@@ -26,7 +26,5 @@ Miscellaneous
 .. autosummary:: 
     :toctree: generated/
     
-    compute_gqsp_polynomial
-    compute_gqsp_angles
     GQET
     hamiltonian_simulation

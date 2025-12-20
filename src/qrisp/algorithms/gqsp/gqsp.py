@@ -16,294 +16,22 @@
 ********************************************************************************
 """
 
-import numpy as np
 from qrisp import (
     QuantumArray,
     QuantumVariable,
     QuantumBool,
-    h,
     u3,
     z,
     control,
     invert,
     gphase,
 )
-from qrisp.algorithms.gqsp.helper_functions import *
-from qrisp.jasp import qache, jrange
-import jax
-import jax.numpy as jnp
-
-
-@jax.jit
-def _compute_maximum(p):
-    r"""
-    Finds the maximum absolute value $M$ that the polynomial $p(z)\in\mathbb C[z]$ assumes on the unit circle $|z|=1$.
-
-    Parameters
-    ----------
-    p : ndarray
-
-    Returns
-    -------
-    float
-        The maximum $M$ such that $|p(z)|\leq M$ for all $|z|=1$.
-
-    """
-
-    d = len(p) - 1 # degree of p
-
-    # p = [p0, p1, ..., p_d] 
-    # For |z|=1: |p(z)|^2 = p(z)p'(1/z) = h(z) where p' is obtained from p by conjugating all coefficients
-    # Using z=e^{it}, 1/z = e^{-it}, this corresponds to a trigonometric polynomial h(t)
-    # The maximum of h(t) is achieved for t such that d/dt h(t) = 0
-
-    # The coefficients of h(t) are given by convolve(p, p_rev')
-    # where p_rev' is obtained from p' by reversing the coefficients, i.e., p_rev'=[p'_d,...,p'_0]
-    # Taking the time derivative corresponds to elemment-wise multiplication with [-d,...,0,...,d]
-    # The zeros of d/dt h(t) are given by the zeros with |z|=1 of the polynomial r(z) corresponding to the resulting coefficient vector r
-    r = jnp.convolve(p, jnp.conjugate(p[::-1]), mode="full") * jnp.arange(-d,d+1)
-    roots = jnp.roots(r, strip_zeros=False)
-
-    # Evaluate |p(z)| at the roots 
-    p_values = jnp.abs(jnp.polyval(p[::-1], roots))
-
-    # Find the maximum |p(z)| considering only roots with |z|=1
-    M = jnp.max(jnp.where(jnp.abs(jnp.abs(roots)-1) < 1e-9, p_values, 0))
-
-    return M
-
-
-@jax.jit
-def compute_gqsp_polynomial(p):
-    r"""
-    Find the second GQSP polynomial $q$.
-
-    For a polynomial $p\in\mathbb C[x]$ satisfying $|p(e^{ix})|^2\leq 1$ for all $x\in\mathbb R$, this method calculates a polynomial $q\in\mathbb C[x]$ such that
-    $|p(e^{ix})|^2+|q(e^{ix})|^2=1$ for all $x\in\mathbb R$.
-
-    This function is JAX-traceable.
-
-    Parameters
-    ----------
-    p : ndarray
-        A polynomial $p\in\mathbb C[x]$ represended as a vector of its coefficients, 
-        i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
-
-    Returns
-    -------
-        ndarray
-            The polynomial $q\in\mathbb C[x]$.
-    """
-
-    d = len(p) - 1 # degree of p
-    
-    # For |z|=1, |q(z)|^2 + |p(z)|^2 = 1 is equivalent to |q(z)|^2 = 1 - |p(z)|^2 = 1 - p(z)p'(1/z) = h(z), where p' is obtained from p by conjugating all coefficients
-    # For d = deg(p), h(z) = z^{-d} r(z), where r(z) = z^d h(z) 
-    # As shown in https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368, the polynomial q(z) can be constructed from the roots of r(z)
-
-    # Compute the polynomal r(z) = z^d(1 - p(z)p'(1/z)) = z^d - p(z)p_rev'(z) 
-    # where p_rev' is obtained from p' by reversing the coefficients, i.e., p_rev'=[p'_d,...,p'_0]
-
-    # polyadd, polymul follow the convention that p=[p0,...,p_d] corresponds to p_d+p_{d-1}+...+p_0x^d (reversed endianness)
-    #zd = jnp.zeros(d+1)
-    #zd = zd.at[0].set(1)
-    # z^d - p(z)p_rev'(z)
-    #r = jnp.polyadd(zd, -jnp.polymul(p[::-1], jnp.conj(p)))
-
-    delta = jnp.zeros(2*d + 1)
-    delta = delta.at[d].set(1)
-    r = delta - jnp.convolve(p, jnp.conjugate(p[::-1]), mode='full')
-
-    roots = jnp.roots(r, strip_zeros=False)
-
-    # 1. Separate roots inside and outside the unit disk
-    abs_roots = jnp.abs(roots)
-    mask_in = abs_roots <= 1.0
-    mask_out = abs_roots > 1.0
-    roots_in_initial = jnp.where(mask_in, roots, 0)
-    roots_out = jnp.where(mask_out, roots, 0) 
-    prod_out = jnp.prod(jnp.where(mask_out, roots, 1))
-
-    # 2d roots; k outside; 2d - k inside the unit disk
-    k = jnp.count_nonzero(roots_out)
-
-    # 2. Find the threshold magnitude from the 'in' roots 
-    # Roots with absolute value within the threshold correspond to pairs (w, 1/w*)
-    # Roots above the threshold are considered to lie on the unit circle
-    abs_roots_in = jnp.abs(roots_in_initial)
-    thres = jnp.sort(abs_roots_in)[2*k]
-
-    # 3. Select roots based on the threshold to obtain g(z)
-    selected_roots = jnp.where(abs_roots_in <= thres, roots_in_initial, 0)
-
-    # Select roots greater than the threshold to obatain r_hat(z) = g_hat^2(z)
-    # Sort complex roots; apply mask that selects every second root to obtain g_hat(z)
-    root_circle = jnp.where(abs_roots_in > thres, roots_in_initial, 0)
-    mask = jnp.ones(2*d).at[1::2].set(0) 
-    roots_circle_masked = jnp.sort_complex(root_circle) * mask
-
-    # 4. Combine and select the final d nonzero roots to obtain g(z)g_hat(z)
-    combined_roots = jnp.concatenate([selected_roots, roots_circle_masked])
-
-    mask_nonzero = combined_roots != 0
-    combined_roots_masked = jnp.where(mask_nonzero, combined_roots, -2)
-    # Sort by complex value and take the last d elements
-    new_roots = jnp.sort_complex(combined_roots_masked)[-d:]
-
-    # Compute polynomial q from roots
-    factor = jnp.sqrt(jnp.abs(r[-1] * prod_out))
-    q = factor * jnp.poly(new_roots)[::-1]
-
-    return q
-
-
-def _compute_gqsp_polynomial(p, num_iterations=10000, learning_rate=0.01):
-    r"""
-    Find the second GQSP polynomial $q$.
-
-    This function solves the optimization problem
-
-    .. math::
-
-        \text{argmin}_{q}\|p\star\text{reversed}(p)^* + q\star\text{reversed}(q)^* - \delta\|^2
-
-    where $\delta=(0,\dotsc,0,1,0,\dotsc,0)$ is a vector of length $2d+1$ with $1$ at the center and $d$ zeros on each side, 
-    and $\star$ is the convolution operator.
-
-    The polynomial $p$ must satisfy $|p(e^{ix})|^2\leq 1$ for all $x\in\mathbb R$.
-
-    This function is JAX-traceable.
-
-    Parameters
-    ----------
-    p : ndarray
-        A polynomial $p\in\mathbb C[x]$ represended as a vector of its coefficients, 
-        i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
-    num_iterations : int
-        Number of optimization steps.
-    learning_rate : float
-        Optimizer learning rate.
-
-    Returns
-    -------
-        ndarray
-            The optimized vector $q$.
-    """
-    import optax
-
-    d = len(p)
-    delta = jnp.zeros(2*d-1)
-    delta = delta.at[d-1].set(1)
-    c_target = delta - jnp.convolve(p, jnp.conjugate(p[::-1]), mode='full') 
-
-    def objective_function(q, c_target):
-        c_actual = jnp.convolve(q, jnp.conjugate(q[::-1]), mode='full')
-        diff = c_actual - c_target
-        return jnp.linalg.norm(diff)**2
-
-    # JIT-compile the value and gradient calculation
-    loss_and_grad = jax.jit(jax.value_and_grad(objective_function))
-
-    # Initialize optimizer (e.g., Adam or Gradient Descent)
-    optimizer = optax.adam(learning_rate)
-    
-    # Initialize parameters (b) and optimizer state
-    key = jax.random.PRNGKey(0)
-    # Start with a random guess
-    b_params = jax.random.normal(key, shape=(d,)) 
-    opt_state = optimizer.init(b_params)
-
-    # Define a single optimization step function
-    @jax.jit
-    def update_step(params, opt_state, target_c_static):
-        loss_val, grads = loss_and_grad(params, target_c_static)
-        updates, opt_state = optimizer.update(grads, opt_state, params)
-        params = optax.apply_updates(params, updates)
-        return params, opt_state, loss_val
-
-    # Run the optimization loop (this loop itself is Python, but the step inside is JIT)
-    for i in range(num_iterations):
-        b_params, opt_state, loss_val = update_step(b_params, opt_state, c_target)
-
-    return b_params
-
-
-def compute_gqsp_angles(p, q):
-    r"""
-    Computes the angles for GQSP.
-
-    Given two polynomials such that
-
-    * $p,q\in\mathbb C[x]$, $\deg p, \deg q \leq d$,
-    * for all $x\in\mathbb R$, $|p(e^{ix})|^2+|q(e^{ix})|^2=1$,
-
-    this method computes the angles $\theta,\phi\in\mathbb R^{d+1}$, $\lambda\in\mathbb R$.
-
-    This function is JAX-traceable.
-
-    Parameters
-    ----------
-    p : ndarray
-        A polynomial $p\in\mathbb C[x]$ represented as a vector of its coefficients, 
-        i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
-    q : ndarray
-        A polynomial $q\in\mathbb C[x]$ represented as a vector of its coefficients. 
-
-    Returns
-    -------
-    theta_arr : ndarray
-        The angles $(\theta_0,\dotsc,\theta_d)$.
-    phi_arr : ndarray
-        The angles $(\phi_0,\dotsc,\phi_d)$.
-    lambda : float
-        The angle $\lambda$.
-
-    """
-
-    d = len(p) - 1
-    theta_arr = jnp.zeros(d + 1)
-    phi_arr = jnp.zeros(d + 1)
-
-    S = jnp.vstack([p, q])
-
-    # Add a small perturbation to denominators to avoid division by zero when computing angles
-    eps = 1e-10
-    theta_arr = theta_arr.at[d].set(jnp.arctan(jnp.abs(S[1][d] / (S[0][d] + eps))))
-    phi_arr = phi_arr.at[d].set(jnp.angle(S[0][d] / (S[1][d] + eps)))
-
-    def cond_fun(vals):
-        d, S, theta_arr, phi_arr = vals
-        return d > 0
-
-    def body_fun(vals):
-        d, S, theta_arr, phi_arr = vals
-    
-        theta = theta_arr[d]
-        phi = phi_arr[d]
-        # R(theta, phi, 0)^dagger
-        R = jnp.array([[jnp.exp(-phi*1j) * jnp.cos(theta), jnp.sin(theta)],[jnp.exp(-phi*1j) * jnp.sin(theta), -jnp.cos(theta)]])
-        S = R @ S
-        S = jnp.vstack([S[0][1:d+1],S[1][0:d]])
-        
-        d = d-1
-        theta_arr = theta_arr.at[d].set(jnp.arctan(jnp.abs(S[1][d] / (S[0][d] + eps))))
-        phi_arr = phi_arr.at[d].set(jnp.angle(S[0][d] / (S[1][d] + eps)))
-
-        return d, S, theta_arr, phi_arr
-    
-    #d, S, theta_arr, phi_arr = jax.lax.while_loop(cond_fun, body_fun, (d, S, theta_arr, phi_arr))
-    vals = (d, S, theta_arr, phi_arr)
-    while(cond_fun(vals)):
-        vals = body_fun(vals)
-
-    d, S, theta_arr, phi_arr = vals
-    lambda_ = jnp.angle(S[1][0])
-
-    return theta_arr, phi_arr, lambda_
+from qrisp.algorithms.gqsp.gqsp_angles import _gqsp_angles
+from qrisp.jasp import jrange
 
 
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
-def GQSP(qargs, U, p=None, q=None, angles=None, k=0):
+def GQSP(qargs, U, p, q=None, angles=None, k=0):
     r"""
     Performs `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
 
@@ -455,16 +183,12 @@ def GQSP(qargs, U, p=None, q=None, angles=None, k=0):
     if angles != None:
         theta, phi, lambda_ = angles
         d = len(theta) - 1
-    elif p != None:
-        d = len(p) - 1
-        if q == None:
-            p = p / _compute_maximum(p)
-            q = compute_gqsp_polynomial(p)
-        theta, phi, lambda_ = compute_gqsp_angles(p, q)
     else:
-        raise Exception("Either GQSP polynomial or angles must be provided.")
+        d = len(p) - 1
+        theta, phi, lambda_ = _gqsp_angles(p)
 
     qbl = QuantumBool()
+
 
     # Define R gate application function based on formula (4) in https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
     def R(theta, phi, kappa, qubit):
