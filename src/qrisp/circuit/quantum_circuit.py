@@ -1655,7 +1655,7 @@ class QuantumCircuit:
 
             backend = def_backend
 
-        return backend.run(self, shots=shots)
+        return backend.run(self, shots)
 
     def statevector_array(self):
         """

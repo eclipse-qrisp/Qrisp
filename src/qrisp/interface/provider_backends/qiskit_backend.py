@@ -121,7 +121,7 @@ class QiskitBackend(Backend):
     def _default_options(cls):
         return {"shots": 1024}
 
-    def run(self, circuit, **kwargs):
+    def run(self, circuit, shots: int | None = None):
         """
         Execute QASM code on a Qiskit backend using SamplerV2.
 
@@ -140,7 +140,7 @@ class QiskitBackend(Backend):
         """
 
         qasm_str = circuit.qasm()
-        shots = kwargs.get("shots", self._options.get("shots", 1024))
+        shots = shots if shots is not None else self.options.get("shots", 1024)
 
         qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
 

@@ -56,9 +56,9 @@ def int_encoder(qv, encoding_number):
     else:
 
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
-                BigInteger
-            )
-        
+            BigInteger,
+        )
+
         if isinstance(encoding_number, BigInteger):
             for i in jrange(qv.size):
                 with control(encoding_number.get_bit(i)):
@@ -404,8 +404,9 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
                 permeability=permeability,
                 is_qfree=is_qfree,
                 name=name,
-                verify=verify
+                verify=verify,
             )(*fargs, **fkwargs)
+
         return wrapper
 
     # If the decorator is called directly with a function (e.g. @gate_wrap)
@@ -415,6 +416,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
     else:
         # Otherwise, return the decorator that can be applied to a function later
         return gate_wrap_helper
+
 
 def gate_wrap_inner(
     function, permeability=None, is_qfree=None, name=None, verify=False
@@ -751,10 +753,13 @@ def multi_measurement(qv_list, shots=None, backend=None):
     {(3, 2, 5): 0.5, (3, 3, 6): 0.5}
 
     """
-    
+
     from qrisp.jasp import check_for_tracing_mode
+
     if check_for_tracing_mode():
-        raise Exception("Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead")
+        raise Exception(
+            "Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead"
+        )
 
     if backend is None:
         if qv_list[0].qs.backend is None:
@@ -812,7 +817,7 @@ def multi_measurement(qv_list, shots=None, backend=None):
 
     # counts = execute(qs_temp, backend, basis_gates = basis_gates,
     # noise_model = noise_model, shots = shots).result().get_counts()
-    counts = backend.run(compiled_qc, shots=shots)
+    counts = backend.run(compiled_qc, shots)
     counts = {k: counts[k] for k in sorted(counts)}
     shots = sum(counts.values())
 
@@ -2251,10 +2256,10 @@ def batched_measurement(variables, backend, shots=None):
     variables : list[:ref:`QuantumVariable`]
         A list of QuantumVariables.
     backend : :ref:`BatchedBackend`
-        The backend to evaluate the compiled QuantumCircuits on. 
+        The backend to evaluate the compiled QuantumCircuits on.
     shots : int, optional
         The amount of shots to perform. The default is given by the backend used.
-        
+
     Returns
     -------
     results : list[dict]
@@ -2307,18 +2312,25 @@ def batched_measurement(variables, backend, shots=None):
 
         batched_measurement([c,f], backend=bb)
         # Yields: [{3: 1.0}, {5: 1.0}]
-    
+
     """
 
     import threading
 
-    results = [0]*len(variables)
+    results = [0] * len(variables)
+
     def eval_measurement(qv, i):
-        results[i] = qv.get_measurement(backend = backend, shots = shots)
+        results[i] = qv.get_measurement(backend=backend, shots=shots)
 
     threads = []
     for i, var in enumerate(variables):
-        thread = threading.Thread(target = eval_measurement, args = (var, i, ))
+        thread = threading.Thread(
+            target=eval_measurement,
+            args=(
+                var,
+                i,
+            ),
+        )
         threads.append(thread)
 
     # Start the threads
@@ -2326,9 +2338,9 @@ def batched_measurement(variables, backend, shots=None):
         thread.start()
 
     # Call the dispatch routine
-    # The min_calls keyword will make it wait 
+    # The min_calls keyword will make it wait
     # until the batch has a size of number of variables
-    backend.dispatch(min_calls = len(variables))
+    backend.dispatch(min_calls=len(variables))
 
     # Wait for the threads to join
     for thread in threads:

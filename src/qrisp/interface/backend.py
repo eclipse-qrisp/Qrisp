@@ -19,7 +19,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from copy import copy
-from typing import Any
 
 
 class Backend(ABC):
@@ -141,22 +140,23 @@ class Backend(ABC):
 
     # TODO: we will handle with batched execution later
     @abstractmethod
-    def run(self, circuit, **kwargs) -> Any:
+    def run(self, circuit, shots: int | None = None):
         """
         Execute a quantum circuit on the backend.
 
-        The execution semantics of this method should not depend on the presence of optional hardware metadata.
-        Backends are expected to ignore unknown keyword arguments or raise a backend-specific error.
+        The execution behavior may be influenced by runtime options, such as the
+        number of shots (which may also be overridden by the ``shots`` argument).
+        These options can be set by passing an ``options`` mapping to the constructor
+        or by defining custom defaults in :meth:`_default_options`.
 
         Parameters
         ----------
         circuit :
             The quantum circuit to be executed on the backend. The type is backend-specific.
 
-        **kwargs :
-            Additional keyword arguments that may modify the execution behavior.
-            If a key is also present in the backend's runtime options, the value
-            from ``kwargs`` is expected to take precedence for that specific execution.
+        shots : int or None, optional
+            Number of shots (repetitions) for the execution.
+            If ``None``, the backend's default number of shots (from runtime options) is used.
 
         Returns
         -------
@@ -220,7 +220,7 @@ class Backend(ABC):
     # ----------------------------------------------------------------------
 
     @property
-    def backend_health(self) -> Any | None:
+    def backend_health(self):
         """
         Current health status or diagnostics of the backend.
 
@@ -231,7 +231,7 @@ class Backend(ABC):
         return None
 
     @property
-    def backend_info(self) -> Any | None:
+    def backend_info(self):
         """
         General information about the backend.
 
@@ -243,7 +243,7 @@ class Backend(ABC):
         return None
 
     @property
-    def backend_queue(self) -> Any | None:
+    def backend_queue(self):
         """
         Current queue status or job backlog of the backend.
 
@@ -259,7 +259,7 @@ class Backend(ABC):
     # ----------------------------------------------------------------------
 
     @property
-    def num_qubits(self) -> int | None:
+    def num_qubits(self):
         """
         Number of qubits available on the backend.
 
@@ -270,7 +270,7 @@ class Backend(ABC):
         return None
 
     @property
-    def connectivity(self) -> Any | None:
+    def connectivity(self):
         """
         Connectivity information for the backend.
 
@@ -291,7 +291,7 @@ class Backend(ABC):
         return None
 
     @property
-    def gate_set(self) -> Any | None:
+    def gate_set(self):
         """
         Native gate set supported by the backend.
 
@@ -304,7 +304,7 @@ class Backend(ABC):
         return None
 
     @property
-    def error_rates(self) -> Any | None:
+    def error_rates(self):
         """
         Error rates or calibration-related information for the backend.
 
@@ -320,7 +320,7 @@ class Backend(ABC):
     # ----------------------------------------------------------------------
 
     @property
-    def capabilities(self) -> Mapping[str, Any]:
+    def capabilities(self):
         """
         Backend-specific capabilities not covered by the base interface.
 
