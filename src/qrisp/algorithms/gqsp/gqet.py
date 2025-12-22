@@ -34,19 +34,29 @@ def GQET(qarg, H, p, kind="Polynomial"):
     Performs `Generalized Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
     Applies polynomial transformations on the eigenvalues of a Hermitian operator.
 
+    The Quantum Eigenvalue Transform is described as follows:
+    
+    * Given a Hermitian operator $H=\sum_i\lambda_i\ket{\lambda_i}\bra{\lambda_i}$ where $\lambda_i\in\mathbb R$ are the eigenvalues for the eigenstates $\ket{\lambda_i}$, 
+    * A quantum state $\ket{\psi}=\sum_i\alpha_i\ket{\lambda_i}$ where $\alpha_i\in\mathbb C$ are the amplitudes for the eigenstates $\ket{\lambda_i}$, 
+    * A (complex) polynomial $p(z)$,
+
+    this transformation prepares a state proportional to
+
+    .. math::
+
+        p(H)\ket{\psi}=\sum_i p(\lambda_i)\ket{\lambda_i}\bra{\lambda_i}\sum_j\alpha_j\ket{\lambda_j}=\sum_i p(\lambda_i)\alpha_i\ket{\lambda_i}
+
     Parameters
     ----------
     qarg : QuantumVariable
-
+        The QuantumVariable representing the state to apply the GQET on.
     H : QubitOperator
-
+        The Hermitian operator.
     p : ndarray
-        A polynomial $p\in\mathbb C[x]$ represented as a vector of its coefficients, 
-        i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
-
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
     kind : str, optinal
-        ``"Polynomial"``or ``"Chebyshev"``.
-        
+        The kind of ``p``. Available are ``"Polynomial"`` or ``"Chebyshev"``. 
+        The default is ``"Polynomial"``.
 
     Returns
     -------
@@ -99,7 +109,7 @@ def GQET(qarg, H, p, kind="Polynomial"):
         poly = np.array([1., 2., 1.])
 
         @RUS
-        def filtered_psi_prep():
+        def transformed_psi_prep():
 
             operand = psi_prep()
 
@@ -113,7 +123,7 @@ def GQET(qarg, H, p, kind="Polynomial"):
         @jaspify(terminal_sampling=True)
         def main(): 
 
-            E = H.expectation_value(filtered_psi_prep, precision=0.001)()
+            E = H.expectation_value(transformed_psi_prep, precision=0.001)()
             return E
 
         print(main())

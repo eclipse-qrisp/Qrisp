@@ -52,7 +52,8 @@ def GQSP(qargs, U, p, q=None, angles=None, k=0):
 
     where the angles $\theta,\phi\in\mathbb R^{d+1}$, $\lambda\in\mathbb R$ are calculated from the polynomials $p,q$, 
     $A=\begin{pmatrix}I & 0\\ 0 & U\end{pmatrix}$ is the signal operator.
-    If $q$ is not specified, it is computed numerically form $p$. The polynomial $p$ must satisfy $|p(e^{ix})|^2\leq 1$ for all $x\in\mathbb R$.
+    If $q$ is not specified, it is computed numerically form $p$. 
+    The polynomial $p$ is rescaled automatically to satisfy $|p(e^{ix})|^2\leq 1$ for all $x\in\mathbb R$.
 
     Parameters
     ----------
@@ -62,16 +63,15 @@ def GQSP(qargs, U, p, q=None, angles=None, k=0):
         A function appying a unitary to the variables in ``qargs``.
         Typically, $U=e^{iH}$ for a Hermitian operator $H$ and GQSP applies a function of $H$.
     p : ndarray, optional
-        A polynomial $p\in\mathbb C[x]$ represented as a vector of its coefficients, 
-        i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
         Either the polynomial ``p`` or ``angles`` must be specified.
     q : ndarray, optional
-        A polynomial $q\in\mathbb C[x]$ represented as a vector of its coefficients. 
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
         If not specified, the polynomial is computed numerically from $p$, and $p$ is rescaled to ensure $|p(e^{ix})|\leq 1$ for all $x\in\mathbb R$.
     angles : tuple(ndarray, ndarray, float), optional
         A tuple of angles $(\theta,\phi,\lambda)$ for $\theta,\phi\in\mathbb R^{d+1}$, $\lambda\in\mathbb R$.
     k : int, optional
-        If specified, the Laurent polynomials $\tilde p(x)=x^{-k}p(x)$, $\tilde q(x)=x^{-k}q(x)$ are applied.
+        If specified, the Laurent polynomial $\tilde p(x)=x^{-k}p(x)$ is applied.
         The default is 0.
 
     Returns
