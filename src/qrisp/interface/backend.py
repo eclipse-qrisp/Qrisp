@@ -19,6 +19,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from copy import copy
+from typing import Any
 
 
 class Backend(ABC):
@@ -56,6 +57,11 @@ class Backend(ABC):
 
     * by overriding :meth:`_default_options` at class level, or
     * by passing a custom ``options`` mapping to the constructor.
+
+    The number of shots may also be overridden per-execution by passing
+    the ``shots`` argument to :meth:`run`. It is treated as a conventional
+    execution parameter for gate-based, shot-based backends,
+    and may be ignored by backends for which it is not meaningful.
 
     The ``options`` argument does not need to be a dict; any object satisfying
     the :class:`collections.abc.Mapping` interface is accepted. This allows
@@ -157,11 +163,6 @@ class Backend(ABC):
         shots : int or None, optional
             Number of shots (repetitions) for the execution.
             If ``None``, the backend's default number of shots (from runtime options) is used.
-
-        Returns
-        -------
-        Any
-            Backend-specific result of the execution.
 
         """
         raise NotImplementedError
@@ -320,7 +321,7 @@ class Backend(ABC):
     # ----------------------------------------------------------------------
 
     @property
-    def capabilities(self):
+    def capabilities(self) -> Mapping[str, Any]:
         """
         Backend-specific capabilities not covered by the base interface.
 
