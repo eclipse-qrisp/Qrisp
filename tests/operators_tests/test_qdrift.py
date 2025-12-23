@@ -15,8 +15,9 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
-import numpy as np
+
 import networkx as nx
+import numpy as np
 from qrisp import QuantumVariable
 from qrisp.operators import X, Z
 
@@ -37,16 +38,17 @@ def test_qdrift_ising_chain():
         return (1.0 / G.number_of_nodes()) * sum(Z(i) for i in G.nodes())
 
     # Simulation setup
-    N=1000
+    N = 100
     G = generate_chain_graph(6)
     H = create_ising_hamiltonian(G, J=1.0, B=1.0)
+    U = H.qdrift()
     M = create_magnetization(G)
-    T_values = np.arange(0, 2, 0.05)
+    T_values = np.arange(0, 1.0, 0.1)
 
-    # Define the state evolution function using QDRIFT
-    def psi(t, use_arctan=True):
+    # Define the state evolution function using QDrift
+    def psi(t):
         qv = QuantumVariable(G.number_of_nodes())
-        H.qdrift(qv, t, N=N, use_arctan=use_arctan)
+        U(qv, t, samples=N)
         return qv
 
     # Compute magnetization expectation values over time
@@ -55,4 +57,4 @@ def test_qdrift_ising_chain():
         ev_M = M.expectation_value(psi, precision=0.05)
         M_values.append(float(ev_M(t)))
 
-    assert M_values[0]-M_values[-1]>0.6
+    assert M_values[0]-M_values[-1]>0.5

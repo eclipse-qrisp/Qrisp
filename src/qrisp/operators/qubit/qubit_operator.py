@@ -1935,15 +1935,14 @@ class QubitOperator(Hamiltonian):
         return U
 
     #
-    # Qdrift
+    # QDrift
     #
 
-    def qdrift(self, qv, t, N, use_arctan= False ):
-
+    def qdrift(self, forward_evolution=True):
         r"""
-        This algorithm simulates the time evolution of a quantum state under a Hamiltonian using the **QDRIFT** (Quantum Stochastic Drift Protocol) algorithm.
+        This algorithm simulates the time evolution of a quantum state under a Hamiltonian using the **QDrift** (Quantum Stochastic Drift Protocol) algorithm.
 
-        QDRIFT approximates the exact time-evolution operator
+        QDrift approximates the exact time-evolution operator
 
         .. math::
             U(t) = e^{-i H t}, \qquad 
@@ -1959,72 +1958,56 @@ class QubitOperator(Hamiltonian):
         .. math::
             p_j = \frac{|h_j|}{\lambda}, \qquad 
             \lambda = \sum_j |h_j|.
+        
+        Each sampled exponential uses a fixed time-step parameter 
+        
+        .. math:: 
+            \tau = \frac{\lambda t}{N}.
 
-        The number of samples :math:`N` controls the overall simulation accuracy. The expected diamond-norm error of the QDRIFT channel satisfies : 
-
-        .. math::
-            \epsilon \le \frac{2 \lambda^2 t^2}{N},
-
-        so that achieving a target precision :math:`\epsilon` requires
+        The number of samples :math:`N` controls the overall simulation accuracy. 
+        Achieving a target precision :math:`\epsilon` requires
 
         .. math::
             N = \mathcal{O}\!\left( \frac{\lambda^2 t^2}{\epsilon} \right).
 
-        Each sampled exponential uses a fixed time-step parameter
-
-        .. math::
-            \tau = \frac{\lambda t}{N},
-
-        or, if :code:`use_arctan=True`, a numerically stable variant
-
-        .. math::
-            \tau = \arctan\!\left( \frac{\lambda t}{N} \right).
-
-        QDRIFT is particularly suited for large quantum systems whose Hamiltonians can be decomposed into a sum of local Pauli terms. 
+        QDrift is particularly suited for large quantum systems whose Hamiltonian are decomposed into a sum of local Pauli terms. 
 
         Parameters
         ----------
-        H : :class:`QubitOperator`
-            Hamiltonian to simulate, written as 
-            :math:`H = \sum_j h_j P_j`, where each :math:`P_j`
-            is a tensor product of Pauli operators.
-        qv : :class:`QuantumVariable`
-            Quantum state to which the simulated evolution is applied.
-        t : float
-            Total simulation time :math:`t`.
-        N : int
-            Number of random samples (the number of exponentials in the product).
-            Larger values yield higher accuracy at the cost of more gates.
-        use_arctan : bool, optional
-            If ``True``, uses :math:`\tau = \arctan(\lambda t / N)`
-            instead of linear scaling. This can improve numerical stability
-            for large :math:`\lambda t`. Default is ``False``.
+        forward_evolution : bool, optional
+            If set to False $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is ``True``.
 
         Returns
         -------
-        qv : :class:`QuantumVariable`
-            The evolved quantum state after applying the QDRIFT approximation.
+        callable
+            A Python function that implements QDrift.
+            This function receives the following arguments:
+
+            * qarg : :ref:`QuantumVariable`
+                The quantum argument.
+            * t : float, optional
+                The evolution time $t$. The default is 1.
+            * samples : int, optional
+                The number of random samples $N$ (the number of exponentials in the product). The default is 100.
+                Larger values yield higher accuracy at the cost of higher runtime.
+            * iter : int, optional
+                The number of iterations the unitary $U(t,N)$ is applied. The default is 1.
         
-            
         Examples
         --------
             
-        Example usage of the qdrift function to simulate a quantum system governed by an Ising Hamiltonian on a chain graph.
-
-
         Below is an example usage of the :func:`qdrift` function to simulate a quantum system governed
         by an Ising Hamiltonian on a one-dimensional chain graph.
 
         In this example, we build a chain graph, define an Ising Hamiltonian with given coupling and
         magnetic field strengths, and compute the magnetization of the system over a range of evolution
-        times using the QDRIFT algorithm. The results are compared to a first-order Trotterization
-        simulation to visualize their qualitative agreement.
+        times using the QDrift algorithm.
 
-        .. code-block:: python
+        ::
 
-            import numpy as np
             import matplotlib.pyplot as plt
             import networkx as nx
+            import numpy as np
             from qrisp import QuantumVariable
             from qrisp.operators import X, Z, QubitOperator
 
@@ -2045,31 +2028,32 @@ class QubitOperator(Hamiltonian):
             # Simulation setup
             G = generate_chain_graph(6)
             H = create_ising_hamiltonian(G, J=1.0, B=1.0)
+            U = H.qdrift()
             M = create_magnetization(G)
-            T_values = np.arange(0, 2, 0.05)
-            precision_expectation_value = 0.001
 
             # Choose N according to the theoretical scaling 
-            # The QDRIFT bound suggests:  N ≈ ceil(2 λ² t² / ε), where λ = ∑|h_j|. Here we use this expression directly, although for many models it leads to very large circuits.
-            #
-            # The user is free to choose any alternative formula for N (e.g. N ∝ (λ t)²), depending on desired accuracy and runtime.
-            lam = sum(abs(coeff) for coeff in H.terms_dict.values())
-            epsilon = 0.001
-            N = int(np.ceil(2 * lam**2 * (max(T_values)**2) / epsilon))
+            # The Qdrift bound suggests:  N ≈ ceil(2 (λ t)² / ε), where λ = ∑|h_j|. 
+            # Here we use this expression directly, although for many models it leads to very large circuits.
+            # The user is free to choose any alternative formula for N, depending on desired accuracy and runtime.
+            lam = np.sum(np.abs(list(H.terms_dict.values())))
+            epsilon = 0.1
 
-            def psi(t, use_arctan=True):
+            def psi(t):
                 qv = QuantumVariable(G.number_of_nodes())
-                H.qdrift(qv, time_simulation=t, N=N, use_arctan=use_arctan)
+                N = int(np.ceil(2 * (lam * t) ** 2) / epsilon)
+                U(qv, t=t, samples=N)
+                return qv
 
             # Compute magnetization expectation 
+            T_values = np.arange(0, 2.0, 0.05)
             M_values = []
             for t in T_values:
-                ev_M = M.expectation_value(psi, precision_expectation_value)
+                ev_M = M.expectation_value(psi, precision=0.01)
                 M_values.append(float(ev_M(t)))
 
             plt.scatter(T_values, M_values, color='#6929C4', marker="o", linestyle="solid", s=20, label=r"Ising chain")
-            plt.xlabel(r"Evolution time $T$", fontsize=15, color="#444444")
-            plt.ylabel(r"Magnetization $\langle M \rangle$", fontsize=15, color="#444444")
+            plt.xlabel(r"Evolution time", fontsize=15, color="#444444")
+            plt.ylabel(r"Magnetization", fontsize=15, color="#444444")
             plt.legend(fontsize=15, labelcolor="#444444")
             plt.tick_params(axis='both', labelsize=12)
             plt.grid()
@@ -2087,51 +2071,37 @@ class QubitOperator(Hamiltonian):
 
         where :math:`\lambda = \sum_j |h_j|` and :math:`\epsilon` is the target diamond-norm precision.
 
-        While this choice guarantees the formal error bound from Random Compiler for Fast Hamiltonian Simulation, Physical Review Letters 123, 070503 (2019), it can produce
-        extremely large circuit depths (here on the order of hundreds of thousands of Pauli rotations),
-        making the simulation slow for dense Hamiltonians such as the Ising model.
+        While this choice guarantees the formal error bound from 
+        `Random Compiler for Fast Hamiltonian Simulation, Physical Review Letters 123, 070503 (2019) <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.123.070503>`_, 
+        it can produce extremely large circuit depths (here on the order of up to thousands of Pauli rotations).
 
-        QDRIFT is **not optimal** for Hamiltonians with many large coefficients (like the Ising chain),
+        QDrift is **not optimal** for Hamiltonians with many large coefficients (like the Ising chain),
         because the total weight :math:`\lambda` is high, leading to large :math:`N`.
         However, it is **highly efficient for sparse or weakly weighted Hamiltonians**
         where :math:`\lambda` is small—common in chemistry or local lattice models—
         making it a powerful tool for large-scale quantum simulations with bounded resources.
 
         """
-        coeffs = []
-        terms = []
-        # signs = []
+        O = self.hermitize().eliminate_ladder_conjugates()
 
-        coeffs = []
-        terms = []
-        for term, coeff in  self.terms_dict.items():
-            terms.append(term)
-            coeffs.append(coeff)
+        terms = list(O.terms_dict.keys())
+        coeffs = np.array(list(O.terms_dict.values()))
+        signs = np.sign(coeffs)
 
-        # Step 1
-        normalisation_factor = sum(abs(c) for c in coeffs)
-        if normalisation_factor == 0 or t == 0:
-            return []  
+        normalisation_factor = np.sum(np.abs(coeffs))
+        probs = np.abs(coeffs) / normalisation_factor 
 
-        # Step 3
-        tau = normalisation_factor * t / N
-        angle = np.arctan(tau) if use_arctan else tau
-
-        # Step 4
-        probs = [abs(c) / normalisation_factor for c in coeffs]
-
-        # Step 5
-        i = 0
         def sample(probs):
             return np.random.choice(range(len(probs)), p=probs)
+        
+        def U(qarg, t=1, samples=100, iter=1):
+            tau = normalisation_factor * t / np.maximum(samples, 1)
+            for _ in range(samples * iter):
+                j = sample(probs) 
+                terms[j].simulate(-tau * signs[j] * (-1) ** int(forward_evolution), qarg) 
 
-        while i < N:
-            i += 1  # Step 5a
-            j = sample(probs)  # Step 5b
-            terms[j].simulate(angle, qv)  # Step 5c
+        return U
             
-
-
     #
     # LCU
     #
