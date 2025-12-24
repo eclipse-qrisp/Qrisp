@@ -107,8 +107,7 @@ def jaspr_to_catalyst_function(jaspr):
 
     # Initiate Catalyst backend info
     device = qml.device("lightning.qubit", wires=0)
-    device_capabilities = catalyst.device.get_device_capabilities(device)
-    backend_info = catalyst.device.extract_backend_info(device, device_capabilities)
+    backend_info = catalyst.device.extract_backend_info(device)
 
     def catalyst_function(*args):
         # Initiate the backend
