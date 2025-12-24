@@ -476,9 +476,7 @@ def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False)
 
     """
     
-    _, coeffs = H.unitaries()
-    
-    # Step 1: Quantum Lanczos: Get expectation values of Chebyshev polynomials
+    # Step 1: Quantum Lanczos: Find expectation values of Chebyshev polynomials
     Tk_expvals = lanczos_expvals(H, D, operand_prep, mes_kwargs)
 
     # Step 2: Build matrices S and H
@@ -491,7 +489,10 @@ def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False)
     #eigvals, eigvecs = jax.scipy.linalg.eigh(H_reg, S_reg) # Solving the generalized eigenvalue problem not implemented in JAX 0.6
     eigvals, eigvecs = generalized_eigh(H_reg, S_reg)
 
-    ground_state_energy = jnp.min(eigvals) * jnp.sum(coeffs)
+    # Step 5: Find ground state energy
+    coeffs = H.hermitize().to_pauli().coeffs() 
+    scaling_factor = jnp.sum(jnp.abs(coeffs)) # Scaling factor for Pauli block-encoding
+    ground_state_energy = jnp.min(eigvals) * scaling_factor
     
     results = {
         'Tk_expvals': Tk_expvals,
