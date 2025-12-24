@@ -138,7 +138,7 @@ def test_mkcs_5nodes():
             break
     else: 
         assert False
-#    onehot = G_onehot
+
 
     def G_bin():
         qarg = QuantumArray(qtype = QuantumColor(color_list, one_hot_enc = False), shape = num_nodes) 
@@ -159,19 +159,8 @@ def test_mkcs_5nodes():
             return True
     
 
-    for _ in range(10):
+    for _ in range(5):
         if G_bin() == True:
             break
-        else: 
-            assert False
-#    bin = G_bin
-
-
-
-
-
-
-
-
-#  BINARY
-
+    else: 
+        assert False
