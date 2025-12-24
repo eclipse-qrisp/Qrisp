@@ -2060,7 +2060,7 @@ class QubitOperator(Hamiltonian):
             # The Qdrift bound suggests:  N ≈ ceil(2 (λ t)² / ε), where λ = ∑|h_j|. 
             # Here we use this expression directly, although for many models it leads to very large circuits.
             # The user is free to choose any alternative formula for N, depending on desired accuracy and runtime.
-            lam = np.sum(np.abs(list(H.terms_dict.values())))
+            lam = np.sum(np.abs(H.coeffs()))
             epsilon = 0.1
 
             def psi(t):
