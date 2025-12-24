@@ -11,7 +11,8 @@ Lanczos Algorithm
 .. autosummary::
    :toctree: generated/
    
-   lanczos_expvals
    inner_lanczos
+   lanczos_expvals
    build_S_H_from_Tk
    regularize_S_H
+   generalized_eigh

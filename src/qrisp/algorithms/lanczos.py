@@ -23,7 +23,6 @@ import numpy as np
 from qrisp import QuantumVariable, QuantumFloat, h, control, conjugate
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.jasp import jrange, q_cond, check_for_tracing_mode, expectation_value
-import scipy
 
 
 def inner_lanczos(H, k, operand_prep):
@@ -186,7 +185,8 @@ def lanczos_expvals(H, D, operand_prep, mes_kwargs={}):
 
 # Postprocessing
 
-def build_S_H_from_Tk(Tk_expvals, D):
+@partial(jax.jit, static_argnums=(1,))
+def build_S_H_from_Tk(expvals, D):
     r"""
     Construct the overlap matrix $S$ and the Krylov Hamiltonian matrix $H$ from Chebyshev polynomial expectation values.
 
@@ -197,8 +197,8 @@ def build_S_H_from_Tk(Tk_expvals, D):
 
     Parameters
     ----------
-    Tk_expectation : ndarray
-        Dictionary of expectations $⟨T_k(H)⟩$ for each Chebyshev polynomial order $k$.
+    expvals : ndarray
+        Expectation values $⟨T_k(H)⟩_0$ for each Chebyshev polynomial order $k$.
     D : int
         Krylov space dimension.
 
@@ -211,72 +211,8 @@ def build_S_H_from_Tk(Tk_expvals, D):
 
     """
     def Tk_vec(k):
-        k = np.abs(k)
-        return Tk_expvals[k]
-
-    # Create 2D arrays of indices i and j
-    i_indices = np.arange(D, dtype=np.int32)[:, None] # Column vector (D, 1)
-    j_indices = np.arange(D, dtype=np.int32)[None, :] # Row vector (1, D)
-    # The combination of these two will broadcast operations across a (D, D) grid
-
-    # Calculate S matrix using vectorized operations
-    # i+j and abs(i-j) are performed element-wise across the (D, D) grid
-    S = 0.5 * (Tk_vec(i_indices + j_indices) + Tk_vec(np.abs(i_indices - j_indices)))
-
-    # Calculate H_mat matrix using vectorized operations
-    H_mat = 0.25 * (
-        Tk_vec(i_indices + j_indices + 1)
-        + Tk_vec(np.abs(i_indices + j_indices - 1))
-        + Tk_vec(np.abs(i_indices - j_indices + 1))
-        + Tk_vec(np.abs(i_indices - j_indices - 1))
-    )
-
-    return S, H_mat
-
-
-def regularize_S_H(S, H_mat, cutoff=1e-2):
-    r"""
-    Regularize the overlap matrix $S$ by retaining only eigenvectors with sufficiently large eigenvalues and project the Hamiltonian matrix $H$ accordingly.
-
-    This function applies a spectral cutoff: only directions in the Krylov subspace with eigenvalues
-    above ``cutoff * max_eigenvalue`` are kept. Both the overlap matrix ($S$) and the Hamiltonian matrix (H)
-    are projected onto this reduced subspace, ensuring numerical stability for subsequent
-    generalized eigenvalue calculations.
-    
-    Parameters
-    ----------
-    S : ndarray
-        Overlap matrix.
-    H_mat : ndarray
-        Hamiltonian matrix.
-    cutoff : float
-        Eigenvalue threshold for regularizing $S$.
-
-    Returns
-    -------
-    S_reg : ndarray
-        Regularized overlap matrix.
-    H_reg : ndarray
-        Regularized Hamiltonian matrix in Krylov subspace.
-
-    """
-    eigvals, eigvecs = np.linalg.eigh(S)
-    max_eigval = eigvals.max()
-    threshold = cutoff * max_eigval
-    mask = eigvals > threshold
-    U = eigvecs[:, mask]
-    S_reg = U.T @ S @ U
-    H_reg = U.T @ H_mat @ U
-    return S_reg, H_reg
-
-# JAX postprocessing
-
-@partial(jax.jit, static_argnums=(1,))
-def build_S_H_from_Tk_jitted(Tk_expvals, D):
-
-    def Tk_vec(k):
         k = jnp.abs(k)
-        return Tk_expvals[k]
+        return expvals[k]
 
     # Create 2D arrays of indices i and j
     i_indices = jnp.arange(D, dtype=jnp.int32)[:, None] # Column vector (D, 1)
@@ -299,8 +235,33 @@ def build_S_H_from_Tk_jitted(Tk_expvals, D):
 
 
 @jax.jit
-def regularize_S_H_jitted(S, H_mat, cutoff=1e-2):
+def regularize_S_H(S, H_mat, cutoff=1e-2):
+    r"""
+    Regularize the overlap matrix $S$ by retaining only eigenvectors with sufficiently large eigenvalues and project the Hamiltonian matrix $H$ accordingly.
 
+    This function applies a spectral cutoff: only directions in the Krylov subspace with eigenvalues
+    above ``cutoff * max_eigenvalue`` are kept. Both the overlap matrix ($S$) and the Hamiltonian matrix (H)
+    are projected onto this reduced subspace, ensuring numerical stability for subsequent
+    generalized eigenvalue calculations. The regularized matrices are caculated as $\tilde{S} = V^TSV$ and $\tilde{H}=V^THV$ for a projection matrix $V$.
+    
+    Parameters
+    ----------
+    S : ndarray
+        Overlap matrix.
+    H_mat : ndarray
+        Hamiltonian matrix.
+    cutoff : float
+        Eigenvalue threshold for regularizing $S$.
+
+    Returns
+    -------
+    S_reg : ndarray
+        Regularized overlap matrix.
+    H_reg : ndarray
+        Regularized Hamiltonian matrix in Krylov subspace.
+    V : ndarray
+        Projection matrix.
+    """
     D = S.shape[0]
 
     eigvals, eigvecs = jnp.linalg.eigh(S)
@@ -323,25 +284,41 @@ def regularize_S_H_jitted(S, H_mat, cutoff=1e-2):
     V = jnp.zeros((D, D), dtype=U.dtype)
     V = V.at[jnp.arange(D), :].set(jnp.where(new_mask, U, zeros))
 
-    S_reg_ext = V.T @ S @ V
-    H_reg_ext = V.T @ H_mat @ V
+    S_reg = V.T @ S @ V
+    H_reg = V.T @ H_mat @ V
 
     I = jnp.eye(D)
-    S_reg_ext = jnp.where(new_mask, S_reg_ext, I)
-    H_reg_ext =jnp.where(new_mask, H_reg_ext, I)
+    S_reg = jnp.where(new_mask, S_reg, I)
+    H_reg =jnp.where(new_mask, H_reg, I)
     
     # S_reg and H_reg will be a block matrix of shape (D, D):
     # upper left: k x k block of regularized matrices S_reg, H_reg, respectively; 
     # lower right: (D-k) x (D-k) identity; 
     # upper right and lower left are zeros
-    return S_reg_ext, H_reg_ext
+    return S_reg, H_reg, V
 
 
+# jax.scipy.linalg.eigh does currently not support the generalized eigenvalue problem
 @jax.jit
-def generalized_eigh_jitted(A, B):
-    # Solves the generalized eigenvalue problem A*v = lambda*B*v
-    # for symmetric/hermitian matrices A and symmetric positive-definite B.
-    
+def generalized_eigh(A, B):
+    r"""
+    Solves the generalized eigenvalue problem $A v = \lambda B v$
+    for a complex Hermitian or real symmetric matrix $A$ and a real symmetric positive-definite matrix $B$.
+
+    Parameters
+    ----------
+    A : ndarray
+        complex Hermitian or real symmetrix matrix.
+    B : ndarray
+        A real symmetric positive-definite matrix.
+
+    Returns
+    -------
+    eigvals : ndarray
+        An array containing the (generalized) eigenvalues.
+    eigvecs : ndarray
+        An array containing the (generalized) eigenvectors.
+    """
     # Compute Cholesky decomposition of B (L*L.T)
     # The 'lower=True' parameter is typically the default but good to be explicit.
     L = jax.scipy.linalg.cholesky(B, lower=True)
@@ -352,15 +329,15 @@ def generalized_eigh_jitted(A, B):
     A_prime = jax.scipy.linalg.solve_triangular(L.T, A_prime.T, lower=False).T
 
     # Solve the standard eigenvalue problem for A'
-    eigenvalues, eigenvectors_prime = jax.scipy.linalg.eigh(A_prime)
+    eigvals, eigvecs_prime = jax.scipy.linalg.eigh(A_prime)
     
     # Transform eigenvectors back to the original basis (v = L_inv_T * v_prime)
-    eigenvectors = jax.scipy.linalg.solve_triangular(L.T, eigenvectors_prime, lower=False)
+    eigvecs = jax.scipy.linalg.solve_triangular(L.T, eigvecs_prime, lower=False)
     
     # Normalize eigenvectors if needed (optional)
-    eigenvectors = eigenvectors / jnp.linalg.norm(eigenvectors, axis=0)
+    eigvecs = eigvals / jnp.linalg.norm(eigvecs, axis=0)
 
-    return eigenvalues, eigenvectors
+    return eigvals, eigvecs
 
 
 def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False):
@@ -409,14 +386,14 @@ def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False)
 
         H_{ij}=\frac{1}{4}\bigg(\langle T_{i+j+1}(H)\rangle_0+\langle T_{|i+j-1|}(H)\rangle_0 + \langle T_{|i-j+1|}(H)\rangle_0 + \langle T_{|i-j-1|}(H)\rangle_0\bigg).
 
-    Because $i,j=0,1,2,\dots, D-1$, all matrix elements $S_{ij}$ and $H_{ij}$ are expressed as linear combinatios of expectation values of Chebyshev polynomials
+    Because $i,j=0,1,2,\dots, D-1$, all matrix elements $S_{ij}$ and $H_{ij}$ are expressed as linear combinations of expectation values of Chebyshev polynomials
     with respect to the initial state $\langle T_k(H)\rangle_0$, where $k=0,1,2,\dots, 2D-1$. The highest value $2D-1$ comes from the first term
     for $H_{ij}$ when $i=j=D-1$. To construct $H$ and $S$ it is enough to estimate all of the expectation values $\langle T_k(H)\rangle_0$.
    
     The final step in this implementation is solving the generalized eigenvalue problem $H\vec{v}=\epsilon S\vec{v}$.
     In practice, the overlap matrix $S$ can become ill-conditioned due to the linear dependencies in the Krylov basis
-    or sampling noise in the expectation values $T_k(H)$. To prevent numerical instability, the matrices are regularized via threshholding,
-    a process involving discarding small eigenvalues of $S$ below a specified cuttoff. The choice of this cutoff is vital;
+    or sampling noise in the expectation values $T_k(H)$. To prevent numerical instability, the matrices are regularized via thresholding,
+    a process involving discarding small eigenvalues of $S$ below a specified cutoff. The choice of this cutoff is vital;
     a value too small may fail to suppress noise, while a value too large may discard physically relevant information.
 
     The entire approach can be summarized by the following steps:
@@ -499,46 +476,28 @@ def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False)
 
     """
     
-    unitaries, coeffs = H.unitaries()
+    _, coeffs = H.unitaries()
     
     # Step 1: Quantum Lanczos: Get expectation values of Chebyshev polynomials
     Tk_expvals = lanczos_expvals(H, D, operand_prep, mes_kwargs)
-
-    
-    if check_for_tracing_mode():
-
-        # Step 2: Build matrices S and H
-        S, H_mat = build_S_H_from_Tk_jitted(Tk_expvals, D)
-
-        # Step 3: Regularize matrices via thresholding
-        S_reg, H_reg = regularize_S_H_jitted(S, H_mat, cutoff=cutoff)  
-
-        # Step 4: Solve generalized eigenvalue problem $H\vec{v}=\epsilonS\vec{v}$
-        #evals, evecs = jax.scipy.linalg.eigh(H_reg, S_reg) # Solving the generalized eigenvalue problem not implemented in JAX 0.6
-        evals, evecs = generalized_eigh_jitted(H_reg, S_reg)
-
-        ground_state_energy = jnp.min(evals) * jnp.sum(coeffs)
-
-        return ground_state_energy
-    
 
     # Step 2: Build matrices S and H
     S, H_mat = build_S_H_from_Tk(Tk_expvals, D)
 
     # Step 3: Regularize matrices via thresholding
-    S_reg, H_reg = regularize_S_H(S, H_mat, cutoff=cutoff)  
+    S_reg, H_reg, _ = regularize_S_H(S, H_mat, cutoff=cutoff)  
 
     # Step 4: Solve generalized eigenvalue problem $H\vec{v}=\epsilonS\vec{v}$
-    evals, evecs = scipy.linalg.eigh(H_reg, S_reg) 
+    #eigvals, eigvecs = jax.scipy.linalg.eigh(H_reg, S_reg) # Solving the generalized eigenvalue problem not implemented in JAX 0.6
+    eigvals, eigvecs = generalized_eigh(H_reg, S_reg)
 
-    ground_state_energy = np.min(evals) * np.sum(coeffs)
-
+    ground_state_energy = jnp.min(eigvals) * jnp.sum(coeffs)
     
     results = {
         'Tk_expvals': Tk_expvals,
         'energy': ground_state_energy,
-        'eigvals': evals,
-        'eigvecs': evecs,
+        'eigvals': eigvals,
+        'eigvecs': eigvecs,
         'S_reg': S_reg,
         'H_reg': H_reg,
     }
