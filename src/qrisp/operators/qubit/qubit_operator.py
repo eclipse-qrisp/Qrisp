@@ -182,6 +182,26 @@ class QubitOperator(Hamiltonian):
 
     def len(self):
         return len(self.terms_dict)
+    
+    def coeffs(self):
+        """
+        Returns the coefficients of the operator.
+
+        Returns
+        -------
+        ndarray
+            The coefficients.
+
+        Examples
+        --------
+
+        >>> from qrisp.operators import X, Y, Z
+        >>> H = X(0)*X(1)+Y(0)*Y(1)+0.5*Z(0)*Z(1)
+        >>> H.coeffs()
+        array([1. , 1. , 0.5])
+
+        """
+        return np.array(list(self.terms_dict.values()))
 
     #
     # Printing
