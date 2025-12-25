@@ -28,3 +28,4 @@ Miscellaneous
     
     GQET
     hamiltonian_simulation
+    convolve
