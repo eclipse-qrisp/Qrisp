@@ -825,12 +825,7 @@ class QuantumVariable:
 
         from qrisp.alg_primitives.prepare import (
             prepare,
-            prepare_qswitch,
         )
-        from qrisp.jasp import check_for_tracing_mode
-        from qrisp.misc import check_if_fresh
-
-        tracing = check_for_tracing_mode()
 
         if isinstance(params, dict):
             target_array = np.zeros(1 << self.size, dtype=np.complex128)
@@ -843,39 +838,7 @@ class QuantumVariable:
             target_array = jnp.asarray(params, dtype=jnp.complex128)
             qiskit_reversed = True
 
-        if not tracing:
-            expected = 1 << self.size
-            if target_array.size != expected:
-                raise ValueError(
-                    f"Statevector length must be {expected} for {self.size} qubits, "
-                    f"got {target_array.size}."
-                )
-            norm = np.linalg.norm(np.asarray(target_array))
-            if np.isclose(norm, 0.0):
-                raise ValueError("The provided statevector has zero norm.")
-            if not check_if_fresh(self.reg, self.qs):
-                raise ValueError(
-                    "Tried to initialize qubits which are not fresh anymore."
-                )
-            target_array = np.asarray(target_array) / norm
-
-        if method == "auto":
-            use_qiskit = not tracing
-        elif method == "qiskit":
-            if tracing:
-                raise ValueError(
-                    "Qiskit state preparation cannot be used in tracing mode."
-                )
-            use_qiskit = True
-        elif method == "qswitch":
-            use_qiskit = False
-        else:
-            raise ValueError("method must be 'auto', 'qiskit', or 'qswitch'.")
-
-        if use_qiskit:
-            prepare(self, target_array, qiskit_reversed)
-        else:
-            prepare_qswitch(self, target_array)
+        prepare(self, target_array, qiskit_reversed, method = method)
 
     def append(self, operation):
         self.qs.append(operation, self)

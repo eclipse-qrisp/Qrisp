@@ -180,17 +180,17 @@ class TestStatePreparationQswitchJasp:
         """Test that an error is raised when method 'qiskit' is used in JASP mode."""
 
         @terminal_sampling(shots=10)
-        def main():
+        def main(state_vector):
             qv = QuantumFloat(2)
-            state_vector = _gen_real_vector(2)
             qv.init_state(state_vector, method="qiskit")
             return qv
 
         with pytest.raises(
             ValueError,
-            match="Qiskit state preparation cannot be used in tracing mode",
+            match="Tried to initialize dynamic jax array using state preparation method qiskit",
         ):
-            main()
+            state_vector = _gen_real_vector(2)
+            main(state_vector)
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_basis_states(self, n):
