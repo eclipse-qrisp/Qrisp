@@ -18,11 +18,14 @@
 
 from qrisp.interface import BatchedBackend
 
-def IQMBackend(api_token, 
-               device_instance = None, 
-               server_url = None, 
-               compilation_options = None, 
-               transpiler = None):
+
+def IQMBackend(
+    api_token,
+    device_instance=None,
+    server_url=None,
+    compilation_options=None,
+    transpiler=None,
+):
     """
     This function creates a :ref:`BatchedBackend` for executing circuits on IQM hardware.
 
@@ -72,30 +75,30 @@ def IQMBackend(api_token,
      13: 0.018,
      11: 0.014,
      3: 0.012}
-    
+
     **Manual qubit selection and routing**
-    
+
     In the next example we showcase how to prevent automatic selection of qubits.
     For this we overide the transpilation procedure. The default transpilation
     calls the ``transpile_to_IQM`` function, which performs routing,
     automatic selection of suitable qubits, basis-gate transformation and other
     optimizations.
-    
+
     For our example we will just transform to the required basis gates and ensure
     manually that our circuit has the correct connectivity.
-    
+
     ::
-        
+
         from qrisp import QuantumCircuit
-        
+
         # The custom transpiler should receive and return a QuantumCircuit
         def custom_transpiler(qc: QuantumCircuit) -> QuantumCircuit:
             return qc.transpile(basis_gates = ["cz", "r", "measure", "reset"])
 
-        custom_transpiled_garnet = IQMBackend("YOUR_IQM_RESONANCE_TOKEN", 
+        custom_transpiled_garnet = IQMBackend("YOUR_IQM_RESONANCE_TOKEN",
                                    device_instance = "garnet",
                                    transpiler = custom_transpiler)
-        
+
         # Create a bell state
         qc = QuantumCircuit(2)
         qc.h(0)
@@ -116,51 +119,51 @@ def IQMBackend(api_token,
         raise ValueError(
             "Please provide either a server_url or a device_instance, but not both."
         )
-    
+
     if server_url is None and device_instance is None:
-        raise ValueError(
-            "Please provide either a server_url or a device_instance."
-        )
+        raise ValueError("Please provide either a server_url or a device_instance.")
 
     if device_instance is not None and not isinstance(device_instance, str):
         raise TypeError(
             "device_instance must be a string. You can retrieve a list of available devices on the IQM Resonance website."
         )
-        
+
     if server_url is not None and not isinstance(server_url, str):
-        raise TypeError(
-            "server_url must be a string."
-        )
+        raise TypeError("server_url must be a string.")
 
     try:
-        from iqm.iqm_client.iqm_client import IQMClient
         from iqm.iqm_client import CircuitCompilationOptions
-        from iqm.qiskit_iqm.iqm_provider import IQMBackend
+        from iqm.iqm_client.iqm_client import IQMClient
         from iqm.qiskit_iqm import transpile_to_IQM
-    except ImportError:
+        from iqm.qiskit_iqm.iqm_provider import IQMBackend
+    except ImportError as exc:
         raise ImportError(
             "Please install qiskit-iqm to use the IQMBackend. You can do this by running `pip install qrisp[iqm]`."
-        )
+        ) from exc
 
     # Construct the server URL based on device_instance if server_url is not provided
     if server_url is None:
         server_url = "https://resonance.meetiqm.com/"
-        
-    client = IQMClient(iqm_server_url = server_url, token = api_token, quantum_computer = device_instance)
+
+    client = IQMClient(
+        iqm_server_url=server_url, token=api_token, quantum_computer=device_instance
+    )
     backend = IQMBackend(client)
-    
+
     if compilation_options is None:
         compilation_options = CircuitCompilationOptions()
-        
+
     if transpiler is None:
+
         def transpiler(qc):
             from qrisp import QuantumCircuit
+
             qiskit_qc = qc.to_qiskit()
             transpiled_qiskit_qc = transpile_to_IQM(qiskit_qc, backend)
             return QuantumCircuit.from_qiskit(transpiled_qiskit_qc)
 
     def run_batch_iqm(batch):
-        
+
         circuit_batch = []
         shot_batch = []
         for qc, shots in batch:
@@ -172,45 +175,30 @@ def IQMBackend(api_token,
             circuit_batch.append(backend.serialize_circuit(qiskit_qc))
             if shots is None:
                 shots = 1000
-            
-            shot_batch.append(shots)
-            
-        
 
-        job = client.submit_circuits(circuit_batch, 
-                                      options = compilation_options, 
-                                      shots = max(shot_batch))
-        
-        
+            shot_batch.append(shots)
+
+        job = client.submit_circuits(
+            circuit_batch, options=compilation_options, shots=max(shot_batch)
+        )
+
         job.wait_for_completion()
         answer = job.result()
-        
-        import re
-        
+
         counts_batch = []
-        for i in range(len(batch)):
+        for i, (_, shots) in enumerate(batch):
+
             counts = answer[i]
-        
+            shots = shots or 1000
+
             counts_dic = {}
-            
-            shots = batch[i][1]
-            if shots is None:
-                shots = 1000
-            
             for j in range(shots):
-                
-                key_str = ""
-                
-                for k in counts.keys():
-                    key_str += str(counts[k][j][0])
-                
-                if key_str in counts_dic:
-                    counts_dic[key_str] +=1
-                else:
-                    counts_dic[key_str] =1
-                    
+
+                key_str = "".join(str(counts[k][j][0]) for k in counts.keys())
+                counts_dic[key_str] = counts_dic.get(key_str, 0) + 1
+
             counts_batch.append(counts_dic)
-    
+
         return counts_batch
 
     return BatchedBackend(run_batch_iqm)

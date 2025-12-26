@@ -16,7 +16,10 @@
 ********************************************************************************
 """
 
+import warnings
+
 from qrisp.interface import BackendClient
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 class VirtualBackend(BackendClient):
@@ -34,7 +37,7 @@ class VirtualBackend(BackendClient):
     Parameters
     ----------
     run_func : function
-        A function that recieves a QuantumCircuit, an integer specifiying the amount of
+        A function that receives a QuantumCircuit, an integer specifying the amount of
         shots and a token in the form of a string. It returns the counts as a dictionary
         of bitstrings.
     name : str, optional
@@ -91,6 +94,12 @@ class VirtualBackend(BackendClient):
     def __init__(self, run_func, port=None):
 
         from qrisp.interface import BackendServer
+
+        warnings.warn(
+            "DeprecationWarning: VirtualBackend is deprecated and will be removed in a later release of Qrisp. "
+            "Please use the ``Backend`` abstract class to implement custom backends.",
+            QrispDeprecationWarning,
+        )
 
         self.port = port
         if port is None:
