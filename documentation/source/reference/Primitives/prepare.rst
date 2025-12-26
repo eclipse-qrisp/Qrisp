@@ -5,8 +5,4 @@ Quantum State Preparation
 
 .. currentmodule:: qrisp
 
-.. autosummary::
-   :toctree: generated/
-
-   prepare_qswitch
-   prepare
+.. autofunction:: prepare
