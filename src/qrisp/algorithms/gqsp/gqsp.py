@@ -31,7 +31,7 @@ from qrisp.jasp import jrange
 
 
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
-def GQSP(qargs, U, p, q=None, angles=None, k=0):
+def GQSP(qargs, U, p, q=None, angles=None, k=0, kwargs={}):
     r"""
     Performs `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
 
@@ -73,6 +73,8 @@ def GQSP(qargs, U, p, q=None, angles=None, k=0):
     k : int, optional
         If specified, the Laurent polynomial $\tilde p(x)=x^{-k}p(x)$ is applied.
         The default is 0.
+    kwargs : dict, optional
+        A dictionary of keyword arguments to pass to ``U``. The default is {}.
 
     Returns
     -------
@@ -201,13 +203,13 @@ def GQSP(qargs, U, p, q=None, angles=None, k=0):
 
     for i in jrange(d-k):
         with control(qbl, ctrl_state=0):
-            U(*qargs)   
+            U(*qargs, **kwargs)   
         R(theta[i+1], phi[i+1], 0, qbl)
 
     for i in jrange(k):
         with control(qbl, ctrl_state=1):
             with invert():
-                U(*qargs)
+                U(*qargs, **kwargs)
         R(theta[d-k+i+1], phi[d-k+i+1], 0, qbl)
 
     return qbl

@@ -29,3 +29,4 @@ Miscellaneous
     GQET
     hamiltonian_simulation
     convolve
+    state_preparation
