@@ -251,3 +251,97 @@ def _gqsp_angles(p):
     theta, phi, lambda_ = _angles(p, q)
 
     return theta, phi, lambda_
+
+
+@jax.jit
+def _inlft(a, b):
+    r"""
+    
+    .. math ::
+
+        F_k = \frac{b_k(0)}{a_k^*(0)}, 
+        \quad a_{k+1}^*(z) = \frac{a_k^*(z)+\bar{F_k}b_k(z)}{\sqrt{1+|F_k|^2}}, 
+        \quad b_{k+1}(z) = \frac{b_k(z)-F_ka_k^*(z)}{\sqrt{1+|F_k|^2}}
+    
+    """
+
+    d = len(a) - 1
+
+    a = jnp.conjugate(a)
+
+    F = jnp.zeros(d+1, dtype=complex)
+
+    for k in range(d+1):
+        Fk = b[0] / a[0]
+        F = F.at[k].set(Fk)
+
+        s = jnp.sqrt(1.0 + jnp.abs(Fk)**2)
+        a_ = (a + jnp.conjugate(Fk) * b) / s
+        b_ = jnp.roll( (b - Fk * a) / s, -1) # divide by z
+
+        a = a_
+        b = b_
+
+    return F
+
+
+def _new_gqsp_angles(p):
+    r"""
+    Computes the GQSP angles for a given polynomial.
+
+    Note: The resulting angles correspond to a properly rescaled version of the input polynomial.
+
+    Parameters
+    ----------
+    p : ndarray
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+
+    Returns
+    -------
+    theta_arr : ndarray
+        The angles $(\theta_0,\dotsc,\theta_d)$.
+    phi_arr : ndarray
+        The angles $(\phi_0,\dotsc,\phi_d)$.
+    lambda : float
+        The angle $\lambda$.
+
+    """
+
+    # Comupute the maximum of |p(z)| for |z|=1
+    M = _maximum(p, N=1024)
+
+    # Rescale p(z)
+    # Divide by M such that |p(z)|<=1 for |z|=1 and QSP success probability is maximized
+    #p = p / M 
+    # Multiply by 0.99 to ensure that |p(z)|<1 for |z|=1 for numerical stability of completion algorithm
+    # This comes at the expense of a slightly smaller QSP success probability 
+    #p = 0.99 * p
+    p = -1.j * p
+
+    # Find completion q(z) of p(z) such that |p(z)|^2 + |q(z)|^2 = 1 for |z|=1
+    q = _complementary_polynomial(p)
+
+    #INLFT
+    F = _inlft(q, p)
+    print("F", F)
+
+    # Compute GQSP angles
+    thres = 1e-10
+    # pre-factor
+    psi = np.where(np.abs(F)<thres, 0, np.where(np.abs(np.imag(F))<thres, -np.pi/4, -(1/2)*np.arctan(np.real(F) / np.imag(F))))
+
+    phi = np.arctan(-1.j * np.exp(-2.j * psi) * F)
+
+    psi_ = np.concatenate((psi, np.array([0])))
+    theta = np.roll(psi_, -1)[:-1] - psi
+    lambda_ = psi[0]
+
+    # Switch (Q,P) -> (P, iQ)
+    #phi[-1] = phi[-1] + np.pi/2
+    #theta[-1] = -theta[-1]
+
+    print("theta", theta)
+    print("phi", phi)
+    print("lambda", lambda_)
+
+    return theta, phi, lambda_

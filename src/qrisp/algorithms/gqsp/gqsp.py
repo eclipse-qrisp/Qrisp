@@ -25,8 +25,11 @@ from qrisp import (
     control,
     invert,
     gphase,
+    rx,
+    ry,
+    rz,
 )
-from qrisp.algorithms.gqsp.gqsp_angles import _gqsp_angles
+from qrisp.algorithms.gqsp.gqsp_angles import _gqsp_angles, _new_gqsp_angles
 from qrisp.jasp import jrange
 
 
@@ -187,29 +190,36 @@ def GQSP(qargs, U, p, q=None, angles=None, k=0, kwargs={}):
         d = len(theta) - 1
     else:
         d = len(p) - 1
-        theta, phi, lambda_ = _gqsp_angles(p)
+        theta, phi, lambda_ = _new_gqsp_angles(p)
 
     qbl = QuantumBool()
 
 
     # Define R gate application function based on formula (4) in https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
-    def R(theta, phi, kappa, qubit):
-        z(qubit)
-        u3(2 * theta, -phi, -kappa, qubit)
-        gphase(phi + kappa, qubit)
+    #def R(theta, phi, kappa, qubit):
+    #    z(qubit)
+    #    u3(2 * theta, -phi, -kappa, qubit)
+    #    gphase(phi + kappa, qubit)
 
+    def R(theta, phi, qubit):
+        #rz(-2*theta, qubit)
+        rx(-2*phi, qubit)
 
-    R(theta[0], phi[0], lambda_, qbl)
+    theta = theta[::-1]
+    phi = phi[::-1]
 
     for i in jrange(d-k):
+        R(theta[i], phi[i], qbl)
         with control(qbl, ctrl_state=0):
             U(*qargs, **kwargs)   
-        R(theta[i+1], phi[i+1], 0, qbl)
 
-    for i in jrange(k):
-        with control(qbl, ctrl_state=1):
-            with invert():
-                U(*qargs, **kwargs)
-        R(theta[d-k+i+1], phi[d-k+i+1], 0, qbl)
+    #for i in jrange(k):
+    #    R(theta[d-k+i], phi[d-k+i], qbl)
+    #    with control(qbl, ctrl_state=1):
+    #        with invert():
+    #            U(*qargs, **kwargs)
+        
+    R(theta[d], phi[d], qbl)
+    #rz(-2*lambda_, qbl)
 
     return qbl
