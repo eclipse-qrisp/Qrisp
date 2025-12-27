@@ -29,7 +29,7 @@ from qrisp import (
     ry,
     rz,
 )
-from qrisp.algorithms.gqsp.gqsp_angles import _gqsp_angles, _new_gqsp_angles
+from qrisp.algorithms.gqsp.gqsp_angles import _gqsp_angles, _new_gqsp_angles, _new_gqsp_angles2
 from qrisp.jasp import jrange
 
 
@@ -190,7 +190,7 @@ def GQSP(qargs, U, p, q=None, angles=None, k=0, kwargs={}):
         d = len(theta) - 1
     else:
         d = len(p) - 1
-        theta, phi, lambda_ = _new_gqsp_angles(p)
+        theta, phi, lambda_ = _new_gqsp_angles2(p)
 
     qbl = QuantumBool()
 
@@ -201,15 +201,22 @@ def GQSP(qargs, U, p, q=None, angles=None, k=0, kwargs={}):
     #    u3(2 * theta, -phi, -kappa, qubit)
     #    gphase(phi + kappa, qubit)
 
-    def R(theta, phi, qubit):
-        #rz(-2*theta, qubit)
+    def R1(theta, phi, qubit):
+        rz(-2*theta, qubit)
         rx(-2*phi, qubit)
+
+    def R2(theta, phi, qubit):
+        #z(qubit)
+        kappa = -phi
+        u3(2 * theta, -phi, -kappa, qubit)
+        gphase(phi + kappa, qubit)
+
 
     theta = theta[::-1]
     phi = phi[::-1]
 
     for i in jrange(d-k):
-        R(theta[i], phi[i], qbl)
+        R2(theta[i], phi[i], qbl)
         with control(qbl, ctrl_state=0):
             U(*qargs, **kwargs)   
 
@@ -219,7 +226,7 @@ def GQSP(qargs, U, p, q=None, angles=None, k=0, kwargs={}):
     #        with invert():
     #            U(*qargs, **kwargs)
         
-    R(theta[d], phi[d], qbl)
+    R2(theta[d], phi[d], qbl)
     #rz(-2*lambda_, qbl)
 
     return qbl

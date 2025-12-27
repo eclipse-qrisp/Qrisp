@@ -345,3 +345,50 @@ def _new_gqsp_angles(p):
     print("lambda", lambda_)
 
     return theta, phi, lambda_
+
+
+def _new_gqsp_angles2(p):
+    r"""
+    Computes the GQSP angles for a given polynomial.
+
+    Note: The resulting angles correspond to a properly rescaled version of the input polynomial.
+
+    Parameters
+    ----------
+    p : ndarray
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+
+    Returns
+    -------
+    theta_arr : ndarray
+        The angles $(\theta_0,\dotsc,\theta_d)$.
+    phi_arr : ndarray
+        The angles $(\phi_0,\dotsc,\phi_d)$.
+    lambda : float
+        The angle $\lambda$.
+
+    """
+
+    # Comupute the maximum of |p(z)| for |z|=1
+    M = _maximum(p, N=1024)
+
+    # Rescale p(z)
+    # Divide by M such that |p(z)|<=1 for |z|=1 and QSP success probability is maximized
+    #p = p / M 
+    # Multiply by 0.99 to ensure that |p(z)|<1 for |z|=1 for numerical stability of completion algorithm
+    # This comes at the expense of a slightly smaller QSP success probability 
+    #p = 0.99 * p
+    #p = -1.j * p
+
+    # Find completion q(z) of p(z) such that |p(z)|^2 + |q(z)|^2 = 1 for |z|=1
+    q = _complementary_polynomial(p)
+
+    #INLFT
+    F = _inlft(p, q)
+    print("F", F)
+
+    # Compute GQSP angles
+    theta = jnp.arctan(jnp.abs(F))
+    phi = jnp.angle(F)
+
+    return theta, phi, 0
