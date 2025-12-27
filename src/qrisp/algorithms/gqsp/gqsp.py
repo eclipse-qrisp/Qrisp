@@ -20,43 +20,49 @@ from qrisp import (
     QuantumArray,
     QuantumVariable,
     QuantumBool,
-    u3,
-    z,
     control,
     invert,
-    gphase,
     rx,
-    ry,
     rz,
 )
-from qrisp.algorithms.gqsp.gqsp_angles import _gqsp_angles, _new_gqsp_angles, _new_gqsp_angles2
+from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
 from qrisp.jasp import jrange
 
 
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
-def GQSP(qargs, U, p, q=None, angles=None, k=0, kwargs={}):
+def GQSP(qargs, U, p=None, angles=None, k=0, kwargs={}):
     r"""
     Performs `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
 
-    Given two polynomials such that
+    Generalized Quantum Signal Processing was introduced by `Motlagh and Wiebe <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_. Its equivalence to
+    the non-linear Fourier transform (NLFT) was subsequently established by `Laneve <https://arxiv.org/pdf/2503.03026>`_. 
+    By adopting the conventions from Laneve, we treat Generalized Quantum Signal Processing (GQSP) as the overarching framework for single-qubit signal processing. 
+    In this setting, previously known QSP variants—such as those constrained to $X$ or $Y$ rotations—emerge naturally as special cases where the underlying complex sequences of the NLFT are restricted to purely imaginary or real values, respectively.
 
-    * $p,q\in\mathbb C[x]$, $\deg p, \deg q\leq d$
-    * For all $x\in\mathbb R$, $|p(e^{ix})|^2+|q(e^{ix})|^2=1$,
+    GQSP is described as follows:
 
-    this method implements the unitary
+    * Given a unitary $U$, 
+    * and a complex degree $d$ polynomial $p(z)\in\mathbb C[z]$ such that $|p(e^{ix})|^2\leq 1$ for all $x\in\mathbb R$,
+
+    this algorithm implements the unitary
 
     .. math::
 
         \begin{pmatrix} 
         p(U) & * \\ 
-        q(U) & *
+        * & *
         \end{pmatrix}
-        =\left(\prod_{j=1}^dR(\theta_j,\phi_j,0)A\right)R(\theta_0,\phi_0,\lambda)
+        &=R(\theta_0,\phi_0,\lambda)\left(\prod_{j=1}^{d}AR(\theta_j,\phi_j,0)\right)\\
+        &=R(\theta_0,\phi_0,\lambda)AR(\theta_1,\phi_1,0)A\dotsc AR(\theta_d,\phi_d,0)
 
-    where the angles $\theta,\phi\in\mathbb R^{d+1}$, $\lambda\in\mathbb R$ are calculated from the polynomials $p,q$, 
-    $A=\begin{pmatrix}I & 0\\ 0 & U\end{pmatrix}$ is the signal operator.
-    If $q$ is not specified, it is computed numerically form $p$. 
-    The polynomial $p$ is rescaled automatically to satisfy $|p(e^{ix})|^2\leq 1$ for all $x\in\mathbb R$.
+    where
+
+    .. math::
+
+        R(\theta,\phi,\lambda) = e^{i\lambda Z}e^{i\phi X}e^{i\theta Z} \in SU(2)
+
+    and the angles $\theta,\phi\in\mathbb R^{d+1}$, $\lambda\in\mathbb R$ are calculated from the polynomial $p$, 
+    $A=\begin{pmatrix}U & 0\\ 0 & I\end{pmatrix}$ is the signal operator.
 
     Parameters
     ----------
@@ -68,9 +74,6 @@ def GQSP(qargs, U, p, q=None, angles=None, k=0, kwargs={}):
     p : ndarray, optional
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
         Either the polynomial ``p`` or ``angles`` must be specified.
-    q : ndarray, optional
-        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
-        If not specified, the polynomial is computed numerically from $p$, and $p$ is rescaled to ensure $|p(e^{ix})|\leq 1$ for all $x\in\mathbb R$.
     angles : tuple(ndarray, ndarray, float), optional
         A tuple of angles $(\theta,\phi,\lambda)$ for $\theta,\phi\in\mathbb R^{d+1}$, $\lambda\in\mathbb R$.
     k : int, optional
@@ -84,6 +87,10 @@ def GQSP(qargs, U, p, q=None, angles=None, k=0, kwargs={}):
     QuantumBool
         Auxiliary variable after applying the GQSP protocol. 
         Must be measuered in state $\ket{0}$ for the GQSP protocol to be successful.
+
+    Notes
+    -----
+    - The polynomial $p$ is rescaled automatically to satisfy $|p(e^{ix})|^2\leq 1$ for all $x\in\mathbb R$.
         
     Examples
     --------
@@ -134,10 +141,9 @@ def GQSP(qargs, U, p, q=None, angles=None, k=0, kwargs={}):
         def inner():
 
             p = jnp.array([0.5,0,0.5])
-            q = jnp.array([-0.5,0,0.5])
 
             operand = operand_prep()
-            qbl = GQSP(operand, U, p, q, k=1)
+            qbl = GQSP(operand, U, p, k=1)
 
             success_bool = measure(qbl) == 0
             return success_bool, operand
@@ -185,15 +191,14 @@ def GQSP(qargs, U, p, q=None, angles=None, k=0, kwargs={}):
     if isinstance(qargs, (QuantumVariable, QuantumArray)):
         qargs = [qargs]
 
-    if angles != None:
+    if angles is not None:
         theta, phi, lambda_ = angles
         d = len(theta) - 1
-    else:
+    elif p is not None:
         d = len(p) - 1
-        theta, phi, lambda_ = _new_gqsp_angles2(p)
+        theta, phi, lambda_ = gqsp_angles(p)
 
     qbl = QuantumBool()
-
 
     # Define R gate application function based on formula (4) in https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
     #def R(theta, phi, kappa, qubit):
@@ -201,32 +206,26 @@ def GQSP(qargs, U, p, q=None, angles=None, k=0, kwargs={}):
     #    u3(2 * theta, -phi, -kappa, qubit)
     #    gphase(phi + kappa, qubit)
 
-    def R1(theta, phi, qubit):
+    # Define R gate application function based on Theorem 9 in https://arxiv.org/abs/2503.03026
+    def R(theta, phi, qubit):
         rz(-2*theta, qubit)
         rx(-2*phi, qubit)
-
-    def R2(theta, phi, qubit):
-        #z(qubit)
-        kappa = -phi
-        u3(2 * theta, -phi, -kappa, qubit)
-        gphase(phi + kappa, qubit)
-
 
     theta = theta[::-1]
     phi = phi[::-1]
 
     for i in jrange(d-k):
-        R2(theta[i], phi[i], qbl)
+        R(theta[i], phi[i], qbl)
         with control(qbl, ctrl_state=0):
             U(*qargs, **kwargs)   
 
-    #for i in jrange(k):
-    #    R(theta[d-k+i], phi[d-k+i], qbl)
-    #    with control(qbl, ctrl_state=1):
-    #        with invert():
-    #            U(*qargs, **kwargs)
+    for i in jrange(k):
+        R(theta[d-k+i], phi[d-k+i], qbl)
+        with control(qbl, ctrl_state=1):
+            with invert():
+                U(*qargs, **kwargs)
         
-    R2(theta[d], phi[d], qbl)
-    #rz(-2*lambda_, qbl)
+    R(theta[d], phi[d], qbl)
+    rz(-2*lambda_, qbl)
 
     return qbl

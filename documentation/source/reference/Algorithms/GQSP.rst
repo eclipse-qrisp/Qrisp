@@ -19,6 +19,7 @@ Helper functions
     
     poly2cheb
     cheb2poly
+    gqsp_angles
 
 Miscellaneous
 -------------
