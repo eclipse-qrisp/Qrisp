@@ -155,9 +155,10 @@ def GQET(qarg, H, p, kind="Polynomial"):
             f"Allowed kinds are: {', '.join(ALLOWED_KINDS)}"
         )
 
-    # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
+    # Rescaling of the polynomial to account for scaling factor alpha of pauli block-encoding
+    H = H.hermitize().to_pauli()
     _, coeffs = H.unitaries()
-    alpha = np.sum(coeffs)
+    alpha = np.sum(np.abs(coeffs))
     scaling_exponents = np.arange(len(p))
     scaling_factors = np.power(alpha, scaling_exponents)
 
