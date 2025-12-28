@@ -102,7 +102,7 @@ def state_preparation(qarg, target_array, k=1, mode="standard"):
 
         # Gaussian 
         def f(x):
-            return jnp.exp(-x**2/0.5)
+            return jnp.exp(-2*x**2)
 
 
         # Converts the function to be executed within a repeat-until-success (RUS) procedure.

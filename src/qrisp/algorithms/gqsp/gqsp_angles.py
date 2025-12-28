@@ -114,7 +114,7 @@ def _complementary_polynomial(b):
     # 2. Compute log-magnitude of a(z)
     # log|a| = 0.5 * log(1 - |b|^2)
     mag_sq = jnp.abs(b_points)**2
-    log_a_mag = 0.5 * jnp.log(jnp.clip(1 - mag_sq, a_min=1e-10, a_max=1.0))
+    log_a_mag = 0.5 * jnp.log(jnp.clip(1 - mag_sq, min=1e-10, max=1.0))
     
     # 3. Transform to the Cepstral domain
     # The IFFT of the log-magnitude gives the "real Cepstrum".
@@ -125,7 +125,7 @@ def _complementary_polynomial(b):
     # Transform. In the Cepstral domain, this means zeroing negative frequencies 
     # (indices > N/2) and doubling positive ones (indices < N/2).
     mid = N // 2
-    a_cep_analytic = jnp.zeros(N, dtype=jnp.complex64)
+    a_cep_analytic = jnp.zeros(N, dtype=jnp.complex128)
     
     a_cep_analytic = a_cep_analytic.at[0].set(cepstrum[0]) # DC
     a_cep_analytic = a_cep_analytic.at[1:mid].set(2 * cepstrum[1:mid]) # Positive frequencies
