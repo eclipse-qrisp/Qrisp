@@ -110,7 +110,7 @@ def state_preparation(qarg, target_array, k=1, mode="standard"):
         def preprare_gaussian(n, k):
 
             # Evaluate f at equidistant sample points
-            delta = 2.0 ** (-2*k)
+            delta = 2.0 ** (-2 * k)
             x_val = jnp.arange(-1, 1 ,delta)
             y_val = f(x_val)
             y_val = y_val / jnp.linalg.norm(y_val)

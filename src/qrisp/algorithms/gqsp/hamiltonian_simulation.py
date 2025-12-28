@@ -30,7 +30,7 @@ import jax.numpy as jnp
 
 
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
-@qache(static_argnames=["H", "N"])
+#@qache(static_argnames=["H", "N"])
 def hamiltonian_simulation(qarg, H, t=1, N=1):
     r"""
     Performs Hamiltonian simulation.
@@ -39,7 +39,7 @@ def hamiltonian_simulation(qarg, H, t=1, N=1):
 
     .. math ::
 
-        e^{-it\cos(\theta)} = \sum{n=-\infty}^{\infty}(-i)^nJ_n(t)e^{in\theta}
+        e^{-it\cos(\theta)} = \sum_{n=-\infty}^{\infty}(-i)^nJ_n(t)e^{in\theta}
 
     where $J_n(t)$ are Bessel functions of the first kind.
 
@@ -50,9 +50,9 @@ def hamiltonian_simulation(qarg, H, t=1, N=1):
     H : QubitOperator
         The Hermitian operator.
     t : float, optional
-        The time.
+        The evolution time $t$. The default is 1.
     N : int, optional
-        The truncation index.
+        The truncation index. The default is 1.
 
     Returns
     -------
@@ -63,6 +63,119 @@ def hamiltonian_simulation(qarg, H, t=1, N=1):
 
     Examples
     --------
+
+    ::
+
+        import matplotlib.pyplot as plt
+        import networkx as nx
+        import numpy as np
+        from qrisp import *
+        from qrisp.gqsp import hamiltonian_simulation
+        from qrisp.operators import X, Y, Z
+        import scipy as sp
+
+        def generate_chain_graph(N):
+            coupling_list = [[k,k+1] for k in range(N-1)]
+            G = nx.Graph()
+            G.add_edges_from(coupling_list)
+            return G
+
+        def create_ising_hamiltonian(G, J, B):
+            H = sum(-J * Z(i) * Z(j) for (i,j) in G.edges()) + sum(B * X(i) for i in G.nodes())
+            return H
+
+        def create_magnetization(G):
+            H = (1 / G.number_of_nodes()) * sum(Z(i) for i in G.nodes())
+            return H
+
+        # Evaluate observables via classically
+        def sim_classical(T_values, H, M):
+            M_values = []
+            E_values = []
+            H_mat = H.to_array()
+            M_mat = M.to_array()
+
+            def _psi(t):
+                psi0 = np.zeros(2**H.find_minimal_qubit_amount())
+                psi0[0] = 1
+                psi = sp.linalg.expm(-1.0j * t * H_mat) @ psi0
+                psi = psi / np.linalg.norm(psi)
+                return psi
+
+            for t in T_values:
+                psi = _psi(t)
+                magnetization = (np.conj(psi) @ M_mat @ psi).real
+                energy = (np.conj(psi) @ H_mat @ psi).real
+                M_values.append(magnetization)
+                E_values.append(energy)
+                
+            return np.array(M_values), np.array(E_values)
+
+            
+        # Evaluate observables via QSP-based Hamiltonian simulation
+        def sim_qsp(T_values, H, M):
+            M_values = []
+            E_values = []
+
+            @RUS
+            def psi(t):
+                qv = QuantumVariable(H.find_minimal_qubit_amount())
+                qbl, case = hamiltonian_simulation(qv, H, t=t, N=10)
+                success_bool = (measure(qbl) == 0) & (measure(case) == 0)
+                return success_bool, qv
+
+            @jaspify(terminal_sampling=True)
+            def magnetization(t):
+                magnetization = M.expectation_value(psi, precision=0.005)(t)
+                return magnetization
+
+            @jaspify(terminal_sampling=True)
+            def energy(t):
+                energy = H.expectation_value(psi, precision=0.005)(t)
+                return energy
+
+            for t in T_values:
+                M_values.append(magnetization(t))
+                E_values.append(energy(t))
+            
+            return np.array(M_values), np.array(E_values)
+
+        
+        G = generate_chain_graph(6)
+        H = create_ising_hamiltonian(G, 0.25, 0.5)
+        M = create_magnetization(G)
+
+        T_values = np.arange(0.1, 3.0, 0.1)
+        M_classical, E_classical = sim_classical(T_values, H, M)
+        M_qsp, E_qsp = sim_qsp(T_values, H, M)
+
+        # Plot the results
+        plt.scatter(T_values, M_classical, color='#6929C4', marker="d", label=r"M classical")
+        plt.scatter(T_values, E_classical, color='#20306f', marker="d", label=r"E classical")
+        plt.plot(T_values, M_qsp, color='#6929C4', marker="o", linestyle="solid", alpha=0.5, label=r"M qsp")
+        plt.plot(T_values, E_qsp, color='#20306f', marker="o", linestyle="solid", alpha=0.5, label=r"E qsp")
+        plt.xlabel(r"Evolution time T", fontsize=15, color="#444444")
+        plt.ylabel(r"Energy and Magnetization", fontsize=15, color="#444444")
+        plt.legend(fontsize=15, labelcolor="#444444")
+        plt.tick_params(axis='both', labelsize=12)
+        plt.grid()
+        plt.show()
+
+    .. image:: /_static/qsp_simulation.png
+        :alt: QSP Hamiltonian simulation
+        :align: center
+        :width: 600px
+
+    The plots illustrate the time evolution of energy $E$ and magnetization $M$ for an Ising model, 
+    comparing classical simulation results with those from a quantum simulation employing the Quantum Signal Processing (QSP) based Hamiltonian simulation algorithm.
+
+    Analysis of Results
+
+    - Agreement Phase $T\le 2.0$:  There is excellent agreement between the classical and QSP simulation results for both energy and magnetization during the initial evolution phase, up to an evolution time of $T=2.0$. The $M_{\text{qsp}}$ curve closely follows $M_{\text{classical}}$, while the energy values $E_{\text{classical}}$ and $E_{\text{qsp}}$ remain constant as expected for an isolated system.
+    
+    - Divergence Phase $T>2.0$: Beyond $T=2.0$, the quantum simulation results diverge noticeably from the classical benchmark. Both $M_{\text{qsp}}$ and $E_{\text{qsp}}$ drift away from the classical trajectories, with the energy showing a significant downward trend.
+    
+    - Mitigation: This divergence is attributed to an insufficient truncation order $N$ used in the QSP polynomial expansion. The simulation error accumulates over time when the truncation order is too low for the required evolution time $T$. Increasing the truncation order $N$ can mitigate this effect and maintain accuracy at larger $T$ values, but this comes at the expense of a higher computational runtime or circuit depth.
 
     """
     H = H.hermitize().to_pauli()
@@ -95,6 +208,12 @@ def hamiltonian_simulation(qarg, H, t=1, N=1):
         qbl = GQSP([case, qarg], RU, coeffs, k=N)
 
     return qbl, case
+
+
+# Apply the wache decorator with the workaround in order to show in documentation
+temp_docstring = hamiltonian_simulation.__doc__
+hamiltonian_simulation = qache(static_argnames=["H", "N"])(hamiltonian_simulation)
+hamiltonian_simulation.__doc__ = temp_docstring
 
 
 # jax.scipy.jv is currently not implemented
