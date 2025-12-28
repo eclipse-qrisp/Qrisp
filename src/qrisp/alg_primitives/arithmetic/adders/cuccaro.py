@@ -60,50 +60,6 @@ def UMA_gate(mode=2):
 # qv1 += qv2
 
 
-# TO-DO make this less circuity and more qrispy
-def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_in=None):
-    if len(qubit_list_1) != len(qubit_list_2):
-        print(len(qubit_list_1))
-        print(len(qubit_list_2))
-        raise Exception(
-            "Tried to call Cuccaro-procedure with qubit lists of unequal length"
-        )
-
-    from qrisp.core import QuantumVariable
-
-    if carry_in is None:
-        # Request ancilla Qubit
-        ancilla = QuantumVariable(1)
-    else:
-        ancilla = [carry_in]
-
-    # Prepare MAJ/UMA gate qubits
-    slot_1_qbs = list(ancilla) + qubit_list_1[:-1]
-    slot_2_qbs = qubit_list_2
-    slot_3_qbs = qubit_list_1
-
-    iterations = len(slot_1_qbs)
-
-    # Perform 1st step of the modular addition section
-    for i in range(iterations):
-        qbits = [slot_1_qbs[i], slot_2_qbs[i], slot_3_qbs[i]]
-        qs.append(MAJ_gate(), qbits)
-
-    # Calculate output Qubit
-    if output_qubit:
-        qs.cx(qbits[2], output_qubit)
-
-    # Perform UMA iterations
-    for i in range(iterations - 1, -1, -1):
-        qbits = [slot_1_qbs[i], slot_2_qbs[i], slot_3_qbs[i]]
-
-        qs.append(UMA_gate(), qbits)
-
-    if carry_in is None:
-        # Delete ancilla
-        ancilla.delete()
-
-
 def cuccaro_adder(a, b, c_in=None, c_out=None):
     """
     In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0410184>`__ .
@@ -140,10 +96,3 @@ def cuccaro_adder(a, b, c_in=None, c_out=None):
     {9: 1.0}
 
     """
-
-    cuccaro_procedure(b[0].qs(), a, b, carry_in=c_in, output_qubit=c_out)
-
-
-temp = cuccaro_adder.__doc__
-cuccaro_adder = ammend_inpl_adder(cuccaro_adder)
-cuccaro_adder.__doc__ = temp
