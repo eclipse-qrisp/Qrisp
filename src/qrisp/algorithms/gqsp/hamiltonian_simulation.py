@@ -39,7 +39,7 @@ def hamiltonian_simulation(qarg, H, t=1, N=1):
 
     .. math ::
 
-        e^{-it\cos(\theta)} = \sum_{n=-\infty}^{\infty}(-i)^nJ_n(t)e^{in\theta}
+        e^{-it\cos(\theta)} \approx \sum_{n=-N}^{N}(-i)^nJ_n(t)e^{in\theta}
 
     where $J_n(t)$ are Bessel functions of the first kind.
 
@@ -63,6 +63,11 @@ def hamiltonian_simulation(qarg, H, t=1, N=1):
 
     Examples
     --------
+
+    Below is an example of using the :func:`hamiltonian_simulation` function to simulate a quantum system governed by an Ising Hamiltonian on a 1D chain graph. 
+    In this example, we construct a chain graph, define an Ising Hamiltonian with specific coupling and magnetic field strengths, 
+    and compute the system's energy and magnetization over various evolution times using the QSP-based simulation algorithm. 
+    Finally, the results are compared against a classical simulation.
 
     ::
 
@@ -88,7 +93,7 @@ def hamiltonian_simulation(qarg, H, t=1, N=1):
             H = (1 / G.number_of_nodes()) * sum(Z(i) for i in G.nodes())
             return H
 
-        # Evaluate observables via classically
+        # Evaluate observables classically
         def sim_classical(T_values, H, M):
             M_values = []
             E_values = []
@@ -112,7 +117,7 @@ def hamiltonian_simulation(qarg, H, t=1, N=1):
             return np.array(M_values), np.array(E_values)
 
             
-        # Evaluate observables via QSP-based Hamiltonian simulation
+        # Evaluate observables using QSP-based simulation
         def sim_qsp(T_values, H, M):
             M_values = []
             E_values = []
@@ -150,12 +155,12 @@ def hamiltonian_simulation(qarg, H, t=1, N=1):
         M_qsp, E_qsp = sim_qsp(T_values, H, M)
 
         # Plot the results
-        plt.scatter(T_values, M_classical, color='#6929C4', marker="d", label=r"M classical")
-        plt.scatter(T_values, E_classical, color='#20306f', marker="d", label=r"E classical")
-        plt.plot(T_values, M_qsp, color='#6929C4', marker="o", linestyle="solid", alpha=0.5, label=r"M qsp")
-        plt.plot(T_values, E_qsp, color='#20306f', marker="o", linestyle="solid", alpha=0.5, label=r"E qsp")
-        plt.xlabel(r"Evolution time T", fontsize=15, color="#444444")
-        plt.ylabel(r"Energy and Magnetization", fontsize=15, color="#444444")
+        plt.scatter(T_values, M_classical, color='#6929C4', marker="d", label="M classical")
+        plt.scatter(T_values, E_classical, color='#20306f', marker="d", label="E classical")
+        plt.plot(T_values, M_qsp, color='#6929C4', marker="o", linestyle="solid", alpha=0.5, label="M qsp")
+        plt.plot(T_values, E_qsp, color='#20306f', marker="o", linestyle="solid", alpha=0.5, label="E qsp}")
+        plt.xlabel("Evolution time T", fontsize=15, color="#444444")
+        plt.ylabel("Energy and Magnetization", fontsize=15, color="#444444")
         plt.legend(fontsize=15, labelcolor="#444444")
         plt.tick_params(axis='both', labelsize=12)
         plt.grid()
