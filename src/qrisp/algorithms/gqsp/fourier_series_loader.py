@@ -81,8 +81,8 @@ def fourier_series_loader(qarg, signal=None, frequencies=None, k=1, mode="standa
     mode : str, optional
         Available are 
         
-        - ``"standard"``: frequencies are caluclated from ``target_array`` via FFT,
-        - ``"mirror"``: frequencies are caluclated from mirror padded ``target_array`` via FFT to mitigate artifacts at the boundaries.
+        - ``"standard"``: frequencies are caluclated from ``signal`` via FFT,
+        - ``"mirror"``: frequencies are caluclated from mirror padded ``signal`` via FFT to mitigate artifacts at the boundaries.
 
     Returns
     -------
@@ -97,26 +97,26 @@ def fourier_series_loader(qarg, signal=None, frequencies=None, k=1, mode="standa
 
     ::
 
+        import os
+        os.environ["QRISP_SIMULATOR_FLOAT_THRESH"] = "1e-10"
+
         import jax.numpy as jnp
         import matplotlib.pyplot as plt
         import numpy as np
         from qrisp import *
         from qrisp.gqsp import fourier_series_loader
 
-
         # Gaussian 
-        def f(x):
-            return jnp.exp(-2 * x ** 2)
-
+        def f(x, alpha):
+            return jnp.exp(-alpha * x ** 2)
 
         # Converts the function to be executed within a repeat-until-success (RUS) procedure.
-        @RUS(static_argnums=1)
-        def prepare_gaussian(n, k):
-
-            # Evaluate f at equidistant sample points
-            delta = 2.0 ** (-2 * k)
-            x_val = jnp.arange(-1, 1 ,delta)
-            y_val = f(x_val)
+        @RUS(static_argnames=["k"])
+        def prepare_gaussian(n, alpha, k):
+            # Use 32 sampling points to evaluate f
+            N_samples = 32
+            x_val = jnp.arange(-1.0, 1.0, 2.0 / N_samples)
+            y_val = f(x_val, alpha)
             y_val = y_val / jnp.linalg.norm(y_val)
 
             qv = QuantumFloat(n)
@@ -124,29 +124,31 @@ def fourier_series_loader(qarg, signal=None, frequencies=None, k=1, mode="standa
             success_bool = measure(qbl) == 0
             return success_bool, qv
 
-
         # The terminal_sampling decorator performs a hybrid simulation,
         # and afterwards samples from the resulting quantum state.
         @terminal_sampling
-        def main():
-            qv =  prepare_gaussian(10, 2)
+        def main(n, alpha):
+            qv =  prepare_gaussian(n, alpha, 3)
             return qv   
 
+        # Run the simulation for n-qubit state
+        n = 6
+        alpha = 4
+        res_dict = main(n, alpha)
 
         # Convert the resulting measurement probabilities to amplitudes by appling the square root.
-        res_dict = main()
         for k,v in res_dict.items():
             res_dict[k] = v ** 0.5 
-        y_val_sim = np.array([res_dict.get(key,0) for key in sorted(res_dict.keys())])
-        y_val_sim = y_val_sim/np.linalg.norm(y_val_sim)
+        y_val_sim = np.array([res_dict.get(key, 0) for key in range(2 ** n)])
+        y_val_sim = y_val_sim / np.linalg.norm(y_val_sim)
 
         # Compare to target values
-        x_val = np.linspace(-1, 1, len(y_val_sim))
-        y_val = f(x_val)
+        x_val = np.arange(-1, 1, 2 ** (-n + 1))
+        y_val = f(x_val, alpha)
         y_val = y_val / np.linalg.norm(y_val)
 
         plt.scatter(x_val, y_val, color='#20306f', marker="d", linestyle="solid", s=20, label="target")
-        plt.scatter(x_val, y_val_sim, color='#6929C4', marker="o", linestyle="solid", s=20, label="qsp")
+        plt.plot(x_val, y_val_sim, color='#6929C4', marker="o", linestyle="solid", alpha=0.5, label="qsp")
         plt.xlabel("x", fontsize=15, color="#444444")
         plt.ylabel("Amplitudes f(x)", fontsize=15, color="#444444")
         plt.legend(fontsize=15, labelcolor='linecolor')
@@ -164,12 +166,12 @@ def fourier_series_loader(qarg, signal=None, frequencies=None, k=1, mode="standa
     ::
 
         @count_ops(meas_behavior="0")
-        def main():
-            qv =  prepare_gaussian(10, 2)
+        def main(n, alpha):
+            qv =  prepare_gaussian(n, alpha, 3)
             return qv   
 
-        main()
-        # {'p': 120, 'z': 5, 'h': 10, 'cx': 80, 'u3': 5, 'gphase': 5, 'x': 4, 'measure': 1}
+        main(6, 4)
+        # {'h': 6, 'rz': 8, 'p': 108, 'x': 6, 'cx': 72, 'rx': 7, 'measure': 1}
 
     """
     
@@ -178,6 +180,7 @@ def fourier_series_loader(qarg, signal=None, frequencies=None, k=1, mode="standa
     if frequencies is not None:
         K = (len(frequencies) - 1) // 2 
         compressed_frequencies = frequencies[K-k : K+k+1]
+        scaling_factor = 1.0
     elif signal is not None:
         if mode=="standard":
             # Discrete Fourier transform

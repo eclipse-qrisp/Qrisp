@@ -18,21 +18,21 @@
 
 import jax.numpy as jnp
 import numpy as np
+import pytest
 from qrisp import *
 from qrisp.gqsp import fourier_series_loader
 
 # Gaussian 
-def f(x):
-    return jnp.exp(-2 * x ** 2)
+def f(x, alpha):
+    return jnp.exp(-alpha * x ** 2)
 
 # Converts the function to be executed within a repeat-until-success (RUS) procedure.
-@RUS(static_argnums=1)
-def preprare_gaussian(n, k):
-
-    # Evaluate f at equidistant sample points
-    delta = 2.0 ** (-2 * k)
-    x_val = jnp.arange(-1, 1 ,delta)
-    y_val = f(x_val)
+@RUS(static_argnames=["k"])
+def prepare_gaussian(n, alpha, k):
+    # Use 32 sampling points to evaluate f
+    N_samples = 32
+    x_val = jnp.arange(-1.0, 1.0, 2.0 / N_samples)
+    y_val = f(x_val, alpha)
     y_val = y_val / jnp.linalg.norm(y_val)
 
     qv = QuantumFloat(n)
@@ -43,22 +43,29 @@ def preprare_gaussian(n, k):
 # The terminal_sampling decorator performs a hybrid simulation,
 # and afterwards samples from the resulting quantum state.
 @terminal_sampling
-def main():
-    qv =  preprare_gaussian(10, 4)
+def main(n, alpha):
+    qv =  prepare_gaussian(n, alpha, 4)
     return qv   
 
-def test_qsp_gaussian():
+
+@pytest.mark.parametrize("n, alpha", [
+    (6, 4),
+    (6, 10),
+])
+def test_qsp_gaussian(n, alpha):
+
+    # Run the simulation for n-qubit state
+    res_dict = main(n, alpha)
 
     # Convert the resulting measurement probabilities to amplitudes by appling the square root.
-    res_dict = main()
     for k,v in res_dict.items():
         res_dict[k] = v ** 0.5 
-    y_val_sim = np.array([res_dict.get(key, 0) for key in sorted(res_dict.keys())])
+    y_val_sim = np.array([res_dict.get(key, 0) for key in range(2 ** n)])
     y_val_sim = y_val_sim / np.linalg.norm(y_val_sim)
 
     # Compare to target values
-    x_val = np.linspace(-1, 1, len(y_val_sim))
-    y_val = f(x_val)
+    x_val = np.arange(-1, 1, 2 ** (-n + 1))
+    y_val = f(x_val, alpha)
     y_val = y_val / np.linalg.norm(y_val)
 
     # Evaluate trace distance
