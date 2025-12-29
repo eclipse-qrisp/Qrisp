@@ -2225,7 +2225,12 @@ class QubitOperator(Hamiltonian):
         alpha = np.sum(coeffs)
 
         # Number of qubits for case variable
-        num_qubits = np.int64(np.ceil(np.log2(len(coeffs))))
+        m = len(coeffs)
+        num_qubits = np.int64(np.ceil(np.log2(m)))
+        # Ensure coeffs has size 2 ** num_qubits by padding with zeros
+        coeffs = np.concatenate((coeffs, np.zeros((1 << num_qubits) - m)))
+
+        print("coeffs", coeffs)
 
         @qache
         def U(case, operand):

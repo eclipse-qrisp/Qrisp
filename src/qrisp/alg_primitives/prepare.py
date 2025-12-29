@@ -441,10 +441,10 @@ def prepare(qv, target_array, reversed=False, method = "auto"):
         norm = np.linalg.norm(np.asarray(target_array))
         if np.isclose(norm, 0.0):
             raise ValueError("The provided statevector has zero norm.")
-        if not check_if_fresh(qv.reg, qv.qs):
-            raise ValueError(
-                "Tried to initialize qubits which are not fresh anymore."
-            )
+        #if not check_if_fresh(qv.reg, qv.qs):
+        #    raise ValueError(
+        #        "Tried to initialize qubits which are not fresh anymore."
+        #    )
         target_array = np.asarray(target_array) / norm
     
     if method == "auto":
