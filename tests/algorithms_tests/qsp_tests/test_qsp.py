@@ -63,7 +63,7 @@ def test_qsp(poly, k):
     res_dict = main()
     res = np.array([res_dict.get(key, 0) for key in range(4)]) # Measurement probabilities
 
-    # Compare to classical values
+    # Compare to target values
     H_arr = H.to_array()
     res_numpy = expvalm(poly, k, H_arr) @ np.array([1,0,0,0])
     res_numpy = np.abs(res_numpy / np.linalg.norm(res_numpy)) ** 2

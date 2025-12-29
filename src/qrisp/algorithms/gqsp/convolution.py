@@ -79,11 +79,11 @@ def convolve(qarg, weights):
 
     ::
 
-        from scipy.ndimage import convolve
+        from scipy.ndimage import convolve as scipy_convolve
 
         # Mode 'wrap' performs cyclic convolution
-        convolved_signal = convolve(psi, f, mode='wrap')
-        print(convolved_signal)
+        convolved_signal_target = scipy_convolve(psi, f, mode='wrap')
+        print(convolved_signal_target)
         # [0.75 1.   1.   0.75 0.25 0.   0.   0.25]
 
     ::
@@ -116,7 +116,8 @@ def convolve(qarg, weights):
         max_ = max(res_dict.values())
         for k,v in res_dict.items():
             res_dict[k] = (v / max_) ** 0.5 
-        np.array([res_dict.get(key,0) for key in range(8)])
+        convolved_signal = np.array([res_dict.get(key,0) for key in range(8)])
+        print(convolved_signal)
         #array([0.7499999 , 1.        , 1.        , 0.74999996, 0.24999994, 0.        , 0.        , 0.25000007])
 
     """

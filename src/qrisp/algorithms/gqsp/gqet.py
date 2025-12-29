@@ -129,7 +129,7 @@ def GQET(qarg, H, p, kind="Polynomial"):
         print(main())
         # -16.67236953920006 
 
-    Finally, we compare the quantum simulation to the corresponding numpy calculation:
+    Finally, we compare the quantum simulation to the classically calculated result:
 
     ::
 

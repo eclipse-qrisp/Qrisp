@@ -30,7 +30,7 @@ def test_qsp_convolution():
     f = np.array([0.25, 0.5, 0.25])
 
     # Mode 'wrap' performs cyclic convolution
-    convolved_signal_scipy = scipy_convolve(psi, f, mode='wrap')
+    convolved_signal_target = scipy_convolve(psi, f, mode='wrap')
     # [0.75 1.   1.   0.75 0.25 0.   0.   0.25]
 
     def psi_prep():
@@ -60,4 +60,4 @@ def test_qsp_convolution():
         res_dict[k] = (v / max_) ** 0.5 
     convolved_signal = np.array([res_dict.get(key, 0) for key in range(8)])
     #array([0.7499999 , 1.        , 1.        , 0.74999996, 0.24999994, 0.        , 0.        , 0.25000007])
-    assert np.linalg.norm(convolved_signal_scipy - convolved_signal) < 1e-4
+    assert np.linalg.norm(convolved_signal_target - convolved_signal) < 1e-4

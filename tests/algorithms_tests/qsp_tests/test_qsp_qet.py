@@ -79,7 +79,7 @@ def test_qsp_qet(L, poly):
     E0 = H.expectation_value(psi_prep, precision=0.001)()
     E1 = main()
 
-    # Compare to classical values
+    # Compare to target values
     # Calculate energy for |psi_0>
     H_arr = H.to_array()
     psi_0 = psi_prep().qs.statevector_array()

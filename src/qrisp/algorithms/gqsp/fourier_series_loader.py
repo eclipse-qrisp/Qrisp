@@ -33,7 +33,8 @@ def U(qv, scaling_factor=1.0):
         p(scaling_factor * np.pi * 2.0 ** (i - qv.size + 1), qv[i])
 
 
-def state_preparation(qarg, target_array, k=1, mode="standard"):
+# QSP version of https://iopscience.iop.org/article/10.1088/2058-9565/acfc62
+def fourier_series_loader(qarg, signal=None, frequencies=None, k=1, mode="standard"):
     r"""
     Performs band-limited quantum state preparation.
 
@@ -70,11 +71,14 @@ def state_preparation(qarg, target_array, k=1, mode="standard"):
     ----------
     qarg : QuantumVariable
         The input variable in state $\ket{0}$.
-    target_array : ndarray
+    signal : ndarray, optional
         1-D array of input signal values with shape ``(M,)``.
+        Either ``signal`` or ``frequencies`` must be specified.
+    frequencies : ndarray, optional
+        1-D array of input frequency values in the range $[-K,K]$ with shape ``(2K+1,)``.
     k : int, optional
         The frequency cutoff. Only frequencies in the range $[-k,k]$ are preserved.
-    mode: str, optional
+    mode : str, optional
         Available are 
         
         - ``"standard"``: frequencies are caluclated from ``target_array`` via FFT,
@@ -97,17 +101,17 @@ def state_preparation(qarg, target_array, k=1, mode="standard"):
         import matplotlib.pyplot as plt
         import numpy as np
         from qrisp import *
-        from qrisp.gqsp import state_preparation
+        from qrisp.gqsp import fourier_series_loader
 
 
         # Gaussian 
         def f(x):
-            return jnp.exp(-2*x**2)
+            return jnp.exp(-2 * x ** 2)
 
 
         # Converts the function to be executed within a repeat-until-success (RUS) procedure.
         @RUS(static_argnums=1)
-        def preprare_gaussian(n, k):
+        def prepare_gaussian(n, k):
 
             # Evaluate f at equidistant sample points
             delta = 2.0 ** (-2 * k)
@@ -116,7 +120,7 @@ def state_preparation(qarg, target_array, k=1, mode="standard"):
             y_val = y_val / jnp.linalg.norm(y_val)
 
             qv = QuantumFloat(n)
-            qbl = state_preparation(qv, y_val, k=k)
+            qbl = fourier_series_loader(qv, y_val, k=k)
             success_bool = measure(qbl) == 0
             return success_bool, qv
 
@@ -125,34 +129,32 @@ def state_preparation(qarg, target_array, k=1, mode="standard"):
         # and afterwards samples from the resulting quantum state.
         @terminal_sampling
         def main():
-            qv =  preprare_gaussian(10, 2)
+            qv =  prepare_gaussian(10, 2)
             return qv   
 
 
         # Convert the resulting measurement probabilities to amplitudes by appling the square root.
         res_dict = main()
         for k,v in res_dict.items():
-            res_dict[k] = v**0.5 
+            res_dict[k] = v ** 0.5 
         y_val_sim = np.array([res_dict.get(key,0) for key in sorted(res_dict.keys())])
         y_val_sim = y_val_sim/np.linalg.norm(y_val_sim)
 
-        # Compare to classical values
+        # Compare to target values
         x_val = np.linspace(-1, 1, len(y_val_sim))
         y_val = f(x_val)
         y_val = y_val / np.linalg.norm(y_val)
 
-        plt.scatter(x_val, y_val, color='#20306f', marker="o", linestyle="solid", s=20, label="classical")
-        plt.scatter(x_val, y_val_sim, color='#6929C4', marker="d", linestyle="solid", s=20, label="quantum")
-        plt.xlabel("x", fontsize=16, color="#444444")
-        plt.ylabel("Amplitudes f(x)", fontsize=16, color="#444444")
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
-        plt.legend(fontsize=16, labelcolor='linecolor')
-        plt.tight_layout()
+        plt.scatter(x_val, y_val, color='#20306f', marker="d", linestyle="solid", s=20, label="target")
+        plt.scatter(x_val, y_val_sim, color='#6929C4', marker="o", linestyle="solid", s=20, label="qsp")
+        plt.xlabel("x", fontsize=15, color="#444444")
+        plt.ylabel("Amplitudes f(x)", fontsize=15, color="#444444")
+        plt.legend(fontsize=15, labelcolor='linecolor')
+        plt.tick_params(axis='both', labelsize=12)
         plt.grid()
         plt.show()
 
-    .. image:: /_static/gaussian.png
+    .. image:: /_static/qsp_gaussian.png
         :alt: Gaussian state preparation
         :align: center
         :width: 600px
@@ -163,7 +165,7 @@ def state_preparation(qarg, target_array, k=1, mode="standard"):
 
         @count_ops(meas_behavior="0")
         def main():
-            qv =  preprare_gaussian(10, 2)
+            qv =  prepare_gaussian(10, 2)
             return qv   
 
         main()
@@ -172,25 +174,31 @@ def state_preparation(qarg, target_array, k=1, mode="standard"):
     """
     
     ALLOWED_MODES = {"standard", "mirror"}
-    
-    if mode=="standard":
-        # Discrete Fourier transform
-        frequencies = jnp.fft.fft(target_array)
-        scaling_factor = 1.0
-    elif mode=="mirror":
-        # Mirror padding to mitiagate artifacts at the boundaries
-        target_array_mirr = jnp.concatenate([target_array, target_array[::-1]])
-        # Discrete Fourier transform
-        frequencies = jnp.fft.fft(target_array_mirr)
-        scaling_factor = 0.5
-    else:
-        raise ValueError(
-            f"Invalid mode specified: '{mode}'. "
-            f"Allowed kinds are: {', '.join(ALLOWED_MODES)}"
-        )
 
-    # Compression
-    compressed_frequencies = jnp.concatenate([frequencies[-k:], frequencies[:k+1]])
+    if frequencies is not None:
+        K = (len(frequencies) - 1) // 2 
+        compressed_frequencies = frequencies[K-k : K+k+1]
+    elif signal is not None:
+        if mode=="standard":
+            # Discrete Fourier transform
+            frequencies = jnp.fft.fft(signal)
+            scaling_factor = 1.0
+        elif mode=="mirror":
+            # Mirror padding to mitiagate artifacts at the boundaries
+            target_array_mirr = jnp.concatenate([signal, signal[::-1]])
+            # Discrete Fourier transform
+            frequencies = jnp.fft.fft(target_array_mirr)
+            scaling_factor = 0.5
+        else:
+            raise ValueError(
+                f"Invalid mode specified: '{mode}'. "
+                f"Allowed kinds are: {', '.join(ALLOWED_MODES)}"
+            )
+
+        # Compression
+        compressed_frequencies = jnp.concatenate([frequencies[-k:], frequencies[:k+1]])
+    else:
+        raise Exception("Either signal or frequencies must be specified")
 
     h(qarg)
 

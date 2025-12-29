@@ -155,13 +155,13 @@ def hamiltonian_simulation(qarg, H, t=1, N=1):
         M_qsp, E_qsp = sim_qsp(T_values, H, M)
 
         # Plot the results
-        plt.scatter(T_values, M_classical, color='#6929C4', marker="d", label="M classical")
-        plt.scatter(T_values, E_classical, color='#20306f', marker="d", label="E classical")
+        plt.scatter(T_values, E_classical, color='#20306f', marker="d", label="E target")
+        plt.scatter(T_values, M_classical, color='#6929C4', marker="d", label="M target")
+        plt.plot(T_values, E_qsp, color='#20306f', marker="o", linestyle="solid", alpha=0.5, label="E qsp")
         plt.plot(T_values, M_qsp, color='#6929C4', marker="o", linestyle="solid", alpha=0.5, label="M qsp")
-        plt.plot(T_values, E_qsp, color='#20306f', marker="o", linestyle="solid", alpha=0.5, label="E qsp}")
         plt.xlabel("Evolution time T", fontsize=15, color="#444444")
         plt.ylabel("Energy and Magnetization", fontsize=15, color="#444444")
-        plt.legend(fontsize=15, labelcolor="#444444")
+        plt.legend(fontsize=15, labelcolor='linecolor')
         plt.tick_params(axis='both', labelsize=12)
         plt.grid()
         plt.show()

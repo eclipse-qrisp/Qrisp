@@ -22,4 +22,4 @@ from qrisp.algorithms.gqsp.gqet import *
 from qrisp.algorithms.gqsp.convolution import *
 from qrisp.algorithms.gqsp.hamiltonian_simulation import *
 from qrisp.algorithms.gqsp.helper_functions import *
-from qrisp.algorithms.gqsp.state_preparation import *
+from qrisp.algorithms.gqsp.fourier_series_loader import *

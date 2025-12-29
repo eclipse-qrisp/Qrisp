@@ -19,7 +19,7 @@
 import jax.numpy as jnp
 import numpy as np
 from qrisp import *
-from qrisp.gqsp import state_preparation
+from qrisp.gqsp import fourier_series_loader
 
 # Gaussian 
 def f(x):
@@ -36,7 +36,7 @@ def preprare_gaussian(n, k):
     y_val = y_val / jnp.linalg.norm(y_val)
 
     qv = QuantumFloat(n)
-    qbl = state_preparation(qv, y_val, k=k)
+    qbl = fourier_series_loader(qv, y_val, k=k)
     success_bool = measure(qbl) == 0
     return success_bool, qv
 
@@ -56,7 +56,7 @@ def test_qsp_gaussian():
     y_val_sim = np.array([res_dict.get(key, 0) for key in sorted(res_dict.keys())])
     y_val_sim = y_val_sim / np.linalg.norm(y_val_sim)
 
-    # Compare to classical values
+    # Compare to target values
     x_val = np.linspace(-1, 1, len(y_val_sim))
     y_val = f(x_val)
     y_val = y_val / np.linalg.norm(y_val)
