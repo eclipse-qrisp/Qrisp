@@ -288,6 +288,7 @@ def prepare_qswitch(qv, target_array: jnp.ndarray) -> None:
     from qrisp.misc.utility import bit_reverse
 
     target_array = jnp.asarray(target_array, dtype=jnp.complex128)
+    target_array = target_array / jnp.linalg.norm(target_array)
     # n is static (known at compile time), so we can use normal numpy here
     n = int(np.log2(target_array.shape[0]))
 
