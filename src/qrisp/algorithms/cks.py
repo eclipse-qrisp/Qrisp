@@ -31,7 +31,7 @@ from qrisp import (
     measure,
 )
 from qrisp.alg_primitives.reflection import reflection
-from qrisp.alg_primitives.state_preparation import prepare
+from qrisp.alg_primitives.prepare import prepare
 from qrisp.jasp import jrange, RUS
 from qrisp.operators import QubitOperator
 

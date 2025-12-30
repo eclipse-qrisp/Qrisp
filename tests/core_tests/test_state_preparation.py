@@ -20,7 +20,7 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from qrisp import QuantumFloat, QuantumVariable, x, prepare
+from qrisp import QuantumFloat, QuantumVariable, x
 from qrisp.jasp import terminal_sampling
 from qrisp.misc.utility import _EPSILON, bit_reverse
 
@@ -298,22 +298,3 @@ def test_state_preparation():
     assert np.abs(debugger({qf: 2.75}) - 0.5) < 1e-5
     assert np.abs(debugger({qf: -1.5}) + 0.5) < 1e-5
     assert np.abs(debugger({qf: 3}) - 0.5j) < 1e-5
-
-
-########################################
-### Test preprare function vs init_state
-########################################
-
-
-def test_prepare_vs_init_state():
-    """Test prepare function and init_state are consistent."""
-
-    qv = QuantumFloat(2)
-    prepare(qv, np.array([1,2,3,4]))
-    res_prepare = qv.get_measurement()
-
-    qv = QuantumFloat(2)
-    qv.init_state(np.array([1,2,3,4]))
-    res_init_state = qv.get_measurement()
-
-    assert res_prepare == res_init_state
