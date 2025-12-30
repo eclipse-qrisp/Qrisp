@@ -100,7 +100,7 @@ def prepare(qv, target_array, reversed=False, method = "auto"):
     if method == "qiskit":
         prepare_qiskit(qv, target_array, reversed)
     elif method == "qswitch":
-        if reversed:
+        if not reversed:
             raise Exception("Reversed state preparation is currently not available for method qswitch")
         prepare_qswitch(qv, target_array)
     else:
