@@ -823,7 +823,7 @@ class QuantumVariable:
         # Imports here to avoid circular dependencies
         import jax.numpy as jnp
 
-        from qrisp.alg_primitives.prepare import (
+        from qrisp.alg_primitives.state_preparation import (
             prepare,
         )
 
@@ -831,14 +831,12 @@ class QuantumVariable:
             target_array = np.zeros(1 << self.size, dtype=np.complex128)
             for key, amp in params.items():
                 target_array[self.encoder(key)] = amp
-            qiskit_reversed = False
 
         else:
             # Use JAX array to allow tracing; convert later if needed
             target_array = jnp.asarray(params, dtype=jnp.complex128)
-            qiskit_reversed = True
 
-        prepare(self, target_array, qiskit_reversed, method = method)
+        prepare(self, target_array, method = method)
 
     def append(self, operation):
         self.qs.append(operation, self)
