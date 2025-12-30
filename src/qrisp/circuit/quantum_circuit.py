@@ -2531,26 +2531,6 @@ class QuantumCircuit:
         if not isinstance(phi, (float, sympy.Symbol)):
             raise ValueError("Input parameter phi must be of type float or sympy.Symbol.")
         self.append(ops.MCRZGate(phi, 1), [qubits_0, qubits_1])
-    
-    def mcrz(self, phi, qubits_0, qubits_1):
-        """
-        Instruct a multi-controlled rz-gate.
-
-        Parameters
-        ----------
-        phi : float or sympy.Symbol
-            The angle parameter.
-
-        qubits_0 : List
-            List of control qubits.
-        qubits_1 : Qubit
-            Target qubit for the gate.
-        """
-        if phi == 0:
-            return
-        if not isinstance(phi, (float, sympy.Symbol)):
-            raise ValueError("Input parameter phi must be of type float or sympy.Symbol.")
-        self.append(ops.MCRZGate(phi, 1), [qubits_0, qubits_1])
 
     def t(self, qubits):
         """
