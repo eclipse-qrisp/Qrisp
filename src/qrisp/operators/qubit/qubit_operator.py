@@ -30,6 +30,7 @@ from qrisp.operators.qubit.measurement import get_measurement
 from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge, invert
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 from qrisp.jasp import check_for_tracing_mode, jrange
 
@@ -1629,7 +1630,8 @@ class QubitOperator(Hamiltonian):
         """
 
         warnings.warn(
-            "DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value."
+            "DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value.",
+            QrispDeprecationWarning,
         )
 
         return get_measurement(
@@ -1979,7 +1981,7 @@ class QubitOperator(Hamiltonian):
             H = \sum_{i=0}^{M-1}\alpha_iP_i
 
         where $\alpha_i$ are real coefficients, $P_i\in\{I,X,Y,Z\}^{\otimes n}$ are Pauli operators. Coefficients $\alpha_i$ are nonnegative and each Pauli carries a $\pm1$ sign (corressponding to a phase shift).
-        
+
         Returns
         -------
         list[callable]
@@ -2011,15 +2013,15 @@ class QubitOperator(Hamiltonian):
             unitaries[0](qv)
             barrier(qv)
             unitaries[1](qv)
-        
-        >>> print(qv.qs)  
+
+        >>> print(qv.qs)
         QuantumCircuit:
         ---------------
               ┌───┐ ░ ┌───┐┌────────┐
         qv.0: ┤ X ├─░─┤ Z ├┤ gphase ├
               ├───┤ ░ ├───┤└────────┘
         qv.1: ┤ X ├─░─┤ Z ├──────────
-              └───┘ ░ └───┘          
+              └───┘ ░ └───┘
         Live QuantumVariables:
         ----------------------
         QuantumVariable qv
@@ -2050,19 +2052,19 @@ class QubitOperator(Hamiltonian):
 
             res_dict = main()
 
-        We convert the resulting measurement probabilities to amplitudes by applying the square root. 
+        We convert the resulting measurement probabilities to amplitudes by applying the square root.
         Note that, minus signs of amplitudes cannot be recovered from measurement probabilities.
 
-        
+
         ::
-        
+
             for k, v in res_dict.items():
                 res_dict[k] = v**0.5
 
             print(res_dict)
-            # Yields: {3: 0.8944272109919233, 0: 0.4472135555159407} 
+            # Yields: {3: 0.8944272109919233, 0: 0.4472135555159407}
 
-        Here, the unitary $P_0=XX$ acts as $\ket{0}\rightarrow\ket{3}$, the unitary $P_1=-ZZ$ acts as $\ket{0}\rightarrow -\ket{0}$, 
+        Here, the unitary $P_0=XX$ acts as $\ket{0}\rightarrow\ket{3}$, the unitary $P_1=-ZZ$ acts as $\ket{0}\rightarrow -\ket{0}$,
         and the resulting state is $(2\ket{3}-\ket{0})/\sqrt{5}$.
 
         """
@@ -2074,7 +2076,7 @@ class QubitOperator(Hamiltonian):
 
         for term, coeff in hamiltonian.terms_dict.items():
             coeff_ = np.real(coeff)
-            unitaries.append(term.unitary(sign = (coeff_ < 0)))
+            unitaries.append(term.unitary(sign=(coeff_ < 0)))
             coefficients.append(np.abs(coeff_))
 
         return unitaries, np.array(coefficients, dtype=float)
@@ -2220,7 +2222,7 @@ class QubitOperator(Hamiltonian):
         """
         from qrisp.jasp import qache
         from qrisp.alg_primitives import prepare, qswitch
-    
+
         unitaries, coeffs = self.unitaries()
         alpha = np.sum(coeffs)
 
@@ -2236,6 +2238,6 @@ class QubitOperator(Hamiltonian):
 
         @qache
         def state_prep(case):
-            prepare(case, np.sqrt(coeffs/alpha))
+            prepare(case, np.sqrt(coeffs / alpha))
 
         return U, state_prep, num_qubits

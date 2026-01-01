@@ -16,21 +16,6 @@
 ********************************************************************************
 """
 
-from qrisp.interface.backend import Backend
-from qrisp.simulator.simulator import run as default_run
 
-
-class DefaultBackend(Backend):
-    """A default backend that uses the built-in simulator."""
-
-    def run(self, circuit, shots: int | None = None):
-        shots = shots if shots is not None else self.options.get("shots", None)
-        token = self.options.get("token", "")
-        return default_run(circuit, shots, token)
-
-    @classmethod
-    def _default_options(cls):
-        return {"shots": None, "token": ""}
-
-
-def_backend = DefaultBackend()
+class QrispDeprecationWarning(UserWarning):
+    """Warning for deprecated features in Qrisp."""
