@@ -44,6 +44,7 @@ def polyvalm(poly, A):
 @pytest.mark.parametrize("L, poly", [
     (6, np.array([1., 1.])),
     (6, np.array([1., 2., 1.])),
+    (6, np.array([0., 1., 0., -1.])),
 ])
 def test_qsp_qet(L, poly):
 
