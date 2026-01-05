@@ -19,6 +19,7 @@
 import numpy as np
 from jax.errors import TracerArrayConversionError
 
+
 def prepare_qiskit(qv, target_array, reversed=False):
     
     try:

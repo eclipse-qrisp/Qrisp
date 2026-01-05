@@ -758,17 +758,6 @@ class QuantumVariable:
         method : {"auto", "qiskit", "qswitch"}, optional
             Choice of state-preparation backend. Defaults to ``"auto"``.
 
-        Raises
-        ------
-        ValueError
-            If a statevector of incorrect length is provided.
-        ValueError
-            If the supplied statevector has zero norm.
-        ValueError
-            If the qubits are not fresh prior to initialization.
-        ValueError
-            If ``method="qiskit"`` is used in Jasp mode.
-
         .. note::
 
             When executing in Jasp mode, Python-based shape and normalization
@@ -836,9 +825,9 @@ class QuantumVariable:
         else:
             # Use JAX array to allow tracing; convert later if needed
             target_array = jnp.asarray(params, dtype=jnp.complex128)
-            qiskit_reversed = True
+            qiskit_reversed = False
 
-        prepare(self, target_array, qiskit_reversed, method = method)
+        prepare(self, target_array, qiskit_reversed, method=method)
 
     def append(self, operation):
         self.qs.append(operation, self)
