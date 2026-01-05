@@ -188,10 +188,10 @@ def lanczos_expvals(H, D, operand_prep, mes_kwargs={}):
 @partial(jax.jit, static_argnums=(1,))
 def build_S_H_from_Tk(expvals, D):
     r"""
-    Construct the overlap matrix $S$ and the Krylov Hamiltonian matrix $H$ from Chebyshev polynomial expectation values.
+    Construct the overlap matrix $\mathbf{S}$ and the Krylov Hamiltonian matrix $\mathbf{H}$ from Chebyshev polynomial expectation values.
 
     Using Chebyshev recurrence relations, this function generates the matrix elements for
-    both the overlap matrix ($S$) and the Hamiltonian matrix ($H$) in the Krylov subspace.
+    both the overlap matrix ($\mathbf{S}$) and the Hamiltonian matrix ($\mathbf{H}$) in the Krylov subspace.
     The approach follows Equations (17) and (19) in 
     `"Exact and efficient Lanczos method on a quantum computer" <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
 
@@ -205,9 +205,9 @@ def build_S_H_from_Tk(expvals, D):
     Returns
     -------
     S : ndarray
-        Overlap (Gram) matrix $S$ for Krylov states.
+        Overlap (Gram) matrix $\mathbf{S}$ for Krylov states.
     H_mat : ndarray
-        Hamiltonian matrix $H$ in Krylov subspace.
+        Hamiltonian matrix $\mathbf{H}$ in Krylov subspace.
 
     """
     def Tk_vec(k):
@@ -237,10 +237,10 @@ def build_S_H_from_Tk(expvals, D):
 @jax.jit
 def regularize_S_H(S, H_mat, cutoff=1e-2):
     r"""
-    Regularize the overlap matrix $S$ by retaining only eigenvectors with sufficiently large eigenvalues and project the Hamiltonian matrix $H$ accordingly.
+    Regularize the overlap matrix $\mathbf{S}$ by retaining only eigenvectors with sufficiently large eigenvalues and project the Hamiltonian matrix $\mathbf{H}$ accordingly.
 
     This function applies a spectral cutoff: only directions in the Krylov subspace with eigenvalues
-    above ``cutoff * max_eigenvalue`` are kept. Both the overlap matrix ($S$) and the Hamiltonian matrix (H)
+    above ``cutoff * max_eigenvalue`` are kept. Both the overlap matrix ($\mathbf{S}$) and the Hamiltonian matrix ($\mathbf{H}$)
     are projected onto this reduced subspace, ensuring numerical stability for subsequent
     generalized eigenvalue calculations. The regularized matrices are caculated as $\tilde{S} = V^TSV$ and $\tilde{H}=V^THV$ for a projection matrix $V$.
     
@@ -251,7 +251,7 @@ def regularize_S_H(S, H_mat, cutoff=1e-2):
     H_mat : ndarray
         Hamiltonian matrix.
     cutoff : float
-        Eigenvalue threshold for regularizing $S$.
+        Eigenvalue threshold for regularizing $\mathbf{S}$.
 
     Returns
     -------
@@ -362,11 +362,11 @@ def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False)
 
         \ket{\psi_k}=T_k(H)\ket{\psi_0}, k=0,\dots,D-1,
 
-    which span the same Krylov space as $\{H^k\ket{\psi_0}\}$. The generalized eigenvalue problem $H\vec{v}=\epsilon S\vec{v}$
-    arises as a standard quantum subspace diagonalization task, with the projected Hamiltonian matrix $H$ and overlap matrix $S$ defined 
+    which span the same Krylov space as $\{H^k\ket{\psi_0}\}$. The generalized eigenvalue problem $\mathbf{H}\vec{v}=\epsilon \mathbf{S}\vec{v}$
+    arises as a standard quantum subspace diagonalization task, with the projected Hamiltonian matrix $\mathbf{H}$ and overlap matrix $\mathbf{S}$ defined 
     in this Chebyshev basis.
 
-    We can obtain $S$ by evaluating its matrix elements as
+    We can obtain $\mathbf{S}$ by evaluating its matrix elements as
 
     .. math::
 
@@ -380,7 +380,7 @@ def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False)
 
         S_{ij}=\frac{1}{2}\langle T_{i+j}(H)+T_{|i-j|}(H)\rangle_0=\frac{1}{2}\bigg(\langle T_{i+j}(H)\rangle_0+\langle T_{|i-j|}(H)\rangle_0\bigg).
 
-    For $H$, we have $H_{ij}=\langle T_i(H) H T_j(H)\rangle_0$. By using the fact that $H=T_1(H)$ and applying the Chebyshev identity twice, we get
+    For $\mathbf{H}$, we have $H_{ij}=\langle T_i(H) H T_j(H)\rangle_0$. By using the fact that $H=T_1(H)$ and applying the Chebyshev identity twice, we get
 
     .. math::
 
@@ -388,19 +388,19 @@ def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False)
 
     Because $i,j=0,1,2,\dots, D-1$, all matrix elements $S_{ij}$ and $H_{ij}$ are expressed as linear combinations of expectation values of Chebyshev polynomials
     with respect to the initial state $\langle T_k(H)\rangle_0$, where $k=0,1,2,\dots, 2D-1$. The highest value $2D-1$ comes from the first term
-    for $H_{ij}$ when $i=j=D-1$. To construct $H$ and $S$ it is enough to estimate all of the expectation values $\langle T_k(H)\rangle_0$.
+    for $H_{ij}$ when $i=j=D-1$. To construct $\mathbf{H}$ and $\mathbf{S}$ it is enough to estimate all of the expectation values $\langle T_k(H)\rangle_0$.
    
-    The final step in this implementation is solving the generalized eigenvalue problem $H\vec{v}=\epsilon S\vec{v}$.
-    In practice, the overlap matrix $S$ can become ill-conditioned due to the linear dependencies in the Krylov basis
+    The final step in this implementation is solving the generalized eigenvalue problem $\mathbf{H}\vec{v}=\epsilon \mathbf{S}\vec{v}$.
+    In practice, the overlap matrix $\mathbf{S}$ can become ill-conditioned due to the linear dependencies in the Krylov basis
     or sampling noise in the expectation values $T_k(H)$. To prevent numerical instability, the matrices are regularized via thresholding,
-    a process involving discarding small eigenvalues of $S$ below a specified cutoff. The choice of this cutoff is vital;
+    a process involving discarding small eigenvalues of $\mathbf{S}$ below a specified cutoff. The choice of this cutoff is vital;
     a value too small may fail to suppress noise, while a value too large may discard physically relevant information.
 
     The entire approach can be summarized by the following steps:
       1. Run quantum Lanczos subroutine :func:`lanczos_expvals` to obtain Chebyshev expectation values $\langle T_k(H)\rangle$.
-      2. Build overlap and Hamiltonian subspace matrices $(S,H)$.
-      3. Regularize overlap matrix $S$ and $H$ by projecting onto the subspace with well conditioned eigenvalues.
-      4. Solve generalized eigenvalue problem $H\vec{v}=\epsilon S\vec{v}$.
+      2. Build overlap and Hamiltonian subspace matrices $(\mathbf{S}, \mathbf{H})$.
+      3. Regularize overlap matrix $\mathbf{S}$ and $\mathbf{H}$ by projecting onto the subspace with well conditioned eigenvalues.
+      4. Solve generalized eigenvalue problem $\mathbf{H}\vec{v}=\epsilon \mathbf{S}\vec{v}$.
       5. Return lowest eigenvalue $\epsilon_{\text{min}}$ as ground state energy estimate.
 
     Parameters
@@ -416,7 +416,7 @@ def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False)
             The keyword arguments for the measurement function. 
             By default, 100_000 ``shots`` are executed for measuring each expectation value.
         cutoff : float
-            Regularization cutoff threshold for overlap matrix $S$. The default is 1e-2.
+            Regularization cutoff threshold for overlap matrix $\mathbf{S}$. The default is 1e-2.
         show_info : bool, optional
             If True, a dictionary with detailed information is returned. The default is False.
 
@@ -485,7 +485,7 @@ def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False)
     # Step 3: Regularize matrices via thresholding
     S_reg, H_reg, _ = regularize_S_H(S, H_mat, cutoff=cutoff)  
 
-    # Step 4: Solve generalized eigenvalue problem $H\vec{v}=\epsilonS\vec{v}$
+    # Step 4: Solve generalized eigenvalue problem $\mathbf{H}\vec{v}=\epsilon\mathbf{S}\vec{v}$
     #eigvals, eigvecs = jax.scipy.linalg.eigh(H_reg, S_reg) # Solving the generalized eigenvalue problem not implemented in JAX 0.6
     eigvals, eigvecs = generalized_eigh(H_reg, S_reg)
 
