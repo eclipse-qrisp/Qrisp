@@ -18,11 +18,11 @@
 
 import stim
 from qrisp.core import append_operation
-from qrisp.misc.stim_tools.error_class import StimError
+from qrisp.misc.stim_tools.error_class import StimNoiseGate
 
 def stim_noise(stim_name, *parameters_and_qubits, pauli_string = None):
     """
-    Applies a Stim error gate to the given qubits.
+    Applies a ``StimNoiseGate`` to the given qubits.
 
     For a list of supported error instructions, please check `Stims gate reference <https://github.com/quantumlib/Stim/blob/main/doc/gates.md#noise-channels>`_.
     
@@ -145,7 +145,7 @@ def stim_noise(stim_name, *parameters_and_qubits, pauli_string = None):
     params = parameters_and_qubits[:-num_qubits]
     qubits = parameters_and_qubits[-num_qubits:]
     
-    error_op = StimError(stim_name, *params, pauli_string=pauli_string)
+    error_op = StimNoiseGate(stim_name, *params, pauli_string=pauli_string)
     
     append_operation(error_op, qubits = qubits)
 

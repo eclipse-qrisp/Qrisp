@@ -200,26 +200,26 @@ def test_error_on_non_clifford():
 
 
 def test_stim_errors():
-    """Test conversion of Stim noise channels via StimError."""
-    from qrisp.misc.stim_tools import StimError
+    """Test conversion of Stim noise channels via StimNoiseGate."""
+    from qrisp.misc.stim_tools import StimNoiseGate
     
     # Test 1-qubit errors
     qc = QuantumCircuit(1)
     
     # 1 parameter errors
-    qc.append(StimError("DEPOLARIZE1", 0.1), [qc.qubits[0]])
-    qc.append(StimError("X_ERROR", 0.2), [qc.qubits[0]])
-    qc.append(StimError("Y_ERROR", 0.3), [qc.qubits[0]])
-    qc.append(StimError("Z_ERROR", 0.4), [qc.qubits[0]])
+    qc.append(StimNoiseGate("DEPOLARIZE1", 0.1), [qc.qubits[0]])
+    qc.append(StimNoiseGate("X_ERROR", 0.2), [qc.qubits[0]])
+    qc.append(StimNoiseGate("Y_ERROR", 0.3), [qc.qubits[0]])
+    qc.append(StimNoiseGate("Z_ERROR", 0.4), [qc.qubits[0]])
     
     # 3 parameters (PAULI_CHANNEL_1)
-    qc.append(StimError("PAULI_CHANNEL_1", 0.01, 0.02, 0.03), [qc.qubits[0]])
+    qc.append(StimNoiseGate("PAULI_CHANNEL_1", 0.01, 0.02, 0.03), [qc.qubits[0]])
     
     # HERALDED_ERASE (1 parameter)
-    qc.append(StimError("HERALDED_ERASE", 0.05), [qc.qubits[0]])
+    qc.append(StimNoiseGate("HERALDED_ERASE", 0.05), [qc.qubits[0]])
 
     # HERALDED_PAULI_CHANNEL_1 (4 parameters)
-    qc.append(StimError("HERALDED_PAULI_CHANNEL_1", 0.01, 0.02, 0.03, 0.04), [qc.qubits[0]])
+    qc.append(StimNoiseGate("HERALDED_PAULI_CHANNEL_1", 0.01, 0.02, 0.03, 0.04), [qc.qubits[0]])
 
     stim_circuit = qc.to_stim()
     stim_str = str(stim_circuit)
@@ -236,12 +236,12 @@ def test_stim_errors():
     qc = QuantumCircuit(2)
     
     # 1 parameter
-    qc.append(StimError("DEPOLARIZE2", 0.05), qc.qubits)
+    qc.append(StimNoiseGate("DEPOLARIZE2", 0.05), qc.qubits)
     
     # 15 parameters for PAULI_CHANNEL_2
     # Verify that we can pass a large number of parameters
     params = [0.001 * i for i in range(1, 16)]
-    qc.append(StimError("PAULI_CHANNEL_2", *params), qc.qubits)
+    qc.append(StimNoiseGate("PAULI_CHANNEL_2", *params), qc.qubits)
     
     stim_circuit = qc.to_stim()
     stim_str = str(stim_circuit)
@@ -257,10 +257,10 @@ def test_stim_errors():
     # Test CORRELATED_ERROR (E)
     qc = QuantumCircuit(3)
     # E(0.1) X0 Y1 (Z2 skipped or implicit I) - User notation E_XYI
-    qc.append(StimError("E", 0.1, pauli_string="XYI"), qc.qubits)
+    qc.append(StimNoiseGate("E", 0.1, pauli_string="XYI"), qc.qubits)
     
     # ELSE_CORRELATED_ERROR(0.2) Z0 Z1 Z2
-    qc.append(StimError("ELSE_CORRELATED_ERROR", 0.2, pauli_string="ZZZ"), qc.qubits)
+    qc.append(StimNoiseGate("ELSE_CORRELATED_ERROR", 0.2, pauli_string="ZZZ"), qc.qubits)
 
     stim_circuit = qc.to_stim()
     stim_str = str(stim_circuit)

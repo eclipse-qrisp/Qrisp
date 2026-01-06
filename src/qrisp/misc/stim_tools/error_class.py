@@ -19,7 +19,7 @@
 import stim
 from qrisp.circuit import Operation, QuantumCircuit
 
-class StimError(Operation):
+class StimNoiseGate(Operation):
     """
     Class for representing Stim errors in Qrisp circuits.
     
@@ -73,11 +73,11 @@ class StimError(Operation):
     ::
         
         from qrisp import QuantumCircuit
-        from qrisp.misc.stim_tools import StimError
+        from qrisp.misc.stim_tools import StimNoiseGate
         qc = QuantumCircuit(1)
         qc.x(0)
         # Apply a depolarization error with probability 0.1
-        qc.append(StimError("DEPOLARIZE1", 0.1), qc.qubits)
+        qc.append(StimNoiseGate("DEPOLARIZE1", 0.1), qc.qubits)
         print(qc)
         # Yields:
         #       ┌───┐┌──────────────────┐

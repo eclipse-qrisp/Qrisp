@@ -1,12 +1,12 @@
 from qrisp import QuantumCircuit
-from qrisp.misc.stim_tools import StimError
+from qrisp.misc.stim_tools import StimNoiseGate
 import stim
 
 def test_repro():
     qc = QuantumCircuit(1)
     
     # 1 parameter errors
-    op = StimError("DEPOLARIZE1", 0.1)
+    op = StimNoiseGate("DEPOLARIZE1", 0.1)
     print(f"Created op: {op.name}, num_qubits: {op.num_qubits}")
     qc.append(op, [qc.qubits[0]])
     
