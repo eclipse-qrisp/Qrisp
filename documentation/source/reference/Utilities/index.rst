@@ -12,27 +12,27 @@ Utilities
    :widths: 30 70
 
    * - :func:`~qrisp.multi_measurement`
-     - Perform measurement on a list of QuantumVariables or a QuantumCircuit.
+     - Perform measurement on a list of QuantumVariables.
    * - :func:`~qrisp.batched_measurement`
-     - Perform batched measurement on a list of QuantumVariables or a QuantumCircuit.
+     - Perform batched measurement on a list of QuantumVariables.
    * - :func:`~qrisp.gate_wrap`
      - Decorator to bundle up the quantum instructions of a function into a single gate object.
    * - :func:`~qrisp.custom_control`
      - Adds a custom control behavior to a function.
    * - :func:`~qrisp.lifted`
-     - Decorator that indicates that a function computes a phase logic (i.e. is diagonal).
+     - Decorator that indicates that a function is ``qfree`` and permeable in its inputs.
    * - :func:`~qrisp.redirect_qfunction`
      - Redirects a quantum function to a new target qubit.
    * - :func:`~qrisp.as_hamiltonian`
-     - Decorator that converts a function returning a phase into a Hamiltonian.
+     - Decorator that converts a function returning a phase into a diagonal Hamiltonian.
    * - :func:`~qrisp.lock`
-     - Context manager that locks a list of qubits, preventing them from being used for automatic allocation.
+     - Locks a list of qubits, implying an error will be raised if the user tries to perform any operation involving these qubits.
    * - :func:`~qrisp.unlock`
-     - Context manager that unlocks a list of qubits, allowing them to be used for automatic allocation.
+     - Locks a list of qubits such that only permeable gates can be executed on these qubits.
    * - :func:`~qrisp.perm_lock`
      - Context manager that permanently locks a list of qubits, preventing them from being used for automatic allocation.
    * - :func:`~qrisp.perm_unlock`
-     - Context manager that permanently unlocks a list of qubits, allowing them to be used for automatic allocation.
+     - Reverses ``perm_lock``.
    * - :func:`~qrisp.t_depth_indicator`
      - Returns the T-depth of a given operation.
    * - :func:`~qrisp.cnot_depth_indicator`
