@@ -174,6 +174,9 @@ def qrisp_to_stim(qc, return_clbit_map = False):
             # R is reset to |0⟩ state
             stim_circuit.append("R", qubit_indices)
         
+        elif isinstance(op, StimError):
+            stim_circuit.append(op.stim_name, qubit_indices, op.params)
+
         # Handle T gate (not a Clifford gate, but check for it)
         elif op_name in ["t", "t_dg"]:
             raise NotImplementedError(
