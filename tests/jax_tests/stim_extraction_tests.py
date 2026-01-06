@@ -612,4 +612,35 @@ def test_large_circuit():
     # All qubits should be correlated
     for i in range(1, 20):
         assert np.all(qv_samples[:, 0] == qv_samples[:, i])
+
+
+def test_jasp_stim_extraction_with_error():
+    """Test Jasp stim extraction with errors."""
+    from qrisp.jasp import extract_stim
+    from qrisp import QuantumVariable, h, cx
+    from qrisp.stim_noise import StimError
     
+    @extract_stim
+    def noisy_bell_pair():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        
+        # Add noise
+        qc = qv.qs
+        qc.append(StimError("DEPOLARIZE1", 0.1), [qv[0]])
+        qc.append(StimError("DEPOLARIZE2", 0.05), [qv[0], qv[1]])
+        
+        # Add correlated error
+        qc.append(StimError("E_XY", 0.1), [qv[0], qv[1]])
+
+    stim_circuit = noisy_bell_pair()
+    stim_str = str(stim_circuit)
+    
+    assert "H 0" in stim_str
+    assert "CX 0 1" in stim_str
+    assert "DEPOLARIZE1(0.1) 0" in stim_str
+    assert "DEPOLARIZE2(0.05) 0 1" in stim_str
+    # E might be aliased or formatted differently, check for presence
+    assert "E(" in stim_str or "CORRELATED_ERROR(" in stim_str 
+    assert "X0" in stim_str or "X 0" in stim_str # Ensure target part is present

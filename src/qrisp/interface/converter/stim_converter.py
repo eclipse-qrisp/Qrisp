@@ -175,7 +175,25 @@ def qrisp_to_stim(qc, return_clbit_map = False):
             stim_circuit.append("R", qubit_indices)
         
         elif isinstance(op, StimError):
-            stim_circuit.append(op.stim_name, qubit_indices, op.params)
+            if op.pauli_string is None:
+                stim_circuit.append(op.stim_name, qubit_indices, op.params)
+            else:
+                targets = []
+                for i in range(len(qubit_indices)):
+                    char = op.pauli_string[i].upper()
+                    idx = qubit_indices[i]
+                    if char == "I":
+                        continue
+                    elif char == "X":
+                        targets.append(stim.target_x(idx))
+                    elif char == "Y":
+                        targets.append(stim.target_y(idx))
+                    elif char == "Z":
+                        targets.append(stim.target_z(idx))
+                    else:
+                        raise ValueError(f"Unknown Pauli char: {char}")
+                
+                stim_circuit.append(op.stim_name, targets, op.params)
 
         # Handle T gate (not a Clifford gate, but check for it)
         elif op_name in ["t", "t_dg"]:

@@ -197,3 +197,85 @@ def test_error_on_non_clifford():
         assert False, "Expected NotImplementedError for T gate"
     except NotImplementedError:
         pass  # Expected behavior
+
+
+def test_stim_errors():
+    """Test conversion of Stim noise channels via StimError."""
+    from qrisp.stim_noise import StimError
+    
+    # Test 1-qubit errors
+    qc = QuantumCircuit(1)
+    
+    # 1 parameter errors
+    qc.append(StimError("DEPOLARIZE1", 0.1), [qc.qubits[0]])
+    qc.append(StimError("X_ERROR", 0.2), [qc.qubits[0]])
+    qc.append(StimError("Y_ERROR", 0.3), [qc.qubits[0]])
+    qc.append(StimError("Z_ERROR", 0.4), [qc.qubits[0]])
+    
+    # 3 parameters (PAULI_CHANNEL_1)
+    qc.append(StimError("PAULI_CHANNEL_1", 0.01, 0.02, 0.03), [qc.qubits[0]])
+    
+    # HERALDED_ERASE (1 parameter)
+    qc.append(StimError("HERALDED_ERASE", 0.05), [qc.qubits[0]])
+
+    # HERALDED_PAULI_CHANNEL_1 (4 parameters)
+    qc.append(StimError("HERALDED_PAULI_CHANNEL_1", 0.01, 0.02, 0.03, 0.04), [qc.qubits[0]])
+
+    stim_circuit = qc.to_stim()
+    stim_str = str(stim_circuit)
+    
+    assert "DEPOLARIZE1(0.1) 0" in stim_str
+    assert "X_ERROR(0.2) 0" in stim_str
+    assert "Y_ERROR(0.3) 0" in stim_str
+    assert "Z_ERROR(0.4) 0" in stim_str
+    assert "PAULI_CHANNEL_1(0.01, 0.02, 0.03) 0" in stim_str
+    assert "HERALDED_ERASE(0.05) 0" in stim_str
+    assert "HERALDED_PAULI_CHANNEL_1(0.01, 0.02, 0.03, 0.04) 0" in stim_str
+    
+    # Test 2-qubit errors
+    qc = QuantumCircuit(2)
+    
+    # 1 parameter
+    qc.append(StimError("DEPOLARIZE2", 0.05), qc.qubits)
+    
+    # 15 parameters for PAULI_CHANNEL_2
+    # Verify that we can pass a large number of parameters
+    params = [0.001 * i for i in range(1, 16)]
+    qc.append(StimError("PAULI_CHANNEL_2", *params), qc.qubits)
+    
+    stim_circuit = qc.to_stim()
+    stim_str = str(stim_circuit)
+    
+    assert "DEPOLARIZE2(0.05) 0 1" in stim_str
+    
+    # Check PAULI_CHANNEL_2 output format
+    assert "PAULI_CHANNEL_2" in stim_str
+    # Check a few parameters are present in the string
+    assert "0.001" in stim_str
+    assert "0.015" in stim_str
+
+    # Test CORRELATED_ERROR (E)
+    qc = QuantumCircuit(3)
+    # E(0.1) X0 Y1 (Z2 skipped or implicit I) - User notation E_XYI
+    qc.append(StimError("E_XYI", 0.1), qc.qubits)
+    
+    # ELSE_CORRELATED_ERROR(0.2) Z0 Z1 Z2
+    qc.append(StimError("ELSE_CORRELATED_ERROR_ZZZ", 0.2), qc.qubits)
+
+    stim_circuit = qc.to_stim()
+    stim_str = str(stim_circuit)
+
+    # Note: stim string representation formats targets like X0, Y1
+    # Check for presence of E operations
+    # Depending on stim version, E might be aliased to CORRELATED_ERROR in output or vice versa
+    assert "E(0.1)" in stim_str or "CORRELATED_ERROR(0.1)" in stim_str
+    assert "ELSE_CORRELATED_ERROR(0.2)" in stim_str
+    
+    # Check targets (format might comprise X0, Y1 etc)
+    # The exact string representation depends on qubit indices
+    # We applied to 0, 1, 2
+    # So X0 Y1
+    assert "X0" in stim_str
+    assert "Y1" in stim_str
+    # Z2 for ELSE_CORRELATED_ERROR
+    assert "Z2" in stim_str
