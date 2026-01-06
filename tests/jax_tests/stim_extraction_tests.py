@@ -618,7 +618,7 @@ def test_jasp_stim_extraction_with_error():
     """Test Jasp stim extraction with errors."""
     from qrisp.jasp import extract_stim
     from qrisp import QuantumVariable, h, cx
-    from qrisp.misc.stim_noise import StimError
+    from qrisp.misc.stim_tools import StimError
     
     @extract_stim
     def noisy_bell_pair():

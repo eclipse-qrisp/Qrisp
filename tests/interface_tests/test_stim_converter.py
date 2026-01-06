@@ -201,7 +201,7 @@ def test_error_on_non_clifford():
 
 def test_stim_errors():
     """Test conversion of Stim noise channels via StimError."""
-    from qrisp.misc.stim_noise import StimError
+    from qrisp.misc.stim_tools import StimError
     
     # Test 1-qubit errors
     qc = QuantumCircuit(1)

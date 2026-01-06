@@ -16,5 +16,5 @@
 ********************************************************************************
 """
 
-from qrisp.misc.stim_noise.error_class import *
-from qrisp.misc.stim_noise.stim_noise_gate_application_functions import *
+from qrisp.misc.stim_tools.error_class import *
+from qrisp.misc.stim_tools.stim_noise_gate_application_functions import *

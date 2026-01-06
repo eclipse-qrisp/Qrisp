@@ -18,7 +18,7 @@
 
 import stim
 from qrisp.core import append_operation
-from qrisp.misc.stim_noise.error_class import StimError
+from qrisp.misc.stim_tools.error_class import StimError
 
 def stim_noise(stim_name, *parameters_and_qubits, pauli_string = None):
     

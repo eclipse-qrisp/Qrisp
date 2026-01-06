@@ -83,9 +83,13 @@ def qrisp_to_stim(qc, return_clbit_map = False):
     >>> reordered = samples[:, [clbit_map[cb] for cb in sorted_clbits]]
     """
     import stim
-    from qrisp.misc.stim_noise import StimError
-    
-    qc = qc.transpile()
+    from qrisp.misc.stim_tools import StimError
+
+    # We don't want to transpile StimError gates because the have trivial definition    
+    def transpile_predicate(op):
+        return not isinstance(op, StimError)
+
+    qc = qc.transpile(transpile_predicate = transpile_predicate)
     
     # Create Stim circuit
     stim_circuit = stim.Circuit()
@@ -129,6 +133,7 @@ def qrisp_to_stim(qc, return_clbit_map = False):
     for instr in qc.data:
         op = instr.op
         op_name = op.name.lower()
+        
         qubits = instr.qubits
         
         # Skip allocation/deallocation operations
