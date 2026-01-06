@@ -32,11 +32,21 @@ Inserting Noise
 
 A crucial feature of Stim is precise control over what type of noise can appear during the circuit execution and a very powerful simulation pipeline. In order to describe this Qrisp offers two options for realizing arbitrary noise channels.
 
-.. autosummary::
-   :toctree: generated
+.. list-table::
+   :header-rows: 0
+   :widths: 30 70
 
-   qrisp.misc.stim_tools.stim_noise
-   qrisp.misc.stim_tools.StimError
+   * - :func:`~qrisp.misc.stim_tools.stim_noise`
+     - Applies a Stim error gate to the given qubits.
+   * - :class:`~qrisp.misc.stim_tools.StimError`
+     - Class for representing Stim errors in Qrisp circuits.
+
+.. toctree:: 
+   :hidden:
+
+   stim_noise_doc
+   StimError_doc
+   
 
 .. warning::
 
