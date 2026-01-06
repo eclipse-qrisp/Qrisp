@@ -1,5 +1,5 @@
-qrisp.misc.stim_tools.StimError
-===============================
+StimError
+=========
 
 .. currentmodule:: qrisp.misc.stim_tools
 

@@ -1,5 +1,5 @@
-qrisp.jasp.extract_stim
-=======================
+extract_stim
+============
 
 .. currentmodule:: qrisp.jasp
 
