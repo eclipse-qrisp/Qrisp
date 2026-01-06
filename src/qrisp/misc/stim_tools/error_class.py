@@ -23,7 +23,36 @@ class StimError(Operation):
     """
     Class for representing Stim errors in Qrisp circuits.
     
-    This class is used to wrap Stim instructions into Qrisp Operations. These operations are effectively identity gates (they have an empty definition) but carry the information about the Stim noise channel. When converted to Stim circuits, these operations are replaced by the corresponding Stim instruction.
+    This class is used to wrap Stim instructions into Qrisp Operations. These operations are 
+    effectively identity gates (they have an empty definition) but carry the information about the Stim 
+    noise channel. When converted to Stim circuits, these operations are replaced by the corresponding 
+    Stim instruction.
+    
+    .. list-table::
+       :widths: 25 75
+       :header-rows: 1
+
+       * - Name
+         - Description
+       * - ``DEPOLARIZE1``
+         - Single qubit depolarizing noise. This channel applies one of the Pauli errors X, Y, Z with probability $p/3$.
+       * - ``DEPOLARIZE2``
+         - Two qubit depolarizing noise. This channel applies one of the 15 non-identity two-qubit Pauli errors (IX, IY, ..., ZZ) with probability $p/15$.
+       * - ``X_ERROR``
+         - Single qubit Pauli-X error (Bit flip). Applies X with probability $p$.
+       * - ``Y_ERROR``
+         - Single qubit Pauli-Y error. Applies Y with probability $p$.
+       * - ``Z_ERROR``
+         - Single qubit Pauli-Z error (Phase flip). Applies Z with probability $p$.
+       * - ``PAULI_CHANNEL_1``
+         - Custom single qubit Pauli channel. Takes 3 arguments (px, py, pz) specifying the probabilities of applying X, Y, and Z errors respectively.
+       * - ``PAULI_CHANNEL_2``
+         - Custom two qubit Pauli channel. Takes 15 arguments specifying the probabilities of applying each of the 15 non-identity two-qubit Pauli errors.
+       * - ``E`` (or ``CORRELATED_ERROR``)
+         - Correlated Pauli error on multiple qubits (requires ``pauli_string`` argument). Applies the specified Pauli string with probability $p$.
+       * - ``ELSE_CORRELATED_ERROR``
+         - Similar to ``CORRELATED_ERROR`` but only applies if the *previous* error instruction did NOT apply an error. This allows constructing more complex conditional error models.
+
     
     Parameters
     ----------
@@ -35,7 +64,7 @@ class StimError(Operation):
         `Stims gate reference <https://github.com/quantumlib/Stim/blob/main/doc/gates.md#noise-channels>`_
     pauli_string : str, optional
         A string of Pauli operators (e.g. ``XX``) for correlated errors.
-    
+        
     Examples
     --------
 

@@ -55,7 +55,11 @@ def stim_noise(stim_name, *parameters_and_qubits, pauli_string = None):
 
     .. warning::
 
-        Every noisy operation described here behaves as a purely unitary identity gate, unless the compilation target is indeed Stim (see :meth:`~qrisp.QuantumCircuit.to_stim`). This means for instance that :meth:`~qrisp.QuantumCircuit.to_qiskit` converts the noisy operations to trivial identity gates. The same applies to the behavior of the Qrisp simulator. In other words - the noisy operations will only behave noisy if pushed through the Stim compiler.
+        Every noisy operation described here behaves as a purely unitary identity gate, unless the 
+        compilation target is indeed Stim (see :meth:`~qrisp.QuantumCircuit.to_stim`). This means for 
+        instance that :meth:`~qrisp.QuantumCircuit.to_qiskit` converts the noisy operations to trivial 
+        identity gates. The same applies to the behavior of the Qrisp simulator. In other words - the 
+        noisy operations will only behave noisy if pushed through the Stim compiler.
 
 
     Parameters
