@@ -20,7 +20,47 @@ import stim
 from qrisp.circuit import Operation, QuantumCircuit
 
 class StimError(Operation):
+    """
+    Class for representing Stim errors in Qrisp circuits.
     
+    This class is used to wrap Stim instructions into Qrisp Operations. These operations are effectively identity gates (they have an empty definition) but carry the information about the Stim noise channel. When converted to Stim circuits, these operations are replaced by the corresponding Stim instruction.
+    
+    Parameters
+    ----------
+    stim_name : str
+        The name of the Stim error gate (e.g. ``DEPOLARIZE1``).
+    *params : float
+        The parameters of the error channel (e.g. error probability). Further 
+        details about the semantics of the parameters can be found in the
+        `Stims gate reference <https://github.com/quantumlib/Stim/blob/main/doc/gates.md#noise-channels>`_
+    pauli_string : str, optional
+        A string of Pauli operators (e.g. ``XX``) for correlated errors.
+    
+    Examples
+    --------
+
+    We construct a simple circuit that contains both: quantum gates and error instructions.
+
+    ::
+        
+        from qrisp import QuantumCircuit
+        from qrisp.misc.stim_tools import StimError
+        qc = QuantumCircuit(1)
+        qc.x(0)
+        # Apply a depolarization error with probability 0.1
+        qc.append(StimError("DEPOLARIZE1", 0.1), qc.qubits)
+        print(qc)
+        # Yields:
+        #       ┌───┐┌──────────────────┐
+        # qb_0: ┤ X ├┤ stim.DEPOLARIZE1 ├
+        #       └───┘└──────────────────┘
+        print(qc.to_stim())
+        # Yields:
+        # X 0
+        # DEPOLARIZE1(0.1) 0
+        
+    """
+
     def __init__(self, stim_name, *params, pauli_string = None):
         
         self.stim_name = stim_name

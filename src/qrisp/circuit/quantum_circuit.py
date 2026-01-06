@@ -1911,41 +1911,80 @@ class QuantumCircuit:
             The converted Stim circuit.
         clbit_map : dict
             A dictionary mapping Qrisp Clbit objects to Stim measurement record indices. 
-            For example, {clbit_obj_0: 2, clbit_obj_1: 0} means the first Clbit object 
-            corresponds to the 3rd measurement (index 2) in Stim's measurement record.
+            For example, ``{Clbit(cb_1): 2, Clbit(cb_0): 1}`` means ``Clbit("cb_1")``
+            corresponds to index 2 in Stim's measurement record.
 
         Examples
         --------
         Basic conversion:
-        
+
         >>> from qrisp import QuantumCircuit
         >>> qc = QuantumCircuit(2, 2)
-        >>> qc.h(0)
-        >>> qc.cx(0, 1)
-        >>> qc.measure([0, 1])
-        >>> stim_circuit, clbit_map = qc.to_stim(True)
+        >>> qc.x(0)
+        >>> qc.cz(0, 1)
+        >>> qc.measure(0, 0)
+        >>> qc.measure(1, 1)
+        >>> print(qc)
+              ┌───┐   ┌─┐   
+        qb_0: ┤ X ├─■─┤M├───
+              └───┘ │ └╥┘┌─┐
+        qb_1: ──────■──╫─┤M├
+                       ║ └╥┘
+        cb_0: ═════════╩══╬═
+                          ║ 
+        cb_1: ════════════╩═
+                 
+        >>> stim_circuit = qc.to_stim()
         >>> print(stim_circuit)
-        H 0
-        CX 0 1
+        X 0
+        CZ 0 1
         M 0 1
-        >>> print(clbit_map)  # Maps Clbit objects to measurement indices
-        {Clbit(cb_2): 0, Clbit(cb_3): 1}
         
-        Handling non-sequential classical bit mapping:
+        Stim creates measurement indices in the order of how the measurements appear
+        in the circuit. This is different in Qrisp: It is for instance possible 
+        for the first measurement of the circuit to target the second ``Clbit``.
+        The second measurement can in-principle then target either the first or
+        the second ``Clbit``. In order to still identify which ``Clbit`` corresponds to
+        which stim measurement index, we can use the ``return_clbit_map`` keyword
+        argument.
         
-        >>> qc = QuantumCircuit(3, 3)
-        >>> qc.h(0)
-        >>> qc.x(1)
-        >>> qc.measure(qc.qubits[0], qc.clbits[2])  # qubit 0 -> clbit 2
-        >>> qc.measure(qc.qubits[1], qc.clbits[0])  # qubit 1 -> clbit 0
-        >>> stim_circuit, clbit_map = qc.to_stim(True)
-        >>> # clbit_map maps Clbit objects to Stim measurement record indices
+        >>> qc = QuantumCircuit(2, 2)
+        >>> qc.x(0)
+        >>> qc.cz(0, 1) 
+        >>> qc.measure(1, 1) # The first measurement of the circuit targets the second ClBit
+        >>> qc.measure(0, 0) # The second measurement of the circuit targets the first ClBit
+        >>> print(qc)
+              ┌───┐      ┌─┐
+        qb_0: ┤ X ├─■────┤M├
+              └───┘ │ ┌─┐└╥┘
+        qb_1: ──────■─┤M├─╫─
+                      └╥┘ ║ 
+        cb_0: ═════════╬══╩═
+                       ║    
+        cb_1: ═════════╩════
+        >>> stim_circuit, clbit_map = qc.to_stim(return_clbit_map = True)
+        >>> print(stim_circuit)
+        X 0
+        CZ 0 1
+        M 1 0
+            
+        We see that Stim now measures the qubit with index 1 first (``M 1 0``),
+        which is why in the measurement record the measurement result in ``Clbit("cb_1")``
+        will appear at index 0 and ``Clbit("cb_0")`` at index 1.
+        To retrieve the correct order, we inspect the ``clbit_map`` dictionary.
+
+        >>> print(clbit_map)  # Maps Clbit objects to Stim measurement indices
+        {Clbit(cb_1): 0, Clbit(cb_0): 1}
+            
+        We can now check the samples drawn from this circuit for a given ``Clbit``
+        object by slicing the sampling result array.
+        
         >>> sampler = stim_circuit.compile_sampler()
-        >>> samples = sampler.sample(100)
-        >>> # Reorder to match Qrisp's classical bit order:
-        >>> clbit_indices = {clbit: qc.clbits.index(clbit) for clbit in clbit_map}
-        >>> sorted_clbits = sorted(clbit_map.keys(), key=lambda cb: clbit_indices[cb])
-        >>> reordered = samples[:, [clbit_map[cb] for cb in sorted_clbits]]
+        >>> all_samples = sampler.sample(5)
+        >>> samples = all_samples[:, clbit_map[qc.clbits[0]]]
+        >>> print(samples)
+        array([ True,  True,  True,  True,  True])
+            
         """
 
         from qrisp.interface import qrisp_to_stim

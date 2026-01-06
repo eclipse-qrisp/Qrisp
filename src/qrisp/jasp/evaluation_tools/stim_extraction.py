@@ -39,8 +39,9 @@ def extract_stim(func):
         :ref:`QuantumFloat` apply post-processing to raw measurement results during 
         decoding. For example, a QuantumFloat might convert a raw integer into a fractional 
         value. This post-processing cannot be performed during the Stim extraction 
-        because it requires transforming a list of classical bits in ways that go 
-        beyond simple index mapping.
+        because it requires transforming a list of classical bits in ways that involve
+        classical post-processing steps that can not be represented by the Stim circuit
+        format.
         
         For this reason, it is **recommended to use** :ref:`QuantumVariable` **instead 
         of QuantumFloat** (or similar advanced types) when working with ``extract_stim``. 
@@ -83,7 +84,7 @@ def extract_stim(func):
     
     **Example 1: Single return value**
     
-    When the function returns a single measured value, only the Stim circuit is returned:
+    When the function has no return value, only the Stim circuit is returned:
     
     ::
         
@@ -95,7 +96,7 @@ def extract_stim(func):
             qv = QuantumVariable(2)
             h(qv[0])
             cx(qv[0], qv[1])
-            return measure(qv)
+            measure(qv)
         
         stim_circuit = bell_state()
         print(stim_circuit)
@@ -106,7 +107,7 @@ def extract_stim(func):
     
     **Example 2: Multiple return values with measurement indices**
     
-    When returning multiple values, quantum measurements are returned as measurement 
+    When returning one or more values, quantum measurements are returned as measurement 
     indices, while classical values remain unchanged:
     
     ::
@@ -134,7 +135,7 @@ def extract_stim(func):
         
         print(f"Classical value: {classical_val}")  # 6 (unchanged)
         print(f"First qubit measurement index: {first_meas_idx}")  # e.g., 0
-        print(f"Final measurement indices: {final_meas_indices}")  # e.g., [1, 2, 3]
+        print(f"Final measurement indices: {final_meas_indices}")  # e.g., (1, 2, 3)
     
     **Example 3: Sampling and slicing results**
     
