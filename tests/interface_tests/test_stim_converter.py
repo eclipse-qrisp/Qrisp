@@ -201,7 +201,7 @@ def test_error_on_non_clifford():
 
 def test_stim_errors():
     """Test conversion of Stim noise channels via StimError."""
-    from qrisp.stim_noise import StimError
+    from qrisp.misc.stim_noise import StimError
     
     # Test 1-qubit errors
     qc = QuantumCircuit(1)
@@ -257,10 +257,10 @@ def test_stim_errors():
     # Test CORRELATED_ERROR (E)
     qc = QuantumCircuit(3)
     # E(0.1) X0 Y1 (Z2 skipped or implicit I) - User notation E_XYI
-    qc.append(StimError("E_XYI", 0.1), qc.qubits)
+    qc.append(StimError("E", 0.1, pauli_string="XYI"), qc.qubits)
     
     # ELSE_CORRELATED_ERROR(0.2) Z0 Z1 Z2
-    qc.append(StimError("ELSE_CORRELATED_ERROR_ZZZ", 0.2), qc.qubits)
+    qc.append(StimError("ELSE_CORRELATED_ERROR", 0.2, pauli_string="ZZZ"), qc.qubits)
 
     stim_circuit = qc.to_stim()
     stim_str = str(stim_circuit)

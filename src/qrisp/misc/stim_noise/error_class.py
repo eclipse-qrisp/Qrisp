@@ -21,29 +21,12 @@ from qrisp.circuit import Operation
 
 class StimError(Operation):
     
-    def __init__(self, stim_name, *params):
+    def __init__(self, stim_name, *params, pauli_string = None):
         
-        # We need to handle correlated errors separately from standard errors
-        # because for correlated errors, the user supplies a string like E_XYZ
-        # where XYZ specifies the Pauli targets.
+        self.stim_name = stim_name
+        self.pauli_string = pauli_string
         
-        self.pauli_string = None
-        
-        if stim_name.startswith("E_"):
-            self.stim_name = "E"
-            self.pauli_string = stim_name[2:]
-            
-        elif stim_name.startswith("CORRELATED_ERROR_"):
-            self.stim_name = "CORRELATED_ERROR"
-            self.pauli_string = stim_name[17:]
-            
-        elif stim_name.startswith("ELSE_CORRELATED_ERROR_"):
-            self.stim_name = "ELSE_CORRELATED_ERROR"
-            self.pauli_string = stim_name[22:]
-        else:
-            self.stim_name = stim_name
-        
-        error_data = stim.gate_data(self.stim_name)
+        error_data = stim.gate_data(stim_name)
         
         parameter_amounts = list(error_data.num_parens_arguments_range)
         
@@ -51,10 +34,15 @@ class StimError(Operation):
             raise Exception("Non-noisy stim gates are not supported via the error interface. Please use the default Qrisp alternatives.")
         
         if len(params) not in parameter_amounts:
-            raise Exception(f"Stim error of type {self.stim_name} can take parameter amounts {parameter_amounts} but not received {len(params)} parameters instead")
+            raise Exception(f"Stim error of type {stim_name} can take parameter amounts {parameter_amounts} but not received {len(params)} parameters instead")
             
         if self.pauli_string is not None:
-             num_qubits = len(self.pauli_string)
+            # Check for compatibility
+            if not (stim_name in ["E", "CORRELATED_ERROR", "ELSE_CORRELATED_ERROR"]):
+                 raise Exception(f"Stim error {stim_name} does not support Pauli strings. Supported gates are E, CORRELATED_ERROR, ELSE_CORRELATED_ERROR")
+
+            num_qubits = len(self.pauli_string)
+
         elif error_data.is_single_qubit_gate:
             num_qubits = 1
         elif error_data.is_two_qubit_gate:

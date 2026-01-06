@@ -618,7 +618,7 @@ def test_jasp_stim_extraction_with_error():
     """Test Jasp stim extraction with errors."""
     from qrisp.jasp import extract_stim
     from qrisp import QuantumVariable, h, cx
-    from qrisp.stim_noise import StimError
+    from qrisp.misc.stim_noise import StimError
     
     @extract_stim
     def noisy_bell_pair():
@@ -632,7 +632,7 @@ def test_jasp_stim_extraction_with_error():
         qc.append(StimError("DEPOLARIZE2", 0.05), [qv[0], qv[1]])
         
         # Add correlated error
-        qc.append(StimError("E_XY", 0.1), [qv[0], qv[1]])
+        qc.append(StimError("E", 0.1, pauli_string="XY"), [qv[0], qv[1]])
 
     stim_circuit = noisy_bell_pair()
     stim_str = str(stim_circuit)
