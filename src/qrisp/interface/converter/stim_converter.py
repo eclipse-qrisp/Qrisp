@@ -83,6 +83,7 @@ def qrisp_to_stim(qc, return_clbit_map = False):
     >>> reordered = samples[:, [clbit_map[cb] for cb in sorted_clbits]]
     """
     import stim
+    from qrisp.stim_noise import StimError
     
     qc = qc.transpile()
     
