@@ -17,7 +17,7 @@
 """
 
 import stim
-from qrisp.circuit import Operation
+from qrisp.circuit import Operation, QuantumCircuit
 
 class StimError(Operation):
     
@@ -52,7 +52,9 @@ class StimError(Operation):
         
         name = "stim." + stim_name
         
+        
         Operation.__init__(self, name = name, 
                            num_qubits = num_qubits,
-                           params = params)
+                           params = params,
+                           definition = QuantumCircuit(num_qubits))
 
