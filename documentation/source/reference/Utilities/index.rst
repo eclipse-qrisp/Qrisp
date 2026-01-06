@@ -4,6 +4,12 @@ Utilities
 
 .. currentmodule:: qrisp
 
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   
+   stim_tools
+
 .. autosummary::
    :toctree: generated/
 
