@@ -671,3 +671,132 @@ def test_stim_noise_gate_errors():
     
     # Check is_permeable
     assert not ng.is_permeable([0])
+
+
+# ============================================================================
+# Detector Tests
+# ============================================================================
+
+def test_extract_stim_with_detector():
+    """Test extract_stim decorator with a function using detector()."""
+    from qrisp.misc.stim_tools import detector
+    
+    @extract_stim
+    def simple_detector_circuit():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        
+        d = detector(m0, m1)
+        return d
+        
+    res = simple_detector_circuit()
+    det_idx, stim_circ = res
+    
+    assert isinstance(stim_circ, stim.Circuit)
+    assert isinstance(det_idx, int)
+    assert det_idx == 0
+    
+    # Run simulation
+    sampler = stim_circ.compile_detector_sampler()
+    det_samples = sampler.sample(100)
+    assert not np.any(det_samples)
+
+
+def test_extract_stim_detector_with_noise():
+    """Test detector firing when noise is introduced."""
+    from qrisp.misc.stim_tools import detector, stim_noise
+
+    @extract_stim
+    def noisy_detector_circuit():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        
+        stim_noise("X_ERROR", 1.0, qv[1])
+        
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        
+        d = detector(m0, m1)
+        return d
+
+    det_idx, stim_circ = noisy_detector_circuit()
+    
+    sampler = stim_circ.compile_detector_sampler()
+    det_samples = sampler.sample(100)
+    assert np.all(det_samples[:, det_idx])
+
+
+def test_extract_stim_multiple_detectors():
+    """Test multiple detectors."""
+    from qrisp.misc.stim_tools import detector
+
+    @extract_stim
+    def multi_detector_circuit():
+        qv = QuantumVariable(3)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        cx(qv[1], qv[2])
+        
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        m2 = measure(qv[2])
+        
+        d1 = detector(m0, m1)
+        d2 = detector(m1, m2)
+        
+        return d1, d2
+
+    d1_idx, d2_idx, stim_circ = multi_detector_circuit()
+    
+    sampler = stim_circ.compile_detector_sampler()
+    det_samples = sampler.sample(100)
+    assert not np.any(det_samples)
+
+
+def test_detector_indexing_correctness():
+    """Ensure detector indices returned by extract_stim point to the correct detectors."""
+    from qrisp.misc.stim_tools import detector, stim_noise
+    
+    @extract_stim
+    def selective_noise_circuit():
+        qv = QuantumVariable(4)
+        
+        # Pair A
+        h(qv[0])
+        cx(qv[0], qv[1])
+        
+        # Pair B
+        h(qv[2])
+        cx(qv[2], qv[3])
+        
+        # Noise on Pair B
+        stim_noise("X_ERROR", 1.0, qv[3])
+        
+        ma0 = measure(qv[0])
+        ma1 = measure(qv[1])
+        mb0 = measure(qv[2])
+        mb1 = measure(qv[3])
+        
+        det_a = detector(ma0, ma1)
+        det_b = detector(mb0, mb1)
+        det_c = detector(ma0, ma1)
+        
+        return det_a, det_b, det_c
+
+    idx_a, idx_b, idx_c, stim_circ = selective_noise_circuit()
+    
+    sampler = stim_circ.compile_detector_sampler()
+    det_samples = sampler.sample(100)
+    
+    samples_a = det_samples[:, idx_a]
+    samples_b = det_samples[:, idx_b]
+    samples_c = det_samples[:, idx_c]
+    
+    assert not np.any(samples_a)
+    assert np.all(samples_b)
+    assert not np.any(samples_c)

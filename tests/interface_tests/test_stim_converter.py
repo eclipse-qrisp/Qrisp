@@ -279,3 +279,38 @@ def test_stim_errors():
     assert "Y1" in stim_str
     # Z2 for ELSE_CORRELATED_ERROR
     assert "Z2" in stim_str
+
+
+def test_detector_operation_conversion():
+    """
+    Test manual creation of StimDetector and conversion to Stim using qc.to_stim().
+    """
+    from qrisp.misc.stim_tools import StimDetector
+    qc = QuantumCircuit(2, 3) # 2 qubits, 3 clbits (2 for measure, 1 for detector result)
+    # Manual circuit construction simulating what JASP would do
+    # measure qubit 0 into clbit 0
+    qc.measure(0, 0)
+    # measure qubit 1 into clbit 1
+    qc.measure(1, 1)
+    
+    # Detector operation depending on clbit 0 and 1
+    # It writes its result to clbit 2
+    det_op = StimDetector(num_inputs=2)
+    qc.append(det_op, clbits=[qc.clbits[0], qc.clbits[1], qc.clbits[2]])
+    
+    stim_circuit, meas_map, det_map = qc.to_stim(return_measurement_map=True, return_detector_map=True)
+    
+    # Check instructions
+    lines = str(stim_circuit).splitlines()
+    assert "M 0 1" in lines or ("M 0" in lines and "M 1" in lines)
+
+    # We expect DETECTOR rec[-2] rec[-1] or rec[-1] rec[-2]
+    det_lines = [l for l in lines if "DETECTOR" in l]
+    assert len(det_lines) == 1
+    assert "rec[-1]" in det_lines[0]
+    assert "rec[-2]" in det_lines[0]
+    
+    # Check maps
+    assert len(meas_map) == 2
+    assert len(det_map) == 1
+    assert det_map[qc.clbits[2]] == 0
