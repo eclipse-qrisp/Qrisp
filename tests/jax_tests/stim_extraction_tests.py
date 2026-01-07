@@ -648,3 +648,26 @@ def test_jasp_stim_extraction_with_error():
     # E might be aliased or formatted differently, check for presence
     assert "E(" in stim_str or "CORRELATED_ERROR(" in stim_str 
     assert "X0" in stim_str or "X 0" in stim_str # Ensure target part is present
+
+
+def test_stim_noise_gate_errors():
+    """Test that prohibited methods on StimNoiseGate raise appropriate exceptions."""
+    from qrisp.misc.stim_tools.error_class import StimNoiseGate
+    import pytest
+    
+    ng = StimNoiseGate("DEPOLARIZE1", 0.1)
+
+    # Test inverse
+    with pytest.raises(Exception, match="is not invertible"):
+        ng.inverse()
+
+    # Test control
+    with pytest.raises(Exception, match="can not be controlled"):
+        ng.control()
+
+    # Test c_if
+    with pytest.raises(Exception, match="can not be classically controlled"):
+        ng.c_if()
+    
+    # Check is_permeable
+    assert not ng.is_permeable([0])
