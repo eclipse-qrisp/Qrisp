@@ -19,6 +19,12 @@
 from jax.extend.core import Primitive
 
 class StimPrimitive(Primitive):
+    """
+    Base class for Stim-related JAX primitives.
+    
+    This class extends the JAX Primitive class to support Stim specific operations
+    within the JASP / JAX tracing framework.
+    """
     def __init__(self, name):
         Primitive.__init__(self, "stim." + name)
         self.stim_name = name

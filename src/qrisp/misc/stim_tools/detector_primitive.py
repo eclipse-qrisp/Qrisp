@@ -27,6 +27,11 @@ from jax.core import ShapedArray
 
 @detector_p.def_abstract_eval
 def detector_abstract_eval(*measurements_and_abs_qc):
+    """
+    Abstract evaluation for the detector primitive.
+    
+    Checks that inputs are boolean (measurement results) and returns a boolean scalar (the detector result).
+    """
     measurements = measurements_and_abs_qc[:-1]
     
     for b in measurements:
@@ -36,12 +41,30 @@ def detector_abstract_eval(*measurements_and_abs_qc):
     return ShapedArray((), bool)
 
 def detector(*measurements):
+    """
+    Creates a Stim detector instruction.
+    
+    Parameters
+    ----------
+    *measurements : bool or Qubit
+        The boolean measurement results that this detector depends on.
+        
+    Returns
+    -------
+    bool
+        A boolean result representing the detector outcome (usually used for error correction syndrome).
+    """
     from qrisp.jasp import TracingQuantumSession
     qs = TracingQuantumSession.get_instance()
     return detector_p.bind(*(list(measurements) + [qs.abs_qc]))
 
 @detector_p.def_impl
 def detector_implementation(*measurements_and_qc):
+    """
+    Implementation of the detector primitive.
+    
+    Appends a StimDetector operation to the QuantumCircuit.
+    """
     measurements = measurements_and_qc[:-1]
     qc = measurements_and_qc[-1]
     res = qc.add_clbit()
@@ -50,6 +73,12 @@ def detector_implementation(*measurements_and_qc):
 
 
 class StimDetector(Operation):
+    """
+    Operation class representing a Stim detector.
+    
+    This operation is used to interface with Stim's DETECTOR instruction during the
+    conversion process. It acts as a placeholder in the Qrisp QuantumCircuit.
+    """
     def __init__(self, num_inputs):
         
         definition = QuantumCircuit(0, num_inputs + 1)

@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-def qrisp_to_stim(qc, return_clbit_map = False, return_detector_map = False):
+def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = False):
     """
     Convert a Qrisp quantum circuit to a Stim circuit.
     
@@ -25,8 +25,8 @@ def qrisp_to_stim(qc, return_clbit_map = False, return_detector_map = False):
     qc : QuantumCircuit
         The Qrisp quantum circuit to convert. The circuit will be automatically
         transpiled to decompose composite gates into Clifford basis gates.
-    return_clbit_map : bool, optional
-        If set to True, the function returns the clbit_map, as described below.
+    return_measurement_map : bool, optional
+        If set to True, the function returns the measurement_map, as described below.
         The default is False.
     return_detector_map : bool, optional
         If set to True, the function returns the detector_map.
@@ -36,7 +36,7 @@ def qrisp_to_stim(qc, return_clbit_map = False, return_detector_map = False):
     -------
     stim_circuit : stim.Circuit
         The converted Stim circuit.
-    clbit_map : dict
+    measurement_map : dict
         (Optional) A dictionary mapping Qrisp Clbit objects to Stim measurement record indices. 
         For example, {clbit_obj_0: 2, clbit_obj_1: 0} means the first Clbit object 
         corresponds to the 3rd measurement (index 2) in Stim's measurement record.
@@ -63,12 +63,12 @@ def qrisp_to_stim(qc, return_clbit_map = False, return_detector_map = False):
     >>> qc.h(0)
     >>> qc.cx(0, 1)
     >>> qc.measure([0, 1])
-    >>> stim_circuit, clbit_map = qrisp_to_stim(qc, True)
+    >>> stim_circuit, measurement_map = qrisp_to_stim(qc, True)
     >>> print(stim_circuit)
     H 0
     CX 0 1
     M 0 1
-    >>> print(clbit_map)  # Maps Clbit objects to measurement indices
+    >>> print(measurement_map)  # Maps Clbit objects to measurement indices
     {cb_0: 0, cb_1: 1}
     
     Handling non-sequential classical bit mapping:
@@ -78,14 +78,14 @@ def qrisp_to_stim(qc, return_clbit_map = False, return_detector_map = False):
     >>> qc.x(1)
     >>> qc.measure(qc.qubits[0], qc.clbits[2])  # qubit 0 -> clbit 2
     >>> qc.measure(qc.qubits[1], qc.clbits[0])  # qubit 1 -> clbit 0
-    >>> stim_circuit, clbit_map = qrisp_to_stim(qc, True)
-    >>> # clbit_map maps Clbit objects to Stim measurement record indices
+    >>> stim_circuit, measurement_map = qrisp_to_stim(qc, True)
+    >>> # measurement_map maps Clbit objects to Stim measurement record indices
     >>> sampler = stim_circuit.compile_sampler()
     >>> samples = sampler.sample(100)
     >>> # Reorder to match Qrisp's classical bit order:
-    >>> clbit_indices = {clbit: qc.clbits.index(clbit) for clbit in clbit_map}
-    >>> sorted_clbits = sorted(clbit_map.keys(), key=lambda cb: clbit_indices[cb])
-    >>> reordered = samples[:, [clbit_map[cb] for cb in sorted_clbits]]
+    >>> clbit_indices = {clbit: qc.clbits.index(clbit) for clbit in measurement_map}
+    >>> sorted_clbits = sorted(measurement_map.keys(), key=lambda cb: clbit_indices[cb])
+    >>> reordered = samples[:, [measurement_map[cb] for cb in sorted_clbits]]
     """
     import stim
     from qrisp.misc.stim_tools import StimNoiseGate
@@ -252,7 +252,7 @@ def qrisp_to_stim(qc, return_clbit_map = False, return_detector_map = False):
     
     res = [stim_circuit]
     
-    if return_clbit_map:
+    if return_measurement_map:
         res.append(clbit_to_measurement_idx)
         
     if return_detector_map:

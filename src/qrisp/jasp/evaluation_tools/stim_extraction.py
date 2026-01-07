@@ -227,7 +227,7 @@ def extract_stim(func):
             # The idx_mapping is a dict that maps Qrisp Clbit objects to Stim measurement
             # record indices. This is necessary because Stim uses sequential integer indices
             # for its measurement record, while Qrisp uses Clbit objects.
-            stim_circ, clbit_mapping, detector_mapping = qc.to_stim(return_clbit_map=True, return_detector_map=True)
+            stim_circ, clbit_mapping, detector_mapping = qc.to_stim(return_measurement_map=True, return_detector_map=True)
             idx_mapping = {**detector_mapping, **clbit_mapping}
             
             # Process all return values except the QuantumCircuit (last element)
