@@ -448,6 +448,8 @@ class Jaspr(ClosedJaxpr):
                     context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
                     return
                 return True
+            elif eqn.primitive.name == "stim.detector":
+                return True
             else:
 
                 invalues = extract_invalues(eqn, context_dic)
