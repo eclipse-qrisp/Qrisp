@@ -38,16 +38,32 @@ A crucial feature of Stim is precise control over what type of noise can appear 
 
    * - :func:`~qrisp.misc.stim_tools.stim_noise`
      - Applies a Stim error gate to the given qubits.
-   * - :class:`~qrisp.misc.stim_tools.StimError`
+   * - :class:`~qrisp.misc.stim_tools.StimNoiseGate`
      - Class for representing Stim errors in Qrisp circuits.
 
 .. toctree:: 
    :hidden:
 
    stim_noise_doc
-   StimError_doc
-   
+   StimNoiseGate_doc
 
 .. warning::
 
     Every noisy operation described here behaves as a purely unitary identity gate, unless the compilation target is indeed Stim (see :meth:`~qrisp.QuantumCircuit.to_stim`). This means for instance that :meth:`~qrisp.QuantumCircuit.to_qiskit` converts the noisy operations to trivial identity gates. The same applies to the behavior of the Qrisp simulator. In other words - the noisy operations will only behave noisy if pushed through the Stim compiler.
+
+Detectors
+---------
+
+Detectors in Stim are annotations that assert that a set of measurement outcomes has a specific parity. They are crucial for defining error correction tasks. A detector fires if the parity of the referenced measurements deviates from the value expected in a noiseless execution. In Stim, these events are stored in a separate record than the ordinary measurement results. To sample them efficiently, it is necessary to compile a dedicated sampler (such as ``stim.Circuit.compile_detector_sampler``).
+
+.. list-table::
+   :header-rows: 0
+   :widths: 30 70
+
+   * - :func:`~qrisp.misc.stim_tools.detector`
+     - Creates a Stim detector object based on the given measurement outcomes.
+
+.. toctree:: 
+   :hidden:
+
+   detector_doc

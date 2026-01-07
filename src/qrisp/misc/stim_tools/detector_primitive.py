@@ -41,18 +41,122 @@ def detector_abstract_eval(*measurements_and_abs_qc):
     return ShapedArray((), bool)
 
 def detector(*measurements):
-    """
-    Creates a Stim detector instruction.
+    r"""
+    Creates a Stim detector.
+
+    A detector in Stim is an annotation that declares that a set of measurement outcomes has a deterministic parity (in the absence of noise). 
+    In the context of quantum error correction, detectors typically correspond to operator measurements (stabilizers) which should yield a specific value (normally 0 for +1 eigenstates). 
     
+    If the parity of the given measurements does not match the expected parity (which is implicitly 0), the detector "fires", indicating an error or an event.
+
+    This function should be used within a function decorated with :func:`~qrisp.misc.stim_tools.extract_stim`. When the Qrisp circuit is converted to a Stim circuit, this operation is translated into a ``DETECTOR`` instruction targeting the measurement records corresponding to the input arguments.
+
     Parameters
     ----------
-    *measurements : bool or Qubit
-        The boolean measurement results that this detector depends on.
-        
+    *measurements : list[Tracer[boolean]]
+        Variable length argument list of measurement results (typically outcomes of ``measure`` or similar operations).
+
     Returns
     -------
-    bool
-        A boolean result representing the detector outcome (usually used for error correction syndrome).
+    Tracer[boolean]
+        A boolean value representing whether the detector fired. In a noiseless simulation, this will be False (0). In a noisy simulation (handled by Stim), if the noise flips the parity of the measurements, this will be True (1).
+
+    Examples
+    --------
+    
+    **1. Selective Noise Indication**
+
+    In this example, we setup two Bell-pairs. One is kept noiseless, while we insert a Pauli-X error into the other one.
+    Because the Bell-states have the structure $|00\rangle + |11\rangle$, the parity $m_0 \oplus m_1$ is always 0.
+    The X-error flips this parity and subsequently triggers the detector, which monitors the noisy pair.
+
+    ::
+
+        from qrisp import QuantumVariable, h, cx, measure
+        from qrisp.misc.stim_tools import extract_stim, detector, stim_noise
+        import stim
+
+        @extract_stim
+        def selective_noise_demo():
+            # Create two QuantumVariables for independent Bell pairs
+            bell_pair_1 = QuantumVariable(2)
+            bell_pair_2 = QuantumVariable(2)
+            
+            # Initialize first Bell pair (Noiseless)
+            h(bell_pair_1[0])
+            cx(bell_pair_1[0], bell_pair_1[1])
+            
+            # Initialize second Bell pair (Noisy)
+            h(bell_pair_2[0])
+            cx(bell_pair_2[0], bell_pair_2[1])
+            
+            # Apply deterministic X error to one of the qubits in the second pair
+            # This will flip the parity of the measurement outcomes
+            stim_noise(1.0, "X", bell_pair_2[0])
+            
+            # Measure
+            m1_0 = measure(bell_pair_1[0])
+            m1_1 = measure(bell_pair_1[1])
+            
+            m2_0 = measure(bell_pair_2[0])
+            m2_1 = measure(bell_pair_2[1])
+            
+            # Detector 1 checks parity of first pair. No noise -> Parity 0 -> Detector output 0 (False)
+            d1 = detector(m1_0, m1_1)
+            
+            # Detector 2 checks parity of second pair. X error -> Parity 1 -> Detector output 1 (True)
+            d2 = detector(m2_0, m2_1)
+            
+            return d1, d2
+
+        d1, d2, stim_circuit = selective_noise_demo()
+        
+        sampler = stim_circuit.compile_detector_sampler()
+        print(sampler.sample(1))
+        # Yields [[False, True]]
+
+    **2. Repetition Code Syndrome Measurement**
+
+    We simulate a repetition code on 3 qubits, which encodes a single logical qubit. We prepare the logical $|+\rangle_L$ state (which is $|000\rangle + |111\rangle$).
+    We then insert a stochastic X error on the participating qubits.
+    Finally, we measure the stabilizer operators $Z_0 Z_1$ and $Z_1 Z_2$ by measuring the qubits survival state validation.
+
+    ::
+
+        @extract_stim
+        def repetition_code_demo():
+            qv = QuantumVariable(3)
+            
+            # Encode logical state |0> + |1> -> |000> + |111>
+            h(qv[0])
+            cx(qv[0], qv[1])
+            cx(qv[0], qv[2])
+            
+            # Apply stochastic bit flip noise on the qubit (25% chance)
+            stim_noise("X_ERROR", 0.25, qv[0])
+            stim_noise("X_ERROR", 0.25, qv[1])
+            stim_noise("X_ERROR", 0.25, qv[2])
+            
+            # Measure all data qubits
+            m = [measure(qv[i]) for i in range(3)]
+            
+            # Check parity of neighbors (syndrome extraction)
+            
+            detector_1 = detector(m[0], m[1])
+            detector_2 = detector(m[1], m[2])
+            
+            return detector_1, detector_2
+
+        d1, d2, stim_circuit = repetition_code_demo()
+        
+        sampler = stim_circuit.compile_detector_sampler()
+        print(sampler.sample(5))
+        # Possible output:
+        # [[False,  False],  # No error
+        #  [True,   False],    # Error on first qubit qubit
+        #  [True,   True],    # Error on middle qubit qubit
+        #  ... ]
+    
     """
     from qrisp.jasp import TracingQuantumSession
     qs = TracingQuantumSession.get_instance()

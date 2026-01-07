@@ -1,5 +1,5 @@
 StimNoiseGate
-=========
+=============
 
 .. currentmodule:: qrisp.misc.stim_tools
 
