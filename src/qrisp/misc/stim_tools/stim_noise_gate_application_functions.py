@@ -126,7 +126,7 @@ def stim_noise(stim_name, *parameters_and_qubits, pauli_string = None):
 
     """
     
-    error_data = stim.gate_data("X_ERROR")
+    error_data = stim.gate_data(stim_name)
     
     if pauli_string is not None:
         # Check for compatibility

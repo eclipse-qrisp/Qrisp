@@ -103,7 +103,7 @@ class StimNoiseGate(Operation):
             raise Exception("Non-noisy stim gates are not supported via the error interface. Please use the default Qrisp alternatives.")
         
         if len(params) not in parameter_amounts:
-            raise Exception(f"Stim error of type {stim_name} can take parameter amounts {parameter_amounts} but not received {len(params)} parameters instead")
+            raise Exception(f"Stim error of type {stim_name} can take parameter amounts {parameter_amounts} but received {len(params)} parameters instead")
             
         if self.pauli_string is not None:
             # Check for compatibility
