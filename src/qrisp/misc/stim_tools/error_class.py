@@ -126,4 +126,16 @@ class StimNoiseGate(Operation):
                            num_qubits = num_qubits,
                            params = params,
                            definition = QuantumCircuit(num_qubits))
+        
+        for k in self.permeability.keys():
+            self.permeability[k] = False
+
+    def inverse(self):
+        raise Exception(f"StimNoiseGate {self.name} is not invertible.")
+
+    def control(self, num_ctrl_qubits=1, ctrl_state=-1, method=None):
+        raise Exception(f"StimNoiseGate {self.name} can not be controlled.")
+
+    def c_if(self, num_control=1, ctrl_state=-1):
+        raise Exception(f"StimNoiseGate {self.name} can not be classically controlled.")
 
