@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-def qrisp_to_stim(qc, return_clbit_map = False):
+def qrisp_to_stim(qc, return_clbit_map = False, return_detector_map = False):
     """
     Convert a Qrisp quantum circuit to a Stim circuit.
     
@@ -28,15 +28,20 @@ def qrisp_to_stim(qc, return_clbit_map = False):
     return_clbit_map : bool, optional
         If set to True, the function returns the clbit_map, as described below.
         The default is False.
+    return_detector_map : bool, optional
+        If set to True, the function returns the detector_map.
+        The default is False.
     
     Returns
     -------
     stim_circuit : stim.Circuit
         The converted Stim circuit.
     clbit_map : dict
-        A dictionary mapping Qrisp Clbit objects to Stim measurement record indices. 
+        (Optional) A dictionary mapping Qrisp Clbit objects to Stim measurement record indices. 
         For example, {clbit_obj_0: 2, clbit_obj_1: 0} means the first Clbit object 
         corresponds to the 3rd measurement (index 2) in Stim's measurement record.
+    detector_map : dict
+        (Optional) A dictionary mapping Qrisp Clbit objects to Stim detector indices.
     
     Notes
     -----
@@ -87,7 +92,7 @@ def qrisp_to_stim(qc, return_clbit_map = False):
 
     # We don't want to transpile StimNoiseGate gates because the have trivial definition    
     def transpile_predicate(op):
-        return not isinstance(op, StimNoiseGate)
+        return not isinstance(op, StimNoiseGate) and op.name != "stim.detector"
 
     qc = qc.transpile(transpile_predicate = transpile_predicate)
     
@@ -99,6 +104,9 @@ def qrisp_to_stim(qc, return_clbit_map = False):
     # We need to map Qrisp Clbit objects to Stim measurement record indices
     clbit_to_measurement_idx = {}  # Maps Clbit object -> measurement_record_idx
     measurement_counter = 0  # Tracks the current position in Stim's measurement record
+    
+    detector_map = {}
+    detector_counter = 0
     
     # Gate mapping from Qrisp to Stim
     # Stim gate names are usually uppercase
@@ -200,6 +208,27 @@ def qrisp_to_stim(qc, return_clbit_map = False):
                 
                 stim_circuit.append(op.stim_name, targets, op.params)
 
+        elif op_name == "stim.detector":
+            measurement_clbits = instr.clbits[:-1]
+            result_clbit = instr.clbits[-1]
+            
+            targets = []
+            for clbit in measurement_clbits:
+                if clbit not in clbit_to_measurement_idx:
+                    raise Exception("Detector depends on a classical bit that is not in the measurement record.")
+                
+                # Stim uses relative record targets (rec[-k]) typically for detectors
+                rec_idx = clbit_to_measurement_idx[clbit]
+                offset = rec_idx - measurement_counter
+                targets.append(stim.target_rec(offset))
+            
+            # Append DETECTOR instruction
+            stim_circuit.append("DETECTOR", targets, op.params)
+            
+            # Map the result clbit to the current detector index
+            detector_map[result_clbit] = detector_counter
+            detector_counter += 1
+        
         # Handle T gate (not a Clifford gate, but check for it)
         elif op_name in ["t", "t_dg"]:
             raise NotImplementedError(
@@ -221,8 +250,15 @@ def qrisp_to_stim(qc, return_clbit_map = False):
                 f"Stim only supports Clifford gates."
             )
     
+    res = [stim_circuit]
+    
     if return_clbit_map:
-        # Return both the circuit and the classical bit mapping
-        return stim_circuit, clbit_to_measurement_idx
+        res.append(clbit_to_measurement_idx)
+        
+    if return_detector_map:
+        res.append(detector_map)
+
+    if len(res) == 1:
+        return res[0]
     else:
-        return stim_circuit
+        return tuple(res)

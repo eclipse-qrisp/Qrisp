@@ -1891,7 +1891,7 @@ class QuantumCircuit:
 
         return qml_converter(self)
     
-    def to_stim(self, return_clbit_map = False):
+    def to_stim(self, return_clbit_map = False, return_detector_map = False):
         """
         Method to convert the given QuantumCircuit to a `Stim <https://github.com/quantumlib/Stim/>`_ Circuit.
 
@@ -1904,15 +1904,20 @@ class QuantumCircuit:
         return_clbit_map : bool, optional
             If set to True, the function returns the clbit_map, as described below.
             The default is False.
+        return_detector_map : bool, optional
+            If set to True, the function returns the detector_map.
+            The default is False.
 
         Returns
         -------
         stim_circuit : stim.Circuit
             The converted Stim circuit.
         clbit_map : dict
-            A dictionary mapping Qrisp Clbit objects to Stim measurement record indices. 
+            (Optional) A dictionary mapping Qrisp Clbit objects to Stim measurement record indices. 
             For example, ``{Clbit(cb_1): 2, Clbit(cb_0): 1}`` means ``Clbit("cb_1")``
             corresponds to index 2 in Stim's measurement record.
+        detector_map : dict
+            (Optional) A dictionary mapping Qrisp Clbit objects to Stim detector indices.
 
         Examples
         --------
@@ -1989,7 +1994,7 @@ class QuantumCircuit:
 
         from qrisp.interface import qrisp_to_stim
 
-        return qrisp_to_stim(self, return_clbit_map)
+        return qrisp_to_stim(self, return_clbit_map, return_detector_map)
 
     def to_pytket(self):
         """

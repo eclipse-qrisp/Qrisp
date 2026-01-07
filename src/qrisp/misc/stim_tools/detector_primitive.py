@@ -28,7 +28,6 @@ from jax.core import ShapedArray
 @detector_p.def_abstract_eval
 def detector_abstract_eval(*measurements_and_abs_qc):
     measurements = measurements_and_abs_qc[:-1]
-    abs_qc = measurements_and_abs_qc[-1]
     
     for b in measurements:
         if not isinstance(b, ShapedArray) or not isinstance(b.dtype, np.dtypes.BoolDType):
@@ -43,11 +42,11 @@ def detector(*measurements):
 
 @detector_p.def_impl
 def detector_implementation(*measurements_and_qc):
-    print("test")
     measurements = measurements_and_qc[:-1]
     qc = measurements_and_qc[-1]
     res = qc.add_clbit()
     qc.append(StimDetector(len(measurements)), clbits = list(measurements) + [res])
+    return res
 
 
 class StimDetector(Operation):
