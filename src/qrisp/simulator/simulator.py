@@ -68,6 +68,11 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         measurement_amount = count_measurements_and_treat_alloc(
             qc, insert_reset=insert_reset
         )
+        
+        if measurement_amount == 0:
+            progress_bar.close()
+            print("\r" + 85 * " ", end=LINE_CLEAR + "\r")
+            return {"" : 1.}
 
         # Apply circuit preprocessing more
         qc = circuit_preprocessor(qc)
