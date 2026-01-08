@@ -322,7 +322,7 @@ def process_while(eqn, context_dic):
         
         return eval_jaxpr(converted_cond_jaxpr)(*flattened_invalues)
 
-    outvalues = while_loop(cond_fun, body_fun, invalues)[eqn.params["body_nconsts"]:]
+    outvalues = while_loop(cond_fun, body_fun, invalues)[overall_constant_amount:]
     
     insert_outvalues(eqn, context_dic, outvalues)
 
