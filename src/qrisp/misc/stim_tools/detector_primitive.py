@@ -72,8 +72,8 @@ def detector(*measurements):
 
     ::
 
-        from qrisp import QuantumVariable, h, cx, measure
-        from qrisp.misc.stim_tools import extract_stim, detector, stim_noise
+        from qrisp import QuantumVariable, h, cx, measure, extract_stim
+        from qrisp.misc.stim_tools import detector, stim_noise
         import stim
 
         @extract_stim
@@ -92,7 +92,7 @@ def detector(*measurements):
             
             # Apply deterministic X error to one of the qubits in the second pair
             # This will flip the parity of the measurement outcomes
-            stim_noise(1.0, "X", bell_pair_2[0])
+            stim_noise("X_ERROR", 1.0, bell_pair_2[0])
             
             # Measure
             m1_0 = measure(bell_pair_1[0])
