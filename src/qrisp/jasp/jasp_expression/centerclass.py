@@ -22,7 +22,6 @@ import jax
 from jax import make_jaxpr
 from jax.extend.core import Jaxpr, Literal, ClosedJaxpr
 from jax.tree_util import tree_flatten
-from jax.errors import UnexpectedTracerError
 
 from qrisp.jasp.jasp_expression import invert_jaspr, collect_environments
 from qrisp.jasp import (
@@ -1345,7 +1344,7 @@ class Jaspr(ClosedJaxpr):
         return jaspr_to_catalyst_jaxpr(self.flatten_environments())
 
 
-def make_jaspr(fun, garbage_collection="auto", flatten_envs=True, **jax_kwargs):
+def make_jaspr(fun, flatten_envs=True, **jax_kwargs):
     from qrisp.jasp import (
         AbstractQuantumCircuit,
         TracingQuantumSession,
@@ -1370,7 +1369,7 @@ def make_jaspr(fun, garbage_collection="auto", flatten_envs=True, **jax_kwargs):
             abs_qc = kwargs[10*"~"]
             del kwargs[10*"~"]
 
-            qs.start_tracing(abs_qc, garbage_collection)
+            qs.start_tracing(abs_qc)
 
             # If the signature contains QuantumVariables, these QuantumVariables went
             # through a flattening/unflattening procedure. The unflattening creates
@@ -1385,10 +1384,6 @@ def make_jaspr(fun, garbage_collection="auto", flatten_envs=True, **jax_kwargs):
             except Exception as e:
                 qs.conclude_tracing()
                 raise e
-
-            res_qvs = recursive_qv_search(res)
-
-            qs.garbage_collection(spare_qv_list=arg_qvs + res_qvs)
 
             res_qc = qs.conclude_tracing()
 
