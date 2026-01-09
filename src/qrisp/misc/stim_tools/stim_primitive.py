@@ -16,8 +16,15 @@
 ********************************************************************************
 """
 
-from qrisp.interface.converter.qiskit_converter import *
-from qrisp.interface.converter.pytket_converter import *
-from qrisp.interface.converter.pennylane_converter import *
-from qrisp.interface.converter.qulacs_converter import *
-from qrisp.interface.converter.stim_converter import *
+from jax.extend.core import Primitive
+
+class StimPrimitive(Primitive):
+    """
+    Base class for Stim-related JAX primitives.
+    
+    This class extends the JAX Primitive class to support Stim specific operations
+    within the JASP / JAX tracing framework.
+    """
+    def __init__(self, name):
+        Primitive.__init__(self, "stim." + name)
+        self.stim_name = name
