@@ -13,6 +13,7 @@ Methods
    :toctree: generated/
    
    QubitOperator.adjoint
+   QubitOperator.coeffs
    QubitOperator.commutator
    QubitOperator.expectation_value
    QubitOperator.from_matrix

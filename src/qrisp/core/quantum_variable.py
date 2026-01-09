@@ -25,7 +25,6 @@ from jax import tree_util
 from qrisp.core.compilation import qompiler
 
 
-
 class QuantumVariable:
     """
     The QuantumVariable is the quantum equivalent of a regular variable in classical
@@ -234,7 +233,7 @@ class QuantumVariable:
 
         # Store quantum session
         from qrisp.core import QuantumSession
-        from qrisp.jasp import check_for_tracing_mode, TracingQuantumSession
+        from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
         if check_for_tracing_mode():
             self.qs = TracingQuantumSession.get_instance()
@@ -339,11 +338,23 @@ class QuantumVariable:
         except ValueError:
             pass
 
+        # The following lists are used to indicate to the 
+        # (un)flattening mechanism of Jax which attributes
+        # of the QuantumVariable should be considered static
+        # and which are dynamic.
+        # For instance, in the case of QuantumFloat,
+        # the exponent is dynamic and the signed boolean is
+        # static.
+        # For reference check:
+        # https://docs.jax.dev/en/latest/custom_pytrees.html
+
         # Specify the traced attributes (None for base type QuantumVariable)
         self.traced_attributes = []
+        # Specify the static attributes (None for base type QuantumVariable)
+        self.static_attributes = []
 
     def __or__(self, other):
-        from qrisp import mcx, x, cx
+        from qrisp import cx, mcx, x
 
         if len(self) > len(other):
             or_res = self.duplicate()
@@ -526,7 +537,7 @@ class QuantumVariable:
         """
 
         from qrisp.core import QuantumSession
-        from qrisp.jasp import check_for_tracing_mode, TracingQuantumSession
+        from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
         if check_for_tracing_mode():
             new_qs = TracingQuantumSession.get_instance()
@@ -706,8 +717,8 @@ class QuantumVariable:
 
         """
 
-        from qrisp.misc import check_if_fresh, int_encoder
         from qrisp.jasp import TracingQuantumSession
+        from qrisp.misc import check_if_fresh, int_encoder
 
         if not isinstance(self.qs, TracingQuantumSession):
             if not permit_dirtyness:
@@ -718,74 +729,128 @@ class QuantumVariable:
 
         int_encoder(self, self.encoder(value))
 
-    def init_state(self, state_dic):
+    def init_state(self, params, method="auto"):
         r"""
-        The ``init_state`` method allows the initialization of arbitrary quantum states.
-        It recieves a dictionary of the type
+        Initialize an arbitrary quantum state on this quantum variable.
 
-        **{value : complex number}**
+        This method can be used in two ways:
 
-        and initializes the **normalized** state. Amplitudes not specified are assumed
-        to be zero.
+        **1. Dictionary input**
 
-        Note that the state initialization algorithm requires it's qubits to be in
-        state $\ket{0}$.
+            A dictionary of the form ``{value: amplitude}`` describing the
+            (possibly non-normalized) wavefunction in the logical basis of the
+            quantum variable. Any value not explicitly provided is assigned
+            amplitude zero.
 
-        A shorthand for this method is the ``[:]`` operator, when handed the
-        corresponding dictionary
+        **2. Explicit statevector input**
+
+            A flat vector of complex amplitudes of length :math:`2^{n}`, where
+            :math:`n` is the size (in qubits) of the quantum variable.
+            The vector is automatically normalized.
+
+        In both cases, the initialization algorithm requires all underlying
+        qubits to be in the :math:`\ket{0}` state (i.e. *fresh*).
+
+        The parameter ``method`` determines the backend used for state
+        preparation:
+
+        - ``"auto"`` (default): Use the Qiskit-based initializer when not
+          in Jasp mode, and fall back to the internal ``qswitch`` initializer
+          during Jasp mode.
+        - ``"qiskit"``: Force the Qiskit state-preparation circuit. This
+          cannot be used in Jasp mode.
+        - ``"qswitch"``: Use the state-preparation implementation based on
+          :ref:`qswitch <qswitch>`, which is compatible with Jasp mode.
 
         Parameters
         ----------
-        state_dic : dict
-            Dictionary describing the wave function to be initialized.
+        params : dict or array-like
+            Either a dictionary ``{value: amplitude}`` or a length
+            :math:`2^{n}` complex statevector.
+        method : {"auto", "qiskit", "qswitch"}, optional
+            Choice of state-preparation backend. Defaults to ``"auto"``.
 
         Raises
         ------
-        Exception
-            Tried to initialize qubits which are not fresh anymore.
+        ValueError
+            If a statevector of incorrect length is provided.
+        ValueError
+            If the supplied statevector has zero norm.
+        ValueError
+            If the qubits are not fresh prior to initialization.
+        ValueError
+            If ``method="qiskit"`` is used in Jasp mode.
+
+        .. note::
+
+            When executing in Jasp mode, Python-based shape and normalization
+            checks are disabled to avoid introducing tracing side effects.
+
+        .. note::
+
+            When using an array-like input, the ordering of amplitudes should
+            correspond to the one retrieved with the ``statevector`` method.
 
         Examples
         --------
+        **Dictionary input**
 
-        We create a QuantumFloat and encode the state
+        We create a ``QuantumFloat`` and encode the state
 
         .. math::
 
-            \ket{\psi} = \sqrt{\frac{1}{3}} \ket{0.5} + i\sqrt{\frac{2}{3}} \ket{2}
+            \ket{\psi} = \sqrt{\tfrac{1}{3}}\,\ket{0.5}
+                         + i\sqrt{\tfrac{2}{3}}\,\ket{2.0}
 
         >>> from qrisp import QuantumFloat
         >>> qf = QuantumFloat(3, -1)
+        >>> qf.init_state({0.5: (1/3)**0.5, 2.0: 1j*(2/3)**0.5})
 
-        We can now use either
+        or equivalently:
 
-        >>> qf.init_state({0.5: (1/3)**0.5, 2.0 : 1j*(2/3)**0.5})
+        >>> qf[:] = {0.5: (1/3)**0.5, 2.0: 1j*(2/3)**0.5}
 
-        or:
+        **Explicit statevector input**
 
-        >>> qf[:] = {0.5: (1/3)**0.5, 2.0 : 1j*(2/3)**0.5}
+        >>> import numpy as np
+        >>> psi = np.zeros(2**3, dtype=complex)
+        >>> psi[4] = (1/3)**0.5
+        >>> psi[1] = 1j*(2/3)**0.5
+        >>> qf.init_state(psi)
 
-        To acquire the expected result
+        **Forcing a backend**
 
-        >>> print(qf)
-        {2.0: 0.6667, 0.5: 0.3333}
+        We can also explicitly choose the state-preparation backend:
 
+        >>> qf.init_state(psi, method="qswitch")   # Always allowed
+        >>> qf.init_state(psi, method="qiskit")    # Only outside Jasp mode
+
+        After initialization, the amplitudes can be inspected via:
+
+        >>> sv_function = qf.qs.statevector("function")
+        >>> sv_function({qf: 2.0})
+        0.8164965809277261j  # i * sqrt(2/3)
         """
 
-        from qrisp.misc import check_if_fresh
+        # Imports here to avoid circular dependencies
+        import jax.numpy as jnp
 
-        if not check_if_fresh(self.reg, self.qs):
-            raise Exception("Tried to initialize qubits which are not fresh anymore.")
+        from qrisp.alg_primitives.state_preparation import (
+            prepare,
+        )
 
-        from qrisp import init_state
+        if isinstance(params, dict):
+            target_array = np.zeros(1 << self.size, dtype=np.complex128)
+            for key, amp in params.items():
+                target_array[self.encoder(key)] = amp
+            qiskit_reversed = False
 
-        target_array = np.zeros(2**self.size, dtype=np.complex128)
+        else:
+            # Use JAX array to allow tracing; convert later if needed
+            target_array = jnp.asarray(params, dtype=jnp.complex128)
+            qiskit_reversed = True
 
-        for key in state_dic.keys():
-            target_array[self.encoder(key)] = state_dic[key]
-
-        target_array = target_array / np.vdot(target_array, target_array) ** 0.5
-
-        init_state(self, target_array)
+        prepare(self, target_array, qiskit_reversed, method = method)
 
     def append(self, operation):
         self.qs.append(operation, self)
@@ -834,7 +899,7 @@ class QuantumVariable:
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            
+
             if isinstance(position, int) and position in [0, -1]:
                 if position == -1:
                     self.reg = self.reg + insertion_qubits
@@ -843,10 +908,10 @@ class QuantumVariable:
             else:
                 self.reg = self.reg[:position] + insertion_qubits + self.reg[position:]
         else:
-            
+
             if position == -1:
                 position = self.size
-            
+
             for i in range(amount):
                 insertion_qubits[i].identifier = (
                     self.name
