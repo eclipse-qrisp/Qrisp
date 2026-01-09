@@ -216,6 +216,32 @@ def count_ops(meas_behavior):
     return count_ops_decorator
 
 
+# def depth(external_arg):
+
+#     def depth_decorator(function):
+
+#         def depth_counter(*args):
+
+#             from qrisp.jasp import make_jaspr
+
+#             if not hasattr(function, "jaspr_dict"):
+#                 function.jaspr_dict = {}
+
+#             args = list(args)
+
+#             signature = tuple([type(arg) for arg in args])
+#             if not signature in function.jaspr_dict:
+#                 function.jaspr_dict[signature] = make_jaspr(function)(*args)
+
+#             return function.jaspr_dict[signature].depth(
+#                 *args, external_arg=external_arg
+#             )
+
+#         return depth_counter
+
+#     return depth_decorator
+
+
 def always_zero(key):
     return False
 
@@ -279,15 +305,25 @@ def profile_jaspr(jaspr, meas_behavior="0"):
 @lru_cache(int(1e5))
 def get_profiling_array_computer(jaspr, meas_behavior):
 
+    print(f"Getting profiling array computer for jaxpr {jaspr}")
+
     # Find the occuring quantum operations and store their names in a dictionary,
     # indicating, which tracer counts what operation
     quantum_operations = get_quantum_operations(jaspr)
+
+    # print(f"Quantum operations found: {quantum_operations}")
+    # print(f"type of quantum_operations: {type(quantum_operations)}")
+
     profiling_dic = {quantum_operations[i]: i for i in range(len(quantum_operations))}
+
+    print(f"Profiling dic: {profiling_dic}")
 
     if "measure" not in profiling_dic:
         profiling_dic["measure"] = -1
 
     profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic, meas_behavior)
+
+    print(f"Profiling eqn evaluator: {profiling_eqn_evaluator}")
 
     evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 

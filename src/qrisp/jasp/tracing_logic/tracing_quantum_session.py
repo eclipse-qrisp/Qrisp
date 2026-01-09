@@ -32,6 +32,8 @@ greek_letters = symbols(
 
 
 class TracingQuantumSession:
+    """Class managing the tracing of quantum circuits in Jasp mode."""
+
     tr_qs_container = [None]
     abs_qc_stack = []
     qubit_cache_stack = []
@@ -92,7 +94,7 @@ class TracingQuantumSession:
         return temp
 
     def append(self, operation, qubits=[], clbits=[], param_tracers=[]):
-        
+
         if not self.abs_qc._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
@@ -125,18 +127,22 @@ class TracingQuantumSession:
                     param_tracers=param_tracers,
                 )
             return
-        
+
         elif isinstance(qubits[0], QuantumArray):
-            
+
             for i in range(1, len(qubits)):
                 if not isinstance(qubits[i], QuantumArray):
-                    raise Exception(f"Tried to apply multi-qubit gate to mixed qubit argument types (QuantumArray + {type(qubits[i])})")
-                
+                    raise Exception(
+                        f"Tried to apply multi-qubit gate to mixed qubit argument types (QuantumArray + {type(qubits[i])})"
+                    )
+
                 if qubits[i].shape != qubits[0].shape:
-                    raise Exception("Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape.")
-            
+                    raise Exception(
+                        "Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape."
+                    )
+
             flattened_qubits = [qubits[i].flatten() for i in range(len(qubits))]
-            
+
             for i in jrange(flattened_qubits[0].size):
                 self.append(
                     operation,
@@ -152,8 +158,7 @@ class TracingQuantumSession:
             temp_op.params[i] = greek_letters[i]
 
         self.abs_qc = quantum_gate_p.bind(
-            *([b for b in qubits] + param_tracers + [self.abs_qc]),
-            gate = operation
+            *([b for b in qubits] + param_tracers + [self.abs_qc]), gate=operation
         )
 
     def register_qv(self, qv, size):
@@ -166,7 +171,7 @@ class TracingQuantumSession:
         # Determine amount of required qubits
         if size is not None:
             qv.reg = self.request_qubits(size)
-            
+
         # Register in the list of active quantum variable
         self.qv_list.append(qv)
         qv.qs = self
@@ -174,14 +179,13 @@ class TracingQuantumSession:
         QuantumVariable.live_qvs.append(weakref.ref(qv))
         qv.creation_time = int(QuantumVariable.creation_counter[0])
         QuantumVariable.creation_counter += 1
-        
+
     def request_qubits(self, amount):
         qb_array_tracer, self.abs_qc = create_qubits(amount, self.abs_qc)
         return DynamicQubitArray(qb_array_tracer)
-        
 
     def delete_qv(self, qv, verify=False):
-        
+
         if not self.abs_qc._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
@@ -227,8 +231,10 @@ tracing_qs_singleton = TracingQuantumSession()
 def check_for_tracing_mode():
     return hasattr(jax._src.core.trace_ctx.trace, "frame")
 
-def get_last_equation(i = -1):
+
+def get_last_equation(i=-1):
     return jax._src.core.trace_ctx.trace.frame.eqns[i]
+
 
 def check_live(tracer):
     if tracer is None:

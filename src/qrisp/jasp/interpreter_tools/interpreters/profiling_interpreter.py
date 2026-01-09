@@ -40,7 +40,7 @@ import numpy as np
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     extract_invalues,
     eval_jaxpr,
-    insert_outvalues
+    insert_outvalues,
 )
 
 from qrisp.jasp.primitives import (
@@ -54,13 +54,12 @@ import jax.numpy as jnp
 from jax.random import key
 
 
-
 # This functions takes a "profiling dic", i.e. a dictionary of the form {str : int}
 # indicating what kinds of quantum gates can appear in a Jaspr.
 # It returns an equation evaluator, which increments a counter in an array for
 # each quantum operation.
 def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
-    
+
     def profiling_eqn_evaluator(eqn, context_dic):
 
         invalues = extract_invalues(eqn, context_dic)
@@ -84,10 +83,10 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
 
                 for op_name, count in op_counts.items():
                     counting_index = profiling_dic[op_name]
-                    
+
                     # It seems like at this point we can just
                     # naively increment the Jax tracer but
-                    # unfortunately the XLA compiler really 
+                    # unfortunately the XLA compiler really
                     # doesn't like constants. (Compile time blows up)
                     # We therefore jump through a lot of hoops
                     # to make it look like we are adding variables.
@@ -100,9 +99,13 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
                     while count:
                         incrementor = min(count, len(incrementation_constants))
                         count -= incrementor
-                        counting_array[counting_index] += incrementation_constants[incrementor-1]
+                        counting_array[counting_index] += incrementation_constants[
+                            incrementor - 1
+                        ]
 
-                insert_outvalues(eqn, context_dic, (counting_array, incrementation_constants))
+                insert_outvalues(
+                    eqn, context_dic, (counting_array, incrementation_constants)
+                )
 
             elif eqn.primitive.name == "jasp.measure":
 
@@ -139,10 +142,14 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
                         raise Exception(
                             f"Tried to profil Jaspr with a measurement behavior not returning a boolean (got {meas_res.dtype}) instead"
                         )
-                        
+
                     counting_array[counting_index] += incrementation_constants[1]
 
-                insert_outvalues(eqn, context_dic, [meas_res, (counting_array, incrementation_constants)])
+                insert_outvalues(
+                    eqn,
+                    context_dic,
+                    [meas_res, (counting_array, incrementation_constants)],
+                )
 
             # Since we don't need to track to which qubits a certain operation
             # is applied, we can implement a really simple behavior for most
@@ -179,43 +186,49 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
                 # Trivial behavior: return the last argument (the counting array).
                 insert_outvalues(eqn, context_dic, invalues[-1])
             elif eqn.primitive.name == "jasp.create_quantum_kernel":
-                raise Exception("Tried to perform resource estimation on a function calling calling a kernelized function")
+                raise Exception(
+                    "Tried to perform resource estimation on a function calling calling a kernelized function"
+                )
             else:
                 raise Exception(
                     f"Don't know how to perform resource estimation with quantum primitive {eqn.primitive}"
                 )
 
         elif eqn.primitive.name == "while":
-            
-            overall_constant_amount= eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
-            
+
+            overall_constant_amount = (
+                eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
+            )
+
             # Reinterpreted body and cond function
             def body_fun(val):
-                
-                constants = val[eqn.params["cond_nconsts"]:overall_constant_amount]
+
+                constants = val[eqn.params["cond_nconsts"] : overall_constant_amount]
                 carries = val[overall_constant_amount:]
-                
+
                 body_res = eval_jaxpr(
                     eqn.params["body_jaxpr"], eqn_evaluator=profiling_eqn_evaluator
                 )(*(constants + carries))
-                
+
                 if not isinstance(body_res, tuple):
                     body_res = (body_res,)
-                
+
                 return val[:overall_constant_amount] + tuple(body_res)
 
             def cond_fun(val):
-                
-                constants = val[eqn.params["body_nconsts"]:overall_constant_amount]
+
+                constants = val[eqn.params["body_nconsts"] : overall_constant_amount]
                 carries = val[overall_constant_amount:]
-                
+
                 res = eval_jaxpr(
                     eqn.params["cond_jaxpr"], eqn_evaluator=profiling_eqn_evaluator
                 )(*(constants + carries))
-                
+
                 return res
 
-            outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[overall_constant_amount:]
+            outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[
+                overall_constant_amount:
+            ]
 
             insert_outvalues(eqn, context_dic, outvalues)
 
@@ -281,9 +294,9 @@ def get_compiled_profiler(jaxpr, zipped_profiling_dic, meas_behavior):
     profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic, meas_behavior)
 
     jitted_profiler = jax.jit(eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator))
-    
+
     call_counter = np.zeros(1)
-    
+
     def profiler(*args):
         if call_counter[0] < 3 or len(jaxpr.eqns) < 20:
             call_counter[0] += 1
