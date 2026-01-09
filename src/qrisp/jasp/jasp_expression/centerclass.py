@@ -679,6 +679,10 @@ class Jaspr(ClosedJaxpr):
         ----------
         *args : iterable
             The arguments to call the function with.
+        device : object
+            The `PennyLane device <https://docs.pennylane.ai/projects/catalyst/en/stable/dev/devices.html>`_ to execute the function. 
+            The default device is `"lightning.qubit" <https://docs.pennylane.ai/projects/lightning/en/stable/lightning_qubit/device.html>`_, 
+            a fast state-vector qubit simulator.
 
         Returns
         -------
