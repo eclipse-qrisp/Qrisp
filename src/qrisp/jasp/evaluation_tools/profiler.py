@@ -250,9 +250,9 @@ def profile_jaspr(jaspr, meas_behavior="0"):
             profiling_array_computer, profiling_dic = get_profiling_array_computer(
                 jaspr, meas_behavior
             )
-            
+
             args = tree_flatten(args)[0]
-            
+
             # Compute the profiling array
             if len(jaspr.outvars) > 1:
                 profiling_array = profiling_array_computer(*args)[-1][0]
@@ -282,15 +282,13 @@ def get_profiling_array_computer(jaspr, meas_behavior):
     # Find the occuring quantum operations and store their names in a dictionary,
     # indicating, which tracer counts what operation
     quantum_operations = get_quantum_operations(jaspr)
-    profiling_dic = {quantum_operations[i] : i for i in range(len(quantum_operations))}
-    
-    if "measure" not in profiling_dic:
-        profiling_dic["measure"] = - 1
+    profiling_dic = {quantum_operations[i]: i for i in range(len(quantum_operations))}
 
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(
-        profiling_dic, meas_behavior
-    )
-    
+    if "measure" not in profiling_dic:
+        profiling_dic["measure"] = -1
+
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic, meas_behavior)
+
     evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     # This function calls the profiling interpeter to evaluate the gate counts
@@ -307,13 +305,18 @@ def get_profiling_array_computer(jaspr, meas_behavior):
         # incrementation (i.e. CZ_count += 1). It therefore doesn't
         # look like a constant is being added but a variable
         final_arg = ([0] * len(profiling_dic), list(range(1, 6)))
-        
+
         # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
-        filtered_args = []        
+        filtered_args = []
         from qrisp.operators import QubitOperator, FermionicOperator
-        
+
         for x in list(args) + [final_arg]:
-            if type(x) not in [str, QubitOperator, FermionicOperator, types.FunctionType]:
+            if type(x) not in [
+                str,
+                QubitOperator,
+                FermionicOperator,
+                types.FunctionType,
+            ]:
                 filtered_args.append(x)
 
         res = evaluator(*filtered_args)
@@ -331,16 +334,22 @@ def get_quantum_operations(jaxpr):
     for eqn in jaxpr.eqns:
         # Add current primitive
         if eqn.primitive.name == "jasp.quantum_gate":
-            
+
             if eqn.params["gate"].definition:
-                for op_name in eqn.params["gate"].definition.transpile().count_ops().keys():
+                for op_name in (
+                    eqn.params["gate"].definition.transpile().count_ops().keys()
+                ):
                     quantum_operations.add(op_name)
             else:
                 quantum_operations.add(eqn.params["gate"].name)
 
         if eqn.primitive.name == "cond":
-            quantum_operations.update(get_quantum_operations(eqn.params["branches"][0].jaxpr))
-            quantum_operations.update(get_quantum_operations(eqn.params["branches"][1].jaxpr))
+            quantum_operations.update(
+                get_quantum_operations(eqn.params["branches"][0].jaxpr)
+            )
+            quantum_operations.update(
+                get_quantum_operations(eqn.params["branches"][1].jaxpr)
+            )
             continue
 
         # Handle call primitives (like cond/pjit)
