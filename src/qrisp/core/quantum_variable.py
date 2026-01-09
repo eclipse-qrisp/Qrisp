@@ -338,8 +338,20 @@ class QuantumVariable:
         except ValueError:
             pass
 
+        # The following lists are used to indicate to the 
+        # (un)flattening mechanism of Jax which attributes
+        # of the QuantumVariable should be considered static
+        # and which are dynamic.
+        # For instance, in the case of QuantumFloat,
+        # the exponent is dynamic and the signed boolean is
+        # static.
+        # For reference check:
+        # https://docs.jax.dev/en/latest/custom_pytrees.html
+
         # Specify the traced attributes (None for base type QuantumVariable)
         self.traced_attributes = []
+        # Specify the static attributes (None for base type QuantumVariable)
+        self.static_attributes = []
 
     def __or__(self, other):
         from qrisp import cx, mcx, x
