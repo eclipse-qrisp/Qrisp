@@ -969,13 +969,22 @@ class QuantumArray:
             return out
 
     def __add__(self, other):
-        return self._element_wise_out_of_place_injection(other, lambda a,b: a+b, self.qtype)
+        from qrisp.qtypes.quantum_float import create_output_qf, QuantumFloat
+        if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
+            raise Exception("Tried to element-wise add QuantumArrays with qtype not QuantumFloat")
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a+b, create_output_qf([self.qtype, other.qtype], "add"))
         
     def __sub__(self, other):
-        return self._element_wise_out_of_place_injection(other, lambda a,b: a-b, self.qtype)
+        from qrisp.qtypes.quantum_float import create_output_qf, QuantumFloat
+        if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
+            raise Exception("Tried to element-wise subtract QuantumArrays with qtype not QuantumFloat")
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a-b, create_output_qf([self.qtype, other.qtype], "sub"))
 
     def __mul__(self, other):
-        return self._element_wise_out_of_place_injection(other, lambda a,b: a*b,self.qtype)
+        from qrisp.qtypes.quantum_float import create_output_qf, QuantumFloat
+        if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
+            raise Exception("Tried to element-wise multiply QuantumArrays with qtype not QuantumFloat")
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a*b, create_output_qf([self.qtype, other.qtype], "mul"))
 
     def __eq__(self, other):
         from qrisp.qtypes import QuantumBool
@@ -986,19 +995,27 @@ class QuantumArray:
         return self._element_wise_out_of_place_injection(other, lambda a,b: a==b, QuantumBool())
 
     def __gt__(self, other):
-        from qrisp.qtypes import QuantumBool
+        from qrisp.qtypes.quantum_float import QuantumBool, QuantumFloat
+        if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
+            raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
         return self._element_wise_out_of_place_injection(other, lambda a,b: a>b, QuantumBool())
 
     def __ge__(self, other):
-        from qrisp.qtypes import QuantumBool
+        from qrisp.qtypes.quantum_float import QuantumBool, QuantumFloat
+        if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
+            raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
         return self._element_wise_out_of_place_injection(other, lambda a,b: a>=b, QuantumBool())
 
     def __lt__(self, other):
-        from qrisp.qtypes import QuantumBool
+        from qrisp.qtypes.quantum_float import QuantumBool, QuantumFloat
+        if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
+            raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
         return self._element_wise_out_of_place_injection(other, lambda a,b: a<b, QuantumBool())
 
     def __le__(self, other):
-        from qrisp.qtypes import QuantumBool
+        from qrisp.qtypes.quantum_float import QuantumBool, QuantumFloat
+        if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
+            raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
         self._element_wise_out_of_place_injection(other, lambda a,b: a<=b, QuantumBool())
 
     # Delegation of element-wise in-place functions
