@@ -23,6 +23,8 @@
 # from qrisp.operators.hamiltonian import *
 # from qrisp.operators.hamiltonian_tools import *
 
+from qrisp.operators.block_encoding import *
+
 from qrisp.operators.hamiltonian import *
 from qrisp.operators.hamiltonian_tools import *
 
