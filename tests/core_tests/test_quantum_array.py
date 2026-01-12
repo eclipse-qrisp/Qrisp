@@ -155,8 +155,35 @@ def test_quantum_array_inject_add():
     r_array = QuantumArray(QuantumFloat(6), shape=(3,3))
     (r_array << (lambda a,b: a+b))(a_array, b_array)
     for k in r_array.get_measurement().keys():
-        pass
-        #assert(k == (a_c + b_c))
+        assert(k == (a_c + b_c))
+    
+    # Test modular addition
+    a_c = np.array(3*[[0,1,2]])
+    b_c = np.arange(0, 9).reshape((3,3))
+    a_array = QuantumArray(QuantumModulus(9), shape=(3,3))
+    a_array[:] = a_c
+    b_array = QuantumArray(QuantumModulus(9), shape=(3,3))
+    b_array[:] = b_c
+    r_array = QuantumArray(QuantumModulus(9), shape=(3,3))
+    (r_array << (lambda a,b: a+b))(a_array, b_array)
+    
+    for k in r_array.get_measurement().keys():
+        assert(k == ((a_c + b_c)%9))
+
+
+def test_modular_multiplication():
+    # Test modular multiplication
+    
+    a_c = np.array(3*[[0,1,2]])
+    b_c = np.arange(0, 9).reshape((3,3))
+    a_array = QuantumArray(QuantumModulus(9), shape=(3,3))
+    a_array[:] = a_c
+    b_array = QuantumArray(QuantumModulus(9), shape=(3,3))
+    b_array[:] = b_c
+    r_array = a_array*b_array
+    
+    for k in r_array.get_measurement().keys():
+        assert(k == ((a_c * b_c)%9))
 
 
 def test_quantum_array_injection():

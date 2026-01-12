@@ -22,7 +22,7 @@ import jax.numpy as jnp
 from qrisp import check_for_tracing_mode
 from qrisp.qtypes.quantum_float import QuantumFloat
 from qrisp.misc import gate_wrap
-from qrisp.core import QuantumVariable
+from qrisp.core import cx
 import jax
 
 
@@ -380,7 +380,8 @@ class QuantumModulus(QuantumFloat):
 
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
 
-        res = self.duplicate(init=True)
+        res = self.duplicate()
+        cx(self, res)
 
         mod_adder(other, res, self.inpl_adder, self.modulus)
 

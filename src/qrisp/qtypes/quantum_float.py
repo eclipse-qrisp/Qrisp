@@ -1127,6 +1127,14 @@ def create_output_qf(operands, op):
 
         return QuantumFloat(msize, exponent=exponent, signed=signed)
 
+    from qrisp.qtypes import QuantumModulus
+    if all(isinstance(operand, QuantumModulus) for operand in operands):
+        res = operands[0].duplicate()
+        if op == "mul":
+            res.m = operands[0].m + operands[1].m - (int(np.ceil(np.log2((operands[0].modulus - 1) ** 2) + 1)) - operands[0].size)
+        return res
+
+
     if op == "add":
         signed = operands[0].signed or operands[1].signed
         exponent = min(operands[0].exponent, operands[1].exponent)
