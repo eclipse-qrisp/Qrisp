@@ -1475,7 +1475,7 @@ def remove_redundant_allocations(closed_jaxpr):
     # Identify variables that are returned by the function, as these cannot be optimized away.
     returned_vars = set()
     for var in jaxpr.outvars:
-        if not isinstance(var, DropVar):
+        if not isinstance(var, DropVar) and not isinstance(var, Literal):
             returned_vars.add(var)
     
     replacements = {}
