@@ -16,8 +16,4 @@
 ********************************************************************************
 """
 
-from qrisp.interface.converter.qiskit_converter import *
-from qrisp.interface.converter.pytket_converter import *
-from qrisp.interface.converter.pennylane_converter import *
-from qrisp.interface.converter.qulacs_converter import *
-from qrisp.interface.converter.cirq_converter import *
+from qrisp.alg_primitives.state_preparation.prepare_func import *

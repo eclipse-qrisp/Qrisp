@@ -206,7 +206,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
 
             def cond_fun(val):
                 
-                constants = val[eqn.params["body_nconsts"]:overall_constant_amount]
+                constants = val[:eqn.params["cond_nconsts"]]
                 carries = val[overall_constant_amount:]
                 
                 res = eval_jaxpr(
@@ -216,7 +216,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
                 return res
 
             outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[overall_constant_amount:]
-
+            
             insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "cond":
