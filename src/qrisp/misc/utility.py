@@ -1459,7 +1459,7 @@ def find_calling_line(level=0):
 
 
 def retarget_instructions(data, source_qubits, target_qubits):
-    from qrisp import QuantumEnvironment, multi_session_merge, recursive_qs_search
+    from qrisp import QuantumEnvironment
 
     for i in range(len(data)):
         instr = data[i]
@@ -1470,7 +1470,7 @@ def retarget_instructions(data, source_qubits, target_qubits):
             continue
 
         for j in range(len(instr.qubits)):
-            if any(instr.qubits[j] is q for q in source_qubits):
+            if instr.qubits[j] in source_qubits:
                 instr.qubits[j] = target_qubits[source_qubits.index(instr.qubits[j])]
 
 
