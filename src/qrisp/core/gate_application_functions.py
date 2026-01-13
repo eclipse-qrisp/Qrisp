@@ -673,7 +673,7 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
 
     """
 
-    from qrisp.misc import gate_wrap
+    from qrisp.misc import bin_rep, gate_wrap
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
     def mcz_inner(qubits, method="auto", ctrl_state=-1):
@@ -720,8 +720,6 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
         return qubits
 
     n = jlen(qubits)
-
-    from qrisp import bin_rep
     if not check_for_tracing_mode():
         if not isinstance(ctrl_state, str):
             if ctrl_state == -1:
@@ -733,11 +731,6 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
         if isinstance(ctrl_state, str):
             ctrl_state = int(ctrl_state, 2)
         return jasp_mcz_inner(qubits, method=method, ctrl_state=ctrl_state)
-
-    #if not isinstance(ctrl_state, str):
-    #    if ctrl_state == -1:
-    #        ctrl_state += 2**n
-    #    ctrl_state = bin_rep(ctrl_state, n)
 
     if method in ["gray", "auto"]:
         if ctrl_state[-1] == "0":
