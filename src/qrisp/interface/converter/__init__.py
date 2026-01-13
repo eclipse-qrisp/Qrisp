@@ -27,4 +27,4 @@ try:
     from qrisp.interface.converter.cirq_converter import *
 except (ModuleNotFoundError, ImportError) as e:
     if 'cirq' in str(e):
-        print("To use the Qrisp to Cirq converter, install Cirq.")
+        pass
