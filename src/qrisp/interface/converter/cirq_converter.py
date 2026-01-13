@@ -4,7 +4,7 @@ import numpy as np
 
 try:
     from cirq import Circuit, LineQubit
-except ImportError:
+except (ModuleNotFoundError, ImportError):
     raise ImportError("Cirq must be installed to be able to use the Qrisp to Cirq converter.")
 
 from cirq import (
