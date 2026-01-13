@@ -29,7 +29,7 @@ def test_L1_ladder():
         with invert():
             for i in range(N - 1):
                 cx(circ1[i], circ1[i + 1])
-        jsp = make_jaspr(main, garbage_collection="none")(1)
+        jsp = make_jaspr(main)(1)
         circ2 = jsp.to_qc(N)
 
         assert circ2.compare_unitary(circ1.qs)

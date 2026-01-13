@@ -260,8 +260,6 @@ def qache_helper(func, jax_kwargs):
                         f"Found in-place parameter modification of QuantumVariable {qv.name}"
                     )
 
-        abs_qs.garbage_collection(arg_qvs + res_qvs)
-
         new_abs_qc = abs_qs.abs_qc
         # Return the result and the result AbstractQuantumCircuit.
         return res, new_abs_qc
