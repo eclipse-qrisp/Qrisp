@@ -79,6 +79,8 @@ class BlockEncoding:
     Examples
     --------
 
+    We define a block-encoding for a symmetric tridiagonal matrix with wrap-around corners.
+
     ::
 
         import numpy as np
@@ -98,6 +100,9 @@ class BlockEncoding:
         #[0. 0. 0. 0. 1. 1. 1. 0.]
         #[0. 0. 0. 0. 0. 1. 1. 1.]
         #[1. 0. 0. 0. 0. 0. 1. 1.]]
+
+    This matrix is decomposed as linear combination of three unitaries: the identity $I$, 
+    and two shift operators $V\colon\ket{k}\rightarrow\ket{k+1\mod N}$ and $V^{\dagger}\colon\ket{k}\rightarrow\ket{k-1\mod N}$.
 
     ::
 
