@@ -113,7 +113,7 @@ def control_eqn(eqn, ctrl_qubit_var):
     """
     from qrisp.jasp import Jaspr, AbstractQuantumCircuit
 
-    if eqn.primitive.name == "pjit":
+    if eqn.primitive.name == "jit":
 
         new_params = dict(eqn.params)
 
@@ -258,7 +258,7 @@ def control_jaspr(jaspr):
     new_eqns = []
     for eqn in jaspr.eqns:
         if eqn.primitive.name == "jasp.quantum_gate" or eqn.primitive.name in [
-            "pjit",
+            "jit",
             "while",
             "cond",
         ]:

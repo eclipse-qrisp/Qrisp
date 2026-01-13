@@ -66,7 +66,7 @@ def collect_environments(closed_jaxpr):
     for j in range(len(eqn_list)):
         eqn = eqn_list[j]
 
-        if eqn.primitive.name == "pjit":
+        if eqn.primitive.name == "jit":
 
             new_params = dict(eqn.params)
 

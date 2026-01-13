@@ -432,7 +432,7 @@ class Jaspr(ClosedJaxpr):
         jaspr = self
         
         def eqn_evaluator(eqn, context_dic):
-            if eqn.primitive.name == "pjit" and isinstance(
+            if eqn.primitive.name == "jit" and isinstance(
                 eqn.params["jaxpr"], Jaspr
             ):
                 return pjit_to_gate(eqn, context_dic, eqn_evaluator)
@@ -580,7 +580,7 @@ class Jaspr(ClosedJaxpr):
         flattened_jaspr = self
 
         def eqn_evaluator(eqn, context_dic):
-            if eqn.primitive.name == "pjit":
+            if eqn.primitive.name == "jit":
 
                 if eqn.params["name"] == "expectation_value_eval_function":
                     from qrisp.jasp.program_control import sampling_evaluator

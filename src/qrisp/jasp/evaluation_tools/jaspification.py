@@ -276,7 +276,7 @@ def simulate_jaspr(
 
     def eqn_evaluator(eqn, context_dic):
 
-        if eqn.primitive.name == "pjit":
+        if eqn.primitive.name == "jit":
 
             function_name = eqn.params["name"]
             jaxpr = eqn.params["jaxpr"]

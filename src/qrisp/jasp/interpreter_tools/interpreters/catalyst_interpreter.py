@@ -147,7 +147,7 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             return process_while(eqn, context_dic)
         elif eqn.primitive.name == "cond":
             return process_cond(eqn, context_dic)  #
-        elif eqn.primitive.name == "pjit":
+        elif eqn.primitive.name == "jit":
             process_pjit(eqn, context_dic)
         else:
             return True
