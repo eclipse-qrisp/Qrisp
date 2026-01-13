@@ -197,7 +197,7 @@ def less_than(a, b):
 
 @lifted
 def equal(qf_0, qf_1):
-    from qrisp import QuantumBool, QuantumFloat, cx, mcx
+    from qrisp import QuantumBool, QuantumFloat, cx, mcx, check_for_tracing_mode, q_cond
     from qrisp.jasp import jrange
     import jax.numpy as jnp
 
