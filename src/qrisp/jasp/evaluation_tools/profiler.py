@@ -63,11 +63,11 @@ def count_ops(meas_behavior):
     examples section.
 
     Finally it is also possible to call the Qrisp simulator to determine
-    measurement behavior by providing ``sim``. This is of course much less
+    measurement behavior by providing ``"sim"``. This is of course much less
     scalable but in particular for algorithms involving repeat-until-success
     components, a necessary evil.
 
-    Note that the ``sim`` option might return non-deterministic results, while
+    Note that the ``"sim"`` option might return non-deterministic results, while
     the other methods do.
 
     .. warning::
@@ -78,8 +78,8 @@ def count_ops(meas_behavior):
     Parameters
     ----------
     meas_behavior : str or callable
-        A string or callable indicating the behavior of the ressource computation
-        when measurements are performed. Available are
+        A string or callable indicating the behavior of the resource computation
+        when measurements are performed. Available strings are ``"0"``, ``"1"``, and ``"sim"``.
 
 
     Returns
