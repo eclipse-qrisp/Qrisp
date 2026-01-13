@@ -1,6 +1,11 @@
-from cirq import Circuit, LineQubit
+
 from qrisp.circuit import ControlledOperation
 import numpy as np
+
+try:
+    from cirq import Circuit, LineQubit
+except ImportError:
+    raise ImportError("Cirq must be installed to be able to use the Qrisp to Cirq converter.")
 
 from cirq import (
     CNOT,
