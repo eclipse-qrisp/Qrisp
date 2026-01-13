@@ -698,10 +698,14 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
         return qubits
     
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
-    def jasp_mcz_inner(qubits, method="balauca", ctrl_state=0):
-        from qrisp import h, x, control
+    def jasp_mcz_inner(qubits, method="balauca", ctrl_state=-1):
+        from jax.lax import cond
+        import jax.numpy as jnp
+        from qrisp.environments import control
 
         n = jlen(qubits)
+        ctrl_state = jnp.int64(ctrl_state)
+        ctrl_state = cond(ctrl_state == -1, lambda x: x + (1 << n), lambda x: x, ctrl_state)
 
         with control(n == 1):
             z(qubits[0])
@@ -714,8 +718,8 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
             mcx(qubits[:-1], qubits[-1], method=method, ctrl_state=ctrl_state & ((1 << (n - 1)) - 1))
             h(qubits[-1])
 
-            with control((ctrl_state >> (n - 1)) & 1 == 0):
-                x(qubits[-1])
+        with control((ctrl_state >> (n - 1)) & 1 == 0):
+            x(qubits[-1])
 
         return qubits
 
