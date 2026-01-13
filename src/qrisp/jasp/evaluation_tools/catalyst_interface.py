@@ -99,14 +99,16 @@ def jaspr_to_catalyst_jaxpr(jaspr):
     return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator))(*args)
 
 
-def jaspr_to_catalyst_function(jaspr):
+def jaspr_to_catalyst_function(jaspr, device=None):
 
     # This function takes a jaspr and returns a function that performs a sequence
     # of .bind calls of Catalyst primitives, such that the function (when compiled)
     # by Catalyst reproduces the semantics of jaspr
 
     # Initiate Catalyst backend info
-    device = qml.device("lightning.qubit", wires=0)
+    if device==None:
+        device = qml.device("lightning.qubit", wires=0)
+
     backend_info = catalyst.device.extract_backend_info(device)
 
     def catalyst_function(*args):
@@ -138,10 +140,10 @@ def jaspr_to_catalyst_function(jaspr):
 
 
 @lru_cache(int(1e5))
-def jaspr_to_catalyst_qjit(jaspr, function_name="jaspr_function"):
+def jaspr_to_catalyst_qjit(jaspr, function_name="jaspr_function", device=None):
     # This function takes a jaspr and turns it into a Catalyst QJIT object.
     # Perform the code specified by the Catalyst developers
-    catalyst_function = jaspr_to_catalyst_function(jaspr)
+    catalyst_function = jaspr_to_catalyst_function(jaspr, device=device)
     catalyst_function.__name__ = function_name
     jit_object = catalyst.QJIT(catalyst_function, catalyst.CompileOptions())
     jit_object.jaxpr = make_jaxpr(catalyst_function)(
