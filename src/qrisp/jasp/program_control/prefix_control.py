@@ -366,7 +366,7 @@ def q_cond(pred, true_fun, false_fun, *operands):
     return cond_res[0]
 
 
-def q_switch(index, branches, *operands, branch_amount=None):
+def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
     r"""
     Jasp compatible version of
     `jax.lax.switch <https://docs.jax.dev/en/latest/_autosummary/jax.lax.switch.html>`_
@@ -390,7 +390,15 @@ def q_switch(index, branches, *operands, branch_amount=None):
     *operands : tuple
         The input values for whichever function is applied.
     branch_amount : int, optional
-        The amount of branches. Only needed if ``branches`` is a function and ``index`` is a :ref:`QuantumVariable`.
+        The amount of branches. 
+        Only needed if ``index`` is a :ref:`QuantumVariable` and ``branches`` is a function.
+        Is automatically inferred from the length of ``branches`` if it is a list.
+    method : str, optional
+        Only needed if ``index`` is a :ref:`QuantumVariable`.
+        The method used to implement the quantum switch. Can be ``"auto"``, ``"sequential"``, ``"parallel"``,
+        or ``"tree"``. Default is ``"auto"``.
+        Method ``"tree"`` uses `balanced binary trees <https://arxiv.org/pdf/2407.17966v1>`_.
+        Method ``"parallel"`` is exponentially faster but requires more qubits.     
 
     Returns
     -------
@@ -471,7 +479,7 @@ def q_switch(index, branches, *operands, branch_amount=None):
     from qrisp.core import QuantumVariable
 
     if isinstance(index, QuantumVariable):
-        return quantum_switch(index, branches, *operands, branch_amount=branch_amount)
+        return quantum_switch(index, branches, *operands, branch_amount=branch_amount, method=method)
 
     if callable(branches):
         return branches(index, *operands)
