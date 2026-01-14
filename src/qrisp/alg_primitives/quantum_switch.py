@@ -44,26 +44,27 @@ def _invert_inpl_function(func):
     return inverted_func
 
 
-def quantum_switch(
-    case, branches, *operands, branch_amount=None, method="auto", inv=False, ctrl=None
+# Switch implementation for quantum index
+def _q_switch_q(
+    index, branches, *operands, branch_amount=None, method="auto", inv=False, ctrl=None
 ):
     r"""
-    Executes a switch - case statement distinguishing between a list of
+    Executes a switch - index statement distinguishing between a list of
     given in-place functions.
 
-    More precisely, the qswitch applies the unitary $U_i$ to the operand in state $\ket{\psi}$ given that the case variable is in state $\ket{i}$, i.e.,
+    More precisely, the qswitch applies the unitary $U_i$ to the operand in state $\ket{\psi}$ given that the index variable is in state $\ket{i}$, i.e.,
 
     .. math::
 
-        \text{qswitch}\ket{i}_{\text{case}}\ket{\psi}_{\text{operand}} = \ket{i}_{\text{case}}U_i\ket{\psi}_{\text{operand}}
+        \text{qswitch}\ket{i}_{\text{index}}\ket{\psi}_{\text{operand}} = \ket{i}_{\text{index}}U_i\ket{\psi}_{\text{operand}}
 
     Parameters
     ----------
-    case : QuantumVariable or list[:ref:`Qubit`]
+    index : QuantumVariable or list[:ref:`Qubit`]
         An integer value, deciding which function gets executed.
     branches : list[callable] or callable
-        List of functions to be executed based on ``case`` or a single function
-        that takes the case as first argument.
+        List of functions to be executed based on ``index`` or a single function
+        that takes the index as first argument.
     *operands : tuple
         The input values for whichever function is applied.
     branch_amount : int, optional
@@ -114,8 +115,8 @@ def quantum_switch(
 
     if is_function_mode := callable(branches):
         if branch_amount is None:
-            case_size = len(case) if isinstance(case, list) else case.size
-            branch_amount = 2**case_size
+            index_size = len(index) if isinstance(index, list) else index.size
+            branch_amount = 2**index_size
         xrange = jrange if check_for_tracing_mode() else range
         if inv:
             branches = _invert_inpl_function(branches)
@@ -142,7 +143,7 @@ def quantum_switch(
         control_qbl = QuantumBool()
 
         for i in xrange(branch_amount):
-            with conjugate(mcx)(case, control_qbl, ctrl_state=i):
+            with conjugate(mcx)(index, control_qbl, ctrl_state=i):
                 with control(control_qbl):
                     if ctrl is None:
                         if is_function_mode:
@@ -166,9 +167,9 @@ def quantum_switch(
                 f"Compile method {method} for switch-case structure not available in tracing mode."
             )
 
-        if isinstance(case, list):
+        if isinstance(index, list):
             raise NotImplementedError(
-                "Compile method 'parallel' for switch-case structure not available when 'case' is a list of qubits."
+                "Compile method 'parallel' for switch-case structure not available when 'index' is a list of qubits."
             )
         
         if len(operands)>1:
@@ -177,23 +178,23 @@ def quantum_switch(
             )
 
         # Idea: Use demux function to move operand and enabling bool into QuantumArray
-        # to execute cases in parallel.
+        # to execute indexs in parallel.
 
         # This QuantumArray acts as an addressable QRAM via the demux function
 
-        if branch_amount != 2**case.size:
+        if branch_amount != 2**index.size:
 
             warnings.warn(
-                "Warning: Additional qubit overhead because case amount is smaller than case QuantumVariable!"
+                "Warning: Additional qubit overhead because branch amount is smaller than index QuantumVariable!"
             )
 
-        enable = QuantumArray(qtype=QuantumBool(), shape=(2**case.size,))
+        enable = QuantumArray(qtype=QuantumBool(), shape=(2**index.size,))
         enable[0].flip()
 
-        qa = QuantumArray(qtype=operands[0], shape=((2**case.size,)))
+        qa = QuantumArray(qtype=operands[0], shape=((2**index.size,)))
 
-        with conjugate(demux)(operands[0], case, qa, parallelize_qc=True):
-            with conjugate(demux)(enable[0], case, enable, parallelize_qc=True):
+        with conjugate(demux)(operands[0], index, qa, parallelize_qc=True):
+            with conjugate(demux)(enable[0], index, enable, parallelize_qc=True):
                 for i in range(branch_amount):
                     with control(enable[i]):
                         if ctrl is None:
@@ -244,7 +245,7 @@ def quantum_switch(
             def bitwise_count_diff(a, b):
                 return np.int32(np.bitwise_count(np.bitwise_xor(a, b)))
 
-        n = len(case) if isinstance(case, list) else case.size
+        n = len(index) if isinstance(index, list) else index.size
 
         def nor_x(t):
             x(t)
@@ -457,25 +458,25 @@ def quantum_switch(
 
         # Go to first node
         for j in xrange(0, n, 1):
-            down(j, anc, case, *operands)
+            down(j, anc, index, *operands)
 
         # Perform leafs and jumps
 
         _, _, _ = x_fori_loop(
-            0, -(-branch_amount // 2) - 1, body_fun, (anc, case, *operands)
+            0, -(-branch_amount // 2) - 1, body_fun, (anc, index, *operands)
         )
 
         # Perfrom last leaf
         x_cond(
             branch_amount % 2 == 0,
-            lambda: leaf(n - 1, anc, case, branch_amount - 2, *operands),
-            lambda: last_leaf(n - 1, anc, case, branch_amount - 1, *operands),
+            lambda: leaf(n - 1, anc, index, branch_amount - 2, *operands),
+            lambda: last_leaf(n - 1, anc, index, branch_amount - 1, *operands),
         )
 
         # Go back from last node
         diff = 2**n - branch_amount
         for j in xrange(0, n, 1):
-            up(n - j - 1, anc, case, *operands)
+            up(n - j - 1, anc, index, *operands)
 
             def bf():
                 # with control(anc[n-j-2]):
@@ -510,6 +511,6 @@ def quantum_switch(
         )
 
 
-temp = quantum_switch.__doc__
-qswitch = custom_control(custom_inversion(quantum_switch))
-qswitch.__doc__ = temp
+temp = _q_switch_q.__doc__
+_q_switch_q = custom_control(custom_inversion(_q_switch_q))
+_q_switch_q.__doc__ = temp

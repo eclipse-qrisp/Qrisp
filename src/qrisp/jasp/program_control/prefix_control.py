@@ -366,6 +366,126 @@ def q_cond(pred, true_fun, false_fun, *operands):
     return cond_res[0]
 
 
+# Switch implementation for classical index
+def _q_switch_c(index, branches, *operands):
+    r"""
+    Jasp compatible version of
+    `jax.lax.switch <https://docs.jax.dev/en/latest/_autosummary/jax.lax.switch.html>`_
+    The parameters and semantics are the same as for the Jax version.
+
+    Performs the following semantics:
+
+    ::
+
+        def q_switch(index, branches, *operands):
+            return branches[index](*operands)
+
+
+    Parameters
+    ----------
+    index : int or jax.core.Tracer
+        An integer value, deciding which function gets executed.
+    branches : list[callable]
+        List of functions to be executed based on ``index``.
+    *operands : tuple
+        The input values for whichever function is applied.
+
+    Returns
+    -------
+    object
+        The return value of the respective function.
+
+    Examples
+    --------
+
+    We write a script that brings a :ref:`QuantumFloat` into superpostion and
+    subsequently measures it. If the measurement result is ``k`` we add ``3-k``
+    such that in the end, the float will always be in the $\ket{\text{3}}$
+    state.
+
+    ::
+
+        from qrisp import *
+        from qrisp.jasp import *
+        import jax.numpy as jnp
+
+        @jaspify
+        def main():
+
+            def f0(x): x += 3
+            def f1(x): x += 2
+            def f2(x): x += 1
+            def f3(x): pass
+            branches = [f0, f1, f2, f3]
+
+            operand = QuantumFloat(2)
+            h(operand)
+            index = jnp.int32(measure(operand))
+
+            q_switch(index, branches, operand)
+            return measure(operand)
+
+        print(main())
+        # 3.0
+
+    """
+
+    if not check_for_tracing_mode():
+        return branches[index](*operands)
+
+    def convert_branch(branch):
+
+        def new_branch(*operands):
+            qs.start_tracing(operands[1])
+            for qv in recursive_qv_search(operands[0]):
+                qs.register_qv(qv, None)
+            res = branch(*operands[0])
+            abs_qc = qs.conclude_tracing()
+            return (res, abs_qc)
+        
+        return new_branch
+    
+    new_branches = [convert_branch(branch) for branch in branches]
+
+    qs = TracingQuantumSession.get_instance()
+    abs_qc = qs.abs_qc
+
+    new_operands = (operands, abs_qc)
+
+    switch_res = switch(index, new_branches, *new_operands)
+
+    # There seem to be situations, where Jax performs some automatic type
+    # conversion after the cond call. This results in the cond equation
+    # not being the most recent equation.
+    # We therefore search for the last cond primitive.
+    i = 1
+    while True:
+        eqn = get_last_equation(-i)
+        if eqn.primitive.name == "cond":
+            break
+        i += 1
+        
+    branch_jaxprs = eqn.params["branches"]
+
+    if not isinstance(branch_jaxprs[0].jaxpr.invars[-1].aval, AbstractQuantumCircuit):
+        raise Exception(
+            "Found implicit variable import in q_switch. Please make sure all used variables are part of the body signature."
+        )
+
+    from qrisp.jasp import Jaspr
+
+    if all([not isinstance(branch_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumCircuit) for branch_jaxpr in branch_jaxprs]):
+        eqn.invars.pop(-1)
+        [branch_jaxpr.jaxpr.invars.pop(-1) for branch_jaxpr in branch_jaxprs]
+        return switch_res[0]
+    
+    eqn.params["branches"] = tuple([Jaspr.from_cache(branch_jaxpr) for branch_jaxpr in branch_jaxprs])
+    
+    qs.abs_qc = switch_res[-1]
+
+    return switch_res[0]
+
+
 def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
     r"""
     Jasp compatible version of
@@ -475,66 +595,13 @@ def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
 
     """
 
-    from qrisp.alg_primitives.quantum_switch import quantum_switch
+    from qrisp.alg_primitives.quantum_switch import _q_switch_q
     from qrisp.core import QuantumVariable
 
     if isinstance(index, QuantumVariable):
-        return quantum_switch(index, branches, *operands, branch_amount=branch_amount, method=method)
-
+        return _q_switch_q(index, branches, *operands, branch_amount=branch_amount, method=method)
+    
     if callable(branches):
         return branches(index, *operands)
-
-    if not check_for_tracing_mode():
-        return branches[index](*operands)
-
-    def convert_branch(branch):
-
-        def new_branch(*operands):
-            qs.start_tracing(operands[1])
-            for qv in recursive_qv_search(operands[0]):
-                qs.register_qv(qv, None)
-            res = branch(*operands[0])
-            abs_qc = qs.conclude_tracing()
-            return (res, abs_qc)
-        
-        return new_branch
     
-    new_branches = [convert_branch(branch) for branch in branches]
-
-    qs = TracingQuantumSession.get_instance()
-    abs_qc = qs.abs_qc
-
-    new_operands = (operands, abs_qc)
-
-    switch_res = switch(index, new_branches, *new_operands)
-
-    # There seem to be situations, where Jax performs some automatic type
-    # conversion after the cond call. This results in the cond equation
-    # not being the most recent equation.
-    # We therefore search for the last cond primitive.
-    i = 1
-    while True:
-        eqn = get_last_equation(-i)
-        if eqn.primitive.name == "cond":
-            break
-        i += 1
-        
-    branch_jaxprs = eqn.params["branches"]
-
-    if not isinstance(branch_jaxprs[0].jaxpr.invars[-1].aval, AbstractQuantumCircuit):
-        raise Exception(
-            "Found implicit variable import in q_switch. Please make sure all used variables are part of the body signature."
-        )
-
-    from qrisp.jasp import Jaspr
-
-    if all([not isinstance(branch_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumCircuit) for branch_jaxpr in branch_jaxprs]):
-        eqn.invars.pop(-1)
-        [branch_jaxpr.jaxpr.invars.pop(-1) for branch_jaxpr in branch_jaxprs]
-        return switch_res[0]
-    
-    eqn.params["branches"] = tuple([Jaspr.from_cache(branch_jaxpr) for branch_jaxpr in branch_jaxprs])
-    
-    qs.abs_qc = switch_res[-1]
-
-    return switch_res[0]
+    return _q_switch_c(index, branches, *operands)
