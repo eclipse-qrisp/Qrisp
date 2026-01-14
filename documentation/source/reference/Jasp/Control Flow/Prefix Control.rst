@@ -23,3 +23,8 @@ The following functions expose program control features from Jax as Jasp-compati
 
 .. currentmodule:: qrisp.jasp
 .. autofunction:: q_cond
+
+.. _q_switch_loop:
+
+.. currentmodule:: qrisp.jasp
+.. autofunction:: q_switch
