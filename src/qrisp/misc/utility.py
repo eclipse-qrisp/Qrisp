@@ -1564,7 +1564,7 @@ def redirect_qfunction(function_to_redirect):
     def redirected_qfunction(*args, target=None, **kwargs):
 
         if check_for_tracing_mode():
-            jaspr = make_jaspr(function_to_redirect, garbage_collection="manual")(
+            jaspr = make_jaspr(function_to_redirect)(
                 *args, **kwargs
             ).flatten_environments()
 
