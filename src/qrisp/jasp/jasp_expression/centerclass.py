@@ -22,7 +22,6 @@ import jax
 from jax import make_jaxpr
 from jax.extend.core import Jaxpr, Literal, ClosedJaxpr
 from jax.tree_util import tree_flatten
-from jax.errors import UnexpectedTracerError
 
 from qrisp.jasp.jasp_expression import invert_jaspr, collect_environments
 from qrisp.jasp import (

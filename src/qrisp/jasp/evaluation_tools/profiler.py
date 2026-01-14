@@ -36,10 +36,15 @@ from functools import lru_cache
 import types
 
 import jax
+import jax.numpy as jnp
 from jax.extend.core import ClosedJaxpr
 from jax.tree_util import tree_flatten
 
-from qrisp.jasp.interpreter_tools import make_profiling_eqn_evaluator, eval_jaxpr
+from qrisp.jasp.interpreter_tools import (
+    make_profiling_eqn_evaluator,
+    make_depth_eqn_evaluator,
+    eval_jaxpr,
+)
 from qrisp.jasp.evaluation_tools.jaspification import simulate_jaspr
 
 
@@ -216,30 +221,30 @@ def count_ops(meas_behavior):
     return count_ops_decorator
 
 
-# def depth(external_arg):
+def depth(meas_behavior):
 
-#     def depth_decorator(function):
+    def depth_decorator(function):
 
-#         def depth_counter(*args):
+        def depth_counter(*args):
 
-#             from qrisp.jasp import make_jaspr
+            from qrisp.jasp import make_jaspr
 
-#             if not hasattr(function, "jaspr_dict"):
-#                 function.jaspr_dict = {}
+            if not hasattr(function, "jaspr_dict"):
+                function.jaspr_dict = {}
 
-#             args = list(args)
+            args = list(args)
 
-#             signature = tuple([type(arg) for arg in args])
-#             if not signature in function.jaspr_dict:
-#                 function.jaspr_dict[signature] = make_jaspr(function)(*args)
+            signature = tuple([type(arg) for arg in args])
+            if not signature in function.jaspr_dict:
+                function.jaspr_dict[signature] = make_jaspr(function)(*args)
 
-#             return function.jaspr_dict[signature].depth(
-#                 *args, external_arg=external_arg
-#             )
+            return function.jaspr_dict[signature].depth(
+                *args, meas_behavior=meas_behavior
+            )
 
-#         return depth_counter
+        return depth_counter
 
-#     return depth_decorator
+    return depth_decorator
 
 
 def always_zero(key):
@@ -269,9 +274,9 @@ def profile_jaspr(jaspr, meas_behavior="0"):
 
         def profiler(*args):
 
-            # The profiling array computer is a function that computes the array
-            # countaining the gate counts.
-            # The profiling dic is a dictionary of type {str : int}, which indicates
+            # The `profiling_array_computer` is a function that computes the array
+            # containing the gate counts.
+            # The `profiling_dic` is a dictionary of type {str : int}, which indicates
             # which operation has been computed at which index of the array.
             profiling_array_computer, profiling_dic = get_profiling_array_computer(
                 jaspr, meas_behavior
@@ -301,30 +306,51 @@ def profile_jaspr(jaspr, meas_behavior="0"):
     return profiler
 
 
+def depth_profiler_jaspr(jaspr, meas_behavior="0"):
+
+    if isinstance(meas_behavior, str):
+        if meas_behavior == "0":
+            meas_behavior = always_zero
+        elif meas_behavior == "1":
+            meas_behavior = always_one
+        elif not meas_behavior == "sim":
+            raise Exception(
+                f"Don't know how to compute required resources via method {meas_behavior}"
+            )
+
+    if callable(meas_behavior):
+
+        raise NotImplementedError(
+            "Computing the depth via static analysis is not yet implemented."
+        )
+
+    else:
+
+        raise NotImplementedError(
+            "Computing the depth via simulation is not yet implemented."
+        )
+
+    return profiler
+
+
 # This function takes a Jaspr and returns a function computing the "counting array"
 @lru_cache(int(1e5))
 def get_profiling_array_computer(jaspr, meas_behavior):
-
-    print(f"Getting profiling array computer for jaxpr {jaspr}")
 
     # Find the occuring quantum operations and store their names in a dictionary,
     # indicating, which tracer counts what operation
     quantum_operations = get_quantum_operations(jaspr)
 
-    # print(f"Quantum operations found: {quantum_operations}")
-    # print(f"type of quantum_operations: {type(quantum_operations)}")
-
     profiling_dic = {quantum_operations[i]: i for i in range(len(quantum_operations))}
-
-    print(f"Profiling dic: {profiling_dic}")
 
     if "measure" not in profiling_dic:
         profiling_dic["measure"] = -1
 
+    # `profiling_eqn_evaluator` is the function that knows how to “execute one equation”.
     profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic, meas_behavior)
 
-    print(f"Profiling eqn evaluator: {profiling_eqn_evaluator}")
-
+    # `evaluator` is JIT-compiled and, when called,
+    # returns a result structure that includes the profiling array.
     evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     # This function calls the profiling interpeter to evaluate the gate counts
@@ -360,6 +386,12 @@ def get_profiling_array_computer(jaspr, meas_behavior):
         return res
 
     return profiling_array_computer, profiling_dic
+
+
+@lru_cache(int(1e5))
+def get_depth_computer(jaspr, meas_behavior):
+
+    pass
 
 
 # This functions determines the set of primitives that appear in a given Jaxpr

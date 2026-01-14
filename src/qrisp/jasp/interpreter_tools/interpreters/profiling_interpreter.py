@@ -286,6 +286,11 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
     return profiling_eqn_evaluator
 
 
+def make_depth_eqn_evaluator(profiling_dic, meas_behavior):
+
+    pass
+
+
 @lru_cache(int(1e5))
 def get_compiled_profiler(jaxpr, zipped_profiling_dic, meas_behavior):
 

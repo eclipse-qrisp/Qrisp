@@ -32,13 +32,40 @@ greek_letters = symbols(
 
 
 class TracingQuantumSession:
-    """Class managing the tracing of quantum circuits in Jasp mode."""
+    """
+    Manage tracing-time state for building quantum circuits in Jasp mode.
+
+    This class acts as the central recording context while JAX is tracing a Python
+    function that constructs a quantum program. In particular, it maintains:
+
+    - a reference to the currently active :class:`~qrisp.jasp.AbstractQuantumCircuit`
+      being built (``self.abs_qc``),
+
+    - a cache for qubits allocated during tracing (``self.qubit_cache``),
+
+    - a list of "live" quantum variables currently registered in this session
+      (``self.qv_list``),
+
+    - a garbage-collection policy controlling what happens when a quantum variable
+      goes out of scope during tracing (``self.gc_mode``).
+
+    The session supports nested tracing. Each call to :meth:`start_tracing`
+    pushes the previous tracing state onto internal stacks; :meth:`conclude_tracing`
+    restores the previous state and returns the circuit that was traced in the
+    nested scope.
+    """
 
     tr_qs_container = [None]
     abs_qc_stack = []
     qubit_cache_stack = []
 
     def __init__(self):
+        """
+        Construct a new tracing quantum session and make it the current session.
+
+        The session starts with no active circuit.
+        Use :meth:`start_tracing` to begin recording into a provided abstract circuit object.
+        """
 
         self.abs_qc = None
         self.qv_list = []
@@ -50,6 +77,25 @@ class TracingQuantumSession:
         self.gc_mode = "auto"
 
     def start_tracing(self, abs_qc, gc_mode=None):
+        """
+        Begin a new tracing scope using the given abstract circuit.
+
+        This method supports nested tracing by pushing the current tracing state
+        onto internal stacks and replacing it with a fresh tracing state.
+
+        Parameters
+        ----------
+        abs_qc : AbstractQuantumCircuit
+            The abstract circuit object to trace into.
+
+        gc_mode : str or None, optional
+            Garbage-collection mode for this tracing scope.
+
+            - If ``None``, the previous scope's garbage-collection mode is reused.
+            - Otherwise, overrides the session's current ``gc_mode`` for the
+              duration of this scope.
+        """
+
         self.abs_qc_stack.append(self.abs_qc)
         self.qubit_cache_stack.append(self.qubit_cache)
 
@@ -67,6 +113,21 @@ class TracingQuantumSession:
             self.gc_mode = gc_mode
 
     def garbage_collection(self, spare_qv_list):
+        """
+        Apply tracing-time garbage collection for quantum variables.
+
+        Depending on ``self.gc_mode``, this method either automatically deallocates
+        quantum variables that are no longer needed, or raises an error if such a
+        variable is detected.
+
+        Parameters
+        ----------
+        spare_qv_list : sequence
+            A sequence of quantum variables that must remain live after this GC step.
+            Any quantum variable in ``self.qv_list`` whose hash is not present
+            in ``spare_qv_list`` is considered out-of-scope.
+
+        """
 
         if self.gc_mode in ["auto", "debug"]:
             from qrisp import reset
