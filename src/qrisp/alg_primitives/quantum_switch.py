@@ -529,6 +529,6 @@ def quantum_switch(
         )
 
 
-temp = qswitch.__doc__
-qswitch = custom_control(custom_inversion(qswitch))
+temp = quantum_switch.__doc__
+qswitch = custom_control(custom_inversion(quantum_switch))
 qswitch.__doc__ = temp

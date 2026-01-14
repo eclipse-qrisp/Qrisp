@@ -397,6 +397,8 @@ def q_switch(index, branches, *operands):
     Examples
     --------
 
+    **Classical index**
+
     We write a script that brings a :ref:`QuantumFloat` into superpostion and
     subsequently measures it. If the measurement result is ``k`` we add ``3-k``
     such that in the end, the float will always be in the $\ket{\text{3}}$
@@ -411,33 +413,62 @@ def q_switch(index, branches, *operands):
         @jaspify
         def main():
 
-            def f0(x): 
-                x += 3
-                return x
-            def f1(x): 
-                x += 2
-                return x
-            def f2(x): 
-                x += 1
-                return x
-            def f3(x):
-                return x
-            
+            def f0(x): x += 3
+            def f1(x): x += 2
+            def f2(x): x += 1
+            def f3(x): pass
             branches = [f0, f1, f2, f3]
 
-            qf = QuantumFloat(2)
-            h(qf)
-            index = jnp.int32(measure(qf))
+            operand = QuantumFloat(2)
+            h(operand)
+            index = jnp.int32(measure(operand))
 
-            qf = q_switch(index, branches, qf)
-
-            return measure(qf)
+            q_switch(index, branches, operand)
+            return measure(operand)
 
         print(main())
-        # Yields:
         # 3.0
 
+    **Quantum index**
+
+    We write a script that uses a :ref:`QuantumFloat` as index to select
+    different operations on another operand :ref:`QuantumFloat`. The index float is
+    put into superposition such that all branches are executed in superposition.
+
+    ::
+
+        from qrisp import *
+        from qrisp.jasp import *
+
+        @terminal_sampling
+        def main():
+
+            def f0(x): x += 1
+            def f1(x): x += 2
+            def f2(x): pass
+            def f3(x): h(x[1])
+            branches = [f0, f1, f2, f3]
+
+            operand = QuantumFloat(4)
+            operand[:] = 1
+            index = QuantumFloat(2)
+            h(index)
+
+            q_switch(index, branches, operand)
+            return index, operand
+
+        print(main())
+        # {(0.0, 2.0): 0.25000000372529035, (1.0, 3.0): 0.25000000372529035, 
+        # (2.0, 1.0): 0.25000000372529035, (3.0, 1.0): 0.12499999441206447, 
+        # (3.0, 3.0): 0.12499999441206447}
+
     """
+
+    from qrisp.alg_primitives.quantum_switch import quantum_switch
+    from qrisp.core import QuantumVariable
+
+    if isinstance(index, QuantumVariable):
+        return quantum_switch(index, branches, *operands)
 
     if not check_for_tracing_mode():
         return branches[index](*operands)
