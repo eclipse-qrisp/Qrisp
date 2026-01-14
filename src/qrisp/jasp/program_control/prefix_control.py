@@ -563,7 +563,7 @@ def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
     **Quantum index**
 
     We write a script that uses a :ref:`QuantumFloat` as index to select
-    different operations on another operand :ref:`QuantumFloat`. The index float is
+    different operations on another operand :ref:`QuantumFloat`. The index variable is
     put into superposition such that all branches are executed in superposition.
 
     ::

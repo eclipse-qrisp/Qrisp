@@ -49,14 +49,8 @@ def _q_switch_q(
     index, branches, *operands, branch_amount=None, method="auto", inv=False, ctrl=None
 ):
     r"""
-    Executes a switch - index statement distinguishing between a list of
-    given in-place functions.
+    Executes a switch - case statement distinguishing between given in-place functions.
 
-    More precisely, the qswitch applies the unitary $U_i$ to the operand in state $\ket{\psi}$ given that the index variable is in state $\ket{i}$, i.e.,
-
-    .. math::
-
-        \text{qswitch}\ket{i}_{\text{index}}\ket{\psi}_{\text{operand}} = \ket{i}_{\text{index}}U_i\ket{\psi}_{\text{operand}}
 
     Parameters
     ----------
@@ -81,7 +75,7 @@ def _q_switch_q(
     --------
 
     We write a script that uses a :ref:`QuantumFloat` as index to select
-    different operations on another operand :ref:`QuantumFloat`. The index float is
+    different operations on another operand :ref:`QuantumFloat`. The index variable is
     put into superposition such that all branches are executed in superposition.
 
     ::
@@ -134,7 +128,7 @@ def _q_switch_q(
         xrange = range
 
     else:
-        raise TypeError("Argument 'branches' must be a list or a callable(i, x)")
+        raise TypeError("Argument 'branches' must be a list or a callable(i, *operands)")
 
     method = "tree" if method == "auto" else method
 
@@ -434,7 +428,7 @@ def _q_switch_q(
 
         else:
             raise TypeError(
-                "Argument 'branches' must be a list or a callable(i, x)"
+                "Argument 'branches' must be a list or a callable(i, *operands)"
             )
 
         def body_fun(pos, val):
