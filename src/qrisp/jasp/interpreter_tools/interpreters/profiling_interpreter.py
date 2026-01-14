@@ -286,9 +286,38 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
     return profiling_eqn_evaluator
 
 
+# TODO: The final architecture for depth counting might differ from this.
+# For now, we duplicate the structure of count_ops for the implementation.
 def make_depth_eqn_evaluator(profiling_dic, meas_behavior):
 
-    pass
+    def profiling_eqn_evaluator(eqn, context_dic):
+
+        invalues = extract_invalues(eqn, context_dic)
+
+        # TODO: Implement depth counting logic
+
+        if isinstance(eqn.primitive, QuantumPrimitive):
+
+            match eqn.primitive.name:
+
+                case "jasp.create_qubits":
+
+                    print("create_qubits called in depth profiler")
+
+                    ...
+
+                case "jasp.get_qubits":
+
+                    print("get_qubits called in depth profiler")
+
+                    ...
+
+                case _:
+
+                    # Should this return something else?
+                    return True
+
+    return profiling_eqn_evaluator
 
 
 @lru_cache(int(1e5))

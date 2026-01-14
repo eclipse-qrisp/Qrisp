@@ -651,9 +651,9 @@ class Jaspr(ClosedJaxpr):
         return profile_jaspr(self, meas_behavior)(*args)
     
     def depth(self, *args, meas_behavior="1"):
-        from qrisp.jasp.evaluation_tools import depth_jaspr
+        from qrisp.jasp.evaluation_tools import depth_profiler_jaspr
 
-        return depth_jaspr(self, meas_behavior)(*args)
+        return depth_profiler_jaspr(self, meas_behavior)(*args)
 
     def embedd(self, *args, name=None, inline=False):
         from qrisp.jasp import TracingQuantumSession, get_last_equation

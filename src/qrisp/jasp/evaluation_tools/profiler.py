@@ -221,6 +221,8 @@ def count_ops(meas_behavior):
     return count_ops_decorator
 
 
+# TODO: The final architecture for depth counting might differ from this.
+# For now, we duplicate the structure of count_ops for the implementation.
 def depth(meas_behavior):
 
     def depth_decorator(function):
@@ -306,6 +308,8 @@ def profile_jaspr(jaspr, meas_behavior="0"):
     return profiler
 
 
+# TODO: The final architecture for depth counting might differ from this.
+# For now, we duplicate the structure of count_ops for the implementation.
 def depth_profiler_jaspr(jaspr, meas_behavior="0"):
 
     if isinstance(meas_behavior, str):
@@ -320,9 +324,11 @@ def depth_profiler_jaspr(jaspr, meas_behavior="0"):
 
     if callable(meas_behavior):
 
-        raise NotImplementedError(
-            "Computing the depth via static analysis is not yet implemented."
-        )
+        def profiler(*args):
+
+            # TODO: Continue implementation
+
+            get_depth_computer(jaspr, meas_behavior)
 
     else:
 
@@ -391,7 +397,42 @@ def get_profiling_array_computer(jaspr, meas_behavior):
 @lru_cache(int(1e5))
 def get_depth_computer(jaspr, meas_behavior):
 
-    pass
+    # Find the occuring quantum operations and store their names in a dictionary,
+    # indicating, which tracer counts what operation
+    quantum_operations = get_quantum_operations(jaspr)
+
+    profiling_dic = {quantum_operations[i]: i for i in range(len(quantum_operations))}
+
+    if "measure" not in profiling_dic:
+        profiling_dic["measure"] = -1
+
+    profiling_eqn_evaluator = make_depth_eqn_evaluator(profiling_dic, meas_behavior)
+
+    evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
+
+    # TODO: Below is mostly copy-paste from get_profiling_array_computer.
+    # Adjust to depth counting logic.
+
+    def profiling_array_computer(*args):
+
+        final_arg = ([0] * len(profiling_dic), list(range(1, 6)))
+        filtered_args = []
+        from qrisp.operators import QubitOperator, FermionicOperator
+
+        for x in list(args) + [final_arg]:
+            if type(x) not in [
+                str,
+                QubitOperator,
+                FermionicOperator,
+                types.FunctionType,
+            ]:
+                filtered_args.append(x)
+
+        res = evaluator(*filtered_args)
+
+        return res
+
+    return profiling_array_computer, profiling_dic
 
 
 # This functions determines the set of primitives that appear in a given Jaxpr
