@@ -45,7 +45,7 @@ def _invert_inpl_function(func):
 
 
 def quantum_switch(
-    case, branches, *operands, method="auto", branch_amount=None, case_amount=None, inv=False, ctrl=None
+    case, branches, *operands, branch_amount=None, method="auto", inv=False, ctrl=None
 ):
     r"""
     Executes a switch - case statement distinguishing between a list of
@@ -59,75 +59,56 @@ def quantum_switch(
 
     Parameters
     ----------
-    case : :ref:`QuantumFloat` or list[:ref:`Qubit`]
-        The case variable specifying which case should be executed.
+    case : QuantumVariable or list[:ref:`Qubit`]
+        An integer value, deciding which function gets executed.
     branches : list[callable] or callable
-        A list of functions, performing some in-place operation on ``*operands``, or
-        a function ``branches(i, *operands)`` performing some in-place operation on ``*operands`` depending on a nonnegative integer index ``i`` specifying the case.
-    operands : :ref:`QuantumVariable`
-        The arguments on which the branches are applied.
-    method : str, optional
-        The compilation method. Available are ``sequential``, ``parallel``, ``tree`` and ``auto``.
-        ``parallel`` is exponentially fast but requires more temporary qubits. ``tree`` uses `balanced binaray trees <https://arxiv.org/pdf/2407.17966v1>`_.
-        The default is ``auto``.
+        List of functions to be executed based on ``case`` or a single function
+        that takes the case as first argument.
+    *operands : tuple
+        The input values for whichever function is applied.
     branch_amount : int, optional
-        The number of cases. By default the number is inferred automatically:
-        - When ``branches`` is a single function, the size of the ``case`` variable is used.
-        - When ``branches`` is a list of functions, the length of that list is used instead.
+        The amount of branches. 
+        Only needed if ``branches`` is a function.
+        Is automatically inferred from the length of ``branches`` if it is a list.
+    method : str, optional
+        The method used to implement the quantum switch. Can be ``"auto"``, ``"sequential"``, ``"parallel"``,
+        or ``"tree"``. Default is ``"auto"``.
+        Method ``"tree"`` uses `balanced binary trees <https://arxiv.org/pdf/2407.17966v1>`_.
+        Method ``"parallel"`` is exponentially faster but requires more qubits.   
 
     Examples
     --------
 
-    First, we consider the case where ``branches`` is a **list of functions**:
-
-    We create some sample functions:
+    We write a script that uses a :ref:`QuantumFloat` as index to select
+    different operations on another operand :ref:`QuantumFloat`. The index float is
+    put into superposition such that all branches are executed in superposition.
 
     ::
 
         from qrisp import *
+        from qrisp.jasp import *
 
-        def f0(x): x += 1
-        def f1(x): inpl_mult(x, 3, treat_overflow = False)
-        def f2(x): pass
-        def f3(x): h(x[1])
-        branches_list = [f0, f1, f2, f3]
+        @terminal_sampling
+        def main():
 
-    Create operand and case variable:
+            def f0(x): x += 1
+            def f1(x): x += 2
+            def f2(x): pass
+            def f3(x): h(x[1])
+            branches = [f0, f1, f2, f3]
 
-    ::
+            operand = QuantumFloat(4)
+            operand[:] = 1
+            index = QuantumFloat(2)
+            h(index)
 
-        operand = QuantumFloat(4)
-        operand[:] = 1
-        case = QuantumFloat(2)
-        h(case)
+            q_switch(index, branches, operand)
+            return index, operand
 
-    Execute switch - case function:
-
-    >>> qswitch(operand, case, branches_list)
-
-    Simulate:
-
-    >>> print(multi_measurement([case, operand]))
-    {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
-
-
-    Second, we consider the case where ``branches`` is a **function**:
-
-    ::
-
-        def branches(i, qv):
-            x(qv[i])
-
-        operand = QuantumFloat(4)
-        case = QuantumFloat(2)
-        h(case)
-
-        qswitch(operand, case, branches)
-
-    Simulate:
-
-    >>> print(multi_measurement([case, operand]))
-    {(0, 1): 0.25, (1, 2): 0.25, (2, 4): 0.25, (3, 8): 0.25}
+        print(main())
+        # {(0.0, 2.0): 0.25000000372529035, (1.0, 3.0): 0.25000000372529035, 
+        # (2.0, 1.0): 0.25000000372529035, (3.0, 1.0): 0.12499999441206447, 
+        # (3.0, 3.0): 0.12499999441206447}
 
     """
 
