@@ -366,7 +366,7 @@ def q_cond(pred, true_fun, false_fun, *operands):
     return cond_res[0]
 
 
-def q_switch(index, branches, *operands):
+def q_switch(index, branches, *operands, branch_amount=None):
     r"""
     Jasp compatible version of
     `jax.lax.switch <https://docs.jax.dev/en/latest/_autosummary/jax.lax.switch.html>`_
@@ -382,12 +382,15 @@ def q_switch(index, branches, *operands):
 
     Parameters
     ----------
-    index : int or jax.core.Tracer
+    index : int or jax.core.Tracer or QuantumVariable
         An integer value, deciding which function gets executed.
-    branches : list[callable]
-        List of functions to be executed based on ``index``.
+    branches : list[callable] or callable
+        List of functions to be executed based on ``index`` or a single function
+        that takes the index as first argument.
     *operands : tuple
         The input values for whichever function is applied.
+    branch_amount : int, optional
+        The amount of branches. Only needed if ``branches`` is a function and ``index`` is a :ref:`QuantumVariable`.
 
     Returns
     -------
@@ -468,7 +471,10 @@ def q_switch(index, branches, *operands):
     from qrisp.core import QuantumVariable
 
     if isinstance(index, QuantumVariable):
-        return quantum_switch(index, branches, *operands)
+        return quantum_switch(index, branches, *operands, branch_amount=branch_amount)
+
+    if callable(branches):
+        return branches(index, *operands)
 
     if not check_for_tracing_mode():
         return branches[index](*operands)
