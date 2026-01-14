@@ -131,34 +131,6 @@ def quantum_switch(
 
     """
 
-    if isinstance(branches, QuantumVariable):
-        # Map deprecated interface 'qswitch(operand, case, case_function, method="auto", case_amount=None)'
-        # to new interface 'qswitch(case, branches, *operands, method="auto", branch_amount=None)' 
-        # (matching https://docs.jax.dev/en/latest/_autosummary/jax.lax.switch.html)
-        branch_amount = case_amount
-        temp = case
-        case = branches
-        branches = operands[0]
-
-        # The deprecated interface allowed for passing 'method' and 'case_amount' without keyword
-        for i in range(1,3):
-            if len(operands) > i:
-                if isinstance(operands[i], str):
-                    method = operands[i]
-                else: 
-                    branch_amount = operands[i]
-
-        operands = [temp]
-
-        warnings.warn(
-            "The 'qswitch(operand, case, case_function)' interface is deprecated and will be "
-            "removed in a future release. Please migrate to 'qswitch(case, branches, *operands)'. "
-            "See: https://www.qrisp.eu/reference/Primitives/qswitch.html",
-            category=FutureWarning,
-            stacklevel=4, # Use level 4 since qswitch is wrapped twice
-        )
-
-
     if is_function_mode := callable(branches):
         if branch_amount is None:
             case_size = len(case) if isinstance(case, list) else case.size
