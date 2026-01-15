@@ -28,7 +28,7 @@ from qrisp.jasp.primitives import AbstractQuantumCircuit
 def q_while_loop(cond_fun, body_fun, init_val):
     """
     Jasp compatible version of
-    `jax.lax.while_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.while_loop.html#jax.lax.while_loop>`_
+    `jax.lax.while_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.while_loop.html#jax.lax.while_loop>`_.
     The parameters and semantics are the same as for the Jax version.
 
     In particular the following loop is performed
@@ -156,7 +156,7 @@ def q_while_loop(cond_fun, body_fun, init_val):
 def q_fori_loop(lower, upper, body_fun, init_val):
     """
     Jasp compatible version of
-    `jax.lax.fori_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.fori_loop.html#jax.lax.fori_loop>`_
+    `jax.lax.fori_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.fori_loop.html#jax.lax.fori_loop>`_.
     The parameters and semantics are the same as for the Jax version.
 
     In particular the following loop is performed
@@ -230,7 +230,7 @@ def q_fori_loop(lower, upper, body_fun, init_val):
 def q_cond(pred, true_fun, false_fun, *operands):
     r"""
     Jasp compatible version of
-    `jax.lax.cond <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.cond.html#jax.lax.cond>`_
+    `jax.lax.cond <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.cond.html#jax.lax.cond>`_.
     The parameters and semantics are the same as for the Jax version.
 
     Performs the following semantics:
@@ -370,7 +370,7 @@ def q_cond(pred, true_fun, false_fun, *operands):
 def _q_switch_c(index, branches, *operands):
     r"""
     Jasp compatible version of
-    `jax.lax.switch <https://docs.jax.dev/en/latest/_autosummary/jax.lax.switch.html>`_
+    `jax.lax.switch <https://docs.jax.dev/en/latest/_autosummary/jax.lax.switch.html>`_.
     The parameters and semantics are the same as for the Jax version.
 
     Performs the following semantics:
@@ -488,8 +488,11 @@ def _q_switch_c(index, branches, *operands):
 
 def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
     r"""
+
+    **Classical index**
+
     Jasp compatible version of
-    `jax.lax.switch <https://docs.jax.dev/en/latest/_autosummary/jax.lax.switch.html>`_
+    `jax.lax.switch <https://docs.jax.dev/en/latest/_autosummary/jax.lax.switch.html>`_.
     The parameters and semantics are the same as for the Jax version.
 
     Performs the following semantics:
@@ -499,10 +502,15 @@ def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
         def q_switch(index, branches, *operands):
             return branches[index](*operands)
 
+    **Quantum index**
+
+    Executes a quantum switch - case statement distinguishing between given
+    in-place functions.
+
 
     Parameters
     ----------
-    index : int or jax.core.Tracer or QuantumVariable
+    index : int or jax.core.Tracer or QuantumVariable or list[Qubit]
         An integer value, deciding which function gets executed.
     branches : list[callable] or callable
         List of functions to be executed based on ``index`` or a single function
