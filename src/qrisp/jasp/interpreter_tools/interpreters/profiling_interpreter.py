@@ -292,6 +292,10 @@ def make_depth_eqn_evaluator(profiling_dic, meas_behavior):
 
     def profiling_eqn_evaluator(eqn, context_dic):
 
+        # In this interpreter, context_dic is an environment mapping:
+        # - keys: JAXPR variables (eqn.outvars[i], i.e. SSA names like bg, bh)
+        # - values: whatever concrete (or traced) Python/JAX objects the evaluator chooses to represent those variables with
+
         invalues = extract_invalues(eqn, context_dic)
 
         # TODO: Implement depth counting logic
@@ -300,17 +304,69 @@ def make_depth_eqn_evaluator(profiling_dic, meas_behavior):
 
             match eqn.primitive.name:
 
+                # quantum_gate has the signature (Qubit, ... , QuantumCircuit)
+                # (it depends on the gate how many qubits there are)
+                case "jasp.quantum_gate":
+
+                    print(f"\n\n\njasp.quantum_gate called")
+
+                    *qubits, depth_state = invalues
+
+                    depth_vec, global_depth = depth_state
+
+                    qubit_ids = jnp.array(qubits, dtype=jnp.int32)
+                    touched = jnp.take(depth_vec, qubit_ids)
+                    start = jnp.max(touched)
+
+                    # TODO: determine actual duration of the gate
+                    # duration: 1 for now (or duration = op_depth if op.definition exists)
+                    end = start + 1
+
+                    # update all involved qubits to `end`
+                    depth_vec = depth_vec.at[qubit_ids].set(end)
+
+                    global_depth = jnp.maximum(global_depth, end)
+
+                    # Outvars is QuantumCircuit
+                    insert_outvalues(eqn, context_dic, (depth_vec, global_depth))
+
+                # create_qubits has the signature (size, QuantumCircuit)
                 case "jasp.create_qubits":
 
-                    print("create_qubits called in depth profiler")
+                    print(f"jasp.create_qubits called")
 
-                    ...
+                    size, depth_state = invalues
 
-                case "jasp.get_qubits":
+                    # Allocate a fresh id range [size] starting from next_base_id
+                    base_id = context_dic.get("_depth_next_base_id", jnp.int32(0))
+                    base_id = jnp.asarray(base_id, dtype=jnp.int32)
 
-                    print("get_qubits called in depth profiler")
+                    size = jnp.asarray(size, dtype=jnp.int32)
 
-                    ...
+                    context_dic["_depth_next_base_id"] = base_id + size
+
+                    qubit_array_handle = (base_id, size)
+                    print(f"qubit_array_handle: {qubit_array_handle}")
+
+                    # Outvars are (QubitArray, QuantumCircuit)
+                    insert_outvalues(
+                        eqn, context_dic, (qubit_array_handle, depth_state)
+                    )
+
+                # get_qubit has the signature (QubitArray, index)
+                case "jasp.get_qubit":
+
+                    print(f"\n\n\njasp.get_qubit called")
+
+                    qubit_array_handle, index = invalues
+
+                    base_id, _ = qubit_array_handle
+
+                    # A Qubit is represented by its (virtual) integer id.
+                    qubit_id = jnp.asarray(base_id + index, dtype=jnp.int32)
+
+                    # Outvars are (Qubit)
+                    insert_outvalues(eqn, context_dic, qubit_id)
 
                 case _:
 

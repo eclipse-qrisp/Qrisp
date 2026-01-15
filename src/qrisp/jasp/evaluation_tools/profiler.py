@@ -394,6 +394,8 @@ def get_profiling_array_computer(jaspr, meas_behavior):
     return profiling_array_computer, profiling_dic
 
 
+MAX_QUBITS = 3
+
 @lru_cache(int(1e5))
 def get_depth_computer(jaspr, meas_behavior):
 
@@ -415,7 +417,10 @@ def get_depth_computer(jaspr, meas_behavior):
 
     def profiling_array_computer(*args):
 
-        final_arg = ([0] * len(profiling_dic), list(range(1, 6)))
+        depth_vec0 = jnp.zeros((MAX_QUBITS,), dtype=jnp.int32)
+        global_depth0 = jnp.int32(0)
+        final_arg = (depth_vec0, global_depth0)
+
         filtered_args = []
         from qrisp.operators import QubitOperator, FermionicOperator
 
@@ -428,6 +433,10 @@ def get_depth_computer(jaspr, meas_behavior):
             ]:
                 filtered_args.append(x)
 
+        # `evaluator` is defined as `evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))`,
+        # where `profiling_eqn_evaluator` is created via
+        # `profiling_eqn_evaluator = make_depth_eqn_evaluator(profiling_dic, meas_behavior)`
+        # That is, `profiling_eqn_evaluator` is the function that goes through the equations of the Jaspr
         res = evaluator(*filtered_args)
 
         return res
