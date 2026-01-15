@@ -43,124 +43,92 @@ def _invert_inpl_function(func):
 
     return inverted_func
 
-# DEPRECATED FUNCTIONALITY
-def qswitch(
-    operand, case, case_function, method="auto", case_amount=None, inv=False, ctrl=None
+
+# Switch implementation for quantum index
+def _q_switch_q(
+    index, branches, *operands, branch_amount=None, method="auto", inv=False, ctrl=None
 ):
     r"""
-    Executes a switch - case statement distinguishing between a list of
-    given in-place functions.
+    Executes a switch - case statement distinguishing between given in-place functions.
 
-    More precisely, the qswitch applies the unitary $U_i$ to the operand in state $\ket{\psi}$ given that the case variable is in state $\ket{i}$, i.e.,
-
-    .. math::
-
-        \text{qswitch}\ket{i}_{\text{case}}\ket{\psi}_{\text{operand}} = \ket{i}_{\text{case}}U_i\ket{\psi}_{\text{operand}}
 
     Parameters
     ----------
-    operand : :ref:`QuantumVariable`
-        The argument on which the case function operates.
-    case : :ref:`QuantumFloat` or list[:ref:`Qubit`]
-        The case variable specifying which case should be executed.
-    case_function : list[callable] or callable
-        A list of functions, performing some in-place operation on ``operand``, or
-        a function ``case_function(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
+    index : QuantumVariable or list[:ref:`Qubit`]
+        An integer value, deciding which function gets executed.
+    branches : list[callable] or callable
+        List of functions to be executed based on ``index`` or a single function
+        that takes the index as first argument.
+    *operands : tuple
+        The input values for whichever function is applied.
+    branch_amount : int, optional
+        The amount of branches. 
+        Only needed if ``branches`` is a function.
+        Is automatically inferred from the length of ``branches`` if it is a list.
     method : str, optional
-        The compilation method. Available are ``sequential``, ``parallel``, ``tree`` and ``auto``.
-        ``parallel`` is exponentially fast but requires more temporary qubits. ``tree`` uses `balanced binaray trees <https://arxiv.org/pdf/2407.17966v1>`_.
-        The default is ``auto``.
-    case_amount : int, optional
-        The number of cases. By default the number is inferred automatically:
-        - When ``case_function`` is a single function, the size of the case variable is used.
-        - When ``case_function`` is a list of functions, the length of that list is used instead.
+        The method used to implement the quantum switch. Can be ``"auto"``, ``"sequential"``, ``"parallel"``,
+        or ``"tree"``. Default is ``"auto"``.
+        Method ``"tree"`` uses `balanced binary trees <https://arxiv.org/pdf/2407.17966v1>`_.
+        Method ``"parallel"`` is exponentially faster but requires more qubits.   
 
     Examples
     --------
 
-    First, we consider the case where ``case_function`` is a **list of functions**:
-
-    We create some sample functions:
+    We write a script that uses a :ref:`QuantumFloat` as index to select
+    different operations on another operand :ref:`QuantumFloat`. The index variable is
+    put into superposition such that all branches are executed in superposition.
 
     ::
 
         from qrisp import *
+        from qrisp.jasp import *
 
-        def f0(x): x += 1
-        def f1(x): inpl_mult(x, 3, treat_overflow = False)
-        def f2(x): pass
-        def f3(x): h(x[1])
-        case_function_list = [f0, f1, f2, f3]
+        @terminal_sampling
+        def main():
 
-    Create operand and case variable:
+            def f0(x): x += 1
+            def f1(x): x += 2
+            def f2(x): pass
+            def f3(x): h(x[1])
+            branches = [f0, f1, f2, f3]
 
-    ::
+            operand = QuantumFloat(4)
+            operand[:] = 1
+            index = QuantumFloat(2)
+            h(index)
 
-        operand = QuantumFloat(4)
-        operand[:] = 1
-        case = QuantumFloat(2)
-        h(case)
+            q_switch(index, branches, operand)
+            return index, operand
 
-    Execute switch - case function:
-
-    >>> qswitch(operand, case, case_function_list)
-
-    Simulate:
-
-    >>> print(multi_measurement([case, operand]))
-    {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
-
-
-    Second, we consider the case where ``case_function`` is a **function**:
-
-    ::
-
-        def case_function(i, qv):
-            x(qv[i])
-
-        operand = QuantumFloat(4)
-        case = QuantumFloat(2)
-        h(case)
-
-        qswitch(operand, case, case_function)
-
-    Simulate:
-
-    >>> print(multi_measurement([case, operand]))
-    {(0, 1): 0.25, (1, 2): 0.25, (2, 4): 0.25, (3, 8): 0.25}
+        print(main())
+        # {(0.0, 2.0): 0.25000000372529035, (1.0, 3.0): 0.25000000372529035, 
+        # (2.0, 1.0): 0.25000000372529035, (3.0, 1.0): 0.12499999441206447, 
+        # (3.0, 3.0): 0.12499999441206447}
 
     """
 
-    warnings.warn(
-        "The 'qswitch(operand, case, case_function)' interface is deprecated and will be "
-        "removed in a future release. Please migrate to 'q_switch(case, branches, *operands)'. "
-        "See: https://www.qrisp.eu/reference/Primitives/q_switch.html",
-        category=FutureWarning,
-        stacklevel=4, # Use level 4 since qswitch is wrapped twice
-    )
-
-    if is_function_mode := callable(case_function):
-        if case_amount is None:
-            case_size = len(case) if isinstance(case, list) else case.size
-            case_amount = 2**case_size
+    if is_function_mode := callable(branches):
+        if branch_amount is None:
+            index_size = len(index) if isinstance(index, list) else index.size
+            branch_amount = 2**index_size
         xrange = jrange if check_for_tracing_mode() else range
         if inv:
-            case_function = _invert_inpl_function(case_function)
+            branches = _invert_inpl_function(branches)
 
-    elif isinstance(case_function, list):
-        if case_amount is None:
-            case_amount = len(case_function)
+    elif isinstance(branches, list):
+        if branch_amount is None:
+            branch_amount = len(branches)
         elif method == "sequential":
             raise TypeError(
-                "Argument 'case_amount' must be None when using the 'sequential' method and a list as a 'case_function'"
+                "Argument 'branch_amount' must be None when using the 'sequential' method and a list as a 'branches'"
             )
         if inv:
-            case_function = [_invert_inpl_function(func) for func in case_function]
+            branches = [_invert_inpl_function(func) for func in branches]
 
         xrange = range
 
     else:
-        raise TypeError("Argument 'case_function' must be a list or a callable(i, x)")
+        raise TypeError("Argument 'branches' must be a list or a callable(i, *operands)")
 
     method = "tree" if method == "auto" else method
 
@@ -168,21 +136,21 @@ def qswitch(
 
         control_qbl = QuantumBool()
 
-        for i in xrange(case_amount):
-            with conjugate(mcx)(case, control_qbl, ctrl_state=i):
+        for i in xrange(branch_amount):
+            with conjugate(mcx)(index, control_qbl, ctrl_state=i):
                 with control(control_qbl):
                     if ctrl is None:
                         if is_function_mode:
-                            case_function(i, operand)
+                            branches(i, *operands)
                         else:
-                            case_function[i](operand)
+                            branches[i](*operands)
                     else:
                         if is_function_mode:
                             with control(ctrl):
-                                case_function(i, operand)
+                                branches(i, *operands)
                         else:
                             with control(ctrl):
-                                case_function[i](operand)
+                                branches[i](*operands)
 
         control_qbl.delete()
 
@@ -193,43 +161,48 @@ def qswitch(
                 f"Compile method {method} for switch-case structure not available in tracing mode."
             )
 
-        if isinstance(case, list):
+        if isinstance(index, list):
             raise NotImplementedError(
-                "Compile method 'parallel' for switch-case structure not available when 'case' is a list of qubits."
+                "Compile method 'parallel' for switch-case structure not available when 'index' is a list of qubits."
+            )
+        
+        if len(operands)>1:
+            raise NotImplementedError(
+                "Compile method 'parallel' for switch-case structure not available when more then one 'operands' are provided."
             )
 
         # Idea: Use demux function to move operand and enabling bool into QuantumArray
-        # to execute cases in parallel.
+        # to execute indexs in parallel.
 
         # This QuantumArray acts as an addressable QRAM via the demux function
 
-        if case_amount != 2**case.size:
+        if branch_amount != 2**index.size:
 
             warnings.warn(
-                "Warning: Additional qubit overhead because case amount is smaller than case QuantumVariable!"
+                "Warning: Additional qubit overhead because branch amount is smaller than index QuantumVariable!"
             )
 
-        enable = QuantumArray(qtype=QuantumBool(), shape=(2**case.size,))
+        enable = QuantumArray(qtype=QuantumBool(), shape=(2**index.size,))
         enable[0].flip()
 
-        qa = QuantumArray(qtype=operand, shape=((2**case.size,)))
+        qa = QuantumArray(qtype=operands[0], shape=((2**index.size,)))
 
-        with conjugate(demux)(operand, case, qa, parallelize_qc=True):
-            with conjugate(demux)(enable[0], case, enable, parallelize_qc=True):
-                for i in range(case_amount):
+        with conjugate(demux)(operands[0], index, qa, parallelize_qc=True):
+            with conjugate(demux)(enable[0], index, enable, parallelize_qc=True):
+                for i in range(branch_amount):
                     with control(enable[i]):
                         if ctrl is None:
                             if is_function_mode:
-                                case_function(i, qa[i])
+                                branches(i, qa[i])
                             else:
-                                case_function[i](qa[i])
+                                branches[i](qa[i])
                         else:
                             if is_function_mode:
                                 with control(ctrl):
-                                    case_function(i, qa[i])
+                                    branches(i, qa[i])
                             else:
                                 with control(ctrl):
-                                    case_function[i](qa[i])
+                                    branches[i](qa[i])
 
         qa.delete()
 
@@ -266,7 +239,7 @@ def qswitch(
             def bitwise_count_diff(a, b):
                 return np.int32(np.bitwise_count(np.bitwise_xor(a, b)))
 
-        n = len(case) if isinstance(case, list) else case.size
+        n = len(index) if isinstance(index, list) else index.size
 
         def nor_x(t):
             x(t)
@@ -351,9 +324,9 @@ def qswitch(
         # Function mode
         if is_function_mode:
 
-            def leaf(d: int, anc, ca, oper, i):
+            def leaf(d: int, anc, ca, i, *oper):
                 with control(anc[d]):
-                    case_function(i, oper)
+                    branches(i, *oper)
 
                 # with control(anc[d-1]):
                 #    x(anc[d])
@@ -371,28 +344,28 @@ def qswitch(
                     )
 
                 with control(anc[d]):
-                    case_function(i + 1, oper)
+                    branches(i + 1, *oper)
 
-            def last_leaf(d: int, anc, ca, oper, i):
+            def last_leaf(d: int, anc, ca, i, *oper):
                 with control(anc[d]):
-                    case_function(i, oper)
+                    branches(i, *oper)
 
         # List mode
-        elif isinstance(case_function, list):
+        elif isinstance(branches, list):
 
-            if len(case_function) % 2 != 0:
+            if len(branches) % 2 != 0:
 
                 def identity(_):
                     pass
 
-                case_function.append(identity)
+                branches.append(identity)
 
             if check_for_tracing_mode():
 
-                def leaf(d: int, anc, ca, oper, i):
+                def leaf(d: int, anc, ca, i, *oper):
                     def apply_leaf(A, B):
                         with control(anc[d]):
-                            A(oper)
+                            A(*oper)
 
                         # with control(anc[d-1]):
                         #    x(anc[d])
@@ -410,22 +383,22 @@ def qswitch(
                             )
 
                         with control(anc[d]):
-                            B(oper)
+                            B(*oper)
 
-                    for j in range(0, len(case_function), 2):
+                    for j in range(0, len(branches), 2):
                         x_cond(
                             j == i,
                             apply_leaf,
                             lambda a, b: None,
-                            case_function[j],
-                            case_function[j + 1],
+                            branches[j],
+                            branches[j + 1],
                         )
 
             else:
 
-                def leaf(d: int, anc, ca, oper, i):
+                def leaf(d: int, anc, ca, i, *oper):
                     with control(anc[d]):
-                        case_function[i](oper)
+                        branches[i](*oper)
 
                     # with control(anc[d-1]):
                     #    x(anc[d])
@@ -443,61 +416,61 @@ def qswitch(
                         )
 
                     with control(anc[d]):
-                        case_function[i + 1](oper)
+                        branches[i + 1](*oper)
 
-            def last_leaf(d: int, anc, ca, oper, i):
+            def last_leaf(d: int, anc, ca, i, *oper):
                 def apply(f):
                     with control(anc[d]):
-                        f(oper)
+                        f(*oper)
 
-                for j in range(0, len(case_function)):
-                    x_cond(j == i, apply, lambda x: None, case_function[j])
+                for j in range(0, len(branches)):
+                    x_cond(j == i, apply, lambda x: None, branches[j])
 
         else:
             raise TypeError(
-                "Argument 'case_function' must be a list or a callable(i, x)"
+                "Argument 'branches' must be a list or a callable(i, *operands)"
             )
 
         def body_fun(pos, val):
-            anc, ca, oper = val
+            anc, ca, *oper = val
 
             # Apply leaf
-            leaf(n - 1, anc, ca, oper, 2 * pos)
+            leaf(n - 1, anc, ca, 2 * pos, *oper)
 
             # Jump to next leaf
             q = bitwise_count_diff(pos, pos + 1)
             for j in xrange(0, q - 1, 1):
-                up(n - j - 1, anc, ca, oper)
-            bounce(n - q, anc, ca, oper)
+                up(n - j - 1, anc, ca, *oper)
+            bounce(n - q, anc, ca, *oper)
             for j in xrange(0, q - 1, 1):
-                down(n - (q - 1) + j, anc, ca, oper)
+                down(n - (q - 1) + j, anc, ca, *oper)
 
-            return anc, ca, oper
+            return anc, ca, *oper
 
         anc = QuantumVariable(n)
         # x(anc[0])
 
         # Go to first node
         for j in xrange(0, n, 1):
-            down(j, anc, case, operand)
+            down(j, anc, index, *operands)
 
         # Perform leafs and jumps
 
         _, _, _ = x_fori_loop(
-            0, -(-case_amount // 2) - 1, body_fun, (anc, case, operand)
+            0, -(-branch_amount // 2) - 1, body_fun, (anc, index, *operands)
         )
 
         # Perfrom last leaf
         x_cond(
-            case_amount % 2 == 0,
-            lambda: leaf(n - 1, anc, case, operand, case_amount - 2),
-            lambda: last_leaf(n - 1, anc, case, operand, case_amount - 1),
+            branch_amount % 2 == 0,
+            lambda: leaf(n - 1, anc, index, branch_amount - 2, *operands),
+            lambda: last_leaf(n - 1, anc, index, branch_amount - 1, *operands),
         )
 
         # Go back from last node
-        diff = 2**n - case_amount
+        diff = 2**n - branch_amount
         for j in xrange(0, n, 1):
-            up(n - j - 1, anc, case, operand)
+            up(n - j - 1, anc, index, *operands)
 
             def bf():
                 # with control(anc[n-j-2]):
@@ -532,6 +505,6 @@ def qswitch(
         )
 
 
-temp = qswitch.__doc__
-qswitch = custom_control(custom_inversion(qswitch))
-qswitch.__doc__ = temp
+temp = _q_switch_q.__doc__
+_q_switch_q = custom_control(custom_inversion(_q_switch_q))
+_q_switch_q.__doc__ = temp
