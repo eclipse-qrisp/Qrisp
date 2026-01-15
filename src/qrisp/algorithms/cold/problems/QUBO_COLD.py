@@ -5,17 +5,8 @@ from qrisp.operators.qubit import X, Y, Z
 from qrisp import QuantumVariable
 
 
-# Define QUBO problem
-Q = np.array([[-1.1, 0.6, 0.4, 0.0, 0.0, 0.0],
-              [0.6, -0.9,  0.5, 0.0, 0.0, 0.0],
-              [0.4, 0.5, -1.0, -0.6, 0.0, 0.0],
-              [0.0, 0.0, -0.6, -0.5, 0.6, 0.0],
-              [0.0, 0.0, 0.0, 0.6, -0.3, 0.5],
-              [0.0, 0.0, 0.0, 0.0, 0.5, -0.4]])
-solution = {'101101': -3.4}
-
 # Create all methods and operators needed for the DCQO instance
-def create_COLD_instance(Q, alpha_vec=True):
+def create_COLD_instance(Q, uniform_AGP_coeffs):
 
     N = len(Q[0])
     h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
@@ -32,19 +23,8 @@ def create_COLD_instance(Q, alpha_vec=True):
         g_expr = lam * T
         return g_expr
 
-    # Return alpha function either of one alpha or alpha_i for each qubit
-    if alpha_vec:
-        def alpha(lam, f, f_deriv):
-
-            nom = [h[i] + f + (1-lam) * f_deriv 
-                for i in range(N)]
-            denom = [2 * ((lam*h[i] + f)**2 + (1-lam)**2 + 
-                    lam**2 * sum([J[i][j] for j in range(N) if j != i])) 
-                    for i in range(N)]
-
-            alph = [nom[i]/denom[i] for i in range(N)]
-            return alph
-    else:
+    # AGP coefficients            
+    if uniform_AGP_coeffs:
         def alpha(lam, f, f_deriv):
             A = lam * h + f
             B = 1 - lam
@@ -56,6 +36,17 @@ def create_COLD_instance(Q, alpha_vec=True):
             alph = [alph]*N
 
             return alph
+    else:
+        def alpha(lam, f, f_deriv):
+            nom = [h[i] + f + (1-lam) * f_deriv 
+                for i in range(N)]
+            denom = [2 * ((lam*h[i] + f)**2 + (1-lam)**2 + 
+                    lam**2 * sum([J[i][j] for j in range(N) if j != i])) 
+                    for i in range(N)]
+
+            alph = [nom[i]/denom[i] for i in range(N)]
+            return alph
+
 
     # Initial Hamiltonian
     H_init = -1 * sum([X(i) for i in range(N)])
@@ -71,22 +62,5 @@ def create_COLD_instance(Q, alpha_vec=True):
     # Control Hamiltonian
     H_control = sum([Z(i) for i in range(N)])
 
-    return lam, g, alpha, H_init, H_prob, A_lam, H_control
+    return lam, g, alpha, H_init, H_prob, A_lam, J, h, H_control
 
-# Create DCQO instance
-# lam, g, alpha, H_init, H_prob, A_lam, H_control = create_COLD_instance(Q)
-# COLD_prob = DCQOProblem(lam, g, alpha, H_init, H_prob, A_lam, H_control)
-
-# # Run COLD problem
-# qarg = QuantumVariable(size=Q.shape[0])
-# COLD_result = COLD_prob.run(qarg, N_steps=10, T=5, N_opt=1)
-
-# # Benchmark result
-# from qrisp.algorithms.cold.cold_benchmark import *
-# ar = approx_ratio(Q, COLD_result, solution)
-# sp = success_prob(COLD_result, solution)
-# most_likely_3 = most_likely_res(Q, COLD_result, N=3)
-
-# print(f'Approximation ratio: {ar}')
-# print(f'Success probability: {sp}')
-# print(f'3 most likely: {most_likely_3}')
