@@ -456,6 +456,8 @@ def exec_multi_measurement(catalyst_register, qubit_list):
         body_nconsts=0,
         nimplicit=0,
         preserve_dimensions=True,
+        num_implicit_outputs=0,
+        num_implicit_inputs=0,
     )
 
     i, acc, reg, static_qubit_array, list_size = while_res
@@ -486,6 +488,7 @@ def process_while(eqn, context_dic):
         body_nconsts=new_body_nconsts,
         nimplicit=0,
         preserve_dimensions=True,
+        num_implicit_inputs=0,
     )
 
     outvalues = list(outvalues)
@@ -517,7 +520,10 @@ def process_cond(eqn, context_dic):
         flattened_invalues = flatten_signature(invalues, eqn.invars)
 
         outvalues = cond_p.bind(
-            *flattened_invalues, branch_jaxprs=branch_list[::-1], nimplicit_outputs=0
+            *flattened_invalues, 
+            branch_jaxprs=branch_list[::-1], 
+            nimplicit_outputs=0,
+            num_implicit_outputs=0
         )
 
         unflattened_outvalues = unflatten_signature(outvalues, eqn.outvars)
