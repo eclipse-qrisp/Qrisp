@@ -102,20 +102,10 @@ def inner_QSVT(A, operand_prep, phi_qsvt):
 
     phi_qsvt = jnp.flip(phi_qsvt)
     d = len(phi_qsvt) - 1
-
-    # Jasp mode
-    if check_for_tracing_mode():
-        x_cond = q_cond
-    else:
-        def x_cond(pred, true_fun, false_fun, *operands):
-            if pred:
-                return true_fun(*operands)
-            else:
-                return false_fun(*operands)
             
     for i in jrange(0, d): 
         reflection(case, temp, phase=2 * phi_qsvt[i])
-        x_cond(i%2==0, U_tilde, U_tilde_dg, case, operand, state_prep) 
+        q_cond(i%2==0, U_tilde, U_tilde_dg, case, operand, state_prep) 
     reflection(case, temp, phase=2 * phi_qsvt[d])
         
     h(temp)
