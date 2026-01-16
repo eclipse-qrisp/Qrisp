@@ -221,8 +221,6 @@ def count_ops(meas_behavior):
     return count_ops_decorator
 
 
-# TODO: The final architecture for depth counting might differ from this.
-# For now, we duplicate the structure of count_ops for the implementation.
 def depth(meas_behavior):
 
     def depth_decorator(function):

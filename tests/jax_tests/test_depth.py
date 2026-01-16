@@ -117,3 +117,87 @@ def test_depth_one_qubit_4_dyn():
         return measure(qf[1])
 
     assert main(2) == 2
+
+
+# From now on, dynamic is implied
+
+
+def test_depth_3_h_parallel():
+
+    @depth(meas_behavior="0")
+    def main(num_qubits):
+        qf = QuantumFloat(num_qubits)
+        h(qf[0])
+        h(qf[1])
+        h(qf[2])
+        return measure(qf[0])
+
+    assert main(3) == 1
+
+
+def test_depth_3_h_sequential():
+
+    @depth(meas_behavior="0")
+    def main(num_qubits):
+        qf = QuantumFloat(num_qubits)
+        h(qf[0])
+        h(qf[0])
+        h(qf[0])
+        return measure(qf[0])
+
+    assert main(3) == 3
+
+
+def test_depth_3_h_sequential_and_parallel():
+
+    @depth(meas_behavior="0")
+    def main(num_qubits):
+        qf = QuantumFloat(num_qubits)
+        h(qf[0])
+        h(qf[0])
+        h(qf[0])
+
+        h(qf[1])
+        h(qf[1])
+        h(qf[1])
+
+        h(qf[2])
+        h(qf[2])
+        h(qf[2])
+        return measure(qf[0])
+
+    assert main(3) == 3
+
+
+def test_depth_h_cx_comb1():
+
+    @depth(meas_behavior="0")
+    def main(num_qubits):
+        qf = QuantumFloat(num_qubits)
+        h(qf[0])
+        h(qf[2])
+        cx(qf[0], qf[1])
+        h(qf[1])
+        return measure(qf[0])
+
+    assert main(3) == 3
+
+
+def test_depth_h_cx_comb2():
+
+    @depth(meas_behavior="0")
+    def main(num_qubits):
+        qf = QuantumFloat(num_qubits)
+        h(qf[0])
+        h(qf[2])
+
+        mcx([qf[0], qf[1]], qf[2])
+
+        h(qf[1])
+        h(qf[1])
+
+        cx(qf[2], qf[3])
+
+        return measure(qf[0])
+
+    assert main(4) == 4
