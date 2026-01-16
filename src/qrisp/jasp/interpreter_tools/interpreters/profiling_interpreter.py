@@ -45,7 +45,6 @@ from qrisp.jasp.interpreter_tools.abstract_interpreter import (
 
 from qrisp.jasp.primitives import (
     QuantumPrimitive,
-    OperationPrimitive,
     AbstractQubitArray,
 )
 
@@ -68,15 +67,15 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
 
         if isinstance(eqn.primitive, QuantumPrimitive):
 
-            # In the case of an OperationPrimitive, we determine the array index
+            # In the case of a quantum gate, we determine the array index
             # to be increment via dictionary look-up and perform the increment
             # via the Jax-given .at method.
-            if isinstance(eqn.primitive, OperationPrimitive):
+            if eqn.primitive.name == "jasp.quantum_gate":
 
                 counting_array = list(invalues[-1][0])
                 incrementation_constants = invalues[-1][1]
 
-                op = eqn.primitive.op
+                op = eqn.params["gate"]
 
                 if op.definition:
                     op_counts = op.definition.transpile().count_ops()
@@ -193,7 +192,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
             # Reinterpreted body and cond function
             def body_fun(val):
                 
-                constants = val[:eqn.params["body_nconsts"]]
+                constants = val[eqn.params["cond_nconsts"]:overall_constant_amount]
                 carries = val[overall_constant_amount:]
                 
                 body_res = eval_jaxpr(
@@ -207,7 +206,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
 
             def cond_fun(val):
                 
-                constants = val[eqn.params["body_nconsts"]:overall_constant_amount]
+                constants = val[:eqn.params["cond_nconsts"]]
                 carries = val[overall_constant_amount:]
                 
                 res = eval_jaxpr(
@@ -217,7 +216,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
                 return res
 
             outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[overall_constant_amount:]
-
+            
             insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "cond":

@@ -33,7 +33,7 @@ from qrisp.jasp import (
     extract_invalues,
     insert_outvalues
 )
-from qrisp.jasp.primitives import AbstractQuantumCircuit
+from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive
 
 
 class Jaspr(ClosedJaxpr):
@@ -458,7 +458,12 @@ class Jaspr(ClosedJaxpr):
                     elif isinstance(val, (ProcessedMeasurement, Clbit)):
                         break
                 else:
-                    return True
+                    if isinstance(eqn.primitive, QuantumPrimitive):
+                        outvalues = eqn.primitive.impl(*invalues, **eqn.params)
+                        insert_outvalues(eqn, context_dic, outvalues)
+                        return
+                    else:
+                        return True
                 
             if len(eqn.outvars) == 0:
                 return
@@ -665,7 +670,7 @@ class Jaspr(ClosedJaxpr):
         qs.abs_qc = new_abs_qc
         return res
 
-    def qjit(self, *args, function_name="jaspr_function"):
+    def qjit(self, *args, function_name="jaspr_function", device=None):
         """
         Leverages the Catalyst pipeline to compile a QIR representation of
         this function and executes that function using the Catalyst QIR runtime.
@@ -674,6 +679,10 @@ class Jaspr(ClosedJaxpr):
         ----------
         *args : iterable
             The arguments to call the function with.
+        device : object
+            The `PennyLane device <https://docs.pennylane.ai/projects/catalyst/en/stable/dev/devices.html>`_ to execute the function. 
+            The default device is `"lightning.qubit" <https://docs.pennylane.ai/projects/lightning/en/stable/lightning_qubit/device.html>`_, 
+            a fast state-vector qubit simulator.
 
         Returns
         -------
@@ -686,7 +695,7 @@ class Jaspr(ClosedJaxpr):
             jaspr_to_catalyst_qjit,
         )
 
-        qjit_obj = jaspr_to_catalyst_qjit(flattened_jaspr, function_name=function_name)
+        qjit_obj = jaspr_to_catalyst_qjit(flattened_jaspr, function_name=function_name, device=device)
         res = qjit_obj.compiled_function(*args)
         if not isinstance(res, (tuple, list)):
             return res
@@ -990,8 +999,80 @@ class Jaspr(ClosedJaxpr):
         from qrisp.jasp.evaluation_tools.catalyst_interface import jaspr_to_qir
 
         return jaspr_to_qir(self.flatten_environments())
-
+    
     def to_mlir(self):
+        """
+        Compiles the Jaspr to an xDSL module using the Jasp Dialect.
+        Requires the xDSL package to be installed (``pip install xdsl``).
+        
+        
+        .. note::
+        
+            An xDSL module can be visualized via:
+                
+            ::
+                
+                print(xdsl_module)
+                
+            and serialized to a string using:
+                
+            ::
+                
+                from xdsl.printer import Printer
+                Printer().print_op(xdsl_module)
+        
+
+        Returns
+        -------
+        xdsl.dialects.builtin.ModuleOp
+            An xDSL module representing the quantum computation.
+            
+        Examples
+        --------
+
+        We create a simple script and inspect the MLIR string:
+
+        ::
+
+            from qrisp import *
+            from qrisp.jasp import make_jaspr
+
+            def example_function(i):
+
+                qv = QuantumVariable(i)
+                cx(qv[0], qv[1])
+                t(qv[1])
+                meas_res = measure(qv)
+                meas_res += 1
+                return meas_res
+
+            jaspr = make_jaspr(example_function)(2)
+            print(jaspr.to_mlir())
+            
+        .. code-block:: none
+        
+            builtin.module @jasp_module {
+              func.func public @main(%arg0 : tensor<i64>, %arg1 : !jasp.QuantumState) -> (tensor<i64>, !jasp.QuantumState) {
+                %0, %1 = "jasp.create_qubits"(%arg0, %arg1) : (tensor<i64>, !jasp.QuantumState) -> (!jasp.QubitArray, !jasp.QuantumState)
+                %2 = "stablehlo.constant"() <{value = dense<0> : tensor<i64>}> : () -> tensor<i64>
+                %3 = "jasp.get_qubit"(%0, %2) : (!jasp.QubitArray, tensor<i64>) -> !jasp.Qubit
+                %4 = "stablehlo.constant"() <{value = dense<1> : tensor<i64>}> : () -> tensor<i64>
+                %5 = "jasp.get_qubit"(%0, %4) : (!jasp.QubitArray, tensor<i64>) -> !jasp.Qubit
+                %6 = "jasp.quantum_gate"(%3, %5, %1) {gate_type = "cx"} : (!jasp.Qubit, !jasp.Qubit, !jasp.QuantumState) -> !jasp.QuantumState
+                %7 = "jasp.quantum_gate"(%5, %6) {gate_type = "t"} : (!jasp.Qubit, !jasp.QuantumState) -> !jasp.QuantumState
+                %8, %9 = "jasp.measure"(%0, %7) : (!jasp.QubitArray, !jasp.QuantumState) -> (tensor<i64>, !jasp.QuantumState)
+                %10 = "stablehlo.add"(%8, %4) : (tensor<i64>, tensor<i64>) -> tensor<i64>
+                %11 = "jasp.reset"(%0, %9) : (!jasp.QubitArray, !jasp.QuantumState) -> !jasp.QuantumState
+                %12 = "jasp.delete_qubits"(%0, %11) : (!jasp.QubitArray, !jasp.QuantumState) -> !jasp.QuantumState
+                func.return %10, %12 : tensor<i64>, !jasp.QuantumState
+              }
+            }
+        
+        """
+        from qrisp.jasp.mlir import jaspr_to_mlir
+        return jaspr_to_mlir(self)
+
+    def to_catalyst_mlir(self):
         """
         Compiles the Jaspr to MLIR using the `Catalyst dialect <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
 
@@ -1024,7 +1105,7 @@ class Jaspr(ClosedJaxpr):
                 return meas_res
 
             jaspr = make_jaspr(example_function)(2)
-            print(jaspr.to_mlir())
+            print(jaspr.to_catalyst_mlir())
 
         .. code-block:: none
 

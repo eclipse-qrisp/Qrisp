@@ -26,16 +26,16 @@ REQUIREMENTS = [
                 "scipy>=1.10.0",
                 "numba",
                 "networkx",
-                "tdqm",
+                "tqdm",
                 "dill",
-                "flask",
+                "flask<2.3.0",
                 "waitress",
                 "pyyaml",
                 "requests",
                 "psutil",
                 "pyqsp",
-                "jax==0.6.0",
-                "jaxlib==0.6.0"]
+                "jax==0.6.2",
+                "jaxlib==0.6.2"]
 
 
 with open("README.md", "r", encoding="utf-8") as fh:

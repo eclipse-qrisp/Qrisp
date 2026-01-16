@@ -28,7 +28,6 @@ import jax.numpy as jnp
 from qrisp.circuit import PTControlledOperation
 from qrisp.jasp import (
     QuantumPrimitive,
-    OperationPrimitive,
     AbstractQuantumCircuit,
     AbstractQubitArray,
     AbstractQubit,
@@ -50,8 +49,8 @@ def cl_func_eqn_evaluator(eqn, context_dic):
         invars = eqn.invars
         outvars = eqn.outvars
 
-        if isinstance(eqn.primitive, OperationPrimitive):
-            process_op(eqn.primitive, invars, outvars, context_dic)
+        if eqn.primitive.name == "jasp.quantum_gate":
+            process_op(eqn.params["gate"], invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.create_qubits":
             process_create_qubits(invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.get_qubit":
@@ -166,12 +165,11 @@ def process_get_size(invars, outvars, context_dic):
     context_dic[outvars[0]] = context_dic[invars[0]].counter
 
 
-def process_op(op_prim, invars, outvars, context_dic):
+def process_op(op, invars, outvars, context_dic):
 
     # B
     bit_array = context_dic[invars[-1]][0]
 
-    op = op_prim.op
     # For that we find all the integers (ie. positions) of the participating
     # qubits in the AbstractQreg
     qb_pos = []
@@ -289,7 +287,7 @@ def process_while(eqn, context_dic):
 
     body_jaxpr = eqn.params["body_jaxpr"]
     cond_jaxpr = eqn.params["cond_jaxpr"]
-    overall_constant_amount= max(eqn.params["body_nconsts"], eqn.params["cond_nconsts"])
+    overall_constant_amount= eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
 
     invalues = extract_invalues(eqn, context_dic)
 
@@ -304,7 +302,7 @@ def process_while(eqn, context_dic):
 
     def body_fun(args):
         
-        constants = args[:eqn.params["body_nconsts"]]
+        constants = args[eqn.params["cond_nconsts"]:overall_constant_amount]
         carries = args[overall_constant_amount:]
         
         flattened_invalues = flatten_signature(constants + carries, body_jaxpr.jaxpr.invars)
@@ -324,7 +322,7 @@ def process_while(eqn, context_dic):
         
         return eval_jaxpr(converted_cond_jaxpr)(*flattened_invalues)
 
-    outvalues = while_loop(cond_fun, body_fun, invalues)[eqn.params["body_nconsts"]:]
+    outvalues = while_loop(cond_fun, body_fun, invalues)[overall_constant_amount:]
     
     insert_outvalues(eqn, context_dic, outvalues)
 

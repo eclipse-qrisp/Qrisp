@@ -131,10 +131,15 @@ class QubitOperator(Hamiltonian):
         from qrisp.operators import A,C,Z,Y
         from qrisp import QuantumVariable
         O = A(0)*C(1)*Z(2)*A(3) + Y(3)
-        U = O.trotterization()
-        qv = QuantumVariable(4)
+        
         t = Symbol("t")
-        U(qv, t = t)
+        def state_prep(t):
+            qv = QuantumVariable(4)
+            U = O.trotterization()
+            U(qv, t = t)
+            return qv
+        
+        qv = state_prep(t)
         
     >>> print(qv.qs)
     QuantumCircuit:
@@ -167,8 +172,8 @@ class QubitOperator(Hamiltonian):
     
     Call the simulator:
         
-    >>> print(qv.get_measurement(subs_dic = {t : 0.5}))
-    {'0000': 0.77015, '0001': 0.22985}
+    >>> O.expectation_value(state_prep)(0.5)  # Calculate the expectation value
+    0.007990479428765712
 
     """
 
@@ -177,6 +182,26 @@ class QubitOperator(Hamiltonian):
 
     def len(self):
         return len(self.terms_dict)
+    
+    def coeffs(self):
+        """
+        Returns the coefficients of the operator.
+
+        Returns
+        -------
+        ndarray
+            The coefficients.
+
+        Examples
+        --------
+
+        >>> from qrisp.operators import X, Y, Z
+        >>> H = X(0)*X(1)+Y(0)*Y(1)+0.5*Z(0)*Z(1)
+        >>> H.coeffs()
+        array([1. , 1. , 0.5])
+
+        """
+        return np.array(list(self.terms_dict.values()))
 
     #
     # Printing
@@ -2200,7 +2225,10 @@ class QubitOperator(Hamiltonian):
         alpha = np.sum(coeffs)
 
         # Number of qubits for case variable
-        num_qubits = np.int64(np.ceil(np.log2(len(coeffs))))
+        m = len(coeffs)
+        num_qubits = np.int64(np.ceil(np.log2(m)))
+        # Ensure coeffs has size 2 ** num_qubits by zero padding
+        coeffs = np.concatenate((coeffs, np.zeros((1 << num_qubits) - m)))
 
         @qache
         def U(case, operand):
