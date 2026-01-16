@@ -311,12 +311,19 @@ def make_depth_eqn_evaluator(profiling_dic, meas_behavior):
                     print(f"\n\n\njasp.quantum_gate called")
 
                     *qubits, depth_state = invalues
+                    print(f"qubits: {qubits}")
+                    print(f"depth_state: {depth_state}")
 
                     depth_vec, global_depth = depth_state
+                    print(f"depth_vec: {depth_vec}")
+                    print(f"global_depth: {global_depth}")
 
                     qubit_ids = jnp.array(qubits, dtype=jnp.int32)
+                    print(f"qubit_ids: {qubit_ids}")
                     touched = jnp.take(depth_vec, qubit_ids)
+                    print(f"touched: {touched}")
                     start = jnp.max(touched)
+                    print(f"start: {start}")
 
                     # TODO: determine actual duration of the gate
                     # duration: 1 for now (or duration = op_depth if op.definition exists)
@@ -324,8 +331,10 @@ def make_depth_eqn_evaluator(profiling_dic, meas_behavior):
 
                     # update all involved qubits to `end`
                     depth_vec = depth_vec.at[qubit_ids].set(end)
+                    print(f"updated depth_vec: {depth_vec}")
 
                     global_depth = jnp.maximum(global_depth, end)
+                    print(f"updated global_depth: {global_depth}")
 
                     # Outvars is QuantumCircuit
                     insert_outvalues(eqn, context_dic, (depth_vec, global_depth))
@@ -336,12 +345,16 @@ def make_depth_eqn_evaluator(profiling_dic, meas_behavior):
                     print(f"jasp.create_qubits called")
 
                     size, depth_state = invalues
+                    print(f"size: {size}")
+                    print(f"depth_state: {depth_state}")
 
                     # Allocate a fresh id range [size] starting from next_base_id
                     base_id = context_dic.get("_depth_next_base_id", jnp.int32(0))
                     base_id = jnp.asarray(base_id, dtype=jnp.int32)
+                    print(f"base_id: {base_id}")
 
                     size = jnp.asarray(size, dtype=jnp.int32)
+                    print(f"size after asarray: {size}")
 
                     context_dic["_depth_next_base_id"] = base_id + size
 
@@ -359,18 +372,60 @@ def make_depth_eqn_evaluator(profiling_dic, meas_behavior):
                     print(f"\n\n\njasp.get_qubit called")
 
                     qubit_array_handle, index = invalues
+                    print(f"qubit_array_handle: {qubit_array_handle}")
+                    print(f"index: {index}")
 
                     base_id, _ = qubit_array_handle
 
                     # A Qubit is represented by its (virtual) integer id.
                     qubit_id = jnp.asarray(base_id + index, dtype=jnp.int32)
+                    print(f"qubit_id: {qubit_id}")
 
                     # Outvars are (Qubit)
                     insert_outvalues(eqn, context_dic, qubit_id)
 
+                # measure has the signature (Qubit, QuantumCircuit)
+                case "jasp.measure":
+
+                    print(f"\n\n\njasp.measure called")
+
+                    measured_obj, depth_state = invalues
+                    print(f"measured_obj: {measured_obj}")
+                    print(f"depth_state: {depth_state}")
+
+                    # Ignore measurement impact on depth; just fabricate a valid measurement result.
+                    # In qrisp/jasp it looks like measurement result is an int64 scalar.
+                    meas_res = jnp.int64(0)
+
+                    # Outvars are (meas_result, QuantumCircuit)
+                    insert_outvalues(eqn, context_dic, (meas_res, depth_state))
+
+                # reset has the signature (QubitArray, QuantumCircuit)
+                case "jasp.reset":
+
+                    print(f"\n\n\njasp.reset called")
+
+                    _qubitarray_handle, depth_state = invalues
+                    print(f"_qubitarray_handle: {_qubitarray_handle}")
+                    print(f"depth_state: {depth_state}")
+
+                    # Outvars are (QuantumCircuit)
+                    insert_outvalues(eqn, context_dic, depth_state)
+
+                # delete_qubits has the signature (QubitArray, QuantumCircuit)
+                case "jasp.delete_qubits":
+
+                    print(f"\n\n\njasp.delete_qubits called")
+
+                    _qubitarray_handle, depth_state = invalues
+                    print(f"_qubitarray_handle: {_qubitarray_handle}")
+                    print(f"depth_state: {depth_state}")
+
+                    # Outvars are (QuantumCircuit)
+                    insert_outvalues(eqn, context_dic, depth_state)
+
                 case _:
 
-                    # Should this return something else?
                     return True
 
     return profiling_eqn_evaluator

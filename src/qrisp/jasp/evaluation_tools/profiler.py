@@ -329,6 +329,29 @@ def depth_profiler_jaspr(jaspr, meas_behavior="0"):
             # TODO: Continue implementation
 
             get_depth_computer(jaspr, meas_behavior)
+            # The `profiling_array_computer` is a function that computes ...
+            # The `profiling_dic` is a dictionary of type {str : int}, which indicates
+            # which operation has been computed at which index of the array.
+            profiling_array_computer, profiling_dic = get_depth_computer(
+                jaspr, meas_behavior
+            )
+
+            args = tree_flatten(args)[0]
+
+            res = profiling_array_computer(*args)
+
+            print("Depth profiler result:", res)
+
+            # Compute the profiling array
+            if len(jaspr.outvars) > 1:
+                profiling_array = res[-1][1]
+                print("Profiling array (case >1):", profiling_array)
+
+            else:
+                profiling_array = res[1]
+                print("Profiling array (case 1):", profiling_array)
+
+            return profiling_array
 
     else:
 
@@ -394,7 +417,8 @@ def get_profiling_array_computer(jaspr, meas_behavior):
     return profiling_array_computer, profiling_dic
 
 
-MAX_QUBITS = 3
+MAX_QUBITS = 5
+
 
 @lru_cache(int(1e5))
 def get_depth_computer(jaspr, meas_behavior):
@@ -438,6 +462,8 @@ def get_depth_computer(jaspr, meas_behavior):
         # `profiling_eqn_evaluator = make_depth_eqn_evaluator(profiling_dic, meas_behavior)`
         # That is, `profiling_eqn_evaluator` is the function that goes through the equations of the Jaspr
         res = evaluator(*filtered_args)
+
+        print("Depth computation result:", res)
 
         return res
 
