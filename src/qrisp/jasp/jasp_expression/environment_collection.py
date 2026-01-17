@@ -21,7 +21,25 @@ from functools import lru_cache
 import numpy as np
 from numba import njit
 from jax.extend.core import ClosedJaxpr, JaxprEqn, Literal, Jaxpr
+from jax.api_util import debug_info
 
+
+# In newer versions, Jax enforces providing a debug info object
+# to the Jaxpr constructor. This object contains metadata information
+# about the Python function corresponding to the Jaxpr object.
+# In this file, Jaxprs are created from QuantumEnvironments,
+# i.e. blocks of code that undergo a particular compilation
+# routine. The assumption that there is a underlying function
+# therefore doesn't apply. Because of this reason, we create a
+# dummy debug info object, to still enable compatibility with the
+# latest Jax versions.
+dummy_debug_info = debug_info(traced_for = "env_jaspr", 
+                              fun = (lambda : None), 
+                              args = (), 
+                              kwargs = {},
+                              static_argnums=[],
+                              static_argnames=[],
+                              result_paths_thunk=lambda : [])
 
 @lru_cache(maxsize=int(1e5))
 def collect_environments(closed_jaxpr):
@@ -66,7 +84,7 @@ def collect_environments(closed_jaxpr):
     for j in range(len(eqn_list)):
         eqn = eqn_list[j]
 
-        if eqn.primitive.name == "pjit":
+        if eqn.primitive.name == "jit":
 
             new_params = dict(eqn.params)
 
@@ -172,13 +190,14 @@ def collect_environments(closed_jaxpr):
                 if isinstance(outvars[k].aval, AbstractQuantumCircuit):
                     outvars.pop(k)
                     break
-
+            
             # Create the Jaxpr
             environment_body_jaspr = Jaspr(
                 constvars=[],
                 invars=invars + enter_eq.outvars,
                 outvars=outvars + eqn.invars[-1:],
                 eqns=environment_body_eqn_list,
+                debug_info=dummy_debug_info
             )
 
             # Create the Equation
@@ -217,6 +236,7 @@ def collect_environments(closed_jaxpr):
             invars=closed_jaxpr.jaxpr.invars,
             outvars=closed_jaxpr.jaxpr.outvars,
             eqns=new_eqn_list,
+            debug_info=closed_jaxpr.jaxpr.debug_info
         )
         
         return ClosedJaxpr(res_jaxpr, closed_jaxpr.consts)

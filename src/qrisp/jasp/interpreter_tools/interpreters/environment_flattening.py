@@ -72,7 +72,7 @@ def flatten_environments(jaspr):
     def eqn_evaluator(eqn, context_dic):
         if eqn.primitive.name == "jasp.q_env":
             eqn.primitive.jcompile(eqn, context_dic)
-        elif eqn.primitive.name == "pjit":
+        elif eqn.primitive.name == "jit":
             flatten_environments_in_pjit_eqn(eqn, context_dic)
         elif eqn.primitive.name == "while":
             flatten_environments_in_while_eqn(eqn, context_dic)

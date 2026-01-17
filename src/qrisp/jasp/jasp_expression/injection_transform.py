@@ -104,7 +104,7 @@ def injection_transform(jaspr, qubit_array_outvar):
                 continue
 
         # Recursively apply the injection transform
-        elif eqn.primitive.name == "pjit":
+        elif eqn.primitive.name == "jit":
             if qubit_array_outvar in eqn.outvars:
 
                 # Retrieve the Jaspr to be transformed

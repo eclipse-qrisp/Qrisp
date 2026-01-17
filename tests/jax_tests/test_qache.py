@@ -78,7 +78,7 @@ def test_qache():
     jaspr_id_dict = {}
     def eqn_evaluator(eqn, context_dic):
         
-        if eqn.primitive.name == "pjit":
+        if eqn.primitive.name == "jit":
             name = eqn.params["name"]
             if isinstance(eqn.params["jaxpr"].jaxpr, Jaspr) and name != "ctrl_env":
                 jaspr = eqn.params["jaxpr"].jaxpr

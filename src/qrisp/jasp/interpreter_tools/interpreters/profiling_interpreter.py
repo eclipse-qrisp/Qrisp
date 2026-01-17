@@ -238,7 +238,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
 
             insert_outvalues(eqn, context_dic, outvalues)
 
-        elif eqn.primitive.name == "pjit":
+        elif eqn.primitive.name == "jit":
 
             # For qached functions, we want to make sure, the compiled function
             # contains only a single implementation per qached function.
