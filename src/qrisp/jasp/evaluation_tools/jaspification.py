@@ -325,7 +325,7 @@ def simulate_jaspr(
                         else:
                             insert_outvalues(eqn, context_dic, [outvalues])
                         return False
-                    except NotImplementedError:
+                    except TypeError:
                         is_executable[0] = False
 
             # We simulate the inverse Gidney mcx via the non-hybrid version because
