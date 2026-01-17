@@ -454,9 +454,7 @@ def exec_multi_measurement(catalyst_register, qubit_list):
         body_jaxpr=loop_jaxpr,
         cond_nconsts=0,
         body_nconsts=0,
-        nimplicit=0,
         preserve_dimensions=True,
-        num_implicit_outputs=0,
         num_implicit_inputs=0,
     )
 
@@ -486,7 +484,6 @@ def process_while(eqn, context_dic):
         body_jaxpr=body_jaxpr,
         cond_nconsts=new_cond_nconsts,
         body_nconsts=new_body_nconsts,
-        nimplicit=0,
         preserve_dimensions=True,
         num_implicit_inputs=0,
     )
@@ -522,7 +519,6 @@ def process_cond(eqn, context_dic):
         outvalues = cond_p.bind(
             *flattened_invalues, 
             branch_jaxprs=branch_list[::-1], 
-            nimplicit_outputs=0,
             num_implicit_outputs=0
         )
 
