@@ -1,61 +1,85 @@
-from cirq import Circuit, LineQubit
+"""
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************
+"""
+
 from qrisp.circuit import ControlledOperation
 import numpy as np
 
-from cirq import (
-    CNOT,
-    H,
-    X,
-    Y,
-    Z,
-    S,
-    T,
-    SWAP,
-    rx,
-    ry,
-    rz,
-    inverse,
-    I,
-    M,
-    R,
-    CZ,
-    ZPowGate,
-    XPowGate,
-)
-
-qrisp_cirq_ops_dict = {
-    "cx": CNOT,
-    "cz": CZ,
-    "swap": SWAP,
-    "h": H,
-    "x": X,
-    "y": Y,
-    "z": Z,
-    "rx": rx,
-    "ry": ry,
-    "rz": rz,
-    "s": S,
-    "t": T,
-    "s_dg": inverse(S),
-    "t_dg": inverse(T),
-    "measure": M,
-    "reset": R,
-    "id": I,
-    "p": ZPowGate,
-    "sx": XPowGate,
-    "sx_dg": XPowGate,
-    # the converter skips adding the global phase gate for now
-    "gphase": None,
-    "xxyy": None,
-    "rxx": None,
-    "rzz": None,
-    # skip qubit allocation and deallocation ops in the converter
-    "qb_alloc": None,
-    "qb_dealloc": None,
-}
-
-
 def convert_to_cirq(qrisp_circuit, cirq_qubits = None):
+    
+    try:
+        from cirq import Circuit, LineQubit
+    except (ModuleNotFoundError, ImportError):
+        raise ImportError("Cirq must be installed to be able to use the Qrisp to Cirq converter.")
+
+    
+    from cirq import (
+        CNOT,
+        H,
+        X,
+        Y,
+        Z,
+        S,
+        T,
+        SWAP,
+        rx,
+        ry,
+        rz,
+        inverse,
+        I,
+        M,
+        R,
+        CZ,
+        ZPowGate,
+        XPowGate,
+        GlobalPhaseGate
+    )
+    
+    qrisp_cirq_ops_dict = {
+        "cx": CNOT,
+        "cz": CZ,
+        "swap": SWAP,
+        "h": H,
+        "x": X,
+        "y": Y,
+        "z": Z,
+        "rx": rx,
+        "ry": ry,
+        "rz": rz,
+        "s": S,
+        "t": T,
+        "s_dg": inverse(S),
+        "t_dg": inverse(T),
+        "measure": M,
+        "reset": R,
+        "id": I,
+        "p": ZPowGate,
+        "sx": XPowGate,
+        "sx_dg": XPowGate,
+        # the converter skips adding the global phase gate for now
+        "gphase": None,
+        "xxyy": None,
+        "rxx": None,
+        "rzz": None,
+        # skip qubit allocation and deallocation ops in the converter
+        "qb_alloc": None,
+        "qb_dealloc": None,
+    }
+    
     """Function to convert a Qrisp circuit to a Cirq circuit."""
     # get data from Qrisp circuit
     qrisp_circ_num_qubits = qrisp_circuit.num_qubits()
@@ -101,10 +125,10 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits = None):
                     f"{op_i} gate is not supported by the Qrisp to Cirq converter."
                 )
 
-        if op_i in ["gphase"]:
-            print(
-                "Qrisp circuit contains a global phase gate which will be skipped in the Qrisp to Cirq conversion."
-            )
+        if op_i == "gphase":
+            cirq_circuit.append(GlobalPhaseGate(np.exp(1j * instr.op.params[0]))())
+            continue
+            
         # the filter is useful for composite gates that do not have a cirq equivalent and have instr.op.definition
         cirq_gates_filter = [
             "cx",
