@@ -46,6 +46,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits = None):
         CZ,
         ZPowGate,
         XPowGate,
+        GlobalPhaseGate
     )
     
     qrisp_cirq_ops_dict = {
@@ -124,10 +125,10 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits = None):
                     f"{op_i} gate is not supported by the Qrisp to Cirq converter."
                 )
 
-        if op_i in ["gphase"]:
-            print(
-                "Qrisp circuit contains a global phase gate which will be skipped in the Qrisp to Cirq conversion."
-            )
+        if op_i == "gphase":
+            cirq_circuit.append(GlobalPhaseGate(np.exp(1j * instr.op.params[0]))())
+            continue
+            
         # the filter is useful for composite gates that do not have a cirq equivalent and have instr.op.definition
         cirq_gates_filter = [
             "cx",

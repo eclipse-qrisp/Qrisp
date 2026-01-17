@@ -84,31 +84,20 @@ def test_unsupported_gate(op, expected_msg):
         convert_to_cirq(qc)
 
 
-@pytest.mark.parametrize(
-    "gate, qubits",
-    [
-        ("rxx", [1, 3]),
-        ("rzz", [2, 0]),
-        ("gphase", [0]),
-    ],
-)
-def test_gphase_error(capsys, gate, qubits):
-    """Verify a message is printed when the Qrisp circuit contains a global phase gate."""
-    qc = QuantumCircuit(4)
-    if gate == "rxx":
-        qc.rxx(0.3, *qubits)
-    elif gate == "rzz":
-        qc.rzz(0.3, *qubits)
-    elif gate == "gphase":
-        qc.gphase(0.3, *qubits)
+def test_gphase():
+    
+    qc = QuantumCircuit(1)
 
-    convert_to_cirq(qc)
-    captured = capsys.readouterr()
-    assert (
-        "Qrisp circuit contains a global phase gate which will be skipped in the Qrisp to Cirq conversion."
-        in captured.out
-    )
-
+    qc.x(0)
+    qc.x(0)
+    qc.gphase(0.5, 0)
+    circuit = qc.to_cirq()
+    U = unitary(circuit)
+    first_non_zero_val = U[0,0]
+    # Calculate the phase angle
+    phase_angle = np.angle(first_non_zero_val)
+    
+    assert phase_angle == 0.5
 
 def test_converter_compiled_qs():
     """Verify the converter works as expected on a simple compiled QuantumSession circuit."""
