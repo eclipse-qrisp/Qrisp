@@ -92,6 +92,7 @@ def copy_jaxpr(jaxpr):
         outvars=list(jaxpr.outvars),
         eqns=list(jaxpr.eqns),
         effects=jaxpr.effects,
+        debug_info=jaxpr.debug_info
     )
 
 
@@ -278,7 +279,8 @@ def control_jaspr(jaspr):
         invars=[ctrl_qubit_var] + jaspr.invars,
         outvars=jaspr.outvars,
         eqns=new_eqns,
-        consts=jaspr.consts
+        consts=jaspr.consts,
+        debug_info=jaspr.debug_info
     )
 
 

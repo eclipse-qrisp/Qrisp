@@ -715,7 +715,8 @@ class Jaspr(ClosedJaxpr):
             invars=list(self.invars),
             outvars=list(self.outvars),
             eqns=list(eqns),
-            consts=list(self.consts)
+            consts=list(self.consts),
+            debug_info=self.debug_info
         )
 
     def to_qir(self):

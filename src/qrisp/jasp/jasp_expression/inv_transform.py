@@ -199,7 +199,8 @@ def invert_jaspr(jaspr):
     temp_jaxpr = ClosedJaxpr(Jaxpr(invars = list(jaspr.invars),
                                    outvars=jaspr.outvars[:-1] + [current_abs_qc],
                                    constvars=jaspr.constvars,
-                                   eqns=non_op_eqs + op_eqs,),
+                                   eqns=non_op_eqs + op_eqs,
+                                   debug_info=jaspr.debug_info),
                              jaspr.consts)
     
     processed_jaxpr = make_jaxpr(eval_jaxpr(temp_jaxpr, eqn_evaluator = eqn_evaluator))(*[invar.aval for invar in jaspr.invars])
