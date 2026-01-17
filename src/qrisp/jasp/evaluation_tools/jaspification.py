@@ -20,6 +20,7 @@ from functools import lru_cache
 
 import jax
 from jax.tree_util import tree_flatten, tree_unflatten
+from jax._src.lib.mlir import ir
 
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
 from qrisp.jasp.evaluation_tools.buffered_quantum_state import BufferedQuantumState
@@ -325,7 +326,7 @@ def simulate_jaspr(
                         else:
                             insert_outvalues(eqn, context_dic, [outvalues])
                         return False
-                    except TypeError:
+                    except (TypeError, ir.MLIRError):
                         is_executable[0] = False
 
             # We simulate the inverse Gidney mcx via the non-hybrid version because
