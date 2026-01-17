@@ -2,65 +2,67 @@
 from qrisp.circuit import ControlledOperation
 import numpy as np
 
-try:
-    from cirq import Circuit, LineQubit
-except (ModuleNotFoundError, ImportError):
-    raise ImportError("Cirq must be installed to be able to use the Qrisp to Cirq converter.")
-
-from cirq import (
-    CNOT,
-    H,
-    X,
-    Y,
-    Z,
-    S,
-    T,
-    SWAP,
-    rx,
-    ry,
-    rz,
-    inverse,
-    I,
-    M,
-    R,
-    CZ,
-    ZPowGate,
-    XPowGate,
-)
-
-qrisp_cirq_ops_dict = {
-    "cx": CNOT,
-    "cz": CZ,
-    "swap": SWAP,
-    "h": H,
-    "x": X,
-    "y": Y,
-    "z": Z,
-    "rx": rx,
-    "ry": ry,
-    "rz": rz,
-    "s": S,
-    "t": T,
-    "s_dg": inverse(S),
-    "t_dg": inverse(T),
-    "measure": M,
-    "reset": R,
-    "id": I,
-    "p": ZPowGate,
-    "sx": XPowGate,
-    "sx_dg": XPowGate,
-    # the converter skips adding the global phase gate for now
-    "gphase": None,
-    "xxyy": None,
-    "rxx": None,
-    "rzz": None,
-    # skip qubit allocation and deallocation ops in the converter
-    "qb_alloc": None,
-    "qb_dealloc": None,
-}
-
 
 def convert_to_cirq(qrisp_circuit, cirq_qubits = None):
+    
+    try:
+        from cirq import Circuit, LineQubit
+    except (ModuleNotFoundError, ImportError):
+        raise ImportError("Cirq must be installed to be able to use the Qrisp to Cirq converter.")
+
+    
+    from cirq import (
+        CNOT,
+        H,
+        X,
+        Y,
+        Z,
+        S,
+        T,
+        SWAP,
+        rx,
+        ry,
+        rz,
+        inverse,
+        I,
+        M,
+        R,
+        CZ,
+        ZPowGate,
+        XPowGate,
+    )
+    
+    qrisp_cirq_ops_dict = {
+        "cx": CNOT,
+        "cz": CZ,
+        "swap": SWAP,
+        "h": H,
+        "x": X,
+        "y": Y,
+        "z": Z,
+        "rx": rx,
+        "ry": ry,
+        "rz": rz,
+        "s": S,
+        "t": T,
+        "s_dg": inverse(S),
+        "t_dg": inverse(T),
+        "measure": M,
+        "reset": R,
+        "id": I,
+        "p": ZPowGate,
+        "sx": XPowGate,
+        "sx_dg": XPowGate,
+        # the converter skips adding the global phase gate for now
+        "gphase": None,
+        "xxyy": None,
+        "rxx": None,
+        "rzz": None,
+        # skip qubit allocation and deallocation ops in the converter
+        "qb_alloc": None,
+        "qb_dealloc": None,
+    }
+    
     """Function to convert a Qrisp circuit to a Cirq circuit."""
     # get data from Qrisp circuit
     qrisp_circ_num_qubits = qrisp_circuit.num_qubits()

@@ -20,11 +20,4 @@ from qrisp.interface.converter.qiskit_converter import *
 from qrisp.interface.converter.pytket_converter import *
 from qrisp.interface.converter.pennylane_converter import *
 from qrisp.interface.converter.qulacs_converter import *
-
-
-# add cirq as an optional dependency
-try:
-    from qrisp.interface.converter.cirq_converter import *
-except (ModuleNotFoundError, ImportError) as e:
-    if 'cirq' in str(e):
-        pass
+from qrisp.interface.converter.cirq_converter import *
