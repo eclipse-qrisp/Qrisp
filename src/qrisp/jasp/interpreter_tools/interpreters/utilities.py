@@ -16,16 +16,33 @@
 ********************************************************************************
 """
 
+from typing import List
+
 from jax.extend.core import ClosedJaxpr
 
+from qrisp.jasp.jasp_expression import Jaspr
 
-# This functions determines the set of primitives that appear in a given Jaxpr
-def get_quantum_operations(jaxpr):
+
+def get_quantum_operations(jaspr: Jaspr) -> List[str]:
+    """
+    Get the list of quantum operations used in a Jaspr expression.
+
+    Parameters
+    ----------
+    jaspr : Jaspr
+        The Jaspr expression to analyze.
+
+    Returns
+    -------
+    List[str]
+        A list of quantum operation names used in the Jaspr expression.
+
+    """
 
     quantum_operations = set()
 
-    for eqn in jaxpr.eqns:
-        # Add current primitive
+    for eqn in jaspr.eqns:
+
         if eqn.primitive.name == "jasp.quantum_gate":
 
             if eqn.params["gate"].definition:
