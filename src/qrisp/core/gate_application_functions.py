@@ -702,19 +702,10 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
         from jax.lax import cond
         import jax.numpy as jnp
         from qrisp.environments import control
-        from qrisp.jasp import q_cond
 
         n = jlen(qubits)
         ctrl_state = jnp.int64(ctrl_state)
         ctrl_state = cond(ctrl_state == -1, lambda x: x + (1 << n), lambda x: x, ctrl_state)
-
-        def nor_z(qubits):
-            z(qubits)
-        
-        def nor_x(qubits):
-            x(qubits)
-
-        
 
         with control(n == 1):
             z(qubits[0])
