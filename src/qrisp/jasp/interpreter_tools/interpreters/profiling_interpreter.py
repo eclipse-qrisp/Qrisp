@@ -424,9 +424,29 @@ def make_depth_eqn_evaluator(profiling_dic, meas_behavior):
                     # Outvars are (QuantumCircuit)
                     insert_outvalues(eqn, context_dic, depth_state)
 
-                case _:
+        elif eqn.primitive.name == "cond":
 
-                    return True
+            print(f"\n\n\ncond called")
+
+            # Build branch evaluators that use *this same* depth evaluator.
+            branch_fns = [
+                eval_jaxpr(branch_jaxpr, eqn_evaluator=profiling_eqn_evaluator)
+                for branch_jaxpr in eqn.params["branches"]
+            ]
+            print(f"branch_fns: {branch_fns}")
+
+            # invalues[0] is the branch index / predicate encoding (as in your gate-count code)
+            # remaining invalues are operands/carries passed to the branches
+            outvalues = jax.lax.switch(invalues[0], branch_fns, *invalues[1:])
+
+            # We normalize to tuple when cond has a single outvar
+            if len(eqn.outvars) == 1:
+                outvalues = (outvalues,)
+
+            insert_outvalues(eqn, context_dic, outvalues)
+
+        else:
+            return True
 
     return profiling_eqn_evaluator
 

@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,188 +16,223 @@
 ********************************************************************************
 """
 
-# TODO: I am still adding tests here, many more to come (they will also be nicely organized later)
+import pytest
 
-import jax
-from jax import numpy as jnp
-
-from qrisp import *
-from qrisp.jasp import *
+from qrisp import QuantumFloat, control, cx, depth, h, mcx, measure, q_cond
 
 
-def test_depth_one_qubit_1():
+class TestDepthQuantumPrimitiveSingleQubit:
+    """Test that the depth is correctly computed for single-qubit quantum primitives."""
 
-    @depth(meas_behavior="0")
-    def main():
-        qf = QuantumFloat(1)
-        h(qf[0])
-        return measure(qf[0])
+    def test_one_qubit_h_static(self):
+        """Test depth of a single Hadamard gate on one qubit (static case)."""
 
-    assert main() == 1
+        @depth(meas_behavior="0")
+        def main():
+            qf = QuantumFloat(1)
+            h(qf[0])
+            return measure(qf[0])
 
+        assert main() == 1
 
-def test_depth_one_qubit_1_dyn():
+    def test_one_qubit_h(self):
+        """Test depth of a single Hadamard gate on one qubit (dynamic case)."""
 
-    @depth(meas_behavior="0")
-    def main(num_qubits):
-        qf = QuantumFloat(num_qubits)
-        h(qf[0])
-        return measure(qf[0])
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
+            h(qf[0])
+            return measure(qf[0])
 
-    assert main(1) == 1
+        assert main(1) == 1
 
+    @pytest.mark.parametrize(
+        "num_qubits,qubit_indices,expected_depth",
+        [
+            (2, [0, 0], 2),
+            (2, [0, 1], 1),
+            (2, [1, 0], 1),
+            (2, [1, 1], 2),
+        ],
+    )
+    def test_two_qubit_h(self, num_qubits, qubit_indices, expected_depth):
+        """Test depth of Hadamard gates on various 2-qubit configurations."""
 
-def test_depth_one_qubit_2():
+        @depth(meas_behavior="0")
+        def main(num_qubits, qubit_indices):
+            qf = QuantumFloat(num_qubits)
+            h(qf[qubit_indices[0]])
+            h(qf[qubit_indices[1]])
+            return measure(qf[qubit_indices[-1]])
 
-    @depth(meas_behavior="0")
-    def main():
-        qf = QuantumFloat(1)
-        h(qf[0])
-        h(qf[0])
-        return measure(qf[0])
+        assert main(num_qubits, qubit_indices) == expected_depth
 
-    assert main() == 2
+    @pytest.mark.parametrize(
+        "qubit_indices,expected_depth",
+        [
+            ([0, 1, 2], 1),  # parallel
+            ([0, 0, 0], 3),  # sequential
+        ],
+    )
+    def test_three_qubit_h(self, qubit_indices, expected_depth):
+        """Test depth of 3 Hadamard gates in parallel vs sequential configuration."""
 
+        @depth(meas_behavior="0")
+        def main(num_qubits, qubit_indices):
+            qf = QuantumFloat(num_qubits)
+            h(qf[qubit_indices[0]])
+            h(qf[qubit_indices[1]])
+            h(qf[qubit_indices[2]])
+            return measure(qf[0])
 
-def test_depth_one_qubit_2_dyn():
+        assert main(3, qubit_indices) == expected_depth
 
-    @depth(meas_behavior="0")
-    def main(num_qubits):
-        qf = QuantumFloat(num_qubits)
-        h(qf[0])
-        h(qf[0])
-        return measure(qf[0])
+    def test_three_qubit_h_parallel_and_sequential(self):
+        """Test depth of 3 Hadamard gates applied sequentially on each of 3 qubits."""
 
-    assert main(1) == 2
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
+            h(qf[0])
+            h(qf[0])
+            h(qf[0])
 
+            h(qf[1])
+            h(qf[1])
+            h(qf[1])
 
-def test_depth_one_qubit_3():
+            h(qf[2])
+            h(qf[2])
+            h(qf[2])
+            return measure(qf[0])
 
-    @depth(meas_behavior="0")
-    def main():
-        qf = QuantumFloat(2)
-        h(qf[0])
-        h(qf[1])
-        return measure(qf[0])
-
-    assert main() == 1
-
-
-def test_depth_one_qubit_3_dyn():
-
-    @depth(meas_behavior="0")
-    def main(num_qubits):
-        qf = QuantumFloat(num_qubits)
-        h(qf[0])
-        h(qf[1])
-        return measure(qf[0])
-
-    assert main(2) == 1
-
-
-def test_depth_one_qubit_4():
-
-    @depth(meas_behavior="0")
-    def main():
-        qf = QuantumFloat(2)
-        h(qf[1])
-        h(qf[1])
-        return measure(qf[1])
-
-    assert main() == 2
-
-
-def test_depth_one_qubit_4_dyn():
-
-    @depth(meas_behavior="0")
-    def main(num_qubits):
-        qf = QuantumFloat(num_qubits)
-        h(qf[1])
-        h(qf[1])
-        return measure(qf[1])
-
-    assert main(2) == 2
+        assert main(3) == 3
 
 
-# From now on, dynamic is implied
+class TestDepthQuantumPrimitiveMultiQubit:
+    """Test that the depth is correctly computed for multi-qubit quantum primitives."""
+
+    def test_two_qubit_cx(self):
+        """Test depth of a single CNOT gate on two qubits."""
+
+        @depth(meas_behavior="0")
+        def main():
+            qf = QuantumFloat(2)
+            cx(qf[0], qf[1])
+            return measure(qf[0])
+
+        assert main() == 1
+
+    def test_three_qubit_mcx(self):
+        """Test depth of a single Toffoli gate on three qubits."""
+
+        @depth(meas_behavior="0")
+        def main():
+            qf = QuantumFloat(3)
+            mcx([qf[0], qf[1]], qf[2])
+            return measure(qf[0])
+
+        assert main() == 1
+
+    def test_h_cx_combination_1(self):
+        """Test depth of a combination of Hadamard and CNOT gates."""
+
+        @depth(meas_behavior="0")
+        def main():
+            qf = QuantumFloat(2)
+            h(qf[0])
+            cx(qf[0], qf[1])
+            h(qf[1])
+            return measure(qf[0])
+
+        assert main() == 3
+
+    def test_h_cx_combination_2(self):
+        """Test depth of a combination of Hadamard, Toffoli, and CNOT gates."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
+            h(qf[0])
+            h(qf[2])
+            mcx([qf[0], qf[1]], qf[2])
+            h(qf[1])
+            h(qf[1])
+            cx(qf[2], qf[3])
+            return measure(qf[0])
+
+        assert main(4) == 4
 
 
-def test_depth_3_h_parallel():
+class TestDepthControlStructures:
+    """Test that the depth is correctly computed for control structures."""
 
-    @depth(meas_behavior="0")
-    def main(num_qubits):
-        qf = QuantumFloat(num_qubits)
-        h(qf[0])
-        h(qf[1])
-        h(qf[2])
-        return measure(qf[0])
+    @pytest.mark.parametrize("selector", [0, -1])
+    def test_conditional_1(self, selector):
+        """Test depth computation in a conditional structure with q_cond."""
 
-    assert main(3) == 1
+        @depth(meas_behavior="0")
+        def main(num_qubits, selector):
+            qf = QuantumFloat(num_qubits)
 
+            def true_fn():
+                h(qf[0])
+                h(qf[2])
+                cx(qf[0], qf[1])
+                h(qf[1])
 
-def test_depth_3_h_sequential():
+            def false_fn():
+                h(qf[0])
+                h(qf[2])
+                mcx([qf[0], qf[1]], qf[2])
+                h(qf[1])
+                h(qf[1])
+                cx(qf[2], qf[3])
 
-    @depth(meas_behavior="0")
-    def main(num_qubits):
-        qf = QuantumFloat(num_qubits)
-        h(qf[0])
-        h(qf[0])
-        h(qf[0])
-        return measure(qf[0])
+            q_cond(selector >= 0, true_fn, false_fn)
 
-    assert main(3) == 3
+            return measure(qf[0])
 
+        expected_depth = 3 if selector >= 0 else 4
+        assert main(4, selector) == expected_depth
 
-def test_depth_3_h_sequential_and_parallel():
+    @pytest.mark.parametrize("selector", [0, -1])
+    def test_conditional_2(self, selector):
+        """Test depth computation in a conditional structure with control context."""
 
-    @depth(meas_behavior="0")
-    def main(num_qubits):
-        qf = QuantumFloat(num_qubits)
-        h(qf[0])
-        h(qf[0])
-        h(qf[0])
+        @depth(meas_behavior="0")
+        def main(num_qubits, selector):
+            qf = QuantumFloat(num_qubits)
 
-        h(qf[1])
-        h(qf[1])
-        h(qf[1])
+            with control(selector >= 0):
+                h(qf[0])
+                h(qf[2])
+                cx(qf[0], qf[1])
+                h(qf[1])
+            with control(selector < 0):
+                h(qf[0])
+                h(qf[2])
+                mcx([qf[0], qf[1]], qf[2])
+                h(qf[1])
+                h(qf[1])
+                cx(qf[2], qf[3])
 
-        h(qf[2])
-        h(qf[2])
-        h(qf[2])
-        return measure(qf[0])
+            return measure(qf[0])
 
-    assert main(3) == 3
-
-
-def test_depth_h_cx_comb1():
-
-    @depth(meas_behavior="0")
-    def main(num_qubits):
-        qf = QuantumFloat(num_qubits)
-        h(qf[0])
-        h(qf[2])
-        cx(qf[0], qf[1])
-        h(qf[1])
-        return measure(qf[0])
-
-    assert main(3) == 3
+        expected_depth = 3 if selector >= 0 else 4
+        assert main(4, selector) == expected_depth
 
 
-def test_depth_h_cx_comb2():
+# @pytest.mark.parametrize("iterations", [1, 5, 10, 20])
+# def test_loop1(iterations):
 
-    @depth(meas_behavior="0")
-    def main(num_qubits):
-        qf = QuantumFloat(num_qubits)
-        h(qf[0])
-        h(qf[2])
+#     @depth(meas_behavior="0")
+#     def main(num_qubits, iterations):
+#         qf = QuantumFloat(num_qubits)
 
-        mcx([qf[0], qf[1]], qf[2])
+#         for _ in jrange(iterations):
+#             h(qf[0])
 
-        h(qf[1])
-        h(qf[1])
+#         return measure(qf[0])
 
-        cx(qf[2], qf[3])
-
-        return measure(qf[0])
-
-    assert main(4) == 4
+#     assert main(1, iterations) == iterations
