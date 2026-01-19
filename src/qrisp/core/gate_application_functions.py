@@ -707,19 +707,15 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
         ctrl_state = jnp.int64(ctrl_state)
         ctrl_state = cond(ctrl_state == -1, lambda x: x + (1 << n), lambda x: x, ctrl_state)
 
-        with control(n == 1):
-            z(qubits[0])
+        with control((ctrl_state >> (n - 1)) & 1 == 0):
+            x(qubits[-1])
 
-        with control(n > 1): 
-            with control((ctrl_state >> (n - 1)) & 1 == 0):
-                x(qubits[-1])
+        h(qubits[-1])
+        mcx(qubits[:-1], qubits[-1], method=method, ctrl_state=ctrl_state & ((1 << (n - 1)) - 1))
+        h(qubits[-1])
 
-            h(qubits[-1])
-            mcx(qubits[:-1], qubits[-1], method=method, ctrl_state=ctrl_state & ((1 << (n - 1)) - 1))
-            h(qubits[-1])
-
-            with control((ctrl_state >> (n - 1)) & 1 == 0):
-                x(qubits[-1])
+        with control((ctrl_state >> (n - 1)) & 1 == 0):
+            x(qubits[-1])
 
         return qubits
 
