@@ -58,7 +58,7 @@ def invert_eqn(eqn):
 
     """
 
-    if eqn.primitive.name == "pjit":
+    if eqn.primitive.name == "jit":
         params = dict(eqn.params)
         params["jaxpr"] = eqn.params["jaxpr"].inverse()
 
@@ -140,7 +140,7 @@ def invert_jaspr(jaspr):
 
     for eqn in jaspr.eqns:
         if eqn.primitive == quantum_gate_p or (
-            (eqn.primitive.name in ["pjit", "while", "cond"])
+            (eqn.primitive.name in ["jit", "while", "cond"])
             and len(eqn.invars)
             and isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit)
         ):
@@ -199,7 +199,8 @@ def invert_jaspr(jaspr):
     temp_jaxpr = ClosedJaxpr(Jaxpr(invars = list(jaspr.invars),
                                    outvars=jaspr.outvars[:-1] + [current_abs_qc],
                                    constvars=jaspr.constvars,
-                                   eqns=non_op_eqs + op_eqs,),
+                                   eqns=non_op_eqs + op_eqs,
+                                   debug_info=jaspr.debug_info),
                              jaspr.consts)
     
     processed_jaxpr = make_jaxpr(eval_jaxpr(temp_jaxpr, eqn_evaluator = eqn_evaluator))(*[invar.aval for invar in jaspr.invars])
