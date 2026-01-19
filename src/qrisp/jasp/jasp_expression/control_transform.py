@@ -92,6 +92,7 @@ def copy_jaxpr(jaxpr):
         outvars=list(jaxpr.outvars),
         eqns=list(jaxpr.eqns),
         effects=jaxpr.effects,
+        debug_info=jaxpr.debug_info
     )
 
 
@@ -113,7 +114,7 @@ def control_eqn(eqn, ctrl_qubit_var):
     """
     from qrisp.jasp import Jaspr, AbstractQuantumCircuit
 
-    if eqn.primitive.name == "pjit":
+    if eqn.primitive.name == "jit":
 
         new_params = dict(eqn.params)
 
@@ -258,7 +259,7 @@ def control_jaspr(jaspr):
     new_eqns = []
     for eqn in jaspr.eqns:
         if eqn.primitive.name == "jasp.quantum_gate" or eqn.primitive.name in [
-            "pjit",
+            "jit",
             "while",
             "cond",
         ]:
@@ -278,7 +279,8 @@ def control_jaspr(jaspr):
         invars=[ctrl_qubit_var] + jaspr.invars,
         outvars=jaspr.outvars,
         eqns=new_eqns,
-        consts=jaspr.consts
+        consts=jaspr.consts,
+        debug_info=jaspr.debug_info
     )
 
 
