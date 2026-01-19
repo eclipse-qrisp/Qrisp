@@ -217,7 +217,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
 
             def cond_fun(val):
 
-                constants = val[eqn.params["body_nconsts"] : overall_constant_amount]
+                constants = val[: eqn.params["cond_nconsts"]]
                 carries = val[overall_constant_amount:]
 
                 res = eval_jaxpr(
@@ -251,7 +251,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
 
             insert_outvalues(eqn, context_dic, outvalues)
 
-        elif eqn.primitive.name == "pjit":
+        elif eqn.primitive.name == "jit":
 
             # For qached functions, we want to make sure, the compiled function
             # contains only a single implementation per qached function.

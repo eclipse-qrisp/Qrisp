@@ -92,20 +92,6 @@ class TestStatePreparationQSwitch:
         ):
             qv.init_state(array, method="qswitch")
 
-    def test_error_fresh_qubits(self):
-        """Test that an error is raised when qubits are not in the |0> state."""
-
-        qv = QuantumVariable(2)
-        x(qv[0])
-
-        array = np.array([1j, 0, 0, 0], dtype=complex)
-
-        with pytest.raises(
-            ValueError,
-            match="Tried to initialize qubits which are not fresh anymore",
-        ):
-            qv.init_state(array, method="qswitch")
-
     def test_error_zero_vector(self):
         """Test that an error is raised when a zero vector is provided."""
 

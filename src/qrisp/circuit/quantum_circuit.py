@@ -1898,13 +1898,27 @@ class QuantumCircuit:
         Returns
         -------
         function
-            A function representing a pennylane QuantumCircuit.
+            A function representing a PyTket QuantumCircuit.
 
         """
         from qrisp.interface import pytket_converter
 
         return pytket_converter(self)
 
+    def to_cirq(self):
+        """
+        Method to convert the given QuantumCircuit to a Cirq Circuit.
+
+        Returns
+        -------
+        function
+            A function representing a Cirq QuantumCircuit.
+
+        """
+        from qrisp.interface import convert_to_cirq
+
+        return convert_to_cirq(self)
+    
     # Several methods to apply the standard operation defined in standard_operations.py
     def measure(self, qubits, clbits=None):
         """
