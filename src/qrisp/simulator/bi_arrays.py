@@ -1256,7 +1256,7 @@ def tensordot(a, b, axes, contract_sparsity_threshold=0.01):
         # contract method of DenseBiArray)
         res_sparsity = 1 - (1 - a.sparsity * b.sparsity) ** contraction_size
 
-        res_size = a.size * b.size / contraction_size
+        res_size = a.size * b.size / contraction_size**2
     else:
         res_sparsity = a.sparsity * b.sparsity
 

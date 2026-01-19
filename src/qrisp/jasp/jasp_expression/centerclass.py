@@ -432,7 +432,7 @@ class Jaspr(ClosedJaxpr):
         jaspr = self
         
         def eqn_evaluator(eqn, context_dic):
-            if eqn.primitive.name == "pjit" and isinstance(
+            if eqn.primitive.name == "jit" and isinstance(
                 eqn.params["jaxpr"], Jaspr
             ):
                 return pjit_to_gate(eqn, context_dic, eqn_evaluator)
@@ -580,7 +580,7 @@ class Jaspr(ClosedJaxpr):
         flattened_jaspr = self
 
         def eqn_evaluator(eqn, context_dic):
-            if eqn.primitive.name == "pjit":
+            if eqn.primitive.name == "jit":
 
                 if eqn.params["name"] == "expectation_value_eval_function":
                     from qrisp.jasp.program_control import sampling_evaluator
@@ -670,7 +670,7 @@ class Jaspr(ClosedJaxpr):
         qs.abs_qc = new_abs_qc
         return res
 
-    def qjit(self, *args, function_name="jaspr_function"):
+    def qjit(self, *args, function_name="jaspr_function", device=None):
         """
         Leverages the Catalyst pipeline to compile a QIR representation of
         this function and executes that function using the Catalyst QIR runtime.
@@ -679,6 +679,10 @@ class Jaspr(ClosedJaxpr):
         ----------
         *args : iterable
             The arguments to call the function with.
+        device : object
+            The `PennyLane device <https://docs.pennylane.ai/projects/catalyst/en/stable/dev/devices.html>`_ to execute the function. 
+            The default device is `"lightning.qubit" <https://docs.pennylane.ai/projects/lightning/en/stable/lightning_qubit/device.html>`_, 
+            a fast state-vector qubit simulator.
 
         Returns
         -------
@@ -691,7 +695,7 @@ class Jaspr(ClosedJaxpr):
             jaspr_to_catalyst_qjit,
         )
 
-        qjit_obj = jaspr_to_catalyst_qjit(flattened_jaspr, function_name=function_name)
+        qjit_obj = jaspr_to_catalyst_qjit(flattened_jaspr, function_name=function_name, device=device)
         res = qjit_obj.compiled_function(*args)
         if not isinstance(res, (tuple, list)):
             return res
@@ -711,7 +715,8 @@ class Jaspr(ClosedJaxpr):
             invars=list(self.invars),
             outvars=list(self.outvars),
             eqns=list(eqns),
-            consts=list(self.consts)
+            consts=list(self.consts),
+            debug_info=self.debug_info
         )
 
     def to_qir(self):
