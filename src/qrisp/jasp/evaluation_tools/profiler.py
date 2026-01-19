@@ -32,20 +32,26 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 
 """
 
-from functools import lru_cache
 import types
+from functools import lru_cache
+from typing import Any, Callable, NamedTuple
 
 import jax
-import jax.numpy as jnp
-from jax.extend.core import ClosedJaxpr
 from jax.tree_util import tree_flatten
 
-from qrisp.jasp.interpreter_tools import (
-    make_profiling_eqn_evaluator,
-    make_depth_eqn_evaluator,
-    eval_jaxpr,
-)
 from qrisp.jasp.evaluation_tools.jaspification import simulate_jaspr
+from qrisp.jasp.interpreter_tools import (
+    eval_jaxpr,
+    make_profiling_eqn_evaluator,
+)
+from qrisp.jasp.interpreter_tools.interpreters.depth_metric import (
+    extract_depth,
+    get_depth_computer,
+)
+from qrisp.jasp.interpreter_tools.interpreters.utilities import get_quantum_operations
+from qrisp.jasp.jasp_expression import Jaspr
+
+# TODO: move count_ops to a separate file
 
 
 def count_ops(meas_behavior):
@@ -221,30 +227,25 @@ def count_ops(meas_behavior):
     return count_ops_decorator
 
 
-def depth(meas_behavior):
+def _normalize_meas_behavior(meas_behavior) -> Callable:
+    """Normalize the measurement behavior into a callable."""
 
-    def depth_decorator(function):
-
-        def depth_counter(*args):
-
-            from qrisp.jasp import make_jaspr
-
-            if not hasattr(function, "jaspr_dict"):
-                function.jaspr_dict = {}
-
-            args = list(args)
-
-            signature = tuple([type(arg) for arg in args])
-            if not signature in function.jaspr_dict:
-                function.jaspr_dict[signature] = make_jaspr(function)(*args)
-
-            return function.jaspr_dict[signature].depth(
-                *args, meas_behavior=meas_behavior
+    if isinstance(meas_behavior, str):
+        if meas_behavior == "0":
+            return always_zero
+        if meas_behavior == "1":
+            return always_one
+        if meas_behavior == "sim":
+            # TODO: implement simulation-based measurement
+            raise NotImplementedError(
+                "Simulation-based measurement behavior not yet implemented."
             )
+        raise ValueError(f"Unknown meas_behavior={meas_behavior!r}")
 
-        return depth_counter
+    if callable(meas_behavior):
+        return meas_behavior
 
-    return depth_decorator
+    raise TypeError("meas_behavior must be a str or callable")
 
 
 def always_zero(key):
@@ -306,60 +307,6 @@ def profile_jaspr(jaspr, meas_behavior="0"):
     return profiler
 
 
-# TODO: The final architecture for depth counting might differ from this.
-# For now, we duplicate the structure of count_ops for the implementation.
-def depth_profiler_jaspr(jaspr, meas_behavior="0"):
-
-    if isinstance(meas_behavior, str):
-        if meas_behavior == "0":
-            meas_behavior = always_zero
-        elif meas_behavior == "1":
-            meas_behavior = always_one
-        elif not meas_behavior == "sim":
-            raise Exception(
-                f"Don't know how to compute required resources via method {meas_behavior}"
-            )
-
-    if callable(meas_behavior):
-
-        def profiler(*args):
-
-            # TODO: Continue implementation
-
-            get_depth_computer(jaspr, meas_behavior)
-            # The `profiling_array_computer` is a function that computes ...
-            # The `profiling_dic` is a dictionary of type {str : int}, which indicates
-            # which operation has been computed at which index of the array.
-            profiling_array_computer, profiling_dic = get_depth_computer(
-                jaspr, meas_behavior
-            )
-
-            args = tree_flatten(args)[0]
-
-            res = profiling_array_computer(*args)
-
-            print("Depth profiler result:", res)
-
-            # Compute the profiling array
-            if len(jaspr.outvars) > 1:
-                profiling_array = res[-1][1]
-                print("Profiling array (case >1):", profiling_array)
-
-            else:
-                profiling_array = res[1]
-                print("Profiling array (case 1):", profiling_array)
-
-            return profiling_array
-
-    else:
-
-        raise NotImplementedError(
-            "Computing the depth via simulation is not yet implemented."
-        )
-
-    return profiler
-
-
 # This function takes a Jaspr and returns a function computing the "counting array"
 @lru_cache(int(1e5))
 def get_profiling_array_computer(jaspr, meas_behavior):
@@ -397,7 +344,7 @@ def get_profiling_array_computer(jaspr, meas_behavior):
 
         # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
         filtered_args = []
-        from qrisp.operators import QubitOperator, FermionicOperator
+        from qrisp.operators import FermionicOperator, QubitOperator
 
         for x in list(args) + [final_arg]:
             if type(x) not in [
@@ -415,88 +362,86 @@ def get_profiling_array_computer(jaspr, meas_behavior):
     return profiling_array_computer, profiling_dic
 
 
-MAX_QUBITS = 5
+# FROM NOW ON IS THE NEW IMPLEMENTATION OF THE PROFILER
 
 
-@lru_cache(int(1e5))
-def get_depth_computer(jaspr, meas_behavior):
+# TODO: This should be moved to a separate file at the end.
+def depth(meas_behavior):
 
-    # Find the occuring quantum operations and store their names in a dictionary,
-    # indicating, which tracer counts what operation
-    quantum_operations = get_quantum_operations(jaspr)
+    def depth_decorator(function):
 
-    profiling_dic = {quantum_operations[i]: i for i in range(len(quantum_operations))}
+        def depth_counter(*args):
 
-    if "measure" not in profiling_dic:
-        profiling_dic["measure"] = -1
+            from qrisp.jasp import make_jaspr
 
-    profiling_eqn_evaluator = make_depth_eqn_evaluator(profiling_dic, meas_behavior)
+            if not hasattr(function, "jaspr_dict"):
+                function.jaspr_dict = {}
 
-    evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
+            args = list(args)
 
-    # TODO: Below is mostly copy-paste from get_profiling_array_computer.
-    # Adjust to depth counting logic.
+            signature = tuple([type(arg) for arg in args])
+            if not signature in function.jaspr_dict:
+                function.jaspr_dict[signature] = make_jaspr(function)(*args)
 
-    def profiling_array_computer(*args):
-
-        depth_vec0 = jnp.zeros((MAX_QUBITS,), dtype=jnp.int32)
-        global_depth0 = jnp.int32(0)
-        final_arg = (depth_vec0, global_depth0)
-
-        filtered_args = []
-        from qrisp.operators import QubitOperator, FermionicOperator
-
-        for x in list(args) + [final_arg]:
-            if type(x) not in [
-                str,
-                QubitOperator,
-                FermionicOperator,
-                types.FunctionType,
-            ]:
-                filtered_args.append(x)
-
-        # `evaluator` is defined as `evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))`,
-        # where `profiling_eqn_evaluator` is created via
-        # `profiling_eqn_evaluator = make_depth_eqn_evaluator(profiling_dic, meas_behavior)`
-        # That is, `profiling_eqn_evaluator` is the function that goes through the equations of the Jaspr
-        res = evaluator(*filtered_args)
-
-        print("Depth computation result:", res)
-
-        return res
-
-    return profiling_array_computer, profiling_dic
-
-
-# This functions determines the set of primitives that appear in a given Jaxpr
-def get_quantum_operations(jaxpr):
-
-    quantum_operations = set()
-
-    for eqn in jaxpr.eqns:
-        # Add current primitive
-        if eqn.primitive.name == "jasp.quantum_gate":
-
-            if eqn.params["gate"].definition:
-                for op_name in (
-                    eqn.params["gate"].definition.transpile().count_ops().keys()
-                ):
-                    quantum_operations.add(op_name)
-            else:
-                quantum_operations.add(eqn.params["gate"].name)
-
-        if eqn.primitive.name == "cond":
-            quantum_operations.update(
-                get_quantum_operations(eqn.params["branches"][0].jaxpr)
+            return function.jaspr_dict[signature].depth(
+                *args, meas_behavior=meas_behavior
             )
-            quantum_operations.update(
-                get_quantum_operations(eqn.params["branches"][1].jaxpr)
-            )
-            continue
 
-        # Handle call primitives (like cond/pjit)
-        for param in eqn.params.values():
-            if isinstance(param, ClosedJaxpr):
-                quantum_operations.update(get_quantum_operations(param.jaxpr))
+        return depth_counter
 
-    return list(quantum_operations)
+    return depth_decorator
+
+
+class MetricSpec(NamedTuple):
+    """Specification of a metric to be computed via profiling."""
+
+    build_computer: Callable[[Jaspr, Callable], tuple[Callable, dict]]
+    extract_result: Callable[[Any, dict, Jaspr], Any]
+    simulate_fallback: Callable | None
+
+
+METRIC_DISPATCH = {
+    "depth": MetricSpec(
+        build_computer=get_depth_computer,
+        extract_result=extract_depth,
+        simulate_fallback=None,  # TODO: implement depth via simulation
+    ),
+}
+
+
+def profile_jaspr_new(
+    jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0"
+) -> Callable:
+    """
+    Profile a Jaspr according to a given metric mode.
+
+    Parameters
+    ----------
+    jaspr : Jaspr
+        The Jaspr to be profiled.
+    mode : str
+        The profiling mode to be used. Currently supported modes are "depth".
+    meas_behavior : str or callable, optional
+        The measurement behavior to be used during profiling. Default is "0".
+
+
+    Returns
+    -------
+    Callable
+        A function that computes the specified metric when called with the same
+        arguments as the original Jaspr.
+
+    """
+
+    # We dispatch to the appropriate metric specification
+    # since different metrics might return different data structures.
+    metric_spec = METRIC_DISPATCH[mode]
+    meas_behavior_norm = _normalize_meas_behavior(meas_behavior)
+    prof_computer, profiling_dic = metric_spec.build_computer(jaspr, meas_behavior_norm)
+
+    def profiler(*args):
+        args = tree_flatten(args)[0]
+        res = prof_computer(*args)
+        return metric_spec.extract_result(res, profiling_dic, jaspr)
+
+    return profiler
