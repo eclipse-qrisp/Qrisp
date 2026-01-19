@@ -76,7 +76,7 @@ def cl_func_eqn_evaluator(eqn, context_dic):
             return process_while(eqn, context_dic)
         elif eqn.primitive.name == "cond":
             return process_cond(eqn, context_dic)  #
-        elif eqn.primitive.name == "pjit":
+        elif eqn.primitive.name == "jit":
             process_pjit(eqn, context_dic)
         else:
             return True
@@ -322,7 +322,7 @@ def process_while(eqn, context_dic):
         
         return eval_jaxpr(converted_cond_jaxpr)(*flattened_invalues)
 
-    outvalues = while_loop(cond_fun, body_fun, invalues)[eqn.params["body_nconsts"]:]
+    outvalues = while_loop(cond_fun, body_fun, invalues)[overall_constant_amount:]
     
     insert_outvalues(eqn, context_dic, outvalues)
 

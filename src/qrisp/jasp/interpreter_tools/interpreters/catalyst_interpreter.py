@@ -147,7 +147,7 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             return process_while(eqn, context_dic)
         elif eqn.primitive.name == "cond":
             return process_cond(eqn, context_dic)  #
-        elif eqn.primitive.name == "pjit":
+        elif eqn.primitive.name == "jit":
             process_pjit(eqn, context_dic)
         else:
             return True
@@ -454,8 +454,8 @@ def exec_multi_measurement(catalyst_register, qubit_list):
         body_jaxpr=loop_jaxpr,
         cond_nconsts=0,
         body_nconsts=0,
-        nimplicit=0,
         preserve_dimensions=True,
+        num_implicit_inputs=0,
     )
 
     i, acc, reg, static_qubit_array, list_size = while_res
@@ -484,8 +484,8 @@ def process_while(eqn, context_dic):
         body_jaxpr=body_jaxpr,
         cond_nconsts=new_cond_nconsts,
         body_nconsts=new_body_nconsts,
-        nimplicit=0,
         preserve_dimensions=True,
+        num_implicit_inputs=0,
     )
 
     outvalues = list(outvalues)
@@ -517,7 +517,9 @@ def process_cond(eqn, context_dic):
         flattened_invalues = flatten_signature(invalues, eqn.invars)
 
         outvalues = cond_p.bind(
-            *flattened_invalues, branch_jaxprs=branch_list[::-1], nimplicit_outputs=0
+            *flattened_invalues, 
+            branch_jaxprs=branch_list[::-1], 
+            num_implicit_outputs=0
         )
 
         unflattened_outvalues = unflatten_signature(outvalues, eqn.outvars)

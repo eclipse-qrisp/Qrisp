@@ -21,3 +21,4 @@ from qrisp.interface.converter.pytket_converter import *
 from qrisp.interface.converter.pennylane_converter import *
 from qrisp.interface.converter.qulacs_converter import *
 from qrisp.interface.converter.stim_converter import *
+from qrisp.interface.converter.cirq_converter import *
