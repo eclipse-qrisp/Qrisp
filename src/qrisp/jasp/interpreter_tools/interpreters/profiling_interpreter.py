@@ -53,6 +53,8 @@ import jax
 import jax.numpy as jnp
 from jax.random import key
 
+from typing import Callable
+
 
 # This functions takes a "profiling dic", i.e. a dictionary of the form {str : int}
 # indicating what kinds of quantum gates can appear in a Jaspr.
@@ -286,8 +288,20 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
     return profiling_eqn_evaluator
 
 
-# TODO: The final architecture for depth counting might differ from this.
-def make_profiling_eqn_evaluator_new(profiling_dic, meas_behavior, metric):
+def make_profiling_eqn_evaluator_new(metric) -> Callable:
+    """
+    Build a profiling equation evaluator for a given metric.
+
+    Parameters
+    ----------
+    metric
+        The metric to use for profiling.
+
+    Returns
+    -------
+    Callable
+        The profiling equation evaluator.
+    """
 
     def profiling_eqn_evaluator(eqn, context_dic):
 

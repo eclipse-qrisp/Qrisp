@@ -18,7 +18,7 @@
 
 import types
 from functools import lru_cache
-from typing import Callable
+from typing import Callable, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -37,12 +37,15 @@ MAX_QUBITS = 5
 class DepthMetric:
     """A simple depth counting metric implementation."""
 
-    def __init__(self):
+    def __init__(self, profiling_dic: dict, meas_behavior: Callable):
         """Initialize the DepthMetric."""
 
         depth_vec = jnp.zeros((MAX_QUBITS,), dtype=jnp.int32)
         global_depth = jnp.int32(0)
         self.final_arg = (depth_vec, global_depth)
+
+        self.profiling_dic = profiling_dic
+        self.meas_behavior = meas_behavior
 
     def handle_measure(self, invalues):
         """Handle the `jasp.measure` primitive."""
@@ -51,7 +54,8 @@ class DepthMetric:
         print(f"measured_obj: {measured_obj}")
         print(f"depth_state: {depth_state}")
 
-        # Ignore measurement impact on depth; just fabricate a valid measurement result.
+        # At this stage we ignore measurement impact on depth.
+        # We just fabricate a valid measurement result.
         # In qrisp/jasp it looks like measurement result is an int64 scalar.
         meas_res = jnp.int64(0)
 
@@ -141,19 +145,36 @@ class DepthMetric:
         return depth_state
 
 
-def extract_depth(res, _, jaspr):
+def extract_depth(res: Tuple, jaspr: Jaspr) -> int:
     """Extract depth from the profiling result."""
 
     if len(jaspr.outvars) > 1:
         depth = res[-1][1]
     else:
         depth = res[1]
+
     return int(depth) if hasattr(depth, "__int__") else depth
 
 
 @lru_cache(int(1e5))
-def get_depth_computer(jaspr: Jaspr, meas_behavior: Callable) -> tuple[Callable, dict]:
-    """Build a depth profiling computer for a given Jaspr."""
+def get_depth_profiler(jaspr: Jaspr, meas_behavior: Callable) -> Callable:
+    """
+    Build a depth profiling computer for a given Jaspr.
+
+    Parameters
+    ----------
+    jaspr : Jaspr
+        The Jaspr expression to profile.
+
+    meas_behavior : Callable
+        The measurement behavior function.
+
+    Returns
+    -------
+    Callable
+        A depth profiler function.
+
+    """
 
     quantum_operations = get_quantum_operations(jaspr)
     profiling_dic = {quantum_operations[i]: i for i in range(len(quantum_operations))}
@@ -161,20 +182,23 @@ def get_depth_computer(jaspr: Jaspr, meas_behavior: Callable) -> tuple[Callable,
     if "measure" not in profiling_dic:
         profiling_dic["measure"] = -1
 
-    metric = DepthMetric()
-    eqn_eval = make_profiling_eqn_evaluator_new(profiling_dic, meas_behavior, metric)
-    jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=eqn_eval))
+    depth_metric = DepthMetric(profiling_dic, meas_behavior)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator_new(depth_metric)
+    jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def depth_profiler(*args):
 
         # Import here to avoid circular imports
+        # TODO: is this needed for depth metric?
         from qrisp.operators import FermionicOperator, QubitOperator
 
         static_types = (str, QubitOperator, FermionicOperator, types.FunctionType)
         filtered_args = [
-            x for x in list(args) + [metric.final_arg] if type(x) not in static_types
+            x
+            for x in list(args) + [depth_metric.final_arg]
+            if type(x) not in static_types
         ]
 
         return jitted_evaluator(*filtered_args)
 
-    return depth_profiler, profiling_dic
+    return depth_profiler

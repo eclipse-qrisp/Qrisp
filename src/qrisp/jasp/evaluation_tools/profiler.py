@@ -46,10 +46,12 @@ from qrisp.jasp.interpreter_tools import (
 )
 from qrisp.jasp.interpreter_tools.interpreters.depth_metric import (
     extract_depth,
-    get_depth_computer,
+    get_depth_profiler,
 )
 from qrisp.jasp.interpreter_tools.interpreters.utilities import get_quantum_operations
 from qrisp.jasp.jasp_expression import Jaspr
+from functools import wraps
+
 
 # TODO: move count_ops to a separate file
 
@@ -395,15 +397,15 @@ def depth(meas_behavior):
 class MetricSpec(NamedTuple):
     """Specification of a metric to be computed via profiling."""
 
-    build_computer: Callable[[Jaspr, Callable], tuple[Callable, dict]]
-    extract_result: Callable[[Any, dict, Jaspr], Any]
-    simulate_fallback: Callable | None
+    build_profiler: Callable[[Jaspr, Callable], Any]
+    extract_metric: Callable[[Any, Jaspr], Any]
+    simulate_fallback: Callable | None = None
 
 
 METRIC_DISPATCH = {
     "depth": MetricSpec(
-        build_computer=get_depth_computer,
-        extract_result=extract_depth,
+        build_profiler=get_depth_profiler,
+        extract_metric=extract_depth,
         simulate_fallback=None,  # TODO: implement depth via simulation
     ),
 }
@@ -433,15 +435,14 @@ def profile_jaspr_new(
 
     """
 
-    # We dispatch to the appropriate metric specification
-    # since different metrics might return different data structures.
-    metric_spec = METRIC_DISPATCH[mode]
     meas_behavior_norm = _normalize_meas_behavior(meas_behavior)
-    prof_computer, profiling_dic = metric_spec.build_computer(jaspr, meas_behavior_norm)
+    metric_spec = METRIC_DISPATCH[mode]
+    profiler = metric_spec.build_profiler(jaspr, meas_behavior_norm)
 
-    def profiler(*args):
+    @wraps(profiler)
+    def wrapper(*args):
         args = tree_flatten(args)[0]
-        res = prof_computer(*args)
-        return metric_spec.extract_result(res, profiling_dic, jaspr)
+        res = profiler(*args)
+        return metric_spec.extract_metric(res, jaspr)
 
-    return profiler
+    return wrapper
