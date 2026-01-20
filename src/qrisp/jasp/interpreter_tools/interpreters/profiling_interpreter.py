@@ -319,56 +319,47 @@ def make_profiling_eqn_evaluator_new(metric) -> Callable:
                 # quantum_gate has the signature (Qubit, ... , QuantumCircuit)
                 # (it depends on the gate how many qubits there are)
                 case "jasp.quantum_gate":
-                    print(f"\n\n\njasp.quantum_gate called")
                     outvalues = metric.handle_quantum_gate(invalues)
                     # Outvars is QuantumCircuit
                     insert_outvalues(eqn, context_dic, outvalues)
 
                 # create_qubits has the signature (size, QuantumCircuit)
                 case "jasp.create_qubits":
-                    print(f"jasp.create_qubits called")
                     outvalues = metric.handle_create_qubits(invalues, context_dic)
                     # Outvars are (QubitArray, QuantumCircuit)
                     insert_outvalues(eqn, context_dic, outvalues)
 
                 # get_qubit has the signature (QubitArray, index)
                 case "jasp.get_qubit":
-                    print(f"\n\n\njasp.get_qubit called")
                     outvalues = metric.handle_get_qubit(invalues)
                     # Outvars are (Qubit)
                     insert_outvalues(eqn, context_dic, outvalues)
 
                 # measure has the signature (Qubit, QuantumCircuit)
                 case "jasp.measure":
-                    print(f"\n\n\njasp.measure called")
                     outvalues = metric.handle_measure(invalues)
                     # Outvars are (meas_result, QuantumCircuit)
                     insert_outvalues(eqn, context_dic, outvalues)
 
                 # reset has the signature (QubitArray, QuantumCircuit)
                 case "jasp.reset":
-                    print(f"\n\n\njasp.reset called")
                     outvalues = metric.handle_reset(invalues)
                     # Outvars are (QuantumCircuit)
                     insert_outvalues(eqn, context_dic, outvalues)
 
                 # delete_qubits has the signature (QubitArray, QuantumCircuit)
                 case "jasp.delete_qubits":
-                    print(f"\n\n\njasp.delete_qubits called")
                     outvalues = metric.handle_delete_qubits(invalues)
                     # Outvars are (QuantumCircuit)
                     insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "cond":
 
-            print(f"\n\n\ncond called")
-
             # Build branch evaluators that use *this same* depth evaluator.
             branch_fns = [
                 eval_jaxpr(branch_jaxpr, eqn_evaluator=profiling_eqn_evaluator)
                 for branch_jaxpr in eqn.params["branches"]
             ]
-            print(f"branch_fns: {branch_fns}")
 
             # invalues[0] is the branch index / predicate encoding (as in your gate-count code)
             # remaining invalues are operands/carries passed to the branches

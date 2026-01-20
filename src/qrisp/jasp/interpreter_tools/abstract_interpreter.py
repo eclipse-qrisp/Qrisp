@@ -89,15 +89,15 @@ def eval_jaxpr(jaxpr, return_context_dic=False, eqn_evaluator=exec_eqn) -> Calla
 
     def jaxpr_evaluator(*args):
 
-        full_args = consts + list(args)
+        args_and_consts = consts + list(args)
 
-        if len(full_args) != len(invars):
+        if len(args_and_consts) != len(invars):
             raise ValueError(
                 "Tried to evaluate jaxpr with insufficient arguments: "
-                f"expected {len(invars)} (including {len(consts)} consts), got {len(full_args)}."
+                f"expected {len(invars)} (including {len(consts)} consts), got {len(args_and_consts)}."
             )
 
-        context_dic = ContextDict(dict(zip(invars, full_args)))
+        context_dic = ContextDict(dict(zip(invars, args_and_consts)))
 
         eval_jaxpr_with_context_dic(jaxpr_core, context_dic, eqn_evaluator)
 

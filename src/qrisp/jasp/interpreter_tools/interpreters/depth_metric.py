@@ -35,114 +35,114 @@ MAX_QUBITS = 5
 
 # TODO: The final architecture for depth counting might differ from this.
 class DepthMetric:
-    """A simple depth counting metric implementation."""
+    """
+    A simple depth counting metric implementation.
+
+    Parameters
+    ----------
+    profiling_dic : dict
+        A dictionary mapping quantum operation names to their profiling indices.
+
+    meas_behavior : Callable
+        The measurement behavior function.
+
+    """
 
     def __init__(self, profiling_dic: dict, meas_behavior: Callable):
         """Initialize the DepthMetric."""
 
-        depth_vec = jnp.zeros((MAX_QUBITS,), dtype=jnp.int32)
-        global_depth = jnp.int32(0)
-        self.final_arg = (depth_vec, global_depth)
-
         self.profiling_dic = profiling_dic
         self.meas_behavior = meas_behavior
+
+        depth_array = jnp.zeros((MAX_QUBITS,), dtype=jnp.int32)
+        global_depth = jnp.int32(0)
+        self.metric_data = (depth_array, global_depth)
 
     def handle_measure(self, invalues):
         """Handle the `jasp.measure` primitive."""
 
-        measured_obj, depth_state = invalues
-        print(f"measured_obj: {measured_obj}")
-        print(f"depth_state: {depth_state}")
+        _, metric_data = invalues
 
         # At this stage we ignore measurement impact on depth.
         # We just fabricate a valid measurement result.
         # In qrisp/jasp it looks like measurement result is an int64 scalar.
         meas_res = jnp.int64(0)
 
-        return (meas_res, depth_state)
+        # Associate the following in context_dic:
+        # meas_result -> meas_res (int64 scalar)
+        # QuantumCircuit -> metric_data (depth_array, global_depth)
+        return meas_res, metric_data
 
     def handle_get_qubit(self, invalues):
         """Handle the `jasp.get_qubit` primitive."""
 
         qubit_array_handle, index = invalues
-        print(f"qubit_array_handle: {qubit_array_handle}")
-        print(f"index: {index}")
 
         base_id, _ = qubit_array_handle
 
         # A Qubit is represented by its (virtual) integer id.
         qubit_id = jnp.asarray(base_id + index, dtype=jnp.int32)
-        print(f"qubit_id: {qubit_id}")
+
+        # Associate the following in context_dic:
+        # Qubit -> qubit_id (integer)
         return qubit_id
 
     def handle_create_qubits(self, invalues, context_dic):
         """Handle the `jasp.create_qubits` primitive."""
 
-        size, depth_state = invalues
-        print(f"size: {size}")
-        print(f"depth_state: {depth_state}")
+        size, metric_data = invalues
 
         # Allocate a fresh id range [size] starting from next_base_id
         base_id = context_dic.get("_depth_next_base_id", jnp.int32(0))
         base_id = jnp.asarray(base_id, dtype=jnp.int32)
-        print(f"base_id: {base_id}")
-
         size = jnp.asarray(size, dtype=jnp.int32)
-        print(f"size after asarray: {size}")
-
         context_dic["_depth_next_base_id"] = base_id + size
-
         qubit_array_handle = (base_id, size)
-        print(f"qubit_array_handle: {qubit_array_handle}")
 
-        return (qubit_array_handle, depth_state)
+        # Associate the following in context_dic:
+        # QubitArray -> qubit_array_handle (base_id, size)
+        # QuantumCircuit -> metric_data (depth_array, global_depth)
+        return qubit_array_handle, metric_data
 
     def handle_quantum_gate(self, invalues):
         """Handle the `jasp.quantum_gate` primitive."""
 
-        *qubits, depth_state = invalues
-        print(f"qubits: {qubits}")
-        print(f"depth_state: {depth_state}")
+        *qubits, metric_data = invalues
 
-        depth_vec, global_depth = depth_state
-        print(f"depth_vec: {depth_vec}")
-        print(f"global_depth: {global_depth}")
-
+        depth_array, global_depth = metric_data
         qubit_ids = jnp.array(qubits, dtype=jnp.int32)
-        print(f"qubit_ids: {qubit_ids}")
-        touched = jnp.take(depth_vec, qubit_ids)
-        print(f"touched: {touched}")
+        touched = jnp.take(depth_array, qubit_ids)
         start = jnp.max(touched)
-        print(f"start: {start}")
 
         # TODO: determine actual duration of the gate
         # duration: 1 for now (or duration = op_depth if op.definition exists)
         end = start + 1
 
         # update all involved qubits to `end`
-        depth_vec = depth_vec.at[qubit_ids].set(end)
-        print(f"updated depth_vec: {depth_vec}")
-
+        depth_array = depth_array.at[qubit_ids].set(end)
         global_depth = jnp.maximum(global_depth, end)
-        print(f"updated global_depth: {global_depth}")
 
-        return (depth_vec, global_depth)
+        # Associate the following in context_dic:
+        # QuantumCircuit -> metric_data (depth_array, global_depth)
+        return depth_array, global_depth
 
     def handle_delete_qubits(self, invalues):
         """Handle the `jasp.delete_qubits` primitive."""
 
-        _qubitarray_handle, depth_state = invalues
-        print(f"_qubitarray_handle: {_qubitarray_handle}")
-        print(f"depth_state: {depth_state}")
-        return depth_state
+        _, metric_data = invalues
+
+        # Associate the following in context_dic:
+        # QuantumCircuit -> metric_data (depth_array, global_depth)
+        return metric_data
 
     def handle_reset(self, invalues):
         """Handle the `jasp.reset` primitive."""
 
-        _qubitarray_handle, depth_state = invalues
-        print(f"_qubitarray_handle: {_qubitarray_handle}")
-        print(f"depth_state: {depth_state}")
-        return depth_state
+        _, metric_data = invalues
+
+        # Associate the following in context_dic:
+        # QuantumCircuit -> metric_data (depth_array, global_depth)
+        return metric_data
 
 
 def extract_depth(res: Tuple, jaspr: Jaspr) -> int:
@@ -195,7 +195,7 @@ def get_depth_profiler(jaspr: Jaspr, meas_behavior: Callable) -> Callable:
         static_types = (str, QubitOperator, FermionicOperator, types.FunctionType)
         filtered_args = [
             x
-            for x in list(args) + [depth_metric.final_arg]
+            for x in list(args) + [depth_metric.metric_data]
             if type(x) not in static_types
         ]
 
