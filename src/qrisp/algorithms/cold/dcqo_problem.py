@@ -55,13 +55,13 @@ class DCQOProblem:
     def __init__(
         self, 
         sympy_lambda, 
-        sympy_g,
         agp_coeffs,
         H_init,
         H_prob,
         A_lam,
         J,
         h,
+        sympy_g = None,
         H_control=None,
         qarg_prep=None, 
         callback=False
@@ -428,7 +428,7 @@ class DCQOProblem:
                         args=(CRAB)
                         )
         
-        return res.x
+        return res.x, objective(res.x, CRAB)
 
     def run(
         self, 
@@ -440,7 +440,7 @@ class DCQOProblem:
         CRAB=False, 
         optimizer="Powell",
         objective="exp_value",
-        bounds=(-2, 2),
+        bounds=(),
         options={}
     ):
         """
@@ -496,9 +496,15 @@ class DCQOProblem:
                 U_circuit = None
 
             # Find optimal params for control pulse
-            opt_params = self.optimization_routine(qarg2, N_opt, N_steps, T, U_circuit, CRAB, 
-                                                   optimizer, options, objective=objective, bounds=bounds)
-
+            opt_params, cost = None, None
+            # Do optimization 3 times and choose best result
+            for i in range(3):
+                opt_params_temp, cost_temp = self.optimization_routine(qarg2, N_opt, N_steps, T, U_circuit, CRAB, 
+                                                    optimizer, options, objective=objective, bounds=bounds)
+                if cost is None or cost_temp < cost:
+                    opt_params = opt_params_temp
+                    cost = cost_temp
+    
             # Apply hamiltonian with optimal parameters
             # Here we do not want the randomized parameters to be included -> CRAB=False in any case
             self.apply_cold_hamiltonian(qarg, N_steps, T, opt_params, CRAB=False)
