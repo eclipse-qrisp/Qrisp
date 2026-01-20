@@ -355,13 +355,12 @@ def make_profiling_eqn_evaluator_new(metric) -> Callable:
 
         elif eqn.primitive.name == "cond":
 
-            # Build branch evaluators that use *this same* depth evaluator.
             branch_fns = [
                 eval_jaxpr(branch_jaxpr, eqn_evaluator=profiling_eqn_evaluator)
                 for branch_jaxpr in eqn.params["branches"]
             ]
 
-            # invalues[0] is the branch index / predicate encoding (as in your gate-count code)
+            # invalues[0] is the branch index / predicate encoding
             # remaining invalues are operands/carries passed to the branches
             outvalues = jax.lax.switch(invalues[0], branch_fns, *invalues[1:])
 
