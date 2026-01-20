@@ -18,7 +18,8 @@
 
 import pytest
 
-from qrisp import QuantumFloat, control, cx, depth, h, mcx, measure, q_cond
+from qrisp import QuantumFloat, control, cx, depth, h, mcx, measure
+from qrisp.jasp import q_cond, jrange
 
 
 class TestDepthQuantumPrimitiveSingleQubit:
@@ -222,17 +223,30 @@ class TestDepthControlStructures:
         expected_depth = 3 if selector >= 0 else 4
         assert main(4, selector) == expected_depth
 
+    def test_loop_h_sequential(self):
+        """Test depth computation in a loop with sequential Hadamard gates."""
 
-# @pytest.mark.parametrize("iterations", [1, 5, 10, 20])
-# def test_loop1(iterations):
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
 
-#     @depth(meas_behavior="0")
-#     def main(num_qubits, iterations):
-#         qf = QuantumFloat(num_qubits)
+            for _ in jrange(qf.size):
+                h(qf[0])
 
-#         for _ in jrange(iterations):
-#             h(qf[0])
+            return measure(qf[0])
 
-#         return measure(qf[0])
+        assert main(4) == 4
 
-#     assert main(1, iterations) == iterations
+    def test_loop_h_parallel(self):
+        """Test depth computation in a loop with parallel Hadamard gates."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
+
+            for i in jrange(qf.size):
+                h(qf[i])
+
+            return measure(qf[0])
+
+        assert main(5) == 1

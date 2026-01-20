@@ -288,6 +288,27 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
     return profiling_eqn_evaluator
 
 
+@lru_cache(int(1e5))
+def get_compiled_profiler(jaxpr, zipped_profiling_dic, meas_behavior):
+
+    profiling_dic = dict(zipped_profiling_dic)
+
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic, meas_behavior)
+
+    jitted_profiler = jax.jit(eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator))
+
+    call_counter = np.zeros(1)
+
+    def profiler(*args):
+        if call_counter[0] < 3 or len(jaxpr.eqns) < 20:
+            call_counter[0] += 1
+            return eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator)(*args)
+        else:
+            return jitted_profiler(*args)
+
+    return profiler
+
+
 def make_profiling_eqn_evaluator_new(metric) -> Callable:
     """
     Build a profiling equation evaluator for a given metric.
@@ -314,6 +335,8 @@ def make_profiling_eqn_evaluator_new(metric) -> Callable:
 
         if isinstance(eqn.primitive, QuantumPrimitive):
 
+            # TODO: replace this with a more compact and efficient dispatch mechanism
+            # after everything has been unified to use this new profiling interpreter structure.
             match prim_name:
 
                 # quantum_gate has the signature (Qubit, ... , QuantumCircuit)
@@ -333,6 +356,12 @@ def make_profiling_eqn_evaluator_new(metric) -> Callable:
                 case "jasp.get_qubit":
                     outvalues = metric.handle_get_qubit(invalues)
                     # Outvars are (Qubit)
+                    insert_outvalues(eqn, context_dic, outvalues)
+
+                # slice has the signature (QubitArray)
+                case "jasp.get_size":
+                    outvalues = metric.handle_get_size(invalues)
+                    # Outvars are (size)
                     insert_outvalues(eqn, context_dic, outvalues)
 
                 # measure has the signature (Qubit, QuantumCircuit)
@@ -360,13 +389,39 @@ def make_profiling_eqn_evaluator_new(metric) -> Callable:
                 for branch_jaxpr in eqn.params["branches"]
             ]
 
-            # invalues[0] is the branch index / predicate encoding
+            # invalues[0] is the branch index/predicate encoding
             # remaining invalues are operands/carries passed to the branches
             outvalues = jax.lax.switch(invalues[0], branch_fns, *invalues[1:])
+            outvalues = (outvalues,) if len(eqn.outvars) == 1 else outvalues
+            insert_outvalues(eqn, context_dic, outvalues)
 
-            # We normalize to tuple when cond has a single outvar
-            if len(eqn.outvars) == 1:
-                outvalues = (outvalues,)
+        elif eqn.primitive.name == "while":
+
+            body_jaxpr = eqn.params["body_jaxpr"]
+            cond_jaxpr = eqn.params["cond_jaxpr"]
+            body_nconsts = eqn.params["body_nconsts"]
+            cond_nconsts = eqn.params["cond_nconsts"]
+
+            overall_constant_amount = body_nconsts + cond_nconsts
+
+            body_eval = eval_jaxpr(body_jaxpr, eqn_evaluator=profiling_eqn_evaluator)
+            cond_eval = eval_jaxpr(cond_jaxpr, eqn_evaluator=profiling_eqn_evaluator)
+
+            def body_fun(val):
+                constants = val[cond_nconsts:overall_constant_amount]
+                carries = val[overall_constant_amount:]
+                body_res = body_eval(*(constants + carries))
+                body_res = body_res if isinstance(body_res, tuple) else (body_res,)
+                return val[:overall_constant_amount] + body_res
+
+            def cond_fun(val):
+                constants = val[:cond_nconsts]
+                carries = val[overall_constant_amount:]
+                return cond_eval(*(constants + carries))
+
+            outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[
+                overall_constant_amount:
+            ]
 
             insert_outvalues(eqn, context_dic, outvalues)
 
@@ -374,24 +429,3 @@ def make_profiling_eqn_evaluator_new(metric) -> Callable:
             return True
 
     return profiling_eqn_evaluator
-
-
-@lru_cache(int(1e5))
-def get_compiled_profiler(jaxpr, zipped_profiling_dic, meas_behavior):
-
-    profiling_dic = dict(zipped_profiling_dic)
-
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic, meas_behavior)
-
-    jitted_profiler = jax.jit(eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator))
-
-    call_counter = np.zeros(1)
-
-    def profiler(*args):
-        if call_counter[0] < 3 or len(jaxpr.eqns) < 20:
-            call_counter[0] += 1
-            return eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator)(*args)
-        else:
-            return jitted_profiler(*args)
-
-    return profiler

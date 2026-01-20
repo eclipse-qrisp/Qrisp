@@ -30,10 +30,9 @@ from qrisp.jasp.interpreter_tools import (
 from qrisp.jasp.interpreter_tools.interpreters.utilities import get_quantum_operations
 from qrisp.jasp.jasp_expression import Jaspr
 
-MAX_QUBITS = 5
+MAX_QUBITS = 1024
 
 
-# TODO: The final architecture for depth counting might differ from this.
 class DepthMetric:
     """
     A simple depth counting metric implementation.
@@ -54,8 +53,8 @@ class DepthMetric:
         self.profiling_dic = profiling_dic
         self.meas_behavior = meas_behavior
 
-        depth_array = jnp.zeros((MAX_QUBITS,), dtype=jnp.int32)
-        global_depth = jnp.int32(0)
+        depth_array = jnp.zeros((MAX_QUBITS,), dtype=jnp.int64)
+        global_depth = jnp.int64(0)
         self.metric_data = (depth_array, global_depth)
 
     def handle_measure(self, invalues):
@@ -79,13 +78,24 @@ class DepthMetric:
         qubit_array_handle, index = invalues
 
         base_id, _ = qubit_array_handle
-
-        # A Qubit is represented by its (virtual) integer id.
-        qubit_id = jnp.asarray(base_id + index, dtype=jnp.int32)
+        base_id = jnp.asarray(base_id, dtype=jnp.int64)
+        index = jnp.asarray(index, dtype=jnp.int64)
 
         # Associate the following in context_dic:
         # Qubit -> qubit_id (integer)
-        return qubit_id
+        return base_id + index
+
+    def handle_get_size(self, invalues):
+        """Handle the `jasp.get_size` primitive."""
+
+        (qubit_array_handle,) = invalues
+
+        _, size = qubit_array_handle
+        size = jnp.asarray(size, dtype=jnp.int64)
+
+        # Associate the following in context_dic:
+        # size -> size_value (integer)
+        return size
 
     def handle_create_qubits(self, invalues, context_dic):
         """Handle the `jasp.create_qubits` primitive."""
@@ -93,9 +103,9 @@ class DepthMetric:
         size, metric_data = invalues
 
         # Allocate a fresh id range [size] starting from next_base_id
-        base_id = context_dic.get("_depth_next_base_id", jnp.int32(0))
-        base_id = jnp.asarray(base_id, dtype=jnp.int32)
-        size = jnp.asarray(size, dtype=jnp.int32)
+        base_id = context_dic.get("_depth_next_base_id", jnp.int64(0))
+        base_id = jnp.asarray(base_id, dtype=jnp.int64)
+        size = jnp.asarray(size, dtype=jnp.int64)
         context_dic["_depth_next_base_id"] = base_id + size
         qubit_array_handle = (base_id, size)
 
@@ -110,7 +120,7 @@ class DepthMetric:
         *qubits, metric_data = invalues
 
         depth_array, global_depth = metric_data
-        qubit_ids = jnp.array(qubits, dtype=jnp.int32)
+        qubit_ids = jnp.asarray(qubits, dtype=jnp.int64)
         touched = jnp.take(depth_array, qubit_ids)
         start = jnp.max(touched)
 
