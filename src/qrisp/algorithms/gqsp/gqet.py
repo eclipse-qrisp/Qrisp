@@ -21,9 +21,11 @@ from qrisp import (
     QuantumFloat,
     conjugate,
 )
+from qrisp.alg_primitives.prepare import prepare
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.algorithms.gqsp.helper_functions import poly2cheb, cheb2poly
+from qrisp.algorithms.quantum_backtracking.backtracking_tree import psi_prep
 from qrisp.jasp import qache, jrange
 import jax
 import jax.numpy as jnp
@@ -183,3 +185,46 @@ def GQET(qarg, H, p, kind="Polynomial"):
         qbl = GQSP([case, qarg], RU, p, k=0)
 
     return qbl, case
+
+
+def GQET_inversion(A, b, eps, kappa = None):
+    """
+
+    """
+
+    if isinstance(A, tuple) and len(A) == 3:
+        kappa = kappa
+    else:
+        kappa = np.linalg.cond(A)
+
+    H = QubitOperator.from_matrix(A, reverse_endianness=True)
+
+    j_0, beta = CKS_parameters(A, eps, kappa)
+    p_odd = cheb_coefficients(j_0, beta)
+
+    p_odd = p_odd * (-1) ** np.arange(len(p_odd))
+
+    p = np.zeros(2 * len(p_odd))
+    p[1::2] = p_odd    
+    p = np.array(p)
+
+    H = H.hermitize().to_pauli()
+    _, coeffs = H.unitaries()
+    alpha = np.sum(np.abs(coeffs))
+    scaling_exponents = np.arange(len(p))
+    scaling_factors = np.power(1/alpha, scaling_exponents)
+
+    p = cheb2poly(p)
+    p = p * scaling_factors
+    p = poly2cheb(p)
+
+    def psi_prep():
+        operand = QuantumFloat(int(np.log2(b.shape[0])))
+        prepare(operand, b)
+        return operand
+
+    operand = psi_prep()
+
+    qbl, case = GQET(operand, H, p, kind="Chebyshev")
+
+    return operand, qbl, case
