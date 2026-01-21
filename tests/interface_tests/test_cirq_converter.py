@@ -128,8 +128,7 @@ def test_converter_compiled_qs():
     reflection_cirq_qc = convert_to_cirq(reflection_compiled_qc)
 
     expected_unitary = reflection_compiled_qc.get_unitary()
-    # multiple by -1 to account for the global phase gate in the qrisp circuit
-    calculated_unitary = -1 * unitary(reflection_cirq_qc)
+    calculated_unitary = unitary(reflection_cirq_qc)
     np.testing.assert_array_almost_equal(expected_unitary, calculated_unitary)
 
 
