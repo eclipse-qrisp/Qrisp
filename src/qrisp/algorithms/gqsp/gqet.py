@@ -191,6 +191,57 @@ def GQET(qarg, H, p, kind="Polynomial"):
 
 def GQET_inversion(A, b, eps, kappa = None):
     """
+    Quantum Linear System solver via Generalized Quantum Eigenvalue Transformation (GQET).
+
+    This function implements a GQET-based quantum circuit that approximates the matrix
+    inversion operation :math:`A^{-1}` applied to an input quantum state :math:`\\ket{b}`.
+    Using a Chebyshev polynomial approximation to the inverse function within error
+    tolerance ``eps``, it constructs a generalized eigenvalue transformation that
+    effectively solves the Quantum Linear System Problem (QLSP)
+    :math:`A \\vec{x} = \\vec{b}`.
+
+    The block-encoding of the matrix :math:`A` can be provided either explicitly as a
+    block-encoding tuple, or implicitly via a Hermitian matrix which will be
+    block-encoded internally via a Pauli decomposition routine such as
+    :meth:`QubitOperator.pauli_block_encoding <qrisp.operators.qubit.QubitOperator.pauli_block_encoding>`.
+    In the former case, the condition number :math:`\\kappa` of :math:`A` must be
+    provided explicitly.
+
+    The inversion polynomial is constructed via
+    :func:`CKS_parameters` and :func:`cheb_coefficients`, yielding an odd Chebyshev
+    polynomial that approximates :math:`1/x` on the relevant spectral interval.
+    This odd polynomial is then embedded into a full Chebyshev series and rescaled
+    to the normalized Hamiltonian :math:`H / \\alpha` using :func:`_extend_and_rescale_cheb`.
+    :math:`A^{-1} \\ket{b}`.
+
+    Parameters
+    ----------
+    A : numpy.ndarray or scipy.sparse.csr_matrix or tuple
+        Either the Hermitian matrix :math:`A` of size :math:`N \\times N` from
+        the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
+        ``(U, state_prep, n)`` representing a preconstructed block-encoding
+        of :math:`A`. When a tuple is provided, the matrix itself is not required
+        and ``kappa`` must be specified.
+    b : numpy.ndarray or callable
+        Either a vector :math:`\\vec{b}` of the linear system, or a
+        callable that prepares the corresponding quantum state ``operand``.
+    eps : float
+        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
+        :math:`\epsilon` of :math:`\ket{x}`.
+    kappa : float, optional
+        Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
+        a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
+        If ``A`` is provided as a matrix and ``kappa`` is ``None``, it is
+        estimated as ``numpy.linalg.cond(A)``.
+
+    Returns
+    -------
+    operand : QuantumVariable
+        Operand variable after applying the GQET protocol.
+    qbl : QuantumBool
+        Auxiliary variable after GQET protocol. Must be measured in state $\ket{0}$.
+    case : QuantumFloat
+        Auxiliary variable after GQET protocol. Must be measured in state $\ket{0}$.
 
     """
 
@@ -212,20 +263,24 @@ def GQET_inversion(A, b, eps, kappa = None):
 
     # Extend the odd Chebyshev polynomial and rescale it for the normalized
     # Hamiltonian H / alpha.
-    p = _extend_and_rescale_cheb_poly(p_odd, alpha)
+    p = _extend_and_rescale_cheb(p_odd, alpha)
 
-    def psi_prep():
-        operand = QuantumFloat(int(np.log2(b.shape[0])))
-        prepare(operand, b)
-        return operand
+    if callable(b):
+        b_prep = b
 
-    operand = psi_prep()
+    else:
+        def b_prep():
+            operand = QuantumFloat(int(np.log2(b.shape[0])))
+            prepare(operand, b)
+            return operand
+
+    operand = b_prep()
 
     qbl, case = GQET(operand, H, p, kind="Chebyshev")
 
     return operand, qbl, case
 
-def _extend_and_rescale_cheb_poly(p_odd, alpha):
+def _extend_and_rescale_cheb(p_odd, alpha):
     
     # Initialize full Chebyshev coefficient array.
     # We place the odd coefficients at indices 1, 3, 5, ... and keep even indices zero.
