@@ -140,7 +140,7 @@ class BlockEncoding:
             block_encoding.unitary(*ancillas, operand)
 
             bools = jnp.array([(measure(anc) == 0) for anc in ancillas])
-            success_bool = jnp.any(bools)
+            success_bool = jnp.all(bools)
 
             # garbage collection
             [reset(anc) for anc in ancillas]
