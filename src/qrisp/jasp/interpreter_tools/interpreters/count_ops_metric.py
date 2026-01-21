@@ -26,7 +26,7 @@ from jax.random import key
 
 from qrisp.jasp.interpreter_tools import (
     eval_jaxpr,
-    make_profiling_eqn_evaluator_new,
+    make_profiling_eqn_evaluator,
 )
 from qrisp.jasp.interpreter_tools.interpreters.utilities import get_quantum_operations
 from qrisp.jasp.jasp_expression import Jaspr
@@ -235,7 +235,7 @@ def get_count_ops_profiler(
         profiling_dic["measure"] = -1
 
     count_ops_metric = CountOpsMetric(profiling_dic, meas_behavior)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator_new(count_ops_metric)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(count_ops_metric)
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def count_ops_profiler(*args):

@@ -25,7 +25,7 @@ import jax.numpy as jnp
 
 from qrisp.jasp.interpreter_tools import (
     eval_jaxpr,
-    make_profiling_eqn_evaluator_new,
+    make_profiling_eqn_evaluator,
 )
 from qrisp.jasp.interpreter_tools.interpreters.utilities import get_quantum_operations
 from qrisp.jasp.jasp_expression import Jaspr
@@ -193,7 +193,7 @@ def get_depth_profiler(jaspr: Jaspr, meas_behavior: Callable) -> Tuple[Callable,
         profiling_dic["measure"] = -1
 
     depth_metric = DepthMetric(profiling_dic, meas_behavior)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator_new(depth_metric)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(depth_metric)
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def depth_profiler(*args):
@@ -211,3 +211,9 @@ def get_depth_profiler(jaspr: Jaspr, meas_behavior: Callable) -> Tuple[Callable,
         return jitted_evaluator(*filtered_args)
 
     return depth_profiler, None
+
+
+def simulate_depth(jaspr: Jaspr, *_, **__) -> int:
+    """Simulate depth metric via actual simulation."""
+
+    raise NotImplementedError("Depth metric via simulation is not implemented yet.")

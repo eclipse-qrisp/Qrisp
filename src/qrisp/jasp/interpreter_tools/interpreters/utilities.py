@@ -31,6 +31,11 @@ def always_one(_):
     return True
 
 
+def simulation():
+    """Simulate measurements normally without any forced behavior."""
+    pass
+
+
 def get_quantum_operations(jaspr: Jaspr) -> List[str]:
     """
     Get the list of quantum operations used in a Jaspr expression.

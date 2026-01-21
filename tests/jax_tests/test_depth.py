@@ -250,3 +250,16 @@ class TestDepthControlStructures:
             return measure(qf[0])
 
         assert main(5) == 1
+
+
+def test_depth_simulation_not_implemented():
+    """Test that depth via simulation raises NotImplementedError."""
+
+    @depth(meas_behavior="sim")
+    def main():
+        pass
+
+    with pytest.raises(
+        NotImplementedError, match="Depth metric via simulation is not implemented yet"
+    ):
+        main()

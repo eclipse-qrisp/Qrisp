@@ -263,7 +263,6 @@ def simulate_jaspr(
     terminal_sampling=False,
     simulator="qrisp",
     return_gate_counts=False,
-    return_depth=False,
 ):
 
     from qrisp.jasp import Jaspr
@@ -361,9 +360,6 @@ def simulate_jaspr(
 
     if return_gate_counts:
         return res[-1].gate_counts
-
-    if return_depth:
-        raise NotImplementedError("Depth calculation not yet implemented in jaspify")
 
     if isinstance(jaxpr, Jaspr):
         if len(jaxpr.jaxpr.outvars) == 2:

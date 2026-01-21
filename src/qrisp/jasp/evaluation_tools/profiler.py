@@ -45,12 +45,40 @@ from qrisp.jasp.interpreter_tools.interpreters.count_ops_metric import (
 from qrisp.jasp.interpreter_tools.interpreters.depth_metric import (
     extract_depth,
     get_depth_profiler,
+    simulate_depth,
 )
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
     always_zero,
+    simulation,
 )
 from qrisp.jasp.jasp_expression import Jaspr
+
+
+class MetricSpec(NamedTuple):
+    """Specification of a metric to be computed via profiling."""
+
+    build_profiler: Callable[[Jaspr, Callable], Tuple[Callable, Any]]
+    extract_metric: Callable[[Tuple, Jaspr, Any], Any]
+    simulate_fallback: Callable[[Jaspr, Any], Any]
+
+
+METRIC_DISPATCH = {
+    "count_ops": MetricSpec(
+        build_profiler=get_count_ops_profiler,
+        extract_metric=extract_count_ops,
+        simulate_fallback=simulate_jaspr,
+    ),
+    "depth": MetricSpec(
+        build_profiler=get_depth_profiler,
+        extract_metric=extract_depth,
+        simulate_fallback=simulate_depth,
+    ),
+}
+
+
+# TODO: `count_ops` and `depth` should be moved to their own (already existing) files.
+# So far we keep them here to avoid circular imports.
 
 
 def count_ops(meas_behavior):
@@ -212,8 +240,8 @@ def count_ops(meas_behavior):
                 function.jaspr_dict = {}
 
             args = list(args)
-
             signature = tuple([type(arg) for arg in args])
+
             if not signature in function.jaspr_dict:
                 function.jaspr_dict[signature] = make_jaspr(function)(*args)
 
@@ -235,11 +263,10 @@ def _normalize_meas_behavior(meas_behavior) -> Callable:
         if meas_behavior == "1":
             return always_one
         if meas_behavior == "sim":
-            # TODO: implement simulation-based measurement
-            raise NotImplementedError(
-                "Simulation-based measurement behavior not yet implemented."
-            )
-        raise ValueError(f"Unknown meas_behavior={meas_behavior!r}")
+            return simulation
+        raise ValueError(
+            f"Don't know how to compute required resources via method {meas_behavior}"
+        )
 
     if callable(meas_behavior):
         return meas_behavior
@@ -273,28 +300,6 @@ def depth(meas_behavior):
     return depth_decorator
 
 
-class MetricSpec(NamedTuple):
-    """Specification of a metric to be computed via profiling."""
-
-    build_profiler: Callable[[Jaspr, Callable], Tuple[Callable, Any]]
-    extract_metric: Callable[[Tuple, Jaspr, Any], Any]
-    simulate_fallback: Callable | None = None
-
-
-METRIC_DISPATCH = {
-    "count_ops": MetricSpec(
-        build_profiler=get_count_ops_profiler,
-        extract_metric=extract_count_ops,
-        simulate_fallback=None,
-    ),
-    "depth": MetricSpec(
-        build_profiler=get_depth_profiler,
-        extract_metric=extract_depth,
-        simulate_fallback=None,  # TODO: implement depth via simulation
-    ),
-}
-
-
 def profile_jaspr(
     jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0"
 ) -> Callable:
@@ -319,18 +324,29 @@ def profile_jaspr(
 
     """
 
-    meas_behavior_norm = _normalize_meas_behavior(meas_behavior)
+    meas_behavior_callable = _normalize_meas_behavior(meas_behavior)
     metric_spec = METRIC_DISPATCH[mode]
+
+    if (
+        meas_behavior_callable.__name__ == "simulation"
+        and metric_spec.simulate_fallback is not None
+    ):
+
+        @wraps(metric_spec.simulate_fallback)
+        def simulation_wrapper(*args):
+            return metric_spec.simulate_fallback(jaspr, *args, return_gate_counts=True)
+
+        return simulation_wrapper
 
     # `profiler` is a function that computes the metric we are interested in.
     # `aux` is any auxiliary data that might be needed to reconstruct the metric
     # (for example the profiling dictionary for count_ops).
-    profiler, aux = metric_spec.build_profiler(jaspr, meas_behavior_norm)
+    profiler, aux = metric_spec.build_profiler(jaspr, meas_behavior_callable)
 
     @wraps(profiler)
-    def wrapper(*args):
+    def profiler_wrapper(*args):
         args = tree_flatten(args)[0]
         res = profiler(*args)
         return metric_spec.extract_metric(res, jaspr, aux)
 
-    return wrapper
+    return profiler_wrapper
