@@ -16,6 +16,13 @@
 ********************************************************************************
 """
 
+import numpy as np
+import jax.numpy as jnp
+from qrisp.alg_primitives.prepare import prepare
+from qrisp.alg_primitives.qswitch import qswitch
+from qrisp.environments import conjugate
+from qrisp.qtypes import QuantumFloat
+
 
 class BlockEncoding:
     r"""
@@ -188,4 +195,68 @@ class BlockEncoding:
         for template in self.ancilla_templates:
             anc_list.append(template.construct())
         return anc_list
-  
+    
+    def __add__(self, other):
+        """
+        Implements addition of two BlockEncodings self and other.
+
+        Parameters
+        ----------
+        other : BlockEncoding
+            Another BlockEncoding to be added.  
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding representing the sum of self and other.
+
+        """
+        if not isinstance(other, BlockEncoding):
+            raise ValueError("Can only add another BlockEncoding")
+        
+        alpha = self.alpha
+        beta = other.alpha
+        m = len(self.anc_templates)
+        n = len(other.anc_templates)
+
+        def new_unitary(*args):
+            with conjugate(prepare)(args[0], [np.sqrt(alpha / (alpha + beta)), np.sqrt(beta / (alpha + beta))]):
+                qswitch(args[1 + m + n:], args[0], [self.unitary, other.unitary])
+
+        new_anc_templates = [QuantumFloat(1)] + self.anc_templates + other.anc_templates
+        new_alpha = alpha + beta
+        return BlockEncoding(new_unitary, new_anc_templates, new_alpha)
+    
+    def __mul__(self, other):
+        """
+        Implements multiplication of two BlockEncodings self and other.
+
+        Parameters
+        ----------
+        other : BlockEncoding
+            Another BlockEncoding to be multiplied. 
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding representing the product of self and other.
+
+        """
+        if not isinstance(other, BlockEncoding):
+            raise ValueError("Can only multiply with another BlockEncoding")
+
+        m = len(self.anc_templates)
+        n = len(other.anc_templates)
+
+        def new_unitary(*args):
+            self_args = [args[:m] + args[m+n:]]
+            self.unitary(*self_args)
+            other_args = [args[m:n] + args[m+n:]]
+            other.unitary(*other_args)
+
+        new_anc_templates = self.anc_templates + other.anc_templates
+        new_alpha = self.alpha * other.alpha
+        return BlockEncoding(new_unitary, new_anc_templates, new_alpha)
+
+    __radd__ = __add__
+    __rmul__ = __mul__
