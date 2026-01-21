@@ -384,7 +384,69 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
         .. raw:: html
 
             </div>
+            
 
+.. grid:: 1 1 2 2
+
+    .. grid-item-card::
+        :shadow: none
+
+        .. raw:: html
+
+            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+
+        .. raw:: html
+
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./DickeStatestutorial.html" style="text-decoration: none; color: inherit;">Preparation of Dicke States</a>
+            </h4>
+
+        .. image:: ../../_static/DickeStates.png
+            :align: center
+            :target: ./DickeStatestutorial.html
+
+        .. raw:: html
+            
+            <p style="margin-top: 5px;"></p>
+
+        .. dropdown:: :fa:`eye me-1` Description
+            :color: primary
+
+            In this tutorial, we will show you different routines for the preparation of Dicke States and how to implement them in Qrisp.
+
+        .. raw:: html
+
+            </div>
+
+    .. grid-item-card::
+        :shadow: none
+
+        .. raw:: html
+
+            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+
+        .. raw:: html
+
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./DQItutorial.html" style="text-decoration: none; color: inherit;">DQI Optimization</a>
+            </h4>
+
+        .. image:: ../../_static/DQIplot.png
+            :align: center
+            :target: ./DQItutorial.html
+
+        .. raw:: html
+            
+            <p style="margin-top: 5px;"></p>
+
+        .. dropdown:: :fa:`eye me-1` Description
+            :color: primary
+
+            This tutorial will show you how to implement the DQI algorithm in Qrisp and how to use it to solve optimization problems.
+
+        .. raw:: html
+
+            </div>
 
 Along the way, we'll introduce you to important concepts and techniques that you'll need to know in order to write highly efficient algorithms in Qrisp.
 We encourage you to follow along with the examples and try out the code for yourself. Don't worry if you make mistakes or don't understand something right away - programming is a process of learning and experimentation, and it takes time to become proficient.
@@ -407,4 +469,6 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    JaspQAOAtutorial.ipynb
    QIROtutorial.ipynb
    QMCItutorial.ipynb
+   DickeStatestutorial.ipynb
+   DQItutorial.ipynb
    
