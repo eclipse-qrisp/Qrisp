@@ -206,19 +206,13 @@ def GQET_inversion(A, b, eps, kappa = None):
 
     p_odd = p_odd * (-1) ** np.arange(len(p_odd))
 
-    p = np.zeros(2 * len(p_odd))
-    p[1::2] = p_odd    
-    p = np.array(p)
-
     H = H.hermitize().to_pauli()
     _, coeffs = H.unitaries()
     alpha = np.sum(np.abs(coeffs))
-    scaling_exponents = np.arange(len(p))
-    scaling_factors = np.power(1/alpha, scaling_exponents)
 
-    p = cheb2poly(p)
-    p = p * scaling_factors
-    p = poly2cheb(p)
+    # Extend the odd Chebyshev polynomial and rescale it for the normalized
+    # Hamiltonian H / alpha.
+    p = _extend_and_rescale_cheb_poly(p_odd, alpha)
 
     def psi_prep():
         operand = QuantumFloat(int(np.log2(b.shape[0])))
@@ -230,3 +224,23 @@ def GQET_inversion(A, b, eps, kappa = None):
     qbl, case = GQET(operand, H, p, kind="Chebyshev")
 
     return operand, qbl, case
+
+def _extend_and_rescale_cheb_poly(p_odd, alpha):
+    
+    # Initialize full Chebyshev coefficient array.
+    # We place the odd coefficients at indices 1, 3, 5, ... and keep even indices zero.
+    p = np.zeros(2 * len(p_odd))
+    p[1::2] = p_odd
+
+    # Convert to Polynomial basis.
+    p = cheb2poly(p)
+
+    # Apply the rescaling x -> x / alpha in polynomial basis:
+
+    scaling_exponents = np.arange(len(p))
+    scaling_factors = (1.0 / alpha) ** scaling_exponents
+    p_scaled = p * scaling_factors
+
+    # Convert back to Chebyshev basis.
+    p_scaled = poly2cheb(p_scaled)
+    return p_scaled
