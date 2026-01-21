@@ -21,11 +21,13 @@ from qrisp import (
     QuantumFloat,
     conjugate,
 )
+from qrisp.operators import QubitOperator
 from qrisp.alg_primitives.prepare import prepare
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.algorithms.gqsp.helper_functions import poly2cheb, cheb2poly
 from qrisp.algorithms.quantum_backtracking.backtracking_tree import psi_prep
+from qrisp.algorithms.cks import CKS_parameters, cheb_coefficients
 from qrisp.jasp import qache, jrange
 import jax
 import jax.numpy as jnp
