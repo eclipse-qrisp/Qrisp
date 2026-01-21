@@ -243,6 +243,72 @@ def GQET_inversion(A, b, eps, kappa = None):
     case : QuantumFloat
         Auxiliary variable after GQET protocol. Must be measured in state $\ket{0}$.
 
+    Examples
+    --------
+    This example shows how to solve a QLSP using the ``GQET_inversion`` function directly,
+    without employing the :ref:`RUS` protocol in Qrisp.
+
+    First, define a Hermitian matrix :math:`A` and a right-hand side vector :math:`\\vec{b}`
+
+    ::
+
+        import numpy as np
+
+        A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
+                      [0.14516978, 0.68701415, -0.04929867, -0.00999921],
+                      [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
+                      [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
+
+        b = np.array([0, 1, 1, 1])
+
+    Then, construct the GQET inversion circuit and perform a multi measurement:
+
+    ::
+
+        from qrisp.algorithms.gqet import GQET_inversion
+        from qrisp import multi_measurement
+
+        operand, qbl, case = GQET_inversion(A, b, 0.01)
+        res_dict = multi_measurement([operand, qbl, case])
+
+    This performs the measurement on all three QuantumVariables ``operand``, ``qbl``,
+    and ``case``. Since the GQET (and all other LCU-based approaches) is correctly
+    performed only when auxiliary QuantumVariables are measured in :math:`\\ket{0}`,
+    we need to construct a new dictionary and collect the measurements when this
+    condition is satisfied.
+
+    ::
+
+        new_dict = dict()
+        success_prob = 0
+
+        for key, prob in res_dict.items():
+            # key = (operand_outcome, qbl_outcome, case_outcome)
+            if key[1] == 0 and key[2] == 0:
+                new_dict[key[0]] = prob
+                success_prob += prob
+
+        for key in new_dict.keys():
+            new_dict[key] = new_dict[key] / success_prob
+
+        for k, v in new_dict.items():
+            new_dict[k] = v**0.5
+
+    Finally, compare the quantum simulation result with the classical solution:
+
+    ::
+
+        q = np.array([new_dict.get(key, 0) for key in range(len(b))])
+        c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
+
+        print("QUANTUM SIMULATION\\n", q, "\\nCLASSICAL SOLUTION\\n", c)
+        # QUANTUM SIMULATION
+        # [0.02908157 0.55499333 0.53005093 0.64045506] 
+        # CLASSICAL SOLUTION
+        # [0.02944539 0.55423278 0.53013239 0.64102936]
+
+    This approach enables execution of the compiled GQET inversion circuit on
+    :ref:`compatible quantum hardware or simulators <BackendInterface>`.
     """
 
     if isinstance(A, tuple) and len(A) == 3:
