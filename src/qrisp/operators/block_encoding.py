@@ -249,9 +249,9 @@ class BlockEncoding:
         n = len(other.anc_templates)
 
         def new_unitary(*args):
-            self_args = [args[:m] + args[m+n:]]
+            self_args = [args[:m] + args[m + n:]]
             self.unitary(*self_args)
-            other_args = [args[m:n] + args[m+n:]]
+            other_args = [args[m:n] + args[m + n:]]
             other.unitary(*other_args)
 
         new_anc_templates = self.anc_templates + other.anc_templates
