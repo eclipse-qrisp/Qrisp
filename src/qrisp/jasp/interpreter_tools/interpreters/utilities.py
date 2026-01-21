@@ -17,10 +17,18 @@
 """
 
 from typing import List
-
 from jax.extend.core import ClosedJaxpr
-
 from qrisp.jasp.jasp_expression import Jaspr
+
+
+def always_zero(_):
+    """Return False for all inputs, simulating measurements that always yield 0."""
+    return False
+
+
+def always_one(_):
+    """Return True for all inputs, simulating measurements that always yield 1."""
+    return True
 
 
 def get_quantum_operations(jaspr: Jaspr) -> List[str]:

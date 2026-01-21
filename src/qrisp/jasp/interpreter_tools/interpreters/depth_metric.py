@@ -57,7 +57,7 @@ class DepthMetric:
         global_depth = jnp.int64(0)
         self.metric_data = (depth_array, global_depth)
 
-    def handle_measure(self, invalues):
+    def handle_measure(self, invalues, _):
         """Handle the `jasp.measure` primitive."""
 
         _, metric_data = invalues
@@ -114,7 +114,7 @@ class DepthMetric:
         # QuantumCircuit -> metric_data (depth_array, global_depth)
         return qubit_array_handle, metric_data
 
-    def handle_quantum_gate(self, invalues):
+    def handle_quantum_gate(self, invalues, _):
         """Handle the `jasp.quantum_gate` primitive."""
 
         *qubits, metric_data = invalues
@@ -155,7 +155,7 @@ class DepthMetric:
         return metric_data
 
 
-def extract_depth(res: Tuple, jaspr: Jaspr) -> int:
+def extract_depth(res: Tuple, jaspr: Jaspr, _) -> int:
     """Extract depth from the profiling result."""
 
     if len(jaspr.outvars) > 1:
@@ -167,7 +167,7 @@ def extract_depth(res: Tuple, jaspr: Jaspr) -> int:
 
 
 @lru_cache(int(1e5))
-def get_depth_profiler(jaspr: Jaspr, meas_behavior: Callable) -> Callable:
+def get_depth_profiler(jaspr: Jaspr, meas_behavior: Callable) -> Tuple[Callable, None]:
     """
     Build a depth profiling computer for a given Jaspr.
 
@@ -181,8 +181,8 @@ def get_depth_profiler(jaspr: Jaspr, meas_behavior: Callable) -> Callable:
 
     Returns
     -------
-    Callable
-        A depth profiler function.
+    Tuple[Callable, None]
+        A depth profiler function and None as auxiliary data.
 
     """
 
@@ -199,7 +199,6 @@ def get_depth_profiler(jaspr: Jaspr, meas_behavior: Callable) -> Callable:
     def depth_profiler(*args):
 
         # Import here to avoid circular imports
-        # TODO: is this needed for depth metric?
         from qrisp.operators import FermionicOperator, QubitOperator
 
         static_types = (str, QubitOperator, FermionicOperator, types.FunctionType)
@@ -211,4 +210,4 @@ def get_depth_profiler(jaspr: Jaspr, meas_behavior: Callable) -> Callable:
 
         return jitted_evaluator(*filtered_args)
 
-    return depth_profiler
+    return depth_profiler, None

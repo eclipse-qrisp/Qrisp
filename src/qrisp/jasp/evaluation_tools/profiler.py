@@ -32,28 +32,25 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 
 """
 
-import types
-from functools import lru_cache
-from typing import Any, Callable, NamedTuple
+from functools import wraps
+from typing import Any, Callable, NamedTuple, Tuple
 
-import jax
 from jax.tree_util import tree_flatten
 
 from qrisp.jasp.evaluation_tools.jaspification import simulate_jaspr
-from qrisp.jasp.interpreter_tools import (
-    eval_jaxpr,
-    make_profiling_eqn_evaluator,
+from qrisp.jasp.interpreter_tools.interpreters.count_ops_metric import (
+    extract_count_ops,
+    get_count_ops_profiler,
 )
 from qrisp.jasp.interpreter_tools.interpreters.depth_metric import (
     extract_depth,
     get_depth_profiler,
 )
-from qrisp.jasp.interpreter_tools.interpreters.utilities import get_quantum_operations
+from qrisp.jasp.interpreter_tools.interpreters.utilities import (
+    always_one,
+    always_zero,
+)
 from qrisp.jasp.jasp_expression import Jaspr
-from functools import wraps
-
-
-# TODO: move count_ops to a separate file
 
 
 def count_ops(meas_behavior):
@@ -250,124 +247,6 @@ def _normalize_meas_behavior(meas_behavior) -> Callable:
     raise TypeError("meas_behavior must be a str or callable")
 
 
-def always_zero(key):
-    return False
-
-
-def always_one(key):
-    return True
-
-
-# This function is the central interface for performing resource estimation.
-# It takes a Jaspr and returns a function, returning a dictionary (with the counted
-# operations).
-def profile_jaspr(jaspr, meas_behavior="0"):
-
-    if isinstance(meas_behavior, str):
-        if meas_behavior == "0":
-            meas_behavior = always_zero
-        elif meas_behavior == "1":
-            meas_behavior = always_one
-        elif not meas_behavior == "sim":
-            raise Exception(
-                f"Don't know how to compute required resources via method {meas_behavior}"
-            )
-
-    if callable(meas_behavior):
-
-        def profiler(*args):
-
-            # The `profiling_array_computer` is a function that computes the array
-            # containing the gate counts.
-            # The `profiling_dic` is a dictionary of type {str : int}, which indicates
-            # which operation has been computed at which index of the array.
-            profiling_array_computer, profiling_dic = get_profiling_array_computer(
-                jaspr, meas_behavior
-            )
-
-            args = tree_flatten(args)[0]
-
-            # Compute the profiling array
-            if len(jaspr.outvars) > 1:
-                profiling_array = profiling_array_computer(*args)[-1][0]
-            else:
-                profiling_array = profiling_array_computer(*args)[0]
-
-            # Transform to a dictionary containing gate counts
-            res_dic = {}
-            for k in profiling_dic.keys():
-                if int(profiling_array[profiling_dic[k]]):
-                    res_dic[k] = int(profiling_array[profiling_dic[k]])
-
-            return res_dic
-
-    else:
-
-        def profiler(*args):
-            return simulate_jaspr(jaspr, *args, return_gate_counts=True)
-
-    return profiler
-
-
-# This function takes a Jaspr and returns a function computing the "counting array"
-@lru_cache(int(1e5))
-def get_profiling_array_computer(jaspr, meas_behavior):
-
-    # Find the occuring quantum operations and store their names in a dictionary,
-    # indicating, which tracer counts what operation
-    quantum_operations = get_quantum_operations(jaspr)
-
-    profiling_dic = {quantum_operations[i]: i for i in range(len(quantum_operations))}
-
-    if "measure" not in profiling_dic:
-        profiling_dic["measure"] = -1
-
-    # `profiling_eqn_evaluator` is the function that knows how to “execute one equation”.
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic, meas_behavior)
-
-    # `evaluator` is JIT-compiled and, when called,
-    # returns a result structure that includes the profiling array.
-    evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
-
-    # This function calls the profiling interpeter to evaluate the gate counts
-    def profiling_array_computer(*args):
-
-        # The XLA compiler showed some scalability problems in compile time.
-        # Through a process involving a lot of blood and sweat
-        # we reverse engineered what to do to improve these problems
-        # 1. represent the integers that count the gates as a list
-        # of integers (instead of an array)
-        # 2. Avoid telling the compiler that it is constants that
-        # are being added. To do this, we supply a list of the first
-        # few integers as arguments, which will be used to do the
-        # incrementation (i.e. CZ_count += 1). It therefore doesn't
-        # look like a constant is being added but a variable
-        final_arg = ([0] * len(profiling_dic), list(range(1, 6)))
-
-        # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
-        filtered_args = []
-        from qrisp.operators import FermionicOperator, QubitOperator
-
-        for x in list(args) + [final_arg]:
-            if type(x) not in [
-                str,
-                QubitOperator,
-                FermionicOperator,
-                types.FunctionType,
-            ]:
-                filtered_args.append(x)
-
-        res = evaluator(*filtered_args)
-
-        return res
-
-    return profiling_array_computer, profiling_dic
-
-
-# FROM NOW ON IS THE NEW IMPLEMENTATION OF THE PROFILER
-
-
-# TODO: This should be moved to a separate file at the end.
 def depth(meas_behavior):
 
     def depth_decorator(function):
@@ -397,12 +276,17 @@ def depth(meas_behavior):
 class MetricSpec(NamedTuple):
     """Specification of a metric to be computed via profiling."""
 
-    build_profiler: Callable[[Jaspr, Callable], Any]
-    extract_metric: Callable[[Any, Jaspr], Any]
+    build_profiler: Callable[[Jaspr, Callable], Tuple[Callable, Any]]
+    extract_metric: Callable[[Tuple, Jaspr, Any], Any]
     simulate_fallback: Callable | None = None
 
 
 METRIC_DISPATCH = {
+    "count_ops": MetricSpec(
+        build_profiler=get_count_ops_profiler,
+        extract_metric=extract_count_ops,
+        simulate_fallback=None,
+    ),
     "depth": MetricSpec(
         build_profiler=get_depth_profiler,
         extract_metric=extract_depth,
@@ -411,7 +295,7 @@ METRIC_DISPATCH = {
 }
 
 
-def profile_jaspr_new(
+def profile_jaspr(
     jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0"
 ) -> Callable:
     """
@@ -437,12 +321,16 @@ def profile_jaspr_new(
 
     meas_behavior_norm = _normalize_meas_behavior(meas_behavior)
     metric_spec = METRIC_DISPATCH[mode]
-    profiler = metric_spec.build_profiler(jaspr, meas_behavior_norm)
+
+    # `profiler` is a function that computes the metric we are interested in.
+    # `aux` is any auxiliary data that might be needed to reconstruct the metric
+    # (for example the profiling dictionary for count_ops).
+    profiler, aux = metric_spec.build_profiler(jaspr, meas_behavior_norm)
 
     @wraps(profiler)
     def wrapper(*args):
         args = tree_flatten(args)[0]
         res = profiler(*args)
-        return metric_spec.extract_metric(res, jaspr)
+        return metric_spec.extract_metric(res, jaspr, aux)
 
     return wrapper
