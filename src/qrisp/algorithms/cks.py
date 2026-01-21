@@ -432,7 +432,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         def encoding_unitary(case, operand):
             with conjugate(state_prep)(case):
                 U(case, operand)
-        BE = BlockEncoding(encoding_unitary, [QuantumVariable(n)], 1.0)
+        BE = BlockEncoding(encoding_unitary, [QuantumFloat(n)], 1.0)
     else:
         H = QubitOperator.from_matrix(A, reverse_endianness=True)
         BE = H.pauli_block_encoding() # Construct block encoding of A as a set of Pauli unitaries
@@ -487,7 +487,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
                 RU(in_case_list, operand)
                 RU(in_case_list, operand)
 
-    return operand, *in_case_list, out_case
+    return operand, in_case_list[0], out_case
 
 def inner_CKS_wrapper(qlsp, eps, kappa=None, max_beta=None):
     """
@@ -531,7 +531,7 @@ def inner_CKS_wrapper(qlsp, eps, kappa=None, max_beta=None):
 
     vars = inner_CKS(A, b, eps, kappa, max_beta)
     operand = vars[0]
-    ancillas = vars[1:-1]
+    ancillas = vars[1:]
 
     bools = jnp.array([(measure(anc) == 0) for anc in ancillas])
     success_bool = jnp.all(bools)
