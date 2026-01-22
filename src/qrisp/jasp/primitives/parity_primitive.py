@@ -40,19 +40,23 @@ def parity_abstract_eval(*measurements, expectation = 2):
 
 def parity(*measurements, expectation = 2):
     r"""
-    Creates a Stim detector.
+    Creates a Stim detector or an Observable depending on the ``expectation`` argument.
 
     A detector in Stim is an annotation that declares that a set of measurement outcomes has a deterministic parity (in the absence of noise). 
     In the context of quantum error correction, detectors typically correspond to operator measurements (stabilizers) which should yield a specific value (normally 0 for +1 eigenstates). 
     
-    If the parity of the given measurements does not match the expected parity (which is implicitly 0), the detector "fires", indicating an error or an event.
+    If the parity of the given measurements does not match the expected parity (which is configured by the ``expectation`` argument), the detector "fires", indicating an error or an event.
 
     This function should be used within a function decorated with :func:`~qrisp.misc.stim_tools.extract_stim`. When the Qrisp circuit is converted to a Stim circuit, this operation is translated into a ``DETECTOR`` instruction targeting the measurement records corresponding to the input arguments.
+    
+    If the expectation value is set to 2 (which is the default), this function creates an Observable instead of a detector.
 
     Parameters
     ----------
     *measurements : list[Tracer[boolean]]
         Variable length argument list of measurement results (typically outcomes of ``measure`` or similar operations).
+    expectation : int, optional
+        The expected value of the parity of the measurement results. If set to 0 or 1, a ``DETECTOR`` instruction is created. If set to 2, an ``OBSERVABLE_INCLUDE`` instruction is created. The default is 2.
 
     Returns
     -------
@@ -64,14 +68,16 @@ def parity(*measurements, expectation = 2):
     
     **1. Selective Noise Indication**
 
-    In this example, we setup two Bell-pairs. One is kept noiseless, while we insert a Pauli-X error into the other one.
+    Uses :class:`~qrisp.misc.stim_tools.StiNoiseGate` to insert X errors in specific
+    parts of a Bell pair and utilizes :func:`~qrisp.jasp.parity` to verify the state.
     Because the Bell-states have the structure $|00\rangle + |11\rangle$, the parity $m_0 \oplus m_1$ is always 0.
     The X-error flips this parity and subsequently triggers the detector, which monitors the noisy pair.
 
     ::
 
-        from qrisp import QuantumVariable, h, cx, measure, extract_stim
-        from qrisp.misc.stim_tools import detector, stim_noise
+        from qrisp import QuantumVariable, h, cx, measure
+        from qrisp.jasp import extract_stim, parity
+        from qrisp.misc.stim_tools import stim_noise
         import stim
 
         @extract_stim
@@ -100,10 +106,11 @@ def parity(*measurements, expectation = 2):
             m2_1 = measure(bell_pair_2[1])
             
             # Detector 1 checks parity of first pair. No noise -> Parity 0 -> Detector output 0 (False)
-            d1 = detector(m1_0, m1_1)
+            # expectation=0 implies we expect even parity (m1_0 ^ m1_1 == 0)
+            d1 = parity(m1_0, m1_1, expectation=0)
             
             # Detector 2 checks parity of second pair. X error -> Parity 1 -> Detector output 1 (True)
-            d2 = detector(m2_0, m2_1)
+            d2 = parity(m2_0, m2_1, expectation=0)
             
             return d1, d2
 
@@ -140,8 +147,8 @@ def parity(*measurements, expectation = 2):
             
             # Check parity of neighbors (syndrome extraction)
             
-            detector_1 = detector(m[0], m[1])
-            detector_2 = detector(m[1], m[2])
+            detector_1 = parity(m[0], m[1], expectation=0)
+            detector_2 = parity(m[1], m[2], expectation=0)
             
             return detector_1, detector_2
 
@@ -151,9 +158,37 @@ def parity(*measurements, expectation = 2):
         print(sampler.sample(5))
         # Possible output:
         # [[False,  False],  # No error
-        #  [True,   False],    # Error on first qubit qubit
-        #  [True,   True],    # Error on middle qubit qubit
+        #  [True,   False],    # Error on first qubit
+        #  [True,   True],    # Error on middle qubit
         #  ... ]
+    
+    **3. Defining Observables**
+
+    In this example, we define an observable which corresponds to the parity of two measurements. Observables are tracked by Stim and can be used to check for logical errors.
+
+    ::
+
+        @extract_stim
+        def observable_demo():
+            qv = QuantumVariable(2)
+            h(qv)
+            
+            # Perform measurements
+            m0 = measure(qv[0])
+            m1 = measure(qv[1])
+            
+            # Define an observable O = Z_0 Z_1 (logical parity)
+            # expectation=2 implies this is a Logical Observable, not a detector
+            logical_obs = parity(m0, m1, expectation=2)
+            
+            # You can chain observables:
+            # obs2 = parity(logical_obs, measure(qv[1]), expectation=2)
+            
+            return logical_obs
+
+        obs_idx, stim_circuit = observable_demo()
+        # obs_idx will be the Stim Observable index (0)
+        # stim_circuit contains OBSERVABLE_INCLUDE(0) rec[-2] rec[-1]
     
     """
     return parity_p.bind(*measurements, expectation = expectation)
@@ -161,9 +196,9 @@ def parity(*measurements, expectation = 2):
 @parity_p.def_impl
 def parity_implementation(*measurements):
     """
-    Implementation of the detector primitive.
+    Implementation of the parity primitive.
     
-    Appends a StimDetector operation to the QuantumCircuit.
+    Appends a ParityOperation to the QuantumCircuit.
     """
     res = 0
     for i in range(len(measurements)):
@@ -172,9 +207,9 @@ def parity_implementation(*measurements):
 
 class ParityOperation(Operation):
     """
-    Operation class representing a Stim detector.
+    Operation class representing a Stim parity instructions (DETECTOR or OBSERVABLE_INCLUDE).
     
-    This operation is used to interface with Stim's DETECTOR instruction during the
+    This operation is used to interface with Stim's DETECTOR and OBSERVABLE instructions during the
     conversion process. It acts as a placeholder in the Qrisp QuantumCircuit.
     """
     def __init__(self, num_inputs, expectation = 2):
