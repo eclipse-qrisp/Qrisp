@@ -185,7 +185,66 @@ def extract_stim(func):
         # Verify entanglement: when qf1[0]=0, all qf2 bits should be 0
         qf1_first_bit = qf1_samples[:, 0]
         assert np.all(qf2_samples[qf1_first_bit == 0] == 0)
-    
+
+    **Example 4: Using parity checks (Detectors)**
+
+    You can use the :func:`~qrisp.jasp.parity` function to define parity checks within your circuit.
+    When extracted to Stim, these are converted into ``DETECTOR`` instructions.
+
+    ::
+
+        from qrisp import QuantumVariable, h, cx, measure
+        from qrisp.jasp import extract_stim, parity
+        from qrisp.misc.stim_tools import stim_noise
+        import stim
+
+        @extract_stim
+        def selective_noise_demo():
+            # Create two QuantumVariables for independent Bell pairs
+            bell_pair_1 = QuantumVariable(2)
+            bell_pair_2 = QuantumVariable(2)
+            
+            h(bell_pair_1[0]); cx(bell_pair_1[0], bell_pair_1[1])
+            h(bell_pair_2[0]); cx(bell_pair_2[0], bell_pair_2[1])
+            
+            # Apply deterministic X error to one of the qubits in the second pair
+            stim_noise("X_ERROR", 1.0, bell_pair_2[0])
+            
+            m1_0 = measure(bell_pair_1[0]); m1_1 = measure(bell_pair_1[1])
+            m2_0 = measure(bell_pair_2[0]); m2_1 = measure(bell_pair_2[1])
+            
+            # Detector 1: expectation=0 implies we expect even parity
+            d1 = parity(m1_0, m1_1, expectation=0)
+            
+            # Detector 2: Checks parity of second, noisy pair
+            d2 = parity(m2_0, m2_1, expectation=0)
+            
+            return d1, d2
+
+        d1, d2, stim_circuit = selective_noise_demo()
+        sampler = stim_circuit.compile_detector_sampler()
+        print(sampler.sample(1))
+        # Yields [[False, True]] (False = no error/match, True = error/mismatch)
+
+    **Example 5: Defining Observables**
+
+    Similarly, :func:`~qrisp.jasp.parity` with ``expectation=2`` defines logical observables in Stim.
+
+    ::
+
+        @extract_stim
+        def observable_demo():
+            qv = QuantumVariable(2)
+            h(qv)
+            m0 = measure(qv[0]); m1 = measure(qv[1])
+            
+            # Define an observable O = Z_0 Z_1
+            logical_obs = parity(m0, m1, expectation=2)
+            return logical_obs
+
+        obs_idx, stim_circuit = observable_demo()
+        # stim_circuit contains OBSERVABLE_INCLUDE(0) ...
+
     """
     
     def return_func(*args):
