@@ -271,14 +271,6 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
 
             else:
                 # --- Detector Mode ---
-                # Check if we are depending on Observables?
-                # The gathered components are just measurement indices.
-                # So we CAN create a detector even if inputs came from 'observables' (which are just sums of measurements).
-                # Previous restriction "Cannot create Detector based on abstract Observable handle" is technically resolved
-                # because we resolved the handle to its constituent measurements.
-                
-                # However, semantic check: Is it valid to use a "Likely Logical Error" as a "Syndrome"?
-                # Mechanically, yes. It's just parity of measurements.
                 
                 # Emit DETECTOR
                 if stim_targets:
