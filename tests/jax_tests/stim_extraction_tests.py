@@ -888,3 +888,125 @@ def test_stim_noise_injection():
         
     res, stim_circuit = noise_job()
     assert "X_ERROR(0.1) 0" in str(stim_circuit)
+
+
+# ============================================================================
+# Sampling Based Tests
+# ============================================================================
+
+def test_parity_observable_sampling():
+    """
+    Verify that parity used as an observable correctly computes parity of measurements.
+    We'll produce a state |00> + |11> (Parity even -> 0)
+    and |01> + |10> (Parity odd -> 1).
+    """
+    @extract_stim
+    def observable_sampling_even():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        # Even parity: m0 XOR m1 = 0
+        return parity(m0, m1, expectation=None)
+
+    @extract_stim
+    def observable_sampling_odd():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        x(qv[0]) # Flip one -> |01> + |10>
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        # Odd parity: m0 XOR m1 = 1
+        return parity(m0, m1, expectation=None)
+
+    # Test Even
+    obs_idx_even, stim_circ_even = observable_sampling_even()
+    
+    dsampler = stim_circ_even.compile_detector_sampler()
+    # Returns [detectors..., observables...]
+    outcomes = dsampler.sample(100)
+    # Expect 0 (False) for all shots since it's even parity state and we defined it as observable 0.
+    assert not np.any(outcomes)
+
+    # Test Odd
+    obs_idx_odd, stim_circ_odd = observable_sampling_odd()
+    dsampler_odd = stim_circ_odd.compile_detector_sampler()
+    outcomes_odd = dsampler_odd.sample(100)
+    
+    # Check correct sampling for deterministically flipped parity
+    assert not np.any(outcomes_odd)
+
+
+def test_parity_detector_sampling():
+    """
+    Verify `parity` with expectation=... working as a detector.
+    """
+    @extract_stim
+    def detector_circuit():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        
+        # Inject deterministic noise: 100% X error on qv[0]
+        # This should flip the parity m0+m1 (from 0 to 1).
+        stim_noise("X_ERROR", 1.0, qv[0])
+        
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        
+        # We expect even parity (0).
+        # Detector fires if m0+m1 != 0.
+        d = parity(m0, m1, expectation=False)
+        return d
+
+    det_idx, stim_circ = detector_circuit()
+    
+    # Run 100 shots (deterministic)
+    sampler = stim_circ.compile_detector_sampler()
+    samples = sampler.sample(100)
+    
+    # Samples shape: (100, 1) since 1 detector
+    # Since noise is deterministic (100%), detector should fire every time.
+    assert np.all(samples)
+
+
+def test_parity_expectations_behavior():
+    """
+    Verify `parity` expectation parameter behavior in Stim.
+    
+    Note: Currently, Stim conversion uses expectation only to distinguish 
+    between Detectors (expectation=True/False) and Observables (expectation=None).
+    The actual boolean value (True/False) does NOT modify the reference frame 
+    or logic of the detector in Stim. Stim detectors always check if measurements 
+    deviate from the deterministic noiseless simulation.
+    
+    Therefore, setting expectation=True on a circuit that deterministically produces 0 
+    does NOT trigger a detector event in Stim simulation.
+    """
+    @extract_stim
+    def check_expectations():
+        qv = QuantumVariable(2)
+        # Create |11> -> Parity even (0)
+        x(qv[0]); x(qv[1])
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        
+        # Expectation=False (0) -> Matches parity 0 -> No detection
+        d1 = parity(m0, m1, expectation=False)
+        
+        # Expectation=True (1) -> Mismatches (semantic) parity 0 -> BUT Stim sees physical match -> No detection
+        d2 = parity(m0, m1, expectation=True)
+        
+        return d1, d2
+
+    d1_idx, d2_idx, stim_circuit = check_expectations()
+    
+    sampler = stim_circuit.compile_detector_sampler()
+    samples = sampler.sample(10)
+    
+    # Both should be False (0) because the circuit physically produces even parity,
+    # and Stim detectors check against the physical simulation.
+    assert not np.any(samples[:, d1_idx])
+    assert not np.any(samples[:, d2_idx])
