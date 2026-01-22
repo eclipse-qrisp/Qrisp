@@ -16,7 +16,6 @@
 ********************************************************************************
 """
 
-import types
 from functools import lru_cache
 from typing import Callable, Tuple
 
@@ -70,6 +69,22 @@ class CountOpsMetric:
         # look like a constant is being added but a variable
         self.initial_metric = ([0] * len(profiling_dic), list(range(1, 6)))
 
+    def _validate_measurement_result(self, meas_res):
+        """Validate that measurement result is a boolean."""
+
+        if not isinstance(meas_res, bool) and meas_res.dtype != jnp.bool:
+            raise ValueError(
+                f"Measurement behavior must return a boolean, got {meas_res.dtype}"
+            )
+
+    def _measurement_body_fun(self, meas_number, i, acc):
+        """Helper function for measuring qubit arrays."""
+
+        meas_key = key(meas_number + i)
+        meas_res = self.meas_behavior(meas_key)
+        self._validate_measurement_result(meas_res)
+        return acc + (1 << i) * meas_res
+
     def handle_measure(self, invalues, eqn):
         """Handle the `jasp.measure` primitive."""
 
@@ -81,27 +96,17 @@ class CountOpsMetric:
 
         if isinstance(eqn.invars[0].aval, AbstractQubitArray):
 
-            def rng_body(i, acc):
-                meas_key = key(meas_number + i)
-                meas_res = self.meas_behavior(meas_key)
+            def body_fun(i, acc):
+                return self._measurement_body_fun(meas_number, i, acc)
 
-                if not isinstance(meas_res, bool) and not meas_res.dtype == jnp.bool:
-                    raise Exception(
-                        f"Tried to profil Jaspr with a measurement behavior not returning a boolean (got {meas_res.dtype}) instead"
-                    )
-                acc = acc + (1 << i) * meas_res
-                return acc
-
-            meas_res = jax.lax.fori_loop(0, invalues[0], rng_body, jnp.int64(0))
+            meas_res = jax.lax.fori_loop(0, invalues[0], body_fun, jnp.int64(0))
             counting_array[counting_index] += invalues[0]
-        else:
-            meas_res = self.meas_behavior(key(meas_number))
-            if not isinstance(meas_res, bool) and not meas_res.dtype == jnp.bool:
-                raise Exception(
-                    f"Tried to profil Jaspr with a measurement behavior not returning a boolean (got {meas_res.dtype}) instead"
-                )
 
-            counting_array[counting_index] += incrementation_constants[1]
+        else:  # measuring a single qubit
+
+            meas_res = self.meas_behavior(key(meas_number))
+            self._validate_measurement_result(meas_res)
+            counting_array[counting_index] += incrementation_constants[0]
 
         return [meas_res, (counting_array, incrementation_constants)]
 

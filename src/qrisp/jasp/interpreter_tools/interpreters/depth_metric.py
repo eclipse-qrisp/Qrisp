@@ -16,12 +16,12 @@
 ********************************************************************************
 """
 
-import types
 from functools import lru_cache
 from typing import Callable, Tuple
 
 import jax
 import jax.numpy as jnp
+from jax.random import key
 
 from qrisp.jasp.interpreter_tools import (
     ContextDict,
@@ -30,6 +30,9 @@ from qrisp.jasp.interpreter_tools import (
 )
 from qrisp.jasp.interpreter_tools.interpreters.utilities import filter_static_types
 from qrisp.jasp.jasp_expression import Jaspr
+from qrisp.jasp.primitives import (
+    AbstractQubitArray,
+)
 
 MAX_QUBITS = 1024
 
@@ -141,6 +144,22 @@ class DepthMetric:
         # Associate the following in context_dic:
         # QuantumCircuit -> metric_data (depth_array, global_depth)
         return depth_array, global_depth
+
+    def _validate_measurement_result(self, meas_res):
+        """Validate that measurement result is a boolean."""
+
+        if not isinstance(meas_res, bool) and meas_res.dtype != jnp.bool:
+            raise ValueError(
+                f"Measurement behavior must return a boolean, got {meas_res.dtype}"
+            )
+
+    def _measurement_body_fun(self, meas_number, i, acc):
+        """Helper function for measuring qubit arrays."""
+
+        meas_key = key(meas_number + i)
+        meas_res = self.meas_behavior(meas_key)
+        self._validate_measurement_result(meas_res)
+        return acc + (1 << i) * meas_res
 
     def handle_measure(self, invalues, _):
         """Handle the `jasp.measure` primitive."""
