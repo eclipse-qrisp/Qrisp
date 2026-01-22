@@ -38,64 +38,105 @@ def parity_abstract_eval(*measurements, expectation = 2):
     
     return ShapedArray((), bool)
 
-def parity(*measurements, expectation = 2):
+def parity(*measurements, expectation = None):
     r"""
     Computes the parity on a set of measurement results. This is equivalent to performing a multi-input XOR gate.
+    
+    In mathematical terms, if given the inputs $\{x_i \in \mathbb{F}_2\| 0 \leq i < n \}$
+    the output of this function is therefore
+    .. math::
+        
+        p = \bigoplus_{i=0}^{n-1} x_i
 
-    The primary purpose of this function is to check if the parity of a set of measurements matches an expected value.
-    This is common in quantum error correction (e.g., stabilizers) and logical observables.
+    A common usecase for this quanity are certain checks within quantum error 
+    correction circuits. In this scenario, the programmer ensures that 
+    a certain set of measurements has a deterministic parity. If this is not 
+    satisfied during the execution, it indicates the presence of an error.
+    
+    This type of parity check is also called a "detector". The set of detector
+    values together with the "detector error model" is then consumed by the decoder,
+    providing an educated guess, which error caused the parity check to fail.
+    
+    Within Qrisp, the ``parity`` function can receive the ``expectation``
+    keyword argument. This argument can be either ``True``,``False`` or ``None``. 
+    The default is None.
+    
+    If the expectation argument is given, the parity function returns.
+    
+    .. math::
+        
+        p = x_{\text{exp}} \oplus \left( \bigoplus_{i=0}^{n-1} x_i \right)
+
+    This implies that the parity function returns ``True`` if the expectation
+    is NOT met.
 
     .. note::
 
         When used within a function decorated with :func:`~qrisp.misc.stim_tools.extract_stim`, this function 
         is translated into Stim's ``DETECTOR`` or ``OBSERVABLE_INCLUDE`` instructions in the generated circuit.
         
-        * If ``expectation`` is 0 or 1, a ``DETECTOR`` instruction is created.
-        * If ``expectation`` is 2, an ``OBSERVABLE_INCLUDE`` instruction is created.
+        * If ``expectation`` is True or False, a ``DETECTOR`` instruction is created.
+        * If ``expectation`` is None, an ``OBSERVABLE_INCLUDE`` instruction is created.
 
     Parameters
     ----------
     *measurements : list[Tracer[boolean]]
         Variable length argument list of measurement results (typically outcomes of ``measure`` or similar operations).
-    expectation : int, optional
-        The expected value of the parity of the measurement results. 
-        If set to 0 or 1, the return value indicates if the actual parity differs from this expectation. 
-        If set to 2 (default), the function simply returns the calculated parity.
+    expectation : None | bool, optional
+        The expected value of the parity of the measurement results.
+        If set to ``True`` or ``False``, the return value indicates if the actual parity 
+        differs from this expectation. 
+        If set to None (default), the function simply returns the calculated parity.
 
     Returns
     -------
     Tracer[boolean]
-        A boolean value representing the result of the parity check.
-        If ``expectation`` is 0 or 1: Returns ``True`` if the actual parity does not match the expectation (i.e., detector fired), and ``False`` otherwise.
-        If ``expectation`` is 2: Returns the actual parity value (0 or 1).
+        A boolean value representing the parity.
     
     Examples
     --------
     
-    >>> from qrisp import QuantumVariable, h, cx, measure, parity
-    >>> qv = QuantumVariable(2)
-    >>> h(qv[0])
-    >>> cx(qv[0], qv[1])
-    >>> m0 = measure(qv[0])
-    >>> m1 = measure(qv[1])
-    >>> # Check if parity is even (0). Should be True (0) for Bell state.
-    >>> # Function returns False (0) if parity matches expectation (no error).
-    >>> check = parity(m0, m1, expectation=0) 
+    We measure the parity of the 4 qubit GHZ state:
+        
+    .. math::
+        
+        \ket{\text{GHZ}} = \frac{\ket{0000} + \ket{1111}}{\sqrt{2}}
+    
+    ::
+        
+        from qrisp import *
+        
+        @jaspify
+        def main():
+            
+            qv = QuantumVariable(4)
+            h(qv[0])
+            cx(qv[0], qv[1])
+            cx(qv[0], qv[2])
+            cx(qv[0], qv[3])
+            
+            a, b, c, d = tuple(measure(qv[i]) for i in range(4))
+            return parity(a, b, c, d)
+        
+        print(main())
+        # Yields 0
     
     """
+    if expectation is None:
+        expectation = 2
+    else:
+        expectation = int(expectation)
+    
     return parity_p.bind(*measurements, expectation = expectation)
 
 @parity_p.def_impl
-def parity_implementation(*measurements):
+def parity_implementation(*measurements, expectation):
     """
     Implementation of the parity primitive.
     
     Appends a ParityOperation to the QuantumCircuit.
     """
-    res = 0
-    for i in range(len(measurements)):
-        res ^= measurements[i]
-    return res
+    return sum(measurements, start = expectation)%2
 
 class ParityOperation(Operation):
     """
