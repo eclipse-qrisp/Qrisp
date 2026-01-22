@@ -88,8 +88,10 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
     >>> reordered = samples[:, [measurement_map[cb] for cb in sorted_clbits]]
     """
     import stim
-    from qrisp.misc.stim_tools import StimNoiseGate
+    from qrisp import QuantumCircuit
     from qrisp.circuit.operation import ClControlledOperation
+    from qrisp.jasp.primitives.parity_primitive import ParityOperation
+    from qrisp.misc.stim_tools.error_class import StimNoiseGate
 
     # We don't want to transpile StimNoiseGate gates because the have trivial definition    
     def transpile_predicate(op):
@@ -105,6 +107,12 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
     # We need to map Qrisp Clbit objects to Stim measurement record indices
     clbit_to_measurement_idx = {}  # Maps Clbit object -> measurement_record_idx
     measurement_counter = 0  # Tracks the current position in Stim's measurement record
+    
+    # Observable tracking
+    # Key: Clbit object (the output of a parity call)
+    # Value: {'stim_index': int, 'measurements': set(absolute_indices)}
+    clbit_to_observable_info = {}
+    stim_observable_counter = 0
     
     detector_map = {}
     detector_counter = 0
@@ -142,7 +150,6 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
     for instr in qc.data:
         op = instr.op
         op_name = op.name.lower()
-        print(op_name)
         
         qubits = instr.qubits
         
@@ -215,26 +222,70 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
             measurement_clbits = instr.clbits[:-1]
             result_clbit = instr.clbits[-1]
             
-            targets = []
+            # Gather all measurement components involved in this parity check
+            # Use symmetric_difference for XOR logic (parity)
+            current_components = set()
+
             for clbit in measurement_clbits:
-                if clbit not in clbit_to_measurement_idx:
-                    raise Exception("Detector depends on a classical bit that is not in the measurement record.")
+                if clbit in clbit_to_measurement_idx:
+                    # It's a direct measurement
+                    current_components.symmetric_difference_update({clbit_to_measurement_idx[clbit]})
                 
-                # Stim uses relative record targets (rec[-k]) typically for detectors
-                rec_idx = clbit_to_measurement_idx[clbit]
-                offset = rec_idx - measurement_counter
-                targets.append(stim.target_rec(offset))
+                elif clbit in clbit_to_observable_info:
+                    # It's a previous parity result (observable)
+                    # Merge its components
+                    current_components.symmetric_difference_update(clbit_to_observable_info[clbit]['measurements'])
+                
+                else:
+                    raise Exception(f"Parity operation depends on {clbit}, which is neither a measurement result nor a known observable handle.")
             
+            # Sort components for deterministic output
+            sorted_components = sorted(list(current_components))
+            
+            # Generate Stim targets relative to current position
+            stim_targets = []
+            for abs_idx in sorted_components:
+                offset = abs_idx - measurement_counter
+                stim_targets.append(stim.target_rec(offset))
+
             if op.expectation == 2:
-                # Append DETECTOR instruction
-                stim_circuit.append("OBSERVABLE_INCLUDE", targets, op.params)
+                # --- Observable Mode ---
+                # Always create a new Observable Index for the result.
+                # This ensures immutability of previous observables.
+                
+                new_stim_idx = stim_observable_counter
+                stim_observable_counter += 1
+                
+                # Store info for future usage
+                clbit_to_observable_info[result_clbit] = {
+                    'idx': new_stim_idx,
+                    'measurements': current_components # Store set for efficient updates
+                }
+                
+                # Map to detector map so extract_stim knows the index
+                detector_map[result_clbit] = new_stim_idx
+                
+                # Emit instruction if there are targets
+                if stim_targets:
+                     stim_circuit.append("OBSERVABLE_INCLUDE", stim_targets, [new_stim_idx])
+
             else:
-                # Append DETECTOR instruction
-                stim_circuit.append("DETECTOR", targets, op.params)
-            
-            # Map the result clbit to the current detector index
-            detector_map[result_clbit] = detector_counter
-            detector_counter += 1
+                # --- Detector Mode ---
+                # Check if we are depending on Observables?
+                # The gathered components are just measurement indices.
+                # So we CAN create a detector even if inputs came from 'observables' (which are just sums of measurements).
+                # Previous restriction "Cannot create Detector based on abstract Observable handle" is technically resolved
+                # because we resolved the handle to its constituent measurements.
+                
+                # However, semantic check: Is it valid to use a "Likely Logical Error" as a "Syndrome"?
+                # Mechanically, yes. It's just parity of measurements.
+                
+                # Emit DETECTOR
+                if stim_targets:
+                    stim_circuit.append("DETECTOR", stim_targets, op.params)
+                
+                detector_map[result_clbit] = detector_counter
+                detector_counter += 1
         
         # Handle T gate (not a Clifford gate, but check for it)
         elif op_name in ["t", "t_dg"]:
