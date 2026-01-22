@@ -51,19 +51,15 @@ A crucial feature of Stim is precise control over what type of noise can appear 
 
     Every noisy operation described here behaves as a purely unitary identity gate, unless the compilation target is indeed Stim (see :meth:`~qrisp.QuantumCircuit.to_stim`). This means for instance that :meth:`~qrisp.QuantumCircuit.to_qiskit` converts the noisy operations to trivial identity gates. The same applies to the behavior of the Qrisp simulator. In other words - the noisy operations will only behave noisy if pushed through the Stim compiler.
 
-Detectors
----------
+Detectors and Observables
+-------------------------
 
-Detectors in Stim are annotations that assert that a set of measurement outcomes has a specific parity. They are crucial for defining error correction tasks. A detector fires if the parity of the referenced measurements deviates from the value expected in a noiseless execution. In Stim, these events are stored in a separate record than the ordinary measurement results. To sample them efficiently, it is necessary to compile a dedicated sampler (such as ``stim.Circuit.compile_detector_sampler``).
+In Stim, detectors are annotations asserting that a set of measurement outcomes has a deterministic parity. Observables are similar structures tracking logical information.
+Qrisp allows you to define these structures using the general-purpose :func:`~qrisp.jasp.parity` function.
 
 .. list-table::
    :header-rows: 0
    :widths: 30 70
 
-   * - :func:`~qrisp.misc.stim_tools.detector`
-     - Creates a Stim detector object based on the given measurement outcomes.
-
-.. toctree:: 
-   :hidden:
-
-   detector_doc
+   * - :func:`~qrisp.parity`
+     - Performs a parity check on measurement results. Creates Stim detectors or observables when used within :func:`~qrisp.jasp.extract_stim`.
