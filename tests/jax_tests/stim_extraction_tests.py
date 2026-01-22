@@ -18,8 +18,9 @@
 
 import numpy as np
 import stim
-from qrisp import QuantumVariable, QuantumFloat, QuantumBool, h, x, y, z, s, s_dg, sx, cx, cy, cz, measure
-from qrisp.jasp import extract_stim
+from qrisp import QuantumVariable, QuantumFloat, QuantumBool, h, x, y, z, s, s_dg, sx, cx, cy, cz, measure, control
+from qrisp.jasp import extract_stim, parity
+from qrisp.misc.stim_tools import stim_noise
 
 
 # ============================================================================
@@ -674,129 +675,220 @@ def test_stim_noise_gate_errors():
 
 
 # ============================================================================
-# Detector Tests
+# Parity / Detector / Observable Tests
 # ============================================================================
 
-def test_extract_stim_with_detector():
-    """Test extract_stim decorator with a function using detector()."""
-    from qrisp.misc.stim_tools import detector
-    
+def test_basic_parity_detector():
+    """
+    Test simple parity detector usage.
+    """
     @extract_stim
-    def simple_detector_circuit():
+    def simple_detector():
         qv = QuantumVariable(2)
         h(qv[0])
         cx(qv[0], qv[1])
-        
         m0 = measure(qv[0])
         m1 = measure(qv[1])
         
-        d = detector(m0, m1)
-        return d
-        
-    res = simple_detector_circuit()
-    det_idx, stim_circ = res
-    
-    assert isinstance(stim_circ, stim.Circuit)
-    assert isinstance(det_idx, int)
-    assert det_idx == 0
-    
-    # Run simulation
-    sampler = stim_circ.compile_detector_sampler()
-    det_samples = sampler.sample(100)
-    assert not np.any(det_samples)
-
-
-def test_extract_stim_detector_with_noise():
-    """Test detector firing when noise is introduced."""
-    from qrisp.misc.stim_tools import detector, stim_noise
-
-    @extract_stim
-    def noisy_detector_circuit():
-        qv = QuantumVariable(2)
-        h(qv[0])
-        cx(qv[0], qv[1])
-        
-        stim_noise("X_ERROR", 1.0, qv[1])
-        
-        m0 = measure(qv[0])
-        m1 = measure(qv[1])
-        
-        d = detector(m0, m1)
+        # Parity of Bell pair should be 0
+        d = parity(m0, m1, expectation=0)
         return d
 
-    det_idx, stim_circ = noisy_detector_circuit()
+    res, stim_circuit = simple_detector()
     
-    sampler = stim_circ.compile_detector_sampler()
-    det_samples = sampler.sample(100)
-    assert np.all(det_samples[:, det_idx])
+    # Check that we have a detector instruction
+    num_detectors = stim_circuit.num_detectors if hasattr(stim_circuit, "num_detectors") else len([i for i in stim_circuit if i.name == "DETECTOR"])
+    assert num_detectors == 1
+    # Check structure: H 0, CX 0 1, M 0 1, DETECTOR rec[-2] rec[-1]
+    s_str = str(stim_circuit)
+    assert "DETECTOR" in s_str
+    assert "rec[-1]" in s_str and "rec[-2]" in s_str
 
-
-def test_extract_stim_multiple_detectors():
-    """Test multiple detectors."""
-    from qrisp.misc.stim_tools import detector
-
+def test_measurement_detector_gap_interleaved():
+    """
+    Test detector with measurements separated by another measurement in time.
+    """
     @extract_stim
-    def multi_detector_circuit():
+    def gap_detector_interleaved():
         qv = QuantumVariable(3)
-        h(qv[0])
-        cx(qv[0], qv[1])
-        cx(qv[1], qv[2])
+        h(qv)
+        m0 = measure(qv[0])
+        m1 = measure(qv[1]) # Intervening measurement
+        m2 = measure(qv[2])
         
+        # Check 0 and 2 (skipping m1)
+        d = parity(m0, m2, expectation=0)
+        return d
+        
+    res, stim_circuit = gap_detector_interleaved()
+    s_str = str(stim_circuit)
+    # m0 is rec[-3], m1 is rec[-2], m2 is rec[-1]
+    assert "rec[-1]" in s_str
+    assert "rec[-3]" in s_str
+    assert "rec[-2]" not in s_str
+
+def test_basic_observable():
+    """
+    Test observable creation (expectation=2).
+    """
+    @extract_stim
+    def simple_observable():
+        qv = QuantumVariable(1)
+        h(qv[0])
+        m = measure(qv[0])
+        obs = parity(m, expectation=2)
+        return obs
+
+    res_obs_idx, stim_circuit = simple_observable()
+    
+    # Handle tuple return if necessary
+    if isinstance(res_obs_idx, tuple):
+        res_obs_idx = res_obs_idx[0]
+
+    # Return value should be observable index 0
+    assert res_obs_idx == 0
+    assert stim_circuit.num_observables == 1
+    assert "OBSERVABLE_INCLUDE(0)" in str(stim_circuit)
+
+def test_observable_chaining():
+    """
+    Test chaining observables (extending one observable).
+    parity(new_meas, old_obs) -> should create NEW observable with combined measurements.
+    """
+    @extract_stim
+    def chained_observable():
+        qv = QuantumVariable(3)
+        h(qv)
         m0 = measure(qv[0])
         m1 = measure(qv[1])
         m2 = measure(qv[2])
         
-        d1 = detector(m0, m1)
-        d2 = detector(m1, m2)
+        # Obs 0: m[0] + m[1]
+        obs_1 = parity(m0, m1, expectation=2)
         
-        return d1, d2
+        # Obs 1: m[2] + Obs 0 (= m[0] + m[1] + m[2])
+        obs_2 = parity(m2, obs_1, expectation=2)
+        
+        return obs_1, obs_2
 
-    d1_idx, d2_idx, stim_circ = multi_detector_circuit()
+    (idx1, idx2), stim_circuit = chained_observable()
     
-    sampler = stim_circ.compile_detector_sampler()
-    det_samples = sampler.sample(100)
-    assert not np.any(det_samples)
-
-
-def test_detector_indexing_correctness():
-    """Ensure detector indices returned by extract_stim point to the correct detectors."""
-    from qrisp.misc.stim_tools import detector, stim_noise
+    # We expect two observables.
+    # idx1 -> 0
+    # idx2 -> 1
+    assert idx1 == 0
+    assert idx2 == 1
+    assert stim_circuit.num_observables == 2
     
+    lines = str(stim_circuit).splitlines()
+    obs_lines = [l for l in lines if "OBSERVABLE_INCLUDE" in l]
+    
+    # Should contains OBS(0) and OBS(1)
+    assert any("OBSERVABLE_INCLUDE(0)" in l for l in obs_lines)
+    assert any("OBSERVABLE_INCLUDE(1)" in l for l in obs_lines)
+    
+    # Check that Obs 1 incorporates Obs 0's history
+    # Finding line for obs 1
+    obs1_line = next(l for l in obs_lines if "OBSERVABLE_INCLUDE(1)" in l)
+    assert obs1_line.count("rec") == 3
+
+def test_observable_merging():
+    """
+    Test merging two distinct observables into a third one.
+    """
     @extract_stim
-    def selective_noise_circuit():
+    def merged_observable():
         qv = QuantumVariable(4)
+        h(qv)
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        m2 = measure(qv[2])
         
-        # Pair A
-        h(qv[0])
-        cx(qv[0], qv[1])
+        # Obs 0: m0
+        o1 = parity(m0, expectation=2)
+        # Obs 1: m1
+        o2 = parity(m1, expectation=2)
         
-        # Pair B
-        h(qv[2])
-        cx(qv[2], qv[3])
+        # Obs 2: o1 + o2 + m2 (= m0 + m1 + m2)
+        o3 = parity(o1, o2, m2, expectation=2)
         
-        # Noise on Pair B
-        stim_noise("X_ERROR", 1.0, qv[3])
-        
-        ma0 = measure(qv[0])
-        ma1 = measure(qv[1])
-        mb0 = measure(qv[2])
-        mb1 = measure(qv[3])
-        
-        det_a = detector(ma0, ma1)
-        det_b = detector(mb0, mb1)
-        det_c = detector(ma0, ma1)
-        
-        return det_a, det_b, det_c
+        return o3
 
-    idx_a, idx_b, idx_c, stim_circ = selective_noise_circuit()
+    res_idx, stim_circuit = merged_observable()
     
-    sampler = stim_circ.compile_detector_sampler()
-    det_samples = sampler.sample(100)
+    if isinstance(res_idx, tuple):
+        res_idx = res_idx[0]
+
+    assert res_idx == 2 # 3rd observable created
+    assert stim_circuit.num_observables == 3
     
-    samples_a = det_samples[:, idx_a]
-    samples_b = det_samples[:, idx_b]
-    samples_c = det_samples[:, idx_c]
+    obs_lines = [l for l in str(stim_circuit).splitlines() if "OBSERVABLE_INCLUDE(2)" in l]
+    assert len(obs_lines) > 0
+    # Should include m0(rec[-4]), m1(rec[-3]), m2(rec[-2]) - wait order depends on measurement order
+    # m0, m1, m2 measured sequentially.
+    assert obs_lines[0].count("rec") == 3
+
+def test_detectors_on_observables():
+    """
+    Test creating a detector from observable handles.
+    """
+    @extract_stim
+    def detector_on_obs():
+        qv = QuantumVariable(2)
+        h(qv)
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        
+        # Create an "observable" container for m[0]
+        obs = parity(m0, expectation=2)
+        
+        # Detector checking parity of (Obs + m[1]) = (m[0] + m[1])
+        d = parity(obs, m1, expectation=0) # Default expectation=0 -> Detector
+        return d
+
+    res, stim_circuit = detector_on_obs()
     
-    assert not np.any(samples_a)
-    assert np.all(samples_b)
-    assert not np.any(samples_c)
+    # Should have 1 detector and 1 observable
+    assert stim_circuit.num_observables == 1
+    
+    num_detectors = stim_circuit.num_detectors if hasattr(stim_circuit, "num_detectors") else len([i for i in stim_circuit if i.name == "DETECTOR"])
+    assert num_detectors == 1
+    
+    # Detector should target m0 and m1
+    det_line = [l for l in str(stim_circuit).splitlines() if "DETECTOR" in l][0]
+    assert det_line.count("rec") == 2
+
+def test_classical_conditions():
+    """
+    Test classically conditioned gates (Feedback).
+    """
+    @extract_stim
+    def conditional_circuit():
+        qv = QuantumVariable(1)
+        h(qv[0])
+        m = measure(qv[0])
+        
+        with control(m):
+            x(qv[0])
+        
+        return m
+
+    res, stim_circuit = conditional_circuit()
+    s_str = str(stim_circuit)
+    
+    # Expect CX rec[-1] 0
+    assert "CX rec[-1] 0" in s_str
+
+def test_stim_noise_injection():
+    """
+    Test explicit Stim noise injection.
+    """
+    @extract_stim
+    def noise_job():
+        qv = QuantumVariable(1)
+        stim_noise("X_ERROR", 0.1, qv[0])
+        m = measure(qv[0])
+        return m
+        
+    res, stim_circuit = noise_job()
+    assert "X_ERROR(0.1) 0" in str(stim_circuit)
