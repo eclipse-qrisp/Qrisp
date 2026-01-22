@@ -19,28 +19,26 @@
 import numpy as np
 
 from qrisp.circuit import Operation, QuantumCircuit
-from qrisp.misc.stim_tools.stim_primitive import StimPrimitive
+from qrisp.jasp.primitives.quantum_primitive import QuantumPrimitive
 
-detector_p = StimPrimitive("detector")
+parity_p = QuantumPrimitive("parity")
 
 from jax.core import ShapedArray
 
-@detector_p.def_abstract_eval
-def detector_abstract_eval(*measurements_and_abs_qc):
+@parity_p.def_abstract_eval
+def parity_abstract_eval(*measurements, expectation = 2):
     """
-    Abstract evaluation for the detector primitive.
+    Abstract evaluation for the parity primitive.
     
     Checks that inputs are boolean (measurement results) and returns a boolean scalar (the detector result).
     """
-    measurements = measurements_and_abs_qc[:-1]
-    
     for b in measurements:
         if not isinstance(b, ShapedArray) or not isinstance(b.dtype, np.dtypes.BoolDType):
-            raise Exception(f"Tried to trace detector with value {b} (permitted is boolean)")
+            raise Exception(f"Tried to trace parity primitive with value {b} (permitted is boolean)")
     
     return ShapedArray((), bool)
 
-def detector(*measurements):
+def parity(*measurements, expectation = 2):
     r"""
     Creates a Stim detector.
 
@@ -158,32 +156,29 @@ def detector(*measurements):
         #  ... ]
     
     """
-    from qrisp.jasp import TracingQuantumSession
-    qs = TracingQuantumSession.get_instance()
-    return detector_p.bind(*(list(measurements) + [qs.abs_qc]))
+    return parity_p.bind(*measurements, expectation = expectation)
 
-@detector_p.def_impl
-def detector_implementation(*measurements_and_qc):
+@parity_p.def_impl
+def parity_implementation(*measurements):
     """
     Implementation of the detector primitive.
     
     Appends a StimDetector operation to the QuantumCircuit.
     """
-    measurements = measurements_and_qc[:-1]
-    qc = measurements_and_qc[-1]
-    res = qc.add_clbit()
-    qc.append(StimDetector(len(measurements)), clbits = list(measurements) + [res])
+    res = 0
+    for i in range(len(measurements)):
+        res ^= measurements[i]
     return res
 
-
-class StimDetector(Operation):
+class ParityOperation(Operation):
     """
     Operation class representing a Stim detector.
     
     This operation is used to interface with Stim's DETECTOR instruction during the
     conversion process. It acts as a placeholder in the Qrisp QuantumCircuit.
     """
-    def __init__(self, num_inputs):
+    def __init__(self, num_inputs, expectation = 2):
         
         definition = QuantumCircuit(0, num_inputs + 1)
-        Operation.__init__(self, "stim.detector", num_clbits = num_inputs + 1, definition = definition)
+        self.expectation = expectation
+        Operation.__init__(self, "parity", num_clbits = num_inputs + 1, definition = definition)

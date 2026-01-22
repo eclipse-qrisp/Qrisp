@@ -33,7 +33,7 @@ from qrisp.jasp import (
     extract_invalues,
     insert_outvalues
 )
-from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive
+from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive, ParityOperation
 
 
 class Jaspr(ClosedJaxpr):
@@ -448,8 +448,14 @@ class Jaspr(ClosedJaxpr):
                     context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
                     return
                 return True
-            elif eqn.primitive.name == "stim.detector":
-                return True
+            elif eqn.primitive.name == "jasp.parity":
+                invalues = extract_invalues(eqn, context_dic)
+                qc = context_dic[jaspr.invars[-1]]
+                res = qc.add_clbit()
+                qc.append(ParityOperation(len(invalues), expectation = eqn.params["expectation"]),
+                                          clbits = list(invalues) + [res])
+                insert_outvalues(eqn, context_dic, [res])
+                return False
             else:
 
                 invalues = extract_invalues(eqn, context_dic)

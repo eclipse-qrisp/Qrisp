@@ -18,5 +18,3 @@
 
 from qrisp.misc.stim_tools.error_class import *
 from qrisp.misc.stim_tools.stim_noise_gate_application_functions import *
-from qrisp.misc.stim_tools.stim_primitive import *
-from qrisp.misc.stim_tools.detector_primitive import detector, StimDetector

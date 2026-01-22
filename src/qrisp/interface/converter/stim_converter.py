@@ -93,7 +93,7 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
 
     # We don't want to transpile StimNoiseGate gates because the have trivial definition    
     def transpile_predicate(op):
-        return not isinstance(op, StimNoiseGate) and op.name != "stim.detector"
+        return not isinstance(op, StimNoiseGate) and op.name != "parity"
 
     qc = qc.transpile(transpile_predicate = transpile_predicate)
     
@@ -142,6 +142,7 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
     for instr in qc.data:
         op = instr.op
         op_name = op.name.lower()
+        print(op_name)
         
         qubits = instr.qubits
         
@@ -209,7 +210,8 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
                 
                 stim_circuit.append(op.stim_name, targets, op.params)
 
-        elif op_name == "stim.detector":
+        elif op_name == "parity":
+            
             measurement_clbits = instr.clbits[:-1]
             result_clbit = instr.clbits[-1]
             
@@ -223,8 +225,12 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
                 offset = rec_idx - measurement_counter
                 targets.append(stim.target_rec(offset))
             
-            # Append DETECTOR instruction
-            stim_circuit.append("DETECTOR", targets, op.params)
+            if op.expectation == 2:
+                # Append DETECTOR instruction
+                stim_circuit.append("OBSERVABLE_INCLUDE", targets, op.params)
+            else:
+                # Append DETECTOR instruction
+                stim_circuit.append("DETECTOR", targets, op.params)
             
             # Map the result clbit to the current detector index
             detector_map[result_clbit] = detector_counter
