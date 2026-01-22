@@ -302,6 +302,8 @@ def extract_stim(func):
                 # a list of classical bits representing the measurement results.
                 if isinstance(val, list) and len(val) and isinstance(val[0], Clbit):
                     new_val = tuple(idx_mapping[clbit] for clbit in val)
+                    if len(new_val) == 1:
+                        new_val = new_val[0]
                 
                 # Case 2: Value is a single Clbit object
                 # Replace it with its Stim measurement index.

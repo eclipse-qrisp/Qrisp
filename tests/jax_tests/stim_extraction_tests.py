@@ -446,15 +446,14 @@ def test_quantum_bool_compatibility():
     
     meas_idx, stim_circuit = qb_test()
     
-    # QuantumBool measurement returns a tuple with one element
-    assert isinstance(meas_idx, tuple)
-    assert len(meas_idx) == 1
-    assert meas_idx[0] == 0
+    # QuantumBool measurement returns a single index (int)
+    assert isinstance(meas_idx, int)
+    assert meas_idx == 0
     
     # Sample
     sampler = stim_circuit.compile_sampler()
     samples = sampler.sample(100)
-    qb_samples = samples[:, meas_idx[0]]
+    qb_samples = samples[:, meas_idx]
     
     # Should have both 0 and 1 outcomes
     assert 0 in qb_samples
@@ -513,9 +512,9 @@ def test_mixed_classical_and_quantum():
     assert c_prod == 35
     
     # Check quantum measurement indices
-    # QuantumBool also returns a tuple
-    assert isinstance(single_idx, tuple)
-    assert len(single_idx) == 1
+    # QuantumBool returns a single index (int)
+    assert isinstance(single_idx, int)
+    
     assert isinstance(multi_indices, tuple)
     assert len(multi_indices) == 3
     
@@ -816,9 +815,6 @@ def test_observable_merging():
 
     res_idx, stim_circuit = merged_observable()
     
-    if isinstance(res_idx, tuple):
-        res_idx = res_idx[0]
-
     assert res_idx == 2 # 3rd observable created
     assert stim_circuit.num_observables == 3
     
