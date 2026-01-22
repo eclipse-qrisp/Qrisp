@@ -89,6 +89,7 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
     """
     import stim
     from qrisp.misc.stim_tools import StimNoiseGate
+    from qrisp.circuit.operation import ClControlledOperation
 
     # We don't want to transpile StimNoiseGate gates because the have trivial definition    
     def transpile_predicate(op):
@@ -242,7 +243,46 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
                 f"Parametric gate '{op_name}' is not a Clifford gate and cannot be simulated by Stim. "
                 "Stim only supports Clifford operations."
             )
-        
+
+        elif isinstance(op, ClControlledOperation):
+            
+            if op.num_control != 1:
+                 raise NotImplementedError("Stim conversion only supports single-bit classical control for now.")
+            
+            # Identify the control bit and the operation's target qubits
+            control_clbit = instr.clbits[0]
+            
+            # Verify the control bit corresponds to a known measurement
+            if control_clbit not in clbit_to_measurement_idx:
+                 raise ValueError("Classical control bit must be a result of a previous measurement.")
+                 
+            # Convert absolute measurement index to Stim's relative record format (rec[-k])
+            meas_idx = clbit_to_measurement_idx[control_clbit]
+            rec_target = stim.target_rec(meas_idx - measurement_counter)
+            
+            base_op_name = op.base_op.name.lower()
+            
+            # Map the base operation to the corresponding Stim feedback gate.
+            # Stim uses the 2-qubit syntax (CX, CY, CZ) where the first target is the record.
+            if base_op_name == "x":
+                stim_gate = "CX"
+            elif base_op_name == "y":
+                stim_gate = "CY"
+            elif base_op_name == "z":
+                stim_gate = "CZ"
+            else:
+                 # Stim currently restricts feedback to Pauli operations.
+                 # Gates like H or S cannot be classically conditioned directly.
+                 raise NotImplementedError(
+                     f"Classically conditioned '{base_op_name}' is not supported. "
+                     "Stim only supports X, Y, and Z gates conditioned on measurement results."
+                 )
+
+            # Apply the conditional gate for each target qubit
+            for q_idx in qubit_indices:
+                stim_circuit.append(stim_gate, [rec_target, q_idx])
+            
+
         # Unknown gate
         else:
             raise ValueError(
