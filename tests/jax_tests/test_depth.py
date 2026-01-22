@@ -109,6 +109,34 @@ class TestDepthQuantumPrimitiveSingleQubit:
 
         assert main(3) == 3
 
+    @pytest.mark.parametrize(
+        "qubit_indices_1, qubit_indices_2, expected_depth",
+        [
+            ([0, 0], [0, 1], 2),
+            ([1, 1], [0, 1], 2),
+            ([1, 0], [0, 1], 1),
+            ([0, 1], [0, 0], 2),
+            ([1, 0], [1, 1], 2),
+            ([0, 1], [1, 0], 1),
+        ],
+    )
+    def test_multiple_create_qubits(
+        self, qubit_indices_1, qubit_indices_2, expected_depth
+    ):
+        """Test depth computation with multiple create_qubits calls."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[qubit_indices_1[0]])
+            h(qf2[qubit_indices_2[0]])
+            h(qf1[qubit_indices_1[1]])
+            h(qf2[qubit_indices_2[1]])
+            return measure(qf1[qubit_indices_1[0]])
+
+        assert main(2, 2) == expected_depth
+
 
 class TestDepthQuantumPrimitiveMultiQubit:
     """Test that the depth is correctly computed for multi-qubit quantum primitives."""
@@ -139,14 +167,14 @@ class TestDepthQuantumPrimitiveMultiQubit:
         """Test depth of a combination of Hadamard and CNOT gates."""
 
         @depth(meas_behavior="0")
-        def main():
-            qf = QuantumFloat(2)
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
             h(qf[0])
             cx(qf[0], qf[1])
             h(qf[1])
             return measure(qf[0])
 
-        assert main() == 3
+        assert main(2) == 3
 
     def test_h_cx_combination_2(self):
         """Test depth of a combination of Hadamard, Toffoli, and CNOT gates."""
@@ -163,6 +191,27 @@ class TestDepthQuantumPrimitiveMultiQubit:
             return measure(qf[0])
 
         assert main(4) == 4
+
+    def test_multiple_create_qubits(self):
+        """Test depth computation with multiple create_qubits calls."""
+
+        # This test uses the combinations 1 and 2 from the previous tests,
+        # to be applied on different qubit registers and in sparse order.
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[0])
+            h(qf1[2])
+            h(qf2[0])
+            mcx([qf1[0], qf1[1]], qf1[2])
+            cx(qf2[0], qf2[1])
+            h(qf1[1])
+            h(qf1[1])
+            cx(qf1[2], qf1[3])
+            h(qf2[1])
+
+        assert main(4, 2) == 4
 
 
 class TestDepthControlStructures:

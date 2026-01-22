@@ -26,6 +26,9 @@ from qrisp.jasp import check_for_tracing_mode
 
 
 class ContextDict(dict):
+    """
+    A dictionary-like data structure to hold variable bindings during Jaxpr evaluation.
+    """
 
     def __getitem__(self, key):
         if isinstance(key, Literal):
@@ -33,12 +36,11 @@ class ContextDict(dict):
         else:
             res = dict.__getitem__(self, key)
 
-        if type(res) == int:
-            return jnp.array(res, dtype=jnp.dtype("int64"))
-        elif type(res) == float:
-            return jnp.array(res, dtype=jnp.dtype("float64"))
-        else:
-            return res
+        if isinstance(res, int):
+            return jnp.asarray(res, dtype=jnp.dtype("int64"))
+        if isinstance(res, float):
+            return jnp.asarray(res, dtype=jnp.dtype("float64"))
+        return res
 
 
 def exec_eqn(eqn, context_dic):

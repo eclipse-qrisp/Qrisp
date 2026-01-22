@@ -19,6 +19,7 @@
 from typing import List
 from jax.extend.core import ClosedJaxpr
 from qrisp.jasp.jasp_expression import Jaspr
+import types
 
 
 def always_zero(_):
@@ -34,6 +35,34 @@ def always_one(_):
 def simulation():
     """Simulate measurements normally without any forced behavior."""
     pass
+
+
+def filter_static_types(args, metric_instance) -> List:
+    """
+    Filter out static types from the provided arguments.
+
+    Parameters
+    ----------
+    args : Tuple
+        The arguments to filter.
+
+    metric_instance : object
+        The metric instance containing the final argument.
+
+    Returns
+    -------
+    List
+        A list of arguments with static types removed.
+    """
+
+    # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
+    # Import here to avoid circular import issues
+    from qrisp.operators import FermionicOperator, QubitOperator
+
+    STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
+
+    initial_metric_value = metric_instance.initial_metric
+    return [x for x in args + (initial_metric_value,) if type(x) not in STATIC_TYPES]
 
 
 def get_quantum_operations(jaspr: Jaspr) -> List[str]:

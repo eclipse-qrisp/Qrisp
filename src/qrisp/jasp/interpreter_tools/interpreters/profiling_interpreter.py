@@ -40,6 +40,7 @@ import jax
 import numpy as np
 
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
+    ContextDict,
     eval_jaxpr,
     extract_invalues,
     insert_outvalues,
@@ -88,11 +89,10 @@ def make_profiling_eqn_evaluator(metric) -> Callable:
         The profiling equation evaluator.
     """
 
-    def profiling_eqn_evaluator(eqn, context_dic):
-
-        # In this interpreter, context_dic is an environment mapping:
-        # - keys: JAXPR variables (eqn.outvars[i], i.e. SSA names like bg, bh)
-        # - values: whatever concrete (or traced) Python/JAX objects the evaluator chooses to represent those variables with
+    # In this interpreter, context_dic is an environment mapping:
+    # - keys: JAXPR variables (eqn.outvars[i], i.e. SSA names)
+    # - values: whatever concrete (or traced) JAX objects every metric chooses to represent them with
+    def profiling_eqn_evaluator(eqn, context_dic: ContextDict):
 
         invalues = extract_invalues(eqn, context_dic)
         prim_name = eqn.primitive.name
@@ -103,20 +103,13 @@ def make_profiling_eqn_evaluator(metric) -> Callable:
             # after everything has been unified to use this new profiling interpreter structure.
             match prim_name:
 
-                # quantum_gate has the signature (Qubit, ... , QuantumCircuit)
-                # (it depends on the gate how many qubits there are)
-                case "jasp.quantum_gate":
-                    outvalues = metric.handle_quantum_gate(invalues, eqn)
-                    # Outvars is QuantumCircuit
-                    insert_outvalues(eqn, context_dic, outvalues)
-
                 # create_qubits has the signature (size, QuantumCircuit)
                 case "jasp.create_qubits":
                     outvalues = metric.handle_create_qubits(invalues, context_dic)
                     # Outvars are (QubitArray, QuantumCircuit)
                     insert_outvalues(eqn, context_dic, outvalues)
 
-                # get_qubit has the signature (QubitArray, index)
+                # get_qubit has the signature (QubitArray, index (int))
                 case "jasp.get_qubit":
                     outvalues = metric.handle_get_qubit(invalues)
                     # Outvars are (Qubit)
@@ -128,16 +121,23 @@ def make_profiling_eqn_evaluator(metric) -> Callable:
                     # Outvars are (size)
                     insert_outvalues(eqn, context_dic, outvalues)
 
-                # ...
+                # fuse has the signature (QubitArray, QubitArray)
                 case "jasp.fuse":
                     outvalues = metric.handle_fuse(invalues)
-                    # ...
+                    # Outvars are (QubitArray)
                     insert_outvalues(eqn, context_dic, outvalues)
 
-                # ...
+                # slice has the signature (QubitArray, start (int), stop (int))
                 case "jasp.slice":
                     outvalues = metric.handle_slice(invalues)
-                    # ...
+                    # Outvars are (QubitArray)
+                    insert_outvalues(eqn, context_dic, outvalues)
+
+                # quantum_gate has the signature (Qubit, ... , QuantumCircuit)
+                # (it depends on the gate how many qubits there are)
+                case "jasp.quantum_gate":
+                    outvalues = metric.handle_quantum_gate(invalues, eqn)
+                    # Outvars is (QuantumCircuit)
                     insert_outvalues(eqn, context_dic, outvalues)
 
                 # measure has the signature (Qubit, QuantumCircuit)

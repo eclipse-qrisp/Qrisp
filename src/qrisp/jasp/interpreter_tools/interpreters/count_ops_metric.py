@@ -28,7 +28,10 @@ from qrisp.jasp.interpreter_tools import (
     eval_jaxpr,
     make_profiling_eqn_evaluator,
 )
-from qrisp.jasp.interpreter_tools.interpreters.utilities import get_quantum_operations
+from qrisp.jasp.interpreter_tools.interpreters.utilities import (
+    filter_static_types,
+    get_quantum_operations,
+)
 from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.jasp.primitives import (
     AbstractQubitArray,
@@ -65,7 +68,7 @@ class CountOpsMetric:
         # few integers as arguments, which will be used to do the
         # incrementation (i.e. CZ_count += 1). It therefore doesn't
         # look like a constant is being added but a variable
-        self.final_arg = ([0] * len(profiling_dic), list(range(1, 6)))
+        self.initial_metric = ([0] * len(profiling_dic), list(range(1, 6)))
 
     def handle_measure(self, invalues, eqn):
         """Handle the `jasp.measure` primitive."""
@@ -239,18 +242,7 @@ def get_count_ops_profiler(
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def count_ops_profiler(*args):
-
-        # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
-        # Import here to avoid circular import issues
-        from qrisp.operators import FermionicOperator, QubitOperator
-
-        static_types = (str, QubitOperator, FermionicOperator, types.FunctionType)
-        filtered_args = [
-            x
-            for x in list(args) + [count_ops_metric.final_arg]
-            if type(x) not in static_types
-        ]
-
+        filtered_args = filter_static_types(args, metric_instance=count_ops_metric)
         return jitted_evaluator(*filtered_args)
 
     return count_ops_profiler, profiling_dic
