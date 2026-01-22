@@ -75,8 +75,8 @@ def parity(*measurements, expectation = None):
         When used within a function decorated with :func:`~qrisp.misc.stim_tools.extract_stim`, this function 
         is translated into Stim's ``DETECTOR`` or ``OBSERVABLE_INCLUDE`` instructions in the generated circuit.
         
-        * If ``expectation`` is True or False, a ``DETECTOR`` instruction is created.
-        * If ``expectation`` is None, an ``OBSERVABLE_INCLUDE`` instruction is created.
+        * If ``expectation`` is ``True`` or ``False``, a ``DETECTOR`` instruction is created.
+        * If ``expectation`` is ``None``, an ``OBSERVABLE_INCLUDE`` instruction is created.
 
     Parameters
     ----------

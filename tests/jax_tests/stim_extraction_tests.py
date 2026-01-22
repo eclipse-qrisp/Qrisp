@@ -691,7 +691,7 @@ def test_basic_parity_detector():
         m1 = measure(qv[1])
         
         # Parity of Bell pair should be 0
-        d = parity(m0, m1, expectation=0)
+        d = parity(m0, m1, expectation=False)
         return d
 
     res, stim_circuit = simple_detector()
@@ -717,7 +717,7 @@ def test_measurement_detector_gap_interleaved():
         m2 = measure(qv[2])
         
         # Check 0 and 2 (skipping m1)
-        d = parity(m0, m2, expectation=0)
+        d = parity(m0, m2, expectation=False)
         return d
         
     res, stim_circuit = gap_detector_interleaved()
@@ -729,14 +729,14 @@ def test_measurement_detector_gap_interleaved():
 
 def test_basic_observable():
     """
-    Test observable creation (expectation=2).
+    Test observable creation (expectation=None).
     """
     @extract_stim
     def simple_observable():
         qv = QuantumVariable(1)
         h(qv[0])
         m = measure(qv[0])
-        obs = parity(m, expectation=2)
+        obs = parity(m, expectation=None)
         return obs
 
     res_obs_idx, stim_circuit = simple_observable()
@@ -764,14 +764,14 @@ def test_observable_chaining():
         m2 = measure(qv[2])
         
         # Obs 0: m[0] + m[1]
-        obs_1 = parity(m0, m1, expectation=2)
+        obs_1 = parity(m0, m1, expectation=None)
         
         # Obs 1: m[2] + Obs 0 (= m[0] + m[1] + m[2])
-        obs_2 = parity(m2, obs_1, expectation=2)
+        obs_2 = parity(m2, obs_1, expectation=None)
         
         return obs_1, obs_2
 
-    (idx1, idx2), stim_circuit = chained_observable()
+    idx1, idx2, stim_circuit = chained_observable()
     
     # We expect two observables.
     # idx1 -> 0
@@ -805,12 +805,12 @@ def test_observable_merging():
         m2 = measure(qv[2])
         
         # Obs 0: m0
-        o1 = parity(m0, expectation=2)
+        o1 = parity(m0, expectation=None)
         # Obs 1: m1
-        o2 = parity(m1, expectation=2)
+        o2 = parity(m1, expectation=None)
         
         # Obs 2: o1 + o2 + m2 (= m0 + m1 + m2)
-        o3 = parity(o1, o2, m2, expectation=2)
+        o3 = parity(o1, o2, m2, expectation=None)
         
         return o3
 
@@ -840,10 +840,10 @@ def test_detectors_on_observables():
         m1 = measure(qv[1])
         
         # Create an "observable" container for m[0]
-        obs = parity(m0, expectation=2)
+        obs = parity(m0, expectation=None)
         
         # Detector checking parity of (Obs + m[1]) = (m[0] + m[1])
-        d = parity(obs, m1, expectation=0) # Default expectation=0 -> Detector
+        d = parity(obs, m1, expectation=False) # Default expectation=False -> Detector
         return d
 
     res, stim_circuit = detector_on_obs()

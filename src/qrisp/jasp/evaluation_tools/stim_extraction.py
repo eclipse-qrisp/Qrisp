@@ -213,11 +213,11 @@ def extract_stim(func):
             m1_0 = measure(bell_pair_1[0]); m1_1 = measure(bell_pair_1[1])
             m2_0 = measure(bell_pair_2[0]); m2_1 = measure(bell_pair_2[1])
             
-            # Detector 1: expectation=0 implies we expect even parity
-            d1 = parity(m1_0, m1_1, expectation=0)
+            # Detector 1: expectation=False implies we expect even parity
+            d1 = parity(m1_0, m1_1, expectation=False)
             
             # Detector 2: Checks parity of second, noisy pair
-            d2 = parity(m2_0, m2_1, expectation=0)
+            d2 = parity(m2_0, m2_1, expectation=False)
             
             return d1, d2
 
@@ -228,7 +228,7 @@ def extract_stim(func):
 
     **Example 5: Defining Observables**
 
-    Similarly, :func:`~qrisp.jasp.parity` with ``expectation=2`` defines logical observables in Stim.
+    Similarly, :func:`~qrisp.jasp.parity` with ``expectation=None`` defines logical observables in Stim.
 
     ::
 
@@ -239,7 +239,7 @@ def extract_stim(func):
             m0 = measure(qv[0]); m1 = measure(qv[1])
             
             # Define an observable O = Z_0 Z_1
-            logical_obs = parity(m0, m1, expectation=2)
+            logical_obs = parity(m0, m1)
             return logical_obs
 
         obs_idx, stim_circuit = observable_demo()
