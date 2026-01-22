@@ -191,44 +191,46 @@ def cq_montgomery_multiply_inplace(X: Union[int, BigInteger], y: QuantumFloat, N
     ctrl : QuantumBit or None
         Optional external control for the in-place operation.
     """
-    tmp = QuantumFloat(y.size)
-
-    if ctrl is not None:
-        x(ctrl)
-        with control(ctrl):  # TODO: Add invert=True
-            for i in jrange(y.size):
-                swap(tmp[i], y[i])
-        x(ctrl)
-
-    cq_montgomery_multiply(X, y, N, m, inpl_adder, x_is_montgomery, tmp)
-
-    if x_is_montgomery:
-        if isinstance(X, BigInteger):
-            R = BigInteger.create(1, X.digits.shape[0]) << m
-            X = montgomery_decoder(X, R, N)
+    
+    with control(X != 1):
+        tmp = QuantumFloat(y.size)
+    
+        if ctrl is not None:
+            x(ctrl)
+            with control(ctrl):  # TODO: Add invert=True
+                for i in jrange(y.size):
+                    swap(tmp[i], y[i])
+            x(ctrl)
+    
+        cq_montgomery_multiply(X, y, N, m, inpl_adder, x_is_montgomery, tmp)
+    
+        if x_is_montgomery:
+            if isinstance(X, BigInteger):
+                R = BigInteger.create(1, X.digits.shape[0]) << m
+                X = montgomery_decoder(X, R, N)
+            else:
+                X = montgomery_decoder(X, 1 << m, N)
+        X1 = modinv(X, N)
+    
+        if ctrl is not None:
+            x(ctrl)
+            with control(ctrl):  # TODO: Add invert=True
+                for i in jrange(y.size):
+                    swap(tmp[i], y[i])
+            x(ctrl)
+    
+        with invert():
+            cq_montgomery_multiply(X1, tmp, N, m, inpl_adder, False, y)
+    
+        if ctrl is not None:
+            with control(ctrl, invert=False):
+                for i in jrange(y.size):
+                    swap(tmp[i], y[i])
         else:
-            X = montgomery_decoder(X, 1 << m, N)
-    X1 = modinv(X, N)
-
-    if ctrl is not None:
-        x(ctrl)
-        with control(ctrl):  # TODO: Add invert=True
             for i in jrange(y.size):
                 swap(tmp[i], y[i])
-        x(ctrl)
-
-    with invert():
-        cq_montgomery_multiply(X1, tmp, N, m, inpl_adder, False, y)
-
-    if ctrl is not None:
-        with control(ctrl, invert=False):
-            for i in jrange(y.size):
-                swap(tmp[i], y[i])
-    else:
-        for i in jrange(y.size):
-            swap(tmp[i], y[i])
-
-    tmp.delete()
+    
+        tmp.delete()
 
 
 def qq_montgomery_multiply(x: QuantumFloat, y: QuantumFloat, N: int, m: int, inpl_adder=gidney_adder):
