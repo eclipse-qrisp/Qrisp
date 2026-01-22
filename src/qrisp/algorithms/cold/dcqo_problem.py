@@ -438,7 +438,7 @@ class DCQOProblem:
         method,
         N_opt=None, 
         CRAB=False, 
-        optimizer="Powell",
+        optimizer="COBYQA",
         objective="exp_value",
         bounds=(),
         options={}

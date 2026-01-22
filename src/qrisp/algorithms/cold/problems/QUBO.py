@@ -1,20 +1,88 @@
+"""
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************
+"""
+
+# from qrisp import *
 import numpy as np
 import sympy as sp
-from qrisp.algorithms.cold import DCQOProblem
+from qrisp.core import QuantumVariable
 from qrisp.operators.qubit import X, Y, Z
-from qrisp import QuantumVariable
-from qrisp.algorithms.cold.AGP_params import solve_alpha, solve_alpha_gamma_chi
+from qrisp.algorithms.cold import DCQOProblem, solve_alpha_gamma_chi, solve_alpha
 
-# Define QUBO problem
-Q = np.array([[-1.1, 0.6, 0.4, 0.0, 0.0, 0.0],
-              [0.6, -0.9,  0.5, 0.0, 0.0, 0.0],
-              [0.4, 0.5, -1.0, -0.6, 0.0, 0.0],
-              [0.0, 0.0, -0.6, -0.5, 0.6, 0.0],
-              [0.0, 0.0, 0.0, 0.6, -0.3, 0.5],
-              [0.0, 0.0, 0.0, 0.0, 0.5, -0.4]])
-solution = {'101101': -3.4}
 
-# Create all methods and operators needed for the DCQO instance
+def create_COLD_instance(Q, uniform_AGP_coeffs):
+
+    N = len(Q[0])
+    h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
+    J = 0.5 * Q
+
+    def lam():
+        t, T = sp.symbols("t T", real=True)
+        lam_expr = t/T
+        return lam_expr
+    
+    def g():
+        # Inverse of lam(t) giving t(lam)
+        lam, T = sp.symbols("lam T")
+        g_expr = lam * T
+        return g_expr
+
+    # AGP coefficients            
+    if uniform_AGP_coeffs:
+        def alpha(lam, f, f_deriv):
+            A = lam * h + f
+            B = 1 - lam
+            C = h + f_deriv
+
+            nom = np.sum(A + 4*B*C)
+            denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
+            alph = nom/denom
+            alph = [alph]*N
+
+            return alph
+    else:
+        def alpha(lam, f, f_deriv):
+            nom = [h[i] + f + (1-lam) * f_deriv 
+                for i in range(N)]
+            denom = [2 * ((lam*h[i] + f)**2 + (1-lam)**2 + 
+                    lam**2 * sum([J[i][j] for j in range(N) if j != i])) 
+                    for i in range(N)]
+
+            alph = [nom[i]/denom[i] for i in range(N)]
+            return alph
+
+
+    # Initial Hamiltonian
+    H_init = -1 * sum([X(i) for i in range(N)])
+
+    # Problem Hamiltonian
+    H_prob = (sum([sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]) 
+              + sum([h[i] * Z(i) for i in range(N)]))
+    
+    # AGP as function of alpha
+    def A_lam(alph):
+        return sum([alph[i] * Y(i) for i in range(N)])
+
+    # Control Hamiltonian
+    H_control = sum([Z(i) for i in range(N)])
+
+    return lam, alpha, H_init, H_prob, A_lam, J, h, g, H_control
+
+
 def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
 
     def build_agp(agp_type):
@@ -101,6 +169,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
                 return alph
             return alpha
 
+
         builders = {("order1", True): order1_uniform(),
                     ("order1", False): order1_nonuniform(),
                     ("order2", uniform_AGP_coeffs): order2(uniform_AGP_coeffs),
@@ -135,24 +204,53 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     
     return lam, coeff_func, H_init, H_prob, A_lam, J, h
 
-# Create DCQO instance for different scenarios
-# for agp_type in ["order1", "order2", "nc"]:
-#     for uniform in [True, False]:
 
-#         lam, alpha, H_init, H_prob, A_lam, J, h = create_LCD_instance(Q, agp_type, uniform)
-#         LCD_prob = DCQOProblem(lam, None, alpha, H_init, H_prob, A_lam, J, h)
+def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
+    """
+    Solves a QUBO Matrix using counterdiabatic driving. 
 
-#         # Run LCD problem
-#         qarg = QuantumVariable(size=Q.shape[0])
-#         LCD_result = LCD_prob.run(qarg, N_steps=10, T=5, method='LCD')
+    Example usage:
+    Q = np.array([
+        [-1.0, 0.5, 0.4, 0.0], 
+        [0.5, -0.9, 0.6, 0.0], 
+        [0.4, 0.6, -0.8, -0.5], 
+        [0.0, 0.0, -0.5, 0.2]
+        ])
 
-#         from qrisp.algorithms.cold.cold_benchmark import *
-#         ar = approx_ratio(Q, LCD_result, solution)
-#         sup = success_prob(LCD_result, solution)
-#         most_likely_3 = most_likely_res(Q, LCD_result, N=3)
+    problem_args = {"method": "COLD", "uniform": False}
+    run_args = {"N_steps": 6, "T": 1, "N_opt": 1, "CRAB": False, "objective": "exp_value", "bounds": (-2, 2)}
 
-#         print(f'AGP type {agp_type}, uniform coeffs: {uniform}, N = {Q.shape[0]}')
-#         print(f'Approximation ratio: {ar}')
-#         print(f'Success probability: {sup}')
-#         print(f'3 most likely: {most_likely_3}\n')
+    result = solve_QUBO(Q, problem_args, run_args)
+    
+    Q : np.array
+        QUBO Matrix to solve.
+    problem_args : dict
+        Holds arguments for DCQO problem creation (method: str (COLD/LCD), uniform: bool).
+    run_args : dict
+        Holds arguments for running the DCQO instance (N_steps, T, N_opt, CRAB, optimizer, objective, bounds).
+        For all options, see :ref: `DCQOProblam`.
+
+    """
+
+    method = problem_args["method"]
+
+
+    if method == "LCD":
+        problem_operators = create_LCD_instance(
+            Q, agp_type=problem_args["agp_type"], uniform_AGP_coeffs=problem_args["uniform"]
+        )
+        
+    elif method == "COLD":
+        problem_operators = create_COLD_instance(
+            Q, uniform_AGP_coeffs=problem_args["uniform"]
+        )
+
+    # Create qarg and problem instrance
+    qarg = QuantumVariable(Q.shape[0])
+    prob = DCQOProblem(*problem_operators)
+
+    # Run problem
+    result = prob.run(qarg, method=method, **run_args)
+
+    return result
 
