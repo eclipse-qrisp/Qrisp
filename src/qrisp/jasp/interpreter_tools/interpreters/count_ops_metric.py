@@ -16,6 +16,7 @@
 ********************************************************************************
 """
 
+import types
 from functools import lru_cache
 from typing import Callable, Tuple
 
@@ -28,7 +29,6 @@ from qrisp.jasp.interpreter_tools import (
     make_profiling_eqn_evaluator,
 )
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
-    filter_static_types,
     get_quantum_operations,
 )
 from qrisp.jasp.jasp_expression import Jaspr
@@ -247,7 +247,18 @@ def get_count_ops_profiler(
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def count_ops_profiler(*args):
-        filtered_args = filter_static_types(args, metric_instance=count_ops_metric)()
+
+        # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
+        # Import here to avoid circular import issues
+        from qrisp.operators import FermionicOperator, QubitOperator
+
+        STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
+
+        initial_metric_value = count_ops_metric.initial_metric
+        filtered_args = [
+            x for x in args + (initial_metric_value,) if type(x) not in STATIC_TYPES
+        ]
+
         return jitted_evaluator(*filtered_args)
 
     return count_ops_profiler, profiling_dic
