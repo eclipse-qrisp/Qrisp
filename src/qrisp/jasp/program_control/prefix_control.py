@@ -603,7 +603,7 @@ def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
 
     """
 
-    from qrisp.alg_primitives.quantum_switch import _q_switch_q
+    from qrisp.alg_primitives.program_control.quantum_switch import _q_switch_q
     from qrisp.core import QuantumVariable
 
     if isinstance(index, QuantumVariable):
