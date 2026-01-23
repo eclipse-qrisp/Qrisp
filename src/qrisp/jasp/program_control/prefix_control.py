@@ -604,9 +604,15 @@ def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
     """
 
     from qrisp.alg_primitives.program_control.quantum_switch import _q_switch_q
+    from qrisp.circuit import Qubit
     from qrisp.core import QuantumVariable
+    from qrisp.jasp.tracing_logic import DynamicQubitArray
 
-    if isinstance(index, QuantumVariable):
+    if (
+        isinstance(index, QuantumVariable) 
+        or (isinstance(index, list) and all(isinstance(q, Qubit) for q in index)) 
+        or isinstance(index, DynamicQubitArray)
+    ):
         return _q_switch_q(index, branches, *operands, branch_amount=branch_amount, method=method)
     
     if callable(branches):
