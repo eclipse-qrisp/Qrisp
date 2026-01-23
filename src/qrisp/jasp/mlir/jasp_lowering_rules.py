@@ -28,9 +28,11 @@ from qrisp.jasp.primitives import (
     create_quantum_kernel_p,
     consume_quantum_kernel_p,
     quantum_gate_p,
+    parity_p,
     AbstractQuantumCircuit,
     AbstractQubitArray,
     AbstractQubit)
+
 
 import qrisp.jasp.mlir.dialect_implementation._jasp_ops_gen as jasp_dialect
 
@@ -238,5 +240,22 @@ def quantum_gate_lowering(ctx, *args, **params):
     return [quantum_gate_op.results[0]]
 
 lowering_rules.append((quantum_gate_p, quantum_gate_lowering))
+
+def parity_lowering(ctx, *measurements, expectation):
+    """
+    Lowering rule that emits our Parity dialect operation.
+    """
+    # Measurements is a list of booleans, we pass them as variadic arguments
+    # Expectation is an integer attribute
+    
+    # Create the result type: scalar tensor of i1 (0-rank tensor)
+    result_type = ir.RankedTensorType.get([], get_i1_type())
+
+    # Create our parity operation using the generated class
+    parity_op = jasp_dialect.ParityOp(result_type, list(measurements), expectation)
+    # Return the boolean result
+    return [parity_op.results[0]]
+
+lowering_rules.append((parity_p, parity_lowering))
 
 jasp_lowering_rules = tuple(lowering_rules)
