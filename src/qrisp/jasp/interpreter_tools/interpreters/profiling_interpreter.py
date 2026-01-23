@@ -54,6 +54,43 @@ from qrisp.jasp.primitives import (
 class BaseMetric(ABC):
     """Runtime-enforced base class for profiling metrics."""
 
+    def __init__(self, meas_behavior: Callable, profiling_dic: dict):
+        """Initialize the BaseMetric."""
+
+        self._meas_behavior = meas_behavior
+        self._profiling_dic = profiling_dic
+
+    @property
+    def meas_behavior(self) -> Callable:
+        return self._meas_behavior
+
+    @property
+    def profiling_dic(self) -> dict:
+        return self._profiling_dic
+
+    @property
+    @abstractmethod
+    def initial_metric(self) -> Any: ...
+
+    def _validate_measurement_result(self, meas_res):
+        """Validate that measurement result is a boolean."""
+
+        if isinstance(meas_res, bool):
+            return
+        if hasattr(meas_res, "dtype") and meas_res.dtype == jax.numpy.bool_:
+            return
+        raise ValueError(
+            f"Measurement behavior must return a boolean, got {meas_res} of type {type(meas_res)}."
+        )
+
+    def _measurement_body_fun(self, meas_number, i, acc):
+        """Helper function for measuring qubit arrays."""
+
+        meas_key = jax.random.key(meas_number + i)
+        meas_res = self.meas_behavior(meas_key)
+        self._validate_measurement_result(meas_res)
+        return acc + (1 << i) * meas_res
+
     # create_qubits has the signature (size, QuantumCircuit)
     # Outvars are (QubitArray, QuantumCircuit)
     @abstractmethod
@@ -128,6 +165,7 @@ class BaseMetric(ABC):
             "jasp.measure": self.handle_measure,
             "jasp.reset": self.handle_reset,
             "jasp.delete_qubits": self.handle_delete_qubits,
+            "jasp.create_quantum_kernel": self.handle_create_quantum_kernel,
         }
 
 

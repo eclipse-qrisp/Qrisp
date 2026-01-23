@@ -55,8 +55,7 @@ class DepthMetric(BaseMetric):
     def __init__(self, meas_behavior: Callable, profiling_dic: dict):
         """Initialize the DepthMetric."""
 
-        self.meas_behavior = meas_behavior
-        self.profiling_dic = profiling_dic
+        super().__init__(meas_behavior=meas_behavior, profiling_dic=profiling_dic)
 
         # As data structure in the context dictionary to keep track of depth,
         # we use an array of size MAX_QUBITS where each entry corresponds to the depth of that qubit.
@@ -69,7 +68,12 @@ class DepthMetric(BaseMetric):
         # this will obviously fail. We can later think of dynamic resizing strategies
         depth_array = jnp.zeros(MAX_QUBITS, dtype=jnp.int64)
         global_depth = jnp.int64(0)
-        self.initial_metric = (depth_array, global_depth)
+        self._initial_metric = (depth_array, global_depth)
+
+    @property
+    def initial_metric(self) -> Tuple[jnp.ndarray, int]:
+        """Return the initial metric value."""
+        return self._initial_metric
 
     def handle_create_qubits(self, *, invalues, eqn, context_dic: ContextDict):
         """Handle the `jasp.create_qubits` primitive."""
@@ -143,25 +147,6 @@ class DepthMetric(BaseMetric):
         # Associate the following in context_dic:
         # QuantumCircuit -> metric_data (depth_array, global_depth)
         return depth_array, global_depth
-
-    def _validate_measurement_result(self, meas_res):
-        """Validate that measurement result is a boolean."""
-
-        if isinstance(meas_res, bool):
-            return
-        if hasattr(meas_res, "dtype") and meas_res.dtype == jnp.bool:
-            return
-        raise ValueError(
-            f"Measurement behavior must return a boolean, got {meas_res} of type {type(meas_res)}."
-        )
-
-    def _measurement_body_fun(self, meas_number, i, acc):
-        """Helper function for measuring qubit arrays."""
-
-        meas_key = key(meas_number + i)
-        meas_res = self.meas_behavior(meas_key)
-        self._validate_measurement_result(meas_res)
-        return acc + (1 << i) * meas_res
 
     def handle_measure(self, *, invalues, eqn, context_dic: ContextDict):
         """Handle the `jasp.measure` primitive."""

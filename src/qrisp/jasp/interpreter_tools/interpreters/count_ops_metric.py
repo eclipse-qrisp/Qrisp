@@ -18,7 +18,7 @@
 
 import types
 from functools import lru_cache
-from typing import Callable, Tuple
+from typing import Callable, List, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -56,8 +56,7 @@ class CountOpsMetric(BaseMetric):
     def __init__(self, profiling_dic: dict, meas_behavior: Callable):
         """Initialize the CountOpsMetric."""
 
-        self.profiling_dic = profiling_dic
-        self.meas_behavior = meas_behavior
+        super().__init__(meas_behavior=meas_behavior, profiling_dic=profiling_dic)
 
         # The XLA compiler showed some scalability problems in compile time.
         # Through a process involving a lot of blood and sweat
@@ -69,23 +68,12 @@ class CountOpsMetric(BaseMetric):
         # few integers as arguments, which will be used to do the
         # incrementation (i.e. CZ_count += 1). It therefore doesn't
         # look like a constant is being added but a variable
-        self.initial_metric = ([0] * len(profiling_dic), list(range(1, 6)))
+        self._initial_metric = ([0] * len(profiling_dic), list(range(1, 6)))
 
-    def _validate_measurement_result(self, meas_res):
-        """Validate that measurement result is a boolean."""
-
-        if not isinstance(meas_res, bool) and meas_res.dtype != jnp.bool:
-            raise ValueError(
-                f"Measurement behavior must return a boolean, got {meas_res.dtype}"
-            )
-
-    def _measurement_body_fun(self, meas_number, i, acc):
-        """Helper function for measuring qubit arrays."""
-
-        meas_key = key(meas_number + i)
-        meas_res = self.meas_behavior(meas_key)
-        self._validate_measurement_result(meas_res)
-        return acc + (1 << i) * meas_res
+    @property
+    def initial_metric(self) -> Tuple[List[int], List[int]]:
+        """Return the initial metric value."""
+        return self._initial_metric
 
     def handle_measure(self, *, invalues, eqn, context_dic: ContextDict):
         """Handle the `jasp.measure` primitive."""
