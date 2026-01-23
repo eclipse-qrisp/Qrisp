@@ -424,3 +424,39 @@ class TestDepthMeasurementBehavior:
         first = main(selector)
         second = main(selector)
         assert first == second
+
+
+def test_slice_primitive_not_implemented():
+    """Test that slicing raises NotImplementedError in depth metric."""
+
+    @depth(meas_behavior="0")
+    def main():
+        qf = QuantumFloat(4)
+        qf_slice = qf[1:3]
+        h(qf_slice[0])
+        h(qf_slice[1])
+        return measure(qf_slice[0])
+
+    with pytest.raises(
+        NotImplementedError,
+        match="Depth metric for slicing is not implemented yet.",
+    ):
+        main()
+
+
+def test_fuse_primitive_not_implemented():
+    """Test that fusing raises NotImplementedError in depth metric."""
+
+    @depth(meas_behavior="0")
+    def main():
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+
+        return measure(a.reg + b.reg)
+
+    with pytest.raises(
+        NotImplementedError, match="Depth metric for fusing is not implemented yet."
+    ):
+        main()

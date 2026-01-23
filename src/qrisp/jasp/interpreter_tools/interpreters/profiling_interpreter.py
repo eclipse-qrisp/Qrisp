@@ -33,8 +33,9 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 """
 
 
+from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import Callable
+from typing import Any, Callable, Dict
 
 import jax
 import numpy as np
@@ -48,6 +49,86 @@ from qrisp.jasp.interpreter_tools.abstract_interpreter import (
 from qrisp.jasp.primitives import (
     QuantumPrimitive,
 )
+
+
+class BaseMetric(ABC):
+    """Runtime-enforced base class for profiling metrics."""
+
+    # create_qubits has the signature (size, QuantumCircuit)
+    # Outvars are (QubitArray, QuantumCircuit)
+    @abstractmethod
+    def handle_create_qubits(self, *, invalues, eqn, context_dic: ContextDict):
+        """Handle the `jasp.create_qubits` primitive."""
+
+    # get_qubit has the signature (QubitArray, index (int))
+    # Outvars are (Qubit)
+    @abstractmethod
+    def handle_get_qubit(self, *, invalues, eqn, context_dic: ContextDict):
+        """Handle the `jasp.get_qubit` primitive."""
+
+    # get_size has the signature (QubitArray)
+    # Outvars are (size)
+    @abstractmethod
+    def handle_get_size(self, *, invalues, eqn, context_dic: ContextDict):
+        """Handle the `jasp.get_size` primitive."""
+
+    # fuse has the signature (QubitArray, QubitArray)
+    # Outvars are (QubitArray)
+    @abstractmethod
+    def handle_fuse(self, *, invalues, eqn, context_dic: ContextDict):
+        """Handle the `jasp.fuse` primitive."""
+
+    # slice has the signature (QubitArray, start (int), stop (int))
+    # Outvars are (QubitArray)
+    @abstractmethod
+    def handle_slice(self, *, invalues, eqn, context_dic: ContextDict):
+        """Handle the `jasp.slice` primitive."""
+
+    # quantum_gate has the signature (Qubit, ... , QuantumCircuit)
+    # Outvars is (QuantumCircuit)
+    @abstractmethod
+    def handle_quantum_gate(self, *, invalues, eqn, context_dic: ContextDict):
+        """Handle the `jasp.quantum_gate` primitive."""
+
+    # measure has the signature (Qubit | QubitArray, QuantumCircuit)
+    # Outvars are (meas_result, QuantumCircuit)
+    @abstractmethod
+    def handle_measure(self, *, invalues, eqn, context_dic: ContextDict):
+        """Handle the `jasp.measure` primitive."""
+
+    # reset has the signature (QubitArray, QuantumCircuit)
+    # Outvars are (QuantumCircuit)
+    @abstractmethod
+    def handle_reset(self, *, invalues, eqn, context_dic: ContextDict):
+        """Handle the `jasp.reset` primitive."""
+
+    # delete_qubits has the signature (QubitArray, QuantumCircuit)
+    # Outvars are (QuantumCircuit)
+    @abstractmethod
+    def handle_delete_qubits(self, *, invalues, eqn, context_dic: ContextDict):
+        """Handle the `jasp.delete_qubits` primitive."""
+
+    def handle_create_quantum_kernel(self, *_args, **_kwargs):
+        """Handle the `jasp.create_quantum_kernel` primitive."""
+
+        raise NotImplementedError(
+            "Quantum kernel creation not yet supported in profiling interpreter."
+        )
+
+    def get_handlers(self) -> Dict[str, Callable[..., Any]]:
+        """Return a mapping from primitive names to handler methods."""
+
+        return {
+            "jasp.create_qubits": self.handle_create_qubits,
+            "jasp.get_qubit": self.handle_get_qubit,
+            "jasp.get_size": self.handle_get_size,
+            "jasp.fuse": self.handle_fuse,
+            "jasp.slice": self.handle_slice,
+            "jasp.quantum_gate": self.handle_quantum_gate,
+            "jasp.measure": self.handle_measure,
+            "jasp.reset": self.handle_reset,
+            "jasp.delete_qubits": self.handle_delete_qubits,
+        }
 
 
 # This reconstructs the metric inside the cached function so caching not keyed
@@ -74,13 +155,13 @@ def get_compiled_profiler(jaxpr, metric_cls, zipped_profiling_dic, meas_behavior
     return profiler
 
 
-def make_profiling_eqn_evaluator(metric) -> Callable:
+def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
     """
     Build a profiling equation evaluator for a given metric.
 
     Parameters
     ----------
-    metric
+    metric : BaseMetric
         The metric to use for profiling.
 
     Returns
@@ -89,84 +170,30 @@ def make_profiling_eqn_evaluator(metric) -> Callable:
         The profiling equation evaluator.
     """
 
+    # We cache once per call and use closure + O(1) lookup to handle primitives.
+    handlers = dict(metric.get_handlers())
+
     # In this interpreter, context_dic is an environment mapping:
     # - keys: JAXPR variables (eqn.outvars[i], i.e. SSA names)
     # - values: whatever concrete (or traced) JAX objects every metric chooses to represent them with
     def profiling_eqn_evaluator(eqn, context_dic: ContextDict):
 
         invalues = extract_invalues(eqn, context_dic)
-        prim_name = eqn.primitive.name
+        prim = eqn.primitive
 
-        if isinstance(eqn.primitive, QuantumPrimitive):
+        if isinstance(prim, QuantumPrimitive):
 
-            # TODO: replace this with a more compact and efficient dispatch mechanism
-            # after everything has been unified to use this new profiling interpreter structure.
-            match prim_name:
+            prim_handler = handlers.get(prim.name, None)
 
-                # create_qubits has the signature (size, QuantumCircuit)
-                case "jasp.create_qubits":
-                    outvalues = metric.handle_create_qubits(invalues, context_dic)
-                    # Outvars are (QubitArray, QuantumCircuit)
-                    insert_outvalues(eqn, context_dic, outvalues)
+            if prim_handler is None:
+                raise NotImplementedError(
+                    f"Don't know how to handle quantum primitive {prim.name} in profiling interpreter."
+                )
 
-                # get_qubit has the signature (QubitArray, index (int))
-                case "jasp.get_qubit":
-                    outvalues = metric.handle_get_qubit(invalues)
-                    # Outvars are (Qubit)
-                    insert_outvalues(eqn, context_dic, outvalues)
-
-                # slice has the signature (QubitArray)
-                case "jasp.get_size":
-                    outvalues = metric.handle_get_size(invalues)
-                    # Outvars are (size)
-                    insert_outvalues(eqn, context_dic, outvalues)
-
-                # fuse has the signature (QubitArray, QubitArray)
-                case "jasp.fuse":
-                    outvalues = metric.handle_fuse(invalues)
-                    # Outvars are (QubitArray)
-                    insert_outvalues(eqn, context_dic, outvalues)
-
-                # slice has the signature (QubitArray, start (int), stop (int))
-                case "jasp.slice":
-                    outvalues = metric.handle_slice(invalues)
-                    # Outvars are (QubitArray)
-                    insert_outvalues(eqn, context_dic, outvalues)
-
-                # quantum_gate has the signature (Qubit, ... , QuantumCircuit)
-                # (it depends on the gate how many qubits there are)
-                case "jasp.quantum_gate":
-                    outvalues = metric.handle_quantum_gate(invalues, eqn)
-                    # Outvars is (QuantumCircuit)
-                    insert_outvalues(eqn, context_dic, outvalues)
-
-                # measure has the signature (Qubit | QubitArray, QuantumCircuit)
-                case "jasp.measure":
-                    outvalues = metric.handle_measure(invalues, context_dic, eqn)
-                    # Outvars are (meas_result, QuantumCircuit)
-                    insert_outvalues(eqn, context_dic, outvalues)
-
-                # reset has the signature (QubitArray, QuantumCircuit)
-                case "jasp.reset":
-                    outvalues = metric.handle_reset(invalues)
-                    # Outvars are (QuantumCircuit)
-                    insert_outvalues(eqn, context_dic, outvalues)
-
-                # delete_qubits has the signature (QubitArray, QuantumCircuit)
-                case "jasp.delete_qubits":
-                    outvalues = metric.handle_delete_qubits(invalues)
-                    # Outvars are (QuantumCircuit)
-                    insert_outvalues(eqn, context_dic, outvalues)
-
-                case "jasp.create_quantum_kernel":
-                    raise NotImplementedError(
-                        "Quantum kernel creation not yet supported in profiling interpreter."
-                    )
-
-                case _:
-                    raise NotImplementedError(
-                        f"Don't know how to handle quantum primitive {prim_name} in profiling interpreter."
-                    )
+            outvalues = prim_handler(
+                invalues=invalues, eqn=eqn, context_dic=context_dic
+            )
+            insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "cond":
 

@@ -275,6 +275,25 @@ def _normalize_meas_behavior(meas_behavior) -> Callable:
 
 
 def depth(meas_behavior):
+    """
+    Decorator to determine the depth of large scale quantum computations.
+    This decorator compiles the given Jasp-compatible function into a classical
+    function computing the depth required. The decorated function will return
+    an integer indicating the depth of the quantum computation.
+
+    Parameters
+    ----------
+    meas_behavior : str or callable
+        A string or callable indicating the behavior of the resource computation
+        when measurements are performed. Available strings are ``"0"`` and ``"1"``.
+
+    Returns
+    -------
+    depth decorator
+        A decorator, producing a function to computed the depth required.
+
+    TODO: Examples
+    """
 
     def depth_decorator(function):
 

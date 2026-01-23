@@ -25,6 +25,7 @@ import jax.numpy as jnp
 from jax.random import key
 
 from qrisp.jasp.interpreter_tools import (
+    BaseMetric,
     ContextDict,
     eval_jaxpr,
     make_profiling_eqn_evaluator,
@@ -40,9 +41,9 @@ from qrisp.jasp.primitives import (
 MAX_QUBITS = 1024
 
 
-class DepthMetric:
+class DepthMetric(BaseMetric):
     """
-    A simple depth counting metric implementation.
+    A metric implementation that computes the circuit depth of a Jaspr.
 
     Parameters
     ----------
@@ -70,7 +71,7 @@ class DepthMetric:
         global_depth = jnp.int64(0)
         self.initial_metric = (depth_array, global_depth)
 
-    def handle_create_qubits(self, invalues, context_dic: ContextDict):
+    def handle_create_qubits(self, *, invalues, eqn, context_dic: ContextDict):
         """Handle the `jasp.create_qubits` primitive."""
 
         size, metric_data = invalues
@@ -86,7 +87,7 @@ class DepthMetric:
         # QuantumCircuit -> metric_data (depth_array, global_depth)
         return qubit_array_handle, metric_data
 
-    def handle_get_qubit(self, invalues):
+    def handle_get_qubit(self, *, invalues, eqn, context_dic: ContextDict):
         """Handle the `jasp.get_qubit` primitive."""
 
         qubit_array_handle, get_qubit_index = invalues
@@ -97,7 +98,7 @@ class DepthMetric:
         # Qubit -> qubit_id (integer)
         return index_start + get_qubit_index
 
-    def handle_get_size(self, invalues):
+    def handle_get_size(self, *, invalues, eqn, context_dic: ContextDict):
         """Handle the `jasp.get_size` primitive."""
 
         (qubit_array_handle,) = invalues
@@ -108,20 +109,15 @@ class DepthMetric:
         # size -> size_value (integer)
         return size
 
-    def handle_fuse(self, invalues):
+    def handle_fuse(self, *, invalues, eqn, context_dic: ContextDict):
         """Handle the `jasp.fuse` primitive."""
-        # The size of the fused qubit array is the size of the two added.
-        return invalues[0] + invalues[1]
+        raise NotImplementedError("Depth metric for fusing is not implemented yet.")
 
-    def handle_slice(self, invalues):
+    def handle_slice(self, *, invalues, eqn, context_dic: ContextDict):
         """Handle the `jasp.slice` primitive."""
-        # For the slice operation, we need to make sure, we don't go out
-        # of bounds.
-        start = jnp.max(jnp.array([invalues[1], 0]))
-        stop = jnp.min(jnp.array([invalues[2], invalues[0]]))
-        return stop - start
+        raise NotImplementedError("Depth metric for slicing is not implemented yet.")
 
-    def handle_quantum_gate(self, invalues, _):
+    def handle_quantum_gate(self, *, invalues, eqn, context_dic: ContextDict):
         """Handle the `jasp.quantum_gate` primitive."""
 
         *qubits, metric_data = invalues
@@ -167,7 +163,7 @@ class DepthMetric:
         self._validate_measurement_result(meas_res)
         return acc + (1 << i) * meas_res
 
-    def handle_measure(self, invalues, context_dic, eqn):
+    def handle_measure(self, *, invalues, eqn, context_dic: ContextDict):
         """Handle the `jasp.measure` primitive."""
 
         target, depth_state = invalues
@@ -197,7 +193,7 @@ class DepthMetric:
         # QuantumCircuit -> metric_data (depth_array, global_depth)
         return (meas_res, (depth_vec, global_depth))
 
-    def handle_reset(self, invalues):
+    def handle_reset(self, *, invalues, eqn, context_dic: ContextDict):
         """Handle the `jasp.reset` primitive."""
 
         _, metric_data = invalues
@@ -206,7 +202,7 @@ class DepthMetric:
         # QuantumCircuit -> metric_data (depth_array, global_depth)
         return metric_data
 
-    def handle_delete_qubits(self, invalues):
+    def handle_delete_qubits(self, *, invalues, eqn, context_dic: ContextDict):
         """Handle the `jasp.delete_qubits` primitive."""
 
         _, metric_data = invalues
