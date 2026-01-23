@@ -78,6 +78,16 @@ def parity(*measurements, expectation = None):
         * If ``expectation`` is ``True`` or ``False``, a ``DETECTOR`` instruction is created.
         * If ``expectation`` is ``None``, an ``OBSERVABLE_INCLUDE`` instruction is created.
 
+        If executed **without** ``extract_stim`` (i.e., in regular Qrisp simulation via :func:`~qrisp.jasp.jaspify`, for instance),
+        the function verifies that the measured parity matches the ``expectation`` provided. 
+        Deviations from the parity expectation should solely stem from hardware noise,
+        i.e. a deviation in a **noiseless** simulation is an error *in the programm*.
+        Because of this, an Exception is raised when the verification fails. 
+        However, when extracted to Stim, this verification is NOT performed 
+        during the extraction or simulation process (Stim detectors record 
+        differences but do not stop execution).
+
+
     Parameters
     ----------
     *measurements : list[Tracer[boolean]]
@@ -136,7 +146,11 @@ def parity_implementation(*measurements, expectation):
     
     Appends a ParityOperation to the QuantumCircuit.
     """
-    return sum(measurements, start = expectation)%2
+    res = sum(measurements)%2
+    if expectation != 2:
+        if expectation != res:
+            raise Exception("Parity expectation deviated from simulation result")
+    return (res + expectation)%2
 
 class ParityOperation(Operation):
     """

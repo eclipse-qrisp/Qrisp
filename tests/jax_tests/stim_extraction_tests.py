@@ -1010,3 +1010,45 @@ def test_parity_expectations_behavior():
     # and Stim detectors check against the physical simulation.
     assert not np.any(samples[:, d1_idx])
     assert not np.any(samples[:, d2_idx])
+
+def test_parity_exception_behavior():
+    """
+    Test that parity raises an Exception in noiseless simulation if expectation is violated,
+    but does NOT raise an Exception in Stim extraction/simulation.
+    """
+    from qrisp.jasp import jaspify
+    import pytest
+
+    def violating_circuit():
+        qv = QuantumVariable(2)
+        # Create |11> -> Parity even.
+        x(qv[0]); x(qv[1]) 
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        
+        # We define expectation=True (Odd).
+        # In actual execution (noiseless), parity is 0 (Even). 
+        # This is a violation.
+        return parity(m0, m1, expectation=True)
+
+    # 1. Test Regular JAX/Qrisp Simulation -> Should Raise Exception
+    # We wrap in jaspify to execute using the Jax implementation of the primitive
+    jaspified_violator = jaspify(violating_circuit)
+    
+    with pytest.raises(Exception, match="deviated"):
+        jaspified_violator()
+        
+    # 2. Test Stim Extraction -> Should NOT Raise Exception
+    @extract_stim
+    def stim_violator():
+        return violating_circuit()
+    
+    try:
+        det_idx, stim_circ = stim_violator()
+    except Exception as e:
+        pytest.fail(f"extract_stim raised an exception unexpectedly: {e}")
+    
+    # Verify the generated circuit has a detector
+    # Even though expectation is violated in Qrisp semantics, Stim extraction does not 
+    # check this violation. It generates a valid DETECTOR instruction.
+    assert "DETECTOR" in str(stim_circ)

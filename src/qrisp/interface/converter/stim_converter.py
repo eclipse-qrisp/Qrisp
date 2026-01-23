@@ -110,7 +110,7 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
     
     # Observable tracking
     # Key: Clbit object (the output of a parity call)
-    # Value: {'stim_index': int, 'measurements': set(absolute_indices)}
+    # Value: {'stim_index': int, 'measurements': set(absolute_indices)}   
     clbit_to_observable_info = {}
     stim_observable_counter = 0
     
