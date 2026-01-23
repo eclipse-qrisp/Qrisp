@@ -36,9 +36,9 @@ class ContextDict(dict):
         else:
             res = dict.__getitem__(self, key)
 
-        if isinstance(res, int):
+        if type(res) == int:
             return jnp.asarray(res, dtype=jnp.dtype("int64"))
-        if isinstance(res, float):
+        if type(res) == float:
             return jnp.asarray(res, dtype=jnp.dtype("float64"))
         return res
 
