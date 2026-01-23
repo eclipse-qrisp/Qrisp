@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from typing import List
+from typing import Callable, List
 from jax.extend.core import ClosedJaxpr
 from qrisp.jasp.jasp_expression import Jaspr
 import types
@@ -37,7 +37,7 @@ def simulation():
     pass
 
 
-def filter_static_types(args, metric_instance) -> List:
+def filter_static_types(args, metric_instance) -> Callable:
     """
     Filter out static types from the provided arguments.
 
@@ -51,18 +51,24 @@ def filter_static_types(args, metric_instance) -> List:
 
     Returns
     -------
-    List
-        A list of arguments with static types removed.
+    Callable
+        A wrapper function that returns the filtered arguments.
     """
 
-    # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
-    # Import here to avoid circular import issues
-    from qrisp.operators import FermionicOperator, QubitOperator
+    def wrapper() -> List:
 
-    STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
+        # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
+        # Import here to avoid circular import issues
+        from qrisp.operators import FermionicOperator, QubitOperator
 
-    initial_metric_value = metric_instance.initial_metric
-    return [x for x in args + (initial_metric_value,) if type(x) not in STATIC_TYPES]
+        STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
+
+        initial_metric_value = metric_instance.initial_metric
+        return [
+            x for x in args + (initial_metric_value,) if type(x) not in STATIC_TYPES
+        ]
+
+    return wrapper
 
 
 def get_quantum_operations(jaspr: Jaspr) -> List[str]:

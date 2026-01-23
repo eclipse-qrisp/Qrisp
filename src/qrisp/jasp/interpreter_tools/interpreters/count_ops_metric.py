@@ -247,7 +247,7 @@ def get_count_ops_profiler(
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def count_ops_profiler(*args):
-        filtered_args = filter_static_types(args, metric_instance=count_ops_metric)
+        filtered_args = filter_static_types(args, metric_instance=count_ops_metric)()
         return jitted_evaluator(*filtered_args)
 
     return count_ops_profiler, profiling_dic

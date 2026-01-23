@@ -231,7 +231,7 @@ def get_depth_profiler(jaspr: Jaspr, meas_behavior: Callable) -> Tuple[Callable,
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def depth_profiler(*args):
-        filtered_args = filter_static_types(args, metric_instance=depth_metric)
+        filtered_args = filter_static_types(args, metric_instance=depth_metric)()
         return jitted_evaluator(*filtered_args)
 
     return depth_profiler, None
