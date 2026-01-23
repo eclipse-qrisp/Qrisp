@@ -85,13 +85,16 @@ class CountOpsMetric:
         self._validate_measurement_result(meas_res)
         return acc + (1 << i) * meas_res
 
-    def handle_measure(self, invalues, eqn):
+    def handle_measure(self, invalues, _, eqn):
         """Handle the `jasp.measure` primitive."""
 
         counting_index = self.profiling_dic["measure"]
         counting_array = list(invalues[-1][0])
         incrementation_constants = invalues[-1][1]
 
+        # If I understand correctly the logic here,
+        # `meas_number` is the current count of measurements performed so far.
+        # It’s also the next available measurement id (offset) for key generation.
         meas_number = counting_array[counting_index]
 
         if isinstance(eqn.invars[0].aval, AbstractQubitArray):

@@ -16,10 +16,12 @@
 ********************************************************************************
 """
 
-from typing import Callable, List
+from typing import List
+
+import jax
 from jax.extend.core import ClosedJaxpr
+
 from qrisp.jasp.jasp_expression import Jaspr
-import types
 
 
 def always_zero(_):
@@ -35,6 +37,12 @@ def always_one(_):
 def simulation():
     """Simulate measurements normally without any forced behavior."""
     pass
+
+
+# Deterministic for every key
+def meas_rng(key):
+    """Simulate measurements using the provided random key."""
+    return jax.numpy.bool_(jax.random.randint(key, (1,), 0, 2)[0])
 
 
 def get_quantum_operations(jaspr: Jaspr) -> List[str]:

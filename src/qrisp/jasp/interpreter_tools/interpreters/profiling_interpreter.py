@@ -142,7 +142,7 @@ def make_profiling_eqn_evaluator(metric) -> Callable:
 
                 # measure has the signature (Qubit | QubitArray, QuantumCircuit)
                 case "jasp.measure":
-                    outvalues = metric.handle_measure(invalues, eqn)
+                    outvalues = metric.handle_measure(invalues, context_dic, eqn)
                     # Outvars are (meas_result, QuantumCircuit)
                     insert_outvalues(eqn, context_dic, outvalues)
 

@@ -19,7 +19,12 @@
 import pytest
 
 from qrisp import QuantumFloat, control, cx, depth, h, mcx, measure
-from qrisp.jasp import q_cond, jrange
+from qrisp.jasp import jrange, q_cond
+from qrisp.jasp.interpreter_tools.interpreters.utilities import (
+    always_one,
+    always_zero,
+    meas_rng,
+)
 
 
 class TestDepthQuantumPrimitiveSingleQubit:
@@ -301,14 +306,121 @@ class TestDepthControlStructures:
         assert main(5) == 1
 
 
-def test_depth_simulation_not_implemented():
-    """Test that depth via simulation raises NotImplementedError."""
+class TestDepthMeasurementBehavior:
+    """Test that different measurement behaviors affect depth computation correctly."""
 
-    @depth(meas_behavior="sim")
-    def main():
-        pass
+    def test_depth_simulation_not_implemented(self):
+        """Test that depth via simulation raises NotImplementedError."""
 
-    with pytest.raises(
-        NotImplementedError, match="Depth metric via simulation is not implemented yet"
-    ):
-        main()
+        @depth(meas_behavior="sim")
+        def main():
+            pass
+
+        with pytest.raises(
+            NotImplementedError,
+            match="Depth metric via simulation is not implemented yet",
+        ):
+            main()
+
+    def test_error_on_invalid_measurement_behavior(self):
+        """Test that an invalid measurement behavior raises ValueError."""
+
+        @depth(meas_behavior="invalid_behavior")
+        def main():
+            pass
+
+        with pytest.raises(
+            ValueError,
+            match="Don't know how to compute required resources via method invalid_behavior",
+        ):
+            main()
+
+    def test_error_on_non_boolean_measurement(self):
+        """Test that a non-boolean measurement result raises ValueError."""
+
+        def invalid_meas_behavior(_):
+            return 42
+
+        @depth(meas_behavior=invalid_meas_behavior)
+        def main():
+            qf = QuantumFloat(1)
+            return measure(qf[0])
+
+        with pytest.raises(
+            ValueError, match="Measurement behavior must return a boolean, got 42"
+        ):
+            main()
+
+    def test_no_measurements(self):
+        """Test that depth is not increased/decreased when there are no measurements."""
+
+        @depth(meas_behavior=always_zero)
+        def main(num_qubits):
+            qv = QuantumFloat(num_qubits)
+            h(qv[0])
+            h(qv[0])
+
+        assert main(1) == 2
+
+    @pytest.mark.parametrize(
+        "meas_behavior,expected_depth",
+        [
+            (always_zero, 0),
+            (always_one, 1),
+        ],
+    )
+    def test_depth_controlled_by_measurement(self, meas_behavior, expected_depth):
+        """Test depth computation when operations are controlled by measurement outcomes."""
+
+        @depth(meas_behavior=meas_behavior)
+        def main(num_qubits):
+            qv = QuantumFloat(num_qubits)
+            m = measure(qv[0])
+            with control(m == 1):
+                h(qv[0])
+            return m
+
+        assert main(1) == expected_depth
+
+    def test_depth_branch_structure(self):
+        """Test depth computation in a branching structure based on measurement outcomes."""
+
+        @depth(meas_behavior=always_zero)
+        def branch0(num_qubits):
+            qv = QuantumFloat(num_qubits)
+            m = measure(qv[0])
+            with control(m == 0):
+                h(qv[0])
+                h(qv[1])
+            return m
+
+        @depth(meas_behavior=always_one)
+        def branch1(num_qubits):
+            qv = QuantumFloat(num_qubits)
+            m = measure(qv[0])
+            with control(m == 0):
+                h(qv[0])
+                h(qv[1])
+            with control(m == 1):
+                cx(qv[0], qv[1])
+                h(qv[0])
+            return m
+
+        assert branch0(2) == 1
+        assert branch1(2) == 2
+
+    @pytest.mark.parametrize("selector", [0, 1])
+    def test_depth_rng_is_deterministic(self, selector):
+        """Test that depth computation with rng-based measurement behavior is deterministic."""
+
+        @depth(meas_behavior=meas_rng)
+        def main(i):
+            qv = QuantumFloat(1)
+            m = measure(qv[0])
+            with control(m == i):
+                h(qv[0])
+            return m
+
+        first = main(selector)
+        second = main(selector)
+        assert first == second
