@@ -21,6 +21,7 @@ from io import StringIO
 
 from jax.interpreters.mlir import LoweringParameters, ModuleContext, lower_jaxpr_to_fun
 from jaxlib.mlir import ir
+from jaxlib.mlir import passmanager
 from jax._src import core
 
 from xdsl.context import Context
@@ -78,8 +79,16 @@ def lower_jaxpr_to_MLIR(jaxpr, lowering_rules = tuple([])):
                 jaxpr,  # Pass the full ClosedJaxpr object
                 jaxpr.effects,
                 num_const_args=len(core.jaxpr_const_args(jaxpr.jaxpr)),
-                in_avals=[var.aval for var in core.jaxpr_const_args(jaxpr.jaxpr) + jaxpr.jaxpr.invars]
+                in_avals=[var.aval for var in core.jaxpr_const_args(jaxpr.jaxpr) + jaxpr.jaxpr.invars],
+                main_function=True
             )
+            
+            # Remove unused functions (like shadow definitions for primitives)
+            # symbol-dce removes private functions that are not referenced.
+            # We set main_function=True above to ensure @main is public and preserved.
+            pm = passmanager.PassManager.parse("builtin.module(symbol-dce)")
+            pm.run(ctx.module.operation)
+
         except Exception as e:
             print(f"Error in lower_jaxpr_to_fun: {e}")
             import traceback
