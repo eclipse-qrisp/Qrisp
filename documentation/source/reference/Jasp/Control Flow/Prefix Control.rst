@@ -19,12 +19,12 @@ The following functions expose program control features from Jax as Jasp-compati
 .. currentmodule:: qrisp.jasp
 .. autofunction:: q_while_loop
 
-.. _q_cond_loop:
+.. _q_cond:
 
 .. currentmodule:: qrisp.jasp
 .. autofunction:: q_cond
 
-.. _q_switch_loop:
+.. _q_switch:
 
 .. currentmodule:: qrisp.jasp
 .. autofunction:: q_switch
