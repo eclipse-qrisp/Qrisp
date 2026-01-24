@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = False):
+def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = False, return_observable_map = False):
     """
     Convert a Qrisp quantum circuit to a Stim circuit.
     
@@ -31,6 +31,9 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
     return_detector_map : bool, optional
         If set to True, the function returns the detector_map.
         The default is False.
+    return_observable_map : bool, optional
+        If set to True, the function returns the observable_map.
+        The default is False.
     
     Returns
     -------
@@ -42,6 +45,8 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
         corresponds to the 3rd measurement (index 2) in Stim's measurement record.
     detector_map : dict
         (Optional) A dictionary mapping Qrisp Clbit objects to Stim detector indices.
+    observable_map : dict
+        (Optional) A dictionary mapping Qrisp Clbit objects to Stim observable indices.
     
     Notes
     -----
@@ -116,6 +121,8 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
     
     detector_map = {}
     detector_counter = 0
+
+    observable_map = {}
     
     # Gate mapping from Qrisp to Stim
     # Stim gate names are usually uppercase
@@ -264,6 +271,7 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
                 
                 # Map to detector map so extract_stim knows the index
                 detector_map[result_clbit] = new_stim_idx
+                observable_map[result_clbit] = new_stim_idx
                 
                 # Emit instruction if there are targets
                 if stim_targets:
@@ -346,6 +354,9 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
         
     if return_detector_map:
         res.append(detector_map)
+
+    if return_observable_map:
+        res.append(observable_map)
 
     if len(res) == 1:
         return res[0]

@@ -496,3 +496,40 @@ def test_detector_permutation():
     print("Passed.")
 
     print("All tests passed.")
+
+
+def test_observable_map():
+    from qrisp import QuantumCircuit
+    from qrisp.jasp.primitives.parity_primitive import ParityOperation
+
+    qc = QuantumCircuit(2, 3)
+    qc.h(0)
+    qc.cx(0, 1)
+    
+    # Define parity/observable operation
+    parity_op = ParityOperation(2, expectation=2)
+    
+    # Explicitly measure into the clbits used by parity
+    qc.measure(qc.qubits[0], qc.clbits[0])
+    qc.measure(qc.qubits[1], qc.clbits[1])
+    
+    # Apply parity op to get an observable
+    # Parity op takes 2 measurement bits + 1 result bit
+    qc.append(parity_op, [], [qc.clbits[0], qc.clbits[1], qc.clbits[2]])
+    
+    res = qc.to_stim(return_observable_map=True)
+    stim_circuit = res[0]
+    observable_map = res[1]
+    
+    # Check that the map is correct
+    assert qc.clbits[2] in observable_map
+    assert observable_map[qc.clbits[2]] == 0
+    
+    # Ensure it's not in detector map unless requested (implicit check that return logic works)
+    res_det = qc.to_stim(return_detector_map=True, return_observable_map=True)
+    det_map = res_det[1]
+    obs_map = res_det[2]
+    
+    assert qc.clbits[2] in det_map
+    assert qc.clbits[2] in obs_map
+    assert det_map[qc.clbits[2]] == obs_map[qc.clbits[2]]

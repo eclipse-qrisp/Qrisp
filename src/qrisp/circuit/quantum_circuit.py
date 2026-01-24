@@ -1891,7 +1891,7 @@ class QuantumCircuit:
 
         return qml_converter(self)
     
-    def to_stim(self, return_measurement_map = False, return_detector_map = False):
+    def to_stim(self, return_measurement_map = False, return_detector_map = False, return_observable_map = False):
         """
         Method to convert the given QuantumCircuit to a `Stim <https://github.com/quantumlib/Stim/>`_ Circuit.
 
@@ -1906,6 +1906,9 @@ class QuantumCircuit:
             The default is False.
         return_detector_map : bool, optional
             If set to True, the function returns the detector_map.
+            The default is False.
+        return_observable_map : bool, optional
+            If set to True, the function returns the observable_map.
             The default is False.
 
         Returns
@@ -1994,7 +1997,7 @@ class QuantumCircuit:
 
         from qrisp.interface import qrisp_to_stim
 
-        return qrisp_to_stim(self, return_measurement_map, return_detector_map)
+        return qrisp_to_stim(self, return_measurement_map, return_detector_map, return_observable_map)
 
     def to_pytket(self):
         """
