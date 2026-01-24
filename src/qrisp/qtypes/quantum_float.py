@@ -29,14 +29,62 @@ from qrisp.jasp import check_for_tracing_mode
 
 @jit
 def _signed_int_iso(x, n):
-    return jnp.int64(x) & ((int(1) << jnp.minimum(n + 1, 63)) - 1)
+    """
+    Computes the signed integer isomorphism for a given bit-width.
+
+    This function maps an integer `x` from the signed range [-2^n, 2^n - 1] 
+    into the unsigned range [0, 2^(n+1) - 1].
+    This is equivalent to the mathematical operation: x % 2^(n+1).
+
+    Parameters
+    ----------
+    x : int or jax.Array
+        The signed integer or array of integers to be transformed.
+    n : int
+        The bit-width for the signed integer representation.
+
+    Returns
+    -------
+    jax.Array
+        A jnp.int64 array where each element of `x` has been mapped to 
+        the unsigned range [0, 2^(n+1) - 1].
+    """
+    # 1. Modular wrap: Ensure x is within [0, 2**(n+1) - 1]
+    mask = (jnp.int64(1) << (n + 1)) - 1
+    return jnp.int64(x) & mask
 
 @jit
 def _signed_int_iso_inv(y, n):
-    m = int(1) << (n + 1)
-    t = jnp.int64(y) % m
-    return t - (t // (int(1) << n)) * m
+    """
+    Computes the inverse signed integer isomorphism for a given bit-width.
 
+    This function maps an integer `y` from the unsigned range [0, 2^(n+1) - 1]
+    back into the signed range [-2^n, 2^n - 1]. It performs a manual 
+    sign-extension by treating the n-th bit of `y` as the sign bit.
+
+    Parameters
+    ----------
+    y : int or jax.Array
+        The unsigned integer or array of integers to be transformed.
+    n : int
+        The bit-width for the signed integer representation.
+
+    Returns
+    -------
+    jax.Array
+        A jnp.int64 array where each element of `y` has been mapped to 
+        the signed range [-2^n, 2^n - 1].
+    """
+    # 1. Modular wrap: Ensure y is within [0, 2**(n+1) - 1]
+    mask = (jnp.int64(1) << (n + 1)) - 1
+    y_wrapped = jnp.int64(y) & mask
+    
+    # 2. Sign extension: If bit 'n' is set, the number is negative.
+    # In two's complement, we subtract 2**(n+1) from values >= 2**n.
+    sign_bit = jnp.int64(1) << n
+    return jnp.where(y_wrapped & sign_bit, 
+                     y_wrapped - (jnp.int64(1) << (n + 1)), 
+                     y_wrapped)
 
 #def signed_int_iso(x, n):
 #    if int(x) < -(2**n) or int(x) >= 2**n:
