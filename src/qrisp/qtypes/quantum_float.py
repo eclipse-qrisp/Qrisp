@@ -28,32 +28,32 @@ from qrisp.environments import invert, conjugate
 from qrisp.jasp import check_for_tracing_mode
 
 @jit
-def signed_int_iso_2(x, n):
-    return jnp.int64(x) & ((int(1) << jnp.minimum(n, 63))-1)
+def _signed_int_iso(x, n):
+    return jnp.int64(x) & ((int(1) << jnp.minimum(n + 1, 63)) - 1)
 
 @jit
-def signed_int_iso_inv_2(y, n, signed_int):
+def _signed_int_iso_inv(y, n):
     m = int(1) << (n + 1)
     t = jnp.int64(y) % m
-    return t - signed_int * m * (t // (int(1) << n))
+    return t - (t // (int(1) << n)) * m
 
 
-def signed_int_iso(x, n):
-    if int(x) < -(2**n) or int(x) >= 2**n:
-        raise Exception("Applying signed integer isomorphism resulted in overflow")
+#def signed_int_iso(x, n):
+#    if int(x) < -(2**n) or int(x) >= 2**n:
+#        raise Exception("Applying signed integer isomorphism resulted in overflow")
 
-    if x >= 0:
-        return x % 2**n
-    else:
-        return -abs(x) % 2 ** (n + 1)
+#    if x >= 0:
+#        return x % 2**n
+#    else:
+#        return -abs(x) % 2 ** (n + 1)
 
 
-def signed_int_iso_inv(y, n):
-    y = y % 2 ** (n + 1)
-    if y < 2**n:
-        return y
-    else:
-        return -(2 ** (n + 1)) + y
+#def signed_int_iso_inv(y, n):
+#    y = y % 2 ** (n + 1)
+#    if y < 2**n:
+#        return y
+#    else:
+#        return -(2 ** (n + 1)) + y
 
 
 # Truncates a polynomial of the form p(x) = 2**k_0*x*i_0 + 2**k_1*x**i_1 ...
@@ -321,7 +321,10 @@ class QuantumFloat(QuantumVariable):
     # Define outcome_labels
     def decoder(self, i):
 
-        res = signed_int_iso_inv_2(i, self.msize, self.signed) * jnp.float64(2)**self.exponent
+        if self.signed:
+            res = _signed_int_iso_inv(i, self.msize) * jnp.float64(2) ** self.exponent
+        else:  
+            res = i * jnp.float64(2) ** self.exponent
 
         if check_for_tracing_mode():
             return res
@@ -335,11 +338,11 @@ class QuantumFloat(QuantumVariable):
         return self.decoder(i)
 
     def encoder(self, i):
-        res = signed_int_iso_2(i / (jnp.float64(2) ** self.exponent), self.size)
-        # if self.signed:
-        #     res = signed_int_iso(i/2**self.exponent, self.size-1)
-        # else:
-        #     res = i/2**self.exponent
+
+        if self.signed:
+            res = _signed_int_iso(i / jnp.float64(2) ** self.exponent, self.msize)
+        else:
+            res = i / jnp.float64(2) ** self.exponent
 
         if isinstance(res, (int, float)):
             return int(res)
@@ -979,7 +982,7 @@ class QuantumFloat(QuantumVariable):
 
         if self.signed:
             res = jnp.maximum(-2 ** self.msize, res)
-            res = signed_int_iso_2(res, self.size)
+            res = _signed_int_iso(res, self.size)
         else:
             res = jnp.maximum(0, res)
 
