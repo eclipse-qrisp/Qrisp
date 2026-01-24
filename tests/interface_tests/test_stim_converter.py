@@ -281,36 +281,127 @@ def test_stim_errors():
     assert "Z2" in stim_str
 
 
-def test_detector_operation_conversion():
-    """
-    Test manual creation of StimDetector and conversion to Stim using qc.to_stim().
-    """
-    from qrisp.misc.stim_tools import StimDetector
-    qc = QuantumCircuit(2, 3) # 2 qubits, 3 clbits (2 for measure, 1 for detector result)
-    # Manual circuit construction simulating what JASP would do
-    # measure qubit 0 into clbit 0
-    qc.measure(0, 0)
-    # measure qubit 1 into clbit 1
-    qc.measure(1, 1)
-    
-    # Detector operation depending on clbit 0 and 1
-    # It writes its result to clbit 2
-    det_op = StimDetector(num_inputs=2)
-    qc.append(det_op, clbits=[qc.clbits[0], qc.clbits[1], qc.clbits[2]])
-    
-    stim_circuit, meas_map, det_map = qc.to_stim(return_measurement_map=True, return_detector_map=True)
-    
-    # Check instructions
-    lines = str(stim_circuit).splitlines()
-    assert "M 0 1" in lines or ("M 0" in lines and "M 1" in lines)
+def test_detector_permutation():
+    import stim
+    import numpy as np
+    from qrisp.misc.stim_tools.detector_permutation import permute_detectors
 
-    # We expect DETECTOR rec[-2] rec[-1] or rec[-1] rec[-2]
-    det_lines = [l for l in lines if "DETECTOR" in l]
-    assert len(det_lines) == 1
-    assert "rec[-1]" in det_lines[0]
-    assert "rec[-2]" in det_lines[0]
+    # Test 1: Validation
+    print("Test 1: Validation...", end="")
+    c = stim.Circuit("M 0\nDETECTOR(0) rec[-1]")
+    try:
+        permute_detectors(c, (1, 0)) # Too many indices
+        raise Exception("Failed to catch length mismatch")
+    except ValueError:
+        pass
+        
+    try:
+        permute_detectors(c, (0, 0)) 
+        raise Exception("Failed to catch invalid permutation (duplicates)")
+    except ValueError:
+        pass
+    print("Passed.")
+
+    # Test 2: Sampler Consistency
+    print("Test 2: Sampler Consistency...", end="")
     
-    # Check maps
-    assert len(meas_map) == 2
-    assert len(det_map) == 1
-    assert det_map[qc.clbits[2]] == 0
+    # Create a circuit where:
+    # Error on q0 -> Triggers D0
+    # Error on q1 -> Triggers D1
+    # Error on q2 -> Triggers D2
+    c = stim.Circuit("""
+        X_ERROR(1) 0 1 2
+        M 0 1 2
+        DETECTOR(0) rec[-3]
+        DETECTOR(1) rec[-2]
+        DETECTOR(2) rec[-1]
+    """)
+    
+    perm = (1, 2, 0)
+    c_perm = permute_detectors(c, perm)
+    
+    sampler_orig = c.compile_detector_sampler()
+    sampler_perm = c_perm.compile_detector_sampler()
+    
+    # Generate many samples to ensure we see errors
+    shots = 1000
+    samples_orig = sampler_orig.sample(shots, bit_packed=False)
+    samples_perm = sampler_perm.sample(shots, bit_packed=False)
+    
+    c_det = stim.Circuit("""
+        X_ERROR(1) 0 2
+        M 0 1 2
+        DETECTOR(0) rec[-3]
+        DETECTOR(1) rec[-2]
+        DETECTOR(2) rec[-1]
+    """)
+    # D0 checks M0 (X 0 -> 1) -> D0 triggers
+    # D1 checks M1 (Identity -> 0) -> D1 off
+    # D2 checks M2 (X 2 -> 1) -> D2 triggers
+    # Result: [1, 0, 1]
+    
+    c_det_perm = permute_detectors(c_det, perm)
+    # Permutation (1, 2, 0)
+    # New D0 = Old D1 = 0
+    # New D1 = Old D2 = 1
+    # New D2 = Old D0 = 1
+    # Expected: [0, 1, 1]
+    
+    s_orig = c_det.compile_detector_sampler().sample(1)[0]
+    s_perm = c_det_perm.compile_detector_sampler().sample(1)[0]
+    
+    assert np.array_equal(s_orig, [True, False, True]), f"Setup failed: {s_orig}"
+    
+    reconstructed_perm = []
+    for i in range(len(perm)):
+        reconstructed_perm.append(s_orig[perm[i]])
+    reconstructed_perm = np.array(reconstructed_perm)
+    
+    if not np.array_equal(s_perm, reconstructed_perm):
+        raise Exception(f"Deterministic sampler mismatch.\nOrig: {s_orig}\nPerm: {s_perm}\nExpP: {reconstructed_perm}")
+    print("Passed.")
+
+    # Test 3: Coordinate Shift and Semantic Preservation
+    print("Test 3: Coordinates...", end="")
+    c_coords = stim.Circuit("""
+        SHIFT_COORDS(10)
+        M 0
+        DETECTOR(1) rec[-1]
+        SHIFT_COORDS(20)
+        M 1
+        DETECTOR(2) rec[-1]
+    """)
+    # D0: Coords(1)+Shift(10) = 11. Targets M0.
+    # D1: Coords(2)+Shift(10+20) = 32. Targets M1.
+    
+    # Permute (1, 0)
+    # New D0 = Old D1 (Abs 32, Targets M1)
+    # New D1 = Old D0 (Abs 11, Targets M0)
+    
+    c_coords_perm = permute_detectors(c_coords, (1, 0))
+    
+    dets = [inst for inst in c_coords_perm if inst.name == "DETECTOR"]
+    d0_args = dets[0].gate_args_copy()
+    d1_args = dets[1].gate_args_copy()
+    
+    if list(d0_args) != [2.0]:
+         raise Exception(f"D0 Coordinate mismatch. Expected [2.0], got {d0_args}")
+    if list(d1_args) != [-19.0]:
+         raise Exception(f"D1 Coordinate mismatch. Expected [-19.0], got {d1_args}")
+         
+    print("Passed.")
+
+    # Test 4: Repeat Safety
+    print("Test 4: Repeat Safety...", end="")
+    c_repeat = stim.Circuit("""
+        REPEAT 10 {
+            M 0
+            DETECTOR(0) rec[-1]
+        }
+    """)
+    try:
+        permute_detectors(c_repeat, list(range(10))) 
+        raise Exception("Failed to catch REPEAT block")
+    except ValueError as e:
+        assert "REPEAT" in str(e)
+    print("Passed.")
