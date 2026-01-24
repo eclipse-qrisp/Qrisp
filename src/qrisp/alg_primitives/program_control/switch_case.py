@@ -133,7 +133,7 @@ def qswitch(
 
     warnings.warn(
         "The 'qswitch(operand, case, case_function)' interface is deprecated and will be "
-        "removed in a future release. Please migrate to 'q_switch(case, branches, *operands)'. "
+        "removed in a future release. Please migrate to 'q_switch(index, branches, *operands)'. "
         "See: https://www.qrisp.eu/reference/Primitives/q_switch.html",
         category=FutureWarning,
         stacklevel=4, # Use level 4 since qswitch is wrapped twice

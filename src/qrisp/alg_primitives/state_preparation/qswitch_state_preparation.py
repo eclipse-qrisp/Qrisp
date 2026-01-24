@@ -323,13 +323,13 @@ def prepare_qswitch(qv, target_array: jnp.ndarray) -> None:
     for layer_size in xrange(1, qv.size - 1):
 
         q_switch(
-            case=qv[:layer_size],
-            case_function=make_case_fn(layer_size),
-            operand=qv[layer_size],
+            qv[:layer_size],
+            make_case_fn(layer_size),
+            qv[layer_size],
         )
 
     q_switch(
-        case=qv[: qv.size - 1],
-        case_function=make_case_fn(qv.size - 1, is_final=True),
-        operand=qv[qv.size - 1],
+        qv[: qv.size - 1],
+        make_case_fn(qv.size - 1, is_final=True),
+        qv[qv.size - 1],
     )
