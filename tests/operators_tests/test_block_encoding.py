@@ -16,93 +16,50 @@
 ********************************************************************************
 """
 
-import random
-from qrisp.operators import X, Y, Z, A, C, P0, P1
+import numpy as np
+import jax.numpy as jnp
+import pytest
 from qrisp import *
-from qrisp.interface import VirtualBackend
-from qrisp.simulator import run
+from qrisp.operators import X, Y, Z
 
-def test_expectation_value(sample_size=100, seed=42, exhaustive = False):
+
+@pytest.mark.parametrize("H1, H2", [
+    (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2)),
+    (0.5*X(1) + 0.7*Y(1) + 0.3*X(4), Z(0) + Z(1) + X(2)),
+    (X(0)*X(1), Z(0) + 0.9*Z(1) + X(3)),
+])
+def test_block_encoding_addition(H1, H2):
+
+    BE1 = H1.pauli_block_encoding()
+    BE2 = H2.pauli_block_encoding()
+
+    H3 = H1 + H2
+    BE3 = H3.pauli_block_encoding()
+    BE_addition = BE1 + BE2
+
+    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
+
+    @RUS
+    def main(BE):
+        qv = QuantumVariable(n)
+        ancillas = BE.apply(qv)
+        bools = jnp.array([(measure(anc) == 0) for anc in ancillas])
+        success_bool = jnp.all(bools)
+
+        # garbage collection
+        [reset(anc) for anc in ancillas]
+        [anc.delete() for anc in ancillas]
+        return success_bool, qv
+
+    @terminal_sampling
+    def run_main(BE):
+        qv = main(BE)
+        return qv
     
-    non_sampling_backend = VirtualBackend(lambda qasm_string, shots, token : run(QuantumCircuit.from_qasm_str(qasm_string), None, ""))    
+    res_be3 = run_main(BE3)
+    res_be_add = run_main(BE_addition)
 
-    def testing_helper(state_prep, operator_combinations):
-        for H in operator_combinations:
-            if isinstance(H, int):
-                continue
-            
-            print(H)
-            assert abs(H.expectation_value(state_prep, precision=0.0005, backend = non_sampling_backend)() - 
-                       H.to_pauli().expectation_value(state_prep, precision=0.0005, backend = non_sampling_backend)()) < 1E-1
-            assert abs(H.expectation_value(state_prep, precision=0.0005, 
-                       diagonalisation_method="commuting", backend = non_sampling_backend)() - 
-                       H.to_pauli().expectation_value(state_prep, precision=0.0005, 
-                       diagonalisation_method="commuting", backend = non_sampling_backend)()) < 1E-1
-            
-            # Jasp tests 
-            @jaspify(terminal_sampling=True)
-            def main():
-                return H.expectation_value(state_prep, precision=0.01)()
-
-            assert abs(main() - H.expectation_value(state_prep, precision=0.01, backend = non_sampling_backend)()) < 1E-1
-
-    # Set the random seed for reproducibility
-    random.seed(seed)
-
-    # Define the full list of operators
-    operator_list = [lambda x: 1, X, Y, Z, A, C, P0, P1]
-
-    # Generate all possible combinations of operators
-    all_combinations = []
-    
-    if exhaustive:
-        for op1 in operator_list:
-            for op2 in operator_list:
-                for op3 in operator_list:
-                    for op4 in operator_list:
-                        
-                        H = op1(0)*op2(1)*op3(2)*op4(3)
-                        
-                        if H == 1:
-                            continue
-                        
-                        all_combinations.append(H)
-    else:
-        for _ in range(sample_size):
-            combination = [random.choice(operator_list) for _ in range(4)]  # Choose 4 operators
-            H = combination[0](0) * combination[1](1) * combination[2](2) * combination[3](3)
-            all_combinations.append(H)
-
-   
-    def state_prep():
-        qv = QuantumFloat(4)
-        return qv
-
-    # Perform tests with the randomly generated operator combinations
-    testing_helper(state_prep, all_combinations)
-
-    def state_prep():
-        qv = QuantumFloat(4)
-        h(qv[0])
-        return qv
-
-    testing_helper(state_prep, all_combinations)
-
-    def state_prep():
-        qv = QuantumFloat(4)
-        h(qv[0])
-        cx(qv[0], qv[1])
-        return qv
-
-    testing_helper(state_prep, all_combinations)
-
-    def state_prep():
-        qv = QuantumFloat(4)
-        h(qv[0])
-        cx(qv[0], qv[1])
-        cx(qv[0], qv[2])
-        return qv
-
-    testing_helper(state_prep, all_combinations)
-
-    
+    for k in range(2 ** n):
+        val_be3 = res_be3.get(k, 0)
+        val_be_add = res_be_add.get(k, 0)
+        assert np.isclose(val_be3, val_be_add), f"Mismatch at state |{k}>: {val_be3} vs {val_be_add}"
