@@ -2232,9 +2232,17 @@ class QubitOperator(Hamiltonian):
         # Ensure coeffs has size 2 ** num_qubits by zero padding
         coeffs = np.concatenate((coeffs, np.zeros((1 << num_qubits) - m)))
 
+        if m==1:
+            # Special case: only one unitary, no need for control qubits
+            @qache
+            def U(operand):
+                unitaries[0](operand)
+
+            return BlockEncoding(U, [], alpha)
+
         @qache
         def U(case, operand):
             with conjugate(prepare)(case, np.sqrt(coeffs/alpha)):
                 qswitch(operand, case, unitaries)
 
-        return BlockEncoding(U, [QuantumFloat(num_qubits)], alpha)
+        return BlockEncoding(U, [QuantumFloat(num_qubits).template()], alpha)

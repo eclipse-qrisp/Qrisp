@@ -18,10 +18,10 @@
 
 import numpy as np
 import jax.numpy as jnp
-from qrisp.alg_primitives.prepare import prepare
-from qrisp.alg_primitives.qswitch import qswitch
-from qrisp.environments import conjugate
-from qrisp.qtypes import QuantumFloat
+from qrisp.alg_primitives.state_preparation import prepare
+from qrisp.alg_primitives.switch_case import qswitch
+from qrisp.environments import conjugate, control
+from qrisp.qtypes import QuantumFloat, QuantumBool
 
 
 class BlockEncoding:
@@ -170,13 +170,13 @@ class BlockEncoding:
     def __init__(
         self,
         unitary,
-        ancillas,
+        anc_templates,
         alpha,
         is_hermitian=False,
     ):
 
         self.unitary = unitary
-        self.ancilla_templates = [anc.template() for anc in ancillas]
+        self.anc_templates = anc_templates
         self.alpha = alpha
         self.is_hemitian = is_hermitian
 
@@ -192,7 +192,7 @@ class BlockEncoding:
         
         """
         anc_list = []
-        for template in self.ancilla_templates:
+        for template in self.anc_templates:
             anc_list.append(template.construct())
         return anc_list
     
@@ -220,10 +220,14 @@ class BlockEncoding:
         n = len(other.anc_templates)
 
         def new_unitary(*args):
-            with conjugate(prepare)(args[0], [np.sqrt(alpha / (alpha + beta)), np.sqrt(beta / (alpha + beta))]):
-                qswitch(args[1 + m + n:], args[0], [self.unitary, other.unitary])
+            with conjugate(prepare)(args[0], np.array([np.sqrt(alpha / (alpha + beta)), np.sqrt(beta / (alpha + beta))])):
+                with control(args[0], ctrl_state=0):
+                    self.unitary(*args[1:1 + m], *args[1 + m + n:])
 
-        new_anc_templates = [QuantumFloat(1)] + self.anc_templates + other.anc_templates
+                with control(args[0], ctrl_state=1):
+                    other.unitary(*args[1 + m:1 + m + n], *args[1 + m + n:])
+
+        new_anc_templates = [QuantumBool().template()] + self.anc_templates + other.anc_templates
         new_alpha = alpha + beta
         return BlockEncoding(new_unitary, new_anc_templates, new_alpha)
     
@@ -249,9 +253,9 @@ class BlockEncoding:
         n = len(other.anc_templates)
 
         def new_unitary(*args):
-            self_args = [args[:m] + args[m + n:]]
+            self_args = args[:m] + args[m + n:]
             self.unitary(*self_args)
-            other_args = [args[m:n] + args[m + n:]]
+            other_args = args[m:n] + args[m + n:]
             other.unitary(*other_args)
 
         new_anc_templates = self.anc_templates + other.anc_templates
