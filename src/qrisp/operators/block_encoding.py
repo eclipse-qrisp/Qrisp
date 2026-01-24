@@ -196,6 +196,25 @@ class BlockEncoding:
             anc_list.append(template.construct())
         return anc_list
     
+    def apply(self, *operands):
+        """
+        Applies the block-encoding unitary to the given operands.
+
+        Parameters
+        ----------
+        operands : list[QuantumVariable]
+            A list of QuantumVariables serving as operands for the block-encoding.
+
+        Returns
+        -------
+        list[QuantumVariable]
+            A list of ancilla QuantumVariables used in the application.
+
+        """
+        ancillas = self.create_ancillas()
+        self.unitary(*ancillas, *operands)
+        return ancillas
+    
     def __add__(self, other):
         """
         Implements addition of two BlockEncodings self and other.
