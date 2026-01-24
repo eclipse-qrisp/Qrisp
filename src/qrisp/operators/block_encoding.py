@@ -182,7 +182,7 @@ class BlockEncoding:
 
 
     def create_ancillas(self):
-        """
+        r"""
         Returns a list of ancilla QuantumVariables for the BlockEncoding.
 
         Returns
@@ -197,7 +197,7 @@ class BlockEncoding:
         return anc_list
     
     def apply(self, *operands):
-        """
+        r"""
         Applies the block-encoding unitary to the given operands.
 
         Parameters
@@ -209,14 +209,79 @@ class BlockEncoding:
         -------
         list[QuantumVariable]
             A list of ancilla QuantumVariables used in the application.
+            Must be measured to determine success of the block-encoding application.
 
         """
         ancillas = self.create_ancillas()
         self.unitary(*ancillas, *operands)
         return ancillas
     
-    def __add__(self, other):
+    def apply_rus(self, operand_prep):
+        r"""
+        Applies the block-encoding unitary using Repeat-Until-Success (RUS) to the prepared operands.
+
+        Parameters
+        ----------
+        operand_prep : callable
+            A function ``operand_prep(*args)`` preparing and returning the operand QuantumVariables.
+
+        Returns
+        -------
+        callable
+            A function ``rus_function(*args)`` preparing the operand QuantumVariables,
+            and implementing the RUS application of the block-encoding.
+
+        Examples
+        --------  
+
+        Define a block-encoding and apply it using RUS. 
+
+        ::
+
+            import numpy as np
+            from qrisp import *
+            from qrisp.operators import X, Y, Z
+
+            H = X(0)*X(1) + 0.5*Z(0)*Z(1)
+            BE = H.pauli_block_encoding()
+
+            def operand_prep(phi):
+                qv = QuantumVariable(2)
+                ry(phi, qv[0])
+                return qv
+
+            @terminal_sampling
+            def main(BE):
+                qv = BE.apply_rus(operand_prep)(np.pi / 4)
+                return qv
+
+            main(BE)
+            
         """
+        from qrisp.core.gate_application_functions import measure, reset
+        from qrisp.jasp import RUS
+
+        @RUS
+        def rus_function(*args):
+            operands = operand_prep(*args)
+            if not isinstance(operands, tuple):
+                operands = (operands,)    
+
+            ancillas = self.create_ancillas()
+            self.unitary(*ancillas, *operands)
+
+            bools = jnp.array([(measure(anc) == 0) for anc in ancillas])
+            success_bool = jnp.all(bools)
+
+            # garbage collection
+            [reset(anc) for anc in ancillas]
+            [anc.delete() for anc in ancillas]
+            return success_bool, *operands       
+
+        return rus_function
+    
+    def __add__(self, other):
+        r"""
         Implements addition of two BlockEncodings self and other.
 
         Parameters
@@ -251,7 +316,7 @@ class BlockEncoding:
         return BlockEncoding(new_unitary, new_anc_templates, new_alpha)
     
     def __mul__(self, other):
-        """
+        r"""
         Implements multiplication of two BlockEncodings self and other.
 
         Parameters
