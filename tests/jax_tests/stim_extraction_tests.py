@@ -961,10 +961,10 @@ def test_parity_detector_sampling():
         d = parity(m0, m1, expectation=False)
         return d
 
-    det_idx, stim_circ = detector_circuit()
+    det_idx, stim_circuit = detector_circuit()
     
     # Run 100 shots (deterministic)
-    sampler = stim_circ.compile_detector_sampler()
+    sampler = stim_circuit.compile_detector_sampler()
     samples = sampler.sample(100)
     
     # Samples shape: (100, 1) since 1 detector
@@ -1052,3 +1052,90 @@ def test_parity_exception_behavior():
     # Even though expectation is violated in Qrisp semantics, Stim extraction does not 
     # check this violation. It generates a valid DETECTOR instruction.
     assert "DETECTOR" in str(stim_circ)
+
+def test_extract_stim_detectors_sampling():
+    """Test sampling detector events from an extracted Stim circuit."""
+    
+    @extract_stim
+    def detector_circuit():
+        qv = QuantumVariable(2)
+
+        # Prepare |00>
+
+        # Add deterministic error to flip parity
+        stim_noise("X_ERROR", 1.0, qv[0])
+
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+
+        # Expect even parity (0). Since we applied deterministic X noise to qv[0],
+        # the measured parity will differ from the noiseless expectation and the
+        # DETECTOR should record an event.
+        det = parity(m0, m1, expectation=0)
+        return det
+
+    det_idx, stim_circuit = detector_circuit()
+    
+    # Compile detector sampler
+    sampler = stim_circuit.compile_detector_sampler()
+    
+    # Sample detector events
+    # Returns binary matrix: (shots, num_detectors)
+    det_events = sampler.sample(10)
+    
+    # Verify we have correct number of detectors
+    assert stim_circuit.num_detectors == 1
+    assert det_events.shape == (10, 1)
+    
+    # The returned index from the function should be 0
+    assert det_idx == 0
+    
+    # Verify the detector fired (True) for all shots
+    assert np.all(det_events[:, det_idx])
+
+
+def test_extract_stim_observables_sampling():
+    """Test sampling observables from an extracted Stim circuit."""
+    
+    @extract_stim
+    def observable_circuit():
+        qv = QuantumVariable(2)
+
+        # Prepare |11> via deterministic X errors
+        stim_noise("X_ERROR", 1.0, qv)
+
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+
+        # Define Observable corresponding to ZZ parity.
+        qv2 = QuantumVariable(2)
+        stim_noise("X_ERROR", 1.0, qv2[0])  # |10>
+        m2_0 = measure(qv2[0])
+        m2_1 = measure(qv2[1])
+
+        # Observable 0: Parity of |11> -> 0
+        obs0 = parity(m0, m1, expectation=2)
+
+        # Observable 1: Parity of |10> -> 1
+        obs1 = parity(m2_0, m2_1, expectation=2)
+
+        return obs0, obs1
+
+    obs0_idx, obs1_idx, stim_circuit = observable_circuit()
+    
+    # Compile detector sampler
+    sampler = stim_circuit.compile_detector_sampler()
+    
+    # Sample with observables appended
+    
+    assert stim_circuit.num_detectors == 0
+    assert stim_circuit.num_observables == 2
+    
+    # Re-sample with safe arguments
+    det_events, obs_events = sampler.sample(10, separate_observables=True)
+    
+    # Observable 0 (index 0) should be 0 (false)
+    # Observable 1 (index 1) should be 1 (true)
+    
+    assert np.all(obs_events[:, obs0_idx] == 0)
+    assert np.all(obs_events[:, obs1_idx] == 1)

@@ -530,6 +530,5 @@ def test_observable_map():
     det_map = res_det[1]
     obs_map = res_det[2]
     
-    assert qc.clbits[2] in det_map
+    assert qc.clbits[2] not in det_map
     assert qc.clbits[2] in obs_map
-    assert det_map[qc.clbits[2]] == obs_map[qc.clbits[2]]

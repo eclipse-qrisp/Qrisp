@@ -269,8 +269,7 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
                     'measurements': current_components # Store set for efficient updates
                 }
                 
-                # Map to detector map so extract_stim knows the index
-                detector_map[result_clbit] = new_stim_idx
+                # Map to observable map so extract_stim knows the index
                 observable_map[result_clbit] = new_stim_idx
                 
                 # Emit instruction if there are targets
