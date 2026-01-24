@@ -294,6 +294,47 @@ class BlockEncoding:
         BlockEncoding
             A new BlockEncoding representing the sum of self and other.
 
+        Notes
+        -----
+        - Can only be used when both BlockEncodings have the same operand structure.
+        - The ``+`` operator should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method.
+
+        Examples
+        --------
+
+        Define two block-encodings and add them.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import X, Y, Z
+
+            H1 = X(0)*X(1) + 0.2*Y(0)*Y(1)
+            H2 = Z(0)*Z(1) + X(2)
+            H3 = H1 + H2
+
+            BE1 = H1.pauli_block_encoding()
+            BE2 = H2.pauli_block_encoding()
+            BE3 = H3.pauli_block_encoding()
+
+            BE_add = BE1 + BE2
+
+            def operand_prep():
+                qv = QuantumVariable(3)
+                return qv
+
+            @terminal_sampling
+            def main(BE):
+                qv = BE.apply_rus(operand_prep)()
+                return qv
+
+            res_be3 = main(BE3)
+            res_be_add = main(BE_add)
+            print("Result from BE of H1 + H2: ", res_be3)
+            print("Result from BE1 + BE2: ", res_be_add)
+            # Result from BE of H1 + H2:  {0: 0.37878788804466035, 4: 0.37878788804466035, 3: 0.24242422391067933}
+            # Result from BE1 + BE2:  {0: 0.37878789933341894, 4: 0.37878789933341894, 3: 0.24242420133316217}
+
         """
         if not isinstance(other, BlockEncoding):
             raise ValueError("Can only add another BlockEncoding")
