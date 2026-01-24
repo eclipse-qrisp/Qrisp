@@ -71,11 +71,8 @@ def permute_detectors(circuit: stim.Circuit, permutation) -> stim.Circuit:
             
             new_args = p_old - p_accum
             
-            # Trim trailing zeros for cleanliness
             new_args_list = list(new_args)
-            while new_args_list and new_args_list[-1] == 0:
-                new_args_list.pop()
-                
+            
             # Create updated instruction
             new_instr = stim.CircuitInstruction("DETECTOR", new_targets, new_args_list)
             detector_list.append(new_instr)

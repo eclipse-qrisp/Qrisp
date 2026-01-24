@@ -444,3 +444,55 @@ def test_detector_permutation():
     except ValueError as e:
         assert "REPEAT" in str(e)
     print("Passed.")
+
+    # Test 5: Observables Interaction
+    print("Test 5: Observables Interaction...", end="")
+    # Check that Observables are preserved and don't interfere
+    c_obs = stim.Circuit("""
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        DETECTOR(0) rec[-1]
+        M 1
+        OBSERVABLE_INCLUDE(1) rec[-1]
+        DETECTOR(1) rec[-1]
+    """)
+    # Original: 
+    # D0 checks M0. D1 checks M1.
+    # L0 checks M0. L1 checks M1.
+    
+    # Observables should stay in 'other_instructions' and not be moved.
+    
+    c_obs_perm = permute_detectors(c_obs, (1, 0))
+    
+    # We expect:
+    # M 0
+    # Obs(0) rec[-1]
+    # M 1
+    # Obs(1) rec[-1]
+    # DETECTOR(1) ... (was D1, now D0) -> targets M1 (rec[-1] relative to end)
+    # DETECTOR(0) ... (was D0, now D1) -> targets M0 (rec[-2] relative to end)
+    
+    str_circ = str(c_obs_perm)
+    print("Circuit:\n", str_circ)
+    
+    # Verify DETECTORS moved to end
+    assert str_circ.strip().endswith("DETECTOR(0) rec[-2]"), f"Circuit did not end with expected detector string. output: {str_circ.strip()[-20:]}"
+    
+    # Verify OBSERVABLES stayed put (interleaved)
+    lines = str_circ.splitlines()
+    m0_idx = -1
+    obs0_idx = -1
+    m1_idx = -1
+    obs1_idx = -1
+    
+    for i, line in enumerate(lines):
+        if "M 0" in line: m0_idx = i
+        if "OBSERVABLE_INCLUDE(0)" in line: obs0_idx = i
+        if "M 1" in line: m1_idx = i
+        if "OBSERVABLE_INCLUDE(1)" in line: obs1_idx = i
+        
+    assert m0_idx < obs0_idx < m1_idx < obs1_idx, f"Observables were moved or reordered improperly. Indices: M0={m0_idx}, Obs0={obs0_idx}, M1={m1_idx}, Obs1={obs1_idx}"
+    
+    print("Passed.")
+
+    print("All tests passed.")
