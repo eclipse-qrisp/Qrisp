@@ -22,7 +22,7 @@ from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.alg_primitives.switch_case import qswitch
 from qrisp.environments import conjugate, control, invert
 from qrisp.qtypes import QuantumFloat, QuantumBool
-from qrisp.core.gate_application_functions import z
+from qrisp.core.gate_application_functions import h, x, z
 import warnings
 
 
@@ -638,10 +638,6 @@ class BlockEncoding:
         BlockEncoding
             A new BlockEncoding representing the qubitization of self.
 
-        Notes
-        -----
-        - Qubitization can only be applied to Hermitian BlockEncodings.
-
         Examples
         --------
 
@@ -659,13 +655,29 @@ class BlockEncoding:
         """
         from qrisp.alg_primitives.reflection import reflection
 
-        if not self.is_hermitian:
-            warnings.warn("Qubitization can only be applied to Hermitian BlockEncodings")
-
         m = len(self.anc_templates)
 
-        def new_unitary(*args):
-            self.unitary(*args)
-            reflection(args[:m])
+        if self.is_hermitian:
+            # W = (2*|0><0| - I) U 
+            def new_unitary(*args):
+                self.unitary(*args)
+                reflection(args[:m])
 
-        return BlockEncoding(new_unitary, self.anc_templates, alpha=self.alpha, is_hermitian=self.is_hermitian)
+            return BlockEncoding(new_unitary, self.anc_templates, alpha=self.alpha, is_hermitian=True)
+        else:
+            # W = (2*|0><0| - I) U_tilde, U_tilde = (|0><1| ⊗ U) + (|1><0| ⊗ U†) is hermitian
+            def new_unitary(*args):
+                with conjugate(h)(args[0]):
+                    with control(args[0], ctrl_state=0):
+                        self.unitary(*args[1:])
+
+                    with control(args[0], ctrl_state=1):
+                        with invert():
+                            self.unitary(*args[1:])
+
+                    x(args[0])
+
+                reflection(args[0:1 + m])
+
+            new_anc_templates = [QuantumBool().template()] + self.anc_templates
+            return BlockEncoding(new_unitary, new_anc_templates, alpha=self.alpha, is_hermitian=True)
