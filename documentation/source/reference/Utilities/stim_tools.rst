@@ -40,12 +40,15 @@ A crucial feature of Stim is precise control over what type of noise can appear 
      - Applies a Stim error gate to the given qubits.
    * - :class:`~qrisp.misc.stim_tools.StimNoiseGate`
      - Class for representing Stim errors in Qrisp circuits.
+   * - :func:`~qrisp.misc.stim_tools.permute_detectors`
+     - Permutes the detectors in a Stim circuit according to the given permutation.
 
 .. toctree:: 
    :hidden:
 
    stim_noise_doc
    StimNoiseGate_doc
+   permute_detectors_doc
 
 .. warning::
 

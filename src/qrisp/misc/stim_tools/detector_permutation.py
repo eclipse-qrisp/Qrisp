@@ -7,17 +7,80 @@ def permute_detectors(circuit: stim.Circuit, permutation) -> stim.Circuit:
     
     The function moves all detectors to the end of the circuit and applies the permutation.
     It preserves the semantic meaning of each detector (which measurements it targets)
-    and its spatial coordinates (compensating for SHIFT_COORDS instructions).
+    and its spatial coordinates (compensating for ``SHIFT_COORDS`` instructions).
 
-    Args:
-        circuit: The input Stim circuit. Assumed to have no REPEAT blocks.
-        permutation: An iterable of integers representing the desired order of detectors.
-                     permutation[i] = k means the i-th detector in the output
-                     should be the k-th detector from the input.
-                     E.g. (2, 1, 0) means Output_D0 = Input_D2, Output_D1 = Input_D1, Output_D2 = Input_D0.
+    Parameters
+    ----------
+    circuit : stim.Circuit
+        The input Stim circuit. Assumed to have no ``REPEAT`` blocks.
+    permutation : iter
+        An iterable of integers representing the desired order of detectors. 
+        permutation[i] = k means the i-th detector in the output should be 
+        the k-th detector from the input. E.g. (2, 1, 0) means 
+        Output_D0 = Input_D2, Output_D1 = Input_D1, Output_D2 = Input_D0.
 
-    Returns:
+    Returns
+    -------
+    new_circuit : stim.Circuit
         A new Stim circuit with permuted detectors.
+    
+    Examples
+    --------
+    
+    We create a circuit with three detectors. The first and third detectors are triggered by deterministic errors.
+    
+    ::
+    
+        from qrisp import QuantumVariable, measure
+        from qrisp.jasp import extract_stim, parity
+        from qrisp.misc.stim_tools import stim_noise, permute_detectors
+        import numpy as np
+    
+        @extract_stim
+        def detector_circuit():
+            qv = QuantumVariable(3)
+            # Apply deterministic noise to qv[0] and qv[2]
+            stim_noise("X_ERROR", 1.0, qv[0]) 
+            stim_noise("X_ERROR", 1.0, qv[2])
+            
+            m0 = measure(qv[0])
+            m1 = measure(qv[1])
+            m2 = measure(qv[2])
+            
+            # Detector 0 checks m0 (fires)
+            d0 = parity(m0, expectation=0)
+            # Detector 1 checks m1 (silent)
+            d1 = parity(m1, expectation=0)
+            # Detector 2 checks m2 (fires)
+            d2 = parity(m2, expectation=0)
+            
+            return d0, d1, d2
+    
+        d0_idx, d1_idx, d2_idx, stim_circ = detector_circuit()
+    
+    We sample from the original circuit:
+    
+    ::
+    
+        # Sample original
+        sampler = stim_circ.compile_detector_sampler()
+        print(sampler.sample(1))
+        # Yields: [[True, False, True]]
+    
+    Now we permute the detectors using the permutation (1, 2, 0).
+    
+    ::
+    
+        # Permute: (1, 2, 0)
+        # New D0 comes from Old D1 (False)
+        # New D1 comes from Old D2 (True)
+        # New D2 comes from Old D0 (True)
+        permuted_circ = permute_detectors(stim_circ, (1, 2, 0))
+    
+        sampler_perm = permuted_circ.compile_detector_sampler()
+        print(sampler_perm.sample(1))
+        # Yields: [[False, True, True]]
+    
     """
     
     # Check for REPEAT blocks
