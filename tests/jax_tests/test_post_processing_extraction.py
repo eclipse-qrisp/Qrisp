@@ -37,12 +37,12 @@ def test_basic_post_processing():
     
     jaspr = simple_function(2)
     
-    # Extract post-processing function
+    # Extract post-processing function (bitstring input by default)
     post_proc = jaspr.extract_post_processing(2)
     
-    # Test with different measurement results (now as an array)
-    assert post_proc(jnp.array([False])) == 1  # 0 + 1 = 1
-    assert post_proc(jnp.array([True])) == 2   # 1 + 1 = 2
+    # Test with bitstring input
+    assert post_proc("0") == 1  # 0 + 1 = 1
+    assert post_proc("1") == 2   # 1 + 1 = 2
 
 
 def test_multiple_measurements():
@@ -67,16 +67,16 @@ def test_multiple_measurements():
     post_proc = jaspr.extract_post_processing(1, 5)
     
     # Test all combinations
-    result = post_proc(jnp.array([False, False]))
+    result = post_proc("00")
     assert result[0] == 5 and result[1] == False
     
-    result = post_proc(jnp.array([False, True]))
+    result = post_proc("01")
     assert result[0] == 5 and result[1] == True
     
-    result = post_proc(jnp.array([True, False]))
+    result = post_proc("10")
     assert result[0] == 6 and result[1] == False
     
-    result = post_proc(jnp.array([True, True]))
+    result = post_proc("11")
     assert result[0] == 6 and result[1] == True
 
 
@@ -110,16 +110,16 @@ def test_boolean_post_processing():
     post_proc = jaspr.extract_post_processing()
     
     # Test truth table
-    and_result, or_result, not_result = post_proc(jnp.array([False, False]))
+    and_result, or_result, not_result = post_proc("00")
     assert and_result == False and or_result == False and not_result == True
     
-    and_result, or_result, not_result = post_proc(jnp.array([False, True]))
+    and_result, or_result, not_result = post_proc("01")
     assert and_result == False and or_result == True and not_result == True
     
-    and_result, or_result, not_result = post_proc(jnp.array([True, False]))
+    and_result, or_result, not_result = post_proc("10")
     assert and_result == False and or_result == True and not_result == False
     
-    and_result, or_result, not_result = post_proc(jnp.array([True, True]))
+    and_result, or_result, not_result = post_proc("11")
     assert and_result == True and or_result == True and not_result == False
 
 
@@ -148,11 +148,11 @@ def test_arithmetic_post_processing():
     post_proc = jaspr.extract_post_processing(3)
     
     # Test with False (0)
-    add_res, sub_res, mul_res = post_proc(jnp.array([False]))
+    add_res, sub_res, mul_res = post_proc("0")
     assert add_res == 3 and sub_res == -3 and mul_res == 0
     
     # Test with True (1)
-    add_res, sub_res, mul_res = post_proc(jnp.array([True]))
+    add_res, sub_res, mul_res = post_proc("1")
     assert add_res == 4 and sub_res == -2 and mul_res == 3
 
 
@@ -181,11 +181,11 @@ def test_comparison_post_processing():
     post_proc = jaspr.extract_post_processing(0)
     
     # Test with False (0)
-    gt, lt, eq = post_proc(jnp.array([False]))
+    gt, lt, eq = post_proc("0")
     assert gt == False and lt == False and eq == True
     
     # Test with True (1)
-    gt, lt, eq = post_proc(jnp.array([True]))
+    gt, lt, eq = post_proc("1")
     assert gt == True and lt == False and eq == False
 
 
@@ -215,10 +215,10 @@ def test_nested_operations():
     post_proc = jaspr.extract_post_processing(2, 3)
     
     # Test combinations
-    assert post_proc(jnp.array([False, False])) == (0 + 2) * (0 + 3)  # 2 * 3 = 6
-    assert post_proc(jnp.array([False, True])) == (0 + 2) * (1 + 3)   # 2 * 4 = 8
-    assert post_proc(jnp.array([True, False])) == (1 + 2) * (0 + 3)   # 3 * 3 = 9
-    assert post_proc(jnp.array([True, True])) == (1 + 2) * (1 + 3)    # 3 * 4 = 12
+    assert post_proc("00") == (0 + 2) * (0 + 3)  # 2 * 3 = 6
+    assert post_proc("01") == (0 + 2) * (1 + 3)   # 2 * 4 = 8
+    assert post_proc("10") == (1 + 2) * (0 + 3)   # 3 * 3 = 9
+    assert post_proc("11") == (1 + 2) * (1 + 3)    # 3 * 4 = 12
 
 
 def test_single_measurement_multiple_uses():
@@ -247,11 +247,11 @@ def test_single_measurement_multiple_uses():
     post_proc = jaspr.extract_post_processing(10)
     
     # Test with False (0)
-    r1, r2, r3 = post_proc(jnp.array([False]))
+    r1, r2, r3 = post_proc("0")
     assert r1 == 10 and r2 == 0 and r3 == -10
     
     # Test with True (1)
-    r1, r2, r3 = post_proc(jnp.array([True]))
+    r1, r2, r3 = post_proc("1")
     assert r1 == 11 and r2 == 2 and r3 == -9
 
 
@@ -284,8 +284,8 @@ def test_consistency_with_to_qc():
     assert has_measurements
     
     # Verify post-processing works
-    assert post_proc(jnp.array([False])) == 7
-    assert post_proc(jnp.array([True])) == 8
+    assert post_proc("0") == 7
+    assert post_proc("1") == 8
 
 
 def test_no_measurements():
@@ -303,7 +303,7 @@ def test_no_measurements():
     post_proc = jaspr.extract_post_processing(5)
     
     # Should return the computed value (no measurement arguments needed)
-    result = post_proc(jnp.array([]))
+    result = post_proc("")
     assert result == 10
 
 
@@ -326,8 +326,8 @@ def test_direct_function_call():
     # Use the function directly instead of the method
     post_proc = extract_post_processing(jaspr, 100)
     
-    assert post_proc(jnp.array([False])) == 100
-    assert post_proc(jnp.array([True])) == 101
+    assert post_proc("0") == 100
+    assert post_proc("1") == 101
 
 
 def test_multiple_static_arguments():
@@ -353,8 +353,8 @@ def test_multiple_static_arguments():
     post_proc = jaspr.extract_post_processing(2, 3, 4, 5)
     
     # Test: meas_int * 2 + 3 * 4 - 5 = meas_int * 2 + 12 - 5 = meas_int * 2 + 7
-    assert post_proc(jnp.array([False])) == 0 * 2 + 7  # 7
-    assert post_proc(jnp.array([True])) == 1 * 2 + 7   # 9
+    assert post_proc("0") == 0 * 2 + 7  # 7
+    assert post_proc("1") == 1 * 2 + 7   # 9
 
 
 def test_quantum_gates_before_measurement():
@@ -388,8 +388,8 @@ def test_quantum_gates_before_measurement():
     post_proc = jaspr.extract_post_processing(10)
     
     # Post-processing should only contain the multiplication
-    assert post_proc(jnp.array([False])) == 0
-    assert post_proc(jnp.array([True])) == 10
+    assert post_proc("0") == 0
+    assert post_proc("1") == 10
 
 
 def test_get_size_in_post_processing():
@@ -419,11 +419,11 @@ def test_get_size_in_post_processing():
     post_proc = jaspr.extract_post_processing(5)
     
     # Test with measurement results
-    result, size = post_proc(jnp.array([False]))
+    result, size = post_proc("0")
     assert result == 5  # 0 + 5
     assert size == 5
     
-    result, size = post_proc(jnp.array([True]))
+    result, size = post_proc("1")
     assert result == 6  # 1 + 5
     assert size == 5
 
@@ -456,11 +456,11 @@ def test_slice_in_post_processing():
     post_proc = jaspr.extract_post_processing()
     
     # Test with measurement results
-    result, size = post_proc(jnp.array([False]))
+    result, size = post_proc("0")
     assert result == 0  # 0 * 5
     assert size == 5
     
-    result, size = post_proc(jnp.array([True]))
+    result, size = post_proc("1")
     assert result == 5  # 1 * 5
     assert size == 5
 
@@ -496,18 +496,119 @@ def test_fuse_in_post_processing():
     post_proc = jaspr.extract_post_processing()
     
     # Test with measurement results
-    result, size = post_proc(jnp.array([False, False]))
+    result, size = post_proc("00")
     assert result == 0  # (0 + 0) * 7
     assert size == 7
     
-    result, size = post_proc(jnp.array([True, False]))
+    result, size = post_proc("10")
     assert result == 7  # (1 + 0) * 7
     assert size == 7
     
-    result, size = post_proc(jnp.array([False, True]))
+    result, size = post_proc("01")
     assert result == 7  # (0 + 1) * 7
     assert size == 7
     
-    result, size = post_proc(jnp.array([True, True]))
+    result, size = post_proc("11")
     assert result == 14  # (1 + 1) * 7
     assert size == 7
+
+
+def test_bitstring_input():
+    """
+    Test that bitstring input works correctly (default behavior).
+    """
+    @make_jaspr
+    def bitstring_function(i, j):
+        qv = QuantumFloat(5)
+        return measure(qv[i]) + 1, measure(qv[j])
+    
+    jaspr = bitstring_function(1, 2)
+    
+    # Extract post-processing (bitstring input is default)
+    post_proc = jaspr.extract_post_processing(1, 2)
+    
+    # Test with bitstring "01"
+    result = post_proc("01")
+    assert result == (1, True)  # meas[0]=False -> 0+1=1, meas[1]=True
+    
+    # Test with bitstring "10"
+    result = post_proc("10")
+    assert result == (2, False)  # meas[0]=True -> 1+1=2, meas[1]=False
+    
+    # Test with bitstring "11"
+    result = post_proc("11")
+    assert result == (2, True)  # meas[0]=True -> 1+1=2, meas[1]=True
+    
+    # Test with bitstring "00"
+    result = post_proc("00")
+    assert result == (1, False)  # meas[0]=False -> 0+1=1, meas[1]=False
+
+
+def test_bitstring_vs_array_equivalence():
+    """
+    Test that bitstring and array inputs produce the same results.
+    """
+    @make_jaspr
+    def test_function():
+        qv = QuantumFloat(3)
+        meas1 = measure(qv[0])
+        meas2 = measure(qv[1])
+        meas3 = measure(qv[2])
+        
+        from jax.lax import convert_element_type
+        m1_int = convert_element_type(meas1, int)
+        m2_int = convert_element_type(meas2, int)
+        m3_int = convert_element_type(meas3, int)
+        
+        return m1_int + 2*m2_int + 4*m3_int
+    
+    jaspr = test_function()
+    
+    # Create both versions
+    post_proc_bitstring = jaspr.extract_post_processing()  # Default is bitstring
+    post_proc_array = jaspr.extract_post_processing(array_input=True)
+    
+    # Test all combinations
+    for bits in ["000", "001", "010", "011", "100", "101", "110", "111"]:
+        array_input = jnp.array([c == '1' for c in bits], dtype=bool)
+        result_bitstring = post_proc_bitstring(bits)
+        result_array = post_proc_array(array_input)
+        assert result_array == result_bitstring, f"Mismatch for {bits}: {result_array} != {result_bitstring}"
+
+
+def test_array_input_jittable():
+    """
+    Test that array_input=True produces JAX-jittable functions.
+    """
+    import jax
+    
+    @make_jaspr
+    def test_function():
+        qv = QuantumFloat(3)
+        meas1 = measure(qv[0])
+        meas2 = measure(qv[1])
+        
+        from jax.lax import convert_element_type
+        m1_int = convert_element_type(meas1, int)
+        m2_int = convert_element_type(meas2, int)
+        
+        return m1_int + 2*m2_int
+    
+    jaspr = test_function()
+    
+    # Extract with array input
+    post_proc = jaspr.extract_post_processing(array_input=True)
+    
+    # Jit the post-processing function
+    jitted_post_proc = jax.jit(post_proc)
+    
+    # Test that jitted version works
+    test_input = jnp.array([False, True])
+    result = jitted_post_proc(test_input)
+    expected = post_proc(test_input)
+    assert result == expected
+    
+    # Test with different input
+    test_input2 = jnp.array([True, False])
+    result2 = jitted_post_proc(test_input2)
+    assert result2 == 1  # 1 + 2*0 = 1

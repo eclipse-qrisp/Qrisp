@@ -19,7 +19,7 @@ Implementation uses the equation evaluator pattern (similar to qc_extraction_int
 to avoid manually building slice/squeeze equations.
 """
 
-def extract_post_processing(jaspr, *args):
+def extract_post_processing(jaspr, *args, array_input=False):
     """
     Extracts the post-processing logic from a Jaspr object and returns a function
     that performs the post-processing.
@@ -37,13 +37,16 @@ def extract_post_processing(jaspr, *args):
         The static argument values that were used for circuit extraction (excluding 
         the QuantumCircuit argument). These will be bound into the post-processing
         function.
+    array_input : bool, optional
+        If True, the returned function will accept measurement results as a JAX array
+        of booleans instead of a bitstring. Default is False (bitstring input).
     
     Returns
     -------
     callable
-        A function that takes a JAX array of boolean measurement results and returns 
-        the post-processed results. The array should have shape (n,) where n is the 
-        number of measurements in the original Jaspr.
+        A function that takes measurement results and returns the post-processed results.
+        If array_input=False (default), accepts a string of '0' and '1' characters.
+        If array_input=True, accepts a JAX array of booleans with shape (n,).
     
     Examples
     --------
@@ -60,17 +63,20 @@ def extract_post_processing(jaspr, *args):
             return measure(qv[i]) + 1, measure(qv[1])
         
         jaspr = main(1, 2)
-        # Extract post-processing with the same arguments used for circuit extraction
-        post_proc_func = extract_post_processing(jaspr, 1, 2)
         
-        # Pass measurement results as a JAX array
-        result = post_proc_func(jnp.array([False, True]))
-        # Returns the same as the original function would have with those measurements
+        # Bitstring input (default)
+        post_proc = extract_post_processing(jaspr, 1, 2)
+        result = post_proc("01")
+        
+        # Array input (for JAX jitting)
+        post_proc_array = extract_post_processing(jaspr, 1, 2, array_input=True)
+        result = post_proc_array(jnp.array([False, True]))
         
     """
     from jax.extend.core import ClosedJaxpr
     from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive
     from qrisp.jasp.interpreter_tools.abstract_interpreter import eval_jaxpr_with_context_dic, ContextDict
+    import jax.numpy as jnp
     
     # Get the inner jaxpr
     if isinstance(jaspr.jaxpr, ClosedJaxpr):
@@ -156,19 +162,24 @@ def extract_post_processing(jaspr, *args):
     # Return function that evaluates with custom evaluator
     def post_processing_func(measurement_results):
         """
-        Post-processing function that takes measurement results as a JAX array.
+        Post-processing function that takes measurement results.
         
         Parameters
         ----------
-        measurement_results : jax.Array
-            A 1D array of boolean measurement results from the quantum circuit execution.
-            Should have shape (n,) where n is the number of measurements.
+        measurement_results : str or jax.Array
+            If array_input=False (default): A string of '0' and '1' characters.
+            If array_input=True: A 1D array of boolean measurement results.
         
         Returns
         -------
         tuple or single value
             The post-processed results.
         """
+        # Convert bitstring to JAX array if needed
+        if not array_input:
+            # Convert string "01001..." to array [False, True, False, False, True, ...]
+            measurement_results = jnp.array([c == '1' for c in measurement_results], dtype=bool)
+        
         # Create evaluator with closure over measurement_results
         eqn_evaluator = create_post_processing_evaluator(measurement_results)
         
