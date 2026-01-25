@@ -63,3 +63,45 @@ def test_block_encoding_addition(H1, H2):
         val_be3 = res_be3.get(k, 0)
         val_be_add = res_be_add.get(k, 0)
         assert np.isclose(val_be3, val_be_add), f"Mismatch at state |{k}>: {val_be3} vs {val_be_add}"
+
+
+@pytest.mark.parametrize("H1, H2", [
+    (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2)),
+    (0.5*X(1) + 0.7*Y(1) + 0.3*X(4), Z(0) + Z(1) + X(2)),
+    (X(0)*X(1), Z(0) + 0.9*Z(1) + X(3)),
+])
+def test_block_encoding_subtraction(H1, H2):
+
+    BE1 = H1.pauli_block_encoding()
+    BE2 = H2.pauli_block_encoding()
+
+    H3 = H1 - H2
+    BE3 = H3.pauli_block_encoding()
+    BE_subtraction = BE1 - BE2
+
+    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
+
+    @RUS
+    def main(BE):
+        qv = QuantumVariable(n)
+        ancillas = BE.apply(qv)
+        bools = jnp.array([(measure(anc) == 0) for anc in ancillas])
+        success_bool = jnp.all(bools)
+
+        # garbage collection
+        [reset(anc) for anc in ancillas]
+        [anc.delete() for anc in ancillas]
+        return success_bool, qv
+
+    @terminal_sampling
+    def run_main(BE):
+        qv = main(BE)
+        return qv
+    
+    res_be3 = run_main(BE3)
+    res_be_sub = run_main(BE_subtraction)
+
+    for k in range(2 ** n):
+        val_be3 = res_be3.get(k, 0)
+        val_be_sub = res_be_sub.get(k, 0)
+        assert np.isclose(val_be3, val_be_sub), f"Mismatch at state |{k}>: {val_be3} vs {val_be_sub}"
