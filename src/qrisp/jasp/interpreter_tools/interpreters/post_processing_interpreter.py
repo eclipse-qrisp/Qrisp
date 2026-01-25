@@ -43,6 +43,8 @@ def extract_post_processing(jaspr, *args):
     Examples
     --------
     
+    ::
+    
         from qrisp import *
         from qrisp.jasp import make_jaspr
         
@@ -58,6 +60,7 @@ def extract_post_processing(jaspr, *args):
         # Now post_proc_func(False, True) will return the same as
         # the original function would have returned with measurements
         # yielding False and True respectively
+        
     """
     from jax.extend.core import Var, Jaxpr, ClosedJaxpr, JaxprEqn, Literal
     from qrisp.jasp import eval_jaxpr
@@ -99,13 +102,6 @@ def extract_post_processing(jaspr, *args):
             new_invar = Var(aval=meas_result_var.aval)
             measure_invars.append(new_invar)
             measure_replacement_map[meas_result_var] = new_invar
-            
-            # The second outvar is the quantum circuit, we need to track it
-            if len(eqn.outvars) > 1:
-                # We need to map the output quantum circuit to the input quantum circuit
-                qc_out_var = eqn.outvars[1]
-                qc_in_var = eqn.invars[-1]  # Last invar should be the quantum circuit
-                measure_replacement_map[qc_out_var] = qc_in_var
     
     # Build new invars list: only measurement invars
     # Original arguments are bound as static values
@@ -133,14 +129,6 @@ def extract_post_processing(jaspr, *args):
         # Skip quantum circuit operations (create_qubits, reset, delete_qubits, gates, etc.)
         # These are not needed for post-processing
         if isinstance(eqn.primitive, QuantumPrimitive):
-            # Map any quantum circuit outputs to their inputs
-            for i, outvar in enumerate(eqn.outvars):
-                if isinstance(outvar.aval, AbstractQuantumCircuit):
-                    # Find the corresponding input quantum circuit
-                    for invar in eqn.invars:
-                        if isinstance(invar.aval, AbstractQuantumCircuit):
-                            measure_replacement_map[outvar] = replace_var(invar)
-                            break
             continue
         
         # For non-quantum primitives, update invars and outvars with replacements
