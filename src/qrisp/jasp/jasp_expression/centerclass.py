@@ -431,6 +431,75 @@ class Jaspr(ClosedJaxpr):
         from qrisp.jasp.interpreter_tools.interpreters import jaspr_to_qc
         return jaspr_to_qc(self, *args)
 
+    def extract_post_processing(self, *args):
+        """
+        Extracts the post-processing logic from this Jaspr and returns a function
+        that performs the post-processing on measurement results.
+        
+        This method is useful for separating the quantum circuit from the classical
+        post-processing of measurement results. The quantum circuit can be executed
+        on a backend to obtain measurement results, and then the post-processing
+        function can be applied to those results to obtain the final output.
+        
+        Parameters
+        ----------
+        *args : tuple
+            The static argument values that were used for circuit extraction (excluding 
+            the QuantumCircuit argument). These will be bound into the post-processing
+            function as Literals.
+        
+        Returns
+        -------
+        callable
+            A function that takes n boolean arguments (measurement results) and returns 
+            the post-processed results.
+        
+        Examples
+        --------
+        
+        We create a Jaspr that performs post-processing on measurement results:
+        
+        ::
+        
+            from qrisp import *
+            from qrisp.jasp import make_jaspr
+            
+            @make_jaspr
+            def example_function(i):
+                qv = QuantumFloat(5)
+                # First measurement
+                meas_1 = measure(qv[i])
+                # Second measurement
+                meas_2 = measure(qv[1])
+                # Classical post-processing
+                result = int(meas_1) + 1
+                return result, meas_2
+            
+            jaspr = example_function(1)
+            
+            # Extract the quantum circuit
+            _, _, qc = jaspr.to_qc(1)
+            
+            # Extract the post-processing function with the SAME arguments
+            post_proc = jaspr.extract_post_processing(1)
+            
+            # Execute qc on a backend to get measurement results
+            # For example: results = {'00': 100, '01': 50}
+            
+            # Apply post-processing to each result
+            for bitstring, count in results.items():
+                cb_0 = bool(int(bitstring[0]))
+                cb_1 = bool(int(bitstring[1]))
+                processed = post_proc(cb_0, cb_1)
+                print(f"{bitstring} -> {processed}")
+        
+        Note that the static arguments (in this case `1`) must be the same as those
+        used for circuit extraction, since they affect the structure of both the
+        quantum circuit and the post-processing logic.
+        """
+        from qrisp.jasp.interpreter_tools.interpreters import extract_post_processing
+        return extract_post_processing(self, *args)
+
     def eval(self, *args, eqn_evaluator=lambda x, y: True):
         return eval_jaxpr(self, eqn_evaluator=eqn_evaluator)(*args)
 
