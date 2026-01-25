@@ -107,7 +107,23 @@ def extract_post_processing(jaspr, *args):
                     context_dic[eqn.outvars[0]] = result
                 return False
             
-            # Skip quantum primitives entirely
+            # Handle create_qubits: store size in context as QubitArray representation
+            if eqn.primitive.name == "jasp.create_qubits":
+                # invars[0] is the size, invars[1] is the QuantumCircuit
+                size = context_dic[eqn.invars[0]]
+                # Store size as the QubitArray representation (we don't need actual qubits)
+                context_dic[eqn.outvars[0]] = size
+                # Skip QuantumCircuit outvar (eqn.outvars[1])
+                return False
+            
+            # Handle get_size: return the stored size
+            if eqn.primitive.name == "jasp.get_size":
+                # invars[0] is the QubitArray (represented by its size)
+                size = context_dic[eqn.invars[0]]
+                context_dic[eqn.outvars[0]] = size
+                return False
+            
+            # Skip other quantum primitives entirely
             if isinstance(eqn.primitive, QuantumPrimitive):
                 return False
             

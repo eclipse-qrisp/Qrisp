@@ -390,3 +390,39 @@ def test_quantum_gates_before_measurement():
     # Post-processing should only contain the multiplication
     assert post_proc(jnp.array([False])) == 0
     assert post_proc(jnp.array([True])) == 10
+
+
+def test_get_size_in_post_processing():
+    """
+    Test that get_size operations work correctly in post-processing.
+    """
+    @make_jaspr
+    def size_function(i):
+        qv = QuantumFloat(i)
+        
+        # Get the size of the quantum variable
+        size = qv.size
+        
+        # Measure a qubit
+        meas = measure(qv[0])
+        
+        # Use both in post-processing
+        from jax.lax import convert_element_type
+        meas_int = convert_element_type(meas, int)
+        result = meas_int + size
+        
+        return result, size
+    
+    jaspr = size_function(1)
+    
+    # Extract post-processing
+    post_proc = jaspr.extract_post_processing(5)
+    
+    # Test with measurement results
+    result, size = post_proc(jnp.array([False]))
+    assert result == 5  # 0 + 5
+    assert size == 5
+    
+    result, size = post_proc(jnp.array([True]))
+    assert result == 6  # 1 + 5
+    assert size == 5
