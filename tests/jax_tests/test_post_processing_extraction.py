@@ -20,6 +20,7 @@ from qrisp import *
 from qrisp.jasp import make_jaspr
 from qrisp.jasp.interpreter_tools.interpreters import extract_post_processing
 import numpy as np
+import jax.numpy as jnp
 
 
 def test_basic_post_processing():
@@ -39,9 +40,9 @@ def test_basic_post_processing():
     # Extract post-processing function
     post_proc = jaspr.extract_post_processing(2)
     
-    # Test with different measurement results
-    assert post_proc(False) == 1  # 0 + 1 = 1
-    assert post_proc(True) == 2   # 1 + 1 = 2
+    # Test with different measurement results (now as an array)
+    assert post_proc(jnp.array([False])) == 1  # 0 + 1 = 1
+    assert post_proc(jnp.array([True])) == 2   # 1 + 1 = 2
 
 
 def test_multiple_measurements():
@@ -66,16 +67,16 @@ def test_multiple_measurements():
     post_proc = jaspr.extract_post_processing(1, 5)
     
     # Test all combinations
-    result = post_proc(False, False)
+    result = post_proc(jnp.array([False, False]))
     assert result[0] == 5 and result[1] == False
     
-    result = post_proc(False, True)
+    result = post_proc(jnp.array([False, True]))
     assert result[0] == 5 and result[1] == True
     
-    result = post_proc(True, False)
+    result = post_proc(jnp.array([True, False]))
     assert result[0] == 6 and result[1] == False
     
-    result = post_proc(True, True)
+    result = post_proc(jnp.array([True, True]))
     assert result[0] == 6 and result[1] == True
 
 
@@ -109,16 +110,16 @@ def test_boolean_post_processing():
     post_proc = jaspr.extract_post_processing()
     
     # Test truth table
-    and_result, or_result, not_result = post_proc(False, False)
+    and_result, or_result, not_result = post_proc(jnp.array([False, False]))
     assert and_result == False and or_result == False and not_result == True
     
-    and_result, or_result, not_result = post_proc(False, True)
+    and_result, or_result, not_result = post_proc(jnp.array([False, True]))
     assert and_result == False and or_result == True and not_result == True
     
-    and_result, or_result, not_result = post_proc(True, False)
+    and_result, or_result, not_result = post_proc(jnp.array([True, False]))
     assert and_result == False and or_result == True and not_result == False
     
-    and_result, or_result, not_result = post_proc(True, True)
+    and_result, or_result, not_result = post_proc(jnp.array([True, True]))
     assert and_result == True and or_result == True and not_result == False
 
 
@@ -147,11 +148,11 @@ def test_arithmetic_post_processing():
     post_proc = jaspr.extract_post_processing(3)
     
     # Test with False (0)
-    add_res, sub_res, mul_res = post_proc(False)
+    add_res, sub_res, mul_res = post_proc(jnp.array([False]))
     assert add_res == 3 and sub_res == -3 and mul_res == 0
     
     # Test with True (1)
-    add_res, sub_res, mul_res = post_proc(True)
+    add_res, sub_res, mul_res = post_proc(jnp.array([True]))
     assert add_res == 4 and sub_res == -2 and mul_res == 3
 
 
@@ -180,11 +181,11 @@ def test_comparison_post_processing():
     post_proc = jaspr.extract_post_processing(0)
     
     # Test with False (0)
-    gt, lt, eq = post_proc(False)
+    gt, lt, eq = post_proc(jnp.array([False]))
     assert gt == False and lt == False and eq == True
     
     # Test with True (1)
-    gt, lt, eq = post_proc(True)
+    gt, lt, eq = post_proc(jnp.array([True]))
     assert gt == True and lt == False and eq == False
 
 
@@ -214,10 +215,10 @@ def test_nested_operations():
     post_proc = jaspr.extract_post_processing(2, 3)
     
     # Test combinations
-    assert post_proc(False, False) == (0 + 2) * (0 + 3)  # 2 * 3 = 6
-    assert post_proc(False, True) == (0 + 2) * (1 + 3)   # 2 * 4 = 8
-    assert post_proc(True, False) == (1 + 2) * (0 + 3)   # 3 * 3 = 9
-    assert post_proc(True, True) == (1 + 2) * (1 + 3)    # 3 * 4 = 12
+    assert post_proc(jnp.array([False, False])) == (0 + 2) * (0 + 3)  # 2 * 3 = 6
+    assert post_proc(jnp.array([False, True])) == (0 + 2) * (1 + 3)   # 2 * 4 = 8
+    assert post_proc(jnp.array([True, False])) == (1 + 2) * (0 + 3)   # 3 * 3 = 9
+    assert post_proc(jnp.array([True, True])) == (1 + 2) * (1 + 3)    # 3 * 4 = 12
 
 
 def test_single_measurement_multiple_uses():
@@ -246,11 +247,11 @@ def test_single_measurement_multiple_uses():
     post_proc = jaspr.extract_post_processing(10)
     
     # Test with False (0)
-    r1, r2, r3 = post_proc(False)
+    r1, r2, r3 = post_proc(jnp.array([False]))
     assert r1 == 10 and r2 == 0 and r3 == -10
     
     # Test with True (1)
-    r1, r2, r3 = post_proc(True)
+    r1, r2, r3 = post_proc(jnp.array([True]))
     assert r1 == 11 and r2 == 2 and r3 == -9
 
 
@@ -283,8 +284,8 @@ def test_consistency_with_to_qc():
     assert has_measurements
     
     # Verify post-processing works
-    assert post_proc(False) == 7
-    assert post_proc(True) == 8
+    assert post_proc(jnp.array([False])) == 7
+    assert post_proc(jnp.array([True])) == 8
 
 
 def test_no_measurements():
@@ -302,7 +303,7 @@ def test_no_measurements():
     post_proc = jaspr.extract_post_processing(5)
     
     # Should return the computed value (no measurement arguments needed)
-    result = post_proc()
+    result = post_proc(jnp.array([]))
     assert result == 10
 
 
@@ -325,8 +326,8 @@ def test_direct_function_call():
     # Use the function directly instead of the method
     post_proc = extract_post_processing(jaspr, 100)
     
-    assert post_proc(False) == 100
-    assert post_proc(True) == 101
+    assert post_proc(jnp.array([False])) == 100
+    assert post_proc(jnp.array([True])) == 101
 
 
 def test_multiple_static_arguments():
@@ -352,8 +353,8 @@ def test_multiple_static_arguments():
     post_proc = jaspr.extract_post_processing(2, 3, 4, 5)
     
     # Test: meas_int * 2 + 3 * 4 - 5 = meas_int * 2 + 12 - 5 = meas_int * 2 + 7
-    assert post_proc(False) == 0 * 2 + 7  # 7
-    assert post_proc(True) == 1 * 2 + 7   # 9
+    assert post_proc(jnp.array([False])) == 0 * 2 + 7  # 7
+    assert post_proc(jnp.array([True])) == 1 * 2 + 7   # 9
 
 
 def test_quantum_gates_before_measurement():
@@ -387,5 +388,5 @@ def test_quantum_gates_before_measurement():
     post_proc = jaspr.extract_post_processing(10)
     
     # Post-processing should only contain the multiplication
-    assert post_proc(False) == 0
-    assert post_proc(True) == 10
+    assert post_proc(jnp.array([False])) == 0
+    assert post_proc(jnp.array([True])) == 10

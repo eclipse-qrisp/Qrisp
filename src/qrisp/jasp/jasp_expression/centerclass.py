@@ -451,8 +451,9 @@ class Jaspr(ClosedJaxpr):
         Returns
         -------
         callable
-            A function that takes n boolean arguments (measurement results) and returns 
-            the post-processed results.
+            A function that takes a JAX array of boolean measurement results and returns 
+            the post-processed results. The array should have shape (n,) where n is the 
+            number of measurements.
         
         Examples
         --------
@@ -463,6 +464,7 @@ class Jaspr(ClosedJaxpr):
         
             from qrisp import *
             from qrisp.jasp import make_jaspr
+            import jax.numpy as jnp
             
             @make_jaspr
             def example_function(i):
@@ -472,13 +474,14 @@ class Jaspr(ClosedJaxpr):
                 # Second measurement
                 meas_2 = measure(qv[1])
                 # Classical post-processing
-                result = int(meas_1) + 1
+                from jax.lax import convert_element_type
+                result = convert_element_type(meas_1, int) + 1
                 return result, meas_2
             
             jaspr = example_function(1)
             
             # Extract the quantum circuit
-            _, _, qc = jaspr.to_qc(1)
+            _, qc = jaspr.to_qc(1)
             
             # Extract the post-processing function with the SAME arguments
             post_proc = jaspr.extract_post_processing(1)
@@ -488,9 +491,9 @@ class Jaspr(ClosedJaxpr):
             
             # Apply post-processing to each result
             for bitstring, count in results.items():
-                cb_0 = bool(int(bitstring[0]))
-                cb_1 = bool(int(bitstring[1]))
-                processed = post_proc(cb_0, cb_1)
+                # Convert bitstring to JAX array of booleans
+                meas_array = jnp.array([bool(int(b)) for b in bitstring])
+                processed = post_proc(meas_array)
                 print(f"{bitstring} -> {processed}")
         
         Note that the static arguments (in this case `1`) must be the same as those

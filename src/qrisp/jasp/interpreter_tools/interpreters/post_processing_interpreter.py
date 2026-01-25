@@ -8,10 +8,15 @@ quantum backend.
 The key function is `extract_post_processing(jaspr, *args)` which:
 1. Takes the static argument values that were used for circuit extraction
 2. Analyzes the Jaspr to identify all measurement operations
-3. Removes quantum operations (measure, create_qubits, reset, etc.)
-4. Replaces measurement results with function arguments
-5. Binds static arguments as Literals in the Jaxpr
+3. Uses a custom equation evaluator to skip quantum operations
+4. Replaces measurement results with indexing into a JAX array
+5. Binds static arguments in the evaluation context
 6. Returns a callable that performs the classical post-processing
+
+The returned function accepts a single JAX array of boolean measurement results.
+
+Implementation uses the equation evaluator pattern (similar to qc_extraction_interpreter.py)
+to avoid manually building slice/squeeze equations.
 """
 
 def extract_post_processing(jaspr, *args):
@@ -19,10 +24,9 @@ def extract_post_processing(jaspr, *args):
     Extracts the post-processing logic from a Jaspr object and returns a function
     that performs the post-processing.
     
-    This function iterates through the Jaxpr equations, removes all measure primitives,
-    and replaces their outputs with new invars (boolean arguments). The static argument
-    values are bound directly into the post-processing function since they must be known
-    at circuit extraction time anyway.
+    Uses a custom equation evaluator that intercepts measurement operations and
+    replaces them with array indexing, while skipping quantum operations entirely.
+    This avoids the complexity of manually building slice/squeeze equations.
     
     Parameters
     ----------
@@ -37,8 +41,9 @@ def extract_post_processing(jaspr, *args):
     Returns
     -------
     callable
-        A function that takes n boolean arguments (measurement results) and returns 
-        the post-processed results.
+        A function that takes a JAX array of boolean measurement results and returns 
+        the post-processed results. The array should have shape (n,) where n is the 
+        number of measurements in the original Jaspr.
     
     Examples
     --------
@@ -47,6 +52,7 @@ def extract_post_processing(jaspr, *args):
     
         from qrisp import *
         from qrisp.jasp import make_jaspr
+        import jax.numpy as jnp
         
         @make_jaspr
         def main(i, j):
@@ -57,25 +63,24 @@ def extract_post_processing(jaspr, *args):
         # Extract post-processing with the same arguments used for circuit extraction
         post_proc_func = extract_post_processing(jaspr, 1, 2)
         
-        # Now post_proc_func(False, True) will return the same as
-        # the original function would have returned with measurements
-        # yielding False and True respectively
+        # Pass measurement results as a JAX array
+        result = post_proc_func(jnp.array([False, True]))
+        # Returns the same as the original function would have with those measurements
         
     """
-    from jax.extend.core import Var, Jaxpr, ClosedJaxpr, JaxprEqn, Literal
-    from qrisp.jasp import eval_jaxpr
+    from jax.extend.core import ClosedJaxpr
     from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive
+    from qrisp.jasp.interpreter_tools.abstract_interpreter import eval_jaxpr_with_context_dic, ContextDict
     
     # Get the inner jaxpr
-    if isinstance(jaspr, ClosedJaxpr):
-        inner_jaxpr = jaspr.jaxpr
-        consts = jaspr.consts
+    if isinstance(jaspr.jaxpr, ClosedJaxpr):
+        inner_jaxpr = jaspr.jaxpr.jaxpr
+        consts = jaspr.jaxpr.consts
     else:
-        inner_jaxpr = jaspr
+        inner_jaxpr = jaspr.jaxpr
         consts = []
     
-    # Create a context dictionary to bind the static argument values
-    # Map original invars (excluding QuantumCircuit) to their static values
+    # Create static value map (excluding QuantumCircuit)
     static_value_map = {}
     arg_index = 0
     for var in inner_jaxpr.invars:
@@ -84,104 +89,68 @@ def extract_post_processing(jaspr, *args):
                 static_value_map[var] = args[arg_index]
                 arg_index += 1
     
-    # We'll build a new jaxpr without measure primitives
-    # and with new invars for the measurement results
-    new_invars = []
-    new_eqns = []
+    # Track measurements for indexing
+    measurement_counter = [0]  # Use list so we can modify in closure
     
-    # Track measurement outputs and their corresponding new invars
-    measure_replacement_map = {}
-    measure_invars = []  # List of new boolean invars for measurements
-    
-    # First pass: identify all measure primitives and create new invars
-    for eqn in inner_jaxpr.eqns:
-        if eqn.primitive.name == "jasp.measure":
-            # Create new invar for this measurement result
-            # The first outvar is the measurement result (bool or int64)
-            meas_result_var = eqn.outvars[0]
-            new_invar = Var(aval=meas_result_var.aval)
-            measure_invars.append(new_invar)
-            measure_replacement_map[meas_result_var] = new_invar
-    
-    # Build new invars list: only measurement invars
-    # Original arguments are bound as static values
-    new_invars = list(measure_invars)
-    
-    # Second pass: rebuild equations, replacing measure primitives and updating var references
-    def replace_var(var):
-        """Replace a var with its mapped replacement if it exists."""
-        # Literals are not hashable, so we can't use them as dict keys
-        if isinstance(var, Literal):
-            return var
-        # Check if this var should be replaced by a measurement result
-        if var in measure_replacement_map:
-            return measure_replacement_map[var]
-        # Check if this var should be replaced by a static value (convert to Literal)
-        if var in static_value_map:
-            return Literal(static_value_map[var], var.aval)
-        return var
-    
-    for eqn in inner_jaxpr.eqns:
-        # Skip measure primitives
-        if eqn.primitive.name == "jasp.measure":
-            continue
+    # Custom equation evaluator
+    def create_post_processing_evaluator(measurement_array):
+        """Create an equation evaluator with closure over measurement_array."""
+        measurement_counter[0] = 0  # Reset counter
         
-        # Skip quantum circuit operations (create_qubits, reset, delete_qubits, gates, etc.)
-        # These are not needed for post-processing
-        if isinstance(eqn.primitive, QuantumPrimitive):
-            continue
+        def eval_eqn(eqn, context_dic):
+            # Replace measure with array indexing (check BEFORE QuantumPrimitive check)
+            if eqn.primitive.name == "jasp.measure":
+                result = measurement_array[measurement_counter[0]]
+                measurement_counter[0] += 1
+                
+                if eqn.outvars:
+                    context_dic[eqn.outvars[0]] = result
+                return False
+            
+            # Skip quantum primitives entirely
+            if isinstance(eqn.primitive, QuantumPrimitive):
+                return False
+            
+            # For other primitives, use default evaluation
+            return True
         
-        # For non-quantum primitives, update invars and outvars with replacements
-        new_eqn_invars = [replace_var(v) for v in eqn.invars]
-        new_eqn_outvars = list(eqn.outvars)
-        
-        new_eqn = JaxprEqn(
-            primitive=eqn.primitive,
-            invars=new_eqn_invars,
-            outvars=new_eqn_outvars,
-            params=dict(eqn.params),
-            source_info=eqn.source_info,
-            effects=eqn.effects,
-            ctx=eqn.ctx,
-        )
-        new_eqns.append(new_eqn)
+        return eval_eqn
     
-    # Build new outvars list (excluding QuantumCircuit)
-    new_outvars = []
-    for var in inner_jaxpr.outvars:
-        if not isinstance(var.aval, AbstractQuantumCircuit):
-            new_outvars.append(replace_var(var))
-    
-    # Create the new jaxpr
-    new_jaxpr = Jaxpr(
-        constvars=inner_jaxpr.constvars,
-        invars=new_invars,
-        outvars=new_outvars,
-        eqns=new_eqns,
-        effects=inner_jaxpr.effects,
-        debug_info=inner_jaxpr.debug_info,
-    )
-    
-    # Create a closed jaxpr
-    new_closed_jaxpr = ClosedJaxpr(new_jaxpr, consts)
-    
-    # Return a function that evaluates this jaxpr
-    def post_processing_func(*measurement_results):
+    # Return function that evaluates with custom evaluator
+    def post_processing_func(measurement_results):
         """
-        Post-processing function that takes measurement results as booleans.
+        Post-processing function that takes measurement results as a JAX array.
         
         Parameters
         ----------
-        *measurement_results : bool or int
-            The measurement results from the quantum circuit execution.
+        measurement_results : jax.Array
+            A 1D array of boolean measurement results from the quantum circuit execution.
+            Should have shape (n,) where n is the number of measurements.
         
         Returns
         -------
         tuple or single value
             The post-processed results.
         """
-        # Evaluate the new jaxpr with the measurement results
-        result = eval_jaxpr(new_closed_jaxpr)(*measurement_results)
-        return result
+        # Create evaluator with closure over measurement_results
+        eqn_evaluator = create_post_processing_evaluator(measurement_results)
+        
+        # Create initial context with static args (skip QuantumCircuit)
+        context_dic = ContextDict()
+        for var, val in static_value_map.items():
+            context_dic[var] = val
+        
+        # Evaluate using the original jaxpr with custom evaluator
+        eval_jaxpr_with_context_dic(inner_jaxpr, context_dic, eqn_evaluator)
+        
+        # Extract outputs (excluding QuantumCircuit)
+        outputs = []
+        for var in inner_jaxpr.outvars:
+            if not isinstance(var.aval, AbstractQuantumCircuit):
+                outputs.append(context_dic[var])
+        
+        if len(outputs) == 1:
+            return outputs[0]
+        return tuple(outputs)
     
     return post_processing_func
