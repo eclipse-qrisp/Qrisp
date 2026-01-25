@@ -88,7 +88,7 @@ def test_boolean_post_processing():
         qb_1 = QuantumBool()
         qb_2 = QuantumBool()
         
-        h(qb_1)
+        h(qb_1[0])
         
         meas_1 = measure(qb_1)
         meas_2 = measure(qb_2)
@@ -365,9 +365,9 @@ def test_quantum_gates_before_measurement():
         qb = QuantumBool()
         
         # Apply quantum gates
-        h(qb)
-        x(qb)
-        h(qb)
+        h(qb[0])
+        x(qb[0])
+        h(qb[0])
         
         # Measure
         meas = measure(qb)
