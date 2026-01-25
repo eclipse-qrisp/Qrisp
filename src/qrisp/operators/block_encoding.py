@@ -23,6 +23,7 @@ from qrisp.alg_primitives.switch_case import qswitch
 from qrisp.environments import conjugate, control, invert
 from qrisp.qtypes import QuantumFloat, QuantumBool
 from qrisp.core.gate_application_functions import z
+import warnings
 
 
 class BlockEncoding:
@@ -627,3 +628,44 @@ class BlockEncoding:
                 self.unitary(*args)
 
         return BlockEncoding(new_unitary, self.anc_templates, self.alpha, is_hermitian=self.is_hermitian)
+    
+    def qubitization(self) -> "BlockEncoding":
+        r"""
+        Returns the qubitization of the BlockEncoding.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding representing the qubitization of self.
+
+        Notes
+        -----
+        - Qubitization can only be applied to Hermitian BlockEncodings.
+
+        Examples
+        --------
+
+        Define a block-encoding and compute its qubitization.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import X, Y, Z
+
+            H = X(0)*Y(1) + 0.5*Z(0)*X(1)
+            BE = H.pauli_block_encoding()
+            BE_qubitized = BE.qubitization()
+
+        """
+        from qrisp.alg_primitives.reflection import reflection
+
+        if not self.is_hermitian:
+            warnings.warn("Qubitization can only be applied to Hermitian BlockEncodings")
+
+        m = len(self.anc_templates)
+
+        def new_unitary(*args):
+            self.unitary(*args)
+            reflection(args[:m])
+
+        return BlockEncoding(new_unitary, self.anc_templates, alpha=self.alpha, is_hermitian=self.is_hermitian)
