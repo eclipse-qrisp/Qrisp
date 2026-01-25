@@ -33,6 +33,7 @@ from qrisp.jasp import (
     extract_invalues,
     insert_outvalues
 )
+from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement
 from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive
 
 
@@ -427,63 +428,8 @@ class Jaspr(ClosedJaxpr):
         
 
         """
-        from qrisp import QuantumCircuit, Clbit
-
-        jaspr = self
-        
-        def eqn_evaluator(eqn, context_dic):
-            if eqn.primitive.name == "jit" and isinstance(
-                eqn.params["jaxpr"], Jaspr
-            ):
-                return pjit_to_gate(eqn, context_dic, eqn_evaluator)
-            elif eqn.primitive.name == "cond":
-                return cond_to_cl_control(eqn, context_dic, eqn_evaluator)
-            elif eqn.primitive.name == "convert_element_type":
-                if isinstance(context_dic[eqn.invars[0]], (ProcessedMeasurement, Clbit)):
-                    context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
-                    return
-                elif isinstance(context_dic[eqn.invars[0]], list) and isinstance(
-                    context_dic[eqn.invars[0]][0], (ProcessedMeasurement, Clbit)
-                ):
-                    context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
-                    return
-                return True
-            else:
-
-                invalues = extract_invalues(eqn, context_dic)
-                for val in invalues:
-                    if isinstance(val, list) and len(val):
-                        if isinstance(val[0], (ProcessedMeasurement, Clbit)):
-                            break
-                    elif isinstance(val, (ProcessedMeasurement, Clbit)):
-                        break
-                else:
-                    if isinstance(eqn.primitive, QuantumPrimitive):
-                        outvalues = eqn.primitive.impl(*invalues, **eqn.params)
-                        insert_outvalues(eqn, context_dic, outvalues)
-                        return
-                    else:
-                        return True
-                
-            if len(eqn.outvars) == 0:
-                return
-            elif len(eqn.outvars) == 1 and not eqn.primitive.multiple_results:
-                outvalues = ProcessedMeasurement()
-            elif len(eqn.outvars) >= 1:
-                outvalues = [ProcessedMeasurement() for _ in range(len(eqn.outvars))]
-            
-            insert_outvalues(eqn, context_dic, outvalues)
-
-        ammended_args = list(args) + [QuantumCircuit()]
-        
-        if len(ammended_args) != len(jaspr.invars):
-            raise Exception(
-                "Supplied invalid number of arguments to Jaspr.to_qc (please exclude any static arguments, in particular callables)"
-            )
-
-        res = eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator)(*(ammended_args))
-
-        return res
+        from qrisp.jasp.interpreter_tools.interpreters import jaspr_to_qc
+        return jaspr_to_qc(self, *args)
 
     def eval(self, *args, eqn_evaluator=lambda x, y: True):
         return eval_jaxpr(self, eqn_evaluator=eqn_evaluator)(*args)
@@ -1433,6 +1379,3 @@ def check_aval_equivalence(invars_1, invars_2):
     avals_1 = [invar.aval for invar in invars_1]
     avals_2 = [invar.aval for invar in invars_2]
     return all([type(avals_1[i]) == type(avals_2[i]) for i in range(len(avals_1))])
-
-class ProcessedMeasurement:
-    pass
