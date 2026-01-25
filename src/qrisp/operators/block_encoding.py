@@ -212,6 +212,89 @@ class BlockEncoding:
             A list of ancilla QuantumVariables used in the application.
             Must be measured to determine success of the block-encoding application.
 
+        Examples
+        --------
+
+        Define a block-encoding and apply it using RUS.
+
+        ::
+
+            import numpy as np
+            from qrisp import *
+            from qrisp.operators import X, Y, Z
+
+            H = X(0)*X(1) + 0.5*Z(0)*Z(1)
+            BE = H.pauli_block_encoding()
+
+            def operand_prep(phi):
+                qv = QuantumFloat(2)
+                ry(phi, qv[0])
+                return qv
+
+            @RUS
+            def apply_be(BE, phi):
+                qv = operand_prep(phi)
+
+                ancillas = BE.apply(qv)
+
+                bools = jnp.array([(measure(anc) == 0) for anc in ancillas])
+                success_bool = jnp.all(bools)
+
+                # garbage collection
+                [reset(anc) for anc in ancillas]
+                [anc.delete() for anc in ancillas]
+
+                return success_bool, qv
+
+            @terminal_sampling
+            def main(BE):
+                qv = apply_be(BE, np.pi / 4)
+                return qv
+
+            main(BE)
+            #{3: 0.6828427278345078, 0: 0.17071065215630213, 2: 0.11715730494804945, 1: 0.02928931506114055}
+
+        For convenience, the :meth:`apply_rus` method directly applies the block-encoding using RUS.    
+
+        Define a block-encoding and apply it using post-selection.
+
+        ::
+
+            import numpy as np
+            from qrisp import *
+            from qrisp.operators import X, Y, Z
+
+            H = X(0)*X(1) + 0.5*Z(0)*Z(1)
+            BE = H.pauli_block_encoding()
+
+            def operand_prep(phi):
+                qv = QuantumFloat(2)
+                ry(phi, qv[0])
+                return qv
+
+            def main(BE):
+                operand = operand_prep(np.pi / 4)
+                ancillas = BE.apply(operand)
+                return operand, ancillas
+
+            operand, ancillas = main(BE)
+            res_dict = multi_measurement([operand] + ancillas)
+
+            # Post-selection on ancillas being in |0> state
+            new_dict = dict()
+            success_prob = 0
+
+            for key, prob in res_dict.items():
+                if all(k == 0 for k in key[1:]):
+                    new_dict[key[0]] = prob
+                    success_prob += prob
+
+            for key in new_dict.keys():
+                new_dict[key] = new_dict[key] / success_prob
+
+            new_dict
+            #{3: 0.6828427278345078, 0: 0.17071065215630213, 2: 0.11715730494804945, 1: 0.02928931506114055}
+
         """
         ancillas = self.create_ancillas()
         self.unitary(*ancillas, *operands)
@@ -219,7 +302,7 @@ class BlockEncoding:
     
     def apply_rus(self, operand_prep):
         r"""
-        Applies the block-encoding unitary using Repeat-Until-Success (RUS) to the prepared operands.
+        Applies the block-encoding unitary to the prepared operands using Repeat-Until-Success (RUS).
 
         Parameters
         ----------
@@ -247,7 +330,7 @@ class BlockEncoding:
             BE = H.pauli_block_encoding()
 
             def operand_prep(phi):
-                qv = QuantumVariable(2)
+                qv = QuantumFloat(2)
                 ry(phi, qv[0])
                 return qv
 
@@ -257,6 +340,7 @@ class BlockEncoding:
                 return qv
 
             main(BE)
+            #{3: 0.6828427278345078, 0: 0.17071065215630213, 2: 0.11715730494804945, 1: 0.02928931506114055}
             
         """
         from qrisp.core.gate_application_functions import measure, reset
