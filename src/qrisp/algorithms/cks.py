@@ -440,36 +440,10 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     j_0, beta = CKS_parameters(A, eps, kappa, max_beta)
     cheb_coeffs = cheb_coefficients(j_0, beta)
 
-    def RU(cases, operand):
-        """
-        Applies one qubitization step :math:`RU` (or its inverse) associated
-        with the Chebyshev polynomial block-encoding of an operator :math:`A`.
-
-        This operation alternates between application of the block-encoding
-        unitary :math:`U` and a reflection about the block-encoding state
-        :math:`\ket{G}`, realizing
-
-        .. math::
-
-            T_k(A) = (RU)^k,
-
-        where :math:`R` reflects about the block-encoding state :math:`\ket{G}`,
-        and :math:`T_k(A)` is the Chebyshev polynomials of the first kind of degree :math:`k`.
-
-        Parameters
-        ----------
-        case : QuantumVariable
-            Auxiliary case variable encoding the block-encoding state :math:`\ket{G}`.
-        operand : QuantumVariable
-            Operand (solution) variable upon which the block-encoded matrix
-            :math:`A` acts. 
-
-        """
-        BE.unitary(*cases, operand)
-        reflection(cases, state_function=lambda x : None)  # reflection operator R about $\ket{0}$.
+    BE_qubitized = BE.qubitization()
 
     out_case = QuantumFloat(j_0 + 1)
-    in_case_list = BE.create_ancillas()
+    in_case_list = BE_qubitized.create_ancillas()
 
     if callable(b):
         operand = b()
@@ -480,12 +454,12 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     # Core LCU protocol: PREP, SELECT, PREP^†
     with conjugate(unary_prep)(out_case, cheb_coeffs):
         with control(out_case[0]):
-            RU(in_case_list, operand)
+            BE_qubitized.unitary(*in_case_list, operand)
         for i in jrange(1, j_0 + 1):
             z(out_case[i])
             with control(out_case[i]):
-                RU(in_case_list, operand)
-                RU(in_case_list, operand)
+                BE_qubitized.unitary(*in_case_list, operand)
+                BE_qubitized.unitary(*in_case_list, operand)
 
     return operand, in_case_list[0], out_case
 
