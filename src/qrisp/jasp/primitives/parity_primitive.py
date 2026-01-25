@@ -44,6 +44,7 @@ def parity(*measurements, expectation = None):
     
     In mathematical terms, if given the inputs $\{x_i \in \mathbb{F}_2\| 0 \leq i < n \}$
     the output of this function is therefore
+    
     .. math::
         
         p = \bigoplus_{i=0}^{n-1} x_i
