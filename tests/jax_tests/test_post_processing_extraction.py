@@ -426,3 +426,88 @@ def test_get_size_in_post_processing():
     result, size = post_proc(jnp.array([True]))
     assert result == 6  # 1 + 5
     assert size == 5
+
+
+def test_slice_in_post_processing():
+    """
+    Test that QubitArray slicing works correctly in post-processing.
+    """
+    @make_jaspr
+    def slice_function():
+        qv = QuantumFloat(10)
+        
+        # Slice the quantum variable
+        sliced = qv[2:7]  # Size should be 7 - 2 = 5
+        size = sliced.size
+        
+        # Measure a qubit
+        meas = measure(qv[0])
+        
+        # Use size in post-processing
+        from jax.lax import convert_element_type
+        meas_int = convert_element_type(meas, int)
+        result = meas_int * size
+        
+        return result, size
+    
+    jaspr = slice_function()
+    
+    # Extract post-processing
+    post_proc = jaspr.extract_post_processing()
+    
+    # Test with measurement results
+    result, size = post_proc(jnp.array([False]))
+    assert result == 0  # 0 * 5
+    assert size == 5
+    
+    result, size = post_proc(jnp.array([True]))
+    assert result == 5  # 1 * 5
+    assert size == 5
+
+
+def test_fuse_in_post_processing():
+    """
+    Test that QubitArray fusing works correctly in post-processing.
+    """
+    @make_jaspr
+    def fuse_function():
+        qv1 = QuantumFloat(3)
+        qv2 = QuantumFloat(4)
+        
+        # Fuse the quantum variables
+        fused = qv1[:] + qv2[:]  # Size should be 3 + 4 = 7
+        size = fused.size
+        
+        # Measure qubits
+        meas1 = measure(qv1[0])
+        meas2 = measure(qv2[0])
+        
+        # Use size in post-processing
+        from jax.lax import convert_element_type
+        meas1_int = convert_element_type(meas1, int)
+        meas2_int = convert_element_type(meas2, int)
+        result = (meas1_int + meas2_int) * size
+        
+        return result, size
+    
+    jaspr = fuse_function()
+    
+    # Extract post-processing
+    post_proc = jaspr.extract_post_processing()
+    
+    # Test with measurement results
+    result, size = post_proc(jnp.array([False, False]))
+    assert result == 0  # (0 + 0) * 7
+    assert size == 7
+    
+    result, size = post_proc(jnp.array([True, False]))
+    assert result == 7  # (1 + 0) * 7
+    assert size == 7
+    
+    result, size = post_proc(jnp.array([False, True]))
+    assert result == 7  # (0 + 1) * 7
+    assert size == 7
+    
+    result, size = post_proc(jnp.array([True, True]))
+    assert result == 14  # (1 + 1) * 7
+    assert size == 7

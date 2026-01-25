@@ -123,6 +123,27 @@ def extract_post_processing(jaspr, *args):
                 context_dic[eqn.outvars[0]] = size
                 return False
             
+            # Handle slice: compute new size as (stop - start)
+            if eqn.primitive.name == "jasp.slice":
+                # invars[0] is the QubitArray (size), invars[1] is start, invars[2] is stop
+                array_size = context_dic[eqn.invars[0]]
+                start = context_dic[eqn.invars[1]]
+                stop = context_dic[eqn.invars[2]]
+                # New size is the difference
+                new_size = stop - start
+                context_dic[eqn.outvars[0]] = new_size
+                return False
+            
+            # Handle fuse: add the two sizes
+            if eqn.primitive.name == "jasp.fuse":
+                # invars[0] and invars[1] are the two arrays (represented by sizes)
+                size1 = context_dic[eqn.invars[0]]
+                size2 = context_dic[eqn.invars[1]]
+                # Combined size is the sum
+                combined_size = size1 + size2
+                context_dic[eqn.outvars[0]] = combined_size
+                return False
+            
             # Skip other quantum primitives entirely
             if isinstance(eqn.primitive, QuantumPrimitive):
                 return False
