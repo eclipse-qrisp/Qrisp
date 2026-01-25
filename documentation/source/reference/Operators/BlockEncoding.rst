@@ -12,9 +12,10 @@ Methods
 .. autosummary::
    :toctree: generated/
    
-   BlockEncoding.create_ancillas
    BlockEncoding.apply
    BlockEncoding.apply_rus
+   BlockEncoding.create_ancillas
+   BlockEncoding.dagger
 
 Arithmetic
 ==========

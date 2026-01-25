@@ -20,7 +20,7 @@ import numpy as np
 import jax.numpy as jnp
 from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.alg_primitives.switch_case import qswitch
-from qrisp.environments import conjugate, control
+from qrisp.environments import conjugate, control, invert
 from qrisp.qtypes import QuantumFloat, QuantumBool
 from qrisp.core.gate_application_functions import z
 
@@ -439,7 +439,7 @@ class BlockEncoding:
 
         new_anc_templates = [QuantumBool().template()] + self.anc_templates + other.anc_templates
         new_alpha = alpha + beta
-        return BlockEncoding(new_unitary, new_anc_templates, new_alpha)
+        return BlockEncoding(new_unitary, new_anc_templates, new_alpha, is_hermitian=self.is_hermitian and other.is_hermitian)
 
     def __sub__(self, other: "BlockEncoding") -> "BlockEncoding":
         r"""
@@ -517,7 +517,7 @@ class BlockEncoding:
 
         new_anc_templates = [QuantumBool().template()] + self.anc_templates + other.anc_templates
         new_alpha = alpha + beta
-        return BlockEncoding(new_unitary, new_anc_templates, new_alpha)
+        return BlockEncoding(new_unitary, new_anc_templates, new_alpha, is_hermitian=self.is_hermitian and other.is_hermitian)
 
     def __mul__(self, other: "BlockEncoding") -> "BlockEncoding":
         r"""
@@ -596,3 +596,34 @@ class BlockEncoding:
 
     __radd__ = __add__
     __rmul__ = __mul__
+
+    def dagger(self) -> "BlockEncoding":
+        r"""
+        Returns the Hermitian adjoint (dagger) of the BlockEncoding.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding representing the Hermitian adjoint of self.
+
+        Examples
+        --------
+
+        Define a block-encoding and compute its dagger.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import X, Y, Z
+
+            H = X(0)*Y(1) + 0.5*Z(0)*X(1)
+            BE = H.pauli_block_encoding()
+            BE_dg = BE.dagger()
+
+        """
+
+        def new_unitary(*args):
+            with invert():
+                self.unitary(*args)
+
+        return BlockEncoding(new_unitary, self.anc_templates, self.alpha, is_hermitian=self.is_hermitian)
