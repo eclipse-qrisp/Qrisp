@@ -179,7 +179,7 @@ class BlockEncoding:
         self.unitary = unitary
         self.anc_templates = anc_templates
         self.alpha = alpha
-        self.is_hemitian = is_hermitian
+        self.is_hermitian = is_hermitian
 
 
     def create_ancillas(self):
