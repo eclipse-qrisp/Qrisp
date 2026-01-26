@@ -238,7 +238,6 @@ def extract_post_processing(jaspr, *args, array_input=False):
             # We use LRU caching to ensure identical jaxprs use the same function instance,
             # which allows JAX to compile them only once during tracing.
             if eqn.primitive.name in ("jit", "pjit"):
-                from qrisp.jasp import check_for_tracing_mode
                 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
                     extract_invalues,
                     insert_outvalues,
@@ -263,6 +262,75 @@ def extract_post_processing(jaspr, *args, array_input=False):
                     outvals = (outvals,)
                 
                 insert_outvalues(eqn, context_dic, outvals)
+                return False
+
+            # Handle while loops
+            if eqn.primitive.name == "while":
+                from qrisp.jasp.interpreter_tools.abstract_interpreter import (
+                    extract_invalues,
+                    insert_outvalues,
+                    eval_jaxpr,
+                )
+                import jax.lax
+
+                invalues = extract_invalues(eqn, context_dic)
+                
+                overall_constant_amount = eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
+                
+                # Reinterpreted body and cond function
+                def body_fun(val):
+                    constants = val[eqn.params["cond_nconsts"]:overall_constant_amount]
+                    carries = val[overall_constant_amount:]
+                    
+                    body_res = eval_jaxpr(
+                        eqn.params["body_jaxpr"], eqn_evaluator=eval_eqn
+                    )(*(constants + carries))
+                    
+                    if not isinstance(body_res, tuple):
+                        body_res = (body_res,)
+                    
+                    return val[:overall_constant_amount] + tuple(body_res)
+
+                def cond_fun(val):
+                    constants = val[:eqn.params["cond_nconsts"]]
+                    carries = val[overall_constant_amount:]
+                    
+                    res = eval_jaxpr(
+                        eqn.params["cond_jaxpr"], eqn_evaluator=eval_eqn
+                    )(*(constants + carries))
+                    
+                    return res
+
+                outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[overall_constant_amount:]
+                
+                insert_outvalues(eqn, context_dic, outvalues)
+                return False
+
+            # Handle conditional (cond/switch)
+            if eqn.primitive.name == "cond":
+                from qrisp.jasp.interpreter_tools.abstract_interpreter import (
+                    extract_invalues,
+                    insert_outvalues,
+                )
+                import jax.lax
+
+                invalues = extract_invalues(eqn, context_dic)
+                
+                # Reinterpret branches
+                branch_list = []
+                for i in range(len(eqn.params["branches"])):
+                    branch_list.append(
+                        eval_jaxpr(
+                            eqn.params["branches"][i], eqn_evaluator=eval_eqn
+                        )
+                    )
+
+                outvalues = jax.lax.switch(invalues[0], branch_list, *invalues[1:])
+
+                if len(eqn.outvars) == 1:
+                    outvalues = (outvalues,)
+
+                insert_outvalues(eqn, context_dic, outvalues)
                 return False
 
             # For other primitives, use default evaluation

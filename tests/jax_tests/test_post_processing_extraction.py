@@ -810,3 +810,115 @@ def test_jit_post_processor_with_mixed_subroutines():
     result = jitted_post_proc(test_input)
     expected = 2.5
     assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
+
+
+def test_cond_primitive():
+    """
+    Test that the cond (conditional) primitive works with post-processing.
+    """
+    import jax
+    
+    @make_jaspr
+    def test_with_cond():
+        qv = QuantumFloat(2)
+        h(qv[0])
+        
+        # Measure to get a boolean
+        meas = measure(qv[0])
+        
+        # Use conditional based on measurement
+        from jax.lax import cond
+        
+        def true_branch(x):
+            return x + 10
+        
+        def false_branch(x):
+            return x + 20
+        
+        result = cond(meas, true_branch, false_branch, 5)
+        
+        return result
+    
+    jaspr = test_with_cond()
+    
+    # Extract post-processing
+    post_proc = jaspr.extract_post_processing(array_input=True)
+    
+    # Test with meas=False -> false_branch(5) = 25
+    result = post_proc(jnp.array([False, False]))
+    assert result == 25, f"Expected 25, got {result}"
+    
+    # Test with meas=True -> true_branch(5) = 15
+    result = post_proc(jnp.array([True, False]))
+    assert result == 15, f"Expected 15, got {result}"
+    
+    # Test that it can be jitted
+    jitted_post_proc = jax.jit(post_proc)
+    result = jitted_post_proc(jnp.array([False, False]))
+    assert result == 25, f"Jitted: Expected 25, got {result}"
+    
+    result = jitted_post_proc(jnp.array([True, False]))
+    assert result == 15, f"Jitted: Expected 15, got {result}"
+
+
+def test_while_primitive():
+    """
+    Test that the while loop primitive works with post-processing.
+    """
+    import jax
+    
+    @make_jaspr
+    def test_with_while():
+        qv = QuantumFloat(3)
+        h(qv[0])
+        h(qv[1])
+        
+        # Measure two qubits
+        meas1 = measure(qv[0])
+        meas2 = measure(qv[1])
+        
+        # Convert to int
+        from jax.lax import convert_element_type, while_loop
+        m1 = convert_element_type(meas1, int)
+        m2 = convert_element_type(meas2, int)
+        
+        # Count how many bits are set using while loop
+        def cond_fun(carry):
+            counter, remaining = carry
+            return remaining > 0
+        
+        def body_fun(carry):
+            counter, remaining = carry
+            return (counter + 1, remaining - 1)
+        
+        # Start with sum of measurements
+        initial = (0, m1 + m2)
+        final_counter, _ = while_loop(cond_fun, body_fun, initial)
+        
+        return final_counter
+    
+    jaspr = test_with_while()
+    
+    # Extract post-processing
+    post_proc = jaspr.extract_post_processing(array_input=True)
+    
+    # Test with both False -> 0 + 0 = 0, loop runs 0 times, counter=0
+    result = post_proc(jnp.array([False, False, False]))
+    assert result == 0, f"Expected 0, got {result}"
+    
+    # Test with one True -> 1 + 0 = 1, loop runs 1 time, counter=1
+    result = post_proc(jnp.array([True, False, False]))
+    assert result == 1, f"Expected 1, got {result}"
+    
+    # Test with other True -> 0 + 1 = 1, loop runs 1 time, counter=1
+    result = post_proc(jnp.array([False, True, False]))
+    assert result == 1, f"Expected 1, got {result}"
+    
+    # Test with both True -> 1 + 1 = 2, loop runs 2 times, counter=2
+    result = post_proc(jnp.array([True, True, False]))
+    assert result == 2, f"Expected 2, got {result}"
+    
+    # Test that it can be jitted
+    jitted_post_proc = jax.jit(post_proc)
+    result = jitted_post_proc(jnp.array([True, True, False]))
+    assert result == 2, f"Jitted: Expected 2, got {result}"
