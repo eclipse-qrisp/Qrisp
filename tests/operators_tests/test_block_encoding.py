@@ -149,3 +149,49 @@ def test_block_encoding_multiplication(H1, H2):
         val_be3 = res_be3.get(k, 0)
         val_be_mul = res_be_mul.get(k, 0)
         assert np.isclose(val_be3, val_be_mul), f"Mismatch at state |{k}>: {val_be3} vs {val_be_mul}"
+
+
+@pytest.mark.parametrize("H1, H2, scalar", [
+    (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2), 2),
+    (0.5*X(1) + 0.7*Y(1), Z(0) + X(2), 0.5),
+    (X(0), Z(0), 1),
+])
+def test_block_encoding_scalar_multiplication(H1, H2, scalar):
+    H_target = scalar * H1 + H2
+    BE_target = H_target.pauli_block_encoding()
+
+    BE1 = H1.pauli_block_encoding()
+    BE2 = H2.pauli_block_encoding()
+
+    BE_left = scalar * BE1 + BE2
+    BE_right = BE1 * scalar + BE2
+
+    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
+
+    @RUS
+    def main(BE):
+        qv = QuantumVariable(n)
+        ancillas = BE.apply(qv)
+        success_bool = jnp.all(jnp.array([(measure(anc) == 0) for anc in ancillas]))
+        
+        for anc in ancillas:
+            reset(anc)
+            anc.delete()
+            
+        return success_bool, qv
+
+    @terminal_sampling
+    def run_main(BE):
+        return main(BE)
+
+    res_target = run_main(BE_target)
+    res_left = run_main(BE_left)
+    res_right = run_main(BE_right)
+
+    for k in range(2 ** n):
+        val_target = res_target.get(k, 0)
+        val_left = res_left.get(k, 0)
+        val_right = res_right.get(k, 0)
+        
+        assert np.isclose(val_target, val_left), f"Left-mul mismatch at |{k}>"
+        assert np.isclose(val_target, val_right), f"Right-mul mismatch at |{k}>"
