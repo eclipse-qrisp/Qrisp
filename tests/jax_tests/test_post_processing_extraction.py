@@ -612,3 +612,201 @@ def test_array_input_jittable():
     test_input2 = jnp.array([True, False])
     result2 = jitted_post_proc(test_input2)
     assert result2 == 1  # 1 + 2*0 = 1
+
+
+def test_jit_post_processor_with_jitted_subroutines():
+    """
+    Test that jitting a post-processor works when it contains jitted subroutines.
+    This is important because QuantumFloat decoders use jax.jit internally for
+    non-trivial exponents.
+    """
+    import jax
+    
+    @make_jaspr
+    def test_with_jitted_decoder():
+        # QuantumFloat with exponent=-1 uses a jitted decoder internally
+        qf = QuantumFloat(3, exponent=-1)
+        h(qf[0])
+        h(qf[1])
+        
+        result = measure(qf)
+        return result
+    
+    jaspr = test_with_jitted_decoder()
+    
+    # Extract post-processing with array input (required for jitting)
+    post_proc = jaspr.extract_post_processing(array_input=True)
+    
+    # Jit the post-processing function
+    jitted_post_proc = jax.jit(post_proc)
+    
+    # Test various measurement results
+    # Note: bit order is bit[0]=MSB, bit[1]=middle, bit[2]=LSB
+    # value = (4*bit[0] + 2*bit[1] + bit[2]) * 0.5
+    
+    # "000" -> 0 * 0.5 = 0.0
+    test_input = jnp.array([False, False, False])
+    result = jitted_post_proc(test_input)
+    expected = 0.0
+    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
+    
+    # "100" -> 4 * 0.5 = 2.0
+    test_input = jnp.array([True, False, False])
+    result = jitted_post_proc(test_input)
+    expected = 2.0
+    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
+    
+    # "010" -> 2 * 0.5 = 1.0
+    test_input = jnp.array([False, True, False])
+    result = jitted_post_proc(test_input)
+    expected = 1.0
+    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
+    
+    # "001" -> 1 * 0.5 = 0.5
+    test_input = jnp.array([False, False, True])
+    result = jitted_post_proc(test_input)
+    expected = 0.5
+    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
+    
+    # "111" -> 7 * 0.5 = 3.5
+    test_input = jnp.array([True, True, True])
+    result = jitted_post_proc(test_input)
+    expected = 3.5
+    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
+
+
+def test_jit_post_processor_with_qached_subroutines():
+    """
+    Test that jitting a post-processor works when it contains qached subroutines.
+    Qached functions are the quantum equivalent of jit - they cache quantum circuits
+    and are called with pjit in the Jaspr.
+    """
+    import jax
+    from qrisp.jasp import qache
+    
+    # Create a qached subroutine
+    @qache
+    def qached_operation(qv):
+        h(qv[0])
+        cx(qv[0], qv[1])
+        result = measure(qv[0])
+        return result
+    
+    @make_jaspr
+    def test_with_qached():
+        qv1 = QuantumVariable(2)
+        qv2 = QuantumVariable(2)
+        
+        # Call qached function multiple times
+        res1 = qached_operation(qv1)
+        res2 = qached_operation(qv2)
+        
+        # Combine results
+        from jax.lax import convert_element_type
+        r1_int = convert_element_type(res1, int)
+        r2_int = convert_element_type(res2, int)
+        
+        return r1_int + 2*r2_int
+    
+    jaspr = test_with_qached()
+    
+    # Extract post-processing with array input (required for jitting)
+    post_proc = jaspr.extract_post_processing(array_input=True)
+    
+    # Jit the post-processing function
+    jitted_post_proc = jax.jit(post_proc)
+    
+    # Test various combinations
+    # Both measurements False -> 0 + 2*0 = 0
+    test_input = jnp.array([False, False])
+    result = jitted_post_proc(test_input)
+    assert result == 0, f"Expected 0, got {result}"
+    
+    # First True, second False -> 1 + 2*0 = 1
+    test_input = jnp.array([True, False])
+    result = jitted_post_proc(test_input)
+    assert result == 1, f"Expected 1, got {result}"
+    
+    # First False, second True -> 0 + 2*1 = 2
+    test_input = jnp.array([False, True])
+    result = jitted_post_proc(test_input)
+    assert result == 2, f"Expected 2, got {result}"
+    
+    # Both True -> 1 + 2*1 = 3
+    test_input = jnp.array([True, True])
+    result = jitted_post_proc(test_input)
+    assert result == 3, f"Expected 3, got {result}"
+
+
+def test_jit_post_processor_with_mixed_subroutines():
+    """
+    Test jitting a post-processor with both jitted (QuantumFloat decoder) and
+    qached subroutines. This is the most comprehensive test case.
+    """
+    import jax
+    from qrisp.jasp import qache
+    
+    # Create a qached subroutine
+    @qache
+    def prepare_state(qv):
+        h(qv[0])
+        return measure(qv[0])
+    
+    @make_jaspr
+    def test_mixed():
+        # Use qached function
+        qv = QuantumVariable(2)
+        bit_result = prepare_state(qv)
+        
+        # Use QuantumFloat with non-trivial exponent (uses jitted decoder)
+        qf = QuantumFloat(2, exponent=-1)
+        h(qf[0])
+        float_result = measure(qf)
+        
+        # Combine both results
+        from jax.lax import convert_element_type
+        bit_int = convert_element_type(bit_result, int)
+        
+        return bit_int + float_result
+    
+    jaspr = test_mixed()
+    
+    # Extract post-processing with array input
+    post_proc = jaspr.extract_post_processing(array_input=True)
+    
+    # Jit the post-processing function
+    jitted_post_proc = jax.jit(post_proc)
+    
+    # Test various combinations
+    # Note: For QuantumFloat(2, exponent=-1), bit order is MSB, LSB
+    # qf_value = (2*bit[qf_msb] + bit[qf_lsb]) * 0.5
+    
+    # bit=False (0), qf="00" (0.0) -> 0 + 0.0 = 0.0
+    test_input = jnp.array([False, False, False])
+    result = jitted_post_proc(test_input)
+    expected = 0.0
+    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
+    
+    # bit=True (1), qf="00" (0.0) -> 1 + 0.0 = 1.0
+    test_input = jnp.array([True, False, False])
+    result = jitted_post_proc(test_input)
+    expected = 1.0
+    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
+    
+    # bit=False (0), qf="10" (2*0.5=1.0) -> 0 + 1.0 = 1.0
+    test_input = jnp.array([False, True, False])
+    result = jitted_post_proc(test_input)
+    expected = 1.0
+    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
+    
+    # bit=False (0), qf="01" (1*0.5=0.5) -> 0 + 0.5 = 0.5
+    test_input = jnp.array([False, False, True])
+    result = jitted_post_proc(test_input)
+    expected = 0.5
+    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
+    
+    # bit=True (1), qf="11" ((2+1)*0.5=1.5) -> 1 + 1.5 = 2.5
+    test_input = jnp.array([True, True, True])
+    result = jitted_post_proc(test_input)
+    expected = 2.5
+    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"

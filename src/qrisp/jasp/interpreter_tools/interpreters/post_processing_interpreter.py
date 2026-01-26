@@ -19,6 +19,40 @@ Implementation uses the equation evaluator pattern (similar to qc_extraction_int
 to avoid manually building slice/squeeze equations.
 """
 
+from functools import lru_cache
+
+
+@lru_cache(maxsize=int(1e5))
+def get_post_processing_evaluator(jaxpr):
+    """
+    Get a cached evaluator for a jaxpr.
+    
+    This function is LRU cached so that identical jaxprs return the same
+    function instance. This is crucial for compilation efficiency: when the
+    post-processing function is traced (e.g., for jax.jit), JAX will see the
+    same function object for identical nested jaxprs and compile them only once.
+    
+    Parameters
+    ----------
+    jaxpr : jax.core.Jaxpr
+        The jaxpr to create an evaluator for.
+    
+    Returns
+    -------
+    callable
+        A function that evaluates the jaxpr using the post-processing evaluator.
+    """
+    from qrisp.jasp.interpreter_tools.abstract_interpreter import eval_jaxpr
+    
+    # We return a function that will use the post-processing evaluator
+    # The evaluator itself is created inside extract_post_processing
+    # This function will be called with the evaluator at runtime
+    def cached_evaluator(eval_eqn):
+        return eval_jaxpr(jaxpr, eqn_evaluator=eval_eqn)
+    
+    return cached_evaluator
+
+
 def extract_post_processing(jaspr, *args, array_input=False):
     """
     Extracts the post-processing logic from a Jaspr object and returns a function
@@ -199,13 +233,13 @@ def extract_post_processing(jaspr, *args, array_input=False):
                     context_dic[eqn.outvars[-1]] = context_dic[eqn.invars[-1]]
                 return False
 
-            # Intercept JAX control-flow / compilation primitives that would otherwise
-            # trigger compilation (pjit/jit). Evaluate their contained jaxprs eagerly
-            # using our same evaluator to avoid XLA compilation during post-processing.
+            # Intercept JAX control-flow / compilation primitives.
+            # During tracing mode, we want to preserve jit calls (they get compiled later).
+            # We use LRU caching to ensure identical jaxprs use the same function instance,
+            # which allows JAX to compile them only once during tracing.
             if eqn.primitive.name in ("jit", "pjit"):
-                # Evaluate the nested jaxpr eagerly
+                from qrisp.jasp import check_for_tracing_mode
                 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
-                    eval_jaxpr,
                     extract_invalues,
                     insert_outvalues,
                 )
@@ -215,8 +249,13 @@ def extract_post_processing(jaspr, *args, array_input=False):
                     return False
 
                 invalues = extract_invalues(eqn, context_dic)
-                # eval_jaxpr returns a python-callable that uses our eval path
-                outvals = eval_jaxpr(jaxpr, eqn_evaluator=eval_eqn)(*invalues)
+                
+                # Get the cached evaluator for this jaxpr
+                # For identical jaxprs, this returns the same function instance
+                cached_eval_func = get_post_processing_evaluator(jaxpr.jaxpr)
+                
+                # Call it with the current evaluator
+                outvals = cached_eval_func(eval_eqn)(*invalues)
                 
                 # eval_jaxpr returns a single value if there's one output, tuple otherwise
                 # But insert_outvalues expects a tuple if eqn.primitive.multiple_results is True
