@@ -26,7 +26,6 @@ from jax.random import key
 
 from qrisp.jasp.interpreter_tools import (
     BaseMetric,
-    ContextDict,
     eval_jaxpr,
     make_profiling_eqn_evaluator,
 )
@@ -75,7 +74,7 @@ class CountOpsMetric(BaseMetric):
         """Return the initial metric value."""
         return self._initial_metric
 
-    def handle_measure(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_measure(self, invalues, eqn, context_dic):
         """Handle the `jasp.measure` primitive."""
 
         counting_index = self.profiling_dic["measure"]
@@ -109,28 +108,28 @@ class CountOpsMetric(BaseMetric):
     # We represent qubit arrays simply with integers (indicating their)
     # size.
 
-    def handle_create_qubits(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_create_qubits(self, invalues, eqn, context_dic):
         """Handle the `jasp.create_qubits` primitive."""
         # Since we represent QubitArrays via integers, it is sufficient
         # to simply return the input as the output for this primitive.
         return invalues
 
-    def handle_get_qubit(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_get_qubit(self, invalues, eqn, context_dic):
         """Handle the `jasp.get_qubit` primitive."""
         # Trivial behavior since we don't need qubit address information
         return None
 
-    def handle_get_size(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_get_size(self, invalues, eqn, context_dic):
         """Handle the `jasp.get_size` primitive."""
         # The QubitArray size is represented via an integer.
         return invalues[0]
 
-    def handle_fuse(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_fuse(self, invalues, eqn, context_dic):
         """Handle the `jasp.fuse` primitive."""
         # The size of the fused qubit array is the size of the two added.
         return invalues[0] + invalues[1]
 
-    def handle_slice(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_slice(self, invalues, eqn, context_dic):
         """Handle the `jasp.slice` primitive."""
         # For the slice operation, we need to make sure, we don't go out
         # of bounds.
@@ -138,7 +137,7 @@ class CountOpsMetric(BaseMetric):
         stop = jnp.min(jnp.array([invalues[2], invalues[0]]))
         return stop - start
 
-    def handle_quantum_gate(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_quantum_gate(self, invalues, eqn, context_dic):
         """Handle the `jasp.quantum_gate` primitive."""
 
         # In the case of a quantum gate, we determine the array index
@@ -179,12 +178,12 @@ class CountOpsMetric(BaseMetric):
 
         return (counting_array, incrementation_constants)
 
-    def handle_delete_qubits(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_delete_qubits(self, invalues, eqn, context_dic):
         """Handle the `jasp.delete_qubits` primitive."""
         # Trivial behavior: return the last argument (the counting array).
         return invalues[-1]
 
-    def handle_reset(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_reset(self, invalues, eqn, context_dic):
         """Handle the `jasp.reset` primitive."""
         # Trivial behavior: return the last argument (the counting array).
         return invalues[-1]

@@ -35,10 +35,11 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, List
 
 import jax
 import numpy as np
+from jax._src.core import JaxprEqn
 
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     ContextDict,
@@ -94,55 +95,61 @@ class BaseMetric(ABC):
     # create_qubits has the signature (size, QuantumCircuit)
     # Outvars are (QubitArray, QuantumCircuit)
     @abstractmethod
-    def handle_create_qubits(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_create_qubits(
+        self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict
+    ):
         """Handle the `jasp.create_qubits` primitive."""
 
     # get_qubit has the signature (QubitArray, index (int))
     # Outvars are (Qubit)
     @abstractmethod
-    def handle_get_qubit(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_get_qubit(self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict):
         """Handle the `jasp.get_qubit` primitive."""
 
     # get_size has the signature (QubitArray)
     # Outvars are (size)
     @abstractmethod
-    def handle_get_size(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_get_size(self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict):
         """Handle the `jasp.get_size` primitive."""
 
     # fuse has the signature (QubitArray, QubitArray)
     # Outvars are (QubitArray)
     @abstractmethod
-    def handle_fuse(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_fuse(self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict):
         """Handle the `jasp.fuse` primitive."""
 
     # slice has the signature (QubitArray, start (int), stop (int))
     # Outvars are (QubitArray)
     @abstractmethod
-    def handle_slice(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_slice(self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict):
         """Handle the `jasp.slice` primitive."""
 
     # quantum_gate has the signature (Qubit, ... , QuantumCircuit)
     # Outvars is (QuantumCircuit)
     @abstractmethod
-    def handle_quantum_gate(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_quantum_gate(
+        self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict
+    ):
         """Handle the `jasp.quantum_gate` primitive."""
 
     # measure has the signature (Qubit | QubitArray, QuantumCircuit)
     # Outvars are (meas_result, QuantumCircuit)
     @abstractmethod
-    def handle_measure(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_measure(self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict):
         """Handle the `jasp.measure` primitive."""
 
     # reset has the signature (QubitArray, QuantumCircuit)
     # Outvars are (QuantumCircuit)
     @abstractmethod
-    def handle_reset(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_reset(self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict):
         """Handle the `jasp.reset` primitive."""
 
     # delete_qubits has the signature (QubitArray, QuantumCircuit)
     # Outvars are (QuantumCircuit)
     @abstractmethod
-    def handle_delete_qubits(self, *, invalues, eqn, context_dic: ContextDict):
+    def handle_delete_qubits(
+        self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict
+    ):
         """Handle the `jasp.delete_qubits` primitive."""
 
     def handle_create_quantum_kernel(self, *_args, **_kwargs):
@@ -209,7 +216,7 @@ def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
     """
 
     # We cache once per call and use closure + O(1) lookup to handle primitives.
-    handlers = dict(metric.get_handlers())
+    prim_handlers = dict(metric.get_handlers())
 
     # In this interpreter, context_dic is an environment mapping:
     # - keys: JAXPR variables (eqn.outvars[i], i.e. SSA names)
@@ -221,7 +228,7 @@ def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
 
         if isinstance(prim, QuantumPrimitive):
 
-            prim_handler = handlers.get(prim.name, None)
+            prim_handler = prim_handlers.get(prim.name, None)
 
             if prim_handler is None:
                 raise NotImplementedError(

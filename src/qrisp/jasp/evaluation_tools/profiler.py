@@ -292,7 +292,6 @@ def depth(meas_behavior):
     depth decorator
         A decorator, producing a function to computed the depth required.
 
-    TODO: Examples
     """
 
     def depth_decorator(function):

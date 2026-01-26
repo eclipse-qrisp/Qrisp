@@ -27,7 +27,75 @@ from qrisp.jasp.interpreter_tools.interpreters.utilities import (
 )
 
 
-class TestDepthQuantumPrimitiveSingleQubit:
+class TestDepthFuse:
+    """Test that the depth is correctly computed when fusing quantum registers."""
+
+    def test_fuse_multi_qubit_1(self):
+        """Test depth computation with fusing on multi-qubit operations."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[1])
+            h(qf1[1])
+            new_qv = qf1[:] + qf2[:]
+            h(new_qv[0])
+            cx(new_qv[1], new_qv[2])
+            h(new_qv[3])
+
+        assert main(2, 2) == 3
+
+    def test_fuse_multi_qubit_2(self):
+        """Test depth computation with fusing on multi-qubit operations."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[0])
+            h(qf1[1])
+            new_qv = qf1[:] + qf2[:]
+            h(new_qv[0])
+            cx(new_qv[1], new_qv[2])
+            h(new_qv[3])
+
+        assert main(2, 2) == 2
+
+    def test_fuse_multi_qubit_3(self):
+        """Test depth computation with fusing on multi-qubit operations."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[0])
+            h(qf1[0])
+            new_qv = qf1[:] + qf2[:]
+            h(new_qv[0])
+            cx(new_qv[2], new_qv[0])
+            h(new_qv[0])
+
+        assert main(2, 2) == 5
+
+    def test_fuse_multi_qubit_4(self):
+        """Test depth computation with fusing on multi-qubit operations."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[1])
+            h(qf2[1])
+            new_qv = qf1[:] + qf2[:]
+            h(new_qv[0])
+            cx(new_qv[1], new_qv[2])
+            h(new_qv[3])
+
+        assert main(2, 2) == 2
+
+
+class TestDepthSingleQubit:
     """Test that the depth is correctly computed for single-qubit quantum primitives."""
 
     def test_one_qubit_h_static(self):
@@ -143,7 +211,7 @@ class TestDepthQuantumPrimitiveSingleQubit:
         assert main(2, 2) == expected_depth
 
 
-class TestDepthQuantumPrimitiveMultiQubit:
+class TestDepthMultiQubit:
     """Test that the depth is correctly computed for multi-qubit quantum primitives."""
 
     def test_two_qubit_cx(self):
@@ -426,37 +494,154 @@ class TestDepthMeasurementBehavior:
         assert first == second
 
 
-def test_slice_primitive_not_implemented():
-    """Test that slicing raises NotImplementedError in depth metric."""
+class TestDepthSliceFuse:
+    """Test that the depth is correctly computed when slicing and/or fusing quantum registers."""
 
-    @depth(meas_behavior="0")
-    def main():
-        qf = QuantumFloat(4)
-        qf_slice = qf[1:3]
-        h(qf_slice[0])
-        h(qf_slice[1])
-        return measure(qf_slice[0])
+    @pytest.mark.parametrize(
+        "slices,expected_depth",
+        [
+            ([(0, 0), (0, 0), (1, 1)], 0),
+            ([(0, 1), (1, 2), (2, 4)], 1),
+            ([(0, 1), (1, 3), (2, 4)], 2),
+            ([(0, 3), (1, 3), (2, 4)], 3),
+            ([(0, 4), (0, 4), (0, 4)], 3),
+        ],
+    )
+    def test_slice_one_qubit(self, slices, expected_depth):
+        """Test depth computation with slicing on one qubit."""
 
-    with pytest.raises(
-        NotImplementedError,
-        match="Depth metric for slicing is not implemented yet.",
-    ):
-        main()
+        @depth(meas_behavior="0")
+        def main(num_qubits, slices):
+            qf = QuantumFloat(num_qubits)
+            for start, stop in slices:
+                h(qf[start:stop])
 
+        assert main(4, slices) == expected_depth
 
-def test_fuse_primitive_not_implemented():
-    """Test that fusing raises NotImplementedError in depth metric."""
+    def test_dyn_slice(self):
+        """Test depth computation with dynamic slicing."""
 
-    @depth(meas_behavior="0")
-    def main():
-        a = QuantumFloat(3)
-        b = QuantumFloat(3)
-        a[:] = 7
-        b[:] = 7
+        @depth(meas_behavior="0")
+        def main(num_qubits, start, stop):
+            qf = QuantumFloat(num_qubits)
+            dyn_slice = qf[start:stop]
+            h(dyn_slice)
+            h(qf[start:stop])
+            h(dyn_slice)
 
-        return measure(a.reg + b.reg)
+        assert main(4, 1, 3) == 3
 
-    with pytest.raises(
-        NotImplementedError, match="Depth metric for fusing is not implemented yet."
-    ):
-        main()
+    # We keep the following three tests separate for clarity
+    # (parametrization would make them much less readable).
+
+    def test_slice_multi_qubit_1(self):
+        """Test depth computation with slicing on multi-qubit operations."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[0:3])
+            h(qf2[0:3])
+            cx(qf1[0:1], qf1[1:2])
+            cx(qf2[0:1], qf2[1:2])
+            cx(qf2[2:3], qf2[3:4])
+
+        assert main(4, 4) == 2
+
+    def test_slice_multi_qubit_2(self):
+        """Test depth computation with slicing on multi-qubit operations."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[0:3])
+            h(qf2[0:3])
+            cx(qf1[0:1], qf1[1:2])
+            cx(qf2[1:2], qf2[1:3])
+            cx(qf2[0:2], qf2[2:4])
+
+        assert main(4, 4) == 3
+
+    def test_slice_multi_qubit_3(self):
+        """Test depth computation with slicing on multi-qubit operations."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[0:3])
+            h(qf2[0:3])
+            cx(qf1[0:2], qf1[2:4])
+            cx(qf2[0:1], qf2[1:2])
+            cx(qf2[0:1], qf2[1:2])
+
+        assert main(4, 4) == 3
+
+    # We keep the following four tests separate for clarity
+    # (parametrization would make them much less readable).
+
+    def test_fuse_multi_qubit_1(self):
+        """Test depth computation with fusing on multi-qubit operations."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[1])
+            h(qf1[1])
+            new_qv = qf1[:] + qf2[:]
+            h(new_qv[0])
+            cx(new_qv[1], new_qv[2])
+            h(new_qv[3])
+
+        assert main(2, 2) == 3
+
+    def test_fuse_multi_qubit_2(self):
+        """Test depth computation with fusing on multi-qubit operations."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[0])
+            h(qf1[1])
+            new_qv = qf1[:] + qf2[:]
+            h(new_qv[0])
+            cx(new_qv[1], new_qv[2])
+            h(new_qv[3])
+
+        assert main(2, 2) == 2
+
+    def test_fuse_multi_qubit_3(self):
+        """Test depth computation with fusing on multi-qubit operations."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[0])
+            h(qf1[0])
+            new_qv = qf1[:] + qf2[:]
+            h(new_qv[0])
+            cx(new_qv[2], new_qv[0])
+            h(new_qv[0])
+
+        assert main(2, 2) == 5
+
+    def test_fuse_multi_qubit_4(self):
+        """Test depth computation with fusing on multi-qubit operations."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[1])
+            h(qf2[1])
+            new_qv = qf1[:] + qf2[:]
+            h(new_qv[0])
+            cx(new_qv[1], new_qv[2])
+            h(new_qv[3])
+
+        assert main(2, 2) == 2
