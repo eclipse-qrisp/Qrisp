@@ -22,7 +22,7 @@ from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.alg_primitives.switch_case import qswitch
 from qrisp.environments import conjugate, control, invert
 from qrisp.qtypes import QuantumFloat, QuantumBool
-from qrisp.core.gate_application_functions import h, x, z
+from qrisp.core.gate_application_functions import h, x, z, gphase
 import warnings
 
 
@@ -622,7 +622,11 @@ class BlockEncoding:
             # Result from BE1 * 2 + BE2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}
         """
         if isinstance(other, (int, float)):
-            return BlockEncoding(self.unitary, self.anc_templates, self.alpha * other)
+            def new_unitary(*args):
+                self.unitary(*args)
+                if other < 0:
+                    gphase(np.pi, args[0][0])
+            return BlockEncoding(self.unitary, self.anc_templates, self.alpha * abs(other))
 
         if isinstance(other, BlockEncoding):
             m = len(self.anc_templates)
@@ -642,6 +646,54 @@ class BlockEncoding:
     
     __radd__ = __add__
     __rmul__ = __mul__
+
+    def __neg__(self) -> "BlockEncoding":
+        r"""
+        Implements negation of the BlockEncoding.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding representing the negation of self.
+
+        Examples
+        --------
+
+        Define a block-encoding and negate it.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import X, Y, Z
+
+            H1 = X(0)*X(1) - 0.2*Y(0)*Y(1)
+            H2 = 0.2*Y(0)*Y(1) - X(0)*X(1)
+
+            BE1 = H1.pauli_block_encoding()
+            BE2 = H2.pauli_block_encoding()
+            BE3 = -BE1
+
+            def operand_prep():
+                qv = QuantumFloat(3)
+                return qv
+
+            @terminal_sampling
+            def main(BE):
+                qv = BE.apply_rus(operand_prep)()
+                return qv
+
+            res_be2 = main(BE2)
+            res_be_neg = main(BE3)
+
+            print("Result from BE of H2 = - H1: ", res_be2)
+            print("Result from - BE1: ", res_be_neg)
+            # Result from BE of H2 = - H1:  {3.0: 1.0}                                                  
+            # Result from - BE1:  {3.0: 1.0}
+        """
+        def new_unitary(*args):
+            self.unitary(*args)
+            gphase(np.pi, args[0][0])
+        return BlockEncoding(new_unitary, self.anc_templates, self.alpha, is_hermitian=self.is_hermitian)
     
     def dagger(self) -> "BlockEncoding":
         r"""
