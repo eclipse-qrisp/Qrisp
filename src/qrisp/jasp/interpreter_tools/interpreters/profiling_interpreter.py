@@ -177,20 +177,18 @@ class BaseMetric(ABC):
     def get_handlers(self) -> Dict[str, Callable[..., Any]]:
         """Return a mapping from primitive names to handler methods."""
 
-        return dict(
-            {
-                "jasp.create_qubits": self.handle_create_qubits,
-                "jasp.get_qubit": self.handle_get_qubit,
-                "jasp.get_size": self.handle_get_size,
-                "jasp.fuse": self.handle_fuse,
-                "jasp.slice": self.handle_slice,
-                "jasp.quantum_gate": self.handle_quantum_gate,
-                "jasp.measure": self.handle_measure,
-                "jasp.reset": self.handle_reset,
-                "jasp.delete_qubits": self.handle_delete_qubits,
-                "jasp.create_quantum_kernel": self.handle_create_quantum_kernel,
-            }
-        )
+        return {
+            "jasp.create_qubits": self.handle_create_qubits,
+            "jasp.get_qubit": self.handle_get_qubit,
+            "jasp.get_size": self.handle_get_size,
+            "jasp.fuse": self.handle_fuse,
+            "jasp.slice": self.handle_slice,
+            "jasp.quantum_gate": self.handle_quantum_gate,
+            "jasp.measure": self.handle_measure,
+            "jasp.reset": self.handle_reset,
+            "jasp.delete_qubits": self.handle_delete_qubits,
+            "jasp.create_quantum_kernel": self.handle_create_quantum_kernel,
+        }
 
 
 # This reconstructs the metric inside the cached function so caching not keyed
@@ -233,7 +231,7 @@ def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
     """
 
     # We cache once per call and use closure + O(1) lookup to handle primitives.
-    prim_handlers = dict(metric.get_handlers())
+    prim_handlers = metric.get_handlers()
 
     # In this interpreter, context_dic is an environment mapping:
     # - keys: JAXPR variables (eqn.outvars[i], i.e. SSA names)
