@@ -2245,4 +2245,4 @@ class QubitOperator(Hamiltonian):
             with conjugate(prepare)(case, np.sqrt(coeffs/alpha)):
                 qswitch(operand, case, unitaries)
 
-        return BlockEncoding(U, [QuantumFloat(num_qubits).template()], alpha)
+        return BlockEncoding(U, [QuantumFloat(num_qubits).template()], alpha, is_hermitian=True)
