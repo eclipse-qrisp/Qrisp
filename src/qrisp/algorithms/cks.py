@@ -380,8 +380,8 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         from qrisp.algorithms.cks import inner_CKS
         from qrisp import multi_measurement
 
-        operand, in_case, out_case = inner_CKS(A, b, 0.001)
-        res_dict = multi_measurement([operand, in_case, out_case])
+        operand, *ancillas = inner_CKS(A, b, 0.001)
+        res_dict = multi_measurement([operand, *ancillas])
 
     This performs the measurement on all three of our QuantumVariables ``out_case``, ``in_case``, and ``operand``.
     Since the CKS (and all other LCU based approaches) is correctly performed only when
@@ -394,15 +394,15 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         success_prob = 0
 
         for key, prob in res_dict.items():
-            if key[1]==0 and key[2]==0:
+            if all(k == 0 for k in key[1:]):
                 new_dict[key[0]] = prob
                 success_prob += prob
 
         for key in new_dict.keys():
-            new_dict[key] = new_dict[key]/success_prob
+            new_dict[key] = new_dict[key] / success_prob
 
         for k, v in new_dict.items():
-            new_dict[k] = v**0.5
+            new_dict[k] = v ** 0.5
     
     Finally, compare the quantum simulation result with the classical solution:
 
