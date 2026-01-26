@@ -520,14 +520,14 @@ class BlockEncoding:
         new_alpha = alpha + beta
         return BlockEncoding(new_unitary, new_anc_templates, new_alpha, is_hermitian=self.is_hermitian and other.is_hermitian)
 
-    def __mul__(self, other: "BlockEncoding") -> "BlockEncoding":
+    def __mul__(self, other: "BlockEncoding | int | float") -> "BlockEncoding":
         r"""
-        Implements multiplication of two BlockEncodings self and other.
+        Implements multiplication of a BlockEncoding by another BlockEncoding or a scalar.
 
         Parameters
         ----------
-        other : BlockEncoding
-            Another BlockEncoding to be multiplied. 
+        other : BlockEncoding or int or float
+            The object to multiply with. If a BlockEncoding is provided, the unitaries are composed. If a scalar is provided, the normalization factor $\alpha$  is scaled. 
 
         Returns
         -------
@@ -536,13 +536,15 @@ class BlockEncoding:
 
         Notes
         -----
-
-        - Can only be used when both BlockEncodings have the same operand structure.
-        - The ``*`` operator should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method
+        - Scalar multiplication: Multiplying by a scalar $c$ results in a new BlockEncoding of $cA$ by updating $\alpha \rightarrow c\alpha$.
+        - BlockEncoding multiplication: Can only be used when both BlockEncodings have the same operand structure.
+        - The ``*`` operator should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method.
         - The product of two Hermitian operators A and B is Hermitian if and only if they commute, i.e., AB = BA.
 
         Examples
         --------
+
+        **Example 1:**
 
         Define two block-encodings and multiply them.
 
@@ -578,6 +580,46 @@ class BlockEncoding:
             # Result from BE of H1 * H2:  {3.0: 0.5, 7.0: 0.5}  
             # Result from BE1 * BE2:  {3.0: 0.5, 7.0: 0.5}  
 
+        **Example 2:**
+
+        Define two block-encodings and multiply their linear combination with a scalar.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import X, Y, Z
+
+            # Commuting operators H1 and H2
+            H1 = X(0)*X(1) + 0.2*Y(0)*Y(1)
+            H2 = Z(0)*Z(1) + X(2)
+            H3 = 2*H1 + H2
+
+            BE1 = H1.pauli_block_encoding()
+            BE2 = H2.pauli_block_encoding()
+            BE3 = H3.pauli_block_encoding()
+
+            BE_mul = 2*BE1 + BE2
+            BE_mul_r = BE1*2 + BE2
+
+            def operand_prep():
+                qv = QuantumFloat(3)
+                return qv
+
+            @terminal_sampling
+            def main(BE):
+                qv = BE.apply_rus(operand_prep)()
+                return qv
+
+            res_be3 = main(BE3)
+            res_be_mul = main(BE_mul)
+            res_be_mul_r = main(BE_mul_r)
+
+            print("Result from BE of 2 * H1 + H2: ", res_be3)
+            print("Result from 2 * BE1 + BE2: ", res_be_mul)
+            print("Result from BE1 * 2 + BE2: ", res_be_mul_r)
+            # Result from BE of 2 * H1 + H2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}  
+            # Result from 2 * BE1 + BE2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}
+            # Result from BE1 * 2 + BE2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}
         """
         if isinstance(other, (int, float)):
             return BlockEncoding(self.unitary, self.anc_templates, self.alpha * other)
