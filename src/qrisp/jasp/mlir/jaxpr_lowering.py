@@ -21,6 +21,7 @@ from io import StringIO
 
 from jax.interpreters.mlir import LoweringParameters, ModuleContext, lower_jaxpr_to_fun
 from jaxlib.mlir import ir
+from jax._src import core
 
 from xdsl.context import Context
 from xdsl.parser import Parser
@@ -70,16 +71,14 @@ def lower_jaxpr_to_MLIR(jaxpr, lowering_rules = tuple([])):
         
         ctx.module.operation.attributes["sym_name"] = ir.StringAttr.get("jasp_module")
         
-        from jax._src.source_info_util import NameStack
-        
         try:
             lower_jaxpr_to_fun(
                 ctx,
                 "main",
                 jaxpr,  # Pass the full ClosedJaxpr object
                 jaxpr.effects,
-                public=True,
-                name_stack=NameStack(),
+                num_const_args=len(core.jaxpr_const_args(jaxpr.jaxpr)),
+                in_avals=[var.aval for var in core.jaxpr_const_args(jaxpr.jaxpr) + jaxpr.jaxpr.invars]
             )
         except Exception as e:
             print(f"Error in lower_jaxpr_to_fun: {e}")

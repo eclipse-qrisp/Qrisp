@@ -304,7 +304,8 @@ class QuantumFloat(QuantumVariable):
         else:
             super().__init__(msize, qs, name=name)
 
-        self.traced_attributes = ["exponent", "signed"]
+        self.traced_attributes = ["exponent"]
+        self.static_attributes = ["signed"]
 
     @property
     def msize(self):
