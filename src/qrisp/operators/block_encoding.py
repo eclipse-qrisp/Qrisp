@@ -582,7 +582,7 @@ class BlockEncoding:
         if isinstance(other, (int, float)):
             return BlockEncoding(self.unitary, self.anc_templates, self.alpha * other)
 
-        if not isinstance(other, BlockEncoding):
+        if isinstance(other, BlockEncoding):
             m = len(self.anc_templates)
             n = len(other.anc_templates)
 
@@ -599,15 +599,7 @@ class BlockEncoding:
         return NotImplemented
     
     __radd__ = __add__
-
-    def __rmul__(self, other) -> "BlockEncoding":
-        if isinstance(other, (int, float)):
-            return self * other
-        
-        if isinstance(other, BlockEncoding):
-            return other * self 
-        
-        return NotImplemented
+    __rmul__ = __mul__
     
     def dagger(self) -> "BlockEncoding":
         r"""
