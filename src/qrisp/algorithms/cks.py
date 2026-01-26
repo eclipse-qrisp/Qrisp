@@ -461,7 +461,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
                 BE_qubitized.unitary(*in_case_list, operand)
                 BE_qubitized.unitary(*in_case_list, operand)
 
-    return operand, in_case_list[0], out_case
+    return operand, *in_case_list, out_case
 
 def inner_CKS_wrapper(qlsp, eps, kappa=None, max_beta=None):
     """
