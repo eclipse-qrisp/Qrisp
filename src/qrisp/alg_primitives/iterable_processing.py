@@ -19,7 +19,8 @@
 import numpy as np
 
 from qrisp.core import cx, swap
-
+from qrisp.environments import control
+from qrisp.jasp import jlen, jrange, while_loop
 
 def demux(
     input,
@@ -300,36 +301,70 @@ def cyclic_shift(iterable, shift_amount=1):
     singular_shift(iterable[: 2**n])
     singular_shift([iterable[0]] + list(iterable[2**n :]), use_saeedi=True)
 
+def compute_ladder_iterations(N):
+    """
+    Computes the number of iterations required to reduce a given size `N`
+    to a value less than or equal to 2 by repeatedly halving it.
+    This function uses a loop to simulate the halving process and counts
+    the number of iterations needed.
+    Args:
+        N (int): The initial size to be reduced.
+    Returns:
+        int: The number of iterations required to reduce `N` to a value
+        less than or equal to 2.
+    """
+
+    iterations = 1
+    current_size = N
+
+    def body_fun(val):
+        i, current_size = val
+        current_size = current_size // 2
+        i += 1
+        return i, current_size
+
+    def cond_fun(val):
+        return val[1] > 2
+
+    i, current_size = while_loop(cond_fun, body_fun, (iterations, current_size))
+    return i
 
 def singular_shift(iterable, use_saeedi=False):
 
-    N = len(iterable)
+    N = jlen(iterable)
 
-    if N in [0, 1]:
-        return
-
+    # with control(N == 0):
+    #     return
+    # with control(N == 1):
+    #     return
     if use_saeedi:
-        # Strategy from https://arxiv.org/abs/1304.7516
-        # Seems to perform worse when shifting by a quantum float
-        # But better when the shift length is not a power of 2
-        for i in range(N // 2):
-            if (-i) % N == i + 1 or i + 1 >= N:
-                continue
-            swap(iterable[-i], iterable[i + 1])
+        for i in jrange(N // 2):
+            j = (N - i) % N   # equivalent to -i % N
 
-        for i in range(N // 2):
-            if (-i) % N == i + 2 or i + 2 >= N:
-                continue
-            swap(iterable[-i], iterable[i + 2])
+            expr_out = j != i + 1
+            expr_in =  i + 1 < N
+            with control(expr_out):
+                with control(expr_in):
+                    swap(iterable[j], iterable[i + 1])
+
+        for i in jrange(N // 2):
+            j = (N - i) % N   # equivalent to -i % N
+            
+            expr_out = j != i + 2
+            expr_in = i + 2 < N
+            with control(expr_out):
+                with control(expr_in):
+                    swap(iterable[j], iterable[i + 2])
 
     else:
-        correction_indices = []
-        for i in range(len(iterable) // 2):
-            swap_tuple = (2 * i, 2 * i + 1)
-            swap(iterable[swap_tuple[0]], iterable[swap_tuple[1]])
-            correction_indices.append(swap_tuple[0])
 
-        singular_shift([iterable[i] for i in correction_indices])
+        iterations = compute_ladder_iterations(N)
+        for j in jrange(iterations):
+            for i in jrange(0, N - 2**j, 2 * 2**j):
+                left = i
+                right = i + 2**j
+                with control(right < N):
+                    swap(iterable[left], iterable[right])
 
 
 def to_cycles(perm):
