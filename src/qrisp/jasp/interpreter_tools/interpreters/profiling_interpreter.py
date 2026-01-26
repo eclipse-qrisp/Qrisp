@@ -35,11 +35,12 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, Sequence
 
 import jax
 import numpy as np
 from jax._src.core import JaxprEqn
+from jax.typing import ArrayLike
 
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     ContextDict,
@@ -73,7 +74,7 @@ class BaseMetric(ABC):
     @abstractmethod
     def initial_metric(self) -> Any: ...
 
-    def _validate_measurement_result(self, meas_res):
+    def _validate_measurement_result(self, meas_res: bool | jax.Array) -> None:
         """Validate that measurement result is a boolean."""
 
         if isinstance(meas_res, bool):
@@ -84,72 +85,86 @@ class BaseMetric(ABC):
             f"Measurement behavior must return a boolean, got {meas_res} of type {type(meas_res)}."
         )
 
-    def _measurement_body_fun(self, meas_number, i, acc):
+    def _measurement_body_fun(
+        self, meas_number: ArrayLike, i: ArrayLike, acc: ArrayLike
+    ) -> ArrayLike:
         """Helper function for measuring qubit arrays."""
 
         meas_key = jax.random.key(meas_number + i)
         meas_res = self.meas_behavior(meas_key)
         self._validate_measurement_result(meas_res)
-        return acc + (1 << i) * meas_res
+        return acc + jax.numpy.left_shift(1, i) * meas_res
 
     # create_qubits has the signature (size, QuantumCircuit)
     # Outvars are (QubitArray, QuantumCircuit)
     @abstractmethod
     def handle_create_qubits(
-        self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict
-    ):
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
         """Handle the `jasp.create_qubits` primitive."""
 
     # get_qubit has the signature (QubitArray, index (int))
     # Outvars are (Qubit)
     @abstractmethod
-    def handle_get_qubit(self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict):
+    def handle_get_qubit(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
         """Handle the `jasp.get_qubit` primitive."""
 
     # get_size has the signature (QubitArray)
     # Outvars are (size)
     @abstractmethod
-    def handle_get_size(self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict):
+    def handle_get_size(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
         """Handle the `jasp.get_size` primitive."""
 
     # fuse has the signature (QubitArray, QubitArray)
     # Outvars are (QubitArray)
     @abstractmethod
-    def handle_fuse(self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict):
+    def handle_fuse(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
         """Handle the `jasp.fuse` primitive."""
 
     # slice has the signature (QubitArray, start (int), stop (int))
     # Outvars are (QubitArray)
     @abstractmethod
-    def handle_slice(self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict):
+    def handle_slice(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
         """Handle the `jasp.slice` primitive."""
 
     # quantum_gate has the signature (Qubit, ... , QuantumCircuit)
     # Outvars is (QuantumCircuit)
     @abstractmethod
     def handle_quantum_gate(
-        self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict
-    ):
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
         """Handle the `jasp.quantum_gate` primitive."""
 
     # measure has the signature (Qubit | QubitArray, QuantumCircuit)
     # Outvars are (meas_result, QuantumCircuit)
     @abstractmethod
-    def handle_measure(self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict):
+    def handle_measure(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
         """Handle the `jasp.measure` primitive."""
 
     # reset has the signature (QubitArray, QuantumCircuit)
     # Outvars are (QuantumCircuit)
     @abstractmethod
-    def handle_reset(self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict):
+    def handle_reset(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
         """Handle the `jasp.reset` primitive."""
 
     # delete_qubits has the signature (QubitArray, QuantumCircuit)
     # Outvars are (QuantumCircuit)
     @abstractmethod
     def handle_delete_qubits(
-        self, invalues: List, eqn: JaxprEqn, context_dic: ContextDict
-    ):
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
         """Handle the `jasp.delete_qubits` primitive."""
 
     def handle_create_quantum_kernel(self, *_args, **_kwargs):
@@ -162,18 +177,20 @@ class BaseMetric(ABC):
     def get_handlers(self) -> Dict[str, Callable[..., Any]]:
         """Return a mapping from primitive names to handler methods."""
 
-        return {
-            "jasp.create_qubits": self.handle_create_qubits,
-            "jasp.get_qubit": self.handle_get_qubit,
-            "jasp.get_size": self.handle_get_size,
-            "jasp.fuse": self.handle_fuse,
-            "jasp.slice": self.handle_slice,
-            "jasp.quantum_gate": self.handle_quantum_gate,
-            "jasp.measure": self.handle_measure,
-            "jasp.reset": self.handle_reset,
-            "jasp.delete_qubits": self.handle_delete_qubits,
-            "jasp.create_quantum_kernel": self.handle_create_quantum_kernel,
-        }
+        return dict(
+            {
+                "jasp.create_qubits": self.handle_create_qubits,
+                "jasp.get_qubit": self.handle_get_qubit,
+                "jasp.get_size": self.handle_get_size,
+                "jasp.fuse": self.handle_fuse,
+                "jasp.slice": self.handle_slice,
+                "jasp.quantum_gate": self.handle_quantum_gate,
+                "jasp.measure": self.handle_measure,
+                "jasp.reset": self.handle_reset,
+                "jasp.delete_qubits": self.handle_delete_qubits,
+                "jasp.create_quantum_kernel": self.handle_create_quantum_kernel,
+            }
+        )
 
 
 # This reconstructs the metric inside the cached function so caching not keyed
@@ -194,8 +211,8 @@ def get_compiled_profiler(jaxpr, metric_cls, zipped_profiling_dic, meas_behavior
         if call_counter[0] < 3 or len(jaxpr.eqns) < 20:
             call_counter[0] += 1
             return jaxpr_evaluator(*args)
-        else:
-            return jitted_profiler(*args)
+
+        return jitted_profiler(*args)
 
     return profiler
 
@@ -229,15 +246,12 @@ def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
         if isinstance(prim, QuantumPrimitive):
 
             prim_handler = prim_handlers.get(prim.name, None)
-
             if prim_handler is None:
                 raise NotImplementedError(
                     f"Don't know how to handle quantum primitive {prim.name} in profiling interpreter."
                 )
 
-            outvalues = prim_handler(
-                invalues=invalues, eqn=eqn, context_dic=context_dic
-            )
+            outvalues = prim_handler(invalues, eqn, context_dic)
             insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "cond":

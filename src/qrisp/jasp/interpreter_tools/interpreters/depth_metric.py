@@ -23,6 +23,7 @@ from typing import Callable, Tuple
 import jax
 import jax.numpy as jnp
 from jax.random import key
+from jax.typing import ArrayLike
 
 from qrisp.jasp.interpreter_tools import (
     BaseMetric,
@@ -73,11 +74,11 @@ class DepthMetric(BaseMetric):
         self._initial_metric = (depth_array, global_depth)
 
     @property
-    def initial_metric(self) -> Tuple[jnp.ndarray, int]:
+    def initial_metric(self) -> Tuple[ArrayLike, int]:
         """Return the initial metric value."""
         return self._initial_metric
 
-    def _create_new_qubit_array(self, idx_start: int | jnp.ndarray) -> jnp.ndarray:
+    def _create_new_qubit_array(self, idx_start: ArrayLike) -> ArrayLike:
         """Create a new qubit array for depth tracking."""
 
         qubit_array = idx_start + jnp.arange(MAX_QUBITS, dtype=jnp.int64)
