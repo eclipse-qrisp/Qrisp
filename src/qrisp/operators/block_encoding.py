@@ -579,25 +579,36 @@ class BlockEncoding:
             # Result from BE1 * BE2:  {3.0: 0.5, 7.0: 0.5}  
 
         """
+        if isinstance(other, (int, float)):
+            return BlockEncoding(self.unitary, self.anc_templates, self.alpha * other)
+
         if not isinstance(other, BlockEncoding):
-            raise ValueError("Can only multiply with another BlockEncoding")
+            m = len(self.anc_templates)
+            n = len(other.anc_templates)
 
-        m = len(self.anc_templates)
-        n = len(other.anc_templates)
+            def new_unitary(*args):
+                self_args = args[:m] + args[m + n:]
+                self.unitary(*self_args)
+                other_args = args[m:m + n] + args[m + n:]
+                other.unitary(*other_args)
 
-        def new_unitary(*args):
-            self_args = args[:m] + args[m + n:]
-            self.unitary(*self_args)
-            other_args = args[m:m + n] + args[m + n:]
-            other.unitary(*other_args)
+            new_anc_templates = self.anc_templates + other.anc_templates
+            new_alpha = self.alpha * other.alpha
+            return BlockEncoding(new_unitary, new_anc_templates, new_alpha)
 
-        new_anc_templates = self.anc_templates + other.anc_templates
-        new_alpha = self.alpha * other.alpha
-        return BlockEncoding(new_unitary, new_anc_templates, new_alpha)
-
+        return NotImplemented
+    
     __radd__ = __add__
-    __rmul__ = __mul__
 
+    def __rmul__(self, other) -> "BlockEncoding":
+        if isinstance(other, (int, float)):
+            return self * other
+        
+        if isinstance(other, BlockEncoding):
+            return other * self 
+        
+        return NotImplemented
+    
     def dagger(self) -> "BlockEncoding":
         r"""
         Returns the Hermitian adjoint (dagger) of the BlockEncoding.
