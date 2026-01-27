@@ -352,7 +352,8 @@ def extract_post_processing(jaspr, *args, array_input=False):
             measurement_results = jnp.array([c == '1' for c in measurement_results], dtype=bool)
         
         # Reverse the array to match circuit bit order
-        # (bitstrings from qc.run() follow Qiskit convention: reversed from circuit order)
+        # Both bitstring and array inputs follow Qiskit convention: last measurement (highest 
+        # qubit index) is the first element. We reverse to get circuit order (qubit 0 first).
         measurement_results = measurement_results[::-1]
         
         # Create evaluator

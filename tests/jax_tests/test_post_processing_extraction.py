@@ -67,16 +67,19 @@ def test_multiple_measurements():
     post_proc = jaspr.extract_post_processing(1, 5)
     
     # Test all combinations
-    result = post_proc("00")
+    # Note: Only 2 qubits are measured (qf[1] and qf[2]), so bitstring has 2 bits
+    # Qiskit convention: rightmost bit is the first measurement (qf[1])
+    # String "XY" maps to: X→qf[2], Y→qf[1]
+    result = post_proc("00")  # qf[1]=0, qf[2]=0
     assert result[0] == 5 and result[1] == False
     
-    result = post_proc("01")
-    assert result[0] == 5 and result[1] == True
-    
-    result = post_proc("10")
+    result = post_proc("01")  # qf[1]=1, qf[2]=0
     assert result[0] == 6 and result[1] == False
     
-    result = post_proc("11")
+    result = post_proc("10")  # qf[1]=0, qf[2]=1
+    assert result[0] == 5 and result[1] == True
+    
+    result = post_proc("11")  # qf[1]=1, qf[2]=1
     assert result[0] == 6 and result[1] == True
 
 
@@ -110,13 +113,15 @@ def test_boolean_post_processing():
     post_proc = jaspr.extract_post_processing()
     
     # Test truth table
+    # Note: Bitstrings follow Qiskit convention (MSB first, rightmost=qubit 0)
+    # String "XY" maps to: X→qb_2, Y→qb_1  (assuming 2-qubit system: qb_1, qb_2)
     and_result, or_result, not_result = post_proc("00")
     assert and_result == False and or_result == False and not_result == True
     
-    and_result, or_result, not_result = post_proc("01")
+    and_result, or_result, not_result = post_proc("10")  # qb_1=0, qb_2=1
     assert and_result == False and or_result == True and not_result == True
     
-    and_result, or_result, not_result = post_proc("10")
+    and_result, or_result, not_result = post_proc("01")  # qb_1=1, qb_2=0
     assert and_result == False and or_result == True and not_result == False
     
     and_result, or_result, not_result = post_proc("11")
@@ -215,9 +220,11 @@ def test_nested_operations():
     post_proc = jaspr.extract_post_processing(2, 3)
     
     # Test combinations
+    # Only 2 qubits measured: qf[0] then qf[1]
+    # Bitstring "XY" after reversal: Y→qf[0], X→qf[1]
     assert post_proc("00") == (0 + 2) * (0 + 3)  # 2 * 3 = 6
-    assert post_proc("01") == (0 + 2) * (1 + 3)   # 2 * 4 = 8
-    assert post_proc("10") == (1 + 2) * (0 + 3)   # 3 * 3 = 9
+    assert post_proc("01") == (1 + 2) * (0 + 3)   # 3 * 3 = 9
+    assert post_proc("10") == (0 + 2) * (1 + 3)   # 2 * 4 = 8
     assert post_proc("11") == (1 + 2) * (1 + 3)    # 3 * 4 = 12
 
 
@@ -527,17 +534,20 @@ def test_bitstring_input():
     # Extract post-processing (bitstring input is default)
     post_proc = jaspr.extract_post_processing(1, 2)
     
-    # Test with bitstring "01"
-    result = post_proc("01")
-    assert result == (1, True)  # meas[0]=False -> 0+1=1, meas[1]=True
+    # Test with bitstrings (Qiskit convention applies to overall bitstring)
+    # Only 2 qubits measured: qv[1] then qv[2]
+    # Bitstring "XY" after reversal gives: Y→qv[1], X→qv[2]
+    result = post_proc("00")  # qv[1]=0, qv[2]=0
+    assert result == (1, False)  # 0+1=1, False
     
-    # Test with bitstring "10"
-    result = post_proc("10")
-    assert result == (2, False)  # meas[0]=True -> 1+1=2, meas[1]=False
+    result = post_proc("01")  # qv[1]=1, qv[2]=0
+    assert result == (2, False)  # 1+1=2, False
     
-    # Test with bitstring "11"
-    result = post_proc("11")
-    assert result == (2, True)  # meas[0]=True -> 1+1=2, meas[1]=True
+    result = post_proc("10")  # qv[1]=0, qv[2]=1
+    assert result == (1, True)  # 0+1=1, True
+    
+    result = post_proc("11")  # qv[1]=1, qv[2]=1
+    assert result == (2, True)  # 1+1=2, True
     
     # Test with bitstring "00"
     result = post_proc("00")
@@ -603,13 +613,17 @@ def test_array_input_jittable():
     jitted_post_proc = jax.jit(post_proc)
     
     # Test that jitted version works
-    test_input = jnp.array([False, True])
+    # Circuit measures: qv[0] then qv[1]
+    # Qiskit order: last measurement first, so [qv[1], qv[0], unused]
+    # For meas1=False, meas2=True: Qiskit order [True, False, unused]
+    test_input = jnp.array([True, False])  # Qiskit: qv[1]=True, qv[0]=False, unused
     result = jitted_post_proc(test_input)
     expected = post_proc(test_input)
     assert result == expected
     
     # Test with different input
-    test_input2 = jnp.array([True, False])
+    # For meas1=True, meas2=False: Qiskit order [False, True, unused]
+    test_input2 = jnp.array([False, True])
     result2 = jitted_post_proc(test_input2)
     assert result2 == 1  # 1 + 2*0 = 1
 
@@ -717,22 +731,25 @@ def test_jit_post_processor_with_qached_subroutines():
     jitted_post_proc = jax.jit(post_proc)
     
     # Test various combinations
-    # Both measurements False -> 0 + 2*0 = 0
+    # Circuit measures: res1 (from qv1[0]) then res2 (from qv2[0])
+    # Qiskit convention: last measurement first, so [res2, res1]
+    
+    # Both measurements False: Qiskit order [False, False]
     test_input = jnp.array([False, False])
     result = jitted_post_proc(test_input)
     assert result == 0, f"Expected 0, got {result}"
     
-    # First True, second False -> 1 + 2*0 = 1
-    test_input = jnp.array([True, False])
+    # res1=True, res2=False: Qiskit order [False, True]
+    test_input = jnp.array([False, True])
     result = jitted_post_proc(test_input)
     assert result == 1, f"Expected 1, got {result}"
     
-    # First False, second True -> 0 + 2*1 = 2
-    test_input = jnp.array([False, True])
+    # res1=False, res2=True: Qiskit order [True, False]
+    test_input = jnp.array([True, False])
     result = jitted_post_proc(test_input)
     assert result == 2, f"Expected 2, got {result}"
     
-    # Both True -> 1 + 2*1 = 3
+    # Both True: Qiskit order [True, True]
     test_input = jnp.array([True, True])
     result = jitted_post_proc(test_input)
     assert result == 3, f"Expected 3, got {result}"
@@ -778,35 +795,38 @@ def test_jit_post_processor_with_mixed_subroutines():
     jitted_post_proc = jax.jit(post_proc)
     
     # Test various combinations
-    # Note: For QuantumFloat(2, exponent=-1), bit order is MSB, LSB
-    # qf_value = (2*bit[qf_msb] + bit[qf_lsb]) * 0.5
+    # QuantumVariable(2) has qubits qv[0], qv[1]; QuantumFloat(2) has qubits qf[0], qf[1]
+    # Circuit measures: bit_result (qv[0]), then qf (qf[0] and qf[1])
+    # Qiskit order (all 4 qubits reversed): [qf[1], qf[0], qv[1], qv[0]]
+    # Array: [qv[1]=unmeasured, bit_result=qv[0], qf[0], qf[1]]
+    # For QuantumFloat(2, exponent=-1): value = (qf[0] + qf[1]*2) * 0.5
     
-    # bit=False (0), qf="00" (0.0) -> 0 + 0.0 = 0.0
-    test_input = jnp.array([False, False, False])
+    # bit=False, qf[0]=False, qf[1]=False: qf_val=0.0 -> 0 + 0.0 = 0.0
+    test_input = jnp.array([False, False, False, False])
     result = jitted_post_proc(test_input)
     expected = 0.0
     assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
     
-    # bit=True (1), qf="00" (0.0) -> 1 + 0.0 = 1.0
-    test_input = jnp.array([True, False, False])
+    # bit=True, qf[0]=False, qf[1]=False: qf_val=0.0 -> 1 + 0.0 = 1.0
+    test_input = jnp.array([False, True, False, False])
     result = jitted_post_proc(test_input)
     expected = 1.0
     assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
     
-    # bit=False (0), qf="10" (2*0.5=1.0) -> 0 + 1.0 = 1.0
-    test_input = jnp.array([False, True, False])
-    result = jitted_post_proc(test_input)
-    expected = 1.0
-    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
-    
-    # bit=False (0), qf="01" (1*0.5=0.5) -> 0 + 0.5 = 0.5
-    test_input = jnp.array([False, False, True])
+    # bit=False, qf[0]=True, qf[1]=False: qf_val=0.5 -> 0 + 0.5 = 0.5
+    test_input = jnp.array([False, False, True, False])
     result = jitted_post_proc(test_input)
     expected = 0.5
     assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
     
-    # bit=True (1), qf="11" ((2+1)*0.5=1.5) -> 1 + 1.5 = 2.5
-    test_input = jnp.array([True, True, True])
+    # bit=False, qf[0]=False, qf[1]=True: qf_val=1.0 -> 0 + 1.0 = 1.0
+    test_input = jnp.array([False, False, False, True])
+    result = jitted_post_proc(test_input)
+    expected = 1.0
+    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
+    
+    # bit=True, qf[0]=True, qf[1]=True: qf_val=1.5 -> 1 + 1.5 = 2.5
+    test_input = jnp.array([False, True, True, True])
     result = jitted_post_proc(test_input)
     expected = 2.5
     assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
@@ -844,12 +864,16 @@ def test_cond_primitive():
     # Extract post-processing
     post_proc = jaspr.extract_post_processing(array_input=True)
     
+    # Circuit measures: qv[0]
+    # QuantumFloat(2) has 2 qubits: qv[0] and qv[1]
+    # Qiskit order: [qv[1], qv[0]] where qv[1] is unmeasured
+    
     # Test with meas=False -> false_branch(5) = 25
-    result = post_proc(jnp.array([False, False]))
+    result = post_proc(jnp.array([False, False]))  # [qv[1]=unused, qv[0]=False]
     assert result == 25, f"Expected 25, got {result}"
     
     # Test with meas=True -> true_branch(5) = 15
-    result = post_proc(jnp.array([True, False]))
+    result = post_proc(jnp.array([False, True]))  # [qv[1]=unused, qv[0]=True]
     assert result == 15, f"Expected 15, got {result}"
     
     # Test that it can be jitted
@@ -857,7 +881,7 @@ def test_cond_primitive():
     result = jitted_post_proc(jnp.array([False, False]))
     assert result == 25, f"Jitted: Expected 25, got {result}"
     
-    result = jitted_post_proc(jnp.array([True, False]))
+    result = jitted_post_proc(jnp.array([False, True]))
     assert result == 15, f"Jitted: Expected 15, got {result}"
 
 
@@ -902,23 +926,307 @@ def test_while_primitive():
     # Extract post-processing
     post_proc = jaspr.extract_post_processing(array_input=True)
     
+    # Circuit measures: qv[0] (meas1), qv[1] (meas2)
+    # QuantumFloat(3) has 3 qubits: qv[0], qv[1], qv[2]
+    # Qiskit order: [qv[2], qv[1], qv[0]] where qv[2] is unmeasured
+    
     # Test with both False -> 0 + 0 = 0, loop runs 0 times, counter=0
-    result = post_proc(jnp.array([False, False, False]))
+    result = post_proc(jnp.array([False, False, False]))  # [qv[2], qv[1]=False, qv[0]=False]
     assert result == 0, f"Expected 0, got {result}"
     
-    # Test with one True -> 1 + 0 = 1, loop runs 1 time, counter=1
-    result = post_proc(jnp.array([True, False, False]))
+    # Test with meas1=True -> 1 + 0 = 1, loop runs 1 time, counter=1
+    result = post_proc(jnp.array([False, False, True]))  # [qv[2], qv[1]=False, qv[0]=True]
     assert result == 1, f"Expected 1, got {result}"
     
-    # Test with other True -> 0 + 1 = 1, loop runs 1 time, counter=1
-    result = post_proc(jnp.array([False, True, False]))
+    # Test with meas2=True -> 0 + 1 = 1, loop runs 1 time, counter=1
+    result = post_proc(jnp.array([False, True, False]))  # [qv[2], qv[1]=True, qv[0]=False]
     assert result == 1, f"Expected 1, got {result}"
     
     # Test with both True -> 1 + 1 = 2, loop runs 2 times, counter=2
-    result = post_proc(jnp.array([True, True, False]))
+    result = post_proc(jnp.array([False, True, True]))  # [qv[2], qv[1]=True, qv[0]=True]
     assert result == 2, f"Expected 2, got {result}"
     
     # Test that it can be jitted
     jitted_post_proc = jax.jit(post_proc)
-    result = jitted_post_proc(jnp.array([True, True, False]))
+    result = jitted_post_proc(jnp.array([False, True, True]))
     assert result == 2, f"Jitted: Expected 2, got {result}"
+
+
+def test_terminal_sampling_comparison():
+    """
+    Compare post-processing extraction with terminal sampling across various algorithms.
+    
+    This test verifies that post-processing extraction produces equivalent results
+    to terminal sampling by:
+    1. Running algorithms with terminal_sampling decorator
+    2. Running algorithms with make_jaspr, extracting circuit, and executing
+    3. Applying post-processing to circuit outputs
+    4. Comparing the resulting distributions
+    """
+    
+    # Helper function to convert bitstring to bool array
+    def bitstring_to_array(bitstring):
+        """Convert Qiskit bitstring to JAX array of booleans.
+        
+        The bitstring from qc.run() is in Qiskit convention (last measurement first).
+        We convert to array maintaining the same order. The post_processing_func
+        will handle reversing to circuit order for both bitstring and array inputs.
+        """
+        return jnp.array([c == '1' for c in bitstring])
+    
+    # Helper function to compare post-processed distributions
+    def compare_post_processed_distributions(qc_results, post_proc, terminal_results, tolerance=0.1):
+        """
+        Compare post-processed circuit results with terminal sampling results.
+        
+        This applies post-processing to each circuit output and builds a distribution
+        of post-processed results, then compares with terminal sampling.
+        """
+        total_shots = sum(qc_results.values())
+        
+        # Build distribution of post-processed results
+        post_proc_dist = {}
+        for bitstring, count in qc_results.items():
+            bit_array = bitstring_to_array(bitstring)
+            result = post_proc(bit_array)
+            
+            # Convert result to hashable key
+            # Handle single values, tuples, and arrays
+            if isinstance(result, (tuple, list)):
+                # Convert arrays to basic types for hashing
+                key = tuple(float(x) if hasattr(x, 'item') else x for x in result)
+            elif hasattr(result, 'item'):
+                key = float(result)
+            else:
+                key = result
+                
+            if key not in post_proc_dist:
+                post_proc_dist[key] = 0
+            post_proc_dist[key] += count
+        
+        # Normalize to probabilities
+        for key in post_proc_dist:
+            post_proc_dist[key] /= total_shots
+        
+        # Compare distributions
+        # Check all post-processed outcomes appear in terminal results
+        for key, prob in post_proc_dist.items():
+            # For single value results, terminal might have it as first element of tuple
+            terminal_key = key
+            if terminal_key not in terminal_results:
+                # Try extracting first element if key is tuple
+                if isinstance(key, tuple) and len(key) > 0:
+                    terminal_key = key[0]
+            
+            if terminal_key in terminal_results:
+                terminal_prob = terminal_results[terminal_key]
+                diff = abs(prob - terminal_prob)
+                if diff > tolerance:
+                    return False, f"Mismatch for {key}: post_proc={prob:.3f}, terminal={terminal_prob:.3f}"
+            elif prob > tolerance:
+                return False, f"Unexpected post-processed outcome {key} with prob {prob:.3f}"
+        
+        return True, "Distributions match"
+    
+    # Test 1: Superposition State Analysis
+    def superposition_algorithm():
+        qf = QuantumFloat(2, signed=False)
+        h(qf)
+        return qf
+    
+    superposition_terminal = terminal_sampling(superposition_algorithm)
+    
+    @make_jaspr
+    def superposition_post_proc():
+        qf = superposition_algorithm()
+        m = measure(qf)
+        
+        from jax.lax import convert_element_type
+        val = convert_element_type(m, int)
+        is_even = (val % 2 == 0)
+        
+        return val, is_even
+    
+    # Get terminal sampling results
+    terminal_results = superposition_terminal()
+    
+    # Get circuit and run it
+    jaspr = superposition_post_proc()
+    result = jaspr.to_qc()
+    qc = result[-1]
+    qc_results = qc.run(shots=1000)
+    
+    # Extract post-processing function
+    post_proc = jaspr.extract_post_processing(array_input=True)
+    
+    # Compare distributions
+    match, msg = compare_post_processed_distributions(qc_results, post_proc, terminal_results)
+    assert match, f"Superposition test - {msg}"
+    
+    # Test 2: Bell State Parity Check
+    def bell_state_algorithm():
+        q1 = QuantumBool()
+        q2 = QuantumBool()
+        h(q1)
+        cx(q1, q2)
+        return q1, q2
+    
+    bell_state_terminal = terminal_sampling(bell_state_algorithm)
+    
+    @make_jaspr
+    def bell_state_post_proc():
+        q1, q2 = bell_state_algorithm()
+        m1 = measure(q1)
+        m2 = measure(q2)
+        return m1, m2
+    
+    terminal_results = bell_state_terminal()
+    jaspr = bell_state_post_proc()
+    result = jaspr.to_qc()
+    qc = result[-1]
+    qc_results = qc.run(shots=1000)
+    post_proc = jaspr.extract_post_processing(array_input=True)
+    
+    match, msg = compare_post_processed_distributions(qc_results, post_proc, terminal_results)
+    assert match, f"Bell state test - {msg}"
+    
+    # Verify Bell state property: both qubits should be same
+    for bitstring in list(qc_results.keys())[:2]:
+        bits = bitstring_to_array(bitstring)
+        result = post_proc(bits)
+        assert result[0] == result[1], f"Bell state violation: {result}"
+    
+    # Test 3: CNOT Gate
+    def cnot_algorithm():
+        ctrl = QuantumBool()
+        target = QuantumBool()
+        h(ctrl)
+        cx(ctrl, target)
+        return ctrl, target
+    
+    cnot_terminal = terminal_sampling(cnot_algorithm)
+    
+    @make_jaspr
+    def cnot_post_proc():
+        ctrl, target = cnot_algorithm()
+        m_ctrl = measure(ctrl)
+        m_target = measure(target)
+        return m_ctrl, m_target
+    
+    terminal_results = cnot_terminal()
+    jaspr = cnot_post_proc()
+    result = jaspr.to_qc()
+    qc = result[-1]
+    qc_results = qc.run(shots=1000)
+    post_proc = jaspr.extract_post_processing(array_input=True)
+    
+    match, msg = compare_post_processed_distributions(qc_results, post_proc, terminal_results)
+    assert match, f"CNOT test - {msg}"
+    
+    # Test 4: GHZ State
+    def ghz_algorithm():
+        q1 = QuantumBool()
+        q2 = QuantumBool()
+        q3 = QuantumBool()
+        h(q1)
+        cx(q1, q2)
+        cx(q1, q3)
+        return q1, q2, q3
+    
+    ghz_terminal = terminal_sampling(ghz_algorithm)
+    
+    @make_jaspr
+    def ghz_post_proc():
+        q1, q2, q3 = ghz_algorithm()
+        m1 = measure(q1)
+        m2 = measure(q2)
+        m3 = measure(q3)
+        return m1, m2, m3
+    
+    terminal_results = ghz_terminal()
+    jaspr = ghz_post_proc()
+    result = jaspr.to_qc()
+    qc = result[-1]
+    qc_results = qc.run(shots=1000)
+    post_proc = jaspr.extract_post_processing(array_input=True)
+    
+    match, msg = compare_post_processed_distributions(qc_results, post_proc, terminal_results)
+    assert match, f"GHZ state test - {msg}"
+    
+    # Verify GHZ state property: all qubits should be same
+    for bitstring in list(qc_results.keys())[:2]:
+        bits = bitstring_to_array(bitstring)
+        result = post_proc(bits)
+        assert result[0] == result[1] == result[2], f"GHZ state violation: {result}"
+    
+    # Test 5: Mixed Size QuantumFloats
+    def mixed_size_algorithm():
+        qf1 = QuantumFloat(2, signed=False)
+        qf2 = QuantumFloat(3, signed=False)
+        qf1[:] = 2
+        qf2[:] = 5
+        return qf1, qf2
+    
+    mixed_size_terminal = terminal_sampling(mixed_size_algorithm)
+    
+    @make_jaspr
+    def mixed_size_post_proc():
+        qf1, qf2 = mixed_size_algorithm()
+        m1 = measure(qf1)
+        m2 = measure(qf2)
+        return m1, m2
+    
+    terminal_results = mixed_size_terminal()
+    terminal_key = list(terminal_results.keys())[0]
+    jaspr = mixed_size_post_proc()
+    result = jaspr.to_qc()
+    qc = result[-1]
+    qc_results = qc.run(shots=1000)
+    post_proc = jaspr.extract_post_processing(array_input=True)
+    
+    match, msg = compare_post_processed_distributions(qc_results, post_proc, terminal_results)
+    assert match, f"Mixed size QuantumFloats test - {msg}"
+    
+    # Verify deterministic outcome
+    assert len(qc_results) == 1, "Expected deterministic outcome"
+    bitstring = list(qc_results.keys())[0]
+    bits = bitstring_to_array(bitstring)
+    result = post_proc(bits)
+    assert result[0] == terminal_key[0], f"qf1 mismatch: expected {terminal_key[0]}, got {result[0]}"
+    assert result[1] == terminal_key[1], f"qf2 mismatch: expected {terminal_key[1]}, got {result[1]}"
+    
+    # Test 6: Same-sized QuantumFloats
+    def arithmetic_algorithm():
+        qf1 = QuantumFloat(3, signed=False)
+        qf2 = QuantumFloat(3, signed=False)
+        qf1[:] = 3
+        qf2[:] = 5
+        return qf1, qf2
+    
+    arithmetic_terminal = terminal_sampling(arithmetic_algorithm)
+    
+    @make_jaspr
+    def arithmetic_post_proc():
+        qf1, qf2 = arithmetic_algorithm()
+        m1 = measure(qf1)
+        m2 = measure(qf2)
+        return m1, m2
+    
+    terminal_results = arithmetic_terminal()
+    terminal_key = list(terminal_results.keys())[0]
+    jaspr = arithmetic_post_proc()
+    result = jaspr.to_qc()
+    qc = result[-1]
+    qc_results = qc.run(shots=1000)
+    post_proc = jaspr.extract_post_processing(array_input=True)
+    
+    match, msg = compare_post_processed_distributions(qc_results, post_proc, terminal_results)
+    assert match, f"Same-sized QuantumFloats test - {msg}"
+    
+    # Verify deterministic outcome
+    assert len(qc_results) == 1, "Expected deterministic outcome"
+    bitstring = list(qc_results.keys())[0]
+    bits = bitstring_to_array(bitstring)
+    result = post_proc(bits)
+    assert result[0] == terminal_key[0], f"qf1 mismatch: expected {terminal_key[0]}, got {result[0]}"
+    assert result[1] == terminal_key[1], f"qf2 mismatch: expected {terminal_key[1]}, got {result[1]}"
