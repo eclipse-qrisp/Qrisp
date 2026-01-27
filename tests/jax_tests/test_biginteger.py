@@ -300,6 +300,8 @@ def test_comparisons(size, seed):
     B = BigInteger.create_static(ib, size)
     assert bool(A < B) == (ia < ib)
     assert bool(A <= B) == (ia <= ib)
+    assert bool(A > B) == (ia > ib)
+    assert bool(A >= B) == (ia >= ib)
     assert bool(A == B) == (ia == ib)
     assert bool(A != B) == (ia != ib)
 
