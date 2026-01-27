@@ -438,7 +438,7 @@ class Jaspr(ClosedJaxpr):
         
         This method is useful for separating the quantum circuit from the classical
         post-processing of measurement results. The quantum circuit can be executed
-        on a backend to obtain measurement results, and then the post-processing
+        on a NISQ-style backend to obtain measurement results, and then the post-processing
         function can be applied to those results to obtain the final output.
         
         Parameters
