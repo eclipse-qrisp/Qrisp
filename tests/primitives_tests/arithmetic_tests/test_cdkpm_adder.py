@@ -19,8 +19,8 @@
 from qrisp import *
 import pytest
 
-def test_cdkpm_adder_valid_input():
-    """Verify the function works as expected for valid inputs."""
+def test_cdkpm_adder_valid_quantumfloat_input():
+    """Verify the function works as expected for valid QuantumFloat inputs."""
 
     # both inputs are quantum in static mode
     i, j = 13, 14
@@ -84,6 +84,7 @@ def test_cdkpm_adder_valid_input():
 
     jaspr = make_jaspr(run_jasp_adder)(2, 3)
     assert jaspr(16, 19) == 34.0
+
 
 
 def test_invalid_input():
