@@ -20,6 +20,7 @@ import numpy as np
 
 from qrisp import QuantumCircuit
 from qrisp.misc import gate_wrap
+from qrisp import cdkpm_adder
 
 
 
@@ -187,11 +188,7 @@ def inpl_add(
         for i in range(ancilla_var.size):
             qs.cx(qf2[-1], ancilla_var[i])
 
-    if adder == "cuccaro":
-        cuccaro_procedure(
-            qs, qubit_list_2[:-1], qubit_list_1[:-1], output_qubit=qubit_list_1[-1]
-        )
-    elif adder == "thapliyal":
+    if adder == "thapliyal":
         thapliyal_procedure(
             qs, qubit_list_2[:-1], qubit_list_1[:-1], output_qubit=qubit_list_1[-1]
         )
