@@ -16,14 +16,15 @@
 ********************************************************************************
 """
 
+from __future__ import annotations
 import numpy as np
 import jax.numpy as jnp
 from qrisp.alg_primitives.state_preparation import prepare
-from qrisp.alg_primitives.switch_case import qswitch
+from qrisp.core import QuantumVariable
 from qrisp.environments import conjugate, control, invert
-from qrisp.qtypes import QuantumFloat, QuantumBool
+from qrisp.qtypes import QuantumBool
 from qrisp.core.gate_application_functions import h, x, z, gphase
-import warnings
+from typing import Any, Callable
 
 
 class BlockEncoding:
@@ -183,7 +184,7 @@ class BlockEncoding:
         self.is_hermitian = is_hermitian
 
 
-    def create_ancillas(self):
+    def create_ancillas(self) -> list[QuantumVariable]:
         r"""
         Returns a list of ancilla QuantumVariables for the BlockEncoding.
 
@@ -198,7 +199,7 @@ class BlockEncoding:
             anc_list.append(template.construct())
         return anc_list
     
-    def apply(self, *operands):
+    def apply(self, *operands: QuantumVariable) -> list[QuantumVariable]:
         r"""
         Applies the block-encoding unitary to the given operands.
 
@@ -301,7 +302,7 @@ class BlockEncoding:
         self.unitary(*ancillas, *operands)
         return ancillas
     
-    def apply_rus(self, operand_prep):
+    def apply_rus(self, operand_prep: Callable[..., Any]) -> Callable[..., Any]:
         r"""
         Applies the block-encoding unitary to the prepared operands using Repeat-Until-Success (RUS).
 
@@ -366,7 +367,7 @@ class BlockEncoding:
 
         return rus_function
 
-    def __add__(self, other: "BlockEncoding") -> "BlockEncoding":
+    def __add__(self, other: BlockEncoding) -> BlockEncoding:
         r"""
         Implements addition of two BlockEncodings self and other.
 
@@ -423,7 +424,7 @@ class BlockEncoding:
 
         """
         if not isinstance(other, BlockEncoding):
-            raise ValueError("Can only add another BlockEncoding")
+            return NotImplemented
         
         alpha = self.alpha
         beta = other.alpha
@@ -442,7 +443,7 @@ class BlockEncoding:
         new_alpha = alpha + beta
         return BlockEncoding(new_unitary, new_anc_templates, new_alpha, is_hermitian=self.is_hermitian and other.is_hermitian)
 
-    def __sub__(self, other: "BlockEncoding") -> "BlockEncoding":
+    def __sub__(self, other: BlockEncoding) -> BlockEncoding:
         r"""
         Implements subtraction of two BlockEncodings self and other.
 
@@ -499,7 +500,7 @@ class BlockEncoding:
 
         """
         if not isinstance(other, BlockEncoding):
-            raise ValueError("Can only add another BlockEncoding")
+            return NotImplemented
         
         alpha = self.alpha
         beta = other.alpha
@@ -520,7 +521,7 @@ class BlockEncoding:
         new_alpha = alpha + beta
         return BlockEncoding(new_unitary, new_anc_templates, new_alpha, is_hermitian=self.is_hermitian and other.is_hermitian)
 
-    def __mul__(self, other: "BlockEncoding | int | float") -> "BlockEncoding":
+    def __mul__(self, other: BlockEncoding | int | float) -> BlockEncoding:
         r"""
         Implements multiplication of a BlockEncoding by another BlockEncoding or a scalar.
 
@@ -647,7 +648,7 @@ class BlockEncoding:
     __radd__ = __add__
     __rmul__ = __mul__
 
-    def __neg__(self) -> "BlockEncoding":
+    def __neg__(self) -> BlockEncoding:
         r"""
         Implements negation of the BlockEncoding.
 
@@ -695,7 +696,7 @@ class BlockEncoding:
             gphase(np.pi, args[0][0])
         return BlockEncoding(new_unitary, self.anc_templates, self.alpha, is_hermitian=self.is_hermitian)
     
-    def dagger(self) -> "BlockEncoding":
+    def dagger(self) -> BlockEncoding:
         r"""
         Returns the Hermitian adjoint (dagger) of the BlockEncoding.
 
@@ -726,7 +727,7 @@ class BlockEncoding:
 
         return BlockEncoding(new_unitary, self.anc_templates, self.alpha, is_hermitian=self.is_hermitian)
     
-    def qubitization(self) -> "BlockEncoding":
+    def qubitization(self) -> BlockEncoding:
         r"""
         Returns the qubitization of the BlockEncoding.
 
