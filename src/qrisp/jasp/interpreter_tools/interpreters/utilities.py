@@ -20,6 +20,7 @@ from typing import List
 
 import jax
 from jax.extend.core import ClosedJaxpr
+from jax.typing import ArrayLike
 
 from qrisp.jasp.jasp_expression import Jaspr
 
@@ -43,6 +44,26 @@ def simulation():
 def meas_rng(key):
     """Simulate measurements using the provided random key."""
     return jax.numpy.bool_(jax.random.randint(key, (1,), 0, 2)[0])
+
+
+def is_abstract(tensor: ArrayLike) -> bool:
+    """Check if the input is an abstract JAX value.
+
+    Parameters
+    ----------
+    tensor : ArrayLike
+        The input to check.
+
+    Returns
+    -------
+    bool
+        True if the input is an abstract JAX value, False otherwise.
+
+    """
+    # Use jax.core.Tracer as base class to catch all tracer types including new ones in JAX 0.7.0+
+    if isinstance(tensor, jax.core.Tracer):
+        return not jax.core.is_concrete(tensor)
+    return False
 
 
 def get_quantum_operations(jaspr: Jaspr) -> List[str]:

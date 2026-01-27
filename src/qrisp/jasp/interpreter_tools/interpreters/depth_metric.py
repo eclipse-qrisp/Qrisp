@@ -32,6 +32,7 @@ from qrisp.jasp.interpreter_tools import (
 )
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     get_quantum_operations,
+    is_abstract,
 )
 from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.jasp.primitives import (
@@ -39,7 +40,8 @@ from qrisp.jasp.primitives import (
 )
 
 # Define a maximum number of qubits to track depth for
-# This can be adjusted as needed (trade-off between memory and flexibility)
+# This can be adjusted as needed (trade-off between memory and flexibility).
+# Unfortunately, JAX does not support dynamic arrays (yet).
 # Ideally, we would implement dynamic resizing in the future
 MAX_QUBITS = 1024
 
@@ -62,13 +64,13 @@ class DepthMetric(BaseMetric):
 
         # As data structure in the context dictionary to keep track of depth,
         # we use an array of size MAX_QUBITS where each entry corresponds to the depth of that qubit.
-        # The final depth is the maximum value in this array (retrieved at the end).
+        # The final depth is the maximum value in this array.
         #
         # Note 1: to speed up compilation time, it will be probably necessary to
         # use the same incrementation constants trick used for gate counting.
         #
-        # Note 2: in case the algorithm uses more than MAX_QUBITS qubits,
-        # this will obviously fail. We can later think of dynamic resizing strategies
+        # Note 2: unfortunately, JAX does not support dynamic arrays (yet),
+        # so we have to fix a maximum static number of qubits.
         depth_array = jnp.zeros(MAX_QUBITS, dtype=jnp.int64)
         global_depth = jnp.int64(0)
         self._initial_metric = (depth_array, global_depth)
@@ -78,93 +80,59 @@ class DepthMetric(BaseMetric):
         """Return the initial metric value."""
         return self._initial_metric
 
-    def _create_new_qubit_array(self, idx_start: ArrayLike) -> ArrayLike:
-        """Create a new qubit array for depth tracking."""
+    # This method creates a lookup table (mapping table) with length `table_size`
+    # (this must be a concrete integer because of JAX and <= MAX_QUBITS)
+    # that maps logical indices to global qubit ids in the depth array based on a starting index.
+    def _create_lookup_table(
+        self, idx_start: ArrayLike, table_size: ArrayLike
+    ) -> ArrayLike:
+        """Create a lookup table for qubit IDs starting from idx_start."""
 
-        qubit_array = idx_start + jnp.arange(MAX_QUBITS, dtype=jnp.int64)
-        # We clip to stay in-bounds (safe indexing)
-        return jnp.clip(qubit_array, 0, MAX_QUBITS - 1)
+        qubits_lookup_table = idx_start + jnp.arange(table_size, dtype=jnp.int64)
+        # TODO: This is corrupted if the program uses more than MAX_QUBITS qubits overall.
+        # We should find a better way to handle/flag this case.
+        return jnp.clip(qubits_lookup_table, 0, MAX_QUBITS - 1)
 
     def handle_create_qubits(self, invalues, eqn, context_dic):
         """Handle the `jasp.create_qubits` primitive."""
 
         size, metric_data = invalues
 
-        # We create a fresh qubit array with `size` qubits in a new region of the depth_array.
         # This keeps into account the fact that `create_qubits` can be called multiple times.
-        index_start = context_dic.get("_previous_qubit_array_end", jnp.int64(0))
-        context_dic["_previous_qubit_array_end"] = index_start + size
+        idx_start = context_dic.get("_previous_qubit_array_end", jnp.int64(0))
+        context_dic["_previous_qubit_array_end"] = idx_start + size
 
-        # ids[i] = index_start + i for all i,
-        # but only first `size` entries are valid logically.
-        ids = self._create_new_qubit_array(index_start)
+        table_size = size if not is_abstract(size) else MAX_QUBITS
+        qubit_ids_table = self._create_lookup_table(idx_start, table_size)
 
-        qubit_array_handle = (ids, size)
+        qubit_table_handle = (qubit_ids_table, size)
 
         # Associate the following in context_dic:
-        # QubitArray -> qubit_array_handle (ids, size)
+        # QubitArray -> qubit_table_handle (qubit_ids_table, size)
         # QuantumCircuit -> metric_data (depth_array, global_depth)
-        return qubit_array_handle, metric_data
+        return qubit_table_handle, metric_data
 
     def handle_get_qubit(self, invalues, eqn, context_dic):
         """Handle the `jasp.get_qubit` primitive."""
 
-        qubit_array_handle, get_qubit_index = invalues
+        qubit_table_handle, qubit_index = invalues
 
-        qubit_array, _ = qubit_array_handle
+        qubit_ids_table, _ = qubit_table_handle
 
         # Associate the following in context_dic:
         # Qubit -> qubit_id (integer tracer/array scalar)
-        return qubit_array[get_qubit_index]
+        return qubit_ids_table[qubit_index]
 
     def handle_get_size(self, invalues, eqn, context_dic):
         """Handle the `jasp.get_size` primitive."""
 
-        (qubit_array_handle,) = invalues
+        (qubit_table_handle,) = invalues
 
-        _, size = qubit_array_handle
+        _, size = qubit_table_handle
 
         # Associate the following in context_dic:
         # size -> size_value (integer tracer/scalar)
         return size
-
-    def handle_fuse(self, invalues, eqn, context_dic):
-        """Handle the `jasp.fuse` primitive."""
-
-        (qubit_array_a, size_a), (qubit_array_b, size_b) = invalues
-
-        idxs = jnp.arange(MAX_QUBITS, dtype=jnp.int64)
-
-        size_out = jnp.minimum(size_a + size_b, jnp.int64(MAX_QUBITS))
-        qubit_array_out = qubit_array_a
-
-        b_pos = idxs - size_a
-        b_pos = jnp.clip(b_pos, 0, MAX_QUBITS - 1)
-        b_take = qubit_array_b[b_pos]
-
-        mask_b = (idxs >= size_a) & (idxs < size_out)
-        qubit_array_out = jnp.where(mask_b, b_take, qubit_array_out)
-
-        return (qubit_array_out, size_out)
-
-    def handle_slice(self, invalues, eqn, context_dic):
-        """Handle the `jasp.slice` primitive for depth."""
-
-        (qubit_array, size), start, stop = invalues
-
-        start = jnp.maximum(start, jnp.int64(0))
-        stop = jnp.minimum(stop, size)
-        stop = jnp.maximum(stop, start)  # ensure non-negative length
-
-        size_out = stop - start
-
-        # Only the first size_out entries are logically valid
-        array_idx_mapping = self._create_new_qubit_array(start)
-        qubit_array_out = qubit_array[array_idx_mapping]
-
-        # Associate the following in context_dic:
-        # QubitArray -> (qubit_array_out, size_out)
-        return (qubit_array_out, size_out)
 
     def handle_quantum_gate(self, invalues, eqn, context_dic):
         """Handle the `jasp.quantum_gate` primitive."""
@@ -178,7 +146,7 @@ class DepthMetric(BaseMetric):
         touched = jnp.take(depth_array, qubit_ids)
         start = jnp.max(touched)
 
-        # TODO: I am assuming here that each gate has duration 1.
+        # TODO: We are assuming here that each gate has duration 1.
         # This can be changed later to accommodate gates with different durations
         # (in the same way as in the gate counting metric)
         duration = jnp.int64(1)
@@ -195,9 +163,9 @@ class DepthMetric(BaseMetric):
     def handle_measure(self, invalues, eqn, context_dic):
         """Handle the `jasp.measure` primitive."""
 
-        target, depth_state = invalues
+        target, metric_data = invalues
 
-        depth_vec, global_depth = depth_state
+        depth_array, global_depth = metric_data
         # We keep a measurement counter only to generate unique keys.
         meas_number = context_dic.get("_depth_meas_number", jnp.int32(0))
 
@@ -220,7 +188,51 @@ class DepthMetric(BaseMetric):
         # Associate the following in context_dic:
         # meas_result -> meas_res (int64 scalar)
         # QuantumCircuit -> metric_data (depth_array, global_depth)
-        return (meas_res, (depth_vec, global_depth))
+        return (meas_res, (depth_array, global_depth))
+
+    def handle_fuse(self, invalues, eqn, context_dic):
+        """Handle the `jasp.fuse` primitive."""
+
+        (qubit_array_a, size_a), (qubit_array_b, size_b) = invalues
+
+        size_out = jnp.minimum(size_a + size_b, jnp.int64(MAX_QUBITS))
+
+        table_size = size_out if not is_abstract(size_out) else MAX_QUBITS
+        idxs = self._create_lookup_table(jnp.int64(0), table_size)
+
+        # We start from qubit_array_a and then we overwrite entries from b where needed
+        qubit_array_out = qubit_array_a
+
+        b_pos = idxs - size_a
+        b_pos = jnp.clip(b_pos, 0, table_size - 1)
+        b_take = qubit_array_b[b_pos]
+
+        # This decides which entries to take from b_take
+        mask_b = (idxs >= size_a) & (idxs < size_out)
+        qubit_array_out = jnp.where(mask_b, b_take, qubit_array_out)
+
+        # Associate the following in context_dic:
+        # QubitArray -> (qubit_array_out, size_out)
+        return (qubit_array_out, size_out)
+
+    def handle_slice(self, invalues, eqn, context_dic):
+        """Handle the `jasp.slice` primitive for depth."""
+
+        (qubit_array, size), start, stop = invalues
+
+        start = jnp.maximum(start, jnp.int64(0))
+        stop = jnp.minimum(stop, size)
+        stop = jnp.maximum(stop, start)
+
+        size_out = stop - start
+        table_size = size_out if not is_abstract(size_out) else MAX_QUBITS
+
+        array_idx_mapping = self._create_lookup_table(start, table_size)
+        qubit_array_out = qubit_array[array_idx_mapping]
+
+        # Associate the following in context_dic:
+        # QubitArray -> (qubit_array_out, size_out)
+        return (qubit_array_out, size_out)
 
     def handle_reset(self, invalues, eqn, context_dic):
         """Handle the `jasp.reset` primitive."""
