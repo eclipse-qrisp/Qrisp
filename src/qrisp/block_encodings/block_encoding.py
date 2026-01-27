@@ -221,7 +221,7 @@ class BlockEncoding:
         Examples
         --------
 
-        Define a block-encoding and apply it using RUS.
+        Define a block-encoding and apply it using repeat-until-success.
 
         ::
 
