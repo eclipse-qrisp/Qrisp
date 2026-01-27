@@ -15,7 +15,8 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
-from qrisp import QuantumFloat, QuantumBool, QuantumModulus, cx, mcx, x, jrange
+from qrisp import *
+from qrisp.jasp import jrange
 import jax.numpy as jnp
 
 ALLOWED_CDKPM_ADDER_QUANTUM_TYPES = (QuantumFloat, QuantumBool, QuantumModulus)
