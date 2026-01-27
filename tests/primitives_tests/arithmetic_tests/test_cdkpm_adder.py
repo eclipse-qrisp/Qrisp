@@ -35,7 +35,7 @@ def test_cdkpm_adder_valid_input():
     assert calculated_out_a == {20: 1.0}
     assert calculated_out_b == {34: 1.0}
 
-    # one input is quantum, the other is classical in static mode
+    # one input is classical, the other is quantum in static mode
     a = 20
     b = QuantumFloat(15)
     b[:] = 14
@@ -44,6 +44,20 @@ def test_cdkpm_adder_valid_input():
     calculated_out_a = a
     assert calculated_out_a == 20
     assert calculated_out_b == {34: 1.0}
+
+    # one input is quantum, the other is classical in static mode
+    b = 20
+    a = QuantumFloat(15)
+    a[:] = 14
+    cdkpm_adder(a, b)
+    # when the first input is quantum and the second is classical
+    # the inputs are switched internally to be able to perform the addition
+    # on the quantum object
+    calculated_out_a = a.get_measurement()
+    assert calculated_out_a == {34: 1.0}
+    # verify b is unchanged outside of the adder
+    assert b == 20
+    
 
     # both quantum inputs in dynamic mode
     def run_jasp_adder(i, j):
