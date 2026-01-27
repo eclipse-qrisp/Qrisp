@@ -16,7 +16,5 @@
 ********************************************************************************
 """
 
-from qrisp.algorithms.cold.problems.QUBO_COLD import *
-from qrisp.algorithms.cold.problems.QUBO_COLD_CRAB import *
-from qrisp.algorithms.cold.problems.QUBO_LCD import *
+from qrisp.algorithms.cold.problems.QUBO import *
 from qrisp.algorithms.cold.problems.qubo_problems import *

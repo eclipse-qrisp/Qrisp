@@ -17,4 +17,6 @@
 """
 
 from qrisp.algorithms.cold.dcqo_problem import *
+from qrisp.algorithms.cold.AGP_params import *
 from qrisp.algorithms.cold.problems import *
+from qrisp.algorithms.cold.cold_benchmark import *
