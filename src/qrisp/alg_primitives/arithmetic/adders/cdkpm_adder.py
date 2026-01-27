@@ -19,7 +19,7 @@ from qrisp import *
 from qrisp.jasp import jrange
 import jax.numpy as jnp
 
-ALLOWED_CDKPM_ADDER_QUANTUM_TYPES = (QuantumFloat, QuantumBool, QuantumModulus)
+ALLOWED_CDKPM_ADDER_QUANTUM_TYPES = (QuantumFloat)
 
 
 def cdkpm_adder(a, b, c_in=None, c_out=None):
