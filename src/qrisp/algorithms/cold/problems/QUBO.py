@@ -25,6 +25,24 @@ from qrisp.algorithms.cold import DCQOProblem, solve_alpha_gamma_chi, solve_alph
 
 
 def create_COLD_instance(Q, uniform_AGP_coeffs):
+    """
+    Create the necessary parameters and operators to initialize a DCQO problem instance for COLD.
+
+    Parameters
+    ----------
+    Q : np.array
+        The QUBO Matrix to be encoded in the Hamiltonian.
+    uniform_AGP_coeffs : bool
+        Whether to approximate the AGP with uniform or non-uniform coefficients.
+
+    Returns
+    -------
+    collected operators : tuple
+        Tuple containing the following functions and operators: 
+        Scheduling function (lam(t)), function for AGP coefficients (alpha), initial and problem
+        Hamiltonian (H_init, H_prob), AGP function (A_lam), Coupling and onsite energies of 
+        problem Hamiltonian (J, h), inverse scheduling function (g(lam)), control Hamiltonian (H_control).
+    """
 
     N = len(Q[0])
     h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
@@ -80,10 +98,33 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
     # Control Hamiltonian
     H_control = sum([Z(i) for i in range(N)])
 
-    return lam, alpha, H_init, H_prob, A_lam, J, h, g, H_control
+    collected_operators = (lam, alpha, H_init, H_prob, A_lam, Q, g, H_control)
+
+    return collected_operators
 
 
 def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
+    """
+    Create the necessary parameters and operators to initialize a DCQO problem instance for LCD.
+
+    Parameters
+    ----------
+    Q : np.array
+        The QUBO Matrix to be encoded in the Hamiltonian.
+    agp_type : str
+        Which approximation of the AGP to use. Can choose between ``order1``, 
+        ``order2``, ``nc`` (nested commutators up to first order).
+    uniform_AGP_coeffs : bool
+        Whether to approximate the AGP with uniform or non-uniform coefficients.
+
+    Returns
+    -------
+    collected operators : tuple
+        Tuple containing the following functions and operators: 
+        Scheduling function (lam(t)), function for AGP coefficients (alpha), initial and problem
+        Hamiltonian (H_init, H_prob), AGP function (A_lam), Coupling and onsite energies of 
+        problem Hamiltonian (J, h), inverse scheduling function (g(lam)), control Hamiltonian (H_control).
+    """
 
     def build_agp(agp_type):
         
@@ -202,7 +243,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     # AGP
     A_lam = build_agp(agp_type)
     
-    return lam, coeff_func, H_init, H_prob, A_lam, J, h
+    return lam, coeff_func, H_init, H_prob, A_lam, Q
 
 
 def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):

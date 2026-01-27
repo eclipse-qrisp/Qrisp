@@ -31,25 +31,31 @@ class DCQOProblem:
 
     Parameters
     ----------
-    qarg_prep : callable
-        A function receiving a :ref:`QuantumVariable` for preparing the inital state.
-        By default, the uniform superposition state $\ket{+}^n$ is prepared.
     sympy_lambda : callable
         A function $\lambda(t, T)$ mapping $t \in$ [0, T] to $\lambda \in$ [0, 1]. This function needs to return
         a `sympy <https://docs.sympy.org/>`_ expression with $t$ and $T$ as `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
-    alpha : callable
+    agp_coeffs : callable
         The parameters for the adiabatic gauge potential (AGP). If the COLD method is being used,
-        alpha must depend on the optimization pulses in ``H_control``.
+        they must depend on the optimization pulses in ``H_control``.
     H_init : :ref:`QubitOperator`
         Hamiltonian, the system is at the time t=0.
     H_prob : :ref:`QubitOperator`
         Hamiltonian, the system evolves to for t=T.
     A_lam : :ref:`QubitOperator`
         Operator holding an appoximation for the adiabatic gauge potential (AGP).
+    J : np.array
+        The coupling matrix in the ``H_prob`` operator.
+    h : np.aray
+        The local vector in the ``H_prob`` operator.
+    sympy_g : callable
+        The inverse function of $\lambda(t, T)$. This function needs to return a `sympy <https://docs.sympy.org/>`_ expression 
+        with $\lambda$ and $T$ as `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
+        Only needed for the COLD algorithm.
     H_control : :ref:`QubitOperator`, optional
         Hamiltonian specifying the control pulses for the COLD method. If not given, the LCD method is used automatically.
-    callback : bool, optional
-        If ``True``, intermediate results are stored. The default is ``False``.
+    qarg_prep : callable
+        A function receiving a :ref:`QuantumVariable` for preparing the inital state.
+        By default, the uniform superposition state $\ket{+}^n$ is prepared.
     """
 
     def __init__(
@@ -59,12 +65,10 @@ class DCQOProblem:
         H_init,
         H_prob,
         A_lam,
-        J,
-        h,
+        Q,
         sympy_g = None,
         H_control=None,
         qarg_prep=None, 
-        callback=False
 
     ):
         
@@ -81,21 +85,9 @@ class DCQOProblem:
         self.qarg_prep = qarg_prep
 
         # Qubo characteristics
-        self.J = J
-        self.h = h
-        
-        # Parameters for callback
-        self.callback = callback
-        self.optimization_params = []
-        self.optimization_costs = []
-
-    def set_callback(self):
-        """
-        Sets ``callback=True`` for saving intermediate results.
-
-        """
-
-        self.callback = True
+        self. Q = Q
+        self.J = 0.5 * Q
+        self.h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
 
     def _precompute_timegrid(self, N_steps, T, method):
         """
@@ -108,6 +100,8 @@ class DCQOProblem:
             Number of timesteps.
         T : float
             Evolution time for the simulation.
+        method : str
+            The method to solve the QUBO with (either ``LCD`` or ``COLD``).
         
         Returns
         -------
@@ -331,6 +325,10 @@ class DCQOProblem:
             The argument to which the H_prob circuit is applied.
         N_opt : int
             Number of optimization parameters in ``H_control``.
+        N_steps : int
+            Number of time steps for the simulation.
+        T : float
+            Evolution time for the simulation.
         qc : :ref:`QuantumCircuit`
             The COLD circuit that is applied before measuring the qarg.
         CRAB : bool, optional
@@ -384,25 +382,6 @@ class DCQOProblem:
                 magnitude += (np.abs(gamma[0]) + np.abs(chi[0]) + np.abs(alpha[0]))
 
             return magnitude
-
-        # Amplitude of the AGP coefficients (coeffs are treated as uniform for simplification)
-        # (maximum absolute coeffs value of all timesteps)
-        def objective_amp(params, CRAB):
-            # Precompute opt pulses to be multiplied with opt params
-            t_list = np.linspace(T/N_steps, T, int(N_steps))
-            sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(params), CRAB=CRAB)
-            amplitude = 0
-
-            # Iterate through lambda(t)
-            for s in range(N_steps):
-                # Get alpha, f and f_deriv for the timestep
-                f = sin_matrix[s, :] @ params
-                f_deriv = cos_matrix[s, :] @ params
-                alpha, gamma, chi = solve_alpha_gamma_chi(self.h, self.J, self.lam[s], f, f_deriv, uniform=True)
-                if np.abs(gamma[0]) + np.abs(chi[0] + np.abs(alpha[0])) > amplitude:
-                    amplitude = np.abs(gamma[0]) + np.abs(chi[0])
-
-            return amplitude
         
         init_point = np.random.rand(N_opt) * np.pi/2
 
@@ -413,9 +392,6 @@ class DCQOProblem:
         elif objective == "agp_coeff_magnitude":
             objective = objective_mag
 
-        elif objective == "agp_coeff_amplitude":
-            objective = objective_amp
-        
         else:
             raise ValueError("{objective} is not a valid option as objective.")
 
@@ -429,6 +405,25 @@ class DCQOProblem:
                         )
         
         return res.x, objective(res.x, CRAB)
+    
+    def QUBO_cost(self, res):
+        """
+        Returns the cost y = x^T Q x for a given binary array x.
+        
+        Parameters
+        ----------
+        res : np.array
+            The array to calculate the cost for.
+        
+        Returns
+        -------
+        cost : float
+            The QUBO cost.
+        
+        """
+        cost = res @ self.Q @ res
+        return cost
+
 
     def run(
         self, 
@@ -439,7 +434,7 @@ class DCQOProblem:
         N_opt=None, 
         CRAB=False, 
         optimizer="COBYQA",
-        objective="exp_value",
+        objective="agp_coeff_magnitude",
         bounds=(),
         options={}
     ):
@@ -452,10 +447,11 @@ class DCQOProblem:
         qarg : :ref:`QuantumVariable`
             The argument to which the DCQO circuit is applied.
         N_steps : int
-            Number of time steps in which the function ``lambda'' is split up.
-            Or: Number of time steps for the simulation.
+            Number of time steps for the simulation.
         T : float
             Evolution time for the simulation.
+        method : str
+            Method to solve the QUBO with. Either ``LCD`` or ``COLD``.
         N_opt : int
             Number of optimization parameters in ``H_control``.
         CRAB : bool
@@ -466,9 +462,11 @@ class DCQOProblem:
         options : dict
             A dictionary of solver options.
         objective : str
-            The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude``, ``agp_coeff_amplitude``). Default is ``exp_value``.
+            The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude````). Default is ``agp_coeff_magnitude``.
         bounds : tuple
             The parameter bounds for the optimizer. Default is (-2, 2).
+        options : dict
+            Additional options for the Scipy solver.
 
         Returns
         -------
@@ -518,5 +516,10 @@ class DCQOProblem:
 
         # Measure qarg
         res_dict = qarg.get_measurement()
+
+        # Add qubo cost in result dict
+        for res in res_dict.keys():
+            res_array = np.fromiter(res, dtype=int)
+            res_dict[res] = [res_dict[res], self.QUBO_cost(res_array)]
 
         return res_dict
