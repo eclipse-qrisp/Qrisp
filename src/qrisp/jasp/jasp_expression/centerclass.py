@@ -431,7 +431,7 @@ class Jaspr(ClosedJaxpr):
         from qrisp.jasp.interpreter_tools.interpreters import jaspr_to_qc
         return jaspr_to_qc(self, *args)
 
-    def extract_post_processing(self, *args, array_input=False):
+    def extract_post_processing(self, *args):
         """
         Extracts the post-processing logic from this Jaspr and returns a function
         that performs the post-processing on measurement results.
@@ -447,16 +447,13 @@ class Jaspr(ClosedJaxpr):
             The static argument values that were used for circuit extraction (excluding 
             the QuantumCircuit argument). These will be bound into the post-processing
             function as Literals.
-        array_input : bool, optional
-            If True, the returned function will accept measurement results as a JAX array
-            of booleans instead of a bitstring. Default is False (bitstring input).
         
         Returns
         -------
         callable
             A function that takes measurement results and returns the post-processed results.
-            If array_input=False (default), accepts a string of '0' and '1' characters.
-            If array_input=True, accepts a JAX array of booleans with shape (n,).
+            Accepts either a string of '0' and '1' characters or a JAX array of booleans
+            with shape (n,). String inputs are automatically converted to boolean arrays.
         
         Examples
         --------
@@ -497,17 +494,17 @@ class Jaspr(ClosedJaxpr):
                 processed = post_proc(bitstring)
                 print(f"{bitstring} -> {processed}")
             
-            # Or with array input (useful for JAX jitting):
-            post_proc_array = jaspr.extract_post_processing(1, array_input=True)
+            # Can also use with array input (useful for JAX jitting):
+            import jax.numpy as jnp
             meas_array = jnp.array([False, True])
-            processed = post_proc_array(meas_array)
+            processed = post_proc(meas_array)
         
         Note that the static arguments (in this case `1`) must be the same as those
         used for circuit extraction, since they affect the structure of both the
         quantum circuit and the post-processing logic.
         """
         from qrisp.jasp.interpreter_tools.interpreters import extract_post_processing
-        return extract_post_processing(self, *args, array_input=array_input)
+        return extract_post_processing(self, *args)
 
     def eval(self, *args, eqn_evaluator=lambda x, y: True):
         return eval_jaxpr(self, eqn_evaluator=eqn_evaluator)(*args)

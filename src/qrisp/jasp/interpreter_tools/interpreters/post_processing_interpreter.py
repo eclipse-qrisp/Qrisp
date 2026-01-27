@@ -60,7 +60,7 @@ def get_post_processing_evaluator(jaxpr):
     return cached_evaluator
 
 
-def extract_post_processing(jaspr, *args, array_input=False):
+def extract_post_processing(jaspr, *args):
     """
     Extracts the post-processing logic from a Jaspr object and returns a function
     that performs the post-processing.
@@ -78,16 +78,13 @@ def extract_post_processing(jaspr, *args, array_input=False):
         The static argument values that were used for circuit extraction (excluding 
         the QuantumCircuit argument). These will be bound into the post-processing
         function.
-    array_input : bool, optional
-        If True, the returned function will accept measurement results as a JAX array
-        of booleans instead of a bitstring. Default is False (bitstring input).
     
     Returns
     -------
     callable
         A function that takes measurement results and returns the post-processed results.
-        If array_input=False (default), accepts a string of '0' and '1' characters.
-        If array_input=True, accepts a JAX array of booleans with shape (n,).
+        Accepts either a string of '0' and '1' characters or a JAX array of booleans
+        with shape (n,). String inputs are automatically converted to boolean arrays.
     
     Examples
     --------
@@ -105,13 +102,14 @@ def extract_post_processing(jaspr, *args, array_input=False):
         
         jaspr = main(1, 2)
         
-        # Bitstring input (default)
+        # Extract post-processing function
         post_proc = extract_post_processing(jaspr, 1, 2)
+        
+        # Can use with bitstring input
         result = post_proc("01")
         
-        # Array input (for JAX jitting)
-        post_proc_array = extract_post_processing(jaspr, 1, 2, array_input=True)
-        result = post_proc_array(jnp.array([False, True]))
+        # Or with array input (automatically detected, useful for JAX jitting)
+        result = post_proc(jnp.array([False, True]))
         
     """
     from jax.extend.core import ClosedJaxpr
@@ -338,16 +336,16 @@ def extract_post_processing(jaspr, *args, array_input=False):
         Parameters
         ----------
         measurement_results : str or jax.Array
-            If array_input=False (default): A string of '0' and '1' characters.
-            If array_input=True: A 1D array of boolean measurement results.
+            Either a string of '0' and '1' characters or a 1D array of boolean
+            measurement results. String inputs are automatically converted to arrays.
         
         Returns
         -------
         tuple or single value
             The post-processed results.
         """
-        # Convert bitstring to JAX array if needed
-        if not array_input:
+        # Convert bitstring to JAX array if it's a string
+        if isinstance(measurement_results, str):
             # Convert string "01001..." to array [False, True, False, False, True, ...]
             measurement_results = jnp.array([c == '1' for c in measurement_results], dtype=bool)
         

@@ -565,8 +565,8 @@ def test_bitstring_vs_array_equivalence():
     jaspr = test_function()
     
     # Create both versions
-    post_proc_bitstring = jaspr.extract_post_processing()  # Default is bitstring
-    post_proc_array = jaspr.extract_post_processing(array_input=True)
+    post_proc_bitstring = jaspr.extract_post_processing()  # Works with both string and array
+    post_proc_array = jaspr.extract_post_processing()
     
     # Test all combinations
     for bits in ["000", "001", "010", "011", "100", "101", "110", "111"]:
@@ -578,7 +578,7 @@ def test_bitstring_vs_array_equivalence():
 
 def test_array_input_jittable():
     """
-    Test that array_input=True produces JAX-jittable functions.
+    Test that the post-processing function works with JAX jit.
     """
     import jax
     
@@ -597,7 +597,7 @@ def test_array_input_jittable():
     jaspr = test_function()
     
     # Extract with array input
-    post_proc = jaspr.extract_post_processing(array_input=True)
+    post_proc = jaspr.extract_post_processing()
     
     # Jit the post-processing function
     jitted_post_proc = jax.jit(post_proc)
@@ -635,8 +635,8 @@ def test_jit_post_processor_with_jitted_subroutines():
     
     jaspr = test_with_jitted_decoder()
     
-    # Extract post-processing with array input (required for jitting)
-    post_proc = jaspr.extract_post_processing(array_input=True)
+    # Extract post-processing
+    post_proc = jaspr.extract_post_processing()
     
     # Jit the post-processing function
     jitted_post_proc = jax.jit(post_proc)
@@ -711,8 +711,8 @@ def test_jit_post_processor_with_qached_subroutines():
     
     jaspr = test_with_qached()
     
-    # Extract post-processing with array input (required for jitting)
-    post_proc = jaspr.extract_post_processing(array_input=True)
+    # Extract post-processing
+    post_proc = jaspr.extract_post_processing()
     
     # Jit the post-processing function
     jitted_post_proc = jax.jit(post_proc)
@@ -775,8 +775,8 @@ def test_jit_post_processor_with_mixed_subroutines():
     
     jaspr = test_mixed()
     
-    # Extract post-processing with array input
-    post_proc = jaspr.extract_post_processing(array_input=True)
+    # Extract post-processing
+    post_proc = jaspr.extract_post_processing()
     
     # Jit the post-processing function
     jitted_post_proc = jax.jit(post_proc)
@@ -846,7 +846,7 @@ def test_cond_primitive():
     jaspr = test_with_cond()
     
     # Extract post-processing
-    post_proc = jaspr.extract_post_processing(array_input=True)
+    post_proc = jaspr.extract_post_processing()
     
     # Circuit measures: qv[0] (single measurement)
     # QuantumFloat(2) has 2 qubits but only qv[0] is measured
@@ -908,7 +908,7 @@ def test_while_primitive():
     jaspr = test_with_while()
     
     # Extract post-processing
-    post_proc = jaspr.extract_post_processing(array_input=True)
+    post_proc = jaspr.extract_post_processing()
     
     result = post_proc(jnp.array([False, False, False]))
     assert result == 0, f"Expected 0, got {result}"
@@ -1033,7 +1033,7 @@ def test_terminal_sampling_comparison():
     qc_results = qc.run(shots=1000)
     
     # Extract post-processing function
-    post_proc = jaspr.extract_post_processing(array_input=True)
+    post_proc = jaspr.extract_post_processing()
     
     # Compare distributions
     match, msg = compare_post_processed_distributions(qc_results, post_proc, terminal_results)
@@ -1061,7 +1061,7 @@ def test_terminal_sampling_comparison():
     result = jaspr.to_qc()
     qc = result[-1]
     qc_results = qc.run(shots=1000)
-    post_proc = jaspr.extract_post_processing(array_input=True)
+    post_proc = jaspr.extract_post_processing()
     
     match, msg = compare_post_processed_distributions(qc_results, post_proc, terminal_results)
     assert match, f"Bell state test - {msg}"
@@ -1094,7 +1094,7 @@ def test_terminal_sampling_comparison():
     result = jaspr.to_qc()
     qc = result[-1]
     qc_results = qc.run(shots=1000)
-    post_proc = jaspr.extract_post_processing(array_input=True)
+    post_proc = jaspr.extract_post_processing()
     
     match, msg = compare_post_processed_distributions(qc_results, post_proc, terminal_results)
     assert match, f"CNOT test - {msg}"
@@ -1124,7 +1124,7 @@ def test_terminal_sampling_comparison():
     result = jaspr.to_qc()
     qc = result[-1]
     qc_results = qc.run(shots=1000)
-    post_proc = jaspr.extract_post_processing(array_input=True)
+    post_proc = jaspr.extract_post_processing()
     
     match, msg = compare_post_processed_distributions(qc_results, post_proc, terminal_results)
     assert match, f"GHZ state test - {msg}"
@@ -1158,7 +1158,7 @@ def test_terminal_sampling_comparison():
     result = jaspr.to_qc()
     qc = result[-1]
     qc_results = qc.run(shots=1000)
-    post_proc = jaspr.extract_post_processing(array_input=True)
+    post_proc = jaspr.extract_post_processing()
     
     match, msg = compare_post_processed_distributions(qc_results, post_proc, terminal_results)
     assert match, f"Mixed size QuantumFloats test - {msg}"
@@ -1194,7 +1194,7 @@ def test_terminal_sampling_comparison():
     result = jaspr.to_qc()
     qc = result[-1]
     qc_results = qc.run(shots=1000)
-    post_proc = jaspr.extract_post_processing(array_input=True)
+    post_proc = jaspr.extract_post_processing()
     
     match, msg = compare_post_processed_distributions(qc_results, post_proc, terminal_results)
     assert match, f"Same-sized QuantumFloats test - {msg}"
