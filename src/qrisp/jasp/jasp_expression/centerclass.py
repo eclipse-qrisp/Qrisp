@@ -441,6 +441,12 @@ class Jaspr(ClosedJaxpr):
         on a NISQ-style backend to obtain measurement results, and then the post-processing
         function can be applied to those results to obtain the final output.
         
+        .. note::
+            
+            It is not possible to extract QuantumCircuits from Jaspr objects
+            involving real-time computation, but it is possible to extract a post
+            processing function.
+        
         Parameters
         ----------
         *args : tuple
