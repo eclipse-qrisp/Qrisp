@@ -39,25 +39,12 @@ def test_block_encoding_addition(H1, H2):
 
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    @RUS
-    def main(BE):
-        qv = QuantumVariable(n)
-        ancillas = BE.apply(qv)
-        bools = jnp.array([(measure(anc) == 0) for anc in ancillas])
-        success_bool = jnp.all(bools)
-
-        # garbage collection
-        [reset(anc) for anc in ancillas]
-        [anc.delete() for anc in ancillas]
-        return success_bool, qv
-
     @terminal_sampling
-    def run_main(BE):
-        qv = main(BE)
-        return qv
-    
-    res_be3 = run_main(BE3)
-    res_be_add = run_main(BE_addition)
+    def main(BE):
+        return BE.apply_rus(lambda: QuantumVariable(n))()
+
+    res_be3 = main(BE3)
+    res_be_add = main(BE_addition)
 
     for k in range(2 ** n):
         val_be3 = res_be3.get(k, 0)
@@ -81,25 +68,12 @@ def test_block_encoding_subtraction(H1, H2):
 
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    @RUS
-    def main(BE):
-        qv = QuantumVariable(n)
-        ancillas = BE.apply(qv)
-        bools = jnp.array([(measure(anc) == 0) for anc in ancillas])
-        success_bool = jnp.all(bools)
-
-        # garbage collection
-        [reset(anc) for anc in ancillas]
-        [anc.delete() for anc in ancillas]
-        return success_bool, qv
-
     @terminal_sampling
-    def run_main(BE):
-        qv = main(BE)
-        return qv
+    def main(BE):
+        return BE.apply_rus(lambda: QuantumVariable(n))()
     
-    res_be3 = run_main(BE3)
-    res_be_sub = run_main(BE_subtraction)
+    res_be3 = main(BE3)
+    res_be_sub = main(BE_subtraction)
 
     for k in range(2 ** n):
         val_be3 = res_be3.get(k, 0)
@@ -125,25 +99,12 @@ def test_block_encoding_multiplication(H1, H2):
 
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    @RUS
-    def main(BE):
-        qv = QuantumVariable(n)
-        ancillas = BE.apply(qv)
-        bools = jnp.array([(measure(anc) == 0) for anc in ancillas])
-        success_bool = jnp.all(bools)
-
-        # garbage collection
-        [reset(anc) for anc in ancillas]
-        [anc.delete() for anc in ancillas]
-        return success_bool, qv
-
     @terminal_sampling
-    def run_main(BE):
-        qv = main(BE)
-        return qv
+    def main(BE):
+        return BE.apply_rus(lambda: QuantumVariable(n))()
     
-    res_be3 = run_main(BE3)
-    res_be_mul = run_main(BE_multiplication)
+    res_be3 = main(BE3)
+    res_be_mul = main(BE_multiplication)
 
     for k in range(2 ** n):
         val_be3 = res_be3.get(k, 0)
@@ -168,25 +129,13 @@ def test_block_encoding_scalar_multiplication(H1, H2, scalar):
     
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    @RUS
-    def main(BE):
-        qv = QuantumVariable(n)
-        ancillas = BE.apply(qv)
-        success_bool = jnp.all(jnp.array([(measure(anc) == 0) for anc in ancillas]))
-        
-        for anc in ancillas:
-            reset(anc)
-            anc.delete()
-            
-        return success_bool, qv
-
     @terminal_sampling
-    def run_main(BE):
-        return main(BE)
+    def main(BE):
+        return BE.apply_rus(lambda: QuantumVariable(n))()
 
-    res_target = run_main(BE_target)
-    res_left = run_main(BE_left)
-    res_right = run_main(BE_right)
+    res_target = main(BE_target)
+    res_left = main(BE_left)
+    res_right = main(BE_right)
 
     for k in range(2 ** n):
         val_target = res_target.get(k, 0)
@@ -211,24 +160,12 @@ def test_block_encoding_negation(H1, H2):
 
     n = H1.find_minimal_qubit_amount()
 
-    @RUS
-    def main(BE):
-        qv = QuantumVariable(n)
-        ancillas = BE.apply(qv)
-        success_bool = jnp.all(jnp.array([(measure(anc) == 0) for anc in ancillas]))
-        
-        for anc in ancillas:
-            reset(anc)
-            anc.delete()
-            
-        return success_bool, qv
-
     @terminal_sampling
-    def run_main(BE):
-        return main(BE)
+    def main(BE):
+        return BE.apply_rus(lambda: QuantumVariable(n))()
     
-    res_be_neg = run_main(BE_neg)
-    res_be2 = run_main(BE2)
+    res_be_neg = main(BE_neg)
+    res_be2 = main(BE2)
 
     for k in range(2 ** n):
         val_be_neg = res_be_neg.get(k, 0)
