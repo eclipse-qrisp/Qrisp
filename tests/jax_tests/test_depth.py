@@ -577,3 +577,24 @@ class TestDepthSliceFuse:
             h(new_qv[3])
 
         assert main(2, 2) == 2
+
+
+def test_check_overflow():
+    """Check for depth metric overflow handling."""
+
+    @depth(meas_behavior="0")
+    def main(num_qubits1, num_qubits2):
+        qf1 = QuantumFloat(num_qubits1)
+        qf2 = QuantumFloat(num_qubits2)
+        h(qf1[1])
+        h(qf2[1])
+        new_qv = qf1[:] + qf2[:]
+        h(new_qv[0])
+        cx(new_qv[1], new_qv[2])
+        h(new_qv[3])
+
+    with pytest.raises(
+        ValueError,
+        match="The depth metric computation overflowed the maximum number of qubits supported.",
+    ):
+        main(0, 2**16)

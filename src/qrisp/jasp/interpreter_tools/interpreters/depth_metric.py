@@ -69,10 +69,11 @@ class DepthMetric(BaseMetric):
         # use the same incrementation constants trick used for gate counting.
         depth_array = jnp.zeros(self._MAX_QUBITS, dtype=jnp.int64)
         current_depth = jnp.int64(0)
-        self._initial_metric = (depth_array, current_depth)
+        invalid = jnp.bool_(False)
+        self._initial_metric = (depth_array, current_depth, invalid)
 
     @property
-    def initial_metric(self) -> Tuple[ArrayLike, int]:
+    def initial_metric(self) -> Tuple[ArrayLike, ArrayLike, ArrayLike]:
         """Return the initial metric value."""
         return self._initial_metric
 
@@ -85,18 +86,23 @@ class DepthMetric(BaseMetric):
         """Create a lookup table for qubit IDs starting from idx_start."""
 
         qubits_lookup_table = idx_start + jnp.arange(table_size, dtype=jnp.int64)
-        # TODO: This is corrupted if the program uses more than MAX_QUBITS qubits overall.
-        # We should find a better way to handle/flag this case.
-        return jnp.clip(qubits_lookup_table, 0, self._MAX_QUBITS - 1)
+        return qubits_lookup_table
 
     def handle_create_qubits(self, invalues, eqn, context_dic):
         """Handle the `jasp.create_qubits` primitive."""
 
         size, metric_data = invalues
+        depth_array, global_depth, invalid = metric_data
 
-        # This keeps into account the fact that `create_qubits` can be called multiple times.
+        # We keep into account that `create_qubits` can be called multiple times.
         idx_start = context_dic.get("_previous_qubit_array_end", jnp.int64(0))
-        context_dic["_previous_qubit_array_end"] = idx_start + size
+        idx_end = idx_start + size
+
+        overflow = idx_end > self._MAX_QUBITS
+        # accumulate invalid flag (once invalid, always invalid)
+        invalid = jnp.logical_or(invalid, overflow)
+
+        context_dic["_previous_qubit_array_end"] = idx_end
 
         table_size = size if not is_abstract(size) else self._MAX_QUBITS
         qubit_ids_table = self._create_lookup_table(idx_start, table_size)
@@ -105,8 +111,8 @@ class DepthMetric(BaseMetric):
 
         # Associate the following in context_dic:
         # QubitArray -> qubit_table_handle (qubit_ids_table, size)
-        # QuantumCircuit -> metric_data (depth_array, current_depth)
-        return qubit_table_handle, metric_data
+        # QuantumCircuit -> metric_data (depth_array, current_depth, invalid)
+        return qubit_table_handle, (depth_array, global_depth, invalid)
 
     def handle_get_qubit(self, invalues, eqn, context_dic):
         """Handle the `jasp.get_qubit` primitive."""
@@ -134,7 +140,7 @@ class DepthMetric(BaseMetric):
         """Handle the `jasp.quantum_gate` primitive."""
 
         *qubits, metric_data = invalues
-        depth_array, current_depth = metric_data
+        depth_array, current_depth, invalid = metric_data
 
         # Qubits have been already converted to their integer indices
         # by the `jasp.get_qubit` primitive handler
@@ -153,15 +159,15 @@ class DepthMetric(BaseMetric):
         current_depth = jnp.maximum(current_depth, end)
 
         # Associate the following in context_dic:
-        # QuantumCircuit -> metric_data (depth_array, current_depth)
-        return depth_array, current_depth
+        # QuantumCircuit -> metric_data (depth_array, current_depth, invalid)
+        return depth_array, current_depth, invalid
 
     def handle_measure(self, invalues, eqn, context_dic):
         """Handle the `jasp.measure` primitive."""
 
         target, metric_data = invalues
 
-        depth_array, current_depth = metric_data
+        depth_array, current_depth, invalid = metric_data
         # We keep a measurement counter only to generate unique keys.
         meas_number = context_dic.get("_depth_meas_number", jnp.int32(0))
 
@@ -183,8 +189,8 @@ class DepthMetric(BaseMetric):
 
         # Associate the following in context_dic:
         # meas_result -> meas_res (int64 scalar)
-        # QuantumCircuit -> metric_data (depth_array, current_depth)
-        return (meas_res, (depth_array, current_depth))
+        # QuantumCircuit -> metric_data (depth_array, current_depth, invalid)
+        return (meas_res, (depth_array, current_depth, invalid))
 
     def handle_fuse(self, invalues, eqn, context_dic):
         """Handle the `jasp.fuse` primitive."""
@@ -236,7 +242,7 @@ class DepthMetric(BaseMetric):
         _, metric_data = invalues
 
         # Associate the following in context_dic:
-        # QuantumCircuit -> metric_data (depth_array, current_depth)
+        # QuantumCircuit -> metric_data (depth_array, current_depth, invalid)
         return metric_data
 
     def handle_delete_qubits(self, invalues, eqn, context_dic):
@@ -245,17 +251,20 @@ class DepthMetric(BaseMetric):
         _, metric_data = invalues
 
         # Associate the following in context_dic:
-        # QuantumCircuit -> metric_data (depth_array, current_depth)
+        # QuantumCircuit -> metric_data (depth_array, current_depth, invalid)
         return metric_data
 
 
 def extract_depth(res: Tuple, jaspr: Jaspr, _) -> int:
     """Extract depth from the profiling result."""
 
-    if len(jaspr.outvars) > 1:
-        depth = res[-1][1]
-    else:
-        depth = res[1]
+    metric = res[-1] if len(jaspr.outvars) > 1 else res
+    _, depth, overflowed = metric
+
+    if overflowed:
+        raise ValueError(
+            "The depth metric computation overflowed the maximum number of qubits supported."
+        )
 
     return int(depth) if hasattr(depth, "__int__") else depth
 
