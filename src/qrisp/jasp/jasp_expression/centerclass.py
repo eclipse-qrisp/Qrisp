@@ -450,9 +450,8 @@ class Jaspr(ClosedJaxpr):
         Parameters
         ----------
         *args : tuple
-            The static argument values that were used for circuit extraction (excluding 
-            the QuantumCircuit argument). These will be bound into the post-processing
-            function as Literals.
+            The static argument values that were used for circuit extraction. 
+            These will be bound into the post-processing function as Literals.
         
         Returns
         -------
@@ -469,7 +468,6 @@ class Jaspr(ClosedJaxpr):
         ::
         
             from qrisp import *
-            from qrisp.jasp import make_jaspr
             import jax.numpy as jnp
             
             @make_jaspr
@@ -477,23 +475,22 @@ class Jaspr(ClosedJaxpr):
                 qv = QuantumFloat(5)
                 # First measurement
                 meas_1 = measure(qv[i])
+                h(qv[1])
                 # Second measurement
                 meas_2 = measure(qv[1])
                 # Classical post-processing
-                from jax.lax import convert_element_type
-                result = convert_element_type(meas_1, int) + 1
-                return result, meas_2
+                return meas_1 + 2, meas_2
             
             jaspr = example_function(1)
             
             # Extract the quantum circuit
-            _, qc = jaspr.to_qc(1)
+            a, b, qc = jaspr.to_qc(1)
             
             # Extract the post-processing function with the SAME arguments
             post_proc = jaspr.extract_post_processing(1)
             
             # Execute qc on a backend to get measurement results
-            # For example: results = {'00': 100, '01': 50}
+            results = qc.run()
             
             # Apply post-processing to each result
             for bitstring, count in results.items():
