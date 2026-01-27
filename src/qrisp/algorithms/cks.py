@@ -380,8 +380,8 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         from qrisp.algorithms.cks import inner_CKS
         from qrisp import multi_measurement
 
-        operand, in_case, out_case = inner_CKS(A, b, 0.001)
-        res_dict = multi_measurement([operand, in_case, out_case])
+        operand, *ancillas = inner_CKS(A, b, 0.001)
+        res_dict = multi_measurement([operand, *ancillas])
 
     This performs the measurement on all three of our QuantumVariables ``out_case``, ``in_case``, and ``operand``.
     Since the CKS (and all other LCU based approaches) is correctly performed only when
@@ -394,15 +394,15 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         success_prob = 0
 
         for key, prob in res_dict.items():
-            if key[1]==0 and key[2]==0:
+            if all(k == 0 for k in key[1:]):
                 new_dict[key[0]] = prob
                 success_prob += prob
 
         for key in new_dict.keys():
-            new_dict[key] = new_dict[key]/success_prob
+            new_dict[key] = new_dict[key] / success_prob
 
         for k, v in new_dict.items():
-            new_dict[k] = v**0.5
+            new_dict[k] = v ** 0.5
     
     Finally, compare the quantum simulation result with the classical solution:
 
@@ -440,36 +440,10 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     j_0, beta = CKS_parameters(A, eps, kappa, max_beta)
     cheb_coeffs = cheb_coefficients(j_0, beta)
 
-    def RU(cases, operand):
-        """
-        Applies one qubitization step :math:`RU` (or its inverse) associated
-        with the Chebyshev polynomial block-encoding of an operator :math:`A`.
-
-        This operation alternates between application of the block-encoding
-        unitary :math:`U` and a reflection about the block-encoding state
-        :math:`\ket{G}`, realizing
-
-        .. math::
-
-            T_k(A) = (RU)^k,
-
-        where :math:`R` reflects about the block-encoding state :math:`\ket{G}`,
-        and :math:`T_k(A)` is the Chebyshev polynomials of the first kind of degree :math:`k`.
-
-        Parameters
-        ----------
-        case : QuantumVariable
-            Auxiliary case variable encoding the block-encoding state :math:`\ket{G}`.
-        operand : QuantumVariable
-            Operand (solution) variable upon which the block-encoded matrix
-            :math:`A` acts. 
-
-        """
-        BE.unitary(*cases, operand)
-        reflection(cases, state_function=lambda x : None)  # reflection operator R about $\ket{0}$.
+    BE_qubitized = BE.qubitization()
 
     out_case = QuantumFloat(j_0 + 1)
-    in_case_list = BE.create_ancillas()
+    in_case_list = BE_qubitized.create_ancillas()
 
     if callable(b):
         operand = b()
@@ -480,14 +454,14 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     # Core LCU protocol: PREP, SELECT, PREP^†
     with conjugate(unary_prep)(out_case, cheb_coeffs):
         with control(out_case[0]):
-            RU(in_case_list, operand)
+            BE_qubitized.unitary(*in_case_list, operand)
         for i in jrange(1, j_0 + 1):
             z(out_case[i])
             with control(out_case[i]):
-                RU(in_case_list, operand)
-                RU(in_case_list, operand)
+                BE_qubitized.unitary(*in_case_list, operand)
+                BE_qubitized.unitary(*in_case_list, operand)
 
-    return operand, in_case_list[0], out_case
+    return operand, *in_case_list, out_case
 
 def inner_CKS_wrapper(qlsp, eps, kappa=None, max_beta=None):
     """
