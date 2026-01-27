@@ -274,7 +274,7 @@ def _normalize_meas_behavior(meas_behavior) -> Callable:
     raise TypeError("meas_behavior must be a str or callable")
 
 
-def depth(meas_behavior):
+def depth(meas_behavior) -> Callable:
     """
     Decorator to determine the depth of large scale quantum computations.
     This decorator compiles the given Jasp-compatible function into a classical

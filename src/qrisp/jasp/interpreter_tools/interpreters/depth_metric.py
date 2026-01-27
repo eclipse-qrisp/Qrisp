@@ -55,7 +55,7 @@ class DepthMetric(BaseMetric):
     # This can be adjusted as needed (trade-off between memory and flexibility).
     # Unfortunately, JAX does not support dynamic arrays (yet).
     # Ideally, we would implement dynamic resizing in the future
-    _MAX_QUBITS: ArrayLike = jnp.int64(1024)
+    _MAX_QUBITS: int = 1024
 
     def __init__(self, meas_behavior: Callable, profiling_dic: dict):
         """Initialize the DepthMetric."""
@@ -88,6 +88,10 @@ class DepthMetric(BaseMetric):
         qubits_lookup_table = idx_start + jnp.arange(table_size, dtype=jnp.int64)
         return qubits_lookup_table
 
+    def _check_overflow(self, idx_end: ArrayLike):
+        """Check if the number of qubits exceeds the maximum allowed."""
+        pass
+
     def handle_create_qubits(self, invalues, eqn, context_dic):
         """Handle the `jasp.create_qubits` primitive."""
 
@@ -98,8 +102,7 @@ class DepthMetric(BaseMetric):
         idx_start = context_dic.get("_previous_qubit_array_end", jnp.int64(0))
         idx_end = idx_start + size
 
-        overflow = idx_end > self._MAX_QUBITS
-        # accumulate invalid flag (once invalid, always invalid)
+        overflow = idx_end > jnp.int64(self._MAX_QUBITS)
         invalid = jnp.logical_or(invalid, overflow)
 
         context_dic["_previous_qubit_array_end"] = idx_end
@@ -148,13 +151,16 @@ class DepthMetric(BaseMetric):
         touched = jnp.take(depth_array, qubit_ids)
         start = jnp.max(touched)
 
-        # TODO: We are assuming here that each gate has duration 1.
-        # This can be changed later to accommodate gates with different durations
-        # (in the same way as in the gate counting metric)
+        # TODO: We are assuming here that each gate has duration 1,
+        # but this should be extended to support gates with different durations.
+        op = eqn.params["gate"]
+        if op.definition:
+            raise NotImplementedError(
+                "Depth computation for gates with definitions is not implemented yet."
+            )
         duration = jnp.int64(1)
         end = start + duration
 
-        # We update all touched qubits to `end`
         depth_array = depth_array.at[qubit_ids].set(end)
         current_depth = jnp.maximum(current_depth, end)
 
@@ -192,6 +198,7 @@ class DepthMetric(BaseMetric):
         # QuantumCircuit -> metric_data (depth_array, current_depth, invalid)
         return (meas_res, (depth_array, current_depth, invalid))
 
+    # TODO: need to keep track of possible overflows in fuse and slice
     def handle_fuse(self, invalues, eqn, context_dic):
         """Handle the `jasp.fuse` primitive."""
 
