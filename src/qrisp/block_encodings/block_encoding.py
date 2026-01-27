@@ -21,9 +21,10 @@ import numpy as np
 import jax.numpy as jnp
 from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.core import QuantumVariable
-from qrisp.environments import conjugate, control, invert
-from qrisp.qtypes import QuantumBool
 from qrisp.core.gate_application_functions import h, x, z, gphase
+from qrisp.environments import conjugate, control, invert
+from qrisp.jasp.tracing_logic import QuantumVariableTemplate
+from qrisp.qtypes import QuantumBool
 from typing import Any, Callable
 
 
@@ -71,15 +72,16 @@ class BlockEncoding:
 
     Parameters
     ----------
-    unitary : callable
-        A function ``unitary(*ancillas, *operands)`` applying the block-encoding unitary 
-        to ancilla and operand QuantumVariables.
-    ancillas : list[QuantumVariable]
-        A list of QuantumVariables serving as templates for the ancilla variables.
-    alpha : float
+    unitary : Callable[..., None]
+        A function ``unitary(*ancillas, *operands)`` applying the block-encoding unitary. 
+        It receives the ancilla and operand QuantumVariables as arguments.
+    ancillas : list[QuantumVariable | QuantumVariableTemplate]
+        A list of QuantumVariables or QuantumVariableTemplates. These serve as 
+        templates for the ancilla variables used in the block-encoding.
+    alpha : float | int
         The scaling factor.
-    is_hermitian : bool
-        Indicates whether the block-encoding unitary is Hermitian. The default is ``False``.
+    is_hermitian : bool, optional
+        Indicates whether the block-encoding unitary is Hermitian. The default is False.
 
     Attributes
     ----------
@@ -172,17 +174,19 @@ class BlockEncoding:
 
     def __init__(
         self,
-        unitary,
-        anc_templates,
-        alpha,
-        is_hermitian=False,
-    ):
+        unitary: Callable[..., None],
+        ancillas: list[QuantumVariable | QuantumVariableTemplate],
+        alpha: float | int,
+        is_hermitian: bool = False,
+    ) -> None:
 
         self.unitary = unitary
-        self.anc_templates = anc_templates
         self.alpha = alpha
         self.is_hermitian = is_hermitian
-
+        self.anc_templates: list[QuantumVariableTemplate] = [
+            anc.template() if isinstance(anc, QuantumVariable) else anc 
+            for anc in ancillas
+        ]
 
     def create_ancillas(self) -> list[QuantumVariable]:
         r"""
@@ -205,8 +209,8 @@ class BlockEncoding:
 
         Parameters
         ----------
-        operands : list[QuantumVariable]
-            A list of QuantumVariables serving as operands for the block-encoding.
+        *operands : QuantumVariable
+            QuantumVariables serving as operands for the block-encoding.
 
         Returns
         -------
@@ -521,7 +525,7 @@ class BlockEncoding:
         new_alpha = alpha + beta
         return BlockEncoding(new_unitary, new_anc_templates, new_alpha, is_hermitian=self.is_hermitian and other.is_hermitian)
 
-    def __mul__(self, other: BlockEncoding | int | float) -> BlockEncoding:
+    def __mul__(self, other: BlockEncoding | float | int) -> BlockEncoding:
         r"""
         Implements multiplication of a BlockEncoding by another BlockEncoding or a scalar.
 
