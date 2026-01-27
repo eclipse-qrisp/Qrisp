@@ -26,7 +26,6 @@ We encourage you to explore these Operators, delve into their documentation, and
 .. toctree::
    :hidden:
    
-   BlockEncoding
    QubitOperator
    FermionicOperator
 

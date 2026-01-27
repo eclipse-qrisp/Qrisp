@@ -3,7 +3,7 @@
 BlockEncoding
 =============
 
-.. currentmodule:: qrisp.operators.block_encoding
+.. currentmodule:: qrisp.block_encodings
 .. autoclass:: BlockEncoding
 
 Methods

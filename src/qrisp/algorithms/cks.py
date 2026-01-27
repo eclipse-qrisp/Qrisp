@@ -421,7 +421,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     hardware or simulators <BackendInterface>`.  
 
     """
-    from qrisp.operators.block_encoding import BlockEncoding
+    from qrisp.block_encodings import BlockEncoding
 
     if isinstance(A, BlockEncoding):
         BE = A

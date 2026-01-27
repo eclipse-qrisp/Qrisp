@@ -2220,7 +2220,7 @@ class QubitOperator(Hamiltonian):
         """
         from qrisp.alg_primitives import prepare, qswitch
         from qrisp.jasp import qache
-        from qrisp.operators.block_encoding import BlockEncoding
+        from qrisp.block_encodings import BlockEncoding
         from qrisp.qtypes import QuantumFloat
     
         unitaries, coeffs = self.unitaries()
