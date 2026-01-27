@@ -159,14 +159,11 @@ def extract_post_processing(jaspr, *args, array_input=False):
                     # Size of the qubit array (may be dynamic!)
                     size = context_dic[eqn.invars[0]]
                     
-                    # Use JAX loop to build integer from bits (handles dynamic size)
-                    # Note: Bitstrings from quantum backends are typically big-endian
-                    # (most significant bit first), but we build little-endian internally
-                    # (bit 0 is LSB), so we need to reverse the bit order.
+                    # Use JAX loop to build integer from bits
+                    # Bits are in circuit order (LSB first for little-endian QuantumFloats)
                     # Loop body: accumulator = accumulator | ((bit ? 1 : 0) << i)
                     def loop_body(i, acc):
-                        # Reverse index: read from end of slice backwards
-                        bit = meas_arr[last_popped + size - 1 - i]
+                        bit = meas_arr[last_popped + i]
                         # Convert bool to int: bit -> 1 if True else 0
                         bit_int = jnp.where(bit, jnp.array(1, dtype=jnp.int64), jnp.array(0, dtype=jnp.int64))
                         # Shift and OR into accumulator
@@ -353,6 +350,10 @@ def extract_post_processing(jaspr, *args, array_input=False):
         if not array_input:
             # Convert string "01001..." to array [False, True, False, False, True, ...]
             measurement_results = jnp.array([c == '1' for c in measurement_results], dtype=bool)
+        
+        # Reverse the array to match circuit bit order
+        # (bitstrings from qc.run() follow Qiskit convention: reversed from circuit order)
+        measurement_results = measurement_results[::-1]
         
         # Create evaluator
         eqn_evaluator = create_post_processing_evaluator()
