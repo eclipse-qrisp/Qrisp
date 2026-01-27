@@ -496,6 +496,10 @@ class Jaspr(ClosedJaxpr):
             for bitstring, count in results.items():
                 processed = post_proc(bitstring)
                 print(f"{bitstring} -> {processed}")
+              
+            # Yields:
+            # 00 -> (Array(2, dtype=int64), Array(False, dtype=bool))
+            # 01 -> (Array(2, dtype=int64), Array(True, dtype=bool))
             
             # Can also use with array input (useful for JAX jitting):
             import jax.numpy as jnp
