@@ -23,10 +23,50 @@ ALLOWED_CDKPM_ADDER_QUANTUM_TYPES = (QuantumFloat, QuantumBool, QuantumModulus)
 
 
 def cdkpm_adder(a, b, c_in=None, c_out=None):
-    """Adder as introduced in https://arxiv.org/abs/quant-ph/0410184
+    """In-place adder as introduced in https://arxiv.org/abs/quant-ph/0410184
 
     This function works in both static and dynamic modes. The allowed inputs are both quantum types or one quantum
-    type and one classical type.
+    type and one classical type. 
+
+    .. note::
+    
+        If the first input is quantum and the second classical, the addition is performed
+        on the first input and the inputs are switched internally.
+
+    
+    Parameters
+    ----------
+    a : int or QuantumVariable or list[Qubit]
+        The value that should be added.
+    b : QuantumVariable or list[Qubit]
+        The value that should be modified in the in-place addition.
+    c_in : Qubit, optional
+        An optional carry in value. The default is None.
+    c_out : Qubit, optional
+        An optional carry out value. The default is None.
+
+    Raises
+    ------
+    ValueError
+        If the inputs are not valid quantum or classical types.
+    
+    Returns
+    -------
+    None
+        The function modifies the second input in place.
+    
+    Examples
+    --------
+    Static mode with both quantum inputs:
+
+    >>> from qrisp import QuantumFloat, cdkpm_adder
+    >>> a = QuantumFloat(4)
+    >>> b = QuantumFloat(4)
+    >>> a[:] = 4
+    >>> b[:] = 5
+    >>> cdkpm_adder(a,b)
+    >>> print(b)
+    {9: 1.0}
     """
 
     if not (
@@ -50,10 +90,16 @@ def cdkpm_adder(a, b, c_in=None, c_out=None):
         q_a = QuantumFloat(b.size)
         q_a[:] = a
         a = q_a
+    
+    # if the first input is quantum and the second is classical
+    # we switch the inputs to make the second input always quantum given that
+    # the sum is implemented on the second input
     elif not isinstance(b, ALLOWED_CDKPM_ADDER_QUANTUM_TYPES):
         q_b = QuantumFloat(a.size)
         q_b[:] = b
         b = q_b
+        # switch the inputs
+        a, b = b, a
 
     # when the inputs are of unequal length
     # pad the size of the input with the smaller size
