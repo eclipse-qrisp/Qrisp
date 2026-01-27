@@ -21,6 +21,14 @@ to avoid manually building slice/squeeze equations.
 
 from functools import lru_cache
 
+from qrisp.jasp.interpreter_tools.abstract_interpreter import (
+    extract_invalues,
+    insert_outvalues,
+    eval_jaxpr,
+    eval_jaxpr_with_context_dic, 
+    ContextDict
+)
+
 
 @lru_cache(maxsize=int(1e5))
 def get_post_processing_evaluator(jaxpr):
@@ -42,7 +50,6 @@ def get_post_processing_evaluator(jaxpr):
     callable
         A function that evaluates the jaxpr using the post-processing evaluator.
     """
-    from qrisp.jasp.interpreter_tools.abstract_interpreter import eval_jaxpr
     
     # We return a function that will use the post-processing evaluator
     # The evaluator itself is created inside extract_post_processing
@@ -109,7 +116,6 @@ def extract_post_processing(jaspr, *args, array_input=False):
     """
     from jax.extend.core import ClosedJaxpr
     from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive, AbstractQubitArray
-    from qrisp.jasp.interpreter_tools.abstract_interpreter import eval_jaxpr_with_context_dic, ContextDict
     import jax.numpy as jnp
     
     # Get the inner jaxpr
@@ -238,10 +244,6 @@ def extract_post_processing(jaspr, *args, array_input=False):
             # We use LRU caching to ensure identical jaxprs use the same function instance,
             # which allows JAX to compile them only once during tracing.
             if eqn.primitive.name in ("jit", "pjit"):
-                from qrisp.jasp.interpreter_tools.abstract_interpreter import (
-                    extract_invalues,
-                    insert_outvalues,
-                )
 
                 jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
                 if jaxpr is None:
@@ -266,11 +268,7 @@ def extract_post_processing(jaspr, *args, array_input=False):
 
             # Handle while loops
             if eqn.primitive.name == "while":
-                from qrisp.jasp.interpreter_tools.abstract_interpreter import (
-                    extract_invalues,
-                    insert_outvalues,
-                    eval_jaxpr,
-                )
+
                 import jax.lax
 
                 invalues = extract_invalues(eqn, context_dic)
@@ -308,10 +306,7 @@ def extract_post_processing(jaspr, *args, array_input=False):
 
             # Handle conditional (cond/switch)
             if eqn.primitive.name == "cond":
-                from qrisp.jasp.interpreter_tools.abstract_interpreter import (
-                    extract_invalues,
-                    insert_outvalues,
-                )
+
                 import jax.lax
 
                 invalues = extract_invalues(eqn, context_dic)
