@@ -335,14 +335,12 @@ def sum_path(a, b, c, R):
             if not len(a_block) == len(b_block):
                 padding_var = QuantumVariable(len(b_block) - len(a_block))
                 a_block = a_block + list(padding_var)
-            # Perform Cuccarro addition
+            # Perform Gidney addition
             if i == 0:
-                # cuccaro_procedure(a.qs, a_block, b_block)
 
                 gidney_adder(a_block, b_block)
             else:
 
-                # cuccaro_procedure(a.qs, a_block, b_block, carry_in = c[i-1])
                 gidney_adder(a_block, b_block, c[i - 1])
 
             # Delete carry var
@@ -458,15 +456,13 @@ def sum_path_gidney(a, b, c, R):
             padding_var = QuantumVariable(len(b_block) - len(a_block))
             a_block = a_block + list(padding_var)
 
-        # Perform Cuccarro addition
+        # Perform Gidney addition
         if i == 0:
-            # cuccaro_procedure(a.qs, a_block, b_block)
             if len(c):
                 gidney_adder(a_block, b_block, c_out=c[i])
             else:
                 gidney_adder(a_block, b_block)
         elif i < len(c):
-            # cuccaro_procedure(a.qs, a_block, b_block, carry_in = c[i-1])
             gidney_adder(a_block, b_block, c_in=c[i - 1], c_out=c[i])
         else:
             gidney_adder(a_block, b_block, c_in=c[i - 1])
