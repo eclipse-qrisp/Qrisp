@@ -719,24 +719,24 @@ def test_jit_post_processor_with_qached_subroutines():
     
     # Test various combinations
     # Circuit measures: res1 (from qv1[0]) then res2 (from qv2[0])
-    # Qiskit convention: last measurement first, so [res2, res1]
+    # Measurement order: [res1, res2] - chronological order (first measurement first)
     
-    # Both measurements False: Qiskit order [False, False]
+    # Both measurements False: array[0]=res1=False, array[1]=res2=False
     test_input = jnp.array([False, False])
     result = jitted_post_proc(test_input)
     assert result == 0, f"Expected 0, got {result}"
     
-    # res1=True, res2=False: Qiskit order [False, True]
+    # res1=True, res2=False: array[0]=res1=True, array[1]=res2=False
     test_input = jnp.array([True, False])
     result = jitted_post_proc(test_input)
     assert result == 1, f"Expected 1, got {result}"
     
-    # res1=False, res2=True: Qiskit order [True, False]
+    # res1=False, res2=True: array[0]=res1=False, array[1]=res2=True
     test_input = jnp.array([False, True])
     result = jitted_post_proc(test_input)
     assert result == 2, f"Expected 2, got {result}"
     
-    # Both True: Qiskit order [True, True]
+    # Both True: array[0]=res1=True, array[1]=res2=True
     test_input = jnp.array([True, True])
     result = jitted_post_proc(test_input)
     assert result == 3, f"Expected 3, got {result}"
@@ -782,32 +782,34 @@ def test_jit_post_processor_with_mixed_subroutines():
     jitted_post_proc = jax.jit(post_proc)
     
     # Test various combinations
+    # Measurement order: qv[0] (bit), qf[0], qf[1] - chronological order
+    # qf value = (qf[0] << 0 | qf[1] << 1) * 0.5
 
-    # bit=False, qf[0]=False, qf[1]=False: qf_val=0.0 -> 0 + 0.0 = 0.0
+    # array[0]=qv[0]=False (bit=0), array[1]=qf[0]=False, array[2]=qf[1]=False: qf_val=0.0 -> 0 + 0.0 = 0.0
     test_input = jnp.array([False, False, False, False])
     result = jitted_post_proc(test_input)
     expected = 0.0
     assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
     
-    # bit=True, qf[0]=False, qf[1]=False: qf_val=0.0 -> 1 + 0.0 = 1.0
-    test_input = jnp.array([False, False, True, False])
-    result = jitted_post_proc(test_input)
-    expected = 1.0
-    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
-    
-    # bit=False, qf[0]=True, qf[1]=False: qf_val=0.5 -> 0 + 0.5 = 0.5
-    test_input = jnp.array([False, True, False, False])
-    result = jitted_post_proc(test_input)
-    expected = 0.5
-    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
-    
-    # bit=False, qf[0]=False, qf[1]=True: qf_val=1.0 -> 0 + 1.0 = 1.0
+    # array[0]=qv[0]=True (bit=1), array[1]=qf[0]=False, array[2]=qf[1]=False: qf_val=0.0 -> 1 + 0.0 = 1.0
     test_input = jnp.array([True, False, False, False])
     result = jitted_post_proc(test_input)
     expected = 1.0
     assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
     
-    # bit=True, qf[0]=True, qf[1]=True: qf_val=1.5 -> 1 + 1.5 = 2.5
+    # array[0]=qv[0]=False (bit=0), array[1]=qf[0]=True, array[2]=qf[1]=False: qf_val=0.5 -> 0 + 0.5 = 0.5
+    test_input = jnp.array([False, True, False, False])
+    result = jitted_post_proc(test_input)
+    expected = 0.5
+    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
+    
+    # array[0]=qv[0]=False (bit=0), array[1]=qf[0]=False, array[2]=qf[1]=True: qf_val=1.0 -> 0 + 1.0 = 1.0
+    test_input = jnp.array([False, False, True, False])
+    result = jitted_post_proc(test_input)
+    expected = 1.0
+    assert abs(float(result) - expected) < 0.01, f"Expected {expected}, got {result}"
+    
+    # array[0]=qv[0]=True (bit=1), array[1]=qf[0]=True, array[2]=qf[1]=True: qf_val=1.5 -> 1 + 1.5 = 2.5
     test_input = jnp.array([True, True, True, False])
     result = jitted_post_proc(test_input)
     expected = 2.5
@@ -846,16 +848,16 @@ def test_cond_primitive():
     # Extract post-processing
     post_proc = jaspr.extract_post_processing(array_input=True)
     
-    # Circuit measures: qv[0]
-    # QuantumFloat(2) has 2 qubits: qv[0] and qv[1]
-    # Qiskit order: [qv[1], qv[0]] where qv[1] is unmeasured
+    # Circuit measures: qv[0] (single measurement)
+    # QuantumFloat(2) has 2 qubits but only qv[0] is measured
+    # Measurement order: qv[0] at array[0] (additional array elements are ignored)
     
     # Test with meas=False -> false_branch(5) = 25
-    result = post_proc(jnp.array([False, False]))  # [qv[1]=unused, qv[0]=False]
+    result = post_proc(jnp.array([False, False]))  # array[0]=qv[0]=False (extra elements ignored)
     assert result == 25, f"Expected 25, got {result}"
     
     # Test with meas=True -> true_branch(5) = 15
-    result = post_proc(jnp.array([True, False]))  # [qv[1]=unused, qv[0]=True]
+    result = post_proc(jnp.array([True, False]))  # array[0]=qv[0]=True (extra elements ignored)
     assert result == 15, f"Expected 15, got {result}"
     
     # Test that it can be jitted
@@ -908,24 +910,16 @@ def test_while_primitive():
     # Extract post-processing
     post_proc = jaspr.extract_post_processing(array_input=True)
     
-    # Circuit measures: qv[0] (meas1), qv[1] (meas2)
-    # QuantumFloat(3) has 3 qubits: qv[0], qv[1], qv[2]
-    # Qiskit order: [qv[2], qv[1], qv[0]] where qv[2] is unmeasured
-    
-    # Test with both False -> 0 + 0 = 0, loop runs 0 times, counter=0
-    result = post_proc(jnp.array([False, False, False]))  # [qv[2], qv[1]=False, qv[0]=False]
+    result = post_proc(jnp.array([False, False, False]))
     assert result == 0, f"Expected 0, got {result}"
     
-    # Test with meas1=True -> 1 + 0 = 1, loop runs 1 time, counter=1
-    result = post_proc(jnp.array([True, False, False]))  # [qv[2], qv[1]=False, qv[0]=True]
+    result = post_proc(jnp.array([True, False, False]))
     assert result == 1, f"Expected 1, got {result}"
     
-    # Test with meas2=True -> 0 + 1 = 1, loop runs 1 time, counter=1
-    result = post_proc(jnp.array([False, True, False]))  # [qv[2], qv[1]=True, qv[0]=False]
+    result = post_proc(jnp.array([False, True, False]))
     assert result == 1, f"Expected 1, got {result}"
     
-    # Test with both True -> 1 + 1 = 2, loop runs 2 times, counter=2
-    result = post_proc(jnp.array([True, True, False]))  # [qv[2], qv[1]=True, qv[0]=True]
+    result = post_proc(jnp.array([True, True, False]))
     assert result == 2, f"Expected 2, got {result}"
     
     # Test that it can be jitted
@@ -948,11 +942,11 @@ def test_terminal_sampling_comparison():
     
     # Helper function to convert bitstring to bool array
     def bitstring_to_array(bitstring):
-        """Convert Qiskit bitstring to JAX array of booleans.
+        """Convert bitstring to JAX array of booleans.
         
-        The bitstring from qc.run() is in Qiskit convention (last measurement first).
-        We convert to array maintaining the same order. The post_processing_func
-        will handle reversing to circuit order for both bitstring and array inputs.
+        Converts each character in the bitstring to a boolean value.
+        The post_processing_func consumes measurements in chronological order
+        (first measurement at array[0], second at array[1], etc.).
         """
         return jnp.array([c == '1' for c in bitstring])
     
