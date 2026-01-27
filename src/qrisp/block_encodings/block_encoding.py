@@ -72,7 +72,7 @@ class BlockEncoding:
 
     Parameters
     ----------
-    unitary : Callable[..., None]
+    unitary : Callable
         A function ``unitary(*ancillas, *operands)`` applying the block-encoding unitary. 
         It receives the ancilla and operand QuantumVariables as arguments.
     ancillas : list[QuantumVariable | QuantumVariableTemplate]
@@ -312,14 +312,15 @@ class BlockEncoding:
 
         Parameters
         ----------
-        operand_prep : callable
-            A function ``operand_prep(*args)`` preparing and returning the operand QuantumVariables.
+        operand_prep : Callable
+            A function ``operand_prep(*args)`` that prepares and returns the operand QuantumVariables.
 
         Returns
         -------
-        callable
-            A function ``rus_function(*args)`` preparing the operand QuantumVariables,
-            and implementing the RUS application of the block-encoding.
+        Callable
+            A function ``rus_function(*args, **kwargs)`` with the same signature 
+            as ``operand_prep``. It prepares the operands and implements 
+            the RUS application of the block-encoding until success is achieved.
 
         Examples
         --------  
