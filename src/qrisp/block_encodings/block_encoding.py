@@ -656,7 +656,7 @@ class BlockEncoding:
 
     def __matmul__(self, other: BlockEncoding) -> BlockEncoding:
         r"""
-        Implements the Kronecker product of two BlockEncodings using the @ operator as described in Chapter 10.2 in `Dalzell et al. <https://arxiv.org/abs/2310.03011>`_.
+        Implements the Kronecker product of two BlockEncodings using the ``@`` operator as described in Chapter 10.2 in `Dalzell et al. <https://arxiv.org/abs/2310.03011>`_.
 
         Parameters
         ----------
@@ -670,7 +670,7 @@ class BlockEncoding:
 
         Notes
         -----
-        - The ``@`` operator applies the operands of self to the first set of operands and the operands of other to the remaining operands in a single unified unitary.
+        - The ``@`` operator maps the operands of self to the first set of operands and the operands of other to the remaining operands in a single unified unitary.
         - The ``@`` operator should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method.
         - A more qubit-efficient implementation of the Kronecker product can be found in `this paper <https://arxiv.org/pdf/2509.15779>`_ and will be implemented in future updates.
 
