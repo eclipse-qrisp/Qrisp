@@ -44,6 +44,8 @@ def test_qsp_convolution():
         qarg = psi_prep()
         qbl = convolve(qarg, f)
         success_bool = measure(qbl) == 0
+        reset(qbl)
+        qbl.delete()
         return success_bool, qarg
 
     # The terminal_sampling decorator performs a hybrid simulation,

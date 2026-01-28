@@ -71,12 +71,13 @@ def sim_qsp(T_values, H, M):
     M_values = []
     E_values = []
 
-    @RUS
+    def operand_prep():
+        return QuantumVariable(H.find_minimal_qubit_amount())
+
     def psi(t):
-        qv = QuantumVariable(H.find_minimal_qubit_amount())
-        qbl, case = hamiltonian_simulation(qv, H, t=t, N=10)
-        success_bool = (measure(qbl) == 0) & (measure(case) == 0)
-        return success_bool, qv
+        BE = hamiltonian_simulation(H, t=t, N=10)
+        operand = BE.apply_rus(operand_prep)()
+        return operand
 
     @jaspify(terminal_sampling=True)
     def magnetization(t):

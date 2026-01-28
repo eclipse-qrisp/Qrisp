@@ -54,6 +54,9 @@ def test_qsp_qet(L, poly):
     M = nx.maximal_matching(G)
     U0 = create_heisenberg_init_function(M)
 
+    # Block encoding for poly(H)
+    BE = GQET(H, poly, kind="Polynomial")
+
 
     # Define initial state preparation function
     def psi_prep():
@@ -62,12 +65,9 @@ def test_qsp_qet(L, poly):
         return operand
 
 
-    @RUS
     def transformed_psi_prep():
-        operand = psi_prep()
-        qbl, case = GQET(operand, H, poly, kind="Polynomial")
-        success_bool = (measure(qbl) == 0) & (measure(case) == 0)
-        return success_bool, operand
+        operand = BE.apply_rus(psi_prep)()
+        return operand
     
 
     @jaspify(terminal_sampling=True)

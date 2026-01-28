@@ -38,6 +38,8 @@ def prepare_gaussian(n, alpha, k):
     qv = QuantumFloat(n)
     qbl = fourier_series_loader(qv, y_val, k=k)
     success_bool = measure(qbl) == 0
+    reset(qbl)
+    qbl.delete()
     return success_bool, qv
 
 # The terminal_sampling decorator performs a hybrid simulation,

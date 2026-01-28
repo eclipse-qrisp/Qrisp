@@ -51,8 +51,11 @@ def test_qsp(poly, k):
     @RUS
     def inner():
         operand = operand_prep()
-        qbl = GQSP(operand, U, poly, k=k)
+        qbl = QuantumBool()
+        GQSP(qbl, operand, unitary=U, p=poly, k=k)
         success_bool = measure(qbl) == 0
+        reset(qbl)
+        qbl.delete()
         return success_bool, operand
 
     @terminal_sampling
