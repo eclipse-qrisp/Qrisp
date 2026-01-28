@@ -16,10 +16,10 @@
 ********************************************************************************
 """
 
-
 from qrisp.algorithms.gqsp.gqsp import *
 from qrisp.algorithms.gqsp.gqet import *
 from qrisp.algorithms.gqsp.convolution import *
+from qrisp.algorithms.gqsp.fourier_series_loader import *
 from qrisp.algorithms.gqsp.hamiltonian_simulation import *
 from qrisp.algorithms.gqsp.helper_functions import *
-from qrisp.algorithms.gqsp.fourier_series_loader import *
+from qrisp.algorithms.gqsp.inversion import *
