@@ -760,7 +760,7 @@ class QuantumVariable:
         - ``"qiskit"``: Force the Qiskit state-preparation circuit. This
           cannot be used in Jasp mode.
         - ``"qswitch"``: Use the state-preparation implementation based on
-          :ref:`qswitch <qswitch>`, which is compatible with Jasp mode.
+          :ref:`q_switch <q_switch>`, which is compatible with Jasp mode.
 
         Parameters
         ----------

@@ -17,8 +17,7 @@
 """
 
 from qrisp import QuantumFloat, conjugate, measure
-from qrisp.jasp import make_jaspr, RUS
-from qrisp.alg_primitives.switch_case import qswitch
+from qrisp.jasp import make_jaspr, q_switch, RUS
 from qrisp.algorithms.grover.grover_tools import tag_state
 from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
 import numpy as np
@@ -185,7 +184,7 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=
     # LCU protocol with conjugate preparation
     def LCU_state_prep(case_indicator, operand):
         with conjugate(state_prep)(case_indicator):
-            qswitch(operand, case_indicator, unitaries)
+            q_switch(case_indicator, unitaries, operand)
 
     def oracle_func(case_indicator, operand):
         tag_state({case_indicator: 0})
