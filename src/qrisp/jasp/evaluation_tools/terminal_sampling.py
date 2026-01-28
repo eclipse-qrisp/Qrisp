@@ -142,7 +142,7 @@ def terminal_sampling(func=None, shots=0):
     def return_function(*args):
         from qrisp.jasp import simulate_jaspr
 
-        jaspr = make_jaspr(tracing_function, garbage_collection=True)(*args)
+        jaspr = make_jaspr(tracing_function)(*args)
         return simulate_jaspr(jaspr, *args, terminal_sampling=True)
 
     return return_function
