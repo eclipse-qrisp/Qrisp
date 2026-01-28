@@ -200,14 +200,14 @@ def test_hermitian_matrix_post_selection():
 
     b = np.array([0, 1, 1, 1])
 
-    operand, in_case, out_case = inner_CKS(A, b, 0.001)
-    res_dict = multi_measurement([operand, in_case, out_case])
+    operand, *ancillas = inner_CKS(A, b, 0.001)
+    res_dict = multi_measurement([operand, *ancillas])
 
     new_dict = dict()
     success_prob = 0
 
     for key, prob in res_dict.items():
-        if key[1]==0 and key[2]==0:
+        if all(k == 0 for k in key[1:]):
             new_dict[key[0]] = prob
             success_prob += prob
 

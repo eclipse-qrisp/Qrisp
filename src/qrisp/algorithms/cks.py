@@ -29,11 +29,13 @@ from qrisp import (
     control,
     conjugate,
     measure,
+    reset
 )
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.jasp import jrange, RUS
 from qrisp.operators import QubitOperator
+import warnings
 
 
 def CKS_parameters(A, eps, kappa=None, max_beta=None):
@@ -378,8 +380,8 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         from qrisp.algorithms.cks import inner_CKS
         from qrisp import multi_measurement
 
-        operand, in_case, out_case = inner_CKS(A, b, 0.001)
-        res_dict = multi_measurement([operand, in_case, out_case])
+        operand, *ancillas = inner_CKS(A, b, 0.001)
+        res_dict = multi_measurement([operand, *ancillas])
 
     This performs the measurement on all three of our QuantumVariables ``out_case``, ``in_case``, and ``operand``.
     Since the CKS (and all other LCU based approaches) is correctly performed only when
@@ -392,15 +394,15 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         success_prob = 0
 
         for key, prob in res_dict.items():
-            if key[1]==0 and key[2]==0:
+            if all(k == 0 for k in key[1:]):
                 new_dict[key[0]] = prob
                 success_prob += prob
 
         for key in new_dict.keys():
-            new_dict[key] = new_dict[key]/success_prob
+            new_dict[key] = new_dict[key] / success_prob
 
         for k, v in new_dict.items():
-            new_dict[k] = v**0.5
+            new_dict[k] = v ** 0.5
     
     Finally, compare the quantum simulation result with the classical solution:
 
@@ -419,45 +421,29 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     hardware or simulators <BackendInterface>`.  
 
     """
-    if isinstance(A, tuple) and len(A) == 3:
+    from qrisp.block_encodings import BlockEncoding
+
+    if isinstance(A, BlockEncoding):
+        BE = A
+    elif isinstance(A, tuple) and len(A) == 3:
+        warnings.warn("The interface (U, state_prep, n) is deprecated. Please use a BlockEncoding object instead.")
+        
         U, state_prep, n = A
+        def encoding_unitary(case, operand):
+            with conjugate(state_prep)(case):
+                U(case, operand)
+        BE = BlockEncoding(encoding_unitary, [QuantumFloat(n).template()], 1.0)
     else:
         H = QubitOperator.from_matrix(A, reverse_endianness=True)
-        U, state_prep, n = (H.pauli_block_encoding())  # Construct block encoding of A as a set of Pauli unitaries
+        BE = H.pauli_block_encoding() # Construct block encoding of A as a set of Pauli unitaries
 
     j_0, beta = CKS_parameters(A, eps, kappa, max_beta)
     cheb_coeffs = cheb_coefficients(j_0, beta)
 
-    def RU(case, operand):
-        """
-        Applies one qubitization step :math:`RU` (or its inverse) associated
-        with the Chebyshev polynomial block-encoding of an operator :math:`A`.
-
-        This operation alternates between application of the block-encoding
-        unitary :math:`U` and a reflection about the block-encoding state
-        :math:`\ket{G}`, realizing
-
-        .. math::
-
-            T_k(A) = (RU)^k,
-
-        where :math:`R` reflects about the block-encoding state :math:`\ket{G}`,
-        and :math:`T_k(A)` is the Chebyshev polynomials of the first kind of degree :math:`k`.
-
-        Parameters
-        ----------
-        case : QuantumVariable
-            Auxiliary case variable encoding the block-encoding state :math:`\ket{G}`.
-        operand : QuantumVariable
-            Operand (solution) variable upon which the block-encoded matrix
-            :math:`A` acts. 
-
-        """
-        U(case, operand)
-        reflection(case, state_function=state_prep)  # reflection operator R about $\ket{G}$.
+    BE_qubitized = BE.qubitization()
 
     out_case = QuantumFloat(j_0 + 1)
-    in_case = QuantumFloat(n)
+    in_case_list = BE_qubitized.create_ancillas()
 
     if callable(b):
         operand = b()
@@ -467,16 +453,15 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
 
     # Core LCU protocol: PREP, SELECT, PREP^†
     with conjugate(unary_prep)(out_case, cheb_coeffs):
-        with conjugate(state_prep)(in_case):
-            with control(out_case[0]):
-                RU(in_case, operand)
-            for i in jrange(1, j_0 + 1):
-                z(out_case[i])
-                with control(out_case[i]):
-                    RU(in_case, operand)
-                    RU(in_case, operand)
+        with control(out_case[0]):
+            BE_qubitized.unitary(*in_case_list, operand)
+        for i in jrange(1, j_0 + 1):
+            z(out_case[i])
+            with control(out_case[i]):
+                BE_qubitized.unitary(*in_case_list, operand)
+                BE_qubitized.unitary(*in_case_list, operand)
 
-    return operand, in_case, out_case
+    return operand, *in_case_list, out_case
 
 def inner_CKS_wrapper(qlsp, eps, kappa=None, max_beta=None):
     """
@@ -518,9 +503,16 @@ def inner_CKS_wrapper(qlsp, eps, kappa=None, max_beta=None):
 
     A, b = qlsp()
 
-    operand, in_case, out_case = inner_CKS(A, b, eps, kappa, max_beta)
+    vars = inner_CKS(A, b, eps, kappa, max_beta)
+    operand = vars[0]
+    ancillas = vars[1:]
 
-    success_bool = (measure(out_case) == 0) & (measure(in_case) == 0)
+    bools = jnp.array([(measure(anc) == 0) for anc in ancillas])
+    success_bool = jnp.all(bools)
+
+    # garbage collection
+    [reset(anc) for anc in ancillas]
+    [anc.delete() for anc in ancillas]
 
     return success_bool, operand
 
