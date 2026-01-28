@@ -26,7 +26,8 @@ Evaluation
    :toctree: generated/
    
    Jaspr.qjit
-   Jaspr.to_qc   
+   Jaspr.to_qc
+   Jaspr.extract_post_processing   
    Jaspr.to_qasm
    Jaspr.to_mlir
    Jaspr.to_catalyst_jaxpr

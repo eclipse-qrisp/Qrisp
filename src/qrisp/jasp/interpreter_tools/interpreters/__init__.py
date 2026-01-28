@@ -22,3 +22,5 @@ from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation impor
 from qrisp.jasp.interpreter_tools.interpreters.jaspr_to_gate_interpreter import *
 from qrisp.jasp.interpreter_tools.interpreters.terminal_sampling_interpreter import *
 from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import *
+from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import *
+from qrisp.jasp.interpreter_tools.interpreters.post_processing_interpreter import *
