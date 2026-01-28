@@ -17,6 +17,7 @@
 """
 
 import jax
+from jax import Array
 import jax.numpy as jnp
 from typing import TYPE_CHECKING
 
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
 # numpy.polynomial.chebyshev.poly2cheb
 # To be deprecated when available in jax.numpy
 @jax.jit
-def poly2cheb(poly: "ArrayLike") -> "ArrayLike":
+def poly2cheb(poly: "ArrayLike") -> Array:
     """
     Convert a polynomial to a Chebyshev series.
     JAX version of `numpy.polynomial.chebyshev.poly2cheb <https://numpy.org/doc/2.3/reference/generated/numpy.polynomial.chebyshev.poly2cheb.html>`_.
@@ -42,7 +43,7 @@ def poly2cheb(poly: "ArrayLike") -> "ArrayLike":
 
     Returns
     -------
-    cheb : ArrayLike
+    cheb : Array
         1-D array containing the coefficients of the equivalent Chebyshev series ordered from lowest order term to highest.
 
     Examples
@@ -83,7 +84,7 @@ def poly2cheb(poly: "ArrayLike") -> "ArrayLike":
 # numpy.polynomial.chebyshev.cheb2poly
 # To be deprecated when available in jax.numpy
 @jax.jit
-def cheb2poly(cheb: "ArrayLike") -> "ArrayLike":
+def cheb2poly(cheb: "ArrayLike") -> Array:
     """
     Convert a Chebyshev series to a polynomial.
     JAX version of `numpy.polynomial.chebyshev.cheb2poly <https://numpy.org/doc/stable/reference/generated/numpy.polynomial.chebyshev.cheb2poly.html>`_.
@@ -98,7 +99,7 @@ def cheb2poly(cheb: "ArrayLike") -> "ArrayLike":
 
     Returns
     -------
-    poly : ArrayLike
+    poly : Array
         1-D array containing the coefficients of the equivalent polynomial (relative to the “standard” basis), ordered from lowest order term to highest.
 
     Examples
