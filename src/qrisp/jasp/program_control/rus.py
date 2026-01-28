@@ -41,6 +41,16 @@ def RUS(*trial_function, **jit_kwargs):
     arguments. This is because after each trial, a new copy of these arguments
     would be required to perform the next iteration, which is prohibited by
     the no-clone theorem. It is however legal to provide classical arguments.
+    
+    .. warning::
+        
+        The ``RUS`` decorator will automatically reset and deallocate any 
+        QuantumVariables returned by the trial function, if the termination
+        bool is not ``True``.
+        It is however left up to the user to deallocate all LOCAL
+        QuantumVariables/QuantumArrays within the trial function that are not returned.
+        Any non-deallocated variables will accumulate over every iteration and
+        block their corresponding qubits indefinitely.
 
     Parameters
     ----------
@@ -283,19 +293,10 @@ def RUS(*trial_function, **jit_kwargs):
         from qrisp.jasp import q_while_loop, q_cond
         from qrisp.core import recursive_qv_search, reset
 
-        abs_qs = TracingQuantumSession.get_instance()
-
-        initial_gc_mode = abs_qs.gc_mode
-        
-        # Set the garbage collection mode to temporarily auto to collect 
-        # any ancillas that have not been deleted.
-        abs_qs.gc_mode = "auto"
         # Execute the function
         qached_function = qache(trial_function, **jit_kwargs)
         first_iter_res = qached_function(*trial_args)
 
-        abs_qs.gc_mode = initial_gc_mode
-        
         
         dynamic_args = []
         
@@ -340,10 +341,7 @@ def RUS(*trial_function, **jit_kwargs):
                 else:
                     new_trial_args.append(trial_args[i])
 
-            # Set the garbage collection mode to auto and call the function            
-            abs_qs.gc_mode = "auto"
             trial_res = qached_function(*new_trial_args)
-            abs_qs.gc_mode = initial_gc_mode
             
             # Update the tuple with initial args and the new results
             combined_args = tuple(list(args[:n_arg_vals]) + list(trial_res))

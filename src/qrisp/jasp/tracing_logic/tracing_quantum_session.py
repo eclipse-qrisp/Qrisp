@@ -44,10 +44,8 @@ class TracingQuantumSession:
         self.qubit_cache = None
         TracingQuantumSession.tr_qs_container.insert(0, self)
         self.qv_stack = []
-        self.gc_mode_stack = []
-        self.gc_mode = "auto"
 
-    def start_tracing(self, abs_qc, gc_mode=None):
+    def start_tracing(self, abs_qc):
         self.abs_qc_stack.append(self.abs_qc)
         self.qubit_cache_stack.append(self.qubit_cache)
 
@@ -58,36 +56,12 @@ class TracingQuantumSession:
         self.qv_list = []
         self.deleted_qv_list = []
 
-        self.gc_mode_stack.append(self.gc_mode)
-        if gc_mode is None:
-            self.gc_mode = self.gc_mode_stack[-1]
-        else:
-            self.gc_mode = gc_mode
-
-    def garbage_collection(self, spare_qv_list):
-
-        if self.gc_mode in ["auto", "debug"]:
-            from qrisp import reset
-
-            spare_hash_list = [hash(qv) for qv in spare_qv_list]
-            for qv in list(self.qv_list):
-                if hash(qv) in spare_hash_list:
-                    continue
-                if self.gc_mode == "auto":
-                    reset(qv)
-                    qv.delete()
-                else:
-                    raise Exception(
-                        f"QuantumVariable {qv} went out of scope without deallocation"
-                    )
-
     def conclude_tracing(self):
 
         temp = self.abs_qc
         self.abs_qc = self.abs_qc_stack.pop(-1)
         self.qubit_cache = self.qubit_cache_stack.pop(-1)
         self.qv_list, self.deleted_qv_list = self.qv_stack.pop(-1)
-        self.gc_mode = self.gc_mode_stack.pop(-1)
 
         return temp
 
