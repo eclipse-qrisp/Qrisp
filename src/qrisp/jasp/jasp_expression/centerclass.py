@@ -650,10 +650,10 @@ class Jaspr(ClosedJaxpr):
 
         return profile_jaspr(self, "count_ops", meas_behavior)(*args)
 
-    def depth(self, *args, meas_behavior="1"):
+    def depth(self, *args, meas_behavior="1", max_qubits=1024):
         from qrisp.jasp.evaluation_tools import profile_jaspr
 
-        return profile_jaspr(self, "depth", meas_behavior)(*args)
+        return profile_jaspr(self, "depth", meas_behavior, max_qubits=max_qubits)(*args)
 
     def embedd(self, *args, name=None, inline=False):
         from qrisp.jasp import TracingQuantumSession, get_last_equation

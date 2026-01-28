@@ -49,25 +49,33 @@ class DepthMetric(BaseMetric):
     meas_behavior : Callable
         The measurement behavior function.
 
+    profiling_dic : dict
+        The profiling dictionary mapping quantum operations to indices.
+
+    max_qubits : int, optional
+        The maximum number of qubits supported for depth computation. Default is 1024.
+
     """
 
-    # Define a maximum number of qubits to track depth for
-    # This can be adjusted as needed (trade-off between memory and flexibility).
-    # Unfortunately, JAX does not support dynamic arrays (yet).
-    # Ideally, we would implement dynamic resizing in the future
-    _MAX_QUBITS: int = 1024
-
-    def __init__(self, meas_behavior: Callable, profiling_dic: dict):
+    def __init__(
+        self, meas_behavior: Callable, profiling_dic: dict, max_qubits: int = 1024
+    ):
         """Initialize the DepthMetric."""
 
         super().__init__(meas_behavior=meas_behavior, profiling_dic=profiling_dic)
+
+        # Define a maximum number of qubits to track depth for
+        # This can be adjusted as needed (trade-off between memory and flexibility).
+        # Unfortunately, JAX does not support dynamic arrays (yet).
+        # Ideally, we would implement dynamic resizing in the future
+        self._max_qubits = max_qubits
 
         # As data structure in the context dictionary to keep track of depth,
         # we use an array of size MAX_QUBITS where each entry corresponds to the depth of that qubit.
         #
         # To speed up compilation time, it will be probably necessary to
         # use the same incrementation constants trick used for gate counting.
-        depth_array = jnp.zeros(self._MAX_QUBITS, dtype=jnp.int64)
+        depth_array = jnp.zeros(self._max_qubits, dtype=jnp.int64)
         current_depth = jnp.int64(0)
         invalid = jnp.bool_(False)
         self._initial_metric = (depth_array, current_depth, invalid)
@@ -76,6 +84,11 @@ class DepthMetric(BaseMetric):
     def initial_metric(self) -> Tuple[ArrayLike, ArrayLike, ArrayLike]:
         """Return the initial metric value."""
         return self._initial_metric
+
+    @property
+    def max_qubits(self) -> int:
+        """Return the maximum number of qubits supported."""
+        return self._max_qubits
 
     # This method creates a lookup table (mapping table) with length `table_size`
     # (this must be a concrete integer because of JAX and <= MAX_QUBITS)
@@ -102,12 +115,12 @@ class DepthMetric(BaseMetric):
         idx_start = context_dic.get("_previous_qubit_array_end", jnp.int64(0))
         idx_end = idx_start + size
 
-        overflow = idx_end > jnp.int64(self._MAX_QUBITS)
+        overflow = idx_end > jnp.int64(self.max_qubits)
         invalid = jnp.logical_or(invalid, overflow)
 
         context_dic["_previous_qubit_array_end"] = idx_end
 
-        table_size = size if not is_abstract(size) else self._MAX_QUBITS
+        table_size = size if not is_abstract(size) else self.max_qubits
         qubit_ids_table = self._create_lookup_table(idx_start, table_size)
 
         qubit_table_handle = (qubit_ids_table, size)
@@ -204,9 +217,9 @@ class DepthMetric(BaseMetric):
 
         (qubit_array_a, size_a), (qubit_array_b, size_b) = invalues
 
-        size_out = jnp.minimum(size_a + size_b, jnp.int64(self._MAX_QUBITS))
+        size_out = jnp.minimum(size_a + size_b, jnp.int64(self.max_qubits))
 
-        table_size = size_out if not is_abstract(size_out) else self._MAX_QUBITS
+        table_size = size_out if not is_abstract(size_out) else self.max_qubits
         idxs = self._create_lookup_table(jnp.int64(0), table_size)
 
         # We start from qubit_array_a and then we overwrite entries from b where needed
@@ -234,7 +247,7 @@ class DepthMetric(BaseMetric):
         stop = jnp.maximum(stop, start)
 
         size_out = stop - start
-        table_size = size_out if not is_abstract(size_out) else self._MAX_QUBITS
+        table_size = size_out if not is_abstract(size_out) else self.max_qubits
 
         array_idx_mapping = self._create_lookup_table(start, table_size)
         qubit_array_out = qubit_array[array_idx_mapping]
@@ -277,7 +290,9 @@ def extract_depth(res: Tuple, jaspr: Jaspr, _) -> int:
 
 
 @lru_cache(int(1e5))
-def get_depth_profiler(jaspr: Jaspr, meas_behavior: Callable) -> Tuple[Callable, None]:
+def get_depth_profiler(
+    jaspr: Jaspr, meas_behavior: Callable, max_qubits: int = 1024
+) -> Tuple[Callable, None]:
     """
     Build a depth profiling computer for a given Jaspr.
 
@@ -288,6 +303,9 @@ def get_depth_profiler(jaspr: Jaspr, meas_behavior: Callable) -> Tuple[Callable,
 
     meas_behavior : Callable
         The measurement behavior function.
+
+    max_qubits : int, optional
+        The maximum number of qubits supported for depth computation. Default is 1024.
 
     Returns
     -------
@@ -301,7 +319,7 @@ def get_depth_profiler(jaspr: Jaspr, meas_behavior: Callable) -> Tuple[Callable,
     if "measure" not in profiling_dic:
         profiling_dic["measure"] = -1
 
-    depth_metric = DepthMetric(meas_behavior, profiling_dic)
+    depth_metric = DepthMetric(meas_behavior, profiling_dic, max_qubits)
     profiling_eqn_evaluator = make_profiling_eqn_evaluator(depth_metric)
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 

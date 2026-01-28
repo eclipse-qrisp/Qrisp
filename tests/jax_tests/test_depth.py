@@ -516,8 +516,68 @@ class TestDepthSliceFuse:
 
         assert main(4, 4) == 3
 
-    # We keep the following four tests separate for clarity
+    # We keep the following tests separate for clarity
     # (parametrization would make them much less readable).
+
+    def test_fuse_single_qubit_1(self):
+        """Test depth computation with fusing on single-qubit operations."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[0])
+            h(qf1[0])
+            new_qv = qf1[0:1] + qf2[0:1]
+            h(new_qv[0])
+            h(new_qv[1])
+
+        assert main(1, 1) == 3
+
+    def test_fuse_single_qubit_2(self):
+        """Test depth computation with fusing on single-qubit operations."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[0])
+            h(qf1[0])
+            new_qv = qf1[0:1] + qf2[0:1]
+            h(new_qv[1])
+            h(new_qv[1])
+
+        assert main(1, 1) == 2
+
+    def test_fuse_single_qubit_3(self):
+        """Test depth computation with fusing on single-qubit operations."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[0])
+            h(qf1[1])
+            new_qv = qf1[0:1] + qf2[0:1]
+            h(new_qv[0])
+            h(new_qv[1])
+
+        assert main(1, 1) == 2
+
+    def test_fuse_single_qubit_4(self):
+        """Test depth computation with fusing on single-qubit operations."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[0])
+            h(qf1[0])
+            new_qv = qf1[0:1] + qf2[0:1]
+            h(new_qv[0])
+            h(new_qv[0])
+
+        assert main(1, 1) == 4
 
     def test_fuse_multi_qubit_1(self):
         """Test depth computation with fusing on multi-qubit operations."""
@@ -618,68 +678,52 @@ def test_not_implemented_error_op_def():
         main()
 
 
-def test_check_overflow_1():
-    """Check for depth metric overflow handling."""
+class TestDepthOverflow:
+    """Tests for depth metric overflow handling."""
 
-    @depth(meas_behavior="0")
-    def main(num_qubits):
-        _ = QuantumFloat(num_qubits)
+    def test_check_overflow_1(self):
+        """Check for depth metric overflow handling."""
 
-    with pytest.raises(
-        ValueError,
-        match="The depth metric computation overflowed the maximum number of qubits supported.",
-    ):
-        main(1025)
+        @depth(meas_behavior="0", max_qubits=10)
+        def main(num_qubits):
+            _ = QuantumFloat(num_qubits)
 
+        with pytest.raises(
+            ValueError,
+            match=(
+                "The depth metric computation overflowed the maximum number of qubits supported."
+            ),
+        ):
+            main(11)
 
-def test_check_overflow_2():
-    """Check for depth metric overflow handling."""
+    def test_check_overflow_2(self):
+        """Check for depth metric overflow handling."""
 
-    @depth(meas_behavior="0")
-    def main(num_qubits):
-        _ = QuantumFloat(2)
-        __ = QuantumFloat(num_qubits)
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            _ = QuantumFloat(2)
+            _qf = QuantumFloat(num_qubits)
 
-    with pytest.raises(
-        ValueError,
-        match="The depth metric computation overflowed the maximum number of qubits supported.",
-    ):
-        main(1023)
+        with pytest.raises(
+            ValueError,
+            match=(
+                "The depth metric computation overflowed the maximum number of qubits supported."
+            ),
+        ):
+            main(1023)
 
+    def test_check_overflow_3(self):
+        """Check for depth metric overflow handling."""
 
-def test_check_overflow_3():
-    """Check for depth metric overflow handling."""
+        @depth(meas_behavior="0", max_qubits=600)
+        def main(num_qubits1, num_qubits2):
+            _ = QuantumFloat(num_qubits1)
+            _qf = QuantumFloat(num_qubits2)
 
-    @depth(meas_behavior="0")
-    def main(num_qubits1, num_qubits2):
-        qf1 = QuantumFloat(num_qubits1)
-        qf2 = QuantumFloat(num_qubits2)
-        h(qf1[1])
-        h(qf2[1])
-        new_qv = qf1[:] + qf2[:]
-        h(new_qv[0])
-        cx(new_qv[1], new_qv[2])
-        h(new_qv[3])
-
-    with pytest.raises(
-        ValueError,
-        match="The depth metric computation overflowed the maximum number of qubits supported.",
-    ):
-        main(0, 2**16)
-
-
-@pytest.mark.xfail(reason="Currently not implemented")
-def test_check_overflow_4():
-    """Check for depth metric overflow handling."""
-
-    @depth(meas_behavior="0")
-    def main(num_qubits1, num_qubits2):
-        qf1 = QuantumFloat(num_qubits1)
-        qf2 = QuantumFloat(num_qubits2)
-        _ = qf1[:] + qf2[:]
-
-    with pytest.raises(
-        ValueError,
-        match="The depth metric computation overflowed the maximum number of qubits supported.",
-    ):
-        main(500, 500)
+        with pytest.raises(
+            ValueError,
+            match=(
+                "The depth metric computation overflowed the maximum number of qubits supported."
+            ),
+        ):
+            main(300, 301)

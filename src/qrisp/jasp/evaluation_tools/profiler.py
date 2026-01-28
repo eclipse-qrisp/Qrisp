@@ -274,7 +274,7 @@ def _normalize_meas_behavior(meas_behavior) -> Callable:
     raise TypeError("meas_behavior must be a str or callable")
 
 
-def depth(meas_behavior) -> Callable:
+def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
     """
     Decorator to determine the depth of large scale quantum computations.
     This decorator compiles the given Jasp-compatible function into a classical
@@ -286,6 +286,9 @@ def depth(meas_behavior) -> Callable:
     meas_behavior : str or callable
         A string or callable indicating the behavior of the resource computation
         when measurements are performed. Available strings are ``"0"`` and ``"1"``.
+
+    max_qubits : int, optional
+        The maximum number of qubits supported for depth computation. Default is 1024.
 
     Returns
     -------
@@ -310,7 +313,7 @@ def depth(meas_behavior) -> Callable:
                 function.jaspr_dict[signature] = make_jaspr(function)(*args)
 
             return function.jaspr_dict[signature].depth(
-                *args, meas_behavior=meas_behavior
+                *args, meas_behavior=meas_behavior, max_qubits=max_qubits
             )
 
         return depth_counter
@@ -319,7 +322,7 @@ def depth(meas_behavior) -> Callable:
 
 
 def profile_jaspr(
-    jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0"
+    jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0", **kwargs: Any
 ) -> Callable:
     """
     Profile a Jaspr according to a given metric mode.
@@ -328,11 +331,16 @@ def profile_jaspr(
     ----------
     jaspr : Jaspr
         The Jaspr to be profiled.
+
     mode : str
         The profiling mode to be used. Currently supported modes are "depth".
+
     meas_behavior : str or callable, optional
         The measurement behavior to be used during profiling. Default is "0".
 
+    **kwargs : Any
+        Additional keyword arguments to be passed to the profiler builder.
+        For example, `max_qubits` for depth profiling.
 
     Returns
     -------
@@ -359,7 +367,7 @@ def profile_jaspr(
     # `profiler` is a function that computes the metric we are interested in.
     # `aux` is any auxiliary data that might be needed to reconstruct the metric
     # (for example the profiling dictionary for count_ops).
-    profiler, aux = metric_spec.build_profiler(jaspr, meas_behavior_callable)
+    profiler, aux = metric_spec.build_profiler(jaspr, meas_behavior_callable, **kwargs)
 
     @wraps(profiler)
     def profiler_wrapper(*args):
