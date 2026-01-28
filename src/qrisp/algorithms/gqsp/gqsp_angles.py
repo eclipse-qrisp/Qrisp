@@ -19,26 +19,31 @@
 from functools import partial
 import numpy as np
 import jax
+from jax import Array
 import jax.numpy as jnp
+from typing import Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from jax.typing import ArrayLike
 
 
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
 @jax.jit
-def _complementary_objective(a, b):
+def _complementary_objective(a: "ArrayLike", b: "ArrayLike") -> Array:
     """
     Computes the complementary objective function for two given polynomials.
 
     Parameters
     ----------
-    a : ndarray
+    a : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.   
-    b : ndarray
+    b : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.   
 
     Returns
     -------
-    float
-        The objective function value.
+    Array
+        The scalar objective function value as 0-D Array.
     
     """
     d = len(a) - 1
@@ -49,19 +54,21 @@ def _complementary_objective(a, b):
 
 
 @partial(jax.jit, static_argnames=['N'])
-def _maximum(b, N=1024):
+def _maximum(b: "ArrayLike", N: int = 1024) -> Array:
     r"""
     Finds the maximum absolute value that a given polynomial assumes on the unit circle.
 
     Parameters
     ----------
-    b : ndarray
+    b : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.   
+    N : int
+        The number of roots of unity to evaluate the polynomial.
 
     Returns
     -------
-    float
-        The maximum absolute value.
+    Array
+        The scalar maximum absolute value as 0-D array.
 
     """
     # 1. Evaluate b(z) at N-th roots of unity
@@ -71,7 +78,7 @@ def _maximum(b, N=1024):
 
 
 @jax.jit
-def _complementary_polynomial(b):
+def _complementary_polynomial(b: "ArrayLike") -> Array:
     r"""
     Finds a complementary polynomial $a$ such that $|a|^2 + |b|^2 = 1$ on the unit circle.
     
@@ -93,12 +100,12 @@ def _complementary_polynomial(b):
 
     Parameters
     ----------
-    b : ndarray
+    b : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.   
 
     Returns
     -------
-    a : ndarray
+    a : Array
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
 
     """
@@ -139,7 +146,7 @@ def _complementary_polynomial(b):
 
 
 @jax.jit
-def _inlft(a, b):
+def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
     r"""
     Perform inverse non-linear Fourier transform.
 
@@ -151,14 +158,14 @@ def _inlft(a, b):
 
     Parameters
     ----------
-    a : ndarray
+    a : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
-    b : ndarray
+    b : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
 
     Returns
     -------
-    F : ndarray
+    F : Array
         1-D array containing the sequence, ordered from lowest order term to highest.
     
     """
@@ -182,23 +189,23 @@ def _inlft(a, b):
 
 
 # https://arxiv.org/pdf/2503.03026
-def gqsp_angles(p):
+def gqsp_angles(p: "ArrayLike") -> Array:
     r"""
     Computes the GQSP angles for a given polynomial.
 
     Parameters
     ----------
-    p : ndarray
+    p : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
 
     Returns
     -------
-    theta : ndarray
-        The angles $(\theta_0,\dotsc,\theta_d)$.
-    phi : ndarray
-        The angles $(\phi_0,\dotsc,\phi_d)$.
-    lambda : float
-        The angle $\lambda$.
+    theta : Array
+        1-D array of angles $(\theta_0,\dotsc,\theta_d)$.
+    phi : Array
+        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
+    lambda : Array
+        The scalar angle $\lambda$ as 0-D array.
 
     Notes
     -----
