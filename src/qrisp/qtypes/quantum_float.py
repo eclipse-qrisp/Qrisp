@@ -28,32 +28,80 @@ from qrisp.environments import invert, conjugate
 from qrisp.jasp import check_for_tracing_mode
 
 @jit
-def signed_int_iso_2(x, n):
-    return jnp.int64(x) & ((int(1) << jnp.minimum(n, 63))-1)
+def _signed_int_iso(x, n):
+    """
+    Computes the signed integer isomorphism for a given bit-width.
+
+    This function maps an integer `x` from the signed range [-2^n, 2^n - 1] 
+    into the unsigned range [0, 2^(n+1) - 1].
+    This is equivalent to the mathematical operation: x % 2^(n+1).
+
+    Parameters
+    ----------
+    x : int or jax.Array
+        The signed integer or array of integers to be transformed.
+    n : int
+        The bit-width for the signed integer representation.
+
+    Returns
+    -------
+    jax.Array
+        A jnp.int64 array where each element of `x` has been mapped to 
+        the unsigned range [0, 2^(n+1) - 1].
+    """
+    # 1. Modular wrap: Ensure x is within [0, 2**(n+1) - 1]
+    mask = (jnp.int64(1) << (n + 1)) - 1
+    return jnp.int64(x) & mask
 
 @jit
-def signed_int_iso_inv_2(y, n, signed_int):
-    m = int(1) << (n + 1)
-    t = jnp.int64(y) % m
-    return t - signed_int * m * (t // (int(1) << n))
+def _signed_int_iso_inv(y, n):
+    """
+    Computes the inverse signed integer isomorphism for a given bit-width.
+
+    This function maps an integer `y` from the unsigned range [0, 2^(n+1) - 1]
+    back into the signed range [-2^n, 2^n - 1]. It performs a manual 
+    sign-extension by treating the n-th bit of `y` as the sign bit.
+
+    Parameters
+    ----------
+    y : int or jax.Array
+        The unsigned integer or array of integers to be transformed.
+    n : int
+        The bit-width for the signed integer representation.
+
+    Returns
+    -------
+    jax.Array
+        A jnp.int64 array where each element of `y` has been mapped to 
+        the signed range [-2^n, 2^n - 1].
+    """
+    # 1. Modular wrap: Ensure y is within [0, 2**(n+1) - 1]
+    mask = (jnp.int64(1) << (n + 1)) - 1
+    y_wrapped = jnp.int64(y) & mask
+    
+    # 2. Sign extension: If bit 'n' is set, the number is negative.
+    # In two's complement, we subtract 2**(n+1) from values >= 2**n.
+    sign_bit = jnp.int64(1) << n
+    return jnp.where(y_wrapped & sign_bit, 
+                     y_wrapped - (jnp.int64(1) << (n + 1)), 
+                     y_wrapped)
+
+#def signed_int_iso(x, n):
+#    if int(x) < -(2**n) or int(x) >= 2**n:
+#        raise Exception("Applying signed integer isomorphism resulted in overflow")
+
+#    if x >= 0:
+#        return x % 2**n
+#    else:
+#        return -abs(x) % 2 ** (n + 1)
 
 
-def signed_int_iso(x, n):
-    if int(x) < -(2**n) or int(x) >= 2**n:
-        raise Exception("Applying signed integer isomorphism resulted in overflow")
-
-    if x >= 0:
-        return x % 2**n
-    else:
-        return -abs(x) % 2 ** (n + 1)
-
-
-def signed_int_iso_inv(y, n):
-    y = y % 2 ** (n + 1)
-    if y < 2**n:
-        return y
-    else:
-        return -(2 ** (n + 1)) + y
+#def signed_int_iso_inv(y, n):
+#    y = y % 2 ** (n + 1)
+#    if y < 2**n:
+#        return y
+#    else:
+#        return -(2 ** (n + 1)) + y
 
 
 # Truncates a polynomial of the form p(x) = 2**k_0*x*i_0 + 2**k_1*x**i_1 ...
@@ -321,7 +369,10 @@ class QuantumFloat(QuantumVariable):
     # Define outcome_labels
     def decoder(self, i):
 
-        res = signed_int_iso_inv_2(i, self.msize, self.signed) * jnp.float64(2)**self.exponent
+        if self.signed:
+            res = _signed_int_iso_inv(i, self.msize) * jnp.float64(2) ** self.exponent
+        else:  
+            res = i * jnp.float64(2) ** self.exponent
 
         if check_for_tracing_mode():
             return res
@@ -335,11 +386,11 @@ class QuantumFloat(QuantumVariable):
         return self.decoder(i)
 
     def encoder(self, i):
-        res = signed_int_iso_2(i / (jnp.float64(2) ** self.exponent), self.size)
-        # if self.signed:
-        #     res = signed_int_iso(i/2**self.exponent, self.size-1)
-        # else:
-        #     res = i/2**self.exponent
+
+        if self.signed:
+            res = _signed_int_iso(i / jnp.float64(2) ** self.exponent, self.msize)
+        else:
+            res = i / jnp.float64(2) ** self.exponent
 
         if isinstance(res, (int, float)):
             return int(res)
@@ -979,7 +1030,7 @@ class QuantumFloat(QuantumVariable):
 
         if self.signed:
             res = jnp.maximum(-2 ** self.msize, res)
-            res = signed_int_iso_2(res, self.size)
+            res = _signed_int_iso(res, self.size)
         else:
             res = jnp.maximum(0, res)
 
