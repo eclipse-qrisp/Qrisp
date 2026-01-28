@@ -751,17 +751,15 @@ class BlockEncoding:
         n = len(other.anc_templates)
 
         sig_self = inspect.signature(self.unitary)
-        operand_size_self = len(sig_self.parameters) - m
-
-        sig_other = inspect.signature(other.unitary)
-
+        num_operand_vars_self = len(sig_self.parameters) - m
+        
         def new_unitary(*args):
             self_anc = args[:m]
             other_anc = args[m : m + n]
             operands = args[m + n:]
 
-            self.unitary(*self_anc, *operands[:operand_size_self])
-            other.unitary(*other_anc, *operands[operand_size_self:])
+            self.unitary(*self_anc, *operands[:num_operand_vars_self])
+            other.unitary(*other_anc, *operands[num_operand_vars_self:])
         
         new_anc_templates = self.anc_templates + other.anc_templates
         new_alpha = self.alpha * other.alpha
