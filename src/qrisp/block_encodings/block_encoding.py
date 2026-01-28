@@ -639,10 +639,10 @@ class BlockEncoding:
             n = len(other.anc_templates)
 
             def new_unitary(*args):
-                self_args = args[:m] + args[m + n:]
-                self.unitary(*self_args)
                 other_args = args[m:m + n] + args[m + n:]
                 other.unitary(*other_args)
+                self_args = args[:m] + args[m + n:]
+                self.unitary(*self_args)
 
             new_anc_templates = self.anc_templates + other.anc_templates
             new_alpha = self.alpha * other.alpha
