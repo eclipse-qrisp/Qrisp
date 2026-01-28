@@ -26,6 +26,7 @@ from qrisp.environments import conjugate, control, invert
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.qtypes import QuantumBool
 from typing import Any, Callable
+import inspect
 
 
 class BlockEncoding:
@@ -639,10 +640,10 @@ class BlockEncoding:
             n = len(other.anc_templates)
 
             def new_unitary(*args):
-                self_args = args[:m] + args[m + n:]
-                self.unitary(*self_args)
                 other_args = args[m:m + n] + args[m + n:]
                 other.unitary(*other_args)
+                self_args = args[:m] + args[m + n:]
+                self.unitary(*self_args)
 
             new_anc_templates = self.anc_templates + other.anc_templates
             new_alpha = self.alpha * other.alpha
@@ -652,6 +653,117 @@ class BlockEncoding:
     
     __radd__ = __add__
     __rmul__ = __mul__
+
+    def __matmul__(self, other: BlockEncoding) -> BlockEncoding:
+        r"""
+        Implements the Kronecker product of two BlockEncodings using the ``@`` operator as described in Chapter 10.2 in `Dalzell et al. <https://arxiv.org/abs/2310.03011>`_.
+
+        Parameters
+        ----------
+        other : BlockEncoding
+            Another BlockEncoding to be composed with self.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding representing the Kronecker product of self and other.
+
+        Notes
+        -----
+        - The ``@`` operator maps the operands of self to the first set of operands and the operands of other to the remaining operands in a single unified unitary.
+        - The ``@`` operator should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method.
+        - A more qubit-efficient implementation of the Kronecker product can be found in `this paper <https://arxiv.org/pdf/2509.15779>`_ and will be implemented in future updates.
+
+        Examples
+        --------
+
+        **Example 1:**
+
+        Define two block-encodings and perform their Kronecker product.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import X, Y, Z
+
+            H1 = X(0)*X(1) + 0.2*Y(0)*Y(1)
+            H2 = Z(0)*Z(1) + X(2)
+
+            BE1 = H1.pauli_block_encoding()
+            BE2 = H2.pauli_block_encoding()
+
+            BE_composed = BE1 @ BE2
+
+            n1 = H1.find_minimal_qubit_amount()
+            n2 = H2.find_minimal_qubit_amount()
+
+            def operand_prep():
+                qv1 = QuantumVariable(n1)
+                qv2 = QuantumVariable(n2)
+                return qv1, qv2
+
+            @terminal_sampling
+            def main(BE):
+                return BE.apply_rus(operand_prep)()
+
+            result = main(BE_composed)
+            print("Result from BE1 @ BE2: ", result)
+
+        **Example 2:**
+
+        Perform multiple Kronecker products of block-encodings in sequence.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import X, Y, Z
+
+            H1 = X(0)*X(1)
+            H2 = Z(0)*Z(1)
+            H3 = Y(0)*Y(1)
+
+            BE1 = H1.pauli_block_encoding()
+            BE2 = H2.pauli_block_encoding()
+            BE3 = H3.pauli_block_encoding()
+
+            # Compose BE1 with the composition of BE2 and BE3
+            BE_composed = BE1 @ (BE2 @ BE3)
+
+            n1 = H1.find_minimal_qubit_amount()
+            n2 = H2.find_minimal_qubit_amount()
+            n3 = H3.find_minimal_qubit_amount()
+
+            def operand_prep():
+                qv1 = QuantumVariable(n1)
+                qv2 = QuantumVariable(n2)
+                qv3 = QuantumVariable(n3)
+                return qv1, qv2, qv3
+
+            @terminal_sampling
+            def main(BE):
+                return BE.apply_rus(operand_prep)()
+
+            result = main(BE_composed)
+            print("Result from BE1 @ BE2 @ BE3: ", result)
+
+        """
+        m = len(self.anc_templates)
+        n = len(other.anc_templates)
+
+        sig_self = inspect.signature(self.unitary)
+        num_operand_vars_self = len(sig_self.parameters) - m
+        
+        def new_unitary(*args):
+            self_anc = args[:m]
+            other_anc = args[m : m + n]
+            operands = args[m + n:]
+
+            self.unitary(*self_anc, *operands[:num_operand_vars_self])
+            other.unitary(*other_anc, *operands[num_operand_vars_self:])
+        
+        new_anc_templates = self.anc_templates + other.anc_templates
+        new_alpha = self.alpha * other.alpha
+        return BlockEncoding(new_unitary, new_anc_templates, new_alpha)
 
     def __neg__(self) -> BlockEncoding:
         r"""
