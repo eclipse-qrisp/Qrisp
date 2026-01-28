@@ -206,12 +206,6 @@ def GQSP(
         d = len(p) - 1
         theta, phi, lambda_ = gqsp_angles(p)
 
-    # Define R gate application function based on formula (4) in https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
-    #def R(theta, phi, kappa, qubit):
-    #    z(qubit)
-    #    u3(2 * theta, -phi, -kappa, qubit)
-    #    gphase(phi + kappa, qubit)
-
     # Define R gate application function based on Theorem 9 in https://arxiv.org/abs/2503.03026
     def R(theta, phi, qubit):
         rz(-2*theta, qubit)
