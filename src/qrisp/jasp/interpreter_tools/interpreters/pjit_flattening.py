@@ -46,7 +46,7 @@ def evaluate_pjit_eqn(pjit_eqn, context_dic):
 def flatten_pjit(jaxpr):
 
     def eqn_evaluator(eqn, context_dic):
-        if eqn.primitive.name == "pjit":
+        if eqn.primitive.name == "jit":
             evaluate_pjit_eqn(eqn, context_dic)
         else:
             return True

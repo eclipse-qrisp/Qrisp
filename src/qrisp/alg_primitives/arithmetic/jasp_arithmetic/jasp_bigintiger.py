@@ -519,7 +519,57 @@ class BigInteger:
         _, res = lax.while_loop(cond_fun, body_fun, (n, -5))
         res = lax.cond(res == -5, lambda: 1, lambda: res)
         return (res != 0)
+    
+    def __gt__(self, other: "BigInteger"):
+        """
+        Greater-than comparison between two fixed-width BigIntegers.
 
+        If `other` is a scalar, it is converted to the same width. Requires
+        both operands to have the same number of limbs.
+
+        Parameters
+        ----------
+        other : BigInteger or int
+            Right-hand operand.
+
+        Returns
+        -------
+        jnp.bool_
+            True if `self > other` (unsigned), else False.
+        """
+        n = self.digits.shape[0]
+        if not isinstance(other, BigInteger):
+            other = BigInteger.create(other, n)
+        m = other.digits.shape[0]
+        assert n == m
+
+        return other.__lt__(self)
+    
+    def __ge__(self, other: "BigInteger"):
+        """
+        Greater-or-equal comparison between two fixed-width BigIntegers.
+
+        If `other` is a scalar, it is converted to the same width. Requires
+        both operands to have the same number of limbs.
+
+        Parameters
+        ----------
+        other : BigInteger or int
+            Right-hand operand.
+
+        Returns
+        -------
+        jnp.bool_
+            True if `self >= other` (unsigned), else False.
+        """
+        n = self.digits.shape[0]
+        if not isinstance(other, BigInteger):
+            other = BigInteger.create(other, n)
+        m = other.digits.shape[0]
+        assert n == m
+
+        return other.__le__(self)
+    
     @jax.jit
     def __lshift__(self, shift):
         """

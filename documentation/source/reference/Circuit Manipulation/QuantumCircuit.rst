@@ -58,6 +58,7 @@ Interfacing
    QuantumCircuit.to_pytket
    QuantumCircuit.from_qasm_str
    QuantumCircuit.from_qasm_file
+   QuantumCircuit.to_cirq
    
 
 

@@ -186,7 +186,7 @@ def terminal_sampling_evaluator(sampling_res_type):
                     break_after_first_iter=True,
                 )
 
-            if eqn.primitive.name == "pjit":
+            if eqn.primitive.name == "jit":
                 invalues = extract_invalues(eqn, context_dic)
 
                 function_name = eqn.params["name"]
