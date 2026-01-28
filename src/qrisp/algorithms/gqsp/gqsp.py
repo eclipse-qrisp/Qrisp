@@ -94,10 +94,10 @@ def GQSP(
     angles : tuple(ArrayLike, ArrayLike, ArrayLike), optional
         A tuple of angles $(\theta,\phi,\lambda)$ where $\theta,\phi\in\mathbb R^{d+1}$ are 1-D arrays
         and $\lambda\in\mathbb R$ is a scalar.
-    k : int, optional
+    k : int
         If specified, the Laurent polynomial $\tilde p(x)=x^{-k}p(x)$ is applied.
         The default is 0.
-    kwargs : dict, optional
+    kwargs : dict
         A dictionary of keyword arguments to pass to ``unitary``. The default is {}.
 
     Notes
@@ -143,7 +143,6 @@ def GQSP(
 
     The transformation $\cos(H)$ is achieved by applying $\tilde p(x)=0.5x^{-1} + 0.5x^1$ to the unitary $e^{iH}$.
     This corresponds to the polynomial $p(x)=0.5+0.5x^2$ (i.e., ``p=[0.5,0,0.5]``) and ``k=1``. 
-    A suitable second polynomial is $q(x)=-0.5+0.5x^2$ (i.e., ``q=[-0.5,0,0.5]``) which corresponds to $\tilde q(x)=-0.5x^{-1}+0.5x$.
 
     Finally, we apply QSP within a :ref:`RUS` protocol.
 
@@ -155,9 +154,12 @@ def GQSP(
             p = jnp.array([0.5,0,0.5])
 
             operand = operand_prep()
-            qbl = GQSP(operand, U, p, k=1)
+            qbl = QuantumBool()
+            GQSP(qbl, operand, unitary=U, p=p, k=1)
 
             success_bool = measure(qbl) == 0
+            reset(qbl)
+            qbl.delete()
             return success_bool, operand
 
 
