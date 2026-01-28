@@ -16,27 +16,18 @@
 ********************************************************************************
 """
 
-import numpy as np
-from qrisp import (
-    QuantumArray,
-    QuantumVariable,
-    QuantumBool,
-    h,
-    u3,
-    z,
-    control,
-    invert,
-    gphase,
-)
-from qrisp.jasp import qache, jrange
 import jax
 import jax.numpy as jnp
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from jax.typing import ArrayLike
 
 
 # numpy.polynomial.chebyshev.poly2cheb
 # To be deprecated when available in jax.numpy
 @jax.jit
-def poly2cheb(poly):
+def poly2cheb(poly: "ArrayLike") -> "ArrayLike":
     """
     Convert a polynomial to a Chebyshev series.
     JAX version of `numpy.polynomial.chebyshev.poly2cheb <https://numpy.org/doc/2.3/reference/generated/numpy.polynomial.chebyshev.poly2cheb.html>`_.
@@ -46,12 +37,12 @@ def poly2cheb(poly):
     
     Parameters
     ----------
-    poly : ndarray
+    poly : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
 
     Returns
     -------
-    cheb : ndarray
+    cheb : ArrayLike
         1-D array containing the coefficients of the equivalent Chebyshev series ordered from lowest order term to highest.
 
     Examples
@@ -92,7 +83,7 @@ def poly2cheb(poly):
 # numpy.polynomial.chebyshev.cheb2poly
 # To be deprecated when available in jax.numpy
 @jax.jit
-def cheb2poly(cheb):
+def cheb2poly(cheb: "ArrayLike") -> "ArrayLike":
     """
     Convert a Chebyshev series to a polynomial.
     JAX version of `numpy.polynomial.chebyshev.cheb2poly <https://numpy.org/doc/stable/reference/generated/numpy.polynomial.chebyshev.cheb2poly.html>`_.
@@ -102,12 +93,12 @@ def cheb2poly(cheb):
     
     Parameters
     ----------
-    cheb : ndarray
+    cheb : ArrayLike
         1-D array containing the Chebyshev series coefficients, ordered from lowest order term to highest.
 
     Returns
     -------
-    poly : ndarray
+    poly : ArrayLike
         1-D array containing the coefficients of the equivalent polynomial (relative to the “standard” basis), ordered from lowest order term to highest.
 
     Examples
