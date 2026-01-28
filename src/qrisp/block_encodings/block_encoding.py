@@ -26,6 +26,7 @@ from qrisp.environments import conjugate, control, invert
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.qtypes import QuantumBool
 from typing import Any, Callable
+import inspect
 
 
 class BlockEncoding:
@@ -652,6 +653,28 @@ class BlockEncoding:
     
     __radd__ = __add__
     __rmul__ = __mul__
+
+    def __matmul__(self, other: BlockEncoding) -> BlockEncoding:
+        m = len(self.anc_templates)
+        n = len(other.anc_templates)
+
+        sig_self = inspect.signature(self.unitary)
+        operand_size_self = len(sig_self.parameters) - m
+
+        sig_other = inspect.signature(other.unitary)
+        operand_size_other = len(sig_other.parameters) - n
+
+        def new_unitary(*args):
+            self_anc = args[:m]
+            other_anc = args[m : m + n]
+            operands = args[m + n:]
+
+            self.unitary(*self_anc, *operands[:operand_size_self])
+            other.unitary(*other_anc, *operands[operand_size_self:])
+        
+        new_anc_templates = self.anc_templates + other.anc_templates
+        new_alpha = self.alpha * other.alpha
+        return BlockEncoding(new_unitary, new_anc_templates, new_alpha)
 
     def __neg__(self) -> BlockEncoding:
         r"""
