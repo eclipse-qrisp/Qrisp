@@ -17,21 +17,22 @@
 """
 
 import numpy as np
-from qrisp import (
-    QuantumFloat,
-    conjugate,
-)
-from qrisp.alg_primitives.reflection import reflection
+from qrisp import QuantumBool
 from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.jasp import qache
+from qrisp.block_encodings import BlockEncoding
+from qrisp.operators import QubitOperator
 from scipy.special import jv
 import jax
 import jax.numpy as jnp
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from jax.typing import ArrayLike
 
 
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
-#@qache(static_argnames=["H", "N"])
-def hamiltonian_simulation(qarg, H, t=1, N=1):
+def hamiltonian_simulation(H: QubitOperator | BlockEncoding, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
     r"""
     Performs Hamiltonian simulation.
 
@@ -45,21 +46,17 @@ def hamiltonian_simulation(qarg, H, t=1, N=1):
 
     Parameters
     ----------
-    qarg : QuantumVariable
-        The QuantumVariable representing the state to apply Hamiltonian simulation on.
-    H : QubitOperator
+    H : BlockEncoding | QubitOperator
         The Hermitian operator.
-    t : float, optional
+    t : ArrayLike
         The evolution time $t$. The default is 1.
-    N : int, optional
-        The truncation index. The default is 1.
+    N : int
+        The truncation index for the Bessel function expansion. The default is 1.
 
     Returns
     -------
-    qbl : QuantumBool
-        Auxiliary variable after GQSP protocol. Must be measured in state $\ket{0}$.
-    case : QuantumFloat
-        Auxiliary variable after GQSP protocol. Must be measured in state $\ket{0}$.
+    BlockEncoding
+        A block encoding approximating $e^{itH}$.
 
     Examples
     --------
@@ -122,12 +119,13 @@ def hamiltonian_simulation(qarg, H, t=1, N=1):
             M_values = []
             E_values = []
 
-            @RUS
+            def operand_prep():
+                return QuantumVariable(H.find_minimal_qubit_amount())
+
             def psi(t):
-                qv = QuantumVariable(H.find_minimal_qubit_amount())
-                qbl, case = hamiltonian_simulation(qv, H, t=t, N=10)
-                success_bool = (measure(qbl) == 0) & (measure(case) == 0)
-                return success_bool, qv
+                BE = hamiltonian_simulation(H, t=t, N=10)
+                operand = BE.apply_rus(operand_prep)()
+                return operand
 
             @jaspify(terminal_sampling=True)
             def magnetization(t):
@@ -183,10 +181,12 @@ def hamiltonian_simulation(qarg, H, t=1, N=1):
     - Mitigation: This divergence is attributed to an insufficient truncation order $N$ used in the QSP polynomial expansion. The simulation error accumulates over time when the truncation order is too low for the required evolution time $T$. Increasing the truncation order $N$ can mitigate this effect and maintain accuracy at larger $T$ values, but this comes at the expense of a higher computational runtime or circuit depth.
 
     """
-    H = H.hermitize().to_pauli()
+
+    if isinstance(H, QubitOperator):
+        H = H.pauli_block_encoding()
+
     # Rescaling the time to account for scaling factor alpha of pauli block-encoding
-    _, coeffs = H.unitaries()
-    alpha = np.sum(np.abs(coeffs))
+    alpha = H.alpha
     t = t * alpha
 
     # Calculate coefficients of truncated Jacobi-Anger expansion
@@ -200,25 +200,21 @@ def hamiltonian_simulation(qarg, H, t=1, N=1):
     factors = (-1.j) ** jnp.arange(-N, N +1)
     coeffs = factors * j_values
 
-    U, state_prep, n = H.pauli_block_encoding()
+    BE_walk = H.qubitization()
 
-    # Qubitization step: RU^k is a block-encoding of T_k(H)
-    def RU(case, operand):
-        U(case, operand)
-        reflection(case, state_function=state_prep)
+    new_anc_templates = [QuantumBool().template()] + BE_walk.anc_templates
+    new_alpha = 1 # TBD
 
-    case = QuantumFloat(n)
-    
-    with conjugate(state_prep)(case):
-        qbl = GQSP([case, qarg], RU, coeffs, k=N)
+    def new_unitary(*args):
+        GQSP(args[0], *args[1:], unitary = BE_walk.unitary, p=coeffs, k=N)
 
-    return qbl, case
+    return BlockEncoding(new_unitary, new_anc_templates, new_alpha, is_hermitian=False)
 
 
 # Apply the wache decorator with the workaround in order to show in documentation
-temp_docstring = hamiltonian_simulation.__doc__
-hamiltonian_simulation = qache(static_argnames=["H", "N"])(hamiltonian_simulation)
-hamiltonian_simulation.__doc__ = temp_docstring
+#temp_docstring = hamiltonian_simulation.__doc__
+#hamiltonian_simulation = qache(static_argnames=["H", "N"])(hamiltonian_simulation)
+#hamiltonian_simulation.__doc__ = temp_docstring
 
 
 # jax.scipy.jv is currently not implemented
