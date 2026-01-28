@@ -189,7 +189,7 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
 
 
 # https://arxiv.org/pdf/2503.03026
-def gqsp_angles(p: "ArrayLike") -> Array:
+def gqsp_angles(p: "ArrayLike") -> Tuple[Array, Array, Array]:
     r"""
     Computes the GQSP angles for a given polynomial.
 
