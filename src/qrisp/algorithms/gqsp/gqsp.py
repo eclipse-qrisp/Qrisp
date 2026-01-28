@@ -44,7 +44,7 @@ def GQSP(
     angles: Optional[Tuple["ArrayLike", "ArrayLike", "ArrayLike"]] = None, 
     k: int = 0, 
     kwargs: Dict[str, Any] = {}
-) -> QuantumBool:
+) -> None:
     r"""
     Performs `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
 
@@ -99,12 +99,6 @@ def GQSP(
         The default is 0.
     kwargs : dict, optional
         A dictionary of keyword arguments to pass to ``unitary``. The default is {}.
-
-    Returns
-    -------
-    QuantumBool
-        Auxiliary variable after applying the GQSP protocol. 
-        Must be measuered in state $\ket{0}$ for the GQSP protocol to be successful.
 
     Notes
     -----
@@ -239,5 +233,3 @@ def GQSP(
         
     R(theta[d], phi[d], qbl)
     rz(-2*lambda_, qbl)
-
-    return qbl

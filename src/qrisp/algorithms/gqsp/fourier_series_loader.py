@@ -19,22 +19,27 @@
 import numpy as np
 import jax.numpy as jnp
 from qrisp import (
+    QuantumVariable,
+    QuantumBool,
     h,
     p,
 )
 from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.jasp import qache, jrange
+from typing import Optional, TYPE_CHECKING
 
-
-@qache
-def U(qv, scaling_factor=1.0):
-    # Scaling factor: 1.0 standard FFT; 0.5 mirror padding + FFT
-    for i in jrange(qv.size):
-        p(scaling_factor * np.pi * 2.0 ** (i - qv.size + 1), qv[i])
+if TYPE_CHECKING:
+    from jax.typing import ArrayLike
 
 
 # QSP version of https://iopscience.iop.org/article/10.1088/2058-9565/acfc62
-def fourier_series_loader(qarg, signal=None, frequencies=None, k=1, mode="standard"):
+def fourier_series_loader(
+    qarg: QuantumVariable, 
+    signal: Optional["ArrayLike"] = None, 
+    frequencies: Optional["ArrayLike"] = None, 
+    k: int = 1, 
+    mirror: bool = False
+) -> QuantumBool:
     r"""
     Performs band-limited quantum state preparation.
 
@@ -71,18 +76,16 @@ def fourier_series_loader(qarg, signal=None, frequencies=None, k=1, mode="standa
     ----------
     qarg : QuantumVariable
         The input variable in state $\ket{0}$.
-    signal : ndarray, optional
+    signal : ArrayLike, optional
         1-D array of input signal values with shape ``(M,)``.
         Either ``signal`` or ``frequencies`` must be specified.
-    frequencies : ndarray, optional
+    frequencies : ArrayLike, optional
         1-D array of input frequency values in the range $[-K,K]$ with shape ``(2K+1,)``.
-    k : int, optional
-        The frequency cutoff. Only frequencies in the range $[-k,k]$ are preserved.
-    mode : str, optional
-        Available are 
-        
-        - ``"standard"``: frequencies are caluclated from ``signal`` via FFT,
-        - ``"mirror"``: frequencies are caluclated from mirror padded ``signal`` via FFT to mitigate artifacts at the boundaries.
+    k : int
+        The frequency cutoff. Only frequencies in the range $[-k,k]$ are preserved. The default is 1.
+    mirror : bool
+        If True, frequencies are caluclated from mirror padded ``signal`` via FFT to mitigate artifacts at the boundaries.
+        The default is False.
 
     Returns
     -------
@@ -122,6 +125,8 @@ def fourier_series_loader(qarg, signal=None, frequencies=None, k=1, mode="standa
             qv = QuantumFloat(n)
             qbl = fourier_series_loader(qv, y_val, k=k)
             success_bool = measure(qbl) == 0
+            reset(qbl)
+            qbl.delete()
             return success_bool, qv
 
         # The terminal_sampling decorator performs a hybrid simulation,
@@ -182,29 +187,32 @@ def fourier_series_loader(qarg, signal=None, frequencies=None, k=1, mode="standa
         compressed_frequencies = frequencies[K-k : K+k+1]
         scaling_factor = 1.0
     elif signal is not None:
-        if mode=="standard":
-            # Discrete Fourier transform
-            frequencies = jnp.fft.fft(signal)
-            scaling_factor = 1.0
-        elif mode=="mirror":
+        if mirror:
             # Mirror padding to mitiagate artifacts at the boundaries
             target_array_mirr = jnp.concatenate([signal, signal[::-1]])
             # Discrete Fourier transform
             frequencies = jnp.fft.fft(target_array_mirr)
             scaling_factor = 0.5
         else:
-            raise ValueError(
-                f"Invalid mode specified: '{mode}'. "
-                f"Allowed kinds are: {', '.join(ALLOWED_MODES)}"
-            )
+            # Discrete Fourier transform
+            frequencies = jnp.fft.fft(signal)
+            scaling_factor = 1.0
 
         # Compression
         compressed_frequencies = jnp.concatenate([frequencies[-k:], frequencies[:k+1]])
     else:
         raise Exception("Either signal or frequencies must be specified")
+    
+    @qache
+    def U(qv, scaling_factor=1.0):
+        # Scaling factor: 1.0 standard FFT; 0.5 mirror padding + FFT
+        for i in jrange(qv.size):
+            p(scaling_factor * np.pi * 2.0 ** (i - qv.size + 1), qv[i])
 
     h(qarg)
 
-    qbl = GQSP(qarg, U, compressed_frequencies, k=k, kwargs={"scaling_factor" : scaling_factor})
+    qbl = QuantumBool()
+
+    GQSP(qbl, qarg, unitary=U, p=compressed_frequencies, k=k, kwargs={"scaling_factor" : scaling_factor})
 
     return qbl

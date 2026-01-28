@@ -56,7 +56,7 @@ def hamiltonian_simulation(H: QubitOperator | BlockEncoding, t: "ArrayLike" = 1,
     Returns
     -------
     BlockEncoding
-        A block encoding approximating $e^{itH}$.
+        A block encoding approximating $e^{-itH}$.
 
     Examples
     --------

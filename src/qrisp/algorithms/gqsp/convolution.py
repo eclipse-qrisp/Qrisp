@@ -18,22 +18,22 @@
 
 import numpy as np
 from qrisp import (
+    QuantumVariable,
+    QuantumBool,
     conjugate,
     p,
 )
 from qrisp.alg_primitives import QFT
 from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.jasp import qache, jrange
+from typing import TYPE_CHECKING
 
-
-@qache
-def U(qv):
-    for i in jrange(qv.size):
-        p(np.pi * 2.0 ** (i - qv.size + 1), qv[i])
+if TYPE_CHECKING:
+    from jax.typing import ArrayLike
 
 
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
-def convolve(qarg, weights):
+def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
     r"""
     Performs cyclic convolution of a quantum state with a filter.
 
@@ -55,7 +55,7 @@ def convolve(qarg, weights):
     ----------
     qarg : QuantumVariable
         The input state.
-    weights : ndarray
+    weights : ArrayLike
         1-D array of weights with shape ``(2d+1,)``.
 
     Returns
@@ -102,6 +102,8 @@ def convolve(qarg, weights):
             qarg = psi_prep()
             qbl = convolve(qarg, f)
             success_bool = measure(qbl) == 0
+            reset(qbl)
+            qbl.delete()
             return success_bool, qarg
 
         # The terminal_sampling decorator performs a hybrid simulation,
@@ -122,9 +124,16 @@ def convolve(qarg, weights):
 
     """
 
+    @qache
+    def U(qv):
+        for i in jrange(qv.size):
+            p(np.pi * 2.0 ** (i - qv.size + 1), qv[i])
+
     d = len(weights) // 2
 
+    qbl = QuantumBool()
+
     with conjugate(QFT)(qarg):
-        qbl = GQSP(qarg, U, weights, k=d)
+        GQSP(qbl, qarg, unitary=U, p=weights, k=d)
 
     return qbl
