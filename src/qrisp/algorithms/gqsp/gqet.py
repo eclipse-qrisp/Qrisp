@@ -17,17 +17,18 @@
 """
 
 import numpy as np
-from qrisp import (
-    QuantumFloat,
-    conjugate,
-)
-from qrisp.operators import QubitOperator
-from qrisp.alg_primitives.reflection import reflection
+from qrisp import QuantumBool
 from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.algorithms.gqsp.helper_functions import poly2cheb, cheb2poly
+from qrisp.block_encodings import BlockEncoding
+from qrisp.operators import QubitOperator
+from typing import Literal, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from jax.typing import ArrayLike
 
 
-def GQET(qarg, H, p, kind="Polynomial"):
+def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial") -> BlockEncoding:
     r"""
     Performs `Generalized Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
     Applies polynomial transformations on the eigenvalues of a Hermitian operator.
@@ -46,22 +47,17 @@ def GQET(qarg, H, p, kind="Polynomial"):
 
     Parameters
     ----------
-    qarg : QuantumVariable
-        The QuantumVariable representing the state to apply the GQET on.
-    H : QubitOperator
+    H : BlockEncoding | QubitOperator
         The Hermitian operator.
-    p : ndarray
+    p : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
-    kind : str, optinal
-        The kind of ``p``. Available are ``"Polynomial"`` or ``"Chebyshev"``. 
-        The default is ``"Polynomial"``.
+    kind : {"Polynomial", "Chebyshev"}
+        The kind of ``p``. The default is ``"Polynomial"``.
 
     Returns
     -------
-    qbl : QuantumBool
-        Auxiliary variable after GQSP protocol. Must be measured in state $\ket{0}$.
-    case : QuantumFloat
-        Auxiliary variable after GQSP protocol. Must be measured in state $\ket{0}$.
+    BlockEncoding
+        A block encoding of $p(H)$.
 
     Examples
     --------
@@ -104,17 +100,12 @@ def GQET(qarg, H, p, kind="Polynomial"):
 
     ::
 
-        poly = np.array([1., 2., 1.])
+        poly = jnp.array([1., 2., 1.])
+        BE = GQET(H, poly, kind="Polynomial")
 
-        @RUS
         def transformed_psi_prep():
-
-            operand = psi_prep()
-
-            qbl, case = GQET(operand, H, poly, kind="Polynomial")
-
-            success_bool = (measure(qbl) == 0) & (measure(case) == 0)
-            return success_bool, operand
+            operand = BE.apply_rus(psi_prep)()
+            return operand
 
     ::
 
@@ -153,10 +144,11 @@ def GQET(qarg, H, p, kind="Polynomial"):
             f"Allowed kinds are: {', '.join(ALLOWED_KINDS)}"
         )
 
-    # Rescaling of the polynomial to account for scaling factor alpha of pauli block-encoding
-    H = H.hermitize().to_pauli()
-    _, coeffs = H.unitaries()
-    alpha = np.sum(np.abs(coeffs))
+    if isinstance(H, QubitOperator):
+        H = H.pauli_block_encoding()    
+
+    # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
+    alpha = H.alpha
     scaling_exponents = np.arange(len(p))
     scaling_factors = np.power(alpha, scaling_exponents)
 
@@ -168,16 +160,12 @@ def GQET(qarg, H, p, kind="Polynomial"):
 
     p = poly2cheb(p)
 
-    U, state_prep, n = H.pauli_block_encoding()
+    BE_walk = H.qubitization()
 
-    # Qubitization step: RU^k is a block-encoding of T_k(H)
-    def RU(case, operand):
-        U(case, operand)
-        reflection(case, state_function=state_prep)
+    new_anc_templates = [QuantumBool().template()] + BE_walk.anc_templates
+    new_alpha = 1 # TBD
 
-    case = QuantumFloat(n)
+    def new_unitary(*args):
+        GQSP(args[0], *args[1:], unitary = BE_walk.unitary, p=p)
 
-    with conjugate(state_prep)(case):
-        qbl = GQSP([case, qarg], RU, p, k=0)
-
-    return qbl, case
+    return BlockEncoding(new_unitary, new_anc_templates, new_alpha, is_hermitian=False)

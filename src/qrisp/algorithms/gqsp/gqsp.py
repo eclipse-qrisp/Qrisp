@@ -16,6 +16,8 @@
 ********************************************************************************
 """
 
+#from __future__ import annotations
+#from jax.typing import ArrayLike
 from qrisp import (
     QuantumArray,
     QuantumVariable,
@@ -27,10 +29,22 @@ from qrisp import (
 )
 from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
 from qrisp.jasp import jrange
+from typing import Any, Callable, Dict, Optional, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from jax.typing import ArrayLike
 
 
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
-def GQSP(qargs, U, p=None, angles=None, k=0, kwargs={}):
+def GQSP(
+    qbl: QuantumBool, 
+    *qargs: QuantumVariable, 
+    unitary: Callable[..., None], 
+    p: Optional["ArrayLike"] = None, 
+    angles: Optional[Tuple["ArrayLike", "ArrayLike", "ArrayLike"]] = None, 
+    k: int = 0, 
+    kwargs: Dict[str, Any] = {}
+) -> QuantumBool:
     r"""
     Performs `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
 
@@ -66,21 +80,25 @@ def GQSP(qargs, U, p=None, angles=None, k=0, kwargs={}):
 
     Parameters
     ----------
-    qargs : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
-        The (list of) QuantumVariables representing the state to apply the GQSP on.
-    U : function
-        A function appying a unitary to the variables in ``qargs``.
+    qbl : QuantumBool
+        Auxiliary variable in state $\ket{0}$ for applying the GQSP protocol.
+        Must be measuered in state $\ket{0}$ for the GQSP protocol to be successful.
+    *qargs : QuantumVariable
+        QuantumVariables serving as operands for the unitary.
+    unitary : Callable
+        A function appying a unitary to the variables ``*qargs``.
         Typically, $U=e^{iH}$ for a Hermitian operator $H$ and GQSP applies a function of $H$.
-    p : ndarray, optional
+    p : ArrayLike, optional
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
         Either the polynomial ``p`` or ``angles`` must be specified.
-    angles : tuple(ndarray, ndarray, float), optional
-        A tuple of angles $(\theta,\phi,\lambda)$ for $\theta,\phi\in\mathbb R^{d+1}$, $\lambda\in\mathbb R$.
+    angles : tuple(ArrayLike, ArrayLike, ArrayLike), optional
+        A tuple of angles $(\theta,\phi,\lambda)$ where $\theta,\phi\in\mathbb R^{d+1}$ are 1-D arrays
+        and $\lambda\in\mathbb R$ is a scalar.
     k : int, optional
         If specified, the Laurent polynomial $\tilde p(x)=x^{-k}p(x)$ is applied.
         The default is 0.
     kwargs : dict, optional
-        A dictionary of keyword arguments to pass to ``U``. The default is {}.
+        A dictionary of keyword arguments to pass to ``unitary``. The default is {}.
 
     Returns
     -------
@@ -187,18 +205,12 @@ def GQSP(qargs, U, p=None, angles=None, k=0, kwargs={}):
 
     """
 
-    # Convert qargs into a list
-    if isinstance(qargs, (QuantumVariable, QuantumArray)):
-        qargs = [qargs]
-
     if angles is not None:
         theta, phi, lambda_ = angles
         d = len(theta) - 1
     elif p is not None:
         d = len(p) - 1
         theta, phi, lambda_ = gqsp_angles(p)
-
-    qbl = QuantumBool()
 
     # Define R gate application function based on formula (4) in https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
     #def R(theta, phi, kappa, qubit):
@@ -217,13 +229,13 @@ def GQSP(qargs, U, p=None, angles=None, k=0, kwargs={}):
     for i in jrange(d-k):
         R(theta[i], phi[i], qbl)
         with control(qbl, ctrl_state=0):
-            U(*qargs, **kwargs)   
+            unitary(*qargs, **kwargs)   
 
     for i in jrange(k):
         R(theta[d-k+i], phi[d-k+i], qbl)
         with control(qbl, ctrl_state=1):
             with invert():
-                U(*qargs, **kwargs)
+                unitary(*qargs, **kwargs)
         
     R(theta[d], phi[d], qbl)
     rz(-2*lambda_, qbl)
