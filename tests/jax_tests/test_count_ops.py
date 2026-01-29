@@ -129,6 +129,63 @@ def test_count_ops():
         else:
             assert False
 
+
+def test_parity_count_ops():
+    """Test that parity primitive works with count_ops profiling."""
+    
+    # Test basic parity - should not add to op counts
+    @count_ops(meas_behavior="0")
+    def test_parity_basic():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        x(qv[2])
         
-            
+        m1 = measure(qv[0])
+        m2 = measure(qv[1])
+        m3 = measure(qv[2])
+        
+        result = parity(m1, m2, m3)
+        return result
+    
+    ops = test_parity_basic()
+    # Should count x gates and measurements, but not parity
+    assert ops["x"] == 2, f"Expected 2 x gates, got {ops.get('x', 0)}"
+    assert ops["measure"] == 3, f"Expected 3 measurements, got {ops.get('measure', 0)}"
+    assert "parity" not in ops, "Parity should not be counted as an operation"
+    
+    # Test that parity doesn't affect operation counts compared to without parity
+    @count_ops(meas_behavior="0")
+    def test_without_parity():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        x(qv[2])
+        
+        m1 = measure(qv[0])
+        m2 = measure(qv[1])
+        m3 = measure(qv[2])
+        
+        return m1  # Just return measurement, no parity
+    
+    ops_without = test_without_parity()
+    ops_with = test_parity_basic()
+    
+    # Operation counts should be identical (parity doesn't add quantum operations)
+    assert ops_with == ops_without, f"Operations should match: with parity {ops_with} vs without {ops_without}"
+    
+    # Test with expectation parameter
+    @count_ops(meas_behavior="1")
+    def test_parity_expectation():
+        qv = QuantumVariable(2)
+        x(qv[0])
+        
+        m1 = measure(qv[0])
+        m2 = measure(qv[1])
+        
+        # Parity is True (one 1), expectation is False
+        result = parity(m1, m2, expectation=False)
+        return result
+    
+    ops = test_parity_expectation()
+    assert ops["x"] == 1, f"Expected 1 x gate, got {ops.get('x', 0)}"
+    assert ops["measure"] == 2, f"Expected 2 measurements, got {ops.get('measure', 0)}"
         

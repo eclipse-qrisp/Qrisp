@@ -140,7 +140,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
                             f"Tried to profil Jaspr with a measurement behavior not returning a boolean (got {meas_res.dtype}) instead"
                         )
                         
-                    counting_array[counting_index] += incrementation_constants[1]
+                    counting_array[counting_index] += incrementation_constants[0]
 
                 insert_outvalues(eqn, context_dic, [meas_res, (counting_array, incrementation_constants)])
 
@@ -178,6 +178,16 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
             elif eqn.primitive.name in ["jasp.delete_qubits", "jasp.reset"]:
                 # Trivial behavior: return the last argument (the counting array).
                 insert_outvalues(eqn, context_dic, invalues[-1])
+            elif eqn.primitive.name == "jasp.parity":
+                # Parity is a classical operation on measurement results
+                # Compute XOR and handle expectation
+                expectation = eqn.params.get("expectation", 2)
+                result = sum(invalues) % 2
+                
+                if expectation != 2:
+                    result = result ^ expectation
+                
+                insert_outvalues(eqn, context_dic, result)
             elif eqn.primitive.name == "jasp.create_quantum_kernel":
                 raise Exception("Tried to perform resource estimation on a function calling calling a kernelized function")
             else:
