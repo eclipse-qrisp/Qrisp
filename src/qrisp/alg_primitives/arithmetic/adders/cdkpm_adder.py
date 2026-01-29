@@ -16,8 +16,8 @@
 ********************************************************************************
 """
 from qrisp import *
-from qrisp.jasp import jrange
 import jax.numpy as jnp
+from typing import Union
 
 ALLOWED_CDKPM_ADDER_QUANTUM_TYPES = (QuantumFloat)
 
@@ -25,24 +25,24 @@ ALLOWED_CDKPM_ADDER_QUANTUM_TYPES = (QuantumFloat)
 def cdkpm_adder(a, b, c_in=None, c_out=None):
     """In-place adder as introduced in https://arxiv.org/abs/quant-ph/0410184
 
-    This function works in both static and dynamic modes. The allowed inputs are both quantum types or one quantum
-    type and one classical type. 
+    This function works in both static and dynamic modes. The allowed inputs are both quantum types or one classical
+    type and one quantum type. 
 
     .. note::
     
-        If the first input is quantum and the second classical, the addition is performed
-        on the first input and the inputs are switched internally.
+        If the first input is quantum and the second classical, the function cannot work as addition is 
+        performed "in-place" on the second input. 
 
     
     Parameters
     ----------
-    a : int or QuantumVariable or list[Qubit]
+    a : int or QuantumVariable
         The value that should be added.
-    b : QuantumVariable or list[Qubit]
+    b : QuantumVariable
         The value that should be modified in the in-place addition.
-    c_in : Qubit, optional
+    c_in : QuantumVariable, optional
         An optional carry in value. The default is None.
-    c_out : Qubit, optional
+    c_out : QuantumVariable, optional
         An optional carry out value. The default is None.
 
     Raises
@@ -91,15 +91,8 @@ def cdkpm_adder(a, b, c_in=None, c_out=None):
         q_a[:] = a
         a = q_a
     
-    # if the first input is quantum and the second is classical
-    # we switch the inputs to make the second input always quantum given that
-    # the sum is implemented on the second input
     elif not isinstance(b, ALLOWED_CDKPM_ADDER_QUANTUM_TYPES):
-        q_b = QuantumFloat(a.size)
-        q_b[:] = b
-        b = q_b
-        # switch the inputs
-        a, b = b, a
+        raise ValueError("The second argument must be of type QuantumVariable.")
 
     # when the inputs are of unequal length
     # pad the size of the input with the smaller size
@@ -107,8 +100,24 @@ def cdkpm_adder(a, b, c_in=None, c_out=None):
     dim_b = b.size
 
     max_size = jnp.maximum(dim_a, dim_b)
-    a.extend(abs(max_size - dim_a))
-    b.extend(abs(max_size - dim_b))
+
+    # create an extension ancilla to change the size of the inputs
+    extension_anc_a = QuantumVariable(max_size - dim_a)
+    extension_anc_b = QuantumVariable(max_size - dim_b)
+
+    # create dynamic qubit arrays of both inputs
+    extended_a = a[:] + extension_anc_a[:]
+    extended_b = b[:] + extension_anc_b[:]
+
+    a = extended_a
+    b = extended_b
+
+    if not check_for_tracing_mode():
+        dim_a = len(a)
+        dim_b = len(b)
+    else:
+        dim_a = a.size
+        dim_b = b.size
 
     # carry bit is initialized to 0
     if c_in is None:
@@ -128,7 +137,9 @@ def cdkpm_adder(a, b, c_in=None, c_out=None):
     mcx([ancilla[0], b[0]], a[0])
 
     # iterator maj gate application
-    for i in jrange(1, a.size):
+    from qrisp.jasp import jrange
+    
+    for i in jrange(1, dim_a):
         cx(a[i], b[i])
         cx(a[i], a[i - 1])
         mcx([a[i - 1], b[i]], a[i])
@@ -137,9 +148,9 @@ def cdkpm_adder(a, b, c_in=None, c_out=None):
     cx(a[-1], ancilla2[-1])
 
     # iterator uma gate application
-    for j in jrange(a.size - 1):
+    for j in jrange(dim_a - 1):
         # reverse the iteration
-        i = a.size - j - 1
+        i = dim_a - j - 1
 
         x(b[i])
         cx(a[i - 1], b[i])
@@ -161,3 +172,8 @@ def cdkpm_adder(a, b, c_in=None, c_out=None):
 
     if c_out is None:
         ancilla2.delete()
+
+    # delete the extension ancillas when the inputs are of unequal length
+    extension_anc_a.delete()
+    extension_anc_b.delete()
+    
