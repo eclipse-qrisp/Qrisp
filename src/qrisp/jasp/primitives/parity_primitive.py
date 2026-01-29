@@ -24,6 +24,7 @@ from qrisp.jasp.primitives.quantum_primitive import QuantumPrimitive
 parity_p = QuantumPrimitive("parity")
 
 from jax.core import ShapedArray
+from jax.lax import while_loop
 
 @parity_p.def_abstract_eval
 def parity_abstract_eval(*measurements, expectation = 2):
@@ -193,20 +194,29 @@ def parity(*measurements, expectation = None):
             raise ValueError(f"Cannot mix scalar and array inputs to parity. Got shapes: {shapes}")
         
         result_shape = first_shape
+        flat_result = jnp.zeros(measurements[0].size, dtype = bool)
         
         # Flatten for element-wise processing
         flat_measurements = [jnp.ravel(m) for m in measurements]
         
-        # Stack flattened measurements into shape (num_elements, num_measurements)
-        stacked = jnp.stack(flat_measurements, axis=-1)
+        init_val = (0, flat_result, flat_measurements)
         
-        # Apply parity to each element using lax.map
-        def apply_parity(elems):
-            return parity_p.bind(*elems, expectation=expectation)
+        def body_function(val):
+            
+            index, flat_result, flat_measurements = val
+            parity_res = parity(*[meas[index] for meas in flat_measurements])
+            flat_result = flat_result.at[index].set(parity_res)
+            index += 1
+            
+            return index, flat_result, flat_measurements
         
-        flat_result = lax.map(apply_parity, stacked)
+        def cond_function(val):
+            return val[0] < val[1].size
+
+        while_res = while_loop(cond_function, body_function, init_val)
         
-        # Reshape to output shape
+        flat_result = while_res[1]
+        
         return jnp.reshape(flat_result, result_shape)
 
 @parity_p.def_impl
