@@ -19,75 +19,103 @@
 from qrisp import *
 import pytest
 
-def test_cdkpm_adder_valid_quantumfloat_input():
-    """Verify the function works as expected for valid QuantumFloat inputs."""
+import pytest
 
-    # both inputs are quantum in static mode
-    i, j = 13, 14
-    a = QuantumFloat(i)
-    a[:] = 20
-    b = QuantumFloat(j)
-    b[:] = 14
+@pytest.mark.parametrize("input_a, input_b, expected_a, expected_b", [
+    # both inputs are quantum in static mode, inputs are of unequal size
+    (QuantumFloat(13), QuantumFloat(14), {20: 1.0}, {34: 1.0}),
 
-    cdkpm_adder(a, b)
-    calculated_out_b = b.get_measurement()
-    calculated_out_a = a.get_measurement()
-    assert calculated_out_a == {20: 1.0}
-    assert calculated_out_b == {34: 1.0}
+    # both inputs are quantum in static mode, inputs are of equal size
+    (QuantumFloat(13), QuantumFloat(13), {20: 1.0}, {34: 1.0}),
 
     # one input is classical, the other is quantum in static mode
-    a = 20
-    b = QuantumFloat(15)
-    b[:] = 14
-    cdkpm_adder(a, b)
-    calculated_out_b = b.get_measurement()
-    calculated_out_a = a
-    assert calculated_out_a == 20
-    assert calculated_out_b == {34: 1.0}
+    (20, QuantumFloat(15), 20, {34: 1.0}),
+])
+def test_cdkpm_adder_valid_input_static_mode(input_a, input_b, expected_a, expected_b):
+    """Verify the function works as expected for valid inputs in static mode."""
+    if isinstance(input_a, QuantumFloat):
+        input_a[:] = 20
+    if isinstance(input_b, QuantumFloat):
+        input_b[:] = 14
 
-    # one input is quantum, the other is classical in static mode
-    b = 20
-    a = QuantumFloat(15)
-    a[:] = 14
-    cdkpm_adder(a, b)
-    # when the first input is quantum and the second is classical
-    # the inputs are switched internally to be able to perform the addition
-    # on the quantum object
-    calculated_out_a = a.get_measurement()
-    assert calculated_out_a == {34: 1.0}
-    # verify b is unchanged outside of the adder
-    assert b == 20
-    
+    cdkpm_adder(input_a, input_b)
 
-    # both quantum inputs in dynamic mode
-    def run_jasp_adder(i, j):
-        a = QuantumFloat(i)
-        a[:] = 20
-        b = QuantumFloat(j)
-        b[:] = 14
+    calculated_out_b = input_b.get_measurement() if isinstance(input_b, QuantumFloat) else input_b
+    calculated_out_a = input_a.get_measurement() if isinstance(input_a, QuantumFloat) else input_a
 
-        cdkpm_adder(a, b)
-        return measure(b)
+    assert calculated_out_a == expected_a
+    assert calculated_out_b == expected_b
 
-    jaspr = make_jaspr(run_jasp_adder)(2, 3)
+@pytest.mark.parametrize("input_a_type, input_b_type, input_a_size, input_b_size, expected_output", [
+    # both quantum inputs in dynamic mode, inputs are of unequal size
+    (QuantumFloat, QuantumFloat, 16, 19, 34.0),
 
-    assert jaspr(16, 19) == 34.0
+    # both quantum inputs in dynamic mode, inputs are of equal size
+    (QuantumFloat, QuantumFloat, 19, 19, 34.0),
 
     # one classical input in dynamic mode
+    (int, QuantumFloat, 16, 19, 34.0),
+])
+def test_jaspr_mode_cdkpm_adder(input_a_type, input_b_type, input_a_size, input_b_size, expected_output):
     def run_jasp_adder(i, j):
-        a = 20
-        b = QuantumFloat(j)
+        a = input_a_type(i) if input_a_type != int else 20
+        if input_a_type == QuantumFloat:
+            a[:] = 20
+        b = input_b_type(j)
         b[:] = 14
-
         cdkpm_adder(a, b)
         return measure(b)
 
     jaspr = make_jaspr(run_jasp_adder)(2, 3)
-    assert jaspr(16, 19) == 34.0
+    assert jaspr(input_a_size, input_b_size) == expected_output
 
 
+@pytest.mark.parametrize("input_a, input_b, expected_error_message", [
+    # both inputs are classical
+    (10, 15, "Attempted to call the CDKPM adder on invalid inputs"),
+    # first input is quantum in static mode, second is classical
+    (QuantumFloat(5), 10, "The second argument must be of type QuantumVariable."),
+])
+def test_invalid_input(input_a, input_b, expected_error_message):
+    """Verify function raises error for invalid inputs."""
+    if isinstance(input_a, QuantumFloat):
+        input_a[:] = 2
+    if isinstance(input_b, QuantumFloat):
+        input_b[:] = 14
 
-def test_invalid_input():
-    """Verify function raises error for both classical inputs."""
-    with pytest.raises(ValueError):
-        cdkpm_adder(10, 15)
+    with pytest.raises(ValueError, match=expected_error_message):
+        cdkpm_adder(input_a, input_b)
+
+
+@pytest.mark.parametrize("input_a, input_b, expected_error_message", [
+    # first input is quantum in dynamic mode, second is classical
+    (QuantumFloat, 20, "The second argument must be of type QuantumVariable."),
+    # both inputs are classical in dynamic mode
+    (20, 20, "Attempted to call the CDKPM adder on invalid inputs"),
+])
+def test_invalid_input_dynamic_mode(input_a, input_b, expected_error_message):
+    """Verify function raises error for invalid inputs in dynamic mode."""
+    def run_jasp_adder(i, j):
+        a = input_a(j) if input_a != 20 else 20
+        if input_a == QuantumFloat:
+            a[:] = 14
+        cdkpm_adder(a, input_b)
+        return measure(a)
+
+    with pytest.raises(ValueError, match=expected_error_message):
+        jaspr = make_jaspr(run_jasp_adder)(2, 3)
+        jaspr(16, 19)
+
+def test_inputs_modified():
+    """Verify the size of inputs are unmodified when they are initially of unequal size."""
+    a = QuantumFloat(10)
+    b = QuantumFloat(12)
+    original_size_a = a.size
+    original_size_b = b.size
+    a[:] = 5
+    b[:] = 7
+
+    cdkpm_adder(a, b)
+
+    assert a.size == original_size_a
+    assert b.size == original_size_b
