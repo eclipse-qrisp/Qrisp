@@ -66,14 +66,14 @@ def inner_lanczos(H, k, operand_prep):
     case_indicator = BE_qubitized.create_ancillas()
     operand = operand_prep()
 
-    if operand not isinstance(tuple, list):
+    if not isinstance(operand, (tuple, list)):
         operand = list(operand)
 
     def even(case_indicator, operand, k):
         # EVEN k: Figure 1 top
         for _ in jrange(k//2):
             BE_qubitized.unitary(*case_indicator, *operand)
-        return *case_indicator
+        return case_indicator
 
     def odd(case_indicator, operand, k):
         # ODD k: Figure 1 bottom
