@@ -145,9 +145,9 @@ def count_ops(meas_behavior):
             return measure(c)
 
         print(main(5))
-        # {'cx': 506, 'x': 22, 'h': 135, 'measure': 55, '2cx': 2, 's': 45, 't': 90, 't_dg': 90}
+        # {'s': 45, 'x': 22, 't_dg': 98, 'cx': 510, 't': 96, 'h': 139, 'measure': 55}
         print(main(5000))
-        # {'cx': 462552491, 'x': 20002, 'h': 112522500, 'measure': 37517500, '2cx': 2, 's': 37507500, 't': 75015000, 't_dg': 75015000}
+        # {'t': 751506, 'h': 1127254, 'x': 2002, 's': 375750, 't_dg': 751508, 'cx': 4629255, 'measure': 752500}
 
     Note that even though the second computation contains more than 800 million gates,
     determining the resources takes less than 200ms, highlighting the scalability
@@ -277,23 +277,107 @@ def _normalize_meas_behavior(meas_behavior) -> Callable:
 def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
     """
     Decorator to determine the depth of large scale quantum computations.
+
     This decorator compiles the given Jasp-compatible function into a classical
-    function computing the depth required. The decorated function will return
+    function computing the circuit depth required. The decorated function returns
     an integer indicating the depth of the quantum computation.
+
+    The depth is computed by tracking, for each qubit, the time at which it
+    becomes available again after an operation. Multi-qubit gates increase the
+    depth of all qubits they act on to the same value.
 
     Parameters
     ----------
     meas_behavior : str or callable
         A string or callable indicating the behavior of the resource computation
         when measurements are performed. Available strings are ``"0"`` and ``"1"``.
+        A callable must take a JAX PRNG key as input and return a boolean.
 
     max_qubits : int, optional
-        The maximum number of qubits supported for depth computation. Default is 1024.
+        The maximum number of qubits supported for depth computation.
+        Default is 1024.
 
     Returns
     -------
     depth decorator
-        A decorator, producing a function to computed the depth required.
+        A decorator producing a function that computes the depth required.
+
+    Examples
+    --------
+
+    Let's consider a simple circuit:
+
+    ::
+
+        from qrisp import *
+
+        @depth(meas_behavior="0")
+        def circuit(n):
+            qv = QuantumFloat(n)
+            h(qv[0])
+            h(qv[1])
+            cx(qv[0], qv[1])
+            h(qv[0])
+
+        print(circuit(2))  # Output: 3
+
+    The first two Hadamards run in parallel (depth 1), the CNOT
+    increases depth to 2, and the final Hadamard gives depth 3.
+
+    Now, consider a circuit with measurement and classical control:
+
+    ::
+
+        @depth(meas_behavior="0")
+        def circuit(n):
+            qv = QuantumFloat(n)
+            m = measure(qv[0])
+
+            with control(m == 0):
+                h(qv[0])
+                x(qv[1])
+                h(qv[0])
+
+            with control(m == 1):
+                cx(qv[0], qv[1])
+                h(qv[0])
+                x(qv[0])
+
+        print(circuit(2))  # Output: 2
+
+    The same circuit with ``meas_behavior="1"`` yields a depth of 3,
+    because a different branch of the computation is taken.
+
+    **Macro-gates and gate definitions**
+
+    If a gate has a ``definition`` (for example a Toffoli gate implemented
+    as a sequence of simpler gates), it is treated as a *macro-gate* with a
+    fixed duration equal to the depth of its definition. This duration is
+    applied uniformly to all qubits the gate acts on.
+
+    For instance, if a Toffoli gate has an internal decomposition of depth 8,
+    applying it to three qubits increases the depth of all three qubits by 8.
+
+    .. note::
+
+        Computing depth requires tracking qubit dependencies. As a result,
+        compilation time for the depth metric can be noticeably slower for large circuits
+        compared to ``count_ops``. This will be improved in future versions.
+        However, the scalability offered by Jasp after the initial compilation
+        is not affected.
+
+    .. note::
+
+        The ``max_qubits`` parameter sets an upper limit on the number of qubits
+        that can be handled for depth computation. This is necessary as JAX
+        requires static shapes for JIT compilation. The default value of 1024
+        can be adjusted based on the expected number of qubits in the circuits
+        to be analyzed.
+
+    .. warning::
+
+        It is currently not possible to estimate programs, which include a
+        :ref:`kernelized <quantum_kernel>` function.
 
     """
 
