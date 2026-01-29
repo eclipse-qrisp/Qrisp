@@ -57,7 +57,7 @@ Measurement_p.multiple_results = True
 
 @Measurement_p.def_impl
 def measure_implementation(meas_object, qc):
-    from qrisp import Qubit, QuantumCircuit
+    from qrisp import Qubit, QuantumCircuit, Clbit
 
     return_bool = False
     if isinstance(meas_object, Qubit):
@@ -66,13 +66,17 @@ def measure_implementation(meas_object, qc):
 
     if isinstance(qc, QuantumCircuit):
         if return_bool:
-            qc.measure(meas_object)
-            return qc.clbits[-1], qc
+            meas_res = Clbit("cb_" + str(len(qc.clbits)))
+            qc.clbits.insert(0, meas_res)
+            qc.measure(meas_object, meas_res)
+            return meas_res, qc
         else:
             clbit_list = []
             for i in range(len(meas_object)):
-                qc.measure(meas_object[i])
-                clbit_list.append(qc.clbits[-1])
+                meas_res = Clbit("cb_" + str(len(qc.clbits)))
+                qc.clbits.insert(0, meas_res)
+                qc.measure(meas_object[i], meas_res)
+                clbit_list.append(meas_res)
             return clbit_list, qc
     else:
         res = 0
