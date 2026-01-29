@@ -16,6 +16,8 @@
 ********************************************************************************
 """
 
+# qswitch is deprecated, use q_switch instead
+
 from qrisp import inpl_mult, h, QuantumFloat, qswitch, multi_measurement, x
 def test_qswitch_case_list():
 

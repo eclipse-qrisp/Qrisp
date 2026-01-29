@@ -57,8 +57,23 @@ def test_dynamic_mcx():
                 assert k[1]
             else:
                 assert not k[1]
-     
-    # Test dynamic mcp
+
+    # Test no additional phase on output
+    @terminal_sampling
+    def main(i):
+        
+        qf = QuantumFloat(i)        
+        qbl = QuantumBool()
+        with conjugate(h)(qf[qf.size-1]):
+            h(qbl[0])
+            mcx(qf.reg, qbl[0], method = "balauca")
+        return qf
+    for i in range (1,8):                
+        assert(main(i))=={0.0: 1.0}    
+
+
+def test_dynamic_mcp():
+
     @terminal_sampling
     def main(phi, i):
         
@@ -105,16 +120,53 @@ def test_dynamic_mcx():
             assert main(np.pi, 5, j) == {2**(4): 1.0}
         else: 
             assert main(np.pi, 5, j) == {0: 1.0}
-    
-    # Test no additional phase on output
+
+
+def test_dynamic_mcz():
+
     @terminal_sampling
     def main(i):
         
-        qf = QuantumFloat(i)        
-        qbl = QuantumBool()
-        with conjugate(h)(qf[qf.size-1]):
-            h(qbl[0])
-            mcx(qf.reg, qbl[0], method = "balauca")
-        return qf
-    for i in range (1,8):                
-        assert(main(i))=={0.0: 1.0}    
+        qv = QuantumFloat(i)
+    
+        x(qv[:qv.size-1])
+        
+        with conjugate(h)(qv[qv.size-1]):
+            mcz(qv, method="khattar")
+        
+        return qv
+
+    assert main(5) == {31: 1.0}
+
+    @terminal_sampling
+    def main(i, j):
+        
+        qv = QuantumFloat(i)
+    
+        with conjugate(h)(qv[qv.size-1]):
+            mcz(qv, method="khattar", ctrl_state = j)
+        
+        return qv
+    
+    for i in range(2,8):
+        for j in range(2**i):
+            if j==0 or j==2**(i-1):        
+                assert main(i, j) == {2**(i-1): 1.0}
+            else: 
+                assert main(i, j) == {0: 1.0}   
+
+    @terminal_sampling
+    def main(i, j):
+        
+        qv = QuantumFloat(i)
+    
+        with conjugate(h)(qv[qv.size-1]):
+            mcz([qv[i] for i in range(5)], method="khattar", ctrl_state = j)
+        
+        return qv
+
+    for j in range(2**5):
+        if j==0 or j==2**(4):        
+            assert main(5, j) == {2**(4): 1.0}
+        else: 
+            assert main(5, j) == {0: 1.0}
