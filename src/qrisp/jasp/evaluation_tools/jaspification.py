@@ -145,13 +145,8 @@ def jaspify(func=None, terminal_sampling=False):
         return flattened_values
 
     def return_function(*args):
-        # To prevent "accidental deletion" induced non-determinism we set the
-        # garbage collection mode to manual
-        if terminal_sampling:
-            garbage_collection = "manual"
-        else:
-            garbage_collection = "auto"
-        jaspr = make_jaspr(tracing_function, garbage_collection=garbage_collection)(
+
+        jaspr = make_jaspr(tracing_function)(
             *args
         )
         jaspr_res = simulate_jaspr(jaspr, *args, terminal_sampling=terminal_sampling)
