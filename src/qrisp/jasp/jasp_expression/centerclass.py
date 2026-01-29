@@ -32,6 +32,7 @@ from qrisp.jasp import (
     extract_invalues,
     insert_outvalues,
 )
+from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement
 from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive
 
 
@@ -434,63 +435,90 @@ class Jaspr(ClosedJaxpr):
 
 
         """
-        from qrisp import QuantumCircuit, Clbit
+        from qrisp.jasp.interpreter_tools.interpreters import jaspr_to_qc
+        return jaspr_to_qc(self, *args)
 
-        jaspr = self
-
-        def eqn_evaluator(eqn, context_dic):
-            if eqn.primitive.name == "jit" and isinstance(eqn.params["jaxpr"], Jaspr):
-                return pjit_to_gate(eqn, context_dic, eqn_evaluator)
-            elif eqn.primitive.name == "cond":
-                return cond_to_cl_control(eqn, context_dic, eqn_evaluator)
-            elif eqn.primitive.name == "convert_element_type":
-                if isinstance(
-                    context_dic[eqn.invars[0]], (ProcessedMeasurement, Clbit)
-                ):
-                    context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
-                    return
-                elif isinstance(context_dic[eqn.invars[0]], list) and isinstance(
-                    context_dic[eqn.invars[0]][0], (ProcessedMeasurement, Clbit)
-                ):
-                    context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
-                    return
-                return True
-            else:
-
-                invalues = extract_invalues(eqn, context_dic)
-                for val in invalues:
-                    if isinstance(val, list) and len(val):
-                        if isinstance(val[0], (ProcessedMeasurement, Clbit)):
-                            break
-                    elif isinstance(val, (ProcessedMeasurement, Clbit)):
-                        break
-                else:
-                    if isinstance(eqn.primitive, QuantumPrimitive):
-                        outvalues = eqn.primitive.impl(*invalues, **eqn.params)
-                        insert_outvalues(eqn, context_dic, outvalues)
-                        return
-                    else:
-                        return True
-
-            if len(eqn.outvars) == 0:
-                return
-            elif len(eqn.outvars) == 1 and not eqn.primitive.multiple_results:
-                outvalues = ProcessedMeasurement()
-            elif len(eqn.outvars) >= 1:
-                outvalues = [ProcessedMeasurement() for _ in range(len(eqn.outvars))]
-
-            insert_outvalues(eqn, context_dic, outvalues)
-
-        ammended_args = list(args) + [QuantumCircuit()]
-
-        if len(ammended_args) != len(jaspr.invars):
-            raise Exception(
-                "Supplied invalid number of arguments to Jaspr.to_qc (please exclude any static arguments, in particular callables)"
-            )
-
-        res = eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator)(*(ammended_args))
-
-        return res
+    def extract_post_processing(self, *args):
+        """
+        Extracts the post-processing logic from this Jaspr and returns a function
+        that performs the post-processing on measurement results.
+        
+        This method is useful for separating the quantum circuit from the classical
+        post-processing of measurement results. The quantum circuit can be executed
+        on a NISQ-style backend to obtain measurement results, and then the post-processing
+        function can be applied to those results to obtain the final output.
+        
+        .. note::
+            
+            It is not possible to extract QuantumCircuits from Jaspr objects
+            involving real-time computation, but it is possible to extract a post
+            processing function.
+        
+        Parameters
+        ----------
+        *args : tuple
+            The static argument values that were used for circuit extraction. 
+            These will be bound into the post-processing function as Literals.
+        
+        Returns
+        -------
+        callable
+            A function that takes measurement results and returns the post-processed results.
+            Accepts either a string of '0' and '1' characters or a JAX array of booleans
+            with shape (n,). String inputs are automatically converted to boolean arrays.
+        
+        Examples
+        --------
+        
+        We create a Jaspr that performs post-processing on measurement results:
+        
+        ::
+        
+            from qrisp import *
+            import jax.numpy as jnp
+            
+            @make_jaspr
+            def example_function(i):
+                qv = QuantumFloat(5)
+                # First measurement
+                meas_1 = measure(qv[i])
+                h(qv[1])
+                # Second measurement
+                meas_2 = measure(qv[1])
+                # Classical post-processing
+                return meas_1 + 2, meas_2
+            
+            jaspr = example_function(1)
+            
+            # Extract the quantum circuit
+            a, b, qc = jaspr.to_qc(1)
+            
+            # Extract the post-processing function with the SAME arguments
+            post_proc = jaspr.extract_post_processing(1)
+            
+            # Execute qc on a backend to get measurement results
+            results = qc.run()
+            
+            # Apply post-processing to each result
+            for bitstring, count in results.items():
+                processed = post_proc(bitstring)
+                print(f"{bitstring} -> {processed}")
+              
+            # Yields:
+            # 00 -> (Array(2, dtype=int64), Array(False, dtype=bool))
+            # 01 -> (Array(2, dtype=int64), Array(True, dtype=bool))
+            
+            # Can also use with array input (useful for JAX jitting):
+            import jax.numpy as jnp
+            meas_array = jnp.array([False, True])
+            processed = post_proc(meas_array)
+        
+        Note that the static arguments (in this case `1`) must be the same as those
+        used for circuit extraction, since they affect the structure of both the
+        quantum circuit and the post-processing logic.
+        """
+        from qrisp.jasp.interpreter_tools.interpreters import extract_post_processing
+        return extract_post_processing(self, *args)
 
     def eval(self, *args, eqn_evaluator=lambda x, y: True):
         return eval_jaxpr(self, eqn_evaluator=eqn_evaluator)(*args)
