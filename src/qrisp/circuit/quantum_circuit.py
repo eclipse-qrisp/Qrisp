@@ -1921,6 +1921,8 @@ class QuantumCircuit:
             corresponds to index 2 in Stim's measurement record.
         detector_map : dict
             (Optional) A dictionary mapping Qrisp Clbit objects to Stim detector indices.
+        detector_map : dict
+            (Optional) A dictionary mapping Qrisp Clbit objects to Stim observable indices.
 
         Examples
         --------
