@@ -17,9 +17,6 @@
 """
 from qrisp import *
 import jax.numpy as jnp
-from typing import Union
-
-ALLOWED_CDKPM_ADDER_QUANTUM_TYPES = (QuantumFloat)
 
 
 def cdkpm_adder(a, b, c_in=None, c_out=None):
@@ -72,26 +69,24 @@ def cdkpm_adder(a, b, c_in=None, c_out=None):
     if not (
         # verify at least one input is classical and the other is quantum
         (
-            isinstance(a, ALLOWED_CDKPM_ADDER_QUANTUM_TYPES)
-            ^ isinstance(b, ALLOWED_CDKPM_ADDER_QUANTUM_TYPES)
+            isinstance(a, QuantumFloat) ^ isinstance(b, QuantumFloat)
         )
         or
         # verify both inputs are quantum
         (
-            isinstance(a, ALLOWED_CDKPM_ADDER_QUANTUM_TYPES)
-            and isinstance(b, ALLOWED_CDKPM_ADDER_QUANTUM_TYPES)
+            isinstance(a, QuantumFloat) and isinstance(b, QuantumFloat)
         )
     ):
         raise ValueError("Attempted to call the CDKPM adder on invalid inputs.")
 
     # convert the classical input to a quantum input
-    if not isinstance(a, ALLOWED_CDKPM_ADDER_QUANTUM_TYPES):
+    if not isinstance(a, QuantumFloat):
         # create a QuantumFloat of the same size as the other quantum input
         q_a = QuantumFloat(b.size)
         q_a[:] = a
         a = q_a
     
-    elif not isinstance(b, ALLOWED_CDKPM_ADDER_QUANTUM_TYPES):
+    elif not isinstance(b, QuantumFloat):
         raise ValueError("The second argument must be of type QuantumVariable.")
 
     # when the inputs are of unequal length
