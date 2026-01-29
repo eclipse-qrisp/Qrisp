@@ -111,20 +111,27 @@ def evaluate_scan(scan_eq, context_dic, eqn_evaluator=exec_eqn):
     f = eval_jaxpr(scan_eq.params["jaxpr"], eqn_evaluator=eqn_evaluator)
 
     length = scan_eq.params["length"]
+    reverse = scan_eq.params.get("reverse", False)
 
     carry_amount = scan_eq.params["num_carry"]
     const_amount = scan_eq.params["num_consts"]
 
     init = invalues[const_amount : carry_amount + const_amount]
+    scan_invalues = invalues[const_amount + carry_amount :]
 
-    if len(invalues) == carry_amount + const_amount:
-        xs = [[]] * length
-    else:
-        xs = [[invalues[-1][i]] for i in range(length)]
+    iterator = range(length)
+    if reverse:
+        iterator = reversed(iterator)
+
+    xs = []
+    for i in iterator:
+        xs.append([val[i] for val in scan_invalues])
 
     carry = init
     consts = invalues[:const_amount]
-    ys = []
+    
+    ys_collection = None
+
     for x in xs:
         args = consts + list(carry) + x
 
@@ -136,11 +143,26 @@ def evaluate_scan(scan_eq, context_dic, eqn_evaluator=exec_eqn):
         carry = res[:carry_amount]
         y = res[carry_amount:]
 
-        if len(y):
-            ys.append(y[0])
+        if ys_collection is None:
+            ys_collection = [[] for _ in range(len(y))]
 
-    if len(ys):
-        ys = [jnp.stack(ys)]
+        for i, val in enumerate(y):
+            ys_collection[i].append(val)
+
+    if ys_collection is None:
+        # Handle length=0 case or no-output case
+        jaxpr = scan_eq.params["jaxpr"].jaxpr
+        outvars = jaxpr.outvars
+        y_vars = outvars[carry_amount:]
+        ys = []
+        for v in y_vars:
+            shape = (length,) + v.aval.shape
+            ys.append(jnp.zeros(shape, dtype=v.aval.dtype))
+    else:
+        if reverse:
+            ys = [jnp.stack(col[::-1]) for col in ys_collection]
+        else:
+            ys = [jnp.stack(col) for col in ys_collection]
 
     outvalues = list(carry) + ys
 
