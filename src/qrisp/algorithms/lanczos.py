@@ -55,32 +55,33 @@ def inner_lanczos(H, k, operand_prep):
 
     """
 
-    # Extract unitaries and size of the case_indicator QuantumFloat.
-    U, state_prep, n = H.pauli_block_encoding()
+    if isinstance(H, BlockEncoding):
+        BE = H
+    
+    else:
+        BE = H.pauli_block_encoding()
 
-    def UR(case_indicator, operand):
-        U(case_indicator, operand) # applies $U = \sum_i\ket{i}\bra{i}\otimes P_i$.
-        reflection(case_indicator, state_function=state_prep) # reflection operator R about $\ket{G}$.
+    BE_qubitized = BE.qubitization()
 
-    case_indicator = QuantumFloat(n)
+    case_indicator = BE_qubitized.create_ancillas()
     operand = operand_prep()
 
     def even(case_indicator, operand, k):
         # EVEN k: Figure 1 top
-        with conjugate(state_prep)(case_indicator):
+        with conjugate(state_prep)(*case_indicator):
             for _ in jrange(k//2):
-                UR(case_indicator, operand)
-        return case_indicator
+                BE_qubitized.unitary(*case_indicator, operand)
+        return *case_indicator
 
     def odd(case_indicator, operand, k):
         # ODD k: Figure 1 bottom
         state_prep(case_indicator)
         for _ in jrange(k//2):
-            UR(case_indicator, operand)
+            BE_qubitized.unitary(*case_indicator, operand)
         qv = QuantumFloat(1)
         h(qv) # Hadamard test for <U>
         with control(qv[0]):
-            U(case_indicator, operand) # control-U on the case_indicator QuantumFloat
+            BE.unitary(*case_indicator, operand) # control-U on the case_indicator QuantumFloat
         h(qv) # Hadamard test for <U>
         return qv
             
