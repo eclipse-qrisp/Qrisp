@@ -16,19 +16,5 @@
 ********************************************************************************
 """
 
-from qrisp.alg_primitives.qft import *
-from qrisp.alg_primitives.qpe import *
-from qrisp.alg_primitives.qae import *
-from qrisp.alg_primitives.iterative_qae import *
-from qrisp.alg_primitives.logic_synthesis import *
-from qrisp.alg_primitives.mcx_algs import *
-from qrisp.alg_primitives.arithmetic import *
-from qrisp.alg_primitives.iterable_processing import *
-from qrisp.alg_primitives.dicke_state_prep import *
-from qrisp.alg_primitives.program_control.switch_case import *
 from qrisp.alg_primitives.program_control.quantum_switch import *
-from qrisp.alg_primitives.amplitude_amplification import *
-from qrisp.alg_primitives.lcu import *
-from qrisp.alg_primitives.state_preparation import *
-from qrisp.alg_primitives.iterative_qpe import *
-from qrisp.alg_primitives.reflection import *
+from qrisp.alg_primitives.program_control.switch_case import *
