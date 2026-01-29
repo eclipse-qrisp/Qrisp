@@ -17,9 +17,9 @@
 """
 
 import numpy as np
-from qrisp import QuantumFloat, gphase, prepare
+from qrisp import QuantumFloat, gphase, prepare, multi_measurement
 from qrisp.alg_primitives import qswitch
-from qrisp.algorithms.cks import CKS
+from qrisp.algorithms.cks import CKS, inner_CKS
 from qrisp.jasp import terminal_sampling
 
 def rand_binary_with_forced_one(n):
@@ -190,4 +190,36 @@ def test_A_block_encoding_b_callable():
     c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
 
     assert np.linalg.norm(q-c) < 1e-2
+
+def test_hermitian_matrix_post_selection():
+
+    A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
+                [0.14516978, 0.68701415, -0.04929867, -0.00999921],
+                [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
+                [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
+
+    b = np.array([0, 1, 1, 1])
+
+    operand, *ancillas = inner_CKS(A, b, 0.001)
+    res_dict = multi_measurement([operand, *ancillas])
+
+    new_dict = dict()
+    success_prob = 0
+
+    for key, prob in res_dict.items():
+        if all(k == 0 for k in key[1:]):
+            new_dict[key[0]] = prob
+            success_prob += prob
+
+    for key in new_dict.keys():
+        new_dict[key] = new_dict[key]/success_prob
+
+    for k, v in new_dict.items():
+        new_dict[k] = v**0.5
+
+    q = np.array([new_dict.get(key, 0) for key in range(len(b))])
+    c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
+    
+    assert np.linalg.norm(q-c) < 1e-2
+
 
