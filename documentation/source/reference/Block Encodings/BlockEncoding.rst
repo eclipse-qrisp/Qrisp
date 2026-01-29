@@ -25,5 +25,7 @@ Arithmetic
    :toctree: generated/
    
    BlockEncoding.__add__
-   BlockEncoding.__sub__
+   BlockEncoding.__matmul__
    BlockEncoding.__mul__
+   BlockEncoding.__neg__
+   BlockEncoding.__sub__

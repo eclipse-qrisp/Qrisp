@@ -147,7 +147,7 @@ class BlockEncoding:
             with conjugate(prepare)(case, np.sqrt(coeffs/alpha)):
                 qswitch(operand, case, unitaries)
 
-        block_encoding = BlockEncoding(U, [QuantumVariable(2)], alpha)
+        block_encoding = BlockEncoding(alpha, [QuantumVariable(2)], U)
 
     :: 
 
@@ -706,7 +706,8 @@ class BlockEncoding:
 
     def __matmul__(self, other: BlockEncoding) -> BlockEncoding:
         r"""
-        Implements the Kronecker product of two BlockEncodings using the ``@`` operator as described in Chapter 10.2 in `Dalzell et al. <https://arxiv.org/abs/2310.03011>`_.
+        Implements the Kronecker product of two BlockEncodings.
+        Implementation as described in Chapter 10.2 in `Dalzell et al. <https://arxiv.org/abs/2310.03011>`_.
 
         Parameters
         ----------
