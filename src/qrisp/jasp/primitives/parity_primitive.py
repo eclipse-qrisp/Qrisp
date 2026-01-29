@@ -30,13 +30,11 @@ def parity_abstract_eval(*measurements, expectation = 2):
     """
     Abstract evaluation for the parity primitive.
     
-    Checks that inputs are boolean scalars (measurement results) and returns a boolean scalar.
+    Checks that inputs are boolean (measurement results) and returns a boolean scalar (the detector result).
     """
     for b in measurements:
         if not isinstance(b, ShapedArray) or not isinstance(b.dtype, np.dtypes.BoolDType):
             raise Exception(f"Tried to trace parity primitive with value {b} (permitted is boolean)")
-        if b.shape != ():
-            raise Exception(f"Parity primitive expects scalar inputs, got shape {b.shape}. Broadcasting should be handled in the parity function.")
     
     return ShapedArray((), bool)
 

@@ -150,3 +150,34 @@ def test_parity_to_qc():
     # The quantum circuit should contain the measurements
     assert len(qc.clbits) == 3, f"Expected 3 classical bits, got {len(qc.clbits)}"
     
+    # Test parity with array inputs (scan primitive)
+    def parity_scan_test():
+        import jax.numpy as jnp
+        
+        qv0 = QuantumVariable(3)
+        qv1 = QuantumVariable(3)
+        
+        x(qv0[0])
+        x(qv1[1])
+        
+        # Measure and create arrays
+        m0_0 = measure(qv0[0])
+        m0_1 = measure(qv0[1])
+        m0_2 = measure(qv0[2])
+        
+        m1_0 = measure(qv1[0])
+        m1_1 = measure(qv1[1])
+        m1_2 = measure(qv1[2])
+        
+        meas_array_0 = jnp.array([m0_0, m0_1, m0_2])
+        meas_array_1 = jnp.array([m1_0, m1_1, m1_2])
+        
+        # Parity with arrays (triggers scan)
+        result = parity(meas_array_0, meas_array_1)
+        return result
+    
+    jaspr = make_jaspr(parity_scan_test)()
+    result, qc = jaspr.to_qc()
+    
+    # Array parity should also return ProcessedMeasurement
+    assert isinstance(result, ProcessedMeasurement), f"Expected ProcessedMeasurement for array parity, got {type(result)}"
