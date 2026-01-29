@@ -208,7 +208,7 @@ def hamiltonian_simulation(H: QubitOperator | BlockEncoding, t: "ArrayLike" = 1,
     def new_unitary(*args):
         GQSP(args[0], *args[1:], unitary = BE_walk.unitary, p=coeffs, k=N)
 
-    return BlockEncoding(new_unitary, new_anc_templates, new_alpha, is_hermitian=False)
+    return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian=False)
 
 
 # Apply the wache decorator with the workaround in order to show in documentation

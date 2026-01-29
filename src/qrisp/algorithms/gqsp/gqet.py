@@ -17,6 +17,7 @@
 """
 
 import numpy as np
+import jax.numpy as jnp
 from qrisp import QuantumBool
 from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.algorithms.gqsp.helper_functions import poly2cheb, cheb2poly
@@ -149,8 +150,8 @@ def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polyno
 
     # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
     alpha = H.alpha
-    scaling_exponents = np.arange(len(p))
-    scaling_factors = np.power(alpha, scaling_exponents)
+    scaling_exponents = jnp.arange(len(p))
+    scaling_factors = jnp.power(alpha, scaling_exponents)
 
     # Convert to Polynomial for rescaling
     if kind=="Chebyshev":
@@ -168,4 +169,4 @@ def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polyno
     def new_unitary(*args):
         GQSP(args[0], *args[1:], unitary = BE_walk.unitary, p=p)
 
-    return BlockEncoding(new_unitary, new_anc_templates, new_alpha, is_hermitian=False)
+    return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian=False)
