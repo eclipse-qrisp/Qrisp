@@ -121,5 +121,32 @@ def test_qc_converter():
     jaspr = make_jaspr(main)()
     
     assert isinstance(jaspr.to_qc()[0], ProcessedMeasurement)
+
+
+def test_parity_to_qc():
+    """Test parity primitive with to_qc (cl_func_interpreter/qc_extraction_interpreter)."""
+    from qrisp.jasp import parity
     
+    # Test that parity creates ProcessedMeasurement placeholders in QC extraction
+    # (since classical post-processing can't be represented in QuantumCircuit)
+    def parity_test():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        x(qv[2])
+        
+        m1 = measure(qv[0])
+        m2 = measure(qv[1])
+        m3 = measure(qv[2])
+        
+        result = parity(m1, m2, m3)
+        return result
+    
+    jaspr = make_jaspr(parity_test)()
+    result, qc = jaspr.to_qc()
+    
+    # Parity is a post-processing operation, so should return ProcessedMeasurement
+    assert isinstance(result, ProcessedMeasurement), f"Expected ProcessedMeasurement, got {type(result)}"
+    
+    # The quantum circuit should contain the measurements
+    assert len(qc.clbits) == 3, f"Expected 3 classical bits, got {len(qc.clbits)}"
     

@@ -1263,6 +1263,8 @@ def test_parity_post_processing():
     assert result == 0, f"Expected 0 (match indicator), got {result}"
     
     # Test parity in control flow
+    from jax.lax import cond
+    
     @make_jaspr
     def parity_in_control():
         qv = QuantumVariable(2)
@@ -1273,10 +1275,7 @@ def test_parity_post_processing():
         
         par = parity(m1, m2)
         
-        if par:
-            return 10
-        else:
-            return 20
+        return cond(par, lambda: 10, lambda: 20)
     
     jaspr = parity_in_control()
     post_proc = jaspr.extract_post_processing()
@@ -1285,4 +1284,13 @@ def test_parity_post_processing():
     assert result == 10, f"Expected 10, got {result}"
     
     result = post_proc("00")  # parity=False -> return 20
-    assert result == 20, f"Expected 20, got {result}"
+    assert result == 20, f"Expected 20, got {result}"    
+    # Test that post-processing function can be jitted
+    from jax import jit
+    jitted_post_proc = jit(post_proc)
+    
+    result = jitted_post_proc(jnp.array([True, False], dtype=bool))
+    assert result == 10, f"Expected 10 from jitted function, got {result}"
+    
+    result = jitted_post_proc(jnp.array([False, False], dtype=bool))
+    assert result == 20, f"Expected 20 from jitted function, got {result}"

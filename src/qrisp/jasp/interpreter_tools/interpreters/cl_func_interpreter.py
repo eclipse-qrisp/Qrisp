@@ -67,6 +67,8 @@ def cl_func_eqn_evaluator(eqn, context_dic):
             process_reset(eqn, context_dic)
         elif eqn.primitive.name == "jasp.fuse":
             process_fuse(eqn, context_dic)
+        elif eqn.primitive.name == "jasp.parity":
+            process_parity(eqn, context_dic)
         else:
             raise Exception(
                 f"Don't know how to process QuantumPrimitive {eqn.primitive}"
@@ -276,6 +278,34 @@ def exec_multi_measurement(bit_array, qubit_reg):
     )
 
     return bit_array, acc
+
+
+def process_parity(eqn, context_dic):
+    """Process parity primitive: compute XOR of measurement results."""
+    from jax import debug
+    
+    invalues = extract_invalues(eqn, context_dic)
+    expectation = eqn.params.get("expectation", 2)
+    
+    # Compute parity (XOR) of all measurements
+    result = sum(invalues) % 2
+    
+    # If expectation is specified, check and emit warning if mismatch
+    if expectation != 2:
+        # Define callbacks for match/mismatch
+        def warn_mismatch():
+            debug.print("WARNING: Parity expectation deviated from simulation result")
+        
+        def no_warning():
+            return
+        
+        # Check if expectation matches result
+        cond(result != expectation, warn_mismatch, no_warning)
+        
+        # XOR result with expectation (0 if match, 1 if mismatch)
+        result = result ^ expectation
+    
+    context_dic[eqn.outvars[0]] = result
 
 
 def process_while(eqn, context_dic):
