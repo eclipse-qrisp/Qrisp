@@ -30,11 +30,13 @@ def parity_abstract_eval(*measurements, expectation = 2):
     """
     Abstract evaluation for the parity primitive.
     
-    Checks that inputs are boolean (measurement results) and returns a boolean scalar (the detector result).
+    Checks that inputs are boolean scalars (measurement results) and returns a boolean scalar.
     """
     for b in measurements:
         if not isinstance(b, ShapedArray) or not isinstance(b.dtype, np.dtypes.BoolDType):
             raise Exception(f"Tried to trace parity primitive with value {b} (permitted is boolean)")
+        if b.shape != ():
+            raise Exception(f"Parity primitive expects scalar inputs, got shape {b.shape}. Broadcasting should be handled in the parity function.")
     
     return ShapedArray((), bool)
 
@@ -70,6 +72,10 @@ def parity(*measurements, expectation = None):
 
     This implies that the parity function returns ``True`` if the expectation
     is NOT met.
+    
+    **Array Support**: If the measurement inputs are arrays, all arrays must have exactly
+    the same shape (no broadcasting). The function applies the parity computation element-wise,
+    returning an array of the same shape. Mixing scalar and array inputs is not allowed.
 
     .. note::
 
@@ -91,8 +97,10 @@ def parity(*measurements, expectation = None):
 
     Parameters
     ----------
-    *measurements : list[Tracer[boolean]]
+    *measurements : list[Tracer[boolean] | array[boolean]]
         Variable length argument list of measurement results (typically outcomes of ``measure`` or similar operations).
+        Can be scalars or arrays. All array inputs must have exactly the same shape.
+        Mixing scalar and array inputs is not allowed.
     expectation : None | bool, optional
         The expected value of the parity of the measurement results.
         If set to ``True`` or ``False``, the return value indicates if the actual parity 
@@ -101,8 +109,9 @@ def parity(*measurements, expectation = None):
 
     Returns
     -------
-    Tracer[boolean]
-        A boolean value representing the parity.
+    Tracer[boolean] | array[boolean]
+        A boolean value representing the parity. Returns scalar if all inputs are scalars,
+        otherwise returns an array with the broadcasted shape of the inputs.
     
     Examples
     --------
@@ -132,26 +141,88 @@ def parity(*measurements, expectation = None):
         print(main())
         # Yields 0
     
+    Array example with element-wise parity:
+    
+    ::
+        
+        from qrisp import *
+        import jax.numpy as jnp
+        
+        @jaspify
+        def array_parity():
+            # Create arrays of measurements
+            a = jnp.array([True, False, True])
+            b = jnp.array([False, False, True])
+            
+            # Compute element-wise parity
+            result = parity(a, b)
+            return result
+        
+        print(array_parity())
+        # Yields [1, 0, 0]
+    
     """
+    import jax.numpy as jnp
+    from jax import lax
+    
     if expectation is None:
         expectation = 2
     else:
         expectation = int(expectation)
     
-    return parity_p.bind(*measurements, expectation = expectation)
+    # Check if any inputs are arrays
+    shapes = [jnp.shape(m) for m in measurements]
+    
+    if all(s == () for s in shapes):
+        # All scalars - direct call to primitive
+        return parity_p.bind(*measurements, expectation=expectation)
+    else:
+        # At least one array - check that all arrays have the same shape
+        # Collect all non-scalar shapes
+        non_scalar_shapes = [s for s in shapes if s != ()]
+        
+        if not non_scalar_shapes:
+            # This shouldn't happen given the if-else structure, but just in case
+            return parity_p.bind(*measurements, expectation=expectation)
+        
+        # Check that all non-scalar shapes are identical
+        first_shape = non_scalar_shapes[0]
+        if not all(s == first_shape for s in non_scalar_shapes):
+            raise ValueError(f"All array inputs to parity must have the same shape. Got shapes: {shapes}")
+        
+        # Also check that scalar and non-scalar inputs are not mixed
+        if len(non_scalar_shapes) != len(shapes):
+            raise ValueError(f"Cannot mix scalar and array inputs to parity. Got shapes: {shapes}")
+        
+        result_shape = first_shape
+        
+        # Flatten for element-wise processing
+        flat_measurements = [jnp.ravel(m) for m in measurements]
+        
+        # Stack flattened measurements into shape (num_elements, num_measurements)
+        stacked = jnp.stack(flat_measurements, axis=-1)
+        
+        # Apply parity to each element using lax.map
+        def apply_parity(elems):
+            return parity_p.bind(*elems, expectation=expectation)
+        
+        flat_result = lax.map(apply_parity, stacked)
+        
+        # Reshape to output shape
+        return jnp.reshape(flat_result, result_shape)
 
 @parity_p.def_impl
 def parity_implementation(*measurements, expectation):
     """
     Implementation of the parity primitive.
     
-    Appends a ParityOperation to the QuantumCircuit.
+    Handles only scalar inputs. Array broadcasting is handled in the parity function.
     """
-    res = sum(measurements)%2
+    res = sum(measurements) % 2
     if expectation != 2:
         if expectation != res:
             raise Exception("Parity expectation deviated from simulation result")
-    return (res + expectation)%2
+    return (res + expectation) % 2
 
 class ParityOperation(Operation):
     """
