@@ -99,7 +99,13 @@ class BlockEncoding:
     Examples
     --------
 
-    We define a block-encoding for a symmetric tridiagonal matrix with wrap-around corners.
+    **Example 1: Pauli Block Encoding**
+
+
+
+    **Example 2: Custom Block Encoding**
+
+    Define a block-encoding for a discrete Laplace operator in one dimension with periodic boundary conditions.
 
     ::
 
@@ -107,76 +113,65 @@ class BlockEncoding:
 
         N = 8
         I = np.eye(N)
-        A = I + np.eye(N, k=1) + np.eye(N, k=-1)
-        A[0, N-1] = 1
-        A[N-1, 0] = 1
+        A = 2*I - np.eye(N, k=1) - np.eye(N, k=-1)
+        A[0, N-1] = -1
+        A[N-1, 0] = -1
 
         print(A)
-        #[[1. 1. 0. 0. 0. 0. 0. 1.]
-        #[1. 1. 1. 0. 0. 0. 0. 0.]
-        #[0. 1. 1. 1. 0. 0. 0. 0.]
-        #[0. 0. 1. 1. 1. 0. 0. 0.]
-        #[0. 0. 0. 1. 1. 1. 0. 0.]
-        #[0. 0. 0. 0. 1. 1. 1. 0.]
-        #[0. 0. 0. 0. 0. 1. 1. 1.]
-        #[1. 0. 0. 0. 0. 0. 1. 1.]]
+        #[[ 2. -1.  0.  0.  0.  0.  0. -1.]
+        # [-1.  2. -1.  0.  0.  0.  0.  0.]
+        # [ 0. -1.  2. -1.  0.  0.  0.  0.]
+        # [ 0.  0. -1.  2. -1.  0.  0.  0.]
+        # [ 0.  0.  0. -1.  2. -1.  0.  0.]
+        # [ 0.  0.  0.  0. -1.  2. -1.  0.]
+        # [ 0.  0.  0.  0.  0. -1.  2. -1.]
+        # [-1.  0.  0.  0.  0.  0. -1.  2.]]
 
     This matrix is decomposed as linear combination of three unitaries: the identity $I$, 
-    and two shift operators $V\colon\ket{k}\rightarrow\ket{k+1\mod N}$ and $V^{\dagger}\colon\ket{k}\rightarrow\ket{k-1\mod N}$.
+    and two shift operators $V\colon\ket{k}\rightarrow-\ket{k+1\mod N}$ and $V^{\dagger}\colon\ket{k}\rightarrow-\ket{k-1\mod N}$.
 
     ::
 
         from qrisp import *
-        from qrisp.operators import BlockEncoding
+        from qrisp.block_encodings import BlockEncoding
 
         def I(qv):
             pass
 
         def V(qv):
             qv += 1
+            gphase(np.pi, qv[0])
 
         def V_dg(qv):
             qv -= 1
+            gphase(np.pi, qv[0])
 
         unitaries = [I, V, V_dg]
 
-        coeffs = np.array([1.0, 1.0, 1.0, 0])
+        coeffs = np.array([2.0, 1.0, 1.0, 0])
         alpha = np.sum(coeffs)
 
         def U(case, operand):
             with conjugate(prepare)(case, np.sqrt(coeffs/alpha)):
                 qswitch(operand, case, unitaries)
 
-        block_encoding = BlockEncoding(alpha, [QuantumVariable(2)], U)
+        BE = BlockEncoding(alpha, [QuantumVariable(2)], U)
+
+    Apply the operator to the inital system state $\ket{0}$.
 
     :: 
 
-        @RUS
-        def test():
-
-            operand = QuantumFloat(4)
-            ancillas = block_encoding.create_ancillas()
-
-            block_encoding.unitary(*ancillas, operand)
-
-            bools = jnp.array([(measure(anc) == 0) for anc in ancillas])
-            success_bool = jnp.all(bools)
-
-            # garbage collection
-            [reset(anc) for anc in ancillas]
-            [anc.delete() for anc in ancillas]
-
-            return success_bool, operand
-
+        # Prepare initial system state |0>
+        def operand_prep():
+            return QuantumFloat(3)
 
         @terminal_sampling
         def main():
-
-            qv = test()
-            return qv
+            operand = BE.apply_rus(operand_prep)()
+            return operand
 
         main()
-        # {15.0: 0.3333334525426193, 0.0: 0.3333333035310118, 1.0: 0.3333332439263688}
+        # {0.0: 0.6666666567325588, 7.0: 0.16666667908430155, 1.0: 0.1666666641831397}
 
     """
 
@@ -262,7 +257,9 @@ class BlockEncoding:
         Examples
         --------
 
-        Define a block-encoding and apply it using repeat-until-success.
+        **Example 1:**
+
+        Define a block-encoding and apply it using **repeat-until-success**.
 
         ::
 
@@ -301,9 +298,11 @@ class BlockEncoding:
             main(BE)
             #{3: 0.6828427278345078, 0: 0.17071065215630213, 2: 0.11715730494804945, 1: 0.02928931506114055}
 
-        For convenience, the :meth:`apply_rus` method directly applies the block-encoding using RUS.    
+        For convenience, the :meth:`apply_rus` method directly applies the block-encoding using RUS.
 
-        Define a block-encoding and apply it using post-selection.
+        **Example 2:** 
+
+        Define a block-encoding and apply it using **post-selection**.
 
         ::
 
