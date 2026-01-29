@@ -1294,3 +1294,88 @@ def test_parity_post_processing():
     
     result = jitted_post_proc(jnp.array([False, False], dtype=bool))
     assert result == 20, f"Expected 20 from jitted function, got {result}"
+    
+    # Test parity with array inputs (triggers scan/map primitive)
+    @make_jaspr
+    def parity_with_scan():
+        import jax.numpy as jnp
+        
+        # Create individual qubits
+        qv0 = QuantumVariable(3)
+        qv1 = QuantumVariable(3)
+        
+        # Set up some states
+        x(qv0[0])
+        x(qv0[2])
+        x(qv1[1])
+        
+        # Measure individual qubits and collect into arrays
+        m0_0 = measure(qv0[0])
+        m0_1 = measure(qv0[1])
+        m0_2 = measure(qv0[2])
+        
+        m1_0 = measure(qv1[0])
+        m1_1 = measure(qv1[1])
+        m1_2 = measure(qv1[2])
+        
+        # Stack into arrays - this creates JAX arrays
+        meas_array_0 = jnp.array([m0_0, m0_1, m0_2])
+        meas_array_1 = jnp.array([m1_0, m1_1, m1_2])
+        
+        # Parity with array inputs triggers lax.map -> scan
+        parity_res = parity(meas_array_0, meas_array_1)
+        return parity_res
+    
+    jaspr = parity_with_scan()
+    post_proc = jaspr.extract_post_processing()
+    
+    # meas_array_0: [m0_0=1, m0_1=0, m0_2=1]
+    # meas_array_1: [m1_0=0, m1_1=1, m1_2=0]
+    # Parity element-wise: [1 XOR 0, 0 XOR 1, 1 XOR 0] = [1, 1, 1]
+    result = post_proc("010101")  # 6 measurements in order
+    assert jnp.array_equal(result, jnp.array([1, 1, 1])), f"Expected [1, 1, 1], got {result}"
+    
+    # Test with all zeros
+    result = post_proc("000000")
+    assert jnp.array_equal(result, jnp.array([0, 0, 0])), f"Expected [0, 0, 0], got {result}"
+    
+    # Test jitting the scan-based post-processor
+    jitted_scan_post_proc = jit(post_proc)
+    result = jitted_scan_post_proc(jnp.array([True, False, True, False, True, False], dtype=bool))
+    assert jnp.array_equal(result, jnp.array([1, 1, 1])), f"Expected [1, 1, 1] from jitted scan function, got {result}"
+    
+    # Old test with jrange (uses while_loop, not scan) - kept for coverage
+    @make_jaspr
+    def parity_with_arrays():
+        data = QuantumArray(qtype=QuantumBool(), shape=(3, 2))
+        
+        for i in jrange(3):
+            h(data[i, 0])
+            cx(data[i, 0], data[i, 1])
+        
+        meas_0 = measure(data[:, 0])
+        meas_1 = measure(data[:, 1])
+        
+        # Parity of each pair should be 0 (both qubits in same state due to cx)
+        parity_res = parity(meas_0, meas_1)
+        return parity_res
+    
+    jaspr = parity_with_arrays()
+    post_proc = jaspr.extract_post_processing()
+    
+    # Test with bitstring - 6 measurements (3 pairs)
+    # Each pair should have matching bits due to cx gates
+    result = post_proc("000000")  # All pairs match -> all parities are 0
+    assert jnp.array_equal(result, jnp.array([0, 0, 0])), f"Expected [0, 0, 0], got {result}"
+    
+    # Bitstring "110011" reads right-to-left: bits [1,1,0,0,1,1]
+    # meas_0 gets first 3 bits: [1, 1, 0]
+    # meas_1 gets next 3 bits: [0, 1, 1]
+    # parity = [1 XOR 0, 1 XOR 1, 0 XOR 1] = [1, 0, 1]
+    result = post_proc("110011")
+    assert jnp.array_equal(result, jnp.array([1, 0, 1])), f"Expected [1, 0, 1], got {result}"
+    
+    # Test jitting the array parity post-processor
+    jitted_array_post_proc = jit(post_proc)
+    result = jitted_array_post_proc(jnp.array([False, False, False, False, False, False], dtype=bool))
+    assert jnp.array_equal(result, jnp.array([0, 0, 0])), f"Expected [0, 0, 0] from jitted array function, got {result}"

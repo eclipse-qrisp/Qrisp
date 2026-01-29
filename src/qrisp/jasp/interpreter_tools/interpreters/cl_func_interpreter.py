@@ -78,6 +78,8 @@ def cl_func_eqn_evaluator(eqn, context_dic):
             return process_while(eqn, context_dic)
         elif eqn.primitive.name == "cond":
             return process_cond(eqn, context_dic)  #
+        elif eqn.primitive.name == "scan":
+            return process_scan(eqn, context_dic)
         elif eqn.primitive.name == "jit":
             process_pjit(eqn, context_dic)
         else:
