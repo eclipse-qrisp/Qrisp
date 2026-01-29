@@ -20,8 +20,8 @@ from functools import partial
 import jax.numpy as jnp
 import jax
 import numpy as np
-from qrisp import QuantumVariable, QuantumFloat, h, control, conjugate
-from qrisp.alg_primitives.reflection import reflection
+from qrisp import QuantumFloat, h, control
+from qrisp.block_encodings import BlockEncoding
 from qrisp.jasp import jrange, q_cond, check_for_tracing_mode, expectation_value
 
 
