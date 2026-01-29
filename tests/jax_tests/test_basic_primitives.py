@@ -186,7 +186,104 @@ def test_quantum_array_appending():
         test()
     except Exception as e:
         assert "mixed" in str(e)
+
+
+def test_parity_scalar():
+    """Test parity function with scalar boolean inputs."""
+    
+    # Test basic scalar parity (XOR)
+    def test_function():
+        qv = QuantumVariable(4)
+        h(qv[0])
         
+        meas_a = measure(qv[0])
+        meas_b = measure(qv[1])
+        meas_c = measure(qv[2])
+        meas_d = measure(qv[3])
+        
+        # Test parity with different numbers of inputs
+        result_2 = parity(meas_a, meas_b)
+        result_3 = parity(meas_a, meas_b, meas_c)
+        result_4 = parity(meas_a, meas_b, meas_c, meas_d)
+        
+        return result_2, result_3, result_4
+    
+    # Check that parity primitive is in the jaxpr
+    jaspr = make_jaspr(test_function)()
+    jaxpr_str = str(jaspr.jaxpr)
+    assert 'parity' in jaxpr_str
+    
+    # Test with expectation parameter
+    def test_function_with_expectation():
+        qv = QuantumVariable(2)
+        
+        meas_a = measure(qv[0])
+        meas_b = measure(qv[1])
+        
+        # Test with None (returns raw parity)
+        result_none = parity(meas_a, meas_b, expectation=None)
+        # Test with False expectation
+        result_false = parity(meas_a, meas_b, expectation=False)
+        
+        return result_none, result_false
+    
+    jaspr = make_jaspr(test_function_with_expectation)()
+    assert 'parity' in str(jaspr.jaxpr)
+
+
+def test_parity_array():
+    """Test parity function with array inputs."""
+    import jax.numpy as jnp
+    
+    # Test element-wise parity on arrays
+    def test_function():
+        qv = QuantumVariable(3)
+        
+        # Create arrays of measurements
+        meas_a = jnp.array([True, False, True, False])
+        meas_b = jnp.array([False, False, True, True])
+        meas_c = jnp.array([True, True, False, False])
+        
+        # Test parity with arrays
+        result_2 = parity(meas_a, meas_b)
+        result_3 = parity(meas_a, meas_b, meas_c)
+        
+        return result_2, result_3
+    
+    jaspr = make_jaspr(test_function)()
+    
+    # Check that lax.map is used for element-wise application
+    jaxpr_str = str(jaspr.jaxpr)
+    assert 'map' in jaxpr_str or 'scan' in jaxpr_str  # map lowers to scan
+    assert 'parity' in jaxpr_str
+    
+    # Test shape mismatch error
+    def test_shape_mismatch():
+        meas_a = jnp.array([True, False, True])
+        meas_b = jnp.array([False, False])  # Different shape!
+        
+        return parity(meas_a, meas_b)
+    
+    try:
+        make_jaspr(test_shape_mismatch)()
+        assert False, "Should have raised ValueError for shape mismatch"
+    except ValueError as e:
+        assert "same shape" in str(e)
+    
+    # Test mixing scalar and array error
+    def test_mixed_scalar_array():
+        qv = QuantumVariable(2)
+        meas_scalar = measure(qv[0])
+        meas_array = jnp.array([True, False])
+        
+        return parity(meas_scalar, meas_array)
+    
+    try:
+        make_jaspr(test_mixed_scalar_array)()
+        assert False, "Should have raised ValueError for mixing scalar and array"
+    except ValueError as e:
+        assert "scalar and array" in str(e)
+    
     
         
     

@@ -73,3 +73,195 @@ def test_jasp_simulation():
 
 
     assert main(4) == 9
+
+def test_parity_simulation():
+    """Test parity function simulation with scalar inputs."""
+    
+    # Test basic parity (XOR) with known outcomes
+    @jaspify
+    def test_all_false():
+        qv = QuantumVariable(3)
+        # All qubits start as False (|0>)
+        a = measure(qv[0])
+        b = measure(qv[1])
+        c = measure(qv[2])
+        
+        # Parity of (False, False, False) = False
+        result = parity(a, b, c)
+        return result
+    
+    assert test_all_false() == False
+    
+    # Test with one True
+    @jaspify
+    def test_one_true():
+        qv = QuantumVariable(3)
+        x(qv[0])  # Set first qubit to |1>
+        
+        a = measure(qv[0])
+        b = measure(qv[1])
+        c = measure(qv[2])
+        
+        # Parity of (True, False, False) = True
+        result = parity(a, b, c)
+        return result
+    
+    assert test_one_true() == True
+    
+    # Test with two True
+    @jaspify
+    def test_two_true():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        x(qv[1])
+        
+        a = measure(qv[0])
+        b = measure(qv[1])
+        c = measure(qv[2])
+        
+        # Parity of (True, True, False) = False
+        result = parity(a, b, c)
+        return result
+    
+    assert test_two_true() == False
+    
+    # Test with three True
+    @jaspify
+    def test_three_true():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        x(qv[1])
+        x(qv[2])
+        
+        a = measure(qv[0])
+        b = measure(qv[1])
+        c = measure(qv[2])
+        
+        # Parity of (True, True, True) = True
+        result = parity(a, b, c)
+        return result
+    
+    assert test_three_true() == True
+    
+    # Test with expectation parameter
+    @jaspify
+    def test_expectation_met():
+        qv = QuantumVariable(2)
+        
+        a = measure(qv[0])
+        b = measure(qv[1])
+        
+        # Parity is False, expectation is False -> returns False (expectation met)
+        result = parity(a, b, expectation=False)
+        return result
+
+    assert test_expectation_met() == False
+
+    @jaspify
+    def test_expectation_not_met():
+        qv = QuantumVariable(2)
+        x(qv[0])  # Make parity True
+
+        a = measure(qv[0])
+        b = measure(qv[1])
+
+        # Parity is True, expectation is False -> raises exception
+        result = parity(a, b, expectation=False)
+        return result
+
+    # Should raise exception when expectation not met
+    import pytest
+    with pytest.raises(Exception, match="Parity expectation deviated"):
+        test_expectation_not_met()
+
+
+def test_parity_array_simulation():
+    """Test parity function simulation with array inputs."""
+    import jax.numpy as jnp
+    
+    @jaspify
+    def test_array_parity():
+        # Create arrays of boolean values
+        a = jnp.array([True, False, True, False])
+        b = jnp.array([False, False, True, True])
+        c = jnp.array([True, True, False, False])
+        
+        # Element-wise parity
+        result = parity(a, b, c)
+        return result
+    
+    result = test_array_parity()
+    expected = jnp.array([False, True, False, True])  # Element-wise XOR
+    assert jnp.array_equal(result, expected)
+    
+    # Test with 2D arrays
+    @jaspify
+    def test_2d_array_parity():
+        a = jnp.array([[True, False], [True, False]])
+        b = jnp.array([[False, True], [True, False]])
+        
+        result = parity(a, b)
+        return result
+    
+    result = test_2d_array_parity()
+    expected = jnp.array([[True, True], [False, False]])
+    assert jnp.array_equal(result, expected)
+    
+    # Test array parity with expectation that matches
+    @jaspify
+    def test_array_expectation_met():
+        a = jnp.array([False, False, True])
+        b = jnp.array([False, False, True])
+
+        # Parity: [False, False, False]
+        # Expectation: False for all -> expectation met
+        result = parity(a, b, expectation=False)
+        return result
+
+    result = test_array_expectation_met()
+    expected = jnp.array([False, False, False])
+    assert jnp.array_equal(result, expected)
+
+    # Test array parity with expectation that doesn't match
+    @jaspify
+    def test_array_expectation_not_met():
+        a = jnp.array([True, False, True])
+        b = jnp.array([False, False, True])
+
+        # Parity: [True, False, False]
+        # Expectation: False for all -> first element mismatches
+        result = parity(a, b, expectation=False)
+        return result
+
+    # Should raise exception on first mismatch (element 0)
+    import pytest
+    with pytest.raises(Exception, match="Parity expectation deviated"):
+        test_array_expectation_not_met()
+
+
+def test_parity_with_superposition():
+    """Test parity with qubits in superposition."""
+    
+    @jaspify
+    def test_ghz_parity():
+        # Create GHZ state: (|0000> + |1111>) / sqrt(2)
+        qv = QuantumVariable(4)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        cx(qv[0], qv[2])
+        cx(qv[0], qv[3])
+        
+        a = measure(qv[0])
+        b = measure(qv[1])
+        c = measure(qv[2])
+        d = measure(qv[2])
+        
+        # Parity of GHZ state is always True (either 0 or 3 ones)
+        result = parity(a, b, c, d)
+        return result
+    
+    # Run multiple times to check consistency
+    results = [test_ghz_parity() for _ in range(10)]
+    # All results should be True (parity of 0 or 3 is always odd count mod 2 = True for 1 or 3)
+    # Actually: 000 has parity False, 111 has parity True
+    assert all(r == False for r in results)
