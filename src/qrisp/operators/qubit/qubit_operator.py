@@ -31,7 +31,7 @@ from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge, invert
 
-from qrisp.jasp import check_for_tracing_mode, jrange
+from qrisp.jasp import check_for_tracing_mode, jrange, qache
 
 
 threshold = 1e-9
@@ -2079,6 +2079,7 @@ class QubitOperator(Hamiltonian):
 
         return unitaries, np.array(coefficients, dtype=float)
 
+    @qache
     def pauli_block_encoding(self):
         r"""
         Returns a block encoding of the operator.
@@ -2218,8 +2219,10 @@ class QubitOperator(Hamiltonian):
             (7.0, 6.0): 0.08333333084980639}
 
         """
-        from qrisp.jasp import qache
         from qrisp.alg_primitives import prepare, qswitch
+        from qrisp.jasp import qache
+        from qrisp.block_encodings import BlockEncoding
+        from qrisp.qtypes import QuantumFloat
     
         unitaries, coeffs = self.unitaries()
         alpha = np.sum(coeffs)
@@ -2230,12 +2233,17 @@ class QubitOperator(Hamiltonian):
         # Ensure coeffs has size 2 ** num_qubits by zero padding
         coeffs = np.concatenate((coeffs, np.zeros((1 << num_qubits) - m)))
 
+        if m==1:
+            # Special case: only one unitary, no need for control qubits
+            @qache
+            def U(operand):
+                unitaries[0](operand)
+
+            return BlockEncoding(U, [], alpha)
+
         @qache
         def U(case, operand):
-            qswitch(operand, case, unitaries)
+            with conjugate(prepare)(case, np.sqrt(coeffs/alpha)):
+                qswitch(operand, case, unitaries)
 
-        @qache
-        def state_prep(case):
-            prepare(case, np.sqrt(coeffs/alpha))
-
-        return U, state_prep, num_qubits
+        return BlockEncoding(U, [QuantumFloat(num_qubits).template()], alpha, is_hermitian=True)

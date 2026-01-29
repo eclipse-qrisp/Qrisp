@@ -36,7 +36,7 @@ from qrisp.jasp import jlen, qache
 
 #@qache
 @gate_wrap(permeability=[], is_qfree=False)
-def reflection(qargs, state_function, args=(), kwargs={}, phase=np.pi, reflection_indices=None):
+def reflection(qargs, state_function=None, args=(), kwargs={}, phase=np.pi, reflection_indices=None):
     r"""
     Applies a reflection around a state $\ket{\psi}$ of (multiple) QuantumVariables, i.e., applies the operator
 
@@ -53,6 +53,7 @@ def reflection(qargs, state_function, args=(), kwargs={}, phase=np.pi, reflectio
         The (list of) QuantumVariables representing the state to apply the reflection on.
     state_function : function, optional
         A Python function ``state_function(*qargs, *args, **kwargs)`` preparing the state $\ket{\psi}$ in variables ``qargs`` around which to reflect.
+        By default, the reflection is performed around the $\ket{0}$ state.
     args : tuple, optional
         Additional arguments for the state function.
     kwargs : dict, optional
@@ -174,13 +175,8 @@ def reflection(qargs, state_function, args=(), kwargs={}, phase=np.pi, reflectio
 
     qubits = sum([flattened_qargs[i].reg for i in reflection_indices], [])  
 
-
-    def inv_state_function(qargs, args, kwargs):
-        with invert():
-            state_function(*qargs, *args, **kwargs)
-
-
-    with conjugate(inv_state_function)(qargs, args, kwargs):
+    # Reflection around |0> state
+    def inner_reflection(qubits, phase):
 
         with control(phase == np.pi):
 
@@ -199,6 +195,16 @@ def reflection(qargs, state_function, args=(), kwargs={}, phase=np.pi, reflectio
         with control(phase != np.pi):
             mcp(phase, qubits, ctrl_state=0)
 
+
+    if state_function is not None:
+        def inv_state_function(qargs, args, kwargs):
+            with invert():
+                state_function(*qargs, *args, **kwargs)
+
+        with conjugate(inv_state_function)(qargs, args, kwargs):
+            inner_reflection(qubits, phase)
+    else:
+        inner_reflection(qubits, phase)
 
     gphase(np.pi, qargs[0][0])
 
