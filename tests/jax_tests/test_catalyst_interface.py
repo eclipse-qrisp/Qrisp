@@ -218,3 +218,45 @@ def test_parity_catalyst():
     
     # Parity of (True, False) = True
     assert test_parity_type() == True
+
+
+def test_parity_catalyst_with_scan():
+    """Test parity with array inputs (scan primitive) in catalyst."""
+    
+    try:
+        import catalyst
+    except ModuleNotFoundError:
+        return
+    
+    import jax.numpy as jnp
+    
+    @qjit
+    def test_array_parity():
+        qv0 = QuantumVariable(3)
+        qv1 = QuantumVariable(3)
+        
+        # Set specific states
+        x(qv0[0])  # qv0 = [1, 0, 1]
+        x(qv0[2])
+        x(qv1[1])  # qv1 = [0, 1, 0]
+        
+        # Measure individual qubits
+        m0_0 = measure(qv0[0])
+        m0_1 = measure(qv0[1])
+        m0_2 = measure(qv0[2])
+        
+        m1_0 = measure(qv1[0])
+        m1_1 = measure(qv1[1])
+        m1_2 = measure(qv1[2])
+        
+        # Create arrays and compute parity (triggers scan)
+        meas_array_0 = jnp.array([m0_0, m0_1, m0_2])
+        meas_array_1 = jnp.array([m1_0, m1_1, m1_2])
+        
+        result = parity(meas_array_0, meas_array_1)
+        return result
+    
+    result = test_array_parity()
+    # Expected: [1 XOR 0, 0 XOR 1, 1 XOR 0] = [1, 1, 1]
+    expected = jnp.array([1, 1, 1])
+    assert jnp.array_equal(result, expected), f"Expected {expected}, got {result}"

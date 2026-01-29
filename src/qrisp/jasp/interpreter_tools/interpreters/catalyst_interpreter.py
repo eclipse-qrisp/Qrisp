@@ -149,6 +149,8 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             return process_while(eqn, context_dic)
         elif eqn.primitive.name == "cond":
             return process_cond(eqn, context_dic)  #
+        elif eqn.primitive.name == "scan":
+            return process_scan(eqn, context_dic)
         elif eqn.primitive.name == "jit":
             process_pjit(eqn, context_dic)
         else:
@@ -563,6 +565,72 @@ def process_cond(eqn, context_dic):
         )
 
     insert_outvalues(eqn, context_dic, unflattened_outvalues)
+
+
+def process_scan(eqn, context_dic):
+    """
+    Process scan primitive for catalyst_interpreter.
+    Reinterprets the scan body and calls jax.lax.scan to preserve loop structure.
+    """
+    from jax.lax import scan as jax_scan
+    
+    invalues = extract_invalues(eqn, context_dic)
+    
+    # Extract scan parameters
+    num_consts = eqn.params["num_consts"]
+    num_carry = eqn.params["num_carry"]
+    length = eqn.params["length"]
+    reverse = eqn.params.get("reverse", False)
+    unroll = eqn.params.get("unroll", 1)
+    
+    # Separate inputs: constants, initial carry, scanned inputs
+    consts = invalues[:num_consts]
+    init = invalues[num_consts:num_consts + num_carry]
+    xs = invalues[num_consts + num_carry:]
+    
+    # Reinterpret the scan body with catalyst_eqn_evaluator
+    scan_body_jaxpr = eqn.params["jaxpr"]
+    scan_body = eval_jaxpr(scan_body_jaxpr, eqn_evaluator=catalyst_eqn_evaluator)
+    
+    # Create wrapper function that includes constants
+    if num_consts > 0:
+        def wrapped_body(carry, x):
+            args = consts + list(carry) + (list(x) if isinstance(x, tuple) else [x])
+            result = scan_body(*args)
+            if not isinstance(result, tuple):
+                result = (result,)
+            return result[:num_carry], result[num_carry:]
+    else:
+        def wrapped_body(carry, x):
+            args = list(carry) + (list(x) if isinstance(x, tuple) else [x])
+            result = scan_body(*args)
+            if not isinstance(result, tuple):
+                result = (result,)
+            return result[:num_carry], result[num_carry:]
+    
+    # Prepare inputs for JAX scan
+    if len(xs) == 1:
+        xs_arg = xs[0]
+    else:
+        xs_arg = tuple(xs)
+    
+    if len(init) == 1:
+        init_arg = init[0]
+    else:
+        init_arg = tuple(init)
+    
+    # Call JAX scan
+    final_carry, ys = jax_scan(wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll)
+    
+    # Prepare output
+    if not isinstance(final_carry, tuple):
+        final_carry = (final_carry,)
+    if not isinstance(ys, tuple):
+        ys = (ys,)
+    
+    outvalues = final_carry + ys
+    
+    insert_outvalues(eqn, context_dic, outvalues)
 
 
 @lru_cache(maxsize=int(1e5))
