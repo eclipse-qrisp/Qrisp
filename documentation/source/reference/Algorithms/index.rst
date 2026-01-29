@@ -29,6 +29,8 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
      - numerical integration
    * - :ref:`CKS Algorithm <CKS>`
      - solving the quantum linear system problem
+   * - :ref:`Quantum Singular Value Transform <QSVT>`
+     - applying polynomial transformations to singular values of a block of a unitary
 
 
 We encourage you to explore these algorithms, delve into their documentation, and experiment with their implementations.
@@ -49,3 +51,4 @@ We encourage you to explore these algorithms, delve into their documentation, an
    quantum_counting   
    QMCI
    CKS
+   QSVT
