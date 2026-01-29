@@ -194,11 +194,23 @@ class BaseMetric(ABC):
 # This reconstructs the metric inside the cached function so caching not keyed
 # by the metric object identity.
 @lru_cache(int(1e5))
-def get_compiled_profiler(jaxpr, metric_cls, zipped_profiling_dic, meas_behavior):
+def get_compiled_profiler(
+    jaxpr,
+    metric_cls,
+    zipped_profiling_dic,
+    meas_behavior,
+    max_qubits=None,
+):
+    """Get a compiled profiler for a given Jaspr and metric."""
 
     profiling_dic = dict(zipped_profiling_dic)
-    metric = metric_cls(profiling_dic, meas_behavior)
+    metric_kwargs = {
+        "profiling_dic": profiling_dic,
+        "meas_behavior": meas_behavior,
+        **({"max_qubits": max_qubits} if max_qubits is not None else {}),
+    }
 
+    metric = metric_cls(**metric_kwargs)
     profiling_eqn_evaluator = make_profiling_eqn_evaluator(metric)
     jaxpr_evaluator = eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator)
     jitted_profiler = jax.jit(jaxpr_evaluator)
@@ -313,12 +325,14 @@ def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
 
             zipped_profiling_dic = tuple(metric.profiling_dic.items())
             meas_behavior = metric.meas_behavior
+            max_qubits = getattr(metric, "max_qubits", None)
 
             profiler = get_compiled_profiler(
                 eqn.params["jaxpr"],
                 type(metric),  # used only to reconstruct metric inside cache
                 zipped_profiling_dic,
                 meas_behavior,
+                max_qubits,
             )
 
             outvalues = profiler(*invalues)

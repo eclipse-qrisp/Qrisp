@@ -25,6 +25,7 @@ import jax.numpy as jnp
 from jax.random import key
 from jax.typing import ArrayLike
 
+from qrisp.circuit.operation import Operation
 from qrisp.jasp.interpreter_tools import (
     BaseMetric,
     eval_jaxpr,
@@ -38,6 +39,14 @@ from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.jasp.primitives import (
     AbstractQubitArray,
 )
+
+
+@lru_cache(maxsize=None)
+def _duration_for_op(op: Operation) -> int:
+    """Return the duration (depth contribution) for a given operation."""
+    if getattr(op, "definition", None):
+        return int(op.definition.transpile().depth())
+    return 1
 
 
 class DepthMetric(BaseMetric):
@@ -101,10 +110,6 @@ class DepthMetric(BaseMetric):
         qubits_lookup_table = idx_start + jnp.arange(table_size, dtype=jnp.int64)
         return qubits_lookup_table
 
-    def _check_overflow(self, idx_end: ArrayLike):
-        """Check if the number of qubits exceeds the maximum allowed."""
-        pass
-
     def handle_create_qubits(self, invalues, eqn, context_dic):
         """Handle the `jasp.create_qubits` primitive."""
 
@@ -164,14 +169,8 @@ class DepthMetric(BaseMetric):
         touched = jnp.take(depth_array, qubit_ids)
         start = jnp.max(touched)
 
-        # TODO: We are assuming here that each gate has duration 1,
-        # but this should be extended to support gates with different durations.
         op = eqn.params["gate"]
-        if op.definition:
-            raise NotImplementedError(
-                "Depth computation for gates with definitions is not implemented yet."
-            )
-        duration = jnp.int64(1)
+        duration = jnp.int64(_duration_for_op(op))
         end = start + duration
 
         depth_array = depth_array.at[qubit_ids].set(end)
@@ -211,7 +210,6 @@ class DepthMetric(BaseMetric):
         # QuantumCircuit -> metric_data (depth_array, current_depth, invalid)
         return (meas_res, (depth_array, current_depth, invalid))
 
-    # TODO: need to keep track of possible overflows in fuse and slice
     def handle_fuse(self, invalues, eqn, context_dic):
         """Handle the `jasp.fuse` primitive."""
 

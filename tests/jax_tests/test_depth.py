@@ -221,6 +221,31 @@ class TestDepthMultiQubit:
 
         assert main(4, 2) == 4
 
+    @pytest.mark.parametrize(
+        "first_h_idx,mcx_controls,mcx_target,second_h_idx,expected_depth",
+        [
+            (3, [0, 1], 2, 3, 8),
+            (0, [0, 1], 2, 3, 9),
+            (0, [0, 1], 2, 0, 10),
+        ],
+    )
+    def test_ops_with_definition(
+        self, first_h_idx, mcx_controls, mcx_target, second_h_idx, expected_depth
+    ):
+        """Test depth computation for operations with definitions (e.g., mcx)."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits, first_h_idx, mcx_controls, mcx_target, second_h_idx):
+            qf = QuantumFloat(num_qubits)
+            h(qf[first_h_idx])
+            mcx([qf[i] for i in mcx_controls], qf[mcx_target])
+            h(qf[second_h_idx])
+
+        assert (
+            main(3, first_h_idx, mcx_controls, mcx_target, second_h_idx)
+            == expected_depth
+        )
+
 
 class TestDepthControlStructures:
     """Test that the depth is correctly computed for control structures."""
@@ -661,21 +686,6 @@ class TestDepthSliceFuse:
             h(qf3[0])
 
         assert main(2, 2) == 2
-
-
-def test_not_implemented_error_op_def():
-    """Check that NotImplementedError is raised for unsupported operations."""
-
-    @depth(meas_behavior="0")
-    def main():
-        qf = QuantumFloat(3)
-        mcx([qf[0], qf[1]], qf[0])
-
-    with pytest.raises(
-        NotImplementedError,
-        match="Depth computation for gates with definitions is not implemented yet.",
-    ):
-        main()
 
 
 class TestDepthOverflow:
