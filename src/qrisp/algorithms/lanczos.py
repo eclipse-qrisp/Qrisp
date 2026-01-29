@@ -66,18 +66,19 @@ def inner_lanczos(H, k, operand_prep):
     case_indicator = BE_qubitized.create_ancillas()
     operand = operand_prep()
 
+    if operand not isinstance(tuple, list):
+        operand = list(operand)
+
     def even(case_indicator, operand, k):
         # EVEN k: Figure 1 top
-        with conjugate(state_prep)(*case_indicator):
-            for _ in jrange(k//2):
-                BE_qubitized.unitary(*case_indicator, operand)
+        for _ in jrange(k//2):
+            BE_qubitized.unitary(*case_indicator, *operand)
         return *case_indicator
 
     def odd(case_indicator, operand, k):
         # ODD k: Figure 1 bottom
-        state_prep(case_indicator)
         for _ in jrange(k//2):
-            BE_qubitized.unitary(*case_indicator, operand)
+            BE_qubitized.unitary(*case_indicator, *operand)
         qv = QuantumFloat(1)
         h(qv) # Hadamard test for <U>
         with control(qv[0]):
