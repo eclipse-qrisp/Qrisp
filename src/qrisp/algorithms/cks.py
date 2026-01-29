@@ -432,7 +432,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         def encoding_unitary(case, operand):
             with conjugate(state_prep)(case):
                 U(case, operand)
-        BE = BlockEncoding(encoding_unitary, [QuantumFloat(n).template()], 1.0)
+        BE = BlockEncoding(1.0, [QuantumFloat(n).template()], encoding_unitary)
     else:
         H = QubitOperator.from_matrix(A, reverse_endianness=True)
         BE = H.pauli_block_encoding() # Construct block encoding of A as a set of Pauli unitaries
