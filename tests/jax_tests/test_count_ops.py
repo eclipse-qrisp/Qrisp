@@ -188,4 +188,40 @@ def test_parity_count_ops():
     ops = test_parity_expectation()
     assert ops["x"] == 1, f"Expected 1 x gate, got {ops.get('x', 0)}"
     assert ops["measure"] == 2, f"Expected 2 measurements, got {ops.get('measure', 0)}"
+
+
+def test_parity_count_ops_with_scan():
+    """Test that parity with array inputs (scan primitive) works with count_ops profiling."""
+    import jax.numpy as jnp
+    
+    @count_ops(meas_behavior="0")
+    def test_array_parity():
+        qv0 = QuantumVariable(3)
+        qv1 = QuantumVariable(3)
         
+        # Set specific states
+        x(qv0[0])  # 2 x gates total
+        x(qv0[2])
+        x(qv1[1])  # 3 x gates total
+        
+        # Measure individual qubits - 6 measurements
+        m0_0 = measure(qv0[0])
+        m0_1 = measure(qv0[1])
+        m0_2 = measure(qv0[2])
+        
+        m1_0 = measure(qv1[0])
+        m1_1 = measure(qv1[1])
+        m1_2 = measure(qv1[2])
+        
+        # Create arrays and compute parity (triggers scan)
+        meas_array_0 = jnp.array([m0_0, m0_1, m0_2])
+        meas_array_1 = jnp.array([m1_0, m1_1, m1_2])
+        
+        result = parity(meas_array_0, meas_array_1)
+        return result
+    
+    ops = test_array_parity()
+    # Should count x gates and measurements, but not parity
+    assert ops["x"] == 3, f"Expected 3 x gates, got {ops.get('x', 0)}"
+    assert ops["measure"] == 6, f"Expected 6 measurements, got {ops.get('measure', 0)}"
+    assert "parity" not in ops, "Parity should not be counted as an operation"
