@@ -160,3 +160,61 @@ def test_catalyst_interface():
     
     jaspr = main()
     qir_str = jaspr.to_qir()
+
+def test_parity_catalyst():
+    """Test parity primitive with catalyst interface."""
+    
+    try:
+        import catalyst
+    except ModuleNotFoundError:
+        return
+    
+    # Test basic parity
+    @qjit
+    def test_basic_parity():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        x(qv[2])
+        
+        m1 = measure(qv[0])
+        m2 = measure(qv[1])
+        m3 = measure(qv[2])
+        
+        result = parity(m1, m2, m3)
+        return result
+    
+    # XOR of (True, False, True) = False
+    assert test_basic_parity() == False
+    
+    # Test parity with expectation
+    @qjit
+    def test_parity_expectation():
+        qv = QuantumVariable(2)
+        x(qv[0])
+        
+        m1 = measure(qv[0])
+        m2 = measure(qv[1])
+        
+        # Parity is True (one 1), expectation is False
+        # XOR(True, False) = True (mismatch indicator)
+        result = parity(m1, m2, expectation=False)
+        return result
+    
+    assert test_parity_expectation() == True
+    
+    # Test parity returns correct type that can be used in subsequent operations
+    @qjit
+    def test_parity_type():
+        qv = QuantumVariable(2)
+        x(qv[0])
+        
+        m1 = measure(qv[0])
+        m2 = measure(qv[1])
+        
+        p = parity(m1, m2)
+        
+        # Parity result should be usable in boolean operations
+        return p
+    
+    # Parity of (True, False) = True
+    assert test_parity_type() == True

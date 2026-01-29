@@ -122,6 +122,8 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             process_get_qubit(invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.measure":
             process_measurement(invars, outvars, context_dic)
+        elif eqn.primitive.name == "jasp.parity":
+            process_parity(eqn, context_dic)
         elif eqn.primitive.name == "jasp.get_size":
             process_get_size(invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.slice":
@@ -411,6 +413,37 @@ def process_measurement(invars, outvars, context_dic):
     # Insert the result values into the context dict
     context_dic[outvars[1]] = (catalyst_register_tracer, context_dic[invars[1]][1])
     context_dic[outvars[0]] = meas_res
+
+
+def process_parity(eqn, context_dic):
+    """
+    Process the parity primitive, computing XOR of measurement results.
+    
+    Parameters
+    ----------
+    eqn : jax.core.JaxprEqn
+        The equation containing the parity primitive.
+    context_dic : qrisp.jasp.interpreters.ContextDict
+        The ContextDict representing the current state.
+    """
+    # Extract the measurement results
+    invalues = extract_invalues(eqn, context_dic)
+    
+    # Check if expectation parameter is present
+    expectation = eqn.params.get("expectation", None)
+    
+    # Compute XOR by summing all measurement results and taking modulo 2
+    result = 0
+    for val in invalues:
+        result = result + val
+    result = result % 2
+    
+    # If expectation is provided, XOR with it
+    if expectation != 2:
+        result = (result + expectation) % 2
+    
+    # Insert the result into the context
+    insert_outvalues(eqn, context_dic, jnp.array(result, dtype = bool))
 
 
 def exec_multi_measurement(catalyst_register, qubit_list):
