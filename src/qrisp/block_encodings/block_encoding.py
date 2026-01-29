@@ -80,14 +80,14 @@ class BlockEncoding:
 
     Parameters
     ----------
-    unitary : Callable
-        A function ``unitary(*ancillas, *operands)`` applying the block-encoding unitary. 
-        It receives the ancilla and operand QuantumVariables as arguments.
+    alpha : ArrayLike
+        The scalar scaling factor.
     ancillas : list[QuantumVariable | QuantumVariableTemplate]
         A list of QuantumVariables or QuantumVariableTemplates. These serve as 
         templates for the ancilla variables used in the block-encoding.
-    alpha : ArrayLike
-        The scalar scaling factor.
+    unitary : Callable
+        A function ``unitary(*ancillas, *operands)`` applying the block-encoding unitary. 
+        It receives the ancilla and operand QuantumVariables as arguments.
     is_hermitian : bool, optional
         Indicates whether the block-encoding unitary is Hermitian. The default is False.
 
