@@ -101,7 +101,28 @@ class BlockEncoding:
 
     **Example 1: Pauli Block Encoding**
 
+    ::
 
+        from qrisp import *
+        from qrisp.operators import X, Y, Z
+
+        H = sum(X(i)*X(i+1) + Y(i)*Y(i+1) + Z(i)*Z(i+1) for i in range(3))
+        BE = H.pauli_block_encoding()
+
+        # Apply the operator to an initial system state
+
+        # Prepare initial system state
+        def operand_prep():
+            operand = QuantumFloat(4)
+            h(operand[0])
+            return operand
+
+        @terminal_sampling
+        def main():
+            return BE.apply_rus(operand_prep)()
+
+        main()
+        # {0.0: 0.6428571295525347, 2.0: 0.2857142963579722, 1.0: 0.07142857408949305}
 
     **Example 2: Custom Block Encoding**
 
@@ -172,6 +193,19 @@ class BlockEncoding:
 
         main()
         # {0.0: 0.6666666567325588, 7.0: 0.16666667908430155, 1.0: 0.1666666641831397}
+
+    To perform quantum resource estimation (not counting repetitions), 
+    replace the ``@terminal_sampling`` decorator with ``@count_ops(meas_behavior="0")``:
+
+    ::
+
+        @count_ops(meas_behavior="0")
+        def main():
+            operand = BE.apply_rus(operand_prep)()
+            return operand
+
+        main()
+        # {'s': 4, 'gphase': 2, 'u3': 6, 't': 14, 't_dg': 16, 'x': 5, 'cx': 54, 'p': 2, 'h': 16, 'measure': 10}
 
     """
 
