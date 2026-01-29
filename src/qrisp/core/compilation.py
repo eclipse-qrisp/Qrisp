@@ -34,7 +34,8 @@ from qrisp.circuit import (
     RZZGate,
     PGate,
     GPhaseGate,
-    ClControlledOperation
+    ClControlledOperation,
+    U3Gate
 )
 from qrisp.misc import get_depth_dic, retarget_instructions
 from qrisp.permeability import optimize_allocations, parallelize_qc, lightcone_reduction
@@ -583,11 +584,7 @@ def combine_single_qubit_gates(qc):
     qc_new = qc.clearcopy()
 
     for instr in qc.data:
-        if (
-            len(instr.qubits) > 1
-            or instr.op.name in ["qb_alloc", "qb_dealloc"]
-            or len(instr.clbits) > 0
-        ):
+        if not isinstance(instr.op, U3Gate):
             for qb in instr.qubits:
                 apply_combined_gates(qc_new, qb_dic[qb], qb)
             qc_new.append(instr)
