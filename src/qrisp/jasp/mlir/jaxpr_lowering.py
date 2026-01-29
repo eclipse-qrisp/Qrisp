@@ -86,8 +86,8 @@ def lower_jaxpr_to_MLIR(jaxpr, lowering_rules = tuple([])):
             # Remove unused functions (like shadow definitions for primitives)
             # symbol-dce removes private functions that are not referenced.
             # We set main_function=True above to ensure @main is public and preserved.
-            pm = passmanager.PassManager.parse("builtin.module(symbol-dce)")
-            pm.run(ctx.module.operation)
+            # pm = passmanager.PassManager.parse("builtin.module(symbol-dce)")
+            # pm.run(ctx.module.operation)
 
         except Exception as e:
             print(f"Error in lower_jaxpr_to_fun: {e}")

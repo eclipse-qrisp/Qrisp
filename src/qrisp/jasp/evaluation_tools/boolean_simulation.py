@@ -170,7 +170,7 @@ def boolean_simulation(*func, bit_array_padding=2**16):
     @jit
     def return_function(*args):
 
-        jaspr = make_jaspr(func, garbage_collection="manual")(*args)
+        jaspr = make_jaspr(func)(*args)
         
         for var in jaspr.outvars:
             if isinstance(var.aval, (AbstractQubitArray, AbstractQubit)):

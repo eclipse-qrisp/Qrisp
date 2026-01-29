@@ -190,6 +190,15 @@ def test_HHL_demo():
             qbl = (case_indicator >= inv_res)
 
         cancellation_bool = (qrisp.measure(case_indicator) == 0) & (qrisp.measure(qbl) == 0)
+        
+        # Clean up case-indicator and qbl
+        # When using the RUS decorator, all local variables of the
+        # trial function need to be deallocated in order to avoid
+        # quantum memory leaks.
+        qrisp.reset(case_indicator)
+        qrisp.reset(qbl)
+        qbl.delete()
+        case_indicator.delete()
 
         # The first return value is a boolean value. Additional return values are QuantumVariables.
         return cancellation_bool, qf, qpe_res, inv_res
