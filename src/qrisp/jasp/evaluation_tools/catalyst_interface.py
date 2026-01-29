@@ -25,6 +25,10 @@ import jax.numpy as jnp
 import pennylane as qml
 import catalyst
 from catalyst.jax_primitives import qalloc_p, device_init_p, AbstractQreg
+from catalyst.jax_extras.patches import patched_make_eqn
+from catalyst.utils.patching import Patcher
+from jax.interpreters.partial_eval import DynamicJaxprTrace
+
 
 from qrisp.jasp import (
     AbstractQubitArray,
@@ -96,8 +100,10 @@ def jaspr_to_catalyst_jaxpr(jaspr):
             args.append(invar.aval)
 
     # Call the Catalyst interpreter
-    return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator))(*args)
-
+    
+    # Hotfix according to: https://github.com/PennyLaneAI/catalyst/issues/2394#issuecomment-3752134787
+    with Patcher((DynamicJaxprTrace, "make_eqn", patched_make_eqn)):
+        return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator))(*args)
 
 def jaspr_to_catalyst_function(jaspr, device=None):
 
@@ -134,7 +140,10 @@ def jaspr_to_catalyst_function(jaspr, device=None):
 
         # Call the catalyst interpreter. The first return value will be the AbstractQreg
         # tuple, which is why we exclude it from the return values
-        return eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator)(*args)[:-1]
+        
+        # Hotfix according to: https://github.com/PennyLaneAI/catalyst/issues/2394#issuecomment-3752134787
+        with Patcher((DynamicJaxprTrace, "make_eqn", patched_make_eqn)):
+            return eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator)(*args)[:-1]
 
     return catalyst_function
 
