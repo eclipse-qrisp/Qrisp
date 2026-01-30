@@ -27,11 +27,11 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
     r"""
     Quantum Linear System Solver via Generalized Quantum Eigenvalue Transformation (GQET).
 
-    For a block-encoded matrix $A$, this function implements a GQET-based quantum circuit that approximates the matrix inversion operation $A^{-1}$.
+    For a block-encoded matrix $A$, this function returns a BlockEncoding that approximates the matrix inversion operation $A^{-1}$.
     Using a Chebyshev polynomial approximation of the inverse function $1/x$ in the interval $[-1,-1/\kappa]\cup [1/\kappa,1]$ within an error tolerance $\epsilon$, 
     it constructs a generalized eigenvalue transformation.
 
-    When applied to an input quantum state $\ket{b}$, the circuit effectively solves the Quantum Linear System Problem (QLSP) $A\vec{x}=\vec{b}$.
+    When applied to an input quantum state $\ket{b}$, the BlockEncoding effectively solves the Quantum Linear System Problem (QLSP) $A\vec{x}=\vec{b}$.
 
     Parameters
     ----------
@@ -59,11 +59,15 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
         import numpy as np
 
         A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
-                      [0.14516978, 0.68701415, -0.04929867, -0.00999921],
-                      [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
-                      [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
+                    [0.14516978, 0.68701415, -0.04929867, -0.00999921],
+                    [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
+                    [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
 
         b = np.array([0, 1, 1, 1])
+
+        kappa = np.linalg.cond(A)
+        print("Condition number of A: ", kappa)
+        # Condition number of A:  1.8448536035491883
 
     Generate a block encoding of $A$ and use :meth:`inversion` to find a block-encoding approximating $A^{-1}$.
 

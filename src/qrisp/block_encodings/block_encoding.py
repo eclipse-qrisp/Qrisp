@@ -980,3 +980,89 @@ class BlockEncoding:
 
             new_anc_templates = [QuantumBool().template()] + self.anc_templates
             return BlockEncoding(self.alpha, new_anc_templates, new_unitary, is_hermitian=True)
+        
+    def inv(self, eps: float, kappa: float) -> BlockEncoding:
+        r"""
+        Returns a BlockEncoding approximating the matrix inversion of self.
+
+        For a block-encoded matrix $A$, this function returns a BlockEncoding that approximates the matrix inversion operation $A^{-1}$.
+
+        Parameters
+        ----------
+            eps : float
+                Target precision :math:`\epsilon` such that $\|A^{-1}-A\|\leq\epsilon$.
+            kappa : float
+                An upper bound for the condition number $\kappa$ of $A$. 
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding approximating the inverse of self.
+
+        Examples
+        --------
+
+        Define a QSLP and solve it using :meth:`inv`.
+
+        First, define a Hermitian matrix $A$ and a right-hand side vector $\vec{b}$.
+
+        ::
+
+            import numpy as np
+
+            A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
+                        [0.14516978, 0.68701415, -0.04929867, -0.00999921],
+                        [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
+                        [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
+
+            b = np.array([0, 1, 1, 1])
+
+            kappa = np.linalg.cond(A)
+            print("Condition number of A: ", kappa)
+            # Condition number of A:  1.8448536035491883
+
+        Generate a block encoding of $A$ and use :meth:`inv` to find a block-encoding approximating $A^{-1}$.
+
+        ::
+
+            from qrisp import *
+            from qrisp.algorithms.gqsp import inversion
+            from qrisp.operators import QubitOperator
+
+            H = QubitOperator.from_matrix(A, reverse_endianness=True)
+            BA = H.pauli_block_encoding()
+
+            BA_inv = BA.inv(0.01, 2)
+
+            # Prepares operand variable in state |b>
+            def prep_b():
+                operand = QuantumVariable(2)
+                prepare(operand, b)
+                return operand
+
+            @terminal_sampling
+            def main():
+                operand = BA_inv.apply_rus(prep_b)()
+                return operand
+
+            res_dict = main()
+
+        Finally, compare the quantum simulation result with the classical solution:
+
+        ::
+
+            for k, v in res_dict.items():
+                res_dict[k] = v**0.5
+
+            q = np.array([res_dict.get(key, 0) for key in range(len(b))])
+            c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
+
+            print("QUANTUM SIMULATION\n", q, "\nCLASSICAL SOLUTION\n", c)
+            # QUANTUM SIMULATION
+            # [0.02844496 0.55538449 0.53010186 0.64010231] 
+            # CLASSICAL SOLUTION
+            # [0.02944539 0.55423278 0.53013239 0.64102936]
+
+        """
+        from qrisp.algorithms.gqsp import inversion
+        return inversion(self, eps, kappa)

@@ -16,6 +16,7 @@ Methods
    BlockEncoding.apply_rus
    BlockEncoding.create_ancillas
    BlockEncoding.dagger
+   BlockEncoding.inv
    BlockEncoding.qubitization
 
 Arithmetic
