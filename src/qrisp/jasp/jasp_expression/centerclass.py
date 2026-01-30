@@ -1393,6 +1393,7 @@ class Jaspr(ClosedJaxpr):
 
 
 def make_jaspr(fun, flatten_envs=True, **jax_kwargs):
+    from qrisp.core import recursive_qv_search
     from qrisp.jasp import (
         AbstractQuantumCircuit,
         TracingQuantumSession,
