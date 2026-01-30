@@ -143,7 +143,8 @@ class MeasurementArray:
     
     1. **Integer Encoding**: We encode array contents as integers:
        - 0: Known boolean value False
-       - 1: Known boolean value True  
+       - 1: Known boolean value True
+       - 2: ProcessedMeasurement (result of classical post-processing)
        - Negative values: Measurement results (indices into qc.clbits)
          * -1 corresponds to the last clbit in the circuit
          * -2 corresponds to the second-to-last clbit
@@ -153,8 +154,14 @@ class MeasurementArray:
        corresponds to a measurement, we return the actual Clbit object.
        This allows the extracted value to be used in subsequent operations
        (like controlled gates or parity primitives) that expect Clbit inputs.
+       
+    3. **ProcessedMeasurement Tracking**: When classical operations (like ~, &, |)
+       are applied to measurement arrays, we mark those entries as "processed"
+       (value 2). Extracting such an entry returns a ProcessedMeasurement object.
+       If a circuit-influencing operation (like parity) receives a processed
+       entry, it raises an error since we can't build the circuit correctly.
     
-    3. **Array Operations**: We intercept JAX array primitives and implement
+    4. **Array Operations**: We intercept JAX array primitives and implement
        them using NumPy operations on our integer-encoded data.
     
     Why Negative Indexing?
@@ -178,7 +185,15 @@ class MeasurementArray:
         negative indices back to actual Clbit objects.
     data : numpy.ndarray
         Array of integers encoding the boolean/measurement values.
+        
+    Class Constants
+    ---------------
+    PROCESSED_VALUE : int
+        The integer value (2) used to encode ProcessedMeasurement entries.
     """
+    
+    # Class constant for the "processed" marker value
+    PROCESSED_VALUE = 2
     
     def __init__(self, qc, data):
         """
@@ -213,9 +228,10 @@ class MeasurementArray:
         
         Returns
         -------
-        Clbit, bool, or MeasurementArray
-            - If extracting a single measurement element: returns the Clbit
-            - If extracting a single known boolean: returns that boolean
+        Clbit, bool, ProcessedMeasurement, or MeasurementArray
+            - If extracting a single measurement element (negative): returns the Clbit
+            - If extracting a single known boolean (0 or 1): returns that boolean
+            - If extracting a processed element (2): returns ProcessedMeasurement
             - If extracting a slice: returns a new MeasurementArray
         """
         if isinstance(key, (int, np.integer)):
@@ -225,8 +241,11 @@ class MeasurementArray:
                 # The value directly serves as a negative index into qc.clbits.
                 clbit_index = int(val)
                 return self.qc.clbits[clbit_index]
+            elif val == self.PROCESSED_VALUE:
+                # Value 2 indicates a processed measurement
+                return ProcessedMeasurement()
             else:
-                # Non-negative value is a known boolean (0 = False, 1 = True)
+                # 0 or 1: known boolean value
                 return bool(val)
         elif isinstance(key, slice):
             return MeasurementArray(self.qc, self.data[key])
@@ -234,6 +253,44 @@ class MeasurementArray:
             raise TypeError(
                 f"MeasurementArray indices must be integers or slices, not {type(key)}"
             )
+    
+    def has_processed_entries(self):
+        """Check if this array contains any ProcessedMeasurement entries."""
+        return np.any(self.data == self.PROCESSED_VALUE)
+    
+    def to_clbit_list(self):
+        """
+        Convert to a list of Clbits, raising an error if any processed entries exist.
+        
+        This is used by operations like parity that need actual Clbit values.
+        
+        Returns
+        -------
+        list[Clbit]
+            List of Clbit objects.
+        
+        Raises
+        ------
+        Exception
+            If the array contains any ProcessedMeasurement entries.
+        """
+        if self.has_processed_entries():
+            raise Exception(
+                "Cannot convert MeasurementArray to Clbit list: array contains "
+                "processed measurement values (from operations like ~, &, |). "
+                "These values cannot be used in circuit-influencing operations."
+            )
+        
+        result = []
+        for val in self.data:
+            if val < 0:
+                result.append(self.qc.clbits[int(val)])
+            else:
+                raise Exception(
+                    f"Cannot convert MeasurementArray entry {val} to Clbit: "
+                    "only measurement results (negative indices) can be converted."
+                )
+        return result
     
     @classmethod
     def from_clbit(cls, qc, clbit):
@@ -280,6 +337,43 @@ class MeasurementArray:
         return cls(qc, np.array([int(bool(value))], dtype=np.int64))
     
     @classmethod
+    def from_processed(cls, qc, size=1):
+        """
+        Create a MeasurementArray filled with ProcessedMeasurement markers.
+        
+        Parameters
+        ----------
+        qc : QuantumCircuit
+            The quantum circuit being built.
+        size : int
+            Number of processed entries.
+        
+        Returns
+        -------
+        MeasurementArray
+            Array with all entries set to PROCESSED_VALUE (2).
+        """
+        return cls(qc, np.full(size, cls.PROCESSED_VALUE, dtype=np.int64))
+    
+    def mark_as_processed(self):
+        """
+        Return a new MeasurementArray with all entries marked as processed.
+        
+        This is used when classical operations (like ~, &, |) are applied
+        to the array. The original measurement information is lost, replaced
+        with the "processed" marker.
+        
+        Returns
+        -------
+        MeasurementArray
+            New array with all entries set to PROCESSED_VALUE (2).
+        """
+        return MeasurementArray(
+            self.qc, 
+            np.full_like(self.data, self.PROCESSED_VALUE)
+        )
+    
+    @classmethod
     def concatenate(cls, qc, arrays):
         """
         Concatenate multiple arrays/values into a single MeasurementArray.
@@ -295,6 +389,7 @@ class MeasurementArray:
             List of values to concatenate. Each can be:
             - MeasurementArray: data is extended directly
             - Clbit: encoded as negative index
+            - ProcessedMeasurement: encoded as PROCESSED_VALUE (2)
             - bool/int: encoded as 0 or 1
         
         Returns
@@ -312,6 +407,8 @@ class MeasurementArray:
                 clbit_idx = qc.clbits.index(arr)
                 neg_idx = clbit_idx - len(qc.clbits)
                 result_data.append(neg_idx)
+            elif isinstance(arr, ProcessedMeasurement):
+                result_data.append(cls.PROCESSED_VALUE)
             elif isinstance(arr, (bool, np.bool_)):
                 result_data.append(int(arr))
             elif isinstance(arr, (int, np.integer)):
@@ -353,6 +450,80 @@ def contains_measurement_data(val):
     if isinstance(val, list) and len(val):
         return contains_measurement_data(val[0])
     return False
+
+
+def handle_classical_processing(qc, invalues):
+    """
+    Handle operations that represent classical post-processing on measurement data.
+    
+    Many operations (arithmetic, comparisons, reductions, bitwise ops) represent
+    classical computation that cannot be performed during circuit construction.
+    This function provides a unified way to handle all such operations.
+    
+    The strategy is:
+    1. If any input is a MeasurementArray, return a MeasurementArray of the same
+       size with all entries marked as "processed" (value 2).
+    2. If inputs contain scalar measurement data (Clbit, ProcessedMeasurement),
+       return a scalar ProcessedMeasurement.
+    3. If no measurement data is involved, return None to indicate default
+       JAX evaluation should be used.
+    
+    Parameters
+    ----------
+    qc : QuantumCircuit
+        The quantum circuit being built (needed for MeasurementArray).
+    invalues : list
+        Input values to the operation.
+    
+    Returns
+    -------
+    MeasurementArray, ProcessedMeasurement, or None
+        - MeasurementArray with processed entries if input was an array
+        - ProcessedMeasurement for scalar measurement inputs
+        - None if no measurement data (use default JAX evaluation)
+    """
+    from qrisp import Clbit
+    
+    # Check for MeasurementArray inputs first (preserves array structure)
+    for v in invalues:
+        if isinstance(v, MeasurementArray):
+            return v.mark_as_processed()
+    
+    # Check for scalar measurement data
+    for v in invalues:
+        if isinstance(v, (Clbit, ProcessedMeasurement)):
+            return ProcessedMeasurement()
+    
+    # Check for lists containing measurement data
+    for v in invalues:
+        if isinstance(v, list) and len(v) and contains_measurement_data(v[0]):
+            return ProcessedMeasurement()
+    
+    # No measurement data - use default evaluation
+    return None
+
+
+# List of primitives that represent classical processing on measurement data.
+# These operations cannot be performed during circuit construction because
+# measurement results are not known until runtime.
+CLASSICAL_PROCESSING_PRIMITIVES = {
+    # Arithmetic operations
+    "add", "sub", "mul", "div", "rem", "pow", "neg",
+    "integer_pow", "floor", "ceil", "round", "abs",
+    
+    # Comparison operations  
+    "eq", "ne", "lt", "gt", "le", "ge",
+    
+    # Reduction operations
+    "reduce_sum", "reduce_prod", "reduce_max", "reduce_min",
+    "reduce_or", "reduce_and", "reduce_xor",
+    
+    # Bitwise operations (scalar versions - array versions handled separately)
+    "shift_left", "shift_right_arithmetic", "shift_right_logical",
+    
+    # Type conversions that change semantics
+    # Note: convert_element_type is handled specially since bool->bool is OK
+}
 
 
 # =============================================================================
@@ -450,29 +621,77 @@ def make_qc_extraction_eqn_evaluator(qc):
         elif prim_name == "jasp.parity":
             # Parity operation: XOR of multiple classical bits
             # This is implemented as a classical operation in the circuit
+            
+            # Check for ProcessedMeasurement in scalar inputs
+            if any(isinstance(v, ProcessedMeasurement) for v in invalues):
+                raise Exception(
+                    "Cannot compute parity of processed measurement data. "
+                    "Parity requires actual measurement results, but the input "
+                    "contains results of classical post-processing (e.g., ~, &, |) "
+                    "that cannot be represented in a QuantumCircuit."
+                )
+            
+            # Check for ProcessedMeasurement in MeasurementArray inputs
+            for v in invalues:
+                if isinstance(v, MeasurementArray) and v.has_processed_entries():
+                    raise Exception(
+                        "Cannot compute parity of MeasurementArray containing "
+                        "processed entries. Some elements in the array are the result "
+                        "of classical post-processing (e.g., ~, &, |) and cannot be "
+                        "used in circuit-influencing operations."
+                    )
+            
+            # Convert any MeasurementArray to list of clbits
+            parity_clbits = []
+            for v in invalues:
+                if isinstance(v, MeasurementArray):
+                    parity_clbits.extend(v.to_clbit_list())
+                else:
+                    parity_clbits.append(v)
+            
             res = Clbit("cb_" + str(len(qc.clbits)))
             qc.clbits.insert(0, res)
-            qc.append(ParityOperation(len(invalues)), clbits=invalues + [res])
+            qc.append(ParityOperation(len(parity_clbits)), clbits=parity_clbits + [res])
             insert_outvalues(eqn, context_dic, res)
             return
         
         # -----------------------------------------------------------------
         # SECTION 4.3: Type Conversion (convert_element_type)
         # -----------------------------------------------------------------
-        # JAX often inserts type conversions. For measurement data, we just
-        # pass through the value unchanged since we're not doing real computation.
+        # JAX often inserts type conversions. For measurement data:
+        # - bool->bool conversions pass through unchanged
+        # - Conversions to numeric types (int, float) mark as processed
+        #   since we can't actually compute with measurement values
         
         elif prim_name == "convert_element_type":
             inval = context_dic[eqn.invars[0]]
-            if isinstance(inval, (ProcessedMeasurement, Clbit, MeasurementArray)):
-                # Measurement data passes through unchanged
-                context_dic[eqn.outvars[0]] = inval
+            new_dtype = eqn.params.get("new_dtype", None)
+            
+            if isinstance(inval, MeasurementArray):
+                # Check if converting to a non-boolean type
+                if new_dtype is not None and not np.issubdtype(new_dtype, np.bool_):
+                    # Converting to numeric type - mark as processed
+                    context_dic[eqn.outvars[0]] = inval.mark_as_processed()
+                else:
+                    # Bool-to-bool or unknown conversion - pass through
+                    context_dic[eqn.outvars[0]] = inval
+                return
+            elif isinstance(inval, (ProcessedMeasurement, Clbit)):
+                if new_dtype is not None and not np.issubdtype(new_dtype, np.bool_):
+                    # Converting scalar to numeric - mark as processed
+                    context_dic[eqn.outvars[0]] = ProcessedMeasurement()
+                else:
+                    # Pass through unchanged
+                    context_dic[eqn.outvars[0]] = inval
                 return
             elif isinstance(inval, list) and len(inval) and isinstance(
                 inval[0], (ProcessedMeasurement, Clbit)
             ):
-                # List of measurement data passes through unchanged
-                context_dic[eqn.outvars[0]] = inval
+                # List of measurement data
+                if new_dtype is not None and not np.issubdtype(new_dtype, np.bool_):
+                    context_dic[eqn.outvars[0]] = ProcessedMeasurement()
+                else:
+                    context_dic[eqn.outvars[0]] = inval
                 return
             return True
         
@@ -482,6 +701,11 @@ def make_qc_extraction_eqn_evaluator(qc):
         # These primitives handle JAX array operations when the arrays contain
         # measurement results. We use MeasurementArray to track Clbit references
         # through these operations.
+        #
+        # IMPORTANT: When a ProcessedMeasurement appears in these operations,
+        # we propagate it through (returning ProcessedMeasurement) rather than
+        # failing. This allows the circuit extraction to continue even when
+        # some classical processing has occurred on measurement data.
         
         elif prim_name == "broadcast_in_dim":
             # broadcast_in_dim: Expands a scalar to an array shape
@@ -491,7 +715,13 @@ def make_qc_extraction_eqn_evaluator(qc):
             inval = invalues[0]
             shape = eqn.params["shape"]
             
-            if isinstance(inval, Clbit):
+            if isinstance(inval, ProcessedMeasurement):
+                # Create a MeasurementArray filled with processed markers
+                size = int(np.prod(shape)) if shape else 1
+                result = MeasurementArray.from_processed(qc, size)
+                insert_outvalues(eqn, context_dic, result)
+                return
+            elif isinstance(inval, Clbit):
                 meas_arr = MeasurementArray.from_clbit(qc, inval)
                 new_data = np.broadcast_to(meas_arr.data, shape)
                 result = MeasurementArray(qc, new_data.flatten())
@@ -519,7 +749,9 @@ def make_qc_extraction_eqn_evaluator(qc):
             #   broadcast_in_dim(m2) -> arr2
             #   concatenate(arr0, arr1, arr2)
             
+            # Check if any input contains measurement data (including ProcessedMeasurement)
             if any(contains_measurement_data(v) for v in invalues):
+                # MeasurementArray.concatenate now handles ProcessedMeasurement inputs
                 result = MeasurementArray.concatenate(qc, invalues)
                 insert_outvalues(eqn, context_dic, result)
                 return
@@ -532,7 +764,10 @@ def make_qc_extraction_eqn_evaluator(qc):
             # The slice extracts shape (1,), squeeze reduces to scalar
             
             inval = invalues[0]
-            if isinstance(inval, MeasurementArray):
+            if isinstance(inval, ProcessedMeasurement):
+                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
+                return
+            elif isinstance(inval, MeasurementArray):
                 if len(inval.data) == 1:
                     # Single element - extract and return the actual value
                     # This is where we bridge back to Clbit!
@@ -549,7 +784,10 @@ def make_qc_extraction_eqn_evaluator(qc):
             # Example: arr[0:2] or arr[i] where i is a constant
             
             inval = invalues[0]
-            if isinstance(inval, MeasurementArray):
+            if isinstance(inval, ProcessedMeasurement):
+                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
+                return
+            elif isinstance(inval, MeasurementArray):
                 start_indices = eqn.params["start_indices"]
                 limit_indices = eqn.params["limit_indices"]
                 start = start_indices[0] if start_indices else 0
@@ -565,7 +803,10 @@ def make_qc_extraction_eqn_evaluator(qc):
             # Example: arr[i] inside a loop where i is a loop variable
             
             inval = invalues[0]
-            if isinstance(inval, MeasurementArray):
+            if isinstance(inval, ProcessedMeasurement):
+                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
+                return
+            elif isinstance(inval, MeasurementArray):
                 start_idx = int(invalues[1])
                 slice_size = eqn.params["slice_sizes"][0]
                 result = MeasurementArray(
@@ -580,7 +821,10 @@ def make_qc_extraction_eqn_evaluator(qc):
             # gather: General indexing operation (covers various indexing patterns)
             
             inval = invalues[0]
-            if isinstance(inval, MeasurementArray):
+            if isinstance(inval, ProcessedMeasurement):
+                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
+                return
+            elif isinstance(inval, MeasurementArray):
                 indices = invalues[1]
                 if hasattr(indices, 'item'):
                     idx = int(indices.item())
@@ -592,8 +836,95 @@ def make_qc_extraction_eqn_evaluator(qc):
             else:
                 return True
         
+        elif prim_name == "reshape":
+            # reshape: Changes the shape of an array without changing data
+            # This preserves measurement information, just reorganizes it
+            
+            inval = invalues[0]
+            if isinstance(inval, ProcessedMeasurement):
+                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
+                return
+            elif isinstance(inval, MeasurementArray):
+                # Reshape preserves the data, just changes the logical shape
+                # Since MeasurementArray is 1D internally, we keep it as-is
+                # The reshaped array will still work for element extraction
+                new_shape = eqn.params.get("new_sizes", eqn.params.get("dimensions", None))
+                result = MeasurementArray(qc, inval.data.copy())
+                insert_outvalues(eqn, context_dic, result)
+                return
+            else:
+                return True
+        
+        elif prim_name == "transpose":
+            # transpose: Permutes the dimensions of an array
+            # For 1D MeasurementArray, this is essentially a no-op
+            
+            inval = invalues[0]
+            if isinstance(inval, ProcessedMeasurement):
+                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
+                return
+            elif isinstance(inval, MeasurementArray):
+                # For 1D arrays, transpose doesn't change anything
+                result = MeasurementArray(qc, inval.data.copy())
+                insert_outvalues(eqn, context_dic, result)
+                return
+            else:
+                return True
+        
+        elif prim_name == "scatter":
+            # scatter: Update array elements at specified indices
+            # Used in array assignment operations
+            # If inputs contain measurement data, we mark the affected entries as processed
+            
+            result = handle_classical_processing(qc, invalues)
+            if result is not None:
+                insert_outvalues(eqn, context_dic, result)
+                return
+            else:
+                return True
+        
         # -----------------------------------------------------------------
-        # SECTION 4.5: Default Handling
+        # SECTION 4.5: Classical Processing Operations
+        # -----------------------------------------------------------------
+        # This section handles all operations that represent classical
+        # computation on measurement data. These operations cannot be
+        # performed during circuit construction because measurement results
+        # are not known until runtime.
+        #
+        # We use a unified approach:
+        # 1. Check if the primitive is in CLASSICAL_PROCESSING_PRIMITIVES
+        # 2. Use handle_classical_processing() to create appropriate output
+        # 3. This preserves array structure (MeasurementArray with processed
+        #    entries) while marking the data as "processed"
+        
+        elif prim_name in CLASSICAL_PROCESSING_PRIMITIVES:
+            result = handle_classical_processing(qc, invalues)
+            if result is not None:
+                insert_outvalues(eqn, context_dic, result)
+                return
+            else:
+                return True
+        
+        elif prim_name == "not":
+            # Bitwise NOT - handled separately because it's a common operation
+            result = handle_classical_processing(qc, invalues)
+            if result is not None:
+                insert_outvalues(eqn, context_dic, result)
+                return
+            else:
+                return True
+        
+        elif prim_name in ["and", "or", "xor"]:
+            # Bitwise operations on boolean arrays
+            result = handle_classical_processing(qc, invalues)
+            if result is not None:
+                insert_outvalues(eqn, context_dic, result)
+                return
+            else:
+                return True
+        
+        # -----------------------------------------------------------------
+        # SECTION 4.6: Default Handling
         # -----------------------------------------------------------------
         
         else:
@@ -613,7 +944,7 @@ def make_qc_extraction_eqn_evaluator(qc):
                     return True
         
         # -----------------------------------------------------------------
-        # SECTION 4.6: Fallback for Unhandled Measurement Operations
+        # SECTION 4.7: Fallback for Unhandled Measurement Operations
         # -----------------------------------------------------------------
         # If we reach here, the operation involves measurement data but isn't
         # one of the specifically handled cases above. We create 
