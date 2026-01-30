@@ -16,18 +16,19 @@
 ********************************************************************************
 """
 
-from typing import Callable
+from typing import Callable, Tuple
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 from jax import lax
-from jax.errors import TracerArrayConversionError
 
 from qrisp.misc.utility import _EPSILON, swap_endianness
 
 
-def _rot_params_from_state(vec: jnp.ndarray) -> tuple:
+def _rot_params_from_state(
+    vec: jnp.ndarray,
+) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
     Computes the rotation angles to prepare a single qubit state,
     where the amplitude of the |0> basis state is real and non-negative.
@@ -57,13 +58,13 @@ def _rot_params_from_state(vec: jnp.ndarray) -> tuple:
     a = jnp.clip(jnp.real(a), -1.0, 1.0)
     theta = 2.0 * jnp.arccos(a)
     phi = jnp.where(jnp.abs(b) > _EPSILON, jnp.angle(b), 0.0)
-    lam = 0.0
+    lam = jnp.float64(0.0)
     return theta, phi, lam
 
 
 def _normalize_with_phase(
     v: jnp.ndarray, acc: jnp.ndarray
-) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
     Normalizes a given vector and adjusts its phase.
 
@@ -111,7 +112,7 @@ def _normalize_with_phase(
 
 def _compute_thetas(
     vec: jnp.ndarray, acc: jnp.ndarray
-) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
     For a given input vector, this function computes the rotation angles
     needed for the uniformly controlled RY at this tree layer, normalizes its child vectors,
@@ -154,7 +155,7 @@ def _compute_thetas(
 
 def _compute_u3_params(
     qubit_vec: jnp.ndarray, acc: jnp.ndarray
-) -> tuple[jnp.ndarray, jnp.ndarray]:
+) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """
     For a given length-2 vector, this function computes the U3 gate parameters needed
     to prepare the corresponding state, normalizes the vector, and updates the accumulated phase.
@@ -203,7 +204,7 @@ def _compute_u3_params(
 #
 def _preprocess(
     target_array: jnp.ndarray,
-) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
     This preprocessing function returns three data structures needed for state preparation.
 
@@ -251,6 +252,7 @@ def _preprocess(
         acc_phases = acc_phases.reshape((2 * num_nodes,))
 
     return thetas, u_params, phases
+
 
 def prepare_qswitch(qv, target_array: jnp.ndarray) -> None:
     """

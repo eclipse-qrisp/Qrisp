@@ -17,37 +17,104 @@
 """
 
 import numpy as np
-
 from jax.errors import TracerArrayConversionError
 
-from qrisp.alg_primitives.state_preparation.qswitch_state_preparation import prepare_qswitch
-from qrisp.alg_primitives.state_preparation.qiskit_state_preparation import prepare_qiskit
+from qrisp.alg_primitives.state_preparation.qiskit_state_preparation import (
+    prepare_qiskit,
+)
+from qrisp.alg_primitives.state_preparation.qswitch_state_preparation import (
+    prepare_qswitch,
+)
+from qrisp.jasp.tracing_logic import check_for_tracing_mode
 
-def prepare(qv, target_array, reversed=False, method = "auto"):
+
+def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
     r"""
-    This method performs quantum state preparation. Given a vector $b=(b_0,\dotsc,b_{N-1})$, the function acts as
+    Performs quantum state preparation on a quantum variable.
+
+    Given a vector :math:`b=(b_0,\dotsc,b_{N-1})` with :math:`b \neq 0`, this
+    function prepares a state proportional to
 
     .. math::
 
-        \ket{0} \rightarrow \sum_{i=0}^{N-1}b_i\ket{i}
+        \sum_{i=0}^{N-1} b_i \ket{i}.
+
+    If ``target_array`` is a concrete array (non-Jasp mode), it is normalized internally, i.e.
+
+    .. math::
+
+        \tilde b_i = \frac{b_i}{\|b\|},
+        \qquad
+        \ket{0} \;\mapsto\; \sum_{i=0}^{N-1} \tilde b_i \ket{i}.
+
+    By default, the little-endian convention is used for the computational basis ordering.
+    For example, for a 2-qubit system, the basis states are ordered as
+
+    .. math::
+
+        \ket{0} \equiv \ket{q_0 = 0, q_1 = 0}, \quad \ket{1} \equiv \ket{q_0 = 1, q_1 = 0}, \dotsc
 
     Parameters
     ----------
+
     qv : QuantumVariable
         The quantum variable on which to apply state preparation.
-    target_array : numpy.ndarray
-        The vector $b$.
-    reversed : boolean
-        If set to ``True``, the endianness is reversed. The default is ``False``.
-    method : str, optional
-        String to specify the compilation method. Available are ``qiskit``, ``qswitch`` and ``auto``.
-        ``qiskit`` is more gate-efficient but ``qswitch`` can also process dynamic arrays.
-        The default is ``auto``.
+
+    target_array : numpy.ndarray or jax.numpy.ndarray
+        Target amplitude vector :math:`b`. Must have length :math:`2^n` where
+        :math:`n` is the size of ``qv`` (validated for concrete arrays).
+
+    reversed : bool, optional
+        If ``True``, applies a bit-reversal permutation to the computational
+        basis ordering. Instead of the little-endian convention, the basis
+        states are ordered as big-endian. Default is ``False``.
+
+    method : {'qiskit', 'qswitch', 'auto'}, optional
+        Compilation method for state preparation.
+
+        - ``'qiskit'``: requires concrete arrays (e.g. NumPy).
+        - ``'qswitch'``: supports traced arrays (e.g. JAX tracers). Note that
+          input validation/normalization may be deferred.
+        - ``'auto'``: automatically selects between the above.
+
+        Default is ``'auto'``.
 
     Examples
     --------
 
-    We create a :ref:`QuantumFloat` and prepare the state $\sum_{i=0}^3b_i\ket{i}$ for $b=(0,1,2,3)$.
+    Let's define a normalized target statevector and use it to prepare a quantum state.
+
+    ::
+
+        import numpy as np
+        from qrisp import QuantumFloat, prepare
+
+        input_vec = np.array([0, 1, 2, 3], dtype=float)
+        input_vec /= np.linalg.norm(input_vec)
+
+        qf = QuantumFloat(2)
+        prepare(qf, input_vec)
+
+    We can verify that the state has been prepared by retrieving the statevector amplitudes.
+
+    For example, we can use the ``statevector`` method to get a function that maps basis states to amplitudes:
+
+    ::
+
+        sv_function = qf.qs.statevector("function")
+
+        print(f"input_vec[1]: {input_vec[1]} -> {sv_function({qf: 1})}")
+        # input_vec[1]: 0.2672612419124244 -> (0.26726123690605164-0j)
+        print(f"input_vec[2]: {input_vec[2]} -> {sv_function({qf: 2})}")
+        # input_vec[2]: 0.5345224838248488 -> (0.5345224738121033-0j)
+
+    where index 1 in little-endian corresponds to the basis state :math:`\ket{q_0=1, q_1=0}`
+    and index 2 to :math:`\ket{q_0=0, q_1=1}`.  With ``reversed=True``, we can map ``input_vec[1]``
+    to ``sv_function({qf: 2})`` instead, and vice versa.
+
+    TODO: continue from here. This function is BROKEN for `qswitch`!
+
+    In the following example, we create a :ref:`QuantumFloat` and prepare the state $\sum_{i=0}^3b_i\ket{i}$ for $b=(0,1,2,3)$.
 
     ::
 
@@ -68,13 +135,10 @@ def prepare(qv, target_array, reversed=False, method = "auto"):
         # Yields: {3: 2.9999766670425863, 2: 1.999965000393743, 1: 1.0}
 
     """
-    
-    from qrisp.jasp import check_for_tracing_mode
-    from qrisp.misc import check_if_fresh
-    
-    tracing = int(check_for_tracing_mode())
-    
-    if not tracing:
+
+    is_tracing = check_for_tracing_mode()
+
+    if not is_tracing:
         expected = 1 << qv.size
         if target_array.size != expected:
             raise ValueError(
@@ -84,24 +148,24 @@ def prepare(qv, target_array, reversed=False, method = "auto"):
         norm = np.linalg.norm(np.asarray(target_array))
         if np.isclose(norm, 0.0):
             raise ValueError("The provided statevector has zero norm.")
-        #if not check_if_fresh(qv.reg, qv.qs):
-        #    raise ValueError(
-        #        "Tried to initialize qubits which are not fresh anymore."
-        #    )
+
         target_array = np.asarray(target_array) / norm
-    
+
     if method == "auto":
         try:
             target_array = np.array(target_array)
             method = "qiskit"
         except TracerArrayConversionError:
             method = "qswitch"
-            
+
     if method == "qiskit":
         prepare_qiskit(qv, target_array, reversed)
+
     elif method == "qswitch":
-        if not reversed:
-            raise Exception("Reversed state preparation is currently not available for method qswitch")
+        if reversed:
+            raise NotImplementedError(
+                "Reversed state preparation is currently not available for method qswitch"
+            )
         prepare_qswitch(qv, target_array)
     else:
         raise ValueError("method must be 'auto', 'qiskit', or 'qswitch'")
