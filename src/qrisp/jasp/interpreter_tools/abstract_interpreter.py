@@ -136,7 +136,6 @@ def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator=exec_eqn):
                     evaluate_while_loop,
                     evaluate_scan,
                 )
-                print(eqn.primitive.name)
 
                 if eqn.primitive.name == "while":
                     evaluate_while_loop(eqn, context_dic, eqn_evaluator)

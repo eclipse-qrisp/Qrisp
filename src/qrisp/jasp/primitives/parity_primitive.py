@@ -25,6 +25,7 @@ parity_p = QuantumPrimitive("parity")
 
 from jax.core import ShapedArray
 from jax.lax import while_loop
+import jax.numpy as jnp
 
 @parity_p.def_abstract_eval
 def parity_abstract_eval(*measurements, expectation = 2):
@@ -204,7 +205,8 @@ def parity(*measurements, expectation = None):
         def body_function(val):
             
             index, flat_result, flat_measurements = val
-            parity_res = parity(*[meas[index] for meas in flat_measurements])
+            parity_res = parity(*[meas[index] for meas in flat_measurements], 
+                                expectation=expectation)
             flat_result = flat_result.at[index].set(parity_res)
             index += 1
             
@@ -230,7 +232,7 @@ def parity_implementation(*measurements, expectation):
     if expectation != 2:
         if expectation != res:
             raise Exception("Parity expectation deviated from simulation result")
-    return (res + expectation) % 2
+    return jnp.array((res + expectation) % 2, dtype = bool)
 
 class ParityOperation(Operation):
     """
