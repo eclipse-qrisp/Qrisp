@@ -30,7 +30,6 @@ from qrisp import (
     rz,
 )
 from qrisp.alg_primitives.state_preparation import prepare
-from qrisp.alg_primitives.reflection import reflection
 from qrisp.jasp import jrange, q_cond, RUS, check_for_tracing_mode
 from qrisp.operators import QubitOperator
 from qrisp.block_encodings import BlockEncoding
@@ -81,44 +80,41 @@ def QSVT(A, phi_qsvt):
         Must be measured in state $\ket{0}$ for the QSVT protocol to be successful.
     """
 
-    if isinstance(A, BlockEncoding):
-        BE = A
-    else:
-        H = QubitOperator.from_matrix(A, reverse_endianness=True)
-        BE = H.pauli_block_encoding() # Construct block encoding of A as a set of Pauli unitaries
-      
-    def even(*args):
-        BE.unitary(*args)
+    m = len(A.anc_templates)
 
-    def odd(*args):
+    def reflection(args, phase):
+        qubits = sum([arg.reg for arg in args[1:m + 1]], []) 
+        with conjugate(mcx)(qubits, args[0], ctrl_state=0):
+            rz(phase, args[0])
+
+    def even(args):
+        A.unitary(*args[1:])
+
+    def odd(args):
         with invert():
-            BE.unitary(*args)
-
-    
-    temp = QuantumBool()
-    m = len(BE.ancilla_templates)
+            A.unitary(*args[1:])
 
     def new_unitary(*args):
-        h(temp) 
+        h(args[0]) 
 
-        phi_qsvt = jnp.flip(phi_qsvt)
+        phlipped_qsvt = jnp.flip(phi_qsvt)
         d = len(phi_qsvt) - 1
                 
         for i in jrange(0, d): 
-            reflection(args[:m+1], phase=2 * phi_qsvt[i])
-            q_cond(i%2==0, even, odd, *args[1:]) 
-        reflection(args[:m+1], phase=2 * phi_qsvt[d])
+            reflection(args, phase = 2 * phlipped_qsvt[i])
+            q_cond(i%2==0, even, odd, args) 
+        reflection(args, phase=2 * phlipped_qsvt[d])
             
-        h(temp)
+        h(args[0])
 
-    new_anc_templates = [QuantumBool().template()] + BE.ancilla_templates
+    new_anc_templates = [QuantumBool().template()] + A.anc_templates
     new_alpha = 1 # TBD
 
     return BlockEncoding(new_unitary, new_anc_templates, new_alpha, is_hermitian = False)
 
 
 
-def QSVT_inversion(A, b, eps, kappa = None):
+def QSVT_inversion(A, eps, kappa):
     """
     Quantum Linear System solver via Quantum Singular Value Transformation (QSVT).
 
@@ -161,11 +157,6 @@ def QSVT_inversion(A, b, eps, kappa = None):
         Auxiliary variable used for the reflections after applying the QSVT protocol.
         Must be measured in state $\ket{0}$ for the QSVT protocol to be successful.
     """
-    if isinstance(A, BlockEncoding):
-        kappa = kappa
-    else:
-        kappa = np.linalg.cond(A)
-
 
     def inversion_angles(eps, kappa):
         """
@@ -209,23 +200,9 @@ def QSVT_inversion(A, b, eps, kappa = None):
         phi_qsvt[1:-1] = phi_qsp[1:-1] + np.pi / 2
         phi_qsvt[-1] = phi_qsp[-1] - np.pi / 4
 
-        return jnp.array(phi_qsvt), s
+        return np.array(phi_qsvt), s
 
 
     phi_inversion, _ = inversion_angles(eps, kappa)
-    
-    if callable(b):
-        b_prep = b
-
-    else:
-        def b_prep():
-            operand = QuantumFloat(int(np.log2(b.shape[0])))
-            prepare(operand, b)
-            return operand
-    
-    def new_unitary(*args):
-        return QSVT(A, phi_inversion).unitary(*args)
-    
-    
-
-    return BlockEncoding(new_unitary, new_anc_templates, new_alpha, is_hermitian = False)
+    print(phi_inversion)
+    return QSVT(A, phi_inversion)
