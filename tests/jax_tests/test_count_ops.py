@@ -190,8 +190,8 @@ def test_parity_count_ops():
     assert ops["measure"] == 2, f"Expected 2 measurements, got {ops.get('measure', 0)}"
 
 
-def test_parity_count_ops_with_scan():
-    """Test that parity with array inputs (scan primitive) works with count_ops profiling."""
+def test_parity_count_ops_in_while():
+    """Test that parity with array inputs (while primitive) works with count_ops profiling."""
     import jax.numpy as jnp
     
     @count_ops(meas_behavior="0")
@@ -213,7 +213,7 @@ def test_parity_count_ops_with_scan():
         m1_1 = measure(qv1[1])
         m1_2 = measure(qv1[2])
         
-        # Create arrays and compute parity (triggers scan)
+        # Create arrays and compute parity (triggers while)
         meas_array_0 = jnp.array([m0_0, m0_1, m0_2])
         meas_array_1 = jnp.array([m1_0, m1_1, m1_2])
         

@@ -187,7 +187,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
                 if expectation != 2:
                     result = result ^ expectation
                 
-                insert_outvalues(eqn, context_dic, result)
+                insert_outvalues(eqn, context_dic, jnp.array(result, dtype = bool))
             elif eqn.primitive.name == "jasp.create_quantum_kernel":
                 raise Exception("Tried to perform resource estimation on a function calling calling a kernelized function")
             else:
