@@ -47,19 +47,28 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
         \qquad
         \ket{0} \;\mapsto\; \sum_{i=0}^{N-1} \tilde b_i \ket{i}.
 
+    By default, the little-endian convention is used for the computational basis ordering.
+    For example, for a 2-qubit system, the basis states are ordered as
+
+    .. math::
+
+        \ket{0} \equiv \ket{q_0 = 0, q_1 = 0}, \quad \ket{1} \equiv \ket{q_0 = 1, q_1 = 0}, \dotsc
+
     Parameters
     ----------
 
     qv : QuantumVariable
         The quantum variable on which to apply state preparation.
+
     target_array : numpy.ndarray or jax.numpy.ndarray
         Target amplitude vector :math:`b`. Must have length :math:`2^n` where
         :math:`n` is the size of ``qv`` (validated for concrete arrays).
+
     reversed : bool, optional
         If ``True``, applies a bit-reversal permutation to the computational
-        basis ordering (endianness). Equivalently, amplitudes are remapped so
-        that index ``i`` is interpreted with reversed bit order. Default is
-        ``False``.
+        basis ordering. Instead of the little-endian convention, the basis
+        states are ordered as big-endian. Default is ``False``.
+
     method : {'qiskit', 'qswitch', 'auto'}, optional
         Compilation method for state preparation.
 
@@ -72,6 +81,38 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
 
     Examples
     --------
+
+    Let's define a normalized target statevector and use it to prepare a quantum state.
+
+    ::
+
+        import numpy as np
+        from qrisp import QuantumFloat, prepare
+
+        input_vec = np.array([0, 1, 2, 3], dtype=float)
+        input_vec /= np.linalg.norm(input_vec)
+
+        qf = QuantumFloat(2)
+        prepare(qf, input_vec)
+
+    We can verify that the state has been prepared by retrieving the statevector amplitudes.
+
+    For example, we can use the ``statevector`` method to get a function that maps basis states to amplitudes:
+
+    ::
+
+        sv_function = qf.qs.statevector("function")
+
+        print(f"input_vec[1]: {input_vec[1]} -> {sv_function({qf: 1})}")
+        # input_vec[1]: 0.2672612419124244 -> (0.26726123690605164-0j)
+        print(f"input_vec[2]: {input_vec[2]} -> {sv_function({qf: 2})}")
+        # input_vec[2]: 0.5345224838248488 -> (0.5345224738121033-0j)
+
+    where index 1 in little-endian corresponds to the basis state :math:`\ket{q_0=1, q_1=0}`
+    and index 2 to :math:`\ket{q_0=0, q_1=1}`.  With ``reversed=True``, we can map ``input_vec[1]``
+    to ``sv_function({qf: 2})`` instead, and vice versa.
+
+    TODO: continue from here. This function is BROKEN for `qswitch`!
 
     In the following example, we create a :ref:`QuantumFloat` and prepare the state $\sum_{i=0}^3b_i\ket{i}$ for $b=(0,1,2,3)$.
 

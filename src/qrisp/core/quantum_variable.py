@@ -338,7 +338,7 @@ class QuantumVariable:
         except ValueError:
             pass
 
-        # The following lists are used to indicate to the 
+        # The following lists are used to indicate to the
         # (un)flattening mechanism of Jax which attributes
         # of the QuantumVariable should be considered static
         # and which are dynamic.
