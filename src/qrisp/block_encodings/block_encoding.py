@@ -1066,3 +1066,106 @@ class BlockEncoding:
         """
         from qrisp.algorithms.gqsp import inversion
         return inversion(self, eps, kappa)
+    
+    def sim(self, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
+        r"""
+        Returns a BlockEncoding approximating Hamiltonian simulation of self.
+
+        For a block-encoded matrix $A$ and an evolution time $t$, this function returns a BlockEncoding that approximates the Hamiltonian simulation operation $e^{-itA}$.
+
+        Based on Jacobi-Anger expansion
+
+        .. math ::
+
+            e^{-it\cos(\theta)} \approx \sum_{n=-N}^{N}(-i)^nJ_n(t)e^{in\theta}
+
+        where $J_n(t)$ are Bessel functions of the first kind.
+
+        Parameters
+        ----------
+        t : ArrayLike
+            The scalar evolution time $t$. The default is 1.
+        N : int
+            The truncation index for the Bessel function expansion. The default is 1.
+
+        Returns
+        -------
+        BlockEncoding
+            A block encoding approximating $e^{-itA}$.
+
+        Examples
+        --------
+
+        Generate an Ising Hamiltonian $H$ and apply Hamiltonian simulation $e^{-itH}$ to the inital system state $\ket{0}$.
+
+        ::
+
+            # Restart the kernel to enable high-precision simulation
+            import os
+            os.environ["QRISP_SIMULATOR_FLOAT_THRESH"] = "1e-10"
+
+            from qrisp import *
+            from qrisp.operators import X, Y, Z
+
+            def create_ising_hamiltonian(L, J, B):
+                H = sum(-J * Z(i) * Z(i + 1) for i in range(L-1))  \
+                    + sum(B * X(i) for i in range(L))
+                return H
+
+            L = 4
+            H = create_ising_hamiltonian(L, 0.25, 0.5)
+            BE = H.pauli_block_encoding()
+
+            # Prepare inital system state |psi> = |0>
+            def operand_prep():
+                return QuantumFloat(L)
+
+            # Prepare state|psi(t)> = e^{itH} |psi>
+            def psi(t):
+                BE_sim = BE.sim(t=t, N=8)
+                operand = BE_sim.apply_rus(operand_prep)()
+                return operand
+
+            @terminal_sampling
+            def main(t):
+                return psi(t)
+
+            res_dict = main(0.5)
+
+            # Convert measurement probabilities to (absolute values of) amplitudes
+            for k, v in res_dict.items():
+                res_dict[k] = v**0.5
+
+            q = np.array([res_dict.get(key, 0) for key in range(16)])
+            print(q)
+            #[0.88288218 0.224682   0.22269639 0.05723058 0.22269632 0.05669449                   
+            # 0.0570588  0.01457775 0.22468192 0.05717859 0.05669445 0.0145699
+            # 0.05723059 0.01456992 0.01457775 0.00372438]
+
+        Finally, compare the quantum simulation result with the classical solution:
+
+        ::
+
+            import scipy as sp
+
+            H_mat = H.to_array()
+
+            # Prepare state|psi(t)> = e^{itH} |psi>
+            def psi_(t):
+                # Prepare inital system state |psi> = |0>
+                psi0 = np.zeros(2**H.find_minimal_qubit_amount())
+                psi0[0] = 1
+                
+                psi = sp.linalg.expm(-1.0j * t * H_mat) @ psi0
+                psi = psi / np.linalg.norm(psi)
+                return psi
+
+            c = np.abs(psi_(0.5))
+            print(c)
+            #[0.88288217 0.22468197 0.22269638 0.05723056 0.22269638 0.05669446
+            # 0.05705877 0.01457772 0.22468197 0.0571786  0.05669446 0.01456988
+            # 0.05723056 0.01456988 0.01457772 0.00372439]
+
+        """
+        from qrisp.algorithms.gqsp import hamiltonian_simulation
+        return hamiltonian_simulation(self, t, N)

@@ -49,7 +49,7 @@ def hamiltonian_simulation(H: QubitOperator | BlockEncoding, t: "ArrayLike" = 1,
     H : BlockEncoding | QubitOperator
         The Hermitian operator.
     t : ArrayLike
-        The evolution time $t$. The default is 1.
+        The scalar evolution time $t$. The default is 1.
     N : int
         The truncation index for the Bessel function expansion. The default is 1.
 
@@ -120,7 +120,7 @@ def hamiltonian_simulation(H: QubitOperator | BlockEncoding, t: "ArrayLike" = 1,
             E_values = []
 
             def operand_prep():
-                return QuantumVariable(H.find_minimal_qubit_amount())
+                return QuantumFloat(H.find_minimal_qubit_amount())
 
             def psi(t):
                 BE = hamiltonian_simulation(H, t=t, N=10)

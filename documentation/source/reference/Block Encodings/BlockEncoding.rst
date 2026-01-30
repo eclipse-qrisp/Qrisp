@@ -18,6 +18,7 @@ Methods
    BlockEncoding.dagger
    BlockEncoding.inv
    BlockEncoding.qubitization
+   BlockEncoding.sim
 
 Arithmetic
 ==========

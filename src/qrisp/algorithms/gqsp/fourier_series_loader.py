@@ -100,6 +100,7 @@ def fourier_series_loader(
 
     ::
 
+        # Restart the kernel to enable high-precision simulation
         import os
         os.environ["QRISP_SIMULATOR_FLOAT_THRESH"] = "1e-10"
 
