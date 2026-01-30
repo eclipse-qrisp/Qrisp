@@ -17,77 +17,42 @@
 """
 
 import numpy as np
-from qrisp import (
-    QuantumFloat,
-    conjugate,
-)
-from qrisp.operators import QubitOperator
-from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.algorithms.gqsp.helper_functions import poly2cheb, cheb2poly
 from qrisp.algorithms.cks import CKS_parameters, cheb_coefficients
 from qrisp.algorithms.gqsp.gqet import GQET
+from qrisp.block_encodings import BlockEncoding
 
 
-def GQET_inversion(A, b, eps, kappa = None):
-    """
-    Quantum Linear System solver via Generalized Quantum Eigenvalue Transformation (GQET).
+def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
+    r"""
+    Quantum Linear System Solver via Generalized Quantum Eigenvalue Transformation (GQET).
 
-    This function implements a GQET-based quantum circuit that approximates the matrix
-    inversion operation :math:`A^{-1}` applied to an input quantum state :math:`\\ket{b}`.
-    Using a Chebyshev polynomial approximation to the inverse function within error
-    tolerance ``eps``, it constructs a generalized eigenvalue transformation that
-    effectively solves the Quantum Linear System Problem (QLSP)
-    :math:`A \\vec{x} = \\vec{b}`.
+    For a block-encoded matrix $A$, this function implements a GQET-based quantum circuit that approximates the matrix inversion operation $A^{-1}$.
+    Using a Chebyshev polynomial approximation of the inverse function $1/x$ in the interval $[-1,-1/\kappa]\cup [1/\kappa,1]$ within an error tolerance $\epsilon$, 
+    it constructs a generalized eigenvalue transformation.
 
-    The block-encoding of the matrix :math:`A` can be provided either explicitly as a
-    block-encoding tuple, or implicitly via a Hermitian matrix which will be
-    block-encoded internally via a Pauli decomposition routine such as
-    :meth:`QubitOperator.pauli_block_encoding <qrisp.operators.qubit.QubitOperator.pauli_block_encoding>`.
-    In the former case, the condition number :math:`\\kappa` of :math:`A` must be
-    provided explicitly.
-
-    The inversion polynomial is constructed via
-    :func:`CKS_parameters` and :func:`cheb_coefficients`, yielding an odd Chebyshev
-    polynomial that approximates :math:`1/x` on the relevant spectral interval.
-    This odd polynomial is then embedded into a full Chebyshev series and rescaled
-    to the normalized Hamiltonian :math:`H / \\alpha` using :func:`_extend_and_rescale_cheb`.
-    :math:`A^{-1} \\ket{b}`.
+    When applied to an input quantum state $\ket{b}$, the circuit effectively solves the Quantum Linear System Problem (QLSP) $A\vec{x}=\vec{b}$.
 
     Parameters
     ----------
-    A : numpy.ndarray or scipy.sparse.csr_matrix or tuple
-        Either the Hermitian matrix :math:`A` of size :math:`N \\times N` from
-        the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
-        ``(U, state_prep, n)`` representing a preconstructed block-encoding
-        of :math:`A`. When a tuple is provided, the matrix itself is not required
-        and ``kappa`` must be specified.
-    b : numpy.ndarray or callable
-        Either a vector :math:`\\vec{b}` of the linear system, or a
-        callable that prepares the corresponding quantum state ``operand``.
+    A : BlockEncoding
+        The Hermitian operator.
     eps : float
-        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
-        :math:`\epsilon` of :math:`\ket{x}`.
-    kappa : float, optional
-        Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
-        a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
-        If ``A`` is provided as a matrix and ``kappa`` is ``None``, it is
-        estimated as ``numpy.linalg.cond(A)``.
+        Target precision :math:`\epsilon` such that $\|A^{-1}-A\|\leq\epsilon$.
+    kappa : float
+        An upper bound for the condition number $\kappa$ of $A$. 
 
     Returns
     -------
-    operand : QuantumVariable
-        Operand variable after applying the GQET protocol.
-    qbl : QuantumBool
-        Auxiliary variable after GQET protocol. Must be measured in state $\ket{0}$.
-    case : QuantumFloat
-        Auxiliary variable after GQET protocol. Must be measured in state $\ket{0}$.
+    BlockEncoding
+        A block encoding approximating $A^{-1}$.
 
     Examples
     --------
-    This example shows how to solve a QLSP using the ``GQET_inversion`` function directly,
-    without employing the :ref:`RUS` protocol in Qrisp.
 
-    First, define a Hermitian matrix :math:`A` and a right-hand side vector :math:`\\vec{b}`
+    Define a QSLP and solve it using :meth:`inversion`.
+
+    First, define a Hermitian matrix $A$ and a right-hand side vector $\vec{b}$.
 
     ::
 
@@ -100,90 +65,64 @@ def GQET_inversion(A, b, eps, kappa = None):
 
         b = np.array([0, 1, 1, 1])
 
-    Then, construct the GQET inversion circuit and perform a multi measurement:
+    Generate a block encoding of $A$ and use :meth:`inversion` to find a block-encoding approximating $A^{-1}$.
 
     ::
 
-        from qrisp.algorithms.gqet import GQET_inversion
-        from qrisp import multi_measurement
+        from qrisp import *
+        from qrisp.algorithms.gqsp import inversion
+        from qrisp.operators import QubitOperator
 
-        operand, qbl, case = GQET_inversion(A, b, 0.01)
-        res_dict = multi_measurement([operand, qbl, case])
+        H = QubitOperator.from_matrix(A, reverse_endianness=True)
+        BA = H.pauli_block_encoding()
 
-    This performs the measurement on all three QuantumVariables ``operand``, ``qbl``,
-    and ``case``. Since the GQET (and all other LCU-based approaches) is correctly
-    performed only when auxiliary QuantumVariables are measured in :math:`\\ket{0}`,
-    we need to construct a new dictionary and collect the measurements when this
-    condition is satisfied.
+        BA_inv = inversion(BA, 0.01, 2)
 
-    ::
+        # Prepares operand variable in state |b>
+        def prep_b():
+            operand = QuantumVariable(2)
+            prepare(operand, b)
+            return operand
 
-        new_dict = dict()
-        success_prob = 0
+        @terminal_sampling
+        def main():
+            operand = BA_inv.apply_rus(prep_b)()
+            return operand
 
-        for key, prob in res_dict.items():
-            # key = (operand_outcome, qbl_outcome, case_outcome)
-            if key[1] == 0 and key[2] == 0:
-                new_dict[key[0]] = prob
-                success_prob += prob
-
-        for key in new_dict.keys():
-            new_dict[key] = new_dict[key] / success_prob
-
-        for k, v in new_dict.items():
-            new_dict[k] = v**0.5
+        res_dict = main()
 
     Finally, compare the quantum simulation result with the classical solution:
 
     ::
 
-        q = np.array([new_dict.get(key, 0) for key in range(len(b))])
+        for k, v in res_dict.items():
+            res_dict[k] = v**0.5
+
+        q = np.array([res_dict.get(key, 0) for key in range(len(b))])
         c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
 
-        print("QUANTUM SIMULATION\\n", q, "\\nCLASSICAL SOLUTION\\n", c)
+        print("QUANTUM SIMULATION\n", q, "\nCLASSICAL SOLUTION\n", c)
         # QUANTUM SIMULATION
-        # [0.02755194 0.55708993 0.53033009 0.63846825] 
+        # [0.02844496 0.55538449 0.53010186 0.64010231] 
         # CLASSICAL SOLUTION
         # [0.02944539 0.55423278 0.53013239 0.64102936]
 
-    This approach enables execution of the compiled GQET inversion circuit on
-    :ref:`compatible quantum hardware or simulators <BackendInterface>`.
     """
 
-    if isinstance(A, tuple) and len(A) == 3:
-        kappa = kappa
-    else:
-        kappa = np.linalg.cond(A)
-
-    H = QubitOperator.from_matrix(A, reverse_endianness=True)
-
+    # The inversion polynomial is constructed using CKS_parameters and cheb_coefficients. 
+    # Since the approximation of \(1/x\) on the relevant spectral interval relies on an odd Chebyshev series, 
+    # cheb_coefficients returns an array containing only the coefficients for odd degrees. 
+    # To facilitate the GQET, this array is expanded into a full Chebyshev series by inserting zeros for all even-degree terms. 
+    # Finally, the series is adjusted to the block encoding's scale using the _extend_and_rescale_cheb utility.
     j_0, beta = CKS_parameters(A, eps, kappa)
     p_odd = cheb_coefficients(j_0, beta)
-
     p_odd = p_odd * (-1) ** np.arange(len(p_odd))
+    p = _extend_and_rescale_cheb(p_odd, A.alpha)
 
-    H = H.hermitize().to_pauli()
-    _, coeffs = H.unitaries()
-    alpha = np.sum(np.abs(coeffs))
+    A_inv = GQET(A, p, kind="Chebyshev")
 
-    # Extend the odd Chebyshev polynomial and rescale it for the normalized
-    # Hamiltonian H / alpha.
-    p = _extend_and_rescale_cheb(p_odd, alpha)
+    return A_inv
 
-    if callable(b):
-        b_prep = b
-
-    else:
-        def b_prep():
-            operand = QuantumFloat(int(np.log2(b.shape[0])))
-            prepare(operand, b)
-            return operand
-
-    operand = b_prep()
-
-    qbl, case = GQET(operand, H, p, kind="Chebyshev")
-
-    return operand, qbl, case
 
 def _extend_and_rescale_cheb(p_odd, alpha):
     
@@ -195,8 +134,7 @@ def _extend_and_rescale_cheb(p_odd, alpha):
     # Convert to Polynomial basis.
     p = cheb2poly(p)
 
-    # Apply the rescaling x -> x / alpha in polynomial basis:
-
+    # Apply the rescaling x -> x / alpha in polynomial basis.
     scaling_exponents = np.arange(len(p))
     scaling_factors = (1.0 / alpha) ** scaling_exponents
     p_scaled = p * scaling_factors

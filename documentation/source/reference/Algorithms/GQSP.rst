@@ -31,3 +31,4 @@ Miscellaneous
     hamiltonian_simulation
     convolve
     fourier_series_loader
+    inversion
