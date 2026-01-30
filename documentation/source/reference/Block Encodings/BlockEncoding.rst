@@ -17,6 +17,7 @@ Methods
    BlockEncoding.create_ancillas
    BlockEncoding.dagger
    BlockEncoding.inv
+   BlockEncoding.poly
    BlockEncoding.qubitization
    BlockEncoding.sim
 

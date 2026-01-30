@@ -63,6 +63,8 @@ def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polyno
     Examples
     --------
 
+    Define a Heisenberg Hamiltonian and apply a polynomial $p(H)$ to an initial system state.
+
     ::
 
         from qrisp import *
@@ -99,6 +101,8 @@ def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polyno
         E = H.expectation_value(psi_prep, precision=0.001)()
         print(E)
 
+    Define a polynomial and use GQET to obtain a BlockEncoding of $p(H)$.
+
     ::
 
         poly = jnp.array([1., 2., 1.])
@@ -108,11 +112,12 @@ def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polyno
             operand = BE.apply_rus(psi_prep)()
             return operand
 
+    Calculate the expectation value of $H$ for the transformed state $p(H)\ket{\psi}$.
+            
     ::
 
         @jaspify(terminal_sampling=True)
         def main(): 
-
             E = H.expectation_value(transformed_psi_prep, precision=0.001)()
             return E
 

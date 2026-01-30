@@ -28,7 +28,7 @@ from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.qtypes import QuantumBool
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Any, Callable, Literal, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -1169,3 +1169,28 @@ class BlockEncoding:
         """
         from qrisp.algorithms.gqsp import hamiltonian_simulation
         return hamiltonian_simulation(self, t, N)
+    
+    def poly(self, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial") -> BlockEncoding:
+        r"""
+        Returns a BlockEncoding representing a polynomial transformation of self.
+
+        For a block-encoded matrix $A$ and a polynomial $p$, this function returns a BlockEncoding for $p(A)$.
+
+        Parameters
+        ----------
+        p : ArrayLike
+            1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+        kind : {"Polynomial", "Chebyshev"}
+            The kind of ``p``. The default is ``"Polynomial"``.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding representing a polynomial transformation of self.
+
+        Examples
+        --------
+
+        """
+        from qrisp.algorithms.gqsp import GQET
+        return GQET(self, p, kind=kind)
