@@ -240,7 +240,7 @@ def extract_post_processing(jaspr, *args):
                     result = result ^ expectation
                 
                 # Insert result into context
-                context_dic[eqn.outvars[0]] = result
+                context_dic[eqn.outvars[0]] = jnp.array(result, dtype = bool)
                 return False
 
             # Skip other quantum primitives entirely
