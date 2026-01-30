@@ -73,29 +73,8 @@ class TracingQuantumSession:
         self.qubit_cache = None
         TracingQuantumSession.tr_qs_container.insert(0, self)
         self.qv_stack = []
-        self.gc_mode_stack = []
-        self.gc_mode = "auto"
 
-    def start_tracing(self, abs_qc, gc_mode=None):
-        """
-        Begin a new tracing scope using the given abstract circuit.
-
-        This method supports nested tracing by pushing the current tracing state
-        onto internal stacks and replacing it with a fresh tracing state.
-
-        Parameters
-        ----------
-        abs_qc : AbstractQuantumCircuit
-            The abstract circuit object to trace into.
-
-        gc_mode : str or None, optional
-            Garbage-collection mode for this tracing scope.
-
-            - If ``None``, the previous scope's garbage-collection mode is reused.
-            - Otherwise, overrides the session's current ``gc_mode`` for the
-              duration of this scope.
-        """
-
+    def start_tracing(self, abs_qc):
         self.abs_qc_stack.append(self.abs_qc)
         self.qubit_cache_stack.append(self.qubit_cache)
 
@@ -106,51 +85,12 @@ class TracingQuantumSession:
         self.qv_list = []
         self.deleted_qv_list = []
 
-        self.gc_mode_stack.append(self.gc_mode)
-        if gc_mode is None:
-            self.gc_mode = self.gc_mode_stack[-1]
-        else:
-            self.gc_mode = gc_mode
-
-    def garbage_collection(self, spare_qv_list):
-        """
-        Apply tracing-time garbage collection for quantum variables.
-
-        Depending on ``self.gc_mode``, this method either automatically deallocates
-        quantum variables that are no longer needed, or raises an error if such a
-        variable is detected.
-
-        Parameters
-        ----------
-        spare_qv_list : sequence
-            A sequence of quantum variables that must remain live after this GC step.
-            Any quantum variable in ``self.qv_list`` whose hash is not present
-            in ``spare_qv_list`` is considered out-of-scope.
-
-        """
-
-        if self.gc_mode in ["auto", "debug"]:
-            from qrisp import reset
-
-            spare_hash_list = [hash(qv) for qv in spare_qv_list]
-            for qv in list(self.qv_list):
-                if hash(qv) in spare_hash_list:
-                    continue
-                if self.gc_mode == "auto":
-                    reset(qv)
-                    qv.delete()
-                else:
-                    raise Exception(
-                        f"QuantumVariable {qv} went out of scope without deallocation"
-                    )
-
     def conclude_tracing(self):
 
         temp = self.abs_qc
         self.abs_qc = self.abs_qc_stack.pop(-1)
         self.qubit_cache = self.qubit_cache_stack.pop(-1)
         self.qv_list, self.deleted_qv_list = self.qv_stack.pop(-1)
-        self.gc_mode = self.gc_mode_stack.pop(-1)
 
         return temp
 
