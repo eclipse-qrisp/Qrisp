@@ -41,43 +41,87 @@ if TYPE_CHECKING:
 
 def QSVT(A, phi_qsvt):
     """
-    Core implementation of the Quantum Singular Value Transformation (QSVT) algorithm.
+    Performs `Quantum Singular Value Transformation (QSVT) <https://arxiv.org/abs/1806.01838>_`
 
-    This function constructs the quantum circuit performing singular value transformation 
-    on a block-encoded matrix A, applied to an input quantum state b, using 
-    a sequence of phase modulation angles ``phi_qsvt``. The implementation follows the 
-    alternating phase modulation framework of QSVT based on controlled reflections and 
-    block-encoding unitaries, as described by `Gilyén et al. <https://arxiv.org/abs/1806.01838>`_.
+    Applies polynomial transformations on the singular values of an operator that block encods the matrix A,
+    by tuning a sequence of phase angles that define the transformation.
 
-    The algorithm applies a sequence of phase modulated reflection operators interleaved 
-    with applications of the block-encoding unitary :math:`U` and its state preparation auxiliary, 
-    implementing a polynomial transformation of the singular values of A determined by 
-    the phase angles phi_qsvt.
+    The Quantum Singular Value Transformation is described as follows:
+    Suppose $A = \sum_i \sigma_i \ket{u_i}\bra{v_i}$ is the singular value decomposition (SVD) of $A$,
+      where $\sigma_i \in [0, 1]$ are the singular values. A block-encoding $U_A$ of $A$ satisfies 
+      $(\bra{0} \otimes I) U_A (\ket{0} \otimes I) = A / \alpha$ for some normalization constant $\alpha$.
+    
+    QSVT constructs a transformed unitary $U_P$ such that
+    
+      .. math::
+          (\bra{0} \otimes I) U_P (\ket{0} \otimes I) = P(A / \alpha)
+    
+      where $P$ is a polynomial whose coefficients are determined implicitly by the chosen sequence 
+      of phase modulation angles $\phi = (\phi_0, \phi_1, \dots, \phi_d)$.
 
-    This function implements the core QSVT circuit without repeat-until-success or post-selection.
+    
 
     Parameters
     ----------
-    A : tuple or numpy.ndarray
-        Either a 3-tuple (U, state_prep, n) representing the block-encoding unitary and its 
-        associated state preparation callable and ancilla qubit size, or a Hermitian matrix 
-        that is internally block-encoded.
-    operand_prep : callable
-        Function returning the (operand) QuantumVariable in the initial system state $\ket{\psi_0}$, i.e.,
-        ``operand=operand_prep()``.
+    A : BlockEncoding
+        Block encoding of the input operator (not necessarily Hermitian).
+
     phi_qsvt : tuple or list of floats
-        Phase modulation angles phi used in the singular value transformation polynomial.
+        Sequence of phase modulation angles $\phi$ defining the transformation polynomial.
 
     Returns
     -------
-    operand : QuantumVariable
-        Operand variable after applying the QSVT protocol.
-    case : QuantumFloat
-        Auxiliary variable used for the block-encoding after applying the QSVT protocol.
-        Must be measured in state $\ket{0}$ for the QSVT protocol to be successful.
-    temp : QuantumBool
-        Auxiliary variable used for the reflections after applying the QSVT protocol.
-        Must be measured in state $\ket{0}$ for the QSVT protocol to be successful.
+    BlockEncoding
+        A block encoding of the transformed operator $P(A/\alpha)$.
+    
+    Examples
+    --------
+
+    ::
+
+        from qrisp import *
+        from qrisp.algorithms.qsvt import QSVT_inversion
+        from qrisp.operators import QubitOperator
+        import numpy as np
+
+        A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
+              [0.14516978, 0.68701415, -0.04929867, -0.00999921],
+              [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
+              [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
+
+        b = np.array([0, 1, 1, 1])
+
+        H = QubitOperator.from_matrix(A, reverse_endianness=True)
+        BA = H.pauli_block_encoding()
+
+        BA_inv = QSVT_inversion(BA, 0.01, 2)
+
+        # Prepares operand variable in state |b>
+        def prep_b():
+            operand = QuantumVariable(2)
+            prepare(operand, b)
+            return operand
+
+        @terminal_sampling()
+        def main():
+            operand = BA_inv.apply_rus(prep_b)()
+            return operand
+
+        res_dict = main()
+
+        for k, v in res_dict.items():
+            res_dict[k] = v**0.5
+
+        q = np.array([res_dict.get(key, 0) for key in range(len(b))])
+        c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
+
+        print("QUANTUM SIMULATION\n", q, "\nCLASSICAL SOLUTION\n", c)
+        # QUANTUM SIMULATION
+        # [0.02846016 0.55539072 0.53011626 0.6400843 ] 
+        # CLASSICAL SOLUTION
+        # [0.02944539 0.55423278 0.53013239 0.64102936]
+
+
     """
 
     m = len(A.anc_templates)
@@ -118,44 +162,29 @@ def QSVT_inversion(A, eps, kappa):
     """
     Quantum Linear System solver via Quantum Singular Value Transformation (QSVT).
 
-    This function implements a QSVT-based quantum circuit that approximates the matrix 
-    inversion operation :math:`A^{-1}` applied to an input quantum state :math:`\ket{b}` representing. 
+    This function performs QSVT on a block encoding that approximates the matrix 
+    inversion operation :math:`A^{-1}` applied to an input quantum state :math:`\ket{b}`. 
     Using polynomial phase factor sequences generated to approximate 
     the inverse function within error tolerance ``eps``, it constructs the quantum singular 
     value transformation that effectively solves the Quantum Linear System Problem (QLSP) :math:`A\\vec{x}=\\vec{b}`.
 
-    The block-encoding of matrix :math:`A` can be provided either explicitly as a block-encoding tuple,
-    or implicitly via a Hermitian matrix which will be block-encoded internally via :meth:`Pauli decomposition <qrisp.operators.qubit.QubitOperator.pauli_block_encoding>`. 
-    Note that in the former case, the condition number :math:`\kappa` of :math:`A` also has to be provided. 
-
-    This function implements the core QSVT circuit without repeat-until-success or post-selection.
+    The condition number :math:`\kappa` of the block encoded matrix :math:`A` also has be provided. 
 
     Parameters
     ----------
-    A : numpy.ndarray or scipy.sparse.csr_matrix or tuple
-        Either the Hermitian matrix :math:`A` of size :math:`N \\times N` from
-        the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
-        ``(U, state_prep, n)`` representing a preconstructed block-encoding.
-    b : numpy.ndarray or callable
-        Either a vector :math:`\\vec{b}` of the linear system, or a
-        callable that prepares the corresponding quantum state ``operand``.
+    A : BlockEncoding
+        Block encoding of the input operator (not necessarily Hermitian).
     eps : float
         Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
         :math:`\epsilon` of :math:`\ket{x}`.
-    kappa : float, optional
+    kappa : float
         Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
         a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
 
     Returns
     -------
-    operand : QuantumVariable
-        Operand variable after applying the QSVT protocol.
-    case : QuantumFloat
-        Auxiliary variable used for the block-encoding after applying the QSVT protocol.
-        Must be measured in state $\ket{0}$ for the QSVT protocol to be successful.
-    temp : QuantumBool
-        Auxiliary variable used for the reflections after applying the QSVT protocol.
-        Must be measured in state $\ket{0}$ for the QSVT protocol to be successful.
+    BlockEncoding
+        A block encoding of the transformed operator $A^{-1}$.
     """
 
     def inversion_angles(eps, kappa):
@@ -201,7 +230,6 @@ def QSVT_inversion(A, eps, kappa):
         phi_qsvt[-1] = phi_qsp[-1] - np.pi / 4
 
         return np.array(phi_qsvt), s
-
 
     phi_inversion, _ = inversion_angles(eps, kappa)
     print(phi_inversion)
