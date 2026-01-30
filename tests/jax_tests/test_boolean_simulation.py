@@ -180,7 +180,7 @@ def test_parity_boolean_simulation():
     assert result == False, f"Expected False (match), got {result}"
 
 
-def test_parity_boolean_simulation_with_scan():
+def test_parity_boolean_simulation_inside_loop():
     """Test parity with array inputs (scan primitive) in boolean simulation."""
     from qrisp import QuantumVariable, x, measure, boolean_simulation
     from qrisp.jasp import parity

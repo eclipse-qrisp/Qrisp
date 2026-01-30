@@ -248,9 +248,8 @@ def test_parity_array():
     
     jaspr = make_jaspr(test_function)()
     
-    # Check that lax.map is used for element-wise application
     jaxpr_str = str(jaspr.jaxpr)
-    assert 'map' in jaxpr_str or 'scan' in jaxpr_str  # map lowers to scan
+    assert 'while' in jaxpr_str
     assert 'parity' in jaxpr_str
     
     # Test shape mismatch error

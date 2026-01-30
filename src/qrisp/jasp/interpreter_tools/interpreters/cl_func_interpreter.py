@@ -307,30 +307,27 @@ def process_parity(eqn, context_dic):
         # XOR result with expectation (0 if match, 1 if mismatch)
         result = result ^ expectation
     
-    context_dic[eqn.outvars[0]] = result
+    context_dic[eqn.outvars[0]] = jnp.array(result, dtype = bool)
 
 
 def process_while(eqn, context_dic):
-    for invar in eqn.invars:
-        if isinstance(invar.aval, AbstractQuantumCircuit):
-            break
-    else:
-        return True
 
     body_jaxpr = eqn.params["body_jaxpr"]
     cond_jaxpr = eqn.params["cond_jaxpr"]
     overall_constant_amount= eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
 
     invalues = extract_invalues(eqn, context_dic)
+    
+    if isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
+        bit_array_padding = invalues[-1][0].shape[0] * 64
+    else:
+        bit_array_padding = 0
+    
 
-    if isinstance(body_jaxpr.jaxpr.invars[-1].aval, AbstractQuantumCircuit):
-        converted_body_jaxpr = jaspr_to_cl_func_jaxpr(
-            body_jaxpr.jaxpr, invalues[-1][0].shape[0] * 64
-        )
-    if isinstance(cond_jaxpr.jaxpr.invars[-1].aval, AbstractQuantumCircuit):
-        converted_cond_jaxpr = jaspr_to_cl_func_jaxpr(
-            cond_jaxpr.jaxpr, invalues[-1][0].shape[0] * 64
-        )
+    body_jaxpr = jaspr_to_cl_func_jaxpr(
+        body_jaxpr.jaxpr, bit_array_padding)
+    cond_jaxpr = jaspr_to_cl_func_jaxpr(
+        cond_jaxpr.jaxpr, bit_array_padding)
 
     def body_fun(args):
         
@@ -339,7 +336,7 @@ def process_while(eqn, context_dic):
         
         flattened_invalues = flatten_signature(constants + carries, body_jaxpr.jaxpr.invars)
         
-        body_res = eval_jaxpr(converted_body_jaxpr)(*(flattened_invalues))
+        body_res = eval_jaxpr(body_jaxpr)(*(flattened_invalues))
         
         unflattened_body_outvalues = unflatten_signature(body_res, body_jaxpr.jaxpr.outvars)
         
@@ -352,7 +349,7 @@ def process_while(eqn, context_dic):
         
         flattened_invalues = flatten_signature(constants + carries, cond_jaxpr.jaxpr.invars)
         
-        return eval_jaxpr(converted_cond_jaxpr)(*flattened_invalues)
+        return eval_jaxpr(cond_jaxpr)(*flattened_invalues)
 
     outvalues = while_loop(cond_fun, body_fun, invalues)[overall_constant_amount:]
     
@@ -646,16 +643,12 @@ def flatten_signature(values, variables):
 def ensure_conversion(jaxpr, invalues):
 
     bit_array_padding = 0
-    convert = False
     for i in range(len(jaxpr.invars)):
         invar = jaxpr.invars[i]
         if isinstance(
             invar.aval, (AbstractQuantumCircuit, AbstractQubitArray, AbstractQubit)
         ):
-            convert = True
             if isinstance(invar.aval, AbstractQuantumCircuit):
                 bit_array_padding = invalues[i][0].shape[0] * 64
 
-    if convert:
-        return jaspr_to_cl_func_jaxpr(jaxpr, bit_array_padding)
-    return ClosedJaxpr(jaxpr, [])
+    return jaspr_to_cl_func_jaxpr(jaxpr, bit_array_padding)
