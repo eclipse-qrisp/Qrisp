@@ -321,7 +321,7 @@ def q_fractional(a: QuantumFloat) -> QuantumFloat:
     for i in jrange(a.size):
         cx(a[i], b[i])
 
-    with control(a.signed):
+    if a.signed:
         flag = QuantumFloat(1)
         cx(a[-1], flag)
         with control(flag): 
@@ -344,7 +344,7 @@ def q_fractional(a: QuantumFloat) -> QuantumFloat:
         cx(a[-1], flag)
         flag.delete()
         
-    with control(not a.signed):  
+    if not a.signed:  
         #If the QuantumFloat is unsigned: substract the floor
         c = q_floor(a)
         b -= c

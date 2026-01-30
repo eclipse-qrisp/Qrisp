@@ -33,8 +33,8 @@ REQUIREMENTS = [
                 "pyyaml",
                 "requests",
                 "psutil",
-                "jax==0.6.2",
-                "jaxlib==0.6.2"]
+                "jax==0.7.1",
+                "jaxlib==0.7.1"]
 
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -59,5 +59,5 @@ setuptools.setup(
         'iqm': ['iqm-client[qiskit]']
     },
     packages=setuptools.find_packages(where="src"),
-    python_requires=">=3.10",
+    python_requires=">=3.11",
 )
