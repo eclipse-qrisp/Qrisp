@@ -1100,9 +1100,9 @@ class BlockEncoding:
 
         ::
 
-            # Restart the kernel to enable high-precision simulation
-            import os
-            os.environ["QRISP_SIMULATOR_FLOAT_THRESH"] = "1e-10"
+            # For larger systems, restart the kernel and adjust simulator precision
+            # import os
+            # os.environ["QRISP_SIMULATOR_FLOAT_THRESH"] = "1e-10"
 
             from qrisp import *
             from qrisp.operators import X, Y, Z
@@ -1190,6 +1190,62 @@ class BlockEncoding:
 
         Examples
         --------
+
+        First, define a Hermitian matrix $A$ and a right-hand side vector $\vec{b}$.
+
+        ::
+
+            import numpy as np
+
+            A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
+                        [0.14516978, 0.68701415, -0.04929867, -0.00999921],
+                        [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
+                        [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
+
+            b = np.array([0, 1, 1, 1])
+
+        Generate a block encoding $A$ of and use :meth:`poly` to find a block-encoding of $p(A)$.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import QubitOperator
+
+            H = QubitOperator.from_matrix(A, reverse_endianness=True)
+            BA = H.pauli_block_encoding()
+
+            BA_poly = BA.poly(np.array([1.,2.,1.]))
+
+            # Prepares operand variable in state |b>
+            def prep_b():
+                operand = QuantumVariable(2)
+                prepare(operand, b)
+                return operand
+
+            @terminal_sampling
+            def main():
+                operand = BA_poly.apply_rus(prep_b)()
+                return operand
+
+            res_dict = main()
+
+        Finally, compare the quantum simulation result with the classical solution:
+
+        ::
+
+            # Convert measurement probabilities to (absolute values of) amplitudes
+            for k, v in res_dict.items():
+                res_dict[k] = v**0.5
+
+            q = np.array([res_dict.get(key, 0) for key in range(len(b))])
+            c = (np.eye(4) + A + A @ A) @ b
+            c = c / np.linalg.norm(c)
+
+            print("QUANTUM SIMULATION\n", q, "\nCLASSICAL SOLUTION\n", c)
+            # QUANTUM SIMULATION
+            #  [0.02986315 0.57992481 0.62416743 0.52269535] 
+            # CLASSICAL SOLUTION
+            # [-0.02785869  0.57879093  0.62100135  0.52780894]
 
         """
         from qrisp.algorithms.gqsp import GQET
