@@ -873,14 +873,103 @@ def make_qc_extraction_eqn_evaluator(qc):
         
         elif prim_name == "scatter":
             # scatter: Update array elements at specified indices
-            # Used in array assignment operations
-            # If inputs contain measurement data, we mark the affected entries as processed
+            # Used in array assignment operations (e.g., building arrays in loops)
+            #
+            # Scatter has the form: scatter(operand, indices, updates)
+            # - operand: The array being updated
+            # - indices: Where to place the updates
+            # - updates: The values to insert
+            #
+            # We need to handle this carefully:
+            # - If updates is a Clbit, we're building an array of measurements
+            # - If updates is ProcessedMeasurement, mark that position as processed
+            # - If operand is MeasurementArray, we update it properly
             
-            result = handle_classical_processing(qc, invalues)
-            if result is not None:
+            operand = invalues[0]
+            indices = invalues[1]
+            updates = invalues[2] if len(invalues) > 2 else None
+            
+            # Unwrap updates if it's a single-element list
+            if isinstance(updates, list) and len(updates) == 1:
+                updates = updates[0]
+            
+            # Helper to get index from various index formats
+            def get_scatter_index(indices):
+                if hasattr(indices, 'item'):
+                    return int(indices.item())
+                elif hasattr(indices, '__len__') and len(indices) == 1:
+                    return int(indices[0])
+                else:
+                    return int(indices)
+            
+            # Check if we're working with measurement data
+            if isinstance(operand, MeasurementArray):
+                idx = get_scatter_index(indices)
+                
+                # Create a copy of the data
+                new_data = operand.data.copy()
+                
+                if isinstance(updates, Clbit):
+                    # Insert a measurement result at the given index
+                    clbit_idx = qc.clbits.index(updates)
+                    neg_idx = clbit_idx - len(qc.clbits)
+                    new_data[idx] = neg_idx
+                elif isinstance(updates, ProcessedMeasurement):
+                    # Mark this position as processed
+                    new_data[idx] = MeasurementArray.PROCESSED_VALUE
+                elif isinstance(updates, (bool, np.bool_)):
+                    # Insert a known boolean value
+                    new_data[idx] = int(updates)
+                elif isinstance(updates, MeasurementArray):
+                    # Scattering another MeasurementArray
+                    # For simplicity, mark as processed
+                    new_data[idx] = MeasurementArray.PROCESSED_VALUE
+                else:
+                    # Unknown update type - mark as processed to be safe
+                    new_data[idx] = MeasurementArray.PROCESSED_VALUE
+                
+                result = MeasurementArray(qc, new_data)
                 insert_outvalues(eqn, context_dic, result)
                 return
+            
+            elif isinstance(updates, Clbit):
+                # Operand is not a MeasurementArray but updates is a Clbit
+                # This happens when building an array from measurements in a loop
+                # Convert the operand to MeasurementArray first
+                
+                # Get the shape of the operand
+                if hasattr(operand, 'shape'):
+                    size = int(np.prod(operand.shape))
+                elif hasattr(operand, '__len__'):
+                    size = len(operand)
+                else:
+                    size = 1
+                
+                # Initialize MeasurementArray with the operand's values
+                # (assume all False/0 for boolean arrays)
+                new_data = np.zeros(size, dtype=np.int64)
+                
+                # Set the update at the given index
+                idx = get_scatter_index(indices)
+                clbit_idx = qc.clbits.index(updates)
+                neg_idx = clbit_idx - len(qc.clbits)
+                new_data[idx] = neg_idx
+                
+                result = MeasurementArray(qc, new_data)
+                insert_outvalues(eqn, context_dic, result)
+                return
+            
+            elif isinstance(updates, ProcessedMeasurement):
+                # Operand is not a MeasurementArray but updates is ProcessedMeasurement
+                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
+                return
+            
+            elif isinstance(operand, ProcessedMeasurement):
+                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
+                return
+            
             else:
+                # No measurement data involved
                 return True
         
         # -----------------------------------------------------------------

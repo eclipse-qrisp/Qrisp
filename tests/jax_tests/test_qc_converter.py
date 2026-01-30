@@ -180,8 +180,10 @@ def test_parity_to_qc():
     jaspr = make_jaspr(parity_while_test)()
     result, qc = jaspr.to_qc()
     
-    # Array parity should also return ProcessedMeasurement
-    assert isinstance(result, ProcessedMeasurement), f"Expected ProcessedMeasurement for array parity, got {type(result)}"
+    # Array parity returns a MeasurementArray with Clbit references (negative values)
+    # because parity operations create ParityOperations that produce new Clbits
+    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import MeasurementArray
+    assert isinstance(result, MeasurementArray), f"Expected MeasurementArray for array parity, got {type(result)}"
 
 
 def test_measurement_array_basic():
@@ -569,10 +571,11 @@ def test_measurement_array_parity_with_unprocessed():
     import jax.numpy as jnp
     from qrisp import Clbit
     from qrisp.jasp import parity
+    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import MeasurementArray
     
     # When parity is called with an array, it uses the while primitive internally,
-    # which returns ProcessedMeasurement since while involves operations that
-    # can't be directly represented in a QuantumCircuit.
+    # which returns a MeasurementArray with processed entries since while involves 
+    # operations that can't be directly represented in a QuantumCircuit.
     def parity_array_test():
         qv = QuantumVariable(3)
         x(qv[0])
@@ -592,10 +595,11 @@ def test_measurement_array_parity_with_unprocessed():
     jaspr = make_jaspr(parity_array_test)()
     result, qc = jaspr.to_qc()
     
-    # Array parity uses scan primitive, which returns ProcessedMeasurement
+    # Array parity returns a MeasurementArray with Clbit references (negative values)
+    # because parity operations create ParityOperations that produce new Clbits
     # For direct Clbit parity, use scalar arguments: parity(m0, m1, m2)
-    assert isinstance(result, ProcessedMeasurement), \
-        f"Array parity (via scan) should return ProcessedMeasurement, got {type(result)}"
+    assert isinstance(result, MeasurementArray), \
+        f"Array parity (via scan) should return MeasurementArray, got {type(result)}"
 
 
 def test_measurement_array_chain_operations():
