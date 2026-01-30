@@ -17,7 +17,7 @@
 """
 
 from jax import make_jaxpr
-from qrisp import QuantumVariable, cx, QuantumCircuit, QuantumFloat, x, rz, measure, control, QuantumBool
+from qrisp import QuantumVariable, cx, QuantumCircuit, QuantumFloat, x, rz, measure, control, QuantumBool, QuantumArray
 from qrisp.jasp import qache, flatten_pjit, make_jaspr, ProcessedMeasurement
 
 def test_qc_converter():
@@ -663,4 +663,150 @@ def test_measurement_array_chain_operations():
         f"Third element should be processed, got {result.data[2]}"
     assert result.data[3] == MeasurementArray.PROCESSED_VALUE, \
         f"Fourth element should be processed, got {result.data[3]}"
+
+
+def test_scatter_with_clbit_updates():
+    """Test scatter primitive handling with Clbit updates (used by QuantumArray measurement)."""
+    import jax.numpy as jnp
+    from qrisp import Clbit
+    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import MeasurementArray
+    
+    # Test 1: Simple QuantumArray measurement (uses scatter internally via while loop)
+    def simple_quantum_array_measure():
+        qa = QuantumArray(qtype=QuantumBool(), shape=(2,))
+        meas = measure(qa)
+        return meas
+    
+    jaspr = make_jaspr(simple_quantum_array_measure)()
+    result, qc = jaspr.to_qc()
+    
+    assert isinstance(result, MeasurementArray), \
+        f"QuantumArray measurement should return MeasurementArray, got {type(result)}"
+    assert result.data.shape == (2,), f"Expected shape (2,), got {result.data.shape}"
+    # Should contain Clbit references (negative values)
+    assert all(v < 0 for v in result.data.flatten()), \
+        f"All values should be Clbit references (negative), got {result.data}"
+    
+    # Test 2: QuantumArray with different shape (stored flattened internally)
+    def shaped_quantum_array_measure():
+        qa = QuantumArray(qtype=QuantumBool(), shape=(2, 3))
+        meas = measure(qa)
+        return meas
+    
+    jaspr = make_jaspr(shaped_quantum_array_measure)()
+    result, qc = jaspr.to_qc()
+    
+    assert isinstance(result, MeasurementArray), \
+        f"QuantumArray measurement should return MeasurementArray, got {type(result)}"
+    # MeasurementArray stores data flattened, so 2x3 becomes 6 elements
+    assert result.data.size == 6, f"Expected 6 elements, got {result.data.size}"
+    # Should have 6 unique Clbit references
+    unique_refs = set(result.data.flatten())
+    assert len(unique_refs) == 6, f"Expected 6 unique Clbit refs, got {len(unique_refs)}"
+    
+    # Test 3: Multiple QuantumArray measurements
+    def multiple_quantum_array_measure():
+        qa_0 = QuantumArray(qtype=QuantumBool(), shape=(2,))
+        qa_1 = QuantumArray(qtype=QuantumBool(), shape=(3,))
+        meas_0 = measure(qa_0)
+        meas_1 = measure(qa_1)
+        return meas_0, meas_1
+    
+    jaspr = make_jaspr(multiple_quantum_array_measure)()
+    result_0, result_1, qc = jaspr.to_qc()
+    
+    assert isinstance(result_0, MeasurementArray), f"First result should be MeasurementArray"
+    assert isinstance(result_1, MeasurementArray), f"Second result should be MeasurementArray"
+    assert result_0.data.shape == (2,), f"Expected shape (2,), got {result_0.data.shape}"
+    assert result_1.data.shape == (3,), f"Expected shape (3,), got {result_1.data.shape}"
+    
+    # All Clbit references should be unique across both arrays
+    all_refs = list(result_0.data.flatten()) + list(result_1.data.flatten())
+    assert len(set(all_refs)) == 5, f"Expected 5 unique Clbit refs total, got {len(set(all_refs))}"
+
+
+def test_quantum_array_measurement_with_parity():
+    """Test the user's example: QuantumArray measurement with parity operation."""
+    import jax.numpy as jnp
+    from qrisp.jasp import parity
+    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import MeasurementArray
+    
+    # User's exact example
+    @make_jaspr
+    def array_test():
+        qa_0 = QuantumArray(qtype=QuantumBool(), shape=(2, 1))
+        qa_1 = QuantumArray(qtype=QuantumBool(), shape=(2, 1))
+        meas_0 = measure(qa_0)
+        meas_1 = measure(qa_1)
+        return parity(meas_0, meas_1)
+    
+    jaspr = array_test()
+    result, qc = jaspr.to_qc()
+    
+    # Result should be a MeasurementArray with parity Clbit references
+    assert isinstance(result, MeasurementArray), \
+        f"Parity of QuantumArray measurements should return MeasurementArray, got {type(result)}"
+    
+    # The circuit should have classical bits for the measurements and parity results
+    # 4 measurements (2 from each QuantumArray) + 2 parity results = 6 clbits
+    assert len(qc.clbits) == 6, \
+        f"Expected 6 classical bits (4 measurements + 2 parity), got {len(qc.clbits)}"
+    
+    # Test with single-dimensional arrays
+    @make_jaspr  
+    def array_test_1d():
+        qa_0 = QuantumArray(qtype=QuantumBool(), shape=(3,))
+        qa_1 = QuantumArray(qtype=QuantumBool(), shape=(3,))
+        meas_0 = measure(qa_0)
+        meas_1 = measure(qa_1)
+        return parity(meas_0, meas_1)
+    
+    jaspr = array_test_1d()
+    result, qc = jaspr.to_qc()
+    
+    assert isinstance(result, MeasurementArray), \
+        f"Parity result should be MeasurementArray, got {type(result)}"
+    assert result.data.shape == (3,), f"Expected shape (3,), got {result.data.shape}"
+    
+    # 6 measurements + 3 parity results = 9 clbits
+    assert len(qc.clbits) == 9, \
+        f"Expected 9 classical bits (6 measurements + 3 parity), got {len(qc.clbits)}"
+
+
+def test_quantum_array_measurement_operations():
+    """Test various operations on QuantumArray measurement results."""
+    import jax.numpy as jnp
+    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import MeasurementArray
+    
+    # Test: Element access from QuantumArray measurement
+    def element_access_test():
+        qa = QuantumArray(qtype=QuantumBool(), shape=(3,))
+        meas = measure(qa)
+        return meas[1]  # Access second element
+    
+    jaspr = make_jaspr(element_access_test)()
+    result, qc = jaspr.to_qc()
+    
+    from qrisp import Clbit
+    assert isinstance(result, Clbit), \
+        f"Element access should return Clbit, got {type(result)}"
+    
+    # Test: Concatenate QuantumArray measurements
+    def concat_test():
+        qa_0 = QuantumArray(qtype=QuantumBool(), shape=(2,))
+        qa_1 = QuantumArray(qtype=QuantumBool(), shape=(3,))
+        meas_0 = measure(qa_0)
+        meas_1 = measure(qa_1)
+        combined = jnp.concatenate([meas_0, meas_1])
+        return combined
+    
+    jaspr = make_jaspr(concat_test)()
+    result, qc = jaspr.to_qc()
+    
+    assert isinstance(result, MeasurementArray), \
+        f"Concatenated measurements should be MeasurementArray, got {type(result)}"
+    assert result.data.shape == (5,), f"Expected shape (5,), got {result.data.shape}"
+    # All should be Clbit references
+    assert all(v < 0 for v in result.data.flatten()), \
+        f"All values should be Clbit refs, got {result.data}"
 
