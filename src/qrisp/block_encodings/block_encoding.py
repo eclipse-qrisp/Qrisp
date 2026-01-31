@@ -1112,11 +1112,9 @@ class BlockEncoding:
         ::
 
             from qrisp import *
-            from qrisp.algorithms.gqsp import inversion
-            from qrisp.operators import QubitOperator
+            from qrisp.block_encodings import BlockEncoding
 
-            H = QubitOperator.from_matrix(A, reverse_endianness=True)
-            BA = H.pauli_block_encoding()
+            BA = BlockEncoding.from_array(A)
 
             BA_inv = BA.inv(0.01, 2)
 
@@ -1295,10 +1293,9 @@ class BlockEncoding:
         ::
 
             from qrisp import *
-            from qrisp.operators import QubitOperator
+            from qrisp.block_encodings import BlockEncoding
 
-            H = QubitOperator.from_matrix(A, reverse_endianness=True)
-            BA = H.pauli_block_encoding()
+            BA = BlockEncoding.from_array(A)
 
             BA_poly = BA.poly(np.array([1.,2.,1.]))
 
@@ -1324,14 +1321,14 @@ class BlockEncoding:
                 res_dict[k] = v**0.5
 
             q = np.array([res_dict.get(key, 0) for key in range(len(b))])
-            c = (np.eye(4) + A + A @ A) @ b
+            c = (np.eye(4) + 2 * A + A @ A) @ b
             c = c / np.linalg.norm(c)
 
             print("QUANTUM SIMULATION\n", q, "\nCLASSICAL SOLUTION\n", c)
             # QUANTUM SIMULATION
             #  [0.02986315 0.57992481 0.62416743 0.52269535] 
             # CLASSICAL SOLUTION
-            # [-0.02785869  0.57879093  0.62100135  0.52780894]
+            # [-0.02986321  0.57992485  0.6241675   0.52269522]
 
         """
         from qrisp.algorithms.gqsp import GQET
