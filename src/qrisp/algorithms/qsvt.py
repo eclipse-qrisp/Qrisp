@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 
 
 def QSVT(A, phi_qsvt):
-    """
+    r"""
     Performs `Quantum Singular Value Transformation (QSVT) <https://arxiv.org/abs/1806.01838>_`
 
     Applies polynomial transformations on the singular values of an operator that block encods the matrix A,
@@ -48,18 +48,17 @@ def QSVT(A, phi_qsvt):
 
     The Quantum Singular Value Transformation is described as follows:
     Suppose $A = \sum_i \sigma_i \ket{u_i}\bra{v_i}$ is the singular value decomposition (SVD) of $A$,
-      where $\sigma_i \in [0, 1]$ are the singular values. A block-encoding $U_A$ of $A$ satisfies 
-      $(\bra{0} \otimes I) U_A (\ket{0} \otimes I) = A / \alpha$ for some normalization constant $\alpha$.
+    where $\sigma_i \in [0, 1]$ are the singular values. A block-encoding $U_A$ of $A$ satisfies 
+    $(\bra{0} \otimes I) U_A (\ket{0} \otimes I) = A / \alpha$ for some normalization constant $\alpha$.
     
     QSVT constructs a transformed unitary $U_P$ such that
     
-      .. math::
-          (\bra{0} \otimes I) U_P (\ket{0} \otimes I) = P(A / \alpha)
-    
-      where $P$ is a polynomial whose coefficients are determined implicitly by the chosen sequence 
-      of phase modulation angles $\phi = (\phi_0, \phi_1, \dots, \phi_d)$.
+    .. math::
 
+        (\bra{0} \otimes I) U_P (\ket{0} \otimes I) = P(A / \alpha)
     
+    where $P$ is a polynomial whose coefficients are determined implicitly by the chosen sequence 
+    of phase modulation angles $\phi = (\phi_0, \phi_1, \dots, \phi_d)$.
 
     Parameters
     ----------

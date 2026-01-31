@@ -16,16 +16,4 @@ Inversion
 .. autosummary:: 
     :toctree: generated/
     
-    QSVT_inversion
-
-Circuit construction
---------------------
-
-.. autosummary:: 
-    :toctree: generated/
-    
-    inner_QSVT
-    inner_QSVT_inversion
-
-
-    
+    QSVT_inversion    
