@@ -17,10 +17,35 @@
 """
 
 import numpy as np
-import jax.numpy as jnp
 import pytest
 from qrisp import *
 from qrisp.block_encodings import BlockEncoding
+from qrisp.operators import X, Y, Z
+
+
+def test_block_encoding_from_array():
+    A = np.array([[0,1,0,1],[1,0,0,0],[0,0,1,0],[1,0,0,0]])
+    B = BlockEncoding.from_array(A)
+
+    @terminal_sampling
+    def main():
+        return B.apply_rus(lambda: QuantumFloat(2))()
+
+    res = main()
+    assert res == {1.0: 0.5, 3.0: 0.5}
+
+
+def test_block_encoding_from_operator():
+    H = X(0)*X(1) + 0.2*Y(0)*Y(1)
+    B = BlockEncoding.from_operator(H)
+
+    @terminal_sampling
+    def main():
+        return B.apply_rus(lambda: QuantumFloat(2))()
+
+    res = main()
+    assert res == {3.0: 1.0}
+
 
 def test_block_encoding_alpha_dynamic():
 
