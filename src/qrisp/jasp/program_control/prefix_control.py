@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from jax.lax import fori_loop, while_loop, cond
+from jax.lax import fori_loop, while_loop, cond, switch
 from jax.extend.core import ClosedJaxpr
 import jax
 
@@ -28,7 +28,7 @@ from qrisp.jasp.primitives import AbstractQuantumCircuit
 def q_while_loop(cond_fun, body_fun, init_val):
     """
     Jasp compatible version of
-    `jax.lax.while_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.while_loop.html#jax.lax.while_loop>`_
+    `jax.lax.while_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.while_loop.html#jax.lax.while_loop>`_.
     The parameters and semantics are the same as for the Jax version.
 
     In particular the following loop is performed
@@ -156,7 +156,7 @@ def q_while_loop(cond_fun, body_fun, init_val):
 def q_fori_loop(lower, upper, body_fun, init_val):
     """
     Jasp compatible version of
-    `jax.lax.fori_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.fori_loop.html#jax.lax.fori_loop>`_
+    `jax.lax.fori_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.fori_loop.html#jax.lax.fori_loop>`_.
     The parameters and semantics are the same as for the Jax version.
 
     In particular the following loop is performed
@@ -230,7 +230,7 @@ def q_fori_loop(lower, upper, body_fun, init_val):
 def q_cond(pred, true_fun, false_fun, *operands):
     r"""
     Jasp compatible version of
-    `jax.lax.cond <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.cond.html#jax.lax.cond>`_
+    `jax.lax.cond <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.cond.html#jax.lax.cond>`_.
     The parameters and semantics are the same as for the Jax version.
 
     Performs the following semantics:
@@ -364,3 +364,258 @@ def q_cond(pred, true_fun, false_fun, *operands):
     qs.abs_qc = cond_res[-1]
 
     return cond_res[0]
+
+
+# Switch implementation for classical index
+def _q_switch_c(index, branches, *operands):
+    r"""
+    Jasp compatible version of
+    `jax.lax.switch <https://docs.jax.dev/en/latest/_autosummary/jax.lax.switch.html>`_.
+    The parameters and semantics are the same as for the Jax version.
+
+    Performs the following semantics:
+
+    ::
+
+        def q_switch(index, branches, *operands):
+            return branches[index](*operands)
+
+
+    Parameters
+    ----------
+    index : int or jax.core.Tracer
+        An integer value, deciding which function gets executed.
+    branches : list[callable]
+        List of functions to be executed based on ``index``.
+    *operands : tuple
+        The input values for whichever function is applied.
+
+    Returns
+    -------
+    object
+        The return value of the respective function.
+
+    Examples
+    --------
+
+    We write a script that brings a :ref:`QuantumFloat` into superpostion and
+    subsequently measures it. If the measurement result is ``k`` we add ``3-k``
+    such that in the end, the float will always be in the $\ket{\text{3}}$
+    state.
+
+    ::
+
+        from qrisp import *
+        from qrisp.jasp import *
+        import jax.numpy as jnp
+
+        @jaspify
+        def main():
+
+            def f0(x): x += 3
+            def f1(x): x += 2
+            def f2(x): x += 1
+            def f3(x): pass
+            branches = [f0, f1, f2, f3]
+
+            operand = QuantumFloat(2)
+            h(operand)
+            index = jnp.int32(measure(operand))
+
+            q_switch(index, branches, operand)
+            return measure(operand)
+
+        print(main())
+        # 3.0
+
+    """
+
+    if not check_for_tracing_mode():
+        return branches[index](*operands)
+
+    def convert_branch(branch):
+
+        def new_branch(*operands):
+            qs.start_tracing(operands[1])
+            for qv in recursive_qv_search(operands[0]):
+                qs.register_qv(qv, None)
+            res = branch(*operands[0])
+            abs_qc = qs.conclude_tracing()
+            return (res, abs_qc)
+        
+        return new_branch
+    
+    new_branches = [convert_branch(branch) for branch in branches]
+
+    qs = TracingQuantumSession.get_instance()
+    abs_qc = qs.abs_qc
+
+    new_operands = (operands, abs_qc)
+
+    switch_res = switch(index, new_branches, *new_operands)
+
+    # There seem to be situations, where Jax performs some automatic type
+    # conversion after the cond call. This results in the cond equation
+    # not being the most recent equation.
+    # We therefore search for the last cond primitive.
+    i = 1
+    while True:
+        eqn = get_last_equation(-i)
+        if eqn.primitive.name == "cond":
+            break
+        i += 1
+        
+    branch_jaxprs = eqn.params["branches"]
+
+    if not isinstance(branch_jaxprs[0].jaxpr.invars[-1].aval, AbstractQuantumCircuit):
+        raise Exception(
+            "Found implicit variable import in q_switch. Please make sure all used variables are part of the body signature."
+        )
+
+    from qrisp.jasp import Jaspr
+
+    if all([not isinstance(branch_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumCircuit) for branch_jaxpr in branch_jaxprs]):
+        eqn.invars.pop(-1)
+        [branch_jaxpr.jaxpr.invars.pop(-1) for branch_jaxpr in branch_jaxprs]
+        return switch_res[0]
+    
+    eqn.params["branches"] = tuple([Jaspr.from_cache(branch_jaxpr) for branch_jaxpr in branch_jaxprs])
+    
+    qs.abs_qc = switch_res[-1]
+
+    return switch_res[0]
+
+
+def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
+    r"""
+
+    **Classical index**
+
+    Jasp compatible version of
+    `jax.lax.switch <https://docs.jax.dev/en/latest/_autosummary/jax.lax.switch.html>`_.
+    The parameters and semantics are the same as for the Jax version.
+
+    Performs the following semantics:
+
+    ::
+
+        def q_switch(index, branches, *operands):
+            return branches[index](*operands)
+
+    **Quantum index**
+
+    Executes a quantum switch - case statement distinguishing between given
+    in-place functions.
+
+
+    Parameters
+    ----------
+    index : int or jax.core.Tracer or QuantumVariable or list[Qubit]
+        An integer value, deciding which function gets executed.
+    branches : list[callable] or callable
+        List of functions to be executed based on ``index`` or a single function
+        that takes the index as first argument.
+    *operands : tuple
+        The input values for whichever function is applied.
+    branch_amount : int, optional
+        The amount of branches. 
+        Only needed if ``index`` is a :ref:`QuantumVariable` and ``branches`` is a function.
+        Is automatically inferred from the length of ``branches`` if it is a list.
+    method : str, optional
+        Only needed if ``index`` is a :ref:`QuantumVariable`.
+        The method used to implement the quantum switch. Can be ``"auto"``, ``"sequential"``, ``"parallel"``,
+        or ``"tree"``. Default is ``"auto"``.
+        Method ``"tree"`` uses `balanced binary trees <https://arxiv.org/pdf/2407.17966v1>`_.
+        Method ``"parallel"`` is exponentially faster but requires more qubits.     
+
+    Returns
+    -------
+    object
+        The return value of the respective function.
+
+    Examples
+    --------
+
+    **Classical index**
+
+    We write a script that brings a :ref:`QuantumFloat` into superpostion and
+    subsequently measures it. If the measurement result is ``k`` we add ``3-k``
+    such that in the end, the float will always be in the $\ket{\text{3}}$
+    state.
+
+    ::
+
+        from qrisp import *
+        from qrisp.jasp import *
+        import jax.numpy as jnp
+
+        @jaspify
+        def main():
+
+            def f0(x): x += 3
+            def f1(x): x += 2
+            def f2(x): x += 1
+            def f3(x): pass
+            branches = [f0, f1, f2, f3]
+
+            operand = QuantumFloat(2)
+            h(operand)
+            index = jnp.int32(measure(operand))
+
+            q_switch(index, branches, operand)
+            return measure(operand)
+
+        print(main())
+        # 3.0
+
+    **Quantum index**
+
+    We write a script that uses a :ref:`QuantumFloat` as index to select
+    different operations on another operand :ref:`QuantumFloat`. The index variable is
+    put into superposition such that all branches are executed in superposition.
+
+    ::
+
+        from qrisp import *
+        from qrisp.jasp import *
+
+        @terminal_sampling
+        def main():
+
+            def f0(x): x += 1
+            def f1(x): x += 2
+            def f2(x): pass
+            def f3(x): h(x[1])
+            branches = [f0, f1, f2, f3]
+
+            operand = QuantumFloat(4)
+            operand[:] = 1
+            index = QuantumFloat(2)
+            h(index)
+
+            q_switch(index, branches, operand)
+            return index, operand
+
+        print(main())
+        # {(0.0, 2.0): 0.25000000372529035, (1.0, 3.0): 0.25000000372529035, 
+        # (2.0, 1.0): 0.25000000372529035, (3.0, 1.0): 0.12499999441206447, 
+        # (3.0, 3.0): 0.12499999441206447}
+
+    """
+
+    from qrisp.alg_primitives.program_control.quantum_switch import _q_switch_q
+    from qrisp.circuit import Qubit
+    from qrisp.core import QuantumVariable
+    from qrisp.jasp.tracing_logic import DynamicQubitArray
+
+    if (
+        isinstance(index, QuantumVariable) 
+        or (isinstance(index, list) and all(isinstance(q, Qubit) for q in index)) 
+        or isinstance(index, DynamicQubitArray)
+    ):
+        return _q_switch_q(index, branches, *operands, branch_amount=branch_amount, method=method)
+    
+    if callable(branches):
+        return branches(index, *operands)
+    
+    return _q_switch_c(index, branches, *operands)
