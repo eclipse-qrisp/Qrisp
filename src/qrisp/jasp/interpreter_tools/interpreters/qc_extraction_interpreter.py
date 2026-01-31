@@ -651,7 +651,8 @@ def make_qc_extraction_eqn_evaluator(qc):
             
             res = Clbit("cb_" + str(len(qc.clbits)))
             qc.clbits.insert(0, res)
-            qc.append(ParityOperation(len(parity_clbits)), clbits=parity_clbits + [res])
+            qc.append(ParityOperation(len(parity_clbits), expectation = eqn.params["expectation"]),
+                      clbits=parity_clbits + [res])
             insert_outvalues(eqn, context_dic, res)
             return
         
