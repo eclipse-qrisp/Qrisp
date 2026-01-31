@@ -773,24 +773,16 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
             # Parity operation: XOR of multiple classical bits
             # Parity results are stored directly in ParityHandle with expanded clbits
             
-            # Check for ProcessedMeasurement in scalar inputs
+            # Check for ProcessedMeasurement in scalar inputs - return ProcessedMeasurement
             if any(isinstance(v, ProcessedMeasurement) for v in invalues):
-                raise Exception(
-                    "Cannot compute parity of processed measurement data. "
-                    "Parity requires actual measurement results, but the input "
-                    "contains results of classical post-processing (e.g., ~, &, |) "
-                    "that cannot be represented in a QuantumCircuit."
-                )
+                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
+                return
             
-            # Check for ProcessedMeasurement in MeasurementArray inputs
+            # Check for ProcessedMeasurement in MeasurementArray inputs - return ProcessedMeasurement
             for v in invalues:
                 if isinstance(v, MeasurementArray) and v.has_processed_entries():
-                    raise Exception(
-                        "Cannot compute parity of MeasurementArray containing "
-                        "processed entries. Some elements in the array are the result "
-                        "of classical post-processing (e.g., ~, &, |) and cannot be "
-                        "used in circuit-influencing operations."
-                    )
+                    insert_outvalues(eqn, context_dic, ProcessedMeasurement())
+                    return
             
             # Collect all input clbits and parity handles
             parity_inputs = []

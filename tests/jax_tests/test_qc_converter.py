@@ -855,3 +855,68 @@ def test_quantum_array_measurement_operations():
     assert all(isinstance(item, Clbit) for item in result.flat), \
         f"All values should be Clbit objects"
 
+
+def test_processed_parity_returns_processed_measurement():
+    """Test that parity on processed measurements returns ProcessedMeasurement."""
+    import jax.numpy as jnp
+    from qrisp.jasp import parity
+    
+    def parity_on_processed():
+        qv = QuantumVariable(2)
+        
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        
+        # Put measurements in array and process with bitwise ops
+        arr = jnp.array([m0, m1])
+        processed = arr & True  # Bitwise AND - marks as processed
+        
+        # Use processed values in parity - should return ProcessedMeasurement
+        p = parity(processed[0], processed[1])
+        
+        return p
+    
+    jaspr = make_jaspr(parity_on_processed)()
+    result, qc = jaspr.to_qc()
+    
+    # Should return ProcessedMeasurement, not raise an error
+    assert isinstance(result, ProcessedMeasurement), \
+        f"Parity on processed measurements should return ProcessedMeasurement, got {type(result)}"
+    
+    # Circuit should still have the measurements
+    measure_ops = [instr for instr in qc.data if instr.op.name == "measure"]
+    assert len(measure_ops) == 2, f"Expected 2 measurement operations, got {len(measure_ops)}"
+
+
+def test_processed_measurement_in_control_raises_error():
+    """Test that using processed measurements for control raises an error."""
+    import jax.numpy as jnp
+    import pytest
+    
+    def control_with_processed():
+        qv = QuantumVariable(2)
+        
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        
+        # Put measurements in array and process
+        arr = jnp.array([m0, m1])
+        processed = arr & True  # Bitwise - marks as processed
+        
+        # Try to use processed value for control (circuit-influencing)
+        with control(processed[0]):
+            x(qv[0])
+        
+        return qv
+    
+    jaspr = make_jaspr(control_with_processed)()
+    
+    # Should raise an error about real-time feedback
+    try:
+        jaspr.to_qc()
+        assert False, "Expected an exception for control with processed measurement"
+    except Exception as e:
+        # Should mention something about real-time feedback or processed measurements
+        assert "real-time feedback" in str(e).lower() or "processed" in str(e).lower(), \
+            f"Expected error about real-time feedback or processed measurements, got: {e}"
+
