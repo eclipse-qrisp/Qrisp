@@ -32,6 +32,7 @@ from qrisp.jasp import (
     extract_invalues,
     insert_outvalues
 )
+from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive, ParityOperation
 from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement
 from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive
 
@@ -434,7 +435,7 @@ class Jaspr(ClosedJaxpr):
         """
         Extracts the post-processing logic from this Jaspr and returns a function
         that performs the post-processing on measurement results.
-        
+
         This method is useful for separating the quantum circuit from the classical
         post-processing of measurement results. The quantum circuit can be executed
         on a NISQ-style backend to obtain measurement results, and then the post-processing

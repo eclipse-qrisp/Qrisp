@@ -67,6 +67,8 @@ def cl_func_eqn_evaluator(eqn, context_dic):
             process_reset(eqn, context_dic)
         elif eqn.primitive.name == "jasp.fuse":
             process_fuse(eqn, context_dic)
+        elif eqn.primitive.name == "jasp.parity":
+            process_parity(eqn, context_dic)
         else:
             raise Exception(
                 f"Don't know how to process QuantumPrimitive {eqn.primitive}"
@@ -76,6 +78,8 @@ def cl_func_eqn_evaluator(eqn, context_dic):
             return process_while(eqn, context_dic)
         elif eqn.primitive.name == "cond":
             return process_cond(eqn, context_dic)  #
+        elif eqn.primitive.name == "scan":
+            return process_scan(eqn, context_dic)
         elif eqn.primitive.name == "jit":
             process_pjit(eqn, context_dic)
         else:
@@ -278,27 +282,52 @@ def exec_multi_measurement(bit_array, qubit_reg):
     return bit_array, acc
 
 
+def process_parity(eqn, context_dic):
+    """Process parity primitive: compute XOR of measurement results."""
+    from jax import debug
+    
+    invalues = extract_invalues(eqn, context_dic)
+    expectation = eqn.params.get("expectation", 2)
+    
+    # Compute parity (XOR) of all measurements
+    result = sum(invalues) % 2
+    
+    # If expectation is specified, check and emit warning if mismatch
+    if expectation != 2:
+        # Define callbacks for match/mismatch
+        def warn_mismatch():
+            debug.print("WARNING: Parity expectation deviated from simulation result")
+        
+        def no_warning():
+            return
+        
+        # Check if expectation matches result
+        cond(result != expectation, warn_mismatch, no_warning)
+        
+        # XOR result with expectation (0 if match, 1 if mismatch)
+        result = result ^ expectation
+    
+    context_dic[eqn.outvars[0]] = jnp.array(result, dtype = bool)
+
+
 def process_while(eqn, context_dic):
-    for invar in eqn.invars:
-        if isinstance(invar.aval, AbstractQuantumCircuit):
-            break
-    else:
-        return True
 
     body_jaxpr = eqn.params["body_jaxpr"]
     cond_jaxpr = eqn.params["cond_jaxpr"]
     overall_constant_amount= eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
 
     invalues = extract_invalues(eqn, context_dic)
+    
+    if isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
+        bit_array_padding = invalues[-1][0].shape[0] * 64
+    else:
+        bit_array_padding = 0
+    
 
-    if isinstance(body_jaxpr.jaxpr.invars[-1].aval, AbstractQuantumCircuit):
-        converted_body_jaxpr = jaspr_to_cl_func_jaxpr(
-            body_jaxpr.jaxpr, invalues[-1][0].shape[0] * 64
-        )
-    if isinstance(cond_jaxpr.jaxpr.invars[-1].aval, AbstractQuantumCircuit):
-        converted_cond_jaxpr = jaspr_to_cl_func_jaxpr(
-            cond_jaxpr.jaxpr, invalues[-1][0].shape[0] * 64
-        )
+    body_jaxpr = jaspr_to_cl_func_jaxpr(
+        body_jaxpr.jaxpr, bit_array_padding)
+    cond_jaxpr = jaspr_to_cl_func_jaxpr(
+        cond_jaxpr.jaxpr, bit_array_padding)
 
     def body_fun(args):
         
@@ -307,7 +336,7 @@ def process_while(eqn, context_dic):
         
         flattened_invalues = flatten_signature(constants + carries, body_jaxpr.jaxpr.invars)
         
-        body_res = eval_jaxpr(converted_body_jaxpr)(*(flattened_invalues))
+        body_res = eval_jaxpr(body_jaxpr)(*(flattened_invalues))
         
         unflattened_body_outvalues = unflatten_signature(body_res, body_jaxpr.jaxpr.outvars)
         
@@ -320,7 +349,7 @@ def process_while(eqn, context_dic):
         
         flattened_invalues = flatten_signature(constants + carries, cond_jaxpr.jaxpr.invars)
         
-        return eval_jaxpr(converted_cond_jaxpr)(*flattened_invalues)
+        return eval_jaxpr(cond_jaxpr)(*flattened_invalues)
 
     outvalues = while_loop(cond_fun, body_fun, invalues)[overall_constant_amount:]
     
@@ -349,6 +378,72 @@ def process_cond(eqn, context_dic):
         unflattened_outvalues = (outvalues,)
 
     insert_outvalues(eqn, context_dic, unflattened_outvalues)
+
+
+def process_scan(eqn, context_dic):
+    """
+    Process scan primitive for cl_func_interpreter.
+    Reinterprets the scan body and calls jax.lax.scan to preserve loop structure.
+    """
+    from jax.lax import scan as jax_scan
+    
+    invalues = extract_invalues(eqn, context_dic)
+    
+    # Extract scan parameters
+    num_consts = eqn.params["num_consts"]
+    num_carry = eqn.params["num_carry"]
+    length = eqn.params["length"]
+    reverse = eqn.params.get("reverse", False)
+    unroll = eqn.params.get("unroll", 1)
+    
+    # Separate inputs: constants, initial carry, scanned inputs
+    consts = invalues[:num_consts]
+    init = invalues[num_consts:num_consts + num_carry]
+    xs = invalues[num_consts + num_carry:]
+    
+    # Reinterpret the scan body with cl_func_eqn_evaluator
+    scan_body_jaxpr = eqn.params["jaxpr"]
+    scan_body = eval_jaxpr(scan_body_jaxpr, eqn_evaluator=cl_func_eqn_evaluator)
+    
+    # Create wrapper function that includes constants
+    if num_consts > 0:
+        def wrapped_body(carry, x):
+            args = consts + list(carry) + (list(x) if isinstance(x, tuple) else [x])
+            result = scan_body(*args)
+            if not isinstance(result, tuple):
+                result = (result,)
+            return result[:num_carry], result[num_carry:]
+    else:
+        def wrapped_body(carry, x):
+            args = list(carry) + (list(x) if isinstance(x, tuple) else [x])
+            result = scan_body(*args)
+            if not isinstance(result, tuple):
+                result = (result,)
+            return result[:num_carry], result[num_carry:]
+    
+    # Prepare inputs for JAX scan
+    if len(xs) == 1:
+        xs_arg = xs[0]
+    else:
+        xs_arg = tuple(xs)
+    
+    if len(init) == 1:
+        init_arg = init[0]
+    else:
+        init_arg = tuple(init)
+    
+    # Call JAX scan
+    final_carry, ys = jax_scan(wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll)
+    
+    # Prepare output
+    if not isinstance(final_carry, tuple):
+        final_carry = (final_carry,)
+    if not isinstance(ys, tuple):
+        ys = (ys,)
+    
+    outvalues = final_carry + ys
+    
+    insert_outvalues(eqn, context_dic, outvalues)
 
 
 @lru_cache(maxsize=int(1e5))
@@ -548,16 +643,12 @@ def flatten_signature(values, variables):
 def ensure_conversion(jaxpr, invalues):
 
     bit_array_padding = 0
-    convert = False
     for i in range(len(jaxpr.invars)):
         invar = jaxpr.invars[i]
         if isinstance(
             invar.aval, (AbstractQuantumCircuit, AbstractQubitArray, AbstractQubit)
         ):
-            convert = True
             if isinstance(invar.aval, AbstractQuantumCircuit):
                 bit_array_padding = invalues[i][0].shape[0] * 64
 
-    if convert:
-        return jaspr_to_cl_func_jaxpr(jaxpr, bit_array_padding)
-    return ClosedJaxpr(jaxpr, [])
+    return jaspr_to_cl_func_jaxpr(jaxpr, bit_array_padding)

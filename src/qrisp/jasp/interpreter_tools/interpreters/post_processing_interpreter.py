@@ -226,6 +226,23 @@ def extract_post_processing(jaspr, *args):
                 context_dic[eqn.outvars[0]] = combined_size
                 return False
 
+            # Handle parity: compute XOR of measurement results
+            if eqn.primitive.name == "jasp.parity":
+                invalues = extract_invalues(eqn, context_dic)
+                expectation = eqn.params.get("expectation", 2)
+                
+                # Compute parity (XOR) of all measurements
+                result = sum(invalues) % 2
+                
+                # If expectation is specified, XOR it with the result
+                # Result will be 0 if expectation matches, 1 if it doesn't
+                if expectation != 2:
+                    result = result ^ expectation
+                
+                # Insert result into context
+                context_dic[eqn.outvars[0]] = jnp.array(result, dtype = bool)
+                return False
+
             # Skip other quantum primitives entirely
             # But we must propagate QuantumCircuit tuples from input to output!
             if isinstance(eqn.primitive, QuantumPrimitive):
@@ -320,6 +337,70 @@ def extract_post_processing(jaspr, *args):
                 if len(eqn.outvars) == 1:
                     outvalues = (outvalues,)
 
+                insert_outvalues(eqn, context_dic, outvalues)
+                return False
+
+            # Handle scan/map loops
+            if eqn.primitive.name == "scan":
+
+                import jax.lax
+
+                invalues = extract_invalues(eqn, context_dic)
+                
+                # Reinterpret the scan body function
+                scan_body = eval_jaxpr(
+                    eqn.params["jaxpr"], eqn_evaluator=eval_eqn
+                )
+                
+                # Extract scan parameters
+                num_consts = eqn.params["num_consts"]
+                num_carry = eqn.params["num_carry"]
+                length = eqn.params["length"]
+                reverse = eqn.params.get("reverse", False)
+                unroll = eqn.params.get("unroll", 1)
+                
+                # Separate inputs
+                consts = invalues[:num_consts]
+                init = invalues[num_consts:num_consts + num_carry]
+                xs = invalues[num_consts + num_carry:]
+                
+                # Create a wrapper function that includes constants
+                if num_consts > 0:
+                    def wrapped_body(carry, x):
+                        args = consts + list(carry) + list(x) if isinstance(x, tuple) else consts + list(carry) + [x]
+                        result = scan_body(*args)
+                        if not isinstance(result, tuple):
+                            result = (result,)
+                        return result[:num_carry], result[num_carry:]
+                else:
+                    def wrapped_body(carry, x):
+                        args = list(carry) + (list(x) if isinstance(x, tuple) else [x])
+                        result = scan_body(*args)
+                        if not isinstance(result, tuple):
+                            result = (result,)
+                        return result[:num_carry], result[num_carry:]
+                
+                # Call JAX scan with the reinterpreted body
+                if len(xs) == 1:
+                    xs_arg = xs[0]
+                else:
+                    xs_arg = tuple(xs)
+                
+                if len(init) == 1:
+                    init_arg = init[0]
+                else:
+                    init_arg = tuple(init)
+                
+                final_carry, ys = jax.lax.scan(wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll)
+                
+                # Prepare output
+                if not isinstance(final_carry, tuple):
+                    final_carry = (final_carry,)
+                if not isinstance(ys, tuple):
+                    ys = (ys,)
+                
+                outvalues = final_carry + ys
+                
                 insert_outvalues(eqn, context_dic, outvalues)
                 return False
 
