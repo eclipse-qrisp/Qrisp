@@ -1,4 +1,4 @@
-.. _BlockEncodings:
+.. _block_encodings:
 
 Block Encodings
 ===============
@@ -10,6 +10,7 @@ Block Encodings
    
    BlockEncoding
    qrisp_vs_numpy
+   block_encodings_nisq
 
 
 **A High-Level Abstraction for Quantum Linear Algebra**

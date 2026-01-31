@@ -102,6 +102,8 @@ class BlockEncoding:
 
     **Example 1: Pauli Block Encoding**
 
+    Define a block encoding for a Heisenberg Hamiltonian and apply it to an initial system state.
+
     ::
 
         from qrisp import *
@@ -127,7 +129,7 @@ class BlockEncoding:
 
     **Example 2: Custom Block Encoding**
 
-    Define a block-encoding for a discrete Laplace operator in one dimension with periodic boundary conditions.
+    Define a block encoding for a discrete Laplace operator in one dimension with periodic boundary conditions.
 
     ::
 
