@@ -146,6 +146,14 @@ class ParityHandle:
     
     def __repr__(self):
         return f"ParityHandle(index={self.index}, clbits={self.clbits}, expectation={self.expectation})"
+    
+    def __hash__(self):
+        return hash(self.index)
+    
+    def __eq__(self, other):
+        if isinstance(other, ParityHandle):
+            return self.index == other.index
+        return False
 
 
 # =============================================================================
@@ -271,6 +279,29 @@ class MeasurementArray:
     def __len__(self):
         return len(self.data)
     
+    def _decode_value(self, val):
+        """
+        Decode a single integer value to its corresponding object.
+        
+        Parameters
+        ----------
+        val : int
+            The encoded integer value.
+        
+        Returns
+        -------
+        Clbit, bool, ProcessedMeasurement, or ParityHandle
+            The decoded object.
+        """
+        if val < 0:
+            return self.qc.clbits[int(val)]
+        elif val == self.PROCESSED_VALUE:
+            return ProcessedMeasurement()
+        elif val >= self.PARITY_HANDLE_OFFSET:
+            return self.parity_handles[int(val) - self.PARITY_HANDLE_OFFSET]
+        else:
+            return bool(val)
+    
     def __getitem__(self, key):
         """
         Extract element(s) from the MeasurementArray.
@@ -295,22 +326,7 @@ class MeasurementArray:
             - If extracting a slice: returns a new MeasurementArray
         """
         if isinstance(key, (int, np.integer)):
-            val = self.data[key]
-            if val < 0:
-                # Negative value indicates a measurement result.
-                # The value directly serves as a negative index into qc.clbits.
-                clbit_index = int(val)
-                return self.qc.clbits[clbit_index]
-            elif val == self.PROCESSED_VALUE:
-                # Value 2 indicates a processed measurement
-                return ProcessedMeasurement()
-            elif val >= self.PARITY_HANDLE_OFFSET:
-                # Value >= 3 indicates a parity handle reference
-                parity_index = int(val) - self.PARITY_HANDLE_OFFSET
-                return self.parity_handles[parity_index]
-            else:
-                # 0 or 1: known boolean value
-                return bool(val)
+            return self._decode_value(self.data[key])
         elif isinstance(key, slice):
             return MeasurementArray(self.qc, self.data[key], self.parity_handles)
         else:
@@ -352,16 +368,13 @@ class MeasurementArray:
         
         result = []
         for val in self.data:
-            if val < 0:
-                result.append(self.qc.clbits[int(val)])
-            elif val >= self.PARITY_HANDLE_OFFSET:
-                parity_index = int(val) - self.PARITY_HANDLE_OFFSET
-                result.append(self.parity_handles[parity_index])
-            else:
+            decoded = self._decode_value(val)
+            if isinstance(decoded, bool):
                 raise Exception(
                     f"Cannot convert MeasurementArray entry {val} to Clbit/ParityHandle: "
                     "only measurement results (negative indices) or parity handles can be converted."
                 )
+            result.append(decoded)
         return result
     
     def resolve(self):
@@ -381,15 +394,7 @@ class MeasurementArray:
         """
         result = np.empty(self.data.shape, dtype=object)
         for idx, val in np.ndenumerate(self.data):
-            if val < 0:
-                result[idx] = self.qc.clbits[int(val)]
-            elif val == self.PROCESSED_VALUE:
-                result[idx] = ProcessedMeasurement()
-            elif val >= self.PARITY_HANDLE_OFFSET:
-                parity_index = int(val) - self.PARITY_HANDLE_OFFSET
-                result[idx] = self.parity_handles[parity_index]
-            else:
-                result[idx] = bool(val)
+            result[idx] = self._decode_value(val)
         return result
     
     @classmethod
