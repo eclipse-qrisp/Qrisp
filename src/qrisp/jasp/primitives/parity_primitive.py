@@ -242,7 +242,7 @@ class ParityOperation(Operation):
     conversion process. It acts as a placeholder in the Qrisp QuantumCircuit.
     
     The operation takes n input clbits (the measurements to compute parity of).
-    Parity results are tracked separately via the circuit's parity_handles list.
+    Parity results are tracked via ParityHandle objects returned by jaspr.to_qc().
     """
     def __init__(self, num_inputs, expectation = 2):
         

@@ -283,7 +283,7 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
             else:
                 # --- Detector Mode ---
                 
-                # Populate detector_map - key is the parity index (matching parity_record order)
+                # Populate detector_map - key is the parity index (matching ParityHandle.index)
                 detector_map[parity_counter] = detector_counter
                 
                 # Emit DETECTOR

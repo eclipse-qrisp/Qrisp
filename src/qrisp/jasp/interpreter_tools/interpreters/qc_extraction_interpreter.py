@@ -198,7 +198,7 @@ class MeasurementArray:
        entry, it raises an error since we can't build the circuit correctly.
     
     4. **ParityHandle Tracking**: Values >= PARITY_HANDLE_OFFSET encode references
-       to parity results stored in the circuit's parity_handles list. These are extracted
+       to parity results stored in the parity_handles list. These are extracted
        as ParityHandle objects that can be used in nested parity operations.
     
     5. **Array Operations**: We intercept JAX array primitives and implement
