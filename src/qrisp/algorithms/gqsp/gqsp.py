@@ -206,7 +206,7 @@ def GQSP(
         d = len(theta) - 1
     elif p is not None:
         d = len(p) - 1
-        theta, phi, lambda_ = gqsp_angles(p)
+        (theta, phi, lambda_), _ = gqsp_angles(p)
 
     # Define R gate application function based on Theorem 9 in https://arxiv.org/abs/2503.03026
     def R(theta, phi, qubit):

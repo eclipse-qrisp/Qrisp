@@ -189,7 +189,7 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
 
 
 # https://arxiv.org/pdf/2503.03026
-def gqsp_angles(p: "ArrayLike") -> Tuple[Array, Array, Array]:
+def gqsp_angles(p: "ArrayLike") -> Tuple[Tuple[Array, Array, Array], Array]:
     r"""
     Computes the GQSP angles for a given polynomial.
 
@@ -200,12 +200,17 @@ def gqsp_angles(p: "ArrayLike") -> Tuple[Array, Array, Array]:
 
     Returns
     -------
-    theta : Array
-        1-D array of angles $(\theta_0,\dotsc,\theta_d)$.
-    phi : Array
-        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
-    lambda : Array
-        The scalar angle $\lambda$ as 0-D array.
+    angles : tuple of (Array, Array, Array)
+        A collection containing:
+
+        - **theta** (Array): 1-D array of angles $(\theta_0,\dotsc,\theta_d)$.
+
+        - **phi** (Array): 1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
+
+        - **lambda** (Array): The scalar angle $\lambda$ as 0-D array.
+    
+    alpha : Array
+        The scalar scaling factor as 0-D array.
 
     Notes
     -----
@@ -250,4 +255,6 @@ def gqsp_angles(p: "ArrayLike") -> Tuple[Array, Array, Array]:
     theta = jnp.real(theta)
     lambda_ = jnp.real(lambda_)
 
-    return theta, phi, lambda_
+    alpha = M / 0.99
+
+    return (theta, phi, lambda_), alpha

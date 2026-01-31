@@ -20,6 +20,7 @@ import numpy as np
 import jax.numpy as jnp
 from qrisp import QuantumBool
 from qrisp.algorithms.gqsp.gqsp import GQSP
+from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
 from qrisp.algorithms.gqsp.helper_functions import poly2cheb, cheb2poly
 from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import QubitOperator
@@ -168,10 +169,10 @@ def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polyno
 
     BE_walk = H.qubitization()
 
-    new_anc_templates = [QuantumBool().template()] + BE_walk.anc_templates
-    new_alpha = 1 # TBD
+    angles, new_alpha = gqsp_angles(p)
 
     def new_unitary(*args):
-        GQSP(args[0], *args[1:], unitary = BE_walk.unitary, p=p)
+        GQSP(args[0], *args[1:], unitary = BE_walk.unitary, angles=angles)
 
+    new_anc_templates = [QuantumBool().template()] + BE_walk.anc_templates
     return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian=False)

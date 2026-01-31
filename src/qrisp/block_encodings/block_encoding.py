@@ -955,6 +955,9 @@ class BlockEncoding:
         from qrisp.alg_primitives.reflection import reflection
 
         m = len(self.anc_templates)
+        # W = U
+        if m==0:
+            return self
 
         if self.is_hermitian:
             # W = (2*|0><0| - I) U 
