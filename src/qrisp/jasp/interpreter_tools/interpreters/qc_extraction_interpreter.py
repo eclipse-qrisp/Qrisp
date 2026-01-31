@@ -112,6 +112,108 @@ class ProcessedMeasurement:
     pass
 
 
+class ParityHandle:
+    """
+    A handle referencing a parity result stored in the circuit's parity record.
+    
+    Problem Being Solved
+    --------------------
+    Parity operations compute the XOR of multiple measurement results. Unlike
+    measurements which are physical operations, parity is a classical computation.
+    Rather than creating a "fake" clbit for parity results (which breaks the
+    1:1 mapping between clbits and actual measurements), we track parity results
+    separately.
+    
+    This handle references an entry in the circuit's parity record, allowing
+    the parity result to be used in subsequent operations (like nested parity
+    or as a return value) without conflating it with actual measurement clbits.
+    
+    Attributes
+    ----------
+    index : int
+        The index of this parity result in the circuit's parity_record list.
+    expectation : int
+        The expected parity value (0, 1, or 2 for unknown). Used for detector mode.
+    """
+    def __init__(self, index, expectation=2):
+        self.index = index
+        self.expectation = expectation
+    
+    def __repr__(self):
+        return f"ParityHandle(index={self.index}, expectation={self.expectation})"
+
+
+class ParityRecord:
+    """
+    Records parity operations separately from measurements.
+    
+    Problem Being Solved
+    --------------------
+    In the previous design, parity operations created a result clbit, making
+    qc.clbits contain a mix of actual measurements and computed parities.
+    This is confusing for backend implementers who expect clbits to correspond
+    to physical measurements.
+    
+    Solution
+    --------
+    The ParityRecord tracks parity operations as a separate list. Each entry
+    contains the input clbits/handles and the expectation value. Backend
+    implementations can then compute parity results as post-processing.
+    
+    Attributes
+    ----------
+    entries : list
+        List of (input_clbits, expectation) tuples, where input_clbits is a
+        list of Clbit objects or ParityHandle objects (for nested parity).
+    
+    Usage
+    -----
+    After circuit extraction:
+        result, qc = jaspr.to_qc()
+        
+        # qc.clbits only contains actual measurements
+        # qc.parity_record.entries contains parity definitions
+        
+        # To compute parity result i from measurement results:
+        inputs, expectation = qc.parity_record.entries[i]
+        parity_value = xor(measurement_results[inputs]) ^ expectation
+    """
+    def __init__(self):
+        self.entries = []
+    
+    def add(self, input_clbits, expectation=2):
+        """
+        Add a parity operation to the record.
+        
+        Parameters
+        ----------
+        input_clbits : list
+            List of Clbit or ParityHandle objects that are inputs to this parity.
+        expectation : int
+            Expected parity value (0, 1) or 2 for unknown/observable mode.
+            
+        Returns
+        -------
+        ParityHandle
+            A handle referencing this parity entry.
+        """
+        index = len(self.entries)
+        self.entries.append((input_clbits, expectation))
+        return ParityHandle(index, expectation)
+    
+    def __len__(self):
+        return len(self.entries)
+    
+    def __iter__(self):
+        return iter(self.entries)
+    
+    def __getitem__(self, index):
+        return self.entries[index]
+    
+    def __repr__(self):
+        return f"ParityRecord({len(self.entries)} entries)"
+
+
 # =============================================================================
 # SECTION 2: MeasurementArray - Handling Arrays of Measurement Results
 # =============================================================================
@@ -161,7 +263,11 @@ class MeasurementArray:
        If a circuit-influencing operation (like parity) receives a processed
        entry, it raises an error since we can't build the circuit correctly.
     
-    4. **Array Operations**: We intercept JAX array primitives and implement
+    4. **ParityHandle Tracking**: Values >= PARITY_HANDLE_OFFSET encode references
+       to parity results stored in the circuit's parity_record. These are extracted
+       as ParityHandle objects that can be used in nested parity operations.
+    
+    5. **Array Operations**: We intercept JAX array primitives and implement
        them using NumPy operations on our integer-encoded data.
     
     Why Negative Indexing?
@@ -178,6 +284,14 @@ class MeasurementArray:
     
     When extracting, -1 gives us qc.clbits[-1] = cb_2, which is correct.
     
+    Encoding Scheme
+    ---------------
+    - 0: Known boolean False
+    - 1: Known boolean True
+    - 2: ProcessedMeasurement (classical post-processing result)
+    - >= 3: ParityHandle reference (index = value - 3)
+    - < 0: Clbit reference (negative index into qc.clbits)
+    
     Attributes
     ----------
     qc : QuantumCircuit
@@ -190,10 +304,15 @@ class MeasurementArray:
     ---------------
     PROCESSED_VALUE : int
         The integer value (2) used to encode ProcessedMeasurement entries.
+    PARITY_HANDLE_OFFSET : int
+        The offset (3) added to parity handle indices to encode them.
     """
     
     # Class constant for the "processed" marker value
     PROCESSED_VALUE = 2
+    
+    # Offset for encoding ParityHandle indices (value = handle.index + PARITY_HANDLE_OFFSET)
+    PARITY_HANDLE_OFFSET = 3
     
     def __init__(self, qc, data):
         """
@@ -228,10 +347,11 @@ class MeasurementArray:
         
         Returns
         -------
-        Clbit, bool, ProcessedMeasurement, or MeasurementArray
+        Clbit, bool, ProcessedMeasurement, ParityHandle, or MeasurementArray
             - If extracting a single measurement element (negative): returns the Clbit
             - If extracting a single known boolean (0 or 1): returns that boolean
             - If extracting a processed element (2): returns ProcessedMeasurement
+            - If extracting a parity handle element (>= 3): returns ParityHandle
             - If extracting a slice: returns a new MeasurementArray
         """
         if isinstance(key, (int, np.integer)):
@@ -244,6 +364,11 @@ class MeasurementArray:
             elif val == self.PROCESSED_VALUE:
                 # Value 2 indicates a processed measurement
                 return ProcessedMeasurement()
+            elif val >= self.PARITY_HANDLE_OFFSET:
+                # Value >= 3 indicates a parity handle reference
+                parity_index = int(val) - self.PARITY_HANDLE_OFFSET
+                expectation = self.qc.parity_record[parity_index][1]
+                return ParityHandle(parity_index, expectation)
             else:
                 # 0 or 1: known boolean value
                 return bool(val)
@@ -258,16 +383,21 @@ class MeasurementArray:
         """Check if this array contains any ProcessedMeasurement entries."""
         return np.any(self.data == self.PROCESSED_VALUE)
     
+    def has_parity_entries(self):
+        """Check if this array contains any ParityHandle entries."""
+        return np.any(self.data >= self.PARITY_HANDLE_OFFSET)
+    
     def to_clbit_list(self):
         """
-        Convert to a list of Clbits, raising an error if any processed entries exist.
+        Convert to a list of Clbits and ParityHandles.
         
-        This is used by operations like parity that need actual Clbit values.
+        This is used by operations like parity that need actual measurement
+        or parity values.
         
         Returns
         -------
-        list[Clbit]
-            List of Clbit objects.
+        list[Clbit or ParityHandle]
+            List of Clbit objects and/or ParityHandle objects.
         
         Raises
         ------
@@ -285,11 +415,16 @@ class MeasurementArray:
         for val in self.data:
             if val < 0:
                 result.append(self.qc.clbits[int(val)])
+            elif val >= self.PARITY_HANDLE_OFFSET:
+                parity_index = int(val) - self.PARITY_HANDLE_OFFSET
+                expectation = self.qc.parity_record[parity_index][1]
+                result.append(ParityHandle(parity_index, expectation))
             else:
                 raise Exception(
-                    f"Cannot convert MeasurementArray entry {val} to Clbit: "
-                    "only measurement results (negative indices) can be converted."
+                    f"Cannot convert MeasurementArray entry {val} to Clbit/ParityHandle: "
+                    "only measurement results (negative indices) or parity handles can be converted."
                 )
+        return result
         return result
     
     @classmethod
@@ -620,7 +755,7 @@ def make_qc_extraction_eqn_evaluator(qc):
         
         elif prim_name == "jasp.parity":
             # Parity operation: XOR of multiple classical bits
-            # This is implemented as a classical operation in the circuit
+            # Parity results are tracked in a separate record, not as clbits
             
             # Check for ProcessedMeasurement in scalar inputs
             if any(isinstance(v, ProcessedMeasurement) for v in invalues):
@@ -641,19 +776,46 @@ def make_qc_extraction_eqn_evaluator(qc):
                         "used in circuit-influencing operations."
                     )
             
-            # Convert any MeasurementArray to list of clbits
-            parity_clbits = []
+            # Collect all input clbits and parity handles
+            parity_inputs = []
             for v in invalues:
                 if isinstance(v, MeasurementArray):
-                    parity_clbits.extend(v.to_clbit_list())
+                    parity_inputs.extend(v.to_clbit_list())
+                elif isinstance(v, ParityHandle):
+                    # Nested parity - include the handle directly for parity_record
+                    parity_inputs.append(v)
                 else:
-                    parity_clbits.append(v)
+                    # Should be a Clbit
+                    parity_inputs.append(v)
             
-            res = Clbit("cb_" + str(len(qc.clbits)))
-            qc.clbits.insert(0, res)
-            qc.append(ParityOperation(len(parity_clbits), expectation = eqn.params["expectation"]),
-                      clbits=parity_clbits + [res])
-            insert_outvalues(eqn, context_dic, res)
+            # For the circuit's ParityOperation, we need to expand ParityHandle to their
+            # underlying clbits. This allows stim_converter to correctly trace the
+            # measurement dependencies.
+            def expand_to_clbits(inp):
+                """Recursively expand ParityHandle to underlying clbits."""
+                if isinstance(inp, Clbit):
+                    return [inp]
+                elif isinstance(inp, ParityHandle):
+                    # Get the entry from parity_record
+                    entry_clbits, _ = qc.parity_record[inp.index]
+                    expanded = []
+                    for sub_inp in entry_clbits:
+                        expanded.extend(expand_to_clbits(sub_inp))
+                    return expanded
+                else:
+                    return []
+            
+            circuit_clbits = []
+            for inp in parity_inputs:
+                circuit_clbits.extend(expand_to_clbits(inp))
+            
+            # Add parity operation to the circuit (for stim conversion)
+            qc.append(ParityOperation(len(circuit_clbits), expectation=eqn.params["expectation"]),
+                      clbits=circuit_clbits)
+            
+            # Create a parity handle referencing the parity record
+            handle = qc.parity_record.add(parity_inputs, eqn.params["expectation"])
+            insert_outvalues(eqn, context_dic, handle)
             return
         
         # -----------------------------------------------------------------
@@ -661,29 +823,34 @@ def make_qc_extraction_eqn_evaluator(qc):
         # -----------------------------------------------------------------
         # JAX often inserts type conversions. For measurement data:
         # - bool->bool conversions pass through unchanged
-        # - Conversions to numeric types (int, float) mark as processed
-        #   since we can't actually compute with measurement values
+        # - bool->int conversions for Clbit pass through (used by cond primitive)
+        # - Conversions to float types mark as processed since we can't
+        #   actually compute with measurement values
         
         elif prim_name == "convert_element_type":
             inval = context_dic[eqn.invars[0]]
             new_dtype = eqn.params.get("new_dtype", None)
             
             if isinstance(inval, MeasurementArray):
-                # Check if converting to a non-boolean type
-                if new_dtype is not None and not np.issubdtype(new_dtype, np.bool_):
-                    # Converting to numeric type - mark as processed
+                # Check if converting to a non-boolean/non-integer type
+                if new_dtype is not None and not (np.issubdtype(new_dtype, np.bool_) or np.issubdtype(new_dtype, np.integer)):
+                    # Converting to float type - mark as processed
                     context_dic[eqn.outvars[0]] = inval.mark_as_processed()
                 else:
-                    # Bool-to-bool or unknown conversion - pass through
+                    # Bool-to-bool, bool-to-int, or unknown conversion - pass through
                     context_dic[eqn.outvars[0]] = inval
                 return
-            elif isinstance(inval, (ProcessedMeasurement, Clbit)):
-                if new_dtype is not None and not np.issubdtype(new_dtype, np.bool_):
-                    # Converting scalar to numeric - mark as processed
+            elif isinstance(inval, Clbit):
+                # Clbit should pass through for bool->int conversions (used by cond)
+                # Only mark as processed for float conversions
+                if new_dtype is not None and not (np.issubdtype(new_dtype, np.bool_) or np.issubdtype(new_dtype, np.integer)):
                     context_dic[eqn.outvars[0]] = ProcessedMeasurement()
                 else:
-                    # Pass through unchanged
                     context_dic[eqn.outvars[0]] = inval
+                return
+            elif isinstance(inval, ProcessedMeasurement):
+                # ProcessedMeasurement stays processed
+                context_dic[eqn.outvars[0]] = ProcessedMeasurement()
                 return
             elif isinstance(inval, list) and len(inval) and isinstance(
                 inval[0], (ProcessedMeasurement, Clbit)
@@ -915,6 +1082,9 @@ def make_qc_extraction_eqn_evaluator(qc):
                     clbit_idx = qc.clbits.index(updates)
                     neg_idx = clbit_idx - len(qc.clbits)
                     new_data[idx] = neg_idx
+                elif isinstance(updates, ParityHandle):
+                    # Insert a parity handle reference
+                    new_data[idx] = updates.index + MeasurementArray.PARITY_HANDLE_OFFSET
                 elif isinstance(updates, ProcessedMeasurement):
                     # Mark this position as processed
                     new_data[idx] = MeasurementArray.PROCESSED_VALUE
@@ -955,6 +1125,29 @@ def make_qc_extraction_eqn_evaluator(qc):
                 clbit_idx = qc.clbits.index(updates)
                 neg_idx = clbit_idx - len(qc.clbits)
                 new_data[idx] = neg_idx
+                
+                result = MeasurementArray(qc, new_data)
+                insert_outvalues(eqn, context_dic, result)
+                return
+            
+            elif isinstance(updates, ParityHandle):
+                # Operand is not a MeasurementArray but updates is a ParityHandle
+                # This happens when building an array from parity results in a loop
+                
+                # Get the shape of the operand
+                if hasattr(operand, 'shape'):
+                    size = int(np.prod(operand.shape))
+                elif hasattr(operand, '__len__'):
+                    size = len(operand)
+                else:
+                    size = 1
+                
+                # Initialize MeasurementArray with zeros
+                new_data = np.zeros(size, dtype=np.int64)
+                
+                # Set the parity handle at the given index
+                idx = get_scatter_index(indices)
+                new_data[idx] = updates.index + MeasurementArray.PARITY_HANDLE_OFFSET
                 
                 result = MeasurementArray(qc, new_data)
                 insert_outvalues(eqn, context_dic, result)
@@ -1164,6 +1357,10 @@ def jaspr_to_qc(jaspr, *args):
     from qrisp.jasp import eval_jaxpr
 
     qc = QuantumCircuit()
+    
+    # Initialize the parity record for tracking parity operations
+    qc.parity_record = ParityRecord()
+    
     ammended_args = list(args) + [qc]
     
     if len(ammended_args) != len(jaspr.invars):

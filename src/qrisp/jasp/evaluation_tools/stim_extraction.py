@@ -18,6 +18,7 @@
 
 from qrisp.jasp import make_jaspr
 from qrisp.circuit import Clbit
+from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityHandle
 
 def extract_stim(func):
     """
@@ -282,10 +283,11 @@ def extract_stim(func):
             # Extract the QuantumCircuit (always the last element of the tuple)
             qc = staticalization_result[-1]
             
-            # Convert the QuantumCircuit to Stim with clbit mapping enabled.
-            # The idx_mapping is a dict that maps Qrisp Clbit objects to Stim measurement
-            # record indices. This is necessary because Stim uses sequential integer indices
-            # for its measurement record, while Qrisp uses Clbit objects.
+            # Convert the QuantumCircuit to Stim with mapping enabled.
+            # - clbit_mapping: maps Clbit objects to Stim measurement record indices
+            # - detector_mapping: maps parity record indices to Stim detector indices
+            # - observable_mapping: maps parity record indices to Stim observable indices
+            # We merge these into idx_mapping for unified lookup.
             stim_circ, clbit_mapping, detector_mapping, observable_mapping = qc.to_stim(return_measurement_map=True, return_detector_map=True, return_observable_map = True)
             idx_mapping = {**detector_mapping, **clbit_mapping, **observable_mapping}
             
@@ -311,7 +313,12 @@ def extract_stim(func):
                 elif isinstance(val, Clbit):
                     new_val = idx_mapping[val]
                 
-                # Case 3: Value is something else (e.g., integer, float, ProcessedMeasurement)
+                # Case 3: Value is a ParityHandle (from parity operation)
+                # Replace it with its Stim detector/observable index from the mapping.
+                elif isinstance(val, ParityHandle):
+                    new_val = idx_mapping[val.index]
+                
+                # Case 4: Value is something else (e.g., integer, float, ProcessedMeasurement)
                 # Pass through unchanged. Classical values computed during the function
                 # (not involving measurements) are returned as-is.
                 else:

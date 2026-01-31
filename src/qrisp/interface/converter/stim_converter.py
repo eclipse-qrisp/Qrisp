@@ -44,9 +44,11 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
         For example, {clbit_obj_0: 2, clbit_obj_1: 0} means the first Clbit object 
         corresponds to the 3rd measurement (index 2) in Stim's measurement record.
     detector_map : dict
-        (Optional) A dictionary mapping Qrisp Clbit objects to Stim detector indices.
+        (Optional) A dictionary mapping parity record indices to Stim detector indices.
+        The keys correspond to the order of parity operations in the circuit's parity_record.
     observable_map : dict
-        (Optional) A dictionary mapping Qrisp Clbit objects to Stim observable indices.
+        (Optional) A dictionary mapping parity record indices to Stim observable indices.
+        The keys correspond to the order of parity operations in the circuit's parity_record.
     
     Notes
     -----
@@ -114,13 +116,14 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
     measurement_counter = 0  # Tracks the current position in Stim's measurement record
     
     # Observable tracking
-    # Key: Clbit object (the output of a parity call)
-    # Value: {'stim_index': int, 'measurements': set(absolute_indices)}   
+    # Key: tuple ('parity', parity_counter) identifying this parity operation
+    # Value: {'idx': int (stim observable index), 'measurements': set(absolute_indices)}   
     clbit_to_observable_info = {}
     stim_observable_counter = 0
     
     detector_map = {}
     detector_counter = 0
+    parity_counter = 0  # Tracks order of parity operations for parity_record indexing
 
     observable_map = {}
     
@@ -226,8 +229,8 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
 
         elif op_name == "parity":
             
-            measurement_clbits = instr.clbits[:-1]
-            result_clbit = instr.clbits[-1]
+            # All clbits are now inputs (no output clbit)
+            measurement_clbits = instr.clbits
             
             # Gather all measurement components involved in this parity check
             # Use symmetric_difference for XOR logic (parity)
@@ -257,20 +260,21 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
 
             if op.expectation == 2:
                 # --- Observable Mode ---
-                # Always create a new Observable Index for the result.
-                # This ensures immutability of previous observables.
+                # Create a new Observable Index
                 
                 new_stim_idx = stim_observable_counter
                 stim_observable_counter += 1
                 
-                # Store info for future usage
-                clbit_to_observable_info[result_clbit] = {
+                # Track this parity for potential nested usage and populate observable_map
+                # Use parity_counter as key for parity_record indexing
+                parity_key = ('parity', parity_counter)
+                clbit_to_observable_info[parity_key] = {
                     'idx': new_stim_idx,
-                    'measurements': current_components # Store set for efficient updates
+                    'measurements': current_components
                 }
                 
-                # Map to observable map so extract_stim knows the index
-                observable_map[result_clbit] = new_stim_idx
+                # Populate observable_map - key is the parity index (matching parity_record order)
+                observable_map[parity_counter] = new_stim_idx
                 
                 # Emit instruction if there are targets
                 if stim_targets:
@@ -279,12 +283,16 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
             else:
                 # --- Detector Mode ---
                 
+                # Populate detector_map - key is the parity index (matching parity_record order)
+                detector_map[parity_counter] = detector_counter
+                
                 # Emit DETECTOR
                 if stim_targets:
                     stim_circuit.append("DETECTOR", stim_targets, op.params)
                 
-                detector_map[result_clbit] = detector_counter
                 detector_counter += 1
+            
+            parity_counter += 1
         
         # Handle T gate (not a Clifford gate, but check for it)
         elif op_name in ["t", "t_dg"]:

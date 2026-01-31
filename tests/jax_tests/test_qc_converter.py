@@ -126,10 +126,10 @@ def test_qc_converter():
 def test_parity_to_qc():
     """Test parity primitive with to_qc (cl_func_interpreter/qc_extraction_interpreter)."""
     from qrisp.jasp import parity
-    from qrisp import Clbit
+    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityHandle, MeasurementArray
     
     # Test that parity of scalar measurements creates a ParityOperation in the circuit
-    # and returns a Clbit representing the parity result
+    # and returns a ParityHandle referencing the parity result in parity_record
     def parity_test():
         qv = QuantumVariable(3)
         x(qv[0])
@@ -145,11 +145,18 @@ def test_parity_to_qc():
     jaspr = make_jaspr(parity_test)()
     result, qc = jaspr.to_qc()
     
-    # Parity of scalar measurements returns a Clbit (ParityOperation added to circuit)
-    assert isinstance(result, Clbit), f"Expected Clbit, got {type(result)}"
+    # Parity of scalar measurements returns a ParityHandle (references parity_record)
+    assert isinstance(result, ParityHandle), f"Expected ParityHandle, got {type(result)}"
     
-    # The quantum circuit should contain the measurements plus the parity result
-    assert len(qc.clbits) == 4, f"Expected 4 classical bits (3 measurements + 1 parity result), got {len(qc.clbits)}"
+    # The quantum circuit should contain ONLY the measurements (parity tracked separately)
+    assert len(qc.clbits) == 3, f"Expected 3 classical bits (3 measurements), got {len(qc.clbits)}"
+    
+    # Parity result is tracked in parity_record
+    assert len(qc.parity_record) == 1, f"Expected 1 parity entry, got {len(qc.parity_record)}"
+    
+    # Check parity entry: should have 3 input clbits
+    entry_clbits, expectation = qc.parity_record[0]
+    assert len(entry_clbits) == 3, f"Expected 3 input clbits in parity entry, got {len(entry_clbits)}"
     
     # Test parity with array inputs (while primitive)
     def parity_while_test():
@@ -180,10 +187,12 @@ def test_parity_to_qc():
     jaspr = make_jaspr(parity_while_test)()
     result, qc = jaspr.to_qc()
     
-    # Array parity returns a MeasurementArray with Clbit references (negative values)
-    # because parity operations create ParityOperations that produce new Clbits
-    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import MeasurementArray
+    # Array parity returns a MeasurementArray with ParityHandle references (values >= 3)
+    # because parity operations create ParityOperations that reference parity_record
     assert isinstance(result, MeasurementArray), f"Expected MeasurementArray for array parity, got {type(result)}"
+    
+    # Should have 3 parity entries (one for each element-wise parity)
+    assert len(qc.parity_record) == 3, f"Expected 3 parity entries, got {len(qc.parity_record)}"
 
 
 def test_measurement_array_basic():
@@ -595,9 +604,9 @@ def test_measurement_array_parity_with_unprocessed():
     jaspr = make_jaspr(parity_array_test)()
     result, qc = jaspr.to_qc()
     
-    # Array parity returns a MeasurementArray with Clbit references (negative values)
-    # because parity operations create ParityOperations that produce new Clbits
-    # For direct Clbit parity, use scalar arguments: parity(m0, m1, m2)
+    # Array parity returns a MeasurementArray because parity on arrays uses
+    # while_loop internally. ParityOperations track results via ParityHandle,
+    # not as Clbits. For direct scalar parity, use scalar arguments: parity(m0, m1, m2)
     assert isinstance(result, MeasurementArray), \
         f"Array parity (via scan) should return MeasurementArray, got {type(result)}"
 
@@ -743,14 +752,19 @@ def test_quantum_array_measurement_with_parity():
     jaspr = array_test()
     result, qc = jaspr.to_qc()
     
-    # Result should be a MeasurementArray with parity Clbit references
+    # Result should be a MeasurementArray with parity ParityHandle references
     assert isinstance(result, MeasurementArray), \
         f"Parity of QuantumArray measurements should return MeasurementArray, got {type(result)}"
     
-    # The circuit should have classical bits for the measurements and parity results
-    # 4 measurements (2 from each QuantumArray) + 2 parity results = 6 clbits
-    assert len(qc.clbits) == 6, \
-        f"Expected 6 classical bits (4 measurements + 2 parity), got {len(qc.clbits)}"
+    # The circuit should have classical bits ONLY for the measurements
+    # Parity results are tracked separately in parity_record
+    # 4 measurements (2 from each QuantumArray)
+    assert len(qc.clbits) == 4, \
+        f"Expected 4 classical bits (4 measurements), got {len(qc.clbits)}"
+    
+    # Parity results tracked in parity_record
+    assert len(qc.parity_record) == 2, \
+        f"Expected 2 parity entries, got {len(qc.parity_record)}"
     
     # Test with single-dimensional arrays
     @make_jaspr  
@@ -768,9 +782,13 @@ def test_quantum_array_measurement_with_parity():
         f"Parity result should be MeasurementArray, got {type(result)}"
     assert result.data.shape == (3,), f"Expected shape (3,), got {result.data.shape}"
     
-    # 6 measurements + 3 parity results = 9 clbits
-    assert len(qc.clbits) == 9, \
-        f"Expected 9 classical bits (6 measurements + 3 parity), got {len(qc.clbits)}"
+    # 6 measurements (parity tracked separately)
+    assert len(qc.clbits) == 6, \
+        f"Expected 6 classical bits (6 measurements), got {len(qc.clbits)}"
+    
+    # 3 parity entries in parity_record
+    assert len(qc.parity_record) == 3, \
+        f"Expected 3 parity entries, got {len(qc.parity_record)}"
 
 
 def test_quantum_array_measurement_operations():

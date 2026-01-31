@@ -284,21 +284,29 @@ def test_stim_errors():
 def test_detector_operation_conversion():
     """
     Test manual creation of ParityOperation and conversion to Stim using qc.to_stim().
+    
+    With the new parity design, ParityOperation takes only n input clbits (no output clbit).
+    The parity result is tracked separately in qc.parity_record.
     """
     from qrisp.jasp.primitives.parity_primitive import ParityOperation
-    qc = QuantumCircuit(2, 3) # 2 qubits, 3 clbits (2 for measure, 1 for detector result)
+    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityRecord
+    
+    qc = QuantumCircuit(2, 2) # 2 qubits, 2 clbits (for measurements only)
+    
     # Manual circuit construction simulating what JASP would do
     # measure qubit 0 into clbit 0
     qc.measure(0, 0)
     # measure qubit 1 into clbit 1
     qc.measure(1, 1)
     
-    # ParityOperation operation checking parity of clbit 0 and 1
-    # It writes its result to clbit 2
-    # ParityOperation takes num_inputs (integer) and expectation (0, 1 or 2)
-    # expectation=0 means we expect even parity, triggering detector if parity is odd
+    # ParityOperation now takes only input clbits (no result clbit)
+    # expectation=0 means we expect even parity
     parity_op = ParityOperation(2, expectation=0)
-    qc.append(parity_op, clbits=[qc.clbits[0], qc.clbits[1], qc.clbits[2]])
+    qc.append(parity_op, clbits=[qc.clbits[0], qc.clbits[1]])
+    
+    # Parity result is tracked in parity_record (initialized by to_stim or manually)
+    qc.parity_record = ParityRecord()
+    qc.parity_record.add([qc.clbits[0], qc.clbits[1]], expectation=0)
     
     stim_circuit, meas_map, det_map = qc.to_stim(return_measurement_map=True, return_detector_map=True)
     
@@ -311,13 +319,10 @@ def test_detector_operation_conversion():
     assert len(det_lines) == 1
     assert "rec[-1]" in det_lines[0]
     assert "rec[-2]" in det_lines[0] # JASP Parity checks all inputs
-    # Note: ParityOperation([0, 1]) implies checking indices 0 and 1 of its inputs
     
     # Check maps
     assert len(meas_map) == 2
     assert len(det_map) == 1
-    # The result of the parity check is stored in the last clbit (clbits[2])
-    assert det_map[qc.clbits[2]] == 0
 
 
 def test_detector_permutation():
@@ -501,34 +506,36 @@ def test_detector_permutation():
 def test_observable_map():
     from qrisp import QuantumCircuit
     from qrisp.jasp.primitives.parity_primitive import ParityOperation
+    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityRecord
 
-    qc = QuantumCircuit(2, 3)
+    qc = QuantumCircuit(2, 2)  # 2 qubits, 2 clbits (measurements only)
     qc.h(0)
     qc.cx(0, 1)
     
-    # Define parity/observable operation
-    parity_op = ParityOperation(2, expectation=2)
-    
-    # Explicitly measure into the clbits used by parity
+    # Explicitly measure into the clbits
     qc.measure(qc.qubits[0], qc.clbits[0])
     qc.measure(qc.qubits[1], qc.clbits[1])
     
-    # Apply parity op to get an observable
-    # Parity op takes 2 measurement bits + 1 result bit
-    qc.append(parity_op, [], [qc.clbits[0], qc.clbits[1], qc.clbits[2]])
+    # Define parity/observable operation - now takes only input clbits
+    parity_op = ParityOperation(2, expectation=2)
+    qc.append(parity_op, [], [qc.clbits[0], qc.clbits[1]])
+    
+    # Parity result is tracked in parity_record
+    qc.parity_record = ParityRecord()
+    parity_handle = qc.parity_record.add([qc.clbits[0], qc.clbits[1]], expectation=2)
     
     res = qc.to_stim(return_observable_map=True)
     stim_circuit = res[0]
     observable_map = res[1]
     
-    # Check that the map is correct
-    assert qc.clbits[2] in observable_map
-    assert observable_map[qc.clbits[2]] == 0
+    # Check that the map contains the parity handle
+    assert len(observable_map) == 1
     
-    # Ensure it's not in detector map unless requested (implicit check that return logic works)
+    # Ensure detector/observable logic is correct
     res_det = qc.to_stim(return_detector_map=True, return_observable_map=True)
     det_map = res_det[1]
     obs_map = res_det[2]
     
-    assert qc.clbits[2] not in det_map
-    assert qc.clbits[2] in obs_map
+    # Detector map should be empty (expectation=2 means observable, not detector)
+    assert len(det_map) == 0
+    assert len(obs_map) == 1

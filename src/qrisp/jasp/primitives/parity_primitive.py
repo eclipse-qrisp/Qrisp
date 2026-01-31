@@ -240,9 +240,12 @@ class ParityOperation(Operation):
     
     This operation is used to interface with Stim's DETECTOR and OBSERVABLE instructions during the
     conversion process. It acts as a placeholder in the Qrisp QuantumCircuit.
+    
+    The operation takes n input clbits (the measurements to compute parity of).
+    Parity results are tracked separately via the circuit's parity_record attribute.
     """
     def __init__(self, num_inputs, expectation = 2):
         
-        definition = QuantumCircuit(0, num_inputs + 1)
+        definition = QuantumCircuit(0, num_inputs)
         self.expectation = expectation
-        Operation.__init__(self, "parity", num_clbits = num_inputs + 1, definition = definition)
+        Operation.__init__(self, "parity", num_clbits = num_inputs, definition = definition)

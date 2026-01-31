@@ -58,7 +58,7 @@ Detectors and Observables
 -------------------------
 
 In Stim, detectors are annotations asserting that a set of measurement outcomes has a deterministic parity. Observables are similar structures tracking logical information.
-Qrisp allows you to define these structures using the general-purpose :func:`~qrisp.jasp.parity` function.
+Qrisp allows you to define these structures using the general-purpose :func:`~qrisp.parity` function.
 
 .. list-table::
    :header-rows: 0
@@ -66,3 +66,8 @@ Qrisp allows you to define these structures using the general-purpose :func:`~qr
 
    * - :func:`~qrisp.parity`
      - Performs a parity check on measurement results. Creates Stim detectors or observables when used within :func:`~qrisp.jasp.extract_stim`.
+
+.. toctree:: 
+   :hidden:
+
+   parity_doc
