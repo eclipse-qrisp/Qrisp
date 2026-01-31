@@ -101,6 +101,8 @@ def test_tridiagonal_shifted_custom_block_encoding():
                 qswitch(operand, case, unitaries)
     
     BE = BlockEncoding(U, [QuantumFloat(2)], alpha)
+
+    BE_inv = QSVT_inversion(BE, 0.01, np.linalg.cond(A))
     
     # Prepare initial system state |0>
     def prep_b():
@@ -110,7 +112,7 @@ def test_tridiagonal_shifted_custom_block_encoding():
     
     @terminal_sampling()
     def main():
-        operand = BE.apply_rus(prep_b)()
+        operand = BE_inv.apply_rus(prep_b)()
         return operand
 
     res_dict = main()
