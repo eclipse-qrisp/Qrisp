@@ -153,7 +153,7 @@ def QSVT(A, phi_qsvt):
     new_anc_templates = [QuantumBool().template()] + A.anc_templates
     new_alpha = 1 # TBD
 
-    return BlockEncoding(new_unitary, new_anc_templates, new_alpha, is_hermitian = False)
+    return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian = False)
 
 
 
