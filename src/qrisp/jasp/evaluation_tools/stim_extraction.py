@@ -315,8 +315,9 @@ def extract_stim(func):
                 
                 # Case 3: Value is a ParityHandle (from parity operation)
                 # Replace it with its Stim detector/observable index from the mapping.
+                # ParityHandle is hashable by index, so it can be used directly as a key.
                 elif isinstance(val, ParityHandle):
-                    new_val = idx_mapping[val.index]
+                    new_val = idx_mapping[val]
                 
                 # Case 4: Value is something else (e.g., integer, float, ProcessedMeasurement)
                 # Pass through unchanged. Classical values computed during the function

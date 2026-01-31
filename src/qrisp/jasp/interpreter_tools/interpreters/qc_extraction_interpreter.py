@@ -148,11 +148,13 @@ class ParityHandle:
         return f"ParityHandle(index={self.index}, clbits={self.clbits}, expectation={self.expectation})"
     
     def __hash__(self):
-        return hash(self.index)
+        # Include clbits in hash so handles from different circuits don't match
+        return hash((self.index, tuple(self.clbits)))
     
     def __eq__(self, other):
         if isinstance(other, ParityHandle):
-            return self.index == other.index
+            # Compare both index and clbits to catch accidental circuit mixing
+            return self.index == other.index and self.clbits == other.clbits
         return False
 
 

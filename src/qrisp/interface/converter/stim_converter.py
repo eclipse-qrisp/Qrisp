@@ -44,11 +44,13 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
         For example, {clbit_obj_0: 2, clbit_obj_1: 0} means the first Clbit object 
         corresponds to the 3rd measurement (index 2) in Stim's measurement record.
     detector_map : dict
-        (Optional) A dictionary mapping parity operation indices to Stim detector indices.
-        The keys correspond to the sequential order of parity operations in the circuit.
+        (Optional) A dictionary mapping ParityHandle objects to Stim detector indices.
+        ParityHandle objects are compared by their index, so handles from to_qc() can
+        be used directly as keys.
     observable_map : dict
-        (Optional) A dictionary mapping parity operation indices to Stim observable indices.
-        The keys correspond to the sequential order of parity operations in the circuit.
+        (Optional) A dictionary mapping ParityHandle objects to Stim observable indices.
+        ParityHandle objects are compared by their index, so handles from to_qc() can
+        be used directly as keys.
     
     Notes
     -----
@@ -98,6 +100,7 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
     from qrisp import QuantumCircuit
     from qrisp.circuit.operation import ClControlledOperation
     from qrisp.jasp.primitives.parity_primitive import ParityOperation
+    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityHandle
     from qrisp.misc.stim_tools.error_class import StimNoiseGate
 
     # We don't want to transpile StimNoiseGate gates because the have trivial definition    
@@ -265,16 +268,18 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
                 new_stim_idx = stim_observable_counter
                 stim_observable_counter += 1
                 
+                # Create a ParityHandle for this parity operation
+                parity_handle = ParityHandle(parity_counter, list(measurement_clbits), op.expectation)
+                
                 # Track this parity for potential nested usage and populate observable_map
-                # Use parity_counter as key for parity indexing
                 parity_key = ('parity', parity_counter)
                 clbit_to_observable_info[parity_key] = {
                     'idx': new_stim_idx,
                     'measurements': current_components
                 }
                 
-                # Populate observable_map - key is the parity index (matching parity operation order)
-                observable_map[parity_counter] = new_stim_idx
+                # Populate observable_map - key is ParityHandle (hashable by index)
+                observable_map[parity_handle] = new_stim_idx
                 
                 # Emit instruction if there are targets
                 if stim_targets:
@@ -283,8 +288,11 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
             else:
                 # --- Detector Mode ---
                 
-                # Populate detector_map - key is the parity index (matching ParityHandle.index)
-                detector_map[parity_counter] = detector_counter
+                # Create a ParityHandle for this parity operation
+                parity_handle = ParityHandle(parity_counter, list(measurement_clbits), op.expectation)
+                
+                # Populate detector_map - key is ParityHandle (hashable by index)
+                detector_map[parity_handle] = detector_counter
                 
                 # Emit DETECTOR
                 if stim_targets:
