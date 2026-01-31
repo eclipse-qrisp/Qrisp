@@ -25,7 +25,6 @@ Utilities
    BlockEncoding.apply_rus
    BlockEncoding.create_ancillas
 
-
 Arithmetic
 ==========
 

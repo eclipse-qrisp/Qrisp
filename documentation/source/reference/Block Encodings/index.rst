@@ -9,6 +9,7 @@ Block Encodings
    :hidden:
    
    BlockEncoding
+   qrisp_vs_numpy
 
 
 **A High-Level Abstraction for Quantum Linear Algebra**
