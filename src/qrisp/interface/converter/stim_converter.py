@@ -44,11 +44,11 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
         For example, {clbit_obj_0: 2, clbit_obj_1: 0} means the first Clbit object 
         corresponds to the 3rd measurement (index 2) in Stim's measurement record.
     detector_map : dict
-        (Optional) A dictionary mapping parity record indices to Stim detector indices.
-        The keys correspond to the order of parity operations in the circuit's parity_record.
+        (Optional) A dictionary mapping parity operation indices to Stim detector indices.
+        The keys correspond to the sequential order of parity operations in the circuit.
     observable_map : dict
-        (Optional) A dictionary mapping parity record indices to Stim observable indices.
-        The keys correspond to the order of parity operations in the circuit's parity_record.
+        (Optional) A dictionary mapping parity operation indices to Stim observable indices.
+        The keys correspond to the sequential order of parity operations in the circuit.
     
     Notes
     -----
@@ -123,7 +123,7 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
     
     detector_map = {}
     detector_counter = 0
-    parity_counter = 0  # Tracks order of parity operations for parity_record indexing
+    parity_counter = 0  # Tracks order of parity operations for indexing
 
     observable_map = {}
     
@@ -266,14 +266,14 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
                 stim_observable_counter += 1
                 
                 # Track this parity for potential nested usage and populate observable_map
-                # Use parity_counter as key for parity_record indexing
+                # Use parity_counter as key for parity indexing
                 parity_key = ('parity', parity_counter)
                 clbit_to_observable_info[parity_key] = {
                     'idx': new_stim_idx,
                     'measurements': current_components
                 }
                 
-                # Populate observable_map - key is the parity index (matching parity_record order)
+                # Populate observable_map - key is the parity index (matching parity operation order)
                 observable_map[parity_counter] = new_stim_idx
                 
                 # Emit instruction if there are targets

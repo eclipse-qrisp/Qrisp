@@ -286,10 +286,9 @@ def test_detector_operation_conversion():
     Test manual creation of ParityOperation and conversion to Stim using qc.to_stim().
     
     With the new parity design, ParityOperation takes only n input clbits (no output clbit).
-    The parity result is tracked separately in qc.parity_record.
+    The parity operation is tracked in the circuit and converted directly to Stim detectors.
     """
     from qrisp.jasp.primitives.parity_primitive import ParityOperation
-    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityRecord
     
     qc = QuantumCircuit(2, 2) # 2 qubits, 2 clbits (for measurements only)
     
@@ -303,10 +302,6 @@ def test_detector_operation_conversion():
     # expectation=0 means we expect even parity
     parity_op = ParityOperation(2, expectation=0)
     qc.append(parity_op, clbits=[qc.clbits[0], qc.clbits[1]])
-    
-    # Parity result is tracked in parity_record (initialized by to_stim or manually)
-    qc.parity_record = ParityRecord()
-    qc.parity_record.add([qc.clbits[0], qc.clbits[1]], expectation=0)
     
     stim_circuit, meas_map, det_map = qc.to_stim(return_measurement_map=True, return_detector_map=True)
     
@@ -506,7 +501,6 @@ def test_detector_permutation():
 def test_observable_map():
     from qrisp import QuantumCircuit
     from qrisp.jasp.primitives.parity_primitive import ParityOperation
-    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityRecord
 
     qc = QuantumCircuit(2, 2)  # 2 qubits, 2 clbits (measurements only)
     qc.h(0)
@@ -519,10 +513,6 @@ def test_observable_map():
     # Define parity/observable operation - now takes only input clbits
     parity_op = ParityOperation(2, expectation=2)
     qc.append(parity_op, [], [qc.clbits[0], qc.clbits[1]])
-    
-    # Parity result is tracked in parity_record
-    qc.parity_record = ParityRecord()
-    parity_handle = qc.parity_record.add([qc.clbits[0], qc.clbits[1]], expectation=2)
     
     res = qc.to_stim(return_observable_map=True)
     stim_circuit = res[0]
