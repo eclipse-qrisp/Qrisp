@@ -69,7 +69,7 @@ With Qrisp we hope to open the creation of quantum algorithms to a much broader 
    Quantum Environments/index
    Primitives/index
    Algorithms/index
-   Block Encodings/BlockEncoding
+   Block Encodings/index
    Operators/index
    Circuit Manipulation/index
    Jasp/index

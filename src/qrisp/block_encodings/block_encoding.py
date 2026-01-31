@@ -27,6 +27,7 @@ from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
+from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool
 from typing import Any, Callable, Literal, TYPE_CHECKING
 
@@ -257,6 +258,80 @@ class BlockEncoding:
             Reconstructed instance.
         """
         return cls(*children, *aux_data)
+    
+    @classmethod
+    def from_operator(cls: "BlockEncoding", O: QubitOperator | FermionicOperator) -> BlockEncoding:
+        """
+        Creates a BlockEncoding from an operator.
+
+        Parameters
+        ----------
+        O : QubitOperator | FermionicOperator
+            The operator.
+
+        Returns
+        -------
+        BlockEncoding
+            A BlockEncoding representing the Hermitian part $(O+O^{\dagger})/2$.
+
+        Examples
+        --------
+
+        >>> from qrisp.block_encodings import BlockEncoding
+        >>> from qrisp.operators import X, Y, Z
+        >>> H = X(0)*X(1) + 0.2*Y(0)*Y(1)
+        >>> B = BlockEncoding.from_operator(H)
+        
+        """
+        if isinstance(O, FermionicOperator):
+            O = O.to_qubit_operator()
+        return O.pauli_block_encoding()
+    
+    @classmethod
+    def from_array(cls: "BlockEncoding", A: "ArrayLike") -> BlockEncoding:
+        """
+        Creates a BlockEncoding from a 2-D array.
+
+        Parameters
+        ----------
+        A : ArrayLike
+            2-D array of shape ``(N,N,)`` for a power of two ``N``.
+
+        Returns
+        -------
+        BlockEncoding
+            A BlockEncoding representing the Hermitian part $(A+A^{\dagger})/2$.
+
+        Examples
+        --------
+
+        >>> import numpy as np
+        >>> from qrisp.block_encodings import BlockEncoding
+        >>> A = np.array([[0,1,0,1],[1,0,0,0],[0,0,1,0],[1,0,0,0]])
+        >>> B = BlockEncoding.from_array(A)
+        
+        """
+
+        A_arr = np.asanyarray(A)
+        shape = A.shape
+        
+        # 1. Check if the array is 2D and square
+        if len(shape) != 2 or shape[0] != shape[1]:
+            raise ValueError(f"Array must be square (N, N), but got {shape}.")
+            
+        # 2. Check if N is a power of two
+        N = shape[0]
+        if not (N > 0 and (N & (N - 1)) == 0):
+            raise ValueError(f"Size N={N} must be a power of two.")
+        
+        A_arr = (A_arr + A_arr.conj().T) / 2
+
+        O = QubitOperator.from_matrix(A_arr, reverse_endianness=True)
+        return O.pauli_block_encoding()
+
+    #
+    # Utilities
+    #
 
     def create_ancillas(self) -> list[QuantumVariable]:
         r"""
@@ -445,6 +520,10 @@ class BlockEncoding:
             return success_bool, *operands       
 
         return rus_function
+    
+    #
+    # Arithmetic
+    #
 
     def __add__(self, other: BlockEncoding) -> BlockEncoding:
         r"""
@@ -928,6 +1007,10 @@ class BlockEncoding:
 
         return BlockEncoding(self.alpha, self.anc_templates, new_unitary, is_hermitian=self.is_hermitian)
     
+    #
+    # Transformations
+    #
+
     def qubitization(self) -> BlockEncoding:
         r"""
         Returns the qubitization of the BlockEncoding.
