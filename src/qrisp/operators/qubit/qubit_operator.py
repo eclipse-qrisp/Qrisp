@@ -2238,11 +2238,11 @@ class QubitOperator(Hamiltonian):
             def U(operand):
                 unitaries[0](operand)
 
-            return BlockEncoding(U, [], alpha)
+            return BlockEncoding(alpha, [], U, is_hermitian=True)
 
         @qache
         def U(case, operand):
-            with conjugate(prepare)(case, np.sqrt(coeffs/alpha)):
+            with conjugate(prepare)(case, np.sqrt(coeffs / alpha)):
                 qswitch(operand, case, unitaries)
 
-        return BlockEncoding(U, [QuantumFloat(num_qubits).template()], alpha, is_hermitian=True)
+        return BlockEncoding(alpha, [QuantumFloat(num_qubits).template()], U, is_hermitian=True)

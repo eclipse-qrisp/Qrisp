@@ -407,4 +407,5 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    JaspQAOAtutorial.ipynb
    QIROtutorial.ipynb
    QMCItutorial.ipynb
+   GQSP_filtering.ipynb
    

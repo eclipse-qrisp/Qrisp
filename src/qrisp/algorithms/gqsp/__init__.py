@@ -16,15 +16,10 @@
 ********************************************************************************
 """
 
-import qrisp.algorithms.grover as grover
-import qrisp.algorithms.shor as shor
-import qrisp.algorithms.qaoa as qaoa
-import qrisp.algorithms.qiro as qiro
-import qrisp.algorithms.quantum_backtracking as quantum_backtracking
-from qrisp.algorithms.quantum_counting import quantum_counting
-import qrisp.algorithms.vqe as vqe
-import qrisp.algorithms.qite as qite
-import qrisp.algorithms.qmci as qmci
-import qrisp.algorithms.cks as cks
-import qrisp.algorithms.qsvt as qsvt
-import qrisp.algorithms.gqsp as gqsp
+from qrisp.algorithms.gqsp.gqsp import *
+from qrisp.algorithms.gqsp.gqet import *
+from qrisp.algorithms.gqsp.convolution import *
+from qrisp.algorithms.gqsp.fourier_series_loader import *
+from qrisp.algorithms.gqsp.hamiltonian_simulation import *
+from qrisp.algorithms.gqsp.helper_functions import *
+from qrisp.algorithms.gqsp.inversion import *
