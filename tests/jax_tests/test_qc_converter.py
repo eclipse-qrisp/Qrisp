@@ -930,7 +930,7 @@ def test_nested_qache_with_measurements():
     This is a common pattern for syndrome measurements in error correction.
     """
     import jax.numpy as jnp
-    from qrisp import reset, cx
+    from qrisp import reset, cx, Clbit
     
     N = 4
     
@@ -960,15 +960,15 @@ def test_nested_qache_with_measurements():
     jaspr = make_jaspr(main)()
     result, qc = jaspr.to_qc()
     
-    # jnp.vstack processes the MeasurementArrays, so we get ProcessedMeasurements
-    # The result is an array of 3 ProcessedMeasurement objects (one per round)
+    # jnp.vstack now properly preserves MeasurementArrays and their shapes
+    # Result should be a 2D array of shape (3, N-1) containing Clbits
     assert hasattr(result, 'shape'), f"Expected result with shape, got {type(result)}"
-    assert result.shape == (3,), f"Expected shape (3,), got {result.shape}"
+    assert result.shape == (3, N-1), f"Expected shape (3, {N-1}), got {result.shape}"
     
-    # All elements should be ProcessedMeasurement
-    for elem in result:
-        assert isinstance(elem, ProcessedMeasurement), \
-            f"Expected ProcessedMeasurement, got {type(elem)}"
+    # All elements should be Clbits
+    for elem in result.flat:
+        assert isinstance(elem, Clbit), \
+            f"Expected Clbit, got {type(elem)}"
     
     # Verify the circuit has measurements: 3 rounds * (N-1) ancilla qubits = 9
     measure_ops = [instr for instr in qc.data if instr.op.name == "measure"]

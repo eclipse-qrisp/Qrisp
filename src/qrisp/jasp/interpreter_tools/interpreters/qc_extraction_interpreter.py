@@ -261,7 +261,7 @@ class MeasurementArray:
     # Offset for encoding ParityHandle indices (value = handle.index + PARITY_HANDLE_OFFSET)
     PARITY_HANDLE_OFFSET = 3
     
-    def __init__(self, qc, data, parity_handles=None):
+    def __init__(self, qc, data, parity_handles=None, shape=None):
         """
         Initialize a MeasurementArray.
         
@@ -273,10 +273,25 @@ class MeasurementArray:
             Array of integers encoding boolean/measurement values.
         parity_handles : list, optional
             List of ParityHandle objects. If None, uses empty list.
+        shape : tuple, optional
+            Logical shape of the array. If None, defaults to 1D shape of data.
         """
         self.qc = qc
-        self.data = np.array(data, dtype=np.int64)
+        self.data = np.array(data, dtype=np.int64).flatten()
         self.parity_handles = parity_handles if parity_handles is not None else []
+        self._shape = shape if shape is not None else (len(self.data),)
+    
+    @property
+    def shape(self):
+        """Return the logical shape of the array."""
+        return self._shape
+    
+    def reshape(self, new_shape):
+        """Return a new MeasurementArray with the specified shape."""
+        # Validate that the total size matches
+        if np.prod(new_shape) != len(self.data):
+            raise ValueError(f"Cannot reshape array of size {len(self.data)} into shape {new_shape}")
+        return MeasurementArray(self.qc, self.data, self.parity_handles, new_shape)
     
     def __len__(self):
         return len(self.data)
@@ -394,10 +409,13 @@ class MeasurementArray:
         numpy.ndarray
             Array with dtype=object containing the resolved values.
         """
-        result = np.empty(self.data.shape, dtype=object)
-        for idx, val in np.ndenumerate(self.data):
-            result[idx] = self._decode_value(val)
-        return result
+        # Resolve flat data first
+        resolved_flat = np.empty(len(self.data), dtype=object)
+        for i, val in enumerate(self.data):
+            resolved_flat[i] = self._decode_value(val)
+        
+        # Reshape to logical shape
+        return resolved_flat.reshape(self._shape)
     
     @classmethod
     def from_clbit(cls, qc, clbit, parity_handles=None):
@@ -488,7 +506,7 @@ class MeasurementArray:
         )
     
     @classmethod
-    def concatenate(cls, qc, arrays):
+    def concatenate(cls, qc, arrays, dimension=0):
         """
         Concatenate multiple arrays/values into a single MeasurementArray.
         
@@ -505,6 +523,8 @@ class MeasurementArray:
             - Clbit: encoded as negative index
             - ProcessedMeasurement: encoded as PROCESSED_VALUE (2)
             - bool/int: encoded as 0 or 1
+        dimension : int
+            The axis along which to concatenate.
         
         Returns
         -------
@@ -513,29 +533,36 @@ class MeasurementArray:
         """
         from qrisp import Clbit
         
-        result_data = []
+        # Convert all inputs to MeasurementArrays with shapes
+        meas_arrays = []
         parity_handles = None
         for arr in arrays:
             if isinstance(arr, MeasurementArray):
-                result_data.extend(arr.data)
+                meas_arrays.append(arr)
                 if parity_handles is None:
                     parity_handles = arr.parity_handles
             elif isinstance(arr, Clbit):
                 clbit_idx = qc.clbits.index(arr)
                 neg_idx = clbit_idx - len(qc.clbits)
-                result_data.append(neg_idx)
+                meas_arrays.append(cls(qc, np.array([neg_idx], dtype=np.int64), parity_handles, (1,)))
             elif isinstance(arr, ProcessedMeasurement):
-                result_data.append(cls.PROCESSED_VALUE)
+                meas_arrays.append(cls(qc, np.array([cls.PROCESSED_VALUE], dtype=np.int64), parity_handles, (1,)))
             elif isinstance(arr, (bool, np.bool_)):
-                result_data.append(int(arr))
+                meas_arrays.append(cls(qc, np.array([int(arr)], dtype=np.int64), parity_handles, (1,)))
             elif isinstance(arr, (int, np.integer)):
-                result_data.append(int(arr))
+                meas_arrays.append(cls(qc, np.array([int(arr)], dtype=np.int64), parity_handles, (1,)))
             else:
                 raise TypeError(
                     f"Cannot concatenate type {type(arr)} into MeasurementArray"
                 )
         
-        return cls(qc, np.array(result_data, dtype=np.int64), parity_handles)
+        # Use numpy's concatenate logic to compute the result shape
+        shaped_arrays = [ma.data.reshape(ma.shape) for ma in meas_arrays]
+        concatenated = np.concatenate(shaped_arrays, axis=dimension)
+        result_shape = concatenated.shape
+        result_data = concatenated.flatten()
+        
+        return cls(qc, result_data, parity_handles, result_shape)
 
 
 # =============================================================================
@@ -766,6 +793,24 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
             insert_outvalues(eqn, context_dic, res)
             return
         
+        elif prim_name == "jit":
+            # Generic jit (e.g., from jnp.vstack's atleast_2d) - evaluate if contains measurement data
+            if any(contains_measurement_data(v) for v in invalues):
+                from qrisp.jasp import eval_jaxpr
+                
+                definition_jaxpr = eqn.params["jaxpr"]
+                res = eval_jaxpr(definition_jaxpr.jaxpr, eqn_evaluator=qc_extraction_eqn_evaluator)(
+                    *(invalues + definition_jaxpr.consts)
+                )
+                
+                if len(definition_jaxpr.jaxpr.outvars) == 1:
+                    res = [res]
+                
+                insert_outvalues(eqn, context_dic, res)
+                return
+            else:
+                return True
+        
         elif prim_name == "cond":
             # Conditional branching - may become classically controlled operation
             return cond_to_cl_control(eqn, context_dic, qc_extraction_eqn_evaluator)
@@ -899,23 +944,24 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
                 # Create a MeasurementArray filled with processed markers
                 size = int(np.prod(shape)) if shape else 1
                 result = MeasurementArray.from_processed(qc, size, parity_handles)
+                result._shape = shape
                 insert_outvalues(eqn, context_dic, result)
                 return
             elif isinstance(inval, Clbit):
                 meas_arr = MeasurementArray.from_clbit(qc, inval, parity_handles)
                 new_data = np.broadcast_to(meas_arr.data, shape)
-                result = MeasurementArray(qc, new_data.flatten(), parity_handles)
+                result = MeasurementArray(qc, new_data.flatten(), parity_handles, shape)
                 insert_outvalues(eqn, context_dic, result)
                 return
             elif isinstance(inval, MeasurementArray):
-                new_data = np.broadcast_to(inval.data, shape)
-                result = MeasurementArray(qc, new_data.flatten(), parity_handles)
+                new_data = np.broadcast_to(inval.data.reshape(inval.shape), shape)
+                result = MeasurementArray(qc, new_data.flatten(), parity_handles, shape)
                 insert_outvalues(eqn, context_dic, result)
                 return
             elif isinstance(inval, (bool, np.bool_)):
                 meas_arr = MeasurementArray.from_value(qc, inval, parity_handles)
                 new_data = np.broadcast_to(meas_arr.data, shape)
-                result = MeasurementArray(qc, new_data.flatten(), parity_handles)
+                result = MeasurementArray(qc, new_data.flatten(), parity_handles, shape)
                 insert_outvalues(eqn, context_dic, result)
                 return
             else:
@@ -923,16 +969,16 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
         
         elif prim_name == "concatenate":
             # concatenate: Joins multiple arrays along an axis
-            # Example: jnp.array([m0, m1, m2]) compiles to:
-            #   broadcast_in_dim(m0) -> arr0
-            #   broadcast_in_dim(m1) -> arr1
-            #   broadcast_in_dim(m2) -> arr2
-            #   concatenate(arr0, arr1, arr2)
+            # Example: jnp.vstack([arr0, arr1, arr2]) compiles to:
+            #   broadcast_in_dim(arr0) -> arr0_2d  (shape (1, n))
+            #   broadcast_in_dim(arr1) -> arr1_2d
+            #   broadcast_in_dim(arr2) -> arr2_2d
+            #   concatenate(arr0_2d, arr1_2d, arr2_2d, dimension=0)
             
             # Check if any input contains measurement data (including ProcessedMeasurement)
             if any(contains_measurement_data(v) for v in invalues):
-                # MeasurementArray.concatenate now handles ProcessedMeasurement inputs
-                result = MeasurementArray.concatenate(qc, invalues)
+                dimension = eqn.params.get("dimension", 0)
+                result = MeasurementArray.concatenate(qc, invalues, dimension)
                 insert_outvalues(eqn, context_dic, result)
                 return
             else:
