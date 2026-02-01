@@ -57,7 +57,8 @@ def test_qc_converter():
     jaspr = make_jaspr(test_function)(5)
     qc = jaspr.to_qc(5)
     
-    assert len(qc.data) == 3 + len(qc.qubits)
+    # 6 cx operations (2 per inner_function call × 3 calls) + 5 qubit allocations
+    assert len(qc.data) == 6 + len(qc.qubits)
     print(qc)
     comparison_qc = QuantumCircuit(5)
     
@@ -919,4 +920,63 @@ def test_processed_measurement_in_control_raises_error():
         # Should mention something about real-time feedback or processed measurements
         assert "real-time feedback" in str(e).lower() or "processed" in str(e).lower(), \
             f"Expected error about real-time feedback or processed measurements, got: {e}"
+
+
+def test_nested_qache_with_measurements():
+    """Test that nested @qache functions with measurements work correctly.
+    
+    This tests the scenario where a @qache function measures qubits and returns
+    the results, which are then collected in a loop by an outer function.
+    This is a common pattern for syndrome measurements in error correction.
+    """
+    import jax.numpy as jnp
+    from qrisp import reset, cx
+    
+    N = 4
+    
+    def measure_stabilizer(data_qb_0, data_qb_1, ancilla):
+        reset(ancilla)
+        cx(data_qb_0, ancilla)
+        cx(data_qb_1, ancilla)
+    
+    @qache
+    def syndrome_round(data, ancilla):
+        for i in range(ancilla.size):
+            measure_stabilizer(data[i][0], data[i+1][0], ancilla[i][0])
+        return measure(ancilla)
+    
+    def multi_round(data, ancilla, amount):
+        syndrome_list = []
+        for i in range(amount):
+            syndrome_list.append(syndrome_round(data, ancilla))
+        return jnp.vstack(syndrome_list)
+    
+    def main():
+        data = QuantumArray(qtype=QuantumBool(), shape=(N,))
+        ancilla = QuantumArray(qtype=QuantumBool(), shape=(N-1,))
+        return multi_round(data, ancilla, 3)
+    
+    # This should not raise an error
+    jaspr = make_jaspr(main)()
+    result, qc = jaspr.to_qc()
+    
+    # jnp.vstack processes the MeasurementArrays, so we get ProcessedMeasurements
+    # The result is an array of 3 ProcessedMeasurement objects (one per round)
+    assert hasattr(result, 'shape'), f"Expected result with shape, got {type(result)}"
+    assert result.shape == (3,), f"Expected shape (3,), got {result.shape}"
+    
+    # All elements should be ProcessedMeasurement
+    for elem in result:
+        assert isinstance(elem, ProcessedMeasurement), \
+            f"Expected ProcessedMeasurement, got {type(elem)}"
+    
+    # Verify the circuit has measurements: 3 rounds * (N-1) ancilla qubits = 9
+    measure_ops = [instr for instr in qc.data if instr.op.name == "measure"]
+    assert len(measure_ops) == 3 * (N-1), \
+        f"Expected {3 * (N-1)} measurements, got {len(measure_ops)}"
+    
+    # Verify the circuit has reset operations
+    reset_ops = [instr for instr in qc.data if instr.op.name == "reset"]
+    assert len(reset_ops) == 3 * (N-1), \
+        f"Expected {3 * (N-1)} resets, got {len(reset_ops)}"
 
