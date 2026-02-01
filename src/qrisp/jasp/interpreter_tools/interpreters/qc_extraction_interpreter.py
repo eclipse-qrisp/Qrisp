@@ -185,151 +185,38 @@ class ParityHandle:
 # SECTION 2: MeasurementArray - Handling Arrays of Measurement Results
 # =============================================================================
 
-class MeasurementArray:
+class MeasurementArray(np.ndarray):
     """
-    Represents an array of measurement-related values during QuantumCircuit extraction.
+    A numpy ndarray subclass for measurement-related values during QuantumCircuit extraction.
     
     Problem Being Solved
     --------------------
     In Jaspr, measurement results are JAX boolean values that can be freely
-    combined into arrays using operations like:
-    
-        m0 = measure(qv[0])  # Returns JAX boolean tracer
-        m1 = measure(qv[1])  # Returns JAX boolean tracer
-        m2 = measure(qv[2])  # Returns JAX boolean tracer
-        arr = jnp.array([m0, m1, m2])  # Creates JAX boolean array
-        first = arr[0]  # Extracts first element
-    
-    When lowering to QuantumCircuit, measurements return `Clbit` objects instead
-    of JAX booleans. The problem is that JAX array operations (broadcast_in_dim,
-    concatenate, slice, etc.) cannot handle Clbit objects - they expect JAX-
-    compatible types.
+    combined into arrays. When lowering to QuantumCircuit, measurements return
+    `Clbit` objects instead of JAX booleans. JAX array operations cannot handle
+    Clbit objects directly.
     
     Solution
     --------
-    MeasurementArray provides a bridge between the JAX array world and Clbit world
-    using a numpy object array that stores elements directly:
+    MeasurementArray is a numpy ndarray subclass with dtype=object that stores:
     
     - Clbit objects: Measurement results that can be used in circuit operations
     - ParityHandle objects: Parity computation results  
     - ProcessedMeasurement: Marker for classical post-processing results
     - bool: Known boolean values (True/False)
     
-    Array operations (reshape, slice, concatenate, etc.) work naturally on object
-    arrays with essentially no performance penalty.
-    
-    Attributes
-    ----------
-    data : numpy.ndarray
-        Object array containing Clbit, ParityHandle, ProcessedMeasurement, or bool values.
+    Being a numpy subclass means reshape, slice, concatenate, etc. work natively.
+    The subclass provides type identification via isinstance() and helper methods.
     """
     
-    def __init__(self, data, shape=None):
-        """
-        Initialize a MeasurementArray.
-        
-        Parameters
-        ----------
-        data : array-like
-            Array of measurement-related values (Clbit, ParityHandle, 
-            ProcessedMeasurement, or bool).
-        shape : tuple, optional
-            Logical shape of the array. If None, defaults to 1D shape of data.
-        """
-        self.data = np.array(data, dtype=object).flatten()
-        self._shape = shape if shape is not None else (len(self.data),)
+    def __new__(cls, data):
+        """Create a new MeasurementArray from data."""
+        arr = np.asarray(data, dtype=object).view(cls)
+        return arr
     
-    @property
-    def shape(self):
-        """Return the logical shape of the array."""
-        return self._shape
-    
-    def reshape(self, new_shape):
-        """Return a new MeasurementArray with the specified shape."""
-        if np.prod(new_shape) != len(self.data):
-            raise ValueError(f"Cannot reshape array of size {len(self.data)} into shape {new_shape}")
-        return MeasurementArray(self.data, new_shape)
-    
-    def __len__(self):
-        return len(self.data)
-    
-    def __getitem__(self, key):
-        """
-        Extract element(s) from the MeasurementArray.
-        
-        Parameters
-        ----------
-        key : int or slice
-            Index or slice to extract.
-        
-        Returns
-        -------
-        Clbit, bool, ProcessedMeasurement, ParityHandle, or MeasurementArray
-            - Single index: returns the stored object directly
-            - Slice: returns a new MeasurementArray
-        """
-        if isinstance(key, (int, np.integer)):
-            return self.data[key]
-        elif isinstance(key, slice):
-            return MeasurementArray(self.data[key])
-        else:
-            raise TypeError(
-                f"MeasurementArray indices must be integers or slices, not {type(key)}"
-            )
-    
-    def __setitem__(self, key, value):
-        """Set element(s) in the MeasurementArray."""
-        self.data[key] = value
-    
-    def has_processed_entries(self):
-        """Check if this array contains any ProcessedMeasurement entries."""
-        return any(isinstance(x, ProcessedMeasurement) for x in self.data)
-    
-    def to_clbit_list(self):
-        """
-        Convert to a list of Clbits and ParityHandles.
-        
-        Returns
-        -------
-        list[Clbit or ParityHandle]
-            List of Clbit objects and/or ParityHandle objects.
-        
-        Raises
-        ------
-        Exception
-            If the array contains ProcessedMeasurement or bool entries.
-        """
-        from qrisp import Clbit
-        
-        result = []
-        for val in self.data:
-            if isinstance(val, ProcessedMeasurement):
-                raise Exception(
-                    "Cannot convert MeasurementArray to Clbit list: array contains "
-                    "processed measurement values (from operations like ~, &, |). "
-                    "These values cannot be used in circuit-influencing operations."
-                )
-            elif isinstance(val, bool):
-                raise Exception(
-                    "Cannot convert MeasurementArray entry to Clbit/ParityHandle: "
-                    "only measurement results or parity handles can be converted."
-                )
-            elif isinstance(val, (Clbit, ParityHandle)):
-                result.append(val)
-            else:
-                raise Exception(f"Unexpected value type in MeasurementArray: {type(val)}")
-        return result
-    
-    def resolve(self):
-        """
-        Resolve this MeasurementArray to a numpy array with dtype=object.
-        
-        Returns
-        -------
-        numpy.ndarray
-            Array with dtype=object reshaped to logical shape.
-        """
-        return self.data.reshape(self._shape)
+    def __array_finalize__(self, obj):
+        """Called after array construction to finalize the object."""
+        pass
     
     def mark_as_processed(self):
         """
@@ -340,12 +227,8 @@ class MeasurementArray:
         MeasurementArray
             New array with all entries set to ProcessedMeasurement().
         """
-        processed_data = np.array([ProcessedMeasurement() for _ in self.data], dtype=object)
-        return MeasurementArray(processed_data, self._shape)
-    
-    def copy(self):
-        """Return a copy of this MeasurementArray."""
-        return MeasurementArray(self.data.copy(), self._shape)
+        processed_data = np.array([ProcessedMeasurement() for _ in self.flat], dtype=object)
+        return MeasurementArray(processed_data.reshape(self.shape))
 
 
 # =============================================================================
@@ -384,7 +267,7 @@ def to_object_array(val):
     ----------
     val : any
         Value to convert. Can be:
-        - MeasurementArray: returns its data reshaped to logical shape
+        - MeasurementArray: returned as-is (already an ndarray subclass)
         - Clbit, ParityHandle, ProcessedMeasurement, bool: wrapped in 0-d array
         - numpy array: converted to object dtype
         - Other: returned unchanged
@@ -397,7 +280,8 @@ def to_object_array(val):
     from qrisp import Clbit
     
     if isinstance(val, MeasurementArray):
-        return val.data.reshape(val.shape)
+        # MeasurementArray is already an ndarray subclass
+        return val
     elif isinstance(val, (Clbit, ParityHandle, ProcessedMeasurement)):
         return np.array(val, dtype=object)
     elif isinstance(val, (bool, np.bool_)):
@@ -497,7 +381,7 @@ def apply_array_primitive(prim_name, params, invalues):
         return result.item()
     else:
         # Array result
-        return MeasurementArray(result.flatten(), result.shape)
+        return MeasurementArray(result)
 
 
 def resolve_measurement_arrays(value):
@@ -512,7 +396,7 @@ def resolve_measurement_arrays(value):
     ----------
     value : any
         The value to resolve. Can be:
-        - MeasurementArray: resolved to numpy array with dtype=object
+        - MeasurementArray: viewed as plain numpy array with dtype=object
         - tuple/list: each element is recursively resolved
         - Other types: returned unchanged
     
@@ -522,7 +406,8 @@ def resolve_measurement_arrays(value):
         The resolved value with MeasurementArrays converted to numpy arrays.
     """
     if isinstance(value, MeasurementArray):
-        return value.resolve()
+        # View as plain numpy array (MeasurementArray is already an ndarray subclass)
+        return value.view(np.ndarray)
     elif isinstance(value, tuple):
         return tuple(resolve_measurement_arrays(v) for v in value)
     elif isinstance(value, list):
@@ -595,11 +480,9 @@ CLASSICAL_PROCESSING_PRIMITIVES = {
     "reduce_sum", "reduce_prod", "reduce_max", "reduce_min",
     "reduce_or", "reduce_and", "reduce_xor",
     
-    # Bitwise operations (scalar versions - array versions handled separately)
+    # Bitwise operations
+    "not", "and", "or", "xor",
     "shift_left", "shift_right_arithmetic", "shift_right_logical",
-    
-    # Type conversions that change semantics
-    # Note: convert_element_type is handled specially since bool->bool is OK
 }
 
 
@@ -677,7 +560,7 @@ def make_qc_extraction_eqn_evaluator(qc):
         # SECTION 4.1: Control Flow and Structural Primitives
         # -----------------------------------------------------------------
         
-        if prim_name == "jit" and isinstance(eqn.params["jaxpr"], Jaspr):
+        if prim_name == "jit" and (isinstance(eqn.params["jaxpr"], Jaspr) or any(contains_measurement_data(v) for v in invalues)):
             # Nested Jaspr (from @qache or similar) - evaluate with our interpreter
             from qrisp.jasp import eval_jaxpr
             
@@ -693,22 +576,7 @@ def make_qc_extraction_eqn_evaluator(qc):
             return
         
         elif prim_name == "jit":
-            # Generic jit (e.g., from jnp.vstack's atleast_2d) - evaluate if contains measurement data
-            if any(contains_measurement_data(v) for v in invalues):
-                from qrisp.jasp import eval_jaxpr
-                
-                definition_jaxpr = eqn.params["jaxpr"]
-                res = eval_jaxpr(definition_jaxpr.jaxpr, eqn_evaluator=qc_extraction_eqn_evaluator)(
-                    *(invalues + definition_jaxpr.consts)
-                )
-                
-                if len(definition_jaxpr.jaxpr.outvars) == 1:
-                    res = [res]
-                
-                insert_outvalues(eqn, context_dic, res)
-                return
-            else:
-                return True
+            return True
         
         elif prim_name == "cond":
             # Conditional branching - may become classically controlled operation
@@ -725,39 +593,22 @@ def make_qc_extraction_eqn_evaluator(qc):
         
         elif prim_name == "jasp.parity":
             # Parity operation: XOR of multiple classical bits
-            # Parity results are stored directly in ParityHandle with expanded clbits
+            # Note: Parity on arrays is dissolved into loops during tracing,
+            # so invalues are always scalars (Clbit, ParityHandle, or ProcessedMeasurement)
             
-            # Check for ProcessedMeasurement in scalar inputs - return ProcessedMeasurement
+            # Check for ProcessedMeasurement - return ProcessedMeasurement
             if any(isinstance(v, ProcessedMeasurement) for v in invalues):
                 insert_outvalues(eqn, context_dic, ProcessedMeasurement())
                 return
             
-            # Check for ProcessedMeasurement in MeasurementArray inputs - return ProcessedMeasurement
-            for v in invalues:
-                if isinstance(v, MeasurementArray) and v.has_processed_entries():
-                    insert_outvalues(eqn, context_dic, ProcessedMeasurement())
-                    return
-            
-            # Collect all input clbits and parity handles
-            parity_inputs = []
-            for v in invalues:
-                if isinstance(v, MeasurementArray):
-                    parity_inputs.extend(v.to_clbit_list())
-                elif isinstance(v, ParityHandle):
-                    # Nested parity - expand and use symmetric difference
-                    parity_inputs.append(v)
-                else:
-                    # Should be a Clbit
-                    parity_inputs.append(v)
-            
             # Expand all inputs to clbits using symmetric difference (XOR semantics)
             # This means duplicate clbits cancel out (a XOR a = 0)
             clbit_set = set()
-            for inp in parity_inputs:
+            for inp in invalues:
                 if isinstance(inp, Clbit):
                     clbit_set.symmetric_difference_update({inp})
                 elif isinstance(inp, ParityHandle):
-                    # ParityHandle already stores expanded clbits
+                    # ParityHandle stores expanded clbits
                     clbit_set.symmetric_difference_update(inp.clbits)
             
             # Convert set to sorted list for deterministic ordering
@@ -919,24 +770,6 @@ def make_qc_extraction_eqn_evaluator(qc):
         #    entries) while marking the data as "processed"
         
         elif prim_name in CLASSICAL_PROCESSING_PRIMITIVES:
-            result = handle_classical_processing(invalues)
-            if result is not None:
-                insert_outvalues(eqn, context_dic, result)
-                return
-            else:
-                return True
-        
-        elif prim_name == "not":
-            # Bitwise NOT - handled separately because it's a common operation
-            result = handle_classical_processing(invalues)
-            if result is not None:
-                insert_outvalues(eqn, context_dic, result)
-                return
-            else:
-                return True
-        
-        elif prim_name in ["and", "or", "xor"]:
-            # Bitwise operations on boolean arrays
             result = handle_classical_processing(invalues)
             if result is not None:
                 insert_outvalues(eqn, context_dic, result)
