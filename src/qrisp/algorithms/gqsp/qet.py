@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 def QET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial") -> BlockEncoding:
     r"""
     Performs `Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
-    Applies real, fixed parity polynomial transformations on the eigenvalues of a Hermitian operator.
+    Applies **real, fixed parity** polynomial transformations on the eigenvalues of a Hermitian operator.
 
     The Quantum Eigenvalue Transform is described as follows:
     
@@ -155,6 +155,10 @@ def QET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynom
 
     m = len(H.anc_templates)
     d = len(p)
+    # Angles theta and lambda vanish for real polynomials.
+    # Implementation based on conjecture: phi has fixed parity iff p has fixed parity.
+    # Combine two consecutive walk operators: (R U) (R U) = (R U R U ) = (R U_dg R U) = T_2
+    # https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf
     angles, alpha = gqsp_angles(p)
     phi = angles[1][::-1]
 
