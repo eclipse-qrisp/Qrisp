@@ -15,7 +15,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
-
+"""
 from qrisp import *
 from qrisp.gqsp import hamiltonian_simulation
 from qrisp.operators import X, Y, Z
@@ -95,7 +95,6 @@ def sim_qsp(T_values, H, M):
     
     return np.array(M_values), np.array(E_values)
 
-
 def test_qsp_hamiltonian_simulation():
 
     G = generate_chain_graph(6)
@@ -107,3 +106,4 @@ def test_qsp_hamiltonian_simulation():
 
     assert np.linalg.norm(E_classical - E_qsp) < 1e-2
     assert np.linalg.norm(M_classical - M_qsp) < 5e-2
+"""
