@@ -741,7 +741,6 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
             ParityOperation
         )
         from qrisp.jasp.interpreter_tools.interpreters import (
-            pjit_to_gate, 
             cond_to_cl_control
         )
         
@@ -753,8 +752,19 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
         # -----------------------------------------------------------------
         
         if prim_name == "jit" and isinstance(eqn.params["jaxpr"], Jaspr):
-            # Nested Jaspr (from @qache or similar) - convert to gate
-            return pjit_to_gate(eqn, context_dic, qc_extraction_eqn_evaluator)
+            # Nested Jaspr (from @qache or similar) - evaluate with our interpreter
+            from qrisp.jasp import eval_jaxpr
+            
+            definition_jaxpr = eqn.params["jaxpr"]
+            res = eval_jaxpr(definition_jaxpr.jaxpr, eqn_evaluator=qc_extraction_eqn_evaluator)(
+                *(invalues + definition_jaxpr.consts)
+            )
+            
+            if len(definition_jaxpr.jaxpr.outvars) == 1:
+                res = [res]
+            
+            insert_outvalues(eqn, context_dic, res)
+            return
         
         elif prim_name == "cond":
             # Conditional branching - may become classically controlled operation
