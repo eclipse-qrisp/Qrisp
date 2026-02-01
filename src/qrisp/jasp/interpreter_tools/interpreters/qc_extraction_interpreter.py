@@ -355,10 +355,6 @@ class MeasurementArray:
         """Check if this array contains any ProcessedMeasurement entries."""
         return np.any(self.data == self.PROCESSED_VALUE)
     
-    def has_parity_entries(self):
-        """Check if this array contains any ParityHandle entries."""
-        return np.any(self.data >= self.PARITY_HANDLE_OFFSET)
-    
     def to_clbit_list(self):
         """
         Convert to a list of Clbits and ParityHandles.
@@ -417,75 +413,6 @@ class MeasurementArray:
         # Reshape to logical shape
         return resolved_flat.reshape(self._shape)
     
-    @classmethod
-    def from_clbit(cls, qc, clbit, parity_handles=None):
-        """
-        Create a single-element MeasurementArray from a Clbit.
-        
-        This is used when a scalar Clbit needs to be broadcast into an array
-        shape (e.g., via broadcast_in_dim).
-        
-        Parameters
-        ----------
-        qc : QuantumCircuit
-            The quantum circuit containing the clbit.
-        clbit : Clbit
-            The classical bit to encode.
-        parity_handles : list, optional
-            List of ParityHandle objects.
-        
-        Returns
-        -------
-        MeasurementArray
-            Single-element array containing the encoded clbit reference.
-        """
-        # Find position of this clbit and convert to negative index
-        clbit_idx = qc.clbits.index(clbit)
-        neg_idx = clbit_idx - len(qc.clbits)
-        return cls(qc, np.array([neg_idx], dtype=np.int64), parity_handles)
-    
-    @classmethod
-    def from_value(cls, qc, value, parity_handles=None):
-        """
-        Create a single-element MeasurementArray from a known boolean value.
-        
-        Parameters
-        ----------
-        qc : QuantumCircuit
-            The quantum circuit (needed for consistency, not used for encoding).
-        value : bool
-            The boolean value to encode.
-        parity_handles : list, optional
-            List of ParityHandle objects.
-        
-        Returns
-        -------
-        MeasurementArray
-            Single-element array containing 0 (False) or 1 (True).
-        """
-        return cls(qc, np.array([int(bool(value))], dtype=np.int64), parity_handles)
-    
-    @classmethod
-    def from_processed(cls, qc, size=1, parity_handles=None):
-        """
-        Create a MeasurementArray filled with ProcessedMeasurement markers.
-        
-        Parameters
-        ----------
-        qc : QuantumCircuit
-            The quantum circuit being built.
-        size : int
-            Number of processed entries.
-        parity_handles : list, optional
-            List of ParityHandle objects.
-        
-        Returns
-        -------
-        MeasurementArray
-            Array with all entries set to PROCESSED_VALUE (2).
-        """
-        return cls(qc, np.full(size, cls.PROCESSED_VALUE, dtype=np.int64), parity_handles)
-    
     def mark_as_processed(self):
         """
         Return a new MeasurementArray with all entries marked as processed.
@@ -504,65 +431,6 @@ class MeasurementArray:
             np.full_like(self.data, self.PROCESSED_VALUE),
             self.parity_handles
         )
-    
-    @classmethod
-    def concatenate(cls, qc, arrays, dimension=0):
-        """
-        Concatenate multiple arrays/values into a single MeasurementArray.
-        
-        This handles the JAX `concatenate` primitive when any of the inputs
-        contains measurement data.
-        
-        Parameters
-        ----------
-        qc : QuantumCircuit
-            The quantum circuit being built.
-        arrays : list
-            List of values to concatenate. Each can be:
-            - MeasurementArray: data is extended directly
-            - Clbit: encoded as negative index
-            - ProcessedMeasurement: encoded as PROCESSED_VALUE (2)
-            - bool/int: encoded as 0 or 1
-        dimension : int
-            The axis along which to concatenate.
-        
-        Returns
-        -------
-        MeasurementArray
-            Concatenated array.
-        """
-        from qrisp import Clbit
-        
-        # Convert all inputs to MeasurementArrays with shapes
-        meas_arrays = []
-        parity_handles = None
-        for arr in arrays:
-            if isinstance(arr, MeasurementArray):
-                meas_arrays.append(arr)
-                if parity_handles is None:
-                    parity_handles = arr.parity_handles
-            elif isinstance(arr, Clbit):
-                clbit_idx = qc.clbits.index(arr)
-                neg_idx = clbit_idx - len(qc.clbits)
-                meas_arrays.append(cls(qc, np.array([neg_idx], dtype=np.int64), parity_handles, (1,)))
-            elif isinstance(arr, ProcessedMeasurement):
-                meas_arrays.append(cls(qc, np.array([cls.PROCESSED_VALUE], dtype=np.int64), parity_handles, (1,)))
-            elif isinstance(arr, (bool, np.bool_)):
-                meas_arrays.append(cls(qc, np.array([int(arr)], dtype=np.int64), parity_handles, (1,)))
-            elif isinstance(arr, (int, np.integer)):
-                meas_arrays.append(cls(qc, np.array([int(arr)], dtype=np.int64), parity_handles, (1,)))
-            else:
-                raise TypeError(
-                    f"Cannot concatenate type {type(arr)} into MeasurementArray"
-                )
-        
-        # Use numpy's concatenate logic to compute the result shape
-        shaped_arrays = [ma.data.reshape(ma.shape) for ma in meas_arrays]
-        concatenated = np.concatenate(shaped_arrays, axis=dimension)
-        result_shape = concatenated.shape
-        result_data = concatenated.flatten()
-        
-        return cls(qc, result_data, parity_handles, result_shape)
 
 
 # =============================================================================
@@ -594,6 +462,158 @@ def contains_measurement_data(val):
     if isinstance(val, list) and len(val):
         return contains_measurement_data(val[0])
     return False
+
+
+def encode_to_int_array(val, qc, parity_handles):
+    """
+    Encode a measurement-related value to an integer numpy array.
+    
+    This converts any measurement-related type to the internal integer encoding
+    used by MeasurementArray, returning both the data and its shape.
+    
+    Parameters
+    ----------
+    val : any
+        Value to encode. Can be:
+        - MeasurementArray: returns its data reshaped to logical shape
+        - Clbit: encoded as negative index
+        - ProcessedMeasurement: encoded as PROCESSED_VALUE (2)
+        - ParityHandle: encoded as index + PARITY_HANDLE_OFFSET
+        - bool/int: encoded as 0 or 1
+        - numpy array: passed through unchanged
+    qc : QuantumCircuit
+        The quantum circuit (needed for Clbit encoding).
+    parity_handles : list
+        List of ParityHandle objects.
+    
+    Returns
+    -------
+    numpy.ndarray
+        Integer array with the encoded value(s).
+    """
+    from qrisp import Clbit
+    
+    if isinstance(val, MeasurementArray):
+        return val.data.reshape(val.shape)
+    elif isinstance(val, Clbit):
+        clbit_idx = qc.clbits.index(val)
+        neg_idx = clbit_idx - len(qc.clbits)
+        return np.array(neg_idx, dtype=np.int64)
+    elif isinstance(val, ProcessedMeasurement):
+        return np.array(MeasurementArray.PROCESSED_VALUE, dtype=np.int64)
+    elif isinstance(val, ParityHandle):
+        return np.array(val.index + MeasurementArray.PARITY_HANDLE_OFFSET, dtype=np.int64)
+    elif isinstance(val, (bool, np.bool_)):
+        return np.array(int(val), dtype=np.int64)
+    elif isinstance(val, (int, np.integer)):
+        return np.array(int(val), dtype=np.int64)
+    elif isinstance(val, np.ndarray):
+        return val.astype(np.int64)
+    else:
+        return val
+
+
+def apply_array_primitive(prim_name, params, invalues, qc, parity_handles):
+    """
+    Apply a JAX array primitive to measurement data using numpy equivalents.
+    
+    This generic handler converts measurement-related inputs to integer arrays,
+    applies the numpy equivalent of the JAX primitive, and wraps the result
+    back into a MeasurementArray.
+    
+    Parameters
+    ----------
+    prim_name : str
+        Name of the JAX primitive (e.g., 'broadcast_in_dim', 'concatenate').
+    params : dict
+        Parameters of the JAX primitive.
+    invalues : list
+        Input values to the primitive.
+    qc : QuantumCircuit
+        The quantum circuit being built.
+    parity_handles : list
+        List of ParityHandle objects.
+    
+    Returns
+    -------
+    MeasurementArray, Clbit, ProcessedMeasurement, or None
+        - MeasurementArray for array results
+        - Scalar (Clbit, bool, ProcessedMeasurement) for scalar results
+        - None if this primitive is not handled
+    """
+    # Encode all inputs to integer arrays
+    encoded = [encode_to_int_array(v, qc, parity_handles) for v in invalues]
+    
+    # Apply the numpy equivalent based on primitive name
+    if prim_name == "broadcast_in_dim":
+        shape = params["shape"]
+        result = np.broadcast_to(encoded[0], shape)
+        
+    elif prim_name == "concatenate":
+        dimension = params.get("dimension", 0)
+        result = np.concatenate(encoded, axis=dimension)
+        
+    elif prim_name == "squeeze":
+        dimensions = params.get("dimensions", None)
+        result = np.squeeze(encoded[0], axis=dimensions)
+        
+    elif prim_name == "slice":
+        start_indices = params["start_indices"]
+        limit_indices = params["limit_indices"]
+        # Build slice tuple for each dimension
+        slices = tuple(slice(s, e) for s, e in zip(start_indices, limit_indices))
+        result = encoded[0][slices]
+        
+    elif prim_name == "dynamic_slice":
+        # Start indices come from invalues[1:]
+        start_indices = [int(encoded[i]) for i in range(1, len(encoded))]
+        slice_sizes = params["slice_sizes"]
+        # Build slice tuple
+        slices = tuple(slice(s, s + sz) for s, sz in zip(start_indices, slice_sizes))
+        result = encoded[0][slices]
+        
+    elif prim_name == "gather":
+        # Simple indexing case
+        indices = encoded[1]
+        if hasattr(indices, 'item'):
+            idx = int(indices.item())
+        elif np.ndim(indices) == 0:
+            idx = int(indices)
+        else:
+            idx = int(indices[0]) if len(indices) == 1 else indices
+        result = encoded[0].flat[idx] if isinstance(idx, (int, np.integer)) else encoded[0][idx]
+        
+    elif prim_name == "reshape":
+        new_sizes = params.get("new_sizes", params.get("dimensions", None))
+        if new_sizes is not None:
+            result = encoded[0].reshape(new_sizes)
+        else:
+            result = encoded[0]
+            
+    elif prim_name == "transpose":
+        permutation = params.get("permutation", None)
+        result = np.transpose(encoded[0], permutation)
+        
+    else:
+        return None
+    
+    # Wrap result back into MeasurementArray (or scalar if 0-d)
+    result = np.asarray(result, dtype=np.int64)
+    
+    if result.ndim == 0:
+        # Scalar result - decode to actual type
+        val = int(result)
+        if val < 0:
+            return qc.clbits[val]
+        elif val == MeasurementArray.PROCESSED_VALUE:
+            return ProcessedMeasurement()
+        elif val >= MeasurementArray.PARITY_HANDLE_OFFSET:
+            return parity_handles[val - MeasurementArray.PARITY_HANDLE_OFFSET]
+        else:
+            return bool(val)
+    else:
+        # Array result
+        return MeasurementArray(qc, result.flatten(), parity_handles, result.shape)
 
 
 def resolve_measurement_arrays(value):
@@ -924,178 +944,20 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
         # SECTION 4.4: Array Operations on Measurement Data
         # -----------------------------------------------------------------
         # These primitives handle JAX array operations when the arrays contain
-        # measurement results. We use MeasurementArray to track Clbit references
-        # through these operations.
-        #
-        # IMPORTANT: When a ProcessedMeasurement appears in these operations,
-        # we propagate it through (returning ProcessedMeasurement) rather than
-        # failing. This allows the circuit extraction to continue even when
-        # some classical processing has occurred on measurement data.
+        # measurement results. We use a generic handler that:
+        # 1. Encodes all inputs to integer arrays
+        # 2. Applies the numpy equivalent of the primitive
+        # 3. Wraps the result back into MeasurementArray
         
-        elif prim_name == "broadcast_in_dim":
-            # broadcast_in_dim: Expands a scalar to an array shape
-            # Example: jnp.array([m]) where m is a scalar measurement
-            # JAX traces this as: broadcast_in_dim(m, shape=(1,))
-            
-            inval = invalues[0]
-            shape = eqn.params["shape"]
-            
-            if isinstance(inval, ProcessedMeasurement):
-                # Create a MeasurementArray filled with processed markers
-                size = int(np.prod(shape)) if shape else 1
-                result = MeasurementArray.from_processed(qc, size, parity_handles)
-                result._shape = shape
-                insert_outvalues(eqn, context_dic, result)
-                return
-            elif isinstance(inval, Clbit):
-                meas_arr = MeasurementArray.from_clbit(qc, inval, parity_handles)
-                new_data = np.broadcast_to(meas_arr.data, shape)
-                result = MeasurementArray(qc, new_data.flatten(), parity_handles, shape)
-                insert_outvalues(eqn, context_dic, result)
-                return
-            elif isinstance(inval, MeasurementArray):
-                new_data = np.broadcast_to(inval.data.reshape(inval.shape), shape)
-                result = MeasurementArray(qc, new_data.flatten(), parity_handles, shape)
-                insert_outvalues(eqn, context_dic, result)
-                return
-            elif isinstance(inval, (bool, np.bool_)):
-                meas_arr = MeasurementArray.from_value(qc, inval, parity_handles)
-                new_data = np.broadcast_to(meas_arr.data, shape)
-                result = MeasurementArray(qc, new_data.flatten(), parity_handles, shape)
-                insert_outvalues(eqn, context_dic, result)
-                return
-            else:
-                return True
-        
-        elif prim_name == "concatenate":
-            # concatenate: Joins multiple arrays along an axis
-            # Example: jnp.vstack([arr0, arr1, arr2]) compiles to:
-            #   broadcast_in_dim(arr0) -> arr0_2d  (shape (1, n))
-            #   broadcast_in_dim(arr1) -> arr1_2d
-            #   broadcast_in_dim(arr2) -> arr2_2d
-            #   concatenate(arr0_2d, arr1_2d, arr2_2d, dimension=0)
-            
-            # Check if any input contains measurement data (including ProcessedMeasurement)
+        elif prim_name in ("broadcast_in_dim", "concatenate", "squeeze", "slice", 
+                           "dynamic_slice", "gather", "reshape", "transpose"):
+            # Check if any input contains measurement data
             if any(contains_measurement_data(v) for v in invalues):
-                dimension = eqn.params.get("dimension", 0)
-                result = MeasurementArray.concatenate(qc, invalues, dimension)
-                insert_outvalues(eqn, context_dic, result)
-                return
-            else:
-                return True
-        
-        elif prim_name == "squeeze":
-            # squeeze: Removes dimensions of size 1
-            # Example: arr[0] on a 1D array often compiles to slice + squeeze
-            # The slice extracts shape (1,), squeeze reduces to scalar
-            
-            inval = invalues[0]
-            if isinstance(inval, ProcessedMeasurement):
-                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
-                return
-            elif isinstance(inval, MeasurementArray):
-                if len(inval.data) == 1:
-                    # Single element - extract and return the actual value
-                    # This is where we bridge back to Clbit!
-                    result = inval[0]
-                else:
-                    result = inval
-                insert_outvalues(eqn, context_dic, result)
-                return
-            else:
-                return True
-        
-        elif prim_name == "slice":
-            # slice: Static slicing with known start/stop indices
-            # Example: arr[0:2] or arr[i] where i is a constant
-            
-            inval = invalues[0]
-            if isinstance(inval, ProcessedMeasurement):
-                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
-                return
-            elif isinstance(inval, MeasurementArray):
-                start_indices = eqn.params["start_indices"]
-                limit_indices = eqn.params["limit_indices"]
-                start = start_indices[0] if start_indices else 0
-                stop = limit_indices[0] if limit_indices else len(inval)
-                result = inval[start:stop]
-                insert_outvalues(eqn, context_dic, result)
-                return
-            else:
-                return True
-        
-        elif prim_name == "dynamic_slice":
-            # dynamic_slice: Slicing with runtime-determined start index
-            # Example: arr[i] inside a loop where i is a loop variable
-            
-            inval = invalues[0]
-            if isinstance(inval, ProcessedMeasurement):
-                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
-                return
-            elif isinstance(inval, MeasurementArray):
-                start_idx = int(invalues[1])
-                slice_size = eqn.params["slice_sizes"][0]
-                result = MeasurementArray(
-                    qc, inval.data[start_idx:start_idx + slice_size]
-                )
-                insert_outvalues(eqn, context_dic, result)
-                return
-            else:
-                return True
-        
-        elif prim_name == "gather":
-            # gather: General indexing operation (covers various indexing patterns)
-            
-            inval = invalues[0]
-            if isinstance(inval, ProcessedMeasurement):
-                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
-                return
-            elif isinstance(inval, MeasurementArray):
-                indices = invalues[1]
-                if hasattr(indices, 'item'):
-                    idx = int(indices.item())
-                else:
-                    idx = int(indices)
-                result = inval[idx]
-                insert_outvalues(eqn, context_dic, result)
-                return
-            else:
-                return True
-        
-        elif prim_name == "reshape":
-            # reshape: Changes the shape of an array without changing data
-            # This preserves measurement information, just reorganizes it
-            
-            inval = invalues[0]
-            if isinstance(inval, ProcessedMeasurement):
-                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
-                return
-            elif isinstance(inval, MeasurementArray):
-                # Reshape preserves the data, just changes the logical shape
-                # Since MeasurementArray is 1D internally, we keep it as-is
-                # The reshaped array will still work for element extraction
-                new_shape = eqn.params.get("new_sizes", eqn.params.get("dimensions", None))
-                result = MeasurementArray(qc, inval.data.copy(), parity_handles)
-                insert_outvalues(eqn, context_dic, result)
-                return
-            else:
-                return True
-        
-        elif prim_name == "transpose":
-            # transpose: Permutes the dimensions of an array
-            # For 1D MeasurementArray, this is essentially a no-op
-            
-            inval = invalues[0]
-            if isinstance(inval, ProcessedMeasurement):
-                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
-                return
-            elif isinstance(inval, MeasurementArray):
-                # For 1D arrays, transpose doesn't change anything
-                result = MeasurementArray(qc, inval.data.copy(), parity_handles)
-                insert_outvalues(eqn, context_dic, result)
-                return
-            else:
-                return True
+                result = apply_array_primitive(prim_name, eqn.params, invalues, qc, parity_handles)
+                if result is not None:
+                    insert_outvalues(eqn, context_dic, result)
+                    return
+            return True
         
         elif prim_name == "scatter":
             # scatter: Update array elements at specified indices

@@ -26,7 +26,6 @@ from jax.tree_util import tree_flatten
 from qrisp.jasp.jasp_expression import invert_jaspr, collect_environments
 from qrisp.jasp import (
     eval_jaxpr,
-    pjit_to_gate,
     flatten_environments,
     cond_to_cl_control,
     extract_invalues,
