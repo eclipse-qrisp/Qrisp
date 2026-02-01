@@ -15,6 +15,9 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
+
+# Disabled due to long runtime
+# hamiltonian_simulation is tested in block encoding sim test
 """
 from qrisp import *
 from qrisp.gqsp import hamiltonian_simulation
