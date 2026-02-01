@@ -199,7 +199,7 @@ class QuantumArray:
 
         self.ind_array = jnp.arange(size)
         self.ind_array = self.ind_array.reshape(shape)
-        self.qtype = qtype
+        self.qtype_template = qtype.template()
 
         if check_for_tracing_mode():
 
@@ -221,8 +221,20 @@ class QuantumArray:
             self.qv_list = []
             for i in range(size):
                 self.qv_list.append(
-                    qtype.duplicate(name=self.qtype.name + "*", qs=self.qs)
+                    qtype.duplicate(name=qtype.name + "*", qs=self.qs)
                 )
+
+    @property
+    def qtype(self):
+        if check_for_tracing_mode():
+            s = self.qtype_size
+            reg = self.qb_array[: s]
+            qv = self.qtype_template.construct(reg)
+            qv.qs = self.qs
+            return qv
+        else:
+            return self.qv_list[0]
+            
 
     @property
     def shape(self):
@@ -959,24 +971,24 @@ def flatten_qa(qa):
 
     children = []
 
-    qtype_children, qtype_aux_values = jax.tree.flatten(qa.qtype)
+    qtype_template_children, qtype_template_aux_values = jax.tree.flatten(qa.qtype_template)
 
     children.append(qa.qtype_size)
     children.append(qa.ind_array)
     children.append(qa.qb_array)
-    children.extend(qtype_children)
+    children.extend(qtype_template_children)
 
-    aux_values = [qtype_aux_values]
+    aux_values = [qtype_template_aux_values]
 
     return tuple(children), tuple(aux_values)
 
 
 def unflatten_qa(aux_data, children):
 
-    qtype_children = children[3:]
-    qtype_aux_values = aux_data[0]
+    qtype_template_children = children[3:]
+    qtype_template_aux_values = aux_data[0]
 
-    qtype = jax.tree.unflatten(qtype_aux_values, qtype_children)
+    qtype_template = jax.tree.unflatten(qtype_template_aux_values, qtype_template_children)
 
     qa_dummy = object.__new__(QuantumArray)
 
@@ -985,7 +997,7 @@ def unflatten_qa(aux_data, children):
     qb_array = children[2]
 
     qa_dummy.qtype_size = qtype_size
-    qa_dummy.qtype = qtype
+    qa_dummy.qtype_template = qtype_template
     qa_dummy.ind_array = ind_array
     qa_dummy.qb_array = qb_array
     qa_dummy.qs = TracingQuantumSession.get_instance()
