@@ -184,6 +184,50 @@ def test_quantum_array_appending():
         assert "mixed" in str(e)
         
     
-        
+def test_redundant_allocation_removal():
     
+    @make_jaspr
+    def main():
+        a = QuantumFloat(5)
+        a = QuantumFloat(5)
+        a = QuantumFloat(5)
+        a = QuantumFloat(5)
+        a = QuantumFloat(5)
+        return a.size
+
+    jaspr_str = str(main())
+    assert jaspr_str.count("jasp.create_qubits") == 0
+
+    @make_jaspr
+    def main():
+        a = QuantumFloat(5)
+        a = QuantumFloat(5)
+        a = QuantumFloat(5)
+        a = QuantumFloat(5)
+        res = a.size
+        a.delete()
+        return res
+
+    jaspr_str = str(main())
+    assert jaspr_str.count("jasp.create_qubits") == 0
+
     
+    @make_jaspr
+    def main():
+        a = QuantumFloat(5)
+        a = QuantumFloat(5)
+        a = QuantumFloat(5)
+        a = QuantumFloat(5)
+        a = QuantumFloat(5)
+        return measure(a)
+
+    jaspr_str = str(main())
+    assert jaspr_str.count("jasp.create_qubits") == 1
+    
+    @make_jaspr
+    def main():
+        qa = QuantumArray(qtype = QuantumFloat(5), shape = (5,5))
+        return measure(qa[0, 1])
+
+    jaspr_str = str(main())
+    assert jaspr_str.count("jasp.create_qubits") == 1
