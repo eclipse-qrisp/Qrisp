@@ -187,8 +187,7 @@ class ParityHandle:
 
 class MeasurementArray:
     """
-    Represents an array of boolean values (possibly measurement results) during
-    QuantumCircuit extraction.
+    Represents an array of measurement-related values during QuantumCircuit extraction.
     
     Problem Being Solved
     --------------------
@@ -208,100 +207,36 @@ class MeasurementArray:
     
     Solution
     --------
-    MeasurementArray provides a bridge between the JAX array world and Clbit world:
+    MeasurementArray provides a bridge between the JAX array world and Clbit world
+    using a numpy object array that stores elements directly:
     
-    1. **Integer Encoding**: We encode array contents as integers:
-       - 0: Known boolean value False
-       - 1: Known boolean value True
-       - 2: ProcessedMeasurement (result of classical post-processing)
-       - Negative values: Measurement results (indices into qc.clbits)
-         * -1 corresponds to the last clbit in the circuit
-         * -2 corresponds to the second-to-last clbit
-         * etc.
+    - Clbit objects: Measurement results that can be used in circuit operations
+    - ParityHandle objects: Parity computation results  
+    - ProcessedMeasurement: Marker for classical post-processing results
+    - bool: Known boolean values (True/False)
     
-    2. **Transparent Extraction**: When extracting a single element that
-       corresponds to a measurement, we return the actual Clbit object.
-       This allows the extracted value to be used in subsequent operations
-       (like controlled gates or parity primitives) that expect Clbit inputs.
-       
-    3. **ProcessedMeasurement Tracking**: When classical operations (like ~, &, |)
-       are applied to measurement arrays, we mark those entries as "processed"
-       (value 2). Extracting such an entry returns a ProcessedMeasurement object.
-       If a circuit-influencing operation (like parity) receives a processed
-       entry, it raises an error since we can't build the circuit correctly.
-    
-    4. **ParityHandle Tracking**: Values >= PARITY_HANDLE_OFFSET encode references
-       to parity results stored in the parity_handles dict. These are extracted
-       as ParityHandle objects that can be used in nested parity operations.
-    
-    5. **Array Operations**: We intercept JAX array primitives and implement
-       them using NumPy operations on our integer-encoded data.
-    
-    Why Negative Indexing?
-    ----------------------
-    We use negative indices because clbits are typically added during circuit
-    construction. When a measurement happens, a new clbit is created. Using
-    negative indices (from the end) means the encoding remains valid even as
-    more clbits are added later.
-    
-    For example, if we have clbits [cb_0, cb_1, cb_2]:
-    - cb_0 is at index 0, encoded as -3 (0 - 3 = -3)
-    - cb_1 is at index 1, encoded as -2 (1 - 3 = -2)  
-    - cb_2 is at index 2, encoded as -1 (2 - 3 = -1)
-    
-    When extracting, -1 gives us qc.clbits[-1] = cb_2, which is correct.
-    
-    Encoding Scheme
-    ---------------
-    - 0: Known boolean False
-    - 1: Known boolean True
-    - 2: ProcessedMeasurement (classical post-processing result)
-    - >= 3: ParityHandle reference (index = value - 3)
-    - < 0: Clbit reference (negative index into qc.clbits)
+    Array operations (reshape, slice, concatenate, etc.) work naturally on object
+    arrays with essentially no performance penalty.
     
     Attributes
     ----------
-    qc : QuantumCircuit
-        Reference to the quantum circuit being built. Needed to resolve
-        negative indices back to actual Clbit objects.
-    parity_handles : dict
-        Bidirectional dict mapping ParityHandle -> int and int -> ParityHandle
-        for O(1) lookup in both directions.
     data : numpy.ndarray
-        Array of integers encoding the boolean/measurement values.
-        
-    Class Constants
-    ---------------
-    PROCESSED_VALUE : int
-        The integer value (2) used to encode ProcessedMeasurement entries.
-    PARITY_HANDLE_OFFSET : int
-        The offset (3) added to parity handle indices to encode them.
+        Object array containing Clbit, ParityHandle, ProcessedMeasurement, or bool values.
     """
     
-    # Class constant for the "processed" marker value
-    PROCESSED_VALUE = 2
-    
-    # Offset for encoding ParityHandle indices (value = handle.index + PARITY_HANDLE_OFFSET)
-    PARITY_HANDLE_OFFSET = 3
-    
-    def __init__(self, qc, data, parity_handles=None, shape=None):
+    def __init__(self, data, shape=None):
         """
         Initialize a MeasurementArray.
         
         Parameters
         ----------
-        qc : QuantumCircuit
-            The quantum circuit being built.
         data : array-like
-            Array of integers encoding boolean/measurement values.
-        parity_handles : dict, optional
-            Dict mapping ParityHandle -> int (index). If None, uses empty dict.
+            Array of measurement-related values (Clbit, ParityHandle, 
+            ProcessedMeasurement, or bool).
         shape : tuple, optional
             Logical shape of the array. If None, defaults to 1D shape of data.
         """
-        self.qc = qc
-        self.data = np.array(data, dtype=np.int64).flatten()
-        self.parity_handles = parity_handles if parity_handles is not None else {}
+        self.data = np.array(data, dtype=object).flatten()
         self._shape = shape if shape is not None else (len(self.data),)
     
     @property
@@ -311,47 +246,16 @@ class MeasurementArray:
     
     def reshape(self, new_shape):
         """Return a new MeasurementArray with the specified shape."""
-        # Validate that the total size matches
         if np.prod(new_shape) != len(self.data):
             raise ValueError(f"Cannot reshape array of size {len(self.data)} into shape {new_shape}")
-        return MeasurementArray(self.qc, self.data, self.parity_handles, new_shape)
+        return MeasurementArray(self.data, new_shape)
     
     def __len__(self):
         return len(self.data)
     
-    def _decode_value(self, val):
-        """
-        Decode a single integer value to its corresponding object.
-        
-        Parameters
-        ----------
-        val : int
-            The encoded integer value.
-        
-        Returns
-        -------
-        Clbit, bool, ProcessedMeasurement, or ParityHandle
-            The decoded object.
-        """
-        if val < 0:
-            return self.qc.clbits[int(val)]
-        elif val == self.PROCESSED_VALUE:
-            return ProcessedMeasurement()
-        elif val >= self.PARITY_HANDLE_OFFSET:
-            # Direct O(1) lookup: idx -> handle
-            target_idx = int(val) - self.PARITY_HANDLE_OFFSET
-            return self.parity_handles[target_idx]
-        else:
-            return bool(val)
-    
     def __getitem__(self, key):
         """
         Extract element(s) from the MeasurementArray.
-        
-        This is the key method that bridges back to the Clbit world. When
-        extracting a single element that represents a measurement, we return
-        the actual Clbit object so it can be used in subsequent quantum
-        operations (e.g., classically controlled gates).
         
         Parameters
         ----------
@@ -361,31 +265,29 @@ class MeasurementArray:
         Returns
         -------
         Clbit, bool, ProcessedMeasurement, ParityHandle, or MeasurementArray
-            - If extracting a single measurement element (negative): returns the Clbit
-            - If extracting a single known boolean (0 or 1): returns that boolean
-            - If extracting a processed element (2): returns ProcessedMeasurement
-            - If extracting a parity handle element (>= 3): returns ParityHandle
-            - If extracting a slice: returns a new MeasurementArray
+            - Single index: returns the stored object directly
+            - Slice: returns a new MeasurementArray
         """
         if isinstance(key, (int, np.integer)):
-            return self._decode_value(self.data[key])
+            return self.data[key]
         elif isinstance(key, slice):
-            return MeasurementArray(self.qc, self.data[key], self.parity_handles)
+            return MeasurementArray(self.data[key])
         else:
             raise TypeError(
                 f"MeasurementArray indices must be integers or slices, not {type(key)}"
             )
     
+    def __setitem__(self, key, value):
+        """Set element(s) in the MeasurementArray."""
+        self.data[key] = value
+    
     def has_processed_entries(self):
         """Check if this array contains any ProcessedMeasurement entries."""
-        return np.any(self.data == self.PROCESSED_VALUE)
+        return any(isinstance(x, ProcessedMeasurement) for x in self.data)
     
     def to_clbit_list(self):
         """
         Convert to a list of Clbits and ParityHandles.
-        
-        This is used by operations like parity that need actual measurement
-        or parity values.
         
         Returns
         -------
@@ -395,67 +297,55 @@ class MeasurementArray:
         Raises
         ------
         Exception
-            If the array contains any ProcessedMeasurement entries.
+            If the array contains ProcessedMeasurement or bool entries.
         """
-        if self.has_processed_entries():
-            raise Exception(
-                "Cannot convert MeasurementArray to Clbit list: array contains "
-                "processed measurement values (from operations like ~, &, |). "
-                "These values cannot be used in circuit-influencing operations."
-            )
+        from qrisp import Clbit
         
         result = []
         for val in self.data:
-            decoded = self._decode_value(val)
-            if isinstance(decoded, bool):
+            if isinstance(val, ProcessedMeasurement):
                 raise Exception(
-                    f"Cannot convert MeasurementArray entry {val} to Clbit/ParityHandle: "
-                    "only measurement results (negative indices) or parity handles can be converted."
+                    "Cannot convert MeasurementArray to Clbit list: array contains "
+                    "processed measurement values (from operations like ~, &, |). "
+                    "These values cannot be used in circuit-influencing operations."
                 )
-            result.append(decoded)
+            elif isinstance(val, bool):
+                raise Exception(
+                    "Cannot convert MeasurementArray entry to Clbit/ParityHandle: "
+                    "only measurement results or parity handles can be converted."
+                )
+            elif isinstance(val, (Clbit, ParityHandle)):
+                result.append(val)
+            else:
+                raise Exception(f"Unexpected value type in MeasurementArray: {type(val)}")
         return result
     
     def resolve(self):
         """
         Resolve this MeasurementArray to a numpy array with dtype=object.
         
-        This converts the internal integer encoding back to actual objects:
-        - Negative values -> Clbit objects
-        - 0 or 1 -> boolean values
-        - 2 -> ProcessedMeasurement objects
-        - >= 3 -> ParityHandle objects
-        
         Returns
         -------
         numpy.ndarray
-            Array with dtype=object containing the resolved values.
+            Array with dtype=object reshaped to logical shape.
         """
-        # Resolve flat data first
-        resolved_flat = np.empty(len(self.data), dtype=object)
-        for i, val in enumerate(self.data):
-            resolved_flat[i] = self._decode_value(val)
-        
-        # Reshape to logical shape
-        return resolved_flat.reshape(self._shape)
+        return self.data.reshape(self._shape)
     
     def mark_as_processed(self):
         """
         Return a new MeasurementArray with all entries marked as processed.
         
-        This is used when classical operations (like ~, &, |) are applied
-        to the array. The original measurement information is lost, replaced
-        with the "processed" marker.
-        
         Returns
         -------
         MeasurementArray
-            New array with all entries set to PROCESSED_VALUE (2).
+            New array with all entries set to ProcessedMeasurement().
         """
-        return MeasurementArray(
-            self.qc, 
-            np.full_like(self.data, self.PROCESSED_VALUE),
-            self.parity_handles
-        )
+        processed_data = np.array([ProcessedMeasurement() for _ in self.data], dtype=object)
+        return MeasurementArray(processed_data, self._shape)
+    
+    def copy(self):
+        """Return a copy of this MeasurementArray."""
+        return MeasurementArray(self.data.copy(), self._shape)
 
 
 # =============================================================================
@@ -466,9 +356,6 @@ def contains_measurement_data(val):
     """
     Check if a value contains measurement-related data.
     
-    This helper is used to determine whether an operation involves measurement
-    results and thus requires special handling (rather than default JAX evaluation).
-    
     Parameters
     ----------
     val : any
@@ -477,76 +364,53 @@ def contains_measurement_data(val):
     Returns
     -------
     bool
-        True if the value is or contains Clbit, MeasurementArray, or
-        ProcessedMeasurement data.
+        True if the value is or contains Clbit, MeasurementArray, 
+        ParityHandle, or ProcessedMeasurement data.
     """
     from qrisp import Clbit
     
-    if isinstance(val, (Clbit, MeasurementArray, ProcessedMeasurement)):
+    if isinstance(val, (Clbit, MeasurementArray, ProcessedMeasurement, ParityHandle)):
         return True
     if isinstance(val, list) and len(val):
         return contains_measurement_data(val[0])
     return False
 
 
-def encode_to_int_array(val, qc, parity_handles):
+def to_object_array(val):
     """
-    Encode a measurement-related value to an integer numpy array.
-    
-    This converts any measurement-related type to the internal integer encoding
-    used by MeasurementArray, returning both the data and its shape.
+    Convert a measurement-related value to an object numpy array.
     
     Parameters
     ----------
     val : any
-        Value to encode. Can be:
+        Value to convert. Can be:
         - MeasurementArray: returns its data reshaped to logical shape
-        - Clbit: encoded as negative index
-        - ProcessedMeasurement: encoded as PROCESSED_VALUE (2)
-        - ParityHandle: encoded as index (from parity_handles dict) + PARITY_HANDLE_OFFSET
-        - bool/int: encoded as 0 or 1
-        - numpy array: passed through unchanged
-    qc : QuantumCircuit
-        The quantum circuit (needed for Clbit encoding).
-    parity_handles : dict
-        Dict mapping ParityHandle -> int (index).
+        - Clbit, ParityHandle, ProcessedMeasurement, bool: wrapped in 0-d array
+        - numpy array: converted to object dtype
+        - Other: returned unchanged
     
     Returns
     -------
-    numpy.ndarray
-        Integer array with the encoded value(s).
+    numpy.ndarray or original value
+        Object array with the value(s).
     """
     from qrisp import Clbit
     
     if isinstance(val, MeasurementArray):
         return val.data.reshape(val.shape)
-    elif isinstance(val, Clbit):
-        clbit_idx = qc.clbits.index(val)
-        neg_idx = clbit_idx - len(qc.clbits)
-        return np.array(neg_idx, dtype=np.int64)
-    elif isinstance(val, ProcessedMeasurement):
-        return np.array(MeasurementArray.PROCESSED_VALUE, dtype=np.int64)
-    elif isinstance(val, ParityHandle):
-        # Look up the index in the parity_handles dict (O(1))
-        handle_idx = parity_handles[val]
-        return np.array(handle_idx + MeasurementArray.PARITY_HANDLE_OFFSET, dtype=np.int64)
+    elif isinstance(val, (Clbit, ParityHandle, ProcessedMeasurement)):
+        return np.array(val, dtype=object)
     elif isinstance(val, (bool, np.bool_)):
-        return np.array(int(val), dtype=np.int64)
-    elif isinstance(val, (int, np.integer)):
-        return np.array(int(val), dtype=np.int64)
+        return np.array(bool(val), dtype=object)
     elif isinstance(val, np.ndarray):
-        return val.astype(np.int64)
+        return val.astype(object) if val.dtype != object else val
     else:
         return val
 
 
-def apply_array_primitive(prim_name, params, invalues, qc, parity_handles):
+def apply_array_primitive(prim_name, params, invalues):
     """
     Apply a JAX array primitive to measurement data using numpy equivalents.
-    
-    This generic handler converts measurement-related inputs to integer arrays,
-    applies the numpy equivalent of the JAX primitive, and wraps the result
-    back into a MeasurementArray.
     
     Parameters
     ----------
@@ -556,20 +420,16 @@ def apply_array_primitive(prim_name, params, invalues, qc, parity_handles):
         Parameters of the JAX primitive.
     invalues : list
         Input values to the primitive.
-    qc : QuantumCircuit
-        The quantum circuit being built.
-    parity_handles : dict
-        Dict mapping ParityHandle -> int (index).
     
     Returns
     -------
-    MeasurementArray, Clbit, ProcessedMeasurement, or None
+    MeasurementArray, scalar, or None
         - MeasurementArray for array results
-        - Scalar (Clbit, bool, ProcessedMeasurement) for scalar results
+        - Scalar (Clbit, bool, ProcessedMeasurement, ParityHandle) for 0-d results
         - None if this primitive is not handled
     """
-    # Encode all inputs to integer arrays
-    encoded = [encode_to_int_array(v, qc, parity_handles) for v in invalues]
+    # Convert all inputs to object arrays
+    encoded = [to_object_array(v) for v in invalues]
     
     # Apply the numpy equivalent based on primitive name
     if prim_name == "broadcast_in_dim":
@@ -587,15 +447,14 @@ def apply_array_primitive(prim_name, params, invalues, qc, parity_handles):
     elif prim_name == "slice":
         start_indices = params["start_indices"]
         limit_indices = params["limit_indices"]
-        # Build slice tuple for each dimension
         slices = tuple(slice(s, e) for s, e in zip(start_indices, limit_indices))
         result = encoded[0][slices]
         
     elif prim_name == "dynamic_slice":
         # Start indices come from invalues[1:]
-        start_indices = [int(encoded[i]) for i in range(1, len(encoded))]
+        start_indices = [int(encoded[i]) if np.ndim(encoded[i]) == 0 else int(encoded[i].flat[0]) 
+                        for i in range(1, len(encoded))]
         slice_sizes = params["slice_sizes"]
-        # Build slice tuple
         slices = tuple(slice(s, s + sz) for s, sz in zip(start_indices, slice_sizes))
         result = encoded[0][slices]
         
@@ -603,12 +462,18 @@ def apply_array_primitive(prim_name, params, invalues, qc, parity_handles):
         # Simple indexing case
         indices = encoded[1]
         if hasattr(indices, 'item'):
-            idx = int(indices.item())
+            idx = indices.item()
+            if isinstance(idx, (int, np.integer)):
+                idx = int(idx)
         elif np.ndim(indices) == 0:
-            idx = int(indices)
+            idx = int(indices) if isinstance(indices, (int, np.integer, np.ndarray)) else indices
         else:
             idx = int(indices[0]) if len(indices) == 1 else indices
-        result = encoded[0].flat[idx] if isinstance(idx, (int, np.integer)) else encoded[0][idx]
+        
+        if isinstance(idx, (int, np.integer)):
+            result = encoded[0].flat[idx]
+        else:
+            result = encoded[0][idx]
         
     elif prim_name == "reshape":
         new_sizes = params.get("new_sizes", params.get("dimensions", None))
@@ -624,16 +489,15 @@ def apply_array_primitive(prim_name, params, invalues, qc, parity_handles):
     else:
         return None
     
-    # Wrap result back into MeasurementArray (or scalar if 0-d)
-    result = np.asarray(result, dtype=np.int64)
+    # Handle result
+    result = np.asarray(result, dtype=object)
     
     if result.ndim == 0:
-        # Scalar result - decode using MeasurementArray helper
-        arr = MeasurementArray(qc, [int(result)], parity_handles)
-        return arr._decode_value(int(result))
+        # Scalar result - return the object directly
+        return result.item()
     else:
         # Array result
-        return MeasurementArray(qc, result.flatten(), parity_handles, result.shape)
+        return MeasurementArray(result.flatten(), result.shape)
 
 
 def resolve_measurement_arrays(value):
@@ -667,7 +531,7 @@ def resolve_measurement_arrays(value):
         return value
 
 
-def handle_classical_processing(qc, invalues):
+def handle_classical_processing(invalues):
     """
     Handle operations that represent classical post-processing on measurement data.
     
@@ -677,16 +541,14 @@ def handle_classical_processing(qc, invalues):
     
     The strategy is:
     1. If any input is a MeasurementArray, return a MeasurementArray of the same
-       size with all entries marked as "processed" (value 2).
-    2. If inputs contain scalar measurement data (Clbit, ProcessedMeasurement),
-       return a scalar ProcessedMeasurement.
+       size with all entries marked as "processed".
+    2. If inputs contain scalar measurement data (Clbit, ProcessedMeasurement,
+       ParityHandle), return a scalar ProcessedMeasurement.
     3. If no measurement data is involved, return None to indicate default
        JAX evaluation should be used.
     
     Parameters
     ----------
-    qc : QuantumCircuit
-        The quantum circuit being built (needed for MeasurementArray).
     invalues : list
         Input values to the operation.
     
@@ -706,7 +568,7 @@ def handle_classical_processing(qc, invalues):
     
     # Check for scalar measurement data
     for v in invalues:
-        if isinstance(v, (Clbit, ProcessedMeasurement)):
+        if isinstance(v, (Clbit, ProcessedMeasurement, ParityHandle)):
             return ProcessedMeasurement()
     
     # Check for lists containing measurement data
@@ -745,20 +607,17 @@ CLASSICAL_PROCESSING_PRIMITIVES = {
 # SECTION 4: Equation Evaluator Factory
 # =============================================================================
 
-def make_qc_extraction_eqn_evaluator(qc, parity_handles):
+def make_qc_extraction_eqn_evaluator(qc):
     """
     Create an equation evaluator for extracting a QuantumCircuit from a Jaspr.
     
-    This factory function creates a closure over the QuantumCircuit being built
-    and the parity_handles dict, returning an evaluator function that can be 
-    passed to eval_jaxpr.
+    This factory function creates a closure over the QuantumCircuit being built,
+    returning an evaluator function that can be passed to eval_jaxpr.
     
     Parameters
     ----------
     qc : QuantumCircuit
         The quantum circuit to build. Operations will be appended to this circuit.
-    parity_handles : dict
-        Bidirectional dict to accumulate ParityHandle mappings during extraction.
     
     Returns
     -------
@@ -913,9 +772,6 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
             
             # Create a parity handle with the instruction and circuit reference
             handle = ParityHandle(parity_instr, qc)
-            idx = len(parity_handles) // 2  # Each handle adds 2 entries
-            parity_handles[handle] = idx
-            parity_handles[idx] = handle
             insert_outvalues(eqn, context_dic, handle)
             return
         
@@ -968,16 +824,14 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
         # SECTION 4.4: Array Operations on Measurement Data
         # -----------------------------------------------------------------
         # These primitives handle JAX array operations when the arrays contain
-        # measurement results. We use a generic handler that:
-        # 1. Encodes all inputs to integer arrays
-        # 2. Applies the numpy equivalent of the primitive
-        # 3. Wraps the result back into MeasurementArray
+        # measurement results. We use a generic handler that converts to object
+        # arrays, applies the numpy equivalent, and wraps back into MeasurementArray.
         
         elif prim_name in ("broadcast_in_dim", "concatenate", "squeeze", "slice", 
                            "dynamic_slice", "gather", "reshape", "transpose"):
             # Check if any input contains measurement data
             if any(contains_measurement_data(v) for v in invalues):
-                result = apply_array_primitive(prim_name, eqn.params, invalues, qc, parity_handles)
+                result = apply_array_primitive(prim_name, eqn.params, invalues)
                 if result is not None:
                     insert_outvalues(eqn, context_dic, result)
                     return
@@ -991,11 +845,6 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
             # - operand: The array being updated
             # - indices: Where to place the updates
             # - updates: The values to insert
-            #
-            # We need to handle this carefully:
-            # - If updates is a Clbit, we're building an array of measurements
-            # - If updates is ProcessedMeasurement, mark that position as processed
-            # - If operand is MeasurementArray, we update it properly
             
             operand = invalues[0]
             indices = invalues[1]
@@ -1018,40 +867,15 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
             if isinstance(operand, MeasurementArray):
                 idx = get_scatter_index(indices)
                 
-                # Create a copy of the data
-                new_data = operand.data.copy()
-                
-                if isinstance(updates, Clbit):
-                    # Insert a measurement result at the given index
-                    clbit_idx = qc.clbits.index(updates)
-                    neg_idx = clbit_idx - len(qc.clbits)
-                    new_data[idx] = neg_idx
-                elif isinstance(updates, ParityHandle):
-                    # Insert a parity handle reference
-                    handle_idx = parity_handles[updates]
-                    new_data[idx] = handle_idx + MeasurementArray.PARITY_HANDLE_OFFSET
-                elif isinstance(updates, ProcessedMeasurement):
-                    # Mark this position as processed
-                    new_data[idx] = MeasurementArray.PROCESSED_VALUE
-                elif isinstance(updates, (bool, np.bool_)):
-                    # Insert a known boolean value
-                    new_data[idx] = int(updates)
-                elif isinstance(updates, MeasurementArray):
-                    # Scattering another MeasurementArray
-                    # For simplicity, mark as processed
-                    new_data[idx] = MeasurementArray.PROCESSED_VALUE
-                else:
-                    # Unknown update type - mark as processed to be safe
-                    new_data[idx] = MeasurementArray.PROCESSED_VALUE
-                
-                result = MeasurementArray(qc, new_data, parity_handles)
+                # Create a copy and update directly (object array)
+                result = operand.copy()
+                result[idx] = updates
                 insert_outvalues(eqn, context_dic, result)
                 return
             
-            elif isinstance(updates, Clbit):
-                # Operand is not a MeasurementArray but updates is a Clbit
+            elif contains_measurement_data(updates):
+                # Operand is not a MeasurementArray but updates contains measurement data
                 # This happens when building an array from measurements in a loop
-                # Convert the operand to MeasurementArray first
                 
                 # Get the shape of the operand
                 if hasattr(operand, 'shape'):
@@ -1061,47 +885,15 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
                 else:
                     size = 1
                 
-                # Initialize MeasurementArray with the operand's values
-                # (assume all False/0 for boolean arrays)
-                new_data = np.zeros(size, dtype=np.int64)
+                # Initialize MeasurementArray with False values
+                new_data = np.array([False] * size, dtype=object)
                 
                 # Set the update at the given index
                 idx = get_scatter_index(indices)
-                clbit_idx = qc.clbits.index(updates)
-                neg_idx = clbit_idx - len(qc.clbits)
-                new_data[idx] = neg_idx
+                new_data[idx] = updates
                 
-                result = MeasurementArray(qc, new_data, parity_handles)
+                result = MeasurementArray(new_data)
                 insert_outvalues(eqn, context_dic, result)
-                return
-            
-            elif isinstance(updates, ParityHandle):
-                # Operand is not a MeasurementArray but updates is a ParityHandle
-                # This happens when building an array from parity results in a loop
-                
-                # Get the shape of the operand
-                if hasattr(operand, 'shape'):
-                    size = int(np.prod(operand.shape))
-                elif hasattr(operand, '__len__'):
-                    size = len(operand)
-                else:
-                    size = 1
-                
-                # Initialize MeasurementArray with zeros
-                new_data = np.zeros(size, dtype=np.int64)
-                
-                # Set the parity handle at the given index
-                idx = get_scatter_index(indices)
-                handle_idx = parity_handles[updates]
-                new_data[idx] = handle_idx + MeasurementArray.PARITY_HANDLE_OFFSET
-                
-                result = MeasurementArray(qc, new_data, parity_handles)
-                insert_outvalues(eqn, context_dic, result)
-                return
-            
-            elif isinstance(updates, ProcessedMeasurement):
-                # Operand is not a MeasurementArray but updates is ProcessedMeasurement
-                insert_outvalues(eqn, context_dic, ProcessedMeasurement())
                 return
             
             elif isinstance(operand, ProcessedMeasurement):
@@ -1127,7 +919,7 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
         #    entries) while marking the data as "processed"
         
         elif prim_name in CLASSICAL_PROCESSING_PRIMITIVES:
-            result = handle_classical_processing(qc, invalues)
+            result = handle_classical_processing(invalues)
             if result is not None:
                 insert_outvalues(eqn, context_dic, result)
                 return
@@ -1136,7 +928,7 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
         
         elif prim_name == "not":
             # Bitwise NOT - handled separately because it's a common operation
-            result = handle_classical_processing(qc, invalues)
+            result = handle_classical_processing(invalues)
             if result is not None:
                 insert_outvalues(eqn, context_dic, result)
                 return
@@ -1145,7 +937,7 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
         
         elif prim_name in ["and", "or", "xor"]:
             # Bitwise operations on boolean arrays
-            result = handle_classical_processing(qc, invalues)
+            result = handle_classical_processing(invalues)
             if result is not None:
                 insert_outvalues(eqn, context_dic, result)
                 return
@@ -1304,9 +1096,6 @@ def jaspr_to_qc(jaspr, *args):
 
     qc = QuantumCircuit()
     
-    # Dict to track parity operations during extraction {ParityHandle: int index}
-    parity_handles = {}
-    
     ammended_args = list(args) + [qc]
     
     if len(ammended_args) != len(jaspr.invars):
@@ -1317,7 +1106,7 @@ def jaspr_to_qc(jaspr, *args):
 
     res = eval_jaxpr(
         jaspr, 
-        eqn_evaluator=make_qc_extraction_eqn_evaluator(qc, parity_handles)
+        eqn_evaluator=make_qc_extraction_eqn_evaluator(qc)
     )(*ammended_args)
 
     # Resolve MeasurementArrays to numpy arrays with dtype=object
