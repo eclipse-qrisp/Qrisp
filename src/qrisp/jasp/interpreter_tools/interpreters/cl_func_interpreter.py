@@ -324,10 +324,8 @@ def process_while(eqn, context_dic):
         bit_array_padding = 0
     
 
-    body_jaxpr = jaspr_to_cl_func_jaxpr(
-        body_jaxpr.jaxpr, bit_array_padding)
-    cond_jaxpr = jaspr_to_cl_func_jaxpr(
-        cond_jaxpr.jaxpr, bit_array_padding)
+    converted_body_jaxpr = jaspr_to_cl_func_jaxpr(body_jaxpr.jaxpr, bit_array_padding)
+    converted_cond_jaxpr = jaspr_to_cl_func_jaxpr(cond_jaxpr.jaxpr, bit_array_padding)
 
     def body_fun(args):
         
@@ -336,7 +334,7 @@ def process_while(eqn, context_dic):
         
         flattened_invalues = flatten_signature(constants + carries, body_jaxpr.jaxpr.invars)
         
-        body_res = eval_jaxpr(body_jaxpr)(*(flattened_invalues))
+        body_res = eval_jaxpr(converted_body_jaxpr)(*(flattened_invalues))
         
         unflattened_body_outvalues = unflatten_signature(body_res, body_jaxpr.jaxpr.outvars)
         
@@ -349,7 +347,7 @@ def process_while(eqn, context_dic):
         
         flattened_invalues = flatten_signature(constants + carries, cond_jaxpr.jaxpr.invars)
         
-        return eval_jaxpr(cond_jaxpr)(*flattened_invalues)
+        return eval_jaxpr(converted_cond_jaxpr)(*flattened_invalues)
 
     outvalues = while_loop(cond_fun, body_fun, invalues)[overall_constant_amount:]
     
