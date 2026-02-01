@@ -124,37 +124,60 @@ class ParityHandle:
     1:1 mapping between clbits and actual measurements), we use this handle
     to track parity results.
     
-    The handle stores the fully expanded list of clbits involved in the parity
-    computation (nested parity handles are expanded and duplicates are eliminated
-    using symmetric difference for correct XOR semantics).
+    The clbits involved in the parity computation are accessible through the
+    instruction's clbits attribute (nested parity handles are expanded and 
+    duplicates are eliminated using symmetric difference for correct XOR semantics).
+    
+    Design Note
+    -----------
+    The handle stores a reference to the instruction object (from qc.data) and
+    the QuantumCircuit itself. This makes the handle robust to circuit 
+    modifications (like gate reordering by compilation passes) - similar to
+    Clbit objects, every ParityHandle corresponds to a particular boolean value 
+    that could in principle be uniquely computed by executing the underlying circuit.
     
     Attributes
     ----------
-    index : int
-        The sequential index of this parity operation (for MeasurementArray encoding
-        and stim converter mapping).
+    instruction : Instruction
+        The ParityOperation instruction object sitting in qc.data.
+    qc : QuantumCircuit
+        The QuantumCircuit containing this parity operation.
+    
+    Properties
+    ----------
     clbits : list[Clbit]
-        The list of Clbit objects involved in this parity (already expanded and
-        deduplicated via symmetric difference).
+        The list of Clbit objects involved in this parity. Retrieved from
+        instruction.clbits.
     expectation : int
-        The expected parity value (0, 1, or 2 for unknown). Used for detector mode.
+        The expected parity value (0, 1, or 2 for unknown). Retrieved from
+        instruction.op.expectation.
     """
-    def __init__(self, index, clbits, expectation=2):
-        self.index = index
-        self.clbits = clbits
-        self.expectation = expectation
+    def __init__(self, instruction, qc):
+        self.instruction = instruction
+        self.qc = qc
+    
+    @property
+    def clbits(self):
+        """Get the clbits involved in this parity from the underlying instruction."""
+        return self.instruction.clbits
+    
+    @property
+    def expectation(self):
+        """Get the expected parity value from the underlying instruction."""
+        return self.instruction.op.expectation
     
     def __repr__(self):
-        return f"ParityHandle(index={self.index}, clbits={self.clbits}, expectation={self.expectation})"
+        return f"ParityHandle{tuple(self.clbits)}"
     
     def __hash__(self):
-        # Include clbits in hash so handles from different circuits don't match
-        return hash((self.index, tuple(self.clbits)))
+        # Use both instruction and qc identity for hashing
+        # Same instruction can appear in different circuits with different semantics
+        return hash((id(self.instruction), id(self.qc)))
     
     def __eq__(self, other):
         if isinstance(other, ParityHandle):
-            # Compare both index and clbits to catch accidental circuit mixing
-            return self.index == other.index and self.clbits == other.clbits
+            # Compare by both instruction and qc identity
+            return self.instruction is other.instruction and self.qc is other.qc
         return False
 
 
@@ -208,7 +231,7 @@ class MeasurementArray:
        entry, it raises an error since we can't build the circuit correctly.
     
     4. **ParityHandle Tracking**: Values >= PARITY_HANDLE_OFFSET encode references
-       to parity results stored in the parity_handles list. These are extracted
+       to parity results stored in the parity_handles dict. These are extracted
        as ParityHandle objects that can be used in nested parity operations.
     
     5. **Array Operations**: We intercept JAX array primitives and implement
@@ -241,9 +264,9 @@ class MeasurementArray:
     qc : QuantumCircuit
         Reference to the quantum circuit being built. Needed to resolve
         negative indices back to actual Clbit objects.
-    parity_handles : list
-        List of ParityHandle objects created during extraction. Needed to
-        resolve parity handle indices back to actual ParityHandle objects.
+    parity_handles : dict
+        Bidirectional dict mapping ParityHandle -> int and int -> ParityHandle
+        for O(1) lookup in both directions.
     data : numpy.ndarray
         Array of integers encoding the boolean/measurement values.
         
@@ -271,14 +294,14 @@ class MeasurementArray:
             The quantum circuit being built.
         data : array-like
             Array of integers encoding boolean/measurement values.
-        parity_handles : list, optional
-            List of ParityHandle objects. If None, uses empty list.
+        parity_handles : dict, optional
+            Dict mapping ParityHandle -> int (index). If None, uses empty dict.
         shape : tuple, optional
             Logical shape of the array. If None, defaults to 1D shape of data.
         """
         self.qc = qc
         self.data = np.array(data, dtype=np.int64).flatten()
-        self.parity_handles = parity_handles if parity_handles is not None else []
+        self.parity_handles = parity_handles if parity_handles is not None else {}
         self._shape = shape if shape is not None else (len(self.data),)
     
     @property
@@ -315,7 +338,9 @@ class MeasurementArray:
         elif val == self.PROCESSED_VALUE:
             return ProcessedMeasurement()
         elif val >= self.PARITY_HANDLE_OFFSET:
-            return self.parity_handles[int(val) - self.PARITY_HANDLE_OFFSET]
+            # Direct O(1) lookup: idx -> handle
+            target_idx = int(val) - self.PARITY_HANDLE_OFFSET
+            return self.parity_handles[target_idx]
         else:
             return bool(val)
     
@@ -478,13 +503,13 @@ def encode_to_int_array(val, qc, parity_handles):
         - MeasurementArray: returns its data reshaped to logical shape
         - Clbit: encoded as negative index
         - ProcessedMeasurement: encoded as PROCESSED_VALUE (2)
-        - ParityHandle: encoded as index + PARITY_HANDLE_OFFSET
+        - ParityHandle: encoded as index (from parity_handles dict) + PARITY_HANDLE_OFFSET
         - bool/int: encoded as 0 or 1
         - numpy array: passed through unchanged
     qc : QuantumCircuit
         The quantum circuit (needed for Clbit encoding).
-    parity_handles : list
-        List of ParityHandle objects.
+    parity_handles : dict
+        Dict mapping ParityHandle -> int (index).
     
     Returns
     -------
@@ -502,7 +527,9 @@ def encode_to_int_array(val, qc, parity_handles):
     elif isinstance(val, ProcessedMeasurement):
         return np.array(MeasurementArray.PROCESSED_VALUE, dtype=np.int64)
     elif isinstance(val, ParityHandle):
-        return np.array(val.index + MeasurementArray.PARITY_HANDLE_OFFSET, dtype=np.int64)
+        # Look up the index in the parity_handles dict (O(1))
+        handle_idx = parity_handles[val]
+        return np.array(handle_idx + MeasurementArray.PARITY_HANDLE_OFFSET, dtype=np.int64)
     elif isinstance(val, (bool, np.bool_)):
         return np.array(int(val), dtype=np.int64)
     elif isinstance(val, (int, np.integer)):
@@ -531,8 +558,8 @@ def apply_array_primitive(prim_name, params, invalues, qc, parity_handles):
         Input values to the primitive.
     qc : QuantumCircuit
         The quantum circuit being built.
-    parity_handles : list
-        List of ParityHandle objects.
+    parity_handles : dict
+        Dict mapping ParityHandle -> int (index).
     
     Returns
     -------
@@ -601,16 +628,9 @@ def apply_array_primitive(prim_name, params, invalues, qc, parity_handles):
     result = np.asarray(result, dtype=np.int64)
     
     if result.ndim == 0:
-        # Scalar result - decode to actual type
-        val = int(result)
-        if val < 0:
-            return qc.clbits[val]
-        elif val == MeasurementArray.PROCESSED_VALUE:
-            return ProcessedMeasurement()
-        elif val >= MeasurementArray.PARITY_HANDLE_OFFSET:
-            return parity_handles[val - MeasurementArray.PARITY_HANDLE_OFFSET]
-        else:
-            return bool(val)
+        # Scalar result - decode using MeasurementArray helper
+        arr = MeasurementArray(qc, [int(result)], parity_handles)
+        return arr._decode_value(int(result))
     else:
         # Array result
         return MeasurementArray(qc, result.flatten(), parity_handles, result.shape)
@@ -730,15 +750,15 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
     Create an equation evaluator for extracting a QuantumCircuit from a Jaspr.
     
     This factory function creates a closure over the QuantumCircuit being built
-    and the parity_handles list, returning an evaluator function that can be 
+    and the parity_handles dict, returning an evaluator function that can be 
     passed to eval_jaxpr.
     
     Parameters
     ----------
     qc : QuantumCircuit
         The quantum circuit to build. Operations will be appended to this circuit.
-    parity_handles : list
-        A list to accumulate ParityHandle objects during extraction.
+    parity_handles : dict
+        Bidirectional dict to accumulate ParityHandle mappings during extraction.
     
     Returns
     -------
@@ -888,10 +908,14 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
             qc.append(ParityOperation(len(expanded_clbits), expectation=eqn.params["expectation"]),
                       clbits=expanded_clbits)
             
-            # Create a parity handle with the expanded clbits
-            parity_index = len(parity_handles)
-            handle = ParityHandle(parity_index, expanded_clbits, expectation=eqn.params["expectation"])
-            parity_handles.append(handle)
+            # Get the instruction we just appended
+            parity_instr = qc.data[-1]
+            
+            # Create a parity handle with the instruction and circuit reference
+            handle = ParityHandle(parity_instr, qc)
+            idx = len(parity_handles) // 2  # Each handle adds 2 entries
+            parity_handles[handle] = idx
+            parity_handles[idx] = handle
             insert_outvalues(eqn, context_dic, handle)
             return
         
@@ -1004,7 +1028,8 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
                     new_data[idx] = neg_idx
                 elif isinstance(updates, ParityHandle):
                     # Insert a parity handle reference
-                    new_data[idx] = updates.index + MeasurementArray.PARITY_HANDLE_OFFSET
+                    handle_idx = parity_handles[updates]
+                    new_data[idx] = handle_idx + MeasurementArray.PARITY_HANDLE_OFFSET
                 elif isinstance(updates, ProcessedMeasurement):
                     # Mark this position as processed
                     new_data[idx] = MeasurementArray.PROCESSED_VALUE
@@ -1067,7 +1092,8 @@ def make_qc_extraction_eqn_evaluator(qc, parity_handles):
                 
                 # Set the parity handle at the given index
                 idx = get_scatter_index(indices)
-                new_data[idx] = updates.index + MeasurementArray.PARITY_HANDLE_OFFSET
+                handle_idx = parity_handles[updates]
+                new_data[idx] = handle_idx + MeasurementArray.PARITY_HANDLE_OFFSET
                 
                 result = MeasurementArray(qc, new_data, parity_handles)
                 insert_outvalues(eqn, context_dic, result)
@@ -1278,8 +1304,8 @@ def jaspr_to_qc(jaspr, *args):
 
     qc = QuantumCircuit()
     
-    # List to track parity operations during extraction (not attached to qc)
-    parity_handles = []
+    # Dict to track parity operations during extraction {ParityHandle: int index}
+    parity_handles = {}
     
     ammended_args = list(args) + [qc]
     
