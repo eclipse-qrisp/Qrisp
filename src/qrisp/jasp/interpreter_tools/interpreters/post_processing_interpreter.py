@@ -244,11 +244,19 @@ def extract_post_processing(jaspr, *args):
                 return False
 
             # Skip other quantum primitives entirely
-            # But we must propagate QuantumCircuit tuples from input to output!
+            # We must:
+            # 1. Propagate QuantumCircuit tuples from input to output
+            # 2. Store placeholder values for any non-QuantumCircuit outputs (like Qubit)
+            #    so that subsequent operations (like nested jit calls) can find them
             if isinstance(eqn.primitive, QuantumPrimitive):
-                # Find any QuantumCircuit invars and propagate them to outvars
-                if isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit) and isinstance(eqn.outvars[-1].aval, AbstractQuantumCircuit):
-                    context_dic[eqn.outvars[-1]] = context_dic[eqn.invars[-1]]
+                for outvar in eqn.outvars:
+                    if isinstance(outvar.aval, AbstractQuantumCircuit):
+                        # Propagate QuantumCircuit from input to output
+                        context_dic[outvar] = context_dic[eqn.invars[-1]]
+                    else:
+                        # For non-QC outputs (Qubit, QubitArray, etc.), store None as placeholder
+                        # These are only needed to satisfy nested jit calls which will also skip them
+                        context_dic[outvar] = None
                 return False
 
             # Intercept JAX control-flow / compilation primitives.
@@ -257,23 +265,24 @@ def extract_post_processing(jaspr, *args):
             # which allows JAX to compile them only once during tracing.
             if eqn.primitive.name in ("jit", "pjit"):
 
-                jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
-                if jaxpr is None:
+                closed_jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
+                if closed_jaxpr is None:
                     return False
 
                 invalues = extract_invalues(eqn, context_dic)
                 
                 # Get the cached evaluator for this jaxpr
                 # For identical jaxprs, this returns the same function instance
-                cached_eval_func = get_post_processing_evaluator(jaxpr.jaxpr)
+                cached_eval_func = get_post_processing_evaluator(closed_jaxpr.jaxpr)
                 
-                # Call it with the current evaluator
-                outvals = cached_eval_func(eval_eqn)(*invalues)
+                # Call it with the current evaluator, including the constants
+                outvals = cached_eval_func(eval_eqn)(*(invalues + list(closed_jaxpr.consts)))
                 
-                # eval_jaxpr returns a single value if there's one output, tuple otherwise
-                # But insert_outvalues expects a tuple if eqn.primitive.multiple_results is True
-                if not isinstance(outvals, tuple):
-                    outvals = (outvals,)
+                # Handle wrapping based on the number of outputs in the inner jaxpr
+                # Note: Our QuantumCircuit representation is (meas_arr, last_popped) tuple,
+                # which can confuse isinstance(outvals, tuple) checks. Use the jaxpr outvars count.
+                if len(closed_jaxpr.jaxpr.outvars) == 1:
+                    outvals = [outvals]
                 
                 insert_outvalues(eqn, context_dic, outvals)
                 return False
