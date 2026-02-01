@@ -28,6 +28,7 @@ from qrisp import (
     ry,
     control,
     conjugate,
+    invert,
     measure,
     reset
 )
@@ -440,10 +441,26 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     j_0, beta = CKS_parameters(A, eps, kappa, max_beta)
     cheb_coeffs = cheb_coefficients(j_0, beta)
 
-    BE_qubitized = BE.qubitization()
+    m = len(BE.anc_templates)
+
+    # Following https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf:
+    # T1 = (U R), T2 = (U R U_dg R) -> T2^k T1 is block encoding T_{2k+1}(A) 
+    # This is valid even if U is not Hermitian.
+    def T1(*args):
+        reflection(args[:m])
+        BE.unitary(*args)
+    
+    def inv_unitary(*args):
+        with invert():
+            BE.unitary(*args)
+
+    def T2(*args):
+        reflection(args[:m])
+        with conjugate(inv_unitary)(*args):
+            reflection(args[:m])
 
     out_case = QuantumFloat(j_0 + 1)
-    in_case_list = BE_qubitized.create_ancillas()
+    in_case_list = BE.create_ancillas()
 
     if callable(b):
         operand = b()
@@ -454,12 +471,11 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     # Core LCU protocol: PREP, SELECT, PREP^†
     with conjugate(unary_prep)(out_case, cheb_coeffs):
         with control(out_case[0]):
-            BE_qubitized.unitary(*in_case_list, operand)
+            T1(*in_case_list, operand)
         for i in jrange(1, j_0 + 1):
             z(out_case[i])
             with control(out_case[i]):
-                BE_qubitized.unitary(*in_case_list, operand)
-                BE_qubitized.unitary(*in_case_list, operand)
+                T2(*in_case_list, operand)
 
     return operand, *in_case_list, out_case
 
