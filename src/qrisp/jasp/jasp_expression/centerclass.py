@@ -21,7 +21,7 @@ from functools import lru_cache
 import jax
 from jax import make_jaxpr
 from jax.extend.core import Jaxpr, Literal, ClosedJaxpr
-from jax.tree_util import tree_flatten
+from jax.tree_util import tree_flatten, tree_unflatten
 
 from qrisp.jasp.jasp_expression import invert_jaspr, collect_environments
 from qrisp.jasp import (
@@ -1379,13 +1379,135 @@ class Jaspr(ClosedJaxpr):
         return jaspr_to_catalyst_jaxpr(self.flatten_environments())
 
 
-def make_jaspr(fun, flatten_envs=True, **jax_kwargs):
+def make_jaxpr_mod(fun, static_argnums=(), return_shape=False, abstracted_axes=None):
+    """
+    Creates a function that produces the jaxpr of a traced function.
+    
+    This is a modified version of JAX's ``make_jaxpr`` that supports
+    ``return_shape=True`` even when the function returns custom abstract
+    types that don't have ``shape``/``dtype`` attributes (such as
+    ``AbstractQuantumCircuit``).
+    
+    The interface is identical to ``jax.make_jaxpr``.
+    
+    Parameters
+    ----------
+    fun : Callable
+        The function whose jaxpr is to be computed.
+    static_argnums : int or Sequence[int], optional
+        Indices of arguments that should be treated as static (not traced).
+        Default is ``()``.
+    return_shape : bool, optional
+        If True, the returned function produces a tuple ``(jaxpr, out_tree)``
+        where ``out_tree`` is a PyTreeDef representing the structure of the
+        output. This can be used to reconstruct PyTree objects from flat
+        output lists using ``jax.tree_util.tree_unflatten``.
+        Default is False.
+    abstracted_axes : optional
+        Specification for which axes to abstract over. Default is None.
+    
+    Returns
+    -------
+    Callable
+        A function that, when called with example arguments, returns either:
+        - A ClosedJaxpr representation of ``fun`` (if ``return_shape=False``)
+        - A tuple ``(ClosedJaxpr, out_tree)`` (if ``return_shape=True``)
+    
+    Notes
+    -----
+    JAX's native ``make_jaxpr(return_shape=True)`` fails on custom abstract
+    types because it tries to create ``ShapeDtypeStruct`` objects from the
+    outputs, which requires ``shape`` and ``dtype`` attributes. This function
+    avoids that by using ``jit(...).trace()`` to directly access the output
+    tree structure.
+    
+    Examples
+    --------
+    >>> def f(x):
+    ...     return {"a": x + 1, "b": x * 2}
+    >>> jaxpr, out_tree = make_jaxpr_mod(f, return_shape=True)(1.0)
+    >>> # out_tree can be used with tree_unflatten to reconstruct the dict
+    """
+    from jax._src.interpreters import partial_eval as pe
+    from jax._src.util import split_list
+    
+    def jaxpr_creator(*args, **kwargs):
+        if return_shape:
+            # Use jit(...).trace() directly to get access to _out_tree
+            # This avoids JAX's make_jaxpr return_shape logic which fails on
+            # custom abstract types that don't have shape/dtype attributes.
+            traced = jax.jit(
+                fun, 
+                static_argnums=static_argnums,
+                abstracted_axes=abstracted_axes
+            ).trace(*args, **kwargs)
+            
+            # Extract the jaxpr, handling constants if needed
+            # (same logic as JAX's make_jaxpr)
+            if traced._num_consts:
+                consts, _ = split_list(traced._args_flat, [traced._num_consts])
+                jaxpr_ = pe.convert_invars_to_constvars(
+                    traced.jaxpr.jaxpr, traced._num_consts
+                )
+                closed_jaxpr = ClosedJaxpr(jaxpr_, consts)
+            else:
+                closed_jaxpr = traced.jaxpr
+            
+            return closed_jaxpr, traced._out_tree
+        else:
+            return make_jaxpr(fun, static_argnums=static_argnums, 
+                              abstracted_axes=abstracted_axes)(*args, **kwargs)
+    
+    return jaxpr_creator
+
+
+def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
+    """
+    Creates a function that returns the Jaspr representation of a quantum function.
+    
+    This function is analogous to JAX's ``make_jaxpr``, but produces a Jaspr
+    (a Jaxpr enhanced with quantum primitives) from a Qrisp quantum function.
+    
+    Parameters
+    ----------
+    fun : Callable
+        The quantum function whose Jaspr is to be computed.
+    flatten_envs : bool, optional
+        If True (default), flatten quantum environments in the resulting Jaspr.
+    return_shape : bool, optional
+        If True, the returned function produces a tuple ``(jaspr, out_tree)``
+        where ``out_tree`` is a PyTreeDef representing the structure of the
+        output of ``fun``. This can be used to reconstruct PyTree objects
+        from flat output lists using ``jax.tree_util.tree_unflatten``.
+        Default is False.
+    **jax_kwargs
+        Additional keyword arguments passed to ``jax.make_jaxpr``, such as
+        ``static_argnums``.
+    
+    Returns
+    -------
+    Callable
+        A function that, when called with example arguments, returns either:
+        - A Jaspr representation of ``fun`` (if ``return_shape=False``)
+        - A tuple ``(Jaspr, out_tree)`` (if ``return_shape=True``) where
+          ``out_tree`` is a PyTreeDef that can be used with ``tree_unflatten``
+    """
     from qrisp.jasp import (
         AbstractQuantumCircuit,
         TracingQuantumSession,
         check_for_tracing_mode,
     )
     from qrisp.core import recursive_qv_search
+
+    # Handle static_argnums adjustment for the ammended function
+    adjusted_jax_kwargs = dict(jax_kwargs)
+    if "static_argnums" in adjusted_jax_kwargs:
+        if isinstance(adjusted_jax_kwargs["static_argnums"], list):
+            adjusted_jax_kwargs["static_argnums"] = list(adjusted_jax_kwargs["static_argnums"])
+            for i in range(len(adjusted_jax_kwargs["static_argnums"])):
+                adjusted_jax_kwargs["static_argnums"][i] += 1
+        else:
+            adjusted_jax_kwargs["static_argnums"] += 1
 
     def jaspr_creator(*args, **kwargs):
 
@@ -1426,9 +1548,26 @@ def make_jaspr(fun, flatten_envs=True, **jax_kwargs):
 
         ammended_kwargs = dict(kwargs)
         ammended_kwargs[10*"~"] = AbstractQuantumCircuit()
-        closed_jaxpr = make_jaxpr(ammended_function, **jax_kwargs)(
-            *args, **ammended_kwargs
-        )
+        
+        # Use make_jaxpr_mod to trace the function
+        # Pass return_shape through to get the output tree if requested
+        static_argnums = adjusted_jax_kwargs.get("static_argnums", ())
+        abstracted_axes = adjusted_jax_kwargs.get("abstracted_axes", None)
+        
+        result = make_jaxpr_mod(
+            ammended_function,
+            static_argnums=static_argnums,
+            return_shape=return_shape,
+            abstracted_axes=abstracted_axes
+        )(*args, **ammended_kwargs)
+        
+        if return_shape:
+            closed_jaxpr, full_out_tree = result
+            # full_out_tree is a PyTreeDef for (res, res_qc)
+            # We use .children() to get the subtrees, and take the first one (res)
+            user_out_tree = full_out_tree.children()[0]
+        else:
+            closed_jaxpr = result
             
         # Collect the environments
         # This means that the quantum environments no longer appear as
@@ -1438,18 +1577,10 @@ def make_jaspr(fun, flatten_envs=True, **jax_kwargs):
         if flatten_envs:
             res = res.flatten_environments()
 
-        return res
-
-    # Since we are calling the "ammended function", where the first parameter
-    # is the AbstractQuantumCircuit, we need to move the static_argnums indicator.
-    if "static_argnums" in jax_kwargs:
-        jax_kwargs = dict(jax_kwargs)
-        if isinstance(jax_kwargs["static_argnums"], list):
-            jax_kwargs["static_argnums"] = list(jax_kwargs["static_argnums"])
-            for i in range(len(jax_kwargs["static_argnums"])):
-                jax_kwargs["static_argnums"][i] += 1
+        if return_shape:
+            return res, user_out_tree
         else:
-            jax_kwargs["static_argnums"] += 1
+            return res
 
     return jaspr_creator
 
