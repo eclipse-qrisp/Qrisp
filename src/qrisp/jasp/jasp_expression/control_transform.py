@@ -145,6 +145,7 @@ def control_eqn(eqn, ctrl_qubit_var):
         
         body_jaxpr = eqn.params["body_jaxpr"].jaxpr
         cond_jaxpr = eqn.params["cond_jaxpr"].jaxpr
+        new_invars = list(eqn.invars)
 
         if isinstance(
             body_jaxpr.invars[-1].aval, AbstractQuantumCircuit
@@ -152,6 +153,7 @@ def control_eqn(eqn, ctrl_qubit_var):
 
             # Generate controlled body jaxpr
             new_params["body_jaxpr"] = control_jaspr(Jaspr(eqn.params["body_jaxpr"]))
+            new_invars.insert(eqn.params["cond_nconsts"], ctrl_qubit_var)
             new_params["body_nconsts"] += 1
 
         else:
@@ -159,8 +161,6 @@ def control_eqn(eqn, ctrl_qubit_var):
             new_params["body_jaxpr"] = ClosedJaxpr(
                 new_jaxpr, eqn.params["body_jaxpr"].consts
             )
-            
-            new_params["body_nconsts"] += 1
 
         if isinstance(
             cond_jaxpr.invars[-1].aval, AbstractQuantumCircuit
@@ -176,7 +176,7 @@ def control_eqn(eqn, ctrl_qubit_var):
         control_var_count[0] += 1
         temp = JaxprEqn(
             primitive=eqn.primitive,
-            invars=[ctrl_qubit_var] +eqn.invars,
+            invars=new_invars,
             outvars=eqn.outvars,
             params=new_params,
             source_info=eqn.source_info,
