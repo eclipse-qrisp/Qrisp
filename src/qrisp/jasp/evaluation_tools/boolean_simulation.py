@@ -56,7 +56,11 @@ def boolean_simulation(*func, bit_array_padding=2**16):
         slows down the simulation but prevents overflow errors. The simulation
         is performed without any memory management, therefore even qubits that
         are deallocated count into the padding. The default is ``2**20``. The
-        minimum value is 64.
+        minimum value is 512. This threshold describes the maximum OVERALL
+        amount of qubits that can appear in the simulation. The maximum
+        amount per QuantumVariable/per QuantumArray is tied to this number
+        and will always be ``1/1024`` of the ``bit_array_padding``.
+        The default here is therefore ``2**20/2**10 = 1024``.
 
     Returns
     -------
@@ -164,8 +168,8 @@ def boolean_simulation(*func, bit_array_padding=2**16):
     else:
         func = func[0]
 
-    if bit_array_padding < 64:
-        raise Exception("Tried to initialize boolean_simulation with less than 64 bits")
+    if bit_array_padding < 512:
+        raise Exception("Tried to initialize boolean_simulation with less than 512 bits")
 
     @jit
     def return_function(*args):

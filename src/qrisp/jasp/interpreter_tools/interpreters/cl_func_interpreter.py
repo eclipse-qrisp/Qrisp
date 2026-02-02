@@ -93,7 +93,8 @@ def process_create_qubits(invars, outvars, context_dic):
     # We create the new QubitArray representation by putting the appropriate tuple
     # in the context_dic
 
-    reg_qubits = Jlist()
+    reg_qubits = Jlist(init_val = jnp.array([], dtype = jnp.uint64),
+                       max_size = 64*qreg.size//1024)
 
     def loop_body(i, val_tuple):
         reg_qubits, free_qubits = val_tuple
@@ -122,7 +123,7 @@ def process_fuse(eqn, context_dic):
     if isinstance(eqn.invars[0].aval, AbstractQubit) and isinstance(
         eqn.invars[1].aval, AbstractQubit
     ):
-        res_qubits = Jlist(invalues)
+        res_qubits = Jlist(invalues, max_size=invalues[0].max_size)
     elif isinstance(eqn.invars[0].aval, AbstractQubitArray) and isinstance(
         eqn.invars[1].aval, AbstractQubit
     ):
@@ -477,7 +478,9 @@ def jaspr_to_cl_func_jaxpr(jaspr, bit_array_padding):
                 )
             )
         elif isinstance(invar.aval, AbstractQubitArray):
-            args.append(Jlist())
+            qreg = Jlist(init_val = jnp.array([], dtype = jnp.uint64),
+                                   max_size = bit_array_padding//1024)
+            args.append(qreg)
         elif isinstance(invar.aval, AbstractQubit):
             args.append(jnp.asarray(0, dtype="int64"))
         elif isinstance(invar, Literal):
