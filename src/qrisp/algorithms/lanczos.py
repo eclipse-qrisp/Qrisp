@@ -88,6 +88,41 @@ def inner_lanczos(H, k, operand_prep):
             
     return q_cond(k%2==0, even, odd, case_indicator, operand, k)
 
+def lanczos_even(BE, k, operand_prep):
+    # case_indicator must be created INSIDE for each k to be traced correctly
+    BE_qubitized = BE.qubitization()
+
+    case_indicator = BE_qubitized.create_ancillas()
+    
+    operand = operand_prep()
+    #if not isinstance(operand, (tuple, list)):
+    #    operand = list(operand)
+    #op_args = operand if isinstance(operand, (tuple, list)) else [operand]
+
+    for _ in jrange(k // 2):
+        BE_qubitized.unitary(*case_indicator, operand)
+    
+    return tuple(case_indicator)
+
+def lanczos_odd(BE, k, operand_prep):
+    BE_qubitized = BE.qubitization()
+
+    case_indicator = BE_qubitized.create_ancillas()
+    
+    operand = operand_prep()
+    #op_args = operand if isinstance(operand, (tuple, list)) else [operand]
+
+    for _ in jrange(k // 2):
+        BE_qubitized.unitary(*case_indicator, operand)
+    
+    qv = QuantumFloat(1)
+    h(qv) 
+    with control(qv[0]):
+        # BE.unitary uses the base block encoding
+        BE.unitary(*case_indicator, operand) 
+    h(qv)
+    
+    return qv
 
 def compute_expectation(meas_res):
     r"""
@@ -160,28 +195,40 @@ def lanczos_expvals(H, D, operand_prep, mes_kwargs={}):
     if not "shots" in mes_kwargs:
         mes_kwargs["shots"] = 100000
 
+    BE = H if isinstance(H, BlockEncoding) else H.pauli_block_encoding()
+    BE_qubitized = BE.qubitization()
+
     if check_for_tracing_mode():
 
         @jax.jit
-        def post_processor(x):
+        def post_processor(*args):
             """
             Returns 1 if the input integer x is 0, and -1 otherwise, using jax.numpy.where.
             """
-            return jnp.where(x == 0, 1, -1)
+            return jnp.where(jnp.array(args) == 0, 1, -1)
         
-        ev_function = expectation_value(inner_lanczos, shots = mes_kwargs["shots"], post_processor = post_processor)
+        ev_even = expectation_value(lanczos_even, shots=mes_kwargs["shots"], post_processor=post_processor)
+        ev_odd = expectation_value(lanczos_odd, shots=mes_kwargs["shots"], post_processor=post_processor)
         expvals = jnp.zeros(2*D)
 
         for k in range(0, 2*D):
-            expval = ev_function(H, k, operand_prep)
-            expvals = expvals.at[k].set(expval)
+            if k % 2 == 0:
+                val = ev_even(BE, k, operand_prep)
+            else:
+                val = ev_odd(BE, k, operand_prep)
+            expvals = expvals.at[k].set(val)
 
-    else:
-        expvals = np.zeros(2*D)
-        for k in range(0, 2*D):
-            qarg = inner_lanczos(H, k, operand_prep)
-            meas = qarg.get_measurement(**mes_kwargs)
-            expvals[k] = compute_expectation(meas)
+    #else:
+        # TO-DO
+        #expvals = np.zeros(2*D)
+        #for k in range(0, 2*D):
+        #    if k % 2 == 0:
+        #        qarg = lanczos_even(BE_qubitized, k, operand_prep)
+        #        meas = something to do with multi_measurement
+        #    else:
+        #        qarg = inner_lanczos(H, k, operand_prep)
+        #        meas = qarg.get_measurement(**mes_kwargs)
+        #    expvals[k] = compute_expectation(meas)
     
     return expvals
 
