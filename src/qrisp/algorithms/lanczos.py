@@ -20,7 +20,7 @@ from functools import partial
 import jax.numpy as jnp
 import jax
 import numpy as np
-from qrisp import QuantumFloat, h, control
+from qrisp import QuantumFloat, h, control, multi_measurement
 from qrisp.block_encodings import BlockEncoding
 from qrisp.jasp import jrange, q_cond, check_for_tracing_mode, expectation_value
 
@@ -89,15 +89,11 @@ def inner_lanczos(H, k, operand_prep):
     return q_cond(k%2==0, even, odd, case_indicator, operand, k)
 
 def lanczos_even(BE, k, operand_prep):
-    # case_indicator must be created INSIDE for each k to be traced correctly
     BE_qubitized = BE.qubitization()
 
     case_indicator = BE_qubitized.create_ancillas()
     
     operand = operand_prep()
-    #if not isinstance(operand, (tuple, list)):
-    #    operand = list(operand)
-    #op_args = operand if isinstance(operand, (tuple, list)) else [operand]
 
     for _ in jrange(k // 2):
         BE_qubitized.unitary(*case_indicator, operand)
@@ -110,15 +106,13 @@ def lanczos_odd(BE, k, operand_prep):
     case_indicator = BE_qubitized.create_ancillas()
     
     operand = operand_prep()
-    #op_args = operand if isinstance(operand, (tuple, list)) else [operand]
-
+    
     for _ in jrange(k // 2):
         BE_qubitized.unitary(*case_indicator, operand)
     
     qv = QuantumFloat(1)
     h(qv) 
     with control(qv[0]):
-        # BE.unitary uses the base block encoding
         BE.unitary(*case_indicator, operand) 
     h(qv)
     
@@ -150,11 +144,15 @@ def compute_expectation(meas_res):
     """
     expval = 0.0
     for outcome, prob in meas_res.items():
-
-        if int(outcome) == 0:
-            expval += prob * 1
+        if isinstance(outcome, tuple):
+            is_zero = all(v == 0 for v in outcome)
         else:
-            expval += prob * (-1)
+            is_zero = (int(outcome) == 0)
+
+        if is_zero:
+            expval += prob
+        else:
+            expval -= prob
     return expval
 
 
@@ -218,17 +216,16 @@ def lanczos_expvals(H, D, operand_prep, mes_kwargs={}):
                 val = ev_odd(BE, k, operand_prep)
             expvals = expvals.at[k].set(val)
 
-    #else:
-        # TO-DO
-        #expvals = np.zeros(2*D)
-        #for k in range(0, 2*D):
-        #    if k % 2 == 0:
-        #        qarg = lanczos_even(BE_qubitized, k, operand_prep)
-        #        meas = something to do with multi_measurement
-        #    else:
-        #        qarg = inner_lanczos(H, k, operand_prep)
-        #        meas = qarg.get_measurement(**mes_kwargs)
-        #    expvals[k] = compute_expectation(meas)
+    else:
+        expvals = np.zeros(2*D)
+        for k in range(0, 2*D):
+            if k % 2 == 0:
+                qargs = lanczos_even(BE, k, operand_prep)
+                meas = multi_measurement(list(qargs), **mes_kwargs)
+            else:
+                qarg = lanczos_odd(BE, k, operand_prep)
+                meas = qarg.get_measurement(**mes_kwargs)
+            expvals[k] = compute_expectation(meas)
     
     return expvals
 
