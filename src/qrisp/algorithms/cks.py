@@ -649,17 +649,29 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
         b = np.array([0, 1, 1, 1])
 
+        kappa = np.linalg.cond(A)
+        print("Condition number of A: ", kappa)
+        # Condition number of A:  1.8448536035491883
+
     Next, we solve this linear system using the CKS quantum algorithm:
 
     ::
 
+        from qrisp import prepare, QuantumFloat
         from qrisp.algorithms.cks import CKS
+        from qrisp.block_encodings import BlockEncoding
         from qrisp.jasp import terminal_sampling
+
+        def prep_b():
+            operand = QuantumFloat(2)
+            prepare(operand, b)
+            return operand
 
         @terminal_sampling
         def main():
 
-            x = CKS(A, b, 0.01)
+            BA = BlockEncoding.from_array(A)
+            x = CKS(BA, 0.01, kappa).apply_rus(prep_b)()
             return x
 
         res_dict = main()
@@ -699,12 +711,13 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
         @count_ops(meas_behavior="0")
         def main():
 
-            x = CKS(A, b, 0.01)
+            BA = BlockEncoding.from_array(A)
+            x = CKS(BA, 0.01, kappa).apply_rus(prep_b)()
             return x
 
         res_dict = main()
         print(res_dict)
-        # {'cx': 3628, 't': 1288, 't_dg': 1702, 'p': 178, 'cz': 138, 'cy': 46, 'h': 960, 'x': 324, 's': 66, 's_dg': 66, 'u3': 723, 'gphase': 49, 'ry': 2, 'z': 11, 'measure': 16}
+        # {'gphase': 51, 't_dg': 1548, 'cz': 150, 'ry': 2, 'z': 12, 'h': 890, 'cy': 50, 'cx': 3516, 'x': 377, 's_dg': 70, 'p': 193, 's': 70, 't': 1173, 'u3': 753, 'measure': 18}
 
     The printed dictionary lists the estimated quantum gate counts required for the CKS algorithm. Since the simulation itself is not executed, 
     this approach enables scalable gate count estimation for linear systems of arbitrary size.
@@ -716,7 +729,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
     corresponds to, e.g., an Ising or a Heisenberg Hamiltonian, the number of Pauli terms may not scale favorably in general.
     For certain sparse matrices, their structure can be exploited to construct more efficient block-encodings.
 
-    In this example, we construct a block-encoding representation for the following tridiagonal sparse matrix:
+    In this example, we construct a block-encoding representation for the following following tridiagonal sparse matrix:
 
     ::
 
@@ -745,7 +758,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
     ::
 
-        from qrisp import gphase, prepare, qswitch
+        from qrisp import conjugate, gphase, prepare, qswitch
 
         def I(qv):
             pass
@@ -760,34 +773,32 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
         unitaries = [I, V, V_dg]
 
-    Additionally, the block encoding unitary :math:`U` supplied must satisfy the property :math:`U^2 = I`, i.e., it is self-inverse.
-    This condition is required for the correctness of the Chebyshev polynomial block encoding
-    and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_. In this case, the fact that $V^2=(V^{\dagger})^2=I$
-    ensures that defining the block encoding unitary via a :ref:`quantum switch case <qswitch>` satsifies :math:`U^2 = I`.
-
-    We now define the block_encoding ``(U, state_prep, n)``:
+    We now define the block_encoding.
 
     ::
 
-        coeffs = np.array([5,1,1])
+        coeffs = np.array([5,1,1,0])
         alpha = np.sum(coeffs)
 
         def U(case, operand):
-            qswitch(operand, case, unitaries)
+            with conjugate(prepare)(case, np.sqrt(coeffs / alpha)):
+                qswitch(operand, case, unitaries)
 
-        def state_prep(case):
-            prepare(case, np.sqrt(coeffs/alpha))
+        BA = BlockEncoding(alpha, [QuantumFloat(2)], U)
 
-        block_encoding = (U, state_prep, 2)
-
-    We solve the linear system by passing this block-encoding tuple as ``A`` into the CKS function:
+    Next, we solve this linear system using the CKS quantum algorithm:
 
     ::
+
+        def prep_b():
+            operand = QuantumFloat(3)
+            prepare(operand, b)
+            return operand
 
         @terminal_sampling
         def main():
 
-            x = CKS(block_encoding, b, 0.01, np.linalg.cond(A))
+            x = CKS(BA, 0.01, kappa).apply_rus(prep_b)()
             return x
 
         res_dict = main()
@@ -815,12 +826,12 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
         @count_ops(meas_behavior="0")
         def main():
 
-            x = CKS(block_encoding, b, 0.01, np.linalg.cond(A))
+            x = CKS(BA, 0.01, kappa).apply_rus(prep_b)()
             return x
     
         res_dict = main()
         print(res_dict)
-        # {'h': 676, 't_dg': 806, 'cx': 1984, 't': 651, 's': 152, 's_dg': 90, 'u3': 199, 'gphase': 65, 'p': 149, 'z': 15, 'x': 126, 'measure': 142, 'ry': 2}
+        # {'gphase': 51, 's_dg': 70, 's': 120, 'z': 12, 'x': 127, 't': 298, 'u3': 157, 'cx': 1194, 'p': 118, 'ry': 2, 'h': 390, 't_dg': 348, 'measure': 116}
 
     Finally, note that it is also possible to solve a linear system without using the :ref:`RUS` decorator,
     by performing the necessary post-selection manually. Such an example can be found in :func:`inner_CKS`.
