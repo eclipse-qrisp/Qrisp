@@ -6,15 +6,6 @@ Childs-Kothari-Somma (CKS)
 .. currentmodule:: qrisp.cks
 .. autofunction:: CKS
 
-Circuit construction
---------------------
-
-.. autosummary:: 
-    :toctree: generated/
-    
-    inner_CKS
-
-
 Miscellaneous
 -------------
 
