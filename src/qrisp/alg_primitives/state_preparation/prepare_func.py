@@ -82,7 +82,8 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
     Examples
     --------
 
-    Let's define a normalized target statevector and use it to prepare a quantum state.
+    In this example, we create a :ref:`QuantumFloat` and prepare the normalized state
+    $\sum_{i=0}^3 \tilde b_i\ket{i}$ for $\tilde b=(0,1,2,3)/\sqrt{14}$.
 
     ::
 
@@ -95,7 +96,7 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
         qf = QuantumFloat(2)
         prepare(qf, b)
 
-    We can verify that the state has been prepared by retrieving the statevector amplitudes.
+    We can verify that the state has been correctly prepared.
 
     For example, we can use the ``statevector`` method to get a function that maps basis states to amplitudes:
 
@@ -109,30 +110,34 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
         # b[2]: 0.5345224838248488 -> (0.5345224738121033-0j)
 
     where index 1 in little-endian corresponds to the basis state :math:`\ket{q_0=1, q_1=0}`
-    and index 2 to :math:`\ket{q_0=0, q_1=1}`.  With ``reversed=True``, we can map ``b[1]``
-    to ``sv_function({qf: 2})`` instead, and vice versa.
+    and index 2 to :math:`\ket{q_0=0, q_1=1}`.  With ``reversed=True``, we can
+    switch to big-endian ordering. That is, we can map ``b[1]`` to ``sv_function({qf: 2})``
+    instead, and so on.
 
-    In the following example, we create a :ref:`QuantumFloat` and prepare the state $\sum_{i=0}^3b_i\ket{i}$ for $b=(0,1,2,3)$.
+    We can perform a similar verification even if the statevector is not directly
+    accessible (for example when running on hardware), by using measurement results:
 
     ::
-
-        b = np.array([0,1,2,3])
 
         qf = QuantumFloat(2)
         prepare(qf, b)
 
         res_dict = qf.get_measurement()
 
-        for k, v in res_dict.items():
-            res_dict[k] = v**0.5
+        ref = np.sqrt(res_dict[1])
+        amps = {k: round(np.sqrt(v) / ref) for k, v in res_dict.items()}
 
-        for k, v in res_dict.items():
-            res_dict[k] = v/res_dict[1.0]
+        print(amps)
+        # Yields: {3: 3, 2: 2, 1: 1}
 
-        print(res_dict)
-        # Yields: {3: 2.9999766670425863, 2: 1.999965000393743, 1: 1.0}
+    The output indicates that the magnitudes of the amplitudes for the basis states
+    :math:`\ket{1}`, :math:`\ket{2}`, and :math:`\ket{3}` are in the ratio :math:`1 : 2 : 3`,
+    exactly matching the input vector :math:`b = (0,1,2,3)` up to normalization.
 
     """
+
+    if method not in {"auto", "qiskit", "qswitch"}:
+        raise ValueError("method must be 'auto', 'qiskit', or 'qswitch'")
 
     is_tracing = check_for_tracing_mode()
 
@@ -143,22 +148,20 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
                 f"Statevector length must be {expected} for {qv.size} qubits, "
                 f"got {target_array.size}."
             )
-        norm = np.linalg.norm(np.asarray(target_array))
+        target_array = np.asarray(target_array)
+        norm = np.linalg.norm(target_array)
         if np.isclose(norm, 0.0):
             raise ValueError("The provided statevector has zero norm.")
-
-        target_array = np.asarray(target_array) / norm
+        target_array = target_array / norm
 
     if method == "auto":
         try:
-            target_array = np.array(target_array)
+            target_array = np.asarray(target_array)
             method = "qiskit"
         except TracerArrayConversionError:
             method = "qswitch"
 
     if method == "qiskit":
         prepare_qiskit(qv, target_array, reversed)
-    elif method == "qswitch":
-        prepare_qswitch(qv, target_array, reversed)
     else:
-        raise ValueError("method must be 'auto', 'qiskit', or 'qswitch'")
+        prepare_qswitch(qv, target_array, reversed)
