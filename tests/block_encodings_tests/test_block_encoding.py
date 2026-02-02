@@ -23,9 +23,9 @@ from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
 
 
-def test_block_encoding_from_matrix():
+def test_block_encoding_from_array():
     A = np.array([[0,1,0,1],[1,0,0,0],[0,0,1,0],[1,0,0,0]])
-    B = BlockEncoding.from_operator(A)
+    B = BlockEncoding.from_array(A)
 
     @terminal_sampling
     def main():
