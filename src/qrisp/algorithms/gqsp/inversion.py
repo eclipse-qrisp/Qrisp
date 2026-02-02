@@ -114,40 +114,19 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
     """
 
     # The inversion polynomial is constructed using CKS_parameters and cheb_coefficients.
-    # Since approximating 1/x over the relevant spectral interval requires an odd Chebyshev series,
-    # cheb_coefficients returns an array containing only the odd-degree coefficients.
-    # To remain compatible with the GQET interface, this array is expanded into a full 
+    # Since approximating 1/x over the relevant spectral interval [-1, -1/kappa] + [1/kappa,1] 
+    # requires an odd Chebyshev series, cheb_coefficients returns an array containing only the odd-degree coefficients.
+    # To remain compatible with the QET interface, this array is expanded into a full 
     # Chebyshev series by padding even-degree terms with zeros.
-    # Finally, the series scale is adjusted via _extend_and_rescale_cheb.
-    # Since GQET targets p(A) instead of p(A/α), we rescale p(x) to p(x/α) to compensate 
-    # for the internal rescaling.
     j_0, beta = CKS_parameters(A, eps, kappa)
     p_odd = cheb_coefficients(j_0, beta)
     p_odd = p_odd * (-1) ** np.arange(len(p_odd))
-    p = _extend_and_rescale_cheb(p_odd, A.alpha)
+    p = np.zeros(2 * len(p_odd))
+    p[1::2] = p_odd
 
-    A_inv = QET(A, p, kind="Chebyshev")
+    # Set _rescale=False to apply p(A/α) instead of p(A).
+    A_inv = QET(A, p, kind="Chebyshev", _rescale=False)
 
     # Adjust scaling factor since (A/α)^{-1} = αA^{-1}.
     A_inv.alpha = A_inv.alpha / A.alpha
     return A_inv
-
-
-def _extend_and_rescale_cheb(p_odd, alpha):
-    
-    # Initialize full Chebyshev coefficient array.
-    # We place the odd coefficients at indices 1, 3, 5, ... and keep even indices zero.
-    p = np.zeros(2 * len(p_odd))
-    p[1::2] = p_odd
-
-    # Convert to Polynomial basis.
-    p = cheb2poly(p)
-
-    # Apply the rescaling x -> x / alpha in polynomial basis.
-    scaling_exponents = np.arange(len(p))
-    scaling_factors = (1.0 / alpha) ** scaling_exponents
-    p_scaled = p * scaling_factors
-
-    # Convert back to Chebyshev basis.
-    p_scaled = poly2cheb(p_scaled)
-    return p_scaled

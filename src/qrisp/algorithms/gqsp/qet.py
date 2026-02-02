@@ -23,7 +23,7 @@ from qrisp.core.gate_application_functions import rx
 from qrisp.environments import conjugate, control
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
-from qrisp.algorithms.gqsp.helper_functions import poly2cheb, cheb2poly
+from qrisp.algorithms.gqsp.helper_functions import poly2cheb, _rescale_poly
 from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import QubitOperator
 from typing import Literal, TYPE_CHECKING
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
 
-def QET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial") -> BlockEncoding:
+def QET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial", _rescale: bool = True) -> BlockEncoding:
     r"""
     Performs `Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
     Applies **real, fixed parity** polynomial transformations on the eigenvalues of a Hermitian operator.
@@ -141,17 +141,10 @@ def QET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynom
         H = H.pauli_block_encoding()    
 
     # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
-    alpha = H.alpha
-    scaling_exponents = jnp.arange(len(p))
-    scaling_factors = jnp.power(alpha, scaling_exponents)
-
-    # Convert to Polynomial for rescaling
-    if kind=="Chebyshev":
-        p = cheb2poly(p)
-
-    p = p * scaling_factors
-
-    p = poly2cheb(p)
+    if _rescale:
+        p = _rescale_poly(H.alpha, p, kind=kind)
+    if kind=="Polynomial":
+        p = poly2cheb(p)
 
     m = len(H.anc_templates)
     d = len(p)
