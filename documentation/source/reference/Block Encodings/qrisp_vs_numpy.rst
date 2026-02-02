@@ -1,7 +1,7 @@
 .. _qrisp_vs_numpy:
 
-qrisp vs numpy
---------------
+NumPy-like syntax
+-----------------
 
 Define two Hermitian matrices $A$ and $B$ and evaluate the matrix expression 
 $C = I + 2A + A^2 + B^{-1}$ applied to a vector $\vec{b}$.
