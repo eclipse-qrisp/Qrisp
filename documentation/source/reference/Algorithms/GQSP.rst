@@ -28,6 +28,7 @@ Miscellaneous
     :toctree: generated/
     
     GQET
+    QET
     hamiltonian_simulation
     convolve
     fourier_series_loader

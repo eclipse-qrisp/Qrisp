@@ -19,7 +19,7 @@
 import jax
 from jax import Array
 import jax.numpy as jnp
-from typing import TYPE_CHECKING
+from typing import Literal, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -134,3 +134,39 @@ def cheb2poly(cheb: "ArrayLike") -> Array:
     poly = jnp.dot(cheb, C) # or jnp.dot(C.T, coeffs) if coeffs was a column vector
 
     return poly
+
+
+def _rescale_poly(alpha: "ArrayLike", p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial") -> "ArrayLike":
+    r"""
+    Returns a new polynomial $\tilde{p}$ such that $\tilde{p}(z) = p(z/\alpha)$.
+
+    Parameters
+    ----------
+    alpha : ArrayLike
+        Scalar scaling factor. 
+    p : ArrayLike
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+    kind : {"Polynomial", "Chebyshev"}
+        The kind of ``p``. The default is ``"Polynomial"``.
+
+    Returns
+    -------
+    ArrayLike
+        1-D array containing the (rescaled) polynomial coefficients, ordered from lowest order term to highest.
+    
+    """
+
+    # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
+    scaling_exponents = jnp.arange(len(p))
+    scaling_factors = jnp.power(alpha, scaling_exponents)
+
+    # Convert to Polynomial for rescaling
+    if kind=="Chebyshev":
+        p = cheb2poly(p)
+
+    p = p * scaling_factors
+
+    if kind=="Chebyshev":
+        p = poly2cheb(p)
+    
+    return p

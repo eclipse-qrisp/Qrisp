@@ -1133,14 +1133,15 @@ class BlockEncoding:
 
             res_dict = main()
 
+            # Convert measurement probabilities to (absolute values of) amplitudes
+            for k, v in res_dict.items():
+                res_dict[k] = v**0.5
+            q = np.array([res_dict.get(key, 0) for key in range(len(b))])
+
         Finally, compare the quantum simulation result with the classical solution:
 
         ::
 
-            for k, v in res_dict.items():
-                res_dict[k] = v**0.5
-
-            q = np.array([res_dict.get(key, 0) for key in range(len(b))])
             c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
 
             print("QUANTUM SIMULATION\n", q, "\nCLASSICAL SOLUTION\n", c)
@@ -1221,8 +1222,8 @@ class BlockEncoding:
             # Convert measurement probabilities to (absolute values of) amplitudes
             for k, v in res_dict.items():
                 res_dict[k] = v**0.5
-
             q = np.array([res_dict.get(key, 0) for key in range(16)])
+            
             print(q)
             #[0.88288218 0.224682   0.22269639 0.05723058 0.22269632 0.05669449                   
             # 0.0570588  0.01457775 0.22468192 0.05717859 0.05669445 0.0145699
@@ -1277,7 +1278,7 @@ class BlockEncoding:
         Examples
         --------
 
-        First, define a Hermitian matrix $A$ and a right-hand side vector $\vec{b}$.
+        Define a Hermitian matrix $A$ and a vector $\vec{b}$.
 
         ::
 
@@ -1314,15 +1315,15 @@ class BlockEncoding:
 
             res_dict = main()
 
+            # Convert measurement probabilities to (absolute values of) amplitudes
+            for k, v in res_dict.items():
+                res_dict[k] = v**0.5
+            q = np.array([res_dict.get(key, 0) for key in range(len(b))])
+
         Finally, compare the quantum simulation result with the classical solution:
 
         ::
 
-            # Convert measurement probabilities to (absolute values of) amplitudes
-            for k, v in res_dict.items():
-                res_dict[k] = v**0.5
-
-            q = np.array([res_dict.get(key, 0) for key in range(len(b))])
             c = (np.eye(4) + 2 * A + A @ A) @ b
             c = c / np.linalg.norm(c)
 
