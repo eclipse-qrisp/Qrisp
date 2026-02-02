@@ -22,73 +22,36 @@ import jax
 import numpy as np
 from qrisp import QuantumFloat, h, control, multi_measurement
 from qrisp.block_encodings import BlockEncoding
-from qrisp.jasp import jrange, q_cond, check_for_tracing_mode, expectation_value
+from qrisp.jasp import jrange, check_for_tracing_mode, expectation_value
 
-
-def inner_lanczos(H, k, operand_prep):
+def lanczos_even(BE, k, operand_prep):
     r"""
-    Perform the quantum subroutine of the exact and efficient Lanczos method to estimate expectation values of Chebyshev polynomials of a Hamiltonian.
-
     This function implements the Krylov space construction via block-encodings 
-    of Chebyshev polynomials $T_k(H)$, as described in 
-    `"Exact and efficient Lanczos method on a quantum computer" <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
+    of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(a) of `Kirby et al. <https://arxiv.org/pdf/2208.00567>`_.
     
-    For each polynomial order $k = 0, \dots, 2D-1$, it prepares circuits corresponding 
-    either to $\bra{\psi\lfloor k/2\rfloor}R\ket{\psi\lfloor k/2\rfloor}$ for even $k$, or
-    $\bra{\psi\lfloor k/2\rfloor}U\ket{\psi\lfloor k/2\rfloor}$ for odd $k$. 
-    The measured statistics of the prepared quantum states encode the expectation values $\langle T_k(H)\rangle$. 
+    For even $k$, the subroutine prepares a state by applying $k/2$ qubitization 
+    steps $(RU)$. The expectation value $\langle T_k(H)\rangle$ is then obtained 
+    by measuring the reflection operator $R = 2|G\rangle_a\langle G|_a - I$ on 
+    the auxiliary register. 
+    
+    The "all-zeros" measurement outcome (representing $|G\rangle_a$) corresponds 
+    to the $+1$ eigenvalue of $R$, while any other outcome corresponds to $-1$.
 
     Parameters
     ----------
-    H : QubitOperator
-        Hamiltonian for which to estimate the ground-state energy.
-    D : int
-        Krylov space dimension. Determines maximum Chebyshev order $(2D-1)$.
+    BE : BlockEncoding
+        The block-encoding of the Hamiltonian $H$ for which we want to estimate the ground-state energy.
+    k : int
+        Even integer representing the even Chebyshev polynomial order.
     operand_prep : callable 
         Function returning the (operand) QuantumVariable in the initial system state $\ket{\psi_0}$, i.e.,
         ``operand=operand_prep()``.
 
     Returns
     -------
-    QuantumVariable
-        A QuantumVariable for which the measured statistics encodes the expectation values $\langle T_k(H)\rangle$. 
-
+    tuple of QuantumVariable
+        The auxiliary case-indicator QuantumVariables. Measurement outcomes of these variables encode the expectation value.
     """
-
-    if isinstance(H, BlockEncoding):
-        BE = H
-    
-    else:
-        BE = H.pauli_block_encoding()
-
-    BE_qubitized = BE.qubitization()
-
-    case_indicator = BE_qubitized.create_ancillas()
-    operand = operand_prep()
-
-    if not isinstance(operand, (tuple, list)):
-        operand = list(operand)
-
-    def even(case_indicator, operand, k):
-        # EVEN k: Figure 1 top
-        for _ in jrange(k//2):
-            BE_qubitized.unitary(*case_indicator, *operand)
-        return case_indicator
-
-    def odd(case_indicator, operand, k):
-        # ODD k: Figure 1 bottom
-        for _ in jrange(k//2):
-            BE_qubitized.unitary(*case_indicator, *operand)
-        qv = QuantumFloat(1)
-        h(qv) # Hadamard test for <U>
-        with control(qv[0]):
-            BE.unitary(*case_indicator, operand) # control-U on the case_indicator QuantumFloat
-        h(qv) # Hadamard test for <U>
-        return qv
-            
-    return q_cond(k%2==0, even, odd, case_indicator, operand, k)
-
-def lanczos_even(BE, k, operand_prep):
     BE_qubitized = BE.qubitization()
 
     case_indicator = BE_qubitized.create_ancillas()
@@ -101,6 +64,31 @@ def lanczos_even(BE, k, operand_prep):
     return tuple(case_indicator)
 
 def lanczos_odd(BE, k, operand_prep):
+    r"""
+    This function implements the Krylov space construction via block-encodings 
+    of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(b) of `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
+    
+    For odd $k$, the subroutine applies $\lfloor k/2 \rfloor$ qubitization steps 
+    followed by a Hadamard test for the block-encoding unitary $U$. This 
+    effectively estimates $\langle \psi_{\lfloor k/2 \rfloor} | U | \psi_{\lfloor k/2 \rfloor} \rangle$, 
+    which encodes the odd Chebyshev expectation value $\langle T_k(H)\rangle$.
+
+    Parameters
+    ----------
+    BE : BlockEncoding
+        The block-encoding of the Hamiltonian $H$ for which we want to estimate the ground-state energy.
+    k : int
+        Odd integer representing the odd Chebyshev polynomial order..
+    operand_prep : callable 
+        Function returning the (operand) QuantumVariable in the initial system state $\ket{\psi_0}$, i.e.,
+        ``operand=operand_prep()``.
+
+    Returns
+    -------
+    QuantumFloat
+        A single-qubit QuantumFloat used as the Hadamard test ancilla. The expectation value is derived 
+        from the Z-basis measurement statistics ($P(0) - P(1)$).
+    """
     BE_qubitized = BE.qubitization()
 
     case_indicator = BE_qubitized.create_ancillas()
@@ -120,26 +108,38 @@ def lanczos_odd(BE, k, operand_prep):
 
 def compute_expectation(meas_res):
     r"""
-    Convert measurement results into an expectation value.
+    Convert measurement results from Lanczos subroutines into the expectation 
+    value of a Chebyshev polynomial $\langle T_k(H) \rangle$.
+
+    This function processes the output of `:ref: lanczos_even` and `lanczos_odd`` constructing the circuits described in 
+    `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_ to extract the physical 
+    expectation value from the ancilla measurement statistics.
 
     Assumes measurement outcomes correspond to $\pm 1$ eigenvalues of observables 
     (reflection $R$ or block-encoding unitary $U$). 
 
-    For even $k$ we measure the auxilary case_indicator QuantumFloat in the computational basis. We then map:
-    $+1$ if all-zeros outcome (projector $2\ket{0}\bra{0} - \mathbb{I}$), else $-1$ (paper step 2).
-
-    For odd $k$ we perform the Hadamard test for the block-encoding unitary $U$ and then measure the 
-    auxilary QuantumVariable in the $Z$ basis.
+    For even $k$,  he subroutine returns a tuple of outcomes for the auxiliary 
+    ``case_indicator`` QuantumVariable. Since the observable is the reflection 
+    operator $R = 2|G\rangle_a\langle G|_a - I$, the outcome is mapped to 
+    $+1$ if the ancilla is in the ground state $|G\rangle_a$ (all-zeros), 
+    and $-1$ otherwise.
+    
+    For odd $k$, the subroutine returns the outcome of a single Hadamard test ancilla. 
+    The expectation value of the block-encoding unitary $U$ is given by 
+    the $Z$-basis contrast: $P(0) - P(1)$.
 
     Parameters
     ----------
     meas_res : dict
-        A dictionary of values and their corresponding measurement probabilities.
+        A dictionary where keys are measurement outcomes (integers for scalar 
+        variables or tuples for multiple variables) and values are their 
+        respective probabilities.
 
     Returns
     -------
     expval : float
-        Expectation value of the measured observable.
+        The estimated expectation value $\langle T_k(H) \rangle$. 
+        In the absence of noise, this value is exact.
 
     """
     expval = 0.0
@@ -158,21 +158,32 @@ def compute_expectation(meas_res):
 
 def lanczos_expvals(H, D, operand_prep, mes_kwargs={}):
     r"""
-    Perform the quantum subroutine of the exact and efficient Lanczos method to estimate expectation values of Chebyshev polynomials of a Hamiltonian.
+    Estimate the expectation values of Chebyshev polynomials $\langle T_k(H) \rangle$ 
+    for the exact and efficient Quantum Lanczos method.
 
-    This function implements the Krylov space construction via block-encodings 
-    of Chebyshev polynomials $T_k(H)$, as described in 
-    `"Exact and efficient Lanczos method on a quantum computer" <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
+    This function constructs the Krylov space basis by evaluating the expectation 
+    values of Chebyshev polynomials up to order $2D-1$. It dispatches tasks to 
+    :func:`lanczos_even` and :func:`lanczos_odd`, which implement the circuit 
+    layouts described in _Figure 1_ of `Kirby et al. (2023) 
+    <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
     
     For each polynomial order $k = 0, \dotsc, 2D-1$, it prepares and measures circuits corresponding 
     either to $\bra{\psi\lfloor k/2\rfloor}R\ket{\psi\lfloor k/2\rfloor}$ for even $k$, or
     $\bra{\psi\lfloor k/2\rfloor}U\ket{\psi\lfloor k/2\rfloor}$ for odd $k$. 
     The measured statistics encode the expectation values $\langle T_k(H)\rangle$. 
 
+    The function supports two execution modes:
+    - Tracing Mode (JAX): Uses ``expectation_value`` with a JIT-compiled 
+       post-processor for high-performance gradient or batch execution.
+    - Standard Mode: Uses ``multi_measurement`` and 
+       :func:`compute_expectation` for simulation or hardware execution.
+    
     Parameters
     ----------
-    H : QubitOperator
-        Hamiltonian for which to estimate the ground-state energy.
+    H : QubitOperator or BlockEncoding
+        Hamiltonian for which to estimate the ground-state energy. If a 
+        QubitOperator is provided, it is automatically converted to a 
+        Pauli block-encoding.
     D : int
         Krylov space dimension. Determines maximum Chebyshev order $(2D-1)$.
     operand_prep : callable 
@@ -185,7 +196,8 @@ def lanczos_expvals(H, D, operand_prep, mes_kwargs={}):
     Returns
     -------
     expvals : ndarray
-        The expectation values $\langle T_k(H)\rangle$ for $k=0, \dotsc, 2D-1$.
+        An array of length $2D$ containing the expectation values 
+        $\langle T_k(H) \rangle$ for $k=0, \dots, 2D-1$.
 
     """
 
@@ -194,16 +206,15 @@ def lanczos_expvals(H, D, operand_prep, mes_kwargs={}):
         mes_kwargs["shots"] = 100000
 
     BE = H if isinstance(H, BlockEncoding) else H.pauli_block_encoding()
-    BE_qubitized = BE.qubitization()
 
     if check_for_tracing_mode():
 
         @jax.jit
         def post_processor(*args):
             """
-            Returns 1 if the input integer x is 0, and -1 otherwise, using jax.numpy.where.
+            Maps the 'all-zeros' outcome to 1 and any other outcome to -1.
             """
-            return jnp.where(jnp.array(args) == 0, 1, -1)
+            return jnp.where(jnp.all(jnp.array(args)) == 0, 1, -1)
         
         ev_even = expectation_value(lanczos_even, shots=mes_kwargs["shots"], post_processor=post_processor)
         ev_odd = expectation_value(lanczos_odd, shots=mes_kwargs["shots"], post_processor=post_processor)
@@ -388,11 +399,10 @@ def generalized_eigh(A, B):
 
 def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False):
     r"""
-    Exact and efficient Lanczos method on a quantum computer for ground state energy estimation.
+    Estimate the ground state energy of a Hamiltonian using the `Exact and efficient Lanczos method on a quantum computer <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
 
-    This function implements the Lanczos method on a quantum computer using block-encodings of Chebyshev
-    polynomials $T_k(H)$, closely following the algorithm proposed in
-    `"Exact and efficient Lanczos method on a quantum computer" <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
+    This function implements the algorithm proposed in Kirby et al. by constructing a Krylov subspace using block-encodings of Chebyshev polynomials $T_k(H)$, 
+    bypassing the need for real or imaginary time evolution.
 
     The quantum Lanczos algorithm efficiently constructs a Krylov subspace by applying Chebyshev polynomials
     of the Hamiltonian $T_k(H)$ to an initial state $\ket{\psi_0}$. The Krylov space dimension $D$ determines the accuracy of ground
@@ -451,8 +461,10 @@ def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False)
 
     Parameters
     ----------
-        H : QubitOperator
-            Hamiltonian for which to estimate the ground-state energy.
+        H : QubitOperator or BlockEncoding
+        Hamiltonian for which to estimate the ground-state energy. If a 
+        QubitOperator is provided, it is automatically converted to a 
+        Pauli block-encoding.
         D : int
             Krylov space dimension.
         operand_prep : callable 
@@ -488,22 +500,24 @@ def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False)
     Examples
     --------
 
+    **Example 1: Jasp Mode (Dynamic Execution)**
+
+    This mode uses Qrisp's ``jasp`` framework for JIT-compilation and 
+    tracing, ideal for high-performance simulation or gradient-based methods.
+
     ::
 
         from qrisp import QuantumVariable
-        from qrisp.lanczos import lanczos_alg
+        from qrisp.algorithms.lanczos import lanczos_alg
         from qrisp.operators import X, Y, Z
         from qrisp.vqe.problems.heisenberg import create_heisenberg_init_function
+        from qrisp.jasp import jaspify
         import networkx as nx
 
+        # Define a 1D Heisenberg model
         L = 6
-        G = nx.Graph()
-        G.add_edges_from([(k, (k+1) % L) for k in range(L - 1)])
-
-        # Define Hamiltonian e.g. Heisenberg with custom couplings
+        G = nx.cycle_graph(L)
         H = (1/4)*sum((X(i)*X(j) + Y(i)*Y(j) + 0.5*Z(i)*Z(j)) for i,j in G.edges())
-
-        print(f"Ground state energy: {H.ground_state_energy()}")
 
         # Prepare initial state function (tensor product of singlets)
         M = nx.maximal_matching(G)
@@ -515,10 +529,31 @@ def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False)
             return qv
 
         D = 6  # Krylov dimension
-        energy, info = lanczos_alg(H, D, operand_prep, show_info=True)
 
+        @jaspify(terminal_sampling=True)
+        def main():
+            return lanczos_alg(H, D, operand_prep, show_info=True)
+
+        energy, info = main()
         print(f"Ground state energy estimate: {energy}")
 
+    We can compare the results obtained by classical calculation:
+
+    ::
+
+        print(f"Ground state energy: {H.ground_state_energy()}")
+
+    **Example 2: Standard Mode (Static Execution)**
+
+    The standard mode is useful for simple scripts and direct hardware 
+    interface without JAX overhead.
+
+    ::
+
+        # Using the same Hamiltonian and prep function from the previous example
+        energy = lanczos_alg(H, D=6, operand_prep=operand_prep)
+        print(f"Ground state energy: {energy}")
+        print(f"Ground state energy: {H.ground_state_energy()}")
 
     """
     
