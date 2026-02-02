@@ -35,9 +35,11 @@ if TYPE_CHECKING:
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
 def hamiltonian_simulation(H: QubitOperator | BlockEncoding, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
     r"""
-    Performs Hamiltonian simulation.
+    Performs Hamiltonian simulation using Generalised Quantum Signal Processing.
 
-    Based on Jacobi-Anger expansion
+    This function approximates the unitary evolution operator $U = e^{-itH}$
+    by expanding the time-evolution function into a series of Bessel functions 
+    via the Jacobi-Anger identity
 
     .. math ::
 
@@ -48,16 +50,27 @@ def hamiltonian_simulation(H: QubitOperator | BlockEncoding, t: "ArrayLike" = 1,
     Parameters
     ----------
     H : BlockEncoding | QubitOperator
-        The Hermitian operator.
+        The Hermitian operator to be simulated.
     t : ArrayLike
-        The scalar evolution time $t$. The default is 1.
+        The scalar evolution time $t$. The default is 1.0.
     N : int
-        The truncation index for the Bessel function expansion. The default is 1.
+        The truncation order of the expansion. The default is 1.
 
     Returns
     -------
     BlockEncoding
-        A block encoding approximating $e^{-itH}$.
+        A block encoding approximating the unitary $e^{-itH}$.
+
+    Notes
+    -----
+    - **Precision**: The truncation error scales (decreases) super-exponentially with $N$. 
+      For a fixed $t$, choosing $N > |t|$ ensures rapid convergence.
+    - **Normalization**: The resulting operator is nearly unitary, meaning its 
+      block-encoding normalization factor $\alpha$ will be close to 1.
+
+    References
+    ----------
+    - Motlagh & Wiebe (2024) `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
 
     Examples
     --------

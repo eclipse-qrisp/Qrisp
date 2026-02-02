@@ -1079,19 +1079,33 @@ class BlockEncoding:
         r"""
         Returns a BlockEncoding approximating the matrix inversion of self.
 
-        For a block-encoded matrix $A$, this function returns a BlockEncoding that approximates the matrix inversion operation $A^{-1}$.
+        For a block-encoded matrix $A$, this function returns a BlockEncoding that approximates the matrix inversion operator $A^{-1}$.
+
+        The function constructs a polynomial that approximates $1/x$ over the 
+        domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$. The resulting 
+        BlockEncoding represents an operator $\tilde{A}^{-1}$ such that 
+        $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$.
 
         Parameters
         ----------
-            eps : float
-                Target precision :math:`\epsilon` such that $\|A^{-1}-A\|\leq\epsilon$.
-            kappa : float
-                An upper bound for the condition number $\kappa$ of $A$. 
+        eps : float
+            The target precision $\epsilon$.
+        kappa : float
+            An upper bound for the condition number $\kappa$ of $A$. 
+            This value defines the "gap" around zero where the function $1/x$ is not approximated.
 
         Returns
         -------
         BlockEncoding
-            A new BlockEncoding approximating the inverse of self.
+            A block encoding approximating the inverse operator $A^{-1}$.
+
+        Notes
+        -----
+        - **Complexity**: The polynomial degree scales as $\mathcal{O}(\kappa \log(\kappa/\epsilon))$.
+
+        References
+        ----------
+        - Childs et. al (2017) `Quantum algorithm for systems of linear equations with exponentially improved dependence on precision <https://arxiv.org/pdf/1511.02306>`_.
 
         Examples
         --------
@@ -1164,9 +1178,11 @@ class BlockEncoding:
         r"""
         Returns a BlockEncoding approximating Hamiltonian simulation of self.
 
-        For a block-encoded matrix $A$ and an evolution time $t$, this function returns a BlockEncoding that approximates the Hamiltonian simulation operation $e^{-itA}$.
+        For a block-encoded matrix $A$ and an evolution time $t$, this function returns a BlockEncoding that approximates the Hamiltonian simulation operator $e^{-itA}$.
 
-        Based on Jacobi-Anger expansion
+        This function approximates the unitary evolution operator $U = e^{-itA}$
+        by expanding the time-evolution function into a series of Bessel functions 
+        via the Jacobi-Anger identity
 
         .. math ::
 
@@ -1177,14 +1193,25 @@ class BlockEncoding:
         Parameters
         ----------
         t : ArrayLike
-            The scalar evolution time $t$. The default is 1.
+            The scalar evolution time $t$. The default is 1.0.
         N : int
-            The truncation index for the Bessel function expansion. The default is 1.
+            The truncation order of the expansion. The default is 1.
 
         Returns
         -------
         BlockEncoding
-            A block encoding approximating $e^{-itA}$.
+            A block encoding approximating the unitary $e^{-itA}$.
+
+        Notes
+        -----
+        - **Precision**: The truncation error scales (decreases) super-exponentially with $N$. 
+          For a fixed $t$, choosing $N > |t|$ ensures rapid convergence.
+        - **Normalization**: The resulting operator is nearly unitary, meaning its 
+          block-encoding normalization factor $\alpha$ will be close to 1.
+
+        References
+        ----------
+        - Motlagh & Wiebe (2025) `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
 
         Examples
         --------
@@ -1267,7 +1294,8 @@ class BlockEncoding:
         r"""
         Returns a BlockEncoding representing a polynomial transformation of self.
 
-        For a block-encoded matrix $A$ and a polynomial $p$, this function returns a BlockEncoding for $p(A)$.
+        For a block-encoded matrix $A$ and a polynomial $p$, this function returns a BlockEncoding for 
+        the matrix polynomial operator $p(A)$.
 
         Parameters
         ----------
@@ -1279,7 +1307,7 @@ class BlockEncoding:
         Returns
         -------
         BlockEncoding
-            A new BlockEncoding representing a polynomial transformation of self.
+            A BlockEncoding representing the transformed operator $p(A)$.
 
         Examples
         --------

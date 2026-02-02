@@ -41,7 +41,7 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
         The block-encoded Hermitian matrix to be inverted. It is assumed that 
         the eigenvalues of $A$ lie within $D_{\kappa}$.
     eps : float
-        The target precision :math:`\epsilon`.
+        The target precision $\epsilon$.
     kappa : float
         An upper bound for the condition number $\kappa$ of $A$. 
         This value defines the "gap" around zero where the function $1/x$ is not approximated.
@@ -54,6 +54,10 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
     Notes
     -----
     - **Complexity**: The polynomial degree scales as :math:`\mathcal{O}(\kappa \log(\kappa/\epsilon))`.
+
+    References
+    ----------
+    - Childs et. al (2017) `Quantum algorithm for systems of linear equations with exponentially improved dependence on precision <https://arxiv.org/pdf/1511.02306>`_.
 
     Examples
     --------
