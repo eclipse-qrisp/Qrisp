@@ -12,6 +12,7 @@ Creation
 .. autosummary::
    :toctree: generated/
 
+   BlockEncoding.from_array
    BlockEncoding.from_operator
 
 Utilities
