@@ -23,6 +23,7 @@ import jax.numpy as jnp
 from qrisp import (
     QuantumVariable,
     QuantumFloat,
+    QuantumBool,
     x,
     z,
     ry,
@@ -34,9 +35,14 @@ from qrisp import (
 )
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.alg_primitives.state_preparation import prepare
+from qrisp.block_encodings import BlockEncoding
 from qrisp.jasp import jrange, RUS
 from qrisp.operators import QubitOperator
 import warnings
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from jax.typing import ArrayLike
 
 
 def CKS_parameters(A, eps, kappa=None, max_beta=None):
@@ -540,7 +546,7 @@ inner_CKS_wrapper = RUS(static_argnums=[1, 2])(inner_CKS_wrapper)
 inner_CKS_wrapper.__doc__ = temp_docstring
 
 
-def CKS(A, b, eps, kappa=None, max_beta=None):
+def CKS(A, eps, kappa=None, max_beta=None):
     """
     Performs the `Childs–Kothari–Somma (CKS) quantum algorithm <https://arxiv.org/abs/1511.02306>`_ to solve the Quantum Linear Systems Problem (QLSP)
     :math:`A \\vec{x} = \\vec{b}`, using the Chebyshev approximation of :math:`1/x`. 
@@ -833,8 +839,51 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
 
     """
 
-    def qlsp():
-        return A, b
+    if isinstance(A, BlockEncoding):
+        BE = A
+    elif isinstance(A, tuple) and len(A) == 3:
+        warnings.warn("The interface (U, state_prep, n) is deprecated. Please use a BlockEncoding object instead.")
+        
+        U, state_prep, n = A
+        def encoding_unitary(case, operand):
+            with conjugate(state_prep)(case):
+                U(case, operand)
+        BE = BlockEncoding(1.0, [QuantumFloat(n).template()], encoding_unitary)
+    else:
+        BE = BlockEncoding.from_array(A)
 
-    operand = inner_CKS_wrapper(qlsp, eps, kappa, max_beta)
-    return operand
+    j_0, beta = CKS_parameters(A, eps, kappa, max_beta)
+    cheb_coeffs = cheb_coefficients(j_0, beta)
+
+    m = len(BE.anc_templates)
+
+    # Following https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf:
+    # T1 = (U R), T2 = (U R U_dg R) -> T2^k T1 is block encoding T_{2k+1}(A) 
+    # This is valid even if the block encoding unitary is not Hermitian.
+    # The first control-(U R) can be simplified to U since:
+    # 1) The first qubit of the |unary> state is always 1.
+    # 2) The R acts as identity on |0>.
+
+    def inv_unitary(*args):
+        with invert():
+            BE.unitary(*args)
+
+    def T2(*args):
+        reflection(args[:m])
+        with conjugate(inv_unitary)(*args):
+            reflection(args[:m])
+
+    def new_unitary(*args):
+        # Core LCU protocol: PREP, SELECT, PREP^†
+        with conjugate(unary_prep)(args[1], cheb_coeffs):
+
+            BE.unitary(*args[2:])    
+
+            for i in jrange(1, j_0 + 1):
+                z(args[1][i])
+                with control(args[1][i]):
+                    T2(*args[2:])
+
+    new_anc_templates = [QuantumBool().template(), QuantumFloat(j_0 + 1).template()] + BE.anc_templates
+    new_alpha = np.sum(np.abs(cheb_coeffs)) / BE.alpha
+    return BlockEncoding(new_alpha, new_anc_templates, new_unitary)
