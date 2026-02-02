@@ -19,20 +19,23 @@
 from __future__ import annotations
 import inspect
 from dataclasses import dataclass
-from jax import tree_util
 from jax.tree_util import register_pytree_node_class
 import jax.numpy as jnp
 import numpy as np
+import numpy.typing as npt
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool
-from typing import Any, Callable, Literal, TYPE_CHECKING
+from scipy.sparse import csr_array, csr_matrix
+from typing import Any, Callable, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
+
+MatrixType = Union[npt.NDArray[Any], csr_array, csr_matrix]
 
 
 @register_pytree_node_class
@@ -102,8 +105,6 @@ class BlockEncoding:
 
     **Example 1: Pauli Block Encoding**
 
-    Define a block encoding for a Heisenberg Hamiltonian and apply it to an initial system state.
-
     ::
 
         from qrisp import *
@@ -129,7 +130,7 @@ class BlockEncoding:
 
     **Example 2: Custom Block Encoding**
 
-    Define a block encoding for a discrete Laplace operator in one dimension with periodic boundary conditions.
+    Define a block-encoding for a discrete Laplace operator in one dimension with periodic boundary conditions.
 
     ::
 
@@ -275,6 +276,11 @@ class BlockEncoding:
         -------
         BlockEncoding
             A BlockEncoding representing the Hermitian part $(O+O^{\dagger})/2$.
+
+        Notes
+        -----
+
+        - Block encoding based on Pauli decomposition $O=\sum_i\alpha_i P_i$ where $\alpha_i$ are real coefficients and $P_i$ are Pauli strings.
 
         Examples
         --------
