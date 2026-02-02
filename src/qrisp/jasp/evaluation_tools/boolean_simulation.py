@@ -51,6 +51,7 @@ from typing import TYPE_CHECKING, Any, Callable
 
 import jax.numpy as jnp
 from jax import jit, Array
+from jax.tree_util import tree_unflatten
 
 from qrisp.jasp import make_jaspr, AbstractQubitArray, AbstractQubit
 
@@ -219,11 +220,11 @@ def boolean_simulation(
         JIT-compiled simulation function that transforms and executes the quantum program.
         
         This inner function:
-        1. Creates a Jaspr from the decorated function
+        1. Creates a Jaspr from the decorated function (with output tree structure)
         2. Validates that no quantum values are returned (must be measured first)
         3. Transforms the Jaspr to a classical Jaxpr
         4. Initializes the boolean quantum circuit state (bit array + free qubit pool)
-        5. Executes the classical Jaxpr and extracts the results
+        5. Executes the classical Jaxpr and reconstructs the PyTree structure
         
         Parameters
         ----------
@@ -233,13 +234,14 @@ def boolean_simulation(
         Returns
         -------
         Any
-            The result of the simulation:
+            The result of the simulation, with the original PyTree structure preserved:
             - None if the function has no return value
-            - Single value if the function returns one value
-            - Tuple of values if the function returns multiple values
+            - dict, list, tuple, or nested structure matching the original return type
         """
         # Create the Jaspr representation of the quantum program
-        jaspr: Jaspr = make_jaspr(func)(*args)
+        # Use return_shape=True to capture the output PyTree structure
+        jaspr: Jaspr
+        jaspr, out_tree = make_jaspr(func, return_shape=True)(*args)
         
         # Validate that no quantum values are returned
         # (quantum values must be measured before returning from boolean simulation)
@@ -278,17 +280,17 @@ def boolean_simulation(
         res = eval_jaxpr(cl_func_jaxpr)(*ammended_args)
 
         # Extract the return values from the result
-        # The result always contains at least 3 elements: the quantum circuit state
-        # (bit_array, jlist_array, jlist_counter). Any additional elements are
-        # the actual return values from the user's function.
-        if len(res) == 4:
-            # Function returns a single value (+ 3 for quantum circuit state)
-            return res[0]
-        elif len(res) == 3:
+        # The result always contains 3 trailing elements for quantum circuit state:
+        # (bit_array, jlist_array, jlist_counter)
+        # The leading elements are the actual return values from the user's function.
+        num_output_values = len(res) - 3
+        
+        if num_output_values == 0:
             # Function returns nothing (only quantum circuit state)
             return None
         else:
-            # Function returns multiple values
-            return res[:-3]
+            # Extract user return values and reconstruct the PyTree structure
+            flat_results = res[:num_output_values]
+            return tree_unflatten(out_tree, flat_results)
 
     return return_function
