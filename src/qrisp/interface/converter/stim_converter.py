@@ -167,7 +167,7 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
         qubits = instr.qubits
         
         # Skip allocation/deallocation operations
-        if op_name in ["qb_alloc", "qb_dealloc", "barrier"]:
+        if op_name in ["qb_alloc", "qb_dealloc", "barrier"]  or "iqm" in op_name:
             continue
         
         # Get qubit indices
