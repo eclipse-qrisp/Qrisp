@@ -27,25 +27,33 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
     r"""
     Quantum Linear System Solver via Generalized Quantum Eigenvalue Transformation (GQET).
 
-    For a block-encoded matrix $A$, this function returns a BlockEncoding that approximates the matrix inversion operation $A^{-1}$.
-    Using a Chebyshev polynomial approximation of the inverse function $1/x$ in the interval $[-1,-1/\kappa]\cup [1/\kappa,1]$ within an error tolerance $\epsilon$, 
-    it constructs a generalized eigenvalue transformation.
+    Approximates the inverse $A^{-1}$ of a block-encoded Hermitian matrix $A$
+    using a polynomial expansion based on the Quantum Eigenvalue Transformation.
 
-    When applied to an input quantum state $\ket{b}$, the BlockEncoding effectively solves the Quantum Linear System Problem (QLSP) $A\vec{x}=\vec{b}$.
+    The function constructs a polynomial that approximates $1/x$ over the 
+    domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$. The resulting 
+    BlockEncoding represents an operator $\tilde{A}^{-1}$ such that 
+    $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$.
 
     Parameters
     ----------
     A : BlockEncoding
-        The Hermitian operator.
+        The block-encoded Hermitian matrix to be inverted. It is assumed that 
+        the eigenvalues of $A$ lie within $D_{\kappa}$.
     eps : float
-        Target precision :math:`\epsilon` such that $\|A^{-1}-A\|\leq\epsilon$.
+        The target precision :math:`\epsilon`.
     kappa : float
         An upper bound for the condition number $\kappa$ of $A$. 
+        This value defines the "gap" around zero where the function $1/x$ is not approximated.
 
     Returns
     -------
     BlockEncoding
-        A block encoding approximating $A^{-1}$.
+        A block encoding approximating the inverse operator $A^{-1}$.
+
+    Notes
+    -----
+    - **Complexity**: The polynomial degree scales as :math:`\mathcal{O}(\kappa \log(\kappa/\epsilon))`.
 
     Examples
     --------
