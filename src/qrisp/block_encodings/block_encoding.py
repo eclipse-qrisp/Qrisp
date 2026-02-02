@@ -19,20 +19,23 @@
 from __future__ import annotations
 import inspect
 from dataclasses import dataclass
-from jax import tree_util
 from jax.tree_util import register_pytree_node_class
 import jax.numpy as jnp
 import numpy as np
+import numpy.typing as npt
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool
-from typing import Any, Callable, TYPE_CHECKING
+from scipy.sparse import csr_array, csr_matrix
+from typing import Any, Callable, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
+
+MatrixType = Union[npt.NDArray[Any], csr_array, csr_matrix]
 
 
 @register_pytree_node_class
@@ -261,18 +264,23 @@ class BlockEncoding:
     
     @classmethod
     def from_operator(cls: "BlockEncoding", O: QubitOperator | FermionicOperator) -> BlockEncoding:
-        """
+        r"""
         Creates a BlockEncoding from an operator.
 
         Parameters
         ----------
         O : QubitOperator | FermionicOperator
-            The operator.
+            The operator to be block-encoded.
 
         Returns
         -------
         BlockEncoding
             A BlockEncoding representing the Hermitian part $(O+O^{\dagger})/2$.
+
+        Notes
+        -----
+
+        - Block encoding based on Pauli decomposition $O=\sum_i\alpha_i P_i$ where $\alpha_i$ are real coefficients and $P_i$ are Pauli strings.
 
         Examples
         --------
@@ -288,19 +296,24 @@ class BlockEncoding:
         return O.pauli_block_encoding()
     
     @classmethod
-    def from_array(cls: "BlockEncoding", A: "ArrayLike") -> BlockEncoding:
-        """
+    def from_array(cls: "BlockEncoding", A: MatrixType) -> BlockEncoding:
+        r"""
         Creates a BlockEncoding from a 2-D array.
 
         Parameters
         ----------
-        A : ArrayLike
+        A : ndarray | csr_array | csr_matrix
             2-D array of shape ``(N,N,)`` for a power of two ``N``.
 
         Returns
         -------
         BlockEncoding
             A BlockEncoding representing the Hermitian part $(A+A^{\dagger})/2$.
+
+        Notes
+        -----
+
+        - Block encoding based on Pauli decomposition $O=\sum_i\alpha_i P_i$ where $\alpha_i$ are real coefficients and $P_i$ are Pauli strings.
 
         Examples
         --------
@@ -312,9 +325,7 @@ class BlockEncoding:
         
         """
 
-        A_arr = np.asanyarray(A)
         shape = A.shape
-        
         # 1. Check if the array is 2D and square
         if len(shape) != 2 or shape[0] != shape[1]:
             raise ValueError(f"Array must be square (N, N), but got {shape}.")
@@ -323,11 +334,8 @@ class BlockEncoding:
         N = shape[0]
         if not (N > 0 and (N & (N - 1)) == 0):
             raise ValueError(f"Size N={N} must be a power of two.")
-        
-        A_arr = (A_arr + A_arr.conj().T) / 2
 
-        O = QubitOperator.from_matrix(A_arr, reverse_endianness=True)
-        return O.pauli_block_encoding()
+        return QubitOperator.from_matrix(A, reverse_endianness=True).pauli_block_encoding()
 
     #
     # Utilities
