@@ -4,7 +4,7 @@ qrisp vs numpy
 --------------
 
 Define two Hermitian matrices $A$ and $B$ and evaluate the matrix expression 
-$C = I + 2A + A^2 + B^{-1}$ applied to a vector $\vec{c}$.
+$C = I + 2A + A^2 + B^{-1}$ applied to a vector $\vec{b}$.
 
 :: 
 
@@ -28,7 +28,7 @@ $C = I + 2A + A^2 + B^{-1}$ applied to a vector $\vec{c}$.
     B_A = BlockEncoding.from_array(A)
     B_B = BlockEncoding.from_array(B)
 
-    c = np.array([1., 1., 2., 0.])
+    b = np.array([1., 1., 2., 0.])
 
 Next, evaluate the matrix expression.
 
@@ -62,15 +62,15 @@ Finally, compare the results, which for Qrisp involves a small amount of quantum
 
 :: 
 
-    # Prepare state |c>
-    def prep_c():
+    # Prepare state |b>
+    def prep_b():
         qv = QuantumFloat(2)
-        prepare(qv, c)
+        prepare(qv, b)
         return qv
 
     @terminal_sampling
     def main():
-        return B_C.apply_rus(prep_c)()
+        return B_C.apply_rus(prep_b)()
 
     res_dict = main()
 
@@ -78,7 +78,7 @@ Finally, compare the results, which for Qrisp involves a small amount of quantum
     for k, v in res_dict.items():
         res_dict[k] = v**0.5
 
-    q = np.array([res_dict.get(key, 0) for key in range(len(c))])
+    q = np.array([res_dict.get(key, 0) for key in range(len(b))])
     print("qrisp:", q)
     # qrisp: [0.34182954 0.42435018 0.83731951 0.04444684]
 

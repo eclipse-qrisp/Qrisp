@@ -19,7 +19,7 @@
 import numpy as np
 from qrisp.algorithms.gqsp.helper_functions import poly2cheb, cheb2poly
 from qrisp.algorithms.cks import CKS_parameters, cheb_coefficients
-from qrisp.algorithms.gqsp.gqet import GQET
+from qrisp.algorithms.gqsp.qet import QET
 from qrisp.block_encodings import BlockEncoding
 
 
@@ -126,7 +126,7 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
     p_odd = p_odd * (-1) ** np.arange(len(p_odd))
     p = _extend_and_rescale_cheb(p_odd, A.alpha)
 
-    A_inv = GQET(A, p, kind="Chebyshev")
+    A_inv = QET(A, p, kind="Chebyshev")
 
     return A_inv
 
