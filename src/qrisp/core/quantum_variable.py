@@ -751,6 +751,9 @@ class QuantumVariable:
         In both cases, the initialization algorithm requires all underlying
         qubits to be in the :math:`\ket{0}` state (i.e. *fresh*).
 
+        When using an array-like input, the little-endian convention is used.
+        For details, see :ref:`prepare <prepare>`.
+
         The parameter ``method`` determines the backend used for state
         preparation:
 
@@ -767,6 +770,7 @@ class QuantumVariable:
         params : dict or array-like
             Either a dictionary ``{value: amplitude}`` or a length
             :math:`2^{n}` complex statevector.
+
         method : {"auto", "qiskit", "qswitch"}, optional
             Choice of state-preparation backend. Defaults to ``"auto"``.
 
@@ -774,11 +778,6 @@ class QuantumVariable:
 
             When executing in Jasp mode, Python-based shape and normalization
             checks are disabled to avoid introducing tracing side effects.
-
-        .. note::
-
-            When using an array-like input, the ordering of amplitudes should
-            correspond to the one retrieved with the ``statevector`` method.
 
         Examples
         --------
@@ -832,14 +831,12 @@ class QuantumVariable:
             target_array = np.zeros(1 << self.size, dtype=np.complex128)
             for key, amp in params.items():
                 target_array[self.encoder(key)] = amp
-            qiskit_reversed = False
 
         else:
             # Use JAX array to allow tracing; convert later if needed
             target_array = jnp.asarray(params, dtype=jnp.complex128)
-            qiskit_reversed = False
 
-        prepare(self, target_array, qiskit_reversed, method=method)
+        prepare(self, target_array, False, method=method)
 
     def append(self, operation):
         self.qs.append(operation, self)

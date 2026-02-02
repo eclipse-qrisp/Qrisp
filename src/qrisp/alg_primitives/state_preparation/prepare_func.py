@@ -89,11 +89,11 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
         import numpy as np
         from qrisp import QuantumFloat, prepare
 
-        input_vec = np.array([0, 1, 2, 3], dtype=float)
-        input_vec /= np.linalg.norm(input_vec)
+        b = np.array([0, 1, 2, 3], dtype=float)
+        b /= np.linalg.norm(b)
 
         qf = QuantumFloat(2)
-        prepare(qf, input_vec)
+        prepare(qf, b)
 
     We can verify that the state has been prepared by retrieving the statevector amplitudes.
 
@@ -103,16 +103,14 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
 
         sv_function = qf.qs.statevector("function")
 
-        print(f"input_vec[1]: {input_vec[1]} -> {sv_function({qf: 1})}")
-        # input_vec[1]: 0.2672612419124244 -> (0.26726123690605164-0j)
-        print(f"input_vec[2]: {input_vec[2]} -> {sv_function({qf: 2})}")
-        # input_vec[2]: 0.5345224838248488 -> (0.5345224738121033-0j)
+        print(f"b[1]: {b[1]} -> {sv_function({qf: 1})}")
+        # b[1]: 0.2672612419124244 -> (0.26726123690605164-0j)
+        print(f"b[2]: {b[2]} -> {sv_function({qf: 2})}")
+        # b[2]: 0.5345224838248488 -> (0.5345224738121033-0j)
 
     where index 1 in little-endian corresponds to the basis state :math:`\ket{q_0=1, q_1=0}`
-    and index 2 to :math:`\ket{q_0=0, q_1=1}`.  With ``reversed=True``, we can map ``input_vec[1]``
+    and index 2 to :math:`\ket{q_0=0, q_1=1}`.  With ``reversed=True``, we can map ``b[1]``
     to ``sv_function({qf: 2})`` instead, and vice versa.
-
-    TODO: continue from here. This function is BROKEN for `qswitch`!
 
     In the following example, we create a :ref:`QuantumFloat` and prepare the state $\sum_{i=0}^3b_i\ket{i}$ for $b=(0,1,2,3)$.
 
@@ -160,12 +158,7 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
 
     if method == "qiskit":
         prepare_qiskit(qv, target_array, reversed)
-
     elif method == "qswitch":
-        if reversed:
-            raise NotImplementedError(
-                "Reversed state preparation is currently not available for method qswitch"
-            )
-        prepare_qswitch(qv, target_array)
+        prepare_qswitch(qv, target_array, reversed)
     else:
         raise ValueError("method must be 'auto', 'qiskit', or 'qswitch'")

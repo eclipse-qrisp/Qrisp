@@ -254,7 +254,7 @@ def _preprocess(
     return thetas, u_params, phases
 
 
-def prepare_qswitch(qv, target_array: jnp.ndarray) -> None:
+def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
     """
     Prepare the quantum state encoded in ``qv`` so that it matches the given
     ``target_array`` by constructing a binary-tree decomposition of the target
@@ -268,18 +268,18 @@ def prepare_qswitch(qv, target_array: jnp.ndarray) -> None:
     The quantum stage applies them using ``q_switch``, which replaces
     explicit multiplexers and conditionals in both static execution and Jasp mode.
 
-    .. note::
-
-        During the quantum stage, ``q_switch`` enumerates control patterns in
-        little-endian order, so each index is bit-reversed before accessing
-        the parameters computed in the classical preprocessing stage.
-
     Parameters
     ----------
     qv : QuantumVariable
         The quantum variable representing the qubits to be prepared.
+
     target_array : jnp.ndarray
         A normalized complex vector representing the target state to prepare.
+
+    big_endianness : bool, optional
+        If ``True``, indicates that the state preparation should use big-endian
+        convention for the computational basis ordering.
+        Default is ``False``, meaning little-endian convention is used.
 
     """
 
@@ -295,6 +295,18 @@ def prepare_qswitch(qv, target_array: jnp.ndarray) -> None:
     # n is static (known at compile time), so we can use normal numpy here
     n = int(np.log2(target_array.shape[0]))
 
+    # The binary-tree preprocessing (_preprocess) and the q_switch traversal in this
+    # function were originally implemented for a big-endian interpretation of the
+    # target statevector indices (i.e. MSB-first splitting).
+    #
+    # However, we later on decided to consider little-endianness as the default
+    # convention in Qrisp. That is, qv[0] is the least significant bit in the basis-state index.”
+    #
+    # Therefore, `big_endianness=False` indicates that we want to use little-endianness,
+    # so we need to swap the endianness of the target_array before proceeding.
+    if big_endianness is False:
+        target_array = swap_endianness(target_array, n)
+
     # We could use jrange even in static mode, but this would add overhead.
     xrange = jrange if check_for_tracing_mode() else range
 
@@ -304,6 +316,8 @@ def prepare_qswitch(qv, target_array: jnp.ndarray) -> None:
         """Create a case function for q_switch at a given layer."""
 
         def case_fn(i, qb):
+            # This bit-reversal is not about Qrisp's endianness.
+            # It compensates for the order in which q_switch enumerates control patterns
             rev_idx = bit_reverse(i, layer_size)
             if is_final:
                 theta_i, phi_i, lam_i = u_params[rev_idx]
