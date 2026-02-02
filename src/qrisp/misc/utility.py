@@ -1245,6 +1245,70 @@ def custom_qv(labels, decoder=None, qs=None, name=None):
     return CustomQuantumVariable(qs=qs, name=name)
 
 
+# This is required in the qswitch-based state preparation,
+# where it is called inside jrange loops, because DynamicQubitArray
+# does not support reverse iteration.
+def bit_reverse(i, width):
+    """
+    Jasp-compatible bit-reversal function.
+
+    Interprets ``i`` as a ``width``-bit binary integer
+    and returns the decimal integer corresponding to the bit-reversal of ``i``.
+    The maximum supported width is 64 bits.
+
+    This function can be used in Jasp-mode and within a `jrange` loop.
+    It does not use any Python or Jax control flow, but only Jax array operations.
+
+    Parameters
+    ----------
+    i : jnp.ndarray
+        Index to be bit-reversed.
+    width : jnp.ndarray
+        Bit-width for the reversal (scalar array).
+
+    Returns
+    -------
+    jnp.ndarray
+        Bit-reversed index.
+
+
+    Examples
+    --------
+
+    For ``i=5`` and ``width=3``, the binary representation
+    of ``5`` is ``101``, and its bit-reversal is (again) ``101``, which is ``5`` in decimal.
+
+    >>> from qrisp.misc.utility import bit_reverse
+    >>> bit_reverse(5, 3)
+    5
+
+    For ``i=3`` and ``width=4``, the binary representation
+    of ``3`` is ``0011``, and its bit-reversal is ``1100``, which is ``12`` in decimal.
+
+    >>> bit_reverse(3, 4)
+    12
+
+    """
+    i = jnp.asarray(i, dtype=jnp.uint64)
+    width = jnp.asarray(width, dtype=jnp.uint64)
+
+    m1 = jnp.uint64(0x5555555555555555)
+    m2 = jnp.uint64(0x3333333333333333)
+    m3 = jnp.uint64(0x0F0F0F0F0F0F0F0F)
+    m4 = jnp.uint64(0x00FF00FF00FF00FF)
+    m5 = jnp.uint64(0x0000FFFF0000FFFF)
+    m6 = jnp.uint64(0x00000000FFFFFFFF)
+
+    i = ((i >> 1) & m1) | ((i & m1) << 1)
+    i = ((i >> 2) & m2) | ((i & m2) << 2)
+    i = ((i >> 4) & m3) | ((i & m3) << 4)
+    i = ((i >> 8) & m4) | ((i & m4) << 8)
+    i = ((i >> 16) & m5) | ((i & m5) << 16)
+    i = ((i >> 32) & m6) | ((i & m6) << 32)
+
+    return i >> jnp.asarray(64, jnp.uint64) - width
+
+
 def get_statevector_function(qs, decimals=None):
     if len(qs.qv_list) == 0:
         return lambda x: 0
@@ -2355,67 +2419,3 @@ def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jnp.ndarray:
     """
     r = _bitrev_indices(n)
     return vec[r]
-
-
-# This is required in the qswitch-based state preparation,
-# where it is called inside jrange loops, because DynamicQubitArray
-# does not support reverse iteration.
-def bit_reverse(i: ArrayLike, width: ArrayLike) -> ArrayLike:
-    """
-    Jasp-compatible bit-reversal function.
-
-    Interprets ``i`` as a ``width``-bit binary integer
-    and returns the decimal integer corresponding to the bit-reversal of ``i``.
-    The maximum supported width is 64 bits.
-
-    This function can be used in Jasp-mode and within a `jrange` loop.
-    It does not use any Python or Jax control flow, but only Jax array operations.
-
-    Parameters
-    ----------
-    i : ArrayLike
-        Index to be bit-reversed.
-    width : ArrayLike
-        Bit-width for the reversal (scalar array).
-
-    Returns
-    -------
-    ArrayLike
-        Bit-reversed index.
-
-
-    Examples
-    --------
-
-    For ``i=5`` and ``width=3``, the binary representation
-    of ``5`` is ``101``, and its bit-reversal is (again) ``101``, which is ``5`` in decimal.
-
-    >>> from qrisp.misc.utility import bit_reverse
-    >>> bit_reverse(5, 3)
-    5
-
-    For ``i=3`` and ``width=4``, the binary representation
-    of ``3`` is ``0011``, and its bit-reversal is ``1100``, which is ``12`` in decimal.
-
-    >>> bit_reverse(3, 4)
-    12
-
-    """
-    i = jnp.asarray(i, dtype=jnp.uint64)
-    width = jnp.asarray(width, dtype=jnp.uint64)
-
-    m1 = jnp.uint64(0x5555555555555555)
-    m2 = jnp.uint64(0x3333333333333333)
-    m3 = jnp.uint64(0x0F0F0F0F0F0F0F0F)
-    m4 = jnp.uint64(0x00FF00FF00FF00FF)
-    m5 = jnp.uint64(0x0000FFFF0000FFFF)
-    m6 = jnp.uint64(0x00000000FFFFFFFF)
-
-    i = ((i >> 1) & m1) | ((i & m1) << 1)
-    i = ((i >> 2) & m2) | ((i & m2) << 2)
-    i = ((i >> 4) & m3) | ((i & m3) << 4)
-    i = ((i >> 8) & m4) | ((i & m4) << 8)
-    i = ((i >> 16) & m5) | ((i & m5) << 16)
-    i = ((i >> 32) & m6) | ((i & m6) << 32)
-
-    return i >> jnp.asarray(64, jnp.uint64) - width

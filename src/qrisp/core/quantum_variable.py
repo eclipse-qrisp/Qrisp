@@ -750,9 +750,6 @@ class QuantumVariable:
             The little-endian convention is assumed.
             For details, see :ref:`prepare <prepare>`.
 
-        In both cases, the initialization algorithm requires all underlying
-        qubits to be in the :math:`\ket{0}` state (i.e. *fresh*).
-
         .. note::
 
             When executing in Jasp mode, Python-based shape and normalization
