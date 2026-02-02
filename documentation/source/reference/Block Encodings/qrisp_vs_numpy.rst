@@ -25,6 +25,8 @@ $C = I + 2A + A^2 + B^{-1}$ applied to a vector $\vec{b}$.
         [-0.16, -0.03,  0.69, -0.15],
         [-0.1 ,  0.08, -0.15,  0.88]])
 
+    kappa = np.linalg.cond(B)
+
     B_A = BlockEncoding.from_array(A)
     B_B = BlockEncoding.from_array(B)
 
@@ -44,7 +46,7 @@ qrisp
 
 ::
 
-    B_C = B_A.poly(np.array([1.,2.,1.])) + B_B.inv(0.01, 2)
+    B_C = B_A.poly(np.array([1.,2.,1.])) + B_B.inv(0.001, kappa)
 
 Notably, expressing high-level quantum linear algebra in Qrisp requires no prior knowledge of quantum computing, thanks to its intuitive, NumPy-like syntax.
 
@@ -80,7 +82,7 @@ Finally, compare the results, which for Qrisp involves a small amount of quantum
 
     q = np.array([res_dict.get(key, 0) for key in range(len(b))])
     print("qrisp:", q)
-    # qrisp: [0.34182954 0.42435018 0.83731951 0.04444684]
+    # qrisp: [0.33181535 0.42225404 0.84150093 0.05896006]
 
 The results agree within the approximation error of the quantum matrix inversion. 
 Note that the sign of the output cannot be directly recovered from measurement amplitudes alone, as they only reflect the modulus squared of the state.

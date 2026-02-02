@@ -128,6 +128,8 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
 
     A_inv = QET(A, p, kind="Chebyshev")
 
+    # Adjust scaling factor since (A/α)^{-1} = αA^{-1}.
+    A_inv.alpha = A_inv.alpha / A.alpha
     return A_inv
 
 
