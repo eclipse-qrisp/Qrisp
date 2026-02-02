@@ -155,16 +155,17 @@ def QET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynom
 
     m = len(H.anc_templates)
     d = len(p)
-    # Angles theta and lambda vanish for real polynomials.
+    # Angles theta and lambda vanish for real polynomials https://arxiv.org/abs/2503.03026.
     # Implementation based on conjecture: phi has fixed parity iff p has fixed parity.
     # Combine two consecutive walk operators: (R U) (R U) = (R U R U ) = (R U_dg R U) = T_2
+    # This is qubitization step even if the block encoding unitary is not Hemitian.
     # https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf
+    # If the parity is odd, there is a single (R U) at the end which is not followed by a rotation.
+    # Since the QET is only successful if all ancillas are |0>, there is no need to control-(R U) 
+    # and the refelction acts as identity.
+    
     angles, alpha = gqsp_angles(p)
     phi = angles[1][::-1]
-
-    def T1(*args):
-        H.unitary(*args)
-        reflection(args[:m])
 
     def T2(*args):
         with conjugate(H.unitary)(*args):
@@ -180,8 +181,7 @@ def QET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynom
             rx(-2 * phi[2*i], args[0])
 
         with control(is_odd):
-            with control(args[0], ctrl_state=0):
-                T1(*args[1:])
+            H.unitary(*args[1:])
 
     new_anc_templates = [QuantumBool().template()] + H.anc_templates
     return BlockEncoding(alpha, new_anc_templates, new_unitary)
