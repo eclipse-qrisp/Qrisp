@@ -445,11 +445,11 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
 
     # Following https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf:
     # T1 = (U R), T2 = (U R U_dg R) -> T2^k T1 is block encoding T_{2k+1}(A) 
-    # This is valid even if U is not Hermitian.
-    def T1(*args):
-        reflection(args[:m])
-        BE.unitary(*args)
-    
+    # This is valid even if the block encoding unitary is not Hermitian.
+    # The first control-(U R) can be simplified to U since:
+    # 1) The first qubit of the |unary> state is always 1.
+    # 2) The R acts as identity on |0>.
+
     def inv_unitary(*args):
         with invert():
             BE.unitary(*args)
@@ -470,8 +470,9 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
 
     # Core LCU protocol: PREP, SELECT, PREP^†
     with conjugate(unary_prep)(out_case, cheb_coeffs):
-        with control(out_case[0]):
-            T1(*in_case_list, operand)
+
+        BE.unitary(*in_case_list, operand)    
+
         for i in jrange(1, j_0 + 1):
             z(out_case[i])
             with control(out_case[i]):
