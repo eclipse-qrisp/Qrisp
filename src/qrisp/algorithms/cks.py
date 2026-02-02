@@ -546,7 +546,7 @@ inner_CKS_wrapper = RUS(static_argnums=[1, 2])(inner_CKS_wrapper)
 inner_CKS_wrapper.__doc__ = temp_docstring
 
 
-def CKS(A, eps, kappa=None, max_beta=None):
+def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> BlockEncoding:
     """
     Performs the `Childs–Kothari–Somma (CKS) quantum algorithm <https://arxiv.org/abs/1511.02306>`_ to solve the Quantum Linear Systems Problem (QLSP)
     :math:`A \\vec{x} = \\vec{b}`, using the Chebyshev approximation of :math:`1/x`. 
@@ -570,73 +570,61 @@ def CKS(A, eps, kappa=None, max_beta=None):
     Implementation overview:
       1. Compute the CKS parameters :math:`j_0` and :math:`\\beta` (:func:`CKS_parameters`).
       2. Generate Chebyshev coefficients and the auxiliary unary state (:func:`cheb_coefficients`, :func:`unary_prep`).
-      3. Build the core LCU structure and qubitization operator (:func:`inner_CKS`).
-      4. Apply the RUS post-selection step to project onto the valid success outcome.
+      3. Build the core LCU structure via qubitization operator.
 
-    This function supports interchangeable and independent input types for both
-    the matrix ``A`` and vector ``b`` from the QLSP :math:`A\\vec{x} = \\vec{b}`.
+    The goal of this algorithm is to apply the non-unitary operator :math:`A^{-1}` to the
+    input state :math:`\ket{b}`. Following the Chebyshev approach introduced in the CKS paper, we express :math:`A^{-1}` as
+    a linear combination of odd Chebyshev polynomials: 
 
-    **Case distinctions for A**
+    .. math::
+    
+        A^{-1}\propto\sum_{j=0}^{j_0}\\alpha_{2j+1}T_{2j+1}(A),
 
-    - Matrix input: 
-        ``A`` is either a NumPy array (Hermitian matrix), or SciPy Compressed Sparse Row matrix (Hermitian matrix).
-        The block encoding unitary :math:`SEL` and state preparation unitary
-        :math:`PREP` are constructed internally from ``A`` via
-        :meth:`Pauli decomposition <qrisp.operators.qubit.QubitOperator.pauli_block_encoding>`.
+    where :math:`T_k(A)` are Chebyshev polynomials of the first kind and :math:`\\alpha_{2j+1} > 0` are computed
+    via :func:`cheb_coefficients`. These operators can be efficiently implemented with qubitization, which relies on a unitary
+    block encoding :math:`U` of the matrix :math:`A`, and a :ref:`reflection operator <reflection>` :math:`R`.
 
-    - Block-encoding input: 
-        ``A`` is a 3-tuple ``(U, state_prep, n)`` representing a block-encoding: 
-        
-        * U : callable
-            Callable ``U(operand, case)`` applies the block-encoding unitary :math:`SEL`.
-        * state_prep : callable
-            Callable ``state_prep(case)`` applies the block-encoding state preparatiion unitary :math:`PREP`
-            to an auxiliary ``case`` QuantumVariable .
-        * n : int
-            The size of the auxiliary ``case`` QuantumVariable.
-            
-        In this case, (an upper bound for) the condition number ``kappa`` must be specified.
-        Additionally, the block-encoding unitary :math:`U` supplied must satisfy
-        the property :math:`U^2 = I`, i.e., it is self-inverse. This condition is
-        required for the correctness of the Chebyshev polynomial block encoding
-        and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_.
+    If the block encoding unitary is $U$ is Hermitian (:math:`U^2=I`),
+    the fundamental iteration step is defined as :math:`(RU)`, where :math:`R` reflects
+    around the auxiliary block-encoding state :math:`\ket{G}`, prepared as the ``inner_case`` QuantumFloat.
+    Repeated applications of these unitaries, :math:`(RU)^k`, yield a block encoding of the :math:`k`-th Chebyshev polynomial 
+    of the first kind :math:`T_k(A)`.
+    
+    We then construct a linear combination of these block-encoded polynomials using the LCU structure 
 
-    **Case distinctions for b**
+    .. math::
+    
+        LCU\ket{0}\ket{\psi}=PREP^{\dagger}\cdot SEL\cdot PREP\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi}.
+    
+    Here, the :math:`PREP` operation prepares an auxiliary ``out_case`` Quantumfloat in the unary state :math:`\ket{\\text{unary}}`
+    that encodes the square root of the Chebyshev coefficients :math:`\sqrt{\\alpha_j}`. The :math:`SEL` operation selects and applies the
+    appropriate Chebyshev polynomial operator :math:`T_k(A)`, implemented by :math:`(RU)^k`, controlled on ``out_case`` in the unary
+    state :math:`\ket{\\text{unary}}`. Based on the Hamming-weight :math:`k` of :math:`\ket{\\text{unary}}`,
+    the polynomial :math:`T_{2k-1}` is block encoded and applied to the circuit. 
+    
+    To construct a linear combination of Chebyshev polynomials up to the :math:`2j_0+1`-th order, as in the original paper, 
+    our implementation requires :math:`j_0+1` qubits in the ``out_case`` state :math:`\ket{\\text{unary}}`.
 
-    - Vector input: 
-        If ``b`` is a NumPy array, a new ``operand`` QuantumFloat is constructed, and state preparation is performed via
-        ``prepare(operand, b)``.
-
-    - Callable input:
-        If ``b`` is a callable, it is assumed to prepare the operand state when called. 
-        The ``operand`` QuantumFloat is generated directly via ``operand = b()``.
+    The Chebyshev coefficients alternate in sign :math:`(-1)^j\\alpha_j`.
+    Since the LCU lemma requires :math:`\\alpha_j>0`, negative terms are accounted for
+    by applying Z-gates on each index qubit in ``out_case``.
 
     Parameters
     ----------
-    A : numpy.ndarray or scipy.sparse.csr_matrix or tuple
-        Either the Hermitian matrix :math:`A` of size :math:`N \\times N` from
-        the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
-        ``(U, state_prep, n)`` representing a preconstructed block-encoding.
-    b : numpy.ndarray or callable
-        Either a vector :math:`\\vec{b}` of the linear system, or a
-        callable that prepares the corresponding quantum state ``operand``.
+    A : BlockEncoding
+        The Hermitian operator.
     eps : float
         Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
         :math:`\epsilon` of :math:`\ket{x}`.
-    kappa : float, optional
-        Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
-        a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
+    kappa : float
+        An upper boound for the condition number :math:`\\kappa` of :math:`A`.
     max_beta : float, optional
         Optional upper bound on the complexity parameter :math:`\\beta`.
 
     Returns
     -------
-    operand : QuantumVariable
-        Quantum variable containing the final (approximate) solution state
-        :math:`\ket{\\tilde{x}} \propto A^{-1}\ket{b}`. When the internal
-        :ref:`RUS <RUS>` decorator reports success (``success_bool = True``), this
-        variable contains the valid post-selected solution. If ``success_bool``
-        is ``False``, the simulation automatically repeats until success.
+    BlockEncoding
+        A block encoding approximating $A^{-1}$.
         
     Examples
     --------
@@ -839,23 +827,10 @@ def CKS(A, eps, kappa=None, max_beta=None):
 
     """
 
-    if isinstance(A, BlockEncoding):
-        BE = A
-    elif isinstance(A, tuple) and len(A) == 3:
-        warnings.warn("The interface (U, state_prep, n) is deprecated. Please use a BlockEncoding object instead.")
-        
-        U, state_prep, n = A
-        def encoding_unitary(case, operand):
-            with conjugate(state_prep)(case):
-                U(case, operand)
-        BE = BlockEncoding(1.0, [QuantumFloat(n).template()], encoding_unitary)
-    else:
-        BE = BlockEncoding.from_array(A)
-
     j_0, beta = CKS_parameters(A, eps, kappa, max_beta)
     cheb_coeffs = cheb_coefficients(j_0, beta)
 
-    m = len(BE.anc_templates)
+    m = len(A.anc_templates)
 
     # Following https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf:
     # T1 = (U R), T2 = (U R U_dg R) -> T2^k T1 is block encoding T_{2k+1}(A) 
@@ -866,7 +841,7 @@ def CKS(A, eps, kappa=None, max_beta=None):
 
     def inv_unitary(*args):
         with invert():
-            BE.unitary(*args)
+            A.unitary(*args)
 
     def T2(*args):
         reflection(args[:m])
@@ -877,13 +852,13 @@ def CKS(A, eps, kappa=None, max_beta=None):
         # Core LCU protocol: PREP, SELECT, PREP^†
         with conjugate(unary_prep)(args[1], cheb_coeffs):
 
-            BE.unitary(*args[2:])    
+            A.unitary(*args[2:])    
 
             for i in jrange(1, j_0 + 1):
                 z(args[1][i])
                 with control(args[1][i]):
                     T2(*args[2:])
 
-    new_anc_templates = [QuantumBool().template(), QuantumFloat(j_0 + 1).template()] + BE.anc_templates
-    new_alpha = np.sum(np.abs(cheb_coeffs)) / BE.alpha
+    new_anc_templates = [QuantumBool().template(), QuantumFloat(j_0 + 1).template()] + A.anc_templates
+    new_alpha = np.sum(np.abs(cheb_coeffs)) / A.alpha
     return BlockEncoding(new_alpha, new_anc_templates, new_unitary)
