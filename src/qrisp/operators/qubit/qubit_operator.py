@@ -2081,7 +2081,7 @@ class QubitOperator(Hamiltonian):
 
     def pauli_block_encoding(self):
         r"""
-        Returns a block encoding of the operator.
+        Returns a :ref:`BlockEncoding` of the operator.
 
         A block encoding (`Low & Chuang <https://quantum-journal.org/papers/q-2019-07-12-163/pdf/>`_, `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/pdf/>`_) 
         of a Hamiltonian $H$ (acting on a Hilbert space $\mathcal H_s$) is a pair of unitaries $(U,G)$, 
@@ -2128,17 +2128,13 @@ class QubitOperator(Hamiltonian):
        
         Returns
         -------
-        U : function
-            A function ``U(case, operand)`` applying the block encoding unitary $U$ to ``case`` and ``operand`` QuantumVariables.
-        state_prep : function
-            A function ``state_prep(case)`` preparing the block encoding state $\ket{G}$ in an auxiliary ``case`` QuantumVariable.
-        num_qubits : int
-            The number of qubits of the auxiliary ``case`` QuantumVariable.
+        BlockEncoding
+            A BlockEncoding representing the Hermitian part $(O+O^{\dagger})/2$.
 
         Examples
         --------
 
-        We apply a Hermitian matrix to a quantum state via a Pauli block encoding.
+        We apply a Hermitian matrix to a quantum state via a Pauli :ref:`BlockEncoding`.
 
         ::
 
@@ -2149,13 +2145,17 @@ class QubitOperator(Hamiltonian):
             m = 2
             A = np.eye(2**m, k=1)  
             A = A + A.T
-            print(A)
 
-            H = QubitOperator.from_matrix(A, reverse_endianness=True)
+            print(A)
+            #[[0. 1. 0. 0.]
+            # [1. 0. 1. 0.]
+            # [0. 1. 0. 1.]
+            # [0. 0. 1. 0.]]
 
         The matrix $A$ encodes the mapping $\ket{0}\rightarrow\ket{1}$, $\ket{k}\rightarrow\ket{k-1}+\ket{k+1}$ for $k=1,\dotsc,2^m-2$, $\ket{2^m-1}\rightarrow\ket{2^m-2}$.
-        We now apply the matrix $A$ to a QuantumVariable in supersosition state $\ket{0}+\dotsb+\ket{2^m-1}$ via the Pauli block encoding of the corresponding QubitOperator $H$.
-        (In this case, the endianness must be reversed when encoding the matrix as QubitOperator for compatibility with Qrisp's QuantumFloat.)
+
+        We apply the matrix $A$ to a :ref:`QuantumFloat` in supersosition state $\ket{0}+\dotsb+\ket{2^m-1}$ via the Pauli :ref:`BlockEncoding` of the corresponding QubitOperator $H$.
+        (To ensure compatibility with Qrisp's QuantumFloat, we use little-endian encoding when representing the matrix as a QubitOperator.)
 
         To illustrate the result, we actually create an entangled state 
 
@@ -2167,27 +2167,28 @@ class QubitOperator(Hamiltonian):
 
         ::
 
+            H = QubitOperator.from_matrix(A, reverse_endianness=True)
+            BE = H.pauli_block_encoding()
+            # Short: BE = BlockEncoding.from_matrix(A)
+
             @RUS
             def inner():
 
-                U, state_prep, n = H.pauli_block_encoding()
-
-                a = QuantumFloat(3)
+                a = QuantumFloat(2)
                 h(a)
 
-                b = QuantumFloat(3)
+                b = QuantumFloat(2)
                 cx(a,b)
 
-                case = QuantumVariable(n)
+                # Use BlockEncoding to apply matrix A to state b.
+                ancs = BE.apply(b)
 
-                # Apply matrix A via block encoding
-                with conjugate(state_prep)(case):
-                    U(case, a)
-
-                success_bool = measure(case) == 0
+                # Pauli block encoding has one ancilla variable.
+                success_bool = measure(ancs[0]) == 0
+                reset(ancs[0])
+                ancs[0].delete()
 
                 return success_bool, a, b
-
 
             @terminal_sampling
             def main():
@@ -2196,26 +2197,16 @@ class QubitOperator(Hamiltonian):
 
                 return a, b
 
-
             main()
+            #{(1.0, 2.0): 0.16666667660077444,
+            # (2.0, 1.0): 0.16666667660077444,
+            # (0.0, 1.0): 0.1666666616996128,
+            # (1.0, 0.0): 0.1666666616996128,
+            # (2.0, 3.0): 0.1666666616996128,
+            # (3.0, 2.0): 0.1666666616996128}
 
-        The ``inner`` function is equipped with the :ref:`RUS` decorator. This means that the routine is repeatedly run until the ``case`` variable is measured in state $\ket{0}$, i.e.,
+        The ``inner`` function is equipped with the :ref:`RUS` decorator. This means that the routine is run repeatedly until the ancilla variable is measured in state $\ket{0}$, i.e.,
         the matrix $A$ is successfully applied. 
-            
-        .. code-block::
-
-            {(1.0, 2.0): 0.08333333830038721,
-            (2.0, 1.0): 0.08333333830038721,
-            (5.0, 6.0): 0.08333333830038721,
-            (6.0, 5.0): 0.08333333830038721,
-            (0.0, 1.0): 0.08333333084980639,
-            (1.0, 0.0): 0.08333333084980639,
-            (2.0, 3.0): 0.08333333084980639,
-            (3.0, 2.0): 0.08333333084980639,
-            (4.0, 5.0): 0.08333333084980639,
-            (5.0, 4.0): 0.08333333084980639,
-            (6.0, 7.0): 0.08333333084980639,
-            (7.0, 6.0): 0.08333333084980639}
 
         """
         from qrisp.alg_primitives.state_preparation import prepare
