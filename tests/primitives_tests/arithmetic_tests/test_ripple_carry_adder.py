@@ -31,14 +31,14 @@ import pytest
     # one input is classical, the other is quantum in static mode
     (20, QuantumFloat(15), 20, {34: 1.0}),
 ])
-def test_cdkpm_adder_valid_input_static_mode(input_a, input_b, expected_a, expected_b):
+def test_inpl_add_valid_input_static_mode(input_a, input_b, expected_a, expected_b):
     """Verify the function works as expected for valid inputs in static mode."""
     if isinstance(input_a, QuantumFloat):
         input_a[:] = 20
     if isinstance(input_b, QuantumFloat):
         input_b[:] = 14
 
-    cdkpm_adder(input_a, input_b)
+    inpl_add(input_a, input_b)
 
     calculated_out_b = input_b.get_measurement() if isinstance(input_b, QuantumFloat) else input_b
     calculated_out_a = input_a.get_measurement() if isinstance(input_a, QuantumFloat) else input_a
@@ -56,14 +56,14 @@ def test_cdkpm_adder_valid_input_static_mode(input_a, input_b, expected_a, expec
     # one classical input in dynamic mode
     (int, QuantumFloat, 16, 19, 34.0),
 ])
-def test_jaspr_mode_cdkpm_adder(input_a_type, input_b_type, input_a_size, input_b_size, expected_output):
+def test_jaspr_mode_inpl_add(input_a_type, input_b_type, input_a_size, input_b_size, expected_output):
     def run_jasp_adder(i, j):
         a = input_a_type(i) if input_a_type != int else 20
         if input_a_type == QuantumFloat:
             a[:] = 20
         b = input_b_type(j)
         b[:] = 14
-        cdkpm_adder(a, b)
+        inpl_add(a, b)
         return measure(b)
 
     jaspr = make_jaspr(run_jasp_adder)(2, 3)
@@ -84,7 +84,7 @@ def test_invalid_input(input_a, input_b, expected_error_message):
         input_b[:] = 14
 
     with pytest.raises(ValueError, match=expected_error_message):
-        cdkpm_adder(input_a, input_b)
+        inpl_add(input_a, input_b)
 
 
 @pytest.mark.parametrize("input_a, input_b, expected_error_message", [
@@ -99,7 +99,7 @@ def test_invalid_input_dynamic_mode(input_a, input_b, expected_error_message):
         a = input_a(j) if input_a != 20 else 20
         if input_a == QuantumFloat:
             a[:] = 14
-        cdkpm_adder(a, input_b)
+        inpl_add(a, input_b)
         return measure(a)
 
     with pytest.raises(ValueError, match=expected_error_message):
@@ -115,7 +115,20 @@ def test_inputs_modified():
     a[:] = 5
     b[:] = 7
 
-    cdkpm_adder(a, b)
+    inpl_add(a, b)
 
     assert a.size == original_size_a
     assert b.size == original_size_b
+
+
+def test_invalid_adder():
+    """Verify function raises error for invalid adder."""
+    a = QuantumFloat(5)
+    b = QuantumFloat(5)
+    a[:] = 2
+    b[:] = 3
+
+    with pytest.raises(
+        NotImplementedError, 
+        match="Adder invalid_adder not implemented for the inpl_add function."):
+        inpl_add(a, b, adder="invalid_adder")

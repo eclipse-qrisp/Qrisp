@@ -16,63 +16,57 @@
 ********************************************************************************
 """
 
-import numpy as np
+from qrisp import *
+from qrisp.alg_primitives.arithmetic.adders.cdkpm_adder import cdkpm_adder
 
-from qrisp import QuantumCircuit
+def inpl_add(
+    qf1,
+    qf2,
+    adder=None,
+    ignore_rounding_error=False,
+    ignore_overflow_error=False,
+):
+    """
+    Performs in-place addition of the second argument onto the first.
+    In Python syntax: ::
 
-# Adder based on https://arxiv.org/abs/1712.02630
+        qf1 += qf2
+    
+    Currently, the Cuccaro adder as introduced in `this paper <https://arxiv.org/abs/quant-ph/0410184>`_
+    is supported in both static and dynamic modes. 
 
+    
+    Parameters
+    ----------
+    qf1 : QuantumFloat
+        The QuantumFloat that will be in-place modified.
+    qf2 : QuantumFloat
+        The QuantumFloat that is being added.
 
-def TR_gate():
-    qc = QuantumCircuit(3)
-    qc.crx(-np.pi / 2, 1, 2)
-    qc.p(-np.pi / 4, 1)
-    qc.cx(0, 1)
+    adder : str, optional
+        Specifies the adder. Available option is "cuccaro" (also the default).
 
-    qc.p(np.pi / 4, 0)
-    qc.crx(np.pi / 2, 0, 2)
+    Raises
+    ------
+    Exception
+        Tried to add signed QuantumFloat onto non signed QuantumFloat.
 
-    qc.p(np.pi / 4, 1)
-    qc.crx(np.pi / 2, 1, 2)
+    Examples
+    --------
 
-    # Error in Thapliyal paper? Doesnt work if there is no inverse here
-    result = qc.to_gate().inverse()
-    result.name = "TR"
-    return result
+    We create two QuantumFloats and apply the inplace adder
 
-
-def thapliyal_procedure(qc, qubit_list_1, qubit_list_2, output_qubit):
-    if len(qubit_list_1) != len(qubit_list_2):
-        raise Exception(
-            "Tried to call Thapliyal-procedure with qubit lists of unequal length"
-        )
-
-    n = len(qubit_list_1)
-
-    # Step 1
-    for i in range(1, n):
-        qc.cx(qubit_list_1[i], qubit_list_2[i])
-
-    # Step 2
-    qc.cx(qubit_list_1[-1], output_qubit)
-
-    for i in range(n - 2, 0, -1):
-        qc.cx(qubit_list_1[i], qubit_list_1[i + 1])
-
-    # Step 3
-    for i in range(n - 1):
-        qc.mcx([qubit_list_1[i], qubit_list_2[i]], qubit_list_1[i + 1])
-
-    # Step 4
-    qc.append(TR_gate(), [qubit_list_1[-1], qubit_list_2[-1], output_qubit])
-
-    for i in range(n - 2, -1, -1):
-        qc.append(TR_gate(), [qubit_list_1[i], qubit_list_2[i], qubit_list_1[i + 1]])
-
-    # Step 5
-    for i in range(1, n - 1):
-        qc.cx(qubit_list_1[i], qubit_list_1[i + 1])
-
-    # Step 6
-    for i in range(1, n):
-        qc.cx(qubit_list_1[i], qubit_list_2[i])
+    >>> from qrisp import QuantumFloat, inpl_add
+    >>> qf_0 = QuantumFloat(5)
+    >>> qf_1 = QuantumFloat(5)
+    >>> qf_0[:] = 4
+    >>> qf_1[:] = 3
+    >>> inpl_add(qf_0, qf_1)
+    >>> print(qf_0)
+    {7.0: 1.0}
+    """
+    if adder is not None and adder != "cuccaro":
+        raise NotImplementedError(f"Adder {adder} not implemented for the inpl_add function.")
+    
+    if adder == "cuccaro" or adder is None:
+        cdkpm_adder(qf1, qf2) 

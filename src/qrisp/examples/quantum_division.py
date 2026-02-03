@@ -35,7 +35,7 @@ divisor.encode(D)
 
 
 prec = 4
-quotient, remainder = q_divmod(numerator, divisor, prec=prec, adder="thapliyal")
+quotient, remainder = q_divmod(numerator, divisor, prec=prec, adder = None)
 
 # Q, R = list(multi_measurement([quotient, remainder], backend = qasm_simulator))[0]
 Q, R = list(multi_measurement([quotient, remainder]))[0]
