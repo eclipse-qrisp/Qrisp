@@ -172,15 +172,9 @@ class BlockEncoding:
             gphase(np.pi, qv[0])
 
         unitaries = [I, V, V_dg]
-
-        coeffs = np.array([2.0, 1.0, 1.0, 0])
-        alpha = np.sum(coeffs)
-
-        def U(case, operand):
-            with conjugate(prepare)(case, np.sqrt(coeffs/alpha)):
-                qswitch(operand, case, unitaries)
-
-        BE = BlockEncoding(alpha, [QuantumVariable(2)], U)
+        coeffs = np.array([2.0, 1.0, 1.0])
+        
+        BE = BlockEncoding.from_lcu(coeffs, unitaries)
 
     Apply the operator to the inital system state $\ket{0}$.
 

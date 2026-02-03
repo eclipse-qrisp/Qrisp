@@ -2213,7 +2213,6 @@ class QubitOperator(Hamiltonian):
         coeffs = np.pad(coeffs, (0, (1 << n) - m))
 
         if m==1:
-            # Special case: only one unitary, no need for control qubits
             @qache
             def U(operand):
                 unitaries[0](operand)
