@@ -20,11 +20,16 @@ from functools import partial
 import jax.numpy as jnp
 import jax
 import numpy as np
-from qrisp import QuantumFloat, h, control, multi_measurement
+from qrisp import QuantumVariable, QuantumFloat, h, control, multi_measurement
+from qrisp.operators import QubitOperator
 from qrisp.block_encodings import BlockEncoding
 from qrisp.jasp import jrange, check_for_tracing_mode, expectation_value
+from typing import Any, TYPE_CHECKING, Callable, Dict, Tuple
 
-def lanczos_even(BE, k, operand_prep):
+if TYPE_CHECKING:
+    from jax.typing import ArrayLike
+
+def lanczos_even(BE: "BlockEncoding" | QubitOperator, k: int, operand_prep: Callable[..., Any]) -> Tuple["QuantumVariable", ...]: 
     r"""
     This function implements the Krylov space construction via block-encodings 
     of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(a) of `Kirby et al. <https://arxiv.org/pdf/2208.00567>`_.
@@ -63,7 +68,7 @@ def lanczos_even(BE, k, operand_prep):
     
     return tuple(case_indicator)
 
-def lanczos_odd(BE, k, operand_prep):
+def lanczos_odd(BE: "BlockEncoding" | QubitOperator, k: int, operand_prep: Callable[..., Any]) -> "QuantumFloat":
     r"""
     This function implements the Krylov space construction via block-encodings 
     of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(b) of `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
@@ -106,7 +111,7 @@ def lanczos_odd(BE, k, operand_prep):
     
     return qv
 
-def compute_expectation(meas_res):
+def compute_expectation(meas_res: Dict[object, float]) -> float:
     r"""
     Convert measurement results from Lanczos subroutines into the expectation 
     value of a Chebyshev polynomial $\langle T_k(H) \rangle$.
@@ -156,7 +161,8 @@ def compute_expectation(meas_res):
     return expval
 
 
-def lanczos_expvals(H, D, operand_prep, mes_kwargs={}):
+def lanczos_expvals(H, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dict[str, object] = {}) -> "ArrayLike":
+
     r"""
     Estimate the expectation values of Chebyshev polynomials $\langle T_k(H) \rangle$ 
     for the exact and efficient Quantum Lanczos method.
@@ -195,8 +201,8 @@ def lanczos_expvals(H, D, operand_prep, mes_kwargs={}):
 
     Returns
     -------
-    expvals : ndarray
-        An array of length $2D$ containing the expectation values 
+    expvals : ArrayLike
+        An array-like object of length $2D$ containing the expectation values 
         $\langle T_k(H) \rangle$ for $k=0, \dots, 2D-1$.
 
     """
@@ -243,7 +249,7 @@ def lanczos_expvals(H, D, operand_prep, mes_kwargs={}):
 # Postprocessing
 
 @partial(jax.jit, static_argnums=(1,))
-def build_S_H_from_Tk(expvals, D):
+def build_S_H_from_Tk(expvals: "ArrayLike", D: int) -> Tuple["ArrayLike", "ArrayLike"]:
     r"""
     Construct the overlap matrix $\mathbf{S}$ and the Krylov Hamiltonian matrix $\mathbf{H}$ from Chebyshev polynomial expectation values.
 
@@ -254,16 +260,16 @@ def build_S_H_from_Tk(expvals, D):
 
     Parameters
     ----------
-    expvals : ndarray
+    expvals : ArrayLike
         Expectation values $⟨T_k(H)⟩_0$ for each Chebyshev polynomial order $k$.
     D : int
         Krylov space dimension.
 
     Returns
     -------
-    S : ndarray
+    S : ArrayLike
         Overlap (Gram) matrix $\mathbf{S}$ for Krylov states.
-    H_mat : ndarray
+    H_mat : ArrayLike
         Hamiltonian matrix $\mathbf{H}$ in Krylov subspace.
 
     """
@@ -292,7 +298,7 @@ def build_S_H_from_Tk(expvals, D):
 
 
 @jax.jit
-def regularize_S_H(S, H_mat, cutoff=1e-2):
+def regularize_S_H(S: "ArrayLike", H_mat: "ArrayLike", cutoff: float = 1e-2) -> Tuple["ArrayLike", "ArrayLike", "ArrayLike"]:
     r"""
     Regularize the overlap matrix $\mathbf{S}$ by retaining only eigenvectors with sufficiently large eigenvalues and project the Hamiltonian matrix $\mathbf{H}$ accordingly.
 
@@ -303,20 +309,20 @@ def regularize_S_H(S, H_mat, cutoff=1e-2):
     
     Parameters
     ----------
-    S : ndarray
+    S : ArrayLike
         Overlap matrix.
-    H_mat : ndarray
+    H_mat : ArrayLike
         Hamiltonian matrix.
     cutoff : float
         Eigenvalue threshold for regularizing $\mathbf{S}$.
 
     Returns
     -------
-    S_reg : ndarray
+    S_reg : ArrayLike
         Regularized overlap matrix.
-    H_reg : ndarray
+    H_reg : ArrayLike
         Regularized Hamiltonian matrix in Krylov subspace.
-    V : ndarray
+    V : ArrayLike
         Projection matrix.
     """
     D = S.shape[0]
@@ -357,24 +363,24 @@ def regularize_S_H(S, H_mat, cutoff=1e-2):
 
 # jax.scipy.linalg.eigh does currently not support the generalized eigenvalue problem
 @jax.jit
-def generalized_eigh(A, B):
+def generalized_eigh(A: "ArrayLike", B: "ArrayLike") -> Tuple["ArrayLike", "ArrayLike"]:
     r"""
     Solves the generalized eigenvalue problem $A v = \lambda B v$
     for a complex Hermitian or real symmetric matrix $A$ and a real symmetric positive-definite matrix $B$.
 
     Parameters
     ----------
-    A : ndarray
+    A : ArrayLike
         complex Hermitian or real symmetrix matrix.
-    B : ndarray
+    B : ArrayLike
         A real symmetric positive-definite matrix.
 
     Returns
     -------
-    eigvals : ndarray
-        An array containing the (generalized) eigenvalues.
-    eigvecs : ndarray
-        An array containing the (generalized) eigenvectors.
+    eigvals : ArrayLike
+        An array-like object containing the (generalized) eigenvalues.
+    eigvecs : ArrayLike
+        An array-like object containing the (generalized) eigenvectors.
     """
     # Compute Cholesky decomposition of B (L*L.T)
     # The 'lower=True' parameter is typically the default but good to be explicit.
@@ -397,7 +403,7 @@ def generalized_eigh(A, B):
     return eigvals, eigvecs
 
 
-def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False):
+def lanczos_alg(H: "BlockEncoding" | QubitOperator, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dict[str, object] = {}, cutoff: float = 1e-2, show_info: bool = False):
     r"""
     Estimate the ground state energy of a Hamiltonian using the `Exact and efficient Lanczos method on a quantum computer <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
 
@@ -484,17 +490,17 @@ def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False)
         Estimated ground state energy of the Hamiltonian H.
     info : dict, optional
         Full details including:
-            - 'Tk_expvals' : ndarray
+            - 'Tk_expvals' : ArrayLike
                 Chebyshev expectation values
             - 'energy' : float 
                 Ground-state energy estimate
-            - 'eigvals' : ndarray 
+            - 'eigvals' : ArrayLike
                 Eigenvalues of regularized problem
-            - 'eigvecs' : ndarray
+            - 'eigvecs' : ArrayLike
                 Eigenvectors of regularized problem
-            - 'S_reg' : ndarray
+            - 'S_reg' : ArrayLike
                 Regularized overlap matrix
-            - 'H_reg' : ndarray
+            - 'H_reg' : ArrayLike
                 Regularized Hamiltonian matrix
     
     Examples
