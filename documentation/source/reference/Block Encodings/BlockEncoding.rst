@@ -6,13 +6,14 @@ BlockEncoding
 .. currentmodule:: qrisp.block_encodings
 .. autoclass:: BlockEncoding
 
-Creation
-========
+Construction
+============
 
 .. autosummary::
    :toctree: generated/
 
    BlockEncoding.from_array
+   BlockEncoding.from_lcu
    BlockEncoding.from_operator
 
 Utilities

@@ -35,6 +35,19 @@ def test_block_encoding_from_array():
     assert res == {1.0: 0.5, 3.0: 0.5}
 
 
+def test_block_encoding_from_lcu():
+    def f0(x): x-=1
+    def f1(x): x+=1
+    BE = BlockEncoding.from_lcu(np.array([1., 1.]), [f0, f1])
+
+    @terminal_sampling
+    def main():
+        return BE.apply_rus(lambda : QuantumFloat(2))()
+
+    res = main()
+    assert res == {1.0: 0.5, 3.0: 0.5}
+
+
 def test_block_encoding_from_operator():
     H = X(0)*X(1) + 0.2*Y(0)*Y(1)
     B = BlockEncoding.from_operator(H)

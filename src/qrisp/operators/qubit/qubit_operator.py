@@ -2087,9 +2087,9 @@ class QubitOperator(Hamiltonian):
 
         .. math::
 
-            H = \sum_{i=0}^{T-1} \alpha_i P_i
+            H = \sum_{i=0}^{M-1} \alpha_i P_i
 
-        where $\alpha_i \ge 0$ are real, normalized coefficients such that $\sum_i \alpha_i = 1$, 
+        where $\alpha_i \ge 0$ are real coefficients such that $\sum_i \alpha_i = \alpha$, 
         and $P_i$ are Pauli strings acting on $n$ qubits (including their respective signs).
 
         The block encoding unitary is constructed via the LCU protocol: 
@@ -2104,18 +2104,22 @@ class QubitOperator(Hamiltonian):
         
         .. math::
 
-            \text{SEL} = \sum_{i=0}^{T-1} \ket{i}\bra{i} \otimes P_i
+            \text{SEL} = \sum_{i=0}^{M-1} \ket{i}\bra{i} \otimes P_i
 
         * **PREP** (Prepare) prepares the state representing the coefficients:
        
         .. math::
 
-            \text{PREP} \ket{0}_a = \sum_{i=0}^{T-1} \sqrt{\alpha_i} \ket{i}_a
+            \text{PREP} \ket{0}_a = \sum_{i=0}^{M-1} \sqrt{\frac{\alpha_i}{\alpha}} \ket{i}_a
        
         Returns
         -------
         BlockEncoding
             A BlockEncoding representing the Hermitian part $(O+O^{\dagger})/2$.
+
+        Notes
+        -----
+        - **Normalization**: The block-encoding normalization factor is $\alpha = \sum_i \alpha_i$.
 
         Examples
         --------

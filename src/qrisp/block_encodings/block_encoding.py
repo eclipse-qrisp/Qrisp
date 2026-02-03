@@ -28,7 +28,7 @@ from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
-from qrisp.qtypes import QuantumBool
+from qrisp.qtypes import QuantumBool, QuantumFloat
 from scipy.sparse import csr_array, csr_matrix
 from typing import Any, Callable, TYPE_CHECKING, Union
 
@@ -265,7 +265,7 @@ class BlockEncoding:
     @classmethod
     def from_operator(cls: "BlockEncoding", O: QubitOperator | FermionicOperator) -> BlockEncoding:
         r"""
-        Creates a BlockEncoding from an operator.
+        Constructs a BlockEncoding from an operator.
 
         Parameters
         ----------
@@ -298,7 +298,7 @@ class BlockEncoding:
     @classmethod
     def from_array(cls: "BlockEncoding", A: MatrixType) -> BlockEncoding:
         r"""
-        Creates a BlockEncoding from a 2-D array.
+        Constructs a BlockEncoding from a 2-D array.
 
         Parameters
         ----------
@@ -337,6 +337,110 @@ class BlockEncoding:
 
         return QubitOperator.from_matrix(A, reverse_endianness=True).pauli_block_encoding()
 
+    @classmethod
+    def from_lcu(cls: "BlockEncoding", coeffs: npt.NDArray[np.float64], unitaries: list[Callable[..., Any]]) -> BlockEncoding:
+        r"""
+        Constructs a BlockEncoding using the Linear Combination of Unitaries (LCU) protocol.
+
+        For an LCU block encoding, consider a linear combination of unitaries:
+
+        .. math::
+
+            O = \sum_{i=0}^{M-1} \alpha_i U_i
+
+        where $\alpha_i$ are real coefficients such that $\sum_i |\alpha_i| = \alpha$, 
+        and $U_i$ are unitaries acting on the same operand quantum variables.
+
+        The block encoding unitary is constructed via the LCU protocol: 
+        
+        .. math::
+        
+            U = \text{PREP} \cdot \text{SEL} \cdot \text{PREP}^{\dagger}
+            
+        where:
+
+        * **SEL** (Select, in Qrisp: :ref:`q_switch <qswitch>`) applies each unitary $U_i$ conditioned on the auxiliary variable state $\ket{i}_a$:
+        
+        .. math::
+
+            \text{SEL} = \sum_{i=0}^{M-1} \ket{i}\bra{i} \otimes U_i
+
+        * **PREP** (Prepare) prepares the state representing the coefficients:
+       
+        .. math::
+
+            \text{PREP} \ket{0}_a = \sum_{i=0}^{M-1} \sqrt{\frac{\alpha_i}{\alpha}} \ket{i}_a
+
+        Parameters
+        ----------
+        coeffs : ndarray
+            1-D array of expansion coefficients $\alpha_i$.
+        unitaries : list[Callable]
+            List of functions, where each ``U(*operands)`` applies a unitary 
+            transformation in-place to the provided quantum variables. 
+            All functions must accept the same signature and operate on the 
+            same set of operands.
+
+        Returns
+        -------
+        BlockEncoding
+            A BlockEncoding using LCU.
+
+        Notes
+        -----
+        - **Normalization**: The block-encoding normalization factor is $\alpha = \sum_i \alpha_i$.
+
+        Examples
+        --------
+
+        ::
+
+            from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
+            def f0(x): x-=1
+            def f1(x): x+=1
+            BE = BlockEncoding.from_lcu(np.array([1., 1.]), [f0, f1])
+
+            @terminal_sampling
+            def main():
+                return BE.apply_rus(lambda : QuantumFloat(2))()
+
+            main()
+            # {1.0: 0.5, 3.0: 0.5}
+        
+        """
+        from qrisp.alg_primitives.state_preparation import prepare
+        from qrisp.jasp import q_switch
+
+        # Number of qubits for index variable
+        m = len(coeffs)
+        n = np.int64(np.ceil(np.log2(m)))
+        # Ensure coeffs has size 2 ** n by zero padding
+        coeffs = np.concatenate((coeffs, np.zeros((1 << n) - m)))
+
+        alpha = np.sum(np.abs(coeffs))
+
+        signs = np.sign(coeffs)
+        new_unitaries = []
+        for i, U in enumerate(unitaries):
+            if signs[i] == -1:
+                def new_U(*args):
+                    U(*args)
+                    gphase(np.pi, args[0][0])
+                new_unitaries.append(new_U)
+            else:
+                new_unitaries.append(U)
+
+        if m==1:
+            return BlockEncoding(alpha, [], new_unitaries[0])
+
+        def unitary(*args):
+            # LCU = PREP SEL PREP_dg
+            with conjugate(prepare)(args[0], np.sqrt(coeffs / alpha)):
+                q_switch(args[0], new_unitaries, *args[1:])
+
+        return BlockEncoding(alpha, [QuantumFloat(n).template()], unitary)
+    
     #
     # Utilities
     #
