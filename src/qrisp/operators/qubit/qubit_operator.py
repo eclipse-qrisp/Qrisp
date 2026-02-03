@@ -2218,15 +2218,15 @@ class QubitOperator(Hamiltonian):
             (7.0, 6.0): 0.08333333084980639}
 
         """
-        from qrisp.alg_primitives import prepare, qswitch
-        from qrisp.jasp import qache
+        from qrisp.alg_primitives.state_preparation import prepare
         from qrisp.block_encodings import BlockEncoding
+        from qrisp.jasp import qache, q_switch
         from qrisp.qtypes import QuantumFloat
     
         unitaries, coeffs = self.unitaries()
         alpha = np.sum(coeffs)
 
-        # Number of qubits for case variable
+        # Number of qubits for index variable
         m = len(coeffs)
         num_qubits = np.int64(np.ceil(np.log2(m)))
         # Ensure coeffs has size 2 ** num_qubits by zero padding
@@ -2241,8 +2241,8 @@ class QubitOperator(Hamiltonian):
             return BlockEncoding(alpha, [], U, is_hermitian=True)
 
         @qache
-        def U(case, operand):
-            with conjugate(prepare)(case, np.sqrt(coeffs / alpha)):
-                qswitch(operand, case, unitaries)
+        def U(index, operand):
+            with conjugate(prepare)(index, np.sqrt(coeffs / alpha)):
+                q_switch(index, unitaries, operand)
 
         return BlockEncoding(alpha, [QuantumFloat(num_qubits).template()], U, is_hermitian=True)
