@@ -42,6 +42,11 @@ from qrisp.jasp.interpreter_tools.interpreters.count_ops_metric import (
     extract_count_ops,
     get_count_ops_profiler,
 )
+from qrisp.jasp.interpreter_tools.interpreters.count_qubits_metric import (
+    extract_count_qubits,
+    get_count_qubits_profiler,
+    simulate_count_qubits,
+)
 from qrisp.jasp.interpreter_tools.interpreters.depth_metric import (
     extract_depth,
     get_depth_profiler,
@@ -74,14 +79,39 @@ METRIC_DISPATCH = {
         extract_metric=extract_depth,
         simulate_fallback=simulate_depth,
     ),
+    "count_qubits": MetricSpec(
+        build_profiler=get_count_qubits_profiler,
+        extract_metric=extract_count_qubits,
+        simulate_fallback=simulate_count_qubits,
+    ),
 }
 
 
-# TODO: `count_ops` and `depth` should be moved to their own (already existing) files.
-# So far we keep them here to avoid circular imports.
+def _normalize_meas_behavior(meas_behavior) -> Callable:
+    """Normalize the measurement behavior into a callable."""
+
+    if isinstance(meas_behavior, str):
+        if meas_behavior == "0":
+            return always_zero
+        if meas_behavior == "1":
+            return always_one
+        if meas_behavior == "sim":
+            return simulation
+        raise ValueError(
+            f"Don't know how to compute required resources via method {meas_behavior}"
+        )
+
+    if callable(meas_behavior):
+        return meas_behavior
+
+    raise TypeError("meas_behavior must be a str or callable")
 
 
-def count_ops(meas_behavior):
+# TODO: Move each metric implementation into its dedicated module (already present).
+# Keeping them here for now to avoid circular imports.
+
+
+def count_ops(meas_behavior: str | Callable) -> Callable:
     """
     Decorator to determine resources of large scale quantum computations.
     This decorator compiles the given Jasp-compatible function into a classical
@@ -232,46 +262,25 @@ def count_ops(meas_behavior):
 
     def count_ops_decorator(function):
 
+        @wraps(function)
         def ops_counter(*args):
-
             from qrisp.jasp import make_jaspr
 
             if not hasattr(function, "jaspr_dict"):
                 function.jaspr_dict = {}
 
-            args = list(args)
-            signature = tuple([type(arg) for arg in args])
+            signature = tuple(type(arg) for arg in args)
+            jaspr = function.jaspr_dict.get(signature)
 
-            if not signature in function.jaspr_dict:
-                function.jaspr_dict[signature] = make_jaspr(function)(*args)
+            if jaspr is None:
+                jaspr = make_jaspr(function)(*args)
+                function.jaspr_dict[signature] = jaspr
 
-            return function.jaspr_dict[signature].count_ops(
-                *args, meas_behavior=meas_behavior
-            )
+            return jaspr.count_ops(*args, meas_behavior=meas_behavior)
 
         return ops_counter
 
     return count_ops_decorator
-
-
-def _normalize_meas_behavior(meas_behavior) -> Callable:
-    """Normalize the measurement behavior into a callable."""
-
-    if isinstance(meas_behavior, str):
-        if meas_behavior == "0":
-            return always_zero
-        if meas_behavior == "1":
-            return always_one
-        if meas_behavior == "sim":
-            return simulation
-        raise ValueError(
-            f"Don't know how to compute required resources via method {meas_behavior}"
-        )
-
-    if callable(meas_behavior):
-        return meas_behavior
-
-    raise TypeError("meas_behavior must be a str or callable")
 
 
 def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
@@ -383,26 +392,56 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
 
     def depth_decorator(function):
 
+        @wraps(function)
         def depth_counter(*args):
-
             from qrisp.jasp import make_jaspr
 
             if not hasattr(function, "jaspr_dict"):
                 function.jaspr_dict = {}
 
-            args = list(args)
+            signature = tuple(type(arg) for arg in args)
+            jaspr = function.jaspr_dict.get(signature)
 
-            signature = tuple([type(arg) for arg in args])
-            if not signature in function.jaspr_dict:
-                function.jaspr_dict[signature] = make_jaspr(function)(*args)
+            if jaspr is None:
+                jaspr = make_jaspr(function)(*args)
+                function.jaspr_dict[signature] = jaspr
 
-            return function.jaspr_dict[signature].depth(
+            return jaspr.depth(
                 *args, meas_behavior=meas_behavior, max_qubits=max_qubits
             )
 
         return depth_counter
 
     return depth_decorator
+
+
+def count_qubits(meas_behavior: str | Callable) -> Callable:
+    """
+    ...
+    """
+
+    def count_qubits_decorator(function):
+
+        @wraps(function)
+        def qubits_counter(*args):
+
+            from qrisp.jasp import make_jaspr
+
+            if not hasattr(function, "jaspr_dict"):
+                function.jaspr_dict = {}
+
+            signature = tuple(type(arg) for arg in args)
+            jaspr = function.jaspr_dict.get(signature)
+
+            if jaspr is None:
+                jaspr = make_jaspr(function)(*args)
+                function.jaspr_dict[signature] = jaspr
+
+            return jaspr.count_qubits(*args, meas_behavior=meas_behavior)
+
+        return qubits_counter
+
+    return count_qubits_decorator
 
 
 def profile_jaspr(
@@ -417,7 +456,8 @@ def profile_jaspr(
         The Jaspr to be profiled.
 
     mode : str
-        The profiling mode to be used. Currently supported modes are "depth".
+        The profiling mode to be used.
+        Currently supported modes are "depth", "count_ops", and "count_qubits".
 
     meas_behavior : str or callable, optional
         The measurement behavior to be used during profiling. Default is "0".
