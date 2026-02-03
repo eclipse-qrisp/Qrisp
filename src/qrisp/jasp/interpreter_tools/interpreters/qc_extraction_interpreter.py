@@ -130,18 +130,15 @@ class ParityHandle:
     
     Design Note
     -----------
-    The handle stores a reference to the instruction object (from qc.data) and
-    the QuantumCircuit itself. This makes the handle robust to circuit 
-    modifications (like gate reordering by compilation passes) - similar to
-    Clbit objects, every ParityHandle corresponds to a particular boolean value 
-    that could in principle be uniquely computed by executing the underlying circuit.
+    The handle stores a reference to the instruction object (from qc.data).
+    Equality and hashing are based on the instruction's clbits and expectation,
+    making handles work correctly across transpile calls where instruction objects
+    are copied but their semantic content is preserved.
     
     Attributes
     ----------
     instruction : Instruction
         The ParityOperation instruction object sitting in qc.data.
-    qc : QuantumCircuit
-        The QuantumCircuit containing this parity operation.
     
     Properties
     ----------
@@ -152,9 +149,8 @@ class ParityHandle:
         The expected parity value (0, 1, or 2 for unknown). Retrieved from
         instruction.op.expectation.
     """
-    def __init__(self, instruction, qc):
+    def __init__(self, instruction):
         self.instruction = instruction
-        self.qc = qc
     
     @property
     def clbits(self):
@@ -170,14 +166,14 @@ class ParityHandle:
         return f"ParityHandle{tuple(self.clbits)}"
     
     def __hash__(self):
-        # Use both instruction and qc identity for hashing
-        # Same instruction can appear in different circuits with different semantics
-        return hash((id(self.instruction), id(self.qc)))
+        # Hash by clbits (as frozenset) and expectation for content-based comparison
+        # This allows matching across transpile calls where instruction objects are copied
+        return hash((frozenset(self.clbits), self.expectation))
     
     def __eq__(self, other):
         if isinstance(other, ParityHandle):
-            # Compare by both instruction and qc identity
-            return self.instruction is other.instruction and self.qc is other.qc
+            # Compare by content: same clbits and same expectation
+            return set(self.clbits) == set(other.clbits) and self.expectation == other.expectation
         return False
 
 
@@ -621,8 +617,8 @@ def make_qc_extraction_eqn_evaluator(qc):
             # Get the instruction we just appended
             parity_instr = qc.data[-1]
             
-            # Create a parity handle with the instruction and circuit reference
-            handle = ParityHandle(parity_instr, qc)
+            # Create a parity handle with the instruction
+            handle = ParityHandle(parity_instr)
             insert_outvalues(eqn, context_dic, handle)
             return
         

@@ -269,7 +269,7 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
                 stim_observable_counter += 1
                 
                 # Create a ParityHandle for this parity operation
-                parity_handle = ParityHandle(instr, qc)
+                parity_handle = ParityHandle(instr)
                 
                 # Track this parity for potential nested usage and populate observable_map
                 parity_key = ('parity', parity_counter)
@@ -278,7 +278,7 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
                     'measurements': current_components
                 }
                 
-                # Populate observable_map - key is ParityHandle (hashable by index)
+                # Populate observable_map - key is ParityHandle (hashable by clbits and expectation)
                 observable_map[parity_handle] = new_stim_idx
                 
                 # Emit instruction if there are targets
@@ -289,9 +289,9 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
                 # --- Detector Mode ---
                 
                 # Create a ParityHandle for this parity operation
-                parity_handle = ParityHandle(instr, qc)
+                parity_handle = ParityHandle(instr)
                 
-                # Populate detector_map - key is ParityHandle (hashable by index)
+                # Populate detector_map - key is ParityHandle (hashable by clbits and expectation)
                 detector_map[parity_handle] = detector_counter
                 
                 # Emit DETECTOR

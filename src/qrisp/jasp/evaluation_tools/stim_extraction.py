@@ -19,6 +19,76 @@
 from qrisp.jasp import make_jaspr
 from qrisp.circuit import Clbit
 from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityHandle
+import numpy as np
+
+
+# =============================================================================
+# Numpy array subtypes for typed return values from extract_stim
+# =============================================================================
+
+class MeasurementHandles(np.ndarray):
+    """
+    A numpy.ndarray subtype representing Stim measurement record indices.
+    
+    This class behaves exactly like a regular numpy array (and can be used
+    directly for slicing sample arrays), but carries type information indicating
+    that the values represent measurement record indices in a Stim circuit.
+    
+    The indices can be used to slice the results from `stim_circuit.compile_sampler().sample()`.
+    
+    Example
+    -------
+    >>> meas_indices, stim_circuit = my_func()
+    >>> isinstance(meas_indices, MeasurementHandles)
+    True
+    >>> samples = stim_circuit.compile_sampler().sample(100)
+    >>> my_results = samples[:, meas_indices]  # Direct slicing works
+    """
+    pass
+
+
+class DetectorHandles(np.ndarray):
+    """
+    A numpy.ndarray subtype representing Stim detector indices.
+    
+    This class behaves exactly like a regular numpy array (and can be used
+    directly for slicing detector sample arrays), but carries type information 
+    indicating that the values represent detector indices in a Stim circuit.
+    
+    The indices can be used to slice the results from 
+    `stim_circuit.compile_detector_sampler().sample()`.
+    
+    Example
+    -------
+    >>> det_indices, stim_circuit = my_func()
+    >>> isinstance(det_indices, DetectorHandles)
+    True
+    >>> samples = stim_circuit.compile_detector_sampler().sample(100)
+    >>> my_results = samples[:, det_indices]  # Direct slicing works
+    """
+    pass
+
+
+class ObservableHandles(np.ndarray):
+    """
+    A numpy.ndarray subtype representing Stim observable indices.
+    
+    This class behaves exactly like a regular numpy array (and can be used
+    directly for slicing observable results), but carries type information 
+    indicating that the values represent observable indices in a Stim circuit.
+    
+    The indices can be used to slice the results from 
+    `stim_circuit.compile_detector_sampler().sample(separate_observables=True)`.
+    
+    Example
+    -------
+    >>> obs_indices, stim_circuit = my_func()
+    >>> isinstance(obs_indices, ObservableHandles)
+    True
+    >>> det_samples, obs_samples = stim_circuit.compile_detector_sampler().sample(100, separate_observables=True)
+    >>> my_results = obs_samples[:, obs_indices]  # Direct slicing works
+    """
+    pass
 
 def extract_stim(func):
     """
@@ -285,41 +355,81 @@ def extract_stim(func):
             
             # Convert the QuantumCircuit to Stim with mapping enabled.
             # - clbit_mapping: maps Clbit objects to Stim measurement record indices
-            # - detector_mapping: maps parity record indices to Stim detector indices
-            # - observable_mapping: maps parity record indices to Stim observable indices
-            # We merge these into idx_mapping for unified lookup.
+            # - detector_mapping: maps ParityHandle to Stim detector indices
+            # - observable_mapping: maps ParityHandle to Stim observable indices
             stim_circ, clbit_mapping, detector_mapping, observable_mapping = qc.to_stim(return_measurement_map=True, return_detector_map=True, return_observable_map = True)
-            idx_mapping = {**detector_mapping, **clbit_mapping, **observable_mapping}
+            
+            # Helper function to convert a single value (Clbit or ParityHandle) to its index
+            def convert_single_value(val):
+                if isinstance(val, Clbit):
+                    return clbit_mapping[val], 'measurement'
+                elif isinstance(val, ParityHandle):
+                    if val in detector_mapping:
+                        return detector_mapping[val], 'detector'
+                    elif val in observable_mapping:
+                        return observable_mapping[val], 'observable'
+                    else:
+                        raise KeyError(f"ParityHandle not found in detector or observable mapping: {val}")
+                else:
+                    return val, None
             
             # Process all return values except the QuantumCircuit (last element)
-            # We need to replace any Clbit objects with their corresponding Stim indices.
+            # We replace Clbit objects and ParityHandles with their corresponding Stim indices,
+            # wrapped in typed numpy array subtypes for identification.
             new_result = []
             for i in range(len(staticalization_result)-1):
                 
                 val = staticalization_result[i]
                 
-                # Case 1: Value is a list of Clbit objects (e.g., from multi-qubit measurement)
+                # Case 1: Value is a numpy array - could contain Clbits or ParityHandles
+                # Convert each element and wrap in appropriate typed array.
+                if isinstance(val, np.ndarray) and val.dtype == object:
+                    # Flatten, convert, then reshape
+                    flat = val.flatten()
+                    if len(flat) > 0:
+                        first_idx, first_type = convert_single_value(flat[0])
+                        if first_type is not None:
+                            # Convert all elements
+                            indices = [convert_single_value(v)[0] for v in flat]
+                            result_array = np.array(indices, dtype=np.intp).reshape(val.shape)
+                            # Wrap in appropriate type
+                            if first_type == 'measurement':
+                                new_val = result_array.view(MeasurementHandles)
+                            elif first_type == 'detector':
+                                new_val = result_array.view(DetectorHandles)
+                            elif first_type == 'observable':
+                                new_val = result_array.view(ObservableHandles)
+                        else:
+                            new_val = val
+                    else:
+                        new_val = val
+                
+                # Case 2: Value is a list of Clbit objects (e.g., from multi-qubit measurement)
                 # Replace each Clbit with its corresponding Stim measurement index.
                 # This happens when a QuantumFloat/QuantumVariable is measured and returns
                 # a list of classical bits representing the measurement results.
-                if isinstance(val, list) and len(val) and isinstance(val[0], Clbit):
-                    new_val = tuple(idx_mapping[clbit] for clbit in val)
-                    if len(new_val) == 1:
-                        new_val = new_val[0]
+                # Wrap in MeasurementHandles for type identification.
+                elif isinstance(val, list) and len(val) and isinstance(val[0], Clbit):
+                    indices = [clbit_mapping[clbit] for clbit in val]
+                    new_val = np.array(indices, dtype=np.intp).view(MeasurementHandles)
                 
-                # Case 2: Value is a single Clbit object
-                # Replace it with its Stim measurement index.
+                # Case 3: Value is a single Clbit object
+                # Replace it with its Stim measurement index as a 0-d MeasurementHandles array.
                 # This happens when a single qubit is measured.
                 elif isinstance(val, Clbit):
-                    new_val = idx_mapping[val]
+                    new_val = np.array(clbit_mapping[val], dtype=np.intp).view(MeasurementHandles)
                 
-                # Case 3: Value is a ParityHandle (from parity operation)
-                # Replace it with its Stim detector/observable index from the mapping.
-                # ParityHandle is hashable by index, so it can be used directly as a key.
+                # Case 4: Value is a ParityHandle (from parity operation)
+                # Look up in detector or observable mapping and wrap accordingly.
                 elif isinstance(val, ParityHandle):
-                    new_val = idx_mapping[val]
+                    if val in detector_mapping:
+                        new_val = np.array(detector_mapping[val], dtype=np.intp).view(DetectorHandles)
+                    elif val in observable_mapping:
+                        new_val = np.array(observable_mapping[val], dtype=np.intp).view(ObservableHandles)
+                    else:
+                        raise KeyError(f"ParityHandle not found in detector or observable mapping: {val}")
                 
-                # Case 4: Value is something else (e.g., integer, float, ProcessedMeasurement)
+                # Case 5: Value is something else (e.g., integer, float, ProcessedMeasurement)
                 # Pass through unchanged. Classical values computed during the function
                 # (not involving measurements) are returned as-is.
                 else:

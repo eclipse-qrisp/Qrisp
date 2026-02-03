@@ -20,6 +20,7 @@ import numpy as np
 import stim
 from qrisp import QuantumVariable, QuantumFloat, QuantumBool, h, x, y, z, s, s_dg, sx, cx, cy, cz, measure, control
 from qrisp.jasp import extract_stim, parity
+from qrisp.jasp.evaluation_tools.stim_extraction import MeasurementHandles, DetectorHandles, ObservableHandles
 from qrisp.misc.stim_tools import stim_noise
 
 
@@ -77,8 +78,8 @@ def test_multiple_return_values():
     qv1_indices, qv2_indices, stim_circuit = multi_return()
     
     # Check we got 3 elements (2 return values + circuit)
-    assert isinstance(qv1_indices, tuple)
-    assert isinstance(qv2_indices, tuple)
+    assert isinstance(qv1_indices, np.ndarray)
+    assert isinstance(qv2_indices, np.ndarray)
     assert isinstance(stim_circuit, stim.Circuit)
     
     # Check indices are correct length
@@ -86,8 +87,8 @@ def test_multiple_return_values():
     assert len(qv2_indices) == 3
     
     # Check indices are sequential
-    assert qv1_indices == (0, 1)
-    assert qv2_indices == (2, 3, 4)
+    assert np.array_equal(qv1_indices, [0, 1])
+    assert np.array_equal(qv2_indices, [2, 3, 4])
 
 
 def test_classical_value_passthrough():
@@ -110,8 +111,8 @@ def test_classical_value_passthrough():
     # Classical value should be unchanged
     assert classical_val == 25  # 10 * 2 + 5
     
-    # Measurement indices should be a tuple
-    assert isinstance(meas_indices, tuple)
+    # Measurement indices should be a numpy array
+    assert isinstance(meas_indices, np.ndarray)
     assert len(meas_indices) == 2
     
     # Circuit should be present
@@ -132,9 +133,8 @@ def test_single_qubit_measurement():
     
     meas_idx, stim_circuit = single_qubit()
     
-    # Single qubit measurement should return an integer, not a tuple
-    assert isinstance(meas_idx, int)
-    assert meas_idx == 0
+    # Single qubit measurement should return an integer-like value
+    assert int(meas_idx) == 0
 
 
 # ============================================================================
@@ -358,10 +358,10 @@ def test_mid_circuit_measurement():
     mid_idx, final_indices, stim_circuit = mid_circuit()
     
     # Mid-circuit measurement should be index 0
-    assert mid_idx == 0
+    assert int(mid_idx) == 0
     
     # Final measurements should be indices 1, 2, 3 (qv[0] is measured again)
-    assert final_indices == (1, 2, 3)
+    assert np.array_equal(final_indices, [1, 2, 3])
     
     # Sample and verify
     sampler = stim_circuit.compile_sampler()
@@ -421,8 +421,8 @@ def test_quantum_variable_compatibility():
     
     meas_indices, stim_circuit = qv_test()
     
-    # Should return tuple of indices
-    assert isinstance(meas_indices, tuple)
+    # Should return numpy array of indices
+    assert isinstance(meas_indices, np.ndarray)
     assert len(meas_indices) == 3
     
     # Sample and convert to integers
@@ -446,9 +446,8 @@ def test_quantum_bool_compatibility():
     
     meas_idx, stim_circuit = qb_test()
     
-    # QuantumBool measurement returns a single index (int)
-    assert isinstance(meas_idx, int)
-    assert meas_idx == 0
+    # QuantumBool measurement returns a single index
+    assert meas_idx.item() == 0
     
     # Sample
     sampler = stim_circuit.compile_sampler()
@@ -512,10 +511,10 @@ def test_mixed_classical_and_quantum():
     assert c_prod == 35
     
     # Check quantum measurement indices
-    # QuantumBool returns a single index (int)
-    assert isinstance(single_idx, int)
+    # QuantumBool returns a single index
+    assert single_idx.item() == 0
     
-    assert isinstance(multi_indices, tuple)
+    assert isinstance(multi_indices, np.ndarray)
     assert len(multi_indices) == 3
     
     # Check circuit
@@ -1139,3 +1138,289 @@ def test_extract_stim_observables_sampling():
     
     assert np.all(obs_events[:, obs0_idx] == 0)
     assert np.all(obs_events[:, obs1_idx] == 1)
+
+
+# ============================================================================
+# Array Shape Tests for Measurements, Detectors, and Observables
+# ============================================================================
+
+def test_measurement_handles_1d_array():
+    """Test that 1D arrays of measurements return MeasurementHandles with correct shape."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def array_measurements():
+        qv = QuantumVariable(4)
+        h(qv)
+        
+        # Measure all qubits and collect into an array
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        m2 = measure(qv[2])
+        m3 = measure(qv[3])
+        
+        # Return as a JAX array
+        return jnp.array([m0, m1, m2, m3])
+    
+    meas_array, stim_circuit = array_measurements()
+    
+    # Check type and shape
+    assert isinstance(meas_array, MeasurementHandles)
+    assert meas_array.shape == (4,)
+    assert np.array_equal(meas_array, [0, 1, 2, 3])
+    
+    # Verify slicing works correctly
+    sampler = stim_circuit.compile_sampler()
+    samples = sampler.sample(100)
+    
+    # Should be able to slice directly with the handles
+    sliced = samples[:, meas_array]
+    assert sliced.shape == (100, 4)
+
+
+def test_measurement_handles_2d_array():
+    """Test that 2D arrays of measurements return MeasurementHandles with correct shape."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def matrix_measurements():
+        qv = QuantumVariable(6)
+        h(qv)
+        
+        # Measure all qubits
+        measurements = [measure(qv[i]) for i in range(6)]
+        
+        # Reshape into 2x3 matrix
+        return jnp.array(measurements).reshape(2, 3)
+    
+    meas_matrix, stim_circuit = matrix_measurements()
+    
+    # Check type and shape
+    assert isinstance(meas_matrix, MeasurementHandles)
+    assert meas_matrix.shape == (2, 3)
+    
+    # Check values are sequential
+    assert np.array_equal(meas_matrix.flatten(), [0, 1, 2, 3, 4, 5])
+    
+    # Verify slicing works - flatten for indexing
+    sampler = stim_circuit.compile_sampler()
+    samples = sampler.sample(50)
+    
+    # Slice using flattened indices
+    row0_samples = samples[:, meas_matrix[0]]
+    row1_samples = samples[:, meas_matrix[1]]
+    assert row0_samples.shape == (50, 3)
+    assert row1_samples.shape == (50, 3)
+
+
+def test_detector_handles_1d_array():
+    """Test that 1D arrays of detectors return DetectorHandles with correct shape."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def array_detectors():
+        # Create multiple Bell pairs and check their parities
+        detectors = []
+        for i in range(3):
+            qv = QuantumVariable(2)
+            h(qv[0])
+            cx(qv[0], qv[1])
+            m0 = measure(qv[0])
+            m1 = measure(qv[1])
+            # Bell pair parity should be 0
+            d = parity(m0, m1, expectation=False)
+            detectors.append(d)
+        
+        return jnp.array(detectors)
+    
+    det_array, stim_circuit = array_detectors()
+    
+    # Check type and shape
+    assert isinstance(det_array, DetectorHandles)
+    assert det_array.shape == (3,)
+    assert np.array_equal(det_array, [0, 1, 2])
+    
+    # Verify we have 3 detectors
+    assert stim_circuit.num_detectors == 3
+    
+    # Sample and verify all detectors report no error (Bell pairs have even parity)
+    sampler = stim_circuit.compile_detector_sampler()
+    det_samples = sampler.sample(100)
+    
+    # Slice with detector handles
+    sliced = det_samples[:, det_array]
+    assert sliced.shape == (100, 3)
+    # All should be False (no parity violations)
+    assert np.all(sliced == False)
+
+
+def test_observable_handles_1d_array():
+    """Test that 1D arrays of observables return ObservableHandles with correct shape."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def array_observables():
+        observables = []
+        
+        # Create multiple observables
+        for i in range(4):
+            qv = QuantumVariable(2)
+            if i % 2 == 0:
+                # Even: prepare |00>, parity = 0
+                pass
+            else:
+                # Odd: prepare |11>, parity = 0
+                x(qv)
+            m0 = measure(qv[0])
+            m1 = measure(qv[1])
+            obs = parity(m0, m1, expectation=None)
+            observables.append(obs)
+        
+        return jnp.array(observables)
+    
+    obs_array, stim_circuit = array_observables()
+    
+    # Check type and shape
+    assert isinstance(obs_array, ObservableHandles)
+    assert obs_array.shape == (4,)
+    assert np.array_equal(obs_array, [0, 1, 2, 3])
+    
+    # Verify we have 4 observables
+    assert stim_circuit.num_observables == 4
+    
+    # Sample and verify
+    sampler = stim_circuit.compile_detector_sampler()
+    det_events, obs_events = sampler.sample(100, separate_observables=True)
+    
+    # Slice with observable handles
+    sliced = obs_events[:, obs_array]
+    assert sliced.shape == (100, 4)
+    # All observables should report parity 0 (even)
+    assert np.all(sliced == False)
+
+
+def test_detector_handles_2d_array():
+    """Test that 2D arrays of detectors return DetectorHandles with correct shape."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def matrix_detectors():
+        detectors = []
+        
+        # Create 2x2 grid of detectors
+        for _ in range(4):
+            qv = QuantumVariable(2)
+            h(qv[0])
+            cx(qv[0], qv[1])
+            m0 = measure(qv[0])
+            m1 = measure(qv[1])
+            d = parity(m0, m1, expectation=False)
+            detectors.append(d)
+        
+        return jnp.array(detectors).reshape(2, 2)
+    
+    det_matrix, stim_circuit = matrix_detectors()
+    
+    # Check type and shape
+    assert isinstance(det_matrix, DetectorHandles)
+    assert det_matrix.shape == (2, 2)
+    
+    # Check values
+    assert np.array_equal(det_matrix.flatten(), [0, 1, 2, 3])
+    
+    # Verify we have 4 detectors
+    assert stim_circuit.num_detectors == 4
+    
+    # Sample and slice by row
+    sampler = stim_circuit.compile_detector_sampler()
+    det_samples = sampler.sample(50)
+    
+    row0 = det_samples[:, det_matrix[0]]
+    row1 = det_samples[:, det_matrix[1]]
+    assert row0.shape == (50, 2)
+    assert row1.shape == (50, 2)
+
+
+def test_measurement_handles_preserve_dtype():
+    """Test that MeasurementHandles arrays have integer dtype suitable for indexing."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def check_dtype():
+        qv = QuantumVariable(3)
+        h(qv)
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        m2 = measure(qv[2])
+        return jnp.array([m0, m1, m2])
+    
+    meas_array, stim_circuit = check_dtype()
+    
+    # Should be integer type for indexing
+    assert np.issubdtype(meas_array.dtype, np.integer)
+    
+    # Should work as indices
+    sampler = stim_circuit.compile_sampler()
+    samples = sampler.sample(10)
+    indexed = samples[:, meas_array]
+    assert indexed.shape == (10, 3)
+
+
+def test_scalar_measurement_is_0d_array():
+    """Test that single measurements return 0-d MeasurementHandles arrays."""
+    @extract_stim
+    def single_meas():
+        qv = QuantumVariable(1)
+        h(qv)
+        return measure(qv[0])
+    
+    meas_idx, stim_circuit = single_meas()
+    
+    # Should be MeasurementHandles (0-d array)
+    assert isinstance(meas_idx, MeasurementHandles)
+    assert meas_idx.ndim == 0
+    assert meas_idx.item() == 0
+    
+    # Should still work for indexing (numpy handles 0-d arrays)
+    sampler = stim_circuit.compile_sampler()
+    samples = sampler.sample(10)
+    # Index with the scalar
+    indexed = samples[:, meas_idx]
+    assert indexed.shape == (10,)
+
+
+def test_scalar_detector_is_0d_array():
+    """Test that single detectors return 0-d DetectorHandles arrays."""
+    @extract_stim
+    def single_detector():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        return parity(m0, m1, expectation=False)
+    
+    det_idx, stim_circuit = single_detector()
+    
+    # Should be DetectorHandles (0-d array)
+    assert isinstance(det_idx, DetectorHandles)
+    assert det_idx.ndim == 0
+    assert det_idx.item() == 0
+
+
+def test_scalar_observable_is_0d_array():
+    """Test that single observables return 0-d ObservableHandles arrays."""
+    @extract_stim
+    def single_observable():
+        qv = QuantumVariable(2)
+        h(qv)
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        return parity(m0, m1, expectation=None)
+    
+    obs_idx, stim_circuit = single_observable()
+    
+    # Should be ObservableHandles (0-d array)
+    assert isinstance(obs_idx, ObservableHandles)
+    assert obs_idx.ndim == 0
+    assert obs_idx.item() == 0
