@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 def lanczos_even(BE: "BlockEncoding" | QubitOperator, k: int, operand_prep: Callable[..., Any]) -> Tuple["QuantumVariable", ...]: 
     r"""
     This function implements the Krylov space construction via block-encodings 
-    of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(a) of `Kirby et al. <https://arxiv.org/pdf/2208.00567>`_.
+    of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(a) of `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018>`__.
     
     For even $k$, the subroutine prepares a state by applying $k/2$ qubitization 
     steps $(RU)$. The expectation value $\langle T_k(H)\rangle$ is then obtained 
@@ -72,7 +72,7 @@ def lanczos_even(BE: "BlockEncoding" | QubitOperator, k: int, operand_prep: Call
 def lanczos_odd(BE: "BlockEncoding" | QubitOperator, k: int, operand_prep: Callable[..., Any]) -> "QuantumFloat":
     r"""
     This function implements the Krylov space construction via block-encodings 
-    of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(b) of `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
+    of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(b) of `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/>`__.
     
     For odd $k$, the subroutine applies $\lfloor k/2 \rfloor$ qubitization steps 
     followed by a Hadamard test for the block-encoding unitary $U$. This 
@@ -118,7 +118,7 @@ def compute_expectation(meas_res: Dict[object, float]) -> float:
     value of a Chebyshev polynomial $\langle T_k(H) \rangle$.
 
     This function processes the output of `:ref: lanczos_even` and `lanczos_odd`` constructing the circuits described in 
-    `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_ to extract the physical 
+    `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/>`__ to extract the physical 
     expectation value from the ancilla measurement statistics.
 
     Assumes measurement outcomes correspond to $\pm 1$ eigenvalues of observables 
@@ -171,8 +171,7 @@ def lanczos_expvals(H, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dic
     This function constructs the Krylov space basis by evaluating the expectation 
     values of Chebyshev polynomials up to order $2D-1$. It dispatches tasks to 
     :func:`lanczos_even` and :func:`lanczos_odd`, which implement the circuit 
-    layouts described in `Figure 1 in Kirby et al. (2023) 
-    <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
+    layouts described in `Figure 1 in Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/>`__.
     
     For each polynomial order $k = 0, \dotsc, 2D-1$, it prepares and measures circuits corresponding 
     either to $\bra{\psi\lfloor k/2\rfloor}R\ket{\psi\lfloor k/2\rfloor}$ for even $k$, or
@@ -257,7 +256,7 @@ def build_S_H_from_Tk(expvals: "ArrayLike", D: int) -> Tuple["ArrayLike", "Array
 
     Using Chebyshev recurrence relations, this function generates the matrix elements for
     both the overlap matrix ($\mathbf{S}$) and the Hamiltonian matrix ($\mathbf{H}$) in the Krylov subspace.
-    The approach follows `Equations (17) and (19) in Exact and efficient Lanczos method on a quantum computer <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
+    The approach follows `Equations (17) and (19) in Exact and efficient Lanczos method on a quantum computer <https://quantum-journal.org/papers/q-2023-05-23-1018/>`__.
 
     Parameters
     ----------
@@ -406,7 +405,7 @@ def generalized_eigh(A: "ArrayLike", B: "ArrayLike") -> Tuple["ArrayLike", "Arra
 
 def lanczos_alg(H: "BlockEncoding" | QubitOperator, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dict[str, object] = {}, cutoff: float = 1e-2, show_info: bool = False):
     r"""
-    Estimate the ground state energy of a Hamiltonian using the `Exact and efficient Lanczos method on a quantum computer <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
+    Estimate the ground state energy of a Hamiltonian using the `Exact and efficient Lanczos method on a quantum computer <https://quantum-journal.org/papers/q-2023-05-23-1018/>`__.
 
     This function implements the algorithm proposed in Kirby et al. by constructing a Krylov subspace using block-encodings of Chebyshev polynomials $T_k(H)$, 
     bypassing the need for real or imaginary time evolution.
@@ -509,7 +508,7 @@ def lanczos_alg(H: "BlockEncoding" | QubitOperator, D: int, operand_prep: Callab
 
     **Example 1: Jasp Mode (Dynamic Execution)**
 
-    This mode uses Qrisp's :ref:`jasp` framework for JIT-compilation and 
+    This mode uses Qrisp's :ref:`jasp <jasp>` framework for JIT-compilation and 
     tracing, ideal for high-performance simulation or gradient-based methods.
 
     ::
