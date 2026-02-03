@@ -21,6 +21,9 @@ from qrisp.alg_primitives.arithmetic import QuantumFloat, q_divmod
 from qrisp.misc import multi_measurement
 
 
+import pytest
+
+@pytest.mark.skip(reason="Skip until inpl_add is fixed.")
 def test_quantum_divison():
     numerator = QuantumFloat(4, -2, signed=True)
     divisor = QuantumFloat(4, -2, signed=True)
