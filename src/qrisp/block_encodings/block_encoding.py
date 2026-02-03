@@ -412,12 +412,11 @@ class BlockEncoding:
         from qrisp.alg_primitives.state_preparation import prepare
         from qrisp.jasp import q_switch
 
-        # Number of qubits for index variable
         m = len(coeffs)
-        n = (m - 1).bit_length() 
+        n = (m - 1).bit_length() # Number of qubits for index variable
         # Ensure coeffs has size 2 ** n by zero padding
         coeffs = np.pad(coeffs, (0, (1 << n) - m))
-        
+
         alpha = np.sum(np.abs(coeffs))
 
         signs = np.sign(coeffs)

@@ -2206,10 +2206,9 @@ class QubitOperator(Hamiltonian):
     
         unitaries, coeffs = self.unitaries()
         alpha = np.sum(coeffs)
-
-        # Number of qubits for index variable
+        
         m = len(coeffs)
-        n = (m - 1).bit_length() 
+        n = (m - 1).bit_length() # Number of qubits for index variable
         # Ensure coeffs has size 2 ** n by zero padding
         coeffs = np.pad(coeffs, (0, (1 << n) - m))
 
@@ -2226,4 +2225,4 @@ class QubitOperator(Hamiltonian):
             with conjugate(prepare)(index, np.sqrt(coeffs / alpha)):
                 q_switch(index, unitaries, operand)
 
-        return BlockEncoding(alpha, [QuantumFloat(num_qubits).template()], U, is_hermitian=True)
+        return BlockEncoding(alpha, [QuantumFloat(n).template()], U, is_hermitian=True)
