@@ -170,7 +170,7 @@ def lanczos_expvals(H, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dic
     This function constructs the Krylov space basis by evaluating the expectation 
     values of Chebyshev polynomials up to order $2D-1$. It dispatches tasks to 
     :func:`lanczos_even` and :func:`lanczos_odd`, which implement the circuit 
-    layouts described in _Figure 1_ of `Kirby et al. (2023) 
+    layouts described in `Figure 1 in Kirby et al. (2023) 
     <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
     
     For each polynomial order $k = 0, \dotsc, 2D-1$, it prepares and measures circuits corresponding 
@@ -179,9 +179,10 @@ def lanczos_expvals(H, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dic
     The measured statistics encode the expectation values $\langle T_k(H)\rangle$. 
 
     The function supports two execution modes:
-    - Tracing Mode (JAX): Uses ``expectation_value`` with a JIT-compiled 
+
+    - Tracing Mode (JAX): Uses :func:`expectation_value` with a JIT-compiled 
        post-processor for high-performance gradient or batch execution.
-    - Standard Mode: Uses ``multi_measurement`` and 
+    - Standard Mode: Uses :func:`multi_measurement` and 
        :func:`compute_expectation` for simulation or hardware execution.
     
     Parameters
@@ -255,8 +256,7 @@ def build_S_H_from_Tk(expvals: "ArrayLike", D: int) -> Tuple["ArrayLike", "Array
 
     Using Chebyshev recurrence relations, this function generates the matrix elements for
     both the overlap matrix ($\mathbf{S}$) and the Hamiltonian matrix ($\mathbf{H}$) in the Krylov subspace.
-    The approach follows Equations (17) and (19) in 
-    `"Exact and efficient Lanczos method on a quantum computer" <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
+    The approach follows `Equations (17) and (19) in Exact and efficient Lanczos method on a quantum computer <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
 
     Parameters
     ----------
@@ -468,9 +468,9 @@ def lanczos_alg(H: "BlockEncoding" | QubitOperator, D: int, operand_prep: Callab
     Parameters
     ----------
         H : QubitOperator or BlockEncoding
-        Hamiltonian for which to estimate the ground-state energy. If a 
-        QubitOperator is provided, it is automatically converted to a 
-        Pauli block-encoding.
+            Hamiltonian for which to estimate the ground-state energy. If a 
+            QubitOperator is provided, it is automatically converted to a 
+            Pauli block-encoding.
         D : int
             Krylov space dimension.
         operand_prep : callable 
@@ -508,7 +508,7 @@ def lanczos_alg(H: "BlockEncoding" | QubitOperator, D: int, operand_prep: Callab
 
     **Example 1: Jasp Mode (Dynamic Execution)**
 
-    This mode uses Qrisp's ``jasp`` framework for JIT-compilation and 
+    This mode uses Qrisp's :ref:`jasp` framework for JIT-compilation and 
     tracing, ideal for high-performance simulation or gradient-based methods.
 
     ::
