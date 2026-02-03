@@ -17,7 +17,7 @@
 """
 
 from qrisp.jasp import make_jaspr
-from qrisp.circuit import Clbit
+from qrisp.circuit import Clbit, Qubit
 from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityHandle
 import numpy as np
 
@@ -26,7 +26,7 @@ import numpy as np
 # Numpy array subtypes for typed return values from extract_stim
 # =============================================================================
 
-class MeasurementHandles(np.ndarray):
+class StimMeasurementHandles(np.ndarray):
     """
     A numpy.ndarray subtype representing Stim measurement record indices.
     
@@ -39,7 +39,7 @@ class MeasurementHandles(np.ndarray):
     Example
     -------
     >>> meas_indices, stim_circuit = my_func()
-    >>> isinstance(meas_indices, MeasurementHandles)
+    >>> isinstance(meas_indices, StimMeasurementHandles)
     True
     >>> samples = stim_circuit.compile_sampler().sample(100)
     >>> my_results = samples[:, meas_indices]  # Direct slicing works
@@ -47,7 +47,7 @@ class MeasurementHandles(np.ndarray):
     pass
 
 
-class DetectorHandles(np.ndarray):
+class StimDetectorHandles(np.ndarray):
     """
     A numpy.ndarray subtype representing Stim detector indices.
     
@@ -61,7 +61,7 @@ class DetectorHandles(np.ndarray):
     Example
     -------
     >>> det_indices, stim_circuit = my_func()
-    >>> isinstance(det_indices, DetectorHandles)
+    >>> isinstance(det_indices, StimDetectorHandles)
     True
     >>> samples = stim_circuit.compile_detector_sampler().sample(100)
     >>> my_results = samples[:, det_indices]  # Direct slicing works
@@ -69,7 +69,7 @@ class DetectorHandles(np.ndarray):
     pass
 
 
-class ObservableHandles(np.ndarray):
+class StimObservableHandles(np.ndarray):
     """
     A numpy.ndarray subtype representing Stim observable indices.
     
@@ -83,10 +83,30 @@ class ObservableHandles(np.ndarray):
     Example
     -------
     >>> obs_indices, stim_circuit = my_func()
-    >>> isinstance(obs_indices, ObservableHandles)
+    >>> isinstance(obs_indices, StimObservableHandles)
     True
     >>> det_samples, obs_samples = stim_circuit.compile_detector_sampler().sample(100, separate_observables=True)
     >>> my_results = obs_samples[:, obs_indices]  # Direct slicing works
+    """
+    pass
+
+
+class StimQubitIndices(np.ndarray):
+    """
+    A numpy.ndarray subtype representing Stim qubit indices.
+    
+    This class behaves exactly like a regular numpy array, but carries type 
+    information indicating that the values represent qubit indices in a Stim circuit.
+    
+    These indices correspond to the qubit numbering used internally by Stim,
+    which can be useful for applying noise models or analyzing circuit structure.
+    
+    Example
+    -------
+    >>> qubit_indices, stim_circuit = my_func()
+    >>> isinstance(qubit_indices, StimQubitIndices)
+    True
+    >>> print(f"Qubits used: {qubit_indices}")  # e.g., [0, 1, 2]
     """
     pass
 
@@ -96,8 +116,19 @@ def extract_stim(func):
     
     This decorator enables high-performance Clifford circuit simulation by converting
     Jasp-traceable Qrisp functions into Stim circuits. It handles the translation of
-    quantum measurements into Stim's measurement record indices, allowing you to map
-    simulation results back to the original function's return values.
+    quantum measurements, detectors, observables, and qubit references into Stim's
+    internal indices, allowing you to map simulation results back to the original 
+    function's return values.
+    
+    Return values are wrapped in typed numpy array subtypes for easy identification:
+    
+    - :class:`StimMeasurementHandles` - measurement record indices (for slicing sampler results)
+    - :class:`StimDetectorHandles` - detector indices (for slicing detector sampler results)
+    - :class:`StimObservableHandles` - observable indices (for slicing observable results)
+    - :class:`StimQubitIndices` - qubit indices (for identifying which Stim qubits correspond to a QuantumVariable)
+    
+    These typed arrays behave exactly like regular numpy arrays and can be used directly
+    for slicing sample arrays, while also carrying type information about what they represent.
     
     .. note::
         
@@ -129,24 +160,31 @@ def extract_stim(func):
     ----------
     func : callable
         A Jasp-traceable function that manipulates quantum variables and returns
-        quantum measurement results and/or classical values.
+        quantum measurement results, parity checks (detectors/observables), 
+        QuantumVariables (for qubit indices), and/or classical values.
     
     Returns
     -------
     callable
         A decorated function that returns:
         
-        - **Single return value:** If `func` returns nothing, returns just the 
+        - **No return value:** If `func` returns nothing, returns just the 
           `stim.Circuit` object.
-        - **Multiple return values:** If `func` returns n values, returns a tuple 
+        - **With return values:** If `func` returns n values, returns a tuple 
           of (n+1) elements:
           
           * Elements 0 to n-1: The function's return values, where:
             
             - **Classical values** (integers, floats, etc.) are returned as-is.
-            - **Quantum measurements** (measured QuantumVariables) are returned as 
-              integers or tuples of integers indicating which measurement positions 
-              in the Stim circuit correspond to this return value.
+            - **Quantum measurements** are returned as :class:`StimMeasurementHandles`
+              arrays containing measurement record indices. These can be used directly
+              to slice the results from ``stim_circuit.compile_sampler().sample()``.
+            - **Parity detectors** (from ``parity(..., expectation=True/False)``) are 
+              returned as :class:`StimDetectorHandles` arrays containing detector indices.
+            - **Parity observables** (from ``parity(..., expectation=None)``) are 
+              returned as :class:`StimObservableHandles` arrays containing observable indices.
+            - **QuantumVariables** (unmeasured) are returned as :class:`StimQubitIndices`
+              arrays containing the Stim qubit indices for that variable.
           
           * Element n: The `stim.Circuit` object.
     
@@ -178,8 +216,8 @@ def extract_stim(func):
     
     **Example 2: Multiple return values with measurement indices**
     
-    When returning one or more values, quantum measurements are returned as measurement 
-    indices, while classical values remain unchanged:
+    When returning one or more values, quantum measurements are returned as 
+    :class:`StimMeasurementHandles` arrays, while classical values remain unchanged:
     
     ::
         
@@ -205,12 +243,13 @@ def extract_stim(func):
         classical_val, first_meas_idx, final_meas_indices, stim_circuit = analyze_state(3)
         
         print(f"Classical value: {classical_val}")  # 6 (unchanged)
-        print(f"First qubit measurement index: {first_meas_idx}")  # e.g., 0
-        print(f"Final measurement indices: {final_meas_indices}")  # e.g., (1, 2, 3)
+        print(f"First qubit measurement index: {first_meas_idx}")  # StimMeasurementHandles([0])
+        print(f"Final measurement indices: {final_meas_indices}")  # StimMeasurementHandles([1, 2, 3])
+        print(f"Type: {type(final_meas_indices)}")  # <class 'StimMeasurementHandles'>
     
     **Example 3: Sampling and slicing results**
     
-    Use the measurement indices to extract specific results from Stim's samples:
+    Use the measurement handles (which are numpy arrays) to slice results from Stim's samples:
     
     ::
         
@@ -234,14 +273,18 @@ def extract_stim(func):
         # Extract the circuit and measurement indices
         qf1_indices, qf2_indices, stim_circuit = prepare_entangled_state()
 
-        print(f"qf1 measured at positions: {qf1_indices}")  # [0, 1]
-        print(f"qf2 measured at positions: {qf2_indices}")  # [2, 3, 4]
+        print(f"qf1 measured at positions: {qf1_indices}")  # StimMeasurementHandles([0, 1])
+        print(f"qf2 measured at positions: {qf2_indices}")  # StimMeasurementHandles([2, 3, 4])
 
         # Sample 1000 shots from the Stim circuit
         sampler = stim_circuit.compile_sampler()
         all_samples = sampler.sample(1000)  # Shape: (1000, 5) - 5 total measurements
+        
+        # Slice the samples using the handle arrays directly (they are numpy arrays)
+        qf1_samples = all_samples[:, qf1_indices]  # Shape: (1000, 2)
+        qf2_samples = all_samples[:, qf2_indices]  # Shape: (1000, 3)
 
-        # Slice the samples to get only the results for each return value
+        # Slice the samples using the handle arrays directly (they are numpy arrays)
         qf1_samples = all_samples[:, qf1_indices]  # Shape: (1000, 2)
         qf2_samples = all_samples[:, qf2_indices]  # Shape: (1000, 3)
 
@@ -260,7 +303,8 @@ def extract_stim(func):
     **Example 4: Using parity checks (Detectors)**
 
     You can use the :func:`~qrisp.jasp.parity` function to define parity checks within your circuit.
-    When extracted to Stim, these are converted into ``DETECTOR`` instructions.
+    When extracted to Stim, these are converted into ``DETECTOR`` instructions and
+    returned as :class:`StimDetectorHandles` arrays:
 
     ::
 
@@ -293,13 +337,22 @@ def extract_stim(func):
             return d1, d2
 
         d1, d2, stim_circuit = selective_noise_demo()
+        
+        print(f"Detector 1 index: {d1}")  # StimDetectorHandles([0])
+        print(f"Detector 2 index: {d2}")  # StimDetectorHandles([1])
+        
         sampler = stim_circuit.compile_detector_sampler()
-        print(sampler.sample(1))
-        # Yields [[False, True]] (False = no error/match, True = error/mismatch)
+        detector_samples = sampler.sample(1)
+        
+        # Slice detector results using the handles
+        d1_result = detector_samples[:, d1]
+        d2_result = detector_samples[:, d2]
+        print(f"D1: {d1_result}, D2: {d2_result}")  # [[False]] [[True]] (error in pair 2)
 
     **Example 5: Defining Observables**
 
-    Similarly, :func:`~qrisp.jasp.parity` with ``expectation=None`` defines logical observables in Stim.
+    Similarly, :func:`~qrisp.jasp.parity` with ``expectation=None`` defines logical observables 
+    in Stim, returned as :class:`StimObservableHandles` arrays:
 
     ::
 
@@ -314,7 +367,27 @@ def extract_stim(func):
             return logical_obs
 
         obs_idx, stim_circuit = observable_demo()
+        print(f"Observable index: {obs_idx}")  # StimObservableHandles([0])
         # stim_circuit contains OBSERVABLE_INCLUDE(0) ...
+    
+    **Example 6: Returning qubit indices**
+    
+    When returning an unmeasured QuantumVariable, you get :class:`StimQubitIndices` arrays
+    containing the Stim qubit indices for that variable:
+    
+    ::
+        
+        @extract_stim
+        def qubit_index_demo():
+            qv1 = QuantumVariable(2)
+            qv2 = QuantumVariable(3)
+            h(qv1)
+            cx(qv1[0], qv2[0])
+            return qv1, qv2
+        
+        qv1_indices, qv2_indices, stim_circuit = qubit_index_demo()
+        print(f"qv1 uses Stim qubits: {qv1_indices}")  # StimQubitIndices([0, 1])
+        print(f"qv2 uses Stim qubits: {qv2_indices}")  # StimQubitIndices([2, 3, 4])
 
     """
     
@@ -359,7 +432,10 @@ def extract_stim(func):
             # - observable_mapping: maps ParityHandle to Stim observable indices
             stim_circ, clbit_mapping, detector_mapping, observable_mapping = qc.to_stim(return_measurement_map=True, return_detector_map=True, return_observable_map = True)
             
-            # Helper function to convert a single value (Clbit or ParityHandle) to its index
+            # Create qubit mapping: Qubit -> Stim qubit index
+            qubit_mapping = {qb: idx for idx, qb in enumerate(qc.qubits)}
+            
+            # Helper function to convert a single value (Clbit, ParityHandle, or Qubit) to its index
             def convert_single_value(val):
                 if isinstance(val, Clbit):
                     return clbit_mapping[val], 'measurement'
@@ -370,18 +446,20 @@ def extract_stim(func):
                         return observable_mapping[val], 'observable'
                     else:
                         raise KeyError(f"ParityHandle not found in detector or observable mapping: {val}")
+                elif isinstance(val, Qubit):
+                    return qubit_mapping[val], 'qubit'
                 else:
                     return val, None
             
             # Process all return values except the QuantumCircuit (last element)
-            # We replace Clbit objects and ParityHandles with their corresponding Stim indices,
+            # We replace Clbit objects, ParityHandles, and Qubits with their corresponding Stim indices,
             # wrapped in typed numpy array subtypes for identification.
             new_result = []
             for i in range(len(staticalization_result)-1):
                 
                 val = staticalization_result[i]
                 
-                # Case 1: Value is a numpy array - could contain Clbits or ParityHandles
+                # Case 1: Value is a numpy array - could contain Clbits, ParityHandles, or Qubits
                 # Convert each element and wrap in appropriate typed array.
                 if isinstance(val, np.ndarray) and val.dtype == object:
                     # Flatten, convert, then reshape
@@ -394,11 +472,13 @@ def extract_stim(func):
                             result_array = np.array(indices, dtype=np.intp).reshape(val.shape)
                             # Wrap in appropriate type
                             if first_type == 'measurement':
-                                new_val = result_array.view(MeasurementHandles)
+                                new_val = result_array.view(StimMeasurementHandles)
                             elif first_type == 'detector':
-                                new_val = result_array.view(DetectorHandles)
+                                new_val = result_array.view(StimDetectorHandles)
                             elif first_type == 'observable':
-                                new_val = result_array.view(ObservableHandles)
+                                new_val = result_array.view(StimObservableHandles)
+                            elif first_type == 'qubit':
+                                new_val = result_array.view(StimQubitIndices)
                         else:
                             new_val = val
                     else:
@@ -408,28 +488,39 @@ def extract_stim(func):
                 # Replace each Clbit with its corresponding Stim measurement index.
                 # This happens when a QuantumFloat/QuantumVariable is measured and returns
                 # a list of classical bits representing the measurement results.
-                # Wrap in MeasurementHandles for type identification.
+                # Wrap in StimMeasurementHandles for type identification.
                 elif isinstance(val, list) and len(val) and isinstance(val[0], Clbit):
                     indices = [clbit_mapping[clbit] for clbit in val]
-                    new_val = np.array(indices, dtype=np.intp).view(MeasurementHandles)
+                    new_val = np.array(indices, dtype=np.intp).view(StimMeasurementHandles)
                 
-                # Case 3: Value is a single Clbit object
-                # Replace it with its Stim measurement index as a 0-d MeasurementHandles array.
+                # Case 3: Value is a list of Qubit objects
+                # Replace each Qubit with its corresponding Stim qubit index.
+                elif isinstance(val, list) and len(val) and isinstance(val[0], Qubit):
+                    indices = [qubit_mapping[qb] for qb in val]
+                    new_val = np.array(indices, dtype=np.intp).view(StimQubitIndices)
+                
+                # Case 4: Value is a single Clbit object
+                # Replace it with its Stim measurement index as a 0-d StimMeasurementHandles array.
                 # This happens when a single qubit is measured.
                 elif isinstance(val, Clbit):
-                    new_val = np.array(clbit_mapping[val], dtype=np.intp).view(MeasurementHandles)
+                    new_val = np.array(clbit_mapping[val], dtype=np.intp).view(StimMeasurementHandles)
                 
-                # Case 4: Value is a ParityHandle (from parity operation)
+                # Case 5: Value is a single Qubit object
+                # Replace it with its Stim qubit index as a 0-d StimQubitIndices array.
+                elif isinstance(val, Qubit):
+                    new_val = np.array(qubit_mapping[val], dtype=np.intp).view(StimQubitIndices)
+                
+                # Case 6: Value is a ParityHandle (from parity operation)
                 # Look up in detector or observable mapping and wrap accordingly.
                 elif isinstance(val, ParityHandle):
                     if val in detector_mapping:
-                        new_val = np.array(detector_mapping[val], dtype=np.intp).view(DetectorHandles)
+                        new_val = np.array(detector_mapping[val], dtype=np.intp).view(StimDetectorHandles)
                     elif val in observable_mapping:
-                        new_val = np.array(observable_mapping[val], dtype=np.intp).view(ObservableHandles)
+                        new_val = np.array(observable_mapping[val], dtype=np.intp).view(StimObservableHandles)
                     else:
                         raise KeyError(f"ParityHandle not found in detector or observable mapping: {val}")
                 
-                # Case 5: Value is something else (e.g., integer, float, ProcessedMeasurement)
+                # Case 7: Value is something else (e.g., integer, float, ProcessedMeasurement)
                 # Pass through unchanged. Classical values computed during the function
                 # (not involving measurements) are returned as-is.
                 else:
