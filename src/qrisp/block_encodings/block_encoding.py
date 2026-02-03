@@ -414,10 +414,10 @@ class BlockEncoding:
 
         # Number of qubits for index variable
         m = len(coeffs)
-        n = np.int64(np.ceil(np.log2(m)))
+        n = (m - 1).bit_length() 
         # Ensure coeffs has size 2 ** n by zero padding
-        coeffs = np.concatenate((coeffs, np.zeros((1 << n) - m)))
-
+        coeffs = np.pad(coeffs, (0, (1 << n) - m))
+        
         alpha = np.sum(np.abs(coeffs))
 
         signs = np.sign(coeffs)

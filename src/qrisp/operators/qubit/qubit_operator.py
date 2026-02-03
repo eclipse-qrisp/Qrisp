@@ -2209,9 +2209,9 @@ class QubitOperator(Hamiltonian):
 
         # Number of qubits for index variable
         m = len(coeffs)
-        num_qubits = np.int64(np.ceil(np.log2(m)))
-        # Ensure coeffs has size 2 ** num_qubits by zero padding
-        coeffs = np.concatenate((coeffs, np.zeros((1 << num_qubits) - m)))
+        n = (m - 1).bit_length() 
+        # Ensure coeffs has size 2 ** n by zero padding
+        coeffs = np.pad(coeffs, (0, (1 << n) - m))
 
         if m==1:
             # Special case: only one unitary, no need for control qubits
