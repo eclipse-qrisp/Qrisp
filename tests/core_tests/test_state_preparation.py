@@ -188,7 +188,7 @@ class TestStatePreparationQswitchJasp:
 
         with pytest.raises(
             ValueError,
-            match="Tried to initialize dynamic jax array using state preparation method qiskit",
+            match="Tried to initialize a quantum variable with a JAX Tracer array using the Qiskit ",
         ):
             state_vector = _gen_real_vector(2)
             main(state_vector)
