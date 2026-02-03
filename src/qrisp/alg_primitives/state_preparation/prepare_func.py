@@ -30,10 +30,10 @@ from qrisp.jasp.tracing_logic import check_for_tracing_mode
 
 def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
     r"""
-    Performs quantum state preparation on a quantum variable.
+    Prepare a quantum state on ``qv`` from a target amplitude vector.
 
-    Given a vector :math:`b=(b_0,\dotsc,b_{N-1})` with :math:`b \neq 0`, this
-    function prepares a state proportional to
+    Given a vector :math:`b=(b_0,\dotsc,b_{N-1})` (corresponding to ``target_array``),
+    this routine prepares a state proportional to
 
     .. math::
 
@@ -56,25 +56,23 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
 
     Parameters
     ----------
-
     qv : QuantumVariable
-        The quantum variable on which to apply state preparation.
+        Quantum variable to prepare.
 
     target_array : numpy.ndarray or jax.numpy.ndarray
         Target amplitude vector :math:`b`. Must have length :math:`2^n` where
         :math:`n` is the size of ``qv`` (validated for concrete arrays).
 
     reversed : bool, optional
-        If ``True``, applies a bit-reversal permutation to the computational
-        basis ordering. Instead of the little-endian convention, the basis
-        states are ordered as big-endian. Default is ``False``.
+        If ``True``, applies a bit-reversal permutation (big-endian ordering).
+        Default is ``False``.
 
     method : {'qiskit', 'qswitch', 'auto'}, optional
-        Compilation method for state preparation.
+        Compilation method for state preparation. Possible values are:
 
         - ``'qiskit'``: requires concrete arrays (e.g. NumPy).
-        - ``'qswitch'``: supports traced arrays (e.g. JAX tracers). Note that
-          input validation/normalization may be deferred.
+        - ``'qswitch'``: supports traced arrays (e.g. JAX tracers in Jasp mode).
+          Note that input validation/normalization is skipped in this mode.
         - ``'auto'``: automatically selects between the above.
 
         Default is ``'auto'``.
@@ -104,10 +102,10 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
 
         sv_function = qf.qs.statevector("function")
 
-        print(f"b[1]: {b[1]} -> {sv_function({qf: 1})}")
-        # b[1]: 0.2672612419124244 -> (0.26726123690605164-0j)
-        print(f"b[2]: {b[2]} -> {sv_function({qf: 2})}")
-        # b[2]: 0.5345224838248488 -> (0.5345224738121033-0j)
+        print(f"b[1]: {b[1]:.6f} -> {sv_function({qf: 1}):.6f}")
+        # b[1]: 0.267261 -> 0.267261-0.000000j
+        print(f"b[2]: {b[2]:.6f} -> {sv_function({qf: 2}):.6f}")
+        # b[2]: 0.534522 -> 0.534522-0.000000j
 
     where index 1 in little-endian corresponds to the basis state :math:`\ket{q_0=1, q_1=0}`
     and index 2 to :math:`\ket{q_0=0, q_1=1}`.  With ``reversed=True``, we can

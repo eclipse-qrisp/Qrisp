@@ -1659,34 +1659,32 @@ class QuantumCircuit:
 
     def statevector_array(self):
         r"""
-        Performs a simulation of the statevector of self and returns a numpy array of
-        complex numbers.
+        Simulate the circuit statevector and return it as a NumPy array of complex
+        amplitudes.
 
         .. note::
 
-            When using this method, the returned array uses big-endian index ordering.
-            This means that the array index ``i`` corresponds to qubit values via
+            The returned array uses **big-endian index ordering**. The array index
+            ``i`` maps to qubit values as
 
             .. math::
 
                 i = \sum_{k=0}^{n-1} q_k \, 2^{\,n-1-k},
 
-            so that the most significant qubit is :math:`q_0`.
-            For example, for a 2-qubit system this gives
+            so :math:`q_0` is the most significant qubit. For two qubits this yields:
 
             - ``i = 0``  → :math:`|q_0=0, q_1=0\rangle`
             - ``i = 1``  → :math:`|q_0=0, q_1=1\rangle`
             - ``i = 2``  → :math:`|q_0=1, q_1=0\rangle`
             - ``i = 3``  → :math:`|q_0=1, q_1=1\rangle`
 
-            This differs from Qrisp's internal little-endian convention.
-            The difference is only in how array indices map to basis states.
-
+            This differs from Qrisp’s internal little-endian convention (only the
+            index-to-basis mapping changes).
 
         Returns
         -------
         numpy.ndarray
-            The statevector of this circuit.
+            The statevector of this circuit in big-endian order.
 
         Examples
         --------
@@ -1709,24 +1707,19 @@ class QuantumCircuit:
         $\sum_{i=0}^3 \tilde b_i\ket{i}$ for $\tilde b=(0,1,2,3)/\sqrt{14}$.
 
         >>> import numpy as np
-
+        >>> from qrisp import QuantumFloat
         >>> b = np.array([0, 1, 2, 3], dtype=float)
         >>> b /= np.linalg.norm(b)
         >>> qf = QuantumFloat(2)
         >>> qf.init_state(b)
-
-        If we use the ``statevector_array`` method to retrieve the state,
-        the array indices must be interpreted using the big-endian rule above:
-
         >>> sv_array = qf.qs.statevector_array()
-        >>> print(f"b[1]: {b[1]} -> {sv_array[2]}")
-        b[1]: 0.2672612419124244 -> (0.26726123690605164-0j)
-        >>> print(f"b[2]: {b[2]} -> {sv_array[1]}")
-        b[2]: 0.5345224838248488 -> (0.5345224738121033-0j)
+        >>> print(f"b[1]: {b[1]:.6f} -> {sv_array[2]:.6f}")
+        b[1]: 0.267261 -> 0.267261-0.000000j
+        >>> print(f"b[2]: {b[2]:.6f} -> {sv_array[1]:.6f}")
+        b[2]: 0.534522 -> 0.534522-0.000000j
 
-        where ``sv_array[2]`` corresponds to the basis state :math:`\ket{q_0=1, q_1=0}`
-        and ``sv_array[1]`` to :math:`\ket{q_0=0, q_1=1}`.
-
+        Here ``sv_array[2]`` corresponds to :math:`\ket{q_0=1, q_1=0}` and
+        ``sv_array[1]`` to :math:`\ket{q_0=0, q_1=1}`.
         """
         from qrisp.simulator import statevector_sim
 

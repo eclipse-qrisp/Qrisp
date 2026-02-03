@@ -733,27 +733,25 @@ class QuantumVariable:
         r"""
         Initialize an arbitrary quantum state on this quantum variable.
 
-        This method can be used in two ways:
+        This method supports two input formats:
 
         **1. Dictionary input**
 
-            A dictionary of the form ``{value: amplitude}`` describing the
-            (possibly non-normalized) wavefunction in the logical basis of the
-            quantum variable. Any value not explicitly provided is assigned
-            amplitude zero.
+            A dictionary ``{value: amplitude}`` describing the (possibly
+            non-normalized) wavefunction in the logical basis of the quantum
+            variable. Any value not listed is assigned amplitude zero.
 
         **2. Explicit statevector input**
 
             A flat vector of complex amplitudes of length :math:`2^{n}`, where
-            :math:`n` is the size (in qubits) of the quantum variable.
-            The vector is automatically normalized if not in Jasp mode.
-            The little-endian convention is assumed.
-            For details, see :ref:`prepare <prepare>`.
+            :math:`n` is the number of qubits. The vector is automatically
+            normalized outside Jasp mode. The little-endian convention is
+            assumed for indexing basis states. See :ref:`prepare <prepare>` for details.
 
         .. note::
 
-            When executing in Jasp mode, Python-based shape and normalization
-            checks are disabled to avoid introducing tracing side effects.
+            In Jasp mode, Python-based shape and normalization checks are skipped
+            to avoid tracing side effects.
 
         Parameters
         ----------
@@ -762,20 +760,20 @@ class QuantumVariable:
             :math:`2^{n}` complex statevector.
 
         method : {"auto", "qiskit", "qswitch"}, optional
-            Choice of state-preparation backend. Possible values are:
+            Select the state-preparation backend.
+            The possible options are:
 
             - ``"auto"`` (default):
-                Use the Qiskit-based initializer when not
-                in Jasp mode, and fall back to the internal ``qswitch`` initializer
-                during Jasp mode.
+                Use the Qiskit-based initializer outside Jasp mode and fall back
+                to the internal ``qswitch`` initializer in Jasp mode.
 
             - ``"qiskit"``:
-                Force the Qiskit state-preparation circuit. This
-                cannot be used in Jasp mode.
+                Force the Qiskit state-preparation circuit. Not available in
+                Jasp mode.
 
             - ``"qswitch"``:
-                Use the state-preparation implementation based on
-                :ref:`q_switch <q_switch>`, which is compatible with Jasp mode.
+                Use the :ref:`q_switch <q_switch>`-based implementation, which
+                is compatible with Jasp mode.
 
             Defaults to ``"auto"``.
 
@@ -817,10 +815,10 @@ class QuantumVariable:
 
         >>> sv_function = qf.qs.statevector("function")
 
-        >>> print(f"b[1]: {b[1]} -> {sv_function({qf: 1})}")
-        b[1]: 0.2672612419124244 -> (0.26726123690605164-0j)
-        >>> print(f"b[2]: {b[2]} -> {sv_function({qf: 2})}")
-        b[2]: 0.5345224838248488 -> (0.5345224738121033-0j)
+        >>> print(f"b[1]: {b[1]:.6f} -> {sv_function({qf: 1}):.6f}")
+        b[1]: 0.267261 -> 0.267261-0.000000j
+        >>> print(f"b[2]: {b[2]:.6f} -> {sv_function({qf: 2}):.6f}")
+        b[2]: 0.534522 -> 0.534522-0.000000j
 
         where index 1 in little-endian corresponds to the basis state :math:`\ket{q_0=1, q_1=0}`
         and index 2 to :math:`\ket{q_0=0, q_1=1}`.
