@@ -1,10 +1,7 @@
 import pandas as pd
 import numpy as np
-from qrisp import QuantumVariable
-from qrisp.algorithms.cold.problems.QUBO_COLD import create_COLD_instance
-from qrisp.algorithms.cold.problems.QUBO_LCD import create_LCD_instance
-from qrisp.algorithms.cold.dcqo_problem import DCQOProblem
-from qrisp.algorithms.cold.cold_benchmark import most_likely_res
+from qrisp.algorithms.cold.problems.QUBO import solve_QUBO
+from qrisp.algorithms.cold.cold_benchmark import most_likely_cost_and_prob
 import time
 
 if __name__ == '__main__':
@@ -54,20 +51,19 @@ if __name__ == '__main__':
         ## Solve with LCD ##
         ####################
 
-        qarg = QuantumVariable(size=N)
-        lam, alpha, H_init, H_prob, A_lam, J, h = create_LCD_instance(Q, "order1", uniform)
-        LCD_prob = DCQOProblem(lam, alpha, H_init, H_prob, A_lam, J, h)
+        problem_args = {"method": "LCD", "uniform": uniform, "agp_type": "order1"}
+        run_args = {"N_steps": N_step, "T": T}
+        
         t0 = time.time()
-        LCD_result = LCD_prob.run(qarg, N_steps=N_step, T=T, method='LCD')
+        LCD_result = solve_QUBO(Q, problem_args, run_args)
         runtime = time.time() - t0
 
-        # Get most likely result and its probability
-        ml = most_likely_res(Q, LCD_result, 1)
-        ml_prob = [LCD_result[k] for k in ml.keys()]
+        # Get most likely cost and its probability
+        ml_cost, ml_prob = most_likely_cost_and_prob(LCD_result, 1)
 
         # Save to list
         data.append(["LCD", N, T, N_step, uniform, 0, None, 
-                    runtime, ml, ml_prob, LCD_result])
+                    runtime, ml_cost, ml_prob, LCD_result])
 
 
         #####################
@@ -75,23 +71,20 @@ if __name__ == '__main__':
         #####################
 
         CRAB = False
-        qarg = QuantumVariable(size=N)
-        lam, g, alpha, H_init, H_prob, A_lam, J, h, H_control = create_COLD_instance(Q, uniform)
-        COLD_prob = DCQOProblem(lam, alpha, H_init, H_prob, A_lam, J, h, g, H_control)
+
+        problem_args = {"method": "COLD", "uniform": uniform}
+        run_args = {"N_steps": N_step, "T": T, "N_opt": N_opt, "CRAB": CRAB, "objective": objective, "bounds": bounds}
+
         t0 = time.time()
-        COLD_result = COLD_prob.run(
-            qarg, N_step, T, 'COLD', N_opt, CRAB, 
-            optimizer="COBYQA", objective=objective, bounds=bounds
-            )
+        COLD_result = solve_QUBO(Q, problem_args, run_args)
         runtime = time.time() - t0
 
-        # Get most likely result and its probability
-        ml = most_likely_res(Q, COLD_result, 1)
-        ml_prob = [COLD_result[k] for k in ml.keys()]
+        # Get most likely cost and its probability
+        ml_cost, ml_prob = most_likely_cost_and_prob(LCD_result, 1)
 
         # Save to list
-        data.append(["COLD", N, T, N_step, uniform, N_opt, False, 
-                    runtime, ml, ml_prob, COLD_result])
+        data.append(["COLD", N, T, N_step, uniform, N_opt, CRAB, 
+                    runtime, ml_cost, ml_prob, COLD_result])
         
 
         ##########################
@@ -99,23 +92,20 @@ if __name__ == '__main__':
         ##########################
 
         CRAB = True
-        qarg = QuantumVariable(size=N)
-        lam, g, alpha, H_init, H_prob, A_lam, J, h, H_control = create_COLD_instance(Q, uniform)
-        COLD_prob = DCQOProblem(lam, alpha, H_init, H_prob, A_lam, J, h, g, H_control)
+
+        problem_args = {"method": "COLD", "uniform": uniform}
+        run_args = {"N_steps": N_step, "T": T, "N_opt": N_opt, "CRAB": CRAB, "objective": objective, "bounds": bounds}
+        
         t0 = time.time()
-        COLD_result = COLD_prob.run(
-            qarg, N_step, T, 'COLD', N_opt, CRAB, 
-            optimizer="COBYQA", objective=objective, bounds=bounds
-            )
+        COLD_result = solve_QUBO(Q, problem_args, run_args)
         runtime = time.time() - t0
 
-        # Get most likely result and its probability
-        ml = most_likely_res(Q, COLD_result, 1)
-        ml_prob = [COLD_result[k] for k in ml.keys()]
+        # Get most likely cost and its probability
+        ml_cost, ml_prob = most_likely_cost_and_prob(LCD_result, 1)
 
         # Save to list
-        data.append(["COLD-CRAB", N, T, N_step, uniform, N_opt, True, 
-                    runtime, ml, ml_prob, COLD_result])
+        data.append(["COLD-CRAB", N, T, N_step, uniform, N_opt, CRAB, 
+                    runtime, ml_cost, ml_prob, COLD_result])
 
         df = pd.DataFrame(data, columns=header)
-        df.to_csv("Q_eval.csv") 
+        df.to_csv("Q_proj.csv") 
