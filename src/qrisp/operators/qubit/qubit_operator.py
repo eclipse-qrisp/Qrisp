@@ -2081,50 +2081,36 @@ class QubitOperator(Hamiltonian):
 
     def pauli_block_encoding(self):
         r"""
-        Returns a :ref:`BlockEncoding` of the operator.
-
-        A block encoding (`Low & Chuang <https://quantum-journal.org/papers/q-2019-07-12-163/pdf/>`_, `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/pdf/>`_) 
-        of a Hamiltonian $H$ (acting on a Hilbert space $\mathcal H_s$) is a pair of unitaries $(U,G)$, 
-        where $U$ is the block encoding unitary acting on $\mathcal H_a\otimes H_s$ (for some auxiliary Hilbert space $\mathcal H_a$), 
-        and $G$ prepares the block encoding state $\ket{G}_a=G\ket{0}_a$ in the auxiliary variable such that $(\bra{G}_a\otimes\mathbb I_s)U(\ket{G_a}\otimes\mathbb I_s)=H$.
-        Here $\mathbb I_s$ denotes the identity acting on $\mathcal H_s$.
-
-        The operator $H$, which is non-unitary in general, is applied as follows:
-
-        .. math::
-            U\ket{G}_a\ket{\psi}_s = \ket{G}_a H\ket{\psi}_s + \sqrt{1-\|H\ket{\psi}\|^2}\ket{G_{\psi}^{\perp}}_{as},\quad 
-            U= 
-            \begin{pmatrix}
-                H & *\\
-                * & * 
-            \end{pmatrix}
-
-        where $\ket{G_{\psi}^{\perp}}_{as}$ is a state in $\mathcal H_a\otimes H_s$ orthogonal to $\ket{G}$, i.e., $(\bra{G}_a\otimes\mathbb I_s)\ket{G_{\psi}^{\perp}}_{as}=0$.
-        Therefore, a block-encoding embeds a not necessarily unitary operator $H$ as a block into a larger unitary operator $U$. In standard form i.e., when $\ket{G}_a=G\ket{0}_a$
-        is prepared from the $\ket{0}$ state, $H$ is embedded as the upper left block of the operator $U$.
-
-        For a Pauli block encoding, consider an $n$-qubit Hamiltonian expressed as linear combination of Pauli operators
-
-        .. math::
-    
-            H = \sum_{i=0}^{T-1}\alpha_iP_i
-
-        where $\alpha_i$ are real coefficients, $P_i$ are Pauli strings acting on $n$ qubits, and $T$ is the number of terms.
-        We assume that the coefficients $\alpha_i$ are nonnegative, and each Pauli $P_i$ carries a $\pm1$ sign. 
-        We also require the coefficients of $H$ to be normalized: $\sum_{i=0}^{T-1}\alpha_i=1$.
-
-        The block encoding unitary is
+        Returns a :ref:`BlockEncoding` of the operator using the LCU (Linear Combination of Unitaries) protocol.
+            
+        For a Pauli block encoding, consider an $n$-qubit Hamiltonian expressed as a linear combination of Pauli operators:
 
         .. math::
 
-            U = \sum_{i=0}^{T-1}\ket{i}\bra{i}\otimes P_i
+            H = \sum_{i=0}^{T-1} \alpha_i P_i
 
-        i.e., application of each Pauli string $P_i$ controlled on the state of the auxiliary variable being $\ket{i}_a$.
-        The belonging block encoding state is
+        where $\alpha_i \ge 0$ are real, normalized coefficients such that $\sum_i \alpha_i = 1$, 
+        and $P_i$ are Pauli strings acting on $n$ qubits (including their respective signs).
 
+        The block encoding unitary is constructed via the LCU protocol: 
+        
+        .. math::
+        
+            U = \text{PREP} \cdot \text{SEL} \cdot \text{PREP}^{\dagger}
+            
+        where:
+
+        * **SEL** (Select, in Qrisp: :ref:`q_switch <qswitch>`) applies each Pauli string $P_i$ conditioned on the auxiliary variable state $\ket{i}_a$:
+        
         .. math::
 
-            \ket{G} = \sum_{i=0}^{T-1}\sqrt{\alpha_i}\ket{i}.
+            \text{SEL} = \sum_{i=0}^{T-1} \ket{i}\bra{i} \otimes P_i
+
+        * **PREP** (Prepare) prepares the state representing the coefficients:
+       
+        .. math::
+
+            \text{PREP} \ket{0}_a = \sum_{i=0}^{T-1} \sqrt{\alpha_i} \ket{i}_a
        
         Returns
         -------
@@ -2163,7 +2149,7 @@ class QubitOperator(Hamiltonian):
 
             \sum_{k=0}^{2^m-1}\ket{i}_{a}\ket{i}_b
 
-        of QuantumVariables $a, b$, and apply the matrix $A$ to the variable $b$.
+        of QuantumFloats $a, b$, and apply the matrix $A$ to the variable $b$.
 
         ::
 
