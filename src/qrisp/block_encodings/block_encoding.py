@@ -629,6 +629,37 @@ class BlockEncoding:
 
         return rus_function
     
+    def dagger(self) -> BlockEncoding:
+        r"""
+        Returns the Hermitian adjoint (dagger) of the BlockEncoding.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding representing the Hermitian adjoint of self.
+
+        Examples
+        --------
+
+        Define a block-encoding and compute its dagger.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import X, Y, Z
+
+            H = X(0)*Y(1) + 0.5*Z(0)*X(1)
+            BE = H.pauli_block_encoding()
+            BE_dg = BE.dagger()
+
+        """
+
+        def new_unitary(*args):
+            with invert():
+                self.unitary(*args)
+
+        return BlockEncoding(self.alpha, self.anc_templates, new_unitary, is_hermitian=self.is_hermitian)
+    
     def qubitization(self) -> BlockEncoding:
         r"""
         Returns the qubitization of the BlockEncoding.
@@ -684,7 +715,7 @@ class BlockEncoding:
             new_anc_templates = [QuantumBool().template()] + self.anc_templates
             return BlockEncoding(self.alpha, new_anc_templates, new_unitary, is_hermitian=True)
         
-    def chebyshev(self: "BlockEncoding", k: int) -> BlockEncoding:
+    def chebyshev(self, k: int) -> BlockEncoding:
 
         m = len(self.anc_templates)
 
@@ -707,9 +738,7 @@ class BlockEncoding:
                 self.unitary(*args)
 
         return BlockEncoding(self.alpha, self.anc_templates, new_unitary)
-            
-        
-    
+
     #
     # Arithmetic
     #
@@ -1208,42 +1237,10 @@ class BlockEncoding:
             gphase(np.pi, args[0][0])
         return BlockEncoding(self.alpha, self.anc_templates, new_unitary, is_hermitian=self.is_hermitian)
     
-    def dagger(self) -> BlockEncoding:
-        r"""
-        Returns the Hermitian adjoint (dagger) of the BlockEncoding.
-
-        Returns
-        -------
-        BlockEncoding
-            A new BlockEncoding representing the Hermitian adjoint of self.
-
-        Examples
-        --------
-
-        Define a block-encoding and compute its dagger.
-
-        ::
-
-            from qrisp import *
-            from qrisp.operators import X, Y, Z
-
-            H = X(0)*Y(1) + 0.5*Z(0)*X(1)
-            BE = H.pauli_block_encoding()
-            BE_dg = BE.dagger()
-
-        """
-
-        def new_unitary(*args):
-            with invert():
-                self.unitary(*args)
-
-        return BlockEncoding(self.alpha, self.anc_templates, new_unitary, is_hermitian=self.is_hermitian)
-    
     #
     # Transformations
     #
 
-            
     def inv(self, eps: float, kappa: float) -> BlockEncoding:
         r"""
         Returns a BlockEncoding approximating the matrix inversion of the operator.

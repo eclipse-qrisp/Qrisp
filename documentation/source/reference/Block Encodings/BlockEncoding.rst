@@ -39,6 +39,7 @@ Arithmetic
    BlockEncoding.__mul__
    BlockEncoding.__neg__
    BlockEncoding.__sub__
+   BlockEncoding.kron
 
 Algorithms & Applications
 -------------------------

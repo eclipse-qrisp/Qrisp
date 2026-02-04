@@ -1,7 +1,7 @@
 .. _block_encodings_nisq:
 
 How to run on NISQ
-------------------
+==================
 
 Since current quantum hardware lacks support for repeat-until-success protocols, this example demonstrates how to implement block encodings on NISQ devices using post-selection.
 
