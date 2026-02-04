@@ -66,6 +66,10 @@ def QET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynom
     BlockEncoding
         A new BlockEncoding instance representing the transformed operator $p(H)$.
 
+    Notes
+    -----
+    - Improved efficiency compared to GQET for a real, fixed parity polynomial $p(x)$.
+
     Examples
     --------
 

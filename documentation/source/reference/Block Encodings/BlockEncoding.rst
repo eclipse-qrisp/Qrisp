@@ -7,7 +7,7 @@ BlockEncoding
 .. autoclass:: BlockEncoding
 
 Construction
-============
+------------
 
 .. autosummary::
    :toctree: generated/
@@ -17,7 +17,7 @@ Construction
    BlockEncoding.from_operator
 
 Utilities
-=========
+---------
 
 .. autosummary::
    :toctree: generated/
@@ -25,9 +25,11 @@ Utilities
    BlockEncoding.apply
    BlockEncoding.apply_rus
    BlockEncoding.create_ancillas
+   BlockEncoding.dagger
+   BlockEncoding.qubitization
 
 Arithmetic
-==========
+----------
 
 .. autosummary::
    :toctree: generated/
@@ -38,14 +40,12 @@ Arithmetic
    BlockEncoding.__neg__
    BlockEncoding.__sub__
 
-Transformations
-===============
+Algorithms & Applications
+-------------------------
 
 .. autosummary::
    :toctree: generated/
    
-   BlockEncoding.dagger
    BlockEncoding.inv
    BlockEncoding.poly
-   BlockEncoding.qubitization
    BlockEncoding.sim
