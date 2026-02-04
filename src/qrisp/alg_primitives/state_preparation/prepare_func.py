@@ -39,7 +39,7 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
 
         \sum_{i=0}^{N-1} b_i \ket{i}.
 
-    If ``target_array`` is a concrete array (non-Jasp mode), it is normalized internally, i.e.
+    The ``target_array`` is normalized internally, i.e.
 
     .. math::
 
