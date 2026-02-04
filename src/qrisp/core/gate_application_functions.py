@@ -673,7 +673,7 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
 
     """
 
-    from qrisp.misc import gate_wrap
+    from qrisp.misc import bin_rep, gate_wrap
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
     def mcz_inner(qubits, method="auto", ctrl_state=-1):
@@ -696,15 +696,41 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
             x(qubits[-1])
 
         return qubits
+    
+    @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
+    def jasp_mcz_inner(qubits, method="balauca", ctrl_state=-1):
+        from jax.lax import cond
+        import jax.numpy as jnp
+        from qrisp.environments import control
 
-    n = len(qubits)
+        n = jlen(qubits)
+        ctrl_state = jnp.int64(ctrl_state)
+        ctrl_state = cond(ctrl_state == -1, lambda x: x + (1 << n), lambda x: x, ctrl_state)
 
-    from qrisp import bin_rep
+        with control((ctrl_state >> (n - 1)) & 1 == 0):
+            x(qubits[-1])
 
-    if not isinstance(ctrl_state, str):
-        if ctrl_state == -1:
-            ctrl_state += 2**n
-        ctrl_state = bin_rep(ctrl_state, n)
+        h(qubits[-1])
+        mcx(qubits[:-1], qubits[-1], method=method, ctrl_state=ctrl_state & ((1 << (n - 1)) - 1))
+        h(qubits[-1])
+
+        with control((ctrl_state >> (n - 1)) & 1 == 0):
+            x(qubits[-1])
+
+        return qubits
+
+    n = jlen(qubits)
+    if not check_for_tracing_mode():
+        if not isinstance(ctrl_state, str):
+            if ctrl_state == -1:
+                ctrl_state += 2**n
+            ctrl_state = bin_rep(ctrl_state, n)[::-1]
+    else:
+        if method == "auto":
+            method = "balauca"
+        if isinstance(ctrl_state, str):
+            ctrl_state = int(ctrl_state, 2)
+        return jasp_mcz_inner(qubits, method=method, ctrl_state=ctrl_state)
 
     if method in ["gray", "auto"]:
         if ctrl_state[-1] == "0":
