@@ -127,3 +127,49 @@ def test_error_invalid_slice_step():
         NotImplementedError, match="Slicing with DynamicQubitArray only supports step=1"
     ):
         main()
+
+def test_injection():
+    @jaspify
+    def test():
+        a_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        x(a_array)
+        b_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        h(b_array)
+        r_array = QuantumArray(QuantumBool(), shape=(4,4))
+
+        (r_array << (lambda a,b: a==b))(a_array, b_array)
+        return measure(r_array), measure(a_array), measure(b_array)
+
+    r, a, b = test()
+    assert((r == (a == b)).all())
+
+def test_element_wise_addition_injection_qm():
+    @jaspify
+    def test():
+        I = np.eye(4, dtype=int)
+        a_array = QuantumArray(QuantumModulus(7), shape=(4,4))
+        a_array[:] = I
+        b_array = QuantumArray(QuantumModulus(7), shape=(4,4))
+        b_array[:] = I
+        r_array = QuantumArray(QuantumModulus(7), shape=(4,4))
+
+        (r_array << (lambda a,b: a+b))(a_array, b_array)
+        return measure(r_array), measure(a_array), measure(b_array)
+
+    r, a, b = test()
+    assert((r == (a+b)%7).all())
+
+def test_element_wise_addition_injection():
+    @jaspify
+    def test():
+        a_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        x(a_array)
+        b_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        h(b_array)
+        r_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+
+        (r_array << (lambda a,b: a+b))(a_array, b_array)
+        return measure(r_array), measure(a_array), measure(b_array)
+
+    r, a, b = test()
+    assert((r == (a+b)%16).all())
