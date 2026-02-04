@@ -30,7 +30,7 @@ from typing import Any, TYPE_CHECKING, Callable, Dict, Tuple
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
-def lanczos_even(BE: "BlockEncoding" | QubitOperator, k: int, operand_prep: Callable[..., Any]) -> Tuple["QuantumVariable", ...]: 
+def lanczos_even(BE: BlockEncoding | QubitOperator, k: int, operand_prep: Callable[..., Any]) -> Tuple[QuantumVariable, ...]: 
     r"""
     This function implements the Krylov space construction via block-encodings 
     of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(a) of `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018>`__.
@@ -69,7 +69,7 @@ def lanczos_even(BE: "BlockEncoding" | QubitOperator, k: int, operand_prep: Call
     
     return tuple(case_indicator)
 
-def lanczos_odd(BE: "BlockEncoding" | QubitOperator, k: int, operand_prep: Callable[..., Any]) -> "QuantumFloat":
+def lanczos_odd(BE: BlockEncoding | QubitOperator, k: int, operand_prep: Callable[..., Any]) -> QuantumFloat:
     r"""
     This function implements the Krylov space construction via block-encodings 
     of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(b) of `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/>`__.
@@ -403,7 +403,7 @@ def generalized_eigh(A: "ArrayLike", B: "ArrayLike") -> Tuple["ArrayLike", "Arra
     return eigvals, eigvecs
 
 
-def lanczos_alg(H: "BlockEncoding" | QubitOperator, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dict[str, object] = {}, cutoff: float = 1e-2, show_info: bool = False):
+def lanczos_alg(H: BlockEncoding | QubitOperator, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dict[str, object] = {}, cutoff: float = 1e-2, show_info: bool = False):
     r"""
     Estimate the ground state energy of a Hamiltonian using the `Exact and efficient Lanczos method on a quantum computer <https://quantum-journal.org/papers/q-2023-05-23-1018/>`__.
 
