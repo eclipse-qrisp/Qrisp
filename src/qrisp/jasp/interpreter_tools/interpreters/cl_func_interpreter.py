@@ -244,8 +244,25 @@ def process_fuse(eqn: JaxprEqn, context_dic: ContextDict) -> None:
     if isinstance(eqn.invars[0].aval, AbstractQubit) and isinstance(
         eqn.invars[1].aval, AbstractQubit
     ):
+        
+        # To find the maximum size of the newly created Jlist,
+        # we need to search through the context dic for an
+        # AbstractQuantumCircuit.
+        # This could in principle lead to very bad scaling
+        # behavior but in reality, this is not the case.
+        # Why? For each stack frame, the arguments of the 
+        # calling Jaxpr are inserted into the context_dic
+        # first, i.e. also at least one AbstractQuantumCircuit.
+        # Since they .keys() iterator returns them in the
+        # order they were inserted, a fitting entry is quickly
+        # found.
+        for k in context_dic.keys():
+            if isinstance(k.aval, AbstractQuantumCircuit):
+                max_size = 64 * context_dic[k][0].size//64
+                break
+        
         # Case 1: Two individual qubits -> create a new list containing both
-        res_qubits = Jlist(invalues, max_size = 3)
+        res_qubits = Jlist(invalues, max_size = max_size)
     elif isinstance(eqn.invars[0].aval, AbstractQubitArray) and isinstance(
         eqn.invars[1].aval, AbstractQubit
     ):
