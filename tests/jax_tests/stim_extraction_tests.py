@@ -1462,3 +1462,367 @@ def test_scalar_qubit_from_quantum_bool():
     assert isinstance(qubit_idx, StimQubitIndices)
     assert len(qubit_idx) == 1
     assert qubit_idx[0] == 0
+
+
+# ============================================================================
+# Array Reversal (rev primitive) Tests
+# ============================================================================
+
+def test_rev_1d_measurement_array():
+    """Test that reversing a 1D array of measurements works correctly."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def reverse_measurements():
+        qv1 = QuantumBool()
+        qv2 = QuantumBool()
+        qv3 = QuantumBool()
+        qv4 = QuantumBool()
+        h(qv1); h(qv2); h(qv3); h(qv4)
+        m1 = measure(qv1)
+        m2 = measure(qv2)
+        m3 = measure(qv3)
+        m4 = measure(qv4)
+        arr = jnp.array([m1, m2, m3, m4])
+        return arr[::-1]
+    
+    reversed_arr, stim_circuit = reverse_measurements()
+    
+    # Check type and shape
+    assert isinstance(reversed_arr, StimMeasurementHandles)
+    assert reversed_arr.shape == (4,)
+    # Original order is [0, 1, 2, 3], reversed should be [3, 2, 1, 0]
+    assert np.array_equal(reversed_arr, [3, 2, 1, 0])
+    
+    # Verify slicing works correctly
+    sampler = stim_circuit.compile_sampler()
+    samples = sampler.sample(100)
+    sliced = samples[:, reversed_arr]
+    assert sliced.shape == (100, 4)
+
+
+def test_rev_2d_measurement_array_axis0():
+    """Test reversing a 2D array along axis 0."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def reverse_2d_axis0():
+        qv1 = QuantumBool()
+        qv2 = QuantumBool()
+        qv3 = QuantumBool()
+        qv4 = QuantumBool()
+        h(qv1); h(qv2); h(qv3); h(qv4)
+        m1 = measure(qv1)
+        m2 = measure(qv2)
+        m3 = measure(qv3)
+        m4 = measure(qv4)
+        arr = jnp.array([[m1, m2], [m3, m4]])
+        return arr[::-1, :]
+    
+    reversed_arr, stim_circuit = reverse_2d_axis0()
+    
+    # Check type and shape
+    assert isinstance(reversed_arr, StimMeasurementHandles)
+    assert reversed_arr.shape == (2, 2)
+    # Original: [[0, 1], [2, 3]], after reverse axis 0: [[2, 3], [0, 1]]
+    assert np.array_equal(reversed_arr, [[2, 3], [0, 1]])
+
+
+def test_rev_2d_measurement_array_both_axes():
+    """Test reversing a 2D array along both axes."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def reverse_2d_both():
+        qv1 = QuantumBool()
+        qv2 = QuantumBool()
+        qv3 = QuantumBool()
+        qv4 = QuantumBool()
+        h(qv1); h(qv2); h(qv3); h(qv4)
+        m1 = measure(qv1)
+        m2 = measure(qv2)
+        m3 = measure(qv3)
+        m4 = measure(qv4)
+        arr = jnp.array([[m1, m2], [m3, m4]])
+        return arr[::-1, ::-1]
+    
+    reversed_arr, stim_circuit = reverse_2d_both()
+    
+    # Check type and shape
+    assert isinstance(reversed_arr, StimMeasurementHandles)
+    assert reversed_arr.shape == (2, 2)
+    # Original: [[0, 1], [2, 3]], after reverse both: [[3, 2], [1, 0]]
+    assert np.array_equal(reversed_arr, [[3, 2], [1, 0]])
+
+
+def test_rev_detector_array():
+    """Test that reversing detector handles works correctly."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def reverse_detectors():
+        qv1 = QuantumVariable(2)
+        qv2 = QuantumVariable(2)
+        h(qv1[0]); cx(qv1[0], qv1[1])
+        h(qv2[0]); cx(qv2[0], qv2[1])
+        m1_0 = measure(qv1[0]); m1_1 = measure(qv1[1])
+        m2_0 = measure(qv2[0]); m2_1 = measure(qv2[1])
+        d1 = parity(m1_0, m1_1, expectation=False)
+        d2 = parity(m2_0, m2_1, expectation=False)
+        arr = jnp.array([d1, d2])
+        return arr[::-1]
+    
+    reversed_arr, stim_circuit = reverse_detectors()
+    
+    # Check type and shape
+    assert isinstance(reversed_arr, StimDetectorHandles)
+    assert reversed_arr.shape == (2,)
+    # Original: [0, 1], reversed: [1, 0]
+    assert np.array_equal(reversed_arr, [1, 0])
+
+
+def test_rev_with_jnp_flip():
+    """Test that jnp.flip also works (uses rev primitive)."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def flip_measurements():
+        qv1 = QuantumBool()
+        qv2 = QuantumBool()
+        qv3 = QuantumBool()
+        h(qv1); h(qv2); h(qv3)
+        m1 = measure(qv1)
+        m2 = measure(qv2)
+        m3 = measure(qv3)
+        arr = jnp.array([m1, m2, m3])
+        return jnp.flip(arr)
+    
+    flipped_arr, stim_circuit = flip_measurements()
+    
+    assert isinstance(flipped_arr, StimMeasurementHandles)
+    assert flipped_arr.shape == (3,)
+    assert np.array_equal(flipped_arr, [2, 1, 0])
+
+
+# ============================================================================
+# Array Split (split primitive) Tests  
+# ============================================================================
+
+def test_split_measurement_array():
+    """Test that splitting an array of measurements works correctly."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def split_measurements():
+        qv1 = QuantumBool()
+        qv2 = QuantumBool()
+        qv3 = QuantumBool()
+        qv4 = QuantumBool()
+        h(qv1); h(qv2); h(qv3); h(qv4)
+        m1 = measure(qv1)
+        m2 = measure(qv2)
+        m3 = measure(qv3)
+        m4 = measure(qv4)
+        arr = jnp.array([m1, m2, m3, m4])
+        a, b = jnp.split(arr, 2)
+        return a, b
+    
+    part_a, part_b, stim_circuit = split_measurements()
+    
+    # Check types and shapes
+    assert isinstance(part_a, StimMeasurementHandles)
+    assert isinstance(part_b, StimMeasurementHandles)
+    assert part_a.shape == (2,)
+    assert part_b.shape == (2,)
+    assert np.array_equal(part_a, [0, 1])
+    assert np.array_equal(part_b, [2, 3])
+
+
+def test_split_uneven():
+    """Test splitting an array into uneven parts using array_split."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def split_uneven():
+        qubits = [QuantumBool() for _ in range(5)]
+        for qb in qubits:
+            h(qb)
+        measurements = [measure(qb) for qb in qubits]
+        arr = jnp.array(measurements)
+        a, b = jnp.array_split(arr, 2)
+        return a, b
+    
+    part_a, part_b, stim_circuit = split_uneven()
+    
+    # array_split([0,1,2,3,4], 2) -> [0,1,2], [3,4]
+    assert isinstance(part_a, StimMeasurementHandles)
+    assert isinstance(part_b, StimMeasurementHandles)
+    assert part_a.shape == (3,)
+    assert part_b.shape == (2,)
+    assert np.array_equal(part_a, [0, 1, 2])
+    assert np.array_equal(part_b, [3, 4])
+
+
+def test_split_2d_array():
+    """Test splitting a 2D array along axis 0."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def split_2d():
+        qubits = [QuantumBool() for _ in range(4)]
+        for qb in qubits:
+            h(qb)
+        m = [measure(qb) for qb in qubits]
+        arr = jnp.array([[m[0], m[1]], [m[2], m[3]]])
+        a, b = jnp.vsplit(arr, 2)
+        return a, b
+    
+    part_a, part_b, stim_circuit = split_2d()
+    
+    # vsplit([[0,1],[2,3]], 2) -> [[0,1]], [[2,3]]
+    assert isinstance(part_a, StimMeasurementHandles)
+    assert isinstance(part_b, StimMeasurementHandles)
+    assert part_a.shape == (1, 2)
+    assert part_b.shape == (1, 2)
+    assert np.array_equal(part_a, [[0, 1]])
+    assert np.array_equal(part_b, [[2, 3]])
+
+
+# ============================================================================
+# Dynamic Update Slice Tests
+# ============================================================================
+
+def test_dynamic_update_slice():
+    """Test dynamic_update_slice with measurement arrays."""
+    import jax.numpy as jnp
+    import jax.lax as lax
+    
+    @extract_stim
+    def update_slice():
+        qv1 = QuantumBool()
+        qv2 = QuantumBool()
+        qv3 = QuantumBool()
+        h(qv1); h(qv2); h(qv3)
+        m1 = measure(qv1)
+        m2 = measure(qv2)
+        m3 = measure(qv3)
+        arr = jnp.array([m1, m2, m3])
+        update = jnp.array([m2])  # Replace position 0 with m2
+        return lax.dynamic_update_slice(arr, update, (0,))
+    
+    result, stim_circuit = update_slice()
+    
+    # Original [0, 1, 2], update position 0 with value at position 1
+    # Result should be [1, 1, 2]
+    assert isinstance(result, StimMeasurementHandles)
+    assert result.shape == (3,)
+    assert np.array_equal(result, [1, 1, 2])
+
+
+def test_dynamic_update_slice_middle():
+    """Test dynamic_update_slice updating middle elements."""
+    import jax.numpy as jnp
+    import jax.lax as lax
+    
+    @extract_stim
+    def update_middle():
+        qubits = [QuantumBool() for _ in range(5)]
+        for qb in qubits:
+            h(qb)
+        measurements = [measure(qb) for qb in qubits]
+        arr = jnp.array(measurements)
+        # Update positions 1 and 2 with values from positions 3 and 4
+        update = jnp.array([measurements[3], measurements[4]])
+        return lax.dynamic_update_slice(arr, update, (1,))
+    
+    result, stim_circuit = update_middle()
+    
+    # Original [0, 1, 2, 3, 4], update positions 1-2 with [3, 4]
+    # Result should be [0, 3, 4, 3, 4]
+    assert isinstance(result, StimMeasurementHandles)
+    assert result.shape == (5,)
+    assert np.array_equal(result, [0, 3, 4, 3, 4])
+
+
+# ============================================================================
+# Select/Where Tests
+# ============================================================================
+
+def test_select_n_where():
+    """Test jnp.where (select_n) with measurement arrays."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def where_select():
+        qv1 = QuantumBool()
+        qv2 = QuantumBool()
+        qv3 = QuantumBool()
+        qv4 = QuantumBool()
+        h(qv1); h(qv2); h(qv3); h(qv4)
+        m1 = measure(qv1)
+        m2 = measure(qv2)
+        m3 = measure(qv3)
+        m4 = measure(qv4)
+        arr1 = jnp.array([m1, m2])  # [0, 1]
+        arr2 = jnp.array([m3, m4])  # [2, 3]
+        cond = jnp.array([True, False])
+        return jnp.where(cond, arr1, arr2)
+    
+    result, stim_circuit = where_select()
+    
+    # where([True, False], [0, 1], [2, 3]) -> [0, 3]
+    assert isinstance(result, StimMeasurementHandles)
+    assert result.shape == (2,)
+    assert np.array_equal(result, [0, 3])
+
+
+def test_select_n_all_true():
+    """Test where with all-true condition."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def where_all_true():
+        qv1 = QuantumBool()
+        qv2 = QuantumBool()
+        qv3 = QuantumBool()
+        qv4 = QuantumBool()
+        h(qv1); h(qv2); h(qv3); h(qv4)
+        m1 = measure(qv1)
+        m2 = measure(qv2)
+        m3 = measure(qv3)
+        m4 = measure(qv4)
+        arr1 = jnp.array([m1, m2])
+        arr2 = jnp.array([m3, m4])
+        cond = jnp.array([True, True])
+        return jnp.where(cond, arr1, arr2)
+    
+    result, stim_circuit = where_all_true()
+    
+    # Should select all from arr1
+    assert np.array_equal(result, [0, 1])
+
+
+def test_select_n_all_false():
+    """Test where with all-false condition."""
+    import jax.numpy as jnp
+    
+    @extract_stim
+    def where_all_false():
+        qv1 = QuantumBool()
+        qv2 = QuantumBool()
+        qv3 = QuantumBool()
+        qv4 = QuantumBool()
+        h(qv1); h(qv2); h(qv3); h(qv4)
+        m1 = measure(qv1)
+        m2 = measure(qv2)
+        m3 = measure(qv3)
+        m4 = measure(qv4)
+        arr1 = jnp.array([m1, m2])
+        arr2 = jnp.array([m3, m4])
+        cond = jnp.array([False, False])
+        return jnp.where(cond, arr1, arr2)
+    
+    result, stim_circuit = where_all_false()
+    
+    # Should select all from arr2
+    assert np.array_equal(result, [2, 3])

@@ -365,6 +365,44 @@ def apply_array_primitive(prim_name, params, invalues):
     elif prim_name == "transpose":
         permutation = params.get("permutation", None)
         result = np.transpose(encoded[0], permutation)
+    
+    elif prim_name == "rev":
+        # Reverse array along specified dimensions
+        dimensions = params.get("dimensions", ())
+        result = encoded[0]
+        for dim in dimensions:
+            result = np.flip(result, axis=dim)
+    
+    elif prim_name == "dynamic_update_slice":
+        # dynamic_update_slice(operand, update, start_indices)
+        # Updates a slice of operand starting at start_indices with the values from update
+        operand = encoded[0]
+        update = encoded[1]
+        # Start indices come from remaining invalues (already encoded)
+        start_indices = tuple(int(encoded[i]) if np.ndim(encoded[i]) == 0 else int(encoded[i].flat[0]) 
+                              for i in range(2, len(encoded)))
+        
+        # Create a copy and update the slice
+        result = operand.copy()
+        slices = tuple(slice(s, s + u) for s, u in zip(start_indices, update.shape))
+        result[slices] = update
+    
+    elif prim_name == "select_n":
+        # select_n(cond, *cases) - selects from cases based on cond values
+        # cond[i] == j means select cases[j][i]
+        cond = encoded[0]
+        cases = encoded[1:]
+        
+        # For boolean/binary condition (most common case)
+        if len(cases) == 2:
+            # np.where with object arrays
+            result = np.where(cond.astype(bool), cases[1], cases[0])
+        else:
+            # General case: build result by indexing
+            result = np.empty_like(cases[0])
+            for i in range(len(cases)):
+                mask = (cond == i)
+                result[mask] = cases[i][mask]
         
     else:
         return None
@@ -675,13 +713,42 @@ def make_qc_extraction_eqn_evaluator(qc):
         # arrays, applies the numpy equivalent, and wraps back into MeasurementArray.
         
         elif prim_name in ("broadcast_in_dim", "concatenate", "squeeze", "slice", 
-                           "dynamic_slice", "gather", "reshape", "transpose"):
+                           "dynamic_slice", "gather", "reshape", "transpose", "rev",
+                           "dynamic_update_slice", "select_n"):
             # Check if any input contains measurement data
             if any(contains_measurement_data(v) for v in invalues):
                 result = apply_array_primitive(prim_name, eqn.params, invalues)
                 if result is not None:
                     insert_outvalues(eqn, context_dic, result)
                     return
+            return True
+        
+        elif prim_name == "split":
+            # split: Split an array into multiple sub-arrays
+            # This is a multiple-result primitive, so we need to handle it specially
+            if any(contains_measurement_data(v) for v in invalues):
+                encoded = to_object_array(invalues[0])
+                axis = eqn.params.get("axis", 0)
+                sizes = eqn.params.get("sizes", ())
+                
+                # numpy.split expects indices, but JAX gives us sizes
+                # Convert sizes to split indices
+                indices = np.cumsum(sizes[:-1]).tolist()
+                
+                # Perform the split
+                results = np.split(encoded, indices, axis=axis)
+                
+                # Wrap each result as MeasurementArray
+                wrapped_results = []
+                for r in results:
+                    r = np.asarray(r, dtype=object)
+                    if r.ndim == 0:
+                        wrapped_results.append(r.item())
+                    else:
+                        wrapped_results.append(MeasurementArray(r))
+                
+                insert_outvalues(eqn, context_dic, wrapped_results)
+                return
             return True
         
         elif prim_name == "scatter":
