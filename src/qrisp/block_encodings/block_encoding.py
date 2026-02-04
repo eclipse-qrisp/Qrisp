@@ -24,8 +24,10 @@ import jax.numpy as jnp
 import numpy as np
 import numpy.typing as npt
 from qrisp.core import QuantumVariable
+from qrisp.alg_primitives.reflection import reflection
 from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
+from qrisp.jasp import jrange
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool, QuantumFloat
@@ -434,6 +436,7 @@ class BlockEncoding:
 
         return BlockEncoding(alpha, [QuantumFloat(n).template()], unitary)
     
+    
     #
     # Utilities
     #
@@ -625,6 +628,87 @@ class BlockEncoding:
             return success_bool, *operands       
 
         return rus_function
+    
+    def qubitization(self) -> BlockEncoding:
+        r"""
+        Returns the qubitization of the BlockEncoding.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding representing the qubitization of self.
+
+        Examples
+        --------
+
+        Define a block-encoding and compute its qubitization.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import X, Y, Z
+
+            H = X(0)*Y(1) + 0.5*Z(0)*X(1)
+            BE = H.pauli_block_encoding()
+            BE_qubitized = BE.qubitization()
+
+        """
+
+        m = len(self.anc_templates)
+        # W = U
+        if m==0:
+            return self
+
+        if self.is_hermitian:
+            # W = (2*|0><0| - I) U 
+            def new_unitary(*args):
+                self.unitary(*args)
+                reflection(args[:m])
+
+            return BlockEncoding(self.alpha, self.anc_templates, new_unitary, is_hermitian=True)
+        else:
+            # W = (2*|0><0| - I) U_tilde, U_tilde = (|0><1| ⊗ U) + (|1><0| ⊗ U†) is hermitian
+            def new_unitary(*args):
+                with conjugate(h)(args[0]):
+                    with control(args[0], ctrl_state=0):
+                        self.unitary(*args[1:])
+
+                    with control(args[0], ctrl_state=1):
+                        with invert():
+                            self.unitary(*args[1:])
+
+                    x(args[0])
+
+                reflection(args[0:1 + m])
+
+            new_anc_templates = [QuantumBool().template()] + self.anc_templates
+            return BlockEncoding(self.alpha, new_anc_templates, new_unitary, is_hermitian=True)
+        
+    def chebyshev(self: "BlockEncoding", k: int) -> BlockEncoding:
+
+        m = len(self.anc_templates)
+
+        if k%2 == 0:
+            def new_unitary(*args):
+                k = k // 2
+                for _ in jrange(0, k):
+                    reflection(args[:m])
+                    with conjugate(self.unitary)(*args):
+                        reflection(args[:m])
+
+        else:
+            def new_unitary(*args):
+                k = k // 2
+                for _ in jrange(0, k):
+                    reflection(args[:m])
+                    with conjugate(self.unitary)(*args):
+                        reflection(args[:m])
+                reflection(args[:m])
+                self.unitary(*args)
+
+        return BlockEncoding(self.alpha, self.anc_templates, new_unitary)
+            
+        
     
     #
     # Arithmetic
@@ -1159,62 +1243,7 @@ class BlockEncoding:
     # Transformations
     #
 
-    def qubitization(self) -> BlockEncoding:
-        r"""
-        Returns the qubitization of the BlockEncoding.
-
-        Returns
-        -------
-        BlockEncoding
-            A new BlockEncoding representing the qubitization of self.
-
-        Examples
-        --------
-
-        Define a block-encoding and compute its qubitization.
-
-        ::
-
-            from qrisp import *
-            from qrisp.operators import X, Y, Z
-
-            H = X(0)*Y(1) + 0.5*Z(0)*X(1)
-            BE = H.pauli_block_encoding()
-            BE_qubitized = BE.qubitization()
-
-        """
-        from qrisp.alg_primitives.reflection import reflection
-
-        m = len(self.anc_templates)
-        # W = U
-        if m==0:
-            return self
-
-        if self.is_hermitian:
-            # W = (2*|0><0| - I) U 
-            def new_unitary(*args):
-                self.unitary(*args)
-                reflection(args[:m])
-
-            return BlockEncoding(self.alpha, self.anc_templates, new_unitary, is_hermitian=True)
-        else:
-            # W = (2*|0><0| - I) U_tilde, U_tilde = (|0><1| ⊗ U) + (|1><0| ⊗ U†) is hermitian
-            def new_unitary(*args):
-                with conjugate(h)(args[0]):
-                    with control(args[0], ctrl_state=0):
-                        self.unitary(*args[1:])
-
-                    with control(args[0], ctrl_state=1):
-                        with invert():
-                            self.unitary(*args[1:])
-
-                    x(args[0])
-
-                reflection(args[0:1 + m])
-
-            new_anc_templates = [QuantumBool().template()] + self.anc_templates
-            return BlockEncoding(self.alpha, new_anc_templates, new_unitary, is_hermitian=True)
-        
+            
     def inv(self, eps: float, kappa: float) -> BlockEncoding:
         r"""
         Returns a BlockEncoding approximating the matrix inversion of the operator.
