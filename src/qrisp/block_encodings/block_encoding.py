@@ -632,17 +632,21 @@ class BlockEncoding:
 
     def __add__(self, other: BlockEncoding) -> BlockEncoding:
         r"""
-        Implements addition of two BlockEncodings self and other.
+        Constructs a BlockEncoding of the sum of two operators.
+
+        This method implements the linear combination $A + B$ via the LCU 
+        (Linear Combination of Unitaries) framework, where $A$ and $B$ are 
+        the operators encoded by the respective instances.
 
         Parameters
         ----------
         other : BlockEncoding
-            Another BlockEncoding to be added.  
+            The BlockEncoding instance to be added.
 
         Returns
         -------
         BlockEncoding
-            A new BlockEncoding representing the sum of self and other.
+            A new BlockEncoding instance representing the operator sum.
 
         Notes
         -----
@@ -712,17 +716,21 @@ class BlockEncoding:
 
     def __sub__(self, other: BlockEncoding) -> BlockEncoding:
         r"""
-        Implements subtraction of two BlockEncodings self and other.
+        Constructs a BlockEncoding of the difference between two operators.
+
+        This method implements the subtraction $A - B$ using a linear combination 
+        of unitaries (LCU), where $A$ is the operator encoded by this instance 
+        and $B$ is the operator encoded by 'other'.
 
         Parameters
         ----------
         other : BlockEncoding
-            Another BlockEncoding to be subtracted.  
+            The BlockEncoding instance to be subtracted.
 
         Returns
         -------
         BlockEncoding
-            A new BlockEncoding representing the difference of self and other.
+            A new BlockEncoding representing the operator difference.
 
         Notes
         -----
@@ -818,7 +826,7 @@ class BlockEncoding:
         Examples
         --------
 
-        Define two block encodings and implement their scaled sum as a new block encoding.
+        Define two block-encodings and implement their scaled sum as a new block encoding.
 
         ::
 
@@ -870,17 +878,20 @@ class BlockEncoding:
     
     def __matmul__(self, other: "ArrayLike" | BlockEncoding) -> BlockEncoding:
         r"""
-        Implements multiplication of a BlockEncoding by another BlockEncoding.
+        Constructs a BlockEncoding of the product of two operators.
+
+        This method implements the operator product $A \cdot B$ by composing 
+        two BlockEncodings, where $A$ and $B$ are the operators encoded by the respective instances.
 
         Parameters
         ----------
         other : BlockEncoding
-            The BlockEncoding to multiply with.
+            The BlockEncoding instance to be multiplied.
 
         Returns
         -------
         BlockEncoding
-            A new BlockEncoding representing the product of self and other.
+            A new BlockEncoding representing the operator product.
 
         Notes
         -----
@@ -947,23 +958,28 @@ class BlockEncoding:
 
     def kron(self, other: BlockEncoding) -> BlockEncoding:
         r"""
-        Implements the Kronecker product of two BlockEncodings.
-        Implementation as described in Chapter 10.2 in `Dalzell et al. <https://arxiv.org/abs/2310.03011>`_.
+        Constructs a BlockEncoding of the Kronecker product (tensor product) of two operators.
+
+        This method implements the operator $A \otimes B$, where $A$ and $B$ are 
+        the operators encoded by the respective instances. Following the 
+        construction in Chapter 10.2 in `Dalzell et al. <https://arxiv.org/abs/2310.03011>`_, 
+        the resulting BlockEncoding is formed by the tensor product of the underlying unitaries, $U_A \otimes U_B$.
 
         Parameters
         ----------
         other : BlockEncoding
-            Another BlockEncoding to be composed with self.
+            The BlockEncoding instance to be tensored.
 
         Returns
         -------
         BlockEncoding
-            A new BlockEncoding representing the Kronecker product of self and other.
+            A new BlockEncoding representing the tensor product $A \otimes B$.
 
         Notes
         -----
+        - **Normalization**: The normalization factors ($\alpha$) are combined multiplicatively.
         - The ``kron`` operator maps the operands of self to the first set of operands and the operands of other to the remaining operands in a single unified unitary.
-        - The ``kron`` operator should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method.
+        - The ``kron`` operator should be used sparingly, primarily to combine a few block encodings.
         - A more qubit-efficient implementation of the Kronecker product can be found in `this paper <https://arxiv.org/pdf/2509.15779>`_ and will be implemented in future updates.
 
         Examples
@@ -1059,12 +1075,15 @@ class BlockEncoding:
 
     def __neg__(self) -> BlockEncoding:
         r"""
-        Implements negation of the BlockEncoding.
+        Constructs a BlockEncoding of the negated operator.
+
+        This method implements the transformation $A \to -A$ by scaling the 
+        encoded operator by $-1$.
 
         Returns
         -------
         BlockEncoding
-            A new BlockEncoding representing the negation of self.
+            A new BlockEncoding instance representing the operator $-A$.
 
         Examples
         --------
@@ -1198,14 +1217,12 @@ class BlockEncoding:
         
     def inv(self, eps: float, kappa: float) -> BlockEncoding:
         r"""
-        Returns a BlockEncoding approximating the matrix inversion of self.
+        Constructs a BlockEncoding approximating the matrix inversion of the operator.
 
-        For a block-encoded matrix $A$, this function returns a BlockEncoding that approximates the matrix inversion operator $A^{-1}$.
-
-        The function constructs a polynomial that approximates $1/x$ over the 
-        domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$. The resulting 
-        BlockEncoding represents an operator $\tilde{A}^{-1}$ such that 
-        $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$.
+        For a block-encoded matrix $A$, this function returns a BlockEncoding of an 
+        operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$. 
+        The inversion is implemented via Quantum Eigenvalue Transformation (QET)         
+        using a polynomial approximation of $1/x$ over the domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$.
 
         Parameters
         ----------
@@ -1218,7 +1235,7 @@ class BlockEncoding:
         Returns
         -------
         BlockEncoding
-            A block encoding approximating the inverse operator $A^{-1}$.
+            A new BlockEncoding instance representing an approximation of the inverse $A^{-1}$.
 
         Notes
         -----
@@ -1250,7 +1267,7 @@ class BlockEncoding:
             print("Condition number of A: ", kappa)
             # Condition number of A:  1.8448536035491883
 
-        Generate a block encoding of $A$ and use :meth:`inv` to find a block-encoding approximating $A^{-1}$.
+        Generate a block-encoding of $A$ and use :meth:`inv` to find a block-encoding approximating $A^{-1}$.
 
         ::
 
@@ -1297,31 +1314,31 @@ class BlockEncoding:
     
     def sim(self, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
         r"""
-        Returns a BlockEncoding approximating Hamiltonian simulation of self.
+        Constructs a BlockEncoding approximating Hamiltonian simulation of the operator.
 
-        For a block-encoded matrix $A$ and an evolution time $t$, this function returns a BlockEncoding that approximates the Hamiltonian simulation operator $e^{-itA}$.
+        For a block-encoded Hamiltonian $H$, this method returns a BlockEncoding of an approximation of
+        the unitary evolution operator $e^{-itH}$ for a given time $t$.
 
-        This function approximates the unitary evolution operator $U = e^{-itA}$
-        by expanding the time-evolution function into a series of Bessel functions 
-        via the Jacobi-Anger identity
+        The approximation is based on the Jacobi-Anger expansion into Bessel functions 
+        of the first kind ($J_n$):
 
         .. math ::
 
             e^{-it\cos(\theta)} \approx \sum_{n=-N}^{N}(-i)^nJ_n(t)e^{in\theta}
-
-        where $J_n(t)$ are Bessel functions of the first kind.
 
         Parameters
         ----------
         t : ArrayLike
             The scalar evolution time $t$. The default is 1.0.
         N : int
-            The truncation order of the expansion. The default is 1.
+            The truncation order $N$ of the expansion. A higher order provides 
+            better approximation for larger $t$ or higher precision requirements. 
+            Default is 1.
 
         Returns
         -------
         BlockEncoding
-            A block encoding approximating the unitary $e^{-itA}$.
+            A new BlockEncoding instance representing an approximation of the unitary $e^{-itH}$.
 
         Notes
         -----
@@ -1413,7 +1430,11 @@ class BlockEncoding:
     
     def poly(self, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial") -> BlockEncoding:
         r"""
-        Returns a BlockEncoding representing a polynomial transformation of self.
+        Constructs a Block-Encoding representing a polynomial transformation of the operator.
+
+        For a block-encoded matrix $A$ and a (complex) polynomial $p(z)$, this method returns 
+        a BlockEncoding of the operator $p(A)$. This is achieved using 
+        Generalized Quantum Eigenvalue Transformation (GQET).
 
         For a block-encoded matrix $A$ and a polynomial $p$, this function returns a BlockEncoding for 
         the matrix polynomial operator $p(A)$.
@@ -1423,12 +1444,18 @@ class BlockEncoding:
         p : ArrayLike
             1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
         kind : {"Polynomial", "Chebyshev"}
-            The kind of ``p``. The default is ``"Polynomial"``.
+            The basis in which the coefficients are defined. 
+
+            - ``"Polynomial"``: $p(x) = \sum c_i x^i$
+
+            - ``"Chebyshev"``: $p(x) = \sum c_i T_i(x)$, where $T_i$ are Chebyshev polynomials of the first kind.
+            
+            Default is ``"Polynomial"``.
 
         Returns
         -------
         BlockEncoding
-            A BlockEncoding representing the transformed operator $p(A)$.
+            A new Block-Encoding instance representing the transformed operator $p(A)$.
 
         Examples
         --------
@@ -1446,7 +1473,7 @@ class BlockEncoding:
 
             b = np.array([0, 1, 1, 1])
 
-        Generate a block encoding $A$ of and use :meth:`poly` to find a block-encoding of $p(A)$.
+        Generate a block-encoding $A$ of and use :meth:`poly` to find a block-encoding of $p(A)$.
 
         ::
 
