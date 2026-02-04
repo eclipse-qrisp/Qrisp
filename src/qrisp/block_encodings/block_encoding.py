@@ -632,7 +632,7 @@ class BlockEncoding:
 
     def __add__(self, other: BlockEncoding) -> BlockEncoding:
         r"""
-        Constructs a BlockEncoding of the sum of two operators.
+        Returns a BlockEncoding of the sum of two operators.
 
         This method implements the linear combination $A + B$ via the LCU 
         (Linear Combination of Unitaries) framework, where $A$ and $B$ are 
@@ -716,7 +716,7 @@ class BlockEncoding:
 
     def __sub__(self, other: BlockEncoding) -> BlockEncoding:
         r"""
-        Constructs a BlockEncoding of the difference between two operators.
+        Returns a BlockEncoding of the difference between two operators.
 
         This method implements the subtraction $A - B$ using a linear combination 
         of unitaries (LCU), where $A$ is the operator encoded by this instance 
@@ -802,7 +802,7 @@ class BlockEncoding:
 
     def __mul__(self, other: "ArrayLike") -> BlockEncoding:
         r"""
-        Constructs a BlockEncoding of the scaled operator.
+        Returns a BlockEncoding of the scaled operator.
 
         This method implements the scalar multiplication $c \cdot A$, where $A$ 
         is the operator encoded by this instance and $c$ is the 
@@ -878,7 +878,7 @@ class BlockEncoding:
     
     def __matmul__(self, other: "ArrayLike" | BlockEncoding) -> BlockEncoding:
         r"""
-        Constructs a BlockEncoding of the product of two operators.
+        Returns a BlockEncoding of the product of two operators.
 
         This method implements the operator product $A \cdot B$ by composing 
         two BlockEncodings, where $A$ and $B$ are the operators encoded by the respective instances.
@@ -958,7 +958,7 @@ class BlockEncoding:
 
     def kron(self, other: BlockEncoding) -> BlockEncoding:
         r"""
-        Constructs a BlockEncoding of the Kronecker product (tensor product) of two operators.
+        Returns a BlockEncoding of the Kronecker product (tensor product) of two operators.
 
         This method implements the operator $A \otimes B$, where $A$ and $B$ are 
         the operators encoded by the respective instances. Following the 
@@ -1075,7 +1075,7 @@ class BlockEncoding:
 
     def __neg__(self) -> BlockEncoding:
         r"""
-        Constructs a BlockEncoding of the negated operator.
+        Returns a BlockEncoding of the negated operator.
 
         This method implements the transformation $A \to -A$ by scaling the 
         encoded operator by $-1$.
@@ -1217,7 +1217,7 @@ class BlockEncoding:
         
     def inv(self, eps: float, kappa: float) -> BlockEncoding:
         r"""
-        Constructs a BlockEncoding approximating the matrix inversion of the operator.
+        Returns a BlockEncoding approximating the matrix inversion of the operator.
 
         For a block-encoded matrix $A$, this function returns a BlockEncoding of an 
         operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$. 
@@ -1314,7 +1314,7 @@ class BlockEncoding:
     
     def sim(self, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
         r"""
-        Constructs a BlockEncoding approximating Hamiltonian simulation of the operator.
+        Returns a BlockEncoding approximating Hamiltonian simulation of the operator.
 
         For a block-encoded Hamiltonian $H$, this method returns a BlockEncoding of an approximation of
         the unitary evolution operator $e^{-itH}$ for a given time $t$.
@@ -1430,7 +1430,7 @@ class BlockEncoding:
     
     def poly(self, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial") -> BlockEncoding:
         r"""
-        Constructs a Block-Encoding representing a polynomial transformation of the operator.
+        Returns a Block-Encoding representing a polynomial transformation of the operator.
 
         For a block-encoded matrix $A$ and a (complex) polynomial $p(z)$, this method returns 
         a BlockEncoding of the operator $p(A)$. This is achieved using 
@@ -1449,7 +1449,7 @@ class BlockEncoding:
             - ``"Polynomial"``: $p(x) = \sum c_i x^i$
 
             - ``"Chebyshev"``: $p(x) = \sum c_i T_i(x)$, where $T_i$ are Chebyshev polynomials of the first kind.
-            
+
             Default is ``"Polynomial"``.
 
         Returns
