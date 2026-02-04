@@ -95,7 +95,7 @@ def test_block_encoding_multiplication(H1, H2):
 
     H3 = H1 * H2
     BE3 = H3.pauli_block_encoding()
-    BE_multiplication = BE1 * BE2
+    BE_multiplication = BE1 @ BE2
 
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 

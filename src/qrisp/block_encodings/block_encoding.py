@@ -792,69 +792,33 @@ class BlockEncoding:
         new_alpha = alpha + beta
         return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian=self.is_hermitian and other.is_hermitian)
 
-    def __mul__(self, other: "ArrayLike" | BlockEncoding) -> BlockEncoding:
+    def __mul__(self, other: "ArrayLike") -> BlockEncoding:
         r"""
-        Implements multiplication of a BlockEncoding by another BlockEncoding or a scalar.
+        Constructs a BlockEncoding of the scaled operator.
+
+        This method implements the scalar multiplication $c \cdot A$, where $A$ 
+        is the operator encoded by this instance and $c$ is the 
+        provided scalar.
 
         Parameters
         ----------
-        other : ArrayLike | BlockEncoding
-            The object to multiply with. If a BlockEncoding is provided, the unitaries are composed. If a scalar is provided, the normalization factor $\alpha$ is scaled. 
+        other : ArrayLike
+            The scalar scaling factor (coefficient) to apply. Can be a Python float, 
+            a JAX/NumPy scalar, or a 0-dimensional array.
 
         Returns
         -------
         BlockEncoding
-            A new BlockEncoding representing the product of self and other.
+            A new BlockEncoding instance representing the scaled operator. 
 
         Notes
         -----
-        - Scalar multiplication: Multiplying by a scalar $c$ results in a new BlockEncoding of $cA$ by updating $\alpha \rightarrow c\alpha$.
-        - BlockEncoding multiplication: Can only be used when both BlockEncodings have the same operand structure.
-        - The ``*`` operator should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method.
-        - The product of two Hermitian operators A and B is Hermitian if and only if they commute, i.e., AB = BA.
+        - Multiplying by a scalar $c$ results in a new BlockEncoding of $cA$ by updating $\alpha \rightarrow c\alpha$.
 
         Examples
         --------
 
-        **Example 1:**
-
-        Define two block-encodings and multiply them.
-
-        ::
-
-            from qrisp import *
-            from qrisp.operators import X, Y, Z
-
-            # Commuting operators H1 and H2
-            H1 = X(0)*X(1) + 0.2*Y(0)*Y(1)
-            H2 = Z(0)*Z(1) + X(2)
-            H3 = H1 * H2
-
-            BE1 = H1.pauli_block_encoding()
-            BE2 = H2.pauli_block_encoding()
-            BE3 = H3.pauli_block_encoding()
-
-            BE_mul = BE1 * BE2
-
-            def operand_prep():
-                qv = QuantumFloat(3)
-                return qv
-
-            @terminal_sampling
-            def main(BE):
-                qv = BE.apply_rus(operand_prep)()
-                return qv
-
-            res_be3 = main(BE3)
-            res_be_mul = main(BE_mul)
-            print("Result from BE of H1 * H2: ", res_be3)
-            print("Result from BE1 * BE2: ", res_be_mul)
-            # Result from BE of H1 * H2:  {3.0: 0.5, 7.0: 0.5}  
-            # Result from BE1 * BE2:  {3.0: 0.5, 7.0: 0.5}  
-
-        **Example 2:**
-
-        Define two block-encodings and multiply their linear combination with a scalar.
+        Define two block encodings and implement their scaled sum as a new block encoding.
 
         ::
 
@@ -902,21 +866,81 @@ class BlockEncoding:
                     gphase(np.pi, args[0][0])
             return BlockEncoding(self.alpha * jnp.abs(other), self.anc_templates, new_unitary, is_hermitian=self.is_hermitian)
 
-        if isinstance(other, BlockEncoding):
-            m = len(self.anc_templates)
-            n = len(other.anc_templates)
-
-            def new_unitary(*args):
-                other_args = args[m:m + n] + args[m + n:]
-                other.unitary(*other_args)
-                self_args = args[:m] + args[m + n:]
-                self.unitary(*self_args)
-
-            new_anc_templates = self.anc_templates + other.anc_templates
-            new_alpha = self.alpha * other.alpha
-            return BlockEncoding(new_alpha, new_anc_templates, new_unitary)
-
         return NotImplemented
+    
+    def __matmul__(self, other: "ArrayLike" | BlockEncoding) -> BlockEncoding:
+        r"""
+        Implements multiplication of a BlockEncoding by another BlockEncoding.
+
+        Parameters
+        ----------
+        other : BlockEncoding
+            The BlockEncoding to multiply with.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding representing the product of self and other.
+
+        Notes
+        -----
+        - Can only be used when both BlockEncodings have the same operand structure.
+        - The ``@`` operator should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method.
+        - The product of two Hermitian operators A and B is Hermitian if and only if they commute, i.e., AB = BA.
+
+        Examples
+        --------
+
+        Define two block-encodings and multiply them.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import X, Y, Z
+
+            # Commuting operators H1 and H2
+            H1 = X(0)*X(1) + 0.2*Y(0)*Y(1)
+            H2 = Z(0)*Z(1) + X(2)
+            H3 = H1 * H2
+
+            BE1 = H1.pauli_block_encoding()
+            BE2 = H2.pauli_block_encoding()
+            BE3 = H3.pauli_block_encoding()
+
+            BE_mul = BE1 * BE2
+
+            def operand_prep():
+                qv = QuantumFloat(3)
+                return qv
+
+            @terminal_sampling
+            def main(BE):
+                qv = BE.apply_rus(operand_prep)()
+                return qv
+
+            res_be3 = main(BE3)
+            res_be_mul = main(BE_mul)
+            print("Result from BE of H1 * H2: ", res_be3)
+            print("Result from BE1 * BE2: ", res_be_mul)
+            # Result from BE of H1 * H2:  {3.0: 0.5, 7.0: 0.5}  
+            # Result from BE1 * BE2:  {3.0: 0.5, 7.0: 0.5}  
+
+        """
+        if not isinstance(other, BlockEncoding):
+            return NotImplemented
+
+        m = len(self.anc_templates)
+        n = len(other.anc_templates)
+
+        def new_unitary(*args):
+            other_args = args[m:m + n] + args[m + n:]
+            other.unitary(*other_args)
+            self_args = args[:m] + args[m + n:]
+            self.unitary(*self_args)
+
+        new_anc_templates = self.anc_templates + other.anc_templates
+        new_alpha = self.alpha * other.alpha
+        return BlockEncoding(new_alpha, new_anc_templates, new_unitary)
     
     __radd__ = __add__
     __rmul__ = __mul__
