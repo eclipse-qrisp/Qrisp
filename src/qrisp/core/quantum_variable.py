@@ -745,13 +745,13 @@ class QuantumVariable:
 
             A flat vector of complex amplitudes of length :math:`2^{n}`, where
             :math:`n` is the number of qubits. The vector is automatically
-            normalized outside Jasp mode. The little-endian convention is
-            assumed for indexing basis states. See :ref:`prepare <prepare>` for details.
+            normalized. The little-endian convention is assumed for indexing
+            basis states. See :ref:`prepare <prepare>` for details.
 
         .. note::
 
-            In Jasp mode, Python-based shape and normalization checks are skipped
-            to avoid tracing side effects.
+            In Jasp mode, Python-based shape and checks on the norm of the
+            statevector are skipped to avoid tracing side effects.
 
         Parameters
         ----------

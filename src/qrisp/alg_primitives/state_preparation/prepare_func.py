@@ -72,7 +72,7 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
 
         - ``'qiskit'``: requires concrete arrays (e.g. NumPy).
         - ``'qswitch'``: supports traced arrays (e.g. JAX tracers in Jasp mode).
-          Note that input validation/normalization is skipped in this mode.
+          Note that shape validation is not performed in Jasp mode.
         - ``'auto'``: automatically selects between the above.
 
         Default is ``'auto'``.

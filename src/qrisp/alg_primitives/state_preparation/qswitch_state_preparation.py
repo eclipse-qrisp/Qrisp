@@ -47,8 +47,10 @@ def _rot_params_from_state(
     -------
     theta : float
         The rotation angle theta.
+
     phi : float
         The rotation angle phi.
+
     lam : float
         The rotation angle lambda.
     """
@@ -75,6 +77,7 @@ def _normalize_with_phase(
     ----------
     v : jnp.ndarray
         The child vector to normalize.
+
     acc : jnp.ndarray
         The accumulated phase from previous operations.
 
@@ -82,8 +85,10 @@ def _normalize_with_phase(
     -------
     norm : jnp.ndarray
         The norm of the input vector.
+
     v_normalized : jnp.ndarray
         The normalized vector with adjusted phase.
+
     updated_acc : jnp.ndarray
         The updated accumulated phase.
     """
@@ -122,6 +127,7 @@ def _compute_thetas(
     ----------
     vec : jnp.ndarray
         A complex vector representing the current vector to process.
+
     acc : jnp.ndarray
         The accumulated phase from previous operations.
 
@@ -130,8 +136,10 @@ def _compute_thetas(
     -------
     theta : jnp.ndarray
         The angle (scalar array) for the ry rotation gate.
+
     subvecs : jnp.ndarray
         A 2D array where each row corresponds to a normalized subvector.
+
     acc_phases : jnp.ndarray
         A 1D array containing the updated accumulated phases for each subvector.
 
@@ -164,6 +172,7 @@ def _compute_u3_params(
     ----------
     qubit_vec : jnp.ndarray
         A complex vector representing a one-qubit state.
+
     acc : jnp.ndarray
         The accumulated phase from previous operations.
 
@@ -171,6 +180,7 @@ def _compute_u3_params(
     -------
     u_params : jnp.ndarray
         A 1D array containing the rotation angles (theta, phi, lambda) for the U3 gate.
+
     total_phase : jnp.ndarray
         The updated accumulated phase after processing the leaf subvector.
 
@@ -316,7 +326,7 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
         """Create a case function for q_switch at a given layer."""
 
         def case_fn(i, qb):
-            # This bit-reversal is not about Qrisp's endianness.
+            # NOTE: This bit-reversal is not about Qrisp's endianness.
             # It compensates for the order in which q_switch enumerates control patterns
             rev_idx = bit_reverse(i, layer_size)
             if is_final:

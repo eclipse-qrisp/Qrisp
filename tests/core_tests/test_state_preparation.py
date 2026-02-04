@@ -132,13 +132,16 @@ class TestStatePreparationQSwitch:
 
         qv = QuantumVariable(3)
         array = jnp.array([1, 1j, -1, -1j, 1, 1j, -1, -1j])
-        array /= jnp.linalg.norm(array)
 
         prepare_qswitch(qv, array, big_endianness=big_endianness)
 
         logical_sv = _compute_statevector_logical_qubits(
             qv, big_endianness=big_endianness
         )
+
+        # We need to normalize before the check
+        # (this also tests that the normalization in `prepare_qswitch` works correctly)
+        array /= jnp.linalg.norm(array)
         assert np.allclose(logical_sv, array, atol=1e-5)
 
     # From now on, we test both qswitch and qiskit methods
@@ -167,10 +170,13 @@ class TestStatePreparationQSwitch:
 
         qv = QuantumVariable(3)
         array = jnp.array([1.0, _EPSILON, 0, 0, 0, _EPSILON * 1j, -_EPSILON, 0])
-        array /= jnp.linalg.norm(array)
         qv.init_state(array, method="qswitch")
 
         logical_sv = _compute_statevector_logical_qubits(qv)
+
+        # We need to normalize before the check
+        # (this also tests that the normalization in `prepare_qswitch` works correctly)
+        array /= jnp.linalg.norm(array)
         assert np.allclose(logical_sv, array, atol=1e-5)
 
 
