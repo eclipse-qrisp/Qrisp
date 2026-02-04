@@ -360,11 +360,14 @@ def singular_shift(iterable, use_saeedi=False):
 
         iterations = compute_ladder_iterations(N)
         for j in jrange(iterations):
-            for i in jrange(0, N - 2**j, 2 * 2**j):
-                left = i
-                right = i + 2**j
-                with control(right < N):
-                    swap(iterable[left], iterable[right])
+            step = 2 * 2**j
+            max_i = N - 2**j
+            for i in jrange(max_i):
+                with control((i % step) == 0):
+                    left = i
+                    right = i + 2**j
+                    with control(right < N):
+                        swap(iterable[left], iterable[right])
 
 
 def to_cycles(perm):
