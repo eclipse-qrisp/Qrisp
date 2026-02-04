@@ -921,7 +921,7 @@ class BlockEncoding:
     __radd__ = __add__
     __rmul__ = __mul__
 
-    def __matmul__(self, other: BlockEncoding) -> BlockEncoding:
+    def kron(self, other: BlockEncoding) -> BlockEncoding:
         r"""
         Implements the Kronecker product of two BlockEncodings.
         Implementation as described in Chapter 10.2 in `Dalzell et al. <https://arxiv.org/abs/2310.03011>`_.
@@ -938,8 +938,8 @@ class BlockEncoding:
 
         Notes
         -----
-        - The ``@`` operator maps the operands of self to the first set of operands and the operands of other to the remaining operands in a single unified unitary.
-        - The ``@`` operator should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method.
+        - The ``kron`` operator maps the operands of self to the first set of operands and the operands of other to the remaining operands in a single unified unitary.
+        - The ``kron`` operator should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method.
         - A more qubit-efficient implementation of the Kronecker product can be found in `this paper <https://arxiv.org/pdf/2509.15779>`_ and will be implemented in future updates.
 
         Examples
@@ -960,7 +960,7 @@ class BlockEncoding:
             BE1 = H1.pauli_block_encoding()
             BE2 = H2.pauli_block_encoding()
 
-            BE_composed = BE1 @ BE2
+            BE_composed = BE1.kron(BE2)
 
             n1 = H1.find_minimal_qubit_amount()
             n2 = H2.find_minimal_qubit_amount()
@@ -975,7 +975,7 @@ class BlockEncoding:
                 return BE.apply_rus(operand_prep)()
 
             result = main(BE_composed)
-            print("Result from BE1 @ BE2: ", result)
+            print("Result from BE1.kron(BE2): ", result)
 
         **Example 2:**
 
@@ -995,7 +995,7 @@ class BlockEncoding:
             BE3 = H3.pauli_block_encoding()
 
             # Compose BE1 with the composition of BE2 and BE3
-            BE_composed = BE1 @ (BE2 @ BE3)
+            BE_composed = BE1.kron(BE2.kron(BE3))
 
             n1 = H1.find_minimal_qubit_amount()
             n2 = H2.find_minimal_qubit_amount()
@@ -1012,7 +1012,7 @@ class BlockEncoding:
                 return BE.apply_rus(operand_prep)()
 
             result = main(BE_composed)
-            print("Result from BE1 @ BE2 @ BE3: ", result)
+            print("Result from BE1.kron(BE2.kron(BE3)): ", result)
 
         """
         m = len(self.anc_templates)
