@@ -32,8 +32,10 @@ if TYPE_CHECKING:
 
 def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial", _rescale: bool = True) -> BlockEncoding:
     r"""
-    Performs `Generalized Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
-    Applies polynomial transformations on the eigenvalues of a Hermitian operator.
+    Returns a BlockEncoding representing a polynomial transformation of the operator via `Generalized Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
+
+    For a block-encoded operator $H$ and a (complex) polynomial $p(z)$, this method returns 
+    a BlockEncoding of the operator $p(H)$.
 
     The Quantum Eigenvalue Transform is described as follows:
     
@@ -50,16 +52,22 @@ def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polyno
     Parameters
     ----------
     H : BlockEncoding | QubitOperator
-        The Hermitian operator.
+        The Hermitian operator to be transformed.
     p : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
     kind : {"Polynomial", "Chebyshev"}
-        The kind of ``p``. The default is ``"Polynomial"``.
+        The basis in which the coefficients are defined. 
+
+        - ``"Polynomial"``: $p(x) = \sum c_i x^i$
+
+        - ``"Chebyshev"``: $p(x) = \sum c_i T_i(x)$, where $T_i$ are Chebyshev polynomials of the first kind.
+
+        Default is ``"Polynomial"``.
 
     Returns
     -------
     BlockEncoding
-        A block encoding of $p(H)$.
+        A new BlockEncoding instance representing the transformed operator $p(H)$.
 
     Examples
     --------

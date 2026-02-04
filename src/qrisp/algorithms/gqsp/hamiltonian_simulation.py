@@ -35,17 +35,17 @@ if TYPE_CHECKING:
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
 def hamiltonian_simulation(H: QubitOperator | BlockEncoding, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
     r"""
-    Performs Hamiltonian simulation using Generalised Quantum Signal Processing.
+    Returns a BlockEncoding approximating Hamiltonian simulation of the operator.
 
-    This function approximates the unitary evolution operator $U = e^{-itH}$
-    by expanding the time-evolution function into a series of Bessel functions 
-    via the Jacobi-Anger identity
+    For a block-encoded Hamiltonian $H$, this method returns a BlockEncoding of an approximation of
+    the unitary evolution operator $e^{-itH}$ for a given time $t$.
+
+    The approximation is based on the Jacobi-Anger expansion into Bessel functions 
+    of the first kind ($J_n$):
 
     .. math ::
 
         e^{-it\cos(\theta)} \approx \sum_{n=-N}^{N}(-i)^nJ_n(t)e^{in\theta}
-
-    where $J_n(t)$ are Bessel functions of the first kind.
 
     Parameters
     ----------
@@ -54,12 +54,14 @@ def hamiltonian_simulation(H: QubitOperator | BlockEncoding, t: "ArrayLike" = 1,
     t : ArrayLike
         The scalar evolution time $t$. The default is 1.0.
     N : int
-        The truncation order of the expansion. The default is 1.
+        The truncation order $N$ of the expansion. A higher order provides 
+        better approximation for larger $t$ or higher precision requirements. 
+        Default is 1.
 
     Returns
     -------
     BlockEncoding
-        A block encoding approximating the unitary $e^{-itH}$.
+        A new BlockEncoding instance representing an approximation of the unitary $e^{-itH}$.
 
     Notes
     -----

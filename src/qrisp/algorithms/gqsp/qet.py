@@ -34,8 +34,10 @@ if TYPE_CHECKING:
 
 def QET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial", _rescale: bool = True) -> BlockEncoding:
     r"""
-    Performs `Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
-    Applies **real, fixed parity** polynomial transformations on the eigenvalues of a Hermitian operator.
+    Returns a BlockEncoding representing a polynomial transformation of the operator via `Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
+
+    For a block-encoded operator $H$ and a **real, fixed parity** polynomial $p(x)$, this method returns 
+    a BlockEncoding of the operator $p(H)$.
 
     The Quantum Eigenvalue Transform is described as follows:
     
@@ -62,7 +64,7 @@ def QET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynom
     Returns
     -------
     BlockEncoding
-        A block encoding of $p(H)$.
+        A new BlockEncoding instance representing the transformed operator $p(H)$.
 
     Examples
     --------

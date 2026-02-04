@@ -1430,14 +1430,11 @@ class BlockEncoding:
     
     def poly(self, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial") -> BlockEncoding:
         r"""
-        Returns a Block-Encoding representing a polynomial transformation of the operator.
+        Returns a BlockEncoding representing a polynomial transformation of the operator.
 
         For a block-encoded matrix $A$ and a (complex) polynomial $p(z)$, this method returns 
         a BlockEncoding of the operator $p(A)$. This is achieved using 
         Generalized Quantum Eigenvalue Transformation (GQET).
-
-        For a block-encoded matrix $A$ and a polynomial $p$, this function returns a BlockEncoding for 
-        the matrix polynomial operator $p(A)$.
 
         Parameters
         ----------

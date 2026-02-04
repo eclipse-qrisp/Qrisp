@@ -25,15 +25,13 @@ from qrisp.block_encodings import BlockEncoding
 
 def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
     r"""
-    Quantum Linear System Solver via Generalized Quantum Eigenvalue Transformation (GQET).
+    Quantum Linear System Solver via Quantum Eigenvalue Transformation (QET).
+    Returns a BlockEncoding approximating the matrix inversion of the operator.
 
-    Approximates the inverse $A^{-1}$ of a block-encoded Hermitian matrix $A$
-    using a polynomial expansion based on the Quantum Eigenvalue Transformation.
-
-    The function constructs a polynomial that approximates $1/x$ over the 
-    domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$. The resulting 
-    BlockEncoding represents an operator $\tilde{A}^{-1}$ such that 
-    $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$.
+    For a block-encoded matrix $A$, this function returns a BlockEncoding of an 
+    operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$. 
+    The inversion is implemented via Quantum Eigenvalue Transformation (QET)         
+    using a polynomial approximation of $1/x$ over the domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$.
 
     Parameters
     ----------
@@ -49,7 +47,7 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
     Returns
     -------
     BlockEncoding
-        A block encoding approximating the inverse operator $A^{-1}$.
+        A new BlockEncoding instance representing an approximation of the inverse $A^{-1}$.
 
     Notes
     -----
@@ -81,7 +79,7 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
         print("Condition number of A: ", kappa)
         # Condition number of A:  1.8448536035491883
 
-    Generate a block encoding of $A$ and use :meth:`inversion` to find a block-encoding approximating $A^{-1}$.
+    Generate a block-encoding of $A$ and use :meth:`inversion` to find a block-encoding approximating $A^{-1}$.
 
     ::
 
