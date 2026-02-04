@@ -132,3 +132,45 @@ def test_invalid_adder():
         NotImplementedError, 
         match="Adder invalid_adder not implemented for the inpl_add function."):
         inpl_add(a, b, adder="invalid_adder")
+
+
+@pytest.mark.parametrize("i, j, a_value, b_value, ctrl_qbl_value, expected_result", [
+    (10, 11, 3, 5, True, {8: 1.0}),  
+    (10, 11, 3, 5, False, {5: 1.0}),  
+])
+def test_inpl_add_static_mode(i, j, a_value, b_value, ctrl_qbl_value, expected_result):
+    """Verify the main in-place adder is triggered when the control qubit is in the |1> state
+    in static mode. """
+    a = QuantumFloat(i)
+    b = QuantumFloat(j)
+    a[:] = a_value
+    b[:] = b_value
+    ctrl_qbl = QuantumBool()
+    if ctrl_qbl_value:
+        x(ctrl_qbl[0])
+    inpl_add(a, b, ctrl=ctrl_qbl)
+    result = b.get_measurement()
+    assert result == expected_result
+
+@pytest.mark.parametrize("i, j, a_value, b_value, ctrl_qbl_value, expected_result", [
+    (16, 19, 4, 6, True, (4.0, 10.0)),  
+    (16, 19, 4, 6, False, (4.0, 6.0)),  
+])
+def test_inpl_add_dynamic_mode(i, j, a_value, b_value, ctrl_qbl_value, expected_result):
+    """Verify the main in-place adder is triggered when the control qubit is in the |1> state
+    in dynamic mode. """
+    def run_jasp_adder_with_control(i, j):
+        a = QuantumFloat(i)
+        b = QuantumFloat(j)
+        a[:] = a_value
+        b[:] = b_value
+        ctrl_qbl = QuantumBool()
+        if ctrl_qbl_value:
+            x(ctrl_qbl[0])
+        inpl_add(a, b, ctrl=ctrl_qbl)
+        return measure(a), measure(b)
+    
+    jaspr = make_jaspr(run_jasp_adder_with_control)(2, 3)
+    result_a, result_b = jaspr(i, j)
+    assert result_a == expected_result[0]
+    assert result_b == expected_result[1]

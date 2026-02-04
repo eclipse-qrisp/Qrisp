@@ -23,6 +23,7 @@ def inpl_add(
     qf1,
     qf2,
     adder=None,
+    ctrl=None,
     ignore_rounding_error=False,
     ignore_overflow_error=False,
 ):
@@ -69,4 +70,4 @@ def inpl_add(
         raise NotImplementedError(f"Adder {adder} not implemented for the inpl_add function.")
     
     if adder == "cuccaro" or adder is None:
-        cdkpm_adder(qf1, qf2) 
+        cdkpm_adder(qf1, qf2, ctrl=ctrl) 
