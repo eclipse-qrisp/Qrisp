@@ -826,10 +826,32 @@ class QuantumArray:
 
         """
 
-        if not self.qtype is other.qtype:
-            raise Exception(
-                "Tried to concatenate two QuantumArrays with non-identical qtype"
-            )
+        from qrisp.qtypes import QuantumFloat
+        
+        # How can we make this more secure?
+        if check_for_tracing_mode():
+            if not type(self.qtype) == type(other.qtype):
+                raise Exception(
+                    "Tried to concatenate two QuantumArrays with non-identical qtype"
+                )
+                
+            if isinstance(self.qtype, QuantumFloat):
+                if self.qtype.signed != other.qtype.signed:
+                    raise Exception(
+                        "Tried to concatenate two QuantumArrays with non-identical qtype"
+                    )
+        else:
+            if (not type(self.qtype) == type(other.qtype)) or (self.qtype.size != other.qtype.size):
+                raise Exception(
+                    "Tried to concatenate two QuantumArrays with non-identical qtype"
+                )                
+            
+            if isinstance(self.qtype, QuantumFloat):
+                if self.qtype.exponent != other.qtype.exponent or self.qtype.signed != other.qtype.signed:
+                    raise Exception(
+                        "Tried to concatenate two QuantumArrays with non-identical qtype"
+                    )
+                    
 
         res = copy.copy(self)
 
