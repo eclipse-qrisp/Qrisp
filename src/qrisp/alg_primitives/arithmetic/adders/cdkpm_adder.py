@@ -18,12 +18,14 @@
 from qrisp import *
 import jax.numpy as jnp
 
-
-def cdkpm_adder(a, b, c_in=None, c_out=None):
+@custom_control
+def cdkpm_adder(a, b, c_in=None, c_out=None, ctrl = None):
     """In-place adder as introduced in https://arxiv.org/abs/quant-ph/0410184
 
     This function works in both static and dynamic modes. The allowed inputs are both quantum types or one classical
     type and one quantum type. 
+
+    The custom control implementation is based on Theorem 2.12 of https://arxiv.org/abs/2407.20167
 
     .. note::
     
@@ -142,25 +144,46 @@ def cdkpm_adder(a, b, c_in=None, c_out=None):
     # cnot
     cx(a[-1], ancilla2[-1])
 
-    # iterator uma gate application
-    for j in jrange(dim_a - 1):
-        # reverse the iteration
-        i = dim_a - j - 1
+    if ctrl is None:
 
-        x(b[i])
-        cx(a[i - 1], b[i])
-        mcx([a[i - 1], b[i]], a[i])
-        x(b[i])
-        cx(a[i], a[i - 1])
-        cx(a[i], b[i])
+        # iterator uma gate application
+        for j in jrange(dim_a - 1):
+            # reverse the iteration
+            i = dim_a - j - 1
 
-    # last uma gate application
-    x(b[0])
-    cx(ancilla[0], b[0])
-    mcx([ancilla[0], b[0]], a[0])
-    x(b[0])
-    cx(a[0], ancilla[0])
-    cx(a[0], b[0])
+            x(b[i])
+            cx(a[i - 1], b[i])
+            mcx([a[i - 1], b[i]], a[i])
+            x(b[i])
+            cx(a[i], a[i - 1])
+            cx(a[i], b[i])
+
+        # last uma gate application
+        x(b[0])
+        cx(ancilla[0], b[0])
+        mcx([ancilla[0], b[0]], a[0])
+        x(b[0])
+        cx(a[0], ancilla[0])
+        cx(a[0], b[0])
+    
+    else:
+
+        # iterator uma gate application
+        for j in jrange(dim_a - 1):
+            # reverse the iteration
+            i = dim_a - j - 1
+
+            mcx([a[i - 1], b[i]], a[i])
+            mcx([ctrl, a[i-1]], b[i])
+            cx(a[i], a[i - 1])
+            cx(a[i], b[i])
+        
+        # last uma gate application
+        mcx([ancilla[0], b[0]], a[0])
+        mcx([ctrl, ancilla[0]], b[0])
+        cx(a[0], ancilla[0])
+        cx(a[0], b[0])
+    
 
     if c_in is None:
         ancilla.delete()
