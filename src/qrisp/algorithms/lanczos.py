@@ -203,7 +203,7 @@ def lanczos_expvals(H, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dic
     Returns
     -------
     expvals : ArrayLike
-        An array-like object of length $2D$ containing the expectation values 
+        An array-like object of shape (2*D,) containing the expectation values 
         $\langle T_k(H) \rangle$ for $k=0, \dots, 2D-1$.
 
     """
@@ -261,16 +261,16 @@ def build_S_H_from_Tk(expvals: "ArrayLike", D: int) -> Tuple["ArrayLike", "Array
     Parameters
     ----------
     expvals : ArrayLike
-        Expectation values $⟨T_k(H)⟩_0$ for each Chebyshev polynomial order $k$.
+        Expectation values $⟨T_k(H)⟩_0$ for each Chebyshev polynomial order $k$. Array-like of length 2*D (or shape (2*D,)).
     D : int
         Krylov space dimension.
 
     Returns
     -------
     S : ArrayLike
-        Overlap (Gram) matrix $\mathbf{S}$ for Krylov states.
+        Overlap (Gram) matrix $\mathbf{S}$ for Krylov states of shape (D, D).
     H_mat : ArrayLike
-        Hamiltonian matrix $\mathbf{H}$ in Krylov subspace.
+        Hamiltonian matrix $\mathbf{H}$ in Krylov subspace of shape (D, D).
 
     """
     def Tk_vec(k):
@@ -310,20 +310,20 @@ def regularize_S_H(S: "ArrayLike", H_mat: "ArrayLike", cutoff: float = 1e-2) -> 
     Parameters
     ----------
     S : ArrayLike
-        Overlap matrix.
+        Overlap matrix of shape (D, D).
     H_mat : ArrayLike
-        Hamiltonian matrix.
+        Hamiltonian matrix of shape (D, D).
     cutoff : float
         Eigenvalue threshold for regularizing $\mathbf{S}$.
 
     Returns
     -------
     S_reg : ArrayLike
-        Regularized overlap matrix.
+        Regularized overlap matrix of shape (D, D).
     H_reg : ArrayLike
-        Regularized Hamiltonian matrix in Krylov subspace.
+        Regularized Hamiltonian matrix in Krylov subspace of shape (D, D).
     V : ArrayLike
-        Projection matrix.
+        Projection matrix of shape (D, D).
     """
     D = S.shape[0]
 
@@ -371,16 +371,16 @@ def generalized_eigh(A: "ArrayLike", B: "ArrayLike") -> Tuple["ArrayLike", "Arra
     Parameters
     ----------
     A : ArrayLike
-        complex Hermitian or real symmetrix matrix.
+        complex Hermitian or real symmetrix matrix of shape (n, n).
     B : ArrayLike
-        A real symmetric positive-definite matrix.
+        A real symmetric positive-definite matrix of shape (n, n).
 
     Returns
     -------
     eigvals : ArrayLike
-        An array-like object containing the (generalized) eigenvalues.
+        An array-like object of shape (n, ) containing the (generalized) eigenvalues.
     eigvecs : ArrayLike
-        An array-like object containing the (generalized) eigenvectors.
+        An array-like object of shape (n, n) containing the (generalized) eigenvectors.
     """
     # Compute Cholesky decomposition of B (L*L.T)
     # The 'lower=True' parameter is typically the default but good to be explicit.
