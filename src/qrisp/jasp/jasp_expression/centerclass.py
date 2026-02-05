@@ -1573,6 +1573,7 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
         reconstructed = tree_unflatten(out_tree, flat_results)
 
     """
+    from qrisp import recursive_qv_search
     from qrisp.jasp import (
         AbstractQuantumCircuit,
         TracingQuantumSession,
