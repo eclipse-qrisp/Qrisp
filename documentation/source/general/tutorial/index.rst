@@ -80,7 +80,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
         .. raw:: html
 
             <h4 style="font-weight: bold; margin-top: 0;">
-                <a href="./QIROtutorial.html" style="text-decoration: none; color: inherit;">Quantum Linear Algebra</a>
+                <a href="./BE_construct.html" style="text-decoration: none; color: inherit;">Quantum Linear Algebra</a>
             </h4>
 
         .. image:: ../../_static/BE_thumbnail.png
@@ -110,7 +110,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
         .. raw:: html
 
             <h4 style="font-weight: bold; margin-top: 0;">
-                <a href="./QMCItutorial.html" style="text-decoration: none; color: inherit;">Filtered state preparation with GQSP</a>
+                <a href="./GQSP_filtering.html" style="text-decoration: none; color: inherit;">Filtered state preparation with GQSP</a>
             </h4>
 
         .. image:: ../../_static/filtering_thumb_placeholder.png
