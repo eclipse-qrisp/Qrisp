@@ -1826,3 +1826,241 @@ def test_select_n_all_false():
     
     # Should select all from arr2
     assert np.array_equal(result, [2, 3])
+
+
+# ============================================================================
+# Detector Ordering Tests
+# ============================================================================
+
+def test_detector_order_chronological():
+    """Test default chronological detector ordering."""
+    @extract_stim
+    def chrono_detectors():
+        qv = QuantumVariable(3)
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        m2 = measure(qv[2])
+        
+        d0 = parity(m0, expectation=False)
+        d1 = parity(m1, expectation=False)
+        d2 = parity(m2, expectation=False)
+        
+        return d0, d1, d2
+    
+    d0, d1, d2, circuit = chrono_detectors()
+    
+    # Detectors should be in chronological order
+    assert isinstance(d0, StimDetectorHandles)
+    assert isinstance(d1, StimDetectorHandles)
+    assert isinstance(d2, StimDetectorHandles)
+    assert d0 == 0
+    assert d1 == 1
+    assert d2 == 2
+    
+    # Circuit should have detectors in order
+    circuit_str = str(circuit)
+    assert "DETECTOR rec[-3]" in circuit_str
+    assert "DETECTOR rec[-2]" in circuit_str
+    assert "DETECTOR rec[-1]" in circuit_str
+
+
+def test_detector_order_return_order():
+    """Test detector_order='return_order' reorders detectors based on return values."""
+    @extract_stim(detector_order="return_order")
+    def reordered_detectors():
+        qv = QuantumVariable(3)
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        m2 = measure(qv[2])
+        
+        # Create detectors in chronological order
+        d0 = parity(m0, expectation=False)
+        d1 = parity(m1, expectation=False)
+        d2 = parity(m2, expectation=False)
+        
+        # Return in different order: d2, d0, d1
+        return d2, d0, d1
+    
+    d2, d0, d1, circuit = reordered_detectors()
+    
+    # Detector indices should be updated to reflect new order
+    # Note: scalar detectors become int after reordering
+    assert d2 == 0  # d2 is now first
+    assert d0 == 1  # d0 is now second
+    assert d1 == 2  # d1 is now third
+    
+    # Circuit should have detectors reordered
+    circuit_str = str(circuit)
+    lines = circuit_str.strip().split('\n')
+    
+    # The last three lines should be the detectors in reordered positions
+    # d2 (originally rec[-1]), d0 (originally rec[-3]), d1 (originally rec[-2])
+    assert "DETECTOR rec[-1]" in lines[-3]  # d2
+    assert "DETECTOR rec[-3]" in lines[-2]  # d0
+    assert "DETECTOR rec[-2]" in lines[-1]  # d1
+
+
+def test_detector_order_invalid_value():
+    """Test that invalid detector_order raises ValueError."""
+    import pytest
+    
+    with pytest.raises(ValueError, match="detector_order must be 'chronological' or 'return_order'"):
+        @extract_stim(detector_order="invalid")
+        def invalid_order():
+            qv = QuantumVariable(1)
+            return measure(qv)
+
+
+def test_detector_order_partial_detectors():
+    """Test that returning only subset of detectors raises error with return_order."""
+    import pytest
+    
+    @extract_stim(detector_order="return_order")
+    def partial_detectors():
+        qv = QuantumVariable(5)
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        m2 = measure(qv[2])
+        m3 = measure(qv[3])
+        m4 = measure(qv[4])
+        
+        # Create 5 detectors
+        d0 = parity(m0, expectation=False)
+        d1 = parity(m1, expectation=False)
+        d2 = parity(m2, expectation=False)
+        d3 = parity(m3, expectation=False)
+        d4 = parity(m4, expectation=False)
+        
+        # Only return 3 of them
+        return d1, d3, d0
+    
+    # Should raise error because permutation is incomplete
+    with pytest.raises(ValueError, match="Circuit contains 5 detectors, but permutation has length 3"):
+        partial_detectors()
+
+
+def test_detector_order_no_detectors_returned():
+    """Test that returning no detectors works fine with return_order."""
+    @extract_stim(detector_order="return_order")
+    def no_detectors():
+        qv = QuantumVariable(3)
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        m2 = measure(qv[2])
+        
+        # Create detectors but don't return them
+        d0 = parity(m0, expectation=False)
+        d1 = parity(m1, expectation=False)
+        d2 = parity(m2, expectation=False)
+        
+        # Return measurements instead
+        return m0, m1, m2
+    
+    m0, m1, m2, circuit = no_detectors()
+    
+    # Should work fine - no reordering applied
+    assert isinstance(m0, StimMeasurementHandles)
+    assert circuit.num_detectors == 3
+
+
+def test_detector_order_nested_structure():
+    """Test that detector_order='return_order' works with nested structures."""
+    import jax.numpy as jnp
+    
+    @extract_stim(detector_order="return_order")
+    def nested_detectors():
+        qv = QuantumVariable(4)
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        m2 = measure(qv[2])
+        m3 = measure(qv[3])
+        
+        d0 = parity(m0, expectation=False)
+        d1 = parity(m1, expectation=False)
+        d2 = parity(m2, expectation=False)
+        d3 = parity(m3, expectation=False)
+        
+        # Return in nested structure
+        first_pair = jnp.array([d0, d1])
+        second_pair = jnp.array([d2, d3])
+        
+        return first_pair, second_pair
+    
+    first_pair, second_pair, circuit = nested_detectors()
+    
+    # Arrays should be flattened and all detectors extracted
+    assert isinstance(first_pair, StimDetectorHandles)
+    assert isinstance(second_pair, StimDetectorHandles)
+    assert first_pair.shape == (2,)
+    assert second_pair.shape == (2,)
+    
+    # Indices should be reordered based on flattened order
+    assert np.array_equal(first_pair, [0, 1])
+    assert np.array_equal(second_pair, [2, 3])
+    
+    # All 4 detectors should be present
+    assert circuit.num_detectors == 4
+
+
+def test_detector_order_repetition_code():
+    """Test detector_order='return_order' with repetition code pattern."""
+    import jax.numpy as jnp
+    from qrisp import QuantumArray, QuantumBool, reset, cx
+    
+    code_size = 4
+    rounds = 3
+    
+    def syndrom_round(data, ancilla):
+        reset(ancilla)
+        for i in range(ancilla.size):
+            cx(data[i], ancilla[i])
+            cx(data[i+1], ancilla[i])
+        return measure(ancilla)
+    
+    def multi_round(data, ancilla, amount):
+        parity_outcome_list = []
+        previous_meas_res = syndrom_round(data, ancilla)
+        
+        for i in range(1, amount):
+            new_meas_res = syndrom_round(data, ancilla)
+            detector_value = parity(new_meas_res, previous_meas_res, expectation=False)
+            parity_outcome_list.append(detector_value)
+            previous_meas_res = new_meas_res
+        
+        return jnp.vstack(parity_outcome_list)
+    
+    # Test manual approach
+    @extract_stim
+    def main_manual():
+        data = QuantumArray(shape=(code_size,), qtype=QuantumBool())
+        ancilla = QuantumArray(shape=(code_size - 1,), qtype=QuantumBool())
+        
+        for d in data:
+            x(d)
+        
+        return multi_round(data, ancilla, rounds)
+    
+    detector_positions, circuit_manual = main_manual()
+    
+    # Test automatic approach
+    @extract_stim(detector_order="return_order")
+    def main_auto():
+        data = QuantumArray(shape=(code_size,), qtype=QuantumBool())
+        ancilla = QuantumArray(shape=(code_size - 1,), qtype=QuantumBool())
+        
+        for d in data:
+            x(d)
+        
+        return multi_round(data, ancilla, rounds)
+    
+    detector_positions_auto, circuit_auto = main_auto()
+    
+    # Manually reorder the first circuit
+    from qrisp.misc.stim_tools import permute_detectors
+    circuit_manual_reordered = permute_detectors(circuit_manual, detector_positions.flatten())
+    
+    # Both approaches should produce identical circuits
+    assert str(circuit_manual_reordered) == str(circuit_auto)
+    
+    # Detector positions should match
+    assert np.array_equal(detector_positions_auto.flatten(), np.arange(len(detector_positions.flatten())))
