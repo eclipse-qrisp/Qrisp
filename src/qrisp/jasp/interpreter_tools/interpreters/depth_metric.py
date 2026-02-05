@@ -18,14 +18,14 @@
 
 import types
 from functools import lru_cache
-from typing import Callable, Tuple
+from typing import Any, Callable, Iterator, List, Tuple
 
 import jax
 import jax.numpy as jnp
 from jax.random import key
 from jax.typing import ArrayLike
 
-from qrisp.circuit.operation import Operation
+from qrisp.circuit.instruction import Instruction
 from qrisp.jasp.interpreter_tools import (
     BaseMetric,
     eval_jaxpr,
@@ -41,12 +41,45 @@ from qrisp.jasp.primitives import (
 )
 
 
-@lru_cache(maxsize=None)
-def _duration_for_op(op: Operation) -> int:
-    """Return the duration (depth contribution) for a given operation."""
-    if getattr(op, "definition", None):
-        return int(op.definition.transpile().depth())
-    return 1
+def _apply_duration_on_qubits(
+    depth_array: jnp.ndarray,
+    current_depth: jnp.ndarray,
+    qubit_ids: List,
+    duration: jnp.ndarray,
+) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    """
+    Apply a gate of given duration on specified qubits,
+    updating the depth array and current depth accordingly.
+    """
+    qubit_ids_arr = jnp.asarray(qubit_ids, dtype=jnp.int64)
+    touched = jnp.take(depth_array, qubit_ids_arr)
+    start = jnp.max(touched)
+    end = start + jnp.int64(duration)
+
+    depth_array = depth_array.at[qubit_ids_arr].set(end)
+    current_depth = jnp.maximum(current_depth, end)
+    return depth_array, current_depth
+
+
+# This function creates a lookup table (mapping table) with length `table_size`
+# (this must be a concrete integer because of JAX and <= MAX_QUBITS)
+# that maps logical indices to global qubit ids in the depth array.
+def _create_lookup_table(idx_start: ArrayLike, table_size: ArrayLike) -> ArrayLike:
+    """Create a lookup table for qubit IDs starting from idx_start."""
+
+    return idx_start + jnp.arange(table_size, dtype=jnp.int64)
+
+
+def _iter_definition_ops(definition) -> Iterator[Tuple[Instruction, List[Any]]]:
+    """Iterate over operations in a quantum circuit definition."""
+
+    for instruction in definition.data:
+        qubits = getattr(instruction, "qubits", None)
+        if qubits is None:
+            raise TypeError(
+                f"Unsupported definition.data entry type {type(instruction)}: {instruction}"
+            )
+        yield instruction, list(qubits)
 
 
 class DepthMetric(BaseMetric):
@@ -99,17 +132,6 @@ class DepthMetric(BaseMetric):
         """Return the maximum number of qubits supported."""
         return self._max_qubits
 
-    # This method creates a lookup table (mapping table) with length `table_size`
-    # (this must be a concrete integer because of JAX and <= MAX_QUBITS)
-    # that maps logical indices to global qubit ids in the depth array.
-    def _create_lookup_table(
-        self, idx_start: ArrayLike, table_size: ArrayLike
-    ) -> ArrayLike:
-        """Create a lookup table for qubit IDs starting from idx_start."""
-
-        qubits_lookup_table = idx_start + jnp.arange(table_size, dtype=jnp.int64)
-        return qubits_lookup_table
-
     def handle_create_qubits(self, invalues, eqn, context_dic):
         """Handle the `jasp.create_qubits` primitive."""
 
@@ -126,7 +148,7 @@ class DepthMetric(BaseMetric):
         context_dic["_previous_qubit_array_end"] = idx_end
 
         table_size = size if not is_abstract(size) else self.max_qubits
-        qubit_ids_table = self._create_lookup_table(idx_start, table_size)
+        qubit_ids_table = _create_lookup_table(idx_start, table_size)
 
         qubit_table_handle = (qubit_ids_table, size)
 
@@ -160,21 +182,47 @@ class DepthMetric(BaseMetric):
     def handle_quantum_gate(self, invalues, eqn, context_dic):
         """Handle the `jasp.quantum_gate` primitive."""
 
-        *qubits, metric_data = invalues
-        depth_array, current_depth, invalid = metric_data
-
-        # Qubits have been already converted to their integer indices
-        # by the `jasp.get_qubit` primitive handler
-        qubit_ids = jnp.asarray(qubits, dtype=jnp.int64)
-        touched = jnp.take(depth_array, qubit_ids)
-        start = jnp.max(touched)
+        # invalues are (*qubits, *params, metric_data)
 
         op = eqn.params["gate"]
-        duration = jnp.int64(_duration_for_op(op))
-        end = start + duration
 
-        depth_array = depth_array.at[qubit_ids].set(end)
-        current_depth = jnp.maximum(current_depth, end)
+        depth_array, current_depth, invalid = invalues[-1]
+
+        # Qubits have been already converted to their integer (possibly traced)
+        # indices by the `jasp.get_qubit` primitive handler
+        qubits = list(invalues[: op.num_qubits])
+
+        if not getattr(op, "definition", None):
+            depth_array, current_depth = _apply_duration_on_qubits(
+                depth_array=depth_array,
+                current_depth=current_depth,
+                qubit_ids=qubits,
+                duration=jnp.int64(1),
+            )
+            return depth_array, current_depth, invalid
+
+        transpiled_definition = op.definition.transpile()
+        concrete_qubits = list(transpiled_definition.qubits)
+
+        # Here, `concrete_qubits` are Qubit objects, while `qubits` are retrieved
+        # from the invalues and are integer tracers/array scalars.
+        # With this `qubit_map` below, we can map the concrete qubits in the
+        # op definition to their corresponding indices in the depth array.
+        qubit_map = dict(zip(concrete_qubits, qubits, strict=True))
+
+        for _, inner_def_qubits in _iter_definition_ops(transpiled_definition):
+
+            if not inner_def_qubits:
+                continue
+
+            inner_ids = [qubit_map[qb] for qb in inner_def_qubits]
+
+            depth_array, current_depth = _apply_duration_on_qubits(
+                depth_array=depth_array,
+                current_depth=current_depth,
+                qubit_ids=inner_ids,
+                duration=jnp.int64(1),
+            )
 
         # Associate the following in context_dic:
         # QuantumCircuit -> metric_data (depth_array, current_depth, invalid)
@@ -218,7 +266,7 @@ class DepthMetric(BaseMetric):
         size_out = jnp.minimum(size_a + size_b, jnp.int64(self.max_qubits))
 
         table_size = size_out if not is_abstract(size_out) else self.max_qubits
-        idxs = self._create_lookup_table(jnp.int64(0), table_size)
+        idxs = _create_lookup_table(jnp.int64(0), table_size)
 
         # We start from qubit_array_a and then we overwrite entries from b where needed
         qubit_array_out = qubit_array_a
@@ -247,7 +295,7 @@ class DepthMetric(BaseMetric):
         size_out = stop - start
         table_size = size_out if not is_abstract(size_out) else self.max_qubits
 
-        array_idx_mapping = self._create_lookup_table(start, table_size)
+        array_idx_mapping = _create_lookup_table(start, table_size)
         qubit_array_out = qubit_array[array_idx_mapping]
 
         # Associate the following in context_dic:

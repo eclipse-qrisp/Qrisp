@@ -135,7 +135,8 @@ class BaseMetric(ABC):
     ) -> Sequence:
         """Handle the `jasp.slice` primitive."""
 
-    # quantum_gate has the signature (Qubit, ... , QuantumCircuit)
+    # quantum_gate has the signature:
+    # (Qubit 0, Qubit 1,  ...  , Param 0, Param 1 ... , QuantumCircuit)
     # Outvars is (QuantumCircuit)
     @abstractmethod
     def handle_quantum_gate(

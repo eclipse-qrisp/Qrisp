@@ -351,12 +351,8 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
     **Macro-gates and gate definitions**
 
     If a gate has a ``definition`` (for example a Toffoli gate implemented
-    as a sequence of simpler gates), it is treated as a *macro-gate* with a
-    fixed duration equal to the depth of its definition. This duration is
-    applied uniformly to all qubits the gate acts on.
-
-    For instance, if a Toffoli gate has an internal decomposition of depth 8,
-    applying it to three qubits increases the depth of all three qubits by 8.
+    as a sequence of simpler gates), the `transpile` method is applied to
+    the definition to determine the depth of the macro-gate.
 
     .. note::
 

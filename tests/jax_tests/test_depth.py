@@ -18,7 +18,17 @@
 
 import pytest
 
-from qrisp import QuantumFloat, control, cx, depth, h, mcx, measure
+from qrisp import (
+    QuantumFloat,
+    control,
+    cx,
+    depth,
+    h,
+    measure,
+    QuantumVariable,
+    QuantumCircuit,
+    rx,
+)
 from qrisp.jasp import jrange, q_cond
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
@@ -222,29 +232,119 @@ class TestDepthMultiQubit:
         assert main(4, 2) == 4
 
     @pytest.mark.parametrize(
-        "first_h_idx,mcx_controls,mcx_target,second_h_idx,expected_depth",
+        "x_target,expected_depth",
         [
-            (3, [0, 1], 2, 3, 8),
-            (0, [0, 1], 2, 3, 9),
-            (0, [0, 1], 2, 0, 10),
+            (1, 3),
+            (0, 6),
         ],
     )
-    def test_ops_with_definition(
-        self, first_h_idx, mcx_controls, mcx_target, second_h_idx, expected_depth
-    ):
-        """Test depth computation for operations with definitions (e.g., mcx)."""
+    def test_op_with_definition(self, x_target, expected_depth):
+        """Test depth computation for an operation with definition."""
+
+        qc = QuantumCircuit(2)
+        for _ in range(3):
+            qc.x(x_target)
+        gate = qc.to_gate()
 
         @depth(meas_behavior="0")
-        def main(num_qubits, first_h_idx, mcx_controls, mcx_target, second_h_idx):
-            qf = QuantumFloat(num_qubits)
-            h(qf[first_h_idx])
-            mcx([qf[i] for i in mcx_controls], qf[mcx_target])
-            h(qf[second_h_idx])
+        def main(num_qubits):
+            qv = QuantumVariable(num_qubits)
 
-        assert (
-            main(3, first_h_idx, mcx_controls, mcx_target, second_h_idx)
-            == expected_depth
-        )
+            for _ in range(3):
+                h(qv[0])
+
+            qv.qs.append(gate, [qv[0], qv[1]])
+
+        assert main(2) == expected_depth
+
+    def test_op_with_definition2(self):
+        """Test depth computation for an operation with definition."""
+
+        qc_2 = QuantumCircuit(3)
+        for _ in range(3):
+            qc_2.x(0)
+        gate_2 = qc_2.to_gate()
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qv = QuantumVariable(num_qubits)
+            for _ in range(3):
+                h(qv[1])
+            qv.qs.append(gate_2, [qv[1], qv[0], qv[2]])  # NOTE: swapped qubits!
+
+        assert main(3) == 6
+
+    # We keep the following three tests separate for clarity
+    # (parametrization would make them much less readable).
+
+    def test_op_with_definition3(self):
+        """Test depth computation for an operation with definition."""
+
+        qc_1 = QuantumCircuit(2)
+        for _ in range(3):
+            qc_1.rx(3.1415, 0)
+        gate_1 = qc_1.to_gate()
+
+        qc_2 = QuantumCircuit(2)
+        for _ in range(3):
+            qc_2.x(0)
+        qc_2.append(gate_1, [0, 1])
+        gate_2 = qc_2.to_gate()
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qv = QuantumVariable(num_qubits)
+            for _ in range(3):
+                h(qv[0])
+            qv.qs.append(gate_2, [qv[0], qv[1]])
+
+        assert main(2) == 9
+
+    def test_op_with_definition4(self):
+        """Test depth computation for an operation with definition."""
+
+        qc_1 = QuantumCircuit(2)
+        for _ in range(3):
+            qc_1.x(0)
+        gate_1 = qc_1.to_gate()
+
+        qc_2 = QuantumCircuit(2)
+        for _ in range(3):
+            qc_2.rx(3.1415, 1)
+        qc_2.append(gate_1, [0, 1])
+        gate_2 = qc_2.to_gate()
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qv = QuantumVariable(num_qubits)
+            for _ in range(3):
+                h(qv[0])
+            qv.qs.append(gate_2, [qv[0], qv[1]])
+
+        assert main(2) == 6
+
+    def test_op_with_definition5(self):
+        """Test depth computation for an operation with definition."""
+
+        qc_1 = QuantumCircuit(2)
+        for _ in range(3):
+            qc_1.x(1)
+        gate_1 = qc_1.to_gate()
+
+        qc_2 = QuantumCircuit(3)
+        for _ in range(3):
+            qc_2.rx(2.718, 2)
+        qc_2.append(gate_1, [0, 1])
+        gate_2 = qc_2.to_gate()
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qv = QuantumVariable(num_qubits)
+            for _ in range(3):
+                rx(1.618, qv[0])
+            qv.qs.append(gate_2, [qv[0], qv[1], qv[2]])
+
+        assert main(3) == 3
 
 
 class TestDepthControlStructures:
