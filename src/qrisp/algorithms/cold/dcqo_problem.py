@@ -19,62 +19,61 @@
 import numpy as np
 from scipy.optimize import minimize, Bounds
 import sympy as sp
-from qrisp import h
 from qrisp.algorithms.cold.AGP_params import solve_alpha_gamma_chi
 
 
 class DCQOProblem:
     """
-    General structure to formulate Digitized Counterdiabaric Quantum Optimization problems.
-    This class is used to solve DCQO problems with the algorithms COLD, LCD and/or a nonlocal AGP,
-    depending on the parameters given by the user.
+    General structure to formulate Digitized Counterdiabatic Quantum Optimization problems.
+    This class is used to solve DCQO problems with the algorithms COLD or LCD.
+    To run the COLD algorithm on the problem, you need to specify the control Hamiltonian
+    ``H_control`` and the inverse scheduling function ``g_func``. These are not needed for
+    the LCD algorithm.
 
     Parameters
     ----------
-    sympy_lambda : callable
-        A function $\lambda(t, T)$ mapping $t \in$ [0, T] to $\lambda \in$ [0, 1]. This function needs to return
-        a `sympy <https://docs.sympy.org/>`_ expression with $t$ and $T$ as `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
-    agp_coeffs : callable
-        The parameters for the adiabatic gauge potential (AGP). If the COLD method is being used,
-        they must depend on the optimization pulses in ``H_control``.
+    Q : np.array
+        The QUBO matrix.
     H_init : :ref:`QubitOperator`
         Hamiltonian, the system is at the time t=0.
     H_prob : :ref:`QubitOperator`
         Hamiltonian, the system evolves to for t=T.
     A_lam : :ref:`QubitOperator`
         Operator holding an appoximation for the adiabatic gauge potential (AGP).
-    J : np.array
-        The coupling matrix in the ``H_prob`` operator.
-    h : np.aray
-        The local vector in the ``H_prob`` operator.
-    sympy_g : callable
+    agp_coeffs : callable
+        The parameters for the adiabatic gauge potential (AGP). If the COLD method is being used,
+        they must depend on the optimization pulses in ``H_control``.
+    lam_func : callable
+        A function $\lambda(t, T)$ mapping $t \in [0, T]$ to $\lambda \in [0, 1]$. This function needs to return
+        a `sympy <https://docs.sympy.org/>`_ expression with $t$ and $T$ as `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
+    g_func : callable, optional
         The inverse function of $\lambda(t, T)$. This function needs to return a `sympy <https://docs.sympy.org/>`_ expression 
         with $\lambda$ and $T$ as `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
         Only needed for the COLD algorithm.
     H_control : :ref:`QubitOperator`, optional
         Hamiltonian specifying the control pulses for the COLD method. If not given, the LCD method is used automatically.
-    qarg_prep : callable
+    qarg_prep : callable, optional
         A function receiving a :ref:`QuantumVariable` for preparing the inital state.
-        By default, the uniform superposition state $\ket{+}^n$ is prepared.
+        By default, the groundstate of the x-operator $\ket{0}^n$ is prepared.
     """
 
     def __init__(
         self, 
-        sympy_lambda, 
-        agp_coeffs,
+        Q,
         H_init,
         H_prob,
         A_lam,
-        Q,
-        sympy_g = None,
+        agp_coeffs,
+        lam_func, 
+        g_func = None,
         H_control=None,
         qarg_prep=None, 
 
     ):
         
         # Scheduling function
-        self.sympy_lambda = sympy_lambda
-        self.sympy_g = sympy_g
+        self.lam_func = lam_func
+        self.g_func = g_func
 
         # Operators
         self.agp_coeffs = agp_coeffs
@@ -106,9 +105,9 @@ class DCQOProblem:
         Returns
         -------
         lam : array
-            The parametrized timefunction, specified by ``sympy_lambda`` for t in [0, T].
+            The parametrized timefunction, specified by ``lam_func`` for t in [0, T].
         lamdot : array
-            The time derivative of ``sympy_lambda`` for t in [0, T].
+            The time derivative of ``lam_func`` for t in [0, T].
         """
 
         # Sympy symbols for t and T
@@ -118,8 +117,8 @@ class DCQOProblem:
         t_list = np.linspace(dt, T, N_steps)
 
         # Sympy functions for lam and lamdot
-        lam_func = sp.lambdify((t_sym, T_sym), self.sympy_lambda(), 'numpy')
-        lamdot_expr = sp.diff(self.sympy_lambda(), t_sym)
+        lam_func = sp.lambdify((t_sym, T_sym), self.lam_func(), 'numpy')
+        lamdot_expr = sp.diff(self.lam_func(), t_sym)
         lamdot_func = sp.lambdify((t_sym, T_sym), lamdot_expr, 'numpy')
 
         # Compute functions of values t_list
@@ -135,8 +134,8 @@ class DCQOProblem:
         # must only be calculated for COLD, not for LCD
         if method == 'COLD':
             lam_sym = sp.Symbol("lam")
-            g_func = sp.lambdify((lam_sym, T_sym), self.sympy_g(), 'numpy')
-            g_deriv_expr = sp.diff(self.sympy_g(), lam_sym)
+            g_func = sp.lambdify((lam_sym, T_sym), self.g_func(), 'numpy')
+            g_deriv_expr = sp.diff(self.g_func(), lam_sym)
             g_deriv_func = sp.lambdify((lam_sym, T_sym), g_deriv_expr, 'numpy')
             g_deriv = g_deriv_func(self.lam, T)
 
@@ -360,9 +359,6 @@ class DCQOProblem:
                                                  subs_dic=subs_dic, 
                                                  precompiled_qc=qc)()
             
-            if self.callback:
-                self.optimization_costs.append(cost)
-            
             return cost
         
         # Magnitude of the AGP coefficients (coeffs are treated as uniform for simplification)
@@ -478,7 +474,7 @@ class DCQOProblem:
         # If no prep for qarg is specified, use uniform superposition state
         if self.qarg_prep is None:
             def qarg_prep(q):
-                return h(q)
+                return q
             self.qarg_prep = qarg_prep
 
         # Run COLD routine
