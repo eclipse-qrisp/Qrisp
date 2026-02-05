@@ -1491,6 +1491,71 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
         - A Jaspr representation of ``fun`` (if ``return_shape=False``)
         - A tuple ``(Jaspr, out_tree)`` (if ``return_shape=True``) where
           ``out_tree`` is a PyTreeDef that can be used with ``tree_unflatten``
+    
+    Examples
+    --------
+    
+    **Basic quantum circuit with measurement**
+    
+    Create a Jaspr for a simple Bell state circuit:
+    
+    ::
+        
+        from qrisp import QuantumVariable, h, cx, measure
+        from qrisp.jasp import make_jaspr
+        
+        def simple_circuit():
+            qv = QuantumVariable(2)
+            h(qv[0])
+            cx(qv[0], qv[1])
+            return measure(qv)
+        
+        jaspr = make_jaspr(simple_circuit)()
+        result = jaspr()  # Returns 0 or 3 with equal probability
+    
+    **Parameterized quantum circuit**
+    
+    Create a Jaspr with parameterized gates that can be executed with different parameters:
+    
+    ::
+        
+        from qrisp import QuantumVariable, h, p, measure
+        from qrisp.jasp import make_jaspr
+        
+        def rotation_circuit(angle):
+            qv = QuantumVariable(1)
+            h(qv)
+            p(angle, qv)
+            return measure(qv)
+        
+        jaspr = make_jaspr(rotation_circuit)(0.5)
+        result1 = jaspr(0.5)  # Execute with angle=0.5
+        result2 = jaspr(1.0)  # Execute with angle=1.0
+    
+    **Using return_shape for PyTree reconstruction**
+    
+    Retrieve the output `tree structure<https://docs.jax.dev/en/latest/pytrees.html>`_ alongside the Jaspr for reconstructing complex return values:
+    
+    ::
+        
+        from qrisp import QuantumVariable, h, cx, x, measure
+        from qrisp.jasp import make_jaspr
+        from jax.tree_util import tree_unflatten, tree_flatten
+        
+        def multi_output_circuit():
+            qa = QuantumVariable(2)
+            qb = QuantumVariable(2)
+            h(qa[0])
+            cx(qa[0], qa[1])
+            x(qb)
+            return measure(qa), measure(qb)
+        
+        jaspr, out_tree = make_jaspr(multi_output_circuit, return_shape=True)()
+        result_a, result_b = jaspr()
+        
+        # Use out_tree to reconstruct the output structure
+        flat_results, _ = tree_flatten((result_a, result_b))
+        reconstructed = tree_unflatten(out_tree, flat_results)
     """
     from qrisp.jasp import (
         AbstractQuantumCircuit,

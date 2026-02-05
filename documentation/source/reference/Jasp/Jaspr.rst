@@ -35,6 +35,27 @@ Evaluation
    Jaspr.to_qir
    
 
+Evaluation
+^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+   
+   Jaspr.qjit
+   Jaspr.to_qc
+   Jaspr.extract_post_processing   
+   Jaspr.to_qasm
+   Jaspr.to_mlir
+   Jaspr.to_catalyst_jaxpr
+   Jaspr.to_catalyst_mlir
+   Jaspr.to_qir
+   
+
+Construction
+============
+
+.. autofunction:: make_jaspr
+
 
 Advanced details
 ================
