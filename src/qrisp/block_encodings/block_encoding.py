@@ -715,7 +715,61 @@ class BlockEncoding:
             new_anc_templates = [QuantumBool().template()] + self.anc_templates
             return BlockEncoding(self.alpha, new_anc_templates, new_unitary, is_hermitian=True)
         
+<<<<<<< Updated upstream
     def chebyshev(self, k: int) -> BlockEncoding:
+=======
+    def chebyshev(self: "BlockEncoding", k: int) -> BlockEncoding:
+        r"""
+        Returns the block encoding of the $k$-thChebyshev polynomial of the first kind as a BlockEncoding.
+
+        This method computes the Chebyshev polynomial $T_k(U_A)$ of order $k$ 
+        applied to the block-encoding unitary, where $U_A$ is the block-encoding unitary 
+        of operator $A$.
+
+        Parameters
+        ----------
+        k : int
+            The order of the Chebyshev polynomial. Must be a non-negative integer.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding representing the Chebyshev polynomial transformation.
+
+        Notes
+        -----
+        - The Chebyshev polynomial approach is useful for polynomial approximations and spectral methods.
+        - The resulting block-encoding maintains the same scaling factor $\alpha$ as the original.
+
+        Examples
+        --------
+
+        Define a block-encoding and apply the Chebyshev polynomial transformation.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import X, Y, Z
+
+            H = X(0)*X(1) + 0.5*Z(0)*Z(1)
+            BE = H.pauli_block_encoding()
+            
+            # Apply Chebyshev polynomial of order 2
+            BE_cheb = BE.chebyshev(2)
+
+            def operand_prep():
+                qv = QuantumFloat(2)
+                return qv
+
+            @terminal_sampling
+            def main(BE):
+                qv = BE.apply_rus(operand_prep)()
+                return qv
+
+            main(BE_cheb)
+
+        """
+>>>>>>> Stashed changes
 
         m = len(self.anc_templates)
 
