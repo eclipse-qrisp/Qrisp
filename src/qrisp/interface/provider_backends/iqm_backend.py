@@ -22,7 +22,10 @@ def IQMBackend(api_token,
                device_instance = None, 
                server_url = None, 
                compilation_options = None, 
-               transpiler = None):
+               transpiler = None,
+               calibration_set_id: str | UUID | None = None,
+               use_metrics: bool = False,
+               ):
     """
     This function creates a :ref:`BatchedBackend` for executing circuits on IQM hardware.
 
@@ -43,6 +46,12 @@ def IQMBackend(api_token,
         A function receiving and returning a QuantumCircuit, mapping the given
         circuit to a hardware friendly circuit. By default the `transpile_to_iqm <https://iqm-finland.github.io/qiskit-on-iqm/api/iqm.qiskit_iqm.iqm_naive_move_pass.transpile_to_IQM.html>`_
         function will be used.
+    calibration_set_id: ID of the calibration set the backend will use.
+        ``None`` means the IQM Server will be queried for the current default
+        calibration set.
+    use_metrics: If True, the backend will query the server for calibration data and related
+        quality metrics, and pass these to the transpilation target(s). The default value is set
+        to False until quality metrics become available on the Resonance API.
 
     Examples
     --------
@@ -147,7 +156,7 @@ def IQMBackend(api_token,
         server_url = "https://resonance.meetiqm.com/"
         
     client = IQMClient(iqm_server_url = server_url, token = api_token, quantum_computer = device_instance)
-    backend = IQMBackend(client)
+    backend = IQMBackend(client, calibration_set_id=calibration_set_id, use_metrics=use_metrics)
     
     if compilation_options is None:
         compilation_options = CircuitCompilationOptions()
