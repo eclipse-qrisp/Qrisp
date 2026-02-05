@@ -165,17 +165,9 @@ class Jaspr(ClosedJaxpr):
                         "Tried to create Jaspr with constvars but no constants"
                     )
                 consts = []
-<<<<<<< depth_computation_jasp
 
             ClosedJaxpr.__init__(self, jaxpr=Jaxpr(**kwargs), consts=consts)
 
-=======
-            
-            ClosedJaxpr.__init__(self, 
-                                 jaxpr = Jaxpr(**kwargs), 
-                                 consts = consts)
-            
->>>>>>> main
         self.hashvalue = id(self)
         self.permeability = {}
         if permeability is None:
@@ -1482,16 +1474,17 @@ def check_aval_equivalence(invars_1, invars_2):
     avals_2 = [invar.aval for invar in invars_2]
     return all([type(avals_1[i]) == type(avals_2[i]) for i in range(len(avals_1))])
 
+
 def remove_redundant_allocations(closed_jaxpr):
     """
     Optimizes the Jaspr by removing redundant qubit allocations.
-    
+
     Strategy:
     1.  Map usages of all variables to identify how QubitArrays are consumed.
     2.  Identify `jasp.create_qubits` operations that are redundant. An allocation is redundant if:
         -   The resulting QubitArray is not returned by the function.
-        -   The QubitArray is either unused (DropVar) or ONLY used by `free` primitives 
-            (like `get_size`, `delete_qubits`) that don't actually require the physical qubits 
+        -   The QubitArray is either unused (DropVar) or ONLY used by `free` primitives
+            (like `get_size`, `delete_qubits`) that don't actually require the physical qubits
             if we know the allocation parameters.
     3.  Plan removals and replacements:
         -   Mark redundant `create_qubits` equations for removal.
@@ -1503,16 +1496,17 @@ def remove_redundant_allocations(closed_jaxpr):
         -   Update variable references in remaining equations and output variables using the replacement map.
     """
     from jax.core import DropVar
+
     try:
         from jax.extend.core import Literal
     except ImportError:
         from jax.core import Literal
-    
+
     jaxpr = closed_jaxpr.jaxpr
     eqns = jaxpr.eqns
-    
+
     usages = {}
-    
+
     # 1. Build usage map
     # We iterate over all equations and record which equation uses which input variable.
     for eqn in eqns:
@@ -1524,33 +1518,33 @@ def remove_redundant_allocations(closed_jaxpr):
             if var not in usages:
                 usages[var] = []
             usages[var].append(eqn)
-    
+
     # Identify variables that are returned by the function, as these cannot be optimized away.
     returned_vars = set()
     for var in jaxpr.outvars:
         if not isinstance(var, DropVar) and not isinstance(var, Literal):
             returned_vars.add(var)
-    
+
     replacements = {}
     eqns_to_remove = set()
-    
+
     # Primitives that are "safe" to exist on a redundant qubit array.
     # These operations can be resolved without the actual qubits if the allocation is known.
     allowed_primitives = {"jasp.get_size", "jasp.delete_qubits"}
-    
+
     # 2. Identify and plan removals
     for eqn in eqns:
         if eqn.primitive.name == "jasp.create_qubits":
             out_qa = eqn.outvars[0]
             out_qc = eqn.outvars[1]
-            
+
             # If the QubitArray is part of the output, we must keep it.
             if out_qa in returned_vars:
                 continue
-                
+
             # Check if out_qa is only used by allowed primitives or not at all
             is_redundant = False
-            
+
             if isinstance(out_qa, DropVar) or out_qa not in usages:
                 is_redundant = True
             else:
@@ -1562,24 +1556,24 @@ def remove_redundant_allocations(closed_jaxpr):
                         break
                 if only_allowed_usages:
                     is_redundant = True
-            
+
             if is_redundant:
                 eqns_to_remove.add(id(eqn))
-                
+
                 # Rewire circuit: Bypass the allocation by mapping output circuit to input circuit.
                 replacements[out_qc] = eqn.invars[1]
-                
+
                 # Handle dependent equations (safe primitives)
                 if not isinstance(out_qa, DropVar) and out_qa in usages:
                     for u_eqn in usages[out_qa]:
                         eqns_to_remove.add(id(u_eqn))
-                        
+
                         if u_eqn.primitive.name == "jasp.get_size":
-                             # Optimize get_size: Use the input size from create_qubits directly.
-                             replacements[u_eqn.outvars[0]] = eqn.invars[0]
+                            # Optimize get_size: Use the input size from create_qubits directly.
+                            replacements[u_eqn.outvars[0]] = eqn.invars[0]
                         elif u_eqn.primitive.name == "jasp.delete_qubits":
-                             # Bypass cleanup: Map the cleanup's output circuit to its input circuit.
-                             replacements[u_eqn.outvars[0]] = u_eqn.invars[1]
+                            # Bypass cleanup: Map the cleanup's output circuit to its input circuit.
+                            replacements[u_eqn.outvars[0]] = u_eqn.invars[1]
 
     if not eqns_to_remove:
         return
@@ -1602,13 +1596,12 @@ def remove_redundant_allocations(closed_jaxpr):
     for eqn in eqns:
         if id(eqn) in eqns_to_remove:
             continue
-        
+
         # Update inputs of remaining equations using the replacement map
         eqn.invars[:] = [resolve(var) for var in eqn.invars]
         new_eqns.append(eqn)
-        
+
     # Update the equations list in-place
     jaxpr.eqns[:] = new_eqns
     # Update the output variables of the jaxpr
     jaxpr.outvars[:] = [resolve(var) for var in jaxpr.outvars]
-

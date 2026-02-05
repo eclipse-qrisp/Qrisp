@@ -61,15 +61,6 @@ def _apply_duration_on_qubits(
     return depth_array, current_depth
 
 
-# This function creates a lookup table (mapping table) with length `table_size`
-# (this must be a concrete integer because of JAX and <= MAX_QUBITS)
-# that maps logical indices to global qubit ids in the depth array.
-def _create_lookup_table(idx_start: ArrayLike, table_size: ArrayLike) -> ArrayLike:
-    """Create a lookup table for qubit IDs starting from idx_start."""
-
-    return idx_start + jnp.arange(table_size, dtype=jnp.int64)
-
-
 def _iter_definition_ops(definition) -> Iterator[Tuple[Instruction, List[Any]]]:
     """Iterate over operations in a quantum circuit definition."""
 
@@ -80,6 +71,24 @@ def _iter_definition_ops(definition) -> Iterator[Tuple[Instruction, List[Any]]]:
                 f"Unsupported definition.data entry type {type(instruction)}: {instruction}"
             )
         yield instruction, list(qubits)
+
+
+# This function creates a lookup table (mapping table) with length `table_size`
+# (this must be a concrete integer because of JAX and <= MAX_QUBITS)
+# that maps logical indices to global qubit ids in the depth array.
+def _create_lookup_table(idx_start: ArrayLike, table_size: ArrayLike) -> ArrayLike:
+    """Create a lookup table for qubit IDs starting from idx_start."""
+
+    return idx_start + jnp.arange(table_size, dtype=jnp.int64)
+
+
+# If this is triggered, the computation will fail anyway because of overflow.
+def _warn(_):
+    """Helper function to print a warning when the depth metric computation overflows the maximum number of qubits supported."""
+    jax.debug.print(
+        "ERROR: the depth metric computation overflowed the maximum number of qubits supported."
+        " Consider increasing the `max_qubits` parameter."
+    )
 
 
 class DepthMetric(BaseMetric):
@@ -144,6 +153,7 @@ class DepthMetric(BaseMetric):
 
         overflow = idx_end > jnp.int64(self.max_qubits)
         invalid = jnp.logical_or(invalid, overflow)
+        jax.lax.cond(invalid, _warn, lambda _: None, operand=None)
 
         context_dic["_previous_qubit_array_end"] = idx_end
 

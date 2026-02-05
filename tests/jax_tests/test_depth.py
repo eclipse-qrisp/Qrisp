@@ -796,7 +796,7 @@ class TestDepthOverflow:
 
         @depth(meas_behavior="0", max_qubits=10)
         def main(num_qubits):
-            _ = QuantumFloat(num_qubits)
+            return QuantumFloat(num_qubits)
 
         with pytest.raises(
             ValueError,
@@ -811,8 +811,9 @@ class TestDepthOverflow:
 
         @depth(meas_behavior="0")
         def main(num_qubits):
-            _ = QuantumFloat(2)
-            _qf = QuantumFloat(num_qubits)
+            qf1 = QuantumFloat(2)
+            qf2 = QuantumFloat(num_qubits)
+            return qf1 + qf2
 
         with pytest.raises(
             ValueError,
@@ -827,8 +828,9 @@ class TestDepthOverflow:
 
         @depth(meas_behavior="0", max_qubits=600)
         def main(num_qubits1, num_qubits2):
-            _ = QuantumFloat(num_qubits1)
-            _qf = QuantumFloat(num_qubits2)
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            return qf1 + qf2
 
         with pytest.raises(
             ValueError,
