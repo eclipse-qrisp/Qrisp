@@ -29,6 +29,8 @@ from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
 from qrisp.jasp import jrange
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
+from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
+from qrisp.algorithms.gqsp.helper_functions import _rescale_poly
 from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool, QuantumFloat
 from scipy.sparse import csr_array, csr_matrix
@@ -715,7 +717,7 @@ class BlockEncoding:
             new_anc_templates = [QuantumBool().template()] + self.anc_templates
             return BlockEncoding(self.alpha, new_anc_templates, new_unitary, is_hermitian=True)
         
-    def chebyshev(self: "BlockEncoding", k: int) -> BlockEncoding:
+    def chebyshev(self: "BlockEncoding", k: int, _rescale = True) -> BlockEncoding:
         r"""
         Returns the block encoding of the $k$-thChebyshev polynomial of the first kind as a BlockEncoding.
 
@@ -787,7 +789,13 @@ class BlockEncoding:
                 reflection(args[:m])
                 self.unitary(*args)
 
-        return BlockEncoding(self.alpha, self.anc_templates, new_unitary)
+        p = np.zeros(k + 1)
+        p[-1] = 1.0
+        if _rescale:
+            p = _rescale_poly(self.alpha, p, kind="Chebyshev")
+        
+        _, new_alpha = gqsp_angles(p)
+        return BlockEncoding(new_alpha, self.anc_templates, new_unitary)
 
     #
     # Arithmetic
