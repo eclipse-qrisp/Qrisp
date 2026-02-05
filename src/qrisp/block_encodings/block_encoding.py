@@ -715,9 +715,6 @@ class BlockEncoding:
             new_anc_templates = [QuantumBool().template()] + self.anc_templates
             return BlockEncoding(self.alpha, new_anc_templates, new_unitary, is_hermitian=True)
         
-<<<<<<< Updated upstream
-    def chebyshev(self, k: int) -> BlockEncoding:
-=======
     def chebyshev(self: "BlockEncoding", k: int) -> BlockEncoding:
         r"""
         Returns the block encoding of the $k$-thChebyshev polynomial of the first kind as a BlockEncoding.
@@ -769,22 +766,21 @@ class BlockEncoding:
             main(BE_cheb)
 
         """
->>>>>>> Stashed changes
 
         m = len(self.anc_templates)
 
+        iterations = k // 2
+
         if k%2 == 0:
             def new_unitary(*args):
-                k = k // 2
-                for _ in jrange(0, k):
+                for _ in jrange(0, iterations):
                     reflection(args[:m])
                     with conjugate(self.unitary)(*args):
                         reflection(args[:m])
 
         else:
             def new_unitary(*args):
-                k = k // 2
-                for _ in jrange(0, k):
+                for _ in jrange(0, iterations):
                     reflection(args[:m])
                     with conjugate(self.unitary)(*args):
                         reflection(args[:m])
