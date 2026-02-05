@@ -74,7 +74,7 @@ def test_jaspr_mode_inpl_add(input_a_type, input_b_type, input_a_size, input_b_s
     # both inputs are classical
     (10, 15, "Attempted to call the CDKPM adder on invalid inputs"),
     # first input is quantum in static mode, second is classical
-    (QuantumFloat(5), 10, "The second argument must be of type QuantumVariable."),
+    (QuantumFloat(5), 10, "The second argument must be of type QuantumFloat."),
 ])
 def test_invalid_input(input_a, input_b, expected_error_message):
     """Verify function raises error for invalid inputs."""
@@ -89,7 +89,7 @@ def test_invalid_input(input_a, input_b, expected_error_message):
 
 @pytest.mark.parametrize("input_a, input_b, expected_error_message", [
     # first input is quantum in dynamic mode, second is classical
-    (QuantumFloat, 20, "The second argument must be of type QuantumVariable."),
+    (QuantumFloat, 20, "The second argument must be of type QuantumFloat."),
     # both inputs are classical in dynamic mode
     (20, 20, "Attempted to call the CDKPM adder on invalid inputs"),
 ])
