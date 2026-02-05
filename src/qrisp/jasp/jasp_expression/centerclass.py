@@ -1489,8 +1489,7 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
     Callable
         A function that, when called with example arguments, returns either:
         - A Jaspr representation of ``fun`` (if ``return_shape=False``)
-        - A tuple ``(Jaspr, out_tree)`` (if ``return_shape=True``) where
-          ``out_tree`` is a PyTreeDef that can be used with ``tree_unflatten``
+        - A tuple ``(Jaspr, out_tree)`` (if ``return_shape=True``) where ``out_tree`` is a PyTreeDef that can be used with ``tree_unflatten``
     
     Examples
     --------
@@ -1534,7 +1533,8 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
     
     **Using return_shape for PyTree reconstruction**
     
-    Retrieve the output `tree structure<https://docs.jax.dev/en/latest/pytrees.html>`_ alongside the Jaspr for reconstructing complex return values:
+    Retrieve the output tree structure alongside the Jaspr for reconstructing
+    complex return values:
     
     ::
         
@@ -1556,6 +1556,7 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
         # Use out_tree to reconstruct the output structure
         flat_results, _ = tree_flatten((result_a, result_b))
         reconstructed = tree_unflatten(out_tree, flat_results)
+
     """
     from qrisp.jasp import (
         AbstractQuantumCircuit,
