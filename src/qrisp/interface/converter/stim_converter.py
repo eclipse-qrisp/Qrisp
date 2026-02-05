@@ -167,7 +167,7 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
         qubits = instr.qubits
         
         # Skip allocation/deallocation operations
-        if op_name in ["qb_alloc", "qb_dealloc", "barrier"]  or "iqm" in op_name:
+        if op_name in ["qb_alloc", "qb_dealloc"]  or "iqm" in op_name:
             continue
         
         # Get qubit indices
@@ -208,6 +208,10 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
         elif op_name == "reset":
             # R is reset to |0⟩ state
             stim_circuit.append("R", qubit_indices)
+        
+                # Handle reset operations
+        elif op_name == "barrier":
+            stim_circuit.append("TICK")
         
         elif isinstance(op, StimNoiseGate):
             if op.pauli_string is None:
