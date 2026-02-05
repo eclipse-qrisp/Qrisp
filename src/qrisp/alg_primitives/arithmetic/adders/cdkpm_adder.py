@@ -84,7 +84,8 @@ def cdkpm_adder(a, b, c_in=None, c_out=None, ctrl = None):
     # convert the classical input to a quantum input
     if not isinstance(a, QuantumFloat):
         # create a QuantumFloat of the same size as the other quantum input
-        q_a = QuantumFloat(b.size)
+        q_a = b.duplicate()
+        # set the value of the quantum input to the classical input
         q_a[:] = a
         a = q_a
     
@@ -109,12 +110,8 @@ def cdkpm_adder(a, b, c_in=None, c_out=None, ctrl = None):
     a = extended_a
     b = extended_b
 
-    if not check_for_tracing_mode():
-        dim_a = len(a)
-        dim_b = len(b)
-    else:
-        dim_a = a.size
-        dim_b = b.size
+    dim_a = jlen(a)
+    dim_b = jlen(b)
 
     # carry bit is initialized to 0
     if c_in is None:
