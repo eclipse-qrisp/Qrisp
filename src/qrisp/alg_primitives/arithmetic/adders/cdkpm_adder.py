@@ -120,9 +120,7 @@ def cdkpm_adder(a, b, c_in=None, c_out=None, ctrl = None):
     else:
         ancilla = [c_in]
 
-    if c_out is None:
-        ancilla2 = QuantumFloat(1)
-    else:
+    if c_out is not None:
         ancilla2 = [c_out]
 
     # first maj gate application
@@ -139,7 +137,8 @@ def cdkpm_adder(a, b, c_in=None, c_out=None, ctrl = None):
         mcx([a[i - 1], b[i]], a[i])
 
     # cnot
-    cx(a[-1], ancilla2[-1])
+    if c_out is not None:
+        cx(a[-1], ancilla2[0])
 
     if ctrl is None:
 
@@ -184,9 +183,6 @@ def cdkpm_adder(a, b, c_in=None, c_out=None, ctrl = None):
 
     if c_in is None:
         ancilla.delete()
-
-    if c_out is None:
-        ancilla2.delete()
 
     # delete the extension ancillas when the inputs are of unequal length
     extension_anc_a.delete()
