@@ -116,25 +116,17 @@
     
         .. raw:: html
             
-            <a href="./reference/Core/generated/qrisp.QuantumSession.statevector.html">
+            <a href="./general/tutorial/BE_tutorial/BE_construct.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Explore parametrized algorithms with symbolic statevector simulation</p>
+            <p class="sd-card-text">Use block encodings as programming abstractions to perform Quantum Linear Algebra using the numpy-like interface of our BlockEncoding class.</p>
             </div>
             </a>
             <div class="frontpage-equation">
             
             
-        .. math::
-            
-            \definecolor{qrispblue}{RGB}{32, 48, 111}
-            \definecolor{textgray}{RGB}{68, 68, 68}
-            
-            \Large
-            \textcolor{textgray}{
-            \begin{align}
-            \frac{\ket{\texttt{hello}} + e^{i \textcolor{red}{\phi}} \ket{\texttt{world}}}{\sqrt{2}}
-            \end{align}
-            }
+        .. image:: ./_static/BE_thumbnail.png
+            :width: 180
+            :align: center
             
         .. raw:: html
             
