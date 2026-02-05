@@ -82,12 +82,18 @@ def _create_lookup_table(idx_start: ArrayLike, table_size: ArrayLike) -> ArrayLi
     return idx_start + jnp.arange(table_size, dtype=jnp.int64)
 
 
-# If this is triggered, the computation will fail anyway because of overflow.
-def _warn(_):
-    """Helper function to print a warning when the depth metric computation overflows the maximum number of qubits supported."""
+# The computation will fail anyway if this is triggered,
+# but this way we can print an informative message before the failure happens.
+def _warn(idx_end, max_qubits):
+    """Helper function to print a warning when the depth metric computation overflows."""
     jax.debug.print(
-        "ERROR: the depth metric computation overflowed the maximum number of qubits supported."
-        " Consider increasing the `max_qubits` parameter."
+        (
+            "ERROR: Depth metric computation overflowed: tried to create qubits with "
+            "global indices up to {idx_end}, but the maximum supported is {max_qubits}. "
+            "Consider increasing the `max_qubits` parameter for depth profiling."
+        ),
+        idx_end=idx_end,
+        max_qubits=max_qubits,
     )
 
 
@@ -153,7 +159,7 @@ class DepthMetric(BaseMetric):
 
         overflow = idx_end > jnp.int64(self.max_qubits)
         invalid = jnp.logical_or(invalid, overflow)
-        jax.lax.cond(invalid, _warn, lambda _: None, operand=None)
+        jax.lax.cond(invalid, _warn, lambda *_: None, idx_end, self.max_qubits)
 
         context_dic["_previous_qubit_array_end"] = idx_end
 
