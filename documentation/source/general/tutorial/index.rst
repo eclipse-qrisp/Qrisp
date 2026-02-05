@@ -396,6 +396,7 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    :hidden:
    
    tutorial.ipynb
+   BE_tutorial/index
    H2.ipynb
    Jasp.ipynb
    HHL.ipynb
