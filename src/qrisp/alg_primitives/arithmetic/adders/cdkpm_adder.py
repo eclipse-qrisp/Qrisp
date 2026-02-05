@@ -19,7 +19,7 @@ from qrisp import *
 import jax.numpy as jnp
 
 @custom_control
-def cdkpm_adder(a, b, c_in=None, c_out=None, ctrl = None):
+def cdkpm_adder(a, b, c_out=None, ctrl = None):
     """In-place adder as introduced in https://arxiv.org/abs/quant-ph/0410184
 
     This function works in both static and dynamic modes. The allowed inputs are both quantum types or one classical
@@ -35,13 +35,11 @@ def cdkpm_adder(a, b, c_in=None, c_out=None, ctrl = None):
     
     Parameters
     ----------
-    a : int or QuantumVariable
+    a : int or QuantumFloat
         The value that should be added.
-    b : QuantumVariable
+    b : QuantumFloat
         The value that should be modified in the in-place addition.
-    c_in : QuantumVariable, optional
-        An optional carry in value. The default is None.
-    c_out : QuantumVariable, optional
+    c_out : QuantumFloat, optional
         An optional carry out value. The default is None.
 
     Raises
@@ -87,10 +85,12 @@ def cdkpm_adder(a, b, c_in=None, c_out=None, ctrl = None):
         q_a = b.duplicate()
         # set the value of the quantum input to the classical input
         q_a[:] = a
+        a_in = a
         a = q_a
     
     elif not isinstance(b, QuantumFloat):
-        raise ValueError("The second argument must be of type QuantumVariable.")
+        raise ValueError("The second argument must be of type QuantumFloat.")
+    
 
     # when the inputs are of unequal length
     # pad the size of the input with the smaller size
@@ -113,12 +113,8 @@ def cdkpm_adder(a, b, c_in=None, c_out=None, ctrl = None):
     dim_a = jlen(a)
     dim_b = jlen(b)
 
-    # carry bit is initialized to 0
-    if c_in is None:
-        ancilla = QuantumFloat(1)
-        ancilla[:] = 0
-    else:
-        ancilla = [c_in]
+    ancilla = QuantumFloat(max_size)
+    ancilla[:] = 0
 
     if c_out is not None:
         ancilla2 = [c_out]
@@ -181,8 +177,8 @@ def cdkpm_adder(a, b, c_in=None, c_out=None, ctrl = None):
         cx(a[0], b[0])
     
 
-    if c_in is None:
-        ancilla.delete()
+    # delete the ancilla used for carry bits
+    ancilla.delete()
 
     # delete the extension ancillas when the inputs are of unequal length
     extension_anc_a.delete()
