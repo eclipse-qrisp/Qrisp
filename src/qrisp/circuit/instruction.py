@@ -20,7 +20,7 @@
 class Instruction:
     """
     This class combines Operation objects with their operands (ie. qubits and classical
-    bits). The data attribut of the QuantumCircuit class consists of a list of
+    bits). The data attribute of the QuantumCircuit class consists of a list of
     Instructions.
 
     Instructions can be added to QuantumCircuits using the
