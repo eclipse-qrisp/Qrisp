@@ -110,7 +110,7 @@ class StimQubitIndices(np.ndarray):
     """
     pass
 
-def extract_stim(func):
+def extract_stim(func=None, *, detector_order="chronological"):
     """
     Decorator that extracts a Stim circuit from a Jasp-traceable function.
     
@@ -162,6 +162,17 @@ def extract_stim(func):
         A Jasp-traceable function that manipulates quantum variables and returns
         quantum measurement results, parity checks (detectors/observables), 
         QuantumVariables (for qubit indices), and/or classical values.
+    detector_order : str, optional
+        Specifies the ordering of detectors in the returned Stim circuit.
+        
+        - ``"chronological"`` (default): Detectors appear in the circuit in the 
+          order they appear in the code execution.
+        - ``"return_order"``: Reorders detectors based on the function's return 
+          values. This analyzes all ``StimDetectorHandles`` in the return values, 
+          flattens and concatenates them to form a permutation, then applies 
+          :func:`~qrisp.misc.stim_tools.permute_detectors` to reorder the circuit 
+          accordingly. The detector handle values are also adjusted to reflect 
+          the new ordering.
     
     Returns
     -------
@@ -391,147 +402,197 @@ def extract_stim(func):
 
     """
     
-    def return_func(*args):
+    # Validate detector_order parameter
+    if detector_order not in ["chronological", "return_order"]:
+        raise ValueError(f"detector_order must be 'chronological' or 'return_order', got '{detector_order}'")
+    
+    def decorator(f):
         """
-        Inner function that performs the actual Stim extraction.
-        
-        This function implements the conversion pipeline:
-        1. Creates a Jaspr (Jax-like representation) from the traced function
-        2. Converts the Jaspr to a QuantumCircuit via staticalization
-        3. Extracts the Stim circuit from the QuantumCircuit
-        4. Maps Qrisp Clbit objects to Stim measurement record indices
+        Decorator that wraps the function to perform Stim extraction.
         """
-        
-        # Step 1: Create a Jaspr from the function with the given arguments
-        # The Jaspr is a traced representation of the quantum program, similar to Jax's jaxpr.
-        # This tracing process records the quantum operations without actually executing them.
-        jaspr = make_jaspr(func)(*args)
-        
-        # Step 2: Convert the Jaspr to a QuantumCircuit
-        # The "staticalization" process converts the traced representation back to a concrete
-        # quantum circuit. The to_qc method returns a tuple containing:
-        # - All return values from the original function (e.g., measured values, QuantumVariables)
-        # - The QuantumCircuit object (always the last element)
-        # So if the original function returns n values, staticalization_result has (n+1) elements.
-        staticalization_result = jaspr.to_qc(*args)
-        
-        # Handle the simple case: function returns no value (i.e. the staticalization returns just a qc)
-        if len(jaspr.outvars) == 1:
-            # For single return values, staticalization_result is just the QuantumCircuit.
-            # Convert it directly to Stim without needing to track the clbit mapping.
-            return staticalization_result.to_stim()
-        
-        # Handle the complex case: function returns multiple values
-        else:
-            # Extract the QuantumCircuit (always the last element of the tuple)
-            qc = staticalization_result[-1]
+        def return_func(*args):
+            """
+            Inner function that performs the actual Stim extraction.
             
-            # Convert the QuantumCircuit to Stim with mapping enabled.
-            # - clbit_mapping: maps Clbit objects to Stim measurement record indices
-            # - detector_mapping: maps ParityHandle to Stim detector indices
-            # - observable_mapping: maps ParityHandle to Stim observable indices
-            stim_circ, clbit_mapping, detector_mapping, observable_mapping = qc.to_stim(return_measurement_map=True, return_detector_map=True, return_observable_map = True)
+            This function implements the conversion pipeline:
+            1. Creates a Jaspr (Jax-like representation) from the traced function
+            2. Converts the Jaspr to a QuantumCircuit via staticalization
+            3. Extracts the Stim circuit from the QuantumCircuit
+            4. Maps Qrisp Clbit objects to Stim measurement record indices
+            """
             
-            # Create qubit mapping: Qubit -> Stim qubit index
-            qubit_mapping = {qb: idx for idx, qb in enumerate(qc.qubits)}
+            # Step 1: Create a Jaspr from the function with the given arguments
+            # The Jaspr is a traced representation of the quantum program, similar to Jax's jaxpr.
+            # This tracing process records the quantum operations without actually executing them.
+            jaspr = make_jaspr(f)(*args)
             
-            # Helper function to convert a single value (Clbit, ParityHandle, or Qubit) to its index
-            def convert_single_value(val):
-                if isinstance(val, Clbit):
-                    return clbit_mapping[val], 'measurement'
-                elif isinstance(val, ParityHandle):
-                    if val in detector_mapping:
-                        return detector_mapping[val], 'detector'
-                    elif val in observable_mapping:
-                        return observable_mapping[val], 'observable'
+            # Step 2: Convert the Jaspr to a QuantumCircuit
+            # The "staticalization" process converts the traced representation back to a concrete
+            # quantum circuit. The to_qc method returns a tuple containing:
+            # - All return values from the original function (e.g., measured values, QuantumVariables)
+            # - The QuantumCircuit object (always the last element)
+            # So if the original function returns n values, staticalization_result has (n+1) elements.
+            staticalization_result = jaspr.to_qc(*args)
+            
+            # Handle the simple case: function returns no value (i.e. the staticalization returns just a qc)
+            if len(jaspr.outvars) == 1:
+                # For single return values, staticalization_result is just the QuantumCircuit.
+                # Convert it directly to Stim without needing to track the clbit mapping.
+                return staticalization_result.to_stim()
+            
+            # Handle the complex case: function returns multiple values
+            else:
+                # Extract the QuantumCircuit (always the last element of the tuple)
+                qc = staticalization_result[-1]
+                
+                # Convert the QuantumCircuit to Stim with mapping enabled.
+                # - clbit_mapping: maps Clbit objects to Stim measurement record indices
+                # - detector_mapping: maps ParityHandle to Stim detector indices
+                # - observable_mapping: maps ParityHandle to Stim observable indices
+                stim_circ, clbit_mapping, detector_mapping, observable_mapping = qc.to_stim(return_measurement_map=True, return_detector_map=True, return_observable_map = True)
+                
+                # Create qubit mapping: Qubit -> Stim qubit index
+                qubit_mapping = {qb: idx for idx, qb in enumerate(qc.qubits)}
+                
+                # Helper function to convert a single value (Clbit, ParityHandle, or Qubit) to its index
+                def convert_single_value(val):
+                    if isinstance(val, Clbit):
+                        return clbit_mapping[val], 'measurement'
+                    elif isinstance(val, ParityHandle):
+                        if val in detector_mapping:
+                            return detector_mapping[val], 'detector'
+                        elif val in observable_mapping:
+                            return observable_mapping[val], 'observable'
+                        else:
+                            raise KeyError(f"ParityHandle not found in detector or observable mapping: {val}")
+                    elif isinstance(val, Qubit):
+                        return qubit_mapping[val], 'qubit'
                     else:
-                        raise KeyError(f"ParityHandle not found in detector or observable mapping: {val}")
-                elif isinstance(val, Qubit):
-                    return qubit_mapping[val], 'qubit'
-                else:
-                    return val, None
-            
-            # Process all return values except the QuantumCircuit (last element)
-            # We replace Clbit objects, ParityHandles, and Qubits with their corresponding Stim indices,
-            # wrapped in typed numpy array subtypes for identification.
-            new_result = []
-            for i in range(len(staticalization_result)-1):
+                        return val, None
                 
-                val = staticalization_result[i]
-                
-                # Case 1: Value is a numpy array - could contain Clbits, ParityHandles, or Qubits
-                # Convert each element and wrap in appropriate typed array.
-                if isinstance(val, np.ndarray) and val.dtype == object:
-                    # Flatten, convert, then reshape
-                    flat = val.flatten()
-                    if len(flat) > 0:
-                        first_idx, first_type = convert_single_value(flat[0])
-                        if first_type is not None:
-                            # Convert all elements
-                            indices = [convert_single_value(v)[0] for v in flat]
-                            result_array = np.array(indices, dtype=np.intp).reshape(val.shape)
-                            # Wrap in appropriate type
-                            if first_type == 'measurement':
-                                new_val = result_array.view(StimMeasurementHandles)
-                            elif first_type == 'detector':
-                                new_val = result_array.view(StimDetectorHandles)
-                            elif first_type == 'observable':
-                                new_val = result_array.view(StimObservableHandles)
-                            elif first_type == 'qubit':
-                                new_val = result_array.view(StimQubitIndices)
+                # Process all return values except the QuantumCircuit (last element)
+                # We replace Clbit objects, ParityHandles, and Qubits with their corresponding Stim indices,
+                # wrapped in typed numpy array subtypes for identification.
+                new_result = []
+                for i in range(len(staticalization_result)-1):
+                    
+                    val = staticalization_result[i]
+                    
+                    # Case 1: Value is a numpy array - could contain Clbits, ParityHandles, or Qubits
+                    # Convert each element and wrap in appropriate typed array.
+                    if isinstance(val, np.ndarray) and val.dtype == object:
+                        # Flatten, convert, then reshape
+                        flat = val.flatten()
+                        if len(flat) > 0:
+                            first_idx, first_type = convert_single_value(flat[0])
+                            if first_type is not None:
+                                # Convert all elements
+                                indices = [convert_single_value(v)[0] for v in flat]
+                                result_array = np.array(indices, dtype=np.intp).reshape(val.shape)
+                                # Wrap in appropriate type
+                                if first_type == 'measurement':
+                                    new_val = result_array.view(StimMeasurementHandles)
+                                elif first_type == 'detector':
+                                    new_val = result_array.view(StimDetectorHandles)
+                                elif first_type == 'observable':
+                                    new_val = result_array.view(StimObservableHandles)
+                                elif first_type == 'qubit':
+                                    new_val = result_array.view(StimQubitIndices)
+                            else:
+                                new_val = val
                         else:
                             new_val = val
+                    
+                    # Case 2: Value is a list of Clbit objects (e.g., from multi-qubit measurement)
+                    # Replace each Clbit with its corresponding Stim measurement index.
+                    # This happens when a QuantumFloat/QuantumVariable is measured and returns
+                    # a list of classical bits representing the measurement results.
+                    # Wrap in StimMeasurementHandles for type identification.
+                    elif isinstance(val, list) and len(val) and isinstance(val[0], Clbit):
+                        indices = [clbit_mapping[clbit] for clbit in val]
+                        new_val = np.array(indices, dtype=np.intp).view(StimMeasurementHandles)
+                    
+                    # Case 3: Value is a list of Qubit objects
+                    # Replace each Qubit with its corresponding Stim qubit index.
+                    elif isinstance(val, list) and len(val) and isinstance(val[0], Qubit):
+                        indices = [qubit_mapping[qb] for qb in val]
+                        new_val = np.array(indices, dtype=np.intp).view(StimQubitIndices)
+                    
+                    # Case 4: Value is a single Clbit object
+                    # Replace it with its Stim measurement index as a 0-d StimMeasurementHandles array.
+                    # This happens when a single qubit is measured.
+                    elif isinstance(val, Clbit):
+                        new_val = np.array(clbit_mapping[val], dtype=np.intp).view(StimMeasurementHandles)
+                    
+                    # Case 5: Value is a single Qubit object
+                    # Replace it with its Stim qubit index as a 0-d StimQubitIndices array.
+                    elif isinstance(val, Qubit):
+                        new_val = np.array(qubit_mapping[val], dtype=np.intp).view(StimQubitIndices)
+                    
+                    # Case 6: Value is a ParityHandle (from parity operation)
+                    # Look up in detector or observable mapping and wrap accordingly.
+                    elif isinstance(val, ParityHandle):
+                        if val in detector_mapping:
+                            new_val = np.array(detector_mapping[val], dtype=np.intp).view(StimDetectorHandles)
+                        elif val in observable_mapping:
+                            new_val = np.array(observable_mapping[val], dtype=np.intp).view(StimObservableHandles)
+                        else:
+                            raise KeyError(f"ParityHandle not found in detector or observable mapping: {val}")
+                    
+                    # Case 7: Value is something else (e.g., integer, float, ProcessedMeasurement)
+                    # Pass through unchanged. Classical values computed during the function
+                    # (not involving measurements) are returned as-is.
                     else:
                         new_val = val
+                        
+                    new_result.append(new_val)
                 
-                # Case 2: Value is a list of Clbit objects (e.g., from multi-qubit measurement)
-                # Replace each Clbit with its corresponding Stim measurement index.
-                # This happens when a QuantumFloat/QuantumVariable is measured and returns
-                # a list of classical bits representing the measurement results.
-                # Wrap in StimMeasurementHandles for type identification.
-                elif isinstance(val, list) and len(val) and isinstance(val[0], Clbit):
-                    indices = [clbit_mapping[clbit] for clbit in val]
-                    new_val = np.array(indices, dtype=np.intp).view(StimMeasurementHandles)
-                
-                # Case 3: Value is a list of Qubit objects
-                # Replace each Qubit with its corresponding Stim qubit index.
-                elif isinstance(val, list) and len(val) and isinstance(val[0], Qubit):
-                    indices = [qubit_mapping[qb] for qb in val]
-                    new_val = np.array(indices, dtype=np.intp).view(StimQubitIndices)
-                
-                # Case 4: Value is a single Clbit object
-                # Replace it with its Stim measurement index as a 0-d StimMeasurementHandles array.
-                # This happens when a single qubit is measured.
-                elif isinstance(val, Clbit):
-                    new_val = np.array(clbit_mapping[val], dtype=np.intp).view(StimMeasurementHandles)
-                
-                # Case 5: Value is a single Qubit object
-                # Replace it with its Stim qubit index as a 0-d StimQubitIndices array.
-                elif isinstance(val, Qubit):
-                    new_val = np.array(qubit_mapping[val], dtype=np.intp).view(StimQubitIndices)
-                
-                # Case 6: Value is a ParityHandle (from parity operation)
-                # Look up in detector or observable mapping and wrap accordingly.
-                elif isinstance(val, ParityHandle):
-                    if val in detector_mapping:
-                        new_val = np.array(detector_mapping[val], dtype=np.intp).view(StimDetectorHandles)
-                    elif val in observable_mapping:
-                        new_val = np.array(observable_mapping[val], dtype=np.intp).view(StimObservableHandles)
-                    else:
-                        raise KeyError(f"ParityHandle not found in detector or observable mapping: {val}")
-                
-                # Case 7: Value is something else (e.g., integer, float, ProcessedMeasurement)
-                # Pass through unchanged. Classical values computed during the function
-                # (not involving measurements) are returned as-is.
-                else:
-                    new_val = val
+                # Apply detector reordering if requested
+                if detector_order == "return_order":
+                    # Collect all StimDetectorHandles from the return values
+                    detector_indices_list = []
+                    for val in new_result:
+                        if isinstance(val, np.ndarray):
+                            # Check if this is a StimDetectorHandles array
+                            if type(val) == StimDetectorHandles:
+                                detector_indices_list.append(val.flatten())
                     
-                new_result.append(new_val)
+                    if detector_indices_list:
+                        # Concatenate all detector indices to form the permutation
+                        permutation = np.concatenate(detector_indices_list)
+                        
+                        # Import permute_detectors function
+                        from qrisp.misc.stim_tools import permute_detectors
+                        
+                        # Apply permutation to stim circuit
+                        stim_circ = permute_detectors(stim_circ, permutation)
+                        
+                        # Create inverse mapping: old_idx -> new_idx
+                        # If permutation[i] = k, then detector k in input becomes detector i in output
+                        # So inverse_perm[k] = i
+                        inverse_perm = np.empty_like(permutation)
+                        inverse_perm[permutation] = np.arange(len(permutation))
+                        
+                        # Update all detector handle values in new_result
+                        for i, val in enumerate(new_result):
+                            if isinstance(val, np.ndarray) and type(val) == StimDetectorHandles:
+                                # Map old indices to new indices
+                                old_indices = val.view(np.ndarray)
+                                new_indices = inverse_perm[old_indices]
+                                new_result[i] = new_indices.reshape(val.shape).view(StimDetectorHandles)
+                
+                # Append the Stim circuit as the last element of the result tuple
+                new_result.append(stim_circ)
             
-            # Append the Stim circuit as the last element of the result tuple
-            new_result.append(stim_circ)
+                # Return all processed values plus the Stim circuit as a tuple
+                return tuple(new_result)
         
-            # Return all processed values plus the Stim circuit as a tuple
-            return tuple(new_result)
+        return return_func
     
-    return return_func
+    # Handle both @extract_stim and @extract_stim(detector_order=...)
+    if func is None:
+        # Called with arguments: @extract_stim(detector_order="...")
+        return decorator
+    else:
+        # Called without arguments: @extract_stim
+        return decorator(func)
