@@ -630,6 +630,75 @@ class BlockEncoding:
         return rus_function
     
     def resources(self, operand_prep: Callable[..., Any], meas_behavior: str = "0"):
+        r"""
+        Estimate the quantum resources required for the BlockEncoding object.
+
+        
+
+        This method uses the :ref:`count_ops <count_ops>` decorator to obtain gate counts, circuit depth, 
+        and (in future) qubit usage for a single execution of ``.unitary``. Unlike :meth:`apply_rus`, it does not 
+        run the simulator and does not include repetitions from the Repeat-Until-Success procedure.
+
+        Parameters
+        ----------
+        operand_prep : Callable
+            A function ``operand_prep(*args)`` that prepares and returns the operand QuantumVariables.
+        meas_behavior : str, optional
+            Specifies the measurement outcome to assume during the tracing process (e.g., "0", or "1"). The default is "0".
+
+        Returns
+        -------
+        Callable
+            A function ``resource_counter(*args, **kwargs)`` with the same signature
+            as ``operand_prep``. When called, it returns a resource summary object
+            whose string representation is a dictionary of the counted quantum
+            operations. Use ``print(resource_counter(...))`` to display the
+            gate-count dictionary.
+
+        Examples
+        --------
+        
+        **Example 1:**: Estimate the quantum resources for a block-encoded Pauli operator.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import X, Z
+
+            H = X(0)*X(1) + 0.5*Z(0)*Z(1)
+            BE = H.pauli_block_encoding()
+
+            def operand_prep():
+                qf = QuantumFloat(2)
+                return qf
+
+            QRE = BE.resources(operand_prep)()
+            print(QRE)
+            # {'gphase': 2, 'u3': 2, 'cx': 4, 'cz': 2, 'x': 3} 
+
+        **Example 2:**: Estimate the quantum resources for applying the Quantum Eigenvalue Transform.
+
+        ::
+
+            from qrisp import *
+            from qrisp.algorithms.gqsp import QET
+            from qrisp.operators import X, Z
+
+            H = X(0)*X(1) + 0.5*Z(0)*Z(1)
+            BE = H.pauli_block_encoding()
+
+            b = np.array([0, 1, 1, 1])
+
+            def operand_prep():
+                qf = QuantumFloat(2)
+                return qf
+
+            BE_QET = QET(BE, b)
+            QRE = BE_QET.resources(operand_prep)()
+            print(QRE)
+            # {'gphase': 4, 'u3': 4, 'p': 2, 'cx': 12, 'x': 8, 'cz': 6, 'rx': 2}  
+            
+        """
 
         @count_ops(meas_behavior=meas_behavior)
         def resource_counter(*args):
