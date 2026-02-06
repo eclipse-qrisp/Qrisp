@@ -262,7 +262,6 @@ def count_ops(meas_behavior: str | Callable) -> Callable:
 
     def count_ops_decorator(function):
 
-        @wraps(function)
         def ops_counter(*args):
             from qrisp.jasp import make_jaspr
 
@@ -388,7 +387,6 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
 
     def depth_decorator(function):
 
-        @wraps(function)
         def depth_counter(*args):
             from qrisp.jasp import make_jaspr
 
@@ -418,7 +416,6 @@ def count_qubits(meas_behavior: str | Callable) -> Callable:
 
     def count_qubits_decorator(function):
 
-        @wraps(function)
         def qubits_counter(*args):
 
             from qrisp.jasp import make_jaspr

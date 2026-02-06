@@ -148,7 +148,6 @@ class DepthMetric(BaseMetric):
         return self._max_qubits
 
     def handle_create_qubits(self, invalues, eqn, context_dic):
-        """Handle the `jasp.create_qubits` primitive."""
 
         size, metric_data = invalues
         depth_array, global_depth, invalid = metric_data
@@ -174,7 +173,6 @@ class DepthMetric(BaseMetric):
         return qubit_table_handle, (depth_array, global_depth, invalid)
 
     def handle_get_qubit(self, invalues, eqn, context_dic):
-        """Handle the `jasp.get_qubit` primitive."""
 
         qubit_table_handle, qubit_index = invalues
 
@@ -185,7 +183,6 @@ class DepthMetric(BaseMetric):
         return qubit_ids_table[qubit_index]
 
     def handle_get_size(self, invalues, eqn, context_dic):
-        """Handle the `jasp.get_size` primitive."""
 
         (qubit_table_handle,) = invalues
 
@@ -196,14 +193,10 @@ class DepthMetric(BaseMetric):
         return size
 
     def handle_quantum_gate(self, invalues, eqn, context_dic):
-        """Handle the `jasp.quantum_gate` primitive."""
-
-        # invalues are (*qubits, *params, metric_data)
-
-        op = eqn.params["gate"]
 
         depth_array, current_depth, invalid = invalues[-1]
 
+        op = eqn.params["gate"]
         # Qubits have been already converted to their integer (possibly traced)
         # indices by the `jasp.get_qubit` primitive handler
         qubits = list(invalues[: op.num_qubits])
@@ -245,7 +238,6 @@ class DepthMetric(BaseMetric):
         return depth_array, current_depth, invalid
 
     def handle_measure(self, invalues, eqn, context_dic):
-        """Handle the `jasp.measure` primitive."""
 
         target, metric_data = invalues
 
@@ -275,7 +267,6 @@ class DepthMetric(BaseMetric):
         return (meas_res, (depth_array, current_depth, invalid))
 
     def handle_fuse(self, invalues, eqn, context_dic):
-        """Handle the `jasp.fuse` primitive."""
 
         (qubit_array_a, size_a), (qubit_array_b, size_b) = invalues
 
@@ -300,7 +291,6 @@ class DepthMetric(BaseMetric):
         return (qubit_array_out, size_out)
 
     def handle_slice(self, invalues, eqn, context_dic):
-        """Handle the `jasp.slice` primitive for depth."""
 
         (qubit_array, size), start, stop = invalues
 
@@ -319,7 +309,6 @@ class DepthMetric(BaseMetric):
         return (qubit_array_out, size_out)
 
     def handle_reset(self, invalues, eqn, context_dic):
-        """Handle the `jasp.reset` primitive."""
 
         _, metric_data = invalues
 
@@ -328,7 +317,6 @@ class DepthMetric(BaseMetric):
         return metric_data
 
     def handle_delete_qubits(self, invalues, eqn, context_dic):
-        """Handle the `jasp.delete_qubits` primitive."""
 
         _, metric_data = invalues
 

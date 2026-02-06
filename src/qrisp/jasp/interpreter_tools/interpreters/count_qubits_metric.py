@@ -43,10 +43,106 @@ from qrisp.jasp.primitives import (
 
 class CountQubitsMetric(BaseMetric):
     """
-    ...
+    A metric implementation that computes the count of qubits in a Jaspr.
+
+    Parameters
+    ----------
+    meas_behavior : Callable
+        The measurement behavior function.
+
+    profiling_dic : dict
+        The profiling dictionary mapping quantum operations to indices.
+
     """
 
-    pass
+    def __init__(self, meas_behavior: Callable, profiling_dic: dict):
+        """Initialize the CountQubitsMetric."""
+
+        super().__init__(meas_behavior=meas_behavior, profiling_dic=profiling_dic)
+
+        self._initial_metric = ...
+
+    @property
+    def initial_metric(self) -> ...:
+        """Return the initial metric value."""
+        return self._initial_metric
+
+    def handle_create_qubits(self, invalues, eqn, context_dic):
+
+        ...
+
+        # Associate the following in context_dic:
+        # QubitArray -> ...
+        # QuantumCircuit -> metric_data ...
+        return ...
+
+    def handle_get_qubit(self, invalues, eqn, context_dic):
+
+        ...
+
+        # Associate the following in context_dic:
+        # Qubit -> ...
+        return ...
+
+    def handle_get_size(self, invalues, eqn, context_dic):
+        """Handle the `jasp.get_size` primitive."""
+
+        ...
+
+        # Associate the following in context_dic:
+        # size -> ...
+        return ...
+
+    def handle_quantum_gate(self, invalues, eqn, context_dic):
+
+        ...
+
+        # Associate the following in context_dic:
+        # QuantumCircuit -> ...
+        return ...
+
+    def handle_measure(self, invalues, eqn, context_dic):
+
+        ...
+
+        # Associate the following in context_dic:
+        # meas_result -> ...
+        # QuantumCircuit -> ...
+        return ...
+
+    def handle_fuse(self, invalues, eqn, context_dic):
+
+        ...
+
+        # Associate the following in context_dic:
+        # QubitArray -> ...
+        return ...
+
+    def handle_slice(self, invalues, eqn, context_dic):
+
+        ...
+
+        ...
+
+        # Associate the following in context_dic:
+        # QubitArray -> ...
+        return ...
+
+    def handle_reset(self, invalues, eqn, context_dic):
+
+        ...
+
+        # Associate the following in context_dic:
+        # QuantumCircuit -> ...
+        return ...
+
+    def handle_delete_qubits(self, invalues, eqn, context_dic):
+
+        ...
+
+        # Associate the following in context_dic:
+        # QuantumCircuit -> ...
+        return ...
 
 
 def extract_count_qubits(res: Tuple, jaspr: Jaspr, _):
@@ -59,8 +155,47 @@ def extract_count_qubits(res: Tuple, jaspr: Jaspr, _):
 def get_count_qubits_profiler(
     jaspr: Jaspr, meas_behavior: Callable
 ) -> Tuple[Callable, None]:
+    """
+    Build a count qubits profiling computer for a given Jaspr.
 
-    pass
+    Parameters
+    ----------
+    jaspr : Jaspr
+        The Jaspr expression to profile.
+
+    meas_behavior : Callable
+        The measurement behavior function.
+
+    Returns
+    -------
+    Tuple[Callable, None]
+        A count qubits profiler function and None as auxiliary data.
+
+    """
+    quantum_operations = get_quantum_operations(jaspr)
+    profiling_dic = {quantum_operations[i]: i for i in range(len(quantum_operations))}
+
+    if "measure" not in profiling_dic:
+        profiling_dic["measure"] = -1
+
+    count_qubits_metric = CountQubitsMetric(meas_behavior, profiling_dic)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(count_qubits_metric)
+    jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
+
+    def count_qubits_profiler(*args):
+        # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
+        # Import here to avoid circular import issues
+        from qrisp.operators import FermionicOperator, QubitOperator
+
+        STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
+
+        initial_metric_value = count_qubits_metric.initial_metric
+        filtered_args = [
+            x for x in args + (initial_metric_value,) if type(x) not in STATIC_TYPES
+        ]
+        return jitted_evaluator(*filtered_args)
+
+    return count_qubits_profiler, None
 
 
 def simulate_count_qubits(jaspr: Jaspr, *_, **__) -> int:
