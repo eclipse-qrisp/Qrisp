@@ -240,3 +240,105 @@ def test_parity_boolean_simulation_inside_loop():
     result = test_array_parity_zeros()
     expected = jnp.array([0, 0, 0])
     assert jnp.array_equal(result, expected), f"Expected {expected}, got {result}"
+
+def test_boolean_simulation_pytree():
+    """Test that boolean_simulation preserves PyTree structure in return values."""
+    
+    # Test 1: Returning a dictionary
+    @boolean_simulation
+    def dict_return():
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = 5
+        b[:] = 3
+        return {"first": measure(a), "second": measure(b)}
+    
+    result = dict_return()
+    assert isinstance(result, dict), "Should return a dict"
+    assert "first" in result and "second" in result, "Should have correct keys"
+    assert result["first"] == 5, "first should be 5"
+    assert result["second"] == 3, "second should be 3"
+    
+    # Test 2: Returning a list
+    @boolean_simulation
+    def list_return():
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        c = QuantumFloat(4)
+        a[:] = 1
+        b[:] = 2
+        c[:] = 3
+        return [measure(a), measure(b), measure(c)]
+    
+    result = list_return()
+    assert isinstance(result, list), "Should return a list"
+    assert len(result) == 3, "Should have 3 elements"
+    assert result == [1, 2, 3], "Should have correct values"
+    
+    # Test 3: Returning a tuple (should still work as before)
+    @boolean_simulation
+    def tuple_return():
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = 7
+        b[:] = 9
+        return (measure(a), measure(b))
+    
+    result = tuple_return()
+    assert isinstance(result, tuple), "Should return a tuple"
+    assert result == (7, 9), "Should have correct values"
+    
+    # Test 4: Returning nested structure
+    @boolean_simulation
+    def nested_return():
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        c = QuantumFloat(4)
+        a[:] = 1
+        b[:] = 2
+        c[:] = 3
+        return {
+            "pair": (measure(a), measure(b)),
+            "single": measure(c)
+        }
+    
+    result = nested_return()
+    assert isinstance(result, dict), "Should return a dict"
+    assert isinstance(result["pair"], tuple), "Nested tuple should be preserved"
+    assert result["pair"] == (1, 2), "pair should be (1, 2)"
+    assert result["single"] == 3, "single should be 3"
+    
+    # Test 5: Single return value (scalar)
+    @boolean_simulation
+    def single_return():
+        a = QuantumFloat(4)
+        a[:] = 11
+        return measure(a)
+    
+    result = single_return()
+    # Single values should be returned as-is
+    assert result == 11, "Should return the scalar value"
+    
+    # Test 6: No return value
+    @boolean_simulation
+    def no_return():
+        a = QuantumFloat(4)
+        a[:] = 5
+    
+    result = no_return()
+    assert result is None, "Should return None"
+    
+    # Test 7: Returning dict with computed values
+    @boolean_simulation
+    def computed_dict(x, y):
+        a = QuantumFloat(8)
+        b = QuantumFloat(8)
+        a[:] = x
+        b[:] = y
+        c = a + b
+        d = a * b
+        return {"sum": measure(c), "product": measure(d)}
+    
+    result = computed_dict(3, 4)
+    assert result["sum"] == 7, "sum should be 7"
+    assert result["product"] == 12, "product should be 12"

@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from jax.tree_util import tree_flatten, tree_unflatten
+from jax.tree_util import tree_unflatten
 from qrisp.jasp.jasp_expression import make_jaspr
 
 
@@ -127,10 +127,22 @@ def qjit(function=None, device=None):
 
         signature = tuple([type(arg) for arg in args])
         if not signature in function.jaspr_dict:
-            function.jaspr_dict[signature] = make_jaspr(function)(*args)
+            # Use return_shape=True to capture the output PyTree structure
+            jaspr, out_tree = make_jaspr(function, return_shape=True)(*args)
+            function.jaspr_dict[signature] = (jaspr, out_tree)
 
-        return function.jaspr_dict[signature].qjit(
+        jaspr, out_tree = function.jaspr_dict[signature]
+        result = jaspr.qjit(
             *args, function_name=function.__name__, device=device
         )
+        
+        # Reconstruct the PyTree structure from flat results
+        if isinstance(result, (tuple, list)):
+            return tree_unflatten(out_tree, result)
+        elif result is not None:
+            # Single value case
+            return tree_unflatten(out_tree, [result])
+        else:
+            return None
 
     return jitted_function
