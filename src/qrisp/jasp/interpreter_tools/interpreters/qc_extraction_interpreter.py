@@ -989,6 +989,8 @@ def jaspr_to_qc(jaspr, *args):
     """
     from qrisp import QuantumCircuit
     from qrisp.jasp import eval_jaxpr
+    from qrisp.circuit import Qubit
+    from jax._src.core import eval_context
 
     qc = QuantumCircuit()
     
@@ -1000,10 +1002,26 @@ def jaspr_to_qc(jaspr, *args):
             "(please exclude any static arguments, in particular callables)"
         )
 
-    res = eval_jaxpr(
-        jaspr, 
-        eqn_evaluator=make_qc_extraction_eqn_evaluator(qc)
-    )(*ammended_args)
+    # Pre-register any Qubit objects passed as arguments into the
+    # internal QuantumCircuit. This is needed when the Jaspr receives
+    # qubits directly (e.g. from a QuantumVariable or QuantumArray traced
+    # inside make_jaspr) rather than creating them via create_qubits.
+    for arg in args:
+        if isinstance(arg, list) and len(arg) and isinstance(arg[0], Qubit):
+            for qb in arg:
+                if qb not in qc.qubits:
+                    qc.add_qubit(qb)
+
+    # Use eval_context to temporarily exit any outer JAX trace.
+    # This ensures that primitive .bind() calls for classical operations
+    # evaluate concretely rather than being captured by an outer trace,
+    # allowing jaspr_to_qc to be called from within a make_jaspr or
+    # jit tracing context without TracerIntegerConversionError.
+    with eval_context():
+        res = eval_jaxpr(
+            jaspr, 
+            eqn_evaluator=make_qc_extraction_eqn_evaluator(qc)
+        )(*ammended_args)
 
     # Resolve MeasurementArrays to numpy arrays with dtype=object
     res = resolve_measurement_arrays(res)
