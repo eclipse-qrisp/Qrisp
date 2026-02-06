@@ -46,6 +46,7 @@ for i in [
     "qite",
     "qmci",
     "cks",
+    "gqsp",
 ]:
     sys.modules["qrisp." + i] = sys.modules["qrisp.algorithms." + i]
 
@@ -75,6 +76,7 @@ def register_static_types():
     from qrisp.operators import QubitOperator, FermionicOperator
     tree_util.register_pytree_node(QubitOperator, flatten_function, unflatten_function)
     tree_util.register_pytree_node(FermionicOperator, flatten_function, unflatten_function)
+    #tree_util.register_pytree_node(BlockEncoding, flatten_function, unflatten_function)
 
 register_static_types()
         
