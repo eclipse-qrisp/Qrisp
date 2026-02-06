@@ -33,208 +33,278 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 """
 
 
+from abc import ABC, abstractmethod
 from functools import lru_cache
-
-import numpy as np
-
-from qrisp.jasp.interpreter_tools.abstract_interpreter import (
-    extract_invalues,
-    eval_jaxpr,
-    insert_outvalues
-)
-
-from qrisp.jasp.primitives import (
-    QuantumPrimitive,
-    AbstractQubitArray,
-)
-
+from typing import Any, Callable, Dict, Sequence
 
 import jax
-import jax.numpy as jnp
-from jax.random import key
+import numpy as np
+from jax._src.core import JaxprEqn
+from jax.typing import ArrayLike
+
+from qrisp.jasp.interpreter_tools.abstract_interpreter import (
+    ContextDict,
+    eval_jaxpr,
+    extract_invalues,
+    insert_outvalues,
+)
+from qrisp.jasp.primitives import (
+    QuantumPrimitive,
+)
 
 
+class BaseMetric(ABC):
+    """Runtime-enforced base class for profiling metrics."""
 
-# This functions takes a "profiling dic", i.e. a dictionary of the form {str : int}
-# indicating what kinds of quantum gates can appear in a Jaspr.
-# It returns an equation evaluator, which increments a counter in an array for
-# each quantum operation.
-def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
-    
-    def profiling_eqn_evaluator(eqn, context_dic):
+    def __init__(self, meas_behavior: Callable, profiling_dic: dict):
+        """Initialize the BaseMetric."""
+
+        self._meas_behavior = meas_behavior
+        self._profiling_dic = profiling_dic
+
+    @property
+    def meas_behavior(self) -> Callable:
+        return self._meas_behavior
+
+    @property
+    def profiling_dic(self) -> dict:
+        return self._profiling_dic
+
+    @property
+    @abstractmethod
+    def initial_metric(self) -> Any: ...
+
+    def _validate_measurement_result(self, meas_res: bool | jax.Array) -> None:
+        """Validate that measurement result is a boolean."""
+
+        if isinstance(meas_res, bool):
+            return
+        if hasattr(meas_res, "dtype") and meas_res.dtype == jax.numpy.bool_:
+            return
+        raise ValueError(
+            f"Measurement behavior must return a boolean, got {meas_res} of type {type(meas_res)}."
+        )
+
+    def _measurement_body_fun(
+        self, meas_number: ArrayLike, i: ArrayLike, acc: ArrayLike
+    ) -> ArrayLike:
+        """Helper function for measuring qubit arrays."""
+
+        meas_key = jax.random.key(meas_number + i)
+        meas_res = self.meas_behavior(meas_key)
+        self._validate_measurement_result(meas_res)
+        return acc + jax.numpy.left_shift(1, i) * meas_res
+
+    # create_qubits has the signature (size, QuantumCircuit)
+    # Outvars are (QubitArray, QuantumCircuit)
+    @abstractmethod
+    def handle_create_qubits(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
+        """Handle the `jasp.create_qubits` primitive."""
+
+    # get_qubit has the signature (QubitArray, index (int))
+    # Outvars are (Qubit)
+    @abstractmethod
+    def handle_get_qubit(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
+        """Handle the `jasp.get_qubit` primitive."""
+
+    # get_size has the signature (QubitArray)
+    # Outvars are (size)
+    @abstractmethod
+    def handle_get_size(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
+        """Handle the `jasp.get_size` primitive."""
+
+    # fuse has the signature (QubitArray, QubitArray)
+    # Outvars are (QubitArray)
+    @abstractmethod
+    def handle_fuse(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
+        """Handle the `jasp.fuse` primitive."""
+
+    # slice has the signature (QubitArray, start (int), stop (int))
+    # Outvars are (QubitArray)
+    @abstractmethod
+    def handle_slice(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
+        """Handle the `jasp.slice` primitive."""
+
+    # quantum_gate has the signature:
+    # (Qubit 0, Qubit 1,  ...  , Param 0, Param 1 ... , QuantumCircuit)
+    # Outvars is (QuantumCircuit)
+    @abstractmethod
+    def handle_quantum_gate(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
+        """Handle the `jasp.quantum_gate` primitive."""
+
+    # measure has the signature (Qubit | QubitArray, QuantumCircuit)
+    # Outvars are (meas_result, QuantumCircuit)
+    @abstractmethod
+    def handle_measure(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
+        """Handle the `jasp.measure` primitive."""
+
+    # reset has the signature (QubitArray, QuantumCircuit)
+    # Outvars are (QuantumCircuit)
+    @abstractmethod
+    def handle_reset(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
+        """Handle the `jasp.reset` primitive."""
+
+    # delete_qubits has the signature (QubitArray, QuantumCircuit)
+    # Outvars are (QuantumCircuit)
+    @abstractmethod
+    def handle_delete_qubits(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
+        """Handle the `jasp.delete_qubits` primitive."""
+
+    def handle_create_quantum_kernel(self, *_args, **_kwargs):
+        """Handle the `jasp.create_quantum_kernel` primitive."""
+
+        raise NotImplementedError(
+            "Quantum kernel creation not yet supported in profiling interpreter."
+        )
+
+    def get_handlers(self) -> Dict[str, Callable[..., Any]]:
+        """Return a mapping from primitive names to handler methods."""
+
+        return {
+            "jasp.create_qubits": self.handle_create_qubits,
+            "jasp.get_qubit": self.handle_get_qubit,
+            "jasp.get_size": self.handle_get_size,
+            "jasp.fuse": self.handle_fuse,
+            "jasp.slice": self.handle_slice,
+            "jasp.quantum_gate": self.handle_quantum_gate,
+            "jasp.measure": self.handle_measure,
+            "jasp.reset": self.handle_reset,
+            "jasp.delete_qubits": self.handle_delete_qubits,
+            "jasp.create_quantum_kernel": self.handle_create_quantum_kernel,
+        }
+
+
+# This reconstructs the metric inside the cached function so caching not keyed
+# by the metric object identity.
+@lru_cache(int(1e5))
+def get_compiled_profiler(
+    jaxpr,
+    metric_cls,
+    zipped_profiling_dic,
+    meas_behavior,
+    max_qubits=None,
+):
+    """Get a compiled profiler for a given Jaspr and metric."""
+
+    profiling_dic = dict(zipped_profiling_dic)
+    metric_kwargs = {
+        "profiling_dic": profiling_dic,
+        "meas_behavior": meas_behavior,
+        **({"max_qubits": max_qubits} if max_qubits is not None else {}),
+    }
+
+    metric = metric_cls(**metric_kwargs)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(metric)
+    jaxpr_evaluator = eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator)
+    jitted_profiler = jax.jit(jaxpr_evaluator)
+
+    call_counter = np.zeros(1)
+
+    def profiler(*args):
+        if call_counter[0] < 3 or len(jaxpr.eqns) < 20:
+            call_counter[0] += 1
+            return jaxpr_evaluator(*args)
+
+        return jitted_profiler(*args)
+
+    return profiler
+
+
+def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
+    """
+    Build a profiling equation evaluator for a given metric.
+
+    Parameters
+    ----------
+    metric : BaseMetric
+        The metric to use for profiling.
+
+    Returns
+    -------
+    Callable
+        The profiling equation evaluator.
+    """
+
+    # We cache once per call and use closure + O(1) lookup to handle primitives.
+    prim_handlers = metric.get_handlers()
+
+    # In this interpreter, context_dic is an environment mapping:
+    # - keys: JAXPR variables (eqn.outvars[i], i.e. SSA names)
+    # - values: whatever concrete (or traced) JAX objects every metric chooses to represent them with
+    def profiling_eqn_evaluator(eqn, context_dic: ContextDict):
 
         invalues = extract_invalues(eqn, context_dic)
+        prim = eqn.primitive
 
-        if isinstance(eqn.primitive, QuantumPrimitive):
+        if isinstance(prim, QuantumPrimitive):
 
-            # In the case of a quantum gate, we determine the array index
-            # to be increment via dictionary look-up and perform the increment
-            # via the Jax-given .at method.
-            if eqn.primitive.name == "jasp.quantum_gate":
-
-                counting_array = list(invalues[-1][0])
-                incrementation_constants = invalues[-1][1]
-
-                op = eqn.params["gate"]
-
-                if op.definition:
-                    op_counts = op.definition.transpile().count_ops()
-                else:
-                    op_counts = {op.name: 1}
-
-                for op_name, count in op_counts.items():
-                    counting_index = profiling_dic[op_name]
-                    
-                    # It seems like at this point we can just
-                    # naively increment the Jax tracer but
-                    # unfortunately the XLA compiler really 
-                    # doesn't like constants. (Compile time blows up)
-                    # We therefore jump through a lot of hoops
-                    # to make it look like we are adding variables.
-                    # This is done by supplying a list of tracers
-                    # that will contain the numbers from 1 to n.
-                    # Here is the next problem: If n is very large
-                    # this also slows down the compilation because
-                    # each function call has to have n+ arguments.
-                    # We therefore perform the following loop:
-                    while count:
-                        incrementor = min(count, len(incrementation_constants))
-                        count -= incrementor
-                        counting_array[counting_index] += incrementation_constants[incrementor-1]
-
-                insert_outvalues(eqn, context_dic, (counting_array, incrementation_constants))
-
-            elif eqn.primitive.name == "jasp.measure":
-
-                counting_index = profiling_dic["measure"]
-                counting_array = list(invalues[-1][0])
-                incrementation_constants = invalues[-1][1]
-
-                meas_number = counting_array[counting_index]
-
-                if isinstance(eqn.invars[0].aval, AbstractQubitArray):
-
-                    def rng_body(i, acc):
-                        meas_key = key(meas_number + i)
-                        meas_res = meas_behavior(meas_key)
-
-                        if (
-                            not isinstance(meas_res, bool)
-                            and not meas_res.dtype == jnp.bool
-                        ):
-                            raise Exception(
-                                f"Tried to profil Jaspr with a measurement behavior not returning a boolean (got {meas_res.dtype}) instead"
-                            )
-                        acc = acc + (1 << i) * meas_res
-                        return acc
-
-                    meas_res = jax.lax.fori_loop(0, invalues[0], rng_body, jnp.int64(0))
-                    counting_array[counting_index] += invalues[0]
-                else:
-                    meas_res = meas_behavior(key(meas_number))
-                    if (
-                        not isinstance(meas_res, bool)
-                        and not meas_res.dtype == jnp.bool
-                    ):
-                        raise Exception(
-                            f"Tried to profil Jaspr with a measurement behavior not returning a boolean (got {meas_res.dtype}) instead"
-                        )
-                        
-                    counting_array[counting_index] += incrementation_constants[1]
-
-                insert_outvalues(eqn, context_dic, [meas_res, (counting_array, incrementation_constants)])
-
-            # Since we don't need to track to which qubits a certain operation
-            # is applied, we can implement a really simple behavior for most
-            # Qubit/QubitArray handling methods.
-            # We represent qubit arrays simply with integers (indicating their)
-            # size.
-            elif eqn.primitive.name == "jasp.create_qubits":
-                # create_qubits has the signature (size, QuantumCircuit).
-                # Since we represent QubitArrays via integers, it is sufficient
-                # to simply return the input as the output for this primitive.
-                insert_outvalues(eqn, context_dic, invalues)
-
-            elif eqn.primitive.name == "jasp.get_size":
-                # The QubitArray size is represented via an integer.
-                insert_outvalues(eqn, context_dic, invalues[0])
-
-            elif eqn.primitive.name == "jasp.fuse":
-                # The size of the fused qubit array is the size of the two added.
-                insert_outvalues(eqn, context_dic, invalues[0] + invalues[1])
-
-            elif eqn.primitive.name == "jasp.slice":
-                # For the slice operation, we need to make sure, we don't go out
-                # of bounds.
-                start = jnp.max(jnp.array([invalues[1], 0]))
-                stop = jnp.min(jnp.array([invalues[2], invalues[0]]))
-
-                insert_outvalues(eqn, context_dic, stop - start)
-
-            elif eqn.primitive.name == "jasp.get_qubit":
-                # Trivial behavior since we don't need qubit address information
-                insert_outvalues(eqn, context_dic, None)
-
-            elif eqn.primitive.name in ["jasp.delete_qubits", "jasp.reset"]:
-                # Trivial behavior: return the last argument (the counting array).
-                insert_outvalues(eqn, context_dic, invalues[-1])
-            elif eqn.primitive.name == "jasp.create_quantum_kernel":
-                raise Exception("Tried to perform resource estimation on a function calling calling a kernelized function")
-            else:
-                raise Exception(
-                    f"Don't know how to perform resource estimation with quantum primitive {eqn.primitive}"
+            prim_handler = prim_handlers.get(prim.name, None)
+            if prim_handler is None:
+                raise NotImplementedError(
+                    f"Don't know how to handle quantum primitive {prim.name} in profiling interpreter."
                 )
 
-        elif eqn.primitive.name == "while":
-            
-            overall_constant_amount= eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
-            
-            # Reinterpreted body and cond function
-            def body_fun(val):
-                
-                constants = val[eqn.params["cond_nconsts"]:overall_constant_amount]
-                carries = val[overall_constant_amount:]
-                
-                body_res = eval_jaxpr(
-                    eqn.params["body_jaxpr"], eqn_evaluator=profiling_eqn_evaluator
-                )(*(constants + carries))
-                
-                if not isinstance(body_res, tuple):
-                    body_res = (body_res,)
-                
-                return val[:overall_constant_amount] + tuple(body_res)
-
-            def cond_fun(val):
-                
-                constants = val[:eqn.params["cond_nconsts"]]
-                carries = val[overall_constant_amount:]
-                
-                res = eval_jaxpr(
-                    eqn.params["cond_jaxpr"], eqn_evaluator=profiling_eqn_evaluator
-                )(*(constants + carries))
-                
-                return res
-
-            outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[overall_constant_amount:]
-            
+            outvalues = prim_handler(invalues, eqn, context_dic)
             insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "cond":
 
-            # Reinterpret branches
-            branch_list = []
+            branch_fns = [
+                eval_jaxpr(branch_jaxpr, eqn_evaluator=profiling_eqn_evaluator)
+                for branch_jaxpr in eqn.params["branches"]
+            ]
 
-            for i in range(len(eqn.params["branches"])):
-                branch_list.append(
-                    eval_jaxpr(
-                        eqn.params["branches"][i], eqn_evaluator=profiling_eqn_evaluator
-                    )
-                )
+            # invalues[0] is the branch index/predicate encoding
+            # remaining invalues are operands/carries passed to the branches
+            outvalues = jax.lax.switch(invalues[0], branch_fns, *invalues[1:])
+            outvalues = (outvalues,) if len(eqn.outvars) == 1 else outvalues
+            insert_outvalues(eqn, context_dic, outvalues)
 
-            outvalues = jax.lax.switch(invalues[0], branch_list, *invalues[1:])
+        elif eqn.primitive.name == "while":
 
-            if len(eqn.outvars) == 1:
-                outvalues = (outvalues,)
+            body_jaxpr = eqn.params["body_jaxpr"]
+            cond_jaxpr = eqn.params["cond_jaxpr"]
+            body_nconsts = eqn.params["body_nconsts"]
+            cond_nconsts = eqn.params["cond_nconsts"]
+
+            overall_constant_amount = body_nconsts + cond_nconsts
+
+            body_eval = eval_jaxpr(body_jaxpr, eqn_evaluator=profiling_eqn_evaluator)
+            cond_eval = eval_jaxpr(cond_jaxpr, eqn_evaluator=profiling_eqn_evaluator)
+
+            def body_fun(val):
+                constants = val[cond_nconsts:overall_constant_amount]
+                carries = val[overall_constant_amount:]
+                body_res = body_eval(*(constants + carries))
+                body_res = body_res if isinstance(body_res, tuple) else (body_res,)
+                return val[:overall_constant_amount] + body_res
+
+            def cond_fun(val):
+                constants = val[:cond_nconsts]
+                carries = val[overall_constant_amount:]
+                return cond_eval(*(constants + carries))
+
+            outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[
+                overall_constant_amount:
+            ]
 
             insert_outvalues(eqn, context_dic, outvalues)
 
@@ -254,10 +324,16 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
             # with the same object. Since identical qached function calls are
             # represented by the same jaxpr, we achieve our goal.
 
-            zipped_profiling_dic = tuple(profiling_dic.items())
+            zipped_profiling_dic = tuple(metric.profiling_dic.items())
+            meas_behavior = metric.meas_behavior
+            max_qubits = getattr(metric, "max_qubits", None)
 
             profiler = get_compiled_profiler(
-                eqn.params["jaxpr"], zipped_profiling_dic, meas_behavior
+                eqn.params["jaxpr"],
+                type(metric),  # used only to reconstruct metric inside cache
+                zipped_profiling_dic,
+                meas_behavior,
+                max_qubits,
             )
 
             outvalues = profiler(*invalues)
@@ -271,24 +347,3 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
             return True
 
     return profiling_eqn_evaluator
-
-
-@lru_cache(int(1e5))
-def get_compiled_profiler(jaxpr, zipped_profiling_dic, meas_behavior):
-
-    profiling_dic = dict(zipped_profiling_dic)
-
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic, meas_behavior)
-
-    jitted_profiler = jax.jit(eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator))
-    
-    call_counter = np.zeros(1)
-    
-    def profiler(*args):
-        if call_counter[0] < 3 or len(jaxpr.eqns) < 20:
-            call_counter[0] += 1
-            return eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator)(*args)
-        else:
-            return jitted_profiler(*args)
-
-    return profiler
