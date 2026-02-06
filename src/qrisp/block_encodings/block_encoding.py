@@ -27,7 +27,7 @@ from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
-from qrisp.jasp import jrange
+from qrisp.jasp import jrange, count_ops
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool, QuantumFloat
@@ -628,6 +628,21 @@ class BlockEncoding:
             return success_bool, *operands       
 
         return rus_function
+    
+    def resources(self, operand_prep: Callable[..., Any], meas_behavior: str = "0"):
+
+        @count_ops(meas_behavior=meas_behavior)
+        def resource_counter(*args):
+            operands = operand_prep(*args)
+            if not isinstance(operands, tuple):
+                operands = (operands,)    
+            ancillas = self.create_ancillas()
+
+            self.unitary(*ancillas, *operands)
+            
+            return operands
+
+        return resource_counter
     
     def dagger(self) -> BlockEncoding:
         r"""
@@ -1599,4 +1614,6 @@ class BlockEncoding:
 
         """
         from qrisp.algorithms.gqsp import GQET
+        if isinstance(p, list):
+            p = np.array(p)
         return GQET(self, p, kind=kind)
