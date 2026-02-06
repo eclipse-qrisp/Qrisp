@@ -21,6 +21,9 @@ from qrisp.alg_primitives.arithmetic import QuantumFloat, q_divmod
 from qrisp.misc import multi_measurement
 
 
+import pytest
+
+
 def test_quantum_divison():
     numerator = QuantumFloat(4, -2, signed=True)
     divisor = QuantumFloat(4, -2, signed=True)
@@ -31,7 +34,7 @@ def test_quantum_divison():
     divisor.encode(d)
 
     prec = 4
-    quotient, remainder = q_divmod(numerator, divisor, prec=prec, adder="thapliyal")
+    quotient, remainder = q_divmod(numerator, divisor, prec=prec, adder = None)
 
     q, r = list(multi_measurement([quotient, remainder]))[0]
 
