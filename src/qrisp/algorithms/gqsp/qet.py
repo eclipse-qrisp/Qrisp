@@ -54,12 +54,17 @@ def QET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynom
     Parameters
     ----------
     H : BlockEncoding | QubitOperator
-        The Hermitian operator.
+        The Hermitian operator to be transformed.
     p : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
-        Polynomial must be real and have even or odd parity.
     kind : {"Polynomial", "Chebyshev"}
-        The kind of ``p``. The default is ``"Polynomial"``.
+        The basis in which the coefficients are defined. 
+
+        - ``"Polynomial"``: $p(x) = \sum c_i x^i$
+
+        - ``"Chebyshev"``: $p(x) = \sum c_i T_i(x)$, where $T_i$ are Chebyshev polynomials of the first kind.
+
+        Default is ``"Polynomial"``.
 
     Returns
     -------

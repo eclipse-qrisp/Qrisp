@@ -27,7 +27,7 @@ from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
-from qrisp.jasp import jrange
+from qrisp.jasp import jrange, count_ops
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool, QuantumFloat
@@ -629,6 +629,90 @@ class BlockEncoding:
 
         return rus_function
     
+    def resources(self, operand_prep: Callable[..., Any], meas_behavior: str = "0"):
+        r"""
+        Estimate the quantum resources required for the BlockEncoding object.
+
+        
+
+        This method uses the :ref:`count_ops <count_ops>` decorator to obtain gate counts, circuit depth, 
+        and (in future) qubit usage for a single execution of ``.unitary``. Unlike :meth:`apply_rus`, it does not 
+        run the simulator and does not include repetitions from the Repeat-Until-Success procedure.
+
+        Parameters
+        ----------
+        operand_prep : Callable
+            A function ``operand_prep(*args)`` that prepares and returns the operand QuantumVariables.
+        meas_behavior : str, optional
+            Specifies the measurement outcome to assume during the tracing process (e.g., "0", or "1"). The default is "0".
+
+        Returns
+        -------
+        Callable
+            A function ``resource_counter(*args, **kwargs)`` with the same signature
+            as ``operand_prep``. When called, it returns a resource summary object
+            whose string representation is a dictionary of the counted quantum
+            operations. Use ``print(resource_counter(...))`` to display the
+            gate-count dictionary.
+
+        Examples
+        --------
+        
+        **Example 1:**: Estimate the quantum resources for a block-encoded Pauli operator.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import X, Z
+
+            H = X(0)*X(1) + 0.5*Z(0)*Z(1)
+            BE = H.pauli_block_encoding()
+
+            def operand_prep():
+                qf = QuantumFloat(2)
+                return qf
+
+            QRE = BE.resources(operand_prep)()
+            print(QRE)
+            # {'gphase': 2, 'u3': 2, 'cx': 4, 'cz': 2, 'x': 3} 
+
+        **Example 2:**: Estimate the quantum resources for applying the Quantum Eigenvalue Transform.
+
+        ::
+
+            from qrisp import *
+            from qrisp.algorithms.gqsp import QET
+            from qrisp.operators import X, Z
+
+            H = X(0)*X(1) + 0.5*Z(0)*Z(1)
+            BE = H.pauli_block_encoding()
+
+            b = np.array([0, 1, 1, 1])
+
+            def operand_prep():
+                qf = QuantumFloat(2)
+                return qf
+
+            BE_QET = QET(BE, b)
+            QRE = BE_QET.resources(operand_prep)()
+            print(QRE)
+            # {'gphase': 4, 'u3': 4, 'p': 2, 'cx': 12, 'x': 8, 'cz': 6, 'rx': 2}  
+            
+        """
+
+        @count_ops(meas_behavior=meas_behavior)
+        def resource_counter(*args):
+            operands = operand_prep(*args)
+            if not isinstance(operands, tuple):
+                operands = (operands,)    
+            ancillas = self.create_ancillas()
+
+            self.unitary(*ancillas, *operands)
+            
+            return operands
+
+        return resource_counter
+    
     def dagger(self) -> BlockEncoding:
         r"""
         Returns the Hermitian adjoint (dagger) of the BlockEncoding.
@@ -715,18 +799,21 @@ class BlockEncoding:
             new_anc_templates = [QuantumBool().template()] + self.anc_templates
             return BlockEncoding(self.alpha, new_anc_templates, new_unitary, is_hermitian=True)
         
-    def chebyshev(self: "BlockEncoding", k: int) -> BlockEncoding:
+    def chebyshev(self: "BlockEncoding", k: int, _rescale = True) -> BlockEncoding:
         r"""
-        Returns the block encoding of the $k$-thChebyshev polynomial of the first kind as a BlockEncoding.
+        Returns the rescaled block encoding of the $k$-thChebyshev polynomial of the first kind as a BlockEncoding.
 
         This method computes the Chebyshev polynomial $T_k(U_A)$ of order $k$ 
-        applied to the block-encoding unitary, where $U_A$ is the block-encoding unitary 
-        of operator $A$.
+        applied to the operator $A$ encoded in the current BlockEncoding. Depending on the ``_rescale`` flag, it returns
+        either $T_k(A)$ if ``_rescale = True``, or $T_k(A/\alpha)$ if ``_rescale = False``.
 
         Parameters
         ----------
         k : int
             The order of the Chebyshev polynomial. Must be a non-negative integer.
+        _rescale : bool, optional
+            If set to ``True`` (default), the method returns the rescaled block encoding of $T_k(A)$. If ``False``,
+            the method returns the non-rescaled block encoding of $T_k(A/\alpha)$.
 
         Returns
         -------
@@ -787,6 +874,12 @@ class BlockEncoding:
                 reflection(args[:m])
                 self.unitary(*args)
         
+        if _rescale:
+            from qrisp.algorithms.gqsp.qet import QET
+            p = np.zeros(k+1)
+            p[-1] = 1.0
+            return QET(self, p, kind = "Chebyshev")
+           
         return BlockEncoding(self.alpha, self.anc_templates, new_unitary)
 
     #
@@ -1590,4 +1683,6 @@ class BlockEncoding:
 
         """
         from qrisp.algorithms.gqsp import GQET
+        if isinstance(p, list):
+            p = np.array(p)
         return GQET(self, p, kind=kind)
