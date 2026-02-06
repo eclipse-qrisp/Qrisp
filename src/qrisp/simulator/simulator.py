@@ -18,6 +18,7 @@
 
 import threading
 import sys
+import shutil
 import numpy as np
 from tqdm import tqdm
 from numba import njit
@@ -45,7 +46,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
     progress_bar = tqdm(
         desc=f"Simulating {len(qc.qubits)} qubits..",
         bar_format="{desc} |{bar}| [{percentage:3.0f}%]",
-        ncols=85,
+        ncols=min(85, shutil.get_terminal_size().columns),
         leave=False,
         delay=0.1,
         position=0,
@@ -71,7 +72,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         
         if measurement_amount == 0:
             progress_bar.close()
-            print("\r" + 85 * " ", end=LINE_CLEAR + "\r")
+            print(LINE_CLEAR, end="\r")
             return {"" : 1.}
 
         # Apply circuit preprocessing more
@@ -159,7 +160,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
             mes_qubit_indices = []
 
         progress_bar.close()
-        print("\r" + 85 * " ", end=LINE_CLEAR + "\r")
+        print(LINE_CLEAR, end="\r")
 
         # Prepare result dictionary
         # The iqs object contains the outcome bitstrings in the attribute .outcome_list
@@ -227,7 +228,7 @@ def statevector_sim(qc):
     progress_bar = tqdm(
         desc=f"Simulating {len(qc.qubits)} qubits..",
         bar_format="{desc} |{bar}| [{percentage:3.0f}%]",
-        ncols=85,
+        ncols=min(85, shutil.get_terminal_size().columns),
         # ascii = " >#",
         leave=False,
         delay=0.2,
@@ -297,7 +298,7 @@ def statevector_sim(qc):
         res = qs.eval().tensor_array.to_array()
 
         progress_bar.close()
-        print("\r" + 85 * " ", end=LINE_CLEAR + "\r")
+        print(LINE_CLEAR, end="\r")
 
         # Deactivate the fast append mode
         QuantumCircuit.fast_append = False
@@ -433,7 +434,7 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
     progress_bar = tqdm(
         desc=f"Simulating {max_req_qubits-allocation_amount} qubits..",
         bar_format="{desc} |{bar}| [{percentage:3.0f}%]",
-        ncols=85,
+        ncols=min(85, shutil.get_terminal_size().columns),
         leave=False,
         delay=0.2,
         position=0,
@@ -506,6 +507,6 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
                 quantum_state.apply_operation(instr.op, qubit_indices)
 
         progress_bar.close()
-        print("\r" + 85 * " ", end=LINE_CLEAR + "\r")
+        print(LINE_CLEAR, end="\r")
 
         return quantum_state
