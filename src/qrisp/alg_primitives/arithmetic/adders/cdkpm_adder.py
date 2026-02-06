@@ -78,17 +78,28 @@ def cdkpm_adder(a, b, c_out=None, ctrl = None):
         )
     ):
         raise ValueError("Attempted to call the CDKPM adder on invalid inputs.")
+    
 
     # convert the classical input to a quantum input
     if not isinstance(a, QuantumFloat):
         # create a QuantumFloat of the same size as the other quantum input
         q_a = b.duplicate()
-        # set the value of the quantum input to the classical input
-        q_a[:] = a
-        a_in = a
-        a = q_a
+
+        with conjugate(q_a.encode)(a):
+            # begin with q_a in the state |a>
+            if c_out is not None:
+                cdkpm_adder(q_a, b, c_out = c_out)
+            elif ctrl is not None:
+                cdkpm_adder(q_a, b, ctrl = ctrl)
+            else:
+                cdkpm_adder(q_a, b)
+        
+        # outside the conjugation, q_a is back in the state |0> and the addition has been performed on b
+        # delete the temporary quantum variable created for the classical input
+        q_a.delete()
+        return
     
-    elif not isinstance(b, QuantumFloat):
+    if not isinstance(b, QuantumFloat):
         raise ValueError("The second argument must be of type QuantumFloat.")
     
 
@@ -182,5 +193,4 @@ def cdkpm_adder(a, b, c_out=None, ctrl = None):
 
     # delete the extension ancillas when the inputs are of unequal length
     extension_anc_a.delete()
-    extension_anc_b.delete()
-    
+    extension_anc_b.delete()  
