@@ -5,7 +5,7 @@ Algorithms & Applications
 
 .. currentmodule:: qrisp.block_encodings
 
-**Unified Algorithmic Framework**
+**A Unified Algorithmic Framework**
 
 By utilizing block-encodings as a foundation, this abstraction enables the realization of nearly all fundamental tasks in quantum computation [Martyn2021]_,
 through (Generalized) Quantum Signal Processing (QSP) [Motlagh2024]_ and its derivatives Quantum Eigenvalue Transform (QET) and Quantum Singular Value Transformation (QSVT) [Gilyén2019]_, [Sünderhauf2023]_.
