@@ -715,18 +715,21 @@ class BlockEncoding:
             new_anc_templates = [QuantumBool().template()] + self.anc_templates
             return BlockEncoding(self.alpha, new_anc_templates, new_unitary, is_hermitian=True)
         
-    def chebyshev(self: "BlockEncoding", k: int) -> BlockEncoding:
+    def chebyshev(self: "BlockEncoding", k: int, _rescale = True) -> BlockEncoding:
         r"""
-        Returns the block encoding of the $k$-thChebyshev polynomial of the first kind as a BlockEncoding.
+        Returns the rescaled block encoding of the $k$-thChebyshev polynomial of the first kind as a BlockEncoding.
 
         This method computes the Chebyshev polynomial $T_k(U_A)$ of order $k$ 
-        applied to the block-encoding unitary, where $U_A$ is the block-encoding unitary 
-        of operator $A$.
+        applied to the operator $A$ encoded in the current BlockEncoding. Depending on the ``_rescale`` flag, it returns
+        either $T_k(A)$ if ``_rescale = True``, or $T_k(A/\alpha)$ if ``_rescale = False``.
 
         Parameters
         ----------
         k : int
             The order of the Chebyshev polynomial. Must be a non-negative integer.
+        _rescale : bool, optional
+            If set to ``True`` (default), the method returns the rescaled block encoding of $T_k(A)$. If ``False``,
+            the method returns the non-rescaled block encoding of $T_k(A/\alpha)$.
 
         Returns
         -------
@@ -786,7 +789,13 @@ class BlockEncoding:
                         reflection(args[:m])
                 reflection(args[:m])
                 self.unitary(*args)
-
+        
+        if _rescale:
+            from qrisp.algorithms.gqsp.qet import QET
+            p = np.zeros(k+1)
+            p[-1] = 1.0
+            return QET(self, p, kind = "Chebyshev")
+           
         return BlockEncoding(self.alpha, self.anc_templates, new_unitary)
 
     #
