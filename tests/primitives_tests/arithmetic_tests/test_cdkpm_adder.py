@@ -46,6 +46,34 @@ def test_cdkpm_adder_valid_input_static_mode(input_a, input_b, expected_a, expec
     assert calculated_out_a == expected_a
     assert calculated_out_b == expected_b
 
+@pytest.mark.parametrize("input_a, input_b, expected_a, expected_b", [
+    # both inputs are quantum in static mode, inputs are of unequal size
+    (QuantumFloat(13), QuantumFloat(14), {20: 1.0}, {34: 1.0}),
+
+    # both inputs are quantum in static mode, inputs are of equal size
+    (QuantumFloat(13), QuantumFloat(13), {20: 1.0}, {34: 1.0}),
+
+    # one input is classical, the other is quantum in static mode
+    (20, QuantumFloat(15), 20, {34: 1.0}),
+])
+def test_cdkpm_adder_valid_input_static_mode_with_cout(input_a, input_b, expected_a, expected_b):
+    """Verify the function works as expected for valid inputs in static mode when c_out is provided."""
+    if isinstance(input_a, QuantumFloat):
+        input_a[:] = 20
+    if isinstance(input_b, QuantumFloat):
+        input_b[:] = 14
+
+    c_out = QuantumFloat(2)
+    cdkpm_adder(input_a, input_b, c_out=c_out)
+
+    calculated_out_b = input_b.get_measurement() if isinstance(input_b, QuantumFloat) else input_b
+    calculated_out_a = input_a.get_measurement() if isinstance(input_a, QuantumFloat) else input_a
+    calculated_out_cout = c_out.get_measurement()
+
+    assert calculated_out_a == expected_a
+    assert calculated_out_b == expected_b
+    assert calculated_out_cout == {0: 1.0}  # since no overflow is expected in these test cases
+
 @pytest.mark.parametrize("input_a_type, input_b_type, input_a_size, input_b_size, expected_output", [
     # both quantum inputs in dynamic mode, inputs are of unequal size
     (QuantumFloat, QuantumFloat, 16, 19, 34.0),

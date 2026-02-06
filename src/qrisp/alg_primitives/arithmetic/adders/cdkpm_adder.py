@@ -128,7 +128,7 @@ def cdkpm_adder(a, b, c_out=None, ctrl = None):
     ancilla[:] = 0
 
     if c_out is not None:
-        ancilla2 = [c_out]
+        ancilla2 = c_out
 
     # first maj gate application
     cx(a[0], b[0])
@@ -193,4 +193,4 @@ def cdkpm_adder(a, b, c_out=None, ctrl = None):
 
     # delete the extension ancillas when the inputs are of unequal length
     extension_anc_a.delete()
-    extension_anc_b.delete()  
+    extension_anc_b.delete()
