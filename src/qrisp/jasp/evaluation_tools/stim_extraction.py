@@ -19,6 +19,7 @@
 from qrisp.jasp import make_jaspr
 from qrisp.circuit import Clbit, Qubit
 from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityHandle
+from jax.tree_util import tree_unflatten
 import numpy as np
 
 
@@ -424,7 +425,9 @@ def extract_stim(func=None, *, detector_order="chronological"):
             # Step 1: Create a Jaspr from the function with the given arguments
             # The Jaspr is a traced representation of the quantum program, similar to Jax's jaxpr.
             # This tracing process records the quantum operations without actually executing them.
-            jaspr = make_jaspr(f)(*args)
+            # Use return_shape=True to capture the output PyTree structure so we can
+            # reconstruct nested return types (lists, dicts, etc.) after processing.
+            jaspr, out_tree = make_jaspr(f, return_shape=True)(*args)
             
             # Step 2: Convert the Jaspr to a QuantumCircuit
             # The "staticalization" process converts the traced representation back to a concrete
@@ -581,11 +584,15 @@ def extract_stim(func=None, *, detector_order="chronological"):
                                 new_indices = inverse_perm[old_indices]
                                 new_result[i] = new_indices.reshape(val.shape).view(StimDetectorHandles)
                 
-                # Append the Stim circuit as the last element of the result tuple
-                new_result.append(stim_circ)
-            
-                # Return all processed values plus the Stim circuit as a tuple
-                return tuple(new_result)
+                # Reconstruct the original PyTree structure from the flat results
+                reconstructed = tree_unflatten(out_tree, new_result)
+                
+                # Append the Stim circuit: unpack if the return was a tuple,
+                # otherwise wrap in a tuple with the stim circuit.
+                if isinstance(reconstructed, tuple):
+                    return (*reconstructed, stim_circ)
+                else:
+                    return (reconstructed, stim_circ)
         
         return return_func
     

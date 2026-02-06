@@ -2064,3 +2064,170 @@ def test_detector_order_repetition_code():
     
     # Detector positions should match
     assert np.array_equal(detector_positions_auto.flatten(), np.arange(len(detector_positions.flatten())))
+
+
+# ============================================================================
+# PyTree Reconstruction Tests
+# ============================================================================
+
+def test_pytree_list_return():
+    """Test that a list return value is preserved as a list (not flattened)."""
+    @extract_stim
+    def list_return():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        d0 = parity(m0, m1, expectation=False)
+        d1 = parity(m0, expectation=True)
+        return [d0, d1]
+
+    result = list_return()
+    assert len(result) == 2  # (list, stim_circuit)
+    detector_list, stim_circuit = result
+    assert isinstance(detector_list, list), f"Expected list, got {type(detector_list)}"
+    assert len(detector_list) == 2
+    assert isinstance(stim_circuit, stim.Circuit)
+    for item in detector_list:
+        assert isinstance(item, StimDetectorHandles)
+
+
+def test_pytree_list_and_scalar_return():
+    """Test the repetition code pattern: returning (list_of_detectors, observable)."""
+    @extract_stim
+    def list_and_scalar():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        d0 = parity(m0, m1, expectation=False)
+        d1 = parity(m0, expectation=True)
+        obs = parity(m1)
+        return [d0, d1], obs
+
+    result = list_and_scalar()
+    assert len(result) == 3  # (list, observable, stim_circuit)
+    detector_list, obs, stim_circuit = result
+    assert isinstance(detector_list, list), f"Expected list, got {type(detector_list)}"
+    assert len(detector_list) == 2
+    for item in detector_list:
+        assert isinstance(item, StimDetectorHandles)
+    assert isinstance(obs, StimObservableHandles)
+    assert isinstance(stim_circuit, stim.Circuit)
+
+
+def test_pytree_dict_return():
+    """Test that a dict return value is preserved as a dict."""
+    @extract_stim
+    def dict_return():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        d = parity(m0, m1, expectation=False)
+        obs = parity(m0)
+        return {"detector": d, "observable": obs}
+
+    result = dict_return()
+    assert len(result) == 2  # (dict, stim_circuit)
+    result_dict, stim_circuit = result
+    assert isinstance(result_dict, dict), f"Expected dict, got {type(result_dict)}"
+    assert "detector" in result_dict
+    assert "observable" in result_dict
+    assert isinstance(result_dict["detector"], StimDetectorHandles)
+    assert isinstance(result_dict["observable"], StimObservableHandles)
+    assert isinstance(stim_circuit, stim.Circuit)
+
+
+def test_pytree_nested_structure():
+    """Test nested PyTree: dict containing a list."""
+    @extract_stim
+    def nested_return():
+        qv = QuantumVariable(3)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        cx(qv[0], qv[2])
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        m2 = measure(qv[2])
+        d0 = parity(m0, m1, expectation=False)
+        d1 = parity(m1, m2, expectation=False)
+        obs = parity(m0, m2)
+        return {"detectors": [d0, d1], "observable": obs}
+
+    result = nested_return()
+    assert len(result) == 2  # (dict, stim_circuit)
+    result_dict, stim_circuit = result
+    assert isinstance(result_dict, dict)
+    assert isinstance(result_dict["detectors"], list)
+    assert len(result_dict["detectors"]) == 2
+    for item in result_dict["detectors"]:
+        assert isinstance(item, StimDetectorHandles)
+    assert isinstance(result_dict["observable"], StimObservableHandles)
+    assert isinstance(stim_circuit, stim.Circuit)
+
+
+def test_pytree_flat_tuple_unchanged():
+    """Test that existing flat tuple returns still work identically."""
+    @extract_stim
+    def flat_tuple():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        return m0, m1
+
+    result = flat_tuple()
+    # Flat tuple (m0, m1) should unpack as before: (m0, m1, stim_circuit)
+    assert len(result) == 3
+    m0, m1, stim_circuit = result
+    assert isinstance(m0, StimMeasurementHandles)
+    assert isinstance(m1, StimMeasurementHandles)
+    assert isinstance(stim_circuit, stim.Circuit)
+
+
+def test_pytree_no_return_unchanged():
+    """Test that no-return functions still return just a stim.Circuit."""
+    @extract_stim
+    def no_return():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        measure(qv)
+
+    result = no_return()
+    assert isinstance(result, stim.Circuit)
+
+
+def test_pytree_list_with_detector_reorder():
+    """Test that detector_order='return_order' works with list returns."""
+    @extract_stim(detector_order="return_order")
+    def reordered_list():
+        qv = QuantumVariable(3)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        cx(qv[0], qv[2])
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        m2 = measure(qv[2])
+        # Create detectors in one order
+        d0 = parity(m0, m1, expectation=False)
+        d1 = parity(m1, m2, expectation=False)
+        d2 = parity(m0, m2, expectation=False)
+        # Return them reversed so return_order reorders the circuit
+        return [d2, d1, d0]
+
+    result = reordered_list()
+    assert len(result) == 2  # (list, stim_circuit)
+    detector_list, stim_circuit = result
+    assert isinstance(detector_list, list)
+    assert len(detector_list) == 3
+    # After reordering, detector indices should be 0, 1, 2 in return order
+    assert np.array_equal(
+        np.array([int(d) for d in detector_list]),
+        np.arange(3)
+    )
