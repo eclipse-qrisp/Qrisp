@@ -1,7 +1,7 @@
-.. _qrisp_vs_numpy:
+.. _block_encodigns_numpy:
 
 NumPy-like syntax
------------------
+=================
 
 Define two Hermitian matrices $A$ and $B$ and evaluate the matrix expression 
 $C = I + 2A + A^2 + B^{-1}$ applied to a vector $\vec{b}$.
@@ -35,14 +35,14 @@ $C = I + 2A + A^2 + B^{-1}$ applied to a vector $\vec{b}$.
 Next, evaluate the matrix expression.
 
 numpy
-=====
+-----
 
 ::
 
     C = np.eye(4) + 2 * A + A @ A + np.linalg.inv(B) 
 
 qrisp
-=====
+-----
 
 ::
 
@@ -51,7 +51,7 @@ qrisp
 Notably, expressing high-level quantum linear algebra in Qrisp requires no prior knowledge of quantum computing, thanks to its intuitive, NumPy-like syntax.
 
 Results
-=======
+-------
 
 Finally, compare the results, which for Qrisp involves a small amount of quantum-specific code.
 
