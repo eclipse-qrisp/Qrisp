@@ -2231,3 +2231,137 @@ def test_pytree_list_with_detector_reorder():
         np.array([int(d) for d in detector_list]),
         np.arange(3)
     )
+
+
+# ============================================================================
+# Dynamic Noise Parameter Tests
+# ============================================================================
+
+def test_dynamic_noise_single_param():
+    """Test that stim_noise with a dynamic (traced) error probability works."""
+    @extract_stim
+    def dynamic_noise(p):
+        qv = QuantumVariable(1)
+        stim_noise("X_ERROR", p, qv[0])
+        return measure(qv)
+
+    # Call with a concrete value — the dynamic parameter should be substituted
+    _, stim_circuit = dynamic_noise(0.25)
+    assert "X_ERROR(0.25)" in str(stim_circuit)
+
+    # Different value should produce a different circuit
+    _, stim_circuit2 = dynamic_noise(0.5)
+    assert "X_ERROR(0.5)" in str(stim_circuit2)
+
+
+def test_dynamic_noise_depolarize1():
+    """Test dynamic DEPOLARIZE1 noise strength."""
+    @extract_stim
+    def dynamic_depol(p):
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        stim_noise("DEPOLARIZE1", p, qv[0])
+        stim_noise("DEPOLARIZE1", p, qv[1])
+        return measure(qv)
+
+    _, circuit = dynamic_depol(0.03)
+    circuit_str = str(circuit)
+    assert "DEPOLARIZE1(0.03)" in circuit_str
+
+
+def test_dynamic_noise_depolarize2():
+    """Test dynamic DEPOLARIZE2 noise on a two-qubit gate."""
+    @extract_stim
+    def dynamic_depol2(p):
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        stim_noise("DEPOLARIZE2", p, qv[0], qv[1])
+        return measure(qv)
+
+    _, circuit = dynamic_depol2(0.05)
+    assert "DEPOLARIZE2(0.05)" in str(circuit)
+
+
+def test_dynamic_noise_multiple_different_strengths():
+    """Test that different dynamic values for different noise channels work."""
+    @extract_stim
+    def multi_noise(p_x, p_depol):
+        qv = QuantumVariable(1)
+        stim_noise("X_ERROR", p_x, qv[0])
+        stim_noise("DEPOLARIZE1", p_depol, qv[0])
+        return measure(qv)
+
+    _, circuit = multi_noise(0.1, 0.2)
+    circuit_str = str(circuit)
+    assert "X_ERROR(0.1)" in circuit_str
+    assert "DEPOLARIZE1(0.2)" in circuit_str
+
+
+def test_dynamic_noise_sampling_statistics():
+    """Verify dynamic noise actually affects sampling statistics.
+    With X_ERROR(1.0) the qubit deterministically flips."""
+    @extract_stim
+    def deterministic_flip(p):
+        qv = QuantumVariable(1)
+        stim_noise("X_ERROR", p, qv[0])
+        return measure(qv)
+
+    # p=1.0: qubit always flips → measure always 1
+    _, circuit_flip = deterministic_flip(1.0)
+    samples = circuit_flip.compile_sampler().sample(100)
+    assert np.all(samples), "With X_ERROR(1.0), all samples should be True"
+
+    # p=0.0: qubit never flips → measure always 0
+    _, circuit_no_flip = deterministic_flip(0.0)
+    samples_no = circuit_no_flip.compile_sampler().sample(100)
+    assert not np.any(samples_no), "With X_ERROR(0.0), all samples should be False"
+
+
+def test_dynamic_noise_correlated_error():
+    """Test dynamic noise strength with correlated (pauli_string) errors."""
+    @extract_stim
+    def correlated_dynamic(p):
+        qv = QuantumVariable(2)
+        stim_noise("E", p, qv[0], qv[1], pauli_string="XX")
+        return measure(qv)
+
+    _, circuit = correlated_dynamic(0.15)
+    assert "E(0.15)" in str(circuit)
+
+
+def test_dynamic_noise_pauli_channel_1():
+    """Test PAULI_CHANNEL_1 with three dynamic parameters."""
+    @extract_stim
+    def pauli_ch1(px, py, pz):
+        qv = QuantumVariable(1)
+        stim_noise("PAULI_CHANNEL_1", px, py, pz, qv[0])
+        return measure(qv)
+
+    _, circuit = pauli_ch1(0.1, 0.2, 0.3)
+    assert "PAULI_CHANNEL_1(0.1,0.2,0.3)" in str(circuit).replace(" ", "")
+
+
+def test_dynamic_noise_with_detectors():
+    """Test that dynamic noise works correctly in a circuit with detectors."""
+    @extract_stim
+    def noisy_detector_circuit(p):
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        stim_noise("X_ERROR", p, qv[0])
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        d = parity(m0, m1, expectation=False)
+        return d
+
+    # p=0: no error, detector should never fire
+    _, circuit_clean = noisy_detector_circuit(0.0)
+    det_samples = circuit_clean.compile_detector_sampler().sample(100)
+    assert not np.any(det_samples), "With no noise, detector should never fire"
+
+    # p=1: deterministic error, detector should always fire
+    _, circuit_noisy = noisy_detector_circuit(1.0)
+    det_samples_noisy = circuit_noisy.compile_detector_sampler().sample(100)
+    assert np.all(det_samples_noisy), "With X_ERROR(1.0), detector should always fire"

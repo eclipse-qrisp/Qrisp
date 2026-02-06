@@ -18,7 +18,13 @@
 
 import stim
 from qrisp.core import append_operation
+from qrisp.jasp import check_for_tracing_mode
 from qrisp.misc.stim_tools.error_class import StimNoiseGate
+from sympy import symbols
+
+greek_letters = symbols(
+    "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega"
+)
 
 def stim_noise(stim_name, *parameters_and_qubits, pauli_string = None):
     """
@@ -144,9 +150,12 @@ def stim_noise(stim_name, *parameters_and_qubits, pauli_string = None):
     
     params = parameters_and_qubits[:-num_qubits]
     qubits = parameters_and_qubits[-num_qubits:]
-    
-    error_op = StimNoiseGate(stim_name, *params, pauli_string=pauli_string)
-    
-    append_operation(error_op, qubits = qubits)
+
+    if check_for_tracing_mode():
+        error_op = StimNoiseGate(stim_name, *greek_letters[:len(params)], pauli_string=pauli_string)
+        append_operation(error_op, qubits = qubits, param_tracers=list(params))
+    else:
+        error_op = StimNoiseGate(stim_name, *params, pauli_string=pauli_string)
+        append_operation(error_op, qubits = qubits)
 
 
