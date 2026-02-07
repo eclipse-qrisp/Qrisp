@@ -48,6 +48,7 @@ Usage
 
 import stim
 import numpy as np
+import jax
 from jax.tree_util import tree_flatten
 
 from qrisp import QuantumArray, QuantumBool
@@ -73,12 +74,13 @@ def _count_qubits(*args):
     return total
 
 
-def _build_analysis_args(inner_jaspr, num_qubits, original_args):
+def _build_analysis_args(inner_jaspr, num_qubits, quantum_arrays):
     """Build concrete args for calling ``to_qc`` on *inner_jaspr*.
 
-    Each QuantumArray argument receives its own disjoint slice of qubits
-    from the analysis circuit, matching the qubit count of the original
-    QuantumArray.
+    Iterates over the jaspr's invars and replaces ``QubitArray`` types with
+    concrete qubit lists from an analysis circuit.  Static parameters have
+    been bound via closure before tracing, so only QuantumArray-derived
+    invars remain.
     """
     analysis_qc = QC(num_qubits)
     qubit_list = list(analysis_qc.qubits)
@@ -86,27 +88,31 @@ def _build_analysis_args(inner_jaspr, num_qubits, original_args):
     # Partition qubits into slices corresponding to each QuantumArray arg
     qubit_offset = 0
     qubit_slices = []
-    for a in original_args:
-        if isinstance(a, QuantumArray):
-            n = a.size * a.qtype.size
-            qubit_slices.append(qubit_list[qubit_offset:qubit_offset + n])
-            qubit_offset += n
+    for a in quantum_arrays:
+        n = a.size * a.qtype.size
+        qubit_slices.append(qubit_list[qubit_offset:qubit_offset + n])
+        qubit_offset += n
 
     slice_iter = iter(qubit_slices)
 
     invars = inner_jaspr.invars[:-1]  # exclude trailing QC
     args = []
     for v in invars:
-        aval = v.aval
-        aval_str = str(aval)
+        aval_str = str(v.aval)
         if aval_str == "QubitArray":
             args.append(next(slice_iter))
-        elif "int" in aval_str and hasattr(aval, "shape") and aval.shape:
+        elif "int" in aval_str and hasattr(v.aval, "shape") and v.aval.shape:
+            # int array invar (ind_array for qubit indexing)
             args.append(np.arange(num_qubits))
-        elif "int" in aval_str:
+        elif "int" in aval_str or "bool" in aval_str:
+            # Scalar invar from QuantumArray internals (e.g. qtype_size).
+            # Since qtype is always QuantumBool, qtype_size is always 1.
             args.append(1)
         else:
-            raise ValueError(f"Unexpected invar type: {aval_str}")
+            raise ValueError(
+                f"Unexpected traced invar in analysis: {aval_str}. "
+                f"Non-QuantumArray parameters must be static."
+            )
     return args
 
 
@@ -251,11 +257,11 @@ def find_detectors(func=None, *, return_circuits=False):
 
     The ``find_detectors`` feature comes with some constraints:
     
-    **Arguments must be QuantumArrays of QuantumBool**
-        Every positional argument to the decorated function must be a
-        ``QuantumArray`` with ``qtype=QuantumBool()``.  Other quantum types
-        or classical arguments are not supported and will raise a
-        ``TypeError``.
+    **QuantumArray arguments must be QuantumBool**
+        All ``QuantumArray`` arguments to the decorated function must have
+        ``qtype=QuantumBool()``.  Other quantum types will raise a
+        ``TypeError``.  Static parameters (integers, booleans, etc.) are
+        allowed and will be passed through to the function unchanged.
 
     **Only Clifford gates are supported**
         tqecd analyses stabilizer flows, which are only well-defined for
@@ -320,6 +326,12 @@ def find_detectors(func=None, *, return_circuits=False):
         The function to decorate.  When using keyword arguments (e.g.
         ``@find_detectors(return_circuits=True)``), *func* is ``None`` and
         the decorator returns a wrapper that accepts *func*.
+
+        The decorated function must accept at least one ``QuantumArray``
+        argument (with ``qtype=QuantumBool()``).  Additional non-QuantumArray
+        arguments (integers, booleans, strings, etc.) are treated as static
+        parameters: they are captured by closure before JAX tracing so they
+        behave as compile-time constants inside the function body.
     return_circuits : bool, default ``False``
         When ``True``, three additional items are appended to the return
         value (after the detector list and the original returns):
@@ -556,6 +568,36 @@ def find_detectors(func=None, *, return_circuits=False):
         # Detectors that depend on m1 (unreturned) are filtered out.
         # Typically finds 1 detector from the m0 measurement vs initial reset.
         print(f"Found {stim_circ.num_detectors} detectors")
+
+    **Example 7: Static parameters (integers, booleans)**
+
+    The decorated function can accept non-QuantumArray arguments such as
+    integers or booleans.  These are bound via closure before tracing so
+    that JAX treats them as compile-time constants::
+
+        @find_detectors
+        def configurable_syndrome(data, ancilla, num_rounds, use_extra_gate):
+            results = []
+            for _ in range(num_rounds):
+                reset(ancilla[0])
+                cx(data[0], ancilla[0])
+                cx(data[1], ancilla[0])
+                if use_extra_gate:
+                    cx(data[1], ancilla[0])
+                    cx(data[1], ancilla[0])  # cancels out
+                results.append(measure(ancilla[0]))
+            return tuple(results)
+
+        @extract_stim
+        def main():
+            data = QuantumArray(qtype=QuantumBool(), shape=(2,))
+            ancilla = QuantumArray(qtype=QuantumBool(), shape=(1,))
+            detectors, *ms = configurable_syndrome(data, ancilla, 3, True)
+            return (detectors,) + tuple(ms)
+
+        result = main()
+        stim_circ = result[-1]
+        print(f"Found {stim_circ.num_detectors} detectors")
     """
     try:
         import tqecd
@@ -567,26 +609,51 @@ def find_detectors(func=None, *, return_circuits=False):
 
     def _decorator(fn):
         def wrapper(*args, **kwargs):
-            # --- Validate args ---
+            # --- Validate QuantumArray args ---
+            quantum_arrays = []
             for a in args:
-                if not isinstance(a, QuantumArray):
+                if isinstance(a, QuantumArray):
+                    if not isinstance(a.qtype, QuantumBool):
+                        raise TypeError(
+                            f"find_detectors: QuantumArray args must have qtype "
+                            f"QuantumBool, got {a.qtype}"
+                        )
+                    quantum_arrays.append(a)
+                elif isinstance(a, jax.core.Tracer):
                     raise TypeError(
-                        f"find_detectors: all args must be QuantumArray, "
-                        f"got {type(a)}"
+                        "find_detectors: traced (non-static) non-QuantumArray "
+                        "arguments are not supported. All non-QuantumArray "
+                        "parameters must be concrete Python values (int, bool, "
+                        "etc.), not JAX tracers."
                     )
-                if not isinstance(a.qtype, QuantumBool):
-                    raise TypeError(
-                        f"find_detectors: all args must have qtype "
-                        f"QuantumBool, got {a.qtype}"
-                    )
+            
+            if not quantum_arrays:
+                raise TypeError(
+                    "find_detectors: at least one QuantumArray argument is required"
+                )
 
-            num_qubits = _count_qubits(*args)
+            num_qubits = _count_qubits(*quantum_arrays)
 
             # --- 1. Trace inner function to get sub-jaspr ---
-            inner_jaspr = make_jaspr(fn)(*args, **kwargs)
+            # Bind non-QuantumArray args via closure so JAX only traces
+            # the quantum arguments.  Static values (ints, bools, …)
+            # become constants inside the jaspr.
+            qa_indices = [i for i, a in enumerate(args) if isinstance(a, QuantumArray)]
+            static_bindings = {i: a for i, a in enumerate(args) if not isinstance(a, QuantumArray)}
+
+            def fn_qa_only(*qa_args, _kw=kwargs):
+                full_args = [None] * len(args)
+                for idx, qa in zip(qa_indices, qa_args):
+                    full_args[idx] = qa
+                for idx, val in static_bindings.items():
+                    full_args[idx] = val
+                return fn(*full_args, **_kw)
+
+            qa_only_args = tuple(args[i] for i in qa_indices)
+            inner_jaspr = make_jaspr(fn_qa_only)(*qa_only_args)
 
             # --- 2. Analysis: to_qc → stim → tqecd ---
-            analysis_args = _build_analysis_args(inner_jaspr, num_qubits, args)
+            analysis_args = _build_analysis_args(inner_jaspr, num_qubits, quantum_arrays)
             result = inner_jaspr.to_qc(*analysis_args)
 
             analysis_qc = result[-1]
@@ -613,10 +680,26 @@ def find_detectors(func=None, *, return_circuits=False):
 
             # Keep only detectors whose Clbits all appear in returned meas
             returned_clbit_set = set(analysis_clbits_flat)
-            relevant_detectors = [
-                det
-                for det in detector_clbit_sets
-                if all(cb in returned_clbit_set for cb in det)
+            relevant_detector_indices = []
+            relevant_detectors = []
+            for det_idx, det in enumerate(detector_clbit_sets):
+                if all(cb in returned_clbit_set for cb in det):
+                    relevant_detector_indices.append(det_idx)
+                    relevant_detectors.append(det)
+
+            # --- 2b. Simulate noiseless circuit to determine detector expectations ---
+            # Use stim's built-in method to remove all noise processes
+            noiseless_circ = annotated.without_noise()
+            
+            # Run a single noiseless simulation to get all detector expectations
+            sampler = noiseless_circ.compile_detector_sampler()
+            detector_samples = sampler.sample(shots=1)
+            all_detector_expectations = detector_samples[0].tolist()
+            
+            # Extract expectations only for relevant detectors
+            relevant_expectations = [
+                bool(all_detector_expectations[idx])
+                for idx in relevant_detector_indices
             ]
 
             # --- 3. Call real function to get traced results ---
@@ -634,9 +717,10 @@ def find_detectors(func=None, *, return_circuits=False):
 
             # --- 4. Emit parity calls for each detector ---
             detector_results = []
-            for det_clbits in relevant_detectors:
+            for det_idx, det_clbits in enumerate(relevant_detectors):
                 meas_args = [clbit_to_traced[cb] for cb in det_clbits]
-                det_result = parity(*meas_args, expectation=True)
+                expectation_val = relevant_expectations[det_idx]
+                det_result = parity(*meas_args, expectation=expectation_val)
                 detector_results.append(det_result)
 
             out = (detector_results,) + real_returns

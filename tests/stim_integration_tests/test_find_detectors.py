@@ -623,3 +623,163 @@ def test_stress_hadamard_cnot_x_basis():
     assert stim_circ.num_detectors >= 1
     samples = _sample_detectors(stim_circ)
     assert samples.sum() == 0
+
+
+# ──────────────── noise handling tests ─────────────────────────────────
+
+def test_noise_x_error_100_percent():
+    """Test that expectations are computed correctly even with 100% X errors."""
+    
+    @find_detectors
+    def syndrome_with_noise(qa):
+        reset(qa[1])
+        cx(qa[0], qa[1])
+        cx(qa[2], qa[1])
+        return measure(qa[1])
+    
+    @extract_stim
+    def main():
+        qa = QuantumArray(qtype=QuantumBool(), shape=(3,))
+        detectors, m = syndrome_with_noise(qa)
+        return detectors, m
+    
+    # Get the stim circuit
+    stim_circ = _run_and_get_stim(main)
+    
+    # Manually add 100% X error on the ancilla (qubit 1) before measurement.
+    # This flips the measurement outcome and should trigger the detector.
+    noisy_circ = stim.Circuit()
+    for instruction in stim_circ:
+        # Insert X_ERROR on qubit 1 right before any measurement on it
+        if instruction.name in ("M", "MR") and 1 in [t.value for t in instruction.targets_copy()]:
+            noisy_circ.append("X_ERROR", [1], 1.0)
+        noisy_circ.append(instruction)
+    
+    # The noiseless circuit should still have detectors that sample to 0
+    # (the decorated function computed expectations from noiseless simulation)
+    samples_noiseless = _sample_detectors(stim_circ)
+    assert samples_noiseless.sum() == 0, "Noiseless circuit should have zero detector samples"
+    
+    # The noisy circuit should have non-zero detector samples
+    samples_noisy = _sample_detectors(noisy_circ, shots=100)
+    # With 100% error, we expect many non-zero detector samples
+    assert samples_noisy.sum() > 0, "Noisy circuit should have non-zero detector samples"
+
+
+# ──────────────── static parameter tests ───────────────────────────────
+
+def test_static_parameter_integer():
+    """Test that static integer parameters work correctly."""
+    
+    @find_detectors
+    def syndrome_with_rounds(qa, num_rounds):
+        results = []
+        for _ in range(num_rounds):
+            reset(qa[1])
+            cx(qa[0], qa[1])
+            cx(qa[2], qa[1])
+            results.append(measure(qa[1]))
+        return tuple(results)
+    
+    @extract_stim
+    def main():
+        qa = QuantumArray(qtype=QuantumBool(), shape=(3,))
+        detectors, *measurements = syndrome_with_rounds(qa, 3)  # 3 rounds
+        return (detectors,) + tuple(measurements)
+    
+    stim_circ = _run_and_get_stim(main)
+    # Should find >= 3 detectors (one per round)
+    assert stim_circ.num_detectors >= 3
+    samples = _sample_detectors(stim_circ)
+    assert samples.sum() == 0
+
+
+def test_static_parameter_boolean():
+    """Test that static boolean parameters work correctly."""
+    
+    @find_detectors
+    def syndrome_conditional(qa, include_second_check):
+        reset(qa[1])
+        cx(qa[0], qa[1])
+        cx(qa[2], qa[1])
+        m1 = measure(qa[1])
+        
+        if include_second_check:
+            reset(qa[3])
+            cx(qa[2], qa[3])
+            cx(qa[4], qa[3])
+            m2 = measure(qa[3])
+            return m1, m2
+        else:
+            return m1,
+    
+    @extract_stim
+    def main():
+        qa = QuantumArray(qtype=QuantumBool(), shape=(5,))
+        result = syndrome_conditional(qa, True)  # Include second check
+        detectors = result[0]
+        measurements = result[1:]
+        return (detectors,) + measurements
+    
+    stim_circ = _run_and_get_stim(main)
+    # Should find >= 2 detectors (one per check)
+    assert stim_circ.num_detectors >= 2
+    samples = _sample_detectors(stim_circ)
+    assert samples.sum() == 0
+
+
+def test_static_parameter_mixed():
+    """Test mixing quantum arrays and multiple static parameters."""
+    
+    @find_detectors
+    def syndrome_parameterized(data, ancilla, num_rounds, apply_hadamard):
+        results = []
+        for _ in range(num_rounds):
+            reset(ancilla[0])
+            if apply_hadamard:
+                h(ancilla[0])
+            cx(data[0], ancilla[0])
+            cx(data[1], ancilla[0])
+            if apply_hadamard:
+                h(ancilla[0])
+            results.append(measure(ancilla[0]))
+        return tuple(results)
+    
+    @extract_stim
+    def main():
+        data = QuantumArray(qtype=QuantumBool(), shape=(2,))
+        ancilla = QuantumArray(qtype=QuantumBool(), shape=(1,))
+        detectors, *measurements = syndrome_parameterized(data, ancilla, 2, False)
+        return (detectors,) + tuple(measurements)
+    
+    stim_circ = _run_and_get_stim(main)
+    assert stim_circ.num_detectors >= 2
+    samples = _sample_detectors(stim_circ)
+    assert samples.sum() == 0
+
+
+def test_traced_integer_raises_error():
+    """Test that passing a traced (non-static) integer raises TypeError."""
+    from qrisp import QuantumFloat
+
+    @find_detectors
+    def syndrome_with_param(qa, num_rounds):
+        results = []
+        for _ in range(num_rounds):
+            reset(qa[1])
+            cx(qa[0], qa[1])
+            cx(qa[2], qa[1])
+            results.append(measure(qa[1]))
+        return tuple(results)
+
+    @extract_stim
+    def main():
+        qa = QuantumArray(qtype=QuantumBool(), shape=(3,))
+        qf = QuantumFloat(3)
+        # measure returns a tracer — passing it as an integer arg should fail
+        traced_val = measure(qf)
+        detectors, *ms = syndrome_with_param(qa, traced_val)
+        return (detectors,) + tuple(ms)
+
+    with pytest.raises(TypeError, match="traced.*non-static.*non-QuantumArray"):
+        main()
