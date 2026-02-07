@@ -135,7 +135,7 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
     p[1::2] = p_odd
 
     # Set _rescale=False to apply p(A/α) instead of p(A).
-    A_inv = QET(A, p, kind="Chebyshev", _rescale=False)
+    A_inv = QET(A, p, kind="Chebyshev", rescale=False)
 
     # Adjust scaling factor since (A/α)^{-1} = αA^{-1}.
     A_inv.alpha = A_inv.alpha / A.alpha

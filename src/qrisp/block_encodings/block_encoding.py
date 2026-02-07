@@ -807,8 +807,8 @@ class BlockEncoding:
         k : int
             The order of the Chebyshev polynomial. Must be a non-negative integer.
         rescale : bool, optional
-            If set to ``True`` (default), the method returns the rescaled block-encoding of $T_k(A)$,
-            If ``False``, the method returns the non-rescaled block-encoding of $T_k(A/\alpha)$.
+            If True (default), the method returns the a block-encoding of $T_k(A)$,
+            If False, the method returns a block-encoding of $T_k(A/\alpha)$.
 
         Returns
         -------

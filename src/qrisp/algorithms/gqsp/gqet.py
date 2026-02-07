@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
 
-def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial", _rescale: bool = True) -> BlockEncoding:
+def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial", rescale: bool = True) -> BlockEncoding:
     r"""
     Returns a BlockEncoding representing a polynomial transformation of the operator via `Generalized Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
 
@@ -63,6 +63,9 @@ def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polyno
         - ``"Chebyshev"``: $p(x) = \sum c_i T_i(x)$, where $T_i$ are Chebyshev polynomials of the first kind.
 
         Default is ``"Polynomial"``.
+    rescale : bool
+        If True (default), the method returns a block-encoding of $p(H)$.
+        If False, the method returns a block-encoding of $p(H/\alpha)$ where $\alpha$ is the normalization factor for the block-encoding of the operator $H$.
 
     Returns
     -------
@@ -163,7 +166,7 @@ def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polyno
         H = H.pauli_block_encoding()    
 
     # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
-    if _rescale:
+    if rescale:
         p = _rescale_poly(H.alpha, p, kind=kind)
     if kind=="Polynomial":
         p = poly2cheb(p)
