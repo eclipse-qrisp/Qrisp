@@ -718,37 +718,6 @@ class BlockEncoding:
 
         return resource_counter
     
-    def dagger(self) -> BlockEncoding:
-        r"""
-        Returns the Hermitian adjoint (dagger) of the BlockEncoding.
-
-        Returns
-        -------
-        BlockEncoding
-            A new BlockEncoding representing the Hermitian adjoint of self.
-
-        Examples
-        --------
-
-        Define a block-encoding and compute its dagger.
-
-        ::
-
-            from qrisp import *
-            from qrisp.operators import X, Y, Z
-
-            H = X(0)*Y(1) + 0.5*Z(0)*X(1)
-            BE = H.pauli_block_encoding()
-            BE_dg = BE.dagger()
-
-        """
-
-        def new_unitary(*args):
-            with invert():
-                self.unitary(*args)
-
-        return BlockEncoding(self.alpha, self._anc_templates, new_unitary, is_hermitian=self.is_hermitian)
-    
     def qubitization(self) -> BlockEncoding:
         r"""
         Returns the qubitization of the BlockEncoding.
