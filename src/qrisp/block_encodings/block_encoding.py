@@ -720,26 +720,47 @@ class BlockEncoding:
     
     def qubitization(self) -> BlockEncoding:
         r"""
-        Returns the qubitization of the BlockEncoding.
+        Returns a BlockEncoding representing the qubitization walk operator.
+
+        For a block-encoded operator $A$ with normalization factor $\alpha$, 
+        this method returns a BlockEncoding of the qubitization walk operator $W$
+        satisfying $W^k=T_k(A/\alpha)$ where $T_k$ is the $k$-Chebyshev polynomial of the first kind.
+
+        The action of $W$ partitions the Hilbert space into a direct sum of two-dimensional invariant subspaces giving it the name "qubitization".
+        For an eigenstate $\ket{\lambda}$ of $A$ with eigenvalue $\lambda$, the two-dimensional space is spanned by
+
+        - $\ket{\phi_1} = \ket{0}_a\ket{\lambda}$
+        - $\ket{\phi_2} = \frac{(W-\lambda/\alpha\mathbb I)\ket{\phi_1}}{\sqrt{1-(\lambda/\alpha)^2}}$
+
+        In this subspace, $W$ implements a Pauli-Y rotaion by angle $\theta=-2\arccos(\lambda/\alpha)$, i.e., $W=e^{i\arccos(\lambda/\alpha)Y}$.
+
+        If the block-encoding unitary $U$ is Hermitian (i.e., $U^2=\mathbb I$), then $W=R U$ where $R = (2\ket{0}_a\bra{0}_a - \mathbb I)$ 
+        is the reflection around the state $\ket{0}_a$ of the ancilla variables.
+        Otherwise, $W = R \tilde{U}$ where $\tilde{U} = (\ket{0}\bra{1} \otimes U) + (\ket{1}\bra{0} \otimes U^{\dagger})$
+        is a Hermitian block-encoding of $A$ requiring one additional ancilla qubit.
 
         Returns
         -------
         BlockEncoding
-            A new BlockEncoding representing the qubitization of self.
+            A new BlockEncoding instance representing the qubitization walk operator.
+
+        Notes
+        -----
+        - **Normalization**: The resulting block-encoding maintains the same scaling factor $\alpha$ as the original.
 
         Examples
         --------
 
-        Define a block-encoding and compute its qubitization.
+        Define a block-encoding and apply the qubitization transformation.
 
         ::
 
-            from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
             from qrisp.operators import X, Y, Z
 
             H = X(0)*Y(1) + 0.5*Z(0)*X(1)
-            BE = H.pauli_block_encoding()
-            BE_qubitized = BE.qubitization()
+            BE = BlockEncoding.from_operator(H)
+            BE_walk = BE.qubitization()
 
         """
 
@@ -775,9 +796,9 @@ class BlockEncoding:
         
     def chebyshev(self, k: int, rescale: bool = True) -> BlockEncoding:
         r"""
-        Return a BlockEncoding representing $k$-th Chebyshev polynomial of the first kind applied to the operator.
+        Returns a BlockEncoding representing $k$-th Chebyshev polynomial of the first kind applied to the operator.
 
-        For a block-encoded operator $A$ and normalization factor $\alpha$, 
+        For a block-encoded operator $A$ with normalization factor $\alpha$, 
         this method returns a BlockEncoding of the rescaled operator $T_k(A)$ if ``rescale=True``,
         or $T_k(A/\alpha)$ if ``rescale=False``.
 
