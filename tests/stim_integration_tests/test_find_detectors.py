@@ -791,7 +791,14 @@ def test_static_parameter_custom_object():
 
 
 def test_traced_integer_raises_error():
-    """Test that passing a traced (non-static) integer raises TypeError."""
+    """Test that passing a traced (non-static) integer raises TypeError.
+
+    When the traced value hits Python control-flow (``range(tracer)``), JAX
+    raises a native TypeError before ``make_jaspr`` can even return.  For
+    the subtler case where JAX silently absorbs a foreign tracer, the
+    invar-count check inside ``find_detectors`` catches it — see
+    ``test_traced_silent_absorption_raises_error``.
+    """
     from qrisp import QuantumFloat
 
     @find_detectors
@@ -813,5 +820,6 @@ def test_traced_integer_raises_error():
         detectors, *ms = syndrome_with_param(qa, traced_val)
         return (detectors,) + tuple(ms)
 
+    # find_detectors catches JAX's error and re-raises with a clear message
     with pytest.raises(TypeError, match="tracer was leaked"):
         main()
