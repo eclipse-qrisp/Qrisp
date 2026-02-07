@@ -175,5 +175,5 @@ def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polyno
     def new_unitary(*args):
         GQSP(args[0], *args[1:], unitary = BE_walk.unitary, angles=angles)
 
-    new_anc_templates = [QuantumBool().template()] + BE_walk.anc_templates
+    new_anc_templates = [QuantumBool().template()] + BE_walk._anc_templates
     return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian=False)

@@ -157,7 +157,7 @@ def QET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynom
     if kind=="Polynomial":
         p = poly2cheb(p)
 
-    m = len(H.anc_templates)
+    m = len(H._anc_templates)
     d = len(p)
     # Angles theta and lambda vanish for real polynomials https://arxiv.org/abs/2503.03026.
     # Implementation based on conjecture: phi has fixed parity iff p has fixed parity.
@@ -187,5 +187,5 @@ def QET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynom
         with control(is_odd):
             H.unitary(*args[1:])
 
-    new_anc_templates = [QuantumBool().template()] + H.anc_templates
+    new_anc_templates = [QuantumBool().template()] + H._anc_templates
     return BlockEncoding(alpha, new_anc_templates, new_unitary)

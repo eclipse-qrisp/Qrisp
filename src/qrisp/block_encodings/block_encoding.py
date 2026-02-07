@@ -94,13 +94,18 @@ class BlockEncoding:
     unitary : Callable
         A function ``unitary(*ancillas, *operands)`` applying the block-encoding unitary. 
         It receives the ancilla and operand QuantumVariables as arguments.
-    is_hermitian : bool, optional
+    is_hermitian : bool
         Indicates whether the block-encoding unitary is Hermitian. The default is False.
 
     Attributes
     ----------
-    ancilla_templates : list[QuantumVariableTemplate]
-        Templates for the ancilla variables.
+    alpha : ArrayLike
+        The scalar scaling factor.
+    unitary : Callable
+        A function ``unitary(*ancillas, *operands)`` applying the block-encoding unitary. 
+        It receives the ancilla and operand QuantumVariables as arguments.
+    is_hermitian : bool
+        Indicates whether the block-encoding unitary is Hermitian.
 
     Examples
     --------
@@ -218,7 +223,8 @@ class BlockEncoding:
     ) -> None:
 
         self.alpha = alpha
-        self.anc_templates: list[QuantumVariableTemplate] = [
+        # Templates for the ancilla variables.
+        self._anc_templates: list[QuantumVariableTemplate] = [
             anc.template() if isinstance(anc, QuantumVariable) else anc 
             for anc in ancillas
         ]
@@ -235,7 +241,7 @@ class BlockEncoding:
             A pair `(children, aux_data)` where `children` is a tuple containing
             the digits array, and `aux_data` is `None`.
         """
-        children = (self.alpha, self.anc_templates, )
+        children = (self.alpha, self._anc_templates, )
         aux_data = (self.unitary, self.is_hermitian, )
         return (children, aux_data)
 
@@ -452,7 +458,7 @@ class BlockEncoding:
         
         """
         anc_list = []
-        for template in self.anc_templates:
+        for template in self._anc_templates:
             anc_list.append(template.construct())
         return anc_list
     
@@ -741,7 +747,7 @@ class BlockEncoding:
             with invert():
                 self.unitary(*args)
 
-        return BlockEncoding(self.alpha, self.anc_templates, new_unitary, is_hermitian=self.is_hermitian)
+        return BlockEncoding(self.alpha, self._anc_templates, new_unitary, is_hermitian=self.is_hermitian)
     
     def qubitization(self) -> BlockEncoding:
         r"""
@@ -768,7 +774,7 @@ class BlockEncoding:
 
         """
 
-        m = len(self.anc_templates)
+        m = len(self._anc_templates)
         # W = U
         if m==0:
             return self
@@ -779,7 +785,7 @@ class BlockEncoding:
                 self.unitary(*args)
                 reflection(args[:m])
 
-            return BlockEncoding(self.alpha, self.anc_templates, new_unitary, is_hermitian=True)
+            return BlockEncoding(self.alpha, self._anc_templates, new_unitary, is_hermitian=True)
         else:
             # W = (2*|0><0| - I) U_tilde, U_tilde = (|0><1| ⊗ U) + (|1><0| ⊗ U†) is hermitian
             def new_unitary(*args):
@@ -795,7 +801,7 @@ class BlockEncoding:
 
                 reflection(args[0:1 + m])
 
-            new_anc_templates = [QuantumBool().template()] + self.anc_templates
+            new_anc_templates = [QuantumBool().template()] + self._anc_templates
             return BlockEncoding(self.alpha, new_anc_templates, new_unitary, is_hermitian=True)
         
     def chebyshev(self, k: int, rescale: bool = True) -> BlockEncoding:
@@ -854,7 +860,7 @@ class BlockEncoding:
 
         """
 
-        m = len(self.anc_templates)
+        m = len(self._anc_templates)
 
         iterations = k // 2
 
@@ -880,7 +886,7 @@ class BlockEncoding:
             p[-1] = 1.0
             return QET(self, p, kind = "Chebyshev")
            
-        return BlockEncoding(self.alpha, self.anc_templates, new_unitary)
+        return BlockEncoding(self.alpha, self._anc_templates, new_unitary)
 
     #
     # Arithmetic
@@ -951,8 +957,8 @@ class BlockEncoding:
         
         alpha = self.alpha
         beta = other.alpha
-        m = len(self.anc_templates)
-        n = len(other.anc_templates)
+        m = len(self._anc_templates)
+        n = len(other._anc_templates)
 
         def prep(qb, arr):
             theta = 2 * jnp.arctan(arr[1] / arr[0])
@@ -966,7 +972,7 @@ class BlockEncoding:
                 with control(args[0], ctrl_state=1):
                     other.unitary(*args[1 + m:1 + m + n], *args[1 + m + n:])
 
-        new_anc_templates = [QuantumBool().template()] + self.anc_templates + other.anc_templates
+        new_anc_templates = [QuantumBool().template()] + self._anc_templates + other._anc_templates
         new_alpha = alpha + beta
         return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian=self.is_hermitian and other.is_hermitian)
 
@@ -1035,8 +1041,8 @@ class BlockEncoding:
         
         alpha = self.alpha
         beta = other.alpha
-        m = len(self.anc_templates)
-        n = len(other.anc_templates)
+        m = len(self._anc_templates)
+        n = len(other._anc_templates)
 
         def prep(qb, arr):
             theta = 2 * jnp.arctan(arr[1] / arr[0])
@@ -1052,7 +1058,7 @@ class BlockEncoding:
                 with control(args[0], ctrl_state=1):
                     other.unitary(*args[1 + m:1 + m + n], *args[1 + m + n:])
 
-        new_anc_templates = [QuantumBool().template()] + self.anc_templates + other.anc_templates
+        new_anc_templates = [QuantumBool().template()] + self._anc_templates + other._anc_templates
         new_alpha = alpha + beta
         return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian=self.is_hermitian and other.is_hermitian)
 
@@ -1128,7 +1134,7 @@ class BlockEncoding:
                 self.unitary(*args)
                 with control(other < 0):
                     gphase(np.pi, args[0][0])
-            return BlockEncoding(self.alpha * jnp.abs(other), self.anc_templates, new_unitary, is_hermitian=self.is_hermitian)
+            return BlockEncoding(self.alpha * jnp.abs(other), self._anc_templates, new_unitary, is_hermitian=self.is_hermitian)
 
         return NotImplemented
     
@@ -1196,8 +1202,8 @@ class BlockEncoding:
         if not isinstance(other, BlockEncoding):
             return NotImplemented
 
-        m = len(self.anc_templates)
-        n = len(other.anc_templates)
+        m = len(self._anc_templates)
+        n = len(other._anc_templates)
 
         def new_unitary(*args):
             other_args = args[m:m + n] + args[m + n:]
@@ -1205,7 +1211,7 @@ class BlockEncoding:
             self_args = args[:m] + args[m + n:]
             self.unitary(*self_args)
 
-        new_anc_templates = self.anc_templates + other.anc_templates
+        new_anc_templates = self._anc_templates + other._anc_templates
         new_alpha = self.alpha * other.alpha
         return BlockEncoding(new_alpha, new_anc_templates, new_unitary)
     
@@ -1311,8 +1317,8 @@ class BlockEncoding:
             print("Result from BE1.kron(BE2.kron(BE3)): ", result)
 
         """
-        m = len(self.anc_templates)
-        n = len(other.anc_templates)
+        m = len(self._anc_templates)
+        n = len(other._anc_templates)
 
         sig_self = inspect.signature(self.unitary)
         num_operand_vars_self = len(sig_self.parameters) - m
@@ -1325,7 +1331,7 @@ class BlockEncoding:
             self.unitary(*self_anc, *operands[:num_operand_vars_self])
             other.unitary(*other_anc, *operands[num_operand_vars_self:])
         
-        new_anc_templates = self.anc_templates + other.anc_templates
+        new_anc_templates = self._anc_templates + other._anc_templates
         new_alpha = self.alpha * other.alpha
         return BlockEncoding(new_alpha, new_anc_templates, new_unitary)
 
@@ -1378,7 +1384,7 @@ class BlockEncoding:
         def new_unitary(*args):
             self.unitary(*args)
             gphase(np.pi, args[0][0])
-        return BlockEncoding(self.alpha, self.anc_templates, new_unitary, is_hermitian=self.is_hermitian)
+        return BlockEncoding(self.alpha, self._anc_templates, new_unitary, is_hermitian=self.is_hermitian)
     
     #
     # Transformations
