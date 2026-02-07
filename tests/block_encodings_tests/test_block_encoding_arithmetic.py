@@ -171,3 +171,42 @@ def test_block_encoding_negation(H1, H2):
         val_be_neg = res_be_neg.get(k, 0)
         val_be2 = res_be2.get(k, 0)
         assert np.isclose(val_be_neg, val_be2), f"Mismatch at state |{k}>: {val_be_neg} vs {val_be2}"
+
+
+@pytest.mark.parametrize("H1, H2", [
+    (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2)),
+])
+def test_block_encoding_kron(H1, H2):
+
+    BE1 = H1.pauli_block_encoding()
+    BE2 = H2.pauli_block_encoding()
+
+    BE_kron = BE1.kron(BE2)
+
+    n1 = H1.find_minimal_qubit_amount()
+    n2 = H2.find_minimal_qubit_amount()
+
+    def operand_prep():
+        qv1 = QuantumFloat(n1)
+        qv2 = QuantumFloat(n2)
+        return qv1, qv2
+
+    @terminal_sampling
+    def main(BE):
+        return BE.apply_rus(operand_prep)()
+
+    result_be_kron = main(BE_kron)
+
+    @terminal_sampling
+    def main(BE1, BE2):
+        qv1 = BE1.apply_rus(lambda : QuantumFloat(n1))()
+        qv2 = BE2.apply_rus(lambda : QuantumFloat(n2))()
+        return qv1, qv2
+
+    result_be1_be2 = main(BE1, BE2)
+
+    for k in range(2 ** n1):
+        for l in range(2 ** n2):
+            val_be_kron = result_be_kron.get((k, l), 0)
+            val_be1_be2 = result_be1_be2.get((k, l), 0)
+            assert np.isclose(val_be_kron, val_be1_be2), f"Mismatch at state |{k}>: {val_be_kron} vs {val_be1_be2}"
