@@ -17,8 +17,7 @@
 """
 
 from qrisp import QuantumCircuit
-from qrisp.jasp import JaspBackend
-
+from qrisp.interface import VirtualBackend
 
 def run_on_stim(qc: QuantumCircuit, shots: int):
     """
@@ -54,6 +53,4 @@ def run_on_stim(qc: QuantumCircuit, shots: int):
 
     return counts
 
-
-# Create the Stim backend as a Jasp-compatible backend
-StimBackend = JaspBackend(run_on_stim)
+StimBackend = VirtualBackend(run_on_stim)
