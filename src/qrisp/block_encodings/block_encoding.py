@@ -819,7 +819,7 @@ class BlockEncoding:
         -----
         - The Chebyshev polynomial approach is useful for polynomial approximations and spectral methods.
         - Should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method (see :meth:`poly`).
-        - **Normalization**: The resulting block-encoding maintains the same scaling factor $\alpha$ as the original.
+        - **Normalization**: If $k=1$, the resulting block-encoding maintains the same scaling factor $\alpha$ as the original. Otherwise, the scaling factor is $1$.
 
         Examples
         --------
@@ -849,6 +849,12 @@ class BlockEncoding:
             main(BE_cheb)
 
         """
+        
+        if rescale:
+            from qrisp.algorithms.gqsp.qet import QET
+            p = np.zeros(k+1)
+            p[-1] = 1.0
+            return QET(self, p, kind = "Chebyshev")
 
         m = len(self._anc_templates)
 
@@ -860,7 +866,6 @@ class BlockEncoding:
                     reflection(args[:m])
                     with conjugate(self.unitary)(*args):
                         reflection(args[:m])
-
         else:
             def new_unitary(*args):
                 for _ in jrange(0, iterations):
@@ -870,13 +875,8 @@ class BlockEncoding:
                 reflection(args[:m])
                 self.unitary(*args)
         
-        if rescale:
-            from qrisp.algorithms.gqsp.qet import QET
-            p = np.zeros(k+1)
-            p[-1] = 1.0
-            return QET(self, p, kind = "Chebyshev")
-           
-        return BlockEncoding(self.alpha, self._anc_templates, new_unitary)
+        new_alpha = self.alpha if k==1 else 1
+        return BlockEncoding(new_alpha, self._anc_templates, new_unitary)
 
     #
     # Arithmetic

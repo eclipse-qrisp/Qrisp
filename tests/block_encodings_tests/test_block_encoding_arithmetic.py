@@ -17,10 +17,16 @@
 """
 
 import numpy as np
-import jax.numpy as jnp
 import pytest
 from qrisp import *
 from qrisp.operators import X, Y, Z
+
+
+def compare_results(res_dict_1, res_dict_2, n):
+    for k in range(2 ** n):
+        val_1 = res_dict_1.get(k, 0)
+        val_2 = res_dict_2.get(k, 0)
+        assert np.isclose(val_1, val_2), f"Mismatch at state |{k}>: {val_1} vs {val_2}"
 
 
 @pytest.mark.parametrize("H1, H2", [
@@ -45,11 +51,7 @@ def test_block_encoding_addition(H1, H2):
 
     res_be3 = main(BE3)
     res_be_add = main(BE_addition)
-
-    for k in range(2 ** n):
-        val_be3 = res_be3.get(k, 0)
-        val_be_add = res_be_add.get(k, 0)
-        assert np.isclose(val_be3, val_be_add), f"Mismatch at state |{k}>: {val_be3} vs {val_be_add}"
+    compare_results(res_be3, res_be_add, n)
 
 
 @pytest.mark.parametrize("H1, H2", [
@@ -74,11 +76,7 @@ def test_block_encoding_subtraction(H1, H2):
     
     res_be3 = main(BE3)
     res_be_sub = main(BE_subtraction)
-
-    for k in range(2 ** n):
-        val_be3 = res_be3.get(k, 0)
-        val_be_sub = res_be_sub.get(k, 0)
-        assert np.isclose(val_be3, val_be_sub), f"Mismatch at state |{k}>: {val_be3} vs {val_be_sub}"
+    compare_results(res_be3, res_be_sub, n)
 
 
 # The product of two Hermitian operators A and B is Hermitian if and only if they commute, i.e., AB = BA.
@@ -105,11 +103,7 @@ def test_block_encoding_multiplication(H1, H2):
     
     res_be3 = main(BE3)
     res_be_mul = main(BE_multiplication)
-
-    for k in range(2 ** n):
-        val_be3 = res_be3.get(k, 0)
-        val_be_mul = res_be_mul.get(k, 0)
-        assert np.isclose(val_be3, val_be_mul), f"Mismatch at state |{k}>: {val_be3} vs {val_be_mul}"
+    compare_results(res_be3, res_be_mul, n)
 
 
 @pytest.mark.parametrize("H1, H2, scalar", [
@@ -136,14 +130,8 @@ def test_block_encoding_scalar_multiplication(H1, H2, scalar):
     res_target = main(BE_target)
     res_left = main(BE_left)
     res_right = main(BE_right)
-
-    for k in range(2 ** n):
-        val_target = res_target.get(k, 0)
-        val_left = res_left.get(k, 0)
-        val_right = res_right.get(k, 0)
-        
-        assert np.isclose(val_target, val_left), f"Left-mul mismatch at |{k}>"
-        assert np.isclose(val_target, val_right), f"Right-mul mismatch at |{k}>"
+    compare_results(res_target, res_left, n)
+    compare_results(res_target, res_right, n)
 
 
 @pytest.mark.parametrize("H1, H2", [
@@ -164,13 +152,9 @@ def test_block_encoding_negation(H1, H2):
     def main(BE):
         return BE.apply_rus(lambda: QuantumVariable(n))()
     
-    res_be_neg = main(BE_neg)
     res_be2 = main(BE2)
-
-    for k in range(2 ** n):
-        val_be_neg = res_be_neg.get(k, 0)
-        val_be2 = res_be2.get(k, 0)
-        assert np.isclose(val_be_neg, val_be2), f"Mismatch at state |{k}>: {val_be_neg} vs {val_be2}"
+    res_be_neg = main(BE_neg)
+    compare_results(res_be2, res_be_neg, n)
 
 
 @pytest.mark.parametrize("H1, H2", [
