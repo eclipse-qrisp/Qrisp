@@ -20,7 +20,7 @@
 Automatic detector identification for quantum error correction circuits.
 
 This module provides the :func:`find_detectors` decorator, which leverages
-`tqecd <https://github.com/QCHackers/tqecd>`_ to automatically identify
+`tqecd <https://github.com/tqec/tqecd>`_ to automatically identify
 stim ``DETECTOR`` instructions at Jasp tracing time and emit the
 corresponding ``parity()`` calls.
 
@@ -236,7 +236,7 @@ def _extract_detectors(annotated_circ, total_meas, inv_meas_map):
 def find_detectors(func=None, *, return_circuits=False):
     r"""Decorator that automatically identifies stim detectors and returns them.
 
-    ``find_detectors`` leverages `tqecd <https://github.com/QCHackers/tqecd>`_
+    ``find_detectors`` leverages `tqecd <https://github.com/tqec/tqecd>`_
     to automatically discover detector parity checks in quantum error correction
     circuits. The detected parities are returned as an additional value alongside
     the decorated function's original return values.
@@ -244,7 +244,7 @@ def find_detectors(func=None, *, return_circuits=False):
     .. note::
 
         This feature requires the optional ``tqecd`` package.  Install it
-        with ``pip install tqecd``.
+        as described `here <https://tqec.github.io/tqecd/index.html>`_.
 
     Pitfalls & Limitations
     ^^^^^^^^^^^^^^^^^^^^^^
@@ -325,7 +325,7 @@ def find_detectors(func=None, *, return_circuits=False):
         value (after the detector list and the original returns):
 
         * **raw_stim** — the stim circuit obtained directly from ``to_qc``
-          / ``to_stim``, before any restructuring.
+          ``to_stim``, before any restructuring.
         * **tqecd_input** — the circuit after ``_prepare_for_tqecd`` has
           re-arranged it into proper fragments (the input fed to tqecd).
         * **annotated** — the circuit that comes back from
@@ -337,18 +337,14 @@ def find_detectors(func=None, *, return_circuits=False):
 
     Returns
     -------
-    The decorated function returns::
-
-        (detector_bools, *original_returns)
-
-    or, when ``return_circuits=True``::
-
-        (detector_bools, *original_returns, raw_stim, tqecd_input, annotated)
-
-    where *detector_bools* is a ``list`` of Jasp-traced boolean values, one
-    per discovered detector, each representing the ``parity()`` of the
-    measurements that constitute that detector. The original return values
-    from the decorated function are unpacked and appended after the detector list.
+    The decorated function returns:
+        (detector_bools, \*original_returns)
+    or, when ``return_circuits=True``:
+        (detector_bools, \*original_returns, raw_stim, tqecd_input, annotated)
+        where *detector_bools* is a ``list`` of Jasp-traced boolean values, one
+        per discovered detector, each representing the ``parity()`` of the
+        measurements that constitute that detector. The original return values
+        from the decorated function are unpacked and appended after the detector list.
 
     Examples
     --------
