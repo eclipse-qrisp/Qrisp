@@ -758,6 +758,38 @@ def test_static_parameter_mixed():
     assert samples.sum() == 0
 
 
+def test_static_parameter_custom_object():
+    """Test that a non-flattenable custom object can be passed as a static parameter."""
+
+    class SyndromeConfig:
+        """Plain class with no JAX flattening — not a pytree, not a QuantumArray."""
+        def __init__(self, num_rounds, pairs):
+            self.num_rounds = num_rounds
+            self.pairs = pairs  # list of (data_idx, ancilla_idx) tuples
+
+    @find_detectors
+    def syndrome_from_config(qa, cfg):
+        results = []
+        for _ in range(cfg.num_rounds):
+            for data_idx, anc_idx in cfg.pairs:
+                reset(qa[anc_idx])
+                cx(qa[data_idx], qa[anc_idx])
+            results.extend(measure(qa[anc_idx]) for _, anc_idx in cfg.pairs)
+        return tuple(results)
+
+    @extract_stim
+    def main():
+        qa = QuantumArray(qtype=QuantumBool(), shape=(4,))
+        cfg = SyndromeConfig(num_rounds=2, pairs=[(0, 2), (1, 3)])
+        detectors, *measurements = syndrome_from_config(qa, cfg)
+        return (detectors,) + tuple(measurements)
+
+    stim_circ = _run_and_get_stim(main)
+    assert stim_circ.num_detectors >= 2
+    samples = _sample_detectors(stim_circ)
+    assert samples.sum() == 0
+
+
 def test_traced_integer_raises_error():
     """Test that passing a traced (non-static) integer raises TypeError."""
     from qrisp import QuantumFloat
@@ -781,5 +813,5 @@ def test_traced_integer_raises_error():
         detectors, *ms = syndrome_with_param(qa, traced_val)
         return (detectors,) + tuple(ms)
 
-    with pytest.raises(TypeError, match="traced.*non-static.*non-QuantumArray"):
+    with pytest.raises(TypeError, match="tracer was leaked"):
         main()

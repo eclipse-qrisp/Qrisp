@@ -564,12 +564,6 @@ def find_detectors(func=None, *, return_circuits=False):
                             f"find_detectors: QuantumArray args must have "
                             f"qtype QuantumBool, got {a.qtype}")
                     quantum_arrays.append(a)
-                elif isinstance(a, jax.core.Tracer):
-                    raise TypeError(
-                        "find_detectors: traced (non-static) non-QuantumArray "
-                        "arguments are not supported. All non-QuantumArray "
-                        "parameters must be concrete Python values (int, bool, "
-                        "etc.), not JAX tracers.")
             if not quantum_arrays:
                 raise TypeError(
                     "find_detectors: at least one QuantumArray argument is required")
@@ -589,10 +583,36 @@ def find_detectors(func=None, *, return_circuits=False):
                 for i, v in static.items():       full[i] = v
                 return fn(*full, **_kw)
 
-            jaspr = make_jaspr(fn_qa_only)(*(args[i] for i in qa_idx))
+            _TRACER_ERRORS = (
+                jax.errors.UnexpectedTracerError,
+                jax.errors.TracerIntegerConversionError,
+            )
+            _TRACER_MSG = (
+                "find_detectors: a JAX tracer was leaked into the decorated "
+                "function via a non-QuantumArray argument.  All "
+                "non-QuantumArray parameters (including values nested inside "
+                "dicts, lists, etc.) must be concrete Python values, not "
+                "traced quantities."
+            )
+
+            try:
+                jaspr = make_jaspr(fn_qa_only)(*(args[i] for i in qa_idx))
+            except _TRACER_ERRORS as exc:
+                raise TypeError(_TRACER_MSG) from exc
+            except TypeError as exc:
+                # JAX sometimes raises plain TypeError for tracer misuse
+                # (e.g. "Only integer scalar arrays can be converted to a
+                # scalar index").  Re-raise with our message if it looks
+                # tracer-related; otherwise propagate the original error.
+                if "scalar" in str(exc) or "tracer" in str(exc).lower():
+                    raise TypeError(_TRACER_MSG) from exc
+                raise
 
             # --- 2. Analysis: to_qc → stim → tqecd ---
-            result = jaspr.to_qc(*_build_analysis_args(jaspr, n_qubits, quantum_arrays))
+            try:
+                result = jaspr.to_qc(*_build_analysis_args(jaspr, n_qubits, quantum_arrays))
+            except _TRACER_ERRORS as exc:
+                raise TypeError(_TRACER_MSG) from exc
 
             # Flatten analysis Clbits (consistent ordering via tree_flatten)
             analysis_clbits, _ = tree_flatten(result[:-1])
