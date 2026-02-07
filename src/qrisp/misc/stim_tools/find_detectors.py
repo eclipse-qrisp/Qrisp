@@ -54,8 +54,7 @@ from jax.tree_util import tree_flatten
 from qrisp import QuantumArray, QuantumBool
 from qrisp.jasp import make_jaspr
 from qrisp.jasp.primitives.parity_primitive import parity
-from qrisp.circuit import QuantumCircuit as QC, Clbit
-
+from qrisp.circuit import QuantumCircuit as QC
 
 # ───────────────────── stim instruction categories ─────────────────────
 _RESET_OPS = frozenset({"R", "RX", "RY"})
@@ -65,60 +64,46 @@ _TWO_QUBIT_OPS = frozenset({"CX", "CY", "CZ", "XCZ", "YCZ", "SWAP", "ISWAP"})
 
 # ───────────────────── internal helpers ────────────────────────────────
 
-def _count_qubits(*args):
-    """Count total qubits across all QuantumArray args."""
-    total = 0
-    for a in args:
-        if isinstance(a, QuantumArray):
-            total += a.size * a.qtype.size
-    return total
+
+def _tvals(inst):
+    """Return plain target-value list for a stim instruction."""
+    return [t.value for t in inst.targets_copy()]
 
 
-def _build_analysis_args(inner_jaspr, num_qubits, quantum_arrays):
-    """Build concrete args for calling ``to_qc`` on *inner_jaspr*.
+def _build_analysis_args(jaspr, n_qubits, quantum_arrays):
+    """Build concrete args for calling ``to_qc`` on *jaspr*.
 
     Iterates over the jaspr's invars and replaces ``QubitArray`` types with
     concrete qubit lists from an analysis circuit.  Static parameters have
     been bound via closure before tracing, so only QuantumArray-derived
     invars remain.
     """
-    analysis_qc = QC(num_qubits)
-    qubit_list = list(analysis_qc.qubits)
+    qubits = list(QC(n_qubits).qubits)
 
     # Partition qubits into slices corresponding to each QuantumArray arg
-    qubit_offset = 0
-    qubit_slices = []
+    off, slices = 0, []
     for a in quantum_arrays:
         n = a.size * a.qtype.size
-        qubit_slices.append(qubit_list[qubit_offset:qubit_offset + n])
-        qubit_offset += n
+        slices.append(qubits[off:off + n])
+        off += n
+    it = iter(slices)
 
-    slice_iter = iter(qubit_slices)
-
-    invars = inner_jaspr.invars[:-1]  # exclude trailing QC
     args = []
-    for v in invars:
-        aval_str = str(v.aval)
-        if aval_str == "QubitArray":
-            args.append(next(slice_iter))
-        elif "int" in aval_str and hasattr(v.aval, "shape") and v.aval.shape:
-            # int array invar (ind_array for qubit indexing)
-            args.append(np.arange(num_qubits))
-        elif "int" in aval_str or "bool" in aval_str:
-            # Scalar invar from QuantumArray internals (e.g. qtype_size).
-            # Since qtype is always QuantumBool, qtype_size is always 1.
-            args.append(1)
+    for v in jaspr.invars[:-1]:                          # exclude trailing QC
+        s = str(v.aval)
+        if s == "QubitArray":
+            args.append(next(it))
+        elif "int" in s and getattr(v.aval, "shape", ()):
+            args.append(np.arange(n_qubits))             # ind_array for qubit indexing
+        elif "int" in s or "bool" in s:
+            args.append(1)                               # qtype_size (always 1 for QuantumBool)
         else:
-            raise ValueError(
-                f"Unexpected traced invar in analysis: {aval_str}. "
-                f"Non-QuantumArray parameters must be static."
-            )
+            raise ValueError(f"Unexpected invar: {s}")
     return args
 
 
 def _prepare_for_tqecd(stim_circ):
-    """
-    Re-structure a stim circuit into the fragment format expected by tqecd.
+    """Re-structure *stim_circ* into the fragment format expected by tqecd.
 
     tqecd requires each *fragment* to follow this layout:
 
@@ -132,109 +117,70 @@ def _prepare_for_tqecd(stim_circ):
     that was not explicitly reset by the user's circuit.
     """
     # Collect all qubit indices
-    all_qubits = set()
-    for inst in stim_circ.flattened():
-        for t in inst.targets_copy():
-            if not t.is_measurement_record_target:
-                all_qubits.add(t.value)
+    all_qubits = {t.value for i in stim_circ.flattened()
+                  for t in i.targets_copy()
+                  if not t.is_measurement_record_target}
 
-    # --- Split instructions into rounds ---
+    # Split instructions into rounds.
     # A round boundary occurs when we've accumulated measurements and the
     # next instruction is no longer a measurement.
-    rounds = []
-    current = {"resets": [], "gates": [], "measurements": []}
-
+    rounds, cur = [], {"R": [], "G": [], "M": []}
     for inst in stim_circ.flattened():
-        name = inst.name
-        if name == "TICK":
+        if inst.name == "TICK":
             continue
+        if cur["M"] and inst.name not in _MEASUREMENT_OPS:
+            rounds.append(cur)
+            cur = {"R": [], "G": [], "M": []}
+        key = "R" if inst.name in _RESET_OPS else \
+              "M" if inst.name in _MEASUREMENT_OPS else "G"
+        cur[key].append(inst)
+    if cur["M"]:
+        rounds.append(cur)
 
-        if current["measurements"] and name not in _MEASUREMENT_OPS:
-            rounds.append(current)
-            current = {"resets": [], "gates": [], "measurements": []}
-
-        if name in _RESET_OPS:
-            current["resets"].append(inst)
-        elif name in _MEASUREMENT_OPS:
-            current["measurements"].append(inst)
-        else:
-            current["gates"].append(inst)
-
-    if current["measurements"]:
-        rounds.append(current)
-
-    # --- Build output circuit ---
-    new_circ = stim.Circuit()
-
+    out = stim.Circuit()
     for q in sorted(all_qubits):
-        new_circ.append("QUBIT_COORDS", [q], [float(q), 0.0])
+        out.append("QUBIT_COORDS", [q], [float(q), 0.0])
 
-    for round_idx, rnd in enumerate(rounds):
-        # Resets
-        explicitly_reset = set()
-        for inst in rnd["resets"]:
-            for t in inst.targets_copy():
-                explicitly_reset.add(t.value)
-
+    for ri, rnd in enumerate(rounds):
         # First round: implicit R for un-reset qubits (tqecd requires it)
-        if round_idx == 0:
-            unreset = sorted(all_qubits - explicitly_reset)
-            if unreset:
-                new_circ.append("R", unreset)
-
-        for inst in rnd["resets"]:
-            targets = [t.value for t in inst.targets_copy()]
-            new_circ.append(inst.name, targets, inst.gate_args_copy())
-
-        new_circ.append("TICK")
+        reset_qbs = {t.value for i in rnd["R"] for t in i.targets_copy()}
+        if ri == 0 and (unreset := sorted(all_qubits - reset_qbs)):
+            out.append("R", unreset)
+        for i in rnd["R"]:
+            out.append(i.name, _tvals(i), i.gate_args_copy())
+        out.append("TICK")
 
         # Gate moments — two-qubit gates each get their own moment
-        for inst in rnd["gates"]:
-            name = inst.name
-            targets = inst.targets_copy()
-            gate_args = inst.gate_args_copy()
 
-            if name in _TWO_QUBIT_OPS:
-                for i in range(0, len(targets), 2):
-                    new_circ.append(
-                        name,
-                        [targets[i].value, targets[i + 1].value],
-                        gate_args,
-                    )
-                    new_circ.append("TICK")
+        for i in rnd["G"]:
+            tgts, ga = i.targets_copy(), i.gate_args_copy()
+            if i.name in _TWO_QUBIT_OPS:
+                for j in range(0, len(tgts), 2):
+                    out.append(i.name, [tgts[j].value, tgts[j+1].value], ga)
+                    out.append("TICK")
             else:
-                target_vals = [t.value for t in targets]
-                new_circ.append(name, target_vals, gate_args)
-                new_circ.append("TICK")
+                out.append(i.name, _tvals(i), ga)
+                out.append("TICK")
 
         # Measurements
-        for inst in rnd["measurements"]:
-            targets = [t.value for t in inst.targets_copy()]
-            new_circ.append(inst.name, targets, inst.gate_args_copy())
-
-        if round_idx < len(rounds) - 1:
-            new_circ.append("TICK")
-
-    return new_circ
+        for i in rnd["M"]:
+            out.append(i.name, _tvals(i), i.gate_args_copy())
+        if ri < len(rounds) - 1:
+            out.append("TICK")
+    return out
 
 
 def _extract_detectors(annotated_circ, total_meas, inv_meas_map):
-    """
-    Extract detector definitions from an annotated stim circuit.
+    """Extract detector definitions from an annotated stim circuit.
 
     Returns a list of lists of :class:`~qrisp.circuit.Clbit`, one list per
     ``DETECTOR`` instruction.
     """
-    detectors = []
-    for inst in annotated_circ.flattened():
-        if inst.name == "DETECTOR":
-            clbits = []
-            for t in inst.targets_copy():
-                if t.is_measurement_record_target:
-                    abs_idx = total_meas + t.value  # rec[] is negative
-                    clbits.append(inv_meas_map[abs_idx])
-            detectors.append(clbits)
-    return detectors
+    return [
+        [inv_meas_map[total_meas + t.value]
+         for t in inst.targets_copy() if t.is_measurement_record_target]
+        for inst in annotated_circ.flattened() if inst.name == "DETECTOR"
+    ]
 
 
 # ───────────────────── public API ──────────────────────────────────────
@@ -609,125 +555,87 @@ def find_detectors(func=None, *, return_circuits=False):
 
     def _decorator(fn):
         def wrapper(*args, **kwargs):
-            # --- Validate QuantumArray args ---
+            # --- Validate & classify arguments ---
             quantum_arrays = []
             for a in args:
                 if isinstance(a, QuantumArray):
                     if not isinstance(a.qtype, QuantumBool):
                         raise TypeError(
-                            f"find_detectors: QuantumArray args must have qtype "
-                            f"QuantumBool, got {a.qtype}"
-                        )
+                            f"find_detectors: QuantumArray args must have "
+                            f"qtype QuantumBool, got {a.qtype}")
                     quantum_arrays.append(a)
                 elif isinstance(a, jax.core.Tracer):
                     raise TypeError(
                         "find_detectors: traced (non-static) non-QuantumArray "
                         "arguments are not supported. All non-QuantumArray "
                         "parameters must be concrete Python values (int, bool, "
-                        "etc.), not JAX tracers."
-                    )
-            
+                        "etc.), not JAX tracers.")
             if not quantum_arrays:
                 raise TypeError(
-                    "find_detectors: at least one QuantumArray argument is required"
-                )
+                    "find_detectors: at least one QuantumArray argument is required")
 
-            num_qubits = _count_qubits(*quantum_arrays)
+            n_qubits = sum(a.size * a.qtype.size for a in quantum_arrays)
 
             # --- 1. Trace inner function to get sub-jaspr ---
             # Bind non-QuantumArray args via closure so JAX only traces
             # the quantum arguments.  Static values (ints, bools, …)
             # become constants inside the jaspr.
-            qa_indices = [i for i, a in enumerate(args) if isinstance(a, QuantumArray)]
-            static_bindings = {i: a for i, a in enumerate(args) if not isinstance(a, QuantumArray)}
+            qa_idx = [i for i, a in enumerate(args) if isinstance(a, QuantumArray)]
+            static = {i: a for i, a in enumerate(args) if not isinstance(a, QuantumArray)}
 
             def fn_qa_only(*qa_args, _kw=kwargs):
-                full_args = [None] * len(args)
-                for idx, qa in zip(qa_indices, qa_args):
-                    full_args[idx] = qa
-                for idx, val in static_bindings.items():
-                    full_args[idx] = val
-                return fn(*full_args, **_kw)
+                full = [None] * len(args)
+                for i, q in zip(qa_idx, qa_args): full[i] = q
+                for i, v in static.items():       full[i] = v
+                return fn(*full, **_kw)
 
-            qa_only_args = tuple(args[i] for i in qa_indices)
-            inner_jaspr = make_jaspr(fn_qa_only)(*qa_only_args)
+            jaspr = make_jaspr(fn_qa_only)(*(args[i] for i in qa_idx))
 
             # --- 2. Analysis: to_qc → stim → tqecd ---
-            analysis_args = _build_analysis_args(inner_jaspr, num_qubits, quantum_arrays)
-            result = inner_jaspr.to_qc(*analysis_args)
-
-            analysis_qc = result[-1]
-            analysis_returns = result[:-1]
+            result = jaspr.to_qc(*_build_analysis_args(jaspr, n_qubits, quantum_arrays))
 
             # Flatten analysis Clbits (consistent ordering via tree_flatten)
-            analysis_clbits_flat, _ = tree_flatten(analysis_returns)
+            analysis_clbits, _ = tree_flatten(result[:-1])
 
             # Convert to stim
-            raw_stim_circ, meas_map = analysis_qc.to_stim(
-                return_measurement_map=True
-            )
-            inv_meas_map = {v: k for k, v in meas_map.items()}
+            raw_stim, meas_map = result[-1].to_stim(return_measurement_map=True)
+            inv_map = {v: k for k, v in meas_map.items()}
 
             # Prepare for tqecd and annotate
-            tqecd_circ = _prepare_for_tqecd(raw_stim_circ)
+            tqecd_circ = _prepare_for_tqecd(raw_stim)
             annotated = tqecd.annotate_detectors_automatically(tqecd_circ)
-            total_meas = tqecd_circ.num_measurements
 
             # Extract detector Clbit sets
-            detector_clbit_sets = _extract_detectors(
-                annotated, total_meas, inv_meas_map
-            )
+            all_dets = _extract_detectors(
+                annotated, tqecd_circ.num_measurements, inv_map)
 
-            # Keep only detectors whose Clbits all appear in returned meas
-            returned_clbit_set = set(analysis_clbits_flat)
-            relevant_detector_indices = []
-            relevant_detectors = []
-            for det_idx, det in enumerate(detector_clbit_sets):
-                if all(cb in returned_clbit_set for cb in det):
-                    relevant_detector_indices.append(det_idx)
-                    relevant_detectors.append(det)
+            # Keep only detectors whose Clbits all appear in returned measurements
+            returned = set(analysis_clbits)
+            relevant = [(i, d) for i, d in enumerate(all_dets)
+                        if all(cb in returned for cb in d)]
 
             # --- 2b. Simulate noiseless circuit to determine detector expectations ---
             # Use stim's built-in method to remove all noise processes
-            noiseless_circ = annotated.without_noise()
-            
-            # Run a single noiseless simulation to get all detector expectations
-            sampler = noiseless_circ.compile_detector_sampler()
-            detector_samples = sampler.sample(shots=1)
-            all_detector_expectations = detector_samples[0].tolist()
-            
-            # Extract expectations only for relevant detectors
-            relevant_expectations = [
-                bool(all_detector_expectations[idx])
-                for idx in relevant_detector_indices
-            ]
+            expectations = annotated.without_noise() \
+                .compile_detector_sampler().sample(shots=1)[0].tolist()
 
-            # --- 3. Call real function to get traced results ---
+            # --- 3. Call real function & map analysis Clbits to traced booleans ---
             real_returns = fn(*args, **kwargs)
-
             if not isinstance(real_returns, tuple):
                 real_returns = (real_returns,)
-
-            traced_bools_flat, _ = tree_flatten(real_returns)
-
-            # Map analysis Clbits to traced booleans
-            clbit_to_traced = dict(
-                zip(analysis_clbits_flat, traced_bools_flat)
-            )
+            traced_flat, _ = tree_flatten(real_returns)
+            cb_to_traced = dict(zip(analysis_clbits, traced_flat))
 
             # --- 4. Emit parity calls for each detector ---
-            detector_results = []
-            for det_idx, det_clbits in enumerate(relevant_detectors):
-                meas_args = [clbit_to_traced[cb] for cb in det_clbits]
-                expectation_val = relevant_expectations[det_idx]
-                det_result = parity(*meas_args, expectation=expectation_val)
-                detector_results.append(det_result)
+            det_results = [
+                parity(*[cb_to_traced[cb] for cb in det],
+                       expectation=bool(expectations[idx]))
+                for idx, det in relevant
+            ]
 
-            out = (detector_results,) + real_returns
-
+            out = (det_results,) + real_returns
             if return_circuits:
-                out = out + (raw_stim_circ, tqecd_circ, annotated)
-
+                out += (raw_stim, tqecd_circ, annotated)
             return out
 
         return wrapper
