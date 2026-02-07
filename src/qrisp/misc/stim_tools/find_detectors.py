@@ -234,18 +234,85 @@ def _extract_detectors(annotated_circ, total_meas, inv_meas_map):
 # ───────────────────── public API ──────────────────────────────────────
 
 def find_detectors(func=None, *, return_circuits=False):
-    r"""Decorator that automatically identifies stim detectors via tqecd.
+    r"""Decorator that automatically identifies stim detectors and returns them.
 
-    ``find_detectors`` traces the decorated function, converts the resulting
-    circuit to a stim circuit, re-structures it into the fragment format that
-    `tqecd <https://github.com/QCHackers/tqecd>`_ expects, runs automatic
-    detector annotation, and finally emits ``parity()`` calls for every
-    discovered detector during the real Jasp tracing pass.
+    ``find_detectors`` leverages `tqecd <https://github.com/QCHackers/tqecd>`_
+    to automatically discover detector parity checks in quantum error correction
+    circuits. The detected parities are returned as an additional value alongside
+    the decorated function's original return values.
 
     .. note::
 
         This feature requires the optional ``tqecd`` package.  Install it
         with ``pip install tqecd``.
+
+    Pitfalls & Limitations
+    ^^^^^^^^^^^^^^^^^^^^^^
+
+    The ``find_detectors`` feature comes with some constraints:
+    
+    **Arguments must be QuantumArrays of QuantumBool**
+        Every positional argument to the decorated function must be a
+        ``QuantumArray`` with ``qtype=QuantumBool()``.  Other quantum types
+        or classical arguments are not supported and will raise a
+        ``TypeError``.
+
+    **Only Clifford gates are supported**
+        tqecd analyses stabilizer flows, which are only well-defined for
+        Clifford circuits.  If the decorated function contains non-Clifford
+        gates (e.g. T, Toffoli, arbitrary-angle rotations), stim will raise
+        an error during circuit construction or tqecd will silently produce
+        incorrect results.
+
+    **No real-time classical computation inside the decorated function**
+        The circuit is traced symbolically.  Conditional logic that depends
+        on measurement outcomes (real-time ``if``/``else``) cannot be
+        expressed in the stim circuit and will break analysis.
+
+    **Composite detectors from flow products are not discoverable**
+        tqecd finds detectors by tracking individual stabilizer flows from
+        resets through gates to measurements.  It **cannot** discover
+        composite detectors that arise as products of multiple stabilizer
+        flows.  For example, in a GHZ-state circuit the parity
+        :math:`Z_3 Z_4` is a product of :math:`Z_0 Z_3` and
+        :math:`Z_0 Z_4`, but tqecd will not identify it.
+
+    **Multi-round circuits require explicit resets**
+        For tqecd to detect round-to-round detectors (comparing syndrome
+        measurements across rounds), ancilla qubits **must** be explicitly
+        reset between rounds.  Without resets, tqecd cannot establish the
+        start of a new stabilizer flow and will miss cross-round detectors.
+        
+        This is critical: in a two-round repetition code without resets
+        between rounds, tqecd will only find first-round detectors and
+        miss the temporal detectors that compare round 1 vs round 2.
+
+    **Detectors referencing non-returned measurements are discarded**
+        If a detector involves a measurement whose result is *not* part of
+        the decorated function's return value, the detector is silently
+        dropped.  Make sure all relevant measurements are returned.
+        
+        For example, if you measure both syndrome qubits but only return
+        one measurement, detectors involving the unreturned measurement
+        will be filtered out.
+
+    **Multiple QuantumArray arguments receive disjoint qubit slices**
+        When the decorated function takes more than one QuantumArray
+        argument, it is assumed that each argument indeed represents
+        a distinct set of qubits. This can not be guaranteed at tracing
+        time and needs to be ensured from user side.
+        Each array is mapped to its own contiguous slice of
+        qubits during analysis.  The slices are allocated in positional
+        order.
+    
+    **May discover more detectors than expected**
+        In some circuits, ``find_detectors`` may identify *more* valid
+        detectors than a minimal set.  For example, in 2-round codes,
+        tqecd can discover boundary detectors from data qubit measurements
+        that are mathematically valid but redundant with syndrome-based
+        detectors.  All discovered detectors are correct (they will sample
+        to zero in noiseless circuits); the extra ones represent additional
+        stabilizer flows through the circuit.
 
     Parameters
     ----------
@@ -280,117 +347,219 @@ def find_detectors(func=None, *, return_circuits=False):
 
     where *detector_bools* is a ``list`` of Jasp-traced boolean values, one
     per discovered detector, each representing the ``parity()`` of the
-    measurements that constitute that detector.
-
-    Pitfalls & Limitations
-    ----------------------
-    **Arguments must be QuantumArrays of QuantumBool**
-        Every positional argument to the decorated function must be a
-        ``QuantumArray`` with ``qtype=QuantumBool()``.  Other quantum types
-        or classical arguments are not supported and will raise a
-        ``TypeError``.
-
-    **Only Clifford gates are supported**
-        tqecd analyses stabilizer flows, which are only well-defined for
-        Clifford circuits.  If the decorated function contains non-Clifford
-        gates (e.g. T, Toffoli, arbitrary-angle rotations), stim will raise
-        an error during circuit construction or tqecd will silently produce
-        incorrect results.
-
-    **No real-time classical computation inside the decorated function**
-        The circuit is traced symbolically.  Conditional logic that depends
-        on measurement outcomes (real-time ``if``/``else``) cannot be
-        expressed in the stim circuit and will break analysis.
-
-    **Composite detectors from flow products are not discoverable**
-        tqecd finds detectors by tracking individual stabilizer flows from
-        resets through gates to measurements.  It **cannot** discover
-        composite detectors that arise as products of multiple stabilizer
-        flows.  For example, in a GHZ-state circuit the parity
-        :math:`Z_3 Z_4` is a product of :math:`Z_0 Z_3` and
-        :math:`Z_0 Z_4`, but tqecd will not identify it.
-
-    **Multi-round circuits require explicit resets**
-        For tqecd to detect round-to-round detectors (comparing syndrome
-        measurements across rounds), ancilla qubits **must** be explicitly
-        reset between rounds.  Without resets, tqecd cannot establish the
-        start of a new stabilizer flow and will miss cross-round detectors.
-
-    **Fragment structure is automatically inferred**
-        The decorator splits the flat stim circuit into tqecd *fragments*
-        at measurement boundaries (a new fragment starts whenever a
-        non-measurement instruction follows a measurement).  This heuristic
-        works for standard syndrome-extraction patterns but may fail for
-        unusual gate orderings or interleaved measurement/gate patterns.
-
-    **First-round detectors are always included**
-        Because all qubits are implicitly reset at the beginning (tqecd
-        requires it), measurements in the first round that are deterministic
-        given those resets will appear as detectors.  This is standard QEC
-        behaviour — the first round's ancilla outcomes are compared against
-        the known reset state.
-
-    **Detectors referencing non-returned measurements are discarded**
-        If a detector involves a measurement whose result is *not* part of
-        the decorated function's return value, the detector is silently
-        dropped.  Make sure all relevant measurements are returned.
-
-    **Two-qubit gates are split into individual tqecd moments**
-        To avoid qubit collisions within a single moment (which tqecd
-        forbids), every two-qubit gate pair is placed in its own moment.
-        This is correct but may create more moments than strictly necessary
-        for circuits where the two-qubit gates already act on disjoint
-        qubits.
-
-    **Multiple QuantumArray arguments receive disjoint qubit slices**
-        When the decorated function takes more than one QuantumArray
-        argument, it is assumed that each argument indeed represents
-        a distinct set of qubits. This can not be guaranteed at tracing
-        time and needs to be ensured from user side.
-        Each array is mapped to its own contiguous slice of
-        qubits during analysis.  The slices are allocated in positional
-        order.
+    measurements that constitute that detector. The original return values
+    from the decorated function are unpacked and appended after the detector list.
 
     Examples
     --------
-    Single-round syndrome extraction (three data qubits, two ancilla
-    checks):
-
-    >>> from qrisp import *
-    >>> from qrisp.jasp.evaluation_tools.stim_extraction import extract_stim
-    >>> from qrisp.misc.stim_tools.find_detectors import find_detectors
-    >>>
-    >>> @find_detectors
-    ... def syndrome(qa):
-    ...     reset(qa[3]); reset(qa[4])
-    ...     cx(qa[0], qa[3]); cx(qa[1], qa[3])
-    ...     cx(qa[1], qa[4]); cx(qa[2], qa[4])
-    ...     return measure(qa[3]), measure(qa[4])
-    ...
-    >>> @extract_stim
-    ... def main():
-    ...     qa = QuantumArray(qtype=QuantumBool(), shape=(5,))
-    ...     detectors, m3, m4 = syndrome(qa)
-    ...     return detectors, m3, m4
-
-    Two-round repetition code (detectors compare across rounds):
-
-    >>> @find_detectors
-    ... def two_rounds(qa):
-    ...     for _ in range(2):
-    ...         reset(qa[1]); reset(qa[3])
-    ...         cx(qa[0], qa[1]); cx(qa[2], qa[1])
-    ...         cx(qa[2], qa[3]); cx(qa[4], qa[3])
-    ...         m1 = measure(qa[1]); m3 = measure(qa[3])
-    ...     return m1, m3  # only last round's measurements returned
-
-    Debug mode — inspect intermediate circuits:
-
-    >>> @find_detectors(return_circuits=True)
-    ... def debug_syndrome(qa):
-    ...     reset(qa[1])
-    ...     cx(qa[0], qa[1]); cx(qa[2], qa[1])
-    ...     return measure(qa[1])
+    **Example 1: Single-round syndrome extraction**
+    
+    Three data qubits with two ancilla parity checks::
+    
+        from qrisp import *
+        from qrisp.jasp.evaluation_tools.stim_extraction import extract_stim
+        from qrisp.misc.stim_tools import find_detectors
+        
+        @find_detectors
+        def syndrome(data, ancilla):
+            # Reset ancilla qubits
+            reset(ancilla[0])
+            reset(ancilla[1])
+            
+            # Syndrome extraction
+            cx(data[0], ancilla[0])
+            cx(data[1], ancilla[0])
+            cx(data[1], ancilla[1])
+            cx(data[2], ancilla[1])
+            
+            # Measure syndromes
+            return measure(ancilla[0]), measure(ancilla[1])
+        
+        @extract_stim
+        def main():
+            data = QuantumArray(qtype=QuantumBool(), shape=(3,))
+            ancilla = QuantumArray(qtype=QuantumBool(), shape=(2,))
+            detectors, m0, m1 = syndrome(data, ancilla)
+            return detectors, m0, m1
+        
+        # Run and extract stim circuit
+        result = main()
+        stim_circ = result[-1]
+        print(f"Found {stim_circ.num_detectors} detectors")
+    
+    **Example 2: Two-round repetition code**
+    
+    Distance-3 repetition code with temporal detectors comparing rounds::
+    
+        @find_detectors
+        def rep_code_2rounds(data, ancilla):
+            measurements = []
+            
+            for round_num in range(2):
+                # Reset ancillas
+                reset(ancilla[0])
+                reset(ancilla[1])
+                
+                # Parity checks
+                cx(data[0], ancilla[0])
+                cx(data[1], ancilla[0])
+                cx(data[1], ancilla[1])
+                cx(data[2], ancilla[1])
+                
+                # Measure syndromes
+                measurements.append(measure(ancilla[0]))
+                measurements.append(measure(ancilla[1]))
+            
+            # Final data readout
+            for i in range(3):
+                measurements.append(measure(data[i]))
+            
+            return tuple(measurements)
+        
+        @extract_stim
+        def main():
+            data = QuantumArray(qtype=QuantumBool(), shape=(3,))
+            ancilla = QuantumArray(qtype=QuantumBool(), shape=(2,))
+            detectors, *measurements = rep_code_2rounds(data, ancilla)
+            return (detectors,) + tuple(measurements)
+        
+        result = main()
+        stim_circ = result[-1]
+        # Will find >= 6 detectors (may discover more valid boundary detectors):
+        # - 2 detectors in round 1 (vs initial reset)
+        # - 2 detectors in round 2 (vs round 1)
+        # - 2+ data-boundary detectors (tqecd may find additional valid ones)
+        print(f"Found {stim_circ.num_detectors} detectors")
+    
+    **Example 3: Debug mode with circuit inspection**
+    
+    Use ``return_circuits=True`` to inspect intermediate circuits::
+    
+        @find_detectors(return_circuits=True)
+        def debug_syndrome(data, ancilla):
+            reset(ancilla[0])
+            cx(data[0], ancilla[0])
+            cx(data[1], ancilla[0])
+            return measure(ancilla[0])
+        
+        @extract_stim
+        def main():
+            data = QuantumArray(qtype=QuantumBool(), shape=(2,))
+            ancilla = QuantumArray(qtype=QuantumBool(), shape=(1,))
+            detectors, m, raw_stim, tqecd_input, annotated = debug_syndrome(data, ancilla)
+            
+            print("Raw stim circuit:")
+            print(raw_stim)
+            print("\nAfter tqecd restructuring:")
+            print(tqecd_input)
+            print("\nWith detectors annotated:")
+            print(annotated)
+            
+            return detectors, m
+        
+        main()
+    
+    **Example 4: Multi-array arguments**
+    
+    Separate data and ancilla qubits::
+    
+        @find_detectors
+        def surface_check(data_qubits, ancilla_qubits):
+            # Reset ancilla
+            reset(ancilla_qubits[0])
+            
+            # X-stabilizer (Hadamard + CNOTs)
+            h(ancilla_qubits[0])
+            cx(ancilla_qubits[0], data_qubits[0])
+            cx(ancilla_qubits[0], data_qubits[1])
+            cx(ancilla_qubits[0], data_qubits[2])
+            cx(ancilla_qubits[0], data_qubits[3])
+            h(ancilla_qubits[0])
+            
+            return measure(ancilla_qubits[0])
+        
+        @extract_stim
+        def main():
+            data = QuantumArray(qtype=QuantumBool(), shape=(4,))
+            ancilla = QuantumArray(qtype=QuantumBool(), shape=(1,))
+            detectors, m = surface_check(data, ancilla)
+            return detectors, m
+        
+        result = main()
+        # Note: This finds 0 detectors because the X-stabilizer measurement
+        # on Z-basis |0⟩ initialized qubits is not deterministic.
+        # For detectors, would need X-basis initialization (RX) on data qubits.
+    
+    **Example 5: Three-round code with explicit resets**
+    
+    Shows importance of reset between rounds::
+    
+        @find_detectors
+        def three_rounds(data, ancilla):
+            results = []
+            
+            for _ in range(3):
+                # CRITICAL: Reset between rounds
+                reset(ancilla[0])
+                
+                # Syndrome extraction
+                cx(data[0], ancilla[0])
+                cx(data[1], ancilla[0])
+                
+                results.append(measure(ancilla[0]))
+            
+            return tuple(results)
+        
+        @extract_stim
+        def main():
+            data = QuantumArray(qtype=QuantumBool(), shape=(2,))
+            ancilla = QuantumArray(qtype=QuantumBool(), shape=(1,))
+            detectors, m1, m2, m3 = three_rounds(data, ancilla)
+            return detectors, m1, m2, m3
+        
+        result = main()
+        stim_circ = result[-1]
+        # Will find >= 3 detectors (one per round plus temporal)
+        print(f"Found {stim_circ.num_detectors} detectors")
+        
+        # Verify all detectors are valid (noiseless samples = 0)
+        sampler = stim_circ.compile_detector_sampler()
+        samples = sampler.sample(shots=1000)
+        assert samples.sum() == 0, "All detectors should be deterministic!"
+    
+    **Example 6: Partial measurement return**
+    
+    Only detectors involving returned measurements are kept::
+    
+        @find_detectors
+        def partial_return(data, ancilla):
+            reset(ancilla[0])
+            reset(ancilla[1])
+            
+            cx(data[0], ancilla[0])
+            cx(data[1], ancilla[0])
+            cx(data[1], ancilla[1])
+            cx(data[2], ancilla[1])
+            
+            m0 = measure(ancilla[0])
+            m1 = measure(ancilla[1])
+            
+            # Only return m0, discard m1
+            return m0
+        
+        @extract_stim
+        def main():
+            data = QuantumArray(qtype=QuantumBool(), shape=(3,))
+            ancilla = QuantumArray(qtype=QuantumBool(), shape=(2,))
+            detectors, m = partial_return(data, ancilla)
+            return detectors, m
+        
+        result = main()
+        stim_circ = result[-1]
+        # Only detectors involving m0 (the returned measurement) are kept.
+        # Detectors that depend on m1 (unreturned) are filtered out.
+        # Typically finds 1 detector from the m0 measurement vs initial reset.
+        print(f"Found {stim_circ.num_detectors} detectors")
     """
     try:
         import tqecd
