@@ -644,6 +644,9 @@ def make_qc_extraction_eqn_evaluator(qc):
                 elif isinstance(inp, ParityHandle):
                     # ParityHandle stores expanded clbits
                     clbit_set.symmetric_difference_update(inp.clbits)
+                elif isinstance(inp, list) and all(isinstance(c, Clbit) for c in inp):
+                    # List-wrapped Clbits (e.g. from measuring a single-qubit QuantumBool)
+                    clbit_set.symmetric_difference_update(inp)
             
             # Convert set to sorted list for deterministic ordering
             expanded_clbits = sorted(clbit_set, key=lambda cb: qc.clbits.index(cb))
