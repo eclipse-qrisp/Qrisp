@@ -633,9 +633,7 @@ class BlockEncoding:
         r"""
         Estimate the quantum resources required for the BlockEncoding object.
 
-        
-
-        This method uses the :ref:`count_ops <count_ops>` decorator to obtain gate counts, circuit depth, 
+        This method uses the ``count_ops`` decorator to obtain gate counts, circuit depth, 
         and (in future) qubit usage for a single execution of ``.unitary``. Unlike :meth:`apply_rus`, it does not 
         run the simulator and does not include repetitions from the Repeat-Until-Success procedure.
 
@@ -658,7 +656,7 @@ class BlockEncoding:
         Examples
         --------
         
-        **Example 1:**: Estimate the quantum resources for a block-encoded Pauli operator.
+        **Example 1:** Estimate the quantum resources for a block-encoded Pauli operator.
 
         ::
 
@@ -676,7 +674,7 @@ class BlockEncoding:
             print(QRE)
             # {'gphase': 2, 'u3': 2, 'cx': 4, 'cz': 2, 'x': 3} 
 
-        **Example 2:**: Estimate the quantum resources for applying the Quantum Eigenvalue Transform.
+        **Example 2:** Estimate the quantum resources for applying the Quantum Eigenvalue Transform.
 
         ::
 
@@ -687,16 +685,17 @@ class BlockEncoding:
             H = X(0)*X(1) + 0.5*Z(0)*Z(1)
             BE = H.pauli_block_encoding()
 
-            b = np.array([0, 1, 1, 1])
+            # real, fixed parity polynomial
+            p = np.array([0, 1, 0, 1])
 
             def operand_prep():
                 qf = QuantumFloat(2)
                 return qf
 
-            BE_QET = QET(BE, b)
+            BE_QET = QET(BE, p)
             QRE = BE_QET.resources(operand_prep)()
             print(QRE)
-            # {'gphase': 4, 'u3': 4, 'p': 2, 'cx': 12, 'x': 8, 'cz': 6, 'rx': 2}  
+            # {'cx': 16, 'u3': 6, 'x': 11, 'cz': 8, 'rx': 2, 'p': 2, 'gphase': 6}
             
         """
 
@@ -799,31 +798,32 @@ class BlockEncoding:
             new_anc_templates = [QuantumBool().template()] + self.anc_templates
             return BlockEncoding(self.alpha, new_anc_templates, new_unitary, is_hermitian=True)
         
-    def chebyshev(self: "BlockEncoding", k: int, _rescale = True) -> BlockEncoding:
+    def chebyshev(self, k: int, rescale: bool = True) -> BlockEncoding:
         r"""
-        Returns the rescaled block encoding of the $k$-thChebyshev polynomial of the first kind as a BlockEncoding.
+        Return a BlockEncoding representing $k$-th Chebyshev polynomial of the first kind applied to the operator.
 
-        This method computes the Chebyshev polynomial $T_k(U_A)$ of order $k$ 
-        applied to the operator $A$ encoded in the current BlockEncoding. Depending on the ``_rescale`` flag, it returns
-        either $T_k(A)$ if ``_rescale = True``, or $T_k(A/\alpha)$ if ``_rescale = False``.
+        For a block-encoded operator $A$ and normalization factor $\alpha$, 
+        this method returns a BlockEncoding of the rescaled operator $T_k(A)$ if ``rescale=True``,
+        or $T_k(A/\alpha)$ if ``rescale=False``.
 
         Parameters
         ----------
         k : int
             The order of the Chebyshev polynomial. Must be a non-negative integer.
-        _rescale : bool, optional
-            If set to ``True`` (default), the method returns the rescaled block encoding of $T_k(A)$. If ``False``,
-            the method returns the non-rescaled block encoding of $T_k(A/\alpha)$.
+        rescale : bool, optional
+            If set to ``True`` (default), the method returns the rescaled block-encoding of $T_k(A)$,
+            If ``False``, the method returns the non-rescaled block-encoding of $T_k(A/\alpha)$.
 
         Returns
         -------
         BlockEncoding
-            A new BlockEncoding representing the Chebyshev polynomial transformation.
+            A new BlockEncoding instance representing the Chebyshev polynomial transformation.
 
         Notes
         -----
         - The Chebyshev polynomial approach is useful for polynomial approximations and spectral methods.
-        - The resulting block-encoding maintains the same scaling factor $\alpha$ as the original.
+        - Should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method (see :meth:`poly`).
+        - **Normalization**: The resulting block-encoding maintains the same scaling factor $\alpha$ as the original.
 
         Examples
         --------
@@ -874,7 +874,7 @@ class BlockEncoding:
                 reflection(args[:m])
                 self.unitary(*args)
         
-        if _rescale:
+        if rescale:
             from qrisp.algorithms.gqsp.qet import QET
             p = np.zeros(k+1)
             p[-1] = 1.0
@@ -1174,7 +1174,7 @@ class BlockEncoding:
             BE2 = H2.pauli_block_encoding()
             BE3 = H3.pauli_block_encoding()
 
-            BE_mul = BE1 * BE2
+            BE_mul = BE1 @ BE2
 
             def operand_prep():
                 qv = QuantumFloat(3)
@@ -1188,9 +1188,9 @@ class BlockEncoding:
             res_be3 = main(BE3)
             res_be_mul = main(BE_mul)
             print("Result from BE of H1 * H2: ", res_be3)
-            print("Result from BE1 * BE2: ", res_be_mul)
+            print("Result from BE1 @ BE2: ", res_be_mul)
             # Result from BE of H1 * H2:  {3.0: 0.5, 7.0: 0.5}  
-            # Result from BE1 * BE2:  {3.0: 0.5, 7.0: 0.5}  
+            # Result from BE1 @ BE2:  {3.0: 0.5, 7.0: 0.5}  
 
         """
         if not isinstance(other, BlockEncoding):
