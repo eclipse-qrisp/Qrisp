@@ -121,3 +121,13 @@ def QuantumGateOp : JaspOp<"quantum_gate"> {
     
     let assemblyFormat = "$gate_type `(` $gate_operands `)` `,` $in_qst attr-dict `:` `(` type($gate_operands) `)` `,` type($in_qst) `->` type($out_qst)";
 }
+
+def ParityOp : JaspOp<"parity"> {
+    let summary = "Computes parity of measurement results.";
+    let description = "Computes the parity (XOR sum) of a set of measurement results. Supports an expectation attribute for error correction contexts.";
+    
+    let arguments = (ins Variadic<0DTensorOf<[I1]>>:$measurements, I64Attr:$expectation);
+    let results = (outs 0DTensorOf<[I1]>:$result);
+    
+    let assemblyFormat = "$measurements attr-dict `:` type($measurements) `->` type($result)";
+}

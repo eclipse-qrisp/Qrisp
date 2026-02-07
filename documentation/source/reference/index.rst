@@ -73,5 +73,5 @@ With Qrisp we hope to open the creation of quantum algorithms to a much broader 
    Circuit Manipulation/index
    Jasp/index
    Backend Interface/index
-   Utilities
+   Utilities/index
    Examples/index

@@ -1,6 +1,6 @@
-﻿qrisp.lifted
+﻿qrisp.parity
 ============
 
 .. currentmodule:: qrisp
 
-.. autofunction:: lifted
+.. autofunction:: parity
