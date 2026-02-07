@@ -819,7 +819,10 @@ class BlockEncoding:
         -----
         - The Chebyshev polynomial approach is useful for polynomial approximations and spectral methods.
         - Should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method (see :meth:`poly`).
-        - **Normalization**: If $k=1$, the resulting block-encoding maintains the same scaling factor $\alpha$ as the original. Otherwise, the scaling factor is $1$.
+        - **Normalization**: 
+            - ``rescale=True``: The normalization factor is determined by the Quantum Eigenvalue Transform (QET).
+            - ``rescale=False``: If $k=1$, the resulting block-encoding maintains the same scaling factor $\alpha$ as the original. Otherwise, the scaling factor is $1$.
+
 
         Examples
         --------
