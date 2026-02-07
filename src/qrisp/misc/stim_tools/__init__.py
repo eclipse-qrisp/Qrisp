@@ -20,3 +20,4 @@ from qrisp.misc.stim_tools.error_class import *
 from qrisp.misc.stim_tools.stim_noise_gate_application_functions import *
 from qrisp.misc.stim_tools.detector_permutation import permute_detectors
 from qrisp.misc.stim_tools.detector_permutation import *
+from qrisp.misc.stim_tools.find_detectors import find_detectors
