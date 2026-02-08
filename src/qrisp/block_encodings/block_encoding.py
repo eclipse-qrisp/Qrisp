@@ -107,6 +107,14 @@ class BlockEncoding:
     is_hermitian : bool
         Indicates whether the block-encoding unitary is Hermitian.
 
+    Notes
+    -----
+    - The **shape** of the block-encoded operator is determined by the size of the operand variables
+      to which the block-encoding is applied. E.g., if a block-encoded $4\times 4$ matrix $A$ is applied to a 
+      3-qubit QuantumVariable, then a block-encoding of the $8\times 8$ matrix $\tilde{A}=\mathbb{I}\otimes A$
+      is applied. This is consistent with the convention that non-occuring indices in a Pauli string are treated as identities.
+      Static-shaped block-encodings may be introduced in a future release.
+
     Examples
     --------
 
@@ -135,7 +143,7 @@ class BlockEncoding:
         main()
         # {0.0: 0.6428571295525347, 2.0: 0.2857142963579722, 1.0: 0.07142857408949305}
 
-    **Example 2: Custom Block Encoding**
+    **Example 2: LCU Block Encoding**
 
     Define a block-encoding for a discrete Laplace operator in one dimension with periodic boundary conditions.
 
