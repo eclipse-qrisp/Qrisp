@@ -17,7 +17,7 @@
 """
 
 from qrisp import QuantumCircuit
-from qrisp.interface import VirtualBackend
+from qrisp.interface import BatchedBackend
 
 def run_on_stim(qc: QuantumCircuit, shots: int):
     """
@@ -53,4 +53,22 @@ def run_on_stim(qc: QuantumCircuit, shots: int):
 
     return counts
 
-StimBackend = VirtualBackend(run_on_stim)
+
+def run_on_stim_batch(batch):
+    """
+    Simulate a batch of Qrisp QuantumCircuits via Stim.
+
+    Parameters
+    ----------
+    batch : list[tuple[QuantumCircuit, int]]
+        List of (circuit, shots) pairs.
+
+    Returns
+    -------
+    list[dict[str, int]]
+        List of result dictionaries, one per circuit.
+    """
+    return [run_on_stim(qc, shots) for qc, shots in batch]
+
+
+StimBackend = BatchedBackend(run_on_stim_batch)
