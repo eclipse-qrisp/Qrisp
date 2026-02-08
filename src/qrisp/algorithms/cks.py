@@ -523,7 +523,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
     j_0, beta = CKS_parameters(A, eps, kappa, max_beta)
     cheb_coeffs = cheb_coefficients(j_0, beta)
 
-    m = len(A.anc_templates)
+    m = len(A._anc_templates)
 
     # Following https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf:
     # T1 = (U R), T2 = (U R U_dg R) -> T2^k T1 is block encoding T_{2k+1}(A) 
@@ -543,15 +543,15 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
     def new_unitary(*args):
         # Core LCU protocol: PREP, SELECT, PREP^†
-        with conjugate(unary_prep)(args[1], cheb_coeffs):
+        with conjugate(unary_prep)(args[0], cheb_coeffs):
 
-            A.unitary(*args[2:])    
+            A.unitary(*args[1:])    
 
             for i in jrange(1, j_0 + 1):
-                z(args[1][i])
-                with control(args[1][i]):
-                    T2(*args[2:])
+                z(args[0][i])
+                with control(args[0][i]):
+                    T2(*args[1:])
 
-    new_anc_templates = [QuantumBool().template(), QuantumFloat(j_0 + 1).template()] + A.anc_templates
+    new_anc_templates = [QuantumFloat(j_0 + 1).template()] + A._anc_templates
     new_alpha = np.sum(np.abs(cheb_coeffs)) / A.alpha
     return BlockEncoding(new_alpha, new_anc_templates, new_unitary)
