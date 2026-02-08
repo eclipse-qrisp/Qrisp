@@ -123,10 +123,11 @@ class BlockEncoding:
     ::
 
         from qrisp import *
+        from qrisp.block_encodings import BlockEncoding
         from qrisp.operators import X, Y, Z
 
         H = sum(X(i)*X(i+1) + Y(i)*Y(i+1) + Z(i)*Z(i+1) for i in range(3))
-        BE = H.pauli_block_encoding()
+        BE = BlockEncoding.from_operator(H)
 
         # Apply the operator to an initial system state
 
@@ -450,7 +451,6 @@ class BlockEncoding:
 
         return BlockEncoding(alpha, [QuantumFloat(n).template()], unitary)
     
-    
     #
     # Utilities
     #
@@ -496,10 +496,11 @@ class BlockEncoding:
 
             import numpy as np
             from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
             from qrisp.operators import X, Y, Z
 
             H = X(0)*X(1) + 0.5*Z(0)*Z(1)
-            BE = H.pauli_block_encoding()
+            BE = BlockEncoding.from_operator(H)
 
             def operand_prep(phi):
                 qv = QuantumFloat(2)
@@ -542,10 +543,11 @@ class BlockEncoding:
 
             import numpy as np
             from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
             from qrisp.operators import X, Y, Z
 
             H = X(0)*X(1) + 0.5*Z(0)*Z(1)
-            BE = H.pauli_block_encoding()
+            BE = BlockEncoding.from_operator(H)
 
             def operand_prep(phi):
                 qv = QuantumFloat(2)
@@ -598,10 +600,11 @@ class BlockEncoding:
 
             import numpy as np
             from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
             from qrisp.operators import X, Y, Z
 
             H = X(0)*X(1) + 0.5*Z(0)*Z(1)
-            BE = H.pauli_block_encoding()
+            BE = BlockEncoding.from_operator(H)
 
             def operand_prep(phi):
                 qv = QuantumFloat(2)
@@ -671,10 +674,11 @@ class BlockEncoding:
         ::
 
             from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
             from qrisp.operators import X, Z
 
             H = X(0)*X(1) + 0.5*Z(0)*Z(1)
-            BE = H.pauli_block_encoding()
+            BE = BlockEncoding.from_operator(H)
 
             def operand_prep():
                 qf = QuantumFloat(2)
@@ -690,10 +694,11 @@ class BlockEncoding:
 
             from qrisp import *
             from qrisp.algorithms.gqsp import QET
+            from qrisp.block_encodings import BlockEncoding
             from qrisp.operators import X, Z
 
             H = X(0)*X(1) + 0.5*Z(0)*Z(1)
-            BE = H.pauli_block_encoding()
+            BE = BlockEncoding.from_operator(H)
 
             # real, fixed parity polynomial
             p = np.array([0, 1, 0, 1])
@@ -836,10 +841,11 @@ class BlockEncoding:
         ::
 
             from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
             from qrisp.operators import X, Y, Z
 
             H = X(0)*X(1) + 0.5*Z(0)*Z(1)
-            BE = H.pauli_block_encoding()
+            BE = BlockEncoding.from_operator(H)
             
             # Apply Chebyshev polynomial of order 2
             BE_cheb = BE.chebyshev(2)
@@ -920,15 +926,16 @@ class BlockEncoding:
         ::
 
             from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
             from qrisp.operators import X, Y, Z
 
             H1 = X(0)*X(1) + 0.2*Y(0)*Y(1)
             H2 = Z(0)*Z(1) + X(2)
             H3 = H1 + H2
 
-            BE1 = H1.pauli_block_encoding()
-            BE2 = H2.pauli_block_encoding()
-            BE3 = H3.pauli_block_encoding()
+            BE1 = BlockEncoding.from_operator(H1)
+            BE2 = BlockEncoding.from_operator(H2)
+            BE3 = BlockEncoding.from_operator(H3)
 
             BE_add = BE1 + BE2
 
@@ -1004,15 +1011,16 @@ class BlockEncoding:
         ::
 
             from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
             from qrisp.operators import X, Y, Z
 
             H1 = X(0)*X(1) + 0.2*Y(0)*Y(1)
             H2 = Z(0)*Z(1) + X(2)
             H3 = H1 - H2
 
-            BE1 = H1.pauli_block_encoding()
-            BE2 = H2.pauli_block_encoding()
-            BE3 = H3.pauli_block_encoding()
+            BE1 = BlockEncoding.from_operator(H1)
+            BE2 = BlockEncoding.from_operator(H2)
+            BE3 = BlockEncoding.from_operator(H3)
 
             BE_sub = BE1 - BE2
 
@@ -1090,6 +1098,7 @@ class BlockEncoding:
         ::
 
             from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
             from qrisp.operators import X, Y, Z
 
             # Commuting operators H1 and H2
@@ -1097,9 +1106,9 @@ class BlockEncoding:
             H2 = Z(0)*Z(1) + X(2)
             H3 = 2*H1 + H2
 
-            BE1 = H1.pauli_block_encoding()
-            BE2 = H2.pauli_block_encoding()
-            BE3 = H3.pauli_block_encoding()
+            BE1 = BlockEncoding.from_operator(H1)
+            BE2 = BlockEncoding.from_operator(H2)
+            BE3 = BlockEncoding.from_operator(H3)
 
             BE_mul = 2*BE1 + BE2
             BE_mul_r = BE1*2 + BE2
@@ -1166,6 +1175,7 @@ class BlockEncoding:
         ::
 
             from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
             from qrisp.operators import X, Y, Z
 
             # Commuting operators H1 and H2
@@ -1173,9 +1183,9 @@ class BlockEncoding:
             H2 = Z(0)*Z(1) + X(2)
             H3 = H1 * H2
 
-            BE1 = H1.pauli_block_encoding()
-            BE2 = H2.pauli_block_encoding()
-            BE3 = H3.pauli_block_encoding()
+            BE1 = BlockEncoding.from_operator(H1)
+            BE2 = BlockEncoding.from_operator(H2)
+            BE3 = BlockEncoding.from_operator(H3)
 
             BE_mul = BE1 @ BE2
 
@@ -1251,13 +1261,14 @@ class BlockEncoding:
         ::
 
             from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
             from qrisp.operators import X, Y, Z
 
             H1 = X(0)*X(1) + 0.2*Y(0)*Y(1)
             H2 = Z(0)*Z(1) + X(2)
 
-            BE1 = H1.pauli_block_encoding()
-            BE2 = H2.pauli_block_encoding()
+            BE1 = BlockEncoding.from_operator(H1)
+            BE2 = BlockEncoding.from_operator(H2)
 
             BE_composed = BE1.kron(BE2)
 
@@ -1289,9 +1300,9 @@ class BlockEncoding:
             H2 = Z(0)*Z(1)
             H3 = Y(0)*Y(1)
 
-            BE1 = H1.pauli_block_encoding()
-            BE2 = H2.pauli_block_encoding()
-            BE3 = H3.pauli_block_encoding()
+            BE1 = BlockEncoding.from_operator(H1)
+            BE2 = BlockEncoding.from_operator(H2)
+            BE3 = BlockEncoding.from_operator(H3)
 
             # Compose BE1 with the composition of BE2 and BE3
             BE_composed = BE1.kron(BE2.kron(BE3))
@@ -1352,13 +1363,14 @@ class BlockEncoding:
         ::
 
             from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
             from qrisp.operators import X, Y, Z
 
             H1 = X(0)*X(1) - 0.2*Y(0)*Y(1)
             H2 = 0.2*Y(0)*Y(1) - X(0)*X(1)
 
-            BE1 = H1.pauli_block_encoding()
-            BE2 = H2.pauli_block_encoding()
+            BE1 = BlockEncoding.from_operator(H1)
+            BE2 = BlockEncoding.from_operator(H2)
             BE3 = -BE1
 
             def operand_prep():
@@ -1531,6 +1543,7 @@ class BlockEncoding:
             # os.environ["QRISP_SIMULATOR_FLOAT_THRESH"] = "1e-10"
 
             from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
             from qrisp.operators import X, Y, Z
 
             def create_ising_hamiltonian(L, J, B):
@@ -1540,7 +1553,7 @@ class BlockEncoding:
 
             L = 4
             H = create_ising_hamiltonian(L, 0.25, 0.5)
-            BE = H.pauli_block_encoding()
+            BE = BlockEncoding.from_operator(H)
 
             # Prepare inital system state |psi> = |0>
             def operand_prep():

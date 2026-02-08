@@ -19,6 +19,7 @@
 import numpy as np
 import pytest
 from qrisp import *
+from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
 
 
@@ -36,8 +37,8 @@ def compare_results(res_dict_1, res_dict_2, n):
 ])
 def test_block_encoding_addition(H1, H2):
 
-    BE1 = H1.pauli_block_encoding()
-    BE2 = H2.pauli_block_encoding()
+    BE1 = BlockEncoding.from_operator(H1)
+    BE2 = BlockEncoding.from_operator(H2)
 
     H3 = H1 + H2
     BE3 = H3.pauli_block_encoding()
@@ -61,11 +62,11 @@ def test_block_encoding_addition(H1, H2):
 ])
 def test_block_encoding_subtraction(H1, H2):
 
-    BE1 = H1.pauli_block_encoding()
-    BE2 = H2.pauli_block_encoding()
+    BE1 = BlockEncoding.from_operator(H1)
+    BE2 = BlockEncoding.from_operator(H2)
 
     H3 = H1 - H2
-    BE3 = H3.pauli_block_encoding()
+    BE3 = BlockEncoding.from_operator(H3)
     BE_subtraction = BE1 - BE2
 
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
@@ -88,11 +89,11 @@ def test_block_encoding_subtraction(H1, H2):
 ])
 def test_block_encoding_multiplication(H1, H2):
 
-    BE1 = H1.pauli_block_encoding()
-    BE2 = H2.pauli_block_encoding()
+    BE1 = BlockEncoding.from_operator(H1)
+    BE2 = BlockEncoding.from_operator(H2)
 
     H3 = H1 * H2
-    BE3 = H3.pauli_block_encoding()
+    BE3 = BlockEncoding.from_operator(H3)
     BE_multiplication = BE1 @ BE2
 
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
@@ -113,10 +114,10 @@ def test_block_encoding_multiplication(H1, H2):
 ])
 def test_block_encoding_scalar_multiplication(H1, H2, scalar):
     H_target = scalar * H1 + H2
-    BE_target = H_target.pauli_block_encoding()
+    BE_target = BlockEncoding.from_operator(H_target)
 
-    BE1 = H1.pauli_block_encoding()
-    BE2 = H2.pauli_block_encoding()
+    BE1 = BlockEncoding.from_operator(H1)
+    BE2 = BlockEncoding.from_operator(H2)
 
     BE_left = scalar * BE1 + BE2
     BE_right = BE1 * scalar + BE2
@@ -141,10 +142,10 @@ def test_block_encoding_scalar_multiplication(H1, H2, scalar):
 ])
 def test_block_encoding_negation(H1, H2):
 
-    BE1 = H1.pauli_block_encoding()
+    BE1 = BlockEncoding.from_operator(H1)
     BE_neg = -BE1
 
-    BE2 = H2.pauli_block_encoding()
+    BE2 = BlockEncoding.from_operator(H2)
 
     n = H1.find_minimal_qubit_amount()
 
@@ -162,8 +163,8 @@ def test_block_encoding_negation(H1, H2):
 ])
 def test_block_encoding_kron(H1, H2):
 
-    BE1 = H1.pauli_block_encoding()
-    BE2 = H2.pauli_block_encoding()
+    BE1 = BlockEncoding.from_operator(H1)
+    BE2 = BlockEncoding.from_operator(H2)
 
     BE_kron = BE1.kron(BE2)
 

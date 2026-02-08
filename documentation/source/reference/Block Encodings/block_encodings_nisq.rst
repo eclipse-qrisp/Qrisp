@@ -10,10 +10,11 @@ Define a block encoding for a Heisenberg Hamiltonian and apply it to an initial 
 ::
 
     from qrisp import *
+    from qrisp.block_encodings import BlockEncoding
     from qrisp.operators import X, Y, Z
 
     H = sum(X(i)*X(i+1) + Y(i)*Y(i+1) + Z(i)*Z(i+1) for i in range(3))
-    BE = H.pauli_block_encoding()
+    BE = BlockEncoding.from_operator(H)
 
     # Prepare initial system state
     operand = QuantumFloat(4)

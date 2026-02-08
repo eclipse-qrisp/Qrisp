@@ -19,6 +19,7 @@
 import numpy as np
 import pytest
 from qrisp import *
+from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
 
 
@@ -35,8 +36,8 @@ def compare_results(res_dict_1, res_dict_2, n):
 ])
 def test_block_encoding_chebyshev(H1, H2, rescaled):
 
-    BE1 = H1.pauli_block_encoding()
-    BE2 = H2.pauli_block_encoding()
+    BE1 = BlockEncoding.from_operator(H1)
+    BE2 = BlockEncoding.from_operator(H2)
 
     alpha = BE2.alpha
 
@@ -49,9 +50,9 @@ def test_block_encoding_chebyshev(H1, H2, rescaled):
         H_T2 = H1 + (2 / alpha**2 * H2**2 - 1) # H1 + T_2(H2 / alpha)
         H_T3 = H1 + (4 / alpha**3 * H2**3 - 3 / alpha * H2) # H1 + T_3(H2 / alpha)   
     
-    BE_T1 = H_T1.pauli_block_encoding()
-    BE_T2 = H_T2.pauli_block_encoding()
-    BE_T3 = H_T3.pauli_block_encoding()
+    BE_T1 = BlockEncoding.from_operator(H_T1)
+    BE_T2 = BlockEncoding.from_operator(H_T2)
+    BE_T3 = BlockEncoding.from_operator(H_T3)
 
     BE_cheb_T1 = BE2.chebyshev(1, rescale=rescaled)
     BE_cheb_T2 = BE2.chebyshev(2, rescale=rescaled)
