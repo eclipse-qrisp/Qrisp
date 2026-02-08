@@ -292,19 +292,20 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
     Parameters
     ----------
     A : BlockEncoding
-        The Hermitian operator.
+        The block-encoded Hermitian matrix to be inverted.
     eps : float
         Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
         :math:`\epsilon` of :math:`\ket{x}`.
     kappa : float
-        An upper boound for the condition number :math:`\\kappa` of :math:`A`.
+        An upper bound for the condition number :math:`\\kappa` of :math:`A`. This value defines the "gap"
+        around zero where the function :math:`1/x` is not approximated.
     max_beta : float, optional
         Optional upper bound on the complexity parameter :math:`\\beta`.
 
     Returns
     -------
     BlockEncoding
-        A block encoding approximating $A^{-1}$.
+        A new BlockEncoding instance approximating $A^{-1}$.
         
     Examples
     --------
@@ -356,19 +357,14 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
         res_dict = main()
 
-    The resulting dictionary contains the measurement probabilities for each computational basis state.
-    To extract the corresponding quantum amplitudes (up to sign):
-
-    ::
-
-        for k, v in res_dict.items():
-            res_dict[k] = v**0.5
-
-        q = np.array([res_dict.get(key, 0) for key in range(len(b))])
-        print("QUANTUM SIMULATION\\n", q)
+        # The resulting dictionary contains the measurement probabilities 
+        # for each computational basis state.
+        # To extract the corresponding quantum amplitudes (up to sign):
+        amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
+        print("QUANTUM SIMULATION\\n", amps)
         # QUANTUM SIMULATION
         # [0.02714082 0.55709921 0.53035395 0.63845794]
-    
+
     We compare this to the classical normalized solution:
 
     ::
@@ -434,11 +430,11 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
         #  [ 0.  0.  0. -2.  0.  0.  0.  5.]]
 
     This matrix can be decomposed using three unitaries: the identity $I$, and two shift operators $V\colon\ket{k}\\rightarrow-\ket{k+N/2 \mod N}$ and $V^{\dagger}\colon\ket{k}\\rightarrow-\ket{k-N/2 \mod N}$.
-    We define their corresponding functions:
+    We define their corresponding functions and the block-encoding using Linear Combination of Unitaries (LCU):
 
     ::
 
-        from qrisp import conjugate, gphase, prepare, q_switch
+        from qrisp import gphase
 
         def I(qv):
             pass
@@ -452,24 +448,8 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
             gphase(np.pi, qv[0])
 
         unitaries = [I, V, V_dg]
-
-    Additionally, the block encoding unitary :math:`U` supplied must satisfy the property :math:`U^2 = I`, i.e., it is self-inverse.
-    This condition is required for the correctness of the Chebyshev polynomial block encoding
-    and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_. In this case, the fact that $V^2=(V^{\dagger})^2=I$
-    ensures that defining the block encoding unitary via a :ref:`quantum switch case <q_switch>` satsifies :math:`U^2 = I`.
-
-    We now define the block_encoding ``(U, state_prep, n)``:
-
-    ::
-
         coeffs = np.array([5,1,1,0])
-        alpha = np.sum(coeffs)
-
-        def U(case, operand):
-            with conjugate(prepare)(case, np.sqrt(coeffs / alpha)):
-                q_switch(case, unitaries, operand)
-
-        BA = BlockEncoding(alpha, [QuantumFloat(2)], U)
+        BA = BlockEncoding.from_lcu(coeffs, unitaries)
 
     Next, we solve this linear system using the CKS quantum algorithm:
 
@@ -487,18 +467,15 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
             return x
 
         res_dict = main()
+        amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
 
     We, again, compare the solution obtained by quantum simulation with the classical solution
 
     ::
 
-        for k, v in res_dict.items():
-            res_dict[k] = v**0.5
-
-        q = np.array([res_dict.get(key, 0) for key in range(N)])
         c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
 
-        print("QUANTUM SIMULATION\\n", q, "\\nCLASSICAL SOLUTION\\n", c)
+        print("QUANTUM SIMULATION\\n", amps, "\\nCLASSICAL SOLUTION\\n", c)
         # QUANTUM SIMULATION
         # [0.43917486 0.31395935 0.12522139 0.43917505 0.43917459 0.12522104 0.31395943 0.43917502]
         # CLASSICAL SOLUTION
