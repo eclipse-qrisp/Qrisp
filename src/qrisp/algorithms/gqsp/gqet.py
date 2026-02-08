@@ -23,17 +23,19 @@ from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
 from qrisp.algorithms.gqsp.helper_functions import poly2cheb, _rescale_poly
 from qrisp.block_encodings import BlockEncoding
-from qrisp.operators import QubitOperator
+from qrisp.operators import QubitOperator, FermionicOperator
 from typing import Literal, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
 
-def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial", _rescale: bool = True) -> BlockEncoding:
+def GQET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial", rescale: bool = True) -> BlockEncoding:
     r"""
-    Performs `Generalized Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
-    Applies polynomial transformations on the eigenvalues of a Hermitian operator.
+    Returns a BlockEncoding representing a polynomial transformation of the operator via `Generalized Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
+
+    For a block-encoded operator $H$ and a (complex) polynomial $p(z)$, this method returns 
+    a BlockEncoding of the operator $p(H)$.
 
     The Quantum Eigenvalue Transform is described as follows:
     
@@ -49,17 +51,26 @@ def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polyno
 
     Parameters
     ----------
-    H : BlockEncoding | QubitOperator
-        The Hermitian operator.
+    H : BlockEncoding | FermionicOperator | QubitOperator
+        The Hermitian operator to be transformed.
     p : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
     kind : {"Polynomial", "Chebyshev"}
-        The kind of ``p``. The default is ``"Polynomial"``.
+        The basis in which the coefficients are defined. 
+
+        - ``"Polynomial"``: $p(x) = \sum c_i x^i$
+
+        - ``"Chebyshev"``: $p(x) = \sum c_i T_i(x)$, where $T_i$ are Chebyshev polynomials of the first kind.
+
+        Default is ``"Polynomial"``.
+    rescale : bool
+        If True (default), the method returns a block-encoding of $p(H)$.
+        If False, the method returns a block-encoding of $p(H/\alpha)$ where $\alpha$ is the normalization factor for the block-encoding of the operator $H$.
 
     Returns
     -------
     BlockEncoding
-        A block encoding of $p(H)$.
+        A new BlockEncoding instance representing the transformed operator $p(H)$.
 
     Examples
     --------
@@ -151,11 +162,11 @@ def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polyno
             f"Allowed kinds are: {', '.join(ALLOWED_KINDS)}"
         )
 
-    if isinstance(H, QubitOperator):
-        H = H.pauli_block_encoding()    
+    if isinstance(H, (QubitOperator, FermionicOperator)):
+        H = BlockEncoding.from_operator(H)   
 
     # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
-    if _rescale:
+    if rescale:
         p = _rescale_poly(H.alpha, p, kind=kind)
     if kind=="Polynomial":
         p = poly2cheb(p)
@@ -167,5 +178,5 @@ def GQET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polyno
     def new_unitary(*args):
         GQSP(args[0], *args[1:], unitary = BE_walk.unitary, angles=angles)
 
-    new_anc_templates = [QuantumBool().template()] + BE_walk.anc_templates
+    new_anc_templates = [QuantumBool().template()] + BE_walk._anc_templates
     return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian=False)

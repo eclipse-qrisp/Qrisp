@@ -438,7 +438,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
     ::
 
-        from qrisp import conjugate, gphase, prepare, qswitch
+        from qrisp import conjugate, gphase, prepare, q_switch
 
         def I(qv):
             pass
@@ -453,7 +453,12 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
         unitaries = [I, V, V_dg]
 
-    We now define the block_encoding.
+    Additionally, the block encoding unitary :math:`U` supplied must satisfy the property :math:`U^2 = I`, i.e., it is self-inverse.
+    This condition is required for the correctness of the Chebyshev polynomial block encoding
+    and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_. In this case, the fact that $V^2=(V^{\dagger})^2=I$
+    ensures that defining the block encoding unitary via a :ref:`quantum switch case <q_switch>` satsifies :math:`U^2 = I`.
+
+    We now define the block_encoding ``(U, state_prep, n)``:
 
     ::
 
@@ -462,7 +467,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
         def U(case, operand):
             with conjugate(prepare)(case, np.sqrt(coeffs / alpha)):
-                qswitch(operand, case, unitaries)
+                q_switch(case, unitaries, operand)
 
         BA = BlockEncoding(alpha, [QuantumFloat(2)], U)
 

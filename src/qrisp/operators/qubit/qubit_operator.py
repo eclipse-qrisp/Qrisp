@@ -2081,64 +2081,50 @@ class QubitOperator(Hamiltonian):
 
     def pauli_block_encoding(self):
         r"""
-        Returns a block encoding of the operator.
-
-        A block encoding (`Low & Chuang <https://quantum-journal.org/papers/q-2019-07-12-163/pdf/>`_, `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/pdf/>`_) 
-        of a Hamiltonian $H$ (acting on a Hilbert space $\mathcal H_s$) is a pair of unitaries $(U,G)$, 
-        where $U$ is the block encoding unitary acting on $\mathcal H_a\otimes H_s$ (for some auxiliary Hilbert space $\mathcal H_a$), 
-        and $G$ prepares the block encoding state $\ket{G}_a=G\ket{0}_a$ in the auxiliary variable such that $(\bra{G}_a\otimes\mathbb I_s)U(\ket{G_a}\otimes\mathbb I_s)=H$.
-        Here $\mathbb I_s$ denotes the identity acting on $\mathcal H_s$.
-
-        The operator $H$, which is non-unitary in general, is applied as follows:
-
-        .. math::
-            U\ket{G}_a\ket{\psi}_s = \ket{G}_a H\ket{\psi}_s + \sqrt{1-\|H\ket{\psi}\|^2}\ket{G_{\psi}^{\perp}}_{as},\quad 
-            U= 
-            \begin{pmatrix}
-                H & *\\
-                * & * 
-            \end{pmatrix}
-
-        where $\ket{G_{\psi}^{\perp}}_{as}$ is a state in $\mathcal H_a\otimes H_s$ orthogonal to $\ket{G}$, i.e., $(\bra{G}_a\otimes\mathbb I_s)\ket{G_{\psi}^{\perp}}_{as}=0$.
-        Therefore, a block-encoding embeds a not necessarily unitary operator $H$ as a block into a larger unitary operator $U$. In standard form i.e., when $\ket{G}_a=G\ket{0}_a$
-        is prepared from the $\ket{0}$ state, $H$ is embedded as the upper left block of the operator $U$.
-
-        For a Pauli block encoding, consider an $n$-qubit Hamiltonian expressed as linear combination of Pauli operators
-
-        .. math::
-    
-            H = \sum_{i=0}^{T-1}\alpha_iP_i
-
-        where $\alpha_i$ are real coefficients, $P_i$ are Pauli strings acting on $n$ qubits, and $T$ is the number of terms.
-        We assume that the coefficients $\alpha_i$ are nonnegative, and each Pauli $P_i$ carries a $\pm1$ sign. 
-        We also require the coefficients of $H$ to be normalized: $\sum_{i=0}^{T-1}\alpha_i=1$.
-
-        The block encoding unitary is
+        Returns a :ref:`BlockEncoding` of the operator using the LCU (Linear Combination of Unitaries) protocol.
+            
+        For a Pauli block encoding, consider an $n$-qubit Hamiltonian expressed as a linear combination of Pauli operators:
 
         .. math::
 
-            U = \sum_{i=0}^{T-1}\ket{i}\bra{i}\otimes P_i
+            H = \sum_{i=0}^{M-1} \alpha_i P_i
 
-        i.e., application of each Pauli string $P_i$ controlled on the state of the auxiliary variable being $\ket{i}_a$.
-        The belonging block encoding state is
+        where $\alpha_i \ge 0$ are real coefficients such that $\sum_i \alpha_i = \alpha$, 
+        and $P_i$ are Pauli strings acting on $n$ qubits (including their respective signs).
 
+        The block encoding unitary is constructed via the LCU protocol: 
+        
+        .. math::
+        
+            U = \text{PREP} \cdot \text{SEL} \cdot \text{PREP}^{\dagger}
+            
+        where:
+
+        * **SEL** (Select, in Qrisp: :ref:`q_switch <qswitch>`) applies each Pauli string $P_i$ conditioned on the auxiliary variable state $\ket{i}_a$:
+        
         .. math::
 
-            \ket{G} = \sum_{i=0}^{T-1}\sqrt{\alpha_i}\ket{i}.
+            \text{SEL} = \sum_{i=0}^{M-1} \ket{i}\bra{i} \otimes P_i
+
+        * **PREP** (Prepare) prepares the state representing the coefficients:
+       
+        .. math::
+
+            \text{PREP} \ket{0}_a = \sum_{i=0}^{M-1} \sqrt{\frac{\alpha_i}{\alpha}} \ket{i}_a
        
         Returns
         -------
-        U : function
-            A function ``U(case, operand)`` applying the block encoding unitary $U$ to ``case`` and ``operand`` QuantumVariables.
-        state_prep : function
-            A function ``state_prep(case)`` preparing the block encoding state $\ket{G}$ in an auxiliary ``case`` QuantumVariable.
-        num_qubits : int
-            The number of qubits of the auxiliary ``case`` QuantumVariable.
+        BlockEncoding
+            A BlockEncoding representing the Hermitian part $(O+O^{\dagger})/2$.
+
+        Notes
+        -----
+        - **Normalization**: The block-encoding normalization factor is $\alpha = \sum_i \alpha_i$.
 
         Examples
         --------
 
-        We apply a Hermitian matrix to a quantum state via a Pauli block encoding.
+        We apply a Hermitian matrix to a quantum state via a Pauli :ref:`BlockEncoding`.
 
         ::
 
@@ -2149,13 +2135,17 @@ class QubitOperator(Hamiltonian):
             m = 2
             A = np.eye(2**m, k=1)  
             A = A + A.T
-            print(A)
 
-            H = QubitOperator.from_matrix(A, reverse_endianness=True)
+            print(A)
+            #[[0. 1. 0. 0.]
+            # [1. 0. 1. 0.]
+            # [0. 1. 0. 1.]
+            # [0. 0. 1. 0.]]
 
         The matrix $A$ encodes the mapping $\ket{0}\rightarrow\ket{1}$, $\ket{k}\rightarrow\ket{k-1}+\ket{k+1}$ for $k=1,\dotsc,2^m-2$, $\ket{2^m-1}\rightarrow\ket{2^m-2}$.
-        We now apply the matrix $A$ to a QuantumVariable in supersosition state $\ket{0}+\dotsb+\ket{2^m-1}$ via the Pauli block encoding of the corresponding QubitOperator $H$.
-        (In this case, the endianness must be reversed when encoding the matrix as QubitOperator for compatibility with Qrisp's QuantumFloat.)
+
+        We apply the matrix $A$ to a :ref:`QuantumFloat` in supersosition state $\ket{0}+\dotsb+\ket{2^m-1}$ via the Pauli :ref:`BlockEncoding` of the corresponding QubitOperator $H$.
+        (To ensure compatibility with Qrisp's QuantumFloat, we use little-endian encoding when representing the matrix as a QubitOperator.)
 
         To illustrate the result, we actually create an entangled state 
 
@@ -2163,31 +2153,32 @@ class QubitOperator(Hamiltonian):
 
             \sum_{k=0}^{2^m-1}\ket{i}_{a}\ket{i}_b
 
-        of QuantumVariables $a, b$, and apply the matrix $A$ to the variable $b$.
+        of QuantumFloats $a, b$, and apply the matrix $A$ to the variable $b$.
 
         ::
+
+            H = QubitOperator.from_matrix(A, reverse_endianness=True)
+            BE = H.pauli_block_encoding()
+            # Short: BE = BlockEncoding.from_matrix(A)
 
             @RUS
             def inner():
 
-                U, state_prep, n = H.pauli_block_encoding()
-
-                a = QuantumFloat(3)
+                a = QuantumFloat(2)
                 h(a)
 
-                b = QuantumFloat(3)
+                b = QuantumFloat(2)
                 cx(a,b)
 
-                case = QuantumVariable(n)
+                # Use BlockEncoding to apply matrix A to state b.
+                ancs = BE.apply(b)
 
-                # Apply matrix A via block encoding
-                with conjugate(state_prep)(case):
-                    U(case, a)
-
-                success_bool = measure(case) == 0
+                # Pauli block encoding has one ancilla variable.
+                success_bool = measure(ancs[0]) == 0
+                reset(ancs[0])
+                ancs[0].delete()
 
                 return success_bool, a, b
-
 
             @terminal_sampling
             def main():
@@ -2196,44 +2187,32 @@ class QubitOperator(Hamiltonian):
 
                 return a, b
 
-
             main()
+            #{(1.0, 2.0): 0.16666667660077444,
+            # (2.0, 1.0): 0.16666667660077444,
+            # (0.0, 1.0): 0.1666666616996128,
+            # (1.0, 0.0): 0.1666666616996128,
+            # (2.0, 3.0): 0.1666666616996128,
+            # (3.0, 2.0): 0.1666666616996128}
 
-        The ``inner`` function is equipped with the :ref:`RUS` decorator. This means that the routine is repeatedly run until the ``case`` variable is measured in state $\ket{0}$, i.e.,
+        The ``inner`` function is equipped with the :ref:`RUS` decorator. This means that the routine is run repeatedly until the ancilla variable is measured in state $\ket{0}$, i.e.,
         the matrix $A$ is successfully applied. 
-            
-        .. code-block::
-
-            {(1.0, 2.0): 0.08333333830038721,
-            (2.0, 1.0): 0.08333333830038721,
-            (5.0, 6.0): 0.08333333830038721,
-            (6.0, 5.0): 0.08333333830038721,
-            (0.0, 1.0): 0.08333333084980639,
-            (1.0, 0.0): 0.08333333084980639,
-            (2.0, 3.0): 0.08333333084980639,
-            (3.0, 2.0): 0.08333333084980639,
-            (4.0, 5.0): 0.08333333084980639,
-            (5.0, 4.0): 0.08333333084980639,
-            (6.0, 7.0): 0.08333333084980639,
-            (7.0, 6.0): 0.08333333084980639}
 
         """
-        from qrisp.alg_primitives import prepare, qswitch
-        from qrisp.jasp import qache
+        from qrisp.alg_primitives.state_preparation import prepare
         from qrisp.block_encodings import BlockEncoding
+        from qrisp.jasp import qache, q_switch
         from qrisp.qtypes import QuantumFloat
     
         unitaries, coeffs = self.unitaries()
         alpha = np.sum(coeffs)
-
-        # Number of qubits for case variable
+        
         m = len(coeffs)
-        num_qubits = np.int64(np.ceil(np.log2(m)))
-        # Ensure coeffs has size 2 ** num_qubits by zero padding
-        coeffs = np.concatenate((coeffs, np.zeros((1 << num_qubits) - m)))
+        n = (m - 1).bit_length() # Number of qubits for index variable
+        # Ensure coeffs has size 2 ** n by zero padding
+        coeffs = np.pad(coeffs, (0, (1 << n) - m))
 
         if m==1:
-            # Special case: only one unitary, no need for control qubits
             @qache
             def U(operand):
                 unitaries[0](operand)
@@ -2241,8 +2220,8 @@ class QubitOperator(Hamiltonian):
             return BlockEncoding(alpha, [], U, is_hermitian=True)
 
         @qache
-        def U(case, operand):
-            with conjugate(prepare)(case, np.sqrt(coeffs / alpha)):
-                qswitch(operand, case, unitaries)
+        def U(index, operand):
+            with conjugate(prepare)(index, np.sqrt(coeffs / alpha)):
+                q_switch(index, unitaries, operand)
 
-        return BlockEncoding(alpha, [QuantumFloat(num_qubits).template()], U, is_hermitian=True)
+        return BlockEncoding(alpha, [QuantumFloat(n).template()], U, is_hermitian=True)

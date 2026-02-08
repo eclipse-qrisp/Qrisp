@@ -152,6 +152,9 @@ def reflection(qargs, state_function=None, args=(), kwargs={}, phase=np.pi, refl
  
     """
     
+    if isinstance(qargs, (list, tuple)) and not qargs:
+        return
+
     # Convert qargs into a list
     if isinstance(qargs, (QuantumVariable, QuantumArray)):
         qargs = [qargs]

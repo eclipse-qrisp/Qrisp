@@ -22,7 +22,7 @@ from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
 from qrisp.jasp import qache
 from qrisp.block_encodings import BlockEncoding
-from qrisp.operators import QubitOperator
+from qrisp.operators import QubitOperator, FermionicOperator
 from scipy.special import jv
 import jax
 import jax.numpy as jnp
@@ -33,31 +33,46 @@ if TYPE_CHECKING:
 
 
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
-def hamiltonian_simulation(H: QubitOperator | BlockEncoding, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
+def hamiltonian_simulation(H: BlockEncoding | FermionicOperator | QubitOperator, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
     r"""
-    Performs Hamiltonian simulation.
+    Returns a BlockEncoding approximating Hamiltonian simulation of the operator.
 
-    Based on Jacobi-Anger expansion
+    For a block-encoded Hamiltonian $H$, this method returns a BlockEncoding of an approximation of
+    the unitary evolution operator $e^{-itH}$ for a given time $t$.
+
+    The approximation is based on the Jacobi-Anger expansion into Bessel functions 
+    of the first kind ($J_n$):
 
     .. math ::
 
         e^{-it\cos(\theta)} \approx \sum_{n=-N}^{N}(-i)^nJ_n(t)e^{in\theta}
 
-    where $J_n(t)$ are Bessel functions of the first kind.
-
     Parameters
     ----------
-    H : BlockEncoding | QubitOperator
-        The Hermitian operator.
+    H : BlockEncoding | FermionicOperator | QubitOperator
+        The Hermitian operator to be simulated.
     t : ArrayLike
-        The scalar evolution time $t$. The default is 1.
+        The scalar evolution time $t$. The default is 1.0.
     N : int
-        The truncation index for the Bessel function expansion. The default is 1.
+        The truncation order $N$ of the expansion. A higher order provides 
+        better approximation for larger $t$ or higher precision requirements. 
+        Default is 1.
 
     Returns
     -------
     BlockEncoding
-        A block encoding approximating $e^{-itH}$.
+        A new BlockEncoding instance representing an approximation of the unitary $e^{-itH}$.
+
+    Notes
+    -----
+    - **Precision**: The truncation error scales (decreases) super-exponentially with $N$. 
+      For a fixed $t$, choosing $N > |t|$ ensures rapid convergence.
+    - **Normalization**: The resulting operator is nearly unitary, meaning its 
+      block-encoding normalization factor $\alpha$ will be close to 1.
+
+    References
+    ----------
+    - Motlagh & Wiebe (2024) `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
 
     Examples
     --------
@@ -183,8 +198,8 @@ def hamiltonian_simulation(H: QubitOperator | BlockEncoding, t: "ArrayLike" = 1,
 
     """
 
-    if isinstance(H, QubitOperator):
-        H = H.pauli_block_encoding()
+    if isinstance(H, (QubitOperator, FermionicOperator)):
+        H = BlockEncoding.from_operator(H)
 
     # Rescaling the time to account for scaling factor alpha of pauli block-encoding
     alpha = H.alpha
@@ -208,7 +223,7 @@ def hamiltonian_simulation(H: QubitOperator | BlockEncoding, t: "ArrayLike" = 1,
     def new_unitary(*args):
         GQSP(args[0], *args[1:], unitary = BE_walk.unitary, angles=angles, k=N)
 
-    new_anc_templates = [QuantumBool().template()] + BE_walk.anc_templates
+    new_anc_templates = [QuantumBool().template()] + BE_walk._anc_templates
     return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian=False)
 
 

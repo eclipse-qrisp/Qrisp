@@ -257,18 +257,18 @@ def prepare_qswitch(qv, target_array: jnp.ndarray) -> None:
     Prepare the quantum state encoded in ``qv`` so that it matches the given
     ``target_array`` by constructing a binary-tree decomposition of the target
     amplitudes and applying a sequence of uniformly controlled rotations via
-    the ``qswitch`` primitive.
+    the ``q_switch`` primitive.
 
     This routine implements a standard state-preparation algorithm based on
     recursively splitting the target statevector.
     The classical preprocessing stage extracts RY angles for internal tree nodes
     and U3 parameters for the leaf nodes.
-    The quantum stage applies them using ``qswitch``, which replaces
+    The quantum stage applies them using ``q_switch``, which replaces
     explicit multiplexers and conditionals in both static execution and Jasp mode.
 
     .. note::
 
-        During the quantum stage, ``qswitch`` enumerates control patterns in
+        During the quantum stage, ``q_switch`` enumerates control patterns in
         little-endian order, so each index is bit-reversed before accessing
         the parameters computed in the classical preprocessing stage.
 
@@ -282,8 +282,9 @@ def prepare_qswitch(qv, target_array: jnp.ndarray) -> None:
     """
 
     # These imports are here to avoid circular dependencies
-    from qrisp import gphase, qswitch, ry, u3
+    from qrisp import gphase, ry, u3
     from qrisp.jasp.program_control.jrange_iterator import jrange
+    from qrisp.jasp.program_control.prefix_control import q_switch
     from qrisp.jasp.tracing_logic import check_for_tracing_mode
     from qrisp.misc.utility import bit_reverse
 
@@ -298,7 +299,7 @@ def prepare_qswitch(qv, target_array: jnp.ndarray) -> None:
     thetas, u_params, phases = _preprocess(target_array)
 
     def make_case_fn(layer_size: int, is_final: bool = False) -> Callable:
-        """Create a case function for qswitch at a given layer."""
+        """Create a case function for q_switch at a given layer."""
 
         def case_fn(i, qb):
             rev_idx = bit_reverse(i, layer_size)
@@ -321,14 +322,14 @@ def prepare_qswitch(qv, target_array: jnp.ndarray) -> None:
 
     for layer_size in xrange(1, qv.size - 1):
 
-        qswitch(
-            operand=qv[layer_size],
-            case=qv[:layer_size],
-            case_function=make_case_fn(layer_size),
+        q_switch(
+            qv[:layer_size],
+            make_case_fn(layer_size),
+            qv[layer_size],
         )
 
-    qswitch(
-        operand=qv[qv.size - 1],
-        case=qv[: qv.size - 1],
-        case_function=make_case_fn(qv.size - 1, is_final=True),
+    q_switch(
+        qv[: qv.size - 1],
+        make_case_fn(qv.size - 1, is_final=True),
+        qv[qv.size - 1],
     )

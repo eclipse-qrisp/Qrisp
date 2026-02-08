@@ -933,7 +933,7 @@ class QuantumCircuit:
         return transpile(self, transpilation_level, **qiskit_kwargs)
 
     # Counts the amount of operations self contains and returns
-    # a dict {"operatio_name" : operation_count, ...}
+    # a dict {"operation_name" : operation_count, ...}
     def count_ops(self):
         """
         Counts the amount of operations of each kind. Note that operations are

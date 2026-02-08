@@ -114,7 +114,8 @@ def fourier_series_loader(
         def f(x, alpha):
             return jnp.exp(-alpha * x ** 2)
 
-        # Converts the function to be executed within a repeat-until-success (RUS) procedure.
+        # Converts the function to be executed within a 
+        # repeat-until-success (RUS) procedure.
         @RUS(static_argnames=["k"])
         def prepare_gaussian(n, alpha, k):
             # Use 32 sampling points to evaluate f
@@ -141,14 +142,9 @@ def fourier_series_loader(
         n = 6
         alpha = 4
         res_dict = main(n, alpha)
+        y_val_sim = np.sqrt([res_dict.get(key, 0) for key in range(2 ** n)])
 
-        # Convert the resulting measurement probabilities to amplitudes by appling the square root.
-        for k,v in res_dict.items():
-            res_dict[k] = v ** 0.5 
-        y_val_sim = np.array([res_dict.get(key, 0) for key in range(2 ** n)])
-        y_val_sim = y_val_sim / np.linalg.norm(y_val_sim)
-
-        # Compare to target values
+        # Compare to target amplitudes
         x_val = np.arange(-1, 1, 2 ** (-n + 1))
         y_val = f(x_val, alpha)
         y_val = y_val / np.linalg.norm(y_val)
