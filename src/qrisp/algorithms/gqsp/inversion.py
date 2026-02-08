@@ -104,18 +104,15 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
             return operand
 
         res_dict = main()
+        amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
 
     Finally, compare the quantum simulation result with the classical solution:
 
     ::
 
-        for k, v in res_dict.items():
-            res_dict[k] = v**0.5
-
-        q = np.array([res_dict.get(key, 0) for key in range(len(b))])
         c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
 
-        print("QUANTUM SIMULATION\n", q, "\nCLASSICAL SOLUTION\n", c)
+        print("QUANTUM SIMULATION\n", amps, "\nCLASSICAL SOLUTION\n", c)
         # QUANTUM SIMULATION
         # [0.02844496 0.55538449 0.53010186 0.64010231] 
         # CLASSICAL SOLUTION

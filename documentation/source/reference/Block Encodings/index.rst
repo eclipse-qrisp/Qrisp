@@ -103,8 +103,8 @@ Finally, we compare the results, demonstrating that the implementation requires 
     res_dict = main()
 
     # Convert measurement probabilites to (absolute values of) amplitudes
-    q = np.array([np.sqrt(res_dict.get(i, 0)) for i in range(len(b))])
-    print("qrisp:", q)
+    amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
+    print("qrisp:", amps)
     # qrisp: [0.44630489 0.66211377 0.41182956 0.43910558]
 
 The results agree within the approximation error of the quantum matrix inversion. 

@@ -1458,11 +1458,7 @@ class BlockEncoding:
                 return operand
 
             res_dict = main()
-
-            # Convert measurement probabilities to (absolute values of) amplitudes
-            for k, v in res_dict.items():
-                res_dict[k] = v**0.5
-            q = np.array([res_dict.get(key, 0) for key in range(len(b))])
+            amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
 
         Finally, compare the quantum simulation result with the classical solution:
 
@@ -1470,7 +1466,7 @@ class BlockEncoding:
 
             c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
 
-            print("QUANTUM SIMULATION\n", q, "\nCLASSICAL SOLUTION\n", c)
+            print("QUANTUM SIMULATION\n", amps, "\nCLASSICAL SOLUTION\n", c)
             # QUANTUM SIMULATION
             # [0.02844496 0.55538449 0.53010186 0.64010231] 
             # CLASSICAL SOLUTION
@@ -1557,13 +1553,8 @@ class BlockEncoding:
                 return psi(t)
 
             res_dict = main(0.5)
-
-            # Convert measurement probabilities to (absolute values of) amplitudes
-            for k, v in res_dict.items():
-                res_dict[k] = v**0.5
-            q = np.array([res_dict.get(key, 0) for key in range(16)])
-            
-            print(q)
+            amps = np.sqrt([res_dict.get(i, 0) for i in range(2 ** L)])
+            print(amps)
             #[0.88288218 0.224682   0.22269639 0.05723058 0.22269632 0.05669449                   
             # 0.0570588  0.01457775 0.22468192 0.05717859 0.05669445 0.0145699
             # 0.05723059 0.01456992 0.01457775 0.00372438]
@@ -1661,11 +1652,7 @@ class BlockEncoding:
                 return operand
 
             res_dict = main()
-
-            # Convert measurement probabilities to (absolute values of) amplitudes
-            for k, v in res_dict.items():
-                res_dict[k] = v**0.5
-            q = np.array([res_dict.get(key, 0) for key in range(len(b))])
+            amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
 
         Finally, compare the quantum simulation result with the classical solution:
 
@@ -1674,7 +1661,7 @@ class BlockEncoding:
             c = (np.eye(4) + 2 * A + A @ A) @ b
             c = c / np.linalg.norm(c)
 
-            print("QUANTUM SIMULATION\n", q, "\nCLASSICAL SOLUTION\n", c)
+            print("QUANTUM SIMULATION\n", amps, "\nCLASSICAL SOLUTION\n", c)
             # QUANTUM SIMULATION
             #  [0.02986315 0.57992481 0.62416743 0.52269535] 
             # CLASSICAL SOLUTION

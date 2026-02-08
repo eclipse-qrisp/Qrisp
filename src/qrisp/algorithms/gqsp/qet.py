@@ -119,11 +119,7 @@ def QET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynom
             return operand
 
         res_dict = main()
-
-        # Convert measurement probabilities to (absolute values of) amplitudes
-        for k, v in res_dict.items():
-            res_dict[k] = v**0.5
-        q = np.array([res_dict.get(key, 0) for key in range(len(b))])
+        amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
 
     Finally, compare the quantum simulation result with the classical solution:
             
@@ -132,7 +128,7 @@ def QET(H: BlockEncoding | QubitOperator, p: "ArrayLike", kind: Literal["Polynom
         c = (np.eye(4) + A @ A) @ b
         c = c / np.linalg.norm(c)
 
-        print("QUANTUM SIMULATION\n", q, "\nCLASSICAL SOLUTION\n", c)
+        print("QUANTUM SIMULATION\n", amps, "\nCLASSICAL SOLUTION\n", c)
         #QUANTUM SIMULATION
         # [0.02405799 0.57657687 0.61493257 0.53743675] 
         #CLASSICAL SOLUTION
