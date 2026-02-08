@@ -228,11 +228,14 @@ def unary_prep(case, coeffs):
 
 def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> BlockEncoding:
     """
-    Performs the `Childs–Kothari–Somma (CKS) quantum algorithm <https://arxiv.org/abs/1511.02306>`_ to solve the Quantum Linear Systems Problem (QLSP)
-    :math:`A \\vec{x} = \\vec{b}`, using the Chebyshev approximation of :math:`1/x`. 
-    
-    The algorithm prepares a quantum state :math:`\ket{x} \propto A^{-1} \ket{b}`
+    Performs the `Childs–Kothari–Somma (CKS) quantum algorithm <https://arxiv.org/abs/1511.02306>`_ to solve the Quantum Linear System Problem (QLSP)
+    :math:`A \\vec{x} = \\vec{b}`, using the Chebyshev approximation of :math:`1/x`.    
+    When applied to a state $\ket{b}$, the algorithm prepares a state :math:`\ket{\\tilde{x}} \propto A^{-1} \ket{b}`
     within target precision :math:`\epsilon` of the ideal solution :math:`\ket{x}`. 
+
+    For a block-encoded matrix :math:`A`, this function returns a BlockEncoding of an 
+    operator :math:`\\tilde{A}^{-1}` such that :math:`\|\\tilde{A}^{-1} - A^{-1}\| \leq \epsilon`. 
+    The inversion is implemented using a polynomial approximation of :math:`1/x` over the domain :math:`D_{\\kappa} = [-1, -1/\\kappa] \\cup [1/\\kappa, 1]`.
     
     The asymptotic complexity is
     :math:`\\mathcal{O}\\!\\left(\\log(N)s \\kappa^2 \\text{polylog}\\!\\frac{s\\kappa}{\\epsilon}\\right)`, where :math:`N` is the matrix size, :math:`s` its sparsity, and 
@@ -240,7 +243,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
     better precision scaling compared to the HHL algorithm.
 
     This function integrates all core components of the CKS approach:
-    Chebyshev polynomial approximation, linear combination of unitaries (LCU),
+    Chebyshev polynomial approximation, Linear Combination of Unitaries (LCU),
     `qubitization with reflection operators <https://arxiv.org/abs/2208.00567>`_, and the :ref:`Repeat-Until-Success (RUS) <RUS>` protocol.
     The semantics of the approach can be illustrated with the following circuit schematics:
 
@@ -274,10 +277,10 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
     .. math::
     
-        LCU\ket{0}\ket{\psi}=PREP^{\dagger}\cdot SEL\cdot PREP\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi}.
+        LCU\ket{0}\ket{\psi}=\\text{PREP}^{\dagger}\cdot \\text{SEL}\cdot \\text{PREP}\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi}.
     
-    Here, the :math:`PREP` operation prepares an auxiliary ``out_case`` Quantumfloat in the unary state :math:`\ket{\\text{unary}}`
-    that encodes the square root of the Chebyshev coefficients :math:`\sqrt{\\alpha_j}`. The :math:`SEL` operation selects and applies the
+    Here, the :math:`\\text{PREP}` operation prepares an auxiliary ``out_case`` Quantumfloat in the unary state :math:`\ket{\\text{unary}}`
+    that encodes the square root of the Chebyshev coefficients :math:`\sqrt{\\alpha_j}`. The :math:`\\text{SEL}` operation selects and applies the
     appropriate Chebyshev polynomial operator :math:`T_k(A)`, implemented by :math:`(RU)^k`, controlled on ``out_case`` in the unary
     state :math:`\ket{\\text{unary}}`. Based on the Hamming-weight :math:`k` of :math:`\ket{\\text{unary}}`,
     the polynomial :math:`T_{2k-1}` is block encoded and applied to the circuit. 
@@ -294,8 +297,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
     A : BlockEncoding
         The block-encoded Hermitian matrix to be inverted.
     eps : float
-        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
-        :math:`\epsilon` of :math:`\ket{x}`.
+        Target precision :math:`\epsilon`.
     kappa : float
         An upper bound for the condition number :math:`\\kappa` of :math:`A`. This value defines the "gap"
         around zero where the function :math:`1/x` is not approximated.
@@ -305,7 +307,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
     Returns
     -------
     BlockEncoding
-        A new BlockEncoding instance approximating $A^{-1}$.
+        A new BlockEncoding instance representing an approximation of the inverse $A^{-1}$.
         
     Examples
     --------
