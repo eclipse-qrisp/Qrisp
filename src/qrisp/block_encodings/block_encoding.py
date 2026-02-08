@@ -464,7 +464,7 @@ class BlockEncoding:
     
     def apply(self, *operands: QuantumVariable) -> list[QuantumVariable]:
         r"""
-        Applies the block-encoding unitary to the given operands.
+        Applies the BlockEncoding unitary to the given operands.
 
         Parameters
         ----------
@@ -475,14 +475,14 @@ class BlockEncoding:
         -------
         list[QuantumVariable]
             A list of ancilla QuantumVariables used in the application.
-            Must be measured to determine success of the block-encoding application.
+            Must be measured in $0$ for success of the block-encoding application.
 
         Examples
         --------
 
         **Example 1:**
 
-        Define a block-encoding and apply it using **repeat-until-success**.
+        Define a block-encoding and apply it using :ref:`RUS`.
 
         ::
 
@@ -501,8 +501,11 @@ class BlockEncoding:
             @RUS
             def apply_be(BE, phi):
                 qv = operand_prep(phi)
-
                 ancillas = BE.apply(qv)
+
+                # Alternatively, also use:
+                # ancillas = BE.create_ancillas()
+                # BE.unitary(*ancillas, qv)
 
                 bools = jnp.array([(measure(anc) == 0) for anc in ancillas])
                 success_bool = jnp.all(bools)
@@ -550,18 +553,11 @@ class BlockEncoding:
             res_dict = multi_measurement([operand] + ancillas)
 
             # Post-selection on ancillas being in |0> state
-            new_dict = dict()
-            success_prob = 0
-
-            for key, prob in res_dict.items():
-                if all(k == 0 for k in key[1:]):
-                    new_dict[key[0]] = prob
-                    success_prob += prob
-
-            for key in new_dict.keys():
-                new_dict[key] = new_dict[key] / success_prob
-
-            new_dict
+            filtered_dict = {k[0]: p for k, p in res_dict.items() \
+                            if all(x == 0 for x in k[1:])}
+            success_prob = sum(filtered_dict.values())
+            filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
+            filtered_dict
             #{3: 0.6828427278345078, 0: 0.17071065215630213, 2: 0.11715730494804945, 1: 0.02928931506114055}
 
         """
@@ -571,7 +567,7 @@ class BlockEncoding:
     
     def apply_rus(self, operand_prep: Callable[..., Any]) -> Callable[..., Any]:
         r"""
-        Applies the block-encoding unitary to the prepared operands using Repeat-Until-Success (RUS).
+        Applies the BlockEncoding using :ref:`RUS`.
 
         Parameters
         ----------
@@ -581,14 +577,14 @@ class BlockEncoding:
         Returns
         -------
         Callable
-            A function ``rus_function(*args, **kwargs)`` with the same signature 
-            as ``operand_prep``. It prepares the operands and implements 
-            the RUS application of the block-encoding until success is achieved.
+            A function ``rus_function(*args)`` with the same signature 
+            as ``operand_prep``. It prepares the operands and ancillas, and applies
+            the block-encoding unitary within a repeat-until-success protocol.
 
         Examples
         --------  
 
-        Define a block-encoding and apply it using RUS. 
+        Define a block-encoding and apply it using :ref:`RUS`. 
 
         ::
 
@@ -637,11 +633,11 @@ class BlockEncoding:
     
     def resources(self, operand_prep: Callable[..., Any], meas_behavior: str = "0"):
         r"""
-        Estimate the quantum resources required for the BlockEncoding object.
+        Estimate the quantum resources required for the BlockEncoding.
 
         This method uses the ``count_ops`` decorator to obtain gate counts, circuit depth, 
         and (in future) qubit usage for a single execution of ``.unitary``. Unlike :meth:`apply_rus`, it does not 
-        run the simulator and does not include repetitions from the Repeat-Until-Success procedure.
+        run the simulator and does not include repetitions from the :ref:`RUS` procedure.
 
         Parameters
         ----------
