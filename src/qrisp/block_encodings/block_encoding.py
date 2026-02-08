@@ -27,7 +27,7 @@ from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
-from qrisp.jasp import jrange, count_ops
+from qrisp.jasp import jrange, count_ops, depth
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool, QuantumFloat
@@ -646,9 +646,10 @@ class BlockEncoding:
         r"""
         Estimate the quantum resources required for the BlockEncoding.
 
-        This method uses the ``count_ops`` decorator to obtain gate counts, circuit depth, 
-        and (in future) qubit usage for a single execution of ``.unitary``. Unlike :meth:`apply_rus`, it does not 
-        run the simulator and does not include repetitions from the :ref:`RUS` procedure.
+        This method uses the ``count_ops`` and ``depth`` decorators to obtain gate counts, circuit depth, 
+        and (in future release) qubit usage for a single execution of block-encoding ``.unitary``. 
+        Unlike :meth:`apply_rus`, it does not run the simulator 
+        and does not include repetitions from the :ref:`RUS` procedure.
 
         Parameters
         ----------
@@ -660,11 +661,12 @@ class BlockEncoding:
         Returns
         -------
         Callable
-            A function ``resource_counter(*args, **kwargs)`` with the same signature
-            as ``operand_prep``. When called, it returns a resource summary object
-            whose string representation is a dictionary of the counted quantum
-            operations. Use ``print(resource_counter(...))`` to display the
-            gate-count dictionary.
+            A function ``resource_counter(*args)`` with the same signature
+            as ``operand_prep``. When called, it returns a dictionary 
+            containing resource metrics with the following structure:
+
+            - "gate counts" : A dictionary of counted quantum operations.
+            - "depth": The circuit depth as an integer.
 
         Examples
         --------
@@ -684,9 +686,10 @@ class BlockEncoding:
                 qf = QuantumFloat(2)
                 return qf
 
-            QRE = BE.resources(operand_prep)()
-            print(QRE)
-            # {'gphase': 2, 'u3': 2, 'cx': 4, 'cz': 2, 'x': 3} 
+            res_dict = BE.resources(operand_prep)()
+            print(res_dict)
+            # {'gate counts': {'x': 3, 'cz': 2, 'u3': 2, 'cx': 4, 'gphase': 2}, 
+            # 'depth': 12}
 
         **Example 2:** Estimate the quantum resources for applying the Quantum Eigenvalue Transform.
 
@@ -708,22 +711,26 @@ class BlockEncoding:
                 return qf
 
             BE_QET = QET(BE, p)
-            QRE = BE_QET.resources(operand_prep)()
-            print(QRE)
-            # {'cx': 16, 'u3': 6, 'x': 11, 'cz': 8, 'rx': 2, 'p': 2, 'gphase': 6}
+            res_dict = BE_QET.resources(operand_prep)()
+            print(res_dict)
+            # {'gate counts': {'x': 11, 'cz': 8, 'rx': 2, 'u3': 6, 'cx': 16, 
+            # 'gphase': 6, 'p': 2}, 'depth': 42}
             
         """
 
-        @count_ops(meas_behavior=meas_behavior)
-        def resource_counter(*args):
+        def main(*args):
             operands = operand_prep(*args)
-            if not isinstance(operands, tuple):
+            if not isinstance(operands, (list, tuple)):
                 operands = (operands,)    
             ancillas = self.create_ancillas()
 
             self.unitary(*ancillas, *operands)
-            
             return operands
+
+        def resource_counter(*args):
+            circuit_depth = depth(meas_behavior="0")(main)(*args)
+            gate_counts = count_ops(meas_behavior="0")(main)(*args)   
+            return {"gate counts" : gate_counts, "depth" : circuit_depth}     
 
         return resource_counter
     
