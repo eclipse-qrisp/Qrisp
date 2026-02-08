@@ -1418,7 +1418,7 @@ class BlockEncoding:
         r"""
         Returns a BlockEncoding approximating the matrix inversion of the operator.
 
-        For a block-encoded matrix $A$, this function returns a BlockEncoding of an 
+        For a block-encoded matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an 
         operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$. 
         The inversion is implemented via Quantum Eigenvalue Transformation (QET)         
         using a polynomial approximation of $1/x$ over the domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$.
@@ -1439,6 +1439,7 @@ class BlockEncoding:
         Notes
         -----
         - **Complexity**: The polynomial degree scales as $\mathcal{O}(\kappa \log(\kappa/\epsilon))$.
+        - It is assumed that the eigenvalues of $A/\alpha$ lie within $D_{\kappa}$.
 
         References
         ----------
