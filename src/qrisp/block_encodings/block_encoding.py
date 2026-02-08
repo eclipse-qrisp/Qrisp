@@ -969,12 +969,16 @@ class BlockEncoding:
             ry(theta, qb)
 
         def new_unitary(*args):
+            self_ancs = args[1:1 + m]
+            other_ancs = args[1 + m:1 + m + n]
+            operands = args[1 + m + n:]
+
             with conjugate(prep)(args[0], jnp.array([jnp.sqrt(alpha / (alpha + beta)), jnp.sqrt(beta / (alpha + beta))])):
                 with control(args[0], ctrl_state=0):
-                    self.unitary(*args[1:1 + m], *args[1 + m + n:])
+                    self.unitary(*self_ancs, *operands)
 
                 with control(args[0], ctrl_state=1):
-                    other.unitary(*args[1 + m:1 + m + n], *args[1 + m + n:])
+                    other.unitary(*other_ancs, *operands)
 
         new_anc_templates = [QuantumBool().template()] + self._anc_templates + other._anc_templates
         new_alpha = alpha + beta
@@ -1054,14 +1058,18 @@ class BlockEncoding:
             ry(theta, qb)
 
         def new_unitary(*args):
+            self_ancs = args[1:1 + m]
+            other_ancs = args[1 + m:1 + m + n]
+            operands = args[1 + m + n:]
+
             with conjugate(prep)(args[0], jnp.array([jnp.sqrt(alpha / (alpha + beta)), jnp.sqrt(beta / (alpha + beta))])):
                 z(args[0])  # Apply Z gate to flip the sign for subtraction
 
                 with control(args[0], ctrl_state=0):
-                    self.unitary(*args[1:1 + m], *args[1 + m + n:])
+                    self.unitary(*self_ancs, *operands)
 
                 with control(args[0], ctrl_state=1):
-                    other.unitary(*args[1 + m:1 + m + n], *args[1 + m + n:])
+                    other.unitary(*other_ancs, *operands)
 
         new_anc_templates = [QuantumBool().template()] + self._anc_templates + other._anc_templates
         new_alpha = alpha + beta
@@ -1332,12 +1340,12 @@ class BlockEncoding:
         num_operand_vars_self = len(sig_self.parameters) - m
         
         def new_unitary(*args):
-            self_anc = args[:m]
-            other_anc = args[m : m + n]
+            self_ancs = args[:m]
+            other_ancs = args[m : m + n]
             operands = args[m + n:]
 
-            self.unitary(*self_anc, *operands[:num_operand_vars_self])
-            other.unitary(*other_anc, *operands[num_operand_vars_self:])
+            self.unitary(*self_ancs, *operands[:num_operand_vars_self])
+            other.unitary(*other_ancs, *operands[num_operand_vars_self:])
         
         new_anc_templates = self._anc_templates + other._anc_templates
         new_alpha = self.alpha * other.alpha
