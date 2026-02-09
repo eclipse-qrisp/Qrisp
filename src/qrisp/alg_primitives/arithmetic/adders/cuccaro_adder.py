@@ -18,13 +18,6 @@
 from qrisp import *
 import jax.numpy as jnp
 
-
-class RemovedFunctionError(Exception):
-    pass
-
-def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_in=None):
-    raise RemovedFunctionError("The cuccaro_procedure function has been removed. Please use the alternative cuccaro_adder.")
-
 @custom_control
 def cuccaro_adder(a, b, c_out=None, ctrl = None):
     """In-place adder as introduced in https://arxiv.org/abs/quant-ph/0410184
