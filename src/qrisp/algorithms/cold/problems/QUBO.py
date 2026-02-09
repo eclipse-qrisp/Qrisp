@@ -98,7 +98,7 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
     # Control Hamiltonian
     H_control = sum([Z(i) for i in range(N)])
 
-    collected_operators = (lam, alpha, H_init, H_prob, A_lam, Q, g, H_control)
+    collected_operators = (Q, H_init, H_prob, A_lam, alpha, lam, g, H_control)
 
     return collected_operators
 
@@ -243,33 +243,50 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     # AGP
     A_lam = build_agp(agp_type)
     
-    return lam, coeff_func, H_init, H_prob, A_lam, Q
+    return Q, H_init, H_prob, A_lam, coeff_func, lam
 
 
 def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
     """
-    Solves a QUBO Matrix using counterdiabatic driving. 
+    Solves a QUBO Matrix using counterdiabatic driving. This method uses the pre-defined COLD/LCD operators
+    (hamiltonian, scheduling function, AGP parameters) as described in the tutorial. 
+    To define your own operators, create a DCQO instance and use the ``run`` method.
 
-    Example usage:
-    Q = np.array([
-        [-1.0, 0.5, 0.4, 0.0], 
-        [0.5, -0.9, 0.6, 0.0], 
-        [0.4, 0.6, -0.8, -0.5], 
-        [0.0, 0.0, -0.5, 0.2]
-        ])
-
-    problem_args = {"method": "COLD", "uniform": False}
-    run_args = {"N_steps": 6, "T": 1, "N_opt": 1, "CRAB": False, "objective": "exp_value", "bounds": (-2, 2)}
-
-    result = solve_QUBO(Q, problem_args, run_args)
+    Parameters
+    ----------
     
     Q : np.array
         QUBO Matrix to solve.
     problem_args : dict
         Holds arguments for DCQO problem creation (method: str (COLD/LCD), uniform: bool).
     run_args : dict
-        Holds arguments for running the DCQO instance (N_steps, T, N_opt, CRAB, optimizer, objective, bounds).
+        Holds arguments for running the DCQO instance (N_steps, T, N_opt, CRAB).
         For all options, see :ref: `DCQOProblam`.
+
+    
+    Examples
+    --------
+
+    >>> from qrisp.algorithms.cold import solve_QUBO
+    >>>
+    >>> Q = np.array([[-1.1, 0.6, 0.4, 0.0, 0.0, 0.0],
+    >>>               [0.6, -0.9,  0.5, 0.0, 0.0, 0.0],
+    >>>               [0.4, 0.5, -1.0, -0.6, 0.0, 0.0],
+    >>>               [0.0, 0.0, -0.6, -0.5, 0.6, 0.0],
+    >>>               [0.0, 0.0, 0.0, 0.6, -0.3, 0.5],
+    >>>               [0.0, 0.0, 0.0, 0.0, 0.5, -0.4]])
+    >>>
+    >>> problem_args = {"method": "COLD", "uniform": False}
+    >>>
+    >>> run_args = {"N_steps": 6, "T": 50, "N_opt": 1, "CRAB": False, 
+    >>>            "objective": "agp_coeff_magnitude", "bounds": (-3, 3)}
+    >>>
+    >>> result = solve_QUBO(Q, problem_args, run_args)
+    >>>
+    >>> print(result)
+
+    >>> {'101101': [0.0992110992110992, np.float64(-3.4)], '000010': [0.06368806368806368, np.float64(-0.3)], '101110': [0.05536905536905537, np.float64(-2.1)], '101100': [0.053673053673053674, np.float64(-3.0)], '011101': [0.04737404737404737, np.float64(-3.0)], '001000': [0.03825603825603825, np.float64(-1.0)], '000001': [0.037527037527037524, np.float64(-0.4)], '000000': [0.034425034425034425, np.float64(0.0)], '001001': [0.030293030293030293, np.float64(-1.4)], '110101': [0.027792027792027794, np.float64(-1.7000000000000002)], '111110': [0.024496024496024497, np.float64(-0.8)], '000011': [0.023100023100023098, np.float64(0.3)], '001010': [0.022895022895022894, np.float64(-1.3)], '101011': [0.022673022673022673, np.float64(-1.0)], '011110': [0.022657022657022657, np.float64(-1.7)], '000100': [0.022015022015022017, np.float64(-0.5)], '000110': [0.02157602157602158, np.float64(0.39999999999999997)], '001110': [0.02033702033702034, np.float64(-1.8)], '100100': [0.019262019262019262, np.float64(-1.6)], '110110': [0.017424017424017422, np.float64(-0.4000000000000002)], '001101': [0.01686901686901687, np.float64(-3.1)], '111001': [0.014955014955014955, np.float64(-0.4)], '011100': [0.014820014820014821, np.float64(-2.6)], '010001': [0.014550014550014551, np.float64(-1.3)], '110100': [0.013671013671013673, np.float64(-1.3000000000000003)], '011000': [0.013617013617013618, np.float64(-0.9)], '000101': [0.01326901326901327, np.float64(-0.9)], '111100': [0.012355012355012355, np.float64(-1.7000000000000002)], '110010': [0.012283012283012283, np.float64(-1.1)], '010000': [0.011336011336011337, np.float64(-0.9)], '100101': [0.010133010133010134, np.float64(-2.0)], '011111': [0.009947009947009946, np.float64(-1.1)], '010100': [0.009746009746009745, np.float64(-1.4)], '101111': [0.008934008934008933, np.float64(-1.5)], '111000': [0.008660008660008659, np.float64(0.0)], '110000': [0.008464008464008464, np.float64(-0.8000000000000002)], '101001': [0.008319008319008319, np.float64(-1.7000000000000002)], '100110': [0.007622007622007623, np.float64(-0.7)], '001111': [0.0067640067640067645, np.float64(-1.2000000000000002)], '011011': [0.006613006613006613, np.float64(-0.6)], '011001': [0.005968005968005968, np.float64(-1.3)], '111101': [0.005689005689005689, np.float64(-2.1)], '001100': [0.005028005028005028, np.float64(-2.7)], '010101': [0.004958004958004958, np.float64(-1.7999999999999998)], '100011': [0.004917004917004917, np.float64(-0.8000000000000002)], '010110': [0.004891004891004891, np.float64(-0.5)], '110011': [0.004778004778004778, np.float64(-0.5000000000000001)], '010011': [0.004468004468004468, np.float64(-0.6)], '011010': [0.004312004312004312, np.float64(-1.2)], '111011': [0.00395000395000395, np.float64(0.3)], '000111': [0.003368003368003368, np.float64(1.0)], '010010': [0.002816002816002816, np.float64(-1.2)], '100000': [0.0027100027100027103, np.float64(-1.1)], '111010': [0.0023820023820023822, np.float64(-0.3)], '100001': [0.002346002346002346, np.float64(-1.5)], '100010': [0.0021220021220021224, np.float64(-1.4000000000000001)], '110001': [0.001767001767001767, np.float64(-1.2000000000000002)], '101000': [0.001689001689001689, np.float64(-1.3)], '100111': [0.0013020013020013021, np.float64(-0.09999999999999998)], '101010': [0.0011820011820011822, np.float64(-1.6)], '110111': [0.000945000945000945, np.float64(0.19999999999999984)], '111111': [0.0007280007280007281, np.float64(-0.20000000000000007)], '001011': [0.000645000645000645, np.float64(-0.7000000000000001)], '010111': [6.8000068000068e-05, np.float64(0.09999999999999998)]}
+
 
     """
 
@@ -277,8 +294,14 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
 
 
     if method == "LCD":
+        # Check if AGP type is specified, otherwise use 1st order
+        try: 
+            agp_type = problem_args["agp_type"]
+        except KeyError:
+            agp_type = "order1"
+            
         problem_operators = create_LCD_instance(
-            Q, agp_type=problem_args["agp_type"], uniform_AGP_coeffs=problem_args["uniform"]
+            Q, agp_type=agp_type, uniform_AGP_coeffs=problem_args["uniform"]
         )
         
     elif method == "COLD":
