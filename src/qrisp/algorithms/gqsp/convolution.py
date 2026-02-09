@@ -70,33 +70,28 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
 
     ::
 
-        # Example Usage:
         import numpy as np
+        from qrisp import *
+        from qrisp.gqsp import convolve
+        from scipy.ndimage import convolve as sp_convolve
+
         # A simple square wave signal
         psi = np.array([1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0])
         # A simple 3-point smoothing filter {a_{-1}, a_0, a_1} = {0.25, 0.5, 0.25}
         f = np.array([0.25, 0.5, 0.25])
 
-    ::
-
-        from scipy.ndimage import convolve as scipy_convolve
-
         # Mode 'wrap' performs cyclic convolution
-        convolved_signal_target = scipy_convolve(psi, f, mode='wrap')
-        print(convolved_signal_target)
-        # [0.75 1.   1.   0.75 0.25 0.   0.   0.25]
-
-    ::
-
-        from qrisp import *
-        from qrisp.gqsp import convolve
+        convolved_signal_target = sp_convolve(psi, f, mode='wrap')
+        print("target:", convolved_signal_target)
+        # target: [0.75 1.   1.   0.75 0.25 0.   0.   0.25]
 
         def psi_prep():
             qv = QuantumFloat(3)
             prepare(qv, psi)
             return qv
 
-        # Converts the function to be executed within a repeat-until-success (RUS) procedure.
+        # Converts the function to be executed within a 
+        # repeat-until-success (RUS) procedure.
         @RUS
         def conv_psi_prep():
             qarg = psi_prep()
@@ -113,14 +108,12 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
             psi_conv = conv_psi_prep()
             return psi_conv
 
-        # Convert the resulting measurement probabilities to amplitudes by appling the square root.
         res_dict = main()
         max_ = max(res_dict.values())
-        for k,v in res_dict.items():
-            res_dict[k] = (v / max_) ** 0.5 
-        convolved_signal = np.array([res_dict.get(key,0) for key in range(8)])
-        print(convolved_signal)
-        #array([0.7499999 , 1.        , 1.        , 0.74999996, 0.24999994, 0.        , 0.        , 0.25000007])
+        convolved_signal_qsp = np.sqrt([res_dict.get(key,0) / max_ for key in range(8)])
+        print("qsp:", convolved_signal_qsp)
+        # qsp: [0.7499999 , 1.        , 1.        , 0.74999996, 0.24999994, 
+        # 0.        , 0.        , 0.25000007])
 
     """
 

@@ -18,6 +18,7 @@
 
 import numpy as np
 from qrisp import *
+from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
 import scipy as sp
 
@@ -31,7 +32,7 @@ def test_block_encoding_sim():
 
     L = 4
     H = create_ising_hamiltonian(L, 0.25, 0.5)
-    BE = H.pauli_block_encoding()
+    BE = BlockEncoding.from_operator(H)
 
     # Prepare inital system state |psi> = |0>
     def operand_prep():
@@ -48,10 +49,7 @@ def test_block_encoding_sim():
         return psi(t)
 
     res_dict = main(0.5)
-    # Convert measurement probabilities to (absolute values of) amplitudes
-    for k, v in res_dict.items():
-        res_dict[k] = v**0.5
-    q = np.array([res_dict.get(key, 0) for key in range(2 ** L)])
+    amps = np.sqrt([res_dict.get(key, 0) for key in range(2 ** L)])
 
     # Compare to classical solution
     H_mat = H.to_array()
@@ -66,4 +64,4 @@ def test_block_encoding_sim():
         return psi
 
     c = np.abs(psi_(0.5))
-    assert np.linalg.norm(c - q) < 1e-6
+    assert np.linalg.norm(c - amps) < 1e-6

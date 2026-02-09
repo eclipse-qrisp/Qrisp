@@ -10,10 +10,11 @@ Define a block encoding for a Heisenberg Hamiltonian and apply it to an initial 
 ::
 
     from qrisp import *
+    from qrisp.block_encodings import BlockEncoding
     from qrisp.operators import X, Y, Z
 
     H = sum(X(i)*X(i+1) + Y(i)*Y(i+1) + Z(i)*Z(i+1) for i in range(3))
-    BE = H.pauli_block_encoding()
+    BE = BlockEncoding.from_operator(H)
 
     # Prepare initial system state
     operand = QuantumFloat(4)
@@ -31,20 +32,15 @@ Utilize the Qrisp :ref:`BackendInterface` to define a backend. While this exampl
     example_backend = QiskitBackend(backend = AerSimulator())
 
     # Use backend keyword to specify quantum backend
-    res_dict = multi_measurement([operand] + ancillas, shots=1000, backend=example_backend)
+    res_dict = multi_measurement([operand] + ancillas,
+                                shots=1000, 
+                                backend=example_backend)
 
     # Post-selection on ancillas being in |0> state
-    new_dict = dict()
-    success_prob = 0
-
-    for key, prob in res_dict.items():
-        if all(k == 0 for k in key[1:]):
-            new_dict[key[0]] = prob
-            success_prob += prob
-
-    for key in new_dict.keys():
-        new_dict[key] = new_dict[key] / success_prob
-
-    new_dict
+    filtered_dict = {k[0]: p for k, p in res_dict.items() \
+                    if all(x == 0 for x in k[1:])}
+    success_prob = sum(filtered_dict.values())
+    filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
+    filtered_dict
 
 Note that the limited number of shots leads to significant statistical variance in the output distribution.
