@@ -17,10 +17,17 @@
 """
 
 import numpy as np
-import jax.numpy as jnp
 import pytest
 from qrisp import *
+from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
+
+
+def compare_results(res_dict_1, res_dict_2, n):
+    for k in range(2 ** n):
+        val_1 = res_dict_1.get(k, 0)
+        val_2 = res_dict_2.get(k, 0)
+        assert np.isclose(val_1, val_2), f"Mismatch at state |{k}>: {val_1} vs {val_2}"
 
 
 @pytest.mark.parametrize("H1, H2", [
@@ -30,8 +37,8 @@ from qrisp.operators import X, Y, Z
 ])
 def test_block_encoding_addition(H1, H2):
 
-    BE1 = H1.pauli_block_encoding()
-    BE2 = H2.pauli_block_encoding()
+    BE1 = BlockEncoding.from_operator(H1)
+    BE2 = BlockEncoding.from_operator(H2)
 
     H3 = H1 + H2
     BE3 = H3.pauli_block_encoding()
@@ -45,11 +52,7 @@ def test_block_encoding_addition(H1, H2):
 
     res_be3 = main(BE3)
     res_be_add = main(BE_addition)
-
-    for k in range(2 ** n):
-        val_be3 = res_be3.get(k, 0)
-        val_be_add = res_be_add.get(k, 0)
-        assert np.isclose(val_be3, val_be_add), f"Mismatch at state |{k}>: {val_be3} vs {val_be_add}"
+    compare_results(res_be3, res_be_add, n)
 
 
 @pytest.mark.parametrize("H1, H2", [
@@ -59,11 +62,11 @@ def test_block_encoding_addition(H1, H2):
 ])
 def test_block_encoding_subtraction(H1, H2):
 
-    BE1 = H1.pauli_block_encoding()
-    BE2 = H2.pauli_block_encoding()
+    BE1 = BlockEncoding.from_operator(H1)
+    BE2 = BlockEncoding.from_operator(H2)
 
     H3 = H1 - H2
-    BE3 = H3.pauli_block_encoding()
+    BE3 = BlockEncoding.from_operator(H3)
     BE_subtraction = BE1 - BE2
 
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
@@ -74,11 +77,7 @@ def test_block_encoding_subtraction(H1, H2):
     
     res_be3 = main(BE3)
     res_be_sub = main(BE_subtraction)
-
-    for k in range(2 ** n):
-        val_be3 = res_be3.get(k, 0)
-        val_be_sub = res_be_sub.get(k, 0)
-        assert np.isclose(val_be3, val_be_sub), f"Mismatch at state |{k}>: {val_be3} vs {val_be_sub}"
+    compare_results(res_be3, res_be_sub, n)
 
 
 # The product of two Hermitian operators A and B is Hermitian if and only if they commute, i.e., AB = BA.
@@ -90,11 +89,11 @@ def test_block_encoding_subtraction(H1, H2):
 ])
 def test_block_encoding_multiplication(H1, H2):
 
-    BE1 = H1.pauli_block_encoding()
-    BE2 = H2.pauli_block_encoding()
+    BE1 = BlockEncoding.from_operator(H1)
+    BE2 = BlockEncoding.from_operator(H2)
 
     H3 = H1 * H2
-    BE3 = H3.pauli_block_encoding()
+    BE3 = BlockEncoding.from_operator(H3)
     BE_multiplication = BE1 @ BE2
 
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
@@ -105,11 +104,7 @@ def test_block_encoding_multiplication(H1, H2):
     
     res_be3 = main(BE3)
     res_be_mul = main(BE_multiplication)
-
-    for k in range(2 ** n):
-        val_be3 = res_be3.get(k, 0)
-        val_be_mul = res_be_mul.get(k, 0)
-        assert np.isclose(val_be3, val_be_mul), f"Mismatch at state |{k}>: {val_be3} vs {val_be_mul}"
+    compare_results(res_be3, res_be_mul, n)
 
 
 @pytest.mark.parametrize("H1, H2, scalar", [
@@ -119,10 +114,10 @@ def test_block_encoding_multiplication(H1, H2):
 ])
 def test_block_encoding_scalar_multiplication(H1, H2, scalar):
     H_target = scalar * H1 + H2
-    BE_target = H_target.pauli_block_encoding()
+    BE_target = BlockEncoding.from_operator(H_target)
 
-    BE1 = H1.pauli_block_encoding()
-    BE2 = H2.pauli_block_encoding()
+    BE1 = BlockEncoding.from_operator(H1)
+    BE2 = BlockEncoding.from_operator(H2)
 
     BE_left = scalar * BE1 + BE2
     BE_right = BE1 * scalar + BE2
@@ -136,14 +131,8 @@ def test_block_encoding_scalar_multiplication(H1, H2, scalar):
     res_target = main(BE_target)
     res_left = main(BE_left)
     res_right = main(BE_right)
-
-    for k in range(2 ** n):
-        val_target = res_target.get(k, 0)
-        val_left = res_left.get(k, 0)
-        val_right = res_right.get(k, 0)
-        
-        assert np.isclose(val_target, val_left), f"Left-mul mismatch at |{k}>"
-        assert np.isclose(val_target, val_right), f"Right-mul mismatch at |{k}>"
+    compare_results(res_target, res_left, n)
+    compare_results(res_target, res_right, n)
 
 
 @pytest.mark.parametrize("H1, H2", [
@@ -153,10 +142,10 @@ def test_block_encoding_scalar_multiplication(H1, H2, scalar):
 ])
 def test_block_encoding_negation(H1, H2):
 
-    BE1 = H1.pauli_block_encoding()
+    BE1 = BlockEncoding.from_operator(H1)
     BE_neg = -BE1
 
-    BE2 = H2.pauli_block_encoding()
+    BE2 = BlockEncoding.from_operator(H2)
 
     n = H1.find_minimal_qubit_amount()
 
@@ -164,10 +153,45 @@ def test_block_encoding_negation(H1, H2):
     def main(BE):
         return BE.apply_rus(lambda: QuantumVariable(n))()
     
-    res_be_neg = main(BE_neg)
     res_be2 = main(BE2)
+    res_be_neg = main(BE_neg)
+    compare_results(res_be2, res_be_neg, n)
 
-    for k in range(2 ** n):
-        val_be_neg = res_be_neg.get(k, 0)
-        val_be2 = res_be2.get(k, 0)
-        assert np.isclose(val_be_neg, val_be2), f"Mismatch at state |{k}>: {val_be_neg} vs {val_be2}"
+
+@pytest.mark.parametrize("H1, H2", [
+    (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2)),
+])
+def test_block_encoding_kron(H1, H2):
+
+    BE1 = BlockEncoding.from_operator(H1)
+    BE2 = BlockEncoding.from_operator(H2)
+
+    BE_kron = BE1.kron(BE2)
+
+    n1 = H1.find_minimal_qubit_amount()
+    n2 = H2.find_minimal_qubit_amount()
+
+    def operand_prep():
+        qv1 = QuantumFloat(n1)
+        qv2 = QuantumFloat(n2)
+        return qv1, qv2
+
+    @terminal_sampling
+    def main(BE):
+        return BE.apply_rus(operand_prep)()
+
+    result_be_kron = main(BE_kron)
+
+    @terminal_sampling
+    def main(BE1, BE2):
+        qv1 = BE1.apply_rus(lambda : QuantumFloat(n1))()
+        qv2 = BE2.apply_rus(lambda : QuantumFloat(n2))()
+        return qv1, qv2
+
+    result_be1_be2 = main(BE1, BE2)
+
+    for k in range(2 ** n1):
+        for l in range(2 ** n2):
+            val_be_kron = result_be_kron.get((k, l), 0)
+            val_be1_be2 = result_be1_be2.get((k, l), 0)
+            assert np.isclose(val_be_kron, val_be1_be2), f"Mismatch at state |{k}>: {val_be_kron} vs {val_be1_be2}"

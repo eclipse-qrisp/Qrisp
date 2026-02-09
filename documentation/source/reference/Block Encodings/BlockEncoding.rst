@@ -24,9 +24,10 @@ Utilities
    
    BlockEncoding.apply
    BlockEncoding.apply_rus
+   BlockEncoding.chebyshev
    BlockEncoding.create_ancillas
-   BlockEncoding.dagger
    BlockEncoding.qubitization
+   BlockEncoding.resources
 
 Arithmetic
 ----------
