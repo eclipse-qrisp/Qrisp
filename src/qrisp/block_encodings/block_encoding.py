@@ -349,7 +349,7 @@ class BlockEncoding:
         return QubitOperator.from_matrix(A, reverse_endianness=True).pauli_block_encoding()
 
     @classmethod
-    def from_lcu(cls: "BlockEncoding", coeffs: npt.NDArray[np.float64], unitaries: list[Callable[..., Any]]) -> BlockEncoding:
+    def from_lcu(cls: "BlockEncoding", coeffs: npt.NDArray[np.float64], unitaries: list[Callable[..., Any]], is_hermitian: bool = False) -> BlockEncoding:
         r"""
         Constructs a BlockEncoding using the Linear Combination of Unitaries (LCU) protocol.
 
@@ -391,6 +391,9 @@ class BlockEncoding:
             transformation in-place to the provided quantum variables. 
             All functions must accept the same signature and operate on the 
             same set of operands.
+        is_hermitian : bool
+            Indicates whether the block-encoding unitary is Hermitian. The default is False.
+            Set to True, if all provided unitaries are Hermitian.
 
         Returns
         -------
@@ -449,7 +452,7 @@ class BlockEncoding:
             with conjugate(prepare)(args[0], np.sqrt(coeffs / alpha)):
                 q_switch(args[0], new_unitaries, *args[1:])
 
-        return BlockEncoding(alpha, [QuantumFloat(n).template()], unitary)
+        return BlockEncoding(alpha, [QuantumFloat(n).template()], unitary, is_hermitian=is_hermitian)
     
     #
     # Utilities
