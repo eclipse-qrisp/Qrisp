@@ -41,4 +41,6 @@ def test_quantum_divison():
     print("Q: ", q)
     print("delta_Q: ", abs(q - n / d))
     print("R: ", r)
-    assert q == -0.375 and r == 0.03125 and abs(q - n / d) < 2**-prec
+    assert q == -0.375 
+    assert r == 0.03125 
+    assert abs(q - n / d) < 2**-prec
