@@ -224,7 +224,7 @@ def hamiltonian_simulation(H: BlockEncoding | FermionicOperator | QubitOperator,
         GQSP(args[0], *args[1:], unitary = BE_walk.unitary, angles=angles, k=N)
 
     new_anc_templates = [QuantumBool().template()] + BE_walk._anc_templates
-    return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian=False)
+    return BlockEncoding(new_alpha, new_anc_templates, new_unitary, num_ops=BE_walk.num_ops, is_hermitian=False)
 
 
 # Apply the wache decorator with the workaround in order to show in documentation

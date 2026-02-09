@@ -19,12 +19,16 @@
 import numpy as np
 from jax.errors import TracerArrayConversionError
 
+
 def prepare_qiskit(qv, target_array, reversed=False):
-    
+
     try:
         target_array = np.array(target_array)
     except TracerArrayConversionError:
-        raise ValueError("Tried to initialize dynamic jax array using state preparation method qiskit")
+        raise ValueError(
+            "Tried to initialize a quantum variable with a JAX Tracer array using the Qiskit "
+            "state preparation method. Please use the 'qswitch' method instead."
+        )
 
     from qiskit.circuit.library.data_preparation.state_preparation import (
         StatePreparation,

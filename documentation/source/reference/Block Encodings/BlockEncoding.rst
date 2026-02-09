@@ -6,7 +6,7 @@ BlockEncoding
 .. currentmodule:: qrisp.block_encodings
 .. autoclass:: BlockEncoding
 
-Construction
+Constructors
 ------------
 
 .. autosummary::
