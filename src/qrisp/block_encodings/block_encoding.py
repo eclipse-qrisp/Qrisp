@@ -94,6 +94,8 @@ class BlockEncoding:
     unitary : Callable
         A function ``unitary(*ancillas, *operands)`` applying the block-encoding unitary. 
         It receives the ancilla and operand QuantumVariables as arguments.
+    num_ops : int
+        The number of operand quantum variables. The default is 1.
     is_hermitian : bool
         Indicates whether the block-encoding unitary is Hermitian. The default is False.
 
@@ -104,6 +106,10 @@ class BlockEncoding:
     unitary : Callable
         A function ``unitary(*ancillas, *operands)`` applying the block-encoding unitary. 
         It receives the ancilla and operand QuantumVariables as arguments.
+    num_ops : int
+        The number of operand quantum variables.
+    num_ancs : int
+        The number of ancilla quantum variables.
     is_hermitian : bool
         Indicates whether the block-encoding unitary is Hermitian.
 
@@ -228,6 +234,7 @@ class BlockEncoding:
         alpha: "ArrayLike",
         ancillas: list[QuantumVariable | QuantumVariableTemplate],
         unitary: Callable[..., None],
+        num_ops: int = 1,
         is_hermitian: bool = False,
     ) -> None:
 
@@ -239,6 +246,9 @@ class BlockEncoding:
         ]
         self.unitary = unitary
         self.is_hermitian = is_hermitian
+        self.num_ancs = len(ancillas)
+        # More robust than inferring the number of operands for the unitary via inspect.
+        self.num_ops = num_ops
 
     def tree_flatten(self):
         """
@@ -251,7 +261,7 @@ class BlockEncoding:
             the digits array, and `aux_data` is `None`.
         """
         children = (self.alpha, self._anc_templates, )
-        aux_data = (self.unitary, self.is_hermitian, )
+        aux_data = (self.unitary, self.num_ops, self.is_hermitian, )
         return (children, aux_data)
 
     @classmethod
@@ -349,7 +359,7 @@ class BlockEncoding:
         return QubitOperator.from_matrix(A, reverse_endianness=True).pauli_block_encoding()
 
     @classmethod
-    def from_lcu(cls: "BlockEncoding", coeffs: npt.NDArray[np.float64], unitaries: list[Callable[..., Any]], is_hermitian: bool = False) -> BlockEncoding:
+    def from_lcu(cls: "BlockEncoding", coeffs: npt.NDArray[np.float64], unitaries: list[Callable[..., Any]], num_ops: int = 1, is_hermitian: bool = False) -> BlockEncoding:
         r"""
         Constructs a BlockEncoding using the Linear Combination of Unitaries (LCU) protocol.
 
@@ -391,6 +401,8 @@ class BlockEncoding:
             transformation in-place to the provided quantum variables. 
             All functions must accept the same signature and operate on the 
             same set of operands.
+        num_ops : int
+            The number of operand quantum variables. The default is 1.
         is_hermitian : bool
             Indicates whether the block-encoding unitary is Hermitian. The default is False.
             Set to True, if all provided unitaries are Hermitian.
@@ -430,7 +442,6 @@ class BlockEncoding:
         n = (m - 1).bit_length() # Number of qubits for index variable
         # Ensure coeffs has size 2 ** n by zero padding
         coeffs = np.pad(coeffs, (0, (1 << n) - m))
-
         alpha = np.sum(np.abs(coeffs))
 
         signs = np.sign(coeffs)
@@ -445,14 +456,14 @@ class BlockEncoding:
                 new_unitaries.append(U)
 
         if m==1:
-            return BlockEncoding(alpha, [], new_unitaries[0])
+            return BlockEncoding(alpha, [], new_unitaries[0], num_ops=num_ops, is_hermitian=is_hermitian)
 
         def unitary(*args):
             # LCU = PREP SEL PREP_dg
             with conjugate(prepare)(args[0], np.sqrt(coeffs / alpha)):
                 q_switch(args[0], new_unitaries, *args[1:])
 
-        return BlockEncoding(alpha, [QuantumFloat(n).template()], unitary, is_hermitian=is_hermitian)
+        return BlockEncoding(alpha, [QuantumFloat(n).template()], unitary, num_ops=num_ops, is_hermitian=is_hermitian)
     
     #
     # Utilities
@@ -724,8 +735,8 @@ class BlockEncoding:
             self.unitary(*ancillas, *operands)
             return operands
 
-        circuit_depth = depth(meas_behavior="0")(main)()
-        gate_counts = count_ops(meas_behavior="0")(main)()   
+        circuit_depth = depth(meas_behavior=meas_behavior)(main)()
+        gate_counts = count_ops(meas_behavior=meas_behavior)(main)()   
         return {"gate counts" : gate_counts, "depth" : circuit_depth}     
     
     def qubitization(self) -> BlockEncoding:
@@ -785,7 +796,7 @@ class BlockEncoding:
                 self.unitary(*args)
                 reflection(args[:m])
 
-            return BlockEncoding(self.alpha, self._anc_templates, new_unitary, is_hermitian=True)
+            return BlockEncoding(self.alpha, self._anc_templates, new_unitary, num_ops=self.num_ops, is_hermitian=True)
         else:
             # W = (2*|0><0| - I) U_tilde, U_tilde = (|0><1| ⊗ U) + (|1><0| ⊗ U†) is hermitian
             def new_unitary(*args):
@@ -802,7 +813,7 @@ class BlockEncoding:
                 reflection(args[0:1 + m])
 
             new_anc_templates = [QuantumBool().template()] + self._anc_templates
-            return BlockEncoding(self.alpha, new_anc_templates, new_unitary, is_hermitian=True)
+            return BlockEncoding(self.alpha, new_anc_templates, new_unitary, num_ops=self.num_ops, is_hermitian=True)
         
     def chebyshev(self, k: int, rescale: bool = True) -> BlockEncoding:
         r"""
@@ -890,7 +901,7 @@ class BlockEncoding:
                 self.unitary(*args)
         
         new_alpha = self.alpha if k==1 else 1
-        return BlockEncoding(new_alpha, self._anc_templates, new_unitary)
+        return BlockEncoding(new_alpha, self._anc_templates, new_unitary, num_ops=self.num_ops)
 
     #
     # Arithmetic
@@ -983,7 +994,7 @@ class BlockEncoding:
 
         new_anc_templates = [QuantumBool().template()] + self._anc_templates + other._anc_templates
         new_alpha = alpha + beta
-        return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian=self.is_hermitian and other.is_hermitian)
+        return BlockEncoding(new_alpha, new_anc_templates, new_unitary, num_ops=self.num_ops, is_hermitian=self.is_hermitian and other.is_hermitian)
 
     def __sub__(self, other: BlockEncoding) -> BlockEncoding:
         r"""
@@ -1006,7 +1017,9 @@ class BlockEncoding:
         Notes
         -----
         - Can only be used when both BlockEncodings have the same operand structure.
-        - The ``-`` operator should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method.
+        - The ``-`` operator should be used sparingly, primarily to combine a few block encodings. 
+          For larger-scale polynomial transformations, 
+          Quantum Signal Processing (QSP) is the superior method.
 
         Examples
         --------
@@ -1074,7 +1087,7 @@ class BlockEncoding:
 
         new_anc_templates = [QuantumBool().template()] + self._anc_templates + other._anc_templates
         new_alpha = alpha + beta
-        return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian=self.is_hermitian and other.is_hermitian)
+        return BlockEncoding(new_alpha, new_anc_templates, new_unitary, num_ops=self.num_ops, is_hermitian=self.is_hermitian and other.is_hermitian)
 
     def __mul__(self, other: "ArrayLike") -> BlockEncoding:
         r"""
@@ -1149,7 +1162,7 @@ class BlockEncoding:
                 self.unitary(*args)
                 with control(other < 0):
                     gphase(np.pi, args[0][0])
-            return BlockEncoding(self.alpha * jnp.abs(other), self._anc_templates, new_unitary, is_hermitian=self.is_hermitian)
+            return BlockEncoding(self.alpha * jnp.abs(other), self._anc_templates, new_unitary, num_ops=self.num_ops, is_hermitian=self.is_hermitian)
 
         return NotImplemented
     
@@ -1229,7 +1242,7 @@ class BlockEncoding:
 
         new_anc_templates = self._anc_templates + other._anc_templates
         new_alpha = self.alpha * other.alpha
-        return BlockEncoding(new_alpha, new_anc_templates, new_unitary)
+        return BlockEncoding(new_alpha, new_anc_templates, new_unitary, num_ops=self.num_ops)
     
     __radd__ = __add__
     __rmul__ = __mul__
@@ -1337,20 +1350,20 @@ class BlockEncoding:
         m = len(self._anc_templates)
         n = len(other._anc_templates)
 
-        sig_self = inspect.signature(self.unitary)
-        num_operand_vars_self = len(sig_self.parameters) - m
+        #sig_self = inspect.signature(self.unitary)
+        #num_operand_vars_self = len(sig_self.parameters) - m
         
         def new_unitary(*args):
             self_ancs = args[:m]
             other_ancs = args[m : m + n]
             operands = args[m + n:]
 
-            self.unitary(*self_ancs, *operands[:num_operand_vars_self])
-            other.unitary(*other_ancs, *operands[num_operand_vars_self:])
+            self.unitary(*self_ancs, *operands[:self.num_ops])
+            other.unitary(*other_ancs, *operands[self.num_ops:])
         
         new_anc_templates = self._anc_templates + other._anc_templates
         new_alpha = self.alpha * other.alpha
-        return BlockEncoding(new_alpha, new_anc_templates, new_unitary)
+        return BlockEncoding(new_alpha, new_anc_templates, new_unitary, num_ops=self.num_ops + other.num_ops, is_hermitian=self.is_hermitian and other.is_hermitian)
 
     def __neg__(self) -> BlockEncoding:
         r"""
@@ -1402,7 +1415,7 @@ class BlockEncoding:
         def new_unitary(*args):
             self.unitary(*args)
             gphase(np.pi, args[0][0])
-        return BlockEncoding(self.alpha, self._anc_templates, new_unitary, is_hermitian=self.is_hermitian)
+        return BlockEncoding(self.alpha, self._anc_templates, new_unitary, num_ops=self.num_ops, is_hermitian=self.is_hermitian)
     
     #
     # Transformations
