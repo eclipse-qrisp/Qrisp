@@ -160,6 +160,7 @@ def test_block_encoding_negation(H1, H2):
 
 @pytest.mark.parametrize("H1, H2", [
     (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2)),
+    (X(0)*X(1), Z(0)*Z(1)),
 ])
 def test_block_encoding_kron(H1, H2):
 
