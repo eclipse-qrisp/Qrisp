@@ -587,6 +587,35 @@ def extract_stim(func=None, *, detector_order="chronological"):
                 # Reconstruct the original PyTree structure from the flat results
                 reconstructed = tree_unflatten(out_tree, new_result)
                 
+                # Post-process: tree_unflatten may reconstruct QuantumVariable objects
+                # from StimQubitIndices leaves. Convert them back to StimQubitIndices.
+                # The QuantumVariable unflatten procedure is not built to work outside
+                # a tracing context, so we extract the qubit indices directly.
+                from qrisp.core import QuantumVariable
+                from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
+                def convert_qv(val):
+                    if isinstance(val, QuantumVariable):
+                        reg = val.reg
+                        if isinstance(reg, DynamicQubitArray):
+                            # The tracer holds the numpy array of indices
+                            arr = np.asarray(reg.tracer, dtype=np.intp)
+                            return arr.view(StimQubitIndices)
+                        elif isinstance(reg, np.ndarray):
+                            return reg.view(StimQubitIndices)
+                        elif isinstance(reg, list):
+                            indices = [qubit_mapping.get(qb, qb) for qb in reg]
+                            return np.array(indices, dtype=np.intp).view(StimQubitIndices)
+                        return val
+                    elif isinstance(val, tuple):
+                        return tuple(convert_qv(v) for v in val)
+                    elif isinstance(val, list):
+                        return [convert_qv(v) for v in val]
+                    elif isinstance(val, dict):
+                        return {k: convert_qv(v) for k, v in val.items()}
+                    return val
+                
+                reconstructed = convert_qv(reconstructed)
+                
                 # Append the Stim circuit: unpack if the return was a tuple,
                 # otherwise wrap in a tuple with the stim circuit.
                 if isinstance(reconstructed, tuple):
