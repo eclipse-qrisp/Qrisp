@@ -187,4 +187,4 @@ def QET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", ki
             H.unitary(*args[1:])
 
     new_anc_templates = [QuantumBool().template()] + H._anc_templates
-    return BlockEncoding(alpha, new_anc_templates, new_unitary)
+    return BlockEncoding(alpha, new_anc_templates, new_unitary, num_ops=H.num_ops, is_hermitian=False)
