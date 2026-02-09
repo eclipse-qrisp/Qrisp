@@ -342,6 +342,13 @@ class BlockEncoding:
         BlockEncoding
             A BlockEncoding representing the Hermitian part $(A+A^{\dagger})/2$.
 
+        Raises
+        ------
+        ValueError 
+            If ``A`` is not a 2-D square matrix.
+        ValueError
+            If the dimension of ``A`` is not a power of two. 
+
         Notes
         -----
         - Block encoding based on Pauli decomposition $O=\sum_i\alpha_i P_i$ where $\alpha_i$ are real positive coefficients
@@ -681,7 +688,7 @@ class BlockEncoding:
 
         return rus_function
 
-    def resources(self, *operands: Callable[..., Any], meas_behavior: str = "0"):
+    def resources(self, *operands: QuantumVariable, meas_behavior: str = "0"):
         r"""
         Estimate the quantum resources required for the BlockEncoding.
 
@@ -692,17 +699,15 @@ class BlockEncoding:
 
         Parameters
         ----------
-        operand_prep : Callable
-            A function ``operand_prep(*args)`` that prepares and returns the operand QuantumVariables.
+        *operands : QuantumVariable
+            QuantumVariables serving as operands for the block-encoding.
         meas_behavior : str, optional
             Specifies the measurement outcome to assume during the tracing process (e.g., "0", or "1"). The default is "0".
 
         Returns
         -------
-        Callable
-            A function ``resource_counter(*args)`` with the same signature
-            as ``operand_prep``. When called, it returns a dictionary
-            containing resource metrics with the following structure:
+        dict
+            A dictionary containing resource metrics with the following structure:
 
             - "gate counts" : A dictionary of counted quantum operations.
             - "depth": The circuit depth as an integer.
