@@ -60,6 +60,17 @@ def test_block_encoding_from_operator():
     assert res == {3.0: 1.0}
 
 
+def test_block_encoding_resources():
+    H = X(0)*X(1) + 0.5*Z(0)*Z(1)
+    BE = BlockEncoding.from_operator(H)
+
+    res_dict = BE.resources(QuantumFloat(2))
+    # {'gate counts': {'x': 3, 'cz': 2, 'u3': 2, 'cx': 4, 'gphase': 2}, 
+    # 'depth': 12}
+    assert isinstance(res_dict['gate counts'], dict)
+    assert isinstance(res_dict['depth'], int)
+
+
 def test_block_encoding_alpha_dynamic():
 
     @terminal_sampling

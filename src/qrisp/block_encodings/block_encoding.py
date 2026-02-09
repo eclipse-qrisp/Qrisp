@@ -349,7 +349,7 @@ class BlockEncoding:
         return QubitOperator.from_matrix(A, reverse_endianness=True).pauli_block_encoding()
 
     @classmethod
-    def from_lcu(cls: "BlockEncoding", coeffs: npt.NDArray[np.float64], unitaries: list[Callable[..., Any]]) -> BlockEncoding:
+    def from_lcu(cls: "BlockEncoding", coeffs: npt.NDArray[np.float64], unitaries: list[Callable[..., Any]], is_hermitian: bool = False) -> BlockEncoding:
         r"""
         Constructs a BlockEncoding using the Linear Combination of Unitaries (LCU) protocol.
 
@@ -391,6 +391,9 @@ class BlockEncoding:
             transformation in-place to the provided quantum variables. 
             All functions must accept the same signature and operate on the 
             same set of operands.
+        is_hermitian : bool
+            Indicates whether the block-encoding unitary is Hermitian. The default is False.
+            Set to True, if all provided unitaries are Hermitian.
 
         Returns
         -------
@@ -449,7 +452,7 @@ class BlockEncoding:
             with conjugate(prepare)(args[0], np.sqrt(coeffs / alpha)):
                 q_switch(args[0], new_unitaries, *args[1:])
 
-        return BlockEncoding(alpha, [QuantumFloat(n).template()], unitary)
+        return BlockEncoding(alpha, [QuantumFloat(n).template()], unitary, is_hermitian=is_hermitian)
     
     #
     # Utilities
@@ -642,7 +645,7 @@ class BlockEncoding:
 
         return rus_function
     
-    def resources(self, operand_prep: Callable[..., Any], meas_behavior: str = "0"):
+    def resources(self, *operands: Callable[..., Any], meas_behavior: str = "0"):
         r"""
         Estimate the quantum resources required for the BlockEncoding.
 
@@ -682,11 +685,7 @@ class BlockEncoding:
             H = X(0)*X(1) + 0.5*Z(0)*Z(1)
             BE = BlockEncoding.from_operator(H)
 
-            def operand_prep():
-                qf = QuantumFloat(2)
-                return qf
-
-            res_dict = BE.resources(operand_prep)()
+            res_dict = BE.resources(QuantumFloat(2))
             print(res_dict)
             # {'gate counts': {'x': 3, 'cz': 2, 'u3': 2, 'cx': 4, 'gphase': 2}, 
             # 'depth': 12}
@@ -705,34 +704,29 @@ class BlockEncoding:
 
             # real, fixed parity polynomial
             p = np.array([0, 1, 0, 1])
-
-            def operand_prep():
-                qf = QuantumFloat(2)
-                return qf
-
             BE_QET = QET(BE, p)
-            res_dict = BE_QET.resources(operand_prep)()
+            
+            res_dict = BE_QET.resources(QuantumFloat(2))
             print(res_dict)
             # {'gate counts': {'x': 11, 'cz': 8, 'rx': 2, 'u3': 6, 'cx': 16, 
             # 'gphase': 6, 'p': 2}, 'depth': 42}
             
         """
 
-        def main(*args):
-            operands = operand_prep(*args)
-            if not isinstance(operands, (list, tuple)):
-                operands = (operands,)    
-            ancillas = self.create_ancillas()
+        ops_templates = [op.template() for op in operands]
+        def operand_prep():
+            operands = [temp.construct() for temp in ops_templates]
+            return operands
 
+        def main():
+            operands = operand_prep()
+            ancillas = self.create_ancillas()
             self.unitary(*ancillas, *operands)
             return operands
 
-        def resource_counter(*args):
-            circuit_depth = depth(meas_behavior="0")(main)(*args)
-            gate_counts = count_ops(meas_behavior="0")(main)(*args)   
-            return {"gate counts" : gate_counts, "depth" : circuit_depth}     
-
-        return resource_counter
+        circuit_depth = depth(meas_behavior="0")(main)()
+        gate_counts = count_ops(meas_behavior="0")(main)()   
+        return {"gate counts" : gate_counts, "depth" : circuit_depth}     
     
     def qubitization(self) -> BlockEncoding:
         r"""
