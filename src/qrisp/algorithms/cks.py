@@ -17,13 +17,11 @@
 """
 
 import numpy as np
-import scipy as sp
 from scipy.special import comb
 import jax.numpy as jnp
 from qrisp import (
     QuantumVariable,
     QuantumFloat,
-    QuantumBool,
     x,
     z,
     ry,
@@ -39,127 +37,6 @@ from typing import Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
-
-
-def CKS_parameters(A, eps, kappa=None, max_beta=None):
-    """
-    Computes the Chebyshev-series complexity parameter :math:`\\beta` and the truncation order :math:`j_0` for the
-    truncated Chebyshev approximation of :math:`1/x` used in the `Childs–Kothari–Somma quantum algorithm <https://arxiv.org/abs/1511.02306>`_.
-
-    To avoid confusion with the vector :math:`\ket{b}`, we represent the complexity parameter as :math:`\\beta`.
-
-    This function distinguishes two input cases:
-
-    - **Matrix input** 
-        If ``A`` is either a NumPy array (Hermitian matrix), or a SciPy Compressed Sparse Row matrix (Hermitian matrix), the
-        condition number :math:`\\kappa` is computed internally as :math:`\\kappa = \\mathrm{cond}(A)` if it is not specified.
-    - **Block-encoding input** 
-        If ``A`` is a 3-tuple representing a block-encoding, ``kappa`` must be specified.
-
-    Given the condition number :math:`\\kappa` and the target precision
-    :math:`\\epsilon`, the parameters are computed as:
-
-    .. math::
-
-        \\beta = \kappa^2 \log\!\left(\\frac{\kappa}{\epsilon}\\right),
-        \quad
-        j_0 = \sqrt{\\beta \log\!\left(\\frac{4\\beta}{\epsilon}\\right)}.
-
-    If ``max_beta`` is provided, :math:`\\beta` is capped to
-    :math:`\\min(\\beta, \\beta_{\\max})`. The returned values are cast to integers
-    via the floor operation.
-
-    Parameters
-    ----------
-    A : numpy.ndarray or scipy.sparse.csr_matrix or tuple
-        Either the Hermitian matrix :math:`A` of size :math:`N \\times N` from
-        the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
-        representing a preconstructed block-encoding.
-    eps : float
-        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within
-        :math:`\epsilon` of :math:`\ket{x}`.
-    kappa : float, optional
-        Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
-        a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
-    max_beta : float, optional
-        Optional upper bound on the complexity parameter :math:`\\beta`.
-
-    Returns
-    -------
-    j_0 : int
-        Truncation order of the Chebyshev expansion
-        :math:`j_0 = \\lfloor\sqrt{\\beta \log(4\\beta/\epsilon)}\\rfloor`.
-    beta : float
-        Complexity parameter :math:`\\beta = \\lfloor\kappa^2 \log(\kappa/\epsilon)\\rfloor`.
-    """
-    if kappa != None:
-        # kappa is specified by the user
-        pass 
-    elif isinstance(A, tuple): # block-encoding
-        raise Exception("Condition number must be specified if A is a block-encoding")
-    else: # matrix
-        from scipy.sparse import csr_matrix
-        from numpy import ndarray
-
-        if isinstance(A, ndarray):
-            kappa = np.linalg.cond(A)
-        elif isinstance(A, csr_matrix):
-            lam_max = sp.sparse.linalg.eigsh(A, k=1, which='LA', return_eigenvectors=False)[0]
-            lam_min = sp.sparse.linalg.eigsh(A, k=1, which='SA', return_eigenvectors=False)[0]
-            kappa = float(abs(lam_max) / abs(lam_min))
-        else:
-            raise TypeError(f"Unsupported type {type(A)} for the matrix A")
-
-    if max_beta == None:
-        beta = kappa**2 * np.log(kappa / eps)
-    else:
-        beta = min(kappa**2 * np.log(kappa / eps), max_beta)
-    j_0 = np.sqrt(beta * np.log(4 * beta / eps))
-    return int(j_0), int(beta)
-
-
-def cheb_coefficients(j0, b):
-    """
-    Calculates the positive coefficients :math:`\\alpha_i` for the truncated
-    Chebyshev expansion of :math:`1/x` up to order :math:`2j_0+1`, as described in the `Childs–Kothari–Somma paper <https://arxiv.org/abs/1511.02306>`_.
-
-    The approximation is expressed as a linear combination
-    of odd Chebyshev polynomials truncated at index :math:`j_0` (Lemma 14):
-
-    .. math::
-
-        g(x) = 4 \\sum_{j=0}^{j_0} (-1)^j
-        \\left[ \\sum_{i=j+1}^{b} \\frac{\\binom{2b}{b+i}}{2^{2b}} \\right]
-        T_{2j+1}(x)
-
-    The Linear Combination of Unitaries (LCU) lemma requires strictly
-    positive coefficients :math:`\\alpha_i > 0`, their absolute values are
-    used. The alternating factor :math:`(-1)^j` is later implemented as a set of
-    Z-gates within the CKS circuit (see :func:`inner_CKS`).
-
-    Parameters
-    ----------
-    j0 : int
-        Truncation order of the Chebyshev expansion,
-        :math:`j_0 = \\lfloor\sqrt{\\beta \log(4\\beta/\epsilon)}\\rfloor`.
-    b : float
-        Complexity parameter, :math:`\\beta = \\lfloor\kappa^2 \log(\kappa/\epsilon)\\rfloor`.
-
-    Returns
-    -------
-    coeffs : numpy.ndarray
-        Array of positive Chebyshev coefficients
-        :math:`{\\alpha_{2j+1}}`, corresponding to the odd degrees of Chebyshev polynomials of the first kind :math:`T_1, T_3, \\dots, T_{2j_0+1}`.
-    """
-    coeffs = []
-    for j in range(j0 + 1):
-        sum_i = 0
-        for i in range(j + 1, b + 1):
-            sum_i += comb(2 * b, b + i)
-
-        coeff = 4 * (2 ** (-2 * b)) * sum_i
-        coeffs.append(coeff)
-    return np.array(coeffs)
 
 
 def cks_params(eps: float, kappa: float, max_beta: int = None) -> Tuple[int, int]:
@@ -192,7 +69,7 @@ def cks_params(eps: float, kappa: float, max_beta: int = None) -> Tuple[int, int
 
     Returns
     -------
-    j_0 : int
+    j0 : int
         Truncation order of the Chebyshev expansion
         :math:`j_0 = \\lfloor\sqrt{\\beta \log(4\\beta/\epsilon)}\\rfloor`.
     beta : int
@@ -203,14 +80,14 @@ def cks_params(eps: float, kappa: float, max_beta: int = None) -> Tuple[int, int
         beta = kappa**2 * np.log(kappa / eps)
     else:
         beta = min(kappa**2 * np.log(kappa / eps), max_beta)
-    j_0 = np.sqrt(beta * np.log(4 * beta / eps))
-    return int(j_0), int(beta)
+    j0 = np.sqrt(beta * np.log(4 * beta / eps))
+    return int(j0), int(beta)
 
 
 def cks_coeffs(j0: int, b: int) -> npt.NDArray[float]:
     """
     Computes the positive coefficients :math:`\\alpha_i` for the truncated
-    Chebyshev expansion of :math:`1/x` up to order :math:`2j_0+1`. as described in the `Childs–Kothari–Somma paper <https://arxiv.org/abs/1511.02306>`_.
+    Chebyshev expansion of :math:`1/x` up to order :math:`2j_0+1`.
 
     The approximation is expressed as a linear combination
     of odd Chebyshev polynomials truncated at index :math:`j_0` (Lemma 14):
@@ -343,8 +220,8 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
        :align: center
 
     Implementation overview:
-      1. Compute the CKS parameters :math:`j_0` and :math:`\\beta` (:func:`CKS_parameters`).
-      2. Generate Chebyshev coefficients and the auxiliary unary state (:func:`cheb_coefficients`, :func:`unary_prep`).
+      1. Compute the CKS parameters :math:`j_0` and :math:`\\beta` (:func:`cks_params`).
+      2. Generate Chebyshev coefficients and the auxiliary unary state (:func:`cks_coeffs`, :func:`unary_prep`).
       3. Build the core LCU structure via qubitization operator.
 
     The goal of this algorithm is to apply the non-unitary operator :math:`A^{-1}` to the
@@ -356,7 +233,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
         A^{-1}\propto\sum_{j=0}^{j_0}\\alpha_{2j+1}T_{2j+1}(A),
 
     where :math:`T_k(A)` are Chebyshev polynomials of the first kind and :math:`\\alpha_{2j+1} > 0` are computed
-    via :func:`cheb_coefficients`. These operators can be efficiently implemented with qubitization, which relies on a unitary
+    via :func:`cks_coeffs`. These operators can be efficiently implemented with qubitization, which relies on a unitary
     block encoding :math:`U` of the matrix :math:`A`, and a :ref:`reflection operator <reflection>` :math:`R`.
 
     If the block encoding unitary is $U$ is Hermitian (:math:`U^2=I`),
@@ -369,7 +246,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
     .. math::
     
-        LCU\ket{0}\ket{\psi}=\\text{PREP}^{\dagger}\cdot \\text{SEL}\cdot \\text{PREP}\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi}.
+       \\text{LCU}\ket{0}\ket{\psi}=\\text{PREP}^{\dagger}\cdot \\text{SEL}\cdot \\text{PREP}\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi}.
     
     Here, the :math:`\\text{PREP}` operation prepares an auxiliary ``out_case`` Quantumfloat in the unary state :math:`\ket{\\text{unary}}`
     that encodes the square root of the Chebyshev coefficients :math:`\sqrt{\\alpha_j}`. The :math:`\\text{SEL}` operation selects and applies the

@@ -1,13 +1,13 @@
 .. _CKS:
 
-Childs-Kothari-Somma (CKS)
-==========================
+CKS Algorithm
+=============
 
 .. currentmodule:: qrisp.cks
 .. autofunction:: CKS
 
-Miscellaneous
--------------
+Utilities
+---------
 
 .. autosummary:: 
     :toctree: generated/
