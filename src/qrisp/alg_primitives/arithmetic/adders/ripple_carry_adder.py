@@ -34,9 +34,8 @@ def inpl_add(
 
         qf1 += qf2
 
-    There are two different algorithms available:
+    There is two one algorithm available:
     The `Thapliyal adder <https://arxiv.org/abs/1712.02630>`_
-    and the `Cuccaro adder <https://arxiv.org/abs/quant-ph/0410184>`_
 
     Parameters
     ----------
@@ -51,7 +50,7 @@ def inpl_add(
         If set to False, an Exception will be raised if qf2 has higher maximum
         significance than qf2. The default is False.
     adder : str, optional
-        Specifies the adder. Available are "thapliyal" and "cuccaro".
+        Specifies the adder.
         The default is "thapliyal".
 
     Raises
