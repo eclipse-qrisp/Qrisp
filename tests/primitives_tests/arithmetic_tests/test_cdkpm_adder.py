@@ -31,14 +31,14 @@ import pytest
     # one input is classical, the other is quantum in static mode
     (20, QuantumFloat(15), 20, {34: 1.0}),
 ])
-def test_cdkpm_adder_valid_input_static_mode(input_a, input_b, expected_a, expected_b):
+def test_cuccaro_adder_valid_input_static_mode(input_a, input_b, expected_a, expected_b):
     """Verify the function works as expected for valid inputs in static mode."""
     if isinstance(input_a, QuantumFloat):
         input_a[:] = 20
     if isinstance(input_b, QuantumFloat):
         input_b[:] = 14
 
-    cdkpm_adder(input_a, input_b)
+    cuccaro_adder(input_a, input_b)
 
     calculated_out_b = input_b.get_measurement() if isinstance(input_b, QuantumFloat) else input_b
     calculated_out_a = input_a.get_measurement() if isinstance(input_a, QuantumFloat) else input_a
@@ -56,7 +56,7 @@ def test_cdkpm_adder_valid_input_static_mode(input_a, input_b, expected_a, expec
     # one input is classical, the other is quantum in static mode
     (20, QuantumFloat(15), 20, {34: 1.0}),
 ])
-def test_cdkpm_adder_valid_input_static_mode_with_cout(input_a, input_b, expected_a, expected_b):
+def test_cuccaro_adder_valid_input_static_mode_with_cout(input_a, input_b, expected_a, expected_b):
     """Verify the function works as expected for valid inputs in static mode when c_out is provided."""
     if isinstance(input_a, QuantumFloat):
         input_a[:] = 20
@@ -64,7 +64,7 @@ def test_cdkpm_adder_valid_input_static_mode_with_cout(input_a, input_b, expecte
         input_b[:] = 14
 
     c_out = QuantumFloat(2)
-    cdkpm_adder(input_a, input_b, c_out=c_out)
+    cuccaro_adder(input_a, input_b, c_out=c_out)
 
     calculated_out_b = input_b.get_measurement() if isinstance(input_b, QuantumFloat) else input_b
     calculated_out_a = input_a.get_measurement() if isinstance(input_a, QuantumFloat) else input_a
@@ -84,14 +84,14 @@ def test_cdkpm_adder_valid_input_static_mode_with_cout(input_a, input_b, expecte
     # one classical input in dynamic mode
     (int, QuantumFloat, 16, 19, 34.0),
 ])
-def test_jaspr_mode_cdkpm_adder(input_a_type, input_b_type, input_a_size, input_b_size, expected_output):
+def test_jaspr_mode_cuccaro_adder(input_a_type, input_b_type, input_a_size, input_b_size, expected_output):
     def run_jasp_adder(i, j):
         a = input_a_type(i) if input_a_type != int else 20
         if input_a_type == QuantumFloat:
             a[:] = 20
         b = input_b_type(j)
         b[:] = 14
-        cdkpm_adder(a, b)
+        cuccaro_adder(a, b)
         return measure(b)
 
     jaspr = make_jaspr(run_jasp_adder)(2, 3)
@@ -112,7 +112,7 @@ def test_invalid_input(input_a, input_b, expected_error_message):
         input_b[:] = 14
 
     with pytest.raises(ValueError, match=expected_error_message):
-        cdkpm_adder(input_a, input_b)
+        cuccaro_adder(input_a, input_b)
 
 
 @pytest.mark.parametrize("input_a, input_b, expected_error_message", [
@@ -127,7 +127,7 @@ def test_invalid_input_dynamic_mode(input_a, input_b, expected_error_message):
         a = input_a(j) if input_a != 20 else 20
         if input_a == QuantumFloat:
             a[:] = 14
-        cdkpm_adder(a, input_b)
+        cuccaro_adder(a, input_b)
         return measure(a)
 
     with pytest.raises(ValueError, match=expected_error_message):
@@ -143,7 +143,7 @@ def test_inputs_modified():
     a[:] = 5
     b[:] = 7
 
-    cdkpm_adder(a, b)
+    cuccaro_adder(a, b)
 
     assert a.size == original_size_a
     assert b.size == original_size_b
@@ -153,7 +153,7 @@ def test_inputs_modified():
     (10, 11, 3, 5, True, {8: 1.0}),  
     (10, 11, 3, 5, False, {5: 1.0}),  
 ])
-def test_cdkpm_adder_static_mode_with_control(i, j, a_value, b_value, ctrl_qbl_value, expected_result):
+def test_cuccaro_adder_static_mode_with_control(i, j, a_value, b_value, ctrl_qbl_value, expected_result):
     """Verify the CDKPM adder is triggered when the control qubit is in the |1> state
     in static mode. """
     a = QuantumFloat(i)
@@ -163,7 +163,7 @@ def test_cdkpm_adder_static_mode_with_control(i, j, a_value, b_value, ctrl_qbl_v
     ctrl_qbl = QuantumBool()
     if ctrl_qbl_value:
         x(ctrl_qbl[0])
-    cdkpm_adder(a, b, ctrl=ctrl_qbl)
+    cuccaro_adder(a, b, ctrl=ctrl_qbl)
     result = b.get_measurement()
     assert result == expected_result
 
@@ -171,7 +171,7 @@ def test_cdkpm_adder_static_mode_with_control(i, j, a_value, b_value, ctrl_qbl_v
     (16, 19, 4, 6, True, (4.0, 10.0)),  
     (16, 19, 4, 6, False, (4.0, 6.0)),  
 ])
-def test_cdkpm_adder_dynamic_mode_with_control(i, j, a_value, b_value, ctrl_qbl_value, expected_result):
+def test_cuccaro_adder_dynamic_mode_with_control(i, j, a_value, b_value, ctrl_qbl_value, expected_result):
     """Verify the CDKPM adder is triggered when the control qubit is in the |1> state
     in dynamic mode. """
     def run_jasp_adder_with_control(i, j):
@@ -182,7 +182,7 @@ def test_cdkpm_adder_dynamic_mode_with_control(i, j, a_value, b_value, ctrl_qbl_
         ctrl_qbl = QuantumBool()
         if ctrl_qbl_value:
             x(ctrl_qbl[0])
-        cdkpm_adder(a, b, ctrl=ctrl_qbl)
+        cuccaro_adder(a, b, ctrl=ctrl_qbl)
         return measure(a), measure(b)
     
     jaspr = make_jaspr(run_jasp_adder_with_control)(2, 3)
