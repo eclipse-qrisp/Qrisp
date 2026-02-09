@@ -17,8 +17,7 @@
 """
 
 import numpy as np
-from qrisp.algorithms.gqsp.helper_functions import poly2cheb, cheb2poly
-from qrisp.algorithms.cks import CKS_parameters, cheb_coefficients
+from qrisp.algorithms.cks import cks_coeffs, cks_params
 from qrisp.algorithms.gqsp.qet import QET
 from qrisp.block_encodings import BlockEncoding
 
@@ -120,13 +119,13 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
 
     """
 
-    # The inversion polynomial is constructed using CKS_parameters and cheb_coefficients.
+    # The inversion polynomial is constructed using cks_params and cks_coeffs.
     # Since approximating 1/x over the relevant spectral interval [-1, -1/kappa] + [1/kappa,1] 
-    # requires an odd Chebyshev series, cheb_coefficients returns an array containing only the odd-degree coefficients.
+    # requires an odd Chebyshev series, cks_coeffs returns an array containing only the odd-degree coefficients.
     # To remain compatible with the QET interface, this array is expanded into a full 
     # Chebyshev series by padding even-degree terms with zeros.
-    j_0, beta = CKS_parameters(A, eps, kappa)
-    p_odd = cheb_coefficients(j_0, beta)
+    j_0, beta = cks_params(eps, kappa)
+    p_odd = cks_coeffs(j_0, beta)
     p_odd = p_odd * (-1) ** np.arange(len(p_odd))
     p = np.zeros(2 * len(p_odd))
     p[1::2] = p_odd

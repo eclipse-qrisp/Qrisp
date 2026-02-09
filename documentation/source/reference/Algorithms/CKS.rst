@@ -12,6 +12,6 @@ Miscellaneous
 .. autosummary:: 
     :toctree: generated/
     
-    CKS_parameters
-    cheb_coefficients
+    cks_params
+    cks_coeffs
     unary_prep

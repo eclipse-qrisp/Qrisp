@@ -21,6 +21,7 @@ import scipy as sp
 from scipy.special import comb
 import jax.numpy as jnp
 from qrisp import (
+    QuantumVariable,
     QuantumFloat,
     QuantumBool,
     x,
@@ -33,7 +34,8 @@ from qrisp import (
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.block_encodings import BlockEncoding
 from qrisp.jasp import jrange
-from typing import TYPE_CHECKING
+import numpy.typing as npt
+from typing import Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -160,7 +162,97 @@ def cheb_coefficients(j0, b):
     return np.array(coeffs)
 
 
-def unary_angles(coeffs):
+def cks_params(eps: float, kappa: float, max_beta: int = None) -> Tuple[int, int]:
+    """
+    Computes the complexity parameter :math:`\\beta` and the truncation order :math:`j_0` for the
+    truncated Chebyshev approximation of :math:`1/x`, as described in the `Childs–Kothari–Somma paper <https://arxiv.org/abs/1511.02306>`_.
+
+    Given the condition number :math:`\\kappa` and the target precision
+    :math:`\\epsilon`, the parameters are computed as:
+
+    .. math::
+
+        \\beta = \kappa^2 \log\!\left(\\frac{\kappa}{\epsilon}\\right),
+        \quad
+        j_0 = \sqrt{\\beta \log\!\left(\\frac{4\\beta}{\epsilon}\\right)}.
+
+    If ``max_beta`` is provided, :math:`\\beta` is capped to
+    :math:`\\min(\\beta, \\beta_{\\max})`. The returned values are cast to integers
+    via the floor operation.
+
+    Parameters
+    ----------
+    eps : float
+        Target precision :math:`\epsilon`.
+    kappa : float
+        An upper bound for the condition number :math:`\\kappa` of :math:`A`. This value defines the "gap"
+        around zero where the function :math:`1/x` is not approximated.
+    max_beta : float, optional
+        Optional upper bound on the complexity parameter :math:`\\beta`.
+
+    Returns
+    -------
+    j_0 : int
+        Truncation order of the Chebyshev expansion
+        :math:`j_0 = \\lfloor\sqrt{\\beta \log(4\\beta/\epsilon)}\\rfloor`.
+    beta : int
+        Complexity parameter :math:`\\beta = \\lfloor\kappa^2 \log(\kappa/\epsilon)\\rfloor`.
+    """
+
+    if max_beta == None:
+        beta = kappa**2 * np.log(kappa / eps)
+    else:
+        beta = min(kappa**2 * np.log(kappa / eps), max_beta)
+    j_0 = np.sqrt(beta * np.log(4 * beta / eps))
+    return int(j_0), int(beta)
+
+
+def cks_coeffs(j0: int, b: int) -> npt.NDArray[float]:
+    """
+    Computes the positive coefficients :math:`\\alpha_i` for the truncated
+    Chebyshev expansion of :math:`1/x` up to order :math:`2j_0+1`. as described in the `Childs–Kothari–Somma paper <https://arxiv.org/abs/1511.02306>`_.
+
+    The approximation is expressed as a linear combination
+    of odd Chebyshev polynomials truncated at index :math:`j_0` (Lemma 14):
+
+    .. math::
+
+        g(x) = 4 \\sum_{j=0}^{j_0} (-1)^j
+        \\left[ \\sum_{i=j+1}^{b} \\frac{\\binom{2b}{b+i}}{2^{2b}} \\right]
+        T_{2j+1}(x)
+
+    The Linear Combination of Unitaries (LCU) lemma requires strictly
+    positive coefficients :math:`\\alpha_i > 0`, their absolute values are
+    used. The alternating factor :math:`(-1)^j` is later implemented as a set of
+    Z-gates within the CKS circuit.
+
+    Parameters
+    ----------
+    j0 : int
+        Truncation order of the Chebyshev expansion,
+        :math:`j_0 = \\lfloor\sqrt{\\beta \log(4\\beta/\epsilon)}\\rfloor`.
+    b : float
+        Complexity parameter :math:`\\beta = \\lfloor\kappa^2 \log(\kappa/\epsilon)\\rfloor`.
+
+    Returns
+    -------
+    coeffs : ndarray
+        1-D array of positive Chebyshev coefficients :math:`{\\alpha_{2j+1}}`, 
+        corresponding to the odd degree Chebyshev polynomials of the first kind :math:`T_1, T_3, \\dotsc, T_{2j_0+1}`.
+
+    """
+    coeffs = []
+    for j in range(j0 + 1):
+        sum_i = 0
+        for i in range(j + 1, b + 1):
+            sum_i += comb(2 * b, b + i)
+
+        coeff = 4 * (2 ** (-2 * b)) * sum_i
+        coeffs.append(coeff)
+    return np.array(coeffs)
+
+
+def _unary_angles(coeffs: "ArrayLike") -> "ArrayLike":
     """
     Computes rotation angles :math:`\\phi_i` to prepare the unary state :math:`\ket{\\text{unary}}`,
     corresponding to the square-root-amplitude encoding of the Chebyshev coefficients.
@@ -175,13 +267,13 @@ def unary_angles(coeffs):
 
     Parameters
     ----------
-    coeffs : numpy.ndarray
-        Positive Chebyshev coefficients :math:`\\alpha_i`.
+    coeffs : ArrayLike
+        1-D array of positive Chebyshev coefficients :math:`\\alpha_i`.
 
     Returns
     -------
-    phi : numpy.ndarray
-        Rotation angles :math:`\\phi_i` for unary state preparation.
+    ArrayLike
+        1-D array of rotation angles :math:`\\phi_i` for unary state preparation.
     """
 
     alpha = jnp.sqrt(coeffs) # coeffs need not to be normalized since unary angles only depend on their ratio
@@ -196,7 +288,7 @@ def unary_angles(coeffs):
     return 2 * phi  # Compensate for factor 1/2 in ry
 
 
-def unary_prep(case, coeffs):
+def unary_prep(case: QuantumVariable, coeffs: "ArrayLike") -> None:
     """
     Prepares the unary-encoded state :math:`\ket{\\text{unary}}` of Chebyshev coefficients.
 
@@ -213,11 +305,11 @@ def unary_prep(case, coeffs):
     case : QuantumVariable
         Variable with :math:`j_0` qubits on which the unary state preparation will be performed.
         If the variable is in state :math:`\ket{0}`, the state :math:`\ket{\\text{unary}}` is prepared.
-    coeffs : numpy.ndarray
-        An array of :math:`j_0` Chebyshev coefficients :math:`\\alpha_1,\\alpha_3,\dotsc,\\alpha_{2j_0+1}`.
+    coeffs : ArrayLike
+        1-D array of :math:`j_0` Chebyshev coefficients :math:`\\alpha_1,\\alpha_3,\dotsc,\\alpha_{2j_0+1}`.
     
     """
-    phi = unary_angles(coeffs)
+    phi = _unary_angles(coeffs)
 
     x(case[0])
     ry(phi[0], case[1])
@@ -499,8 +591,8 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
     """
 
-    j_0, beta = CKS_parameters(A, eps, kappa, max_beta)
-    cheb_coeffs = cheb_coefficients(j_0, beta)
+    j_0, beta = cks_params(A, eps, kappa, max_beta)
+    cheb_coeffs = cks_coeffs(j_0, beta)
 
     m = len(A._anc_templates)
 
