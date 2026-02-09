@@ -374,7 +374,7 @@ class BlockEncoding:
     @classmethod
     def from_lcu(
         cls: "BlockEncoding",
-        coeffs: "ArrayLike",
+        coeffs: npt.NDArray[np.number],
         unitaries: list[Callable[..., Any]],
         num_ops: int = 1,
         is_hermitian: bool = False,
@@ -468,8 +468,8 @@ class BlockEncoding:
         coeffs = np.pad(coeffs, (0, (1 << n) - m))
         alpha = np.sum(coeffs)
 
-        #if not is_tracing() and np.any(coeffs < 0):
-        #    raise ValueError(f"Negative coefficients detected: {coeffs}. Only positive values are supported.")
+        if np.any(coeffs < 0):
+            raise ValueError(f"Negative coefficients detected: {coeffs}. Only positive values are supported.")
 
         if m == 1:
             return BlockEncoding(
