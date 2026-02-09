@@ -17,7 +17,7 @@
 """
 
 from qrisp import *
-from qrisp.alg_primitives.arithmetic.adders.cdkpm_adder import cdkpm_adder
+from qrisp.alg_primitives.arithmetic.adders.cuccaro_adder import cuccaro_adder
 from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_procedure
 
 @gate_wrap(is_qfree=True, permeability=[1])

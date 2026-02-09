@@ -18,8 +18,15 @@
 from qrisp import *
 import jax.numpy as jnp
 
+
+class RemovedFunctionError(Exception):
+    pass
+
+def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_in=None):
+    raise RemovedFunctionError("The cuccaro_procedure function has been removed. Please use the alternative cuccaro_adder.")
+
 @custom_control
-def cdkpm_adder(a, b, c_out=None, ctrl = None):
+def cuccaro_adder(a, b, c_out=None, ctrl = None):
     """In-place adder as introduced in https://arxiv.org/abs/quant-ph/0410184
 
     This function works in both static and dynamic modes. The allowed inputs are both quantum types or one classical
@@ -56,12 +63,12 @@ def cdkpm_adder(a, b, c_out=None, ctrl = None):
     --------
     Static mode with both quantum inputs:
 
-    >>> from qrisp import QuantumFloat, cdkpm_adder
+    >>> from qrisp import QuantumFloat, cuccaro_adder
     >>> a = QuantumFloat(4)
     >>> b = QuantumFloat(4)
     >>> a[:] = 4
     >>> b[:] = 5
-    >>> cdkpm_adder(a,b)
+    >>> cuccaro_adder(a,b)
     >>> print(b)
     {9: 1.0}
     """
@@ -88,11 +95,11 @@ def cdkpm_adder(a, b, c_out=None, ctrl = None):
         with conjugate(q_a.encode)(a):
             # begin with q_a in the state |a>
             if c_out is not None:
-                cdkpm_adder(q_a, b, c_out = c_out)
+                cuccaro_adder(q_a, b, c_out = c_out)
             elif ctrl is not None:
-                cdkpm_adder(q_a, b, ctrl = ctrl)
+                cuccaro_adder(q_a, b, ctrl = ctrl)
             else:
-                cdkpm_adder(q_a, b)
+                cuccaro_adder(q_a, b)
         
         # outside the conjugation, q_a is back in the state |0> and the addition has been performed on b
         # delete the temporary quantum variable created for the classical input
