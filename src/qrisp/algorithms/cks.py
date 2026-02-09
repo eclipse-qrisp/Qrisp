@@ -468,7 +468,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
     """
 
-    j_0, beta = cks_params(A, eps, kappa, max_beta)
+    j_0, beta = cks_params(eps, kappa, max_beta=max_beta)
     cheb_coeffs = cks_coeffs(j_0, beta)
 
     m = len(A._anc_templates)

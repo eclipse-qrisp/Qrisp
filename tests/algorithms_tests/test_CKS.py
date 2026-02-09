@@ -91,7 +91,7 @@ def test_3_sparse_matrix_8x8():
     assert np.linalg.norm(q-c) < 1e-2
 
 
-def test_A_block_encoding_hermitian():
+def test_cks_block_encoding_hermitian():
 
     def tridiagonal_shifted(n, mu=1.0, dtype=float):
         I = np.eye(n, dtype=dtype)
@@ -113,35 +113,29 @@ def test_A_block_encoding_hermitian():
         gphase(np.pi, qv[0])
 
     unitaries = [U0, U1, U2]
-
     coeffs = np.array([5, 1, 1, 0])
-    alpha = np.sum(coeffs)
+    BE = BlockEncoding.from_lcu(coeffs, unitaries, is_hermitian=True)
+    BE_CKS = CKS(BE, 0.01, np.linalg.cond(A))
 
-    def unitary(case, operand):
-        with conjugate(prepare)(case, np.sqrt(coeffs/alpha)):
-            qswitch(operand, case, unitaries)
+    def operand_prep():
+        qv = QuantumFloat(2)
+        prepare(qv, b)
+        return qv
 
-    BE = BlockEncoding(alpha, [QuantumFloat(2)], unitary, is_hermitian=True)
-    
     @terminal_sampling
     def main():
-
-        x = CKS(BE, b, 0.01, np.linalg.cond(A))
-        return x
+        qv = BE_CKS.apply_rus(operand_prep)()
+        return qv
 
     res_dict = main()
+    amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
 
-    for k, v in res_dict.items():
-        res_dict[k] = v**0.5
-
-    q = np.array([res_dict.get(key, 0) for key in range(n)])
     c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
-
-    assert np.linalg.norm(q-c) < 1e-2
+    assert np.linalg.norm(amps - c) < 1e-2
 
 
 # Discrete Laplace operator
-def test_A_block_encoding_not_hermitian():
+def test_cks_block_encoding_not_hermitian():
 
     def tridiagonal_shifted(n, mu=1.0, dtype=float):
         I = np.eye(n, dtype=dtype)
@@ -166,31 +160,25 @@ def test_A_block_encoding_not_hermitian():
         gphase(np.pi, qv[0])
 
     unitaries = [U0, U1, U2]
-
     coeffs = np.array([5, 1, 1, 0])
-    alpha = np.sum(coeffs)
+    BE = BlockEncoding.from_lcu(coeffs, unitaries, is_hermitian=False)
+    BE_CKS = CKS(BE, 0.01, np.linalg.cond(A))
 
-    def unitary(case, operand):
-        with conjugate(prepare)(case, np.sqrt(coeffs/alpha)):
-            qswitch(operand, case, unitaries)
+    def operand_prep():
+        qv = QuantumFloat(2)
+        prepare(qv, b)
+        return qv
 
-    BE = BlockEncoding(alpha, [QuantumFloat(2)], unitary, is_hermitian=False)
-    
     @terminal_sampling
     def main():
-
-        x = CKS(BE, b, 0.01, np.linalg.cond(A))
-        return x
+        qv = BE_CKS.apply_rus(operand_prep)()
+        return qv
 
     res_dict = main()
+    amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
 
-    for k, v in res_dict.items():
-        res_dict[k] = v**0.5
-
-    q = np.array([res_dict.get(key, 0) for key in range(n)])
     c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
-
-    assert np.linalg.norm(q-c) < 1e-2
+    assert np.linalg.norm(amps - c) < 1e-2
 
 
 def test_A_block_encoding_b_callable():
