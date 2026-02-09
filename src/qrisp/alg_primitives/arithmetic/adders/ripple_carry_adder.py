@@ -20,6 +20,12 @@ from qrisp import *
 from qrisp.alg_primitives.arithmetic.adders.cuccaro_adder import cuccaro_adder
 from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_procedure
 
+class RemovedFunctionError(Exception):
+    pass
+
+def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_in=None):
+    raise RemovedFunctionError("The cuccaro_procedure function has been removed. Please use the alternative cuccaro_adder.")
+
 @gate_wrap(is_qfree=True, permeability=[1])
 def inpl_add(
     qf1,
