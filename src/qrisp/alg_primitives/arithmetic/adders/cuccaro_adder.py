@@ -91,6 +91,8 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
                 cuccaro_adder(q_a, b, c_out = c_out)
             elif ctrl is not None:
                 cuccaro_adder(q_a, b, ctrl = ctrl)
+            elif ctrl is not None and c_out is not None:
+                cuccaro_adder(q_a, b, c_out = c_out, ctrl = ctrl)
             else:
                 cuccaro_adder(q_a, b)
         
