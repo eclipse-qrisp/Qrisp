@@ -973,7 +973,9 @@ class BlockEncoding:
         Notes
         -----
         - Can only be used when both BlockEncodings have the same operand structure.
-        - The ``+`` operator should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method.
+        - The ``+`` operator should be used sparingly, primarily to combine a few block encodings. 
+          For larger-scale polynomial transformations, 
+          Quantum Signal Processing (QSP) is the superior method.
 
         Examples
         --------
@@ -1032,9 +1034,7 @@ class BlockEncoding:
 
             with conjugate(prep)(
                 args[0],
-                jnp.array(
-                    [jnp.sqrt(alpha / (alpha + beta)), jnp.sqrt(beta / (alpha + beta))]
-                ),
+                jnp.sqrt(jnp.array([alpha, beta]) / (alpha + beta)),
             ):
                 with control(args[0], ctrl_state=0):
                     self.unitary(*self_ancs, *operands)
@@ -1136,9 +1136,7 @@ class BlockEncoding:
 
             with conjugate(prep)(
                 args[0],
-                jnp.array(
-                    [jnp.sqrt(alpha / (alpha + beta)), jnp.sqrt(beta / (alpha + beta))]
-                ),
+                jnp.sqrt(jnp.array([alpha, beta]) / (alpha + beta)),
             ):
                 z(args[0])  # Apply Z gate to flip the sign for subtraction
 
@@ -1430,9 +1428,6 @@ class BlockEncoding:
         """
         m = len(self._anc_templates)
         n = len(other._anc_templates)
-
-        # sig_self = inspect.signature(self.unitary)
-        # num_operand_vars_self = len(sig_self.parameters) - m
 
         def new_unitary(*args):
             self_ancs = args[:m]
@@ -1802,7 +1797,7 @@ class BlockEncoding:
 
             print("QUANTUM SIMULATION\n", amps, "\nCLASSICAL SOLUTION\n", c)
             # QUANTUM SIMULATION
-            #  [0.02986315 0.57992481 0.62416743 0.52269535]
+            # [0.02986315 0.57992481 0.62416743 0.52269535]
             # CLASSICAL SOLUTION
             # [-0.02986321  0.57992485  0.6241675   0.52269522]
 
