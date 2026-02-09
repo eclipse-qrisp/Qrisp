@@ -112,9 +112,6 @@ Until now implementing a non-unitary matrix and/or a custom block encoding tied 
    :maxdepth: 2
    :hidden:
    
-   BE_theory.ipynb
-   BE_construct.ipynb
-   BE_arithmetic.ipynb
-   BE_applications.ipynb
-   BE_examples.ipynb
+   BE_vol1.ipynb
+   BE_vol2.ipynb
 
