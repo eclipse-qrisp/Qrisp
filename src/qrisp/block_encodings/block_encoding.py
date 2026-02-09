@@ -27,7 +27,7 @@ from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
-from qrisp.jasp import jrange, count_ops, depth
+from qrisp.jasp import count_ops, depth, jrange, qache, check_for_tracing_mode as is_tracing
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool, QuantumFloat
@@ -308,8 +308,9 @@ class BlockEncoding:
 
         Notes
         -----
-
-        - Block encoding based on Pauli decomposition $O=\sum_i\alpha_i P_i$ where $\alpha_i$ are real coefficients and $P_i$ are Pauli strings.
+        - Block encoding based on Pauli decomposition $O=\sum_i\alpha_i P_i$ where $\alpha_i$ are real positive coefficients
+          and $P_i$ are Pauli strings (including the respective sign).
+        - **Normalization**: The block-encoding normalization factor is $\alpha = \sum_i \alpha_i$.
 
         Examples
         --------
@@ -322,7 +323,9 @@ class BlockEncoding:
         """
         if isinstance(O, FermionicOperator):
             O = O.to_qubit_operator()
-        return O.pauli_block_encoding()
+
+        unitaries, coeffs = O.unitaries()
+        return cls.from_lcu(coeffs, unitaries, is_hermitian=True)
 
     @classmethod
     def from_array(cls: "BlockEncoding", A: MatrixType) -> BlockEncoding:
@@ -341,8 +344,9 @@ class BlockEncoding:
 
         Notes
         -----
-
-        - Block encoding based on Pauli decomposition $O=\sum_i\alpha_i P_i$ where $\alpha_i$ are real coefficients and $P_i$ are Pauli strings.
+        - Block encoding based on Pauli decomposition $O=\sum_i\alpha_i P_i$ where $\alpha_i$ are real positive coefficients
+          and $P_i$ are Pauli strings (including the respective sign).
+        - **Normalization**: The block-encoding normalization factor is $\alpha = \sum_i \alpha_i$.
 
         Examples
         --------
@@ -364,14 +368,13 @@ class BlockEncoding:
         if not (N > 0 and (N & (N - 1)) == 0):
             raise ValueError(f"Size N={N} must be a power of two.")
 
-        return QubitOperator.from_matrix(
-            A, reverse_endianness=True
-        ).pauli_block_encoding()
+        O = QubitOperator.from_matrix(A, reverse_endianness=True)
+        return cls.from_operator(O)
 
     @classmethod
     def from_lcu(
         cls: "BlockEncoding",
-        coeffs: npt.NDArray[np.float64],
+        coeffs: "ArrayLike",
         unitaries: list[Callable[..., Any]],
         num_ops: int = 1,
         is_hermitian: bool = False,
@@ -385,7 +388,7 @@ class BlockEncoding:
 
             O = \sum_{i=0}^{M-1} \alpha_i U_i
 
-        where $\alpha_i$ are real coefficients such that $\sum_i |\alpha_i| = \alpha$,
+        where $\alpha_i$ are real non-negative coefficients such that $\sum_i \alpha_i = \alpha$,
         and $U_i$ are unitaries acting on the same operand quantum variables.
 
         The block encoding unitary is constructed via the LCU protocol:
@@ -410,8 +413,8 @@ class BlockEncoding:
 
         Parameters
         ----------
-        coeffs : ndarray
-            1-D array of expansion coefficients $\alpha_i$.
+        coeffs : ArrayLike
+            1-D array of non-negative coefficients $\alpha_i$.
         unitaries : list[Callable]
             List of functions, where each ``U(*operands)`` applies a unitary
             transformation in-place to the provided quantum variables.
@@ -427,6 +430,11 @@ class BlockEncoding:
         -------
         BlockEncoding
             A BlockEncoding using LCU.
+
+        Raises
+        ------
+        ValueError
+            If any entry in ``coeffs`` is negative, as the LCU protocol only supports positive coefficients.
 
         Notes
         -----
@@ -458,30 +466,21 @@ class BlockEncoding:
         n = (m - 1).bit_length()  # Number of qubits for index variable
         # Ensure coeffs has size 2 ** n by zero padding
         coeffs = np.pad(coeffs, (0, (1 << n) - m))
-        alpha = np.sum(np.abs(coeffs))
+        alpha = np.sum(coeffs)
 
-        signs = np.sign(coeffs)
-        new_unitaries = []
-        for i, U in enumerate(unitaries):
-            if signs[i] == -1:
-
-                def new_U(*args):
-                    U(*args)
-                    gphase(np.pi, args[0][0])
-
-                new_unitaries.append(new_U)
-            else:
-                new_unitaries.append(U)
+        #if not is_tracing() and np.any(coeffs < 0):
+        #    raise ValueError(f"Negative coefficients detected: {coeffs}. Only positive values are supported.")
 
         if m == 1:
             return BlockEncoding(
-                alpha, [], new_unitaries[0], num_ops=num_ops, is_hermitian=is_hermitian
+                alpha, [], unitaries[0], num_ops=num_ops, is_hermitian=is_hermitian
             )
 
+        @qache
         def unitary(*args):
             # LCU = PREP SEL PREP_dg
             with conjugate(prepare)(args[0], np.sqrt(coeffs / alpha)):
-                q_switch(args[0], new_unitaries, *args[1:])
+                q_switch(args[0], unitaries, *args[1:])
 
         return BlockEncoding(
             alpha,

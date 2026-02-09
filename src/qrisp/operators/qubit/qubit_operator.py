@@ -2199,29 +2199,6 @@ class QubitOperator(Hamiltonian):
         the matrix $A$ is successfully applied. 
 
         """
-        from qrisp.alg_primitives.state_preparation import prepare
         from qrisp.block_encodings import BlockEncoding
-        from qrisp.jasp import qache, q_switch
-        from qrisp.qtypes import QuantumFloat
-    
-        unitaries, coeffs = self.unitaries()
-        alpha = np.sum(coeffs)
-        
-        m = len(coeffs)
-        n = (m - 1).bit_length() # Number of qubits for index variable
-        # Ensure coeffs has size 2 ** n by zero padding
-        coeffs = np.pad(coeffs, (0, (1 << n) - m))
 
-        if m==1:
-            @qache
-            def U(operand):
-                unitaries[0](operand)
-
-            return BlockEncoding(alpha, [], U, 1, is_hermitian=True)
-
-        @qache
-        def U(index, operand):
-            with conjugate(prepare)(index, np.sqrt(coeffs / alpha)):
-                q_switch(index, unitaries, operand)
-
-        return BlockEncoding(alpha, [QuantumFloat(n).template()], U, 1, is_hermitian=True)
+        return BlockEncoding.from_operator(self)
