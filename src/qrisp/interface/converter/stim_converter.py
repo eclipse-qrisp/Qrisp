@@ -265,7 +265,7 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
                 offset = abs_idx - measurement_counter
                 stim_targets.append(stim.target_rec(offset))
 
-            if op.expectation == 2:
+            if op.observable:
                 # --- Observable Mode ---
                 # Create a new Observable Index
                 

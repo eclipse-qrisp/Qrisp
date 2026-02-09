@@ -28,7 +28,7 @@ from jax.lax import while_loop
 import jax.numpy as jnp
 
 @parity_p.def_abstract_eval
-def parity_abstract_eval(*measurements, expectation = 2):
+def parity_abstract_eval(*measurements, expectation = 0, observable = False):
     """
     Abstract evaluation for the parity primitive.
     
@@ -40,7 +40,7 @@ def parity_abstract_eval(*measurements, expectation = 2):
     
     return ShapedArray((), bool)
 
-def parity(*measurements, expectation = None):
+def parity(*measurements, expectation = 0, observable = False):
     r"""
     Computes the parity on a set of measurement results. This is equivalent to performing a multi-input XOR gate.
     
@@ -61,10 +61,10 @@ def parity(*measurements, expectation = None):
     providing an educated guess, which error caused the parity check to fail.
     
     Within Qrisp, the ``parity`` function can receive the ``expectation``
-    keyword argument. This argument can be either ``True``,``False`` or ``None``. 
-    The default is None.
+    keyword argument with values ``0`` or ``1``, and the ``observable`` keyword
+    argument (boolean). The default is ``expectation=0, observable=False``.
     
-    If the expectation argument is given, the parity function returns.
+    The parity function returns:
     
     .. math::
         
@@ -82,11 +82,11 @@ def parity(*measurements, expectation = None):
         When used within a function decorated with :func:`~qrisp.misc.stim_tools.extract_stim`, this function 
         is translated into Stim's ``DETECTOR`` or ``OBSERVABLE_INCLUDE`` instructions in the generated circuit.
         
-        * If ``expectation`` is ``True`` or ``False``, a ``DETECTOR`` instruction is created.
-        * If ``expectation`` is ``None``, an ``OBSERVABLE_INCLUDE`` instruction is created.
+        * If ``observable=False`` (default), a ``DETECTOR`` instruction is created.
+        * If ``observable=True``, an ``OBSERVABLE_INCLUDE`` instruction is created.
 
         If executed **without** ``extract_stim`` (i.e., in regular Qrisp simulation via :func:`~qrisp.jasp.jaspify`, for instance),
-        the function verifies that the measured parity matches the ``expectation`` provided. 
+        and ``observable=False``, the function verifies that the measured parity matches the ``expectation`` provided. 
         Deviations from the parity expectation should solely stem from hardware noise,
         i.e. a deviation in a **noiseless** simulation is an error *in the programm*.
         Because of this, an Exception is raised when the verification fails. 
@@ -101,11 +101,13 @@ def parity(*measurements, expectation = None):
         Variable length argument list of measurement results (typically outcomes of ``measure`` or similar operations).
         Can be scalars or arrays. All array inputs must have exactly the same shape.
         Mixing scalar and array inputs is not allowed.
-    expectation : None | bool, optional
+    expectation : int, optional
         The expected value of the parity of the measurement results.
-        If set to ``True`` or ``False``, the return value indicates if the actual parity 
-        differs from this expectation. 
-        If set to None (default), the function simply returns the calculated parity.
+        Must be ``0`` or ``1``. The return value indicates if the actual parity 
+        differs from this expectation. Default is ``0``.
+    observable : bool, optional
+        If ``True``, this parity is treated as a Stim ``OBSERVABLE_INCLUDE`` 
+        instruction rather than a ``DETECTOR``. Default is ``False``.
 
     Returns
     -------
@@ -165,17 +167,15 @@ def parity(*measurements, expectation = None):
     import jax.numpy as jnp
     from jax import lax
     
-    if expectation is None:
-        expectation = 2
-    else:
-        expectation = int(expectation)
+    expectation = int(expectation)
+    observable = bool(observable)
     
     # Check if any inputs are arrays
     shapes = [jnp.shape(m) for m in measurements]
     
     if all(s == () for s in shapes):
         # All scalars - direct call to primitive
-        return parity_p.bind(*measurements, expectation=expectation)
+        return parity_p.bind(*measurements, expectation=expectation, observable=observable)
     else:
         # At least one array - check that all arrays have the same shape
         # Collect all non-scalar shapes
@@ -183,7 +183,7 @@ def parity(*measurements, expectation = None):
         
         if not non_scalar_shapes:
             # This shouldn't happen given the if-else structure, but just in case
-            return parity_p.bind(*measurements, expectation=expectation)
+            return parity_p.bind(*measurements, expectation=expectation, observable=observable)
         
         # Check that all non-scalar shapes are identical
         first_shape = non_scalar_shapes[0]
@@ -206,7 +206,7 @@ def parity(*measurements, expectation = None):
             
             index, flat_result, flat_measurements = val
             parity_res = parity(*[meas[index] for meas in flat_measurements], 
-                                expectation=expectation)
+                                expectation=expectation, observable=observable)
             flat_result = flat_result.at[index].set(parity_res)
             index += 1
             
@@ -222,14 +222,14 @@ def parity(*measurements, expectation = None):
         return jnp.reshape(flat_result, result_shape)
 
 @parity_p.def_impl
-def parity_implementation(*measurements, expectation):
+def parity_implementation(*measurements, expectation, observable):
     """
     Implementation of the parity primitive.
     
     Handles only scalar inputs. Array broadcasting is handled in the parity function.
     """
     res = sum(measurements) % 2
-    if expectation != 2:
+    if not observable:
         if expectation != res:
             raise Exception("Parity expectation deviated from simulation result")
     return jnp.array((res + expectation) % 2, dtype = bool)
@@ -244,8 +244,9 @@ class ParityOperation(Operation):
     The operation takes n input clbits (the measurements to compute parity of).
     Parity results are tracked via ParityHandle objects returned by jaspr.to_qc().
     """
-    def __init__(self, num_inputs, expectation = 2):
+    def __init__(self, num_inputs, expectation = 0, observable = False):
         
         definition = QuantumCircuit(0, num_inputs)
         self.expectation = expectation
+        self.observable = observable
         Operation.__init__(self, "parity", num_clbits = num_inputs, definition = definition)

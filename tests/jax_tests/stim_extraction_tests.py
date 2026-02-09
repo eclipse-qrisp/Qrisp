@@ -689,7 +689,7 @@ def test_basic_parity_detector():
         m1 = measure(qv[1])
         
         # Parity of Bell pair should be 0
-        d = parity(m0, m1, expectation=False)
+        d = parity(m0, m1, expectation=0)
         return d
 
     res, stim_circuit = simple_detector()
@@ -715,7 +715,7 @@ def test_measurement_detector_gap_interleaved():
         m2 = measure(qv[2])
         
         # Check 0 and 2 (skipping m1)
-        d = parity(m0, m2, expectation=False)
+        d = parity(m0, m2, expectation=0)
         return d
         
     res, stim_circuit = gap_detector_interleaved()
@@ -727,14 +727,14 @@ def test_measurement_detector_gap_interleaved():
 
 def test_basic_observable():
     """
-    Test observable creation (expectation=None).
+    Test observable creation (observable=True).
     """
     @extract_stim
     def simple_observable():
         qv = QuantumVariable(1)
         h(qv[0])
         m = measure(qv[0])
-        obs = parity(m, expectation=None)
+        obs = parity(m, observable=True)
         return obs
 
     res_obs_idx, stim_circuit = simple_observable()
@@ -762,10 +762,10 @@ def test_observable_chaining():
         m2 = measure(qv[2])
         
         # Obs 0: m[0] + m[1]
-        obs_1 = parity(m0, m1, expectation=None)
+        obs_1 = parity(m0, m1, observable=True)
         
         # Obs 1: m[2] + Obs 0 (= m[0] + m[1] + m[2])
-        obs_2 = parity(m2, obs_1, expectation=None)
+        obs_2 = parity(m2, obs_1, observable=True)
         
         return obs_1, obs_2
 
@@ -803,12 +803,12 @@ def test_observable_merging():
         m2 = measure(qv[2])
         
         # Obs 0: m0
-        o1 = parity(m0, expectation=None)
+        o1 = parity(m0, observable=True)
         # Obs 1: m1
-        o2 = parity(m1, expectation=None)
+        o2 = parity(m1, observable=True)
         
         # Obs 2: o1 + o2 + m2 (= m0 + m1 + m2)
-        o3 = parity(o1, o2, m2, expectation=None)
+        o3 = parity(o1, o2, m2, observable=True)
         
         return o3
 
@@ -835,10 +835,10 @@ def test_detectors_on_observables():
         m1 = measure(qv[1])
         
         # Create an "observable" container for m[0]
-        obs = parity(m0, expectation=None)
+        obs = parity(m0, observable=True)
         
         # Detector checking parity of (Obs + m[1]) = (m[0] + m[1])
-        d = parity(obs, m1, expectation=False) # Default expectation=False -> Detector
+        d = parity(obs, m1, expectation=0) # Default expectation=0 -> Detector
         return d
 
     res, stim_circuit = detector_on_obs()
@@ -907,7 +907,7 @@ def test_parity_observable_sampling():
         m0 = measure(qv[0])
         m1 = measure(qv[1])
         # Even parity: m0 XOR m1 = 0
-        return parity(m0, m1, expectation=None)
+        return parity(m0, m1, observable=True)
 
     @extract_stim
     def observable_sampling_odd():
@@ -918,7 +918,7 @@ def test_parity_observable_sampling():
         m0 = measure(qv[0])
         m1 = measure(qv[1])
         # Odd parity: m0 XOR m1 = 1
-        return parity(m0, m1, expectation=None)
+        return parity(m0, m1, observable=True)
 
     # Test Even
     obs_idx_even, stim_circ_even = observable_sampling_even()
@@ -957,7 +957,7 @@ def test_parity_detector_sampling():
         
         # We expect even parity (0).
         # Detector fires if m0+m1 != 0.
-        d = parity(m0, m1, expectation=False)
+        d = parity(m0, m1, expectation=0)
         return d
 
     det_idx, stim_circuit = detector_circuit()
@@ -976,12 +976,12 @@ def test_parity_expectations_behavior():
     Verify `parity` expectation parameter behavior in Stim.
     
     Note: Currently, Stim conversion uses expectation only to distinguish 
-    between Detectors (expectation=True/False) and Observables (expectation=None).
+    between Detectors (expectation=1/False) and Observables (observable=True).
     The actual boolean value (True/False) does NOT modify the reference frame 
     or logic of the detector in Stim. Stim detectors always check if measurements 
     deviate from the deterministic noiseless simulation.
     
-    Therefore, setting expectation=True on a circuit that deterministically produces 0 
+    Therefore, setting expectation=1 on a circuit that deterministically produces 0 
     does NOT trigger a detector event in Stim simulation.
     """
     @extract_stim
@@ -993,10 +993,10 @@ def test_parity_expectations_behavior():
         m1 = measure(qv[1])
         
         # Expectation=False (0) -> Matches parity 0 -> No detection
-        d1 = parity(m0, m1, expectation=False)
+        d1 = parity(m0, m1, expectation=0)
         
         # Expectation=True (1) -> Mismatches (semantic) parity 0 -> BUT Stim sees physical match -> No detection
-        d2 = parity(m0, m1, expectation=True)
+        d2 = parity(m0, m1, expectation=1)
         
         return d1, d2
 
@@ -1025,10 +1025,10 @@ def test_parity_exception_behavior():
         m0 = measure(qv[0])
         m1 = measure(qv[1])
         
-        # We define expectation=True (Odd).
+        # We define expectation=1 (Odd).
         # In actual execution (noiseless), parity is 0 (Even). 
         # This is a violation.
-        return parity(m0, m1, expectation=True)
+        return parity(m0, m1, expectation=1)
 
     # 1. Test Regular JAX/Qrisp Simulation -> Should Raise Exception
     # We wrap in jaspify to execute using the Jax implementation of the primitive
@@ -1113,10 +1113,10 @@ def test_extract_stim_observables_sampling():
         m2_1 = measure(qv2[1])
 
         # Observable 0: Parity of |11> -> 0
-        obs0 = parity(m0, m1, expectation=2)
+        obs0 = parity(m0, m1, observable=True)
 
         # Observable 1: Parity of |10> -> 1
-        obs1 = parity(m2_0, m2_1, expectation=2)
+        obs1 = parity(m2_0, m2_1, observable=True)
 
         return obs0, obs1
 
@@ -1228,7 +1228,7 @@ def test_detector_handles_1d_array():
             m0 = measure(qv[0])
             m1 = measure(qv[1])
             # Bell pair parity should be 0
-            d = parity(m0, m1, expectation=False)
+            d = parity(m0, m1, expectation=0)
             detectors.append(d)
         
         return jnp.array(detectors)
@@ -1273,7 +1273,7 @@ def test_observable_handles_1d_array():
                 x(qv)
             m0 = measure(qv[0])
             m1 = measure(qv[1])
-            obs = parity(m0, m1, expectation=None)
+            obs = parity(m0, m1, observable=True)
             observables.append(obs)
         
         return jnp.array(observables)
@@ -1314,7 +1314,7 @@ def test_detector_handles_2d_array():
             cx(qv[0], qv[1])
             m0 = measure(qv[0])
             m1 = measure(qv[1])
-            d = parity(m0, m1, expectation=False)
+            d = parity(m0, m1, expectation=0)
             detectors.append(d)
         
         return jnp.array(detectors).reshape(2, 2)
@@ -1398,7 +1398,7 @@ def test_scalar_detector_is_0d_array():
         cx(qv[0], qv[1])
         m0 = measure(qv[0])
         m1 = measure(qv[1])
-        return parity(m0, m1, expectation=False)
+        return parity(m0, m1, expectation=0)
     
     det_idx, stim_circuit = single_detector()
     
@@ -1416,7 +1416,7 @@ def test_scalar_observable_is_0d_array():
         h(qv)
         m0 = measure(qv[0])
         m1 = measure(qv[1])
-        return parity(m0, m1, expectation=None)
+        return parity(m0, m1, observable=True)
     
     obs_idx, stim_circuit = single_observable()
     
@@ -1567,8 +1567,8 @@ def test_rev_detector_array():
         h(qv2[0]); cx(qv2[0], qv2[1])
         m1_0 = measure(qv1[0]); m1_1 = measure(qv1[1])
         m2_0 = measure(qv2[0]); m2_1 = measure(qv2[1])
-        d1 = parity(m1_0, m1_1, expectation=False)
-        d2 = parity(m2_0, m2_1, expectation=False)
+        d1 = parity(m1_0, m1_1, expectation=0)
+        d2 = parity(m2_0, m2_1, expectation=0)
         arr = jnp.array([d1, d2])
         return arr[::-1]
     
@@ -1841,9 +1841,9 @@ def test_detector_order_chronological():
         m1 = measure(qv[1])
         m2 = measure(qv[2])
         
-        d0 = parity(m0, expectation=False)
-        d1 = parity(m1, expectation=False)
-        d2 = parity(m2, expectation=False)
+        d0 = parity(m0, expectation=0)
+        d1 = parity(m1, expectation=0)
+        d2 = parity(m2, expectation=0)
         
         return d0, d1, d2
     
@@ -1874,9 +1874,9 @@ def test_detector_order_return_order():
         m2 = measure(qv[2])
         
         # Create detectors in chronological order
-        d0 = parity(m0, expectation=False)
-        d1 = parity(m1, expectation=False)
-        d2 = parity(m2, expectation=False)
+        d0 = parity(m0, expectation=0)
+        d1 = parity(m1, expectation=0)
+        d2 = parity(m2, expectation=0)
         
         # Return in different order: d2, d0, d1
         return d2, d0, d1
@@ -1925,11 +1925,11 @@ def test_detector_order_partial_detectors():
         m4 = measure(qv[4])
         
         # Create 5 detectors
-        d0 = parity(m0, expectation=False)
-        d1 = parity(m1, expectation=False)
-        d2 = parity(m2, expectation=False)
-        d3 = parity(m3, expectation=False)
-        d4 = parity(m4, expectation=False)
+        d0 = parity(m0, expectation=0)
+        d1 = parity(m1, expectation=0)
+        d2 = parity(m2, expectation=0)
+        d3 = parity(m3, expectation=0)
+        d4 = parity(m4, expectation=0)
         
         # Only return 3 of them
         return d1, d3, d0
@@ -1949,9 +1949,9 @@ def test_detector_order_no_detectors_returned():
         m2 = measure(qv[2])
         
         # Create detectors but don't return them
-        d0 = parity(m0, expectation=False)
-        d1 = parity(m1, expectation=False)
-        d2 = parity(m2, expectation=False)
+        d0 = parity(m0, expectation=0)
+        d1 = parity(m1, expectation=0)
+        d2 = parity(m2, expectation=0)
         
         # Return measurements instead
         return m0, m1, m2
@@ -1975,10 +1975,10 @@ def test_detector_order_nested_structure():
         m2 = measure(qv[2])
         m3 = measure(qv[3])
         
-        d0 = parity(m0, expectation=False)
-        d1 = parity(m1, expectation=False)
-        d2 = parity(m2, expectation=False)
-        d3 = parity(m3, expectation=False)
+        d0 = parity(m0, expectation=0)
+        d1 = parity(m1, expectation=0)
+        d2 = parity(m2, expectation=0)
+        d3 = parity(m3, expectation=0)
         
         # Return in nested structure
         first_pair = jnp.array([d0, d1])
@@ -2023,7 +2023,7 @@ def test_detector_order_repetition_code():
         
         for i in range(1, amount):
             new_meas_res = syndrom_round(data, ancilla)
-            detector_value = parity(new_meas_res, previous_meas_res, expectation=False)
+            detector_value = parity(new_meas_res, previous_meas_res, expectation=0)
             parity_outcome_list.append(detector_value)
             previous_meas_res = new_meas_res
         
@@ -2079,8 +2079,8 @@ def test_pytree_list_return():
         cx(qv[0], qv[1])
         m0 = measure(qv[0])
         m1 = measure(qv[1])
-        d0 = parity(m0, m1, expectation=False)
-        d1 = parity(m0, expectation=True)
+        d0 = parity(m0, m1, expectation=0)
+        d1 = parity(m0, expectation=1)
         return [d0, d1]
 
     result = list_return()
@@ -2102,9 +2102,9 @@ def test_pytree_list_and_scalar_return():
         cx(qv[0], qv[1])
         m0 = measure(qv[0])
         m1 = measure(qv[1])
-        d0 = parity(m0, m1, expectation=False)
-        d1 = parity(m0, expectation=True)
-        obs = parity(m1)
+        d0 = parity(m0, m1, expectation=0)
+        d1 = parity(m0, expectation=1)
+        obs = parity(m1, observable=True)
         return [d0, d1], obs
 
     result = list_and_scalar()
@@ -2127,8 +2127,8 @@ def test_pytree_dict_return():
         cx(qv[0], qv[1])
         m0 = measure(qv[0])
         m1 = measure(qv[1])
-        d = parity(m0, m1, expectation=False)
-        obs = parity(m0)
+        d = parity(m0, m1, expectation=0)
+        obs = parity(m0, observable=True)
         return {"detector": d, "observable": obs}
 
     result = dict_return()
@@ -2153,9 +2153,9 @@ def test_pytree_nested_structure():
         m0 = measure(qv[0])
         m1 = measure(qv[1])
         m2 = measure(qv[2])
-        d0 = parity(m0, m1, expectation=False)
-        d1 = parity(m1, m2, expectation=False)
-        obs = parity(m0, m2)
+        d0 = parity(m0, m1, expectation=0)
+        d1 = parity(m1, m2, expectation=0)
+        obs = parity(m0, m2, observable=True)
         return {"detectors": [d0, d1], "observable": obs}
 
     result = nested_return()
@@ -2215,9 +2215,9 @@ def test_pytree_list_with_detector_reorder():
         m1 = measure(qv[1])
         m2 = measure(qv[2])
         # Create detectors in one order
-        d0 = parity(m0, m1, expectation=False)
-        d1 = parity(m1, m2, expectation=False)
-        d2 = parity(m0, m2, expectation=False)
+        d0 = parity(m0, m1, expectation=0)
+        d1 = parity(m1, m2, expectation=0)
+        d2 = parity(m0, m2, expectation=0)
         # Return them reversed so return_order reorders the circuit
         return [d2, d1, d0]
 
@@ -2353,7 +2353,7 @@ def test_dynamic_noise_with_detectors():
         stim_noise("X_ERROR", p, qv[0])
         m0 = measure(qv[0])
         m1 = measure(qv[1])
-        d = parity(m0, m1, expectation=False)
+        d = parity(m0, m1, expectation=0)
         return d
 
     # p=0: no error, detector should never fire

@@ -124,9 +124,9 @@ def QuantumGateOp : JaspOp<"quantum_gate"> {
 
 def ParityOp : JaspOp<"parity"> {
     let summary = "Computes parity of measurement results.";
-    let description = "Computes the parity (XOR sum) of a set of measurement results. Supports an expectation attribute for error correction contexts.";
+    let description = "Computes the parity (XOR sum) of a set of measurement results. Supports expectation and observable attributes for error correction contexts.";
     
-    let arguments = (ins Variadic<0DTensorOf<[I1]>>:$measurements, I64Attr:$expectation);
+    let arguments = (ins Variadic<0DTensorOf<[I1]>>:$measurements, I64Attr:$expectation, I64Attr:$observable);
     let results = (outs 0DTensorOf<[I1]>:$result);
     
     let assemblyFormat = "$measurements attr-dict `:` type($measurements) `->` type($result)";

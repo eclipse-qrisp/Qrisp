@@ -191,9 +191,9 @@ def extract_stim(func=None, *, detector_order="chronological"):
             - **Quantum measurements** are returned as :class:`StimMeasurementHandles`
               arrays containing measurement record indices. These can be used directly
               to slice the results from ``stim_circuit.compile_sampler().sample()``.
-            - **Parity detectors** (from ``parity(..., expectation=True/False)``) are 
+            - **Parity detectors** (from ``parity(..., expectation=0/1)``) are 
               returned as :class:`StimDetectorHandles` arrays containing detector indices.
-            - **Parity observables** (from ``parity(..., expectation=None)``) are 
+            - **Parity observables** (from ``parity(..., observable=True)``) are 
               returned as :class:`StimObservableHandles` arrays containing observable indices.
             - **QuantumVariables** (unmeasured) are returned as :class:`StimQubitIndices`
               arrays containing the Stim qubit indices for that variable.
@@ -340,11 +340,11 @@ def extract_stim(func=None, *, detector_order="chronological"):
             m1_0 = measure(bell_pair_1[0]); m1_1 = measure(bell_pair_1[1])
             m2_0 = measure(bell_pair_2[0]); m2_1 = measure(bell_pair_2[1])
             
-            # Detector 1: expectation=False implies we expect even parity
-            d1 = parity(m1_0, m1_1, expectation=False)
+            # Detector 1: expectation=0 implies we expect even parity
+            d1 = parity(m1_0, m1_1, expectation=0)
             
             # Detector 2: Checks parity of second, noisy pair
-            d2 = parity(m2_0, m2_1, expectation=False)
+            d2 = parity(m2_0, m2_1, expectation=0)
             
             return d1, d2
 
@@ -363,7 +363,7 @@ def extract_stim(func=None, *, detector_order="chronological"):
 
     **Example 5: Defining Observables**
 
-    Similarly, :func:`~qrisp.jasp.parity` with ``expectation=None`` defines logical observables 
+    Similarly, :func:`~qrisp.jasp.parity` with ``observable=True`` defines logical observables 
     in Stim, returned as :class:`StimObservableHandles` arrays:
 
     ::
@@ -375,7 +375,7 @@ def extract_stim(func=None, *, detector_order="chronological"):
             m0 = measure(qv[0]); m1 = measure(qv[1])
             
             # Define an observable O = Z_0 Z_1
-            logical_obs = parity(m0, m1)
+            logical_obs = parity(m0, m1, observable=True)
             return logical_obs
 
         obs_idx, stim_circuit = observable_demo()

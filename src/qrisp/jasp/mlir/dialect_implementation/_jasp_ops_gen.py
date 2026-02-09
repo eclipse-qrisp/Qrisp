@@ -307,14 +307,14 @@ def measure(meas_res, out_qst, meas_q, in_qst, *, loc=None, ip=None) -> _ods_ir.
 @_ods_cext.register_operation(_Dialect)
 class ParityOp(_ods_ir.OpView):
   r"""
-  Computes the parity (XOR sum) of a set of measurement results. Supports an expectation attribute for error correction contexts.
+  Computes the parity (XOR sum) of a set of measurement results. Supports expectation and observable attributes for error correction contexts.
   """
 
   OPERATION_NAME = "jasp.parity"
 
   _ODS_REGIONS = (0, True)
 
-  def __init__(self, result, measurements, expectation, *, loc=None, ip=None):
+  def __init__(self, result, measurements, expectation, observable, *, loc=None, ip=None):
     operands = []
     attributes = {}
     regions = None
@@ -324,6 +324,10 @@ class ParityOp(_ods_ir.OpView):
     isinstance(expectation, _ods_ir.Attribute) or
     not _ods_ir.AttrBuilder.contains('I64Attr')) else
       _ods_ir.AttrBuilder.get('I64Attr')(expectation, context=_ods_context))
+    attributes["observable"] = (observable if (
+    isinstance(observable, _ods_ir.Attribute) or
+    not _ods_ir.AttrBuilder.contains('I64Attr')) else
+      _ods_ir.AttrBuilder.get('I64Attr')(observable, context=_ods_context))
     results = []
     results.append(result)
     _ods_successors = None
@@ -345,11 +349,21 @@ class ParityOp(_ods_ir.OpView):
     self.operation.attributes["expectation"] = value
 
   @builtins.property
+  def observable(self) -> _ods_ir.IntegerAttr:
+    return self.operation.attributes["observable"]
+
+  @observable.setter
+  def observable(self, value: _ods_ir.IntegerAttr):
+    if value is None:
+      raise ValueError("'None' not allowed as value for mandatory attributes")
+    self.operation.attributes["observable"] = value
+
+  @builtins.property
   def result(self) -> _ods_ir.OpResult:
     return self.operation.results[0]
 
-def parity(result, measurements, expectation, *, loc=None, ip=None) -> _ods_ir.OpResult:
-  return ParityOp(result=result, measurements=measurements, expectation=expectation, loc=loc, ip=ip).result
+def parity(result, measurements, expectation, observable, *, loc=None, ip=None) -> _ods_ir.OpResult:
+  return ParityOp(result=result, measurements=measurements, expectation=expectation, observable=observable, loc=loc, ip=ip).result
 
 @_ods_cext.register_operation(_Dialect)
 class QuantumGateOp(_ods_ir.OpView):

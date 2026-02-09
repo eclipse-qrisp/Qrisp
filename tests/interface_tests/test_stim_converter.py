@@ -511,7 +511,7 @@ def test_observable_map():
     qc.measure(qc.qubits[1], qc.clbits[1])
     
     # Define parity/observable operation - now takes only input clbits
-    parity_op = ParityOperation(2, expectation=2)
+    parity_op = ParityOperation(2, observable=True)
     qc.append(parity_op, [], [qc.clbits[0], qc.clbits[1]])
     
     res = qc.to_stim(return_observable_map=True)
@@ -526,6 +526,6 @@ def test_observable_map():
     det_map = res_det[1]
     obs_map = res_det[2]
     
-    # Detector map should be empty (expectation=2 means observable, not detector)
+    # Detector map should be empty (observable=True means observable, not detector)
     assert len(det_map) == 0
     assert len(obs_map) == 1

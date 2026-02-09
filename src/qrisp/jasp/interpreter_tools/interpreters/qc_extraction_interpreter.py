@@ -146,8 +146,11 @@ class ParityHandle:
         The list of Clbit objects involved in this parity. Retrieved from
         instruction.clbits.
     expectation : int
-        The expected parity value (0, 1, or 2 for unknown). Retrieved from
+        The expected parity value (0 or 1). Retrieved from
         instruction.op.expectation.
+    observable : bool
+        Whether this parity is an observable (True) or a detector (False).
+        Retrieved from instruction.op.observable.
     """
     def __init__(self, instruction):
         self.instruction = instruction
@@ -162,18 +165,25 @@ class ParityHandle:
         """Get the expected parity value from the underlying instruction."""
         return self.instruction.op.expectation
     
+    @property
+    def observable(self):
+        """Get whether this parity is an observable from the underlying instruction."""
+        return self.instruction.op.observable
+    
     def __repr__(self):
         return f"ParityHandle{tuple(self.clbits)}"
     
     def __hash__(self):
-        # Hash by clbits (as frozenset) and expectation for content-based comparison
+        # Hash by clbits (as frozenset), expectation, and observable for content-based comparison
         # This allows matching across transpile calls where instruction objects are copied
-        return hash((frozenset(self.clbits), self.expectation))
+        return hash((frozenset(self.clbits), self.expectation, self.observable))
     
     def __eq__(self, other):
         if isinstance(other, ParityHandle):
-            # Compare by content: same clbits and same expectation
-            return set(self.clbits) == set(other.clbits) and self.expectation == other.expectation
+            # Compare by content: same clbits, same expectation, and same observable
+            return (set(self.clbits) == set(other.clbits) and 
+                    self.expectation == other.expectation and
+                    self.observable == other.observable)
         return False
 
 
@@ -652,7 +662,7 @@ def make_qc_extraction_eqn_evaluator(qc):
             expanded_clbits = sorted(clbit_set, key=lambda cb: qc.clbits.index(cb))
             
             # Add parity operation to the circuit (for stim conversion)
-            qc.append(ParityOperation(len(expanded_clbits), expectation=eqn.params["expectation"]),
+            qc.append(ParityOperation(len(expanded_clbits), expectation=eqn.params["expectation"], observable=eqn.params["observable"]),
                       clbits=expanded_clbits)
             
             # Get the instruction we just appended

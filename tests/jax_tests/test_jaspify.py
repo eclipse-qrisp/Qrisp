@@ -87,7 +87,7 @@ def test_parity_simulation():
         c = measure(qv[2])
         
         # Parity of (False, False, False) = False
-        result = parity(a, b, c)
+        result = parity(a, b, c, observable=True)
         return result
     
     assert test_all_false() == False
@@ -103,7 +103,7 @@ def test_parity_simulation():
         c = measure(qv[2])
         
         # Parity of (True, False, False) = True
-        result = parity(a, b, c)
+        result = parity(a, b, c, observable=True)
         return result
     
     assert test_one_true() == True
@@ -120,7 +120,7 @@ def test_parity_simulation():
         c = measure(qv[2])
         
         # Parity of (True, True, False) = False
-        result = parity(a, b, c)
+        result = parity(a, b, c, observable=True)
         return result
     
     assert test_two_true() == False
@@ -138,7 +138,7 @@ def test_parity_simulation():
         c = measure(qv[2])
         
         # Parity of (True, True, True) = True
-        result = parity(a, b, c)
+        result = parity(a, b, c, observable=True)
         return result
     
     assert test_three_true() == True
@@ -152,7 +152,7 @@ def test_parity_simulation():
         b = measure(qv[1])
         
         # Parity is False, expectation is False -> returns False (expectation met)
-        result = parity(a, b, expectation=False)
+        result = parity(a, b, expectation=0)
         return result
 
     assert test_expectation_met() == False
@@ -166,7 +166,7 @@ def test_parity_simulation():
         b = measure(qv[1])
 
         # Parity is True, expectation is False -> raises exception
-        result = parity(a, b, expectation=False)
+        result = parity(a, b, expectation=0)
         return result
 
     # Should raise exception when expectation not met
@@ -187,7 +187,7 @@ def test_parity_array_simulation():
         c = jnp.array([True, True, False, False])
         
         # Element-wise parity
-        result = parity(a, b, c)
+        result = parity(a, b, c, observable=True)
         return result
     
     result = test_array_parity()
@@ -200,7 +200,7 @@ def test_parity_array_simulation():
         a = jnp.array([[True, False], [True, False]])
         b = jnp.array([[False, True], [True, False]])
         
-        result = parity(a, b)
+        result = parity(a, b, observable=True)
         return result
     
     result = test_2d_array_parity()
@@ -215,7 +215,7 @@ def test_parity_array_simulation():
 
         # Parity: [False, False, False]
         # Expectation: False for all -> expectation met
-        result = parity(a, b, expectation=False)
+        result = parity(a, b, expectation=0)
         return result
 
     result = test_array_expectation_met()
@@ -230,7 +230,7 @@ def test_parity_array_simulation():
 
         # Parity: [True, False, False]
         # Expectation: False for all -> first element mismatches
-        result = parity(a, b, expectation=False)
+        result = parity(a, b, expectation=0)
         return result
 
     # Should raise exception on first mismatch (element 0)
@@ -257,7 +257,7 @@ def test_parity_with_superposition():
         d = measure(qv[2])
         
         # Parity of GHZ state is always True (either 0 or 3 ones)
-        result = parity(a, b, c, d)
+        result = parity(a, b, c, d, observable=True)
         return result
     
     # Run multiple times to check consistency

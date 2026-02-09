@@ -432,7 +432,8 @@ def process_parity(eqn, context_dic):
     invalues = extract_invalues(eqn, context_dic)
     
     # Check if expectation parameter is present
-    expectation = eqn.params.get("expectation", None)
+    expectation = eqn.params.get("expectation", 0)
+    observable = eqn.params.get("observable", False)
     
     # Compute XOR by summing all measurement results and taking modulo 2
     result = 0
@@ -440,9 +441,8 @@ def process_parity(eqn, context_dic):
         result = result + val
     result = result % 2
     
-    # If expectation is provided, XOR with it
-    if expectation != 2:
-        result = (result + expectation) % 2
+    # XOR result with expectation
+    result = (result + expectation) % 2
     
     # Insert the result into the context
     insert_outvalues(eqn, context_dic, jnp.array(result, dtype = bool))

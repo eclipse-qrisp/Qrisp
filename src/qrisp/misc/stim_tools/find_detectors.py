@@ -642,7 +642,7 @@ def find_detectors(func=None, *, return_circuits=False):
             # --- 4. Emit parity calls for each detector ---
             det_results = [
                 parity(*[cb_to_traced[cb] for cb in det],
-                       expectation=bool(expectations[idx]))
+                       expectation=int(expectations[idx]))
                 for idx, det in relevant
             ]
 

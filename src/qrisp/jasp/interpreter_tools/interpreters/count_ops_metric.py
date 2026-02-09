@@ -192,11 +192,10 @@ class CountOpsMetric(BaseMetric):
         """Handle the `jasp.parity` primitive"""
         # Parity is a classical operation on measurement results
         # Compute XOR and handle expectation
-        expectation = eqn.params.get("expectation", 2)
+        expectation = eqn.params.get("expectation", 0)
         result = sum(invalues) % 2
         
-        if expectation != 2:
-            result = result ^ expectation
+        result = result ^ expectation
         
         return jnp.array(result, dtype = bool)
 

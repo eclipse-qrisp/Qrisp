@@ -1249,17 +1249,17 @@ def test_parity_post_processing():
         
         # Parity is True, expectation is False
         # Result should be 1 (indicating mismatch)
-        result = parity(m1, m2, expectation=False)
+        result = parity(m1, m2, expectation=0)
         return result
     
     jaspr = parity_with_expectation()
     post_proc = jaspr.extract_post_processing()
     
-    result = post_proc("10")  # m1=True, m2=False -> parity=True, expectation=False -> result=1
+    result = post_proc("10")  # m1=True, m2=False -> parity=True, expectation=0 -> result=1
     assert result == 1, f"Expected 1 (mismatch indicator), got {result}"
     
     # Test matching expectation
-    result = post_proc("00")  # m1=False, m2=False -> parity=False, expectation=False -> result=0
+    result = post_proc("00")  # m1=False, m2=False -> parity=False, expectation=0 -> result=0
     assert result == 0, f"Expected 0 (match indicator), got {result}"
     
     # Test parity in control flow

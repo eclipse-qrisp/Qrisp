@@ -158,7 +158,7 @@ def test_parity_boolean_simulation():
         m2 = measure(qv[1])
         
         # Parity is True, expectation is False -> mismatch = True
-        result = parity(m1, m2, expectation=False)
+        result = parity(m1, m2, expectation=0)
         return result
     
     result = test_parity_expectation()
@@ -173,7 +173,7 @@ def test_parity_boolean_simulation():
         m2 = measure(qv[1])
         
         # Parity is False, expectation is False -> match = False
-        result = parity(m1, m2, expectation=False)
+        result = parity(m1, m2, expectation=0)
         return result
     
     result = test_parity_match()

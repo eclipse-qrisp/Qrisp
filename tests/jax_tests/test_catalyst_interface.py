@@ -193,7 +193,7 @@ def test_parity_catalyst():
         
         # Parity is True (one 1), expectation is False
         # XOR(True, False) = True (mismatch indicator)
-        result = parity(m1, m2, expectation=False)
+        result = parity(m1, m2, expectation=0)
         return result
     
     assert test_parity_expectation() == True

@@ -186,7 +186,7 @@ def test_parity_count_ops():
         m2 = measure(qv[1])
         
         # Parity is True (one 1), expectation is False
-        result = parity(m1, m2, expectation=False)
+        result = parity(m1, m2, expectation=0)
         return result
     
     ops = test_parity_expectation()

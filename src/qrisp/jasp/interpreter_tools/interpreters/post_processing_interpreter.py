@@ -229,15 +229,13 @@ def extract_post_processing(jaspr, *args):
             # Handle parity: compute XOR of measurement results
             if eqn.primitive.name == "jasp.parity":
                 invalues = extract_invalues(eqn, context_dic)
-                expectation = eqn.params.get("expectation", 2)
+                expectation = eqn.params.get("expectation", 0)
                 
                 # Compute parity (XOR) of all measurements
                 result = sum(invalues) % 2
                 
-                # If expectation is specified, XOR it with the result
-                # Result will be 0 if expectation matches, 1 if it doesn't
-                if expectation != 2:
-                    result = result ^ expectation
+                # XOR result with expectation
+                result = result ^ expectation
                 
                 # Insert result into context
                 context_dic[eqn.outvars[0]] = jnp.array(result, dtype = bool)

@@ -217,9 +217,9 @@ def test_parity_scalar():
         meas_b = measure(qv[1])
         
         # Test with None (returns raw parity)
-        result_none = parity(meas_a, meas_b, expectation=None)
+        result_none = parity(meas_a, meas_b, observable=True)
         # Test with False expectation
-        result_false = parity(meas_a, meas_b, expectation=False)
+        result_false = parity(meas_a, meas_b, expectation=0)
         
         return result_none, result_false
     
