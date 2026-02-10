@@ -493,22 +493,22 @@ def lanczos_alg(H: BlockEncoding | QubitOperator, D: int, operand_prep: Callable
         Estimated ground state energy of the Hamiltonian H.
     info : dict, optional
         Full details including:
-            - 'Tk_expvals' : ArrayLike, shape (2D,)
-                Chebyshev expectation values
             - 'energy' : float 
                 Ground-state energy estimate
             - 'eigvals' : ArrayLike, shape (D,)
                 Eigenvalues of regularized problem
             - 'eigvecs' : ArrayLike, shape (D, D)
                 Eigenvectors of regularized problem
-            - 'S_reg' : ArrayLike, shape (D, D)
-                Regularized overlap matrix
+            - 'H' : ArrayLike, shape (D, D)
+                The Hamiltonian matrix
             - 'H_reg' : ArrayLike, shape (D, D)
                 Regularized Hamiltonian matrix
             - 'S' : ArrayLike, shape (D, D)
                 The overlap matrix
-            - 'H' : ArrayLike, shape (D, D)
-                The Hamiltonian matrix
+            - 'S_reg' : ArrayLike, shape (D, D)
+                Regularized overlap matrix
+            - 'Tk_expvals' : ArrayLike, shape (2D,)
+                Chebyshev expectation values
     
     Examples
     --------
@@ -592,14 +592,14 @@ def lanczos_alg(H: BlockEncoding | QubitOperator, D: int, operand_prep: Callable
     if show_info:
 
         results = {
-            'Tk_expvals': Tk_expvals,
             'energy': ground_state_energy,
             'eigvals': eigvals,
             'eigvecs': eigvecs,
-            'S_reg': S_reg,
+            'H': H_mat,
             'H_reg': H_reg,
             'S': S,
-            'H': H_mat,
+            'S_reg': S_reg,
+            'Tk_expvals': Tk_expvals,
         }
         return ground_state_energy, results
     
