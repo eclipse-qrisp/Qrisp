@@ -35,6 +35,19 @@ def test_block_encoding_from_array():
     assert res == {1.0: 0.5, 3.0: 0.5}
 
 
+def test_block_encoding_from_lcu():
+    def f0(x): x-=1
+    def f1(x): x+=1
+    BE = BlockEncoding.from_lcu(np.array([1., 1.]), [f0, f1])
+
+    @terminal_sampling
+    def main():
+        return BE.apply_rus(lambda : QuantumFloat(2))()
+
+    res = main()
+    assert res == {1.0: 0.5, 3.0: 0.5}
+
+
 def test_block_encoding_from_operator():
     H = X(0)*X(1) + 0.2*Y(0)*Y(1)
     B = BlockEncoding.from_operator(H)
@@ -45,6 +58,17 @@ def test_block_encoding_from_operator():
 
     res = main()
     assert res == {3.0: 1.0}
+
+
+def test_block_encoding_resources():
+    H = X(0)*X(1) + 0.5*Z(0)*Z(1)
+    BE = BlockEncoding.from_operator(H)
+
+    res_dict = BE.resources(QuantumFloat(2))
+    # {'gate counts': {'x': 3, 'cz': 2, 'u3': 2, 'cx': 4, 'gphase': 2}, 
+    # 'depth': 12}
+    assert isinstance(res_dict['gate counts'], dict)
+    assert isinstance(res_dict['depth'], int)
 
 
 def test_block_encoding_alpha_dynamic():

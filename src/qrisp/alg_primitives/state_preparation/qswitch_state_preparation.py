@@ -16,18 +16,19 @@
 ********************************************************************************
 """
 
-from typing import Callable
+from typing import Callable, Tuple
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 from jax import lax
-from jax.errors import TracerArrayConversionError
 
 from qrisp.misc.utility import _EPSILON, swap_endianness
 
 
-def _rot_params_from_state(vec: jnp.ndarray) -> tuple:
+def _rot_params_from_state(
+    vec: jnp.ndarray,
+) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
     Computes the rotation angles to prepare a single qubit state,
     where the amplitude of the |0> basis state is real and non-negative.
@@ -46,8 +47,10 @@ def _rot_params_from_state(vec: jnp.ndarray) -> tuple:
     -------
     theta : float
         The rotation angle theta.
+
     phi : float
         The rotation angle phi.
+
     lam : float
         The rotation angle lambda.
     """
@@ -57,13 +60,13 @@ def _rot_params_from_state(vec: jnp.ndarray) -> tuple:
     a = jnp.clip(jnp.real(a), -1.0, 1.0)
     theta = 2.0 * jnp.arccos(a)
     phi = jnp.where(jnp.abs(b) > _EPSILON, jnp.angle(b), 0.0)
-    lam = 0.0
+    lam = jnp.float64(0.0)
     return theta, phi, lam
 
 
 def _normalize_with_phase(
     v: jnp.ndarray, acc: jnp.ndarray
-) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
     Normalizes a given vector and adjusts its phase.
 
@@ -74,6 +77,7 @@ def _normalize_with_phase(
     ----------
     v : jnp.ndarray
         The child vector to normalize.
+
     acc : jnp.ndarray
         The accumulated phase from previous operations.
 
@@ -81,8 +85,10 @@ def _normalize_with_phase(
     -------
     norm : jnp.ndarray
         The norm of the input vector.
+
     v_normalized : jnp.ndarray
         The normalized vector with adjusted phase.
+
     updated_acc : jnp.ndarray
         The updated accumulated phase.
     """
@@ -111,7 +117,7 @@ def _normalize_with_phase(
 
 def _compute_thetas(
     vec: jnp.ndarray, acc: jnp.ndarray
-) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
     For a given input vector, this function computes the rotation angles
     needed for the uniformly controlled RY at this tree layer, normalizes its child vectors,
@@ -121,6 +127,7 @@ def _compute_thetas(
     ----------
     vec : jnp.ndarray
         A complex vector representing the current vector to process.
+
     acc : jnp.ndarray
         The accumulated phase from previous operations.
 
@@ -129,8 +136,10 @@ def _compute_thetas(
     -------
     theta : jnp.ndarray
         The angle (scalar array) for the ry rotation gate.
+
     subvecs : jnp.ndarray
         A 2D array where each row corresponds to a normalized subvector.
+
     acc_phases : jnp.ndarray
         A 1D array containing the updated accumulated phases for each subvector.
 
@@ -154,7 +163,7 @@ def _compute_thetas(
 
 def _compute_u3_params(
     qubit_vec: jnp.ndarray, acc: jnp.ndarray
-) -> tuple[jnp.ndarray, jnp.ndarray]:
+) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """
     For a given length-2 vector, this function computes the U3 gate parameters needed
     to prepare the corresponding state, normalizes the vector, and updates the accumulated phase.
@@ -163,6 +172,7 @@ def _compute_u3_params(
     ----------
     qubit_vec : jnp.ndarray
         A complex vector representing a one-qubit state.
+
     acc : jnp.ndarray
         The accumulated phase from previous operations.
 
@@ -170,6 +180,7 @@ def _compute_u3_params(
     -------
     u_params : jnp.ndarray
         A 1D array containing the rotation angles (theta, phi, lambda) for the U3 gate.
+
     total_phase : jnp.ndarray
         The updated accumulated phase after processing the leaf subvector.
 
@@ -203,7 +214,7 @@ def _compute_u3_params(
 #
 def _preprocess(
     target_array: jnp.ndarray,
-) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
     This preprocessing function returns three data structures needed for state preparation.
 
@@ -252,38 +263,40 @@ def _preprocess(
 
     return thetas, u_params, phases
 
-def prepare_qswitch(qv, target_array: jnp.ndarray) -> None:
+
+def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
     """
     Prepare the quantum state encoded in ``qv`` so that it matches the given
     ``target_array`` by constructing a binary-tree decomposition of the target
     amplitudes and applying a sequence of uniformly controlled rotations via
-    the ``qswitch`` primitive.
+    the ``q_switch`` primitive.
 
     This routine implements a standard state-preparation algorithm based on
     recursively splitting the target statevector.
     The classical preprocessing stage extracts RY angles for internal tree nodes
     and U3 parameters for the leaf nodes.
-    The quantum stage applies them using ``qswitch``, which replaces
+    The quantum stage applies them using ``q_switch``, which replaces
     explicit multiplexers and conditionals in both static execution and Jasp mode.
-
-    .. note::
-
-        During the quantum stage, ``qswitch`` enumerates control patterns in
-        little-endian order, so each index is bit-reversed before accessing
-        the parameters computed in the classical preprocessing stage.
 
     Parameters
     ----------
     qv : QuantumVariable
         The quantum variable representing the qubits to be prepared.
+
     target_array : jnp.ndarray
         A normalized complex vector representing the target state to prepare.
+
+    big_endianness : bool, optional
+        If ``True``, indicates that the state preparation should use big-endian
+        convention for the computational basis ordering.
+        Default is ``False``, meaning little-endian convention is used.
 
     """
 
     # These imports are here to avoid circular dependencies
-    from qrisp import gphase, qswitch, ry, u3
+    from qrisp import gphase, ry, u3
     from qrisp.jasp.program_control.jrange_iterator import jrange
+    from qrisp.jasp.program_control.prefix_control import q_switch
     from qrisp.jasp.tracing_logic import check_for_tracing_mode
     from qrisp.misc.utility import bit_reverse
 
@@ -292,15 +305,29 @@ def prepare_qswitch(qv, target_array: jnp.ndarray) -> None:
     # n is static (known at compile time), so we can use normal numpy here
     n = int(np.log2(target_array.shape[0]))
 
+    # The binary-tree preprocessing (_preprocess) and the q_switch traversal in this
+    # function were originally implemented for a big-endian interpretation of the
+    # target statevector indices (i.e. MSB-first splitting).
+    #
+    # However, we later on decided to consider little-endianness as the default
+    # convention in Qrisp. That is, qv[0] is the least significant bit in the basis-state index.”
+    #
+    # Therefore, `big_endianness=False` indicates that we want to use little-endianness,
+    # so we need to swap the endianness of the target_array before proceeding.
+    if big_endianness is False:
+        target_array = swap_endianness(target_array, n)
+
     # We could use jrange even in static mode, but this would add overhead.
     xrange = jrange if check_for_tracing_mode() else range
 
     thetas, u_params, phases = _preprocess(target_array)
 
     def make_case_fn(layer_size: int, is_final: bool = False) -> Callable:
-        """Create a case function for qswitch at a given layer."""
+        """Create a case function for q_switch at a given layer."""
 
         def case_fn(i, qb):
+            # NOTE: This bit-reversal is not about Qrisp's endianness.
+            # It compensates for the order in which q_switch enumerates control patterns
             rev_idx = bit_reverse(i, layer_size)
             if is_final:
                 theta_i, phi_i, lam_i = u_params[rev_idx]
@@ -321,14 +348,14 @@ def prepare_qswitch(qv, target_array: jnp.ndarray) -> None:
 
     for layer_size in xrange(1, qv.size - 1):
 
-        qswitch(
-            operand=qv[layer_size],
-            case=qv[:layer_size],
-            case_function=make_case_fn(layer_size),
+        q_switch(
+            qv[:layer_size],
+            make_case_fn(layer_size),
+            qv[layer_size],
         )
 
-    qswitch(
-        operand=qv[qv.size - 1],
-        case=qv[: qv.size - 1],
-        case_function=make_case_fn(qv.size - 1, is_final=True),
+    q_switch(
+        qv[: qv.size - 1],
+        make_case_fn(qv.size - 1, is_final=True),
+        qv[qv.size - 1],
     )

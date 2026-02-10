@@ -338,7 +338,7 @@ class QuantumVariable:
         except ValueError:
             pass
 
-        # The following lists are used to indicate to the 
+        # The following lists are used to indicate to the
         # (un)flattening mechanism of Jax which attributes
         # of the QuantumVariable should be considered static
         # and which are dynamic.
@@ -733,63 +733,51 @@ class QuantumVariable:
         r"""
         Initialize an arbitrary quantum state on this quantum variable.
 
-        This method can be used in two ways:
+        This method supports two input formats:
 
         **1. Dictionary input**
 
-            A dictionary of the form ``{value: amplitude}`` describing the
-            (possibly non-normalized) wavefunction in the logical basis of the
-            quantum variable. Any value not explicitly provided is assigned
-            amplitude zero.
+            A dictionary ``{value: amplitude}`` describing the (possibly
+            non-normalized) wavefunction in the logical basis of the quantum
+            variable. Any value not listed is assigned amplitude zero.
 
         **2. Explicit statevector input**
 
             A flat vector of complex amplitudes of length :math:`2^{n}`, where
-            :math:`n` is the size (in qubits) of the quantum variable.
-            The vector is automatically normalized.
+            :math:`n` is the number of qubits. The vector is automatically
+            normalized. The little-endian convention is assumed for indexing
+            basis states. See :ref:`prepare <prepare>` for details.
 
-        In both cases, the initialization algorithm requires all underlying
-        qubits to be in the :math:`\ket{0}` state (i.e. *fresh*).
+        .. note::
 
-        The parameter ``method`` determines the backend used for state
-        preparation:
-
-        - ``"auto"`` (default): Use the Qiskit-based initializer when not
-          in Jasp mode, and fall back to the internal ``qswitch`` initializer
-          during Jasp mode.
-        - ``"qiskit"``: Force the Qiskit state-preparation circuit. This
-          cannot be used in Jasp mode.
-        - ``"qswitch"``: Use the state-preparation implementation based on
-          :ref:`qswitch <qswitch>`, which is compatible with Jasp mode.
+            In Jasp mode, Python-based shape and checks on the norm of the
+            statevector are skipped to avoid tracing side effects.
 
         Parameters
         ----------
         params : dict or array-like
             Either a dictionary ``{value: amplitude}`` or a length
             :math:`2^{n}` complex statevector.
+
         method : {"auto", "qiskit", "qswitch"}, optional
-            Choice of state-preparation backend. Defaults to ``"auto"``.
+            Select the state-preparation backend.
+            The possible options are:
 
-        Raises
-        ------
-        ValueError
-            If a statevector of incorrect length is provided.
-        ValueError
-            If the supplied statevector has zero norm.
-        ValueError
-            If the qubits are not fresh prior to initialization.
-        ValueError
-            If ``method="qiskit"`` is used in Jasp mode.
+            - ``"auto"`` (default):
+                Use the Qiskit-based initializer outside Jasp mode and fall back
+                to the internal ``qswitch`` initializer in Jasp mode.
 
-        .. note::
+            - ``"qiskit"``:
+                Force the Qiskit state-preparation circuit. Not available in
+                Jasp mode.
 
-            When executing in Jasp mode, Python-based shape and normalization
-            checks are disabled to avoid introducing tracing side effects.
+            - ``"qswitch"``:
+                Use the :ref:`q_switch <q_switch>`-based implementation, which
+                is compatible with Jasp mode.
 
-        .. note::
+            Defaults to ``"auto"``.
 
-            When using an array-like input, the ordering of amplitudes should
-            correspond to the one retrieved with the ``statevector`` method.
+
 
         Examples
         --------
@@ -812,11 +800,28 @@ class QuantumVariable:
 
         **Explicit statevector input**
 
+        In this example, we create a :ref:`QuantumFloat` and prepare the normalized state
+        $\sum_{i=0}^3 \tilde b_i\ket{i}$ for $\tilde b=(0,1,2,3)/\sqrt{14}$.
+
         >>> import numpy as np
-        >>> psi = np.zeros(2**3, dtype=complex)
-        >>> psi[4] = (1/3)**0.5
-        >>> psi[1] = 1j*(2/3)**0.5
-        >>> qf.init_state(psi)
+
+        >>> b = np.array([0, 1, 2, 3], dtype=float)
+        >>> b /= np.linalg.norm(b)
+        >>> qf = QuantumFloat(2)
+        >>> qf.init_state(b)
+
+        We can use the ``statevector`` method to get a function that maps basis states
+        to amplitudes to verify the prepared state:
+
+        >>> sv_function = qf.qs.statevector("function")
+
+        >>> print(f"b[1]: {b[1]:.6f} -> {sv_function({qf: 1}):.6f}")
+        b[1]: 0.267261 -> 0.267261-0.000000j
+        >>> print(f"b[2]: {b[2]:.6f} -> {sv_function({qf: 2}):.6f}")
+        b[2]: 0.534522 -> 0.534522-0.000000j
+
+        where index 1 in little-endian corresponds to the basis state :math:`\ket{q_0=1, q_1=0}`
+        and index 2 to :math:`\ket{q_0=0, q_1=1}`.
 
         **Forcing a backend**
 
@@ -825,11 +830,9 @@ class QuantumVariable:
         >>> qf.init_state(psi, method="qswitch")   # Always allowed
         >>> qf.init_state(psi, method="qiskit")    # Only outside Jasp mode
 
-        After initialization, the amplitudes can be inspected via:
+        After initialization, the amplitudes can be inspected
+        using ``qf.qs.statevector("function")`` as above.
 
-        >>> sv_function = qf.qs.statevector("function")
-        >>> sv_function({qf: 2.0})
-        0.8164965809277261j  # i * sqrt(2/3)
         """
 
         # Imports here to avoid circular dependencies
@@ -843,14 +846,12 @@ class QuantumVariable:
             target_array = np.zeros(1 << self.size, dtype=np.complex128)
             for key, amp in params.items():
                 target_array[self.encoder(key)] = amp
-            qiskit_reversed = False
 
         else:
             # Use JAX array to allow tracing; convert later if needed
             target_array = jnp.asarray(params, dtype=jnp.complex128)
-            qiskit_reversed = True
 
-        prepare(self, target_array, qiskit_reversed, method = method)
+        prepare(self, target_array, False, method=method)
 
     def append(self, operation):
         self.qs.append(operation, self)
@@ -992,7 +993,7 @@ class QuantumVariable:
         circuit_preprocessor=None,
         filename=None,
         precompiled_qc=None,
-    ):
+    ) -> dict:
         r"""
         Method for quick access to the measurement results of the state of the variable.
         This method returns a dictionary of the type {value : p} where p indicates the

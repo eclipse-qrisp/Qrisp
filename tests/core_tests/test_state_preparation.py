@@ -19,17 +19,21 @@
 import jax.numpy as jnp
 import numpy as np
 import pytest
+from jax.typing import ArrayLike
 
-from qrisp import QuantumFloat, QuantumVariable, x
+from qrisp import QuantumFloat, QuantumVariable
+from qrisp.alg_primitives.state_preparation.prepare_func import prepare_qswitch
 from qrisp.jasp import terminal_sampling
-from qrisp.misc.utility import _EPSILON, bit_reverse
+from qrisp.misc.utility import _EPSILON, swap_endianness
 
 ########################################################
 ### Test state preparation with array (based on qswitch)
 ########################################################
 
 
-def _compute_statevector_logical_qubits(qv: QuantumVariable) -> np.ndarray:
+def _compute_statevector_logical_qubits(
+    qv: QuantumVariable, big_endianness: bool = False
+) -> ArrayLike:
     """Compute the statevector amplitudes corresponding to the logical qubits"""
 
     qs_compiled = qv.qs.compile()
@@ -48,7 +52,11 @@ def _compute_statevector_logical_qubits(qv: QuantumVariable) -> np.ndarray:
         index = int("".join(full_bits), 2)
         logical_amplitudes.append(sv[index])
 
-    return np.array(logical_amplitudes, dtype=complex)
+    logical_amplitudes = np.asarray(logical_amplitudes, dtype=complex)
+    # Adjust for endianness (see docstring and comment in `prepare_qswitch` function)
+    if big_endianness is False:
+        logical_amplitudes = swap_endianness(logical_amplitudes, qv.size)
+    return logical_amplitudes
 
 
 def _gen_real_vector(n):
@@ -118,6 +126,27 @@ class TestStatePreparationQSwitch:
         ):
             qv.init_state(array, method="unknown_method")
 
+    @pytest.mark.parametrize("big_endianness", [True, False])
+    def test_prepare_qswitch_with_endianness(self, big_endianness):
+        """Test state preparation via `prepare_qswitch` with different endianness settings."""
+
+        qv = QuantumVariable(3)
+        array = jnp.array([1, 1j, -1, -1j, 1, 1j, -1, -1j])
+
+        prepare_qswitch(qv, array, big_endianness=big_endianness)
+
+        logical_sv = _compute_statevector_logical_qubits(
+            qv, big_endianness=big_endianness
+        )
+
+        # We need to normalize before the check
+        # (this also tests that the normalization in `prepare_qswitch` works correctly)
+        array /= jnp.linalg.norm(array)
+        assert np.allclose(logical_sv, array, atol=1e-5)
+
+    # From now on, we test both qswitch and qiskit methods
+    # using the `init_state` method of QuantumVariable,
+    # which is assumed to be the most public interface for state preparation.
     @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
     @pytest.mark.parametrize(
         "statevector_fn",
@@ -136,26 +165,18 @@ class TestStatePreparationQSwitch:
 
         assert np.allclose(logical_sv, array, atol=1e-5)
 
-    def test_phase_varied_state(self):
-        """Test state preparation of a state with varied phases."""
-
-        qv = QuantumVariable(3)
-        array = jnp.array([1, 1j, -1, -1j, 1, 1j, -1, -1j])
-        array /= jnp.linalg.norm(array)
-        qv.init_state(array, method="qswitch")
-
-        logical_sv = _compute_statevector_logical_qubits(qv)
-        assert np.allclose(logical_sv, array, atol=1e-5)
-
     def test_near_zero_amplitudes(self):
         """Test state preparation of a state with near-zero amplitudes."""
 
         qv = QuantumVariable(3)
         array = jnp.array([1.0, _EPSILON, 0, 0, 0, _EPSILON * 1j, -_EPSILON, 0])
-        array /= jnp.linalg.norm(array)
         qv.init_state(array, method="qswitch")
 
         logical_sv = _compute_statevector_logical_qubits(qv)
+
+        # We need to normalize before the check
+        # (this also tests that the normalization in `prepare_qswitch` works correctly)
+        array /= jnp.linalg.norm(array)
         assert np.allclose(logical_sv, array, atol=1e-5)
 
 
@@ -173,7 +194,7 @@ class TestStatePreparationQswitchJasp:
 
         with pytest.raises(
             ValueError,
-            match="Tried to initialize dynamic jax array using state preparation method qiskit",
+            match="Tried to initialize a quantum variable with a JAX Tracer array using the Qiskit ",
         ):
             state_vector = _gen_real_vector(2)
             main(state_vector)
@@ -191,9 +212,8 @@ class TestStatePreparationQswitchJasp:
 
         for idx in range(1 << n):
             dict_res = main(idx)
-            key = bit_reverse(idx, n)
             assert len(dict_res) == 1
-            assert dict_res[float(key)] == 1
+            assert dict_res[float(idx)] == 1
 
     # The standard deviation expected on the number of shots per state is
     # sqrt(n_shots * p * (1-p)) where p = 1 / 2^n
@@ -247,7 +267,7 @@ class TestStatePreparationQswitchJasp:
 
         res = main()
 
-        keys = {float(bit_reverse(i, n)) for i in idxs}
+        keys = {float(i) for i in idxs}
         assert set(res.keys()) == keys
 
         for key in keys:
@@ -274,12 +294,6 @@ def test_state_preparation():
     qf.init_state(state_dic)
 
     debugger = qf.qs.statevector("function")
-
-    print(type(debugger))
-
-    print("Amplitude of state 2.75: ", debugger({qf: 2.75}))
-    print("Amplitude of state -1.5: ", debugger({qf: -1.5}))
-    print("Amplitude of state 3: ", debugger({qf: 3}))
 
     assert np.abs(debugger({qf: 2.75}) - 0.5) < 1e-5
     assert np.abs(debugger({qf: -1.5}) + 0.5) < 1e-5

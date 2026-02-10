@@ -124,7 +124,7 @@ def quantum_kernel(func):
 
         qs = TracingQuantumSession.get_instance()
         
-        qs.start_tracing(create_quantum_kernel_p.bind(), gc_mode = "none")
+        qs.start_tracing(create_quantum_kernel_p.bind())
         
         try:
             res = func(*args, **kwargs)
