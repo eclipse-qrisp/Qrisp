@@ -216,7 +216,7 @@ def lanczos_expvals(H, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dic
     if not "shots" in mes_kwargs:
         mes_kwargs["shots"] = 100000
 
-    BE = H if isinstance(H, BlockEncoding) else H.pauli_block_encoding()
+    BE = H if isinstance(H, BlockEncoding) else BlockEncoding.from_operator(H)
 
     if check_for_tracing_mode():
 
@@ -571,8 +571,10 @@ def lanczos_alg(H: BlockEncoding | QubitOperator, D: int, operand_prep: Callable
 
     """
     
+    BE = H if isinstance(H, BlockEncoding) else BlockEncoding.from_operator(H)
+
     # Step 1: Quantum Lanczos: Find expectation values of Chebyshev polynomials
-    Tk_expvals = lanczos_expvals(H, D, operand_prep, mes_kwargs)
+    Tk_expvals = lanczos_expvals(BE, D, operand_prep, mes_kwargs)
 
     # Step 2: Build matrices S and H
     S, H_mat = build_S_H_from_Tk(Tk_expvals, D)
@@ -585,9 +587,8 @@ def lanczos_alg(H: BlockEncoding | QubitOperator, D: int, operand_prep: Callable
     eigvals, eigvecs = generalized_eigh(H_reg, S_reg)
 
     # Step 5: Find ground state energy
-    coeffs = H.hermitize().to_pauli().coeffs() 
-    scaling_factor = jnp.sum(jnp.abs(coeffs)) # Scaling factor for Pauli block-encoding
-    ground_state_energy = jnp.min(eigvals) * scaling_factor
+    # Rescale by block-encoding normalization factor
+    ground_state_energy = jnp.min(eigvals) * BE.alpha
     
     if show_info:
 
