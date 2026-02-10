@@ -1158,7 +1158,7 @@ class QuantumArray:
         # {OutcomeArray([[False, False], [False, False]], dtype=object): 1.0}
 
         """
-        from qrisp.qtypes.quantum_float import QuantumBool, QuantumFloat
+        from qrisp.qtypes import QuantumBool, QuantumFloat
         if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
             raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
         return self._element_wise_out_of_place_injection(other, lambda a,b: a>b, QuantumBool())
@@ -1191,7 +1191,7 @@ class QuantumArray:
         # {OutcomeArray([[True, True], [True, True]], dtype=object): 1.0}
 
         """
-        from qrisp.qtypes.quantum_float import QuantumBool, QuantumFloat
+        from qrisp.qtypes import QuantumBool, QuantumFloat
         if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
             raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
         return self._element_wise_out_of_place_injection(other, lambda a,b: a>=b, QuantumBool())
@@ -1224,7 +1224,7 @@ class QuantumArray:
         # {OutcomeArray([[False, False], [False, False]], dtype=object): 1.0}
 
         """
-        from qrisp.qtypes.quantum_float import QuantumBool, QuantumFloat
+        from qrisp.qtypes import QuantumBool, QuantumFloat
         if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
             raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
         return self._element_wise_out_of_place_injection(other, lambda a,b: a<b, QuantumBool())
@@ -1257,7 +1257,7 @@ class QuantumArray:
         # {OutcomeArray([[True, True], [True, True]], dtype=object): 1.0}
 
         """
-        from qrisp.qtypes.quantum_float import QuantumBool, QuantumFloat
+        from qrisp.qtypes import QuantumBool, QuantumFloat
         if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
             raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
         self._element_wise_out_of_place_injection(other, lambda a,b: a<=b, QuantumBool())
