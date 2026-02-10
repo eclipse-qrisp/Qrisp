@@ -241,11 +241,18 @@ def count_ops(meas_behavior):
 
             args = list(args)
             signature = tuple([type(arg) for arg in args])
+            shape_signature = []
 
-            if not signature in function.jaspr_dict:
-                function.jaspr_dict[signature] = make_jaspr(function)(*args)
+            for arg in tree_flatten(args)[0]:
+                if hasattr(arg, "shape"):
+                    shape_signature.append(arg.shape)
 
-            return function.jaspr_dict[signature].count_ops(
+            hash_key = signature + tuple(shape_signature) + tuple(meas_behavior)
+
+            if not hash_key in function.jaspr_dict:
+                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
+
+            return function.jaspr_dict[hash_key].count_ops(
                 *args, meas_behavior=meas_behavior
             )
 
@@ -389,10 +396,19 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
             args = list(args)
 
             signature = tuple([type(arg) for arg in args])
-            if not signature in function.jaspr_dict:
-                function.jaspr_dict[signature] = make_jaspr(function)(*args)
 
-            return function.jaspr_dict[signature].depth(
+            shape_signature = []
+
+            for arg in tree_flatten(args)[0]:
+                if hasattr(arg, "shape"):
+                    shape_signature.append(arg.shape)
+
+            hash_key = signature + tuple(shape_signature) + tuple(meas_behavior)
+
+            if not hash_key in function.jaspr_dict:
+                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
+
+            return function.jaspr_dict[hash_key].depth(
                 *args, meas_behavior=meas_behavior, max_qubits=max_qubits
             )
 
