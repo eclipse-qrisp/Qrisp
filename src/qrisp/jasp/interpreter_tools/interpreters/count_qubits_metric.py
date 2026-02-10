@@ -25,7 +25,6 @@ import jax.numpy as jnp
 from jax.random import key
 from jax.typing import ArrayLike
 
-from qrisp.circuit.operation import Operation
 from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
     BaseMetric,
     eval_jaxpr,
@@ -33,7 +32,6 @@ from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
 )
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     get_quantum_operations,
-    is_abstract,
 )
 from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.jasp.primitives import (
@@ -60,95 +58,114 @@ class CountQubitsMetric(BaseMetric):
 
         super().__init__(meas_behavior=meas_behavior, profiling_dic=profiling_dic)
 
-        self._initial_metric = ...
+        # This integer keeps track of the qubits allocated so far.
+        self._initial_metric = (jnp.int64(0),)
 
     @property
-    def initial_metric(self) -> ...:
+    def initial_metric(self) -> Tuple[ArrayLike]:
         """Return the initial metric value."""
         return self._initial_metric
 
     def handle_create_qubits(self, invalues, eqn, context_dic):
 
-        ...
+        size, metric_data = invalues
+
+        allocated_qubits = metric_data[0]
+        allocated_qubits += size
 
         # Associate the following in context_dic:
-        # QubitArray -> ...
-        # QuantumCircuit -> metric_data ...
-        return ...
+        # QubitArray -> size
+        # QuantumCircuit -> metric_data
+        return (size, (allocated_qubits,))
 
     def handle_get_qubit(self, invalues, eqn, context_dic):
 
-        ...
-
         # Associate the following in context_dic:
-        # Qubit -> ...
-        return ...
+        # Qubit -> None (we don't need to track individual qubits for this metric)
+        return None
 
     def handle_get_size(self, invalues, eqn, context_dic):
-        """Handle the `jasp.get_size` primitive."""
-
-        ...
 
         # Associate the following in context_dic:
-        # size -> ...
-        return ...
+        # size -> size
+        return invalues[0]
 
     def handle_quantum_gate(self, invalues, eqn, context_dic):
 
-        ...
-
         # Associate the following in context_dic:
-        # QuantumCircuit -> ...
-        return ...
+        # QuantumCircuit -> metric_data
+        return invalues[-1]
 
     def handle_measure(self, invalues, eqn, context_dic):
 
-        ...
+        target, metric_data = invalues
+
+        # We keep a measurement counter only to generate unique keys.
+        meas_number = context_dic.get("_meas_number", jnp.int32(0))
+
+        if isinstance(eqn.invars[0].aval, AbstractQubitArray):
+
+            _, size = target
+
+            def body_fun(i, acc):
+                return self._measurement_body_fun(meas_number, i, acc)
+
+            meas_res = jax.lax.fori_loop(0, size, body_fun, jnp.int64(0))
+            context_dic["_meas_number"] = meas_number + size
+
+        else:  # measuring a single qubit
+
+            meas_res = self.meas_behavior(key(meas_number))
+            self._validate_measurement_result(meas_res)
+            context_dic["_meas_number"] = meas_number + jnp.int32(1)
 
         # Associate the following in context_dic:
-        # meas_result -> ...
-        # QuantumCircuit -> ...
-        return ...
+        # meas_result -> meas_res (int64 scalar)
+        # QuantumCircuit -> metric_data
+        return (meas_res, metric_data)
 
     def handle_fuse(self, invalues, eqn, context_dic):
 
-        ...
-
         # Associate the following in context_dic:
-        # QubitArray -> ...
-        return ...
+        # QubitArray -> size1 + size2
+        return invalues[0] + invalues[1]
 
     def handle_slice(self, invalues, eqn, context_dic):
 
-        ...
-
-        ...
+        start = jnp.max(jnp.array([invalues[1], 0]))
+        stop = jnp.min(jnp.array([invalues[2], invalues[0]]))
 
         # Associate the following in context_dic:
-        # QubitArray -> ...
-        return ...
+        # QubitArray -> size
+        return stop - start
 
     def handle_reset(self, invalues, eqn, context_dic):
 
-        ...
-
         # Associate the following in context_dic:
-        # QuantumCircuit -> ...
-        return ...
+        # QuantumCircuit -> metric_data
+        return invalues[-1]
 
     def handle_delete_qubits(self, invalues, eqn, context_dic):
 
-        ...
+        size, metric_data = invalues
+
+        allocated_qubits = metric_data[0]
+        allocated_qubits -= size
+
+        metric_data = (allocated_qubits,)
 
         # Associate the following in context_dic:
-        # QuantumCircuit -> ...
-        return ...
+        # QubitArray -> size
+        # QuantumCircuit -> metric_data
+        return metric_data
 
 
-def extract_count_qubits(res: Tuple, jaspr: Jaspr, _):
+def extract_count_qubits(res: Tuple, jaspr: Jaspr, _) -> int:
     """Extract count_qubits from the profiling result."""
 
-    pass
+    metric = res[-1] if len(jaspr.outvars) > 1 else res
+    num_allocated_qubits = metric[0]
+    return int(num_allocated_qubits)
 
 
 @lru_cache(int(1e5))

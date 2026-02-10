@@ -127,18 +127,38 @@ class DepthMetric(BaseMetric):
         # Ideally, we would implement dynamic resizing in the future
         self._max_qubits = max_qubits
 
-        # As data structure in the context dictionary to keep track of depth,
-        # we use an array of size MAX_QUBITS where each entry corresponds to the depth of that qubit.
-        #
         # To speed up compilation time, it will be probably necessary to
         # use the same incrementation constants trick used for gate counting.
+
+        # Here is the explanation of the metric data structure:
+        #
+        # - depth_array: jnp.ndarray of shape (max_qubits,) that keeps track
+        #   of the depth of each qubit.
+        #
+        # - current_depth: jnp.ndarray scalar that keeps track of the current
+        #   maximum depth of the circuit.
+        #
+        # - previous_size: jnp.ndarray scalar that keeps track of the
+        #   next available index in the depth_array for newly created qubits.
+        #   When we create new qubits, we assign them global indices starting from this value,
+        #   and then we update it by the number of qubits created.
+        #
+        # - invalid: jnp.ndarray boolean that indicates whether the depth computation
+        #   has overflowed the maximum number of qubits supported.
         depth_array = jnp.zeros(self._max_qubits, dtype=jnp.int64)
         current_depth = jnp.int64(0)
+        previous_size = jnp.int64(0)
         invalid = jnp.bool_(False)
-        self._initial_metric = (depth_array, current_depth, invalid)
+
+        self._initial_metric = (
+            depth_array,
+            current_depth,
+            previous_size,
+            invalid,
+        )
 
     @property
-    def initial_metric(self) -> Tuple[ArrayLike, ArrayLike, ArrayLike]:
+    def initial_metric(self) -> Tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Return the initial metric value."""
         return self._initial_metric
 
@@ -150,17 +170,16 @@ class DepthMetric(BaseMetric):
     def handle_create_qubits(self, invalues, eqn, context_dic):
 
         size, metric_data = invalues
-        depth_array, global_depth, invalid = metric_data
+        depth_array, global_depth, previous_size, invalid = metric_data
 
-        # We keep into account that `create_qubits` can be called multiple times.
-        idx_start = context_dic.get("_previous_qubit_array_end", jnp.int64(0))
+        idx_start = previous_size
         idx_end = idx_start + size
 
         overflow = idx_end > jnp.int64(self.max_qubits)
         invalid = jnp.logical_or(invalid, overflow)
         jax.lax.cond(invalid, _warn, lambda *_: None, idx_end, self.max_qubits)
 
-        context_dic["_previous_qubit_array_end"] = idx_end
+        previous_size = idx_end
 
         table_size = size if not is_abstract(size) else self.max_qubits
         qubit_ids_table = _create_lookup_table(idx_start, table_size)
@@ -169,8 +188,13 @@ class DepthMetric(BaseMetric):
 
         # Associate the following in context_dic:
         # QubitArray -> qubit_table_handle (qubit_ids_table, size)
-        # QuantumCircuit -> metric_data (depth_array, current_depth, invalid)
-        return qubit_table_handle, (depth_array, global_depth, invalid)
+        # QuantumCircuit -> metric_data
+        return qubit_table_handle, (
+            depth_array,
+            global_depth,
+            previous_size,
+            invalid,
+        )
 
     def handle_get_qubit(self, invalues, eqn, context_dic):
 
@@ -194,7 +218,7 @@ class DepthMetric(BaseMetric):
 
     def handle_quantum_gate(self, invalues, eqn, context_dic):
 
-        depth_array, current_depth, invalid = invalues[-1]
+        depth_array, current_depth, previous_size, invalid = invalues[-1]
 
         op = eqn.params["gate"]
         # Qubits have been already converted to their integer (possibly traced)
@@ -208,7 +232,7 @@ class DepthMetric(BaseMetric):
                 qubit_ids=qubits,
                 duration=jnp.int64(1),
             )
-            return depth_array, current_depth, invalid
+            return depth_array, current_depth, previous_size, invalid
 
         transpiled_definition = op.definition.transpile()
         concrete_qubits = list(transpiled_definition.qubits)
@@ -234,14 +258,14 @@ class DepthMetric(BaseMetric):
             )
 
         # Associate the following in context_dic:
-        # QuantumCircuit -> metric_data (depth_array, current_depth, invalid)
-        return depth_array, current_depth, invalid
+        # QuantumCircuit -> metric_data
+        return depth_array, current_depth, previous_size, invalid
 
     def handle_measure(self, invalues, eqn, context_dic):
 
         target, metric_data = invalues
 
-        depth_array, current_depth, invalid = metric_data
+        depth_array, current_depth, previous_size, invalid = metric_data
         # We keep a measurement counter only to generate unique keys.
         meas_number = context_dic.get("_depth_meas_number", jnp.int32(0))
 
@@ -263,8 +287,11 @@ class DepthMetric(BaseMetric):
 
         # Associate the following in context_dic:
         # meas_result -> meas_res (int64 scalar)
-        # QuantumCircuit -> metric_data (depth_array, current_depth, invalid)
-        return (meas_res, (depth_array, current_depth, invalid))
+        # QuantumCircuit -> metric_data
+        return (
+            meas_res,
+            (depth_array, current_depth, previous_size, invalid),
+        )
 
     def handle_fuse(self, invalues, eqn, context_dic):
 
@@ -313,7 +340,7 @@ class DepthMetric(BaseMetric):
         _, metric_data = invalues
 
         # Associate the following in context_dic:
-        # QuantumCircuit -> metric_data (depth_array, current_depth, invalid)
+        # QuantumCircuit -> metric_data
         return metric_data
 
     def handle_delete_qubits(self, invalues, eqn, context_dic):
@@ -321,7 +348,7 @@ class DepthMetric(BaseMetric):
         _, metric_data = invalues
 
         # Associate the following in context_dic:
-        # QuantumCircuit -> metric_data (depth_array, current_depth, invalid)
+        # QuantumCircuit -> metric_data
         return metric_data
 
 
@@ -329,14 +356,14 @@ def extract_depth(res: Tuple, jaspr: Jaspr, _) -> int:
     """Extract depth from the profiling result."""
 
     metric = res[-1] if len(jaspr.outvars) > 1 else res
-    _, depth, overflowed = metric
+    _, depth, _, overflowed = metric
 
     if overflowed:
         raise ValueError(
             "The depth metric computation overflowed the maximum number of qubits supported."
         )
 
-    return int(depth) if hasattr(depth, "__int__") else depth
+    return int(depth)
 
 
 @lru_cache(int(1e5))
