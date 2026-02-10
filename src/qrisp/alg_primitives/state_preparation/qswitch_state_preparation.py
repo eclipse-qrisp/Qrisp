@@ -23,6 +23,12 @@ import jax.numpy as jnp
 import numpy as np
 from jax import lax
 
+from qrisp.environments import (
+    control,
+    custom_control,
+    custom_inversion,
+    invert,
+)
 from qrisp.misc.utility import _EPSILON, swap_endianness
 
 
@@ -264,7 +270,7 @@ def _preprocess(
     return thetas, u_params, phases
 
 
-def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
+def prepare_qswitch(qv, target_array, big_endianness: bool = False, inv=False) -> None:
     """
     Prepare the quantum state encoded in ``qv`` so that it matches the given
     ``target_array`` by constructing a binary-tree decomposition of the target
@@ -322,7 +328,7 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
 
     thetas, u_params, phases = _preprocess(target_array)
 
-    def make_case_fn(layer_size: int, is_final: bool = False) -> Callable:
+    def make_case_fn(layer_size: int, is_final: bool = False, inv: bool = False) -> Callable:
         """Create a case function for q_switch at a given layer."""
 
         def case_fn(i, qb):
@@ -331,10 +337,17 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
             rev_idx = bit_reverse(i, layer_size)
             if is_final:
                 theta_i, phi_i, lam_i = u_params[rev_idx]
-                u3(theta_i, phi_i, lam_i, qb)
-                gphase(phases[rev_idx], qb)
+                if inv:
+                    gphase(-phases[rev_idx], qb)
+                    u3(-theta_i, -phi_i, -lam_i, qb)
+                else:
+                    u3(theta_i, phi_i, lam_i, qb)
+                    gphase(phases[rev_idx], qb)
             else:
-                ry(thetas[layer_size][rev_idx], qb)
+                if inv:
+                    ry(-thetas[layer_size][rev_idx], qb)
+                else:
+                    ry(thetas[layer_size][rev_idx], qb)
 
         return case_fn
 
@@ -344,18 +357,43 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
         gphase(phases[0], qv[0])
         return
 
-    ry(thetas[0][0], qv[0])
-
-    for layer_size in xrange(1, qv.size - 1):
-
+    if inv:
         q_switch(
-            qv[:layer_size],
-            make_case_fn(layer_size),
-            qv[layer_size],
+            qv[: qv.size - 1],
+            make_case_fn(qv.size - 1, is_final=True),
+            qv[qv.size - 1],
         )
 
-    q_switch(
-        qv[: qv.size - 1],
-        make_case_fn(qv.size - 1, is_final=True),
-        qv[qv.size - 1],
-    )
+        for layer_size in xrange(1, qv.size - 1):
+            layer_size_reversed = qv.size - 1 - layer_size
+            
+            q_switch(
+                qv[:layer_size_reversed],
+                make_case_fn(layer_size_reversed),
+                qv[layer_size_reversed],
+            )
+
+        ry(-thetas[0][0], qv[0])
+    
+    else:
+    
+        ry(thetas[0][0], qv[0])
+
+        for layer_size in xrange(1, qv.size - 1):
+
+            q_switch(
+                qv[:layer_size],
+                make_case_fn(layer_size),
+                qv[layer_size],
+            )
+
+        q_switch(
+            qv[: qv.size - 1],
+            make_case_fn(qv.size - 1, is_final=True),
+            qv[qv.size - 1],
+        )
+
+
+temp = prepare_qswitch.__doc__
+prepare_qswitch = custom_inversion(prepare_qswitch)
+prepare_qswitch.__doc__ = temp
