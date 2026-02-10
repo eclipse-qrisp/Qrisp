@@ -1298,7 +1298,7 @@ class QuantumArray:
         """
         from qrisp.qtypes import QuantumBool
         self._validate_arithmetic(other)
-        self._element_wise_out_of_place_injection(other, lambda a,b: a<=b, QuantumBool())
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a<=b, QuantumBool())
 
     # Delegation of element-wise in-place functions
     
