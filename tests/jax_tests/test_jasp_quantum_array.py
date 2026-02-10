@@ -166,10 +166,10 @@ def test_element_wise_addition_injection():
         x(a_array)
         b_array = QuantumArray(QuantumFloat(4), shape=(4,4))
         h(b_array)
-        r_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        r_array = QuantumArray(QuantumFloat(6), shape=(4,4))
 
         (r_array << (lambda a,b: a+b))(a_array, b_array)
         return measure(r_array), measure(a_array), measure(b_array)
 
     r, a, b = test()
-    assert((r == (a+b)%16).all())
+    assert((r == a+b).all())
