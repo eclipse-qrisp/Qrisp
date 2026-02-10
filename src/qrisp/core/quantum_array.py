@@ -748,7 +748,34 @@ class QuantumArray:
             return "<QuantumArray[" + str(self.shape)[1:-1] + "]>"
 
     @lifted
-    def __matmul__(self, other):
+    def __matmul__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs matrix multiplication.
+
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be multiplied.
+
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray containing the multiplication result.
+
+        Examples
+        --------
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.eye(2)
+        >>> b_array[:] = np.eye(2)
+        >>> r_array = a_array @ b_array
+        >>> print(r_array)
+        # {OutcomeArray([[1, 0], [0, 1]]): 1.0}
+
+        """
         from qrisp import QuantumFloat, QuantumModulus
 
         if isinstance(self.qtype, QuantumModulus):
@@ -968,6 +995,22 @@ class QuantumArray:
                 for i in range(self_view.size):
                     (out_view[i] << fun)(self_view[i], other)
             return out
+    
+    def _validate_arithmetic(self, other):
+        """Internal helper to validate type and shape for element-wise operations."""
+        from qrisp.qtypes.quantum_float import QuantumFloat
+        # 1. Type Check
+        if not isinstance(self.qtype, QuantumFloat) or not (hasattr(other, 'qtype') and isinstance(other.qtype, QuantumFloat)):
+            raise TypeError(
+                f"Element-wise operations require both arrays to have qtype 'QuantumFloat'. "
+                f"Got {type(self.qtype).__name__} and {type(getattr(other, 'qtype', other)).__name__}."
+            )
+
+        # 2. Shape Check
+        if self.shape != other.shape:
+            raise ValueError(
+                f"Shape mismatch between {self.shape} and {other.shape}."
+            )
 
     def __add__(self, other: QuantumArray) -> QuantumArray:
         """
@@ -997,9 +1040,8 @@ class QuantumArray:
         # {OutcomeArray([[2, 0], [0, 2]]): 1.0}
 
         """
-        from qrisp.qtypes.quantum_float import create_output_qf, QuantumFloat
-        if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
-            raise Exception("Tried to element-wise add QuantumArrays with qtype not QuantumFloat")
+        from qrisp.qtypes.quantum_float import create_output_qf
+        self._validate_arithmetic(other)
         return self._element_wise_out_of_place_injection(other, lambda a,b: a+b, create_output_qf([self.qtype, other.qtype], "add"))
         
     def __sub__(self, other: QuantumArray) -> QuantumArray:
@@ -1030,9 +1072,8 @@ class QuantumArray:
         # {OutcomeArray([[0, 0], [0, 0]]): 1.0}
 
         """
-        from qrisp.qtypes.quantum_float import create_output_qf, QuantumFloat
-        if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
-            raise Exception("Tried to element-wise subtract QuantumArrays with qtype not QuantumFloat")
+        from qrisp.qtypes.quantum_float import create_output_qf
+        self._validate_arithmetic(other)
         return self._element_wise_out_of_place_injection(other, lambda a,b: a-b, create_output_qf([self.qtype, other.qtype], "sub"))
 
     def __mul__(self, other: QuantumArray) -> QuantumArray:
@@ -1063,9 +1104,8 @@ class QuantumArray:
         # {OutcomeArray([[1, 0], [0, 1]]): 1.0}
 
         """
-        from qrisp.qtypes.quantum_float import create_output_qf, QuantumFloat
-        if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
-            raise Exception("Tried to element-wise multiply QuantumArrays with qtype not QuantumFloat")
+        from qrisp.qtypes.quantum_float import create_output_qf
+        self._validate_arithmetic(other)
         return self._element_wise_out_of_place_injection(other, lambda a,b: a*b, create_output_qf([self.qtype, other.qtype], "mul"))
 
     def __eq__(self, other: QuantumArray) -> QuantumArray:
@@ -1097,6 +1137,7 @@ class QuantumArray:
 
         """
         from qrisp.qtypes import QuantumBool
+        self._validate_arithmetic(other)
         return self._element_wise_out_of_place_injection(other, lambda a,b: a==b, QuantumBool())
         
     def __ne__(self, other: QuantumArray) -> QuantumArray:
@@ -1128,6 +1169,7 @@ class QuantumArray:
 
         """
         from qrisp.qtypes import QuantumBool
+        self._validate_arithmetic(other)
         return self._element_wise_out_of_place_injection(other, lambda a,b: a!=b, QuantumBool())
 
     def __gt__(self, other: QuantumArray) -> QuantumArray:
@@ -1158,9 +1200,8 @@ class QuantumArray:
         # {OutcomeArray([[False, False], [False, False]], dtype=object): 1.0}
 
         """
-        from qrisp.qtypes import QuantumBool, QuantumFloat
-        if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
-            raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
+        from qrisp.qtypes import QuantumBool
+        self._validate_arithmetic(other)
         return self._element_wise_out_of_place_injection(other, lambda a,b: a>b, QuantumBool())
 
     def __ge__(self, other: QuantumArray) -> QuantumArray:
@@ -1191,9 +1232,8 @@ class QuantumArray:
         # {OutcomeArray([[True, True], [True, True]], dtype=object): 1.0}
 
         """
-        from qrisp.qtypes import QuantumBool, QuantumFloat
-        if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
-            raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
+        from qrisp.qtypes import QuantumBool
+        self._validate_arithmetic(other)
         return self._element_wise_out_of_place_injection(other, lambda a,b: a>=b, QuantumBool())
 
     def __lt__(self, other: QuantumArray) -> QuantumArray:
@@ -1224,9 +1264,8 @@ class QuantumArray:
         # {OutcomeArray([[False, False], [False, False]], dtype=object): 1.0}
 
         """
-        from qrisp.qtypes import QuantumBool, QuantumFloat
-        if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
-            raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
+        from qrisp.qtypes import QuantumBool
+        self._validate_arithmetic(other)
         return self._element_wise_out_of_place_injection(other, lambda a,b: a<b, QuantumBool())
 
     def __le__(self, other: QuantumArray) -> QuantumArray:
@@ -1257,9 +1296,8 @@ class QuantumArray:
         # {OutcomeArray([[True, True], [True, True]], dtype=object): 1.0}
 
         """
-        from qrisp.qtypes import QuantumBool, QuantumFloat
-        if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
-            raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
+        from qrisp.qtypes import QuantumBool
+        self._validate_arithmetic(other)
         self._element_wise_out_of_place_injection(other, lambda a,b: a<=b, QuantumBool())
 
     # Delegation of element-wise in-place functions

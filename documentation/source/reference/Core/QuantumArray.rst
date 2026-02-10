@@ -44,6 +44,7 @@ Arithmetic
 
    QuantumArray.__add__
    QuantumArray.__sub__
+   QuantumArray.__matmul__
    QuantumArray.__mul__
    QuantumArray.__eq__
    QuantumArray.__ne__
