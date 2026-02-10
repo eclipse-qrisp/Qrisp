@@ -21,7 +21,7 @@ from functools import partial
 import jax.numpy as jnp
 import jax
 import numpy as np
-from qrisp import QuantumVariable, QuantumFloat, h, control, multi_measurement
+from qrisp import QuantumVariable, QuantumBool, h, control, multi_measurement
 from qrisp.operators import QubitOperator
 from qrisp.block_encodings import BlockEncoding
 from qrisp.jasp import jrange, check_for_tracing_mode, expectation_value
@@ -30,17 +30,17 @@ from typing import Any, TYPE_CHECKING, Callable, Dict, Tuple
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
-def lanczos_even(BE: BlockEncoding | QubitOperator, k: int, operand_prep: Callable[..., Any]) -> Tuple[QuantumVariable, ...]: 
+def lanczos_even(BE: BlockEncoding, k: int, operand_prep: Callable[..., Any]) -> Tuple[QuantumVariable, ...]: 
     r"""
     This function implements the Krylov space construction via block-encodings 
     of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(a) of `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018>`__.
     
     For even $k$, the subroutine prepares a state by applying $k/2$ qubitization 
-    steps $(RU)$. The expectation value $\langle T_k(H)\rangle$ is then obtained 
-    by measuring the reflection operator $R = 2|G\rangle_a\langle G|_a - I$ on 
-    the auxiliary register. 
+    steps $(RU)$. The expectation value $\langle T_k(H)\rangle_0$ is then obtained 
+    by measuring the reflection operator $R = 2|0\rangle_a\langle 0|_a - I$ on 
+    the ancillas. 
     
-    The "all-zeros" measurement outcome (representing $|G\rangle_a$) corresponds 
+    The "all-zeros" measurement outcome (representing $|0\rangle_a$) corresponds 
     to the $+1$ eigenvalue of $R$, while any other outcome corresponds to $-1$.
 
     Parameters
@@ -49,27 +49,29 @@ def lanczos_even(BE: BlockEncoding | QubitOperator, k: int, operand_prep: Callab
         The block-encoding of the Hamiltonian $H$ for which we want to estimate the ground-state energy.
     k : int
         Even integer representing the even Chebyshev polynomial order.
-    operand_prep : callable 
-        Function returning the (operand) QuantumVariable in the initial system state $\ket{\psi_0}$, i.e.,
+    operand_prep : Callable 
+        Function returning the (operand) QuantumVariables in the initial system state $\ket{\psi_0}$, i.e.,
         ``operand=operand_prep()``.
 
     Returns
     -------
     tuple of QuantumVariable
-        The auxiliary case-indicator QuantumVariables. Measurement outcomes of these variables encode the expectation value.
+        The ancilla QuantumVariables. Measurement outcomes of these variables encode the expectation value.
     """
     BE_qubitized = BE.qubitization()
 
-    case_indicator = BE_qubitized.create_ancillas()
+    ancillas = BE_qubitized.create_ancillas()
     
-    operand = operand_prep()
+    operands = operand_prep()
+    if not isinstance(operands, tuple):
+        operands = (operands,)
 
     for _ in jrange(k // 2):
-        BE_qubitized.unitary(*case_indicator, operand)
+        BE_qubitized.unitary(*ancillas, *operands)
     
-    return tuple(case_indicator)
+    return tuple(ancillas)
 
-def lanczos_odd(BE: BlockEncoding | QubitOperator, k: int, operand_prep: Callable[..., Any]) -> QuantumFloat:
+def lanczos_odd(BE: BlockEncoding, k: int, operand_prep: Callable[..., Any]) -> QuantumBool:
     r"""
     This function implements the Krylov space construction via block-encodings 
     of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(b) of `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/>`__.
@@ -77,37 +79,39 @@ def lanczos_odd(BE: BlockEncoding | QubitOperator, k: int, operand_prep: Callabl
     For odd $k$, the subroutine applies $\lfloor k/2 \rfloor$ qubitization steps 
     followed by a Hadamard test for the block-encoding unitary $U$. This 
     effectively estimates $\langle \psi_{\lfloor k/2 \rfloor} | U | \psi_{\lfloor k/2 \rfloor} \rangle$, 
-    which encodes the odd Chebyshev expectation value $\langle T_k(H)\rangle$.
+    which encodes the odd Chebyshev expectation value $\langle T_k(H)\rangle_0$.
 
     Parameters
     ----------
     BE : BlockEncoding
         The block-encoding of the Hamiltonian $H$ for which we want to estimate the ground-state energy.
     k : int
-        Odd integer representing the odd Chebyshev polynomial order..
-    operand_prep : callable 
-        Function returning the (operand) QuantumVariable in the initial system state $\ket{\psi_0}$, i.e.,
+        Odd integer representing the odd Chebyshev polynomial order.
+    operand_prep : Callable 
+        Function returning the (operand) QuantumVariables in the initial system state $\ket{\psi_0}$, i.e.,
         ``operand=operand_prep()``.
 
     Returns
     -------
-    QuantumFloat
-        A single-qubit QuantumFloat used as the Hadamard test ancilla. The expectation value is derived 
+    QuantumBool
+        QuantumBool used as the Hadamard test ancilla. The expectation value is derived 
         from the Z-basis measurement statistics ($P(0) - P(1)$).
     """
     BE_qubitized = BE.qubitization()
 
-    case_indicator = BE_qubitized.create_ancillas()
+    ancillas = BE_qubitized.create_ancillas()
     
-    operand = operand_prep()
+    operands = operand_prep()
+    if not isinstance(operands, tuple):
+        operands = (operands,)
     
     for _ in jrange(k // 2):
-        BE_qubitized.unitary(*case_indicator, operand)
+        BE_qubitized.unitary(*ancillas, *operands)
     
-    qv = QuantumFloat(1)
+    qv = QuantumBool()
     h(qv) 
     with control(qv[0]):
-        BE.unitary(*case_indicator, operand) 
+        BE.unitary(*ancillas, *operands) 
     h(qv)
     
     return qv
@@ -115,7 +119,7 @@ def lanczos_odd(BE: BlockEncoding | QubitOperator, k: int, operand_prep: Callabl
 def compute_expectation(meas_res: Dict[object, float]) -> float:
     r"""
     Convert measurement results from Lanczos subroutines into the expectation 
-    value of a Chebyshev polynomial $\langle T_k(H) \rangle$.
+    value of a Chebyshev polynomial $\langle T_k(H) \rangle_0$.
 
     This function processes the output of `:ref: lanczos_even` and `lanczos_odd`` constructing the circuits described in 
     `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/>`__ to extract the physical 
@@ -126,8 +130,8 @@ def compute_expectation(meas_res: Dict[object, float]) -> float:
 
     For even $k$,  he subroutine returns a tuple of outcomes for the auxiliary 
     ``case_indicator`` QuantumVariable. Since the observable is the reflection 
-    operator $R = 2|G\rangle_a\langle G|_a - I$, the outcome is mapped to 
-    $+1$ if the ancilla is in the ground state $|G\rangle_a$ (all-zeros), 
+    operator $R = 2|0\rangle_a\langle 0|_a - I$, the outcome is mapped to 
+    $+1$ if the ancilla is in the ground state $|0\rangle_a$ (all-zeros), 
     and $-1$ otherwise.
     
     For odd $k$, the subroutine returns the outcome of a single Hadamard test ancilla. 
@@ -144,7 +148,7 @@ def compute_expectation(meas_res: Dict[object, float]) -> float:
     Returns
     -------
     expval : float
-        The estimated expectation value $\langle T_k(H) \rangle$. 
+        The estimated expectation value $\langle T_k(H) \rangle_0$. 
         In the absence of noise, this value is exact.
 
     """
@@ -165,7 +169,7 @@ def compute_expectation(meas_res: Dict[object, float]) -> float:
 def lanczos_expvals(H, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dict[str, object] = {}) -> "ArrayLike":
 
     r"""
-    Estimate the expectation values of Chebyshev polynomials $\langle T_k(H) \rangle$ 
+    Estimate the expectation values of Chebyshev polynomials $\langle T_k(H) \rangle_0$ 
     for the exact and efficient Quantum Lanczos method.
 
     This function constructs the Krylov space basis by evaluating the expectation 
@@ -176,14 +180,15 @@ def lanczos_expvals(H, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dic
     For each polynomial order $k = 0, \dotsc, 2D-1$, it prepares and measures circuits corresponding 
     either to $\bra{\psi\lfloor k/2\rfloor}R\ket{\psi\lfloor k/2\rfloor}$ for even $k$, or
     $\bra{\psi\lfloor k/2\rfloor}U\ket{\psi\lfloor k/2\rfloor}$ for odd $k$. 
-    The measured statistics encode the expectation values $\langle T_k(H)\rangle$. 
+    The measured statistics encode the expectation values $\langle T_k(H)\rangle_0$. 
 
     The function supports two execution modes:
 
-    - Tracing Mode (JAX): Uses :func:`expectation_value` with a JIT-compiled 
-       post-processor for high-performance gradient or batch execution.
-    - Standard Mode: Uses :func:`multi_measurement` and 
-       :func:`compute_expectation` for simulation or hardware execution.
+    - Tracing Mode (JAX): 
+       Uses :func:`expectation_value` with a JIT-compiled 
+       post-processor for high-performance execution.
+    - Standard Mode: 
+       Uses :func:`multi_measurement` for NISQ hardware execution.
     
     Parameters
     ----------
@@ -194,7 +199,7 @@ def lanczos_expvals(H, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dic
     D : int
         Krylov space dimension. Determines maximum Chebyshev order $(2D-1)$.
     operand_prep : callable 
-        Function returning the (operand) QuantumVariable in the initial system state $\ket{\psi_0}$, i.e.,
+        Function returning the (operand) QuantumVariables in the initial system state $\ket{\psi_0}$, i.e.,
         ``operand=operand_prep()``.
     mes_kwargs : dict, optional
         The keyword arguments for the measurement function.
@@ -202,9 +207,8 @@ def lanczos_expvals(H, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dic
 
     Returns
     -------
-    expvals : ArrayLike
-        An array-like object of shape (2*D,) containing the expectation values 
-        $\langle T_k(H) \rangle$ for $k=0, \dots, 2D-1$.
+    expvals : ArrayLike, shape (2D,)
+        The expectation values $\langle T_k(H) \rangle_0$ for $k=0, \dots, 2D-1$.
 
     """
 
@@ -260,17 +264,17 @@ def build_S_H_from_Tk(expvals: "ArrayLike", D: int) -> Tuple["ArrayLike", "Array
 
     Parameters
     ----------
-    expvals : ArrayLike
-        Expectation values $⟨T_k(H)⟩_0$ for each Chebyshev polynomial order $k$. Array-like of length 2*D (or shape (2*D,)).
+    expvals : ArrayLike, shape (2D,)
+        The expectation values $\langle T_k(H)\rangle_0$ for each Chebyshev polynomial order $k$.
     D : int
         Krylov space dimension.
 
     Returns
     -------
-    S : ArrayLike
-        Overlap (Gram) matrix $\mathbf{S}$ for Krylov states of shape (D, D).
-    H_mat : ArrayLike
-        Hamiltonian matrix $\mathbf{H}$ in Krylov subspace of shape (D, D).
+    S : ArrayLike, shape (D, D)
+        The (Gram) matrix $\mathbf{S}$ for Krylov states.
+    H_mat : ArrayLike, shape (D, D)
+        The Hamiltonian matrix $\mathbf{H}$ in Krylov subspace.
 
     """
     def Tk_vec(k):
@@ -309,21 +313,21 @@ def regularize_S_H(S: "ArrayLike", H_mat: "ArrayLike", cutoff: float = 1e-2) -> 
     
     Parameters
     ----------
-    S : ArrayLike
-        Overlap matrix of shape (D, D).
-    H_mat : ArrayLike
-        Hamiltonian matrix of shape (D, D).
+    S : ArrayLike, shape (D, D)
+        The overlap matrix.
+    H_mat : ArrayLike, shape (D, D)
+        The Hamiltonian matrix.
     cutoff : float
         Eigenvalue threshold for regularizing $\mathbf{S}$.
 
     Returns
     -------
-    S_reg : ArrayLike
-        Regularized overlap matrix of shape (D, D).
-    H_reg : ArrayLike
-        Regularized Hamiltonian matrix in Krylov subspace of shape (D, D).
-    V : ArrayLike
-        Projection matrix of shape (D, D).
+    S_reg : ArrayLike, shape (D, D)
+        The regularized overlap matrix.
+    H_reg : ArrayLike, shape (D, D)
+        The regularized Hamiltonian matrix in Krylov subspace.
+    V : ArrayLike, shape (D, D)
+        The projection matrix.
     """
     D = S.shape[0]
 
@@ -370,17 +374,17 @@ def generalized_eigh(A: "ArrayLike", B: "ArrayLike") -> Tuple["ArrayLike", "Arra
 
     Parameters
     ----------
-    A : ArrayLike
-        complex Hermitian or real symmetrix matrix of shape (n, n).
-    B : ArrayLike
-        A real symmetric positive-definite matrix of shape (n, n).
+    A : ArrayLike, shape (D, D)
+        complex Hermitian or real symmetrix matrix.
+    B : ArrayLike, shape (D, D)
+        A real symmetric positive-definite matrix.
 
     Returns
     -------
-    eigvals : ArrayLike
-        An array-like object of shape (n, ) containing the (generalized) eigenvalues.
-    eigvecs : ArrayLike
-        An array-like object of shape (n, n) containing the (generalized) eigenvectors.
+    eigvals : ArrayLike, shape (D,)
+        The generalized eigenvalues.
+    eigvecs : ArrayLike, shape (D, D)
+        The generalized eigenvectors.
     """
     # Compute Cholesky decomposition of B (L*L.T)
     # The 'lower=True' parameter is typically the default but good to be explicit.
@@ -459,7 +463,7 @@ def lanczos_alg(H: BlockEncoding | QubitOperator, D: int, operand_prep: Callable
     a value too small may fail to suppress noise, while a value too large may discard physically relevant information.
 
     The entire approach can be summarized by the following steps:
-      1. Run quantum Lanczos subroutine :func:`lanczos_expvals` to obtain Chebyshev expectation values $\langle T_k(H)\rangle$.
+      1. Run quantum Lanczos subroutine :func:`lanczos_expvals` to obtain Chebyshev expectation values $\langle T_k(H)\rangle_0$.
       2. Build overlap and Hamiltonian subspace matrices $(\mathbf{S}, \mathbf{H})$.
       3. Regularize overlap matrix $\mathbf{S}$ and $\mathbf{H}$ by projecting onto the subspace with well conditioned eigenvalues.
       4. Solve generalized eigenvalue problem $\mathbf{H}\vec{v}=\epsilon \mathbf{S}\vec{v}$.
@@ -490,26 +494,30 @@ def lanczos_alg(H: BlockEncoding | QubitOperator, D: int, operand_prep: Callable
         Estimated ground state energy of the Hamiltonian H.
     info : dict, optional
         Full details including:
-            - 'Tk_expvals' : ArrayLike
+            - 'Tk_expvals' : ArrayLike, shape (2D,)
                 Chebyshev expectation values
             - 'energy' : float 
                 Ground-state energy estimate
-            - 'eigvals' : ArrayLike
+            - 'eigvals' : ArrayLike, shape (D,)
                 Eigenvalues of regularized problem
-            - 'eigvecs' : ArrayLike
+            - 'eigvecs' : ArrayLike, shape (D, D)
                 Eigenvectors of regularized problem
-            - 'S_reg' : ArrayLike
+            - 'S_reg' : ArrayLike, shape (D, D)
                 Regularized overlap matrix
-            - 'H_reg' : ArrayLike
+            - 'H_reg' : ArrayLike, shape (D, D)
                 Regularized Hamiltonian matrix
+            - 'S' : ArrayLike, shape (D, D)
+                The overlap matrix
+            - 'H' : ArrayLike, shape (D, D)
+                The Hamiltonian matrix
     
     Examples
     --------
 
     **Example 1: Jasp Mode (Dynamic Execution)**
 
-    This mode uses Qrisp's :ref:`jasp <jasp>` framework for JIT-compilation and 
-    tracing, ideal for high-performance simulation or gradient-based methods.
+    This mode uses Qrisp's :ref:`Jasp <jasp>` framework for JIT-compilation and 
+    tracing, ideal for high-performance execution.
 
     ::
 
@@ -581,16 +589,21 @@ def lanczos_alg(H: BlockEncoding | QubitOperator, D: int, operand_prep: Callable
     scaling_factor = jnp.sum(jnp.abs(coeffs)) # Scaling factor for Pauli block-encoding
     ground_state_energy = jnp.min(eigvals) * scaling_factor
     
-    results = {
-        'Tk_expvals': Tk_expvals,
-        'energy': ground_state_energy,
-        'eigvals': eigvals,
-        'eigvecs': eigvecs,
-        'S_reg': S_reg,
-        'H_reg': H_reg,
-    }
-    
     if show_info:
+
+        results = {
+            'Tk_expvals': Tk_expvals,
+            'energy': ground_state_energy,
+            'eigvals': eigvals,
+            'eigvecs': eigvecs,
+            'S_reg': S_reg,
+            'H_reg': H_reg,
+            'S': S,
+            'H': H_mat,
+        }
         return ground_state_energy, results
+    
     else:
+
         return ground_state_energy
+    
