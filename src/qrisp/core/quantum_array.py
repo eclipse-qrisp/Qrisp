@@ -16,6 +16,7 @@
 ********************************************************************************
 """
 
+from __future__ import annotations
 import copy
 from itertools import product
 
@@ -968,51 +969,294 @@ class QuantumArray:
                     (out_view[i] << fun)(self_view[i], other)
             return out
 
-    def __add__(self, other):
+    def __add__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs element-wise addition.
+
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be added.
+
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray containing the element-wise sum.
+
+        Examples
+        --------
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.eye(2)
+        >>> b_array[:] = np.eye(2)
+        >>> res = a_array + b_array
+        >>> print(res)
+        # {OutcomeArray([[2, 0], [0, 2]]): 1.0}
+
+        """
         from qrisp.qtypes.quantum_float import create_output_qf, QuantumFloat
         if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
             raise Exception("Tried to element-wise add QuantumArrays with qtype not QuantumFloat")
         return self._element_wise_out_of_place_injection(other, lambda a,b: a+b, create_output_qf([self.qtype, other.qtype], "add"))
         
-    def __sub__(self, other):
+    def __sub__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs element-wise subtraction.
+
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be subtracted.
+
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray containing the element-wise difference.
+
+        Examples
+        --------
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.eye(2)
+        >>> b_array[:] = np.eye(2)
+        >>> res = a_array - b_array
+        >>> print(res)
+        # {OutcomeArray([[0, 0], [0, 0]]): 1.0}
+
+        """
         from qrisp.qtypes.quantum_float import create_output_qf, QuantumFloat
         if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
             raise Exception("Tried to element-wise subtract QuantumArrays with qtype not QuantumFloat")
         return self._element_wise_out_of_place_injection(other, lambda a,b: a-b, create_output_qf([self.qtype, other.qtype], "sub"))
 
-    def __mul__(self, other):
+    def __mul__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs element-wise multiplication.
+
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be multiplied.
+
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray containing the element-wise product.
+
+        Examples
+        --------
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.eye(2)
+        >>> b_array[:] = np.eye(2)
+        >>> res = a_array * b_array
+        >>> print(res)
+        # {OutcomeArray([[1, 0], [0, 1]]): 1.0}
+
+        """
         from qrisp.qtypes.quantum_float import create_output_qf, QuantumFloat
         if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
             raise Exception("Tried to element-wise multiply QuantumArrays with qtype not QuantumFloat")
         return self._element_wise_out_of_place_injection(other, lambda a,b: a*b, create_output_qf([self.qtype, other.qtype], "mul"))
 
-    def __eq__(self, other):
+    def __eq__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs element-wise ``==`` comparison.
+
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be compared to.
+
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray of QuantumBools containing the result of element-wise ``==``.
+
+        Examples
+        --------
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.eye(2)
+        >>> b_array[:] = np.eye(2)
+        >>> res = a_array == b_array
+        >>> print(res)
+        # {OutcomeArray([[True, True], [True, True]], dtype=object): 1.0}
+
+        """
         from qrisp.qtypes import QuantumBool
         return self._element_wise_out_of_place_injection(other, lambda a,b: a==b, QuantumBool())
         
-    def __ne__(self, other):
-        from qrisp.qtypes import QuantumBool
-        return self._element_wise_out_of_place_injection(other, lambda a,b: a==b, QuantumBool())
+    def __ne__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs element-wise ``!=`` comparison.
 
-    def __gt__(self, other):
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be compared to.
+
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray of QuantumBools containing the result of element-wise ``!=``.
+
+        Examples
+        --------
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.eye(2)
+        >>> b_array[:] = np.eye(2)
+        >>> res = a_array != b_array
+        >>> print(res)
+        # {OutcomeArray([[False, False], [False, False]], dtype=object): 1.0}
+
+        """
+        from qrisp.qtypes import QuantumBool
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a!=b, QuantumBool())
+
+    def __gt__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs element-wise ``>`` comparison.
+
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be compared to.
+
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray of QuantumBools containing the result of element-wise ``>``.
+
+        Examples
+        --------
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.eye(2)
+        >>> b_array[:] = np.eye(2)
+        >>> res = a_array > b_array
+        >>> print(res)
+        # {OutcomeArray([[False, False], [False, False]], dtype=object): 1.0}
+
+        """
         from qrisp.qtypes.quantum_float import QuantumBool, QuantumFloat
         if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
             raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
         return self._element_wise_out_of_place_injection(other, lambda a,b: a>b, QuantumBool())
 
-    def __ge__(self, other):
+    def __ge__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs element-wise ``>=`` comparison.
+
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be compared to.
+
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray of QuantumBools containing the result of element-wise ``>=``.
+
+        Examples
+        --------
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.eye(2)
+        >>> b_array[:] = np.eye(2)
+        >>> res = a_array >= b_array
+        >>> print(res)
+        # {OutcomeArray([[True, True], [True, True]], dtype=object): 1.0}
+
+        """
         from qrisp.qtypes.quantum_float import QuantumBool, QuantumFloat
         if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
             raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
         return self._element_wise_out_of_place_injection(other, lambda a,b: a>=b, QuantumBool())
 
-    def __lt__(self, other):
+    def __lt__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs element-wise ``<`` comparison.
+
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be compared to.
+
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray of QuantumBools containing the result of element-wise ``<``.
+
+        Examples
+        --------
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.eye(2)
+        >>> b_array[:] = np.eye(2)
+        >>> res = a_array < b_array
+        >>> print(res)
+        # {OutcomeArray([[False, False], [False, False]], dtype=object): 1.0}
+
+        """
         from qrisp.qtypes.quantum_float import QuantumBool, QuantumFloat
         if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
             raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
         return self._element_wise_out_of_place_injection(other, lambda a,b: a<b, QuantumBool())
 
-    def __le__(self, other):
+    def __le__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs element-wise ``<=`` comparison.
+
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be compared to.
+
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray of QuantumBools containing the result of element-wise ``<=``.
+
+        Examples
+        --------
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.eye(2)
+        >>> b_array[:] = np.eye(2)
+        >>> res = a_array <= b_array
+        >>> print(res)
+        # {OutcomeArray([[True, True], [True, True]], dtype=object): 1.0}
+
+        """
         from qrisp.qtypes.quantum_float import QuantumBool, QuantumFloat
         if not isinstance(self.qtype, QuantumFloat) or not isinstance(other.qtype, QuantumFloat):
             raise Exception("Tried to element-wise compare QuantumArrays with qtype not QuantumFloat")
