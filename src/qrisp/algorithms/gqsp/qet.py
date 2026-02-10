@@ -25,6 +25,7 @@ from qrisp.alg_primitives.reflection import reflection
 from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
 from qrisp.algorithms.gqsp.helper_functions import poly2cheb, _rescale_poly
 from qrisp.block_encodings import BlockEncoding
+from qrisp.jasp import jrange
 from qrisp.operators import QubitOperator, FermionicOperator
 from typing import Literal, TYPE_CHECKING
 
@@ -178,7 +179,7 @@ def QET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", ki
     def new_unitary(*args):
 
         rx(-2*phi[0], args[0])
-        for i in range(1, (d + 1) // 2):
+        for i in jrange(1, (d + 1) // 2):
             with control(args[0], ctrl_state=0):
                 T2(*args[1:])
             rx(-2 * phi[2*i], args[0])
