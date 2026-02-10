@@ -358,27 +358,28 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False, inv=False) -
         return
 
     if inv:
+        
         q_switch(
             qv[: qv.size - 1],
-            make_case_fn(qv.size - 1, is_final=True),
+            make_case_fn(qv.size - 1, is_final=True, inv=True),
             qv[qv.size - 1],
         )
-
+        
         for layer_size in xrange(1, qv.size - 1):
             layer_size_reversed = qv.size - 1 - layer_size
             
             q_switch(
                 qv[:layer_size_reversed],
-                make_case_fn(layer_size_reversed),
+                make_case_fn(layer_size_reversed, inv=True),
                 qv[layer_size_reversed],
             )
-
+        
         ry(-thetas[0][0], qv[0])
     
     else:
     
         ry(thetas[0][0], qv[0])
-
+        
         for layer_size in xrange(1, qv.size - 1):
 
             q_switch(
@@ -386,13 +387,13 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False, inv=False) -
                 make_case_fn(layer_size),
                 qv[layer_size],
             )
-
+        
         q_switch(
             qv[: qv.size - 1],
             make_case_fn(qv.size - 1, is_final=True),
             qv[qv.size - 1],
         )
-
+        
 
 temp = prepare_qswitch.__doc__
 prepare_qswitch = custom_inversion(prepare_qswitch)
