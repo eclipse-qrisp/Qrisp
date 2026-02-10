@@ -353,8 +353,12 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False, inv=False) -
 
     if n == 1:
         theta, phi, lam = u_params[0]
-        u3(theta, phi, lam, qv[0])
-        gphase(phases[0], qv[0])
+        if inv:
+            u3(-theta, -phi, -lam, qv[0])
+            gphase(-phases[0], qv[0])
+        else:
+            u3(theta, phi, lam, qv[0])
+            gphase(phases[0], qv[0])
         return
 
     if inv:
