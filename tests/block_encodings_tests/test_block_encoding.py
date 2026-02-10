@@ -60,6 +60,41 @@ def test_block_encoding_from_operator():
     assert res == {3.0: 1.0}
 
 
+def test_block_encoding_apply():
+    H = X(0)*X(1) + Z(0)*Z(1)
+    BE = BlockEncoding.from_operator(H)
+
+    operand = QuantumFloat(2)
+    ancillas = BE.apply(operand)
+
+    res_dict = multi_measurement(ancillas + [operand])
+    assert res_dict == {(0, 0): 0.25, (0, 3): 0.25, (1, 0): 0.25, (1, 3): 0.25}
+
+
+def test_block_encoding_apply_value_error():
+    H = X(0)*X(1) + Z(0)*Z(1)
+    BE = BlockEncoding.from_operator(H)
+
+    wrong_operands = (QuantumFloat(2), QuantumFloat(2))
+    with pytest.raises(ValueError) as excinfo:
+        ancillas = BE.apply(*wrong_operands)
+
+    assert "Operation expected 1 operands, but got 2" in str(excinfo.value)
+
+
+def test_block_encoding_apply_rus_value_error():
+    H = X(0)*X(1) + Z(0)*Z(1)
+    BE = BlockEncoding.from_operator(H)
+
+    def wrong_operand_prep():
+        return QuantumFloat(2), QuantumFloat(2)
+    
+    with pytest.raises(ValueError) as excinfo:
+        operands = BE.apply_rus(wrong_operand_prep)()
+
+    assert "Operation expected 1 operands, but got 2" in str(excinfo.value)
+
+
 def test_block_encoding_resources():
     H = X(0)*X(1) + 0.5*Z(0)*Z(1)
     BE = BlockEncoding.from_operator(H)
@@ -69,6 +104,17 @@ def test_block_encoding_resources():
     # 'depth': 12}
     assert isinstance(res_dict['gate counts'], dict)
     assert isinstance(res_dict['depth'], int)
+
+
+def test_block_encoding_resources_value_error():
+    H = X(0)*X(1) + Z(0)*Z(1)
+    BE = BlockEncoding.from_operator(H)
+
+    wrong_operands = (QuantumFloat(2), QuantumFloat(2))
+    with pytest.raises(ValueError) as excinfo:
+        res_dict = BE.resources(*wrong_operands)
+
+    assert "Operation expected 1 operands, but got 2" in str(excinfo.value)
 
 
 def test_block_encoding_alpha_dynamic():
