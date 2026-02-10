@@ -16,6 +16,8 @@
 ********************************************************************************
 """
 
+import operator
+import pytest
 from qrisp import *
 
 def test_quantum_array():
@@ -131,8 +133,49 @@ def test_quantum_array():
     
     assert q_array_2.get_measurement() == {OutcomeArray([[1., 0.],
                                                          [0., 1.]]): 1.0}
+
+#
+# Element-wise arithmetic
+#
+
+# Define the set of operators to test
+ops = [
+    operator.add, operator.sub, operator.mul,  # +, -, *
+    operator.eq,  operator.ne,                 # ==, !=
+    operator.gt,  operator.ge,                 # >, >=
+    operator.lt,  operator.le                  # <, <=
+]
+
+@pytest.mark.parametrize("op", ops)
+def test_quantum_array_element_wise_ops(op):
+
+    a_c = np.array([[1, 0], [0, 1]])
+    b_c = np.array([[0, 1], [1, 0]])
     
+    # Initialize QuantumArrays
+    qtype = QuantumFloat(3)
+    a_array = QuantumArray(qtype, shape=(2,2))
+    b_array = QuantumArray(qtype, shape=(2,2))
     
+    a_array[:] = a_c
+    b_array[:] = b_c
+    
+    # Execute quantum operation
+    r_array = op(a_array, b_array)
+    
+    # Calculate classical reference
+    expected_c = op(a_c, b_c)
+    
+    # Validate measurements
+    results = r_array.get_measurement()
+    
+    assert len(results) > 0, "No measurement results found"
+    
+    for k in results.keys():
+        # k is an OutcomeArray; np.array_equal handles both floats and booleans
+        assert np.array_equal(k, expected_c), f"Failed on operator {op.__name__}. Expected {expected_c}, got {k}"
+
+
 def test_quantum_array_element_eq():
     a_c = np.array(3*[[0,1,2]])
     b_c = np.arange(0, 9).reshape((3,3))

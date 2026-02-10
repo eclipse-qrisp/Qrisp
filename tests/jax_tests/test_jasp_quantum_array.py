@@ -16,8 +16,8 @@
 ********************************************************************************
 """
 
+import operator
 import pytest
-
 from qrisp import *
 from qrisp.jasp import *
 
@@ -173,3 +173,44 @@ def test_element_wise_addition_injection():
 
     r, a, b = test()
     assert((r == a+b).all())
+
+#
+# Element-wise arithmetic
+#
+
+# Define the set of operators to test
+ops = [
+    operator.add, operator.sub, operator.mul,  # +, -, *
+    operator.eq,  operator.ne,                 # ==, !=
+    operator.gt,  operator.ge,                 # >, >=
+    operator.lt,  operator.le                  # <, <=
+]
+
+@pytest.mark.parametrize("op", ops)
+def test_quantum_array_element_wise_ops(op):
+
+    a_c = np.array([[1, 0], [0, 1]])
+    b_c = np.array([[0, 1], [1, 0]])
+
+    @jaspify
+    def main():
+
+        # Initialize QuantumArrays
+        qtype = QuantumFloat(3)
+        a_array = QuantumArray(qtype, shape=(2,2))
+        b_array = QuantumArray(qtype, shape=(2,2))
+    
+        a_array[:] = a_c
+        b_array[:] = b_c
+    
+        # Execute quantum operation
+        r_array = op(a_array, b_array)
+        return measure(r_array)
+    
+    # Calculate classical reference
+    expected_c = op(a_c, b_c)
+    
+    # Validate measurements
+    r_array = main()
+
+    assert np.array_equal(r_array, expected_c), f"Failed on operator {op.__name__}. Expected {expected_c}, got {r_array}"

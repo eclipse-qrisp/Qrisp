@@ -992,8 +992,8 @@ class QuantumArray:
         >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
         >>> a_array[:] = np.eye(2)
         >>> b_array[:] = np.eye(2)
-        >>> res = a_array + b_array
-        >>> print(res)
+        >>> r_array = a_array + b_array
+        >>> print(r_array)
         # {OutcomeArray([[2, 0], [0, 2]]): 1.0}
 
         """
@@ -1025,8 +1025,8 @@ class QuantumArray:
         >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
         >>> a_array[:] = np.eye(2)
         >>> b_array[:] = np.eye(2)
-        >>> res = a_array - b_array
-        >>> print(res)
+        >>> r_array = a_array - b_array
+        >>> print(r_array)
         # {OutcomeArray([[0, 0], [0, 0]]): 1.0}
 
         """
@@ -1058,8 +1058,8 @@ class QuantumArray:
         >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
         >>> a_array[:] = np.eye(2)
         >>> b_array[:] = np.eye(2)
-        >>> res = a_array * b_array
-        >>> print(res)
+        >>> r_array = a_array * b_array
+        >>> print(r_array)
         # {OutcomeArray([[1, 0], [0, 1]]): 1.0}
 
         """
@@ -1091,8 +1091,8 @@ class QuantumArray:
         >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
         >>> a_array[:] = np.eye(2)
         >>> b_array[:] = np.eye(2)
-        >>> res = a_array == b_array
-        >>> print(res)
+        >>> r_array = a_array == b_array
+        >>> print(r_array)
         # {OutcomeArray([[True, True], [True, True]], dtype=object): 1.0}
 
         """
@@ -1122,8 +1122,8 @@ class QuantumArray:
         >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
         >>> a_array[:] = np.eye(2)
         >>> b_array[:] = np.eye(2)
-        >>> res = a_array != b_array
-        >>> print(res)
+        >>> r_array = a_array != b_array
+        >>> print(r_array)
         # {OutcomeArray([[False, False], [False, False]], dtype=object): 1.0}
 
         """
@@ -1153,8 +1153,8 @@ class QuantumArray:
         >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
         >>> a_array[:] = np.eye(2)
         >>> b_array[:] = np.eye(2)
-        >>> res = a_array > b_array
-        >>> print(res)
+        >>> r_array = a_array > b_array
+        >>> print(r_array)
         # {OutcomeArray([[False, False], [False, False]], dtype=object): 1.0}
 
         """
@@ -1186,8 +1186,8 @@ class QuantumArray:
         >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
         >>> a_array[:] = np.eye(2)
         >>> b_array[:] = np.eye(2)
-        >>> res = a_array >= b_array
-        >>> print(res)
+        >>> r_array = a_array >= b_array
+        >>> print(r_array)
         # {OutcomeArray([[True, True], [True, True]], dtype=object): 1.0}
 
         """
@@ -1219,8 +1219,8 @@ class QuantumArray:
         >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
         >>> a_array[:] = np.eye(2)
         >>> b_array[:] = np.eye(2)
-        >>> res = a_array < b_array
-        >>> print(res)
+        >>> r_array = a_array < b_array
+        >>> print(r_array)
         # {OutcomeArray([[False, False], [False, False]], dtype=object): 1.0}
 
         """
@@ -1252,8 +1252,8 @@ class QuantumArray:
         >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
         >>> a_array[:] = np.eye(2)
         >>> b_array[:] = np.eye(2)
-        >>> res = a_array <= b_array
-        >>> print(res)
+        >>> r_array = a_array <= b_array
+        >>> print(r_array)
         # {OutcomeArray([[True, True], [True, True]], dtype=object): 1.0}
 
         """
