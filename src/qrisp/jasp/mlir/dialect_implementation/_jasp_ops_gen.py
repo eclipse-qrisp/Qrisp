@@ -5,14 +5,13 @@ from ._ods_common import _cext as _ods_cext
 from ._ods_common import (
     equally_sized_accessor as _ods_equally_sized_accessor,
     get_default_loc_context as _ods_get_default_loc_context,
-    get_op_result_or_op_results as _get_op_result_or_op_results,
     get_op_results_or_values as _get_op_results_or_values,
     segmented_accessor as _ods_segmented_accessor,
 )
 _ods_ir = _ods_cext.ir
 
 import builtins
-from typing import Sequence as _Sequence, Union as _Union
+from typing import Sequence as _Sequence, Union as _Union, Optional as _Optional
 
 
 @_ods_cext.register_dialect
@@ -21,267 +20,363 @@ class _Dialect(_ods_ir.Dialect):
 
 @_ods_cext.register_operation(_Dialect)
 class ConsumeQuantumKernelOp(_ods_ir.OpView):
+  r"""
+  Indicates to the execution environment that the quantum computation has concluded.
+  """
+
   OPERATION_NAME = "jasp.consume_quantum_kernel"
 
   _ODS_REGIONS = (0, True)
 
   def __init__(self, success, qst, *, loc=None, ip=None):
     operands = []
-    results = []
     attributes = {}
     regions = None
     operands.append(qst)
     _ods_context = _ods_get_default_loc_context(loc)
+    results = []
     results.append(success)
     _ods_successors = None
     super().__init__(self.OPERATION_NAME, self._ODS_REGIONS, self._ODS_OPERAND_SEGMENTS, self._ODS_RESULT_SEGMENTS, attributes=attributes, results=results, operands=operands, successors=_ods_successors, regions=regions, loc=loc, ip=ip)
 
   @builtins.property
-  def qst(self):
+  def qst(self) -> _ods_ir.Value:
     return self.operation.operands[0]
 
   @builtins.property
-  def success(self):
+  def success(self) -> _ods_ir.OpResult:
     return self.operation.results[0]
 
-def consume_quantum_kernel(success, qst, *, loc=None, ip=None) -> _ods_ir.Value:
+def consume_quantum_kernel(success, qst, *, loc=None, ip=None) -> _ods_ir.OpResult:
   return ConsumeQuantumKernelOp(success=success, qst=qst, loc=loc, ip=ip).result
 
 @_ods_cext.register_operation(_Dialect)
 class CreateQuantumKernelOp(_ods_ir.OpView):
+  r"""
+  Indicates to the execution environment that a quantum computation will start.
+  """
+
   OPERATION_NAME = "jasp.create_quantum_kernel"
 
   _ODS_REGIONS = (0, True)
 
   def __init__(self, result, *, loc=None, ip=None):
     operands = []
-    results = []
     attributes = {}
     regions = None
     _ods_context = _ods_get_default_loc_context(loc)
+    results = []
     results.append(result)
     _ods_successors = None
     super().__init__(self.OPERATION_NAME, self._ODS_REGIONS, self._ODS_OPERAND_SEGMENTS, self._ODS_RESULT_SEGMENTS, attributes=attributes, results=results, operands=operands, successors=_ods_successors, regions=regions, loc=loc, ip=ip)
 
   @builtins.property
-  def result(self):
+  def result(self) -> _ods_ir.OpResult:
     return self.operation.results[0]
 
-def create_quantum_kernel(result, *, loc=None, ip=None) -> _ods_ir.Value:
+def create_quantum_kernel(result, *, loc=None, ip=None) -> _ods_ir.OpResult:
   return CreateQuantumKernelOp(result=result, loc=loc, ip=ip).result
 
 @_ods_cext.register_operation(_Dialect)
 class CreateQubitsOp(_ods_ir.OpView):
+  r"""
+  Allocates a QubitArray containing n qubits. N can be dynamically sized
+  """
+
   OPERATION_NAME = "jasp.create_qubits"
 
   _ODS_REGIONS = (0, True)
 
   def __init__(self, result, qst_out, amount, qst_in, *, loc=None, ip=None):
     operands = []
-    results = []
     attributes = {}
     regions = None
     operands.append(amount)
     operands.append(qst_in)
     _ods_context = _ods_get_default_loc_context(loc)
+    results = []
     results.append(result)
     results.append(qst_out)
     _ods_successors = None
     super().__init__(self.OPERATION_NAME, self._ODS_REGIONS, self._ODS_OPERAND_SEGMENTS, self._ODS_RESULT_SEGMENTS, attributes=attributes, results=results, operands=operands, successors=_ods_successors, regions=regions, loc=loc, ip=ip)
 
   @builtins.property
-  def amount(self):
+  def amount(self) -> _ods_ir.Value:
     return self.operation.operands[0]
 
   @builtins.property
-  def qst_in(self):
+  def qst_in(self) -> _ods_ir.Value:
     return self.operation.operands[1]
 
   @builtins.property
-  def result(self):
+  def result(self) -> _ods_ir.OpResult:
     return self.operation.results[0]
 
   @builtins.property
-  def qst_out(self):
+  def qst_out(self) -> _ods_ir.OpResult:
     return self.operation.results[1]
 
-def create_qubits(result, qst_out, amount, qst_in, *, loc=None, ip=None) -> _Sequence[_ods_ir.Value]:
+def create_qubits(result, qst_out, amount, qst_in, *, loc=None, ip=None) -> _ods_ir.OpResultList:
   return CreateQubitsOp(result=result, qst_out=qst_out, amount=amount, qst_in=qst_in, loc=loc, ip=ip).results
 
 @_ods_cext.register_operation(_Dialect)
 class DeleteQubitsOp(_ods_ir.OpView):
+  r"""
+  Indicates to the execution environment that the corresponding qubits can be reused.
+  """
+
   OPERATION_NAME = "jasp.delete_qubits"
 
   _ODS_REGIONS = (0, True)
 
   def __init__(self, out_qst, qubits, in_qst, *, loc=None, ip=None):
     operands = []
-    results = []
     attributes = {}
     regions = None
     operands.append(qubits)
     operands.append(in_qst)
     _ods_context = _ods_get_default_loc_context(loc)
+    results = []
     results.append(out_qst)
     _ods_successors = None
     super().__init__(self.OPERATION_NAME, self._ODS_REGIONS, self._ODS_OPERAND_SEGMENTS, self._ODS_RESULT_SEGMENTS, attributes=attributes, results=results, operands=operands, successors=_ods_successors, regions=regions, loc=loc, ip=ip)
 
   @builtins.property
-  def qubits(self):
+  def qubits(self) -> _ods_ir.Value:
     return self.operation.operands[0]
 
   @builtins.property
-  def in_qst(self):
+  def in_qst(self) -> _ods_ir.Value:
     return self.operation.operands[1]
 
   @builtins.property
-  def out_qst(self):
+  def out_qst(self) -> _ods_ir.OpResult:
     return self.operation.results[0]
 
-def delete_qubits(out_qst, qubits, in_qst, *, loc=None, ip=None) -> _ods_ir.Value:
+def delete_qubits(out_qst, qubits, in_qst, *, loc=None, ip=None) -> _ods_ir.OpResult:
   return DeleteQubitsOp(out_qst=out_qst, qubits=qubits, in_qst=in_qst, loc=loc, ip=ip).result
 
 @_ods_cext.register_operation(_Dialect)
 class FuseOp(_ods_ir.OpView):
+  r"""
+  Fuses two QubitArrays, Qubits, or combinations thereof to create a larger QubitArray.
+  """
+
   OPERATION_NAME = "jasp.fuse"
 
   _ODS_REGIONS = (0, True)
 
   def __init__(self, result, operand1, operand2, *, loc=None, ip=None):
     operands = []
-    results = []
     attributes = {}
     regions = None
     operands.append(operand1)
     operands.append(operand2)
     _ods_context = _ods_get_default_loc_context(loc)
+    results = []
     results.append(result)
     _ods_successors = None
     super().__init__(self.OPERATION_NAME, self._ODS_REGIONS, self._ODS_OPERAND_SEGMENTS, self._ODS_RESULT_SEGMENTS, attributes=attributes, results=results, operands=operands, successors=_ods_successors, regions=regions, loc=loc, ip=ip)
 
   @builtins.property
-  def operand1(self):
+  def operand1(self) -> _ods_ir.Value:
     return self.operation.operands[0]
 
   @builtins.property
-  def operand2(self):
+  def operand2(self) -> _ods_ir.Value:
     return self.operation.operands[1]
 
   @builtins.property
-  def result(self):
+  def result(self) -> _ods_ir.OpResult:
     return self.operation.results[0]
 
-def fuse(result, operand1, operand2, *, loc=None, ip=None) -> _ods_ir.Value:
+def fuse(result, operand1, operand2, *, loc=None, ip=None) -> _ods_ir.OpResult:
   return FuseOp(result=result, operand1=operand1, operand2=operand2, loc=loc, ip=ip).result
 
 @_ods_cext.register_operation(_Dialect)
 class GetQubitOp(_ods_ir.OpView):
+  r"""
+  Retrieves a single qubit from a given QubitArray at position.
+  """
+
   OPERATION_NAME = "jasp.get_qubit"
 
   _ODS_REGIONS = (0, True)
 
   def __init__(self, result, qb_array, position, *, loc=None, ip=None):
     operands = []
-    results = []
     attributes = {}
     regions = None
     operands.append(qb_array)
     operands.append(position)
     _ods_context = _ods_get_default_loc_context(loc)
+    results = []
     results.append(result)
     _ods_successors = None
     super().__init__(self.OPERATION_NAME, self._ODS_REGIONS, self._ODS_OPERAND_SEGMENTS, self._ODS_RESULT_SEGMENTS, attributes=attributes, results=results, operands=operands, successors=_ods_successors, regions=regions, loc=loc, ip=ip)
 
   @builtins.property
-  def qb_array(self):
+  def qb_array(self) -> _ods_ir.Value:
     return self.operation.operands[0]
 
   @builtins.property
-  def position(self):
+  def position(self) -> _ods_ir.Value:
     return self.operation.operands[1]
 
   @builtins.property
-  def result(self):
+  def result(self) -> _ods_ir.OpResult:
     return self.operation.results[0]
 
-def get_qubit(result, qb_array, position, *, loc=None, ip=None) -> _ods_ir.Value:
+def get_qubit(result, qb_array, position, *, loc=None, ip=None) -> _ods_ir.OpResult:
   return GetQubitOp(result=result, qb_array=qb_array, position=position, loc=loc, ip=ip).result
 
 @_ods_cext.register_operation(_Dialect)
 class GetSizeOp(_ods_ir.OpView):
+  r"""
+  Returns the number of qubits in a given QubitArray.
+  """
+
   OPERATION_NAME = "jasp.get_size"
 
   _ODS_REGIONS = (0, True)
 
   def __init__(self, size, qb_array, *, loc=None, ip=None):
     operands = []
-    results = []
     attributes = {}
     regions = None
     operands.append(qb_array)
     _ods_context = _ods_get_default_loc_context(loc)
+    results = []
     results.append(size)
     _ods_successors = None
     super().__init__(self.OPERATION_NAME, self._ODS_REGIONS, self._ODS_OPERAND_SEGMENTS, self._ODS_RESULT_SEGMENTS, attributes=attributes, results=results, operands=operands, successors=_ods_successors, regions=regions, loc=loc, ip=ip)
 
   @builtins.property
-  def qb_array(self):
+  def qb_array(self) -> _ods_ir.Value:
     return self.operation.operands[0]
 
   @builtins.property
-  def size(self):
+  def size(self) -> _ods_ir.OpResult:
     return self.operation.results[0]
 
-def get_size(size, qb_array, *, loc=None, ip=None) -> _ods_ir.Value:
+def get_size(size, qb_array, *, loc=None, ip=None) -> _ods_ir.OpResult:
   return GetSizeOp(size=size, qb_array=qb_array, loc=loc, ip=ip).result
 
 @_ods_cext.register_operation(_Dialect)
 class MeasureOp(_ods_ir.OpView):
+  r"""
+  Performs a measurement of a given quantum state on a given qubit or qubit array.
+  """
+
   OPERATION_NAME = "jasp.measure"
 
   _ODS_REGIONS = (0, True)
 
   def __init__(self, meas_res, out_qst, meas_q, in_qst, *, loc=None, ip=None):
     operands = []
-    results = []
     attributes = {}
     regions = None
     operands.append(meas_q)
     operands.append(in_qst)
     _ods_context = _ods_get_default_loc_context(loc)
+    results = []
     results.append(meas_res)
     results.append(out_qst)
     _ods_successors = None
     super().__init__(self.OPERATION_NAME, self._ODS_REGIONS, self._ODS_OPERAND_SEGMENTS, self._ODS_RESULT_SEGMENTS, attributes=attributes, results=results, operands=operands, successors=_ods_successors, regions=regions, loc=loc, ip=ip)
 
   @builtins.property
-  def meas_q(self):
+  def meas_q(self) -> _ods_ir.Value:
     return self.operation.operands[0]
 
   @builtins.property
-  def in_qst(self):
+  def in_qst(self) -> _ods_ir.Value:
     return self.operation.operands[1]
 
   @builtins.property
-  def meas_res(self):
+  def meas_res(self) -> _ods_ir.OpResult:
     return self.operation.results[0]
 
   @builtins.property
-  def out_qst(self):
+  def out_qst(self) -> _ods_ir.OpResult:
     return self.operation.results[1]
 
-def measure(meas_res, out_qst, meas_q, in_qst, *, loc=None, ip=None) -> _Sequence[_ods_ir.Value]:
+def measure(meas_res, out_qst, meas_q, in_qst, *, loc=None, ip=None) -> _ods_ir.OpResultList:
   return MeasureOp(meas_res=meas_res, out_qst=out_qst, meas_q=meas_q, in_qst=in_qst, loc=loc, ip=ip).results
 
 @_ods_cext.register_operation(_Dialect)
+class ParityOp(_ods_ir.OpView):
+  r"""
+  Computes the parity (XOR sum) of a set of measurement results. Supports expectation and observable attributes for error correction contexts.
+  """
+
+  OPERATION_NAME = "jasp.parity"
+
+  _ODS_REGIONS = (0, True)
+
+  def __init__(self, result, measurements, expectation, observable, *, loc=None, ip=None):
+    operands = []
+    attributes = {}
+    regions = None
+    operands.extend(_get_op_results_or_values(measurements))
+    _ods_context = _ods_get_default_loc_context(loc)
+    attributes["expectation"] = (expectation if (
+    isinstance(expectation, _ods_ir.Attribute) or
+    not _ods_ir.AttrBuilder.contains('I64Attr')) else
+      _ods_ir.AttrBuilder.get('I64Attr')(expectation, context=_ods_context))
+    attributes["observable"] = (observable if (
+    isinstance(observable, _ods_ir.Attribute) or
+    not _ods_ir.AttrBuilder.contains('I64Attr')) else
+      _ods_ir.AttrBuilder.get('I64Attr')(observable, context=_ods_context))
+    results = []
+    results.append(result)
+    _ods_successors = None
+    super().__init__(self.OPERATION_NAME, self._ODS_REGIONS, self._ODS_OPERAND_SEGMENTS, self._ODS_RESULT_SEGMENTS, attributes=attributes, results=results, operands=operands, successors=_ods_successors, regions=regions, loc=loc, ip=ip)
+
+  @builtins.property
+  def measurements(self) -> _ods_ir.OpOperandList:
+    _ods_variadic_group_length = len(self.operation.operands) - 1 + 1
+    return self.operation.operands[0:0 + _ods_variadic_group_length]
+
+  @builtins.property
+  def expectation(self) -> _ods_ir.IntegerAttr:
+    return self.operation.attributes["expectation"]
+
+  @expectation.setter
+  def expectation(self, value: _ods_ir.IntegerAttr):
+    if value is None:
+      raise ValueError("'None' not allowed as value for mandatory attributes")
+    self.operation.attributes["expectation"] = value
+
+  @builtins.property
+  def observable(self) -> _ods_ir.IntegerAttr:
+    return self.operation.attributes["observable"]
+
+  @observable.setter
+  def observable(self, value: _ods_ir.IntegerAttr):
+    if value is None:
+      raise ValueError("'None' not allowed as value for mandatory attributes")
+    self.operation.attributes["observable"] = value
+
+  @builtins.property
+  def result(self) -> _ods_ir.OpResult:
+    return self.operation.results[0]
+
+def parity(result, measurements, expectation, observable, *, loc=None, ip=None) -> _ods_ir.OpResult:
+  return ParityOp(result=result, measurements=measurements, expectation=expectation, observable=observable, loc=loc, ip=ip).result
+
+@_ods_cext.register_operation(_Dialect)
 class QuantumGateOp(_ods_ir.OpView):
+  r"""
+  This operation enables quantum processing of quantum states with (parametric) gates
+  """
+
   OPERATION_NAME = "jasp.quantum_gate"
 
   _ODS_REGIONS = (0, True)
 
   def __init__(self, out_qst, gate_type, gate_operands, in_qst, *, loc=None, ip=None):
     operands = []
-    results = []
     attributes = {}
     regions = None
     operands.extend(_get_op_results_or_values(gate_operands))
@@ -291,104 +386,113 @@ class QuantumGateOp(_ods_ir.OpView):
     isinstance(gate_type, _ods_ir.Attribute) or
     not _ods_ir.AttrBuilder.contains('StrAttr')) else
       _ods_ir.AttrBuilder.get('StrAttr')(gate_type, context=_ods_context))
+    results = []
     results.append(out_qst)
     _ods_successors = None
     super().__init__(self.OPERATION_NAME, self._ODS_REGIONS, self._ODS_OPERAND_SEGMENTS, self._ODS_RESULT_SEGMENTS, attributes=attributes, results=results, operands=operands, successors=_ods_successors, regions=regions, loc=loc, ip=ip)
 
   @builtins.property
-  def gate_operands(self):
+  def gate_operands(self) -> _ods_ir.OpOperandList:
     _ods_variadic_group_length = len(self.operation.operands) - 2 + 1
     return self.operation.operands[0:0 + _ods_variadic_group_length]
 
   @builtins.property
-  def in_qst(self):
+  def in_qst(self) -> _ods_ir.Value:
     _ods_variadic_group_length = len(self.operation.operands) - 2 + 1
     return self.operation.operands[1 + _ods_variadic_group_length - 1]
 
   @builtins.property
-  def gate_type(self):
+  def gate_type(self) -> _ods_ir.StringAttr:
     return self.operation.attributes["gate_type"]
 
   @gate_type.setter
-  def gate_type(self, value):
+  def gate_type(self, value: _ods_ir.StringAttr):
     if value is None:
       raise ValueError("'None' not allowed as value for mandatory attributes")
     self.operation.attributes["gate_type"] = value
 
   @builtins.property
-  def out_qst(self):
+  def out_qst(self) -> _ods_ir.OpResult:
     return self.operation.results[0]
 
-def quantum_gate(out_qst, gate_type, gate_operands, in_qst, *, loc=None, ip=None) -> _ods_ir.Value:
+def quantum_gate(out_qst, gate_type, gate_operands, in_qst, *, loc=None, ip=None) -> _ods_ir.OpResult:
   return QuantumGateOp(out_qst=out_qst, gate_type=gate_type, gate_operands=gate_operands, in_qst=in_qst, loc=loc, ip=ip).result
 
 @_ods_cext.register_operation(_Dialect)
 class ResetOp(_ods_ir.OpView):
+  r"""
+  Performs a reset operation on a single qubit or qubit array, returning them to the |0⟩ state.
+  """
+
   OPERATION_NAME = "jasp.reset"
 
   _ODS_REGIONS = (0, True)
 
   def __init__(self, out_qst, qubits, in_qst, *, loc=None, ip=None):
     operands = []
-    results = []
     attributes = {}
     regions = None
     operands.append(qubits)
     operands.append(in_qst)
     _ods_context = _ods_get_default_loc_context(loc)
+    results = []
     results.append(out_qst)
     _ods_successors = None
     super().__init__(self.OPERATION_NAME, self._ODS_REGIONS, self._ODS_OPERAND_SEGMENTS, self._ODS_RESULT_SEGMENTS, attributes=attributes, results=results, operands=operands, successors=_ods_successors, regions=regions, loc=loc, ip=ip)
 
   @builtins.property
-  def qubits(self):
+  def qubits(self) -> _ods_ir.Value:
     return self.operation.operands[0]
 
   @builtins.property
-  def in_qst(self):
+  def in_qst(self) -> _ods_ir.Value:
     return self.operation.operands[1]
 
   @builtins.property
-  def out_qst(self):
+  def out_qst(self) -> _ods_ir.OpResult:
     return self.operation.results[0]
 
-def reset(out_qst, qubits, in_qst, *, loc=None, ip=None) -> _ods_ir.Value:
+def reset(out_qst, qubits, in_qst, *, loc=None, ip=None) -> _ods_ir.OpResult:
   return ResetOp(out_qst=out_qst, qubits=qubits, in_qst=in_qst, loc=loc, ip=ip).result
 
 @_ods_cext.register_operation(_Dialect)
 class SliceOp(_ods_ir.OpView):
+  r"""
+  Returns a subset of qubits from a QubitArray using start and end indices.
+  """
+
   OPERATION_NAME = "jasp.slice"
 
   _ODS_REGIONS = (0, True)
 
   def __init__(self, result, qb_array, start, end, *, loc=None, ip=None):
     operands = []
-    results = []
     attributes = {}
     regions = None
     operands.append(qb_array)
     operands.append(start)
     operands.append(end)
     _ods_context = _ods_get_default_loc_context(loc)
+    results = []
     results.append(result)
     _ods_successors = None
     super().__init__(self.OPERATION_NAME, self._ODS_REGIONS, self._ODS_OPERAND_SEGMENTS, self._ODS_RESULT_SEGMENTS, attributes=attributes, results=results, operands=operands, successors=_ods_successors, regions=regions, loc=loc, ip=ip)
 
   @builtins.property
-  def qb_array(self):
+  def qb_array(self) -> _ods_ir.Value:
     return self.operation.operands[0]
 
   @builtins.property
-  def start(self):
+  def start(self) -> _ods_ir.Value:
     return self.operation.operands[1]
 
   @builtins.property
-  def end(self):
+  def end(self) -> _ods_ir.Value:
     return self.operation.operands[2]
 
   @builtins.property
-  def result(self):
+  def result(self) -> _ods_ir.OpResult:
     return self.operation.results[0]
 
-def slice(result, qb_array, start, end, *, loc=None, ip=None) -> _ods_ir.Value:
+def slice(result, qb_array, start, end, *, loc=None, ip=None) -> _ods_ir.OpResult:
   return SliceOp(result=result, qb_array=qb_array, start=start, end=end, loc=loc, ip=ip).result

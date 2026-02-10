@@ -226,12 +226,35 @@ def extract_post_processing(jaspr, *args):
                 context_dic[eqn.outvars[0]] = combined_size
                 return False
 
+            # Handle parity: compute XOR of measurement results
+            if eqn.primitive.name == "jasp.parity":
+                invalues = extract_invalues(eqn, context_dic)
+                expectation = eqn.params.get("expectation", 0)
+                
+                # Compute parity (XOR) of all measurements
+                result = sum(invalues) % 2
+                
+                # XOR result with expectation
+                result = result ^ expectation
+                
+                # Insert result into context
+                context_dic[eqn.outvars[0]] = jnp.array(result, dtype = bool)
+                return False
+
             # Skip other quantum primitives entirely
-            # But we must propagate QuantumCircuit tuples from input to output!
+            # We must:
+            # 1. Propagate QuantumCircuit tuples from input to output
+            # 2. Store placeholder values for any non-QuantumCircuit outputs (like Qubit)
+            #    so that subsequent operations (like nested jit calls) can find them
             if isinstance(eqn.primitive, QuantumPrimitive):
-                # Find any QuantumCircuit invars and propagate them to outvars
-                if isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit) and isinstance(eqn.outvars[-1].aval, AbstractQuantumCircuit):
-                    context_dic[eqn.outvars[-1]] = context_dic[eqn.invars[-1]]
+                for outvar in eqn.outvars:
+                    if isinstance(outvar.aval, AbstractQuantumCircuit):
+                        # Propagate QuantumCircuit from input to output
+                        context_dic[outvar] = context_dic[eqn.invars[-1]]
+                    else:
+                        # For non-QC outputs (Qubit, QubitArray, etc.), store None as placeholder
+                        # These are only needed to satisfy nested jit calls which will also skip them
+                        context_dic[outvar] = None
                 return False
 
             # Intercept JAX control-flow / compilation primitives.
@@ -240,23 +263,24 @@ def extract_post_processing(jaspr, *args):
             # which allows JAX to compile them only once during tracing.
             if eqn.primitive.name in ("jit", "pjit"):
 
-                jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
-                if jaxpr is None:
+                closed_jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
+                if closed_jaxpr is None:
                     return False
 
                 invalues = extract_invalues(eqn, context_dic)
                 
                 # Get the cached evaluator for this jaxpr
                 # For identical jaxprs, this returns the same function instance
-                cached_eval_func = get_post_processing_evaluator(jaxpr.jaxpr)
+                cached_eval_func = get_post_processing_evaluator(closed_jaxpr.jaxpr)
                 
-                # Call it with the current evaluator
-                outvals = cached_eval_func(eval_eqn)(*invalues)
+                # Call it with the current evaluator, including the constants
+                outvals = cached_eval_func(eval_eqn)(*(invalues + list(closed_jaxpr.consts)))
                 
-                # eval_jaxpr returns a single value if there's one output, tuple otherwise
-                # But insert_outvalues expects a tuple if eqn.primitive.multiple_results is True
-                if not isinstance(outvals, tuple):
-                    outvals = (outvals,)
+                # Handle wrapping based on the number of outputs in the inner jaxpr
+                # Note: Our QuantumCircuit representation is (meas_arr, last_popped) tuple,
+                # which can confuse isinstance(outvals, tuple) checks. Use the jaxpr outvars count.
+                if len(closed_jaxpr.jaxpr.outvars) == 1:
+                    outvals = [outvals]
                 
                 insert_outvalues(eqn, context_dic, outvals)
                 return False
@@ -320,6 +344,70 @@ def extract_post_processing(jaspr, *args):
                 if len(eqn.outvars) == 1:
                     outvalues = (outvalues,)
 
+                insert_outvalues(eqn, context_dic, outvalues)
+                return False
+
+            # Handle scan/map loops
+            if eqn.primitive.name == "scan":
+
+                import jax.lax
+
+                invalues = extract_invalues(eqn, context_dic)
+                
+                # Reinterpret the scan body function
+                scan_body = eval_jaxpr(
+                    eqn.params["jaxpr"], eqn_evaluator=eval_eqn
+                )
+                
+                # Extract scan parameters
+                num_consts = eqn.params["num_consts"]
+                num_carry = eqn.params["num_carry"]
+                length = eqn.params["length"]
+                reverse = eqn.params.get("reverse", False)
+                unroll = eqn.params.get("unroll", 1)
+                
+                # Separate inputs
+                consts = invalues[:num_consts]
+                init = invalues[num_consts:num_consts + num_carry]
+                xs = invalues[num_consts + num_carry:]
+                
+                # Create a wrapper function that includes constants
+                if num_consts > 0:
+                    def wrapped_body(carry, x):
+                        args = consts + list(carry) + list(x) if isinstance(x, tuple) else consts + list(carry) + [x]
+                        result = scan_body(*args)
+                        if not isinstance(result, tuple):
+                            result = (result,)
+                        return result[:num_carry], result[num_carry:]
+                else:
+                    def wrapped_body(carry, x):
+                        args = list(carry) + (list(x) if isinstance(x, tuple) else [x])
+                        result = scan_body(*args)
+                        if not isinstance(result, tuple):
+                            result = (result,)
+                        return result[:num_carry], result[num_carry:]
+                
+                # Call JAX scan with the reinterpreted body
+                if len(xs) == 1:
+                    xs_arg = xs[0]
+                else:
+                    xs_arg = tuple(xs)
+                
+                if len(init) == 1:
+                    init_arg = init[0]
+                else:
+                    init_arg = tuple(init)
+                
+                final_carry, ys = jax.lax.scan(wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll)
+                
+                # Prepare output
+                if not isinstance(final_carry, tuple):
+                    final_carry = (final_carry,)
+                if not isinstance(ys, tuple):
+                    ys = (ys,)
+                
+                outvalues = final_carry + ys
+                
                 insert_outvalues(eqn, context_dic, outvalues)
                 return False
 

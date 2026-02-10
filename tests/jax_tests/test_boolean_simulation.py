@@ -126,6 +126,120 @@ def test_boolean_simulation():
     
     assert main() == 3
 
+def test_parity_boolean_simulation():
+    from qrisp import QuantumVariable, x, measure, boolean_simulation
+    from qrisp.jasp import parity
+    
+    # Test scalar parity with boolean simulation
+    @boolean_simulation
+    def test_scalar_parity():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        x(qv[2])
+        
+        m1 = measure(qv[0])
+        m2 = measure(qv[1])
+        m3 = measure(qv[2])
+        
+        result = parity(m1, m2, m3)
+        return result
+    
+    # Parity of (True, False, True) = False (even number of Trues)
+    result = test_scalar_parity()
+    assert result == False, f"Expected False, got {result}"
+    
+    # Test with expectation parameter
+    @boolean_simulation
+    def test_parity_expectation():
+        qv = QuantumVariable(2)
+        x(qv[0])
+        
+        m1 = measure(qv[0])
+        m2 = measure(qv[1])
+        
+        # Parity is True, expectation is False -> mismatch = True
+        result = parity(m1, m2, expectation=0)
+        return result
+    
+    result = test_parity_expectation()
+    assert result == True, f"Expected True (mismatch), got {result}"
+    
+    # Test matching expectation
+    @boolean_simulation
+    def test_parity_match():
+        qv = QuantumVariable(2)
+        
+        m1 = measure(qv[0])
+        m2 = measure(qv[1])
+        
+        # Parity is False, expectation is False -> match = False
+        result = parity(m1, m2, expectation=0)
+        return result
+    
+    result = test_parity_match()
+    assert result == False, f"Expected False (match), got {result}"
+
+
+def test_parity_boolean_simulation_inside_loop():
+    """Test parity with array inputs (scan primitive) in boolean simulation."""
+    from qrisp import QuantumVariable, x, measure, boolean_simulation
+    from qrisp.jasp import parity
+    import jax.numpy as jnp
+    
+    @boolean_simulation
+    def test_array_parity():
+        qv0 = QuantumVariable(3)
+        qv1 = QuantumVariable(3)
+        
+        # Set specific states
+        x(qv0[0])  # qv0 = [1, 0, 1] after x on [0] and [2]
+        x(qv0[2])
+        x(qv1[1])  # qv1 = [0, 1, 0]
+        
+        # Measure individual qubits
+        m0_0 = measure(qv0[0])
+        m0_1 = measure(qv0[1])
+        m0_2 = measure(qv0[2])
+        
+        m1_0 = measure(qv1[0])
+        m1_1 = measure(qv1[1])
+        m1_2 = measure(qv1[2])
+        
+        # Create arrays and compute parity (triggers scan)
+        meas_array_0 = jnp.array([m0_0, m0_1, m0_2])
+        meas_array_1 = jnp.array([m1_0, m1_1, m1_2])
+        
+        result = parity(meas_array_0, meas_array_1)
+        return result
+    
+    result = test_array_parity()
+    # Expected: [1 XOR 0, 0 XOR 1, 1 XOR 0] = [1, 1, 1]
+    expected = jnp.array([1, 1, 1])
+    assert jnp.array_equal(result, expected), f"Expected {expected}, got {result}"
+    
+    # Test with all zeros
+    @boolean_simulation
+    def test_array_parity_zeros():
+        qv0 = QuantumVariable(3)
+        qv1 = QuantumVariable(3)
+        
+        m0_0 = measure(qv0[0])
+        m0_1 = measure(qv0[1])
+        m0_2 = measure(qv0[2])
+        
+        m1_0 = measure(qv1[0])
+        m1_1 = measure(qv1[1])
+        m1_2 = measure(qv1[2])
+        
+        meas_array_0 = jnp.array([m0_0, m0_1, m0_2])
+        meas_array_1 = jnp.array([m1_0, m1_1, m1_2])
+        
+        result = parity(meas_array_0, meas_array_1)
+        return result
+    
+    result = test_array_parity_zeros()
+    expected = jnp.array([0, 0, 0])
+    assert jnp.array_equal(result, expected), f"Expected {expected}, got {result}"
 
 def test_boolean_simulation_pytree():
     """Test that boolean_simulation preserves PyTree structure in return values."""
@@ -210,7 +324,6 @@ def test_boolean_simulation_pytree():
     def no_return():
         a = QuantumFloat(4)
         a[:] = 5
-        a.delete()
     
     result = no_return()
     assert result is None, "Should return None"

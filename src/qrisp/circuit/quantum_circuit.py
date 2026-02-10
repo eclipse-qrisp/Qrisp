@@ -1906,6 +1906,116 @@ class QuantumCircuit:
         from qrisp.interface import qml_converter
 
         return qml_converter(self)
+    
+    def to_stim(self, return_measurement_map = False, return_detector_map = False, return_observable_map = False):
+        """
+        Method to convert the given QuantumCircuit to a `Stim <https://github.com/quantumlib/Stim/>`_ Circuit.
+
+        .. note::
+            
+            Stim can only process/represent Clifford operations.
+
+        Parameters
+        ----------
+        return_measurement_map : bool, optional
+            If set to True, the function returns the measurement_map, as described below.
+            The default is False.
+        return_detector_map : bool, optional
+            If set to True, the function returns the detector_map.
+            The default is False.
+        return_observable_map : bool, optional
+            If set to True, the function returns the observable_map.
+            The default is False.
+
+        Returns
+        -------
+        stim_circuit : stim.Circuit
+            The converted Stim circuit.
+        measurement_map : dict
+            (Optional) A dictionary mapping Qrisp Clbit objects to Stim measurement record indices. 
+            For example, ``{Clbit(cb_1): 2, Clbit(cb_0): 1}`` means ``Clbit("cb_1")``
+            corresponds to index 2 in Stim's measurement record.
+        detector_map : dict
+            (Optional) A dictionary mapping Qrisp Clbit objects to Stim detector indices.
+        detector_map : dict
+            (Optional) A dictionary mapping Qrisp Clbit objects to Stim observable indices.
+
+        Examples
+        --------
+        Basic conversion:
+
+        >>> from qrisp import QuantumCircuit
+        >>> qc = QuantumCircuit(2, 2)
+        >>> qc.x(0)
+        >>> qc.cz(0, 1)
+        >>> qc.measure(0, 0)
+        >>> qc.measure(1, 1)
+        >>> print(qc)
+              ┌───┐   ┌─┐   
+        qb_0: ┤ X ├─■─┤M├───
+              └───┘ │ └╥┘┌─┐
+        qb_1: ──────■──╫─┤M├
+                       ║ └╥┘
+        cb_0: ═════════╩══╬═
+                          ║ 
+        cb_1: ════════════╩═
+                 
+        >>> stim_circuit = qc.to_stim()
+        >>> print(stim_circuit)
+        X 0
+        CZ 0 1
+        M 0 1
+        
+        Stim creates measurement indices in the order of how the measurements appear
+        in the circuit. This is different in Qrisp: It is for instance possible 
+        for the first measurement of the circuit to target the second ``Clbit``.
+        The second measurement can in-principle then target either the first or
+        the second ``Clbit``. In order to still identify which ``Clbit`` corresponds to
+        which stim measurement index, we can use the ``return_measurement_map`` keyword
+        argument.
+        
+        >>> qc = QuantumCircuit(2, 2)
+        >>> qc.x(0)
+        >>> qc.cz(0, 1) 
+        >>> qc.measure(1, 1) # The first measurement of the circuit targets the second ClBit
+        >>> qc.measure(0, 0) # The second measurement of the circuit targets the first ClBit
+        >>> print(qc)
+              ┌───┐      ┌─┐
+        qb_0: ┤ X ├─■────┤M├
+              └───┘ │ ┌─┐└╥┘
+        qb_1: ──────■─┤M├─╫─
+                      └╥┘ ║ 
+        cb_0: ═════════╬══╩═
+                       ║    
+        cb_1: ═════════╩════
+        >>> stim_circuit, measurement_map = qc.to_stim(return_measurement_map = True)
+        >>> print(stim_circuit)
+        X 0
+        CZ 0 1
+        M 1 0
+            
+        We see that Stim now measures the qubit with index 1 first (``M 1 0``),
+        which is why in the measurement record the measurement result in ``Clbit("cb_1")``
+        will appear at index 0 and ``Clbit("cb_0")`` at index 1.
+        To retrieve the correct order, we inspect the ``measurement_map`` dictionary.
+
+        >>> print(measurement_map)  # Maps Clbit objects to Stim measurement indices
+        {Clbit(cb_1): 0, Clbit(cb_0): 1}
+            
+        We can now check the samples drawn from this circuit for a given ``Clbit``
+        object by slicing the sampling result array.
+        
+        >>> sampler = stim_circuit.compile_sampler()
+        >>> all_samples = sampler.sample(5)
+        >>> samples = all_samples[:, measurement_map[qc.clbits[0]]]
+        >>> print(samples)
+        array([ True,  True,  True,  True,  True])
+            
+        """
+
+        from qrisp.interface import qrisp_to_stim
+
+        return qrisp_to_stim(self, return_measurement_map, return_detector_map, return_observable_map)
 
     def to_pytket(self):
         """
