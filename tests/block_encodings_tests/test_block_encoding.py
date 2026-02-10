@@ -82,6 +82,17 @@ def test_block_encoding_apply_value_error():
     assert "Operation expected 1 operands, but got 2" in str(excinfo.value)
 
 
+def test_block_encoding_apply_rus_type_error():
+    H = X(0)*X(1) + Z(0)*Z(1)
+    BE = BlockEncoding.from_operator(H)
+
+    wrong_operands = (QuantumFloat(2), QuantumFloat(2))
+    with pytest.raises(TypeError) as excinfo:
+        operands = BE.apply_rus(wrong_operands)()
+
+    assert "Expected 'operand_prep' to be a callable, but got" in str(excinfo.value)
+
+
 def test_block_encoding_apply_rus_value_error():
     H = X(0)*X(1) + Z(0)*Z(1)
     BE = BlockEncoding.from_operator(H)

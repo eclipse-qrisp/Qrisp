@@ -648,9 +648,12 @@ class BlockEncoding:
             A function ``rus_function(*args)`` with the same signature
             as ``operand_prep``. It prepares the operands and ancillas, and applies
             the block-encoding unitary within a repeat-until-success protocol.
+            Returns the transformed operand QuantumVariables.
 
         Raises
         ------
+        TypeError
+            If ``operand_prep`` is not a callable object.
         ValueError
             If the number of provided operands does not match 
             the required number of operands (self.num_ops).
@@ -686,6 +689,11 @@ class BlockEncoding:
         """
         from qrisp.core.gate_application_functions import measure, reset
         from qrisp.jasp import RUS
+
+        if not callable(operand_prep):
+            raise TypeError(
+                f"Expected 'operand_prep' to be a callable, but got {type(operand_prep).__name__}."
+            )
 
         @RUS
         def rus_function(*args):
