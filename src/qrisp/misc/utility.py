@@ -22,31 +22,11 @@ import traceback
 import jax.numpy as jnp
 import numpy as np
 import sympy
+from jax.typing import ArrayLike
 
 # A small epsilon value for numerical stability.
 # Defined here for convenience, so it can be imported elsewhere.
 _EPSILON = jnp.sqrt(jnp.finfo(jnp.float64).eps)
-
-
-def swap_endianness(vec: np.ndarray, n: int) -> np.ndarray:
-    """
-    Convert between big-endian and little-endian qubit ordering.
-
-    This transformation is its own inverse, so it works in both directions.
-
-    Parameters
-    ----------
-    vec : np.ndarray
-        The state vector to convert.
-    n : int
-        The number of qubits.
-
-    Returns
-    -------
-    np.ndarray
-        The state vector with reversed qubit ordering.
-    """
-    return vec.reshape([2] * n).transpose(*reversed(range(n))).flatten()
 
 
 def bin_rep(n, bits):
@@ -2423,3 +2403,34 @@ def batched_measurement(variables, backend, shots=None):
 
     # Inspect the results
     return results
+
+
+def _bitrev_indices(n: ArrayLike) -> jnp.ndarray:
+    """Return array r where r[j] = bitreverse(j) over n bits."""
+    idx = jnp.arange(1 << n, dtype=jnp.uint32)
+    rev = jnp.zeros_like(idx)
+    for k in range(n):
+        rev = (rev << 1) | ((idx >> k) & 1)
+    return rev
+
+
+def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jnp.ndarray:
+    """
+    Convert between big-endian and little-endian qubit ordering.
+
+    This transformation is its own inverse, so it works in both directions.
+
+    Parameters
+    ----------
+    vec : ArrayLike
+        The state vector to convert.
+    n : ArrayLike
+        The number of qubits.
+
+    Returns
+    -------
+    jnp.ndarray
+        The state vector with reversed qubit ordering.
+    """
+    r = _bitrev_indices(n)
+    return vec[r]
