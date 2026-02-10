@@ -531,6 +531,12 @@ class BlockEncoding:
             A list of ancilla QuantumVariables used in the application.
             Must be measured in $0$ for success of the block-encoding application.
 
+        Raises
+        ------
+        ValueError
+            If the number of provided operands does not match 
+            the required number of operands (self.num_ops).
+
         Examples
         --------
 
@@ -617,6 +623,12 @@ class BlockEncoding:
             #{3: 0.6828427278345078, 0: 0.17071065215630213, 2: 0.11715730494804945, 1: 0.02928931506114055}
 
         """
+
+        if len(operands) != self.num_ops:
+            raise ValueError(
+                f"Operation expected {self.num_ops} operands, but got {len(operands)}."
+            )
+        
         ancillas = self.create_ancillas()
         self.unitary(*ancillas, *operands)
         return ancillas
@@ -636,6 +648,12 @@ class BlockEncoding:
             A function ``rus_function(*args)`` with the same signature
             as ``operand_prep``. It prepares the operands and ancillas, and applies
             the block-encoding unitary within a repeat-until-success protocol.
+
+        Raises
+        ------
+        ValueError
+            If the number of provided operands does not match 
+            the required number of operands (self.num_ops).
 
         Examples
         --------
@@ -675,6 +693,11 @@ class BlockEncoding:
             if not isinstance(operands, tuple):
                 operands = (operands,)
 
+            if len(operands) != self.num_ops:
+                raise ValueError(
+                    f"Operation expected {self.num_ops} operands, but got {len(operands)}."
+                )
+
             ancillas = self.create_ancillas()
             self.unitary(*ancillas, *operands)
 
@@ -711,6 +734,12 @@ class BlockEncoding:
 
             - "gate counts" : A dictionary of counted quantum operations.
             - "depth": The circuit depth as an integer.
+
+        Raises
+        ------
+        ValueError
+            If the number of provided operands does not match 
+            the required number of operands (self.num_ops).
 
         Examples
         --------
@@ -753,6 +782,11 @@ class BlockEncoding:
             # 'gphase': 6, 'p': 2}, 'depth': 42}
 
         """
+
+        if len(operands) != self.num_ops:
+            raise ValueError(
+                f"Operation expected {self.num_ops} operands, but got {len(operands)}."
+            )
 
         ops_templates = [op.template() for op in operands]
 
