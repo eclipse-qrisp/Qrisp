@@ -51,7 +51,7 @@ def lanczos_even(BE: BlockEncoding, k: int, operand_prep: Callable[..., Any]) ->
         Even integer representing the even Chebyshev polynomial order.
     operand_prep : Callable 
         Function returning the (operand) QuantumVariables in the initial system state $\ket{\psi_0}$, i.e.,
-        ``operand=operand_prep()``.
+        ``operands=operand_prep()``. Must return a QuantumVariable or a tuple of QuantumVariables.
 
     Returns
     -------
@@ -89,7 +89,7 @@ def lanczos_odd(BE: BlockEncoding, k: int, operand_prep: Callable[..., Any]) -> 
         Odd integer representing the odd Chebyshev polynomial order.
     operand_prep : Callable 
         Function returning the (operand) QuantumVariables in the initial system state $\ket{\psi_0}$, i.e.,
-        ``operand=operand_prep()``.
+        ``operands=operand_prep()``. Must return a QuantumVariable or a tuple of QuantumVariables.
 
     Returns
     -------
@@ -166,7 +166,7 @@ def compute_expectation(meas_res: Dict[object, float]) -> float:
     return expval
 
 
-def lanczos_expvals(H, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dict[str, object] = {}) -> "ArrayLike":
+def lanczos_expvals(H: BlockEncoding | QubitOperator, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dict[str, object] = {}) -> "ArrayLike":
 
     r"""
     Estimate the expectation values of Chebyshev polynomials $\langle T_k(H) \rangle_0$ 
@@ -200,7 +200,7 @@ def lanczos_expvals(H, D: int, operand_prep: Callable[..., Any], mes_kwargs: Dic
         Krylov space dimension. Determines maximum Chebyshev order $(2D-1)$.
     operand_prep : callable 
         Function returning the (operand) QuantumVariables in the initial system state $\ket{\psi_0}$, i.e.,
-        ``operand=operand_prep()``.
+        ``operands=operand_prep()``. Must return a QuantumVariable or a tuple of QuantumVariables.
     mes_kwargs : dict, optional
         The keyword arguments for the measurement function.
         By default, 100_000 ``shots`` are executed for measuring each expectation value.
@@ -478,8 +478,8 @@ def lanczos_alg(H: BlockEncoding | QubitOperator, D: int, operand_prep: Callable
         D : int
             Krylov space dimension.
         operand_prep : callable 
-            Function returning the (operand) QuantumVariable in the initial system state $\ket{\psi_0}$, i.e.,
-            ``operand=operand_prep()``.
+            Function returning the (operand) QuantumVariables in the initial system state $\ket{\psi_0}$, i.e.,
+            ``operands=operand_prep()``. Must return a QuantumVariable or a tuple of QuantumVariables.
         mes_kwargs : dict
             The keyword arguments for the measurement function. 
             By default, 100_000 ``shots`` are executed for measuring each expectation value.
