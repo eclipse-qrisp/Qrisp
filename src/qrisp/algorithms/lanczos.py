@@ -253,8 +253,8 @@ def lanczos_expvals(H: BlockEncoding | QubitOperator, D: int, operand_prep: Call
 
 # Postprocessing
 
-@partial(jax.jit, static_argnums=(1,))
-def build_S_H_from_Tk(expvals: "ArrayLike", D: int) -> Tuple["ArrayLike", "ArrayLike"]:
+@jax.jit
+def build_S_H_from_Tk(expvals: "ArrayLike") -> Tuple["ArrayLike", "ArrayLike"]:
     r"""
     Construct the overlap matrix $\mathbf{S}$ and the Krylov Hamiltonian matrix $\mathbf{H}$ from Chebyshev polynomial expectation values.
 
@@ -266,8 +266,6 @@ def build_S_H_from_Tk(expvals: "ArrayLike", D: int) -> Tuple["ArrayLike", "Array
     ----------
     expvals : ArrayLike, shape (2D,)
         The expectation values $\langle T_k(H)\rangle_0$ for each Chebyshev polynomial order $k$.
-    D : int
-        Krylov space dimension.
 
     Returns
     -------
@@ -281,6 +279,7 @@ def build_S_H_from_Tk(expvals: "ArrayLike", D: int) -> Tuple["ArrayLike", "Array
         k = jnp.abs(k)
         return expvals[k]
 
+    D = expvals.shape[0] // 2
     # Create 2D arrays of indices i and j
     i_indices = jnp.arange(D, dtype=jnp.int32)[:, None] # Column vector (D, 1)
     j_indices = jnp.arange(D, dtype=jnp.int32)[None, :] # Row vector (1, D)
@@ -577,7 +576,7 @@ def lanczos_alg(H: BlockEncoding | QubitOperator, D: int, operand_prep: Callable
     Tk_expvals = lanczos_expvals(BE, D, operand_prep, mes_kwargs)
 
     # Step 2: Build matrices S and H
-    S, H_mat = build_S_H_from_Tk(Tk_expvals, D)
+    S, H_mat = build_S_H_from_Tk(Tk_expvals)
 
     # Step 3: Regularize matrices via thresholding
     S_reg, H_reg, _ = regularize_S_H(S, H_mat, cutoff=cutoff)  
