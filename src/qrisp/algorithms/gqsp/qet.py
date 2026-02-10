@@ -163,7 +163,7 @@ def QET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", ki
     # Implementation based on conjecture: phi has fixed parity iff p has fixed parity.
     # Combine two consecutive walk operators: (R U) (R U) = (R U R U ) = (R U_dg R U) = T_2
     # This is qubitization step even if the block encoding unitary is not Hemitian.
-    # https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf
+    # See https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf (page 104).
     # If the parity is odd, there is a single (R U) at the end which is not followed by a rotation.
     # Since the QET is only successful if all ancillas are |0>, there is no need to control-(R U) 
     # and the refelction acts as identity.

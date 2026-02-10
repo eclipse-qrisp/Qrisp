@@ -473,7 +473,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
     m = len(A._anc_templates)
 
-    # Following https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf:
+    # Following https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf (page 104):
     # T1 = (U R), T2 = (U R U_dg R) -> T2^k T1 is block encoding T_{2k+1}(A) 
     # This is valid even if the block encoding unitary is not Hermitian.
     # The first control-(U R) can be simplified to U since:

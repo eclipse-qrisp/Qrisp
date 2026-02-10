@@ -959,7 +959,7 @@ class BlockEncoding:
             main(BE_cheb)
 
         """
-
+        
         if rescale:
             from qrisp.algorithms.gqsp.qet import QET
 
@@ -971,6 +971,9 @@ class BlockEncoding:
 
         iterations = k // 2
 
+        # Following https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf (page 104):
+        # T_{2k}(A) = (U_dg R U R)^k
+        # T_{2k+1}(A) = (U R) (U_dg R U R)^k
         if k % 2 == 0:
 
             def new_unitary(*args):
