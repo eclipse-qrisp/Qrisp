@@ -1963,22 +1963,23 @@ class QubitOperator(Hamiltonian):
     # QDrift
     #
 
-    def qdrift(self, forward_evolution=True):
+    def qdrift(self, forward_evolution=True, seed=42):
         r"""
-        This algorithm simulates the time evolution of a quantum state under a Hamiltonian using the **QDrift** (Quantum Stochastic Drift Protocol) algorithm.
+        This algorithm simulates the time-evolution of a quantum state under a Hamiltonian using the **QDrift** 
+        (`Quantum Stochastic Drift Protocol <https://arxiv.org/pdf/1811.08017>`_) algorithm.
 
         QDrift approximates the exact time-evolution operator
 
         .. math::
             U(t) = e^{-i H t}, \qquad 
-            H = \sum_j h_j P_j,
+            H = \sum_j h_j H_j,
 
         by replacing it with a stochastic product of simpler exponentials
 
         .. math::
-            \tilde{U}(t) = \prod_{k=1}^N e^{-i \, \tau \, P_{j_k}},
+            \tilde{U}(t) = \prod_{k=1}^N e^{-i \, \tau \, H_{j_k}},
 
-        where each term :math:`P_j` is sampled independently with probability
+        where each term :math:`H_j` is sampled independently with probability
 
         .. math::
             p_j = \frac{|h_j|}{\lambda}, \qquad 
@@ -2000,7 +2001,9 @@ class QubitOperator(Hamiltonian):
         Parameters
         ----------
         forward_evolution : bool, optional
-            If set to False $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is ``True``.
+            If set to False, $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is True.
+        seed : int, optional
+            Seed for pseudo-random number generator. The default is 42.
 
         Returns
         -------
@@ -2011,7 +2014,7 @@ class QubitOperator(Hamiltonian):
             * qarg : :ref:`QuantumVariable`
                 The quantum argument.
             * t : float, optional
-                The evolution time $t$. The default is 1.
+                The evolution time $t$. The default is 1.0.
             * samples : int, optional
                 The number of random samples $N$ (the number of exponentials in the product). The default is 100.
                 Larger values yield higher accuracy at the cost of higher runtime.
@@ -2044,7 +2047,8 @@ class QubitOperator(Hamiltonian):
 
             def create_ising_hamiltonian(G, J, B):
                 # H = -J ∑ Z_i Z_{i+1} - B ∑ X_i
-                H = sum(-J * Z(i)*Z(j) for (i,j) in G.edges()) + sum(B * X(i) for i in G.nodes())
+                H = sum(-J * Z(i)*Z(j) for (i,j) in G.edges()) \
+                    + sum(B * X(i) for i in G.nodes())
                 return H
 
             def create_magnetization(G):
@@ -2056,10 +2060,12 @@ class QubitOperator(Hamiltonian):
             U = H.qdrift()
             M = create_magnetization(G)
 
-            # Choose N according to the theoretical scaling 
+            # Choose N according to the theoretical scaling.
             # The Qdrift bound suggests:  N ≈ ceil(2 (λ t)² / ε), where λ = ∑|h_j|. 
-            # Here we use this expression directly, although for many models it leads to very large circuits.
-            # The user is free to choose any alternative formula for N, depending on desired accuracy and runtime.
+            # Here we use this expression directly, 
+            # although for many models it leads to very large circuits.
+            # Choose any alternative formula for N, 
+            # depending on desired accuracy and runtime.
             lam = np.sum(np.abs(H.coeffs()))
             epsilon = 0.1
 
@@ -2070,13 +2076,14 @@ class QubitOperator(Hamiltonian):
                 return qv
 
             # Compute magnetization expectation 
-            T_values = np.arange(0, 2.0, 0.05)
+            T_values = np.arange(0, 1.5, 0.05)
             M_values = []
             for t in T_values:
                 ev_M = M.expectation_value(psi, precision=0.01)
                 M_values.append(float(ev_M(t)))
 
-            plt.scatter(T_values, M_values, color='#6929C4', marker="o", linestyle="solid", s=20, label=r"Ising chain")
+            plt.scatter(T_values, M_values, color='#6929C4', marker="o", 
+                        linestyle="solid", s=20, label=r"Ising chain")
             plt.xlabel(r"Evolution time", fontsize=15, color="#444444")
             plt.ylabel(r"Magnetization", fontsize=15, color="#444444")
             plt.legend(fontsize=15, labelcolor="#444444")
@@ -2100,30 +2107,43 @@ class QubitOperator(Hamiltonian):
         `Random Compiler for Fast Hamiltonian Simulation, Physical Review Letters 123, 070503 (2019) <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.123.070503>`_, 
         it can produce extremely large circuit depths (here on the order of up to thousands of Pauli rotations).
 
-        QDrift is **not optimal** for Hamiltonians with many large coefficients (like the Ising chain),
+        QDrift is not optimal for Hamiltonians with many large coefficients (like the Ising chain),
         because the total weight :math:`\lambda` is high, leading to large :math:`N`.
-        However, it is **highly efficient for sparse or weakly weighted Hamiltonians**
+        However, it can be highly efficient for sparse or weakly weighted Hamiltonians
         where :math:`\lambda` is small—common in chemistry or local lattice models—
         making it a powerful tool for large-scale quantum simulations with bounded resources.
 
         """
-        O = self.hermitize().eliminate_ladder_conjugates()
+        from jax import random
+        from qrisp.jasp import q_switch
 
+        # JAX-traceable implementation of https://arxiv.org/pdf/1811.08017.
+        # We create a list of term.simulate functions for all terms in the operator
+        # and use the q_switch with classical index to apply the j-th function 
+        # within a (dynamic) loop where j is sampled at random.
+        O = self.hermitize().eliminate_ladder_conjugates()
         terms = list(O.terms_dict.keys())
         coeffs = np.array(list(O.terms_dict.values()))
-        signs = np.sign(coeffs)
+        signs = (-1) ** int(not forward_evolution) * jnp.sign(coeffs)
 
-        normalisation_factor = np.sum(np.abs(coeffs))
-        probs = np.abs(coeffs) / normalisation_factor 
+        # List of functions performing forward evolution e^{-itH_j}.
+        branches = [terms[j].simulate for j in range(len(terms))]
 
-        def sample(probs):
-            return np.random.choice(range(len(probs)), p=probs)
+        # Calculate probability distribution for random sampling of terms.
+        lambda_ = np.sum(np.abs(coeffs))
+        probs = np.abs(coeffs) / lambda_
         
-        def U(qarg, t=1, samples=100, iter=1):
-            tau = normalisation_factor * t / np.maximum(samples, 1)
-            for _ in range(samples * iter):
-                j = sample(probs) 
-                terms[j].simulate(-tau * signs[j] * (-1) ** int(forward_evolution), qarg) 
+        def U(qarg, t=1.0, samples=100, iter=1):
+
+            key = random.key(seed)
+            tau = lambda_ * t / jnp.maximum(samples, 1)
+
+            for _ in jrange(samples * iter):
+                # Sample index j.
+                key, subkey = random.split(key)
+                j = random.choice(subkey, a=len(probs), p=probs)
+                # Apply e^{-i tau H_j}.
+                q_switch(j, branches, tau * signs[j], qarg)
 
         return U
             
