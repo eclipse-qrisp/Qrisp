@@ -976,7 +976,7 @@ class QuantumArray:
         out = QuantumArray(out_type, self.shape)
         out_view = out.flatten()
         self_view = self.flatten()
-        # If other is an array, do element-wise
+        # If other is a QuantumArray, do element-wise
         if isinstance(other, QuantumArray):
             other_view = other.flatten()
             if check_for_tracing_mode():
@@ -986,7 +986,21 @@ class QuantumArray:
                 for i in range(self_view.size):
                     (out_view[i] << fun)(self_view[i], other_view[i])
             return out
-        # If other is not an array, use other for every index
+        # If other is a numpy/jax array, flatten and index element-wise
+        elif isinstance(other, (np.ndarray, jnp.ndarray)):
+            flattened_other = other.flatten()
+            if isinstance(other, np.ndarray):
+                xrange = range
+            else:
+                xrange = jrange
+            for i in xrange(self_view.size):
+                # Convert numpy scalars to Python scalars for compatibility
+                scalar_val = flattened_other[i]
+                if isinstance(scalar_val, np.generic):
+                    scalar_val = scalar_val.item()
+                (out_view[i] << fun)(self_view[i], scalar_val)
+            return out
+        # If other is a scalar, broadcast to all elements
         else:
             if check_for_tracing_mode():
                 for i in jrange(self_view.size):
@@ -1057,7 +1071,13 @@ class QuantumArray:
         """
         from qrisp.qtypes.quantum_float import create_output_qf
         self._validate_arithmetic(other)
-        return self._element_wise_out_of_place_injection(other, lambda a,b: a+b, create_output_qf([self.qtype, other.qtype], "add"))
+        if isinstance(other, QuantumArray):
+            out_type = create_output_qf([self.qtype, other.qtype], "add")
+        else:
+            # For scalars and numpy arrays, use self's type as output
+            # (scalar operations preserve size)
+            out_type = self.qtype
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a+b, out_type)
         
     def __sub__(self, other: QuantumArray) -> QuantumArray:
         """
@@ -1089,7 +1109,12 @@ class QuantumArray:
         """
         from qrisp.qtypes.quantum_float import create_output_qf
         self._validate_arithmetic(other)
-        return self._element_wise_out_of_place_injection(other, lambda a,b: a-b, create_output_qf([self.qtype, other.qtype], "sub"))
+        if isinstance(other, QuantumArray):
+            out_type = create_output_qf([self.qtype, other.qtype], "sub")
+        else:
+            # For scalars and numpy arrays, subtraction may need signed output
+            out_type = create_output_qf([self.qtype, self.qtype], "sub")
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a-b, out_type)
 
     def __mul__(self, other: QuantumArray) -> QuantumArray:
         """
@@ -1121,7 +1146,13 @@ class QuantumArray:
         """
         from qrisp.qtypes.quantum_float import create_output_qf
         self._validate_arithmetic(other)
-        return self._element_wise_out_of_place_injection(other, lambda a,b: a*b, create_output_qf([self.qtype, other.qtype], "mul"))
+        if isinstance(other, QuantumArray):
+            out_type = create_output_qf([self.qtype, other.qtype], "mul")
+        else:
+            # For scalars and numpy arrays, use self's type as output
+            # (scalar operations are handled by QuantumFloat)
+            out_type = self.qtype
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a*b, out_type)
 
     def __eq__(self, other: QuantumArray) -> QuantumArray:
         """
