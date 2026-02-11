@@ -28,6 +28,8 @@ from qrisp import (
     QuantumVariable,
     QuantumCircuit,
     rx,
+    BigInteger,
+    QuantumModulus
 )
 from qrisp.jasp import jrange, q_cond
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
