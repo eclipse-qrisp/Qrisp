@@ -1305,6 +1305,8 @@ class QuantumArray:
     def _element_wise_in_place_call(self, other, fun):
         self_view = self.flatten()
         if isinstance(other, QuantumArray):
+            if self.shape != other.shape:
+                raise Exception(f"Tried to perform element-wise function call with missmatching array shapes ({self.shape} vs {other.shape})")
             other_view = other.flatten()
             if check_for_tracing_mode():
                 for i in jrange(self_view.size):
@@ -1312,6 +1314,17 @@ class QuantumArray:
             else:
                 for i in range(self_view.size):
                     fun(self_view[i], other_view[i])
+        elif isinstance(other, (np.ndarray, jnp.ndarray)):
+            if self.shape != other.shape:
+                raise Exception(f"Tried to perform element-wise function call with missmatching array shapes ({self.shape} vs {other.shape})")
+            flattened_other = other.flatten()
+            if isinstance(other, np.ndarray):
+                xrange = range
+            else:
+                xrange = jrange
+
+            for i in xrange(self_view.size):
+                fun(self_view[i], flattened_other[i])
         else:
             if check_for_tracing_mode():
                 for i in jrange(self_view.size):
