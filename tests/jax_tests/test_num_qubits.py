@@ -32,7 +32,7 @@ from qrisp.jasp.interpreter_tools.interpreters.utilities import (
 )
 
 
-class TestNumQubits:
+class TestNumQubitsSimple:
     """Test cases for the num_qubits metric, which counts the number of qubits allocated at the end of a circuit execution."""
 
     @pytest.mark.parametrize("num_qubits_input", [1, 2, 3, 4])
@@ -63,6 +63,76 @@ class TestNumQubits:
 
         expected_count = sum(num_qubits_input + i for i in range(4))
         assert main(num_qubits_input) == expected_count
+
+    def test_num_qubits_delete_qubits(self):
+        """Test qubit counting with qubit deletion."""
+
+        @num_qubits(meas_behavior="0")
+        def circuit_del(num_qubits_input):
+            qv = QuantumFloat(num_qubits_input)
+            h(qv[0])
+            qv.delete()
+
+        assert circuit_del(4) == 0
+
+    def test_num_qubits_delete_qubits2(self):
+        """Test qubit counting with qubit deletion followed by reallocation."""
+
+        @num_qubits(meas_behavior="0")
+        def circuit_del2(num_qubits_input):
+            qv = QuantumFloat(num_qubits_input)
+            h(qv[0])
+            qv.delete()
+            qv = QuantumFloat(num_qubits_input)
+            h(qv[0])
+
+        assert circuit_del2(4) == 4
+
+    def test_num_qubits_all_deleted_in_end(self):
+        """Everything deleted before termination => final count is 0."""
+
+        @num_qubits(meas_behavior="0")
+        def circuit_all_del(n):
+            a = QuantumFloat(n)
+            b = QuantumFloat(n + 1)
+            h(a[0])
+            h(b[0])
+            a.delete()
+            b.delete()
+
+        assert circuit_all_del(4) == 0
+
+    def test_num_qubits_unused_allocation_semantics(self):
+        """Test the expected behavior for qubits that are allocated but never used (e.g., no gates, no measurements)."""
+
+        @num_qubits(meas_behavior="0")
+        def circuit_unused(n):
+            _qv = QuantumFloat(n)
+
+        assert circuit_unused(4) == 0
+
+    def test_num_qubits_alias_delete_counts_once(self):
+        """
+        Test that if we create an alias to a quantum variable and delete the alias,
+        it only counts as one deletion.
+        """
+
+        @num_qubits(meas_behavior="0")
+        def circuit_alias_del(n):
+            qv = QuantumFloat(n)
+            alias = qv
+            h(qv[0])
+            alias.delete()
+
+        assert circuit_alias_del(4) == 0
+
+
+class TestNumQubitsControlFlow:
+    """
+    Test cases for the num_qubits metric in the presence of control flow,
+    possibly with qubit allocation and deletion, and with control flow
+    based on measurement outcomes.
+    """
 
     @pytest.mark.parametrize(
         "meas_behavior,num_qubits_input,num_qubits_input2,num_qubits_input3, expected_count",
@@ -104,30 +174,6 @@ class TestNumQubits:
                 h(qv[i])
 
         assert circuit_loop(5, 5) == 25
-
-    def test_num_qubits_delete_qubits(self):
-        """Test qubit counting with qubit deletion."""
-
-        @num_qubits(meas_behavior="0")
-        def circuit_del(num_qubits_input):
-            qv = QuantumFloat(num_qubits_input)
-            h(qv[0])
-            qv.delete()
-
-        assert circuit_del(4) == 0
-
-    def test_num_qubits_delete_qubits2(self):
-        """Test qubit counting with qubit deletion followed by reallocation."""
-
-        @num_qubits(meas_behavior="0")
-        def circuit_del2(num_qubits_input):
-            qv = QuantumFloat(num_qubits_input)
-            h(qv[0])
-            qv.delete()
-            qv = QuantumFloat(num_qubits_input)
-            h(qv[0])
-
-        assert circuit_del2(4) == 4
 
     def test_delete_qubits_in_loop(self):
         """Test qubit counting with qubit deletion inside a loop."""
@@ -195,40 +241,48 @@ class TestNumQubits:
 
         assert circuit_branch_del2(4) == 12
 
-    def test_num_qubits_all_deleted_in_end(self):
-        """Everything deleted before termination => final count is 0."""
 
-        @num_qubits(meas_behavior="0")
-        def circuit_all_del(n):
-            a = QuantumFloat(n)
-            b = QuantumFloat(n + 1)
-            h(a[0])
-            h(b[0])
-            a.delete()
-            b.delete()
+class TestNumQubitsExceptions:
+    """Test cases for exceptions raised by the num_qubits metric."""
 
-        assert circuit_all_del(4) == 0
+    def test_num_qubits_simulation_not_implemented(self):
+        """Test that num_qubits via simulation raises NotImplementedError."""
 
-    def test_num_qubits_unused_allocation_semantics(self):
-        """Test the expected behavior for qubits that are allocated but never used (e.g., no gates, no measurements)."""
+        @num_qubits(meas_behavior="sim")
+        def main():
+            pass
 
-        @num_qubits(meas_behavior="0")
-        def circuit_unused(n):
-            _qv = QuantumFloat(n)
+        with pytest.raises(
+            NotImplementedError,
+            match="Num qubits metric via simulation is not implemented yet",
+        ):
+            main()
 
-        assert circuit_unused(4) == 0
+    def test_error_on_invalid_measurement_behavior(self):
+        """Test that an invalid measurement behavior raises ValueError."""
 
-    def test_num_qubits_alias_delete_counts_once(self):
-        """
-        Test that if we create an alias to a quantum variable and delete the alias,
-        it only counts as one deletion.
-        """
+        @num_qubits(meas_behavior="invalid_behavior")
+        def main():
+            pass
 
-        @num_qubits(meas_behavior="0")
-        def circuit_alias_del(n):
-            qv = QuantumFloat(n)
-            alias = qv
-            h(qv[0])
-            alias.delete()
+        with pytest.raises(
+            ValueError,
+            match="Don't know how to compute required resources via method invalid_behavior",
+        ):
+            main()
 
-        assert circuit_alias_del(4) == 0
+    def test_error_on_non_boolean_measurement(self):
+        """Test that a non-boolean measurement result raises ValueError."""
+
+        def invalid_meas_behavior(_):
+            return 42
+
+        @num_qubits(meas_behavior=invalid_meas_behavior)
+        def main():
+            qf = QuantumFloat(1)
+            return measure(qf[0])
+
+        with pytest.raises(
+            ValueError, match="Measurement behavior must return a boolean, got 42"
+        ):
+            main()
