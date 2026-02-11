@@ -1323,14 +1323,17 @@ class QuantumArray:
     def __iadd__(self, other):
         def f(a,b): a+=b
         self._element_wise_in_place_call(other, f)
+        return self
 
     def __isub__(self, other):
         def f(a,b): a-=b
         self._element_wise_in_place_call(other, f)
+        return self
         
     def __imul__(self, other):
         def f(a,b): a*=b
         self._element_wise_in_place_call(other, f)
+        return self
 
     # Element-wise implementation of the injection operator
 
