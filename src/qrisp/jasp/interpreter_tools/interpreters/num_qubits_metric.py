@@ -39,9 +39,9 @@ from qrisp.jasp.primitives import (
 )
 
 
-class CountQubitsMetric(BaseMetric):
+class NumQubitsMetric(BaseMetric):
     """
-    A metric implementation that computes the count of qubits in a Jaspr.
+    A metric implementation that computes the number of qubits in a Jaspr.
 
     Parameters
     ----------
@@ -54,7 +54,7 @@ class CountQubitsMetric(BaseMetric):
     """
 
     def __init__(self, meas_behavior: Callable, profiling_dic: dict):
-        """Initialize the CountQubitsMetric."""
+        """Initialize the NumQubitsMetric."""
 
         super().__init__(meas_behavior=meas_behavior, profiling_dic=profiling_dic)
 
@@ -160,20 +160,21 @@ class CountQubitsMetric(BaseMetric):
         return metric_data
 
 
-def extract_count_qubits(res: Tuple, jaspr: Jaspr, _) -> int:
-    """Extract count_qubits from the profiling result."""
+def extract_num_qubits(res: Tuple, jaspr: Jaspr, _) -> int:
+    """Extract num_qubits from the profiling result."""
 
     metric = res[-1] if len(jaspr.outvars) > 1 else res
     num_allocated_qubits = metric[0]
+
     return int(num_allocated_qubits)
 
 
 @lru_cache(int(1e5))
-def get_count_qubits_profiler(
+def get_num_qubits_profiler(
     jaspr: Jaspr, meas_behavior: Callable
 ) -> Tuple[Callable, None]:
     """
-    Build a count qubits profiling computer for a given Jaspr.
+    Build a num qubits profiling computer for a given Jaspr.
 
     Parameters
     ----------
@@ -186,7 +187,7 @@ def get_count_qubits_profiler(
     Returns
     -------
     Tuple[Callable, None]
-        A count qubits profiler function and None as auxiliary data.
+        A num qubits profiler function and None as auxiliary data.
 
     """
     quantum_operations = get_quantum_operations(jaspr)
@@ -195,29 +196,29 @@ def get_count_qubits_profiler(
     if "measure" not in profiling_dic:
         profiling_dic["measure"] = -1
 
-    count_qubits_metric = CountQubitsMetric(meas_behavior, profiling_dic)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(count_qubits_metric)
+    num_qubits_metric = NumQubitsMetric(meas_behavior, profiling_dic)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(num_qubits_metric)
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
-    def count_qubits_profiler(*args):
+    def num_qubits_profiler(*args):
         # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
         # Import here to avoid circular import issues
         from qrisp.operators import FermionicOperator, QubitOperator
 
         STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
 
-        initial_metric_value = count_qubits_metric.initial_metric
+        initial_metric_value = num_qubits_metric.initial_metric
         filtered_args = [
             x for x in args + (initial_metric_value,) if type(x) not in STATIC_TYPES
         ]
         return jitted_evaluator(*filtered_args)
 
-    return count_qubits_profiler, None
+    return num_qubits_profiler, None
 
 
-def simulate_count_qubits(jaspr: Jaspr, *_, **__) -> int:
-    """Simulate count_qubits metric via actual simulation."""
+def simulate_num_qubits(jaspr: Jaspr, *_, **__) -> int:
+    """Simulate num_qubits metric via actual simulation."""
 
     raise NotImplementedError(
-        "Count qubits metric via simulation is not implemented yet."
+        "Num qubits metric via simulation is not implemented yet."
     )

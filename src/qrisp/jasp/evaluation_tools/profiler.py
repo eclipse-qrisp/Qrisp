@@ -42,15 +42,15 @@ from qrisp.jasp.interpreter_tools.interpreters.count_ops_metric import (
     extract_count_ops,
     get_count_ops_profiler,
 )
-from qrisp.jasp.interpreter_tools.interpreters.count_qubits_metric import (
-    extract_count_qubits,
-    get_count_qubits_profiler,
-    simulate_count_qubits,
-)
 from qrisp.jasp.interpreter_tools.interpreters.depth_metric import (
     extract_depth,
     get_depth_profiler,
     simulate_depth,
+)
+from qrisp.jasp.interpreter_tools.interpreters.num_qubits_metric import (
+    extract_num_qubits,
+    get_num_qubits_profiler,
+    simulate_num_qubits,
 )
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
@@ -79,10 +79,10 @@ METRIC_DISPATCH = {
         extract_metric=extract_depth,
         simulate_fallback=simulate_depth,
     ),
-    "count_qubits": MetricSpec(
-        build_profiler=get_count_qubits_profiler,
-        extract_metric=extract_count_qubits,
-        simulate_fallback=simulate_count_qubits,
+    "num_qubits": MetricSpec(
+        build_profiler=get_num_qubits_profiler,
+        extract_metric=extract_num_qubits,
+        simulate_fallback=simulate_num_qubits,
     ),
 }
 
@@ -152,7 +152,7 @@ def count_ops(meas_behavior: str | Callable) -> Callable:
 
     Returns
     -------
-    resource_estimation decorator
+    resource_estimation decorator : Callable
         A decorator, producing a function to computed the required resources.
 
     Examples
@@ -307,7 +307,7 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
 
     Returns
     -------
-    depth decorator
+    depth decorator : Callable
         A decorator producing a function that computes the depth required.
 
     Examples
@@ -409,12 +409,97 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
     return depth_decorator
 
 
-def count_qubits(meas_behavior: str | Callable) -> Callable:
+def num_qubits(meas_behavior: str | Callable) -> Callable:
     """
-    ...
+    Decorator to compute the number of qubits still allocated at the end of a
+    quantum computation.
+
+    This decorator compiles a Jasp-compatible quantum function into a classical
+    function that tracks the number of currently allocated (live) qubits.
+    During evaluation, the counter is:
+
+    - increased whenever qubits are allocated (e.g., via ``QuantumVariable`` creation),
+    - decreased whenever qubits are explicitly deleted (e.g., via ``qv.delete()``),
+
+    and the decorated function returns the final counter value at program end.
+
+    This metric is useful for detecting allocations that are never deallocated
+    (e.g., missing ``delete()`` calls), and for understanding how many qubits
+    remain live after a circuit finishes.
+
+    Note that this is not the total number of qubits allocated over time,
+    nor the peak number of simultaneously live qubits. It is the live-qubit
+    count remaining at termination of the program.
+
+    Parameters
+    ----------
+    meas_behavior : str or callable
+        A string or callable indicating the behavior of the resource computation
+        when measurements are performed. Available strings are ``"0"`` and ``"1"``.
+        A callable must take a JAX PRNG key as input and return a boolean.
+
+    Returns
+    -------
+    Callable
+        A decorator producing a function that returns the number of qubits
+        still allocated at the end of the computation.
+
+    Examples
+    --------
+
+    Let's consider a simple circuit in which the number of qubits at the end
+    depends on the measurement outcome:
+
+    ::
+
+        from qrisp import *
+
+        @num_qubits(meas_behavior="0")
+        def circuit(n1, n2, n3):
+            qv = QuantumFloat(n1)
+            m = measure(qv[0])
+
+            with control(m == 0):
+                qv2 = QuantumFloat(n2)
+                h(qv2[0])
+
+            with control(m == 1):
+                qv3 = QuantumFloat(n3)
+                h(qv3[0])
+
+        print(circuit(2, 3, 4))  # Output: 5
+
+    Here the returned value is the number of qubits that remain allocated at
+    the end of the selected branch. If the measurement returns 0,
+    the final live-qubit count is 5. If it returns 1, the final live-qubit count is 6.
+
+    Note that deallocation affects the final count:
+
+    ::
+
+        @num_qubits(meas_behavior="0")
+        def circuit(n):
+            qv = QuantumFloat(2 * n)
+            h(qv[0])
+            qv.delete()
+
+            qv = QuantumFloat(n)
+            h(qv[0])
+
+        print(circuit(4))  # Output: 4
+
+    Even though 8 qubits are allocated first, they are deleted before the end
+    of the program. Therefore, only the final allocation (4 qubits) remains
+    live at termination.
+
+    .. warning::
+
+        Programs that include a :ref:`kernelized <quantum_kernel>` function
+        cannot currently be analyzed.
+
     """
 
-    def count_qubits_decorator(function):
+    def num_qubits_decorator(function):
 
         def qubits_counter(*args):
 
@@ -430,11 +515,11 @@ def count_qubits(meas_behavior: str | Callable) -> Callable:
                 jaspr = make_jaspr(function)(*args)
                 function.jaspr_dict[signature] = jaspr
 
-            return jaspr.count_qubits(*args, meas_behavior=meas_behavior)
+            return jaspr.num_qubits(*args, meas_behavior=meas_behavior)
 
         return qubits_counter
 
-    return count_qubits_decorator
+    return num_qubits_decorator
 
 
 def profile_jaspr(
@@ -450,7 +535,7 @@ def profile_jaspr(
 
     mode : str
         The profiling mode to be used.
-        Currently supported modes are "depth", "count_ops", and "count_qubits".
+        Currently supported modes are "depth", "count_ops", and "num_qubits".
 
     meas_behavior : str or callable, optional
         The measurement behavior to be used during profiling. Default is "0".
