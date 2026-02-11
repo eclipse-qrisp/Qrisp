@@ -25,6 +25,7 @@ def IQMBackend(api_token,
                transpiler = None,
                calibration_set_id: str | UUID | None = None,
                use_metrics: bool = False,
+               use_timeslot = False
                ):
     """
     This function creates a :ref:`BatchedBackend` for executing circuits on IQM hardware.
@@ -154,7 +155,7 @@ def IQMBackend(api_token,
     # Construct the server URL based on device_instance if server_url is not provided
     if server_url is None:
         server_url = "https://resonance.meetiqm.com/"
-        
+
     client = IQMClient(iqm_server_url = server_url, token = api_token, quantum_computer = device_instance)
     backend = IQMBackend(client, calibration_set_id=calibration_set_id, use_metrics=use_metrics)
     
@@ -188,7 +189,8 @@ def IQMBackend(api_token,
 
         job = client.submit_circuits(circuit_batch, 
                                       options = compilation_options, 
-                                      shots = max(shot_batch))
+                                      shots = max(shot_batch),
+                                        use_timeslot=use_timeslot)
         
         
         job.wait_for_completion()
