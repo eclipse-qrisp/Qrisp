@@ -15,3 +15,42 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
+
+from qrisp import *
+
+def gidney_adder2(a, b, c_in=None, c_out=None):
+    """
+    In-place adder function based on `this paper <https://arxiv.org/abs/1709.06648>`__.
+    Performs the addition:
+
+    ::
+
+        b += a
+
+
+    Parameters
+    ----------
+    a : int or QuantumVariable or list[Qubit]
+        The value that should be added.
+    b : QuantumVariable or list[Qubit]
+        The value that should be modified in the in-place addition.
+    c_in : Qubit, optional
+        An optional carry in value. The default is None.
+    c_out : Qubit, optional
+        An optional carry out value. The default is None.
+
+    Examples
+    --------
+
+    We add two integers:
+
+    >>> from qrisp import QuantumFloat, gidney_adder
+    >>> a = QuantumFloat(4)
+    >>> b = QuantumFloat(4)
+    >>> a[:] = 4
+    >>> b[:] = 5
+    >>> gidney_adder2(a,b)
+    >>> print(b)
+    {9: 1.0}
+
+    """
