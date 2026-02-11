@@ -16,51 +16,19 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumFloat
 import numpy as np
+from jax.errors import TracerArrayConversionError
 
 
-def prepare(qv, target_array, reversed=False):
-    r"""
-    This method performs quantum state preparation. Given a vector $b=(b_0,\dotsc,b_{N-1})$, the function acts as
+def prepare_qiskit(qv, target_array, reversed=False):
 
-    .. math::
-
-        \ket{0} \rightarrow \sum_{i=0}^{N-1}b_i\ket{i}
-
-    Parameters
-    ----------
-    qv : QuantumVariable
-        The quantum variable on which to apply state preparation.
-    target_array : numpy.ndarray
-        The vector $b$.
-    reversed : boolean
-        If set to ``True``, the endianness is reversed. The default is ``False``.
-
-    Examples
-    --------
-
-    We create a :ref:`QuantumFloat` and prepare the state $\sum_{i=0}^3b_i\ket{i}$ for $b=(0,1,2,3)$.
-
-    ::
-
-        b = np.array([0,1,2,3])
-
-        qf = QuantumFloat(2)
-        prepare(qf, b)
-
-        res_dict = qf.get_measurement()
-
-        for k, v in res_dict.items():
-            res_dict[k] = v**0.5
-
-        for k, v in res_dict.items():
-            res_dict[k] = v/res_dict[1.0]
-
-        print(res_dict)
-        # Yields: {3: 2.9999766670425863, 2: 1.999965000393743, 1: 1.0}
-
-    """
+    try:
+        target_array = np.array(target_array)
+    except TracerArrayConversionError:
+        raise ValueError(
+            "Tried to initialize a quantum variable with a JAX Tracer array using the Qiskit "
+            "state preparation method. Please use the 'qswitch' method instead."
+        )
 
     from qiskit.circuit.library.data_preparation.state_preparation import (
         StatePreparation,

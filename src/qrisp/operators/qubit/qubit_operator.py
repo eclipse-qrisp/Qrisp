@@ -2386,18 +2386,21 @@ class QubitOperator(Hamiltonian):
             (7.0, 6.0): 0.08333333084980639}
 
         """
-        from qrisp.jasp import qache
-        from qrisp.alg_primitives import prepare, qswitch
+        from qrisp.jasp import qache, q_switch
+        from qrisp.alg_primitives import prepare
     
         unitaries, coeffs = self.unitaries()
         alpha = np.sum(coeffs)
 
         # Number of qubits for case variable
-        num_qubits = np.int64(np.ceil(np.log2(len(coeffs))))
+        m = len(coeffs)
+        num_qubits = np.int64(np.ceil(np.log2(m)))
+        # Ensure coeffs has size 2 ** num_qubits by zero padding
+        coeffs = np.concatenate((coeffs, np.zeros((1 << num_qubits) - m)))
 
         @qache
         def U(case, operand):
-            qswitch(operand, case, unitaries)
+            q_switch(case, unitaries, operand)
 
         @qache
         def state_prep(case):

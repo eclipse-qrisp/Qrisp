@@ -49,10 +49,10 @@ def test_qasm_converter():
     
     qasm_str = jaspr.to_qasm(3)
     qc = QuantumCircuit.from_qasm_str(qasm_str)
-    assert qc.run() == {'0111': 1.0}
+    assert qc.run() == {'1110': 1.0}
     
     qasm_str = jaspr.to_qasm(5)
     qc = QuantumCircuit.from_qasm_str(qasm_str)
-    assert qc.run() == {'011111': 1.0}
+    assert qc.run() == {'111110': 1.0}
 
     
