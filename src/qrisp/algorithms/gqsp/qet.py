@@ -25,6 +25,7 @@ from qrisp.alg_primitives.reflection import reflection
 from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
 from qrisp.algorithms.gqsp.helper_functions import poly2cheb, _rescale_poly
 from qrisp.block_encodings import BlockEncoding
+from qrisp.jasp import jrange
 from qrisp.operators import QubitOperator, FermionicOperator
 from typing import Literal, TYPE_CHECKING
 
@@ -162,7 +163,7 @@ def QET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", ki
     # Implementation based on conjecture: phi has fixed parity iff p has fixed parity.
     # Combine two consecutive walk operators: (R U) (R U) = (R U R U ) = (R U_dg R U) = T_2
     # This is qubitization step even if the block encoding unitary is not Hemitian.
-    # https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf
+    # See https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf (page 104).
     # If the parity is odd, there is a single (R U) at the end which is not followed by a rotation.
     # Since the QET is only successful if all ancillas are |0>, there is no need to control-(R U) 
     # and the refelction acts as identity.
@@ -178,7 +179,7 @@ def QET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", ki
     def new_unitary(*args):
 
         rx(-2*phi[0], args[0])
-        for i in range(1, (d + 1) // 2):
+        for i in jrange(1, (d + 1) // 2):
             with control(args[0], ctrl_state=0):
                 T2(*args[1:])
             rx(-2 * phi[2*i], args[0])
