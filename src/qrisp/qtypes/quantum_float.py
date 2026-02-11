@@ -649,7 +649,7 @@ class QuantumFloat(QuantumVariable):
 
             polynomial_encoder(input_qf_list, self, poly)
 
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float, np.number)):
             # self.incr(other)
 
             if not int(other / 2**self.exponent) == other / 2**self.exponent:

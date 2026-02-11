@@ -1321,16 +1321,34 @@ class QuantumArray:
                     fun(self_view[i], other)
 
     def __iadd__(self, other):
+        from qrisp import QuantumFloat
+        if not isinstance(self.qtype, QuantumFloat):
+            raise TypeError("Tried to perform arithmetic on QuantumArray with qtype {type(self.qtype)} (allowed is only QuantumFloat) ")
+        if isinstance(other, QuantumArray):
+            if not isinstance(other.qtype, QuantumFloat):
+                raise TypeError("Tried to perform arithmetic on QuantumArray with qtype {type(other.qtype)} (allowed is only QuantumFloat) ")
         def f(a,b): a+=b
         self._element_wise_in_place_call(other, f)
         return self
 
     def __isub__(self, other):
+        from qrisp import QuantumFloat
+        if not isinstance(self.qtype, QuantumFloat):
+            raise TypeError("Tried to perform arithmetic on QuantumArray with qtype {type(self.qtype)} (allowed is only QuantumFloat) ")
+        if isinstance(other, QuantumArray):
+            if not isinstance(other.qtype, QuantumFloat):
+                raise TypeError("Tried to perform arithmetic on QuantumArray with qtype {type(other.qtype)} (allowed is only QuantumFloat) ")
         def f(a,b): a-=b
         self._element_wise_in_place_call(other, f)
         return self
         
     def __imul__(self, other):
+        from qrisp import QuantumFloat
+        if not isinstance(self.qtype, QuantumFloat):
+            raise TypeError("Tried to perform arithmetic on QuantumArray with qtype {type(self.qtype)} (allowed is only QuantumFloat) ")
+        if isinstance(other, QuantumArray):
+            if not isinstance(other.qtype, QuantumFloat):
+                raise TypeError("Tried to perform arithmetic on QuantumArray with qtype {type(other.qtype)} (allowed is only QuantumFloat) ")
         def f(a,b): a*=b
         self._element_wise_in_place_call(other, f)
         return self
