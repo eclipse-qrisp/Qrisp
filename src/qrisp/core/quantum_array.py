@@ -999,18 +999,33 @@ class QuantumArray:
     def _validate_arithmetic(self, other):
         """Internal helper to validate type and shape for element-wise operations."""
         from qrisp.qtypes.quantum_float import QuantumFloat
-        # 1. Type Check
-        if not isinstance(self.qtype, QuantumFloat) or not (hasattr(other, 'qtype') and isinstance(other.qtype, QuantumFloat)):
+        
+        # Self must always be QuantumFloat
+        if not isinstance(self.qtype, QuantumFloat):
             raise TypeError(
-                f"Element-wise operations require both arrays to have qtype 'QuantumFloat'. "
-                f"Got {type(self.qtype).__name__} and {type(getattr(other, 'qtype', other)).__name__}."
+                f"Element-wise operations require qtype 'QuantumFloat'. "
+                f"Got {type(self.qtype).__name__}."
             )
-
-        # 2. Shape Check
-        if self.shape != other.shape:
-            raise ValueError(
-                f"Shape mismatch between {self.shape} and {other.shape}."
-            )
+        
+        # If other is a QuantumArray, check its type and shape
+        if isinstance(other, QuantumArray):
+            if not isinstance(other.qtype, QuantumFloat):
+                raise TypeError(
+                    f"Element-wise operations require both arrays to have qtype 'QuantumFloat'. "
+                    f"Got {type(self.qtype).__name__} and {type(other.qtype).__name__}."
+                )
+            if self.shape != other.shape:
+                raise ValueError(
+                    f"Shape mismatch: {self.shape} vs {other.shape}."
+                )
+        # If other is a numpy/jax array, check shape
+        elif isinstance(other, (np.ndarray, jnp.ndarray)):
+            if self.shape != other.shape:
+                raise ValueError(
+                    f"Shape mismatch: {self.shape} vs {other.shape}."
+                )
+        # For scalar/QuantumVariable cases, no additional validation needed
+        # (the underlying QuantumFloat operations will handle type checking)
 
     def __add__(self, other: QuantumArray) -> QuantumArray:
         """
@@ -1334,34 +1349,19 @@ class QuantumArray:
                     fun(self_view[i], other)
 
     def __iadd__(self, other):
-        from qrisp import QuantumFloat
-        if not isinstance(self.qtype, QuantumFloat):
-            raise TypeError(f"Tried to perform arithmetic on QuantumArray with qtype {type(self.qtype)} (allowed is only QuantumFloat) ")
-        if isinstance(other, QuantumArray):
-            if not isinstance(other.qtype, QuantumFloat):
-                raise TypeError(f"Tried to perform arithmetic on QuantumArray with qtype {type(other.qtype)} (allowed is only QuantumFloat) ")
+        self._validate_arithmetic(other)
         def f(a,b): a+=b
         self._element_wise_in_place_call(other, f)
         return self
 
     def __isub__(self, other):
-        from qrisp import QuantumFloat
-        if not isinstance(self.qtype, QuantumFloat):
-            raise TypeError(f"Tried to perform arithmetic on QuantumArray with qtype {type(self.qtype)} (allowed is only QuantumFloat) ")
-        if isinstance(other, QuantumArray):
-            if not isinstance(other.qtype, QuantumFloat):
-                raise TypeError(f"Tried to perform arithmetic on QuantumArray with qtype {type(other.qtype)} (allowed is only QuantumFloat) ")
+        self._validate_arithmetic(other)
         def f(a,b): a-=b
         self._element_wise_in_place_call(other, f)
         return self
         
     def __imul__(self, other):
-        from qrisp import QuantumFloat
-        if not isinstance(self.qtype, QuantumFloat):
-            raise TypeError(f"Tried to perform arithmetic on QuantumArray with qtype {type(self.qtype)} (allowed is only QuantumFloat) ")
-        if isinstance(other, QuantumArray):
-            if not isinstance(other.qtype, QuantumFloat):
-                raise TypeError(f"Tried to perform arithmetic on QuantumArray with qtype {type(other.qtype)} (allowed is only QuantumFloat) ")
+        self._validate_arithmetic(other)
         def f(a,b): a*=b
         self._element_wise_in_place_call(other, f)
         return self
