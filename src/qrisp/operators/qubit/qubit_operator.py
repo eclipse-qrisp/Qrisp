@@ -1965,7 +1965,7 @@ class QubitOperator(Hamiltonian):
 
     def qdrift(self, forward_evolution=True, seed=42):
         r"""
-        This algorithm simulates the time-evolution of a quantum state under a Hamiltonian using the **QDrift** 
+        Simulates the time-evolution of a quantum state under a Hamiltonian using the **QDrift** 
         (`Quantum Stochastic Drift Protocol <https://arxiv.org/pdf/1811.08017>`_) algorithm.
 
         QDrift approximates the exact time-evolution operator
@@ -2008,7 +2008,7 @@ class QubitOperator(Hamiltonian):
         Returns
         -------
         callable
-            A Python function that implements QDrift.
+            A function that implements QDrift.
             This function receives the following arguments:
 
             * qarg : :ref:`QuantumVariable`
@@ -2061,9 +2061,7 @@ class QubitOperator(Hamiltonian):
             M = create_magnetization(G)
 
             # Choose N according to the theoretical scaling.
-            # The Qdrift bound suggests:  N ≈ ceil(2 (λ t)² / ε), where λ = ∑|h_j|. 
-            # Here we use this expression directly, 
-            # although for many models it leads to very large circuits.
+            # The QDrift bound suggests:  N ≈ ceil(2 (λ t)² / ε), where λ = ∑|h_j|. 
             # Choose any alternative formula for N, 
             # depending on desired accuracy and runtime.
             lam = np.sum(np.abs(H.coeffs()))
@@ -2075,7 +2073,7 @@ class QubitOperator(Hamiltonian):
                 U(qv, t=t, samples=N)
                 return qv
 
-            # Compute magnetization expectation 
+            # Compute magnetization expectation.
             T_values = np.arange(0, 1.5, 0.05)
             M_values = []
             for t in T_values:
@@ -2101,15 +2099,15 @@ class QubitOperator(Hamiltonian):
         .. math::
             N = \left\lceil \frac{2 \lambda^2 t^2}{\epsilon} \right\rceil,
 
-        where :math:`\lambda = \sum_j |h_j|` and :math:`\epsilon` is the target diamond-norm precision.
+        where :math:`\lambda = \sum_j |h_j|` and :math:`\epsilon` is the target precision.
 
         While this choice guarantees the formal error bound from 
         `Random Compiler for Fast Hamiltonian Simulation, Physical Review Letters 123, 070503 (2019) <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.123.070503>`_, 
         it can produce extremely large circuit depths (here on the order of up to thousands of Pauli rotations).
 
-        QDrift is not optimal for Hamiltonians with many large coefficients (like the Ising chain),
+        QDrift is not ideal for Hamiltonians with many large coefficients (like the Ising chain),
         because the total weight :math:`\lambda` is high, leading to large :math:`N`.
-        However, it can be highly efficient for sparse or weakly weighted Hamiltonians
+        However, it is very effective for sparse or weakly weighted Hamiltonians
         where :math:`\lambda` is small—common in chemistry or local lattice models—
         making it a powerful tool for large-scale quantum simulations with bounded resources.
 
