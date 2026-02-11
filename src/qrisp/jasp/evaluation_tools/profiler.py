@@ -47,6 +47,11 @@ from qrisp.jasp.interpreter_tools.interpreters.depth_metric import (
     get_depth_profiler,
     simulate_depth,
 )
+from qrisp.jasp.interpreter_tools.interpreters.num_qubits_metric import (
+    extract_num_qubits,
+    get_num_qubits_profiler,
+    simulate_num_qubits,
+)
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
     always_zero,
@@ -74,14 +79,39 @@ METRIC_DISPATCH = {
         extract_metric=extract_depth,
         simulate_fallback=simulate_depth,
     ),
+    "num_qubits": MetricSpec(
+        build_profiler=get_num_qubits_profiler,
+        extract_metric=extract_num_qubits,
+        simulate_fallback=simulate_num_qubits,
+    ),
 }
 
 
-# TODO: `count_ops` and `depth` should be moved to their own (already existing) files.
-# So far we keep them here to avoid circular imports.
+def _normalize_meas_behavior(meas_behavior) -> Callable:
+    """Normalize the measurement behavior into a callable."""
+
+    if isinstance(meas_behavior, str):
+        if meas_behavior == "0":
+            return always_zero
+        if meas_behavior == "1":
+            return always_one
+        if meas_behavior == "sim":
+            return simulation
+        raise ValueError(
+            f"Don't know how to compute required resources via method {meas_behavior}"
+        )
+
+    if callable(meas_behavior):
+        return meas_behavior
+
+    raise TypeError("meas_behavior must be a str or callable")
 
 
-def count_ops(meas_behavior):
+# TODO: Move each metric implementation into its dedicated module (already present).
+# Keeping them here for now to avoid circular imports.
+
+
+def count_ops(meas_behavior: str | Callable) -> Callable:
     """
     Decorator to determine resources of large scale quantum computations.
     This decorator compiles the given Jasp-compatible function into a classical
@@ -122,7 +152,7 @@ def count_ops(meas_behavior):
 
     Returns
     -------
-    resource_estimation decorator
+    resource_estimation decorator : Callable
         A decorator, producing a function to computed the required resources.
 
     Examples
@@ -233,45 +263,23 @@ def count_ops(meas_behavior):
     def count_ops_decorator(function):
 
         def ops_counter(*args):
-
             from qrisp.jasp import make_jaspr
 
             if not hasattr(function, "jaspr_dict"):
                 function.jaspr_dict = {}
 
-            args = list(args)
-            signature = tuple([type(arg) for arg in args])
+            signature = tuple(type(arg) for arg in args)
+            jaspr = function.jaspr_dict.get(signature)
 
-            if not signature in function.jaspr_dict:
-                function.jaspr_dict[signature] = make_jaspr(function)(*args)
+            if jaspr is None:
+                jaspr = make_jaspr(function)(*args)
+                function.jaspr_dict[signature] = jaspr
 
-            return function.jaspr_dict[signature].count_ops(
-                *args, meas_behavior=meas_behavior
-            )
+            return jaspr.count_ops(*args, meas_behavior=meas_behavior)
 
         return ops_counter
 
     return count_ops_decorator
-
-
-def _normalize_meas_behavior(meas_behavior) -> Callable:
-    """Normalize the measurement behavior into a callable."""
-
-    if isinstance(meas_behavior, str):
-        if meas_behavior == "0":
-            return always_zero
-        if meas_behavior == "1":
-            return always_one
-        if meas_behavior == "sim":
-            return simulation
-        raise ValueError(
-            f"Don't know how to compute required resources via method {meas_behavior}"
-        )
-
-    if callable(meas_behavior):
-        return meas_behavior
-
-    raise TypeError("meas_behavior must be a str or callable")
 
 
 def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
@@ -299,7 +307,7 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
 
     Returns
     -------
-    depth decorator
+    depth decorator : Callable
         A decorator producing a function that computes the depth required.
 
     Examples
@@ -380,25 +388,138 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
     def depth_decorator(function):
 
         def depth_counter(*args):
-
             from qrisp.jasp import make_jaspr
 
             if not hasattr(function, "jaspr_dict"):
                 function.jaspr_dict = {}
 
-            args = list(args)
+            signature = tuple(type(arg) for arg in args)
+            jaspr = function.jaspr_dict.get(signature)
 
-            signature = tuple([type(arg) for arg in args])
-            if not signature in function.jaspr_dict:
-                function.jaspr_dict[signature] = make_jaspr(function)(*args)
+            if jaspr is None:
+                jaspr = make_jaspr(function)(*args)
+                function.jaspr_dict[signature] = jaspr
 
-            return function.jaspr_dict[signature].depth(
+            return jaspr.depth(
                 *args, meas_behavior=meas_behavior, max_qubits=max_qubits
             )
 
         return depth_counter
 
     return depth_decorator
+
+
+def num_qubits(meas_behavior: str | Callable) -> Callable:
+    """
+    Decorator to compute the number of qubits still allocated at the end of a
+    quantum computation.
+
+    This decorator compiles a Jasp-compatible quantum function into a classical
+    function that tracks the number of currently allocated (live) qubits.
+    During evaluation, the counter is:
+
+    - increased whenever qubits are allocated (e.g., via ``QuantumVariable`` creation),
+    - decreased whenever qubits are explicitly deleted (e.g., via ``qv.delete()``),
+
+    and the decorated function returns the final counter value at program end.
+
+    This metric is useful for detecting allocations that are never deallocated
+    (e.g., missing ``delete()`` calls), and for understanding how many qubits
+    remain live after a circuit finishes.
+
+    Note that this is not the total number of qubits allocated over time,
+    nor the peak number of simultaneously live qubits. It is the live-qubit
+    count remaining at termination of the program.
+
+    Parameters
+    ----------
+    meas_behavior : str or callable
+        A string or callable indicating the behavior of the resource computation
+        when measurements are performed. Available strings are ``"0"`` and ``"1"``.
+        A callable must take a JAX PRNG key as input and return a boolean.
+
+    Returns
+    -------
+    Callable
+        A decorator producing a function that returns the number of qubits
+        still allocated at the end of the computation.
+
+    Examples
+    --------
+
+    Let's consider a simple circuit in which the number of qubits at the end
+    depends on the measurement outcome:
+
+    ::
+
+        from qrisp import *
+
+        @num_qubits(meas_behavior="0")
+        def circuit(n1, n2, n3):
+            qv = QuantumFloat(n1)
+            m = measure(qv[0])
+
+            with control(m == 0):
+                qv2 = QuantumFloat(n2)
+                h(qv2[0])
+
+            with control(m == 1):
+                qv3 = QuantumFloat(n3)
+                h(qv3[0])
+
+        print(circuit(2, 3, 4))  # Output: 5
+
+    Here the returned value is the number of qubits that remain allocated at
+    the end of the selected branch. If the measurement returns 0,
+    the final live-qubit count is 5. If it returns 1, the final live-qubit count is 6.
+
+    Note that deallocation affects the final count:
+
+    ::
+
+        @num_qubits(meas_behavior="0")
+        def circuit(n):
+            qv = QuantumFloat(2 * n)
+            h(qv[0])
+            qv.delete()
+
+            qv = QuantumFloat(n)
+            h(qv[0])
+
+        print(circuit(4))  # Output: 4
+
+    Even though 8 qubits are allocated first, they are deleted before the end
+    of the program. Therefore, only the final allocation (4 qubits) remains
+    live at termination.
+
+    .. warning::
+
+        Programs that include a :ref:`kernelized <quantum_kernel>` function
+        cannot currently be analyzed.
+
+    """
+
+    def num_qubits_decorator(function):
+
+        def qubits_counter(*args):
+
+            from qrisp.jasp import make_jaspr
+
+            if not hasattr(function, "jaspr_dict"):
+                function.jaspr_dict = {}
+
+            signature = tuple(type(arg) for arg in args)
+            jaspr = function.jaspr_dict.get(signature)
+
+            if jaspr is None:
+                jaspr = make_jaspr(function)(*args)
+                function.jaspr_dict[signature] = jaspr
+
+            return jaspr.num_qubits(*args, meas_behavior=meas_behavior)
+
+        return qubits_counter
+
+    return num_qubits_decorator
 
 
 def profile_jaspr(
@@ -413,7 +534,8 @@ def profile_jaspr(
         The Jaspr to be profiled.
 
     mode : str
-        The profiling mode to be used. Currently supported modes are "depth".
+        The profiling mode to be used.
+        Currently supported modes are "depth", "count_ops", and "num_qubits".
 
     meas_behavior : str or callable, optional
         The measurement behavior to be used during profiling. Default is "0".
