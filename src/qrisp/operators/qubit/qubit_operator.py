@@ -2138,9 +2138,9 @@ class QubitOperator(Hamiltonian):
             key = random.key(seed)
             tau = lambda_ * t / jnp.maximum(samples, 1)
 
-            for _ in jrange(samples * iter):
+            for i in jrange(samples * iter):
                 # Sample index j.
-                key, subkey = random.split(key)
+                subkey = random.fold_in(key, i)
                 j = random.choice(subkey, a=len(probs), p=probs)
                 # Apply e^{-i tau H_j}.
                 q_switch(j, branches, tau * signs[j], qarg)
