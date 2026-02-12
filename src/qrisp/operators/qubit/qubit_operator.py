@@ -1963,7 +1963,7 @@ class QubitOperator(Hamiltonian):
     # QDrift
     #
 
-    def qdrift(self, forward_evolution=True, seed=42):
+    def qdrift(self, forward_evolution=True):
         r"""
         Simulates the time-evolution of a quantum state under a Hamiltonian using the **QDrift** 
         (`Quantum Stochastic Drift Protocol <https://arxiv.org/pdf/1811.08017>`_) algorithm.
@@ -2002,8 +2002,6 @@ class QubitOperator(Hamiltonian):
         ----------
         forward_evolution : bool, optional
             If set to False, $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is True.
-        seed : int, optional
-            Seed for pseudo-random number generator. The default is 42.
 
         Returns
         -------
@@ -2018,6 +2016,8 @@ class QubitOperator(Hamiltonian):
             * samples : int, optional
                 The number of random samples $N$ (the number of exponentials in the product). The default is 100.
                 Larger values yield higher accuracy at the cost of higher runtime.
+            * seed : int, optional
+                Seed for pseudo-random number generator. The default is 42.
             * iter : int, optional
                 The number of iterations the unitary $U(t,N)$ is applied. The default is 1.
         
@@ -2131,7 +2131,7 @@ class QubitOperator(Hamiltonian):
         lambda_ = np.sum(np.abs(coeffs))
         probs = np.abs(coeffs) / lambda_
         
-        def U(qarg, t=1.0, samples=100, iter=1):
+        def U(qarg, t=1.0, samples=100, seed=42, iter=1):
 
             key = random.key(seed)
             tau = lambda_ * t / jnp.maximum(samples, 1)
