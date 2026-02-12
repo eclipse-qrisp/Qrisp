@@ -52,6 +52,8 @@
 # 4. Apart from the (de)allocation gates, all the collected data is stored inside
 # the .env_data attribute
 
+from contextvars import ContextVar
+
 from qrisp.circuit import QubitAlloc, QubitDealloc, fast_append
 from qrisp.core.quantum_session import QuantumSession
 from qrisp.jasp import AbstractQuantumCircuit, QuantumPrimitive, TracingQuantumSession
@@ -322,7 +324,10 @@ class QuantumEnvironment(QuantumPrimitive):
 
     """
 
-    deepest_environment = [None]
+    _deepest_environment: ContextVar["QuantumEnvironment | None"] = ContextVar(
+        "deepest_q_env",
+        default=None,
+    )
 
     def __init__(self, env_args=None):
 
@@ -391,7 +396,7 @@ class QuantumEnvironment(QuantumPrimitive):
             abs_qs.abs_qc = self.bind(
                 *(self.env_args + [abs_qs.abs_qc]),
                 stage="enter",
-                type=str(type(self)).rsplit(".", maxsplit=1)[-1][:-2]
+                type=str(type(self)).rsplit(".", maxsplit=1)[-1][:-2],
             )[0]
             return
 
@@ -410,9 +415,10 @@ class QuantumEnvironment(QuantumPrimitive):
         # to prevent compilation errors at compile time.
         self.deallocated_qubits = []
 
-        # Set the new relationships
-        self.parent = self.deepest_environment[0]
-        self.deepest_environment[0] = self
+        # Set the new relationships and
+        # store a token so we can restore the previous value reliably in __exit__
+        self.parent = self._deepest_environment.get()
+        self._deepest_env_token = self._deepest_environment.set(self)
 
         # Acquire a list of all active quantum sessions
         self.active_qs_list = QuantumSession.get_active_quantum_sessions()
@@ -454,7 +460,7 @@ class QuantumEnvironment(QuantumPrimitive):
             )[0]
             return
 
-        self.deepest_environment[0] = self.parent
+        self._deepest_environment.reset(self._deepest_env_token)
 
         self.stop_dumping()
 
@@ -524,18 +530,16 @@ class QuantumEnvironment(QuantumPrimitive):
                 self.env_qs.append(QubitDealloc(), [qb])
 
     # This is the default compilation method.
-    # It simply compiles all subenvironments and the collected data to the session
-    # For more advanced environments this should be modified
+    # It simply compiles all sub-environments and the collected data to the session.
     def compile(self):
         """Compile the quantum environment."""
 
         for instruction in self.env_data:
-            # If the instruction is an environment, compile the environment
-            if issubclass(instruction.__class__, QuantumEnvironment):
+
+            if isinstance(instruction, QuantumEnvironment):
                 instruction.compile()
 
             else:
-                # Append instruction
                 self.env_qs.append(instruction)
 
     def jcompile(self, eqn, context_dic):
@@ -544,11 +548,9 @@ class QuantumEnvironment(QuantumPrimitive):
         from qrisp.jasp import eval_jaxpr, extract_invalues, insert_outvalues
 
         args = extract_invalues(eqn, context_dic)
-        body_jaspr = eqn.params["jaspr"]
+        flattened_envs = eqn.params["jaspr"].flatten_environments()
 
-        res = eval_jaxpr(body_jaspr.flatten_environments())(*args)
-
-        if not isinstance(res, tuple):
-            res = (res,)
+        res = eval_jaxpr(flattened_envs)(*args)
+        res = (res,) if not isinstance(res, tuple) else res
 
         insert_outvalues(eqn, context_dic, res)
