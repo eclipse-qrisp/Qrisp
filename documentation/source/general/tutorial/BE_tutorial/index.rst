@@ -42,7 +42,11 @@ Whether you’re a software engineer wary of venturing into quantum because of s
 
 Quantum Linear Algebra has been a rapidly explored field in the recent years, with Quantum Signal Processing being at the center of it all as an unifying model to quantum algorithms. While the theory is extremely elegant and surprisingly simple (depending of the amount of exposure to it, I guess), moving from mathematical expressions and circuit schematics on paper (or your favorite e-reader) to a functioning quantum circuit has historically been a manual, rather complex labor. Qrisp's BlockEncoding class changes that, allowing to program quantum linear algebra as easily as you handle arrays in Numpy, with the compiler handling all the heavy lifting of the ancilla management of the underlying circuit (aah, scary word) construction behind the taken abstractions.
 
-This is the central reference hub of a three part **Quantum Linear Algebra with Qrisp** series.
+This is the central reference hub of a two part **Quantum Linear Algebra with Qrisp** schnellkurs (that is German for "quick course", in case you were wondering):
+
+- BlockEncoding class 101: Block encoding, LCU, resource estimation
+
+- BlockEncoding class 201: Qubitization, Chebyshev polynomials, QSP
 
 And yes, since this question has the probability of 0.82 to appear as an intrusive thought, let us already answer that with Qrisp you can do all of the below:
 
@@ -50,68 +54,44 @@ And yes, since this question has the probability of 0.82 to appear as an intrusi
 
 - perform resource estimation;
 
-- simulate (with or without real-time measurements utilizing the repeat until success feature);
+- simulate (with or without real-time measurements utilizing the repeat until success feature); and
 
-- apply post-processing after having run these compiled circuits on hardware of your choice.
+- apply post-processing after having run these compiled circuits on existing hardware.
 
 With this answered, let's get into the outline of this three part series!
 
-Roadmap: From theory through construction to application
---------------------------------------------------------
+BlockEncoding class 101: Block encoding, LCU, resource estimation
+-----------------------------------------------------------------
+In classical computer science, we take for granted the ability to invert or exponentiate matrices. In quantum computing, nature demands unitarity: all operations must be reversible and preserve the norm (represented by matrices $U$ such that $U^\dagger U = \mathbb{1}$).
 
-This series is divided into three parts designed to take you from "What is an LCU?" to "I just solved a 1D-Laplacian linear system in three lines of code."
+But the matrices that matter, like Hamiltonians describing the energy of a molecule—are rarely unitary. To bridge this gap, we use Block Encodings to "embed" these non-unitary matrices into the top-left corner of a larger unitary system.
 
-Part 0: Theoretical deep dive: From Block Encodings to Quantum Signal Processing (Optional)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In this tutorial, you will learn to build these embeddings from scratch and manipulate them with high-level syntax.
 
-Before exploring the BlockEncoding class, we'll catch up on (just enough) theory to satisfy even the most rigorous academic. We'll dive into the math and connect the dots between a recent stream of publications (we're talking about papers who are all still less than a decade old!). 
+| Method | Purpose | Typical Use Case |
+| :--- | :--- | :--- |
+| ``.from_array(arr)`` | Encodes a NumPy matrix | Quick prototyping of small, specific matrices. |
+| ``.from_operator(op)`` | Encodes a Hamiltonian | Physics and Chemistry simulations. |
+| ``.from_lcu(coeffs, unitaries)`` | Custom weighted sum of unitaries | High-efficiency hardware implementation. |
+| ``.resources(qv)`` | Estimates gate counts and depth | Resource analysis and benchmarking. |
+| ``.apply(qv)`` | Adds gates to the circuit | NISQ hardware with manual post-selection. |
+| ``.apply_rus(prep_func)`` | Deterministic matrix application | Fault-tolerant / Repeat-Until-Success logic. |
+| ``+``, ``-``, ``*``, ``@``, ``.kron()`` | Algebraic arithmetic on encodings | Constructing complex composite systems. |
 
-This tutorial will cover:
+BlockEncoding class 201: Qubitization, Chebyshev polynomials, QSP
+-----------------------------------------------------------------
+Once you have your matrix $A$ block-encoded, the real fun begins. Simply having $A$ isn't enough; you usually want to do something to it. You might want to compute $e^{-iAt}$ to simulate a physical system, or find $A^{-1}$ to solve a massive system of linear equations.
 
-- Block Encodings: The "Top-Left" trick. How to embed a non-unitary matrix $A$ into a unitary $U$ so it can actually live on a quantum circuit.
+Classically, we use Taylor series or polynomial approximations. Quantumly, we use Quantum Signal Processing (QSP). This tutorial takes you from basic embeddings to "Quantum Walks" via a technique called Qubitization.
 
-- Qubitization: The "Walk." By pairing $U$ with a reflection, we create a walk operator that encodes the eigenvalues of $A$ as controllable rotations. This is where we meet our best friends: Chebyshev polynomials. It's exactly these Chebyshevs that provide an optimal basis for bounded polynomial approximations. Take an inverse, for a popular example, to also entertain the QML fans among the readers and immediately plant the idea of solving linear systems and applying them as the basis for Quantum Support Vector Machines. I guess this kind of non-subliminal messaging is just messaging, huh?
+We will explore how to block-encode Chebyshev polynomials to perform near-optimal transformations. You’ll learn the Quantum Lanczos method for ground-state estimation and the Childs-Kothari-Somma (CKS) algorithm for linear systems.
 
-- Quantum Signal Processing (QSP): The "Transformation." How a sequence of single-qubit phases allows us to apply a polynomial $P(A)$—enabling everything from matrix inversion to Hamiltonian simulation.
+Most importantly, we will show how the BlockEncoding class leverages QSP to make high-level operations as simple as a single method call. In Qrisp, performing arbitrary polynomial transformations is done via .poly, solving linear systems becomes .inv, and Hamiltonian simulation is achieved with .sim. No gate-level manual labor required; just clean, functional, and qrispy quantum linear algebra.
 
-- Generalized QSP (GQSP): The "Universal Solver." The final evolution that allows for non-Hermitian or asymmetric polynomial transformations. This is the base of a lot of the methods of the BlockEncoding class, and can also be used for spectral filtering, essentially making the quantum world your oyster.
-
-With the results, lemmas, theorems, and corollaries from the past two years now converging, the theoretical pieces fell into place. Stepping a step away and observing the mosaic with the final pieces added allowed for seeing the bigger picture and provide the common denominator of all these papers, the block encoding, as a standalone programming abstraction in Qrisp.
-
-Part I: From Theory to Code: Constructing a BlockEncoding
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If the theoretical tutorial was too much for you, that's OK! We've designed the BlockEncoding class in a way that you don't even need to (although, it would definitely help) understand the underlying concepts, and just use the classical numpy-like syntax you're already for quantum (definitely not classical) linear algebra.
-
-In this tutorial we focus on the "How." You will learn to generate block encodings from various sources:
-
-- Constructors: Use ``.from_operator``, ``.from_array``, or the powerful ``.from_LCU`` (Linear Combination of Unitaries).
-
-- Arithmetic with BlockEncodings: Perform "Quantum Algebra" using standard Pythonic syntax. Need to add two matrices? Just use ``A + B``. Want to scale an operator? Boom. ``0.5 * A``. Multiply two block encodings? ``A @ B``... You get the idea.
-
-- Execution and Quantum Resource Analysis: Move from abstraction to reality. ``.apply()`` automatically synthesizes the gates (no hand weaving circuits, I promise!), handling all ancilla management. For simulation, ``.apply_rus`` invokes a Repeat-Until-Success procedure returning the result only if the all ancillas are measured in $\ket{0}$. To peek under the hood and see exactly how many gates of all kind, you can use the ``.resources`` method.
-
-Part II: Advanced Applications and executing Algorithms
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-With getting familiar with the basic functionalities of the BlockEncoding class, we now shift up a gear and tackle some of the recent, relevant open questions. We explore and showcase the methods that allow you to use the BlockEncodings for:
-
-- Qubitization: Leverage .qubitization and .chebyshev to walk through Krylov subspaces with optimal query complexity.
-
-- Solving Linear Systems: Perform matrix inversion on the block encoding of your construction with ``.inv``.
-
-- Polynomial Transformations: Apply an arbitrary polynomial transformation of a matrix in either the polynomial or Chebyshev basis using ``.poly``. This is also useful to perform GQSP filtering, which is a topic of a separate tutorial.
-
-- Hamiltonian simulation: Want to perform a Hamiltonian simulation with your block encoding? Sure, by all means... ``.sim`` can help with that.
-
-Until now implementing a non-unitary matrix and/or a custom block encoding tied to one specific case on a quantum computer meant manually calculating normalization factors, managing ancilla registers, and (in most cases) hand-weaving "Prepare" and "Select" oracles. Let's just not do that and instead start coding quantum linear algebra using the BlockEncoding class.
-
-.. currentmodule:: qrisp
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-   
-   BE_vol1.ipynb
-   BE_vol2.ipynb
-
+| Method | Purpose | Mathematical Basis |
+| :--- | :--- | :--- |
+| ``.qubitization()`` | Transforms $A$ into a "walk operator" $W$ | Interleaved ``reflection`` + ``qswitch`` |
+| ``.chebyshev(k)`` | Computes the $k$-th Chebyshev polynomial $T_k$ | Iterative application of $W^k$ (``.qubitization``) |
+| ``.poly(coeffs)`` | Applies an arbitrary polynomial transformation $P(A)$ | GQSP |
+| ``.inv(eps, kappa)`` | Solves the linear system $Ax = b$ | $1/x$ polynomial approximation |
+| ``.sim(t, N)`` | Simulates Hamiltonian evolution $e^{-iHt}$ | Jacobi-Anger expansion (Bessel functions) |
