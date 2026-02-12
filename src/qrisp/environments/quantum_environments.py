@@ -336,7 +336,7 @@ class QuantumEnvironment(QuantumPrimitive):
         self.multiple_results = True
 
         @self.def_abstract_eval
-        def abstract_eval(abs_qc, *env_args, stage=None, type=None, jaxpr=None):
+        def _(*_, **__):
             """Abstract evaluation of the primitive.
 
             This function does not need to be JAX traceable. It will be invoked with
