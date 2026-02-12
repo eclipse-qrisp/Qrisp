@@ -20,6 +20,7 @@ import numpy as np
 from scipy.optimize import minimize, Bounds
 import sympy as sp
 from qrisp.algorithms.cold.AGP_params import solve_alpha_gamma_chi
+from qrisp import h, z
 
 
 class DCQOProblem:
@@ -54,7 +55,7 @@ class DCQOProblem:
         Hamiltonian specifying the control pulses for the COLD method. If not given, the LCD method is used automatically.
     qarg_prep : callable, optional
         A function receiving a :ref:`QuantumVariable` for preparing the inital state.
-        By default, the groundstate of the x-operator $\ket{0}^n$ is prepared.
+        By default, the groundstate of the x-operator $\ket{-}^n$ is prepared.
     """
 
     def __init__(
@@ -84,7 +85,7 @@ class DCQOProblem:
         self.qarg_prep = qarg_prep
 
         # Qubo characteristics
-        self. Q = Q
+        self.Q = Q
         self.J = 0.5 * Q
         self.h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
 
@@ -474,6 +475,8 @@ class DCQOProblem:
         # If no prep for qarg is specified, use uniform superposition state
         if self.qarg_prep is None:
             def qarg_prep(q):
+                h(q)
+                z(q)
                 return q
             self.qarg_prep = qarg_prep
 
