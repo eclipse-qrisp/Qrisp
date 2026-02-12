@@ -479,34 +479,36 @@ class QuantumEnvironment(QuantumPrimitive):
         # We now iterate through the collected data. We do this in order
         # to make sure that the (de)allocation gates are not processed
         # by the environment compiler as this might disturb their functionality
-        i = 0
-        while i < len(self.env_data):
-            instr = self.env_data[i]
+        idx = 0
+        while idx < len(self.env_data):
+
+            instr = self.env_data[idx]
 
             if isinstance(instr, QuantumEnvironment):
-                i += 1
+                idx += 1
                 continue
 
             op_name = instr.op.name
 
             if op_name == "qb_alloc":
                 if not manual_allocation:
-                    alloc_qubit_list.append(self.env_data.pop(i).qubits[0])
+                    alloc_qubit_list.append(self.env_data.pop(idx).qubits[0])
                     continue
-                dealloc_qubit_list.append(instr.qubits[0])
+                alloc_qubit_list.append(instr.qubits[0])
 
             elif op_name == "qb_dealloc":
                 if not manual_allocation:
-                    dealloc_qubit_list.append(self.env_data.pop(i).qubits[0])
+                    dealloc_qubit_list.append(self.env_data.pop(idx).qubits[0])
                     continue
                 dealloc_qubit_list.append(instr.qubits[0])
 
-        # Append allocation gates before compilation
+            idx += 1
+
         if not manual_allocation:
             for qb in set(alloc_qubit_list):
                 self.env_qs.append(QubitAlloc(), [qb])
 
-        # Compile if outermost environment
+        # If this was the outermost environment, we compile
         if len(self.env_qs.env_stack) == 0:
             self.deallocated_qubits.extend(dealloc_qubit_list)
             for qb in self.deallocated_qubits:
@@ -514,8 +516,9 @@ class QuantumEnvironment(QuantumPrimitive):
 
             with fast_append(3):
                 self.compile()
+
+        # Otherwise, we append self to the data of the parent environment
         else:
-            # Append self to parent environment
             if self.env_data:
                 self.env_qs.data.append(self)
             self.parent.deallocated_qubits.extend(dealloc_qubit_list)
