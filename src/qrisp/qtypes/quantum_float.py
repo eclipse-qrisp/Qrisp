@@ -448,8 +448,11 @@ class QuantumFloat(QuantumVariable):
             encoding_number = outcome_labels[
                 np.argmin(np.abs(encoding_number - np.array(outcome_labels)))
             ]
-
-        super().encode(encoding_number, permit_dirtyness=permit_dirtyness)
+        try:
+            super().encode(encoding_number, permit_dirtyness=permit_dirtyness)
+        except Exception as e:
+            raise ValueError(f"Not enough qubits to encode integer {encoding_number} in QuantumFloat"
+                             +f" of {self.size} qubits and exponent {self.exponent}.")
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __mul__(self, other):
