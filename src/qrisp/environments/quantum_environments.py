@@ -54,8 +54,7 @@
 
 from qrisp.circuit import QubitAlloc, QubitDealloc, fast_append
 from qrisp.core.quantum_session import QuantumSession
-
-from qrisp.jasp import QuantumPrimitive, AbstractQuantumCircuit, TracingQuantumSession
+from qrisp.jasp import AbstractQuantumCircuit, QuantumPrimitive, TracingQuantumSession
 
 
 class QuantumEnvironment(QuantumPrimitive):
@@ -329,7 +328,9 @@ class QuantumEnvironment(QuantumPrimitive):
 
     deepest_environment = [None]
 
-    def __init__(self, env_args=[]):
+    def __init__(self, env_args=None):
+
+        env_args = [] if env_args is None else env_args
 
         QuantumPrimitive.__init__(self, name="q_env")
         self.multiple_results = True
@@ -353,6 +354,8 @@ class QuantumEnvironment(QuantumPrimitive):
     # in the meantime is appended to the environments' data list .env_data and
     # the original circuit data is reinstated
     def start_dumping(self):
+        """Start dumping circuit data into the environment."""
+
         qs = self.env_qs
 
         # Temporarily store the qs circuit data
@@ -366,6 +369,8 @@ class QuantumEnvironment(QuantumPrimitive):
         self.env_data = []
 
     def stop_dumping(self):
+        """Stop dumping circuit data into the environment."""
+
         qs = self.env_qs
 
         # Collect circuit data into the data_list
@@ -378,8 +383,8 @@ class QuantumEnvironment(QuantumPrimitive):
 
         self.original_data = []
 
-    # Method to enter the environment
     def __enter__(self):
+        """Enter the quantum environment."""
 
         from qrisp.jasp import check_for_tracing_mode
 
@@ -390,7 +395,7 @@ class QuantumEnvironment(QuantumPrimitive):
             abs_qs.abs_qc = self.bind(
                 *(self.env_args + [abs_qs.abs_qc]),
                 stage="enter",
-                type=str(type(self)).split(".")[-1][:-2]
+                type=str(type(self)).rsplit(".", maxsplit=1)[-1][:-2]
             )[0]
             return
 
@@ -421,7 +426,6 @@ class QuantumEnvironment(QuantumPrimitive):
             if qs is not None:
                 qs.env_stack.append(self)
 
-        # Start the dumping process
         self.start_dumping()
 
         # Manual allocation management means that the compile method can process allocation
@@ -435,28 +439,29 @@ class QuantumEnvironment(QuantumPrimitive):
 
         return self
 
-    # Method to exit the environment
     def __exit__(self, exception_type, exception_value, traceback):
-        
+        """Exit the quantum environment."""
+
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            
+
             if exception_value:
                 raise exception_value
-            
+
             abs_qs = TracingQuantumSession.get_instance()
             abs_qs.qubit_cache = self.temp_qubit_cache
             abs_qs.abs_qc = self.bind(
-                abs_qs.abs_qc, stage="exit", type=str(type(self)).split(".")[-1][:-2]
+                abs_qs.abs_qc,
+                stage="exit",
+                type=str(type(self)).rsplit(".", maxsplit=1)[-1][:-2],
             )[0]
             return
 
         self.deepest_environment[0] = self.parent
-        
-        # Stop dumping
+
         self.stop_dumping()
-        
+
         for i in range(len(self.active_qs_list)):
             # Remove from the environment stack
             if self.active_qs_list[i]() is not None:
@@ -485,15 +490,15 @@ class QuantumEnvironment(QuantumPrimitive):
                     if not self.manual_allocation_management:
                         alloc_qubit_list.append(self.env_data.pop(i).qubits[0])
                         continue
-                    else:
-                        dealloc_qubit_list.append(self.env_data[i].qubits[0])
+
+                    dealloc_qubit_list.append(self.env_data[i].qubits[0])
 
                 if instr.op.name == "qb_dealloc":
                     if not self.manual_allocation_management:
                         dealloc_qubit_list.append(self.env_data.pop(i).qubits[0])
                         continue
-                    else:
-                        dealloc_qubit_list.append(self.env_data[i].qubits[0])
+
+                    dealloc_qubit_list.append(self.env_data[i].qubits[0])
 
             i += 1
 
@@ -501,7 +506,7 @@ class QuantumEnvironment(QuantumPrimitive):
         if not self.manual_allocation_management:
             for qb in list(set(alloc_qubit_list)):
                 self.env_qs.append(QubitAlloc(), [qb])
-            
+
         # If this was the outermost environment, we compile
         if len(self.env_qs.env_stack) == 0:
             self.deallocated_qubits.extend(dealloc_qubit_list)
@@ -513,7 +518,7 @@ class QuantumEnvironment(QuantumPrimitive):
 
         # Otherwise, we append self to the data of the parent environment
         else:
-            if len(self.env_data):
+            if len(self.env_data) > 0:
                 self.env_qs.data.append(self)
             self.parent.deallocated_qubits.extend(dealloc_qubit_list)
 
@@ -526,6 +531,8 @@ class QuantumEnvironment(QuantumPrimitive):
     # It simply compiles all subenvironments and the collected data to the session
     # For more advanced environments this should be modified
     def compile(self):
+        """Compile the quantum environment."""
+
         for instruction in self.env_data:
             # If the instruction is an environment, compile the environment
             if issubclass(instruction.__class__, QuantumEnvironment):
@@ -536,6 +543,8 @@ class QuantumEnvironment(QuantumPrimitive):
                 self.env_qs.append(instruction)
 
     def jcompile(self, eqn, context_dic):
+        """Compile the quantum environment in Jasp mode."""
+
         from qrisp.jasp import eval_jaxpr, extract_invalues, insert_outvalues
 
         args = extract_invalues(eqn, context_dic)
