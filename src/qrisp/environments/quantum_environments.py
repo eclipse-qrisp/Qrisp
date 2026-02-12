@@ -60,8 +60,8 @@ from qrisp.jasp import AbstractQuantumCircuit, QuantumPrimitive, TracingQuantumS
 class QuantumEnvironment(QuantumPrimitive):
     """
 
-    QuantumEnvironments are blocks of code, that undergo some user-specified compilation
-    process. They can be entered using the ``with`` statement
+    QuantumEnvironments are blocks of code that undergo a user-specified compilation
+    process. They can be entered using the ``with`` statement:
 
     ::
 
@@ -72,8 +72,8 @@ class QuantumEnvironment(QuantumPrimitive):
        with QuantumEnvironment():
           x(qv)
 
-    In this case we have no special compilation technique, since the abstract baseclass
-    simply returns it's content:
+    In this case, no special compilation is applied since the base class simply
+    returns its content:
 
     >>> print(qv.qs)
 
@@ -96,21 +96,18 @@ class QuantumEnvironment(QuantumPrimitive):
         ---------------------
         QuantumVariable qv
 
-    More advanced environments allow for a large variety of features and can significantly
-    simplify code development and maintainance.
+    More advanced environments offer a variety of features that can significantly
+    simplify code development and maintenance.
 
     The most important built-in QuantumEnvironments are:
 
     * :ref:`ConditionEnvironment`
-
     * :ref:`ControlEnvironment`
-
     * :ref:`InversionEnvironment`
-
     * :ref:`GateWrapEnvironment`
 
     Due to sophisticated condition evaluation of nested :ref:`conditionenvironment` and
-    :ref:`controlenvironment`, using QuantumEnvironments even can bring an increase in
+    :ref:`controlenvironment`, using QuantumEnvironments can even bring an increase in
     performance, compared to the `control method
     <https://qiskit.org/documentation/stubs/qiskit.circuit.QuantumCircuit.control.html>`_
     which is commonly implemented by QuantumCircuit-based approaches.
@@ -131,18 +128,17 @@ class QuantumEnvironment(QuantumPrimitive):
 
             b = QuantumVariable(1)
 
-            cx(a,b)
+            cx(a, b)
 
             with QuantumEnvironment():
 
                 c = QuantumVariable(1)
 
-                cx(b,c)
+                cx(b, c)
 
-            c.uncompute() # works because c was created in a sub environment
-            b.uncompute() # works because b was created in the same environment
-            # a.uncompute() # doesn't work because a was created outside this
-            environment.
+            c.uncompute()   # works because c was created in a sub-environment
+            b.uncompute()   # works because b was created in the same environment
+            # a.uncompute() # doesn't work because a was created outside this environment.
 
 
     >>> print(a.qs)
@@ -161,10 +157,12 @@ class QuantumEnvironment(QuantumPrimitive):
         ---------------------
         QuantumVariable a
 
-    **Visualisation within QuantumEnvironments**
+    **Visualization within QuantumEnvironments**
 
-    Calling ``print`` on a :ref:`QuantumSession` inside a QuantumEnvironment will
-    display only the instructions, that have been performed within this environment. ::
+    Calling ``print`` on a :ref:`QuantumSession` inside a QuantumEnvironment displays
+    only instructions performed within that environment:
+
+    ::
 
         from qrisp import x, y, z
         a = QuantumVariable(3)
@@ -236,7 +234,7 @@ class QuantumEnvironment(QuantumPrimitive):
 
     .. warning::
 
-        Calling ``print`` within a QuantumEnvironment causes all sub environments to be
+        Calling ``print`` within a QuantumEnvironment causes all sub-environments to be
         compiled. While this doesn't change the semantics of the resulting circuit,
         especially nested :ref:`Condition <conditionenvironment>`- and
         :ref:`ControlEnvironments <controlenvironment>` lose a lot of efficiency if
@@ -249,19 +247,17 @@ class QuantumEnvironment(QuantumPrimitive):
 
     More interesting QuantumEnvironments can be created by inheriting and modifying
     the compile method. In the following code snippet, we will demonstrate how to
-    set up a QuantumEnvironment, that skips every second instruction. We do this
+    set up a QuantumEnvironment that skips every second instruction. We do this
     by inheriting from the QuantumEnvironment class. This will provide us with
     the necessary attributes for writing the compile method:
 
-    #. ``.env_data``, which is the list of instructions, that have been appended in this
-    environment. Note that child environments append themselves in this list upon
-    exiting.
+    * ``.env_data``: List of instructions appended in this environment. Child
+      environments append themselves here upon exiting.
+    * ``.env_qs``: QuantumSession where all QuantumVariables operating inside
+      this environment are registered.
 
-    #. ``.env_qs`` which is a QuantumSession, where all QuantumVariables, that operated
-    inside this environment, are registered.
-
-    The compile method is then called once all environments of ``.env_qs`` have been
-    exited. Note that this doesn't neccessarily imply that all QuantumEnvironments have
+    The ``compile`` method is then called once all environments of ``.env_qs`` have been
+    exited. Note that this doesn't necessarily imply that all QuantumEnvironments have
     been left. For more information about the interplay between QuantumSessions and
     QuantumEnvironments check the :ref:`session merging <SessionMerging>` documentation.
 
@@ -273,16 +269,16 @@ class QuantumEnvironment(QuantumPrimitive):
 
              for i in range(len(self.env_data)):
 
-                #This line makes sure every second instruction is skipped
-                if i%2:
+                # Skip every second instruction
+                if i % 2:
                    continue
 
                 instruction = self.env_data[i]
 
-                #If the instruction is an environment, we compile this environment
+                # If the instruction is an environment, we compile this environment
                 if isinstance(instruction, QuantumEnvironment):
                    instruction.compile()
-                #Otherwise we append
+                # Otherwise we append
                 else:
                     self.env_qs.append(instruction)
 
@@ -373,7 +369,7 @@ class QuantumEnvironment(QuantumPrimitive):
 
         qs = self.env_qs
 
-        # Collect circuit data into the data_list
+        # Collect circuit data into the environment data list
         self.env_data += qs.data
 
         qs.clear_data()
@@ -406,11 +402,11 @@ class QuantumEnvironment(QuantumPrimitive):
         # This list stores the original data of the quantum session tracked
         self.original_data = []
 
-        # This list stores the data that is appended inside the environemt
+        # This list stores the data that is appended inside the environment
         self.env_data = []
 
         # This list stores the qubits that have been deallocated in this environment
-        # This information is required because the need to be temporarily reallocated
+        # This information is required because they need to be temporarily reallocated
         # to prevent compilation errors at compile time.
         self.deallocated_qubits = []
 
@@ -432,7 +428,7 @@ class QuantumEnvironment(QuantumPrimitive):
         # and deallocation gates.
         # If set to False, these gates will be filtered out of the env_data attribute before
         # compile is called.
-        # In this case, the (de)allocation gates that happened insided this environment
+        # In this case, the (de)allocation gates that happened inside this environment
         # will be collected and execute before (after) the compile method is called.
         if type(self) is QuantumEnvironment:
             self.manual_allocation_management = True
@@ -474,7 +470,7 @@ class QuantumEnvironment(QuantumPrimitive):
         dealloc_qubit_list = []
         alloc_qubit_list = []
         # We now iterate through the collected data. We do this in order
-        # to make sure that the (de)allocation gates are notprocessed
+        # to make sure that the (de)allocation gates are not processed
         # by the environment compiler as this might disturb their functionality
         i = 0
 
