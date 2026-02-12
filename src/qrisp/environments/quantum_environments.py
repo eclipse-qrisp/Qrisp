@@ -329,7 +329,7 @@ class QuantumEnvironment(QuantumPrimitive):
         default=None,
     )
 
-    def __init__(self, env_args=None):
+    def __init__(self, env_args=None) -> None:
 
         env_args = [] if env_args is None else env_args
 
@@ -354,7 +354,7 @@ class QuantumEnvironment(QuantumPrimitive):
     # the quantum session. Once the dumping ends the data which has been appended
     # in the meantime is appended to the environments' data list .env_data and
     # the original circuit data is reinstated
-    def start_dumping(self):
+    def _start_dumping(self) -> None:
         """Start dumping circuit data into the environment."""
 
         qs = self.env_qs
@@ -369,7 +369,7 @@ class QuantumEnvironment(QuantumPrimitive):
 
         self.env_data = []
 
-    def stop_dumping(self):
+    def _stop_dumping(self) -> None:
         """Stop dumping circuit data into the environment."""
 
         qs = self.env_qs
@@ -384,7 +384,7 @@ class QuantumEnvironment(QuantumPrimitive):
 
         self.original_data = []
 
-    def __enter__(self):
+    def __enter__(self) -> "QuantumEnvironment | None":
         """Enter the quantum environment."""
 
         from qrisp.jasp import check_for_tracing_mode
@@ -398,7 +398,7 @@ class QuantumEnvironment(QuantumPrimitive):
                 stage="enter",
                 type=str(type(self)).rsplit(".", maxsplit=1)[-1][:-2],
             )[0]
-            return
+            return None
 
         # The QuantumSessions operating inside this environment will be merged
         # into this QuantumSession
@@ -427,7 +427,7 @@ class QuantumEnvironment(QuantumPrimitive):
             if qs is not None:
                 qs.env_stack.append(self)
 
-        self.start_dumping()
+        self._start_dumping()
 
         # Manual allocation management means that the compile method can process allocation
         # and deallocation gates.
@@ -435,11 +435,11 @@ class QuantumEnvironment(QuantumPrimitive):
         # compile is called.
         # In this case, the (de)allocation gates that happened inside this environment
         # will be collected and execute before (after) the compile method is called.
-        self.manual_allocation_management = type(self) is QuantumEnvironment
+        self.manual_allocation_management = isinstance(self, QuantumEnvironment)
 
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Exit the quantum environment."""
 
         from qrisp.jasp import check_for_tracing_mode
@@ -456,11 +456,11 @@ class QuantumEnvironment(QuantumPrimitive):
                 stage="exit",
                 type=str(type(self)).rsplit(".", maxsplit=1)[-1][:-2],
             )[0]
-            return
+            return None
 
         self._deepest_environment.reset(self._deepest_env_token)
 
-        self.stop_dumping()
+        self._stop_dumping()
 
         for qs_ref in self.active_qs_list:
             qs = qs_ref()
@@ -501,8 +501,6 @@ class QuantumEnvironment(QuantumPrimitive):
                     continue
                 dealloc_qubit_list.append(instr.qubits[0])
 
-            i += 1
-
         # Append allocation gates before compilation
         if not manual_allocation:
             for qb in set(alloc_qubit_list):
@@ -527,10 +525,12 @@ class QuantumEnvironment(QuantumPrimitive):
             for qb in set(dealloc_qubit_list):
                 self.env_qs.append(QubitDealloc(), [qb])
 
-    # This is the default compilation method.
-    # It simply compiles all sub-environments and the collected data to the session.
-    def compile(self):
-        """Compile the quantum environment."""
+    def compile(self) -> None:
+        """
+        Default compilation method to compile the quantum environment.
+
+        It simply compiles all sub-environments and the collected data to the session.
+        """
 
         for instruction in self.env_data:
 
@@ -540,8 +540,12 @@ class QuantumEnvironment(QuantumPrimitive):
             else:
                 self.env_qs.append(instruction)
 
-    def jcompile(self, eqn, context_dic):
-        """Compile the quantum environment in Jasp mode."""
+    def jcompile(self, eqn, context_dic) -> None:
+        """
+        Default jasp compilation method to compile the quantum environment.
+
+        It simply compiles all sub-environments and the collected data to the session.
+        """
 
         from qrisp.jasp import eval_jaxpr, extract_invalues, insert_outvalues
 
