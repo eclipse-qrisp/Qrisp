@@ -28,6 +28,8 @@ from qrisp import (
     QuantumVariable,
     QuantumCircuit,
     rx,
+    BigInteger,
+    QuantumModulus
 )
 from qrisp.jasp import jrange, q_cond
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
@@ -839,3 +841,15 @@ class TestDepthOverflow:
             ),
         ):
             main(300, 301)
+
+    
+
+def test_caching_behavior():
+
+    @depth(meas_behavior="0")
+    def main(i: BigInteger):
+        r = QuantumModulus(i)
+        r[:] = 1
+
+    main(BigInteger.create_static(1, 1))
+    main(BigInteger.create_static(5, 2))
