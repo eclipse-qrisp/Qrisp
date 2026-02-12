@@ -422,9 +422,8 @@ class QuantumEnvironment(QuantumPrimitive):
 
         # Acquire a list of all active quantum sessions
         self.active_qs_list = QuantumSession.get_active_quantum_sessions()
-        for qs in self.active_qs_list:
-            # Append self to the environment stack of the QuantumSession
-            qs = qs()
+        for qs_ref in self.active_qs_list:
+            qs = qs_ref()
             if qs is not None:
                 qs.env_stack.append(self)
 
@@ -436,8 +435,7 @@ class QuantumEnvironment(QuantumPrimitive):
         # compile is called.
         # In this case, the (de)allocation gates that happened inside this environment
         # will be collected and execute before (after) the compile method is called.
-        if type(self) is QuantumEnvironment:
-            self.manual_allocation_management = True
+        self.manual_allocation_management = type(self) is QuantumEnvironment
 
         return self
 
@@ -464,52 +462,53 @@ class QuantumEnvironment(QuantumPrimitive):
 
         self.stop_dumping()
 
-        for i in range(len(self.active_qs_list)):
-            # Remove from the environment stack
-            if self.active_qs_list[i]() is not None:
-                self.active_qs_list[i]().env_stack.pop(-1)
+        for qs_ref in self.active_qs_list:
+            qs = qs_ref()
+            if qs is not None:
+                qs.env_stack.pop(-1)
 
         if exception_value:
             raise exception_value
 
-        # Create a list which will store deallocation gates
+        # Create lists to store allocation/deallocation gates
         dealloc_qubit_list = []
         alloc_qubit_list = []
+
+        manual_allocation = getattr(self, "manual_allocation_management", False)
+
         # We now iterate through the collected data. We do this in order
         # to make sure that the (de)allocation gates are not processed
         # by the environment compiler as this might disturb their functionality
         i = 0
-
-        if not hasattr(self, "manual_allocation_management"):
-            self.manual_allocation_management = False
-
-        # Filter allocation gates
         while i < len(self.env_data):
             instr = self.env_data[i]
 
-            if not isinstance(instr, QuantumEnvironment):
-                if instr.op.name == "qb_alloc":
-                    if not self.manual_allocation_management:
-                        alloc_qubit_list.append(self.env_data.pop(i).qubits[0])
-                        continue
+            if isinstance(instr, QuantumEnvironment):
+                i += 1
+                continue
 
-                    dealloc_qubit_list.append(self.env_data[i].qubits[0])
+            op_name = instr.op.name
 
-                if instr.op.name == "qb_dealloc":
-                    if not self.manual_allocation_management:
-                        dealloc_qubit_list.append(self.env_data.pop(i).qubits[0])
-                        continue
+            if op_name == "qb_alloc":
+                if not manual_allocation:
+                    alloc_qubit_list.append(self.env_data.pop(i).qubits[0])
+                    continue
+                dealloc_qubit_list.append(instr.qubits[0])
 
-                    dealloc_qubit_list.append(self.env_data[i].qubits[0])
+            elif op_name == "qb_dealloc":
+                if not manual_allocation:
+                    dealloc_qubit_list.append(self.env_data.pop(i).qubits[0])
+                    continue
+                dealloc_qubit_list.append(instr.qubits[0])
 
             i += 1
 
         # Append allocation gates before compilation
-        if not self.manual_allocation_management:
-            for qb in list(set(alloc_qubit_list)):
+        if not manual_allocation:
+            for qb in set(alloc_qubit_list):
                 self.env_qs.append(QubitAlloc(), [qb])
 
-        # If this was the outermost environment, we compile
+        # Compile if outermost environment
         if len(self.env_qs.env_stack) == 0:
             self.deallocated_qubits.extend(dealloc_qubit_list)
             for qb in self.deallocated_qubits:
@@ -517,16 +516,15 @@ class QuantumEnvironment(QuantumPrimitive):
 
             with fast_append(3):
                 self.compile()
-
-        # Otherwise, we append self to the data of the parent environment
         else:
-            if len(self.env_data) > 0:
+            # Append self to parent environment
+            if self.env_data:
                 self.env_qs.data.append(self)
             self.parent.deallocated_qubits.extend(dealloc_qubit_list)
 
         # Append deallocation gates after compilation
-        if not self.manual_allocation_management:
-            for qb in list(set(dealloc_qubit_list)):
+        if not manual_allocation:
+            for qb in set(dealloc_qubit_list):
                 self.env_qs.append(QubitDealloc(), [qb])
 
     # This is the default compilation method.
