@@ -57,6 +57,70 @@ class DCQOProblem:
     qarg_prep : callable, optional
         A function receiving a :ref:`QuantumVariable` for preparing the inital state.
         By default, the groundstate of the x-operator $\ket{-}^n$ is prepared.
+
+
+    Examples
+    --------
+    For a quick demonstration we build a DCQO problem instance for a 4x4 QUBO. We choose a first order AGP ansatz with uniform coefficients and solve it with LCD.
+
+    ::
+
+        import numpy as np
+        import sympy as sp
+        from qrisp.operators.qubit import X, Y, Z
+        from qrisp.algorithms.cold import DCQOProblem
+        from qrisp import QuantumVariable
+
+        Q = np.array([
+            [-1.2,  0.40, 0.0,  0.0],
+            [ 0.40,  0.30, 0.20, 0.0],
+            [ 0.0,   0.20,-1.1,  0.30],
+            [ 0.0,   0.0,  0.30,-0.80]
+        ])
+        N = Q.shape[0]
+
+        # Define QUBO problem hamiltonian
+        h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
+        J = 0.5 * Q
+
+        H_init = 1 * sum([X(i) for i in range(N)])
+
+        H_prob = (sum([sum([J[i][j]*Z(i)*Z(j) for j in range(i)]) for i in range(N)]) 
+                + sum([h[i]*Z(i) for i in range(N)]))
+
+        # Create AGP
+        A_lam = sum([Y(i) for i in range(N)]) # uniform
+
+        # Function for uniform AGP coefficients
+        def alpha(lam):
+            A = lam * h 
+            B = 1 - lam
+            nom = np.sum(A + 4*B*h)
+            denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
+            alph = nom/denom
+            alph = [alph]*N
+            return alph
+
+        # Simple scheduling function 0 -> 1
+        def lam():
+            t, T = sp.symbols("t T", real=True)
+            lam_expr = t/T
+            return lam_expr
+
+        # Create problem instance
+        lcd_problem = DCQOProblem(Q, H_init, H_prob, A_lam, alpha, lam)
+
+        # Run problem with LCD algorithm
+        qarg = QuantumVariable(N)
+        res = lcd_problem.run(qarg, N_steps=4, T=12, method="LCD")
+        print(res)
+
+    ::
+
+        {'1011': [0.40630593694063055, np.float64(-2.5)], '1111': [0.16247837521624783, np.float64(-0.9999999999999999)], '0111': [0.13156868431315685, np.float64(-0.6000000000000001)], '1000': [0.06881931180688193, np.float64(-1.2)], '0011': [0.05949940500594993, np.float64(-1.3)], '1010': [0.04499955000449995, np.float64(-2.3)], '1101': [0.04084959150408495, np.float64(-0.9)], '0110': [0.019769802301976978, np.float64(-0.40000000000000013)], '1100': [0.01815981840181598, np.float64(-0.09999999999999998)], '0100': [0.013679863201367985, np.float64(0.3)], '0001': [0.010399896001039988, np.float64(-0.8)], '0000': [0.007659923400765992, np.float64(0.0)], '1110': [0.006329936700632993, np.float64(-0.7999999999999999)], '0101': [0.0052899471005289946, np.float64(-0.5)], '1001': [0.0024299757002429973, np.float64(-2.0)], '0010': [0.0017599824001759982, np.float64(-1.1)]}
+
+    We get a dictionary where the key is the quantum state and the values are lists of [probability, cost]. 
+    So our most likely result is '1011' with probabilty 0.4 and the QUBO cost $x^T Q x = -2.5$.
     """
 
     def __init__(
