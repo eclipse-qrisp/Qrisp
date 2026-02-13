@@ -85,7 +85,7 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
 
 
     # Initial Hamiltonian
-    H_init = -1 * sum([X(i) for i in range(N)])
+    H_init = 1 * sum([X(i) for i in range(N)])
 
     # Problem Hamiltonian
     H_prob = (sum([sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]) 
@@ -214,7 +214,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     coeff_func = build_coeffs(agp_type, uniform_AGP_coeffs, J, h)
 
     # Initial Hamiltonian
-    H_init = -1 * sum([X(i) for i in range(N)])
+    H_init = 1 * sum([X(i) for i in range(N)])
 
     # Problem Hamiltonian
     H_prob = (sum([sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]) 
@@ -238,10 +238,10 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
     Q : np.array
         QUBO Matrix to solve.
     problem_args : dict
-        Holds arguments for DCQO problem creation (method: str (COLD/LCD), uniform: bool).
+        Holds arguments for DCQO problem creation (``method``: str ("COLD"/"LCD"), ``uniform``: bool).
     run_args : dict
-        Holds arguments for running the DCQO instance (N_steps, T, N_opt, CRAB).
-        For all options, see :ref: `DCQOProblem`.
+        Holds arguments for running the DCQO instance (``N_steps``, ``T``, ``N_opt``, ``CRAB``).
+        For all options, see :meth:`DCQOProblem.run`.
 
     Returns
     -------
