@@ -48,18 +48,6 @@ This is the central reference hub of a two part **Quantum Linear Algebra with Qr
 
 - BlockEncoding class 201: Qubitization, Chebyshev polynomials, QSP
 
-And yes, since this question has the probability of 0.82 to appear as an intrusive thought, let us already answer that with Qrisp you can do all of the below:
-
-- compile circuits;
-
-- perform resource estimation;
-
-- simulate (with or without real-time measurements utilizing the repeat until success feature); and
-
-- apply post-processing after having run these compiled circuits on existing hardware.
-
-With this answered, let's get into the outline of this three part series!
-
 BlockEncoding class 101: Block encoding, LCU, resource estimation
 -----------------------------------------------------------------
 In classical computer science, we take for granted the ability to invert or exponentiate matrices. In quantum computing, nature demands unitarity: all operations must be reversible and preserve the norm (represented by matrices $U$ such that $U^\dagger U = \mathbb{1}$).
@@ -68,15 +56,34 @@ But the matrices that matter, like Hamiltonians describing the energy of a molec
 
 In this tutorial, you will learn to build these embeddings from scratch and manipulate them with high-level syntax.
 
-| Method | Purpose | Typical Use Case |
-| :--- | :--- | :--- |
-| ``.from_array(arr)`` | Encodes a NumPy matrix | Quick prototyping of small, specific matrices. |
-| ``.from_operator(op)`` | Encodes a Hamiltonian | Physics and Chemistry simulations. |
-| ``.from_lcu(coeffs, unitaries)`` | Custom weighted sum of unitaries | High-efficiency hardware implementation. |
-| ``.resources(qv)`` | Estimates gate counts and depth | Resource analysis and benchmarking. |
-| ``.apply(qv)`` | Adds gates to the circuit | NISQ hardware with manual post-selection. |
-| ``.apply_rus(prep_func)`` | Deterministic matrix application | Fault-tolerant / Repeat-Until-Success logic. |
-| ``+``, ``-``, ``*``, ``@``, ``.kron()`` | Algebraic arithmetic on encodings | Constructing complex composite systems. |
+.. list-table::
+   :widths: 35 30 35
+   :header-rows: 1
+
+   * - Method
+     - Purpose
+     - Typical Use Case
+   * - ``.from_array()``
+     - Encodes a NumPy matrix
+     - Quick prototyping of small, specific matrices.
+   * - ``.from_operator()``
+     - Encodes a Hamiltonian
+     - Physics and Chemistry simulations.
+   * - ``.from_lcu()``
+     - Custom weighted sum of unitaries
+     - High-efficiency hardware implementation.
+   * - ``.resources()``
+     - Estimates gate counts and depth
+     - Resource analysis and benchmarking.
+   * - ``.apply()``
+     - Adds gates to the circuit
+     - NISQ hardware with manual post-selection.
+   * - ``.apply_rus()``
+     - Deterministic matrix application
+     - Fault-tolerant / Repeat-Until-Success logic.
+   * - Operators: ``+``, ``-``, ``*``, ``@``, ``.kron()``
+     - Algebraic arithmetic on encodings
+     - Constructing complex composite systems.
 
 BlockEncoding class 201: Qubitization, Chebyshev polynomials, QSP
 -----------------------------------------------------------------
@@ -88,10 +95,25 @@ We will explore how to block-encode Chebyshev polynomials to perform near-optima
 
 Most importantly, we will show how the BlockEncoding class leverages QSP to make high-level operations as simple as a single method call. In Qrisp, performing arbitrary polynomial transformations is done via .poly, solving linear systems becomes .inv, and Hamiltonian simulation is achieved with .sim. No gate-level manual labor required; just clean, functional, and qrispy quantum linear algebra.
 
-| Method | Purpose | Mathematical Basis |
-| :--- | :--- | :--- |
-| ``.qubitization()`` | Transforms $A$ into a "walk operator" $W$ | Interleaved ``reflection`` + ``qswitch`` |
-| ``.chebyshev(k)`` | Computes the $k$-th Chebyshev polynomial $T_k$ | Iterative application of $W^k$ (``.qubitization``) |
-| ``.poly(coeffs)`` | Applies an arbitrary polynomial transformation $P(A)$ | GQSP |
-| ``.inv(eps, kappa)`` | Solves the linear system $Ax = b$ | $1/x$ polynomial approximation |
-| ``.sim(t, N)`` | Simulates Hamiltonian evolution $e^{-iHt}$ | Jacobi-Anger expansion (Bessel functions) |
+.. list-table::
+   :widths: 25 40 35
+   :header-rows: 1
+
+   * - Method
+     - Purpose
+     - Mathematical Basis
+   * - ``.qubitization()``
+     - Transforms $A$ into a "walk operator" $W$
+     - Interleaved ``reflection`` + ``qswitch``
+   * - ``.chebyshev()``
+     - Computes the $k$-th Chebyshev polynomial $T_k$
+     - Iterative application of $W^k$
+   * - ``.poly()``
+     - Applies an arbitrary polynomial transformation $P(A)$
+     - GQSP
+   * - ``.inv()``
+     - Solves the linear system $Ax = b$
+     - $1/x$ polynomial approximation
+   * - ``.sim()``
+     - Simulates Hamiltonian evolution $e^{-iHt}$
+     - Jacobi-Anger expansion (Bessel functions)
