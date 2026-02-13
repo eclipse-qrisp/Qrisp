@@ -450,8 +450,13 @@ class QuantumFloat(QuantumVariable):
             ]
         try:
             super().encode(encoding_number, permit_dirtyness=permit_dirtyness)
-        except Exception as e:
-            raise ValueError(f"Not enough qubits to encode integer {encoding_number} in QuantumFloat"
+        except ValueError as e:
+            target_msg = "Not enough qubits to encode integer"
+
+            sign_description = ["unsigned", "signed"][self.signed]
+
+            if target_msg in str(e):
+                raise ValueError(f"Not enough qubits to encode integer {encoding_number} in {sign_description} QuantumFloat"
                              +f" of {self.size} qubits and exponent {self.exponent}.")
 
     @gate_wrap(permeability="args", is_qfree=True)

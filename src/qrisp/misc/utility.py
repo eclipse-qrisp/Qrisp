@@ -50,7 +50,7 @@ def int_encoder(qv, encoding_number):
 
     if not check_for_tracing_mode():
         if encoding_number > 2 ** len(qv) - 1:
-            raise Exception(
+            raise ValueError(
                 "Not enough qubits to encode integer " + str(encoding_number)
             )
 
