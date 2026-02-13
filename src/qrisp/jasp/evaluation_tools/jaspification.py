@@ -19,7 +19,7 @@
 from functools import lru_cache
 
 import jax
-from jax.tree_util import tree_flatten, tree_unflatten
+from jax.tree_util import tree_unflatten, tree_flatten
 from jax._src.lib.mlir import ir
 
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
@@ -136,22 +136,18 @@ def jaspify(func=None, terminal_sampling=False):
 
     from qrisp.jasp import make_jaspr
 
-    treedef_container = []
-
-    def tracing_function(*args):
-        res = func(*args)
-        flattened_values, tree_def = tree_flatten(res)
-        treedef_container.append(tree_def)
-        return flattened_values
-
     def return_function(*args):
-
-        jaspr = make_jaspr(tracing_function)(
-            *args
-        )
+        # Use return_shape=True to capture the output PyTree structure
+        jaspr, out_tree = make_jaspr(func, return_shape=True)(*args)
         jaspr_res = simulate_jaspr(jaspr, *args, terminal_sampling=terminal_sampling)
+        
+        # Reconstruct the PyTree structure from flat results
         if isinstance(jaspr_res, tuple):
-            jaspr_res = tree_unflatten(treedef_container[0], jaspr_res)
+            jaspr_res = tree_unflatten(out_tree, jaspr_res)
+        elif jaspr_res is not None:
+            # Single value case - still unflatten to handle any wrapping
+            jaspr_res = tree_unflatten(out_tree, [jaspr_res])
+        
         if len(recursive_qv_search(jaspr_res)):
             raise Exception("Tried to jaspify function returning a QuantumVariable")
         return jaspr_res
@@ -232,19 +228,18 @@ def stimulate(func=None):
 
     from qrisp.jasp import make_jaspr
 
-    treedef_container = []
-
-    def tracing_function(*args):
-        res = func(*args)
-        flattened_values, tree_def = tree_flatten(res)
-        treedef_container.append(tree_def)
-        return flattened_values
-
     def return_function(*args):
-        jaspr = make_jaspr(tracing_function)(*args)
+        # Use return_shape=True to capture the output PyTree structure
+        jaspr, out_tree = make_jaspr(func, return_shape=True)(*args)
         jaspr_res = simulate_jaspr(jaspr, *args, simulator="stim")
+        
+        # Reconstruct the PyTree structure from flat results
         if isinstance(jaspr_res, tuple):
-            jaspr_res = tree_unflatten(treedef_container[0], jaspr_res)
+            jaspr_res = tree_unflatten(out_tree, jaspr_res)
+        elif jaspr_res is not None:
+            # Single value case - still unflatten to handle any wrapping
+            jaspr_res = tree_unflatten(out_tree, [jaspr_res])
+        
         if len(recursive_qv_search(jaspr_res)):
             raise Exception("Tried to simulate function returning a QuantumVariable")
         return jaspr_res
@@ -253,13 +248,19 @@ def stimulate(func=None):
 
 
 def simulate_jaspr(
-    jaxpr, *args, terminal_sampling=False, simulator="qrisp", return_gate_counts=False
+    jaxpr,
+    *args,
+    terminal_sampling=False,
+    simulator="qrisp",
+    return_gate_counts=False,
 ):
-    
+
     from qrisp.jasp import Jaspr
     from qrisp.alg_primitives.mcx_algs.circuit_library import gidney_qc
 
-    if len(jaxpr.jaxpr.outvars) == 1 and isinstance(jaxpr.jaxpr.outvars[0].aval, AbstractQuantumCircuit):
+    if len(jaxpr.jaxpr.outvars) == 1 and isinstance(
+        jaxpr.jaxpr.outvars[0].aval, AbstractQuantumCircuit
+    ):
         return None
 
     if simulator == "stim":
