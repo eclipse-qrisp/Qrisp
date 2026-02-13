@@ -21,6 +21,7 @@ from scipy.optimize import minimize, Bounds
 import sympy as sp
 from qrisp.algorithms.cold.AGP_params import solve_alpha_gamma_chi
 from qrisp import h, z
+from qrisp.operators import QubitOperator
 
 
 class DCQOProblem:
@@ -88,6 +89,10 @@ class DCQOProblem:
         self.Q = Q
         self.J = 0.5 * Q
         self.h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
+
+        # Placeholder for the _precompute_timegrid function
+        self.lam = None
+        self.lamdot = None
 
     def _precompute_timegrid(self, N_steps, T, method):
         """
@@ -206,6 +211,16 @@ class DCQOProblem:
 
         # Compute time-function lamda(t, T) and the derivative lamdot(t, T)
         self._precompute_timegrid(N_steps, T, 'LCD')
+
+        # Trotterize Hamiltonian in different parts with each one needing different coefficients
+        U1 = self.H_init.trotterization()
+        U2 = self.H_prob.trotterization()
+        if isinstance(self.A_lam, QubitOperator):
+            # Uniform AGP coefficients
+            U3 = self.A_lam.trotterization()
+        else:
+            # Non-uniform AGP coefficients
+            U3 = [A_lam.trotterization() for A_lam in self.A_lam]
         
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
@@ -214,14 +229,16 @@ class DCQOProblem:
             coeffs = self.agp_coeffs(self.lam[s])
 
             # H_0 contribution scaled by dt
-            H_step = (1-self.lam[s]) * self.H_init + self.lam[s] * self.H_prob
+            U1(qarg, t=dt*(1-self.lam[s]))
+            U2(qarg, t=dt*self.lam[s])
 
             # AGP contribution scaled by dt* lambda_dot(t)
-            H_step += self.lamdot[s] * self.A_lam(*coeffs)
+            if isinstance(U3, list):
+                for idx, U in enumerate(U3):
+                    U(qarg, t=dt*self.lamdot[s]*coeffs[idx])
+            else:
+                U3(qarg, t=dt*self.lamdot[s]*coeffs[0])
 
-            # Get unitary from trotterization and apply to qarg
-            U = H_step.trotterization()
-            U(qarg, t=dt)
 
     def apply_cold_hamiltonian(self, qarg, N_steps, T, opt_params, CRAB=False):
         """
@@ -256,6 +273,17 @@ class DCQOProblem:
         sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(opt_params), CRAB=CRAB)
         beta = opt_params
 
+        # Trotterize Hamiltonian in different parts with each one needing different coefficients
+        U1 = self.H_init.trotterization()
+        U2 = self.H_prob.trotterization()
+        if isinstance(self.A_lam, QubitOperator):
+            # Uniform AGP coefficients
+            U3 = self.A_lam.trotterization()
+        else:
+            # Non-uniform AGP coefficients
+            U3 = [A_lam.trotterization() for A_lam in self.A_lam]
+        U4 = self.H_control.trotterization()
+
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
 
@@ -263,18 +291,23 @@ class DCQOProblem:
             f = sin_matrix[s, :] @ beta
             f_deriv = cos_matrix[s, :] @ beta
             alpha = self.agp_coeffs(self.lam[s], f, f_deriv)
-            # H_0 contribution scaled by dt
-            H_step = (1-self.lam[s]) * self.H_init + self.lam[s] * self.H_prob
 
-            # AGP contribution scaled by dt* lambda_dot(t)
-            H_step += self.lamdot[s] * self.A_lam(alpha)
+            # H_init contribution scaled by dt*(1-lam)
+            U1(qarg, t=dt*(1-self.lam[s]))
+            # H_prob contribution scaled by dt*lam
+            U2(qarg, t=dt*(self.lam[s]))
 
-            # Control pulse contribution
-            H_step += f * self.H_control
+            # AGP contribution scaled by dt*lambda_dot(t)*alpha
+            if isinstance(U3, list):
+                # Non-uniform alpha
+                for idx, U in enumerate(U3):
+                    U(qarg, t=dt*(self.lamdot[s]*alpha[idx]))
+            else:
+                # Uniform alpha
+                U3(qarg, t=dt*(self.lamdot[s]*alpha[0]))
 
-            # Get unitary from trotterization and apply to qarg
-            U = H_step.trotterization()
-            U(qarg, t=dt)  
+            # Control pulse contribution scaled by opt parameters f
+            U4(qarg, t=dt*f)
 
     
     def compile_U_cold(self, qarg, N_opt, N_steps, T, CRAB=False):
@@ -459,7 +492,7 @@ class DCQOProblem:
         options : dict
             A dictionary of solver options.
         objective : str
-            The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude````). Default is ``agp_coeff_magnitude``.
+            The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude``). Default is ``agp_coeff_magnitude``.
         bounds : tuple
             The parameter bounds for the optimizer. Default is (-2, 2).
         options : dict

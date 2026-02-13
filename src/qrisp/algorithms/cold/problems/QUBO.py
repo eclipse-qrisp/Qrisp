@@ -92,8 +92,10 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
               + sum([h[i] * Z(i) for i in range(N)]))
     
     # AGP as function of alpha
-    def A_lam(alph):
-        return sum([alph[i] * Y(i) for i in range(N)])
+    if uniform_AGP_coeffs:
+        A_lam = sum([Y(i) for i in range(N)])
+    else:
+        A_lam = [Y(i) for i in range(N)]
 
     # Control Hamiltonian
     H_control = sum([Z(i) for i in range(N)])
@@ -126,64 +128,44 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
         problem Hamiltonian (J, h), inverse scheduling function (g(lam)), control Hamiltonian (H_control).
     """
 
-    def build_agp(agp_type):
+    def build_agp(agp_type, J, h):
         
         def order1():
-            def A_lam(alph):
-                return sum([alph[i] * Y(i) for i in range(N)])
+            A_lam = [Y(i) for i in range(N)]
             return A_lam
 
-        def order2():
-            def A_lam(alph, gam, chi):
-                A =  (sum([alph[i] * Y(i) for i in range(N)]) + 
-                      sum([sum([gam[i]*X(i)*Y(j) + gam[j]*Y(i)*X(j) for j in range(i)]) for i in range(N)]) +
-                      sum([sum([chi[i]*Z(i)*Y(j) + chi[j]*Y(i)*Z(j) for j in range(i)]) for i in range(N)]))
-                return A
-            return A_lam
-        
-        def nested_commutators():
-            def A_lam(alph):
-                A = -2 * sum([alph[i]*h[i]*Y(i) + 
-                              alph[i]*sum([J[i][j]*(Y(i)*Z(j) + Z(i)*Y(j)) for j in range(i)]) for i in range(N)])
-                return A
+        def nested_commutators(J, h):
+            A_lam = -2 * [h[i]*Y(i) + sum([J[i][j]*(Y(i)*Z(j) + Z(i)*Y(j)) for j in range(i)]) for i in range(N)]
             return A_lam
         
         builders = {"order1": order1(),
-                    "order2": order2(),
-                    "nc": nested_commutators()}
+                    "nc": nested_commutators(J, h)}
         
         return builders[agp_type]
 
-    def build_coeffs(agp_type, uniform_AGP_coeffs):
+    def build_coeffs(agp_type, uniform_AGP_coeffs, J, h):
 
-        def order1_uniform():
+        def order1_uniform(J, h):
             def alpha(lam):
                 A = lam * h 
                 B = 1 - lam
                 nom = np.sum(A + 4*B*h)
                 denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
                 alph = nom/denom
-                alph = [[alph]*N]
+                alph = [alph]*N
                 return alph
             return alpha
 
-        def order1_nonuniform():
+        def order1_nonuniform(J, h):
             def alpha(lam):
                 denom = [2 * ((lam*h[i])**2 + (1-lam)**2 + 
                         lam**2 * sum([J[i][j] for j in range(N) if j != i])) 
                         for i in range(N)]
-                alph = [[h[i]/denom[i] for i in range(N)]]
+                alph = [h[i]/denom[i] for i in range(N)]
                 return alph
             return alpha
 
-        def order2(uniform):
-            def params(lam):
-                alpha, gamma, chi = solve_alpha_gamma_chi(h, J, lam, uniform=uniform)
-                par = [alpha, gamma, chi]
-                return par
-            return params
-        
-        def nc_uniform():
+        def nc_uniform(J, h):
             def alpha(lam):
                 S_hR = sum([sum([J[i][j]**2 * (h[i]+h[j]) for i in range(j)]) for j in range(N)])
                 S_hsqR = sum([sum([J[i][j]**2 *(h[i]**2+h[j]**2) for i in range(j)]) for j in range(N)])
@@ -203,19 +185,17 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
                 return alph
             return alpha
         
-        def nc_nonuniform():
+        def nc_nonuniform(J, h):
             def alpha(lam):
-                alph = solve_alpha(h, J, lam)
-                alph = [alph]
+                alph = [solve_alpha(h, J, lam)]
                 return alph
             return alpha
 
 
-        builders = {("order1", True): order1_uniform(),
-                    ("order1", False): order1_nonuniform(),
-                    ("order2", uniform_AGP_coeffs): order2(uniform_AGP_coeffs),
-                    ("nc", True): nc_uniform(),
-                    ("nc", False): nc_nonuniform()
+        builders = {("order1", True): order1_uniform(J, h),
+                    ("order1", False): order1_nonuniform(J, h),
+                    ("nc", True): nc_uniform(J, h),
+                    ("nc", False): nc_nonuniform(J, h)
                     }        
 
         return builders[(agp_type, uniform_AGP_coeffs)]
@@ -231,7 +211,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
         return lam_expr
 
     # AGP coefficients
-    coeff_func = build_coeffs(agp_type, uniform_AGP_coeffs)
+    coeff_func = build_coeffs(agp_type, uniform_AGP_coeffs, J, h)
 
     # Initial Hamiltonian
     H_init = -1 * sum([X(i) for i in range(N)])
@@ -241,7 +221,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
               + sum([h[i] * Z(i) for i in range(N)]))
     
     # AGP
-    A_lam = build_agp(agp_type)
+    A_lam = build_agp(agp_type, J, h)
     
     return Q, H_init, H_prob, A_lam, coeff_func, lam
 
@@ -261,12 +241,20 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
         Holds arguments for DCQO problem creation (method: str (COLD/LCD), uniform: bool).
     run_args : dict
         Holds arguments for running the DCQO instance (N_steps, T, N_opt, CRAB).
-        For all options, see :ref: `DCQOProblam`.
+        For all options, see :ref: `DCQOProblem`.
+
+    Returns
+    -------
+
+    result : dict
+        The dictionary holding the QUBO vector results, with their probabilitites and cost.
+        They are ordered from most to least likely and the dictionary entries are {"state": [prob, cost]}.
 
     
     Examples
     --------
 
+    >>> import numpy as np
     >>> from qrisp.algorithms.cold import solve_QUBO
     >>>
     >>> Q = np.array([[-1.1, 0.6, 0.4, 0.0, 0.0, 0.0],
