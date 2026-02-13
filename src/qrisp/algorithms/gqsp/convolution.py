@@ -20,12 +20,9 @@ import numpy as np
 from qrisp import (
     QuantumVariable,
     QuantumBool,
-    conjugate,
-    p,
 )
-from qrisp.alg_primitives import QFT
+from qrisp.alg_primitives import gidney_adder
 from qrisp.algorithms.gqsp.gqsp import GQSP
-from qrisp.jasp import qache, jrange
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -117,16 +114,13 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
 
     """
 
-    @qache
     def U(qv):
-        for i in jrange(qv.size):
-            p(np.pi * 2.0 ** (i - qv.size + 1), qv[i])
+        gidney_adder(1, qv)
 
     d = len(weights) // 2
 
     qbl = QuantumBool()
 
-    with conjugate(QFT)(qarg):
-        GQSP(qbl, qarg, unitary=U, p=weights, k=d)
+    GQSP(qbl, qarg, unitary=U, p=weights, k=d)
 
     return qbl
