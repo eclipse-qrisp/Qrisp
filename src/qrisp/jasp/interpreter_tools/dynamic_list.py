@@ -173,7 +173,7 @@ class Jlist:
         Recreate a DynamicJaxArray from flattened data.
         """
         array, counter = children
-        obj = cls()
+        obj = cls(max_size = array.shape[0])
         obj.array = array
         obj.counter = counter
         return obj
