@@ -1,7 +1,7 @@
 .. _BlockEncoding.__matmul__:
 
 BlockEncoding.__matmul__
-=======================
+========================
 
 .. currentmodule:: qrisp.block_encodings
 

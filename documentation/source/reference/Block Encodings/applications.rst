@@ -17,12 +17,23 @@ through (Generalized) Quantum Signal Processing (QSP) [Motlagh2024]_ and its der
 - **Hamiltonian Simulation:** Implements time-evolution :math:`e^{-iHt}` by approximating the exponential function with a low-degree polynomial [Low2019]_.
 
 
-.. autosummary::
-   :toctree: generated/
-   
-   BlockEncoding.inv
-   BlockEncoding.poly
-   BlockEncoding.sim
+.. list-table::
+   :header-rows: 0
+   :widths: 30 70
+
+   * - :func:`~qrisp.block_encodings.BlockEncoding.inv`
+     - Returns a BlockEncoding approximating the matrix inversion of the operator.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.poly`
+     - Returns a BlockEncoding representing a polynomial transformation of the operator.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.sim`
+     - Returns a BlockEncoding approximating Hamiltonian simulation of the operator.
+
+.. toctree::
+   :hidden:
+
+   methods/inv
+   methods/poly
+   methods/sim
 
 
 **References**

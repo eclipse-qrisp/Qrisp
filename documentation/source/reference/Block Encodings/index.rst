@@ -14,8 +14,8 @@ Block Encodings
    :hidden:
    
    BlockEncoding
-   block_encodings_applications
-   block_encodings_nisq
+   applications
+   nisq
 
 
 A High-Level Abstraction for Quantum Linear Algebra
