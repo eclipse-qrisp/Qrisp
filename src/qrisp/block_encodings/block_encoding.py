@@ -20,6 +20,7 @@ from __future__ import annotations
 import inspect
 from dataclasses import dataclass
 from jax.tree_util import register_pytree_node_class
+import jax
 import jax.numpy as jnp
 import numpy as np
 import numpy.typing as npt
@@ -27,6 +28,7 @@ from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
+from qrisp.interface import BackendClient
 from qrisp.jasp import count_ops, depth, jrange, qache, check_for_tracing_mode as is_tracing
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
@@ -718,6 +720,133 @@ class BlockEncoding:
             return success_bool, *operands
 
         return rus_function
+    
+    def expectation_value(self, operand_prep: Callable[..., Any], shots: int = 100, backend: BackendClient = None) -> Callable[..., Any]:
+        r"""
+        Measures the expectation value of the operator using the Hadamard test protocol.
+
+        For a block-encoded operator $A$ and a state $\ket{\psi}$, 
+        this method measures the expectation value $\langle\psi|A|\psi\rangle$.
+
+        Parameters
+        ----------
+        operand_prep : Callable
+            A function ``operand_prep(*args)`` that prepares and returns the operand QuantumVariables.
+        shots : int
+            The amount of samples to take to compute the expectation value. The default is 100.
+        backend : BackendClient
+            The backend on which to evaluate the quantum circuit. By default the Qrisp simulator is used.
+            Ignored in Jasp mode.
+
+        Returns
+        -------
+        Callable
+            A function ``ev_function(*args)`` with the same signature
+            as ``operand_prep`` returning 
+
+            - Jasp mode:
+                a Jax array containing the expactation value,
+            - Standard mode:
+                a NumPy float representing the expectation value.
+
+        Notes
+        -----
+        - **Precision:** The number of shots $N$ required for target precision $\epsilon$ scales quadratically with the inverse precision $(N\propto 1/\epsilon^2)$.
+
+        Raises
+        ------
+        TypeError
+            If ``operand_prep`` is not a callable object.
+        ValueError
+            If the number of provided operands does not match 
+            the required number of operands (self.num_ops).
+
+        Examples
+        --------
+
+        **Example 1: Jasp Mode (Dynamic Execution)**
+
+        ::
+
+            import numpy as np
+            from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
+            from qrisp.operators import X, Y, Z
+
+            H = X(0)*X(1) + 0.5*Z(0)*Z(1)
+            BE = BlockEncoding.from_operator(H)
+
+            def operand_prep(phi):
+                qv = QuantumFloat(2)
+                ry(phi, qv[0])
+                return qv
+
+            @jaspify(terminal_sampling=True)
+            def main(BE):
+                ev = BE.expectation_value(operand_prep, shots=10000)(np.pi / 4)
+                return ev
+
+            ev = main(BE)
+            print(ev)
+            # 0.3429
+
+        **Example 2: Standard Mode (Static Execution)**
+
+        ::
+
+            # Using the same Hamiltonian and prep function from the previous example
+            ev = BE.expectation_value(operand_prep, shots=10000)(np.pi / 4)
+            print(ev)
+            # 0.3426
+
+        """
+        from qrisp.core.gate_application_functions import measure, reset
+        from qrisp.jasp import expectation_value
+
+        if not callable(operand_prep):
+            raise TypeError(
+                f"Expected 'operand_prep' to be a callable, but got {type(operand_prep).__name__}."
+            )
+        
+        def state_prep(*args):
+            operands = operand_prep(*args)
+            if not isinstance(operands, tuple):
+                operands = (operands,)
+
+            if len(operands) != self.num_ops:
+                raise ValueError(
+                    f"Operation expected {self.num_ops} operands, but got {len(operands)}."
+                )
+            
+            # Hadamard test
+            qbl = QuantumBool()
+            h(qbl)
+            with control(qbl):
+                ancillas = self.apply(*operands)
+            h(qbl)
+            return qbl
+        
+        # Dynamic (Jasp) mode
+        if is_tracing():
+        
+            @jax.jit
+            def post_processor(x):
+                return jnp.where(x==0, 1, -1)
+        
+            def ev_function(*args):
+                ev = expectation_value(state_prep, shots=shots, post_processor=post_processor)(*args)
+                return ev * self.alpha
+        
+            return ev_function
+        
+        # Static mode
+        def ev_function(*args):
+            qbl = state_prep(*args)
+            res_dict = qbl.get_measurement(shots=shots, backend=backend)
+            ev = res_dict.get(0, 0) - res_dict.get(1, 0)
+            return np.float64(ev * jnp.float64(self.alpha))
+    
+        return ev_function
 
     def resources(self, *operands: QuantumVariable, meas_behavior: str = "0"):
         r"""

@@ -26,6 +26,7 @@ Utilities
    BlockEncoding.apply_rus
    BlockEncoding.chebyshev
    BlockEncoding.create_ancillas
+   BlockEncoding.expectation_value
    BlockEncoding.qubitization
    BlockEncoding.resources
 
