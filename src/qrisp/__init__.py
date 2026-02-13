@@ -45,6 +45,7 @@ for i in [
     "vqe",
     "qite",
     "qmci",
+    "cold",
 ]:
     sys.modules["qrisp." + i] = sys.modules["qrisp.algorithms." + i]
 

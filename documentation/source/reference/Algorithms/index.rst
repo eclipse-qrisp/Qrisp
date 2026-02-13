@@ -48,4 +48,4 @@ We encourage you to explore these algorithms, delve into their documentation, an
    QuantumBacktrackingTree
    quantum_counting   
    QMCI
-   DCQO
+   dcqo/DCQO
