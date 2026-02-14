@@ -116,56 +116,9 @@ class ParityHandle:
     """
     A lightweight handle representing the result of a parity computation in quantum circuits.
     
-    ParityHandle objects are returned by :meth:`~qrisp.QuantumCircuit.parity` and serve as 
+    ParityHandle objects are returned by :meth:`qrisp.QuantumCircuit.parity` and serve as 
     keys in the detector and observable maps produced by :meth:`~qrisp.QuantumCircuit.to_stim`.
     They enable tracking of parity check results throughout circuit manipulation pipelines.
-    
-    Design Rationale
-    ----------------
-    In quantum error correction and Stim workflows, parity operations compute the XOR of 
-    multiple measurement results. Unlike measurements (which are quantum operations producing 
-    new classical bits), parity is a purely classical computation operating on existing 
-    measurement results.
-    
-    **Why Not Use Clbits for Parity Results?**
-    
-    A naive approach might create a new ``Clbit`` to represent each parity result. However, 
-    this breaks the fundamental semantic property that classical bits in a QuantumCircuit 
-    have a 1:1 correspondence with actual quantum measurements. Parity operations don't 
-    perform measurements—they compute classical functions of existing measurement outcomes.
-    
-    Creating "fake" Clbits for parity results would:
-    
-    * Violate the semantic contract that each Clbit corresponds to a physical measurement
-    * Complicate measurement record management and classical bit indexing
-    * Make it ambiguous which Clbits represent actual measurement results vs. computed parities
-    * Interfere with transpilation and other circuit transformations that assume Clbit semantics
-    
-    **The ParityHandle Solution**
-    
-    Instead, ParityHandle provides a distinct type for parity results that:
-    
-    * Maintains the 1:1 mapping between Clbits and quantum measurements
-    * Clearly distinguishes computed parities from measurement results
-    * Enables efficient lookup in Stim detector/observable maps
-    * Works correctly across circuit transpilation (via content-based equality)
-    * Provides access to the underlying measurement Clbits via the ``clbits`` property
-    
-    When converting to Stim format, ParityHandles map to ``DETECTOR`` or ``OBSERVABLE_INCLUDE`` 
-    instructions, which is their natural representation in the Stim model.
-    
-    Content-Based Equality
-    ----------------------
-    ParityHandle uses content-based equality (rather than object identity) for hashing and 
-    comparison. Two ParityHandles are considered equal if they have:
-    
-    * The same set of input Clbits (order-independent)
-    * The same expectation value
-    * The same observable flag
-    
-    This design choice ensures ParityHandles work correctly across transpilation passes, 
-    where :class:`~qrisp.Instruction` objects may be copied but their semantic content 
-    (the clbits and parameters they operate on) remains the same.
     
     Attributes
     ----------
@@ -190,7 +143,7 @@ class ParityHandle:
     Examples
     --------
     
-    ParityHandles are typically created via :meth:`~qrisp.QuantumCircuit.parity`:
+    ParityHandles are typically created via :meth:`qrisp.QuantumCircuit.parity`:
     
     >>> from qrisp import QuantumCircuit
     >>> qc = QuantumCircuit(2, 2)
@@ -211,13 +164,54 @@ class ParityHandle:
     ... )
     >>> det_map[handle]  # Get the Stim detector index
     0
-    
-    See Also
-    --------
-    :meth:`qrisp.QuantumCircuit.parity` : Method to create parity operations
-    :meth:`qrisp.QuantumCircuit.to_stim` : Convert circuits to Stim format
-    :func:`qrisp.parity` : Gate function for use in QuantumSessions
     """
+
+    # Design Rationale
+    # ----------------
+    # In quantum error correction and Stim workflows, parity operations compute the XOR of 
+    # multiple measurement results. Unlike measurements (which are quantum operations producing 
+    # new classical bits), parity is a purely classical computation operating on existing 
+    # measurement results.
+    
+    # **Why Not Use Clbits for Parity Results?**
+    
+    # A naive approach might create a new ``Clbit`` to represent each parity result. However, 
+    # this breaks the fundamental semantic property that classical bits in a QuantumCircuit 
+    # have a 1:1 correspondence with actual quantum measurements. Parity operations don't 
+    # perform measurements—they compute classical functions of existing measurement outcomes.
+    
+    # Creating "fake" Clbits for parity results would:
+    
+    # * Violate the semantic contract that each Clbit corresponds to a physical measurement
+    # * Complicate measurement record management and classical bit indexing
+    # * Make it ambiguous which Clbits represent actual measurement results vs. computed parities
+    # * Interfere with transpilation and other circuit transformations that assume Clbit semantics
+    
+    # **The ParityHandle Solution**
+    
+    # Instead, ParityHandle provides a distinct type for parity results that:
+    
+    # * Maintains the 1:1 mapping between Clbits and quantum measurements
+    # * Clearly distinguishes computed parities from measurement results
+    # * Enables efficient lookup in Stim detector/observable maps
+    # * Works correctly across circuit transpilation (via content-based equality)
+    # * Provides access to the underlying measurement Clbits via the ``clbits`` property
+    
+    # When converting to Stim format, ParityHandles map to ``DETECTOR`` or ``OBSERVABLE_INCLUDE`` 
+    # instructions, which is their natural representation in the Stim model.
+    
+    # Content-Based Equality
+    # ----------------------
+    # ParityHandle uses content-based equality (rather than object identity) for hashing and 
+    # comparison. Two ParityHandles are considered equal if they have:
+    
+    # * The same set of input Clbits (order-independent)
+    # * The same expectation value
+    # * The same observable flag
+    
+    # This design choice ensures ParityHandles work correctly across transpilation passes, 
+    # where :class:`~qrisp.Instruction` objects may be copied but their semantic content 
+    # (the clbits and parameters they operate on) remains the same.
     def __init__(self, instruction):
         self.instruction = instruction
     

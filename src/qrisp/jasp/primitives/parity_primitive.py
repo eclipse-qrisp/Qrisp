@@ -94,6 +94,12 @@ def parity(*measurements, expectation = 0, observable = False):
         during the extraction or simulation process (Stim detectors record 
         differences but do not stop execution).
 
+    .. warning::
+        
+        This function only works in tracing mode (i.e., inside a :func:`~qrisp.jasp.jaspify` 
+        or :func:`~qrisp.jasp.extract_stim` decorated function). It cannot be called in 
+        static mode. To annotate parity operations on a :class:`~qrisp.QuantumCircuit` 
+        directly, use the :meth:`~qrisp.QuantumCircuit.parity` method instead.
 
     Parameters
     ----------

@@ -95,6 +95,7 @@ Operation application methods
    :toctree: generated/
    
    QuantumCircuit.measure
+   QuantumCircuit.parity
    QuantumCircuit.cx
    QuantumCircuit.cy
    QuantumCircuit.cz
