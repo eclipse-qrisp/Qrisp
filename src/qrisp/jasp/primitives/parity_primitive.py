@@ -147,7 +147,7 @@ def parity(*measurements, expectation = 0, observable = False):
             return parity(a, b, c, d)
         
         print(main())
-        # Yields 0
+        # Yields False
     
     Array example with element-wise parity:
     
@@ -160,14 +160,14 @@ def parity(*measurements, expectation = 0, observable = False):
         def array_parity():
             # Create arrays of measurements
             a = jnp.array([True, False, True])
-            b = jnp.array([False, False, True])
+            b = jnp.array([True, False, True])
             
             # Compute element-wise parity
             result = parity(a, b)
             return result
         
         print(array_parity())
-        # Yields [1, 0, 0]
+        # Yields [False, False, False]
     
     """
     import jax.numpy as jnp
