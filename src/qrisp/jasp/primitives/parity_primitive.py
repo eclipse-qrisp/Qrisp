@@ -88,7 +88,7 @@ def parity(*measurements, expectation = 0, observable = False):
         If executed **without** ``extract_stim`` (i.e., in regular Qrisp simulation via :func:`~qrisp.jasp.jaspify`, for instance),
         and ``observable=False``, the function verifies that the measured parity matches the ``expectation`` provided. 
         Deviations from the parity expectation should solely stem from hardware noise,
-        i.e. a deviation in a **noiseless** simulation is an error *in the programm*.
+        i.e. a deviation in a **noiseless** simulation is an error *in the program*.
         Because of this, an Exception is raised when the verification fails. 
         However, when extracted to Stim, this verification is NOT performed 
         during the extraction or simulation process (Stim detectors record 
