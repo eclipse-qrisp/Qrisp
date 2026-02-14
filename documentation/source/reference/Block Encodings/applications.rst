@@ -5,10 +5,16 @@ Algorithms & Applications
 
 .. currentmodule:: qrisp.block_encodings
 
-**A Unified Algorithmic Framework**
+Utilizing block-encodings as programming abstraction -- in principle -- enables the realization of a vast array of fundamental tasks in quantum computation [Martyn2021]_.
+Through (Generalized) Quantum Signal Processing (QSP) [Motlagh2024]_ and its derivatives Quantum Eigenvalue Transform (QET) and Quantum Singular Value Transformation (QSVT) [Gilyén2019]_, [Sünderhauf2023]_,
+diverse algorithms -- ranging from Hamiltonian simulation to linear systems solvers -- can be expressed as polynomial transformations of a block-encoded matrix.
 
-By utilizing block-encodings as a foundation, this abstraction enables the realization of nearly all fundamental tasks in quantum computation [Martyn2021]_,
-through (Generalized) Quantum Signal Processing (QSP) [Motlagh2024]_ and its derivatives Quantum Eigenvalue Transform (QET) and Quantum Singular Value Transformation (QSVT) [Gilyén2019]_, [Sünderhauf2023]_.
+While it serves as a powerful toolbox for designing algorithms with rigorous performance bounds, its practical viability depends heavily on the specific application and the underlying hardware constraints. 
+In many scenarios, established alternatives remain highly competitive: for example, Trotter-Suzuki decompositions are often more straightforward for near-term Hamiltonian simulation, 
+variational methods may be better suited for noisy hardware, and traditional Quantum Phase Estimation (QPE) remains a standard for Shor's algorithm. 
+Ultimately, block-encodings should be viewed as a modular and expressive language that complements, rather than replaces, the existing suite of quantum algorithmic strategies.
+
+Key applications of block-encodings are:
 
 - **Matrix Inversion:** Solves the Quantum Linear Systems Problem (QLSP) by applying a polynomial transformation approximating :math:`1/x` to the eigenvalues of an encoded matrix [Childs2017]_.
 
