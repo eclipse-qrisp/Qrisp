@@ -68,9 +68,11 @@ Qrisp allows you to define these structures using the general-purpose :func:`~qr
      - Performs a parity check on measurement results. Creates Stim detectors or observables when used within :func:`~qrisp.jasp.extract_stim`.
    * - :func:`~qrisp.misc.stim_tools.find_detectors`
      - Decorator that automatically identifies stim detectors via tqecd and emits parity calls.
+   * - :class:`~qrisp.jasp.ParityHandle`
+     - A handle representing a parity result with its expanded clbits. Returned by detector/observable maps.
 
 .. toctree:: 
    :hidden:
 
-   parity_doc
    find_detectors_doc
+   ParityHandle_doc

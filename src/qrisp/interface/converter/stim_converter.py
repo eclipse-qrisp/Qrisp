@@ -44,11 +44,11 @@ def qrisp_to_stim(qc, return_measurement_map = False, return_detector_map = Fals
         For example, {clbit_obj_0: 2, clbit_obj_1: 0} means the first Clbit object 
         corresponds to the 3rd measurement (index 2) in Stim's measurement record.
     detector_map : dict
-        (Optional) A dictionary mapping ParityHandle objects to Stim detector indices.
+        (Optional) A dictionary mapping :class:`~qrisp.jasp.ParityHandle` objects to Stim detector indices.
         ParityHandle objects are compared by their index, so handles from to_qc() can
         be used directly as keys.
     observable_map : dict
-        (Optional) A dictionary mapping ParityHandle objects to Stim observable indices.
+        (Optional) A dictionary mapping :class:`~qrisp.jasp.ParityHandle` objects to Stim observable indices.
         ParityHandle objects are compared by their index, so handles from to_qc() can
         be used directly as keys.
     
