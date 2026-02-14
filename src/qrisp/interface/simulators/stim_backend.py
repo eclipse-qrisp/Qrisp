@@ -19,7 +19,8 @@
 from qrisp import QuantumCircuit
 from qrisp.interface import BatchedBackend
 
-def run_on_stim(qc: QuantumCircuit, shots: int):
+
+def run_on_stim(qc: QuantumCircuit, shots: int | None):
     """
     Simulate a Qrisp QuantumCircuit via Stim.
 
@@ -27,14 +28,18 @@ def run_on_stim(qc: QuantumCircuit, shots: int):
     ----------
     qc : QuantumCircuit
         The Qrisp quantum circuit to simulate.
-    shots : int
-        Number of measurement shots to perform.
+    shots : int, optional
+        Number of measurement shots to perform. If None, defaults to 10000.
 
     Returns
     -------
     dict[str, int]
         Dictionary mapping bitstrings to counts.
     """
+
+    if shots is None:
+        shots = 10000
+
     stim_circuit, measurement_map = qc.to_stim(return_measurement_map=True)
 
     sampler = stim_circuit.compile_sampler()
@@ -71,4 +76,36 @@ def run_on_stim_batch(batch):
     return [run_on_stim(qc, shots) for qc, shots in batch]
 
 
-StimBackend = BatchedBackend(run_on_stim_batch)
+def StimBackend():
+    """
+    This function creates a :ref:`BatchedBackend` for simulating Qrisp QuantumCircuits
+    using the Stim simulator.
+    
+    `Stim <https://github.com/quantumlib/Stim>`_ is a fast stabilizer circuit simulator
+    designed for quantum error correction research. It efficiently simulates Clifford
+    circuits and is particularly well-suited for simulating quantum error correction codes
+    with thousands of qubits and millions of gates.
+
+    Returns
+    -------
+    BatchedBackend
+        A backend instance that dispatches circuit simulation to Stim.
+
+    Examples
+    --------
+
+    Basic usage with a QuantumVariable:
+
+    ::
+
+        from qrisp import QuantumVariable
+        from qrisp.interface import StimBackend
+
+        qv = QuantumVariable(2)
+        qv[:] = "10"
+        res = qv.get_measurement(backend=StimBackend())
+        print(res)
+        # Yields: {'10': 1.0}
+
+    """
+    return BatchedBackend(run_on_stim_batch)
