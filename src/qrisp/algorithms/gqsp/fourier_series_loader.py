@@ -125,10 +125,10 @@ def fourier_series_loader(
             y_val = y_val / jnp.linalg.norm(y_val)
 
             qv = QuantumFloat(n)
-            qbl = fourier_series_loader(qv, y_val, k=k)
-            success_bool = measure(qbl) == 0
-            reset(qbl)
-            qbl.delete()
+            anc = fourier_series_loader(qv, y_val, k=k)
+            success_bool = measure(anc) == 0
+            reset(anc)
+            anc.delete()
             return success_bool, qv
 
         # The terminal_sampling decorator performs a hybrid simulation,
@@ -208,8 +208,8 @@ def fourier_series_loader(
 
     h(qarg)
 
-    qbl = QuantumBool()
+    anc = QuantumBool()
 
-    GQSP(qbl, qarg, unitary=U, p=compressed_frequencies, k=k, kwargs={"scaling_factor" : scaling_factor})
+    GQSP(anc, qarg, unitary=U, p=compressed_frequencies, k=k, kwargs={"scaling_factor" : scaling_factor})
 
-    return qbl
+    return anc

@@ -95,10 +95,10 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
         @RUS
         def conv_psi_prep():
             qarg = psi_prep()
-            qbl = convolve(qarg, f)
-            success_bool = measure(qbl) == 0
-            reset(qbl)
-            qbl.delete()
+            anc = convolve(qarg, f)
+            success_bool = measure(anc) == 0
+            reset(anc)
+            anc.delete()
             return success_bool, qarg
 
         # The terminal_sampling decorator performs a hybrid simulation,
@@ -124,9 +124,9 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
 
     d = len(weights) // 2
 
-    qbl = QuantumBool()
+    anc = QuantumBool()
 
     with conjugate(QFT)(qarg):
-        GQSP(qbl, qarg, unitary=U, p=weights, k=d)
+        GQSP(anc, qarg, unitary=U, p=weights, k=d)
 
-    return qbl
+    return anc
