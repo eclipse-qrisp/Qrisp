@@ -75,4 +75,3 @@ Qrisp allows you to define these structures using the general-purpose :func:`~qr
    :hidden:
 
    find_detectors_doc
-   ParityHandle_doc
