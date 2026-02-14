@@ -943,7 +943,7 @@ class BlockEncoding:
 
     def qubitization(self) -> BlockEncoding:
         r"""
-        Returns a BlockEncoding representing the qubitization walk operator.
+        Returns a BlockEncoding representing the `qubitization walk operator <https://quantum-journal.org/papers/q-2019-07-12-163/>`_.
 
         For a block-encoded operator $A$ with normalization factor $\alpha$,
         this method returns a BlockEncoding of the qubitization walk operator $W$
@@ -970,6 +970,10 @@ class BlockEncoding:
         Notes
         -----
         - **Normalization**: The resulting block-encoding maintains the same scaling factor $\alpha$ as the original.
+
+        References
+        ----------
+        - Low & Chuang (2019) `Hamiltonian Simulation by Qubitization <https://quantum-journal.org/papers/q-2019-07-12-163/>`_.
 
         Examples
         --------
@@ -1821,6 +1825,7 @@ class BlockEncoding:
 
         References
         ----------
+        - Low & Chuang (2019) `Hamiltonian Simulation by Qubitization <https://quantum-journal.org/papers/q-2019-07-12-163/>`_.
         - Motlagh & Wiebe (2025) `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
 
         Examples

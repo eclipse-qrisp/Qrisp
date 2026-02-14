@@ -82,11 +82,11 @@ def GQSP(
     ----------
     qbl : QuantumBool
         Auxiliary variable in state $\ket{0}$ for applying the GQSP protocol.
-        Must be measuered in state $\ket{0}$ for the GQSP protocol to be successful.
+        Must be measured in state $\ket{0}$ for the GQSP protocol to be successful.
     *qargs : QuantumVariable
         QuantumVariables serving as operands for the unitary.
     unitary : Callable
-        A function appying a unitary to the variables ``*qargs``.
+        A function applying a unitary to the variables ``*qargs``.
         Typically, $U=e^{iH}$ for a Hermitian operator $H$ and GQSP applies a function of $H$.
     p : ArrayLike, optional
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.

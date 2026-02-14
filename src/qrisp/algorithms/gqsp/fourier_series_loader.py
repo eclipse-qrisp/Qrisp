@@ -91,7 +91,7 @@ def fourier_series_loader(
     -------
     QuantumBool
         Auxiliary variable after applying the GQSP protocol. 
-        Must be measuered in state $\ket{0}$ for the GQSP protocol to be successful.
+        Must be measured in state $\ket{0}$ for the GQSP protocol to be successful.
 
     Examples
     --------
