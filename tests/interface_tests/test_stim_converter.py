@@ -529,3 +529,196 @@ def test_observable_map():
     # Detector map should be empty (observable=True means observable, not detector)
     assert len(det_map) == 0
     assert len(obs_map) == 1
+
+
+def test_qc_parity_method_basic():
+    """Test the QuantumCircuit.parity method with basic usage."""
+    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityHandle
+    
+    qc = QuantumCircuit(2, 2)
+    qc.h(0)
+    qc.cx(0, 1)
+    qc.measure([0, 1], [0, 1])
+    
+    # Test basic parity method call
+    handle = qc.parity([qc.clbits[0], qc.clbits[1]], expectation=0)
+    
+    # Verify it returns a ParityHandle
+    assert isinstance(handle, ParityHandle)
+    
+    # Verify ParityHandle properties
+    assert handle.clbits == [qc.clbits[0], qc.clbits[1]]
+    assert handle.expectation == 0
+    assert handle.observable == False
+
+
+def test_qc_parity_method_single_clbit():
+    """Test the QuantumCircuit.parity method with a single clbit."""
+    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityHandle
+    
+    qc = QuantumCircuit(1, 1)
+    qc.h(0)
+    qc.measure(0, 0)
+    
+    # Test with single clbit (not in a list)
+    handle = qc.parity(qc.clbits[0], expectation=1)
+    
+    assert isinstance(handle, ParityHandle)
+    assert handle.clbits == [qc.clbits[0]]
+    assert handle.expectation == 1
+
+
+def test_qc_parity_method_detector_map():
+    """Test that parity method handles integrate correctly with to_stim detector_map."""
+    qc = QuantumCircuit(3, 3)
+    qc.h(0)
+    qc.cx(0, 1)
+    qc.cx(0, 2)
+    qc.measure([0, 1, 2], [0, 1, 2])
+    
+    # Create parity detectors
+    handle1 = qc.parity([qc.clbits[0], qc.clbits[1]], expectation=0)
+    handle2 = qc.parity([qc.clbits[1], qc.clbits[2]], expectation=0)
+    
+    # Convert to Stim and get detector map
+    stim_circuit, meas_map, det_map = qc.to_stim(
+        return_measurement_map=True,
+        return_detector_map=True
+    )
+    
+    # Verify both handles are in the detector map
+    assert handle1 in det_map
+    assert handle2 in det_map
+    
+    # Verify detector indices are assigned
+    assert det_map[handle1] == 0
+    assert det_map[handle2] == 1
+    
+    # Verify DETECTOR instructions in Stim circuit
+    stim_str = str(stim_circuit)
+    assert stim_str.count("DETECTOR") == 2
+
+
+def test_qc_parity_method_observable_map():
+    """Test that parity method with observable=True integrates with observable_map."""
+    qc = QuantumCircuit(2, 2)
+    qc.h(0)
+    qc.cx(0, 1)
+    qc.measure([0, 1], [0, 1])
+    
+    # Create observable parity
+    handle = qc.parity([qc.clbits[0], qc.clbits[1]], expectation=0, observable=True)
+    
+    # Verify observable property
+    assert handle.observable == True
+    
+    # Convert to Stim and get observable map
+    stim_circuit, meas_map, det_map, obs_map = qc.to_stim(
+        return_measurement_map=True,
+        return_detector_map=True,
+        return_observable_map=True
+    )
+    
+    # Verify handle is in observable map, not detector map
+    assert handle not in det_map
+    assert handle in obs_map
+    assert obs_map[handle] == 0
+    
+    # Verify OBSERVABLE_INCLUDE instruction in Stim circuit
+    stim_str = str(stim_circuit)
+    assert "OBSERVABLE_INCLUDE" in stim_str
+    assert "DETECTOR" not in stim_str or stim_str.count("DETECTOR") == 0
+
+
+def test_qc_parity_method_multiple_detectors():
+    """Test multiple parity operations and their handles."""
+    qc = QuantumCircuit(4, 4)
+    qc.h(0)
+    qc.cx(0, 1)
+    qc.cx(0, 2)
+    qc.cx(0, 3)
+    qc.measure(range(4), range(4))
+    
+    # Create multiple parity checks
+    handles = []
+    handles.append(qc.parity([qc.clbits[0], qc.clbits[1]], expectation=0))
+    handles.append(qc.parity([qc.clbits[0], qc.clbits[2]], expectation=0))
+    handles.append(qc.parity([qc.clbits[0], qc.clbits[3]], expectation=0))
+    
+    # Convert and verify
+    stim_circuit, meas_map, det_map = qc.to_stim(
+        return_measurement_map=True,
+        return_detector_map=True
+    )
+    
+    # All handles should be in map with unique indices
+    assert len(det_map) == 3
+    for i, handle in enumerate(handles):
+        assert handle in det_map
+        assert det_map[handle] == i
+
+
+def test_qc_parity_method_mixed_detectors_observables():
+    """Test mixing detector and observable parity operations."""
+    qc = QuantumCircuit(3, 3)
+    qc.h(0)
+    qc.cx(0, 1)
+    qc.cx(0, 2)
+    qc.measure(range(3), range(3))
+    
+    # Create mixed parity checks
+    det_handle = qc.parity([qc.clbits[0], qc.clbits[1]], expectation=0, observable=False)
+    obs_handle = qc.parity([qc.clbits[0], qc.clbits[2]], expectation=1, observable=True)
+    
+    # Convert
+    stim_circuit, meas_map, det_map, obs_map = qc.to_stim(
+        return_measurement_map=True,
+        return_detector_map=True,
+        return_observable_map=True
+    )
+    
+    # Verify separation
+    assert det_handle in det_map
+    assert det_handle not in obs_map
+    assert obs_handle in obs_map
+    assert obs_handle not in det_map
+    
+    # Verify properties
+    assert det_handle.observable == False
+    assert obs_handle.observable == True
+    assert obs_handle.expectation == 1
+
+
+def test_qc_parity_method_handle_equality():
+    """Test that ParityHandle equality works correctly (content-based)."""
+    qc = QuantumCircuit(2, 2)
+    qc.measure([0, 1], [0, 1])
+    
+    # Create two parity operations with same parameters
+    handle1 = qc.parity([qc.clbits[0], qc.clbits[1]], expectation=0)
+    handle2 = qc.parity([qc.clbits[0], qc.clbits[1]], expectation=0)
+    
+    # ParityHandle uses content-based equality (same clbits, expectation, observable)
+    # This is by design to work across transpile calls
+    assert handle1 == handle2
+    
+    # Handle with different expectation should not be equal
+    handle3 = qc.parity([qc.clbits[0], qc.clbits[1]], expectation=1)
+    assert handle1 != handle3
+    
+    # Both handles with same parameters map to the same detector
+    # (only the last one will appear in the map due to equality)
+    stim_circuit, meas_map, det_map = qc.to_stim(
+        return_measurement_map=True,
+        return_detector_map=True
+    )
+    
+    # Since handle1 == handle2, they should map to the same detector
+    assert handle1 in det_map
+    assert handle2 in det_map
+    assert det_map[handle1] == det_map[handle2]
+    
+    # handle3 has different expectation, so different detector
+    assert handle3 in det_map
+    assert det_map[handle3] != det_map[handle1]
+

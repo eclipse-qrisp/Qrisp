@@ -2061,6 +2061,82 @@ class QuantumCircuit:
 
         self.append(ops.Measurement(), [qubits], [clbits])
 
+    def parity(self, clbits, expectation=0, observable=False):
+        """
+        Instructs a parity operation on a set of classical bits.
+        
+        This method creates a parity check (XOR) on measurement results, useful for
+        quantum error correction and when interfacing with Stim. When the circuit is
+        converted to Stim (via :meth:`to_stim`), this creates either a ``DETECTOR``
+        instruction (if ``observable=False``) or an ``OBSERVABLE_INCLUDE`` instruction
+        (if ``observable=True``).
+        
+        Parameters
+        ----------
+        clbits : list[Clbit] or Clbit
+            The classical bits to compute parity over. Can be a single Clbit or a list
+            of Clbits representing measurement results.
+        expectation : int, optional
+            The expected parity value (0 or 1). Default is 0.
+        observable : bool, optional
+            If True, this parity is treated as a Stim observable rather than a detector.
+            Default is False.
+        
+        Returns
+        -------
+        ParityHandle
+            A :class:`~qrisp.jasp.ParityHandle` object representing the parity result.
+            This handle can be used as a key to look up detector/observable indices in
+            the maps returned by :meth:`to_stim`.
+        
+        Examples
+        --------
+        
+        Create a simple detector checking that two qubits have even parity:
+        
+        >>> from qrisp import QuantumCircuit
+        >>> qc = QuantumCircuit(2, 2)
+        >>> qc.h(0)
+        >>> qc.cx(0, 1)
+        >>> qc.measure([0, 1], [0, 1])
+        >>> handle = qc.parity([qc.clbits[0], qc.clbits[1]], expectation=0)
+        >>> print(handle)
+        ParityHandle(Clbit(cb_2), Clbit(cb_3))
+        
+        Convert to Stim and check the detector:
+        
+        >>> stim_circuit, meas_map, det_map = qc.to_stim(
+        ...     return_measurement_map=True, 
+        ...     return_detector_map=True
+        ... )
+        >>> det_map[handle]  # Get the Stim detector index
+        0
+        
+        See Also
+        --------
+        :func:`qrisp.parity` : The gate function version for use in QuantumSessions
+        :meth:`to_stim` : Convert to Stim circuit with detector/observable maps
+        :class:`qrisp.jasp.ParityHandle` : Documentation of the ParityHandle class
+        """
+        from qrisp.jasp.primitives.parity_primitive import ParityOperation
+        from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityHandle
+        
+        # Ensure clbits is a list
+        if not isinstance(clbits, list):
+            clbits = [clbits]
+        
+        # Create and append the parity operation
+        parity_op = ParityOperation(len(clbits), expectation=expectation, observable=observable)
+        
+        # Append the operation (doesn't return the instruction)
+        self.append(parity_op, clbits=clbits)
+        
+        # Get the last instruction that was just appended
+        instruction = self.data[-1]
+        
+        # Return a ParityHandle wrapping this instruction
+        return ParityHandle(instruction)
+
     def cx(self, qubits_0, qubits_1):
         """
         Instruct a CX-gate.
