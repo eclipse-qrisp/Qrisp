@@ -34,6 +34,11 @@ from qrisp.simulator.circuit_preprocessing import (
 from qrisp.simulator.quantum_state import QuantumState
 
 
+def _clear_progress_line():
+    width = min(85, shutil.get_terminal_size().columns)
+    print("\r" + (" " * width), end="\r")
+
+
 # This functions determines the quantum state after executing a quantum circuit
 # and afterwards extracts the probability of measuring certain bit strings
 def run(qc, shots, token="", iqs=None, insert_reset=True):
@@ -54,7 +59,6 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         file=sys.stdout,
     )
 
-    LINE_CLEAR = "\x1b[2K"
     progress_bar.display()
 
     # This command enables fast appending. Fast appending means that the .append method
@@ -72,7 +76,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         
         if measurement_amount == 0:
             progress_bar.close()
-            print(LINE_CLEAR, end="\r")
+            _clear_progress_line()
             return {"" : 1.}
 
         # Apply circuit preprocessing more
@@ -160,7 +164,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
             mes_qubit_indices = []
 
         progress_bar.close()
-        print(LINE_CLEAR, end="\r")
+        _clear_progress_line()
 
         # Prepare result dictionary
         # The iqs object contains the outcome bitstrings in the attribute .outcome_list
@@ -238,7 +242,6 @@ def statevector_sim(qc):
         # colour = "green"
     )
 
-    LINE_CLEAR = "\x1b[2K"
     progress_bar.display()
     # This command enables fast appending. Fast appending means that the .append method
     # of the QuantumCircuit class checks much less validity conditions and is also less
@@ -269,7 +272,7 @@ def statevector_sim(qc):
             res[0] = 1
 
             progress_bar.close()
-            print(LINE_CLEAR, end="\r")
+            _clear_progress_line()
 
             return res
 
@@ -298,7 +301,7 @@ def statevector_sim(qc):
         res = qs.eval().tensor_array.to_array()
 
         progress_bar.close()
-        print(LINE_CLEAR, end="\r")
+        _clear_progress_line()
 
         # Deactivate the fast append mode
         QuantumCircuit.fast_append = False
@@ -442,7 +445,6 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
         file=sys.stdout,
     )
 
-    LINE_CLEAR = "\x1b[2K"
     progress_bar.display()
 
     # This command enables fast appending. Fast appending means that the .append method
@@ -507,6 +509,6 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
                 quantum_state.apply_operation(instr.op, qubit_indices)
 
         progress_bar.close()
-        print(LINE_CLEAR, end="\r")
+        _clear_progress_line()
 
         return quantum_state
