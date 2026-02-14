@@ -1920,9 +1920,13 @@ class QuantumCircuit:
             For example, ``{Clbit(cb_1): 2, Clbit(cb_0): 1}`` means ``Clbit("cb_1")``
             corresponds to index 2 in Stim's measurement record.
         detector_map : dict
-            (Optional) A dictionary mapping Qrisp Clbit objects to Stim detector indices.
-        detector_map : dict
-            (Optional) A dictionary mapping Qrisp Clbit objects to Stim observable indices.
+            (Optional) A dictionary mapping ParityHandle objects to Stim detector indices.
+            ParityHandle objects are compared by their index, so handles from to_qc() can
+            be used directly as keys.
+        observable_map : dict
+            (Optional) A dictionary mapping ParityHandle objects to Stim observable indices.
+            ParityHandle objects are compared by their index, so handles from to_qc() can
+            be used directly as keys.
 
         Examples
         --------
