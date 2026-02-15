@@ -122,6 +122,10 @@ class BlockEncoding:
       3-qubit QuantumVariable, then a block-encoding of the $8\times 8$ matrix $\tilde{A}=\mathbb{I}\otimes A$
       is applied. This is consistent with the convention that non-occuring indices in a Pauli string are treated as identities.
       Static-shaped block-encodings may be introduced in a future release.
+    - The ``is_hermitian`` attribute indicates whether the block-encoding unitary $U_A$ is Hermitian.
+      This is distinct from the operator $A$ being being Hermitian. A Hermitian operator $A$ 
+      can be block-encoded using a non-Hermitian unitary $U_A$. Conversely, if the unitary $U_A$
+      is Hermitian, then the encoded operator must also be Hermitian.
 
     Examples
     --------
@@ -1806,6 +1810,25 @@ class BlockEncoding:
 
         """
         from qrisp.algorithms.gqsp import inversion
+
+        # The operator is unitary (up to scaling).
+        if self.num_ancs == 0:
+
+            if not self.is_hermitian:
+                def new_unitary(*args):
+                    with invert():
+                        self.unitary(*args)
+            else:
+                # The operator is a reflection (up to scaling).
+                new_unitary = self.unitary
+
+            return BlockEncoding(
+                1.0 / self.alpha,
+                self._anc_templates,
+                new_unitary,
+                num_ops=self.num_ops,
+                is_hermitian=self.is_hermitian,
+            )
 
         return inversion(self, eps, kappa)
 
