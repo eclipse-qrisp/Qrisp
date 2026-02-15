@@ -90,7 +90,7 @@ def test_vqe_electronic_structure_BeH2():
         basis = 'sto-3g')
     
     H = create_electronic_hamiltonian(mol,active_orb=6,active_elec=4).to_qubit_operator()
-    assert np.abs(H.ground_state_energy()-(-16.73195995959339))
+    assert np.abs(H.ground_state_energy()-(-16.73195995959339)) < 1e-9
 
     # runs for >1 minute
     vqe = electronic_structure_problem(mol,active_orb=6,active_elec=4)
