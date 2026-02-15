@@ -276,7 +276,7 @@ Dive into Qrisp code
     <div class="code-example-text">
     
 
-Qrisp code can be significantly shorter and also more readable than the equivalent program in a gate based framework. Regardless, the compiled quantum circuits are in many cases more efficient since the compiler can leverage the code structure into assumptions about algorithmic structure, implying strong compilation optimizations. Below you find two code snippets that perform the same basic task: Multiplication of two n-bit integers. One is written using Qiskit and the other one utilizes Qrisp.
+Qrisp enables developers to express quantum algorithms in substantially fewer lines of code compared to gate-level frameworks - without sacrificing readability. Moreover, the compiler leverages the high-level program structure to infer algorithmic properties, enabling compilation optimizations that often yield more efficient circuits than hand-crafted alternatives. The following example illustrates this: both snippets multiply two n-bit integers, the first using Qiskit and the second using Qrisp.
 
 .. list-table::
    :widths: 25 25
@@ -327,9 +327,9 @@ Qrisp code can be significantly shorter and also more readable than the equivale
          print(res)
          #Yields: {12: 1.0}
 
-Apart from simple scripts like the above, our :ref:`tutorial` showcases the utilization of Qrisp implementing Shor's algorithm leveraging `Montgomery reduction <https://en.wikipedia.org/wiki/Montgomery_modular_multiplication>`_, fully agnostic to the particular quantum adder. This solution involves several conceptually distinct :ref:`QuantumVariables <QuantumVariable>`, with their respective qubits being repeatedly disentangled and repurposed for other variables. The presented approach improves the resource requirement of known open source implementations :ref:`significantly <shor_benchmark_plot>`, while retaining an `accesible form <https://www.qrisp.eu/general/tutorial/Shor.html>`_.
+Beyond simple arithmetic, our :ref:`tutorial` demonstrates a complete implementation of Shor's algorithm using `Montgomery reduction <https://en.wikipedia.org/wiki/Montgomery_modular_multiplication>`_, fully agnostic to the choice of quantum adder. The implementation manages several distinct :ref:`QuantumVariables <QuantumVariable>`, whose qubits are automatically disentangled and recycled across variables. This approach :ref:`significantly reduces <shor_benchmark_plot>` resource requirements compared to existing open-source implementations, while remaining `accessible and well-documented <https://www.qrisp.eu/general/tutorial/Shor.html>`_.
 
-This example illustrates how Qrisp, as a high-level language, permits novel and scalable solutions to intricate problems and furthermore that high-level quantum programming languages will be an integral part of the future of quantum information science.
+This example demonstrates how high-level quantum programming enables novel, scalable solutions to complex problems - and underscores the role that structured languages will play in the future of quantum computing.
 
 .. raw:: html
 
