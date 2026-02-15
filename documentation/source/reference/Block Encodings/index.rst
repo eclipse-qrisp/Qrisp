@@ -24,9 +24,12 @@ Qrisp’s :ref:`BlockEncoding` provides a high-level programming abstraction for
 The core strength of this interface lies in its ability to translate classical matrix operations for **Hermitian matrices** directly into their quantum equivalents, 
 significantly lowering the barrier to entry for quantum algorithm development.
 
-Instead of navigating the intricacies of superposition, entanglement, and gate-level logic, 
+Instead of navigating the intricacies of superposition and entanglement,
 users can work within the familiar language of linear algebra and signal processing.
 The block-encoding layer acts as a bridge that makes matrices "accessible" to the quantum comuter.
+It is important to note that the overall efficiency of an algorithm critically depends on the performance of its underlying block-encodings. 
+While Qrisp currently offers versatile, general-purpose constructors, additional specialized block-encodings will be introduced in future.
+
 Once encoded, these operators can be manipulated using two powerful paradigms:
 
 - **Matrix Arithmetic:** Block-encodings can be added and multiplied, enabling the construction of complex Hamiltonians or large-scale linear systems from simpler building blocks. 
@@ -36,7 +39,7 @@ Once encoded, these operators can be manipulated using two powerful paradigms:
   This allows for the application of non-linear functions to an operator's spectrum, enabling complex operations such as matrix inversion or time evolution. 
   By adopting concepts from signal processing—specifically through the use of polynomial filters—one can isolate specific energy ranges.
 
-Leveraging these matrix-based abstractions bridges the gap for domain experts in fields like 
+These abstractions help bridge the gap for domain experts in fields like 
 `machine learning <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.113.130503>`_,
 scientific computing, and computational dynamics, allowing them to design quantum algorithms using the mathematical tools they already master.
 
