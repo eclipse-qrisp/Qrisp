@@ -15,7 +15,7 @@
     <div id="hero">
         <div class="hero-orb-secondary"></div>
         <div id="hero-left">
-            <img alt="./_static/ecplipse_font.png" class="align-bottom-left scaled-image" src="./_static/ecplipse_font.png" width="109" height="25">
+            <img alt="./_static/eclipse_font.png" class="align-bottom-left scaled-image" src="./_static/eclipse_font.png" width="109" height="25">
             <h2 style="font-size: 68px; font-weight: 800; margin: -0.4rem auto 0;">Qrisp</h2>
             <h3 style="font-weight: 600; margin-top: 0;">The next generation of quantum algorithm development</h3>
             <p>Qrisp is a high-level programming language for creating and compiling quantum algorithms. Its structured programming model enables scalable development and maintenance — with JAX integration for hybrid quantum-classical workflows.</p>
@@ -161,6 +161,27 @@ Key Features
         :class-card: sd-border-0
         :shadow: none
         
+        .. image:: ./_static/hybrid_realtime.png
+            :target: ./general/tutorial/Jasp.html
+            :align: center
+
+        .. raw:: html
+        
+            <div class="key-features-text">
+        
+
+    
+        **Jasp integration** |br|
+        Exert hybrid real-time algorithm control with Catalyst and Jasp. Qrisp's JAX integration enables seamless hybrid quantum-classical workflows with automatic differentiation. `Learn more → <./general/tutorial/Jasp.html>`_
+        
+        .. raw:: html
+        
+            </div>
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+        
         .. image:: ./_static/recycling.png
             :target: ./reference/Core/Uncomputation.html
             :align: center
@@ -171,14 +192,13 @@ Key Features
         
 
     
-        **Automatic uncomputation** |br|
+        **Memory management** |br|
         QuantumVariables can be uncomputed automatically once they are not needed anymore. The uncomputation module is tightly integrated with an advanced qubit resource management system.
         
         .. raw:: html
         
             </div>
 
-        
     .. grid-item-card::
         :class-card: sd-border-0
         :shadow: none
@@ -236,7 +256,10 @@ Key Features
         .. raw:: html
         
             </div>
-        
+
+.. grid:: 1 1 2 2
+    :gutter: 5
+
     .. grid-item-card::
         :class-card: sd-border-0
         :shadow: none
