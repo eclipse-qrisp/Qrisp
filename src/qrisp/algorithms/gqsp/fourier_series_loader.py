@@ -75,12 +75,12 @@ def fourier_series_loader(
     Parameters
     ----------
     qarg : QuantumVariable
-        The input variable in state $\ket{0}$.
-    signal : ArrayLike, optional
-        1-D array of input signal values with shape ``(M,)``.
+        Variable representing the input signal. Must be in state $\ket{0}$ for preparation of target signal.
+    signal : ArrayLike, shape (M,), optional
+        The target signal values.
         Either ``signal`` or ``frequencies`` must be specified.
-    frequencies : ArrayLike, optional
-        1-D array of input frequency values in the range $[-K,K]$ with shape ``(2K+1,)``.
+    frequencies : ArrayLike, shape (2K+1), optional
+        The target frequency values in the range $[-K,K]$.
     k : int
         The frequency cutoff. Only frequencies in the range $[-k,k]$ are preserved. The default is 1.
     mirror : bool

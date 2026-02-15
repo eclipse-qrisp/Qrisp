@@ -51,9 +51,11 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
     Parameters
     ----------
     qarg : QuantumVariable
-        The input state.
-    weights : ArrayLike
-        1-D array of weights with shape ``(2d+1,)``.
+        Variable representing the input signal.
+    weights : ArrayLike, shape (2d+1,)
+        The filter coefficients for the cyclic convolution. 
+        These are applied as a sliding window across the signal, 
+        where the middle element corresponds to the weight of the current index.
 
     Returns
     -------
@@ -61,6 +63,10 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
         Auxiliary variable after applying the GQSP protocol. 
         Must be measured in state $\ket{0}$ for the GQSP protocol to be successful.
 
+    Notes
+    -----
+    - Performs a cyclic convolution on the quantum signal, 
+      effectively applying a local filtering operation such as an $n$-point smoothing.
 
     Examples
     --------
