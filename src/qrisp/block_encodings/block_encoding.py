@@ -128,6 +128,9 @@ class BlockEncoding:
 
     **Example 1: Pauli Block Encoding**
 
+    Define a :ref:`QubitOperator` repesenting a Heisenberg Hamiltonian,
+    and construct a block-encoding based on LCU for its Pauli strings.
+
     ::
 
         from qrisp import *
@@ -137,7 +140,7 @@ class BlockEncoding:
         H = sum(X(i)*X(i+1) + Y(i)*Y(i+1) + Z(i)*Z(i+1) for i in range(3))
         BE = BlockEncoding.from_operator(H)
 
-        # Apply the operator to an initial system state
+        # Apply the Hermitian operator to an initial system state
 
         # Prepare initial system state
         def operand_prep():
@@ -152,7 +155,7 @@ class BlockEncoding:
         main()
         # {0.0: 0.6428571295525347, 2.0: 0.2857142963579722, 1.0: 0.07142857408949305}
 
-    **Example 2: LCU Block Encoding**
+    **Example 2: Custom LCU Block Encoding**
 
     Define a block-encoding for a discrete Laplace operator in one dimension with periodic boundary conditions.
 
@@ -200,7 +203,7 @@ class BlockEncoding:
         
         BE = BlockEncoding.from_lcu(coeffs, unitaries)
 
-    Apply the operator to the inital system state $\ket{0}$.
+    Apply the operator to the initial system state $\ket{0}$.
 
     :: 
 
@@ -216,7 +219,7 @@ class BlockEncoding:
         main()
         # {0.0: 0.6666666567325588, 7.0: 0.16666667908430155, 1.0: 0.1666666641831397}
 
-    To perform quantum resource estimation (not counting repetitions), 
+    To perform quantum resource estimation for the quantum program (not counting repetitions), 
     replace the ``@terminal_sampling`` decorator with ``@count_ops(meas_behavior="0")``:
 
     ::
@@ -227,7 +230,16 @@ class BlockEncoding:
             return operand
 
         main()
-        # {'s': 4, 'gphase': 2, 'u3': 6, 't': 14, 't_dg': 16, 'x': 5, 'cx': 54, 'p': 2, 'h': 16, 'measure': 10}
+        # {'s': 4, 'gphase': 2, 'u3': 6, 't': 14, 't_dg': 16, 'x': 5, 'cx': 54, 
+        # 'p': 2, 'h': 16, 'measure': 10}
+
+    To perform resource estimations for the block-encoding use :meth:`resources`:
+
+    ::
+
+        BE.resources(QuantumFloat(3))
+        # {'gate counts': {'s': 4, 't_dg': 16, 'h': 16, 't': 14, 'gphase': 2, 
+        # 'p': 2, 'x': 5, 'cx': 54, 'u3': 6, 'measure': 4}, 'depth': 87}
 
     """
 
