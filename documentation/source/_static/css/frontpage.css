@@ -349,6 +349,43 @@ h3:not(#hero h3) {
     animation: fadeInUp 0.8s ease-out 0.3s both;
 }
 
+/* ===== SCROLL REVEAL ===== */
+.scroll-reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ===== CARD TILT GLOW OVERLAY ===== */
+.tilt-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.sd-card:hover > .tilt-glow {
+    opacity: 1;
+}
+
+/* ===== CODE TYPING CURSOR ===== */
+.typing-cursor-line {
+    animation: cursorBlink 0.75s step-end infinite;
+}
+
+@keyframes cursorBlink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0; }
+}
+
 /* ===== MOBILE ===== */
 @media (max-width: 768px) {
     #hero {

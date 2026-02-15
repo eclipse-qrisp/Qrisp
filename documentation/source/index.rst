@@ -105,6 +105,7 @@
     </div>
 
     <script src="./_static/js/hero-graph.js"></script>
+    <script src="./_static/js/frontpage-interactions.js"></script>
 
 Key Features
 ============
