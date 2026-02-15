@@ -41,7 +41,7 @@ def fourier_series_loader(
     mirror: bool = False
 ) -> QuantumBool:
     r"""
-    Performs band-limited quantum state preparation.
+    Performs quantum state preparation for the first $k$ Fourier modes.
 
     Given an input array of $M$ values $\{a_{j}\}_{j=0}^{M-1}$ representing a signal sampled at equidistant points, 
     this method prepares an $n$-qubit quantum state $(N=2^{n})$ by reconstructing a smooth approximation of the signal using its lowest $2k+1$ frequency components.
