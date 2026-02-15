@@ -44,7 +44,7 @@ class TestNumQubitsSimple:
             qf = QuantumFloat(num_qubits_input)
             h(qf[0])
 
-        assert main(num_qubits_input) == num_qubits_input
+        assert main(num_qubits_input) == {"alloc1": num_qubits_input}
 
     @pytest.mark.parametrize("num_qubits_input", [1, 2, 3, 4])
     def test_num_qubits_multiple_create_qubits(self, num_qubits_input):
@@ -61,38 +61,55 @@ class TestNumQubitsSimple:
             h(qf3[0])
             h(qf4[0])
 
-        expected_count = sum(num_qubits_input + i for i in range(4))
-        assert main(num_qubits_input) == expected_count
+        res = main(num_qubits_input)
+        expected_dic = {
+            "alloc1": num_qubits_input,
+            "alloc2": num_qubits_input + 1,
+            "alloc3": num_qubits_input + 2,
+            "alloc4": num_qubits_input + 3,
+        }
+        assert res == expected_dic
 
     def test_num_qubits_delete_qubits(self):
         """Test qubit counting with qubit deletion."""
 
         @num_qubits(meas_behavior="0")
-        def circuit_del(num_qubits_input):
+        def main(num_qubits_input):
             qv = QuantumFloat(num_qubits_input)
             h(qv[0])
             qv.delete()
 
-        assert circuit_del(4) == 0
+        res = main(4)
+        expected_dic = {
+            "alloc1": 4,
+            "alloc2": -4,
+        }
+        assert res == expected_dic
 
     def test_num_qubits_delete_qubits2(self):
         """Test qubit counting with qubit deletion followed by reallocation."""
 
         @num_qubits(meas_behavior="0")
-        def circuit_del2(num_qubits_input):
+        def main(num_qubits_input):
             qv = QuantumFloat(num_qubits_input)
             h(qv[0])
             qv.delete()
             qv = QuantumFloat(num_qubits_input)
             h(qv[0])
 
-        assert circuit_del2(4) == 4
+        res = main(4)
+        expected_dic = {
+            "alloc1": 4,
+            "alloc2": -4,
+            "alloc3": 4,
+        }
+        assert res == expected_dic
 
     def test_num_qubits_all_deleted_in_end(self):
         """Everything deleted before termination => final count is 0."""
 
         @num_qubits(meas_behavior="0")
-        def circuit_all_del(n):
+        def main(n):
             a = QuantumFloat(n)
             b = QuantumFloat(n + 1)
             h(a[0])
@@ -100,16 +117,25 @@ class TestNumQubitsSimple:
             a.delete()
             b.delete()
 
-        assert circuit_all_del(4) == 0
+        res = main(4)
+        expected_dic = {
+            "alloc1": 4,
+            "alloc2": 5,
+            "alloc3": -4,
+            "alloc4": -5,
+        }
+        assert res == expected_dic
 
     def test_num_qubits_unused_allocation_semantics(self):
         """Test the expected behavior for qubits that are allocated but never used (e.g., no gates, no measurements)."""
 
         @num_qubits(meas_behavior="0")
-        def circuit_unused(n):
+        def main(n):
             _qv = QuantumFloat(n)
 
-        assert circuit_unused(4) == 0
+        res = main(4)
+        expected_dic = {}
+        assert res == expected_dic
 
     def test_num_qubits_alias_delete_counts_once(self):
         """
@@ -118,13 +144,18 @@ class TestNumQubitsSimple:
         """
 
         @num_qubits(meas_behavior="0")
-        def circuit_alias_del(n):
+        def main(n):
             qv = QuantumFloat(n)
             alias = qv
             h(qv[0])
             alias.delete()
 
-        assert circuit_alias_del(4) == 0
+        res = main(4)
+        expected_dic = {
+            "alloc1": 4,
+            "alloc2": -4,
+        }
+        assert res == expected_dic
 
 
 class TestNumQubitsControlFlow:
@@ -135,8 +166,8 @@ class TestNumQubitsControlFlow:
     """
 
     @pytest.mark.parametrize(
-        "meas_behavior,num_qubits_input,num_qubits_input2,num_qubits_input3, expected_count",
-        [(always_zero, 2, 3, 4, 5), (always_one, 2, 3, 4, 6)],
+        "meas_behavior,num_qubits_input,num_qubits_input2,num_qubits_input3",
+        [(always_zero, 2, 3, 4), (always_one, 2, 3, 4)],
     )
     def test_num_qubits_control_flow(
         self,
@@ -144,12 +175,11 @@ class TestNumQubitsControlFlow:
         num_qubits_input,
         num_qubits_input2,
         num_qubits_input3,
-        expected_count,
     ):
         """Test qubit counting with control flow based on measurement outcomes."""
 
         @num_qubits(meas_behavior=meas_behavior)
-        def circuit_cf(num_qubits_input, num_qubits_input2, num_qubits_input3):
+        def main(num_qubits_input, num_qubits_input2, num_qubits_input3):
             qv = QuantumFloat(num_qubits_input)
             m = measure(qv[0])
             with control(m == 0):
@@ -159,10 +189,15 @@ class TestNumQubitsControlFlow:
                 qv3 = QuantumFloat(num_qubits_input3)
                 h(qv3[0])
 
-        assert (
-            circuit_cf(num_qubits_input, num_qubits_input2, num_qubits_input3)
-            == expected_count
+        res = main(num_qubits_input, num_qubits_input2, num_qubits_input3)
+        expected_alloc2 = (
+            num_qubits_input2 if meas_behavior == always_zero else num_qubits_input3
         )
+        expected_dic = {
+            "alloc1": num_qubits_input,
+            "alloc2": expected_alloc2,
+        }
+        assert res == expected_dic
 
     def test_num_qubits_loop(self):
         """Test qubit counting in a loop structure."""
@@ -173,44 +208,76 @@ class TestNumQubitsControlFlow:
                 qv = QuantumFloat(num_qubits_input)
                 h(qv[i])
 
-        assert circuit_loop(5, 5) == 25
+        res = circuit_loop(5, 5)
+        expected_dic = {
+            "alloc1": 5,
+            "alloc2": 5,
+            "alloc3": 5,
+            "alloc4": 5,
+            "alloc5": 5,
+        }
+        assert res == expected_dic
 
     def test_delete_qubits_in_loop(self):
         """Test qubit counting with qubit deletion inside a loop."""
 
-        num_iterations = 10
+        num_iterations = 4
 
         @num_qubits(meas_behavior="1")
-        def circuit_loop_del(num_qubits_input):
+        def main(num_qubits_input):
 
-            list_of_qvs = []
+            list_of_qvs1 = []
+            list_of_qvs2 = []
 
             for i in range(num_iterations):
-                qv = QuantumFloat(num_qubits_input)
-                h(qv[i])
-                list_of_qvs.append(qv)
+                qv_1 = QuantumFloat(num_qubits_input)
+                h(qv_1[i])
+                list_of_qvs1.append(qv_1)
 
-            qv = QuantumFloat(1)
-            m = measure(qv[0])
+            qv_2 = QuantumFloat(1)
+            h(qv_2[0])
+            m = measure(qv_2[0])
 
             with control(m == 0):
                 # does not matter the size as
                 # it should never be called
-                qv2 = QuantumFloat(1000000)
-                h(qv2[0])
-                list_of_qvs.append(qv2)
+                qv3 = QuantumFloat(1000000)
+                h(qv3[0])
+                list_of_qvs2.append(qv3)
 
             with control(m == 1):
-                qv3 = QuantumFloat(10)
-                h(qv3[0])
-                list_of_qvs.append(qv3)
+                qv4 = QuantumFloat(10)
+                h(qv4[0])
+                list_of_qvs2.append(qv4)
+
+            # If we try to delete list_of_qvs2 here,
+            # we get an Exception `ControlEnvironment with carry value`
+
+            qv_2.delete()
 
             for i in range(num_iterations):
-                list_of_qvs[i].delete()
+                list_of_qvs1[i].delete()
 
-            qv.delete()
-
-        assert circuit_loop_del(5) == 10
+        res = main(5)
+        expected_dic = {
+            # the 4 allocations from the loop
+            "alloc1": 5,
+            "alloc2": 5,
+            "alloc3": 5,
+            "alloc4": 5,
+            # the allocation before the control flow
+            "alloc5": 1,
+            # the allocation of qv4 in the control flow (since m == 1)
+            "alloc6": 10,
+            # the deletion of qv_2
+            "alloc7": -1,
+            # the 4 deletions from the loop
+            "alloc8": -5,
+            "alloc9": -5,
+            "alloc10": -5,
+            "alloc11": -5,
+        }
+        assert res == expected_dic
 
     def test_num_qubits_branch_dependent_delete(self):
         """Test qubit counting when deletion is performed in a measurement-dependent branch."""
@@ -226,7 +293,13 @@ class TestNumQubitsControlFlow:
 
             h(qv[0])
 
-        assert circuit_branch_del(4) == 4
+        res = circuit_branch_del(4)
+        expected_dic = {
+            "alloc1": 4,
+            "alloc2": 8,
+            "alloc3": -8,
+        }
+        assert res == expected_dic
 
         @num_qubits(meas_behavior=always_one)
         def circuit_branch_del2(n):
@@ -239,7 +312,13 @@ class TestNumQubitsControlFlow:
 
             h(qv[0])
 
-        assert circuit_branch_del2(4) == 12
+        res = circuit_branch_del2(4)
+        expected_dic = {
+            "alloc1": 4,
+            "alloc2": 8,
+            # no deletion since m == 1
+        }
+        assert res == expected_dic
 
 
 class TestNumQubitsExceptions:
@@ -284,5 +363,38 @@ class TestNumQubitsExceptions:
 
         with pytest.raises(
             ValueError, match="Measurement behavior must return a boolean, got 42"
+        ):
+            main()
+
+    def test_num_qubits_overflow1(self):
+        """Test that exceeding the maximum number of allocations raises an error."""
+
+        @num_qubits(meas_behavior="0", max_allocations=2)
+        def main():
+            qv1 = QuantumFloat(1)
+            h(qv1[0])
+            qv2 = QuantumFloat(1)
+            h(qv2[0])
+            qv3 = QuantumFloat(1)  # This allocation should trigger the overflow
+            h(qv3[0])
+
+        with pytest.raises(
+            ValueError, match="The ``num_qubits`` metric computation overflowed"
+        ):
+            main()
+
+    def test_num_qubits_overflow2(self):
+        """Test that exceeding the maximum number of allocations raises an error."""
+
+        @num_qubits(meas_behavior="0", max_allocations=2)
+        def main():
+            qv1 = QuantumFloat(1)
+            h(qv1[0])
+            qv2 = QuantumFloat(1)
+            h(qv2[0])
+            qv2.delete()  # This should prevent the overflow since it frees up one allocation
+
+        with pytest.raises(
+            ValueError, match="The ``num_qubits`` metric computation overflowed"
         ):
             main()

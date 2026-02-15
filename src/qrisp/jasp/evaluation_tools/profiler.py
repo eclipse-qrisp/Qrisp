@@ -409,7 +409,7 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
     return depth_decorator
 
 
-def num_qubits(meas_behavior: str | Callable) -> Callable:
+def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Callable:
     """
     Decorator to compute the number of qubits still allocated at the end of a
     quantum computation.
@@ -515,7 +515,9 @@ def num_qubits(meas_behavior: str | Callable) -> Callable:
                 jaspr = make_jaspr(function)(*args)
                 function.jaspr_dict[signature] = jaspr
 
-            return jaspr.num_qubits(*args, meas_behavior=meas_behavior)
+            return jaspr.num_qubits(
+                *args, meas_behavior=meas_behavior, max_allocations=max_allocations
+            )
 
         return qubits_counter
 
@@ -542,7 +544,8 @@ def profile_jaspr(
 
     **kwargs : Any
         Additional keyword arguments to be passed to the profiler builder.
-        For example, `max_qubits` for depth profiling.
+        For example, `max_qubits` for depth profiling,
+        or `max_allocations` for num_qubits profiling.
 
     Returns
     -------

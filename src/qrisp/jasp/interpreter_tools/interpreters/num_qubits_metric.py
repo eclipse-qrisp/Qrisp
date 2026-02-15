@@ -39,6 +39,22 @@ from qrisp.jasp.primitives import (
 )
 
 
+# The computation will fail anyway if this is triggered,
+# but this way we can print an informative message before the failure happens.
+def _warn(n_allocations, max_allocations):
+    """Helper function to print a warning when the number of qubits exceeds the maximum supported."""
+
+    jax.debug.print(
+        (
+            "ERROR: `num_qubits` computation overflowed: tried to (de)allocate qubits "
+            "{n_allocations} times, but the maximum supported is {max_allocations}. "
+            "Consider increasing the `max_allocations` parameter for `num_qubits`."
+        ),
+        n_allocations=n_allocations,
+        max_allocations=max_allocations,
+    )
+
+
 class NumQubitsMetric(BaseMetric):
     """
     A metric implementation that computes the number of qubits in a Jaspr.
@@ -51,18 +67,34 @@ class NumQubitsMetric(BaseMetric):
     profiling_dic : dict
         The profiling dictionary mapping quantum operations to indices.
 
+    max_allocations : int
+        The maximum number of qubit allocations/deallocations supported by the profiler.
+
     """
 
-    def __init__(self, meas_behavior: Callable, profiling_dic: dict):
+    def __init__(
+        self,
+        meas_behavior: Callable,
+        profiling_dic: dict,
+        max_allocations: int = 1000,
+    ):
         """Initialize the NumQubitsMetric."""
 
         super().__init__(meas_behavior=meas_behavior, profiling_dic=profiling_dic)
 
-        # This integer keeps track of the qubits allocated so far.
-        self._initial_metric = (jnp.int64(0),)
+        self._max_allocations = max_allocations
+        allocations_array = jnp.zeros(self._max_allocations, dtype=jnp.int64)
+        self.allocations_counter_index = jnp.int64(0)
+        invalid = jnp.bool_(False)
+
+        self._initial_metric = (
+            allocations_array,
+            self.allocations_counter_index,
+            invalid,
+        )
 
     @property
-    def initial_metric(self) -> Tuple[ArrayLike]:
+    def initial_metric(self) -> Tuple[ArrayLike, int, bool]:
         """Return the initial metric value."""
         return self._initial_metric
 
@@ -70,13 +102,25 @@ class NumQubitsMetric(BaseMetric):
 
         size, metric_data = invalues
 
-        allocated_qubits = metric_data[0]
-        allocated_qubits += size
+        allocations_array, allocations_counter_index, invalid = metric_data
+
+        allocations_array = allocations_array.at[allocations_counter_index].set(size)
+        allocations_counter_index += 1
+
+        overflow = allocations_counter_index > jnp.int64(self._max_allocations)
+        invalid = jnp.logical_or(invalid, overflow)
+        jax.lax.cond(
+            invalid,
+            _warn,
+            lambda *_: None,
+            allocations_counter_index,
+            self._max_allocations,
+        )
 
         # Associate the following in context_dic:
         # QubitArray -> size
         # QuantumCircuit -> metric_data
-        return (size, (allocated_qubits,))
+        return (size, (allocations_array, allocations_counter_index, invalid))
 
     def handle_get_qubit(self, invalues, eqn, context_dic):
 
@@ -149,10 +193,21 @@ class NumQubitsMetric(BaseMetric):
 
         size, metric_data = invalues
 
-        allocated_qubits = metric_data[0]
-        allocated_qubits -= size
+        allocations_array, allocations_counter_index, invalid = metric_data
+        allocations_array = allocations_array.at[allocations_counter_index].set(-size)
+        allocations_counter_index += 1
 
-        metric_data = (allocated_qubits,)
+        overflow = allocations_counter_index > jnp.int64(self._max_allocations)
+        invalid = jnp.logical_or(invalid, overflow)
+        jax.lax.cond(
+            invalid,
+            _warn,
+            lambda *_: None,
+            allocations_counter_index,
+            self._max_allocations,
+        )
+
+        metric_data = (allocations_array, allocations_counter_index, invalid)
 
         # Associate the following in context_dic:
         # QubitArray -> size
@@ -160,18 +215,30 @@ class NumQubitsMetric(BaseMetric):
         return metric_data
 
 
-def extract_num_qubits(res: Tuple, jaspr: Jaspr, _) -> int:
-    """Extract num_qubits from the profiling result."""
+def extract_num_qubits(res: Tuple, jaspr: Jaspr, _) -> dict:
+    """Extract the number of allocated and deallocated qubits from the metric result."""
 
     metric = res[-1] if len(jaspr.outvars) > 1 else res
-    num_allocated_qubits = metric[0]
 
-    return int(num_allocated_qubits)
+    allocations_array, allocations_counter_index, overflowed = metric
+
+    if overflowed:
+        raise ValueError(
+            "The ``num_qubits`` metric computation overflowed "
+            "the maximum number of allocations supported. "
+        )
+
+    alloc_dict = {
+        f"alloc{i+1}": int(allocations_array[i])
+        for i in range(int(allocations_counter_index))
+    }
+
+    return alloc_dict
 
 
 @lru_cache(int(1e5))
 def get_num_qubits_profiler(
-    jaspr: Jaspr, meas_behavior: Callable
+    jaspr: Jaspr, meas_behavior: Callable, max_allocations: int = 1000
 ) -> Tuple[Callable, None]:
     """
     Build a num qubits profiling computer for a given Jaspr.
@@ -183,6 +250,10 @@ def get_num_qubits_profiler(
 
     meas_behavior : Callable
         The measurement behavior function.
+
+    max_allocations : int
+        The maximum number of qubit allocations/deallocations supported by the profiler.
+        Default is 1000.
 
     Returns
     -------
@@ -196,7 +267,7 @@ def get_num_qubits_profiler(
     if "measure" not in profiling_dic:
         profiling_dic["measure"] = -1
 
-    num_qubits_metric = NumQubitsMetric(meas_behavior, profiling_dic)
+    num_qubits_metric = NumQubitsMetric(meas_behavior, profiling_dic, max_allocations)
     profiling_eqn_evaluator = make_profiling_eqn_evaluator(num_qubits_metric)
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
@@ -216,7 +287,7 @@ def get_num_qubits_profiler(
     return num_qubits_profiler, None
 
 
-def simulate_num_qubits(jaspr: Jaspr, *_, **__) -> int:
+def simulate_num_qubits(jaspr: Jaspr, *_, **__) -> dict:
     """Simulate num_qubits metric via actual simulation."""
 
     raise NotImplementedError(
