@@ -85,6 +85,16 @@ def test_count_ops():
 
     assert main(state_prep) == {"measure": 3}
 
+    # Test same type - different shape caching behavior
+
+    @count_ops(meas_behavior="0")
+    def main(i: BigInteger):
+        r = QuantumModulus(i)
+        r[:] = 1
+
+    main(BigInteger.create_static(1, 1))
+    main(BigInteger.create_static(5, 2))
+
     # Test https://github.com/eclipse-qrisp/Qrisp/issues/281
     @register_pytree_node_class
     @dataclass(frozen=True)
@@ -132,3 +142,4 @@ def test_count_ops():
             return
         else:
             assert False
+

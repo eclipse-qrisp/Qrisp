@@ -269,13 +269,17 @@ def count_ops(meas_behavior: str | Callable) -> Callable:
                 function.jaspr_dict = {}
 
             signature = tuple(type(arg) for arg in args)
-            jaspr = function.jaspr_dict.get(signature)
+            shape_signature = tuple(
+                arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape")
+            )
+            hash_key = (signature, shape_signature, hash(meas_behavior))
 
-            if jaspr is None:
-                jaspr = make_jaspr(function)(*args)
-                function.jaspr_dict[signature] = jaspr
+            if hash_key not in function.jaspr_dict:
+                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
-            return jaspr.count_ops(*args, meas_behavior=meas_behavior)
+            return function.jaspr_dict[hash_key].count_ops(
+                *args, meas_behavior=meas_behavior
+            )
 
         return ops_counter
 
@@ -394,13 +398,15 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
                 function.jaspr_dict = {}
 
             signature = tuple(type(arg) for arg in args)
-            jaspr = function.jaspr_dict.get(signature)
+            shape_signature = tuple(
+                arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape")
+            )
+            hash_key = (signature, shape_signature, hash(meas_behavior))
 
-            if jaspr is None:
-                jaspr = make_jaspr(function)(*args)
-                function.jaspr_dict[signature] = jaspr
+            if hash_key not in function.jaspr_dict:
+                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
-            return jaspr.depth(
+            return function.jaspr_dict[hash_key].depth(
                 *args, meas_behavior=meas_behavior, max_qubits=max_qubits
             )
 
@@ -576,13 +582,15 @@ def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Ca
                 function.jaspr_dict = {}
 
             signature = tuple(type(arg) for arg in args)
-            jaspr = function.jaspr_dict.get(signature)
+            shape_signature = tuple(
+                arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape")
+            )
+            hash_key = (signature, shape_signature, hash(meas_behavior))
 
-            if jaspr is None:
-                jaspr = make_jaspr(function)(*args)
-                function.jaspr_dict[signature] = jaspr
+            if hash_key not in function.jaspr_dict:
+                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
-            return jaspr.num_qubits(
+            return function.jaspr_dict[hash_key].num_qubits(
                 *args, meas_behavior=meas_behavior, max_allocations=max_allocations
             )
 
