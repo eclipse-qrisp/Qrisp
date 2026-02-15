@@ -54,6 +54,22 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
 
         \ket{0} \equiv \ket{q_0 = 0, q_1 = 0}, \quad \ket{1} \equiv \ket{q_0 = 1, q_1 = 0}, \dotsc
 
+    .. note::
+
+        This primitive is not yet compatible with QuantumEnviroments
+        such as ``invert`` or ``control`` in jasp mode.
+        Trying to use it within such environments, for example by writing:
+
+        ::
+
+            from qrisp.environments import invert
+
+            with invert():
+                prepare(...)
+
+        currently leads to an error.
+
+
     Parameters
     ----------
     qv : QuantumVariable
