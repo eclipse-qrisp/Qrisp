@@ -58,24 +58,14 @@ h3:not(#hero h3) {
     box-shadow: 0 20px 60px rgba(10, 22, 50, 0.3);
 }
 
-/* Animated grid overlay */
-#hero::before {
-    content: '';
+/* Graph network canvas overlay */
+#hero-graph-canvas {
     position: absolute;
-    inset: -50%;
-    width: 200%;
-    height: 200%;
-    background-image:
-        linear-gradient(rgba(100, 180, 255, 0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(100, 180, 255, 0.04) 1px, transparent 1px);
-    background-size: 48px 48px;
-    animation: heroGrid 20s linear infinite;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
-}
-
-@keyframes heroGrid {
-    0% { transform: translate(0, 0); }
-    100% { transform: translate(48px, 48px); }
+    z-index: 1;
 }
 
 /* Accent glow — top right */

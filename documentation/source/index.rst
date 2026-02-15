@@ -13,11 +13,12 @@
     <link rel="stylesheet" href="./_static/css/frontpage.css">
 
     <div id="hero">
+        <canvas id="hero-graph-canvas"></canvas>
         <div class="hero-orb-secondary"></div>
         <div id="hero-left">
             <img alt="./_static/eclipse_font.png" class="align-bottom-left scaled-image" src="./_static/eclipse_font.png" width="109" height="25">
             <h2 style="font-size: 68px; font-weight: 800; margin: -0.4rem auto 0;">Qrisp</h2>
-            <h3 style="font-weight: 600; margin-top: 0;">The next generation of quantum algorithm development</h3>
+            <h3 style="font-weight: 600; margin-top: 0;">The next generation of quantum <br> algorithm development</h3>
             <p>Qrisp is a high-level programming language for creating and compiling quantum algorithms. Its structured programming model enables scalable development and maintenance — with JAX integration for hybrid quantum-classical workflows.</p>
 
             <div class="homepage-button-container">
@@ -102,27 +103,100 @@
 
     </div>  <!-- End Hero Right -->
     </div>
-    
-.. raw:: html
 
-    <div class="stats-strip">
-        <div class="stat-item">
-            <span class="stat-number">Open Source</span>
-            <span class="stat-label">Eclipse Foundation Project</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-number">100+</span>
-            <span class="stat-label">Qubit Simulation</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-number">JAX</span>
-            <span class="stat-label">Hybrid Integration</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-number">Multi-Backend</span>
-            <span class="stat-label">Hardware Agnostic</span>
-        </div>
-    </div>
+    <script>
+    (function() {
+        const canvas = document.getElementById('hero-graph-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const hero = document.getElementById('hero');
+
+        function resize() {
+            const rect = hero.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+            ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+        }
+
+        // Generate random nodes
+        const NUM_NODES = 80;
+        const CONNECTION_DIST = 180;
+        let nodes = [];
+
+        function initNodes() {
+            const w = hero.offsetWidth;
+            const h = hero.offsetHeight;
+            nodes = [];
+            for (let i = 0; i < NUM_NODES; i++) {
+                nodes.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    vx: (Math.random() - 0.5) * 0.2,
+                    vy: (Math.random() - 0.5) * 0.2,
+                    r: 1 + Math.random() * 1.5,
+                    brightness: 0.15 + Math.random() * 0.25
+                });
+            }
+        }
+
+        function draw() {
+            const w = hero.offsetWidth;
+            const h = hero.offsetHeight;
+            ctx.clearRect(0, 0, w, h);
+
+            // Update positions
+            for (const n of nodes) {
+                n.x += n.vx;
+                n.y += n.vy;
+                if (n.x < 0 || n.x > w) n.vx *= -1;
+                if (n.y < 0 || n.y > h) n.vy *= -1;
+                n.x = Math.max(0, Math.min(w, n.x));
+                n.y = Math.max(0, Math.min(h, n.y));
+            }
+
+            // Draw connections
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const dx = nodes[i].x - nodes[j].x;
+                    const dy = nodes[i].y - nodes[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < CONNECTION_DIST) {
+                        const alpha = (1 - dist / CONNECTION_DIST) * 0.25;
+                        ctx.beginPath();
+                        ctx.moveTo(nodes[i].x, nodes[i].y);
+                        ctx.lineTo(nodes[j].x, nodes[j].y);
+                        ctx.strokeStyle = 'rgba(120, 180, 255, ' + alpha + ')';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Draw nodes
+            for (const n of nodes) {
+                // Glow
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, n.r * 2.5, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(100, 170, 255, ' + (n.brightness * 0.06) + ')';
+                ctx.fill();
+                // Core
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(150, 200, 255, ' + n.brightness + ')';
+                ctx.fill();
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        resize();
+        initNodes();
+        draw();
+        window.addEventListener('resize', function() { resize(); initNodes(); });
+    })();
+    </script>
 
 Key Features
 ============
