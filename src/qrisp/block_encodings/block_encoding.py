@@ -737,7 +737,7 @@ class BlockEncoding:
         r"""
         Measures the expectation value of the operator using the Hadamard test protocol.
 
-        For a block-encoded operator $A$ and a state $\ket{\psi}$, 
+        For a block-encoded **Hermitian** operator $A$ and a state $\ket{\psi}$, 
         this method measures the expectation value $\langle\psi|A|\psi\rangle$.
 
         Parameters
@@ -957,7 +957,7 @@ class BlockEncoding:
         r"""
         Returns a BlockEncoding representing the `qubitization walk operator <https://quantum-journal.org/papers/q-2019-07-12-163/>`_.
 
-        For a block-encoded operator $A$ with normalization factor $\alpha$,
+        For a block-encoded **Hermitian** operator $A$ with normalization factor $\alpha$,
         this method returns a BlockEncoding of the qubitization walk operator $W$
         satisfying $W^k=T_k(A/\alpha)$ where $T_k$ is the $k$-Chebyshev polynomial of the first kind.
 
@@ -971,7 +971,7 @@ class BlockEncoding:
 
         If the block-encoding unitary $U$ is Hermitian (i.e., $U^2=\mathbb I$), then $W=R U$ where $R = (2\ket{0}_a\bra{0}_a - \mathbb I)$
         is the reflection around the state $\ket{0}_a$ of the ancilla variables.
-        Otherwise, $W = R \tilde{U}$ where $\tilde{U} = (\ket{0}\bra{1} \otimes U) + (\ket{1}\bra{0} \otimes U^{\dagger})$
+        Otherwise, $W = R \tilde{U}$ where $\tilde{U} = (H \otimes \mathbb I)(\ket{0}\bra{0} \otimes U) + (\ket{1}\bra{1} \otimes U^{\dagger})(H \otimes \mathbb I)$
         is a Hermitian block-encoding of $A$ requiring one additional ancilla qubit.
 
         Returns
@@ -1022,18 +1022,27 @@ class BlockEncoding:
                 is_hermitian=True,
             )
         else:
-            # W = (2*|0><0| - I) U_tilde, U_tilde = (|0><1| ⊗ U) + (|1><0| ⊗ U†) is hermitian
+            # W = (2*|0><0| - I) U_tilde, U_tilde = (H ⊗ I)(|0><0| ⊗ U) + (|1><1| ⊗ U†)(H ⊗ I) is Hermitian
+            # block-encoding of A=(A+A†)/2 if A is Hermitian.
+            # We conjugate by (H ⊗ I) to achieve that the new ancilla is initialized and projected in |0>,
+            # i.e., A is in the upper left block.
+            # A more general Hermitization is:
+            # W = C0-(2*|0><0| - I) C1-(2*|0><0| - I) U_tilde 
+            # C0-(2*|0><0| - I) performs reflection of args[0] beign |0>
+            # C1-(2*|0><0| - I) performs reflection of args[0] beign |1>
+            # U_tilde = (|0><1| ⊗ U) + (|1><0| ⊗ U†) is Hermitian 
+            # In this case, the new ancilla is initialized and projected in |1>,
+            # i.e., A is not in the upper left block.
             def new_unitary(*args):
                 with conjugate(h)(args[0]):
+                    # (|0><0| ⊗ U)
                     with control(args[0], ctrl_state=0):
                         self.unitary(*args[1:])
-
+                    # (|1><1| ⊗ U†)
                     with control(args[0], ctrl_state=1):
                         with invert():
                             self.unitary(*args[1:])
-
-                    x(args[0])
-
+                
                 reflection(args[0 : 1 + m])
 
             new_anc_templates = [QuantumBool().template()] + self._anc_templates
@@ -1049,7 +1058,7 @@ class BlockEncoding:
         r"""
         Returns a BlockEncoding representing $k$-th Chebyshev polynomial of the first kind applied to the operator.
 
-        For a block-encoded operator $A$ with normalization factor $\alpha$,
+        For a block-encoded **Hermitian** operator $A$ with normalization factor $\alpha$,
         this method returns a BlockEncoding of the rescaled operator $T_k(A)$ if ``rescale=True``,
         or $T_k(A/\alpha)$ if ``rescale=False``.
 
@@ -1709,7 +1718,7 @@ class BlockEncoding:
         r"""
         Returns a BlockEncoding approximating the matrix inversion of the operator.
 
-        For a block-encoded matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
+        For a block-encoded **Hermitian** matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
         operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$.
         The inversion is implemented via Quantum Eigenvalue Transformation (QET)
         using a polynomial approximation of $1/x$ over the domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$.
@@ -1920,7 +1929,7 @@ class BlockEncoding:
         r"""
         Returns a BlockEncoding representing a polynomial transformation of the operator.
 
-        For a block-encoded matrix $A$ and a (complex) polynomial $p(z)$, this method returns
+        For a block-encoded **Hermitian** matrix $A$ and a (complex) polynomial $p(z)$, this method returns
         a BlockEncoding of the operator $p(A)$. This is achieved using
         Generalized Quantum Eigenvalue Transformation (GQET).
 

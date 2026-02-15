@@ -21,7 +21,7 @@ The Abstraction Layer for Quantum Linear Algebra
 
 
 Qrisp’s :ref:`BlockEncoding` provides a high-level programming abstraction for **Quantum Linear Algebra**. 
-The core strength of this interface lies in its ability to translate classical matrix operations for **Hermitian matrices** directly into their quantum equivalents, 
+The core strength of this interface lies in its ability to translate classical matrix operations for **non-unitary matrices** directly into their quantum equivalents, 
 significantly lowering the barrier to entry for quantum algorithm development.
 
 Instead of navigating the intricacies of superposition and entanglement,
@@ -33,7 +33,7 @@ While Qrisp currently offers versatile, general-purpose constructors, additional
 Once encoded, these operators can be manipulated using two powerful paradigms:
 
 - **Matrix Arithmetic:** Block-encodings can be added and multiplied, enabling the construction of complex Hamiltonians or large-scale linear systems from simpler building blocks. 
-  This algebraic flexibility allows for the modular assembly of composite operators.
+  This algebraic flexibility allows for the modular construction of composite operators.
 
 - **Spectral Transformation & Signal Processing:** Beyond simple arithmetic, the spectral properties of an encoded operator can be directly transformed. 
   This allows for the application of non-linear functions to an operator's spectrum, enabling complex operations such as matrix inversion or time evolution. 

@@ -34,7 +34,7 @@ def GQET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", k
     r"""
     Returns a BlockEncoding representing a polynomial transformation of the operator via `Generalized Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
 
-    For a block-encoded operator $H$ and a (complex) polynomial $p(z)$, this method returns 
+    For a block-encoded **Hermitian** operator $H$ and a (complex) polynomial $p(z)$, this method returns 
     a BlockEncoding of the operator $p(H)$.
 
     The Quantum Eigenvalue Transform is described as follows:
