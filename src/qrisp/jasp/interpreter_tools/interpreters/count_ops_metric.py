@@ -185,7 +185,17 @@ class CountOpsMetric(BaseMetric):
 
         # Trivial behavior: return the last argument (the counting array).
         return invalues[-1]
-
+    
+    def handle_parity(self, invalues, eqn, context_dic):
+        """Handle the `jasp.parity` primitive"""
+        # Parity is a classical operation on measurement results
+        # Compute XOR and handle expectation
+        expectation = eqn.params.get("expectation", 0)
+        result = sum(invalues) % 2
+        
+        result = result ^ expectation
+        
+        return jnp.array(result, dtype = bool)
 
 def extract_count_ops(res: Tuple, jaspr: Jaspr, profiling_dic: dict) -> dict:
     """Extract depth from the profiling result."""

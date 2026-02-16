@@ -25,12 +25,16 @@ from jax.tree_util import tree_flatten, tree_unflatten
 
 from qrisp.jasp import (
     eval_jaxpr,
+    flatten_environments,
+    cond_to_cl_control,
     extract_invalues,
     flatten_environments,
     insert_outvalues,
 )
+from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive, ParityOperation
+from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement
+from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive
 from qrisp.jasp.jasp_expression import collect_environments, invert_jaspr
-from qrisp.jasp.primitives import AbstractQuantumCircuit
 
 
 class Jaspr(ClosedJaxpr):

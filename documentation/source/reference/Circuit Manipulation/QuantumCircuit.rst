@@ -56,6 +56,7 @@ Interfacing
    QuantumCircuit.to_qiskit
    QuantumCircuit.to_pennylane
    QuantumCircuit.to_pytket
+   QuantumCircuit.to_stim
    QuantumCircuit.from_qasm_str
    QuantumCircuit.from_qasm_file
    QuantumCircuit.to_cirq
@@ -94,6 +95,7 @@ Operation application methods
    :toctree: generated/
    
    QuantumCircuit.measure
+   QuantumCircuit.parity
    QuantumCircuit.cx
    QuantumCircuit.cy
    QuantumCircuit.cz

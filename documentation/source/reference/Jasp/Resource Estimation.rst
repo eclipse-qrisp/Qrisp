@@ -12,6 +12,8 @@ circuit.
 Gate count
 ----------
 
+.. _count_ops:
+
 .. autofunction:: count_ops
 
 
