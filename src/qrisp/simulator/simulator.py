@@ -212,7 +212,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         return res
 
 
-@njit(cache = True)
+@njit(cache=True)
 def gen_res_dict(samples):
 
     hist = np.histogram(samples, np.arange(np.max(samples) + 2))[0]

@@ -892,7 +892,7 @@ class QuantumCircuit:
             «      └─────────┘└────┘└─────────┘
 
         One can also transpile a specific composite gate in a QuantumCircuit, if desired. A Quantum
-        Phase Estimation circuit also contains a `QFT_dg` gate. 
+        Phase Estimation circuit also contains a `QFT_dg` gate.
 
         >>> from qrisp import p, QuantumVariable, QPE, multi_measurement, h
         >>> import numpy as np
@@ -903,11 +903,11 @@ class QuantumCircuit:
         >>>
         >>>     p(x*2*np.pi, qv[0])
         >>>     p(y*2*np.pi, qv[1])
-        >>> 
+        >>>
         >>> qv = QuantumVariable(2)
         >>>
         >>> h(qv)
-        >>> 
+        >>>
         >>> res = QPE(qv, U, precision = 3)
         >>>
         >>> print(qv.qs.compile())
@@ -921,11 +921,11 @@ class QuantumCircuit:
         >>>        return True
         >>>    else:
         >>>        return False
-        >>>    
+        >>>
         >>> transpiled_qc = test_circuit.transpile(transpile_predicate = transpile_predicate)
         >>>
         >>> print(transpiled_qc)
-        
+
 
         """
         from qrisp.circuit import transpile
@@ -1658,33 +1658,33 @@ class QuantumCircuit:
         return backend.run(self, shots)
 
     def statevector_array(self):
-        """
-        Performs a simulation of the statevector of self and returns a numpy array of
-        complex numbers.
+        r"""
+        Simulate the circuit statevector and return it as a NumPy array of complex
+        amplitudes.
 
         .. note::
 
-            Qrisps qubit ordering convention is reversed when compared to Qiskit,
-            because of simulation efficiency reasons.
-            As a rule of thumb you can remember:
+            The returned array uses **big-endian index ordering**. The array index
+            ``i`` maps to qubit values as
 
-            The statevector array of the following circuit has the amplitude 1 at the
-            index ``0010 = 2``
+            .. math::
 
-            .. code-block:: none
+                i = \sum_{k=0}^{n-1} q_k \, 2^{\,n-1-k},
 
-                qb.0: ─────
+            so :math:`q_0` is the most significant qubit. For two qubits this yields:
 
-                qb.1: ─────
-                      ┌───┐
-                qb.2: ┤ X ├
-                      └───┘
-                qb.3: ─────
+            - ``i = 0``  → :math:`|q_0=0, q_1=0\rangle`
+            - ``i = 1``  → :math:`|q_0=0, q_1=1\rangle`
+            - ``i = 2``  → :math:`|q_0=1, q_1=0\rangle`
+            - ``i = 3``  → :math:`|q_0=1, q_1=1\rangle`
+
+            This differs from Qrisp’s internal little-endian convention (only the
+            index-to-basis mapping changes).
 
         Returns
         -------
         numpy.ndarray
-            The statevector of this circuit.
+            The statevector of this circuit in big-endian order.
 
         Examples
         --------
@@ -1703,7 +1703,23 @@ class QuantumCircuit:
                 0.24999997+0.j, -0.24999997+0.j,  0.24999997+0.j, -0.24999997+0.j],
               dtype=complex64)
 
+        In this example, we create a :ref:`QuantumFloat` and prepare the normalized state
+        $\sum_{i=0}^3 \tilde b_i\ket{i}$ for $\tilde b=(0,1,2,3)/\sqrt{14}$.
 
+        >>> import numpy as np
+        >>> from qrisp import QuantumFloat
+        >>> b = np.array([0, 1, 2, 3], dtype=float)
+        >>> b /= np.linalg.norm(b)
+        >>> qf = QuantumFloat(2)
+        >>> qf.init_state(b)
+        >>> sv_array = qf.qs.statevector_array()
+        >>> print(f"b[1]: {b[1]:.6f} -> {sv_array[2]:.6f}")
+        b[1]: 0.267261 -> 0.267261-0.000000j
+        >>> print(f"b[2]: {b[2]:.6f} -> {sv_array[1]:.6f}")
+        b[2]: 0.534522 -> 0.534522-0.000000j
+
+        Here ``sv_array[2]`` corresponds to :math:`\ket{q_0=1, q_1=0}` and
+        ``sv_array[1]`` to :math:`\ket{q_0=0, q_1=1}`.
         """
         from qrisp.simulator import statevector_sim
 
@@ -2032,7 +2048,7 @@ class QuantumCircuit:
         from qrisp.interface import convert_to_cirq
 
         return convert_to_cirq(self)
-    
+
     # Several methods to apply the standard operation defined in standard_operations.py
     def measure(self, qubits, clbits=None):
         """
