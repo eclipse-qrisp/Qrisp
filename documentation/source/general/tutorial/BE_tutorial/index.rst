@@ -117,3 +117,12 @@ Most importantly, we will show how the BlockEncoding class leverages QSP to make
    * - ``.sim()``
      - Simulates Hamiltonian evolution $e^{-iHt}$
      - Jacobi-Anger expansion (Bessel functions)
+
+.. currentmodule:: qrisp
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   
+   BE_vol1.ipynb
+   BE_vol2.ipynb
