@@ -98,6 +98,11 @@ class NumQubitsMetric(BaseMetric):
         """Return the initial metric value."""
         return self._initial_metric
 
+    @property
+    def max_allocations(self) -> int:
+        """Return the maximum number of qubit allocations/deallocations supported by the profiler."""
+        return self._max_allocations
+
     def handle_create_qubits(self, invalues, eqn, context_dic):
 
         size, metric_data = invalues

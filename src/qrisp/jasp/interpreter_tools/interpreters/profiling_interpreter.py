@@ -261,6 +261,8 @@ class BaseMetric(ABC):
         }
 
 
+# TODO: We should refactor the way in which parameters are passed to the compiled profiler.
+#
 # This reconstructs the metric inside the cached function so caching not keyed
 # by the metric object identity.
 @lru_cache(int(1e5))
@@ -270,6 +272,7 @@ def get_compiled_profiler(
     zipped_profiling_dic,
     meas_behavior,
     max_qubits=None,
+    max_allocations=None,
 ):
     """Get a compiled profiler for a given Jaspr and metric."""
 
@@ -278,6 +281,7 @@ def get_compiled_profiler(
         "profiling_dic": profiling_dic,
         "meas_behavior": meas_behavior,
         **({"max_qubits": max_qubits} if max_qubits is not None else {}),
+        **({"max_allocations": max_allocations} if max_allocations is not None else {}),
     }
 
     metric = metric_cls(**metric_kwargs)
@@ -392,6 +396,7 @@ def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
             zipped_profiling_dic = tuple(metric.profiling_dic.items())
             meas_behavior = metric.meas_behavior
             max_qubits = getattr(metric, "max_qubits", None)
+            max_allocations = getattr(metric, "max_allocations", None)
 
             profiler = get_compiled_profiler(
                 eqn.params["jaxpr"],
@@ -399,6 +404,7 @@ def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
                 zipped_profiling_dic,
                 meas_behavior,
                 max_qubits,
+                max_allocations,
             )
 
             outvalues = profiler(*invalues)
