@@ -211,7 +211,7 @@ def GQSP(
             \tilde{U} = \begin{pmatrix} \left(\frac{A}{\alpha}\right)^k & * \\ * & * \end{pmatrix}
 
         In order to still apply polynomials also to them, we need to call the qubitization
-        method an transform the polynomial into Chebychev basis. More to that in 
+        method and transform the polynomial into Chebychev basis. More to that in 
         the GQSP :ref:`tutorial`.
 
     """
