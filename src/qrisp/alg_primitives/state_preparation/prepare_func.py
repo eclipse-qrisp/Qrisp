@@ -74,6 +74,8 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
 
         currently results in an error.
 
+        Furthermore, it is currently not possible to prepare a state by providing a
+        quantum variable with 64 or more qubits.
 
     Parameters
     ----------
