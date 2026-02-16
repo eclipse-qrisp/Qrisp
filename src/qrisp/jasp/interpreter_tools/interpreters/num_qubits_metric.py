@@ -243,16 +243,17 @@ def extract_num_qubits(res: Tuple, jaspr: Jaspr, _) -> dict:
         for i in range(int(allocations_counter_index))
     }
     dict_values = alloc_dict.values()
+
     total_allocated = sum(v for v in dict_values if v > 0)
     total_deallocated = -sum(v for v in dict_values if v < 0)
     peak_allocations = _peak_allocated_qubits(dict_values)
-    qubits_still_allocated = sum(dict_values)
+    finally_allocated = sum(dict_values)
 
     return {
         "total_allocated": total_allocated,
         "total_deallocated": total_deallocated,
         "peak_allocations": peak_allocations,
-        "qubits_still_allocated": qubits_still_allocated,
+        "finally_allocated": finally_allocated,
     }
 
 

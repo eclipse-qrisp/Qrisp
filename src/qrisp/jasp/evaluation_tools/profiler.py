@@ -419,23 +419,25 @@ def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Ca
     """
     Decorator to track qubit allocation and deallocation events during a quantum computation.
 
-    This decorator compiles a Jasp-compatible quantum function into a classical
-    function that tracks the number of qubits allocated and deallocated throughout the computation.
+    This decorator compiles a Jasp-compatible quantum function into a resource-analysis
+    function that tracks qubit allocation and deallocation events throughout the computation.
 
-    The counter is:
+    An internal allocation counter is updated as follows:
 
     - increased whenever qubits are allocated (e.g., via ``QuantumVariable`` creation),
     - decreased whenever qubits are explicitly deleted (e.g., via ``qv.delete()``),
 
-    and the decorated function returns a dictionary containing all the allocation and deallocation events.
-    The keys of the dictionary are of the form ``"allocX"`` where ``X`` is a unique
-    identifier for each allocation or deallocation event, and the values are the number
-    of qubits allocated (positive) or deallocated (negative) at that event.
-    The dictionary returned preserves the execution order of events.
+    The decorated function returns a dictionary containing information about
+    all allocation and deallocation events.
 
-    From this information, users can reconstruct several resource metrics,
-    such as the maximum number of qubits allocated at any point in time,
-    or the final number of qubits still allocated at the end of the computation (see examples).
+    These are:
+
+    - ``total_allocated``: the total number of qubits allocated during the computation.
+    - ``total_deallocated``: the total number of qubits deallocated during the computation.
+    - ``peak_allocations``: the maximum number of qubits allocated at any point during the computation.
+    - ``finally_allocated``: the number of qubits still allocated at the end of the computation.
+
+    See the examples below for more details on how to interpret these values.
 
     Parameters
     ----------
@@ -451,8 +453,8 @@ def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Ca
     Returns
     -------
     Callable
-        A decorator producing a function that returns a dictionary
-        with the number of qubits allocated and deallocated at each event.
+        A decorator producing a function that returns a dictionary containing aggregated
+        statistics about allocation and deallocation events during the computation.
 
     Examples
     --------
@@ -477,11 +479,15 @@ def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Ca
                 qv3 = QuantumFloat(n3)
                 h(qv3[0])
 
-        print(circuit(2, 3, 4))  # Output: {'alloc1': 2, 'alloc2': 3}
+        print(circuit(2, 3, 4))
+        # Output:
+        # {'total_allocated': 5, 'total_deallocated': 0,
+        # 'peak_allocations': 5, 'finally_allocated': 5}
 
     Here, the measurement of the first qubit determines whether we allocate 3 or 4 additional qubits.
-    The output dictionary contains two allocation events, one for the initial allocation of 2 qubits,
-    and one for the conditional allocation of either 3 or 4 qubits.
+    The output dictionary contains information about the total number of allocated qubits (5),
+    the total number of deallocated qubits (0), the peak number of allocated qubits
+    at any point during the computation (5), and the number of qubits still allocated at the end of the computation (5).
     If we change the measurement behavior to ``"1"``, we get a different output.
 
     Note that deallocation affects the final count:
@@ -497,7 +503,10 @@ def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Ca
             qv = QuantumFloat(n)
             h(qv[0])
 
-        print(circuit(4))  # Output: {'alloc1': 8, 'alloc2': -8, 'alloc3': 4}
+        print(circuit(4))
+        # Output:
+        # {'total_allocated': 12, 'total_deallocated': 8,
+        # 'peak_allocations': 8, 'finally_allocated': 4}
 
     Here, we first allocate 8 qubits, then deallocate them, and finally allocate 4 more qubits.
 
@@ -508,7 +517,7 @@ def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Ca
         from qrisp import *
 
         @num_qubits(meas_behavior="1")
-        def workflow(num_qubits_input):
+        def circuit(num_qubits_input):
 
             list_of_qvs = []
 
@@ -521,49 +530,24 @@ def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Ca
             h(qv_2[0])
             m = measure(qv_2[0])
 
+            qv_2.delete()
+
             with control(m == 1):
                 qv4 = QuantumFloat(10)
                 h(qv4[0])
                 qv4.delete()
 
-            qv_2.delete()
-
             for i in range(2):
                 list_of_qvs[i].delete()
 
-        print(workflow(8))
+        print(circuit(8))
         # Output:
-        # {'alloc1': 8, 'alloc2': 8, 'alloc3': 1, 'alloc4': 10,
-        # 'alloc5': -10, 'alloc6': -1, 'alloc7': -8, 'alloc8': -8}
+        # {'total_allocated': 27, 'total_deallocated': 27,
+        # 'peak_allocations': 26, 'finally_allocated': 0}
 
-    We can retrieve all the information about qubit allocation and deallocation events from the output dictionary,
-    which allows us to reconstruct the number of qubits allocated at any point in time.
-
-    For example, we can compute the peak number of qubits allocated during the computation as follows:
-
-    ::
-
-        def peak_allocated_qubits(alloc_dict: dict) -> int:
-
-            current = 0
-            peak = 0
-            for delta in alloc_dict.values():
-                current += delta
-                peak = max(peak, current)
-            return peak
-
-        peak_allocated_qubits(workflow(8))  # Output: 27
-
-    Or, we can compute the number of qubits still allocated at the end of the computation as follows:
-
-    ::
-
-        def qubits_still_allocated(alloc_dict: dict) -> int:
-            return sum(alloc_dict.values())
-
-        qubits_still_allocated(workflow(8))  # Output: 0
-
-    And so on.
+    In this example, the peak number of allocated qubits is different from the
+    total allocated because ``qv_2`` is deleted before the subsequent allocation of ``qv4``.
+    The final number of allocated qubits is 0 because all allocated qubits are eventually deallocated.
 
     .. warning::
 

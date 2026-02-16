@@ -48,7 +48,7 @@ class TestNumQubitsSimple:
             "total_allocated": num_qubits_input,
             "total_deallocated": 0,
             "peak_allocations": num_qubits_input,
-            "qubits_still_allocated": num_qubits_input,
+            "finally_allocated": num_qubits_input,
         }
         assert main(num_qubits_input) == expected_dic
 
@@ -77,7 +77,7 @@ class TestNumQubitsSimple:
             "total_allocated": expected_entry,
             "total_deallocated": 0,
             "peak_allocations": expected_entry,
-            "qubits_still_allocated": expected_entry,
+            "finally_allocated": expected_entry,
         }
         assert main(num_qubits_input) == expected_dic
 
@@ -95,7 +95,7 @@ class TestNumQubitsSimple:
             "total_allocated": num_qubits_input,
             "total_deallocated": num_qubits_input,
             "peak_allocations": num_qubits_input,
-            "qubits_still_allocated": 0,
+            "finally_allocated": 0,
         }
         assert main(num_qubits_input) == expected_dic
 
@@ -115,7 +115,7 @@ class TestNumQubitsSimple:
             "total_allocated": num_qubits_input * 2,
             "total_deallocated": num_qubits_input,
             "peak_allocations": num_qubits_input,
-            "qubits_still_allocated": num_qubits_input,
+            "finally_allocated": num_qubits_input,
         }
         assert main(num_qubits_input) == expected_dic
 
@@ -136,7 +136,7 @@ class TestNumQubitsSimple:
             "total_allocated": num_qubits_input + (num_qubits_input + 1),
             "total_deallocated": num_qubits_input + (num_qubits_input + 1),
             "peak_allocations": num_qubits_input + (num_qubits_input + 1),
-            "qubits_still_allocated": 0,
+            "finally_allocated": 0,
         }
         assert main(num_qubits_input) == expected_dic
 
@@ -152,7 +152,7 @@ class TestNumQubitsSimple:
             "total_allocated": 0,
             "total_deallocated": 0,
             "peak_allocations": 0,
-            "qubits_still_allocated": 0,
+            "finally_allocated": 0,
         }
         assert main(num_qubits_input) == expected_dic
 
@@ -174,7 +174,7 @@ class TestNumQubitsSimple:
             "total_allocated": num_qubits_input,
             "total_deallocated": num_qubits_input,
             "peak_allocations": num_qubits_input,
-            "qubits_still_allocated": 0,
+            "finally_allocated": 0,
         }
         assert main(num_qubits_input) == expected_dic
 
@@ -218,7 +218,7 @@ class TestNumQubitsControlFlow:
             "total_allocated": peak_alloc,
             "total_deallocated": 0,
             "peak_allocations": peak_alloc,
-            "qubits_still_allocated": peak_alloc,
+            "finally_allocated": peak_alloc,
         }
         res = main(num_qubits_input, num_qubits_input2, num_qubits_input3)
         assert res == expected_dic
@@ -239,7 +239,7 @@ class TestNumQubitsControlFlow:
             "total_allocated": expected_alloc,
             "total_deallocated": 0,
             "peak_allocations": expected_alloc,
-            "qubits_still_allocated": expected_alloc,
+            "finally_allocated": expected_alloc,
         }
         res = circuit_loop(num_qubits_input, num_iterations)
         assert res == expected_dic
@@ -308,7 +308,7 @@ class TestNumQubitsControlFlow:
             "total_allocated": num_qubits_input * num_iterations + 1 + 10,
             "total_deallocated": num_qubits_input * num_iterations + 1,
             "peak_allocations": num_qubits_input * num_iterations + 10,
-            "qubits_still_allocated": 10,
+            "finally_allocated": 10,
         }
         res = main(num_qubits_input)
         assert res == expected_dic
@@ -332,7 +332,7 @@ class TestNumQubitsControlFlow:
             "total_allocated": num_qubits_input + 2 * num_qubits_input,
             "total_deallocated": 2 * num_qubits_input,
             "peak_allocations": num_qubits_input + 2 * num_qubits_input,
-            "qubits_still_allocated": num_qubits_input,
+            "finally_allocated": num_qubits_input,
         }
         res = circuit_branch_del(num_qubits_input)
         assert res == expected_dic
@@ -352,7 +352,7 @@ class TestNumQubitsControlFlow:
             "total_allocated": num_qubits_input + 2 * num_qubits_input,
             "total_deallocated": 0,
             "peak_allocations": num_qubits_input + 2 * num_qubits_input,
-            "qubits_still_allocated": num_qubits_input + 2 * num_qubits_input,
+            "finally_allocated": num_qubits_input + 2 * num_qubits_input,
         }
         res = circuit_branch_del2(num_qubits_input)
         assert res == expected_dic
