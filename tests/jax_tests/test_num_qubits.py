@@ -44,7 +44,13 @@ class TestNumQubitsSimple:
             qf = QuantumFloat(num_qubits_input)
             h(qf[0])
 
-        assert main(num_qubits_input) == {"alloc1": num_qubits_input}
+        expected_dic = {
+            "total_allocated": num_qubits_input,
+            "total_deallocated": 0,
+            "peak_allocations": num_qubits_input,
+            "qubits_still_allocated": num_qubits_input,
+        }
+        assert main(num_qubits_input) == expected_dic
 
     @pytest.mark.parametrize("num_qubits_input", [1, 2, 3, 4])
     def test_num_qubits_multiple_create_qubits(self, num_qubits_input):
@@ -61,14 +67,19 @@ class TestNumQubitsSimple:
             h(qf3[0])
             h(qf4[0])
 
-        res = main(num_qubits_input)
+        expected_entry = (
+            num_qubits_input
+            + (num_qubits_input + 1)
+            + (num_qubits_input + 2)
+            + (num_qubits_input + 3)
+        )
         expected_dic = {
-            "alloc1": num_qubits_input,
-            "alloc2": num_qubits_input + 1,
-            "alloc3": num_qubits_input + 2,
-            "alloc4": num_qubits_input + 3,
+            "total_allocated": expected_entry,
+            "total_deallocated": 0,
+            "peak_allocations": expected_entry,
+            "qubits_still_allocated": expected_entry,
         }
-        assert res == expected_dic
+        assert main(num_qubits_input) == expected_dic
 
     def test_num_qubits_delete_qubits(self):
         """Test qubit counting with qubit deletion."""
@@ -79,12 +90,14 @@ class TestNumQubitsSimple:
             h(qv[0])
             qv.delete()
 
-        res = main(4)
+        num_qubits_input = 4
         expected_dic = {
-            "alloc1": 4,
-            "alloc2": -4,
+            "total_allocated": num_qubits_input,
+            "total_deallocated": num_qubits_input,
+            "peak_allocations": num_qubits_input,
+            "qubits_still_allocated": 0,
         }
-        assert res == expected_dic
+        assert main(num_qubits_input) == expected_dic
 
     def test_num_qubits_delete_qubits2(self):
         """Test qubit counting with qubit deletion followed by reallocation."""
@@ -97,45 +110,51 @@ class TestNumQubitsSimple:
             qv = QuantumFloat(num_qubits_input)
             h(qv[0])
 
-        res = main(4)
+        num_qubits_input = 4
         expected_dic = {
-            "alloc1": 4,
-            "alloc2": -4,
-            "alloc3": 4,
+            "total_allocated": num_qubits_input * 2,
+            "total_deallocated": num_qubits_input,
+            "peak_allocations": num_qubits_input,
+            "qubits_still_allocated": num_qubits_input,
         }
-        assert res == expected_dic
+        assert main(num_qubits_input) == expected_dic
 
     def test_num_qubits_all_deleted_in_end(self):
         """Everything deleted before termination => final count is 0."""
 
         @num_qubits(meas_behavior="0")
-        def main(n):
-            a = QuantumFloat(n)
-            b = QuantumFloat(n + 1)
+        def main(num_qubits_input):
+            a = QuantumFloat(num_qubits_input)
+            b = QuantumFloat(num_qubits_input + 1)
             h(a[0])
             h(b[0])
             a.delete()
             b.delete()
 
-        res = main(4)
+        num_qubits_input = 4
         expected_dic = {
-            "alloc1": 4,
-            "alloc2": 5,
-            "alloc3": -4,
-            "alloc4": -5,
+            "total_allocated": num_qubits_input + (num_qubits_input + 1),
+            "total_deallocated": num_qubits_input + (num_qubits_input + 1),
+            "peak_allocations": num_qubits_input + (num_qubits_input + 1),
+            "qubits_still_allocated": 0,
         }
-        assert res == expected_dic
+        assert main(num_qubits_input) == expected_dic
 
     def test_num_qubits_unused_allocation_semantics(self):
         """Test the expected behavior for qubits that are allocated but never used (e.g., no gates, no measurements)."""
 
         @num_qubits(meas_behavior="0")
-        def main(n):
-            _qv = QuantumFloat(n)
+        def main(num_qubits_input):
+            _qv = QuantumFloat(num_qubits_input)
 
-        res = main(4)
-        expected_dic = {}
-        assert res == expected_dic
+        num_qubits_input = 4
+        expected_dic = {
+            "total_allocated": 0,
+            "total_deallocated": 0,
+            "peak_allocations": 0,
+            "qubits_still_allocated": 0,
+        }
+        assert main(num_qubits_input) == expected_dic
 
     def test_num_qubits_alias_delete_counts_once(self):
         """
@@ -144,18 +163,20 @@ class TestNumQubitsSimple:
         """
 
         @num_qubits(meas_behavior="0")
-        def main(n):
-            qv = QuantumFloat(n)
+        def main(num_qubits_input):
+            qv = QuantumFloat(num_qubits_input)
             alias = qv
             h(qv[0])
             alias.delete()
 
-        res = main(4)
+        num_qubits_input = 4
         expected_dic = {
-            "alloc1": 4,
-            "alloc2": -4,
+            "total_allocated": num_qubits_input,
+            "total_deallocated": num_qubits_input,
+            "peak_allocations": num_qubits_input,
+            "qubits_still_allocated": 0,
         }
-        assert res == expected_dic
+        assert main(num_qubits_input) == expected_dic
 
 
 class TestNumQubitsControlFlow:
@@ -189,14 +210,17 @@ class TestNumQubitsControlFlow:
                 qv3 = QuantumFloat(num_qubits_input3)
                 h(qv3[0])
 
-        res = main(num_qubits_input, num_qubits_input2, num_qubits_input3)
-        expected_alloc2 = (
+        expected_alloc = (
             num_qubits_input2 if meas_behavior == always_zero else num_qubits_input3
         )
+        peak_alloc = num_qubits_input + expected_alloc
         expected_dic = {
-            "alloc1": num_qubits_input,
-            "alloc2": expected_alloc2,
+            "total_allocated": peak_alloc,
+            "total_deallocated": 0,
+            "peak_allocations": peak_alloc,
+            "qubits_still_allocated": peak_alloc,
         }
+        res = main(num_qubits_input, num_qubits_input2, num_qubits_input3)
         assert res == expected_dic
 
     def test_num_qubits_loop(self):
@@ -208,14 +232,16 @@ class TestNumQubitsControlFlow:
                 qv = QuantumFloat(num_qubits_input)
                 h(qv[i])
 
-        res = circuit_loop(5, 5)
+        num_qubits_input = 5
+        num_iterations = 5
+        expected_alloc = num_qubits_input * num_iterations
         expected_dic = {
-            "alloc1": 5,
-            "alloc2": 5,
-            "alloc3": 5,
-            "alloc4": 5,
-            "alloc5": 5,
+            "total_allocated": expected_alloc,
+            "total_deallocated": 0,
+            "peak_allocations": expected_alloc,
+            "qubits_still_allocated": expected_alloc,
         }
+        res = circuit_loop(num_qubits_input, num_iterations)
         assert res == expected_dic
 
     def test_delete_qubits_in_loop(self):
@@ -238,6 +264,8 @@ class TestNumQubitsControlFlow:
             h(qv_2[0])
             m = measure(qv_2[0])
 
+            qv_2.delete()
+
             with control(m == 0):
                 # does not matter the size as
                 # it should never be called
@@ -253,39 +281,45 @@ class TestNumQubitsControlFlow:
             # If we try to delete list_of_qvs2 here,
             # we get an Exception `ControlEnvironment with carry value`
 
-            qv_2.delete()
-
             for i in range(num_iterations):
                 list_of_qvs1[i].delete()
 
-        res = main(5)
+        # expected_allocations = {
+        #     # the 4 allocations from the loop
+        #     "alloc1": 5,
+        #     "alloc2": 5,
+        #     "alloc3": 5,
+        #     "alloc4": 5,
+        #     # the allocation before the control flow
+        #     "alloc5": 1,
+        #     # the deletion of qv_2
+        #     "alloc6": -1,
+        #     # the allocation of qv4 in the control flow (since m == 1)
+        #     "alloc7": 10,
+        #     # the 4 deletions from the loop
+        #     "alloc8": -5,
+        #     "alloc9": -5,
+        #     "alloc10": -5,
+        #     "alloc11": -5,
+        # }
+
+        num_qubits_input = 5
         expected_dic = {
-            # the 4 allocations from the loop
-            "alloc1": 5,
-            "alloc2": 5,
-            "alloc3": 5,
-            "alloc4": 5,
-            # the allocation before the control flow
-            "alloc5": 1,
-            # the allocation of qv4 in the control flow (since m == 1)
-            "alloc6": 10,
-            # the deletion of qv_2
-            "alloc7": -1,
-            # the 4 deletions from the loop
-            "alloc8": -5,
-            "alloc9": -5,
-            "alloc10": -5,
-            "alloc11": -5,
+            "total_allocated": num_qubits_input * num_iterations + 1 + 10,
+            "total_deallocated": num_qubits_input * num_iterations + 1,
+            "peak_allocations": num_qubits_input * num_iterations + 10,
+            "qubits_still_allocated": 10,
         }
+        res = main(num_qubits_input)
         assert res == expected_dic
 
     def test_num_qubits_branch_dependent_delete(self):
         """Test qubit counting when deletion is performed in a measurement-dependent branch."""
 
         @num_qubits(meas_behavior=always_zero)
-        def circuit_branch_del(n):
-            qv = QuantumFloat(n)
-            qv_big = QuantumFloat(2 * n)
+        def circuit_branch_del(num_qubits_input):
+            qv = QuantumFloat(num_qubits_input)
+            qv_big = QuantumFloat(2 * num_qubits_input)
             m = measure(qv[0])
 
             with control(m == 0):
@@ -293,12 +327,14 @@ class TestNumQubitsControlFlow:
 
             h(qv[0])
 
-        res = circuit_branch_del(4)
+        num_qubits_input = 4
         expected_dic = {
-            "alloc1": 4,
-            "alloc2": 8,
-            "alloc3": -8,
+            "total_allocated": num_qubits_input + 2 * num_qubits_input,
+            "total_deallocated": 2 * num_qubits_input,
+            "peak_allocations": num_qubits_input + 2 * num_qubits_input,
+            "qubits_still_allocated": num_qubits_input,
         }
+        res = circuit_branch_del(num_qubits_input)
         assert res == expected_dic
 
         @num_qubits(meas_behavior=always_one)
@@ -312,12 +348,13 @@ class TestNumQubitsControlFlow:
 
             h(qv[0])
 
-        res = circuit_branch_del2(4)
         expected_dic = {
-            "alloc1": 4,
-            "alloc2": 8,
-            # no deletion since m == 1
+            "total_allocated": num_qubits_input + 2 * num_qubits_input,
+            "total_deallocated": 0,
+            "peak_allocations": num_qubits_input + 2 * num_qubits_input,
+            "qubits_still_allocated": num_qubits_input + 2 * num_qubits_input,
         }
+        res = circuit_branch_del2(num_qubits_input)
         assert res == expected_dic
 
 

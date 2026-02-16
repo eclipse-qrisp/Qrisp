@@ -215,6 +215,16 @@ class NumQubitsMetric(BaseMetric):
         return metric_data
 
 
+def _peak_allocated_qubits(dict_values) -> int:
+    """Helper function to compute the peak number of allocated qubits from the allocation dictionary."""
+
+    current, peak = 0, 0
+    for delta in dict_values:
+        current += delta
+        peak = max(peak, current)
+    return peak
+
+
 def extract_num_qubits(res: Tuple, jaspr: Jaspr, _) -> dict:
     """Extract the number of allocated and deallocated qubits from the metric result."""
 
@@ -232,8 +242,18 @@ def extract_num_qubits(res: Tuple, jaspr: Jaspr, _) -> dict:
         f"alloc{i+1}": int(allocations_array[i])
         for i in range(int(allocations_counter_index))
     }
+    dict_values = alloc_dict.values()
+    total_allocated = sum(v for v in dict_values if v > 0)
+    total_deallocated = -sum(v for v in dict_values if v < 0)
+    peak_allocations = _peak_allocated_qubits(dict_values)
+    qubits_still_allocated = sum(dict_values)
 
-    return alloc_dict
+    return {
+        "total_allocated": total_allocated,
+        "total_deallocated": total_deallocated,
+        "peak_allocations": peak_allocations,
+        "qubits_still_allocated": qubits_still_allocated,
+    }
 
 
 @lru_cache(int(1e5))
