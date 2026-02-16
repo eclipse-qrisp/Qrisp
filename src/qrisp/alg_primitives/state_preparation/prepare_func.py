@@ -33,7 +33,7 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
     Prepare a quantum state on ``qv`` from a target amplitude vector.
 
     Given a vector :math:`b=(b_0,\dotsc,b_{N-1})` (corresponding to ``target_array``),
-    this routine prepares a state proportional to
+    this routine prepares the quantum state:
 
     .. math::
 
@@ -56,18 +56,23 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
 
     .. note::
 
-        This primitive is not yet compatible with QuantumEnviroments
-        such as ``invert`` or ``control`` in jasp mode.
+        This primitive is not yet compatible with QuantumEnvironments
+        (e.g. ``invert`` or ``control``) in Jasp mode when using the qswitch method.
         Trying to use it within such environments, for example by writing:
 
         ::
 
-            from qrisp.environments import invert
+            from qrisp.jasp.evaluation_tools import terminal_sampling
 
-            with invert():
-                prepare(...)
+            @terminal_sampling
+            def circuit():
 
-        currently leads to an error.
+                (...)
+
+                with invert():
+                    prepare(..., method="qswitch")
+
+        currently results in an error.
 
 
     Parameters
