@@ -385,6 +385,38 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
             </div>
 
+.. grid:: 1 1 2 2
+
+    .. grid-item-card::
+        :shadow: none
+
+        .. raw:: html
+
+            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+
+        .. raw:: html
+
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./BigInteger.html" style="text-decoration: none; color: inherit;">Using the BigInteger to compile utility-scale quantum algorithms</a>
+            </h4>
+
+        .. image:: ../../_static/order_finding_qre.svg
+            :align: center
+            :target: ./BigInteger.html
+
+        .. raw:: html
+            
+            <p style="margin-top: 5px;"></p>
+
+        .. dropdown:: :fa:`eye me-1` Description
+            :color: primary
+
+            Learn how to use the BigInteger class to avoid integer overflow in jasp and perform resource estimation of large-scale quantum algorithms.
+
+        .. raw:: html
+
+            </div>
+
 
 Along the way, we'll introduce you to important concepts and techniques that you'll need to know in order to write highly efficient algorithms in Qrisp.
 We encourage you to follow along with the examples and try out the code for yourself. Don't worry if you make mistakes or don't understand something right away - programming is a process of learning and experimentation, and it takes time to become proficient.
@@ -407,4 +439,5 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    JaspQAOAtutorial.ipynb
    QIROtutorial.ipynb
    QMCItutorial.ipynb
+   BigInteger.ipynb
    
