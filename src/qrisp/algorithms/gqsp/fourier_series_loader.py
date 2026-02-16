@@ -41,7 +41,7 @@ def fourier_series_loader(
     mirror: bool = False
 ) -> QuantumBool:
     r"""
-    Performs band-limited quantum state preparation.
+    Performs quantum state preparation for the first $k$ Fourier modes.
 
     Given an input array of $M$ values $\{a_{j}\}_{j=0}^{M-1}$ representing a signal sampled at equidistant points, 
     this method prepares an $n$-qubit quantum state $(N=2^{n})$ by reconstructing a smooth approximation of the signal using its lowest $2k+1$ frequency components.
@@ -75,12 +75,12 @@ def fourier_series_loader(
     Parameters
     ----------
     qarg : QuantumVariable
-        The input variable in state $\ket{0}$.
-    signal : ArrayLike, optional
-        1-D array of input signal values with shape ``(M,)``.
+        Variable representing the input signal. Must be in state $\ket{0}$ for preparation of target signal.
+    signal : ArrayLike, shape (M,), optional
+        The target signal values.
         Either ``signal`` or ``frequencies`` must be specified.
-    frequencies : ArrayLike, optional
-        1-D array of input frequency values in the range $[-K,K]$ with shape ``(2K+1,)``.
+    frequencies : ArrayLike, shape (2K+1), optional
+        The target frequency values in the range $[-K,K]$.
     k : int
         The frequency cutoff. Only frequencies in the range $[-k,k]$ are preserved. The default is 1.
     mirror : bool
@@ -91,7 +91,7 @@ def fourier_series_loader(
     -------
     QuantumBool
         Auxiliary variable after applying the GQSP protocol. 
-        Must be measuered in state $\ket{0}$ for the GQSP protocol to be successful.
+        Must be measured in state $\ket{0}$ for the GQSP protocol to be successful.
 
     Examples
     --------
@@ -125,10 +125,10 @@ def fourier_series_loader(
             y_val = y_val / jnp.linalg.norm(y_val)
 
             qv = QuantumFloat(n)
-            qbl = fourier_series_loader(qv, y_val, k=k)
-            success_bool = measure(qbl) == 0
-            reset(qbl)
-            qbl.delete()
+            anc = fourier_series_loader(qv, y_val, k=k)
+            success_bool = measure(anc) == 0
+            reset(anc)
+            anc.delete()
             return success_bool, qv
 
         # The terminal_sampling decorator performs a hybrid simulation,
@@ -208,8 +208,8 @@ def fourier_series_loader(
 
     h(qarg)
 
-    qbl = QuantumBool()
+    anc = QuantumBool()
 
-    GQSP(qbl, qarg, unitary=U, p=compressed_frequencies, k=k, kwargs={"scaling_factor" : scaling_factor})
+    GQSP(anc, qarg, unitary=U, p=compressed_frequencies, k=k, kwargs={"scaling_factor" : scaling_factor})
 
-    return qbl
+    return anc

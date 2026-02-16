@@ -37,7 +37,7 @@ def QET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", ki
     r"""
     Returns a BlockEncoding representing a polynomial transformation of the operator via `Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
 
-    For a block-encoded operator $H$ and a **real, fixed parity** polynomial $p(x)$, this method returns 
+    For a block-encoded **Hermitian** operator $H$ and a **real, fixed parity** polynomial $p(x)$, this method returns 
     a BlockEncoding of the operator $p(H)$.
 
     The Quantum Eigenvalue Transform is described as follows:

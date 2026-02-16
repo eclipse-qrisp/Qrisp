@@ -106,6 +106,57 @@ def test_block_encoding_apply_rus_value_error():
     assert "Operation expected 1 operands, but got 2" in str(excinfo.value)
 
 
+def test_block_encoding_ev():
+    H = X(0)*X(1) + 0.5*Z(0)*Z(1)
+    BE = BlockEncoding.from_operator(H)
+
+    def operand_prep(phi):
+        qv = QuantumFloat(2)
+        ry(phi, qv[0])
+        return qv
+
+    @jaspify(terminal_sampling=True)
+    def main(BE):
+        ev = BE.expectation_value(operand_prep, shots=1_000_000)(np.pi / 4)
+        return ev
+
+    # Jasp mode (Dynamic Execution): Hadamard test
+    be_ev_jasp = main(BE)
+
+    # Standard mode (Static Execution): Hadamard test
+    be_ev = BE.expectation_value(operand_prep, shots=1_000_000)(np.pi / 4)
+
+    # Standard mode (Static Execution): Pauli measurements
+    op_ev = H.expectation_value(operand_prep, precision=0.001)(np.pi / 4)
+
+    assert np.abs(be_ev_jasp - be_ev) < 1e-2
+    assert np.abs(be_ev - op_ev) < 1e-2
+
+
+def test_block_encoding_ev_type_error():
+    H = X(0)*X(1) + Z(0)*Z(1)
+    BE = BlockEncoding.from_operator(H)
+
+    wrong_operands = (QuantumFloat(2), QuantumFloat(2))
+    with pytest.raises(TypeError) as excinfo:
+        ev = BE.expectation_value(wrong_operands)()
+
+    assert "Expected 'operand_prep' to be a callable, but got" in str(excinfo.value)
+
+
+def test_block_encoding_ev_value_error():
+    H = X(0)*X(1) + Z(0)*Z(1)
+    BE = BlockEncoding.from_operator(H)
+
+    def wrong_operand_prep():
+        return QuantumFloat(2), QuantumFloat(2)
+    
+    with pytest.raises(ValueError) as excinfo:
+        ev = BE.expectation_value(wrong_operand_prep)()
+
+    assert "Operation expected 1 operands, but got 2" in str(excinfo.value)
+
+
 def test_block_encoding_resources():
     H = X(0)*X(1) + 0.5*Z(0)*Z(1)
     BE = BlockEncoding.from_operator(H)

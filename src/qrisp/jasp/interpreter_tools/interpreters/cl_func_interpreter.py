@@ -191,7 +191,7 @@ def process_create_qubits(
     # Create a new Jlist to hold the allocated qubit indices
     # The max_size is proportional to the total bit array capacity
     reg_qubits = Jlist(
-        init_val=jnp.array([], dtype=jnp.uint64),
+        init_val=jnp.array([], dtype=jnp.int64),
         max_size=64 * qreg.size//64
     )
 
@@ -909,7 +909,7 @@ def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int) -> ClosedJaxpr:
         elif isinstance(invar.aval, AbstractQubitArray):
             # QubitArray -> empty Jlist (will be filled during execution)
             qreg = Jlist(
-                init_val=jnp.array([], dtype=jnp.uint64),
+                init_val=jnp.array([], dtype=jnp.int64),
                 max_size=bit_array_padding // 64
             )
             args.append(qreg)

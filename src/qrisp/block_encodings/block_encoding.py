@@ -20,6 +20,7 @@ from __future__ import annotations
 import inspect
 from dataclasses import dataclass
 from jax.tree_util import register_pytree_node_class
+import jax
 import jax.numpy as jnp
 import numpy as np
 import numpy.typing as npt
@@ -27,6 +28,7 @@ from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
+from qrisp.interface import BackendClient
 from qrisp.jasp import count_ops, depth, jrange, qache, check_for_tracing_mode as is_tracing
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
@@ -120,11 +122,18 @@ class BlockEncoding:
       3-qubit QuantumVariable, then a block-encoding of the $8\times 8$ matrix $\tilde{A}=\mathbb{I}\otimes A$
       is applied. This is consistent with the convention that non-occuring indices in a Pauli string are treated as identities.
       Static-shaped block-encodings may be introduced in a future release.
+    - The ``is_hermitian`` attribute indicates whether the block-encoding unitary $U_A$ is Hermitian.
+      This is distinct from the operator $A$ being being Hermitian. A Hermitian operator $A$ 
+      can be block-encoded using a non-Hermitian unitary $U_A$. Conversely, if the unitary $U_A$
+      is Hermitian, then the encoded operator must also be Hermitian.
 
     Examples
     --------
 
     **Example 1: Pauli Block Encoding**
+
+    Define a :ref:`QubitOperator` repesenting a Heisenberg Hamiltonian,
+    and construct a block-encoding based on LCU for its Pauli strings.
 
     ::
 
@@ -135,7 +144,7 @@ class BlockEncoding:
         H = sum(X(i)*X(i+1) + Y(i)*Y(i+1) + Z(i)*Z(i+1) for i in range(3))
         BE = BlockEncoding.from_operator(H)
 
-        # Apply the operator to an initial system state
+        # Apply the Hermitian operator to an initial system state
 
         # Prepare initial system state
         def operand_prep():
@@ -150,7 +159,7 @@ class BlockEncoding:
         main()
         # {0.0: 0.6428571295525347, 2.0: 0.2857142963579722, 1.0: 0.07142857408949305}
 
-    **Example 2: LCU Block Encoding**
+    **Example 2: Custom LCU Block Encoding**
 
     Define a block-encoding for a discrete Laplace operator in one dimension with periodic boundary conditions.
 
@@ -198,7 +207,7 @@ class BlockEncoding:
         
         BE = BlockEncoding.from_lcu(coeffs, unitaries)
 
-    Apply the operator to the inital system state $\ket{0}$.
+    Apply the operator to the initial system state $\ket{0}$.
 
     :: 
 
@@ -214,7 +223,7 @@ class BlockEncoding:
         main()
         # {0.0: 0.6666666567325588, 7.0: 0.16666667908430155, 1.0: 0.1666666641831397}
 
-    To perform quantum resource estimation (not counting repetitions), 
+    To perform quantum resource estimation for the quantum program (not counting repetitions), 
     replace the ``@terminal_sampling`` decorator with ``@count_ops(meas_behavior="0")``:
 
     ::
@@ -225,7 +234,16 @@ class BlockEncoding:
             return operand
 
         main()
-        # {'s': 4, 'gphase': 2, 'u3': 6, 't': 14, 't_dg': 16, 'x': 5, 'cx': 54, 'p': 2, 'h': 16, 'measure': 10}
+        # {'s': 4, 'gphase': 2, 'u3': 6, 't': 14, 't_dg': 16, 'x': 5, 'cx': 54, 
+        # 'p': 2, 'h': 16, 'measure': 10}
+
+    To perform resource estimations for the block-encoding use :meth:`resources`:
+
+    ::
+
+        BE.resources(QuantumFloat(3))
+        # {'gate counts': {'s': 4, 't_dg': 16, 'h': 16, 't': 14, 'gphase': 2, 
+        # 'p': 2, 'x': 5, 'cx': 54, 'u3': 6, 'measure': 4}, 'depth': 87}
 
     """
 
@@ -718,6 +736,133 @@ class BlockEncoding:
             return success_bool, *operands
 
         return rus_function
+    
+    def expectation_value(self, operand_prep: Callable[..., Any], shots: int = 100, backend: BackendClient = None) -> Callable[..., Any]:
+        r"""
+        Measures the expectation value of the operator using the Hadamard test protocol.
+
+        For a block-encoded **Hermitian** operator $A$ and a state $\ket{\psi}$, 
+        this method measures the expectation value $\langle\psi|A|\psi\rangle$.
+
+        Parameters
+        ----------
+        operand_prep : Callable
+            A function ``operand_prep(*args)`` that prepares and returns the operand QuantumVariables.
+        shots : int
+            The amount of samples to take to compute the expectation value. The default is 100.
+        backend : BackendClient
+            The backend on which to evaluate the quantum circuit. By default the Qrisp simulator is used.
+            Ignored in Jasp mode.
+
+        Returns
+        -------
+        Callable
+            A function ``ev_function(*args)`` with the same signature
+            as ``operand_prep`` returning 
+
+            - Jasp mode:
+                a Jax array containing the expactation value,
+            - Standard mode:
+                a NumPy float representing the expectation value.
+
+        Notes
+        -----
+        - **Precision:** The number of shots $N$ required for target precision $\epsilon$ scales quadratically with the inverse precision $(N\propto 1/\epsilon^2)$.
+
+        Raises
+        ------
+        TypeError
+            If ``operand_prep`` is not a callable object.
+        ValueError
+            If the number of provided operands does not match 
+            the required number of operands (self.num_ops).
+
+        Examples
+        --------
+
+        **Example 1: Jasp Mode (Dynamic Execution)**
+
+        ::
+
+            import numpy as np
+            from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
+            from qrisp.operators import X, Y, Z
+
+            H = X(0)*X(1) + 0.5*Z(0)*Z(1)
+            BE = BlockEncoding.from_operator(H)
+
+            def operand_prep(phi):
+                qv = QuantumFloat(2)
+                ry(phi, qv[0])
+                return qv
+
+            @jaspify(terminal_sampling=True)
+            def main(BE):
+                ev = BE.expectation_value(operand_prep, shots=10000)(np.pi / 4)
+                return ev
+
+            ev = main(BE)
+            print(ev)
+            # 0.3429
+
+        **Example 2: Standard Mode (Static Execution)**
+
+        ::
+
+            # Using the same Hamiltonian and prep function from the previous example
+            ev = BE.expectation_value(operand_prep, shots=10000)(np.pi / 4)
+            print(ev)
+            # 0.3426
+
+        """
+        from qrisp.core.gate_application_functions import measure, reset
+        from qrisp.jasp import expectation_value
+
+        if not callable(operand_prep):
+            raise TypeError(
+                f"Expected 'operand_prep' to be a callable, but got {type(operand_prep).__name__}."
+            )
+        
+        def state_prep(*args):
+            operands = operand_prep(*args)
+            if not isinstance(operands, tuple):
+                operands = (operands,)
+
+            if len(operands) != self.num_ops:
+                raise ValueError(
+                    f"Operation expected {self.num_ops} operands, but got {len(operands)}."
+                )
+            
+            # Hadamard test
+            qbl = QuantumBool()
+            h(qbl)
+            with control(qbl):
+                ancillas = self.apply(*operands)
+            h(qbl)
+            return qbl
+        
+        # Dynamic (Jasp) mode
+        if is_tracing():
+        
+            @jax.jit
+            def post_processor(x):
+                return jnp.where(x==0, 1, -1)
+        
+            def ev_function(*args):
+                ev = expectation_value(state_prep, shots=shots, post_processor=post_processor)(*args)
+                return ev * self.alpha
+        
+            return ev_function
+        
+        # Static mode
+        def ev_function(*args):
+            qbl = state_prep(*args)
+            res_dict = qbl.get_measurement(shots=shots, backend=backend)
+            ev = res_dict.get(0, 0) - res_dict.get(1, 0)
+            return np.float64(ev * jnp.float64(self.alpha))
+    
+        return ev_function
 
     def resources(self, *operands: QuantumVariable, meas_behavior: str = "0"):
         r"""
@@ -814,9 +959,9 @@ class BlockEncoding:
 
     def qubitization(self) -> BlockEncoding:
         r"""
-        Returns a BlockEncoding representing the qubitization walk operator.
+        Returns a BlockEncoding representing the `qubitization walk operator <https://quantum-journal.org/papers/q-2019-07-12-163/>`_.
 
-        For a block-encoded operator $A$ with normalization factor $\alpha$,
+        For a block-encoded **Hermitian** operator $A$ with normalization factor $\alpha$,
         this method returns a BlockEncoding of the qubitization walk operator $W$
         satisfying $W^k=T_k(A/\alpha)$ where $T_k$ is the $k$-Chebyshev polynomial of the first kind.
 
@@ -830,7 +975,7 @@ class BlockEncoding:
 
         If the block-encoding unitary $U$ is Hermitian (i.e., $U^2=\mathbb I$), then $W=R U$ where $R = (2\ket{0}_a\bra{0}_a - \mathbb I)$
         is the reflection around the state $\ket{0}_a$ of the ancilla variables.
-        Otherwise, $W = R \tilde{U}$ where $\tilde{U} = (\ket{0}\bra{1} \otimes U) + (\ket{1}\bra{0} \otimes U^{\dagger})$
+        Otherwise, $W = R \tilde{U}$ where $\tilde{U} = (H \otimes \mathbb I)(\ket{0}\bra{0} \otimes U) + (\ket{1}\bra{1} \otimes U^{\dagger})(H \otimes \mathbb I)$
         is a Hermitian block-encoding of $A$ requiring one additional ancilla qubit.
 
         Returns
@@ -841,6 +986,10 @@ class BlockEncoding:
         Notes
         -----
         - **Normalization**: The resulting block-encoding maintains the same scaling factor $\alpha$ as the original.
+
+        References
+        ----------
+        - Low & Chuang (2019) `Hamiltonian Simulation by Qubitization <https://quantum-journal.org/papers/q-2019-07-12-163/>`_.
 
         Examples
         --------
@@ -877,18 +1026,27 @@ class BlockEncoding:
                 is_hermitian=True,
             )
         else:
-            # W = (2*|0><0| - I) U_tilde, U_tilde = (|0><1| ⊗ U) + (|1><0| ⊗ U†) is hermitian
+            # W = (2*|0><0| - I) U_tilde, U_tilde = (H ⊗ I)(|0><0| ⊗ U) + (|1><1| ⊗ U†)(H ⊗ I) is Hermitian
+            # block-encoding of A=(A+A†)/2 if A is Hermitian.
+            # We conjugate by (H ⊗ I) to achieve that the new ancilla is initialized and projected in |0>,
+            # i.e., A is in the upper left block.
+            # A more general Hermitization is:
+            # W = C0-(2*|0><0| - I) C1-(2*|0><0| - I) U_tilde 
+            # C0-(2*|0><0| - I) performs reflection of args[0] beign |0>
+            # C1-(2*|0><0| - I) performs reflection of args[0] beign |1>
+            # U_tilde = (|0><1| ⊗ U) + (|1><0| ⊗ U†) is Hermitian 
+            # In this case, the new ancilla is initialized and projected in |1>,
+            # i.e., A is not in the upper left block.
             def new_unitary(*args):
                 with conjugate(h)(args[0]):
+                    # (|0><0| ⊗ U)
                     with control(args[0], ctrl_state=0):
                         self.unitary(*args[1:])
-
+                    # (|1><1| ⊗ U†)
                     with control(args[0], ctrl_state=1):
                         with invert():
                             self.unitary(*args[1:])
-
-                    x(args[0])
-
+                
                 reflection(args[0 : 1 + m])
 
             new_anc_templates = [QuantumBool().template()] + self._anc_templates
@@ -904,7 +1062,7 @@ class BlockEncoding:
         r"""
         Returns a BlockEncoding representing $k$-th Chebyshev polynomial of the first kind applied to the operator.
 
-        For a block-encoded operator $A$ with normalization factor $\alpha$,
+        For a block-encoded **Hermitian** operator $A$ with normalization factor $\alpha$,
         this method returns a BlockEncoding of the rescaled operator $T_k(A)$ if ``rescale=True``,
         or $T_k(A/\alpha)$ if ``rescale=False``.
 
@@ -1564,7 +1722,7 @@ class BlockEncoding:
         r"""
         Returns a BlockEncoding approximating the matrix inversion of the operator.
 
-        For a block-encoded matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
+        For a block-encoded **Hermitian** matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
         operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$.
         The inversion is implemented via Quantum Eigenvalue Transformation (QET)
         using a polynomial approximation of $1/x$ over the domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$.
@@ -1653,6 +1811,25 @@ class BlockEncoding:
         """
         from qrisp.algorithms.gqsp import inversion
 
+        # The operator is unitary (up to scaling).
+        if self.num_ancs == 0:
+
+            if not self.is_hermitian:
+                def new_unitary(*args):
+                    with invert():
+                        self.unitary(*args)
+            else:
+                # The operator is a reflection (up to scaling).
+                new_unitary = self.unitary
+
+            return BlockEncoding(
+                1.0 / self.alpha,
+                self._anc_templates,
+                new_unitary,
+                num_ops=self.num_ops,
+                is_hermitian=self.is_hermitian,
+            )
+
         return inversion(self, eps, kappa)
 
     def sim(self, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
@@ -1692,6 +1869,7 @@ class BlockEncoding:
 
         References
         ----------
+        - Low & Chuang (2019) `Hamiltonian Simulation by Qubitization <https://quantum-journal.org/papers/q-2019-07-12-163/>`_.
         - Motlagh & Wiebe (2025) `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
 
         Examples
@@ -1774,7 +1952,7 @@ class BlockEncoding:
         r"""
         Returns a BlockEncoding representing a polynomial transformation of the operator.
 
-        For a block-encoded matrix $A$ and a (complex) polynomial $p(z)$, this method returns
+        For a block-encoded **Hermitian** matrix $A$ and a (complex) polynomial $p(z)$, this method returns
         a BlockEncoding of the operator $p(A)$. This is achieved using
         Generalized Quantum Eigenvalue Transformation (GQET).
 

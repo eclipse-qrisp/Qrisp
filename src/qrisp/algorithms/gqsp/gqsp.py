@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
 def GQSP(
-    qbl: QuantumBool, 
+    anc: QuantumBool, 
     *qargs: QuantumVariable, 
     unitary: Callable[..., None], 
     p: Optional["ArrayLike"] = None, 
@@ -80,13 +80,13 @@ def GQSP(
 
     Parameters
     ----------
-    qbl : QuantumBool
+    anc : QuantumBool
         Auxiliary variable in state $\ket{0}$ for applying the GQSP protocol.
-        Must be measuered in state $\ket{0}$ for the GQSP protocol to be successful.
+        Must be measured in state $\ket{0}$ for the GQSP protocol to be successful.
     *qargs : QuantumVariable
         QuantumVariables serving as operands for the unitary.
     unitary : Callable
-        A function appying a unitary to the variables ``*qargs``.
+        A function applying a unitary to the variables ``*qargs``.
         Typically, $U=e^{iH}$ for a Hermitian operator $H$ and GQSP applies a function of $H$.
     p : ArrayLike, optional
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
@@ -154,12 +154,12 @@ def GQSP(
             p = jnp.array([0.5,0,0.5])
 
             operand = operand_prep()
-            qbl = QuantumBool()
-            GQSP(qbl, operand, unitary=U, p=p, k=1)
+            anc = QuantumBool()
+            GQSP(anc, operand, unitary=U, p=p, k=1)
 
-            success_bool = measure(qbl) == 0
-            reset(qbl)
-            qbl.delete()
+            success_bool = measure(anc) == 0
+            reset(anc)
+            anc.delete()
             return success_bool, operand
 
 
@@ -217,15 +217,15 @@ def GQSP(
     phi = phi[::-1]
 
     for i in jrange(d-k):
-        R(theta[i], phi[i], qbl)
-        with control(qbl, ctrl_state=0):
+        R(theta[i], phi[i], anc)
+        with control(anc, ctrl_state=0):
             unitary(*qargs, **kwargs)   
 
     for i in jrange(k):
-        R(theta[d-k+i], phi[d-k+i], qbl)
-        with control(qbl, ctrl_state=1):
+        R(theta[d-k+i], phi[d-k+i], anc)
+        with control(anc, ctrl_state=1):
             with invert():
                 unitary(*qargs, **kwargs)
         
-    R(theta[d], phi[d], qbl)
-    rz(-2*lambda_, qbl)
+    R(theta[d], phi[d], anc)
+    rz(-2*lambda_, anc)

@@ -30,10 +30,10 @@ if TYPE_CHECKING:
 @jax.jit
 def poly2cheb(poly: "ArrayLike") -> Array:
     """
-    Convert a polynomial to a Chebyshev series.
+    Convert a polynomial from monomial to Chebyshev basis.
     JAX version of `numpy.polynomial.chebyshev.poly2cheb <https://numpy.org/doc/2.3/reference/generated/numpy.polynomial.chebyshev.poly2cheb.html>`_.
 
-    Convert an array representing the coefficients of a polynomial (relative to the “standard” basis) ordered from lowest degree to highest, 
+    Convert an array representing the coefficients of a polynomial (relative to the monomial basis) ordered from lowest degree to highest, 
     to an array of the coefficients of the equivalent Chebyshev series, ordered from lowest to highest degree.
     
     Parameters
@@ -86,11 +86,11 @@ def poly2cheb(poly: "ArrayLike") -> Array:
 @jax.jit
 def cheb2poly(cheb: "ArrayLike") -> Array:
     """
-    Convert a Chebyshev series to a polynomial.
+    Convert a polynomial from Chebyshev to monomial basis.
     JAX version of `numpy.polynomial.chebyshev.cheb2poly <https://numpy.org/doc/stable/reference/generated/numpy.polynomial.chebyshev.cheb2poly.html>`_.
 
     Convert an array representing the coefficients of a Chebyshev series, ordered from lowest degree to highest, 
-    to an array of the coefficients of the equivalent polynomial (relative to the “standard” basis) ordered from lowest to highest degree.
+    to an array of the coefficients of the equivalent polynomial (relative to the monomial basis) ordered from lowest to highest degree.
     
     Parameters
     ----------
@@ -100,7 +100,7 @@ def cheb2poly(cheb: "ArrayLike") -> Array:
     Returns
     -------
     poly : Array
-        1-D array containing the coefficients of the equivalent polynomial (relative to the “standard” basis), ordered from lowest order term to highest.
+        1-D array containing the coefficients of the equivalent polynomial (relative to the monomial basis), ordered from lowest order term to highest.
 
     Examples
     --------

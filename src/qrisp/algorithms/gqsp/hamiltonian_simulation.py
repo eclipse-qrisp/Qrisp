@@ -72,6 +72,7 @@ def hamiltonian_simulation(H: BlockEncoding | FermionicOperator | QubitOperator,
 
     References
     ----------
+    - Low & Chuang (2019) `Hamiltonian Simulation by Qubitization <https://quantum-journal.org/papers/q-2019-07-12-163/>`_.
     - Motlagh & Wiebe (2024) `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
 
     Examples

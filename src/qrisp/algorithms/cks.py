@@ -202,7 +202,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
     When applied to a state $\ket{b}$, the algorithm prepares a state :math:`\ket{\\tilde{x}} \propto A^{-1} \ket{b}`
     within target precision :math:`\epsilon` of the ideal solution :math:`\ket{x}`. 
 
-    For a block-encoded matrix :math:`A`, this function returns a BlockEncoding of an 
+    For a block-encoded **Hermitian** matrix :math:`A`, this function returns a BlockEncoding of an 
     operator :math:`\\tilde{A}^{-1}` such that :math:`\|\\tilde{A}^{-1} - A^{-1}\| \leq \epsilon`. 
     The inversion is implemented using a polynomial approximation of :math:`1/x` over the domain :math:`D_{\\kappa} = [-1, -1/\\kappa] \\cup [1/\\kappa, 1]`.
     

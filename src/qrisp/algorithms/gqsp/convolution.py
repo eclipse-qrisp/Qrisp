@@ -20,12 +20,9 @@ import numpy as np
 from qrisp import (
     QuantumVariable,
     QuantumBool,
-    conjugate,
-    p,
 )
-from qrisp.alg_primitives import QFT
+from qrisp.alg_primitives import gidney_adder
 from qrisp.algorithms.gqsp.gqsp import GQSP
-from qrisp.jasp import qache, jrange
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -54,16 +51,22 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
     Parameters
     ----------
     qarg : QuantumVariable
-        The input state.
-    weights : ArrayLike
-        1-D array of weights with shape ``(2d+1,)``.
+        Variable representing the input signal.
+    weights : ArrayLike, shape (2d+1,)
+        The filter coefficients for the cyclic convolution. 
+        These are applied as a sliding window across the signal, 
+        where the middle element corresponds to the weight of the current index.
 
     Returns
     -------
     QuantumBool
         Auxiliary variable after applying the GQSP protocol. 
-        Must be measuered in state $\ket{0}$ for the GQSP protocol to be successful.
+        Must be measured in state $\ket{0}$ for the GQSP protocol to be successful.
 
+    Notes
+    -----
+    - Performs a cyclic convolution on the quantum signal, 
+      effectively applying a local filtering operation such as an $n$-point smoothing.
 
     Examples
     --------
@@ -95,10 +98,10 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
         @RUS
         def conv_psi_prep():
             qarg = psi_prep()
-            qbl = convolve(qarg, f)
-            success_bool = measure(qbl) == 0
-            reset(qbl)
-            qbl.delete()
+            anc = convolve(qarg, f)
+            success_bool = measure(anc) == 0
+            reset(anc)
+            anc.delete()
             return success_bool, qarg
 
         # The terminal_sampling decorator performs a hybrid simulation,
@@ -117,16 +120,13 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
 
     """
 
-    @qache
     def U(qv):
-        for i in jrange(qv.size):
-            p(np.pi * 2.0 ** (i - qv.size + 1), qv[i])
+        gidney_adder(1, qv)
 
     d = len(weights) // 2
 
-    qbl = QuantumBool()
+    anc = QuantumBool()
 
-    with conjugate(QFT)(qarg):
-        GQSP(qbl, qarg, unitary=U, p=weights, k=d)
+    GQSP(anc, qarg, unitary=U, p=weights, k=d)
 
-    return qbl
+    return anc
