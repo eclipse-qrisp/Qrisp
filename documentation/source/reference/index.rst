@@ -270,7 +270,7 @@ Key Jasp Features
 * **qache** - A caching decorator that traces quantum functions only once per calling signature, then reuses the cached Jaspr. Functions called multiple times incur tracing cost only on the first invocation.
 * **jrange** - A traceable loop construct that replaces Python's ``range``, enabling dynamic iteration counts in compiled code.
 * **Classical control flow** - Measurement results are native integers (not opaque classical bits), so they can drive ``if``/``else`` branching, arithmetic, or any JAX operation in real time.
-* **Repeat-until-success (@RUS)** - A decorator for trial-based quantum protocols that loop until a classical measurement condition is met.
+* **Repeat-until-success (@RUS)** - A decorator for trial-based quantum protocols that loops until a classical measurement condition is met.
 * **sample / minimize** - Traceable primitives for quantum sampling and classical optimization, enabling end-to-end compiled hybrid loops (e.g., full QAOA optimization without Python-level overhead).
 * **Boolean simulation** - A specialized fast-path for circuits composed entirely of boolean gates (X, CX, MCX). Jasp transforms the Jaspr into pure boolean JAX logic, then leverages XLA compilation for massive throughput - demonstrated at over a million quantum floating-point operations after a single compilation step.
 
