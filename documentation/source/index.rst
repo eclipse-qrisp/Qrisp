@@ -16,10 +16,10 @@
         <canvas id="hero-graph-canvas"></canvas>
         <div class="hero-orb-secondary"></div>
         <div id="hero-left">
-            <img alt="./_static/eclipse_font.png" class="align-bottom-left scaled-image" src="./_static/eclipse_font.png" width="109" height="25">
-            <h2 style="font-size: 68px; font-weight: 800; margin: -0.4rem auto 0;">Qrisp</h2>
+            <img alt="./_static/eclipse_font.png" class="align-bottom-left scaled-image" src="./_static/eclipse_font.png" width="126">
+            <img alt="./_static/logo_white.png" src="./_static/logo_white.png" width="260" style="margin: 0.4rem 0; display: block;">
             <h3 style="font-weight: 600; margin-top: 0;">The next generation of quantum <br> algorithm development</h3>
-            <p>Qrisp is a high-level programming language for creating and compiling quantum algorithms. Its structured programming model enables scalable development and maintenance — with JAX integration for hybrid quantum-classical workflows.</p>
+            <p style="margin-right: 30pt">Qrisp is a high-level language for building and compiling quantum algorithms. Its structured programming model supports scalable, maintainable development. With seamless JAX integration, Qrisp enables hybrid real-time algorithm design and analysis.</p>
 
             <div class="homepage-button-container">
                 <div class="homepage-button-container-row">
