@@ -237,6 +237,16 @@ class BaseMetric(ABC):
         - Outvars: (QuantumCircuit)
         """
 
+    @abstractmethod
+    def handle_parity(
+        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
+    ) -> Sequence:
+        """
+        Handle the `jasp.parity` primitive.
+
+        TODO: add semantics here.
+        """
+
     def handle_create_quantum_kernel(self, *_args, **_kwargs):
         """Handle the `jasp.create_quantum_kernel` primitive."""
 
@@ -383,56 +393,70 @@ def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
             scan_body = eval_jaxpr(
                 eqn.params["jaxpr"], eqn_evaluator=profiling_eqn_evaluator
             )
-            
+
             # Extract scan parameters
             num_consts = eqn.params["num_consts"]
             num_carry = eqn.params["num_carry"]
             length = eqn.params["length"]
             reverse = eqn.params.get("reverse", False)
             unroll = eqn.params.get("unroll", 1)
-            
+
             # Separate inputs
             consts = invalues[:num_consts]
-            init = invalues[num_consts:num_consts + num_carry]
-            xs = invalues[num_consts + num_carry:]
-            
+            init = invalues[num_consts : num_consts + num_carry]
+            xs = invalues[num_consts + num_carry :]
+
             # Create a wrapper function that includes constants
             if num_consts > 0:
+
                 def wrapped_body(carry, x):
-                    args = consts + list(carry) + list(x) if isinstance(x, tuple) else consts + list(carry) + [x]
+                    args = (
+                        consts + list(carry) + list(x)
+                        if isinstance(x, tuple)
+                        else consts + list(carry) + [x]
+                    )
                     result = scan_body(*args)
                     if not isinstance(result, tuple):
                         result = (result,)
                     return result[:num_carry], result[num_carry:]
+
             else:
+
                 def wrapped_body(carry, x):
                     args = list(carry) + (list(x) if isinstance(x, tuple) else [x])
                     result = scan_body(*args)
                     if not isinstance(result, tuple):
                         result = (result,)
                     return result[:num_carry], result[num_carry:]
-            
+
             # Call JAX scan with the reinterpreted body
             if len(xs) == 1:
                 xs_arg = xs[0]
             else:
                 xs_arg = tuple(xs)
-            
+
             if len(init) == 1:
                 init_arg = init[0]
             else:
                 init_arg = tuple(init)
-            
-            final_carry, ys = jax.lax.scan(wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll)
-            
+
+            final_carry, ys = jax.lax.scan(
+                wrapped_body,
+                init_arg,
+                xs_arg,
+                length=length,
+                reverse=reverse,
+                unroll=unroll,
+            )
+
             # Prepare output
             if not isinstance(final_carry, tuple):
                 final_carry = (final_carry,)
             if not isinstance(ys, tuple):
                 ys = (ys,)
-            
+
             outvalues = final_carry + ys
-            
+
             insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "jit":

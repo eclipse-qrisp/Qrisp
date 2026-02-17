@@ -350,17 +350,16 @@ class DepthMetric(BaseMetric):
         # Associate the following in context_dic:
         # QuantumCircuit -> metric_data
         return metric_data
-    
+
     def handle_parity(self, invalues, eqn, context_dic):
         """Handle the `jasp.parity` primitive"""
+
         # Parity is a classical operation on measurement results
         # Compute XOR and handle expectation
         expectation = eqn.params.get("expectation", 0)
-        result = sum(invalues) % 2
-        
-        result = result ^ expectation
-        
-        return jnp.array(result, dtype = bool)
+        result = jnp.bitwise_xor(sum(invalues) % 2, expectation)
+
+        return jnp.array(result, dtype=bool)
 
 
 def extract_depth(res: Tuple, jaspr: Jaspr, _) -> int:

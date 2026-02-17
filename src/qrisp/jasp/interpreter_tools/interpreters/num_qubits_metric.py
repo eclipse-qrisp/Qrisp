@@ -219,6 +219,16 @@ class NumQubitsMetric(BaseMetric):
         # QuantumCircuit -> metric_data
         return metric_data
 
+    def handle_parity(self, invalues, eqn, context_dic):
+        """Handle the `jasp.parity` primitive"""
+
+        # Parity is a classical operation on measurement results
+        # Compute XOR and handle expectation
+        expectation = eqn.params.get("expectation", 0)
+        result = jnp.bitwise_xor(sum(invalues) % 2, expectation)
+
+        return jnp.array(result, dtype=bool)
+
 
 def _peak_allocated_qubits(dict_values) -> int:
     """Helper function to compute the peak number of allocated qubits from the allocation dictionary."""
