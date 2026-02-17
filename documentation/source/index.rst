@@ -42,14 +42,14 @@
         
         .. raw:: html
 
-            <a href="./reference/Algorithms/QuantumBacktrackingTree.html">
+            <a href="./reference/Core/generated/qrisp.QuantumVariable.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Solve backtracking problems by leveraging quantum walks</p>
+            <p class="sd-card-text">Build on NumPy-style, non-unitary linear algebra through block encodings and generalised quantum signal processing</p>
             </div>
             </a>
 
     
-        .. image:: ./_static/backtracking.svg
+        .. image:: ./_static/LinearAlgebra.png
 
     .. grid-item-card::
         :shadow: none
@@ -74,20 +74,6 @@
     
         .. raw:: html
 
-            <a href="./reference/Core/generated/qrisp.QuantumVariable.html">
-            <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Build on NumPy-style, non-unitary linear algebra through block encodings and generalised quantum signal processing</p>
-            </div>
-            </a>
-
-    
-        .. image:: ./_static/LinearAlgebra.png
-
-    .. grid-item-card::
-        :shadow: none
-    
-        .. raw:: html
-
             <a href="./general/tutorial/H2.html">
             <div class="example-img-plot-overlay">
             <p class="sd-card-text">Simulate the quantum dynamics of molecules using chemistry data</code></p>
@@ -96,6 +82,20 @@
 
     
         .. image:: ./_static/hydrogen.png
+
+    .. grid-item-card::
+        :shadow: none
+    
+        .. raw:: html
+
+            <a href="./reference/Algorithms/QuantumBacktrackingTree.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Solve backtracking problems by leveraging quantum walks</p>
+            </div>
+            </a>
+
+    
+        .. image:: ./_static/backtracking.svg
 
 
 .. raw:: html
