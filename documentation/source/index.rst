@@ -76,7 +76,7 @@
 
             <a href="./reference/Core/generated/qrisp.QuantumVariable.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Build on NumPy-style, non-unitary linear algebra through block encodings and Chebyshev-based quantum signal processing</p>
+            <p class="sd-card-text">Explore ground states of lattice models using quantum signal processing</p>
             </div>
             </a>
 
