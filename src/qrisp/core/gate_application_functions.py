@@ -26,8 +26,24 @@ from qrisp.jasp import check_for_tracing_mode, DynamicQubitArray, jlen
 def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
     from qrisp import find_qs
 
-    qs = find_qs(qubits)
-    qs.append(operation, qubits, clbits, param_tracers=param_tracers)
+    try:
+        qs = find_qs(qubits)
+        qs.append(operation, qubits, clbits, param_tracers=param_tracers)
+    except Exception as e:
+
+        # Handle the case that the user specified an empty qubit list, i.e.
+        # cx([], [])
+        if "Couldn't find QuantumSession" in str(e):
+            if len(qubits) == 0:
+                return
+            for q in qubits:
+                if not (isinstance(q, list) and len(q) == 0):
+                    break
+            else:
+                return
+
+        raise e
+
 
 
 def cx(control, target):
@@ -657,7 +673,7 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
 
     """
 
-    from qrisp.misc import gate_wrap
+    from qrisp.misc import bin_rep, gate_wrap
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
     def mcz_inner(qubits, method="auto", ctrl_state=-1):
@@ -680,15 +696,41 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
             x(qubits[-1])
 
         return qubits
+    
+    @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
+    def jasp_mcz_inner(qubits, method="balauca", ctrl_state=-1):
+        from jax.lax import cond
+        import jax.numpy as jnp
+        from qrisp.environments import control
 
-    n = len(qubits)
+        n = jlen(qubits)
+        ctrl_state = jnp.int64(ctrl_state)
+        ctrl_state = cond(ctrl_state == -1, lambda x: x + (1 << n), lambda x: x, ctrl_state)
 
-    from qrisp import bin_rep
+        with control((ctrl_state >> (n - 1)) & 1 == 0):
+            x(qubits[-1])
 
-    if not isinstance(ctrl_state, str):
-        if ctrl_state == -1:
-            ctrl_state += 2**n
-        ctrl_state = bin_rep(ctrl_state, n)
+        h(qubits[-1])
+        mcx(qubits[:-1], qubits[-1], method=method, ctrl_state=ctrl_state & ((1 << (n - 1)) - 1))
+        h(qubits[-1])
+
+        with control((ctrl_state >> (n - 1)) & 1 == 0):
+            x(qubits[-1])
+
+        return qubits
+
+    n = jlen(qubits)
+    if not check_for_tracing_mode():
+        if not isinstance(ctrl_state, str):
+            if ctrl_state == -1:
+                ctrl_state += 2**n
+            ctrl_state = bin_rep(ctrl_state, n)[::-1]
+    else:
+        if method == "auto":
+            method = "balauca"
+        if isinstance(ctrl_state, str):
+            ctrl_state = int(ctrl_state, 2)
+        return jasp_mcz_inner(qubits, method=method, ctrl_state=ctrl_state)
 
     if method in ["gray", "auto"]:
         if ctrl_state[-1] == "0":
@@ -1166,6 +1208,41 @@ def u3(theta, phi, lam, qubits):
     return qubits
 
 
+def unitary(unitary_array, qubits):
+    """
+    Instruct a U3-gate from a given U3 matrix.
+
+    Parameters
+    ----------
+    unitary_array : numpy.ndarray
+        The U3 matrix to apply.
+    qubits : Qubit
+        The Qubit to apply the gate on.
+    """
+    import jax.numpy as jnp
+
+    mat = unitary_array
+    coeff = 1 / jnp.sqrt(jnp.linalg.det(mat))
+    gphase_angle = -jnp.angle(coeff) % (2 * jnp.pi)
+    tmp_10 = jnp.abs((coeff * mat[1][0]))
+    tmp_00 = jnp.abs((coeff * mat[0][0]))
+    theta = 2 * jnp.arctan2(tmp_10, tmp_00)
+    phiplambda2 = jnp.angle(coeff * mat[1][1]) % (2 * jnp.pi)
+    phimlambda2 = jnp.angle(coeff * mat[1][0]) % (2 * jnp.pi)
+    phi = phiplambda2 + phimlambda2
+    lam = phiplambda2 - phimlambda2
+
+    arg_max = jnp.argmax(jnp.abs(mat).flatten())
+    from qrisp.simulator.unitary_management import u3matrix
+
+    temp_u3 = u3matrix(theta, phi, lam, 0).flatten()
+
+    gphase_angle = (-jnp.angle(temp_u3[arg_max] / mat.flatten()[arg_max])) % (2 * jnp.pi)
+
+    u3(theta, phi, lam, qubits)
+    gphase(gphase_angle, qubits)
+
+
 def measure(qubits):
     """
     Performs a measurement of the specified Qubit.
@@ -1207,7 +1284,7 @@ def measure(qubits):
             DynamicQubitArray,
         )
         from qrisp import QuantumVariable, QuantumArray
-        
+
         if not qs.abs_qc._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
@@ -1223,6 +1300,15 @@ def measure(qubits):
 
         return res
 
+def measure_to_big_integer(qv, size):
+    from qrisp import BigInteger, q_fori_loop
+    import jax.numpy as jnp
+    def body_fun(i, val):
+        return val.at[i].set(measure(qv[32*i:32*(i+1)]))
+    digits = q_fori_loop(0, (qv.size-1)//32, body_fun, jnp.zeros(size, jnp.uint32))
+    digits = digits.at[(qv.size-1)//32].set(measure(qv[32*((qv.size - 1)//32):]))
+    return BigInteger(digits)
+
 
 def reset(qubits):
     """
@@ -1233,8 +1319,8 @@ def reset(qubits):
     qubit : Qubit or list[Qubit] or QuantumVariable
         The Qubit to measure.
     """
-    from qrisp import find_qs
-    from qrisp.jasp import TracingQuantumSession
+    from qrisp import find_qs, QuantumArray
+    from qrisp.jasp import TracingQuantumSession, jrange
 
     qs = find_qs(qubits)
 
@@ -1247,6 +1333,11 @@ def reset(qubits):
 
         if isinstance(qubits, QuantumVariable):
             abs_qc = reset_p.bind(qubits.reg.tracer, qs.abs_qc)
+        elif isinstance(qubits, QuantumArray):
+            flattened_qa = qubits.flatten()
+            for i in jrange(qubits.size):
+                reset(flattened_qa[i])
+            return
         elif isinstance(qubits.aval, AbstractQubitArray):
             abs_qc = reset_p.bind(qubits.tracer, qs.abs_qc)
         elif isinstance(qubits.aval, AbstractQubit):

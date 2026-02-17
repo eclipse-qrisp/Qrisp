@@ -21,13 +21,11 @@ from functools import lru_cache
 from sympy import lambdify, symbols
 
 from jax import make_jaxpr, jit
-from jax.extend.core import ClosedJaxpr
-from jax.lax import fori_loop, cond, while_loop, switch
+from jax.lax import fori_loop, cond, while_loop
 from jax._src.linear_util import wrap_init
 import jax.numpy as jnp
 
 from catalyst.jax_primitives import (
-    AbstractQreg,
     qinst_p,
     measure_p,
     qextract_p,
@@ -41,18 +39,16 @@ from catalyst.jax_primitives import (
 
 from qrisp.jasp import (
     QuantumPrimitive,
-    OperationPrimitive,
     AbstractQuantumCircuit,
     AbstractQubitArray,
     AbstractQubit,
     eval_jaxpr,
-    Jaspr,
     extract_invalues,
     insert_outvalues,
+    quantum_gate_p,
     Measurement_p,
     get_qubit_p,
     get_size_p,
-    delete_qubits_p,
     Jlist,
 )
 
@@ -118,14 +114,16 @@ def catalyst_eqn_evaluator(eqn, context_dic):
         invars = eqn.invars
         outvars = eqn.outvars
 
-        if isinstance(eqn.primitive, OperationPrimitive):
-            process_op(eqn.primitive, invars, outvars, context_dic)
+        if eqn.primitive.name == "jasp.quantum_gate":
+            process_op(eqn.params["gate"], invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.create_qubits":
             process_create_qubits(invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.get_qubit":
             process_get_qubit(invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.measure":
             process_measurement(invars, outvars, context_dic)
+        elif eqn.primitive.name == "jasp.parity":
+            process_parity(eqn, context_dic)
         elif eqn.primitive.name == "jasp.get_size":
             process_get_size(invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.slice":
@@ -151,7 +149,9 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             return process_while(eqn, context_dic)
         elif eqn.primitive.name == "cond":
             return process_cond(eqn, context_dic)  #
-        elif eqn.primitive.name == "pjit":
+        elif eqn.primitive.name == "scan":
+            return process_scan(eqn, context_dic)
+        elif eqn.primitive.name == "jit":
             process_pjit(eqn, context_dic)
         else:
             return True
@@ -266,7 +266,7 @@ def process_get_size(invars, outvars, context_dic):
     context_dic[outvars[0]] = context_dic[invars[0]].counter
 
 
-def process_op(op_prim, invars, outvars, context_dic):
+def process_op(op, invars, outvars, context_dic):
 
     # Alias the AbstractQreg
     catalyst_register_tracer = context_dic[invars[-1]][0]
@@ -275,7 +275,6 @@ def process_op(op_prim, invars, outvars, context_dic):
     # that are required for the Operation
     qb_vars = []
 
-    op = op_prim.op
     # For that we find all the integers (ie. positions) of the participating
     # qubits in the AbstractQreg
     qb_pos = []
@@ -418,6 +417,37 @@ def process_measurement(invars, outvars, context_dic):
     context_dic[outvars[0]] = meas_res
 
 
+def process_parity(eqn, context_dic):
+    """
+    Process the parity primitive, computing XOR of measurement results.
+    
+    Parameters
+    ----------
+    eqn : jax.core.JaxprEqn
+        The equation containing the parity primitive.
+    context_dic : qrisp.jasp.interpreters.ContextDict
+        The ContextDict representing the current state.
+    """
+    # Extract the measurement results
+    invalues = extract_invalues(eqn, context_dic)
+    
+    # Check if expectation parameter is present
+    expectation = eqn.params.get("expectation", 0)
+    observable = eqn.params.get("observable", False)
+    
+    # Compute XOR by summing all measurement results and taking modulo 2
+    result = 0
+    for val in invalues:
+        result = result + val
+    result = result % 2
+    
+    # XOR result with expectation
+    result = (result + expectation) % 2
+    
+    # Insert the result into the context
+    insert_outvalues(eqn, context_dic, jnp.array(result, dtype = bool))
+
+
 def exec_multi_measurement(catalyst_register, qubit_list):
     # This function performs the measurement of multiple qubits at once, returning
     # an integer. The qubits to be measured sit in one consecutive interval,
@@ -459,8 +489,8 @@ def exec_multi_measurement(catalyst_register, qubit_list):
         body_jaxpr=loop_jaxpr,
         cond_nconsts=0,
         body_nconsts=0,
-        nimplicit=0,
         preserve_dimensions=True,
+        num_implicit_inputs=0,
     )
 
     i, acc, reg, static_qubit_array, list_size = while_res
@@ -489,8 +519,8 @@ def process_while(eqn, context_dic):
         body_jaxpr=body_jaxpr,
         cond_nconsts=new_cond_nconsts,
         body_nconsts=new_body_nconsts,
-        nimplicit=0,
         preserve_dimensions=True,
+        num_implicit_inputs=0,
     )
 
     outvalues = list(outvalues)
@@ -522,7 +552,9 @@ def process_cond(eqn, context_dic):
         flattened_invalues = flatten_signature(invalues, eqn.invars)
 
         outvalues = cond_p.bind(
-            *flattened_invalues, branch_jaxprs=branch_list[::-1], nimplicit_outputs=0
+            *flattened_invalues, 
+            branch_jaxprs=branch_list[::-1], 
+            num_implicit_outputs=0
         )
 
         unflattened_outvalues = unflatten_signature(outvalues, eqn.outvars)
@@ -533,6 +565,72 @@ def process_cond(eqn, context_dic):
         )
 
     insert_outvalues(eqn, context_dic, unflattened_outvalues)
+
+
+def process_scan(eqn, context_dic):
+    """
+    Process scan primitive for catalyst_interpreter.
+    Reinterprets the scan body and calls jax.lax.scan to preserve loop structure.
+    """
+    from jax.lax import scan as jax_scan
+    
+    invalues = extract_invalues(eqn, context_dic)
+    
+    # Extract scan parameters
+    num_consts = eqn.params["num_consts"]
+    num_carry = eqn.params["num_carry"]
+    length = eqn.params["length"]
+    reverse = eqn.params.get("reverse", False)
+    unroll = eqn.params.get("unroll", 1)
+    
+    # Separate inputs: constants, initial carry, scanned inputs
+    consts = invalues[:num_consts]
+    init = invalues[num_consts:num_consts + num_carry]
+    xs = invalues[num_consts + num_carry:]
+    
+    # Reinterpret the scan body with catalyst_eqn_evaluator
+    scan_body_jaxpr = eqn.params["jaxpr"]
+    scan_body = eval_jaxpr(scan_body_jaxpr, eqn_evaluator=catalyst_eqn_evaluator)
+    
+    # Create wrapper function that includes constants
+    if num_consts > 0:
+        def wrapped_body(carry, x):
+            args = consts + list(carry) + (list(x) if isinstance(x, tuple) else [x])
+            result = scan_body(*args)
+            if not isinstance(result, tuple):
+                result = (result,)
+            return result[:num_carry], result[num_carry:]
+    else:
+        def wrapped_body(carry, x):
+            args = list(carry) + (list(x) if isinstance(x, tuple) else [x])
+            result = scan_body(*args)
+            if not isinstance(result, tuple):
+                result = (result,)
+            return result[:num_carry], result[num_carry:]
+    
+    # Prepare inputs for JAX scan
+    if len(xs) == 1:
+        xs_arg = xs[0]
+    else:
+        xs_arg = tuple(xs)
+    
+    if len(init) == 1:
+        init_arg = init[0]
+    else:
+        init_arg = tuple(init)
+    
+    # Call JAX scan
+    final_carry, ys = jax_scan(wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll)
+    
+    # Prepare output
+    if not isinstance(final_carry, tuple):
+        final_carry = (final_carry,)
+    if not isinstance(ys, tuple):
+        ys = (ys,)
+    
+    outvalues = final_carry + ys
+    
+    insert_outvalues(eqn, context_dic, outvalues)
 
 
 @lru_cache(maxsize=int(1e5))
@@ -582,7 +680,7 @@ def reset_qubit_array(qb_array, abs_qc):
 
         def true_fun(arg_tuple):
             qb, abs_qc = arg_tuple
-            abs_qc = OperationPrimitive(XGate()).bind(qb, abs_qc)
+            abs_qc = quantum_gate_p.bind(qb, abs_qc, gate = XGate())
             return (qb, abs_qc)
 
         def false_fun(arg_tuple):

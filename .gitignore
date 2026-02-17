@@ -1,9 +1,13 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.pyc
+*.pymon
 *.egg-info/
 *.eggs
 *.DS_Store
+/.vscode/*
+timer.dat
+tmp/*
 
 /build/
 /dist/
@@ -14,3 +18,4 @@ __pycache__/
 /eccvenv/
 /python311venv/
 /multiverseenv/
+/notebooks/

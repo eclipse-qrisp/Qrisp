@@ -37,7 +37,7 @@ You can install Qrisp using pip:
 pip install qrisp
 ```
 
-Qrisp has been confirmed to work with Python version 3.10, 3.11 & 3.12.
+Qrisp has been confirmed to work with Python version 3.11 & 3.12.
 
 Qrisp is compatible with any QASM-capable quantum backend! In particular, it offers convenient interfaces for using IBM, IQM and AQT quantum computers, and any quantum backend provider is invited to reach out for a tight integration! 
 
@@ -72,20 +72,24 @@ def find_order(a, N):
     return qpe_res.get_measurement()
 ```
 
-To find out how this can be used to break encryption be sure to check the [tutorial](https://www.qrisp.eu/general/tutorial.html).
+To find out how this can be used to break encryption be sure to check the [tutorial](https://qrisp.eu/general/tutorial/Shor.html).
 
-Qrisp offers much more than just factoring! More examples, like simulating molecules at the quantum level or how to solve the Travelling Salesman Problem, can be found [here](https://www.qrisp.eu/general/tutorial.html).
+Qrisp offers much more than just factoring! More examples, like simulating molecules at the quantum level or how to solve the Travelling Salesman Problem, can be found [here](https://qrisp.eu/general/tutorial/index.html).
 
 ## Authors and Citation
 Qrisp was mainly devised and implemented by Raphael Seidel, supported by Sebastian Bock, Nikolay Tcholtchev, René Zander, Niklas Steinmann and Matic Petric.
 
 If you have comments, questions or love letters, feel free to reach out to us:
 
-raphael.seidel@fokus.fraunhofer.de
+raphael.seidel [at] meetiqm.com
 
-sebastian.bock@fokus.fraunhofer.de
+sebastian.bock [at] fokus.fraunhofer.de
 
-nikolay.tcholtchev@fokus.fraunhofer.de
+nikolay.tcholtchev [at] fokus.fraunhofer.de
+
+rene.zander [at] fokus.fraunhofer.de
+
+matic.petric [at] fokus.fraunhofer.de
 
 If you want to cite Qrisp in your work, please use:
 

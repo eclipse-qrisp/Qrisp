@@ -173,6 +173,26 @@ class FermionicOperator(Hamiltonian):
     def len(self):
         return len(self.terms_dict)
 
+    def coeffs(self):
+        """
+        Returns the coefficients of the operator.
+
+        Returns
+        -------
+        ndarray
+            The coefficients.
+
+        Examples
+        --------
+
+        >>> from qrisp.operators import a, c
+        >>> O = a(0)*c(1)+a(1)*c(0)+0.5*a(1)+0.5*c(1)
+        >>> O.coeffs()
+        array([1. , 1. , 0.5, 0.5])
+
+        """
+        return np.array(list(self.terms_dict.values()))
+    
     #
     # Printing
     #

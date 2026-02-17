@@ -32,22 +32,86 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 
 """
 
-from functools import lru_cache
-import types
+from functools import wraps
+from typing import Any, Callable, NamedTuple, Tuple
 
-import numpy as np
+from jax.tree_util import tree_flatten
 
-import jax
-import jax.numpy as jnp
-from jax.extend.core import ClosedJaxpr
-
-
-from qrisp.jasp.primitives import OperationPrimitive
-from qrisp.jasp.interpreter_tools import make_profiling_eqn_evaluator, eval_jaxpr
 from qrisp.jasp.evaluation_tools.jaspification import simulate_jaspr
+from qrisp.jasp.interpreter_tools.interpreters.count_ops_metric import (
+    extract_count_ops,
+    get_count_ops_profiler,
+)
+from qrisp.jasp.interpreter_tools.interpreters.depth_metric import (
+    extract_depth,
+    get_depth_profiler,
+    simulate_depth,
+)
+from qrisp.jasp.interpreter_tools.interpreters.num_qubits_metric import (
+    extract_num_qubits,
+    get_num_qubits_profiler,
+    simulate_num_qubits,
+)
+from qrisp.jasp.interpreter_tools.interpreters.utilities import (
+    always_one,
+    always_zero,
+    simulation,
+)
+from qrisp.jasp.jasp_expression import Jaspr
 
 
-def count_ops(meas_behavior):
+class MetricSpec(NamedTuple):
+    """Specification of a metric to be computed via profiling."""
+
+    build_profiler: Callable[[Jaspr, Callable], Tuple[Callable, Any]]
+    extract_metric: Callable[[Tuple, Jaspr, Any], Any]
+    simulate_fallback: Callable[[Jaspr, Any], Any]
+
+
+METRIC_DISPATCH = {
+    "count_ops": MetricSpec(
+        build_profiler=get_count_ops_profiler,
+        extract_metric=extract_count_ops,
+        simulate_fallback=simulate_jaspr,
+    ),
+    "depth": MetricSpec(
+        build_profiler=get_depth_profiler,
+        extract_metric=extract_depth,
+        simulate_fallback=simulate_depth,
+    ),
+    "num_qubits": MetricSpec(
+        build_profiler=get_num_qubits_profiler,
+        extract_metric=extract_num_qubits,
+        simulate_fallback=simulate_num_qubits,
+    ),
+}
+
+
+def _normalize_meas_behavior(meas_behavior) -> Callable:
+    """Normalize the measurement behavior into a callable."""
+
+    if isinstance(meas_behavior, str):
+        if meas_behavior == "0":
+            return always_zero
+        if meas_behavior == "1":
+            return always_one
+        if meas_behavior == "sim":
+            return simulation
+        raise ValueError(
+            f"Don't know how to compute required resources via method {meas_behavior}"
+        )
+
+    if callable(meas_behavior):
+        return meas_behavior
+
+    raise TypeError("meas_behavior must be a str or callable")
+
+
+# TODO: Move each metric implementation into its dedicated module (already present).
+# Keeping them here for now to avoid circular imports.
+
+
+def count_ops(meas_behavior: str | Callable) -> Callable:
     """
     Decorator to determine resources of large scale quantum computations.
     This decorator compiles the given Jasp-compatible function into a classical
@@ -67,11 +131,11 @@ def count_ops(meas_behavior):
     examples section.
 
     Finally it is also possible to call the Qrisp simulator to determine
-    measurement behavior by providing ``sim``. This is of course much less
+    measurement behavior by providing ``"sim"``. This is of course much less
     scalable but in particular for algorithms involving repeat-until-success
     components, a necessary evil.
 
-    Note that the ``sim`` option might return non-deterministic results, while
+    Note that the ``"sim"`` option might return non-deterministic results, while
     the other methods do.
 
     .. warning::
@@ -82,13 +146,13 @@ def count_ops(meas_behavior):
     Parameters
     ----------
     meas_behavior : str or callable
-        A string or callable indicating the behavior of the ressource computation
-        when measurements are performed. Available are
+        A string or callable indicating the behavior of the resource computation
+        when measurements are performed. Available strings are ``"0"``, ``"1"``, and ``"sim"``.
 
 
     Returns
     -------
-    resource_estimation decorator
+    resource_estimation decorator : Callable
         A decorator, producing a function to computed the required resources.
 
     Examples
@@ -111,9 +175,9 @@ def count_ops(meas_behavior):
             return measure(c)
 
         print(main(5))
-        # {'cx': 506, 'x': 22, 'h': 135, 'measure': 55, '2cx': 2, 's': 45, 't': 90, 't_dg': 90}
+        # {'s': 45, 'x': 22, 't_dg': 98, 'cx': 510, 't': 96, 'h': 139, 'measure': 55}
         print(main(5000))
-        # {'cx': 462552491, 'x': 20002, 'h': 112522500, 'measure': 37517500, '2cx': 2, 's': 37507500, 't': 75015000, 't_dg': 75015000}
+        # {'t': 751506, 'h': 1127254, 'x': 2002, 's': 375750, 't_dg': 751508, 'cx': 4629255, 'measure': 752500}
 
     Note that even though the second computation contains more than 800 million gates,
     determining the resources takes less than 200ms, highlighting the scalability
@@ -199,19 +263,21 @@ def count_ops(meas_behavior):
     def count_ops_decorator(function):
 
         def ops_counter(*args):
-
             from qrisp.jasp import make_jaspr
 
             if not hasattr(function, "jaspr_dict"):
                 function.jaspr_dict = {}
 
-            args = list(args)
+            signature = tuple(type(arg) for arg in args)
+            shape_signature = tuple(
+                arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape")
+            )
+            hash_key = (signature, shape_signature, hash(meas_behavior))
 
-            signature = tuple([type(arg) for arg in args])
-            if not signature in function.jaspr_dict:
-                function.jaspr_dict[signature] = make_jaspr(function)(*args)
+            if hash_key not in function.jaspr_dict:
+                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
-            return function.jaspr_dict[signature].count_ops(
+            return function.jaspr_dict[hash_key].count_ops(
                 *args, meas_behavior=meas_behavior
             )
 
@@ -220,138 +286,357 @@ def count_ops(meas_behavior):
     return count_ops_decorator
 
 
-def always_zero(key):
-    return False
+def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
+    """
+    Decorator to determine the depth of large scale quantum computations.
 
+    This decorator compiles the given Jasp-compatible function into a classical
+    function computing the circuit depth required. The decorated function returns
+    an integer indicating the depth of the quantum computation.
 
-def always_one(key):
-    return True
+    The depth is computed by tracking, for each qubit, the time at which it
+    becomes available again after an operation. Multi-qubit gates increase the
+    depth of all qubits they act on to the same value.
 
+    Parameters
+    ----------
+    meas_behavior : str or callable
+        A string or callable indicating the behavior of the resource computation
+        when measurements are performed. Available strings are ``"0"`` and ``"1"``.
+        A callable must take a JAX PRNG key as input and return a boolean.
 
-# This function is the central interface for performing resource estimation.
-# It takes a Jaspr and returns a function, returning a dictionary (with the counted
-# operations).
-def profile_jaspr(jaspr, meas_behavior="0"):
+    max_qubits : int, optional
+        The maximum number of qubits supported for depth computation.
+        Default is 1024.
 
-    if isinstance(meas_behavior, str):
-        if meas_behavior == "0":
-            meas_behavior = always_zero
-        elif meas_behavior == "1":
-            meas_behavior = always_one
-        elif not meas_behavior == "sim":
-            raise Exception(
-                f"Don't know how to compute required resources via method {meas_behavior}"
+    Returns
+    -------
+    depth decorator : Callable
+        A decorator producing a function that computes the depth required.
+
+    Examples
+    --------
+
+    Let's consider a simple circuit:
+
+    ::
+
+        from qrisp import *
+
+        @depth(meas_behavior="0")
+        def circuit(n):
+            qv = QuantumFloat(n)
+            h(qv[0])
+            h(qv[1])
+            cx(qv[0], qv[1])
+            h(qv[0])
+
+        print(circuit(2))  # Output: 3
+
+    The first two Hadamards run in parallel (depth 1), the CNOT
+    increases depth to 2, and the final Hadamard gives depth 3.
+
+    Now, consider a circuit with measurement and classical control:
+
+    ::
+
+        @depth(meas_behavior="0")
+        def circuit(n):
+            qv = QuantumFloat(n)
+            m = measure(qv[0])
+
+            with control(m == 0):
+                h(qv[0])
+                x(qv[1])
+                h(qv[0])
+
+            with control(m == 1):
+                cx(qv[0], qv[1])
+                h(qv[0])
+                x(qv[0])
+
+        print(circuit(2))  # Output: 2
+
+    The same circuit with ``meas_behavior="1"`` yields a depth of 3,
+    because a different branch of the computation is taken.
+
+    **Macro-gates and gate definitions**
+
+    If a gate has a ``definition`` (for example a Toffoli gate implemented
+    as a sequence of simpler gates), the `transpile` method is applied to
+    the definition to determine the depth of the macro-gate.
+
+    .. note::
+
+        Computing depth requires tracking qubit dependencies. As a result,
+        compilation time for the depth metric can be noticeably slower for large circuits
+        compared to ``count_ops``. This will be improved in future versions.
+        However, the scalability offered by Jasp after the initial compilation
+        is not affected.
+
+    .. note::
+
+        The ``max_qubits`` parameter sets an upper limit on the number of qubits
+        that can be handled for depth computation. This is necessary as JAX
+        requires static shapes for JIT compilation. The default value of 1024
+        can be adjusted based on the expected number of qubits in the circuits
+        to be analyzed.
+
+    .. warning::
+
+        It is currently not possible to estimate programs, which include a
+        :ref:`kernelized <quantum_kernel>` function.
+
+    """
+
+    def depth_decorator(function):
+
+        def depth_counter(*args):
+            from qrisp.jasp import make_jaspr
+
+            if not hasattr(function, "jaspr_dict"):
+                function.jaspr_dict = {}
+
+            signature = tuple(type(arg) for arg in args)
+            shape_signature = tuple(
+                arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape")
+            )
+            hash_key = (signature, shape_signature, hash(meas_behavior))
+
+            if hash_key not in function.jaspr_dict:
+                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
+
+            return function.jaspr_dict[hash_key].depth(
+                *args, meas_behavior=meas_behavior, max_qubits=max_qubits
             )
 
-    if callable(meas_behavior):
+        return depth_counter
 
-        def profiler(*args):
+    return depth_decorator
 
-            # The profiling array computer is a function that computes the array
-            # countaining the gate counts.
-            # The profiling dic is a dictionary of type {str : int}, which indicates
-            # which operation has been computed at which index of the array.
-            profiling_array_computer, profiling_dic = get_profiling_array_computer(
-                jaspr, meas_behavior
+
+def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Callable:
+    """
+    Decorator to track qubit allocation and deallocation events during a quantum computation.
+
+    This decorator compiles a Jasp-compatible quantum function into a resource-analysis
+    function that tracks qubit allocation and deallocation events throughout the computation.
+
+    An internal allocation counter is updated as follows:
+
+    - increased whenever qubits are allocated (e.g., via ``QuantumVariable`` creation),
+    - decreased whenever qubits are explicitly deleted (e.g., via ``qv.delete()``),
+
+    The decorated function returns a dictionary containing information about
+    all allocation and deallocation events.
+
+    These are:
+
+    - ``total_allocated``: the total number of qubits allocated during the computation.
+    - ``total_deallocated``: the total number of qubits deallocated during the computation.
+    - ``peak_allocations``: the maximum number of qubits allocated at any point during the computation.
+    - ``finally_allocated``: the number of qubits still allocated at the end of the computation.
+
+    See the examples below for more details on how to interpret these values.
+
+    Parameters
+    ----------
+    meas_behavior : str or callable
+        A string or callable indicating the behavior of the resource computation
+        when measurements are performed. Available strings are ``"0"`` and ``"1"``.
+        A callable must take a JAX PRNG key as input and return a boolean.
+
+    max_allocations : int, optional
+        The maximum number of allocation/deallocation events supported for tracking.
+        Default is 1000. This is necessary as JAX requires static shapes for JIT compilation.
+
+    Returns
+    -------
+    Callable
+        A decorator producing a function that returns a dictionary containing aggregated
+        statistics about allocation and deallocation events during the computation.
+
+    Examples
+    --------
+
+    Let's consider a simple circuit in which the number of allocated
+    qubits depends on the measurement outcome:
+
+    ::
+
+        from qrisp import *
+
+        @num_qubits(meas_behavior="0")
+        def circuit(n1, n2, n3):
+            qv = QuantumFloat(n1)
+            m = measure(qv[0])
+
+            with control(m == 0):
+                qv2 = QuantumFloat(n2)
+                h(qv2[0])
+
+            with control(m == 1):
+                qv3 = QuantumFloat(n3)
+                h(qv3[0])
+
+        print(circuit(2, 3, 4))
+        # Output:
+        # {'total_allocated': 5, 'total_deallocated': 0,
+        # 'peak_allocations': 5, 'finally_allocated': 5}
+
+    Here, the measurement of the first qubit determines whether we allocate 3 or 4 additional qubits.
+    The output dictionary contains information about the total number of allocated qubits (5),
+    the total number of deallocated qubits (0), the peak number of allocated qubits
+    at any point during the computation (5), and the number of qubits still allocated at the end of the computation (5).
+    If we change the measurement behavior to ``"1"``, we get a different output.
+
+    Note that deallocation affects the final count:
+
+    ::
+
+        @num_qubits(meas_behavior="0")
+        def circuit(n):
+            qv = QuantumFloat(2 * n)
+            h(qv[0])
+            qv.delete()
+
+            qv = QuantumFloat(n)
+            h(qv[0])
+
+        print(circuit(4))
+        # Output:
+        # {'total_allocated': 12, 'total_deallocated': 8,
+        # 'peak_allocations': 8, 'finally_allocated': 4}
+
+    Here, we first allocate 8 qubits, then deallocate them, and finally allocate 4 more qubits.
+
+    Let's see a final example with branching and deallocation:
+
+    ::
+
+        from qrisp import *
+
+        @num_qubits(meas_behavior="1")
+        def circuit(num_qubits_input):
+
+            list_of_qvs = []
+
+            for i in range(2):
+                qv = QuantumFloat(num_qubits_input)
+                h(qv[i])
+                list_of_qvs.append(qv)
+
+            qv_2 = QuantumFloat(1)
+            h(qv_2[0])
+            m = measure(qv_2[0])
+
+            qv_2.delete()
+
+            with control(m == 1):
+                qv4 = QuantumFloat(10)
+                h(qv4[0])
+                qv4.delete()
+
+            for i in range(2):
+                list_of_qvs[i].delete()
+
+        print(circuit(8))
+        # Output:
+        # {'total_allocated': 27, 'total_deallocated': 27,
+        # 'peak_allocations': 26, 'finally_allocated': 0}
+
+    In this example, the peak number of allocated qubits is different from the
+    total allocated because ``qv_2`` is deleted before the subsequent allocation of ``qv4``.
+    The final number of allocated qubits is 0 because all allocated qubits are eventually deallocated.
+
+    .. warning::
+
+        Programs that include a :ref:`kernelized <quantum_kernel>` function
+        cannot currently be analyzed.
+
+    """
+
+    def num_qubits_decorator(function):
+
+        def qubits_counter(*args):
+
+            from qrisp.jasp import make_jaspr
+
+            if not hasattr(function, "jaspr_dict"):
+                function.jaspr_dict = {}
+
+            signature = tuple(type(arg) for arg in args)
+            shape_signature = tuple(
+                arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape")
             )
-            
-            # Compute the profiling array
-            if len(jaspr.outvars) > 1:
-                profiling_array = profiling_array_computer(*args)[-1][0]
-            else:
-                profiling_array = profiling_array_computer(*args)[0]
+            hash_key = (signature, shape_signature, hash(meas_behavior))
 
-            # Transform to a dictionary containing gate counts
-            res_dic = {}
-            for k in profiling_dic.keys():
-                if int(profiling_array[profiling_dic[k]]):
-                    res_dic[k] = int(profiling_array[profiling_dic[k]])
+            if hash_key not in function.jaspr_dict:
+                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
-            return res_dic
+            return function.jaspr_dict[hash_key].num_qubits(
+                *args, meas_behavior=meas_behavior, max_allocations=max_allocations
+            )
 
-    else:
+        return qubits_counter
 
-        def profiler(*args):
-            return simulate_jaspr(jaspr, *args, return_gate_counts=True)
-
-    return profiler
+    return num_qubits_decorator
 
 
-# This function takes a Jaspr and returns a function computing the "counting array"
-@lru_cache(int(1e5))
-def get_profiling_array_computer(jaspr, meas_behavior):
+def profile_jaspr(
+    jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0", **kwargs: Any
+) -> Callable:
+    """
+    Profile a Jaspr according to a given metric mode.
 
-    # This functions determines the set of primitives that appear in a given Jaxpr
-    primitives = get_primitives(jaspr)
+    Parameters
+    ----------
+    jaspr : Jaspr
+        The Jaspr to be profiled.
 
-    # Filter out the non OperationPrimitives and fill them in a dictionary
-    profiling_dic = {}
-    for i in range(len(primitives)):
-        if isinstance(primitives[i], OperationPrimitive):
-            op = primitives[i].op
-            if op.definition:
-                op_names = list(op.definition.transpile().count_ops().keys())
-            else:
-                op_names = [op.name]
-            for name in op_names:
-                if not name in profiling_dic:
-                    profiling_dic[name] = len(profiling_dic) - 1
-        elif primitives[i].name == "jasp.measure" and not "measure" in profiling_dic:
-            profiling_dic["measure"] = len(profiling_dic) - 1
+    mode : str
+        The profiling mode to be used.
+        Currently supported modes are "depth", "count_ops", and "num_qubits".
 
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(
-        profiling_dic, meas_behavior
-    )
-    
-    evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
+    meas_behavior : str or callable, optional
+        The measurement behavior to be used during profiling. Default is "0".
 
-    # This function calls the profiling interpeter to evaluate the gate counts
-    def profiling_array_computer(*args):
+    **kwargs : Any
+        Additional keyword arguments to be passed to the profiler builder.
+        For example, `max_qubits` for depth profiling,
+        or `max_allocations` for num_qubits profiling.
 
-        # The XLA compiler showed some scalability problems in compile time.
-        # Through a process involving a lot of blood and sweat
-        # we reverse engineered what to do to improve these problems
-        # 1. represent the integers that count the gates as a list
-        # of integers (instead of an array)
-        # 2. Avoid telling the compiler that it is constants that
-        # are being added. To do this, we supply a list of the first
-        # few integers as arguments, which will be used to do the
-        # incrementation (i.e. CZ_count += 1). It therefore doesn't
-        # look like a constant is being added but a variable
-        final_arg = ([0] * len(profiling_dic), list(range(1, 6)))
-        
-        # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
-        filtered_args = []        
-        from qrisp.operators import QubitOperator, FermionicOperator
-        
-        for x in list(args) + [final_arg]:
-            if type(x) not in [str, QubitOperator, FermionicOperator, types.FunctionType]:
-                filtered_args.append(x)
+    Returns
+    -------
+    Callable
+        A function that computes the specified metric when called with the same
+        arguments as the original Jaspr.
 
-        res = evaluator(*filtered_args)
+    """
 
-        return res
+    meas_behavior_callable = _normalize_meas_behavior(meas_behavior)
+    metric_spec = METRIC_DISPATCH[mode]
 
-    return profiling_array_computer, profiling_dic
+    if (
+        meas_behavior_callable.__name__ == "simulation"
+        and metric_spec.simulate_fallback is not None
+    ):
 
+        @wraps(metric_spec.simulate_fallback)
+        def simulation_wrapper(*args):
+            return metric_spec.simulate_fallback(jaspr, *args, return_gate_counts=True)
 
-# This functions determines the set of primitives that appear in a given Jaxpr
-def get_primitives(jaxpr):
+        return simulation_wrapper
 
-    primitives = set()
+    # `profiler` is a function that computes the metric we are interested in.
+    # `aux` is any auxiliary data that might be needed to reconstruct the metric
+    # (for example the profiling dictionary for count_ops).
+    profiler, aux = metric_spec.build_profiler(jaspr, meas_behavior_callable, **kwargs)
 
-    for eqn in jaxpr.eqns:
-        # Add current primitive
-        primitives.add(eqn.primitive)
+    @wraps(profiler)
+    def profiler_wrapper(*args):
+        args = tree_flatten(args)[0]
+        res = profiler(*args)
+        return metric_spec.extract_metric(res, jaspr, aux)
 
-        if eqn.primitive.name == "cond":
-            primitives.update(get_primitives(eqn.params["branches"][0].jaxpr))
-            primitives.update(get_primitives(eqn.params["branches"][1].jaxpr))
-            continue
-
-        # Handle call primitives (like cond/pjit)
-        for param in eqn.params.values():
-            if isinstance(param, ClosedJaxpr):
-                primitives.update(get_primitives(param.jaxpr))
-
-    return list(primitives)
+    return profiler_wrapper

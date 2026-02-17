@@ -20,7 +20,7 @@ import weakref
 
 import jax
 
-from qrisp.jasp.primitives import create_qubits, delete_qubits_p, OperationPrimitive
+from qrisp.jasp.primitives import create_qubits, delete_qubits_p, quantum_gate_p
 from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
 from qrisp.core.quantum_variable import QuantumVariable
 
@@ -32,11 +32,40 @@ greek_letters = symbols(
 
 
 class TracingQuantumSession:
+    """
+    Manage tracing-time state for building quantum circuits in Jasp mode.
+
+    This class acts as the central recording context while JAX is tracing a Python
+    function that constructs a quantum program. In particular, it maintains:
+
+    - a reference to the currently active :class:`~qrisp.jasp.AbstractQuantumCircuit`
+      being built (``self.abs_qc``),
+
+    - a cache for qubits allocated during tracing (``self.qubit_cache``),
+
+    - a list of "live" quantum variables currently registered in this session
+      (``self.qv_list``),
+
+    - a garbage-collection policy controlling what happens when a quantum variable
+      goes out of scope during tracing (``self.gc_mode``).
+
+    The session supports nested tracing. Each call to :meth:`start_tracing`
+    pushes the previous tracing state onto internal stacks; :meth:`conclude_tracing`
+    restores the previous state and returns the circuit that was traced in the
+    nested scope.
+    """
+
     tr_qs_container = [None]
     abs_qc_stack = []
     qubit_cache_stack = []
 
     def __init__(self):
+        """
+        Construct a new tracing quantum session and make it the current session.
+
+        The session starts with no active circuit.
+        Use :meth:`start_tracing` to begin recording into a provided abstract circuit object.
+        """
 
         self.abs_qc = None
         self.qv_list = []
@@ -44,10 +73,8 @@ class TracingQuantumSession:
         self.qubit_cache = None
         TracingQuantumSession.tr_qs_container.insert(0, self)
         self.qv_stack = []
-        self.gc_mode_stack = []
-        self.gc_mode = "auto"
 
-    def start_tracing(self, abs_qc, gc_mode=None):
+    def start_tracing(self, abs_qc):
         self.abs_qc_stack.append(self.abs_qc)
         self.qubit_cache_stack.append(self.qubit_cache)
 
@@ -58,41 +85,17 @@ class TracingQuantumSession:
         self.qv_list = []
         self.deleted_qv_list = []
 
-        self.gc_mode_stack.append(self.gc_mode)
-        if gc_mode is None:
-            self.gc_mode = self.gc_mode_stack[-1]
-        else:
-            self.gc_mode = gc_mode
-
-    def garbage_collection(self, spare_qv_list):
-
-        if self.gc_mode in ["auto", "debug"]:
-            from qrisp import reset
-
-            spare_hash_list = [hash(qv) for qv in spare_qv_list]
-            for qv in list(self.qv_list):
-                if hash(qv) in spare_hash_list:
-                    continue
-                if self.gc_mode == "auto":
-                    reset(qv)
-                    qv.delete()
-                else:
-                    raise Exception(
-                        f"QuantumVariable {qv} went out of scope without deallocation"
-                    )
-
     def conclude_tracing(self):
 
         temp = self.abs_qc
         self.abs_qc = self.abs_qc_stack.pop(-1)
         self.qubit_cache = self.qubit_cache_stack.pop(-1)
         self.qv_list, self.deleted_qv_list = self.qv_stack.pop(-1)
-        self.gc_mode = self.gc_mode_stack.pop(-1)
 
         return temp
 
     def append(self, operation, qubits=[], clbits=[], param_tracers=[]):
-        
+
         if not self.abs_qc._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
@@ -125,18 +128,22 @@ class TracingQuantumSession:
                     param_tracers=param_tracers,
                 )
             return
-        
+
         elif isinstance(qubits[0], QuantumArray):
-            
+
             for i in range(1, len(qubits)):
                 if not isinstance(qubits[i], QuantumArray):
-                    raise Exception(f"Tried to apply multi-qubit gate to mixed qubit argument types (QuantumArray + {type(qubits[i])})")
-                
+                    raise Exception(
+                        f"Tried to apply multi-qubit gate to mixed qubit argument types (QuantumArray + {type(qubits[i])})"
+                    )
+
                 if qubits[i].shape != qubits[0].shape:
-                    raise Exception("Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape.")
-            
+                    raise Exception(
+                        "Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape."
+                    )
+
             flattened_qubits = [qubits[i].flatten() for i in range(len(qubits))]
-            
+
             for i in jrange(flattened_qubits[0].size):
                 self.append(
                     operation,
@@ -151,10 +158,8 @@ class TracingQuantumSession:
         for i in range(len(temp_op.params)):
             temp_op.params[i] = greek_letters[i]
 
-        op_primitive = OperationPrimitive(temp_op)
-
-        self.abs_qc = op_primitive.bind(
-            *([b for b in qubits] + param_tracers + [self.abs_qc])
+        self.abs_qc = quantum_gate_p.bind(
+            *([b for b in qubits] + param_tracers + [self.abs_qc]), gate=operation
         )
 
     def register_qv(self, qv, size):
@@ -167,7 +172,7 @@ class TracingQuantumSession:
         # Determine amount of required qubits
         if size is not None:
             qv.reg = self.request_qubits(size)
-            
+
         # Register in the list of active quantum variable
         self.qv_list.append(qv)
         qv.qs = self
@@ -175,14 +180,13 @@ class TracingQuantumSession:
         QuantumVariable.live_qvs.append(weakref.ref(qv))
         qv.creation_time = int(QuantumVariable.creation_counter[0])
         QuantumVariable.creation_counter += 1
-        
+
     def request_qubits(self, amount):
         qb_array_tracer, self.abs_qc = create_qubits(amount, self.abs_qc)
         return DynamicQubitArray(qb_array_tracer)
-        
 
     def delete_qv(self, qv, verify=False):
-        
+
         if not self.abs_qc._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
@@ -228,8 +232,10 @@ tracing_qs_singleton = TracingQuantumSession()
 def check_for_tracing_mode():
     return hasattr(jax._src.core.trace_ctx.trace, "frame")
 
-def get_last_equation(i = -1):
-    return jax._src.core.trace_ctx.trace.frame.eqns[i]
+
+def get_last_equation(i=-1):
+    return jax._src.core.trace_ctx.trace.frame.tracing_eqns[i]()
+
 
 def check_live(tracer):
     if tracer is None:

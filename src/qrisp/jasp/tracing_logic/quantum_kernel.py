@@ -116,7 +116,7 @@ def quantum_kernel(func):
 
     """
 
-    func = qache(func)
+    func = qache(func, )
 
     def return_function(*args, **kwargs):
 
@@ -144,7 +144,7 @@ def quantum_kernel(func):
             if isinstance(var.aval, (AbstractQubitArray, AbstractQubit)):
                 raise Exception("Tried to construct quantum kernel with quantum output")
         
-        eqn.params["jaxpr"] = ClosedJaxpr(flattened_jaspr, eqn.params["jaxpr"].consts)
+        eqn.params["jaxpr"] = flattened_jaspr
         
         abs_qc = qs.conclude_tracing()
         

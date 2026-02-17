@@ -1,3 +1,5 @@
+.. _BackendInterface:
+
 Backend Interface
 =================
 
@@ -14,6 +16,7 @@ Backend Interface
    IQMBackend
    AQTBackend
    QiskitRuntimeBackend
+   StimBackend
    
 The backend interface contains a minimal set of features that apply to every gate-based quantum computer.
 The main motivation in designing the interface, is to provide a convenient setup for both clients and providers of physical quantum
@@ -120,3 +123,16 @@ Devices available via AQT Cloud currently support up to 2000 shots.
       device_instance = "ibex", 
       workspace = "YOUR_COMPANY_OR_PROJECT_NAME"
    )
+
+
+:ref:`StimBackend`
+---------------------
+
+The StimBackend function returns a :ref:`BatchedBackend` that uses `Stim <https://github.com/quantumlib/Stim>`_ 
+for fast Clifford circuit simulation. Stim is particularly well-suited for simulating quantum error correction circuits.
+
+::
+
+   from qrisp.interface import StimBackend
+   
+   backend = StimBackend()

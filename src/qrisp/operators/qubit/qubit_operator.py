@@ -31,7 +31,7 @@ from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge, invert
 
-from qrisp.jasp import check_for_tracing_mode, jrange
+from qrisp.jasp import check_for_tracing_mode, jrange, qache
 
 
 threshold = 1e-9
@@ -131,10 +131,15 @@ class QubitOperator(Hamiltonian):
         from qrisp.operators import A,C,Z,Y
         from qrisp import QuantumVariable
         O = A(0)*C(1)*Z(2)*A(3) + Y(3)
-        U = O.trotterization()
-        qv = QuantumVariable(4)
+        
         t = Symbol("t")
-        U(qv, t = t)
+        def state_prep(t):
+            qv = QuantumVariable(4)
+            U = O.trotterization()
+            U(qv, t = t)
+            return qv
+        
+        qv = state_prep(t)
         
     >>> print(qv.qs)
     QuantumCircuit:
@@ -167,8 +172,8 @@ class QubitOperator(Hamiltonian):
     
     Call the simulator:
         
-    >>> print(qv.get_measurement(subs_dic = {t : 0.5}))
-    {'0000': 0.77015, '0001': 0.22985}
+    >>> O.expectation_value(state_prep)(0.5)  # Calculate the expectation value
+    0.007990479428765712
 
     """
 
@@ -177,6 +182,26 @@ class QubitOperator(Hamiltonian):
 
     def len(self):
         return len(self.terms_dict)
+    
+    def coeffs(self):
+        """
+        Returns the coefficients of the operator.
+
+        Returns
+        -------
+        ndarray
+            The coefficients.
+
+        Examples
+        --------
+
+        >>> from qrisp.operators import X, Y, Z
+        >>> H = X(0)*X(1)+Y(0)*Y(1)+0.5*Z(0)*Z(1)
+        >>> H.coeffs()
+        array([1. , 1. , 0.5])
+
+        """
+        return np.array(list(self.terms_dict.values()))
 
     #
     # Printing
@@ -588,7 +613,7 @@ class QubitOperator(Hamiltonian):
         return H
 
     @classmethod
-    def from_matrix(self, matrix):
+    def from_matrix(self, matrix, reverse_endianness=False):
         r"""
         Represents a matrix as an operator
 
@@ -602,6 +627,8 @@ class QubitOperator(Hamiltonian):
         ----------
         matrix : numpy.ndarray or scipy.sparse.csr_matrix
             The matrix.
+        reverse_endianness : bool, optional
+            If ``True``, the endianness is reversed. The default is ``False``.
 
         Returns
         -------
@@ -656,7 +683,10 @@ class QubitOperator(Hamiltonian):
             for k in range(n):
                 i = (row >> k) & 1
                 j = (col >> k) & 1
-                factor_dict[n - k - 1] = OPERATOR_TABLE[(i, j)]
+                if reverse_endianness:
+                    factor_dict[k] = OPERATOR_TABLE[(i, j)]
+                else:
+                    factor_dict[n - k - 1] = OPERATOR_TABLE[(i, j)]
 
             O.terms_dict[QubitTerm(factor_dict)] = value
         return O
@@ -1875,8 +1905,7 @@ class QubitOperator(Hamiltonian):
                             )
                             for intersect_group in intersect_groups:
                                 for term, coeff in intersect_group.terms_dict.items():
-                                    coeff = np.real(coeff)
-                                    #coeff = jnp.real(coeff)
+                                    coeff = jnp.real(coeff)
                                     term.simulate(
                                         -coeff
                                         * t
@@ -1930,6 +1959,192 @@ class QubitOperator(Hamiltonian):
 
         return U
 
+    #
+    # QDrift
+    #
+
+    def qdrift(self, forward_evolution=True):
+        r"""
+        Simulates the time-evolution of a quantum state under a Hamiltonian using the **QDrift** 
+        (`Quantum Stochastic Drift Protocol <https://arxiv.org/pdf/1811.08017>`_) algorithm.
+
+        QDrift approximates the exact time-evolution operator
+
+        .. math::
+            U(t) = e^{-i H t}, \qquad 
+            H = \sum_j h_j H_j,
+
+        by replacing it with a stochastic product of simpler exponentials
+
+        .. math::
+            \tilde{U}(t) = \prod_{k=1}^N e^{-i \, \tau \, H_{j_k}},
+
+        where each term :math:`H_j` is sampled independently with probability
+
+        .. math::
+            p_j = \frac{|h_j|}{\lambda}, \qquad 
+            \lambda = \sum_j |h_j|.
+        
+        Each sampled exponential uses a fixed time-step parameter 
+        
+        .. math:: 
+            \tau = \frac{\lambda t}{N}.
+
+        The number of samples :math:`N` controls the overall simulation accuracy. 
+        Achieving a target precision :math:`\epsilon` requires
+
+        .. math::
+            N = \mathcal{O}\!\left( \frac{\lambda^2 t^2}{\epsilon} \right).
+
+        QDrift is particularly suited for large quantum systems whose Hamiltonian are decomposed into a sum of local Pauli terms. 
+
+        Parameters
+        ----------
+        forward_evolution : bool, optional
+            If set to False, $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is True.
+
+        Returns
+        -------
+        callable
+            A function that implements QDrift.
+            This function receives the following arguments:
+
+            * qarg : :ref:`QuantumVariable`
+                The quantum argument.
+            * t : float, optional
+                The evolution time $t$. The default is 1.0.
+            * samples : int, optional
+                The number of random samples $N$ (the number of exponentials in the product). The default is 100.
+                Larger values yield higher accuracy at the cost of higher runtime.
+            * seed : int, optional
+                Seed for pseudo-random number generator. The default is 42.
+            * iter : int, optional
+                The number of iterations the unitary $U(t,N)$ is applied. The default is 1.
+        
+        Examples
+        --------
+            
+        Below is an example usage of the :func:`qdrift` function to simulate a quantum system governed
+        by an Ising Hamiltonian on a one-dimensional chain graph.
+
+        In this example, we build a chain graph, define an Ising Hamiltonian with given coupling and
+        magnetic field strengths, and compute the magnetization of the system over a range of evolution
+        times using the QDrift algorithm.
+
+        ::
+
+            import matplotlib.pyplot as plt
+            import networkx as nx
+            import numpy as np
+            from qrisp import QuantumVariable
+            from qrisp.operators import X, Z, QubitOperator
+
+            # Helper functions
+            def generate_chain_graph(N):
+                G = nx.Graph()
+                G.add_edges_from((k, k+1) for k in range(N-1))
+                return G
+
+            def create_ising_hamiltonian(G, J, B):
+                # H = -J ∑ Z_i Z_{i+1} - B ∑ X_i
+                H = sum(-J * Z(i)*Z(j) for (i,j) in G.edges()) \
+                    + sum(B * X(i) for i in G.nodes())
+                return H
+
+            def create_magnetization(G):
+                return (1.0 / G.number_of_nodes()) * sum(Z(i) for i in G.nodes())
+
+            # Simulation setup
+            G = generate_chain_graph(6)
+            H = create_ising_hamiltonian(G, J=1.0, B=1.0)
+            U = H.qdrift()
+            M = create_magnetization(G)
+
+            # Choose N according to the theoretical scaling.
+            # The QDrift bound suggests:  N ≈ ceil(2 (λ t)² / ε), where λ = ∑|h_j|. 
+            # Choose any alternative formula for N, 
+            # depending on desired accuracy and runtime.
+            lam = np.sum(np.abs(H.coeffs()))
+            epsilon = 0.1
+
+            def psi(t):
+                qv = QuantumVariable(G.number_of_nodes())
+                N = int(np.ceil(2 * (lam * t) ** 2) / epsilon)
+                U(qv, t=t, samples=N)
+                return qv
+
+            # Compute magnetization expectation.
+            T_values = np.arange(0, 1.5, 0.05)
+            M_values = []
+            for t in T_values:
+                ev_M = M.expectation_value(psi, precision=0.01)
+                M_values.append(float(ev_M(t)))
+
+            plt.scatter(T_values, M_values, color='#6929C4', marker="o", 
+                        linestyle="solid", s=20, label=r"Ising chain")
+            plt.xlabel(r"Evolution time", fontsize=15, color="#444444")
+            plt.ylabel(r"Magnetization", fontsize=15, color="#444444")
+            plt.legend(fontsize=15, labelcolor="#444444")
+            plt.tick_params(axis='both', labelsize=12)
+            plt.grid()
+            plt.show()
+
+        .. image:: /_static/qdrift.png
+            :alt: QDRIFT Ising magnetization simulation
+            :align: center
+            :width: 600px
+
+        For the sake of demonstration, this example uses the **theoretical bound**
+
+        .. math::
+            N = \left\lceil \frac{2 \lambda^2 t^2}{\epsilon} \right\rceil,
+
+        where :math:`\lambda = \sum_j |h_j|` and :math:`\epsilon` is the target precision.
+
+        While this choice guarantees the formal error bound from 
+        `Random Compiler for Fast Hamiltonian Simulation, Physical Review Letters 123, 070503 (2019) <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.123.070503>`_, 
+        it can produce extremely large circuit depths (here on the order of up to thousands of Pauli rotations).
+
+        QDrift is not ideal for Hamiltonians with many large coefficients (like the Ising chain),
+        because the total weight :math:`\lambda` is high, leading to large :math:`N`.
+        However, it is very effective for sparse or weakly weighted Hamiltonians
+        where :math:`\lambda` is small—common in chemistry or local lattice models—
+        making it a powerful tool for large-scale quantum simulations with bounded resources.
+
+        """
+        from jax import random
+        from qrisp.jasp import q_switch
+
+        # JAX-traceable implementation of https://arxiv.org/pdf/1811.08017.
+        # We create a list of term.simulate functions for all terms in the operator
+        # and use the q_switch with classical index to apply the j-th function 
+        # within a (dynamic) loop where j is sampled at random.
+        O = self.hermitize().eliminate_ladder_conjugates()
+        terms = list(O.terms_dict.keys())
+        coeffs = np.array(list(O.terms_dict.values()))
+        signs = (-1) ** int(not forward_evolution) * jnp.sign(coeffs)
+
+        # List of functions performing forward evolution e^{-itH_j}.
+        branches = [terms[j].simulate for j in range(len(terms))]
+
+        # Calculate probability distribution for random sampling of terms.
+        lambda_ = np.sum(np.abs(coeffs))
+        probs = np.abs(coeffs) / lambda_
+        
+        def U(qarg, t=1.0, samples=100, seed=42, iter=1):
+
+            key = random.key(seed)
+            tau = lambda_ * t / jnp.maximum(samples, 1)
+
+            for i in jrange(samples * iter):
+                # Sample index j.
+                subkey = random.fold_in(key, i)
+                j = random.choice(subkey, a=len(probs), p=probs)
+                # Apply e^{-i tau H_j}.
+                q_switch(j, branches, tau * signs[j], qarg)
+
+        return U
+            
     #
     # LCU
     #
@@ -2045,7 +2260,132 @@ class QubitOperator(Hamiltonian):
 
         for term, coeff in hamiltonian.terms_dict.items():
             coeff_ = np.real(coeff)
-            unitaries.append(term.unitary(sign = (coeff<0) ))    
+            unitaries.append(term.unitary(sign = (coeff_ < 0)))
             coefficients.append(np.abs(coeff_))
 
         return unitaries, np.array(coefficients, dtype=float)
+
+    @qache
+    def pauli_block_encoding(self):
+        r"""
+        Returns a :ref:`BlockEncoding` of the operator using the LCU (Linear Combination of Unitaries) protocol.
+            
+        For a Pauli block encoding, consider an $n$-qubit Hamiltonian expressed as a linear combination of Pauli operators:
+
+        .. math::
+
+            H = \sum_{i=0}^{M-1} \alpha_i P_i
+
+        where $\alpha_i \ge 0$ are real coefficients such that $\sum_i \alpha_i = \alpha$, 
+        and $P_i$ are Pauli strings acting on $n$ qubits (including their respective signs).
+
+        The block encoding unitary is constructed via the LCU protocol: 
+        
+        .. math::
+        
+            U = \text{PREP} \cdot \text{SEL} \cdot \text{PREP}^{\dagger}
+            
+        where:
+
+        * **SEL** (Select, in Qrisp: :ref:`q_switch <qswitch>`) applies each Pauli string $P_i$ conditioned on the auxiliary variable state $\ket{i}_a$:
+        
+        .. math::
+
+            \text{SEL} = \sum_{i=0}^{M-1} \ket{i}\bra{i} \otimes P_i
+
+        * **PREP** (Prepare) prepares the state representing the coefficients:
+       
+        .. math::
+
+            \text{PREP} \ket{0}_a = \sum_{i=0}^{M-1} \sqrt{\frac{\alpha_i}{\alpha}} \ket{i}_a
+       
+        Returns
+        -------
+        BlockEncoding
+            A BlockEncoding representing the Hermitian part $(O+O^{\dagger})/2$.
+
+        Notes
+        -----
+        - **Normalization**: The block-encoding normalization factor is $\alpha = \sum_i \alpha_i$.
+
+        Examples
+        --------
+
+        We apply a Hermitian matrix to a quantum state via a Pauli :ref:`BlockEncoding`.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import QubitOperator
+            import numpy as np
+
+            m = 2
+            A = np.eye(2**m, k=1)  
+            A = A + A.T
+
+            print(A)
+            #[[0. 1. 0. 0.]
+            # [1. 0. 1. 0.]
+            # [0. 1. 0. 1.]
+            # [0. 0. 1. 0.]]
+
+        The matrix $A$ encodes the mapping $\ket{0}\rightarrow\ket{1}$, $\ket{k}\rightarrow\ket{k-1}+\ket{k+1}$ for $k=1,\dotsc,2^m-2$, $\ket{2^m-1}\rightarrow\ket{2^m-2}$.
+
+        We apply the matrix $A$ to a :ref:`QuantumFloat` in supersosition state $\ket{0}+\dotsb+\ket{2^m-1}$ via the Pauli :ref:`BlockEncoding` of the corresponding QubitOperator $H$.
+        (To ensure compatibility with Qrisp's QuantumFloat, we use little-endian encoding when representing the matrix as a QubitOperator.)
+
+        To illustrate the result, we actually create an entangled state 
+
+        .. math::
+
+            \sum_{k=0}^{2^m-1}\ket{i}_{a}\ket{i}_b
+
+        of QuantumFloats $a, b$, and apply the matrix $A$ to the variable $b$.
+
+        ::
+
+            H = QubitOperator.from_matrix(A, reverse_endianness=True)
+            BE = H.pauli_block_encoding()
+            # Short: BE = BlockEncoding.from_matrix(A)
+
+            @RUS
+            def inner():
+
+                a = QuantumFloat(2)
+                h(a)
+
+                b = QuantumFloat(2)
+                cx(a,b)
+
+                # Use BlockEncoding to apply matrix A to state b.
+                ancs = BE.apply(b)
+
+                # Pauli block encoding has one ancilla variable.
+                success_bool = measure(ancs[0]) == 0
+                reset(ancs[0])
+                ancs[0].delete()
+
+                return success_bool, a, b
+
+            @terminal_sampling
+            def main():
+
+                a, b = inner()
+
+                return a, b
+
+            main()
+            #{(1.0, 2.0): 0.16666667660077444,
+            # (2.0, 1.0): 0.16666667660077444,
+            # (0.0, 1.0): 0.1666666616996128,
+            # (1.0, 0.0): 0.1666666616996128,
+            # (2.0, 3.0): 0.1666666616996128,
+            # (3.0, 2.0): 0.1666666616996128}
+
+        The ``inner`` function is equipped with the :ref:`RUS` decorator. This means that the routine is run repeatedly until the ancilla variable is measured in state $\ket{0}$, i.e.,
+        the matrix $A$ is successfully applied. 
+
+        """
+        from qrisp.block_encodings import BlockEncoding
+
+        return BlockEncoding.from_operator(self)

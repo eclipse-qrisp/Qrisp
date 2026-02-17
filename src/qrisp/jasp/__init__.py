@@ -25,7 +25,6 @@ from qrisp.jasp.program_control import *
 from qrisp.jasp.evaluation_tools import *
 from qrisp.jasp.optimization_tools import *
 
-
 def compare_jaxpr(jaxpr, primitive_name_list):
     assert len(jaxpr.eqns) == len(primitive_name_list)
     for i in range(len(primitive_name_list)):

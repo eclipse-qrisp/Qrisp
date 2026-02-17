@@ -25,6 +25,10 @@ import jax.numpy as jnp
 import pennylane as qml
 import catalyst
 from catalyst.jax_primitives import qalloc_p, device_init_p, AbstractQreg
+from catalyst.jax_extras.patches import patched_make_eqn
+from catalyst.utils.patching import Patcher
+from jax.interpreters.partial_eval import DynamicJaxprTrace
+
 
 from qrisp.jasp import (
     AbstractQubitArray,
@@ -96,19 +100,22 @@ def jaspr_to_catalyst_jaxpr(jaspr):
             args.append(invar.aval)
 
     # Call the Catalyst interpreter
-    return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator))(*args)
+    
+    # Hotfix according to: https://github.com/PennyLaneAI/catalyst/issues/2394#issuecomment-3752134787
+    with Patcher((DynamicJaxprTrace, "make_eqn", patched_make_eqn)):
+        return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator))(*args)
 
-
-def jaspr_to_catalyst_function(jaspr):
+def jaspr_to_catalyst_function(jaspr, device=None):
 
     # This function takes a jaspr and returns a function that performs a sequence
     # of .bind calls of Catalyst primitives, such that the function (when compiled)
     # by Catalyst reproduces the semantics of jaspr
 
     # Initiate Catalyst backend info
-    device = qml.device("lightning.qubit", wires=0)
-    device_capabilities = catalyst.device.get_device_capabilities(device)
-    backend_info = catalyst.device.extract_backend_info(device, device_capabilities)
+    if device==None:
+        device = qml.device("lightning.qubit", wires=0)
+
+    backend_info = catalyst.device.extract_backend_info(device)
 
     def catalyst_function(*args):
         # Initiate the backend
@@ -133,16 +140,19 @@ def jaspr_to_catalyst_function(jaspr):
 
         # Call the catalyst interpreter. The first return value will be the AbstractQreg
         # tuple, which is why we exclude it from the return values
-        return eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator)(*args)[:-1]
+        
+        # Hotfix according to: https://github.com/PennyLaneAI/catalyst/issues/2394#issuecomment-3752134787
+        with Patcher((DynamicJaxprTrace, "make_eqn", patched_make_eqn)):
+            return eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator)(*args)[:-1]
 
     return catalyst_function
 
 
 @lru_cache(int(1e5))
-def jaspr_to_catalyst_qjit(jaspr, function_name="jaspr_function"):
+def jaspr_to_catalyst_qjit(jaspr, function_name="jaspr_function", device=None):
     # This function takes a jaspr and turns it into a Catalyst QJIT object.
     # Perform the code specified by the Catalyst developers
-    catalyst_function = jaspr_to_catalyst_function(jaspr)
+    catalyst_function = jaspr_to_catalyst_function(jaspr, device=device)
     catalyst_function.__name__ = function_name
     jit_object = catalyst.QJIT(catalyst_function, catalyst.CompileOptions())
     jit_object.jaxpr = make_jaxpr(catalyst_function)(

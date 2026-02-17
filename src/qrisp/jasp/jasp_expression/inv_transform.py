@@ -19,13 +19,14 @@
 from functools import lru_cache
 
 import numpy as np
+from sympy import lambdify
 
 from jax import make_jaxpr
-from jax.extend.core import JaxprEqn, Var
+from jax.extend.core import JaxprEqn, Var, ClosedJaxpr, Jaxpr
 from jax.lax import add_p, sub_p, while_loop
 
-from qrisp.jasp.primitives import AbstractQuantumCircuit, OperationPrimitive
-from qrisp.jasp.interpreter_tools import eval_jaxpr
+from qrisp.jasp.primitives import AbstractQuantumCircuit, quantum_gate_p, greek_letters
+from qrisp.jasp.interpreter_tools import eval_jaxpr, extract_invalues, insert_outvalues
 
 def copy_jaxpr_eqn(eqn):
     return JaxprEqn(
@@ -57,7 +58,7 @@ def invert_eqn(eqn):
 
     """
 
-    if eqn.primitive.name == "pjit":
+    if eqn.primitive.name == "jit":
         params = dict(eqn.params)
         params["jaxpr"] = eqn.params["jaxpr"].inverse()
 
@@ -90,7 +91,8 @@ def invert_eqn(eqn):
 
     else:
         params = dict(eqn.params)
-        primitive = eqn.primitive.inverse()
+        params["gate"] = params["gate"].inverse()
+        primitive = eqn.primitive
 
     return JaxprEqn(
         primitive=primitive,
@@ -137,8 +139,8 @@ def invert_jaspr(jaspr):
     # and the Operation equations to the back.
 
     for eqn in jaspr.eqns:
-        if isinstance(eqn.primitive, OperationPrimitive) or (
-            (eqn.primitive.name in ["pjit", "while", "cond"])
+        if eqn.primitive == quantum_gate_p or (
+            (eqn.primitive.name in ["jit", "while", "cond"])
             and len(eqn.invars)
             and isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit)
         ):
@@ -166,18 +168,53 @@ def invert_jaspr(jaspr):
     
     for i in range(len(op_eqs)):
         op_eqs[i].invars[-1] = current_abs_qc
-        current_abs_qc = Var(suffix=str(qc_var_count[0]), aval=AbstractQuantumCircuit())
+        current_abs_qc = Var(aval=AbstractQuantumCircuit())
         qc_var_count[0] += 1
         op_eqs[i].outvars[-1] = current_abs_qc
+    
+    def eqn_evaluator(eqn, context_dic):
         
-    from qrisp.jasp import Jaspr
+        if eqn.primitive == quantum_gate_p:
+            invals = extract_invalues(eqn, context_dic)
+            num_qubits = eqn.params["gate"].num_qubits
+            
+            params = eqn.params["gate"].params
+            tracers = invals[num_qubits:-1]
+            symbols = greek_letters[:len(params)]
+            
+            processed_tracers = []
+            
+            for expr in params:
+                processed_tracers.append(lambdify(symbols, expr, modules='jax')(*tracers))
 
-    res = Jaspr(
-        constvars=jaspr.constvars,
-        invars=list(jaspr.invars),
-        outvars=jaspr.outvars[:-1] + [current_abs_qc],
-        eqns=non_op_eqs + op_eqs,
-    )
+            new_gate = eqn.params["gate"].bind_parameters({symbols[i] : params[i] for i in range(len(params))})
+            
+            outvalues = quantum_gate_p.bind(*(invals[:num_qubits] + processed_tracers + [invals[-1]]), gate = new_gate)
+            
+            insert_outvalues(eqn, context_dic, outvalues)
+            
+        else:
+            return True
+    
+    temp_jaxpr = ClosedJaxpr(Jaxpr(invars = list(jaspr.invars),
+                                   outvars=jaspr.outvars[:-1] + [current_abs_qc],
+                                   constvars=jaspr.constvars,
+                                   eqns=non_op_eqs + op_eqs,
+                                   debug_info=jaspr.debug_info),
+                             jaspr.consts)
+    
+    processed_jaxpr = make_jaxpr(eval_jaxpr(temp_jaxpr, eqn_evaluator = eqn_evaluator))(*[invar.aval for invar in jaspr.invars])
+    
+    from qrisp.jasp import Jaspr
+    
+    res = Jaspr(processed_jaxpr)
+
+    # res = Jaspr(
+    #     constvars=jaspr.constvars,
+    #     invars=list(jaspr.invars),
+    #     outvars=jaspr.outvars[:-1] + [current_abs_qc],
+    #     eqns=non_op_eqs + op_eqs,
+    # )
 
     if jaspr.ctrl_jaspr:
         res.ctrl_jaspr = jaspr.ctrl_jaspr.inverse()
@@ -252,7 +289,7 @@ def invert_loop_body(jaxpr):
 # This function performs the above mentioned step 2 to treat the loop primitive
 def invert_loop_eqn(eqn):
 
-    overall_constant_amount= max(eqn.params["body_nconsts"], eqn.params["cond_nconsts"])
+    overall_constant_amount= eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
     
     # Process the loop body
     body_jaxpr = eqn.params["body_jaxpr"]
@@ -260,7 +297,7 @@ def invert_loop_eqn(eqn):
 
     def body_fun(val):
         
-        constants = val[:eqn.params["body_nconsts"]]
+        constants = val[eqn.params["cond_nconsts"]:overall_constant_amount]
         carries = val[overall_constant_amount:]
         
         body_res = eval_jaxpr(inv_loop_body)(*(constants + carries))

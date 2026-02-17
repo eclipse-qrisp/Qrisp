@@ -100,6 +100,38 @@ def test_pow():
             sampling_dic = main(i)
             for a, b in sampling_dic.keys():
                 assert a**j == b
+                
+def test_non_trivial_exponent_addition():
+    
+    @boolean_simulation
+    def main(k, e):
+        a = QuantumFloat(10, e)
+        a += k
+        b = QuantumFloat(10, e)
+        b -= k
+        return measure(a), measure(b)
+    
+    for e in range(-4, 2):
+        for k in range(0, 2**5, 4):
+            assert main(k, e) == (k%(2**(10+e)),(-k)%(2**(10+e)))
+            
+    @boolean_simulation
+    def main(k, l, e0, e1):
+        a = QuantumFloat(10, e0)
+        a[:]= k
+        b = QuantumFloat(10, e1)
+        b[:]= l
+        a += b
+        return measure(a)
+    
+    for e0 in range(-4, 2):
+        for e1 in range(-4, 2):
+            for k in range(0, 2**5, 4):
+                for l in range(0, 2**5, 4):
+                    assert main(k, l, e0, e1) == (k+l)%(2**(10+e0))
+            
         
-        
+    
+    
+    
     

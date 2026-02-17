@@ -23,3 +23,4 @@ from qrisp.jasp.primitives.abstract_quantum_circuit import *
 from qrisp.jasp.primitives.measurement_primitive import *
 from qrisp.jasp.primitives.operation_primitive import *
 from qrisp.jasp.primitives.kernel_primitives import *
+from qrisp.jasp.primitives.parity_primitive import *

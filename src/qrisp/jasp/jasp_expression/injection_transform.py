@@ -18,12 +18,9 @@
 
 from functools import lru_cache
 
-from jax import make_jaxpr
-from jax.extend.core import JaxprEqn, ClosedJaxpr
-from jax.lax import add_p, sub_p, while_loop
+from jax.extend.core import JaxprEqn
 
-from qrisp.jasp.primitives import AbstractQuantumCircuit, OperationPrimitive
-from qrisp.jasp.jasp_expression.centerclass import Jaspr
+from qrisp.jasp.primitives import AbstractQuantumCircuit
 
 
 def copy_jaxpr_eqn(eqn):
@@ -42,7 +39,7 @@ def copy_jaxpr_eqn(eqn):
 def injection_transform(jaspr, qubit_array_outvar):
     """
     This function takes in a Jaspr that returns a QubitArray, which has been
-    created in it's body. The function then transforms it to a Jaspr, which
+    created in its body. The function then transforms it to a Jaspr, which
     DOESN'T create this QubitArray but instead receives it as a parameter.
     This functionality is required to realize the redirect_qfunction decorator,
     which turns out-of-place functions into in-place functions.
@@ -107,7 +104,7 @@ def injection_transform(jaspr, qubit_array_outvar):
                 continue
 
         # Recursively apply the injection transform
-        elif eqn.primitive.name == "pjit":
+        elif eqn.primitive.name == "jit":
             if qubit_array_outvar in eqn.outvars:
 
                 # Retrieve the Jaspr to be transformed

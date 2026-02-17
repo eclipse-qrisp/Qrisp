@@ -31,85 +31,65 @@ greek_letters = symbols(
 )
 
 
-class OperationPrimitive(QuantumPrimitive):
+quantum_gate_p = QuantumPrimitive("quantum_gate")
 
-    def __init__(self, op):
 
-        self.op = op
+@quantum_gate_p.def_impl
+def append_impl(*args, **kwargs):
+    """Concrete evaluation of the primitive.
 
-        name = op.name
+    This function does not need to be JAX traceable. It will be invoked with
+    actual instances.
+    """
 
-        if len(op.params):
-            name += "("
+    gate = kwargs["gate"]
 
-            for param in op.params[:-1]:
-                name += str(param) + ", "
+    qc = args[-1]
+    args = args[:-1]
 
-            name += str(op.params[-1]) + ")"
+    qubit_args = args[: gate.num_qubits]
+    parameter_args = args[gate.num_qubits :]
 
-        QuantumPrimitive.__init__(self, name)
+    temp_op = gate.bind_parameters(
+        {greek_letters[i]: float(parameter_args[i]) for i in range(len(parameter_args))}
+    )
+    qc.append(temp_op, list(qubit_args))
+    return qc
 
-        @self.def_abstract_eval
-        def abstract_eval(*args):
-            qc = args[-1]
-            qubit_args = [args[i] for i in range(self.op.num_qubits)]
-            parameter_args = [args[i] for i in range(self.op.num_qubits, len(args) - 1)]
 
-            """Abstract evaluation of the primitive.
-            
-            This function does not need to be JAX traceable. It will be invoked with
-            abstractions of the actual arguments. 
-            """
-            if not isinstance(qc, AbstractQuantumCircuit):
-                raise Exception(
-                    f"Tried to execute OperationPrimitive.bind with the last argument of type {type(qc)} instead of AbstractQuantumCircuit"
-                )
+@quantum_gate_p.def_abstract_eval
+def abstract_eval(*args, **kwargs):
+    """Abstract evaluation of the primitive.
 
-            if not all([isinstance(qb, AbstractQubit) for qb in qubit_args]):
-                raise Exception(
-                    f"Tried to execute {self.op.name} with incompatible qubit tracers {[type(qb) for qb in qubit_args]}"
-                )
+    This function does not need to be JAX traceable. It will be invoked with
+    abstractions of the actual arguments.
+    """
 
-            if not all(
-                [
-                    isinstance(param, jnp.number)
-                    or (
-                        isinstance(param, jax.core.ShapedArray)
-                        and len(param.shape) == 0
-                    )
-                    for param in parameter_args
-                ]
-            ):
-                raise Exception(
-                    f"Tried to execute Operation {self.op.name} with incompatible parameter types {[type(param) for param in parameter_args]} (required are number types)"
-                )
+    # `gate` is treated like a static param to the primitive
+    gate = kwargs["gate"]
+    qc = args[-1]
+    qubit_args = [args[i] for i in range(gate.num_qubits)]
+    parameter_args = [args[i] for i in range(gate.num_qubits, len(args) - 1)]
 
-            return AbstractQuantumCircuit()
+    if not isinstance(qc, AbstractQuantumCircuit):
+        raise Exception(
+            f"Tried to execute OperationPrimitive.bind with the last argument of type {type(qc)} instead of AbstractQuantumCircuit"
+        )
 
-        @self.def_impl
-        def append_impl(*args):
+    if not all([isinstance(qb, AbstractQubit) for qb in qubit_args]):
+        raise Exception(
+            f"Tried to execute {gate.name} with incompatible qubit tracers {[type(qb) for qb in qubit_args]}"
+        )
 
-            qc = args[-1]
-            args = args[:-1]
-            """Concrete evaluation of the primitive.
-            
-            This function does not need to be JAX traceable. It will be invoked with
-            actual instances. 
-            """
-            qubit_args = args[: self.op.num_qubits]
-            parameter_args = args[self.op.num_qubits :]
+    if not all(
+        [
+            isinstance(param, jnp.number)
+            or (isinstance(param, jax.core.ShapedArray) and len(param.shape) == 0)
+            for param in parameter_args
+        ]
+    ):
+        raise Exception(
+            f"Tried to execute Operation {gate.name} with incompatible parameter types {[type(param) for param in parameter_args]} (required are number types)"
+        )
 
-            temp_op = self.op.bind_parameters(
-                {
-                    greek_letters[i]: float(parameter_args[i])
-                    for i in range(len(parameter_args))
-                }
-            )
-            qc.append(temp_op, list(qubit_args))
-            return qc
-
-    def inverse(self):
-        return OperationPrimitive(self.op.inverse())
-
-    def control(self, num_ctrl=1, ctrl_state=-1):
-        return OperationPrimitive(self.op.control(num_ctrl, ctrl_state=-1))
+    return AbstractQuantumCircuit()

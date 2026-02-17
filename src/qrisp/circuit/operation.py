@@ -22,7 +22,7 @@ import numpy as np
 from sympy.core.expr import Expr
 from sympy import lambdify
 from jax.core import Tracer
-from jaxlib.xla_extension import ArrayImpl
+from jax._src.array import ArrayImpl
 
 
 def adaptive_substitution(expr, subs_dic, precision=10):
@@ -168,6 +168,11 @@ class Operation:
 
         return res
 
+    def __str__(self):
+        if self.params:
+            return self.name + str(tuple(self.params))
+        else:
+            return self.name
     # Method to get the unitary matrix of the operation
 
     # The parameter decimals has no influence on what is calculated
@@ -471,11 +476,11 @@ class U3Gate(Operation):
         if self.name == "p":
             self.permeability[0] = True
             self.is_qfree = True
-            self.params = [self.lam]
+            self.params = [self.lam + self.phi]
         elif self.name == "rz":
             self.permeability[0] = True
             self.is_qfree = True
-            self.params = [self.phi]
+            self.params = [self.lam + self.phi]
         elif self.name in ["rx", "ry"]:
             self.permeability[0] = False
             self.is_qfree = False
@@ -484,20 +489,27 @@ class U3Gate(Operation):
             self.params = [self.global_phase]
             self.permeability[0] = True
             self.is_qfree = True
-        elif self.name == "h":
+        elif self.name in ["h", "sx", "sx_dg"]:
             self.params = []
             self.permeability[0] = False
             self.is_qfree = False
+        elif self.name in ["s", "s_dg", "t", "t_dg"]:
+            self.params = []
+            self.permeability[0] = True
+            self.is_qfree = True
 
     # Specify inversion method
     def inverse(self):
         # The inverse of a product of matrices if the reverted product of the inverses,
         # i.e. (A*B*C)^(-1) = C^-1 * B^-1 * A^-1
 
-        if self.name[-3:] == "_dg":
-            new_name = self.name[:-3]
+        if self.name in ["p", "rz", "rx", "ry", "gphase", "h"]:
+            new_name = str(self.name)
         else:
-            new_name = self.name + "_dg"
+            if self.name[-3:] == "_dg":
+                new_name = self.name[:-3]
+            else:
+                new_name = self.name + "_dg"
 
         # For exponentials of hermitian matrices, the inverse is the hermitean
         # conjugate, which implies that we simply have to negate the parameters
@@ -512,14 +524,6 @@ class U3Gate(Operation):
 
         if self.name == "u3":
             res.name = "u3"
-
-        # These are special gates that require only a single parameter
-        if self.name in ["rx", "ry", "rz", "p", "h", "gphase"]:
-            res.name = self.name
-            res.params = [-par for par in self.params]
-
-        if self.name in ["s", "t", "s_dg", "t_dg", "sx", "sx_dg"]:
-            res.params = []
 
         if res.is_qfree is not None:
             res.is_qfree = bool(self.is_qfree)
@@ -563,9 +567,8 @@ class U3Gate(Operation):
                 self.lambdified_params.append(lambdify(args, par, modules="numpy"))
 
         for l_par in self.lambdified_params:
-
             new_params.append(l_par(*repl_args))
-
+        
         return U3Gate(
             new_params[0], new_params[1], new_params[2], self.name, new_params[3]
         )
@@ -620,6 +623,9 @@ class PauliGate(U3Gate):
 
     def __repr__(self):
         return self.name
+    
+    def bind_parameters(self, subs_dict):
+        return self.copy()
 
 
 # This class describes phase tolerant controlled operations
@@ -697,12 +703,12 @@ class PTControlledOperation(Operation):
                 temp_gate = PGate(base_operation.params[0])
 
             if self.ctrl_state[0] == "0":
-                definition_circ.x(-2)
+                definition_circ.x(definition_circ.qubits[-2])
 
             definition_circ.append(temp_gate, definition_circ.qubits[:num_ctrl_qubits])
 
             if self.ctrl_state[0] == "0":
-                definition_circ.x(-2)
+                definition_circ.x(definition_circ.qubits[-2])
 
         elif self.base_operation.name == "gray_phase_gate":
             raise
@@ -829,7 +835,7 @@ class PTControlledOperation(Operation):
         from copy import copy
 
         res = copy(self)
-        if not isinstance(self.definition, type(None)):
+        if self.definition:
             res.definition = self.definition.bind_parameters(subs_dic)
         res.base_operation = self.base_operation.bind_parameters(subs_dic)
         res.params = res.base_operation.params

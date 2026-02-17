@@ -17,7 +17,7 @@
 """
 
 import jax.numpy as jnp
-from jaxlib.xla_extension import ArrayImpl
+from jax._src.array import ArrayImpl
 from jax import jit
 
 from qrisp.jasp.tracing_logic import check_for_tracing_mode
@@ -91,15 +91,6 @@ class JRangeIterator:
             created_qvs = list(created_qvs)
             created_qvs = sorted(created_qvs, key=lambda x: hash(x))
 
-            if qs.gc_mode == "auto":
-                for qv in created_qvs:
-                    reset(qv)
-                    qv.delete()
-            elif qs.gc_mode == "debug" and len(created_qvs):
-                raise Exception(
-                    f"QuantumVariables {created_qvs} went out of scope without deletion during jrange"
-                )
-
             # Perform the incrementation
             self.loop_index += self.step
 
@@ -119,15 +110,6 @@ class JRangeIterator:
             created_qvs = set(list(qs.get_instance().qv_list)) - set(self.iter_2_qvs)
             created_qvs = list(created_qvs)
             created_qvs = sorted(created_qvs, key=lambda x: hash(x))
-
-            if qs.gc_mode == "auto":
-                for qv in created_qvs:
-                    reset(qv)
-                    qv.delete()
-            elif qs.gc_mode == "debug" and len(created_qvs):
-                raise Exception(
-                    f"QuantumVariables {created_qvs} went out of scope without deletion during jrange"
-                )
 
             self.loop_index += self.step
 
