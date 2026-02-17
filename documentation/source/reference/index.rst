@@ -71,7 +71,7 @@ Quantum typing integrates with Python's type hints, enabling self-documenting fu
 QuantumArrays
 =============
 
-Multiple QuantumVariable instances of the same type can be organized into a :doc:`Core/QuantumArray` - an N-dimensional array that inherits from NumPy's ``ndarray``. This brings familiar operations like slicing, reshaping, transposing, and concatenation to quantum data, all operating as zero-cost views (no extra qubits allocated). For arrays of type QuantumFloat, matrix multiplication and tensor contraction are available.
+Multiple QuantumVariable instances of the same type can be organized into a :doc:`Core/QuantumArray` - an N-dimensional array that inherits from NumPy's ``ndarray``. This brings familiar operations like slicing, reshaping, transposing, and concatenation to quantum data, all operating as zero-cost views (zero-cost means that operations like slice do not allocate additional qubits but instead they "rearange" the access to the qubits of the original array). For arrays of type QuantumFloat, matrix multiplication and tensor contraction are available.
 
 
 Quantum Environments
