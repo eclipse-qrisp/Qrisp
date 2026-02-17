@@ -27,10 +27,74 @@ from qrisp.jasp import check_for_tracing_mode
 
 class ContextDict(dict):
     """
-    A dictionary-like data structure to hold variable bindings during Jaxpr evaluation.
+    Execution environment for the Jaxpr abstract interpreter.
+
+    ``ContextDict`` is the central data structure used while evaluating a Jaxpr
+    in the profiling/metric interpreters. It acts as a mutable environment that
+    maps SSA-style Jaxpr variables (``eqn.invars`` / ``eqn.outvars``) to the
+    concrete or traced values chosen by a metric to represent them.
+
+    In a normal JAX execution, primitives are evaluated by the XLA runtime.
+    In the profiler, however, we *replay* the Jaxpr equation-by-equation in
+    pure Python using a custom ``eqn_evaluator``. During this replay, every
+    Jaxpr variable must be associated with a value. ``ContextDict`` provides
+    this association.
+
+    Conceptually, this is equivalent to the “environment” of an interpreter:
+
+        Jaxpr variable  --->  metric-specific runtime value
+
+    The values stored in the dictionary are **not** the original program values.
+    Instead, they are arbitrary Python/JAX objects chosen by the active metric
+    to represent the meaning of that variable for the purpose of resource
+    analysis. For example:
+
+    - In ``count_ops``:
+        * ``QuantumCircuit``  ->  (counting_array, incrementation_constants)
+        * ``QubitArray``      ->  integer size
+        * ``Qubit``           ->  None
+        ...
+
+    - In ``depth``:
+        * ``QuantumCircuit``  ->  (depth_array, current_depth, invalid_flag)
+        * ``QubitArray``      ->  (lookup_table, logical_size)
+        * ``Qubit``           ->  integer qubit id
+        ...
+
+    and so on for other metrics.
+
+    The Jaxpr structure itself is **never modified**. Only the interpretation
+    of its variables changes through what is stored in this dictionary.
+
+    Special behavior
+    ----------------
+    ``ContextDict`` overrides ``__getitem__`` for two main reasons:
+
+    1. **Literal handling**
+
+       Jaxpr literals (``jax.core.Literal``) do not appear as normal variables.
+       When accessed, they are transparently converted to their Python value.
+
+    2. **Automatic JAX scalar conversion**
+
+       If a stored value is a Python ``int`` or ``float``, it is automatically
+       converted to a JAX scalar array. This guarantees that subsequent JAX
+       operations inside the metric evaluator can treat these values as valid
+       JAX types, avoiding abstractification errors.
+
+    Because metrics are free to choose what values to associate with variables,
+    this mechanism allows multiple resource metrics (gate counts, depth, future
+    metrics) to reuse the same Jaxpr interpreter without changing its logic —
+    only the contents of this dictionary differ.
+
+    In summary, ``ContextDict`` is the bridge between:
+
+        static Jaxpr structure  <-->  dynamic metric-specific semantics
     """
 
     def __getitem__(self, key):
+        """Override to handle Jaxpr literals and automatic JAX scalar conversion."""
+
         if isinstance(key, Literal):
             res = key.val
         else:
@@ -44,6 +108,8 @@ class ContextDict(dict):
 
 
 def exec_eqn(eqn, context_dic):
+    """Evaluate a single equation within the given context dictionary."""
+
     invalues = extract_invalues(eqn, context_dic)
     res = eqn.primitive.bind(*invalues, **eqn.params)
     insert_outvalues(eqn, context_dic, res)
@@ -137,9 +203,7 @@ def reinterpret(jaxpr, eqn_evaluator=exec_eqn):
 
 def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator=exec_eqn):
 
-    # Iterate through the equations
     for eqn in jaxpr.eqns:
-        # Evaluate the primitive
 
         default_eval = eqn_evaluator(eqn, context_dic)
 
