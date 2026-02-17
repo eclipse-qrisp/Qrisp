@@ -363,8 +363,9 @@ Who is behind Qrisp
     <hr class="section-divider">
     <div class="code-example-text">
     
+Qrisp is an Eclipse open-source project developed mainly at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_ and `IQM <https://meetiqm.com/>`_. 
 
-Qrisp is an Eclipse open-source project developed mainly at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_ and `IQM <https://meetiqm.com/>`_. We are open to all kinds of contribution - feel free to contact us, if you or your organization intend to contribute.
+We are open to all kinds of contribution - feel free to contact us, if you or your organization intend to contribute.
 
 .. raw:: html
 
