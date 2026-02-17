@@ -6,7 +6,7 @@ Introduction
 
 Quantum computing promises strong speedups for problems across optimization, chemistry, and machine learning - but actually *programming* a quantum computer remains far harder than it should be. Most quantum frameworks still operate at the level of individual qubits and gates: the quantum equivalent of writing assembly. The result is code that is tedious to write, difficult to maintain, and nearly impossible to scale.
 
-Qrisp is a high-level quantum programming framework, written in pure Python, that closes this gap. It lets developers express quantum algorithms using typed variables, infix arithmetic, automatic memory management, and classical control flow - concepts familiar from everyday software engineering - while compiling everything down to executable quantum circuits. With its Jax-based compilation backend (Jasp), Qrisp scales to problem sizes that are entirely out of reach for interpreter-level circuit construction, and natively supports real-time classical computation within quantum programs.
+Qrisp is a high-level quantum programming framework, written in pure Python, that closes this gap. It lets developers express quantum algorithms using typed variables, infix arithmetic, automatic memory management, and classical control flow - concepts familiar from everyday software engineering - while compiling everything down to executable quantum circuits. With its JAX-based compilation backend (Jasp), Qrisp scales to problem sizes that are entirely out of reach for interpreter-level circuit construction, and natively supports real-time classical computation within quantum programs.
 
 Qrisp targets three goals simultaneously:
 
@@ -14,7 +14,7 @@ Qrisp targets three goals simultaneously:
 * **Performance**: Compilation to efficient circuits through qubit recycling, gate optimization, and - via Jasp - lowering to LLVM-backed infrastructure that can handle thousands of qubits.
 * **Portability**: Output as standard circuit objects that run on physical backends from IBM, IQM, AQT, Rigetti, and others, as well as a wide range of simulators.
 
-Since Qrisp programs are Python, developers have direct access to the entire scientific Python ecosystem - NumPy, SciPy, Jax, and beyond - without any language boundary.
+Since Qrisp programs are Python, developers have direct access to the entire scientific Python ecosystem - NumPy, SciPy, JAX, and beyond - without any language boundary.
 
 
 Framework Overview
@@ -223,7 +223,7 @@ Jasp - The Next-Gen Compilation Pipeline
 
 Standard Python-based circuit construction hits a wall at scale: a 35-bit modular multiplication already takes ~20 seconds to compile, and typical RSA key sizes reach 2000 bits. Furthermore, many quantum algorithms require *real-time classical computation* - classical logic that executes during the quantum program, faster than decoherence - which an interpreted language fundamentally cannot provide.
 
-Jasp solves both problems by making Qrisp code traceable through `Jax <https://jax.readthedocs.io/>`_, Google's framework for high-performance numerical computing. Instead of executing a function with actual values, Jax sends *tracer* objects through it, recording operations into a functional intermediate representation (Jaxpr). Jasp extends this with quantum primitives, producing a ``Jaspr`` - a Jax-compatible IR that captures both quantum operations (gate applications, measurements) and classical real-time computations (arithmetic, control flow, even neural network inference) in a single representation.
+Jasp solves both problems by making Qrisp code traceable through `JAX <https://docs.jax.dev/en/latest/>`_, Google's framework for high-performance numerical computing. Instead of executing a function with actual values, JAX sends *tracer* objects through it, recording operations into a functional intermediate representation (jaxpr). Jasp extends this with quantum primitives, producing a ``Jaspr`` - a JAX-compatible IR that captures both quantum operations (gate applications, measurements) and classical real-time computations (arithmetic, control flow, even neural network inference) in a single representation.
 
 
 Using Jasp
@@ -257,7 +257,7 @@ The ``terminal_sampling`` option draws samples directly from the statevector ins
 Compilation Targets
 ^^^^^^^^^^^^^^^^^^^
 
-Because ``Jaspr`` objects are embedded in the Jax ecosystem, they can be lowered through multiple compilation paths:
+Because ``Jaspr`` objects are embedded in the JAX ecosystem, they can be lowered through multiple compilation paths:
 
 * **QIR** (Quantum Intermediate Representation) via Catalyst/MLIR - targeting the LLVM toolchain for optimized hybrid quantum-classical execution.
 * **QuantumCircuit** - standard circuit output for any gate-based backend.
@@ -269,10 +269,10 @@ Key Jasp Features
 
 * **qache** - A caching decorator that traces quantum functions only once per calling signature, then reuses the cached Jaspr. Functions called multiple times incur tracing cost only on the first invocation.
 * **jrange** - A traceable loop construct that replaces Python's ``range``, enabling dynamic iteration counts in compiled code.
-* **Classical control flow** - Measurement results are native integers (not opaque classical bits), so they can drive ``if``/``else`` branching, arithmetic, or any Jax operation in real time.
+* **Classical control flow** - Measurement results are native integers (not opaque classical bits), so they can drive ``if``/``else`` branching, arithmetic, or any JAX operation in real time.
 * **Repeat-until-success (@RUS)** - A decorator for trial-based quantum protocols that loop until a classical measurement condition is met.
 * **sample / minimize** - Traceable primitives for quantum sampling and classical optimization, enabling end-to-end compiled hybrid loops (e.g., full QAOA optimization without Python-level overhead).
-* **Boolean simulation** - A specialized fast-path for circuits composed entirely of boolean gates (X, CX, MCX). Jasp transforms the Jaspr into pure boolean Jax logic, then leverages XLA compilation for massive throughput - demonstrated at over a million quantum floating-point operations after a single compilation step.
+* **Boolean simulation** - A specialized fast-path for circuits composed entirely of boolean gates (X, CX, MCX). Jasp transforms the Jaspr into pure boolean JAX logic, then leverages XLA compilation for massive throughput - demonstrated at over a million quantum floating-point operations after a single compilation step.
 
 
 Real-Time Classical Computation
