@@ -215,7 +215,7 @@ Built-in backend classes include:
    * - :doc:`VirtualBackend <Backend Interface/index>`
      - Run arbitrary dispatch code adhering to the Qrisp interface
 
-Qrisp also supports direct export to Qiskit circuit and other circuit formats for seamless interoperability.
+Qrisp also supports direct export to Qiskit circuits and other circuit formats for seamless interoperability.
 
 
 Jasp - The Next-Gen Compilation Pipeline
