@@ -11,7 +11,7 @@ Qrisp is a high-level quantum programming framework, written in pure Python, tha
 Qrisp targets three goals simultaneously:
 
 * **Expressiveness**: A high-level programming interface with typed quantum variables, automatic uncomputation, and environment-based control flow that maps naturally to the way algorithms are described on paper.
-* **Performance**: Compilation to efficient circuits through qubit recycling, gate optimization, and - via Jasp - lowering to LLVM-backed infrastructure that can handle thousands of qubits.
+* **Performance**: Compilation to efficient circuits through qubit recycling, gate optimization, and  lowering via Jasp to LLVM-backed infrastructure that can handle thousands of qubits.
 * **Portability**: Output as standard circuit objects that run on physical backends from IBM, IQM, AQT, Rigetti, and others, as well as a wide range of simulators.
 
 Since Qrisp programs are Python, developers have direct access to the entire scientific Python ecosystem - NumPy, SciPy, JAX, and beyond - without any language boundary.
