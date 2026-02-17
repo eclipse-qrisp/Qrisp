@@ -33,7 +33,7 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
     Prepare a quantum state on ``qv`` from a target amplitude vector.
 
     Given a vector :math:`b=(b_0,\dotsc,b_{N-1})` (corresponding to ``target_array``),
-    this routine prepares a state proportional to
+    this routine prepares the quantum state:
 
     .. math::
 
@@ -53,6 +53,7 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
     .. math::
 
         \ket{0} \equiv \ket{q_0 = 0, q_1 = 0}, \quad \ket{1} \equiv \ket{q_0 = 1, q_1 = 0}, \dotsc
+
 
     Parameters
     ----------
@@ -131,6 +132,29 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
     The output indicates that the magnitudes of the amplitudes for the basis states
     :math:`\ket{1}`, :math:`\ket{2}`, and :math:`\ket{3}` are in the ratio :math:`1 : 2 : 3`,
     exactly matching the input vector :math:`b = (0,1,2,3)` up to normalization.
+
+    .. note::
+
+        This primitive is not yet compatible with QuantumEnvironments
+        (e.g. ``invert`` or ``control``) in Jasp mode when using the ``qswitch`` method.
+        Trying to use it within such environments, for example by writing:
+
+        ::
+
+            from qrisp.jasp.evaluation_tools import terminal_sampling
+
+            @terminal_sampling
+            def circuit():
+
+                (...)
+
+                with invert():
+                    prepare(..., method="qswitch")
+
+        currently results in an error.
+
+        Furthermore, it is currently not possible to prepare
+        a state with 64 or more qubits using the ``qswitch`` method.
 
     """
 
