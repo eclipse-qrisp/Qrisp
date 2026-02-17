@@ -27,7 +27,9 @@ from qrisp.operators import QubitOperator
 class DCQOProblem:
     """
     General structure to formulate Digitized Counterdiabatic Quantum Optimization problems.
-    This class is used to solve DCQO problems with the algorithms COLD or LCD.
+    This class is used to solve `DCQO <https://journals.aps.org/prresearch/abstract/10.1103/PhysRevResearch.4.L042030>`_
+    problems with the algorithms `COLD <https://doi.org/10.1103/PRXQuantum.4.010312>`_ 
+    (counterdiabatic optimized local driving) or LCD (local counterdiabatic driving).
     To run the COLD algorithm on the problem, you need to specify the control Hamiltonian
     ``H_control`` and the inverse scheduling function ``g_func``. These are not needed for
     the LCD algorithm.
