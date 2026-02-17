@@ -363,7 +363,7 @@ Who is behind Qrisp
     <hr class="section-divider">
     <div class="code-example-text">
 
-Qrisp is an open-source project developed accross organizations. We are open to all kinds of contribution - feel free to contact us, if you or your organization intend to contribute.
+Qrisp is an open-source project developed across organizations. We are open to all kinds of contribution - feel free to contact us, if you or your organization intend to contribute.
 
 .. raw:: html
 

@@ -129,7 +129,7 @@ def subtle_glow_line(ax, x, y, color, lw):
     )
 
 # Gradient fill under target Gaussian (subtle)
-gradient_fill(ax, x_plot, f_gaussian, QRISP_NAVY, n_bands=50, alpha_base=0)
+gradient_fill(ax, x_plot, f_gaussian, QRISP_NAVY, n_bands=50, alpha_base=0.5)
 # Target Gaussian on top
 subtle_glow_line(ax, x_plot, f_gaussian, "#05034B", lw=3)
 
@@ -140,7 +140,7 @@ for deg, col, lw in zip(degrees, palette, lws):
         continue
     i+=1
     y = chebval(x_plot, cheb_coeffs[:deg + 1])
-    gradient_fill(ax, x_plot, y, QRISP_PURPLE, n_bands=40, alpha_base=0.2)
+    # gradient_fill(ax, x_plot, y, QRISP_PURPLE, n_bands=40, alpha_base=0.2)
     subtle_glow_line(ax, x_plot, y, col, lw=lw)
 
 

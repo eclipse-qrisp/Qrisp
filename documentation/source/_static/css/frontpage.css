@@ -165,6 +165,17 @@ h3:not(#hero h3) {
 #hero-right .example-img-plot-overlay,
 #hero-right .example-img-plot-overlay p.sd-card-text {
     border-radius: 14px;
+    background: rgb(0 14 72) !important;
+    color: #ffffff !important;
+}
+
+#hero-right .example-img-plot-overlay {
+    opacity: 0;
+    transition: .2s ease;
+}
+
+#hero-right .sd-card:hover .example-img-plot-overlay {
+    opacity: 0.9;
 }
 
 /* ===== BUTTONS ===== */
