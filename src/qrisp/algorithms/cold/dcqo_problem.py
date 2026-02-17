@@ -432,7 +432,9 @@ class DCQOProblem:
         optimizer="COBYQA",
         objective="agp_coeff_magnitude",
         bounds=(),
-        options={}
+        options={},
+        backend = None,
+        shots=5000
     ):
         """
         Run the specific DCQO problem instance with given quantum arguments, number of timesteps and
@@ -463,6 +465,11 @@ class DCQOProblem:
             The parameter bounds for the optimizer. Default is (-2, 2).
         options : dict
             Additional options for the Scipy solver.
+        backend : :ref:`BackendClient`, optional
+            The backend to be used for the quantum simulation.
+            By default, the Qrisp simulator is used.
+        shots: : int
+            The number of shots. The default is 5000.
 
         Returns
         -------
@@ -511,7 +518,12 @@ class DCQOProblem:
             raise ValueError(f'"{method}" is not an option for method. Choose "LCD" or "COLD".')
 
         # Measure qarg
-        res_dict = qarg.get_measurement()
+        if backend == None:
+            from qrisp.default_backend import def_backend
+            backend = def_backend
+        else:
+            backend = backend
+        res_dict = qarg.get_measurement(backend=backend, shots=shots)
 
         # Add qubo cost in result dict
         for res in res_dict.keys():
