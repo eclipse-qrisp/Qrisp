@@ -237,7 +237,7 @@ Key Features
             
     
         **Block Encodings** |br|
-        Use block encodings as programming abstractions to perform Quantum Linear Algebra using the NumPy-like interface of our :ref:`BlockEncoding` class.
+        Use block encodings as programming abstractions to perform Quantum Linear Algebra using the NumPy-like interface of the :ref:`BlockEncoding` class.
 
         .. raw:: html
         
