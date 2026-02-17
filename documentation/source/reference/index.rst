@@ -57,6 +57,7 @@ Creating a custom quantum type is straightforward - inherit from QuantumVariable
     from qrisp import QuantumVariable
 
     class QuantumDate(QuantumVariable):
+    """A quantum variable that represents a date."""
         def __init__(self, size, starting_date):
             self.starting_date = starting_date
             QuantumVariable.__init__(self, size)
