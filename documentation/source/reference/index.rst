@@ -161,7 +161,7 @@ The :doc:`BlockEncoding <Block Encodings/BlockEncoding>` class is the abstractio
 
     \begin{pmatrix} A/\alpha & \cdot \\ \cdot & \cdot \end{pmatrix}
 
-Three besides the basic signature, three additional constructors cover different use cases:
+Besides the basic signature, three additional constructors cover different use cases:
 
 * ``BlockEncoding.from_array(A)`` - from a NumPy array, for rapid prototyping.
 * ``BlockEncoding.from_operator(H)`` - from a QubitOperator or FermionicOperator.
