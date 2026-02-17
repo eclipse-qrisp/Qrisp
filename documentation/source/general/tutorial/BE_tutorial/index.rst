@@ -37,8 +37,19 @@ Before anything, let's just show what the future looks like:
 
    # {'t': 1578, 'h': 1168, 's': 60, 'cx': 4125, 'x': 528, 't_dg': 2084, 's_dg': 60, 'cz': 186, 'ry': 2, 'u3': 466, 'p': 84, 'gphase': 62, 'cy': 178}
    
+It's meaningful to provide insight on ``epsilon`` and ``kappa`` - the former corresponds to the precision of your approximation of the inverse, while the latter is the condition number of the matrix, which is a measure of how "well-behaved" the matrix is for inversion. The higher the condition number, the more sensitive the solution is to changes in the input, and thus the more resources are required to achieve a certain precision. You will get to learn more about it in the tutorials.
 
-Whether you’re a software engineer wary of venturing into quantum because of scary, spooky circuits and gate-level spaghetti code, or a researcher wondering whether this is the shiny new tool that will allow you to finally implement your clever new block-encoding approach to block encoding (the answer to this is yes, by the way), you've arrived at the right place. If you felt directly addressed as a part of the latter target audience, this tutorial will also teach you to add that one missing quantum resource analysis figure that is missing from your upcoming paper (whose conference submission deadline is, as always, breathing down your neck).
+If the concept of block encodings is not all that familiar to you, don't worry. You will learn everything you need to know about it in the tutorials that are listed below through their respective content contained in their respective tables. The idea here was to let the simplicity speak for itself, and to show you that you can do all of this with a few lines of code, without having to worry about the underlying circuit construction, ancilla management, or any of the other complexities that come with programming quantum linear algebra at the gate level. All of this (and more) is explained in the related tutorials.
+
+This tutorial is written to cater to these target audiences:
+
+- software engineers wary of venturing into quantum because of scary, spooky circuits and gate-level spaghetti code
+
+- researchers wondering whether this is the shiny new tool that will allow you to finally implement your clever new block-encoding approach(the answer to this is yes, by the way).
+
+If you are a part of any or both of these groups (or other, for that matter) you've arrived at the right place. 
+
+Furthermore, if you felt directly addressed as a part of the latter target audience, this tutorial will also teach you to add that one missing quantum resource analysis figure that is missing from your upcoming paper (whose conference submission deadline is, as always, breathing down your neck).
 
 Quantum Linear Algebra has been a rapidly explored field in the recent years, with Quantum Signal Processing being at the center of it all as an unifying model to quantum algorithms. While the theory is extremely elegant and surprisingly simple (depending of the amount of exposure to it, I guess), moving from mathematical expressions and circuit schematics on paper (or your favorite e-reader) to a functioning quantum circuit has historically been a manual, rather complex labor. Qrisp's BlockEncoding class changes that, allowing to program quantum linear algebra as easily as you handle arrays in Numpy, with the compiler handling all the heavy lifting of the ancilla management of the underlying circuit (aah, scary word) construction behind the taken abstractions.
 
