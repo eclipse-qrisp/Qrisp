@@ -28,6 +28,8 @@ from qrisp import (
     QuantumVariable,
     QuantumCircuit,
     rx,
+    BigInteger,
+    QuantumModulus
 )
 from qrisp.jasp import jrange, q_cond
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
@@ -435,6 +437,20 @@ class TestDepthControlStructures:
 
         assert main(5) == 1
 
+    def test_create_qubits_called_in_conditional(self):
+        """Test depth computation when create_qubits is called inside a conditional."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qv = QuantumFloat(num_qubits)
+            h(qv[0])
+            m = measure(qv[0])
+            with control(m == 0):
+                qv_inner = QuantumFloat(num_qubits)
+                h(qv_inner[0])
+
+        assert main(1) == 1
+
 
 class TestDepthMeasurementBehavior:
     """Test that different measurement behaviors affect depth computation correctly."""
@@ -839,3 +855,15 @@ class TestDepthOverflow:
             ),
         ):
             main(300, 301)
+
+    
+
+def test_caching_behavior():
+
+    @depth(meas_behavior="0")
+    def main(i: BigInteger):
+        r = QuantumModulus(i)
+        r[:] = 1
+
+    main(BigInteger.create_static(1, 1))
+    main(BigInteger.create_static(5, 2))

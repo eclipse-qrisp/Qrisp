@@ -25,12 +25,16 @@ from jax.tree_util import tree_flatten, tree_unflatten
 
 from qrisp.jasp import (
     eval_jaxpr,
+    flatten_environments,
+    cond_to_cl_control,
     extract_invalues,
     flatten_environments,
     insert_outvalues,
 )
+from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive, ParityOperation
+from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement
+from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive
 from qrisp.jasp.jasp_expression import collect_environments, invert_jaspr
-from qrisp.jasp.primitives import AbstractQuantumCircuit
 
 
 class Jaspr(ClosedJaxpr):
@@ -672,15 +676,22 @@ class Jaspr(ClosedJaxpr):
         qs.abs_qc = new_abs_qc
         return res
 
-    def count_ops(self, *args, meas_behavior="1"):
+    def count_ops(self, *args, meas_behavior):
         from qrisp.jasp.evaluation_tools import profile_jaspr
 
         return profile_jaspr(self, "count_ops", meas_behavior)(*args)
 
-    def depth(self, *args, meas_behavior="1", max_qubits=1024):
+    def depth(self, *args, meas_behavior, max_qubits=1024):
         from qrisp.jasp.evaluation_tools import profile_jaspr
 
         return profile_jaspr(self, "depth", meas_behavior, max_qubits=max_qubits)(*args)
+
+    def num_qubits(self, *args, meas_behavior, max_allocations=1000):
+        from qrisp.jasp.evaluation_tools import profile_jaspr
+
+        return profile_jaspr(
+            self, "num_qubits", meas_behavior, max_allocations=max_allocations
+        )(*args)
 
     def embedd(self, *args, name=None, inline=False):
         from qrisp.jasp import TracingQuantumSession, get_last_equation
