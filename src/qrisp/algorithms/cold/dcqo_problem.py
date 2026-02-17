@@ -27,7 +27,7 @@ from qrisp.operators import QubitOperator
 class DCQOProblem:
     """
     General structure to formulate Digitized Counterdiabatic Quantum Optimization problems.
-    This class is used to solve `DCQO <https://journals.aps.org/prresearch/abstract/10.1103/PhysRevResearch.4.L042030>`_
+    This class is used to solve |dcqo_link|
     problems with the algorithms `COLD <https://doi.org/10.1103/PRXQuantum.4.010312>`_ 
     (counterdiabatic optimized local driving) or LCD (local counterdiabatic driving).
     To run the COLD algorithm on the problem, you need to specify the control Hamiltonian
@@ -123,6 +123,10 @@ class DCQOProblem:
 
     We get a dictionary where the key is the quantum state and the values are lists of [probability, cost]. 
     So our most likely result is '1011' with probabilty 0.4 and the QUBO cost $x^T Q x = -2.5$.
+
+    .. |dcqo_link| raw:: html
+    
+       <a href="https://journals.aps.org/prresearch/abstract/10.1103/PhysRevResearch.4.L042030" target="_blank">DCQO</a>
     """
 
     def __init__(
@@ -267,7 +271,7 @@ class DCQOProblem:
         qarg : :ref:`QuantumVariable`
             The quantum argument to which the quantum circuit is applied.
         N_steps : int
-            Number of steps in which the timefunction ``lambda'' is split up.
+            Number of steps in which the timefunction ``lambda`` is split up.
         T : float
             Evolution time for the simulation.
         """
@@ -318,7 +322,7 @@ class DCQOProblem:
         qarg : :ref:`QuantumVariable`
             The quantum argument to which the quantum circuit is applied.
         N_steps : int
-            Number of steps in which the timefunction ``lambda'' is split up.
+            Number of steps in which the timefunction ``lambda`` is split up.
         T : float
             Evolution time for the simulation.
         opt_params : list
