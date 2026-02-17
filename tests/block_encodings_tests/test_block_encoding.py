@@ -163,9 +163,10 @@ def test_block_encoding_resources():
 
     res_dict = BE.resources(QuantumFloat(2))
     # {'gate counts': {'x': 3, 'cz': 2, 'u3': 2, 'cx': 4, 'gphase': 2}, 
-    # 'depth': 12}
+    # 'depth': 12, 'qubits': 4}
     assert isinstance(res_dict['gate counts'], dict)
     assert isinstance(res_dict['depth'], int)
+    assert isinstance(res_dict['qubits'], int)
 
 
 def test_block_encoding_resources_value_error():

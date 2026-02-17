@@ -107,7 +107,7 @@ def GQSP(
     Examples
     --------
 
-    **Example 1: Applying a transformation in Fourier basis**
+    **Applying a transformation in Fourier basis**
 
     We apply the operator
 
@@ -194,10 +194,25 @@ def GQSP(
 
     which are exactly the probabilities we observed in the quantum simulation.
 
+    .. note::
 
-    **Example 2: Applying a transformation in Chebyshev basis**
+        While GQSP allows you to apply arbitrary polynomials to operators, applying
+        abitrary polynomials to :ref:`BlockEncodings <BlockEncoding>` requires an 
+        additional step. This is because raising the operator
 
-    An example for filtered state preparation with GQSP is shown in the :ref:`tutorial`.
+        .. math::
+
+            U = \begin{pmatrix} \frac{A}{\alpha} & * \\ * & * \end{pmatrix}
+
+        to a given power $k$ does not necessarily give you
+
+        .. math::
+
+            \tilde{U} = \begin{pmatrix} \left(\frac{A}{\alpha}\right)^k & * \\ * & * \end{pmatrix}
+
+        In order to still apply polynomials also to them, we need to call the qubitization
+        method and transform the polynomial into Chebychev basis. More to that in 
+        the GQSP :ref:`tutorial`.
 
     """
 

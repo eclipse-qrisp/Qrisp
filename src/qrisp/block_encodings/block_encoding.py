@@ -29,7 +29,7 @@ from qrisp.alg_primitives.reflection import reflection
 from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
 from qrisp.interface import BackendClient
-from qrisp.jasp import count_ops, depth, jrange, qache, check_for_tracing_mode as is_tracing
+from qrisp.jasp import count_ops, depth, num_qubits, jrange, qache, check_for_tracing_mode as is_tracing
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool, QuantumFloat
@@ -243,7 +243,7 @@ class BlockEncoding:
 
         BE.resources(QuantumFloat(3))
         # {'gate counts': {'s': 4, 't_dg': 16, 'h': 16, 't': 14, 'gphase': 2, 
-        # 'p': 2, 'x': 5, 'cx': 54, 'u3': 6, 'measure': 4}, 'depth': 87}
+        # 'p': 2, 'x': 5, 'cx': 54, 'u3': 6, 'measure': 4}, 'depth': 48, 'qubits': 9}
 
     """
 
@@ -864,7 +864,7 @@ class BlockEncoding:
     
         return ev_function
 
-    def resources(self, *operands: QuantumVariable, meas_behavior: str = "0"):
+    def resources(self, *operands: QuantumVariable, meas_behavior: str | Callable = "0", max_qubits: int = 1024, max_allocations: int = 1000):
         r"""
         Estimate the quantum resources required for the BlockEncoding.
 
@@ -877,8 +877,12 @@ class BlockEncoding:
         ----------
         *operands : QuantumVariable
             QuantumVariables serving as operands for the block-encoding.
-        meas_behavior : str, optional
+        meas_behavior : str or callable, optional
             Specifies the measurement outcome to assume during the tracing process (e.g., "0", or "1"). The default is "0".
+        max_qubits : int, optional
+            The maximum number of qubits supported for depth computation. Default is 1024.
+        max_allocations : int, optional
+            The maximum number of allocation/deallocation events supported for tracking. Default is 1000.
 
         Returns
         -------
@@ -911,7 +915,7 @@ class BlockEncoding:
             res_dict = BE.resources(QuantumFloat(2))
             print(res_dict)
             # {'gate counts': {'x': 3, 'cz': 2, 'u3': 2, 'cx': 4, 'gphase': 2},
-            # 'depth': 12}
+            # 'depth': 12, 'qubits': 4}
 
         **Example 2:** Estimate the quantum resources for applying the Quantum Eigenvalue Transform.
 
@@ -932,7 +936,7 @@ class BlockEncoding:
             res_dict = BE_QET.resources(QuantumFloat(2))
             print(res_dict)
             # {'gate counts': {'x': 11, 'cz': 8, 'rx': 2, 'u3': 6, 'cx': 16,
-            # 'gphase': 6, 'p': 2}, 'depth': 42}
+            # 'gphase': 6, 'p': 2}, 'depth': 42, 'qubits': 5}
 
         """
 
@@ -953,9 +957,10 @@ class BlockEncoding:
             self.unitary(*ancillas, *operands)
             return operands
 
-        circuit_depth = depth(meas_behavior=meas_behavior)(main)()
+        circuit_depth = depth(meas_behavior=meas_behavior, max_qubits=max_qubits)(main)()
         gate_counts = count_ops(meas_behavior=meas_behavior)(main)()
-        return {"gate counts": gate_counts, "depth": circuit_depth}
+        qubit_counts = num_qubits(meas_behavior=meas_behavior, max_allocations=max_allocations)(main)()
+        return {"gate counts": gate_counts, "depth": circuit_depth, "qubits": qubit_counts["peak_allocations"]}
 
     def qubitization(self) -> BlockEncoding:
         r"""
