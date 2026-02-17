@@ -1319,8 +1319,8 @@ def reset(qubits):
     qubit : Qubit or list[Qubit] or QuantumVariable
         The Qubit to measure.
     """
-    from qrisp import find_qs
-    from qrisp.jasp import TracingQuantumSession
+    from qrisp import find_qs, QuantumArray
+    from qrisp.jasp import TracingQuantumSession, jrange
 
     qs = find_qs(qubits)
 
@@ -1333,6 +1333,11 @@ def reset(qubits):
 
         if isinstance(qubits, QuantumVariable):
             abs_qc = reset_p.bind(qubits.reg.tracer, qs.abs_qc)
+        elif isinstance(qubits, QuantumArray):
+            flattened_qa = qubits.flatten()
+            for i in jrange(qubits.size):
+                reset(flattened_qa[i])
+            return
         elif isinstance(qubits.aval, AbstractQubitArray):
             abs_qc = reset_p.bind(qubits.tracer, qs.abs_qc)
         elif isinstance(qubits.aval, AbstractQubit):

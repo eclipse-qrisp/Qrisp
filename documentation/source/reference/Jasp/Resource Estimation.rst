@@ -12,6 +12,8 @@ circuit.
 Gate count
 ----------
 
+.. _count_ops:
+
 .. autofunction:: count_ops
 
 
@@ -19,3 +21,9 @@ Circuit depth
 -------------
 
 .. autofunction:: depth
+
+
+Number of qubits
+----------------
+
+.. autofunction:: num_qubits
