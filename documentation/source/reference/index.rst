@@ -11,7 +11,7 @@ Qrisp is a high-level quantum programming framework, written in pure Python, tha
 Qrisp targets three goals simultaneously:
 
 * **Expressiveness**: A high-level programming interface with typed quantum variables, automatic uncomputation, and environment-based control flow that maps naturally to the way algorithms are described on paper.
-* **Performance**: Compilation to efficient circuits through qubit recycling, gate optimization, and  lowering via Jasp to LLVM-backed infrastructure that can handle thousands of qubits.
+* **Performance**: Compilation to efficient circuits through qubit recycling, gate optimization, and  lowering via Jasp to LLVM-backed infrastructure that can handle thousands of qubits and trillions of gates.
 * **Portability**: Output as standard circuit objects that run on physical backends from IBM, IQM, AQT, Rigetti, and others, as well as a wide range of simulators.
 
 Since Qrisp programs are Python, developers have direct access to the entire scientific Python ecosystem - NumPy, SciPy, JAX, and beyond - without any language boundary.
@@ -36,7 +36,7 @@ The :doc:`Core/QuantumVariable` is the central building block. It represents a q
     print(qv)
     # Outcome: {'000': 0.5, '111': 0.5}
 
-Under the hood, each QuantumVariable is registered in a :doc:`Core/QuantumSession` that manages its lifecycle - qubit allocation, entanglement tracking, compilation, and deallocation. A system of automatic :doc:`Core/Session Merging` ensures that variables from different sessions are transparently unified when they interact, so in most cases the user never has to think about sessions at all.
+Under the hood, each QuantumVariable is registered in a :doc:`Core/QuantumSession` that manages its lifecycle - qubit allocation, gate application, compilation, and deallocation. A system of automatic :doc:`Core/Session Merging` ensures that variables from different sessions are transparently unified when they interact, so in most cases the user never has to think about sessions at all.
 
 
 Quantum Types
