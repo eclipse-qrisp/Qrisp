@@ -109,7 +109,7 @@ h3:not(#hero h3) {
 
 #hero-left .scaled-image {
     filter: brightness(0) invert(1);
-    opacity: 0.8;
+    opacity: 1;
 }
 
 #hero-left h2 {
@@ -404,6 +404,16 @@ h3:not(#hero h3) {
 
     #hero-left h2 {
         font-size: 48px !important;
+    }
+
+    #hero-left p {
+        margin-right: 0 !important;
+    }
+
+    #hero-left .scaled-image,
+    #hero-left img[src$="logo_white.png"] {
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
 
     #hero-right {
