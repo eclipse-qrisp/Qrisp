@@ -279,6 +279,15 @@ html, body {
   align-items: center;
 }
 
+#key-features .sd-card-body img {
+  height: auto;
+  width: auto;
+  max-width: 140px;
+  max-height: 140px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 /* CSS for mobile layout */
 @media (max-width: 767px) {
   #key-features .sd-card-body {

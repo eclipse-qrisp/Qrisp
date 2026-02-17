@@ -154,9 +154,28 @@ Key Features
         
 
     
-        **Jasp integration** |br|
-        Exert hybrid real-time algorithm control with Catalyst and Jasp. Qrisp's JAX integration enables seamless hybrid quantum-classical workflows with automatic differentiation. `Learn more → <./general/tutorial/Jasp.html>`_
+        **Jax integration** |br|
+        Exert hybrid real-time algorithm control with Catalyst and Jasp. Qrisp's JAX integration enables seamless hybrid quantum-classical workflows with deep integration into classical compiler infrastructure (LLVM/MLIR). `Learn more → <./general/tutorial/Jasp.html>`_
         
+        .. raw:: html
+        
+            </div>
+			
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+        
+        .. image:: ./_static/puzzle.png
+            :align: center
+
+        .. raw:: html
+        
+            <div class="key-features-text">
+
+    
+        **Modularity** |br|
+        Automated qubit allocation allows separate modules to recycle qubit resources for each other without intertwining the code. This feature facilitates interoperability of code written by respective domain experts.
+
         .. raw:: html
         
             </div>
@@ -181,25 +200,6 @@ Key Features
         .. raw:: html
         
             </div>
-
-    .. grid-item-card::
-        :class-card: sd-border-0
-        :shadow: none
-        
-        .. image:: ./_static/puzzle.png
-            :align: center
-
-        .. raw:: html
-        
-            <div class="key-features-text">
-
-    
-        **Modularity** |br|
-        Automated qubit allocation allows separate modules to recycle qubit resources for each other without intertwining the code. This feature facilitates interoperability of code written by respective domain experts.
-
-        .. raw:: html
-        
-            </div>
         
     .. grid-item-card::
         :class-card: sd-border-0
@@ -216,7 +216,28 @@ Key Features
             
     
         **Arithmetic** |br|
-        A smoothly integrated system of floating point arithmetic streamlines the development of non-trivial applications.
+        A smoothly integrated system of floating point arithmetic streamlines the development of non-trivial applications. Furthermore, a system of types and functions describing modular arithmetic is available.
+
+        .. raw:: html
+        
+            </div>
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+        
+        .. image:: ./_static/block_encoding_icon.png
+            :target: ./reference/Quantum%20Types/QuantumFloat.html
+            :align: center
+
+
+        .. raw:: html
+        
+            <div class="key-features-text">
+            
+    
+        **Block Encodings** |br|
+        Use block encodings as programming abstractions to perform Quantum Linear Algebra using the NumPy-like interface of our :ref:`BlockEncoding` class.
 
         .. raw:: html
         
@@ -240,8 +261,6 @@ Key Features
         
             </div>
 
-.. grid:: 1 1 2 2
-    :gutter: 5
 
     .. grid-item-card::
         :class-card: sd-border-0
@@ -328,7 +347,7 @@ Qrisp enables developers to express quantum algorithms in substantially fewer li
          print(res)
          #Yields: {12: 1.0}
 
-Beyond simple arithmetic, our :ref:`tutorial` demonstrates a complete implementation of Shor's algorithm using `Montgomery reduction <https://en.wikipedia.org/wiki/Montgomery_modular_multiplication>`_, fully agnostic to the choice of quantum adder. The implementation manages several distinct :ref:`QuantumVariables <QuantumVariable>`, whose qubits are automatically disentangled and recycled across variables. This approach :ref:`significantly reduces <shor_benchmark_plot>` resource requirements compared to existing open-source implementations, while remaining `accessible and well-documented <https://www.qrisp.eu/general/tutorial/Shor.html>`_.
+Beyond simple arithmetic, our :ref:`tutorial` demonstrates a complete implementation of Shor's algorithm using `Montgomery reduction <https://en.wikipedia.org/wiki/Montgomery_modular_multiplication>`_, fully agnostic to the choice of quantum adder. The implementation manages several distinct :ref:`QuantumVariables <QuantumVariable>`, whose qubits are automatically disentangled and recycled across function calls. This approach :ref:`significantly reduces <shor_benchmark_plot>` resource requirements compared to existing open-source implementations, while remaining `accessible and well-documented <https://www.qrisp.eu/general/tutorial/Shor.html>`_.
 
 This example demonstrates how high-level quantum programming enables novel, scalable solutions to complex problems - and underscores the role that structured languages will play in the future of quantum computing.
 
@@ -345,7 +364,7 @@ Who is behind Qrisp
     <div class="code-example-text">
     
 
-Qrisp is an Eclipse open-source project developed mainly at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_ and `IQM <https://meetiqm.com/>`_. We aim to open quantum computation to a broad audience of developers.
+Qrisp is an Eclipse open-source project developed mainly at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_ and `IQM <https://meetiqm.com/>`_. We are open to all kinds of contribution - feel free to contact us, if you or your organization intend to contribute.
 
 .. raw:: html
 
