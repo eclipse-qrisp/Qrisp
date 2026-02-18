@@ -113,24 +113,23 @@ def _warn_slice(idx_slice1, idx_slice2):
     jax.debug.print(
         (
             "ERROR: Slice operation with start index {idx_slice1} and stop index {idx_slice2} "
-            "is out of bounds. Adjusting indices to fit within valid range."
+            "is out of bounds or is currently not implemented. Please adjust the slice "
+            "indices to provide a positive size and ensure they are within bounds."
         ),
         idx_slice1=idx_slice1,
         idx_slice2=idx_slice2,
     )
 
 
-# The computation currently does not fail if the fuse operation goes out of bounds,
+# The computation currently does not fail if the delete/reset operation is called,
 # but this way we can print an informative message.
-def _warn_fuse(size1, size2):
-    """Helper function to print a warning when the fuse operation goes out of bounds."""
+def _warn_delete_reset():
+    """Helper function to print a warning when the delete/reset operation is called."""
     jax.debug.print(
         (
-            "ERROR: Fuse operation with sizes {size1} and {size2} "
-            "is out of bounds. Adjusting sizes to fit within valid range."
+            "Warning: Delete/reset operation handling for "
+            "depth metric is currently not implemented. "
         ),
-        size1=size1,
-        size2=size2,
     )
 
 
@@ -303,10 +302,9 @@ class DepthMetric(BaseMetric):
         arr_b, size_b = _as_qubit_array_handle(invalue2)
 
         size_out = jnp.minimum(size_a + size_b, jnp.int64(self.max_qubits))
-        jax.lax.cond(size_out <= 0, _warn_fuse, lambda *_: None, size_a, size_b)
 
-        table_size = size_out if not is_abstract(size_out) else self.max_qubits
-        idxs = _create_lookup_table(jnp.int64(0), table_size)
+        indices_size = size_out if not is_abstract(size_out) else self.max_qubits
+        idxs = jnp.arange(indices_size, dtype=jnp.int64)
 
         # positions in the fused array that correspond to A
         a_pos = jnp.clip(idxs, 0, jnp.maximum(size_a - 1, 0))
@@ -348,6 +346,8 @@ class DepthMetric(BaseMetric):
 
         _, metric_data = invalues
 
+        _warn_delete_reset()
+
         # Associate the following in context_dic:
         # QuantumCircuit -> metric_data
         return metric_data
@@ -355,6 +355,8 @@ class DepthMetric(BaseMetric):
     def handle_delete_qubits(self, invalues, eqn, context_dic):
 
         _, metric_data = invalues
+
+        _warn_delete_reset()
 
         # Associate the following in context_dic:
         # QuantumCircuit -> metric_data
