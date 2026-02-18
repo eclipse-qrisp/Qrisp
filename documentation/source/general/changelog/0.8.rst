@@ -8,7 +8,7 @@ Qrisp 0.8 is a landmark release bringing **Quantum Linear Algebra** to the foref
 BlockEncoding Class
 -------------------
 
-The BlockEncoding class is the central abstraction for Quantum Linear Algebra in Qrisp. By establishing block encodings as a programming abstraction, it allows users to program complex quantum linear algebra as easily as handling arrays in NumPy. It embeds a non-unitary operator into the upper-left block of a larger unitary system. With this intuitive interface, users can write matrix expressions like addition, multiplication, inversion, polynomial transformations, and Qrisp's compiler automatically handles the heavy lifting of underlying circuit construction and ancilla management.
+The BlockEncoding class is the central abstraction for Quantum Linear Algebra in Qrisp. By establishing block encodings as a programming abstraction, it allows users to program complex quantum linear algebra as easily as handling arrays in NumPy. It embeds a non-unitary operator into the upper-left block of a larger unitary matrix. With this intuitive interface, users can write matrix expressions like addition, multiplication, inversion, polynomial transformations, and Qrisp's compiler automatically handles the heavy lifting of underlying circuit construction and ancilla management.
 Block encodings can be constructed from a variety of sources:
 
 Construction methods
@@ -51,7 +51,7 @@ Qrisp 0.8 introduces a comprehensive :ref:`GQSP <GQSP>` module implementing the 
 * :func:`Fourier series loader <qrisp.gqsp.fourier_series_loader>`: State preparation by loading Fourier modes into qubit amplitudes.
 * :func:`Convolution <qrisp.gqsp.convolve>`: Cyclic convolution of a quantum state with a classical filter.
 
-The :func:`GQSP angle computation <qrisp.gqsp.gqsp_angles>` runs in efficiently and numerically stable using the inverse non-linear Fourier transform and spectral factorization. All of these integrate tightly with the :ref:`BlockEncoding <BlockEncoding>` class via its ``.poly``, ``.inv``, and ``.sim`` methods.
+The :func:`GQSP angle computation <qrisp.gqsp.gqsp_angles>` runs efficiently using the inverse non-linear Fourier transform and spectral factorization. All of these integrate tightly with the :ref:`BlockEncoding <BlockEncoding>` class via its ``.poly``, ``.inv``, and ``.sim`` methods.
 
 A :doc:`detailed tutorial </general/tutorial/GQSP_filtering>` on filtered state preparation with GQSP is available.
 
