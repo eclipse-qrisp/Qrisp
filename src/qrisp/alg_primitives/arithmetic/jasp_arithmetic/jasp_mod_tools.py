@@ -92,6 +92,9 @@ def montgomery_decoder(y: Union[int, BigInteger],
         Rb = R if isinstance(R, BigInteger) else BigInteger.create(R, N.digits.shape[0])
         Nb = N if isinstance(N, BigInteger) else BigInteger.create(N, Rb.digits.shape[0])
         return bi_montgomery_decode(yb, Rb, Nb)
+    # Handle fractional R (from negative Montgomery shifts)
+    if isinstance(R, float) and 0 < R < 1:
+        R = modinv(int(R**-1), N)
     R1 = modinv(R, N)
     return ((y % N) * (R1 % N)) % N
 

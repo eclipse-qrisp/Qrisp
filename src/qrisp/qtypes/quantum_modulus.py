@@ -238,7 +238,14 @@ class QuantumModulus(QuantumFloat):
     
     def jdecoder(self, i):
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_decoder
-        return montgomery_decoder(i, 2 ** self.m, self.modulus)
+        # Use pow(2, -m, N) to compute the decode factor as a plain int,
+        # which handles both positive and negative m correctly.
+        # For m >= 0:  decode_factor = 2^{-m} mod N (modular inverse)
+        # For m < 0:   decode_factor = 2^{|m|} mod N
+        m_val = int(self.m)
+        N_val = int(self.modulus)
+        decode_factor = pow(2, -m_val, N_val)
+        return (i * decode_factor) % N_val
     
     def measure(self):
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
@@ -299,8 +306,6 @@ class QuantumModulus(QuantumFloat):
     def __mul__(self, other):
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
         if isinstance(other, QuantumModulus):
-            if self.m != other.m:
-                raise ValueError("Both QuantumModuli must have the same shift")
             if self.modulus != other.modulus:
                 raise ValueError("Both QuantumModuli must have the same modulus")
             if check_for_tracing_mode():

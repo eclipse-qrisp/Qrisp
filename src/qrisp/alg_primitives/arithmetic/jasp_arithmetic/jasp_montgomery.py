@@ -289,9 +289,15 @@ def qq_montgomery_multiply(x: QuantumFloat, y: QuantumFloat, N: int, m: int, inp
 
 def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     """
-    Perform the montgomery product of two QuantumModuli. Note that both QuantumModuli must be in montgomery form.
-    Similiar to `qq_montgomery_multiply` but extracts the fields of the Moduli.
-    Assumes that both QuantumModuli share the same modulus and the montgomery shift.
+    Perform the montgomery product of two QuantumModuli.
+    Compatible with ``montgomery_mod_mul``: inputs can be in any Montgomery
+    representation (including standard form where ``m=0``).
+
+    The reduction shift *m* is computed from the modulus size (not from the
+    inputs' ``.m`` attributes), and the result's Montgomery shift is set to
+    ``x.m + y.m - m``, which matches the non-JASP ``montgomery_mod_mul``
+    semantics.  When both inputs are in standard form (``m=0``), the output
+    is also in standard form.
 
     Parameters
     ----------
@@ -303,15 +309,24 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     Returns
     ----------
     QuantumModulus
-        The mongomery product of the inputs.
+        The montgomery product of the inputs.
     """
+
+    if x.modulus != y.modulus:
+        raise Exception("Tried to multiply two QuantumModulus with differing modulus")
 
     inpl_adder = x.inpl_adder
     N = x.modulus
-    m = x.m
 
-    # res = qq_montgomery_multiply(x, y, N, m, inpl_adder)
-    # return res
+    # Compute the reduction shift from the modulus, exactly like montgomery_mod_mul:
+    #   m = ceil(log2((N-1)^2 + 1)) - n
+    # This is the number of extra bits needed so that the full integer product
+    # a*b fits in (n + m) bits, independent of the inputs' Montgomery shifts.
+    # NOTE: We compute n from N (not from x.size) to keep it a plain Python int,
+    # since x.size can be a JAX tracer during tracing.
+    import numpy as np
+    n = int(np.ceil(np.log2(int(N))))
+    m = int(np.ceil(np.log2((int(N) - 1) ** 2) + 1)) - n
 
     if check_for_tracing_mode():
         xrange = jrange
@@ -330,7 +345,10 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
                 inpl_adder(cl_int // 2, operand[size - 1 - i:])
 
     res = QuantumModulus(N)
-    res.m = m
+    # The result's Montgomery shift after reduction: (x.m + y.m) - m
+    # (the reduction divides by 2^m, subtracting m from the accumulated shift)
+    res.m = int(x.m) + int(y.m) - m
+    res.inpl_adder = inpl_adder
     aux = QuantumFloat(m + 1)
     wqf = aux[:] + res[:]
 
