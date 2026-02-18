@@ -16,16 +16,7 @@
 ********************************************************************************
 """
 
-import qrisp.algorithms.grover as grover
-import qrisp.algorithms.shor as shor
-import qrisp.algorithms.qaoa as qaoa
-import qrisp.algorithms.qiro as qiro
-import qrisp.algorithms.quantum_backtracking as quantum_backtracking
-from qrisp.algorithms.quantum_counting import quantum_counting
-import qrisp.algorithms.vqe as vqe
-import qrisp.algorithms.qite as qite
-import qrisp.algorithms.qmci as qmci
-import qrisp.algorithms.lanczos as lanczos
-import qrisp.algorithms.cks as cks
-import qrisp.algorithms.gqsp as gqsp
-import qrisp.algorithms.cold as cold
+from qrisp.algorithms.cold.dcqo_problem import *
+from qrisp.algorithms.cold.AGP_params import *
+from qrisp.algorithms.cold.problems import *
+from qrisp.algorithms.cold.cold_benchmark import *
