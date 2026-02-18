@@ -238,14 +238,23 @@ class QuantumModulus(QuantumFloat):
     
     def jdecoder(self, i):
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_decoder
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
         # Use pow(2, -m, N) to compute the decode factor as a plain int,
         # which handles both positive and negative m correctly.
         # For m >= 0:  decode_factor = 2^{-m} mod N (modular inverse)
         # For m < 0:   decode_factor = 2^{|m|} mod N
         m_val = int(self.m)
-        N_val = int(self.modulus)
-        decode_factor = pow(2, -m_val, N_val)
-        return (i * decode_factor) % N_val
+        if m_val == 0:
+            return i
+        if isinstance(self.modulus, BigInteger):
+            N_int = self.modulus()
+            decode_factor_int = pow(2, -m_val, N_int)
+            decode_factor = BigInteger.create_static(decode_factor_int, self.modulus.digits.shape[0])
+            return (i * decode_factor) % self.modulus
+        else:
+            N_val = int(self.modulus)
+            decode_factor = pow(2, -m_val, N_val)
+            return (i * decode_factor) % N_val
     
     def measure(self):
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
