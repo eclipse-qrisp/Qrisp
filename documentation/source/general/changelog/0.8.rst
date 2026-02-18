@@ -42,8 +42,8 @@ Generalized Quantum Signal Processing
 Qrisp 0.8 introduces a comprehensive :ref:`GQSP <GQSP>` module implementing the full hierarchy of Quantum Signal Processing techniques:
 
 * :func:`GQSP <qrisp.gqsp.GQSP>`: Applies an arbitrary complex polynomial $p(z)$ to a unitary $U$ using SU(2) signal-processing rotations (`Motlagh & Wiebe, 2024 <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_).
-* :func:`GQET <qrisp.gqsp.GQET>`: Generalized Quantum Eigenvalue Transform — applies a complex, indefinite-parity polynomial $p(H)$ to the eigenvalues of a Hermitian block-encoded operator.
-* :func:`QET <qrisp.gqsp.QET>`: Quantum Eigenvalue Transform — optimized variant for real, fixed-parity polynomials requiring fewer resources.
+* :func:`GQET <qrisp.gqsp.GQET>`: Generalized Quantum Eigenvalue Transform - applies a complex, indefinite-parity polynomial $p(H)$ to the eigenvalues of a Hermitian block-encoded operator.
+* :func:`QET <qrisp.gqsp.QET>`: Quantum Eigenvalue Transform - optimized variant for real, fixed-parity polynomials requiring fewer resources.
 * :func:`Hamiltonian simulation <qrisp.gqsp.hamiltonian_simulation>`: Approximates $e^{-iHt}$ via Jacobi-Anger expansion into Bessel functions.
 * :func:`Matrix inversion <qrisp.gqsp.inversion>`: Quantum linear system solver with complexity $\mathcal{O}(\kappa \log(\kappa/\epsilon))$ via Chebyshev approximation of $1/x$.
 * :func:`Fourier series loader <qrisp.gqsp.fourier_series_loader>`: State preparation by loading Fourier modes into qubit amplitudes.
@@ -126,8 +126,8 @@ Compatibility
 New Tutorials
 -------------
 
-* :ref:`Block Encoding tutorial (Vol. 1 & Vol. 2) <BE101>` — A two-part introduction to the BlockEncoding class and its applications.
-* :doc:`GQSP filtering tutorial </general/tutorial/GQSP_filtering>` — Filtered state preparation using Generalized Quantum Signal Processing.
-* :doc:`Shor's algorithm at scale </general/tutorial/BigInteger>` — Resource estimation for Shor's algorithm at 128–2048 bit key sizes.
-* :doc:`Fault-Tolerant Compilation </general/tutorial/FT_compilation>` — T-gate optimization and Clifford+T synthesis for fault-tolerant devices.
-* :doc:`Counterdiabatic Driving </general/tutorial/CD>` — LCD and COLD protocols for QUBO optimization.
+* :ref:`Block Encoding tutorial (Vol. 1 & Vol. 2) <BE101>` - A two-part introduction to the BlockEncoding class and its applications.
+* :doc:`GQSP filtering tutorial </general/tutorial/GQSP_filtering>` - Filtered state preparation using Generalized Quantum Signal Processing.
+* :doc:`Shor's algorithm at scale </general/tutorial/BigInteger>` - Resource estimation for Shor's algorithm at 128–2048 bit key sizes.
+* :doc:`Fault-Tolerant Compilation </general/tutorial/FT_compilation>` - T-gate optimization and Clifford+T synthesis for fault-tolerant devices.
+* :doc:`Counterdiabatic Driving </general/tutorial/CD>` - LCD and COLD protocols for QUBO optimization.
