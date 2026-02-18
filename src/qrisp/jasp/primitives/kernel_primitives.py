@@ -18,7 +18,7 @@
 
 import jax.numpy as jnp
 from qrisp.jasp.primitives.quantum_primitive import QuantumPrimitive
-from qrisp.jasp.primitives.abstract_quantum_circuit import AbstractQuantumState
+from qrisp.jasp.primitives.abstract_quantum_state import AbstractQuantumState
 
 create_quantum_kernel_p = QuantumPrimitive("create_quantum_kernel")
 consume_quantum_kernel_p = QuantumPrimitive("consume_quantum_kernel")
