@@ -143,7 +143,7 @@ class NumQubitsMetric(BaseMetric):
                 return self._measurement_body_fun(meas_number, i, acc)
 
             meas_res = jax.lax.fori_loop(0, invalues[0], body_fun, jnp.int64(0))
-            context_dic["_meas_number"] = meas_number + 1
+            context_dic["_meas_number"] = meas_number + invalues[0]
 
         else:  # measuring a single qubit
 
