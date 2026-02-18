@@ -668,38 +668,38 @@ def process_pjit(eqn, context_dic):
 
 
 # Function to reset and delete a qubit array
-def reset_qubit_array(qb_array, abs_qc):
+def reset_qubit_array(qb_array, abs_qst):
     from qrisp.circuit import XGate
 
     def body_func(arg_tuple):
 
-        qb_array, i, abs_qc = arg_tuple
+        qb_array, i, abs_qst = arg_tuple
 
         abs_qb = get_qubit_p.bind(qb_array, i)
-        meas_bl, abs_qc = Measurement_p.bind(abs_qb, abs_qc)
+        meas_bl, abs_qst = Measurement_p.bind(abs_qb, abs_qst)
 
         def true_fun(arg_tuple):
-            qb, abs_qc = arg_tuple
-            abs_qc = quantum_gate_p.bind(qb, abs_qc, gate = XGate())
-            return (qb, abs_qc)
+            qb, abs_qst = arg_tuple
+            abs_qst = quantum_gate_p.bind(qb, abs_qst, gate = XGate())
+            return (qb, abs_qst)
 
         def false_fun(arg_tuple):
             return arg_tuple
 
-        qb, abs_qc = cond(meas_bl, true_fun, false_fun, (abs_qb, abs_qc))
+        qb, abs_qst = cond(meas_bl, true_fun, false_fun, (abs_qb, abs_qst))
 
         i += 1
 
-        return (qb_array, i, abs_qc)
+        return (qb_array, i, abs_qst)
 
     def cond_fun(arg_tuple):
         return arg_tuple[-2] < get_size_p.bind(arg_tuple[0])
 
-    qb_array, i, abs_qc = while_loop(
-        cond_fun, body_func, (qb_array, jnp.array(0, dtype=jnp.int64), abs_qc)
+    qb_array, i, abs_qst = while_loop(
+        cond_fun, body_func, (qb_array, jnp.array(0, dtype=jnp.int64), abs_qst)
     )
 
-    return abs_qc
+    return abs_qst
 
 
 reset_jaxpr = make_jaxpr(reset_qubit_array)(

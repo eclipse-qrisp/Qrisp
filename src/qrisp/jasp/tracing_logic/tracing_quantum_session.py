@@ -39,7 +39,7 @@ class TracingQuantumSession:
     function that constructs a quantum program. In particular, it maintains:
 
     - a reference to the currently active :class:`~qrisp.jasp.AbstractQuantumState`
-      being built (``self.abs_qc``),
+      being built (``self.abs_qst``),
 
     - a cache for qubits allocated during tracing (``self.qubit_cache``),
 
@@ -56,7 +56,7 @@ class TracingQuantumSession:
     """
 
     tr_qs_container = [None]
-    abs_qc_stack = []
+    abs_qst_stack = []
     qubit_cache_stack = []
 
     def __init__(self):
@@ -67,18 +67,18 @@ class TracingQuantumSession:
         Use :meth:`start_tracing` to begin recording into a provided abstract circuit object.
         """
 
-        self.abs_qc = None
+        self.abs_qst = None
         self.qv_list = []
         self.deleted_qv_list = []
         self.qubit_cache = None
         TracingQuantumSession.tr_qs_container.insert(0, self)
         self.qv_stack = []
 
-    def start_tracing(self, abs_qc):
-        self.abs_qc_stack.append(self.abs_qc)
+    def start_tracing(self, abs_qst):
+        self.abs_qst_stack.append(self.abs_qst)
         self.qubit_cache_stack.append(self.qubit_cache)
 
-        self.abs_qc = abs_qc
+        self.abs_qst = abs_qst
         self.qubit_cache = {}
 
         self.qv_stack.append((self.qv_list, self.deleted_qv_list))
@@ -87,8 +87,8 @@ class TracingQuantumSession:
 
     def conclude_tracing(self):
 
-        temp = self.abs_qc
-        self.abs_qc = self.abs_qc_stack.pop(-1)
+        temp = self.abs_qst
+        self.abs_qst = self.abs_qst_stack.pop(-1)
         self.qubit_cache = self.qubit_cache_stack.pop(-1)
         self.qv_list, self.deleted_qv_list = self.qv_stack.pop(-1)
 
@@ -96,7 +96,7 @@ class TracingQuantumSession:
 
     def append(self, operation, qubits=[], clbits=[], param_tracers=[]):
 
-        if not self.abs_qc._trace is jax.core.trace_ctx.trace:
+        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
             )
@@ -158,13 +158,13 @@ class TracingQuantumSession:
         for i in range(len(temp_op.params)):
             temp_op.params[i] = greek_letters[i]
 
-        self.abs_qc = quantum_gate_p.bind(
-            *([b for b in qubits] + param_tracers + [self.abs_qc]), gate=operation
+        self.abs_qst = quantum_gate_p.bind(
+            *([b for b in qubits] + param_tracers + [self.abs_qst]), gate=operation
         )
 
     def register_qv(self, qv, size):
 
-        if not self.abs_qc._trace is jax.core.trace_ctx.trace:
+        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
             )
@@ -182,12 +182,12 @@ class TracingQuantumSession:
         QuantumVariable.creation_counter += 1
 
     def request_qubits(self, amount):
-        qb_array_tracer, self.abs_qc = create_qubits(amount, self.abs_qc)
+        qb_array_tracer, self.abs_qst = create_qubits(amount, self.abs_qst)
         return DynamicQubitArray(qb_array_tracer)
 
     def delete_qv(self, qv, verify=False):
 
-        if not self.abs_qc._trace is jax.core.trace_ctx.trace:
+        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
             )
@@ -215,7 +215,7 @@ class TracingQuantumSession:
 
     def clear_qubits(self, qubits, verify=False):
 
-        self.abs_qc = delete_qubits_p.bind(qubits.tracer, self.abs_qc)
+        self.abs_qst = delete_qubits_p.bind(qubits.tracer, self.abs_qst)
 
     @classmethod
     def release(cls):

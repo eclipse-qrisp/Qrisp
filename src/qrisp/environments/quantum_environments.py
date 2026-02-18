@@ -334,7 +334,7 @@ class QuantumEnvironment(QuantumPrimitive):
         self.multiple_results = True
 
         @self.def_abstract_eval
-        def abstract_eval(abs_qc, *env_args, stage=None, type=None, jaxpr=None):
+        def abstract_eval(abs_qst, *env_args, stage=None, type=None, jaxpr=None):
             """Abstract evaluation of the primitive.
 
             This function does not need to be JAX traceable. It will be invoked with
@@ -386,8 +386,8 @@ class QuantumEnvironment(QuantumPrimitive):
             tr_qs = TracingQuantumSession.get_instance()
             self.temp_qubit_cache = tr_qs.qubit_cache
             tr_qs.qubit_cache = {}
-            tr_qs.abs_qc = self.bind(
-                *(self.env_args + [tr_qs.abs_qc]),
+            tr_qs.abs_qst = self.bind(
+                *(self.env_args + [tr_qs.abs_qst]),
                 stage="enter",
                 type=str(type(self)).split(".")[-1][:-2]
             )[0]
@@ -446,8 +446,8 @@ class QuantumEnvironment(QuantumPrimitive):
             
             tr_qs = TracingQuantumSession.get_instance()
             tr_qs.qubit_cache = self.temp_qubit_cache
-            tr_qs.abs_qc = self.bind(
-                tr_qs.abs_qc, stage="exit", type=str(type(self)).split(".")[-1][:-2]
+            tr_qs.abs_qst = self.bind(
+                tr_qs.abs_qst, stage="exit", type=str(type(self)).split(".")[-1][:-2]
             )[0]
             return
 

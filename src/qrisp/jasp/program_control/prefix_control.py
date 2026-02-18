@@ -106,9 +106,9 @@ def q_while_loop(cond_fun, body_fun, init_val):
         return val
 
     def new_cond_fun(val):
-        temp_qc = qs.abs_qc
+        temp_qc = qs.abs_qst
         res = cond_fun(val[0])
-        if not qs.abs_qc is temp_qc:
+        if not qs.abs_qst is temp_qc:
             raise Exception(
                 "Tried to modify quantum state during while condition evaluation"
             )
@@ -122,12 +122,12 @@ def q_while_loop(cond_fun, body_fun, init_val):
         for qv in recursive_qv_search(val[0]):
             qs.register_qv(qv, None)
         res = body_fun(val[0])
-        abs_qc = qs.conclude_tracing()
-        return (res, abs_qc)
+        abs_qst = qs.conclude_tracing()
+        return (res, abs_qst)
 
     qs = TracingQuantumSession.get_instance()
-    abs_qc = qs.abs_qc
-    new_init_val = (init_val, abs_qc)
+    abs_qst = qs.abs_qst
+    new_init_val = (init_val, abs_qst)
     while_res = while_loop(new_cond_fun, new_body_fun, new_init_val)
 
     eqn = get_last_equation()
@@ -149,7 +149,7 @@ def q_while_loop(cond_fun, body_fun, init_val):
 
     eqn.params["body_jaxpr"] = Jaspr.from_cache(body_jaxpr)
 
-    qs.abs_qc = while_res[1]
+    qs.abs_qst = while_res[1]
     return while_res[0]
 
 
@@ -311,21 +311,21 @@ def q_cond(pred, true_fun, false_fun, *operands):
         for qv in recursive_qv_search(operands[0]):
             qs.register_qv(qv, None)
         res = true_fun(*operands[0])
-        abs_qc = qs.conclude_tracing()
-        return (res, abs_qc)
+        abs_qst = qs.conclude_tracing()
+        return (res, abs_qst)
 
     def new_false_fun(*operands):
         qs.start_tracing(operands[1])
         for qv in recursive_qv_search(operands[0]):
             qs.register_qv(qv, None)
         res = false_fun(*operands[0])
-        abs_qc = qs.conclude_tracing()
-        return (res, abs_qc)
+        abs_qst = qs.conclude_tracing()
+        return (res, abs_qst)
 
     qs = TracingQuantumSession.get_instance()
-    abs_qc = qs.abs_qc
+    abs_qst = qs.abs_qst
 
-    new_operands = (operands, abs_qc)
+    new_operands = (operands, abs_qst)
 
     cond_res = cond(pred, new_true_fun, new_false_fun, *new_operands)
 
@@ -361,7 +361,7 @@ def q_cond(pred, true_fun, false_fun, *operands):
             Jaspr.from_cache(true_jaxpr)
     )
 
-    qs.abs_qc = cond_res[-1]
+    qs.abs_qst = cond_res[-1]
 
     return cond_res[0]
 
@@ -440,17 +440,17 @@ def _q_switch_c(index, branches, *operands):
             for qv in recursive_qv_search(operands[0]):
                 qs.register_qv(qv, None)
             res = branch(*operands[0])
-            abs_qc = qs.conclude_tracing()
-            return (res, abs_qc)
+            abs_qst = qs.conclude_tracing()
+            return (res, abs_qst)
         
         return new_branch
     
     new_branches = [convert_branch(branch) for branch in branches]
 
     qs = TracingQuantumSession.get_instance()
-    abs_qc = qs.abs_qc
+    abs_qst = qs.abs_qst
 
-    new_operands = (operands, abs_qc)
+    new_operands = (operands, abs_qst)
 
     switch_res = switch(index, new_branches, *new_operands)
 
@@ -481,7 +481,7 @@ def _q_switch_c(index, branches, *operands):
     
     eqn.params["branches"] = tuple([Jaspr.from_cache(branch_jaxpr) for branch_jaxpr in branch_jaxprs])
     
-    qs.abs_qc = switch_res[-1]
+    qs.abs_qst = switch_res[-1]
 
     return switch_res[0]
 

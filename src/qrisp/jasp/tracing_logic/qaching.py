@@ -218,13 +218,13 @@ def qache_helper(func, jax_kwargs):
     # in the signature.
     def ammended_function(*args, **kwargs):
 
-        abs_qc = kwargs[10*"~"]
+        abs_qst = kwargs[10*"~"]
         del kwargs[10*"~"]
 
         # Set the given AbstractQuantumState as the
         # one carried by the tracing QuantumSession
         tr_qs = TracingQuantumSession.get_instance()
-        tr_qs.abs_qc = abs_qc
+        tr_qs.abs_qst = abs_qst
 
         # We now iterate through the QuantumVariables of the signature to perform two steps:
         # 1. The QuantumVariables from the signature went through a flatten/unflattening process.
@@ -260,9 +260,9 @@ def qache_helper(func, jax_kwargs):
                         f"Found in-place parameter modification of QuantumVariable {qv.name}"
                     )
 
-        new_abs_qc = tr_qs.abs_qc
+        new_abs_qst = tr_qs.abs_qst
         # Return the result and the result AbstractQuantumState.
-        return res, new_abs_qc
+        return res, new_abs_qst
 
     # Modify the name of the ammended function to reflect the input
     ammended_function.__name__ = func.__name__
@@ -280,7 +280,7 @@ def qache_helper(func, jax_kwargs):
 
         # Get the AbstractQuantumState for tracing
         tr_qs = TracingQuantumSession.get_instance()
-        tr_qs.start_tracing(tr_qs.abs_qc)
+        tr_qs.start_tracing(tr_qs.abs_qst)
 
         # Make sure literals are 32 bit
         args = list(args)
@@ -296,9 +296,9 @@ def qache_helper(func, jax_kwargs):
 
         # Excecute the function
         ammended_kwargs = dict(kwargs)
-        ammended_kwargs[10*"~"] = tr_qs.abs_qc
+        ammended_kwargs[10*"~"] = tr_qs.abs_qst
         try:
-            res, abs_qc_new = ammended_function(*args, **ammended_kwargs)
+            res, abs_qst_new = ammended_function(*args, **ammended_kwargs)
         except Exception as e:
             tr_qs.conclude_tracing()
             raise e
@@ -329,7 +329,7 @@ def qache_helper(func, jax_kwargs):
         eqn.params["jaxpr"] = Jaspr.from_cache(eqn.params["jaxpr"])
 
         # Update the AbstractQuantumState of the TracingQuantumSession
-        tr_qs.abs_qc = abs_qc_new
+        tr_qs.abs_qst = abs_qst_new
 
         # The QuantumVariables from the result went through a flatten/unflattening cycly.
         # The unflattening creates a new QuantumVariable object, that is however not yet

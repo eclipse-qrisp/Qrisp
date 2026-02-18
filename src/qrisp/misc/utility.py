@@ -74,9 +74,9 @@ def int_encoder(qv, encoding_number):
                     x(qv[i])
 
         # def true_fun(qc, cond, qb):
-        #     tr_qs.abs_qc = qc
+        #     tr_qs.abs_qst = qc
         #     x(qb)
-        #     return tr_qs.abs_qc
+        #     return tr_qs.abs_qst
 
         # def false_fun(qc, cond, qb):
         #     return qc
@@ -87,8 +87,8 @@ def int_encoder(qv, encoding_number):
         #     qc = cond(cond_bool, true_fun, false_fun, qc, cond_bool, qb)
 
         #     return qc
-        # qc = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qc))
-        # tr_qs.abs_qc = qc
+        # qc = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qst))
+        # tr_qs.abs_qst = qc
 
 
 # Calculates the binary expression of a given integer and returns it as an array of
@@ -1550,7 +1550,7 @@ def redirect_qfunction(function_to_redirect):
 
 
             qs = TracingQuantumSession.get_instance()
-            abs_qc = qs.abs_qc
+            abs_qst = qs.abs_qst
             from jax.tree_util import tree_flatten
 
             flattened_args = []
@@ -1565,14 +1565,14 @@ def redirect_qfunction(function_to_redirect):
             for arg in args:
                 flattened_args.extend(tree_flatten(arg)[0])
             #[Traced<QubitArray>with<DynamicJaxprTrace>, Traced<ShapedArray(int64[])>with<DynamicJaxprTrace>, Traced<ShapedArray(bool[])>with<DynamicJaxprTrace>]
-            flattened_args.append(abs_qc)
+            flattened_args.append(abs_qst)
 
             res = eval_jaxpr(transformed_jaspr, [])(*flattened_args)
 
             if len(transformed_jaspr.outvars) == 1:
-                qs.abs_qc = res
+                qs.abs_qst = res
             else:
-                qs.abs_qc = res[-1]
+                qs.abs_qst = res[-1]
 
         else:
 

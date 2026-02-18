@@ -38,7 +38,7 @@ def quantum_kernel_abstract_eval():
     return AbstractQuantumState()
 
 @consume_quantum_kernel_p .def_abstract_eval
-def quantum_kernel_abstract_eval(abs_qc):
+def quantum_kernel_abstract_eval(abs_qst):
     """Abstract evaluation of the primitive.
     
     This function does not need to be JAX traceable. It will be invoked with
