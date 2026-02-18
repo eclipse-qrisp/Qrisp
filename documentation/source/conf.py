@@ -45,9 +45,7 @@ copyright = '2025, Qrisp developers'
 # ones.
 
 extensions = [
-                # 'sphinx_fontawesome',
               'sphinx_toolbox.sidebar_links',
-              #'sphinx_toolbox.github',
               'nbsphinx',
                'myst_parser',
               "sphinx.ext.autosummary",
@@ -58,14 +56,13 @@ extensions = [
                "sphinx.ext.mathjax",
               "sphinx.ext.todo",
               "sphinx.ext.viewcode",
-                # "sphinx.ext.imgmath",
               "texext",
                 "numpydoc",
               "sphinx_sitemap",
                "sphinx_copybutton",
                "sphinx_design",
-               "sphinx_thebe"
-              #"nb2plots",
+               "sphinx_thebe",
+               "sphinx_new_tab_link",
               ]
 
 # Configure sphinx-copybutton to only copy input lines (with >>> prompts) and strip the prompts
