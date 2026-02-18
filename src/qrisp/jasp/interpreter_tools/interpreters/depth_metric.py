@@ -123,13 +123,14 @@ def _warn_slice(idx_slice1, idx_slice2):
 
 # The computation currently does not fail if the delete/reset operation is called,
 # but this way we can print an informative message.
-def _warn_delete_reset():
+def _warn_not_implemented(primitive_name):
     """Helper function to print a warning when the delete/reset operation is called."""
     jax.debug.print(
         (
-            "Warning: Delete/reset operation handling for "
+            "Warning: {primitive_name} primitive for "
             "depth metric is currently not implemented. "
         ),
+        primitive_name=primitive_name,
     )
 
 
@@ -346,7 +347,7 @@ class DepthMetric(BaseMetric):
 
         _, metric_data = invalues
 
-        _warn_delete_reset()
+        _warn_not_implemented("reset")
 
         # Associate the following in context_dic:
         # QuantumCircuit -> metric_data
@@ -356,7 +357,7 @@ class DepthMetric(BaseMetric):
 
         _, metric_data = invalues
 
-        _warn_delete_reset()
+        _warn_not_implemented("delete_qubits")
 
         # Associate the following in context_dic:
         # QuantumCircuit -> metric_data
