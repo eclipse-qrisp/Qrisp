@@ -32,7 +32,7 @@ class DCQOProblem:
     (counterdiabatic optimized local driving) or LCD (local counterdiabatic driving).
     To run the COLD algorithm on the problem, you need to specify the control Hamiltonian
     ``H_control`` and the inverse scheduling function ``g_func``. These are not needed for
-    the LCD algorithm.
+    the LCD algorithm. To learn more about counterdiabatic driving, make sure to check out the `tutorial <https://www.qrisp.eu/general/tutorial/CD.html>`_.
 
     Parameters
     ----------
