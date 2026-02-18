@@ -33,7 +33,7 @@ from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation impor
     evaluate_while_loop,
 )
 
-from qrisp.jasp.primitives import AbstractQubitArray, AbstractQuantumCircuit, AbstractQubit
+from qrisp.jasp.primitives import AbstractQubitArray, AbstractQuantumState, AbstractQubit
 
 # The following function implements the behavior of the jaspify simulator for terminal sampling
 # To understand the function consider the result of tracing a simple sampling task
@@ -78,29 +78,29 @@ from qrisp.jasp.primitives import AbstractQubitArray, AbstractQuantumCircuit, Ab
 #           _:i64[] _:i64[] f:f64[1] = while[
 #             body_jaxpr={ lambda ; g:i64[] h:i64[] i:f64[1]. let
 #                 j:i64[] = add g 1
-#                 k:QuantumCircuit = jasp.quantum_kernel
-#                 _:QuantumCircuit l:f64[1] = pjit[
+#                 k:QuantumState = jasp.quantum_kernel
+#                 _:QuantumState l:f64[1] = pjit[
 #                   name=sampling_body_func
-#                   jaxpr={ lambda ; m:QuantumCircuit n:i64[] o:f64[1]. let
+#                   jaxpr={ lambda ; m:QuantumState n:i64[] o:f64[1]. let
 
 # -------------------------------------------------------------------------------------
 
-#                       p:QuantumCircuit q:QubitArray r:i64[] _:bool[] = pjit[
+#                       p:QuantumState q:QubitArray r:i64[] _:bool[] = pjit[
 #                         name=user_func
-#                         jaxpr={ lambda ; s:QuantumCircuit. let
-#                             t:QuantumCircuit u:QubitArray = jasp.create_qubits s
+#                         jaxpr={ lambda ; s:QuantumState. let
+#                             t:QuantumState u:QubitArray = jasp.create_qubits s
 #                               4
 #                             v:Qubit = jasp.get_qubit u 0
-#                             w:QuantumCircuit = jasp.h t v
+#                             w:QuantumState = jasp.h t v
 #                           in (w, u, 0, False) }
 #                       ] m
 
 # -------------------------------------------------------------------------------------
 
-#                       x:QuantumCircuit y:i64[] = pjit[
+#                       x:QuantumState y:i64[] = pjit[
 #                         name=sampling_helper_1
-#                         jaxpr={ lambda ; z:QuantumCircuit ba:QubitArray. let
-#                             bb:QuantumCircuit bc:i64[] = jasp.measure z ba
+#                         jaxpr={ lambda ; z:QuantumState ba:QubitArray. let
+#                             bb:QuantumState bc:i64[] = jasp.measure z ba
 #                           in (bb, bc) }
 #                       ] p q
 
@@ -129,8 +129,8 @@ from qrisp.jasp.primitives import AbstractQubitArray, AbstractQuantumCircuit, Ab
 #                         shape=(1,)
 #                       ] bd
 #                       bk:f64[1] = add o bj
-#                       bl:QuantumCircuit = jasp.reset x q
-#                       _:QuantumCircuit = jasp.delete_qubits bl q
+#                       bl:QuantumState = jasp.reset x q
+#                       _:QuantumState = jasp.delete_qubits bl q
 #                     in (x, bk) }
 #                 ] k g i
 #               in (j, h, l) }
@@ -412,7 +412,7 @@ def decoder_compiler(jaxpr, eqn_evaluator):
         for i in range(len(args)):
             if isinstance(jaxpr.jaxpr.invars[i].aval, AbstractQubitArray):
                 new_args.append(len(args[i]))
-            elif isinstance(jaxpr.jaxpr.invars[i].aval, (AbstractQubit, AbstractQuantumCircuit)):
+            elif isinstance(jaxpr.jaxpr.invars[i].aval, (AbstractQubit, AbstractQuantumState)):
                 raise Exception(f"Found quantum type {jaxpr.jaxpr.invars[i].aval} in decoder implementation")
             else:
                 new_args.append(args[i])

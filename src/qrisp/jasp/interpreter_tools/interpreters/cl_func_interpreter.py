@@ -37,7 +37,7 @@ Core Concepts:
 
 3. **Context Dictionary**: Maps JAX variables to their runtime values during 
    interpretation. For quantum types, this includes:
-   - AbstractQuantumCircuit -> (bit_array, free_qubits_jlist)
+   - AbstractQuantumState -> (bit_array, free_qubits_jlist)
    - AbstractQubitArray -> Jlist of qubit indices
    - AbstractQubit -> single qubit index (int64)
 
@@ -67,7 +67,7 @@ from jax import Array
 from qrisp.circuit import PTControlledOperation, Operation
 from qrisp.jasp import (
     QuantumPrimitive,
-    AbstractQuantumCircuit,
+    AbstractQuantumState,
     AbstractQubitArray,
     AbstractQubit,
     eval_jaxpr,
@@ -141,6 +141,8 @@ def cl_func_eqn_evaluator(eqn: JaxprEqn, context_dic: ContextDict) -> bool | Non
             process_reset(eqn, context_dic)
         elif eqn.primitive.name == "jasp.fuse":
             process_fuse(eqn, context_dic)
+        elif eqn.primitive.name == "jasp.parity":
+            process_parity(eqn, context_dic)
         else:
             raise Exception(
                 f"Don't know how to process QuantumPrimitive {eqn.primitive}"
@@ -150,7 +152,9 @@ def cl_func_eqn_evaluator(eqn: JaxprEqn, context_dic: ContextDict) -> bool | Non
         if eqn.primitive.name == "while":
             return process_while(eqn, context_dic)
         elif eqn.primitive.name == "cond":
-            return process_cond(eqn, context_dic)
+            return process_cond(eqn, context_dic)  #
+        elif eqn.primitive.name == "scan":
+            return process_scan(eqn, context_dic)
         elif eqn.primitive.name == "jit":
             process_pjit(eqn, context_dic)
         else:
@@ -182,7 +186,7 @@ def process_create_qubits(
     context_dic : ContextDict
         The variable-to-value mapping dictionary.
     """
-    # The first invar of the create_qubits primitive is an AbstractQuantumCircuit
+    # The first invar of the create_qubits primitive is an AbstractQuantumState
     # which is represented by a BitArray and a Jlist of free qubit indices
     qreg, free_qubits = context_dic[invars[1]]
 
@@ -191,7 +195,7 @@ def process_create_qubits(
     # Create a new Jlist to hold the allocated qubit indices
     # The max_size is proportional to the total bit array capacity
     reg_qubits = Jlist(
-        init_val=jnp.array([], dtype=jnp.uint64),
+        init_val=jnp.array([], dtype=jnp.int64),
         max_size=64 * qreg.size//64
     )
 
@@ -247,17 +251,17 @@ def process_fuse(eqn: JaxprEqn, context_dic: ContextDict) -> None:
         
         # To find the maximum size of the newly created Jlist,
         # we need to search through the context dic for an
-        # AbstractQuantumCircuit.
+        # AbstractQuantumState.
         # This could in principle lead to very bad scaling
         # behavior but in reality, this is not the case.
         # Why? For each stack frame, the arguments of the 
         # calling Jaxpr are inserted into the context_dic
-        # first, i.e. also at least one AbstractQuantumCircuit.
+        # first, i.e. also at least one AbstractQuantumState.
         # Since they .keys() iterator returns them in the
         # order they were inserted, a fitting entry is quickly
         # found.
         for k in context_dic.keys():
-            if isinstance(k.aval, AbstractQuantumCircuit):
+            if isinstance(k.aval, AbstractQuantumState):
                 max_size = 64 * context_dic[k][0].size//64
                 break
         
@@ -568,11 +572,40 @@ def exec_multi_measurement(
     return bit_array, acc
 
 
+def process_parity(eqn, context_dic):
+    """Process parity primitive: compute XOR of measurement results."""
+    from jax import debug
+    
+    invalues = extract_invalues(eqn, context_dic)
+    expectation = eqn.params.get("expectation", 0)
+    observable = eqn.params.get("observable", False)
+
+    # Compute parity (XOR) of all measurements
+    result = sum(invalues) % 2
+    
+    # If not an observable (i.e. detector mode), check and emit warning if mismatch
+    if not observable:
+        # Define callbacks for match/mismatch
+        def warn_mismatch():
+            debug.print("WARNING: Parity expectation deviated from simulation result {inval}", inval = invalues[1])
+        
+        def no_warning():
+            return
+        
+        # Check if expectation matches result
+        cond(result != expectation, warn_mismatch, no_warning)
+    
+    # XOR result with expectation (0 if match, 1 if mismatch)
+    result = result ^ expectation
+    
+    context_dic[eqn.outvars[0]] = jnp.array(result, dtype = bool)
+
+
 def process_while(eqn: JaxprEqn, context_dic: ContextDict) -> bool | None:
     """
     Process while loop primitives that may contain quantum operations.
     
-    If the while loop involves quantum state (AbstractQuantumCircuit), the body
+    If the while loop involves quantum state (AbstractQuantumState), the body
     and condition Jaxprs are converted to their classical equivalents before
     executing the loop.
     
@@ -589,29 +622,21 @@ def process_while(eqn: JaxprEqn, context_dic: ContextDict) -> bool | None:
         Returns True if no quantum types are involved (use default evaluation).
         Returns None if the loop was handled by this function.
     """
-    # Check if this while loop involves quantum circuit state
-    for invar in eqn.invars:
-        if isinstance(invar.aval, AbstractQuantumCircuit):
-            break
-    else:
-        # No quantum state involved - use default JAX evaluation
-        return True
 
     body_jaxpr = eqn.params["body_jaxpr"]
     cond_jaxpr = eqn.params["cond_jaxpr"]
     overall_constant_amount = eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
 
     invalues = extract_invalues(eqn, context_dic)
+    
+    if isinstance(eqn.invars[-1].aval, AbstractQuantumState):
+        bit_array_padding = invalues[-1][0].shape[0] * 64
+    else:
+        bit_array_padding = 0
+    
 
-    # Convert body and condition Jaxprs to classical equivalents
-    if isinstance(body_jaxpr.jaxpr.invars[-1].aval, AbstractQuantumCircuit):
-        converted_body_jaxpr = jaspr_to_cl_func_jaxpr(
-            body_jaxpr.jaxpr, invalues[-1][0].shape[0] * 64
-        )
-    if isinstance(cond_jaxpr.jaxpr.invars[-1].aval, AbstractQuantumCircuit):
-        converted_cond_jaxpr = jaspr_to_cl_func_jaxpr(
-            cond_jaxpr.jaxpr, invalues[-1][0].shape[0] * 64
-        )
+    converted_body_jaxpr = jaspr_to_cl_func_jaxpr(body_jaxpr.jaxpr, bit_array_padding)
+    converted_cond_jaxpr = jaspr_to_cl_func_jaxpr(cond_jaxpr.jaxpr, bit_array_padding)
 
     def body_fun(args: list) -> list:
         """Execute the loop body with flattened/unflattened signature conversion."""
@@ -672,6 +697,72 @@ def process_cond(eqn: JaxprEqn, context_dic: ContextDict) -> None:
         unflattened_outvalues = (outvalues,)
 
     insert_outvalues(eqn, context_dic, unflattened_outvalues)
+
+
+def process_scan(eqn, context_dic):
+    """
+    Process scan primitive for cl_func_interpreter.
+    Reinterprets the scan body and calls jax.lax.scan to preserve loop structure.
+    """
+    from jax.lax import scan as jax_scan
+    
+    invalues = extract_invalues(eqn, context_dic)
+    
+    # Extract scan parameters
+    num_consts = eqn.params["num_consts"]
+    num_carry = eqn.params["num_carry"]
+    length = eqn.params["length"]
+    reverse = eqn.params.get("reverse", False)
+    unroll = eqn.params.get("unroll", 1)
+    
+    # Separate inputs: constants, initial carry, scanned inputs
+    consts = invalues[:num_consts]
+    init = invalues[num_consts:num_consts + num_carry]
+    xs = invalues[num_consts + num_carry:]
+    
+    # Reinterpret the scan body with cl_func_eqn_evaluator
+    scan_body_jaxpr = eqn.params["jaxpr"]
+    scan_body = eval_jaxpr(scan_body_jaxpr, eqn_evaluator=cl_func_eqn_evaluator)
+    
+    # Create wrapper function that includes constants
+    if num_consts > 0:
+        def wrapped_body(carry, x):
+            args = consts + list(carry) + (list(x) if isinstance(x, tuple) else [x])
+            result = scan_body(*args)
+            if not isinstance(result, tuple):
+                result = (result,)
+            return result[:num_carry], result[num_carry:]
+    else:
+        def wrapped_body(carry, x):
+            args = list(carry) + (list(x) if isinstance(x, tuple) else [x])
+            result = scan_body(*args)
+            if not isinstance(result, tuple):
+                result = (result,)
+            return result[:num_carry], result[num_carry:]
+    
+    # Prepare inputs for JAX scan
+    if len(xs) == 1:
+        xs_arg = xs[0]
+    else:
+        xs_arg = tuple(xs)
+    
+    if len(init) == 1:
+        init_arg = init[0]
+    else:
+        init_arg = tuple(init)
+    
+    # Call JAX scan
+    final_carry, ys = jax_scan(wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll)
+    
+    # Prepare output
+    if not isinstance(final_carry, tuple):
+        final_carry = (final_carry,)
+    if not isinstance(ys, tuple):
+        ys = (ys,)
+    
+    outvalues = final_carry + ys
+    
+    insert_outvalues(eqn, context_dic, outvalues)
 
 
 @lru_cache(maxsize=int(1e5))
@@ -870,7 +961,7 @@ def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int) -> ClosedJaxpr:
     This is the main transformation function that converts a quantum program
     representation into a purely classical JAX expression. The transformation
     replaces:
-    - AbstractQuantumCircuit with (BitArray, Jlist) tuples
+    - AbstractQuantumState with (BitArray, Jlist) tuples
     - AbstractQubitArray with Jlist of qubit indices
     - AbstractQubit with int64 qubit indices
     - Quantum primitives with classical bit manipulation operations
@@ -898,7 +989,7 @@ def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int) -> ClosedJaxpr:
     # Create dummy input values for tracing
     args: list[Any] = []
     for invar in jaspr.invars:
-        if isinstance(invar.aval, AbstractQuantumCircuit):
+        if isinstance(invar.aval, AbstractQuantumState):
             # Quantum circuit -> (bit_array, free_qubits_jlist)
             args.append(
                 (
@@ -909,7 +1000,7 @@ def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int) -> ClosedJaxpr:
         elif isinstance(invar.aval, AbstractQubitArray):
             # QubitArray -> empty Jlist (will be filled during execution)
             qreg = Jlist(
-                init_val=jnp.array([], dtype=jnp.uint64),
+                init_val=jnp.array([], dtype=jnp.int64),
                 max_size=bit_array_padding // 64
             )
             args.append(qreg)
@@ -1011,7 +1102,7 @@ def unflatten_signature(
     """
     Convert flattened JAX values back to structured quantum types.
     
-    During JAX tracing, quantum types (AbstractQuantumCircuit, AbstractQubitArray)
+    During JAX tracing, quantum types (AbstractQuantumState, AbstractQubitArray)
     are flattened into multiple array values. This function reconstructs the
     original structure.
     
@@ -1026,7 +1117,7 @@ def unflatten_signature(
     -------
     list[Any]
         List of values with quantum types reconstructed:
-        - AbstractQuantumCircuit -> (bit_array, Jlist)
+        - AbstractQuantumState -> (bit_array, Jlist)
         - AbstractQubitArray -> Jlist
         - Other types -> unchanged
     """
@@ -1034,7 +1125,7 @@ def unflatten_signature(
     unflattened_values: list[Any] = []
     
     for var in variables:
-        if isinstance(var.aval, AbstractQuantumCircuit):
+        if isinstance(var.aval, AbstractQuantumState):
             # Reconstruct (bit_array, free_qubits_jlist) tuple
             bit_array = values.pop(0)
             jlist_tuple = (values.pop(0), values.pop(0))
@@ -1071,7 +1162,7 @@ def flatten_signature(
     -------
     list[Array]
         Flattened list of JAX arrays:
-        - AbstractQuantumCircuit (bit_array, Jlist) -> [bit_array, array, counter]
+        - AbstractQuantumState (bit_array, Jlist) -> [bit_array, array, counter]
         - AbstractQubitArray Jlist -> [array, counter]
         - Other types -> unchanged
     """
@@ -1081,7 +1172,7 @@ def flatten_signature(
     for i in range(len(variables)):
         var = variables[i]
         value = values.pop(0)
-        if isinstance(var.aval, AbstractQuantumCircuit):
+        if isinstance(var.aval, AbstractQuantumState):
             # Flatten (bit_array, Jlist) -> [bit_array, jlist.array, jlist.counter]
             flattened_values.extend((value[0], *value[1].flatten()[0]))
         elif isinstance(var.aval, AbstractQubitArray):
@@ -1118,19 +1209,15 @@ def ensure_conversion(
         Either the converted classical Jaxpr or the original wrapped as ClosedJaxpr.
     """
     bit_array_padding = 0
-    convert = False
     
     # Check if any input variable is a quantum type
     for i in range(len(jaxpr.invars)):
         invar = jaxpr.invars[i]
         if isinstance(
-            invar.aval, (AbstractQuantumCircuit, AbstractQubitArray, AbstractQubit)
+            invar.aval, (AbstractQuantumState, AbstractQubitArray, AbstractQubit)
         ):
-            convert = True
-            if isinstance(invar.aval, AbstractQuantumCircuit):
+            if isinstance(invar.aval, AbstractQuantumState):
                 # Get bit array size from the quantum circuit value
                 bit_array_padding = invalues[i][0].shape[0] * 64
 
-    if convert:
-        return jaspr_to_cl_func_jaxpr(jaxpr, bit_array_padding)
-    return ClosedJaxpr(jaxpr, [])
+    return jaspr_to_cl_func_jaxpr(jaxpr, bit_array_padding)

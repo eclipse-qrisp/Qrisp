@@ -76,7 +76,7 @@ def extract_post_processing(jaspr, *args):
         (no jit calls, no conditionals, no loops).
     *args : 
         The static argument values that were used for circuit extraction (excluding 
-        the QuantumCircuit argument). These will be bound into the post-processing
+        the QuantumState argument). These will be bound into the post-processing
         function.
     
     Returns
@@ -113,7 +113,7 @@ def extract_post_processing(jaspr, *args):
         
     """
     from jax.extend.core import ClosedJaxpr
-    from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive, AbstractQubitArray
+    from qrisp.jasp.primitives import AbstractQuantumState, QuantumPrimitive, AbstractQubitArray
     import jax.numpy as jnp
     
     # Get the inner jaxpr
@@ -124,28 +124,28 @@ def extract_post_processing(jaspr, *args):
         inner_jaxpr = jaspr.jaxpr
         consts = []
     
-    # Create static value map (excluding QuantumCircuit)
+    # Create static value map (excluding QuantumState)
     static_value_map = {}
     arg_index = 0
     for var in inner_jaxpr.invars:
-        if not isinstance(var.aval, AbstractQuantumCircuit):
+        if not isinstance(var.aval, AbstractQuantumState):
             if arg_index < len(args):
                 static_value_map[var] = args[arg_index]
                 arg_index += 1
     
     # Custom equation evaluator
     def create_post_processing_evaluator():
-        """Create an equation evaluator that consumes bits from a per-QuantumCircuit
+        """Create an equation evaluator that consumes bits from a per-QuantumState
         tuple (measurement_array, last_popped_index) stored in the context.
 
         This avoids a global counter and mirrors the multi-value representation
-        used in the catalyst interpreter: a single logical QuantumCircuit value is
+        used in the catalyst interpreter: a single logical QuantumState value is
         represented by two runtime values.
         """
         from jax.lax import fori_loop
 
         def eval_eqn(eqn, context_dic):
-            # Handle measurement: consume bits from the QuantumCircuit tuple
+            # Handle measurement: consume bits from the QuantumState tuple
             if eqn.primitive.name == "jasp.measure":
                 # invars: [qubit_array, quantum_circuit]
                 qc_var = eqn.invars[1]
@@ -180,7 +180,7 @@ def extract_post_processing(jaspr, *args):
                 if eqn.outvars:
                     context_dic[eqn.outvars[0]] = result
 
-                # Update the QuantumCircuit tuple: output QC gets the updated tuple
+                # Update the QuantumState tuple: output QC gets the updated tuple
                 # (measurement consumes bits, so we advance the pointer)
                 qc_outvar = eqn.outvars[1] if len(eqn.outvars) > 1 else None
                 if qc_outvar:
@@ -189,11 +189,11 @@ def extract_post_processing(jaspr, *args):
 
             # Handle create_qubits: store size in context as QubitArray representation
             if eqn.primitive.name == "jasp.create_qubits":
-                # invars[0] is the size, invars[1] is the QuantumCircuit
+                # invars[0] is the size, invars[1] is the QuantumState
                 size = context_dic[eqn.invars[0]]
                 # Store size as the QubitArray representation (we don't need actual qubits)
                 context_dic[eqn.outvars[0]] = size
-                # Propagate the QuantumCircuit tuple from input to output (unchanged)
+                # Propagate the QuantumState tuple from input to output (unchanged)
                 qc_var_in = eqn.invars[1]
                 qc_var_out = eqn.outvars[1]
                 context_dic[qc_var_out] = context_dic[qc_var_in]
@@ -226,12 +226,35 @@ def extract_post_processing(jaspr, *args):
                 context_dic[eqn.outvars[0]] = combined_size
                 return False
 
+            # Handle parity: compute XOR of measurement results
+            if eqn.primitive.name == "jasp.parity":
+                invalues = extract_invalues(eqn, context_dic)
+                expectation = eqn.params.get("expectation", 0)
+                
+                # Compute parity (XOR) of all measurements
+                result = sum(invalues) % 2
+                
+                # XOR result with expectation
+                result = result ^ expectation
+                
+                # Insert result into context
+                context_dic[eqn.outvars[0]] = jnp.array(result, dtype = bool)
+                return False
+
             # Skip other quantum primitives entirely
-            # But we must propagate QuantumCircuit tuples from input to output!
+            # We must:
+            # 1. Propagate QuantumState tuples from input to output
+            # 2. Store placeholder values for any non-QuantumState outputs (like Qubit)
+            #    so that subsequent operations (like nested jit calls) can find them
             if isinstance(eqn.primitive, QuantumPrimitive):
-                # Find any QuantumCircuit invars and propagate them to outvars
-                if isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit) and isinstance(eqn.outvars[-1].aval, AbstractQuantumCircuit):
-                    context_dic[eqn.outvars[-1]] = context_dic[eqn.invars[-1]]
+                for outvar in eqn.outvars:
+                    if isinstance(outvar.aval, AbstractQuantumState):
+                        # Propagate QuantumState from input to output
+                        context_dic[outvar] = context_dic[eqn.invars[-1]]
+                    else:
+                        # For non-QC outputs (Qubit, QubitArray, etc.), store None as placeholder
+                        # These are only needed to satisfy nested jit calls which will also skip them
+                        context_dic[outvar] = None
                 return False
 
             # Intercept JAX control-flow / compilation primitives.
@@ -240,23 +263,24 @@ def extract_post_processing(jaspr, *args):
             # which allows JAX to compile them only once during tracing.
             if eqn.primitive.name in ("jit", "pjit"):
 
-                jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
-                if jaxpr is None:
+                closed_jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
+                if closed_jaxpr is None:
                     return False
 
                 invalues = extract_invalues(eqn, context_dic)
                 
                 # Get the cached evaluator for this jaxpr
                 # For identical jaxprs, this returns the same function instance
-                cached_eval_func = get_post_processing_evaluator(jaxpr.jaxpr)
+                cached_eval_func = get_post_processing_evaluator(closed_jaxpr.jaxpr)
                 
-                # Call it with the current evaluator
-                outvals = cached_eval_func(eval_eqn)(*invalues)
+                # Call it with the current evaluator, including the constants
+                outvals = cached_eval_func(eval_eqn)(*(invalues + list(closed_jaxpr.consts)))
                 
-                # eval_jaxpr returns a single value if there's one output, tuple otherwise
-                # But insert_outvalues expects a tuple if eqn.primitive.multiple_results is True
-                if not isinstance(outvals, tuple):
-                    outvals = (outvals,)
+                # Handle wrapping based on the number of outputs in the inner jaxpr
+                # Note: Our QuantumState representation is (meas_arr, last_popped) tuple,
+                # which can confuse isinstance(outvals, tuple) checks. Use the jaxpr outvars count.
+                if len(closed_jaxpr.jaxpr.outvars) == 1:
+                    outvals = [outvals]
                 
                 insert_outvalues(eqn, context_dic, outvals)
                 return False
@@ -323,6 +347,70 @@ def extract_post_processing(jaspr, *args):
                 insert_outvalues(eqn, context_dic, outvalues)
                 return False
 
+            # Handle scan/map loops
+            if eqn.primitive.name == "scan":
+
+                import jax.lax
+
+                invalues = extract_invalues(eqn, context_dic)
+                
+                # Reinterpret the scan body function
+                scan_body = eval_jaxpr(
+                    eqn.params["jaxpr"], eqn_evaluator=eval_eqn
+                )
+                
+                # Extract scan parameters
+                num_consts = eqn.params["num_consts"]
+                num_carry = eqn.params["num_carry"]
+                length = eqn.params["length"]
+                reverse = eqn.params.get("reverse", False)
+                unroll = eqn.params.get("unroll", 1)
+                
+                # Separate inputs
+                consts = invalues[:num_consts]
+                init = invalues[num_consts:num_consts + num_carry]
+                xs = invalues[num_consts + num_carry:]
+                
+                # Create a wrapper function that includes constants
+                if num_consts > 0:
+                    def wrapped_body(carry, x):
+                        args = consts + list(carry) + list(x) if isinstance(x, tuple) else consts + list(carry) + [x]
+                        result = scan_body(*args)
+                        if not isinstance(result, tuple):
+                            result = (result,)
+                        return result[:num_carry], result[num_carry:]
+                else:
+                    def wrapped_body(carry, x):
+                        args = list(carry) + (list(x) if isinstance(x, tuple) else [x])
+                        result = scan_body(*args)
+                        if not isinstance(result, tuple):
+                            result = (result,)
+                        return result[:num_carry], result[num_carry:]
+                
+                # Call JAX scan with the reinterpreted body
+                if len(xs) == 1:
+                    xs_arg = xs[0]
+                else:
+                    xs_arg = tuple(xs)
+                
+                if len(init) == 1:
+                    init_arg = init[0]
+                else:
+                    init_arg = tuple(init)
+                
+                final_carry, ys = jax.lax.scan(wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll)
+                
+                # Prepare output
+                if not isinstance(final_carry, tuple):
+                    final_carry = (final_carry,)
+                if not isinstance(ys, tuple):
+                    ys = (ys,)
+                
+                outvalues = final_carry + ys
+                
+                insert_outvalues(eqn, context_dic, outvalues)
+                return False
+
             # For other primitives, use default evaluation
             return True
 
@@ -357,20 +445,20 @@ def extract_post_processing(jaspr, *args):
         for var, val in static_value_map.items():
             context_dic[var] = val
 
-        # Initialize QuantumCircuit variables as tuples (measurement_array, last_popped_index)
+        # Initialize QuantumState variables as tuples (measurement_array, last_popped_index)
         # so that measurements can consume from the per-circuit array.
         for var in inner_jaxpr.invars:
-            if isinstance(var.aval, AbstractQuantumCircuit):
+            if isinstance(var.aval, AbstractQuantumState):
                 # measurement_results is the full boolean array; start pointer at 0
                 context_dic[var] = (measurement_results, 0)
         
         # Evaluate using the original jaxpr with custom evaluator
         eval_jaxpr_with_context_dic(inner_jaxpr, context_dic, eqn_evaluator)
         
-        # Extract outputs (excluding QuantumCircuit)
+        # Extract outputs (excluding QuantumState)
         outputs = []
         for var in inner_jaxpr.outvars:
-            if not isinstance(var.aval, AbstractQuantumCircuit):
+            if not isinstance(var.aval, AbstractQuantumState):
                 outputs.append(context_dic[var])
         
         if len(outputs) == 1:

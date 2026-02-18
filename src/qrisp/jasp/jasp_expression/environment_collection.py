@@ -76,7 +76,7 @@ def collect_environments(closed_jaxpr):
     eqn_var_tracker = VarTracker(eqn_list)
     new_eqn_var_tracker = VarTracker(new_eqn_list)
     
-    from qrisp.jasp import Jaspr, AbstractQuantumCircuit
+    from qrisp.jasp import Jaspr, AbstractQuantumState
 
     if isinstance(closed_jaxpr, Jaspr) and closed_jaxpr.envs_flattened:
         return closed_jaxpr
@@ -167,7 +167,7 @@ def collect_environments(closed_jaxpr):
             # Compute the invars
             invars = environment_body_var_tracker.find_invars()
             
-            # Remove the AbstractQuantumCircuit variable and prepend it.
+            # Remove the AbstractQuantumState variable and prepend it.
             try:
                 invars.remove(enter_eq.outvars[0])
             except ValueError:
@@ -184,10 +184,10 @@ def collect_environments(closed_jaxpr):
             )
             
             
-            # Filter the AbstractQuantumCircuit (we add it manually to make sure
+            # Filter the AbstractQuantumState (we add it manually to make sure
             # it is the last argument)
             for k in range(len(outvars)):
-                if isinstance(outvars[k].aval, AbstractQuantumCircuit):
+                if isinstance(outvars[k].aval, AbstractQuantumState):
                     outvars.pop(k)
                     break
             

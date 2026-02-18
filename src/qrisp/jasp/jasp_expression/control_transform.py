@@ -112,7 +112,7 @@ def control_eqn(eqn, ctrl_qubit_var):
         The equation with inverted operation.
 
     """
-    from qrisp.jasp import Jaspr, AbstractQuantumCircuit
+    from qrisp.jasp import Jaspr, AbstractQuantumState
 
     if eqn.primitive.name == "jit":
 
@@ -148,8 +148,8 @@ def control_eqn(eqn, ctrl_qubit_var):
         new_invars = list(eqn.invars)
 
         if isinstance(
-            body_jaxpr.invars[-1].aval, AbstractQuantumCircuit
-        ) and isinstance(body_jaxpr.outvars[-1].aval, AbstractQuantumCircuit):
+            body_jaxpr.invars[-1].aval, AbstractQuantumState
+        ) and isinstance(body_jaxpr.outvars[-1].aval, AbstractQuantumState):
 
             # Generate controlled body jaxpr
             new_params["body_jaxpr"] = control_jaspr(Jaspr(eqn.params["body_jaxpr"]))
@@ -163,8 +163,8 @@ def control_eqn(eqn, ctrl_qubit_var):
             )
 
         if isinstance(
-            cond_jaxpr.invars[-1].aval, AbstractQuantumCircuit
-        ) and isinstance(cond_jaxpr.outvars[-1].aval, AbstractQuantumCircuit):
+            cond_jaxpr.invars[-1].aval, AbstractQuantumState
+        ) and isinstance(cond_jaxpr.outvars[-1].aval, AbstractQuantumState):
             new_params["cond_jaxpr"] = control_jaspr(Jaspr(eqn.params["cond_jaxpr"]))
             
         else:
@@ -189,8 +189,8 @@ def control_eqn(eqn, ctrl_qubit_var):
 
         new_params = dict(eqn.params)
 
-        if isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit) and isinstance(
-            eqn.outvars[-1].aval, AbstractQuantumCircuit
+        if isinstance(eqn.invars[-1].aval, AbstractQuantumState) and isinstance(
+            eqn.outvars[-1].aval, AbstractQuantumState
         ):
             branch_list = []
             for i in range(len(new_params["branches"])):
@@ -236,7 +236,7 @@ def control_eqn(eqn, ctrl_qubit_var):
 def control_jaspr(jaspr):
     """
     Takes a Jaspr and returns a Jaspr that has an additional Qubit argument
-    (located behind the QuantumCircuit argument). The returned Jaspr is
+    (located behind the QuantumState argument). The returned Jaspr is
     controlled on that Qubit argument.
 
     Parameters

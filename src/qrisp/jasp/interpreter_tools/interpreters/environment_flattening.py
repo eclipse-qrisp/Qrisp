@@ -21,7 +21,7 @@ from functools import lru_cache
 from jax.extend.core import JaxprEqn, ClosedJaxpr
 
 from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret
-from qrisp.jasp.primitives import AbstractQuantumCircuit
+from qrisp.jasp.primitives import AbstractQuantumState
 
 
 def copy_jaxpr_eqn(eqn):
@@ -56,8 +56,8 @@ def flatten_environments(jaspr):
     from qrisp.jasp import Jaspr
     
     if (len(jaspr.jaxpr.invars) == 0 or len(jaspr.jaxpr.outvars) == 0) or not (
-        isinstance(jaspr.jaxpr.invars[-1].aval, AbstractQuantumCircuit)
-        and isinstance(jaspr.jaxpr.outvars[-1].aval, AbstractQuantumCircuit)
+        isinstance(jaspr.jaxpr.invars[-1].aval, AbstractQuantumState)
+        and isinstance(jaspr.jaxpr.outvars[-1].aval, AbstractQuantumState)
     ):
         return jaspr
     

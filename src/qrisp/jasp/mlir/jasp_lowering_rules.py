@@ -28,9 +28,11 @@ from qrisp.jasp.primitives import (
     create_quantum_kernel_p,
     consume_quantum_kernel_p,
     quantum_gate_p,
-    AbstractQuantumCircuit,
+    parity_p,
+    AbstractQuantumState,
     AbstractQubitArray,
     AbstractQubit)
+
 
 import qrisp.jasp.mlir.dialect_implementation._jasp_ops_gen as jasp_dialect
 
@@ -63,7 +65,7 @@ def get_i1_type():
 
 # Register type lowering (like Catalyst does)
 def _aqc_lowering(aval):
-    assert isinstance(aval, AbstractQuantumCircuit)
+    assert isinstance(aval, AbstractQuantumState)
     return get_ir_qst_type()
 def _aqa_lowering(aval):
     assert isinstance(aval, AbstractQubitArray)
@@ -73,7 +75,7 @@ def _aqb_lowering(aval):
     return get_ir_qb_type()
 
 # Register in ir_type_handlers
-ir_type_handlers[AbstractQuantumCircuit] = _aqc_lowering
+ir_type_handlers[AbstractQuantumState] = _aqc_lowering
 ir_type_handlers[AbstractQubitArray] = _aqa_lowering
 ir_type_handlers[AbstractQubit] = _aqb_lowering
 
@@ -238,5 +240,22 @@ def quantum_gate_lowering(ctx, *args, **params):
     return [quantum_gate_op.results[0]]
 
 lowering_rules.append((quantum_gate_p, quantum_gate_lowering))
+
+def parity_lowering(ctx, *measurements, expectation, observable):
+    """
+    Lowering rule that emits our Parity dialect operation.
+    """
+    # Measurements is a list of booleans, we pass them as variadic arguments
+    # Expectation is an integer attribute, observable is an integer attribute (0 or 1)
+    
+    # Create the result type: scalar tensor of i1 (0-rank tensor)
+    result_type = ir.RankedTensorType.get([], get_i1_type())
+
+    # Create our parity operation using the generated class
+    parity_op = jasp_dialect.ParityOp(result_type, list(measurements), expectation, observable)
+    # Return the boolean result
+    return [parity_op.results[0]]
+
+lowering_rules.append((parity_p, parity_lowering))
 
 jasp_lowering_rules = tuple(lowering_rules)

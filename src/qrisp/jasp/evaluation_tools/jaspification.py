@@ -25,7 +25,7 @@ from jax._src.lib.mlir import ir
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
 from qrisp.jasp.evaluation_tools.buffered_quantum_state import BufferedQuantumState
 from qrisp.jasp.primitives import (
-    AbstractQuantumCircuit,
+    AbstractQuantumState,
     AbstractQubitArray,
     AbstractQubit,
 )
@@ -259,7 +259,7 @@ def simulate_jaspr(
     from qrisp.alg_primitives.mcx_algs.circuit_library import gidney_qc
 
     if len(jaxpr.jaxpr.outvars) == 1 and isinstance(
-        jaxpr.jaxpr.outvars[0].aval, AbstractQuantumCircuit
+        jaxpr.jaxpr.outvars[0].aval, AbstractQuantumState
     ):
         return None
 
@@ -300,7 +300,7 @@ def simulate_jaspr(
             for var in jaxpr.jaxpr.invars + jaxpr.jaxpr.outvars:
                 if isinstance(
                     var.aval,
-                    (AbstractQuantumCircuit, AbstractQubitArray, AbstractQubit),
+                    (AbstractQuantumState, AbstractQubitArray, AbstractQubit),
                 ):
                     break
             else:

@@ -146,9 +146,9 @@ def quantum_kernel(func):
         
         eqn.params["jaxpr"] = flattened_jaspr
         
-        abs_qc = qs.conclude_tracing()
+        abs_qst = qs.conclude_tracing()
         
-        consume_quantum_kernel_p.bind(abs_qc)
+        consume_quantum_kernel_p.bind(abs_qst)
         
         return res
 

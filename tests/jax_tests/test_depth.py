@@ -437,6 +437,20 @@ class TestDepthControlStructures:
 
         assert main(5) == 1
 
+    def test_create_qubits_called_in_conditional(self):
+        """Test depth computation when create_qubits is called inside a conditional."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qv = QuantumFloat(num_qubits)
+            h(qv[0])
+            m = measure(qv[0])
+            with control(m == 0):
+                qv_inner = QuantumFloat(num_qubits)
+                h(qv_inner[0])
+
+        assert main(1) == 1
+
 
 class TestDepthMeasurementBehavior:
     """Test that different measurement behaviors affect depth computation correctly."""

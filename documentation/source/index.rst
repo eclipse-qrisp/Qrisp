@@ -10,94 +10,21 @@
    
 .. raw:: html
 
-    <style>
-    .bd-sidebar-secondary {
-        display: none;
-    }
-
-    .wy-nav-content-wrap {
-        margin-left: 0;
-    }
-
-    .frontpage-equation {
-        margin-top: 1.9em;
-        margin-bottom: 1.6em
-    }
-
-    .bd-main .bd-content .bd-article-container {
-        max-width: 75rem; /* Make homepage a little wider instead of 60em */
-    }
-
-    .code-example-text {
-        max-width: 60rem;
-        margin: 0 auto;
-    }
-
-    /* Extra top/bottom padding to the sections */
-    article.bd-article section {
-        padding: 3rem 0 7rem;
-    }
-
-    /* Override all h1 headers except for the hidden ones */
-    h1:not(.sd-d-none) {
-        font-weight: bold;
-        font-size: 48px;
-        text-align: center;
-        margin-bottom: 4rem;
-    }
-
-    /* Override all h3 headers that are not in hero */
-    h3:not(#hero h3) {
-        font-weight: bold;
-        text-align: center;
-    }
-
-    .homepage-button.secondary-button:hover {
-        color: white;
-    }
-
-    /* New CSS for mobile layout */
-    @media (max-width: 768px) {
-        #hero {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-
-        #hero-left,
-        #hero-right {
-            width: 100%;
-        }
-
-        .homepage-button-container {
-            margin-top: 1rem;
-        }
-        
-        img{
-        
-            max-width: 76%;
-        }
-    }
-    
-    /* Center logos at the bottom of the page */
-    .sd-row {
-        justify-content: center;
-    }
-    
-    </style>
+    <link rel="stylesheet" href="./_static/css/frontpage.css">
 
     <div id="hero">
+        <canvas id="hero-graph-canvas"></canvas>
+        <div class="hero-orb-secondary"></div>
         <div id="hero-left">
-            <img alt="./_static/ecplipse_font.png" class="align-bottom-left scaled-image" src="./_static/ecplipse_font.png" width="109" height="25">
-            <h2 style="font-size: 60px; font-weight: bold; margin: -0.4rem auto 0;">Qrisp</h2>
-            <h3 style="font-weight: bold; margin-top: 0; color: #000000;">The next generation of quantum algorithm development</h3>
-            <p>Qrisp is a high-level programming language for creating and compiling quantum algorithms. Its structured programming model enables scalable development and maintenance.</p>
+            <img alt="./_static/eclipse_font.png" class="align-bottom-left scaled-image" src="./_static/eclipse_font.png" width="126">
+            <img alt="./_static/logo_white.png" src="./_static/logo_white.png" width="260" style="margin: 0.4rem 0; display: block;">
+            <h3 style="font-weight: 600; margin-top: 0;">The next generation of quantum <br> algorithm development</h3>
+            <p style="margin-right: 30pt">Qrisp is a high-level language for building and compiling quantum algorithms. Its structured programming model supports scalable, maintainable development. With seamless JAX integration, Qrisp enables hybrid real-time algorithm design and analysis.</p>
 
             <div class="homepage-button-container">
                 <div class="homepage-button-container-row">
-                    <a href="./general/tutorial/index.html" class="homepage-button primary-button"; style="color: #FFFFFF;">Get Started</a>
-                    <a href="./reference/Examples/index.html" class="homepage-button secondary-button"; style=" .a:hover{color: #FFFFFF}">See Examples</a>
+                    <a href="./general/tutorial/index.html" class="homepage-button primary-button">Get Started</a>
+                    <a href="./reference/Examples/index.html" class="homepage-button secondary-button">See Examples</a>
                 </div>
                 <div class="homepage-button-container-row">
                     <a href="./reference/index.html" class="homepage-button-link">See API Reference →</a>
@@ -112,58 +39,7 @@
 
     .. grid-item-card::
         :shadow: none
-            
-    
-        .. raw:: html
-            
-            <a href="./reference/Core/generated/qrisp.QuantumSession.statevector.html">
-            <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Explore parametrized algorithms with symbolic statevector simulation</p>
-            </div>
-            </a>
-            <div class="frontpage-equation">
-            
-            
-        .. math::
-            
-            \definecolor{qrispblue}{RGB}{32, 48, 111}
-            \definecolor{textgray}{RGB}{68, 68, 68}
-            
-            \Large
-            \textcolor{textgray}{
-            \begin{align}
-            \frac{\ket{\texttt{hello}} + e^{i \textcolor{red}{\phi}} \ket{\texttt{world}}}{\sqrt{2}}
-            \end{align}
-            }
-            
-        .. raw:: html
-            
-            </div>
-            
-
-    .. grid-item-card::
-        :shadow: none
-            
-    
-        .. raw:: html
-            
-            <a href="./general/tutorial/Jasp.html">
-            <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Exert hybrid real-time algorithm control with Catalyst and Jasp</p>
-            </div>
-            </a>
-            
-        .. image:: ./_static/hybrid_realtime.png
-            :width: 180
-            :align: center
-
-
-.. grid:: 1 1 2 2
-
-            
-    .. grid-item-card::
-        :shadow: none
-    
+        
         .. raw:: html
 
             <a href="./general/tutorial/H2.html">
@@ -180,7 +56,7 @@
     
         .. raw:: html
 
-            <a href="./reference/Algorithms/Shor.html">
+            <a href="./general/tutorial/Shor.html">
             <div class="example-img-plot-overlay">
             <p class="sd-card-text">Factor integers using abitrary quantum adders with Shor's algorithm</p>
             </div>
@@ -195,10 +71,24 @@
             
     .. grid-item-card::
         :shadow: none
-        
+    
         .. raw:: html
 
-            <a href="./reference/Algorithms/QuantumBacktrackingTree.html">
+            <a href="./general/tutorial/GQSP_filtering.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Explore ground states of lattice models using quantum signal processing</p>
+            </div>
+            </a>
+
+    
+        .. image:: ./_static/chebychev_signal_processing.png
+
+    .. grid-item-card::
+        :shadow: none
+    
+        .. raw:: html
+
+            <a href="./general/tutorial/Sudoku.html">
             <div class="example-img-plot-overlay">
             <p class="sd-card-text">Solve backtracking problems by leveraging quantum walks</p>
             </div>
@@ -207,33 +97,23 @@
     
         .. image:: ./_static/backtracking.svg
 
-    .. grid-item-card::
-        :shadow: none
-    
-        .. raw:: html
-
-            <a href="./reference/Primitives/LCU.html">
-            <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Realize LCU and LCHS using block encodings</p>
-            </div>
-            </a>
-
-    
-        .. image:: ./_static/LCU.png
-
 
 .. raw:: html
 
 
     </div>  <!-- End Hero Right -->
     </div>
-    
-|
-|
-|
+
+    <script src="./_static/js/hero-graph.js"></script>
+    <script src="./_static/js/frontpage-interactions.js"></script>
 
 Key Features
 ============
+
+.. raw:: html
+
+    <hr class="section-divider">
+    <p class="section-subtitle">Powerful features for scalable quantum algorithm engineering</p>
 
 .. grid:: 1 1 2 2
     :gutter: 5
@@ -264,8 +144,8 @@ Key Features
         :class-card: sd-border-0
         :shadow: none
         
-        .. image:: ./_static/recycling.png
-            :target: ./reference/Core/Uncomputation.html
+        .. image:: ./_static/hybrid_realtime.png
+            :target: ./general/tutorial/Jasp.html
             :align: center
 
         .. raw:: html
@@ -274,14 +154,13 @@ Key Features
         
 
     
-        **Automatic uncomputation** |br|
-        QuantumVariables can be uncomputed automatically once they are not needed anymore. The uncomputation module is tightly integrated with an advanced qubit resource management system.
+        **Jax integration** |br|
+        Exert hybrid real-time algorithm control with Catalyst and Jasp. Qrisp's JAX integration enables seamless hybrid quantum-classical workflows with deep integration into classical compiler infrastructure (LLVM/MLIR). `Learn more → <./general/tutorial/Jasp.html>`_
         
         .. raw:: html
         
             </div>
-
-        
+			
     .. grid-item-card::
         :class-card: sd-border-0
         :shadow: none
@@ -297,6 +176,27 @@ Key Features
         **Modularity** |br|
         Automated qubit allocation allows separate modules to recycle qubit resources for each other without intertwining the code. This feature facilitates interoperability of code written by respective domain experts.
 
+        .. raw:: html
+        
+            </div>
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+        
+        .. image:: ./_static/recycling.png
+            :target: ./reference/Core/Uncomputation.html
+            :align: center
+
+        .. raw:: html
+        
+            <div class="key-features-text">
+        
+
+    
+        **Memory management** |br|
+        QuantumVariables can be uncomputed automatically once they are not needed anymore. The uncomputation module is tightly integrated with an advanced qubit resource management system.
+        
         .. raw:: html
         
             </div>
@@ -316,7 +216,28 @@ Key Features
             
     
         **Arithmetic** |br|
-        A smoothly integrated system of floating point arithmetic streamlines the development of non-trivial applications.
+        A smoothly integrated system of floating point arithmetic streamlines the development of non-trivial applications. Furthermore, a system of types and functions describing modular arithmetic is available.
+
+        .. raw:: html
+        
+            </div>
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+        
+        .. image:: ./_static/block_encoding_icon.png
+            :target: ./reference/Quantum%20Types/QuantumFloat.html
+            :align: center
+
+
+        .. raw:: html
+        
+            <div class="key-features-text">
+            
+    
+        **Block Encodings** |br|
+        Use block encodings as programming abstractions to perform Quantum Linear Algebra using the NumPy-like interface of the :ref:`BlockEncoding` class.
 
         .. raw:: html
         
@@ -339,7 +260,8 @@ Key Features
         .. raw:: html
         
             </div>
-        
+
+
     .. grid-item-card::
         :class-card: sd-border-0
         :shadow: none
@@ -369,10 +291,12 @@ Dive into Qrisp code
 
 .. raw:: html
 
+    <hr class="section-divider">
+    <p class="section-subtitle">Write quantum algorithms in fewer lines of more readable code</p>
     <div class="code-example-text">
     
 
-Qrisp code can be significantly shorter and also more readable than the equivalent program in a gate based framework. Regardless, the compiled quantum circuits are in many cases more efficient since the compiler can leverage the code structure into assumptions about algorithmic structure, implying strong compilation optimizations. Below you find two code snippets that perform the same basic task: Multiplication of two n-bit integers. One is written using Qiskit and the other one utilizes Qrisp.
+Qrisp enables developers to express quantum algorithms in substantially fewer lines of code compared to gate-level frameworks - without sacrificing readability. Moreover, the compiler leverages the high-level program structure to infer algorithmic properties, enabling compilation optimizations that often yield more efficient circuits than hand-crafted alternatives. The following example illustrates this: both snippets multiply two n-bit integers, the first using Qiskit and the second using Qrisp.
 
 .. list-table::
    :widths: 25 25
@@ -423,9 +347,9 @@ Qrisp code can be significantly shorter and also more readable than the equivale
          print(res)
          #Yields: {12: 1.0}
 
-Apart from simple scripts like the above, our :ref:`tutorial` showcases the utilization of Qrisp implementing Shor's algorithm leveraging `Montgomery reduction <https://en.wikipedia.org/wiki/Montgomery_modular_multiplication>`_, fully agnostic to the particular quantum adder. This solution involves several conceptually distinct :ref:`QuantumVariables <QuantumVariable>`, with their respective qubits being repeatedly disentangled and repurposed for other variables. The presented approach improves the resource requirement of known open source implementations :ref:`significantly <shor_benchmark_plot>`, while retaining an `accesible form <https://www.qrisp.eu/general/tutorial/Shor.html>`_.
+Beyond simple arithmetic, our :ref:`tutorial` demonstrates a complete implementation of Shor's algorithm using `Montgomery reduction <https://en.wikipedia.org/wiki/Montgomery_modular_multiplication>`_, fully agnostic to the choice of quantum adder. The implementation manages several distinct :ref:`QuantumVariables <QuantumVariable>`, whose qubits are automatically disentangled and recycled across function calls. This approach :ref:`significantly reduces <shor_benchmark_plot>` resource requirements compared to existing open-source implementations, while remaining `accessible and well-documented <https://www.qrisp.eu/general/tutorial/Shor.html>`_.
 
-This example illustrates how Qrisp, as a high-level language, permits novel and scalable solutions to intricate problems and furthermore that high-level quantum programming languages will be an integral part of the future of quantum information science.
+This example demonstrates how high-level quantum programming enables novel, scalable solutions to complex problems - and underscores the role that structured languages will play in the future of quantum computing.
 
 .. raw:: html
 
@@ -436,10 +360,10 @@ Who is behind Qrisp
 
 .. raw:: html
 
+    <hr class="section-divider">
     <div class="code-example-text">
-    
 
-Qrisp is an Eclipse open-source project developed mainly at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_, an industrial research facility based in Berlin. It is publicly funded by the `German ministry of economic affairs <https://www.digitale-technologien.de/DT/Navigation/DE/ProgrammeProjekte/AktuelleTechnologieprogramme/Quanten_Computing/Projekte/Qompiler/qompiler.html>`_ and the European Union with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers. Furthermore we are proud to announce that Qrisp will become a part of the `Eclipse foundation <https://www.eclipse.org/>`_!
+Qrisp is an open-source project developed across organizations. We are open to all kinds of contribution - feel free to contact us, if you or your organization intend to contribute.
 
 .. raw:: html
 
@@ -452,7 +376,7 @@ Qrisp is an Eclipse open-source project developed mainly at `Fraunhofer FOKUS <h
         :class-card: sd-border-0
         :shadow: none
     
-        .. image:: ./_static/dlr_logo.svg
+        .. image:: ./_static/hsrm_logo.png
             :align: center
             :width: 150
             :class: no-scaled-link
@@ -470,7 +394,7 @@ Qrisp is an Eclipse open-source project developed mainly at `Fraunhofer FOKUS <h
         :class-card: sd-border-0
         :shadow: none
     
-        .. image:: ./_static/incubating.png
+        .. image:: ./_static/iqm_logo.jpg
             :align: center
             :width: 150
             :class: no-scaled-link
@@ -491,7 +415,7 @@ Qrisp is an Eclipse open-source project developed mainly at `Fraunhofer FOKUS <h
         :class-card: sd-border-0
         :shadow: none
     
-        .. image:: ./_static/bmwk_logo.png
+        .. image:: ./_static/dlr_logo.svg
             :align: center
             :width: 150
             :class: no-scaled-link
@@ -500,7 +424,16 @@ Qrisp is an Eclipse open-source project developed mainly at `Fraunhofer FOKUS <h
         :class-card: sd-border-0
         :shadow: none
     
-        .. image:: ./_static/iqm_logo.jpg
+        .. image:: ./_static/incubating.png
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ./_static/bmwk_logo.png
             :align: center
             :width: 150
             :class: no-scaled-link
