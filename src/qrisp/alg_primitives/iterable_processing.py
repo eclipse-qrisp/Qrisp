@@ -306,19 +306,42 @@ def cyclic_shift(iterable, shift_amount=1):
 
 def _cyclic_shift_jasp(iterable, shift_amount):
     """
-    JASP-compatible implementation of cyclic_shift for shift_amount=1.
-    Handles dynamic iterable sizes by using jlen, while_loop, and
-    DynamicQubitArray fusion for constructing sub-iterables.
+    JASP-compatible implementation of cyclic_shift for arbitrary integer
+    shift_amount. Decomposes into repeated applications of shift-by-1 using
+    singular_shift with DynamicQubitArray slicing/fusion.
+
+    For negative shift_amount, the invert() environment is used to reverse the
+    direction (inverse of shift-right = shift-left).
+
+    Parameters
+    ----------
+    iterable : QuantumVariable or similar
+        The iterable to shift (must have a .reg attribute supporting slicing).
+    shift_amount : int
+        The (classical) shift amount.
     """
-    from qrisp.jasp import DynamicQubitArray
+    if shift_amount == 0:
+        return
 
+    if shift_amount < 0:
+        from qrisp import invert
+        with invert():
+            _cyclic_shift_jasp(iterable, -shift_amount)
+        return
+
+    for _ in range(shift_amount):
+        _cyclic_shift_one(iterable)
+
+
+def _cyclic_shift_one(iterable):
+    """
+    JASP-compatible single cyclic shift (shift_amount=1).
+    Decomposes into two singular_shift calls using DynamicQubitArray
+    slicing and fusion, mirroring the non-JASP decomposition:
+        singular_shift(iterable[:2**n])
+        singular_shift([iterable[0]] + iterable[2**n:], use_saeedi=True)
+    """
     N = jlen(iterable)
-
-    # For shift_amount=1, decompose into two singular_shifts
-    # just like the non-JASP version:
-    #   singular_shift(iterable[:2**n])
-    #   singular_shift([iterable[0]] + iterable[2**n:], use_saeedi=True)
-    # where n = floor(log2(N))
 
     n = compute_floor_log2(N)
     pow2n = 2**n
