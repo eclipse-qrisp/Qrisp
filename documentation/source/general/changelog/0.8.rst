@@ -8,7 +8,7 @@ Qrisp 0.8 is a landmark release bringing **Quantum Linear Algebra** to the foref
 BlockEncoding Class
 -------------------
 
-The BlockEncoding class is the central abstraction for Quantum Linear Algebra in Qrisp. By establishing block encodings as the main programming abstractions, it allows users to program complex quantum linear algebra as easily as handling arrays in NumPy. It seamlessly embeds a non-unitary operator into the upper-left block of a larger unitary system.  With this intuitive interface, users can write clean matrix expressions while Qrisp's compiler automatically handles the heavy lifting of underlying circuit construction and ancilla management.
+The BlockEncoding class is the central abstraction for Quantum Linear Algebra in Qrisp. By establishing block encodings as a programming abstraction, it allows users to program complex quantum linear algebra as easily as handling arrays in NumPy. It seamlessly embeds a non-unitary operator into the upper-left block of a larger unitary system.  With this intuitive interface, users can write clean matrix expressions while Qrisp's compiler automatically handles the heavy lifting of underlying circuit construction and ancilla management.
 Block encodings can be constructed from a variety of sources:
 
 Construction methods
@@ -16,7 +16,7 @@ Construction methods
 * :func:`BlockEncoding.from_array <qrisp.block_encodings.BlockEncoding.from_array>` constructs a BlockEncoding from a NumPy array or sparse matrix, ideal for quick prototyping.
 * :func:`BlockEncoding.from_operator <qrisp.block_encodings.BlockEncoding.from_operator>` encodes a Hamiltonian (e.g. :ref:`QubitOperator <QubitOperator>` or :ref:`FermionicOperator <FermionicOperator>`), which is particularly useful for physics and chemistry simulations.
 * :func:`BlockEncoding.from_lcu <qrisp.block_encodings.BlockEncoding.from_lcu>` uses the Linear Combination of Unitaries (LCU) approach to construct custom weighted sums of unitaries.
-* Direct constructor: For advanced users, the :func:`BlockEncoding <qrisp.block_encodings.BlockEncoding>`class constructor allows manual definition of an encoding by specifying the normalization factor (``alpha``), ancilla variables (``ancillas``), and a custom unitary function.
+* Direct constructor: For advanced users, the :func:`BlockEncoding <qrisp.block_encodings.BlockEncoding>` class constructor allows manual definition of an encoding by specifying the normalization factor (``alpha``), ancilla variables (``ancillas``), and a custom unitary function.
 
 Supported operations
 ^^^^^^^^^^^^^^^^^^^^
@@ -25,7 +25,7 @@ Supported operations
 * **Application**: :func:`apply <qrisp.block_encodings.BlockEncoding.apply>` for direct application, :func:`apply_rus <qrisp.block_encodings.BlockEncoding.apply_rus>` with automatic post-selection via Repeat-Until-Success, and :func:`expectation_value <qrisp.block_encodings.BlockEncoding.expectation_value>` via the Hadamard test.
 * **Resource estimation**: :func:`resources <qrisp.block_encodings.BlockEncoding.resources>` for gate count, depth, and qubit amount analysis.
 
-For a hands-on introduction, check out the BlockEncoding tutorials: :ref:`BlockEncoding class 101 <BE101>`, and :ref:`BlockEncoding class 201 <BE201>`.
+For a hands-on introduction, check out the two part tutorial series about the BlockEncoding class and its utilities :ref:`here <BE101>`.
 
 Scalable Shor's Algorithm
 -------------------------
