@@ -20,6 +20,7 @@
 import jax.numpy as jnp
 import jax.lax as lax
 import jax
+from jax.core import get_aval
 from dataclasses import dataclass
 from jax.tree_util import register_pytree_node_class
 
@@ -55,27 +56,33 @@ class BigInteger:
     """
     digits: jnp.ndarray  # Little-endian base-2^32
 
-    @jax.jit
     def __call__(self):
         """
-        Return a float64 approximation of the integer value.
+        Return a float64 approximation of the integer value when in tracing mode and an exact Python integer otherwise.
 
-        Computes sum_i digits[i] * (2^32)^i as float64. Exact only for values
-        that fit into float64; larger integers may lose precision.
+        Computes sum_i digits[i] * (2^32)^i. Exact only for values
+        that fit into float64 or for Python integers.
 
         Returns
         -------
-        jnp.float64
-            Approximate numeric value (float64).
+        jnp.float64 or int
+            Numeric value
         """
-        r = lax.fori_loop(
-            0,
-            self.digits.shape[0],
-            lambda i, val: jnp.float64(
-                self.digits[i]) * BASE_FL ** jnp.float64(i) + val,
-            0.0,
-        )
-        return r
+        if isinstance(self.digits, jax.core.Tracer):
+            return lax.fori_loop(
+                0,
+                self.digits.shape[0],
+                lambda i, val: jnp.float64(
+                    self.digits[i]) * BASE_FL ** jnp.float64(i) + val,
+                0.0,
+            )
+        else:
+            r = 0
+            for i, v in enumerate(self.digits):
+                if v != 0:
+                    r += int(v)*2**(i*32)
+            return r
+
 
     def tree_flatten(self):
         """
