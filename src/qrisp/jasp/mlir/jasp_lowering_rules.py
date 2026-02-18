@@ -29,7 +29,7 @@ from qrisp.jasp.primitives import (
     consume_quantum_kernel_p,
     quantum_gate_p,
     parity_p,
-    AbstractQuantumCircuit,
+    AbstractQuantumState,
     AbstractQubitArray,
     AbstractQubit)
 
@@ -65,7 +65,7 @@ def get_i1_type():
 
 # Register type lowering (like Catalyst does)
 def _aqc_lowering(aval):
-    assert isinstance(aval, AbstractQuantumCircuit)
+    assert isinstance(aval, AbstractQuantumState)
     return get_ir_qst_type()
 def _aqa_lowering(aval):
     assert isinstance(aval, AbstractQubitArray)
@@ -75,7 +75,7 @@ def _aqb_lowering(aval):
     return get_ir_qb_type()
 
 # Register in ir_type_handlers
-ir_type_handlers[AbstractQuantumCircuit] = _aqc_lowering
+ir_type_handlers[AbstractQuantumState] = _aqc_lowering
 ir_type_handlers[AbstractQubitArray] = _aqa_lowering
 ir_type_handlers[AbstractQubit] = _aqb_lowering
 

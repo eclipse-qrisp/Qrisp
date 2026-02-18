@@ -21,7 +21,7 @@ from jax.extend.core import ClosedJaxpr
 
 from qrisp.core import recursive_qv_search, recursive_qa_search
 
-from qrisp.jasp.primitives import AbstractQuantumCircuit
+from qrisp.jasp.primitives import AbstractQuantumState
 from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode, get_last_equation
 
 
@@ -209,19 +209,19 @@ def qache_helper(func, jax_kwargs):
 
     # There are however some more things to consider.
 
-    # The Qrisp function doesn't have the AbstractQuantumCircuit object (which is carried by
+    # The Qrisp function doesn't have the AbstractQuantumState object (which is carried by
     # the tracing QuantumSession) in the signature.
 
     # To make jax properly treat this, we modify the function signature
 
-    # This function performs the input function but also has the AbstractQuantumCircuit
+    # This function performs the input function but also has the AbstractQuantumState
     # in the signature.
     def ammended_function(*args, **kwargs):
 
         abs_qc = kwargs[10*"~"]
         del kwargs[10*"~"]
 
-        # Set the given AbstractQuantumCircuit as the
+        # Set the given AbstractQuantumState as the
         # one carried by the tracing QuantumSession
         abs_qs = TracingQuantumSession.get_instance()
         abs_qs.abs_qc = abs_qc
@@ -261,7 +261,7 @@ def qache_helper(func, jax_kwargs):
                     )
 
         new_abs_qc = abs_qs.abs_qc
-        # Return the result and the result AbstractQuantumCircuit.
+        # Return the result and the result AbstractQuantumState.
         return res, new_abs_qc
 
     # Modify the name of the ammended function to reflect the input
@@ -278,7 +278,7 @@ def qache_helper(func, jax_kwargs):
         if not check_for_tracing_mode():
             return func(*args, **kwargs)
 
-        # Get the AbstractQuantumCircuit for tracing
+        # Get the AbstractQuantumState for tracing
         abs_qs = TracingQuantumSession.get_instance()
         abs_qs.start_tracing(abs_qs.abs_qc)
 
@@ -312,14 +312,14 @@ def qache_helper(func, jax_kwargs):
         
         jaxpr = eqn.params["jaxpr"].jaxpr
 
-        if not isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
+        if not isinstance(eqn.invars[-1].aval, AbstractQuantumState):
             for i in range(len(eqn.invars)):
-                if isinstance(eqn.invars[i].aval, AbstractQuantumCircuit):
+                if isinstance(eqn.invars[i].aval, AbstractQuantumState):
                     eqn.invars[-1], eqn.invars[i] = eqn.invars[i], eqn.invars[-1]
                     break
-        if not isinstance(jaxpr.invars[-1].aval, AbstractQuantumCircuit):
+        if not isinstance(jaxpr.invars[-1].aval, AbstractQuantumState):
             for i in range(len(jaxpr.invars)):
-                if isinstance(jaxpr.invars[i].aval, AbstractQuantumCircuit):
+                if isinstance(jaxpr.invars[i].aval, AbstractQuantumState):
                     jaxpr.invars[-1], jaxpr.invars[i] = (
                         jaxpr.invars[i],
                         jaxpr.invars[-1],
@@ -328,7 +328,7 @@ def qache_helper(func, jax_kwargs):
 
         eqn.params["jaxpr"] = Jaspr.from_cache(eqn.params["jaxpr"])
 
-        # Update the AbstractQuantumCircuit of the TracingQuantumSession
+        # Update the AbstractQuantumState of the TracingQuantumSession
         abs_qs.abs_qc = abs_qc_new
 
         # The QuantumVariables from the result went through a flatten/unflattening cycly.

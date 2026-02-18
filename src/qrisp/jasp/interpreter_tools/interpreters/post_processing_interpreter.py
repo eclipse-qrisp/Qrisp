@@ -113,7 +113,7 @@ def extract_post_processing(jaspr, *args):
         
     """
     from jax.extend.core import ClosedJaxpr
-    from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive, AbstractQubitArray
+    from qrisp.jasp.primitives import AbstractQuantumState, QuantumPrimitive, AbstractQubitArray
     import jax.numpy as jnp
     
     # Get the inner jaxpr
@@ -128,7 +128,7 @@ def extract_post_processing(jaspr, *args):
     static_value_map = {}
     arg_index = 0
     for var in inner_jaxpr.invars:
-        if not isinstance(var.aval, AbstractQuantumCircuit):
+        if not isinstance(var.aval, AbstractQuantumState):
             if arg_index < len(args):
                 static_value_map[var] = args[arg_index]
                 arg_index += 1
@@ -248,7 +248,7 @@ def extract_post_processing(jaspr, *args):
             #    so that subsequent operations (like nested jit calls) can find them
             if isinstance(eqn.primitive, QuantumPrimitive):
                 for outvar in eqn.outvars:
-                    if isinstance(outvar.aval, AbstractQuantumCircuit):
+                    if isinstance(outvar.aval, AbstractQuantumState):
                         # Propagate QuantumCircuit from input to output
                         context_dic[outvar] = context_dic[eqn.invars[-1]]
                     else:
@@ -448,7 +448,7 @@ def extract_post_processing(jaspr, *args):
         # Initialize QuantumCircuit variables as tuples (measurement_array, last_popped_index)
         # so that measurements can consume from the per-circuit array.
         for var in inner_jaxpr.invars:
-            if isinstance(var.aval, AbstractQuantumCircuit):
+            if isinstance(var.aval, AbstractQuantumState):
                 # measurement_results is the full boolean array; start pointer at 0
                 context_dic[var] = (measurement_results, 0)
         
@@ -458,7 +458,7 @@ def extract_post_processing(jaspr, *args):
         # Extract outputs (excluding QuantumCircuit)
         outputs = []
         for var in inner_jaxpr.outvars:
-            if not isinstance(var.aval, AbstractQuantumCircuit):
+            if not isinstance(var.aval, AbstractQuantumState):
                 outputs.append(context_dic[var])
         
         if len(outputs) == 1:

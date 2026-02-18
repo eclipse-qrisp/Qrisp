@@ -20,7 +20,7 @@ from functools import lru_cache
 
 from jax.extend.core import JaxprEqn
 
-from qrisp.jasp.primitives import AbstractQuantumCircuit
+from qrisp.jasp.primitives import AbstractQuantumState
 
 
 def copy_jaxpr_eqn(eqn):
@@ -135,7 +135,7 @@ def injection_transform(jaspr, qubit_array_outvar):
             eqn = copy_jaxpr_eqn(eqn)
             for j in range(len(eqn.invars)):
                 invar = eqn.invars[j]
-                if isinstance(invar.aval, AbstractQuantumCircuit):
+                if isinstance(invar.aval, AbstractQuantumState):
                     eqn.invars[j] = deleted_quantum_circuit_variable
                     deleted_quantum_circuit_variable = None
                     break

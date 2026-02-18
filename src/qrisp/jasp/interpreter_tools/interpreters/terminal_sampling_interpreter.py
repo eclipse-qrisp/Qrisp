@@ -33,7 +33,7 @@ from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation impor
     evaluate_while_loop,
 )
 
-from qrisp.jasp.primitives import AbstractQubitArray, AbstractQuantumCircuit, AbstractQubit
+from qrisp.jasp.primitives import AbstractQubitArray, AbstractQuantumState, AbstractQubit
 
 # The following function implements the behavior of the jaspify simulator for terminal sampling
 # To understand the function consider the result of tracing a simple sampling task
@@ -412,7 +412,7 @@ def decoder_compiler(jaxpr, eqn_evaluator):
         for i in range(len(args)):
             if isinstance(jaxpr.jaxpr.invars[i].aval, AbstractQubitArray):
                 new_args.append(len(args[i]))
-            elif isinstance(jaxpr.jaxpr.invars[i].aval, (AbstractQubit, AbstractQuantumCircuit)):
+            elif isinstance(jaxpr.jaxpr.invars[i].aval, (AbstractQubit, AbstractQuantumState)):
                 raise Exception(f"Found quantum type {jaxpr.jaxpr.invars[i].aval} in decoder implementation")
             else:
                 new_args.append(args[i])

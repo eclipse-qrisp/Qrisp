@@ -20,7 +20,7 @@ from jax.core import AbstractValue
 from qrisp.jasp.primitives import QuantumPrimitive, AbstractQubitArray
 
 
-class AbstractQuantumCircuit(AbstractValue):
+class AbstractQuantumState(AbstractValue):
     
     def __init__(self):
         self.vma = None
@@ -30,10 +30,10 @@ class AbstractQuantumCircuit(AbstractValue):
         return "QuantumCircuit"
 
     def __hash__(self):
-        return hash(AbstractQuantumCircuit)
+        return hash(AbstractQuantumState)
 
     def __eq__(self, other):
-        return isinstance(other, AbstractQuantumCircuit)
+        return isinstance(other, AbstractQuantumState)
 
 
 def create_qubits(size, state):
@@ -57,9 +57,9 @@ def create_qubits_abstract_eval(size, qc):
       a ShapedArray for the result of the primitive.
     """
 
-    assert isinstance(qc, AbstractQuantumCircuit)
+    assert isinstance(qc, AbstractQuantumState)
 
-    return AbstractQubitArray(), AbstractQuantumCircuit()
+    return AbstractQubitArray(), AbstractQuantumState()
 
 
 @create_qubits_p.def_impl
@@ -91,7 +91,7 @@ def delete_qubits_abstract_eval(qarr, qc):
       a ShapedArray for the result of the primitive.
     """
 
-    return AbstractQuantumCircuit()
+    return AbstractQuantumState()
 
 
 @delete_qubits_p.def_impl
@@ -119,4 +119,4 @@ def quantum_kernel_abstract_eval():
       a ShapedArray for the result of the primitive.
     """
 
-    return AbstractQuantumCircuit()
+    return AbstractQuantumState()

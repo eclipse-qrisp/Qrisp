@@ -31,9 +31,9 @@ from qrisp.jasp import (
     flatten_environments,
     insert_outvalues,
 )
-from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive, ParityOperation
+from qrisp.jasp.primitives import AbstractQuantumState, QuantumPrimitive, ParityOperation
 from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement
-from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive
+from qrisp.jasp.primitives import AbstractQuantumState, QuantumPrimitive
 from qrisp.jasp.jasp_expression import collect_environments, invert_jaspr
 
 
@@ -186,12 +186,12 @@ class Jaspr(ClosedJaxpr):
         self.inv_jaspr = inv_jaspr
         self.envs_flattened = False
 
-        if not isinstance(self.invars[-1].aval, AbstractQuantumCircuit):
+        if not isinstance(self.invars[-1].aval, AbstractQuantumState):
             raise Exception(
                 f"Tried to create a Jaspr from data that doesn't have a QuantumCircuit the last argument (got {type(self.invars[-1].aval)} instead)"
             )
 
-        if not isinstance(self.outvars[-1].aval, AbstractQuantumCircuit):
+        if not isinstance(self.outvars[-1].aval, AbstractQuantumState):
             raise Exception(
                 f"Tried to create a Jaspr from data that doesn't have a QuantumCircuit the last entry of return type (got {type(self.outvars[-1].aval)} instead)"
             )
@@ -1412,7 +1412,7 @@ def make_jaxpr_mod(fun, static_argnums=(), return_shape=False, abstracted_axes=N
     This is a modified version of JAX's ``make_jaxpr`` that supports
     ``return_shape=True`` even when the function returns custom abstract
     types that don't have ``shape``/``dtype`` attributes (such as
-    ``AbstractQuantumCircuit``).
+    ``AbstractQuantumState``).
     
     The interface is identical to ``jax.make_jaxpr``.
     
@@ -1586,7 +1586,7 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
     """
     from qrisp import recursive_qv_search
     from qrisp.jasp import (
-        AbstractQuantumCircuit,
+        AbstractQuantumState,
         TracingQuantumSession,
         check_for_tracing_mode,
     )
@@ -1639,7 +1639,7 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
             return res, res_qc
 
         ammended_kwargs = dict(kwargs)
-        ammended_kwargs[10*"~"] = AbstractQuantumCircuit()
+        ammended_kwargs[10*"~"] = AbstractQuantumState()
         
         # Use make_jaxpr_mod to trace the function
         # Pass return_shape through to get the output tree if requested

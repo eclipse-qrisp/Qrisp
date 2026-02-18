@@ -54,7 +54,7 @@
 
 from qrisp.circuit import QubitAlloc, QubitDealloc, fast_append
 from qrisp.core.quantum_session import QuantumSession
-from qrisp.jasp import AbstractQuantumCircuit, QuantumPrimitive, TracingQuantumSession
+from qrisp.jasp import AbstractQuantumState, QuantumPrimitive, TracingQuantumSession
 
 
 class QuantumEnvironment(QuantumPrimitive):
@@ -341,7 +341,7 @@ class QuantumEnvironment(QuantumPrimitive):
             abstractions of the actual arguments.
             """
 
-            return (AbstractQuantumCircuit(),)
+            return (AbstractQuantumState(),)
 
         self.env_args = env_args
 

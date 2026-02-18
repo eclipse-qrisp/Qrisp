@@ -22,7 +22,7 @@ import jax
 
 from qrisp.core import recursive_qv_search, recursive_qa_search
 from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode, get_last_equation
-from qrisp.jasp.primitives import AbstractQuantumCircuit
+from qrisp.jasp.primitives import AbstractQuantumState
 
 
 def q_while_loop(cond_fun, body_fun, init_val):
@@ -134,12 +134,12 @@ def q_while_loop(cond_fun, body_fun, init_val):
     
     body_jaxpr = eqn.params["body_jaxpr"]
     
-    # If the AbstractQuantumCircuit is part of the constants of the body,
+    # If the AbstractQuantumState is part of the constants of the body,
     # the body did not execute any quantum operations.
-    # We remove the AbstractQuantumCircuit from the body signature
+    # We remove the AbstractQuantumState from the body signature
     # to make the loop purely classical.
     for i in range(eqn.params["body_nconsts"]):
-        if isinstance(body_jaxpr.jaxpr.invars[i].aval, AbstractQuantumCircuit):
+        if isinstance(body_jaxpr.jaxpr.invars[i].aval, AbstractQuantumState):
             eqn.invars.pop(i + eqn.params["cond_nconsts"])
             body_jaxpr.jaxpr.invars.pop(i)
             eqn.params["body_nconsts"] -= 1
@@ -343,14 +343,14 @@ def q_cond(pred, true_fun, false_fun, *operands):
     false_jaxpr = eqn.params["branches"][0]
     true_jaxpr = eqn.params["branches"][1]
 
-    if not isinstance(false_jaxpr.jaxpr.invars[-1].aval, AbstractQuantumCircuit):
+    if not isinstance(false_jaxpr.jaxpr.invars[-1].aval, AbstractQuantumState):
         raise Exception(
             "Found implicit variable import in q_cond. Please make sure all used variables are part of the body signature."
         )
 
     from qrisp.jasp import Jaspr
 
-    if (not isinstance(false_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumCircuit)) and (not isinstance(true_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumCircuit)):
+    if (not isinstance(false_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumState)) and (not isinstance(true_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumState)):
         eqn.invars.pop(-1)
         false_jaxpr.jaxpr.invars.pop(-1)
         true_jaxpr.jaxpr.invars.pop(-1)
@@ -467,14 +467,14 @@ def _q_switch_c(index, branches, *operands):
         
     branch_jaxprs = eqn.params["branches"]
 
-    if not isinstance(branch_jaxprs[0].jaxpr.invars[-1].aval, AbstractQuantumCircuit):
+    if not isinstance(branch_jaxprs[0].jaxpr.invars[-1].aval, AbstractQuantumState):
         raise Exception(
             "Found implicit variable import in q_switch. Please make sure all used variables are part of the body signature."
         )
 
     from qrisp.jasp import Jaspr
 
-    if all([not isinstance(branch_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumCircuit) for branch_jaxpr in branch_jaxprs]):
+    if all([not isinstance(branch_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumState) for branch_jaxpr in branch_jaxprs]):
         eqn.invars.pop(-1)
         [branch_jaxpr.jaxpr.invars.pop(-1) for branch_jaxpr in branch_jaxprs]
         return switch_res[0]

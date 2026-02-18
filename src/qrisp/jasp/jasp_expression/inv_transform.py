@@ -25,7 +25,7 @@ from jax import make_jaxpr
 from jax.extend.core import JaxprEqn, Var, ClosedJaxpr, Jaxpr
 from jax.lax import add_p, sub_p, while_loop
 
-from qrisp.jasp.primitives import AbstractQuantumCircuit, quantum_gate_p, greek_letters
+from qrisp.jasp.primitives import AbstractQuantumState, quantum_gate_p, greek_letters
 from qrisp.jasp.interpreter_tools import eval_jaxpr, extract_invalues, insert_outvalues
 
 def copy_jaxpr_eqn(eqn):
@@ -142,7 +142,7 @@ def invert_jaspr(jaspr):
         if eqn.primitive == quantum_gate_p or (
             (eqn.primitive.name in ["jit", "while", "cond"])
             and len(eqn.invars)
-            and isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit)
+            and isinstance(eqn.invars[-1].aval, AbstractQuantumState)
         ):
             # Insert the inverted equation at the front
             op_eqs.insert(0, invert_eqn(eqn))
@@ -151,7 +151,7 @@ def invert_jaspr(jaspr):
         elif eqn.primitive.name == "jasp.delete_qubits":
             eqn = copy_jaxpr_eqn(eqn)
             deletions.append(eqn)
-        elif len(eqn.invars) and isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
+        elif len(eqn.invars) and isinstance(eqn.invars[-1].aval, AbstractQuantumState):
             eqn = copy_jaxpr_eqn(eqn)
             eqn.invars[-1] = current_abs_qc
             current_abs_qc = eqn.outvars[-1]
@@ -168,7 +168,7 @@ def invert_jaspr(jaspr):
     
     for i in range(len(op_eqs)):
         op_eqs[i].invars[-1] = current_abs_qc
-        current_abs_qc = Var(aval=AbstractQuantumCircuit())
+        current_abs_qc = Var(aval=AbstractQuantumState())
         qc_var_count[0] += 1
         op_eqs[i].outvars[-1] = current_abs_qc
     

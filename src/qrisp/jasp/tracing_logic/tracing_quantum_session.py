@@ -38,7 +38,7 @@ class TracingQuantumSession:
     This class acts as the central recording context while JAX is tracing a Python
     function that constructs a quantum program. In particular, it maintains:
 
-    - a reference to the currently active :class:`~qrisp.jasp.AbstractQuantumCircuit`
+    - a reference to the currently active :class:`~qrisp.jasp.AbstractQuantumState`
       being built (``self.abs_qc``),
 
     - a cache for qubits allocated during tracing (``self.qubit_cache``),
