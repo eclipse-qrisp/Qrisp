@@ -20,7 +20,7 @@ import numpy as np
 
 from qrisp.core import cx, swap
 from qrisp.environments import control
-from qrisp.jasp import jlen, jrange, while_loop
+from qrisp.jasp import check_for_tracing_mode, jlen, jrange, while_loop
 
 def demux(
     input,
@@ -282,24 +282,75 @@ def cyclic_shift(iterable, shift_amount=1):
 
         return
 
-    N = len(iterable)
-    n = int(np.floor(np.log2(N)))
+    if check_for_tracing_mode():
+        _cyclic_shift_jasp(iterable, shift_amount)
+    else:
+        N = len(iterable)
+        n = int(np.floor(np.log2(N)))
 
-    if N == 0 or not shift_amount % N:
-        return
-    if shift_amount < 0:
-        return cyclic_shift(iterable[::-1], -shift_amount)
+        if N == 0 or not shift_amount % N:
+            return
+        if shift_amount < 0:
+            return cyclic_shift(iterable[::-1], -shift_amount)
 
-    if shift_amount != 1:
+        if shift_amount != 1:
 
-        perm = np.arange(N)
-        perm = (perm - shift_amount) % (N)
+            perm = np.arange(N)
+            perm = (perm - shift_amount) % (N)
 
-        permute_iterable(iterable, perm)
-        return
+            permute_iterable(iterable, perm)
+            return
 
-    singular_shift(iterable[: 2**n])
-    singular_shift([iterable[0]] + list(iterable[2**n :]), use_saeedi=True)
+        singular_shift(iterable[: 2**n])
+        singular_shift([iterable[0]] + list(iterable[2**n :]), use_saeedi=True)
+
+def _cyclic_shift_jasp(iterable, shift_amount):
+    """
+    JASP-compatible implementation of cyclic_shift for shift_amount=1.
+    Handles dynamic iterable sizes by using jlen, while_loop, and
+    DynamicQubitArray fusion for constructing sub-iterables.
+    """
+    from qrisp.jasp import DynamicQubitArray
+
+    N = jlen(iterable)
+
+    # For shift_amount=1, decompose into two singular_shifts
+    # just like the non-JASP version:
+    #   singular_shift(iterable[:2**n])
+    #   singular_shift([iterable[0]] + iterable[2**n:], use_saeedi=True)
+    # where n = floor(log2(N))
+
+    n = compute_floor_log2(N)
+    pow2n = 2**n
+
+    # First singular_shift on iterable[:2**n]
+    first_part = iterable.reg[:pow2n]
+    singular_shift(first_part)
+
+    # Second singular_shift on [iterable[0]] + iterable[2**n:]
+    # Construct via DynamicQubitArray fusion: fuse first qubit with tail
+    first_qubit = iterable.reg[:1]
+    tail = iterable.reg[pow2n:]
+    combined = first_qubit + tail  # DynamicQubitArray.__add__ → fuse_qb_array
+    singular_shift(combined, use_saeedi=True)
+
+
+def compute_floor_log2(N):
+    """
+    Computes floor(log2(N)) in a JASP-compatible way using while_loop.
+    """
+    def body_fun(val):
+        result, current = val
+        current = current // 2
+        result += 1
+        return result, current
+
+    def cond_fun(val):
+        return val[1] > 1
+
+    result, _ = while_loop(cond_fun, body_fun, (0, N))
+    return result
+
 
 def compute_ladder_iterations(N):
     """
