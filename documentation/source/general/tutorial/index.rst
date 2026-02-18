@@ -80,7 +80,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
         .. raw:: html
 
             <h4 style="font-weight: bold; margin-top: 0;">
-                <a href="./BE_construct.html" style="text-decoration: none; color: inherit;">Quantum Linear Algebra</a>
+                <a href="./BE_tutorial/index.rst" style="text-decoration: none; color: inherit;">Quantum Linear Algebra</a>
             </h4>
 
         .. image:: ../../_static/BE_thumbnail.png
