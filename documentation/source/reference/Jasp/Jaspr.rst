@@ -51,7 +51,7 @@ Jasp is designed to model dynamic quantum computations with a minimal set of pri
 
 For that, there are 3 new Jax abstract data types defined:
         
-* ``QuantumCircuit``, which represents an object that tracks what kind of manipulations are applied to the quantum state.
+* ``QuantumState``, which represents an object that tracks what kind of manipulations are applied to the quantum state.
 * ``QubitArray``, which represents an array of qubits that can have a dynamic number of qubits.
 * ``Qubit``, which represents individual qubits.
 
@@ -64,15 +64,15 @@ Before we describe how quantum computations are realized, we list some "administ
    * - Primitive
      - Semantics
    * - ``jasp.create_qubits``
-     - Creates new qubits. Takes a (dynamic) integer representing the size and a ``QuantumCircuit``, then returns a ``QubitArray`` and a new ``QuantumCircuit``. 
+     - Creates new qubits. Takes a (dynamic) integer representing the size and a ``QuantumState``, then returns a ``QubitArray`` and a new ``QuantumState``. 
    * - ``jasp.get_qubit``
      - Extracts a ``Qubit`` from a ``QubitArray``. Takes a ``QubitArray`` and a dynamic integer (indicating the position) and returns a ``Qubit``.
    * - ``jasp.get_size``
      - Retrieves the size of a ``QubitArray``. Takes a ``QubitArray`` and returns an integer (the size).
    * - ``jasp.delete_qubits``
-     - Deallocates a ``QubitArray``. Takes a ``QubitArray`` and a ``QuantumCircuit``, returns a new ``QuantumCircuit``.
+     - Deallocates a ``QubitArray``. Takes a ``QubitArray`` and a ``QuantumState``, returns a new ``QuantumState``.
    * - ``jasp.reset``
-     - Resets qubits in a ``QubitArray`` to the ``|0⟩`` state. Takes a ``QubitArray`` and a ``QuantumCircuit``, returns a new ``QuantumCircuit``.
+     - Resets qubits in a ``QubitArray`` to the ``|0⟩`` state. Takes a ``QubitArray`` and a ``QuantumState``, returns a new ``QuantumState``.
 
 Quantum Operations
 ^^^^^^^^^^^^^^^^^^
@@ -94,17 +94,17 @@ Quantum gates are represented by the ``jasp.quantum_gate`` primitive. Here's an 
 
 ::
 
-	{ lambda ; a:i64[] b:QuantumCircuit. let
-	    c:QubitArray d:QuantumCircuit = jasp.create_qubits a b
+	{ lambda ; a:i64[] b:QuantumState. let
+	    c:QubitArray d:QuantumState = jasp.create_qubits a b
 	    e:Qubit = jasp.get_qubit c 0:i64[]
 	    f:Qubit = jasp.get_qubit c 1:i64[]
-	    g:QuantumCircuit = jasp.quantum_gate[gate=cx] e f d
-	    h:bool[] i:QuantumCircuit = jasp.measure f g
+	    g:QuantumState = jasp.quantum_gate[gate=cx] e f d
+	    h:bool[] i:QuantumState = jasp.measure f g
 	  in (c, h, i) }
 
-The line starting with ``g:`` describes how quantum gates are represented in a Jaspr: The gate name is specified in the parameters (``gate=cx``), followed by the ``Qubit`` arguments, and finally the ``QuantumCircuit``. This structure closely mirrors how quantum computations are modeled mathematically: as a unitary applied to a tensor at certain indices. You can think of ``QuantumCircuit`` objects as tensors, ``Qubit`` objects as integer indices, and ``QubitArray`` objects as arrays of indices.
+The line starting with ``g:`` describes how quantum gates are represented in a Jaspr: The gate name is specified in the parameters (``gate=cx``), followed by the ``Qubit`` arguments, and finally the ``QuantumState``. This structure closely mirrors how quantum computations are modeled mathematically: as a unitary applied to a tensor at certain indices. You can think of ``QuantumState`` objects as tensors, ``Qubit`` objects as integer indices, and ``QubitArray`` objects as arrays of indices.
 
-The ``jasp.measure`` primitive takes a special role: Unlike other quantum operations, it not only returns a new ``QuantumCircuit`` but also a measurement outcome. When measuring a single ``Qubit``, it returns a boolean value. When measuring a ``QubitArray``, it returns an integer:
+The ``jasp.measure`` primitive takes a special role: Unlike other quantum operations, it not only returns a new ``QuantumState`` but also a measurement outcome. When measuring a single ``Qubit``, it returns a boolean value. When measuring a ``QubitArray``, it returns an integer:
 
 ::
 	
@@ -118,12 +118,12 @@ The ``jasp.measure`` primitive takes a special role: Unlike other quantum operat
 
 ::
 	
-	{ lambda ; a:i64[] b:QuantumCircuit. let
-	    c:QubitArray d:QuantumCircuit = jasp.create_qubits a b
+	{ lambda ; a:i64[] b:QuantumState. let
+	    c:QubitArray d:QuantumState = jasp.create_qubits a b
 	    e:Qubit = jasp.get_qubit c 0:i64[]
 	    f:Qubit = jasp.get_qubit c 1:i64[]
-	    g:QuantumCircuit = jasp.quantum_gate[gate=cx] e f d
-	    h:i64[] i:QuantumCircuit = jasp.measure c g
+	    g:QuantumState = jasp.quantum_gate[gate=cx] e f d
+	    h:i64[] i:QuantumState = jasp.measure c g
 	  in (h, i) }
 
 Both variants return values (``bool[]`` or ``i64[]``) that other Jax modules understand, highlighting the seamless embedding of quantum computations into the Jax ecosystem.
@@ -151,14 +151,14 @@ QuantumEnvironments
 
 ::
 	
-	{ lambda ; a:i64[] b:QuantumCircuit. let
-	    c:QubitArray d:QuantumCircuit = jasp.create_qubits a b
-	    e:QuantumCircuit = jasp.q_env[
-	      jaspr={ lambda ; c:QubitArray f:QuantumCircuit. let
+	{ lambda ; a:i64[] b:QuantumState. let
+	    c:QubitArray d:QuantumState = jasp.create_qubits a b
+	    e:QuantumState = jasp.q_env[
+	      jaspr={ lambda ; c:QubitArray f:QuantumState. let
 	          g:Qubit = jasp.get_qubit c 0:i64[]
-	          h:QuantumCircuit = jasp.quantum_gate[gate=t] g f
+	          h:QuantumState = jasp.quantum_gate[gate=t] g f
 	          i:Qubit = jasp.get_qubit c 1:i64[]
-	          j:QuantumCircuit = jasp.quantum_gate[gate=cx] g i h
+	          j:QuantumState = jasp.quantum_gate[gate=cx] g i h
 	        in (j,) }
 	      type=InversionEnvironment
 	    ] c d
@@ -175,12 +175,12 @@ Here, the body of the :ref:`InversionEnvironment` is collected into a nested Jas
 
 ::
 	
-	{ lambda ; a:i64[] b:QuantumCircuit. let
-	    c:QubitArray d:QuantumCircuit = jasp.create_qubits a b
+	{ lambda ; a:i64[] b:QuantumState. let
+	    c:QubitArray d:QuantumState = jasp.create_qubits a b
 	    e:Qubit = jasp.get_qubit c 0:i64[]
 	    f:Qubit = jasp.get_qubit c 1:i64[]
-	    g:QuantumCircuit = jasp.quantum_gate[gate=cx] e f d
-	    h:QuantumCircuit = jasp.quantum_gate[gate=t_dg] e g
+	    g:QuantumState = jasp.quantum_gate[gate=cx] e f d
+	    h:QuantumState = jasp.quantum_gate[gate=t_dg] e g
 	  in (c, h) }
 
 In the flattened form, the :ref:`InversionEnvironment` transformation has been applied: the order of the ``cx`` and ``t`` gates has been reversed, and the ``t`` gate has been transformed into ``t_dg`` (T-dagger). This is the default behavior as it produces more optimized Jaspr representations suitable for execution.
