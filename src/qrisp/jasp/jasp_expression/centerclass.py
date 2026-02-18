@@ -92,14 +92,14 @@ class Jaspr(ClosedJaxpr):
 
     .. code-block::
 
-        { lambda ; a:QuantumCircuit b:i32[]. let
-            c:QuantumCircuit d:QubitArray = create_qubits a b
+        { lambda ; a:QuantumState b:i32[]. let
+            c:QuantumState d:QubitArray = create_qubits a b
             e:Qubit = get_qubit d 0
-            f:QuantumCircuit = x c e
+            f:QuantumState = x c e
             g:i32[] = sub b 1
             h:Qubit = get_qubit d g
-            i:QuantumCircuit = cx f e h
-            j:QuantumCircuit k:i32[] = measure i d
+            i:QuantumState = cx f e h
+            j:QuantumState k:i32[] = measure i d
             l:f32[] = convert_element_type[new_dtype=float64 weak_type=True] k
             m:f32[] = mul l 0.5
             n:f32[] = add m 1.0
@@ -107,7 +107,7 @@ class Jaspr(ClosedJaxpr):
 
 
     A defining feature of the Jaspr class is that the first input and the
-    first output are always of QuantumCircuit type. Therefore, Jaspr objects always
+    first output are always of QuantumState type. Therefore, Jaspr objects always
     represent some (hybrid) quantum operation.
 
     Qrisp comes with a built-in Jaspr interpreter. For that you simply have to
@@ -188,12 +188,12 @@ class Jaspr(ClosedJaxpr):
 
         if not isinstance(self.invars[-1].aval, AbstractQuantumState):
             raise Exception(
-                f"Tried to create a Jaspr from data that doesn't have a QuantumCircuit the last argument (got {type(self.invars[-1].aval)} instead)"
+                f"Tried to create a Jaspr from data that doesn't have a QuantumState the last argument (got {type(self.invars[-1].aval)} instead)"
             )
 
         if not isinstance(self.outvars[-1].aval, AbstractQuantumState):
             raise Exception(
-                f"Tried to create a Jaspr from data that doesn't have a QuantumCircuit the last entry of return type (got {type(self.outvars[-1].aval)} instead)"
+                f"Tried to create a Jaspr from data that doesn't have a QuantumState the last entry of return type (got {type(self.outvars[-1].aval)} instead)"
             )
 
     @property
@@ -279,12 +279,12 @@ class Jaspr(ClosedJaxpr):
 
             print(jaspr.inverse())
             # Yields
-            # { lambda ; a:QuantumCircuit b:i32[]. let
-            #     c:QuantumCircuit d:QubitArray = create_qubits a b
+            # { lambda ; a:QuantumState b:i32[]. let
+            #     c:QuantumState d:QubitArray = create_qubits a b
             #     e:Qubit = get_qubit d 0
             #     f:Qubit = get_qubit d 1
-            #     g:QuantumCircuit = t_dg c f
-            #     h:QuantumCircuit = cx g e f
+            #     g:QuantumState = t_dg c f
+            #     h:QuantumState = cx g e f
             #   in (h, d) }
         """
         return invert_jaspr(self)
@@ -292,7 +292,7 @@ class Jaspr(ClosedJaxpr):
     def control(self, num_ctrl, ctrl_state=-1):
         """
         Returns the controlled version of the Jaspr. The control qubits are added
-        to the signature of the Jaspr as the arguments after the QuantumCircuit.
+        to the signature of the Jaspr as the arguments after the QuantumState.
 
         Parameters
         ----------
@@ -327,16 +327,16 @@ class Jaspr(ClosedJaxpr):
 
             print(jaspr.control(2))
             # Yields
-            # { lambda ; a:QuantumCircuit b:Qubit c:Qubit d:i32[]. let
-            #     e:QuantumCircuit f:QubitArray = create_qubits a 1
+            # { lambda ; a:QuantumState b:Qubit c:Qubit d:i32[]. let
+            #     e:QuantumState f:QubitArray = create_qubits a 1
             #     g:Qubit = get_qubit f 0
-            #     h:QuantumCircuit = ccx e b c g
-            #     i:QuantumCircuit j:QubitArray = create_qubits h d
+            #     h:QuantumState = ccx e b c g
+            #     i:QuantumState j:QubitArray = create_qubits h d
             #     k:Qubit = get_qubit j 0
             #     l:Qubit = get_qubit j 1
-            #     m:QuantumCircuit = ccx i g k l
-            #     n:QuantumCircuit = ct m g l
-            #     o:QuantumCircuit = ccx n b c g
+            #     m:QuantumState = ccx i g k l
+            #     n:QuantumState = ct m g l
+            #     o:QuantumState = ccx n b c g
             #   in (o, j) }
 
         We see that the control qubits are part of the function signature
@@ -557,14 +557,14 @@ class Jaspr(ClosedJaxpr):
 
         ::
 
-                { lambda ; a:QuantumCircuit b:i32[]. let
-                        c:QuantumCircuit d:QubitArray = create_qubits a b
-                        e:QuantumCircuit = q_env[
-                        jaspr={ lambda ; f:QuantumCircuit d:QubitArray. let
+                { lambda ; a:QuantumState b:i32[]. let
+                        c:QuantumState d:QubitArray = create_qubits a b
+                        e:QuantumState = q_env[
+                        jaspr={ lambda ; f:QuantumState d:QubitArray. let
                   g:Qubit = get_qubit d 0
-                  h:QuantumCircuit = t f g
+                  h:QuantumState = t f g
                   i:Qubit = get_qubit d 1
-                  j:QuantumCircuit = cx h g i
+                  j:QuantumState = cx h g i
                 in (j,) }
                         type=InversionEnvironment
                         ] c d
@@ -579,12 +579,12 @@ class Jaspr(ClosedJaxpr):
         ``jaspr.flatten_environments``:
 
         >>> print(jaspr.flatten_environments)
-        { lambda ; a:QuantumCircuit b:i32[]. let
-            c:QuantumCircuit d:QubitArray = create_qubits a b
+        { lambda ; a:QuantumState b:i32[]. let
+            c:QuantumState d:QubitArray = create_qubits a b
             e:Qubit = get_qubit d 0
             f:Qubit = get_qubit d 1
-            g:QuantumCircuit = cx c e f
-            h:QuantumCircuit = t_dg g e
+            g:QuantumState = cx c e f
+            h:QuantumState = t_dg g e
           in (h, d) }
 
         We see that as expected, the order of the ``cx`` and the ``t`` gate has been switched and the ``t`` gate has been turned into a ``t_dg``.

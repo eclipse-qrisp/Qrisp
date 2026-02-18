@@ -134,7 +134,7 @@ def invert_jaspr(jaspr):
     deletions = []
     current_abs_qc = jaspr.invars[-1]
 
-    # Since the Operation equations require as inputs only qubit object and a QuantumCircuit
+    # Since the Operation equations require as inputs only qubit object and a QuantumState
     # we achieve our goal by pulling all the non-Operation equations to the front
     # and the Operation equations to the back.
 
@@ -159,7 +159,7 @@ def invert_jaspr(jaspr):
         else:
             non_op_eqs.append(copy_jaxpr_eqn(eqn))
 
-    # Finally, we need to make sure the Order of QuantumCircuit I/O is also reversed.
+    # Finally, we need to make sure the Order of QuantumState I/O is also reversed.
     n = len(op_eqs)
     if n == 0:
         return jaspr

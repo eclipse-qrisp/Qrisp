@@ -236,7 +236,7 @@ def control_eqn(eqn, ctrl_qubit_var):
 def control_jaspr(jaspr):
     """
     Takes a Jaspr and returns a Jaspr that has an additional Qubit argument
-    (located behind the QuantumCircuit argument). The returned Jaspr is
+    (located behind the QuantumState argument). The returned Jaspr is
     controlled on that Qubit argument.
 
     Parameters

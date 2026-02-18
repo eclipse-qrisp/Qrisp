@@ -27,7 +27,7 @@ class AbstractQuantumState(AbstractValue):
         AbstractValue.__init__(self)
 
     def __repr__(self):
-        return "QuantumCircuit"
+        return "QuantumState"
 
     def __hash__(self):
         return hash(AbstractQuantumState)

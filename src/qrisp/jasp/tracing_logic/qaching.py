@@ -103,38 +103,38 @@ def qache(*func, **kwargs):
     has been traced twice and recalled from the cache twice. We take a look at the :ref:`jaspr`.
 
     >>> print(jaspr)
-    let inner_function = { lambda ; a:QuantumCircuit b:QubitArray. let
+    let inner_function = { lambda ; a:QuantumState b:QubitArray. let
         c:Qubit = jasp.get_qubit b 0
-        d:QuantumCircuit = jasp.h a c
+        d:QuantumState = jasp.h a c
         e:Qubit = jasp.get_qubit b 1
-        f:QuantumCircuit = jasp.cx d c e
-        g:QuantumCircuit h:bool[] = jasp.measure f c
+        f:QuantumState = jasp.cx d c e
+        g:QuantumState h:bool[] = jasp.measure f c
       in (g, h) } in
-    let inner_function1 = { lambda ; i:QuantumCircuit j:QubitArray k:i32[] l:bool[]. let
+    let inner_function1 = { lambda ; i:QuantumState j:QubitArray k:i32[] l:bool[]. let
         m:Qubit = jasp.get_qubit j 0
-        n:QuantumCircuit = jasp.h i m
+        n:QuantumState = jasp.h i m
         o:Qubit = jasp.get_qubit j 1
-        p:QuantumCircuit = jasp.cx n m o
-        q:QuantumCircuit r:bool[] = jasp.measure p m
+        p:QuantumState = jasp.cx n m o
+        q:QuantumState r:bool[] = jasp.measure p m
       in (q, r) } in
-    { lambda ; s:QuantumCircuit. let
-        t:QuantumCircuit u:QubitArray = jasp.create_qubits s 2
-        v:QuantumCircuit w:QubitArray = jasp.create_qubits t 2
-        x:QuantumCircuit y:bool[] = pjit[name=inner_function jaxpr=inner_function] v
+    { lambda ; s:QuantumState. let
+        t:QuantumState u:QubitArray = jasp.create_qubits s 2
+        v:QuantumState w:QubitArray = jasp.create_qubits t 2
+        x:QuantumState y:bool[] = pjit[name=inner_function jaxpr=inner_function] v
           u
-        z:QuantumCircuit ba:bool[] = pjit[name=inner_function jaxpr=inner_function1] x
+        z:QuantumState ba:bool[] = pjit[name=inner_function jaxpr=inner_function1] x
           w 0 False
-        bb:QuantumCircuit bc:bool[] = pjit[name=inner_function jaxpr=inner_function] z
+        bb:QuantumState bc:bool[] = pjit[name=inner_function jaxpr=inner_function] z
           u
-        bd:QuantumCircuit be:bool[] = pjit[
+        bd:QuantumState be:bool[] = pjit[
           name=inner_function
           jaxpr=inner_function1
         ] bb w 0 False
         bf:bool[] = and y ba
         bg:bool[] = and bf bc
         bh:bool[] = and bg be
-        bi:QuantumCircuit = jasp.reset bd u
-        bj:QuantumCircuit = jasp.delete_qubits bi u
+        bi:QuantumState = jasp.reset bd u
+        bj:QuantumState = jasp.delete_qubits bi u
       in (bj, bh) }
 
     As expected, we see three different function definitions:

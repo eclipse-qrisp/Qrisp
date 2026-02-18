@@ -188,7 +188,7 @@ class DepthMetric(BaseMetric):
 
         # Associate the following in context_dic:
         # QubitArray -> qubit_table_handle (qubit_ids_table, size)
-        # QuantumCircuit -> metric_data
+        # QuantumState -> metric_data
         return qubit_table_handle, (
             depth_array,
             global_depth,
@@ -258,7 +258,7 @@ class DepthMetric(BaseMetric):
             )
 
         # Associate the following in context_dic:
-        # QuantumCircuit -> metric_data
+        # QuantumState -> metric_data
         return depth_array, current_depth, previous_size, invalid
 
     def handle_measure(self, invalues, eqn, context_dic):
@@ -287,7 +287,7 @@ class DepthMetric(BaseMetric):
 
         # Associate the following in context_dic:
         # meas_result -> meas_res (int64 scalar)
-        # QuantumCircuit -> metric_data
+        # QuantumState -> metric_data
         return (
             meas_res,
             (depth_array, current_depth, previous_size, invalid),
@@ -340,7 +340,7 @@ class DepthMetric(BaseMetric):
         _, metric_data = invalues
 
         # Associate the following in context_dic:
-        # QuantumCircuit -> metric_data
+        # QuantumState -> metric_data
         return metric_data
 
     def handle_delete_qubits(self, invalues, eqn, context_dic):
@@ -348,7 +348,7 @@ class DepthMetric(BaseMetric):
         _, metric_data = invalues
 
         # Associate the following in context_dic:
-        # QuantumCircuit -> metric_data
+        # QuantumState -> metric_data
         return metric_data
 
     def handle_parity(self, invalues, eqn, context_dic):

@@ -124,7 +124,7 @@ class NumQubitsMetric(BaseMetric):
 
         # Associate the following in context_dic:
         # QubitArray -> size
-        # QuantumCircuit -> metric_data
+        # QuantumState -> metric_data
         return (size, (allocations_array, allocations_counter_index, invalid))
 
     def handle_get_qubit(self, invalues, eqn, context_dic):
@@ -142,7 +142,7 @@ class NumQubitsMetric(BaseMetric):
     def handle_quantum_gate(self, invalues, eqn, context_dic):
 
         # Associate the following in context_dic:
-        # QuantumCircuit -> metric_data
+        # QuantumState -> metric_data
         return invalues[-1]
 
     def handle_measure(self, invalues, eqn, context_dic):
@@ -170,7 +170,7 @@ class NumQubitsMetric(BaseMetric):
 
         # Associate the following in context_dic:
         # meas_result -> meas_res (int64 scalar)
-        # QuantumCircuit -> metric_data
+        # QuantumState -> metric_data
         return (meas_res, metric_data)
 
     def handle_fuse(self, invalues, eqn, context_dic):
@@ -191,7 +191,7 @@ class NumQubitsMetric(BaseMetric):
     def handle_reset(self, invalues, eqn, context_dic):
 
         # Associate the following in context_dic:
-        # QuantumCircuit -> metric_data
+        # QuantumState -> metric_data
         return invalues[-1]
 
     def handle_delete_qubits(self, invalues, eqn, context_dic):
@@ -216,7 +216,7 @@ class NumQubitsMetric(BaseMetric):
 
         # Associate the following in context_dic:
         # QubitArray -> size
-        # QuantumCircuit -> metric_data
+        # QuantumState -> metric_data
         return metric_data
 
     def handle_parity(self, invalues, eqn, context_dic):
