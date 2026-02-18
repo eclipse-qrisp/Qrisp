@@ -50,7 +50,8 @@ def _signed_int_iso(x, n):
         A jnp.int64 array where each element of `x` has been mapped to
         the unsigned range [0, 2^(n+1) - 1].
     """
-    return jnp.int64(x) & ((int(1) << jnp.minimum(n + 1, 63)) - 1)
+    mask = (jnp.int64(1) << (n + 1)) - 1
+    return jnp.int64(x) & mask
 
 
 @jit
