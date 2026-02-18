@@ -507,6 +507,14 @@ def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
     Executes a quantum switch - case statement distinguishing between given
     in-place functions.
 
+    Implements the operation 
+
+    .. math::
+
+        \text{SELECT} = \sum_i \ket{i}\bra{i} \otimes U_i
+
+    for unitaries (branches) $U_i$, 
+    applying the $i$-th unitary conditioned on the index variable being in state $\ket{i}$.
 
     Parameters
     ----------
