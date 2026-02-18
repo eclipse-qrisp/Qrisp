@@ -85,7 +85,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. image:: ../../_static/BE_thumbnail.png
             :align: center
-            :target: ./BE_tutorial/BE_construct.html
+            :target: ./BE_tutorial/index.html
 
         .. raw:: html
             
