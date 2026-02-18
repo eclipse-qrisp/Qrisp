@@ -383,11 +383,11 @@ class QuantumEnvironment(QuantumPrimitive):
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            abs_qs = TracingQuantumSession.get_instance()
-            self.temp_qubit_cache = abs_qs.qubit_cache
-            abs_qs.qubit_cache = {}
-            abs_qs.abs_qc = self.bind(
-                *(self.env_args + [abs_qs.abs_qc]),
+            tr_qs = TracingQuantumSession.get_instance()
+            self.temp_qubit_cache = tr_qs.qubit_cache
+            tr_qs.qubit_cache = {}
+            tr_qs.abs_qc = self.bind(
+                *(self.env_args + [tr_qs.abs_qc]),
                 stage="enter",
                 type=str(type(self)).split(".")[-1][:-2]
             )[0]
@@ -444,10 +444,10 @@ class QuantumEnvironment(QuantumPrimitive):
             if exception_value:
                 raise exception_value
             
-            abs_qs = TracingQuantumSession.get_instance()
-            abs_qs.qubit_cache = self.temp_qubit_cache
-            abs_qs.abs_qc = self.bind(
-                abs_qs.abs_qc, stage="exit", type=str(type(self)).split(".")[-1][:-2]
+            tr_qs = TracingQuantumSession.get_instance()
+            tr_qs.qubit_cache = self.temp_qubit_cache
+            tr_qs.abs_qc = self.bind(
+                tr_qs.abs_qc, stage="exit", type=str(type(self)).split(".")[-1][:-2]
             )[0]
             return
 
