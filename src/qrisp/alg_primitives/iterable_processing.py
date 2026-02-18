@@ -333,10 +333,6 @@ def singular_shift(iterable, use_saeedi=False):
 
     N = jlen(iterable)
 
-    # with control(N == 0):
-    #     return
-    # with control(N == 1):
-    #     return
     if use_saeedi:
         for i in jrange(N // 2):
             j = (N - i) % N   # equivalent to -i % N
