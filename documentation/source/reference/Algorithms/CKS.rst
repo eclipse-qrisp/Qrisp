@@ -1,26 +1,17 @@
 .. _CKS:
 
-Childs-Kothari-Somma (CKS)
-==========================
+CKS Algorithm
+=============
 
 .. currentmodule:: qrisp.cks
 .. autofunction:: CKS
 
-Circuit construction
---------------------
+Utilities
+---------
 
 .. autosummary:: 
     :toctree: generated/
     
-    inner_CKS
-
-
-Miscellaneous
--------------
-
-.. autosummary:: 
-    :toctree: generated/
-    
-    CKS_parameters
-    cheb_coefficients
+    cks_params
+    cks_coeffs
     unary_prep

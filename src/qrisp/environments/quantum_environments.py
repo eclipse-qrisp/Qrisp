@@ -54,8 +54,7 @@
 
 from qrisp.circuit import QubitAlloc, QubitDealloc, fast_append
 from qrisp.core.quantum_session import QuantumSession
-
-from qrisp.jasp import QuantumPrimitive, AbstractQuantumCircuit, TracingQuantumSession
+from qrisp.jasp import AbstractQuantumCircuit, QuantumPrimitive, TracingQuantumSession
 
 
 class QuantumEnvironment(QuantumPrimitive):

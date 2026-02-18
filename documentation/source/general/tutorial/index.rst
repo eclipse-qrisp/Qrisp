@@ -68,6 +68,67 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
             </div>
 
+.. grid:: 1 1 2 2
+
+    .. grid-item-card::
+        :shadow: none
+
+        .. raw:: html
+
+            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+
+        .. raw:: html
+
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./BE_construct.html" style="text-decoration: none; color: inherit;">Quantum Linear Algebra</a>
+            </h4>
+
+        .. image:: ../../_static/BE_thumbnail.png
+            :align: center
+            :target: ./BE_tutorial/index.html
+
+        .. raw:: html
+            
+            <p style="margin-top: 5px;"></p>
+
+        .. dropdown:: :fa:`eye me-1` Description
+            :color: primary
+
+            Use block encodings as programming abstractions to perform Quantum Linear Algebra using the numpy-like interface of our BlockEncoding class.
+
+        .. raw:: html
+
+            </div>
+
+    .. grid-item-card::
+        :shadow: none
+
+        .. raw:: html
+
+            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+
+        .. raw:: html
+
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./GQSP_filtering.html" style="text-decoration: none; color: inherit;">Filtered state preparation with GQSP</a>
+            </h4>
+
+        .. image:: ../../_static/filtering_thumb_placeholder.png
+            :align: center
+            :target: ./GQSP_filtering.html
+
+        .. raw:: html
+            
+            <p style="margin-top: 5px;"></p>
+
+        .. dropdown:: :fa:`eye me-1` Description
+            :color: primary
+
+            Explore how to prepare the ground state by applying a Gaussian filter to enhance the overlap of the prepared state with the ground state using GQSP.
+
+        .. raw:: html
+
+            </div>
 
 .. grid:: 1 1 2 2
 
@@ -417,6 +478,36 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
             </div>
 
+    .. grid-item-card::
+        :shadow: none
+
+        .. raw:: html
+
+            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+
+        .. raw:: html
+
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./CD.html" style="text-decoration: none; color: inherit;">Counterdiabatic Driving Protocols</a>
+            </h4>
+
+        .. image:: ../../_static/cold.png
+            :align: center
+            :target: ./CD.html
+
+        .. raw:: html
+            
+            <p style="margin-top: 5px;"></p>
+
+        .. dropdown:: :fa:`eye me-1` Description
+            :color: primary
+
+            This tutorial explains the concept of counterdiabatic driving and solves a QUBO problem with LCD (local counterdiabatic driving) and COLD (counterdiabatic optimized local driving).
+
+        .. raw:: html
+
+            </div>
+
 
 Along the way, we'll introduce you to important concepts and techniques that you'll need to know in order to write highly efficient algorithms in Qrisp.
 We encourage you to follow along with the examples and try out the code for yourself. Don't worry if you make mistakes or don't understand something right away - programming is a process of learning and experimentation, and it takes time to become proficient.
@@ -428,6 +519,7 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    :hidden:
    
    tutorial.ipynb
+   BE_tutorial/index
    H2.ipynb
    Jasp.ipynb
    HHL.ipynb
@@ -440,4 +532,6 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    QIROtutorial.ipynb
    QMCItutorial.ipynb
    BigInteger.ipynb
+   GQSP_filtering.ipynb
+   CD.ipynb
    
