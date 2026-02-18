@@ -50,13 +50,13 @@ class ContextDict(dict):
     analysis. For example:
 
     - In ``count_ops``:
-        * ``QuantumState``  ->  (counting_array, incrementation_constants)
+        * ``QuantumCircuit``  ->  (counting_array, incrementation_constants)
         * ``QubitArray``      ->  integer size
         * ``Qubit``           ->  None
         ...
 
     - In ``depth``:
-        * ``QuantumState``  ->  (depth_array, current_depth, invalid_flag)
+        * ``QuantumCircuit``  ->  (depth_array, current_depth, invalid_flag)
         * ``QubitArray``      ->  (lookup_table, logical_size)
         * ``Qubit``           ->  integer qubit id
         ...
