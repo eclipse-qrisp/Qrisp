@@ -376,7 +376,7 @@ Qrisp is an open-source project developed across organizations. We are open to a
         :class-card: sd-border-0
         :shadow: none
     
-        .. image:: ./_static/dlr_logo.svg
+        .. image:: ./_static/hsrm_logo.png
             :align: center
             :width: 150
             :class: no-scaled-link
@@ -394,7 +394,7 @@ Qrisp is an open-source project developed across organizations. We are open to a
         :class-card: sd-border-0
         :shadow: none
     
-        .. image:: ./_static/incubating.png
+        .. image:: ./_static/iqm_logo.jpg
             :align: center
             :width: 150
             :class: no-scaled-link
@@ -415,6 +415,24 @@ Qrisp is an open-source project developed across organizations. We are open to a
         :class-card: sd-border-0
         :shadow: none
     
+        .. image:: ./_static/dlr_logo.svg
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ./_static/incubating.png
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
         .. image:: ./_static/bmwk_logo.png
             :align: center
             :width: 150
@@ -424,25 +442,7 @@ Qrisp is an open-source project developed across organizations. We are open to a
         :class-card: sd-border-0
         :shadow: none
     
-        .. image:: ./_static/iqm_logo.jpg
-            :align: center
-            :width: 150
-            :class: no-scaled-link
-
-    .. grid-item-card::
-        :class-card: sd-border-0
-        :shadow: none
-    
         .. image:: ./_static/eu.png
-            :align: center
-            :width: 150
-            :class: no-scaled-link
-
-    .. grid-item-card::
-        :class-card: sd-border-0
-        :shadow: none
-    
-        .. image:: ./_static/hsrm_logo.png
             :align: center
             :width: 150
             :class: no-scaled-link
