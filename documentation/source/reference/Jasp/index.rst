@@ -97,20 +97,20 @@ This will give you the following output:
 
 .. code-block::
 
-    { lambda ; a:QuantumCircuit b:i32[]. let
-        c:QuantumCircuit d:QubitArray = create_qubits a b
-        e:Qubit = get_qubit d 0
-        f:QuantumCircuit = x c e
-        g:Qubit = get_qubit d 0
-        h:i32[] = sub b 1
-        i:Qubit = get_qubit d h
-        j:QuantumCircuit = cx f g i
-        k:QuantumCircuit l:i32[] = measure j d
-        m:f32[] = convert_element_type[new_dtype=float32 weak_type=True] l
-        n:f32[] = mul m 0.5
-      in (k, n) }
+    { lambda ; a:i64[] b:QuantumState. let
+        c:QubitArray d:QuantumState = jasp.create_qubits a b
+        e:Qubit = jasp.get_qubit c 0:i64[]
+        f:QuantumState = jasp.quantum_gate[gate=x] e d
+        g:i64[] = sub a 1:i64[]
+        h:Qubit = jasp.get_qubit c g
+        i:QuantumState = jasp.quantum_gate[gate=cx] e h f
+        j:i64[] k:QuantumState = jasp.measure c i
+        l:f64[] = integer_pow[y=-1] 2.0:f64[]
+        m:f64[] = convert_element_type[new_dtype=float64 weak_type=False] j
+        n:f64[] = mul m l
+      in (n, k) }
       
-Assuming you already have some `understanding of the Jaxpr language <https://docs.jax.dev/en/latest/jaxpr.html>`_ you see a function, that receives a ``QuantumCircuit`` and an integer, does some processing and then returns a ``QuantumCircuit`` and a float. Here you can see one of the defining features of jasprs: They always receive and return a ``QuantumCircuit`` within their signature.
+Assuming you already have some `understanding of the Jaxpr language <https://docs.jax.dev/en/latest/jaxpr.html>`_ you see a function, that receives an integer and a ``QuantumState``, does some processing and then returns a float and a ``QuantumState``. Here you can see one of the defining features of jasprs: They always receive and return a ``QuantumState`` within their signature.
 
 Furthermore it is interesting to note, that you can already see some real-time computation happening there: The result of the measurement is an integer (compared to a `ClBit as in Qiskit <https://docs.quantum.ibm.com/api/qiskit/circuit#clbit>`_) and is decoded according to the decoder by multiplying with $0.5$. In subsequent parts of the program, this float could be processed by literally any other Jax component.
 

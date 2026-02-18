@@ -54,7 +54,7 @@
 
 from qrisp.circuit import QubitAlloc, QubitDealloc, fast_append
 from qrisp.core.quantum_session import QuantumSession
-from qrisp.jasp import AbstractQuantumCircuit, QuantumPrimitive, TracingQuantumSession
+from qrisp.jasp import AbstractQuantumState, QuantumPrimitive, TracingQuantumSession
 
 
 class QuantumEnvironment(QuantumPrimitive):
@@ -334,14 +334,14 @@ class QuantumEnvironment(QuantumPrimitive):
         self.multiple_results = True
 
         @self.def_abstract_eval
-        def abstract_eval(abs_qc, *env_args, stage=None, type=None, jaxpr=None):
+        def abstract_eval(abs_qst, *env_args, stage=None, type=None, jaxpr=None):
             """Abstract evaluation of the primitive.
 
             This function does not need to be JAX traceable. It will be invoked with
             abstractions of the actual arguments.
             """
 
-            return (AbstractQuantumCircuit(),)
+            return (AbstractQuantumState(),)
 
         self.env_args = env_args
 
@@ -383,11 +383,11 @@ class QuantumEnvironment(QuantumPrimitive):
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            abs_qs = TracingQuantumSession.get_instance()
-            self.temp_qubit_cache = abs_qs.qubit_cache
-            abs_qs.qubit_cache = {}
-            abs_qs.abs_qc = self.bind(
-                *(self.env_args + [abs_qs.abs_qc]),
+            tr_qs = TracingQuantumSession.get_instance()
+            self.temp_qubit_cache = tr_qs.qubit_cache
+            tr_qs.qubit_cache = {}
+            tr_qs.abs_qst = self.bind(
+                *(self.env_args + [tr_qs.abs_qst]),
                 stage="enter",
                 type=str(type(self)).split(".")[-1][:-2]
             )[0]
@@ -444,10 +444,10 @@ class QuantumEnvironment(QuantumPrimitive):
             if exception_value:
                 raise exception_value
             
-            abs_qs = TracingQuantumSession.get_instance()
-            abs_qs.qubit_cache = self.temp_qubit_cache
-            abs_qs.abs_qc = self.bind(
-                abs_qs.abs_qc, stage="exit", type=str(type(self)).split(".")[-1][:-2]
+            tr_qs = TracingQuantumSession.get_instance()
+            tr_qs.qubit_cache = self.temp_qubit_cache
+            tr_qs.abs_qst = self.bind(
+                tr_qs.abs_qst, stage="exit", type=str(type(self)).split(".")[-1][:-2]
             )[0]
             return
 

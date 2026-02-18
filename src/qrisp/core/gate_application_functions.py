@@ -1285,7 +1285,7 @@ def measure(qubits):
         )
         from qrisp import QuantumVariable, QuantumArray
 
-        if not qs.abs_qc._trace is jax.core.trace_ctx.trace:
+        if not qs.abs_qst._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
             )
@@ -1293,8 +1293,8 @@ def measure(qubits):
         if isinstance(qubits, (DynamicQubitArray, QuantumVariable, QuantumArray)):
             res = qubits.measure()
         elif isinstance(qubits, jax.core.Tracer) and isinstance(qubits.aval, (AbstractQubitArray, AbstractQubit)):
-            res, abs_qc = Measurement_p.bind(qubits, qs.abs_qc)
-            qs.abs_qc = abs_qc
+            res, abs_qst = Measurement_p.bind(qubits, qs.abs_qst)
+            qs.abs_qst = abs_qst
         else:
             raise Exception(f"Tried to measure type {type(qubits)}")
 
@@ -1332,20 +1332,20 @@ def reset(qubits):
         from qrisp import QuantumVariable
 
         if isinstance(qubits, QuantumVariable):
-            abs_qc = reset_p.bind(qubits.reg.tracer, qs.abs_qc)
+            abs_qst = reset_p.bind(qubits.reg.tracer, qs.abs_qst)
         elif isinstance(qubits, QuantumArray):
             flattened_qa = qubits.flatten()
             for i in jrange(qubits.size):
                 reset(flattened_qa[i])
             return
         elif isinstance(qubits.aval, AbstractQubitArray):
-            abs_qc = reset_p.bind(qubits.tracer, qs.abs_qc)
+            abs_qst = reset_p.bind(qubits.tracer, qs.abs_qst)
         elif isinstance(qubits.aval, AbstractQubit):
-            abs_qc = reset_p.bind(qubits, qs.abs_qc)
+            abs_qst = reset_p.bind(qubits, qs.abs_qst)
         else:
             raise Exception(f"Tried to reset type {type(qubits.aval)}")
 
-        qs.abs_qc = abs_qc
+        qs.abs_qst = abs_qst
 
         return None
 

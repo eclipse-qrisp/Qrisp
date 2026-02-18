@@ -33,7 +33,7 @@ from jax.interpreters.partial_eval import DynamicJaxprTrace
 from qrisp.jasp import (
     AbstractQubitArray,
     AbstractQubit,
-    AbstractQuantumCircuit,
+    AbstractQuantumState,
     eval_jaxpr,
     Jlist,
 )
@@ -61,11 +61,11 @@ def jaspr_to_catalyst_jaxpr(jaspr):
                         in the stack, and the second integer denotes the length
                         of the QubitArray.
 
-    AbstractQuantumCircuit -> A tuple of a AbstractQreg and an integer i. The integer
+    AbstractQuantumState -> A tuple of a AbstractQreg and an integer i. The integer
                             denotes the current "stack size", ie. if a new
                             QubitArray of size l is allocated it will be an
                             interval of qubits starting at position i and the
-                            new tuple representing the new AbstractQuantumCircuit
+                            new tuple representing the new AbstractQuantumState
                             will have i_new = i + l
 
     Parameters
@@ -83,7 +83,7 @@ def jaspr_to_catalyst_jaxpr(jaspr):
     # Translate the input args according to the above rules.
     args = []
     for invar in jaspr.jaxpr.invars:
-        if isinstance(invar.aval, AbstractQuantumCircuit):
+        if isinstance(invar.aval, AbstractQuantumState):
             # We initialize with the inverted list [... 3, 2, 1, 0] since the
             # pop method of the dynamic list always removes the last element
             args.append((AbstractQreg(), Jlist(jnp.arange(30, 0, -1), max_size=30)))

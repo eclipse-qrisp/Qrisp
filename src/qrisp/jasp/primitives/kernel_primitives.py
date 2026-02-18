@@ -18,7 +18,7 @@
 
 import jax.numpy as jnp
 from qrisp.jasp.primitives.quantum_primitive import QuantumPrimitive
-from qrisp.jasp.primitives.abstract_quantum_circuit import AbstractQuantumCircuit
+from qrisp.jasp.primitives.abstract_quantum_state import AbstractQuantumState
 
 create_quantum_kernel_p = QuantumPrimitive("create_quantum_kernel")
 consume_quantum_kernel_p = QuantumPrimitive("consume_quantum_kernel")
@@ -35,10 +35,10 @@ def quantum_kernel_abstract_eval():
       a ShapedArray for the result of the primitive.
     """
     
-    return AbstractQuantumCircuit()
+    return AbstractQuantumState()
 
 @consume_quantum_kernel_p .def_abstract_eval
-def quantum_kernel_abstract_eval(abs_qc):
+def quantum_kernel_abstract_eval(abs_qst):
     """Abstract evaluation of the primitive.
     
     This function does not need to be JAX traceable. It will be invoked with

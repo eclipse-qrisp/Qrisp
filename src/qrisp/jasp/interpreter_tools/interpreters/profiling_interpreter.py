@@ -120,9 +120,9 @@ class BaseMetric(ABC):
 
         The `create_qubits_p` primitive has the following semantics:
 
-        - Invars: (size, QuantumCircuit)
+        - Invars: (size, QuantumState)
 
-        - Outvars: (QubitArray, QuantumCircuit)
+        - Outvars: (QubitArray, QuantumState)
         """
 
     @abstractmethod
@@ -190,9 +190,9 @@ class BaseMetric(ABC):
 
         The `quantum_gate_p` primitive has the following semantics:
 
-        - Invars: (Qubit 0, Qubit 1,  ...  , Param 0, Param 1 ... , QuantumCircuit)
+        - Invars: (Qubit 0, Qubit 1,  ...  , Param 0, Param 1 ... , QuantumState)
 
-        - Outvars: (QuantumCircuit)
+        - Outvars: (QuantumState)
         """
 
     @abstractmethod
@@ -204,9 +204,9 @@ class BaseMetric(ABC):
 
         The `measure_p` primitive has the following semantics:
 
-        - Invars: (Qubit | QubitArray, QuantumCircuit)
+        - Invars: (Qubit | QubitArray, QuantumState)
 
-        - Outvars: (meas_result, QuantumCircuit)
+        - Outvars: (meas_result, QuantumState)
         """
 
     @abstractmethod
@@ -218,9 +218,9 @@ class BaseMetric(ABC):
 
         The `reset_p` primitive has the following semantics:
 
-        - Invars: (QubitArray, QuantumCircuit)
+        - Invars: (QubitArray, QuantumState)
 
-        - Outvars: (QuantumCircuit)
+        - Outvars: (QuantumState)
         """
 
     @abstractmethod
@@ -232,9 +232,9 @@ class BaseMetric(ABC):
 
         The `delete_qubits_p` primitive has the following semantics:
 
-        - Invars: (QubitArray, QuantumCircuit)
+        - Invars: (QubitArray, QuantumState)
 
-        - Outvars: (QuantumCircuit)
+        - Outvars: (QuantumState)
         """
 
     @abstractmethod

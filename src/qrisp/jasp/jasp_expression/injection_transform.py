@@ -20,7 +20,7 @@ from functools import lru_cache
 
 from jax.extend.core import JaxprEqn
 
-from qrisp.jasp.primitives import AbstractQuantumCircuit
+from qrisp.jasp.primitives import AbstractQuantumState
 
 
 def copy_jaxpr_eqn(eqn):
@@ -77,7 +77,7 @@ def injection_transform(jaspr, qubit_array_outvar):
     # 3. slice
 
     # For the first case we delete the equation. Since the create qubits
-    # primitive also returns a new QuantumCircuit object, we need to replace
+    # primitive also returns a new QuantumState object, we need to replace
     # the invar of the following equation to use the invar of the deleted
     # equation instead.
 
@@ -130,12 +130,12 @@ def injection_transform(jaspr, qubit_array_outvar):
                     "Tried to redirect quantum function returning a sliced qubit array"
                 )
 
-        # Replace the QuantumCircuit invar
+        # Replace the QuantumState invar
         if not deleted_quantum_circuit_variable is None:
             eqn = copy_jaxpr_eqn(eqn)
             for j in range(len(eqn.invars)):
                 invar = eqn.invars[j]
-                if isinstance(invar.aval, AbstractQuantumCircuit):
+                if isinstance(invar.aval, AbstractQuantumState):
                     eqn.invars[j] = deleted_quantum_circuit_variable
                     deleted_quantum_circuit_variable = None
                     break
@@ -153,7 +153,7 @@ def injection_transform(jaspr, qubit_array_outvar):
     new_jaspr.eqns.clear()
     new_jaspr.eqns.extend(new_eqns)
 
-    # If the QuantumCircuit invar was never replaced, the QuantumCircuit is
+    # If the QuantumState invar was never replaced, the QuantumState is
     # is returned by the Jaspr
     if not deleted_quantum_circuit_variable is None:
         new_jaspr.outvars[-1] = deleted_quantum_circuit_variable

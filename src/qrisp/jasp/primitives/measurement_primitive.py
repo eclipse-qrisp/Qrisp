@@ -20,7 +20,7 @@ from jax.core import ShapedArray
 from qrisp.circuit import Reset, Qubit
 
 from qrisp.jasp.primitives import (
-    AbstractQuantumCircuit,
+    AbstractQuantumState,
     AbstractQubit,
     QuantumPrimitive,
     AbstractQubitArray,
@@ -43,9 +43,9 @@ def measure_abstract_eval(meas_object, qc):
     """
 
     if isinstance(meas_object, AbstractQubit):
-        return ShapedArray((), bool), AbstractQuantumCircuit()
+        return ShapedArray((), bool), AbstractQuantumState()
     elif isinstance(meas_object, AbstractQubitArray):
-        return ShapedArray((), dtype="int64"), AbstractQuantumCircuit()
+        return ShapedArray((), dtype="int64"), AbstractQuantumState()
     else:
         raise Exception(
             f"Tried to call measurement primitive with type {type(meas_object)}"
@@ -102,7 +102,7 @@ def reset_abstract_eval(reset_object, qc):
     Result:
       a ShapedArray for the result of the primitive.
     """
-    return AbstractQuantumCircuit()
+    return AbstractQuantumState()
 
 
 @reset_p.def_impl

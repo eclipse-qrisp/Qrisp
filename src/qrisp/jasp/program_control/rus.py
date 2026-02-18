@@ -321,9 +321,9 @@ def RUS(*trial_function, **jit_kwargs):
             # from the previous iteration
             qv_results = recursive_qv_search(args[n_arg_vals:])
             
-            abs_qs = TracingQuantumSession.get_instance()
+            tr_qs = TracingQuantumSession.get_instance()
             for qv in qv_results:
-                abs_qs.register_qv(qv, None)
+                tr_qs.register_qv(qv, None)
                 reset(qv)
                 qv.delete()
 

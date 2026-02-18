@@ -39,7 +39,7 @@ from catalyst.jax_primitives import (
 
 from qrisp.jasp import (
     QuantumPrimitive,
-    AbstractQuantumCircuit,
+    AbstractQuantumState,
     AbstractQubitArray,
     AbstractQubit,
     eval_jaxpr,
@@ -159,7 +159,7 @@ def catalyst_eqn_evaluator(eqn, context_dic):
 
 def process_create_qubits(invars, outvars, context_dic):
 
-    # The first invar of the create_qubits primitive is an AbstractQuantumCircuit
+    # The first invar of the create_qubits primitive is an AbstractQuantumState
     # which is represented by an AbstractQreg and an integer
     qreg, free_qubits = context_dic[invars[1]]
 
@@ -185,14 +185,14 @@ def process_create_qubits(invars, outvars, context_dic):
 
     context_dic[outvars[0]] = reg_qubits
 
-    # Furthermore we create the updated AbstractQuantumCircuit representation.
+    # Furthermore we create the updated AbstractQuantumState representation.
     # The new stack size is the old stask size + the size of the QubitArray
     context_dic[outvars[1]] = (qreg, free_qubits)
 
 
 def process_delete_qubits(eqn, context_dic):
 
-    # The first invar of the create_qubits primitive is an AbstractQuantumCircuit
+    # The first invar of the create_qubits primitive is an AbstractQuantumState
     # which is represented by an AbstractQreg and an integer
     qreg, free_qubits = context_dic[eqn.invars[1]]
     reg_qubits = context_dic[eqn.invars[0]]
@@ -538,7 +538,7 @@ def process_cond(eqn, context_dic):
 
     invalues = extract_invalues(eqn, context_dic)
 
-    if isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
+    if isinstance(eqn.invars[-1].aval, AbstractQuantumState):
 
         if len(branch_list) > 2:
             raise Exception(
@@ -668,42 +668,42 @@ def process_pjit(eqn, context_dic):
 
 
 # Function to reset and delete a qubit array
-def reset_qubit_array(qb_array, abs_qc):
+def reset_qubit_array(qb_array, abs_qst):
     from qrisp.circuit import XGate
 
     def body_func(arg_tuple):
 
-        qb_array, i, abs_qc = arg_tuple
+        qb_array, i, abs_qst = arg_tuple
 
         abs_qb = get_qubit_p.bind(qb_array, i)
-        meas_bl, abs_qc = Measurement_p.bind(abs_qb, abs_qc)
+        meas_bl, abs_qst = Measurement_p.bind(abs_qb, abs_qst)
 
         def true_fun(arg_tuple):
-            qb, abs_qc = arg_tuple
-            abs_qc = quantum_gate_p.bind(qb, abs_qc, gate = XGate())
-            return (qb, abs_qc)
+            qb, abs_qst = arg_tuple
+            abs_qst = quantum_gate_p.bind(qb, abs_qst, gate = XGate())
+            return (qb, abs_qst)
 
         def false_fun(arg_tuple):
             return arg_tuple
 
-        qb, abs_qc = cond(meas_bl, true_fun, false_fun, (abs_qb, abs_qc))
+        qb, abs_qst = cond(meas_bl, true_fun, false_fun, (abs_qb, abs_qst))
 
         i += 1
 
-        return (qb_array, i, abs_qc)
+        return (qb_array, i, abs_qst)
 
     def cond_fun(arg_tuple):
         return arg_tuple[-2] < get_size_p.bind(arg_tuple[0])
 
-    qb_array, i, abs_qc = while_loop(
-        cond_fun, body_func, (qb_array, jnp.array(0, dtype=jnp.int64), abs_qc)
+    qb_array, i, abs_qst = while_loop(
+        cond_fun, body_func, (qb_array, jnp.array(0, dtype=jnp.int64), abs_qst)
     )
 
-    return abs_qc
+    return abs_qst
 
 
 reset_jaxpr = make_jaxpr(reset_qubit_array)(
-    AbstractQubitArray(), AbstractQuantumCircuit()
+    AbstractQubitArray(), AbstractQuantumState()
 )
 
 
@@ -728,7 +728,7 @@ def flatten_signature(values, variables):
     for i in range(len(variables)):
         var = variables[i]
         value = values.pop(0)
-        if isinstance(var.aval, AbstractQuantumCircuit):
+        if isinstance(var.aval, AbstractQuantumState):
             flattened_values.extend((value[0], *value[1].flatten()[0]))
         elif isinstance(var.aval, AbstractQubitArray):
             flattened_values.extend(value.flatten()[0])
@@ -742,7 +742,7 @@ def unflatten_signature(values, variables):
     values = list(values)
     unflattened_values = []
     for var in variables:
-        if isinstance(var.aval, AbstractQuantumCircuit):
+        if isinstance(var.aval, AbstractQuantumState):
             catalyst_register_tracer = values.pop(0)
             jlist_tuple = (values.pop(0), values.pop(0))
             unflattened_values.append(

@@ -37,7 +37,7 @@ Core Concepts:
 
 3. **Context Dictionary**: Maps JAX variables to their runtime values during 
    interpretation. For quantum types, this includes:
-   - AbstractQuantumCircuit -> (bit_array, free_qubits_jlist)
+   - AbstractQuantumState -> (bit_array, free_qubits_jlist)
    - AbstractQubitArray -> Jlist of qubit indices
    - AbstractQubit -> single qubit index (int64)
 
@@ -67,7 +67,7 @@ from jax import Array
 from qrisp.circuit import PTControlledOperation, Operation
 from qrisp.jasp import (
     QuantumPrimitive,
-    AbstractQuantumCircuit,
+    AbstractQuantumState,
     AbstractQubitArray,
     AbstractQubit,
     eval_jaxpr,
@@ -186,7 +186,7 @@ def process_create_qubits(
     context_dic : ContextDict
         The variable-to-value mapping dictionary.
     """
-    # The first invar of the create_qubits primitive is an AbstractQuantumCircuit
+    # The first invar of the create_qubits primitive is an AbstractQuantumState
     # which is represented by a BitArray and a Jlist of free qubit indices
     qreg, free_qubits = context_dic[invars[1]]
 
@@ -251,17 +251,17 @@ def process_fuse(eqn: JaxprEqn, context_dic: ContextDict) -> None:
         
         # To find the maximum size of the newly created Jlist,
         # we need to search through the context dic for an
-        # AbstractQuantumCircuit.
+        # AbstractQuantumState.
         # This could in principle lead to very bad scaling
         # behavior but in reality, this is not the case.
         # Why? For each stack frame, the arguments of the 
         # calling Jaxpr are inserted into the context_dic
-        # first, i.e. also at least one AbstractQuantumCircuit.
+        # first, i.e. also at least one AbstractQuantumState.
         # Since they .keys() iterator returns them in the
         # order they were inserted, a fitting entry is quickly
         # found.
         for k in context_dic.keys():
-            if isinstance(k.aval, AbstractQuantumCircuit):
+            if isinstance(k.aval, AbstractQuantumState):
                 max_size = 64 * context_dic[k][0].size//64
                 break
         
@@ -605,7 +605,7 @@ def process_while(eqn: JaxprEqn, context_dic: ContextDict) -> bool | None:
     """
     Process while loop primitives that may contain quantum operations.
     
-    If the while loop involves quantum state (AbstractQuantumCircuit), the body
+    If the while loop involves quantum state (AbstractQuantumState), the body
     and condition Jaxprs are converted to their classical equivalents before
     executing the loop.
     
@@ -629,7 +629,7 @@ def process_while(eqn: JaxprEqn, context_dic: ContextDict) -> bool | None:
 
     invalues = extract_invalues(eqn, context_dic)
     
-    if isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
+    if isinstance(eqn.invars[-1].aval, AbstractQuantumState):
         bit_array_padding = invalues[-1][0].shape[0] * 64
     else:
         bit_array_padding = 0
@@ -961,7 +961,7 @@ def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int) -> ClosedJaxpr:
     This is the main transformation function that converts a quantum program
     representation into a purely classical JAX expression. The transformation
     replaces:
-    - AbstractQuantumCircuit with (BitArray, Jlist) tuples
+    - AbstractQuantumState with (BitArray, Jlist) tuples
     - AbstractQubitArray with Jlist of qubit indices
     - AbstractQubit with int64 qubit indices
     - Quantum primitives with classical bit manipulation operations
@@ -989,7 +989,7 @@ def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int) -> ClosedJaxpr:
     # Create dummy input values for tracing
     args: list[Any] = []
     for invar in jaspr.invars:
-        if isinstance(invar.aval, AbstractQuantumCircuit):
+        if isinstance(invar.aval, AbstractQuantumState):
             # Quantum circuit -> (bit_array, free_qubits_jlist)
             args.append(
                 (
@@ -1102,7 +1102,7 @@ def unflatten_signature(
     """
     Convert flattened JAX values back to structured quantum types.
     
-    During JAX tracing, quantum types (AbstractQuantumCircuit, AbstractQubitArray)
+    During JAX tracing, quantum types (AbstractQuantumState, AbstractQubitArray)
     are flattened into multiple array values. This function reconstructs the
     original structure.
     
@@ -1117,7 +1117,7 @@ def unflatten_signature(
     -------
     list[Any]
         List of values with quantum types reconstructed:
-        - AbstractQuantumCircuit -> (bit_array, Jlist)
+        - AbstractQuantumState -> (bit_array, Jlist)
         - AbstractQubitArray -> Jlist
         - Other types -> unchanged
     """
@@ -1125,7 +1125,7 @@ def unflatten_signature(
     unflattened_values: list[Any] = []
     
     for var in variables:
-        if isinstance(var.aval, AbstractQuantumCircuit):
+        if isinstance(var.aval, AbstractQuantumState):
             # Reconstruct (bit_array, free_qubits_jlist) tuple
             bit_array = values.pop(0)
             jlist_tuple = (values.pop(0), values.pop(0))
@@ -1162,7 +1162,7 @@ def flatten_signature(
     -------
     list[Array]
         Flattened list of JAX arrays:
-        - AbstractQuantumCircuit (bit_array, Jlist) -> [bit_array, array, counter]
+        - AbstractQuantumState (bit_array, Jlist) -> [bit_array, array, counter]
         - AbstractQubitArray Jlist -> [array, counter]
         - Other types -> unchanged
     """
@@ -1172,7 +1172,7 @@ def flatten_signature(
     for i in range(len(variables)):
         var = variables[i]
         value = values.pop(0)
-        if isinstance(var.aval, AbstractQuantumCircuit):
+        if isinstance(var.aval, AbstractQuantumState):
             # Flatten (bit_array, Jlist) -> [bit_array, jlist.array, jlist.counter]
             flattened_values.extend((value[0], *value[1].flatten()[0]))
         elif isinstance(var.aval, AbstractQubitArray):
@@ -1214,9 +1214,9 @@ def ensure_conversion(
     for i in range(len(jaxpr.invars)):
         invar = jaxpr.invars[i]
         if isinstance(
-            invar.aval, (AbstractQuantumCircuit, AbstractQubitArray, AbstractQubit)
+            invar.aval, (AbstractQuantumState, AbstractQubitArray, AbstractQubit)
         ):
-            if isinstance(invar.aval, AbstractQuantumCircuit):
+            if isinstance(invar.aval, AbstractQuantumState):
                 # Get bit array size from the quantum circuit value
                 bit_array_padding = invalues[i][0].shape[0] * 64
 
