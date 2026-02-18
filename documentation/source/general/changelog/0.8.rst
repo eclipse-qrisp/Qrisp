@@ -1,0 +1,133 @@
+.. _v0.8:
+
+Qrisp 0.8
+=========
+
+Qrisp 0.8 is a landmark release bringing **Quantum Linear Algebra** to the forefront. At its core is the new :ref:`BlockEncoding <BlockEncoding>` class, which provides a NumPy-like interface for performing non-unitary matrix operations on a quantum computer. Combined with a comprehensive **Generalized Quantum Signal Processing** module, a native **MLIR dialect**, **Stim extraction** for error correction workflows, and a **scalable Shor implementation** capable of resource estimation at 2048-bit key sizes, this release positions Qrisp as a full-stack framework for utility-scale quantum algorithm development.
+
+BlockEncoding Class
+-------------------
+
+The :ref:`BlockEncoding <BlockEncoding>` class is the central abstraction for Quantum Linear Algebra in Qrisp. It embeds a non-unitary operator $A$ into the upper-left block of a larger unitary $U_A$ and provides an intuitive, NumPy-like interface: users write matrix expressions - addition, multiplication, inversion, polynomial transformations - and Qrisp compiles them into gate sequences automatically.
+
+Block encodings can be constructed from a variety of sources:
+
+* A :ref:`QubitOperator <QubitOperator>` or :ref:`FermionicOperator <FermionicOperator>` via :func:`BlockEncoding.from_operator <qrisp.block_encodings.BlockEncoding.from_operator>`.
+* A NumPy array or sparse matrix via :func:`BlockEncoding.from_array <qrisp.block_encodings.BlockEncoding.from_array>`.
+* A custom Linear Combination of Unitaries via :func:`BlockEncoding.from_lcu <qrisp.block_encodings.BlockEncoding.from_lcu>`.
+
+Once constructed, block encodings support a rich set of operations:
+
+* **Matrix arithmetic**: ``+``, ``-``, ``*``, ``@`` (matrix product), Kronecker product.
+* **Spectral transformations**: :func:`inv <qrisp.block_encodings.BlockEncoding.inv>` (matrix inversion), :func:`poly <qrisp.block_encodings.BlockEncoding.poly>` (arbitrary polynomial via GQET), :func:`sim <qrisp.block_encodings.BlockEncoding.sim>` (Hamiltonian simulation $e^{-iHt}$), :func:`chebyshev <qrisp.block_encodings.BlockEncoding.chebyshev>` ($T_k(A)$), and :func:`qubitization <qrisp.block_encodings.BlockEncoding.qubitization>`.
+* **Application**: :func:`apply <qrisp.block_encodings.BlockEncoding.apply>` for direct application, :func:`apply_rus <qrisp.block_encodings.BlockEncoding.apply_rus>` with automatic post-selection via Repeat-Until-Success, and :func:`expectation_value <qrisp.block_encodings.BlockEncoding.expectation_value>` via the Hadamard test.
+* **Resource estimation**: :func:`resources <qrisp.block_encodings.BlockEncoding.resources>` for gate count and depth analysis.
+
+For a hands-on introduction, check out the :ref:`Block Encoding tutorial <BE101>`.
+
+Scalable Shor's Algorithm
+-------------------------
+
+Building on the modular arithmetic introduced in Qrisp 0.4, this release extends the :ref:`Shor <shors_alg>` implementation to **utility-scale** by leveraging Jasp for compilation and resource estimation. Key ingredients include:
+
+* :class:`BigInteger <qrisp.BigInteger>` **type**: A fixed-width, little-endian base-$2^{32}$ integer type that overcomes Jax's 64-bit limitation and enables manipulation of arbitrarily large integers during tracing.
+* **Jasp-compatible Montgomery arithmetic**: The full Montgomery multiplication pipeline - reduction, constant-quantum multiplication, quantum-quantum multiplication - has been reimplemented for Jasp tracing using ``jrange``, ``BigInteger``, and the :ref:`Gidney adder <gidney_adder>`.
+* **Parallelized resource estimation**: The QPE loop is decomposed into independent windows that are traced in parallel across threads, achieving gate counting rates on the order of $10^9$ gates/s.
+
+Using the :ref:`count_ops <count_ops>` decorator, the same algorithm that can be simulated at small scale via :ref:`jaspify` can be profiled at **128, 256, 512, 1024, and 2048-bit** key sizes - providing concrete T-gate counts and qubit budgets for future quantum hardware. An accompanying :doc:`tutorial </general/tutorial/BigInteger>` elaborates the class and walks through the full workflow 
+
+Generalized Quantum Signal Processing
+--------------------------------------
+
+Qrisp 0.8 introduces a comprehensive :ref:`GQSP <GQSP>` module implementing the full hierarchy of Quantum Signal Processing techniques:
+
+* :func:`GQSP <qrisp.gqsp.GQSP>`: Applies an arbitrary complex polynomial $p(z)$ to a unitary $U$ using SU(2) signal-processing rotations (`Motlagh & Wiebe, 2024 <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_).
+* :func:`GQET <qrisp.gqsp.GQET>`: Generalized Quantum Eigenvalue Transform — applies a complex, indefinite-parity polynomial $p(H)$ to the eigenvalues of a Hermitian block-encoded operator.
+* :func:`QET <qrisp.gqsp.QET>`: Quantum Eigenvalue Transform — optimized variant for real, fixed-parity polynomials requiring fewer resources.
+* :func:`Hamiltonian simulation <qrisp.gqsp.hamiltonian_simulation>`: Approximates $e^{-iHt}$ via Jacobi-Anger expansion into Bessel functions.
+* :func:`Matrix inversion <qrisp.gqsp.inversion>`: Quantum linear system solver with complexity $\mathcal{O}(\kappa \log(\kappa/\epsilon))$ via Chebyshev approximation of $1/x$.
+* :func:`Fourier series loader <qrisp.gqsp.fourier_series_loader>`: State preparation by loading Fourier modes into qubit amplitudes.
+* :func:`Convolution <qrisp.gqsp.convolve>`: Cyclic convolution of a quantum state with a classical filter.
+
+The :func:`GQSP angle computation <qrisp.gqsp.gqsp_angles>` runs in $\mathcal{O}(d \log d)$ using the inverse non-linear Fourier transform and spectral factorization. All of these integrate tightly with the :ref:`BlockEncoding <BlockEncoding>` class via its ``.poly()``, ``.inv()``, and ``.sim()`` methods.
+
+A :doc:`detailed tutorial </general/tutorial/GQSP_filtering>` on filtered state preparation with GQSP is available.
+
+MLIR Integration
+----------------
+
+Qrisp 0.8 introduces a **native MLIR dialect** for quantum programs. The new ``jasp`` dialect defines custom types (``!jasp.QuantumState``, ``!jasp.Qubit``, ``!jasp.QubitArray``) and operations (``CreateQubitsOp``, ``QuantumGateOp``, ``MeasureOp``, ``ResetOp``, etc.) that lower Jaspr programs into a standards-compliant MLIR module via the `xDSL <https://xdsl.dev/>`_ framework.
+
+The :meth:`Jaspr.to_mlir <qrisp.jasp.Jaspr.to_mlir>` method converts any Jaspr into an xDSL ``ModuleOp``, where classical computation is represented in the `StableHLO <https://github.com/openxla/stablehlo>`_ dialect and quantum operations use the Jasp dialect. This opens the door to custom compiler passes, cross-dialect optimizations, and integration with the broader `MLIR/LLVM ecosystem <https://mlir.llvm.org/>`_.
+
+For details see the :ref:`MLIR Interface <mlir_interface>` documentation.
+
+The Qrisp is still compatible with compiling to MLIR via `Catalyst <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`_ in will remain so.
+
+Stim Extraction
+---------------
+
+Qrisp now provides first-class support for extracting `Stim <https://github.com/quantumlib/Stim>`_ circuits from Jasp programs, bridging the gap between high-level quantum programming and error correction simulation.
+
+* The :func:`extract_stim <qrisp.jasp.extract_stim>` decorator traces a Qrisp function, converts it to a Stim circuit, and returns typed handles for measurements, detectors, and observables.
+* The :func:`parity <qrisp.parity>` function computes XOR parity of measurement results, with support for creating Stim ``DETECTOR`` and ``OBSERVABLE_INCLUDE`` annotations.
+* The :func:`find_detectors <qrisp.misc.stim_tools.find_detectors>` decorator automatically identifies detector instructions using `tqecd <https://github.com/tqec/tqecd>`_.
+* The :ref:`StimBackend <StimBackend>` provides a ``BatchedBackend`` built on Stim for fast Clifford simulation.
+* :func:`stim_noise <qrisp.misc.stim_tools.stim_noise>` functions allow applying Stim error models (``X_ERROR``, ``DEPOLARIZE1``, etc.) directly to qubits.
+
+LCD / COLD
+----------
+
+Qrisp 0.8 adds digitized counterdiabatic quantum optimization via the :ref:`DCQOProblem <DCQO>` class:
+
+* **LCD** (Local Counterdiabatic Driving): Uses an analytically computed adiabatic gauge potential to accelerate quantum annealing for QUBO problems.
+* **COLD** (Counterdiabatic Optimized Local Driving): Extends LCD with a control Hamiltonian and numerical optimization of pulse parameters.
+
+A convenience function :func:`solve_QUBO <qrisp.cold.solve_QUBO>` provides a quick-start interface for both methods.
+
+CKS Algorithm
+--------------
+
+The `Childs-Kothari-Somma <https://arxiv.org/abs/1511.02306>`_ (CKS) algorithm for solving quantum linear systems has been implemented as a standalone :ref:`algorithm <CKS>`. It uses LCU with qubitization and a Chebyshev polynomial approximation of $1/x$ within a Repeat-Until-Success loop. It is also available as the :func:`BlockEncoding.inv <qrisp.block_encodings.BlockEncoding.inv>` method for a more integrated workflow.
+
+Quantum Lanczos
+---------------
+
+The :ref:`Quantum Lanczos <lanczos_alg>` algorithm estimates ground-state energies of Hamiltonians by constructing a Krylov subspace from Chebyshev polynomial expectation values $\langle T_k(H) \rangle$. Rather than relying on real or imaginary time evolution, it uses block-encoded Chebyshev polynomials, measures expectation values via ``lanczos_even``/``lanczos_odd`` subroutines, and solves a regularized generalized eigenvalue problem. The implementation works in both Jasp and standard Qrisp modes.
+
+QDrift
+------
+
+:meth:`QubitOperator.qdrift <qrisp.operators.qubit.QubitOperator.qdrift>` implements the `Quantum Stochastic Drift Protocol <https://arxiv.org/abs/1811.08017>`_, which approximates Hamiltonian time-evolution $e^{-iHt}$ by randomly sampling individual Pauli-term exponentials with probabilities proportional to their coefficients. It provides a channel-based approach to Hamiltonian simulation requiring $N = \mathcal{O}(\lambda^2 t^2 / \epsilon)$ samples, complementing the existing :meth:`trotterization <qrisp.operators.qubit.QubitOperator.trotterization>` method.
+
+BatchedBackend
+--------------
+
+The new :ref:`BatchedBackend <BatchedBackend>` solves the high-overhead problem of individual circuit executions on physical backends. Instead of dispatching each circuit independently (incurring network latency, authentication, and compilation overhead per call), the ``BatchedBackend`` collects circuit queries from multiple threads and dispatches them in a single batch via the ``.dispatch()`` method.
+
+Other New Features
+------------------
+
+* **Reflection primitive**: The :ref:`reflection <reflection>` function applies a reflection operator $R = (1 - e^{i\phi})|\psi\rangle\langle\psi| - I$ around a quantum state specified by a preparation function. Supports arbitrary phase shifts and ``reflection_indices`` for oblivious amplitude amplification.
+* **Depth metric**: The :meth:`Jaspr.depth <qrisp.jasp.Jaspr.depth>` method computes the critical-path circuit depth of a Jaspr program via JIT-compiled qubit-level scheduling, complementing the existing :ref:`count_ops <count_ops>` resource estimator.
+* **QuantumArray element-wise arithmetic**: :ref:`QuantumArray <QuantumArray>` now supports element-wise ``+``, ``-``, ``*``, ``==``, and ``!=`` between arrays, scalars, and NumPy/Jax arrays.
+* **Arithmetic tools**: New out-of-place quantum arithmetic functions: ``q_max``, ``q_min``, ``q_floor``, ``q_ceil``, ``q_round``, ``q_fractional``, and ``q_modf`` for :ref:`QuantumFloat <QuantumFloat>` values.
+* **Jasp MCZ**: Multi-controlled Z gate now available as a Jasp primitive.
+* ``prepare`` can now receive dynamic statevector arrays in Jasp mode.
+
+
+Compatibility
+-------------
+
+* **Cirq Conversion** Qrisp circuits can now be converter to Cirq using :meth:`QuantumCircuit.to_cirq`.
+* Jax 0.7.1 compatibility.
+* Catalyst 0.14 compatibility, including the option to pass a PennyLane device (e.g. NVIDIA/AMD-GPU) to :meth:`Jaspr.qjit <qrisp.jasp.Jaspr.qjit>`.
+
+New Tutorials
+-------------
+
+* :ref:`Block Encoding tutorial (Vol. 1 & Vol. 2) <BE101>` — A two-part introduction to the BlockEncoding class and its applications.
+* :doc:`GQSP filtering tutorial </general/tutorial/GQSP_filtering>` — Filtered state preparation using Generalized Quantum Signal Processing.
+* :doc:`Shor's algorithm at scale </general/tutorial/BigInteger>` — Resource estimation for Shor's algorithm at 128–2048 bit key sizes.
+* :doc:`Fault-Tolerant Compilation </general/tutorial/FT_compilation>` — T-gate optimization and Clifford+T synthesis for fault-tolerant devices.
+* :doc:`Counterdiabatic Driving </general/tutorial/CD>` — LCD and COLD protocols for QUBO optimization.
