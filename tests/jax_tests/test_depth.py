@@ -19,17 +19,17 @@
 import pytest
 
 from qrisp import (
+    BigInteger,
+    QuantumCircuit,
     QuantumFloat,
+    QuantumModulus,
+    QuantumVariable,
     control,
     cx,
     depth,
     h,
     measure,
-    QuantumVariable,
-    QuantumCircuit,
     rx,
-    BigInteger,
-    QuantumModulus
 )
 from qrisp.jasp import jrange, q_cond
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
@@ -803,6 +803,36 @@ class TestDepthSliceFuse:
 
         assert main(2, 2) == 2
 
+    def test_fuse_multi_qubit_fuse_single_qubit_1(self):
+        """Test depth computation when fusing a quantum register with a single qubit."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[0])
+            h(qf2[1])
+            new_qv = qf1[0] + qf2[1]
+            h(new_qv[0])
+            h(new_qv[1])
+
+        assert main(2, 2) == 2
+
+    def test_fuse_multi_qubit_fuse_single_qubit_2(self):
+        """Test depth computation when fusing a quantum register with a single qubit."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits1, num_qubits2):
+            qf1 = QuantumFloat(num_qubits1)
+            qf2 = QuantumFloat(num_qubits2)
+            h(qf1[0])
+            h(qf2[1])
+            new_qv = qf1[1] + qf2[0]
+            h(new_qv[0])
+            h(new_qv[1])
+
+        assert main(2, 2) == 1
+
 
 class TestDepthOverflow:
     """Tests for depth metric overflow handling."""
@@ -856,7 +886,6 @@ class TestDepthOverflow:
         ):
             main(300, 301)
 
-    
 
 def test_caching_behavior():
 

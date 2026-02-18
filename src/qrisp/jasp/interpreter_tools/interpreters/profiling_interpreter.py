@@ -86,10 +86,6 @@ class BaseMetric(ABC):
     def profiling_dic(self) -> dict:
         return self._profiling_dic
 
-    @property
-    @abstractmethod
-    def initial_metric(self) -> Any: ...
-
     def _validate_measurement_result(self, meas_res: bool | jax.Array) -> None:
         """Validate that measurement result is a boolean."""
 
@@ -162,7 +158,7 @@ class BaseMetric(ABC):
 
         The `fuse_p` primitive has the following semantics:
 
-        - Invars: (QubitArray, QubitArray)
+        - Invars: (Qubit | QubitArray, Qubit | QubitArray)
 
         - Outvars: (QubitArray)
         """

@@ -23,7 +23,6 @@ from typing import Callable, Tuple
 import jax
 import jax.numpy as jnp
 from jax.random import key
-from jax.typing import ArrayLike
 
 from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
     BaseMetric,
@@ -83,20 +82,6 @@ class NumQubitsMetric(BaseMetric):
         super().__init__(meas_behavior=meas_behavior, profiling_dic=profiling_dic)
 
         self._max_allocations = max_allocations
-        allocations_array = jnp.zeros(self._max_allocations, dtype=jnp.int64)
-        self.allocations_counter_index = jnp.int64(0)
-        invalid = jnp.bool_(False)
-
-        self._initial_metric = (
-            allocations_array,
-            self.allocations_counter_index,
-            invalid,
-        )
-
-    @property
-    def initial_metric(self) -> Tuple[ArrayLike, int, bool]:
-        """Return the initial metric value."""
-        return self._initial_metric
 
     @property
     def max_allocations(self) -> int:
@@ -314,7 +299,29 @@ def get_num_qubits_profiler(
 
         STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
 
-        initial_metric_value = num_qubits_metric.initial_metric
+        # Here is the explanation of the metric data structure:
+
+        # - allocations_array: a JAX array of integers, where each entry represents the
+        #   size of a qubit allocation (positive) or deallocation (negative).
+        #   The length of this array is equal to `max_allocations`,
+        #   which is the maximum number of allocations/deallocations we want to track.
+        #
+        # - allocations_counter_index: a JAX integer scalar that keeps track of how many
+        #   allocations/deallocations have been performed so far. It indicates the next
+        #   index in the `allocations_array` where the next allocation/deallocation size should be recorded.
+        #
+        # - invalid: a JAX boolean scalar that indicates whether the number of
+        #   allocations/deallocations has exceeded the maximum supported.
+        allocations_array = jnp.zeros(max_allocations, dtype=jnp.int64)
+        allocations_counter_index = jnp.int64(0)
+        invalid = jnp.bool_(False)
+
+        initial_metric_value = (
+            allocations_array,
+            allocations_counter_index,
+            invalid,
+        )
+
         filtered_args = [
             x for x in args + (initial_metric_value,) if type(x) not in STATIC_TYPES
         ]

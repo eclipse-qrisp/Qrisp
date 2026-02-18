@@ -82,9 +82,18 @@ def _create_lookup_table(idx_start: ArrayLike, table_size: ArrayLike) -> ArrayLi
     return idx_start + jnp.arange(table_size, dtype=jnp.int64)
 
 
+def _as_qubit_array_handle(x) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    """Convert input to a qubit array handle (array, size) tuple."""
+
+    if isinstance(x, tuple) and len(x) == 2:
+        return jnp.asarray(x[0], dtype=jnp.int64), jnp.asarray(x[1], dtype=jnp.int64)
+
+    return jnp.asarray([x], dtype=jnp.int64), jnp.asarray(jnp.int64(1))
+
+
 # The computation will fail anyway if this is triggered,
 # but this way we can print an informative message before the failure happens.
-def _warn(idx_end, max_qubits):
+def _warn_overflow(idx_end, max_qubits):
     """Helper function to print a warning when the depth metric computation overflows."""
     jax.debug.print(
         (
@@ -94,6 +103,34 @@ def _warn(idx_end, max_qubits):
         ),
         idx_end=idx_end,
         max_qubits=max_qubits,
+    )
+
+
+# The computation currently does not fail if the slice operation goes out of bounds,
+# but this way we can print an informative message.
+def _warn_slice(idx_slice1, idx_slice2):
+    """Helper function to print a warning when the slice operation goes out of bounds."""
+    jax.debug.print(
+        (
+            "ERROR: Slice operation with start index {idx_slice1} and stop index {idx_slice2} "
+            "is out of bounds. Adjusting indices to fit within valid range."
+        ),
+        idx_slice1=idx_slice1,
+        idx_slice2=idx_slice2,
+    )
+
+
+# The computation currently does not fail if the fuse operation goes out of bounds,
+# but this way we can print an informative message.
+def _warn_fuse(size1, size2):
+    """Helper function to print a warning when the fuse operation goes out of bounds."""
+    jax.debug.print(
+        (
+            "ERROR: Fuse operation with sizes {size1} and {size2} "
+            "is out of bounds. Adjusting sizes to fit within valid range."
+        ),
+        size1=size1,
+        size2=size2,
     )
 
 
@@ -127,41 +164,6 @@ class DepthMetric(BaseMetric):
         # Ideally, we would implement dynamic resizing in the future
         self._max_qubits = max_qubits
 
-        # To speed up compilation time, it will be probably necessary to
-        # use the same incrementation constants trick used for gate counting.
-
-        # Here is the explanation of the metric data structure:
-        #
-        # - depth_array: jnp.ndarray of shape (max_qubits,) that keeps track
-        #   of the depth of each qubit.
-        #
-        # - current_depth: jnp.ndarray scalar that keeps track of the current
-        #   maximum depth of the circuit.
-        #
-        # - previous_size: jnp.ndarray scalar that keeps track of the
-        #   next available index in the depth_array for newly created qubits.
-        #   When we create new qubits, we assign them global indices starting from this value,
-        #   and then we update it by the number of qubits created.
-        #
-        # - invalid: jnp.ndarray boolean that indicates whether the depth computation
-        #   has overflowed the maximum number of qubits supported.
-        depth_array = jnp.zeros(self._max_qubits, dtype=jnp.int64)
-        current_depth = jnp.int64(0)
-        previous_size = jnp.int64(0)
-        invalid = jnp.bool_(False)
-
-        self._initial_metric = (
-            depth_array,
-            current_depth,
-            previous_size,
-            invalid,
-        )
-
-    @property
-    def initial_metric(self) -> Tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
-        """Return the initial metric value."""
-        return self._initial_metric
-
     @property
     def max_qubits(self) -> int:
         """Return the maximum number of qubits supported."""
@@ -177,7 +179,7 @@ class DepthMetric(BaseMetric):
 
         overflow = idx_end > jnp.int64(self.max_qubits)
         invalid = jnp.logical_or(invalid, overflow)
-        jax.lax.cond(invalid, _warn, lambda *_: None, idx_end, self.max_qubits)
+        jax.lax.cond(invalid, _warn_overflow, lambda *_: None, idx_end, self.max_qubits)
 
         previous_size = idx_end
 
@@ -295,23 +297,28 @@ class DepthMetric(BaseMetric):
 
     def handle_fuse(self, invalues, eqn, context_dic):
 
-        (qubit_array_a, size_a), (qubit_array_b, size_b) = invalues
+        invalue1, invalue2 = invalues
+
+        arr_a, size_a = _as_qubit_array_handle(invalue1)
+        arr_b, size_b = _as_qubit_array_handle(invalue2)
 
         size_out = jnp.minimum(size_a + size_b, jnp.int64(self.max_qubits))
+        jax.lax.cond(size_out <= 0, _warn_fuse, lambda *_: None, size_a, size_b)
 
         table_size = size_out if not is_abstract(size_out) else self.max_qubits
         idxs = _create_lookup_table(jnp.int64(0), table_size)
 
-        # We start from qubit_array_a and then we overwrite entries from b where needed
-        qubit_array_out = qubit_array_a
+        # positions in the fused array that correspond to A
+        a_pos = jnp.clip(idxs, 0, jnp.maximum(size_a - 1, 0))
+        a_vals = arr_a[a_pos]
 
+        # positions in the fused array that correspond to B
         b_pos = idxs - size_a
-        b_pos = jnp.clip(b_pos, 0, table_size - 1)
-        b_take = qubit_array_b[b_pos]
+        b_pos = jnp.clip(b_pos, 0, jnp.maximum(size_b - 1, 0))
+        b_vals = arr_b[b_pos]
 
-        # This decides which entries to take from b_take
-        mask_b = (idxs >= size_a) & (idxs < size_out)
-        qubit_array_out = jnp.where(mask_b, b_take, qubit_array_out)
+        mask_a = idxs < size_a
+        qubit_array_out = jnp.where(mask_a, a_vals, b_vals)
 
         # Associate the following in context_dic:
         # QubitArray -> (qubit_array_out, size_out)
@@ -319,13 +326,15 @@ class DepthMetric(BaseMetric):
 
     def handle_slice(self, invalues, eqn, context_dic):
 
-        (qubit_array, size), start, stop = invalues
+        (qubit_array, size), start_inv, stop_inv = invalues
 
-        start = jnp.maximum(start, jnp.int64(0))
-        stop = jnp.minimum(stop, size)
+        start = jnp.maximum(start_inv, jnp.int64(0))
+        stop = jnp.minimum(stop_inv, size)
         stop = jnp.maximum(stop, start)
 
         size_out = stop - start
+        jax.lax.cond(size_out <= 0, _warn_slice, lambda *_: None, start_inv, stop_inv)
+
         table_size = size_out if not is_abstract(size_out) else self.max_qubits
 
         array_idx_mapping = _create_lookup_table(start, table_size)
@@ -417,7 +426,36 @@ def get_depth_profiler(
 
         STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
 
-        initial_metric_value = depth_metric.initial_metric
+        # To speed up compilation time, it will be probably necessary to
+        # use the same incrementation constants trick used for gate counting.
+
+        # Here is the explanation of the metric data structure:
+        #
+        # - depth_array: jnp.ndarray of shape (max_qubits,) that keeps track
+        #   of the depth of each qubit.
+        #
+        # - current_depth: jnp.ndarray scalar that keeps track of the current
+        #   maximum depth of the circuit.
+        #
+        # - previous_size: jnp.ndarray scalar that keeps track of the
+        #   next available index in the depth_array for newly created qubits.
+        #   When we create new qubits, we assign them global indices starting from this value,
+        #   and then we update it by the number of qubits created.
+        #
+        # - invalid: jnp.ndarray boolean that indicates whether the depth computation
+        #   has overflowed the maximum number of qubits supported.
+        depth_array = jnp.zeros(max_qubits, dtype=jnp.int64)
+        current_depth = jnp.int64(0)
+        previous_size = jnp.int64(0)
+        invalid = jnp.bool_(False)
+
+        initial_metric_value = (
+            depth_array,
+            current_depth,
+            previous_size,
+            invalid,
+        )
+
         filtered_args = [
             x for x in args + (initial_metric_value,) if type(x) not in STATIC_TYPES
         ]
