@@ -132,20 +132,18 @@ class NumQubitsMetric(BaseMetric):
 
     def handle_measure(self, invalues, eqn, context_dic):
 
-        target, metric_data = invalues
+        _, metric_data = invalues
 
         # We keep a measurement counter only to generate unique keys.
         meas_number = context_dic.get("_meas_number", jnp.int32(0))
 
         if isinstance(eqn.invars[0].aval, AbstractQubitArray):
 
-            _, size = target
-
             def body_fun(i, acc):
                 return self._measurement_body_fun(meas_number, i, acc)
 
-            meas_res = jax.lax.fori_loop(0, size, body_fun, jnp.int64(0))
-            context_dic["_meas_number"] = meas_number + size
+            meas_res = jax.lax.fori_loop(0, invalues[0], body_fun, jnp.int64(0))
+            context_dic["_meas_number"] = meas_number + 1
 
         else:  # measuring a single qubit
 
