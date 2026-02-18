@@ -438,6 +438,15 @@ Qrisp is an open-source project developed across organizations. We are open to a
             :width: 150
             :class: no-scaled-link
 
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ./_static/hsrm_logo.png
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
 
 .. toctree::
    :hidden:
