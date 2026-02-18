@@ -56,7 +56,7 @@
     
         .. raw:: html
 
-            <a href="./reference/Algorithms/Shor.html">
+            <a href="./general/tutorial/Shor.html">
             <div class="example-img-plot-overlay">
             <p class="sd-card-text">Factor integers using abitrary quantum adders with Shor's algorithm</p>
             </div>
@@ -74,7 +74,7 @@
     
         .. raw:: html
 
-            <a href="./reference/Core/generated/qrisp.QuantumVariable.html">
+            <a href="./general/tutorial/GQSP_filtering.html">
             <div class="example-img-plot-overlay">
             <p class="sd-card-text">Explore ground states of lattice models using quantum signal processing</p>
             </div>
@@ -88,7 +88,7 @@
     
         .. raw:: html
 
-            <a href="./reference/Algorithms/QuantumBacktrackingTree.html">
+            <a href="./general/tutorial/Sudoku.html">
             <div class="example-img-plot-overlay">
             <p class="sd-card-text">Solve backtracking problems by leveraging quantum walks</p>
             </div>
