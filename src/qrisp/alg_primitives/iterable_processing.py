@@ -377,31 +377,31 @@ def compute_floor_log2(N):
 
 def compute_ladder_iterations(N):
     """
-    Computes the number of iterations required to reduce a given size `N`
-    to a value less than or equal to 2 by repeatedly halving it.
-    This function uses a loop to simulate the halving process and counts
-    the number of iterations needed.
+    Computes the number of ladder iterations (swap levels) required by
+    ``singular_shift`` for an iterable of length ``N``.
+
+    The ladder algorithm swaps at distances 1, 2, 4, …, 2^(k-1).
+    To reach every element from position 0 we need 2^(k-1) >= N-1,
+    i.e. k = ceil(log2(N)) iterations.
+
     Args:
-        N (int): The initial size to be reduced.
+        N (int): The length of the iterable.
     Returns:
-        int: The number of iterations required to reduce `N` to a value
-        less than or equal to 2.
+        int: The number of iterations (ceil(log2(N))).
     """
 
-    iterations = 1
-    current_size = N
+    power = 1
+    iterations = 0
 
     def body_fun(val):
-        i, current_size = val
-        current_size = current_size // 2
-        i += 1
-        return i, current_size
+        power, iterations = val
+        return (power * 2, iterations + 1)
 
     def cond_fun(val):
-        return val[1] > 2
+        return val[0] < N
 
-    i, current_size = while_loop(cond_fun, body_fun, (iterations, current_size))
-    return i
+    power, iterations = while_loop(cond_fun, body_fun, (power, iterations))
+    return iterations
 
 def singular_shift(iterable, use_saeedi=False):
 
