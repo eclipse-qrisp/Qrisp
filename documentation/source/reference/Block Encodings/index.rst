@@ -4,12 +4,18 @@
 Block Encodings
 ---------------
 
-The Abstraction Layer for Quantum Linear Algebra
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Qrisp’s :ref:`BlockEncoding` provides a high-level programming abstraction for **Quantum Linear Algebra**. 
+The core strength of this interface lies in its ability to translate classical matrix operations for **non-unitary matrices** directly into their quantum equivalents, 
+significantly lowering the barrier to entry for quantum algorithm development. To learn more about this, please refer to the two part tutorial on :ref:`how to use the BlockEncoding class and its applications <BE101>`.
 
 .. image:: /_static/block_encodings.png
     :align: center
     :width: 600
+
+
+The Abstraction Layer for Quantum Linear Algebra
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 
 
 .. toctree::
@@ -18,11 +24,6 @@ The Abstraction Layer for Quantum Linear Algebra
    BlockEncoding
    applications
    nisq
-
-
-Qrisp’s :ref:`BlockEncoding` provides a high-level programming abstraction for **Quantum Linear Algebra**. 
-The core strength of this interface lies in its ability to translate classical matrix operations for **non-unitary matrices** directly into their quantum equivalents, 
-significantly lowering the barrier to entry for quantum algorithm development.
 
 Instead of navigating the intricacies of superposition and entanglement,
 users can work within the familiar language of linear algebra and signal processing.
