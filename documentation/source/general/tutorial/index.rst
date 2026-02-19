@@ -9,11 +9,11 @@ The tutorials are organized into four topics, each containing multiple hands-on 
 
 - **Foundations and first Steps**: Start here to master the core syntax of Qrisp, where you will learn to replace manual circuit building with high-level variables and implement textbook algorithms like Shor's and Grover's.
 
-- **Optimization and numerics**: Explore how to solve combinatorial optimization problems in logistics and scheduling using hybrid approaches like QAOA, QIRO, and COLD, as well as learning about our qrispy Quantum Backtracking implementation.
+- **Optimization and Numerics**: Explore how to solve combinatorial optimization problems in logistics and scheduling using hybrid approaches like QAOA, QIRO, and COLD, as well as learning about our qrispy Quantum Backtracking implementation.
 
-- **High-Performance execution and compilation (Jasp)**: Learn how to scale your code, while estimating your quantum resources, for the real world using the Jasp pipeline for hybrid real-time control. You will also learn about optimizing for Fault-Tolerant compilation for next-generation hardware.
+- **High-Performance Compilation and Execution with Jasp**: Learn how to scale your code, while estimating your quantum resources, for the real world using the Jasp pipeline for hybrid real-time control. You will also learn about optimizing for Fault-Tolerant compilation for next-generation hardware.
 
-- **Scientific computing and quantum numerical linear algebra**: Dive into high-level abstractions for quantum chemistry, physics and linear systems (HHL, CKS, GQSP) using our new :ref:`BlockEncoding` class.
+- **Scientific Computing and Quantum Numerical Linear Algebra**: Dive into high-level abstractions for quantum chemistry, physics and linear systems (HHL, CKS, QSP) using our new :ref:`BlockEncoding` class.
 
 If you’re the type who learns best by breaking things (and then fixing them), you can download any of these tutorials as a Jupyter notebook. Just look for the download box on the right side of the page within each specific tutorial to grab the code and run it in your own local environment.
 
@@ -95,9 +95,12 @@ Kickstart your quantum programming journey here! This section is designed to fam
             </div>
 
 
-Optimization and numerics
+Optimization and Numerics
 -------------------------
-Discover how quantum algorithms can tackle complex search and optimization problems. In this section, you will dive into solving famous computational challenges (such as the Traveling Salesman Problem and Sudoku) using a powerful suite of quantum tools. Whether you are applying Quantum Backtracking, tuning variational models with QAOA and QIRO, or exploring Counterdiabatic Driving and Monte Carlo Integration, you will learn how to optimize solutions across a variety of real-world domains.
+Discover how quantum algorithms can tackle complex search and optimization problems.
+In this section, you will dive into solving famous computational challenges (such as the Traveling Salesman Problem and Sudoku) using a powerful suite of quantum tools. 
+Whether you are applying Quantum Backtracking, tuning variational models with QAOA and QIRO, or exploring Counterdiabatic Driving Protocols and Monte Carlo Integration, 
+you will learn how to optimize solutions across a variety of real-world domains.
 
 .. grid:: 1 1 2 2
             
@@ -310,12 +313,14 @@ Discover how quantum algorithms can tackle complex search and optimization probl
             </div>
 
 
-High-performance execution and compilation (Jasp)
--------------------------------------------------
-Scale your quantum algorithms and prepare them for the real world execution on hardware of both the now and the future. 
-This section focuses on execution efficiency and advanced compilation techniques. 
-You will explore the Jasp pipeline for hybrid real-time control, learn how to build highly performant custom algorithms, 
-and delve into Fault-Tolerant compilation to ensure your code is ready for next-generation hardware. 
+High-Performance Compilation and Execution with Jasp
+----------------------------------------------------
+Scale your quantum algorithms to practically relevant problem sizes by bypassing Python’s performance bottlenecks. 
+By targeting the MLIR toolchain and QIR specification, Jasp enables high-speed compilation and seamless real-time control—allowing classical logic to execute within the quantum coherence window. 
+This is essential for hardware-efficient protocols like Gidney’s adder, error-correcting syndrome decoding or repeat-until-success protocols like HHL.
+
+You will explore the Jasp pipeline for hybrid real-time control, learn how to build highly performant custom optimization algorithms, 
+and delve into Fault-Tolerant compilation to ensure your code is ready for next-generation hardware.
 You'll also discover how to leverage Jasp and the BigInteger class to compile and perform resource estimations for Shor's algorithm at 2048 bit.
 
 .. grid:: 1 1 2 2
@@ -459,9 +464,12 @@ You'll also discover how to leverage Jasp and the BigInteger class to compile an
             </div>
 
 
-Scientific computing and quantum numerical linear algebra
+Scientific Computing and Quantum Numerical Linear Algebra
 ---------------------------------------------------------
-Unlock the potential of quantum computers for scientific discovery and advanced mathematics. Here, you will use Qrisp's high-level abstractions to tackle problems in quantum chemistry, while having block encodings as a programming abstraction for quantum numerical linear algebra. From simulating molecular dynamics (like the $H_2$ molecule) to solving systems of linear equations with the HHL algorithm and preparing ground states via GQSP, this track demonstrates how to bridge the gap between complex scientific theory and executable quantum code.
+Unlock the potential of quantum computers for scientific discovery and advanced mathematics. 
+Here, you will use Qrisp's high-level abstractions to tackle problems in quantum chemistry, while having block encodings as a programming abstraction for quantum numerical linear algebra. 
+From simulating molecular dynamics (like the $H_2$ molecule) to solving systems of linear equations with the HHL algorithm and preparing ground states via quantum signal processing,
+this track demonstrates how to bridge the gap between complex scientific theory and executable quantum code.
 
 .. grid:: 1 1 2 2
 
@@ -482,7 +490,7 @@ Unlock the potential of quantum computers for scientific discovery and advanced 
 
             <div style="text-align: center;">
                 <a href="./H2.html">
-                    <img src="../../_static/hydrogen.png" alt="Hydrogen molecule diagram">
+                    <img src="../../_static/hydrogen.png" alt="Hydrogen Molecule Tutorial">
                 </a>
             </div>
 
@@ -516,7 +524,7 @@ Unlock the potential of quantum computers for scientific discovery and advanced 
 
             <div style="text-align: center;">
                 <a href="./BE_tutorial/index.html">
-                    <img src="../../_static/BE_thumbnail.png" alt="Block Encoding diagram">
+                    <img src="../../_static/BE_thumbnail.png" alt="Block Encoding Tutorial">
                 </a>
             </div>
 
@@ -545,14 +553,14 @@ Unlock the potential of quantum computers for scientific discovery and advanced 
         .. raw:: html
 
             <h4 style="font-weight: bold; margin-top: 0;">
-                <a href="./GQSP_filtering.html" style="text-decoration: none; color: inherit;">Filtered state preparation with GQSP</a>
+                <a href="./GQSP_filtering.html" style="text-decoration: none; color: inherit;">Eigenstate filtering using quantum signal processing</a>
             </h4>
 
         .. raw:: html
 
             <div style="text-align: center;">
                 <a href="./GQSP_filtering.html">
-                    <img src="../../_static/filtering_thumb_placeholder.png" alt="GQSP Filtering diagram">
+                    <img src="../../_static/filtering_thumb_placeholder.png" alt="QSP Filtering Tutorial">
                 </a>
             </div>
 
