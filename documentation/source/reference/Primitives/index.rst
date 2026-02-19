@@ -1,7 +1,7 @@
 Primitives
 ==========
 
-This submodule of Qrisp provides a collection of commonly used buildings blocks to build larger algorithms. Each function comes with comprehensive documentation and brief examples to help you understand its implementation and usage:
+This module of Qrisp provides a collection of commonly used buildings blocks to build larger algorithms. Each function comes with comprehensive documentation and brief examples to help you understand its implementation and usage.
 
 .. list-table::
    :widths: 40 60
