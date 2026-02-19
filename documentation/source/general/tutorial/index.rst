@@ -2,7 +2,7 @@
 
 Tutorials
 =========
-
+ 
 Welcome to the tutorial of Qrisp! This page will help you get started by providing step-by-step instructions and examples. Whether you're a beginner or an experienced quantum programmer, these tutorials provide a helping hand exploring the fundamentals of the framework and make you familiar with its syntax and features.
 
 .. grid:: 1 1 2 2
