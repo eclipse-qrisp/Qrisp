@@ -140,14 +140,14 @@ def jaspify(func=None, terminal_sampling=False):
         # Use return_shape=True to capture the output PyTree structure
         jaspr, out_tree = make_jaspr(func, return_shape=True)(*args)
         jaspr_res = simulate_jaspr(jaspr, *args, terminal_sampling=terminal_sampling)
-        
+
         # Reconstruct the PyTree structure from flat results
         if isinstance(jaspr_res, tuple):
             jaspr_res = tree_unflatten(out_tree, jaspr_res)
         elif jaspr_res is not None:
             # Single value case - still unflatten to handle any wrapping
             jaspr_res = tree_unflatten(out_tree, [jaspr_res])
-        
+
         if len(recursive_qv_search(jaspr_res)):
             raise Exception("Tried to jaspify function returning a QuantumVariable")
         return jaspr_res
@@ -232,14 +232,14 @@ def stimulate(func=None):
         # Use return_shape=True to capture the output PyTree structure
         jaspr, out_tree = make_jaspr(func, return_shape=True)(*args)
         jaspr_res = simulate_jaspr(jaspr, *args, simulator="stim")
-        
+
         # Reconstruct the PyTree structure from flat results
         if isinstance(jaspr_res, tuple):
             jaspr_res = tree_unflatten(out_tree, jaspr_res)
         elif jaspr_res is not None:
             # Single value case - still unflatten to handle any wrapping
             jaspr_res = tree_unflatten(out_tree, [jaspr_res])
-        
+
         if len(recursive_qv_search(jaspr_res)):
             raise Exception("Tried to simulate function returning a QuantumVariable")
         return jaspr_res

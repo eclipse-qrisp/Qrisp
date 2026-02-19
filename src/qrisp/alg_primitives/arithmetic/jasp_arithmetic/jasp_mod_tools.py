@@ -36,12 +36,17 @@ import jax.numpy as jnp
 import jax.lax as lax
 from qrisp import check_for_tracing_mode
 
-from .jasp_bigintiger import BigInteger, bi_modinv, bi_montgomery_encode, bi_montgomery_decode
+from .jasp_bigintiger import (
+    BigInteger,
+    bi_modinv,
+    bi_montgomery_encode,
+    bi_montgomery_decode,
+)
 
 
-def montgomery_encoder(x: Union[int, BigInteger],
-                       R: Union[int, BigInteger],
-                       N: Union[int, BigInteger]):
+def montgomery_encoder(
+    x: Union[int, BigInteger], R: Union[int, BigInteger], N: Union[int, BigInteger]
+):
     """
     Montgomery-encode x as x*R mod N.
 
@@ -59,17 +64,23 @@ def montgomery_encoder(x: Union[int, BigInteger],
     int or BigInteger
         x in Montgomery form.
     """
-    if isinstance(x, BigInteger) or isinstance(R, BigInteger) or isinstance(N, BigInteger):
+    if (
+        isinstance(x, BigInteger)
+        or isinstance(R, BigInteger)
+        or isinstance(N, BigInteger)
+    ):
         xb = x if isinstance(x, BigInteger) else BigInteger.create(x, N.digits.shape[0])
         Rb = R if isinstance(R, BigInteger) else BigInteger.create(R, N.digits.shape[0])
-        Nb = N if isinstance(N, BigInteger) else BigInteger.create(N, Rb.digits.shape[0])
+        Nb = (
+            N if isinstance(N, BigInteger) else BigInteger.create(N, Rb.digits.shape[0])
+        )
         return bi_montgomery_encode(xb, Rb, Nb)
     return ((x % N) * (R % N)) % N
 
 
-def montgomery_decoder(y: Union[int, BigInteger],
-                       R: Union[int, BigInteger],
-                       N: Union[int, BigInteger]):
+def montgomery_decoder(
+    y: Union[int, BigInteger], R: Union[int, BigInteger], N: Union[int, BigInteger]
+):
     """
     Montgomery-decode y as y*R^{-1} mod N.
 
@@ -87,10 +98,16 @@ def montgomery_decoder(y: Union[int, BigInteger],
     int or BigInteger
         Decoded value in standard representation.
     """
-    if isinstance(y, BigInteger) or isinstance(R, BigInteger) or isinstance(N, BigInteger):
+    if (
+        isinstance(y, BigInteger)
+        or isinstance(R, BigInteger)
+        or isinstance(N, BigInteger)
+    ):
         yb = y if isinstance(y, BigInteger) else BigInteger.create(y, N.digits.shape[0])
         Rb = R if isinstance(R, BigInteger) else BigInteger.create(R, N.digits.shape[0])
-        Nb = N if isinstance(N, BigInteger) else BigInteger.create(N, Rb.digits.shape[0])
+        Nb = (
+            N if isinstance(N, BigInteger) else BigInteger.create(N, Rb.digits.shape[0])
+        )
         return bi_montgomery_decode(yb, Rb, Nb)
     R1 = modinv(R, N)
     return ((y % N) * (R1 % N)) % N
@@ -114,6 +131,7 @@ def egcd(a: int, b: int):
     tuple
         (g, x, y) with gcd and Bézout coefficients (JAX scalars under tracing).
     """
+
     def cond_fun(state):
         r, _, _, _ = state
         return jnp.logical_not(r == 0)
@@ -148,11 +166,16 @@ def modinv(a: Union[int, BigInteger], m: Union[int, BigInteger]):
         Modular inverse in [0, m).
     """
     if isinstance(a, BigInteger) or isinstance(m, BigInteger):
-        a_bi = a if isinstance(a, BigInteger) else BigInteger.create(a, m.digits.shape[0])
-        m_bi = m if isinstance(m, BigInteger) else BigInteger.create(m, a.digits.shape[0])
+        a_bi = (
+            a if isinstance(a, BigInteger) else BigInteger.create(a, m.digits.shape[0])
+        )
+        m_bi = (
+            m if isinstance(m, BigInteger) else BigInteger.create(m, a.digits.shape[0])
+        )
         return bi_modinv(a_bi, m_bi)
 
     if check_for_tracing_mode():
+
         def cf(val):
             t, nt, r, nr = val
             return nr != 0
@@ -194,8 +217,9 @@ def smallest_power_of_two(n: Union[int, BigInteger]):
     if check_for_tracing_mode():
         nj = jnp.asarray(n)
         # Avoid log2(0); define result 0 for n<=1
-        return jnp.where(nj <= 1, jnp.int64(0),
-                         jnp.ceil(jnp.log2(nj)).astype(jnp.int64))
+        return jnp.where(
+            nj <= 1, jnp.int64(0), jnp.ceil(jnp.log2(nj)).astype(jnp.int64)
+        )
     else:
         # Pure Python int path, exact and safe
         if hasattr(n, "bit_length"):

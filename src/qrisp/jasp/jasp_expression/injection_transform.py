@@ -119,7 +119,9 @@ def injection_transform(jaspr, qubit_array_outvar):
                 eqn = copy_jaxpr_eqn(eqn)
 
                 # Modify the copied equation
-                eqn.params["jaxpr"] = injection_transform(sub_jaspr, sub_qubit_array_outvar)
+                eqn.params["jaxpr"] = injection_transform(
+                    sub_jaspr, sub_qubit_array_outvar
+                )
                 eqn.invars.insert(0, qubit_array_outvar)
                 eqn.outvars.remove(qubit_array_outvar)
 

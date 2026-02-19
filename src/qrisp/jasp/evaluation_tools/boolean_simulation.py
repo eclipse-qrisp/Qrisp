@@ -63,13 +63,10 @@ from qrisp.jasp.interpreter_tools import Jlist, eval_jaxpr
 from qrisp.jasp import Jaspr
 
 
-def boolean_simulation(
-    *func: Callable, 
-    bit_array_padding: int = 2**16
-) -> Callable:
+def boolean_simulation(*func: Callable, bit_array_padding: int = 2**16) -> Callable:
     """
     Decorator to simulate Jasp functions containing only classical logic (like X, CX, CCX etc.).
-    
+
     This decorator transforms the function into a JAX expression without any
     quantum primitives and leverages the JAX compilation pipeline to compile
     a highly efficient simulation.
@@ -92,8 +89,8 @@ def boolean_simulation(
         sized arrays but Jasp supports dynamically sized QuantumVariables, the
         array has to be "padded". The padding therefore indicates an upper boundary
         for how many qubits are required to execute ``func``. A large padding
-        slows down the simulation but prevents overflow errors.The default is 
-        ``2**16``. The minimum value is 64. This threshold describes the maximum 
+        slows down the simulation but prevents overflow errors.The default is
+        ``2**16``. The minimum value is 64. This threshold describes the maximum
         OVERALL amount of qubits that can appear in the simulation. The maximum
         amount per QuantumVariable/per QuantumArray is tied to this number
         and will always be ``1/64`` of the ``bit_array_padding``.
@@ -212,25 +209,27 @@ def boolean_simulation(
         func = func[0]
 
     if bit_array_padding < 64:
-        raise Exception("Tried to initialize boolean_simulation with less than 512 bits")
+        raise Exception(
+            "Tried to initialize boolean_simulation with less than 512 bits"
+        )
 
     @jit
     def return_function(*args: Any) -> Any:
         """
         JIT-compiled simulation function that transforms and executes the quantum program.
-        
+
         This inner function:
         1. Creates a Jaspr from the decorated function (with output tree structure)
         2. Validates that no quantum values are returned (must be measured first)
         3. Transforms the Jaspr to a classical Jaxpr
         4. Initializes the boolean quantum circuit state (bit array + free qubit pool)
         5. Executes the classical Jaxpr and reconstructs the PyTree structure
-        
+
         Parameters
         ----------
         *args : Any
             Arguments to pass to the original function.
-        
+
         Returns
         -------
         Any
@@ -242,7 +241,7 @@ def boolean_simulation(
         # Use return_shape=True to capture the output PyTree structure
         jaspr: Jaspr
         jaspr, out_tree = make_jaspr(func, return_shape=True)(*args)
-        
+
         # Validate that no quantum values are returned
         # (quantum values must be measured before returning from boolean simulation)
         for var in jaspr.outvars:
@@ -263,12 +262,12 @@ def boolean_simulation(
         # - free_qubit_list: Jlist containing all available qubit indices
         aval = cl_func_jaxpr.jaxpr.invars[-3].aval
         bit_array: Array = jnp.zeros(aval.shape, dtype=aval.dtype)
-        
+
         # Create the free qubit pool as a flattened Jlist
         free_qubit_list = Jlist(
             jnp.arange(bit_array_padding), max_size=bit_array_padding
         ).flatten()[0]
-        
+
         # The boolean quantum circuit is represented as a tuple:
         # (bit_array, jlist_array, jlist_counter)
         boolean_quantum_circuit: tuple[Array, ...] = (bit_array, *free_qubit_list)
@@ -284,7 +283,7 @@ def boolean_simulation(
         # (bit_array, jlist_array, jlist_counter)
         # The leading elements are the actual return values from the user's function.
         num_output_values = len(res) - 3
-        
+
         if num_output_values == 0:
             # Function returns nothing (only quantum circuit state)
             return None

@@ -27,7 +27,7 @@ from typing import Tuple
 def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     """
     Computes the maximum of two QuantumFloats ``a`` and ``b``.
-    
+
     Parameters
     ----------
     a : QuantumFloat
@@ -64,7 +64,7 @@ def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     r = jnp.minimum(a.mshape[1], b.mshape[1])
 
     c = QuantumBool()
-    
+
     compare_func = lambda x, y: x >= y
     injecteted_comp_func = c << compare_func
 
@@ -81,18 +81,24 @@ def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
                 )
 
         with control(c):
-            up_bd = jnp.minimum(a.size,l - a.exponent)
+            up_bd = jnp.minimum(a.size, l - a.exponent)
             cx(a[:up_bd], res[:up_bd])
             lw_bd = jnp.maximum(r, a.exponent)
-            cx(a[lw_bd - a.exponent : a.msize], res[lw_bd - new_exponent : a.mshape[1] - new_exponent])
+            cx(
+                a[lw_bd - a.exponent : a.msize],
+                res[lw_bd - new_exponent : a.mshape[1] - new_exponent],
+            )
             if a.signed:
                 cx(a.sign(), res.sign())
 
         with control(c, 0):
-            up_bd = jnp.minimum(b.size,l - b.exponent)
-            cx(b[: up_bd], res[: up_bd])
+            up_bd = jnp.minimum(b.size, l - b.exponent)
+            cx(b[:up_bd], res[:up_bd])
             lw_bd = jnp.maximum(r, b.exponent)
-            cx(b[lw_bd - b.exponent : b.msize], res[lw_bd - new_exponent : b.mshape[1] - new_exponent])
+            cx(
+                b[lw_bd - b.exponent : b.msize],
+                res[lw_bd - new_exponent : b.mshape[1] - new_exponent],
+            )
             if b.signed:
                 cx(b.sign(), res.sign())
 
@@ -100,10 +106,11 @@ def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
 
     return res
 
+
 def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     """
     Computes the minimum of two QuantumFloats ``a`` and ``b``.
-    
+
     Parameters
     ----------
     a : QuantumFloat
@@ -115,7 +122,7 @@ def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
         The minimum value between ``a`` and ``b``.
 
     Examples
-    -------- 
+    --------
     >>> from qrisp import *
     >>> a = QuantumFloat(2)
     >>> b = QuantumFloat(2)
@@ -156,18 +163,24 @@ def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
                 )
 
         with control(c):
-            up_bd = jnp.minimum(a.size,l - a.exponent)
+            up_bd = jnp.minimum(a.size, l - a.exponent)
             cx(a[:up_bd], res[:up_bd])
             lw_bd = jnp.maximum(r, a.exponent)
-            cx(a[lw_bd - a.exponent : a.msize], res[lw_bd - new_exponent : a.mshape[1] - new_exponent])
+            cx(
+                a[lw_bd - a.exponent : a.msize],
+                res[lw_bd - new_exponent : a.mshape[1] - new_exponent],
+            )
             if a.signed:
                 cx(a.sign(), res.sign())
 
         with control(c, 0):
-            up_bd = jnp.minimum(b.size,l - b.exponent)
-            cx(b[: up_bd], res[: up_bd])
+            up_bd = jnp.minimum(b.size, l - b.exponent)
+            cx(b[:up_bd], res[:up_bd])
             lw_bd = jnp.maximum(r, b.exponent)
-            cx(b[lw_bd - b.exponent : b.msize], res[lw_bd - new_exponent : b.mshape[1] - new_exponent])
+            cx(
+                b[lw_bd - b.exponent : b.msize],
+                res[lw_bd - new_exponent : b.mshape[1] - new_exponent],
+            )
             if b.signed:
                 cx(b.sign(), res.sign())
 
@@ -175,10 +188,11 @@ def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
 
     return res
 
+
 def q_floor(a: QuantumFloat) -> QuantumFloat:
     """
     Computes out-of-place the floor of a QuantumFloat.
-    
+
     Parameters
     ----------
     a : QuantumFloat
@@ -208,7 +222,7 @@ def q_floor(a: QuantumFloat) -> QuantumFloat:
 def q_ceil(a: QuantumFloat) -> QuantumFloat:
     """
     Computes out-of-place the ceiling of a QuantumFloat.
-    
+
     Parameters
     ----------
     a : QuantumFloat
@@ -237,12 +251,12 @@ def q_ceil(a: QuantumFloat) -> QuantumFloat:
         flag = QuantumFloat(1)
 
         # Logical OR on the fractional part
-        logical_OR(a[:-a.exponent], flag[0])
+        logical_OR(a[: -a.exponent], flag[0])
 
         with control(flag[0]):
             b += 1
 
-        logical_OR(a[:-a.exponent], flag[0])
+        logical_OR(a[: -a.exponent], flag[0])
         flag.delete()
     return b
 
@@ -255,10 +269,11 @@ def logical_OR(operands: list[Qubit], flag: Qubit):
     mcx(operands, flag)
     x(operands)
 
+
 def q_round(a: QuantumFloat) -> QuantumFloat:
     """
     Computes out-of-place the rounding of a QuantumFloat to the first significant digit.
-    
+
     Parameters
     ----------
     a : QuantumFloat
@@ -285,9 +300,9 @@ def q_round(a: QuantumFloat) -> QuantumFloat:
     b = q_floor(a)
 
     with control(a.exponent < 0):
-        with control(a[-a.exponent - 1]): 
-            #Control on the first fractional bit (the one holding the value b*0.5)
-            #specifies if the number is rounded up or down.
+        with control(a[-a.exponent - 1]):
+            # Control on the first fractional bit (the one holding the value b*0.5)
+            # specifies if the number is rounded up or down.
             b += 1
 
     return b
@@ -296,7 +311,7 @@ def q_round(a: QuantumFloat) -> QuantumFloat:
 def q_fractional(a: QuantumFloat) -> QuantumFloat:
     """
     Computes out-of-place the fractional part of a QuantumFloat.
-    
+
     Parameters
     ----------
     a : QuantumFloat
@@ -324,17 +339,17 @@ def q_fractional(a: QuantumFloat) -> QuantumFloat:
     if a.signed:
         flag = QuantumFloat(1)
         cx(a[-1], flag)
-        with control(flag): 
-            #If the QuantumFloat is signed and the value negative: substract the ceiling
+        with control(flag):
+            # If the QuantumFloat is signed and the value negative: substract the ceiling
             c = q_ceil(a)
             b -= c
             injected_qceil = c << q_ceil
             with invert():
                 injected_qceil(a)
             c.delete()
-            
-        with control(flag, 0): 
-            #If the QuantumFloat is signed and the value positive: substract the floor
+
+        with control(flag, 0):
+            # If the QuantumFloat is signed and the value positive: substract the floor
             c = q_floor(a)
             b -= c
             injected_qfloor = c << q_floor
@@ -343,9 +358,9 @@ def q_fractional(a: QuantumFloat) -> QuantumFloat:
             c.delete()
         cx(a[-1], flag)
         flag.delete()
-        
-    if not a.signed:  
-        #If the QuantumFloat is unsigned: substract the floor
+
+    if not a.signed:
+        # If the QuantumFloat is unsigned: substract the floor
         c = q_floor(a)
         b -= c
         injected_qfloor = c << q_floor

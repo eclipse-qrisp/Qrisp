@@ -21,7 +21,7 @@ from qrisp.jasp.primitives import QuantumPrimitive, AbstractQubitArray
 
 
 class AbstractQuantumState(AbstractValue):
-    
+
     def __init__(self):
         self.vma = None
         AbstractValue.__init__(self)

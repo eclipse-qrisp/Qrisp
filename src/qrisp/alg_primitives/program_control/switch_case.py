@@ -43,6 +43,7 @@ def _invert_inpl_function(func):
 
     return inverted_func
 
+
 # DEPRECATED FUNCTIONALITY
 def qswitch(
     operand, case, case_function, method="auto", case_amount=None, inv=False, ctrl=None
@@ -136,7 +137,7 @@ def qswitch(
         "removed in a future release. Please migrate to 'q_switch(index, branches, *operands)'. "
         "See: https://www.qrisp.eu/reference/Primitives/q_switch.html",
         category=FutureWarning,
-        stacklevel=4, # Use level 4 since qswitch is wrapped twice
+        stacklevel=4,  # Use level 4 since qswitch is wrapped twice
     )
 
     if is_function_mode := callable(case_function):

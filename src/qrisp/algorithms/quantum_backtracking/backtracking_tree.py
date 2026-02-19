@@ -1261,7 +1261,7 @@ class QuantumBacktrackingTree:
             `this page <https://networkx.org/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw.html>`_
             By default is suitable will be generated.
         ax : matplotlib.axes.Axes, optional
-            The axes object to draw the plot onto. If None, the current active axes is used. 
+            The axes object to draw the plot onto. If None, the current active axes is used.
             This is useful for creating grids of plots using `plt.subplots`.
 
         Examples

@@ -80,7 +80,7 @@ def StimBackend():
     """
     This function creates a :ref:`BatchedBackend` for simulating Qrisp QuantumCircuits
     using the Stim simulator.
-    
+
     `Stim <https://github.com/quantumlib/Stim>`_ is a fast stabilizer circuit simulator
     designed for quantum error correction research. It efficiently simulates Clifford
     circuits and is particularly well-suited for simulating quantum error correction codes

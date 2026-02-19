@@ -45,7 +45,6 @@ def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
         raise e
 
 
-
 def cx(control, target):
     """
     Applies a CX gate.
@@ -696,7 +695,7 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
             x(qubits[-1])
 
         return qubits
-    
+
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
     def jasp_mcz_inner(qubits, method="balauca", ctrl_state=-1):
         from jax.lax import cond
@@ -705,13 +704,20 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
 
         n = jlen(qubits)
         ctrl_state = jnp.int64(ctrl_state)
-        ctrl_state = cond(ctrl_state == -1, lambda x: x + (1 << n), lambda x: x, ctrl_state)
+        ctrl_state = cond(
+            ctrl_state == -1, lambda x: x + (1 << n), lambda x: x, ctrl_state
+        )
 
         with control((ctrl_state >> (n - 1)) & 1 == 0):
             x(qubits[-1])
 
         h(qubits[-1])
-        mcx(qubits[:-1], qubits[-1], method=method, ctrl_state=ctrl_state & ((1 << (n - 1)) - 1))
+        mcx(
+            qubits[:-1],
+            qubits[-1],
+            method=method,
+            ctrl_state=ctrl_state & ((1 << (n - 1)) - 1),
+        )
         h(qubits[-1])
 
         with control((ctrl_state >> (n - 1)) & 1 == 0):
@@ -1237,7 +1243,9 @@ def unitary(unitary_array, qubits):
 
     temp_u3 = u3matrix(theta, phi, lam, 0).flatten()
 
-    gphase_angle = (-jnp.angle(temp_u3[arg_max] / mat.flatten()[arg_max])) % (2 * jnp.pi)
+    gphase_angle = (-jnp.angle(temp_u3[arg_max] / mat.flatten()[arg_max])) % (
+        2 * jnp.pi
+    )
 
     u3(theta, phi, lam, qubits)
     gphase(gphase_angle, qubits)
@@ -1292,7 +1300,9 @@ def measure(qubits):
 
         if isinstance(qubits, (DynamicQubitArray, QuantumVariable, QuantumArray)):
             res = qubits.measure()
-        elif isinstance(qubits, jax.core.Tracer) and isinstance(qubits.aval, (AbstractQubitArray, AbstractQubit)):
+        elif isinstance(qubits, jax.core.Tracer) and isinstance(
+            qubits.aval, (AbstractQubitArray, AbstractQubit)
+        ):
             res, abs_qst = Measurement_p.bind(qubits, qs.abs_qst)
             qs.abs_qst = abs_qst
         else:
@@ -1300,13 +1310,18 @@ def measure(qubits):
 
         return res
 
+
 def measure_to_big_integer(qv, size):
     from qrisp import BigInteger, q_fori_loop
     import jax.numpy as jnp
+
     def body_fun(i, val):
-        return val.at[i].set(measure(qv[32*i:32*(i+1)]))
-    digits = q_fori_loop(0, (qv.size-1)//32, body_fun, jnp.zeros(size, jnp.uint32))
-    digits = digits.at[(qv.size-1)//32].set(measure(qv[32*((qv.size - 1)//32):]))
+        return val.at[i].set(measure(qv[32 * i : 32 * (i + 1)]))
+
+    digits = q_fori_loop(0, (qv.size - 1) // 32, body_fun, jnp.zeros(size, jnp.uint32))
+    digits = digits.at[(qv.size - 1) // 32].set(
+        measure(qv[32 * ((qv.size - 1) // 32) :])
+    )
     return BigInteger(digits)
 
 

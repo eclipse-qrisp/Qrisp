@@ -53,19 +53,19 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
     qarg : QuantumVariable
         Variable representing the input signal.
     weights : ArrayLike, shape (2d+1,)
-        The filter coefficients for the cyclic convolution. 
-        These are applied as a sliding window across the signal, 
+        The filter coefficients for the cyclic convolution.
+        These are applied as a sliding window across the signal,
         where the middle element corresponds to the weight of the current index.
 
     Returns
     -------
     QuantumBool
-        Auxiliary variable after applying the GQSP protocol. 
+        Auxiliary variable after applying the GQSP protocol.
         Must be measured in state $\ket{0}$ for the GQSP protocol to be successful.
 
     Notes
     -----
-    - Performs a cyclic convolution on the quantum signal, 
+    - Performs a cyclic convolution on the quantum signal,
       effectively applying a local filtering operation such as an $n$-point smoothing.
 
     Examples
@@ -93,7 +93,7 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
             prepare(qv, psi)
             return qv
 
-        # Converts the function to be executed within a 
+        # Converts the function to be executed within a
         # repeat-until-success (RUS) procedure.
         @RUS
         def conv_psi_prep():
@@ -115,7 +115,7 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
         max_ = max(res_dict.values())
         convolved_signal_qsp = np.sqrt([res_dict.get(key,0) / max_ for key in range(8)])
         print("qsp:", convolved_signal_qsp)
-        # qsp: [0.7499999 , 1.        , 1.        , 0.74999996, 0.24999994, 
+        # qsp: [0.7499999 , 1.        , 1.        , 0.74999996, 0.24999994,
         # 0.        , 0.        , 0.25000007])
 
     """

@@ -706,7 +706,7 @@ class SparseBiArray(BiArray):
 
         sparse_array_self.data = np.conjugate(sparse_array_self.data)
 
-        return sparse_matrix_mult(sparse_array_self, sparse_array_other).todense()[0,0]
+        return sparse_matrix_mult(sparse_array_self, sparse_array_other).todense()[0, 0]
 
         return sparse_array_self.conjugate().dot(sparse_array_other).todense()[0]
 

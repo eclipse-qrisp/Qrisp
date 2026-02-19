@@ -205,7 +205,11 @@ def depth_sensitive_topological_sort(
             node_costs[i] = np.max(depth_array) + depth_indicators[node] / 10**8
 
             # Multiple possible heuristics
-            node_costs[i] = np.max(depth_array) + depth_indicators[node]/10**8 - np.min(depth_array)/10**12
+            node_costs[i] = (
+                np.max(depth_array)
+                + depth_indicators[node] / 10**8
+                - np.min(depth_array) / 10**12
+            )
             # node_costs[i] = np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)/num_qubits
             # node_costs[i] = depth_indicators[node]/1E8 + np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)/1E8
             # node_costs[i] = depth_indicators[node]/1E8 + np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)*len(depth_list)

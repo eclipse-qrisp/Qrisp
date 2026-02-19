@@ -21,7 +21,11 @@ from jax.extend.core import ClosedJaxpr
 import jax
 
 from qrisp.core import recursive_qv_search, recursive_qa_search
-from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode, get_last_equation
+from qrisp.jasp.tracing_logic import (
+    TracingQuantumSession,
+    check_for_tracing_mode,
+    get_last_equation,
+)
 from qrisp.jasp.primitives import AbstractQuantumState
 
 
@@ -131,9 +135,9 @@ def q_while_loop(cond_fun, body_fun, init_val):
     while_res = while_loop(new_cond_fun, new_body_fun, new_init_val)
 
     eqn = get_last_equation()
-    
+
     body_jaxpr = eqn.params["body_jaxpr"]
-    
+
     # If the AbstractQuantumState is part of the constants of the body,
     # the body did not execute any quantum operations.
     # We remove the AbstractQuantumState from the body signature
@@ -144,7 +148,7 @@ def q_while_loop(cond_fun, body_fun, init_val):
             body_jaxpr.jaxpr.invars.pop(i)
             eqn.params["body_nconsts"] -= 1
             return while_res[0]
-        
+
     from qrisp import Jaspr
 
     eqn.params["body_jaxpr"] = Jaspr.from_cache(body_jaxpr)
@@ -339,7 +343,7 @@ def q_cond(pred, true_fun, false_fun, *operands):
         if eqn.primitive.name == "cond":
             break
         i += 1
-        
+
     false_jaxpr = eqn.params["branches"][0]
     true_jaxpr = eqn.params["branches"][1]
 
@@ -350,15 +354,17 @@ def q_cond(pred, true_fun, false_fun, *operands):
 
     from qrisp.jasp import Jaspr
 
-    if (not isinstance(false_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumState)) and (not isinstance(true_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumState)):
+    if (not isinstance(false_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumState)) and (
+        not isinstance(true_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumState)
+    ):
         eqn.invars.pop(-1)
         false_jaxpr.jaxpr.invars.pop(-1)
         true_jaxpr.jaxpr.invars.pop(-1)
         return cond_res[0]
-    
+
     eqn.params["branches"] = (
-            Jaspr.from_cache(false_jaxpr),
-            Jaspr.from_cache(true_jaxpr)
+        Jaspr.from_cache(false_jaxpr),
+        Jaspr.from_cache(true_jaxpr),
     )
 
     qs.abs_qst = cond_res[-1]
@@ -442,9 +448,9 @@ def _q_switch_c(index, branches, *operands):
             res = branch(*operands[0])
             abs_qst = qs.conclude_tracing()
             return (res, abs_qst)
-        
+
         return new_branch
-    
+
     new_branches = [convert_branch(branch) for branch in branches]
 
     qs = TracingQuantumSession.get_instance()
@@ -464,7 +470,7 @@ def _q_switch_c(index, branches, *operands):
         if eqn.primitive.name == "cond":
             break
         i += 1
-        
+
     branch_jaxprs = eqn.params["branches"]
 
     if not isinstance(branch_jaxprs[0].jaxpr.invars[-1].aval, AbstractQuantumState):
@@ -474,13 +480,20 @@ def _q_switch_c(index, branches, *operands):
 
     from qrisp.jasp import Jaspr
 
-    if all([not isinstance(branch_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumState) for branch_jaxpr in branch_jaxprs]):
+    if all(
+        [
+            not isinstance(branch_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumState)
+            for branch_jaxpr in branch_jaxprs
+        ]
+    ):
         eqn.invars.pop(-1)
         [branch_jaxpr.jaxpr.invars.pop(-1) for branch_jaxpr in branch_jaxprs]
         return switch_res[0]
-    
-    eqn.params["branches"] = tuple([Jaspr.from_cache(branch_jaxpr) for branch_jaxpr in branch_jaxprs])
-    
+
+    eqn.params["branches"] = tuple(
+        [Jaspr.from_cache(branch_jaxpr) for branch_jaxpr in branch_jaxprs]
+    )
+
     qs.abs_qst = switch_res[-1]
 
     return switch_res[0]
@@ -507,13 +520,13 @@ def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
     Executes a quantum switch - case statement distinguishing between given
     in-place functions.
 
-    Implements the operation 
+    Implements the operation
 
     .. math::
 
         \text{SELECT} = \sum_i \ket{i}\bra{i} \otimes U_i
 
-    for unitaries (branches) $U_i$, 
+    for unitaries (branches) $U_i$,
     applying the $i$-th unitary conditioned on the index variable being in state $\ket{i}$.
 
     Parameters
@@ -526,7 +539,7 @@ def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
     *operands : tuple
         The input values for whichever function is applied.
     branch_amount : int, optional
-        The amount of branches. 
+        The amount of branches.
         Only needed if ``index`` is a :ref:`QuantumVariable` and ``branches`` is a function.
         Is automatically inferred from the length of ``branches`` if it is a list.
     method : str, optional
@@ -534,7 +547,7 @@ def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
         The method used to implement the quantum switch. Can be ``"auto"``, ``"sequential"``, ``"parallel"``,
         or ``"tree"``. Default is ``"auto"``.
         Method ``"tree"`` uses `balanced binary trees <https://arxiv.org/pdf/2407.17966v1>`_.
-        Method ``"parallel"`` is exponentially faster but requires more qubits.     
+        Method ``"parallel"`` is exponentially faster but requires more qubits.
 
     Returns
     -------
@@ -605,8 +618,8 @@ def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
             return index, operand
 
         print(main())
-        # {(0.0, 2.0): 0.25000000372529035, (1.0, 3.0): 0.25000000372529035, 
-        # (2.0, 1.0): 0.25000000372529035, (3.0, 1.0): 0.12499999441206447, 
+        # {(0.0, 2.0): 0.25000000372529035, (1.0, 3.0): 0.25000000372529035,
+        # (2.0, 1.0): 0.25000000372529035, (3.0, 1.0): 0.12499999441206447,
         # (3.0, 3.0): 0.12499999441206447}
 
     """
@@ -617,13 +630,15 @@ def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
     from qrisp.jasp.tracing_logic import DynamicQubitArray
 
     if (
-        isinstance(index, QuantumVariable) 
-        or (isinstance(index, list) and all(isinstance(q, Qubit) for q in index)) 
+        isinstance(index, QuantumVariable)
+        or (isinstance(index, list) and all(isinstance(q, Qubit) for q in index))
         or isinstance(index, DynamicQubitArray)
     ):
-        return _q_switch_q(index, branches, *operands, branch_amount=branch_amount, method=method)
-    
+        return _q_switch_q(
+            index, branches, *operands, branch_amount=branch_amount, method=method
+        )
+
     if callable(branches):
         return branches(index, *operands)
-    
+
     return _q_switch_c(index, branches, *operands)

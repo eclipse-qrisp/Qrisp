@@ -34,16 +34,16 @@ if TYPE_CHECKING:
 
 # QSP version of https://iopscience.iop.org/article/10.1088/2058-9565/acfc62
 def fourier_series_loader(
-    qarg: QuantumVariable, 
-    signal: Optional["ArrayLike"] = None, 
-    frequencies: Optional["ArrayLike"] = None, 
-    k: int = 1, 
-    mirror: bool = False
+    qarg: QuantumVariable,
+    signal: Optional["ArrayLike"] = None,
+    frequencies: Optional["ArrayLike"] = None,
+    k: int = 1,
+    mirror: bool = False,
 ) -> QuantumBool:
     r"""
     Performs quantum state preparation for the first $k$ Fourier modes.
 
-    Given an input array of $M$ values $\{a_{j}\}_{j=0}^{M-1}$ representing a signal sampled at equidistant points, 
+    Given an input array of $M$ values $\{a_{j}\}_{j=0}^{M-1}$ representing a signal sampled at equidistant points,
     this method prepares an $n$-qubit quantum state $(N=2^{n})$ by reconstructing a smooth approximation of the signal using its lowest $2k+1$ frequency components.
 
     First, the method computes the frequency coefficients $c_{l}$:
@@ -90,7 +90,7 @@ def fourier_series_loader(
     Returns
     -------
     QuantumBool
-        Auxiliary variable after applying the GQSP protocol. 
+        Auxiliary variable after applying the GQSP protocol.
         Must be measured in state $\ket{0}$ for the GQSP protocol to be successful.
 
     Examples
@@ -110,11 +110,11 @@ def fourier_series_loader(
         from qrisp import *
         from qrisp.gqsp import fourier_series_loader
 
-        # Gaussian 
+        # Gaussian
         def f(x, alpha):
             return jnp.exp(-alpha * x ** 2)
 
-        # Converts the function to be executed within a 
+        # Converts the function to be executed within a
         # repeat-until-success (RUS) procedure.
         @RUS(static_argnames=["k"])
         def prepare_gaussian(n, alpha, k):
@@ -136,7 +136,7 @@ def fourier_series_loader(
         @terminal_sampling
         def main(n, alpha):
             qv =  prepare_gaussian(n, alpha, 3)
-            return qv   
+            return qv
 
         # Run the simulation for n-qubit state
         n = 6
@@ -162,7 +162,7 @@ def fourier_series_loader(
         :alt: Gaussian state preparation
         :align: center
         :width: 600px
-        
+
     To perform quantum resource estimation, replace the ``@terminal_sampling`` decorator with ``@count_ops(meas_behavior="0")``:
 
     ::
@@ -170,18 +170,18 @@ def fourier_series_loader(
         @count_ops(meas_behavior="0")
         def main(n, alpha):
             qv =  prepare_gaussian(n, alpha, 3)
-            return qv   
+            return qv
 
         main(6, 4)
         # {'h': 6, 'rz': 8, 'p': 108, 'x': 6, 'cx': 72, 'rx': 7, 'measure': 1}
 
     """
-    
+
     ALLOWED_MODES = {"standard", "mirror"}
 
     if frequencies is not None:
-        K = (len(frequencies) - 1) // 2 
-        compressed_frequencies = frequencies[K-k : K+k+1]
+        K = (len(frequencies) - 1) // 2
+        compressed_frequencies = frequencies[K - k : K + k + 1]
         scaling_factor = 1.0
     elif signal is not None:
         if mirror:
@@ -196,10 +196,12 @@ def fourier_series_loader(
             scaling_factor = 1.0
 
         # Compression
-        compressed_frequencies = jnp.concatenate([frequencies[-k:], frequencies[:k+1]])
+        compressed_frequencies = jnp.concatenate(
+            [frequencies[-k:], frequencies[: k + 1]]
+        )
     else:
         raise Exception("Either signal or frequencies must be specified")
-    
+
     @qache
     def U(qv, scaling_factor=1.0):
         # Scaling factor: 1.0 standard FFT; 0.5 mirror padding + FFT
@@ -210,6 +212,13 @@ def fourier_series_loader(
 
     anc = QuantumBool()
 
-    GQSP(anc, qarg, unitary=U, p=compressed_frequencies, k=k, kwargs={"scaling_factor" : scaling_factor})
+    GQSP(
+        anc,
+        qarg,
+        unitary=U,
+        p=compressed_frequencies,
+        k=k,
+        kwargs={"scaling_factor": scaling_factor},
+    )
 
     return anc

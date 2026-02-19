@@ -19,14 +19,16 @@
 from qrisp.circuit import ControlledOperation
 import numpy as np
 
-def convert_to_cirq(qrisp_circuit, cirq_qubits = None):
-    
+
+def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
+
     try:
         from cirq import Circuit, LineQubit
     except (ModuleNotFoundError, ImportError):
-        raise ImportError("Cirq must be installed to be able to use the Qrisp to Cirq converter.")
+        raise ImportError(
+            "Cirq must be installed to be able to use the Qrisp to Cirq converter."
+        )
 
-    
     from cirq import (
         CNOT,
         H,
@@ -46,9 +48,9 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits = None):
         CZ,
         ZPowGate,
         XPowGate,
-        GlobalPhaseGate
+        GlobalPhaseGate,
     )
-    
+
     qrisp_cirq_ops_dict = {
         "cx": CNOT,
         "cz": CZ,
@@ -79,7 +81,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits = None):
         "qb_alloc": None,
         "qb_dealloc": None,
     }
-    
+
     """Function to convert a Qrisp circuit to a Cirq circuit."""
     # get data from Qrisp circuit
     qrisp_circ_num_qubits = qrisp_circuit.num_qubits()
@@ -128,7 +130,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits = None):
         if op_i == "gphase":
             cirq_circuit.append(GlobalPhaseGate(np.exp(1j * instr.op.params[0]))())
             continue
-            
+
         # the filter is useful for composite gates that do not have a cirq equivalent and have instr.op.definition
         cirq_gates_filter = [
             "cx",

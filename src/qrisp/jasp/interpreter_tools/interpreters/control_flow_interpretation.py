@@ -26,25 +26,24 @@ from qrisp.jasp.interpreter_tools import (
 )
 
 
-
 def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator=exec_eqn):
     """
     Evaluates a JAX condition equation within the context of the JASP interpreter.
-    
-    This function handles the branching logic of jax.lax.cond or similar primitives. 
+
+    This function handles the branching logic of jax.lax.cond or similar primitives.
     It determines which branch to execute based on the condition variable.
-    
+
     Args:
         cond_eqn (jax.core.JaxprEqn): The equation representing the condition.
         context_dic (dict): Dictionary mapping variables to their values in the current context.
-        eqn_evaluator (function, optional): The function used to evaluate individual equations 
+        eqn_evaluator (function, optional): The function used to evaluate individual equations
                                             within the branches. Defaults to exec_eqn.
 
     Raises:
-        Exception: If the condition variable depends on a Qrisp ProcessedMeasurement (real-time feedback), 
+        Exception: If the condition variable depends on a Qrisp ProcessedMeasurement (real-time feedback),
                    which cannot be resolved during circuit generation/interpretation.
     """
-    
+
     # Extract the invalues from the context dic
     invalues = extract_invalues(cond_eqn, context_dic)
 
@@ -85,7 +84,7 @@ def evaluate_while_loop(
     Raises:
         Exception: If the loop condition depends on a Qrisp ProcessedMeasurement.
     """
-    
+
     from qrisp.jasp.jasp_expression import ProcessedMeasurement
 
     # Parse parameter structure for constants and carry variables
@@ -125,7 +124,7 @@ def evaluate_while_loop(
         )(*new_invalues)
 
         # Update the non-const invalues for the next iteration
-        
+
         if len(while_loop_eqn.params["body_jaxpr"].jaxpr.outvars) == 1:
             outvalues = (outvalues,)
 
@@ -160,7 +159,7 @@ def evaluate_scan(scan_eq, context_dic, eqn_evaluator=exec_eqn):
     carry_amount = scan_eq.params["num_carry"]
     const_amount = scan_eq.params["num_consts"]
 
-    # Separating inputs: constants (pushed into body but not iterated), 
+    # Separating inputs: constants (pushed into body but not iterated),
     # initial carry, and scanned inputs (arrays to be sliced).
     init = invalues[const_amount : carry_amount + const_amount]
     scan_invalues = invalues[const_amount + carry_amount :]
@@ -180,7 +179,7 @@ def evaluate_scan(scan_eq, context_dic, eqn_evaluator=exec_eqn):
 
     carry = init
     consts = invalues[:const_amount]
-    
+
     # Store outputs for each iteration to be stacked later.
     ys_collection = None
 
@@ -218,7 +217,7 @@ def evaluate_scan(scan_eq, context_dic, eqn_evaluator=exec_eqn):
     else:
         # Stack the results into arrays.
         # If reverse=True, we iterated backwards, so ys_collection contains: [y[N-1], y[N-2], ... y[0]]
-        # To match JAX scan semantics (output array index matches input array index), 
+        # To match JAX scan semantics (output array index matches input array index),
         # we need to reverse the collection before stacking -> [y[0], ... y[N-1]]
         if reverse:
             ys = [jnp.stack(col[::-1]) for col in ys_collection]

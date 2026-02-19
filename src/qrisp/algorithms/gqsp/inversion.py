@@ -27,20 +27,20 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
     Quantum Linear System Solver via Quantum Eigenvalue Transformation (QET).
     Returns a BlockEncoding approximating the matrix inversion of the operator.
 
-    For a block-encoded **Hermitian** matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an 
-    operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$. 
-    The inversion is implemented via Quantum Eigenvalue Transformation (QET)         
+    For a block-encoded **Hermitian** matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
+    operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$.
+    The inversion is implemented via Quantum Eigenvalue Transformation (QET)
     using a polynomial approximation of $1/x$ over the domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$.
 
     Parameters
     ----------
     A : BlockEncoding
-        The block-encoded Hermitian matrix to be inverted. It is assumed that 
+        The block-encoded Hermitian matrix to be inverted. It is assumed that
         the eigenvalues of $A/\alpha$ lie within $D_{\kappa}$.
     eps : float
         The target precision $\epsilon$.
     kappa : float
-        An upper bound for the condition number $\kappa$ of $A$. 
+        An upper bound for the condition number $\kappa$ of $A$.
         This value defines the "gap" around zero where the function $1/x$ is not approximated.
 
     Returns
@@ -113,16 +113,16 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
 
         print("QUANTUM SIMULATION\n", amps, "\nCLASSICAL SOLUTION\n", c)
         # QUANTUM SIMULATION
-        # [0.02844496 0.55538449 0.53010186 0.64010231] 
+        # [0.02844496 0.55538449 0.53010186 0.64010231]
         # CLASSICAL SOLUTION
         # [0.02944539 0.55423278 0.53013239 0.64102936]
 
     """
 
     # The inversion polynomial is constructed using cks_params and cks_coeffs.
-    # Since approximating 1/x over the relevant spectral interval [-1, -1/kappa] + [1/kappa,1] 
+    # Since approximating 1/x over the relevant spectral interval [-1, -1/kappa] + [1/kappa,1]
     # requires an odd Chebyshev series, cks_coeffs returns an array containing only the odd-degree coefficients.
-    # To remain compatible with the QET interface, this array is expanded into a full 
+    # To remain compatible with the QET interface, this array is expanded into a full
     # Chebyshev series by padding even-degree terms with zeros.
     j_0, beta = cks_params(eps, kappa)
     p_odd = cks_coeffs(j_0, beta)

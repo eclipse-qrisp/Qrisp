@@ -33,9 +33,10 @@ from qrisp.jasp.mlir.quantum_control_flow import fix_quantum_control_flow
 
 from qrisp.jasp.jasp_expression import Jaspr
 
+
 def jaspr_to_mlir(jaspr: Jaspr) -> builtin.ModuleOp:
-    
-    xdsl_module = jaxpr_to_xdsl(jaspr, lowering_rules = jasp_lowering_rules)
+
+    xdsl_module = jaxpr_to_xdsl(jaspr, lowering_rules=jasp_lowering_rules)
     fix_quantum_control_flow(xdsl_module)
 
     return xdsl_module

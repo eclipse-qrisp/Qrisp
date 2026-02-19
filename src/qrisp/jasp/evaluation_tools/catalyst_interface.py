@@ -100,10 +100,13 @@ def jaspr_to_catalyst_jaxpr(jaspr):
             args.append(invar.aval)
 
     # Call the Catalyst interpreter
-    
+
     # Hotfix according to: https://github.com/PennyLaneAI/catalyst/issues/2394#issuecomment-3752134787
     with Patcher((DynamicJaxprTrace, "make_eqn", patched_make_eqn)):
-        return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator))(*args)
+        return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator))(
+            *args
+        )
+
 
 def jaspr_to_catalyst_function(jaspr, device=None):
 
@@ -112,7 +115,7 @@ def jaspr_to_catalyst_function(jaspr, device=None):
     # by Catalyst reproduces the semantics of jaspr
 
     # Initiate Catalyst backend info
-    if device==None:
+    if device == None:
         device = qml.device("lightning.qubit", wires=0)
 
     backend_info = catalyst.device.extract_backend_info(device)
@@ -124,7 +127,7 @@ def jaspr_to_catalyst_function(jaspr, device=None):
             rtd_lib=backend_info.lpath,
             rtd_name=backend_info.c_interface_name,
             rtd_kwargs=str(backend_info.kwargs),
-            auto_qubit_management = True
+            auto_qubit_management=True,
         )
 
         # Create the AbstractQreg
@@ -140,7 +143,7 @@ def jaspr_to_catalyst_function(jaspr, device=None):
 
         # Call the catalyst interpreter. The first return value will be the AbstractQreg
         # tuple, which is why we exclude it from the return values
-        
+
         # Hotfix according to: https://github.com/PennyLaneAI/catalyst/issues/2394#issuecomment-3752134787
         with Patcher((DynamicJaxprTrace, "make_eqn", patched_make_eqn)):
             return eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator)(*args)[:-1]

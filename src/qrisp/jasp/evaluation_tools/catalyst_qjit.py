@@ -30,8 +30,8 @@ def qjit(function=None, device=None):
     function : callable
         A function performing Qrisp code.
     device : object
-        The `PennyLane device <https://docs.pennylane.ai/projects/catalyst/en/stable/dev/devices.html>`_ to execute the function. 
-        The default device is `"lightning.qubit" <https://docs.pennylane.ai/projects/lightning/en/stable/lightning_qubit/device.html>`_, 
+        The `PennyLane device <https://docs.pennylane.ai/projects/catalyst/en/stable/dev/devices.html>`_ to execute the function.
+        The default device is `"lightning.qubit" <https://docs.pennylane.ai/projects/lightning/en/stable/lightning_qubit/device.html>`_,
         a fast state-vector qubit simulator.
 
     Returns
@@ -42,17 +42,17 @@ def qjit(function=None, device=None):
     Notes
     -----
 
-    Lightning-GPU is compatible with systems featuring NVIDIA Volta (SM 7.0) GPUs or newer. 
+    Lightning-GPU is compatible with systems featuring NVIDIA Volta (SM 7.0) GPUs or newer.
     It is specifically optimized for Linux environments on X86-64 or ARM64 architectures running CUDA-12.
 
     To install Lightning-GPU with NVIDIA CUDA support, the following packages need to be installed
-     
+
     ::
 
         pip install custatevec_cu12
         pip install pennylane-lightning-gpu
 
-        
+
     Pre-built wheels for Lightning-AMDGPU are available for AMD MI300 series GPUs and systems running ROCm 7.0 or newer.
 
     ::
@@ -132,10 +132,8 @@ def qjit(function=None, device=None):
             function.jaspr_dict[signature] = (jaspr, out_tree)
 
         jaspr, out_tree = function.jaspr_dict[signature]
-        result = jaspr.qjit(
-            *args, function_name=function.__name__, device=device
-        )
-        
+        result = jaspr.qjit(*args, function_name=function.__name__, device=device)
+
         # Reconstruct the PyTree structure from flat results
         if isinstance(result, (tuple, list)):
             return tree_unflatten(out_tree, result)

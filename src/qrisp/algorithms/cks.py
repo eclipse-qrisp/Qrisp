@@ -114,7 +114,7 @@ def cks_coeffs(j0: int, b: int) -> npt.NDArray[float]:
     Returns
     -------
     coeffs : ndarray
-        1-D array of positive Chebyshev coefficients :math:`{\\alpha_{2j+1}}`, 
+        1-D array of positive Chebyshev coefficients :math:`{\\alpha_{2j+1}}`,
         corresponding to the odd degree Chebyshev polynomials of the first kind :math:`T_1, T_3, \\dotsc, T_{2j_0+1}`.
 
     """
@@ -153,7 +153,9 @@ def _unary_angles(coeffs: "ArrayLike") -> "ArrayLike":
         1-D array of rotation angles :math:`\\phi_i` for unary state preparation.
     """
 
-    alpha = jnp.sqrt(coeffs) # coeffs need not to be normalized since unary angles only depend on their ratio
+    alpha = jnp.sqrt(
+        coeffs
+    )  # coeffs need not to be normalized since unary angles only depend on their ratio
     phi = jnp.zeros(len(alpha) - 1)
     phi = phi.at[-1].set(
         jnp.arctan(alpha[-1] / alpha[-2])
@@ -184,7 +186,7 @@ def unary_prep(case: QuantumVariable, coeffs: "ArrayLike") -> None:
         If the variable is in state :math:`\ket{0}`, the state :math:`\ket{\\text{unary}}` is prepared.
     coeffs : ArrayLike
         1-D array of :math:`j_0` Chebyshev coefficients :math:`\\alpha_1,\\alpha_3,\dotsc,\\alpha_{2j_0+1}`.
-    
+
     """
     phi = _unary_angles(coeffs)
 
@@ -195,19 +197,21 @@ def unary_prep(case: QuantumVariable, coeffs: "ArrayLike") -> None:
             ry(phi[i], case[i + 1])
 
 
-def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> BlockEncoding:
+def CKS(
+    A: BlockEncoding, eps: float, kappa: float, max_beta: float = None
+) -> BlockEncoding:
     """
     Performs the `Childs–Kothari–Somma (CKS) quantum algorithm <https://arxiv.org/abs/1511.02306>`_ to solve the Quantum Linear System Problem (QLSP)
-    :math:`A \\vec{x} = \\vec{b}`, using the Chebyshev approximation of :math:`1/x`.    
+    :math:`A \\vec{x} = \\vec{b}`, using the Chebyshev approximation of :math:`1/x`.
     When applied to a state $\ket{b}$, the algorithm prepares a state :math:`\ket{\\tilde{x}} \propto A^{-1} \ket{b}`
-    within target precision :math:`\epsilon` of the ideal solution :math:`\ket{x}`. 
+    within target precision :math:`\epsilon` of the ideal solution :math:`\ket{x}`.
 
-    For a block-encoded **Hermitian** matrix :math:`A`, this function returns a BlockEncoding of an 
-    operator :math:`\\tilde{A}^{-1}` such that :math:`\|\\tilde{A}^{-1} - A^{-1}\| \leq \epsilon`. 
+    For a block-encoded **Hermitian** matrix :math:`A`, this function returns a BlockEncoding of an
+    operator :math:`\\tilde{A}^{-1}` such that :math:`\|\\tilde{A}^{-1} - A^{-1}\| \leq \epsilon`.
     The inversion is implemented using a polynomial approximation of :math:`1/x` over the domain :math:`D_{\\kappa} = [-1, -1/\\kappa] \\cup [1/\\kappa, 1]`.
-    
+
     The asymptotic complexity is
-    :math:`\\mathcal{O}\\!\\left(\\log(N)s \\kappa^2 \\text{polylog}\\!\\frac{s\\kappa}{\\epsilon}\\right)`, where :math:`N` is the matrix size, :math:`s` its sparsity, and 
+    :math:`\\mathcal{O}\\!\\left(\\log(N)s \\kappa^2 \\text{polylog}\\!\\frac{s\\kappa}{\\epsilon}\\right)`, where :math:`N` is the matrix size, :math:`s` its sparsity, and
     :math:`\kappa` its condition number. This represents an exponentially
     better precision scaling compared to the HHL algorithm.
 
@@ -226,10 +230,10 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
     The goal of this algorithm is to apply the non-unitary operator :math:`A^{-1}` to the
     input state :math:`\ket{b}`. Following the Chebyshev approach introduced in the CKS paper, we express :math:`A^{-1}` as
-    a linear combination of odd Chebyshev polynomials: 
+    a linear combination of odd Chebyshev polynomials:
 
     .. math::
-    
+
         A^{-1}\propto\sum_{j=0}^{j_0}\\alpha_{2j+1}T_{2j+1}(A),
 
     where :math:`T_k(A)` are Chebyshev polynomials of the first kind and :math:`\\alpha_{2j+1} > 0` are computed
@@ -239,22 +243,22 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
     If the block encoding unitary is $U$ is Hermitian (:math:`U^2=I`),
     the fundamental iteration step is defined as :math:`(RU)`, where :math:`R` reflects
     around the auxiliary block-encoding state :math:`\ket{G}`, prepared as the ``inner_case`` QuantumFloat.
-    Repeated applications of these unitaries, :math:`(RU)^k`, yield a block encoding of the :math:`k`-th Chebyshev polynomial 
+    Repeated applications of these unitaries, :math:`(RU)^k`, yield a block encoding of the :math:`k`-th Chebyshev polynomial
     of the first kind :math:`T_k(A)`.
-    
-    We then construct a linear combination of these block-encoded polynomials using the LCU structure 
+
+    We then construct a linear combination of these block-encoded polynomials using the LCU structure
 
     .. math::
-    
+
        \\text{LCU}\ket{0}\ket{\psi}=\\text{PREP}^{\dagger}\cdot \\text{SEL}\cdot \\text{PREP}\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi}.
-    
+
     Here, the :math:`\\text{PREP}` operation prepares an auxiliary ``out_case`` Quantumfloat in the unary state :math:`\ket{\\text{unary}}`
     that encodes the square root of the Chebyshev coefficients :math:`\sqrt{\\alpha_j}`. The :math:`\\text{SEL}` operation selects and applies the
     appropriate Chebyshev polynomial operator :math:`T_k(A)`, implemented by :math:`(RU)^k`, controlled on ``out_case`` in the unary
     state :math:`\ket{\\text{unary}}`. Based on the Hamming-weight :math:`k` of :math:`\ket{\\text{unary}}`,
-    the polynomial :math:`T_{2k-1}` is block encoded and applied to the circuit. 
-    
-    To construct a linear combination of Chebyshev polynomials up to the :math:`2j_0+1`-th order, as in the original paper, 
+    the polynomial :math:`T_{2k-1}` is block encoded and applied to the circuit.
+
+    To construct a linear combination of Chebyshev polynomials up to the :math:`2j_0+1`-th order, as in the original paper,
     our implementation requires :math:`j_0+1` qubits in the ``out_case`` state :math:`\ket{\\text{unary}}`.
 
     The Chebyshev coefficients alternate in sign :math:`(-1)^j\\alpha_j`.
@@ -277,7 +281,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
     -------
     BlockEncoding
         A new BlockEncoding instance representing an approximation of the inverse $A^{-1}$.
-        
+
     Examples
     --------
 
@@ -285,7 +289,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
     quantum linear systems problem (QLSP)
     :math:`A \\vec{x} = \\vec{b}`, using either a direct Hermitian matrix input or
     a preconstructed block-encoding representation.
-    
+
     **Example 1: Solving a 4×4 Hermitian system**
 
     First, we define a small Hermitian matrix :math:`A` and a right-hand side vector :math:`\\vec{b}`:
@@ -328,7 +332,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
         res_dict = main()
 
-        # The resulting dictionary contains the measurement probabilities 
+        # The resulting dictionary contains the measurement probabilities
         # for each computational basis state.
         # To extract the corresponding quantum amplitudes (up to sign):
         amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
@@ -342,7 +346,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
         c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
 
-        print("CLASSICAL SOLUTION\\n", c)  
+        print("CLASSICAL SOLUTION\\n", c)
         # CLASSICAL SOLUTION
         # [0.02944539 0.55423278 0.53013239 0.64102936]
 
@@ -352,9 +356,9 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
     decorator with ``@count_ops(meas_behavior="0")``:
 
     ::
-        
+
         from qrisp.jasp import count_ops
-    
+
         @count_ops(meas_behavior="0")
         def main():
 
@@ -366,9 +370,9 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
         print(res_dict)
         # {'gphase': 51, 't_dg': 1548, 'cz': 150, 'ry': 2, 'z': 12, 'h': 890, 'cy': 50, 'cx': 3516, 'x': 377, 's_dg': 70, 'p': 193, 's': 70, 't': 1173, 'u3': 753, 'measure': 18}
 
-    The printed dictionary lists the estimated quantum gate counts required for the CKS algorithm. Since the simulation itself is not executed, 
+    The printed dictionary lists the estimated quantum gate counts required for the CKS algorithm. Since the simulation itself is not executed,
     this approach enables scalable gate count estimation for linear systems of arbitrary size.
-    
+
     **Example 2: Using a custom block encoding**
 
     The previous example displays how to solve the linear system for any Hermitian matrix :math:`A`,
@@ -461,7 +465,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
 
             x = CKS(BA, 0.01, kappa).apply_rus(prep_b)()
             return x
-    
+
         res_dict = main()
         print(res_dict)
         # {'gphase': 51, 's_dg': 70, 's': 120, 'z': 12, 'x': 127, 't': 298, 'u3': 157, 'cx': 1194, 'p': 118, 'ry': 2, 'h': 390, 't_dg': 348, 'measure': 116}
@@ -474,7 +478,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
     m = len(A._anc_templates)
 
     # Following https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf (page 104):
-    # T1 = (U R), T2 = (U R U_dg R) -> T2^k T1 is block encoding T_{2k+1}(A) 
+    # T1 = (U R), T2 = (U R U_dg R) -> T2^k T1 is block encoding T_{2k+1}(A)
     # This is valid even if the block encoding unitary is not Hermitian.
     # The first control-(U R) can be simplified to U since:
     # 1) The first qubit of the |unary> state is always 1.
@@ -493,7 +497,7 @@ def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> B
         # Core LCU protocol: PREP, SELECT, PREP^†
         with conjugate(unary_prep)(args[0], cheb_coeffs):
 
-            A.unitary(*args[1:])    
+            A.unitary(*args[1:])
 
             for i in jrange(1, j_0 + 1):
                 z(args[0][i])

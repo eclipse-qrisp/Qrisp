@@ -405,7 +405,7 @@ class ControlEnvironment(QuantumEnvironment):
 
         # Retrieve the equation
         jit_eqn = get_last_equation()
-        
+
         jit_eqn.params["jaxpr"] = controlled_jaspr
         jit_eqn.params["name"] = "ctrl_env"
 

@@ -114,7 +114,7 @@ def unflatten_qv(aux_data, children):
     qv_container = aux_data[0]
     reg = DynamicQubitArray(children[0])
     qv = qv_container.construct(reg)
-    
+
     # We set the QuantumSession to None because the QuantumVariable needs
     # to be registered into the TracingQuantumSession of the new tracing
     # context manually.

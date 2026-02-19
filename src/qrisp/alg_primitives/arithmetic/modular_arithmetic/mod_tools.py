@@ -20,6 +20,7 @@ from qrisp import check_for_tracing_mode
 import jax.numpy as jnp
 import jax.lax as lax
 
+
 def montgomery_decoder(y, R, N):
     if 0 < R < 1:
         R = modinv(R**-1, N)

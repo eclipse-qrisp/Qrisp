@@ -23,30 +23,32 @@ from qrisp.jasp.primitives.abstract_quantum_state import AbstractQuantumState
 create_quantum_kernel_p = QuantumPrimitive("create_quantum_kernel")
 consume_quantum_kernel_p = QuantumPrimitive("consume_quantum_kernel")
 
+
 @create_quantum_kernel_p.def_abstract_eval
 def quantum_kernel_abstract_eval():
     """Abstract evaluation of the primitive.
-    
+
     This function does not need to be JAX traceable. It will be invoked with
-    abstractions of the actual arguments. 
+    abstractions of the actual arguments.
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
     """
-    
+
     return AbstractQuantumState()
 
-@consume_quantum_kernel_p .def_abstract_eval
+
+@consume_quantum_kernel_p.def_abstract_eval
 def quantum_kernel_abstract_eval(abs_qst):
     """Abstract evaluation of the primitive.
-    
+
     This function does not need to be JAX traceable. It will be invoked with
-    abstractions of the actual arguments. 
+    abstractions of the actual arguments.
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
     """
-    
+
     return jnp.bool(False).aval

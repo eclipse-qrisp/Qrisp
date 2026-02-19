@@ -20,6 +20,7 @@ import numpy as np
 
 qubit_hash = np.zeros(1)
 
+
 class Qubit:
     """
     This class describes qubits. Qubits are created by supplying the identifier string.
@@ -58,7 +59,7 @@ class Qubit:
         "recompute",
         "lock",
         "perm_lock",
-        "bit_type"
+        "bit_type",
     ]
 
     def __init__(self, identifier):

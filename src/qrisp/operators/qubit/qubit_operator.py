@@ -182,7 +182,7 @@ class QubitOperator(Hamiltonian):
 
     def len(self):
         return len(self.terms_dict)
-    
+
     def coeffs(self):
         """
         Returns the coefficients of the operator.
@@ -2117,7 +2117,7 @@ class QubitOperator(Hamiltonian):
 
         # JAX-traceable implementation of https://arxiv.org/pdf/1811.08017.
         # We create a list of term.simulate functions for all terms in the operator
-        # and use the q_switch with classical index to apply the j-th function 
+        # and use the q_switch with classical index to apply the j-th function
         # within a (dynamic) loop where j is sampled at random.
         O = self.hermitize().eliminate_ladder_conjugates()
         terms = list(O.terms_dict.keys())
@@ -2130,7 +2130,7 @@ class QubitOperator(Hamiltonian):
         # Calculate probability distribution for random sampling of terms.
         lambda_ = np.sum(np.abs(coeffs))
         probs = np.abs(coeffs) / lambda_
-        
+
         def U(qarg, t=1.0, samples=100, seed=42, iter=1):
 
             key = random.key(seed)
@@ -2144,7 +2144,7 @@ class QubitOperator(Hamiltonian):
                 q_switch(j, branches, tau * signs[j], qarg)
 
         return U
-            
+
     #
     # LCU
     #
@@ -2165,7 +2165,7 @@ class QubitOperator(Hamiltonian):
             H = \sum_{i=0}^{M-1}\alpha_iP_i
 
         where $\alpha_i$ are real coefficients, $P_i\in\{I,X,Y,Z\}^{\otimes n}$ are Pauli operators. Coefficients $\alpha_i$ are nonnegative and each Pauli carries a $\pm1$ sign (corressponding to a phase shift).
-        
+
         Returns
         -------
         list[callable]
@@ -2197,15 +2197,15 @@ class QubitOperator(Hamiltonian):
             unitaries[0](qv)
             barrier(qv)
             unitaries[1](qv)
-        
-        >>> print(qv.qs)  
+
+        >>> print(qv.qs)
         QuantumCircuit:
         ---------------
               ┌───┐ ░ ┌───┐┌────────┐
         qv.0: ┤ X ├─░─┤ Z ├┤ gphase ├
               ├───┤ ░ ├───┤└────────┘
         qv.1: ┤ X ├─░─┤ Z ├──────────
-              └───┘ ░ └───┘          
+              └───┘ ░ └───┘
         Live QuantumVariables:
         ----------------------
         QuantumVariable qv
@@ -2236,19 +2236,19 @@ class QubitOperator(Hamiltonian):
 
             res_dict = main()
 
-        We convert the resulting measurement probabilities to amplitudes by applying the square root. 
+        We convert the resulting measurement probabilities to amplitudes by applying the square root.
         Note that, minus signs of amplitudes cannot be recovered from measurement probabilities.
 
-        
+
         ::
-        
+
             for k, v in res_dict.items():
                 res_dict[k] = v**0.5
 
             print(res_dict)
-            # Yields: {3: 0.8944272109919233, 0: 0.4472135555159407} 
+            # Yields: {3: 0.8944272109919233, 0: 0.4472135555159407}
 
-        Here, the unitary $P_0=XX$ acts as $\ket{0}\rightarrow\ket{3}$, the unitary $P_1=-ZZ$ acts as $\ket{0}\rightarrow -\ket{0}$, 
+        Here, the unitary $P_0=XX$ acts as $\ket{0}\rightarrow\ket{3}$, the unitary $P_1=-ZZ$ acts as $\ket{0}\rightarrow -\ket{0}$,
         and the resulting state is $(2\ket{3}-\ket{0})/\sqrt{5}$.
 
         """
@@ -2260,7 +2260,7 @@ class QubitOperator(Hamiltonian):
 
         for term, coeff in hamiltonian.terms_dict.items():
             coeff_ = np.real(coeff)
-            unitaries.append(term.unitary(sign = (coeff_ < 0)))
+            unitaries.append(term.unitary(sign=(coeff_ < 0)))
             coefficients.append(np.abs(coeff_))
 
         return unitaries, np.array(coefficients, dtype=float)
@@ -2269,36 +2269,36 @@ class QubitOperator(Hamiltonian):
     def pauli_block_encoding(self):
         r"""
         Returns a :ref:`BlockEncoding` of the operator using the LCU (Linear Combination of Unitaries) protocol.
-            
+
         For a Pauli block encoding, consider an $n$-qubit Hamiltonian expressed as a linear combination of Pauli operators:
 
         .. math::
 
             H = \sum_{i=0}^{M-1} \alpha_i P_i
 
-        where $\alpha_i \ge 0$ are real coefficients such that $\sum_i \alpha_i = \alpha$, 
+        where $\alpha_i \ge 0$ are real coefficients such that $\sum_i \alpha_i = \alpha$,
         and $P_i$ are Pauli strings acting on $n$ qubits (including their respective signs).
 
-        The block encoding unitary is constructed via the LCU protocol: 
-        
+        The block encoding unitary is constructed via the LCU protocol:
+
         .. math::
-        
+
             U = \text{PREP} \cdot \text{SEL} \cdot \text{PREP}^{\dagger}
-            
+
         where:
 
         * **SEL** (Select, in Qrisp: :ref:`q_switch <qswitch>`) applies each Pauli string $P_i$ conditioned on the auxiliary variable state $\ket{i}_a$:
-        
+
         .. math::
 
             \text{SEL} = \sum_{i=0}^{M-1} \ket{i}\bra{i} \otimes P_i
 
         * **PREP** (Prepare) prepares the state representing the coefficients:
-       
+
         .. math::
 
             \text{PREP} \ket{0}_a = \sum_{i=0}^{M-1} \sqrt{\frac{\alpha_i}{\alpha}} \ket{i}_a
-       
+
         Returns
         -------
         BlockEncoding
@@ -2320,7 +2320,7 @@ class QubitOperator(Hamiltonian):
             import numpy as np
 
             m = 2
-            A = np.eye(2**m, k=1)  
+            A = np.eye(2**m, k=1)
             A = A + A.T
 
             print(A)
@@ -2334,7 +2334,7 @@ class QubitOperator(Hamiltonian):
         We apply the matrix $A$ to a :ref:`QuantumFloat` in supersosition state $\ket{0}+\dotsb+\ket{2^m-1}$ via the Pauli :ref:`BlockEncoding` of the corresponding QubitOperator $H$.
         (To ensure compatibility with Qrisp's QuantumFloat, we use little-endian encoding when representing the matrix as a QubitOperator.)
 
-        To illustrate the result, we actually create an entangled state 
+        To illustrate the result, we actually create an entangled state
 
         .. math::
 
@@ -2383,7 +2383,7 @@ class QubitOperator(Hamiltonian):
             # (3.0, 2.0): 0.1666666616996128}
 
         The ``inner`` function is equipped with the :ref:`RUS` decorator. This means that the routine is run repeatedly until the ancilla variable is measured in state $\ket{0}$, i.e.,
-        the matrix $A$ is successfully applied. 
+        the matrix $A$ is successfully applied.
 
         """
         from qrisp.block_encodings import BlockEncoding

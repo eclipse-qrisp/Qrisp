@@ -261,7 +261,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
                 return decoded_values
 
             decoded_values = sampling_helper_2(*measurement_ints)
-            
+
             # Insert into the accumulating array
             acc = acc.at[i].set(decoded_values)
 

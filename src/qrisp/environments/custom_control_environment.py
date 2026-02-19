@@ -27,7 +27,13 @@ from qrisp.circuit import Operation, QuantumCircuit, Instruction
 from qrisp.environments.iteration_environment import IterationEnvironment
 from qrisp.core import merge
 
-from qrisp.jasp import check_for_tracing_mode, qache, AbstractQubit, make_jaspr, get_last_equation
+from qrisp.jasp import (
+    check_for_tracing_mode,
+    qache,
+    AbstractQubit,
+    make_jaspr,
+    get_last_equation,
+)
 
 
 def custom_control(*func, **cusc_kwargs):
@@ -151,14 +157,14 @@ def custom_control(*func, **cusc_kwargs):
     # The controlled version is then stored in the params attribute
 
     # Qache the function (in non-traced mode, this has no effect)
-    
+
     # Make sure the inv keyword argument is treated as a static argument
     new_static_argnames = list(cusc_kwargs.get("static_argnames", []))
     new_static_argnames.append("inv")
-    
+
     qache_kwargs = dict(cusc_kwargs)
     qache_kwargs["static_argnames"] = new_static_argnames
-    
+
     qashed_func = qache(func, **qache_kwargs)
 
     def adaptive_control_function(*args, **kwargs):
@@ -267,17 +273,17 @@ def custom_control(*func, **cusc_kwargs):
                     new_kwargs["ctrl"] = ammended_args[0]
                     args = ammended_args[1:]
                     if custom_inversion:
-                        return qashed_func(*args, inv = custom_inv_value, **new_kwargs)
+                        return qashed_func(*args, inv=custom_inv_value, **new_kwargs)
                     else:
                         return qashed_func(*args, **new_kwargs)
 
                 ctrl_aval = AbstractQubit()
                 ammended_args = [ctrl_aval] + list(args)
-                
+
                 controlled_jaspr = make_jaspr(ammended_func, **cusc_kwargs)(
                     *ammended_args, **kwargs
                 )
-                
+
                 # Store controlled version
                 jit_eqn.params["jaxpr"].ctrl_jaspr = controlled_jaspr
 

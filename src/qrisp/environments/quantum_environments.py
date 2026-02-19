@@ -389,7 +389,7 @@ class QuantumEnvironment(QuantumPrimitive):
             tr_qs.abs_qst = self.bind(
                 *(self.env_args + [tr_qs.abs_qst]),
                 stage="enter",
-                type=str(type(self)).split(".")[-1][:-2]
+                type=str(type(self)).split(".")[-1][:-2],
             )[0]
             return
 
@@ -436,14 +436,14 @@ class QuantumEnvironment(QuantumPrimitive):
 
     # Method to exit the environment
     def __exit__(self, exception_type, exception_value, traceback):
-        
+
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            
+
             if exception_value:
                 raise exception_value
-            
+
             tr_qs = TracingQuantumSession.get_instance()
             tr_qs.qubit_cache = self.temp_qubit_cache
             tr_qs.abs_qst = self.bind(
@@ -452,10 +452,10 @@ class QuantumEnvironment(QuantumPrimitive):
             return
 
         self.deepest_environment[0] = self.parent
-        
+
         # Stop dumping
         self.stop_dumping()
-        
+
         for i in range(len(self.active_qs_list)):
             # Remove from the environment stack
             if self.active_qs_list[i]() is not None:
@@ -500,7 +500,7 @@ class QuantumEnvironment(QuantumPrimitive):
         if not self.manual_allocation_management:
             for qb in list(set(alloc_qubit_list)):
                 self.env_qs.append(QubitAlloc(), [qb])
-            
+
         # If this was the outermost environment, we compile
         if len(self.env_qs.env_stack) == 0:
             self.deallocated_qubits.extend(dealloc_qubit_list)

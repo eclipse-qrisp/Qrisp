@@ -105,8 +105,10 @@ def convert_to_qiskit(qc, transpile=False):
             # In Qiskit 1.3, the c_if interface was deprecated
             try:
                 from qiskit.circuit import IfElseOp
-    
-                qregs = [qiskit_qc.qregs[qc.qubits.index(qb)] for qb in qc.data[i].qubits]
+
+                qregs = [
+                    qiskit_qc.qregs[qc.qubits.index(qb)] for qb in qc.data[i].qubits
+                ]
                 body_qc = QuantumCircuit(*qregs)
                 if op.base_op.definition:
                     body_qc = body_qc.compose(op.base_op.definition.to_qiskit())

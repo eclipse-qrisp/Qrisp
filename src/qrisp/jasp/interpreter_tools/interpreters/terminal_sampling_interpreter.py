@@ -33,7 +33,11 @@ from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation impor
     evaluate_while_loop,
 )
 
-from qrisp.jasp.primitives import AbstractQubitArray, AbstractQuantumState, AbstractQubit
+from qrisp.jasp.primitives import (
+    AbstractQubitArray,
+    AbstractQuantumState,
+    AbstractQubit,
+)
 
 # The following function implements the behavior of the jaspify simulator for terminal sampling
 # To understand the function consider the result of tracing a simple sampling task
@@ -280,8 +284,8 @@ def terminal_sampling_evaluator(sampling_res_type):
                         # We now build the key for the result dic
                         # For that we turn the jax types into the corresponding
                         # Python types.
-                        
-                        # This treats the case that the decoder returned only 
+
+                        # This treats the case that the decoder returned only
                         # a single result (instead of a tuple).
                         if len(eqn.params["jaxpr"].jaxpr.outvars) == 1:
                             if sampling_res_type == "ev":
@@ -289,7 +293,7 @@ def terminal_sampling_evaluator(sampling_res_type):
                             elif sampling_res_type == "array":
                                 # sampling_res.extend(v*[outvalues[0]])
                                 sampling_res_dict[outvalues.item()] = v
-                                    # sampling_res.extend(v*[key])
+                                # sampling_res.extend(v*[key])
                             elif sampling_res_type == "dict":
                                 key = outvalues
                                 if not type(v) in [int, float]:
@@ -358,37 +362,35 @@ def terminal_sampling_evaluator(sampling_res_type):
 
 @lru_cache(maxsize=int(1e5))
 def decoder_compiler(jaxpr, eqn_evaluator):
-    
-    
     """
     This function compiles the decoder using the Jax pipeline into a binary
     such that it can be evaluated fast. This is important because the decoding
     step can become a critical bottleneck in some sampling based simulations.
-    
+
     There are a couple of problems that can arise here.
-    
+
     1. If the decoder is something really trivial, it might be faster to just
        call it via the interpreter because there is compile time overhead.
-    
+
     2. Some decoders need the size of the corresponding QuantumVariable. The size
        is however accessed through the "jasp.get_size" primitive, which in turn
        needs access to the AbstractQubitArray. It can therefore happen that
        the decoder-Jaxpr contains not only classical elements but also quantum.
        Since there is no "default" implementation on how Jax compiles them into
        a binary, an error is produced.
-    
+
     The first problem is circumvented by statically checking if the jaxpr exceeds
     a certain number of equations. This is not a guarantee that the decoder would
     infact be trivial because the equations could also contain sub-jaxprs, but
     it serves as a cheap and powerfull guestimate.
-    
+
     The second problem is solved by replacing all occurences of AbstractQubitArrays
     simply with their actual length (i.e. the corresponding arguments are no longer
     quantum but a simple, classical integer) and also modifying the behavior of the
     jasp.get_size primitive to simply return that integer.
-    
+
     """
-    
+
     # Modify the interpretation behavior of the jasp.get_size primitive to simply
     # return it's input
     def new_eqn_evaluator(eqn, context_dic):
@@ -396,7 +398,7 @@ def decoder_compiler(jaxpr, eqn_evaluator):
             context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
         else:
             return eqn_evaluator(eqn, context_dic)
-    
+
     # Decide, whether to compile the evaluator
     if len(jaxpr.eqns) > 10:
         compiled_evaluator = jax.jit(eval_jaxpr(jaxpr, eqn_evaluator=new_eqn_evaluator))
@@ -406,17 +408,21 @@ def decoder_compiler(jaxpr, eqn_evaluator):
     # This function wraps the compiled_evaluator by replacing all parameters that
     # are of type AbstractQubitArray by the actual length.
     def decoder(*args):
-        
+
         new_args = []
-        
+
         for i in range(len(args)):
             if isinstance(jaxpr.jaxpr.invars[i].aval, AbstractQubitArray):
                 new_args.append(len(args[i]))
-            elif isinstance(jaxpr.jaxpr.invars[i].aval, (AbstractQubit, AbstractQuantumState)):
-                raise Exception(f"Found quantum type {jaxpr.jaxpr.invars[i].aval} in decoder implementation")
+            elif isinstance(
+                jaxpr.jaxpr.invars[i].aval, (AbstractQubit, AbstractQuantumState)
+            ):
+                raise Exception(
+                    f"Found quantum type {jaxpr.jaxpr.invars[i].aval} in decoder implementation"
+                )
             else:
                 new_args.append(args[i])
-        
+
         return compiled_evaluator(*new_args)
-        
+
     return decoder

@@ -88,14 +88,14 @@ BooleanQuantumState = tuple[BitArray, Jlist]  # (bit_array, free_qubits)
 
 def cl_func_eqn_evaluator(eqn: JaxprEqn, context_dic: ContextDict) -> bool | None:
     """
-    Custom equation evaluator for transforming quantum primitives into classical 
+    Custom equation evaluator for transforming quantum primitives into classical
     bit operations.
-    
+
     This function is passed to eval_jaxpr as a custom equation handler. It intercepts
     quantum primitives and replaces them with equivalent classical bit manipulations.
     For non-quantum primitives, it returns True to indicate that the default JAX
     evaluation should be used.
-    
+
     Parameters
     ----------
     eqn : JaxprEqn
@@ -103,13 +103,13 @@ def cl_func_eqn_evaluator(eqn: JaxprEqn, context_dic: ContextDict) -> bool | Non
     context_dic : ContextDict
         Dictionary mapping JAX variables to their runtime values. This is a special
         dictionary subclass that handles Literal keys by returning their values.
-    
+
     Returns
     -------
     bool | None
         Returns True if the equation should be handled by default JAX evaluation.
         Returns None (implicitly) if the equation was handled by this function.
-    
+
     Raises
     ------
     Exception
@@ -163,18 +163,16 @@ def cl_func_eqn_evaluator(eqn: JaxprEqn, context_dic: ContextDict) -> bool | Non
 
 
 def process_create_qubits(
-    invars: list[Var], 
-    outvars: list[Var], 
-    context_dic: ContextDict
+    invars: list[Var], outvars: list[Var], context_dic: ContextDict
 ) -> None:
     """
     Process the create_qubits primitive by allocating qubit indices from the free pool.
-    
+
     This function handles qubit allocation by:
     1. Popping the requested number of qubit indices from the free_qubits stack
     2. Creating a new Jlist containing these indices to represent the QubitArray
     3. Updating the context dictionary with the new QubitArray and updated circuit state
-    
+
     Parameters
     ----------
     invars : list[Var]
@@ -195,14 +193,10 @@ def process_create_qubits(
     # Create a new Jlist to hold the allocated qubit indices
     # The max_size is proportional to the total bit array capacity
     reg_qubits = Jlist(
-        init_val=jnp.array([], dtype=jnp.int64),
-        max_size=64 * qreg.size//64
+        init_val=jnp.array([], dtype=jnp.int64), max_size=64 * qreg.size // 64
     )
 
-    def loop_body(
-        i: int, 
-        val_tuple: tuple[Jlist, Jlist]
-    ) -> tuple[Jlist, Jlist]:
+    def loop_body(i: int, val_tuple: tuple[Jlist, Jlist]) -> tuple[Jlist, Jlist]:
         """Pop a qubit index from free pool and add to the new register."""
         reg_qubits, free_qubits = val_tuple
         reg_qubits.append(free_qubits.pop())
@@ -228,14 +222,14 @@ def process_create_qubits(
 def process_fuse(eqn: JaxprEqn, context_dic: ContextDict) -> None:
     """
     Process the fuse primitive which concatenates qubit arrays or individual qubits.
-    
-    The fuse operation combines two quantum registers (or individual qubits) into 
+
+    The fuse operation combines two quantum registers (or individual qubits) into
     a single register. It handles four cases:
     1. Qubit + Qubit -> QubitArray (creates new list with both)
     2. QubitArray + Qubit -> QubitArray (appends qubit to array)
     3. Qubit + QubitArray -> QubitArray (prepends qubit to array)
     4. QubitArray + QubitArray -> QubitArray (extends first with second)
-    
+
     Parameters
     ----------
     eqn : JaxprEqn
@@ -248,13 +242,13 @@ def process_fuse(eqn: JaxprEqn, context_dic: ContextDict) -> None:
     if isinstance(eqn.invars[0].aval, AbstractQubit) and isinstance(
         eqn.invars[1].aval, AbstractQubit
     ):
-        
+
         # To find the maximum size of the newly created Jlist,
         # we need to search through the context dic for an
         # AbstractQuantumState.
         # This could in principle lead to very bad scaling
         # behavior but in reality, this is not the case.
-        # Why? For each stack frame, the arguments of the 
+        # Why? For each stack frame, the arguments of the
         # calling Jaxpr are inserted into the context_dic
         # first, i.e. also at least one AbstractQuantumState.
         # Since they .keys() iterator returns them in the
@@ -262,11 +256,11 @@ def process_fuse(eqn: JaxprEqn, context_dic: ContextDict) -> None:
         # found.
         for k in context_dic.keys():
             if isinstance(k.aval, AbstractQuantumState):
-                max_size = 64 * context_dic[k][0].size//64
+                max_size = 64 * context_dic[k][0].size // 64
                 break
-        
+
         # Case 1: Two individual qubits -> create a new list containing both
-        res_qubits = Jlist(invalues, max_size = max_size)
+        res_qubits = Jlist(invalues, max_size=max_size)
     elif isinstance(eqn.invars[0].aval, AbstractQubitArray) and isinstance(
         eqn.invars[1].aval, AbstractQubit
     ):
@@ -288,13 +282,11 @@ def process_fuse(eqn: JaxprEqn, context_dic: ContextDict) -> None:
 
 
 def process_get_qubit(
-    invars: list[Var], 
-    outvars: list[Var], 
-    context_dic: ContextDict
+    invars: list[Var], outvars: list[Var], context_dic: ContextDict
 ) -> None:
     """
     Process the get_qubit primitive to retrieve a single qubit index from a QubitArray.
-    
+
     Parameters
     ----------
     invars : list[Var]
@@ -310,13 +302,11 @@ def process_get_qubit(
 
 
 def process_slice(
-    invars: list[Var], 
-    outvars: list[Var], 
-    context_dic: ContextDict
+    invars: list[Var], outvars: list[Var], context_dic: ContextDict
 ) -> None:
     """
     Process the slice primitive to extract a sub-range of qubits from a QubitArray.
-    
+
     Parameters
     ----------
     invars : list[Var]
@@ -334,13 +324,11 @@ def process_slice(
 
 
 def process_get_size(
-    invars: list[Var], 
-    outvars: list[Var], 
-    context_dic: ContextDict
+    invars: list[Var], outvars: list[Var], context_dic: ContextDict
 ) -> None:
     """
     Process the get_size primitive to retrieve the number of qubits in a QubitArray.
-    
+
     Parameters
     ----------
     invars : list[Var]
@@ -355,22 +343,19 @@ def process_get_size(
 
 
 def process_op(
-    op: Operation, 
-    invars: list[Var], 
-    outvars: list[Var], 
-    context_dic: ContextDict
+    op: Operation, invars: list[Var], outvars: list[Var], context_dic: ContextDict
 ) -> None:
     """
     Process quantum gate operations by applying classical bit manipulations.
-    
+
     This function handles gates that preserve classical states:
     - X gate: unconditional bit flip
     - SWAP gate: exchange two bits (implemented as 3 CNOTs)
     - Controlled variants (CX, CCX, CSWAP, etc.): conditional bit flips
     - Phase gates (Z, S, T, RZ, P): no-op since phase doesn't affect classical bits
-    
+
     Gates that create superposition (H, RX, RY, etc.) will raise an exception.
-    
+
     Parameters
     ----------
     op : Operation
@@ -381,7 +366,7 @@ def process_op(
         Output variables: [updated_quantum_circuit]
     context_dic : ContextDict
         The variable-to-value mapping dictionary.
-    
+
     Raises
     ------
     Exception
@@ -404,7 +389,7 @@ def process_op(
         "y",
         "z",
         "pt2cx",
-        "swap"
+        "swap",
     ]:
         # Phase gates have no effect on classical states - skip them
         if op.base_operation.name in ["z", "rz", "t", "s", "t_dg", "s_dg", "p"]:
@@ -425,7 +410,7 @@ def process_op(
         swapped_qb_pos = list(qb_pos)
         swapped_qb_pos[-1], swapped_qb_pos[-2] = swapped_qb_pos[-2], swapped_qb_pos[-1]
         ctrl_state = ctrl_state + "1"
-        
+
         # Apply SWAP as three controlled-NOT operations
         bit_array = cl_multi_cx(bit_array, ctrl_state, swapped_qb_pos)
         bit_array = cl_multi_cx(bit_array, ctrl_state, qb_pos)
@@ -439,17 +424,15 @@ def process_op(
 
 
 def cl_multi_cx(
-    bit_array: BitArray, 
-    ctrl_state: str, 
-    bit_pos: list[QubitIndex]
+    bit_array: BitArray, ctrl_state: str, bit_pos: list[QubitIndex]
 ) -> BitArray:
     """
     Apply a multi-controlled X (NOT) gate to the bit array.
-    
+
     This function computes the AND of all control conditions and conditionally
     flips the target bit. The control state string specifies whether each control
     should be active-high ('1') or active-low ('0').
-    
+
     Parameters
     ----------
     bit_array : BitArray
@@ -460,12 +443,12 @@ def cl_multi_cx(
     bit_pos : list[QubitIndex]
         List of qubit indices. The last element is the target qubit; all preceding
         elements are control qubits.
-    
+
     Returns
     -------
     BitArray
         The updated bit array after applying the gate.
-    
+
     Examples
     --------
     - ctrl_state="" (empty): Unconditional X gate on target
@@ -475,7 +458,7 @@ def cl_multi_cx(
     """
     # Start with True (represented as 1) - will be ANDed with all control conditions
     flip = jnp.asarray(1, dtype=bit_array.dtype)
-    
+
     # Compute the AND of all control conditions
     for i in range(len(bit_pos) - 1):
         if ctrl_state[i] == "1":
@@ -492,17 +475,15 @@ def cl_multi_cx(
 
 
 def process_measurement(
-    invars: list[Var], 
-    outvars: list[Var], 
-    context_dic: ContextDict
+    invars: list[Var], outvars: list[Var], context_dic: ContextDict
 ) -> None:
     """
     Process measurement primitives by reading bit values from the bit array.
-    
+
     Since we're simulating classical states only, measurement simply reads the
     current bit value(s). For a QubitArray, the result is an integer formed by
     treating the qubit values as binary digits.
-    
+
     Parameters
     ----------
     invars : list[Var]
@@ -532,30 +513,29 @@ def process_measurement(
 
 
 def exec_multi_measurement(
-    bit_array: BitArray, 
-    qubit_reg: Jlist
+    bit_array: BitArray, qubit_reg: Jlist
 ) -> tuple[BitArray, Array]:
     """
     Perform measurement on multiple qubits, returning an integer result.
-    
+
     Each qubit's bit value is read and combined into an integer where qubit i
     contributes to bit position i of the result (little-endian ordering).
-    
+
     Parameters
     ----------
     bit_array : BitArray
         The packed bit array representing qubit states.
     qubit_reg : Jlist
         A Jlist containing the indices of qubits to measure.
-    
+
     Returns
     -------
     tuple[BitArray, Array]
         A tuple of (unchanged bit_array, measurement result as int64).
     """
+
     def loop_body(
-        i: int, 
-        arg_tuple: tuple[int, BitArray, Jlist]
+        i: int, arg_tuple: tuple[int, BitArray, Jlist]
     ) -> tuple[int, BitArray, Jlist]:
         """Accumulate bit values into an integer."""
         acc, bit_array, qubit_reg = arg_tuple
@@ -575,47 +555,50 @@ def exec_multi_measurement(
 def process_parity(eqn, context_dic):
     """Process parity primitive: compute XOR of measurement results."""
     from jax import debug
-    
+
     invalues = extract_invalues(eqn, context_dic)
     expectation = eqn.params.get("expectation", 0)
     observable = eqn.params.get("observable", False)
 
     # Compute parity (XOR) of all measurements
     result = sum(invalues) % 2
-    
+
     # If not an observable (i.e. detector mode), check and emit warning if mismatch
     if not observable:
         # Define callbacks for match/mismatch
         def warn_mismatch():
-            debug.print("WARNING: Parity expectation deviated from simulation result {inval}", inval = invalues[1])
-        
+            debug.print(
+                "WARNING: Parity expectation deviated from simulation result {inval}",
+                inval=invalues[1],
+            )
+
         def no_warning():
             return
-        
+
         # Check if expectation matches result
         cond(result != expectation, warn_mismatch, no_warning)
-    
+
     # XOR result with expectation (0 if match, 1 if mismatch)
     result = result ^ expectation
-    
-    context_dic[eqn.outvars[0]] = jnp.array(result, dtype = bool)
+
+    context_dic[eqn.outvars[0]] = jnp.array(result, dtype=bool)
 
 
 def process_while(eqn: JaxprEqn, context_dic: ContextDict) -> bool | None:
     """
     Process while loop primitives that may contain quantum operations.
-    
+
     If the while loop involves quantum state (AbstractQuantumState), the body
     and condition Jaxprs are converted to their classical equivalents before
     executing the loop.
-    
+
     Parameters
     ----------
     eqn : JaxprEqn
         The while loop equation.
     context_dic : ContextDict
         The variable-to-value mapping dictionary.
-    
+
     Returns
     -------
     bool | None
@@ -628,48 +611,53 @@ def process_while(eqn: JaxprEqn, context_dic: ContextDict) -> bool | None:
     overall_constant_amount = eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
 
     invalues = extract_invalues(eqn, context_dic)
-    
+
     if isinstance(eqn.invars[-1].aval, AbstractQuantumState):
         bit_array_padding = invalues[-1][0].shape[0] * 64
     else:
         bit_array_padding = 0
-    
 
     converted_body_jaxpr = jaspr_to_cl_func_jaxpr(body_jaxpr.jaxpr, bit_array_padding)
     converted_cond_jaxpr = jaspr_to_cl_func_jaxpr(cond_jaxpr.jaxpr, bit_array_padding)
 
     def body_fun(args: list) -> list:
         """Execute the loop body with flattened/unflattened signature conversion."""
-        constants = args[eqn.params["cond_nconsts"]:overall_constant_amount]
+        constants = args[eqn.params["cond_nconsts"] : overall_constant_amount]
         carries = args[overall_constant_amount:]
-        
-        flattened_invalues = flatten_signature(constants + carries, body_jaxpr.jaxpr.invars)
+
+        flattened_invalues = flatten_signature(
+            constants + carries, body_jaxpr.jaxpr.invars
+        )
         body_res = eval_jaxpr(converted_body_jaxpr)(*(flattened_invalues))
-        unflattened_body_outvalues = unflatten_signature(body_res, body_jaxpr.jaxpr.outvars)
-        
+        unflattened_body_outvalues = unflatten_signature(
+            body_res, body_jaxpr.jaxpr.outvars
+        )
+
         return list(args[:overall_constant_amount]) + list(unflattened_body_outvalues)
 
     def cond_fun(args: list) -> Array:
         """Evaluate the loop condition."""
-        constants = args[:eqn.params["cond_nconsts"]]
+        constants = args[: eqn.params["cond_nconsts"]]
         carries = args[overall_constant_amount:]
-        
-        flattened_invalues = flatten_signature(constants + carries, cond_jaxpr.jaxpr.invars)
+
+        flattened_invalues = flatten_signature(
+            constants + carries, cond_jaxpr.jaxpr.invars
+        )
         return eval_jaxpr(converted_cond_jaxpr)(*flattened_invalues)
 
     # Execute the while loop and extract the carry values (skip constants)
     outvalues = while_loop(cond_fun, body_fun, invalues)[overall_constant_amount:]
-    
+
     insert_outvalues(eqn, context_dic, outvalues)
 
 
 def process_cond(eqn: JaxprEqn, context_dic: ContextDict) -> None:
     """
     Process conditional (if/else) primitives that may contain quantum operations.
-    
+
     Converts the branch Jaxprs to their classical equivalents if they contain
     quantum operations, then uses JAX's switch primitive to select the branch.
-    
+
     Parameters
     ----------
     eqn : JaxprEqn
@@ -705,85 +693,87 @@ def process_scan(eqn, context_dic):
     Reinterprets the scan body and calls jax.lax.scan to preserve loop structure.
     """
     from jax.lax import scan as jax_scan
-    
+
     invalues = extract_invalues(eqn, context_dic)
-    
+
     # Extract scan parameters
     num_consts = eqn.params["num_consts"]
     num_carry = eqn.params["num_carry"]
     length = eqn.params["length"]
     reverse = eqn.params.get("reverse", False)
     unroll = eqn.params.get("unroll", 1)
-    
+
     # Separate inputs: constants, initial carry, scanned inputs
     consts = invalues[:num_consts]
-    init = invalues[num_consts:num_consts + num_carry]
-    xs = invalues[num_consts + num_carry:]
-    
+    init = invalues[num_consts : num_consts + num_carry]
+    xs = invalues[num_consts + num_carry :]
+
     # Reinterpret the scan body with cl_func_eqn_evaluator
     scan_body_jaxpr = eqn.params["jaxpr"]
     scan_body = eval_jaxpr(scan_body_jaxpr, eqn_evaluator=cl_func_eqn_evaluator)
-    
+
     # Create wrapper function that includes constants
     if num_consts > 0:
+
         def wrapped_body(carry, x):
             args = consts + list(carry) + (list(x) if isinstance(x, tuple) else [x])
             result = scan_body(*args)
             if not isinstance(result, tuple):
                 result = (result,)
             return result[:num_carry], result[num_carry:]
+
     else:
+
         def wrapped_body(carry, x):
             args = list(carry) + (list(x) if isinstance(x, tuple) else [x])
             result = scan_body(*args)
             if not isinstance(result, tuple):
                 result = (result,)
             return result[:num_carry], result[num_carry:]
-    
+
     # Prepare inputs for JAX scan
     if len(xs) == 1:
         xs_arg = xs[0]
     else:
         xs_arg = tuple(xs)
-    
+
     if len(init) == 1:
         init_arg = init[0]
     else:
         init_arg = tuple(init)
-    
+
     # Call JAX scan
-    final_carry, ys = jax_scan(wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll)
-    
+    final_carry, ys = jax_scan(
+        wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll
+    )
+
     # Prepare output
     if not isinstance(final_carry, tuple):
         final_carry = (final_carry,)
     if not isinstance(ys, tuple):
         ys = (ys,)
-    
+
     outvalues = final_carry + ys
-    
+
     insert_outvalues(eqn, context_dic, outvalues)
 
 
 @lru_cache(maxsize=int(1e5))
-def get_traced_fun(
-    jaxpr: Jaspr | ClosedJaxpr, 
-    bit_array_size: int
-) -> Callable:
+def get_traced_fun(jaxpr: Jaspr | ClosedJaxpr, bit_array_size: int) -> Callable:
     """
     Get a JIT-compiled function from a Jaxpr, with caching for efficiency.
-    
+
     This function converts a Jaspr to its classical equivalent (if applicable)
     and returns a JIT-compiled evaluator. Results are cached to avoid repeated
     compilation of the same Jaxpr.
-    
+
     Parameters
     ----------
     jaxpr : Jaspr | ClosedJaxpr
         The Jaxpr to compile.
     bit_array_size : int
         The size of the bit array (number of bits that can be simulated).
-    
+
     Returns
     -------
     Callable
@@ -806,10 +796,10 @@ def get_traced_fun(
 def process_pjit(eqn: JaxprEqn, context_dic: ContextDict) -> None:
     """
     Process JIT-compiled function calls (pjit primitive).
-    
+
     This handles calls to JIT-compiled functions, including special cases for
     Gidney-style MCX gates which are optimized multi-controlled X implementations.
-    
+
     Parameters
     ----------
     eqn : JaxprEqn
@@ -818,7 +808,7 @@ def process_pjit(eqn: JaxprEqn, context_dic: ContextDict) -> None:
         The variable-to-value mapping dictionary.
     """
     invalues = extract_invalues(eqn, context_dic)
-    
+
     # Special handling for Gidney MCX gates (optimized multi-controlled X)
     if eqn.params["name"] in ["gidney_mcx", "gidney_mcx_inv"]:
         # Gidney MCX is a 2-controlled X gate
@@ -829,7 +819,10 @@ def process_pjit(eqn: JaxprEqn, context_dic: ContextDict) -> None:
         # Gidney CCCX is a 3-controlled X gate
         controls = [invalues[0][i] for i in range(3)]
         unflattened_outvalues = [
-            (cl_multi_cx(invalues[-1][0], "111", controls + [invalues[1]]), invalues[-1][1])
+            (
+                cl_multi_cx(invalues[-1][0], "111", controls + [invalues[1]]),
+                invalues[-1][1],
+            )
         ]
     else:
         # General case: flatten inputs, call the function, unflatten outputs
@@ -860,15 +853,15 @@ def process_pjit(eqn: JaxprEqn, context_dic: ContextDict) -> None:
 def process_delete_qubits(eqn: JaxprEqn, context_dic: ContextDict) -> None:
     """
     Process qubit deletion with uncomputation verification.
-    
+
     This function handles the deletion of qubits by:
     1. Checking that each qubit is in the |0⟩ state (proper uncomputation)
     2. Returning the qubit indices to the free pool
     3. Printing a warning if any qubit is not properly uncomputed
-    
+
     This verification is valuable for debugging quantum algorithms at scale,
     as faulty uncomputation is a common source of errors.
-    
+
     Parameters
     ----------
     eqn : JaxprEqn
@@ -891,8 +884,7 @@ def process_delete_qubits(eqn: JaxprEqn, context_dic: ContextDict) -> None:
         return
 
     def loop_body(
-        i: int, 
-        value_tuple: tuple[Jlist, BitArray, Jlist]
+        i: int, value_tuple: tuple[Jlist, BitArray, Jlist]
     ) -> tuple[Jlist, BitArray, Jlist]:
         """Check each qubit and return its index to the free pool."""
         qubit_reg, bit_array, free_qubits = value_tuple
@@ -916,10 +908,10 @@ def process_delete_qubits(eqn: JaxprEqn, context_dic: ContextDict) -> None:
 def process_reset(eqn: JaxprEqn, context_dic: ContextDict) -> None:
     """
     Process reset operations that set qubits to the |0⟩ state.
-    
+
     This function resets qubits by flipping any bits that are currently 1.
     It handles both single qubit resets and QubitArray resets.
-    
+
     Parameters
     ----------
     eqn : JaxprEqn
@@ -957,7 +949,7 @@ def process_reset(eqn: JaxprEqn, context_dic: ContextDict) -> None:
 def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int) -> ClosedJaxpr:
     """
     Transform a Jaspr (quantum program) into a classical ClosedJaxpr.
-    
+
     This is the main transformation function that converts a quantum program
     representation into a purely classical JAX expression. The transformation
     replaces:
@@ -965,7 +957,7 @@ def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int) -> ClosedJaxpr:
     - AbstractQubitArray with Jlist of qubit indices
     - AbstractQubit with int64 qubit indices
     - Quantum primitives with classical bit manipulation operations
-    
+
     Parameters
     ----------
     jaspr : Jaspr
@@ -973,12 +965,12 @@ def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int) -> ClosedJaxpr:
     bit_array_padding : int
         The maximum number of qubits that can be simulated. This determines
         the size of the bit array (ceiling of bit_array_padding / 64 uint64s).
-    
+
     Returns
     -------
     ClosedJaxpr
         A classical JAX expression that performs the equivalent boolean simulation.
-    
+
     Notes
     -----
     The transformation works by:
@@ -1001,7 +993,7 @@ def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int) -> ClosedJaxpr:
             # QubitArray -> empty Jlist (will be filled during execution)
             qreg = Jlist(
                 init_val=jnp.array([], dtype=jnp.int64),
-                max_size=bit_array_padding // 64
+                max_size=bit_array_padding // 64,
             )
             args.append(qreg)
         elif isinstance(invar.aval, AbstractQubit):
@@ -1018,23 +1010,19 @@ def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int) -> ClosedJaxpr:
             args.append(invar.aval)
 
     # Trace the evaluation to produce a classical Jaxpr
-    return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=cl_func_eqn_evaluator))(
-        *args
-    )
+    return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=cl_func_eqn_evaluator))(*args)
 
 
 def conditional_bit_flip_bit_array(
-    bit_array: BitArray, 
-    index: QubitIndex, 
-    condition: Array
+    bit_array: BitArray, index: QubitIndex, condition: Array
 ) -> BitArray:
     """
     Conditionally flip a bit in the packed bit array.
-    
+
     The bit array stores 64 bits per uint64 element. This function computes
     the array index and bit position within that element, then XORs the bit
     with the condition value.
-    
+
     Parameters
     ----------
     bit_array : BitArray
@@ -1043,12 +1031,12 @@ def conditional_bit_flip_bit_array(
         The bit index to flip (0-indexed across the entire array).
     condition : Array
         If 1, flip the bit; if 0, leave unchanged.
-    
+
     Returns
     -------
     BitArray
         The updated bit array.
-    
+
     Notes
     -----
     Bit packing scheme:
@@ -1073,14 +1061,14 @@ conditional_bit_flip_bit_array = jit(conditional_bit_flip_bit_array, donate_argn
 def get_bit_array(bit_array: BitArray, index: QubitIndex) -> Array:
     """
     Get the value of a single bit from the packed bit array.
-    
+
     Parameters
     ----------
     bit_array : BitArray
         The packed bit array (uint64 elements, each storing 64 bits).
     index : QubitIndex
         The bit index to read (0-indexed across the entire array).
-    
+
     Returns
     -------
     Array
@@ -1095,24 +1083,21 @@ def get_bit_array(bit_array: BitArray, index: QubitIndex) -> Array:
     return (bit_array[array_index] >> int_index) & 1
 
 
-def unflatten_signature(
-    values: tuple, 
-    variables: list[Var]
-) -> list[Any]:
+def unflatten_signature(values: tuple, variables: list[Var]) -> list[Any]:
     """
     Convert flattened JAX values back to structured quantum types.
-    
+
     During JAX tracing, quantum types (AbstractQuantumState, AbstractQubitArray)
     are flattened into multiple array values. This function reconstructs the
     original structure.
-    
+
     Parameters
     ----------
     values : tuple
         Flattened tuple of JAX array values.
     variables : list[Var]
         List of JAX variables describing the expected types.
-    
+
     Returns
     -------
     list[Any]
@@ -1123,7 +1108,7 @@ def unflatten_signature(
     """
     values = list(values)
     unflattened_values: list[Any] = []
-    
+
     for var in variables:
         if isinstance(var.aval, AbstractQuantumState):
             # Reconstruct (bit_array, free_qubits_jlist) tuple
@@ -1141,23 +1126,20 @@ def unflatten_signature(
     return unflattened_values
 
 
-def flatten_signature(
-    values: list[Any], 
-    variables: list[Var]
-) -> list[Array]:
+def flatten_signature(values: list[Any], variables: list[Var]) -> list[Array]:
     """
     Flatten structured quantum types into plain JAX arrays.
-    
+
     Quantum types need to be flattened for JAX operations like switch and
     while_loop that expect flat argument lists.
-    
+
     Parameters
     ----------
     values : list[Any]
         List of values that may include quantum types.
     variables : list[Var]
         List of JAX variables describing the types.
-    
+
     Returns
     -------
     list[Array]
@@ -1168,7 +1150,7 @@ def flatten_signature(
     """
     values = list(values)
     flattened_values: list[Array] = []
-    
+
     for i in range(len(variables)):
         var = variables[i]
         value = values.pop(0)
@@ -1185,31 +1167,28 @@ def flatten_signature(
     return flattened_values
 
 
-def ensure_conversion(
-    jaxpr: Jaspr, 
-    invalues: list[Any]
-) -> ClosedJaxpr:
+def ensure_conversion(jaxpr: Jaspr, invalues: list[Any]) -> ClosedJaxpr:
     """
     Ensure a Jaxpr is converted to classical form if it contains quantum types.
-    
+
     This function checks if the Jaxpr contains any quantum abstract types and
     converts it to a classical Jaxpr if necessary. If no quantum types are
     present, it wraps the Jaxpr in a ClosedJaxpr unchanged.
-    
+
     Parameters
     ----------
     jaxpr : Jaspr
         The Jaxpr to potentially convert.
     invalues : list[Any]
         The input values, used to determine the bit array size.
-    
+
     Returns
     -------
     ClosedJaxpr
         Either the converted classical Jaxpr or the original wrapped as ClosedJaxpr.
     """
     bit_array_padding = 0
-    
+
     # Check if any input variable is a quantum type
     for i in range(len(jaxpr.invars)):
         invar = jaxpr.invars[i]

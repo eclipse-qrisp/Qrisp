@@ -33,9 +33,9 @@ def poly2cheb(poly: "ArrayLike") -> Array:
     Convert a polynomial from monomial to Chebyshev basis.
     JAX version of `numpy.polynomial.chebyshev.poly2cheb <https://numpy.org/doc/2.3/reference/generated/numpy.polynomial.chebyshev.poly2cheb.html>`_.
 
-    Convert an array representing the coefficients of a polynomial (relative to the monomial basis) ordered from lowest degree to highest, 
+    Convert an array representing the coefficients of a polynomial (relative to the monomial basis) ordered from lowest degree to highest,
     to an array of the coefficients of the equivalent Chebyshev series, ordered from lowest to highest degree.
-    
+
     Parameters
     ----------
     poly : ArrayLike
@@ -50,7 +50,7 @@ def poly2cheb(poly: "ArrayLike") -> Array:
     --------
 
     >>> import jax.numpy as jnp
-    >>> from qrisp.gqsp import poly2cheb 
+    >>> from qrisp.gqsp import poly2cheb
     >>> poly = jnp.array([-2., -8.,  4., 12.])
     >>> cheb = poly2cheb(poly)
     >>> cheb
@@ -58,26 +58,26 @@ def poly2cheb(poly: "ArrayLike") -> Array:
 
     """
     N = len(poly)
-    
+
     # Build the transformation matrix C such that P_power = C @ P_cheb
     # This matrix contains the power-basis coefficients of T_n(x)
     C = jnp.zeros((N, N), dtype=poly.dtype)
-    C = C.at[0, 0].set(1) # T_0(x) = 1
+    C = C.at[0, 0].set(1)  # T_0(x) = 1
     if N > 1:
-        C = C.at[1, 1].set(1) # T_1(x) = x
+        C = C.at[1, 1].set(1)  # T_1(x) = x
         # Use the recurrence T_n(x) = 2 * x * T_{n-1}(x) - T_{n-2}(x)
         for n in range(2, N):
             # 2 * x * T_{n-1}(x): shift coefficients right by 1 and multiply by 2
-            prev = C[n-1]
+            prev = C[n - 1]
             prev_shifted = jnp.roll(prev, 1) * 2
             # Handle the roll boundary condition manually to match 2 * x * T_{n-1}(x)
-            prev_shifted = prev_shifted.at[0].set(0) 
-            C = C.at[n, :].set(prev_shifted - C[n-2, :])
-            
+            prev_shifted = prev_shifted.at[0].set(0)
+            C = C.at[n, :].set(prev_shifted - C[n - 2, :])
+
     # Solve the linear system for the Chebyshev coefficients
     # The matrix C is triangular/well-behaved, making the solve stable
     cheb = jnp.linalg.solve(C.T, poly)
-    
+
     return cheb
 
 
@@ -89,9 +89,9 @@ def cheb2poly(cheb: "ArrayLike") -> Array:
     Convert a polynomial from Chebyshev to monomial basis.
     JAX version of `numpy.polynomial.chebyshev.cheb2poly <https://numpy.org/doc/stable/reference/generated/numpy.polynomial.chebyshev.cheb2poly.html>`_.
 
-    Convert an array representing the coefficients of a Chebyshev series, ordered from lowest degree to highest, 
+    Convert an array representing the coefficients of a Chebyshev series, ordered from lowest degree to highest,
     to an array of the coefficients of the equivalent polynomial (relative to the monomial basis) ordered from lowest to highest degree.
-    
+
     Parameters
     ----------
     cheb : ArrayLike
@@ -106,7 +106,7 @@ def cheb2poly(cheb: "ArrayLike") -> Array:
     --------
 
     >>> import jax.numpy as jnp
-    >>> from qrisp.gqsp import cheb2poly 
+    >>> from qrisp.gqsp import cheb2poly
     >>> poly = jnp.array([0., 1., 2., 3.])
     >>> poly = cheb2poly(cheb)
     >>> poly
@@ -114,36 +114,40 @@ def cheb2poly(cheb: "ArrayLike") -> Array:
 
     """
     N = len(cheb)
-    
+
     # Build the transformation matrix C such that P_power = C @ P_cheb
     # This matrix contains the power-basis coefficients of T_n(x)
     C = jnp.zeros((N, N), dtype=cheb.dtype)
-    C = C.at[0, 0].set(1) # T_0(x) = 1
+    C = C.at[0, 0].set(1)  # T_0(x) = 1
     if N > 1:
-        C = C.at[1, 1].set(1) # T_1(x) = x
+        C = C.at[1, 1].set(1)  # T_1(x) = x
         # Use the recurrence T_n(x) = 2 * x * T_{n-1}(x) - T_{n-2}(x)
         for n in range(2, N):
             # 2 * x * T_{n-1}(x): shift coefficients right by 1 and multiply by 2
-            prev = C[n-1]
+            prev = C[n - 1]
             prev_shifted = jnp.roll(prev, 1) * 2
             # Handle the roll boundary condition manually to match 2 * x * T_{n-1}(x)
-            prev_shifted = prev_shifted.at[0].set(0) 
-            C = C.at[n, :].set(prev_shifted - C[n-2, :])
+            prev_shifted = prev_shifted.at[0].set(0)
+            C = C.at[n, :].set(prev_shifted - C[n - 2, :])
 
     # Resulting power coefficients
-    poly = jnp.dot(cheb, C) # or jnp.dot(C.T, coeffs) if coeffs was a column vector
+    poly = jnp.dot(cheb, C)  # or jnp.dot(C.T, coeffs) if coeffs was a column vector
 
     return poly
 
 
-def _rescale_poly(alpha: "ArrayLike", p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial") -> "ArrayLike":
+def _rescale_poly(
+    alpha: "ArrayLike",
+    p: "ArrayLike",
+    kind: Literal["Polynomial", "Chebyshev"] = "Polynomial",
+) -> "ArrayLike":
     r"""
     Returns a new polynomial $\tilde{p}$ such that $\tilde{p}(z) = p(z/\alpha)$.
 
     Parameters
     ----------
     alpha : ArrayLike
-        Scalar scaling factor. 
+        Scalar scaling factor.
     p : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
     kind : {"Polynomial", "Chebyshev"}
@@ -153,7 +157,7 @@ def _rescale_poly(alpha: "ArrayLike", p: "ArrayLike", kind: Literal["Polynomial"
     -------
     ArrayLike
         1-D array containing the (rescaled) polynomial coefficients, ordered from lowest order term to highest.
-    
+
     """
 
     # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
@@ -161,12 +165,12 @@ def _rescale_poly(alpha: "ArrayLike", p: "ArrayLike", kind: Literal["Polynomial"
     scaling_factors = jnp.power(alpha, scaling_exponents)
 
     # Convert to Polynomial for rescaling
-    if kind=="Chebyshev":
+    if kind == "Chebyshev":
         p = cheb2poly(p)
 
     p = p * scaling_factors
 
-    if kind=="Chebyshev":
+    if kind == "Chebyshev":
         p = poly2cheb(p)
-    
+
     return p
