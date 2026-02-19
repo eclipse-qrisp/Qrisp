@@ -57,6 +57,7 @@ from contextvars import ContextVar
 from qrisp.circuit import QubitAlloc, QubitDealloc, fast_append
 from qrisp.core.quantum_session import QuantumSession
 from qrisp.jasp import AbstractQuantumCircuit, QuantumPrimitive, TracingQuantumSession
+from typing import Any, List
 
 
 class QuantumEnvironment(QuantumPrimitive):
@@ -330,8 +331,7 @@ class QuantumEnvironment(QuantumPrimitive):
     )
 
     def __init__(self, env_args=None) -> None:
-
-        env_args = [] if env_args is None else env_args
+        """Initialize a new quantum environment."""
 
         QuantumPrimitive.__init__(self, name="q_env")
         self.multiple_results = True
@@ -346,7 +346,10 @@ class QuantumEnvironment(QuantumPrimitive):
 
             return (AbstractQuantumCircuit(),)
 
+        env_args = [] if env_args is None else env_args
         self.env_args = env_args
+
+        self._entered: bool = False
 
     # The methods to start the dumping process for this environment
     # The dumping basically consists of copying the original data into a temporary
@@ -386,6 +389,14 @@ class QuantumEnvironment(QuantumPrimitive):
 
     def __enter__(self) -> "QuantumEnvironment | None":
         """Enter the quantum environment."""
+
+        if hasattr(self, "_entered") and self._entered:
+            raise RuntimeError(
+                f"QuantumEnvironment has already been entered. "
+                "QuantumEnvironments cannot be reused."
+            )
+
+        self._entered = True
 
         from qrisp.jasp import check_for_tracing_mode
 
