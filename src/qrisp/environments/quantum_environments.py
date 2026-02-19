@@ -57,7 +57,6 @@ from contextvars import ContextVar
 from qrisp.circuit import QubitAlloc, QubitDealloc, fast_append
 from qrisp.core.quantum_session import QuantumSession
 from qrisp.jasp import AbstractQuantumCircuit, QuantumPrimitive, TracingQuantumSession
-from typing import Any, List
 
 
 class QuantumEnvironment(QuantumPrimitive):
@@ -270,13 +269,10 @@ class QuantumEnvironment(QuantumPrimitive):
 
           def compile(self):
 
-             for i in range(len(self.env_data)):
+             for idx, instruction in enumerate(self.env_data):
 
-                # Skip every second instruction
-                if i % 2:
+                if idx % 2:
                    continue
-
-                instruction = self.env_data[i]
 
                 # If the instruction is an environment, we compile this environment
                 if isinstance(instruction, QuantumEnvironment):

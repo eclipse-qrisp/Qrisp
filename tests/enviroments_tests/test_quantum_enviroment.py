@@ -18,8 +18,7 @@
 
 import pytest
 
-from qrisp import QuantumEnvironment, QuantumVariable, x, cx
-from qrisp.environments import QuantumEnvironment
+from qrisp import QuantumEnvironment, QuantumVariable, cx, h, s, t, x, y, z
 
 
 class TestQuantumEnvironmentBasicUsage:
@@ -58,6 +57,7 @@ class TestQuantumEnvironmentBasicUsage:
 
     def test_deepest_environment_restored_after_exception(self):
         """Test that the ContextVar is restored even if an exception occurs inside."""
+
         before = QuantumEnvironment._deepest_environment.get()
         try:
             with QuantumEnvironment():
@@ -92,17 +92,11 @@ class TestQuantumEnvironmentDocstringExamples:
         """Test that nested QuantumEnvironments in the docstring example work correctly."""
 
         a = QuantumVariable(1)
-
         with QuantumEnvironment():
-
             b = QuantumVariable(1)
-
             cx(a, b)
-
             with QuantumEnvironment():
-
                 c = QuantumVariable(1)
-
                 cx(b, c)
 
             c.uncompute()  # works because c was created in a sub-environment
@@ -115,6 +109,93 @@ class TestQuantumEnvironmentDocstringExamples:
                 "because they were not created within this QuantumEnvironment",
             ):
                 a.uncompute()
+
+    def test_custom_quantum_environment_compile(self):
+        """Test that the compile example in the docstring works correctly."""
+
+        class ExampleEnvironment(QuantumEnvironment):
+            """Example of a custom QuantumEnvironment that compiles its instructions in a specific way."""
+
+            def compile(self):
+                """Compile the instructions by skipping every second instruction."""
+
+                for idx, instruction in enumerate(self.env_data):
+
+                    if idx % 2:
+                        continue
+
+                    if isinstance(instruction, QuantumEnvironment):
+                        instruction.compile()
+
+                    else:
+                        self.env_qs.append(instruction)
+
+        qv = QuantumVariable(6)
+
+        with ExampleEnvironment():
+            x(qv[0])
+            y(qv[1])
+            with ExampleEnvironment():
+                z(qv[2])
+                t(qv[3])
+            with ExampleEnvironment():
+                s(qv[4])
+            h(qv[5])
+
+        assert len(qv.qs.data) == 9
+
+        for i in range(6):
+            assert "qb_alloc" in str(qv.qs.data[i])
+            assert f"qv.{i}" in str(qv.qs.data[i])
+
+        assert "x" in str(qv.qs.data[6]).lower()
+        assert "qv.0" in str(qv.qs.data[6])
+
+        assert "z" in str(qv.qs.data[7]).lower()
+        assert "qv.2" in str(qv.qs.data[7])
+
+        assert "h" in str(qv.qs.data[8]).lower()
+        assert "qv.5" in str(qv.qs.data[8])
+
+    def test_quantum_environment_print_compile(self):
+        """Test that printing a QuantumSession inside a QuantumEnvironment displays only instructions from that environment."""
+
+        qv = QuantumVariable(3)
+        x(qv[0])
+        with QuantumEnvironment():
+            y(qv[1])
+            with QuantumEnvironment():
+                z(qv[2])
+
+                assert len(qv.qs.data) == 1
+                assert "z" in str(qv.qs.data[0]).lower()
+                assert "qv.2" in str(qv.qs.data[0])
+
+            assert len(qv.qs.data) == 2
+            assert "y" in str(qv.qs.data[0]).lower()
+            assert "qv.1" in str(qv.qs.data[0])
+            assert "jasp.q_env" in str(qv.qs.data[1])
+            # NOTE: this print statement is part of the test
+            print(qv.qs)
+            assert len(qv.qs.data) == 2
+            assert "y" in str(qv.qs.data[0]).lower()
+            assert "qv.1" in str(qv.qs.data[0])
+            assert "z" in str(qv.qs.data[1]).lower()
+            assert "qv.2" in str(qv.qs.data[1])
+
+        assert len(qv.qs.data) == 6
+        assert "qb_alloc" in str(qv.qs.data[0])
+        assert "qv.0" in str(qv.qs.data[0])
+        assert "qb_alloc" in str(qv.qs.data[1])
+        assert "qv.1" in str(qv.qs.data[1])
+        assert "qb_alloc" in str(qv.qs.data[2])
+        assert "qv.2" in str(qv.qs.data[2])
+        assert "x" in str(qv.qs.data[3]).lower()
+        assert "qv.0" in str(qv.qs.data[3])
+        assert "y" in str(qv.qs.data[4]).lower()
+        assert "qv.1" in str(qv.qs.data[4])
+        assert "z" in str(qv.qs.data[5]).lower()
+        assert "qv.2" in str(qv.qs.data[5])
 
 
 class TestQuantumEnvErrors:
