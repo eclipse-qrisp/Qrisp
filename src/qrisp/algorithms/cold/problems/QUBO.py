@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -37,9 +37,9 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
     Returns
     -------
     collected operators : tuple
-        Tuple containing the following functions and operators: 
+        Tuple containing the following functions and operators:
         Scheduling function (lam(t)), function for AGP coefficients (alpha), initial and problem
-        Hamiltonian (H_init, H_prob), AGP function (A_lam), Coupling and onsite energies of 
+        Hamiltonian (H_init, H_prob), AGP function (A_lam), Coupling and onsite energies of
         problem Hamiltonian (J, h), inverse scheduling function (g(lam)), control Hamiltonian (H_control).
     """
 
@@ -49,47 +49,57 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
 
     def lam():
         t, T = sp.symbols("t T", real=True)
-        lam_expr = t/T
+        lam_expr = t / T
         return lam_expr
-    
+
     def g():
         # Inverse of lam(t) giving t(lam)
         lam, T = sp.symbols("lam T")
         g_expr = lam * T
         return g_expr
 
-    # AGP coefficients            
+    # AGP coefficients
     if uniform_AGP_coeffs:
+
         def alpha(lam, f, f_deriv):
             A = lam * h + f
             B = 1 - lam
             C = h + f_deriv
 
-            nom = np.sum(A + 4*B*C)
-            denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
-            alph = nom/denom
-            alph = [alph]*N
+            nom = np.sum(A + 4 * B * C)
+            denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(
+                np.tril(J, -1).sum(axis=1)
+            )
+            alph = nom / denom
+            alph = [alph] * N
 
             return alph
+
     else:
+
         def alpha(lam, f, f_deriv):
-            nom = [h[i] + f + (1-lam) * f_deriv 
-                for i in range(N)]
-            denom = [2 * ((lam*h[i] + f)**2 + (1-lam)**2 + 
-                    lam**2 * sum([J[i][j] for j in range(N) if j != i])) 
-                    for i in range(N)]
+            nom = [h[i] + f + (1 - lam) * f_deriv for i in range(N)]
+            denom = [
+                2
+                * (
+                    (lam * h[i] + f) ** 2
+                    + (1 - lam) ** 2
+                    + lam**2 * sum([J[i][j] for j in range(N) if j != i])
+                )
+                for i in range(N)
+            ]
 
-            alph = [nom[i]/denom[i] for i in range(N)]
+            alph = [nom[i] / denom[i] for i in range(N)]
             return alph
-
 
     # Initial Hamiltonian
     H_init = 1 * sum([X(i) for i in range(N)])
 
     # Problem Hamiltonian
-    H_prob = (sum([sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]) 
-              + sum([h[i] * Z(i) for i in range(N)]))
-    
+    H_prob = sum(
+        [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]
+    ) + sum([h[i] * Z(i) for i in range(N)])
+
     # AGP as function of alpha
     if uniform_AGP_coeffs:
         A_lam = sum([Y(i) for i in range(N)])
@@ -113,7 +123,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     Q : np.array
         The QUBO Matrix to be encoded in the Hamiltonian.
     agp_type : str
-        Which approximation of the AGP to use. Can choose between ``order1``, 
+        Which approximation of the AGP to use. Can choose between ``order1``,
         ``order2``, ``nc`` (nested commutators up to first order).
     uniform_AGP_coeffs : bool
         Whether to approximate the AGP with uniform or non-uniform coefficients.
@@ -121,84 +131,114 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     Returns
     -------
     collected operators : tuple
-        Tuple containing the following functions and operators: 
+        Tuple containing the following functions and operators:
         Scheduling function (lam(t)), function for AGP coefficients (alpha), initial and problem
-        Hamiltonian (H_init, H_prob), AGP function (A_lam), Coupling and onsite energies of 
+        Hamiltonian (H_init, H_prob), AGP function (A_lam), Coupling and onsite energies of
         problem Hamiltonian (J, h), inverse scheduling function (g(lam)), control Hamiltonian (H_control).
     """
 
     def build_agp(agp_type, J, h):
-        
+
         def order1():
             A_lam = [Y(i) for i in range(N)]
             return A_lam
 
         def nested_commutators(J, h):
-            A_lam = -2 * [h[i]*Y(i) + sum([J[i][j]*(Y(i)*Z(j) + Z(i)*Y(j)) for j in range(i)]) for i in range(N)]
+            A_lam = -2 * [
+                h[i] * Y(i)
+                + sum([J[i][j] * (Y(i) * Z(j) + Z(i) * Y(j)) for j in range(i)])
+                for i in range(N)
+            ]
             return A_lam
-        
-        builders = {"order1": order1(),
-                    "nc": nested_commutators(J, h)}
-        
+
+        builders = {"order1": order1(), "nc": nested_commutators(J, h)}
+
         return builders[agp_type]
 
     def build_coeffs(agp_type, uniform_AGP_coeffs, J, h):
 
         def order1_uniform(J, h):
             def alpha(lam):
-                A = lam * h 
+                A = lam * h
                 B = 1 - lam
-                nom = np.sum(A + 4*B*h)
-                denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
-                alph = nom/denom
-                alph = [alph]*N
+                nom = np.sum(A + 4 * B * h)
+                denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(
+                    np.tril(J, -1).sum(axis=1)
+                )
+                alph = nom / denom
+                alph = [alph] * N
                 return alph
+
             return alpha
 
         def order1_nonuniform(J, h):
             def alpha(lam):
-                denom = [2 * ((lam*h[i])**2 + (1-lam)**2 + 
-                        lam**2 * sum([J[i][j] for j in range(N) if j != i])) 
-                        for i in range(N)]
-                alph = [h[i]/denom[i] for i in range(N)]
+                denom = [
+                    2
+                    * (
+                        (lam * h[i]) ** 2
+                        + (1 - lam) ** 2
+                        + lam**2 * sum([J[i][j] for j in range(N) if j != i])
+                    )
+                    for i in range(N)
+                ]
+                alph = [h[i] / denom[i] for i in range(N)]
                 return alph
+
             return alpha
 
         def nc_uniform(J, h):
             def alpha(lam):
-                S_hR = sum([sum([J[i][j]**2 * (h[i]+h[j]) for i in range(j)]) for j in range(N)])
-                S_hsqR = sum([sum([J[i][j]**2 *(h[i]**2+h[j]**2) for i in range(j)]) for j in range(N)])
-                S_2 = sum([sum([J[i][j]**2 for i in range(j)]) for j in range(N)])
-                S_4 = sum([sum([J[i][j]**4 for i in range(j)]) for j in range(N)])
-                R_i_list = [sum([J[i][j]**2 if j!=i else 0 for j in range(N)]) for i in range(N)]
+                S_hR = sum(
+                    [
+                        sum([J[i][j] ** 2 * (h[i] + h[j]) for i in range(j)])
+                        for j in range(N)
+                    ]
+                )
+                S_hsqR = sum(
+                    [
+                        sum([J[i][j] ** 2 * (h[i] ** 2 + h[j] ** 2) for i in range(j)])
+                        for j in range(N)
+                    ]
+                )
+                S_2 = sum([sum([J[i][j] ** 2 for i in range(j)]) for j in range(N)])
+                S_4 = sum([sum([J[i][j] ** 4 for i in range(j)]) for j in range(N)])
+                R_i_list = [
+                    sum([J[i][j] ** 2 if j != i else 0 for j in range(N)])
+                    for i in range(N)
+                ]
                 S_Rsq = sum(R_i**2 for R_i in R_i_list)
                 S_h = sum(h)
                 S_hsq = sum(i**2 for i in h)
 
-                nom = S_h + 2*S_2
-                denom = 4*(lam**2*(S_hsq + 2*S_hsqR + 6*S_hR + 2*S_Rsq + 4*S_2 - 2*S_4)
-                           + (1-lam)**2 * (N + 8*S_2))
-                
-                alph = -nom/denom
-                alph = [N*[alph]]
+                nom = S_h + 2 * S_2
+                denom = 4 * (
+                    lam**2
+                    * (S_hsq + 2 * S_hsqR + 6 * S_hR + 2 * S_Rsq + 4 * S_2 - 2 * S_4)
+                    + (1 - lam) ** 2 * (N + 8 * S_2)
+                )
+
+                alph = -nom / denom
+                alph = [N * [alph]]
                 return alph
+
             return alpha
-        
+
         def nc_nonuniform(J, h):
             def alpha(lam):
                 alph = [solve_alpha(h, J, lam)]
                 return alph
+
             return alpha
 
-
-        builders = {("order1", True): order1_uniform(J, h),
-                    ("order1", False): order1_nonuniform(J, h),
-                    ("nc", True): nc_uniform(J, h),
-                    ("nc", False): nc_nonuniform(J, h)
-                    }        
+        builders = {
+            ("order1", True): order1_uniform(J, h),
+            ("order1", False): order1_nonuniform(J, h),
+            ("nc", True): nc_uniform(J, h),
+            ("nc", False): nc_nonuniform(J, h),
+        }
 
         return builders[(agp_type, uniform_AGP_coeffs)]
-
 
     N = len(Q[0])
     h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
@@ -206,7 +246,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
 
     def lam():
         t, T = sp.symbols("t T", real=True)
-        lam_expr = sp.sin(sp.pi/2 * sp.sin(sp.pi*t/(2*T))**2)**2
+        lam_expr = sp.sin(sp.pi / 2 * sp.sin(sp.pi * t / (2 * T)) ** 2) ** 2
         return lam_expr
 
     # AGP coefficients
@@ -216,24 +256,25 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     H_init = 1 * sum([X(i) for i in range(N)])
 
     # Problem Hamiltonian
-    H_prob = (sum([sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]) 
-              + sum([h[i] * Z(i) for i in range(N)]))
-    
+    H_prob = sum(
+        [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]
+    ) + sum([h[i] * Z(i) for i in range(N)])
+
     # AGP
     A_lam = build_agp(agp_type, J, h)
-    
+
     return Q, H_init, H_prob, A_lam, coeff_func, lam
 
 
 def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
     """
     Solves a QUBO Matrix using counterdiabatic driving. This method uses the pre-defined COLD/LCD operators
-    (hamiltonian, scheduling function, AGP parameters) as described in the tutorial. 
+    (hamiltonian, scheduling function, AGP parameters) as described in the tutorial.
     To define your own operators, create a DCQO instance and use the ``run`` method.
 
     Parameters
     ----------
-    
+
     Q : np.array
         QUBO Matrix to solve.
     problem_args : dict
@@ -249,7 +290,7 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
         The dictionary holding the QUBO vector results, with their probabilitites and cost.
         They are ordered from most to least likely and the dictionary entries are {"state": [prob, cost]}.
 
-    
+
     Examples
     --------
 
@@ -267,7 +308,7 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
 
         problem_args = {"method": "COLD", "uniform": False}
 
-        run_args = {"N_steps": 4, "T": 8, "N_opt": 1, "CRAB": False, 
+        run_args = {"N_steps": 4, "T": 8, "N_opt": 1, "CRAB": False,
                     "objective": "agp_coeff_magnitude", "bounds": (-3, 3)}
 
         result = solve_QUBO(Q, problem_args, run_args)
@@ -282,18 +323,17 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
 
     method = problem_args["method"]
 
-
     if method == "LCD":
         # Check if AGP type is specified, otherwise use 1st order
-        try: 
+        try:
             agp_type = problem_args["agp_type"]
         except KeyError:
             agp_type = "order1"
-            
+
         problem_operators = create_LCD_instance(
             Q, agp_type=agp_type, uniform_AGP_coeffs=problem_args["uniform"]
         )
-        
+
     elif method == "COLD":
         problem_operators = create_COLD_instance(
             Q, uniform_AGP_coeffs=problem_args["uniform"]
@@ -307,4 +347,3 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
     result = prob.run(qarg, method=method, **run_args)
 
     return result
-

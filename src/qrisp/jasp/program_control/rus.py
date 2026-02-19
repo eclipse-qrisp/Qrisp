@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -41,10 +41,10 @@ def RUS(*trial_function, **jit_kwargs):
     arguments. This is because after each trial, a new copy of these arguments
     would be required to perform the next iteration, which is prohibited by
     the no-clone theorem. It is however legal to provide classical arguments.
-    
+
     .. warning::
-        
-        The ``RUS`` decorator will automatically reset and deallocate any 
+
+        The ``RUS`` decorator will automatically reset and deallocate any
         QuantumVariables returned by the trial function, if the termination
         bool is not ``True``.
         It is however left up to the user to deallocate all LOCAL
@@ -273,7 +273,7 @@ def RUS(*trial_function, **jit_kwargs):
     # From the infered output signature the q_while_loop is constructed
 
     def return_function(*trial_args):
-        
+
         # Filter out the static arguments
         if "static_argnums" in jit_kwargs:
             static_argnums = jit_kwargs["static_argnums"]
@@ -281,7 +281,7 @@ def RUS(*trial_function, **jit_kwargs):
                 static_argnums = [static_argnums]
         else:
             static_argnums = []
-        
+
         if "static_argnames" in jit_kwargs:
             argname_list = inspect.getfullargspec(trial_function).args
             for i in range(len(argname_list)):
@@ -289,7 +289,7 @@ def RUS(*trial_function, **jit_kwargs):
                     static_argnums.append(i)
             jit_kwargs["static_argnums"] = static_argnums
             del jit_kwargs["static_argnames"]
-        
+
         from qrisp.jasp import q_while_loop, q_cond
         from qrisp.core import recursive_qv_search, reset
 
@@ -297,17 +297,16 @@ def RUS(*trial_function, **jit_kwargs):
         qached_function = qache(trial_function, **jit_kwargs)
         first_iter_res = qached_function(*trial_args)
 
-        
         dynamic_args = []
-        
+
         for i in range(len(trial_args)):
             if i not in static_argnums:
                 dynamic_args.append(trial_args[i])
 
-        n_arg_vals = len(dynamic_args)        
-        
+        n_arg_vals = len(dynamic_args)
+
         # Next we construct the body of the loop
-        # The q_while_loop receives a tuple of arguments and 
+        # The q_while_loop receives a tuple of arguments and
         # also returns a tuple with the same signature.
         # We therefore combine the results of the first iteration with
         # the arguments to execute the loop.
@@ -316,24 +315,23 @@ def RUS(*trial_function, **jit_kwargs):
 
         # This is the body function of the while loop
         def body_fun(args):
-            
+
             # The first step is to reset and delete the results
             # from the previous iteration
             qv_results = recursive_qv_search(args[n_arg_vals:])
-            
+
             tr_qs = TracingQuantumSession.get_instance()
             for qv in qv_results:
                 tr_qs.register_qv(qv, None)
                 reset(qv)
                 qv.delete()
 
-            
             # We now construct the arguments for the function call of
             # the current iteration.
             # For this, we combine the dynamic arguments with the static
             # arguments.
             dynamic_args = list(args[:n_arg_vals])
-            
+
             new_trial_args = []
             for i in range(len(trial_args)):
                 if i not in static_argnums:
@@ -342,7 +340,7 @@ def RUS(*trial_function, **jit_kwargs):
                     new_trial_args.append(trial_args[i])
 
             trial_res = qached_function(*new_trial_args)
-            
+
             # Update the tuple with initial args and the new results
             combined_args = tuple(list(args[:n_arg_vals]) + list(trial_res))
             return combined_args
@@ -367,11 +365,11 @@ def RUS(*trial_function, **jit_kwargs):
 
         # Evaluate everything
         combined_res = q_cond(first_iter_res[0], true_fun, false_fun, combined_args)
-        
+
         # Return the results
         if len(first_iter_res) == 2:
-            return combined_res[n_arg_vals+1]
+            return combined_res[n_arg_vals + 1]
         else:
-            return combined_res[n_arg_vals+1:]
+            return combined_res[n_arg_vals + 1 :]
 
     return return_function

@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -62,14 +62,14 @@ def _q_switch_q(
     *operands : tuple
         The input values for whichever function is applied.
     branch_amount : int, optional
-        The amount of branches. 
+        The amount of branches.
         Only needed if ``branches`` is a function.
         Is automatically inferred from the length of ``branches`` if it is a list.
     method : str, optional
         The method used to implement the quantum switch. Can be ``"auto"``, ``"sequential"``, ``"parallel"``,
         or ``"tree"``. Default is ``"auto"``.
         Method ``"tree"`` uses `balanced binary trees <https://arxiv.org/pdf/2407.17966v1>`_.
-        Method ``"parallel"`` is exponentially faster but requires more qubits.   
+        Method ``"parallel"`` is exponentially faster but requires more qubits.
 
     Examples
     --------
@@ -101,8 +101,8 @@ def _q_switch_q(
             return index, operand
 
         print(main())
-        # {(0.0, 2.0): 0.25000000372529035, (1.0, 3.0): 0.25000000372529035, 
-        # (2.0, 1.0): 0.25000000372529035, (3.0, 1.0): 0.12499999441206447, 
+        # {(0.0, 2.0): 0.25000000372529035, (1.0, 3.0): 0.25000000372529035,
+        # (2.0, 1.0): 0.25000000372529035, (3.0, 1.0): 0.12499999441206447,
         # (3.0, 3.0): 0.12499999441206447}
 
     """
@@ -128,7 +128,9 @@ def _q_switch_q(
         xrange = range
 
     else:
-        raise TypeError("Argument 'branches' must be a list or a callable(i, *operands)")
+        raise TypeError(
+            "Argument 'branches' must be a list or a callable(i, *operands)"
+        )
 
     method = "tree" if method == "auto" else method
 
@@ -165,8 +167,8 @@ def _q_switch_q(
             raise NotImplementedError(
                 "Compile method 'parallel' for switch-case structure not available when 'index' is a list of qubits."
             )
-        
-        if len(operands)>1:
+
+        if len(operands) > 1:
             raise NotImplementedError(
                 "Compile method 'parallel' for switch-case structure not available when more then one 'operands' are provided."
             )

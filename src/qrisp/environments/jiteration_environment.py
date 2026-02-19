@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -167,7 +167,7 @@ def iteration_env_evaluator(eqn, context_dic):
             iter_1_invar_hashes.append(hash(var.val))
         else:
             iter_1_invar_hashes.append(hash(var))
-            
+
     iter_2_invar_hashes = []
     for var in iteration_2_eqn.invars:
         if isinstance(var, Literal):
@@ -181,7 +181,7 @@ def iteration_env_evaluator(eqn, context_dic):
             iter_1_outvar_hashes.append(hash(var.val))
         else:
             iter_1_outvar_hashes.append(hash(var))
-            
+
     # This list will contain the information about which variables need to be
     # updated. If the entry is None, no update is required. Otherwise the entry
     # is an integer indicating which return value of iteration 1 is used for
@@ -211,7 +211,7 @@ def iteration_env_evaluator(eqn, context_dic):
                 if isinstance(iteration_2_eqn.invars[i].aval, ShapedArray):
                     update_rules.append(None)
                     continue
-                
+
                 raise
             update_rules.append(res_index)
         else:

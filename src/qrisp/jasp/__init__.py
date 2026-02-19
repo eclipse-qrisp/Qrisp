@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -24,6 +24,7 @@ from qrisp.jasp.testing_utils import *
 from qrisp.jasp.program_control import *
 from qrisp.jasp.evaluation_tools import *
 from qrisp.jasp.optimization_tools import *
+
 
 def compare_jaxpr(jaxpr, primitive_name_list):
     assert len(jaxpr.eqns) == len(primitive_name_list)

@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -1548,7 +1548,6 @@ def redirect_qfunction(function_to_redirect):
                 *args, **kwargs
             ).flatten_environments()
 
-
             qs = TracingQuantumSession.get_instance()
             abs_qst = qs.abs_qst
             from jax.tree_util import tree_flatten
@@ -1560,11 +1559,13 @@ def redirect_qfunction(function_to_redirect):
                 flattened_args.append(target.qb_array.reg.tracer)
             else:
                 transformed_jaspr = injection_transform(jaspr, jaspr.outvars[0])
-                flattened_args.append(target.reg.tracer) #Traced<QubitArray>with<DynamicJaxprTrace>
+                flattened_args.append(
+                    target.reg.tracer
+                )  # Traced<QubitArray>with<DynamicJaxprTrace>
 
             for arg in args:
                 flattened_args.extend(tree_flatten(arg)[0])
-            #[Traced<QubitArray>with<DynamicJaxprTrace>, Traced<ShapedArray(int64[])>with<DynamicJaxprTrace>, Traced<ShapedArray(bool[])>with<DynamicJaxprTrace>]
+            # [Traced<QubitArray>with<DynamicJaxprTrace>, Traced<ShapedArray(int64[])>with<DynamicJaxprTrace>, Traced<ShapedArray(bool[])>with<DynamicJaxprTrace>]
             flattened_args.append(abs_qst)
 
             res = eval_jaxpr(transformed_jaspr, [])(*flattened_args)
@@ -1589,7 +1590,7 @@ def redirect_qfunction(function_to_redirect):
 
             with env:
                 res = function_to_redirect(*args, **kwargs)
-                
+
                 if isinstance(res, QuantumVariable):
                     res_qubits = list(res)
                     target_qubits = list(target)
@@ -1599,7 +1600,7 @@ def redirect_qfunction(function_to_redirect):
                 else:
                     raise Exception("Given function did not return a QuantumVariable")
 
-                #target = list(target)
+                # target = list(target)
 
                 if len(res) != len(target) or len(list(res)) != len(list(target)):
                     raise Exception(

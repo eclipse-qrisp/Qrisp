@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -23,4 +23,3 @@ from qrisp.interface.converter import *
 from qrisp.interface.docker_backends import *
 from qrisp.interface.provider_backends import *
 from qrisp.interface.simulators import *
-

@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -136,7 +136,9 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             process_fuse(eqn, context_dic)
         elif eqn.primitive.name == "jasp.create_quantum_kernel":
             qreg = qalloc_p.bind(25)
-            insert_outvalues(eqn, context_dic, (qreg, Jlist(jnp.arange(30)[::-1], max_size = 30)))
+            insert_outvalues(
+                eqn, context_dic, (qreg, Jlist(jnp.arange(30)[::-1], max_size=30))
+            )
         elif eqn.primitive.name == "jasp.consume_quantum_kernel":
             invalues = extract_invalues(eqn, context_dic)
             qdealloc_p.bind(invalues[0][0])
@@ -420,7 +422,7 @@ def process_measurement(invars, outvars, context_dic):
 def process_parity(eqn, context_dic):
     """
     Process the parity primitive, computing XOR of measurement results.
-    
+
     Parameters
     ----------
     eqn : jax.core.JaxprEqn
@@ -430,22 +432,22 @@ def process_parity(eqn, context_dic):
     """
     # Extract the measurement results
     invalues = extract_invalues(eqn, context_dic)
-    
+
     # Check if expectation parameter is present
     expectation = eqn.params.get("expectation", 0)
     observable = eqn.params.get("observable", False)
-    
+
     # Compute XOR by summing all measurement results and taking modulo 2
     result = 0
     for val in invalues:
         result = result + val
     result = result % 2
-    
+
     # XOR result with expectation
     result = (result + expectation) % 2
-    
+
     # Insert the result into the context
-    insert_outvalues(eqn, context_dic, jnp.array(result, dtype = bool))
+    insert_outvalues(eqn, context_dic, jnp.array(result, dtype=bool))
 
 
 def exec_multi_measurement(catalyst_register, qubit_list):
@@ -512,7 +514,7 @@ def process_while(eqn, context_dic):
 
     k = eqn.params["cond_nconsts"]
     new_cond_nconsts = len(flatten_signature(invalues[:k], eqn.invars[:k]))
-    
+
     outvalues = while_p.bind(
         *flattened_invalues,
         cond_jaxpr=cond_jaxpr,
@@ -552,9 +554,7 @@ def process_cond(eqn, context_dic):
         flattened_invalues = flatten_signature(invalues, eqn.invars)
 
         outvalues = cond_p.bind(
-            *flattened_invalues, 
-            branch_jaxprs=branch_list[::-1], 
-            num_implicit_outputs=0
+            *flattened_invalues, branch_jaxprs=branch_list[::-1], num_implicit_outputs=0
         )
 
         unflattened_outvalues = unflatten_signature(outvalues, eqn.outvars)
@@ -573,63 +573,68 @@ def process_scan(eqn, context_dic):
     Reinterprets the scan body and calls jax.lax.scan to preserve loop structure.
     """
     from jax.lax import scan as jax_scan
-    
+
     invalues = extract_invalues(eqn, context_dic)
-    
+
     # Extract scan parameters
     num_consts = eqn.params["num_consts"]
     num_carry = eqn.params["num_carry"]
     length = eqn.params["length"]
     reverse = eqn.params.get("reverse", False)
     unroll = eqn.params.get("unroll", 1)
-    
+
     # Separate inputs: constants, initial carry, scanned inputs
     consts = invalues[:num_consts]
-    init = invalues[num_consts:num_consts + num_carry]
-    xs = invalues[num_consts + num_carry:]
-    
+    init = invalues[num_consts : num_consts + num_carry]
+    xs = invalues[num_consts + num_carry :]
+
     # Reinterpret the scan body with catalyst_eqn_evaluator
     scan_body_jaxpr = eqn.params["jaxpr"]
     scan_body = eval_jaxpr(scan_body_jaxpr, eqn_evaluator=catalyst_eqn_evaluator)
-    
+
     # Create wrapper function that includes constants
     if num_consts > 0:
+
         def wrapped_body(carry, x):
             args = consts + list(carry) + (list(x) if isinstance(x, tuple) else [x])
             result = scan_body(*args)
             if not isinstance(result, tuple):
                 result = (result,)
             return result[:num_carry], result[num_carry:]
+
     else:
+
         def wrapped_body(carry, x):
             args = list(carry) + (list(x) if isinstance(x, tuple) else [x])
             result = scan_body(*args)
             if not isinstance(result, tuple):
                 result = (result,)
             return result[:num_carry], result[num_carry:]
-    
+
     # Prepare inputs for JAX scan
     if len(xs) == 1:
         xs_arg = xs[0]
     else:
         xs_arg = tuple(xs)
-    
+
     if len(init) == 1:
         init_arg = init[0]
     else:
         init_arg = tuple(init)
-    
+
     # Call JAX scan
-    final_carry, ys = jax_scan(wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll)
-    
+    final_carry, ys = jax_scan(
+        wrapped_body, init_arg, xs_arg, length=length, reverse=reverse, unroll=unroll
+    )
+
     # Prepare output
     if not isinstance(final_carry, tuple):
         final_carry = (final_carry,)
     if not isinstance(ys, tuple):
         ys = (ys,)
-    
+
     outvalues = final_carry + ys
-    
+
     insert_outvalues(eqn, context_dic, outvalues)
 
 
@@ -656,9 +661,11 @@ def process_pjit(eqn, context_dic):
     jaxpr = eqn.params["jaxpr"]
     traced_fun = get_traced_fun(jaxpr)
 
-    outvalues = func_p.bind(wrap_init(traced_fun, debug_info = eqn.params["jaxpr"].jaxpr.debug_info),
-                            *flattened_invalues, 
-                            fn=traced_fun,)
+    outvalues = func_p.bind(
+        wrap_init(traced_fun, debug_info=eqn.params["jaxpr"].jaxpr.debug_info),
+        *flattened_invalues,
+        fn=traced_fun,
+    )
 
     outvalues = list(outvalues)
 
@@ -680,7 +687,7 @@ def reset_qubit_array(qb_array, abs_qst):
 
         def true_fun(arg_tuple):
             qb, abs_qst = arg_tuple
-            abs_qst = quantum_gate_p.bind(qb, abs_qst, gate = XGate())
+            abs_qst = quantum_gate_p.bind(qb, abs_qst, gate=XGate())
             return (qb, abs_qst)
 
         def false_fun(arg_tuple):

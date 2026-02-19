@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -73,11 +73,11 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         measurement_amount = count_measurements_and_treat_alloc(
             qc, insert_reset=insert_reset
         )
-        
+
         if measurement_amount == 0:
             progress_bar.close()
             _clear_progress_line()
-            return {"" : 1.}
+            return {"": 1.0}
 
         # Apply circuit preprocessing more
         qc = circuit_preprocessor(qc)

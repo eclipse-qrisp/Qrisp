@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -1261,7 +1261,7 @@ class QuantumBacktrackingTree:
             `this page <https://networkx.org/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw.html>`_
             By default is suitable will be generated.
         ax : matplotlib.axes.Axes, optional
-            The axes object to draw the plot onto. If None, the current active axes is used. 
+            The axes object to draw the plot onto. If None, the current active axes is used.
             This is useful for creating grids of plots using `plt.subplots`.
 
         Examples

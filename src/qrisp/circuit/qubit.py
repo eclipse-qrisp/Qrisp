@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -19,6 +19,7 @@
 import numpy as np
 
 qubit_hash = np.zeros(1)
+
 
 class Qubit:
     """
@@ -58,7 +59,7 @@ class Qubit:
         "recompute",
         "lock",
         "perm_lock",
-        "bit_type"
+        "bit_type",
     ]
 
     def __init__(self, identifier):

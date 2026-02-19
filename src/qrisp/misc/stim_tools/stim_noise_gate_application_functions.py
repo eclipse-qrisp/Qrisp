@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -26,12 +26,13 @@ greek_letters = symbols(
     "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega"
 )
 
-def stim_noise(stim_name, *parameters_and_qubits, pauli_string = None):
+
+def stim_noise(stim_name, *parameters_and_qubits, pauli_string=None):
     """
     Applies a ``StimNoiseGate`` to the given qubits.
 
     For a list of supported error instructions, please check `Stims gate reference <https://github.com/quantumlib/Stim/blob/main/doc/gates.md#noise-channels>`_.
-    
+
     Some of the most common errors are listed below:
 
     .. list-table::
@@ -61,10 +62,10 @@ def stim_noise(stim_name, *parameters_and_qubits, pauli_string = None):
 
     .. warning::
 
-        Every noisy operation described here behaves as a purely unitary identity gate, unless the 
-        compilation target is indeed Stim (see :meth:`~qrisp.QuantumCircuit.to_stim`). This means for 
-        instance that :meth:`~qrisp.QuantumCircuit.to_qiskit` converts the noisy operations to trivial 
-        identity gates. The same applies to the behavior of the Qrisp simulator. In other words - the 
+        Every noisy operation described here behaves as a purely unitary identity gate, unless the
+        compilation target is indeed Stim (see :meth:`~qrisp.QuantumCircuit.to_stim`). This means for
+        instance that :meth:`~qrisp.QuantumCircuit.to_qiskit` converts the noisy operations to trivial
+        identity gates. The same applies to the behavior of the Qrisp simulator. In other words - the
         noisy operations will only behave noisy if pushed through the Stim compiler.
 
 
@@ -73,7 +74,7 @@ def stim_noise(stim_name, *parameters_and_qubits, pauli_string = None):
     stim_name : str
         The name of the Stim error gate (e.g. ``DEPOLARIZE1``, ``X_ERROR``, ``CORRELATED_ERROR``).
     *parameters : float
-        The parameters of the error channel (e.g. error probability). Further 
+        The parameters of the error channel (e.g. error probability). Further
         details about the semantics of the parameters can be found in the
         `Stims gate reference <https://github.com/quantumlib/Stim/blob/main/doc/gates.md#noise-channels>`_.
     *qubits : Qubit
@@ -85,41 +86,41 @@ def stim_noise(stim_name, *parameters_and_qubits, pauli_string = None):
     --------
 
     We construct a noisy Bell-pair using the :func:`~qrisp.jasp.extract_stim` decorator.
-        
+
     ::
-        
+
         from qrisp import *
         from qrisp.misc.stim_tools import stim_noise
 
         @extract_stim
         def generate_noisy_bell_pair():
-            
+
             qv = QuantumVariable(2)
-            
+
             h(qv[0])
             cx(qv[0], qv[1])
-            
+
             # Add single qubit noise
             stim_noise("X_ERROR", 0.1, qv[0])
             stim_noise("X_ERROR", 0.1, qv[1])
-            
+
             # Add correlated multi-qubit noise
             stim_noise("E", 0.1, qv[0], qv[1], pauli_string = "XX")
-            
+
             return measure(qv)
 
         # Generate result indices and stim circuit
         res_indices, stim_circuit = generate_noisy_bell_pair()
-        
+
         # Compile sampler and sample
         sampler = stim_circuit.compile_sampler()
         all_samples = sampler.sample(1000)
-        
+
         # Extract results through slicing
         samples = all_samples[:, res_indices]
-        
+
         print(samples)
-        
+
         # Yields:
         # array([[False,  True],
         #        [False,  True],
@@ -131,13 +132,15 @@ def stim_noise(stim_name, *parameters_and_qubits, pauli_string = None):
 
 
     """
-    
+
     error_data = stim.gate_data(stim_name)
-    
+
     if pauli_string is not None:
         # Check for compatibility
         if not (stim_name in ["E", "CORRELATED_ERROR", "ELSE_CORRELATED_ERROR"]):
-             raise Exception(f"Stim error {stim_name} does not support Pauli strings. Supported gates are E, CORRELATED_ERROR, ELSE_CORRELATED_ERROR")
+            raise Exception(
+                f"Stim error {stim_name} does not support Pauli strings. Supported gates are E, CORRELATED_ERROR, ELSE_CORRELATED_ERROR"
+            )
 
         num_qubits = len(pauli_string)
 
@@ -146,16 +149,18 @@ def stim_noise(stim_name, *parameters_and_qubits, pauli_string = None):
     elif error_data.is_two_qubit_gate:
         num_qubits = 2
     else:
-        raise Exception(f"Could not determine qubit amount for Stim error {stim_name}. Please check if the error is supported.")
-    
+        raise Exception(
+            f"Could not determine qubit amount for Stim error {stim_name}. Please check if the error is supported."
+        )
+
     params = parameters_and_qubits[:-num_qubits]
     qubits = parameters_and_qubits[-num_qubits:]
 
     if check_for_tracing_mode():
-        error_op = StimNoiseGate(stim_name, *greek_letters[:len(params)], pauli_string=pauli_string)
-        append_operation(error_op, qubits = qubits, param_tracers=list(params))
+        error_op = StimNoiseGate(
+            stim_name, *greek_letters[: len(params)], pauli_string=pauli_string
+        )
+        append_operation(error_op, qubits=qubits, param_tracers=list(params))
     else:
         error_op = StimNoiseGate(stim_name, *params, pauli_string=pauli_string)
-        append_operation(error_op, qubits = qubits)
-
-
+        append_operation(error_op, qubits=qubits)

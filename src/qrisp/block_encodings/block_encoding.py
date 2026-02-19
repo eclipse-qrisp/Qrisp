@@ -29,7 +29,14 @@ from qrisp.alg_primitives.reflection import reflection
 from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
 from qrisp.interface import BackendClient
-from qrisp.jasp import count_ops, depth, num_qubits, jrange, qache, check_for_tracing_mode as is_tracing
+from qrisp.jasp import (
+    count_ops,
+    depth,
+    num_qubits,
+    jrange,
+    qache,
+    check_for_tracing_mode as is_tracing,
+)
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool, QuantumFloat
@@ -362,10 +369,10 @@ class BlockEncoding:
 
         Raises
         ------
-        ValueError 
+        ValueError
             If ``A`` is not a 2-D square matrix.
         ValueError
-            If the dimension of ``A`` is not a power of two. 
+            If the dimension of ``A`` is not a power of two.
 
         Notes
         -----
@@ -494,7 +501,9 @@ class BlockEncoding:
         alpha = np.sum(coeffs)
 
         if np.any(coeffs < 0):
-            raise ValueError(f"Negative coefficients detected: {coeffs}. Only positive values are supported.")
+            raise ValueError(
+                f"Negative coefficients detected: {coeffs}. Only positive values are supported."
+            )
 
         if m == 1:
             return BlockEncoding(
@@ -646,7 +655,7 @@ class BlockEncoding:
             raise ValueError(
                 f"Operation expected {self.num_ops} operands, but got {len(operands)}."
             )
-        
+
         ancillas = self.create_ancillas()
         self.unitary(*ancillas, *operands)
         return ancillas
@@ -673,7 +682,7 @@ class BlockEncoding:
         TypeError
             If ``operand_prep`` is not a callable object.
         ValueError
-            If the number of provided operands does not match 
+            If the number of provided operands does not match
             the required number of operands (self.num_ops).
 
         Examples
@@ -736,12 +745,17 @@ class BlockEncoding:
             return success_bool, *operands
 
         return rus_function
-    
-    def expectation_value(self, operand_prep: Callable[..., Any], shots: int = 100, backend: BackendClient = None) -> Callable[..., Any]:
+
+    def expectation_value(
+        self,
+        operand_prep: Callable[..., Any],
+        shots: int = 100,
+        backend: BackendClient = None,
+    ) -> Callable[..., Any]:
         r"""
         Measures the expectation value of the operator using the Hadamard test protocol.
 
-        For a block-encoded **Hermitian** operator $A$ and a state $\ket{\psi}$, 
+        For a block-encoded **Hermitian** operator $A$ and a state $\ket{\psi}$,
         this method measures the expectation value $\langle\psi|A|\psi\rangle$.
 
         Parameters
@@ -758,7 +772,7 @@ class BlockEncoding:
         -------
         Callable
             A function ``ev_function(*args)`` with the same signature
-            as ``operand_prep`` returning 
+            as ``operand_prep`` returning
 
             - Jasp mode:
                 a Jax array containing the expactation value,
@@ -774,7 +788,7 @@ class BlockEncoding:
         TypeError
             If ``operand_prep`` is not a callable object.
         ValueError
-            If the number of provided operands does not match 
+            If the number of provided operands does not match
             the required number of operands (self.num_ops).
 
         Examples
@@ -823,7 +837,7 @@ class BlockEncoding:
             raise TypeError(
                 f"Expected 'operand_prep' to be a callable, but got {type(operand_prep).__name__}."
             )
-        
+
         def state_prep(*args):
             operands = operand_prep(*args)
             if not isinstance(operands, tuple):
@@ -833,7 +847,7 @@ class BlockEncoding:
                 raise ValueError(
                     f"Operation expected {self.num_ops} operands, but got {len(operands)}."
                 )
-            
+
             # Hadamard test
             qbl = QuantumBool()
             h(qbl)
@@ -841,30 +855,38 @@ class BlockEncoding:
                 ancillas = self.apply(*operands)
             h(qbl)
             return qbl
-        
+
         # Dynamic (Jasp) mode
         if is_tracing():
-        
+
             @jax.jit
             def post_processor(x):
-                return jnp.where(x==0, 1, -1)
-        
+                return jnp.where(x == 0, 1, -1)
+
             def ev_function(*args):
-                ev = expectation_value(state_prep, shots=shots, post_processor=post_processor)(*args)
+                ev = expectation_value(
+                    state_prep, shots=shots, post_processor=post_processor
+                )(*args)
                 return ev * self.alpha
-        
+
             return ev_function
-        
+
         # Static mode
         def ev_function(*args):
             qbl = state_prep(*args)
             res_dict = qbl.get_measurement(shots=shots, backend=backend)
             ev = res_dict.get(0, 0) - res_dict.get(1, 0)
             return np.float64(ev * jnp.float64(self.alpha))
-    
+
         return ev_function
 
-    def resources(self, *operands: QuantumVariable, meas_behavior: str | Callable = "0", max_qubits: int = 1024, max_allocations: int = 1000):
+    def resources(
+        self,
+        *operands: QuantumVariable,
+        meas_behavior: str | Callable = "0",
+        max_qubits: int = 1024,
+        max_allocations: int = 1000,
+    ):
         r"""
         Estimate the quantum resources required for the BlockEncoding.
 
@@ -895,7 +917,7 @@ class BlockEncoding:
         Raises
         ------
         ValueError
-            If the number of provided operands does not match 
+            If the number of provided operands does not match
             the required number of operands (self.num_ops).
 
         Examples
@@ -957,10 +979,18 @@ class BlockEncoding:
             self.unitary(*ancillas, *operands)
             return operands
 
-        circuit_depth = depth(meas_behavior=meas_behavior, max_qubits=max_qubits)(main)()
+        circuit_depth = depth(meas_behavior=meas_behavior, max_qubits=max_qubits)(
+            main
+        )()
         gate_counts = count_ops(meas_behavior=meas_behavior)(main)()
-        qubit_counts = num_qubits(meas_behavior=meas_behavior, max_allocations=max_allocations)(main)()
-        return {"gate counts": gate_counts, "depth": circuit_depth, "qubits": qubit_counts["peak_allocations"]}
+        qubit_counts = num_qubits(
+            meas_behavior=meas_behavior, max_allocations=max_allocations
+        )(main)()
+        return {
+            "gate counts": gate_counts,
+            "depth": circuit_depth,
+            "qubits": qubit_counts["peak_allocations"],
+        }
 
     def qubitization(self) -> BlockEncoding:
         r"""
@@ -1036,10 +1066,10 @@ class BlockEncoding:
             # We conjugate by (H ⊗ I) to achieve that the new ancilla is initialized and projected in |0>,
             # i.e., A is in the upper left block.
             # A more general Hermitization is:
-            # W = C0-(2*|0><0| - I) C1-(2*|0><0| - I) U_tilde 
+            # W = C0-(2*|0><0| - I) C1-(2*|0><0| - I) U_tilde
             # C0-(2*|0><0| - I) performs reflection of args[0] beign |0>
             # C1-(2*|0><0| - I) performs reflection of args[0] beign |1>
-            # U_tilde = (|0><1| ⊗ U) + (|1><0| ⊗ U†) is Hermitian 
+            # U_tilde = (|0><1| ⊗ U) + (|1><0| ⊗ U†) is Hermitian
             # In this case, the new ancilla is initialized and projected in |1>,
             # i.e., A is not in the upper left block.
             def new_unitary(*args):
@@ -1051,7 +1081,7 @@ class BlockEncoding:
                     with control(args[0], ctrl_state=1):
                         with invert():
                             self.unitary(*args[1:])
-                
+
                 reflection(args[0 : 1 + m])
 
             new_anc_templates = [QuantumBool().template()] + self._anc_templates
@@ -1122,7 +1152,7 @@ class BlockEncoding:
             main(BE_cheb)
 
         """
-        
+
         if rescale:
             from qrisp.algorithms.gqsp.qet import QET
 
@@ -1185,8 +1215,8 @@ class BlockEncoding:
         Notes
         -----
         - Can only be used when both BlockEncodings have the same operand structure.
-        - The ``+`` operator should be used sparingly, primarily to combine a few block encodings. 
-          For larger-scale polynomial transformations, 
+        - The ``+`` operator should be used sparingly, primarily to combine a few block encodings.
+          For larger-scale polynomial transformations,
           Quantum Signal Processing (QSP) is the superior method.
 
         Examples
@@ -1820,9 +1850,11 @@ class BlockEncoding:
         if self.num_ancs == 0:
 
             if not self.is_hermitian:
+
                 def new_unitary(*args):
                     with invert():
                         self.unitary(*args)
+
             else:
                 # The operator is a reflection (up to scaling).
                 new_unitary = self.unitary
