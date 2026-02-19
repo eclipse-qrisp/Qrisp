@@ -3,21 +3,22 @@
 Tutorials
 =========
  
-Welcome to the Qrisp tutorials! This gallery is designed to take you from a curious beginner to a proficient developer of utility-scale quantum algorithms. By shifting the focus from low-level gate gymnastics to high-level programming with QuantumVariables, Qrisp allows you to express complex logic with ease.
+Welcome to the Qrisp tutorials! This gallery is designed to take you from a curious beginner to a proficient developer of utility-scale quantum algorithms. By shifting the focus from low-level gate gymnastics to high-level programming with :ref:`QuantumVariables <QuantumVariable>`, Qrisp allows you to express complex logic with ease.
 
 The tutorials are organized into four topics, each containing multiple hands-on examples that build on each other:
 
 - **Foundations and first Steps**: Start here to master the core syntax of Qrisp, where you will learn to replace manual circuit building with high-level variables and implement textbook algorithms like Shor's and Grover's.
 
-- **Combinatorial optimization**: Explore how to solve complex optimization problems using hybrid approaches like QAOA, QIRO, and COLD, as well as learning about our qrispy Quantum Backtracking implementation. This section is relevant for domains like logistics and scheduling.
+- **Optimization and numerics**: Explore how to solve combinatorial optimization problems in logistics and scheduling using hybrid approaches like QAOA, QIRO, and COLD, as well as learning about our qrispy Quantum Backtracking implementation.
 
-- **High-Performance execution and compilation (Jasp)**: Learn how to scale your code, while estimating your quantum resources, for the real world using the Jasp pipeline for hybrid real-time control. You will also learn about Fault-Tolerant compilation for next-generation hardware.
+- **High-Performance execution and compilation (Jasp)**: Learn how to scale your code, while estimating your quantum resources, for the real world using the Jasp pipeline for hybrid real-time control. You will also learn about optimizing for Fault-Tolerant compilation for next-generation hardware.
 
-- **Scientific computing and quantum numerical linear algebra**: Dive into high-level abstractions for Quantum Chemistry, Linear Systems (HHL, CKS, QSVT, filtering) using our new BlockEncoding class. Also, our Monte Carlo Integration is included.
+- **Scientific computing and quantum numerical linear algebra**: Dive into high-level abstractions for quantum chemistry, physics and linear systems (HHL, CKS, GQSP) using our new :ref:`BlockEncoding` class.
 
 If you’re the type who learns best by breaking things (and then fixing them), you can download any of these tutorials as a Jupyter notebook. Just look for the download box on the right side of the page within each specific tutorial to grab the code and run it in your own local environment.
 
 By the end of these tutorial, you'll have a solid foundation of our high-level framork and be ready to tackle more complex projects. So let's get **started**!
+
 
 Foundations and first steps
 ---------------------------
@@ -38,9 +39,13 @@ Kickstart your quantum programming journey here! This section is designed to fam
                 <a href="./tutorial.html" style="text-decoration: none; color: inherit;">Getting familiar with Qrisp</a>
             </h4>
 
-        .. image:: ../../_static/hello_world.png
-            :align: center
-            :target: ./tutorial.html
+        .. raw:: html
+
+            <div style="text-align: center;">
+                <a href="./tutorial.html">
+                    <img src="../../_static/hello_world.png" alt="Qrisp Tutorial">
+                </a>
+            </div>
 
         .. raw:: html
             
@@ -56,37 +61,42 @@ Kickstart your quantum programming journey here! This section is designed to fam
             </div>
 
     .. grid-item-card::
-            :shadow: none
+        :shadow: none
 
-            .. raw:: html
+        .. raw:: html
 
-                <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
 
-            .. raw:: html
+        .. raw:: html
 
-                <h4 style="font-weight: bold; margin-top: 0;">
-                    <a href="./Shor.html" style="text-decoration: none; color: inherit;">Factoring integers using Shor's algorithm</a>
-                </h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./Shor.html" style="text-decoration: none; color: inherit;">Factoring integers using Shor's algorithm</a>
+            </h4>
 
-            .. image:: ../../_static/period_finding.svg
-                :align: center
-                :target: ./Shor.html
+        .. raw:: html
 
-            .. raw:: html
-                
-                <p style="margin-top: 5px;"></p>
+            <div style="text-align: center;">
+                <a href="./Shor.html">
+                    <img src="../../_static/period_finding.svg" alt="Shor Tutorial">
+                </a>
+            </div>
 
-            .. dropdown:: :fa:`eye me-1` Description
-                :color: primary
+        .. raw:: html
+            
+            <p style="margin-top: 5px;"></p>
 
-                This tutorial will guide you through our state-of-the-art implementation of Shor's algorithm, allowing you to factor numbers and fiddle around encrypting and decrypting hidden messages.
+        .. dropdown:: :fa:`eye me-1` Description
+            :color: primary
 
-            .. raw:: html
+            This tutorial will guide you through our state-of-the-art implementation of Shor's algorithm, allowing you to factor numbers and fiddle around encrypting and decrypting hidden messages.
 
-                </div>
+        .. raw:: html
 
-Combinatorial optimization
---------------------------
+            </div>
+
+
+Optimization and numerics
+-------------------------
 Discover how quantum algorithms can tackle complex search and optimization problems. In this section, you will dive into solving famous computational challenges (such as the Traveling Salesman Problem and Sudoku) using a powerful suite of quantum tools. Whether you are applying Quantum Backtracking, tuning variational models with QAOA and QIRO, or exploring Counterdiabatic Driving and Monte Carlo Integration, you will learn how to optimize solutions across a variety of real-world domains.
 
 .. grid:: 1 1 2 2
@@ -104,9 +114,13 @@ Discover how quantum algorithms can tackle complex search and optimization probl
                 <a href="./TSP.html" style="text-decoration: none; color: inherit;">Solving the Traveling Salesman Problem</a>
             </h4>
 
-        .. image:: ../../_static/tsp.svg
-            :align: center
-            :target: ./TSP.html
+        .. raw:: html
+
+            <div style="text-align: center;">
+                <a href="./TSP.html">
+                    <img src="../../_static/tsp.svg" alt="Traveling Salesperson Problem Tutorial">
+                </a>
+            </div>
 
         .. raw:: html
             
@@ -134,9 +148,13 @@ Discover how quantum algorithms can tackle complex search and optimization probl
                 <a href="./QAOAtutorial/index.html" style="text-decoration: none; color: inherit;">Solving combinatorial optimization problems with QAOA</a>
             </h4>
 
-        .. image:: ../../_static/maxcut_tutorial.png
-            :align: center
-            :target: ./QAOAtutorial/index.html
+        .. raw:: html
+
+            <div style="text-align: center;">
+                <a href="./QAOAtutorial/index.html">
+                    <img src="../../_static/maxcut_tutorial.png" alt="QAOA Tutorial">
+                </a>
+            </div>
 
         .. raw:: html
             
@@ -151,39 +169,41 @@ Discover how quantum algorithms can tackle complex search and optimization probl
 
             </div>
 
-    
-
 .. grid:: 1 1 2 2
 
     .. grid-item-card::
-            :shadow: none
+        :shadow: none
 
-            .. raw:: html
+        .. raw:: html
 
-                <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
 
-            .. raw:: html
+        .. raw:: html
 
-                <h4 style="font-weight: bold; margin-top: 0;">
-                    <a href="./QIROtutorial.html" style="text-decoration: none; color: inherit;">Quantum-Informed Recursive Optimization</a>
-                </h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./QIROtutorial.html" style="text-decoration: none; color: inherit;">Quantum-Informed Recursive Optimization</a>
+            </h4>
 
-            .. image:: ../../_static/maxIndepSet.png
-                :align: center
-                :target: ./QIROtutorial.html
+        .. raw:: html
 
-            .. raw:: html
-                
-                <p style="margin-top: 5px;"></p>
+            <div style="text-align: center;">
+                <a href="./QIROtutorial.html">
+                    <img src="../../_static/maxIndepSet.png" alt="QIRO Tutorial">
+                </a>
+            </div>
 
-            .. dropdown:: :fa:`eye me-1` Description
-                :color: primary
+        .. raw:: html
+            
+            <p style="margin-top: 5px;"></p>
 
-                Learn about a variational algorithm, that aims to adjust the given problem after each round of optimization. This tutorial will show you how to apply the theory to implement the algorithm and solve a **Maximal Independent Set** problem with it!
+        .. dropdown:: :fa:`eye me-1` Description
+            :color: primary
 
-            .. raw:: html
+            Learn about a variational algorithm, that aims to adjust the given problem after each round of optimization. This tutorial will show you how to apply the theory to implement the algorithm and solve a **Maximal Independent Set** problem with it!
 
-                </div>
+        .. raw:: html
+
+            </div>
 
     .. grid-item-card::
         :shadow: none
@@ -198,9 +218,13 @@ Discover how quantum algorithms can tackle complex search and optimization probl
                 <a href="./CD.html" style="text-decoration: none; color: inherit;">Counterdiabatic Driving Protocols</a>
             </h4>
 
-        .. image:: ../../_static/cold.png
-            :align: center
-            :target: ./CD.html
+        .. raw:: html
+
+            <div style="text-align: center;">
+                <a href="./CD.html">
+                    <img src="../../_static/cold.png" alt="Counteradiabatic Driving Tutorial">
+                </a>
+            </div>
 
         .. raw:: html
             
@@ -218,34 +242,38 @@ Discover how quantum algorithms can tackle complex search and optimization probl
 .. grid:: 1 1 2 2
 
     .. grid-item-card::
-                :shadow: none
+        :shadow: none
 
-                .. raw:: html
+        .. raw:: html
 
-                    <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
 
-                .. raw:: html
+        .. raw:: html
 
-                    <h4 style="font-weight: bold; margin-top: 0;">
-                        <a href="./Sudoku.html" style="text-decoration: none; color: inherit;">Solving Sudoku using Quantum Backtracking</a>
-                    </h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./Sudoku.html" style="text-decoration: none; color: inherit;">Solving Sudoku using Quantum Backtracking</a>
+            </h4>
 
-                .. image:: ../../_static/backtracking.svg
-                    :align: center
-                    :target: ./Sudoku.html
+        .. raw:: html
 
-                .. raw:: html
-                    
-                    <p style="margin-top: 5px;"></p>
+            <div style="text-align: center;">
+                <a href="./Sudoku.html">
+                    <img src="../../_static/backtracking.svg" alt="Quantum Backtracking Tutorial">
+                </a>
+            </div>
 
-                .. dropdown:: :fa:`eye me-1` Description
-                    :color: primary
+        .. raw:: html
+            
+            <p style="margin-top: 5px;"></p>
 
-                    You will learn how to efficiently implement the Sudoku problem specific quantum oracles, and how to use the general **Quantum Backtracking** implementation within Qrisp.
+        .. dropdown:: :fa:`eye me-1` Description
+            :color: primary
 
-                .. raw:: html
+            You will learn how to efficiently implement the Sudoku problem specific quantum oracles, and how to use the general **Quantum Backtracking** implementation within Qrisp.
 
-                    </div>
+        .. raw:: html
+
+            </div>
 
     .. grid-item-card::
         :shadow: none
@@ -260,9 +288,13 @@ Discover how quantum algorithms can tackle complex search and optimization probl
                 <a href="./QMCItutorial.html" style="text-decoration: none; color: inherit;">Quantum Monte Carlo Integration</a>
             </h4>
 
-        .. image:: ../../_static/qmci.svg
-            :align: center
-            :target: ./QMCItutorial.html
+        .. raw:: html
+
+            <div style="text-align: center;">
+                <a href="./QMCItutorial.html">
+                    <img src="../../_static/qmci.svg" alt="Quantum Monte Carlo Integration Tutorial">
+                </a>
+            </div>
 
         .. raw:: html
             
@@ -277,9 +309,14 @@ Discover how quantum algorithms can tackle complex search and optimization probl
 
             </div>
 
+
 High-performance execution and compilation (Jasp)
 -------------------------------------------------
-Scale your quantum algorithms and prepare them for the real world execution on hardware of both the now and the future. This section focuses on execution efficiency and advanced compilation techniques. You will explore the Jasp pipeline for hybrid real-time control, learn how to build highly performant custom algorithms, and delve into Fault-Tolerant compilation to ensure your code is ready for next-generation hardware. You'll also discover how to leverage the BigInteger class to handle large-scale resource estimation without classical overflow.
+Scale your quantum algorithms and prepare them for the real world execution on hardware of both the now and the future. 
+This section focuses on execution efficiency and advanced compilation techniques. 
+You will explore the Jasp pipeline for hybrid real-time control, learn how to build highly performant custom algorithms, 
+and delve into Fault-Tolerant compilation to ensure your code is ready for next-generation hardware. 
+You'll also discover how to leverage Jasp and the BigInteger class to compile and perform resource estimations for Shor's algorithm at 2048 bit.
 
 .. grid:: 1 1 2 2
 
@@ -296,10 +333,13 @@ Scale your quantum algorithms and prepare them for the real world execution on h
                 <a href="./Jasp.html" style="text-decoration: none; color: inherit;">Hybrid real-time algorithm control with Jasp</a>
             </h4>
 
-        .. image:: ../../_static/hybrid_realtime.png
-            :width: 180
-            :align: center
-            :target: ./Jasp.html
+        .. raw:: html
+
+            <div style="text-align: center;">
+                <a href="./Jasp.html">
+                    <img src="../../_static/hybrid_realtime.png" width="180" alt="Hybrid Realtime Tutorial">
+                </a>
+            </div>
 
         .. raw:: html
             
@@ -315,102 +355,113 @@ Scale your quantum algorithms and prepare them for the real world execution on h
             </div>
 
     .. grid-item-card::
-            :shadow: none
+        :shadow: none
 
-            .. raw:: html
+        .. raw:: html
 
-                <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
 
-            .. raw:: html
+        .. raw:: html
 
-                <h4 style="font-weight: bold; margin-top: 0;">
-                    <a href="./JaspQAOAtutorial.html" style="text-decoration: none; color: inherit;">Building a QAOA implementation in Jasp</a>
-                </h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./JaspQAOAtutorial.html" style="text-decoration: none; color: inherit;">Building a QAOA implementation in Jasp</a>
+            </h4>
 
-            .. image:: ../../_static/maxcut_jasp.png
-                :align: center
-                :target: ./JaspQAOAtutorial.html
+        .. raw:: html
 
-            .. raw:: html
-                
-                <p style="margin-top: 5px;"></p>
+            <div style="text-align: center;">
+                <a href="./JaspQAOAtutorial.html">
+                    <img src="../../_static/maxcut_jasp.png" alt="MaxCut QAOA Tutorial">
+                </a>
+            </div>
 
-            .. dropdown:: :fa:`eye me-1` Description
-                :color: primary
+        .. raw:: html
+            
+            <p style="margin-top: 5px;"></p>
 
-                This tutorial details how to build an efficient custom QAOA implementation in Jasp using a Jasp-traceable objective function for the example of the MaxCut problem.
+        .. dropdown:: :fa:`eye me-1` Description
+            :color: primary
 
-            .. raw:: html
+            This tutorial details how to build an efficient custom QAOA implementation in Jasp using a Jasp-traceable objective function for the example of the MaxCut problem.
 
-                </div>
+        .. raw:: html
+
+            </div>
 
 .. grid:: 1 1 2 2
 
     .. grid-item-card::
-            :shadow: none
+        :shadow: none
 
-            .. raw:: html
+        .. raw:: html
 
-                <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
 
-            .. raw:: html
+        .. raw:: html
 
-                <h4 style="font-weight: bold; margin-top: 0;">
-                    <a href="./FT_compilation.html" style="text-decoration: none; color: inherit;">Fault-Tolerant compilation</a>
-                </h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./FT_compilation.html" style="text-decoration: none; color: inherit;">Fault-Tolerant compilation</a>
+            </h4>
 
-            .. image:: ../../_static/torus.png
-                :align: center
-                :target: ./FT_compilation.html
+        .. raw:: html
 
-            .. raw:: html
-                
-                <p style="margin-top: 5px;"></p>
+            <div style="text-align: center;">
+                <a href="./FT_compilation.html">
+                    <img src="../../_static/torus.png" alt="Fault-Tolerant Compilation Tutorial">
+                </a>
+            </div>
 
-            .. dropdown:: :fa:`eye me-1` Description
-                :color: primary
+        .. raw:: html
+            
+            <p style="margin-top: 5px;"></p>
 
-                This tutorial delves into the realm of **compiling for fault-tolerant quantum devices**, exploring the specialized techniques and considerations that set this stage apart from the compilation challenges encountered in NISQ environments. At the end you will also optimize the implementation of Shor's from the tutorial above.
+        .. dropdown:: :fa:`eye me-1` Description
+            :color: primary
 
-            .. raw:: html
+            This tutorial delves into the realm of **compiling for fault-tolerant quantum devices**, exploring the specialized techniques and considerations that set this stage apart from the compilation challenges encountered in NISQ environments. At the end you will also optimize the implementation of Shor's from the tutorial above.
 
-                </div>
+        .. raw:: html
+
+            </div>
 
     .. grid-item-card::
-            :shadow: none
+        :shadow: none
 
-            .. raw:: html
+        .. raw:: html
 
-                <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
 
-            .. raw:: html
+        .. raw:: html
 
-                <h4 style="font-weight: bold; margin-top: 0;">
-                    <a href="./BigInteger.html" style="text-decoration: none; color: inherit;">Using the BigInteger to compile utility-scale quantum algorithms</a>
-                </h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./BigInteger.html" style="text-decoration: none; color: inherit;">Using the BigInteger to compile Shor's algorithm at 2048 bit</a>
+            </h4>
 
-            .. image:: ../../_static/order_finding_qre.svg
-                :align: center
-                :target: ./BigInteger.html
+        .. raw:: html
 
-            .. raw:: html
-                
-                <p style="margin-top: 5px;"></p>
+            <div style="text-align: center;">
+                <a href="./BigInteger.html">
+                <img src="../../_static/order_finding_qre.svg" alt="Shor Quantum Resource Estimation Tutorial">
+                </a>
+            </div>
 
-            .. dropdown:: :fa:`eye me-1` Description
-                :color: primary
+        .. raw:: html
+            
+            <p style="margin-top: 5px;"></p>
 
-                Learn how to use the BigInteger class to avoid integer overflow in jasp and perform resource estimation of large-scale quantum algorithms.
+        .. dropdown:: :fa:`eye me-1` Description
+            :color: primary
 
-            .. raw:: html
+            Learn how to use the BigInteger class to avoid integer overflow in Jasp and perform resource estimation of large-scale quantum algorithms.
 
-                </div>
+        .. raw:: html
 
+            </div>
 
 
 Scientific computing and quantum numerical linear algebra
 ---------------------------------------------------------
-Unlock the potential of quantum computers for scientific discovery and advanced mathematics. Here, you will use Qrisp's high-level abstractions to tackle problems in quantum chemistry, while having block encodings as a programming abstraction for quantum munerical linear algebra. From simulating molecular dynamics (like the $H_2$ molecule) to solving complex systems of linear equations with the HHL algorithm and preparing ground states via GQSP, this track demonstrates how to bridge the gap between complex scientific theory and executable quantum code.
+Unlock the potential of quantum computers for scientific discovery and advanced mathematics. Here, you will use Qrisp's high-level abstractions to tackle problems in quantum chemistry, while having block encodings as a programming abstraction for quantum numerical linear algebra. From simulating molecular dynamics (like the $H_2$ molecule) to solving systems of linear equations with the HHL algorithm and preparing ground states via GQSP, this track demonstrates how to bridge the gap between complex scientific theory and executable quantum code.
 
 .. grid:: 1 1 2 2
 
@@ -427,9 +478,13 @@ Unlock the potential of quantum computers for scientific discovery and advanced 
                 <a href="./H2.html" style="text-decoration: none; color: inherit;">Simulate the dynamics of the $H_2$ molecule</a>
             </h4>
 
-        .. image:: ../../_static/hydrogen.png
-            :align: center
-            :target: ./H2.html
+        .. raw:: html
+
+            <div style="text-align: center;">
+                <a href="./H2.html">
+                    <img src="../../_static/hydrogen.png" alt="Hydrogen molecule diagram">
+                </a>
+            </div>
 
         .. raw:: html
             
@@ -457,9 +512,13 @@ Unlock the potential of quantum computers for scientific discovery and advanced 
                 <a href="./BE_tutorial/index.html" style="text-decoration: none; color: inherit;">Quantum Linear Algebra</a>
             </h4>
 
-        .. image:: ../../_static/BE_thumbnail.png
-            :align: center
-            :target: ./BE_tutorial/index.html
+        .. raw:: html
+
+            <div style="text-align: center;">
+                <a href="./BE_tutorial/index.html">
+                    <img src="../../_static/BE_thumbnail.png" alt="Block Encoding diagram">
+                </a>
+            </div>
 
         .. raw:: html
             
@@ -489,9 +548,13 @@ Unlock the potential of quantum computers for scientific discovery and advanced 
                 <a href="./GQSP_filtering.html" style="text-decoration: none; color: inherit;">Filtered state preparation with GQSP</a>
             </h4>
 
-        .. image:: ../../_static/filtering_thumb_placeholder.png
-            :align: center
-            :target: ./GQSP_filtering.html
+        .. raw:: html
+
+            <div style="text-align: center;">
+                <a href="./GQSP_filtering.html">
+                    <img src="../../_static/filtering_thumb_placeholder.png" alt="GQSP Filtering diagram">
+                </a>
+            </div>
 
         .. raw:: html
             
@@ -519,9 +582,13 @@ Unlock the potential of quantum computers for scientific discovery and advanced 
                 <a href="./HHL.html" style="text-decoration: none; color: inherit;">Solving systems of linear equations via HHL</a>
             </h4>
 
-        .. image:: ../../_static/HHL.png
-            :align: center
-            :target: ./HHL.html
+        .. raw:: html
+
+            <div style="text-align: center;">
+                <a href="./HHL.html">
+                    <img src="../../_static/HHL.png" alt="HHL Algorithm diagram">
+                </a>
+            </div>
 
         .. raw:: html
             
@@ -536,6 +603,7 @@ Unlock the potential of quantum computers for scientific discovery and advanced 
         .. raw:: html
 
             </div>
+
 
 You’ve now explored the breadth of what’s possible when you trade gate-level surgery for high-level logic. From your first QuantumVariable to fault-tolerant resource estimation, you have the roadmap to develop utility-scale applications that once seemed out of reach.
 
