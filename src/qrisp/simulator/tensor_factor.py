@@ -263,6 +263,7 @@ class TensorFactor:
             # print(vdot_value)
             # print(xp.abs(xp.abs(vdot_value) - (p_list[0]*p_list[1])**0.5))
             return self, self
+        
         temp = xp.zeros(2, dtype=self.tensor_array.data.dtype)
         temp[0] = (p_list[0]) ** 0.5
         temp[1] = (p_list[1]) ** 0.5 * vdot_value / xp.abs(vdot_value)

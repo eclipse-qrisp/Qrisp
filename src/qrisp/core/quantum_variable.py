@@ -267,7 +267,7 @@ class QuantumVariable:
                     self.qs.register_qv(self, size)
 
                 except RuntimeError:
-                    i = int(self.creation_counter)
+                    i = int(self.creation_counter[0])
                     while True:
                         try:
                             self.name = name + "_" + str(i)
