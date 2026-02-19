@@ -123,39 +123,7 @@ Discover how quantum algorithms can tackle complex search and decision-making pr
         .. raw:: html
 
             </div>
-
-    .. grid-item-card::
-            :shadow: none
-
-            .. raw:: html
-
-                <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
-
-            .. raw:: html
-
-                <h4 style="font-weight: bold; margin-top: 0;">
-                    <a href="./Sudoku.html" style="text-decoration: none; color: inherit;">Solving Sudoku using Quantum Backtracking</a>
-                </h4>
-
-            .. image:: ../../_static/backtracking.svg
-                :align: center
-                :target: ./Sudoku.html
-
-            .. raw:: html
-                
-                <p style="margin-top: 5px;"></p>
-
-            .. dropdown:: :fa:`eye me-1` Description
-                :color: primary
-
-                You will learn how to efficiently implement the Sudoku problem specific quantum oracles, and how to use the general **Quantum Backtracking** implementation within Qrisp.
-
-            .. raw:: html
-
-                </div>
-
-.. grid:: 1 1 2 2
-
+    
     .. grid-item-card::
         :shadow: none
 
@@ -185,6 +153,10 @@ Discover how quantum algorithms can tackle complex search and decision-making pr
         .. raw:: html
 
             </div>
+
+    
+
+.. grid:: 1 1 2 2
 
     .. grid-item-card::
             :shadow: none
@@ -216,8 +188,6 @@ Discover how quantum algorithms can tackle complex search and decision-making pr
 
                 </div>
 
-.. grid:: 1 1 2 2
-
     .. grid-item-card::
         :shadow: none
 
@@ -247,6 +217,38 @@ Discover how quantum algorithms can tackle complex search and decision-making pr
         .. raw:: html
 
             </div>
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card::
+                :shadow: none
+
+                .. raw:: html
+
+                    <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+
+                .. raw:: html
+
+                    <h4 style="font-weight: bold; margin-top: 0;">
+                        <a href="./Sudoku.html" style="text-decoration: none; color: inherit;">Solving Sudoku using Quantum Backtracking</a>
+                    </h4>
+
+                .. image:: ../../_static/backtracking.svg
+                    :align: center
+                    :target: ./Sudoku.html
+
+                .. raw:: html
+                    
+                    <p style="margin-top: 5px;"></p>
+
+                .. dropdown:: :fa:`eye me-1` Description
+                    :color: primary
+
+                    You will learn how to efficiently implement the Sudoku problem specific quantum oracles, and how to use the general **Quantum Backtracking** implementation within Qrisp.
+
+                .. raw:: html
+
+                    </div>
 
     .. grid-item-card::
         :shadow: none
@@ -547,19 +549,18 @@ The quantum landscape is evolving rapidly. By mastering these tracks, you’re n
    :hidden:
    
    tutorial.ipynb
-   BE_tutorial/index
-   H2.ipynb
-   Jasp.ipynb
-   HHL.ipynb
    Shor.ipynb
-   FT_compilation.ipynb
    TSP.ipynb
-   Sudoku.ipynb
    QAOAtutorial/index
-   JaspQAOAtutorial.ipynb
    QIROtutorial.ipynb
-   QMCItutorial.ipynb
-   BigInteger.ipynb
-   GQSP_filtering.ipynb
    CD.ipynb
-   
+   Sudoku.ipynb
+   QMCItutorial.ipynb
+   Jasp.ipynb
+   JaspQAOAtutorial.ipynb
+   FT_compilation.ipynb
+   BigInteger.ipynb
+   H2.ipynb
+   BE_tutorial/index
+   GQSP_filtering.ipynb
+   HHL.ipynb 
