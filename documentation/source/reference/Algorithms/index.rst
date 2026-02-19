@@ -1,7 +1,7 @@
 Algorithms
 ==========
 
-This module features a curated collection of quantum algorithms designed for a wide range of applications. Each algorithm comes with comprehensive documentation and brief examples to help you understand its implementation and usage.
+This submodule of Qrisp features a curated collection of quantum algorithms designed for a wide range of applications. Each algorithm comes with comprehensive documentation and brief examples to help you understand its implementation and usage.
 
 
 Foundational Algorithms
