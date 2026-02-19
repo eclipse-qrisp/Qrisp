@@ -25,6 +25,7 @@ By the end of these tutorial, you'll have a solid foundation of our high-level f
 Foundations and first steps
 ---------------------------
 Kickstart your quantum programming journey here! This section is designed to familiarize you with Qrisp's core philosophy: shifting away from low-level circuit manipulation and toward intuitive, high-level programming using QuantumVariables. You will cover the absolute essentials, starting from your very first quantum script to implementing and understanding textbook algorithms like Grover's, Quantum Phase Estimation, and Shor's algorithm.
+
 .. grid:: 1 1 2 2
 
     .. grid-item-card::
@@ -90,6 +91,7 @@ Kickstart your quantum programming journey here! This section is designed to fam
 Combinatorial optimization
 --------------------------
 Discover how quantum algorithms can tackle complex search and decision-making problems. In this track, you will dive into solving famous computational challenges (such as the Traveling Salesman Problem and Sudoku) using a powerful suite of quantum tools. Whether you are applying Quantum Backtracking, tuning variational models with QAOA and QIRO, or exploring Counterdiabatic Driving and Monte Carlo Integration, you will learn how to optimize solutions across a variety of real-world domains.
+
 .. grid:: 1 1 2 2
             
     .. grid-item-card::
@@ -215,6 +217,7 @@ Discover how quantum algorithms can tackle complex search and decision-making pr
                 </div>
 
 .. grid:: 1 1 2 2
+
     .. grid-item-card::
         :shadow: none
 
@@ -278,6 +281,7 @@ Discover how quantum algorithms can tackle complex search and decision-making pr
 High-performance execution and compilation (Jasp)
 -------------------------------------------------
 Scale your quantum algorithms and prepare them for the real world. This section focuses on execution efficiency and advanced compilation techniques. You will explore the Jasp pipeline for hybrid real-time control, learn how to build highly performant custom algorithms, and delve into Fault-Tolerant compilation to ensure your code is ready for next-generation hardware. You'll also discover how to leverage the BigInteger class to handle large-scale resource estimation without classical overflow.
+
 .. grid:: 1 1 2 2
 
     .. grid-item-card::
@@ -342,6 +346,7 @@ Scale your quantum algorithms and prepare them for the real world. This section 
                 </div>
 
 .. grid:: 1 1 2 2
+
     .. grid-item-card::
             :shadow: none
 
@@ -407,6 +412,7 @@ Scale your quantum algorithms and prepare them for the real world. This section 
 Scientific computing and quantum numerical linear algebra
 ---------------------------------------------------------
 Unlock the potential of quantum computers for scientific discovery and advanced mathematics. Here, you will use Qrisp's high-level abstractions to tackle problems in quantum chemistry and linear algebra. From simulating molecular dynamics (like the $H_2$ molecule) to solving complex systems of linear equations with the HHL algorithm and preparing ground states via GQSP, this track demonstrates how to bridge the gap between complex scientific theory and executable quantum code.
+
 .. grid:: 1 1 2 2
 
     .. grid-item-card::
