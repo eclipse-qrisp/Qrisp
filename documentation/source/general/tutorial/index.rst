@@ -3,20 +3,17 @@
 Tutorials
 =========
  
-Welcome to the Qrisp tutorials! This gallery is designed to take you from a curious beginner to a proficient developer of utility-scale quantum algorithms. By shifting the focus from low-level gate surgery to high-level programming with QuantumVariables, Qrisp allows you to express complex logic with ease.
+Welcome to the Qrisp tutorials! This gallery is designed to take you from a curious beginner to a proficient developer of utility-scale quantum algorithms. By shifting the focus from low-level gate gymnastics to high-level programming with QuantumVariables, Qrisp allows you to express complex logic with ease.
 
-The tutorials are organized into four main tracks:
+The tutorials are organized into four topics, each containing multiple hands-on examples that build on each other:
 
-- Foundations and first Steps: Start here to master the core syntax of Qrisp, where you will learn to replace manual circuit building with high-level variables and implement textbook algorithms like Shor's and Grover's.
+- **Foundations and first Steps**: Start here to master the core syntax of Qrisp, where you will learn to replace manual circuit building with high-level variables and implement textbook algorithms like Shor's and Grover's.
 
-- Combinatorial optimization: Explore how to solve complex decision problems using QAOA, Quantum Backtracking, and Recursive Optimization across domains like logistics and scheduling.
+- **Combinatorial optimization**: Explore how to solve complex optimization problems using hybrid approaches like QAOA, QIRO, and COLD, as well as learning about our qrispy Quantum Backtracking implementation. This section is relevant for domains like logistics and scheduling.
 
-- High-Performance Execution and Compilation (Jasp): Learn how to scale your code for the real world using the Jasp pipeline for hybrid real-time control and Fault-Tolerant compilation for next-generation hardware.
+- **High-Performance execution and compilation (Jasp)**: Learn how to scale your code, while estimating your quantum resources, for the real world using the Jasp pipeline for hybrid real-time control. You will also learn about Fault-Tolerant compilation for next-generation hardware.
 
-- Scientific computing and quantum numerical linear algebra: Dive into high-level abstractions for Quantum Chemistry, Linear Systems (HHL), and Monte Carlo Integration using our advanced block-encoding suite.
-
-Along the way, we'll introduce you to important concepts and techniques that you'll need to know in order to write highly efficient algorithms in Qrisp.
-We encourage you to follow along with the examples and try out the code for yourself. Don't worry if you make mistakes or don't understand something right away - programming is a process of learning and experimentation, and it takes time to become proficient.
+- **Scientific computing and quantum numerical linear algebra**: Dive into high-level abstractions for Quantum Chemistry, Linear Systems (HHL, CKS, QSVT, filtering) using our new BlockEncoding class. Also, our Monte Carlo Integration is included.
 
 If you’re the type who learns best by breaking things (and then fixing them), you can download any of these tutorials as a Jupyter notebook. Just look for the download box on the right side of the page within each specific tutorial to grab the code and run it in your own local environment.
 
@@ -90,7 +87,7 @@ Kickstart your quantum programming journey here! This section is designed to fam
 
 Combinatorial optimization
 --------------------------
-Discover how quantum algorithms can tackle complex search and decision-making problems. In this track, you will dive into solving famous computational challenges (such as the Traveling Salesman Problem and Sudoku) using a powerful suite of quantum tools. Whether you are applying Quantum Backtracking, tuning variational models with QAOA and QIRO, or exploring Counterdiabatic Driving and Monte Carlo Integration, you will learn how to optimize solutions across a variety of real-world domains.
+Discover how quantum algorithms can tackle complex search and optimization problems. In this section, you will dive into solving famous computational challenges (such as the Traveling Salesman Problem and Sudoku) using a powerful suite of quantum tools. Whether you are applying Quantum Backtracking, tuning variational models with QAOA and QIRO, or exploring Counterdiabatic Driving and Monte Carlo Integration, you will learn how to optimize solutions across a variety of real-world domains.
 
 .. grid:: 1 1 2 2
             
@@ -282,7 +279,7 @@ Discover how quantum algorithms can tackle complex search and decision-making pr
 
 High-performance execution and compilation (Jasp)
 -------------------------------------------------
-Scale your quantum algorithms and prepare them for the real world. This section focuses on execution efficiency and advanced compilation techniques. You will explore the Jasp pipeline for hybrid real-time control, learn how to build highly performant custom algorithms, and delve into Fault-Tolerant compilation to ensure your code is ready for next-generation hardware. You'll also discover how to leverage the BigInteger class to handle large-scale resource estimation without classical overflow.
+Scale your quantum algorithms and prepare them for the real world execution on hardware of both the now and the future. This section focuses on execution efficiency and advanced compilation techniques. You will explore the Jasp pipeline for hybrid real-time control, learn how to build highly performant custom algorithms, and delve into Fault-Tolerant compilation to ensure your code is ready for next-generation hardware. You'll also discover how to leverage the BigInteger class to handle large-scale resource estimation without classical overflow.
 
 .. grid:: 1 1 2 2
 
@@ -413,7 +410,7 @@ Scale your quantum algorithms and prepare them for the real world. This section 
 
 Scientific computing and quantum numerical linear algebra
 ---------------------------------------------------------
-Unlock the potential of quantum computers for scientific discovery and advanced mathematics. Here, you will use Qrisp's high-level abstractions to tackle problems in quantum chemistry and linear algebra. From simulating molecular dynamics (like the $H_2$ molecule) to solving complex systems of linear equations with the HHL algorithm and preparing ground states via GQSP, this track demonstrates how to bridge the gap between complex scientific theory and executable quantum code.
+Unlock the potential of quantum computers for scientific discovery and advanced mathematics. Here, you will use Qrisp's high-level abstractions to tackle problems in quantum chemistry, while having block encodings as a programming abstraction for quantum munerical linear algebra. From simulating molecular dynamics (like the $H_2$ molecule) to solving complex systems of linear equations with the HHL algorithm and preparing ground states via GQSP, this track demonstrates how to bridge the gap between complex scientific theory and executable quantum code.
 
 .. grid:: 1 1 2 2
 
@@ -542,7 +539,7 @@ Unlock the potential of quantum computers for scientific discovery and advanced 
 
 You’ve now explored the breadth of what’s possible when you trade gate-level surgery for high-level logic. From your first QuantumVariable to fault-tolerant resource estimation, you have the roadmap to develop utility-scale applications that once seemed out of reach.
 
-The quantum landscape is evolving rapidly. By mastering these tracks, you’re no longer just a spectator, you’re an architect of the next generation of algorithms. So, take these concepts, experiment with the code, and start building the future of quantum computing with intuitive, clean, and qrispy code.
+The quantum landscape is evolving rapidly. By mastering these utorials, you’re no longer just a spectator, you’re an architect of the next generation of algorithms. So, take these concepts, experiment, and start building the future of quantum computing with intuitive, clean, and qrisy code.
 
 .. toctree::
    :maxdepth: 2
