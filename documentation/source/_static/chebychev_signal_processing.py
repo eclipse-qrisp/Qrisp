@@ -5,8 +5,9 @@ from matplotlib.collections import LineCollection
 from numpy.polynomial import Chebyshev
 from numpy.polynomial.chebyshev import chebval
 
-# ── Plot colour ─────────────────────────────────────────────────────────
-PLOT_COLOR = "#01004B"
+# ── Qrisp palette ──────────────────────────────────────────────────────
+QRISP_NAVY   = "#20306F"
+QRISP_PURPLE = "#7D2BFF"
 
 # ── Target: narrow Gaussian on [-1, 1] ─────────────────────────────────
 mu    = 0
@@ -25,8 +26,13 @@ x_plot     = np.linspace(-1, 1, 2000)
 f_gaussian = gaussian(x_plot)
 
 # Polynomial approximations at several degrees
-degrees = [6, 10, 16, 24]
-lws     = 1.1 * np.array([3.6, 3, 2.7, 2.5, 2.3])
+degrees = [6, 10, 16, 24, 40]
+palette = ["#A0B4F0",   # lightest – low degree
+           "#7B8FDC",
+           "#5E78D2",
+           "#3F5CB8",
+           QRISP_NAVY] # strongest – high degree
+lws     = 1.1*np.array([2.3, 2.5, 2.7, 3, 3.6])[::-1]
 
 # ── Figure ──────────────────────────────────────────────────────────────
 fig, ax = plt.subplots(figsize=(5.8, 4.), dpi=220)
@@ -123,15 +129,19 @@ def subtle_glow_line(ax, x, y, color, lw):
     )
 
 # Gradient fill under target Gaussian (subtle)
-gradient_fill(ax, x_plot, f_gaussian, PLOT_COLOR, n_bands=50, alpha_base=0.8)
+gradient_fill(ax, x_plot, f_gaussian, QRISP_NAVY, n_bands=50, alpha_base=0.5)
 # Target Gaussian on top
-subtle_glow_line(ax, x_plot, f_gaussian, PLOT_COLOR, lw=3)
+subtle_glow_line(ax, x_plot, f_gaussian, "#05034B", lw=3)
 
+i = 0
 # Polynomial curves with gradient fill (low → high degree, back-to-front)
-for deg, lw in zip(degrees, lws):
+for deg, col, lw in zip(degrees, palette, lws):
+    if i == 4:
+        continue
+    i+=1
     y = chebval(x_plot, cheb_coeffs[:deg + 1])
-    gradient_fill(ax, x_plot, y, PLOT_COLOR, n_bands=40, alpha_base=0.5)
-    subtle_glow_line(ax, x_plot, y, PLOT_COLOR, lw=lw)
+    gradient_fill(ax, x_plot, y, QRISP_PURPLE, n_bands=40, alpha_base=0.2)
+    subtle_glow_line(ax, x_plot, y, col, lw=lw)
 
 
 
@@ -150,6 +160,6 @@ plt.tight_layout(pad=0.1)
 ax.grid(True, which="major", color=("#C3C3C3", 0.006), linewidth=0.4)
 #ax.axvline(0.0, color=("black", 0.7), linewidth=1.5, zorder=5)
 ax.axhline(0.0, color=("black", 0.7), linewidth=1.5, zorder=2)
-plt.savefig("chebychev_signal_processing.png", dpi=220, facecolor="white")
+plt.savefig("signal_processing.png", dpi=220, facecolor="white")
 plt.show()
-print("saved → chebychev_signal_processing.png")
+print("saved → signal_processing.png")
