@@ -454,7 +454,7 @@ Unlock the potential of quantum computers for scientific discovery and advanced 
         .. raw:: html
 
             <h4 style="font-weight: bold; margin-top: 0;">
-                <a href="./BE_tutorial/index.rst" style="text-decoration: none; color: inherit;">Quantum Linear Algebra</a>
+                <a href="./BE_tutorial/index.html" style="text-decoration: none; color: inherit;">Quantum Linear Algebra</a>
             </h4>
 
         .. image:: ../../_static/BE_thumbnail.png
