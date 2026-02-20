@@ -35,7 +35,7 @@ sys.path.insert(0, os.path.abspath('../../src/qrisp'))
 # -- Project information -----------------------------------------------------
 
 project = ""
-copyright = '2025, Qrisp developers'
+copyright = '2026, Qrisp developers'
 
 
 # -- General configuration ---------------------------------------------------
