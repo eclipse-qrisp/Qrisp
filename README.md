@@ -77,7 +77,7 @@ To find out how this can be used to break encryption be sure to check the [tutor
 Qrisp offers much more than just factoring! More examples, like simulating molecules at the quantum level or how to solve the Travelling Salesman Problem, can be found [here](https://qrisp.eu/general/tutorial/index.html).
 
 ## Authors and Citation
-Qrisp was mainly devised and implemented by Raphael Seidel, supported by Sebastian Bock, Nikolay Tcholtchev, René Zander, Niklas Steinmann and Matic Petric.
+Qrisp is the work of [many people](https://projects.eclipse.org/projects/technology.qrisp/who).
 
 If you have comments, questions or love letters, feel free to reach out to us:
 
