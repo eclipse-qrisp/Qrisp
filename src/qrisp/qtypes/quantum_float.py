@@ -399,6 +399,8 @@ class QuantumFloat(QuantumVariable):
         else:
             return res.astype(int)
 
+    # not used anwhere in this file, worth removing? Ask raphael.
+    # function is also not used anywhere in the codebase
     def sb_poly(self, m=0):
         """
         Returns the semi-boolean polynomial of this `QuantumFloat` where `m` specifies
