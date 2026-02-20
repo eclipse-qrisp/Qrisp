@@ -5,7 +5,7 @@
 
 [![License](https://img.shields.io/badge/License-EPL_2.0-brightgreen.svg)](https://opensource.org/licenses/EPL-2.0)
 ![PyPI - Version](https://img.shields.io/pypi/v/qrisp?color=brightgreen)
-![Discord](https://img.shields.io/discord/1471858163908214870?style=plastic&logo=Discord&label=discord&link=https%3A%2F%2Fdiscord.gg%2Fv5np7DeBaq)
+[![Discord](https://img.shields.io/discord/1471858163908214870?style=plastic&logo=Discord&label=discord)](https://discord.gg/v5np7DeBaq)
 [![Pytest](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml/badge.svg)](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml)
 [![Downloads](https://img.shields.io/pypi/dm/qrisp.svg)](https://pypi.org/project/qrisp/)
 [![CodeFactor](https://www.codefactor.io/repository/github/eclipse-qrisp/qrisp/badge/main)](https://www.codefactor.io/repository/github/eclipse-qrisp/qrisp/overview/main)
