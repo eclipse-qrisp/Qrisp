@@ -335,7 +335,7 @@ class DepthMetric(BaseMetric):
         stop = jnp.maximum(stop, start)
 
         size_out = stop - start
-        #jax.lax.cond(size_out <= 0, _warn_slice, lambda *_: None, start_inv, stop_inv)
+        jax.lax.cond(size_out <= 0, _warn_slice, lambda *_: None, start_inv, stop_inv)
 
         table_size = size_out if not is_abstract(size_out) else self.max_qubits
 
