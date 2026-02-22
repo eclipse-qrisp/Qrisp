@@ -327,6 +327,9 @@ class DepthMetric(BaseMetric):
 
         (qubit_array, size), start_inv, stop_inv = invalues
 
+        start_inv += (start_inv < 0 )*size
+        stop_inv += (stop_inv < 0)*size
+
         start = jnp.maximum(start_inv, jnp.int64(0))
         stop = jnp.minimum(stop_inv, size)
         stop = jnp.maximum(stop, start)
