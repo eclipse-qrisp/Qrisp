@@ -332,7 +332,7 @@ class DepthMetric(BaseMetric):
         stop = jnp.maximum(stop, start)
 
         size_out = stop - start
-        jax.lax.cond(size_out <= 0, _warn_slice, lambda *_: None, start_inv, stop_inv)
+        #jax.lax.cond(size_out <= 0, _warn_slice, lambda *_: None, start_inv, stop_inv)
 
         table_size = size_out if not is_abstract(size_out) else self.max_qubits
 
@@ -347,7 +347,7 @@ class DepthMetric(BaseMetric):
 
         _, metric_data = invalues
 
-        _warn_not_implemented("reset")
+        #_warn_not_implemented("reset")
 
         # Associate the following in context_dic:
         # QuantumState -> metric_data
@@ -357,7 +357,7 @@ class DepthMetric(BaseMetric):
 
         _, metric_data = invalues
 
-        _warn_not_implemented("delete_qubits")
+        #_warn_not_implemented("delete_qubits")
 
         # Associate the following in context_dic:
         # QuantumState -> metric_data
