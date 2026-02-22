@@ -890,10 +890,14 @@ class BlockEncoding:
         r"""
         Estimate the quantum resources required for the BlockEncoding.
 
-        This method uses the ``count_ops`` and ``depth`` decorators to obtain gate counts, circuit depth,
-        and (in future release) qubit usage for a single execution of block-encoding ``.unitary``.
+        This method uses the ``count_ops``, ``depth`` and ``num_qubits`` decorators to obtain gate counts, circuit depth,
+        and qubit usage for a single execution of block-encoding ``.unitary``.
         Unlike :meth:`apply_rus`, it does not run the simulator
         and does not include repetitions from the :ref:`RUS` procedure.
+
+        .. warning::
+
+            The :ref:`depth <depth>` metric is an experimental feature and may not behave as expected in certain edge cases.
 
         Parameters
         ----------
