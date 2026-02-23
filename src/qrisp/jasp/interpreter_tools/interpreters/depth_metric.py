@@ -327,6 +327,9 @@ class DepthMetric(BaseMetric):
 
         (qubit_array, size), start_inv, stop_inv = invalues
 
+        start_inv += (start_inv < 0 )*size
+        stop_inv += (stop_inv < 0)*size
+
         start = jnp.maximum(start_inv, jnp.int64(0))
         stop = jnp.minimum(stop_inv, size)
         stop = jnp.maximum(stop, start)
@@ -347,7 +350,7 @@ class DepthMetric(BaseMetric):
 
         _, metric_data = invalues
 
-        _warn_not_implemented("reset")
+        #_warn_not_implemented("reset")
 
         # Associate the following in context_dic:
         # QuantumState -> metric_data
@@ -357,7 +360,7 @@ class DepthMetric(BaseMetric):
 
         _, metric_data = invalues
 
-        _warn_not_implemented("delete_qubits")
+        #_warn_not_implemented("delete_qubits")
 
         # Associate the following in context_dic:
         # QuantumState -> metric_data

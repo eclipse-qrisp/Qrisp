@@ -20,6 +20,8 @@ Gate count
 Circuit depth
 -------------
 
+.. _depth:
+
 .. autofunction:: depth
 
 

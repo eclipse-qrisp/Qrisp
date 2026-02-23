@@ -387,6 +387,16 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
         It is currently not possible to estimate programs, which include a
         :ref:`kernelized <quantum_kernel>` function.
 
+    .. warning::
+
+        The depth metric an experimental feature and may not behave as expected in certain edge cases.
+
+        -   The memory management operations ``reset`` and ``delete`` are currently ignored.
+            Qubits freed by these calls still count toward the ``max_qubits`` limit.
+        
+        -   This metric can currently handle the slice operation correctly only when 
+            the lower bound of the slice is strictly smaller than the upper bound.
+
     """
 
     def depth_decorator(function):
