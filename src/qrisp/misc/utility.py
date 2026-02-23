@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -74,9 +74,9 @@ def int_encoder(qv, encoding_number):
                     x(qv[i])
 
         # def true_fun(qc, cond, qb):
-        #     tr_qs.abs_qc = qc
+        #     tr_qs.abs_qst = qc
         #     x(qb)
-        #     return tr_qs.abs_qc
+        #     return tr_qs.abs_qst
 
         # def false_fun(qc, cond, qb):
         #     return qc
@@ -87,8 +87,8 @@ def int_encoder(qv, encoding_number):
         #     qc = cond(cond_bool, true_fun, false_fun, qc, cond_bool, qb)
 
         #     return qc
-        # qc = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qc))
-        # tr_qs.abs_qc = qc
+        # qc = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qst))
+        # tr_qs.abs_qst = qc
 
 
 # Calculates the binary expression of a given integer and returns it as an array of
@@ -1548,9 +1548,8 @@ def redirect_qfunction(function_to_redirect):
                 *args, **kwargs
             ).flatten_environments()
 
-
             qs = TracingQuantumSession.get_instance()
-            abs_qc = qs.abs_qc
+            abs_qst = qs.abs_qst
             from jax.tree_util import tree_flatten
 
             flattened_args = []
@@ -1560,19 +1559,21 @@ def redirect_qfunction(function_to_redirect):
                 flattened_args.append(target.qb_array.reg.tracer)
             else:
                 transformed_jaspr = injection_transform(jaspr, jaspr.outvars[0])
-                flattened_args.append(target.reg.tracer) #Traced<QubitArray>with<DynamicJaxprTrace>
+                flattened_args.append(
+                    target.reg.tracer
+                )  # Traced<QubitArray>with<DynamicJaxprTrace>
 
             for arg in args:
                 flattened_args.extend(tree_flatten(arg)[0])
-            #[Traced<QubitArray>with<DynamicJaxprTrace>, Traced<ShapedArray(int64[])>with<DynamicJaxprTrace>, Traced<ShapedArray(bool[])>with<DynamicJaxprTrace>]
-            flattened_args.append(abs_qc)
+            # [Traced<QubitArray>with<DynamicJaxprTrace>, Traced<ShapedArray(int64[])>with<DynamicJaxprTrace>, Traced<ShapedArray(bool[])>with<DynamicJaxprTrace>]
+            flattened_args.append(abs_qst)
 
             res = eval_jaxpr(transformed_jaspr, [])(*flattened_args)
 
             if len(transformed_jaspr.outvars) == 1:
-                qs.abs_qc = res
+                qs.abs_qst = res
             else:
-                qs.abs_qc = res[-1]
+                qs.abs_qst = res[-1]
 
         else:
 
@@ -1589,7 +1590,7 @@ def redirect_qfunction(function_to_redirect):
 
             with env:
                 res = function_to_redirect(*args, **kwargs)
-                
+
                 if isinstance(res, QuantumVariable):
                     res_qubits = list(res)
                     target_qubits = list(target)
@@ -1599,7 +1600,7 @@ def redirect_qfunction(function_to_redirect):
                 else:
                     raise Exception("Given function did not return a QuantumVariable")
 
-                #target = list(target)
+                # target = list(target)
 
                 if len(res) != len(target) or len(list(res)) != len(list(target)):
                     raise Exception(
@@ -1787,6 +1788,7 @@ def get_sympy_state(qs, decimals):
             ket_expr = sp.trigsimp(amplitude) * nnz**0.5
 
         int_string = bin_rep(ind, len(compiled_qc.qubits))
+        from sympy.physics.quantum import TensorProduct
 
         labels = []
         for qv in qv_list:
@@ -1795,7 +1797,7 @@ def get_sympy_state(qs, decimals):
                 bit_string += int_string[compiled_qc.qubits.index(qb)]
 
             label = qv.decoder(int(bit_string[::-1], 2))
-            ket_expr *= OrthogonalKet((label))
+            ket_expr = TensorProduct(ket_expr, OrthogonalKet((label)))
 
         res += ket_expr
 

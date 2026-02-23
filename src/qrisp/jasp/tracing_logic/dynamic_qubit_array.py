@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -96,7 +96,7 @@ class DynamicQubitArray:
         from qrisp.jasp import Measurement_p, TracingQuantumSession
 
         qs = TracingQuantumSession.get_instance()
-        res, qs.abs_qc = Measurement_p.bind(self.tracer, qs.abs_qc)
+        res, qs.abs_qst = Measurement_p.bind(self.tracer, qs.abs_qst)
         return res
 
 

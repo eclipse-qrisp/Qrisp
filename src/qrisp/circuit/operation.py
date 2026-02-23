@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -173,6 +173,7 @@ class Operation:
             return self.name + str(tuple(self.params))
         else:
             return self.name
+
     # Method to get the unitary matrix of the operation
 
     # The parameter decimals has no influence on what is calculated
@@ -568,7 +569,7 @@ class U3Gate(Operation):
 
         for l_par in self.lambdified_params:
             new_params.append(l_par(*repl_args))
-        
+
         return U3Gate(
             new_params[0], new_params[1], new_params[2], self.name, new_params[3]
         )
@@ -623,7 +624,7 @@ class PauliGate(U3Gate):
 
     def __repr__(self):
         return self.name
-    
+
     def bind_parameters(self, subs_dict):
         return self.copy()
 

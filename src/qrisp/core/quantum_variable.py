@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -267,7 +267,7 @@ class QuantumVariable:
                     self.qs.register_qv(self, size)
 
                 except RuntimeError:
-                    i = int(self.creation_counter)
+                    i = int(self.creation_counter[0])
                     while True:
                         try:
                             self.name = name + "_" + str(i)

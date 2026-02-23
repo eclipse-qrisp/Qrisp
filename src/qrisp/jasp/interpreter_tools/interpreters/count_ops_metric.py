@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -18,7 +18,7 @@
 
 import types
 from functools import lru_cache
-from typing import Callable, List, Tuple
+from typing import Callable, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -57,25 +57,7 @@ class CountOpsMetric(BaseMetric):
 
         super().__init__(meas_behavior=meas_behavior, profiling_dic=profiling_dic)
 
-        # The XLA compiler showed some scalability problems in compile time.
-        # Through a process involving a lot of blood and sweat
-        # we reverse engineered what to do to improve these problems
-        # 1. represent the integers that count the gates as a list
-        # of integers (instead of an array)
-        # 2. Avoid telling the compiler that it is constants that
-        # are being added. To do this, we supply a list of the first
-        # few integers as arguments, which will be used to do the
-        # incrementation (i.e. CZ_count += 1). It therefore doesn't
-        # look like a constant is being added but a variable
-        self._initial_metric = ([0] * len(profiling_dic), list(range(1, 6)))
-
-    @property
-    def initial_metric(self) -> Tuple[List[int], List[int]]:
-        """Return the initial metric value."""
-        return self._initial_metric
-
     def handle_measure(self, invalues, eqn, context_dic):
-        """Handle the `jasp.measure` primitive."""
 
         counting_index = self.profiling_dic["measure"]
         counting_array = list(invalues[-1][0])
@@ -109,28 +91,28 @@ class CountOpsMetric(BaseMetric):
     # size.
 
     def handle_create_qubits(self, invalues, eqn, context_dic):
-        """Handle the `jasp.create_qubits` primitive."""
+
         # Since we represent QubitArrays via integers, it is sufficient
         # to simply return the input as the output for this primitive.
         return invalues
 
     def handle_get_qubit(self, invalues, eqn, context_dic):
-        """Handle the `jasp.get_qubit` primitive."""
+
         # Trivial behavior since we don't need qubit address information
         return None
 
     def handle_get_size(self, invalues, eqn, context_dic):
-        """Handle the `jasp.get_size` primitive."""
+
         # The QubitArray size is represented via an integer.
         return invalues[0]
 
     def handle_fuse(self, invalues, eqn, context_dic):
-        """Handle the `jasp.fuse` primitive."""
+
         # The size of the fused qubit array is the size of the two added.
         return invalues[0] + invalues[1]
 
     def handle_slice(self, invalues, eqn, context_dic):
-        """Handle the `jasp.slice` primitive."""
+
         # For the slice operation, we need to make sure, we don't go out
         # of bounds.
         start = jnp.max(jnp.array([invalues[1], 0]))
@@ -138,7 +120,6 @@ class CountOpsMetric(BaseMetric):
         return stop - start
 
     def handle_quantum_gate(self, invalues, eqn, context_dic):
-        """Handle the `jasp.quantum_gate` primitive."""
 
         # In the case of a quantum gate, we determine the array index
         # to be increment via dictionary look-up and perform the increment
@@ -179,14 +160,24 @@ class CountOpsMetric(BaseMetric):
         return (counting_array, incrementation_constants)
 
     def handle_delete_qubits(self, invalues, eqn, context_dic):
-        """Handle the `jasp.delete_qubits` primitive."""
+
         # Trivial behavior: return the last argument (the counting array).
         return invalues[-1]
 
     def handle_reset(self, invalues, eqn, context_dic):
-        """Handle the `jasp.reset` primitive."""
+
         # Trivial behavior: return the last argument (the counting array).
         return invalues[-1]
+
+    def handle_parity(self, invalues, eqn, context_dic):
+        """Handle the `jasp.parity` primitive"""
+
+        # Parity is a classical operation on measurement results
+        # Compute XOR and handle expectation
+        expectation = eqn.params.get("expectation", 0)
+        result = jnp.bitwise_xor(sum(invalues) % 2, expectation)
+
+        return jnp.array(result, dtype=bool)
 
 
 def extract_count_ops(res: Tuple, jaspr: Jaspr, profiling_dic: dict) -> dict:
@@ -246,7 +237,18 @@ def get_count_ops_profiler(
 
         STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
 
-        initial_metric_value = count_ops_metric.initial_metric
+        # The XLA compiler showed some scalability problems in compile time.
+        # Through a process involving a lot of blood and sweat
+        # we reverse engineered what to do to improve these problems
+        # 1. represent the integers that count the gates as a list
+        # of integers (instead of an array)
+        # 2. Avoid telling the compiler that it is constants that
+        # are being added. To do this, we supply a list of the first
+        # few integers as arguments, which will be used to do the
+        # incrementation (i.e. CZ_count += 1). It therefore doesn't
+        # look like a constant is being added but a variable
+        initial_metric_value = ([0] * len(profiling_dic), list(range(1, 6)))
+
         filtered_args = [
             x for x in args + (initial_metric_value,) if type(x) not in STATIC_TYPES
         ]

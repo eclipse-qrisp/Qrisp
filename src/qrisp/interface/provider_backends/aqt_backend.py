@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -22,10 +22,10 @@ from qrisp.interface import VirtualBackend, BatchedBackend
 
 class AQTBackend(BatchedBackend):
     """
-    This class instantiates a :ref:`VirtualBackend` using an AQT backend. 
+    This class instantiates a :ref:`VirtualBackend` using an AQT backend.
     This allows easy access to AQT backends through the qrisp interface.
 
-    Using this backend requires addtional dependencies: ``pip install qiskit-aqt-provider``. 
+    Using this backend requires addtional dependencies: ``pip install qiskit-aqt-provider``.
 
     Parameters
     ----------
@@ -34,7 +34,7 @@ class AQTBackend(BatchedBackend):
     device_instance : str
         The device instance of the AQT backend such as ``ibex`` or ``simulator_noise``.
         For an up-to-date list, see the AQT ARNICA website.
-    workspace : str 
+    workspace : str
         The workspace for a company or project.
 
     Examples
@@ -73,11 +73,9 @@ class AQTBackend(BatchedBackend):
             raise TypeError(
                 "api_token must be a string. You can create an API token on the AQT ARNICA website."
             )
-        
+
         if not isinstance(workspace, str):
-            raise TypeError(
-                "workspace must be a string."
-            )
+            raise TypeError("workspace must be a string.")
 
         if not isinstance(device_instance, str):
             raise TypeError(
@@ -91,9 +89,9 @@ class AQTBackend(BatchedBackend):
             raise ImportError(
                 "Please install qiskit-aqt-provider to use the AQTBackend. You can do this by running `pip install qiskit-aqt-provider`."
             )
-        
+
         provider = AQTProvider(api_token)
-        backend = provider.get_backend(name = device_instance, workspace = workspace)
+        backend = provider.get_backend(name=device_instance, workspace=workspace)
 
         """
         def run(qasm_str, shots=None, token=""):
@@ -135,16 +133,18 @@ class AQTBackend(BatchedBackend):
         """
 
         def run_batch_aqt(batch):
-        
+
             circuit_batch = []
             shot_batch = []
             cl_bits_batch = []
             for qc, shots in batch:
-                # Sometimes wrong results without transpilation 
+                # Sometimes wrong results without transpilation
                 qiskit_qc = qc.transpile().to_qiskit()
 
                 # Make circuit with one monolithic register
-                new_qiskit_qc = qiskit.QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
+                new_qiskit_qc = qiskit.QuantumCircuit(
+                    len(qiskit_qc.qubits), len(qiskit_qc.clbits)
+                )
                 for instr in qiskit_qc:
                     new_qiskit_qc.append(
                         instr.operation,
@@ -157,7 +157,7 @@ class AQTBackend(BatchedBackend):
 
                 if shots is None:
                     shots = 100
-            
+
                 shot_batch.append(shots)
 
             # Instantiate a sampler on the execution backend.
@@ -168,7 +168,7 @@ class AQTBackend(BatchedBackend):
             sampler.set_transpile_options(optimization_level=3)
 
             # Sample the circuit on the execution backend.
-            results = sampler.run(circuit_batch, shots = max(shot_batch)).result()
+            results = sampler.run(circuit_batch, shots=max(shot_batch)).result()
 
             quasi_dist_batch = []
             for i in range(len(batch)):
@@ -181,7 +181,7 @@ class AQTBackend(BatchedBackend):
                     new_quasi_dist.setdefault(new_key, quasi_dist[item])
 
                 quasi_dist_batch.append(new_quasi_dist)
-    
+
             return quasi_dist_batch
 
         # Call BatchedBackend constructor

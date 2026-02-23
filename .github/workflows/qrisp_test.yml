@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     strategy:
       matrix:
         python-version: ["3.11.*"]
@@ -24,7 +24,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest qiskit-aer qiskit-iqm pyscf stim cirq xdsl
           pip install -e ./
-          pip install --upgrade pennylane-catalyst 
+          pip install --upgrade pennylane-catalyst
+          pip install git+https://github.com/tqec/tqecd.git 
       - name: Test with pytest
         run: |
           pytest

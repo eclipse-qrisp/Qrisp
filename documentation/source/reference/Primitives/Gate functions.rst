@@ -11,6 +11,7 @@ These functions facilitate the application of (elementary) quantum gates. Note t
    :toctree: generated/
    
    measure
+   parity
    x
    y
    z

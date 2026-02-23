@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -559,7 +559,7 @@ def get_circuit_block_(int_qc, qubits, established_indices=[]):
     # return instruction_indices, expansion_options.to_qubit_list()
 
 
-@njit(cache = True)
+@njit(cache=True)
 def binary_get_circuit_block_jitted(int_qc_list, qubits, n, established_indices):
     # Set up set of expansion options
     expansion_options = 0
