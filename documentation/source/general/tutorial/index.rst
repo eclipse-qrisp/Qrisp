@@ -98,7 +98,7 @@ Kickstart your quantum programming journey here! This section is designed to fam
 Optimization and Numerics
 -------------------------
 Discover how quantum algorithms can tackle complex search and optimization problems.
-In this section, you will dive into solving famous computational challenges (such as the Traveling Salesman Problem and Sudoku) using a powerful suite of quantum tools. 
+In this section, you will dive into solving famous computational challenges (such as the Traveling Salesman Problem and Sudoku) using a versatile suite of quantum tools. 
 Whether you are applying Quantum Backtracking, tuning variational models with QAOA and QIRO, or exploring Counterdiabatic Driving Protocols and Monte Carlo Integration, 
 you will learn how to optimize solutions across a variety of real-world domains.
 
