@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -21,13 +21,15 @@ from io import StringIO
 
 from jax.interpreters.mlir import LoweringParameters, ModuleContext, lower_jaxpr_to_fun
 from jaxlib.mlir import ir
+from jaxlib.mlir import passmanager
 from jax._src import core
 
 from xdsl.context import Context
 from xdsl.parser import Parser
 from xdsl.dialects import builtin, func
 
-def lower_jaxpr_to_MLIR(jaxpr, lowering_rules = tuple([])):
+
+def lower_jaxpr_to_MLIR(jaxpr, lowering_rules=tuple([])):
     """
     Lowers a Jaxpr object into an MLIR string uses Jax's MLIR infrastructure.
 
@@ -36,8 +38,8 @@ def lower_jaxpr_to_MLIR(jaxpr, lowering_rules = tuple([])):
     jaxpr : ClosedJaxpr
         The Jaxpr to lower.
     lowering_rules : tuple, optional
-        The lowering rules to apply to custom primitives. 
-        Check the jasp_lowering_rules file for an example. 
+        The lowering rules to apply to custom primitives.
+        Check the jasp_lowering_rules file for an example.
         The default is tuple([]).
 
     Returns
@@ -50,9 +52,9 @@ def lower_jaxpr_to_MLIR(jaxpr, lowering_rules = tuple([])):
     keepalives = []
     host_callbacks = []
     channel_iter = 1
-    
+
     lowering_params = LoweringParameters(override_lowering_rules=lowering_rules)
-    
+
     ctx = ModuleContext(
         backend=None,
         platforms=["cpu"],
@@ -62,15 +64,15 @@ def lower_jaxpr_to_MLIR(jaxpr, lowering_rules = tuple([])):
         host_callbacks=host_callbacks,
         lowering_parameters=lowering_params,
     )
-    
+
     # Enable unregistered dialects
     ctx.context.allow_unregistered_dialects = True
-    
+
     # Lower JAXPR to MLIR using Catalyst's method
     with ctx.context, ir.Location.unknown(ctx.context):
-        
+
         ctx.module.operation.attributes["sym_name"] = ir.StringAttr.get("jasp_module")
-        
+
         try:
             lower_jaxpr_to_fun(
                 ctx,
@@ -78,15 +80,28 @@ def lower_jaxpr_to_MLIR(jaxpr, lowering_rules = tuple([])):
                 jaxpr,  # Pass the full ClosedJaxpr object
                 jaxpr.effects,
                 num_const_args=len(core.jaxpr_const_args(jaxpr.jaxpr)),
-                in_avals=[var.aval for var in core.jaxpr_const_args(jaxpr.jaxpr) + jaxpr.jaxpr.invars]
+                in_avals=[
+                    var.aval
+                    for var in core.jaxpr_const_args(jaxpr.jaxpr) + jaxpr.jaxpr.invars
+                ],
+                main_function=True,
             )
+
+            # Remove unused functions (like shadow definitions for primitives)
+            # symbol-dce removes private functions that are not referenced.
+            # We set main_function=True above to ensure @main is public and preserved.
+            # pm = passmanager.PassManager.parse("builtin.module(symbol-dce)")
+            # pm.run(ctx.module.operation)
+
         except Exception as e:
             print(f"Error in lower_jaxpr_to_fun: {e}")
             import traceback
+
             print(f"Traceback: {traceback.format_exc()}")
             raise
-    
+
     return ctx.module
+
 
 def generic_mlir_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
     """Parse a generic-format MLIR string into an xDSL ``builtin.module``.
@@ -117,7 +132,7 @@ def generic_mlir_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
     return parser.parse_operation()
 
 
-def jaxpr_to_xdsl(jaxpr, lowering_rules = tuple([])):
+def jaxpr_to_xdsl(jaxpr, lowering_rules=tuple([])):
     """Lower a JAXPR to an xDSL module.
 
     This function performs two steps:
@@ -137,7 +152,7 @@ def jaxpr_to_xdsl(jaxpr, lowering_rules = tuple([])):
         The xDSL module containing the lowered program.
     """
     # 1) Lower to MLIR (jasp dialect) using the custom lowering pipeline.
-    mlir_module = lower_jaxpr_to_MLIR(jaxpr, lowering_rules = lowering_rules)
+    mlir_module = lower_jaxpr_to_MLIR(jaxpr, lowering_rules=lowering_rules)
 
     # 2) Capture generic MLIR printing. Use try/finally to avoid stdout leaks
     #    if an exception is thrown during printing.
@@ -154,5 +169,3 @@ def jaxpr_to_xdsl(jaxpr, lowering_rules = tuple([])):
 
     # Parse to xDSL.
     return generic_mlir_to_xdsl(generic_mlir_string)
-    
-    

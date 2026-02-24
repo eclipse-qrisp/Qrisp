@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -56,7 +56,7 @@ from contextvars import ContextVar
 
 from qrisp.circuit import QubitAlloc, QubitDealloc, fast_append
 from qrisp.core.quantum_session import QuantumSession
-from qrisp.jasp import AbstractQuantumCircuit, QuantumPrimitive, TracingQuantumSession
+from qrisp.jasp import AbstractQuantumState, QuantumPrimitive, TracingQuantumSession
 
 
 class QuantumEnvironment(QuantumPrimitive):
@@ -340,7 +340,7 @@ class QuantumEnvironment(QuantumPrimitive):
             abstractions of the actual arguments.
             """
 
-            return (AbstractQuantumCircuit(),)
+            return (AbstractQuantumState(),)
 
         env_args = [] if env_args is None else env_args
         self.env_args = env_args
@@ -397,11 +397,11 @@ class QuantumEnvironment(QuantumPrimitive):
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            abs_qs = TracingQuantumSession.get_instance()
-            self.temp_qubit_cache = abs_qs.qubit_cache
-            abs_qs.qubit_cache = {}
-            abs_qs.abs_qc = self.bind(
-                *(self.env_args + [abs_qs.abs_qc]),
+            tr_qs = TracingQuantumSession.get_instance()
+            self.temp_qubit_cache = tr_qs.qubit_cache
+            tr_qs.qubit_cache = {}
+            tr_qs.abs_qst = self.bind(
+                *(self.env_args + [tr_qs.abs_qst]),
                 stage="enter",
                 type=str(type(self)).rsplit(".", maxsplit=1)[-1][:-2],
             )[0]

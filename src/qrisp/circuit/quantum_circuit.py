@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -1907,6 +1907,127 @@ class QuantumCircuit:
 
         return qml_converter(self)
 
+    def to_stim(
+        self,
+        return_measurement_map=False,
+        return_detector_map=False,
+        return_observable_map=False,
+    ):
+        """
+        Method to convert the given QuantumCircuit to a `Stim <https://github.com/quantumlib/Stim/>`_ Circuit.
+
+        .. note::
+
+            Stim can only process/represent Clifford operations.
+
+        Parameters
+        ----------
+        return_measurement_map : bool, optional
+            If set to True, the function returns the measurement_map, as described below.
+            The default is False.
+        return_detector_map : bool, optional
+            If set to True, the function returns the detector_map.
+            The default is False.
+        return_observable_map : bool, optional
+            If set to True, the function returns the observable_map.
+            The default is False.
+
+        Returns
+        -------
+        stim_circuit : stim.Circuit
+            The converted Stim circuit.
+        measurement_map : dict
+            (Optional) A dictionary mapping Qrisp Clbit objects to Stim measurement record indices.
+            For example, ``{Clbit(cb_1): 2, Clbit(cb_0): 1}`` means ``Clbit("cb_1")``
+            corresponds to index 2 in Stim's measurement record.
+        detector_map : dict
+            (Optional) A dictionary mapping :class:`~qrisp.jasp.ParityHandle` objects to Stim detector indices.
+            ParityHandle objects are compared by their index, so handles from to_qc() can
+            be used directly as keys.
+        observable_map : dict
+            (Optional) A dictionary mapping :class:`~qrisp.jasp.ParityHandle` objects to Stim observable indices.
+            ParityHandle objects are compared by their index, so handles from to_qc() can
+            be used directly as keys.
+
+        Examples
+        --------
+        Basic conversion:
+
+        >>> from qrisp import QuantumCircuit
+        >>> qc = QuantumCircuit(2, 2)
+        >>> qc.x(0)
+        >>> qc.cz(0, 1)
+        >>> qc.measure(0, 0)
+        >>> qc.measure(1, 1)
+        >>> print(qc)
+              ┌───┐   ┌─┐
+        qb_0: ┤ X ├─■─┤M├───
+              └───┘ │ └╥┘┌─┐
+        qb_1: ──────■──╫─┤M├
+                       ║ └╥┘
+        cb_0: ═════════╩══╬═
+                          ║
+        cb_1: ════════════╩═
+
+        >>> stim_circuit = qc.to_stim()
+        >>> print(stim_circuit)
+        X 0
+        CZ 0 1
+        M 0 1
+
+        Stim creates measurement indices in the order of how the measurements appear
+        in the circuit. This is different in Qrisp: It is for instance possible
+        for the first measurement of the circuit to target the second ``Clbit``.
+        The second measurement can in-principle then target either the first or
+        the second ``Clbit``. In order to still identify which ``Clbit`` corresponds to
+        which stim measurement index, we can use the ``return_measurement_map`` keyword
+        argument.
+
+        >>> qc = QuantumCircuit(2, 2)
+        >>> qc.x(0)
+        >>> qc.cz(0, 1)
+        >>> qc.measure(1, 1) # The first measurement of the circuit targets the second ClBit
+        >>> qc.measure(0, 0) # The second measurement of the circuit targets the first ClBit
+        >>> print(qc)
+              ┌───┐      ┌─┐
+        qb_0: ┤ X ├─■────┤M├
+              └───┘ │ ┌─┐└╥┘
+        qb_1: ──────■─┤M├─╫─
+                      └╥┘ ║
+        cb_0: ═════════╬══╩═
+                       ║
+        cb_1: ═════════╩════
+        >>> stim_circuit, measurement_map = qc.to_stim(return_measurement_map = True)
+        >>> print(stim_circuit)
+        X 0
+        CZ 0 1
+        M 1 0
+
+        We see that Stim now measures the qubit with index 1 first (``M 1 0``),
+        which is why in the measurement record the measurement result in ``Clbit("cb_1")``
+        will appear at index 0 and ``Clbit("cb_0")`` at index 1.
+        To retrieve the correct order, we inspect the ``measurement_map`` dictionary.
+
+        >>> print(measurement_map)  # Maps Clbit objects to Stim measurement indices
+        {Clbit(cb_1): 0, Clbit(cb_0): 1}
+
+        We can now check the samples drawn from this circuit for a given ``Clbit``
+        object by slicing the sampling result array.
+
+        >>> sampler = stim_circuit.compile_sampler()
+        >>> all_samples = sampler.sample(5)
+        >>> samples = all_samples[:, measurement_map[qc.clbits[0]]]
+        >>> print(samples)
+        array([ True,  True,  True,  True,  True])
+
+        """
+
+        from qrisp.interface import qrisp_to_stim
+
+        return qrisp_to_stim(
+            self, return_measurement_map, return_detector_map, return_observable_map
+        )
+
     def to_pytket(self):
         """
         Method to convert the given QuantumCircuit to a `PyTket <https://cqcl.github.io/tket/pytket/api/#>`_ Circuit.
@@ -1962,6 +2083,86 @@ class QuantumCircuit:
                 clbits = self.add_clbit()
 
         self.append(ops.Measurement(), [qubits], [clbits])
+
+    def parity(self, clbits, expectation=0, observable=False):
+        """
+        Instructs a parity operation on a set of classical bits.
+
+        This method creates a parity check (XOR) on measurement results, useful for
+        quantum error correction and when interfacing with Stim. When the circuit is
+        converted to Stim (via :meth:`to_stim`), this creates either a ``DETECTOR``
+        instruction (if ``observable=False``) or an ``OBSERVABLE_INCLUDE`` instruction
+        (if ``observable=True``).
+
+        Parameters
+        ----------
+        clbits : list[Clbit] or Clbit
+            The classical bits to compute parity over. Can be a single Clbit or a list
+            of Clbits representing measurement results.
+        expectation : int, optional
+            The expected parity value (0 or 1). Default is 0.
+        observable : bool, optional
+            If True, this parity is treated as a Stim observable rather than a detector.
+            Default is False.
+
+        Returns
+        -------
+        ParityHandle
+            A :class:`~qrisp.jasp.ParityHandle` object representing the parity result.
+            This handle can be used as a key to look up detector/observable indices in
+            the maps returned by :meth:`to_stim`.
+
+        Examples
+        --------
+
+        Create a simple detector checking that two qubits have even parity:
+
+        >>> from qrisp import QuantumCircuit
+        >>> qc = QuantumCircuit(2, 2)
+        >>> qc.h(0)
+        >>> qc.cx(0, 1)
+        >>> qc.measure([0, 1], [0, 1])
+        >>> handle = qc.parity([qc.clbits[0], qc.clbits[1]], expectation=0)
+        >>> print(handle)
+        ParityHandle(Clbit(cb_2), Clbit(cb_3))
+
+        Convert to Stim and check the detector:
+
+        >>> stim_circuit, meas_map, det_map = qc.to_stim(
+        ...     return_measurement_map=True,
+        ...     return_detector_map=True
+        ... )
+        >>> det_map[handle]  # Get the Stim detector index
+        0
+
+        See Also
+        --------
+        :func:`qrisp.parity` : The gate function version for use in QuantumSessions
+        :meth:`to_stim` : Convert to Stim circuit with detector/observable maps
+        :class:`qrisp.jasp.ParityHandle` : Documentation of the ParityHandle class
+        """
+        from qrisp.jasp.primitives.parity_primitive import ParityOperation
+        from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
+            ParityHandle,
+        )
+
+        # Ensure clbits is a list
+        if not isinstance(clbits, list):
+            clbits = [clbits]
+
+        # Create and append the parity operation
+        parity_op = ParityOperation(
+            len(clbits), expectation=expectation, observable=observable
+        )
+
+        # Append the operation (doesn't return the instruction)
+        self.append(parity_op, clbits=clbits)
+
+        # Get the last instruction that was just appended
+        instruction = self.data[-1]
+
+        # Return a ParityHandle wrapping this instruction
+        return ParityHandle(instruction)
 
     def cx(self, qubits_0, qubits_1):
         """

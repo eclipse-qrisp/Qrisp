@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -27,12 +27,13 @@ from qrisp.misc import gate_wrap
 from qrisp.environments import invert, conjugate
 from qrisp.jasp import check_for_tracing_mode
 
+
 @jit
 def _signed_int_iso(x, n):
     """
     Computes the signed integer isomorphism for a given bit-width.
 
-    This function maps an integer `x` from the signed range [-2^n, 2^n - 1] 
+    This function maps an integer `x` from the signed range [-2^n, 2^n - 1]
     into the unsigned range [0, 2^(n+1) - 1].
     This is equivalent to the mathematical operation: x % 2^(n+1).
 
@@ -46,12 +47,13 @@ def _signed_int_iso(x, n):
     Returns
     -------
     jax.Array
-        A jnp.int64 array where each element of `x` has been mapped to 
+        A jnp.int64 array where each element of `x` has been mapped to
         the unsigned range [0, 2^(n+1) - 1].
     """
     # 1. Modular wrap: Ensure x is within [0, 2**(n+1) - 1]
     mask = (jnp.int64(1) << (n + 1)) - 1
     return jnp.int64(x) & mask
+
 
 @jit
 def _signed_int_iso_inv(y, n):
@@ -59,7 +61,7 @@ def _signed_int_iso_inv(y, n):
     Computes the inverse signed integer isomorphism for a given bit-width.
 
     This function maps an integer `y` from the unsigned range [0, 2^(n+1) - 1]
-    back into the signed range [-2^n, 2^n - 1]. It performs a manual 
+    back into the signed range [-2^n, 2^n - 1]. It performs a manual
     sign-extension by treating the n-th bit of `y` as the sign bit.
 
     Parameters
@@ -72,21 +74,22 @@ def _signed_int_iso_inv(y, n):
     Returns
     -------
     jax.Array
-        A jnp.int64 array where each element of `y` has been mapped to 
+        A jnp.int64 array where each element of `y` has been mapped to
         the signed range [-2^n, 2^n - 1].
     """
     # 1. Modular wrap: Ensure y is within [0, 2**(n+1) - 1]
     mask = (jnp.int64(1) << (n + 1)) - 1
     y_wrapped = jnp.int64(y) & mask
-    
+
     # 2. Sign extension: If bit 'n' is set, the number is negative.
     # In two's complement, we subtract 2**(n+1) from values >= 2**n.
     sign_bit = jnp.int64(1) << n
-    return jnp.where(y_wrapped & sign_bit, 
-                     y_wrapped - (jnp.int64(1) << (n + 1)), 
-                     y_wrapped)
+    return jnp.where(
+        y_wrapped & sign_bit, y_wrapped - (jnp.int64(1) << (n + 1)), y_wrapped
+    )
 
-#def signed_int_iso(x, n):
+
+# def signed_int_iso(x, n):
 #    if int(x) < -(2**n) or int(x) >= 2**n:
 #        raise Exception("Applying signed integer isomorphism resulted in overflow")
 
@@ -96,7 +99,7 @@ def _signed_int_iso_inv(y, n):
 #        return -abs(x) % 2 ** (n + 1)
 
 
-#def signed_int_iso_inv(y, n):
+# def signed_int_iso_inv(y, n):
 #    y = y % 2 ** (n + 1)
 #    if y < 2**n:
 #        return y
@@ -371,7 +374,7 @@ class QuantumFloat(QuantumVariable):
 
         if self.signed:
             res = _signed_int_iso_inv(i, self.msize) * jnp.float64(2) ** self.exponent
-        else:  
+        else:
             res = i * jnp.float64(2) ** self.exponent
 
         if check_for_tracing_mode():
@@ -627,18 +630,25 @@ class QuantumFloat(QuantumVariable):
 
         if check_for_tracing_mode():
             from qrisp.alg_primitives.arithmetic import gidney_adder
-            
+
             if isinstance(other, QuantumFloat):
                 starting_digit = jnp.maximum(other.exponent, self.exponent)
-                
-                gidney_adder(other[starting_digit-other.exponent:], self[starting_digit-self.exponent:])
-            elif isinstance(other, (int, float)) or (isinstance(other, Tracer) and isinstance(other, Array)):
+
+                gidney_adder(
+                    other[starting_digit - other.exponent :],
+                    self[starting_digit - self.exponent :],
+                )
+            elif isinstance(other, (int, float)) or (
+                isinstance(other, Tracer) and isinstance(other, Array)
+            ):
                 gidney_adder(self.encoder(other), self)
             else:
                 print(isinstance(other, Tracer))
                 print(type(other.dtype))
-                raise Exception(f"Don't know how to handle quantum addition with type {type(other)}")
-            
+                raise Exception(
+                    f"Don't know how to handle quantum addition with type {type(other)}"
+                )
+
             return self
 
         from qrisp.alg_primitives.arithmetic import polynomial_encoder
@@ -649,7 +659,7 @@ class QuantumFloat(QuantumVariable):
 
             polynomial_encoder(input_qf_list, self, poly)
 
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float, np.number)):
             # self.incr(other)
 
             if not int(other / 2**self.exponent) == other / 2**self.exponent:
@@ -775,7 +785,9 @@ class QuantumFloat(QuantumVariable):
 
         from qrisp.alg_primitives.arithmetic import eq
 
-        if not check_for_tracing_mode() and not isinstance(other, (QuantumFloat, int, float)):
+        if not check_for_tracing_mode() and not isinstance(
+            other, (QuantumFloat, int, float)
+        ):
             raise Exception(f"Comparison with type {type(other)} not implemented")
 
         return eq(self, other)
@@ -784,7 +796,9 @@ class QuantumFloat(QuantumVariable):
 
         from qrisp.alg_primitives.arithmetic import neq
 
-        if not check_for_tracing_mode() and not isinstance(other, (QuantumFloat, int, float)):
+        if not check_for_tracing_mode() and not isinstance(
+            other, (QuantumFloat, int, float)
+        ):
             raise Exception(f"Comparison with type {type(other)} not implemented")
 
         return neq(self, other)
@@ -1026,10 +1040,10 @@ class QuantumFloat(QuantumVariable):
         """
 
         res = jnp.int64(jnp.round(x / jnp.float64(2) ** self.exponent))
-        res = jnp.minimum(2 ** self.msize - 1, res)
+        res = jnp.minimum(2**self.msize - 1, res)
 
         if self.signed:
-            res = jnp.maximum(-2 ** self.msize, res)
+            res = jnp.maximum(-(2**self.msize), res)
             res = _signed_int_iso(res, self.size)
         else:
             res = jnp.maximum(0, res)
@@ -1177,12 +1191,27 @@ def create_output_qf(operands, op):
 
         return QuantumFloat(msize, exponent=exponent, signed=signed)
 
+    from qrisp.qtypes import QuantumModulus
+
+    if all(isinstance(operand, QuantumModulus) for operand in operands):
+        res = operands[0].duplicate()
+        if op == "mul":
+            res.m = (
+                operands[0].m
+                + operands[1].m
+                - (
+                    int(np.ceil(np.log2((operands[0].modulus - 1) ** 2) + 1))
+                    - operands[0].size
+                )
+            )
+        return res
+
     if op == "add":
         signed = operands[0].signed or operands[1].signed
-        exponent = min(operands[0].exponent, operands[1].exponent)
-        max_sig = max(operands[0].mshape[1], operands[1].mshape[1]) + 1
+        exponent = jnp.minimum(operands[0].exponent, operands[1].exponent)
+        max_sig = jnp.maximum(operands[0].mshape[1], operands[1].mshape[1]) + 1
         msize = max_sig - exponent + 1
-        
+
         return QuantumFloat(
             msize, exponent, operands[0].qs, signed=signed, name="add_res*"
         )
@@ -1206,8 +1235,8 @@ def create_output_qf(operands, op):
         )
 
     if op == "sub":
-        exponent = min(operands[0].exponent, operands[1].exponent)
-        max_sig = max(operands[0].mshape[1], operands[1].mshape[1]) + 1
+        exponent = jnp.minimum(operands[0].exponent, operands[1].exponent)
+        max_sig = jnp.maximum(operands[0].mshape[1], operands[1].mshape[1]) + 1
         msize = max_sig - exponent + 1
 
         return QuantumFloat(

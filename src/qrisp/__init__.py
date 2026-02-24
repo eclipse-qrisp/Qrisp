@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -46,35 +46,43 @@ for i in [
     "qite",
     "qmci",
     "cks",
+    "lanczos",
+    "gqsp",
+    "cold",
 ]:
     sys.modules["qrisp." + i] = sys.modules["qrisp.algorithms." + i]
 
 from qrisp.default_backend import *
 from qrisp.jasp import *
 
+
 # Register some types as "always static" within Jasp
 def register_static_types():
     from jax import tree_util
-    
+
     def unflatten_function(aux_data, children):
         return aux_data
-    
-    
+
     def flatten_function(arg):
         # return the tracers and auxiliary data (structure of the object)
         return tuple(), arg
-    
-    
+
     try:
-        tree_util.register_pytree_node(types.FunctionType, flatten_function, unflatten_function)
+        tree_util.register_pytree_node(
+            types.FunctionType, flatten_function, unflatten_function
+        )
         tree_util.register_pytree_node(str, flatten_function, unflatten_function)
     except ValueError as e:
         if not "PyTree" in str(e):
             raise e
 
     from qrisp.operators import QubitOperator, FermionicOperator
+
     tree_util.register_pytree_node(QubitOperator, flatten_function, unflatten_function)
-    tree_util.register_pytree_node(FermionicOperator, flatten_function, unflatten_function)
+    tree_util.register_pytree_node(
+        FermionicOperator, flatten_function, unflatten_function
+    )
+    # tree_util.register_pytree_node(BlockEncoding, flatten_function, unflatten_function)
+
 
 register_static_types()
-        

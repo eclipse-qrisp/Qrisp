@@ -16,20 +16,7 @@
 ********************************************************************************
 """
 
-# -*- coding: utf-8 -*-
-
-# import qrisp.operators.pauli as pauli
-# import qrisp.operators.fermionic as fermionic
-# from qrisp.operators.hamiltonian import *
-# from qrisp.operators.hamiltonian_tools import *
-
 from qrisp.operators.hamiltonian import *
 from qrisp.operators.hamiltonian_tools import *
-
 from qrisp.operators.qubit import *
 from qrisp.operators.fermionic import *
-
-# from qrisp.operators.qubit.pauli_operator import *
-# from qrisp.operators.qubit.bound_pauli_operator import *
-# from qrisp.operators.qubit.pauli_measurement import *
-# from qrisp.operators.qubit.pauli import *

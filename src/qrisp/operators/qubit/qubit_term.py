@@ -611,56 +611,57 @@ class QubitTerm:
                 result_coeff *= value
 
         return QubitTerm(result_factor_dict), result_coeff
-    
+
     #
     # Unitary
     #
 
-    def unitary(self, sign = False):
+    def unitary(self, sign=False):
         """
-        Returns the unitary for the term self. 
+        Returns the unitary for the term self.
 
         Parameters
         ----------
             sign : bool
                 A Boolean indicating whether a phase -1 must be applied. The default is False.
-        
+
         """
+
         def unitary_(operand):
             for i, factor in self.factor_dict.items():
-                if factor=="X":
+                if factor == "X":
                     x(operand[i])
-                elif factor=="Y":
+                elif factor == "Y":
                     y(operand[i])
-                elif factor=="Z":
+                elif factor == "Z":
                     z(operand[i])
 
             if sign:
                 gphase(np.pi, operand[0])
-            
+
         return unitary_
-    
-    def apply_unitary(self, operand, sign = False):
+
+    def apply_unitary(self, operand, sign=False):
         """
-        Applies the unitary for the term self to the ``operand``. 
+        Applies the unitary for the term self to the ``operand``.
 
         Parameters
         ----------
             sign : bool
                 A Boolean indicating whether a phase -1 must be applied. The default is False.
-        
+
         """
         for i, factor in self.factor_dict.items():
-            if factor=="X":
+            if factor == "X":
                 x(operand[i])
-            elif factor=="Y":
+            elif factor == "Y":
                 y(operand[i])
-            elif factor=="Z":
+            elif factor == "Z":
                 z(operand[i])
 
         if sign:
-                gphase(np.pi, operand[0])
-            
+            gphase(np.pi, operand[0])
+
     #
     # Commutativity
     #

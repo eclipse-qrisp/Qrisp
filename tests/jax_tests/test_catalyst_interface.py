@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -162,6 +162,101 @@ def test_catalyst_interface():
     qir_str = jaspr.to_qir()
 
 
+def test_parity_catalyst():
+    """Test parity primitive with catalyst interface."""
+
+    # Test basic parity
+    @qjit
+    def test_basic_parity():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        x(qv[2])
+        
+        m1 = measure(qv[0])
+        m2 = measure(qv[1])
+        m3 = measure(qv[2])
+        
+        result = parity(m1, m2, m3)
+        return result
+    
+    # XOR of (True, False, True) = False
+    assert test_basic_parity() == False
+    
+    # Test parity with expectation
+    @qjit
+    def test_parity_expectation():
+        qv = QuantumVariable(2)
+        x(qv[0])
+        
+        m1 = measure(qv[0])
+        m2 = measure(qv[1])
+        
+        # Parity is True (one 1), expectation is False
+        # XOR(True, False) = True (mismatch indicator)
+        result = parity(m1, m2, expectation=0)
+        return result
+    
+    assert test_parity_expectation() == True
+    
+    # Test parity returns correct type that can be used in subsequent operations
+    @qjit
+    def test_parity_type():
+        qv = QuantumVariable(2)
+        x(qv[0])
+        
+        m1 = measure(qv[0])
+        m2 = measure(qv[1])
+        
+        p = parity(m1, m2)
+        
+        # Parity result should be usable in boolean operations
+        return p
+    
+    # Parity of (True, False) = True
+    assert test_parity_type() == True
+
+
+def test_parity_catalyst_with_scan():
+    """Test parity with array inputs (scan primitive) in catalyst."""
+    
+    try:
+        import catalyst
+    except ModuleNotFoundError:
+        return
+    
+    import jax.numpy as jnp
+    
+    @qjit
+    def test_array_parity():
+        qv0 = QuantumVariable(3)
+        qv1 = QuantumVariable(3)
+        
+        # Set specific states
+        x(qv0[0])  # qv0 = [1, 0, 1]
+        x(qv0[2])
+        x(qv1[1])  # qv1 = [0, 1, 0]
+        
+        # Measure individual qubits
+        m0_0 = measure(qv0[0])
+        m0_1 = measure(qv0[1])
+        m0_2 = measure(qv0[2])
+        
+        m1_0 = measure(qv1[0])
+        m1_1 = measure(qv1[1])
+        m1_2 = measure(qv1[2])
+        
+        # Create arrays and compute parity (triggers scan)
+        meas_array_0 = jnp.array([m0_0, m0_1, m0_2])
+        meas_array_1 = jnp.array([m1_0, m1_1, m1_2])
+        
+        result = parity(meas_array_0, meas_array_1)
+        return result
+    
+    result = test_array_parity()
+    # Expected: [1 XOR 0, 0 XOR 1, 1 XOR 0] = [1, 1, 1]
+    expected = jnp.array([1, 1, 1])
+    assert jnp.array_equal(result, expected), f"Expected {expected}, got {result}"
+    
 def test_qjit_pytree():
     """Test that qjit preserves PyTree structure in return values."""
     
@@ -169,7 +264,7 @@ def test_qjit_pytree():
         import catalyst
     except ModuleNotFoundError:
         return
-    
+
     # Test 1: Returning a dictionary
     @qjit
     def dict_return():

@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -263,6 +263,7 @@ class TensorFactor:
             # print(vdot_value)
             # print(xp.abs(xp.abs(vdot_value) - (p_list[0]*p_list[1])**0.5))
             return self, self
+
         temp = xp.zeros(2, dtype=self.tensor_array.data.dtype)
         temp[0] = (p_list[0]) ** 0.5
         temp[1] = (p_list[1]) ** 0.5 * vdot_value / xp.abs(vdot_value)

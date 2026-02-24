@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -1250,7 +1250,7 @@ class QuantumBacktrackingTree:
             return res_graph, root
         return res_graph
 
-    def visualize_statevector(self, pos=None):
+    def visualize_statevector(self, pos=None, ax=None):
         """
         Visualizes the statevector graph.
 
@@ -1260,6 +1260,9 @@ class QuantumBacktrackingTree:
             A dictionary indicating the positional layout of the nodes. For more information visit
             `this page <https://networkx.org/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw.html>`_
             By default is suitable will be generated.
+        ax : matplotlib.axes.Axes, optional
+            The axes object to draw the plot onto. If None, the current active axes is used.
+            This is useful for creating grids of plots using `plt.subplots`.
 
         Examples
         --------
@@ -1362,12 +1365,12 @@ class QuantumBacktrackingTree:
 
         colors = [complex_to_color(node.amplitude) for node in G.nodes()]
 
-        nx.draw(G, pos)
-        nx.draw_networkx_nodes(G, pos, node_color=colors)
+        nx.draw(G, pos, ax=ax)
+        nx.draw_networkx_nodes(G, pos, node_color=colors, ax=ax)
 
         edge_labels = dict([((n1, n2), l) for n1, n2, l in G.edges(data="label")])
 
-        nx.draw_networkx_edge_labels(G, pos=pos, edge_labels=edge_labels)
+        nx.draw_networkx_edge_labels(G, pos=pos, edge_labels=edge_labels, ax=ax)
 
     def statevector(self):
         """

@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -18,8 +18,14 @@
 
 from jax.extend.core import ClosedJaxpr
 
-from qrisp.jasp.primitives import create_quantum_kernel_p, consume_quantum_kernel_p, AbstractQubit, AbstractQubitArray
+from qrisp.jasp.primitives import (
+    create_quantum_kernel_p,
+    consume_quantum_kernel_p,
+    AbstractQubit,
+    AbstractQubitArray,
+)
 from qrisp.jasp.tracing_logic import TracingQuantumSession, qache, get_last_equation
+
 
 def quantum_kernel(func):
     """
@@ -116,16 +122,18 @@ def quantum_kernel(func):
 
     """
 
-    func = qache(func, )
+    func = qache(
+        func,
+    )
 
     def return_function(*args, **kwargs):
 
         from qrisp.jasp.jasp_expression.centerclass import Jaspr, collect_environments
 
         qs = TracingQuantumSession.get_instance()
-        
+
         qs.start_tracing(create_quantum_kernel_p.bind())
-        
+
         try:
             res = func(*args, **kwargs)
         except Exception as e:
@@ -133,7 +141,7 @@ def quantum_kernel(func):
             raise e
 
         eqn = get_last_equation()
-        
+
         flattened_jaspr = Jaspr.from_cache(
             collect_environments(eqn.params["jaxpr"])
         ).flatten_environments()
@@ -143,13 +151,13 @@ def quantum_kernel(func):
         for var in flattened_jaspr.outvars:
             if isinstance(var.aval, (AbstractQubitArray, AbstractQubit)):
                 raise Exception("Tried to construct quantum kernel with quantum output")
-        
+
         eqn.params["jaxpr"] = flattened_jaspr
-        
-        abs_qc = qs.conclude_tracing()
-        
-        consume_quantum_kernel_p.bind(abs_qc)
-        
+
+        abs_qst = qs.conclude_tracing()
+
+        consume_quantum_kernel_p.bind(abs_qst)
+
         return res
 
     return return_function
