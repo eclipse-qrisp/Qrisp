@@ -57,7 +57,7 @@ class TracingQuantumSession:
     """
 
     tr_qs_container: List["TracingQuantumSession | None"] = [None]
-    abs_qc_stack: List = []
+    abs_qst_stack: List = []
     qubit_cache_stack: List = []
 
     def __init__(self):
