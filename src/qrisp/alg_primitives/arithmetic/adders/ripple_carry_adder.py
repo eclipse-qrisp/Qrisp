@@ -40,7 +40,7 @@ def inpl_add(
 
         qf1 += qf2
 
-    There is two one algorithm available:
+    There is one algorithm available:
     The `Thapliyal adder <https://arxiv.org/abs/1712.02630>`_
 
     Parameters
