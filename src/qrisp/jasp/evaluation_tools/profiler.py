@@ -87,7 +87,7 @@ METRIC_DISPATCH = {
 }
 
 
-def _normalize_meas_behavior(meas_behavior) -> Callable:
+def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
     """Normalize the measurement behavior into a callable."""
 
     if isinstance(meas_behavior, str):

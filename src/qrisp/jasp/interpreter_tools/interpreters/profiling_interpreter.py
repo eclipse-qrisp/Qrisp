@@ -331,7 +331,7 @@ def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
 
     prim_handlers = metric.get_handlers()
 
-    def profiling_eqn_evaluator(eqn, context_dic: ContextDict):
+    def profiling_eqn_evaluator(eqn: JaxprEqn, context_dic: ContextDict) -> None | bool:
 
         invalues = extract_invalues(eqn, context_dic)
         prim = eqn.primitive
