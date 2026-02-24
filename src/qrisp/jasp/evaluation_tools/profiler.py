@@ -393,8 +393,8 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
 
         -   The memory management operations ``reset`` and ``delete`` are currently ignored.
             Qubits freed by these calls still count toward the ``max_qubits`` limit.
-        
-        -   This metric can currently handle the slice operation correctly only when 
+
+        -   This metric can currently handle the slice operation correctly only when
             the lower bound of the slice is strictly smaller than the upper bound.
 
     """

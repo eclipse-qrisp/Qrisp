@@ -32,7 +32,6 @@ from qrisp.jasp.interpreter_tools import (
     make_profiling_eqn_evaluator,
 )
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
-    get_quantum_operations,
     is_abstract,
 )
 from qrisp.jasp.jasp_expression import Jaspr
@@ -143,31 +142,34 @@ class DepthMetric(BaseMetric):
     meas_behavior : Callable
         The measurement behavior function.
 
-    profiling_dic : dict
-        The profiling dictionary mapping quantum operations to indices.
-
     max_qubits : int, optional
         The maximum number of qubits supported for depth computation. Default is 1024.
 
     """
 
-    def __init__(
-        self, meas_behavior: Callable, profiling_dic: dict, max_qubits: int = 1024
-    ):
+    def __init__(self, meas_behavior: Callable, max_qubits: int = 1024):
         """Initialize the DepthMetric."""
 
-        super().__init__(meas_behavior=meas_behavior, profiling_dic=profiling_dic)
+        super().__init__(meas_behavior=meas_behavior)
 
         # Define a maximum number of qubits to track depth for
         # This can be adjusted as needed (trade-off between memory and flexibility).
         # Unfortunately, JAX does not support dynamic arrays (yet).
         # Ideally, we would implement dynamic resizing in the future
-        self._max_qubits = max_qubits
+        self._max_qubits: int = max_qubits
 
     @property
     def max_qubits(self) -> int:
         """Return the maximum number of qubits supported."""
         return self._max_qubits
+
+    @classmethod
+    def from_cache_key(cls, cache_key):
+        meas_behavior, max_qubits = cache_key
+        return cls(meas_behavior, max_qubits)
+
+    def cache_key(self):
+        return (self.meas_behavior, self.max_qubits)
 
     def handle_create_qubits(self, invalues, eqn, context_dic):
 
@@ -327,8 +329,8 @@ class DepthMetric(BaseMetric):
 
         (qubit_array, size), start_inv, stop_inv = invalues
 
-        start_inv += (start_inv < 0 )*size
-        stop_inv += (stop_inv < 0)*size
+        start_inv += (start_inv < 0) * size
+        stop_inv += (stop_inv < 0) * size
 
         start = jnp.maximum(start_inv, jnp.int64(0))
         stop = jnp.minimum(stop_inv, size)
@@ -350,7 +352,7 @@ class DepthMetric(BaseMetric):
 
         _, metric_data = invalues
 
-        #_warn_not_implemented("reset")
+        # _warn_not_implemented("reset")
 
         # Associate the following in context_dic:
         # QuantumState -> metric_data
@@ -360,7 +362,7 @@ class DepthMetric(BaseMetric):
 
         _, metric_data = invalues
 
-        #_warn_not_implemented("delete_qubits")
+        # _warn_not_implemented("delete_qubits")
 
         # Associate the following in context_dic:
         # QuantumState -> metric_data
@@ -415,13 +417,8 @@ def get_depth_profiler(
         A depth profiler function and None as auxiliary data.
 
     """
-    quantum_operations = get_quantum_operations(jaspr)
-    profiling_dic = {quantum_operations[i]: i for i in range(len(quantum_operations))}
 
-    if "measure" not in profiling_dic:
-        profiling_dic["measure"] = -1
-
-    depth_metric = DepthMetric(meas_behavior, profiling_dic, max_qubits)
+    depth_metric = DepthMetric(meas_behavior, max_qubits)
     profiling_eqn_evaluator = make_profiling_eqn_evaluator(depth_metric)
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 

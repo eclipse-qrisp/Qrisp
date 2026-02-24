@@ -29,9 +29,6 @@ from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
     eval_jaxpr,
     make_profiling_eqn_evaluator,
 )
-from qrisp.jasp.interpreter_tools.interpreters.utilities import (
-    get_quantum_operations,
-)
 from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.jasp.primitives import (
     AbstractQubitArray,
@@ -63,25 +60,25 @@ class NumQubitsMetric(BaseMetric):
     meas_behavior : Callable
         The measurement behavior function.
 
-    profiling_dic : dict
-        The profiling dictionary mapping quantum operations to indices.
-
     max_allocations : int
         The maximum number of qubit allocations/deallocations supported by the profiler.
 
     """
 
-    def __init__(
-        self,
-        meas_behavior: Callable,
-        profiling_dic: dict,
-        max_allocations: int = 1000,
-    ):
+    def __init__(self, meas_behavior: Callable, max_allocations: int = 1000):
         """Initialize the NumQubitsMetric."""
 
-        super().__init__(meas_behavior=meas_behavior, profiling_dic=profiling_dic)
+        super().__init__(meas_behavior=meas_behavior)
 
-        self._max_allocations = max_allocations
+        self._max_allocations: int = max_allocations
+
+    def cache_key(self):
+        return (self.meas_behavior, self._max_allocations)
+
+    @classmethod
+    def from_cache_key(cls, cache_key):
+        meas_behavior, max_allocations = cache_key
+        return cls(meas_behavior, max_allocations)
 
     @property
     def max_allocations(self) -> int:
@@ -280,13 +277,8 @@ def get_num_qubits_profiler(
         A num qubits profiler function and None as auxiliary data.
 
     """
-    quantum_operations = get_quantum_operations(jaspr)
-    profiling_dic = {quantum_operations[i]: i for i in range(len(quantum_operations))}
 
-    if "measure" not in profiling_dic:
-        profiling_dic["measure"] = -1
-
-    num_qubits_metric = NumQubitsMetric(meas_behavior, profiling_dic, max_allocations)
+    num_qubits_metric = NumQubitsMetric(meas_behavior, max_allocations)
     profiling_eqn_evaluator = make_profiling_eqn_evaluator(num_qubits_metric)
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 

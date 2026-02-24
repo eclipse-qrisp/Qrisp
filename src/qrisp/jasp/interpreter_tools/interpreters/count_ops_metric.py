@@ -18,7 +18,7 @@
 
 import types
 from functools import lru_cache
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Dict
 
 import jax
 import jax.numpy as jnp
@@ -44,7 +44,7 @@ class CountOpsMetric(BaseMetric):
 
     Parameters
     ----------
-    profiling_dic : dict
+    profiling_dic : Dict[str, int]
         A dictionary mapping quantum operation names to their profiling indices.
 
     meas_behavior : Callable
@@ -52,10 +52,26 @@ class CountOpsMetric(BaseMetric):
 
     """
 
-    def __init__(self, profiling_dic: dict, meas_behavior: Callable):
+    def __init__(self, meas_behavior: Callable, profiling_dic: Dict[str, int]) -> None:
         """Initialize the CountOpsMetric."""
 
-        super().__init__(meas_behavior=meas_behavior, profiling_dic=profiling_dic)
+        super().__init__(meas_behavior=meas_behavior)
+
+        self._profiling_dic: Dict[str, int] = profiling_dic
+
+    @property
+    def profiling_dic(self) -> Dict[str, int]:
+        """Return the profiling dictionary."""
+        return self._profiling_dic
+
+    @classmethod
+    def from_cache_key(cls, cache_key):
+        zipped_profiling_dic, meas_behavior = cache_key
+        profiling_dic = dict(zipped_profiling_dic)
+        return cls(meas_behavior, profiling_dic)
+
+    def cache_key(self) -> Tuple:
+        return (tuple(self.profiling_dic.items()), self.meas_behavior)
 
     def handle_measure(self, invalues, eqn, context_dic):
 
@@ -82,7 +98,7 @@ class CountOpsMetric(BaseMetric):
             self._validate_measurement_result(meas_res)
             counting_array[counting_index] += incrementation_constants[0]
 
-        return [meas_res, (counting_array, incrementation_constants)]
+        return (meas_res, (counting_array, incrementation_constants))
 
     # Since we don't need to track to which qubits a certain operation
     # is applied, we can implement a really simple behavior for most
@@ -99,7 +115,7 @@ class CountOpsMetric(BaseMetric):
     def handle_get_qubit(self, invalues, eqn, context_dic):
 
         # Trivial behavior since we don't need qubit address information
-        return None
+        return invalues
 
     def handle_get_size(self, invalues, eqn, context_dic):
 
@@ -225,7 +241,7 @@ def get_count_ops_profiler(
     if "measure" not in profiling_dic:
         profiling_dic["measure"] = -1
 
-    count_ops_metric = CountOpsMetric(profiling_dic, meas_behavior)
+    count_ops_metric = CountOpsMetric(meas_behavior, profiling_dic)
     profiling_eqn_evaluator = make_profiling_eqn_evaluator(count_ops_metric)
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
