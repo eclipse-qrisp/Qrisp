@@ -35,11 +35,11 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import Any, Callable, Dict, Sequence
+from typing import Any, Callable, Dict, Sequence, Tuple
 
 import jax
 import numpy as np
-from jax._src.core import JaxprEqn
+from jax._src.core import Jaxpr, JaxprEqn
 from jax.typing import ArrayLike
 
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
@@ -67,24 +67,17 @@ class BaseMetric(ABC):
     meas_behavior : Callable
         The measurement behavior function.
 
-    profiling_dic : dict
-        A dictionary mapping quantum operation names to their profiling indices.
-
     """
 
-    def __init__(self, meas_behavior: Callable, profiling_dic: dict):
+    def __init__(self, meas_behavior: Callable) -> None:
         """Initialize the BaseMetric."""
 
-        self._meas_behavior = meas_behavior
-        self._profiling_dic = profiling_dic
+        self._meas_behavior: Callable = meas_behavior
 
     @property
     def meas_behavior(self) -> Callable:
+        """Return the measurement behavior function."""
         return self._meas_behavior
-
-    @property
-    def profiling_dic(self) -> dict:
-        return self._profiling_dic
 
     def _validate_measurement_result(self, meas_res: bool | jax.Array) -> None:
         """Validate that measurement result is a boolean."""
@@ -106,6 +99,15 @@ class BaseMetric(ABC):
         meas_res = self.meas_behavior(meas_key)
         self._validate_measurement_result(meas_res)
         return acc + jax.numpy.left_shift(1, i) * meas_res
+
+    @classmethod
+    @abstractmethod
+    def from_cache_key(cls, cache_key: Tuple) -> "BaseMetric":
+        """Reconstruct a metric instance from a hashable cache key."""
+
+    @abstractmethod
+    def cache_key(self) -> Tuple:
+        """Return a hashable representation of this metric's configuration."""
 
     @abstractmethod
     def handle_create_qubits(
@@ -268,30 +270,30 @@ class BaseMetric(ABC):
         }
 
 
-# TODO: We should refactor the way in which parameters are passed to the compiled profiler.
-#
 # This reconstructs the metric inside the cached function so caching not keyed
 # by the metric object identity.
 @lru_cache(int(1e5))
 def get_compiled_profiler(
-    jaxpr,
-    metric_cls,
-    zipped_profiling_dic,
-    meas_behavior,
-    max_qubits=None,
-    max_allocations=None,
-):
-    """Get a compiled profiler for a given Jaspr and metric."""
+    jaxpr: Jaxpr,
+    metric_cls: type[BaseMetric],
+    cache_key: Tuple,
+) -> Callable:
+    """
+    Get a compiled profiler for a given Jaxpr and metric configuration.
 
-    profiling_dic = dict(zipped_profiling_dic)
-    metric_kwargs = {
-        "profiling_dic": profiling_dic,
-        "meas_behavior": meas_behavior,
-        **({"max_qubits": max_qubits} if max_qubits is not None else {}),
-        **({"max_allocations": max_allocations} if max_allocations is not None else {}),
-    }
+    Args:
+        jaxpr (Jaxpr): The Jaxpr to be profiled.
+        metric_cls (type[BaseMetric]): A subclass of BaseMetric used to evaluate
+            and measure metrics during Jaxpr evaluation. This should be a class
+            (not an instance) that inherits from BaseMetric.
+        cache_key (tuple): A key used for caching the compiled profiler.
 
-    metric = metric_cls(**metric_kwargs)
+    Returns:
+        callable: A profiler function that takes the same arguments as the Jaxpr
+            and returns the evaluated result with metric information.
+    """
+
+    metric = metric_cls.from_cache_key(cache_key)
     profiling_eqn_evaluator = make_profiling_eqn_evaluator(metric)
     jaxpr_evaluator = eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator)
     jitted_profiler = jax.jit(jaxpr_evaluator)
@@ -315,17 +317,21 @@ def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
     Parameters
     ----------
     metric : BaseMetric
-        The metric to use for profiling.
+        The metric to use for profiling. This should be an instance of a class
+        that inherits from `BaseMetric`, which defines the profiling behavior for
+        different quantum primitives and operations.
 
     Returns
     -------
     Callable
-        The profiling equation evaluator.
+        The profiling equation evaluator. This is a function that takes a Jaxpr equation
+        and a context dictionary, and evaluates the equation according to the
+        profiling logic defined by the metric.
     """
 
     prim_handlers = metric.get_handlers()
 
-    def profiling_eqn_evaluator(eqn, context_dic: ContextDict):
+    def profiling_eqn_evaluator(eqn: JaxprEqn, context_dic: ContextDict) -> None | bool:
 
         invalues = extract_invalues(eqn, context_dic)
         prim = eqn.primitive
@@ -471,18 +477,8 @@ def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
             # with the same object. Since identical qached function calls are
             # represented by the same jaxpr, we achieve our goal.
 
-            zipped_profiling_dic = tuple(metric.profiling_dic.items())
-            meas_behavior = metric.meas_behavior
-            max_qubits = getattr(metric, "max_qubits", None)
-            max_allocations = getattr(metric, "max_allocations", None)
-
             profiler = get_compiled_profiler(
-                eqn.params["jaxpr"],
-                type(metric),  # used only to reconstruct metric inside cache
-                zipped_profiling_dic,
-                meas_behavior,
-                max_qubits,
-                max_allocations,
+                eqn.params["jaxpr"], type(metric), metric.cache_key()
             )
 
             outvalues = profiler(*invalues)
