@@ -71,81 +71,55 @@ def custom_inversion(*func, **cusi_kwargs):
         within the custom inversion context.
 
     Examples
-    --------
+    ----------
 
-    We create a swap function with custom inversion.
+    We create an in-place addition function, which adds 10 to the input when called in the forward direction
+    and subtracts 10 from the input when called in the backward direction. 
 
     ::
 
-        from qrisp import x, cx, custom_inversion
+        from qrisp import QuantumFloat, custom_inversion, reset
 
         @custom_inversion
-        def custom_inversion_backward(a, b, inv = False):
+        def load_constant(qf, inv=False):
 
             if not inv:
-
-                cx(a, b)
-                cx(b, a)
-                cx(a, b)
-
-
+                # Forward: In-place addition
+                qf += 10
+                print("Forward: In-place addition of 10")
             else:
-                # some custom operations when `inv` is True
-                x(a)
-                x(b)
+                # Inverse: Go back to previous value
+                # reverse in-place addition with -10
+                qf += -10
+                print("Backward: Go back to 0 by in-place addition of -10")
 
-
-    Test the non-custom inverted version:
+    To test the function, we can call it in both forward and backward contexts on a `QuantumFloat`.
 
     ::
 
-        from qrisp import QuantumBool
+        qf = QuantumFloat(0.0)
 
-        a = QuantumBool()
-        b = QuantumBool()
+        # Forward call
+        load_constant(qf)
+        print("Value:", qf)
 
-        custom_inversion_backward(a, b)
+        # Backward call
+        load_constant(qf, inv=True)
+        print("Value:", qf)
 
-        print(a.qs)
 
 
     .. code-block:: none
 
-        QuantumCircuit:
-        --------------
-                  ┌───┐
-        a.0: ──■──┤ X ├──■──
-             ┌─┴─┐└─┬─┘┌─┴─┐
-        b.0: ┤ X ├──■──┤ X ├
-             └───┘     └───┘
-        Live QuantumVariables:
-        ---------------------
-        QuantumBool a
-        QuantumBool b
+        Forward: In-place addition of 10
+        Value: {10: 1.0}  
 
+        Backward: Go back to 0 by in-place addition of -10
+        Value: {0: 1.0}  
 
-    Test the application of custom operations when under the custom inversion context.
+        
 
-    ::
-
-        custom_inversion_backward(a, b, inv = True)
-        print(a.qs)
-    
  
-
-    .. code-block:: none
-
-        QuantumCircuit:
-        ---------------
-                  ┌───┐     ┌───┐
-        a.0: ──■──┤ X ├──■──┤ X ├
-             ┌─┴─┐└─┬─┘┌─┴─┐├───┤
-        b.0: ┤ X ├──■──┤ X ├┤ X ├
-             └───┘     └───┘└───┘
-        Live QuantumVariables:
-        ----------------------
-        QuantumBool a
-        QuantumBool b
 
 
     """
