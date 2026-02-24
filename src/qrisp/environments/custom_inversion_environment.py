@@ -130,6 +130,8 @@ def custom_inversion(*func, **cusi_kwargs):
 
         custom_inversion_backward(a, b, inv = True)
         print(a.qs)
+    
+ 
 
     .. code-block:: none
 
@@ -144,7 +146,6 @@ def custom_inversion(*func, **cusi_kwargs):
         ----------------------
         QuantumBool a
         QuantumBool b
-
 
 
     """
