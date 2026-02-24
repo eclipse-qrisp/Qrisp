@@ -38,17 +38,23 @@ from qrisp.jasp import (
 
 def custom_inversion(*func, **cusi_kwargs):
     """
-    The ``custom_control`` decorator allows to specify the controlled version of
-    the decorated function. If this function is called within a :ref:`ControlEnvironment`
-    or a :ref:`ConditionEnvironment` the controlled version is executed instead.
+    The ``custom_inversion`` decorator allows a user to specify the custom inverted version of
+    the decorated function. If this function is called with the ``inv`` keyword set to
+    ``True``, the custom inverted version is executed instead. There is one version of
+    the function when ``inv`` is ``False`` (forward version) and another version when ``inv``
+    is ``True`` (backward version).
 
-    Specific controlled versions of quantum functions are very common in many
-    scientific publications. This is because the general control procedure can
-    signifcantly increase resource demands.
+    This decorator is crucial for functions where the inversion logic cannot be 
+    derived simply by reversing the gate order (e.g., operations involving 
+    measurements or dynamic classical control). In such scenarios, the user can explicitly
+    define how the function should behave when inverted, ensuring that the correct logic is applied in
+    both forward and backward contexts. Here, it is not as straightforward as using :ref:`InversionEnvironment`,
+    the general inversion environment. 
 
-    In order to use the ``custom_control`` decorator, you need to add the ``ctrl``
-    keyword to your function signature. If called within a controlled context,
-    this keyword will receive the corresponding control qubit.
+    In order to use the ``custom_inversion`` decorator, you need to add the ``inv``
+    keyword to your function signature. If called within an inversion context,
+    this keyword will receive the corresponding boolean value indicating whether the function
+    is being inverted.
 
     For more details consult the examples section.
 
@@ -56,40 +62,40 @@ def custom_inversion(*func, **cusi_kwargs):
     Parameters
     ----------
     func : function
-        A function of QuantumVariables, which has the ``ctrl`` keyword.
+        A function of QuantumVariables, which has the ``inv`` keyword.
 
     Returns
     -------
-    adaptive_control_function : function
-        A function which will execute it's controlled version, if called
-        within a :ref:`ControlEnvironment` or a :ref:`ConditionEnvironment`.
+    adaptive_inversion_function : function
+        A function which will execute it's inverted version, if called
+        within the custom inversion context.
 
     Examples
     --------
 
-    We create a swap function with custom control.
+    We create a swap function with custom inversion.
 
     ::
 
-        from qrisp import mcx, cx, custom_control
+        from qrisp import x, cx, custom_inversion
 
-        @custom_control
-        def swap(a, b, ctrl = None):
+        @custom_inversion
+        def custom_inversion_backward(a, b, inv = False):
 
-            if ctrl is None:
+            if not inv:
 
                 cx(a, b)
                 cx(b, a)
                 cx(a, b)
 
+
             else:
+                # some custom operations when `inv` is True
+                x(a)
+                x(b)
 
-                cx(a, b)
-                mcx([ctrl, b], a)
-                cx(a, b)
 
-
-    Test the non-controlled version:
+    Test the non-custom inverted version:
 
     ::
 
@@ -98,7 +104,7 @@ def custom_inversion(*func, **cusi_kwargs):
         a = QuantumBool()
         b = QuantumBool()
 
-        swap(a, b)
+        custom_inversion_backward(a, b)
 
         print(a.qs)
 
@@ -118,30 +124,27 @@ def custom_inversion(*func, **cusi_kwargs):
         QuantumBool b
 
 
-    Test the controlled version:
+    Test the application of custom operations when under the custom inversion context.
 
     ::
 
-        from qrisp import control
-
-        a = QuantumBool()
-        b = QuantumBool()
-        ctrl_qbl = QuantumBool()
-
-        with control(ctrl_qbl):
-
-            swap(a,b)
-
-        print(a.qs.transpile(1))
+        custom_inversion_backward(a, b, inv = True)
+        print(a.qs)
 
     .. code-block:: none
 
-                         ┌───┐
-               a.0: ──■──┤ X ├──■──
-                    ┌─┴─┐└─┬─┘┌─┴─┐
-               b.0: ┤ X ├──■──┤ X ├
-                    └───┘  │  └───┘
-        ctrl_qbl.0: ───────■───────
+        QuantumCircuit:
+        ---------------
+                  ┌───┐     ┌───┐
+        a.0: ──■──┤ X ├──■──┤ X ├
+             ┌─┴─┐└─┬─┘┌─┴─┐├───┤
+        b.0: ┤ X ├──■──┤ X ├┤ X ├
+             └───┘     └───┘└───┘
+        Live QuantumVariables:
+        ----------------------
+        QuantumBool a
+        QuantumBool b
+
 
 
     """

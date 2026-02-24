@@ -47,6 +47,7 @@ Utilities
    batched_measurement
    gate_wrap
    custom_control
+   custom_inversion
    lifted
    redirect_qfunction
    as_hamiltonian
