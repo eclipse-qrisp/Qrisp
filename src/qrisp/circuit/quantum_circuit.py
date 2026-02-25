@@ -2428,6 +2428,53 @@ class QuantumCircuit:
             ops.MCXGate(len(control_qubits), ctrl_state=ctrl_state, method=method),
             control_qubits + [target_qubits],
         )
+    
+    def mcz(self, qubits, method="gray", ctrl_state=-1):
+        """
+        Instruct a multi-controlled Z-gate.
+
+        Parameters
+        ----------
+        qubits : list
+            The list of Qubits to apply the gate to.
+        method : str, optional
+            The algorithm to synthesize the mcz gate. The default is "gray".
+        ctrl_state : str or int, optional
+            The state on which the X gate is activated. Can be supplied as a string
+            (i.e. "010110...") or an integer. The default is all ones ("11111...").
+
+
+        """
+        self.append(
+            ops.MCZGate(len(qubits)-1, ctrl_state=ctrl_state, method=method),
+            qubits,
+        )
+    
+    def mcp(self, phi, qubits, method="gray", ctrl_state=-1):
+        """
+        Instruct a multi-controlled P-gate.
+
+        Parameters
+        ----------
+        phi : float or sympy.Symbol
+            The angle parameter.
+        qubits : list
+            The list of Qubits to apply the gate to.
+        method : str, optional
+            The algorithm to synthesize the mcp gate. The default is "gray".
+        ctrl_state : str or int, optional
+            The state on which the X gate is activated. Can be supplied as a string
+            (i.e. "010110...") or an integer. The default is all ones ("11111...").
+
+
+        """
+        if not isinstance(phi, (float, sympy.Symbol)):
+            raise ValueError("Input parameter phi must be of type float or sympy.Symbol.")
+
+        self.append(
+            ops.MCPGate(phi, len(qubits)-1, ctrl_state=ctrl_state, method=method),
+            qubits,
+        )
 
     def ccx(self, ctrl_qubit_0, ctrl_qubit_1, target_qubit, method="gray"):
         """
@@ -2464,6 +2511,26 @@ class QuantumCircuit:
         if phi == 0:
             return
         self.append(ops.MCRXGate(phi, 1), [qubits_0, qubits_1])
+    
+    def crz(self, phi, qubits_0, qubits_1):
+        """
+        Instruct a controlled rz-gate.
+
+        Parameters
+        ----------
+        phi : float or sympy.Symbol
+            The angle parameter.
+
+        qubits_0 : Qubit
+            The Qubit to apply the gate on.
+        qubits_1 : Qubit
+            The other Qubit to apply the gate on.
+        """
+        if phi == 0:
+            return
+        if not isinstance(phi, (float, sympy.Symbol)):
+            raise ValueError("Input parameter phi must be of type float or sympy.Symbol.")
+        self.append(ops.MCRZGate(phi, 1), [qubits_0, qubits_1])
 
     def t(self, qubits):
         """
