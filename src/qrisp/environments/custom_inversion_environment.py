@@ -97,7 +97,7 @@ def custom_inversion(*func, **cusi_kwargs):
 
     ::
 
-        qf = QuantumFloat(0.0)
+        qf = QuantumFloat(6)
 
         # Forward call
         load_constant(qf)
