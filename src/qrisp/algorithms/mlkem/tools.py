@@ -1,7 +1,8 @@
 from typing import Union
-from qrisp import QuantumBool, QuantumModulus, QuantumArray, conjugate, modinv, mcz, mcx, amplitude_amplification, jlen
+from qrisp import QuantumBool, QuantumModulus, QuantumArray, conjugate, modinv, mcz, mcx, amplitude_amplification, jlen, prepare
 from qrisp import h as h_gate
-from qrisp.jasp import jrange, q_while_loop
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import smallest_power_of_two
+from qrisp.jasp import jrange, q_while_loop, q_cond
 import jax
 import numpy as np
 import jax.numpy as jnp
@@ -183,72 +184,87 @@ def q_multiply_ntt(f: QuantumArray, g: QuantumArray, result: QuantumArray, q: in
     result : QuantumArray[QuantumModulus]
         An array of size ``(n,)`` of type QuantumModulus(q) representing a vector in $\mathbb Z_q^n$ in NTT representation.
         The result of the multiplication in the NTT domain.
-    root : int
-        An $n$-th root of unity modulo $q$.
 
     """
 
-    n = f.size
-
-    #result = QuantumArray(f[0], shape = (n,))
+    m = jnp.int32(jnp.ceil(jnp.log2(n)))
 
     for i in jrange(n // 2):
-        gamma = modpow_jax(root, 2*bitrev7(i) + 1, q) # Does this work for general n?
+        gamma = modpow_jax(root, 2*bitrevm(i, m-1) + 1, q) # Does this work for general n?
         q_base_case_multipy(f[2*i], f[2*i + 1], g[2*i], g[2*i + 1], result[2*i], result[2*i + 1], gamma, inv = inv)
 
     return result
+
+def q_ntt_mat_mul(A, B, out, q, n, k, root):
+    for i0 in jrange(k):
+        for i1 in jrange(k):
+            def true_fun():
+                aux = QuantumArray(QuantumModulus(q), (n,))
+                q_multiply_ntt(B[i0,i1,:], A[i0,:], aux, q, n, root)
+                out[i1,:] += aux
+                q_multiply_ntt(B[i0,i1,:], A[i0,:], aux, q, n, root, True)
+                aux.delete()
+            q_cond(A[i0, i1] != 0, true_fun, lambda: None)
+
+    return out
 
 ############################################################
 ###################### Grover utility ######################
 ############################################################
 
-def grover_prepare_uniform_bits(bits: QuantumArray):
-    for i in jrange(bits.size):
-        h_gate(bits[i])
+def grover_prepare_uniform_bits(arg, n, k, q, distr):
+    arr = np.zeros(2**int(np.ceil(np.log2(q))), dtype=jnp.float64) # q must be static
+    for i, v in enumerate(distr):
+        arr[i] = arr[-i-1] = v
+    arr /= np.sqrt(np.sum(arr))
+    for i in jrange(k):
+        for j in range(n):
+            prepare(arg[i, j], arr)
 
-def prepare_uniform_s_coeff_simple(s, q, n, root):
-    #TODO: Proper state preparation
-    grover_prepare_uniform_bits(s)
-    q_ntt(s, q, n, root)
 
-
-def create_lwe_oracle(a_hat, t_hat, q, n, root, B_e):
+def create_lwe_oracle(a_hat, t_hat, q, n, k, root, B_e):
     """
     Marks s if r = t - A*s has all coefficients with centered magnitude <= B_e.
     Assumes a_hat, t_hat, s_hat are in NTT domain.
     """
     def oracle(s_hat: QuantumArray):
         #q_ntt(s, q, n, root)
-        rhat = QuantumArray(QuantumModulus(q), shape=(n,))
-        q_multiply_ntt(a_hat, s_hat, rhat, q, n, root, inv=False)
-        rhat -= t_hat
+        rhat = QuantumArray(QuantumModulus(q), shape=(k,n))
+        with conjugate(q_ntt_mat_mul)(a_hat, s_hat, rhat, q, n, k, root):
+        #q_ntt_mat_mul(a_hat, s_hat, rhat, q, n, k, root)
 
-        # r = NTT^{-1}(rr_hat) in coefficient domain
-        q_ntt_inv(rhat, q, n, root)
+            rhat -= t_hat
+            for i in jrange(k):
+                q_ntt_inv(rhat[i], q, n, root)
 
-        # Phase flip if all coeffs are small: r_i <= B_e or r_i >= q - B_e
-        qb = QuantumArray(QuantumBool(), shape=(n,))
-        small_inj = (qb << (lambda v: ((v <= B_e) or (v >= q - B_e))))
-        with conjugate(small_inj)(rhat):
-            #mcz(qb)
-            h_gate(qb[-1])
-            mcx(qb[:-1].qb_array, qb[-1], "balauca")
-            h_gate(qb[-1])
+            qb = QuantumArray(QuantumBool(), shape=(k,n))
+            small_inj = (qb << (lambda v: ((v <= B_e) or (v >= q - B_e))))
+            with conjugate(small_inj)(rhat):
+                h_gate(qb.flatten()[-1])
+                mcx(qb.flatten()[:-1].qb_array, qb[-1], "balauca") #TODO: use mcz
+                h_gate(qb.flatten()[-1])
 
-        # Uncompute r and s_hat
-        q_ntt(rhat, q, n, root)
-        rhat += t_hat
-        q_multiply_ntt(a_hat, s_hat, rhat, q, n, root, inv=True)
+            for i in jrange(k):
+                q_ntt(rhat[i], q, n, root)
+            rhat += t_hat
+        
+        #q_ntt_mat_mul(a_hat, s_hat, rhat, q, n, k, root, inv=True)
         rhat.delete()
-        #q_ntt_inv(s, q, n, root)
     return oracle
 
-def run_lwe_grover_amplification(a_hat, t_hat, q, n, root, iterations, B_e):
-
+def run_lwe_grover_amplification(a_hat, t_hat, q, n, k, root, iterations, B_e, distr):
+    """
+    Parameters
+    ----------
+    a_hat
+        Array of shape (k,k,n)
+    t_hat : QuantumArray[QuantumModulus] or array
+        Array of shape (k,n)
+    """
     # State prep and oracle
-    args = QuantumArray(QuantumModulus(q), shape=(n,))
-    def state_fn(b): grover_prepare_uniform_bits(b)
-    oracle_fn = create_lwe_oracle(a_hat, t_hat, q, n, root, B_e)
+    def state_fn(arg): grover_prepare_uniform_bits(arg, n, k, q, distr)
+    args = QuantumArray(QuantumModulus(q), shape=(k,n))
+    oracle_fn = create_lwe_oracle(a_hat, t_hat, q, n, k, root, B_e)
 
     amplitude_amplification(
         [args],
