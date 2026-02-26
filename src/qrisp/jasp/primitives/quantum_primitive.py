@@ -19,8 +19,19 @@
 from jax.extend.core import Primitive
 
 
-# Wrapper to identify Qrisp primitives
 class QuantumPrimitive(Primitive):
-    def __init__(self, name):
+    """Base class for Jasp quantum primitives."""
+
+    def __init__(self, name: str) -> None:
+        """Initialize a new quantum primitive with the given name."""
+
         Primitive.__init__(self, "jasp." + name)
         self.qrisp_name = name
+
+    def abstract_eval(self, *args, **params):
+        """Abstract evaluation of the primitive."""
+        raise NotImplementedError("Subclasses must implement abstract_eval")
+
+    def impl(self, *args, **params):
+        """Implementation of the primitive."""
+        raise NotImplementedError("Subclasses must implement impl")

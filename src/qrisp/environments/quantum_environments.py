@@ -52,6 +52,8 @@
 # 4. Apart from the (de)allocation gates, all the collected data is stored inside
 # the .env_data attribute
 
+from contextvars import ContextVar
+
 from qrisp.circuit import QubitAlloc, QubitDealloc, fast_append
 from qrisp.core.quantum_session import QuantumSession
 from qrisp.jasp import AbstractQuantumState, QuantumPrimitive, TracingQuantumSession
@@ -60,8 +62,8 @@ from qrisp.jasp import AbstractQuantumState, QuantumPrimitive, TracingQuantumSes
 class QuantumEnvironment(QuantumPrimitive):
     """
 
-    QuantumEnvironments are blocks of code, that undergo some user-specified compilation
-    process. They can be entered using the ``with`` statement
+    QuantumEnvironments are blocks of code that undergo a user-specified compilation
+    process. They can be entered using the ``with`` statement:
 
     ::
 
@@ -72,8 +74,8 @@ class QuantumEnvironment(QuantumPrimitive):
        with QuantumEnvironment():
           x(qv)
 
-    In this case we have no special compilation technique, since the abstract baseclass
-    simply returns it's content:
+    In this case, no special compilation is applied since the base class simply
+    returns its content:
 
     >>> print(qv.qs)
 
@@ -96,21 +98,18 @@ class QuantumEnvironment(QuantumPrimitive):
         ---------------------
         QuantumVariable qv
 
-    More advanced environments allow for a large variety of features and can significantly
-    simplify code development and maintainance.
+    More advanced environments offer a variety of features that can significantly
+    simplify code development and maintenance.
 
     The most important built-in QuantumEnvironments are:
 
     * :ref:`ConditionEnvironment`
-
     * :ref:`ControlEnvironment`
-
     * :ref:`InversionEnvironment`
-
     * :ref:`GateWrapEnvironment`
 
     Due to sophisticated condition evaluation of nested :ref:`conditionenvironment` and
-    :ref:`controlenvironment`, using QuantumEnvironments even can bring an increase in
+    :ref:`controlenvironment`, using QuantumEnvironments can even bring an increase in
     performance, compared to the `control method
     <https://qiskit.org/documentation/stubs/qiskit.circuit.QuantumCircuit.control.html>`_
     which is commonly implemented by QuantumCircuit-based approaches.
@@ -131,18 +130,17 @@ class QuantumEnvironment(QuantumPrimitive):
 
             b = QuantumVariable(1)
 
-            cx(a,b)
+            cx(a, b)
 
             with QuantumEnvironment():
 
                 c = QuantumVariable(1)
 
-                cx(b,c)
+                cx(b, c)
 
-            c.uncompute() # works because c was created in a sub environment
-            b.uncompute() # works because b was created in the same environment
-            # a.uncompute() # doesn't work because a was created outside this
-            environment.
+            c.uncompute()   # works because c was created in a sub-environment
+            b.uncompute()   # works because b was created in the same environment
+            # a.uncompute() # doesn't work because a was created outside this environment.
 
 
     >>> print(a.qs)
@@ -161,10 +159,12 @@ class QuantumEnvironment(QuantumPrimitive):
         ---------------------
         QuantumVariable a
 
-    **Visualisation within QuantumEnvironments**
+    **Visualization within QuantumEnvironments**
 
-    Calling ``print`` on a :ref:`QuantumSession` inside a QuantumEnvironment will
-    display only the instructions, that have been performed within this environment. ::
+    Calling ``print`` on a :ref:`QuantumSession` inside a QuantumEnvironment displays
+    only instructions performed within that environment:
+
+    ::
 
         from qrisp import x, y, z
         a = QuantumVariable(3)
@@ -236,7 +236,7 @@ class QuantumEnvironment(QuantumPrimitive):
 
     .. warning::
 
-        Calling ``print`` within a QuantumEnvironment causes all sub environments to be
+        Calling ``print`` within a QuantumEnvironment causes all sub-environments to be
         compiled. While this doesn't change the semantics of the resulting circuit,
         especially nested :ref:`Condition <conditionenvironment>`- and
         :ref:`ControlEnvironments <controlenvironment>` lose a lot of efficiency if
@@ -249,19 +249,17 @@ class QuantumEnvironment(QuantumPrimitive):
 
     More interesting QuantumEnvironments can be created by inheriting and modifying
     the compile method. In the following code snippet, we will demonstrate how to
-    set up a QuantumEnvironment, that skips every second instruction. We do this
+    set up a QuantumEnvironment that skips every second instruction. We do this
     by inheriting from the QuantumEnvironment class. This will provide us with
     the necessary attributes for writing the compile method:
 
-    #. ``.env_data``, which is the list of instructions, that have been appended in this
-    environment. Note that child environments append themselves in this list upon
-    exiting.
+    * ``.env_data``: List of instructions appended in this environment. Child
+      environments append themselves here upon exiting.
+    * ``.env_qs``: QuantumSession where all QuantumVariables operating inside
+      this environment are registered.
 
-    #. ``.env_qs`` which is a QuantumSession, where all QuantumVariables, that operated
-    inside this environment, are registered.
-
-    The compile method is then called once all environments of ``.env_qs`` have been
-    exited. Note that this doesn't neccessarily imply that all QuantumEnvironments have
+    The ``compile`` method is then called once all environments of ``.env_qs`` have been
+    exited. Note that this doesn't necessarily imply that all QuantumEnvironments have
     been left. For more information about the interplay between QuantumSessions and
     QuantumEnvironments check the :ref:`session merging <SessionMerging>` documentation.
 
@@ -271,18 +269,15 @@ class QuantumEnvironment(QuantumPrimitive):
 
           def compile(self):
 
-             for i in range(len(self.env_data)):
+             for idx, instruction in enumerate(self.env_data):
 
-                #This line makes sure every second instruction is skipped
-                if i%2:
+                if idx % 2:
                    continue
 
-                instruction = self.env_data[i]
-
-                #If the instruction is an environment, we compile this environment
+                # If the instruction is an environment, we compile this environment
                 if isinstance(instruction, QuantumEnvironment):
                    instruction.compile()
-                #Otherwise we append
+                # Otherwise we append
                 else:
                     self.env_qs.append(instruction)
 
@@ -326,15 +321,19 @@ class QuantumEnvironment(QuantumPrimitive):
 
     """
 
-    deepest_environment = [None]
+    _deepest_environment: ContextVar["QuantumEnvironment | None"] = ContextVar(
+        "deepest_q_env",
+        default=None,
+    )
 
-    def __init__(self, env_args=[]):
+    def __init__(self, env_args=None) -> None:
+        """Initialize a new quantum environment."""
 
         QuantumPrimitive.__init__(self, name="q_env")
         self.multiple_results = True
 
         @self.def_abstract_eval
-        def abstract_eval(abs_qst, *env_args, stage=None, type=None, jaxpr=None):
+        def _(*_, **__):
             """Abstract evaluation of the primitive.
 
             This function does not need to be JAX traceable. It will be invoked with
@@ -343,6 +342,7 @@ class QuantumEnvironment(QuantumPrimitive):
 
             return (AbstractQuantumState(),)
 
+        env_args = [] if env_args is None else env_args
         self.env_args = env_args
 
     # The methods to start the dumping process for this environment
@@ -351,7 +351,9 @@ class QuantumEnvironment(QuantumPrimitive):
     # the quantum session. Once the dumping ends the data which has been appended
     # in the meantime is appended to the environments' data list .env_data and
     # the original circuit data is reinstated
-    def start_dumping(self):
+    def _start_dumping(self) -> None:
+        """Start dumping circuit data into the environment."""
+
         qs = self.env_qs
 
         # Temporarily store the qs circuit data
@@ -364,10 +366,12 @@ class QuantumEnvironment(QuantumPrimitive):
 
         self.env_data = []
 
-    def stop_dumping(self):
+    def _stop_dumping(self) -> None:
+        """Stop dumping circuit data into the environment."""
+
         qs = self.env_qs
 
-        # Collect circuit data into the data_list
+        # Collect circuit data into the environment data list
         self.env_data += qs.data
 
         qs.clear_data()
@@ -377,8 +381,8 @@ class QuantumEnvironment(QuantumPrimitive):
 
         self.original_data = []
 
-    # Method to enter the environment
-    def __enter__(self):
+    def __enter__(self) -> "QuantumEnvironment | None":
+        """Enter the quantum environment."""
 
         from qrisp.jasp import check_for_tracing_mode
 
@@ -389,9 +393,9 @@ class QuantumEnvironment(QuantumPrimitive):
             tr_qs.abs_qst = self.bind(
                 *(self.env_args + [tr_qs.abs_qst]),
                 stage="enter",
-                type=str(type(self)).split(".")[-1][:-2],
+                type=str(type(self)).rsplit(".", maxsplit=1)[-1][:-2],
             )[0]
-            return
+            return None
 
         # The QuantumSessions operating inside this environment will be merged
         # into this QuantumSession
@@ -400,42 +404,40 @@ class QuantumEnvironment(QuantumPrimitive):
         # This list stores the original data of the quantum session tracked
         self.original_data = []
 
-        # This list stores the data that is appended inside the environemt
+        # This list stores the data that is appended inside the environment
         self.env_data = []
 
         # This list stores the qubits that have been deallocated in this environment
-        # This information is required because the need to be temporarily reallocated
+        # This information is required because they need to be temporarily reallocated
         # to prevent compilation errors at compile time.
         self.deallocated_qubits = []
 
-        # Set the new relationships
-        self.parent = self.deepest_environment[0]
-        self.deepest_environment[0] = self
+        # Set the new relationships and
+        # store a token so we can restore the previous value reliably in __exit__
+        self.parent = self._deepest_environment.get()
+        self._deepest_env_token = self._deepest_environment.set(self)
 
         # Acquire a list of all active quantum sessions
         self.active_qs_list = QuantumSession.get_active_quantum_sessions()
-        for qs in self.active_qs_list:
-            # Append self to the environment stack of the QuantumSession
-            qs = qs()
+        for qs_ref in self.active_qs_list:
+            qs = qs_ref()
             if qs is not None:
                 qs.env_stack.append(self)
 
-        # Start the dumping process
-        self.start_dumping()
+        self._start_dumping()
 
         # Manual allocation management means that the compile method can process allocation
         # and deallocation gates.
         # If set to False, these gates will be filtered out of the env_data attribute before
         # compile is called.
-        # In this case, the (de)allocation gates that happened insided this environment
+        # In this case, the (de)allocation gates that happened inside this environment
         # will be collected and execute before (after) the compile method is called.
-        if type(self) is QuantumEnvironment:
-            self.manual_allocation_management = True
+        self.manual_allocation_management = isinstance(self, QuantumEnvironment)
 
         return self
 
-    # Method to exit the environment
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
+        """Exit the quantum environment."""
 
         from qrisp.jasp import check_for_tracing_mode
 
@@ -444,61 +446,69 @@ class QuantumEnvironment(QuantumPrimitive):
             if exception_value:
                 raise exception_value
 
-            tr_qs = TracingQuantumSession.get_instance()
-            tr_qs.qubit_cache = self.temp_qubit_cache
-            tr_qs.abs_qst = self.bind(
-                tr_qs.abs_qst, stage="exit", type=str(type(self)).split(".")[-1][:-2]
+            abs_qs = TracingQuantumSession.get_instance()
+            abs_qs.qubit_cache = self.temp_qubit_cache
+            abs_qs.abs_qst = self.bind(
+                abs_qs.abs_qst,
+                stage="exit",
+                type=str(type(self)).rsplit(".", maxsplit=1)[-1][:-2],
             )[0]
-            return
+            return None
 
-        self.deepest_environment[0] = self.parent
+        try:
+            self._deepest_environment.reset(self._deepest_env_token)
+        except RuntimeError as e:
+            raise RuntimeError(
+                "Failed to reset the QuantumEnvironment. "
+                "This may indicate improper nesting or re-entrance of QuantumEnvironments."
+            ) from e
 
-        # Stop dumping
-        self.stop_dumping()
+        self._stop_dumping()
 
-        for i in range(len(self.active_qs_list)):
-            # Remove from the environment stack
-            if self.active_qs_list[i]() is not None:
-                self.active_qs_list[i]().env_stack.pop(-1)
+        for qs_ref in self.active_qs_list:
+            qs = qs_ref()
+            if qs is not None:
+                qs.env_stack.pop(-1)
 
         if exception_value:
             raise exception_value
 
-        # Create a list which will store deallocation gates
+        # Create lists to store allocation/deallocation gates
         dealloc_qubit_list = []
         alloc_qubit_list = []
+
+        manual_allocation = getattr(self, "manual_allocation_management", False)
+
         # We now iterate through the collected data. We do this in order
-        # to make sure that the (de)allocation gates are notprocessed
+        # to make sure that the (de)allocation gates are not processed
         # by the environment compiler as this might disturb their functionality
-        i = 0
+        idx = 0
+        while idx < len(self.env_data):
 
-        if not hasattr(self, "manual_allocation_management"):
-            self.manual_allocation_management = False
+            instr = self.env_data[idx]
 
-        # Filter allocation gates
-        while i < len(self.env_data):
-            instr = self.env_data[i]
+            if isinstance(instr, QuantumEnvironment):
+                idx += 1
+                continue
 
-            if not isinstance(instr, QuantumEnvironment):
-                if instr.op.name == "qb_alloc":
-                    if not self.manual_allocation_management:
-                        alloc_qubit_list.append(self.env_data.pop(i).qubits[0])
-                        continue
-                    else:
-                        dealloc_qubit_list.append(self.env_data[i].qubits[0])
+            op_name = instr.op.name
 
-                if instr.op.name == "qb_dealloc":
-                    if not self.manual_allocation_management:
-                        dealloc_qubit_list.append(self.env_data.pop(i).qubits[0])
-                        continue
-                    else:
-                        dealloc_qubit_list.append(self.env_data[i].qubits[0])
+            if op_name == "qb_alloc":
+                if not manual_allocation:
+                    alloc_qubit_list.append(self.env_data.pop(idx).qubits[0])
+                    continue
+                alloc_qubit_list.append(instr.qubits[0])
 
-            i += 1
+            elif op_name == "qb_dealloc":
+                if not manual_allocation:
+                    dealloc_qubit_list.append(self.env_data.pop(idx).qubits[0])
+                    continue
+                dealloc_qubit_list.append(instr.qubits[0])
 
-        # Append allocation gates before compilation
-        if not self.manual_allocation_management:
-            for qb in list(set(alloc_qubit_list)):
+            idx += 1
+
+        if not manual_allocation:
+            for qb in set(alloc_qubit_list):
                 self.env_qs.append(QubitAlloc(), [qb])
 
         # If this was the outermost environment, we compile
@@ -512,37 +522,43 @@ class QuantumEnvironment(QuantumPrimitive):
 
         # Otherwise, we append self to the data of the parent environment
         else:
-            if len(self.env_data):
+            if self.env_data:
                 self.env_qs.data.append(self)
             self.parent.deallocated_qubits.extend(dealloc_qubit_list)
 
         # Append deallocation gates after compilation
-        if not self.manual_allocation_management:
-            for qb in list(set(dealloc_qubit_list)):
+        if not manual_allocation:
+            for qb in set(dealloc_qubit_list):
                 self.env_qs.append(QubitDealloc(), [qb])
 
-    # This is the default compilation method.
-    # It simply compiles all subenvironments and the collected data to the session
-    # For more advanced environments this should be modified
-    def compile(self):
+    def compile(self) -> None:
+        """
+        Default compilation method to compile the quantum environment.
+
+        It simply compiles all sub-environments and the collected data to the session.
+        """
+
         for instruction in self.env_data:
-            # If the instruction is an environment, compile the environment
-            if issubclass(instruction.__class__, QuantumEnvironment):
+
+            if isinstance(instruction, QuantumEnvironment):
                 instruction.compile()
 
             else:
-                # Append instruction
                 self.env_qs.append(instruction)
 
-    def jcompile(self, eqn, context_dic):
+    def jcompile(self, eqn, context_dic) -> None:
+        """
+        Default jasp compilation method to compile the quantum environment.
+
+        It simply compiles all sub-environments and the collected data to the session.
+        """
+
         from qrisp.jasp import eval_jaxpr, extract_invalues, insert_outvalues
 
         args = extract_invalues(eqn, context_dic)
-        body_jaspr = eqn.params["jaspr"]
+        flattened_envs = eqn.params["jaspr"].flatten_environments()
 
-        res = eval_jaxpr(body_jaspr.flatten_environments())(*args)
-
-        if not isinstance(res, tuple):
-            res = (res,)
+        res = eval_jaxpr(flattened_envs)(*args)
+        res = (res,) if not isinstance(res, tuple) else res
 
         insert_outvalues(eqn, context_dic, res)
