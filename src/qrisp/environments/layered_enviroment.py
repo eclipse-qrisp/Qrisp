@@ -18,7 +18,6 @@
 
 from typing import Any, List
 
-from qrisp import QuantumEnvironment
 from qrisp.environments.quantum_environments import QuantumEnvironment
 
 

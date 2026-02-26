@@ -345,8 +345,6 @@ class QuantumEnvironment(QuantumPrimitive):
         env_args = [] if env_args is None else env_args
         self.env_args = env_args
 
-        self._entered: bool = False
-
     # The methods to start the dumping process for this environment
     # The dumping basically consists of copying the original data into a temporary
     # container (here the list .original_data) and then clearing the data of
@@ -355,6 +353,8 @@ class QuantumEnvironment(QuantumPrimitive):
     # the original circuit data is reinstated
     def _start_dumping(self) -> None:
         """Start dumping circuit data into the environment."""
+
+        print("_start_dumping called")
 
         qs = self.env_qs
 
@@ -371,6 +371,8 @@ class QuantumEnvironment(QuantumPrimitive):
     def _stop_dumping(self) -> None:
         """Stop dumping circuit data into the environment."""
 
+        print("_stop_dumping called")
+
         qs = self.env_qs
 
         # Collect circuit data into the environment data list
@@ -385,14 +387,6 @@ class QuantumEnvironment(QuantumPrimitive):
 
     def __enter__(self) -> "QuantumEnvironment | None":
         """Enter the quantum environment."""
-
-        if hasattr(self, "_entered") and self._entered:
-            raise RuntimeError(
-                f"QuantumEnvironment has already been entered. "
-                "QuantumEnvironments cannot be reused."
-            )
-
-        self._entered = True
 
         from qrisp.jasp import check_for_tracing_mode
 
@@ -465,7 +459,13 @@ class QuantumEnvironment(QuantumPrimitive):
             )[0]
             return None
 
-        self._deepest_environment.reset(self._deepest_env_token)
+        try:
+            self._deepest_environment.reset(self._deepest_env_token)
+        except RuntimeError as e:
+            raise RuntimeError(
+                "Failed to reset the QuantumEnvironment. "
+                "This may indicate improper nesting or re-entrance of QuantumEnvironments."
+            ) from e
 
         self._stop_dumping()
 

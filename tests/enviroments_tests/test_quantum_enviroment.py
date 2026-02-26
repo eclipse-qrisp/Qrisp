@@ -201,21 +201,16 @@ class TestQuantumEnvironmentDocstringExamples:
 class TestQuantumEnvErrors:
     """Test error conditions for QuantumEnvironment."""
 
-    def test_error_quantum_environment_used_twice(self):
-        """Test that a QuantumEnvironment cannot be entered twice."""
+    def test_quantum_environment_used_twice(self):
+        """Test that a QuantumEnvironment can be entered twice."""
 
         q_env = QuantumEnvironment()
 
         with q_env:
             pass
 
-        with pytest.raises(
-            RuntimeError,
-            match="QuantumEnvironment has already been entered. "
-            "QuantumEnvironments cannot be reused",
-        ):
-            with q_env:
-                pass
+        with q_env:
+            pass
 
     def test_error_quantum_environment_nested(self):
         """Test that a QuantumEnvironment raises RuntimeError when nested."""
@@ -224,8 +219,7 @@ class TestQuantumEnvErrors:
 
         with pytest.raises(
             RuntimeError,
-            match="QuantumEnvironment has already been entered. "
-            "QuantumEnvironments cannot be reused",
+            match="Failed to reset the QuantumEnvironment",
         ):
             with q_env:
                 with q_env:
