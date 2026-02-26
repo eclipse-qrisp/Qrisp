@@ -40,21 +40,11 @@ class GateStack(QuantumEnvironment):
     """
 
     def __init__(self, env_args=None):
+        """Initialize with empty layers."""
+
         super().__init__(env_args=env_args)
+
         self.layers: List[List[Any]] = []
-
-    def _build_layers(self) -> List[List[Any]]:
-        """
-        Build layered representation from self.env_data.
-
-        Default: one instruction per layer.
-        """
-        layers: List[List[Any]] = []
-
-        for instr in self.env_data:
-            layers.append([instr])
-
-        return layers
 
     def compile(self):
         """
@@ -62,7 +52,9 @@ class GateStack(QuantumEnvironment):
 
         The parent LayeredEnvironment will interleave and emit these layers.
         """
-        self.layers = self._build_layers()
+
+        for instr in self.env_data:
+            self.layers.append([instr])
 
 
 class LayeredEnvironment(QuantumEnvironment):
@@ -77,6 +69,11 @@ class LayeredEnvironment(QuantumEnvironment):
     Non-GateStack instructions:
       - Default policy below: emit them immediately in the original order,
         but when a GateStack is encountered we buffer it for the final brick emission.
+
+    TODO: several open questions about this QuantumEnvironment.
+
+    Crucially, we are reordering instructions from different GateStacks, so this approach is only semantically
+    safe if operations from different GateStacks that are reordered either act on disjoint qubits or commute.
 
     """
 

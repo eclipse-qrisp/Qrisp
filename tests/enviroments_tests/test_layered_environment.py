@@ -20,20 +20,30 @@ from typing import Any, List
 
 import pytest
 
-from qrisp import QuantumArray, QuantumBool, cx
+from qrisp import QuantumArray, QuantumBool, cx, cz, Qubit
 from qrisp.environments.layered_enviroment import GateStack, LayeredEnvironment
 
 
-def _filter_instructions(qs_data: List[Any]) -> List[Any]:
+def _filter_instructions(qs_data: List[Qubit]) -> List[Qubit]:
     """Helper to filter out `qb_alloc` instructions from a list of instructions."""
     return [instr for instr in qs_data if not str(instr).startswith("qb_alloc")]
 
 
-def measure_Z_stabilizer(source: List[Any], target: Any):
-    """Measure a Z stabilizer on the given source qubits, using the target ancilla."""
+def measure_Z_stabilizer(source: list[Qubit], target: Qubit) -> None:
+    """
+    Measure a Z-type stabilizer by entangling all source qubits with target.
+
+    Parameters:
+    ----------
+    source : list of qubits
+        The data qubits to measure
+
+    target : qubit
+        The ancilla qubit that accumulates the parity
+    """
     with GateStack():
-        for q in source:
-            cx(q, target)
+        for qubit in source:
+            cx(qubit, target)
 
 
 class TestLayeredEnvironmentBasicUsage:

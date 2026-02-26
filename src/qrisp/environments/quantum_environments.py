@@ -354,8 +354,6 @@ class QuantumEnvironment(QuantumPrimitive):
     def _start_dumping(self) -> None:
         """Start dumping circuit data into the environment."""
 
-        print("_start_dumping called")
-
         qs = self.env_qs
 
         # Temporarily store the qs circuit data
@@ -370,8 +368,6 @@ class QuantumEnvironment(QuantumPrimitive):
 
     def _stop_dumping(self) -> None:
         """Stop dumping circuit data into the environment."""
-
-        print("_stop_dumping called")
 
         qs = self.env_qs
 
