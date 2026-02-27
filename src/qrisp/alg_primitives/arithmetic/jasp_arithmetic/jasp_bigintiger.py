@@ -136,6 +136,9 @@ class BigInteger:
         BigInteger
             Fixed-width representation of `n` modulo 2^(32*size).
         """
+        if n < 0:
+            raise ValueError(f"Input must be non-negative, got {n}")
+    
         digits = []
         for i in range(size):
             digits.append(n % BASE)
@@ -169,6 +172,9 @@ class BigInteger:
         JAX's host integer range (typically up to 64 bits). For arbitrarily large
         Python integers, prefer `create_static`.
         """
+        from jax.experimental import checkify
+        
+        checkify.check(n >= 0, "Input must be non-negative.")
 
         def body_fun(i, args):
             digits, num = args
