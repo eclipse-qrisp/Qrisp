@@ -136,6 +136,9 @@ class BigInteger:
         BigInteger
             Fixed-width representation of `n` modulo 2^(32*size).
         """
+        if n < 0:
+            raise ValueError(f"Input must be non-negative, got {n}.")
+    
         digits = []
         for i in range(size):
             digits.append(n % BASE)
@@ -149,6 +152,10 @@ class BigInteger:
 
         Constructs a fixed-width BigInteger with exactly `size` limbs, interpreting
         the input modulo 2^(32*size). JIT-friendly.
+
+        .. warning::
+
+            When called with a negative value, the function will treat it as zero.
 
         Parameters
         ----------
@@ -169,6 +176,9 @@ class BigInteger:
         JAX's host integer range (typically up to 64 bits). For arbitrarily large
         Python integers, prefer `create_static`.
         """
+        # Ensure input is non-negative
+        # if negative, treat as zero to avoid unintended large positive wraparound in the loop below.
+        n = jnp.maximum(n, 0)  
 
         def body_fun(i, args):
             digits, num = args
