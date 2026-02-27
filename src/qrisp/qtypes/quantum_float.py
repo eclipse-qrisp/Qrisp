@@ -28,7 +28,7 @@ from qrisp.environments import invert, conjugate
 from qrisp.jasp import check_for_tracing_mode
 
 
-@jit
+
 def _signed_int_iso(x, n):
     """
     Computes the signed integer isomorphism for a given bit-width.
@@ -54,7 +54,7 @@ def _signed_int_iso(x, n):
     return jnp.int64(x) & mask
 
 
-@jit
+
 def _signed_int_iso_inv(y, n):
     """
     Computes the inverse signed integer isomorphism for a given bit-width.
