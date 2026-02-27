@@ -28,7 +28,7 @@ from qrisp.environments import invert, conjugate
 from qrisp.jasp import check_for_tracing_mode
 
 
-
+@jit
 def _signed_int_iso(x, n):
     """
     Computes the signed integer isomorphism for a given bit-width.
@@ -54,7 +54,7 @@ def _signed_int_iso(x, n):
     return jnp.int64(x) & mask
 
 
-
+@jit
 def _signed_int_iso_inv(y, n):
     """
     Computes the inverse signed integer isomorphism for a given bit-width.
@@ -477,7 +477,7 @@ class QuantumFloat(QuantumVariable):
                 # QuantumFloat's size and exponent. 
                 debug.print("Warning: Value cannot be safely encoded in the provided QuantumFloat.")
                 # Return zero matching the type of x
-                return jnp.zeros_like(x)
+                return x * 0
             
             # Define the function for the "In Bounds" case
             def keep_value(x):
