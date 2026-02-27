@@ -153,6 +153,10 @@ class BigInteger:
         Constructs a fixed-width BigInteger with exactly `size` limbs, interpreting
         the input modulo 2^(32*size). JIT-friendly.
 
+        .. warning::
+
+            When called with a negative value, the function will treat it as zero.
+
         Parameters
         ----------
         n : int or float or jnp.integer or jnp.floating
@@ -172,9 +176,9 @@ class BigInteger:
         JAX's host integer range (typically up to 64 bits). For arbitrarily large
         Python integers, prefer `create_static`.
         """
-        from jax.experimental import checkify
-        
-        checkify.check(n >= 0, "Input must be non-negative.")
+        # Ensure input is non-negative
+        # if negative, treat as zero to avoid unintended large positive wraparound in the loop below.
+        n = jnp.maximum(n, 0)  
 
         def body_fun(i, args):
             digits, num = args
