@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from qrisp.circuit import QuantumCircuit, XGate
+from qrisp.circuit import QuantumCircuit, XGate, fast_append
 from qrisp.simulator import QuantumState, advance_quantum_state, gen_res_dict
 
 
@@ -50,7 +50,8 @@ class BufferedQuantumState:
         return qb
 
     def append(self, op, qubits):
-        self.buffer_qc.append(op, qubits)
+        with fast_append(0):
+            self.buffer_qc.append(op, qubits)
         try:
             if op.name != "qb_alloc" and op.name != "qb_dealloc":
                 self.gate_counts[op.name] += 1
