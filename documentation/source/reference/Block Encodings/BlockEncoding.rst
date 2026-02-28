@@ -44,6 +44,8 @@ Utilities
      - Returns a list of ancilla QuantumVariables for the BlockEncoding.
    * - :func:`~qrisp.block_encodings.BlockEncoding.expectation_value`
      - Measures the expectation value of the operator using the Hadamard test protocol.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.nested_commutators`
+     - Returns a BlockEncoding of a weighted sum odd nested commutators.
    * - :func:`~qrisp.block_encodings.BlockEncoding.qubitization`
      - Returns a BlockEncoding representing the qubitization walk operator.
    * - :func:`~qrisp.block_encodings.BlockEncoding.resources`
@@ -57,6 +59,7 @@ Utilities
    methods/chebyshev
    methods/create_ancillas
    methods/expectation_value
+   methods/nested_commutators
    methods/qubitization
    methods/resources
 

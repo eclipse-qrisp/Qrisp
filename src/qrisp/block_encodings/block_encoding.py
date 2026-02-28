@@ -880,6 +880,94 @@ class BlockEncoding:
 
         return ev_function
 
+    def nested_commutators(self, B: BlockEncoding, coeffs) -> BlockEncoding:
+        r"""
+        Returns a BlockEncoding of a weighted sum odd nested commutators.
+
+        For block-encoded Hermitian operators $A$ and $B$, this function returns a BlockEncoding 
+        of the operator 
+
+        .. math:: 
+
+            \mathcal A = \sum_{k=1}^{\lceil d/2\rceil} c_{2k-1} \text{ad}_A^k(B)
+
+        where each $\text{ad}_A^k(B)$ is a nested commutator $[A,[A,\dotsc[A,B]]$ of order $k$.
+
+        Parameters
+        ----------
+        B : BlockEncoding
+            A block-encoded Hermitian operator.
+        coeffs : ArrayLike, shape (d,)
+            The non-negative coefficients $c_k\geq0$.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding instance representing the sum of nested commutators $\mathcal A$.
+
+        Notes
+        -----
+        - **Complexity**: This implementation requires $\mathcal O(d)$ qubits, $\mathcal O(d)$ calls to the block-encoding $A$,
+          and utilizes a state preparation (PREP) oracle of depth $\mathcal O(d^2)$.
+
+        Examples
+        --------
+
+        ::
+
+            import numpy as np
+            from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
+            from qrisp.operators import X, Y, Z
+
+            A = 0.5*X(0)*Z(1) + 0.5*Y(0)*Y(1)
+            B = 0.5*Z(0)*Z(1) + 0.5*X(0)*Y(1)
+
+            ad1 = (A*B - B*A)
+            ad2 = A*ad1 - ad1*A
+            ad3 = A*ad2 - ad2*A
+
+            ad13 = ad1 + ad3
+            B_ad13 = BlockEncoding.from_operator(1.j * (ad1 + ad3))
+
+            B_A = BlockEncoding.from_operator(A)
+            B_B = BlockEncoding.from_operator(B)
+
+            # BlockEncoding of sum of odd nested commutators
+            B_C = B_A.nested_commutators(B_B, np.array([0., 1., 0., 1.,]))
+
+            b = np.array([1., 1., 0., 1.])
+            # Prepare variable in state |b>
+            def prep_b():
+                qv = QuantumFloat(2)
+                prepare(qv, b)
+                return qv
+
+            @terminal_sampling
+            def main():
+                return B_C.apply_rus(prep_b)()
+
+            res_dict = main()
+            amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
+            print("qrisp:", amps)
+
+        Compare this to the result obtained by first computing the sum of nested commutators 
+        and subsequently constructing its block encoding.
+
+        ::
+
+            @terminal_sampling
+            def main():
+                return B_ad13.apply_rus(prep_b)()
+
+            res_dict = main()
+            amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
+            print("qrisp:", amps)
+        
+        """
+        from qrisp.block_encodings.commutators import nested_commutators
+        return nested_commutators(self, B, coeffs)
+
     def resources(
         self,
         *operands: QuantumVariable,
