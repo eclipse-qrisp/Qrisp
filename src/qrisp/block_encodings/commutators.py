@@ -21,10 +21,11 @@ from __future__ import annotations
 import jax.numpy as jnp
 import numpy as np
 import numpy.typing as npt
-from qrisp.core import QuantumVariable
+from qrisp.cks import unary_prep
+from qrisp.core import QuantumArray, QuantumVariable
 from qrisp.alg_primitives.state_preparation import prepare
-from qrisp.core.gate_application_functions import x, z, mcx
-from qrisp.environments import conjugate, control
+from qrisp.core.gate_application_functions import x, z, mcx, swap, h, cx
+from qrisp.environments import conjugate, control, invert
 from qrisp.jasp import (
     jrange,
     qache,
@@ -121,6 +122,108 @@ def _state_prep(qa, qb, qc, d, coeffs):
 
     q_switch(qa[:n], case_func, qb)
     q_switch(qa[n:], case_func, qc)
+
+
+def prepare_chebyshev_unary_walk(outer: QuantumVariable, qa: QuantumVariable, qb: QuantumVariable, d: int, coeffs: npt.NDArray[Any] = None) -> None:
+    """
+    Coherently prepares the Chebyshev commutator state in strictly linear depth
+    by simulating a symmetric quantum walk on a 1D line from -d to +d.
+
+
+    Parameters
+    ----------
+    outer : QuantumVariable
+        A unary-encoded QuantumVariable of size d, used to control the walk steps.
+    qa : QuantumVariable
+        A unary-encoded QuantumVariable of size d+1, representing the m index.
+    qb : QuantumVariable
+        A unary-encoded QuantumVariable of size d+1, representing the n index.
+    d : int
+        The depth of the commutator expansion, which determines the size of the walk.
+    coeffs : ArrayLike, shape (d,), optional
+        The non-negative coefficients for the weighted sum of commutators. 
+        If None, defaults to a delta distribution on the highest order commutator.
+
+    Notes
+    -----
+    - **Complexity**: This implementation requires $\mathcal O(d)$ qubits, and $\mathcal O(d)$ depth.
+    - The walk is implemented using two sets of coin variables and two position variables (m_line and n_line) to achieve perfect parallelism in the shift operations, 
+      resulting in $\mathcal O(d)$ depth regardless of the number of steps.
+    - The crucial minus signs for the commutator are implemented via Z gates on the coin variables, 
+      which are applied in parallel with the Hadamard gates to create the necessary interference patterns in the walk.
+    
+    """
+    # 1. Define the 1D line size. 
+    # For depth d, the furthest the particle can walk is d steps.
+    # We need a line from -d to +d, giving a total size of 2d + 1.
+    size = 2 * d + 1
+    origin = d  # The center of the array represents m=0 and n=0
+
+    if coeffs is None:
+        coeffs = np.zeros(d)
+        coeffs[d-1] = 1
+    else:
+        # Rescale coefficients 
+        coeffs = np.array(coeffs) * np.array([np.sum(np.abs(_get_chebyshev_commutator_coeffs(k))) for k in range(d)])
+        coeffs = coeffs / np.sum(coeffs)
+
+    outer = QuantumVariable(d, name="outer_anc")
+    unary_prep(outer, coeffs)
+
+    coins1 = QuantumArray(QuantumBool(), shape=(d,))
+    coins2 = QuantumArray(QuantumBool(), shape=(d,))
+    m_line = QuantumVariable(size, name="m_line")
+    n_line = QuantumVariable(size, name="n_line")
+
+    def inner_walk(coins1, coins2, m_line, n_line, step):
+
+        # Initialize the particles directly at the origin (m=0, n=0)
+        x(m_line[origin])
+        x(n_line[origin])
+
+        for step in range(d):
+            c1 = coins1[step]
+            c2 = coins2[step]
+
+            h(c1)
+            z(c1)  # Applies the crucial minus sign for the commutator
+            h(c2)
+
+                # Define the perfectly parallel, O(1) depth shift operator
+            def apply_symmetric_walk(reg):
+                # Layer 1: Swap all Even-Odd index pairs (0-1, 2-3, 4-5...)
+                with control(c2):
+                    for i in range(0, size - 1, 2):
+                        swap(reg[i], reg[i+1])
+                        
+                # Layer 2: Swap all Odd-Even index pairs (1-2, 3-4, 5-6...)
+                with control(c2, ctrl_state=0):
+                    for i in range(1, size - 1, 2):
+                        swap(reg[i], reg[i+1])
+                        
+            # Apply the walk to the chosen register
+            with control(outer[step]):
+
+                with control(c1, ctrl_state=0):
+                    apply_symmetric_walk(m_line)
+                    
+                with control(c1):
+                    apply_symmetric_walk(n_line)
+
+
+    inner_walk(coins1, coins2, m_line, n_line, d)   
+
+    for i in range(size):
+        cx(m_line[i], qa[abs(i - origin)])
+        cx(n_line[i], qb[abs(i - origin)])
+
+    with invert():
+        inner_walk(coins1, coins2, m_line, n_line, d)
+
+    coins1.delete()
+    coins2.delete()
+    m_line.delete()
+    n_line.delete()
 
 
 def nested_commutators(A: BlockEncoding, B: BlockEncoding, coeffs) -> BlockEncoding:
