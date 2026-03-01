@@ -153,24 +153,29 @@ def _unary_angles(coeffs: "ArrayLike") -> "ArrayLike":
         1-D array of rotation angles :math:`\\phi_i` for unary state preparation.
     """
 
-    alpha = jnp.sqrt(
-        coeffs
-    )  # coeffs need not to be normalized since unary angles only depend on their ratio
-    phi = jnp.zeros(len(alpha) - 1)
-    phi = phi.at[-1].set(
-        jnp.where(jnp.abs(alpha[-2]) < 1e-12, 
-                  jnp.pi / 2, 
-                  jnp.arctan(alpha[-1] / alpha[-2])
-        )
-    )  # Last angle is determined by ratio of final two amplitudes
-    for i in range(len(phi) - 2, -1, -1):
-        phi = phi.at[i].set(
-            jnp.where((jnp.abs(alpha[i]) < 1e-12) | (jnp.abs(jnp.cos(phi[i + 1])) < 1e-12), 
-                      jnp.sign(jnp.cos(phi[i + 1])) * jnp.pi / 2, 
-                      jnp.arctan(alpha[i + 1] / alpha[i] / jnp.cos(phi[i + 1]))
-            )
-        )  # Recursively compute previous rotation angles
-    return 2 * phi  # Compensate for factor 1/2 in ry
+    #Computes rotation angles \phi_i to prepare the unary state.
+    #Vectorized and numerically stable implementation using cumulative sums.
+
+    # Amplitudes a_k of the state with exactly k+1 consecutive ones 
+    # are related to the coefficients c_k by:
+    # a_k ~ sin(phi_0)sin(phi_1)...sin(phi_{k-1})cos(phi_k)
+    # cos(phi_k) = sqrt(c_k) / sqrt(c_k + c_{c+1} + ... + c_{N-1})
+    # sin(phi_k) = sqrt(c_{k+1} + ... + c_{N-1}) / sqrt(c_k + c_{k+1} + ... + c_{N-1})
+    
+    # Calculate the reverse cumulative sum of the coefficients
+    # rev_cumsum[k] = sum_{j=k}^{N-1} c_j
+    rev_cumsum = jnp.cumsum(coeffs[::-1])[::-1]
+    
+    # y arguments represent the norm of the remaining state (sin component)
+    y_args = jnp.sqrt(rev_cumsum[1:])
+    
+    # x arguments represent the amplitude of the current unary state (cos component)
+    x_args = jnp.sqrt(coeffs[:-1])
+    
+    # arctan2 safely handles x=0, y=0, and tiny values without division
+    phi = jnp.arctan2(y_args, x_args)
+    
+    return 2 * phi
 
 
 def unary_prep(case: QuantumVariable, coeffs: "ArrayLike") -> None:

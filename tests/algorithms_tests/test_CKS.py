@@ -17,12 +17,36 @@
 """
 
 import numpy as np
-from qrisp import QuantumFloat, gphase, multi_measurement, prepare
-from qrisp.algorithms.cks import CKS
+import pytest
+from qrisp import QuantumFloat, QuantumVariable, gphase, multi_measurement, prepare
+from qrisp.algorithms.cks import CKS, unary_prep
 from qrisp.block_encodings import BlockEncoding
 from qrisp.jasp import terminal_sampling
 
 
+"""Unit tests for the unary preparation implementation in qrisp.algorithms.cks."""
+@pytest.mark.parametrize("coeffs, description", [
+    (np.array([1.0, 1.0, 1.0, 1.0]), "Uniform distribution"),
+    (np.array([0.5, 0.25, 0.125, 0.125]), "Decreasing distribution"),
+    (np.array([1.0, 0.0, 1.0, 0.0, 1.0]), "Zeros in the middle"),
+    (np.array([0.0, 0.0, 1.0, 0.0]), "Mostly zeros"),
+    (np.array([1e-12, 1e-15, 1.0, 1e-14]), "Tiny floating point values"),
+    (np.array([100.0, 200.0, 300.0]), "Unnormalized large coefficients"),
+])
+def test_unary_prep(coeffs, description):
+
+    qv = QuantumVariable(len(coeffs))
+    unary_prep(qv, coeffs)
+    res_dict = qv.get_measurement()
+
+    # Extract the probabilities for the unary strings and convert to measured amplitudes
+    amps = np.sqrt([res_dict.get('1'*(i + 1) + '0'*(len(coeffs) - i - 1), 0) for i in range(len(coeffs))])
+    target_amps = np.sqrt(coeffs / np.sum(coeffs))
+
+    assert np.allclose(amps, target_amps, atol=1e-4)
+
+
+"""Unit tests for the CKS algorithm implementation in qrisp.algorithms.cks."""
 def test_cks_matrix_rus():
 
     A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
