@@ -158,11 +158,17 @@ def _unary_angles(coeffs: "ArrayLike") -> "ArrayLike":
     )  # coeffs need not to be normalized since unary angles only depend on their ratio
     phi = jnp.zeros(len(alpha) - 1)
     phi = phi.at[-1].set(
-        jnp.arctan(alpha[-1] / alpha[-2])
+        jnp.where(jnp.abs(alpha[-2]) < 1e-12, 
+                  jnp.pi / 2, 
+                  jnp.arctan(alpha[-1] / alpha[-2])
+        )
     )  # Last angle is determined by ratio of final two amplitudes
     for i in range(len(phi) - 2, -1, -1):
         phi = phi.at[i].set(
-            jnp.arctan(alpha[i + 1] / alpha[i] / jnp.cos(phi[i + 1]))
+            jnp.where((jnp.abs(alpha[i]) < 1e-12) | (jnp.abs(jnp.cos(phi[i + 1])) < 1e-12), 
+                      jnp.sign(jnp.cos(phi[i + 1])) * jnp.pi / 2, 
+                      jnp.arctan(alpha[i + 1] / alpha[i] / jnp.cos(phi[i + 1]))
+            )
         )  # Recursively compute previous rotation angles
     return 2 * phi  # Compensate for factor 1/2 in ry
 
