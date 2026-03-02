@@ -84,10 +84,41 @@ def _get_chebyshev_commutator_coeffs(d):
     return C
 
 
-def _state_prep(qa, qb, qc, d, coeffs):
+def prepare_chebyshev_unary(qa, qm, qn, d, coeffs):
     r"""
-    Prepares the state $C_{m,n}|m>|n>$ for unary encoded variables in $\mathcal O(d^2)$.
-    
+    Coherently prepares a state that encodes the coefficients of the Chebyshev expansion of the nested commutators in a two-dimensional grid of unary-encoded indices.
+
+    Each nested commutator $\text{ad}_A^k(B)$ can be expressed as a sum of terms of the form $C_{k,m,n}T_m(A)BT_n(A)$, where $T_m(A)$ are Chebyshev polynomials of the first kind evaluated at $A$.
+    The state prepared by this function encodes the square root of the weighted sum of these coefficients in the amplitudes of a superposition over the indices $m$ and $n$,
+    which can then be used to apply the corresponding operators in superposition.
+
+    .. math::  
+
+            \sum_{k=1}^d\text{ad}_A^k(B) = \sum_{k=1}^d c_k\sum_{m,n}C_{k,m,n}T_m(A)BT_n(A)
+
+    .. math::
+
+            \text{PREP}\ket{0}\ket{0}\ket{0} = \sum_{m,n}\sqrt{\sum_{k=1}^d\c_kC_{k,m,n}}|m>|n>
+
+    Parameters
+    ----------
+    qa : QuantumVariable
+        Ancilla QuantumVariable of size $2\lceil\log2(d)\rceil$.
+    qm : QuantumVariable
+        A unary-encoded QuantumVariable of size d+1, representing the m index.
+    qn : QuantumVariable
+        A unary-encoded QuantumVariable of size d+1, representing the n index.
+    d : int
+        The depth of the commutator expansion, which determines the size of the state.
+    coeffs : ArrayLike, shape (d,)
+        The non-negative coefficients for the weighted sum of commutators.
+
+    Notes
+    -----
+    - **Complexity**: This state preparation requires $\mathcal O(d^2)$ depth.
+    - This function is designed to be used as a state preparation oracle within the nested_commutator function, and is not intended for standalone use.
+    - The state prepared by this function encodes the coefficients of the Chebyshev expansion of the nested commutators in a two-dimensional grid of unary-encoded indices, 
+      which can then be used to apply the corresponding operators in superposition.
     
     """
 
@@ -120,15 +151,26 @@ def _state_prep(qa, qb, qc, d, coeffs):
     def case_func(i, qv):
         x(qv[: i + 1])
 
-    q_switch(qa[:n], case_func, qb)
-    q_switch(qa[n:], case_func, qc)
+    q_switch(qa[:n], case_func, qm)
+    q_switch(qa[n:], case_func, qn)
 
 
 def prepare_chebyshev_unary_walk(outer: QuantumVariable, qa: QuantumVariable, qb: QuantumVariable, d: int, coeffs: npt.NDArray[Any] = None) -> None:
-    """
-    Coherently prepares the Chebyshev commutator state in strictly linear depth
-    by simulating a symmetric quantum walk on a 1D line from -d to +d.
+    r"""
+    Coherently prepares a state that encodes the coefficients of the Chebyshev expansion of the nested commutators in a two-dimensional grid of unary-encoded indices
+    by simulating a symmetric quantum walk on a 1D line from $-d$ to $d$.
 
+    Each nested commutator $\text{ad}_A^k(B)$ can be expressed as a sum of terms of the form $C_{k,m,n}T_m(A)BT_n(A)$, where $T_m(A)$ are Chebyshev polynomials of the first kind evaluated at $A$.
+    The state prepared by this function encodes the square root of the weighted sum of these coefficients in the amplitudes of a superposition over the indices $m$ and $n$,
+    which can then be used to apply the corresponding operators in superposition.
+
+    .. math::  
+
+        \sum_{k=1}^d\text{ad}_A^k(B) = \sum_{k=1}^d c_k\sum_{m,n}C_{k,m,n}T_m(A)BT_n(A)
+
+    .. math::
+
+        \sum_{k=1}^d\text{ad}_A^k(B) = \sum_{k=1}^d\sqrt{\c_k}\sum_{m,n}\sqrt{C_{k,m,n}}|k>|m>|n>
 
     Parameters
     ----------
@@ -340,7 +382,7 @@ def nested_commutators(A: BlockEncoding, B: BlockEncoding, coeffs) -> BlockEncod
         operands = args[-num_ops:]
 
         # sum_{m,n} c_{m,n} T_m(A) B T_n(A)
-        with conjugate(_state_prep)(outer_anc, outer_anc_left, outer_anc_right, d, coeffs):
+        with conjugate(prepare_chebyshev_unary)(outer_anc, outer_anc_left, outer_anc_right, d, coeffs):
 
             # Signs
             z(outer_anc_left[1 : d + 1])
