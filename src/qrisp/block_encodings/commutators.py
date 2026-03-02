@@ -142,10 +142,11 @@ def unary_prep(
             C_matrix[:rows, :cols] += coeffs[k] * Ck_matrix
 
         C_matrix = np.sqrt(np.abs(C_matrix))
-
-        for i in range(k+1):
-            for j in range(k+1):
-                target[i + (j<<n)] += coeffs[k] * C_matrix[i,j]
+ 
+        # Flatten the 2D coefficient matrix into a 1D array corresponding to the amplitudes of the target state
+        for i in range(d + 1):
+            for j in range(d + 1):
+                target[i + (j<<n)] += C_matrix[i,j]
 
         return target
 
