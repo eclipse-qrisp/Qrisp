@@ -32,7 +32,7 @@ from qrisp.jasp import (
 )
 from qrisp.qtypes import QuantumBool, QuantumFloat
 from scipy.sparse import csr_array, csr_matrix
-from typing import Any, Callable, TYPE_CHECKING, Union
+from typing import Any, Callable, Literal, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -83,7 +83,13 @@ def _get_chebyshev_commutator_coeffs(d):
     return C
 
 
-def unary_prep(anc: QuantumVariable, qm: QuantumVariable, qn: QuantumVariable, d: int, coeffs: npt.NDArray[Any]) -> None:
+def unary_prep(
+    anc: QuantumVariable,
+    qm: QuantumVariable,
+    qn: QuantumVariable,
+    d: int,
+    coeffs: npt.NDArray[Any],
+)-> None:
     r"""
     Coherently prepares a state that encodes the coefficients of the Chebyshev expansion of the nested commutators in a two-dimensional grid of unary-encoded indices.
 
@@ -155,7 +161,13 @@ def unary_prep(anc: QuantumVariable, qm: QuantumVariable, qn: QuantumVariable, d
     q_switch(anc[n:], case_func, qn)
 
 
-def unary_walk_prep(anc: QuantumVariable, qm: QuantumVariable, qn: QuantumVariable, d: int, coeffs: npt.NDArray[Any] = None) -> None:
+def unary_walk_prep(
+    anc: QuantumVariable,
+    qm: QuantumVariable,
+    qn: QuantumVariable,
+    d: int,
+    coeffs: npt.NDArray[Any] = None,
+) -> None:
     r"""
     Coherently prepares a state that encodes the coefficients of the Chebyshev expansion of the nested commutators in a two-dimensional grid of unary-encoded indices
     by simulating a symmetric quantum walk on a 1D line from $-d$ to $d$.
@@ -269,7 +281,12 @@ def unary_walk_prep(anc: QuantumVariable, qm: QuantumVariable, qn: QuantumVariab
     n_line.delete()
 
 
-def nested_commutators(A: BlockEncoding, B: BlockEncoding, coeffs) -> BlockEncoding:
+def nested_commutators(
+    A: BlockEncoding,
+    B: BlockEncoding,
+    coeffs: "ArrayLike",
+    method: Literal["default", "walk"] = "default",
+) -> BlockEncoding:
     r"""
     Returns a BlockEncoding of a weighted sum odd nested commutators.
 
@@ -290,7 +307,11 @@ def nested_commutators(A: BlockEncoding, B: BlockEncoding, coeffs) -> BlockEncod
         A block-encoded Hermitian operator.
     coeffs : ArrayLike, shape (d,)
         The non-negative coefficients $c_k\geq0$.
-
+    method : str, optional
+        The method to use for constructing the block encoding.
+            - "default": Uses a state preparation method with $\mathcal O(d^2)$ depth.
+            - "walk": Uses a quantum walk-based state preparation method with $\mathcal O(d)$ depth.
+ 
     Returns
     -------
     BlockEncoding
@@ -358,6 +379,18 @@ def nested_commutators(A: BlockEncoding, B: BlockEncoding, coeffs) -> BlockEncod
     
     """
 
+    ALLOWED_METHODS = {"default", "walk"}
+    if method not in ALLOWED_METHODS:
+        raise ValueError(
+            f"Invalid method specified: '{method}'. "
+            f"Allowed methods are: {', '.join(ALLOWED_METHODS)}"
+        )
+    
+    if method == "default":
+        prep_func = unary_prep
+    elif method == "walk":
+        prep_func = unary_walk_prep
+
     A_walk = A.qubitization()
 
     num_ops = A.num_ops
@@ -374,7 +407,7 @@ def nested_commutators(A: BlockEncoding, B: BlockEncoding, coeffs) -> BlockEncod
         outer_anc_right = args[2]
 
         # Reuse ancillas
-        inner_anc = args[3]
+        anc_qbl = args[3]
 
         ancs_A = args[4 : num_ancs_A + 4]
         qubits_A = sum([anc.reg for anc in ancs_A], [])
@@ -383,7 +416,7 @@ def nested_commutators(A: BlockEncoding, B: BlockEncoding, coeffs) -> BlockEncod
         operands = args[-num_ops:]
 
         # sum_{m,n} c_{m,n} T_m(A) B T_n(A)
-        with conjugate(unary_prep)(outer_anc, outer_anc_left, outer_anc_right, d, coeffs):
+        with conjugate(prep_func)(outer_anc, outer_anc_left, outer_anc_right, d, coeffs):
 
             # Signs
             z(outer_anc_left[1 : d + 1])
@@ -396,7 +429,7 @@ def nested_commutators(A: BlockEncoding, B: BlockEncoding, coeffs) -> BlockEncod
 
             # To reuse ancillas for applying T_k(A) from the right,
             # we must ensure that they are in state |0>
-            mcx(qubits_A, inner_anc, ctrl_state=0)
+            mcx(qubits_A, anc_qbl, ctrl_state=0)
 
             # Apply B
             B.unitary(*ancs_B, *operands)
@@ -406,14 +439,14 @@ def nested_commutators(A: BlockEncoding, B: BlockEncoding, coeffs) -> BlockEncod
                 # |1000...> = T_0(A), |1100> = T_1(A)
                 with control(outer_anc_right[i + 1]):
                     # Ensure that ancillas are in state |0>
-                    with control(inner_anc):
+                    with control(anc_qbl):
                         A_walk.unitary(*ancs_A, *operands)
 
             # flip |1> -> |0>
             # Ensure that measurment in |0> yields the correct result
-            x(inner_anc)
+            x(anc_qbl)
 
-    new_anc_templates = [QuantumVariable(2 * n).template(), 
+    new_anc_templates = [QuantumVariable(2 * n).template() if method == "default" else QuantumVariable(d).template(), 
                          QuantumVariable(d + 1).template(), 
                          QuantumVariable(d + 1).template(), 
                          QuantumBool().template(),

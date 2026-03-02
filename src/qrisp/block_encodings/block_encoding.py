@@ -41,7 +41,7 @@ from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool, QuantumFloat
 from scipy.sparse import csr_array, csr_matrix
-from typing import Any, Callable, TYPE_CHECKING, Union
+from typing import Any, Callable, Literal, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -880,7 +880,12 @@ class BlockEncoding:
 
         return ev_function
 
-    def nested_commutators(self, B: BlockEncoding, coeffs) -> BlockEncoding:
+    def nested_commutators(
+        self,
+        B: BlockEncoding,
+        coeffs: "ArrayLike",
+        method: Literal["default", "walk"] = "default",
+    ) -> BlockEncoding:
         r"""
         Returns a BlockEncoding of a weighted sum odd nested commutators.
 
@@ -889,17 +894,23 @@ class BlockEncoding:
 
         .. math:: 
 
-            \mathcal A = \sum_{k=1}^{\lceil d/2\rceil} c_{2k-1} \text{ad}_A^k(B)
+            \mathcal A = \sum_{k=1}^{\lfloor d/2\rfloor} c_{2k-1} \text{ad}_A^k(B)
 
         where each $\text{ad}_A^k(B)$ is a nested commutator $[A,[A,\dotsc[A,B]]$ of order $k$.
 
         Parameters
         ----------
+        A : BlockEncoding
+            A block-encoded Hermitian operator.
         B : BlockEncoding
             A block-encoded Hermitian operator.
         coeffs : ArrayLike, shape (d,)
             The non-negative coefficients $c_k\geq0$.
-
+        method : str, optional
+            The method to use for constructing the block encoding.
+                - "default": Uses a state preparation method with $\mathcal O(d^2)$ depth.
+                - "walk": Uses a quantum walk-based state preparation method with $\mathcal O(d)$ depth.
+    
         Returns
         -------
         BlockEncoding
@@ -908,7 +919,7 @@ class BlockEncoding:
         Notes
         -----
         - **Complexity**: This implementation requires $\mathcal O(d)$ qubits, $\mathcal O(d)$ calls to the block-encoding $A$,
-          and utilizes a state preparation (PREP) oracle of depth $\mathcal O(d^2)$.
+          and utilizes a state preparation (PREP) oracle of detph $\mathcal O(d^2)$.
 
         Examples
         --------
@@ -966,7 +977,7 @@ class BlockEncoding:
         
         """
         from qrisp.block_encodings.commutators import nested_commutators
-        return nested_commutators(self, B, coeffs)
+        return nested_commutators(self, B, coeffs, method=method)
 
     def resources(
         self,
