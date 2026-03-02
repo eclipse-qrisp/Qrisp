@@ -162,7 +162,11 @@ def unary_prep(
 
 
 def unary_walk_prep(
-    anc: QuantumVariable,
+    steps: QuantumVariable,
+    coins1: QuantumVariable,
+    coins2: QuantumVariable,
+    m_line: QuantumVariable,
+    n_line: QuantumVariable,
     qm: QuantumVariable,
     qn: QuantumVariable,
     d: int,
@@ -186,8 +190,16 @@ def unary_walk_prep(
 
     Parameters
     ----------
-    anc : QuantumVariable
+    steps : QuantumVariable
         A unary-encoded ancilla QuantumVariable of size d, used to control the walk steps.
+    coins1 : QuantumVariable
+        An ancilla QuantumVariable of size d, used as the first set of coin variables to control the walk steps.
+    coins2 : QuantumVariable
+        An ancilla QuantumVariable of size d, used as the second set of coin variables to control the walk steps.
+    m_line : QuantumVariable
+        A one-hot-encoded QuantumVariable of size 2d+1, representing the position of the walk along the m-axis, which encodes the index of T_m(A).
+    n_line : QuantumVariable
+        A one-hot-encoded QuantumVariable of size 2d+1, representing the position of the walk along the n-axis, which encodes the index of T_n(A).
     qm : QuantumVariable
         A unary-encoded QuantumVariable of size d+1, representing the $m$ index.
     qn : QuantumVariable
@@ -223,12 +235,7 @@ def unary_walk_prep(
         coeffs = np.array(coeffs) * np.array([np.sum(np.abs(_get_chebyshev_commutator_coeffs(k))) for k in range(d)])
         coeffs = coeffs / np.sum(coeffs)
 
-    unary_prep(anc, coeffs)
-
-    coins1 = QuantumArray(QuantumBool(), shape=(d,))
-    coins2 = QuantumArray(QuantumBool(), shape=(d,))
-    m_line = QuantumVariable(size, name="m_line")
-    n_line = QuantumVariable(size, name="n_line")
+    unary_prep(steps, coeffs)
 
     def inner_walk(coins1, coins2, m_line, n_line, step):
 
@@ -257,7 +264,7 @@ def unary_walk_prep(
                         swap(reg[i], reg[i+1])
                         
             # Apply the walk to the chosen register
-            with control(anc[step]):
+            with control(steps[step]):
 
                 with control(c1, ctrl_state=0):
                     apply_symmetric_walk(m_line)
@@ -268,17 +275,16 @@ def unary_walk_prep(
 
     inner_walk(coins1, coins2, m_line, n_line, d)   
 
-    for i in range(size):
-        cx(m_line[i], qm[abs(i - origin)])
-        cx(n_line[i], qn[abs(i - origin)])
+    for i in range(1, d + 1):
+        cx(m_line[origin - i], m_line[origin + i])
+        cx(n_line[origin - i], n_line[origin + i])
 
-    with invert():
-        inner_walk(coins1, coins2, m_line, n_line, d)
-
-    coins1.delete()
-    coins2.delete()
-    m_line.delete()
-    n_line.delete()
+    # Copy the position of the particles to the output variables in unary encoding
+    for i in range(d + 1):
+        with control(m_line[origin + i]):
+            x(qm[:i + 1])
+        with control(n_line[origin + i]):
+            x(qn[:i + 1])
 
 
 def nested_commutators(
@@ -388,8 +394,10 @@ def nested_commutators(
     
     if method == "default":
         prep_func = unary_prep
+        num_prep_ancs = 1
     elif method == "walk":
         prep_func = unary_walk_prep
+        num_prep_ancs = 5
 
     A_walk = A.qubitization()
 
@@ -402,21 +410,21 @@ def nested_commutators(
 
     def new_unitary(*args):
 
-        outer_anc = args[0]
-        outer_anc_left = args[1]
-        outer_anc_right = args[2]
+        outer_ancs = args[:num_prep_ancs]
+        outer_anc_left = args[num_prep_ancs]
+        outer_anc_right = args[num_prep_ancs + 1]
 
         # Reuse ancillas
-        anc_qbl = args[3]
+        anc_qbl = args[num_prep_ancs + 2]
 
-        ancs_A = args[4 : num_ancs_A + 4]
+        ancs_A = args[num_prep_ancs + 3 : num_prep_ancs + num_ancs_A + 3]
         qubits_A = sum([anc.reg for anc in ancs_A], [])
 
-        ancs_B = args[num_ancs_A + 4 : num_ancs_A + num_ancs_B + 4]
+        ancs_B = args[num_prep_ancs + num_ancs_A + 3 : num_prep_ancs + num_ancs_A + num_ancs_B + 3]
         operands = args[-num_ops:]
 
         # sum_{m,n} c_{m,n} T_m(A) B T_n(A)
-        with conjugate(prep_func)(outer_anc, outer_anc_left, outer_anc_right, d, coeffs):
+        with conjugate(prep_func)(*outer_ancs, outer_anc_left, outer_anc_right, d, coeffs):
 
             # Signs
             z(outer_anc_left[1 : d + 1])
@@ -446,10 +454,27 @@ def nested_commutators(
             # Ensure that measurment in |0> yields the correct result
             x(anc_qbl)
 
-    new_anc_templates = [QuantumVariable(2 * n).template() if method == "default" else QuantumVariable(d).template(), 
-                         QuantumVariable(d + 1).template(), 
-                         QuantumVariable(d + 1).template(), 
-                         QuantumBool().template(),
-                        ] + A_walk._anc_templates + B._anc_templates
+    if method == "default":
+
+        new_anc_templates = [QuantumVariable(2 * n).template(), # binary-encoded ancilla for coefficient preparation
+                            QuantumVariable(d + 1).template(), # unary-encoded m index for T_m(A)
+                            QuantumVariable(d + 1).template(), # unary-encoded n index for T_n(A)
+                            QuantumBool().template(), # ancilla for reusing qubits for right application of T_k(A)
+                            ] + A_walk._anc_templates + B._anc_templates
+        
+    elif method == "walk":
+        
+        new_anc_templates = [QuantumVariable(d).template(), # step ancilla variable for walk
+                            QuantumVariable(d).template(), # coin ancilla variable 1 for walk
+                            QuantumVariable(d).template(), # coin ancilla variable 2 for walk
+                            QuantumVariable(2 * d + 1).template(), # position ancilla variable m_line for walk
+                            QuantumVariable(2 * d + 1).template(), # position ancilla variable n_line for walk
+                            QuantumVariable(d + 1).template(), # unary-encoded m index for T_m(A) 
+                            QuantumVariable(d + 1).template(), # unary-encoded n index for T_n(A)
+                            QuantumBool().template(), # ancilla for reusing qubits for right application of T_k(A)
+                            QuantumVariable(num_ancs_A).template(),
+                            QuantumVariable(num_ancs_B).template(),
+                            ] + A_walk._anc_templates + B._anc_templates
+
     new_alpha = 1 # TBD
     return BlockEncoding(new_alpha, new_anc_templates, new_unitary)
