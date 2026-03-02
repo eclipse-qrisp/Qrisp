@@ -117,7 +117,7 @@ def unary_prep(
     d : int
         The depth of the commutator expansion, which determines the size of the state.
     coeffs : ArrayLike, shape (d,)
-        The non-negative coefficients for the weighted sum of commutators.
+        The non-negative coefficients $c_1,c_2,\dots,c_d$ for the weighted sum of commutators.
 
     Notes
     -----
@@ -131,7 +131,7 @@ def unary_prep(
     def target_state(d, coeffs):
 
         n = int(np.ceil(np.log2(d + 1)))
-        target = np.zeros(2**(2 * n))
+        target = np.zeros(2 ** (2 * n))
 
         C_matrix = np.zeros((d + 1, d + 1))
 
@@ -139,7 +139,7 @@ def unary_prep(
         for k in range(1, d + 1, 2):
             Ck_matrix = _get_chebyshev_commutator_coeffs(k)
             rows, cols = Ck_matrix.shape
-            C_matrix[:rows, :cols] += coeffs[k] * Ck_matrix
+            C_matrix[:rows, :cols] += coeffs[k - 1] * Ck_matrix
 
         C_matrix = np.sqrt(np.abs(C_matrix))
  
@@ -151,13 +151,12 @@ def unary_prep(
         return target
 
     target = target_state(d, coeffs)
-    n = int(np.ceil(np.log2(d + 1)))
-
     prepare(anc, target)
 
     def case_func(i, qv):
         x(qv[: i + 1])
 
+    n = int(np.ceil(np.log2(d + 1)))
     q_switch(anc[:n], case_func, qm)
     q_switch(anc[n:], case_func, qn)
 
@@ -307,7 +306,7 @@ def nested_commutators(
     B : BlockEncoding
         A block-encoded Hermitian operator.
     coeffs : ArrayLike, shape (d,)
-        The non-negative coefficients $c_k\geq0$.
+        The non-negative coefficients $c_1,c_2,\dots,c_d$ for the weighted sum of commutators.
     method : str, optional
         The method to use for constructing the block encoding.
             - "default": Uses a state preparation method with $\mathcal O(d^2)$ depth.
@@ -347,7 +346,7 @@ def nested_commutators(
         B_B = BlockEncoding.from_operator(B)
 
         # BlockEncoding of sum of odd nested commutators
-        B_C = nested_commutator(B_A, B_B, np.array([0., 1., 0., 1.,]))
+        B_C = nested_commutators(B_A, B_B, np.array([1., 0., 1.,]))
 
         b = np.array([1., 1., 0., 1.])
         # Prepare variable in state |b>

@@ -905,7 +905,7 @@ class BlockEncoding:
         B : BlockEncoding
             A block-encoded Hermitian operator.
         coeffs : ArrayLike, shape (d,)
-            The non-negative coefficients $c_k\geq0$.
+            The non-negative coefficients $c_1,c_2,\dots,c_d$ for the weighted sum of commutators.
         method : str, optional
             The method to use for constructing the block encoding.
                 - "default": Uses a state preparation method with $\mathcal O(d^2)$ depth.
@@ -945,7 +945,7 @@ class BlockEncoding:
             B_B = BlockEncoding.from_operator(B)
 
             # BlockEncoding of sum of odd nested commutators
-            B_C = B_A.nested_commutators(B_B, np.array([0., 1., 0., 1.,]))
+            B_C = B_A.nested_commutators(B_B, np.array([1., 0., 1.,]))
 
             b = np.array([1., 1., 0., 1.])
             # Prepare variable in state |b>
