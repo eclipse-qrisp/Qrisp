@@ -21,7 +21,6 @@ from __future__ import annotations
 import jax.numpy as jnp
 import numpy as np
 import numpy.typing as npt
-from qrisp.cks import unary_prep
 from qrisp.core import QuantumArray, QuantumVariable
 from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.core.gate_application_functions import x, z, mcx, swap, h, cx
@@ -84,7 +83,7 @@ def _get_chebyshev_commutator_coeffs(d):
     return C
 
 
-def prepare_chebyshev_unary(qa, qm, qn, d, coeffs):
+def unary_prep(anc: QuantumVariable, qm: QuantumVariable, qn: QuantumVariable, d: int, coeffs: npt.NDArray[Any]) -> None:
     r"""
     Coherently prepares a state that encodes the coefficients of the Chebyshev expansion of the nested commutators in a two-dimensional grid of unary-encoded indices.
 
@@ -98,16 +97,17 @@ def prepare_chebyshev_unary(qa, qm, qn, d, coeffs):
 
     .. math::
 
-            \text{PREP}\ket{0}\ket{0}\ket{0} = \sum_{m,n}\sqrt{\sum_{k=1}^d\c_kC_{k,m,n}}|m>|n>
+            \text{PREP}\ket{0}_a\ket{0}_m\ket{0}_n \propto \sum_{m,n}\sqrt{\sum_{k=1}^d c_kC_{k,m,n}}\ket{m}\ket{n}
 
     Parameters
     ----------
-    qa : QuantumVariable
-        Ancilla QuantumVariable of size $2\lceil\log2(d)\rceil$.
+    anc : QuantumVariable
+        A binary-encoded ancilla QuantumVariable of size $2\lceil\log2(d)\rceil$. 
+        Used to prepare the superposition over the $m$ and $n$ indices in $mathcal O(d^2)$ depth.
     qm : QuantumVariable
-        A unary-encoded QuantumVariable of size d+1, representing the m index.
+        A unary-encoded QuantumVariable of size d+1, representing the $m$ index.
     qn : QuantumVariable
-        A unary-encoded QuantumVariable of size d+1, representing the n index.
+        A unary-encoded QuantumVariable of size d+1, representing the $n$ index.
     d : int
         The depth of the commutator expansion, which determines the size of the state.
     coeffs : ArrayLike, shape (d,)
@@ -115,7 +115,7 @@ def prepare_chebyshev_unary(qa, qm, qn, d, coeffs):
 
     Notes
     -----
-    - **Complexity**: This state preparation requires $\mathcal O(d^2)$ depth.
+    - **Complexity**: This state preparation requires $\mathcal O(d)$ qubits and$\mathcal O(d^2)$ depth.
     - This function is designed to be used as a state preparation oracle within the nested_commutator function, and is not intended for standalone use.
     - The state prepared by this function encodes the coefficients of the Chebyshev expansion of the nested commutators in a two-dimensional grid of unary-encoded indices, 
       which can then be used to apply the corresponding operators in superposition.
@@ -146,16 +146,16 @@ def prepare_chebyshev_unary(qa, qm, qn, d, coeffs):
     target = target_state(d, coeffs)
     n = int(np.ceil(np.log2(d + 1)))
 
-    prepare(qa, target)
+    prepare(anc, target)
 
     def case_func(i, qv):
         x(qv[: i + 1])
 
-    q_switch(qa[:n], case_func, qm)
-    q_switch(qa[n:], case_func, qn)
+    q_switch(anc[:n], case_func, qm)
+    q_switch(anc[n:], case_func, qn)
 
 
-def prepare_chebyshev_unary_walk(outer: QuantumVariable, qa: QuantumVariable, qb: QuantumVariable, d: int, coeffs: npt.NDArray[Any] = None) -> None:
+def unary_walk_prep(anc: QuantumVariable, qm: QuantumVariable, qn: QuantumVariable, d: int, coeffs: npt.NDArray[Any] = None) -> None:
     r"""
     Coherently prepares a state that encodes the coefficients of the Chebyshev expansion of the nested commutators in a two-dimensional grid of unary-encoded indices
     by simulating a symmetric quantum walk on a 1D line from $-d$ to $d$.
@@ -170,16 +170,16 @@ def prepare_chebyshev_unary_walk(outer: QuantumVariable, qa: QuantumVariable, qb
 
     .. math::
 
-        \sum_{k=1}^d\text{ad}_A^k(B) = \sum_{k=1}^d\sqrt{\c_k}\sum_{m,n}\sqrt{C_{k,m,n}}|k>|m>|n>
+        \text{PREP}\ket{0}_k\ket{0}_m\ket{0}_n \propto \sum_{k=1}^d\sqrt{c_k}\sum_{m,n}\sqrt{C_{k,m,n}}\ket{k}\ket{m}\ket{n}
 
     Parameters
     ----------
-    outer : QuantumVariable
-        A unary-encoded QuantumVariable of size d, used to control the walk steps.
-    qa : QuantumVariable
-        A unary-encoded QuantumVariable of size d+1, representing the m index.
-    qb : QuantumVariable
-        A unary-encoded QuantumVariable of size d+1, representing the n index.
+    anc : QuantumVariable
+        A unary-encoded ancilla QuantumVariable of size d, used to control the walk steps.
+    qm : QuantumVariable
+        A unary-encoded QuantumVariable of size d+1, representing the $m$ index.
+    qn : QuantumVariable
+        A unary-encoded QuantumVariable of size d+1, representing the $n$ index.
     d : int
         The depth of the commutator expansion, which determines the size of the walk.
     coeffs : ArrayLike, shape (d,), optional
@@ -188,13 +188,15 @@ def prepare_chebyshev_unary_walk(outer: QuantumVariable, qa: QuantumVariable, qb
 
     Notes
     -----
-    - **Complexity**: This implementation requires $\mathcal O(d)$ qubits, and $\mathcal O(d)$ depth.
+    - **Complexity**: This state preparation requires $\mathcal O(d)$ qubits and$\mathcal O(d)$ depth.
     - The walk is implemented using two sets of coin variables and two position variables (m_line and n_line) to achieve perfect parallelism in the shift operations, 
       resulting in $\mathcal O(d)$ depth regardless of the number of steps.
     - The crucial minus signs for the commutator are implemented via Z gates on the coin variables, 
       which are applied in parallel with the Hadamard gates to create the necessary interference patterns in the walk.
     
     """
+    from qrisp.algorithms.cks import unary_prep
+
     # 1. Define the 1D line size. 
     # For depth d, the furthest the particle can walk is d steps.
     # We need a line from -d to +d, giving a total size of 2d + 1.
@@ -209,8 +211,7 @@ def prepare_chebyshev_unary_walk(outer: QuantumVariable, qa: QuantumVariable, qb
         coeffs = np.array(coeffs) * np.array([np.sum(np.abs(_get_chebyshev_commutator_coeffs(k))) for k in range(d)])
         coeffs = coeffs / np.sum(coeffs)
 
-    outer = QuantumVariable(d, name="outer_anc")
-    unary_prep(outer, coeffs)
+    unary_prep(anc, coeffs)
 
     coins1 = QuantumArray(QuantumBool(), shape=(d,))
     coins2 = QuantumArray(QuantumBool(), shape=(d,))
@@ -244,7 +245,7 @@ def prepare_chebyshev_unary_walk(outer: QuantumVariable, qa: QuantumVariable, qb
                         swap(reg[i], reg[i+1])
                         
             # Apply the walk to the chosen register
-            with control(outer[step]):
+            with control(anc[step]):
 
                 with control(c1, ctrl_state=0):
                     apply_symmetric_walk(m_line)
@@ -256,8 +257,8 @@ def prepare_chebyshev_unary_walk(outer: QuantumVariable, qa: QuantumVariable, qb
     inner_walk(coins1, coins2, m_line, n_line, d)   
 
     for i in range(size):
-        cx(m_line[i], qa[abs(i - origin)])
-        cx(n_line[i], qb[abs(i - origin)])
+        cx(m_line[i], qm[abs(i - origin)])
+        cx(n_line[i], qn[abs(i - origin)])
 
     with invert():
         inner_walk(coins1, coins2, m_line, n_line, d)
@@ -382,7 +383,7 @@ def nested_commutators(A: BlockEncoding, B: BlockEncoding, coeffs) -> BlockEncod
         operands = args[-num_ops:]
 
         # sum_{m,n} c_{m,n} T_m(A) B T_n(A)
-        with conjugate(prepare_chebyshev_unary)(outer_anc, outer_anc_left, outer_anc_right, d, coeffs):
+        with conjugate(unary_prep)(outer_anc, outer_anc_left, outer_anc_right, d, coeffs):
 
             # Signs
             z(outer_anc_left[1 : d + 1])
