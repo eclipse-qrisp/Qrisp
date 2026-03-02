@@ -105,34 +105,6 @@ def _warn_overflow(idx_end, max_qubits):
     )
 
 
-# The computation currently does not fail if the slice operation goes out of bounds,
-# but this way we can print an informative message.
-def _warn_slice(idx_slice1, idx_slice2):
-    """Helper function to print a warning when the slice operation goes out of bounds."""
-    jax.debug.print(
-        (
-            "ERROR: Slice operation with start index {idx_slice1} and stop index {idx_slice2} "
-            "is out of bounds or is currently not implemented. Please adjust the slice "
-            "indices to provide a positive size and ensure they are within bounds."
-        ),
-        idx_slice1=idx_slice1,
-        idx_slice2=idx_slice2,
-    )
-
-
-# The computation currently does not fail if the delete/reset operation is called,
-# but this way we can print an informative message.
-def _warn_not_implemented(primitive_name):
-    """Helper function to print a warning when the delete/reset operation is called."""
-    jax.debug.print(
-        (
-            "Warning: {primitive_name} primitive for "
-            "depth metric is currently not implemented. "
-        ),
-        primitive_name=primitive_name,
-    )
-
-
 class DepthMetric(BaseMetric):
     """
     A metric implementation that computes the circuit depth of a Jaspr.
@@ -164,12 +136,46 @@ class DepthMetric(BaseMetric):
         return self._max_qubits
 
     @classmethod
-    def from_cache_key(cls, cache_key):
+    def from_cache_key(cls, cache_key) -> "DepthMetric":
         meas_behavior, max_qubits = cache_key
         return cls(meas_behavior, max_qubits)
 
-    def cache_key(self):
+    def cache_key(self) -> Tuple[Callable, int]:
         return (self.meas_behavior, self.max_qubits)
+
+    @property
+    def initial_metric(
+        self,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+
+        # To speed up compilation time, it will be probably necessary to
+        # use the same incrementation constants trick used for gate counting.
+
+        # Here is the explanation of the metric data structure:
+        #
+        # - depth_array: jnp.ndarray of shape (max_qubits,) that keeps track
+        #   of the depth of each qubit.
+        #
+        # - current_depth: jnp.ndarray scalar that keeps track of the current
+        #   maximum depth of the circuit.
+        #
+        # - previous_size: jnp.ndarray scalar that keeps track of the
+        #   next available index in the depth_array for newly created qubits.
+        #   When we create new qubits, we assign them global indices starting from this value,
+        #   and then we update it by the number of qubits created.
+        #
+        # - invalid: jnp.ndarray boolean that indicates whether the depth computation
+        #   has overflowed the maximum number of qubits supported.
+        depth_array = jnp.zeros(self.max_qubits, dtype=jnp.int64)
+        current_depth = jnp.int64(0)
+        previous_size = jnp.int64(0)
+        invalid = jnp.bool_(False)
+
+        return depth_array, current_depth, previous_size, invalid
+
+    ##############################################################
+    ### Quantum primitive handlers
+    ##############################################################
 
     def handle_create_qubits(self, invalues, eqn, context_dic):
 
@@ -337,7 +343,6 @@ class DepthMetric(BaseMetric):
         stop = jnp.maximum(stop, start)
 
         size_out = stop - start
-        jax.lax.cond(size_out <= 0, _warn_slice, lambda *_: None, start_inv, stop_inv)
 
         table_size = size_out if not is_abstract(size_out) else self.max_qubits
 
@@ -352,8 +357,6 @@ class DepthMetric(BaseMetric):
 
         _, metric_data = invalues
 
-        # _warn_not_implemented("reset")
-
         # Associate the following in context_dic:
         # QuantumState -> metric_data
         return metric_data
@@ -362,14 +365,11 @@ class DepthMetric(BaseMetric):
 
         _, metric_data = invalues
 
-        # _warn_not_implemented("delete_qubits")
-
         # Associate the following in context_dic:
         # QuantumState -> metric_data
         return metric_data
 
     def handle_parity(self, invalues, eqn, context_dic):
-        """Handle the `jasp.parity` primitive"""
 
         # Parity is a classical operation on measurement results
         # Compute XOR and handle expectation
@@ -429,38 +429,10 @@ def get_depth_profiler(
 
         STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
 
-        # To speed up compilation time, it will be probably necessary to
-        # use the same incrementation constants trick used for gate counting.
-
-        # Here is the explanation of the metric data structure:
-        #
-        # - depth_array: jnp.ndarray of shape (max_qubits,) that keeps track
-        #   of the depth of each qubit.
-        #
-        # - current_depth: jnp.ndarray scalar that keeps track of the current
-        #   maximum depth of the circuit.
-        #
-        # - previous_size: jnp.ndarray scalar that keeps track of the
-        #   next available index in the depth_array for newly created qubits.
-        #   When we create new qubits, we assign them global indices starting from this value,
-        #   and then we update it by the number of qubits created.
-        #
-        # - invalid: jnp.ndarray boolean that indicates whether the depth computation
-        #   has overflowed the maximum number of qubits supported.
-        depth_array = jnp.zeros(max_qubits, dtype=jnp.int64)
-        current_depth = jnp.int64(0)
-        previous_size = jnp.int64(0)
-        invalid = jnp.bool_(False)
-
-        initial_metric_value = (
-            depth_array,
-            current_depth,
-            previous_size,
-            invalid,
-        )
-
         filtered_args = [
-            x for x in args + (initial_metric_value,) if type(x) not in STATIC_TYPES
+            x
+            for x in args + (depth_metric.initial_metric,)
+            if type(x) not in STATIC_TYPES
         ]
         return jitted_evaluator(*filtered_args)
 

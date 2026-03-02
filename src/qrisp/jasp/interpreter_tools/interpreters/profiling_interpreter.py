@@ -105,9 +105,18 @@ class BaseMetric(ABC):
     def from_cache_key(cls, cache_key: Tuple) -> "BaseMetric":
         """Reconstruct a metric instance from a hashable cache key."""
 
+    @property
+    @abstractmethod
+    def initial_metric(self) -> Sequence:
+        """Return the initial value of the metric before any primitives are executed."""
+
     @abstractmethod
     def cache_key(self) -> Tuple:
         """Return a hashable representation of this metric's configuration."""
+
+    ##############################################################
+    ### Quantum primitive handlers
+    ##############################################################
 
     @abstractmethod
     def handle_create_qubits(
