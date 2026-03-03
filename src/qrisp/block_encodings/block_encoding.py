@@ -894,9 +894,10 @@ class BlockEncoding:
 
         .. math::
 
-            \mathcal A = \sum_{k=1}^d c_k \text{ad}_A^k(B)
+            \mathcal A = \sum_{k=1}^d \gamma_kc_k \text{ad}_A^k(B)
 
-        where each $\text{ad}_A^k(B)$ is a nested commutator $[A,[A,\dotsc[A,B]]$ of order $k$.
+        where each $\text{ad}_A^k(B)$ is a nested commutator $[A,[A,\dotsc[A,B]]$ of order $k$, 
+        $c_k$ are real non-negative coefficients, and $\gamma_k=i$ if $k$ is odd and $\gamma_k=1$ if $k$ is even.
 
         Parameters
         ----------

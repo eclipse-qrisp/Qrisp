@@ -139,9 +139,9 @@ def unary_prep(
         A binary-encoded ancilla QuantumVariable of size $2\lceil\log_2(d)\rceil$.
         Used to prepare the superposition over the $m$ and $n$ indices in $\mathcal O(d^2)$ depth.
     qm : QuantumVariable
-        A unary-encoded QuantumVariable of size d+1, representing the $m$ index.
+        A unary-encoded QuantumVariable of size d, representing the $m$ index.
     qn : QuantumVariable
-        A unary-encoded QuantumVariable of size d+1, representing the $n$ index.
+        A unary-encoded QuantumVariable of size d, representing the $n$ index.
     d : int
         The depth of the commutator expansion, which determines the size of the state.
     coeffs : ArrayLike, shape (d,), optional
@@ -179,11 +179,11 @@ def unary_prep(
     prepare(anc, target)
 
     def case_func(i, qv):
-        x(qv[: i + 1])
+        x(qv[:i])
 
     n = int(np.ceil(np.log2(d + 1)))
-    q_switch(anc[:n], case_func, qm)
-    q_switch(anc[n:], case_func, qn)
+    q_switch(anc[:n], case_func, qm, branch_amount=d+1)
+    q_switch(anc[n:], case_func, qn, branch_amount=d+1)
 
 
 def unary_walk_prep(
@@ -226,9 +226,9 @@ def unary_walk_prep(
     n_line : QuantumVariable
         A one-hot-encoded QuantumVariable of size 2d+1, representing the position of the walk along the $n$-axis, which encodes the index of $T_n(A)$.
     qm : QuantumVariable
-        A unary-encoded QuantumVariable of size d+1, representing the $m$ index.
+        A unary-encoded QuantumVariable of size d, representing the $m$ index.
     qn : QuantumVariable
-        A unary-encoded QuantumVariable of size d+1, representing the $n$ index.
+        A unary-encoded QuantumVariable of size d, representing the $n$ index.
     d : int
         The depth of the commutator expansion, which determines the size of the walk.
     coeffs : ArrayLike, shape (d,), optional
@@ -311,11 +311,11 @@ def unary_walk_prep(
         cx(n_line[origin - i], n_line[origin + i])
 
     # Copy the position of the particles to the output variables in unary encoding
-    for i in range(d + 1):
+    for i in range(1, d + 1):
         with control(m_line[origin + i]):
-            x(qm[: i + 1])
+            x(qm[:i])
         with control(n_line[origin + i]):
-            x(qn[: i + 1])
+            x(qn[:i])
 
 
 def nested_commutators(
@@ -471,20 +471,20 @@ def nested_commutators(
 
             def parity(qv1, qv2, qbl):
                 for i in jrange(d):
-                    cx(qv1[i + 1], qbl[0])
-                    cx(qv2[i + 1], qbl[0])
+                    cx(qv1[i], qbl[0])
+                    cx(qv2[i], qbl[0])
 
             # Apply phase -i whenever k = m + n is odd.
             with conjugate(parity)(outer_anc_left, outer_anc_right, anc_qbl):
                 p(np.pi / 2, anc_qbl)
 
             # Apply minus sign for the term T_m(A)BT_n(A) whenever n is odd via Z gates on the outer right ancilla.
-            z(outer_anc_right[1 : d + 1])
+            z(outer_anc_right)
 
             # Apply T_n(A) from the right.
             for i in jrange(d):
-                # |1000...> = T_0(A), |1100> = T_1(A)
-                with control(outer_anc_right[i + 1]):
+                # |0000...> = T_0(A), |1000> = T_1(A)
+                with control(outer_anc_right[i]):
                     A_walk.unitary(*ancs_A, *operands)
 
             # To reuse ancillas for the block-encoding of A for applying T_k(A) from the left,
@@ -496,8 +496,8 @@ def nested_commutators(
 
             # Apply T_m(A) from the left.
             for i in jrange(d):
-                # |1000...> = T_0(A), |1100> = T_1(A)
-                with control(outer_anc_left[i + 1]):
+                # |0000...> = T_0(A), |1000> = T_1(A)
+                with control(outer_anc_left[i]):
                     # Ensure that ancillas for block-encoding of A are in state |0>.
                     with control(anc_qbl):
                         A_walk.unitary(*ancs_A, *operands)
@@ -512,8 +512,8 @@ def nested_commutators(
                 QuantumVariable(
                     2 * n
                 ).template(),  # binary-encoded ancilla for coefficient preparation
-                QuantumVariable(d + 1).template(),  # unary-encoded m index for T_m(A)
-                QuantumVariable(d + 1).template(),  # unary-encoded n index for T_n(A)
+                QuantumVariable(d).template(),  # unary-encoded m index for T_m(A)
+                QuantumVariable(d).template(),  # unary-encoded n index for T_n(A)
                 QuantumBool().template(),  # ancilla for reusing qubits for left application of T_k(A)
             ]
             + A_walk._anc_templates
@@ -533,8 +533,8 @@ def nested_commutators(
                 QuantumVariable(
                     2 * d + 1
                 ).template(),  # position ancilla variable n_line for walk
-                QuantumVariable(d + 1).template(),  # unary-encoded m index for T_m(A)
-                QuantumVariable(d + 1).template(),  # unary-encoded n index for T_n(A)
+                QuantumVariable(d).template(),  # unary-encoded m index for T_m(A)
+                QuantumVariable(d).template(),  # unary-encoded n index for T_n(A)
                 QuantumBool().template(),  # ancilla for reusing qubits for left application of T_k(A)
                 QuantumVariable(num_ancs_A).template(),
                 QuantumVariable(num_ancs_B).template(),

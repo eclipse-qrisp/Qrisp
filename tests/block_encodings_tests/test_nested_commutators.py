@@ -29,8 +29,8 @@ from qrisp.operators import X, Y, Z
 def apply_unary_prep(d, coeffs):
     n = int(np.ceil(np.log2(d + 1)))
     anc = QuantumVariable(2 * n)
-    qm = QuantumVariable(d + 1)
-    qn = QuantumVariable(d + 1)
+    qm = QuantumVariable(d)
+    qn = QuantumVariable(d)
 
     unary_prep(anc, qm, qn, d, coeffs=coeffs)
     return qm, qn
@@ -42,8 +42,8 @@ def apply_unary_walk_prep(d, coeffs):
     coin2 = QuantumVariable(d)
     m_line = QuantumVariable(2 * d + 1)
     n_line = QuantumVariable(2 * d + 1)
-    qm = QuantumVariable(d + 1)
-    qn = QuantumVariable(d + 1)
+    qm = QuantumVariable(d)
+    qn = QuantumVariable(d)
 
     unary_walk_prep(steps, coin1, coin2, m_line, n_line, qm, qn, d, coeffs=coeffs)
     return qm, qn
@@ -68,8 +68,8 @@ def measurement_to_coeff_matrix(res_dict, d):
     """
     C = np.zeros((d + 1, d + 1))
     for key, value in res_dict.items():
-        i = key[0].count('1') - 1
-        j = key[1].count('1') - 1
+        i = key[0].count('1')
+        j = key[1].count('1')
         C[i, j] = value
     return C
 
