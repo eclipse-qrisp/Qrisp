@@ -209,30 +209,26 @@ class QuantumCircuit:
     clbit_index_counter = np.zeros(1, dtype=int)
     xla_mode = 0
 
-    def __init__(self, num_qubits=0, num_clbits=0):
-        object.__setattr__(self, "data", [])
-        object.__setattr__(self, "qubits", [])
-        object.__setattr__(self, "clbits", [])
+    def __init__(self, num_qubits: int = 0, num_clbits: int = 0) -> None:
+        """Initializes the QuantumCircuit."""
 
+        if not isinstance(num_qubits, int):
+            raise TypeError(f"num_qubits must be int, not {type(num_qubits).__name__}")
+        if not isinstance(num_clbits, int):
+            raise TypeError(f"num_clbits must be int, not {type(num_clbits).__name__}")
+
+        self.data = []
+        self.qubits = []
+        self.clbits = []
         self.abstract_params = set()
 
-        if isinstance(num_qubits, int):
-            for i in range(num_qubits):
-                self.qubits.append(Qubit("qb_" + str(self.qubit_index_counter[0] + i)))
-            self.qubit_index_counter[0] += num_qubits
-        else:
-            raise Exception(
-                f"Tried to initialize QuantumCircuit with type {type(num_qubits)}"
-            )
+        start_index = self.qubit_index_counter[0]
+        self.qubits = [Qubit(f"qb_{start_index + i}") for i in range(num_qubits)]
+        self.qubit_index_counter[0] += num_qubits
 
-        if isinstance(num_clbits, int):
-            for i in range(num_clbits):
-                self.clbits.append(Clbit("cb_" + str(self.clbit_index_counter[0] + i)))
-            self.clbit_index_counter[0] += num_clbits
-        else:
-            raise Exception(
-                f"Tried to initialize QuantumCircuit with type {type(num_clbits)}"
-            )
+        start_index = self.clbit_index_counter[0]
+        self.clbits = [Clbit(f"cb_{start_index + i}") for i in range(num_clbits)]
+        self.clbit_index_counter[0] += num_clbits
 
     # Method to add qubit objects to the circuit
     def add_qubit(self, qubit=None):
