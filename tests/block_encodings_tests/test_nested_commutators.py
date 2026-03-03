@@ -24,7 +24,6 @@ from qrisp.block_encodings.commutators import nested_commutators, unary_prep, un
 from qrisp.operators import X, Y, Z
 
 
-
 """Tests for the state preparation subroutines used in the nested commutator block encoding construction."""
 
 def apply_unary_prep(d, coeffs):

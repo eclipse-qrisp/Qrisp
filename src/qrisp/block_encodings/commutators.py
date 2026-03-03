@@ -418,7 +418,8 @@ def nested_commutators(
         outer_anc_left = args[num_prep_ancs]
         outer_anc_right = args[num_prep_ancs + 1]
 
-        # Reuse ancillas
+        # Ancilla QuantumBool for ensuring that the ancillas for the block-encoding of A are in state |0> after left application of T_m(A) and before right application of T_n(A). 
+        # This is necessary to reuse these ancillas for both applications of T_k(A) from the left and right.
         anc_qbl = args[num_prep_ancs + 2]
 
         ancs_A = args[num_prep_ancs + 3 : num_prep_ancs + num_ancs_A + 3]
@@ -427,35 +428,35 @@ def nested_commutators(
         ancs_B = args[num_prep_ancs + num_ancs_A + 3 : num_prep_ancs + num_ancs_A + num_ancs_B + 3]
         operands = args[-num_ops:]
 
-        # sum_{m,n} c_{m,n} T_m(A) B T_n(A)
+        # Apply weighted sum of nested commutators expansion in Chebyshev basis.
+        # sum_{m,n} (-1)^n C_{m,n} T_m(A) B T_n(A)
         with conjugate(prep_func)(*outer_ancs, outer_anc_left, outer_anc_right, d, coeffs):
 
-            # Signs
-            z(outer_anc_left[1 : d + 1])
+            # Apply minus sign for the term T_m(A)BT_n(A) whenever n is odd via Z gates on the outer right ancilla.
+            z(outer_anc_right[1 : d + 1])
         
-            # Apply T_k(A) from the left (first d+1 qubits auf ancilla)
+            # Apply T_m(A) from the left.
             for i in jrange(d):
                 # |1000...> = T_0(A), |1100> = T_1(A)
                 with control(outer_anc_left[i + 1]):
                     A_walk.unitary(*ancs_A, *operands)
 
-            # To reuse ancillas for applying T_k(A) from the right,
-            # we must ensure that they are in state |0>
+            # To reuse ancillas for the block-encoding of A for applying T_k(A) from the right,
+            # we must ensure that they are in state |0>.
             mcx(qubits_A, anc_qbl, ctrl_state=0)
 
             # Apply B
             B.unitary(*ancs_B, *operands)
 
-            # Apply T_k(A) from the right (second d+1 qubits auf ancilla)
+            # Apply T_n(A) from the right.
             for i in jrange(d):
                 # |1000...> = T_0(A), |1100> = T_1(A)
                 with control(outer_anc_right[i + 1]):
-                    # Ensure that ancillas are in state |0>
+                    # Ensure that ancillas for block-encoding of A are in state |0>.
                     with control(anc_qbl):
                         A_walk.unitary(*ancs_A, *operands)
 
-            # flip |1> -> |0>
-            # Ensure that measurment in |0> yields the correct result
+            # Ensure that measurment in |0> yields the correct result.
             x(anc_qbl)
 
     if method == "default":
