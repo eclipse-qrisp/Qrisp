@@ -16,22 +16,13 @@
 ********************************************************************************
 """
 
-from typing import List, Set
+from typing import Dict, List, Set
 
 import numpy as np
 import sympy
 
 import qrisp.circuit.standard_operations as ops
 from qrisp.circuit import Clbit, Instruction, Operation, Qubit
-
-# Class to describe quantum circuits
-# The naming of the attributes is rather similar to the qiskit equivalent
-# in order to allow compatibility of qiskit programs to qrisp
-# The key attributes are
-
-# The list of qubits (.qubits).
-# the list of classical bits (.clbits)
-# the list of instructions (.data)
 
 TO_GATE_COUNTER = np.zeros(1)
 
@@ -67,7 +58,7 @@ class QuantumCircuit:
     We create a QuantumCircuit containing a so-called fan-out gate:
 
     >>> from qrisp import QuantumCircuit
-    >>> qc_0 = QuantumCircuit(4, name = "fan out")
+    >>> qc_0 = QuantumCircuit(4)
     >>> qc_0.cx(0, range(1,4))
     >>> print(qc_0)
 
@@ -92,7 +83,7 @@ class QuantumCircuit:
 
     >>> qc_1 = QuantumCircuit(4)
     >>> qc_1.h(0)
-    >>> qc_1.append(qc_0.to_gate(), qc_1.qubits)
+    >>> qc_1.append(qc_0.to_gate(name="fan-out"), qc_1.qubits)
     >>> print(qc_1)
 
     .. code-block:: none
@@ -101,7 +92,7 @@ class QuantumCircuit:
         qb_4: ┤ H ├┤0         ├
               └───┘│          │
         qb_5: ─────┤1         ├
-                   │  fan out │
+                   │  fan-out │
         qb_6: ─────┤2         ├
                    │          │
         qb_7: ─────┤3         ├
@@ -118,7 +109,7 @@ class QuantumCircuit:
         qb_4: ┤ H ├┤0         ├┤M├─────────
               └───┘│          │└╥┘┌─┐
         qb_5: ─────┤1         ├─╫─┤M├──────
-                   │  fan out │ ║ └╥┘┌─┐
+                   │  fan-out │ ║ └╥┘┌─┐
         qb_6: ─────┤2         ├─╫──╫─┤M├───
                    │          │ ║  ║ └╥┘┌─┐
         qb_7: ─────┤3         ├─╫──╫──╫─┤M├
@@ -402,9 +393,9 @@ class QuantumCircuit:
             )
         return self.to_op(name)
 
-    # Method to extend the given circuit with another circuit
-    # The dic translation dic encodes how the qubits should be plugged into each other
-    def extend(self, other, translation_dic="id"):
+    def extend(
+        self, other: "QuantumCircuit", translation_dic: str | Dict = "id"
+    ) -> None:
         """
         Extends self in-place by another QuantumCircuit.
 
@@ -412,11 +403,11 @@ class QuantumCircuit:
         ----------
         other : QuantumCircuit
             The QuantumCircuit to extend by.
-        translation_dic : dict, optional
+
+        translation_dic : str or dict, optional
             The dictionary containing the information about which Qubits and Clbits
             should be plugged into each other. This dictionary should contain qubits of
-            other as keys and qubits of self as values. If given none, it is assumed
-            that both QuantumCircuits have matching Qubits.
+            other as keys and qubits of self as values.
 
 
         Examples
@@ -427,7 +418,6 @@ class QuantumCircuit:
 
         >>> from qrisp import QuantumCircuit
         >>> extension_qc = QuantumCircuit(4)
-        >>> qc_to_extend = QuantumCircuit(4)
         >>> extension_qc.cx(0, 1)
         >>> extension_qc.cy(0, 2)
         >>> extension_qc.cz(0, 3)
@@ -435,25 +425,24 @@ class QuantumCircuit:
 
         .. code-block:: none
 
-            qb_0: ──■────■────■──
-                  ┌─┴─┐  │    │
-            qb_1: ┤ X ├──┼────┼──
-                  └───┘┌─┴─┐  │
-            qb_2: ─────┤ Y ├──┼──
-                       └───┘┌─┴─┐
-            qb_3: ──────────┤ Z ├
-                            └───┘
+            qb_0: ──■────■───■─
+                  ┌─┴─┐  │   │
+            qb_1: ┤ X ├──┼───┼─
+                  └───┘┌─┴─┐ │
+            qb_2: ─────┤ Y ├─┼─
+                       └───┘ │
+            qb_3: ───────────■─
 
-        >>> translation_dic = {extension_qc.qubits[i] : qc_to_extend.qubits[-1-i]
-        >>> for i in range(4)}
+        >>> qc_to_extend = QuantumCircuit(4)
+        >>> translation_dic = {extension_qc.qubits[i] : qc_to_extend.qubits[-1-i] for i in range(4)}
         >>> qc_to_extend.extend(extension_qc, translation_dic)
         >>> print(qc_to_extend)
 
         .. code-block:: none
 
-                            ┌───┐
-            qb_4: ──────────┤ Z ├
-                       ┌───┐└─┬─┘
+
+            qb_4: ────────────■──
+                       ┌───┐  │
             qb_5: ─────┤ Y ├──┼──
                   ┌───┐└─┬─┘  │
             qb_6: ┤ X ├──┼────┼──
@@ -462,32 +451,22 @@ class QuantumCircuit:
 
         """
 
-        if translation_dic == "id":
-            translation_dic = {}
-            for qb in other.qubits:
-                translation_dic[qb] = qb
+        if isinstance(translation_dic, str):
+            if translation_dic != "id":
+                raise ValueError(
+                    "Invalid translation_dic string. Expected 'id' or a dict mapping qubits of other to qubits of self."
+                )
+            translation_dic = {qb.identifier: qb for qb in other.qubits}
+            translation_dic.update({cb.identifier: cb for cb in other.clbits})
+        else:
+            translation_dic = {
+                (key.identifier if isinstance(key, (Qubit, Clbit)) else key): value
+                for key, value in translation_dic.items()
+            }
 
-            for cb in other.clbits:
-                translation_dic[cb] = cb
-
-        # Copy in order to prevent modification
-        translation_dic = dict(translation_dic)
-
-        for key in list(translation_dic.keys()):
-            if isinstance(key, (Qubit, Clbit)):
-                translation_dic[key.identifier] = translation_dic[key]
-
-        for i in range(len(other.data)):
-            instruction_other = other.data[i]
-            qubits = []
-            for qb in instruction_other.qubits:
-                qubits.append(translation_dic[qb.identifier])
-
-            clbits = []
-
-            for cb in instruction_other.clbits:
-                clbits.append(translation_dic[cb.identifier])
-
+        for instruction_other in other.data:
+            qubits = [translation_dic[qb.identifier] for qb in instruction_other.qubits]
+            clbits = [translation_dic[cb.identifier] for cb in instruction_other.clbits]
             self.append(instruction_other.op, qubits, clbits)
 
     # Returns a copy of self
@@ -1566,7 +1545,7 @@ class QuantumCircuit:
             qc_identifiers = [qb.identifier for qb in self.qubits]
 
             if not set(op_identifiers).issubset(qc_identifiers):
-                raise Exception(
+                raise ValueError(
                     "Instruction Qubits "
                     + str(set(qubits) - set(self.qubits))
                     + " not present in circuit"
@@ -1582,7 +1561,7 @@ class QuantumCircuit:
         if not set([cb.identifier for cb in clbits]).issubset(
             set([cb.identifier for cb in self.clbits])
         ):
-            raise Exception("Instruction Clbits not present in circuit")
+            raise ValueError("Instruction Clbits not present in circuit")
 
         # Log which abstract parameters have been added to the circuit
         try:
