@@ -16,6 +16,8 @@
 ********************************************************************************
 """
 
+from typing import List, Set
+
 import numpy as np
 import sympy
 
@@ -37,7 +39,7 @@ TO_GATE_COUNTER = np.zeros(1)
 class QuantumCircuit:
     """
     This class describes quantum circuits. Many of the attribute and method names are
-    oriented at the `Qiskit QuantumCircuit
+    oriented toward the `Qiskit QuantumCircuit
     <https://qiskit.org/documentation/stubs/qiskit.circuit.QuantumCircuit.html>`_ class
     in order to provide a high degree of compatibility.
 
@@ -52,11 +54,11 @@ class QuantumCircuit:
     ----------
 
     num_qubits : integer, optional
-        The amount of qubits, this QuantumCircuit is initialized with. The default is 0.
+        The amount of qubits this QuantumCircuit is initialized with. The default is 0.
     num_clbits : integer, optional
         The amount of classical bits. The default is 0.
     name : string, optional
-        A name for the QuantumCircuit. The default will generated a generic name.
+        A name for the QuantumCircuit. By default, a generic name is generated.
 
 
     Examples
@@ -134,7 +136,7 @@ class QuantumCircuit:
 
     **Converting from Qiskit**
 
-    We construct the very same fan out QuantumCircuit in Qiskit:
+    We construct the very same fan-out QuantumCircuit in Qiskit:
 
     >>> from qiskit import QuantumCircuit as QiskitQuantumCircuit
     >>> qc_2 = QiskitQuantumCircuit(4)
@@ -172,7 +174,7 @@ class QuantumCircuit:
 
     **Abstract Parameters**
 
-    Abstract parameters are represented by `Sympy symbols
+    Abstract parameters are represented by `SymPy symbols
     <https://docs.sympy.org/latest/modules/core.html#module-sympy.core.symbol>`_
     in Qrisp.
 
@@ -182,7 +184,7 @@ class QuantumCircuit:
     >>> from sympy import symbols
     >>> qc = QuantumCircuit(3)
 
-    Create some Sympy symbols and use them as abstract parameters for phase gates:
+    Create some SymPy symbols and use them as abstract parameters for phase gates:
 
     >>> abstract_parameters = symbols("a b c")
     >>> for i in range(3): qc.p(abstract_parameters[i], i)
@@ -205,29 +207,38 @@ class QuantumCircuit:
 
     """
 
-    qubit_index_counter = np.zeros(1, dtype=int)
-    clbit_index_counter = np.zeros(1, dtype=int)
-    xla_mode = 0
+    qubit_index_counter: np.ndarray = np.zeros(1, dtype=int)
+    clbit_index_counter: np.ndarray = np.zeros(1, dtype=int)
+    xla_mode: int = 0
 
     def __init__(self, num_qubits: int = 0, num_clbits: int = 0) -> None:
         """Initializes the QuantumCircuit."""
 
         if not isinstance(num_qubits, int):
-            raise TypeError(f"num_qubits must be int, not {type(num_qubits).__name__}")
+            raise TypeError(
+                f"Tried to initialize QuantumCircuit with type {type(num_qubits).__name__} for num_qubits, expected int"
+            )
         if not isinstance(num_clbits, int):
-            raise TypeError(f"num_clbits must be int, not {type(num_clbits).__name__}")
+            raise TypeError(
+                f"Tried to initialize QuantumCircuit with type {type(num_clbits).__name__} for num_clbits, expected int"
+            )
 
-        self.data = []
-        self.qubits = []
-        self.clbits = []
-        self.abstract_params = set()
+        object.__setattr__(self, "data", [])
+        object.__setattr__(self, "qubits", [])
+        object.__setattr__(self, "clbits", [])
+
+        self.abstract_params: Set = set()
 
         start_index = self.qubit_index_counter[0]
-        self.qubits = [Qubit(f"qb_{start_index + i}") for i in range(num_qubits)]
+        self.qubits: List[Qubit] = [
+            Qubit(f"qb_{start_index + i}") for i in range(num_qubits)
+        ]
         self.qubit_index_counter[0] += num_qubits
 
         start_index = self.clbit_index_counter[0]
-        self.clbits = [Clbit(f"cb_{start_index + i}") for i in range(num_clbits)]
+        self.clbits: List[Clbit] = [
+            Clbit(f"cb_{start_index + i}") for i in range(num_clbits)
+        ]
         self.clbit_index_counter[0] += num_clbits
 
     # Method to add qubit objects to the circuit
@@ -2137,10 +2148,10 @@ class QuantumCircuit:
         :meth:`to_stim` : Convert to Stim circuit with detector/observable maps
         :class:`qrisp.jasp.ParityHandle` : Documentation of the ParityHandle class
         """
-        from qrisp.jasp.primitives.parity_primitive import ParityOperation
         from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
             ParityHandle,
         )
+        from qrisp.jasp.primitives.parity_primitive import ParityOperation
 
         # Ensure clbits is a list
         if not isinstance(clbits, list):
