@@ -25,7 +25,7 @@ import numpy.typing as npt
 from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.block_encodings import BlockEncoding
-from qrisp.core.gate_application_functions import x, z, mcx, swap, h, cx
+from qrisp.core.gate_application_functions import x, z, mcx, swap, h, cx, p
 from qrisp.environments import conjugate, control
 from qrisp.jasp import (
     jrange,
@@ -332,9 +332,10 @@ def nested_commutators(
 
     .. math::
 
-        \mathcal A = \sum_{k=1}^d c_k \text{ad}_A^k(B)
+        \mathcal A = \sum_{k=1}^d \gamma_kc_k \text{ad}_A^k(B)
 
-    where each $\text{ad}_A^k(B)$ is a nested commutator $[A,[A,\dotsc[A,B]]$ of order $k$.
+    where each $\text{ad}_A^k(B)$ is a nested commutator $[A,[A,\dotsc[A,B]]$ of order $k$, 
+    $c_k$ are real non-negative coefficients, and $\gamma_k=i$ if $k$ is odd and $\gamma_k=1$ if $k$ is even.
 
     Parameters
     ----------
@@ -468,26 +469,35 @@ def nested_commutators(
             *outer_ancs, outer_anc_left, outer_anc_right, d, coeffs
         ):
 
+            def parity(qv1, qv2, qbl):
+                for i in jrange(d):
+                    cx(qv1[i + 1], qbl[0])
+                    cx(qv2[i + 1], qbl[0])
+
+            # Apply phase -i whenever k = m + n is odd.
+            with conjugate(parity)(outer_anc_left, outer_anc_right, anc_qbl):
+                p(np.pi / 2, anc_qbl)
+
             # Apply minus sign for the term T_m(A)BT_n(A) whenever n is odd via Z gates on the outer right ancilla.
             z(outer_anc_right[1 : d + 1])
 
-            # Apply T_m(A) from the left.
+            # Apply T_n(A) from the right.
             for i in jrange(d):
                 # |1000...> = T_0(A), |1100> = T_1(A)
-                with control(outer_anc_left[i + 1]):
+                with control(outer_anc_right[i + 1]):
                     A_walk.unitary(*ancs_A, *operands)
 
-            # To reuse ancillas for the block-encoding of A for applying T_k(A) from the right,
+            # To reuse ancillas for the block-encoding of A for applying T_k(A) from the left,
             # we must ensure that they are in state |0>.
             mcx(qubits_A, anc_qbl, ctrl_state=0)
 
             # Apply B
             B.unitary(*ancs_B, *operands)
 
-            # Apply T_n(A) from the right.
+            # Apply T_m(A) from the left.
             for i in jrange(d):
                 # |1000...> = T_0(A), |1100> = T_1(A)
-                with control(outer_anc_right[i + 1]):
+                with control(outer_anc_left[i + 1]):
                     # Ensure that ancillas for block-encoding of A are in state |0>.
                     with control(anc_qbl):
                         A_walk.unitary(*ancs_A, *operands)
@@ -504,7 +514,7 @@ def nested_commutators(
                 ).template(),  # binary-encoded ancilla for coefficient preparation
                 QuantumVariable(d + 1).template(),  # unary-encoded m index for T_m(A)
                 QuantumVariable(d + 1).template(),  # unary-encoded n index for T_n(A)
-                QuantumBool().template(),  # ancilla for reusing qubits for right application of T_k(A)
+                QuantumBool().template(),  # ancilla for reusing qubits for left application of T_k(A)
             ]
             + A_walk._anc_templates
             + B._anc_templates
@@ -525,7 +535,7 @@ def nested_commutators(
                 ).template(),  # position ancilla variable n_line for walk
                 QuantumVariable(d + 1).template(),  # unary-encoded m index for T_m(A)
                 QuantumVariable(d + 1).template(),  # unary-encoded n index for T_n(A)
-                QuantumBool().template(),  # ancilla for reusing qubits for right application of T_k(A)
+                QuantumBool().template(),  # ancilla for reusing qubits for left application of T_k(A)
                 QuantumVariable(num_ancs_A).template(),
                 QuantumVariable(num_ancs_B).template(),
             ]

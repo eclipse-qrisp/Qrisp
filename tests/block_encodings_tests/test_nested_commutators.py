@@ -102,6 +102,7 @@ def test_state_prep_for_nested_commutators(coeffs):
 @pytest.mark.parametrize("A, B, coeffs, description", [
     (0.5*X(0)*Z(1) + 0.5*Y(0)*Y(1), 0.5*Z(0)*Z(1) + 0.5*X(0)*Y(1), np.array([1., 0., 1.]), "first and third order"),
     (0.5*X(0)*Z(1) + 0.2*Y(0)*Y(1), 0.5*Z(0)*Z(1) + 0.5*X(0)*Y(1), np.array([1., 0., 1.]), "first and third order; normalization factor for A not equal to 1"),
+    (0.5*X(0)*Z(1) + 0.5*Y(0)*Y(1), 0.5*Z(0)*Z(1) + 0.5*X(0)*Y(1), np.array([1., 1., 1.]), "mixed parity"),
     (0.5*X(0)*Z(1) + 0.5*Y(0)*Y(1), 0.5*Z(0)*Z(1) + 0.5*X(0)*Y(1), np.array([0., 0., 1.]), "third order only"),
     (0.5*X(0)*Z(1) + 0.5*Y(0)*Y(1), 0.5*Z(0)*Z(1) + 0.5*X(0)*Y(1), np.array([1.]), "first order only"),
 ])
@@ -111,9 +112,16 @@ def test_nested_commutators(A, B, coeffs, description):
     ad2 = A*ad1 - ad1*A
     ad3 = A*ad2 - ad2*A
 
-    # Weighted sum of odd nested commutators
-    ad_sum = sum(c * ad for c, ad in zip(coeffs, [ad1, ad2, ad3]))
-    B_ad_sum = BlockEncoding.from_operator(1.j * ad_sum)
+    # Weighted sum of nested commutators
+    coeffs_even = np.copy(coeffs)
+    coeffs_even[0::2] = 0
+    ad_sum_even = sum(c * ad for c, ad in zip(coeffs_even, [ad1, ad2, ad3]))
+
+    coeffs_odd = np.copy(coeffs)
+    coeffs_odd[1::2] = 0            
+    ad_sum_odd = sum(c * ad for c, ad in zip(coeffs_odd, [ad1, ad2, ad3]))
+
+    B_ad_sum = BlockEncoding.from_operator(1.j * ad_sum_odd + ad_sum_even)
 
     # BlockEncodings for A and B
     B_A = BlockEncoding.from_operator(A)
