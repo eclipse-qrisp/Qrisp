@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 from qrisp import *
 from qrisp.block_encodings import BlockEncoding
-from qrisp.block_encodings.commutators import nested_commutators, unary_prep, unary_walk_prep, _get_chebyshev_commutator_coeffs
+from qrisp.block_encodings.commutators import nested_commutators, unary_prep, unary_walk_prep, _chebyshev_commutator_coeffs
 from qrisp.operators import X, Y, Z
 
 
@@ -56,7 +56,7 @@ def coeff_matrix(coeffs):
     d = len(coeffs)
     C = np.zeros((d + 1, d + 1))
     for k in range(1, d + 1):
-        Ck_matrix = _get_chebyshev_commutator_coeffs(k)
+        Ck_matrix = _chebyshev_commutator_coeffs(k)
         rows, cols = Ck_matrix.shape
         C[:rows, :cols] += coeffs[k - 1] * Ck_matrix
     return C
@@ -99,12 +99,13 @@ def test_state_prep_for_nested_commutators(coeffs):
 
 """Tests for the nested commutator block encoding construction."""
 
-@pytest.mark.parametrize("A, B, coeffs", [
-    (0.5*X(0)*Z(1) + 0.5*Y(0)*Y(1), 0.5*Z(0)*Z(1) + 0.5*X(0)*Y(1), np.array([1., 0., 1.])),
-    (0.5*X(0)*Z(1) + 0.5*Y(0)*Y(1), 0.5*Z(0)*Z(1) + 0.5*X(0)*Y(1), np.array([0., 0., 1.])),
-    (0.5*X(0)*Z(1) + 0.5*Y(0)*Y(1), 0.5*Z(0)*Z(1) + 0.5*X(0)*Y(1), np.array([1.])),
+@pytest.mark.parametrize("A, B, coeffs, description", [
+    (0.5*X(0)*Z(1) + 0.5*Y(0)*Y(1), 0.5*Z(0)*Z(1) + 0.5*X(0)*Y(1), np.array([1., 0., 1.]), "first and third order"),
+    (0.5*X(0)*Z(1) + 0.2*Y(0)*Y(1), 0.5*Z(0)*Z(1) + 0.5*X(0)*Y(1), np.array([1., 0., 1.]), "first and third order; normalization factor for A not equal to 1"),
+    (0.5*X(0)*Z(1) + 0.5*Y(0)*Y(1), 0.5*Z(0)*Z(1) + 0.5*X(0)*Y(1), np.array([0., 0., 1.]), "third order only"),
+    (0.5*X(0)*Z(1) + 0.5*Y(0)*Y(1), 0.5*Z(0)*Z(1) + 0.5*X(0)*Y(1), np.array([1.]), "first order only"),
 ])
-def test_nested_commutators(A, B, coeffs):
+def test_nested_commutators(A, B, coeffs, description):
 
     ad1 = (A*B - B*A)
     ad2 = A*ad1 - ad1*A
@@ -144,3 +145,46 @@ def test_nested_commutators(A, B, coeffs):
 
     assert np.allclose(amps_ad_sum, amps_C, atol=1e-2)
     assert np.allclose(amps_ad_sum, amps_C_walk, atol=1e-2)
+
+
+@pytest.mark.parametrize("A, B, coeffs, description", [
+    (0.5*X(0)*Z(1) + 0.5*Y(0)*Y(1), 0.5*Z(0)*Z(1) + 0.5*X(0)*Y(1), np.array([0., 1.,]), "second order only"),
+])
+def test_nested_commutators_nomalization(A, B, coeffs, description):
+    """Test that the normalization of the nested commutator block encoding is correct by comparing to a direct block encoding of the same operator."""
+
+    ad1 = (A*B - B*A)
+    ad2 = A*ad1 - ad1*A
+
+    B_T = BlockEncoding.from_operator(ad2 + A)
+
+    # BlockEncodings for A and B
+    B_A = BlockEncoding.from_operator(A)
+    B_B = BlockEncoding.from_operator(B)
+
+    # BlockEncoding of sum of odd nested commutators
+    B_C = B_A.nested_commutators(B_B, coeffs, method="default") + B_A
+    B_C_walk = B_A.nested_commutators(B_B, coeffs, method="walk") + B_A
+
+    b = np.array([1., 1., 0., 1.])
+    # Prepare variable in state |b>
+    def prep_b():
+        qv = QuantumFloat(2)
+        prepare(qv, b)
+        return qv
+    
+    @terminal_sampling
+    def main(BE):
+        return BE.apply_rus(prep_b)()
+
+    res_dict_T = main(B_T)
+    amps_T= np.sqrt([res_dict_T.get(i, 0) for i in range(len(b))])
+
+    res_dict_C = main(B_C)
+    amps_C = np.sqrt([res_dict_C.get(i, 0) for i in range(len(b))])
+
+    res_dict_C_walk = main(B_C_walk)
+    amps_C_walk = np.sqrt([res_dict_C_walk.get(i, 0) for i in range(len(b))])
+
+    assert np.allclose(amps_T, amps_C, atol=1e-2)
+    assert np.allclose(amps_T, amps_C_walk, atol=1e-2)

@@ -39,10 +39,9 @@ if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
 
-def _get_chebyshev_commutator_coeffs(d):
+def _chebyshev_commutator_coeffs(d):
     r"""
-    Calculates the coefficient matrix $C_{m,n}$ for the Chebyshev
-    expansion of the nested commutator $\text{ad}_A^d(B)$.
+    Calculates the coefficient matrix for the Chebyshev expansion of the nested commutator $\text{ad}_A^d(B)$.
 
     Parameters
     ----------
@@ -85,6 +84,30 @@ def _get_chebyshev_commutator_coeffs(d):
         # and add it to the total coefficient matrix
         C += term_weight * np.outer(left_cheb_padded, right_cheb_padded)
 
+    return C
+
+
+def _chebyshev_sum_commutator_coeffs(coeffs):
+    """
+    Constructs the coefficient matrix for the weighted sum of nested commutators given the coefficients for each order of the commutator.
+
+    Parameters
+    ----------
+    coeffs : ArrayLike, shape (d,)
+        The non-negative coefficients $c_1,c_2,\dots,c_d$ for the weighted sum of commutators, where $d$ is the length of the coeffs array.
+
+    Returns
+    -------
+    C : ndarray, shape (d+1, d+1)
+        The coefficient matrix for the weighted sum of nested commutators, where $C_{m,n}$ is the coefficient for the term $T_m(A) B T_n(A)$ in the expansion.
+
+    """
+    d = len(coeffs)
+    C = np.zeros((d + 1, d + 1))
+    for k in range(1, d + 1):
+        Ck_matrix = _chebyshev_commutator_coeffs(k)
+        rows, cols = Ck_matrix.shape
+        C[:rows, :cols] += coeffs[k - 1] * Ck_matrix
     return C
 
 
@@ -143,14 +166,7 @@ def unary_prep(
         n = int(np.ceil(np.log2(d + 1)))
         target = np.zeros(2 ** (2 * n))
 
-        C_matrix = np.zeros((d + 1, d + 1))
-
-        for k in range(1, d + 1):
-            Ck_matrix = _get_chebyshev_commutator_coeffs(k)
-            rows, cols = Ck_matrix.shape
-            C_matrix[:rows, :cols] += coeffs[k - 1] * Ck_matrix
-
-        C_matrix = np.sqrt(np.abs(C_matrix))
+        C_matrix = np.sqrt(np.abs(_chebyshev_sum_commutator_coeffs(coeffs)))
 
         # Flatten the 2D coefficient matrix into a 1D array corresponding to the amplitudes of the target state
         for i in range(d + 1):
@@ -242,7 +258,7 @@ def unary_walk_prep(
     else:
         # Rescale coefficients
         coeffs = np.array(coeffs) * np.array(
-            [np.sum(np.abs(_get_chebyshev_commutator_coeffs(k))) for k in range(d)]
+            [np.sum(np.abs(_chebyshev_commutator_coeffs(k))) for k in range(d)]
         )
         coeffs = coeffs / np.sum(coeffs)
 
@@ -421,6 +437,11 @@ def nested_commutators(
     d = len(coeffs)
     n = int(np.ceil(np.log2(d + 1)))
 
+    # Rescale coefficients by the appropriate power of the normalization factor for A.
+    alpha = A.alpha
+    beta = B.alpha
+    coeffs = np.array(coeffs) * (alpha ** np.arange(1, d + 1))
+
     def new_unitary(*args):
 
         outer_ancs = args[:num_prep_ancs]
@@ -510,5 +531,6 @@ def nested_commutators(
             + B._anc_templates
         )
 
-    new_alpha = 1  # TBD
-    return BlockEncoding(new_alpha, new_anc_templates, new_unitary)
+    new_alpha = np.sum(np.abs(_chebyshev_sum_commutator_coeffs(coeffs))) * beta
+
+    return BlockEncoding(new_alpha, new_anc_templates, new_unitary, num_ops=num_ops)
