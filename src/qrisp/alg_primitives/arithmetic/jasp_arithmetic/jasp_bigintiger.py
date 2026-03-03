@@ -153,10 +153,6 @@ class BigInteger:
         Constructs a fixed-width BigInteger with exactly `size` limbs, interpreting
         the input modulo 2^(32*size). JIT-friendly.
 
-        .. warning::
-
-            When called with a negative value, the function will treat it as zero.
-
         Parameters
         ----------
         n : int or float or jnp.integer or jnp.floating
