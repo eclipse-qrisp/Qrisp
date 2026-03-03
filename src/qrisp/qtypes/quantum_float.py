@@ -50,6 +50,7 @@ def _signed_int_iso(x, n):
         A jnp.int64 array where each element of `x` has been mapped to
         the unsigned range [0, 2^(n+1) - 1].
     """
+    # 1. Modular wrap: Ensure x is within [0, 2**(n+1) - 1]
     mask = (jnp.int64(1) << (n + 1)) - 1
     return jnp.int64(x) & mask
 
@@ -465,30 +466,10 @@ class QuantumFloat(QuantumVariable):
         is_out_of_bounds = (encoding_number > max_float) | (encoding_number < min_float)
 
         # add a check that the provided value is safe to be encoded in the provided QuantumFloat
-        if not check_for_tracing_mode():
-            if is_out_of_bounds:
+        if not check_for_tracing_mode() and is_out_of_bounds:
                 sign_description = ["unsigned", "signed"][self.signed]
                 raise ValueError(f"Not enough qubits to encode value {encoding_number} in {sign_description} QuantumFloat"
                                 +f" of {self.msize} qubits and exponent {self.exponent}.")
-        else:
-
-            def handle_out_of_bounds(x):
-                # Use jax.debug.print to let the user know that their value is larger than the provided
-                # QuantumFloat's size and exponent. 
-                debug.print("Warning: Value cannot be safely encoded in the provided QuantumFloat.")
-                # Return zero matching the type of x
-                return x * 0
-            
-            # Define the function for the "In Bounds" case
-            def keep_value(x):
-                return x
-
-            encoding_number = lax.cond(
-                is_out_of_bounds,
-                handle_out_of_bounds, # Snap unsafe values to zero and print a warning during execution
-                keep_value,        # Return the original value
-                encoding_number
-            )
                 
         
         if rounding:
