@@ -136,7 +136,7 @@ def unary_prep(
     Parameters
     ----------
     anc : QuantumVariable
-        A binary-encoded ancilla QuantumVariable of size $2\lceil\log2(d)\rceil$.
+        A binary-encoded ancilla QuantumVariable of size $2\lceil\log_2(d)\rceil$.
         Used to prepare the superposition over the $m$ and $n$ indices in $\mathcal O(d^2)$ depth.
     qm : QuantumVariable
         A unary-encoded QuantumVariable of size d+1, representing the $m$ index.
@@ -222,9 +222,9 @@ def unary_walk_prep(
     coins2 : QuantumVariable
         An ancilla QuantumVariable of size d, used as the second set of coin variables to control the walk steps.
     m_line : QuantumVariable
-        A one-hot-encoded QuantumVariable of size 2d+1, representing the position of the walk along the m-axis, which encodes the index of T_m(A).
+        A one-hot-encoded QuantumVariable of size 2d+1, representing the position of the walk along the $m$-axis, which encodes the index of $T_m(A)$.
     n_line : QuantumVariable
-        A one-hot-encoded QuantumVariable of size 2d+1, representing the position of the walk along the n-axis, which encodes the index of T_n(A).
+        A one-hot-encoded QuantumVariable of size 2d+1, representing the position of the walk along the $n$-axis, which encodes the index of $T_n(A)$.
     qm : QuantumVariable
         A unary-encoded QuantumVariable of size d+1, representing the $m$ index.
     qn : QuantumVariable
@@ -238,10 +238,12 @@ def unary_walk_prep(
     Notes
     -----
     - **Complexity**: This state preparation requires $\mathcal O(d)$ qubits and $\mathcal O(d)$ depth.
-    - The walk is implemented using two sets of coin variables and two position variables (m_line and n_line) to achieve perfect parallelism in the shift operations,
-      resulting in $\mathcal O(d)$ depth regardless of the number of steps.
-    - The crucial minus signs for the commutator are implemented via Z gates on the coin variables,
-      which are applied in parallel with the Hadamard gates to create the necessary interference patterns in the walk.
+    - This function simulates a symmetric quantum walk on two 1D lines from $-d$ to $d$, where the position of the walk encodes the indices of the Chebyshev polynomials in the expansion of the nested commutators.
+    - The walk is based on the recurrence relations for Chebyshev polynomials: $xT_k(x) = \frac{1}{2}(T_{k+1}(x) - T_{k-1}(x))$.
+    - The walk is implemented using two sets of coin variables (``coins1`` and ``coins2``) and two position variables (``m_line`` and ``n_line``) to achieve perfect parallelism in the shift operations,
+      resulting in $\mathcal O(d)$ depth for $d$ walk steps.
+    - The crucial minus signs for the commutator are implemented via Z gates on the first coin variable,
+      which are applied following the Hadamard gates to create the necessary interference patterns in the walk.
 
     """
     from qrisp.algorithms.cks import unary_prep
@@ -323,14 +325,14 @@ def nested_commutators(
     method: Literal["default", "walk"] = "default",
 ) -> BlockEncoding:
     r"""
-    Returns a BlockEncoding of a weighted sum odd nested commutators.
+    Returns a BlockEncoding of a weighted sum of nested commutators.
 
-    For block-encoded Hermitian operators $A$ and $B$, this function returns a BlockEncoding
+    For block-encoded **Hermitian** operators $A$ and $B$, this function returns a BlockEncoding
     of the operator
 
     .. math::
 
-        \mathcal A = \sum_{k=1}^{\lfloor d/2\rfloor} c_{2k-1} \text{ad}_A^k(B)
+        \mathcal A = \sum_{k=1}^d c_k \text{ad}_A^k(B)
 
     where each $\text{ad}_A^k(B)$ is a nested commutator $[A,[A,\dotsc[A,B]]$ of order $k$.
 
@@ -355,7 +357,7 @@ def nested_commutators(
     Notes
     -----
     - **Complexity**: This implementation requires $\mathcal O(d)$ qubits, $\mathcal O(d)$ calls to the block-encoding $A$,
-      and utilizes a state preparation (PREP) oracle of detph $\mathcal O(d^2)$.
+      and utilizes a state preparation (PREP) oracle of depth $\mathcal O(d^2)$ ("default"), or of depth $\mathcal O(d)$ ("walk").
 
     Examples
     --------

@@ -887,21 +887,19 @@ class BlockEncoding:
         method: Literal["default", "walk"] = "default",
     ) -> BlockEncoding:
         r"""
-        Returns a BlockEncoding of a weighted sum odd nested commutators.
+        Returns a BlockEncoding of a weighted sum of nested commutators.
 
-        For block-encoded Hermitian operators $A$ and $B$, this function returns a BlockEncoding 
-        of the operator 
+        For block-encoded **Hermitian** operators $A$ and $B$, this function returns a BlockEncoding
+        of the operator
 
-        .. math:: 
+        .. math::
 
-            \mathcal A = \sum_{k=1}^{\lfloor d/2\rfloor} c_{2k-1} \text{ad}_A^k(B)
+            \mathcal A = \sum_{k=1}^d c_k \text{ad}_A^k(B)
 
         where each $\text{ad}_A^k(B)$ is a nested commutator $[A,[A,\dotsc[A,B]]$ of order $k$.
 
         Parameters
         ----------
-        A : BlockEncoding
-            A block-encoded Hermitian operator.
         B : BlockEncoding
             A block-encoded Hermitian operator.
         coeffs : ArrayLike, shape (d,)
@@ -910,7 +908,7 @@ class BlockEncoding:
             The method to use for constructing the block encoding.
                 - "default": Uses a state preparation method with $\mathcal O(d^2)$ depth.
                 - "walk": Uses a quantum walk-based state preparation method with $\mathcal O(d)$ depth.
-    
+
         Returns
         -------
         BlockEncoding
@@ -919,7 +917,7 @@ class BlockEncoding:
         Notes
         -----
         - **Complexity**: This implementation requires $\mathcal O(d)$ qubits, $\mathcal O(d)$ calls to the block-encoding $A$,
-          and utilizes a state preparation (PREP) oracle of detph $\mathcal O(d^2)$.
+          and utilizes a state preparation (PREP) oracle of depth $\mathcal O(d^2)$ ("default"), or of depth $\mathcal O(d)$ ("walk").
 
         Examples
         --------
