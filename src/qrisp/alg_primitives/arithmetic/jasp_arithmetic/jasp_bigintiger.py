@@ -176,9 +176,6 @@ class BigInteger:
         JAX's host integer range (typically up to 64 bits). For arbitrarily large
         Python integers, prefer `create_static`.
         """
-        # Ensure input is non-negative
-        # if negative, treat as zero to avoid unintended large positive wraparound in the loop below.
-        n = jnp.maximum(n, 0)  
 
         def body_fun(i, args):
             digits, num = args
