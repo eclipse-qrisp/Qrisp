@@ -56,7 +56,12 @@ def custom_inversion(*func, **cusi_kwargs):
     this keyword will receive the corresponding boolean value indicating whether the function
     is being inverted.
 
-    For more details consult the examples section.
+    For more details consult the examples section. 
+
+    .. warning::
+
+        This decorator is only available in traced mode, meaning that it will only work when the decorated function is called within a JAX-traced context. 
+        If you attempt to use this decorator outside of a traced context, it will simply execute an attempt to invert the original logic.
 
 
     Parameters
@@ -73,50 +78,67 @@ def custom_inversion(*func, **cusi_kwargs):
     Examples
     ----------
 
-    We create an in-place addition function, which adds 10 to the input when called in the forward direction
-    and subtracts 10 from the input when called in the backward direction. 
+    We create an in-place addition function, which adds 100 to the input when called in the forward direction
+    and subtracts 10 from the input when called in the backward direction. To test the function, we can call it in both forward and backward
+    contexts on a ``QuantumFloat``.
 
     ::
 
-        from qrisp import QuantumFloat, custom_inversion, reset
+        from qrisp import QuantumFloat, custom_inversion, invert, make_jaspr, measure
 
         @custom_inversion
         def load_constant(qf, inv=False):
-
             if not inv:
-                # Forward: In-place addition
-                qf += 10
-                print("Forward: In-place addition of 10")
-            else:
-                # Inverse: Go back to previous value
-                # reverse in-place addition with -10
-                qf += -10
-                print("Backward: Go back to 0 by in-place addition of -10")
+                # Forward: In-place addition 
+                qf += 100
 
-    To test the function, we can call it in both forward and backward contexts on a `QuantumFloat`.
+            else:
+                # Custom Inverse: Reduce by 10
+                qf += -10
+
+        def main(size, mode):
+            qf = QuantumFloat(size)
+            
+            # 1. Execute Forward Logic
+            if mode == "forward":
+                load_constant(qf)
+                
+            # 2. Execute Backward Logic
+            elif mode == "backward":
+                # The invert() context triggers the custom_inversion logic
+                with invert():
+                    load_constant(qf)
+                    
+            # 3. Execute Full Logic (Forward then Backward)
+            elif mode == "full":
+                # First run the forward operation (adds 100)
+                load_constant(qf)
+                # Then run the backward operation (subtracts 10)
+                with invert():
+                    load_constant(qf)
+                    
+            return measure(qf)
+    
+    
+    ::
+
+        # In place addition in forward direction
+        jaspr_fwd = make_jaspr(main)(16, mode="forward")
+
+
+        # in-place addition in forward mode and subtraction in backward direction
+        jaspr_full = make_jaspr(main)(16, mode="full")
+        
+
+
 
     ::
 
-        qf = QuantumFloat(6)
+        print("Result (Forward):", jaspr_fwd(16)) 
+        # Expected: 100
 
-        # Forward call
-        load_constant(qf)
-        print("Value:", qf)
-
-        # Backward call
-        load_constant(qf, inv=True)
-        print("Value:", qf)
-
-
-
-    .. code-block:: none
-
-        Forward: In-place addition of 10
-        Value: {10: 1.0}  
-
-        Backward: Go back to 0 by in-place addition of -10
-        Value: {0: 1.0}  
-
+        print("Result (Full):", jaspr_full(16))
+        # Expected: 90 due to (100 - 10)
         
 
  
