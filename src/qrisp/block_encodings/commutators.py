@@ -236,7 +236,10 @@ def unary_walk_prep(
         )
         coeffs = coeffs / np.sum(coeffs)
 
-    unary_prep(steps, coeffs)
+    if d > 1:
+        unary_prep(steps, coeffs)
+    else:
+        x(steps)
 
     def inner_walk(coins1, coins2, m_line, n_line, step):
 

@@ -202,7 +202,8 @@ def unary_prep(case: QuantumVariable, coeffs: "ArrayLike") -> None:
     phi = _unary_angles(coeffs)
 
     x(case[0])
-    ry(phi[0], case[1])
+    with control(case.size > 1):
+        ry(phi[0], case[1])
     for i in jrange(1, case.size - 1):
         with control(case[i]):
             ry(phi[i], case[i + 1])
