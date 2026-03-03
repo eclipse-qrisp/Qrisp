@@ -91,7 +91,7 @@ def unary_prep(
     coeffs: npt.NDArray[Any],
 )-> None:
     r"""
-    Coherently prepares a state that encodes the coefficients of the Chebyshev expansion of the nested commutators in a two-dimensional grid of unary-encoded indices.
+    Coherently prepares a state that encodes the coefficients of the Chebyshev expansion of a weighted sum of nested commutators in a two-dimensional grid of unary-encoded indices.
 
     Each nested commutator $\text{ad}_A^k(B)$ can be expressed as a sum of terms of the form $C_{k,m,n}T_m(A)BT_n(A)$, where $T_m(A)$ are Chebyshev polynomials of the first kind evaluated at $A$.
     The state prepared by this function encodes the square root of the weighted sum of these coefficients in the amplitudes of a superposition over the indices $m$ and $n$,
@@ -135,8 +135,7 @@ def unary_prep(
 
         C_matrix = np.zeros((d + 1, d + 1))
 
-        # Only odd terms
-        for k in range(1, d + 1, 2):
+        for k in range(1, d + 1):
             Ck_matrix = _get_chebyshev_commutator_coeffs(k)
             rows, cols = Ck_matrix.shape
             C_matrix[:rows, :cols] += coeffs[k - 1] * Ck_matrix
@@ -173,7 +172,7 @@ def unary_walk_prep(
     coeffs: npt.NDArray[Any] = None,
 ) -> None:
     r"""
-    Coherently prepares a state that encodes the coefficients of the Chebyshev expansion of the nested commutators in a two-dimensional grid of unary-encoded indices
+    Coherently prepares a state that encodes the coefficients of the Chebyshev expansion of a weighted sum of nested commutators in a two-dimensional grid of unary-encoded indices
     by simulating a symmetric quantum walk on a 1D line from $-d$ to $d$.
 
     Each nested commutator $\text{ad}_A^k(B)$ can be expressed as a sum of terms of the form $C_{k,m,n}T_m(A)BT_n(A)$, where $T_m(A)$ are Chebyshev polynomials of the first kind evaluated at $A$.
