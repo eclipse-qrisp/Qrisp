@@ -40,11 +40,21 @@ if TYPE_CHECKING:
 
 
 def _get_chebyshev_commutator_coeffs(d):
-    """
-    Calculates the coefficient matrix C_{m,n} for the Chebyshev
-    expansion of the nested commutator ad_A^d(B).
+    r"""
+    Calculates the coefficient matrix $C_{m,n}$ for the Chebyshev
+    expansion of the nested commutator $\text{ad}_A^d(B)$.
 
-    Returns a (d+1) x (d+1) numpy array.
+    Parameters
+    ----------
+    d : int
+        The order of the nested commutator, which determines the size of the coefficient matrix.
+    
+    Returns
+    -------
+    C : ndarray, shape (d+1, d+1)
+        The coefficient matrix for the Chebyshev expansion of $\text{ad}_A^d(B)$,
+        where $C_{m,n}$ is the coefficient for the term $T_m(A) B T_n(A)$ in the expansion.
+
     """
     from numpy.polynomial.chebyshev import poly2cheb
 
