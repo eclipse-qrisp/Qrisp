@@ -30,6 +30,8 @@ from qrisp import (
     h,
     measure,
     rx,
+    rz,
+    u3,
 )
 from qrisp.jasp import jrange, q_cond
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
@@ -210,6 +212,33 @@ class TestDepthMultiQubit:
             return measure(qf[0])
 
         assert main(4) == 4
+
+    @pytest.mark.parametrize(
+        "control_qubit,target_qubit_1,target_qubit_2,param_qubit,expected_depth",
+        [
+            (0, 1, 1, 0, 6),
+            (0, 1, 2, 3, 4),
+            (0, 3, 3, 3, 6),
+            (1, 0, 0, 0, 6),
+            (2, 1, 1, 0, 4),
+        ],
+    )
+    def test_parametrized_gates(
+        self, control_qubit, target_qubit_1, target_qubit_2, param_qubit, expected_depth
+    ):
+        """Test depth of a combination of gates including a parametrized gate, with different qubit configurations."""
+
+        @depth(meas_behavior="1")
+        def main():
+            qf = QuantumFloat(4)
+            rx(0.123, qf[param_qubit])
+            rz(0.456, qf[param_qubit])
+            cx(qf[control_qubit], qf[target_qubit_1])
+            rx(0.789, qf[param_qubit])
+            cx(qf[control_qubit], qf[target_qubit_2])
+            u3(0.321, 0.654, 0.987, qf[param_qubit])
+
+        assert main() == expected_depth
 
     def test_multiple_create_qubits(self):
         """Test depth computation with multiple create_qubits calls."""
