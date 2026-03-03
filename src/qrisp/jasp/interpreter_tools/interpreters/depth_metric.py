@@ -144,9 +144,7 @@ class DepthMetric(BaseMetric):
         return (self.meas_behavior, self.max_qubits)
 
     @property
-    def initial_metric(
-        self,
-    ) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+    def initial_metric(self) -> Tuple[jnp.ndarray, int, int, bool]:
 
         # To speed up compilation time, it will be probably necessary to
         # use the same incrementation constants trick used for gate counting.
@@ -156,15 +154,15 @@ class DepthMetric(BaseMetric):
         # - depth_array: jnp.ndarray of shape (max_qubits,) that keeps track
         #   of the depth of each qubit.
         #
-        # - current_depth: jnp.ndarray scalar that keeps track of the current
+        # - current_depth: integer scalar that keeps track of the current
         #   maximum depth of the circuit.
         #
-        # - previous_size: jnp.ndarray scalar that keeps track of the
+        # - previous_size: integer scalar that keeps track of the
         #   next available index in the depth_array for newly created qubits.
         #   When we create new qubits, we assign them global indices starting from this value,
         #   and then we update it by the number of qubits created.
         #
-        # - invalid: jnp.ndarray boolean that indicates whether the depth computation
+        # - invalid: boolean scalar that indicates whether the depth computation
         #   has overflowed the maximum number of qubits supported.
         depth_array = jnp.zeros(self.max_qubits, dtype=jnp.int64)
         current_depth = jnp.int64(0)
@@ -195,16 +193,12 @@ class DepthMetric(BaseMetric):
         qubit_ids_table = _create_lookup_table(idx_start, table_size)
 
         qubit_table_handle = (qubit_ids_table, size)
+        metric_data = (depth_array, global_depth, previous_size, invalid)
 
         # Associate the following in context_dic:
         # QubitArray -> qubit_table_handle (qubit_ids_table, size)
         # QuantumState -> metric_data
-        return qubit_table_handle, (
-            depth_array,
-            global_depth,
-            previous_size,
-            invalid,
-        )
+        return qubit_table_handle, metric_data
 
     def handle_get_qubit(self, invalues, eqn, context_dic):
 
@@ -275,7 +269,6 @@ class DepthMetric(BaseMetric):
 
         target, metric_data = invalues
 
-        depth_array, current_depth, previous_size, invalid = metric_data
         # We keep a measurement counter only to generate unique keys.
         meas_number = context_dic.get("_depth_meas_number", jnp.int32(0))
 
@@ -298,10 +291,7 @@ class DepthMetric(BaseMetric):
         # Associate the following in context_dic:
         # meas_result -> meas_res (int64 scalar)
         # QuantumState -> metric_data
-        return (
-            meas_res,
-            (depth_array, current_depth, previous_size, invalid),
-        )
+        return meas_res, metric_data
 
     def handle_fuse(self, invalues, eqn, context_dic):
 
@@ -329,7 +319,7 @@ class DepthMetric(BaseMetric):
 
         # Associate the following in context_dic:
         # QubitArray -> (qubit_array_out, size_out)
-        return (qubit_array_out, size_out)
+        return qubit_array_out, size_out
 
     def handle_slice(self, invalues, eqn, context_dic):
 
@@ -351,7 +341,7 @@ class DepthMetric(BaseMetric):
 
         # Associate the following in context_dic:
         # QubitArray -> (qubit_array_out, size_out)
-        return (qubit_array_out, size_out)
+        return qubit_array_out, size_out
 
     def handle_reset(self, invalues, eqn, context_dic):
 
