@@ -88,7 +88,7 @@ def unary_prep(
     qm: QuantumVariable,
     qn: QuantumVariable,
     d: int,
-    coeffs: npt.NDArray[Any],
+    coeffs: npt.NDArray[Any] = None,
 )-> None:
     r"""
     Coherently prepares a state that encodes the coefficients of the Chebyshev expansion of a weighted sum of nested commutators in a two-dimensional grid of unary-encoded indices.
@@ -116,8 +116,9 @@ def unary_prep(
         A unary-encoded QuantumVariable of size d+1, representing the $n$ index.
     d : int
         The depth of the commutator expansion, which determines the size of the state.
-    coeffs : ArrayLike, shape (d,)
-        The non-negative coefficients $c_1,c_2,\dots,c_d$ for the weighted sum of commutators.
+    coeffs : ArrayLike, shape (d,), optional
+        The non-negative coefficients $c_1,c_2,\dots,c_d$ for the weighted sum of commutators. 
+        If None, defaults to a delta distribution on the highest order commutator.
 
     Notes
     -----
@@ -127,6 +128,10 @@ def unary_prep(
       which can then be used to apply the corresponding operators in superposition.
     
     """
+
+    if coeffs is None:
+        coeffs = np.zeros(d)
+        coeffs[d-1] = 1
 
     def target_state(d, coeffs):
 
@@ -206,7 +211,7 @@ def unary_walk_prep(
     d : int
         The depth of the commutator expansion, which determines the size of the walk.
     coeffs : ArrayLike, shape (d,), optional
-        The non-negative coefficients for the weighted sum of commutators. 
+        The non-negative coefficients $c_1,c_2,\dots,c_d$ for the weighted sum of commutators. 
         If None, defaults to a delta distribution on the highest order commutator.
 
     Notes
