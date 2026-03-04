@@ -269,49 +269,50 @@ def unary_walk_prep(
     else:
         x(steps)
 
+    # Define the parallel, O(1) depth shift operator
+    def apply_symmetric_walk(coin, qv):
+        # Layer 1: Swap all Even-Odd index pairs (0-1, 2-3, 4-5...)
+        with control(coin):
+            for i in jrange(size // 2):
+                swap(qv[2 * i], qv[2 * i + 1])
+
+        # Layer 2: Swap all Odd-Even index pairs (1-2, 3-4, 5-6...)
+        with control(coin, ctrl_state=0):
+            for i in jrange((size - 1) // 2):
+                swap(qv[2 * i + 1], qv[2 * i + 2])
+
     def inner_walk(coins1, coins2, m_line, n_line, step):
 
         # Initialize the particles directly at the origin (m=0, n=0)
         x(m_line[origin])
         x(n_line[origin])
 
-        for step in range(d):
+        # Initialize the coins
+        h(coins1)
+        z(coins1) # Applies the minus sign for the commutator
+        h(coins2)
+
+        for step in jrange(d):
             c1 = coins1[step]
             c2 = coins2[step]
 
-            h(c1)
-            z(c1)  # Applies the crucial minus sign for the commutator
-            h(c2)
-
-            # Define the perfectly parallel, O(1) depth shift operator
-            def apply_symmetric_walk(reg):
-                # Layer 1: Swap all Even-Odd index pairs (0-1, 2-3, 4-5...)
-                with control(c2):
-                    for i in range(0, size - 1, 2):
-                        swap(reg[i], reg[i + 1])
-
-                # Layer 2: Swap all Odd-Even index pairs (1-2, 3-4, 5-6...)
-                with control(c2, ctrl_state=0):
-                    for i in range(1, size - 1, 2):
-                        swap(reg[i], reg[i + 1])
-
-            # Apply the walk to the chosen register
+            # Apply the walk step
             with control(steps[step]):
 
                 with control(c1, ctrl_state=0):
-                    apply_symmetric_walk(m_line)
+                    apply_symmetric_walk(c2, m_line)
 
                 with control(c1):
-                    apply_symmetric_walk(n_line)
+                    apply_symmetric_walk(c2, n_line)
 
     inner_walk(coins1, coins2, m_line, n_line, d)
 
-    for i in range(1, d + 1):
+    for i in jrange(1, d + 1):
         cx(m_line[origin - i], m_line[origin + i])
         cx(n_line[origin - i], n_line[origin + i])
 
     # Copy the position of the particles to the output variables in unary encoding
-    for i in range(1, d + 1):
+    for i in jrange(1, d + 1):
         with control(m_line[origin + i]):
             x(qm[:i])
         with control(n_line[origin + i]):
