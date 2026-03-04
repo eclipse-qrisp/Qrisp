@@ -91,7 +91,7 @@ def custom_inversion(*func, **cusi_kwargs):
     ::
 
         from qrisp import QuantumFloat, custom_inversion, invert, make_jaspr, measure
-        from qrisp.core import x, h, cx, t, t_dg, s, s_dg
+        from qrisp.core import x
         from qrisp import gidney_mcx_impl, gidney_mcx_inv_impl
 
         @custom_inversion
