@@ -77,68 +77,60 @@ def custom_inversion(*func, **cusi_kwargs):
 
     Examples
     ----------
+    We demonstrate the use of the ``custom_inversion`` decorator with a simple example.
+    
+    In this example, we define a function that implements Gidney's logical AND operation in the forward direction and uncomputes the logical AND in the backward direction. As 
+    `defined by Gidney <https://arxiv.org/abs/1709.06648>`_ , the forward and backward implementations of the logical AND are not simply inverses of each other. Thus, one cannot
+    use the general :ref:`InversionEnvironment` to automatically apply the inverse of the forward implementation. Instead, we use the ``custom_inversion`` decorator to explicitly
+    define both the forward and backward implementations of the logical AND operation.
 
-    We create an in-place addition function, which adds 100 to the input when called in the forward direction
-    and subtracts 10 from the input when called in the backward direction. To test the function, we can call it in both forward and backward
-    contexts on a ``QuantumFloat``.
-
+    The ``gidney_mcx_impl`` and ``gidney_mcx_inv_impl`` functions are the pre-defined implementations of the forward and backward versions of Gidney's logical AND operation, respectively. 
+    We define ``gidney_mcx`` function along with the ``custom_inversion`` decorator, such that we simply apply the logical AND operation and then uncompute it using the custom inverse. 
+    The final state of the target qubit is returned to its initial state, which is the expected behavior for this example.
+     
     ::
 
         from qrisp import QuantumFloat, custom_inversion, invert, make_jaspr, measure
+        from qrisp.core import x, h, cx, t, t_dg, s, s_dg
+        from qrisp import gidney_mcx_impl, gidney_mcx_inv_impl
 
         @custom_inversion
-        def load_constant(qf, inv=False):
+        def gidney_mcx(a, b, c, inv=False):
             if not inv:
-                # Forward: In-place addition 
-                qf += 100
-
+                # Forward: In-place AND operation
+                gidney_mcx_impl(a, b, c)
             else:
-                # Custom Inverse: Reduce by 10
-                qf += -10
+                # Inverse: uncomputation of logical AND
+                gidney_mcx_inv_impl(a, b, c)
 
-        def main(size, mode):
-            qf = QuantumFloat(size)
-            
-            # 1. Execute Forward Logic
-            if mode == "forward":
-                load_constant(qf)
-                
-            # 2. Execute Backward Logic
-            elif mode == "backward":
-                # The invert() context triggers the custom_inversion logic
-                with invert():
-                    load_constant(qf)
-                    
-            # 3. Execute Full Logic (Forward then Backward)
-            elif mode == "full":
-                # First run the forward operation (adds 100)
-                load_constant(qf)
-                # Then run the backward operation (subtracts 10)
-                with invert():
-                    load_constant(qf)
-                    
-            return measure(qf)
+        def main():
+            # Initialize QuantumFloats
+            a = QuantumFloat(1, name="a")
+            b = QuantumFloat(1, name="b")
+            c = QuantumFloat(1, name="c")
+
+            # Prepare inputs (apply bit-flip to controlling qubits a and b)
+            x(a[0])
+            x(b[0])
+
+            # Apply Logical AND
+            gidney_mcx(a[0], b[0], c[0])
+
+            # Uncompute using the custom inverse
+            with invert():
+                gidney_mcx(a[0], b[0], c[0])
+
+            return measure(c)
+
+        # Trace and execute
+        jaspr = make_jaspr(main)()
+        print("Result:", jaspr())
+        # Expected Output: 0
     
     
-    ::
-
-        # In place addition in forward direction
-        jaspr_fwd = make_jaspr(main)(16, mode="forward")
-
-
-        # in-place addition in forward mode and subtraction in backward direction
-        jaspr_full = make_jaspr(main)(16, mode="full")
+    .. code-block:: python
         
-
-
-
-    ::
-
-        print("Result (Forward):", jaspr_fwd(16)) 
-        # Expected: 100
-
-        print("Result (Full):", jaspr_full(16))
-        # Expected: 90 due to (100 - 10)
+        Result: 0.0
         
 
  
