@@ -394,20 +394,23 @@ class QuantumCircuit:
         return self.to_op(name)
 
     def extend(
-        self, other: "QuantumCircuit", translation_dic: str | Dict = "id"
+        self, other: "QuantumCircuit", translation_dic: Dict | None = None
     ) -> None:
         """
-        Extends self in-place by another QuantumCircuit.
+        Extends this QuantumCircuit in-place by appending instructions from another QuantumCircuit.
 
         Parameters
         ----------
         other : QuantumCircuit
-            The QuantumCircuit to extend by.
+            The QuantumCircuit whose instructions will be appended to this circuit.
 
-        translation_dic : str or dict, optional
+        translation_dic : dict, optional
             The dictionary containing the information about which Qubits and Clbits
             should be plugged into each other. This dictionary should contain qubits of
-            other as keys and qubits of self as values.
+            `other` as keys and qubits of `self` as values.
+
+            If None (default), uses identity mapping by matching identifiers.
+            This only works if identifiers match between circuits.
 
 
         Examples
@@ -451,16 +454,12 @@ class QuantumCircuit:
 
         """
 
-        if isinstance(translation_dic, str):
-            if translation_dic != "id":
-                raise ValueError(
-                    "Invalid translation_dic string. Expected 'id' or a dict mapping qubits of other to qubits of self."
-                )
+        if translation_dic is None:
             translation_dic = {qb.identifier: qb for qb in other.qubits}
             translation_dic.update({cb.identifier: cb for cb in other.clbits})
         else:
             translation_dic = {
-                (key.identifier if isinstance(key, (Qubit, Clbit)) else key): value
+                key.identifier if isinstance(key, (Qubit, Clbit)) else key: value
                 for key, value in translation_dic.items()
             }
 
@@ -469,7 +468,6 @@ class QuantumCircuit:
             clbits = [translation_dic[cb.identifier] for cb in instruction_other.clbits]
             self.append(instruction_other.op, qubits, clbits)
 
-    # Returns a copy of self
     def copy(self):
         """
         Returns a copy of the given QuantumCircuit.

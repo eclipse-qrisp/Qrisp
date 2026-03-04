@@ -82,14 +82,14 @@ class TestQuantumCircuitMethods:
         assert str(qc_to_extend.data[2])[:2] == "cz"
 
     def test_extend_with_default_translation(self):
-        """Test extend method with default 'id' translation."""
+        """Test extend method with default translation (no translation dictionary provided)."""
 
         extension_qc = QuantumCircuit(2)
         extension_qc.x(0)
         extension_qc.y(1)
 
         qc_to_extend = QuantumCircuit.copy(extension_qc)
-        qc_to_extend.extend(extension_qc, translation_dic="id")
+        qc_to_extend.extend(extension_qc)
 
         assert len(qc_to_extend.data) == 4
         assert str(qc_to_extend.data[0])[:1] == "x"
@@ -161,19 +161,6 @@ class TestQuantumCircuitMethods:
             ValueError, match="Instruction Clbits not present in circuit"
         ):
             qc_to_extend.extend(extension_qc, translation_dic)
-
-    def test_extend_raises_error_for_invalid_translation_dic_string(self):
-        """Test that extend raises an error for invalid translation_dic strings."""
-        extension_qc = QuantumCircuit(2)
-        extension_qc.x(0)
-
-        qc_to_extend = QuantumCircuit(2)
-
-        with pytest.raises(
-            ValueError,
-            match="Invalid translation_dic string. Expected 'id' or a dict mapping qubits of other to qubits of self.",
-        ):
-            qc_to_extend.extend(extension_qc, "invalid_string")
 
     # TODO: Add more tests for other methods of QuantumCircuit
 
