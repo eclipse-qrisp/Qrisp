@@ -16,10 +16,13 @@
 ********************************************************************************
 """
 
+from hashlib import sha256
 from typing import Dict, List, Set
 
 import numpy as np
 import sympy
+from qiskit import QuantumCircuit as QiskitQuantumCircuit
+from qiskit.visualization import circuit_drawer
 
 import qrisp.circuit.standard_operations as ops
 from qrisp.circuit import Clbit, Instruction, Operation, Qubit
@@ -511,12 +514,9 @@ class QuantumCircuit:
         self.data = temp_data
         return res
 
-    # TO-DO write qiskit independent printer
+    # TODO write qiskit independent printer
 
-    # Printing method
     def __str__(self):
-
-        from qiskit.visualization.circuit_visualization import circuit_drawer
 
         from qrisp.interface import convert_to_qiskit
 
@@ -1055,8 +1055,6 @@ class QuantumCircuit:
         from qrisp.interface import convert_to_qiskit
 
         qiskit_qc = convert_to_qiskit(self, transpile=False)
-
-        from qiskit.visualization import circuit_drawer
 
         return circuit_drawer(qiskit_qc, output="latex_source", **kwargs)
 
@@ -1710,7 +1708,6 @@ class QuantumCircuit:
         return statevector_sim(self)
 
     def __hash__(self):
-        from hashlib import sha256
 
         res = 0
 
@@ -1756,13 +1753,13 @@ class QuantumCircuit:
         return hash(res)
 
     @classmethod
-    def from_qasm_str(self, qasm_string):
+    def from_qasm_str(cls, qasm_string: str) -> "QuantumCircuit":
         """
         Loads a QuantumCircuit from a QASM String.
 
         Parameters
         ----------
-        qasm_string : string
+        qasm_string : str
             A string obeying the syntax of the OpenQASM specification.
 
         Returns
@@ -1772,22 +1769,17 @@ class QuantumCircuit:
 
         """
 
-        from qiskit import QuantumCircuit
-
-        qiskit_qc = QuantumCircuit().from_qasm_str(qasm_string)
-
-        from qrisp import QuantumCircuit
-
-        return QuantumCircuit.from_qiskit(qiskit_qc)
+        qiskit_qc = QiskitQuantumCircuit().from_qasm_str(qasm_string)
+        return cls.from_qiskit(qiskit_qc)
 
     @classmethod
-    def from_qasm_file(self, filename):
+    def from_qasm_file(cls, filename: str) -> "QuantumCircuit":
         """
         Loads a QuantumCircuit from a QASM file.
 
         Parameters
         ----------
-        filename : string
+        filename : str
             A string pointing to a file obeying the OpenQASM syntax.
 
         Returns
@@ -1796,16 +1788,12 @@ class QuantumCircuit:
             The corresponding QuantumCircuit.
 
         """
-        from qiskit import QuantumCircuit
 
-        qiskit_qc = QuantumCircuit().from_qasm_file(filename)
-
-        from qrisp import QuantumCircuit
-
-        return QuantumCircuit.from_qiskit(qiskit_qc)
+        qiskit_qc = QiskitQuantumCircuit().from_qasm_file(filename)
+        return cls.from_qiskit(qiskit_qc)
 
     @classmethod
-    def from_qiskit(self, qiskit_qc):
+    def from_qiskit(cls, qiskit_qc):
         """
         Class method to create QuantumCircuits from Qiskit QuantumCircuits.
 

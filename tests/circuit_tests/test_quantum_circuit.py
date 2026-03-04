@@ -17,6 +17,7 @@
 """
 
 import pytest
+
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
@@ -48,6 +49,30 @@ class TestQuantumCircuitInitialization:
             QuantumCircuit(num_clbits=2.5)
 
     # TODO: Add more tests for other aspects of initialization
+
+    def test_fan_out_example(self):
+        """Test the fan-out example in the QuantumCircuit docstring."""
+
+        qc_0 = QuantumCircuit(4)
+        qc_0.cx(0, range(1, 4))
+
+        assert len(qc_0.data) == 3
+        assert all(str(instruction)[:2] == "cx" for instruction in qc_0.data)
+
+        qc_1 = QuantumCircuit(4)
+        qc_1.h(0)
+        qc_1.append(qc_0.to_gate(name="fan-out"), qc_1.qubits)
+
+        assert len(qc_1.data) == 2
+        assert str(qc_1.data[0])[:1] == "h"
+        assert str(qc_1.data[1])[:7] == "fan-out"
+
+        qc_1.measure(qc_1.qubits)
+        assert len(qc_1.data) == 6
+        for i in range(2, 6):
+            assert str(qc_1.data[i])[:7] == "measure"
+
+    # TODO: Add more tests for other examples in the docstring
 
 
 class TestQuantumCircuitMethods:
@@ -163,31 +188,3 @@ class TestQuantumCircuitMethods:
             qc_to_extend.extend(extension_qc, translation_dic)
 
     # TODO: Add more tests for other methods of QuantumCircuit
-
-
-class TestQuantumCircuitDocstringsExamples:
-    """A test class for the examples in the QuantumCircuit docstrings."""
-
-    def test_fan_out_example(self):
-        """Test the fan-out example in the QuantumCircuit docstring."""
-
-        qc_0 = QuantumCircuit(4)
-        qc_0.cx(0, range(1, 4))
-
-        assert len(qc_0.data) == 3
-        assert all(str(instruction)[:2] == "cx" for instruction in qc_0.data)
-
-        qc_1 = QuantumCircuit(4)
-        qc_1.h(0)
-        qc_1.append(qc_0.to_gate(name="fan-out"), qc_1.qubits)
-
-        assert len(qc_1.data) == 2
-        assert str(qc_1.data[0])[:1] == "h"
-        assert str(qc_1.data[1])[:7] == "fan-out"
-
-        qc_1.measure(qc_1.qubits)
-        assert len(qc_1.data) == 6
-        for i in range(2, 6):
-            assert str(qc_1.data[i])[:7] == "measure"
-
-    # TODO: Add more tests for other examples in the docstrings
