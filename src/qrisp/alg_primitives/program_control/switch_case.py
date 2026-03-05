@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -42,6 +42,7 @@ def _invert_inpl_function(func):
             return func(*args, **kwargs)
 
     return inverted_func
+
 
 # DEPRECATED FUNCTIONALITY
 def qswitch(
@@ -136,7 +137,7 @@ def qswitch(
         "removed in a future release. Please migrate to 'q_switch(index, branches, *operands)'. "
         "See: https://www.qrisp.eu/reference/Primitives/q_switch.html",
         category=FutureWarning,
-        stacklevel=4, # Use level 4 since qswitch is wrapped twice
+        stacklevel=4,  # Use level 4 since qswitch is wrapped twice
     )
 
     if is_function_mode := callable(case_function):

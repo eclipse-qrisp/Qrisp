@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,8 +16,8 @@
 ********************************************************************************
 """
 
-#from __future__ import annotations
-#from jax.typing import ArrayLike
+# from __future__ import annotations
+# from jax.typing import ArrayLike
 from qrisp import (
     QuantumArray,
     QuantumVariable,
@@ -37,13 +37,13 @@ if TYPE_CHECKING:
 
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
 def GQSP(
-    anc: QuantumBool, 
-    *qargs: QuantumVariable, 
-    unitary: Callable[..., None], 
-    p: Optional["ArrayLike"] = None, 
-    angles: Optional[Tuple["ArrayLike", "ArrayLike", "ArrayLike"]] = None, 
-    k: int = 0, 
-    kwargs: Dict[str, Any] = {}
+    anc: QuantumBool,
+    *qargs: QuantumVariable,
+    unitary: Callable[..., None],
+    p: Optional["ArrayLike"] = None,
+    angles: Optional[Tuple["ArrayLike", "ArrayLike", "ArrayLike"]] = None,
+    k: int = 0,
+    kwargs: Dict[str, Any] = {},
 ) -> None:
     r"""
     Performs `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
@@ -225,22 +225,22 @@ def GQSP(
 
     # Define R gate application function based on Theorem 9 in https://arxiv.org/abs/2503.03026
     def R(theta, phi, qubit):
-        rz(-2*theta, qubit)
-        rx(-2*phi, qubit)
+        rz(-2 * theta, qubit)
+        rx(-2 * phi, qubit)
 
     theta = theta[::-1]
     phi = phi[::-1]
 
-    for i in jrange(d-k):
+    for i in jrange(d - k):
         R(theta[i], phi[i], anc)
         with control(anc, ctrl_state=0):
-            unitary(*qargs, **kwargs)   
+            unitary(*qargs, **kwargs)
 
     for i in jrange(k):
-        R(theta[d-k+i], phi[d-k+i], anc)
+        R(theta[d - k + i], phi[d - k + i], anc)
         with control(anc, ctrl_state=1):
             with invert():
                 unitary(*qargs, **kwargs)
-        
+
     R(theta[d], phi[d], anc)
-    rz(-2*lambda_, anc)
+    rz(-2 * lambda_, anc)

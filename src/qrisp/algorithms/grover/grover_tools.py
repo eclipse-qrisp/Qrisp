@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -112,7 +112,9 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
         def state_function(*qargs):
             [h(qv) for qv in qargs]
 
-    reflection(input_object, state_function, phase=phase, reflection_indices=reflection_indices)
+    reflection(
+        input_object, state_function, phase=phase, reflection_indices=reflection_indices
+    )
 
     """
     if isinstance(input_object, QuantumArray):

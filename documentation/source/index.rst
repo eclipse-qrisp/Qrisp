@@ -227,7 +227,7 @@ Key Features
         :shadow: none
         
         .. image:: ./_static/block_encoding_icon.png
-            :target: ./reference/Quantum%20Types/QuantumFloat.html
+            :target: ./reference/Block%20Encodings/index.html
             :align: center
 
 

@@ -32,10 +32,52 @@ Research from within the Qrisp community
 
 .. grid::
   
+    .. grid-item-card:: Double-Bracket Quantum Algorithms for Quantum Imaginary-Time Evolution
+
+        | Marek Gluza, Jeongrak Son, Bi Hong Tiang, René Zander, Raphael Seidel, Yudai Suzuki, Zoë Holmes, Nelly H. Y. Ng
+        | `Physical Review Letters, 2026 <https://link.springer.com/chapter/10.1007/978-3-032-03924-8_11>`__
+
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            Efficiently preparing approximate ground states of large, strongly correlated systems on quantum hardware is challenging, and yet, nature is innately adept at this. 
+            This has motivated the study of thermodynamically inspired approaches to ground-state preparation that aim to replicate cooling processes via imaginary-time evolution. 
+            However, synthesizing quantum circuits that efficiently implement imaginary-time evolution is itself difficult, 
+            with prior proposals generally adopting heuristic variational approaches or using deep block encodings. 
+            Here, we use the insight that quantum imaginary-time evolution is a solution of Brockett’s double-bracket flow 
+            and synthesize circuits that implement double-bracket flows coherently on the quantum computer. 
+            We prove that our double-bracket quantum imaginary-time evolution (DB-QITE) algorithm inherits the cooling guarantees of imaginary-time evolution. 
+            Concretely, each step is guaranteed to (i) decrease the energy of an initial approximate ground state by an amount proportional to the energy fluctuations of the initial state 
+            and (ii) increase the fidelity with the ground state. We provide gate counts for DB-QITE through numerical simulations in qrisp that demonstrate scenarios where DB-QITE outperforms quantum phase estimation. 
+            Thus, DB-QITE provides a means to systematically improve the approximation of a ground state using shallow circuits.
+
+.. grid::
+  
+    .. grid-item-card:: Methods and Tools for Secure Quantum Clouds with a specific Case Study on Homomorphic Encryption
+
+        | Aurelia Kusumastuti, Nikolay Tcholtchev, Philipp Lämmel, Sebastian Bock, Manfred Hauswirth
+        | `ArXIv, 2025 <https://arxiv.org/abs/2512.17748>`__
+
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            The rise of quantum computing/technology potentially introduces significant security challenges to cloud computing, 
+            necessitating quantum-resistant encryption strategies as well as protection schemes and methods for cloud infrastructures offering quantum computing time and services (i.e. quantum clouds). 
+            This research explores various options for securing quantum clouds and ensuring privacy, especially focussing on the integration of homomorphic encryption (HE) into Eclipse Qrisp, 
+            a high-level quantum computing framework, to enhance the security of quantum cloud platforms. The study addresses the technical feasibility of integrating HE with Qrisp, 
+            evaluates performance trade-offs, and assesses the potential impact on future quantum cloud architectures. 
+            The successful implementation and Qrisp integration of three post-quantum cryptographic (PQC) algorithms demonstrates the feasibility of integrating HE with quantum computing frameworks. 
+            The findings indicate that while the Quantum One-Time Pad (QOTP) offers simplicity and low overhead, 
+            other algorithms like Chen and Gentry-Sahai-Waters (GSW) present performance trade-offs in terms of runtime and memory consumption. 
+            The study results in an overall set of recommendations for securing quantum clouds, e.g. implementing HE at data storage and processing levels, 
+            developing Quantum Key Distribution (QKD), and enforcing stringent access control and authentication mechanisms as well as participating in PQC standardization efforts.
+
+.. grid::
+  
     .. grid-item-card:: Role of Riemannian geometry in double-bracket quantum imaginary-time evolution
 
         | René Zander, Raphael Seidel, Li Xiaoyue, Marek Gluza
-        | `ArXiv, 2025 <https://arxiv.org/abs/2504.01065>`__
+        | `International Conference on Geometric Science of Information, 2025 <https://link.springer.com/chapter/10.1007/978-3-032-03924-8_11>`__
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -73,7 +115,35 @@ Research from within the Qrisp community
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
 
-            Eclipse Qrisp is a high-level programming language designed to simplify quantum programming and make it accessible to a wider range of developers and end users. Initially developed at Fraunhofer FOKUS and now part of the Eclipse Foundation, Eclipse Qrisp abstracts complex quantum operations into user-friendly constructs, enhancing code readability structure. Currently, Eclipse Qrisp is realized as an extension of the Python programming language, in the form of an embedded Domain Specific Language (eDSL), allowing to develop hybrid quantum algorithms, while at the same time utilizing the potential of the overall Python ecosystem in terms of libraries and available developer resources. We firmly believe that the eDSL approach to high-level quantum programming will prevail over the idea of defining specific languages-with their own grammar and ecosystem-due to its ease of integration within available ICT products and services. However, in order to reach higher levels of scalability and market penetration, the Eclipse Qrisp eDSL should be available for various platforms and programming languages beyond Python, e.g. C/C++, Java or Rust. In order to provide the means for implementing Eclipse Qrisp in other programming languages, this paper specifies a meta-model, thereby outlining the pursued design philosophy, architecture, and key features, including compatibility with existing frameworks. The purpose of such a Qrisp meta-model is two-fold: On one hand it formalizes and standardizes the Eclipse Qrisp programming model. On the other hand, such a meta-model can be used to formally extend other programming languages and platforms by the capabilities and concepts specified and implemented within Eclipse Qrisp.
+            Eclipse Qrisp is a high-level programming language designed to simplify quantum programming and make it accessible to a wider range of developers and end users. 
+            Initially developed at Fraunhofer FOKUS and now part of the Eclipse Foundation, Eclipse Qrisp abstracts complex quantum operations into user-friendly constructs, 
+            enhancing code readability structure. Currently, Eclipse Qrisp is realized as an extension of the Python programming language, in the form of an embedded Domain Specific Language (eDSL), 
+            allowing to develop hybrid quantum algorithms, while at the same time utilizing the potential of the overall Python ecosystem in terms of libraries and available developer resources. 
+            We firmly believe that the eDSL approach to high-level quantum programming will prevail over the idea of defining specific languages-with their own grammar and ecosystem-due to its ease of integration within available ICT products and services. 
+            However, in order to reach higher levels of scalability and market penetration, the Eclipse Qrisp eDSL should be available for various platforms and programming languages beyond Python,
+            e.g. C/C++, Java or Rust. In order to provide the means for implementing Eclipse Qrisp in other programming languages, this paper specifies a meta-model, thereby outlining the pursued design philosophy, 
+            architecture, and key features, including compatibility with existing frameworks. The purpose of such a Qrisp meta-model is two-fold: On one hand it formalizes and standardizes the Eclipse Qrisp programming model. 
+            On the other hand, such a meta-model can be used to formally extend other programming languages and platforms by the capabilities and concepts specified and implemented within Eclipse Qrisp.
+
+.. grid::
+
+    .. grid-item-card:: Automatic quantum function parallelization and memory management in Qrisp
+
+        | Raphael Seidel
+        | `6th International Workshop on Quantum Compilation, 2024 <https://quantum-compilers.github.io/iwqc2024/papers/IWQC2024_paper_16.pdf>`__
+
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            Automated optimization of quantum programs has gathered significant attention amidst
+            the recent advances of hardware manufacturers. In this work we introduce a novel data-
+            structure for representing quantum programs called permeability DAG, which captures several useful properties of quantum programs
+            across multiple levels of abstraction. Operating on this representation facilitates a variety of powerful transformations such as 
+            automatic parallelization, memory management and synthesis of uncomputation. More potential use-cases are listed in the outlook section.
+            At the core, our representation abstracts away a class of non-trivial commutation relations,
+            which stem from a feature called permeability. Both memory management and parallelization
+            can be made sensitive to execution speed details of each particular quantum gate, implying our
+            compilation methods are not only retargetable between NISQ/FT but even for individual device instances.
 
 .. grid::
 
@@ -131,7 +201,7 @@ Research from within the Qrisp community
     .. grid-item-card:: Uncomputation in the Qrisp high-level Quantum Programming Framework
 
         | Raphael Seidel, Nikolay Tcholtchev, Sebastian Bock, Manfred Hauswirth
-        | `ArXiv, 2023 <https://arxiv.org/abs/2307.11417>`__
+        | `International Conference on Reversible Computation, 2023 <https://link.springer.com/chapter/10.1007/978-3-031-38100-3_11>`__
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -158,6 +228,48 @@ External research utilizing or citing Qrisp
     * - Title
       - Authors
       - Year
+    * - `Integrating Quantum Software Tools with (in) MLIR <https://dl.acm.org/doi/full/10.1145/3773656.3773658>`_
+      - P\. Hopf, E\. Ochoa, Y\. Stade, D\. Rovara, N\. Quetschlich, I\. A\. Florea, J\. Izaac, R\. Wille, L\. Burgholzer
+      - 2026
+    * - `Leveraging quantum computing for heat conduction analysis: A case study in thermal engineering <https://www.sciencedirect.com/science/article/pii/S2214157X26001759>`_
+      - P\. Asinari, M\. M\. Piredda, G\. Barletta, P\. De Angelis, N\. Alghamdi, G\. Trezza, M\. Provenzano, M\. Fasano, E\. Chiavazzo
+      - 2026
+    * - `Investigating Retargetability Claims for Quantum Compilers <https://arxiv.org/abs/2601.16779>`_
+      - L\. Southall, J\. Ammermann, R\. Kelmendi, D\. Eichhorn, I\. Schaefer
+      - 2026
+    * - `The grand challenge of quantum applications <https://arxiv.org/abs/2511.09124>`_
+      - R\. Babbush, R\. King, S\. Boixo, W\. Huggins, T\. Khattar, G\. H\. Low, J\. R\. McClean, T\. O'Brien, N\. C\. Rubin
+      - 2025
+    * - `Analysis of Surface Code Algorithms on Quantum Hardware Using the Qrisp Framework <https://www.mdpi.com/2079-9292/14/23/4707>`_
+      - J\. Krzyszkowski, M\. Niemiec
+      - 2025
+    * - `Qrisp Implementation and Resource Analysis of a T-Count-Optimized Non-Restoring Quantum Square-Root Circuit <https://arxiv.org/pdf/2507.12603>`_
+      - H\. Kupryianau, M\. Niemiec
+      - 2025
+    * - `"A Framework for Debugging Quantum Programs <https://ieeexplore.ieee.org/abstract/document/11134329>`_
+      - D\. Rovara, L\. Burgholzer, R\. Wille
+      - 2025
+    * - `"Pilot-Quantum: A Middleware for Quantum-HPC Resource, Workload and Task Management <https://ieeexplore.ieee.org/abstract/document/11044846>`_
+      - P\. Mantha, F\. J\. Kiwit, N\. Saurabh. S\. Jha. A\. Luckow
+      - 2025
+    * - `Quantum Computing Today: A Status Overview <https://ieeexplore.ieee.org/document/11285931>`_
+      - Y\. Liu
+      - 2025
+    * - `Provideq: A quantum optimization toolbox <https://www.computer.org/csdl/proceedings-article/qsw/2025/672000a206/29zHhWKtMUU>`_
+      - D\. Eichhorn, N\. Poser, M\. Schweikart, I\. Schaefer
+      - 2025
+    * - `Qwerty: A Basis-Oriented Quantum Programming Language <https://ieeexplore.ieee.org/document/11285931>`_
+      - A\. J\. Adams, S\. Khan, A\. S\. Bhamra, R\. R\. Abusaada, T\. S\. Humble, J\. S\. Young, T\. M\. Conte
+      - 2025  
+    * - `QML-Essentials–A Framework for Working with Quantum Fourier Models <https://ieeexplore.ieee.org/abstract/document/11134334>`_
+      - M\. Strobl, M\. Franz, E\. Kuehn, W\. Mauerer, A\. Streit
+      - 2025  
+    * - `SLURM Heterogeneous Jobs for Hybrid Classical-Quantum Workflows <https://arxiv.org/abs/2506.03846>`_
+      - Y\. Liu
+      - 2025  
+    * - `First Practical Experiences Integrating Quantum Computers with HPC Resources: A Case Study With a 20-qubit Superconducting Quantum Computer <https://dl.acm.org/doi/full/10.1145/3731599.3767551>`_
+      - E\. Mansfield, S\. Seegerer, P\. Vesanen, J\. Echavarria, M\. N\. Farooqi, B\. Mete, L\. Schulz
+      - 2025
     * - `QML-ESSENTIALS-A Framework for Working with Quantum Fourier Models <https://www.lfdr.de/Publications/2025/StFrKu+25.pdf>`_
       - M\. Strobl, M\. Franz, E\. Kuehn, W\. Mauerer, A\. Streit
       - 2025

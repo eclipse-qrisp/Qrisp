@@ -24,11 +24,8 @@ Before anything, let's just show what the future looks like:
   epsilon = 0.01
   kappa = np.linalg.cond(A)
 
-  def operand_prep():
-    return QuantumFloat(2)
-
   BE_A = BlockEncoding.from_array(A)
-  BE_B = B.pauli_block_encoding()
+  BE_B = BlockEncoding.from_operator(B)
 
   B_C = BE_A.poly([1, 1, -2]) + BE_B.inv(epsilon, kappa)
 

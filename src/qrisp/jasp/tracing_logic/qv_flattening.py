@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -114,7 +114,7 @@ def unflatten_qv(aux_data, children):
     qv_container = aux_data[0]
     reg = DynamicQubitArray(children[0])
     qv = qv_container.construct(reg)
-    
+
     # We set the QuantumSession to None because the QuantumVariable needs
     # to be registered into the TracingQuantumSession of the new tracing
     # context manually.

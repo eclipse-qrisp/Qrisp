@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -205,7 +205,11 @@ def depth_sensitive_topological_sort(
             node_costs[i] = np.max(depth_array) + depth_indicators[node] / 10**8
 
             # Multiple possible heuristics
-            node_costs[i] = np.max(depth_array) + depth_indicators[node]/10**8 - np.min(depth_array)/10**12
+            node_costs[i] = (
+                np.max(depth_array)
+                + depth_indicators[node] / 10**8
+                - np.min(depth_array) / 10**12
+            )
             # node_costs[i] = np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)/num_qubits
             # node_costs[i] = depth_indicators[node]/1E8 + np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)/1E8
             # node_costs[i] = depth_indicators[node]/1E8 + np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)*len(depth_list)
