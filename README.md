@@ -67,7 +67,7 @@ def find_order(a, N):
     for i in range(len(qpe_res)):
         with control(qpe_res[i]):
             qg *= a
-            a = (a*a)%N
+        a = (a*a)%N
     QFT(qpe_res, inv = True)
     return qpe_res.get_measurement()
 ```

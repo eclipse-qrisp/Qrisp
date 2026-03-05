@@ -1788,7 +1788,6 @@ def get_sympy_state(qs, decimals):
             ket_expr = sp.trigsimp(amplitude) * nnz**0.5
 
         int_string = bin_rep(ind, len(compiled_qc.qubits))
-        from sympy.physics.quantum import TensorProduct
 
         labels = []
         for qv in qv_list:
@@ -1797,7 +1796,7 @@ def get_sympy_state(qs, decimals):
                 bit_string += int_string[compiled_qc.qubits.index(qb)]
 
             label = qv.decoder(int(bit_string[::-1], 2))
-            ket_expr = TensorProduct(ket_expr, OrthogonalKet((label)))
+            ket_expr = ket_expr * OrthogonalKet((label))
 
         res += ket_expr
 
