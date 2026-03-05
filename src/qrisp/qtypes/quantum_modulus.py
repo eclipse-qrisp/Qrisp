@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -35,7 +35,7 @@ def comparison_wrapper(func):
                 "Tried to evaluate QuantumModulus comparison with non-zero Montgomery shift"
             )
 
-        #conversion_flag = False
+        # conversion_flag = False
         if not check_for_tracing_mode() and isinstance(other, QuantumModulus):
 
             if other.m != 0:
@@ -48,13 +48,13 @@ def comparison_wrapper(func):
                     "Tried to compare QuantumModulus instances of differing modulus"
                 )
 
-            #other.__class__ = QuantumFloat
-            #conversion_flag = True
+            # other.__class__ = QuantumFloat
+            # conversion_flag = True
 
-        #self.__class__ = QuantumFloat
+        # self.__class__ = QuantumFloat
         res = func(self, other)
-        #self.__class__ = QuantumModulus
-        #if conversion_flag:
+        # self.__class__ = QuantumModulus
+        # if conversion_flag:
         #    other.__class__ = QuantumModulus
         return res
 
@@ -177,9 +177,14 @@ class QuantumModulus(QuantumFloat):
     def __init__(self, modulus, inpl_adder=None, qs=None):
 
         if check_for_tracing_mode():
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import smallest_power_of_two
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
-            #if isinstance(modulus, BigInteger):
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+                smallest_power_of_two,
+            )
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+                BigInteger,
+            )
+
+            # if isinstance(modulus, BigInteger):
             #    pad = jnp.zeros(modulus.digits.shape[0], dtype=modulus.digits.dtype)
             #    self.modulus_double = BigInteger(jnp.concatenate([modulus.digits, pad], axis=0))
             self.modulus = modulus
@@ -188,6 +193,7 @@ class QuantumModulus(QuantumFloat):
             QuantumFloat.__init__(self, msize=aux, qs=qs)
             if inpl_adder is None:
                 from qrisp.alg_primitives.arithmetic import gidney_adder
+
                 inpl_adder = gidney_adder
 
             self.inpl_adder = inpl_adder
@@ -212,21 +218,23 @@ class QuantumModulus(QuantumFloat):
     def decoder(self, i):
         if check_for_tracing_mode():
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
-                BigInteger
+                BigInteger,
             )
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
-                montgomery_decoder
+                montgomery_decoder,
             )
 
             if isinstance(i, BigInteger):
                 n = i.digits.shape[0]
                 R = BigInteger.create(1, n) << self.m
                 return montgomery_decoder(i, R, self.modulus)
-            
+
             else:
-                from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_decoder
+                from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+                    montgomery_decoder,
+                )
+
                 return montgomery_decoder(i, 2**self.m, self.modulus)
-        
 
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
             montgomery_decoder,
@@ -234,46 +242,65 @@ class QuantumModulus(QuantumFloat):
 
         if i >= self.modulus:  # or (np.gcd(i, self.modulus) != 1 and i != 0):
             return np.nan
-        return montgomery_decoder(i, 2 ** self.m, self.modulus)
-    
+        return montgomery_decoder(i, 2**self.m, self.modulus)
+
     def jdecoder(self, i):
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_decoder
-        return montgomery_decoder(i, 2 ** self.m, self.modulus)
-    
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+            montgomery_decoder,
+        )
+
+        return montgomery_decoder(i, 2**self.m, self.modulus)
+
     def measure(self):
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
-            BigInteger
+            BigInteger,
         )
+
         if isinstance(self.modulus, BigInteger):
             from qrisp import q_fori_loop, measure, jlen
+
             if check_for_tracing_mode():
                 for_loop = q_fori_loop
             else:
+
                 def for_loop(lower, upper, body_fun, init_val):
                     val = init_val
                     for i in range(lower, upper):
                         val = body_fun(i, val)
                     return val
+
             def body_fun(i, val):
-                return val.at[i].set(measure(self[32*i:32*(i+1)]).astype(jnp.uint32))
-            digits = for_loop(0, (self.size-1)//32, body_fun, jnp.zeros_like(self.modulus.digits))
-            digits = digits.at[(self.size-1)//32].set(measure(self[32*((self.size - 1)//32):]).astype(jnp.uint32))
+                return val.at[i].set(
+                    measure(self[32 * i : 32 * (i + 1)]).astype(jnp.uint32)
+                )
+
+            digits = for_loop(
+                0, (self.size - 1) // 32, body_fun, jnp.zeros_like(self.modulus.digits)
+            )
+            digits = digits.at[(self.size - 1) // 32].set(
+                measure(self[32 * ((self.size - 1) // 32) :]).astype(jnp.uint32)
+            )
             return self.jdecoder(BigInteger(digits))
         else:
             return self.jdecoder(self.reg.measure())
 
     def encoder(self, i):
         if check_for_tracing_mode():
-        
+
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
-                BigInteger
+                BigInteger,
             )
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_encoder
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+                montgomery_encoder,
+            )
+
             if isinstance(i, BigInteger):
-                return montgomery_encoder(i, BigInteger.create(1, i.digits.shape[0]) << self.m, self.modulus)
+                return montgomery_encoder(
+                    i, BigInteger.create(1, i.digits.shape[0]) << self.m, self.modulus
+                )
             else:
                 return montgomery_encoder(i, 1 << self.m, self.modulus)
-        
+
         else:
 
             if i >= self.modulus:
@@ -292,12 +319,15 @@ class QuantumModulus(QuantumFloat):
 
         return montgomery_encoder(i, 2**self.m, self.modulus)
 
-    #def encode(self, i):
+    # def encode(self, i):
     #    QuantumVariable.encode(self, self.encoder(i))
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __mul__(self, other):
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+            BigInteger,
+        )
+
         if isinstance(other, QuantumModulus):
             if self.m != other.m:
                 raise ValueError("Both QuantumModuli must have the same shift")
@@ -305,26 +335,31 @@ class QuantumModulus(QuantumFloat):
                 raise ValueError("Both QuantumModuli must have the same modulus")
             if check_for_tracing_mode():
                 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
-                    qq_montgomery_multiply_modulus
+                    qq_montgomery_multiply_modulus,
                 )
+
                 return qq_montgomery_multiply_modulus(self, other)
             else:
                 from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
                     montgomery_mod_mul,
-                )           
+                )
+
                 return montgomery_mod_mul(self, other)
 
         elif isinstance(other, (int, np.integer, jnp.integer, BigInteger)):
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
-                cq_montgomery_multiply
+                cq_montgomery_multiply,
             )
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
-                best_montgomery_shift
+                best_montgomery_shift,
             )
+
             shift = best_montgomery_shift(other, self.modulus)
             if isinstance(self.modulus, BigInteger):
                 assert isinstance(other, BigInteger)
-                return cq_montgomery_multiply(other.get_larger(), self, self.modulus.get_larger(), shift)
+                return cq_montgomery_multiply(
+                    other.get_larger(), self, self.modulus.get_larger(), shift
+                )
             return cq_montgomery_multiply(other, self, self.modulus, shift)
         else:
             raise Exception(
@@ -335,33 +370,42 @@ class QuantumModulus(QuantumFloat):
 
     @gate_wrap(permeability=[1], is_qfree=True)
     def __imul__(self, other):
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+            BigInteger,
+        )
 
         if isinstance(other, (int, np.integer, jnp.integer, jax.Array, BigInteger)):
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
-                cq_montgomery_multiply_inplace
+                cq_montgomery_multiply_inplace,
             )
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
-                best_montgomery_shift
+                best_montgomery_shift,
             )
-            
+
             shift = best_montgomery_shift(other, self.modulus)
             if isinstance(self.modulus, BigInteger):
                 assert isinstance(other, BigInteger)
-                cq_montgomery_multiply_inplace(other.get_larger(), self, self.modulus.get_larger(), shift, self.inpl_adder)
+                cq_montgomery_multiply_inplace(
+                    other.get_larger(),
+                    self,
+                    self.modulus.get_larger(),
+                    shift,
+                    self.inpl_adder,
+                )
             else:
-                cq_montgomery_multiply_inplace(other, self, self.modulus, shift, self.inpl_adder)
-        
+                cq_montgomery_multiply_inplace(
+                    other, self, self.modulus, shift, self.inpl_adder
+                )
+
             if isinstance(other, BigInteger):
                 pad = jnp.zeros(other.digits.shape[0], dtype=other.digits.dtype)
                 other = BigInteger(jnp.concatenate([other.digits, pad], axis=0))
-            
+
             return self
-        else: 
+        else:
             raise Exception(
                 f"Quantum modular in-place multiplication with type {type(other)} not implemented"
             )
-
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __add__(self, other):

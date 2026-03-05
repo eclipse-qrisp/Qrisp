@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -601,10 +601,10 @@ def dag_from_qc(dag, qc, remove_artificials=False):
 
             # The value layer of the node is the highest value layer of all qubits
             node.value_layer = max([value_layer[qb] for qb in instr.qubits])
-            
+
         for clbit in instr.clbits:
             if clbit in recent_node_dic:
-                dag.add_edge(recent_node_dic[clbit], node, edge_type = "anti_dependency")
+                dag.add_edge(recent_node_dic[clbit], node, edge_type="anti_dependency")
             recent_node_dic[clbit] = node
 
     # Save the original_qc

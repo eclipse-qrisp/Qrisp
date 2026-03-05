@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -28,7 +28,7 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
         *args,
         ignore_rounding_error=False,
         ignore_overflow_error=True,
-        **kwargs
+        **kwargs,
     ):
 
         if check_for_tracing_mode():
@@ -154,7 +154,7 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
                     qubit_list_2[:-1],
                     *args,
                     carry_out=qubit_list_1[-1],
-                    **kwargs
+                    **kwargs,
                 )
 
             # Perform 2nd step of the modular addition section
@@ -184,7 +184,7 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
                 qf2 = list(qf2) + list(ancilla_var)
 
             if len(qf2) > len(qf1):
-                qf2 = qf2[:len(qf1)]
+                qf2 = qf2[: len(qf1)]
 
             raw_inpl_adder(qf2, qf1, *args, **kwargs)
 

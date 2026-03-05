@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -119,7 +119,9 @@ def injection_transform(jaspr, qubit_array_outvar):
                 eqn = copy_jaxpr_eqn(eqn)
 
                 # Modify the copied equation
-                eqn.params["jaxpr"] = injection_transform(sub_jaspr, sub_qubit_array_outvar)
+                eqn.params["jaxpr"] = injection_transform(
+                    sub_jaspr, sub_qubit_array_outvar
+                )
                 eqn.invars.insert(0, qubit_array_outvar)
                 eqn.outvars.remove(qubit_array_outvar)
 

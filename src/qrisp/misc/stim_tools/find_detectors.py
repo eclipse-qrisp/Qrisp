@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -84,19 +84,19 @@ def _build_analysis_args(jaspr, n_qubits, quantum_arrays):
     off, slices = 0, []
     for a in quantum_arrays:
         n = a.size * a.qtype.size
-        slices.append(qubits[off:off + n])
+        slices.append(qubits[off : off + n])
         off += n
     it = iter(slices)
 
     args = []
-    for v in jaspr.invars[:-1]:                          # exclude trailing QC
+    for v in jaspr.invars[:-1]:  # exclude trailing QC
         s = str(v.aval)
         if s == "QubitArray":
             args.append(next(it))
         elif "int" in s and getattr(v.aval, "shape", ()):
-            args.append(np.arange(n_qubits))             # ind_array for qubit indexing
+            args.append(np.arange(n_qubits))  # ind_array for qubit indexing
         elif "int" in s or "bool" in s:
-            args.append(1)                               # qtype_size (always 1 for QuantumBool)
+            args.append(1)  # qtype_size (always 1 for QuantumBool)
         else:
             raise ValueError(f"Unexpected invar: {s}")
     return args
@@ -117,9 +117,12 @@ def _prepare_for_tqecd(stim_circ):
     that was not explicitly reset by the user's circuit.
     """
     # Collect all qubit indices
-    all_qubits = {t.value for i in stim_circ.flattened()
-                  for t in i.targets_copy()
-                  if not t.is_measurement_record_target}
+    all_qubits = {
+        t.value
+        for i in stim_circ.flattened()
+        for t in i.targets_copy()
+        if not t.is_measurement_record_target
+    }
 
     # Split instructions into rounds.
     # A round boundary occurs when we've accumulated measurements and the
@@ -131,8 +134,11 @@ def _prepare_for_tqecd(stim_circ):
         if cur["M"] and inst.name not in _MEASUREMENT_OPS:
             rounds.append(cur)
             cur = {"R": [], "G": [], "M": []}
-        key = "R" if inst.name in _RESET_OPS else \
-              "M" if inst.name in _MEASUREMENT_OPS else "G"
+        key = (
+            "R"
+            if inst.name in _RESET_OPS
+            else "M" if inst.name in _MEASUREMENT_OPS else "G"
+        )
         cur[key].append(inst)
     if cur["M"]:
         rounds.append(cur)
@@ -156,7 +162,7 @@ def _prepare_for_tqecd(stim_circ):
             tgts, ga = i.targets_copy(), i.gate_args_copy()
             if i.name in _TWO_QUBIT_OPS:
                 for j in range(0, len(tgts), 2):
-                    out.append(i.name, [tgts[j].value, tgts[j+1].value], ga)
+                    out.append(i.name, [tgts[j].value, tgts[j + 1].value], ga)
                     out.append("TICK")
             else:
                 out.append(i.name, _tvals(i), ga)
@@ -177,13 +183,18 @@ def _extract_detectors(annotated_circ, total_meas, inv_meas_map):
     ``DETECTOR`` instruction.
     """
     return [
-        [inv_meas_map[total_meas + t.value]
-         for t in inst.targets_copy() if t.is_measurement_record_target]
-        for inst in annotated_circ.flattened() if inst.name == "DETECTOR"
+        [
+            inv_meas_map[total_meas + t.value]
+            for t in inst.targets_copy()
+            if t.is_measurement_record_target
+        ]
+        for inst in annotated_circ.flattened()
+        if inst.name == "DETECTOR"
     ]
 
 
 # ───────────────────── public API ──────────────────────────────────────
+
 
 def find_detectors(func=None, *, return_circuits=False):
     r"""Decorator that automatically identifies stim detectors and returns them.
@@ -202,7 +213,7 @@ def find_detectors(func=None, *, return_circuits=False):
     ^^^^^^^^^^^^^^^^^^^^^^
 
     The ``find_detectors`` feature comes with some constraints:
-    
+
     **QuantumArray arguments must be QuantumBool**
         All ``QuantumArray`` arguments to the decorated function must have
         ``qtype=QuantumBool()``.  Other quantum types will raise a
@@ -234,7 +245,7 @@ def find_detectors(func=None, *, return_circuits=False):
         measurements across rounds), ancilla qubits **must** be explicitly
         reset between rounds.  Without resets, tqecd cannot establish the
         start of a new stabilizer flow and will miss cross-round detectors.
-        
+
         This is critical: in a two-round repetition code without resets
         between rounds, tqecd will only find first-round detectors and
         miss the temporal detectors that compare round 1 vs round 2.
@@ -243,7 +254,7 @@ def find_detectors(func=None, *, return_circuits=False):
         If a detector involves a measurement whose result is *not* part of
         the decorated function's return value, the detector is silently
         dropped.  Make sure all relevant measurements are returned.
-        
+
         For example, if you measure both syndrome qubits but only return
         one measurement, detectors involving the unreturned measurement
         will be filtered out.
@@ -256,7 +267,7 @@ def find_detectors(func=None, *, return_circuits=False):
         Each array is mapped to its own contiguous slice of
         qubits during analysis.  The slices are allocated in positional
         order.
-    
+
     **May discover more detectors than expected**
         In some circuits, ``find_detectors`` may identify *more* valid
         detectors than a minimal set.  For example, in 2-round codes,
@@ -307,76 +318,76 @@ def find_detectors(func=None, *, return_circuits=False):
     Examples
     --------
     **Example 1: Single-round syndrome extraction**
-    
+
     Three data qubits with two ancilla parity checks::
-    
+
         from qrisp import *
         from qrisp.jasp.evaluation_tools.stim_extraction import extract_stim
         from qrisp.misc.stim_tools import find_detectors
-        
+
         @find_detectors
         def syndrome(data, ancilla):
             # Reset ancilla qubits
             reset(ancilla[0])
             reset(ancilla[1])
-            
+
             # Syndrome extraction
             cx(data[0], ancilla[0])
             cx(data[1], ancilla[0])
             cx(data[1], ancilla[1])
             cx(data[2], ancilla[1])
-            
+
             # Measure syndromes
             return measure(ancilla[0]), measure(ancilla[1])
-        
+
         @extract_stim
         def main():
             data = QuantumArray(qtype=QuantumBool(), shape=(3,))
             ancilla = QuantumArray(qtype=QuantumBool(), shape=(2,))
             detectors, m0, m1 = syndrome(data, ancilla)
             return detectors, m0, m1
-        
+
         # Run and extract stim circuit
         result = main()
         stim_circ = result[-1]
         print(f"Found {stim_circ.num_detectors} detectors")
-    
+
     **Example 2: Two-round repetition code**
-    
+
     Distance-3 repetition code with temporal detectors comparing rounds::
-    
+
         @find_detectors
         def rep_code_2rounds(data, ancilla):
             measurements = []
-            
+
             for round_num in range(2):
                 # Reset ancillas
                 reset(ancilla[0])
                 reset(ancilla[1])
-                
+
                 # Parity checks
                 cx(data[0], ancilla[0])
                 cx(data[1], ancilla[0])
                 cx(data[1], ancilla[1])
                 cx(data[2], ancilla[1])
-                
+
                 # Measure syndromes
                 measurements.append(measure(ancilla[0]))
                 measurements.append(measure(ancilla[1]))
-            
+
             # Final data readout
             for i in range(3):
                 measurements.append(measure(data[i]))
-            
+
             return tuple(measurements)
-        
+
         @extract_stim
         def main():
             data = QuantumArray(qtype=QuantumBool(), shape=(3,))
             ancilla = QuantumArray(qtype=QuantumBool(), shape=(2,))
             detectors, *measurements = rep_code_2rounds(data, ancilla)
             return (detectors,) + tuple(measurements)
-        
+
         result = main()
         stim_circ = result[-1]
         # Will find >= 6 detectors (may discover more valid boundary detectors):
@@ -384,44 +395,44 @@ def find_detectors(func=None, *, return_circuits=False):
         # - 2 detectors in round 2 (vs round 1)
         # - 2+ data-boundary detectors (tqecd may find additional valid ones)
         print(f"Found {stim_circ.num_detectors} detectors")
-    
+
     **Example 3: Debug mode with circuit inspection**
-    
+
     Use ``return_circuits=True`` to inspect intermediate circuits::
-    
+
         @find_detectors(return_circuits=True)
         def debug_syndrome(data, ancilla):
             reset(ancilla[0])
             cx(data[0], ancilla[0])
             cx(data[1], ancilla[0])
             return measure(ancilla[0])
-        
+
         @extract_stim
         def main():
             data = QuantumArray(qtype=QuantumBool(), shape=(2,))
             ancilla = QuantumArray(qtype=QuantumBool(), shape=(1,))
             detectors, m, raw_stim, tqecd_input, annotated = debug_syndrome(data, ancilla)
-            
+
             print("Raw stim circuit:")
             print(raw_stim)
             print("\nAfter tqecd restructuring:")
             print(tqecd_input)
             print("\nWith detectors annotated:")
             print(annotated)
-            
+
             return detectors, m
-        
+
         main()
-    
+
     **Example 4: Multi-array arguments**
-    
+
     Separate data and ancilla qubits::
-    
+
         @find_detectors
         def surface_check(data_qubits, ancilla_qubits):
             # Reset ancilla
             reset(ancilla_qubits[0])
-            
+
             # X-stabilizer (Hadamard + CNOTs)
             h(ancilla_qubits[0])
             cx(ancilla_qubits[0], data_qubits[0])
@@ -429,85 +440,85 @@ def find_detectors(func=None, *, return_circuits=False):
             cx(ancilla_qubits[0], data_qubits[2])
             cx(ancilla_qubits[0], data_qubits[3])
             h(ancilla_qubits[0])
-            
+
             return measure(ancilla_qubits[0])
-        
+
         @extract_stim
         def main():
             data = QuantumArray(qtype=QuantumBool(), shape=(4,))
             ancilla = QuantumArray(qtype=QuantumBool(), shape=(1,))
             detectors, m = surface_check(data, ancilla)
             return detectors, m
-        
+
         result = main()
         # Note: This finds 0 detectors because the X-stabilizer measurement
         # on Z-basis |0⟩ initialized qubits is not deterministic.
         # For detectors, would need X-basis initialization (RX) on data qubits.
-    
+
     **Example 5: Three-round code with explicit resets**
-    
+
     Shows importance of reset between rounds::
-    
+
         @find_detectors
         def three_rounds(data, ancilla):
             results = []
-            
+
             for _ in range(3):
                 # CRITICAL: Reset between rounds
                 reset(ancilla[0])
-                
+
                 # Syndrome extraction
                 cx(data[0], ancilla[0])
                 cx(data[1], ancilla[0])
-                
+
                 results.append(measure(ancilla[0]))
-            
+
             return tuple(results)
-        
+
         @extract_stim
         def main():
             data = QuantumArray(qtype=QuantumBool(), shape=(2,))
             ancilla = QuantumArray(qtype=QuantumBool(), shape=(1,))
             detectors, m1, m2, m3 = three_rounds(data, ancilla)
             return detectors, m1, m2, m3
-        
+
         result = main()
         stim_circ = result[-1]
         # Will find >= 3 detectors (one per round plus temporal)
         print(f"Found {stim_circ.num_detectors} detectors")
-        
+
         # Verify all detectors are valid (noiseless samples = 0)
         sampler = stim_circ.compile_detector_sampler()
         samples = sampler.sample(shots=1000)
         assert samples.sum() == 0, "All detectors should be deterministic!"
-    
+
     **Example 6: Partial measurement return**
-    
+
     Only detectors involving returned measurements are kept::
-    
+
         @find_detectors
         def partial_return(data, ancilla):
             reset(ancilla[0])
             reset(ancilla[1])
-            
+
             cx(data[0], ancilla[0])
             cx(data[1], ancilla[0])
             cx(data[1], ancilla[1])
             cx(data[2], ancilla[1])
-            
+
             m0 = measure(ancilla[0])
             m1 = measure(ancilla[1])
-            
+
             # Only return m0, discard m1
             return m0
-        
+
         @extract_stim
         def main():
             data = QuantumArray(qtype=QuantumBool(), shape=(3,))
             ancilla = QuantumArray(qtype=QuantumBool(), shape=(2,))
             detectors, m = partial_return(data, ancilla)
             return detectors, m
-        
+
         result = main()
         stim_circ = result[-1]
         # Only detectors involving m0 (the returned measurement) are kept.
@@ -562,11 +573,13 @@ def find_detectors(func=None, *, return_circuits=False):
                     if not isinstance(a.qtype, QuantumBool):
                         raise TypeError(
                             f"find_detectors: QuantumArray args must have "
-                            f"qtype QuantumBool, got {a.qtype}")
+                            f"qtype QuantumBool, got {a.qtype}"
+                        )
                     quantum_arrays.append(a)
             if not quantum_arrays:
                 raise TypeError(
-                    "find_detectors: at least one QuantumArray argument is required")
+                    "find_detectors: at least one QuantumArray argument is required"
+                )
 
             n_qubits = sum(a.size * a.qtype.size for a in quantum_arrays)
 
@@ -575,12 +588,16 @@ def find_detectors(func=None, *, return_circuits=False):
             # the quantum arguments.  Static values (ints, bools, …)
             # become constants inside the jaspr.
             qa_idx = [i for i, a in enumerate(args) if isinstance(a, QuantumArray)]
-            static = {i: a for i, a in enumerate(args) if not isinstance(a, QuantumArray)}
+            static = {
+                i: a for i, a in enumerate(args) if not isinstance(a, QuantumArray)
+            }
 
             def fn_qa_only(*qa_args, _kw=kwargs):
                 full = [None] * len(args)
-                for i, q in zip(qa_idx, qa_args): full[i] = q
-                for i, v in static.items():       full[i] = v
+                for i, q in zip(qa_idx, qa_args):
+                    full[i] = q
+                for i, v in static.items():
+                    full[i] = v
                 return fn(*full, **_kw)
 
             qa_args = tuple(args[i] for i in qa_idx)
@@ -599,9 +616,11 @@ def find_detectors(func=None, *, return_circuits=False):
 
             try:
                 jaspr = make_jaspr(fn_qa_only)(*qa_args)
-            except (jax.errors.UnexpectedTracerError,
-                    jax.errors.TracerIntegerConversionError,
-                    TypeError) as exc:
+            except (
+                jax.errors.UnexpectedTracerError,
+                jax.errors.TracerIntegerConversionError,
+                TypeError,
+            ) as exc:
                 raise TypeError(_TRACER_MSG) from exc
 
             # --- 2. Analysis: to_qc → stim → tqecd ---
@@ -620,17 +639,25 @@ def find_detectors(func=None, *, return_circuits=False):
 
             # Extract detector Clbit sets
             all_dets = _extract_detectors(
-                annotated, tqecd_circ.num_measurements, inv_map)
+                annotated, tqecd_circ.num_measurements, inv_map
+            )
 
             # Keep only detectors whose Clbits all appear in returned measurements
             returned = set(analysis_clbits)
-            relevant = [(i, d) for i, d in enumerate(all_dets)
-                        if all(cb in returned for cb in d)]
+            relevant = [
+                (i, d)
+                for i, d in enumerate(all_dets)
+                if all(cb in returned for cb in d)
+            ]
 
             # --- 2b. Simulate noiseless circuit to determine detector expectations ---
             # Use stim's built-in method to remove all noise processes
-            expectations = annotated.without_noise() \
-                .compile_detector_sampler().sample(shots=1)[0].tolist()
+            expectations = (
+                annotated.without_noise()
+                .compile_detector_sampler()
+                .sample(shots=1)[0]
+                .tolist()
+            )
 
             # --- 3. Call real function & map analysis Clbits to traced booleans ---
             real_returns = fn(*args, **kwargs)
@@ -641,8 +668,10 @@ def find_detectors(func=None, *, return_circuits=False):
 
             # --- 4. Emit parity calls for each detector ---
             det_results = [
-                parity(*[cb_to_traced[cb] for cb in det],
-                       expectation=int(expectations[idx]))
+                parity(
+                    *[cb_to_traced[cb] for cb in det],
+                    expectation=int(expectations[idx]),
+                )
                 for idx, det in relevant
             ]
 

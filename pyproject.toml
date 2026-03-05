@@ -10,3 +10,7 @@ profile = "black"
 
 [tool.pylint. messages_control]
 disable = ["import-error"]
+
+[tool.black]
+line-length = 88
+target-version = ["py311", "py312", "py313"]

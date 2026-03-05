@@ -190,7 +190,7 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
 
             def reflection(qarg, t_):
                 with conjugate(conjugator)(qarg):
-                    if isinstance(qarg,QuantumArray):
+                    if isinstance(qarg, QuantumArray):
                         qubits = sum([qv.reg for qv in qarg.flatten()], [])
                         mcp(t_, qubits, ctrl_state=0, method="khattar")
                     else:

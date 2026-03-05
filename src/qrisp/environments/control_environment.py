@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -405,7 +405,7 @@ class ControlEnvironment(QuantumEnvironment):
 
         # Retrieve the equation
         jit_eqn = get_last_equation()
-        
+
         jit_eqn.params["jaxpr"] = controlled_jaspr
         jit_eqn.params["name"] = "ctrl_env"
 

@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -166,7 +166,7 @@ def ladder2_synth_jax(x, y, method="khattar"):
             x[2 * i],
             method=method,
         )
-    mcx(x[-2] + y[-1], x[-1], method=method) #CHANGED
+    mcx(x[-2] + y[-1], x[-1], method=method)  # CHANGED
 
     max_iterations = compute_ladder_iterations(N)
     for k in jrange(max_iterations - 2):
@@ -233,16 +233,15 @@ def ladder2_synth_jax(x, y, method="khattar"):
 
 
 def remaud_adder(a, b, z):
-    
     """
     In-place adder function based on `this paper, Algorithm 3 <https://arxiv.org/abs/2501.16802>`__.
     Performs the addition:
 
     ::
 
-        b += a 
+        b += a
 
-    with a polylogarithmic depth and no use of auxiliary qubits. 
+    with a polylogarithmic depth and no use of auxiliary qubits.
     Both `a` and `b` should have the same size `N` and the result of the overflow is stored in the carry Qubit.
 
     Parameters
@@ -270,28 +269,28 @@ def remaud_adder(a, b, z):
     {9: 1.0}
 
     """
-    
+
     n = jlen(a)
 
     for i in jrange(1, n):
         cx(a[i], b[i])
-    
+
     ladder1_synth_jax(a[1:] + z[:])
 
     with invert():
-        ladder2_synth_jax(a[:] + z[:], b[:]) 
-    
+        ladder2_synth_jax(a[:] + z[:], b[:])
+
     for i in jrange(1, n):
         cx(a[i], b[i])
 
     x(b[1:-1])
-    
+
     ladder2_synth_jax(a[:], b[:-1])
-    
+
     x(b[1:-1])
-    
+
     with invert():
         ladder1_synth_jax(a[1:])
-    
+
     for i in jrange(n):
         cx(a[i], b[i])

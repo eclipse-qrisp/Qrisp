@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -15,7 +15,6 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
-
 
 import jax.numpy as jnp
 import jax.lax as lax
@@ -38,7 +37,7 @@ class BigInteger:
     This type represents non-negative integers using a fixed number of 32-bit
     limbs (dtype=uint32) in little-endian order (digits[0] is the least significant
     limb). It is compatible with JAX transformations (jit, vmap, pytrees).
-    
+
     All arithmetic (addition, subtraction, multiplication, shifts, division,
     modulo, bitwise) is performed modulo 2^(32*n), where n = len(digits).
     Overflow and underflow beyond the most-significant limb are discarded.
@@ -54,6 +53,7 @@ class BigInteger:
     digits : jnp.ndarray
         Little-endian limbs (dtype=uint32) of length `n`.
     """
+
     digits: jnp.ndarray  # Little-endian base-2^32
 
     def __call__(self):
@@ -72,17 +72,16 @@ class BigInteger:
             return lax.fori_loop(
                 0,
                 self.digits.shape[0],
-                lambda i, val: jnp.float64(
-                    self.digits[i]) * BASE_FL ** jnp.float64(i) + val,
+                lambda i, val: jnp.float64(self.digits[i]) * BASE_FL ** jnp.float64(i)
+                + val,
                 0.0,
             )
         else:
             r = 0
             for i, v in enumerate(self.digits):
                 if v != 0:
-                    r += int(v)*2**(i*32)
+                    r += int(v) * 2 ** (i * 32)
             return r
-
 
     def tree_flatten(self):
         """
@@ -170,11 +169,13 @@ class BigInteger:
         JAX's host integer range (typically up to 64 bits). For arbitrarily large
         Python integers, prefer `create_static`.
         """
+
         def body_fun(i, args):
             digits, num = args
             digits = digits.at[i].set(jnp.uint32(num % BASE))
             num //= BASE
             return digits, num
+
         digits, _ = lax.fori_loop(0, size, body_fun, (jnp.zeros(size, dtype=DTYPE), n))
         return BigInteger(digits)
 
@@ -266,8 +267,12 @@ class BigInteger:
             s, new_carry = lax.cond(
                 jnp.uint64(a[i]) >= jnp.uint64(b[i]) + carry,
                 lambda: (jnp.uint32(a[i] - b[i] - carry), 0),
-                lambda: (jnp.uint32(jnp.uint64(
-                    a[i]) + jnp.uint64(BASE) - jnp.uint64(b[i]) - carry), 1),
+                lambda: (
+                    jnp.uint32(
+                        jnp.uint64(a[i]) + jnp.uint64(BASE) - jnp.uint64(b[i]) - carry
+                    ),
+                    1,
+                ),
             )
             result = result.at[i].set(jnp.uint32(s))
             return new_carry, result
@@ -327,11 +332,7 @@ class BigInteger:
             def inner_body(j, state):
                 res, carry = state
                 k = i + j
-                tmp = (
-                    jnp.uint64(res[k])
-                    + jnp.uint64(a[i]) * jnp.uint64(b[j])
-                    + carry
-                )
+                tmp = jnp.uint64(res[k]) + jnp.uint64(a[i]) * jnp.uint64(b[j]) + carry
                 new_digit = jnp.uint32(tmp & jnp.uint64(0xFFFFFFFF))
                 res = res.at[k].set(new_digit)
                 carry = tmp >> jnp.uint64(32)
@@ -377,10 +378,12 @@ class BigInteger:
 
         def body_fun(state):
             base, exp, acc = state
-            acc = lax.cond((exp & jnp.uint64(1)) == jnp.uint64(1),
-                           lambda a: a * base,
-                           lambda a: a,
-                           acc)
+            acc = lax.cond(
+                (exp & jnp.uint64(1)) == jnp.uint64(1),
+                lambda a: a * base,
+                lambda a: a,
+                acc,
+            )
             base = base * base
             exp = exp >> jnp.uint64(1)
             return base, exp, acc
@@ -398,7 +401,7 @@ class BigInteger:
             String representation of digits (uint32 list).
         """
         return self.digits.__repr__()
-        #return f"BigInteger(digits={self.digits.tolist()})"
+        # return f"BigInteger(digits={self.digits.tolist()})"
 
     @jax.jit
     def __lt__(self, other: "BigInteger"):
@@ -440,7 +443,7 @@ class BigInteger:
 
         _, res = lax.while_loop(cond_fun, body_fun, (n, -5))
         res = lax.cond(res == -5, lambda: 0, lambda: res)
-        return (res != 0)
+        return res != 0
 
     @jax.jit
     def __eq__(self, other: "BigInteger"):
@@ -525,8 +528,8 @@ class BigInteger:
 
         _, res = lax.while_loop(cond_fun, body_fun, (n, -5))
         res = lax.cond(res == -5, lambda: 1, lambda: res)
-        return (res != 0)
-    
+        return res != 0
+
     def __gt__(self, other: "BigInteger"):
         """
         Greater-than comparison between two fixed-width BigIntegers.
@@ -551,7 +554,7 @@ class BigInteger:
         assert n == m
 
         return other.__lt__(self)
-    
+
     def __ge__(self, other: "BigInteger"):
         """
         Greater-or-equal comparison between two fixed-width BigIntegers.
@@ -576,7 +579,7 @@ class BigInteger:
         assert n == m
 
         return other.__le__(self)
-    
+
     @jax.jit
     def __lshift__(self, shift):
         """
@@ -605,6 +608,7 @@ class BigInteger:
                     lambda: x.flip_bit(i + shift),
                     lambda: x,
                 )
+
             return lax.fori_loop(0, total_bits - shift, body_fun, zeros)
 
         return lax.cond(
@@ -642,6 +646,7 @@ class BigInteger:
                     lambda: x.flip_bit(i - shift),
                     lambda: x,
                 )
+
             return lax.fori_loop(shift, total_bits, body_fun, zeros)
 
         return lax.cond(
@@ -842,7 +847,7 @@ class BigInteger:
             ms = lax.while_loop(cond_fun, body_fun, n - 1)
             limb = self.digits[ms]
             # bit length of a 32-bit limb
-            limb_bits = (jnp.floor(jnp.log2(jnp.float64(limb))).astype(jnp.int64) + 1)
+            limb_bits = jnp.floor(jnp.log2(jnp.float64(limb))).astype(jnp.int64) + 1
             return jnp.int64(32) * jnp.int64(ms) + limb_bits
 
         return lax.cond(is_zero, lambda: jnp.int64(0), nonzero_len)
@@ -874,10 +879,10 @@ class BigInteger:
         assert n == m
         r_digits, q_digits = _remainder_division_knuth(self.digits, other.digits)
         return BigInteger(r_digits), BigInteger(q_digits)
-    
+
     def get_larger(self):
         """
-        Given a BigInteger with n limbs, return a new BigInteger with 2n limbs and the 
+        Given a BigInteger with n limbs, return a new BigInteger with 2n limbs and the
         same number
 
         Returns
@@ -904,14 +909,18 @@ def _clz32(x):
     jnp.int32
         Number of leading zeros in `x` (0..32).
     """
+
     # Count leading zeros in a 32-bit word (simple loop)
     def cond_fun(state):
         x, s = state
-        return jnp.logical_and(s < jnp.int32(32), (x & jnp.uint32(0x80000000)) == jnp.uint32(0))
+        return jnp.logical_and(
+            s < jnp.int32(32), (x & jnp.uint32(0x80000000)) == jnp.uint32(0)
+        )
 
     def body_fun(state):
         x, s = state
         return jnp.uint32(x << jnp.uint32(1)), s + jnp.int32(1)
+
     _, s = lax.while_loop(cond_fun, body_fun, (x, jnp.int32(0)))
     return s
 
@@ -941,8 +950,10 @@ def _ms_length(a: jnp.ndarray):
 
         def body_fun(i):
             return i - 1
+
         ms = lax.while_loop(cond_fun, body_fun, jnp.int32(n - 1))
         return ms + jnp.int32(1)
+
     return lax.cond(all_zero, lambda: jnp.int32(0), find_ms)
 
 
@@ -978,15 +989,18 @@ def _shl_bits(arr: jnp.ndarray, s):
         def body(i, state):
             carry, out = state
             ai = arr[i]
-            low = jnp.uint32((jnp.uint64(ai) << jnp.uint64(s_u))
-                             & jnp.uint64(0xFFFFFFFF))
+            low = jnp.uint32(
+                (jnp.uint64(ai) << jnp.uint64(s_u)) & jnp.uint64(0xFFFFFFFF)
+            )
             new_digit = jnp.uint32(low | carry)
             out = out.at[i].set(new_digit)
             # IMPORTANT: parentheses for precedence
             new_carry = jnp.uint32(jnp.uint64(ai) >> (jnp.uint64(32) - jnp.uint64(s_u)))
             return new_carry, out
+
         carry_out, out = lax.fori_loop(0, n, body, (carry, out))
         return out, carry_out
+
     return lax.cond(s == jnp.int32(0), no_shift, do_shift)
 
 
@@ -1022,15 +1036,20 @@ def _shr_bits(arr: jnp.ndarray, s) -> jnp.ndarray:
             carry, out = state
             idx = n - 1 - i
             ai = arr[idx]
-            high = jnp.uint32((jnp.uint64(carry) << (jnp.uint64(
-                32) - jnp.uint64(s_u))) & jnp.uint64(0xFFFFFFFF))
+            high = jnp.uint32(
+                (jnp.uint64(carry) << (jnp.uint64(32) - jnp.uint64(s_u)))
+                & jnp.uint64(0xFFFFFFFF)
+            )
             new_digit = jnp.uint32(
-                (jnp.uint64(ai) >> jnp.uint64(s_u)) | jnp.uint64(high))
+                (jnp.uint64(ai) >> jnp.uint64(s_u)) | jnp.uint64(high)
+            )
             out = out.at[idx].set(new_digit)
             new_carry = jnp.uint32(ai & (jnp.uint32(1) << s_u) - jnp.uint32(1))
             return new_carry, out
+
         _, out = lax.fori_loop(0, n, body, (carry, out))
         return out
+
     return lax.cond(s == jnp.int32(0), no_shift, do_shift)
 
 
@@ -1065,12 +1084,15 @@ def _divmod_single_limb(u: jnp.ndarray, d):
         rem = jnp.uint64(cur % jnp.uint64(d))
         q = q.at[idx].set(qi)
         return q, rem
+
     q, rem = lax.fori_loop(0, n, body, (q, rem))
     return q, jnp.uint32(rem)
 
 
 @jax.jit
-def _remainder_division_knuth(u: jnp.ndarray, v: jnp.ndarray) -> tuple[jnp.ndarray, jnp.ndarray]:
+def _remainder_division_knuth(
+    u: jnp.ndarray, v: jnp.ndarray
+) -> tuple[jnp.ndarray, jnp.ndarray]:
     """
     Knuth long division (base 2^32) for arrays of equal length.
 
@@ -1095,8 +1117,8 @@ def _remainder_division_knuth(u: jnp.ndarray, v: jnp.ndarray) -> tuple[jnp.ndarr
     # Knuth long division base 2^32. Inputs uint32 arrays (same length N).
     # Returns (r_digits, q_digits), both length N.
     N = u.shape[0]
-    m = _ms_length(v)       # effective length of divisor
-    n_eff = _ms_length(u)   # effective length of dividend
+    m = _ms_length(v)  # effective length of divisor
+    n_eff = _ms_length(u)  # effective length of dividend
 
     # Divisor zero => return (0, 0)
     def div_by_zero():
@@ -1121,10 +1143,11 @@ def _remainder_division_knuth(u: jnp.ndarray, v: jnp.ndarray) -> tuple[jnp.ndarr
                 v_msw = v[ms_idx]
                 s = _clz32(v_msw)  # 0..31
 
-                v_norm, _ = _shl_bits(v, s)           # length N
+                v_norm, _ = _shl_bits(v, s)  # length N
                 u_norm_part, carry_u = _shl_bits(u, s)  # length N, carry
-                u_norm = jnp.concatenate([u_norm_part, jnp.array(
-                    [carry_u], dtype=jnp.uint32)], axis=0)  # N+1
+                u_norm = jnp.concatenate(
+                    [u_norm_part, jnp.array([carry_u], dtype=jnp.uint32)], axis=0
+                )  # N+1
 
                 q = jnp.zeros_like(u)
                 # how many quotient positions we fill
@@ -1139,8 +1162,8 @@ def _remainder_division_knuth(u: jnp.ndarray, v: jnp.ndarray) -> tuple[jnp.ndarr
 
                     def do_step(state):
                         u_norm, q = state
-                        j = j_count - t          # 0..j_count
-                        ujm = j + m              # index to top limb of current window
+                        j = j_count - t  # 0..j_count
+                        ujm = j + m  # index to top limb of current window
 
                         # Estimate qhat from top two limbs of u_norm and top limb of v_norm
                         u2 = jnp.uint64(u_norm[ujm])
@@ -1155,8 +1178,10 @@ def _remainder_division_knuth(u: jnp.ndarray, v: jnp.ndarray) -> tuple[jnp.ndarr
                         vm2 = jnp.uint64(v_norm[m - 2])
                         u0 = jnp.uint64(u_norm[ujm - 2])
 
-                        cond1 = jnp.logical_and(qhat == jnp.uint64(0xFFFFFFFF),
-                                                qhat * vm2 > (rhat << jnp.uint64(32)) + u0)
+                        cond1 = jnp.logical_and(
+                            qhat == jnp.uint64(0xFFFFFFFF),
+                            qhat * vm2 > (rhat << jnp.uint64(32)) + u0,
+                        )
                         qhat = jnp.where(cond1, qhat - jnp.uint64(1), qhat)
                         rhat = jnp.where(cond1, rhat + den, rhat)
 
@@ -1178,7 +1203,9 @@ def _remainder_division_knuth(u: jnp.ndarray, v: jnp.ndarray) -> tuple[jnp.ndarr
                             u_di = u_norm[idx]
                             borrow = u_di < p_low
                             new_u = jnp.uint32(
-                                (jnp.uint64(u_di) + BASE64 - jnp.uint64(p_low)) & BASE_MASK)
+                                (jnp.uint64(u_di) + BASE64 - jnp.uint64(p_low))
+                                & BASE_MASK
+                            )
                             u_norm = u_norm.at[idx].set(new_u)
                             carry = p_high + jnp.uint64(borrow)
                             return u_norm, carry
@@ -1188,7 +1215,9 @@ def _remainder_division_knuth(u: jnp.ndarray, v: jnp.ndarray) -> tuple[jnp.ndarr
                         top_before = u_norm[ujm]
                         underflow = top_before < jnp.uint32(carry)
                         top_after = jnp.uint32(
-                            (jnp.uint64(top_before) + BASE64 - jnp.uint64(carry)) & BASE_MASK)
+                            (jnp.uint64(top_before) + BASE64 - jnp.uint64(carry))
+                            & BASE_MASK
+                        )
                         u_norm = u_norm.at[ujm].set(top_after)
 
                         def fix_underflow(uq_state):
@@ -1199,16 +1228,22 @@ def _remainder_division_knuth(u: jnp.ndarray, v: jnp.ndarray) -> tuple[jnp.ndarr
                             def add_body(i, astate):
                                 u_norm, carry2 = astate
                                 idx = j + i
-                                ssum = jnp.uint64(u_norm[idx]) + \
-                                    jnp.uint64(v_norm[i]) + carry2
+                                ssum = (
+                                    jnp.uint64(u_norm[idx])
+                                    + jnp.uint64(v_norm[i])
+                                    + carry2
+                                )
                                 new_digit = jnp.uint32(ssum & BASE_MASK)
                                 carry2 = ssum >> jnp.uint64(32)
                                 u_norm = u_norm.at[idx].set(new_digit)
                                 return u_norm, carry2
+
                             u_norm, carry2 = lax.fori_loop(
-                                0, m, add_body, (u_norm, carry2))
-                            u_norm = u_norm.at[ujm].set(jnp.uint32(
-                                jnp.uint64(u_norm[ujm]) + jnp.uint64(1)))
+                                0, m, add_body, (u_norm, carry2)
+                            )
+                            u_norm = u_norm.at[ujm].set(
+                                jnp.uint32(jnp.uint64(u_norm[ujm]) + jnp.uint64(1))
+                            )
                             return u_norm, q, qhat, j
 
                         u_norm, q, qhat, _ = lax.cond(
@@ -1222,7 +1257,8 @@ def _remainder_division_knuth(u: jnp.ndarray, v: jnp.ndarray) -> tuple[jnp.ndarr
                         return u_norm, q
 
                     u_norm, q = lax.cond(
-                        active, do_step, lambda state: state, operand=(u_norm, q))
+                        active, do_step, lambda state: state, operand=(u_norm, q)
+                    )
                     return u_norm, q
 
                 u_norm, q = lax.fori_loop(0, N, body, (u_norm, q))
@@ -1233,6 +1269,7 @@ def _remainder_division_knuth(u: jnp.ndarray, v: jnp.ndarray) -> tuple[jnp.ndarr
                 def copy_body(i, r_acc):
                     val = jnp.where(i < m, u_norm[i], jnp.uint32(0))
                     return r_acc.at[i].set(val)
+
                 r_norm_full = lax.fori_loop(0, N, copy_body, r_norm_full)
 
                 r = _shr_bits(r_norm_full, s)
@@ -1280,8 +1317,8 @@ def bi_modinv(a: BigInteger, m: BigInteger) -> BigInteger:
     pad = jnp.zeros(n, dtype=DTYPE)
     a = BigInteger(jnp.concatenate([a.digits, pad], axis=0))
     m = BigInteger(jnp.concatenate([m.digits, pad], axis=0))
-    bi0 = BigInteger.create(0, 2*n)
-    bi1 = BigInteger.create(1, 2*n)
+    bi0 = BigInteger.create(0, 2 * n)
+    bi1 = BigInteger.create(1, 2 * n)
 
     t, new_t = bi0, bi1
     r, new_r = m, a
@@ -1363,7 +1400,9 @@ def bi_extended_euclidean(a, b):
 
 
 @jax.jit
-def bi_montgomery_encode(x: BigInteger, R: BigInteger, modulus: BigInteger) -> BigInteger:
+def bi_montgomery_encode(
+    x: BigInteger, R: BigInteger, modulus: BigInteger
+) -> BigInteger:
     """
     Montgomery encode: map x to (x * R) mod modulus, without intermediate wraparound.
 
@@ -1410,7 +1449,9 @@ def bi_montgomery_encode(x: BigInteger, R: BigInteger, modulus: BigInteger) -> B
 
 
 @jax.jit
-def bi_montgomery_decode(x_mon: BigInteger, R: BigInteger, modulus: BigInteger) -> BigInteger:
+def bi_montgomery_decode(
+    x_mon: BigInteger, R: BigInteger, modulus: BigInteger
+) -> BigInteger:
     """
     Montgomery decode: map x_mon to (x_mon * R^{-1}) mod modulus, without wraparound.
 
@@ -1447,7 +1488,7 @@ def bi_montgomery_decode(x_mon: BigInteger, R: BigInteger, modulus: BigInteger) 
     # Widen operands and modulus to 2n limbs
     pad = jnp.zeros(n, dtype=DTYPE)
     x2 = BigInteger(jnp.concatenate([x_mon.digits, pad], axis=0))
-    inv2 = BigInteger(jnp.concatenate([invR.digits,  pad], axis=0))
+    inv2 = BigInteger(jnp.concatenate([invR.digits, pad], axis=0))
     N2 = BigInteger(jnp.concatenate([modulus.digits, pad], axis=0))
 
     # Exact product at 2n limbs, reduce modulo widened modulus, then shrink to n limbs
@@ -1474,10 +1515,12 @@ def _bi_all_ones(n_limbs: int) -> BigInteger:
     return BigInteger(jnp.full((n_limbs,), jnp.uint32(0xFFFFFFFF), dtype=DTYPE))
 
 
-def bi_contfrac_best_approx(a: BigInteger,
-                            b: BigInteger,
-                            max_den: BigInteger | None = None,
-                            max_iters: int | None = None) -> tuple[BigInteger, BigInteger]:
+def bi_contfrac_best_approx(
+    a: BigInteger,
+    b: BigInteger,
+    max_den: BigInteger | None = None,
+    max_iters: int | None = None,
+) -> tuple[BigInteger, BigInteger]:
     """
     Best rational approximation p/q to a/b via continued fractions, with q <= max_den.
 
@@ -1537,11 +1580,18 @@ def bi_contfrac_best_approx(a: BigInteger,
         max_iters = int(2 * 32 * n_limbs + 4)
 
     @jax.jit
-    def _loop(a0: BigInteger, b0: BigInteger,
-              p0: BigInteger, p1: BigInteger,
-              q0: BigInteger, q1: BigInteger,
-              res_p: BigInteger, res_q: BigInteger,
-              done: bool, i: int) -> tuple:
+    def _loop(
+        a0: BigInteger,
+        b0: BigInteger,
+        p0: BigInteger,
+        p1: BigInteger,
+        q0: BigInteger,
+        q1: BigInteger,
+        res_p: BigInteger,
+        res_q: BigInteger,
+        done: bool,
+        i: int,
+    ) -> tuple:
         """
         One step of CF with bound handling. Internal helper for while_loop.
         """
@@ -1554,14 +1604,14 @@ def bi_contfrac_best_approx(a: BigInteger,
         qn = quot * q1 + q0
 
         # Conditions
-        exact_end = (rem == bi0)
+        exact_end = rem == bi0
         # exceed if next denominator would be > max_den
         exceed = jnp.logical_not(qn <= max_den)
 
         # Intermediate convergent if exceed: t = floor((max_den - q0)/q1)
         # Guard q1==0 (only possible at very first step if max_den < 1)
-        q1_is_zero = (q1 == bi0)
-        t_num = (max_den - q0)
+        q1_is_zero = q1 == bi0
+        t_num = max_den - q0
         t = t_num // jax.lax.cond(q1_is_zero, lambda: bi1, lambda: q1)
         p_bound = t * p1 + p0
         q_bound = t * q1 + q0
@@ -1583,12 +1633,22 @@ def bi_contfrac_best_approx(a: BigInteger,
         q0_next = jax.lax.select(done_next, q0, q1)
         q1_next = jax.lax.select(done_next, q1, qn)
         i_next = i + jnp.int32(1)
-        return (a_next, b_next, p0_next, p1_next, q0_next, q1_next,
-                res_p_next, res_q_next, done_next, i_next)
+        return (
+            a_next,
+            b_next,
+            p0_next,
+            p1_next,
+            q0_next,
+            q1_next,
+            res_p_next,
+            res_q_next,
+            done_next,
+            i_next,
+        )
 
     def cond_fn(state):
         a0, b0, p0, p1, q0, q1, res_p, res_q, done, i = state
-        under_cap = (i < jnp.int32(max_iters))
+        under_cap = i < jnp.int32(max_iters)
         return jnp.logical_and(jnp.logical_not(done), under_cap)
 
     # Initial CF state: p[-2]=0, p[-1]=1; q[-2]=1, q[-1]=0
@@ -1598,10 +1658,12 @@ def bi_contfrac_best_approx(a: BigInteger,
     return out_p, out_q
 
 
-def bi_shor_recover_denominator(a: BigInteger,
-                                b: BigInteger,
-                                N_bound: BigInteger | int,
-                                max_iters: int | None = None) -> BigInteger:
+def bi_shor_recover_denominator(
+    a: BigInteger,
+    b: BigInteger,
+    N_bound: BigInteger | int,
+    max_iters: int | None = None,
+) -> BigInteger:
     """
     Recover the candidate period denominator r from a/b for Shor's algorithm.
 
@@ -1642,9 +1704,7 @@ def bi_shor_recover_denominator(a: BigInteger,
     return q
 
 
-def bi_contfrac_convergents(a: BigInteger,
-                            b: BigInteger,
-                            max_terms: int | None = None):
+def bi_contfrac_convergents(a: BigInteger, b: BigInteger, max_terms: int | None = None):
     """
     Generator of convergents p/q for a/b (Python generator; not JAX-traced).
 

@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -80,7 +80,7 @@ def StimBackend():
     """
     This function creates a :ref:`BatchedBackend` for simulating Qrisp QuantumCircuits
     using the Stim simulator.
-    
+
     `Stim <https://github.com/quantumlib/Stim>`_ is a fast stabilizer circuit simulator
     designed for quantum error correction research. It efficiently simulates Clifford
     circuits and is particularly well-suited for simulating quantum error correction codes

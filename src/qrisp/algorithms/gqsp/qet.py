@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -33,17 +33,22 @@ if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
 
-def QET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial", rescale: bool = True) -> BlockEncoding:
+def QET(
+    H: BlockEncoding | FermionicOperator | QubitOperator,
+    p: "ArrayLike",
+    kind: Literal["Polynomial", "Chebyshev"] = "Polynomial",
+    rescale: bool = True,
+) -> BlockEncoding:
     r"""
     Returns a BlockEncoding representing a polynomial transformation of the operator via `Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
 
-    For a block-encoded **Hermitian** operator $H$ and a **real, fixed parity** polynomial $p(x)$, this method returns 
+    For a block-encoded **Hermitian** operator $H$ and a **real, fixed parity** polynomial $p(x)$, this method returns
     a BlockEncoding of the operator $p(H)$.
 
     The Quantum Eigenvalue Transform is described as follows:
-    
-    * Given a Hermitian operator $H=\sum_i\lambda_i\ket{\lambda_i}\bra{\lambda_i}$ where $\lambda_i\in\mathbb R$ are the eigenvalues for the eigenstates $\ket{\lambda_i}$, 
-    * A quantum state $\ket{\psi}=\sum_i\alpha_i\ket{\lambda_i}$ where $\alpha_i\in\mathbb C$ are the amplitudes for the eigenstates $\ket{\lambda_i}$, 
+
+    * Given a Hermitian operator $H=\sum_i\lambda_i\ket{\lambda_i}\bra{\lambda_i}$ where $\lambda_i\in\mathbb R$ are the eigenvalues for the eigenstates $\ket{\lambda_i}$,
+    * A quantum state $\ket{\psi}=\sum_i\alpha_i\ket{\lambda_i}$ where $\alpha_i\in\mathbb C$ are the amplitudes for the eigenstates $\ket{\lambda_i}$,
     * A (complex) polynomial $p(z)$,
 
     this transformation prepares a state proportional to
@@ -59,7 +64,7 @@ def QET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", ki
     p : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
     kind : {"Polynomial", "Chebyshev"}
-        The basis in which the coefficients are defined. 
+        The basis in which the coefficients are defined.
 
         - ``"Polynomial"``: $p(x) = \sum c_i x^i$
 
@@ -95,7 +100,7 @@ def QET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", ki
 
         b = np.array([0, 1, 1, 1])
 
-    Generate a BlockEncoding of $A$ and use QET to obtain a BlockEncoding of $p(H)$ 
+    Generate a BlockEncoding of $A$ and use QET to obtain a BlockEncoding of $p(H)$
     for a real polynomial of even parity.
 
     ::
@@ -123,7 +128,7 @@ def QET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", ki
         amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
 
     Finally, compare the quantum simulation result with the classical solution:
-            
+
     ::
 
         c = (np.eye(4) + A @ A) @ b
@@ -131,14 +136,14 @@ def QET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", ki
 
         print("QUANTUM SIMULATION\n", amps, "\nCLASSICAL SOLUTION\n", c)
         #QUANTUM SIMULATION
-        # [0.02405799 0.57657687 0.61493257 0.53743675] 
+        # [0.02405799 0.57657687 0.61493257 0.53743675]
         #CLASSICAL SOLUTION
         # [-0.024058    0.57657692  0.61493253  0.53743673]
 
     """
 
-    #is_real = jnp.allclose(p.imag, 0, atol=1e-6)
-    #is_even = jnp.allclose(p[1::2], 0, atol=1e-6)
+    # is_real = jnp.allclose(p.imag, 0, atol=1e-6)
+    # is_even = jnp.allclose(p[1::2], 0, atol=1e-6)
     is_odd = jnp.allclose(p[0::2], 0, atol=1e-6)
 
     ALLOWED_KINDS = {"Polynomial", "Chebyshev"}
@@ -149,12 +154,12 @@ def QET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", ki
         )
 
     if isinstance(H, (QubitOperator, FermionicOperator)):
-        H = BlockEncoding.from_operator(H)  
+        H = BlockEncoding.from_operator(H)
 
     # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
     if rescale:
         p = _rescale_poly(H.alpha, p, kind=kind)
-    if kind=="Polynomial":
+    if kind == "Polynomial":
         p = poly2cheb(p)
 
     m = len(H._anc_templates)
@@ -165,9 +170,9 @@ def QET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", ki
     # This is qubitization step even if the block encoding unitary is not Hemitian.
     # See https://math.berkeley.edu/~linlin/qasc/qasc_notes.pdf (page 104).
     # If the parity is odd, there is a single (R U) at the end which is not followed by a rotation.
-    # Since the QET is only successful if all ancillas are |0>, there is no need to control-(R U) 
+    # Since the QET is only successful if all ancillas are |0>, there is no need to control-(R U)
     # and the refelction acts as identity.
-    
+
     angles, alpha = gqsp_angles(p)
     phi = angles[1][::-1]
 
@@ -178,14 +183,16 @@ def QET(H: BlockEncoding | FermionicOperator | QubitOperator, p: "ArrayLike", ki
 
     def new_unitary(*args):
 
-        rx(-2*phi[0], args[0])
+        rx(-2 * phi[0], args[0])
         for i in jrange(1, (d + 1) // 2):
             with control(args[0], ctrl_state=0):
                 T2(*args[1:])
-            rx(-2 * phi[2*i], args[0])
+            rx(-2 * phi[2 * i], args[0])
 
         with control(is_odd):
             H.unitary(*args[1:])
 
     new_anc_templates = [QuantumBool().template()] + H._anc_templates
-    return BlockEncoding(alpha, new_anc_templates, new_unitary, num_ops=H.num_ops, is_hermitian=False)
+    return BlockEncoding(
+        alpha, new_anc_templates, new_unitary, num_ops=H.num_ops, is_hermitian=False
+    )

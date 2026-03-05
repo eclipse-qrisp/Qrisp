@@ -192,7 +192,7 @@ class FermionicOperator(Hamiltonian):
 
         """
         return np.array(list(self.terms_dict.values()))
-    
+
     #
     # Printing
     #

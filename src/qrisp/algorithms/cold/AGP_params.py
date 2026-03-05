@@ -3,6 +3,7 @@ from collections import defaultdict
 
 # ----- Pauli algebra (bitwise) -----
 
+
 def pauli_mul(p1, p2):
     """
     Multiply two Pauli strings encoded as (X_mask, Z_mask).
@@ -14,13 +15,11 @@ def pauli_mul(p1, p2):
     X3 = X1 ^ X2
     Z3 = Z1 ^ Z2
 
-    omega = (
-        (X1 & Z2).bit_count()
-        - (Z1 & X2).bit_count()
-    )
+    omega = (X1 & Z2).bit_count() - (Z1 & X2).bit_count()
     phase = (1j) ** omega
 
     return (X3, Z3), phase
+
 
 def commutator_dict(A, B):
     """
@@ -41,12 +40,13 @@ def commutator_dict(A, B):
     # Prune zeros
     return {p: c for p, c in out.items() if c != 0}
 
+
 def trace(O1, O2):
     """
     Compute trace of D1*D2 (both pauli operators).
     Tr( O1 O2 ) = 2^N * sum_k coeff1(k) * coeff2(k), Pauli strings orthogonal.
     """
-    tr = 0+0j
+    tr = 0 + 0j
     if len(O1) < len(O2):
         for pauli, coeff in O1.items():
             if pauli in O2:
@@ -57,7 +57,9 @@ def trace(O1, O2):
                 tr += coeff * O1[pauli]
     return tr
 
+
 # ----- Helpers to build strings -----
+
 
 def pauli_from_ops(ops):
     """
@@ -68,17 +70,18 @@ def pauli_from_ops(ops):
     X = 0
     Z = 0
     for i, p in ops.items():
-        if p == 1:        # X
+        if p == 1:  # X
             X |= 1 << i
-        elif p == 2:      # Y
+        elif p == 2:  # Y
             X |= 1 << i
             Z |= 1 << i
-        elif p == 3:      # Z
+        elif p == 3:  # Z
             Z |= 1 << i
     return (X, Z)
 
 
 # ----- General builders for linear system -----
+
 
 def build_H_and_dH(h, J, lam, B_val=0.0, Bp_val=0.0):
     """
@@ -122,6 +125,7 @@ def build_H_and_dH(h, J, lam, B_val=0.0, Bp_val=0.0):
 
     return dict(H), dict(dH)
 
+
 def build_AGP_templates_NC(h, J):
     """
     Build AGP ansatz from nested commutators 1st order.
@@ -153,6 +157,7 @@ def build_AGP_templates_NC(h, J):
         A.append(A_i)
 
     return A
+
 
 def build_AGP_templates(N, uniform=False):
     """
@@ -195,19 +200,20 @@ def build_AGP_templates(N, uniform=False):
     else:
         A_alpha = defaultdict(complex)
         A_gamma = defaultdict(complex)
-        A_chi   = defaultdict(complex)
+        A_chi = defaultdict(complex)
 
         for i in range(N):
             A_alpha[pauli_from_ops({i: 2})] += 1.0
             for j in range(N):
                 if j == i:
                     continue
-                A_gamma[pauli_from_ops({min(i,j): 1, max(i,j): 2})] += 1.0
-                A_chi[pauli_from_ops({min(i,j): 3, max(i,j): 2})] += 1.0
+                A_gamma[pauli_from_ops({min(i, j): 1, max(i, j): 2})] += 1.0
+                A_chi[pauli_from_ops({min(i, j): 3, max(i, j): 2})] += 1.0
 
         A = [dict(A_alpha), dict(A_gamma), dict(A_chi)]
 
     return A
+
 
 def build_Hg_from_templates(h, J, lam, B_val, Bp_val, A_lam):
     """
@@ -234,6 +240,7 @@ def build_Hg_from_templates(h, J, lam, B_val, Bp_val, A_lam):
 
     return Hmat, gvec
 
+
 # ----- Solvers -----
 def solve_params(Hmat, gvec):
     """
@@ -244,6 +251,8 @@ def solve_params(Hmat, gvec):
     except np.linalg.LinAlgError:
         x = np.linalg.lstsq(Hmat, gvec, rcond=None)[0]
     return x
+
+
 def solve_alpha(h, J, lam, B_val=0.0, Bp_val=0.0):
     """
     Solve minimal action for first order AGP.
@@ -277,6 +286,7 @@ def solve_alpha(h, J, lam, B_val=0.0, Bp_val=0.0):
     alpha = solve_params(Hmat, gvec)
     return alpha
 
+
 def solve_alpha_gamma_chi(h, J, lam, B_val=0.0, Bp_val=0.0, uniform=False):
     """
     Solve minimal action for 2nd order AGP (leading two three parameters alpha, gamma, chi).
@@ -286,8 +296,8 @@ def solve_alpha_gamma_chi(h, J, lam, B_val=0.0, Bp_val=0.0, uniform=False):
 
     """
     N = len(h)
-    # Build AGP 
-    A  = build_AGP_templates(N, uniform=uniform)
+    # Build AGP
+    A = build_AGP_templates(N, uniform=uniform)
     # Create arrays for linear system
     Hmat, gvec = build_Hg_from_templates(h, J, lam, B_val, Bp_val, A)
     # Solve
@@ -296,4 +306,4 @@ def solve_alpha_gamma_chi(h, J, lam, B_val=0.0, Bp_val=0.0, uniform=False):
         a, g, c = map(float, x)
         return np.full(N, a), np.full(N, g), np.full(N, c)
     else:
-        return x[:N], x[N:2*N], x[2*N:3*N]
+        return x[:N], x[N : 2 * N], x[2 * N : 3 * N]

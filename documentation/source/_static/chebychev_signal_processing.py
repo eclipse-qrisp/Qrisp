@@ -140,7 +140,7 @@ for deg, col, lw in zip(degrees, palette, lws):
         continue
     i+=1
     y = chebval(x_plot, cheb_coeffs[:deg + 1])
-    # gradient_fill(ax, x_plot, y, QRISP_PURPLE, n_bands=40, alpha_base=0.2)
+    gradient_fill(ax, x_plot, y, QRISP_PURPLE, n_bands=40, alpha_base=0.2)
     subtle_glow_line(ax, x_plot, y, col, lw=lw)
 
 

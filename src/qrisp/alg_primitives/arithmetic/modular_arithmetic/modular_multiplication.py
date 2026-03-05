@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -92,7 +92,7 @@ def transfer_lsb(from_qv, to_qv):
 
     # Insert the qubit in the target
     to_qv.reg.insert(len(to_qv), lsb)
-    lsb.identifier = to_qv.name + "_ext_." + str(len(to_qv)-1)
+    lsb.identifier = to_qv.name + "_ext_." + str(len(to_qv) - 1)
 
 
 # This function realizes the first step of the Montgomery reduction
@@ -150,7 +150,7 @@ def QREDC(t, N, m):
     S.signed = False
 
     u.reg.insert(len(u), sgn)
-    sgn.identifier = u.name + "_ext_." + str(len(u)-1)
+    sgn.identifier = u.name + "_ext_." + str(len(u) - 1)
 
     # Adjust the m attribute, which indicates the current Montgomery shift of this
     # QuantumModulus

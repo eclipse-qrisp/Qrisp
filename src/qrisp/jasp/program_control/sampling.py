@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -261,7 +261,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
                 return decoded_values
 
             decoded_values = sampling_helper_2(*measurement_ints)
-            
+
             # Insert into the accumulating array
             acc = acc.at[i].set(decoded_values)
 
