@@ -240,8 +240,8 @@ class QuantumEnvironment(QuantumPrimitive):
         compiled. While this doesn't change the semantics of the resulting circuit,
         especially nested :ref:`Condition <conditionenvironment>`- and
         :ref:`ControlEnvironments <controlenvironment>` lose a lot of efficiency if
-        compiled prematurely. Therefore, ``print``-calls within QuantumEnvironments are
-        usefull for debugging purposes but should be removed, if efficiency is a
+        compiled prematurely. Therefore, ``print`` calls within QuantumEnvironments are
+        useful for debugging purposes but should be removed, if efficiency is a
         concern.
 
 
@@ -261,7 +261,7 @@ class QuantumEnvironment(QuantumPrimitive):
     The ``compile`` method is then called once all environments of ``.env_qs`` have been
     exited. Note that this doesn't necessarily imply that all QuantumEnvironments have
     been left. For more information about the interplay between QuantumSessions and
-    QuantumEnvironments check the :ref:`session merging <SessionMerging>` documentation.
+    QuantumEnvironments, check the :ref:`session merging <SessionMerging>` documentation.
 
     ::
 

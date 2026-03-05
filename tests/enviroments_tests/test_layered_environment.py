@@ -16,11 +16,9 @@
 ********************************************************************************
 """
 
-from typing import Any, List
+from typing import List
 
-import pytest
-
-from qrisp import QuantumArray, QuantumBool, cx, cz, Qubit
+from qrisp import QuantumArray, QuantumBool, cx, Qubit
 from qrisp.environments.layered_enviroment import GateStack, LayeredEnvironment
 
 
@@ -29,7 +27,7 @@ def _filter_instructions(qs_data: List[Qubit]) -> List[Qubit]:
     return [instr for instr in qs_data if not str(instr).startswith("qb_alloc")]
 
 
-def measure_Z_stabilizer(source: list[Qubit], target: Qubit) -> None:
+def measure_z_stabilizer(source: list[Qubit], target: Qubit) -> None:
     """
     Measure a Z-type stabilizer by entangling all source qubits with target.
 
@@ -51,13 +49,14 @@ class TestLayeredEnvironmentBasicUsage:
 
     def test_basic_stabilizer_measurement(self):
         """Test that instructions are correctly layered and emitted for a simple stabilizer measurement."""
-        N = 6
-        qubits = QuantumArray(qtype=QuantumBool(), shape=(2 * N - 1,))
+
+        n = 5
+        qubits = QuantumArray(qtype=QuantumBool(), shape=(2 * n - 1))
         data_qubits = qubits[::2]
         ancilla_qubits = qubits[1::2]
 
         with LayeredEnvironment():
-            for i in range(N - 1):
+            for i in range(n - 1):
                 with GateStack():
                     cx(data_qubits[i], ancilla_qubits[i])
                     cx(data_qubits[i + 1], ancilla_qubits[i])

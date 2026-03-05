@@ -59,21 +59,94 @@ class GateStack(QuantumEnvironment):
 
 class LayeredEnvironment(QuantumEnvironment):
     """
-    Interleave multiple GateStacks layer-by-layer.
+    A QuantumEnvironment that interleaves layers from multiple GateStack children.
 
-    Behavior:
-      - Collect all GateStack children that appear directly in env_data.
-      - Compile each GateStack (which builds `stack.layers` but emits nothing).
-      - Emit: layer 0 from all stacks, then layer 1 from all stacks, etc.
+    This environment collects GateStack instances and emits their operations in a
+    "brick" pattern: all layer-0 instructions from all stacks, then all layer-1
+    instructions, and so on. This enables better parallelization of operations
+    across different stacks.
 
-    Non-GateStack instructions:
-      - Default policy below: emit them immediately in the original order,
-        but when a GateStack is encountered we buffer it for the final brick emission.
+    GateStack instances are compiled and their layers are emitted in brick order.
+    Non-GateStack instructions are emitted immediately in order.
+    Operations are reordered across stacks, so they must either act on
+    disjoint qubits or commute to maintain semantic correctness.
 
-    TODO: several open questions about this QuantumEnvironment.
+    Examples
+    --------
 
-    Crucially, we are reordering instructions from different GateStacks, so this approach is only semantically
-    safe if operations from different GateStacks that are reordered either act on disjoint qubits or commute.
+    Let's suppose we need to measure a Z-type stabilizer by entangling all source qubits
+    with a target ancilla qubit using CX gates.
+
+    We first define a set of data qubits and ancilla qubits using a ``QuantumArray``:
+
+    ::
+
+        from qrisp import *
+
+        n = 3
+        qubits = QuantumArray(qtype=QuantumBool(), shape=(2 * n - 1))
+        data_qubits = qubits[::2]
+        ancilla_qubits = qubits[1::2]
+
+
+    Here, we have 3 data qubits and 2 ancilla qubits interleaved in the `qubits` array.
+    Ancilla qubits are at odd indices and data qubits are at even indices.
+
+    First, let's see what happens if we call the stabilizer measurement function in a normal environment without layering:
+
+    ::
+
+        for i in range(n - 1):
+            cx(data_qubits[i], ancilla_qubits[i])
+            cx(data_qubits[i + 1], ancilla_qubits[i])
+
+    We can see that the instructions are emitted in the original order,
+    with all CXs for each stabilizer measurement grouped together:
+
+    >>> print(qubits.qs)
+        QuantumCircuit:
+        ---------------
+          qubits.0: ──■─────────────────
+                    ┌─┴─┐┌───┐
+        qubits_1.0: ┤ X ├┤ X ├──────────
+                    └───┘└─┬─┘
+        qubits_2.0: ───────■────■───────
+                              ┌─┴─┐┌───┐
+        qubits_3.0: ──────────┤ X ├┤ X ├
+                              └───┘└─┬─┘
+        qubits_4.0: ─────────────────■──
+        ...
+
+
+    Now, let's see what happens if we wrap the same code in a LayeredEnvironment and GateStack:
+
+    ::
+
+        qubits.qs.clear_data()
+
+        with LayeredEnvironment():
+            for i in range(n - 1):
+                with GateStack():
+                    cx(data_qubits[i], ancilla_qubits[i])
+                    cx(data_qubits[i + 1], ancilla_qubits[i])
+
+
+
+    We can see that the instructions are now interleaved layer-by-layer across the different GateStacks:
+
+    >>> print(qubits.qs)
+    QuantumCircuit:
+    ---------------
+      qubits.0: ──■───────
+                ┌─┴─┐┌───┐
+    qubits_1.0: ┤ X ├┤ X ├
+                └───┘└─┬─┘
+    qubits_2.0: ──■────■──
+                ┌─┴─┐┌───┐
+    qubits_3.0: ┤ X ├┤ X ├
+                └───┘└─┬─┘
+    qubits_4.0: ───────■──
+    ...
 
     """
 

@@ -21,53 +21,6 @@ import pytest
 from qrisp import QuantumEnvironment, QuantumVariable, cx, h, s, t, x, y, z
 
 
-class TestQuantumEnvironmentBasicUsage:
-    """Test basic usage of QuantumEnvironment."""
-
-    def test_enter_returns_self_or_none(self):
-        """Test that __enter__ returns a value without crashing."""
-        q_env = QuantumEnvironment()
-        with q_env as result:
-            assert result is q_env or result is None
-
-    def test_sequential_fresh_instances(self):
-        """Test that multiple fresh instances can be used sequentially."""
-        for _ in range(3):
-            with QuantumEnvironment():
-                pass
-
-    def test_deeply_nested_different_instances(self):
-        """Test that deeply nested different instances work correctly."""
-        with QuantumEnvironment():
-            with QuantumEnvironment():
-                with QuantumEnvironment():
-                    pass
-
-    def test_deepest_environment_restored_after_exit(self):
-        """Test that the ContextVar is restored to its previous value after exiting."""
-        outer = QuantumEnvironment()
-        inner = QuantumEnvironment()
-
-        with outer:
-            before_inner = QuantumEnvironment._deepest_environment.get()
-            with inner:
-                pass
-            after_inner = QuantumEnvironment._deepest_environment.get()
-            assert before_inner is after_inner
-
-    def test_deepest_environment_restored_after_exception(self):
-        """Test that the ContextVar is restored even if an exception occurs inside."""
-
-        before = QuantumEnvironment._deepest_environment.get()
-        try:
-            with QuantumEnvironment():
-                raise ValueError("oops")
-        except ValueError:
-            pass
-        after = QuantumEnvironment._deepest_environment.get()
-        assert before is after
-
-
 class TestQuantumEnvironmentDocstringExamples:
     """Test that the examples in the docstring of QuantumEnvironment work correctly."""
 
@@ -198,8 +151,51 @@ class TestQuantumEnvironmentDocstringExamples:
         assert "qv.2" in str(qv.qs.data[5])
 
 
-class TestQuantumEnvErrors:
-    """Test error conditions for QuantumEnvironment."""
+class TestQuantumEnvironmentBasicUsage:
+    """Test basic usage of QuantumEnvironment."""
+
+    def test_enter_returns_self_or_none(self):
+        """Test that __enter__ returns a value without crashing."""
+        q_env = QuantumEnvironment()
+        with q_env as result:
+            assert result is q_env or result is None
+
+    def test_sequential_fresh_instances(self):
+        """Test that multiple fresh instances can be used sequentially."""
+        for _ in range(3):
+            with QuantumEnvironment():
+                pass
+
+    def test_deeply_nested_different_instances(self):
+        """Test that deeply nested different instances work correctly."""
+        with QuantumEnvironment():
+            with QuantumEnvironment():
+                with QuantumEnvironment():
+                    pass
+
+    def test_deepest_environment_restored_after_exit(self):
+        """Test that the ContextVar is restored to its previous value after exiting."""
+        outer = QuantumEnvironment()
+        inner = QuantumEnvironment()
+
+        with outer:
+            before_inner = QuantumEnvironment._deepest_environment.get()
+            with inner:
+                pass
+            after_inner = QuantumEnvironment._deepest_environment.get()
+            assert before_inner is after_inner
+
+    def test_deepest_environment_restored_after_exception(self):
+        """Test that the ContextVar is restored even if an exception occurs inside."""
+
+        before = QuantumEnvironment._deepest_environment.get()
+        try:
+            with QuantumEnvironment():
+                raise ValueError("oops")
+        except ValueError:
+            pass
+        after = QuantumEnvironment._deepest_environment.get()
+        assert before is after
 
     def test_quantum_environment_used_twice(self):
         """Test that a QuantumEnvironment can be entered twice."""
