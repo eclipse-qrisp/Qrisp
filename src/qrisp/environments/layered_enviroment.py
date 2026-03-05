@@ -25,17 +25,11 @@ class GateStack(QuantumEnvironment):
     """
     Collect operations into layers for a parent LayeredEnvironment.
 
-    Default policy:
+    The default policy is that each top-level instruction inside the GateStack becomes its own layer.
+    Sub-environments are treated as atomic instructions (kept as objects), and compiled when the parent emits that layer.
 
-      - each top-level instruction inside the GateStack becomes its own layer
-
-      - sub-environments are treated as atomic instructions (kept as objects),
-        and compiled when the parent emits that layer.
-
-    Note:
-
-      This class intentionally does NOT emit instructions to env_qs in compile().
-      The parent LayeredEnvironment is responsible for emitting.
+    This class intentionally does not emit instructions to env_qs in compile().
+    The parent LayeredEnvironment is responsible for emitting.
 
     """
 
@@ -43,7 +37,6 @@ class GateStack(QuantumEnvironment):
         """Initialize with empty layers."""
 
         super().__init__(env_args=env_args)
-
         self.layers: List[List[Any]] = []
 
     def compile(self):
@@ -52,9 +45,16 @@ class GateStack(QuantumEnvironment):
 
         The parent LayeredEnvironment will interleave and emit these layers.
         """
-
         for instr in self.env_data:
-            self.layers.append([instr])
+            if isinstance(instr, QuantumEnvironment):
+                # Compile the nested environment so its env_qs is populated.
+                # We store it as a one-element layer; _emit_instruction in the
+                # parent will drain env_qs.data rather than calling compile()
+                # a second time.
+                instr.compile()
+                self.layers.append([instr])
+            else:
+                self.layers.append([instr])
 
 
 class LayeredEnvironment(QuantumEnvironment):
@@ -92,7 +92,8 @@ class LayeredEnvironment(QuantumEnvironment):
     Here, we have 3 data qubits and 2 ancilla qubits interleaved in the `qubits` array.
     Ancilla qubits are at odd indices and data qubits are at even indices.
 
-    First, let's see what happens if we call the stabilizer measurement function in a normal environment without layering:
+    First, let's see what happens if we call the stabilizer measurement function in a
+    normal environment without layering:
 
     ::
 
@@ -154,40 +155,56 @@ class LayeredEnvironment(QuantumEnvironment):
         super().__init__(env_args=env_args)
 
     def _emit_instruction(self, instr: Any):
-        """
-        Emit a single instruction or compile a nested environment into this env_qs.
-        """
+        """Emit a single instruction into env_qs."""
         if isinstance(instr, QuantumEnvironment):
-            instr.compile()
+            # The environment was already compiled by GateStack.compile().
+            # We just forward every resolved instruction it produced.
+            for sub_instr in instr.env_qs.data:
+                self.env_qs.append(sub_instr)
         else:
             self.env_qs.append(instr)
 
+    # TODO: this should be optimized and improved
     def compile(self):
-        """
-        Compile by interleaving GateStack layers.
+        """Compile by interleaving GateStack layers in brick order."""
 
-        Non-GateStack instructions are emitted immediately.
-        GateStack instructions are compiled and their layers emitted in brick order.
-        """
-        stacks: List[GateStack] = []
+        # Each segment is either:
+        #   ("bare",  [instr, ...])        – plain instructions
+        #   ("stacks", [GateStack, ...])   – a consecutive run of GateStacks
+
+        segments: List[tuple] = []
 
         for instr in self.env_data:
             if isinstance(instr, GateStack):
-                stacks.append(instr)
+                if segments and segments[-1][0] == "stacks":
+                    segments[-1][1].append(instr)
+                else:
+                    segments.append(("stacks", [instr]))
             else:
-                self._emit_instruction(instr)
+                if segments and segments[-1][0] == "bare":
+                    segments[-1][1].append(instr)
+                else:
+                    segments.append(("bare", [instr]))
 
-        if not stacks:
-            return
-
-        for st in stacks:
-            st.compile()
-
-        max_layers = max((len(st.layers) for st in stacks), default=0)
-
-        for layer_idx in range(max_layers):
-            for st in stacks:
-                if layer_idx >= len(st.layers):
-                    continue
-                for instr in st.layers[layer_idx]:
+        for kind, items in segments:
+            if kind == "bare":
+                for instr in items:
                     self._emit_instruction(instr)
+
+            else:
+                stacks: List[GateStack] = items
+
+                for st in stacks:
+                    st.compile()
+
+                if not stacks:
+                    continue
+
+                max_layers = max(len(st.layers) for st in stacks)
+
+                for layer_idx in range(max_layers):
+                    for st in stacks:
+                        if layer_idx >= len(st.layers):
+                            continue
+                        for instr in st.layers[layer_idx]:
+                            self._emit_instruction(instr)
