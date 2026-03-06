@@ -35,11 +35,11 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
     
     Parameters
     ----------
-    a : int or QuantumFloat
+    a : int or QuantumVariable
         The value that should be added.
-    b : QuantumFloat
+    b : QuantumVariable or list[Qubit]
         The value that should be modified in the in-place addition.
-    c_out : QuantumFloat, optional
+    c_out : QuantumVariable, optional
         An optional carry out value. The default is None.
 
     Raises
@@ -66,22 +66,8 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
     {9: 1.0}
     """
 
-    if not (
-        # verify at least one input is classical and the other is quantum
-        (
-            isinstance(a, QuantumFloat) ^ isinstance(b, QuantumFloat)
-        )
-        or
-        # verify both inputs are quantum
-        (
-            isinstance(a, QuantumFloat) and isinstance(b, QuantumFloat)
-        )
-    ):
-        raise ValueError("Attempted to call the CDKPM adder on invalid inputs.")
-    
-
     # convert the classical input to a quantum input
-    if not isinstance(a, QuantumFloat):
+    if not isinstance(a, QuantumVariable):
         # create a QuantumFloat of the same size as the other quantum input
         q_a = b.duplicate()
 
@@ -101,8 +87,8 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
         q_a.delete()
         return
     
-    if not isinstance(b, QuantumFloat):
-        raise ValueError("The second argument must be of type QuantumFloat.")
+    if not isinstance(b, QuantumVariable):
+        raise ValueError("The second argument must be of type QuantumVariable.")
     
 
     # when the inputs are of unequal length

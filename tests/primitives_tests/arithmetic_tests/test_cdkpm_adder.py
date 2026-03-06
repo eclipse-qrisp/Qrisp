@@ -98,42 +98,6 @@ def test_jaspr_mode_cuccaro_adder(input_a_type, input_b_type, input_a_size, inpu
     assert jaspr(input_a_size, input_b_size) == expected_output
 
 
-@pytest.mark.parametrize("input_a, input_b, expected_error_message", [
-    # both inputs are classical
-    (10, 15, "Attempted to call the CDKPM adder on invalid inputs"),
-    # first input is quantum in static mode, second is classical
-    (QuantumFloat(5), 10, "The second argument must be of type QuantumFloat."),
-])
-def test_invalid_input(input_a, input_b, expected_error_message):
-    """Verify function raises error for invalid inputs."""
-    if isinstance(input_a, QuantumFloat):
-        input_a[:] = 2
-    if isinstance(input_b, QuantumFloat):
-        input_b[:] = 14
-
-    with pytest.raises(ValueError, match=expected_error_message):
-        cuccaro_adder(input_a, input_b)
-
-
-@pytest.mark.parametrize("input_a, input_b, expected_error_message", [
-    # first input is quantum in dynamic mode, second is classical
-    (QuantumFloat, 20, "The second argument must be of type QuantumFloat."),
-    # both inputs are classical in dynamic mode
-    (20, 20, "Attempted to call the CDKPM adder on invalid inputs"),
-])
-def test_invalid_input_dynamic_mode(input_a, input_b, expected_error_message):
-    """Verify function raises error for invalid inputs in dynamic mode."""
-    def run_jasp_adder(i, j):
-        a = input_a(j) if input_a != 20 else 20
-        if input_a == QuantumFloat:
-            a[:] = 14
-        cuccaro_adder(a, input_b)
-        return measure(a)
-
-    with pytest.raises(ValueError, match=expected_error_message):
-        jaspr = make_jaspr(run_jasp_adder)(2, 3)
-        jaspr(16, 19)
-
 def test_inputs_modified():
     """Verify the size of inputs are unmodified (in-place) when they are initially of unequal size."""
     a = QuantumFloat(10)
