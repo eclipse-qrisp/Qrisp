@@ -19,7 +19,7 @@
 import numpy as np
 import pytest
 
-from qrisp import QuantumArray, QuantumBool, QuantumVariable, cx, h, measure, x
+from qrisp import QuantumArray, QuantumBool, QuantumVariable, cx, h, measure, x, z
 from qrisp.environments.layered_enviroment import GateStack, LayeredEnvironment
 
 
@@ -81,7 +81,7 @@ class TestLayeredEnvironmentBasicUsage:
         names = _gate_names(qv.qs.data)
         assert len(names) == n
         for i in range(n):
-            assert names[i].lower().startswith("x(") and f"qv.{i}" in names[i]
+            assert names[i].startswith("x(") and f"qv.{i}" in names[i]
 
     def test_one_deep_one_shallow_stack(self):
         """
@@ -100,10 +100,68 @@ class TestLayeredEnvironmentBasicUsage:
         names = _gate_names(qv.qs.data)
 
         assert len(names) == 4
-        assert names[0].lower().startswith("x(") and "qv.0" in names[0]
-        assert names[1].lower().startswith("x(") and "qv.3" in names[1]
-        assert names[2].lower().startswith("x(") and "qv.1" in names[2]
-        assert names[3].lower().startswith("x(") and "qv.2" in names[3]
+        assert names[0].startswith("x(") and "qv.0" in names[0]
+        assert names[1].startswith("x(") and "qv.3" in names[1]
+        assert names[2].startswith("x(") and "qv.1" in names[2]
+        assert names[3].startswith("x(") and "qv.2" in names[3]
+
+    def test_nested_gate_stacks_not_supported(self):
+        """
+        Test that attempting to nest a GateStack inside another GateStack raises a ValueError.
+        """
+        qv = QuantumVariable(2)
+
+        with pytest.raises(
+            ValueError, match="Nested QuantumEnvironments are not supported"
+        ):
+            with LayeredEnvironment():
+                x(qv[0])
+                with GateStack():
+                    x(qv[0])
+                    with GateStack():
+                        x(qv[1])
+
+    def test_nested_environments_not_supported(self):
+        """
+        Test that attempting to nest a LayeredEnvironment inside another LayeredEnvironment raises a ValueError.
+        """
+        qv = QuantumVariable(2)
+
+        with pytest.raises(
+            ValueError, match="Nested QuantumEnvironments are not supported"
+        ):
+            with LayeredEnvironment():
+                x(qv[0])
+                with LayeredEnvironment():
+                    x(qv[1])
+
+    def test_nested_gate_stack_and_environment_not_supported(self):
+        """
+        Test that attempting to nest a GateStack inside a LayeredEnvironment raises a ValueError.
+        """
+        qv = QuantumVariable(2)
+
+        with pytest.raises(
+            ValueError, match="Nested QuantumEnvironments are not supported"
+        ):
+            with LayeredEnvironment():
+                x(qv[0])
+                with GateStack():
+                    x(qv[1])
+                    with LayeredEnvironment():
+                        x(qv[0])
+
+    def test_no_gate_stacks_first(self):
+        """
+        Test that a GateStack must be called within a LayeredEnvironment"""
+        qv = QuantumVariable(2)
+
+        with pytest.raises(
+            ValueError,
+            match="GateStack must have a parent LayeredEnvironment to compile",
+        ):
+            with GateStack():
+                x(qv[0])
 
 
 class TestEmptyCases:
@@ -201,8 +259,8 @@ class TestInstructionsOutsideGateStack:
 
         names = _gate_names(qv.qs.data)
         assert len(names) == 2
-        assert names[0].lower().startswith("x(") and "qv.0" in names[0]
-        assert names[1].lower().startswith("x(") and "qv.1" in names[1]
+        assert names[0].startswith("x(") and "qv.0" in names[0]
+        assert names[1].startswith("x(") and "qv.1" in names[1]
 
     def test_bare_gate_after_stacks(self):
         """
@@ -216,8 +274,8 @@ class TestInstructionsOutsideGateStack:
 
         names = _gate_names(qv.qs.data)
         assert len(names) == 2
-        assert names[0].lower().startswith("x(") and "qv.0" in names[0]
-        assert names[1].lower().startswith("x(") and "qv.1" in names[1]
+        assert names[0].startswith("x(") and "qv.0" in names[0]
+        assert names[1].startswith("x(") and "qv.1" in names[1]
 
     def test_bare_gates_between_stacks(self):
         """
@@ -233,9 +291,65 @@ class TestInstructionsOutsideGateStack:
 
         names = _gate_names(qv.qs.data)
         assert len(names) == 3
-        assert names[0].lower().startswith("x(") and "qv.0" in names[0]
-        assert names[1].lower().startswith("x(") and "qv.1" in names[1]
-        assert names[2].lower().startswith("x(") and "qv.2" in names[2]
+        assert names[0].startswith("x(") and "qv.0" in names[0]
+        assert names[1].startswith("x(") and "qv.1" in names[1]
+        assert names[2].startswith("x(") and "qv.2" in names[2]
+
+    def test_bare_gates_between_stacks_2(self):
+        """
+        Test that multiple gates emitted between two GateStacks appear in the correct position between the stacks' instructions.
+        """
+        N = 4
+        qubits = QuantumArray(qtype=QuantumBool(), shape=(2 * N - 1,))
+        data_qubits = qubits[::2]
+        ancilla_qubits = qubits[1::2]
+
+        cx(data_qubits[0], ancilla_qubits[0])
+        cx(data_qubits[1], ancilla_qubits[0])
+
+        cx(data_qubits[1], ancilla_qubits[1])
+        cx(data_qubits[2], ancilla_qubits[1])
+
+        z(data_qubits[2])
+
+        cx(data_qubits[2], ancilla_qubits[2])
+        cx(data_qubits[3], ancilla_qubits[2])
+
+        expected_result = qubits.qs.statevector_array()
+
+        qubits.qs.clear_data()
+
+        with LayeredEnvironment():
+
+            with GateStack():
+                cx(data_qubits[0], ancilla_qubits[0])
+                cx(data_qubits[1], ancilla_qubits[0])
+
+            z(data_qubits[2])
+
+            with GateStack():
+                cx(data_qubits[1], ancilla_qubits[1])
+                cx(data_qubits[2], ancilla_qubits[1])
+
+            with GateStack():
+                cx(data_qubits[2], ancilla_qubits[2])
+                cx(data_qubits[3], ancilla_qubits[2])
+
+        result = qubits.qs.statevector_array()
+
+        assert np.allclose(result, expected_result)
+
+        names = _gate_names(qubits.qs.data)
+        assert len(names) == 7
+        assert names[0] == "cx(Qubit(qubits.0), Qubit(qubits_1.0))"
+        assert names[1] == "cx(Qubit(qubits_2.0), Qubit(qubits_1.0))"
+        assert names[2] == "z(Qubit(qubits_4.0))"
+        assert names[3] == "cx(Qubit(qubits_2.0), Qubit(qubits_3.0))"
+        assert names[4] == "cx(Qubit(qubits_4.0), Qubit(qubits_5.0))"  # interleaved
+        assert names[5] == "cx(Qubit(qubits_4.0), Qubit(qubits_3.0))"  # interleaved
+        assert names[6] == "cx(Qubit(qubits_6.0), Qubit(qubits_5.0))"
+
+        assert qubits.qs.depth() == 4
 
     def test_no_gate_stacks_at_all(self):
         """
@@ -249,9 +363,9 @@ class TestInstructionsOutsideGateStack:
 
         names = _gate_names(qv.qs.data)
         assert len(names) == 3
-        assert names[0].lower().startswith("x(") and "qv.0" in names[0]
-        assert names[1].lower().startswith("h(") and "qv.1" in names[1]
-        assert names[2].lower().startswith("x(") and "qv.2" in names[2]
+        assert names[0] == "x(Qubit(qv.0))"
+        assert names[1] == "h(Qubit(qv.1))"
+        assert names[2] == "x(Qubit(qv.2))"
 
 
 class TestMeasurements:
@@ -271,8 +385,8 @@ class TestMeasurements:
 
         names = _gate_names(qv.qs.data)
         assert len(names) == 2
-        assert "measure" in names[0].lower() and "qv.0" in names[0]
-        assert "measure" in names[1].lower() and "qv.1" in names[1]
+        assert names[0] == "measure(Qubit(qv.0), Clbit(clbit_0))"
+        assert names[1] == "measure(Qubit(qv.1), Clbit(cb_1))"
 
     def test_measurement_only_two_stacks_interleaved(self):
         """
@@ -287,8 +401,8 @@ class TestMeasurements:
 
         names = _gate_names(qv.qs.data)
         assert len(names) == 2
-        assert "measure" in names[0].lower() and "qv.0" in names[0]
-        assert "measure" in names[1].lower() and "qv.1" in names[1]
+        assert names[0] == "measure(Qubit(qv.0), Clbit(clbit_0))"
+        assert names[1] == "measure(Qubit(qv.1), Clbit(clbit_1))"
 
     def test_measure_then_gate_in_same_stack(self):
         """
@@ -302,8 +416,8 @@ class TestMeasurements:
 
         names = _gate_names(qv.qs.data)
         assert len(names) == 2
-        assert "measure" in names[0].lower() and "qv.0" in names[0]
-        assert "x(" in names[1].lower() and "qv.1" in names[1]
+        assert "measure" in names[0] and "qv.0" in names[0]
+        assert "x(" in names[1] and "qv.1" in names[1]
 
     def test_interleaved_measure_and_gate_across_stacks(self):
         """
@@ -322,10 +436,10 @@ class TestMeasurements:
         names = _gate_names(qv.qs.data)
 
         assert len(names) == 4
-        assert "measure" in names[0].lower() and "qv.0" in names[0]
-        assert "measure" in names[1].lower() and "qv.1" in names[1]
-        assert "x(" in names[2].lower() and "qv.0" in names[2]
-        assert "x(" in names[3].lower() and "qv.1" in names[3]
+        assert "measure" in names[0] and "qv.0" in names[0]
+        assert "measure" in names[1] and "qv.1" in names[1]
+        assert "x(" in names[2] and "qv.0" in names[2]
+        assert "x(" in names[3] and "qv.1" in names[3]
 
     def test_single_stack_gate_measure_gate(self):
         """
@@ -340,6 +454,6 @@ class TestMeasurements:
 
         names = _gate_names(qv.qs.data)
         assert len(names) == 3
-        assert "h(" in names[0].lower() and "qv.0" in names[0]
-        assert "measure" in names[1].lower() and "qv.0" in names[1]
-        assert "x(" in names[2].lower() and "qv.1" in names[2]
+        assert "h(" in names[0] and "qv.0" in names[0]
+        assert "measure" in names[1] and "qv.0" in names[1]
+        assert "x(" in names[2] and "qv.1" in names[2]

@@ -37,6 +37,7 @@ class GateStack(QuantumEnvironment):
         """Initialize with empty layers."""
 
         super().__init__(env_args=env_args)
+
         self.layers: List[List[Any]] = []
 
     def compile(self):
@@ -45,64 +46,73 @@ class GateStack(QuantumEnvironment):
 
         The parent LayeredEnvironment will interleave and emit these layers.
         """
+
+        if self.parent is None:
+            raise ValueError(
+                "GateStack must have a parent LayeredEnvironment to compile"
+            )
+
         for instr in self.env_data:
             if isinstance(instr, QuantumEnvironment):
-                # Compile the nested environment so its env_qs is populated.
-                # We store it as a one-element layer; _emit_instruction in the
-                # parent will drain env_qs.data rather than calling compile()
-                # a second time.
-                instr.compile()
-                self.layers.append([instr])
-            else:
-                self.layers.append([instr])
+                raise ValueError("Nested QuantumEnvironments are not supported")
+
+            self.layers.append([instr])
 
 
 class LayeredEnvironment(QuantumEnvironment):
     """
-    A QuantumEnvironment that interleaves layers from multiple GateStack children.
+    A QuantumEnvironment that interleaves layers from consecutive ``GateStack``
+    children to reduce circuit depth.
 
-    This environment collects GateStack instances and emits their operations in a
-    "brick" pattern: all layer-0 instructions from all stacks, then all layer-1
-    instructions, and so on. This enables better parallelization of operations
-    across different stacks.
+    Instructions inside each ``GateStack`` are treated as ordered layers.
+    When two or more ``GateStack`` objects appear consecutively in the instruction
+    stream, their layers are emitted in a "brick" pattern: all layer-0 instructions
+    across every stack first, then all layer-1 instructions, and so on.  Because
+    operations from different stacks are reordered, **the user is responsible for
+    ensuring that instructions across adjacent stacks act on disjoint qubits or
+    otherwise commute**.
 
-    GateStack instances are compiled and their layers are emitted in brick order.
-    Non-GateStack instructions are emitted immediately in order.
-    Operations are reordered across stacks, so they must either act on
-    disjoint qubits or commute to maintain semantic correctness.
+    Any instruction emitted directly inside ``LayeredEnvironment`` — outside of a
+    ``GateStack`` — is passed through immediately at the position it appears,
+    breaking adjacency between the stacks on either side of it.  Stacks separated
+    by such a bare instruction are therefore interleaved independently, not with
+    each other.
+
+    If two stacks have different numbers of layers, the shorter stack simply
+    contributes nothing for the extra layers of the longer one. # TODO: there must be a test for this
+
+    .. note::
+
+        This environment performs no commutation or qubit-conflict checks.
+        Incorrectly interleaving non-commuting operations on shared qubits will
+        produce a wrong circuit.
+
+    Parameters
+    ----------
+    env_args : optional
+        Forwarded to the parent :class:`QuantumEnvironment` constructor.
 
     Examples
     --------
 
-    Let's suppose we need to measure a Z-type stabilizer by entangling all source qubits
-    with a target ancilla qubit using CX gates.
+    **Basic usage: parallel stabilizer measurement**
 
-    We first define a set of data qubits and ancilla qubits using a ``QuantumArray``:
-
-    ::
+    Consider measuring a Z-type stabilizer by entangling data qubits with ancilla
+    qubits via CX gates.  We define interleaved data and ancilla qubits::
 
         from qrisp import *
 
         n = 3
         qubits = QuantumArray(qtype=QuantumBool(), shape=(2 * n - 1))
-        data_qubits = qubits[::2]
-        ancilla_qubits = qubits[1::2]
+        data_qubits   = qubits[::2]   # even indices: data
+        ancilla_qubits = qubits[1::2]  # odd  indices: ancilla
 
-
-    Here, we have 3 data qubits and 2 ancilla qubits interleaved in the `qubits` array.
-    Ancilla qubits are at odd indices and data qubits are at even indices.
-
-    First, let's see what happens if we call the stabilizer measurement function in a
-    normal environment without layering:
-
-    ::
+    Without layering, instructions are emitted in source order. That is, all CX gates for
+    each stabilizer are grouped together, giving circuit depth :math:`2(n-1)`::
 
         for i in range(n - 1):
-            cx(data_qubits[i], ancilla_qubits[i])
+            cx(data_qubits[i],     ancilla_qubits[i])
             cx(data_qubits[i + 1], ancilla_qubits[i])
-
-    We can see that the instructions are emitted in the original order,
-    with all CXs for each stabilizer measurement grouped together:
 
     >>> print(qubits.qs)
         QuantumCircuit:
@@ -118,22 +128,19 @@ class LayeredEnvironment(QuantumEnvironment):
         qubits_4.0: ─────────────────■──
         ...
 
+    >>> print(qubits.qs.depth())
+    4
 
-    Now, let's see what happens if we wrap the same code in a LayeredEnvironment and GateStack:
-
-    ::
+    Wrapping each stabilizer in a ``GateStack`` inside a ``LayeredEnvironment``
+    interleaves the CX gates across stabilizers, reducing depth to 2::
 
         qubits.qs.clear_data()
 
         with LayeredEnvironment():
             for i in range(n - 1):
                 with GateStack():
-                    cx(data_qubits[i], ancilla_qubits[i])
+                    cx(data_qubits[i],     ancilla_qubits[i])
                     cx(data_qubits[i + 1], ancilla_qubits[i])
-
-
-
-    We can see that the instructions are now interleaved layer-by-layer across the different GateStacks:
 
     >>> print(qubits.qs)
     QuantumCircuit:
@@ -149,6 +156,55 @@ class LayeredEnvironment(QuantumEnvironment):
     qubits_4.0: ───────■──
     ...
 
+    >>> print(qubits.qs.depth())
+    2
+
+    **Bare instructions break adjacency**
+
+    A bare instruction between two ``GateStack`` objects is emitted at that exact
+    position in the output, and it breaks the run of adjacent stacks.  Stacks on
+    either side of it are interleaved only among themselves::
+
+        N = 4
+        qubits = QuantumArray(qtype=QuantumBool(), shape=(2 * N - 1))
+        data_qubits    = qubits[::2]
+        ancilla_qubits = qubits[1::2]
+
+        with LayeredEnvironment():
+            with GateStack():
+                cx(data_qubits[0], ancilla_qubits[0])
+                cx(data_qubits[1], ancilla_qubits[0])
+            with GateStack():
+                cx(data_qubits[1], ancilla_qubits[1])
+                cx(data_qubits[2], ancilla_qubits[1])
+
+            z(data_qubits[2])
+
+            with GateStack():
+                cx(data_qubits[2], ancilla_qubits[2])
+                cx(data_qubits[3], ancilla_qubits[2])
+
+    The first two stacks are interleaved with each other. Then, the Z gate is emitted
+    immediately after. Finally, the last stack is emitted sequentially on its own:
+
+    >>> print(qubits.qs)
+    QuantumCircuit:
+    ---------------
+      qubits.0: ──■──────────────────────
+                ┌─┴─┐┌───┐
+    qubits_1.0: ┤ X ├┤ X ├───────────────
+                └───┘└─┬─┘
+    qubits_2.0: ──■────■─────────────────
+                ┌─┴─┐┌───┐
+    qubits_3.0: ┤ X ├┤ X ├───────────────
+                └───┘└─┬─┘┌───┐
+    qubits_4.0: ───────■──┤ Z ├──■───────
+                          └───┘┌─┴─┐┌───┐
+    qubits_5.0: ───────────────┤ X ├┤ X ├
+                               └───┘└─┬─┘
+    qubits_6.0: ──────────────────────■──
+    ...
+
     """
 
     def __init__(self, env_args=None):
@@ -156,15 +212,24 @@ class LayeredEnvironment(QuantumEnvironment):
 
     def _emit_instruction(self, instr: Any):
         """Emit a single instruction into env_qs."""
-        if isinstance(instr, QuantumEnvironment):
-            # The environment was already compiled by GateStack.compile().
-            # We just forward every resolved instruction it produced.
-            for sub_instr in instr.env_qs.data:
-                self.env_qs.append(sub_instr)
-        else:
-            self.env_qs.append(instr)
 
-    # TODO: this should be optimized and improved
+        if isinstance(instr, QuantumEnvironment):
+            raise ValueError("Nested QuantumEnvironments are not supported")
+
+        self.env_qs.append(instr)
+
+    def _interleave_layers(self, stacks: List[GateStack]):
+        """Interleave layers from multiple GateStacks in brick order."""
+
+        max_layers = max(len(st.layers) for st in stacks)
+
+        for layer_idx in range(max_layers):
+            for st in stacks:
+                if layer_idx >= len(st.layers):
+                    continue
+                for instr in st.layers[layer_idx]:
+                    self._emit_instruction(instr)
+
     def compile(self):
         """Compile by interleaving GateStack layers in brick order."""
 
@@ -187,24 +252,16 @@ class LayeredEnvironment(QuantumEnvironment):
                     segments.append(("bare", [instr]))
 
         for kind, items in segments:
+
             if kind == "bare":
+
                 for instr in items:
                     self._emit_instruction(instr)
-
             else:
+
                 stacks: List[GateStack] = items
 
                 for st in stacks:
                     st.compile()
 
-                if not stacks:
-                    continue
-
-                max_layers = max(len(st.layers) for st in stacks)
-
-                for layer_idx in range(max_layers):
-                    for st in stacks:
-                        if layer_idx >= len(st.layers):
-                            continue
-                        for instr in st.layers[layer_idx]:
-                            self._emit_instruction(instr)
+                self._interleave_layers(stacks)
