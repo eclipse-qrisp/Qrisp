@@ -16,9 +16,7 @@
 ********************************************************************************
 """
 
-from jax import make_jaxpr
-from jax.extend.core import ClosedJaxpr
-from qrisp.jasp import flatten_environments, flatten_pjit, eval_jaxpr, make_jaspr
+from qrisp.jasp import make_jaspr
 
 
 def jasp_function_test(func):
