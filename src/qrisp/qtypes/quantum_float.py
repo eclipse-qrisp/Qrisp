@@ -19,7 +19,7 @@
 import numpy as np
 import sympy as sp
 import jax.numpy as jnp
-from jax import jit, Array
+from jax import jit, Array, debug
 from jax.core import Tracer
 
 from qrisp.core import QuantumVariable, cx
@@ -400,6 +400,8 @@ class QuantumFloat(QuantumVariable):
         else:
             return res.astype(int)
 
+    # not used anwhere in this file, worth removing? Ask raphael.
+    # function is also not used anywhere in the codebase
     def sb_poly(self, m=0):
         """
         Returns the semi-boolean polynomial of this `QuantumFloat` where `m` specifies
@@ -442,6 +444,34 @@ class QuantumFloat(QuantumVariable):
         return 2**self.exponent * poly
 
     def encode(self, encoding_number, rounding=False, permit_dirtyness=False):
+        from jax import lax
+
+        # calculate the integer bounds based on mantissa size (msize)
+        max_int = 2**self.msize - 1
+        if self.signed:
+            # Signed range: -2^msize to 2^msize - 1
+            min_int = -2**self.msize
+        else:
+            # Unsigned range: 0 to 2^msize - 1
+            min_int = 0
+
+        # convert those integer bounds into actual Float values
+        # using the exponent.
+        scaling_factor = 2**self.exponent
+        max_float = max_int * scaling_factor
+        min_float = min_int * scaling_factor
+
+        # compare the input 'i' against the float limits.
+        # we do this before converting to integer to prevent wrapping.
+        is_out_of_bounds = (encoding_number > max_float) | (encoding_number < min_float)
+
+        # add a check that the provided value is safe to be encoded in the provided QuantumFloat
+        if not check_for_tracing_mode() and is_out_of_bounds:
+                sign_description = ["unsigned", "signed"][self.signed]
+                raise ValueError(f"Not enough qubits to encode value {encoding_number} in {sign_description} QuantumFloat"
+                                +f" of {self.msize} qubits and exponent {self.exponent}.")
+                
+        
         if rounding:
             # Round value to closest fitting number
             outcome_labels = [self.decoder(i) for i in range(2**self.size)]
@@ -450,6 +480,7 @@ class QuantumFloat(QuantumVariable):
             ]
 
         super().encode(encoding_number, permit_dirtyness=permit_dirtyness)
+        
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __mul__(self, other):
