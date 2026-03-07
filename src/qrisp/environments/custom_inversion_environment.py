@@ -38,31 +38,25 @@ from qrisp.jasp import (
 
 def custom_inversion(*func, **cusi_kwargs):
     """
-    The ``custom_inversion`` decorator allows a user to specify the custom inverted version of
-    the decorated function. If this function is called with the ``inv`` keyword set to
-    ``True``, the custom inverted version is executed instead. There is one version of
-    the function when ``inv`` is ``False`` (forward version) and another version when ``inv``
-    is ``True`` (backward version).
 
-    This decorator is crucial for functions where the inversion logic cannot be 
-    derived simply by reversing the gate order (e.g., operations involving 
-    measurements or dynamic classical control). In such scenarios, the user can explicitly
-    define how the function should behave when inverted, ensuring that the correct logic is applied in
-    both forward and backward contexts. Here, it is not as straightforward as using :ref:`InversionEnvironment`,
-    the general inversion environment. 
+    The ``custom_inversion`` decorator enables registering a specialized subroutine for the inverted version
+    of the decorated function. This decorator is crucial for functions where the inversion logic cannot be derived
+    simply by reversing the gate order (e.g., subroutines involving measurements or dynamic classical control). 
+    In such scenarios, the user can explicitly define how the function should behave when inverted, ensuring that
+    the correct logic is applied in both forward and backward contexts.
 
-    In order to use the ``custom_inversion`` decorator, you need to add the ``inv``
-    keyword to your function signature. If called within an inversion context,
-    this keyword will receive the corresponding boolean value indicating whether the function
-    is being inverted.
-
-    For more details consult the examples section. 
+    To make use of the decorator, the decorated function is required to support a keyword argument ``inv``,
+    which receives a static boolean. This boolean indicates whether the forward or the backward version of the function
+    should be executed. Once defined, the function with decorator applied **does not** need to be called with the ``inv`` keyword. 
+    Instead the backward version will be called automatically, if the function is called within an :ref:`InversionEnvironment`.
 
     .. warning::
+        
+        Custom inversion is currently only available in dynamic mode.
 
-        This decorator is only available in traced mode, meaning that it will only work when the decorated function is called within a JAX-traced context. 
-        If you attempt to use this decorator outside of a traced context, it will simply execute an attempt to invert the original logic.
 
+
+    For more details consult the examples section. 
 
     Parameters
     ----------
@@ -72,21 +66,23 @@ def custom_inversion(*func, **cusi_kwargs):
     Returns
     -------
     adaptive_inversion_function : function
-        A function which will execute it's inverted version, if called
+        A function which will execute it's custom inverted version, if called
         within the custom inversion context.
 
     Examples
     ----------
     We demonstrate the use of the ``custom_inversion`` decorator with a simple example.
     
-    In this example, we define a function that implements Gidney's logical AND operation in the forward direction and uncomputes the logical AND in the backward direction. As 
-    `defined by Gidney <https://arxiv.org/abs/1709.06648>`_ , the forward and backward implementations of the logical AND are not simply inverses of each other. Thus, one cannot
-    use the general :ref:`InversionEnvironment` to automatically apply the inverse of the forward implementation. Instead, we use the ``custom_inversion`` decorator to explicitly
+    In this example, we define a function that implements Gidney's logical AND operation in the forward direction and uncomputes the
+    logical AND in the backward direction. As `defined by Gidney <https://arxiv.org/abs/1709.06648>`_ , the forward and backward
+    implementations of the logical AND are not simply inverses of each other. Thus, one cannot use the general :ref:`InversionEnvironment`
+    to automatically apply the inverse of the forward implementation. Instead, we use the ``custom_inversion`` decorator to explicitly
     define both the forward and backward implementations of the logical AND operation.
 
-    The ``gidney_mcx_impl`` and ``gidney_mcx_inv_impl`` functions are the pre-defined implementations of the forward and backward versions of Gidney's logical AND operation, respectively. 
-    We define ``gidney_mcx`` function along with the ``custom_inversion`` decorator, such that we simply apply the logical AND operation and then uncompute it using the custom inverse. 
-    The final state of the target qubit is returned to its initial state, which is the expected behavior for this example.
+    The ``gidney_mcx_impl`` and ``gidney_mcx_inv_impl`` functions are the pre-defined implementations of the forward and backward versions
+    of Gidney's logical AND operation, respectively. We define ``gidney_mcx`` function along with the ``custom_inversion`` decorator, such
+    that we simply apply the logical AND operation and then uncompute it using the custom inverse. The final state of the target qubit is
+    returned to its initial state, which is the expected behavior for this example.
      
     ::
 
