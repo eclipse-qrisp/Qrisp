@@ -39,7 +39,6 @@ from xdsl.ir import Dialect, ParametrizedAttribute, SSAValue, TypeAttribute
 from xdsl.utils.exceptions import VerifyException
 from xdsl.irdl import (
     AnyAttr,
-    AnyOf,
     EqAttrConstraint,
     IRDLOperation,
     ParamAttrConstraint,
@@ -47,6 +46,7 @@ from xdsl.irdl import (
     base,
     irdl_attr_definition,
     irdl_op_definition,
+    irdl_to_attr_constraint,
     operand_def,
     result_def,
     var_operand_def,
@@ -119,7 +119,7 @@ class QubitArrayType(ParametrizedAttribute, TypeAttribute):
 
 
 # Shorthand constraint for operands that accept either a Qubit or a QubitArray.
-_QubitOrArray = AnyOf([base(QubitType), base(QubitArrayType)])
+_QubitOrArray = irdl_to_attr_constraint(QubitType | QubitArrayType)
 
 
 # ---------------------------------------------------------------------------
