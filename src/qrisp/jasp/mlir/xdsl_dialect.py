@@ -31,10 +31,12 @@ from xdsl.dialects.builtin import (
     IntegerAttr,
     StringAttr,
     TensorType,
+    f64,
     i1,
     i64,
 )
 from xdsl.ir import Dialect, ParametrizedAttribute, SSAValue, TypeAttribute
+from xdsl.utils.exceptions import VerifyException
 from xdsl.irdl import (
     AnyAttr,
     AnyOf,
@@ -263,6 +265,18 @@ class MeasureOp(IRDLOperation):
         " `->` type($meas_res) `,` type($out_qst)"
     )
 
+    def verify_(self) -> None:
+        expected = (
+            TensorType(i64, [])
+            if isinstance(self.meas_q.type, QubitArrayType)
+            else TensorType(i1, [])
+        )
+        if self.meas_res.type != expected:
+            raise VerifyException(
+                f"jasp.measure: result type must be '{expected}' when "
+                f"measuring '{self.meas_q.type}', got '{self.meas_res.type}'"
+            )
+
 
 @irdl_op_definition
 class DeleteQubitsOp(IRDLOperation):
@@ -360,6 +374,24 @@ class QuantumGateOp(IRDLOperation):
         printer.print_attribute(self.in_qst.type)
         printer.print_string(" -> ")
         printer.print_attribute(self.out_qst.type)
+
+    def verify_(self) -> None:
+        if not self.operands:
+            raise VerifyException("jasp.quantum_gate: must have at least one operand (the quantum state)")
+        if not isinstance(self.in_qst.type, QuantumStateType):
+            raise VerifyException(
+                f"jasp.quantum_gate: last operand must be '!jasp.QuantumState', got '{self.in_qst.type}'"
+            )
+        _valid_param_types = (QubitType, TensorType)
+        for i, param in enumerate(self.gate_params):
+            if not isinstance(param.type, _valid_param_types):
+                raise VerifyException(
+                    f"jasp.quantum_gate: gate_operands[{i}] must be '!jasp.Qubit' or 'tensor<f64>', got '{param.type}'"
+                )
+            if isinstance(param.type, TensorType) and param.type != TensorType(f64, []):
+                raise VerifyException(
+                    f"jasp.quantum_gate: tensor gate_operands[{i}] must be 'tensor<f64>', got '{param.type}'"
+                )
 
 
 @irdl_op_definition
