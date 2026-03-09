@@ -79,9 +79,10 @@ class TestLayeredEnvironmentBasicUsage:
                     x(qv[i])
 
         names = _gate_names(qv.qs.data)
+
         assert len(names) == n
         for i in range(n):
-            assert names[i].startswith("x(") and f"qv.{i}" in names[i]
+            assert names[i] == f"x(Qubit(qv.{i}))"
 
     def test_one_deep_one_shallow_stack(self):
         """
@@ -96,14 +97,19 @@ class TestLayeredEnvironmentBasicUsage:
                 x(qv[2])
             with GateStack():
                 x(qv[3])
+            with GateStack():
+                x(qv[4])
+                x(qv[5])
 
         names = _gate_names(qv.qs.data)
 
-        assert len(names) == 4
-        assert names[0].startswith("x(") and "qv.0" in names[0]
-        assert names[1].startswith("x(") and "qv.3" in names[1]
-        assert names[2].startswith("x(") and "qv.1" in names[2]
-        assert names[3].startswith("x(") and "qv.2" in names[3]
+        assert len(names) == 6
+        assert names[0] == "x(Qubit(qv.0))"
+        assert names[1] == "x(Qubit(qv.3))"
+        assert names[2] == "x(Qubit(qv.4))"
+        assert names[3] == "x(Qubit(qv.1))"
+        assert names[4] == "x(Qubit(qv.5))"
+        assert names[5] == "x(Qubit(qv.2))"
 
     def test_nested_gate_stacks_not_supported(self):
         """
@@ -258,9 +264,10 @@ class TestInstructionsOutsideGateStack:
                 x(qv[1])
 
         names = _gate_names(qv.qs.data)
+
         assert len(names) == 2
-        assert names[0].startswith("x(") and "qv.0" in names[0]
-        assert names[1].startswith("x(") and "qv.1" in names[1]
+        assert names[0] == "x(Qubit(qv.0))"
+        assert names[1] == "x(Qubit(qv.1))"
 
     def test_bare_gate_after_stacks(self):
         """
@@ -273,9 +280,10 @@ class TestInstructionsOutsideGateStack:
             x(qv[1])
 
         names = _gate_names(qv.qs.data)
+
         assert len(names) == 2
-        assert names[0].startswith("x(") and "qv.0" in names[0]
-        assert names[1].startswith("x(") and "qv.1" in names[1]
+        assert names[0] == "x(Qubit(qv.0))"
+        assert names[1] == "x(Qubit(qv.1))"
 
     def test_bare_gates_between_stacks(self):
         """
@@ -290,17 +298,18 @@ class TestInstructionsOutsideGateStack:
                 x(qv[2])
 
         names = _gate_names(qv.qs.data)
+
         assert len(names) == 3
-        assert names[0].startswith("x(") and "qv.0" in names[0]
-        assert names[1].startswith("x(") and "qv.1" in names[1]
-        assert names[2].startswith("x(") and "qv.2" in names[2]
+        assert names[0] == "x(Qubit(qv.0))"
+        assert names[1] == "x(Qubit(qv.1))"
+        assert names[2] == "x(Qubit(qv.2))"
 
     def test_bare_gates_between_stacks_2(self):
         """
         Test that multiple gates emitted between two GateStacks appear in the correct position between the stacks' instructions.
         """
-        N = 4
-        qubits = QuantumArray(qtype=QuantumBool(), shape=(2 * N - 1,))
+        n = 4
+        qubits = QuantumArray(qtype=QuantumBool(), shape=(2 * n - 1,))
         data_qubits = qubits[::2]
         ancilla_qubits = qubits[1::2]
 
@@ -340,13 +349,14 @@ class TestInstructionsOutsideGateStack:
         assert np.allclose(result, expected_result)
 
         names = _gate_names(qubits.qs.data)
+
         assert len(names) == 7
         assert names[0] == "cx(Qubit(qubits.0), Qubit(qubits_1.0))"
         assert names[1] == "cx(Qubit(qubits_2.0), Qubit(qubits_1.0))"
         assert names[2] == "z(Qubit(qubits_4.0))"
         assert names[3] == "cx(Qubit(qubits_2.0), Qubit(qubits_3.0))"
-        assert names[4] == "cx(Qubit(qubits_4.0), Qubit(qubits_5.0))"  # interleaved
-        assert names[5] == "cx(Qubit(qubits_4.0), Qubit(qubits_3.0))"  # interleaved
+        assert names[4] == "cx(Qubit(qubits_4.0), Qubit(qubits_5.0))"
+        assert names[5] == "cx(Qubit(qubits_4.0), Qubit(qubits_3.0))"
         assert names[6] == "cx(Qubit(qubits_6.0), Qubit(qubits_5.0))"
 
         assert qubits.qs.depth() == 4
@@ -362,6 +372,7 @@ class TestInstructionsOutsideGateStack:
             x(qv[2])
 
         names = _gate_names(qv.qs.data)
+
         assert len(names) == 3
         assert names[0] == "x(Qubit(qv.0))"
         assert names[1] == "h(Qubit(qv.1))"
@@ -384,6 +395,7 @@ class TestMeasurements:
                 measure(qv[1])
 
         names = _gate_names(qv.qs.data)
+
         assert len(names) == 2
         assert names[0] == "measure(Qubit(qv.0), Clbit(clbit_0))"
         assert names[1] == "measure(Qubit(qv.1), Clbit(cb_1))"
@@ -400,6 +412,7 @@ class TestMeasurements:
                 measure(qv[1])
 
         names = _gate_names(qv.qs.data)
+
         assert len(names) == 2
         assert names[0] == "measure(Qubit(qv.0), Clbit(clbit_0))"
         assert names[1] == "measure(Qubit(qv.1), Clbit(clbit_1))"
@@ -415,9 +428,10 @@ class TestMeasurements:
                 x(qv[1])
 
         names = _gate_names(qv.qs.data)
+
         assert len(names) == 2
-        assert "measure" in names[0] and "qv.0" in names[0]
-        assert "x(" in names[1] and "qv.1" in names[1]
+        assert names[0] == "measure(Qubit(qv.0), Clbit(clbit_0))"
+        assert names[1] == "x(Qubit(qv.1))"
 
     def test_interleaved_measure_and_gate_across_stacks(self):
         """
@@ -436,10 +450,10 @@ class TestMeasurements:
         names = _gate_names(qv.qs.data)
 
         assert len(names) == 4
-        assert "measure" in names[0] and "qv.0" in names[0]
-        assert "measure" in names[1] and "qv.1" in names[1]
-        assert "x(" in names[2] and "qv.0" in names[2]
-        assert "x(" in names[3] and "qv.1" in names[3]
+        assert names[0] == "measure(Qubit(qv.0), Clbit(clbit_0))"
+        assert names[1] == "measure(Qubit(qv.1), Clbit(clbit_1))"
+        assert names[2] == "x(Qubit(qv.0))"
+        assert names[3] == "x(Qubit(qv.1))"
 
     def test_single_stack_gate_measure_gate(self):
         """
@@ -453,7 +467,8 @@ class TestMeasurements:
                 x(qv[1])
 
         names = _gate_names(qv.qs.data)
+
         assert len(names) == 3
-        assert "h(" in names[0] and "qv.0" in names[0]
-        assert "measure" in names[1] and "qv.0" in names[1]
-        assert "x(" in names[2] and "qv.1" in names[2]
+        assert names[0] == "h(Qubit(qv.0))"
+        assert names[1] == "measure(Qubit(qv.0), Clbit(cb_0))"
+        assert names[2] == "x(Qubit(qv.1))"

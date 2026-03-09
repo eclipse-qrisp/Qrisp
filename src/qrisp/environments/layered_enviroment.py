@@ -16,8 +16,9 @@
 ********************************************************************************
 """
 
-from typing import Any, List
+from typing import List, Tuple
 
+from qrisp.circuit.instruction import Instruction
 from qrisp.environments.quantum_environments import QuantumEnvironment
 
 
@@ -38,7 +39,7 @@ class GateStack(QuantumEnvironment):
 
         super().__init__(env_args=env_args)
 
-        self.layers: List[List[Any]] = []
+        self.layers: List[Instruction] = []
 
     def compile(self):
         """
@@ -56,7 +57,7 @@ class GateStack(QuantumEnvironment):
             if isinstance(instr, QuantumEnvironment):
                 raise ValueError("Nested QuantumEnvironments are not supported")
 
-            self.layers.append([instr])
+            self.layers.append(instr)
 
 
 class LayeredEnvironment(QuantumEnvironment):
@@ -68,18 +69,18 @@ class LayeredEnvironment(QuantumEnvironment):
     When two or more ``GateStack`` objects appear consecutively in the instruction
     stream, their layers are emitted in a "brick" pattern: all layer-0 instructions
     across every stack first, then all layer-1 instructions, and so on.  Because
-    operations from different stacks are reordered, **the user is responsible for
+    operations from different stacks are reordered, the user is responsible for
     ensuring that instructions across adjacent stacks act on disjoint qubits or
-    otherwise commute**.
+    otherwise commute.
 
     Any instruction emitted directly inside ``LayeredEnvironment`` — outside of a
     ``GateStack`` — is passed through immediately at the position it appears,
-    breaking adjacency between the stacks on either side of it.  Stacks separated
+    breaking adjacency between the stacks on either side of it. Stacks separated
     by such a bare instruction are therefore interleaved independently, not with
     each other.
 
     If two stacks have different numbers of layers, the shorter stack simply
-    contributes nothing for the extra layers of the longer one. # TODO: there must be a test for this
+    contributes nothing for the extra layers of the longer one.
 
     .. note::
 
@@ -162,8 +163,8 @@ class LayeredEnvironment(QuantumEnvironment):
     **Bare instructions break adjacency**
 
     A bare instruction between two ``GateStack`` objects is emitted at that exact
-    position in the output, and it breaks the run of adjacent stacks.  Stacks on
-    either side of it are interleaved only among themselves::
+    position in the output, and it breaks the run of adjacent stacks. Stacks on
+    either side of it are not interleaved with each other:
 
         N = 4
         qubits = QuantumArray(qtype=QuantumBool(), shape=(2 * N - 1))
@@ -207,10 +208,10 @@ class LayeredEnvironment(QuantumEnvironment):
 
     """
 
-    def __init__(self, env_args=None):
+    def __init__(self, env_args=None) -> None:
         super().__init__(env_args=env_args)
 
-    def _emit_instruction(self, instr: Any):
+    def _emit_instruction(self, instr: Instruction) -> None:
         """Emit a single instruction into env_qs."""
 
         if isinstance(instr, QuantumEnvironment):
@@ -218,50 +219,74 @@ class LayeredEnvironment(QuantumEnvironment):
 
         self.env_qs.append(instr)
 
-    def _interleave_layers(self, stacks: List[GateStack]):
+    # We interleave by grouping layers by their index across all stacks.
+    #
+    # For example, if we have:
+    #
+    # Stack A: layers [A1, A2, A3]
+    # Stack B: layers [B1]
+    # Stack C: layers [C1, C2]
+    #
+    # The interleaved order would be: A1, B1, C1, A2, C2, A3
+    def _interleave_layers(self, stacks: List[GateStack]) -> None:
         """Interleave layers from multiple GateStacks in brick order."""
 
-        max_layers = max(len(st.layers) for st in stacks)
+        if not stacks:
+            return
+
+        max_layers = max((len(st.layers) for st in stacks), default=0)
 
         for layer_idx in range(max_layers):
             for st in stacks:
-                if layer_idx >= len(st.layers):
-                    continue
-                for instr in st.layers[layer_idx]:
+                if layer_idx < len(st.layers):
+                    instr = st.layers[layer_idx]
                     self._emit_instruction(instr)
 
-    def compile(self):
-        """Compile by interleaving GateStack layers in brick order."""
+    # Each segment is a tuple of the form (segment_type, items), where segment_type is either "bare" or "stacks":
+    #
+    # - "bare": items is a list of instructions that are not GateStacks.
+    # - "stacks": items is a list of consecutive GateStack objects.
+    #
+    # For example, if self.env_data contains the following sequence of instructions:
+    #
+    # [instr1, instr2, GateStack1, GateStack2, instr3, GateStack3]
+    #
+    # The resulting segments would be:
+    #
+    # [
+    #     ("bare", [instr1, instr2]),
+    #     ("stacks", [GateStack1, GateStack2]),
+    #     ("bare", [instr3]),
+    #     ("stacks", [GateStack3])
+    # ]
+    def _prepare_segment(self) -> List[Tuple[str, List]]:
+        """
+        Prepare a list of segments from self.env_data, grouping consecutive GateStacks together.
+        """
 
-        # Each segment is either:
-        #   ("bare",  [instr, ...])        – plain instructions
-        #   ("stacks", [GateStack, ...])   – a consecutive run of GateStacks
-
-        segments: List[tuple] = []
+        segments: List[Tuple[str, List]] = []
 
         for instr in self.env_data:
-            if isinstance(instr, GateStack):
-                if segments and segments[-1][0] == "stacks":
-                    segments[-1][1].append(instr)
-                else:
-                    segments.append(("stacks", [instr]))
+            is_gatestack = isinstance(instr, GateStack)
+            segment_type = "stacks" if is_gatestack else "bare"
+
+            if segments and segments[-1][0] == segment_type:
+                segments[-1][1].append(instr)
             else:
-                if segments and segments[-1][0] == "bare":
-                    segments[-1][1].append(instr)
-                else:
-                    segments.append(("bare", [instr]))
+                segments.append((segment_type, [instr]))
 
-        for kind, items in segments:
+        return segments
 
-            if kind == "bare":
+    def compile(self) -> None:
+        """Compile by interleaving GateStack layers in brick order."""
 
+        segments = self._prepare_segment()
+
+        for segment_type, items in segments:
+            if segment_type == "bare":
                 for instr in items:
                     self._emit_instruction(instr)
             else:
-
-                stacks: List[GateStack] = items
-
-                for st in stacks:
-                    st.compile()
-
-                self._interleave_layers(stacks)
+                for stack in items:
+                    stack.compile()
+                self._interleave_layers(items)
