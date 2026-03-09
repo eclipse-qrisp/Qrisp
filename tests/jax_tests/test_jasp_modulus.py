@@ -194,3 +194,34 @@ def test_modulus_qq_multiply():
         return measure(a), measure(b), measure(c)
 
     assert test() == (7, 12, (7*12) % 13)
+
+
+def test_modulus_qq_multiply_standard_form():
+    """Regression test: qq_montgomery_multiply_modulus must work when both
+    inputs are in standard form (m=0).  Before the fix, the function used x.m
+    directly as the reduction shift, which was 0 for standard-form inputs and
+    produced wrong results."""
+    from qrisp import QuantumModulus, jaspify, measure
+
+    @jaspify
+    def test():
+        a = QuantumModulus(13)
+        a[:] = 7
+        b = QuantumModulus(13)
+        b[:] = 12
+        c = a * b
+        return measure(a), measure(b), measure(c)
+
+    assert test() == (7, 12, (7 * 12) % 13)
+
+    # Also test with a different modulus to cover more bit-width cases.
+    @jaspify
+    def test2():
+        a = QuantumModulus(31)
+        a[:] = 17
+        b = QuantumModulus(31)
+        b[:] = 23
+        c = a * b
+        return measure(a), measure(b), measure(c)
+
+    assert test2() == (17, 23, (17 * 23) % 31)
