@@ -26,11 +26,8 @@ class GateStack(QuantumEnvironment):
     """
     Collect operations into layers for a parent LayeredEnvironment.
 
-    The default policy is that each top-level instruction inside the GateStack becomes its own layer.
-    Sub-environments are treated as atomic instructions (kept as objects), and compiled when the parent emits that layer.
-
     This class intentionally does not emit instructions to env_qs in compile().
-    The parent LayeredEnvironment is responsible for emitting.
+    The parent LayeredEnvironment is responsible for emitting after interleaving.
 
     """
 
