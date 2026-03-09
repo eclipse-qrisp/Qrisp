@@ -154,7 +154,7 @@ def cq_montgomery_multiply(
         xrange = range
     n = jlen(y)
     if res is None:
-        res = QuantumFloat(n)
+        res = QuantumModulus(N)
     aux = QuantumFloat(m + 1)
     wqf = aux[:] + res[:]
 
