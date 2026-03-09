@@ -181,4 +181,3 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
 
     # delete the extension ancillas when the inputs are of unequal length
     extension_anc_a.delete()
-    extension_anc_b.delete()
