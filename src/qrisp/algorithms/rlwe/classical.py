@@ -1,8 +1,27 @@
+"""
+********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************
+"""
+
 import jax
 import jax.numpy as jnp
 from jax import lax
 import numpy as np
 from qrisp import modinv
+
 
 @jax.jit
 def bitrev7(r):
@@ -16,6 +35,7 @@ def bitrev7(r):
 
     rev, _ = lax.fori_loop(0, 7, body, (jnp.uint8(0), x))
     return rev.astype(jnp.int32)
+
 
 @jax.jit
 def bitrevm(r, m):
@@ -61,7 +81,28 @@ def modpow_jax(a, x, q, dtype=jnp.int64):
     _, _, result = lax.while_loop(cond_fn, body_fn, init)
     return result
 
-def compute_ntt(f, n, q, root):
+
+def compute_ntt(f: np.ndarray, n: int, q: int, root: int) -> np.ndarray:
+    """
+    Computes the forward Number Theoretic Transform (NTT) of an array.
+
+    Parameters
+    ----------
+    f : np.ndarray
+        1-D array of polynomial coefficients.
+    n : int
+        The size of the transform (must be a power of 2).
+    q : int
+        The modulus.
+    root : int
+        The primitive n-th root of unity modulo q.
+
+    Returns
+    -------
+    np.ndarray
+        The transformed array of coefficients.
+
+    """
     m = int(np.ceil(np.log2(n)))
     f = f.copy() % q
     i = 1
@@ -77,7 +118,28 @@ def compute_ntt(f, n, q, root):
         length //= 2
     return f
 
-def compute_inv_ntt(f, n, q, root):
+
+def compute_inv_ntt(f: np.ndarray, n: int, q: int, root: int) -> np.ndarray:
+    """
+    Computes the inverse Number Theoretic Transform (INTT) of an array.
+
+    Parameters
+    ----------
+    f : np.ndarray
+        1-D array of transformed polynomial coefficients.
+    n : int
+        The size of the transform (must be a power of 2).
+    q : int
+        The modulus.
+    root : int
+        The primitive n-th root of unity modulo q.
+
+    Returns
+    -------
+    np.ndarray
+        The inverse-transformed array of coefficients.
+
+    """
     m = int(np.ceil(np.log2(n)))
     f = f.copy() % q
     i = n//2 - 1
