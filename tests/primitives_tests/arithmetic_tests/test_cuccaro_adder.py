@@ -74,28 +74,29 @@ def test_cuccaro_adder_valid_input_static_mode_with_cout(input_a, input_b, expec
     assert calculated_out_b == expected_b
     assert calculated_out_cout == {0: 1.0}  # since no overflow is expected in these test cases
 
-@pytest.mark.parametrize("input_a_type, input_b_type, input_a_size, input_b_size, expected_output", [
-    # both quantum inputs in dynamic mode, inputs are of unequal size
-    (QuantumFloat, QuantumFloat, 16, 19, 34.0),
 
-    # both quantum inputs in dynamic mode, inputs are of equal size
-    (QuantumFloat, QuantumFloat, 19, 19, 34.0),
+def test_jaspr_mode_cuccaro_adder():
+    """Verify the function works as expected in dynamic mode.
+     This test covers both cases where the inputs are of equal size and where they are of unequal size."""
 
-    # one classical input in dynamic mode
-    (int, QuantumFloat, 16, 19, 34.0),
-])
-def test_jaspr_mode_cuccaro_adder(input_a_type, input_b_type, input_a_size, input_b_size, expected_output):
-    def run_jasp_adder(i, j):
-        a = input_a_type(i) if input_a_type != int else 20
-        if input_a_type == QuantumFloat:
-            a[:] = 20
-        b = input_b_type(j)
-        b[:] = 14
-        cuccaro_adder(a, b)
-        return measure(b)
+    @boolean_simulation
+    def main(N, L, j, k):
+    
+        A = QuantumFloat(N)
+        B = QuantumFloat(L)
+        A[:] = j
+        B[:] = k
 
-    jaspr = make_jaspr(run_jasp_adder)(2, 3)
-    assert jaspr(input_a_size, input_b_size) == expected_output
+        cuccaro_adder(j, B)
+        return measure(A), measure(B)
+        
+    for N in range(2, 5):
+        for L in range(2, 5):
+            for j in range(2**N):
+                for k in range(2**L):
+                    A, B = main(N, L, j, k)
+                    assert A == j
+                    assert B == (k+j)%(2**L)
 
 
 def test_inputs_modified():
@@ -131,25 +132,28 @@ def test_cuccaro_adder_static_mode_with_control(i, j, a_value, b_value, ctrl_qbl
     result = b.get_measurement()
     assert result == expected_result
 
-@pytest.mark.parametrize("i, j, a_value, b_value, ctrl_qbl_value, expected_result", [
-    (16, 19, 4, 6, True, (4.0, 10.0)),  
-    (16, 19, 4, 6, False, (4.0, 6.0)),  
-])
-def test_cuccaro_adder_dynamic_mode_with_control(i, j, a_value, b_value, ctrl_qbl_value, expected_result):
+
+def test_cuccaro_adder_dynamic_mode_with_control():
     """Verify the CDKPM adder is triggered when the control qubit is in the |1> state
     in dynamic mode. """
-    def run_jasp_adder_with_control(i, j):
-        a = QuantumFloat(i)
-        b = QuantumFloat(j)
-        a[:] = a_value
-        b[:] = b_value
-        ctrl_qbl = QuantumBool()
-        if ctrl_qbl_value:
-            x(ctrl_qbl[0])
-        cuccaro_adder(a, b, ctrl=ctrl_qbl)
-        return measure(a), measure(b)
-    
-    jaspr = make_jaspr(run_jasp_adder_with_control)(2, 3)
-    result_a, result_b = jaspr(i, j)
-    assert result_a == expected_result[0]
-    assert result_b == expected_result[1]
+    @boolean_simulation
+    def main(N, L, j, k):
+        
+        A = QuantumFloat(N)
+        B = QuantumFloat(L)
+        A[:] = j
+        B[:] = k
+        qbl = QuantumBool()
+        qbl.flip()
+
+        with control(qbl):
+            cuccaro_adder(A, B)
+        return measure(A), measure(B)
+        
+    for N in range(2, 5):
+        for L in range(2, 5):
+            for j in range(2**N):
+                for k in range(2**L):
+                    A, B = main(N, L, j, k)
+                    assert A == j
+                    assert B == (k+j)%(2**L)
