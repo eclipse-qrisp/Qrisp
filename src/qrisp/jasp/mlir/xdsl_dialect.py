@@ -35,7 +35,7 @@ from xdsl.dialects.builtin import (
     i1,
     i64,
 )
-from xdsl.ir import Dialect, ParametrizedAttribute, SSAValue, TypeAttribute
+from xdsl.ir import Dialect, ParametrizedAttribute, TypeAttribute
 from xdsl.utils.exceptions import VerifyException
 from xdsl.irdl import (
     AnyAttr,
@@ -342,26 +342,14 @@ class QuantumGateOp(IRDLOperation):
     name = "jasp.quantum_gate"
 
     gate_type = attr_def(StringAttr)
-    # All operands are collected here: zero or more gate parameters/qubits
-    # followed by the quantum state as the last element.  Use the `gate_params`
-    # and `in_qst` properties to access them by role.
-    gate_operands = var_operand_def()
+    gate_params = var_operand_def()
+    in_qst = operand_def(QuantumStateType)
     out_qst = result_def(QuantumStateType)
-
-    @property
-    def in_qst(self) -> SSAValue:
-        """Quantum-state operand (always last)."""
-        return self.operands[-1]
-
-    @property
-    def gate_params(self) -> list[SSAValue]:
-        """Gate parameter / qubit operands (everything except the last)."""
-        return list(self.operands[:-1])
 
     def print(self, printer: Printer) -> None:
         # Mirrors TableGen assemblyFormat:
-        # $gate_type `(` $gate_operands `)` `,` $in_qst attr-dict
-        #     `:` `(` type($gate_operands) `)` `,` type($in_qst) `->` type($out_qst)
+        # $gate_type `(` $gate_params `)` `,` $in_qst attr-dict
+        #     `:` `(` type($gate_params) `)` `,` type($in_qst) `->` type($out_qst)
         printer.print_string(" ")
         printer.print_attribute(self.gate_type)
         printer.print_string(" (")
@@ -376,21 +364,15 @@ class QuantumGateOp(IRDLOperation):
         printer.print_attribute(self.out_qst.type)
 
     def verify_(self) -> None:
-        if not self.operands:
-            raise VerifyException("jasp.quantum_gate: must have at least one operand (the quantum state)")
-        if not isinstance(self.in_qst.type, QuantumStateType):
-            raise VerifyException(
-                f"jasp.quantum_gate: last operand must be '!jasp.QuantumState', got '{self.in_qst.type}'"
-            )
         _valid_param_types = (QubitType, TensorType)
         for i, param in enumerate(self.gate_params):
             if not isinstance(param.type, _valid_param_types):
                 raise VerifyException(
-                    f"jasp.quantum_gate: gate_operands[{i}] must be '!jasp.Qubit' or 'tensor<f64>', got '{param.type}'"
+                    f"jasp.quantum_gate: gate_params[{i}] must be '!jasp.Qubit' or 'tensor<f64>', got '{param.type}'"
                 )
             if isinstance(param.type, TensorType) and param.type != TensorType(f64, []):
                 raise VerifyException(
-                    f"jasp.quantum_gate: tensor gate_operands[{i}] must be 'tensor<f64>', got '{param.type}'"
+                    f"jasp.quantum_gate: tensor gate_params[{i}] must be 'tensor<f64>', got '{param.type}'"
                 )
 
 
