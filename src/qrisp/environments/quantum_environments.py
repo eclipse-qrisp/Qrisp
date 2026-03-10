@@ -432,7 +432,7 @@ class QuantumEnvironment(QuantumPrimitive):
         # compile is called.
         # In this case, the (de)allocation gates that happened inside this environment
         # will be collected and execute before (after) the compile method is called.
-        self.manual_allocation_management = isinstance(self, QuantumEnvironment)
+        self.manual_allocation_management = self.__class__ is QuantumEnvironment
 
         return self
 
@@ -446,10 +446,10 @@ class QuantumEnvironment(QuantumPrimitive):
             if exception_value:
                 raise exception_value
 
-            abs_qs = TracingQuantumSession.get_instance()
-            abs_qs.qubit_cache = self.temp_qubit_cache
-            abs_qs.abs_qst = self.bind(
-                abs_qs.abs_qst,
+            tr_qs = TracingQuantumSession.get_instance()
+            tr_qs.qubit_cache = self.temp_qubit_cache
+            tr_qs.abs_qst = self.bind(
+                tr_qs.abs_qst,
                 stage="exit",
                 type=str(type(self)).rsplit(".", maxsplit=1)[-1][:-2],
             )[0]
@@ -467,6 +467,7 @@ class QuantumEnvironment(QuantumPrimitive):
 
         for qs_ref in self.active_qs_list:
             qs = qs_ref()
+            # Remove from the environment stack
             if qs is not None:
                 qs.env_stack.pop(-1)
 

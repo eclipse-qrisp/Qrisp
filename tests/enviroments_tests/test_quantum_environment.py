@@ -38,7 +38,7 @@ class TestQuantumEnvironmentDocstringExamples:
             assert f"qv.{i}" in str(qv.qs.data[i])
 
         for i in range(5):
-            assert "x" in str(qv.qs.data[5 + i]).lower()
+            assert "x" in str(qv.qs.data[5 + i])
             assert f"qv.{i}" in str(qv.qs.data[5 + i])
 
     def test_docstring_example_nested_environments(self):
@@ -101,13 +101,13 @@ class TestQuantumEnvironmentDocstringExamples:
             assert "qb_alloc" in str(qv.qs.data[i])
             assert f"qv.{i}" in str(qv.qs.data[i])
 
-        assert "x" in str(qv.qs.data[6]).lower()
+        assert "x" in str(qv.qs.data[6])
         assert "qv.0" in str(qv.qs.data[6])
 
-        assert "z" in str(qv.qs.data[7]).lower()
+        assert "z" in str(qv.qs.data[7])
         assert "qv.2" in str(qv.qs.data[7])
 
-        assert "h" in str(qv.qs.data[8]).lower()
+        assert "h" in str(qv.qs.data[8])
         assert "qv.5" in str(qv.qs.data[8])
 
     def test_quantum_environment_print_compile(self):
@@ -121,19 +121,19 @@ class TestQuantumEnvironmentDocstringExamples:
                 z(qv[2])
 
                 assert len(qv.qs.data) == 1
-                assert "z" in str(qv.qs.data[0]).lower()
+                assert "z" in str(qv.qs.data[0])
                 assert "qv.2" in str(qv.qs.data[0])
 
             assert len(qv.qs.data) == 2
-            assert "y" in str(qv.qs.data[0]).lower()
+            assert "y" in str(qv.qs.data[0])
             assert "qv.1" in str(qv.qs.data[0])
             assert "jasp.q_env" in str(qv.qs.data[1])
             # NOTE: this print statement is part of the test
             print(qv.qs)
             assert len(qv.qs.data) == 2
-            assert "y" in str(qv.qs.data[0]).lower()
+            assert "y" in str(qv.qs.data[0])
             assert "qv.1" in str(qv.qs.data[0])
-            assert "z" in str(qv.qs.data[1]).lower()
+            assert "z" in str(qv.qs.data[1])
             assert "qv.2" in str(qv.qs.data[1])
 
         assert len(qv.qs.data) == 6
@@ -143,11 +143,11 @@ class TestQuantumEnvironmentDocstringExamples:
         assert "qv.1" in str(qv.qs.data[1])
         assert "qb_alloc" in str(qv.qs.data[2])
         assert "qv.2" in str(qv.qs.data[2])
-        assert "x" in str(qv.qs.data[3]).lower()
+        assert "x" in str(qv.qs.data[3])
         assert "qv.0" in str(qv.qs.data[3])
-        assert "y" in str(qv.qs.data[4]).lower()
+        assert "y" in str(qv.qs.data[4])
         assert "qv.1" in str(qv.qs.data[4])
-        assert "z" in str(qv.qs.data[5]).lower()
+        assert "z" in str(qv.qs.data[5])
         assert "qv.2" in str(qv.qs.data[5])
 
 
