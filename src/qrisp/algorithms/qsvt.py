@@ -123,7 +123,7 @@ def QSVT(A, phi_qsvt):
 
     """
 
-    m = len(A.anc_templates)
+    m = A.num_ancs
 
     def reflection(args, phase):
         qubits = sum([arg.reg for arg in args[1:m + 1]], []) 
@@ -150,7 +150,7 @@ def QSVT(A, phi_qsvt):
             
         h(args[0])
 
-    new_anc_templates = [QuantumBool().template()] + A.anc_templates
+    new_anc_templates = [QuantumBool().template()] + A._anc_templates
     new_alpha = 1 # TBD
 
     return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian = False)
