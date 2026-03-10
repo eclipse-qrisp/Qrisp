@@ -16,10 +16,11 @@
 ********************************************************************************
 """
 
-from typing import Callable
+from typing import Callable, Sequence
 
 import jax.numpy as jnp
 from jax import make_jaxpr
+from jax._src.core import JaxprEqn
 from jax.extend.core import ClosedJaxpr, Literal
 
 from qrisp.jasp import check_for_tracing_mode
@@ -115,7 +116,9 @@ def exec_eqn(eqn, context_dic):
     insert_outvalues(eqn, context_dic, res)
 
 
-def eval_jaxpr(jaxpr, return_context_dic=False, eqn_evaluator=exec_eqn) -> Callable:
+def eval_jaxpr(
+    jaxpr, return_context_dic: bool = False, eqn_evaluator: Callable = exec_eqn
+) -> Callable:
     """
     Evaluates a Jaxpr using the provided equation evaluator.
 
@@ -201,7 +204,10 @@ def reinterpret(jaxpr, eqn_evaluator=exec_eqn):
     return res
 
 
-def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator=exec_eqn):
+def eval_jaxpr_with_context_dic(
+    jaxpr, context_dic: ContextDict, eqn_evaluator: Callable = exec_eqn
+) -> None:
+    """Evaluate a Jaxpr using the provided context dictionary and equation evaluator."""
 
     for eqn in jaxpr.eqns:
 
@@ -231,32 +237,22 @@ def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator=exec_eqn):
             exec_eqn(eqn, context_dic)
 
 
-def extract_invalues(eqn, context_dic):
-    invalues = []
-    for i in range(len(eqn.invars)):
-        invar = eqn.invars[i]
-        invalues.append(context_dic[invar])
-    return invalues
+def extract_invalues(eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
+    """Extract input variable values from the context dictionary."""
+    return [context_dic[invar] for invar in eqn.invars]
 
 
-def extract_constvalues(eqn, context_dic):
-    constvalues = []
-    for i in range(len(eqn.constvars)):
-        constvar = eqn.constvars[i]
-        constvalues.append(context_dic[constvar])
-
-    return constvalues
-
-
-def insert_outvalues(eqn, context_dic, outvalues):
+def insert_outvalues(
+    eqn: JaxprEqn, context_dic: ContextDict, outvalues: Sequence
+) -> None:
+    """Insert the output values of an equation into the context dictionary."""
 
     if eqn.primitive.multiple_results:
         if len(outvalues) != len(eqn.outvars):
-            raise Exception(
-                "Tried to insert invalid amount of values into the Context Dictionary"
+            raise ValueError(
+                f"Expected {len(eqn.outvars)} output values, got {len(outvalues)}"
             )
-
-        for i in range(len(eqn.outvars)):
-            context_dic[eqn.outvars[i]] = outvalues[i]
+        for outvar, value in zip(eqn.outvars, outvalues):
+            context_dic[outvar] = value
     else:
         context_dic[eqn.outvars[0]] = outvalues
