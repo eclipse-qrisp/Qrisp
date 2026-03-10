@@ -24,6 +24,7 @@ import pytest
 @pytest.mark.parametrize("input_a, input_b, expected_a, expected_b", [
     # both inputs are quantum in static mode, inputs are of unequal size
     (QuantumFloat(13), QuantumFloat(14), {20: 1.0}, {34: 1.0}),
+    (QuantumFloat(14), QuantumFloat(13), {20: 1.0}, {34: 1.0}),
 
     # both inputs are quantum in static mode, inputs are of equal size
     (QuantumFloat(13), QuantumFloat(13), {20: 1.0}, {34: 1.0}),

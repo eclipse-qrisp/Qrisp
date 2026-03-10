@@ -98,16 +98,15 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
 
     max_size = jnp.maximum(dim_a, dim_b)
 
-    # create an extension ancilla to change the size of the inputs
-    extension_anc_a = QuantumVariable(max_size - dim_a)
-    extension_anc_b = QuantumVariable(max_size - dim_b)
+    # reduce the size of a to the size of b if a is larger than b
+    effective_size_a = jnp.minimum(dim_a, dim_b)
+    a = a[:effective_size_a]
 
-    # create dynamic qubit arrays of both inputs
+    # create an extension ancilla to change the size of a when it is smaller than b
+    extension_size = jnp.maximum(0, dim_b - dim_a)
+    extension_anc_a = QuantumVariable(extension_size)
     extended_a = a[:] + extension_anc_a[:]
-    extended_b = b[:] + extension_anc_b[:]
-
     a = extended_a
-    b = extended_b
 
     dim_a = jlen(a)
     dim_b = jlen(b)
