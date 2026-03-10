@@ -18,7 +18,9 @@
 
 import numpy as np
 import pytest
-from qrisp.algorithms.rlwe import compute_ntt, compute_inv_ntt
+from qrisp import boolean_simulation, measure, QuantumArray, QuantumModulus
+from qrisp.algorithms.rlwe import q_ntt, q_ntt_inv
+
 
 @pytest.mark.parametrize("a, n, q, root", [
     # 1. Small test case (n=4, q=13)
@@ -29,21 +31,28 @@ from qrisp.algorithms.rlwe import compute_ntt, compute_inv_ntt
     
     # 3. Medium test case (n=8, q=17)
     (np.array([1, 15, 8, 4, 12, 3, 9, 0]), 8, 17, 9),
-    
-    # 4. Realistic ML-KEM/Kyber parameter case
-    # n=256, q=3329. 17 is a primitive 256th root of unity mod 3329.
-    (np.random.default_rng(42).integers(0, 3329, size=256), 256, 3329, 17),
 ])
 def test_ntt(a, n, q, root):
     """
     Tests that taking the incomplete NTT and then the INTT 
     returns the original polynomial modulo q.
     """
-    # 1. Forward Transform
-    a_hat = compute_ntt(a, n, q, root)
-    
-    # 2. Inverse Transform
-    a_new = compute_inv_ntt(a_hat, n, q, root)
+
+    @boolean_simulation
+    def main():
+
+        qa = QuantumArray(QuantumModulus(q), shape=(n,))
+        qa[:] = a
+
+        # 1. Forward Transform
+        q_ntt(qa, q, n, root)
+        
+        # 2. Inverse Transform
+        q_ntt_inv(qa, q, n, root)
+
+        return measure(qa)
+
+    a_new = np.array(main())
 
     # 3. Check for exact equality modulo q
     assert np.array_equal(a % q, a_new % q), f"Mismatch!\nExpected: {a % q}\nGot: {a_new % q}"

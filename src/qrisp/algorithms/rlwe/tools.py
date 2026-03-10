@@ -142,9 +142,10 @@ def q_ntt_inv(x : QuantumArray, q: int, n: int, root : int):
 
     q_while_loop(cond_fun_outer, body_fun_outer, (2, i, x))
 
-    n_inv = modinv(n, q)
+    n_half_inv = modinv(n // 2, q)
+
     for i in jrange(n):
-        x[i] *= n_inv
+        x[i] *= n_half_inv
 
 
 def q_base_case_multipy(a0: QuantumModulus, a1: QuantumModulus, b0: QuantumModulus, b1: QuantumModulus, c0: QuantumModulus, c1: QuantumModulus, gamma: int, inv = False):
