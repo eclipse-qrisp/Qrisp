@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 from qrisp import QuantumArray, QuantumBool, QuantumVariable, cx, h, measure, x, z
-from qrisp.environments.layered_enviroment import GateStack, LayeredEnvironment
+from qrisp.environments.layered_environment import GateStack, LayeredEnvironment
 
 
 def _filter_instructions(qs_data):

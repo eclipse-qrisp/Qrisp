@@ -24,10 +24,13 @@ from qrisp.environments.quantum_environments import QuantumEnvironment
 
 class GateStack(QuantumEnvironment):
     """
-    Collect operations into layers for a parent LayeredEnvironment.
+    Collect operations into layers for a parent :class:`LayeredEnvironment` to interleave.
 
-    This class intentionally does not emit instructions to env_qs in compile().
-    The parent LayeredEnvironment is responsible for emitting after interleaving.
+    This class intentionally does not emit instructions to the parent environment when they are added.
+    Instead, it collects them into layers, which are
+    emitted by the parent :class:`LayeredEnvironment` after interleaving.
+
+    For more details and examples, see :class:`LayeredEnvironment`.
 
     """
 
@@ -70,8 +73,8 @@ class LayeredEnvironment(QuantumEnvironment):
     ensuring that instructions across adjacent stacks act on disjoint qubits or
     otherwise commute.
 
-    Any instruction emitted directly inside ``LayeredEnvironment`` — outside of a
-    ``GateStack`` — is passed through immediately at the position it appears,
+    Any instruction emitted directly inside ``LayeredEnvironment`` and outside of a
+    ``GateStack`` is passed through immediately at the position it appears,
     breaking adjacency between the stacks on either side of it. Stacks separated
     by such a bare instruction are therefore interleaved independently, not with
     each other.
@@ -96,7 +99,9 @@ class LayeredEnvironment(QuantumEnvironment):
     **Basic usage: parallel stabilizer measurement**
 
     Consider measuring a Z-type stabilizer by entangling data qubits with ancilla
-    qubits via CX gates.  We define interleaved data and ancilla qubits::
+    qubits via CX gates.  We define interleaved data and ancilla qubits
+
+    ::
 
         from qrisp import *
 
@@ -106,7 +111,9 @@ class LayeredEnvironment(QuantumEnvironment):
         ancilla_qubits = qubits[1::2]  # odd  indices: ancilla
 
     Without layering, instructions are emitted in source order. That is, all CX gates for
-    each stabilizer are grouped together, giving circuit depth :math:`2(n-1)`::
+    each stabilizer are grouped together, giving circuit depth :math:`2(n-1)`:
+
+    ::
 
         for i in range(n - 1):
             cx(data_qubits[i],     ancilla_qubits[i])
@@ -130,7 +137,9 @@ class LayeredEnvironment(QuantumEnvironment):
     4
 
     Wrapping each stabilizer in a ``GateStack`` inside a ``LayeredEnvironment``
-    interleaves the CX gates across stabilizers, reducing depth to 2::
+    interleaves the CX gates across stabilizers, reducing depth to 2:
+
+    ::
 
         qubits.qs.clear_data()
 
@@ -162,6 +171,8 @@ class LayeredEnvironment(QuantumEnvironment):
     A bare instruction between two ``GateStack`` objects is emitted at that exact
     position in the output, and it breaks the run of adjacent stacks. Stacks on
     either side of it are not interleaved with each other:
+
+    ::
 
         N = 4
         qubits = QuantumArray(qtype=QuantumBool(), shape=(2 * N - 1))
