@@ -84,29 +84,33 @@ def modpow_jax(a, x, q, dtype=jnp.int64):
 
 def compute_ntt(f: np.ndarray, n: int, q: int, root: int) -> np.ndarray:
     """
-    Computes the forward Number Theoretic Transform (NTT) of an array.
+    Computes the forward Number Theoretic Transform (NTT) for ML-KEM (FIPS 203).
+
+    Note: This is an incomplete NTT that stops at length=2, leaving the 
+    polynomials as degree 1 polynomials in the NTT domain.
 
     Parameters
     ----------
     f : np.ndarray
         1-D array of polynomial coefficients.
     n : int
-        The size of the transform (must be a power of 2).
+        The size of the transform (must be a power of 2, e.g., 256).
     q : int
         The modulus.
     root : int
-        The primitive n-th root of unity modulo q.
+        The n-th primitive root of unity modulo q.
 
     Returns
     -------
     np.ndarray
-        The transformed array of coefficients.
+        The transformed array of coefficients in the NTT domain.
 
     """
     m = int(np.ceil(np.log2(n)))
     f = f.copy() % q
     i = 1
-    length = n//2
+    length = n // 2
+    
     while length >= 2:
         for start in range(0, n, 2 * length):
             zeta = modpow_jax(root, bitrevm(i, m-1), q)
@@ -121,18 +125,20 @@ def compute_ntt(f: np.ndarray, n: int, q: int, root: int) -> np.ndarray:
 
 def compute_inv_ntt(f: np.ndarray, n: int, q: int, root: int) -> np.ndarray:
     """
-    Computes the inverse Number Theoretic Transform (INTT) of an array.
+    Computes the inverse Number Theoretic Transform (INTT) for ML-KEM (FIPS 203).
+
+    Reconstructs the polynomial from its incomplete NTT domain representation.
 
     Parameters
     ----------
     f : np.ndarray
         1-D array of transformed polynomial coefficients.
     n : int
-        The size of the transform (must be a power of 2).
+        The size of the transform (must be a power of 2, e.g., 256).
     q : int
         The modulus.
     root : int
-        The primitive n-th root of unity modulo q.
+        The n-th primitive root of unity modulo q.
 
     Returns
     -------
@@ -142,19 +148,22 @@ def compute_inv_ntt(f: np.ndarray, n: int, q: int, root: int) -> np.ndarray:
     """
     m = int(np.ceil(np.log2(n)))
     f = f.copy() % q
-    i = n//2 - 1
+    i = n // 2 - 1
     length = 2
-    while length <= n//2:
+    
+    while length <= n // 2:
         for start in range(0, n, 2 * length):
             zeta = modpow_jax(root, bitrevm(i, m-1), q)
             i -= 1
             for j in range(start, start + length):
                 t = f[j] % q
-                f[j] = t + f[j + length]
-                f[j + length] = (zeta*(f[j + length] - t)) % q
+                f[j] = (t + f[j + length]) % q 
+                f[j + length] = (zeta * (f[j + length] - t)) % q 
         length *= 2
 
-    n_inv = modinv(n, q)
-    for i in range(n):
-        f[i] *= n_inv
+    n_half_inv = modinv(n // 2, q) 
+    
+    for idx in range(n):
+        f[idx] = (f[idx] * n_half_inv) % q 
+        
     return f
