@@ -23,7 +23,9 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
     """In-place adder as introduced in https://arxiv.org/abs/quant-ph/0410184
 
     This function works in both static and dynamic modes. The allowed inputs are both quantum types or one classical
-    type and one quantum type. 
+    type and one quantum type. Note that when the first input is larger than the second input, the function will perform
+    modulo addition (relative to the size of the second input) after the first input is truncated to be the same size as
+    the second input.
 
     The custom control implementation is based on Theorem 2.12 of https://arxiv.org/abs/2407.20167
 
