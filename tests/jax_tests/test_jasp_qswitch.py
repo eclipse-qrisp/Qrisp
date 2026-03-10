@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,6 +16,7 @@
 ********************************************************************************
 """
 
+# qswitch is deprecated, use q_switch instead
 
 def test_jasp_qswitch_case_hamiltonian_simulation():
     from qrisp import QuantumFloat, h, qswitch, terminal_sampling

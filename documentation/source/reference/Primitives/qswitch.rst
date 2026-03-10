@@ -5,4 +5,5 @@ Quantum Switch Case
 
 .. currentmodule:: qrisp
 
-.. autofunction:: qswitch
+.. autofunction:: q_switch
+   :noindex:

@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -20,7 +20,7 @@
 class Instruction:
     """
     This class combines Operation objects with their operands (ie. qubits and classical
-    bits). The data attribut of the QuantumCircuit class consists of a list of
+    bits). The data attribute of the QuantumCircuit class consists of a list of
     Instructions.
 
     Instructions can be added to QuantumCircuits using the

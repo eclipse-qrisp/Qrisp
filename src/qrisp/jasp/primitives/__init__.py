@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -19,7 +19,8 @@
 from qrisp.jasp.primitives.quantum_primitive import *
 from qrisp.jasp.primitives.abstract_qubit import *
 from qrisp.jasp.primitives.abstract_quantum_register import *
-from qrisp.jasp.primitives.abstract_quantum_circuit import *
+from qrisp.jasp.primitives.abstract_quantum_state import *
 from qrisp.jasp.primitives.measurement_primitive import *
 from qrisp.jasp.primitives.operation_primitive import *
 from qrisp.jasp.primitives.kernel_primitives import *
+from qrisp.jasp.primitives.parity_primitive import *

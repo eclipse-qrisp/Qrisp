@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from jax.tree_util import tree_flatten, tree_unflatten
+from jax.tree_util import tree_unflatten
 from qrisp.jasp.jasp_expression import make_jaspr
 
 
@@ -30,8 +30,8 @@ def qjit(function=None, device=None):
     function : callable
         A function performing Qrisp code.
     device : object
-        The `PennyLane device <https://docs.pennylane.ai/projects/catalyst/en/stable/dev/devices.html>`_ to execute the function. 
-        The default device is `"lightning.qubit" <https://docs.pennylane.ai/projects/lightning/en/stable/lightning_qubit/device.html>`_, 
+        The `PennyLane device <https://docs.pennylane.ai/projects/catalyst/en/stable/dev/devices.html>`_ to execute the function.
+        The default device is `"lightning.qubit" <https://docs.pennylane.ai/projects/lightning/en/stable/lightning_qubit/device.html>`_,
         a fast state-vector qubit simulator.
 
     Returns
@@ -42,17 +42,17 @@ def qjit(function=None, device=None):
     Notes
     -----
 
-    Lightning-GPU is compatible with systems featuring NVIDIA Volta (SM 7.0) GPUs or newer. 
+    Lightning-GPU is compatible with systems featuring NVIDIA Volta (SM 7.0) GPUs or newer.
     It is specifically optimized for Linux environments on X86-64 or ARM64 architectures running CUDA-12.
 
     To install Lightning-GPU with NVIDIA CUDA support, the following packages need to be installed
-     
+
     ::
 
         pip install custatevec_cu12
         pip install pennylane-lightning-gpu
 
-        
+
     Pre-built wheels for Lightning-AMDGPU are available for AMD MI300 series GPUs and systems running ROCm 7.0 or newer.
 
     ::
@@ -127,10 +127,20 @@ def qjit(function=None, device=None):
 
         signature = tuple([type(arg) for arg in args])
         if not signature in function.jaspr_dict:
-            function.jaspr_dict[signature] = make_jaspr(function)(*args)
+            # Use return_shape=True to capture the output PyTree structure
+            jaspr, out_tree = make_jaspr(function, return_shape=True)(*args)
+            function.jaspr_dict[signature] = (jaspr, out_tree)
 
-        return function.jaspr_dict[signature].qjit(
-            *args, function_name=function.__name__, device=device
-        )
+        jaspr, out_tree = function.jaspr_dict[signature]
+        result = jaspr.qjit(*args, function_name=function.__name__, device=device)
+
+        # Reconstruct the PyTree structure from flat results
+        if isinstance(result, (tuple, list)):
+            return tree_unflatten(out_tree, result)
+        elif result is not None:
+            # Single value case
+            return tree_unflatten(out_tree, [result])
+        else:
+            return None
 
     return jitted_function

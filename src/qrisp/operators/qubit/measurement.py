@@ -211,12 +211,12 @@ class QubitOperatorMeasurement:
 
         from qrisp.misc import get_measurement_from_qc
 
-        results = [0]*len(self.measurement_operators)
+        results = [0] * len(self.measurement_operators)
         meas_coeffs = list(results)
         meas_ops = list(results)
-        
+
         def measurement_thread(i):
-            
+
             group = self.measurement_operators[i]
 
             shots = int(self.shots_list[i] / precision**2)
@@ -239,21 +239,20 @@ class QubitOperatorMeasurement:
 
             meas_coeffs[i] = temp_coeff
             meas_ops[i] = temp_meas_ops
-        
-        
+
         threads = []
-        
+
         for i in range(len(self.measurement_operators)):
-            
+
             if isinstance(backend, BatchedBackend):
-                thread = threading.Thread(target = measurement_thread, args = (i,))
+                thread = threading.Thread(target=measurement_thread, args=(i,))
                 thread.start()
                 threads.append(thread)
             else:
                 measurement_thread(i)
-        
+
         if isinstance(backend, BatchedBackend):
-            backend.dispatch(min_calls = len(self.measurement_operators))
+            backend.dispatch(min_calls=len(self.measurement_operators))
             for thread in threads:
                 thread.join()
 

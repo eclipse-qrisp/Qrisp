@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -20,12 +20,9 @@ import numpy as np
 from qrisp import (
     QuantumVariable,
     QuantumBool,
-    conjugate,
-    p,
 )
-from qrisp.alg_primitives import QFT
+from qrisp.alg_primitives import gidney_adder
 from qrisp.algorithms.gqsp.gqsp import GQSP
-from qrisp.jasp import qache, jrange
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -54,56 +51,57 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
     Parameters
     ----------
     qarg : QuantumVariable
-        The input state.
-    weights : ArrayLike
-        1-D array of weights with shape ``(2d+1,)``.
+        Variable representing the input signal.
+    weights : ArrayLike, shape (2d+1,)
+        The filter coefficients for the cyclic convolution.
+        These are applied as a sliding window across the signal,
+        where the middle element corresponds to the weight of the current index.
 
     Returns
     -------
     QuantumBool
-        Auxiliary variable after applying the GQSP protocol. 
-        Must be measuered in state $\ket{0}$ for the GQSP protocol to be successful.
+        Auxiliary variable after applying the GQSP protocol.
+        Must be measured in state $\ket{0}$ for the GQSP protocol to be successful.
 
+    Notes
+    -----
+    - Performs a cyclic convolution on the quantum signal,
+      effectively applying a local filtering operation such as an $n$-point smoothing.
 
     Examples
     --------
 
     ::
 
-        # Example Usage:
         import numpy as np
+        from qrisp import *
+        from qrisp.gqsp import convolve
+        from scipy.ndimage import convolve as sp_convolve
+
         # A simple square wave signal
         psi = np.array([1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0])
         # A simple 3-point smoothing filter {a_{-1}, a_0, a_1} = {0.25, 0.5, 0.25}
         f = np.array([0.25, 0.5, 0.25])
 
-    ::
-
-        from scipy.ndimage import convolve as scipy_convolve
-
         # Mode 'wrap' performs cyclic convolution
-        convolved_signal_target = scipy_convolve(psi, f, mode='wrap')
-        print(convolved_signal_target)
-        # [0.75 1.   1.   0.75 0.25 0.   0.   0.25]
-
-    ::
-
-        from qrisp import *
-        from qrisp.gqsp import convolve
+        convolved_signal_target = sp_convolve(psi, f, mode='wrap')
+        print("target:", convolved_signal_target)
+        # target: [0.75 1.   1.   0.75 0.25 0.   0.   0.25]
 
         def psi_prep():
             qv = QuantumFloat(3)
             prepare(qv, psi)
             return qv
 
-        # Converts the function to be executed within a repeat-until-success (RUS) procedure.
+        # Converts the function to be executed within a
+        # repeat-until-success (RUS) procedure.
         @RUS
         def conv_psi_prep():
             qarg = psi_prep()
-            qbl = convolve(qarg, f)
-            success_bool = measure(qbl) == 0
-            reset(qbl)
-            qbl.delete()
+            anc = convolve(qarg, f)
+            success_bool = measure(anc) == 0
+            reset(anc)
+            anc.delete()
             return success_bool, qarg
 
         # The terminal_sampling decorator performs a hybrid simulation,
@@ -113,27 +111,22 @@ def convolve(qarg: QuantumVariable, weights: "ArrayLike") -> QuantumBool:
             psi_conv = conv_psi_prep()
             return psi_conv
 
-        # Convert the resulting measurement probabilities to amplitudes by appling the square root.
         res_dict = main()
         max_ = max(res_dict.values())
-        for k,v in res_dict.items():
-            res_dict[k] = (v / max_) ** 0.5 
-        convolved_signal = np.array([res_dict.get(key,0) for key in range(8)])
-        print(convolved_signal)
-        #array([0.7499999 , 1.        , 1.        , 0.74999996, 0.24999994, 0.        , 0.        , 0.25000007])
+        convolved_signal_qsp = np.sqrt([res_dict.get(key,0) / max_ for key in range(8)])
+        print("qsp:", convolved_signal_qsp)
+        # qsp: [0.7499999 , 1.        , 1.        , 0.74999996, 0.24999994,
+        # 0.        , 0.        , 0.25000007])
 
     """
 
-    @qache
     def U(qv):
-        for i in jrange(qv.size):
-            p(np.pi * 2.0 ** (i - qv.size + 1), qv[i])
+        gidney_adder(1, qv)
 
     d = len(weights) // 2
 
-    qbl = QuantumBool()
+    anc = QuantumBool()
 
-    with conjugate(QFT)(qarg):
-        GQSP(qbl, qarg, unitary=U, p=weights, k=d)
+    GQSP(anc, qarg, unitary=U, p=weights, k=d)
 
-    return qbl
+    return anc

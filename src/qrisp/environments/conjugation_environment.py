@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -158,7 +158,7 @@ class ConjugationEnvironment(QuantumEnvironment):
         merge(recursive_qs_search(self.args) + [self.env_qs])
 
         qv_set_before = set(self.env_qs.qv_list)
-        
+
         try:
             res = self.conjugation_function(*self.args, **self.kwargs)
         except Exception as e:
@@ -183,10 +183,12 @@ class ConjugationEnvironment(QuantumEnvironment):
                 creation_dic[instr.qubits[0]] = 1
             elif instr.op.name == "qb_dealloc":
                 if instr.qubits[0] not in creation_dic:
-                    raise Exception(f"Tried to destroy qubit {instr.qubits[0]} within a conjugator.")
+                    raise Exception(
+                        f"Tried to destroy qubit {instr.qubits[0]} within a conjugator."
+                    )
                 else:
-                    creation_dic[instr.qubits[0]] -=1
-                    
+                    creation_dic[instr.qubits[0]] -= 1
+
         for k, v in creation_dic.items():
             if v != 0:
                 raise Exception(f"Tried to create qubit {k} within a conjugator.")
@@ -200,7 +202,9 @@ class ConjugationEnvironment(QuantumEnvironment):
     def __exit__(self, exception_type, exception_value, traceback):
 
         if exception_value:
-            QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
+            QuantumEnvironment.__exit__(
+                self, exception_type, exception_value, traceback
+            )
 
         if not check_for_tracing_mode():
             conjugation_center_data = list(self.env_qs.data)
@@ -233,7 +237,7 @@ class ConjugationEnvironment(QuantumEnvironment):
             self.env_qs.append(instr)
 
     def jcompile(self, eqn, context_dic):
-        
+
         # This function transforms a collected ConjugationEnvironment
         # into the proper unitary, i.e. U^\dagger V U
         # Next to this transformation, we also have to make sure
@@ -257,28 +261,26 @@ class ConjugationEnvironment(QuantumEnvironment):
         # describing the controlled conjugators with their uncontrolled version.
 
         controlled_flattened_jaspr = flattened_jaspr.control(1)
-        
-        
+
         controlled_eqn_list = list(controlled_flattened_jaspr.eqns)
-        
+
         # Replace the controlled conjugators
         controlled_eqn_list[0] = copy_jaxpr_eqn(controlled_flattened_jaspr.eqns[0])
 
         # Remove the invar (control qubits are always added as the first arguments)
         controlled_eqn_list[0].invars.pop(0)
-        
+
         new_params = controlled_eqn_list[0].params
-        
+
         # Replace the pjit body
         new_params["jaxpr"] = flattened_jaspr.eqns[0].params["jaxpr"]
-        
+
         # We also need to update these parameters - otherwise Jax raises errors
         # during MLIR lowering
         new_params["in_shardings"] = new_params["in_shardings"][1:]
         new_params["in_layouts"] = new_params["in_layouts"][1:]
         new_params["donated_invars"] = new_params["donated_invars"][1:]
-        
-        
+
         # Do the same for the last equation
         controlled_eqn_list[-1] = copy_jaxpr_eqn(controlled_flattened_jaspr.eqns[-1])
         controlled_eqn_list[-1].invars.pop(0)
@@ -286,7 +288,7 @@ class ConjugationEnvironment(QuantumEnvironment):
         new_params["jaxpr"] = flattened_jaspr.eqns[-1].params["jaxpr"]
         new_params["in_shardings"] = new_params["in_shardings"][1:]
         new_params["in_layouts"] = new_params["in_layouts"][1:]
-        new_params["donated_invars"] = new_params["donated_invars"][1:]        
+        new_params["donated_invars"] = new_params["donated_invars"][1:]
 
         # Set the ctrl_jaspr attribute to use enable custom control behavior
         flattened_jaspr.ctrl_jaspr = controlled_flattened_jaspr.update_eqns(
@@ -448,13 +450,14 @@ class PJITEnvironment(QuantumEnvironment):
         res = jax.jit(flattened_jaspr.eval)(*args)
 
         jit_eqn = get_last_equation()
-        
+
         jit_eqn.params["jaxpr"] = Jaspr.from_cache(jit_eqn.params["jaxpr"])
 
         if not isinstance(res, tuple):
             res = (res,)
 
         insert_outvalues(eqn, context_dic, res)
+
 
 def copy_jaxpr_eqn(jaxpr_eqn):
     return JaxprEqn(

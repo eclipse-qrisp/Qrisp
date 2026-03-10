@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -22,31 +22,11 @@ import traceback
 import jax.numpy as jnp
 import numpy as np
 import sympy
+from jax.typing import ArrayLike
 
 # A small epsilon value for numerical stability.
 # Defined here for convenience, so it can be imported elsewhere.
 _EPSILON = jnp.sqrt(jnp.finfo(jnp.float64).eps)
-
-
-def swap_endianness(vec: np.ndarray, n: int) -> np.ndarray:
-    """
-    Convert between big-endian and little-endian qubit ordering.
-
-    This transformation is its own inverse, so it works in both directions.
-
-    Parameters
-    ----------
-    vec : np.ndarray
-        The state vector to convert.
-    n : int
-        The number of qubits.
-
-    Returns
-    -------
-    np.ndarray
-        The state vector with reversed qubit ordering.
-    """
-    return vec.reshape([2] * n).transpose(*reversed(range(n))).flatten()
 
 
 def bin_rep(n, bits):
@@ -94,9 +74,9 @@ def int_encoder(qv, encoding_number):
                     x(qv[i])
 
         # def true_fun(qc, cond, qb):
-        #     tr_qs.abs_qc = qc
+        #     tr_qs.abs_qst = qc
         #     x(qb)
-        #     return tr_qs.abs_qc
+        #     return tr_qs.abs_qst
 
         # def false_fun(qc, cond, qb):
         #     return qc
@@ -107,8 +87,8 @@ def int_encoder(qv, encoding_number):
         #     qc = cond(cond_bool, true_fun, false_fun, qc, cond_bool, qb)
 
         #     return qc
-        # qc = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qc))
-        # tr_qs.abs_qc = qc
+        # qc = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qst))
+        # tr_qs.abs_qst = qc
 
 
 # Calculates the binary expression of a given integer and returns it as an array of
@@ -1459,7 +1439,7 @@ def find_calling_line(level=0):
 
 
 def retarget_instructions(data, source_qubits, target_qubits):
-    from qrisp import QuantumEnvironment, multi_session_merge, recursive_qs_search
+    from qrisp import QuantumEnvironment
 
     for i in range(len(data)):
         instr = data[i]
@@ -1564,31 +1544,36 @@ def redirect_qfunction(function_to_redirect):
     def redirected_qfunction(*args, target=None, **kwargs):
 
         if check_for_tracing_mode():
-            jaspr = make_jaspr(function_to_redirect, garbage_collection="manual")(
+            jaspr = make_jaspr(function_to_redirect)(
                 *args, **kwargs
             ).flatten_environments()
 
-            transformed_jaspr = injection_transform(jaspr, jaspr.outvars[0])
-
             qs = TracingQuantumSession.get_instance()
-            abs_qc = qs.abs_qc
+            abs_qst = qs.abs_qst
             from jax.tree_util import tree_flatten
 
             flattened_args = []
 
-            flattened_args.append(target.reg.tracer)
+            if isinstance(target, QuantumArray):
+                transformed_jaspr = injection_transform(jaspr, jaspr.outvars[2])
+                flattened_args.append(target.qb_array.reg.tracer)
+            else:
+                transformed_jaspr = injection_transform(jaspr, jaspr.outvars[0])
+                flattened_args.append(
+                    target.reg.tracer
+                )  # Traced<QubitArray>with<DynamicJaxprTrace>
 
             for arg in args:
                 flattened_args.extend(tree_flatten(arg)[0])
-
-            flattened_args.append(abs_qc)
+            # [Traced<QubitArray>with<DynamicJaxprTrace>, Traced<ShapedArray(int64[])>with<DynamicJaxprTrace>, Traced<ShapedArray(bool[])>with<DynamicJaxprTrace>]
+            flattened_args.append(abs_qst)
 
             res = eval_jaxpr(transformed_jaspr, [])(*flattened_args)
 
             if len(transformed_jaspr.outvars) == 1:
-                qs.abs_qc = res
+                qs.abs_qst = res
             else:
-                qs.abs_qc = res[-1]
+                qs.abs_qst = res[-1]
 
         else:
 
@@ -1606,12 +1591,18 @@ def redirect_qfunction(function_to_redirect):
             with env:
                 res = function_to_redirect(*args, **kwargs)
 
-                if not isinstance(res, QuantumVariable):
+                if isinstance(res, QuantumVariable):
+                    res_qubits = list(res)
+                    target_qubits = list(target)
+                elif isinstance(res, QuantumArray):
+                    res_qubits = [a for l in list(res) for a in list(l)]
+                    target_qubits = [a for l in list(target) for a in list(l)]
+                else:
                     raise Exception("Given function did not return a QuantumVariable")
 
-                target = list(target)
+                # target = list(target)
 
-                if len(res) != len(target):
+                if len(res) != len(target) or len(list(res)) != len(list(target)):
                     raise Exception(
                         "Tried to redirect quantum function into QuantumVariable of "
                         "differing size"
@@ -1625,7 +1616,7 @@ def redirect_qfunction(function_to_redirect):
 
                     if isinstance(instr, QuantumEnvironment):
                         pass
-                    elif instr.op.name == "qb_alloc" and instr.qubits[0] in list(res):
+                    elif instr.op.name == "qb_alloc" and instr.qubits[0] in res_qubits:
                         env.env_qs.data.pop(i)
                         res_is_new = True
                         continue
@@ -1635,21 +1626,26 @@ def redirect_qfunction(function_to_redirect):
 
                     i += 1
 
-                retarget_instructions(env.env_qs.data, list(res), target)
+                retarget_instructions(env.env_qs.data, res_qubits, target_qubits)
 
             if res_is_new:
                 # Remove all traces of res
                 res.delete()
 
-                for i in range(res.size):
-                    res.qs.qubits.remove(res[i])
+                for q in res_qubits:
+                    res.qs.qubits.remove(q)
                     res.qs.data.pop(-1)
 
                 for i in range(len(res.qs.deleted_qv_list)):
                     qv = res.qs.deleted_qv_list[i]
-                    if qv.name == res.name:
-                        res.qs.deleted_qv_list.pop(i)
-                        break
+                    if isinstance(res, QuantumVariable):
+                        if qv.name == res.name:
+                            res.qs.deleted_qv_list.pop(i)
+                            break
+                    elif isinstance(res, QuantumArray):
+                        if qv.name in [q.name for q in list(res)]:
+                            res.qs.deleted_qv_list.pop(i)
+                            break
 
             return target
 
@@ -1800,7 +1796,7 @@ def get_sympy_state(qs, decimals):
                 bit_string += int_string[compiled_qc.qubits.index(qb)]
 
             label = qv.decoder(int(bit_string[::-1], 2))
-            ket_expr *= OrthogonalKet((label))
+            ket_expr = ket_expr * OrthogonalKet((label))
 
         res += ket_expr
 
@@ -2408,3 +2404,34 @@ def batched_measurement(variables, backend, shots=None):
 
     # Inspect the results
     return results
+
+
+def _bitrev_indices(n: ArrayLike) -> jnp.ndarray:
+    """Return array r where r[j] = bitreverse(j) over n bits."""
+    idx = jnp.arange(1 << n, dtype=jnp.uint32)
+    rev = jnp.zeros_like(idx)
+    for k in range(n):
+        rev = (rev << 1) | ((idx >> k) & 1)
+    return rev
+
+
+def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jnp.ndarray:
+    """
+    Convert between big-endian and little-endian qubit ordering.
+
+    This transformation is its own inverse, so it works in both directions.
+
+    Parameters
+    ----------
+    vec : ArrayLike
+        The state vector to convert.
+    n : ArrayLike
+        The number of qubits.
+
+    Returns
+    -------
+    jnp.ndarray
+        The state vector with reversed qubit ordering.
+    """
+    r = _bitrev_indices(n)
+    return vec[r]

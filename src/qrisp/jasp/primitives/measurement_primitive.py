@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -20,7 +20,7 @@ from jax.core import ShapedArray
 from qrisp.circuit import Reset, Qubit
 
 from qrisp.jasp.primitives import (
-    AbstractQuantumCircuit,
+    AbstractQuantumState,
     AbstractQubit,
     QuantumPrimitive,
     AbstractQubitArray,
@@ -43,9 +43,9 @@ def measure_abstract_eval(meas_object, qc):
     """
 
     if isinstance(meas_object, AbstractQubit):
-        return ShapedArray((), bool), AbstractQuantumCircuit()
+        return ShapedArray((), bool), AbstractQuantumState()
     elif isinstance(meas_object, AbstractQubitArray):
-        return ShapedArray((), dtype="int64"), AbstractQuantumCircuit()
+        return ShapedArray((), dtype="int64"), AbstractQuantumState()
     else:
         raise Exception(
             f"Tried to call measurement primitive with type {type(meas_object)}"
@@ -57,7 +57,7 @@ Measurement_p.multiple_results = True
 
 @Measurement_p.def_impl
 def measure_implementation(meas_object, qc):
-    from qrisp import Qubit, QuantumCircuit
+    from qrisp import Qubit, QuantumCircuit, Clbit
 
     return_bool = False
     if isinstance(meas_object, Qubit):
@@ -66,13 +66,17 @@ def measure_implementation(meas_object, qc):
 
     if isinstance(qc, QuantumCircuit):
         if return_bool:
-            qc.measure(meas_object)
-            return qc.clbits[-1], qc
+            meas_res = Clbit("cb_" + str(len(qc.clbits)))
+            qc.clbits.insert(0, meas_res)
+            qc.measure(meas_object, meas_res)
+            return meas_res, qc
         else:
             clbit_list = []
             for i in range(len(meas_object)):
-                qc.measure(meas_object[i])
-                clbit_list.append(qc.clbits[-1])
+                meas_res = Clbit("cb_" + str(len(qc.clbits)))
+                qc.clbits.insert(0, meas_res)
+                qc.measure(meas_object[i], meas_res)
+                clbit_list.append(meas_res)
             return clbit_list, qc
     else:
         res = 0
@@ -98,7 +102,7 @@ def reset_abstract_eval(reset_object, qc):
     Result:
       a ShapedArray for the result of the primitive.
     """
-    return AbstractQuantumCircuit()
+    return AbstractQuantumState()
 
 
 @reset_p.def_impl

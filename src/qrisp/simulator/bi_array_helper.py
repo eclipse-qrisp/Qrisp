@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -394,7 +394,10 @@ def dense_measurement_smart(input_array, mes_amount, outcome_index, float_thresh
         outcome_index_list.extend(c)
 
     a, b, c = dense_measurement_smart(
-        input_array[N // 2 :], mes_amount - 1, outcome_index + 2 ** (mes_amount - 1), float_thresh
+        input_array[N // 2 :],
+        mes_amount - 1,
+        outcome_index + 2 ** (mes_amount - 1),
+        float_thresh,
     )
 
     if c[0] != -1:
@@ -524,7 +527,7 @@ def coo_sparse_matrix_mult_inner(
 
     abs_R = np.abs(R)
     max_abs = np.max(R.ravel())
-    
+
     I, J = np.nonzero(abs_R > (cutoff_ratio * max_abs))
 
     res_row = A_row[unique_marker_a[I]]
@@ -599,7 +602,15 @@ def coo_sparse_matrix_mult(A, B):
     else:
 
         new_col, new_row, new_data = coo_sparse_matrix_mult_inner(
-            B.col, B.row, B.data, A.col, A.row, A.data, B.shape[::-1], A.shape[::-1], cutoff_ratio
+            B.col,
+            B.row,
+            B.data,
+            A.col,
+            A.row,
+            A.data,
+            B.shape[::-1],
+            A.shape[::-1],
+            cutoff_ratio,
         )
 
     if len(new_data) == 0:

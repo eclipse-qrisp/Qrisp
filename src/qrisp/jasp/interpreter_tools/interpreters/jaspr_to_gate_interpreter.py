@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -17,55 +17,6 @@
 """
 
 from qrisp.jasp.interpreter_tools import eval_jaxpr, extract_invalues, insert_outvalues
-
-
-def pjit_to_gate(pjit_eqn, context_dic, eqn_evaluator):
-    """
-    Wraps the content of a pjit primitive into a gate and appends the gate.
-
-    Parameters
-    ----------
-    pjit_eqn : An equation with a pjit primitive
-        The equation to execute.
-
-    Returns
-    -------
-    return values
-        The values/tracers of the pjit execution.
-
-    """
-
-    # Set alias for the function definition
-    definition_jaxpr = pjit_eqn.params["jaxpr"]
-
-    # Extract the invalues from the context dic
-    invalues = extract_invalues(pjit_eqn, context_dic)
-
-    from qrisp.circuit import QuantumCircuit
-
-    if len(invalues) == 0 or not isinstance(invalues[-1], QuantumCircuit):
-        return True
-
-    res = eval_qc(definition_jaxpr, invalues, eqn_evaluator)
-
-    new_qc = res[-1]
-    old_qc = invalues[-1]
-
-    for i in range(len(new_qc.data)):
-        if new_qc.data[i].op.num_clbits:
-            old_qc.extend(new_qc, translation_dic = {b : b for b in new_qc.qubits + new_qc.clbits})
-            break
-    else:
-        # Append the wrapped old circuit to the new circuit
-        old_qc.append(
-            new_qc.to_op(name=pjit_eqn.params["name"]), new_qc.qubits, new_qc.clbits
-        )
-
-    res = list(res)
-    res[-1] = old_qc
-
-    # Insert the result into the context dic
-    insert_outvalues(pjit_eqn, context_dic, res)
 
 
 def cond_to_cl_control(eqn, context_dic, eqn_evaluator):

@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -19,6 +19,7 @@
 import numpy as np
 import pytest
 from qrisp import *
+from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
 
 
@@ -30,12 +31,12 @@ from qrisp.operators import X, Y, Z
 ])
 def test_block_encoding_poly_scaling(H1, H2, poly):
 
-    BE1 = H1.pauli_block_encoding()
-    BE2 = H2.pauli_block_encoding()
+    BE1 = BlockEncoding.from_operator(H1)
+    BE2 = BlockEncoding.from_operator(H2)
 
     # Apply polynomial to QubitOperator H1 and add H2
     H3 = sum(poly[k] * H1 ** k for k in range(len(poly))) + H2
-    BE3 = H3.pauli_block_encoding()
+    BE3 = BlockEncoding.from_operator(H3)
 
     # Apply polynomial to BlockEncoding BE1 and add BE2
     BE_poly = BE1.poly(poly) + BE2

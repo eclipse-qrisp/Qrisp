@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -115,3 +115,69 @@ def test_control_flow_interpretation():
         return ind, res
     
     assert main() == (3,4)
+
+    # Test scan primitive
+    
+    @jaspify
+    def test_scan_basic():
+        xs = jnp.array([1, 2, 3])
+        def body(c, x):
+            return c + x, x * c
+        # init=10
+        # iter 1: x=1, c=10 -> c=11, y=10
+        # iter 2: x=2, c=11 -> c=13, y=22
+        # iter 3: x=3, c=13 -> c=16, y=39
+        last_c, ys = jax.lax.scan(body, 10, xs)
+        return last_c, ys
+
+    c, ys = test_scan_basic()
+    assert c == 16
+    assert np.all(ys == np.array([10, 22, 39]))
+
+    @jaspify
+    def test_scan_reverse():
+        xs = jnp.array([1, 2, 3])
+        def body(c, x):
+            return c + x, c
+        
+        # reverse=True -> scan over [3, 2, 1]
+        # init=0
+        # iter 1: x=3, c=0 -> c=3, y=0 (corresponds to input 3)
+        # iter 2: x=2, c=3 -> c=5, y=3 (corresponds to input 2)
+        # iter 3: x=1, c=5 -> c=6, y=5 (corresponds to input 1)
+        # ys stacked in reverse (to match input order) -> [5, 3, 0]
+        
+        last_c, ys = jax.lax.scan(body, 0, xs, reverse=True)
+        return last_c, ys
+
+    c, ys = test_scan_reverse()
+    assert c == 6
+    assert np.all(ys == np.array([5, 3, 0]))
+
+    @jaspify
+    def test_scan_zero_length():
+        xs = jnp.array([])
+        def body(c, x):
+            return c, x * 2
+        
+        _, ys = jax.lax.scan(body, 0, xs)
+        return ys
+
+    ys = test_scan_zero_length()
+    assert ys.shape == (0,)
+
+    @jaspify
+    def test_scan_multi_input():
+         # Test iterating over multiple arrays (like in lax.map(..., (a, b)))
+        a = jnp.array([1, 2, 3])
+        b = jnp.array([4, 5, 6])
+        
+        def body(c, inputs):
+            x, y = inputs
+            return c, x * y
+        
+        _, out = jax.lax.scan(body, None, (a, b))
+        return out
+    
+    out = test_scan_multi_input()
+    assert np.all(out == np.array([4, 10, 18]))

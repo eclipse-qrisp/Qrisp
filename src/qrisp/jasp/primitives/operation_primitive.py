@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -22,7 +22,7 @@ import jax
 
 from qrisp.jasp.primitives import (
     QuantumPrimitive,
-    AbstractQuantumCircuit,
+    AbstractQuantumState,
     AbstractQubit,
 )
 
@@ -30,49 +30,50 @@ greek_letters = symbols(
     "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega"
 )
 
-    
+
 quantum_gate_p = QuantumPrimitive("quantum_gate")
+
 
 @quantum_gate_p.def_impl
 def append_impl(*args, **kwargs):
+    """Concrete evaluation of the primitive.
+
+    This function does not need to be JAX traceable. It will be invoked with
+    actual instances.
+    """
 
     gate = kwargs["gate"]
-    
+
     qc = args[-1]
     args = args[:-1]
-    """Concrete evaluation of the primitive.
-    
-    This function does not need to be JAX traceable. It will be invoked with
-    actual instances. 
-    """
+
     qubit_args = args[: gate.num_qubits]
     parameter_args = args[gate.num_qubits :]
 
     temp_op = gate.bind_parameters(
-        {
-            greek_letters[i]: float(parameter_args[i])
-            for i in range(len(parameter_args))
-        }
+        {greek_letters[i]: float(parameter_args[i]) for i in range(len(parameter_args))}
     )
     qc.append(temp_op, list(qubit_args))
     return qc
 
+
 @quantum_gate_p.def_abstract_eval
 def abstract_eval(*args, **kwargs):
-    
+    """Abstract evaluation of the primitive.
+
+    This function does not need to be JAX traceable. It will be invoked with
+    abstractions of the actual arguments.
+    """
+
+    # `gate` is treated like a static param to the primitive
     gate = kwargs["gate"]
     qc = args[-1]
     qubit_args = [args[i] for i in range(gate.num_qubits)]
     parameter_args = [args[i] for i in range(gate.num_qubits, len(args) - 1)]
 
-    """Abstract evaluation of the primitive.
-    
-    This function does not need to be JAX traceable. It will be invoked with
-    abstractions of the actual arguments. 
-    """
-    if not isinstance(qc, AbstractQuantumCircuit):
+    if not isinstance(qc, AbstractQuantumState):
         raise Exception(
-            f"Tried to execute OperationPrimitive.bind with the last argument of type {type(qc)} instead of AbstractQuantumCircuit"
+            f"Tried to execute OperationPrimitive.bind with the last argument of type {type(qc)} instead of AbstractQuantumState"
         )
 
     if not all([isinstance(qb, AbstractQubit) for qb in qubit_args]):
@@ -83,10 +84,7 @@ def abstract_eval(*args, **kwargs):
     if not all(
         [
             isinstance(param, jnp.number)
-            or (
-                isinstance(param, jax.core.ShapedArray)
-                and len(param.shape) == 0
-            )
+            or (isinstance(param, jax.core.ShapedArray) and len(param.shape) == 0)
             for param in parameter_args
         ]
     ):
@@ -94,4 +92,4 @@ def abstract_eval(*args, **kwargs):
             f"Tried to execute Operation {gate.name} with incompatible parameter types {[type(param) for param in parameter_args]} (required are number types)"
         )
 
-    return AbstractQuantumCircuit()
+    return AbstractQuantumState()

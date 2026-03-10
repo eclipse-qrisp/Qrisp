@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -32,70 +32,73 @@ greek_letters = symbols(
 
 
 class TracingQuantumSession:
+    """
+    Manage tracing-time state for building quantum circuits in Jasp mode.
+
+    This class acts as the central recording context while JAX is tracing a Python
+    function that constructs a quantum program. In particular, it maintains:
+
+    - a reference to the currently active :class:`~qrisp.jasp.AbstractQuantumState`
+      being built (``self.abs_qst``),
+
+    - a cache for qubits allocated during tracing (``self.qubit_cache``),
+
+    - a list of "live" quantum variables currently registered in this session
+      (``self.qv_list``),
+
+    - a garbage-collection policy controlling what happens when a quantum variable
+      goes out of scope during tracing (``self.gc_mode``).
+
+    The session supports nested tracing. Each call to :meth:`start_tracing`
+    pushes the previous tracing state onto internal stacks; :meth:`conclude_tracing`
+    restores the previous state and returns the circuit that was traced in the
+    nested scope.
+    """
+
     tr_qs_container = [None]
-    abs_qc_stack = []
+    abs_qst_stack = []
     qubit_cache_stack = []
 
     def __init__(self):
+        """
+        Construct a new tracing quantum session and make it the current session.
 
-        self.abs_qc = None
+        The session starts with no active circuit.
+        Use :meth:`start_tracing` to begin recording into a provided abstract circuit object.
+        """
+
+        self.abs_qst = None
         self.qv_list = []
         self.deleted_qv_list = []
         self.qubit_cache = None
         TracingQuantumSession.tr_qs_container.insert(0, self)
         self.qv_stack = []
-        self.gc_mode_stack = []
-        self.gc_mode = "auto"
 
-    def start_tracing(self, abs_qc, gc_mode=None):
-        self.abs_qc_stack.append(self.abs_qc)
+    def start_tracing(self, abs_qst):
+        self.abs_qst_stack.append(self.abs_qst)
         self.qubit_cache_stack.append(self.qubit_cache)
 
-        self.abs_qc = abs_qc
+        self.abs_qst = abs_qst
         self.qubit_cache = {}
 
         self.qv_stack.append((self.qv_list, self.deleted_qv_list))
         self.qv_list = []
         self.deleted_qv_list = []
 
-        self.gc_mode_stack.append(self.gc_mode)
-        if gc_mode is None:
-            self.gc_mode = self.gc_mode_stack[-1]
-        else:
-            self.gc_mode = gc_mode
-
-    def garbage_collection(self, spare_qv_list):
-
-        if self.gc_mode in ["auto", "debug"]:
-            from qrisp import reset
-
-            spare_hash_list = [hash(qv) for qv in spare_qv_list]
-            for qv in list(self.qv_list):
-                if hash(qv) in spare_hash_list:
-                    continue
-                if self.gc_mode == "auto":
-                    reset(qv)
-                    qv.delete()
-                else:
-                    raise Exception(
-                        f"QuantumVariable {qv} went out of scope without deallocation"
-                    )
-
     def conclude_tracing(self):
 
-        temp = self.abs_qc
-        self.abs_qc = self.abs_qc_stack.pop(-1)
+        temp = self.abs_qst
+        self.abs_qst = self.abs_qst_stack.pop(-1)
         self.qubit_cache = self.qubit_cache_stack.pop(-1)
         self.qv_list, self.deleted_qv_list = self.qv_stack.pop(-1)
-        self.gc_mode = self.gc_mode_stack.pop(-1)
 
         return temp
 
     def append(self, operation, qubits=[], clbits=[], param_tracers=[]):
-        
-        if not self.abs_qc._trace is jax.core.trace_ctx.trace:
+
+        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
             raise Exception(
-                """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
+                """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
             )
 
         if len(clbits):
@@ -125,18 +128,22 @@ class TracingQuantumSession:
                     param_tracers=param_tracers,
                 )
             return
-        
+
         elif isinstance(qubits[0], QuantumArray):
-            
+
             for i in range(1, len(qubits)):
                 if not isinstance(qubits[i], QuantumArray):
-                    raise Exception(f"Tried to apply multi-qubit gate to mixed qubit argument types (QuantumArray + {type(qubits[i])})")
-                
+                    raise Exception(
+                        f"Tried to apply multi-qubit gate to mixed qubit argument types (QuantumArray + {type(qubits[i])})"
+                    )
+
                 if qubits[i].shape != qubits[0].shape:
-                    raise Exception("Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape.")
-            
+                    raise Exception(
+                        "Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape."
+                    )
+
             flattened_qubits = [qubits[i].flatten() for i in range(len(qubits))]
-            
+
             for i in jrange(flattened_qubits[0].size):
                 self.append(
                     operation,
@@ -151,22 +158,21 @@ class TracingQuantumSession:
         for i in range(len(temp_op.params)):
             temp_op.params[i] = greek_letters[i]
 
-        self.abs_qc = quantum_gate_p.bind(
-            *([b for b in qubits] + param_tracers + [self.abs_qc]),
-            gate = operation
+        self.abs_qst = quantum_gate_p.bind(
+            *([b for b in qubits] + param_tracers + [self.abs_qst]), gate=operation
         )
 
     def register_qv(self, qv, size):
 
-        if not self.abs_qc._trace is jax.core.trace_ctx.trace:
+        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
             raise Exception(
-                """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
+                """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
             )
 
         # Determine amount of required qubits
         if size is not None:
             qv.reg = self.request_qubits(size)
-            
+
         # Register in the list of active quantum variable
         self.qv_list.append(qv)
         qv.qs = self
@@ -174,17 +180,16 @@ class TracingQuantumSession:
         QuantumVariable.live_qvs.append(weakref.ref(qv))
         qv.creation_time = int(QuantumVariable.creation_counter[0])
         QuantumVariable.creation_counter += 1
-        
+
     def request_qubits(self, amount):
-        qb_array_tracer, self.abs_qc = create_qubits(amount, self.abs_qc)
+        qb_array_tracer, self.abs_qst = create_qubits(amount, self.abs_qst)
         return DynamicQubitArray(qb_array_tracer)
-        
 
     def delete_qv(self, qv, verify=False):
-        
-        if not self.abs_qc._trace is jax.core.trace_ctx.trace:
+
+        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
             raise Exception(
-                """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
+                """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
             )
 
         if verify == True:
@@ -210,7 +215,7 @@ class TracingQuantumSession:
 
     def clear_qubits(self, qubits, verify=False):
 
-        self.abs_qc = delete_qubits_p.bind(qubits.tracer, self.abs_qc)
+        self.abs_qst = delete_qubits_p.bind(qubits.tracer, self.abs_qst)
 
     @classmethod
     def release(cls):
@@ -227,8 +232,10 @@ tracing_qs_singleton = TracingQuantumSession()
 def check_for_tracing_mode():
     return hasattr(jax._src.core.trace_ctx.trace, "frame")
 
-def get_last_equation(i = -1):
+
+def get_last_equation(i=-1):
     return jax._src.core.trace_ctx.trace.frame.tracing_eqns[i]()
+
 
 def check_live(tracer):
     if tracer is None:

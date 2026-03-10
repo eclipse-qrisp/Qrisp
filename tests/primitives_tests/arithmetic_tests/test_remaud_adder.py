@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -29,7 +29,7 @@ def test_L1_ladder():
         with invert():
             for i in range(N - 1):
                 cx(circ1[i], circ1[i + 1])
-        jsp = make_jaspr(main, garbage_collection="none")(1)
+        jsp = make_jaspr(main)(1)
         circ2 = jsp.to_qc(N)
 
         assert circ2.compare_unitary(circ1.qs)

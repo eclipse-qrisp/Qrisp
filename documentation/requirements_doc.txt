@@ -8,4 +8,5 @@ sphinx-sitemap
 sphinx-copybutton
 sphinx-design
 sphinx-thebe
+sphinx-new-tab-link
 pydata-sphinx-theme

@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -21,7 +21,7 @@ from functools import lru_cache
 from jax.extend.core import JaxprEqn, ClosedJaxpr
 
 from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret
-from qrisp.jasp.primitives import AbstractQuantumCircuit
+from qrisp.jasp.primitives import AbstractQuantumState
 
 
 def copy_jaxpr_eqn(eqn):
@@ -54,16 +54,16 @@ def flatten_environments(jaspr):
 
     """
     from qrisp.jasp import Jaspr
-    
+
     if (len(jaspr.jaxpr.invars) == 0 or len(jaspr.jaxpr.outvars) == 0) or not (
-        isinstance(jaspr.jaxpr.invars[-1].aval, AbstractQuantumCircuit)
-        and isinstance(jaspr.jaxpr.outvars[-1].aval, AbstractQuantumCircuit)
+        isinstance(jaspr.jaxpr.invars[-1].aval, AbstractQuantumState)
+        and isinstance(jaspr.jaxpr.outvars[-1].aval, AbstractQuantumState)
     ):
         return jaspr
-    
+
     if not isinstance(jaspr, Jaspr):
         jaspr = Jaspr.from_cache(jaspr)
-    
+
     if jaspr.envs_flattened:
         return jaspr
 
@@ -80,7 +80,7 @@ def flatten_environments(jaspr):
             flatten_environments_in_cond_eqn(eqn, context_dic)
         else:
             return True
-        
+
     # The flatten_environment_eqn function below executes the collected QuantumEnvironments
     # according to their semantics
     # To perform the flattening, we evaluate with the usual tools

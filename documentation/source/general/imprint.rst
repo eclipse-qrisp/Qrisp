@@ -40,14 +40,6 @@ is a constituent entity of the Fraunhofer Gesellschaft, and as such has no separ
    Registered nonprofit association
    Registration no. VR 4461
 
-**Responsible editor:**
-
-.. line-block::
-   Raphael Seidel 
-   raphael.seidel@fokus.fraunhofer.de
-
-Please note: If you have general questions concerning the institute please refer to persons mentioned under “Contact".
-
 **Executive Board**
 
 .. line-block::
@@ -251,14 +243,3 @@ Timeliness and Amendments to this Data Protection Information
 -------------------------------------------------------------
 
 The further development of our website and the products and services offered or changed due to statutory or regulatory requirements, respectively, may make it necessary to amend this data protection information. You may access and print out the latest data protection information at any time from our website.
-
-Icon Attribution
-----------------
-
-The following icons have been used on the Thinq Qrisp page:
-
-* `business networking icons <https://www.flaticon.com/free-icons/business-networking>`_.
-* `Hackathon icons created by Hervv <https://www.flaticon.com/free-icons/hackathon>`_.
-* `Lecture icons created by istar_design_bureau <https://www.flaticon.com/free-icons/lecture>`_.
-* `Desktop icons created by turkkub <https://www.flaticon.com/free-icons/desktop>`_.
-* `Quantum computing icons created by Vlad Szirka <https://www.flaticon.com/free-icons/quantum-computing>`_.

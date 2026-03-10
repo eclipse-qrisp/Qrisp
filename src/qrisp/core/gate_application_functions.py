@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -43,7 +43,6 @@ def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
                 return
 
         raise e
-
 
 
 def cx(control, target):
@@ -673,7 +672,7 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
 
     """
 
-    from qrisp.misc import gate_wrap
+    from qrisp.misc import bin_rep, gate_wrap
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
     def mcz_inner(qubits, method="auto", ctrl_state=-1):
@@ -697,14 +696,47 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
 
         return qubits
 
-    n = len(qubits)
+    @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
+    def jasp_mcz_inner(qubits, method="balauca", ctrl_state=-1):
+        from jax.lax import cond
+        import jax.numpy as jnp
+        from qrisp.environments import control
 
-    from qrisp import bin_rep
+        n = jlen(qubits)
+        ctrl_state = jnp.int64(ctrl_state)
+        ctrl_state = cond(
+            ctrl_state == -1, lambda x: x + (1 << n), lambda x: x, ctrl_state
+        )
 
-    if not isinstance(ctrl_state, str):
-        if ctrl_state == -1:
-            ctrl_state += 2**n
-        ctrl_state = bin_rep(ctrl_state, n)
+        with control((ctrl_state >> (n - 1)) & 1 == 0):
+            x(qubits[-1])
+
+        h(qubits[-1])
+        mcx(
+            qubits[:-1],
+            qubits[-1],
+            method=method,
+            ctrl_state=ctrl_state & ((1 << (n - 1)) - 1),
+        )
+        h(qubits[-1])
+
+        with control((ctrl_state >> (n - 1)) & 1 == 0):
+            x(qubits[-1])
+
+        return qubits
+
+    n = jlen(qubits)
+    if not check_for_tracing_mode():
+        if not isinstance(ctrl_state, str):
+            if ctrl_state == -1:
+                ctrl_state += 2**n
+            ctrl_state = bin_rep(ctrl_state, n)[::-1]
+    else:
+        if method == "auto":
+            method = "balauca"
+        if isinstance(ctrl_state, str):
+            ctrl_state = int(ctrl_state, 2)
+        return jasp_mcz_inner(qubits, method=method, ctrl_state=ctrl_state)
 
     if method in ["gray", "auto"]:
         if ctrl_state[-1] == "0":
@@ -1211,7 +1243,9 @@ def unitary(unitary_array, qubits):
 
     temp_u3 = u3matrix(theta, phi, lam, 0).flatten()
 
-    gphase_angle = (-jnp.angle(temp_u3[arg_max] / mat.flatten()[arg_max])) % (2 * jnp.pi)
+    gphase_angle = (-jnp.angle(temp_u3[arg_max] / mat.flatten()[arg_max])) % (
+        2 * jnp.pi
+    )
 
     u3(theta, phi, lam, qubits)
     gphase(gphase_angle, qubits)
@@ -1259,28 +1293,35 @@ def measure(qubits):
         )
         from qrisp import QuantumVariable, QuantumArray
 
-        if not qs.abs_qc._trace is jax.core.trace_ctx.trace:
+        if not qs.abs_qst._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
             )
 
         if isinstance(qubits, (DynamicQubitArray, QuantumVariable, QuantumArray)):
             res = qubits.measure()
-        elif isinstance(qubits, jax.core.Tracer) and isinstance(qubits.aval, (AbstractQubitArray, AbstractQubit)):
-            res, abs_qc = Measurement_p.bind(qubits, qs.abs_qc)
-            qs.abs_qc = abs_qc
+        elif isinstance(qubits, jax.core.Tracer) and isinstance(
+            qubits.aval, (AbstractQubitArray, AbstractQubit)
+        ):
+            res, abs_qst = Measurement_p.bind(qubits, qs.abs_qst)
+            qs.abs_qst = abs_qst
         else:
             raise Exception(f"Tried to measure type {type(qubits)}")
 
         return res
 
+
 def measure_to_big_integer(qv, size):
     from qrisp import BigInteger, q_fori_loop
     import jax.numpy as jnp
+
     def body_fun(i, val):
-        return val.at[i].set(measure(qv[32*i:32*(i+1)]))
-    digits = q_fori_loop(0, (qv.size-1)//32, body_fun, jnp.zeros(size, jnp.uint32))
-    digits = digits.at[(qv.size-1)//32].set(measure(qv[32*((qv.size - 1)//32):]))
+        return val.at[i].set(measure(qv[32 * i : 32 * (i + 1)]))
+
+    digits = q_fori_loop(0, (qv.size - 1) // 32, body_fun, jnp.zeros(size, jnp.uint32))
+    digits = digits.at[(qv.size - 1) // 32].set(
+        measure(qv[32 * ((qv.size - 1) // 32) :])
+    )
     return BigInteger(digits)
 
 
@@ -1293,8 +1334,8 @@ def reset(qubits):
     qubit : Qubit or list[Qubit] or QuantumVariable
         The Qubit to measure.
     """
-    from qrisp import find_qs
-    from qrisp.jasp import TracingQuantumSession
+    from qrisp import find_qs, QuantumArray
+    from qrisp.jasp import TracingQuantumSession, jrange
 
     qs = find_qs(qubits)
 
@@ -1306,15 +1347,20 @@ def reset(qubits):
         from qrisp import QuantumVariable
 
         if isinstance(qubits, QuantumVariable):
-            abs_qc = reset_p.bind(qubits.reg.tracer, qs.abs_qc)
+            abs_qst = reset_p.bind(qubits.reg.tracer, qs.abs_qst)
+        elif isinstance(qubits, QuantumArray):
+            flattened_qa = qubits.flatten()
+            for i in jrange(qubits.size):
+                reset(flattened_qa[i])
+            return
         elif isinstance(qubits.aval, AbstractQubitArray):
-            abs_qc = reset_p.bind(qubits.tracer, qs.abs_qc)
+            abs_qst = reset_p.bind(qubits.tracer, qs.abs_qst)
         elif isinstance(qubits.aval, AbstractQubit):
-            abs_qc = reset_p.bind(qubits, qs.abs_qc)
+            abs_qst = reset_p.bind(qubits, qs.abs_qst)
         else:
             raise Exception(f"Tried to reset type {type(qubits.aval)}")
 
-        qs.abs_qc = abs_qc
+        qs.abs_qst = abs_qst
 
         return None
 
