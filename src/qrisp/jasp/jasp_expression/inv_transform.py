@@ -19,14 +19,13 @@
 from functools import lru_cache
 
 import numpy as np
+from jax import make_jaxpr
+from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Var
+from jax.lax import add_p, sub_p, while_loop
 from sympy import lambdify
 
-from jax import make_jaxpr
-from jax.extend.core import JaxprEqn, Var, ClosedJaxpr, Jaxpr
-from jax.lax import add_p, sub_p, while_loop
-
-from qrisp.jasp.primitives import AbstractQuantumState, quantum_gate_p, greek_letters
 from qrisp.jasp.interpreter_tools import eval_jaxpr, extract_invalues, insert_outvalues
+from qrisp.jasp.primitives import AbstractQuantumState, greek_letters, quantum_gate_p
 
 
 def copy_jaxpr_eqn(eqn):

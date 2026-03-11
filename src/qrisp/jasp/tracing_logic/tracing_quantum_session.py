@@ -17,14 +17,15 @@
 """
 
 import weakref
+from collections import deque
+from typing import Deque, List, cast
 
 import jax
+from sympy import symbols
 
+from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.jasp.primitives import create_qubits, delete_qubits_p, quantum_gate_p
 from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
-from qrisp.core.quantum_variable import QuantumVariable
-
-from sympy import symbols
 
 greek_letters = symbols(
     "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega"
@@ -55,9 +56,9 @@ class TracingQuantumSession:
     nested scope.
     """
 
-    tr_qs_container = [None]
-    abs_qst_stack = []
-    qubit_cache_stack = []
+    tr_qs_container: Deque = deque([None])
+    abs_qst_stack: List = []
+    qubit_cache_stack: List = []
 
     def __init__(self):
         """
@@ -71,7 +72,7 @@ class TracingQuantumSession:
         self.qv_list = []
         self.deleted_qv_list = []
         self.qubit_cache = None
-        TracingQuantumSession.tr_qs_container.insert(0, self)
+        TracingQuantumSession.tr_qs_container.appendleft(self)
         self.qv_stack = []
 
     def start_tracing(self, abs_qst):
@@ -106,7 +107,7 @@ class TracingQuantumSession:
                 "Tried to append Operation with non-zero classical bits in JAX mode."
             )
 
-        from qrisp.core import QuantumVariable, QuantumArray
+        from qrisp.core import QuantumArray, QuantumVariable
         from qrisp.jasp import jrange
 
         if isinstance(qubits[0], (QuantumVariable, DynamicQubitArray)):
@@ -219,11 +220,11 @@ class TracingQuantumSession:
 
     @classmethod
     def release(cls):
-        cls.tr_qs_container.pop(0)
+        cls.tr_qs_container.popleft()
 
     @classmethod
-    def get_instance(cls):
-        return cls.tr_qs_container[0]
+    def get_instance(cls) -> "TracingQuantumSession":
+        return cast("TracingQuantumSession", cls.tr_qs_container[0])
 
 
 tracing_qs_singleton = TracingQuantumSession()
