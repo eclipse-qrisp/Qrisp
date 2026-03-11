@@ -432,7 +432,8 @@ class QuantumEnvironment(QuantumPrimitive):
         # compile is called.
         # In this case, the (de)allocation gates that happened inside this environment
         # will be collected and execute before (after) the compile method is called.
-        self.manual_allocation_management = self.__class__ is QuantumEnvironment
+        if type(self) is QuantumEnvironment:
+            self.manual_allocation_management = True
 
         return self
 
