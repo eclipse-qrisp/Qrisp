@@ -26,7 +26,7 @@ from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_sum_path imp
     qq_sum_path_direct_uncomputation,
     qq_sum_path,
 )
-from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder
+from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 from qrisp.environments import QuantumEnvironment, invert
 from qrisp.core import QuantumVariable
 from qrisp.circuit import fast_append
