@@ -24,7 +24,7 @@
 
 from qrisp.core.gate_application_functions import x, cx
 from qrisp.misc.utility import check_if_fresh
-from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder, cq_gidney_adder
+from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 from qrisp.alg_primitives.arithmetic.adders.incrementation import lin_incr
 
 # Both of these functions are the semi-classical versions of the ones found in
