@@ -20,7 +20,7 @@ from qrisp import inpl_mult, h, QuantumFloat, q_switch, multi_measurement, x
 
 # classical indexed switch tests
 
-def test_jasp_q_switch_classical_index():
+def test_q_switch_classical_index():
 
     def main(index_val):
 
@@ -41,7 +41,7 @@ def test_jasp_q_switch_classical_index():
 
 # quantum indexed switch tests
 
-def test_jasp_q_switch_quantum_index():
+def test_q_switch_quantum_index():
     from qrisp import QuantumFloat, q_switch
 
     def main(index_val):
@@ -61,6 +61,39 @@ def test_jasp_q_switch_quantum_index():
     for index_val in range(4):
         res = main(index_val)
         assert res[index_val] == 1.0
+
+
+def test_q_switch_multiple_operands():
+    from qrisp import QuantumFloat, jaspify, multi_measurement, q_switch
+
+    def main(index_val):
+
+        def f0(x, y): pass
+
+        def f1(x ,y): 
+            x += 1
+            y += 1
+
+        def f2(x, y): 
+            x += 2
+            y += 2
+
+        def f3(x, y): 
+            x += 3
+            y += 3
+            
+        index = QuantumFloat(2)
+        index[:] = index_val
+        branches = [f0, f1, f2, f3]
+        operand1 = QuantumFloat(2)
+        operand2 = QuantumFloat(2)
+
+        q_switch(index, branches, operand1, operand2)
+        return multi_measurement([operand1, operand2])
+
+    for index_val in range(4):
+        res = main(index_val)
+        assert res[(index_val, index_val)] == 1.0
 
 
 def test_q_switch_branches_list():
