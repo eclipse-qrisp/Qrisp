@@ -1121,10 +1121,10 @@ class BlockEncoding:
 
             x(anc)
 
-            with control(anc, ctrl_state=1):
+            with control(anc, ctrl_state=0):
                 self.unitary(*self_ancs, *operands)
 
-            with control(anc, ctrl_state=0):
+            with control(anc, ctrl_state=1):
                 with invert():
                     self.unitary(*self_ancs, *operands)
      

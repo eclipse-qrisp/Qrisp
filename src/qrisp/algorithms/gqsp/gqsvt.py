@@ -23,7 +23,6 @@ from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
 from qrisp.algorithms.gqsp.helper_functions import poly2cheb, _rescale_poly
 from qrisp.block_encodings import BlockEncoding
-from qrisp.operators import QubitOperator, FermionicOperator
 from typing import Literal, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -41,8 +40,13 @@ def GQSVT(
     Returns a BlockEncoding representing a polynomial transformation of the operator via `Generalized Quantum Singular Value Transform <https://arxiv.org/pdf/2312.00723>`_.
 
     For a block-encoded operator $A$ with Singular Value Decomposition $A = U \Sigma V^{\dagger}$ for unitaries $U, V$, 
-    and a (complex) polynomial $p(z)$, this method returns
-    a BlockEncoding of the operator $p(A)=U p_{parity}(\Sigma) V^{\dagger}$ for either the odd or even parity part of $p=p_{odd}+p_{even}$.
+    and a (complex) polynomial $p(z)$, this method returns a BlockEncoding of either operator:
+
+    - $p_{odd}(A)=V p_{odd}(\Sigma) U^{\dagger}$ 
+
+    - $p_{even}(A)=V p_{even}(\Sigma) V^{\dagger}$
+
+    where $p=p_{odd}+p_{even}$ is decomposed into odd and even parity parts.
 
     Parameters
     ----------
@@ -79,7 +83,7 @@ def GQSVT(
     --------
 
     Define a non-Hermitian matrix $A$ and a vector $\vec{b}$. The matris $A$ has singular value decomposition
-    $A = U p(\Sigma) V^{\dagger}$ for unitary matrices $U, V$.
+    $A = U \Sigma V^{\dagger}$ for unitary matrices $U, V$.
 
     ::
 
@@ -139,7 +143,7 @@ def GQSVT(
         S_poly = S + S ** 3
 
         # Reconstruct transformed matrix
-        A_poly = U @ np.diag(S_poly) @ Vh
+        A_poly = (U @ np.diag(S_poly) @ Vh).conj().T
 
         res = A_poly @ b / np.linalg.norm(A_poly @ b)
         print(res)
@@ -147,8 +151,8 @@ def GQSVT(
 
     .. warning:: 
 
-        For non-Hermitian matrices $A$ performing Singular Value Transform 
-        $p(A) = U p(\Sigma) V^{\dagger}$ is not the same as applying a matrix polynomial.
+        For non-Hermitian matrices performing Singular Value Transform 
+        is not the same as applying a matrix polynomial.
         
     ::
 
