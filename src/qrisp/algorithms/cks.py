@@ -124,11 +124,11 @@ def cks_coeffs(j0: int, b: int) -> npt.NDArray[float]:
     # c_j = 4 * (2 ** (-2 * b)) * sum_{i=j+1}^{b} comb(2 * b, b + i)
     # comb(2b, k) * (0.5 ** (2 * b)) is the probability mass function for a 
     # Binomial distribution: X ~ Binomial(2b, 0.5)
-    # The sum is calculating the probability that X >= b+j+1.
+    # The sum is calculating the probability that X >= b + j + 1.
     # The sum of the "upper tail" of the distribution is evaluated by
     # the Binomial Survival Function.
 
-    # Create an array of all j values from 0 to j0
+    # Create an array of all j values from 0 to j0.
     j_values = np.arange(j0 + 1)
     
     # binom.sf(k, n, p) calculates P(X > k) for X ~ Binomial(n, p).
