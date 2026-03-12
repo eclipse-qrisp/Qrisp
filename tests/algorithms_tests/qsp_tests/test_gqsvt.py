@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 from qrisp import *
 from qrisp.block_encodings import BlockEncoding
-from qrisp.gqsp import GQSVT
+from qrisp.gqsp import GQSVT, inversion
 
 
 @pytest.mark.parametrize("poly, parity", [
@@ -79,6 +79,45 @@ def test_gqsvt(poly, parity):
         A_poly = (U @ np.diag(S_poly) @ Vh).conj().T
 
     res = A_poly @ b / np.linalg.norm(A_poly @ b)
-
     assert np.linalg.norm(np.abs(res) - amps) < 1e-2
-    
+
+
+def test_gqsvt_inversion():
+
+    # Define non-Hermitian matrix A
+    # [[3. 1. 0. 0.]
+    # [0. 3. 1. 0.]
+    # [0. 0. 3. 1.]
+    # [1. 0. 0. 3.]]
+    N = 4
+    A = np.eye(N, k=1) + 3 * np.eye(N)
+    A[N-1,0] = 1
+
+    b = np.array([1,0,0,0])
+
+    # Define BlockEncoding for A
+    def U0(qv): pass
+    def U1(qv): qv-=1
+    BE = BlockEncoding.from_lcu(np.array([3,1]), [U0,U1])
+
+    # Apply inversion via GQSVT
+    BE_inv = inversion(BE, 0.01, np.linalg.cond(A), method="GQSVT")
+
+    # Prepare initial system state |b>
+    def operand_prep():
+        qv = QuantumFloat(2)
+        prepare(qv, b)
+        return qv
+
+    @terminal_sampling
+    def main():
+        operand = BE_inv.apply_rus(operand_prep)()
+        return operand
+
+    res_dict = main()
+    amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
+
+    # Compare to target values
+    A_inv = np.linalg.inv(A)
+    res = A_inv @ b / np.linalg.norm(A_inv @ b)
+    assert np.linalg.norm(np.abs(res) - amps) < 1e-2
