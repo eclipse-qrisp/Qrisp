@@ -21,7 +21,7 @@ from qrisp import gate_wrap
 
 
 @gate_wrap(is_qfree=True, permeability="args")
-def q_int_div(numerator, divisor, adder="cuccaro", n=None, log_output=True):
+def q_int_div(numerator, divisor, adder="thapliyal", n=None, log_output=True):
     # This function performs integer division based on the following algorithm
     # Which is a reformulation of the division algorithm presented in
     # https://en.wikipedia.org/wiki/Division_algorithm#Non-restoring_division
@@ -288,7 +288,7 @@ def q_int_div(numerator, divisor, adder="cuccaro", n=None, log_output=True):
 # Supports division for quantum float of arbitrary exponent.
 # And allows to give a precision threshold (prec)
 # The resulting quotient variable Q_res has the property |Q_res - Q_real| < 2**prec
-def q_divmod(numerator, divisor, adder="thapliyal", prec=0):
+def q_divmod(numerator, divisor, adder = "thapliyal", prec=0):
     """
     Performs division up to arbitrary precision. Returns the quotient and the remainder.
 
