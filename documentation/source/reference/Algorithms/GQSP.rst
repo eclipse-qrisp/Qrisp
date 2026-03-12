@@ -12,6 +12,7 @@ Algorithms & Applications
 .. autosummary:: 
     :toctree: generated/
     
+    GQSVT
     GQET
     QET
     hamiltonian_simulation

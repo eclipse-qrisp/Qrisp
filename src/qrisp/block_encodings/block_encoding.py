@@ -1096,6 +1096,42 @@ class BlockEncoding:
                 num_ops=self.num_ops,
                 is_hermitian=True,
             )
+        
+    def _hermitianization(self) -> BlockEncoding:
+        r"""
+        Returns a BlockEncoding representing the `qubitization walk operator via Hermitianization <https://arxiv.org/pdf/2312.00723>`_.
+
+        For a block-encoded (**not** necessarily Hermitian) operator $A$,
+        this method returns a BlockEncoding of the qubitization walk operator via Hermitianization.
+        The operator $A$ is encoded in the upper right block (measure new ancilla QuantumBool in $\ket{1}$):
+
+        .. math::
+
+            \begin{pmatrix} \mathbb{0} & A \\ A^{\dagger} & \mathbb{0} \end{pmatrix}
+        
+        """
+
+        n = self.num_ancs
+
+        def new_unitary(*args):
+
+            anc = args[0]
+            self_ancs = args[1:n+1]
+            operands = args[n+1:]
+
+            x(anc)
+
+            with control(anc, ctrl_state=1):
+                self.unitary(*self_ancs, *operands)
+
+            with control(anc, ctrl_state=0):
+                with invert():
+                    self.unitary(*self_ancs, *operands)
+     
+            reflection(self_ancs)
+        
+        new_anc_templates = [QuantumBool().template()] + self._anc_templates
+        return BlockEncoding(self.alpha, new_anc_templates, new_unitary, num_ops=self.num_ops, is_hermitian=True)
 
     def chebyshev(self, k: int, rescale: bool = True) -> BlockEncoding:
         r"""
