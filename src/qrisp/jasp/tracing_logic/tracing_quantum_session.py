@@ -25,6 +25,7 @@ from sympy import symbols
 
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.jasp.primitives import create_qubits, delete_qubits_p, quantum_gate_p
+from qrisp.jasp.primitives.abstract_quantum_state import AbstractQuantumState
 from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
 
 greek_letters = symbols(
@@ -36,7 +37,7 @@ class TracingQuantumSession:
     """
     Manage tracing-time state for building quantum circuits in Jasp mode.
 
-    This class acts as the central recording context while JAX is tracing a Python
+    This class acts as the central recording context while JAX traces a Python
     function that constructs a quantum program. In particular, it maintains:
 
     - a reference to the currently active :class:`~qrisp.jasp.AbstractQuantumState`
@@ -52,12 +53,11 @@ class TracingQuantumSession:
 
     The session supports nested tracing. Each call to :meth:`start_tracing`
     pushes the previous tracing state onto internal stacks; :meth:`conclude_tracing`
-    restores the previous state and returns the circuit that was traced in the
-    nested scope.
+    restores the previous state and returns the circuit traced in the nested scope.
     """
 
     tr_qs_container: Deque = deque([None])
-    abs_qst_stack: List = []
+    abs_qst_stack: List[AbstractQuantumState | None] = []
     qubit_cache_stack: List = []
 
     def __init__(self):
@@ -75,23 +75,29 @@ class TracingQuantumSession:
         TracingQuantumSession.tr_qs_container.appendleft(self)
         self.qv_stack = []
 
-    def start_tracing(self, abs_qst):
+    def start_tracing(self, abs_qst: AbstractQuantumState) -> None:
+        """Start a new tracing context with the provided abstract quantum state."""
+
+        # Save current state to stacks
         self.abs_qst_stack.append(self.abs_qst)
         self.qubit_cache_stack.append(self.qubit_cache)
+        self.qv_stack.append((self.qv_list, self.deleted_qv_list))
 
+        # Initialize new tracing state
         self.abs_qst = abs_qst
         self.qubit_cache = {}
-
-        self.qv_stack.append((self.qv_list, self.deleted_qv_list))
         self.qv_list = []
         self.deleted_qv_list = []
 
-    def conclude_tracing(self):
+    def conclude_tracing(self) -> AbstractQuantumState | None:
+        """Conclude the current tracing context and return the traced circuit."""
 
         temp = self.abs_qst
-        self.abs_qst = self.abs_qst_stack.pop(-1)
-        self.qubit_cache = self.qubit_cache_stack.pop(-1)
-        self.qv_list, self.deleted_qv_list = self.qv_stack.pop(-1)
+
+        # Restore previous tracing state
+        self.abs_qst = self.abs_qst_stack.pop()
+        self.qubit_cache = self.qubit_cache_stack.pop()
+        self.qv_list, self.deleted_qv_list = self.qv_stack.pop()
 
         return temp
 
@@ -182,44 +188,41 @@ class TracingQuantumSession:
         qv.creation_time = int(QuantumVariable.creation_counter[0])
         QuantumVariable.creation_counter += 1
 
-    def request_qubits(self, amount):
+    def request_qubits(self, amount) -> DynamicQubitArray:
+        """Request and allocate the specified number of qubits."""
         qb_array_tracer, self.abs_qst = create_qubits(amount, self.abs_qst)
         return DynamicQubitArray(qb_array_tracer)
 
-    def delete_qv(self, qv, verify=False):
+    def delete_qv(self, qv: QuantumVariable, verify: bool = False) -> None:
+        """Delete the specified quantum variable and free its qubits."""
 
         if not self.abs_qst._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
             )
 
-        if verify == True:
-            raise Exception("Tried to verify deletion in tracing mode.")
+        if verify:
+            raise ValueError("Tried to verify deletion in tracing mode.")
 
         # Check if quantum variable appears in this session
         if qv.name not in [qv.name for qv in self.qv_list]:
-            raise Exception(
-                "Tried to remove a non existent quantum variable from quantum session"
+            raise ValueError(
+                "Tried to remove a non-existent quantum variable from quantum session"
             )
 
-        self.clear_qubits(qv.reg, verify)
+        self.clear_qubits(qv.reg)
 
         # Remove quantum variable from list
-        for i in range(len(self.qv_list)):
-            temp_qv = self.qv_list[i]
-
-            if temp_qv.name == qv.name:
-                self.qv_list.pop(i)
-                break
+        self.qv_list = [temp_qv for temp_qv in self.qv_list if temp_qv.name != qv.name]
 
         self.deleted_qv_list.append(qv)
 
-    def clear_qubits(self, qubits, verify=False):
-
+    def clear_qubits(self, qubits) -> None:
+        """Free the specified qubits."""
         self.abs_qst = delete_qubits_p.bind(qubits.tracer, self.abs_qst)
 
     @classmethod
-    def release(cls):
+    def release(cls) -> None:
         cls.tr_qs_container.popleft()
 
     @classmethod
@@ -230,7 +233,8 @@ class TracingQuantumSession:
 tracing_qs_singleton = TracingQuantumSession()
 
 
-def check_for_tracing_mode():
+def check_for_tracing_mode() -> bool:
+    """Check if the current execution context is within a JAX tracing session."""
     return hasattr(jax._src.core.trace_ctx.trace, "frame")
 
 

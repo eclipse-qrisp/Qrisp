@@ -32,9 +32,7 @@ from qrisp.jasp import (
 )
 from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement
 from qrisp.jasp.jasp_expression import collect_environments, invert_jaspr
-from qrisp.jasp.primitives import (
-    AbstractQuantumState,
-)
+from qrisp.jasp.primitives import AbstractQuantumState
 
 
 class Jaspr(ClosedJaxpr):
