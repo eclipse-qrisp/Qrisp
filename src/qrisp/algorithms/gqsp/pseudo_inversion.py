@@ -97,63 +97,90 @@ def pseudo_inversion(
     Examples
     --------
 
-    Define a QSLP and solve it using :meth:`inversion`.
-
-    First, define a Hermitian matrix $A$ and a right-hand side vector $\vec{b}$.
+    First, define a matrix $A$ and a right-hand side vector $\vec{b}$.
 
     ::
 
         import numpy as np
 
-        A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
-                    [0.14516978, 0.68701415, -0.04929867, -0.00999921],
-                    [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
-                    [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
+        N = 4
+        A = 1.4 * np.eye(N, k=1) + 1.1 * np.eye(N, k=-1)
+        A[0, N-1] = 1.1
+        A[N-1, 0] = 1.4
 
         b = np.array([0, 1, 1, 1])
 
-        kappa = np.linalg.cond(A)
-        print("Condition number of A: ", kappa)
-        # Condition number of A:  1.8448536035491883
+        print(A)
+        #[[0.  1.4 0.  1.1]
+        # [1.1 0.  1.4 0. ]
+        # [0.  1.1 0.  1.4]
+        # [1.4 0.  1.1 0. ]]
+        
+        _, S, _ = np.linalg.svd(A)
+        print("Singular values of A: ", S)
+        # Singular values of A:  [2.5 2.5 0.3 0.3]
 
-    Generate a block-encoding of $A$ and use :meth:`inversion` to find a block-encoding approximating $A^{-1}$.
+    Generate a block-encoding of $A$ and use :meth:`pseudo_inversion` to find a block-encoding approximating $A_{1}^{+}$.
 
     ::
 
         from qrisp import *
-        from qrisp.algorithms.gqsp import inversion
-        from qrisp.operators import QubitOperator
+        from qrisp.block_encodings import BlockEncoding
+        from qrisp.gqsp import pseudo_inversion
 
-        H = QubitOperator.from_matrix(A, reverse_endianness=True)
-        BA = H.pauli_block_encoding()
+        # Define efficient block-encoding.
+        def f0(x): x+=1
+        def f1(x): x-=1
+        BE = BlockEncoding.from_lcu(np.array([1.4, 1.1]), [f0, f1])
+        # alpha = 1.4 + 1.1 = 2.5
 
-        BA_inv = inversion(BA, 0.01, 2)
+        # Choose threshold theta > 0.3 / 2.5 = 0.12 
+        # to cut off smallest singular values.
+        BE_inv = pseudo_inversion(BE, 0.01, 0.4, 0.1)
 
         # Prepares operand variable in state |b>
         def prep_b():
-            operand = QuantumVariable(2)
+            operand = QuantumFloat(2)
             prepare(operand, b)
             return operand
 
         @terminal_sampling
         def main():
-            operand = BA_inv.apply_rus(prep_b)()
-            return operand
+            operand = prep_b()
+            ancillas = BE_inv.apply(operand)
+            return operand, *ancillas
 
         res_dict = main()
-        amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
+
+        # Post-selection on ancillas being in |0> state
+        filtered_dict = {k[0]: p for k, p in res_dict.items() \
+                        if all(x == 0 for x in k[1:])}
+        success_prob = sum(filtered_dict.values())
+        print(success_prob)
+        filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
+
+        amps = np.sqrt([filtered_dict.get(i, 0) for i in range(4)])
+        print(amps)
 
     Finally, compare the quantum simulation result with the classical solution:
 
     ::
 
-        c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
+        def threshold_pseudoinverse(A, threshold):
+            U, S, Vh = np.linalg.svd(A, full_matrices=False)
+            S_inv = np.zeros_like(S)
+            valid_mask = S >= threshold
+            S_inv[valid_mask] = 1.0 / S[valid_mask]
+            return (Vh.conj().T * S_inv) @ U.conj().T
+
+        c = (threshold_pseudoinverse(A, 0.4 * 2.5) @ b) 
+        c = c / np.linalg.norm(c)
 
         print("QUANTUM SIMULATION\n", amps, "\nCLASSICAL SOLUTION\n", c)
         # QUANTUM SIMULATION
-        # [0.02844496 0.55538449 0.53010186 0.64010231]
+        # [0.63244232 0.31179432 0.63244232 0.32065201] 
         # CLASSICAL SOLUTION
-        # [0.02944539 0.55423278 0.53013239 0.64102936]
+        # [0.63245553 0.31622777 0.63245553 0.31622777]
 
     """
 
