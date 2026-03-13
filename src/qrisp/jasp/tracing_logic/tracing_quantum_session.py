@@ -18,15 +18,17 @@
 
 import weakref
 from collections import deque
-from typing import Deque, Dict, List, cast
+from typing import Deque, Dict, List
 
 import jax
 from sympy import symbols
 
+from qrisp.circuit.operation import Operation
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.jasp.primitives import create_qubits, delete_qubits_p, quantum_gate_p
 from qrisp.jasp.primitives.abstract_quantum_state import AbstractQuantumState
 from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
+from qrisp.typing import IntLike
 
 greek_letters = symbols(
     "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega"
@@ -88,6 +90,13 @@ class TracingQuantumSession(metaclass=SingletonMeta):
         TracingQuantumSession.tr_qs_container.appendleft(self)
         self.qv_stack = []
 
+    def _ensure_active_trace(self) -> None:
+        """Ensure that there is an active tracing context and that the quantum state is being tracked."""
+        if self.abs_qst is None or self.abs_qst._trace is not jax.core.trace_ctx.trace:
+            raise RuntimeError(
+                """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
+            )
+
     def start_tracing(self, abs_qst: AbstractQuantumState) -> None:
         """Start a new tracing context with the provided abstract quantum state."""
 
@@ -114,22 +123,42 @@ class TracingQuantumSession(metaclass=SingletonMeta):
 
         return temp
 
-    def append(self, operation, qubits=None, clbits=None, param_tracers=None):
-        """Append an operation to the currently traced circuit, with the provided qubits, classical bits, and parameter tracers."""
+    def append(
+        self,
+        operation: Operation,
+        qubits: List | None = None,
+        clbits: List | None = None,
+        param_tracers: List | None = None,
+    ) -> None:
+        """
+        Append an operation to the currently traced circuit.
 
-        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
-            raise Exception(
-                """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
+        Parameters
+        ----------
+        operation : Operation
+            The quantum gate or instruction to append.
+
+        qubits : list, optional
+            Qubit arguments. May be plain qubit tracers, lists, QuantumVariables,
+            DynamicQubitArrays, or QuantumArrays; dispatch is handled automatically.
+
+        clbits : list, optional
+            Classical bit arguments. Must be empty in Jasp mode.
+
+        param_tracers : list, optional
+            JAX tracers for any parametric angles in the operation.
+
+        """
+
+        self._ensure_active_trace()
+
+        if clbits is not None and len(clbits) > 0:
+            raise ValueError(
+                "Tried to append Operation with non-zero classical bits in JAX mode."
             )
 
         qubits = qubits if qubits is not None else []
-        clbits = clbits if clbits is not None else []
         param_tracers = param_tracers if param_tracers is not None else []
-
-        if len(clbits):
-            raise Exception(
-                "Tried to append Operation with non-zero classical bits in JAX mode."
-            )
 
         from qrisp.core import QuantumArray
         from qrisp.jasp import jrange
@@ -155,12 +184,12 @@ class TracingQuantumSession(metaclass=SingletonMeta):
         if isinstance(qubits[0], QuantumArray):
             for i in range(1, len(qubits)):
                 if not isinstance(qubits[i], QuantumArray):
-                    raise Exception(
+                    raise ValueError(
                         f"Tried to apply multi-qubit gate to mixed qubit argument types (QuantumArray + {type(qubits[i])})"
                     )
 
                 if qubits[i].shape != qubits[0].shape:
-                    raise Exception(
+                    raise ValueError(
                         "Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape."
                     )
 
@@ -174,28 +203,18 @@ class TracingQuantumSession(metaclass=SingletonMeta):
                 )
             return
 
-        temp_op = operation.copy()
-
-        temp_op.params = list(temp_op.params)
-        for i, _ in enumerate(temp_op.params):
-            temp_op.params[i] = greek_letters[i]
-
         args = list(qubits) + list(param_tracers) + [self.abs_qst]
         self.abs_qst = quantum_gate_p.bind(*args, gate=operation)
 
-    def register_qv(self, qv, size):
+    def register_qv(self, qv: QuantumVariable, size: IntLike) -> None:
         """Register a quantum variable in the session and allocate its qubits."""
 
-        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
-            raise Exception(
-                """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
-            )
+        self._ensure_active_trace()
 
-        # Determine amount of required qubits
         if size is not None:
-            qv.reg = self.request_qubits(size)
+            qv.reg = self._request_qubits(size)
 
-        # Register in the list of active quantum variable
+        # Register in the list of active quantum variables
         self.qv_list.append(qv)
         qv.qs = self
 
@@ -203,18 +222,16 @@ class TracingQuantumSession(metaclass=SingletonMeta):
         qv.creation_time = int(QuantumVariable.creation_counter[0])
         QuantumVariable.creation_counter += 1
 
-    def request_qubits(self, amount) -> DynamicQubitArray:
+    def _request_qubits(self, amount: IntLike) -> DynamicQubitArray:
         """Request and allocate the specified number of qubits."""
+
         qb_array_tracer, self.abs_qst = create_qubits(amount, self.abs_qst)
         return DynamicQubitArray(qb_array_tracer)
 
     def delete_qv(self, qv: QuantumVariable, verify: bool = False) -> None:
         """Delete the specified quantum variable and free its qubits."""
 
-        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
-            raise Exception(
-                """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
-            )
+        self._ensure_active_trace()
 
         if verify:
             raise ValueError("Tried to verify deletion in tracing mode.")
@@ -225,7 +242,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
                 "Tried to remove a non-existent quantum variable from quantum session"
             )
 
-        self.clear_qubits(qv.reg)
+        self._clear_qubits(qv.reg)
 
         # Remove quantum variable from list
         for idx, temp_qv in enumerate(self.qv_list):
@@ -235,19 +252,24 @@ class TracingQuantumSession(metaclass=SingletonMeta):
 
         self.deleted_qv_list.append(qv)
 
-    def clear_qubits(self, qubits) -> None:
+    def _clear_qubits(self, qubits) -> None:
         """Free the specified qubits."""
+
         self.abs_qst = delete_qubits_p.bind(qubits.tracer, self.abs_qst)
 
     @classmethod
     def release(cls) -> None:
         """Release the current tracing quantum session, allowing a new one to be created."""
+
         cls.tr_qs_container.popleft()
 
     @classmethod
     def get_instance(cls) -> "TracingQuantumSession":
-        """Get the current instance of the tracing quantum session."""
-        return cast("TracingQuantumSession", cls.tr_qs_container[0])
+        """Return the current active TracingQuantumSession instance."""
+        for instance in cls.tr_qs_container:
+            if instance is not None:
+                return instance
+        raise RuntimeError("No active TracingQuantumSession.")
 
 
 tracing_qs_singleton = TracingQuantumSession()
