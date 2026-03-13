@@ -36,7 +36,7 @@ greek_letters = symbols(
 class SingletonMeta(type):
     """Metaclass for implementing the singleton pattern."""
 
-    _instances: Dict[type, object] = {}
+    _instances: Dict["SingletonMeta", "TracingQuantumSession"] = {}
 
     def __call__(cls, *args, **kwargs):
         """Return the singleton instance of the class."""
@@ -114,23 +114,27 @@ class TracingQuantumSession(metaclass=SingletonMeta):
 
         return temp
 
-    def append(self, operation, qubits=[], clbits=[], param_tracers=[]):
+    def append(self, operation, qubits=None, clbits=None, param_tracers=None):
+        """Append an operation to the currently traced circuit, with the provided qubits, classical bits, and parameter tracers."""
 
         if not self.abs_qst._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
             )
 
+        qubits = qubits if qubits is not None else []
+        clbits = clbits if clbits is not None else []
+        param_tracers = param_tracers if param_tracers is not None else []
+
         if len(clbits):
             raise Exception(
                 "Tried to append Operation with non-zero classical bits in JAX mode."
             )
 
-        from qrisp.core import QuantumArray, QuantumVariable
+        from qrisp.core import QuantumArray
         from qrisp.jasp import jrange
 
         if isinstance(qubits[0], (QuantumVariable, DynamicQubitArray)):
-
             for i in jrange(qubits[0].size):
                 self.append(
                     operation,
@@ -139,8 +143,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
                 )
             return
 
-        elif isinstance(qubits[0], list):
-
+        if isinstance(qubits[0], list):
             for i in range(len(qubits[0])):
                 self.append(
                     operation,
@@ -149,8 +152,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
                 )
             return
 
-        elif isinstance(qubits[0], QuantumArray):
-
+        if isinstance(qubits[0], QuantumArray):
             for i in range(1, len(qubits)):
                 if not isinstance(qubits[i], QuantumArray):
                     raise Exception(
@@ -175,14 +177,14 @@ class TracingQuantumSession(metaclass=SingletonMeta):
         temp_op = operation.copy()
 
         temp_op.params = list(temp_op.params)
-        for i in range(len(temp_op.params)):
+        for i, _ in enumerate(temp_op.params):
             temp_op.params[i] = greek_letters[i]
 
-        self.abs_qst = quantum_gate_p.bind(
-            *([b for b in qubits] + param_tracers + [self.abs_qst]), gate=operation
-        )
+        args = list(qubits) + list(param_tracers) + [self.abs_qst]
+        self.abs_qst = quantum_gate_p.bind(*args, gate=operation)
 
     def register_qv(self, qv, size):
+        """Register a quantum variable in the session and allocate its qubits."""
 
         if not self.abs_qst._trace is jax.core.trace_ctx.trace:
             raise Exception(
@@ -239,10 +241,12 @@ class TracingQuantumSession(metaclass=SingletonMeta):
 
     @classmethod
     def release(cls) -> None:
+        """Release the current tracing quantum session, allowing a new one to be created."""
         cls.tr_qs_container.popleft()
 
     @classmethod
     def get_instance(cls) -> "TracingQuantumSession":
+        """Get the current instance of the tracing quantum session."""
         return cast("TracingQuantumSession", cls.tr_qs_container[0])
 
 
@@ -255,10 +259,12 @@ def check_for_tracing_mode() -> bool:
 
 
 def get_last_equation(i=-1):
+    """Get the last equation in the current JAX trace."""
     return jax._src.core.trace_ctx.trace.frame.tracing_eqns[i]()
 
 
 def check_live(tracer):
+    """Check if the provided tracer is live (i.e., part of the current JAX trace)."""
     if tracer is None:
         return True
-    return not not tracer._trace.main.jaxpr_stack
+    return tracer._trace.main.jaxpr_stack
