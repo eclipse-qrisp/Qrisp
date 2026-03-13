@@ -17,6 +17,7 @@
 """
 
 from qrisp.jasp.tracing_logic.tracing_quantum_session import TracingQuantumSession
+from qrisp.jasp.primitives.abstract_quantum_state import AbstractQuantumState
 
 
 def test_tracing_quantum_session_is_singleton():
@@ -24,3 +25,22 @@ def test_tracing_quantum_session_is_singleton():
     session1 = TracingQuantumSession()
     session2 = TracingQuantumSession()
     assert session1 is session2
+
+
+def test_get_instance():
+
+    instance = TracingQuantumSession.get_instance()
+
+    assert instance.abs_qst is None
+    assert instance.qubit_cache == {}
+    assert instance.qv_list == []
+    assert instance.deleted_qv_list == []
+
+    abs_qst = AbstractQuantumState()
+
+    instance.start_tracing(abs_qst)
+
+    assert instance.abs_qst is abs_qst
+    assert instance.qubit_cache == {}
+    assert instance.qv_list == []
+    assert instance.deleted_qv_list == []

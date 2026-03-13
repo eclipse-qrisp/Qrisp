@@ -26,7 +26,6 @@ import jax
 from jax.extend.core import JaxprEqn
 from sympy import symbols
 
-from qrisp.circuit.operation import Operation
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.jasp.primitives import create_qubits, delete_qubits_p, quantum_gate_p
 from qrisp.jasp.primitives.abstract_quantum_state import AbstractQuantumState
@@ -48,6 +47,23 @@ class SingletonMeta(type):
             instance = super().__call__(*args, **kwargs)
             cls._instances[cls] = instance
         return cls._instances[cls]
+
+
+# Question 1: This class is a singleton by construction. Therefore, there is only one instance
+# of TracingQuantumSession that can exist at any time.
+# Therefore, what is the purpose of the trc_qs_stack attribute,
+# which is a deque that can hold multiple instances of TracingQuantumSession or None?
+
+
+# Question 2: For the same reason as above, what is the point of distinguishing
+# between class attributes (like trc_qs_stack) and instance attributes (like abs_qst, qubit_cache, qv_list, deleted_qv_list)?
+
+
+# Question 3: `qubit_cache` is always initialized as an empty dictionary in the constructor,
+# and is also reset to an empty dictionary in the `start_tracing` method. Looks like that this always initialized externally,
+# and is never modified internally in the class. If it is an attribute of the class, it should be initialized inside the class.
+
+# Question 4: Why do we store self.abs_qst instead of just using the abs_qst passed to start_tracing?
 
 
 class TracingQuantumSession(metaclass=SingletonMeta):
@@ -117,7 +133,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
 
     def append(
         self,
-        operation: Operation,
+        operation,
         qubits: List | None = None,
         clbits: List | None = None,
         param_tracers: List | None = None,
@@ -127,7 +143,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
 
         Parameters
         ----------
-        operation : Operation
+        operation : qrisp.circuit.operation.Operation
             The quantum gate or instruction to append.
 
         qubits : list, optional
