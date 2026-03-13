@@ -65,6 +65,9 @@ def pseudo_inversion(
     using a polynomial approximation of $1/x$ over the domain $D_{\theta} = [-1, -\theta] \cup [\theta, 1]$, 
     and a smoothed rectangle filter over the domain $D_{\theta}' = [-\theta, \theta]$.
 
+    .. image:: /_static/pseudo_inverse.png
+       :align: center
+
     Parameters
     ----------
     A : BlockEncoding
@@ -87,7 +90,7 @@ def pseudo_inversion(
 
     Notes
     -----
-    - **Complexity**: The polynomial degree scales as :math:`\mathcal{O}(\kappa \log(\kappa/\epsilon))`.
+    - **Complexity**: The polynomial degree scales as :math:`\mathcal{O}(\log(1/(\epsilon\theta))/\theta)`.
 
     References
     ----------
