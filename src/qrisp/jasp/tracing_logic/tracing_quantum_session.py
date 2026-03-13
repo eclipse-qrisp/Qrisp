@@ -18,7 +18,7 @@
 
 import weakref
 from collections import deque
-from typing import Deque, List, cast
+from typing import Deque, Dict, List, cast
 
 import jax
 from sympy import symbols
@@ -33,7 +33,20 @@ greek_letters = symbols(
 )
 
 
-class TracingQuantumSession:
+class SingletonMeta(type):
+    """Metaclass for implementing the singleton pattern."""
+
+    _instances: Dict[type, object] = {}
+
+    def __call__(cls, *args, **kwargs):
+        """Return the singleton instance of the class."""
+        if cls not in cls._instances:
+            instance = super().__call__(*args, **kwargs)
+            cls._instances[cls] = instance
+        return cls._instances[cls]
+
+
+class TracingQuantumSession(metaclass=SingletonMeta):
     """
     Manage tracing-time state for building quantum circuits in Jasp mode.
 
@@ -213,7 +226,10 @@ class TracingQuantumSession:
         self.clear_qubits(qv.reg)
 
         # Remove quantum variable from list
-        self.qv_list = [temp_qv for temp_qv in self.qv_list if temp_qv.name != qv.name]
+        for idx, temp_qv in enumerate(self.qv_list):
+            if temp_qv.name == qv.name:
+                del self.qv_list[idx]
+                break
 
         self.deleted_qv_list.append(qv)
 
