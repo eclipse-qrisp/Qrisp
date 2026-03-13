@@ -39,7 +39,7 @@ def GQSVT(
     r"""
     Returns a BlockEncoding representing a polynomial transformation of the operator via `Generalized Quantum Singular Value Transform <https://arxiv.org/pdf/2312.00723>`_.
 
-    For a block-encoded operator $A$ with Singular Value Decomposition $A = U \Sigma V^{\dagger}$ for unitaries $U, V$, 
+    For a block-encoded operator $A$ with `Singular Value Decomposition <https://en.wikipedia.org/wiki/Singular_value_decomposition>`_ $A = U \Sigma V^{\dagger}$ for unitaries $U, V$, 
     and a (complex) polynomial $p(z)$, this method returns a BlockEncoding of either operator:
 
     - $p_{odd}(A)=V p_{odd}(\Sigma) U^{\dagger}$ 

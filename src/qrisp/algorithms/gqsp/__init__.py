@@ -25,3 +25,4 @@ from qrisp.algorithms.gqsp.fourier_series_loader import *
 from qrisp.algorithms.gqsp.hamiltonian_simulation import *
 from qrisp.algorithms.gqsp.helper_functions import *
 from qrisp.algorithms.gqsp.inversion import *
+from qrisp.algorithms.gqsp.pseudo_inversion import *
