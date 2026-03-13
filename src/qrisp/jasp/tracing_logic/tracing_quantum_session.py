@@ -23,7 +23,7 @@ from typing import Deque, Dict, List
 import jax
 from sympy import symbols
 
-from qrisp.circuit.operation import Operation
+# from qrisp.circuit.operation import Operation
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.jasp.primitives import create_qubits, delete_qubits_p, quantum_gate_p
 from qrisp.jasp.primitives.abstract_quantum_state import AbstractQuantumState
@@ -125,7 +125,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
 
     def append(
         self,
-        operation: Operation,
+        operation,
         qubits: List | None = None,
         clbits: List | None = None,
         param_tracers: List | None = None,
