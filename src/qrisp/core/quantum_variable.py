@@ -324,7 +324,6 @@ class QuantumVariable:
                     except RuntimeError:
                         pass
 
-        import weakref
 
         # This attribute tracks the created QuantumVariables for the
         # auto_uncompute decorator

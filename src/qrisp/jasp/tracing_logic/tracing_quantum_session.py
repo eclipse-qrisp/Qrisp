@@ -1,34 +1,36 @@
-"""
-********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+
+"""This module defines the TracingQuantumSession class, which manages the state of quantum circuit construction during JAX tracing in Jasp mode."""
 
 import weakref
 from collections import deque
-from typing import Deque, Dict, List
+from typing import Deque, Dict, List, Tuple
+
 
 import jax
+from jax.extend.core import JaxprEqn
 from sympy import symbols
 
-# from qrisp.circuit.operation import Operation
+from qrisp.circuit.operation import Operation
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.jasp.primitives import create_qubits, delete_qubits_p, quantum_gate_p
 from qrisp.jasp.primitives.abstract_quantum_state import AbstractQuantumState
 from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
-from qrisp.typing import IntLike
 
 greek_letters = symbols(
     "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega"
@@ -50,45 +52,27 @@ class SingletonMeta(type):
 
 class TracingQuantumSession(metaclass=SingletonMeta):
     """
-    Manage tracing-time state for building quantum circuits in Jasp mode.
-
-    This class acts as the central recording context while JAX traces a Python
-    function that constructs a quantum program. In particular, it maintains:
-
-    - a reference to the currently active :class:`~qrisp.jasp.AbstractQuantumState`
-      being built (``self.abs_qst``),
-
-    - a cache for qubits allocated during tracing (``self.qubit_cache``),
-
-    - a list of "live" quantum variables currently registered in this session
-      (``self.qv_list``),
-
-    - a garbage-collection policy controlling what happens when a quantum variable
-      goes out of scope during tracing (``self.gc_mode``).
-
-    The session supports nested tracing. Each call to :meth:`start_tracing`
-    pushes the previous tracing state onto internal stacks; :meth:`conclude_tracing`
-    restores the previous state and returns the circuit traced in the nested scope.
+    Central context for managing quantum circuit construction during JAX tracing in Jasp mode.
     """
 
-    tr_qs_container: Deque = deque([None])
-    abs_qst_stack: List[AbstractQuantumState | None] = []
-    qubit_cache_stack: List = []
+    trc_qs_stack: Deque["TracingQuantumSession | None"] = deque()
+
+    abs_qst_stack: Deque[AbstractQuantumState | None] = deque()
+    qubit_cache_stack: Deque[Dict] = deque()
+    qv_stack: Deque[Tuple[List[QuantumVariable], List[QuantumVariable]]] = deque()
 
     def __init__(self):
         """
         Construct a new tracing quantum session and make it the current session.
-
-        The session starts with no active circuit.
-        Use :meth:`start_tracing` to begin recording into a provided abstract circuit object.
         """
 
-        self.abs_qst = None
-        self.qv_list = []
-        self.deleted_qv_list = []
-        self.qubit_cache = None
-        TracingQuantumSession.tr_qs_container.appendleft(self)
-        self.qv_stack = []
+        TracingQuantumSession.trc_qs_stack.appendleft(self)
+
+        self.abs_qst: AbstractQuantumState | None = None
+        self.qubit_cache: Dict = {}
+
+        self.qv_list: List[QuantumVariable] = []
+        self.deleted_qv_list: List[QuantumVariable] = []
 
     def _ensure_active_trace(self) -> None:
         """Ensure that there is an active tracing context and that the quantum state is being tracked."""
@@ -101,31 +85,39 @@ class TracingQuantumSession(metaclass=SingletonMeta):
         """Start a new tracing context with the provided abstract quantum state."""
 
         # Save current state to stacks
-        self.abs_qst_stack.append(self.abs_qst)
-        self.qubit_cache_stack.append(self.qubit_cache)
-        self.qv_stack.append((self.qv_list, self.deleted_qv_list))
+        TracingQuantumSession.abs_qst_stack.append(self.abs_qst)
+        TracingQuantumSession.qubit_cache_stack.append(self.qubit_cache)
+        TracingQuantumSession.qv_stack.append((self.qv_list, self.deleted_qv_list))
 
         # Initialize new tracing state
         self.abs_qst = abs_qst
         self.qubit_cache = {}
+
         self.qv_list = []
         self.deleted_qv_list = []
 
     def conclude_tracing(self) -> AbstractQuantumState | None:
-        """Conclude the current tracing context and return the traced circuit."""
+        """
+        Conclude the current tracing context and return the traced circuit.
 
-        temp = self.abs_qst
+        Returns
+        -------
+        AbstractQuantumState or None
+            The abstract quantum state representing the traced circuit, or None if there was no active trace.
+        """
+
+        current_abs_qst = self.abs_qst
 
         # Restore previous tracing state
-        self.abs_qst = self.abs_qst_stack.pop()
-        self.qubit_cache = self.qubit_cache_stack.pop()
-        self.qv_list, self.deleted_qv_list = self.qv_stack.pop()
+        self.abs_qst = TracingQuantumSession.abs_qst_stack.pop()
+        self.qubit_cache = TracingQuantumSession.qubit_cache_stack.pop()
+        self.qv_list, self.deleted_qv_list = TracingQuantumSession.qv_stack.pop()
 
-        return temp
+        return current_abs_qst
 
     def append(
         self,
-        operation,
+        operation: Operation,
         qubits: List | None = None,
         clbits: List | None = None,
         param_tracers: List | None = None,
@@ -206,7 +198,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
         args = list(qubits) + list(param_tracers) + [self.abs_qst]
         self.abs_qst = quantum_gate_p.bind(*args, gate=operation)
 
-    def register_qv(self, qv: QuantumVariable, size: IntLike) -> None:
+    def register_qv(self, qv: QuantumVariable, size: int | jax.Array) -> None:
         """Register a quantum variable in the session and allocate its qubits."""
 
         self._ensure_active_trace()
@@ -222,7 +214,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
         qv.creation_time = int(QuantumVariable.creation_counter[0])
         QuantumVariable.creation_counter += 1
 
-    def _request_qubits(self, amount: IntLike) -> DynamicQubitArray:
+    def _request_qubits(self, amount: int | jax.Array) -> DynamicQubitArray:
         """Request and allocate the specified number of qubits."""
 
         qb_array_tracer, self.abs_qst = create_qubits(amount, self.abs_qst)
@@ -252,7 +244,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
 
         self.deleted_qv_list.append(qv)
 
-    def _clear_qubits(self, qubits) -> None:
+    def _clear_qubits(self, qubits: DynamicQubitArray) -> None:
         """Free the specified qubits."""
 
         self.abs_qst = delete_qubits_p.bind(qubits.tracer, self.abs_qst)
@@ -260,13 +252,12 @@ class TracingQuantumSession(metaclass=SingletonMeta):
     @classmethod
     def release(cls) -> None:
         """Release the current tracing quantum session, allowing a new one to be created."""
-
-        cls.tr_qs_container.popleft()
+        cls.trc_qs_stack.popleft()
 
     @classmethod
     def get_instance(cls) -> "TracingQuantumSession":
         """Return the current active TracingQuantumSession instance."""
-        for instance in cls.tr_qs_container:
+        for instance in cls.trc_qs_stack:
             if instance is not None:
                 return instance
         raise RuntimeError("No active TracingQuantumSession.")
@@ -280,7 +271,7 @@ def check_for_tracing_mode() -> bool:
     return hasattr(jax._src.core.trace_ctx.trace, "frame")
 
 
-def get_last_equation(i=-1):
+def get_last_equation(i: int = -1) -> JaxprEqn:
     """Get the last equation in the current JAX trace."""
     return jax._src.core.trace_ctx.trace.frame.tracing_eqns[i]()
 
