@@ -817,7 +817,7 @@ def _should_use_callback(jaxpr, call_graph_stats):
     return (
         stats.call_count >= 2
         and stats.inlined_eqn_count > 100
-        and isinstance(jaxpr.invars[-1].aval, AbstractQuantumState)
+        and isinstance(jaxpr.jaxpr.invars[-1].aval, AbstractQuantumState)
     )
 
 
