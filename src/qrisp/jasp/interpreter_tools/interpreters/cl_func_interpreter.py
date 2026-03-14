@@ -898,7 +898,7 @@ def process_pjit(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None)
             jid = id(jaxpr)
             if jid in call_graph_stats:
                 stats = call_graph_stats[jid]
-                if stats.call_count >= 2 and stats.inlined_eqn_count > 100:
+                if stats.call_count >= 2 and stats.inlined_eqn_count > 100 and isinstance(jaxpr.invars[-1].aval, AbstractQuantumState):
                     use_callback = True
 
         if use_callback:
