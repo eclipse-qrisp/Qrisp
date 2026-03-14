@@ -145,7 +145,7 @@ class CreateQubitsOp(IRDLOperation):
     assembly_format = (
         "$amount attr-dict `,` $qst_in"
         " `:` type($qst_in) `,` type($amount)"
-        " `->` type($result)"
+        " `->` type($result) `,` type($qst_out)"
     )
 
 
