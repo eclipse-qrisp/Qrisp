@@ -20,8 +20,8 @@ import jax
 import jax.numpy as jnp
 from jax import make_jaxpr
 
-from qrisp.jasp.interpreter_tools.jaxpr_analysis import (
-    analyze_jaxpr,
+from qrisp.jasp.interpreter_tools.call_graph_analysis import (
+    analyze_call_graph,
     JaxprStats,
 )
 
@@ -38,7 +38,7 @@ def test_flat_jaxpr():
         return x
 
     jaxpr = make_jaxpr(f)(1.0)
-    root, all_stats = analyze_jaxpr(jaxpr)
+    root, all_stats = analyze_call_graph(jaxpr)
 
     assert root.local_eqn_count == 3
     assert root.inlined_eqn_count == 3
@@ -70,7 +70,7 @@ def test_single_jit_call():
         return sub(x) + 3.0
 
     jaxpr = make_jaxpr(f)(1.0)
-    root, all_stats = analyze_jaxpr(jaxpr)
+    root, all_stats = analyze_call_graph(jaxpr)
 
     # 3 jaxprs: root wrapper, f body, sub body
     assert len(all_stats) == 3
@@ -110,7 +110,7 @@ def test_shared_jit_reuse():
         return x
 
     jaxpr = make_jaxpr(g)(1.0)
-    root, all_stats = analyze_jaxpr(jaxpr)
+    root, all_stats = analyze_call_graph(jaxpr)
 
     assert root.inlined_eqn_count == 6
 
@@ -149,7 +149,7 @@ def test_nested_jit():
         return outer(x)
 
     jaxpr = make_jaxpr(f)(1.0)
-    root, all_stats = analyze_jaxpr(jaxpr)
+    root, all_stats = analyze_call_graph(jaxpr)
 
     assert root.inlined_eqn_count == 2
     assert len(all_stats) == 4  # root, f_body, outer_body, inner_body
@@ -175,7 +175,7 @@ def test_diamond_reuse():
         return outer_a(x) + outer_b(x)
 
     jaxpr = make_jaxpr(f)(1.0)
-    root, all_stats = analyze_jaxpr(jaxpr)
+    root, all_stats = analyze_call_graph(jaxpr)
 
     # inner_body has 1 local eqn and should be called 2×
     inner_stats = [s for s in all_stats.values()
@@ -191,7 +191,7 @@ def test_cond_branches():
         return jax.lax.cond(x > 0, lambda x: x + 1.0, lambda x: x - 1.0, x)
 
     jaxpr = make_jaxpr(f)(1.0)
-    root, all_stats = analyze_jaxpr(jaxpr)
+    root, all_stats = analyze_call_graph(jaxpr)
 
     # Root: gt + convert_element_type + cond = 3 eqns; each branch has 1 eqn
     # Inlined: 3 + (1-1) + (1-1) = 3
@@ -208,7 +208,7 @@ def test_while_loop():
         return jax.lax.while_loop(lambda x: x < 10.0, lambda x: x + 1.0, x)
 
     jaxpr = make_jaxpr(f)(0.0)
-    root, all_stats = analyze_jaxpr(jaxpr)
+    root, all_stats = analyze_call_graph(jaxpr)
 
     # Root: 1 eqn (the while); cond: 1 eqn; body: 1 eqn
     assert root.local_eqn_count == 1
@@ -226,7 +226,7 @@ def test_scan():
         return final
 
     jaxpr = make_jaxpr(f)(0.0)
-    root, all_stats = analyze_jaxpr(jaxpr)
+    root, all_stats = analyze_call_graph(jaxpr)
 
     # root: 2 eqns (iota/arange + scan), scan body: 1 eqn
     assert root.local_eqn_count == 2
@@ -253,7 +253,7 @@ def test_inflation_calculation():
         return x
 
     jaxpr = make_jaxpr(f)(1.0)
-    root, all_stats = analyze_jaxpr(jaxpr)
+    root, all_stats = analyze_call_graph(jaxpr)
 
     # Find sub (5 local eqns, called 10×)
     sub_stats = [s for s in all_stats.values()
@@ -286,7 +286,7 @@ def test_no_reuse_no_inflation():
         return sub_a(x) + sub_b(x)
 
     jaxpr = make_jaxpr(f)(1.0)
-    root, all_stats = analyze_jaxpr(jaxpr)
+    root, all_stats = analyze_call_graph(jaxpr)
 
     total_inflation = sum(
         (s.call_count - 1) * s.inlined_eqn_count
@@ -322,7 +322,7 @@ def test_deeply_nested_inlined_count():
         return a(x)
 
     jaxpr = make_jaxpr(f)(1.0)
-    root, all_stats = analyze_jaxpr(jaxpr)
+    root, all_stats = analyze_call_graph(jaxpr)
 
     assert root.inlined_eqn_count == 3
     # root, f_body, a_body, b_body, c_body
@@ -349,7 +349,7 @@ def test_mixed_reuse_and_unique():
         return x
 
     jaxpr = make_jaxpr(f)(1.0)
-    root, all_stats = analyze_jaxpr(jaxpr)
+    root, all_stats = analyze_call_graph(jaxpr)
 
     # shared_body: 1 eqn, called 3×
     shared_stats = [s for s in all_stats.values() if s.call_count == 3]
@@ -371,7 +371,7 @@ def test_empty_jaxpr():
         return x
 
     jaxpr = make_jaxpr(f)(1.0)
-    root, all_stats = analyze_jaxpr(jaxpr)
+    root, all_stats = analyze_call_graph(jaxpr)
 
     assert root.local_eqn_count == 0
     assert root.inlined_eqn_count == 0
@@ -394,7 +394,7 @@ def test_large_reuse_count():
         return x
 
     jaxpr = make_jaxpr(f)(1.0)
-    root, all_stats = analyze_jaxpr(jaxpr)
+    root, all_stats = analyze_call_graph(jaxpr)
 
     sub_stats = [s for s in all_stats.values()
                  if s.local_eqn_count == 2 and s.inlined_eqn_count == 2]

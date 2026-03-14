@@ -17,14 +17,14 @@
 """
 
 """
-Jaxpr Analysis Utilities
-========================
+Call Graph Analysis Utilities
+=============================
 
-This module provides functions for analyzing the structure of Jaxpr expression 
-trees, in particular computing the **inlined equation count** (the total number
-of equations that would result from fully inlining all sub-jaxpr calls) and
-the **reuse count** of each sub-jaxpr (how many times it is referenced across
-the entire expression tree).
+This module provides functions for analyzing the call graph structure of Jaxpr
+expression trees, in particular computing the **inlined equation count** (the
+total number of equations that would result from fully inlining all sub-jaxpr
+calls) and the **reuse count** of each sub-jaxpr (how many times it is
+referenced across the entire call graph).
 
 These metrics are useful for making informed decisions about compilation
 strategies — for example, deciding whether a reused sub-jaxpr should be
@@ -33,13 +33,13 @@ pass duplicating it at every call site, which causes HLO explosion and
 superlinear compilation time.
 
 The analysis is performed as a single recursive tree walk with per-jaxpr
-caching, making it efficient even for deeply nested expression trees.
+caching, making it efficient even for deeply nested call graphs.
 
 Example usage::
 
-    from qrisp.jasp.interpreter_tools.jaxpr_analysis import analyze_jaxpr
+    from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
 
-    stats = analyze_jaxpr(my_jaspr)
+    stats = analyze_call_graph(my_jaspr)
     print(stats.inlined_eqn_count)  # Total equations after full inlining
     print(stats.call_count)         # How many call sites reference this jaxpr
     for sub_id, sub_stats in stats.sub_jaxpr_stats.items():
@@ -131,12 +131,12 @@ def _iter_sub_jaxprs(eqn):
             yield jaxpr
 
 
-def analyze_jaxpr(jaxpr):
+def analyze_call_graph(jaxpr):
     """
-    Recursively analyze a Jaxpr expression tree.
+    Recursively analyze the call graph of a Jaxpr expression tree.
 
     Computes the **inlined equation count** and **call/reuse count** for
-    every sub-jaxpr in the tree. Results are cached by jaxpr identity
+    every sub-jaxpr in the call graph. Results are cached by jaxpr identity
     (``id()``) so each unique jaxpr is analyzed exactly once.
 
     The inlined equation count represents the total number of HLO operations
@@ -155,13 +155,13 @@ def analyze_jaxpr(jaxpr):
         
     dict[int, JaxprStats]
         A dictionary mapping ``id(sub_jaxpr)`` to ``JaxprStats`` for every unique
-        sub-jaxpr encountered in the tree (including the root).
+        sub-jaxpr encountered in the call graph (including the root).
 
     Example
     -------
     ::
 
-        root_stats, all_stats = analyze_jaxpr(my_jaspr)
+        root_stats, all_stats = analyze_call_graph(my_jaspr)
 
         # Total equations after full inlining
         print(root_stats.inlined_eqn_count)

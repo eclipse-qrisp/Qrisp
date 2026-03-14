@@ -18,5 +18,5 @@
 
 from qrisp.jasp.interpreter_tools.dynamic_list import *
 from qrisp.jasp.interpreter_tools.abstract_interpreter import *
-from qrisp.jasp.interpreter_tools.jaxpr_analysis import *
+from qrisp.jasp.interpreter_tools.call_graph_analysis import *
 from qrisp.jasp.interpreter_tools.interpreters import *
