@@ -18,30 +18,46 @@
 
 import numpy as np
 from qrisp.algorithms.cks import cks_coeffs, cks_params
+from qrisp.algorithms.gqsp.gqsvt import GQSVT
 from qrisp.algorithms.gqsp.qet import QET
 from qrisp.block_encodings import BlockEncoding
+from typing import Literal
 
 
-def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
+def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET", "GQSVT"] = "QET",) -> BlockEncoding:
     r"""
     Quantum Linear System Solver via Quantum Eigenvalue Transformation (QET).
     Returns a BlockEncoding approximating the matrix inversion of the operator.
 
-    For a block-encoded **Hermitian** matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
+    For a block-encoded matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
     operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$.
-    The inversion is implemented via Quantum Eigenvalue Transformation (QET)
+    
+    The inversion is implemented via
+
+    - Quantum Eigenvalue Transformation (QET) ($A$ must be **Hermitian**)
+
+    - Generalized Quantum Singular Value Transform (GQSVT)
+
     using a polynomial approximation of $1/x$ over the domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$.
 
     Parameters
     ----------
     A : BlockEncoding
-        The block-encoded Hermitian matrix to be inverted. It is assumed that
+        The block-encoded matrix to be inverted. It is assumed that
         the eigenvalues of $A/\alpha$ lie within $D_{\kappa}$.
     eps : float
         The target precision $\epsilon$.
     kappa : float
         An upper bound for the condition number $\kappa$ of $A$.
         This value defines the "gap" around zero where the function $1/x$ is not approximated.
+    method : {"QET", "GQSVT"}
+        The method for implementing the inversion.
+
+        - ``"QET"``: Quantum Eigenvalue Transform ($A$ must be Hermitian)
+
+        - ``"GQSVT"``: Generalized Quantum Singular Value Transform
+
+        Default is ``"QET"``.
 
     Returns
     -------
@@ -119,6 +135,13 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
 
     """
 
+    ALLOWED_METHODS = {"QET", "GQSVT"}
+    if method not in ALLOWED_METHODS:
+        raise ValueError(
+            f"Invalid method specified: '{method}'. "
+            f"Allowed methods are: {', '.join(ALLOWED_METHODS)}"
+        )
+
     # The inversion polynomial is constructed using cks_params and cks_coeffs.
     # Since approximating 1/x over the relevant spectral interval [-1, -1/kappa] + [1/kappa,1]
     # requires an odd Chebyshev series, cks_coeffs returns an array containing only the odd-degree coefficients.
@@ -130,8 +153,11 @@ def inversion(A: BlockEncoding, eps: float, kappa: float) -> BlockEncoding:
     p = np.zeros(2 * len(p_odd))
     p[1::2] = p_odd
 
-    # Set _rescale=False to apply p(A/α) instead of p(A).
-    A_inv = QET(A, p, kind="Chebyshev", rescale=False)
+    if method == "GQSVT":
+        # Set _rescale=False to apply p(A/α) instead of p(A).
+        A_inv = GQSVT(A, p, kind="Chebyshev", rescale=False)
+    else:
+        A_inv = QET(A, p, kind="Chebyshev", rescale=False)
 
     # Adjust scaling factor since (A/α)^{-1} = αA^{-1}.
     A_inv.alpha = A_inv.alpha / A.alpha
