@@ -53,6 +53,7 @@ The transformation works by:
 3. Producing a standard ClosedJaxpr that can be JIT-compiled by JAX
 """
 
+from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
@@ -83,13 +84,6 @@ from qrisp.jasp.interpreter_tools.abstract_interpreter import ContextDict
 BitArray = Array  # uint64 array where each element stores 64 bits
 QubitIndex = Array  # int64 scalar representing a qubit's position
 BooleanQuantumState = tuple[BitArray, Jlist]  # (bit_array, free_qubits)
-
-# Manual cache for get_traced_fun, replacing @lru_cache so that
-# call_graph_stats (an unhashable dict) can be threaded through.
-# Keyed by (id(jaxpr), bit_array_size); the call_graph_stats dict is the
-# same object for the entire transformation tree so it doesn't affect the
-# cache key.
-_traced_fun_cache: dict[tuple[int, int], tuple[Callable, tuple]] = {}
 
 
 def make_cl_func_eqn_evaluator(call_graph_stats=None):
@@ -783,40 +777,79 @@ def process_scan(eqn, context_dic, call_graph_stats=None):
     insert_outvalues(eqn, context_dic, outvalues)
 
 
-def get_traced_fun(
-    jaxpr: Jaspr | ClosedJaxpr,
-    bit_array_size: int,
-    call_graph_stats=None,
-) -> tuple[Callable, tuple]:
-    """
-    Get a JIT-compiled function and output shape specification from a Jaxpr.
+# ---------------------------------------------------------------------------
+# Sub-jaxpr compilation cache & callback helpers
+# ---------------------------------------------------------------------------
 
-    This function converts a Jaspr to its classical equivalent (if applicable)
-    and returns a JIT-compiled evaluator together with the output shapes needed
-    for ``jax.pure_callback``. Results are cached (keyed by jaxpr identity and
-    bit_array_size) to avoid repeated compilation of the same Jaxpr.
+# LRU cache for compiled sub-jaxprs.  Keyed by ``(id(jaxpr), bit_array_size)``
+# so that identical sub-jaxpr objects (shared via ``@qache``) are compiled
+# only once.  Uses ``OrderedDict`` for LRU eviction instead of
+# ``@lru_cache`` because ``call_graph_stats`` is an unhashable dict.
+_TRACED_FUN_CACHE_MAX_SIZE: int = 10_000
+_traced_fun_cache: OrderedDict[tuple[int, int], tuple[Callable, tuple]] = OrderedDict()
+
+
+def _should_use_callback(jaxpr, call_graph_stats):
+    """
+    Decide whether *jaxpr* should be called via ``jax.pure_callback``.
+
+    A sub-jaxpr benefits from callback wrapping when it is **reused**
+    (``call_count >= 2``), large enough to matter (``inlined_eqn_count > 100``),
+    and operates on quantum state.  Wrapping prevents XLA's
+    ``flatten-call-graph`` pass from cloning the HLO at every call site.
 
     Parameters
     ----------
     jaxpr : Jaspr | ClosedJaxpr
-        The Jaxpr to compile.
+        The sub-jaxpr under consideration.
+    call_graph_stats : dict | None
+        Output of ``analyze_call_graph``.  ``None`` disables callbacks.
+
+    Returns
+    -------
+    bool
+    """
+    if call_graph_stats is None:
+        return False
+    stats = call_graph_stats.get(id(jaxpr))
+    if stats is None:
+        return False
+    return (
+        stats.call_count >= 2
+        and stats.inlined_eqn_count > 100
+        and isinstance(jaxpr.invars[-1].aval, AbstractQuantumState)
+    )
+
+
+def _compile_sub_jaxpr(jaxpr, bit_array_size, call_graph_stats=None):
+    """
+    Compile a sub-jaxpr to a JIT-compiled function and cache the result.
+
+    For ``Jaspr`` instances the quantum-to-classical transformation is applied
+    first; plain ``ClosedJaxpr`` objects are compiled directly.
+
+    Parameters
+    ----------
+    jaxpr : Jaspr | ClosedJaxpr
+        The sub-jaxpr to compile.
     bit_array_size : int
-        The size of the bit array (number of bits that can be simulated).
-    call_graph_stats : dict[int, JaxprStats] | None, optional
-        Call graph analysis results for callback optimization.
+        Maximum number of simulatable qubits.
+    call_graph_stats : dict | None, optional
+        Passed through to ``jaspr_to_cl_func_jaxpr`` for nested callback
+        decisions.
 
     Returns
     -------
     tuple[Callable, tuple[ShapeDtypeStruct, ...]]
-        A 2-tuple of:
-        - A JIT-compiled function that evaluates the Jaxpr.
-        - A tuple of ``ShapeDtypeStruct`` describing the output arrays.
+        ``(jitted_fun, result_shapes)`` – the compiled function and the
+        output shape specification needed by ``jax.pure_callback``.
     """
     key = (id(jaxpr), bit_array_size)
     if key in _traced_fun_cache:
+        _traced_fun_cache.move_to_end(key)          # mark as recently used
         return _traced_fun_cache[key]
 
-    from jax.core import eval_jaxpr
+    from jax.core import eval_jaxpr as jax_eval_jaxpr
 
     if isinstance(jaxpr, Jaspr):
         cl_func_jaxpr = jaspr_to_cl_func_jaxpr(jaxpr, bit_array_size, call_graph_stats)
@@ -825,7 +858,7 @@ def get_traced_fun(
 
     @jit
     def jitted_fun(*args):
-        return eval_jaxpr(cl_func_jaxpr.jaxpr, cl_func_jaxpr.consts, *args)
+        return jax_eval_jaxpr(cl_func_jaxpr.jaxpr, cl_func_jaxpr.consts, *args)
 
     result_shapes = tuple(
         ShapeDtypeStruct(v.aval.shape, v.aval.dtype)
@@ -834,41 +867,48 @@ def get_traced_fun(
 
     result = (jitted_fun, result_shapes)
     _traced_fun_cache[key] = result
+    if len(_traced_fun_cache) > _TRACED_FUN_CACHE_MAX_SIZE:
+        _traced_fun_cache.popitem(last=False)       # evict least-recently used
     return result
 
 
+# ---------------------------------------------------------------------------
+# process_pjit – handles the ``jit`` primitive
+# ---------------------------------------------------------------------------
+
 def process_pjit(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None) -> None:
     """
-    Process JIT-compiled function calls (pjit primitive).
+    Process a ``jit`` (pjit) equation in the boolean-simulation interpreter.
 
-    This handles calls to JIT-compiled functions, including special cases for
-    Gidney-style MCX gates which are optimized multi-controlled X implementations.
+    Three cases are distinguished:
 
-    When ``call_graph_stats`` is provided, sub-jaxprs that are reused
-    (``call_count >= 2``) are wrapped in ``jax.pure_callback`` so that XLA
-    treats them as opaque boxes instead of inlining and duplicating them via
-    its ``flatten-call-graph`` pass.
+    1. **Gidney MCX / CCCX gates** – hard-coded multi-controlled-X shortcuts
+       that bypass the generic compilation path entirely.
+    2. **Reused sub-jaxprs** – compiled once and invoked via
+       ``jax.pure_callback`` so that XLA cannot duplicate the HLO.
+    3. **Everything else** – compiled once (cached) and called directly.
 
     Parameters
     ----------
     eqn : JaxprEqn
-        The pjit equation representing the function call.
+        The pjit equation.
     context_dic : ContextDict
-        The variable-to-value mapping dictionary.
-    call_graph_stats : dict[int, JaxprStats] | None, optional
-        Call graph analysis results. When a sub-jaxpr has ``call_count >= 2``,
-        it is called via ``pure_callback`` to avoid HLO duplication.
+        Variable-to-value mapping.
+    call_graph_stats : dict | None, optional
+        Call-graph analysis results from ``analyze_call_graph``.
     """
     invalues = extract_invalues(eqn, context_dic)
+    name = eqn.params["name"]
 
-    # Special handling for Gidney MCX gates (optimized multi-controlled X)
-    if eqn.params["name"] in ["gidney_mcx", "gidney_mcx_inv"]:
-        # Gidney MCX is a 2-controlled X gate
+    # ---- Gidney MCX shortcuts ------------------------------------------------
+    if name in ("gidney_mcx", "gidney_mcx_inv"):
         unflattened_outvalues = [
             (cl_multi_cx(invalues[-1][0], "11", invalues[:-1]), invalues[-1][1])
         ]
-    elif eqn.params["name"] in ["gidney_CCCX", "gidney_CCCX_dg"]:
-        # Gidney CCCX is a 3-controlled X gate
+        insert_outvalues(eqn, context_dic, unflattened_outvalues)
+        return
+
+    if name in ("gidney_CCCX", "gidney_CCCX_dg"):
         controls = [invalues[0][i] for i in range(3)]
         unflattened_outvalues = [
             (
@@ -876,41 +916,24 @@ def process_pjit(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None)
                 invalues[-1][1],
             )
         ]
+        insert_outvalues(eqn, context_dic, unflattened_outvalues)
+        return
+
+    # ---- General case --------------------------------------------------------
+    jaxpr = eqn.params["jaxpr"]
+    bit_array_padding = invalues[-1][0].shape[0] * 64 if isinstance(jaxpr, Jaspr) else 0
+
+    traced_fun, result_shapes = _compile_sub_jaxpr(
+        jaxpr, bit_array_padding, call_graph_stats
+    )
+    flattened_invalues = flatten_signature(invalues, eqn.invars)
+
+    if _should_use_callback(jaxpr, call_graph_stats):
+        outvalues = pure_callback(traced_fun, result_shapes, *flattened_invalues)
     else:
-        # General case: flatten inputs, call the function, unflatten outputs
-        jaxpr = eqn.params["jaxpr"]
+        outvalues = traced_fun(*flattened_invalues)
 
-        # Determine bit array padding from the quantum circuit if present
-        if isinstance(jaxpr, Jaspr):
-            bit_array_padding = invalues[-1][0].shape[0] * 64
-        else:
-            bit_array_padding = 0
-
-        traced_fun, result_shapes = get_traced_fun(jaxpr, bit_array_padding, call_graph_stats)
-
-        flattened_invalues = flatten_signature(invalues, eqn.invars)
-
-        # Check if this sub-jaxpr should be called via pure_callback
-        # (reused sub-jaxprs benefit from callback wrapping to avoid
-        #  XLA's flatten-call-graph duplicating them at every call site)
-        use_callback = False
-        if call_graph_stats is not None:
-            jid = id(jaxpr)
-            if jid in call_graph_stats:
-                stats = call_graph_stats[jid]
-                if stats.call_count >= 2 and stats.inlined_eqn_count > 100 and isinstance(jaxpr.invars[-1].aval, AbstractQuantumState):
-                    use_callback = True
-
-        if use_callback:
-            outvalues = pure_callback(
-                traced_fun, result_shapes, *flattened_invalues
-            )
-        else:
-            outvalues = traced_fun(*flattened_invalues)
-
-        unflattened_outvalues = unflatten_signature(outvalues, eqn.outvars)
-
-    insert_outvalues(eqn, context_dic, unflattened_outvalues)
+    insert_outvalues(eqn, context_dic, unflatten_signature(outvalues, eqn.outvars))
 
 
 def process_delete_qubits(eqn: JaxprEqn, context_dic: ContextDict) -> None:
