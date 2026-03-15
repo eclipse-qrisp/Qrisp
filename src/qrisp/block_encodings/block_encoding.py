@@ -529,6 +529,7 @@ class BlockEncoding:
         cls: "BlockEncoding",
         left: Union[int, Tuple[int, ...], Callable], 
         right: Optional[Union[int, Tuple[int, ...], Callable]] = None, 
+        kernel: bool = False,
         num_ops: int = 1,
     ) -> BlockEncoding:
         r"""
@@ -543,6 +544,9 @@ class BlockEncoding:
             An integer or a tuple of integers representing a computational basis state $\ket{\psi}$,
             or a function ``right(*operands)`` preparing a state $\ket{\psi}$.
             Defaults to ``left``.
+        kernel : bool
+            If True, the kernel projector $\mathbb I - \ket{\phi}\bra{\phi}$ is block-encoded.
+            If False the projector $\ket{\phi}\bra{\psi}$ is block-encoded. Defauts to False.
         num_ops : int
             The number of operand quantum variables.
             Automatically inferred when ``left`` or ``right`` is an integer or tuple of integers.
@@ -555,7 +559,7 @@ class BlockEncoding:
 
         """
 
-        if right == None:
+        if kernel or (right == None):
             right = left
 
         # left
@@ -599,7 +603,9 @@ class BlockEncoding:
             anc = args[0]
             operands = args[1:]
 
-            x(anc)
+            if not kernel:
+                x(anc)
+
             with invert():
                 prep_right(*operands)
 

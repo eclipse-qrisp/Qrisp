@@ -17,6 +17,7 @@ Algorithms & Applications
     QET
     hamiltonian_simulation
     inversion
+    dalzell_inversion
     convolve
     fourier_series_loader
 
