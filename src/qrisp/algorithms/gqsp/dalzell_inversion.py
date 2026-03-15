@@ -144,7 +144,7 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
     # A_t = |0><0| ⊗ A + (1 / t) |1><1| ⊗ |0><0|
     P0 = BlockEncoding.from_projector(0,0)
     P10 = BlockEncoding.from_projector((1,0), (1,0))
-    A_t = P0.kron(A) + (1 / t) * P10
+    A_t = P0.kron(A) + (A.alpha / t) * P10
     
     # Define BlockEncoding of the kernel projector I - |b_t><b_t|
     P = BlockEncoding.from_projector(prep_b_ext, kernel=True, num_ops=2)
@@ -154,7 +154,7 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
 
     # Kernel Reflection
     # Rescale kappa to account for larger normalization factor of A_t
-    kappa_t = kappa * (A.alpha + 1.0 / t) / A.alpha
+    kappa_t = kappa * (1.0 + 1.0 / t)
     p = _kernel_reflection_poly(1.0 / kappa_t, eps)
     KR = GQSVT(G_t, p, kind="Chebyshev", parity="even", rescale=False)
 
