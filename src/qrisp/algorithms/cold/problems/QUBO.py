@@ -97,8 +97,12 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
 
     # Problem Hamiltonian
     H_prob = sum(
-        [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]
+        [sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)] # ÄNDERUNG
     ) + sum([h[i] * Z(i) for i in range(N)])
+
+    #H_prob = sum(
+    #    [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]
+    #) + sum([h[i] * Z(i) for i in range(N)])
 
     # AGP as function of alpha
     if uniform_AGP_coeffs:
@@ -256,8 +260,12 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     H_init = 1 * sum([X(i) for i in range(N)])
 
     # Problem Hamiltonian
+    # H_prob = sum(
+    #    [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]
+    #) + sum([h[i] * Z(i) for i in range(N)])
+
     H_prob = sum(
-        [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]
+        [sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)] # ÄNDERUNG
     ) + sum([h[i] * Z(i) for i in range(N)])
 
     # AGP

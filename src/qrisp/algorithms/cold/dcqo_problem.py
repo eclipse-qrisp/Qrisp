@@ -419,7 +419,20 @@ class DCQOProblem:
         return compiled_qc
 
     def optimization_routine(
-        self, qarg, N_opt, N_steps, T, qc, CRAB, optimizer, options, objective, bounds
+        self,
+        qarg,
+        N_opt,
+        N_steps,
+        T,
+        qc,
+        CRAB,
+        optimizer,
+        options,
+        objective,
+        bounds,
+        precision=0.01,
+        exp_value_method="auto",
+        exp_value_backend=None,
     ):
         """
         Subroutine for the optimization method used in COLD.
@@ -447,6 +460,12 @@ class DCQOProblem:
             The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude``, ``agp_coeff_amplitude``). Default is ``exp_value``.
         bounds : tuple
             The parameter bounds for the optimizer. Default is (-2, 2).
+        precision : float, optional
+            Precision for expectation value calculations. Default is 0.01.
+        exp_value_method : str, optional
+            Method for exp_value objective: "auto" (try statevector, fallback to measurement), "statevector", "measurement", "backend". Default is "auto".
+        exp_value_backend : BackendClient, optional
+            Backend for exp_value calculations when using "measurement" or "backend" method. Default is None (uses qarg's backend).
 
         Returns
         -------
@@ -456,6 +475,14 @@ class DCQOProblem:
 
         # Different objective functions: exp_value, agp coeffs magnitude, agp coeffs amplitude
 
+        # Precompute costs for statevector method
+        n_qubits = len(qarg)
+        num_states = 1 << n_qubits
+        bit_indices = np.arange(n_qubits - 1, -1, -1, dtype=np.uint64)
+        state_indices = np.arange(num_states, dtype=np.uint64)
+        basis = ((state_indices[:, None] >> bit_indices) & 1).astype(np.int8)
+        costs = np.einsum("bi,ij,bj->b", basis, self.Q, basis)
+
         # Expectation value of the QUBO Hamiltonian
         def objective_exp(params, CRAB):
             # Dict to assign the optimization parameters
@@ -463,11 +490,54 @@ class DCQOProblem:
                 sp.Symbol("par_" + str(i)): params[i] for i in range(len(params))
             }
 
-            cost = self.H_prob.expectation_value(
-                qarg, compile=False, subs_dic=subs_dic, precompiled_qc=qc
-            )()
+            if exp_value_method == "statevector":
+                # Force statevector-based expectation
+                bound_qc = qc.bind_parameters(subs_dic)
+                sv = bound_qc.statevector_array()
+                probs = np.abs(sv) ** 2
+                exp_val = float(np.dot(probs, costs))
+            elif exp_value_method == "measurement":
+                # Use measurement-based expectation
+                exp_val = self.H_prob.expectation_value(
+                    qarg,
+                    precision=precision,
+                    compile=False,
+                    subs_dic=subs_dic,
+                    precompiled_qc=qc,
+                )()
+            elif exp_value_method == "backend":
+                # Use backend for expectation (temporarily set qarg backend)
+                original_backend = qarg.qs.backend
+                try:
+                    qarg.qs.backend = exp_value_backend
+                    exp_val = self.H_prob.expectation_value(
+                        qarg,
+                        precision=precision,
+                        compile=False,
+                        subs_dic=subs_dic,
+                        precompiled_qc=qc,
+                    )()
+                finally:
+                    qarg.qs.backend = original_backend
+            elif exp_value_method == "auto":
+                # Try statevector first, fallback to measurement
+                try:
+                    bound_qc = qc.bind_parameters(subs_dic)
+                    sv = bound_qc.statevector_array()
+                    probs = np.abs(sv) ** 2
+                    exp_val = float(np.dot(probs, costs))
+                except (MemoryError, ValueError, RuntimeError) as e:
+                    exp_val = self.H_prob.expectation_value(
+                        qarg,
+                        precision=precision,
+                        compile=False,
+                        subs_dic=subs_dic,
+                        precompiled_qc=qc,
+                    )()
+            else:
+                raise ValueError(f"Invalid exp_value_method: {exp_value_method}")
 
-            return cost
+            return exp_val
 
         # Magnitude of the AGP coefficients (coeffs are treated as uniform for simplification)
         # (sum of absolute values for each timestep)
@@ -545,6 +615,9 @@ class DCQOProblem:
         bounds=(),
         options={},
         mes_kwargs={},
+        precision=0.01,
+        exp_value_method="auto",
+        exp_value_backend=None,
     ):
         """
         Run the specific DCQO problem instance with given quantum arguments, number of timesteps and
@@ -577,6 +650,12 @@ class DCQOProblem:
             Additional options for the Scipy solver.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
+        precision : float, optional
+            Precision for expectation value calculations. Default is 0.01.
+        exp_value_method : str, optional
+            Method for exp_value objective: "auto" (try statevector, fallback to measurement), "statevector", "measurement", "backend". Default is "auto".
+        exp_value_backend : BackendClient, optional
+            Backend for exp_value calculations when using "measurement" or "backend" method. Default is None (uses qarg's backend).
         backend : :ref:`BackendClient`, optional
             The backend to be used for the quantum simulation.
             By default, the Qrisp simulator is used.
@@ -627,6 +706,9 @@ class DCQOProblem:
                     options,
                     objective=objective,
                     bounds=bounds,
+                    precision=precision,
+                    exp_value_method=exp_value_method,
+                    exp_value_backend=exp_value_backend,
                 )
                 if cost is None or cost_temp < cost:
                     opt_params = opt_params_temp
