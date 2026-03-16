@@ -15,7 +15,11 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
-from qrisp import *
+from qrisp.core import QuantumVariable, x, cx, mcx
+from qrisp.qtypes import QuantumFloat
+from qrisp.environments import conjugate, custom_control
+from qrisp.misc import int_encoder
+from qrisp.jasp import jrange, jlen
 import jax.numpy as jnp
 
 @custom_control
@@ -73,7 +77,7 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
         # create a QuantumFloat of the same size as the other quantum input
         q_a = b.duplicate()
 
-        with conjugate(q_a.encode)(a):
+        with conjugate(int_encoder)(q_a, a):
             # begin with q_a in the state |a>
             if c_out is not None:
                 cuccaro_adder(q_a, b, c_out = c_out)
@@ -114,7 +118,6 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
     dim_b = jlen(b)
 
     ancilla = QuantumFloat(max_size)
-    ancilla[:] = 0
 
     if c_out is not None:
         ancilla2 = c_out
