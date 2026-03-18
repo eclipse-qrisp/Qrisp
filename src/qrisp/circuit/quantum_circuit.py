@@ -21,6 +21,7 @@ from typing import Dict, List, Set
 
 import numpy as np
 import sympy
+from numpy.linalg import norm
 from qiskit import QuantumCircuit as QiskitQuantumCircuit
 from qiskit.visualization import circuit_drawer
 
@@ -47,11 +48,11 @@ class QuantumCircuit:
     Parameters
     ----------
 
-    num_qubits : integer, optional
+    num_qubits : int, optional
         The amount of qubits this QuantumCircuit is initialized with. The default is 0.
-    num_clbits : integer, optional
+    num_clbits : int, optional
         The amount of classical bits. The default is 0.
-    name : string, optional
+    name : str, optional
         A name for the QuantumCircuit. By default, a generic name is generated.
 
 
@@ -252,6 +253,8 @@ class QuantumCircuit:
         Examples
         --------
 
+        We create a QuantumCircuit and add a qubit to it:
+
         >>> from qrisp import QuantumCircuit
         >>> qc = QuantumCircuit()
         >>> qc.add_qubit()
@@ -260,8 +263,10 @@ class QuantumCircuit:
 
         """
 
+        self.qubit_index_counter[0] += 1
+
         if qubit is None:
-            qubit = Qubit("qb_" + str(len(self.qubits)))
+            qubit = Qubit("qb_" + str(self.qubit_index_counter[0]))
 
         if not isinstance(qubit, Qubit):
             raise TypeError(f"Tried to add type {type(qubit)} as a qubit")
@@ -271,7 +276,6 @@ class QuantumCircuit:
                 raise ValueError(f"Qubit name {qubit.identifier} already exists")
 
         self.qubits.append(qubit)
-        self.qubit_index_counter[0] += 1
 
         return self.qubits[-1]
 
@@ -292,6 +296,8 @@ class QuantumCircuit:
         Examples
         --------
 
+        We create a QuantumCircuit and add a classical bit to it:
+
         >>> from qrisp import QuantumCircuit
         >>> qc = QuantumCircuit()
         >>> qc.add_clbit()
@@ -300,8 +306,10 @@ class QuantumCircuit:
 
         """
 
+        self.clbit_index_counter[0] += 1
+
         if clbit is None:
-            clbit = Clbit("cb_" + str(len(self.clbits)))
+            clbit = Clbit("cb_" + str(self.clbit_index_counter[0]))
 
         if not isinstance(clbit, Clbit):
             raise TypeError(f"Tried to add type {type(clbit)} as a classical bit")
@@ -310,7 +318,6 @@ class QuantumCircuit:
             raise ValueError(f"Clbit name {clbit.identifier} already exists")
 
         self.clbits.append(clbit)
-        self.clbit_index_counter[0] += 1
 
         return self.clbits[-1]
 
@@ -336,12 +343,27 @@ class QuantumCircuit:
         Examples
         --------
 
+        We create a QuantumCircuit and turn it into an Operation which we append to another QuantumCircuit:
+
         >>> from qrisp import QuantumCircuit
         >>> qc_0 = QuantumCircuit(4)
         >>> qc_0.x(qc_0.qubits)
-        >>> operation = qc_0.to_gate()
+        >>> operation = qc_0.to_op(name="converted_op")
         >>> qc_1 = QuantumCircuit(4)
         >>> qc_1.append(operation, qc_1.qubits)
+        >>> print(qc_1)
+
+        .. code-block:: none
+
+                    ┌───────────────┐
+            qb_107: ┤0              ├
+                    │               │
+            qb_108: ┤1              ├
+                    │  converted_op │
+            qb_109: ┤2              ├
+                    │               │
+            qb_110: ┤3              ├
+                    └───────────────┘
 
         """
 
@@ -372,7 +394,6 @@ class QuantumCircuit:
         if self contains classical bits (like the
         `Qiskit equivalent
         <https://qiskit.org/documentation/stubs/qiskit.circuit.QuantumCircuit.to_gate.html>`_).
-        # noqa
 
         Parameters
         ----------
@@ -381,7 +402,7 @@ class QuantumCircuit:
 
         Raises
         ------
-        Exception
+        ValueError
             Tried to turn a circuit including classical bits into unitary gate
 
         Returns
@@ -389,12 +410,38 @@ class QuantumCircuit:
         Operation
             The QuantumCircuit turned into an :ref:`Operation` instance.
 
+        Examples
+        --------
+
+        We create a QuantumCircuit and turn it into an Operation which we append to another QuantumCircuit:
+
+        >>> from qrisp import QuantumCircuit
+        >>> qc_0 = QuantumCircuit(4)
+        >>> qc_0.x(qc_0.qubits)
+        >>> gate = qc_0.to_gate(name="converted_gate")
+        >>> qc_1 = QuantumCircuit(4)
+        >>> qc_1.append(gate, qc_1.qubits)
+        >>> print(qc_1)
+
+        .. code-block:: none
+
+                    ┌─────────────────┐
+            qb_167: ┤0                ├
+                    │                 │
+            qb_168: ┤1                ├
+                    │  converted_gate │
+            qb_169: ┤2                ├
+                    │                 │
+            qb_170: ┤3                ├
+                    └─────────────────┘
+
         """
 
         if len(self.clbits) != 0:
-            raise Exception(
+            raise ValueError(
                 "Tried to turn a circuit including classical bits into unitary gate"
             )
+
         return self.to_op(name)
 
     def extend(
@@ -472,7 +519,7 @@ class QuantumCircuit:
             clbits = [translation_dic[cb.identifier] for cb in instruction_other.clbits]
             self.append(instruction_other.op, qubits, clbits)
 
-    def copy(self):
+    def copy(self) -> "QuantumCircuit":
         """
         Returns a copy of the given QuantumCircuit.
 
@@ -482,8 +529,6 @@ class QuantumCircuit:
             The copied QuantumCircuit.
 
         """
-        # If an inital circuit is given we construct a new instance
-
         res = QuantumCircuit()
 
         object.__setattr__(res, "data", list(self.data))
@@ -497,8 +542,7 @@ class QuantumCircuit:
 
         return res
 
-    # Returns a copy of self but with no instructions
-    def clearcopy(self):
+    def clearcopy(self) -> "QuantumCircuit":
         """
         Returns a copy of the given QuantumCircuit but without any data
         (i.e. just the Qubits and Clbits).
@@ -516,8 +560,7 @@ class QuantumCircuit:
         return res
 
     # TODO write qiskit independent printer
-
-    def __str__(self):
+    def __str__(self) -> str:
 
         # NOTE: This is here to avoid circular imports
         from qrisp.interface import convert_to_qiskit
@@ -530,16 +573,16 @@ class QuantumCircuit:
                     cregbundle=False,
                 )
             )
-        except AttributeError:
-            raise Exception(
+        except AttributeError as exc:
+            raise RuntimeError(
                 "Tried to print QuantumSession with uncompiled QuantumEnvironments"
-            )
+            ) from exc
 
         return res_str
 
-    # Method which compares the unitary of two given circuits and returns
-    # True if they are equivalent
-    def compare_unitary(self, other, precision=4, ignore_gphase=False):
+    def compare_unitary(
+        self, other: "QuantumCircuit", precision: int = 4, ignore_gphase: bool = False
+    ) -> bool:
         """
         Compares the unitaries of two QuantumCircuits. This can be used to check if a
         QuantumCircuit transformation is valid.
@@ -548,16 +591,18 @@ class QuantumCircuit:
         ----------
         other : QuantumCircuit
             The QuantumCircuit to compare to.
+
         precision : int, optional
             The precision of the comparison. This function will return True, if the norm
             of the difference of the unitaries is below the precision. The default is 4.
+
         ignore_gphase: bool, optional
             If set to True, this method returns True if the unitaries only differ in a
             global phase.
 
         Returns
         -------
-        Bool
+        bool
             The comparison outcome.
 
         Examples
@@ -606,15 +651,12 @@ class QuantumCircuit:
         unitary_other = other.get_unitary()
 
         if ignore_gphase:
+            # Normalize by the phase of the largest amplitude element
             arg_max = np.argmax(np.abs(unitary_self.flatten()))
-
-            unitary_self = (
-                unitary_self
-                * unitary_other.flatten()[arg_max]
-                / unitary_self.flatten()[arg_max]
+            phase_correction = (
+                unitary_other.flatten()[arg_max] / unitary_self.flatten()[arg_max]
             )
-
-        from numpy.linalg import norm
+            unitary_self = unitary_self * phase_correction
 
         return bool(norm(unitary_self - unitary_other) < 10**-precision)
 
@@ -719,11 +761,11 @@ class QuantumCircuit:
         return inverted_circuit
 
     # Generate the circuits unitary matrix
-    def get_unitary(self, decimals=-1):
+    def get_unitary(self, decimals=-1) -> np.ndarray:
         """
-        Acquires the unitary matrix of the given QuantumCircuit as a Numpy array.
+        Acquires the unitary matrix of the given QuantumCircuit as a NumPy array.
 
-        This method also works with abstract parameters. In this case a Numpy array
+        This method also works with abstract parameters. In this case a NumPy array
         with Sympy entries is returned.
 
         Parameters
