@@ -326,7 +326,7 @@ def _q_switch_q(
         # Function mode
         if is_function_mode:
 
-            def leaf(d: int, anc, ca, i, *oper):
+            def leaf(d: int, anc, ca, i, oper):
                 with control(anc[d]):
                     branches(i, *oper)
 
@@ -348,7 +348,7 @@ def _q_switch_q(
                 with control(anc[d]):
                     branches(i + 1, *oper)
 
-            def last_leaf(d: int, anc, ca, i, *oper):
+            def last_leaf(d: int, anc, ca, i, oper):
                 with control(anc[d]):
                     branches(i, *oper)
 
@@ -364,7 +364,7 @@ def _q_switch_q(
 
             if check_for_tracing_mode():
 
-                def leaf(d: int, anc, ca, i, *oper):
+                def leaf(d: int, anc, ca, i, oper):
                     def apply_leaf(A, B):
                         with control(anc[d]):
                             A(*oper)
@@ -398,7 +398,7 @@ def _q_switch_q(
 
             else:
 
-                def leaf(d: int, anc, ca, i, *oper):
+                def leaf(d: int, anc, ca, i, oper):
                     with control(anc[d]):
                         branches[i](*oper)
 
@@ -420,7 +420,7 @@ def _q_switch_q(
                     with control(anc[d]):
                         branches[i + 1](*oper)
 
-            def last_leaf(d: int, anc, ca, i, *oper):
+            def last_leaf(d: int, anc, ca, i, oper):
                 def apply(f):
                     with control(anc[d]):
                         f(*oper)
@@ -434,45 +434,45 @@ def _q_switch_q(
             )
 
         def body_fun(pos, val):
-            anc, ca, *oper = val
+            anc, ca, oper = val
 
             # Apply leaf
-            leaf(n - 1, anc, ca, 2 * pos, *oper)
+            leaf(n - 1, anc, ca, 2 * pos, oper)
 
             # Jump to next leaf
             q = bitwise_count_diff(pos, pos + 1)
             for j in xrange(0, q - 1, 1):
-                up(n - j - 1, anc, ca, *oper)
-            bounce(n - q, anc, ca, *oper)
+                up(n - j - 1, anc, ca, oper)
+            bounce(n - q, anc, ca, oper)
             for j in xrange(0, q - 1, 1):
-                down(n - (q - 1) + j, anc, ca, *oper)
+                down(n - (q - 1) + j, anc, ca, oper)
 
-            return anc, ca, *oper
+            return anc, ca, oper
 
         anc = QuantumVariable(n)
         # x(anc[0])
 
         # Go to first node
         for j in xrange(0, n, 1):
-            down(j, anc, index, *operands)
+            down(j, anc, index, operands)
 
         # Perform leafs and jumps
 
         _, _, _ = x_fori_loop(
-            0, -(-branch_amount // 2) - 1, body_fun, (anc, index, *operands)
+            0, -(-branch_amount // 2) - 1, body_fun, (anc, index, operands)
         )
 
         # Perfrom last leaf
         x_cond(
             branch_amount % 2 == 0,
-            lambda: leaf(n - 1, anc, index, branch_amount - 2, *operands),
-            lambda: last_leaf(n - 1, anc, index, branch_amount - 1, *operands),
+            lambda: leaf(n - 1, anc, index, branch_amount - 2, operands),
+            lambda: last_leaf(n - 1, anc, index, branch_amount - 1, operands),
         )
 
         # Go back from last node
         diff = 2**n - branch_amount
         for j in xrange(0, n, 1):
-            up(n - j - 1, anc, index, *operands)
+            up(n - j - 1, anc, index, operands)
 
             def bf():
                 # with control(anc[n-j-2]):

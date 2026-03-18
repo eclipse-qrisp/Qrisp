@@ -19,14 +19,14 @@
 import sys
 from io import StringIO
 
-from jax.interpreters.mlir import LoweringParameters, ModuleContext, lower_jaxpr_to_fun
-from jaxlib.mlir import ir
-from jaxlib.mlir import passmanager
 from jax._src import core
-
+from jax.interpreters.mlir import LoweringParameters, ModuleContext, lower_jaxpr_to_fun
+from jaxlib.mlir import ir, passmanager
 from xdsl.context import Context
-from xdsl.parser import Parser
 from xdsl.dialects import builtin, func
+from xdsl.parser import Parser
+
+from qrisp.jasp.mlir.xdsl_dialect import JaspDialect
 
 
 def lower_jaxpr_to_MLIR(jaxpr, lowering_rules=tuple([])):
@@ -126,6 +126,7 @@ def generic_mlir_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
     # Register essential dialects used by the wrapper module and functions.
     ctx.load_dialect(builtin.Builtin)
     ctx.load_dialect(func.Func)
+    ctx.load_dialect(JaspDialect)
 
     # Parse the MLIR string and return the module op.
     parser = Parser(ctx, mlir_string)
