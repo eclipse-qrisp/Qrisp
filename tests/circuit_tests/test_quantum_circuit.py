@@ -18,6 +18,7 @@
 
 import pytest
 
+from qrisp.circuit import Clbit, Qubit
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
@@ -186,5 +187,161 @@ class TestQuantumCircuitMethods:
             ValueError, match="Instruction Clbits not present in circuit"
         ):
             qc_to_extend.extend(extension_qc, translation_dic)
+
+    ##########################
+    ### add_qubit method tests
+    ##########################
+
+    def test_add_qubit_default(self):
+        """Test adding a qubit without providing a Qubit object."""
+        qc = QuantumCircuit()
+        initial_qubit_count = len(qc.qubits)
+
+        added_qubit = qc.add_qubit()
+
+        assert len(qc.qubits) == initial_qubit_count + 1
+        assert added_qubit in qc.qubits
+        assert added_qubit == qc.qubits[-1]
+
+    def test_add_qubit_with_qubit_object(self):
+        """Test adding a qubit by providing a Qubit object."""
+
+        qc = QuantumCircuit()
+        custom_qubit = Qubit("custom_qb")
+        initial_qubit_count = len(qc.qubits)
+
+        added_qubit = qc.add_qubit(custom_qubit)
+
+        assert len(qc.qubits) == initial_qubit_count + 1
+        assert added_qubit == custom_qubit
+        assert added_qubit in qc.qubits
+
+    def test_add_multiple_qubits(self):
+        """Test adding multiple qubits sequentially."""
+        qc = QuantumCircuit()
+
+        for _ in range(5):
+            qc.add_qubit()
+
+        assert len(qc.qubits) == 5
+
+    def test_add_qubit_increments_counter(self):
+        """Test that adding qubits correctly increments the qubit index counter."""
+        qc = QuantumCircuit(2)
+
+        initial_counter = qc.qubit_index_counter[0]
+
+        qc.add_qubit()
+
+        assert qc.qubit_index_counter[0] == initial_counter + 1
+
+    def test_add_qubit_error_wrong_type(self):
+        """Test that adding a non-Qubit object raises a TypeError."""
+        qc = QuantumCircuit()
+
+        with pytest.raises(TypeError, match="Tried to add type .* as a qubit"):
+            qc.add_qubit("not_a_qubit")
+
+    def test_add_qubit_error_duplicate_identifier(self):
+        """Test that adding a qubit with a duplicate identifier raises a ValueError."""
+
+        qc = QuantumCircuit()
+        qubit1 = Qubit("duplicate_qb")
+        qubit2 = Qubit("duplicate_qb")
+
+        qc.add_qubit(qubit1)
+
+        with pytest.raises(ValueError, match="Qubit name .* already exists"):
+            qc.add_qubit(qubit2)
+
+    def test_add_qubit_return_value(self):
+        """Test that add_qubit returns the added qubit."""
+        qc = QuantumCircuit()
+
+        added_qubit = qc.add_qubit()
+
+        assert added_qubit is qc.qubits[-1]
+
+    ##########################
+    ### add_clbit method tests
+    ##########################
+
+    def test_add_clbit_default(self):
+        """Test adding a classical bit without providing a Clbit object."""
+        qc = QuantumCircuit()
+        initial_clbit_count = len(qc.clbits)
+        added_clbit = qc.add_clbit()
+        assert len(qc.clbits) == initial_clbit_count + 1
+        assert added_clbit in qc.clbits
+        assert added_clbit == qc.clbits[-1]
+
+    def test_add_clbit_with_clbit_object(self):
+        """Test adding a classical bit by providing a Clbit object."""
+
+        qc = QuantumCircuit()
+        custom_clbit = Clbit("custom_cb")
+        initial_clbit_count = len(qc.clbits)
+
+        added_clbit = qc.add_clbit(custom_clbit)
+
+        assert len(qc.clbits) == initial_clbit_count + 1
+        assert added_clbit == custom_clbit
+        assert added_clbit in qc.clbits
+
+    def test_add_multiple_clbits(self):
+        """Test adding multiple classical bits sequentially."""
+        qc = QuantumCircuit()
+
+        for _ in range(5):
+            qc.add_clbit()
+
+        assert len(qc.clbits) == 5
+
+    def test_add_clbit_increments_counter(self):
+        """Test that adding classical bits correctly increments the clbit index counter."""
+
+        qc = QuantumCircuit(0, 2)
+        initial_counter = qc.clbit_index_counter[0]
+        qc.add_clbit()
+        assert qc.clbit_index_counter[0] == initial_counter + 1
+
+    def test_add_clbit_error_wrong_type(self):
+        """Test that adding a non-Clbit object raises a TypeError."""
+        qc = QuantumCircuit()
+
+        with pytest.raises(TypeError, match="Tried to add type .* as a classical bit"):
+            qc.add_clbit("not_a_clbit")
+
+    def test_add_clbit_error_duplicate_identifier(self):
+        """Test that adding a clbit with a duplicate identifier raises a ValueError."""
+
+        qc = QuantumCircuit()
+        clbit1 = Clbit("duplicate_cb")
+        clbit2 = Clbit("duplicate_cb")
+
+        qc.add_clbit(clbit1)
+
+        with pytest.raises(ValueError, match="Clbit name .* already exists"):
+            qc.add_clbit(clbit2)
+
+    def test_add_clbit_return_value(self):
+        """Test that add_clbit returns the added classical bit."""
+        qc = QuantumCircuit()
+        added_clbit = qc.add_clbit()
+        assert added_clbit is qc.clbits[-1]
+
+    def test_add_qubit_and_clbit_together(self):
+        """Test adding both qubits and classical bits to the same circuit."""
+        qc = QuantumCircuit()
+
+        qubit1 = qc.add_qubit()
+        clbit1 = qc.add_clbit()
+        qubit2 = qc.add_qubit()
+        clbit2 = qc.add_clbit()
+
+        assert len(qc.qubits) == 2
+        assert len(qc.clbits) == 2
+        assert qc.qubits == [qubit1, qubit2]
+        assert qc.clbits == [clbit1, clbit2]
 
     # TODO: Add more tests for other methods of QuantumCircuit

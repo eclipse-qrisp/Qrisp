@@ -235,8 +235,7 @@ class QuantumCircuit:
         ]
         self.clbit_index_counter[0] += num_clbits
 
-    # Method to add qubit objects to the circuit
-    def add_qubit(self, qubit=None):
+    def add_qubit(self, qubit: Qubit | None = None) -> Qubit:
         """
         Adds a Qubit to the QuantumCircuit.
 
@@ -257,29 +256,26 @@ class QuantumCircuit:
         >>> qc = QuantumCircuit()
         >>> qc.add_qubit()
         >>> qc.qubits
-        [qb_0]
+        [Qubit(qb_0)]
 
         """
 
-        self.qubit_index_counter += 1
-
         if qubit is None:
-            qubit = Qubit("qb_" + str(self.qubit_index_counter[0]))
-
-        if self.xla_mode < 2:
-            for qb in self.qubits:
-                if qb.identifier == qubit.identifier:
-                    raise Exception(f"Qubit name {qubit.identifier} already exists")
+            qubit = Qubit("qb_" + str(len(self.qubits)))
 
         if not isinstance(qubit, Qubit):
-            raise Exception(f"Tried to add type {type(qubit)} as a qubit")
+            raise TypeError(f"Tried to add type {type(qubit)} as a qubit")
+
+        if self.xla_mode < 2:
+            if any(qb.identifier == qubit.identifier for qb in self.qubits):
+                raise ValueError(f"Qubit name {qubit.identifier} already exists")
 
         self.qubits.append(qubit)
+        self.qubit_index_counter[0] += 1
 
         return self.qubits[-1]
 
-    # Method to add classical bit objects to the circuit
-    def add_clbit(self, clbit=None):
+    def add_clbit(self, clbit: Clbit | None = None) -> Clbit:
         """
         Adds a classical bit to the QuantumCircuit.
 
@@ -293,24 +289,32 @@ class QuantumCircuit:
         Clbit
             The added Clbit.
 
+        Examples
+        --------
+
+        >>> from qrisp import QuantumCircuit
+        >>> qc = QuantumCircuit()
+        >>> qc.add_clbit()
+        >>> qc.clbits
+        [Clbit(cb_0)]
+
         """
 
         if clbit is None:
             clbit = Clbit("cb_" + str(len(self.clbits)))
 
         if not isinstance(clbit, Clbit):
-            raise Exception(f"Tried to add type {type(clbit)} as a classical bit")
+            raise TypeError(f"Tried to add type {type(clbit)} as a classical bit")
 
-        for cb in self.clbits:
-            if cb.identifier == clbit.identifier:
-                raise Exception(f"Clbit name {clbit.identifier} already exists")
+        if any(cb.identifier == clbit.identifier for cb in self.clbits):
+            raise ValueError(f"Clbit name {clbit.identifier} already exists")
 
         self.clbits.append(clbit)
+        self.clbit_index_counter[0] += 1
 
         return self.clbits[-1]
 
-    # Method to transform the given circuit into an operation object
-    def to_op(self, name=None):
+    def to_op(self, name: str | None = None) -> Operation:
         """
         Method to return an Operation object generated out of this QuantumCircuit.
 
@@ -321,7 +325,7 @@ class QuantumCircuit:
 
         Parameters
         ----------
-        name : string, optional
+        name : str, optional
             The name of the gate. By default, the QuantumCircuit's name will be used.
 
         Returns
@@ -334,7 +338,7 @@ class QuantumCircuit:
 
         >>> from qrisp import QuantumCircuit
         >>> qc_0 = QuantumCircuit(4)
-        >>> qc_0.x(qc.qubits)
+        >>> qc_0.x(qc_0.qubits)
         >>> operation = qc_0.to_gate()
         >>> qc_1 = QuantumCircuit(4)
         >>> qc_1.append(operation, qc_1.qubits)
@@ -342,30 +346,27 @@ class QuantumCircuit:
         """
 
         if name is None:
-            # name = "circuit" + str(id(self))[:5]
             name = "circuit" + str(int(TO_GATE_COUNTER[0]))[:7].zfill(7)
-
             TO_GATE_COUNTER[0] += 1
 
         definition = self.copy()
-        i = 0
 
-        while i < len(definition.data):
-            if definition.data[i].op.name in ["qb_alloc", "qb_dealloc"]:
-                definition.data.pop(i)
-                continue
-            i += 1
+        definition.data = [
+            instr
+            for instr in definition.data
+            if instr.op.name not in ["qb_alloc", "qb_dealloc"]
+        ]
 
         return Operation(
             name=name,
             num_qubits=len(self.qubits),
             num_clbits=len(self.clbits),
             definition=definition,
-            params=[],
+            params=None,
         )
 
     # Wrapper to increase Qiskit compatibility
-    def to_gate(self, name=None):
+    def to_gate(self, name: str | None = None) -> Operation:
         """
         Similar to :meth:`to_op <qrisp.QuantumCircuit.to_op>` but raises an exception
         if self contains classical bits (like the
@@ -518,6 +519,7 @@ class QuantumCircuit:
 
     def __str__(self):
 
+        # NOTE: This is here to avoid circular imports
         from qrisp.interface import convert_to_qiskit
 
         try:
