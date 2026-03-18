@@ -59,3 +59,15 @@ def test_injection_operator():
         return res
 
     main()
+
+    def init_psi():
+        qv = QuantumFloat(5)
+        x(qv[0])
+        return qv
+
+    @jaspify
+    def main():
+        qv = QuantumFloat(5)
+
+        (qv << init_psi)()
+        return measure(qv)

@@ -1577,19 +1577,21 @@ def redirect_qfunction(function_to_redirect):
 
         else:
 
-            merge(
-                [
+            qargs = [
                     arg
                     for arg in list(args) + [target]
                     if isinstance(arg, (QuantumVariable, QuantumArray))
-                ]
-            )
+                    ]
+            merge(qargs)
+                
             env = QuantumEnvironment()
             env.manual_allocation_management = True
             qs = target.qs
 
             with env:
                 res = function_to_redirect(*args, **kwargs)
+
+                merge([res] + qargs)
 
                 if isinstance(res, QuantumVariable):
                     res_qubits = list(res)
