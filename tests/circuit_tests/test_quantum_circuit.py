@@ -16,7 +16,9 @@
 ********************************************************************************
 """
 
+import numpy as np
 import pytest
+from qiskit import QuantumCircuit as QiskitQuantumCircuit
 from sympy import symbols
 
 from qrisp.circuit import Clbit, Instruction, Qubit
@@ -53,6 +55,10 @@ class TestQuantumCircuitInitialization:
 
     # TODO: Add more tests for other aspects of initialization
 
+    ##############################
+    ### Docstring example tests
+    ##############################
+
     def test_fan_out_example(self):
         """Test the fan-out example in the QuantumCircuit docstring."""
 
@@ -75,7 +81,37 @@ class TestQuantumCircuitInitialization:
         for i in range(2, 6):
             assert str(qc_1.data[i])[:7] == "measure"
 
-    # TODO: Add more tests for other examples in the docstring
+    def test_from_qiskit_fan_out_example(self):
+        """Test the from_qiskit conversion example in the QuantumCircuit docstring."""
+
+        qc_2 = QiskitQuantumCircuit(4)
+        qc_2.cx(0, range(1, 4))
+
+        qrisp_qc_2 = QuantumCircuit.from_qiskit(qc_2)
+
+        assert len(qrisp_qc_2.qubits) == 4
+        assert len(qrisp_qc_2.clbits) == 0
+        assert len(qrisp_qc_2.data) == 3
+        assert all(str(instruction)[:2] == "cx" for instruction in qrisp_qc_2.data)
+
+    def test_abstract_parameters_docstring_example(self):
+        """Test the abstract parameters example in the QuantumCircuit docstring."""
+
+        qc = QuantumCircuit(3)
+
+        abstract_parameters = symbols("a b c")
+        for i in range(3):
+            qc.p(abstract_parameters[i], i)
+
+        assert len(qc.data) == 3
+        assert all(str(instruction)[:1] == "p" for instruction in qc.data)
+        assert qc.abstract_params == set(abstract_parameters)
+
+        subs_dic = {abstract_parameters[i]: i for i in range(3)}
+        bound_qc = qc.bind_parameters(subs_dic)
+
+        assert len(bound_qc.data) == 3
+        assert bound_qc.abstract_params == {}
 
 
 class TestQuantumCircuitMethods:
@@ -694,4 +730,201 @@ class TestQuantumCircuitMethods:
         assert len(qc_clearcopy.data) == 0
         assert len(qc_copy.qubits) == len(qc_clearcopy.qubits)
 
+    ###################################
+    ### compare_unitary method tests
+    ###################################
+
+    def test_compare_unitary_identical_circuits(self):
+        """Test comparing unitaries of identical circuits."""
+        qc_0 = QuantumCircuit(2)
+        qc_0.h(0)
+        qc_0.cx(0, 1)
+
+        qc_1 = QuantumCircuit(2)
+        qc_1.h(0)
+        qc_1.cx(0, 1)
+
+        assert qc_0.compare_unitary(qc_1) is True
+
+    def test_compare_unitary_different_circuits(self):
+        """Test comparing unitaries of different circuits."""
+        qc_0 = QuantumCircuit(2)
+        qc_0.h(0)
+        qc_0.cx(0, 1)
+
+        qc_1 = QuantumCircuit(2)
+        qc_1.x(0)
+        qc_1.y(1)
+
+        assert qc_0.compare_unitary(qc_1) is False
+
+    def test_compare_unitary_commuting_gates(self):
+        """Test comparing unitaries of circuits with commuting gates."""
+        qc_0 = QuantumCircuit(2)
+        qc_0.z(0)
+        qc_0.cx(0, 1)
+
+        qc_1 = QuantumCircuit(2)
+        qc_1.cx(0, 1)
+        qc_1.z(0)
+
+        assert qc_0.compare_unitary(qc_1) is True
+
+    def test_compare_unitary_docstring_example(self):
+        """Test the example from the compare_unitary docstring."""
+        qc_0 = QuantumCircuit(2)
+        qc_1 = QuantumCircuit(2)
+        qc_0.z(0)
+        qc_0.cx(0, 1)
+
+        qc_1.cx(0, 1)
+        qc_1.z(0)
+
+        assert qc_0.compare_unitary(qc_1) is True
+
+    def test_compare_unitary_different_qubit_counts(self):
+        """Test that compare_unitary returns False for circuits with different qubit counts."""
+        qc_0 = QuantumCircuit(2)
+        qc_0.h(0)
+
+        qc_1 = QuantumCircuit(3)
+        qc_1.h(0)
+
+        assert qc_0.compare_unitary(qc_1) is False
+
+    def test_compare_unitary_precision_parameter(self):
+        """Test the precision parameter of compare_unitary."""
+        qc_0 = QuantumCircuit(1)
+        qc_0.h(0)
+
+        qc_1 = QuantumCircuit(1)
+        qc_1.h(0)
+
+        # Should be True with default and higher precision
+        assert qc_0.compare_unitary(qc_1, precision=4) is True
+        assert qc_0.compare_unitary(qc_1, precision=10) is True
+
+    def test_compare_unitary_single_qubit_gates(self):
+        """Test comparing unitaries with single qubit gates."""
+        qc_0 = QuantumCircuit(1)
+        qc_0.x(0)
+        qc_0.x(0)  # X^2 = I
+
+        qc_1 = QuantumCircuit(1)
+        qc_1.id(0)
+
+        assert qc_0.compare_unitary(qc_1) is True
+
+    def test_compare_unitary_empty_circuits(self):
+        """Test comparing unitaries of empty circuits (identity)."""
+        qc_0 = QuantumCircuit(2)
+        qc_1 = QuantumCircuit(2)
+
+        assert qc_0.compare_unitary(qc_1) is True
+
+    @pytest.mark.xfail
+    def test_compare_unitary_global_phase_difference(self):
+        """Test comparing unitaries that differ only by global phase."""
+        qc_0 = QuantumCircuit(1)
+        qc_0.p(np.pi, 0)
+
+        qc_1 = QuantumCircuit(1)
+        qc_1.z(0)
+
+        # These differ by a global phase, should be False without ignore_gphase
+        assert qc_0.compare_unitary(qc_1, ignore_gphase=False) is False
+        # Should be True when ignoring global phase
+        assert qc_0.compare_unitary(qc_1, ignore_gphase=True) is True
+
+    @pytest.mark.xfail
+    def test_compare_unitary_ignore_gphase_parameter(self):
+        """Test the ignore_gphase parameter."""
+        qc_0 = QuantumCircuit(2)
+        qc_0.h(0)
+        qc_0.p(np.pi / 4, 1)
+
+        qc_1 = QuantumCircuit(2)
+        qc_1.h(0)
+        qc_1.p(np.pi / 4 + np.pi, 1)  # Differs by a global phase
+
+        assert qc_0.compare_unitary(qc_1, ignore_gphase=True) is True
+
+    @pytest.mark.xfail
+    def test_compare_unitary_two_qubit_gates(self):
+        """Test comparing unitaries with two-qubit gates."""
+        qc_0 = QuantumCircuit(2)
+        qc_0.cx(0, 1)
+        qc_0.cx(1, 0)
+
+        qc_1 = QuantumCircuit(2)
+        qc_1.swap(0, 1)
+
+        assert qc_0.compare_unitary(qc_1) is True
+
+    def test_compare_unitary_controlled_operations(self):
+        """Test comparing unitaries with controlled operations."""
+        qc_0 = QuantumCircuit(3)
+        qc_0.ccx(0, 1, 2)
+
+        qc_1 = QuantumCircuit(3)
+        qc_1.ccx(0, 1, 2)
+
+        assert qc_0.compare_unitary(qc_1) is True
+
+    def test_compare_unitary_parametric_gates(self):
+        """Test comparing unitaries with parametric gates."""
+        angle = np.pi / 4
+
+        qc_0 = QuantumCircuit(1)
+        qc_0.rx(angle, 0)
+
+        qc_1 = QuantumCircuit(1)
+        qc_1.rx(angle, 0)
+
+        assert qc_0.compare_unitary(qc_1) is True
+
+    def test_compare_unitary_different_parametric_angles(self):
+        """Test comparing unitaries with different parametric angles."""
+        qc_0 = QuantumCircuit(1)
+        qc_0.rx(np.pi / 4, 0)
+
+        qc_1 = QuantumCircuit(1)
+        qc_1.rx(np.pi / 3, 0)
+
+        assert qc_0.compare_unitary(qc_1) is False
+
+    @pytest.mark.xfail
+    def test_compare_unitary_rotation_equivalence(self):
+        """Test comparing unitaries of equivalent rotation gates."""
+        qc_0 = QuantumCircuit(1)
+        qc_0.rx(2 * np.pi, 0)  # Full rotation
+
+        qc_1 = QuantumCircuit(1)
+        qc_1.id(0)
+
+        assert qc_0.compare_unitary(qc_1) is True
+
+    def test_compare_unitary_inverse_operations(self):
+        """Test comparing a circuit with its inverse."""
+        qc_0 = QuantumCircuit(2)
+        qc_0.h(0)
+        qc_0.cx(0, 1)
+        qc_0.ry(np.pi / 3, 1)
+
+        qc_1 = qc_0.inverse()
+
+        # Composing a circuit with its inverse should give identity
+        qc_combined = qc_0.clearcopy()
+        qc_combined.extend(qc_0)
+        qc_combined.extend(qc_1)
+
+        qc_identity = QuantumCircuit(2)
+        assert qc_combined.compare_unitary(qc_identity) is True
+
     # TODO: Add more tests for other methods of QuantumCircuit
+
+
+class TestQuantumCircuitDunderMethods:
+    """A test class for the dunder methods of QuantumCircuit."""
+
+    pass

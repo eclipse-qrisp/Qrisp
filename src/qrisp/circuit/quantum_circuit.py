@@ -17,7 +17,7 @@
 """
 
 from hashlib import sha256
-from typing import Dict, List, Set
+from typing import Dict, List, Set, cast
 
 import numpy as np
 import sympy
@@ -151,7 +151,7 @@ class QuantumCircuit:
 
     To acquire the Qrisp QuantumCircuit we call the
     :meth:`from_qiskit <qrisp.QuantumCircuit.from_qiskit>` method. Note that we don't
-    need to create a QuantumCircuit object first as this is a class method.
+    need to create a QuantumCircuit object first as this is a classmethod.
 
     >>> qrisp_qc_2 = QuantumCircuit.from_qiskit(qc_2)
     >>> print(qrisp_qc_2)
@@ -680,7 +680,7 @@ class QuantumCircuit:
                     self.qubits[input], inner_recursion=inner_recursion
                 )
             except IndexError:
-                raise Exception(
+                raise RuntimeError(
                     "Not enough qubits in circuit to access qubit " + str(input) + "."
                 )
 
@@ -690,8 +690,8 @@ class QuantumCircuit:
                 return_list.append(self.convert_to_qubit_list(qb, inner_recursion=True))
             return return_list
 
-        raise Exception(
-            "Could not convert input type " + type(input) + " to qubit list"
+        raise ValueError(
+            "Could not convert input type " + str(type(input)) + " to qubit list"
         )
 
     # Similar function as above but with classical bits
@@ -708,7 +708,7 @@ class QuantumCircuit:
                     self.clbits[input], inner_recursion=inner_recursion
                 )
             except IndexError:
-                raise Exception(
+                raise RuntimeError(
                     "Not enough clbits in circuit to access clbit " + str(input) + "."
                 )
 
