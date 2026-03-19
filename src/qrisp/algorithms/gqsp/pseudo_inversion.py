@@ -30,7 +30,7 @@ from scipy.special import erf
 def pseudo_inversion(
     A: BlockEncoding,
     eps: float,
-    kappa: float,
+    theta: float,
     delta: float = None,
 ) -> BlockEncoding:
     r"""
@@ -72,7 +72,7 @@ def pseudo_inversion(
     ----------
     A : BlockEncoding
         The block-encoded matrix to be pseudo inverted. It is assumed that
-        the relevant eigenvalues of $A/\alpha$ lie within $D_{\theta}$.
+        the relevant singular values of $A/\alpha$ lie within $D_{\theta}$.
     eps : float
         The target precision $\epsilon$.
     theta : float
@@ -139,7 +139,7 @@ def pseudo_inversion(
 
         # Choose threshold theta > 0.3 / 2.5 = 0.12 
         # to cut off smallest singular values.
-        BE_inv = pseudo_inversion(BE, 0.01, 0.4, 0.1)
+        BE_inv = pseudo_inversion(BE, eps=0.01, theta=0.4, delta=0.1)
 
         # Prepares operand variable in state |b>
         def prep_b():
@@ -162,7 +162,7 @@ def pseudo_inversion(
         print(success_prob)
         filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
 
-        amps = np.sqrt([filtered_dict.get(i, 0) for i in range(4)])
+        amps = np.sqrt([filtered_dict.get(i, 0) for i in range(len(b))])
         print(amps)
 
     Finally, compare the quantum simulation result with the classical solution:
@@ -187,7 +187,7 @@ def pseudo_inversion(
 
     """
 
-    p = _pseudo_inverse_cheb(kappa, delta, eps, 100)
+    p = _pseudo_inverse_cheb(theta, delta, eps, 100)
 
     # Set _rescale=False to apply p(A/α) instead of p(A).
     A_pseudo_inv = GQSVT(A, p, kind="Chebyshev", rescale=False)
