@@ -17,6 +17,7 @@
 """
 
 import numpy as np
+import numpy.typing as npt
 from qrisp.algorithms.cks import cks_coeffs, cks_params
 from qrisp.algorithms.gqsp.gqsvt import GQSVT
 from qrisp.algorithms.gqsp.qet import QET
@@ -39,6 +40,9 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
     - Generalized Quantum Singular Value Transform (GQSVT)
 
     using a polynomial approximation of $1/x$ over the domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$.
+
+    .. image:: /_static/chebyshev_inversion.png
+       :align: center
 
     Parameters
     ----------
@@ -142,15 +146,7 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
             f"Allowed methods are: {', '.join(ALLOWED_METHODS)}"
         )
 
-    # The inversion polynomial is constructed using cks_params and cks_coeffs.
-    # Since approximating 1/x over the relevant spectral interval [-1, -1/kappa] + [1/kappa, 1]
-    # requires an odd Chebyshev series, cks_coeffs returns an array containing only the odd-degree coefficients.
-    # This array is expanded into a full Chebyshev series by padding even-degree terms with zeros.
-    j_0, beta = cks_params(eps, kappa)
-    p_odd = cks_coeffs(j_0, beta)
-    p_odd = p_odd * (-1) ** np.arange(len(p_odd))
-    p = np.zeros(2 * len(p_odd))
-    p[1::2] = p_odd
+    p = _inversion_cheb(1.0 / kappa, eps)
 
     if method == "GQSVT":
         # Set _rescale=False to apply p(A/α) instead of p(A).
@@ -161,3 +157,41 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
     # Adjust scaling factor since (A/α)^{-1} = αA^{-1}.
     A_inv.alpha = A_inv.alpha / A.alpha
     return A_inv
+
+
+def _inversion_cheb(
+    theta: float,
+    eps: float = 1e-3,
+) -> npt.NDArray[np.float64]:
+    r"""
+    Constructs a Chebyshev polynomial approximation of the inversion.
+
+    This function creates a polynomial that approximates $1/x$ over the domain 
+    $[-1, \theta] \cup [\theta, 1]$ (https://arxiv.org/pdf/1511.02306, Lemma 14). 
+
+    Parameters
+    ----------
+    theta : float
+        This threshold value defines the boundaries of the "gap" around zero 
+        $[-\theta, \theta]\subset [-1,1]$ where the function $1/x$ is not approximated.
+    eps : float, optional
+        The target precision $\epsilon$ for the approximation. Defaults to 1e-3.
+
+    Returns
+    -------
+    ndarray
+        1-D array containing the coefficients of the Chebyshev series representing the smooth, bounded 
+        approximation of the inverse, ordered from lowest order term to highest.
+    """
+
+    # The inversion polynomial is constructed using cks_params and cks_coeffs.
+    # Since approximating 1/x over the relevant spectral interval [-1, -1/kappa] + [1/kappa, 1]
+    # requires an odd Chebyshev series, cks_coeffs returns an array containing only the odd-degree coefficients.
+    # This array is expanded into a full Chebyshev series by padding even-degree terms with zeros.
+    j_0, beta = cks_params(eps, 1.0 / theta)
+    coeffs_odd = cks_coeffs(j_0, beta)
+    coeffs_odd = coeffs_odd * (-1) ** np.arange(len(coeffs_odd))
+    coeffs = np.zeros(2 * len(coeffs_odd))
+    coeffs[1::2] = coeffs_odd
+
+    return coeffs

@@ -65,7 +65,7 @@ def pseudo_inversion(
     using a polynomial approximation of $1/x$ over the domain $D_{\theta} = [-1, -\theta] \cup [\theta, 1]$, 
     and a smoothed rectangle filter over the domain $D_{\theta}' = [-\theta, \theta]$.
 
-    .. image:: /_static/pseudo_inverse.png
+    .. image:: /_static/chebyshev_pseudo_inversion.png
        :align: center
 
     Parameters
@@ -244,7 +244,7 @@ def _pseudo_inversion_cheb(
     max_N: int = 100,
 ) -> npt.NDArray[np.float64]:
     r"""
-    Constructs a Chebyshev polynomial approximation of the pseudo-inverse.
+    Constructs a Chebyshev polynomial approximation of the pseudo-inversion.
 
     This function creates a polynomial that approximates $1/x$ over the domain 
     $[-1, \theta] \cup [\theta, 1]$ while smoothly dropping to zero around the 
@@ -261,7 +261,7 @@ def _pseudo_inversion_cheb(
         The width of the transition region for the smooth origin cutoff. 
         If None, it defaults to $\theta / 4$.
     eps : float, optional
-        The target precision $\epsilon$ for the approximations. Defaults to 1e-3.
+        The target precision $\epsilon$ for the approximation. Defaults to 1e-3.
     max_N : int, optional
         The maximum polynomial degree to evaluate when interpolating the 
         even cutoff polynomial (the smooth rectangle). Defaults to 100.

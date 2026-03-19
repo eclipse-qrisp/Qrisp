@@ -35,6 +35,9 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
 
         The returned BlockEncoding must be applied to operands in state $\ket{0}$ (and not in state $\ket{b}$).
 
+    .. image:: /_static/chebyshev_kernel_reflection.png
+       :align: center
+
     Parameters
     ----------
     A : BlockEncoding
