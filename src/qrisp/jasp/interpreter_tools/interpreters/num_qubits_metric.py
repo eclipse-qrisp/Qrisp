@@ -85,7 +85,6 @@ class NumQubitsMetric(BaseMetric):
         meas_behavior, max_allocations = cache_key
         return cls(meas_behavior, max_allocations)
 
-    @property
     def initial_metric(self) -> Tuple[jnp.ndarray, int, bool]:
 
         # Here is the explanation of the metric data structure:
@@ -314,10 +313,10 @@ def get_num_qubits_profiler(
 
         STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
 
+        initial_metric = num_qubits_metric.initial_metric()
+
         filtered_args = [
-            x
-            for x in args + (num_qubits_metric.initial_metric,)
-            if type(x) not in STATIC_TYPES
+            x for x in args + (initial_metric,) if type(x) not in STATIC_TYPES
         ]
         return jitted_evaluator(*filtered_args)
 

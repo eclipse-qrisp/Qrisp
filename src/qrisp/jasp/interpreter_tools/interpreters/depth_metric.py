@@ -143,7 +143,6 @@ class DepthMetric(BaseMetric):
     def cache_key(self) -> Tuple[Callable, int]:
         return (self.meas_behavior, self.max_qubits)
 
-    @property
     def initial_metric(self) -> Tuple[jnp.ndarray, int, int, bool]:
 
         # To speed up compilation time, it will be probably necessary to
@@ -419,10 +418,10 @@ def get_depth_profiler(
 
         STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
 
+        initial_metric = depth_metric.initial_metric()
+
         filtered_args = [
-            x
-            for x in args + (depth_metric.initial_metric,)
-            if type(x) not in STATIC_TYPES
+            x for x in args + (initial_metric,) if type(x) not in STATIC_TYPES
         ]
         return jitted_evaluator(*filtered_args)
 

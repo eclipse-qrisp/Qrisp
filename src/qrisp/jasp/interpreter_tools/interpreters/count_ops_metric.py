@@ -61,7 +61,6 @@ class CountOpsMetric(BaseMetric):
 
     @property
     def profiling_dic(self) -> Dict[str, int]:
-        """Return the profiling dictionary."""
         return self._profiling_dic
 
     @classmethod
@@ -73,9 +72,7 @@ class CountOpsMetric(BaseMetric):
     def cache_key(self) -> Tuple[Tuple, Callable]:
         return (tuple(self.profiling_dic.items()), self.meas_behavior)
 
-    @property
     def initial_metric(self) -> Tuple[List[int], List[int]]:
-        """Return the initial metric value, which is a tuple of (counting_array, incrementation_constants)."""
 
         # The XLA compiler showed some scalability problems in compile time.
         # Through a process involving a lot of blood and sweat
@@ -134,7 +131,7 @@ class CountOpsMetric(BaseMetric):
     def handle_get_qubit(self, invalues, eqn, context_dic):
 
         # Trivial behavior since we don't need qubit address information
-        return invalues
+        return None
 
     def handle_get_size(self, invalues, eqn, context_dic):
 
@@ -271,10 +268,10 @@ def get_count_ops_profiler(
 
         STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
 
+        initial_metric = count_ops_metric.initial_metric()
+
         filtered_args = [
-            x
-            for x in args + (count_ops_metric.initial_metric,)
-            if type(x) not in STATIC_TYPES
+            x for x in args + (initial_metric,) if type(x) not in STATIC_TYPES
         ]
 
         return jitted_evaluator(*filtered_args)
