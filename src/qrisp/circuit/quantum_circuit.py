@@ -17,7 +17,7 @@
 """
 
 from hashlib import sha256
-from typing import Dict, List, Set
+from typing import Dict, List, Sequence, Set
 
 import numpy as np
 import sympy
@@ -27,6 +27,8 @@ from qiskit.visualization import circuit_drawer
 
 import qrisp.circuit.standard_operations as ops
 from qrisp.circuit import Clbit, Instruction, Operation, Qubit
+from qrisp.circuit.operation import ControlledOperation, PTControlledOperation
+from qrisp.misc import cnot_count, get_depth_dic
 
 TO_GATE_COUNTER = np.zeros(1)
 
@@ -789,12 +791,22 @@ class QuantumCircuit:
 
         return res
 
-    def get_depth_dic(self):
-        from qrisp.misc import get_depth_dic
+    # TODO: Improve docstrings of this method (maybe provide examples)
+    def get_depth_dic(self) -> Dict[str, int]:
+        """
+        Method to determine the depth of this QuantumCircuit.
+
+        Returns
+        -------
+        dict[str, int]
+            A dictionary with the depth of the QuantumCircuit.
+
+        """
 
         return get_depth_dic(self)
 
-    def cnot_count(self):
+    # TODO: Improve docstrings of this method (maybe provide examples)
+    def cnot_count(self) -> int:
         """
         Method to determine the amount of CNOT gates used in this QuantumCircuit.
 
@@ -805,11 +817,11 @@ class QuantumCircuit:
 
         """
 
-        from qrisp.misc import cnot_count
-
         return cnot_count(self)
 
-    def transpile(self, transpilation_level=np.inf, **qiskit_kwargs):
+    def transpile(
+        self, transpilation_level: int | float = np.inf, **qiskit_kwargs
+    ) -> "QuantumCircuit":
         """
         Transpiles the QuantumCircuit in the sense that there are no longer any
         synthesized gate objects. Furthermore, we can call the `Qiskit transpiler
@@ -820,6 +832,12 @@ class QuantumCircuit:
 
         Parameters
         ----------
+        transpilation_level : int, optional
+            The level of transpilation. If set to 0, no transpilation is performed.
+            If set to 1, only the top-level gates are transpiled, and so on.
+            The default is np.inf, which means that all gates are transpiled.
+
+
         **qiskit_kwargs :
             Keyword arguments for the Qiskit transpiler.
 
@@ -869,7 +887,7 @@ class QuantumCircuit:
             «      └─────────┘└────┘└─────────┘
 
         One can also transpile a specific composite gate in a QuantumCircuit, if desired. A Quantum
-        Phase Estimation circuit also contains a `QFT_dg` gate.
+        Phase Estimation circuit also contains a ``QFT_dg`` gate.
 
         >>> from qrisp import p, QuantumVariable, QPE, multi_measurement, h
         >>> import numpy as np
@@ -889,7 +907,7 @@ class QuantumCircuit:
         >>>
         >>> print(qv.qs.compile())
 
-        To transpile just `QFT_dg` in the compiled QuantumCircuit,
+        To transpile just ``QFT_dg`` in the compiled QuantumCircuit,
 
         >>> test_circuit = qv.qs.compile()
         >>>
@@ -905,20 +923,19 @@ class QuantumCircuit:
 
 
         """
+        # NOTE: This is here to avoid circular imports
         from qrisp.circuit import transpile
 
         return transpile(self, transpilation_level, **qiskit_kwargs)
 
-    # Counts the amount of operations self contains and returns
-    # a dict {"operation_name" : operation_count, ...}
-    def count_ops(self):
+    def count_ops(self) -> Dict[str, int]:
         """
         Counts the amount of operations of each kind. Note that operations are
         identified by their name.
 
         Returns
         -------
-        count_dic : dict
+        count_dic : Dict[str, int]
             A dictionary containing the gate counts.
 
         Examples
@@ -940,26 +957,70 @@ class QuantumCircuit:
         count_dic = {}
 
         for ins in self.data:
-            if ins.op.name in ["qb_alloc", "qb_dealloc"]:
-                continue
-            try:
-                count_dic[ins.op.name] += 1
-            except KeyError:
-                count_dic[ins.op.name] = 1
+            op_name = ins.op.name
+            if op_name not in ["qb_alloc", "qb_dealloc"]:
+                count_dic[op_name] = count_dic.get(op_name, 0) + 1
 
         return count_dic
 
-    def control(self, amount):
+    def control(self, amount: int) -> PTControlledOperation | ControlledOperation:
+        """
+        Returns a controlled version of this QuantumCircuit.
+
+        Parameters
+        ----------
+        amount : int
+            The amount of control qubits.
+
+        Returns
+        -------
+        PTControlledOperation or ControlledOperation
+            The controlled version of this QuantumCircuit.
+
+        """
         return self.to_gate().control(amount)
 
-    def compose(self, other, qubits=[], clbits=[], inplace=True):
+    def compose(
+        self,
+        other: "QuantumCircuit",
+        qubits: Sequence[Qubit] | None = None,
+        clbits: Sequence[Clbit] | None = None,
+        inplace: bool = True,
+    ) -> "QuantumCircuit | None":
+        """
+        Composes this QuantumCircuit with another QuantumCircuit by appending the other to self.
+
+        Parameters
+        ----------
+        other : QuantumCircuit
+            The QuantumCircuit to be appended to self.
+
+        qubits : Sequence[Qubit], optional
+            The qubits to be used for the composition.
+            If None, the qubits of self and other will be matched by their identifiers. The default is None.
+
+        clbits : Sequence[Clbit], optional
+            The classical bits to be used for the composition.
+            If None, the clbits of self and other will be matched by their identifiers. The default is None.
+
+        inplace : bool, optional
+            If True, the composition is performed in-place and self is modified.
+            If False, a new QuantumCircuit is returned and self is not modified. The default is True.
+
+        Returns
+        -------
+        QuantumCircuit | None
+            The composed QuantumCircuit. Only returned if inplace is False.
+
+        """
+
         if inplace:
             self.append(other.to_gate(), qubits, clbits)
+            return None
 
-        else:
-            res = self.copy()
-            res.append(other.to_gate(), qubits, clbits)
-            return res
+        res = self.copy()
+        res.append(other.to_gate(), qubits, clbits)
+        return res
 
     def bind_parameters(self, subs_dic):
         """
@@ -1340,7 +1401,12 @@ class QuantumCircuit:
     # execute qc.append(CXGate(), [[qubit1, qubit3, qubit5], [qubit2, qubit4, qubit6]])
     # If it is required to apply a cx gate to the qubit pairs (1,2), (1,3), (1,4)
     # execute qc.append(CXGate(), [qubit_1, [qubit2, qubit3, qubit4]])
-    def append(self, operation_or_instruction, qubits=[], clbits=[]):
+    def append(
+        self,
+        operation_or_instruction: Operation | Instruction,
+        qubits: Sequence[Qubit] | None = None,
+        clbits: Sequence[Clbit] | None = None,
+    ):
         r"""
         Method for appending Operation or Instruction objects to the QuantumCircuit.
 
@@ -1394,6 +1460,9 @@ class QuantumCircuit:
             qb_11: ────────────
 
         """
+
+        qubits = [] if qubits is None else qubits
+        clbits = [] if clbits is None else clbits
 
         # Check the type of the instruction/operation
         # from qrisp.circuit import Instruction, Operation
@@ -2673,7 +2742,6 @@ def convert_to_qb_list(input, circuit=None, top_level=True):
 
 
 def convert_to_cb_list(input, circuit=None, top_level=True):
-    from qrisp.circuit import Clbit
 
     if hasattr(input, "__iter__"):
         result = []

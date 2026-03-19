@@ -300,7 +300,6 @@ class Operation:
 
         return res
 
-    # Method to create a controlled gate
     def control(self, num_ctrl_qubits=1, ctrl_state=-1, method=None):
         """
         Returns the controlled version of this Operation (if applicable).
