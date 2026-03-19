@@ -515,35 +515,31 @@ class TestQuantumCircuitMethods:
 
         assert combined.compare_unitary(QuantumCircuit(2)) is True
 
-    @pytest.mark.xfail
     def test_compare_unitary_global_phase(self):
-        """Circuits differing only by global phase are handled by ignore_gphase."""
+        """Circuits that differ only by a global phase scalar are equal iff ignore_gphase=True."""
 
+        # RX(2π) = -I  (global phase of -1 relative to the identity)
         qc_0 = QuantumCircuit(1)
-        qc_0.p(np.pi, 0)
+        qc_0.rx(2 * np.pi, 0)
+
+        # identity
         qc_1 = QuantumCircuit(1)
-        qc_1.z(0)
+
         assert qc_0.compare_unitary(qc_1, ignore_gphase=False) is False
         assert qc_0.compare_unitary(qc_1, ignore_gphase=True) is True
 
-    @pytest.mark.xfail
-    def test_compare_unitary_cx_cx_is_swap(self):
-        """CX(0,1)·CX(1,0) should equal SWAP(0,1)."""
+    def test_compare_unitary_cx_cx_cx_is_swap(self):
+        """SWAP(0,1) equals the three-CX decomposition CX(0,1)·CX(1,0)·CX(0,1)."""
 
         qc_0 = QuantumCircuit(2)
         qc_0.cx(0, 1)
         qc_0.cx(1, 0)
+        qc_0.cx(0, 1)
+
         qc_1 = QuantumCircuit(2)
         qc_1.swap(0, 1)
+
         assert qc_0.compare_unitary(qc_1) is True
-
-    @pytest.mark.xfail
-    def test_compare_unitary_full_rotation_is_identity(self):
-        """RX(2π) should equal the identity up to global phase."""
-
-        qc_0 = QuantumCircuit(1)
-        qc_0.rx(2 * np.pi, 0)
-        assert qc_0.compare_unitary(QuantumCircuit(1)) is True
 
     # ------------------------------------------------------------------ #
     # get_unitary — single-qubit standard gates                          #
