@@ -17,7 +17,7 @@
 """
 
 from hashlib import sha256
-from typing import Dict, List, Set, cast
+from typing import Dict, List, Set
 
 import numpy as np
 import sympy
@@ -47,7 +47,6 @@ class QuantumCircuit:
 
     Parameters
     ----------
-
     num_qubits : int, optional
         The amount of qubits this QuantumCircuit is initialized with. The default is 0.
     num_clbits : int, optional
@@ -243,7 +242,7 @@ class QuantumCircuit:
         Parameters
         ----------
         qubit : Qubit, optional
-            The Qubit to be added. If given none, a new Qubit will be generated.
+            The Qubit to be added. If None is provided, a new Qubit will be generated.
 
         Returns
         -------
@@ -286,7 +285,7 @@ class QuantumCircuit:
         Parameters
         ----------
         clbit : Clbit, optional
-            The classical bit to be added. If given none, a new Clbit will be generated.
+            The classical bit to be added. If None is provided, a new Clbit will be generated.
 
         Returns
         -------
@@ -640,7 +639,6 @@ class QuantumCircuit:
 
         >>> qc_0.compare_unitary(qc_1)
         True
-
 
         """
 

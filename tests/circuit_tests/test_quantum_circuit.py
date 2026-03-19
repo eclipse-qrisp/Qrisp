@@ -542,6 +542,107 @@ class TestQuantumCircuitMethods:
         assert qc_0.compare_unitary(qc_1) is True
 
     # ------------------------------------------------------------------ #
+    # inverse                                                            #
+    # ------------------------------------------------------------------ #
+
+    def test_inverse_reverses_gate_order(self):
+        """Inverse reverses the sequence of gates in the circuit."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.z(1)
+
+        inv_qc = qc.inverse()
+
+        assert len(inv_qc.data) == 3
+        assert str(inv_qc.data[0])[:1] == "z"
+        assert str(inv_qc.data[1])[:2] == "cx"
+        assert str(inv_qc.data[2])[:1] == "h"
+
+    def test_inverse_empty_circuit(self):
+        """Inverse of an empty circuit is an empty circuit with the same structure."""
+
+        qc = QuantumCircuit(3, 2)
+        inv_qc = qc.inverse()
+        assert len(inv_qc.data) == 0
+        assert len(inv_qc.qubits) == 3
+        assert len(inv_qc.clbits) == 2
+
+    def test_inverse_preserves_qubit_structure(self):
+        """Inverse preserves qubit and clbit counts."""
+
+        qc = QuantumCircuit(3, 2)
+        qc.h(0)
+        qc.cx(0, 1)
+        inv_qc = qc.inverse()
+        assert len(inv_qc.qubits) == 3
+        assert len(inv_qc.clbits) == 2
+
+    def test_inverse_returns_new_circuit(self):
+        """inverse() returns a new object without mutating the original."""
+
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        inv_qc = qc.inverse()
+        assert inv_qc is not qc
+        assert len(qc.data) == 1  # original unchanged
+
+    def test_inverse_double_inverse_is_original(self):
+        """Applying inverse twice recovers the original unitary."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.s(1)
+        assert qc.compare_unitary(qc.inverse().inverse()) is True
+
+    @pytest.mark.parametrize("gate_name", ["x", "y", "z", "h"])
+    def test_inverse_self_adjoint_gates(self, gate_name):
+        """Self-adjoint gates (X, Y, Z, H) are their own inverse."""
+
+        qc = QuantumCircuit(1)
+        getattr(qc, gate_name)(0)
+        assert qc.compare_unitary(qc.inverse()) is True
+
+    @pytest.mark.parametrize(
+        "gate_name,angle",
+        [
+            ("rx", np.pi / 5),
+            ("ry", np.pi / 7),
+            ("rz", np.pi / 3),
+            ("p", np.pi / 3),
+        ],
+    )
+    def test_inverse_parametric_gate_cancels(self, gate_name, angle):
+        """A parametric gate composed with its inverse yields the identity."""
+
+        qc = QuantumCircuit(1)
+        getattr(qc, gate_name)(angle, 0)
+        combined = qc.clearcopy()
+        combined.extend(qc)
+        combined.extend(qc.inverse())
+        assert combined.compare_unitary(QuantumCircuit(1)) is True
+
+    @pytest.mark.parametrize(
+        "build",
+        [
+            lambda qc: (qc.h(0), qc.cx(0, 1), qc.ry(np.pi / 4, 1)),
+            lambda qc: (qc.x(0), qc.z(0), qc.y(0)),
+            lambda qc: (qc.h(0), qc.cx(0, 1), qc.cx(1, 0)),
+        ],
+    )
+    def test_inverse_combined_with_original_is_identity(self, build):
+        """Any circuit composed with its inverse yields the identity unitary."""
+
+        qc = QuantumCircuit(2)
+        build(qc)
+        combined = qc.clearcopy()
+        combined.extend(qc)
+        combined.extend(qc.inverse())
+        assert combined.compare_unitary(QuantumCircuit(2)) is True
+
+    # ------------------------------------------------------------------ #
     # get_unitary — single-qubit standard gates                          #
     # ------------------------------------------------------------------ #
 
@@ -680,4 +781,4 @@ class TestQuantumCircuitMethods:
 class TestQuantumCircuitDunderMethods:
     """Tests for QuantumCircuit dunder methods."""
 
-    pass
+    # TODO: Implement tests for __str__, __repr__, __eq__, __hash__, etc.
