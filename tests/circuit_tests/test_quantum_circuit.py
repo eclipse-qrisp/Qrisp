@@ -18,6 +18,7 @@
 
 import numpy as np
 import pytest
+import sympy
 from qiskit import QuantumCircuit as QiskitQuantumCircuit
 from sympy import symbols
 
@@ -920,6 +921,285 @@ class TestQuantumCircuitMethods:
 
         qc_identity = QuantumCircuit(2)
         assert qc_combined.compare_unitary(qc_identity) is True
+
+    ###################################
+    ### get_unitary method tests
+    ###################################
+
+    def test_get_unitary_identity_circuit(self):
+        """Test get_unitary for an empty circuit (identity)."""
+        qc = QuantumCircuit(2)
+        unitary = qc.get_unitary()
+
+        expected = np.eye(4, dtype=np.complex64)
+        assert unitary.shape == (4, 4)
+        assert np.allclose(unitary, expected)
+
+    def test_get_unitary_single_qubit_x_gate(self):
+        """Test get_unitary for a single X gate."""
+        qc = QuantumCircuit(1)
+        qc.x(0)
+        unitary = qc.get_unitary()
+
+        expected = np.array([[0, 1], [1, 0]], dtype=np.complex64)
+        assert unitary.shape == (2, 2)
+        assert np.allclose(unitary, expected)
+
+    def test_get_unitary_single_qubit_h_gate(self):
+        """Test get_unitary for a Hadamard gate."""
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        unitary = qc.get_unitary()
+
+        expected = np.array([[1, 1], [1, -1]], dtype=np.complex64) / np.sqrt(2)
+        assert unitary.shape == (2, 2)
+        assert np.allclose(unitary, expected)
+
+    def test_get_unitary_two_qubit_cnot(self):
+        """Test get_unitary for a CNOT gate."""
+        qc = QuantumCircuit(2)
+        qc.cx(0, 1)
+        unitary = qc.get_unitary()
+
+        assert unitary.shape == (4, 4)
+        assert np.allclose(unitary @ unitary.conj().T, np.eye(4), atol=1e-5)
+
+    def test_get_unitary_docstring_example_numeric(self):
+        """Test the numeric example from the get_unitary docstring."""
+        qc = QuantumCircuit(2)
+        phi = np.pi
+        qc.p(phi / 2, 0)
+        qc.p(phi / 2, 1)
+        qc.cx(0, 1)
+        qc.p(-phi / 2, 1)
+        qc.cx(0, 1)
+
+        unitary = qc.get_unitary(decimals=4)
+
+        expected = np.array(
+            [
+                [1.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
+                [0.0 + 0.0j, 1.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
+                [0.0 + 0.0j, 0.0 + 0.0j, 1.0 + 0.0j, 0.0 + 0.0j],
+                [0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, -1.0 + 0.0j],
+            ],
+            dtype=np.complex64,
+        )
+
+        assert np.allclose(unitary, expected, atol=1e-4)
+
+    def test_get_unitary_docstring_example_symbolic(self):
+        """Test the symbolic example from the get_unitary docstring."""
+        qc = QuantumCircuit(2)
+        phi = sympy.Symbol("phi")
+        qc.p(phi / 2, 0)
+        qc.p(phi / 2, 1)
+        qc.cx(0, 1)
+        qc.p(-phi / 2, 1)
+        qc.cx(0, 1)
+
+        unitary = qc.get_unitary(decimals=4)
+
+        assert unitary.dtype == np.dtype("O")
+        assert unitary.shape == (4, 4)
+        assert unitary[0, 0] == 1
+        assert unitary[3, 3].has(phi)
+
+    def test_get_unitary_without_decimals(self):
+        """Test get_unitary returns full precision when decimals is None."""
+        qc = QuantumCircuit(1)
+        qc.h(0)
+
+        unitary = qc.get_unitary(decimals=None)
+
+        assert unitary is not None
+        assert unitary.shape == (2, 2)
+
+    def test_get_unitary_with_decimals_rounding(self):
+        """Test that decimals parameter rounds numeric values correctly."""
+        qc = QuantumCircuit(1)
+        qc.rx(np.pi / 4, 0)
+
+        unitary_full = qc.get_unitary()
+        unitary_rounded = qc.get_unitary(decimals=2)
+
+        assert unitary_full.shape == unitary_rounded.shape
+        assert unitary_rounded.dtype == np.complex64
+
+    def test_get_unitary_parametric_gate(self):
+        """Test get_unitary with parametric gates."""
+        angle = np.pi / 4
+        qc = QuantumCircuit(1)
+        qc.rx(angle, 0)
+
+        unitary = qc.get_unitary()
+
+        assert unitary.shape == (2, 2)
+        assert np.allclose(unitary @ unitary.conj().T, np.eye(2), atol=1e-5)
+
+    def test_get_unitary_phase_gate(self):
+        """Test get_unitary with phase gates."""
+        qc = QuantumCircuit(1)
+        qc.p(np.pi / 2, 0)
+
+        unitary = qc.get_unitary()
+
+        expected = np.array([[1, 0], [0, np.exp(1j * np.pi / 2)]], dtype=np.complex64)
+        assert np.allclose(unitary, expected)
+
+    def test_get_unitary_symbolic_parameter(self):
+        """Test get_unitary with symbolic parameters."""
+        qc = QuantumCircuit(1)
+        theta = sympy.Symbol("theta")
+        qc.rx(theta, 0)
+
+        unitary = qc.get_unitary()
+
+        assert unitary.dtype == np.dtype("O")
+        assert unitary[0, 0].has(theta) or unitary[0, 1].has(theta)
+
+    def test_get_unitary_multiple_symbolic_parameters(self):
+        """Test get_unitary with multiple symbolic parameters."""
+        qc = QuantumCircuit(2)
+        a, b = sympy.symbols("a b")
+        qc.rx(a, 0)
+        qc.ry(b, 1)
+
+        unitary = qc.get_unitary()
+
+        assert unitary.dtype == np.dtype("O")
+        assert unitary.shape == (4, 4)
+
+    def test_get_unitary_unitarity(self):
+        """Test that returned matrix is unitary (U†U = I)."""
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.ry(np.pi / 3, 1)
+
+        unitary = qc.get_unitary()
+
+        product = unitary @ unitary.conj().T
+        assert np.allclose(product, np.eye(4), atol=1e-5)
+
+    def test_get_unitary_complex_circuit(self):
+        """Test get_unitary with a complex multi-gate circuit."""
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.cx(1, 2)
+        qc.ry(np.pi / 6, 2)
+
+        unitary = qc.get_unitary()
+
+        assert unitary.shape == (8, 8)
+        assert np.allclose(unitary @ unitary.conj().T, np.eye(8), atol=1e-5)
+
+    def test_get_unitary_sequential_x_gates(self):
+        """Test get_unitary with X gates (X²=I)."""
+        qc = QuantumCircuit(1)
+        qc.x(0)
+        qc.x(0)
+
+        unitary = qc.get_unitary()
+        expected = np.eye(2, dtype=np.complex64)
+
+        assert np.allclose(unitary, expected)
+
+    def test_get_unitary_decimals_snapping(self):
+        """Test that decimals parameter snaps values near 1 to exactly 1."""
+        qc = QuantumCircuit(1)
+        a = sympy.Symbol("a")
+        qc.p(a, 0)
+
+        unitary = qc.get_unitary(decimals=4)
+
+        assert unitary.dtype == np.dtype("O")
+        # First diagonal element should be exactly 1
+        assert unitary[0, 0] == 1
+
+    def test_get_unitary_symbolic_simplification(self):
+        """Test that symbolic expressions are simplified."""
+        qc = QuantumCircuit(1)
+        phi = sympy.Symbol("phi")
+        qc.p(phi, 0)
+
+        unitary_1 = qc.get_unitary()
+        unitary_2 = qc.get_unitary(decimals=4)
+
+        assert unitary_1.dtype == np.dtype("O")
+        assert unitary_2.dtype == np.dtype("O")
+
+    def test_get_unitary_empty_circuit_multiple_qubits(self):
+        """Test get_unitary for empty circuits with different numbers of qubits."""
+        for num_qubits in range(1, 4):
+            qc = QuantumCircuit(num_qubits)
+            unitary = qc.get_unitary()
+
+            expected_dim = 2**num_qubits
+            assert unitary.shape == (expected_dim, expected_dim)
+            assert np.allclose(unitary, np.eye(expected_dim))
+
+    def test_get_unitary_z_gate(self):
+        """Test get_unitary for Z gate."""
+        qc = QuantumCircuit(1)
+        qc.z(0)
+
+        unitary = qc.get_unitary()
+        expected = np.array([[1, 0], [0, -1]], dtype=np.complex64)
+
+        assert np.allclose(unitary, expected)
+
+    def test_get_unitary_y_gate(self):
+        """Test get_unitary for Y gate."""
+        qc = QuantumCircuit(1)
+        qc.y(0)
+
+        unitary = qc.get_unitary()
+        expected = np.array([[0, -1j], [1j, 0]], dtype=np.complex64)
+
+        assert np.allclose(unitary, expected)
+
+    def test_get_unitary_s_gate(self):
+        """Test get_unitary for S gate."""
+        qc = QuantumCircuit(1)
+        qc.s(0)
+
+        unitary = qc.get_unitary()
+        expected = np.array([[1, 0], [0, 1j]], dtype=np.complex64)
+
+        assert np.allclose(unitary, expected)
+
+    def test_get_unitary_t_gate(self):
+        """Test get_unitary for T gate."""
+        qc = QuantumCircuit(1)
+        qc.t(0)
+
+        unitary = qc.get_unitary()
+        expected = np.array([[1, 0], [0, np.exp(1j * np.pi / 4)]], dtype=np.complex64)
+
+        assert np.allclose(unitary, expected)
+
+    def test_get_unitary_swap_gate(self):
+        """Test get_unitary for SWAP gate."""
+        qc = QuantumCircuit(2)
+        qc.swap(0, 1)
+
+        unitary = qc.get_unitary()
+
+        assert unitary.shape == (4, 4)
+        assert np.allclose(unitary @ unitary.conj().T, np.eye(4), atol=1e-5)
+
+    def test_get_unitary_preserves_matrix_structure(self):
+        """Test that get_unitary preserves expected matrix structure."""
+        qc = QuantumCircuit(1)
+        qc.h(0)
+
+        unitary = qc.get_unitary()
+
+        # Hadamard is Hermitian and unitary
+        assert np.allclose(unitary, unitary.conj().T)
+        assert np.allclose(unitary @ unitary.conj().T, np.eye(2), atol=1e-5)
 
     # TODO: Add more tests for other methods of QuantumCircuit
 

@@ -720,10 +720,9 @@ class QuantumCircuit:
 
         return self.convert_to_clbit_list(list(input))
 
-    # Generates the inverse of self by applying the inverse gates in reversed order
-    def inverse(self):
+    def inverse(self) -> "QuantumCircuit":
         """
-        Returns the inverse/daggered QuantumCircuit.
+        Generates the inverse of this QuantumCircuit by applying the inverse gates in reversed order.
 
         Returns
         -------
@@ -733,7 +732,7 @@ class QuantumCircuit:
         Examples
         --------
 
-        Daggering a QuantumCircuit reverses the order and daggers each operation.
+        Daggering a QuantumCircuit reverses the order and daggers each operation:
 
         >>> from qrisp import QuantumCircuit
         >>> import numpy as np
@@ -760,24 +759,29 @@ class QuantumCircuit:
 
         return inverted_circuit
 
-    # Generate the circuits unitary matrix
-    def get_unitary(self, decimals=-1) -> np.ndarray:
+    def get_unitary(self, decimals: int | None = None) -> np.ndarray:
         """
-        Acquires the unitary matrix of the given QuantumCircuit as a NumPy array.
+        Return the unitary matrix of this QuantumCircuit as a NumPy array.
 
-        This method also works with abstract parameters. In this case a NumPy array
-        with Sympy entries is returned.
+        Works with both numeric and abstract (SymPy) parameters. When the
+        circuit contains symbolic parameters, the returned array has
+        ``dtype=object`` with SymPy expressions as entries.
 
         Parameters
         ----------
-        decimals : integer, optional
-            The amount of decimals to be rounded to. By default, the full precision is
-            returned.
+        decimals : int, optional
+            Number of decimal places to round to. When not provided, full
+            precision is returned. For symbolic arrays, floating-point
+            coefficients inside each expression are rounded. Values within
+            ``10**(-decimals)`` of 1 are snapped to exactly 1 to suppress
+            floating-point noise.
 
         Returns
         -------
         numpy.ndarray
-            The unitary matrix as a numpy array.
+            The unitary matrix. ``dtype`` is ``complex64`` for numeric
+            circuits and ``object`` for symbolic ones.
+
 
         Examples
         --------
@@ -799,7 +803,7 @@ class QuantumCircuit:
                [ 0.+0.j,  0.+0.j,  1.+0.j,  0.+0.j],
                [ 0.+0.j,  0.+0.j,  0.+0.j, -1.+0.j]], dtype=complex64)
 
-        We now synthesize the exact same QuantumCircuit but this time ``phi`` is a Sympy
+        We now synthesize the exact same QuantumCircuit, but this time ``phi`` is a SymPy
         symbol.
 
         >>> from sympy import Symbol
@@ -817,26 +821,33 @@ class QuantumCircuit:
                [0, 0, 0, exp(I*phi)]], dtype=object)
 
         """
+        # NOTE: This is here to avoid circular imports
         from qrisp.simulator import calc_circuit_unitary
 
-        res = calc_circuit_unitary(self)
+        res = calc_circuit_unitary(self, res_type="numpy")
+        if not isinstance(res, np.ndarray):
+            raise TypeError(
+                f"calc_circuit_unitary must return a numpy array, got {type(res).__name__}"
+            )
 
-        if decimals != -1:
-            if res.dtype == np.dtype("O"):
-                raveled_res = res.ravel()
-                for i in range(len(raveled_res)):
-                    expression = sympy.simplify(raveled_res[i])
-                    for a in sympy.preorder_traversal(expression):
-                        if isinstance(a, sympy.Float):
-                            rounded_float = round(a, decimals)
-                            if abs(float(a) - 1) < 10 ** -(decimals):
-                                expression = expression.subs(a, 1)
-                            else:
-                                expression = expression.subs(a, rounded_float)
+        if decimals is None:
+            return res
 
-                    raveled_res[i] = expression
-            else:
-                res = np.round(res, decimals)
+        if res.dtype != np.dtype("O"):
+            return np.round(res, decimals)
+
+        raveled = res.ravel()
+        snap_threshold = 10 ** (-decimals)
+
+        for i, entry in enumerate(raveled):
+            expression = sympy.simplify(entry)
+            for leaf in sympy.preorder_traversal(expression):
+                if isinstance(leaf, sympy.Float):
+                    if abs(float(leaf) - 1) < snap_threshold:
+                        expression = expression.subs(leaf, 1)
+                    else:
+                        expression = expression.subs(leaf, round(leaf, decimals))
+            raveled[i] = expression
 
         return res
 
