@@ -31,9 +31,7 @@ if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
 
-def lanczos_even(
-    BE: BlockEncoding, k: int, operand_prep: Callable[..., Any]
-) -> Tuple[QuantumVariable, ...]:
+def lanczos_even(BE: BlockEncoding, k: int, operand_prep: Callable[..., Any]) -> Tuple[QuantumVariable, ...]:
     r"""
     This function implements the Krylov space construction via block-encodings
     of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(a) of `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018>`__.
@@ -75,9 +73,7 @@ def lanczos_even(
     return tuple(ancillas)
 
 
-def lanczos_odd(
-    BE: BlockEncoding, k: int, operand_prep: Callable[..., Any]
-) -> QuantumBool:
+def lanczos_odd(BE: BlockEncoding, k: int, operand_prep: Callable[..., Any]) -> QuantumBool:
     r"""
     This function implements the Krylov space construction via block-encodings
     of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(b) of `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/>`__.
@@ -238,12 +234,8 @@ def lanczos_expvals(
             """
             return jnp.where(jnp.all(jnp.array(args)) == 0, 1, -1)
 
-        ev_even = expectation_value(
-            lanczos_even, shots=mes_kwargs["shots"], post_processor=post_processor
-        )
-        ev_odd = expectation_value(
-            lanczos_odd, shots=mes_kwargs["shots"], post_processor=post_processor
-        )
+        ev_even = expectation_value(lanczos_even, shots=mes_kwargs["shots"], post_processor=post_processor)
+        ev_odd = expectation_value(lanczos_odd, shots=mes_kwargs["shots"], post_processor=post_processor)
         expvals = jnp.zeros(2 * D)
 
         for k in range(0, 2 * D):
@@ -617,7 +609,6 @@ def lanczos_alg(
     ground_state_energy = jnp.min(eigvals) * BE.alpha
 
     if show_info:
-
         results = {
             "energy": ground_state_energy,
             "eigvals": eigvals,
@@ -631,5 +622,4 @@ def lanczos_alg(
         return ground_state_energy, results
 
     else:
-
         return ground_state_energy

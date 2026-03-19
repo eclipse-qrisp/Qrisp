@@ -25,44 +25,43 @@ from qrisp.vqe.problems.electronic_structure import *
 
 
 def test_catalyst_interface():
-    
+
     try:
         import catalyst
     except ModuleNotFoundError:
         return
-    
+
     def test_fun(i):
         qv = QuantumFloat(i, -2)
         with invert():
-            cx(qv[0], qv[qv.size-1])
+            cx(qv[0], qv[qv.size - 1])
             x(qv[0])
         meas_res = measure(qv)
         return meas_res + 3
-    
+
     jaspr = make_jaspr(test_fun)(2)
-    
+
     jaspr.to_qir()
     jaspr.to_mlir()
     jaspr.to_catalyst_jaxpr()
-    
+
     assert jaspr.qjit(4) == 5.25
-    
-    
+
     def int_encoder(qv, encoding_int):
         for i in jrange(qv.size):
-            with control(encoding_int & (1<<i)):
+            with control(encoding_int & (1 << i)):
                 x(qv[i])
 
     @qjit
     def test_f(a):
-        time.sleep(10)        
+        time.sleep(10)
         qv = QuantumFloat(4)
         int_encoder(qv, a)
         return measure(qv)
 
     t0 = time.time()
 
-    # Test classical control flow    
+    # Test classical control flow
     assert test_f(4) == 4
     assert test_f(5) == 5
     assert test_f(6) == 6
@@ -71,93 +70,94 @@ def test_catalyst_interface():
     # Test QJIT caching
     assert time.time() - t0 < 20
 
-    # Test U3 translation    
+    # Test U3 translation
     def main(a, b, c, d):
         qv = QuantumFloat(1)
         with control(d == 0):
             h(qv[0])
-        u3(a*np.pi, b*np.pi, c*np.pi, qv[0])
+        u3(a * np.pi, b * np.pi, c * np.pi, qv[0])
         with control(d == 0):
             h(qv[0])
         return measure(qv[0])
-    
-    for a,b,c,d in itertools.product(*4*[[0,1]]):
-        assert qjit(main)(a,b,c,d) == jaspify(main)(a,b,c,d)
-        
+
+    for a, b, c, d in itertools.product(*4 * [[0, 1]]):
+        assert qjit(main)(a, b, c, d) == jaspify(main)(a, b, c, d)
+
     for i in range(8):
-        statevector_array = 8*[0]
+        statevector_array = 8 * [0]
         statevector_array[i] = 1
+
         def main():
             qv = QuantumFloat(3)
             prepare(qv, statevector_array)
             return measure(qv)
+
         assert jaspify(main)() == qjit(main)()
-        
+
     ## Test fuse primitive
-    
+
     @qjit
     def main():
-        
+
         a = QuantumFloat(3)
         b = QuantumFloat(3)
         a[:] = 7
         b[:] = 7
-        
+
         return measure(a.reg + b.reg)
 
     assert main() == 63
-        
+
     @qjit
     def main():
-        
+
         a = QuantumFloat(3)
         b = QuantumFloat(3)
         a[:] = 7
         b[:] = 7
-        
+
         return measure(a.reg + b[0])
 
     assert main() == 15
-    
+
     @qjit
     def main():
-        
+
         a = QuantumFloat(3)
         b = QuantumFloat(3)
         a[:] = 7
         b[:] = 7
-        
+
         return measure(a[0] + b.reg)
 
     assert main() == 15
-    
+
     @qjit
     def main():
-        
+
         a = QuantumFloat(3)
         b = QuantumFloat(3)
         a[:] = 7
         b[:] = 7
-        
+
         return measure(a[0] + b[0])
 
     assert main() == 3
 
-    # Test for https://github.com/eclipse-qrisp/Qrisp/issues/180    
+    # Test for https://github.com/eclipse-qrisp/Qrisp/issues/180
     from pyscf import gto
+
     @make_jaspr
     def main():
-    
-        mol = gto.M(
-            atom = '''H 0 0 0; H 0 0 0.74''',
-            basis = 'sto-3g')
-    
+
+        mol = gto.M(atom="""H 0 0 0; H 0 0 0.74""", basis="sto-3g")
+
         vqe = electronic_structure_problem(mol)
-    
-        energy = vqe.run(lambda : QuantumFloat(4), depth=1, max_iter=100, optimizer="SPSA")
-    
+
+        energy = vqe.run(lambda: QuantumFloat(4), depth=1, max_iter=100, optimizer="SPSA")
+
         return energy
-    
+
     jaspr = main()
     qir_str = jaspr.to_qir()
 
@@ -171,95 +171,96 @@ def test_parity_catalyst():
         qv = QuantumVariable(3)
         x(qv[0])
         x(qv[2])
-        
+
         m1 = measure(qv[0])
         m2 = measure(qv[1])
         m3 = measure(qv[2])
-        
+
         result = parity(m1, m2, m3)
         return result
-    
+
     # XOR of (True, False, True) = False
     assert test_basic_parity() == False
-    
+
     # Test parity with expectation
     @qjit
     def test_parity_expectation():
         qv = QuantumVariable(2)
         x(qv[0])
-        
+
         m1 = measure(qv[0])
         m2 = measure(qv[1])
-        
+
         # Parity is True (one 1), expectation is False
         # XOR(True, False) = True (mismatch indicator)
         result = parity(m1, m2, expectation=0)
         return result
-    
+
     assert test_parity_expectation() == True
-    
+
     # Test parity returns correct type that can be used in subsequent operations
     @qjit
     def test_parity_type():
         qv = QuantumVariable(2)
         x(qv[0])
-        
+
         m1 = measure(qv[0])
         m2 = measure(qv[1])
-        
+
         p = parity(m1, m2)
-        
+
         # Parity result should be usable in boolean operations
         return p
-    
+
     # Parity of (True, False) = True
     assert test_parity_type() == True
 
 
 def test_parity_catalyst_with_scan():
     """Test parity with array inputs (scan primitive) in catalyst."""
-    
+
     try:
         import catalyst
     except ModuleNotFoundError:
         return
-    
+
     import jax.numpy as jnp
-    
+
     @qjit
     def test_array_parity():
         qv0 = QuantumVariable(3)
         qv1 = QuantumVariable(3)
-        
+
         # Set specific states
         x(qv0[0])  # qv0 = [1, 0, 1]
         x(qv0[2])
         x(qv1[1])  # qv1 = [0, 1, 0]
-        
+
         # Measure individual qubits
         m0_0 = measure(qv0[0])
         m0_1 = measure(qv0[1])
         m0_2 = measure(qv0[2])
-        
+
         m1_0 = measure(qv1[0])
         m1_1 = measure(qv1[1])
         m1_2 = measure(qv1[2])
-        
+
         # Create arrays and compute parity (triggers scan)
         meas_array_0 = jnp.array([m0_0, m0_1, m0_2])
         meas_array_1 = jnp.array([m1_0, m1_1, m1_2])
-        
+
         result = parity(meas_array_0, meas_array_1)
         return result
-    
+
     result = test_array_parity()
     # Expected: [1 XOR 0, 0 XOR 1, 1 XOR 0] = [1, 1, 1]
     expected = jnp.array([1, 1, 1])
     assert jnp.array_equal(result, expected), f"Expected {expected}, got {result}"
-    
+
+
 def test_qjit_pytree():
     """Test that qjit preserves PyTree structure in return values."""
-    
+
     try:
         import catalyst
     except ModuleNotFoundError:
@@ -273,13 +274,13 @@ def test_qjit_pytree():
         a[:] = 5
         b[:] = 3
         return {"first": measure(a), "second": measure(b)}
-    
+
     result = dict_return()
     assert isinstance(result, dict), "Should return a dict"
     assert "first" in result and "second" in result, "Should have correct keys"
     assert result["first"] == 5, "first should be 5"
     assert result["second"] == 3, "second should be 3"
-    
+
     # Test 2: Returning a list
     @qjit
     def list_return():
@@ -290,12 +291,12 @@ def test_qjit_pytree():
         b[:] = 2
         c[:] = 3
         return [measure(a), measure(b), measure(c)]
-    
+
     result = list_return()
     assert isinstance(result, list), "Should return a list"
     assert len(result) == 3, "Should have 3 elements"
     assert result == [1, 2, 3], "Should have correct values"
-    
+
     # Test 3: Returning a tuple
     @qjit
     def tuple_return():
@@ -304,11 +305,11 @@ def test_qjit_pytree():
         a[:] = 7
         b[:] = 9
         return (measure(a), measure(b))
-    
+
     result = tuple_return()
     assert isinstance(result, tuple), "Should return a tuple"
     assert result == (7, 9), "Should have correct values"
-    
+
     # Test 4: Returning nested structure
     @qjit
     def nested_return():
@@ -318,23 +319,20 @@ def test_qjit_pytree():
         a[:] = 1
         b[:] = 2
         c[:] = 3
-        return {
-            "pair": (measure(a), measure(b)),
-            "single": measure(c)
-        }
-    
+        return {"pair": (measure(a), measure(b)), "single": measure(c)}
+
     result = nested_return()
     assert isinstance(result, dict), "Should return a dict"
     assert isinstance(result["pair"], tuple), "Nested tuple should be preserved"
     assert result["pair"] == (1, 2), "pair should be (1, 2)"
     assert result["single"] == 3, "single should be 3"
-    
+
     # Test 5: Single return value (scalar)
     @qjit
     def single_return():
         a = QuantumFloat(4)
         a[:] = 11
         return measure(a)
-    
+
     result = single_return()
     assert result == 11, "Should return the scalar value"

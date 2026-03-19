@@ -60,7 +60,8 @@ def test_jasp_QITE_GC():
     b = QITE_basic()
 
     for i in range(8):
-        assert(np.abs(a[float(i)] - b[(i,)]) < 0.001)
+        assert np.abs(a[float(i)] - b[(i,)]) < 0.001
+
 
 def test_jasp_QITE_HOPF():
     from qrisp import rx, h, ry, s_dg, swap, QuantumFloat
@@ -105,4 +106,4 @@ def test_jasp_QITE_HOPF():
     b = QITE_basic()
 
     for i in range(8):
-        assert(np.abs(a[float(i)] - b[(i,)]) < 0.001)
+        assert np.abs(a[float(i)] - b[(i,)]) < 0.001

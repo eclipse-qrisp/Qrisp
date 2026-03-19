@@ -38,9 +38,7 @@ def test_GXX_gates_example():
 
     x(qv[-1])
     qs.append(
-        gms_multi_cx_fan_out(
-            n - 1, use_uniform=True, phase_tolerant=False, basis="GXX"
-        ),
+        gms_multi_cx_fan_out(n - 1, use_uniform=True, phase_tolerant=False, basis="GXX"),
         qv.reg,
     )
 
@@ -85,9 +83,7 @@ def test_GXX_gates_example():
     print("Is equal:", qs_0.compare_unitary(qs_1))
     assert qs_0.compare_unitary(qs_1)
 
-    print(
-        "Is diagonal:", np.linalg.norm(unitary - np.diag(np.diagonal(unitary))) < 1e-3
-    )
+    print("Is diagonal:", np.linalg.norm(unitary - np.diag(np.diagonal(unitary))) < 1e-3)
     assert np.linalg.norm(unitary - np.diag(np.diagonal(unitary))) < 1e-3
 
     print(np.round(np.angle(np.diagonal(unitary)) % (2 * np.pi) / (np.pi), 3))

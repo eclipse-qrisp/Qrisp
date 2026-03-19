@@ -18,6 +18,7 @@
 
 # qswitch is deprecated, use q_switch instead
 
+
 def test_jasp_qswitch_case_hamiltonian_simulation():
     from qrisp import QuantumFloat, h, qswitch, terminal_sampling
     import numpy as np

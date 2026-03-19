@@ -37,9 +37,7 @@ def yong_mcx(input_qubits, target, ancilla=None, ctrl_state=None):
         if ancilla is None:
             mcx(input_qubits, target, method="gray", ctrl_state=ctrl_state)
         else:
-            target.qs().append(
-                gray_pt_mcx(2, ctrl_state=ctrl_state), input_qubits + [target]
-            )
+            target.qs().append(gray_pt_mcx(2, ctrl_state=ctrl_state), input_qubits + [target])
             # mcx(input_qubits, target, method = "gray_pt", ctrl_state = ctrl_state)
         return
 
@@ -65,9 +63,7 @@ def yong_mcx(input_qubits, target, ancilla=None, ctrl_state=None):
 
     s(ancilla)
 
-    yong_mcx(
-        input_qubits=partition_k_2 + [target], target=ancilla, ancilla=partition_k_1[-1]
-    )
+    yong_mcx(input_qubits=partition_k_2 + [target], target=ancilla, ancilla=partition_k_1[-1])
 
     s_dg(ancilla)
 

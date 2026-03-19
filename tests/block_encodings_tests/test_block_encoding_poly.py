@@ -24,18 +24,21 @@ from qrisp.operators import X, Y, Z
 
 
 # This test confirms that BlockEncodings via GQET (used for BlockEncoding.poly) have the correct scaling factor alpha.
-@pytest.mark.parametrize("H1, H2, poly", [
-    (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2), np.array([1,1,1])),
-    (0.5*X(1) + 0.7*Y(1) + 0.3*X(4), Z(0) + Z(1) + X(2), np.array([0,1,0,1])),
-    (X(0)*X(1), Z(0) + 0.9*Z(1) + X(3), np.array([1,1,0,1])),
-])
+@pytest.mark.parametrize(
+    "H1, H2, poly",
+    [
+        (X(0) * X(1) + 0.2 * Y(0) * Y(1), Z(0) * Z(1) + X(2), np.array([1, 1, 1])),
+        (0.5 * X(1) + 0.7 * Y(1) + 0.3 * X(4), Z(0) + Z(1) + X(2), np.array([0, 1, 0, 1])),
+        (X(0) * X(1), Z(0) + 0.9 * Z(1) + X(3), np.array([1, 1, 0, 1])),
+    ],
+)
 def test_block_encoding_poly_scaling(H1, H2, poly):
 
     BE1 = BlockEncoding.from_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
 
     # Apply polynomial to QubitOperator H1 and add H2
-    H3 = sum(poly[k] * H1 ** k for k in range(len(poly))) + H2
+    H3 = sum(poly[k] * H1**k for k in range(len(poly))) + H2
     BE3 = BlockEncoding.from_operator(H3)
 
     # Apply polynomial to BlockEncoding BE1 and add BE2
@@ -50,7 +53,7 @@ def test_block_encoding_poly_scaling(H1, H2, poly):
     res_be3 = main(BE3)
     res_be_poly = main(BE_poly)
 
-    for k in range(2 ** n):
+    for k in range(2**n):
         val_be3 = res_be3.get(k, 0)
         val_be_poly = res_be_poly.get(k, 0)
         assert np.isclose(val_be3, val_be_poly), f"Mismatch at state |{k}>: {val_be3} vs {val_be_poly}"

@@ -32,6 +32,7 @@ QC_INPLACE_SIZE = [1, 2]
 
 # ----------------- Helpers -----------------
 
+
 def mask_for_size(size: int) -> int:
     return (1 << (32 * size)) - 1
 
@@ -74,6 +75,7 @@ def random_limbs(size):
 
 # ----------------- Tests -----------------
 
+
 @pytest.mark.parametrize("size", CREATE_MEASURE_SIZE)
 @pytest.mark.parametrize("seed", CREATE_MEASURE_SEEDS)
 def test_modulus_biginteger_create_measure(seed, size):
@@ -90,6 +92,7 @@ def test_modulus_biginteger_create_measure(seed, size):
         qm = QuantumModulus(N)
         qm[:] = V
         return measure(qm)
+
     assert to_int(main()) == V_int
 
 
@@ -112,14 +115,14 @@ def test_modulus_biginteger_qc_inplace(seed, size):
 
     @boolean_simulation
     def main():
-        N = BigInteger.create_static(N_int, size+2)
-        A = BigInteger.create_static(A_int, size+2)
-        B = BigInteger.create_static(B_int, size+2)
+        N = BigInteger.create_static(N_int, size + 2)
+        A = BigInteger.create_static(A_int, size + 2)
+        B = BigInteger.create_static(B_int, size + 2)
         qm = QuantumModulus(N)
         qm[:] = A
         qm *= B
         return measure(qm)
-    
+
     assert to_int(main()) == (A_int * B_int) % N_int
 
 
@@ -154,7 +157,7 @@ def test_modulus_qc_inplace_multiply():
         a *= 11
         return measure(a)
 
-    assert test() == (7*11) % 13
+    assert test() == (7 * 11) % 13
 
 
 def test_modulus_qc_multiply():
@@ -167,7 +170,7 @@ def test_modulus_qc_multiply():
         b = a * 3
         return measure(a), measure(b)
 
-    assert test_l() == (7, (7*3) % 13)
+    assert test_l() == (7, (7 * 3) % 13)
 
     @jaspify
     def test_r():
@@ -176,7 +179,7 @@ def test_modulus_qc_multiply():
         b = 3 * a
         return measure(a), measure(b)
 
-    assert test_r() == (7, (7*3) % 13)
+    assert test_r() == (7, (7 * 3) % 13)
 
 
 def test_modulus_qq_multiply():
@@ -193,4 +196,4 @@ def test_modulus_qq_multiply():
         c = a * b
         return measure(a), measure(b), measure(c)
 
-    assert test() == (7, 12, (7*12) % 13)
+    assert test() == (7, 12, (7 * 12) % 13)

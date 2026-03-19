@@ -238,7 +238,6 @@ class ClControlEnvironment(QuantumEnvironment):
 
         # If there is more than one control variable, loop through
         if len(ctrl_vars) > 1:
-
             for i in range(1, len(ctrl_vars)):
                 tmp = ctrl_vars[i]
                 if self.ctrl_state != -1 and ((self.ctrl_state & 1 << i) == 0):

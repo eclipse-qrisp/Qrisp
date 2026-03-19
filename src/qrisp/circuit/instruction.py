@@ -126,14 +126,7 @@ class Instruction:
 
     def __str__(self):
         if len(self.clbits):
-            return (
-                self.op.name
-                + "("
-                + str(self.qubits)[1:-1]
-                + ", "
-                + str(self.clbits)[1:-1]
-                + ")"
-            )
+            return self.op.name + "(" + str(self.qubits)[1:-1] + ", " + str(self.clbits)[1:-1] + ")"
         else:
             return self.op.name + "(" + str(self.qubits)[1:-1] + ")"
 

@@ -137,9 +137,7 @@ class TestDepthSingleQubit:
             ([0, 1], [1, 0], 1),
         ],
     )
-    def test_multiple_create_qubits(
-        self, qubit_indices_1, qubit_indices_2, expected_depth
-    ):
+    def test_multiple_create_qubits(self, qubit_indices_1, qubit_indices_2, expected_depth):
         """Test depth computation with multiple create_qubits calls."""
 
         @depth(meas_behavior="0")
@@ -492,9 +490,7 @@ class TestDepthMeasurementBehavior:
             qf = QuantumFloat(1)
             return measure(qf[0])
 
-        with pytest.raises(
-            ValueError, match="Measurement behavior must return a boolean, got 42"
-        ):
+        with pytest.raises(ValueError, match="Measurement behavior must return a boolean, got 42"):
             main()
 
     def test_no_measurements(self):
@@ -846,9 +842,7 @@ class TestDepthOverflow:
 
         with pytest.raises(
             ValueError,
-            match=(
-                "The depth metric computation overflowed the maximum number of qubits supported."
-            ),
+            match=("The depth metric computation overflowed the maximum number of qubits supported."),
         ):
             main(11)
 
@@ -863,9 +857,7 @@ class TestDepthOverflow:
 
         with pytest.raises(
             ValueError,
-            match=(
-                "The depth metric computation overflowed the maximum number of qubits supported."
-            ),
+            match=("The depth metric computation overflowed the maximum number of qubits supported."),
         ):
             main(1023)
 
@@ -880,9 +872,7 @@ class TestDepthOverflow:
 
         with pytest.raises(
             ValueError,
-            match=(
-                "The depth metric computation overflowed the maximum number of qubits supported."
-            ),
+            match=("The depth metric computation overflowed the maximum number of qubits supported."),
         ):
             main(300, 301)
 

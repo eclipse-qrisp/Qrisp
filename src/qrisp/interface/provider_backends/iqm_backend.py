@@ -121,15 +121,11 @@ def IQMBackend(
 
     """
     if not isinstance(api_token, str):
-        raise TypeError(
-            "api_token must be a string. You can create an API token on the IQM Resonance website."
-        )
+        raise TypeError("api_token must be a string. You can create an API token on the IQM Resonance website.")
 
     # Validate that either server_url or device_instance is provided, but not both
     if server_url is not None and device_instance is not None:
-        raise ValueError(
-            "Please provide either a server_url or a device_instance, but not both."
-        )
+        raise ValueError("Please provide either a server_url or a device_instance, but not both.")
 
     if server_url is None and device_instance is None:
         raise ValueError("Please provide either a server_url or a device_instance.")
@@ -156,12 +152,8 @@ def IQMBackend(
     if server_url is None:
         server_url = "https://resonance.meetiqm.com/"
 
-    client = IQMClient(
-        iqm_server_url=server_url, token=api_token, quantum_computer=device_instance
-    )
-    backend = IQMBackend(
-        client, calibration_set_id=calibration_set_id, use_metrics=use_metrics
-    )
+    client = IQMClient(iqm_server_url=server_url, token=api_token, quantum_computer=device_instance)
+    backend = IQMBackend(client, calibration_set_id=calibration_set_id, use_metrics=use_metrics)
 
     if compilation_options is None:
         compilation_options = CircuitCompilationOptions()
@@ -212,7 +204,6 @@ def IQMBackend(
                 shots = 1000
 
             for j in range(shots):
-
                 key_str = ""
 
                 for k in counts.keys():

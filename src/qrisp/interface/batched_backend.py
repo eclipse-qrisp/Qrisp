@@ -217,10 +217,7 @@ class BatchedBackend(VirtualBackend):
         # We now perform the backend call and catch potential exceptions
         try:
             run_func_results = self.batch_run_func(self.batch)
-            self.results = {
-                id(self.batch[i][0]): run_func_results[i]
-                for i in range(len(self.batch))
-            }
+            self.results = {id(self.batch[i][0]): run_func_results[i] for i in range(len(self.batch))}
         except Exception as e:
             if threading.current_thread() is threading.main_thread():
                 raise e

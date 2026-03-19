@@ -51,9 +51,7 @@ def optimize_allocations(qc):
         nodes.sort(key=sort_key)
         return nodes
 
-    for n in topological_sort(
-        G, prefer=dealloc_identifier, delay=alloc_identifer, sub_sort=sub_sort
-    ):
+    for n in topological_sort(G, prefer=dealloc_identifier, delay=alloc_identifer, sub_sort=sub_sort):
         if n.instr:
             qc_new.append(n.instr)
 
@@ -71,9 +69,7 @@ def optimize_allocations(qc):
             delayed_qubit_alloc_dic[instr.qubits[0]] = instr
         else:
             # We sort the qubits in order to prevent non-deterministic compilation behavior
-            alloc_qubits = list(
-                set(delayed_qubit_alloc_dic.keys()).intersection(instr.qubits)
-            )
+            alloc_qubits = list(set(delayed_qubit_alloc_dic.keys()).intersection(instr.qubits))
             alloc_qubits.sort(key=lambda x: hash(x))
             for qb in alloc_qubits:
                 new_data.append(delayed_qubit_alloc_dic[qb])
@@ -172,13 +168,9 @@ memory = psutil.virtual_memory().total
 def toposort_helper(indptr, indices, node_amount, delay_nodes, prefered_nodes):
 
     if memory / 4 < node_amount**2:
-        return toposort_helper_sparse(
-            indptr, indices, node_amount, delay_nodes, prefered_nodes
-        )
+        return toposort_helper_sparse(indptr, indices, node_amount, delay_nodes, prefered_nodes)
     else:
-        return toposort_helper_dense(
-            indptr, indices, node_amount, delay_nodes, prefered_nodes
-        )
+        return toposort_helper_dense(indptr, indices, node_amount, delay_nodes, prefered_nodes)
 
 
 @njit(cache=True)
@@ -238,9 +230,7 @@ def toposort_helper_dense(indptr, indices, node_amount, delay_nodes, prefered_no
             # Update the depedency matrix: All delay nodes that have been processed
             # don't need to be considered again for all following iterations,
             # we therefore remove them from the other columns
-            dependency_matrix = np.clip(
-                dependency_matrix - dependency_matrix[min_node_index, :], 0, 1
-            )
+            dependency_matrix = np.clip(dependency_matrix - dependency_matrix[min_node_index, :], 0, 1)
 
             # Finaly we set all nodes in the processed column to 1 so this column
             # is not processed again.
@@ -284,9 +274,7 @@ def compute_all_ancestors_dense(indptr, indices, node_amount):
 @njit(cache=True)
 def compute_all_ancestors_sparse(indptr, indices, node_amount, prefered_nodes):
     # Initialize ancestor sets for all nodes using a list of sets
-    ancestors = [
-        np.zeros(1, dtype=np.int8) for i in np.arange(node_amount, dtype=np.int32)
-    ]
+    ancestors = [np.zeros(1, dtype=np.int8) for i in np.arange(node_amount, dtype=np.int32)]
 
     # Topological sort
     in_degree = np.zeros(node_amount, dtype=np.int64)
@@ -338,9 +326,7 @@ def compute_all_ancestors_sparse(indptr, indices, node_amount, prefered_nodes):
 def toposort_helper_sparse(indptr, indices, node_amount, delay_nodes, prefered_nodes):
     # This array returns a graph that reflects all ancestor relations
     # i.e. ancestor_graph[42] is True at all ancestors of node 42
-    ancestor_graph = compute_all_ancestors_sparse(
-        indptr, indices, node_amount, prefered_nodes
-    )
+    ancestor_graph = compute_all_ancestors_sparse(indptr, indices, node_amount, prefered_nodes)
 
     n = prefered_nodes.size
     m = delay_nodes.size
@@ -393,9 +379,7 @@ def toposort_helper_sparse(indptr, indices, node_amount, delay_nodes, prefered_n
             # Update the depedency matrix: All delay nodes that have been processed
             # don't need to be considered again for all following iterations,
             # we therefore remove them from the other columns
-            dependency_matrix = np.clip(
-                dependency_matrix - dependency_matrix[min_node_index, :], 0, 1
-            )
+            dependency_matrix = np.clip(dependency_matrix - dependency_matrix[min_node_index, :], 0, 1)
 
             # Finaly we set all nodes in the processed column to 1 so this column
             # is not processed again.

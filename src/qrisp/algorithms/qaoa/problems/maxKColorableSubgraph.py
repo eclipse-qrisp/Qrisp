@@ -82,9 +82,7 @@ class QuantumColor(QuantumVariable):
 
         # If binary encoding is used, the size of QuantumVariable is the maximal value of log2 for the number of colors
         else:
-            QuantumVariable.__init__(
-                self, size=int(np.ceil(np.log2(len(list_of_colors))))
-            )
+            QuantumVariable.__init__(self, size=int(np.ceil(np.log2(len(list_of_colors)))))
 
     def decoder(self, i):
         """
@@ -213,9 +211,7 @@ def create_coloring_operator(G):
 
     def coloring_operator(quantumcolor_array, gamma):
         for pair in list(G.edges()):
-            apply_phase_if_eq(
-                quantumcolor_array[pair[0]], quantumcolor_array[pair[1]], gamma
-            )
+            apply_phase_if_eq(quantumcolor_array[pair[0]], quantumcolor_array[pair[1]], gamma)
 
     return coloring_operator
 
@@ -226,7 +222,6 @@ def mkcs_obj(quantumcolor_array, G):
 
     # Iterate over all edges in graph G
     for pair in list(G.edges()):
-
         # If colors of nodes in current pair are not same, multiply color by reward factor 4
         if quantumcolor_array[pair[0]] != quantumcolor_array[pair[1]]:
             cost *= 4
@@ -287,6 +282,4 @@ def graph_coloring_problem(G):
     """
     from qrisp.qaoa import QAOAProblem, apply_XY_mixer
 
-    return QAOAProblem(
-        create_coloring_operator(G), apply_XY_mixer, create_coloring_cl_cost_function(G)
-    )
+    return QAOAProblem(create_coloring_operator(G), apply_XY_mixer, create_coloring_cl_cost_function(G))

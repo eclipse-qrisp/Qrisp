@@ -95,9 +95,7 @@ class Operation:
             definition = init_op.definition
 
         elif not isinstance(name, str):
-            raise Exception(
-                "Tried to create a Operation with name of type({type(name)} (required is str)"
-            )
+            raise Exception("Tried to create a Operation with name of type({type(name)} (required is str)")
 
         # Name of the operation - this is how the backend behind the interface will
         # identify the operation
@@ -134,9 +132,7 @@ class Operation:
                 else:
                     par = float(par)
             elif not isinstance(par, (float, int, complex, Tracer)):
-                raise Exception(
-                    f"Tried to create operation with parameters of type {type(par)}"
-                )
+                raise Exception(f"Tried to create operation with parameters of type {type(par)}")
 
             self.params.append(par)
 
@@ -287,7 +283,6 @@ class Operation:
 
             res = QubitAlloc()
         elif self.name == "barrier":
-
             res = self.copy()
         # Otherwise raise an error
         else:
@@ -364,17 +359,10 @@ class Operation:
             res_num_ctrl_qubits += len(self.controls)
 
         # Check if the method is phase tolerant
-        if (
-            method.find("pt") != -1 or method.find("gidney") != -1
-        ) and res_num_ctrl_qubits != 1:
-
-            return PTControlledOperation(
-                self, num_ctrl_qubits, ctrl_state=ctrl_state, method=method
-            )
+        if (method.find("pt") != -1 or method.find("gidney") != -1) and res_num_ctrl_qubits != 1:
+            return PTControlledOperation(self, num_ctrl_qubits, ctrl_state=ctrl_state, method=method)
         else:
-            return ControlledOperation(
-                self, num_ctrl_qubits, ctrl_state=ctrl_state, method=method
-            )
+            return ControlledOperation(self, num_ctrl_qubits, ctrl_state=ctrl_state, method=method)
 
     # TO-DO implement more robust hashing method
     def __hash__(self):
@@ -426,7 +414,6 @@ class Operation:
                 self.lambdified_params.append(lambdify(args, par, modules="numpy"))
 
         for l_par in self.lambdified_params:
-
             new_params.append(l_par(*repl_args))
 
         res = self.copy()
@@ -462,9 +449,7 @@ class U3Gate(Operation):
 
         if isinstance(global_phase, Expr):
             if len(global_phase.free_symbols):
-                self.abstract_params = self.abstract_params.union(
-                    global_phase.free_symbols
-                )
+                self.abstract_params = self.abstract_params.union(global_phase.free_symbols)
             else:
                 global_phase = float(global_phase)
         self.global_phase = global_phase
@@ -570,9 +555,7 @@ class U3Gate(Operation):
         for l_par in self.lambdified_params:
             new_params.append(l_par(*repl_args))
 
-        return U3Gate(
-            new_params[0], new_params[1], new_params[2], self.name, new_params[3]
-        )
+        return U3Gate(new_params[0], new_params[1], new_params[2], self.name, new_params[3])
 
         # return U3Gate(
         #     adaptive_substitution(self.theta, subs_dic),
@@ -668,9 +651,7 @@ class PTControlledOperation(Operation):
 
         # Check if control state specification matches control qubit amount
         if len(self.ctrl_state) != num_ctrl_qubits:
-            raise Exception(
-                "Specified control state incompatible with given control qubit amount"
-            )
+            raise Exception("Specified control state incompatible with given control qubit amount")
 
         # Now we generate the definition circuit. Note that most of the generation
         # process also applies to the ControlledOperation class, however this class has
@@ -729,11 +710,7 @@ class PTControlledOperation(Operation):
         # For the case of a pauli gate with a single control, we insert an extra case
         # since here is no need for any advanced algorithm here and we do not need
         # to apply the phase tolerant naming convention
-        elif (
-            isinstance(base_operation, PauliGate)
-            and num_ctrl_qubits == 1
-            and self.ctrl_state == "1"
-        ):
+        elif isinstance(base_operation, PauliGate) and num_ctrl_qubits == 1 and self.ctrl_state == "1":
             if base_operation.name == "x":
                 super().__init__(name="cx", num_qubits=2, num_clbits=0, params=[])
                 self.permeability = {0: True, 1: False}
@@ -779,9 +756,7 @@ class PTControlledOperation(Operation):
 
         # Raise exception if no possility of synthesizing a controlled game is known
         else:
-            raise Exception(
-                "Control method for gate " + base_operation.name + " not implemented"
-            )
+            raise Exception("Control method for gate " + base_operation.name + " not implemented")
 
         # Generate gate name
         if num_ctrl_qubits == 1:
@@ -892,7 +867,6 @@ class ControlledOperation(PTControlledOperation):
 
 
 class ClControlledOperation(Operation):
-
     def __init__(self, base_op, num_control=1, ctrl_state=-1):
 
         if ctrl_state == -1:
@@ -908,7 +882,6 @@ class ClControlledOperation(Operation):
         self.ctrl_state = ctrl_state
 
         if base_op.definition:
-
             from qrisp import QuantumCircuit, Clbit
 
             definition = QuantumCircuit()

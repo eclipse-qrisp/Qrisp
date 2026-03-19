@@ -24,7 +24,6 @@ import jax.numpy as jnp
 
 @jax.tree_util.register_pytree_node_class
 class Jlist:
-
     fill_value = 0
 
     def __init__(self, init_val=None, max_size=int(2**10)):
@@ -37,7 +36,6 @@ class Jlist:
         n = 0
 
         if init_val is not None:
-
             if isinstance(init_val, list):
                 n = len(init_val)
             else:
@@ -114,7 +112,6 @@ class Jlist:
 
     def __getitem__(self, key):
         if isinstance(key, slice):
-
             if key.start is None:
                 start = 0
             else:
@@ -135,9 +132,7 @@ class Jlist:
 
             new_array = jnp.zeros(self.max_size, dtype=jnp.int64)
 
-            new_array, _ = jax.lax.fori_loop(
-                0, length, body_fun, (new_array, self.array)
-            )
+            new_array, _ = jax.lax.fori_loop(0, length, body_fun, (new_array, self.array))
 
             res = Jlist.__new__(Jlist)
             res.array = new_array

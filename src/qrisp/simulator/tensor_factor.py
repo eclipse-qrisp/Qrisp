@@ -27,7 +27,6 @@ from qrisp.simulator.numerics_config import float_thresh, xp
 
 
 class TensorFactor:
-
     index_init = xp.zeros(1, dtype=xp.int64)
     data_init = xp.ones(1, dtype=xp.complex64)
 
@@ -43,10 +42,7 @@ class TensorFactor:
         self.n = len(qubits)
 
         if init_tensor_array is None:
-
-            self.tensor_array = SparseBiArray(
-                (self.index_init, self.data_init), shape=(2**self.n,)
-            )
+            self.tensor_array = SparseBiArray((self.index_init, self.data_init), shape=(2**self.n,))
 
         else:
             self.tensor_array = init_tensor_array
@@ -86,9 +82,7 @@ class TensorFactor:
             self.swap(qubit_index, i)
 
         # Reshape tensor array such that the qubits form a single index
-        reshaped_tensor_array = self.tensor_array.reshape(
-            (matrix.shape[0], 2**self.n // matrix.shape[0])
-        )
+        reshaped_tensor_array = self.tensor_array.reshape((matrix.shape[0], 2**self.n // matrix.shape[0]))
 
         # Apply matrix
         self.tensor_array = tensordot(
@@ -101,9 +95,7 @@ class TensorFactor:
         if id(self.tensor_array) == id(other.tensor_array):
             return self
         if set(self.qubits).intersection(other.qubits):
-            raise Exception(
-                "Tried to entangle two tensor factors with overlapping qubits"
-            )
+            raise Exception("Tried to entangle two tensor factors with overlapping qubits")
 
         # The tensordot function with axes = ((),()) performs a,b -> a (x) b, where
         # (x) is the tensor product sign
@@ -197,7 +189,6 @@ class TensorFactor:
         if return_res_tf:
             tf_list = []
             for i in range(len(p_list)):
-
                 new_bi_arrays[i].data *= 1 / p_list[i] ** 0.5
                 tf_list.append(TensorFactor(list(new_qubit_list), new_bi_arrays[i]))
         else:
@@ -215,9 +206,7 @@ class TensorFactor:
 
         # Split the array - the lower half corresponds to the state with outcome 0,
         # the upper half to 1
-        new_bi_arrays, p_list, outcome_index_list = self.tensor_array.multi_measure(
-            [0], return_new_arrays=True
-        )
+        new_bi_arrays, p_list, outcome_index_list = self.tensor_array.multi_measure([0], return_new_arrays=True)
 
         new_qubits = list(self.qubits)
         new_qubits.remove(qubit)
@@ -226,39 +215,25 @@ class TensorFactor:
             temp = xp.zeros(2, dtype=self.tensor_array.data.dtype)
             if outcome_index_list[0] == 1:
                 if warning:
-                    print(
-                        "\r"
-                        + 85 * " "
-                        + "\rWARNING: Faulty uncomputation found during simulation."
-                    )
+                    print("\r" + 85 * " " + "\rWARNING: Faulty uncomputation found during simulation.")
                 temp[1] = 1
             else:
                 temp[0] = 1
 
             new_bi_arrays[0].data *= 1 / p_list[0] ** 0.5
             # print("disentangling successfull")
-            return TensorFactor([qubit], temp), TensorFactor(
-                new_qubits, new_bi_arrays[0]
-            )
+            return TensorFactor([qubit], temp), TensorFactor(new_qubits, new_bi_arrays[0])
 
         if not new_bi_arrays[0].exclude_linear_indpendence(new_bi_arrays[1]):
             if warning:
-                print(
-                    "\r"
-                    + 85 * " "
-                    + "\rWARNING: Faulty uncomputation found during simulation."
-                )
+                print("\r" + 85 * " " + "\rWARNING: Faulty uncomputation found during simulation.")
             return self, self
 
         vdot_value = new_bi_arrays[0].vdot(new_bi_arrays[1])
 
         if xp.abs(xp.abs(vdot_value) - (p_list[0] * p_list[1]) ** 0.5) > 1e-7:
             if warning:
-                print(
-                    "\r"
-                    + 85 * " "
-                    + "\rWARNING: Faulty uncomputation found during simulation."
-                )
+                print("\r" + 85 * " " + "\rWARNING: Faulty uncomputation found during simulation.")
             # print("disentangling failed")
             # print(vdot_value)
             # print(xp.abs(xp.abs(vdot_value) - (p_list[0]*p_list[1])**0.5))

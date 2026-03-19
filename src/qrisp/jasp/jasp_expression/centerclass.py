@@ -160,18 +160,14 @@ class Jaspr(ClosedJaxpr):
             kwargs["consts"] = args[0].consts
 
         if "jaxpr" in kwargs:
-
             ClosedJaxpr.__init__(self, kwargs["jaxpr"], kwargs["consts"])
         else:
-
             if "consts" in kwargs:
                 consts = kwargs["consts"]
                 del kwargs["consts"]
             else:
                 if len(kwargs["constvars"]):
-                    raise Exception(
-                        "Tried to create Jaspr with constvars but no constants"
-                    )
+                    raise Exception("Tried to create Jaspr with constvars but no constants")
                 consts = []
 
             ClosedJaxpr.__init__(self, jaxpr=Jaxpr(**kwargs), consts=consts)
@@ -623,27 +619,20 @@ class Jaspr(ClosedJaxpr):
 
         def eqn_evaluator(eqn, context_dic):
             if eqn.primitive.name == "jit":
-
                 if eqn.params["name"] == "expectation_value_eval_function":
                     from qrisp.jasp.program_control import sampling_evaluator
 
-                    sampling_evaluator("ev")(
-                        eqn, context_dic, eqn_evaluator=eqn_evaluator
-                    )
+                    sampling_evaluator("ev")(eqn, context_dic, eqn_evaluator=eqn_evaluator)
                     return
 
                 if eqn.params["name"] == "sampling_eval_function":
                     from qrisp.jasp.program_control import sampling_evaluator
 
-                    sampling_evaluator("array")(
-                        eqn, context_dic, eqn_evaluator=eqn_evaluator
-                    )
+                    sampling_evaluator("array")(eqn, context_dic, eqn_evaluator=eqn_evaluator)
                     return
 
                 invalues = extract_invalues(eqn, context_dic)
-                outvalues = eval_jaxpr(
-                    eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator
-                )(*invalues)
+                outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator)(*invalues)
                 if not isinstance(outvalues, (list, tuple)):
                     outvalues = [outvalues]
                 insert_outvalues(eqn, context_dic, outvalues)
@@ -652,9 +641,7 @@ class Jaspr(ClosedJaxpr):
             else:
                 return True
 
-        res = eval_jaxpr(flattened_jaspr, eqn_evaluator=eqn_evaluator)(
-            *(args + self.consts)
-        )
+        res = eval_jaxpr(flattened_jaspr, eqn_evaluator=eqn_evaluator)(*(args + self.consts))
 
         if len(self.outvars) == 2:
             return res[1]
@@ -693,9 +680,7 @@ class Jaspr(ClosedJaxpr):
     def num_qubits(self, *args, meas_behavior, max_allocations=1000):
         from qrisp.jasp.evaluation_tools import profile_jaspr
 
-        return profile_jaspr(
-            self, "num_qubits", meas_behavior, max_allocations=max_allocations
-        )(*args)
+        return profile_jaspr(self, "num_qubits", meas_behavior, max_allocations=max_allocations)(*args)
 
     def embedd(self, *args, name=None, inline=False):
         from qrisp.jasp import TracingQuantumSession, get_last_equation
@@ -749,9 +734,7 @@ class Jaspr(ClosedJaxpr):
             jaspr_to_catalyst_qjit,
         )
 
-        qjit_obj = jaspr_to_catalyst_qjit(
-            flattened_jaspr, function_name=function_name, device=device
-        )
+        qjit_obj = jaspr_to_catalyst_qjit(flattened_jaspr, function_name=function_name, device=device)
         res = qjit_obj.compiled_function(*args)
         if not isinstance(res, (tuple, list)):
             return res
@@ -1466,26 +1449,20 @@ def make_jaxpr_mod(fun, static_argnums=(), return_shape=False, abstracted_axes=N
             # Use jit(...).trace() directly to get access to _out_tree
             # This avoids JAX's make_jaxpr return_shape logic which fails on
             # custom abstract types that don't have shape/dtype attributes.
-            traced = jax.jit(
-                fun, static_argnums=static_argnums, abstracted_axes=abstracted_axes
-            ).trace(*args, **kwargs)
+            traced = jax.jit(fun, static_argnums=static_argnums, abstracted_axes=abstracted_axes).trace(*args, **kwargs)
 
             # Extract the jaxpr, handling constants if needed
             # (same logic as JAX's make_jaxpr)
             if traced._num_consts:
                 consts, _ = split_list(traced._args_flat, [traced._num_consts])
-                jaxpr_ = pe.convert_invars_to_constvars(
-                    traced.jaxpr.jaxpr, traced._num_consts
-                )
+                jaxpr_ = pe.convert_invars_to_constvars(traced.jaxpr.jaxpr, traced._num_consts)
                 closed_jaxpr = ClosedJaxpr(jaxpr_, consts)
             else:
                 closed_jaxpr = traced.jaxpr
 
             return closed_jaxpr, traced._out_tree
         else:
-            return make_jaxpr(
-                fun, static_argnums=static_argnums, abstracted_axes=abstracted_axes
-            )(*args, **kwargs)
+            return make_jaxpr(fun, static_argnums=static_argnums, abstracted_axes=abstracted_axes)(*args, **kwargs)
 
     return jaxpr_creator
 
@@ -1598,9 +1575,7 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
     adjusted_jax_kwargs = dict(jax_kwargs)
     if "static_argnums" in adjusted_jax_kwargs:
         if isinstance(adjusted_jax_kwargs["static_argnums"], list):
-            adjusted_jax_kwargs["static_argnums"] = list(
-                adjusted_jax_kwargs["static_argnums"]
-            )
+            adjusted_jax_kwargs["static_argnums"] = list(adjusted_jax_kwargs["static_argnums"])
             for i in range(len(adjusted_jax_kwargs["static_argnums"])):
                 adjusted_jax_kwargs["static_argnums"][i] += 1
         else:

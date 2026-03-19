@@ -20,9 +20,7 @@ from qrisp.alg_primitives.qpe import QPE
 from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
 
 
-def QAE(
-    args, state_function, oracle_function, kwargs_oracle={}, precision=None, target=None
-):
+def QAE(args, state_function, oracle_function, kwargs_oracle={}, precision=None, target=None):
     r"""
     This method implements the canonical quantum amplitude estimation (QAE) algorithm by `Brassard et al. <https://arxiv.org/abs/quant-ph/0005055>`_.
 

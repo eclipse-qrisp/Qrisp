@@ -2,7 +2,7 @@
 Post-processing extraction for Jaspr objects.
 
 This module provides functionality to extract the post-processing logic from a Jaspr object
-and convert it into a function that can be applied to measurement results from a 
+and convert it into a function that can be applied to measurement results from a
 quantum backend.
 
 The key function is `extract_post_processing(jaspr, *args)` which:
@@ -176,9 +176,7 @@ def extract_post_processing(jaspr, *args):
                         acc = acc | (bit_int << i)
                         return acc
 
-                    result = fori_loop(
-                        0, size, loop_body, jnp.array(0, dtype=jnp.int64)
-                    )
+                    result = fori_loop(0, size, loop_body, jnp.array(0, dtype=jnp.int64))
                     new_last = last_popped + size
                 else:
                     # Single qubit measurement -> boolean (keep as bool for compatibility)
@@ -272,7 +270,6 @@ def extract_post_processing(jaspr, *args):
             # We use LRU caching to ensure identical jaxprs use the same function instance,
             # which allows JAX to compile them only once during tracing.
             if eqn.primitive.name in ("jit", "pjit"):
-
                 closed_jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
                 if closed_jaxpr is None:
                     return False
@@ -284,9 +281,7 @@ def extract_post_processing(jaspr, *args):
                 cached_eval_func = get_post_processing_evaluator(closed_jaxpr.jaxpr)
 
                 # Call it with the current evaluator, including the constants
-                outvals = cached_eval_func(eval_eqn)(
-                    *(invalues + list(closed_jaxpr.consts))
-                )
+                outvals = cached_eval_func(eval_eqn)(*(invalues + list(closed_jaxpr.consts)))
 
                 # Handle wrapping based on the number of outputs in the inner jaxpr
                 # Note: Our QuantumState representation is (meas_arr, last_popped) tuple,
@@ -299,25 +294,18 @@ def extract_post_processing(jaspr, *args):
 
             # Handle while loops
             if eqn.primitive.name == "while":
-
                 import jax.lax
 
                 invalues = extract_invalues(eqn, context_dic)
 
-                overall_constant_amount = (
-                    eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
-                )
+                overall_constant_amount = eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
 
                 # Reinterpreted body and cond function
                 def body_fun(val):
-                    constants = val[
-                        eqn.params["cond_nconsts"] : overall_constant_amount
-                    ]
+                    constants = val[eqn.params["cond_nconsts"] : overall_constant_amount]
                     carries = val[overall_constant_amount:]
 
-                    body_res = eval_jaxpr(
-                        eqn.params["body_jaxpr"], eqn_evaluator=eval_eqn
-                    )(*(constants + carries))
+                    body_res = eval_jaxpr(eqn.params["body_jaxpr"], eqn_evaluator=eval_eqn)(*(constants + carries))
 
                     if not isinstance(body_res, tuple):
                         body_res = (body_res,)
@@ -328,22 +316,17 @@ def extract_post_processing(jaspr, *args):
                     constants = val[: eqn.params["cond_nconsts"]]
                     carries = val[overall_constant_amount:]
 
-                    res = eval_jaxpr(eqn.params["cond_jaxpr"], eqn_evaluator=eval_eqn)(
-                        *(constants + carries)
-                    )
+                    res = eval_jaxpr(eqn.params["cond_jaxpr"], eqn_evaluator=eval_eqn)(*(constants + carries))
 
                     return res
 
-                outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[
-                    overall_constant_amount:
-                ]
+                outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[overall_constant_amount:]
 
                 insert_outvalues(eqn, context_dic, outvalues)
                 return False
 
             # Handle conditional (cond/switch)
             if eqn.primitive.name == "cond":
-
                 import jax.lax
 
                 invalues = extract_invalues(eqn, context_dic)
@@ -351,9 +334,7 @@ def extract_post_processing(jaspr, *args):
                 # Reinterpret branches
                 branch_list = []
                 for i in range(len(eqn.params["branches"])):
-                    branch_list.append(
-                        eval_jaxpr(eqn.params["branches"][i], eqn_evaluator=eval_eqn)
-                    )
+                    branch_list.append(eval_jaxpr(eqn.params["branches"][i], eqn_evaluator=eval_eqn))
 
                 outvalues = jax.lax.switch(invalues[0], branch_list, *invalues[1:])
 
@@ -365,7 +346,6 @@ def extract_post_processing(jaspr, *args):
 
             # Handle scan/map loops
             if eqn.primitive.name == "scan":
-
                 import jax.lax
 
                 invalues = extract_invalues(eqn, context_dic)
@@ -389,11 +369,7 @@ def extract_post_processing(jaspr, *args):
                 if num_consts > 0:
 
                     def wrapped_body(carry, x):
-                        args = (
-                            consts + list(carry) + list(x)
-                            if isinstance(x, tuple)
-                            else consts + list(carry) + [x]
-                        )
+                        args = consts + list(carry) + list(x) if isinstance(x, tuple) else consts + list(carry) + [x]
                         result = scan_body(*args)
                         if not isinstance(result, tuple):
                             result = (result,)
@@ -463,9 +439,7 @@ def extract_post_processing(jaspr, *args):
         # Convert bitstring to JAX array if it's a string
         if isinstance(measurement_results, str):
             # Convert string "01001..." to array [False, True, False, False, True, ...]
-            measurement_results = jnp.array(
-                [c == "1" for c in measurement_results], dtype=bool
-            )
+            measurement_results = jnp.array([c == "1" for c in measurement_results], dtype=bool)
 
         # Create evaluator
         eqn_evaluator = create_post_processing_evaluator()

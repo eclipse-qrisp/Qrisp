@@ -41,10 +41,7 @@ def create_min_set_cover_mixer(sets, universe):
 
     """
 
-    membership_dict = {
-        element: [i for i, subset in enumerate(sets) if element in subset]
-        for element in universe
-    }
+    membership_dict = {element: [i for i, subset in enumerate(sets) if element in subset] for element in universe}
 
     def predicate(qv, i):
         anc = QuantumVariable(len(sets[i]))

@@ -63,7 +63,6 @@ def cl_cost_function(counts):
 
     # Iterate over all items in counts
     for meas, meas_count in counts.items():
-
         # Calculate objective function for current measurement
         obj_for_meas = maxcut_obj(meas, G)
 
@@ -106,7 +105,6 @@ def maxcut_obj(x, G):
 
     # Iterate over all edges in graph G
     for i, j in G.edges():
-
         # If the nodes are not the same, the edge is cut
         if x[i] != x[j]:  # the edge is cut
             cut -= 1
@@ -179,9 +177,7 @@ print(maxcut_instance.compile_circuit(qarg, depth=5)[0].depth())
 start_time = time.time()
 
 # Run QAOA with given quantum arguments, depth, measurement keyword arguments and maximum iterations for optimization
-res = maxcut_instance.run(
-    qarg, depth, mes_kwargs={"backend": qaoa_backend}, max_iter=50
-)  # runs the simulation
+res = maxcut_instance.run(qarg, depth, mes_kwargs={"backend": qaoa_backend}, max_iter=50)  # runs the simulation
 
 # Print runtime of QAOA
 print(time.time() - start_time)
@@ -189,9 +185,7 @@ print(time.time() - start_time)
 # qaoa_backend.close_session()
 
 # Get the best solution and print it
-best_cut, best_solution = min(
-    [(maxcut_obj(x, G), x) for x in res.keys()], key=itemgetter(0)
-)
+best_cut, best_solution = min([(maxcut_obj(x, G), x) for x in res.keys()], key=itemgetter(0))
 print(f"Best string: {best_solution} with cut: {-best_cut}")
 
 # Get final solution with optimized gamma and beta angle parameter values and print it

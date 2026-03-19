@@ -24,16 +24,19 @@ from qrisp.operators import X, Y, Z
 
 
 def compare_results(res_dict_1, res_dict_2, n):
-    for k in range(2 ** n):
+    for k in range(2**n):
         val_1 = res_dict_1.get(k, 0)
         val_2 = res_dict_2.get(k, 0)
         assert np.isclose(val_1, val_2), f"Mismatch at state |{k}>: {val_1} vs {val_2}"
 
 
-@pytest.mark.parametrize("H1, H2, rescaled", [
-    (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2), True),
-    (0.5*X(1) + 0.7*Y(1) + 0.3*X(4), Z(0) + Z(1) + X(2), False),
-])
+@pytest.mark.parametrize(
+    "H1, H2, rescaled",
+    [
+        (X(0) * X(1) + 0.2 * Y(0) * Y(1), Z(0) * Z(1) + X(2), True),
+        (0.5 * X(1) + 0.7 * Y(1) + 0.3 * X(4), Z(0) + Z(1) + X(2), False),
+    ],
+)
 def test_block_encoding_chebyshev(H1, H2, rescaled):
 
     BE1 = BlockEncoding.from_operator(H1)
@@ -42,14 +45,14 @@ def test_block_encoding_chebyshev(H1, H2, rescaled):
     alpha = BE2.alpha
 
     if rescaled:
-        H_T1 = H1 + H2 # H1 + T_1(H2)
-        H_T2 = H1 + (2 * H2**2 - 1) # H1 + T_2(H2)
-        H_T3 = H1 + (4 * H2**3 - 3 * H2) # H1 + T_3(H2)
+        H_T1 = H1 + H2  # H1 + T_1(H2)
+        H_T2 = H1 + (2 * H2**2 - 1)  # H1 + T_2(H2)
+        H_T3 = H1 + (4 * H2**3 - 3 * H2)  # H1 + T_3(H2)
     else:
-        H_T1 = H1 + H2 # H1 + T_1(H2 / alpha)
-        H_T2 = H1 + (2 / alpha**2 * H2**2 - 1) # H1 + T_2(H2 / alpha)
-        H_T3 = H1 + (4 / alpha**3 * H2**3 - 3 / alpha * H2) # H1 + T_3(H2 / alpha)   
-    
+        H_T1 = H1 + H2  # H1 + T_1(H2 / alpha)
+        H_T2 = H1 + (2 / alpha**2 * H2**2 - 1)  # H1 + T_2(H2 / alpha)
+        H_T3 = H1 + (4 / alpha**3 * H2**3 - 3 / alpha * H2)  # H1 + T_3(H2 / alpha)
+
     BE_T1 = BlockEncoding.from_operator(H_T1)
     BE_T2 = BlockEncoding.from_operator(H_T2)
     BE_T3 = BlockEncoding.from_operator(H_T3)

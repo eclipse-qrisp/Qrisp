@@ -158,12 +158,8 @@ class CreateQubitsOp(_ods_ir.OpView):
         return self.operation.results[1]
 
 
-def create_qubits(
-    result, qst_out, amount, qst_in, *, loc=None, ip=None
-) -> _ods_ir.OpResultList:
-    return CreateQubitsOp(
-        result=result, qst_out=qst_out, amount=amount, qst_in=qst_in, loc=loc, ip=ip
-    ).results
+def create_qubits(result, qst_out, amount, qst_in, *, loc=None, ip=None) -> _ods_ir.OpResultList:
+    return CreateQubitsOp(result=result, qst_out=qst_out, amount=amount, qst_in=qst_in, loc=loc, ip=ip).results
 
 
 @_ods_cext.register_operation(_Dialect)
@@ -214,9 +210,7 @@ class DeleteQubitsOp(_ods_ir.OpView):
 
 
 def delete_qubits(out_qst, qubits, in_qst, *, loc=None, ip=None) -> _ods_ir.OpResult:
-    return DeleteQubitsOp(
-        out_qst=out_qst, qubits=qubits, in_qst=in_qst, loc=loc, ip=ip
-    ).result
+    return DeleteQubitsOp(out_qst=out_qst, qubits=qubits, in_qst=in_qst, loc=loc, ip=ip).result
 
 
 @_ods_cext.register_operation(_Dialect)
@@ -267,9 +261,7 @@ class FuseOp(_ods_ir.OpView):
 
 
 def fuse(result, operand1, operand2, *, loc=None, ip=None) -> _ods_ir.OpResult:
-    return FuseOp(
-        result=result, operand1=operand1, operand2=operand2, loc=loc, ip=ip
-    ).result
+    return FuseOp(result=result, operand1=operand1, operand2=operand2, loc=loc, ip=ip).result
 
 
 @_ods_cext.register_operation(_Dialect)
@@ -320,9 +312,7 @@ class GetQubitOp(_ods_ir.OpView):
 
 
 def get_qubit(result, qb_array, position, *, loc=None, ip=None) -> _ods_ir.OpResult:
-    return GetQubitOp(
-        result=result, qb_array=qb_array, position=position, loc=loc, ip=ip
-    ).result
+    return GetQubitOp(result=result, qb_array=qb_array, position=position, loc=loc, ip=ip).result
 
 
 @_ods_cext.register_operation(_Dialect)
@@ -423,12 +413,8 @@ class MeasureOp(_ods_ir.OpView):
         return self.operation.results[1]
 
 
-def measure(
-    meas_res, out_qst, meas_q, in_qst, *, loc=None, ip=None
-) -> _ods_ir.OpResultList:
-    return MeasureOp(
-        meas_res=meas_res, out_qst=out_qst, meas_q=meas_q, in_qst=in_qst, loc=loc, ip=ip
-    ).results
+def measure(meas_res, out_qst, meas_q, in_qst, *, loc=None, ip=None) -> _ods_ir.OpResultList:
+    return MeasureOp(meas_res=meas_res, out_qst=out_qst, meas_q=meas_q, in_qst=in_qst, loc=loc, ip=ip).results
 
 
 @_ods_cext.register_operation(_Dialect)
@@ -441,9 +427,7 @@ class ParityOp(_ods_ir.OpView):
 
     _ODS_REGIONS = (0, True)
 
-    def __init__(
-        self, result, measurements, expectation, observable, *, loc=None, ip=None
-    ):
+    def __init__(self, result, measurements, expectation, observable, *, loc=None, ip=None):
         operands = []
         attributes = {}
         regions = None
@@ -451,18 +435,12 @@ class ParityOp(_ods_ir.OpView):
         _ods_context = _ods_get_default_loc_context(loc)
         attributes["expectation"] = (
             expectation
-            if (
-                isinstance(expectation, _ods_ir.Attribute)
-                or not _ods_ir.AttrBuilder.contains("I64Attr")
-            )
+            if (isinstance(expectation, _ods_ir.Attribute) or not _ods_ir.AttrBuilder.contains("I64Attr"))
             else _ods_ir.AttrBuilder.get("I64Attr")(expectation, context=_ods_context)
         )
         attributes["observable"] = (
             observable
-            if (
-                isinstance(observable, _ods_ir.Attribute)
-                or not _ods_ir.AttrBuilder.contains("I64Attr")
-            )
+            if (isinstance(observable, _ods_ir.Attribute) or not _ods_ir.AttrBuilder.contains("I64Attr"))
             else _ods_ir.AttrBuilder.get("I64Attr")(observable, context=_ods_context)
         )
         results = []
@@ -512,9 +490,7 @@ class ParityOp(_ods_ir.OpView):
         return self.operation.results[0]
 
 
-def parity(
-    result, measurements, expectation, observable, *, loc=None, ip=None
-) -> _ods_ir.OpResult:
+def parity(result, measurements, expectation, observable, *, loc=None, ip=None) -> _ods_ir.OpResult:
     return ParityOp(
         result=result,
         measurements=measurements,
@@ -544,10 +520,7 @@ class QuantumGateOp(_ods_ir.OpView):
         _ods_context = _ods_get_default_loc_context(loc)
         attributes["gate_type"] = (
             gate_type
-            if (
-                isinstance(gate_type, _ods_ir.Attribute)
-                or not _ods_ir.AttrBuilder.contains("StrAttr")
-            )
+            if (isinstance(gate_type, _ods_ir.Attribute) or not _ods_ir.AttrBuilder.contains("StrAttr"))
             else _ods_ir.AttrBuilder.get("StrAttr")(gate_type, context=_ods_context)
         )
         results = []
@@ -592,9 +565,7 @@ class QuantumGateOp(_ods_ir.OpView):
         return self.operation.results[0]
 
 
-def quantum_gate(
-    out_qst, gate_type, gate_operands, in_qst, *, loc=None, ip=None
-) -> _ods_ir.OpResult:
+def quantum_gate(out_qst, gate_type, gate_operands, in_qst, *, loc=None, ip=None) -> _ods_ir.OpResult:
     return QuantumGateOp(
         out_qst=out_qst,
         gate_type=gate_type,
@@ -709,6 +680,4 @@ class SliceOp(_ods_ir.OpView):
 
 
 def slice(result, qb_array, start, end, *, loc=None, ip=None) -> _ods_ir.OpResult:
-    return SliceOp(
-        result=result, qb_array=qb_array, start=start, end=end, loc=loc, ip=ip
-    ).result
+    return SliceOp(result=result, qb_array=qb_array, start=start, end=end, loc=loc, ip=ip).result

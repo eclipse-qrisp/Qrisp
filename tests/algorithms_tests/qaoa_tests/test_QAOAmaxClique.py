@@ -16,23 +16,31 @@
 ********************************************************************************
 """
 
-
 from qrisp import QuantumVariable
-from qrisp.qaoa import QAOAProblem, RZ_mixer, create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function, approximation_ratio
+from qrisp.qaoa import (
+    QAOAProblem,
+    RZ_mixer,
+    create_max_indep_set_cl_cost_function,
+    create_max_indep_set_mixer,
+    max_indep_set_init_function,
+    approximation_ratio,
+)
 import networkx as nx
 
 
 def test_QAOAmaxClique():
 
-    G = nx.erdos_renyi_graph(9, 0.7, seed = 133)
+    G = nx.erdos_renyi_graph(9, 0.7, seed=133)
     G_complement = nx.complement(G)
 
     qarg = QuantumVariable(G.number_of_nodes())
 
-    qaoa_max_clique = QAOAProblem(cost_operator=RZ_mixer,
-                                    mixer=create_max_indep_set_mixer(G_complement),
-                                    cl_cost_function=create_max_indep_set_cl_cost_function(G_complement),
-                                    init_function=max_indep_set_init_function)
+    qaoa_max_clique = QAOAProblem(
+        cost_operator=RZ_mixer,
+        mixer=create_max_indep_set_mixer(G_complement),
+        cl_cost_function=create_max_indep_set_cl_cost_function(G_complement),
+        init_function=max_indep_set_init_function,
+    )
     results = qaoa_max_clique.run(qarg, depth=5)
 
     cl_cost = create_max_indep_set_cl_cost_function(G_complement)
@@ -49,4 +57,4 @@ def test_QAOAmaxClique():
     optimal_sol = "".join(["1" if index in cliques[max_index] else "0" for index in range(G.number_of_nodes())])
 
     # approximation ratio test
-    assert approximation_ratio(results, optimal_sol, cl_cost)>=0.5 
+    assert approximation_ratio(results, optimal_sol, cl_cost) >= 0.5

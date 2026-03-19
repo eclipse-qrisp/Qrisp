@@ -118,11 +118,11 @@ def cks_coeffs(j0: int, b: int) -> npt.NDArray[float]:
 
     """
     from scipy.stats import binom
-    # Computes CKS coefficients using the Binomial Survival Function 
+    # Computes CKS coefficients using the Binomial Survival Function
     # to guarantee numerical stability for very large parameters.
-    # Original formula (https://arxiv.org/pdf/1511.02306, Lemma 19): 
+    # Original formula (https://arxiv.org/pdf/1511.02306, Lemma 19):
     # c_j = 4 * (2 ** (-2 * b)) * sum_{i=j+1}^{b} comb(2 * b, b + i)
-    # comb(2b, k) * (0.5 ** (2 * b)) is the probability mass function for a 
+    # comb(2b, k) * (0.5 ** (2 * b)) is the probability mass function for a
     # Binomial distribution: X ~ Binomial(2b, 0.5)
     # The sum is calculating the probability that X >= b + j + 1.
     # The sum of the "upper tail" of the distribution is evaluated by
@@ -130,11 +130,11 @@ def cks_coeffs(j0: int, b: int) -> npt.NDArray[float]:
 
     # Create an array of all j values from 0 to j0.
     j_values = np.arange(j0 + 1)
-    
+
     # binom.sf(k, n, p) calculates P(X > k) for X ~ Binomial(n, p).
     # We want P(X >= b + j + 1), which is identical to P(X > b + j).
     coeffs = 4 * binom.sf(b + j_values, 2 * b, 0.5)
-    
+
     return coeffs
 
 
@@ -162,13 +162,9 @@ def _unary_angles(coeffs: "ArrayLike") -> "ArrayLike":
         1-D array of rotation angles :math:`\\phi_i` for unary state preparation.
     """
 
-    alpha = jnp.sqrt(
-        coeffs
-    )  # coeffs need not to be normalized since unary angles only depend on their ratio
+    alpha = jnp.sqrt(coeffs)  # coeffs need not to be normalized since unary angles only depend on their ratio
     phi = jnp.zeros(len(alpha) - 1)
-    phi = phi.at[-1].set(
-        jnp.arctan(alpha[-1] / alpha[-2])
-    )  # Last angle is determined by ratio of final two amplitudes
+    phi = phi.at[-1].set(jnp.arctan(alpha[-1] / alpha[-2]))  # Last angle is determined by ratio of final two amplitudes
     for i in range(len(phi) - 2, -1, -1):
         phi = phi.at[i].set(
             jnp.arctan(alpha[i + 1] / alpha[i] / jnp.cos(phi[i + 1]))
@@ -206,9 +202,7 @@ def unary_prep(case: QuantumVariable, coeffs: "ArrayLike") -> None:
             ry(phi[i], case[i + 1])
 
 
-def CKS(
-    A: BlockEncoding, eps: float, kappa: float, max_beta: float = None
-) -> BlockEncoding:
+def CKS(A: BlockEncoding, eps: float, kappa: float, max_beta: float = None) -> BlockEncoding:
     """
     Performs the `Childs–Kothari–Somma (CKS) quantum algorithm <https://arxiv.org/abs/1511.02306>`_ to solve the Quantum Linear System Problem (QLSP)
     :math:`A \\vec{x} = \\vec{b}`, using the Chebyshev approximation of :math:`1/x`.
@@ -505,7 +499,6 @@ def CKS(
     def new_unitary(*args):
         # Core LCU protocol: PREP, SELECT, PREP^†
         with conjugate(unary_prep)(args[0], cheb_coeffs):
-
             A.unitary(*args[1:])
 
             for i in jrange(1, j_0 + 1):

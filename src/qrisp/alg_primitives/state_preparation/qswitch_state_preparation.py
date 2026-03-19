@@ -64,9 +64,7 @@ def _rot_params_from_state(
     return theta, phi, lam
 
 
-def _normalize_with_phase(
-    v: jnp.ndarray, acc: jnp.ndarray
-) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+def _normalize_with_phase(v: jnp.ndarray, acc: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
     Normalizes a given vector and adjusts its phase.
 
@@ -115,9 +113,7 @@ def _normalize_with_phase(
     )
 
 
-def _compute_thetas(
-    vec: jnp.ndarray, acc: jnp.ndarray
-) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+def _compute_thetas(vec: jnp.ndarray, acc: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
     For a given input vector, this function computes the rotation angles
     needed for the uniformly controlled RY at this tree layer, normalizes its child vectors,
@@ -161,9 +157,7 @@ def _compute_thetas(
     return theta, subvecs, acc_phases
 
 
-def _compute_u3_params(
-    qubit_vec: jnp.ndarray, acc: jnp.ndarray
-) -> Tuple[jnp.ndarray, jnp.ndarray]:
+def _compute_u3_params(qubit_vec: jnp.ndarray, acc: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """
     For a given length-2 vector, this function computes the U3 gate parameters needed
     to prepare the corresponding state, normalizes the vector, and updates the accumulated phase.
@@ -246,7 +240,6 @@ def _preprocess(
     subvecs = target_array[jnp.newaxis, :]
     acc_phases = jnp.zeros((1,), dtype=jnp.float64)
     for l in range(n):
-
         num_nodes = 1 << l
         sub_len = 1 << (n - l)
 
@@ -347,7 +340,6 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
     ry(thetas[0][0], qv[0])
 
     for layer_size in xrange(1, qv.size - 1):
-
         q_switch(
             qv[:layer_size],
             make_case_fn(layer_size),

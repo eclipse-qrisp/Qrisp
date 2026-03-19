@@ -181,7 +181,6 @@ class QIROProblem(QAOAProblem):
         exclusions = []
 
         for index in range(n_recursions):
-
             new_problem, solutions, sign, exclusions = self.replacement_routine(
                 res, [self.problem, solutions, exclusions]
             )
@@ -189,9 +188,7 @@ class QIROProblem(QAOAProblem):
             corr_vals.append(sign)
             self.problem = new_problem
 
-            self.cost_operator = self.qiro_cost_operator(
-                [new_problem, solutions, exclusions]
-            )
+            self.cost_operator = self.qiro_cost_operator([new_problem, solutions, exclusions])
             self.mixer = self.qiro_mixer([new_problem, solutions, exclusions])
             self.init_function = self.qiro_init_function(  # problem = new_problem,
                 solutions=solutions, exclusions=exclusions

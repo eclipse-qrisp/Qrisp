@@ -96,9 +96,7 @@ class TestQuantumCircuitMethods:
         assert str(extension_qc.data[2])[:2] == "cz"
 
         qc_to_extend = QuantumCircuit(4)
-        translation_dic = {
-            extension_qc.qubits[i]: qc_to_extend.qubits[-1 - i] for i in range(4)
-        }
+        translation_dic = {extension_qc.qubits[i]: qc_to_extend.qubits[-1 - i] for i in range(4)}
         qc_to_extend.extend(extension_qc, translation_dic)
 
         assert len(qc_to_extend.data) == 3
@@ -165,9 +163,7 @@ class TestQuantumCircuitMethods:
             extension_qc.qubits[0]: extension_qc.qubits[1],
         }
 
-        with pytest.raises(
-            Exception, match="Instruction Qubits .* not present in circuit"
-        ):
+        with pytest.raises(Exception, match="Instruction Qubits .* not present in circuit"):
             qc_to_extend.extend(extension_qc, translation_dic)
 
     def test_extend_raises_error_for_invalid_clbit_reference(self):
@@ -182,9 +178,7 @@ class TestQuantumCircuitMethods:
             extension_qc.clbits[0]: extension_qc.clbits[1],
         }
 
-        with pytest.raises(
-            ValueError, match="Instruction Clbits not present in circuit"
-        ):
+        with pytest.raises(ValueError, match="Instruction Clbits not present in circuit"):
             qc_to_extend.extend(extension_qc, translation_dic)
 
     # TODO: Add more tests for other methods of QuantumCircuit

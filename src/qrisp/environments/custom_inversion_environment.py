@@ -41,22 +41,22 @@ def custom_inversion(*func, **cusi_kwargs):
 
     The ``custom_inversion`` decorator enables registering a specialized subroutine for the inverted version
     of the decorated function. This decorator is crucial for functions where the inversion logic cannot be derived
-    simply by reversing the gate order (e.g., subroutines involving measurements or dynamic classical control). 
+    simply by reversing the gate order (e.g., subroutines involving measurements or dynamic classical control).
     In such scenarios, the user can explicitly define how the function should behave when inverted, ensuring that
     the correct logic is applied in both forward and backward contexts.
 
     To make use of the decorator, the decorated function is required to support a keyword argument ``inv``,
     which receives a static boolean. This boolean indicates whether the forward or the backward version of the function
-    should be executed. Once defined, the function with decorator applied **does not** need to be called with the ``inv`` keyword. 
+    should be executed. Once defined, the function with decorator applied **does not** need to be called with the ``inv`` keyword.
     Instead the backward version will be called automatically, if the function is called within an :ref:`InversionEnvironment`.
 
     .. warning::
-        
+
         Custom inversion is currently only available in dynamic mode.
 
 
 
-    For more details consult the examples section. 
+    For more details consult the examples section.
 
     Parameters
     ----------
@@ -72,7 +72,7 @@ def custom_inversion(*func, **cusi_kwargs):
     Examples
     ----------
     We demonstrate the use of the ``custom_inversion`` decorator with a simple example.
-    
+
     In this example, we define a function that implements Gidney's logical AND operation in the forward direction and uncomputes the
     logical AND in the backward direction. As `defined by Gidney <https://arxiv.org/abs/1709.06648>`_ , the forward and backward
     implementations of the logical AND are not simply inverses of each other. Thus, one cannot use the general :ref:`InversionEnvironment`
@@ -83,7 +83,7 @@ def custom_inversion(*func, **cusi_kwargs):
     of Gidney's logical AND operation, respectively. We define ``gidney_mcx`` function along with the ``custom_inversion`` decorator, such
     that we simply apply the logical AND operation and then uncompute it using the custom inverse. The final state of the target qubit is
     returned to its initial state, which is the expected behavior for this example.
-     
+
     ::
 
         from qrisp import QuantumFloat, custom_inversion, invert, make_jaspr, measure
@@ -122,14 +122,14 @@ def custom_inversion(*func, **cusi_kwargs):
         jaspr = make_jaspr(main)()
         print("Result:", jaspr())
         # Expected Output: 0
-    
-    
-    .. code-block:: python
-        
-        Result: 0.0
-        
 
- 
+
+    .. code-block:: python
+
+        Result: 0.0
+
+
+
 
 
     """
@@ -159,7 +159,6 @@ def custom_inversion(*func, **cusi_kwargs):
             return func(*args, **kwargs)
 
         else:
-
             args = list(args)
             for i in range(len(args)):
                 if isinstance(args[i], bool):

@@ -49,7 +49,6 @@ maxfive = sorted(res_qiro, key=res_qiro.get, reverse=True)[:5]
 costFunc = create_max_indep_set_cl_cost_function(G)
 for key, val in res_qiro.items():
     if key in maxfive:
-
         print(key)
         print(costFunc({key: 1}))
 

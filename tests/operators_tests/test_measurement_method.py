@@ -22,22 +22,37 @@ from qrisp import *
 from qrisp.interface import VirtualBackend
 from qrisp.simulator import run
 
-def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
-    
-    non_sampling_backend = VirtualBackend(lambda qasm_string, shots, token : run(QuantumCircuit.from_qasm_str(qasm_string), None, ""))    
+
+def test_measurement_method(sample_size=100, seed=42, exhaustive=False):
+
+    non_sampling_backend = VirtualBackend(
+        lambda qasm_string, shots, token: run(QuantumCircuit.from_qasm_str(qasm_string), None, "")
+    )
 
     def testing_helper(qv, operator_combinations):
         for H in operator_combinations:
             if isinstance(H, int):
                 continue
-            
+
             print(H)
-            assert abs(H.get_measurement(qv, precision=0.0005, backend =non_sampling_backend) - 
-                       H.to_pauli().get_measurement(qv, precision=0.0005, backend = non_sampling_backend)) < 1E-1
-            assert abs(H.get_measurement(qv, precision=0.0005, 
-                       diagonalisation_method="commuting", backend = non_sampling_backend) - 
-                       H.to_pauli().get_measurement(qv, precision=0.0005, 
-                       diagonalisation_method="commuting", backend = non_sampling_backend)) < 1E-1
+            assert (
+                abs(
+                    H.get_measurement(qv, precision=0.0005, backend=non_sampling_backend)
+                    - H.to_pauli().get_measurement(qv, precision=0.0005, backend=non_sampling_backend)
+                )
+                < 1e-1
+            )
+            assert (
+                abs(
+                    H.get_measurement(
+                        qv, precision=0.0005, diagonalisation_method="commuting", backend=non_sampling_backend
+                    )
+                    - H.to_pauli().get_measurement(
+                        qv, precision=0.0005, diagonalisation_method="commuting", backend=non_sampling_backend
+                    )
+                )
+                < 1e-1
+            )
 
     # Set the random seed for reproducibility
     random.seed(seed)
@@ -47,18 +62,17 @@ def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
 
     # Generate all possible combinations of operators
     all_combinations = []
-    
+
     if exhaustive:
         for op1 in operator_list:
             for op2 in operator_list:
                 for op3 in operator_list:
                     for op4 in operator_list:
-                        
-                        H = op1(0)*op2(1)*op3(2)*op4(3)
-                        
+                        H = op1(0) * op2(1) * op3(2) * op4(3)
+
                         if H is 1:
                             continue
-                        
+
                         all_combinations.append(H)
     else:
         for _ in range(sample_size):
@@ -84,20 +98,19 @@ def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
     testing_helper(qv, all_combinations)
 
     h(qv[0])
-    
 
     # Perform test for issue #165
     qv = QuantumVariable(4)
     x(qv[0])
     x(qv[1])
 
-    H = A(0)*C(1)*C(2)*A(3) + P1(0)*P1(2) + P1(1)*P1(3)
+    H = A(0) * C(1) * C(2) * A(3) + P1(0) * P1(2) + P1(1) * P1(3)
 
-    assert H.get_measurement(qv,diagonalisation_method='commuting') == 0
-    assert H.get_measurement(qv,diagonalisation_method='commuting_qw') == 0
-    
+    assert H.get_measurement(qv, diagonalisation_method="commuting") == 0
+    assert H.get_measurement(qv, diagonalisation_method="commuting_qw") == 0
+
     # Test BatchedBackend
-    
+
     def run_func_batch(batch):
         """
         Parameters
@@ -111,13 +124,13 @@ def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
             The list of results.
 
         """
-        
+
         results = []
         for i in range(len(batch)):
             qc = batch[i][0]
             shots = batch[i][1]
-            results.append(qc.run(shots = shots))
-            
+            results.append(qc.run(shots=shots))
+
         return results
 
     from qrisp.interface import BatchedBackend
@@ -128,13 +141,9 @@ def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
     e[:] = 2
     f = d + e
 
-    H = Z(0)*Z(1)*Z(2)*Z(3) + X(0)*X(1)*X(2)*X(3)
+    H = Z(0) * Z(1) * Z(2) * Z(3) + X(0) * X(1) * X(2) * X(3)
 
     # Set up batched backend
     bb = BatchedBackend(run_func_batch)
 
-    ev = H.expectation_value(lambda : f, backend = bb)()
-    
-    
-    
-    
+    ev = H.expectation_value(lambda: f, backend=bb)()

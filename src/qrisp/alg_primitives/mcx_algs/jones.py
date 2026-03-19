@@ -28,7 +28,6 @@ from qrisp.alg_primitives.mcx_algs.circuit_library import (
 
 # Implementation of the T-Depth 1 Toffoli found in https://arxiv.org/pdf/1212.5069.pdf
 class JonesToffoli(Operation):
-
     def __init__(self, ctrl_state="11"):
 
         definition = QuantumCircuit(5)
@@ -38,9 +37,7 @@ class JonesToffoli(Operation):
         if ctrl_state[1] == "0":
             definition.x(definition.qubits[1])
 
-        definition.append(
-            amy_toffoli_qc.to_gate("jones_toffoli"), definition.qubits[:-1]
-        )
+        definition.append(amy_toffoli_qc.to_gate("jones_toffoli"), definition.qubits[:-1])
 
         if ctrl_state[0] == "0":
             definition.x(definition.qubits[0])
@@ -57,9 +54,7 @@ class JonesToffoli(Operation):
 
     def recompile(self):
 
-        res = ctrl_state_wrap(jones_toffoli_qc, self.ctrl_state).to_op(
-            "compiled_jones_toffoli"
-        )
+        res = ctrl_state_wrap(jones_toffoli_qc, self.ctrl_state).to_op("compiled_jones_toffoli")
         res.permeability = {0: True, 1: True, 2: False, 3: False, 4: False}
         res.is_qfree = True
 
@@ -79,7 +74,5 @@ def jones_toffoli(ctrl, target, ctrl_state="11"):
         name="jones_ancilla_" + str(int(QuantumVariable.creation_counter[0])),
     )
 
-    target.qs().append(
-        JonesToffoli(ctrl_state), list(ctrl) + [target] + list(jones_ancilla)
-    )
+    target.qs().append(JonesToffoli(ctrl_state), list(ctrl) + [target] + list(jones_ancilla))
     jones_ancilla.delete()

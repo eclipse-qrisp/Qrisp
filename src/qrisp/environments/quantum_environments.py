@@ -440,15 +440,12 @@ class QuantumEnvironment(QuantumPrimitive):
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-
             if exception_value:
                 raise exception_value
 
             tr_qs = TracingQuantumSession.get_instance()
             tr_qs.qubit_cache = self.temp_qubit_cache
-            tr_qs.abs_qst = self.bind(
-                tr_qs.abs_qst, stage="exit", type=str(type(self)).split(".")[-1][:-2]
-            )[0]
+            tr_qs.abs_qst = self.bind(tr_qs.abs_qst, stage="exit", type=str(type(self)).split(".")[-1][:-2])[0]
             return
 
         self.deepest_environment[0] = self.parent

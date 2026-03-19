@@ -56,7 +56,6 @@ def qq_gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     gidney_anc = QuantumVariable(len(b) - 1, name="gidney_anc*", qs=b[0].qs())
 
     for i in range(len(b) - 1):
-
         if i != 0:
             mcx([a[i], b[i]], gidney_anc[i], method="gidney")
             cx(gidney_anc[i - 1], gidney_anc[i])
@@ -84,7 +83,6 @@ def qq_gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
 
     with invert():
         for i in range(len(b) - 1):
-
             if i != 0:
                 if i != len(b) - 1:
                     cx(gidney_anc[i - 1], a[i])
@@ -110,7 +108,6 @@ def qq_gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
                 mcx([a[i], b[i]], gidney_anc[i], method="gidney")
                 cx(c_in, gidney_anc[i])
             else:
-
                 if ctrl is not None:
                     mcx([ctrl, a[i]], gidney_control_anc[0], method="gidney")
                     cx(gidney_control_anc[0], b[i])

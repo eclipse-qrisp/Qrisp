@@ -16,6 +16,7 @@
 ********************************************************************************
 """
 
+
 def test_jasp_quantum_counting():
     from qrisp import quantum_counting, z, QuantumFloat
     from qrisp.jasp import jaspify
@@ -28,7 +29,7 @@ def test_jasp_quantum_counting():
     def main():
         res = quantum_counting(QuantumFloat(3), oracle, 3)
         return res
-    
+
     res = main()
 
-    assert np.abs(res-4) < 1e-4
+    assert np.abs(res - 4) < 1e-4

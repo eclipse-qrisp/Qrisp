@@ -28,5 +28,5 @@ def test_string_test():
     q_str += q_str_2
 
     q_str += "! "
-    
-    assert q_str.get_measurement() == {'hello world! ': 1.0}
+
+    assert q_str.get_measurement() == {"hello world! ": 1.0}

@@ -45,9 +45,7 @@ def _invert_inpl_function(func):
 
 
 # DEPRECATED FUNCTIONALITY
-def qswitch(
-    operand, case, case_function, method="auto", case_amount=None, inv=False, ctrl=None
-):
+def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=False, ctrl=None):
     r"""
     Executes a switch - case statement distinguishing between a list of
     given in-place functions.
@@ -166,7 +164,6 @@ def qswitch(
     method = "tree" if method == "auto" else method
 
     if method == "sequential":
-
         control_qbl = QuantumBool()
 
         for i in xrange(case_amount):
@@ -188,7 +185,6 @@ def qswitch(
         control_qbl.delete()
 
     elif method == "parallel":
-
         if check_for_tracing_mode():
             raise NotImplementedError(
                 f"Compile method {method} for switch-case structure not available in tracing mode."
@@ -205,7 +201,6 @@ def qswitch(
         # This QuantumArray acts as an addressable QRAM via the demux function
 
         if case_amount != 2**case.size:
-
             warnings.warn(
                 "Warning: Additional qubit overhead because case amount is smaller than case QuantumVariable!"
             )
@@ -239,7 +234,6 @@ def qswitch(
 
     # Uses balanced binaray trees https://arxiv.org/pdf/2407.17966v1
     elif method == "tree":
-
         # Jasp mode
         if check_for_tracing_mode():
             xrange = jrange
@@ -380,7 +374,6 @@ def qswitch(
 
         # List mode
         elif isinstance(case_function, list):
-
             if len(case_function) % 2 != 0:
 
                 def identity(_):
@@ -455,9 +448,7 @@ def qswitch(
                     x_cond(j == i, apply, lambda x: None, case_function[j])
 
         else:
-            raise TypeError(
-                "Argument 'case_function' must be a list or a callable(i, x)"
-            )
+            raise TypeError("Argument 'case_function' must be a list or a callable(i, x)")
 
         def body_fun(pos, val):
             anc, ca, oper = val
@@ -484,9 +475,7 @@ def qswitch(
 
         # Perform leafs and jumps
 
-        _, _, _ = x_fori_loop(
-            0, -(-case_amount // 2) - 1, body_fun, (anc, case, operand)
-        )
+        _, _, _ = x_fori_loop(0, -(-case_amount // 2) - 1, body_fun, (anc, case, operand))
 
         # Perfrom last leaf
         x_cond(
@@ -528,9 +517,7 @@ def qswitch(
         anc.delete()
 
     else:
-        raise Exception(
-            f"Don't know compile method {method} for switch-case structure."
-        )
+        raise Exception(f"Don't know compile method {method} for switch-case structure.")
 
 
 temp = qswitch.__doc__

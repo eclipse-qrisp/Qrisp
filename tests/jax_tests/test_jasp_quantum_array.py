@@ -123,56 +123,58 @@ def test_error_invalid_slice_step():
         qf = QuantumFloat(4)
         qf[::-1]
 
-    with pytest.raises(
-        NotImplementedError, match="Slicing with DynamicQubitArray only supports step=1"
-    ):
+    with pytest.raises(NotImplementedError, match="Slicing with DynamicQubitArray only supports step=1"):
         main()
+
 
 def test_injection():
     @jaspify
     def test():
-        a_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        a_array = QuantumArray(QuantumFloat(4), shape=(4, 4))
         x(a_array)
-        b_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        b_array = QuantumArray(QuantumFloat(4), shape=(4, 4))
         h(b_array)
-        r_array = QuantumArray(QuantumBool(), shape=(4,4))
+        r_array = QuantumArray(QuantumBool(), shape=(4, 4))
 
-        (r_array << (lambda a,b: a==b))(a_array, b_array)
+        (r_array << (lambda a, b: a == b))(a_array, b_array)
         return measure(r_array), measure(a_array), measure(b_array)
 
     r, a, b = test()
-    assert((r == (a == b)).all())
+    assert (r == (a == b)).all()
+
 
 def test_element_wise_addition_injection_qm():
     @jaspify
     def test():
         I = np.eye(4, dtype=int)
-        a_array = QuantumArray(QuantumModulus(7), shape=(4,4))
+        a_array = QuantumArray(QuantumModulus(7), shape=(4, 4))
         a_array[:] = I
-        b_array = QuantumArray(QuantumModulus(7), shape=(4,4))
+        b_array = QuantumArray(QuantumModulus(7), shape=(4, 4))
         b_array[:] = I
-        r_array = QuantumArray(QuantumModulus(7), shape=(4,4))
+        r_array = QuantumArray(QuantumModulus(7), shape=(4, 4))
 
-        (r_array << (lambda a,b: a+b))(a_array, b_array)
+        (r_array << (lambda a, b: a + b))(a_array, b_array)
         return measure(r_array), measure(a_array), measure(b_array)
 
     r, a, b = test()
-    assert((r == (a+b)%7).all())
+    assert (r == (a + b) % 7).all()
+
 
 def test_element_wise_addition_injection():
     @jaspify
     def test():
-        a_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        a_array = QuantumArray(QuantumFloat(4), shape=(4, 4))
         x(a_array)
-        b_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        b_array = QuantumArray(QuantumFloat(4), shape=(4, 4))
         h(b_array)
-        r_array = QuantumArray(QuantumFloat(6), shape=(4,4))
+        r_array = QuantumArray(QuantumFloat(6), shape=(4, 4))
 
-        (r_array << (lambda a,b: a+b))(a_array, b_array)
+        (r_array << (lambda a, b: a + b))(a_array, b_array)
         return measure(r_array), measure(a_array), measure(b_array)
 
     r, a, b = test()
-    assert((r == a+b).all())
+    assert (r == a + b).all()
+
 
 #
 # Element-wise arithmetic
@@ -180,11 +182,17 @@ def test_element_wise_addition_injection():
 
 # Define the set of operators to test
 ops = [
-    operator.add, operator.sub, operator.mul,  # +, -, *
-    operator.eq,  operator.ne,                 # ==, !=
-    operator.gt,  operator.ge,                 # >, >=
-    operator.lt,  operator.le                  # <, <=
+    operator.add,
+    operator.sub,
+    operator.mul,  # +, -, *
+    operator.eq,
+    operator.ne,  # ==, !=
+    operator.gt,
+    operator.ge,  # >, >=
+    operator.lt,
+    operator.le,  # <, <=
 ]
+
 
 @pytest.mark.parametrize("op", ops)
 def test_quantum_array_element_wise_ops(op):
@@ -197,20 +205,22 @@ def test_quantum_array_element_wise_ops(op):
 
         # Initialize QuantumArrays
         qtype = QuantumFloat(3)
-        a_array = QuantumArray(qtype, shape=(2,2))
-        b_array = QuantumArray(qtype, shape=(2,2))
-    
+        a_array = QuantumArray(qtype, shape=(2, 2))
+        b_array = QuantumArray(qtype, shape=(2, 2))
+
         a_array[:] = a_c
         b_array[:] = b_c
-    
+
         # Execute quantum operation
         r_array = op(a_array, b_array)
         return measure(r_array)
-    
+
     # Calculate classical reference
     expected_c = op(a_c, b_c)
-    
+
     # Validate measurements
     r_array = main()
 
-    assert np.array_equal(r_array, expected_c), f"Failed on operator {op.__name__}. Expected {expected_c}, got {r_array}"
+    assert np.array_equal(r_array, expected_c), (
+        f"Failed on operator {op.__name__}. Expected {expected_c}, got {r_array}"
+    )

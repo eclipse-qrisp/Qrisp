@@ -102,9 +102,7 @@ def phase_apply_summed_distance(itinerary, iter=1):
 
 @gate_wrap(permeability="args", is_qfree=True)
 def qpe_calc_perm_travel_distance(itinerary, precision):
-    return QPE(
-        itinerary, phase_apply_summed_distance, precision=precision, iter_spec=True
-    )
+    return QPE(itinerary, phase_apply_summed_distance, precision=precision, iter_spec=True)
 
 
 def qdict_calc_perm_travel_distance(itinerary, precision):
@@ -146,10 +144,7 @@ def eval_distance_threshold(perm_specifiers, precision, threshold, method="qpe")
 perm_specifiers = create_perm_specifiers(city_amount)
 
 winner_state_amount = (
-    2 ** sum([qv.size for qv in perm_specifiers])
-    / factorial(city_amount)
-    * city_amount
-    * 2
+    2 ** sum([qv.size for qv in perm_specifiers]) / factorial(city_amount) * city_amount * 2
 )  # average number of state per permutation * (4 cyclic shifts)*(2 directions)
 
 # Evaluate Grovers algorithm
@@ -285,9 +280,7 @@ def qpe_calc_perm_travel_distance(itinerary, precision):
     if precision is None:
         raise Exception("Tried to evaluate oracle without specifying a precision")
 
-    return QPE(
-        itinerary, phase_apply_summed_distance, precision=precision, iter_spec=True
-    )
+    return QPE(itinerary, phase_apply_summed_distance, precision=precision, iter_spec=True)
 
 
 def qdict_calc_perm_travel_distance(itinerary, precision):

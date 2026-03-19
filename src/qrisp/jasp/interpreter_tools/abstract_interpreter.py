@@ -204,15 +204,10 @@ def reinterpret(jaxpr, eqn_evaluator=exec_eqn):
 def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator=exec_eqn):
 
     for eqn in jaxpr.eqns:
-
         default_eval = eqn_evaluator(eqn, context_dic)
 
         if default_eval:
-            if (
-                eqn.primitive.name in ["while", "cond", "scan"]
-                and not check_for_tracing_mode()
-            ):
-
+            if eqn.primitive.name in ["while", "cond", "scan"] and not check_for_tracing_mode():
                 from qrisp.jasp import (
                     evaluate_cond_eqn,
                     evaluate_scan,
@@ -252,9 +247,7 @@ def insert_outvalues(eqn, context_dic, outvalues):
 
     if eqn.primitive.multiple_results:
         if len(outvalues) != len(eqn.outvars):
-            raise Exception(
-                "Tried to insert invalid amount of values into the Context Dictionary"
-            )
+            raise Exception("Tried to insert invalid amount of values into the Context Dictionary")
 
         for i in range(len(eqn.outvars)):
             context_dic[eqn.outvars[i]] = outvalues[i]

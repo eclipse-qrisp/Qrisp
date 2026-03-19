@@ -101,7 +101,6 @@ def extract_order(mes_res, a, N):
         pass
 
     while True:
-
         r_values = get_r_values(approximations.pop(0))
 
         for r in r_values:
@@ -118,9 +117,7 @@ def extract_order(mes_res, a, N):
 
 
 def get_r_values(approx):
-    rationals = continued_fraction_convergents(
-        continued_fraction_iterator(Rational(approx))
-    )
+    rationals = continued_fraction_convergents(continued_fraction_iterator(Rational(approx)))
     return [rat.q for rat in rationals if 1 < rat.q]
 
 
@@ -159,7 +156,6 @@ def shors_alg(N, inpl_adder=None, mes_kwargs={}):
     a_proposals = find_optimal_a(N)
 
     for a in a_proposals:
-
         K = np.gcd(a, N)
 
         if K != 1:

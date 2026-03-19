@@ -26,7 +26,6 @@ from qrisp.circuit import QuantumCircuit, Operation
 
 
 class GidneyLogicalAND(Operation):
-
     def __init__(self, inv=False, ctrl_state="11"):
 
         definition = QuantumCircuit(3)
@@ -66,9 +65,7 @@ class GidneyLogicalAND(Operation):
             elif computation_strategy == "margolus":
                 compiled_qc = margolus_qc
             else:
-                raise Exception(
-                    f"Don't know measurement based uncomputation strategy {computation_strategy}"
-                )
+                raise Exception(f"Don't know measurement based uncomputation strategy {computation_strategy}")
 
         name = "compiled_gidney_mcx"
         if self.inv:
@@ -117,7 +114,6 @@ def gidney_mcx_inv_impl(a, b, c):
 
 
 class GidneyMCXJaspr(Jaspr):
-
     slots = ["inv"]
 
     def __init__(self, inv):

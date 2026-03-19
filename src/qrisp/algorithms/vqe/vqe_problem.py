@@ -195,11 +195,7 @@ class VQEProblem:
         temp = list(qarg.qs.data)
 
         # Define parameters theta for VQE circuit
-        theta = [
-            Symbol("theta_" + str(i) + str(j))
-            for i in range(depth)
-            for j in range(self.num_params)
-        ]
+        theta = [Symbol("theta_" + str(i) + str(j)) for i in range(depth) for j in range(self.num_params)]
 
         # Prepare the initial state for particular problem instance, the default is the \ket{0} state
         if self.init_function is not None:
@@ -207,9 +203,7 @@ class VQEProblem:
 
         # Apply p layers of the ansatz
         for i in range(depth):
-            self.ansatz_function(
-                qarg, [theta[self.num_params * i + j] for j in range(self.num_params)]
-            )
+            self.ansatz_function(qarg, [theta[self.num_params * i + j] for j in range(self.num_params)])
 
         # Compile quantum circuit
         compiled_qc = qarg.qs.compile()
@@ -261,7 +255,6 @@ class VQEProblem:
         """
 
         if check_for_tracing_mode():
-
             # Define optimization wrapper function to be minimized using VQE
             def optimization_wrapper(theta, state_prep, mes_kwargs):
                 """
@@ -287,18 +280,13 @@ class VQEProblem:
                     The expectation value of the Hamiltonian.
                 """
 
-                expectation = self.hamiltonian.expectation_value(
-                    state_prep, **mes_kwargs
-                )(theta)
+                expectation = self.hamiltonian.expectation_value(state_prep, **mes_kwargs)(theta)
 
                 return expectation
 
         else:
-
             # Define optimization wrapper function to be minimized using VQE
-            def optimization_wrapper(
-                theta, state_prep, mes_kwargs, compiled_qc, symbols, measurement_data
-            ):
+            def optimization_wrapper(theta, state_prep, mes_kwargs, compiled_qc, symbols, measurement_data):
                 """
                 Wrapper function for the optimization method used in VQE.
 
@@ -342,23 +330,16 @@ class VQEProblem:
 
         # Initialization for optimization parameters
         if init_point is None:
-
             if init_type == "random":
                 # Random optimization parameters
                 if check_for_tracing_mode():
                     key = jax.random.key(11)
-                    init_point = (
-                        jax.random.uniform(key=key, shape=(self.num_params * depth,))
-                        * jnp.pi
-                        / 2
-                    )
+                    init_point = jax.random.uniform(key=key, shape=(self.num_params * depth,)) * jnp.pi / 2
                 else:
                     init_point = np.random.rand(self.num_params * depth) * np.pi / 2
 
             else:
-                raise Exception(
-                    f"Parameter initialization method {init_type} is not available."
-                )
+                raise Exception(f"Parameter initialization method {init_type} is not available.")
 
         def state_prep(theta):
 
@@ -369,15 +350,12 @@ class VQEProblem:
                 self.init_function(qarg)
 
             for i in range(depth):
-                self.ansatz_function(
-                    qarg, theta[self.num_params * i : self.num_params * (i + 1) + 1]
-                )
+                self.ansatz_function(qarg, theta[self.num_params * i : self.num_params * (i + 1) + 1])
 
             return qarg
 
         # Perform optimization using specified method
         if check_for_tracing_mode():
-
             res_sample = jasp_minimize(
                 optimization_wrapper,
                 init_point,
@@ -392,7 +370,6 @@ class VQEProblem:
             return res_sample.x, res_sample.fun
 
         else:
-
             compiled_qc, symbols = self.compile_circuit(qarg_prep(), depth)
 
             res_sample = minimize(
@@ -476,11 +453,9 @@ class VQEProblem:
         options["maxiter"] = max_iter
 
         if check_for_tracing_mode():
-
             measurement_data = None
 
         else:
-
             measurement_data = QubitOperatorMeasurement(
                 self.hamiltonian,
                 diagonalisation_method=mes_kwargs["diagonalisation_method"],
@@ -566,11 +541,9 @@ class VQEProblem:
         options["maxiter"] = max_iter
 
         if check_for_tracing_mode():
-
             measurement_data = None
 
         else:
-
             measurement_data = QubitOperatorMeasurement(
                 self.hamiltonian,
                 diagonalisation_method=mes_kwargs["diagonalisation_method"],
@@ -593,9 +566,7 @@ class VQEProblem:
                 self.init_function(qarg)
 
             for i in range(depth):
-                self.ansatz_function(
-                    qarg, opt_theta[self.num_params * i : self.num_params * (i + 1) + 1]
-                )
+                self.ansatz_function(qarg, opt_theta[self.num_params * i : self.num_params * (i + 1) + 1])
 
         return circuit_generator
 
@@ -707,7 +678,6 @@ class VQEProblem:
             for s in precision_range:
                 for it in iter_range:
                     for k in range(repetitions):
-
                         start_time = time.time()
 
                         temp_mes_kwargs = dict(mes_kwargs)
@@ -752,9 +722,7 @@ class VQEProblem:
         import matplotlib.pyplot as plt
 
         if not self.callback:
-            raise Exception(
-                "Visualization can only be performed for a VQE instance with callback=True"
-            )
+            raise Exception("Visualization can only be performed for a VQE instance with callback=True")
 
         if exact:
             exact_solution = self.hamiltonian.ground_state_energy()

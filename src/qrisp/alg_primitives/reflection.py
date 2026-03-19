@@ -36,9 +36,7 @@ from qrisp.jasp import jlen, qache
 
 # @qache
 @gate_wrap(permeability=[], is_qfree=False)
-def reflection(
-    qargs, state_function=None, args=(), kwargs={}, phase=np.pi, reflection_indices=None
-):
+def reflection(qargs, state_function=None, args=(), kwargs={}, phase=np.pi, reflection_indices=None):
     r"""
     Applies a reflection around a state $\ket{\psi}$ of (multiple) QuantumVariables, i.e., applies the operator
 
@@ -183,7 +181,6 @@ def reflection(
     def inner_reflection(qubits, phase):
 
         with control(phase == np.pi):
-
             x(qubits[-1])
 
             with control(jlen(qubits) == 1):

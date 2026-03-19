@@ -31,9 +31,7 @@ from qrisp.misc.utility import _EPSILON, swap_endianness
 ########################################################
 
 
-def _compute_statevector_logical_qubits(
-    qv: QuantumVariable, big_endianness: bool = False
-) -> ArrayLike:
+def _compute_statevector_logical_qubits(qv: QuantumVariable, big_endianness: bool = False) -> ArrayLike:
     """Compute the statevector amplitudes corresponding to the logical qubits"""
 
     qs_compiled = qv.qs.compile()
@@ -135,9 +133,7 @@ class TestStatePreparationQSwitch:
 
         prepare_qswitch(qv, array, big_endianness=big_endianness)
 
-        logical_sv = _compute_statevector_logical_qubits(
-            qv, big_endianness=big_endianness
-        )
+        logical_sv = _compute_statevector_logical_qubits(qv, big_endianness=big_endianness)
 
         # We need to normalize before the check
         # (this also tests that the normalization in `prepare_qswitch` works correctly)

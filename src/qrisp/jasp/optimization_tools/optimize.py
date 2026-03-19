@@ -102,6 +102,4 @@ def minimize(fun, x0, args=(), method="COBYLA", options={}):
     elif method == "COBYLA":
         return cobyla(fun, x0, args, **options)
     else:
-        raise Exception(
-            f"Optimization method {method} is not available in tracing mode."
-        )
+        raise Exception(f"Optimization method {method} is not available in tracing mode.")

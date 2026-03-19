@@ -28,24 +28,18 @@ from sympy import Symbol
 
 
 class a_(Symbol):
-
     __slots__ = ("ladder", "index")
 
     def __new__(cls, index):
-        obj = Symbol.__new__(
-            cls, "%s%s" % ("a", index), commutative=False, hermitian=True
-        )
+        obj = Symbol.__new__(cls, "%s%s" % ("a", index), commutative=False, hermitian=True)
         obj.index = index
         return obj
 
 
 class c_(Symbol):
-
     __slots__ = ("ladder", "index")
 
     def __new__(cls, index):
-        obj = Symbol.__new__(
-            cls, "%s%s" % ("c", index), commutative=False, hermitian=True
-        )
+        obj = Symbol.__new__(cls, "%s%s" % ("c", index), commutative=False, hermitian=True)
         obj.index = index
         return obj

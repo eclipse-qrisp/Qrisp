@@ -43,9 +43,7 @@ verify_manual_uncomputations = np.zeros(1)
 def qq_qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True):
 
     if len(a) > len(b):
-        raise Exception(
-            "Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision"
-        )
+        raise Exception("Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision")
 
     with fast_append():
         # if True:
@@ -84,9 +82,7 @@ def qq_qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True):
 
             with invert():
                 # We use the redirect_qfunction decorator to steer the function onto c
-                redirect_qfunction(qq_calc_carry)(
-                    a, b, radix_base, radix_exponent, target=c
-                )
+                redirect_qfunction(qq_calc_carry)(a, b, radix_base, radix_exponent, target=c)
 
             # Flip the sum back
             x(b)

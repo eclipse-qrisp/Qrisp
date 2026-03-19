@@ -49,9 +49,7 @@ class BoundQubitTerm:
     def __init__(self, factor_dict={}):
         self.factor_dict = factor_dict
 
-        self.hash_value = hash(
-            tuple(sorted(factor_dict.items(), key=lambda x: hash(x)))
-        )
+        self.hash_value = hash(tuple(sorted(factor_dict.items(), key=lambda x: hash(x))))
 
     def update(self, update_dict):
         self.factor_dict.update(update_dict)
@@ -140,12 +138,7 @@ class BoundQubitTerm:
             else:
                 return self
         else:
-            raise TypeError(
-                "Unsupported operand type(s) for ** or pow(): "
-                + str(type(self))
-                + " and "
-                + str(type(e))
-            )
+            raise TypeError("Unsupported operand type(s) for ** or pow(): " + str(type(self)) + " and " + str(type(e)))
 
     def __mul__(self, other):
         result_factor_dict = {}
@@ -207,11 +200,7 @@ class BoundQubitTerm:
         commute = True
 
         for key in keys:
-            if (
-                a.get(key, "I") != "I"
-                and b.get(key, "I") != "I"
-                and a.get(key, "I") != b.get(key, "I")
-            ):
+            if a.get(key, "I") != "I" and b.get(key, "I") != "I" and a.get(key, "I") != b.get(key, "I"):
                 commute = not commute
         return commute
 
@@ -228,10 +217,6 @@ class BoundQubitTerm:
         keys.update(set(b.keys()))
 
         for key in keys:
-            if (
-                a.get(key, "I") != "I"
-                and b.get(key, "I") != "I"
-                and a.get(key, "I") != b.get(key, "I")
-            ):
+            if a.get(key, "I") != "I" and b.get(key, "I") != "I" and a.get(key, "I") != b.get(key, "I"):
                 return False
         return True

@@ -26,8 +26,7 @@ import scipy as sp
 def test_block_encoding_sim():
 
     def create_ising_hamiltonian(L, J, B):
-        H = sum(-J * Z(i) * Z(i + 1) for i in range(L-1))  \
-            + sum(B * X(i) for i in range(L))
+        H = sum(-J * Z(i) * Z(i + 1) for i in range(L - 1)) + sum(B * X(i) for i in range(L))
         return H
 
     L = 4
@@ -49,14 +48,15 @@ def test_block_encoding_sim():
         return psi(t)
 
     res_dict = main(0.5)
-    amps = np.sqrt([res_dict.get(key, 0) for key in range(2 ** L)])
+    amps = np.sqrt([res_dict.get(key, 0) for key in range(2**L)])
 
     # Compare to classical solution
     H_mat = H.to_array()
+
     # Prepare state|psi(t)> = e^{itH} |psi>
     def psi_(t):
         # Prepare inital system state |psi> = |0>
-        psi0 = np.zeros(2**H.find_minimal_qubit_amount())
+        psi0 = np.zeros(2 ** H.find_minimal_qubit_amount())
         psi0[0] = 1
 
         psi = sp.linalg.expm(-1.0j * t * H_mat) @ psi0

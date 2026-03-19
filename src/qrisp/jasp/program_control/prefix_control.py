@@ -113,9 +113,7 @@ def q_while_loop(cond_fun, body_fun, init_val):
         temp_qc = qs.abs_qst
         res = cond_fun(val[0])
         if not qs.abs_qst is temp_qc:
-            raise Exception(
-                "Tried to modify quantum state during while condition evaluation"
-            )
+            raise Exception("Tried to modify quantum state during while condition evaluation")
         return res
 
     def new_body_fun(val):
@@ -481,18 +479,13 @@ def _q_switch_c(index, branches, *operands):
     from qrisp.jasp import Jaspr
 
     if all(
-        [
-            not isinstance(branch_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumState)
-            for branch_jaxpr in branch_jaxprs
-        ]
+        [not isinstance(branch_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumState) for branch_jaxpr in branch_jaxprs]
     ):
         eqn.invars.pop(-1)
         [branch_jaxpr.jaxpr.invars.pop(-1) for branch_jaxpr in branch_jaxprs]
         return switch_res[0]
 
-    eqn.params["branches"] = tuple(
-        [Jaspr.from_cache(branch_jaxpr) for branch_jaxpr in branch_jaxprs]
-    )
+    eqn.params["branches"] = tuple([Jaspr.from_cache(branch_jaxpr) for branch_jaxpr in branch_jaxprs])
 
     qs.abs_qst = switch_res[-1]
 
@@ -634,9 +627,7 @@ def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
         or (isinstance(index, list) and all(isinstance(q, Qubit) for q in index))
         or isinstance(index, DynamicQubitArray)
     ):
-        return _q_switch_q(
-            index, branches, *operands, branch_amount=branch_amount, method=method
-        )
+        return _q_switch_q(index, branches, *operands, branch_amount=branch_amount, method=method)
 
     if callable(branches):
         return branches(index, *operands)

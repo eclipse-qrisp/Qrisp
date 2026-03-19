@@ -196,9 +196,7 @@ def fourier_series_loader(
             scaling_factor = 1.0
 
         # Compression
-        compressed_frequencies = jnp.concatenate(
-            [frequencies[-k:], frequencies[: k + 1]]
-        )
+        compressed_frequencies = jnp.concatenate([frequencies[-k:], frequencies[: k + 1]])
     else:
         raise Exception("Either signal or frequencies must be specified")
 

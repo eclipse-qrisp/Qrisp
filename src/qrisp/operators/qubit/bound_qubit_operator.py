@@ -114,18 +114,10 @@ class BoundQubitOperator(Hamiltonian):
                     return self
             else:
                 raise TypeError(
-                    "Unsupported operand type(s) for ** or pow(): "
-                    + str(type(self))
-                    + " and "
-                    + str(type(e))
+                    "Unsupported operand type(s) for ** or pow(): " + str(type(self)) + " and " + str(type(e))
                 )
         else:
-            raise TypeError(
-                "Unsupported operand type(s) for ** or pow(): "
-                + str(type(self))
-                + " and "
-                + str(type(e))
-            )
+            raise TypeError("Unsupported operand type(s) for ** or pow(): " + str(type(self)) + " and " + str(type(e)))
 
     def __add__(self, other):
         """
@@ -182,9 +174,7 @@ class BoundQubitOperator(Hamiltonian):
         if isinstance(other, (int, float, complex)):
             other = BoundQubitOperator({BoundQubitTerm(): other})
         if not isinstance(other, BoundQubitOperator):
-            raise TypeError(
-                "Cannot substract BoundQubitOperator and " + str(type(other))
-            )
+            raise TypeError("Cannot substract BoundQubitOperator and " + str(type(other)))
 
         res_terms_dict = {}
 
@@ -220,9 +210,7 @@ class BoundQubitOperator(Hamiltonian):
         if isinstance(other, (int, float, complex)):
             other = BoundQubitOperator({BoundQubitTerm(): other})
         if not isinstance(other, BoundQubitOperator):
-            raise TypeError(
-                "Cannot substract BoundQubitOperator and " + str(type(other))
-            )
+            raise TypeError("Cannot substract BoundQubitOperator and " + str(type(other)))
 
         res_terms_dict = {}
 
@@ -258,18 +246,14 @@ class BoundQubitOperator(Hamiltonian):
         if isinstance(other, (int, float, complex)):
             other = BoundQubitOperator({BoundQubitTerm(): other})
         if not isinstance(other, BoundQubitOperator):
-            raise TypeError(
-                "Cannot multipliy BoundQubitOperator and " + str(type(other))
-            )
+            raise TypeError("Cannot multipliy BoundQubitOperator and " + str(type(other)))
 
         res_terms_dict = {}
 
         for pauli1, coeff1 in self.terms_dict.items():
             for pauli2, coeff2 in other.terms_dict.items():
                 curr_pauli, curr_coeff = pauli1 * pauli2
-                res_terms_dict[curr_pauli] = (
-                    res_terms_dict.get(curr_pauli, 0) + curr_coeff * coeff1 * coeff2
-                )
+                res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli, 0) + curr_coeff * coeff1 * coeff2
 
         result = BoundQubitOperator(res_terms_dict)
         return result
@@ -293,9 +277,7 @@ class BoundQubitOperator(Hamiltonian):
         """
 
         if isinstance(other, (int, float, complex)):
-            self.terms_dict[BoundQubitTerm()] = (
-                self.terms_dict.get(BoundQubitTerm(), 0) + other
-            )
+            self.terms_dict[BoundQubitTerm()] = self.terms_dict.get(BoundQubitTerm(), 0) + other
             return self
         if not isinstance(other, BoundQubitOperator):
             raise TypeError("Cannot add BoundQubitOperator and " + str(type(other)))
@@ -318,9 +300,7 @@ class BoundQubitOperator(Hamiltonian):
         """
 
         if isinstance(other, (int, float, complex)):
-            self.terms_dict[BoundQubitTerm()] = (
-                self.terms_dict.get(BoundQubitTerm(), 0) - other
-            )
+            self.terms_dict[BoundQubitTerm()] = self.terms_dict.get(BoundQubitTerm(), 0) - other
             return self
         if not isinstance(other, BoundQubitOperator):
             raise TypeError("Cannot add BoundQubitOperator and " + str(type(other)))
@@ -349,18 +329,14 @@ class BoundQubitOperator(Hamiltonian):
             return self
 
         if not isinstance(other, BoundQubitOperator):
-            raise TypeError(
-                "Cannot multipliy BoundQubitOperator and " + str(type(other))
-            )
+            raise TypeError("Cannot multipliy BoundQubitOperator and " + str(type(other)))
 
         res_terms_dict = {}
 
         for pauli1, coeff1 in self.terms_dict.items():
             for pauli2, coeff2 in other.terms_dict.items():
                 curr_pauli, curr_coeff = pauli1 * pauli2
-                res_terms_dict[curr_pauli] = (
-                    res_terms_dict.get(curr_pauli, 0) + curr_coeff * coeff1 * coeff2
-                )
+                res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli, 0) + curr_coeff * coeff1 * coeff2
 
         self.terms_dict = res_terms_dict
         return self
@@ -388,9 +364,7 @@ class BoundQubitOperator(Hamiltonian):
 
         for pauli, coeff in self.terms_dict.items():
             curr_pauli, curr_coeff = pauli.subs(subs_dict)
-            res_terms_dict[curr_pauli] = (
-                res_terms_dict.get(curr_pauli, 0) + curr_coeff * coeff
-            )
+            res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli, 0) + curr_coeff * coeff
 
         result = BoundQubitOperator(res_terms_dict)
         return result
@@ -519,12 +493,9 @@ class BoundQubitOperator(Hamiltonian):
         groups = []  # Groups of commuting BoundQubitTerms
 
         # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
-        sorted_terms = sorted(
-            self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True
-        )
+        sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
 
         for pauli, coeff in sorted_terms:
-
             commute_bool = False
             if len(groups) > 0:
                 for group in groups:
@@ -562,12 +533,9 @@ class BoundQubitOperator(Hamiltonian):
         bases = []  # Bases as BoundQubitTerms
 
         # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
-        sorted_terms = sorted(
-            self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True
-        )
+        sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
 
         for pauli, coeff in sorted_terms:
-
             commute_bool = False
             if len(groups) > 0:
                 n = len(groups)
@@ -700,9 +668,7 @@ class BoundQubitOperator(Hamiltonian):
                 if qb not in participating_qubits:
                     participating_qubits.append(qb)
 
-        index_inv = {
-            participating_qubits[i]: i for i in range(len(participating_qubits))
-        }
+        index_inv = {participating_qubits[i]: i for i in range(len(participating_qubits))}
 
         unbound_operator = 0
 

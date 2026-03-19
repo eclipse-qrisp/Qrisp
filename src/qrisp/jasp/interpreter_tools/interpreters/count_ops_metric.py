@@ -77,7 +77,6 @@ class CountOpsMetric(BaseMetric):
             counting_array[counting_index] += invalues[0]
 
         else:  # measuring a single qubit
-
             meas_res = self.meas_behavior(key(meas_number))
             self._validate_measurement_result(meas_res)
             counting_array[counting_index] += incrementation_constants[0]
@@ -153,9 +152,7 @@ class CountOpsMetric(BaseMetric):
             while count:
                 incrementor = min(count, len(incrementation_constants))
                 count -= incrementor
-                counting_array[counting_index] += incrementation_constants[
-                    incrementor - 1
-                ]
+                counting_array[counting_index] += incrementation_constants[incrementor - 1]
 
         return (counting_array, incrementation_constants)
 
@@ -198,9 +195,7 @@ def extract_count_ops(res: Tuple, jaspr: Jaspr, profiling_dic: dict) -> dict:
 
 
 @lru_cache(int(1e5))
-def get_count_ops_profiler(
-    jaspr: Jaspr, meas_behavior: Callable
-) -> Tuple[Callable, dict]:
+def get_count_ops_profiler(jaspr: Jaspr, meas_behavior: Callable) -> Tuple[Callable, dict]:
     """
     Build a count operations profiling computer for a given Jaspr.
 
@@ -249,9 +244,7 @@ def get_count_ops_profiler(
         # look like a constant is being added but a variable
         initial_metric_value = ([0] * len(profiling_dic), list(range(1, 6)))
 
-        filtered_args = [
-            x for x in args + (initial_metric_value,) if type(x) not in STATIC_TYPES
-        ]
+        filtered_args = [x for x in args + (initial_metric_value,) if type(x) not in STATIC_TYPES]
 
         return jitted_evaluator(*filtered_args)
 

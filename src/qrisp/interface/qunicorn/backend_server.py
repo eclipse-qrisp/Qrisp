@@ -217,7 +217,6 @@ class BackendServer:
 
             # Find out wether the job suceeded
             if job["exception"] is not None:
-
                 state = "failed"
                 response = {
                     "code": 0,
@@ -292,9 +291,7 @@ class BackendServer:
         # Hold programm until the server answers
         while True:
             try:
-                response = requests.get(
-                    "http://" + self.ip_address + ":" + str(self.port) + "/jobs/0/"
-                )
+                response = requests.get("http://" + self.ip_address + ":" + str(self.port) + "/jobs/0/")
             except:
                 continue
             break

@@ -41,10 +41,7 @@ def quantum_eq_inner(input_0, input_1, test_kwargs="test"):
 
     if isinstance(input_1, QuantumVariable):
         if input_0.size != input_1.size:
-            raise Exception(
-                "Tried to evaluate equality condition for "
-                "QuantumVariables of differing size"
-            )
+            raise Exception("Tried to evaluate equality condition for QuantumVariables of differing size")
 
         cx(input_0, input_1)
         mcx(input_1, res, ctrl_state=0)

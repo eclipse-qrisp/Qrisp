@@ -143,9 +143,7 @@ class CreateQubitsOp(IRDLOperation):
     qst_out = result_def(QuantumStateType)
 
     assembly_format = (
-        "$amount attr-dict `,` $qst_in"
-        " `:` type($qst_in) `,` type($amount)"
-        " `->` type($result) `,` type($qst_out)"
+        "$amount attr-dict `,` $qst_in `:` type($qst_in) `,` type($amount) `->` type($result) `,` type($qst_out)"
     )
 
 
@@ -160,11 +158,7 @@ class GetQubitOp(IRDLOperation):
 
     result = result_def(QubitType)
 
-    assembly_format = (
-        "$qb_array `,` $position attr-dict"
-        " `:` type($qb_array) `,` type($position)"
-        " `->` type($result)"
-    )
+    assembly_format = "$qb_array `,` $position attr-dict `:` type($qb_array) `,` type($position) `->` type($result)"
 
 
 @irdl_op_definition
@@ -193,9 +187,7 @@ class SliceOp(IRDLOperation):
     result = result_def(QubitArrayType)
 
     assembly_format = (
-        "$qb_array `,` $start `,` $end attr-dict"
-        " `:` type($qb_array) `,` type($start) `,` type($end)"
-        " `->` type($result)"
+        "$qb_array `,` $start `,` $end attr-dict `:` type($qb_array) `,` type($start) `,` type($end) `->` type($result)"
     )
 
 
@@ -214,11 +206,7 @@ class FuseOp(IRDLOperation):
 
     result = result_def(QubitArrayType)
 
-    assembly_format = (
-        "$operand1 `,` $operand2 attr-dict"
-        " `:` type($operand1) `,` type($operand2)"
-        " `->` type($result)"
-    )
+    assembly_format = "$operand1 `,` $operand2 attr-dict `:` type($operand1) `,` type($operand2) `->` type($result)"
 
 
 @irdl_op_definition
@@ -236,11 +224,7 @@ class ResetOp(IRDLOperation):
 
     out_qst = result_def(QuantumStateType)
 
-    assembly_format = (
-        "$qubits `,` $in_qst attr-dict"
-        " `:` type($qubits) `,` type($in_qst)"
-        " `->` type($out_qst)"
-    )
+    assembly_format = "$qubits `,` $in_qst attr-dict `:` type($qubits) `,` type($in_qst) `->` type($out_qst)"
 
 
 @irdl_op_definition
@@ -260,17 +244,11 @@ class MeasureOp(IRDLOperation):
     out_qst = result_def(QuantumStateType)
 
     assembly_format = (
-        "$meas_q `,` $in_qst attr-dict"
-        " `:` type($meas_q) `,` type($in_qst)"
-        " `->` type($meas_res) `,` type($out_qst)"
+        "$meas_q `,` $in_qst attr-dict `:` type($meas_q) `,` type($in_qst) `->` type($meas_res) `,` type($out_qst)"
     )
 
     def verify_(self) -> None:
-        expected = (
-            TensorType(i64, [])
-            if isinstance(self.meas_q.type, QubitArrayType)
-            else TensorType(i1, [])
-        )
+        expected = TensorType(i64, []) if isinstance(self.meas_q.type, QubitArrayType) else TensorType(i1, [])
         if self.meas_res.type != expected:
             raise VerifyException(
                 f"jasp.measure: result type must be '{expected}' when "
@@ -293,11 +271,7 @@ class DeleteQubitsOp(IRDLOperation):
 
     out_qst = result_def(QuantumStateType)
 
-    assembly_format = (
-        "$qubits `,` $in_qst attr-dict"
-        " `:` type($qubits) `,` type($in_qst)"
-        " `->` type($out_qst)"
-    )
+    assembly_format = "$qubits `,` $in_qst attr-dict `:` type($qubits) `,` type($in_qst) `->` type($out_qst)"
 
 
 @irdl_op_definition

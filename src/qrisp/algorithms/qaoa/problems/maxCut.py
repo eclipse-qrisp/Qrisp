@@ -73,7 +73,6 @@ def create_maxcut_cl_cost_function(G):
 
         int_list = []
         if not isinstance(counts_keys[0], str):
-
             for c_array in counts_keys:
                 integer = int("".join([c for c in c_array])[::-1], 2)
                 int_list.append(integer)
@@ -101,9 +100,7 @@ def create_cut_computer(G):
     @jit
     def cut_computer(x):
         x_uint = jnp.uint32(x)
-        bools = extract_boolean_digit(x_uint, edge_list[:, 0]) != extract_boolean_digit(
-            x_uint, edge_list[:, 1]
-        )
+        bools = extract_boolean_digit(x_uint, edge_list[:, 0]) != extract_boolean_digit(x_uint, edge_list[:, 1])
         cut = jnp.sum(bools)  # Count the number of edges crossing the cut
         return -cut
 
@@ -114,9 +111,7 @@ def create_maxcut_sample_array_post_processor(G):
     cut_computer = create_cut_computer(G)
 
     def post_processor(sample_array):
-        cut_values = vmap(cut_computer)(
-            sample_array
-        )  # Use vmap for automatic vectorization
+        cut_values = vmap(cut_computer)(sample_array)  # Use vmap for automatic vectorization
         average_cut = jnp.mean(cut_values)
         return average_cut
 
@@ -176,6 +171,4 @@ def maxcut_problem(G):
     """
     from qrisp.qaoa import QAOAProblem, RX_mixer
 
-    return QAOAProblem(
-        create_maxcut_cost_operator(G), RX_mixer, create_maxcut_cl_cost_function(G)
-    )
+    return QAOAProblem(create_maxcut_cost_operator(G), RX_mixer, create_maxcut_cl_cost_function(G))

@@ -114,9 +114,7 @@ def rlf_coloring(num_vertices, adjacency_matrix):
             colors[vertex] = current_color
 
         # Remove colored vertices from the list of uncolored vertices
-        uncolored_vertices = np.array(
-            [v for v in uncolored_vertices if v not in independent_set]
-        )
+        uncolored_vertices = np.array([v for v in uncolored_vertices if v not in independent_set])
 
         current_color += 1
 
@@ -158,10 +156,7 @@ def dsatur_coloring(num_vertices, adjacency_matrix):
         # Find the lowest available color for this vertex
         used_colors = set()
         for neighbor in range(num_vertices):
-            if (
-                adjacency_matrix[max_saturation_vertex, neighbor] == 1
-                and colors[neighbor] != -1
-            ):
+            if adjacency_matrix[max_saturation_vertex, neighbor] == 1 and colors[neighbor] != -1:
                 used_colors.add(colors[neighbor])
 
         available_color = 0
@@ -181,9 +176,7 @@ def dsatur_coloring(num_vertices, adjacency_matrix):
                 saturation_degrees[neighbor] = len(neighbor_colors)
 
         # Remove the colored vertex from uncolored_vertices
-        uncolored_vertices = uncolored_vertices[
-            uncolored_vertices != max_saturation_vertex
-        ]
+        uncolored_vertices = uncolored_vertices[uncolored_vertices != max_saturation_vertex]
 
     return colors
 

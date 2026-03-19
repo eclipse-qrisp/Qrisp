@@ -53,18 +53,11 @@ def compile_inv_environments(closed_jaxpr):
     environment_stack = [[]]
     # Loop through equations and compile inversion environments accordingly
     for eqn in jaxpr.eqns:
-
         op_name = eqn.primitive.name
 
-        if (
-            op_name == "enter_inv"
-            and not mlir_implementation_available[op_name.split("_")[1]]
-        ):
+        if op_name == "enter_inv" and not mlir_implementation_available[op_name.split("_")[1]]:
             environment_stack.append([])
-        elif (
-            op_name == "exit_inv"
-            and not mlir_implementation_available[op_name.split("_")[1]]
-        ):
+        elif op_name == "exit_inv" and not mlir_implementation_available[op_name.split("_")[1]]:
             content = environment_stack.pop(-1)
             inv_content = get_adjoint(content)
 
@@ -72,9 +65,7 @@ def compile_inv_environments(closed_jaxpr):
         else:
             environment_stack[-1].append(eqn)
 
-    return core.Jaxpr(
-        closed_jaxpr.consts, jaxpr.invars, jaxpr.outvars, environment_stack[0]
-    )
+    return core.Jaxpr(closed_jaxpr.consts, jaxpr.invars, jaxpr.outvars, environment_stack[0])
 
 
 # %%

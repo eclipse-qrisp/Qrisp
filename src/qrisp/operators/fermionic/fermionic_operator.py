@@ -143,7 +143,6 @@ class FermionicOperator(Hamiltonian):
         new_terms_dict = {}
 
         for term, coeff in self.terms_dict.items():
-
             # We only store the sorted version of each term.
             # Sorting here means permuting the creators/annihilators
             # while considering the sign of the permutation applied by the sort.
@@ -159,9 +158,7 @@ class FermionicOperator(Hamiltonian):
                     flip_sign = daggered_flip_sign
 
             # Compute the new coefficient.
-            new_terms_dict[sorted_term] = flip_sign * coeff + new_terms_dict.get(
-                sorted_term, 0
-            )
+            new_terms_dict[sorted_term] = flip_sign * coeff + new_terms_dict.get(sorted_term, 0)
 
         for term, coeff in list(new_terms_dict.items()):
             if isinstance(coeff, (int, float)):
@@ -291,10 +288,7 @@ class FermionicOperator(Hamiltonian):
                 daggered_sorted_term, flip_sign = term.dagger().sort()
                 if daggered_sorted_term not in reduced_other.terms_dict:
                     return False
-                elif (
-                    reduced_self.terms_dict[term]
-                    != flip_sign * reduced_other.terms_dict[daggered_sorted_term]
-                ):
+                elif reduced_self.terms_dict[term] != flip_sign * reduced_other.terms_dict[daggered_sorted_term]:
                     return False
                 continue
 
@@ -373,9 +367,7 @@ class FermionicOperator(Hamiltonian):
         if isinstance(other, (int, float, complex)):
             other = FermionicOperator({FermionicTerm(): other})
         if not isinstance(other, FermionicOperator):
-            raise TypeError(
-                "Cannot substract FermionicOperator and " + str(type(other))
-            )
+            raise TypeError("Cannot substract FermionicOperator and " + str(type(other)))
 
         res_terms_dict = {}
 
@@ -411,9 +403,7 @@ class FermionicOperator(Hamiltonian):
         if isinstance(other, (int, float, complex)):
             other = FermionicOperator({FermionicTerm(): other})
         if not isinstance(other, FermionicOperator):
-            raise TypeError(
-                "Cannot substract FermionicOperator and " + str(type(other))
-            )
+            raise TypeError("Cannot substract FermionicOperator and " + str(type(other)))
 
         res_terms_dict = {}
 
@@ -449,18 +439,14 @@ class FermionicOperator(Hamiltonian):
         if isinstance(other, (int, float, complex)):
             other = FermionicOperator({FermionicTerm(): other})
         if not isinstance(other, FermionicOperator):
-            raise TypeError(
-                "Cannot multipliy FermionicOperator and " + str(type(other))
-            )
+            raise TypeError("Cannot multipliy FermionicOperator and " + str(type(other)))
 
         res_terms_dict = {}
 
         for ladder_term1, coeff1 in self.terms_dict.items():
             for ladder_term2, coeff2 in other.terms_dict.items():
                 curr_ladder_term = ladder_term1 * ladder_term2
-                res_terms_dict[curr_ladder_term] = (
-                    res_terms_dict.get(curr_ladder_term, 0) + coeff1 * coeff2
-                )
+                res_terms_dict[curr_ladder_term] = res_terms_dict.get(curr_ladder_term, 0) + coeff1 * coeff2
 
         result = FermionicOperator(res_terms_dict)
         return result
@@ -484,9 +470,7 @@ class FermionicOperator(Hamiltonian):
         """
 
         if isinstance(other, (int, float, complex)):
-            self.terms_dict[FermionicTerm()] = (
-                self.terms_dict.get(FermionicTerm(), 0) + other
-            )
+            self.terms_dict[FermionicTerm()] = self.terms_dict.get(FermionicTerm(), 0) + other
             return self
         if not isinstance(other, FermionicOperator):
             raise TypeError("Cannot add FermionicOperator and " + str(type(other)))
@@ -510,9 +494,7 @@ class FermionicOperator(Hamiltonian):
         """
 
         if isinstance(other, (int, float, complex)):
-            self.terms_dict[FermionicTerm()] = (
-                self.terms_dict.get(FermionicTerm(), 0) - other
-            )
+            self.terms_dict[FermionicTerm()] = self.terms_dict.get(FermionicTerm(), 0) - other
             return self
         if not isinstance(other, FermionicOperator):
             raise TypeError("Cannot add FermionicOperator and " + str(type(other)))
@@ -537,18 +519,14 @@ class FermionicOperator(Hamiltonian):
         if isinstance(other, (int, float, complex)):
             other = FermionicOperator({FermionicTerm(): other})
         if not isinstance(other, FermionicOperator):
-            raise TypeError(
-                "Cannot multipliy FermionicOperator and " + str(type(other))
-            )
+            raise TypeError("Cannot multipliy FermionicOperator and " + str(type(other)))
 
         res_terms_dict = {}
 
         for ladder_term1, coeff1 in self.terms_dict.items():
             for ladder_term2, coeff2 in other.terms_dict.items():
                 curr_ladder_term = ladder_term1 * ladder_term2
-                res_terms_dict[curr_ladder_term] = (
-                    res_terms_dict.get(curr_ladder_term, 0) + coeff1 * coeff2
-                )
+                res_terms_dict[curr_ladder_term] = res_terms_dict.get(curr_ladder_term, 0) + coeff1 * coeff2
 
         self.terms_dict = res_terms_dict
 
@@ -760,9 +738,7 @@ class FermionicOperator(Hamiltonian):
         qubit_operator = self.to_qubit_operator(mapping_type)
         return qubit_operator.get_measurement(qarg, **measurement_kwargs)
 
-    def expectation_value(
-        self, state_prep, mapping_type="jordan_wigner", **measurement_kwargs
-    ):
+    def expectation_value(self, state_prep, mapping_type="jordan_wigner", **measurement_kwargs):
         r"""
         The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
         This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
@@ -978,7 +954,6 @@ class FermionicOperator(Hamiltonian):
         terms_dict = {}
 
         for term, coeff in of_fermionic_hamiltonian.terms.items():
-
             ladder_list = []
 
             for tup in term[::-1]:

@@ -139,9 +139,7 @@ def _complementary_polynomial(b: "ArrayLike") -> Array:
     a_cep_analytic = jnp.zeros(N, dtype=jnp.complex128)
 
     a_cep_analytic = a_cep_analytic.at[0].set(cepstrum[0])  # DC
-    a_cep_analytic = a_cep_analytic.at[1:mid].set(
-        2 * cepstrum[1:mid]
-    )  # Positive frequencies
+    a_cep_analytic = a_cep_analytic.at[1:mid].set(2 * cepstrum[1:mid])  # Positive frequencies
     a_cep_analytic = a_cep_analytic.at[mid].set(cepstrum[mid])  # Nyquist
 
     # 5. Recovery of coefficients

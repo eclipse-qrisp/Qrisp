@@ -50,9 +50,7 @@ def uint_cq_less_than(a, b, inv_adder):
     with control((a >= 0) & (a < 2**b.size - 1)):
         comparison_anc = QuantumBool()
 
-        with conjugate(inv_adder, allocation_management=False)(
-            a + 1, b.reg + comparison_anc.reg
-        ):
+        with conjugate(inv_adder, allocation_management=False)(a + 1, b.reg + comparison_anc.reg):
             cx(comparison_anc, comparison_res)
 
         comparison_res.flip()
@@ -70,9 +68,7 @@ def uint_qc_less_than(a, b, inv_adder):
     with control((b >= 0) & (b <= 2**a.size)):
         comparison_anc = QuantumBool()
 
-        with conjugate(inv_adder, allocation_management=False)(
-            b, a.reg + comparison_anc.reg
-        ):
+        with conjugate(inv_adder, allocation_management=False)(b, a.reg + comparison_anc.reg):
             cx(comparison_anc, comparison_res)
 
         comparison_anc.delete()

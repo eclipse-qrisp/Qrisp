@@ -64,7 +64,6 @@ def jasp_cq_gidney_adder(a, b, ctrl=None):
 
     # if n > 1:
     with control(n > 1):
-
         i = 0
         gidney_anc = QuantumVariable(n - 1, name="gidney_anc*")
 
@@ -77,7 +76,6 @@ def jasp_cq_gidney_adder(a, b, ctrl=None):
 
         # Left part of the V shape
         for j in jrange(n - 2):
-
             i = j + 1
 
             cx(gidney_anc[i - 1], b[i])
@@ -103,7 +101,6 @@ def jasp_cq_gidney_adder(a, b, ctrl=None):
 
         # Right part of the V shape
         for j in jrange(n - 2):
-
             i = n - j - 2
             cx(gidney_anc[i - 1], gidney_anc[i])
 

@@ -91,10 +91,7 @@ def create_max_indep_replacement_routine(res, problem_updated):
 
         elif sign < 0:
             # remove all nodes connected to both nodes
-            intersect = list(
-                set(list(graph.adj[max_item[0]].keys()))
-                & set(list(graph.adj[max_item[0]].keys()))
-            )
+            intersect = list(set(list(graph.adj[max_item[0]].keys())) & set(list(graph.adj[max_item[0]].keys())))
             new_graph.remove_nodes_from(intersect)
             exclusions += intersect
 
@@ -172,9 +169,7 @@ def create_max_indep_controlled_mixer_reduced(problem_updated):
             )
         return qbl
 
-    controlled_RX_mixer = qiro_controlled_RX_mixer_gen(
-        qiro_predicate, solutions + exclusions
-    )
+    controlled_RX_mixer = qiro_controlled_RX_mixer_gen(qiro_predicate, solutions + exclusions)
 
     return controlled_RX_mixer
 

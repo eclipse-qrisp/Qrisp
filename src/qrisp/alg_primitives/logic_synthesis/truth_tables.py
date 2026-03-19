@@ -71,9 +71,7 @@ class TruthTable:
             # Check if the list contains only bit strings of the same length
             for i in range(1, len(init_object)):
                 if len(init_object[0]) != len(init_object[i]):
-                    raise Exception(
-                        "Tried to initialize truth table with varying lengths"
-                    )
+                    raise Exception("Tried to initialize truth table with varying lengths")
 
             # Save string list into object structure
             self.str_l = init_object
@@ -89,9 +87,7 @@ class TruthTable:
 
             # Generate list of bitstrings
             self.str_l = [
-                "".join(
-                    [str(int(init_object[i, j])) for i in range(init_object.shape[0])]
-                )
+                "".join([str(int(init_object[i, j])) for i in range(init_object.shape[0])])
                 for j in range(init_object.shape[1])
             ]
 
@@ -113,9 +109,7 @@ class TruthTable:
     # Returns the "left side" of the truth table, ie. the variable values
     # (starting with 00..00, 00..01, 00..10,...)
     def variable_array(self):
-        variable_table_array = [
-            int_as_array(i, int(np.log2(self.shape[0]))) for i in range(self.shape[0])
-        ]
+        variable_table_array = [int_as_array(i, int(np.log2(self.shape[0]))) for i in range(self.shape[0])]
         variable_table_array = np.array(variable_table_array)
 
         return TruthTable(variable_table_array)
@@ -172,14 +166,10 @@ class TruthTable:
     # Synthesizes a ciruict which represents the truth table
     def q_synth(self, input_var, output_var, method="gray"):
         if output_var.size != self.shape[1]:
-            raise Exception(
-                "Given output variable doesn't include the required amount of qubits"
-            )
+            raise Exception("Given output variable doesn't include the required amount of qubits")
 
         if len(input_var) != self.bit_amount:
-            raise Exception(
-                "Given input variable doesn't include the required amount of qubits"
-            )
+            raise Exception("Given input variable doesn't include the required amount of qubits")
 
         # Use gray synthesis to synthesize truth table
         if method == "gray":
@@ -203,9 +193,7 @@ class TruthTable:
             )
             from qrisp.misc import quantum_invert
 
-            quantum_invert(
-                gray_logic_synth, [input_var, output_var, self, True], input_var.qs
-            )
+            quantum_invert(gray_logic_synth, [input_var, output_var, self, True], input_var.qs)
 
         elif method == "pprm_pt":
             from qrisp.alg_primitives.logic_synthesis.pprm_synthesis import pprm
@@ -218,9 +206,7 @@ class TruthTable:
             pprm(input_var, output_var, self, phase_tolerant=False)
 
         elif method == "best":
-            input_var.qs.append(
-                self.gate_synth(), list(input_var.reg) + list(output_var.reg)
-            )
+            input_var.qs.append(self.gate_synth(), list(input_var.reg) + list(output_var.reg))
 
         else:
             raise Exception("Given synthesis method unknown")
@@ -230,9 +216,7 @@ class TruthTable:
         # input_var.qs.data[-1].op.tt = self
         # input_var.qs.data[-1].op.logic_synth_method = method
 
-        input_var.qs.data[-1].op = LogicSynthGate(
-            input_var.qs.data[-1].op, self, phase_tolerant=method
-        )
+        input_var.qs.data[-1].op = LogicSynthGate(input_var.qs.data[-1].op, self, phase_tolerant=method)
 
     def gate_synth(self, method="best", inv=False):
         from qrisp.core import QuantumSession, QuantumVariable
@@ -337,10 +321,7 @@ def rw_spectrum(f):
     size = len(f)
 
     if np.log2(size) != int(np.log2(size)):
-        raise Exception(
-            "The given function does not have the length to properly represent "
-            "a truth table"
-        )
+        raise Exception("The given function does not have the length to properly represent a truth table")
 
     n = int(np.log2(size))
 
@@ -393,20 +374,14 @@ def NZ(f):
 
 def synth_poly(truth_table, column=0, coeff=None):
     if coeff is None:
-        coeff = sp.symbols(
-            "".join([" x" + str(i) for i in range(truth_table.bit_amount)])
-        )
+        coeff = sp.symbols("".join([" x" + str(i) for i in range(truth_table.bit_amount)]))
         if truth_table.bit_amount == 1:
             coeff = [coeff]
 
     try:
         expr = truth_table.expr
         symbols = get_ordered_symbol_list(expr)
-        coeff_temp = sp.symbols(
-            "".join(
-                [" abcdefghijkllmn" + str(i) for i in range(truth_table.bit_amount)]
-            )
-        )
+        coeff_temp = sp.symbols("".join([" abcdefghijkllmn" + str(i) for i in range(truth_table.bit_amount)]))
         subs_dic = {symbols[i]: coeff_temp[i] for i in range(len(coeff))}
         expr = expr.subs(subs_dic)
         subs_dic = {coeff_temp[i]: coeff[i] for i in range(len(coeff))}
@@ -442,9 +417,7 @@ class LogicSynthGate(Operation):
         qc.append(init_op, qc.qubits)
         self.logic_synth_method = phase_tolerant
 
-        Operation.__init__(
-            self, "logic_synth", num_qubits=len(qc.qubits), definition=qc
-        )
+        Operation.__init__(self, "logic_synth", num_qubits=len(qc.qubits), definition=qc)
 
         self.permeability = {i: i < self.tt.bit_amount for i in range(self.num_qubits)}
         self.is_qfree = True

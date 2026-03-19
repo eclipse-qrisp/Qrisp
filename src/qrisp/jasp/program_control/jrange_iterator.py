@@ -24,7 +24,6 @@ from qrisp.jasp.tracing_logic import check_for_tracing_mode
 
 
 class JRangeIterator:
-
     def __init__(self, *args):
 
         # Differentiate between the 3 possible cases of input signature
@@ -85,7 +84,6 @@ class JRangeIterator:
             return self.loop_index
 
         elif self.iteration == 2:
-
             qs = TracingQuantumSession.get_instance()
             created_qvs = set(list(qs.qv_list)) - set(self.iter_1_qvs)
             created_qvs = list(created_qvs)
@@ -105,7 +103,6 @@ class JRangeIterator:
             return self.loop_index
 
         elif self.iteration == 3:
-
             qs = TracingQuantumSession.get_instance()
             created_qvs = set(list(qs.get_instance().qv_list)) - set(self.iter_2_qvs)
             created_qvs = list(created_qvs)

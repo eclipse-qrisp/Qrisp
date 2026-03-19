@@ -112,9 +112,7 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
         def state_function(*qargs):
             [h(qv) for qv in qargs]
 
-    reflection(
-        input_object, state_function, phase=phase, reflection_indices=reflection_indices
-    )
+    reflection(input_object, state_function, phase=phase, reflection_indices=reflection_indices)
 
     """
     if isinstance(input_object, QuantumArray):
@@ -215,7 +213,6 @@ def tag_state(tag_specificator, binary_values=False, phase=np.pi):
     qv_list = list(tag_specificator.keys())
 
     if check_for_tracing_mode():
-
         states = [qv.encoder(tag_specificator[qv]) for qv in qv_list]
 
         def conjugator(qv_list, temp_qf):
@@ -246,7 +243,6 @@ def tag_state(tag_specificator, binary_values=False, phase=np.pi):
         temp_qf.delete()
 
     else:
-
         states = [tag_specificator[qv] for qv in qv_list]
 
         if not len(states):
@@ -259,9 +255,7 @@ def tag_state(tag_specificator, binary_values=False, phase=np.pi):
             if binary_values:
                 bit_string += states[i][::-1]
             else:
-                bit_string += bin_rep(qv_list[i].encoder(states[i]), qv_list[i].size)[
-                    ::-1
-                ]
+                bit_string += bin_rep(qv_list[i].encoder(states[i]), qv_list[i].size)[::-1]
 
         qubit_list = sum([list(qv.reg) for qv in qv_list], [])
         state = bit_string
@@ -435,10 +429,7 @@ def grovers_alg(
     """
 
     if exact and winner_state_amount is None:
-        raise Exception(
-            "Tried to call exact Grover's algorithm without specifying "
-            "winner_state_amount"
-        )
+        raise Exception("Tried to call exact Grover's algorithm without specifying winner_state_amount")
     elif winner_state_amount is None:
         winner_state_amount = 1
 
@@ -458,17 +449,13 @@ def grovers_alg(
         # Implementation for phase calculation for exact grovers alg as in
         # https://arxiv.org/pdf/quant-ph/0106071.pdf
         iterations = 1
-        tmp = (
-            jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
-            * (N / winner_state_amount) ** 0.5
-        )
+        tmp = jnp.sin(jnp.pi / (4 * (iterations - 1) + 6)) * (N / winner_state_amount) ** 0.5
 
         def body_fun(state):
             iterations, tmp = state
             return (
                 iterations + 1,
-                jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
-                * (N / winner_state_amount) ** 0.5,
+                jnp.sin(jnp.pi / (4 * (iterations - 1) + 6)) * (N / winner_state_amount) ** 0.5,
             )
 
         def cond_fun(state):
@@ -486,10 +473,7 @@ def grovers_alg(
                 state = body_fun(state)
             iterations, tmp = state
 
-        phi = 2 * jnp.arcsin(
-            jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
-            * (N / winner_state_amount) ** 0.5
-        )
+        phi = 2 * jnp.arcsin(jnp.sin(jnp.pi / (4 * (iterations - 1) + 6)) * (N / winner_state_amount) ** 0.5)
 
     else:
         if iterations == 0:
@@ -502,7 +486,6 @@ def grovers_alg(
         h(qv_list)
 
     if check_for_tracing_mode():
-
         for i in jrange(iterations):
             if exact:
                 oracle_function(qv_list, phase=phi, **kwargs)
@@ -512,7 +495,6 @@ def grovers_alg(
                 diffuser(qv_list)
 
     else:
-
         merge(qv_list)
         qs = recursive_qs_search(qv_list)[0]
         qv_amount = len(qs.qv_list)
@@ -526,9 +508,7 @@ def grovers_alg(
                 diffuser(qv_list)
 
         if qv_amount != len(qs.qv_list):
-            raise Exception(
-                "Applied oracle introducing new QuantumVariables without uncomputing/deleting"
-            )
+            raise Exception("Applied oracle introducing new QuantumVariables without uncomputing/deleting")
 
 
 # Workaround to keep the docstring but still gatewrap

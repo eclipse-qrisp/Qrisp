@@ -160,18 +160,14 @@ class VQEBenchmark:
         """
 
         if isinstance(cost_metric, str):
-
             if cost_metric == "oqv":
                 cost_metric = overall_quantum_volume
             else:
                 raise Exception(f"Cost metric {cost_metric} is unknown")
 
         if isinstance(gain_metric, str):
-
             if gain_metric == "approx_ratio":
-                gain_metric = lambda x: approximation_ratio(
-                    x["energy"], self.optimal_energy
-                )
+                gain_metric = lambda x: approximation_ratio(x["energy"], self.optimal_energy)
             else:
                 raise Exception(f"Gain metric {gain_metric} is unknown")
 
@@ -179,7 +175,6 @@ class VQEBenchmark:
         gain_data = []
 
         for i in range(len(self.layer_depth)):
-
             run_data = {
                 "layer_depth": self.layer_depth[i],
                 "circuit_depth": self.circuit_depth[i],
@@ -316,7 +311,6 @@ class VQEBenchmark:
         """
 
         if isinstance(metric, str):
-
             if metric == "approx_ratio":
 
                 def approx_ratio(x):
@@ -331,7 +325,6 @@ class VQEBenchmark:
             average_dict = {}
 
         for i in range(len(self.layer_depth)):
-
             run_data = {
                 "layer_depth": self.layer_depth[i],
                 "circuit_depth": self.circuit_depth[i],
@@ -375,9 +368,7 @@ class VQEBenchmark:
                 if not key in average_dict:
                     continue
 
-                run_data["metric"] = (
-                    average_dict[key]["total_metric"] / average_dict[key]["count"]
-                )
+                run_data["metric"] = average_dict[key]["total_metric"] / average_dict[key]["count"]
                 del run_data["energy"]
                 del run_data["runtime"]
                 run_data_list.append(run_data)
@@ -416,12 +407,9 @@ class VQEBenchmark:
 
         # Print the header row
         print("{:<5} {:<12} {:<12} {:<4} {:<10} {:<9} {:<7} {:<10}".format(*header))
-        print(
-            "============================================================================"
-        )
+        print("============================================================================")
 
         for i, run_data in enumerate(run_data_list):
-
             oqv = sci_notation(overall_quantum_volume(run_data), 4)
             metric_value = sci_notation(run_data["metric"], 3)
 
@@ -532,11 +520,7 @@ class VQEBenchmark:
 
 def overall_quantum_volume(run_data):
     return (
-        run_data["circuit_depth"]
-        * run_data["qubit_amount"]
-        * 1
-        / (run_data["precision"]) ** 2
-        * run_data["iterations"]
+        run_data["circuit_depth"] * run_data["qubit_amount"] * 1 / (run_data["precision"]) ** 2 * run_data["iterations"]
     )
 
 

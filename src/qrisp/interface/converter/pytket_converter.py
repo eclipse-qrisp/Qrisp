@@ -198,9 +198,7 @@ def pytket_converter(qc, boxFlag=False):
                 tket_definition = pytket_converter(op.base_operation.definition)
                 base_gate = tket_definition
                 if isinstance(base_gate, Circuit):
-                    tket_definition = pytket_converter(
-                        op.base_operation.definition, boxFlag=True
-                    )
+                    tket_definition = pytket_converter(op.base_operation.definition, boxFlag=True)
                     tket_definition.name = base_name
                     tket_ins = CircBox(tket_definition)
                 else:

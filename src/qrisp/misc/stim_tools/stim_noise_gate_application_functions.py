@@ -157,9 +157,7 @@ def stim_noise(stim_name, *parameters_and_qubits, pauli_string=None):
     qubits = parameters_and_qubits[-num_qubits:]
 
     if check_for_tracing_mode():
-        error_op = StimNoiseGate(
-            stim_name, *greek_letters[: len(params)], pauli_string=pauli_string
-        )
+        error_op = StimNoiseGate(stim_name, *greek_letters[: len(params)], pauli_string=pauli_string)
         append_operation(error_op, qubits=qubits, param_tracers=list(params))
     else:
         error_op = StimNoiseGate(stim_name, *params, pauli_string=pauli_string)

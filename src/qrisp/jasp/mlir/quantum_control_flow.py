@@ -82,15 +82,11 @@ class HLOControlFlowReplacement(RewritePattern):
 
         # stablehlo.case -> scf.index_switch
         if op_name == "stablehlo.case":
-
             # Extract scalar from a tensor value (StableHLO convention) as i32 then cast to index.
             i32_case_indicator = tensor.ExtractOp(op.operands[0], [], builtin.i32)
 
             if len(op.regions) == 2:
-
-                const_op = arith.ConstantOp(
-                    builtin.IntegerAttr(0, builtin.IntegerType(32))
-                )
+                const_op = arith.ConstantOp(builtin.IntegerAttr(0, builtin.IntegerType(32)))
                 cmp_op = arith.CmpiOp(i32_case_indicator, const_op, "ne")
 
                 if_op = scf.IfOp(
@@ -100,23 +96,16 @@ class HLOControlFlowReplacement(RewritePattern):
                     false_region=op.regions[1].clone(),
                 )
 
-                rewriter.replace_matched_op(
-                    [i32_case_indicator, const_op, cmp_op, if_op]
-                )
+                rewriter.replace_matched_op([i32_case_indicator, const_op, cmp_op, if_op])
 
                 return
 
             else:
-
                 # StableHLO case selector is an i32 scalar; SCF switch expects an index.
                 # We also enumerate cases 0..N-1 and use the last region as default.
-                case_values = builtin.DenseArrayBase.from_list(
-                    builtin.i64, list(range(len(op.regions) - 1))
-                )
+                case_values = builtin.DenseArrayBase.from_list(builtin.i64, list(range(len(op.regions) - 1)))
 
-                selector_index = arith.IndexCastOp(
-                    i32_case_indicator.result, builtin.IndexType()
-                )
+                selector_index = arith.IndexCastOp(i32_case_indicator.result, builtin.IndexType())
 
                 switch_op = scf.IndexSwitchOp(
                     arg=selector_index,
@@ -126,14 +115,11 @@ class HLOControlFlowReplacement(RewritePattern):
                     result_types=op.result_types,
                 )
 
-                rewriter.replace_matched_op(
-                    [i32_case_indicator, selector_index, switch_op]
-                )
+                rewriter.replace_matched_op([i32_case_indicator, selector_index, switch_op])
                 return
 
         # stablehlo.while -> scf.while
         if op_name == "stablehlo.while":
-
             while_op = scf.WhileOp(
                 arguments=op.operands,
                 result_types=op.result_types,

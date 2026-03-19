@@ -67,9 +67,7 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
             C = h + f_deriv
 
             nom = np.sum(A + 4 * B * C)
-            denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(
-                np.tril(J, -1).sum(axis=1)
-            )
+            denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
             alph = nom / denom
             alph = [alph] * N
 
@@ -80,12 +78,7 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
         def alpha(lam, f, f_deriv):
             nom = [h[i] + f + (1 - lam) * f_deriv for i in range(N)]
             denom = [
-                2
-                * (
-                    (lam * h[i] + f) ** 2
-                    + (1 - lam) ** 2
-                    + lam**2 * sum([J[i][j] for j in range(N) if j != i])
-                )
+                2 * ((lam * h[i] + f) ** 2 + (1 - lam) ** 2 + lam**2 * sum([J[i][j] for j in range(N) if j != i]))
                 for i in range(N)
             ]
 
@@ -96,9 +89,9 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
     H_init = 1 * sum([X(i) for i in range(N)])
 
     # Problem Hamiltonian
-    H_prob = sum(
-        [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]
-    ) + sum([h[i] * Z(i) for i in range(N)])
+    H_prob = sum([sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]) + sum(
+        [h[i] * Z(i) for i in range(N)]
+    )
 
     # AGP as function of alpha
     if uniform_AGP_coeffs:
@@ -145,9 +138,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
 
         def nested_commutators(J, h):
             A_lam = -2 * [
-                h[i] * Y(i)
-                + sum([J[i][j] * (Y(i) * Z(j) + Z(i) * Y(j)) for j in range(i)])
-                for i in range(N)
+                h[i] * Y(i) + sum([J[i][j] * (Y(i) * Z(j) + Z(i) * Y(j)) for j in range(i)]) for i in range(N)
             ]
             return A_lam
 
@@ -162,9 +153,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
                 A = lam * h
                 B = 1 - lam
                 nom = np.sum(A + 4 * B * h)
-                denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(
-                    np.tril(J, -1).sum(axis=1)
-                )
+                denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
                 alph = nom / denom
                 alph = [alph] * N
                 return alph
@@ -174,12 +163,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
         def order1_nonuniform(J, h):
             def alpha(lam):
                 denom = [
-                    2
-                    * (
-                        (lam * h[i]) ** 2
-                        + (1 - lam) ** 2
-                        + lam**2 * sum([J[i][j] for j in range(N) if j != i])
-                    )
+                    2 * ((lam * h[i]) ** 2 + (1 - lam) ** 2 + lam**2 * sum([J[i][j] for j in range(N) if j != i]))
                     for i in range(N)
                 ]
                 alph = [h[i] / denom[i] for i in range(N)]
@@ -189,32 +173,18 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
 
         def nc_uniform(J, h):
             def alpha(lam):
-                S_hR = sum(
-                    [
-                        sum([J[i][j] ** 2 * (h[i] + h[j]) for i in range(j)])
-                        for j in range(N)
-                    ]
-                )
-                S_hsqR = sum(
-                    [
-                        sum([J[i][j] ** 2 * (h[i] ** 2 + h[j] ** 2) for i in range(j)])
-                        for j in range(N)
-                    ]
-                )
+                S_hR = sum([sum([J[i][j] ** 2 * (h[i] + h[j]) for i in range(j)]) for j in range(N)])
+                S_hsqR = sum([sum([J[i][j] ** 2 * (h[i] ** 2 + h[j] ** 2) for i in range(j)]) for j in range(N)])
                 S_2 = sum([sum([J[i][j] ** 2 for i in range(j)]) for j in range(N)])
                 S_4 = sum([sum([J[i][j] ** 4 for i in range(j)]) for j in range(N)])
-                R_i_list = [
-                    sum([J[i][j] ** 2 if j != i else 0 for j in range(N)])
-                    for i in range(N)
-                ]
+                R_i_list = [sum([J[i][j] ** 2 if j != i else 0 for j in range(N)]) for i in range(N)]
                 S_Rsq = sum(R_i**2 for R_i in R_i_list)
                 S_h = sum(h)
                 S_hsq = sum(i**2 for i in h)
 
                 nom = S_h + 2 * S_2
                 denom = 4 * (
-                    lam**2
-                    * (S_hsq + 2 * S_hsqR + 6 * S_hR + 2 * S_Rsq + 4 * S_2 - 2 * S_4)
+                    lam**2 * (S_hsq + 2 * S_hsqR + 6 * S_hR + 2 * S_Rsq + 4 * S_2 - 2 * S_4)
                     + (1 - lam) ** 2 * (N + 8 * S_2)
                 )
 
@@ -256,9 +226,9 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     H_init = 1 * sum([X(i) for i in range(N)])
 
     # Problem Hamiltonian
-    H_prob = sum(
-        [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]
-    ) + sum([h[i] * Z(i) for i in range(N)])
+    H_prob = sum([sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]) + sum(
+        [h[i] * Z(i) for i in range(N)]
+    )
 
     # AGP
     A_lam = build_agp(agp_type, J, h)
@@ -330,14 +300,10 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
         except KeyError:
             agp_type = "order1"
 
-        problem_operators = create_LCD_instance(
-            Q, agp_type=agp_type, uniform_AGP_coeffs=problem_args["uniform"]
-        )
+        problem_operators = create_LCD_instance(Q, agp_type=agp_type, uniform_AGP_coeffs=problem_args["uniform"])
 
     elif method == "COLD":
-        problem_operators = create_COLD_instance(
-            Q, uniform_AGP_coeffs=problem_args["uniform"]
-        )
+        problem_operators = create_COLD_instance(Q, uniform_AGP_coeffs=problem_args["uniform"])
 
     # Create qarg and problem instrance
     qarg = QuantumVariable(Q.shape[0])

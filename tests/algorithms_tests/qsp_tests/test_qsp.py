@@ -20,25 +20,28 @@ import numpy as np
 import pytest
 from qrisp import *
 from qrisp.gqsp import GQSP
-from qrisp.operators import X,Y,Z
+from qrisp.operators import X, Y, Z
 from scipy.linalg import expm
 
 
 def expvalm(poly, k, A):
     res = np.zeros(A.shape, dtype=complex)
     for ind, coeff in enumerate(poly):
-        res += coeff * expm(1.j * (ind - k) * A)
+        res += coeff * expm(1.0j * (ind - k) * A)
     return res
 
 
-@pytest.mark.parametrize("poly, k", [
-    (np.array([0.5, 0., 0.5]), 1), # cos
-    (np.array([1., 1.]), 0),
-])
+@pytest.mark.parametrize(
+    "poly, k",
+    [
+        (np.array([0.5, 0.0, 0.5]), 1),  # cos
+        (np.array([1.0, 1.0]), 0),
+    ],
+)
 def test_qsp(poly, k):
 
     # All terms in Hamiltonian commute -> e^{iH} is implemented exactly by trotterization
-    H = Z(0)*Z(1) + X(0)*X(1)
+    H = Z(0) * Z(1) + X(0) * X(1)
 
     # e^{iH}
     def U(operand):
@@ -47,7 +50,7 @@ def test_qsp(poly, k):
     def operand_prep():
         operand = QuantumVariable(2)
         return operand
-    
+
     @RUS
     def inner():
         operand = operand_prep()
@@ -59,16 +62,15 @@ def test_qsp(poly, k):
         return success_bool, operand
 
     @terminal_sampling
-    def main(): 
+    def main():
         qv = inner()
         return qv
-    
+
     res_dict = main()
-    res = np.array([res_dict.get(key, 0) for key in range(4)]) # Measurement probabilities
+    res = np.array([res_dict.get(key, 0) for key in range(4)])  # Measurement probabilities
 
     # Compare to target values
     H_arr = H.to_array()
-    res_numpy = expvalm(poly, k, H_arr) @ np.array([1,0,0,0])
+    res_numpy = expvalm(poly, k, H_arr) @ np.array([1, 0, 0, 0])
     res_numpy = np.abs(res_numpy / np.linalg.norm(res_numpy)) ** 2
     assert np.linalg.norm(res - res_numpy) < 1e-2
-

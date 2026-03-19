@@ -116,9 +116,7 @@ def QUBO_problem(Q):
     """
     from qrisp.qaoa import QAOAProblem, RX_mixer
 
-    return QAOAProblem(
-        create_QUBO_cost_operator(Q), RX_mixer, create_QUBO_cl_cost_function(Q)
-    )
+    return QAOAProblem(create_QUBO_cost_operator(Q), RX_mixer, create_QUBO_cl_cost_function(Q))
 
 
 def solve_QUBO(Q, depth, shots=5000, max_iter=50, backend=None):
@@ -203,9 +201,7 @@ def solve_QUBO(Q, depth, shots=5000, max_iter=50, backend=None):
     )  # runs the simulation
 
     # Calculate the cost for each solution
-    costs_and_solutions = [
-        (QUBO_obj(bitstring, Q), bitstring, res[bitstring]) for bitstring in res.keys()
-    ]
+    costs_and_solutions = [(QUBO_obj(bitstring, Q), bitstring, res[bitstring]) for bitstring in res.keys()]
 
     # Sort the solutions by their cost in ascending order
     sorted_costs_and_solutions = sorted(costs_and_solutions, key=itemgetter(0))

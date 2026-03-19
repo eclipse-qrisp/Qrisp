@@ -44,8 +44,7 @@ def test_singular_shift_static_power_of_2():
             shifted_bits = [expected_bits[-1]] + expected_bits[:-1]
             expected = sum(b << i for i, b in enumerate(shifted_bits))
             assert result == expected, (
-                f"Static singular_shift({n_bits}-bit, val={val}): "
-                f"got {result}, expected {expected}"
+                f"Static singular_shift({n_bits}-bit, val={val}): got {result}, expected {expected}"
             )
 
 
@@ -54,7 +53,7 @@ def test_singular_shift_static_non_power_of_2():
     from qrisp import QuantumFloat, singular_shift
 
     for n_bits in [3, 5, 6, 7]:
-        for val in [0, 1, 2**(n_bits - 1), 2**n_bits - 1]:
+        for val in [0, 1, 2 ** (n_bits - 1), 2**n_bits - 1]:
             qf = QuantumFloat(n_bits)
             qf[:] = val
             singular_shift(qf)
@@ -64,8 +63,7 @@ def test_singular_shift_static_non_power_of_2():
             shifted_bits = [expected_bits[-1]] + expected_bits[:-1]
             expected = sum(b << i for i, b in enumerate(shifted_bits))
             assert result == expected, (
-                f"Static singular_shift({n_bits}-bit, val={val}): "
-                f"got {result}, expected {expected}"
+                f"Static singular_shift({n_bits}-bit, val={val}): got {result}, expected {expected}"
             )
 
 
@@ -88,8 +86,7 @@ def test_singular_shift_dynamic_power_of_2():
             shifted_bits = [expected_bits[-1]] + expected_bits[:-1]
             expected = sum(b << i for i, b in enumerate(shifted_bits))
             assert result == expected, (
-                f"Dynamic singular_shift({n_bits}-bit, val={val}): "
-                f"got {result}, expected {expected}"
+                f"Dynamic singular_shift({n_bits}-bit, val={val}): got {result}, expected {expected}"
             )
 
 
@@ -105,15 +102,14 @@ def test_singular_shift_dynamic_non_power_of_2():
         return measure(qf)
 
     for n_bits in [3, 5, 6, 7]:
-        for val in [0, 1, 2**(n_bits - 1), 2**n_bits - 1]:
+        for val in [0, 1, 2 ** (n_bits - 1), 2**n_bits - 1]:
             result = run_singular_shift(val, n_bits)
 
             expected_bits = [(val >> i) & 1 for i in range(n_bits)]
             shifted_bits = [expected_bits[-1]] + expected_bits[:-1]
             expected = sum(b << i for i, b in enumerate(shifted_bits))
             assert result == expected, (
-                f"Dynamic singular_shift({n_bits}-bit, val={val}): "
-                f"got {result}, expected {expected}"
+                f"Dynamic singular_shift({n_bits}-bit, val={val}): got {result}, expected {expected}"
             )
 
 
@@ -122,7 +118,7 @@ def test_singular_shift_saeedi_static():
     from qrisp import QuantumFloat, singular_shift
 
     for n_bits in [3, 4, 5]:
-        for val in [0, 1, 2**(n_bits - 1), 2**n_bits - 1]:
+        for val in [0, 1, 2 ** (n_bits - 1), 2**n_bits - 1]:
             qf = QuantumFloat(n_bits)
             qf[:] = val
             singular_shift(qf, use_saeedi=True)
@@ -132,8 +128,7 @@ def test_singular_shift_saeedi_static():
             shifted_bits = [expected_bits[-1]] + expected_bits[:-1]
             expected = sum(b << i for i, b in enumerate(shifted_bits))
             assert result == expected, (
-                f"Static singular_shift(saeedi, {n_bits}-bit, val={val}): "
-                f"got {result}, expected {expected}"
+                f"Static singular_shift(saeedi, {n_bits}-bit, val={val}): got {result}, expected {expected}"
             )
 
 
@@ -149,15 +144,14 @@ def test_singular_shift_saeedi_dynamic():
         return measure(qf)
 
     for n_bits in [3, 4, 5]:
-        for val in [0, 1, 2**(n_bits - 1), 2**n_bits - 1]:
+        for val in [0, 1, 2 ** (n_bits - 1), 2**n_bits - 1]:
             result = run_singular_shift_saeedi(val, n_bits)
 
             expected_bits = [(val >> i) & 1 for i in range(n_bits)]
             shifted_bits = [expected_bits[-1]] + expected_bits[:-1]
             expected = sum(b << i for i, b in enumerate(shifted_bits))
             assert result == expected, (
-                f"Dynamic singular_shift(saeedi, {n_bits}-bit, val={val}): "
-                f"got {result}, expected {expected}"
+                f"Dynamic singular_shift(saeedi, {n_bits}-bit, val={val}): got {result}, expected {expected}"
             )
 
 
@@ -184,8 +178,7 @@ def test_singular_shift_static_vs_dynamic_consistency():
             dynamic_result = run_dynamic(val, n_bits)
 
             assert static_result == dynamic_result, (
-                f"Mismatch ({n_bits}-bit, val={val}): "
-                f"static={static_result}, dynamic={dynamic_result}"
+                f"Mismatch ({n_bits}-bit, val={val}): static={static_result}, dynamic={dynamic_result}"
             )
 
 
@@ -199,7 +192,7 @@ def test_cyclic_shift_static_shift_1():
     from qrisp import QuantumFloat, cyclic_shift
 
     for n_bits in [3, 4, 5, 6]:
-        for val in [0, 1, 2**(n_bits - 1), 2**n_bits - 1]:
+        for val in [0, 1, 2 ** (n_bits - 1), 2**n_bits - 1]:
             qf = QuantumFloat(n_bits)
             qf[:] = val
             cyclic_shift(qf, shift_amount=1)
@@ -209,8 +202,7 @@ def test_cyclic_shift_static_shift_1():
             shifted_bits = [expected_bits[-1]] + expected_bits[:-1]
             expected = sum(b << i for i, b in enumerate(shifted_bits))
             assert result == expected, (
-                f"Static cyclic_shift(1, {n_bits}-bit, val={val}): "
-                f"got {result}, expected {expected}"
+                f"Static cyclic_shift(1, {n_bits}-bit, val={val}): got {result}, expected {expected}"
             )
 
 
@@ -226,15 +218,14 @@ def test_cyclic_shift_dynamic_shift_1():
         return measure(qf)
 
     for n_bits in [3, 4, 5, 6]:
-        for val in [0, 1, 2**(n_bits - 1), 2**n_bits - 1]:
+        for val in [0, 1, 2 ** (n_bits - 1), 2**n_bits - 1]:
             result = run_cyclic_shift(val, n_bits)
 
             expected_bits = [(val >> i) & 1 for i in range(n_bits)]
             shifted_bits = [expected_bits[-1]] + expected_bits[:-1]
             expected = sum(b << i for i, b in enumerate(shifted_bits))
             assert result == expected, (
-                f"Dynamic cyclic_shift(1, {n_bits}-bit, val={val}): "
-                f"got {result}, expected {expected}"
+                f"Dynamic cyclic_shift(1, {n_bits}-bit, val={val}): got {result}, expected {expected}"
             )
 
 
@@ -257,8 +248,7 @@ def test_cyclic_shift_static_positive_shifts():
             expected = sum(b << i for i, b in enumerate(bits))
 
             assert result == expected, (
-                f"Static cyclic_shift({shift}, {n_bits}-bit, val={val}): "
-                f"got {result}, expected {expected}"
+                f"Static cyclic_shift({shift}, {n_bits}-bit, val={val}): got {result}, expected {expected}"
             )
 
 
@@ -285,8 +275,7 @@ def test_cyclic_shift_dynamic_positive_shifts():
             expected = sum(b << i for i, b in enumerate(bits))
 
             assert result == expected, (
-                f"Dynamic cyclic_shift({shift}, {n_bits}-bit, val={val}): "
-                f"got {result}, expected {expected}"
+                f"Dynamic cyclic_shift({shift}, {n_bits}-bit, val={val}): got {result}, expected {expected}"
             )
 
 
@@ -309,8 +298,7 @@ def test_cyclic_shift_static_negative_shifts():
             expected = sum(b << i for i, b in enumerate(bits))
 
             assert result == expected, (
-                f"Static cyclic_shift({shift}, {n_bits}-bit, val={val}): "
-                f"got {result}, expected {expected}"
+                f"Static cyclic_shift({shift}, {n_bits}-bit, val={val}): got {result}, expected {expected}"
             )
 
 
@@ -337,8 +325,7 @@ def test_cyclic_shift_dynamic_negative_shifts():
             expected = sum(b << i for i, b in enumerate(bits))
 
             assert result == expected, (
-                f"Dynamic cyclic_shift({shift}, {n_bits}-bit, val={val}): "
-                f"got {result}, expected {expected}"
+                f"Dynamic cyclic_shift({shift}, {n_bits}-bit, val={val}): got {result}, expected {expected}"
             )
 
 
@@ -367,8 +354,7 @@ def test_cyclic_shift_static_vs_dynamic_consistency():
             dynamic_result = run_dynamic(val)
 
             assert static_result == dynamic_result, (
-                f"Mismatch (shift={shift}, val={val}): "
-                f"static={static_result}, dynamic={dynamic_result}"
+                f"Mismatch (shift={shift}, val={val}): static={static_result}, dynamic={dynamic_result}"
             )
 
 
@@ -384,10 +370,7 @@ def test_cyclic_shift_roundtrip_static():
             cyclic_shift(qf, shift_amount=shift)
             cyclic_shift(qf, shift_amount=-shift)
             result = list(qf.get_measurement().keys())[0]
-            assert result == val, (
-                f"Static roundtrip (shift={shift}, val={val}): "
-                f"got {result}, expected {val}"
-            )
+            assert result == val, f"Static roundtrip (shift={shift}, val={val}): got {result}, expected {val}"
 
 
 def test_cyclic_shift_roundtrip_dynamic():
@@ -407,10 +390,7 @@ def test_cyclic_shift_roundtrip_dynamic():
 
         for val in [0, 1, 7, 16, 31]:
             result = run_roundtrip(val)
-            assert result == val, (
-                f"Dynamic roundtrip (shift={shift}, val={val}): "
-                f"got {result}, expected {val}"
-            )
+            assert result == val, f"Dynamic roundtrip (shift={shift}, val={val}): got {result}, expected {val}"
 
 
 def test_cyclic_shift_full_rotation_static():
@@ -423,10 +403,7 @@ def test_cyclic_shift_full_rotation_static():
             qf[:] = val
             cyclic_shift(qf, shift_amount=n_bits)
             result = list(qf.get_measurement().keys())[0]
-            assert result == val, (
-                f"Static full rotation ({n_bits}-bit, val={val}): "
-                f"got {result}, expected {val}"
-            )
+            assert result == val, f"Static full rotation ({n_bits}-bit, val={val}): got {result}, expected {val}"
 
 
 def test_cyclic_shift_full_rotation_dynamic():
@@ -444,10 +421,7 @@ def test_cyclic_shift_full_rotation_dynamic():
 
         for val in [0, 1, 2**n_bits - 1]:
             result = run_full_rotation(val)
-            assert result == val, (
-                f"Dynamic full rotation ({n_bits}-bit, val={val}): "
-                f"got {result}, expected {val}"
-            )
+            assert result == val, f"Dynamic full rotation ({n_bits}-bit, val={val}): got {result}, expected {val}"
 
 
 def test_cyclic_shift_quantum_array_static():
@@ -459,9 +433,7 @@ def test_cyclic_shift_quantum_array_static():
     cyclic_shift(qa, shift_amount=1)
     result = list(qa.get_measurement().keys())[0]
     expected = np.array([3, 0, 1, 2])
-    assert np.array_equal(result, expected), (
-        f"Static QuantumArray cyclic_shift: got {result}, expected {expected}"
-    )
+    assert np.array_equal(result, expected), f"Static QuantumArray cyclic_shift: got {result}, expected {expected}"
 
 
 def test_cyclic_shift_quantum_array_shift_2_static():
@@ -473,6 +445,4 @@ def test_cyclic_shift_quantum_array_shift_2_static():
     cyclic_shift(qa, shift_amount=2)
     result = list(qa.get_measurement().keys())[0]
     expected = np.array([6, 7, 0, 1, 2, 3, 4, 5])
-    assert np.array_equal(result, expected), (
-        f"Static QuantumArray cyclic_shift(2): got {result}, expected {expected}"
-    )
+    assert np.array_equal(result, expected), f"Static QuantumArray cyclic_shift(2): got {result}, expected {expected}"

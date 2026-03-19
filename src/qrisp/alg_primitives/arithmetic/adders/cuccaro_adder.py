@@ -15,6 +15,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
+
 from qrisp.core import QuantumVariable, x, cx, mcx
 from qrisp.qtypes import QuantumFloat
 from qrisp.environments import conjugate, custom_control
@@ -22,8 +23,9 @@ from qrisp.misc import int_encoder
 from qrisp.jasp import jrange, jlen
 import jax.numpy as jnp
 
+
 @custom_control
-def cuccaro_adder(a, b, c_out=None, ctrl = None):
+def cuccaro_adder(a, b, c_out=None, ctrl=None):
     """In-place adder as introduced in https://arxiv.org/abs/quant-ph/0410184
 
     This function works in both static and dynamic modes. The allowed inputs are both quantum types or one classical
@@ -34,11 +36,11 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
     The custom control implementation is based on Theorem 2.12 of https://arxiv.org/abs/2407.20167
 
     .. note::
-    
-        If the first input is quantum and the second classical, the function cannot work as addition is 
-        performed "in-place" on the second input. 
 
-    
+        If the first input is quantum and the second classical, the function cannot work as addition is
+        performed "in-place" on the second input.
+
+
     Parameters
     ----------
     a : int or QuantumVariable
@@ -52,12 +54,12 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
     ------
     ValueError
         If the inputs are not valid quantum or classical types.
-    
+
     Returns
     -------
     None
         The function modifies the second input in place.
-    
+
     Examples
     --------
     Static mode with both quantum inputs:
@@ -80,22 +82,21 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
         with conjugate(int_encoder)(q_a, a):
             # begin with q_a in the state |a>
             if c_out is not None:
-                cuccaro_adder(q_a, b, c_out = c_out)
+                cuccaro_adder(q_a, b, c_out=c_out)
             elif ctrl is not None:
-                cuccaro_adder(q_a, b, ctrl = ctrl)
+                cuccaro_adder(q_a, b, ctrl=ctrl)
             elif ctrl is not None and c_out is not None:
-                cuccaro_adder(q_a, b, c_out = c_out, ctrl = ctrl)
+                cuccaro_adder(q_a, b, c_out=c_out, ctrl=ctrl)
             else:
                 cuccaro_adder(q_a, b)
-        
+
         # outside the conjugation, q_a is back in the state |0> and the addition has been performed on b
         # delete the temporary quantum variable created for the classical input
         q_a.delete()
         return
-    
+
     if not isinstance(b, QuantumVariable):
         raise ValueError("The second argument must be of type QuantumVariable.")
-    
 
     # when the inputs are of unequal length
     # pad the size of the input with the smaller size
@@ -129,7 +130,7 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
 
     # iterator maj gate application
     from qrisp.jasp import jrange
-    
+
     for i in jrange(1, dim_a):
         cx(a[i], b[i])
         cx(a[i], a[i - 1])
@@ -140,7 +141,6 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
         cx(a[-1], ancilla2[0])
 
     if ctrl is None:
-
         # iterator uma gate application
         for j in jrange(dim_a - 1):
             # reverse the iteration
@@ -160,25 +160,23 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
         x(b[0])
         cx(a[0], ancilla[0])
         cx(a[0], b[0])
-    
-    else:
 
+    else:
         # iterator uma gate application
         for j in jrange(dim_a - 1):
             # reverse the iteration
             i = dim_a - j - 1
 
             mcx([a[i - 1], b[i]], a[i])
-            mcx([ctrl, a[i-1]], b[i])
+            mcx([ctrl, a[i - 1]], b[i])
             cx(a[i], a[i - 1])
             cx(a[i], b[i])
-        
+
         # last uma gate application
         mcx([ancilla[0], b[0]], a[0])
         mcx([ctrl, ancilla[0]], b[0])
         cx(a[0], ancilla[0])
         cx(a[0], b[0])
-    
 
     # delete the ancilla used for carry bits
     ancilla.delete()

@@ -84,16 +84,12 @@ class Qubit:
 
     def __add__(self, other):
         if not isinstance(other, (list, Qubit)):
-            raise Exception(
-                f"Tried to add Qubit to type {type(other)} (only list ist possible)"
-            )
+            raise Exception(f"Tried to add Qubit to type {type(other)} (only list ist possible)")
         if isinstance(other, Qubit):
             return [self] + [other]
         return [self] + other
 
     def __radd__(self, other):
         if not isinstance(other, list):
-            raise Exception(
-                f"Tried to add Qubit to type {type(other)} (only list ist possible)"
-            )
+            raise Exception(f"Tried to add Qubit to type {type(other)} (only list ist possible)")
         return other + [self]

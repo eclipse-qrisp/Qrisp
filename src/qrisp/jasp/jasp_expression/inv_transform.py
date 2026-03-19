@@ -188,17 +188,11 @@ def invert_jaspr(jaspr):
             processed_tracers = []
 
             for expr in params:
-                processed_tracers.append(
-                    lambdify(symbols, expr, modules="jax")(*tracers)
-                )
+                processed_tracers.append(lambdify(symbols, expr, modules="jax")(*tracers))
 
-            new_gate = eqn.params["gate"].bind_parameters(
-                {symbols[i]: params[i] for i in range(len(params))}
-            )
+            new_gate = eqn.params["gate"].bind_parameters({symbols[i]: params[i] for i in range(len(params))})
 
-            outvalues = quantum_gate_p.bind(
-                *(invals[:num_qubits] + processed_tracers + [invals[-1]]), gate=new_gate
-            )
+            outvalues = quantum_gate_p.bind(*(invals[:num_qubits] + processed_tracers + [invals[-1]]), gate=new_gate)
 
             insert_outvalues(eqn, context_dic, outvalues)
 
@@ -274,9 +268,7 @@ def invert_loop_body(jaxpr):
         if increment_eqn.invars[1].val != 1:
             raise
     except:
-        raise Exception(
-            "Dynamic loop inversion is only supported for loops the have step size 1."
-        )
+        raise Exception("Dynamic loop inversion is only supported for loops the have step size 1.")
 
     # Create the decrement equation
     decrement_eqn = JaxprEqn(

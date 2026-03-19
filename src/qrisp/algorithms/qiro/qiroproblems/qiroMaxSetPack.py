@@ -38,11 +38,7 @@ def transform_max_set_pack_to_mis(problem):
     """
 
     def non_empty_intersection(problem):
-        return [
-            (i, j)
-            for (i, s1), (j, s2) in combinations(enumerate(problem), 2)
-            if s1.intersection(s2)
-        ]
+        return [(i, j) for (i, s1), (j, s2) in combinations(enumerate(problem), 2) if s1.intersection(s2)]
 
     # create constraint graph
     G = nx.Graph()

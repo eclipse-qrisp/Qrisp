@@ -75,12 +75,8 @@ m = 100
 
 start_time = time.time()
 for i in range(int(m)):
-    param_values = [
-        random.randint(0, 100) / 100 * 2 * np.pi for j in range(len(parameter_list))
-    ]
-    qc.bind_parameters(
-        {parameter_list[j]: param_values[j] for j in range(len(parameter_list))}
-    )
+    param_values = [random.randint(0, 100) / 100 * 2 * np.pi for j in range(len(parameter_list))]
+    qc.bind_parameters({parameter_list[j]: param_values[j] for j in range(len(parameter_list))})
 
 duration = time.time() - start_time
 

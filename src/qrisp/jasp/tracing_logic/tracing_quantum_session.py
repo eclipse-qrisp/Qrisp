@@ -102,15 +102,12 @@ class TracingQuantumSession:
             )
 
         if len(clbits):
-            raise Exception(
-                "Tried to append Operation with non-zero classical bits in JAX mode."
-            )
+            raise Exception("Tried to append Operation with non-zero classical bits in JAX mode.")
 
         from qrisp.core import QuantumVariable, QuantumArray
         from qrisp.jasp import jrange
 
         if isinstance(qubits[0], (QuantumVariable, DynamicQubitArray)):
-
             for i in jrange(qubits[0].size):
                 self.append(
                     operation,
@@ -120,7 +117,6 @@ class TracingQuantumSession:
             return
 
         elif isinstance(qubits[0], list):
-
             for i in range(len(qubits[0])):
                 self.append(
                     operation,
@@ -130,7 +126,6 @@ class TracingQuantumSession:
             return
 
         elif isinstance(qubits[0], QuantumArray):
-
             for i in range(1, len(qubits)):
                 if not isinstance(qubits[i], QuantumArray):
                     raise Exception(
@@ -138,9 +133,7 @@ class TracingQuantumSession:
                     )
 
                 if qubits[i].shape != qubits[0].shape:
-                    raise Exception(
-                        "Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape."
-                    )
+                    raise Exception("Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape.")
 
             flattened_qubits = [qubits[i].flatten() for i in range(len(qubits))]
 
@@ -158,9 +151,7 @@ class TracingQuantumSession:
         for i in range(len(temp_op.params)):
             temp_op.params[i] = greek_letters[i]
 
-        self.abs_qst = quantum_gate_p.bind(
-            *([b for b in qubits] + param_tracers + [self.abs_qst]), gate=operation
-        )
+        self.abs_qst = quantum_gate_p.bind(*([b for b in qubits] + param_tracers + [self.abs_qst]), gate=operation)
 
     def register_qv(self, qv, size):
 
@@ -197,9 +188,7 @@ class TracingQuantumSession:
 
         # Check if quantum variable appears in this session
         if qv.name not in [qv.name for qv in self.qv_list]:
-            raise Exception(
-                "Tried to remove a non existent quantum variable from quantum session"
-            )
+            raise Exception("Tried to remove a non existent quantum variable from quantum session")
 
         self.clear_qubits(qv.reg, verify)
 

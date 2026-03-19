@@ -25,10 +25,14 @@ from qrisp.jasp import terminal_sampling
 
 def test_cks_matrix_rus():
 
-    A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
-                [0.14516978, 0.68701415, -0.04929867, -0.00999921],
-                [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
-                [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
+    A = np.array(
+        [
+            [0.73255474, 0.14516978, -0.14510851, -0.0391581],
+            [0.14516978, 0.68701415, -0.04929867, -0.00999921],
+            [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
+            [-0.0391581, -0.00999921, -0.03420339, 0.58862043],
+        ]
+    )
 
     b = np.array([0, 1, 1, 1])
 
@@ -54,10 +58,14 @@ def test_cks_matrix_rus():
 
 def test_cks_matrix_post_selection():
 
-    A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
-                [0.14516978, 0.68701415, -0.04929867, -0.00999921],
-                [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
-                [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
+    A = np.array(
+        [
+            [0.73255474, 0.14516978, -0.14510851, -0.0391581],
+            [0.14516978, 0.68701415, -0.04929867, -0.00999921],
+            [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
+            [-0.0391581, -0.00999921, -0.03420339, 0.58862043],
+        ]
+    )
 
     b = np.array([0, 1, 1, 1])
 
@@ -68,7 +76,7 @@ def test_cks_matrix_post_selection():
         qv = QuantumFloat(2)
         prepare(qv, b)
         return qv
-    
+
     def main():
         operand = b_prep()
         ancillas = BE_CKS.apply(operand)
@@ -78,8 +86,7 @@ def test_cks_matrix_post_selection():
     res_dict = multi_measurement([operand] + ancillas)
 
     # Post-selection on ancillas being in |0> state
-    filtered_dict = {k[0]: p for k, p in res_dict.items() \
-                    if all(x == 0 for x in k[1:])}
+    filtered_dict = {k[0]: p for k, p in res_dict.items() if all(x == 0 for x in k[1:])}
     success_prob = sum(filtered_dict.values())
     filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
     amps = np.sqrt([filtered_dict.get(i, 0) for i in range(len(b))])
@@ -92,8 +99,8 @@ def test_cks_3_sparse_matrix_8x8():
 
     def tridiagonal_shifted(n, mu=1.0, dtype=float):
         I = np.eye(n, dtype=dtype)
-        return (2 + mu) * I - 2*np.eye(n, k=n//2, dtype=dtype) - 2*np.eye(n, k=-n//2, dtype=dtype)
-    
+        return (2 + mu) * I - 2 * np.eye(n, k=n // 2, dtype=dtype) - 2 * np.eye(n, k=-n // 2, dtype=dtype)
+
     n = 8
     A = tridiagonal_shifted(n, mu=3)
     b = b = np.array([0, 1, 1, 1, 0, 1, 1, 1])
@@ -122,22 +129,22 @@ def test_cks_custom_block_encoding_hermitian():
 
     def tridiagonal_shifted(n, mu=1.0, dtype=float):
         I = np.eye(n, dtype=dtype)
-        A =  (2 + mu) * I - 2*np.eye(n, k=n//2, dtype=dtype) - 2*np.eye(n, k=-n//2, dtype=dtype)
+        A = (2 + mu) * I - 2 * np.eye(n, k=n // 2, dtype=dtype) - 2 * np.eye(n, k=-n // 2, dtype=dtype)
         return A
-    
+
     n = 4
     A = tridiagonal_shifted(n, mu=3)
     b = np.array([0, 1, 1, 1])
-    
+
     def U0(qv):
         pass
 
     def U1(qv):
-        qv += n//2
+        qv += n // 2
         gphase(np.pi, qv[0])
 
     def U2(qv):
-        qv -= n//2
+        qv -= n // 2
         gphase(np.pi, qv[0])
 
     unitaries = [U0, U1, U2]
@@ -171,10 +178,10 @@ def test_cks_custom_block_encoding_not_hermitian():
         A[0, n - 1] = -1
         A[n - 1, 0] = -1
         return A
-    
+
     A = tridiagonal_shifted(4, mu=3)
     b = np.array([0, 1, 1, 1])
-    
+
     def U0(qv):
         pass
 

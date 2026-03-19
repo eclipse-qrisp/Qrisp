@@ -44,7 +44,6 @@ def jasp_qq_gidney_adder(a, b, ctrl=None):
 
     # If the addition is only a single qubit, it can be done with a CX gate (below)
     with control(n > 1):
-
         # Allocate the ancillae
         gidney_anc = QuantumVariable(n - 1, name="gidney_anc*")
 
@@ -67,7 +66,6 @@ def jasp_qq_gidney_adder(a, b, ctrl=None):
         # We solve this issue by performing a 1-incrementation on the remainder
         # if the carry out value is True
         with control(perform_incrementation):
-
             # Compute the carry out similar to the loop above
 
             carry_out = QuantumBool()
@@ -135,7 +133,6 @@ def jasp_qq_gidney_adder(a, b, ctrl=None):
         gidney_anc.delete()
 
     with control((n == 1) & perform_incrementation):
-
         ctrl_list = [a[0], b[0]]
 
         if ctrl is not None:

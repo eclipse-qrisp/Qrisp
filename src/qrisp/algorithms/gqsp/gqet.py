@@ -162,10 +162,7 @@ def GQET(
 
     ALLOWED_KINDS = {"Polynomial", "Chebyshev"}
     if kind not in ALLOWED_KINDS:
-        raise ValueError(
-            f"Invalid kind specified: '{kind}'. "
-            f"Allowed kinds are: {', '.join(ALLOWED_KINDS)}"
-        )
+        raise ValueError(f"Invalid kind specified: '{kind}'. Allowed kinds are: {', '.join(ALLOWED_KINDS)}")
 
     if isinstance(H, (QubitOperator, FermionicOperator)):
         H = BlockEncoding.from_operator(H)

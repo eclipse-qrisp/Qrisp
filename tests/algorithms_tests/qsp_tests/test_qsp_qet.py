@@ -28,7 +28,7 @@ from qrisp.vqe.problems.heisenberg import create_heisenberg_init_function
 
 def generate_1D_chain_graph(L):
     graph = nx.Graph()
-    graph.add_edges_from([(k, (k+1)%L) for k in range(L-1)]) 
+    graph.add_edges_from([(k, (k + 1) % L) for k in range(L - 1)])
     return graph
 
 
@@ -37,26 +37,28 @@ def polyvalm(poly, A):
     I = np.eye(A.shape[0])
     res = np.eye(A.shape[0])
     for i in range(len(roots)):
-        res = (A - roots[i]*I) @ res
+        res = (A - roots[i] * I) @ res
     return res
 
 
-@pytest.mark.parametrize("L, poly", [
-    (6, np.array([1., 1.])),
-    (6, np.array([1., 2., 1.])),
-    (6, np.array([0., 1., 0., -1.])),
-])
+@pytest.mark.parametrize(
+    "L, poly",
+    [
+        (6, np.array([1.0, 1.0])),
+        (6, np.array([1.0, 2.0, 1.0])),
+        (6, np.array([0.0, 1.0, 0.0, -1.0])),
+    ],
+)
 def test_qsp_qet(L, poly):
 
-    # Define Heisenberg Hamiltonian 
+    # Define Heisenberg Hamiltonian
     G = generate_1D_chain_graph(L)
-    H = sum((X(i)*X(j) + Y(i)*Y(j) + Z(i)*Z(j)) for i,j in G.edges())
+    H = sum((X(i) * X(j) + Y(i) * Y(j) + Z(i) * Z(j)) for i, j in G.edges())
     M = nx.maximal_matching(G)
     U0 = create_heisenberg_init_function(M)
 
     # Block encoding for poly(H)
     BE = GQET(H, poly, kind="Polynomial")
-
 
     # Define initial state preparation function
     def psi_prep():
@@ -64,17 +66,14 @@ def test_qsp_qet(L, poly):
         U0(operand)
         return operand
 
-
     def transformed_psi_prep():
         operand = BE.apply_rus(psi_prep)()
         return operand
-    
 
     @jaspify(terminal_sampling=True)
-    def main(): 
+    def main():
         E = H.expectation_value(transformed_psi_prep, precision=0.001)()
         return E
-
 
     # Calculate the energy
     E0 = H.expectation_value(psi_prep, precision=0.001)()

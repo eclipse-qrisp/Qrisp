@@ -97,9 +97,7 @@ def _normalize_meas_behavior(meas_behavior) -> Callable:
             return always_one
         if meas_behavior == "sim":
             return simulation
-        raise ValueError(
-            f"Don't know how to compute required resources via method {meas_behavior}"
-        )
+        raise ValueError(f"Don't know how to compute required resources via method {meas_behavior}")
 
     if callable(meas_behavior):
         return meas_behavior
@@ -269,17 +267,13 @@ def count_ops(meas_behavior: str | Callable) -> Callable:
                 function.jaspr_dict = {}
 
             signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(
-                arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape")
-            )
+            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
             hash_key = (signature, shape_signature, hash(meas_behavior))
 
             if hash_key not in function.jaspr_dict:
                 function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
-            return function.jaspr_dict[hash_key].count_ops(
-                *args, meas_behavior=meas_behavior
-            )
+            return function.jaspr_dict[hash_key].count_ops(*args, meas_behavior=meas_behavior)
 
         return ops_counter
 
@@ -393,8 +387,8 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
 
         -   The memory management operations ``reset`` and ``delete`` are currently ignored.
             Qubits freed by these calls still count toward the ``max_qubits`` limit.
-        
-        -   This metric can currently handle the slice operation correctly only when 
+
+        -   This metric can currently handle the slice operation correctly only when
             the lower bound of the slice is strictly smaller than the upper bound.
 
     """
@@ -408,17 +402,13 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
                 function.jaspr_dict = {}
 
             signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(
-                arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape")
-            )
+            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
             hash_key = (signature, shape_signature, hash(meas_behavior))
 
             if hash_key not in function.jaspr_dict:
                 function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
-            return function.jaspr_dict[hash_key].depth(
-                *args, meas_behavior=meas_behavior, max_qubits=max_qubits
-            )
+            return function.jaspr_dict[hash_key].depth(*args, meas_behavior=meas_behavior, max_qubits=max_qubits)
 
         return depth_counter
 
@@ -576,9 +566,7 @@ def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Ca
                 function.jaspr_dict = {}
 
             signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(
-                arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape")
-            )
+            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
             hash_key = (signature, shape_signature, hash(meas_behavior))
 
             if hash_key not in function.jaspr_dict:
@@ -593,9 +581,7 @@ def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Ca
     return num_qubits_decorator
 
 
-def profile_jaspr(
-    jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0", **kwargs: Any
-) -> Callable:
+def profile_jaspr(jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0", **kwargs: Any) -> Callable:
     """
     Profile a Jaspr according to a given metric mode.
 
@@ -627,10 +613,7 @@ def profile_jaspr(
     meas_behavior_callable = _normalize_meas_behavior(meas_behavior)
     metric_spec = METRIC_DISPATCH[mode]
 
-    if (
-        meas_behavior_callable.__name__ == "simulation"
-        and metric_spec.simulate_fallback is not None
-    ):
+    if meas_behavior_callable.__name__ == "simulation" and metric_spec.simulate_fallback is not None:
 
         @wraps(metric_spec.simulate_fallback)
         def simulation_wrapper(*args):

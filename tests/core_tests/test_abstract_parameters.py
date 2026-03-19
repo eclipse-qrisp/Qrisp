@@ -77,18 +77,14 @@ def test_abstract_parameters():
 
     for i in range(n):
         qc.cx(i, i + 1)
-        qc.p(parameter_list[i]**(i%10), i)
+        qc.p(parameter_list[i] ** (i % 10), i)
 
     m = 100
 
     start_time = time.time()
     for i in range(int(m)):
-        param_values = [
-            random.randint(0, 100) / 100 * 2 * np.pi for j in range(len(parameter_list))
-        ]
-        qc.bind_parameters(
-            {parameter_list[j]: param_values[j] for j in range(len(parameter_list))}
-        )
+        param_values = [random.randint(0, 100) / 100 * 2 * np.pi for j in range(len(parameter_list))]
+        qc.bind_parameters({parameter_list[j]: param_values[j] for j in range(len(parameter_list))})
 
     duration = time.time() - start_time
-    print("Took " + str(duration/m) + " per binding iteration")
+    print("Took " + str(duration / m) + " per binding iteration")

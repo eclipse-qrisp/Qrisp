@@ -161,7 +161,6 @@ class InstructionNode(UnqompNode):
 # As a subclass of networkx's DiGraph, it can be processed by
 # many of networkx's algorithms.
 class PermeabilityGraph(nx.DiGraph):
-
     def __init__(self, qc, remove_artificials=False):
 
         nx.DiGraph.__init__(self)
@@ -171,9 +170,7 @@ class PermeabilityGraph(nx.DiGraph):
         # which describes which nodes represent the
         # operations that have been carried ot most
         # recently on the corresponding Qubit.
-        self.recent_node_dic = dag_from_qc(
-            self, qc, remove_artificials=remove_artificials
-        )
+        self.recent_node_dic = dag_from_qc(self, qc, remove_artificials=remove_artificials)
 
     # Visualizes the DAG
     def draw(self, layout_seed=None):
@@ -242,9 +239,7 @@ class PermeabilityGraph(nx.DiGraph):
         if self.has_edge(in_node, out_node):
             nx.DiGraph.get_edge_data(self, in_node, out_node)["qubits"].extend(qubits)
         else:
-            nx.DiGraph.add_edge(
-                self, in_node, out_node, edge_type=edge_type, qubits=list(qubits)
-            )
+            nx.DiGraph.add_edge(self, in_node, out_node, edge_type=edge_type, qubits=list(qubits))
 
     def get_target_qubits(self, node):
         """
@@ -405,9 +400,7 @@ class PermeabilityGraph(nx.DiGraph):
 
     def get_streak_children(self, node, qb):
         successors = self.successors(node)
-        return [
-            suc for suc in successors if qb in self.get_edge_data(node, suc)["qubits"]
-        ]
+        return [suc for suc in successors if qb in self.get_edge_data(node, suc)["qubits"]]
 
     def get_edge_type(self, node_out, node_in):
         return self.get_edge_data(node_out, node_in)["edge_type"]
@@ -455,22 +448,18 @@ def dag_from_qc(dag, qc, remove_artificials=False):
 
     # We iterate through the QuantumCircuit and process each Instruction
     for i in range(len(qc.data)):
-
         # Set alias
         instr = qc.data[i]
 
         # We check whether the relevant Qubit already have an allocation node.
         for qb in instr.qubits:
             if qb not in recent_node_dic:
-
                 # If the qubit has not been allocated yet but the first instruction being
                 # executed is not an allocation, we insert and "artificial" allocation node
                 is_artificial = instr.op.name != "qb_alloc"
 
                 # Create the allocation node.
-                alloc_node = AllocNode(
-                    instr=Instruction(QubitAlloc(), [qb]), artificial=is_artificial
-                )
+                alloc_node = AllocNode(instr=Instruction(QubitAlloc(), [qb]), artificial=is_artificial)
 
                 if alloc_node.artificial:
                     artificial_init_nodes.append(alloc_node)
@@ -527,7 +516,6 @@ def dag_from_qc(dag, qc, remove_artificials=False):
 
         # To connect the edges, we iterate over each qubit
         for j in range(len(instr.qubits)):
-
             # Set alias
             qb = instr.qubits[j]
 
@@ -536,26 +524,18 @@ def dag_from_qc(dag, qc, remove_artificials=False):
 
             # Case streak is continued
             if streak_dic[qb] == edge_type and edge_type != "neutral":
-                dag.add_edge(
-                    recent_node_dic[qb], node, edge_type=edge_type, qubits=[qb]
-                )
+                dag.add_edge(recent_node_dic[qb], node, edge_type=edge_type, qubits=[qb])
 
             # Case streak is terminated or edge_type is neutral
             else:
-
                 # If the streak has more than one member, we insert a terminator node.
                 # For that, we get the successors and filter out the edges that don't
                 # describe the relevant qubit
                 successors = list(dag.successors(recent_node_dic[qb]))
-                streak_members = [
-                    s
-                    for s in successors
-                    if qb in dag.get_edge_qubits(recent_node_dic[qb], s)
-                ]
+                streak_members = [s for s in successors if qb in dag.get_edge_qubits(recent_node_dic[qb], s)]
 
                 # Insert the terminator if there are more than one streak_member to our qubit
                 if len(streak_members) > 1:
-
                     # Create the TerminatorNode
                     terminator = TerminatorNode(qb)
                     # dag.add_node(terminator)
@@ -570,11 +550,8 @@ def dag_from_qc(dag, qc, remove_artificials=False):
                     # successor with the hight value layer and increase it by one.
                     value_layers = []
                     for s in streak_members:
-
                         # Add anti-depedency edge
-                        dag.add_edge(
-                            s, terminator, edge_type="anti_dependency", qubits=[qb]
-                        )
+                        dag.add_edge(s, terminator, edge_type="anti_dependency", qubits=[qb])
                         value_layers.append(s.value_layer)
 
                     terminator.value_layer = max(value_layers) + 1
@@ -589,9 +566,7 @@ def dag_from_qc(dag, qc, remove_artificials=False):
                     recent_node_dic[qb] = streak_members[0]
 
                 # Add the edge to the dag
-                dag.add_edge(
-                    recent_node_dic[qb], node, edge_type=edge_type, qubits=[qb]
-                )
+                dag.add_edge(recent_node_dic[qb], node, edge_type=edge_type, qubits=[qb])
 
                 # Increase the value layer
                 value_layer[qb] += 1
@@ -690,15 +665,9 @@ def visualize_dag(G, layout_seed=None):
         labels[node] = node.__repr__()
 
     # Draw the nodes
-    nx.draw_networkx_nodes(
-        G, pos, nodelist=allocation_nodes, node_color="tab:blue", node_size=750
-    )
-    nx.draw_networkx_nodes(
-        G, pos, nodelist=instruction_nodes, node_color="grey", node_size=750
-    )
-    nx.draw_networkx_nodes(
-        G, pos, nodelist=terminator_nodes, node_color="orange", node_size=750
-    )
+    nx.draw_networkx_nodes(G, pos, nodelist=allocation_nodes, node_color="tab:blue", node_size=750)
+    nx.draw_networkx_nodes(G, pos, nodelist=instruction_nodes, node_color="grey", node_size=750)
+    nx.draw_networkx_nodes(G, pos, nodelist=terminator_nodes, node_color="orange", node_size=750)
 
     # Define node and edge colors
     edge_colors = {
@@ -709,11 +678,7 @@ def visualize_dag(G, layout_seed=None):
     }
     # Draw edges with colors based on their type
     for edge_type, color in edge_colors.items():
-        edges = [
-            (u, v)
-            for u, v, attr in G.edges(data=True)
-            if attr.get("edge_type") == edge_type
-        ]
+        edges = [(u, v) for u, v, attr in G.edges(data=True) if attr.get("edge_type") == edge_type]
 
         # Draw the edges
         nx.draw_networkx_edges(

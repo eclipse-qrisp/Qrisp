@@ -282,9 +282,7 @@ def anc_gate(method="gray"):
 def qcla(a, b, radix_base=2, radix_exponent=0, reduce_t_depth=True):
 
     if len(a) > len(b):
-        raise Exception(
-            "Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision"
-        )
+        raise Exception("Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision")
 
     R = radix_base**radix_exponent
 
@@ -317,7 +315,6 @@ def sum_path(a, b, c, R):
         i = 0
         # Execute addition using the corresponding carry values
         for i in range(len(c) + 1):
-
             # Determine the radix qubits to perform the addition on
             a_block = a[R * i : R * (i + 1)]
             b_block = b[R * i : R * (i + 1)]
@@ -337,10 +334,8 @@ def sum_path(a, b, c, R):
                 a_block = a_block + list(padding_var)
             # Perform Gidney addition
             if i == 0:
-
                 gidney_adder(a_block, b_block)
             else:
-
                 gidney_adder(a_block, b_block, c[i - 1])
 
             # Delete carry var
@@ -419,7 +414,6 @@ def sum_path_gidney(a, b, c, R):
         # print("R: ", R)
         # print("len(a)//R: ", len(a)//R)
         for j in range(int(np.ceil(len(a) / R)), len(b) // R + 2)[::-1]:
-
             b_block = b[R * j : R * (j + 1)]
             # print(j)
 
@@ -617,7 +611,6 @@ for radix_base in [2, 3]:
     for radix_exponent in [1, 0, 2]:
         for m in range(1, 7):
             for n in range(1, m):
-
                 a = QuantumFloat(n)
                 b = QuantumFloat(m)
                 c = QuantumFloat(m)
@@ -640,11 +633,7 @@ for radix_base in [2, 3]:
                         assert False
 
                 statevector_arr = a.qs.compile().statevector_array()
-                angles = np.angle(
-                    statevector_arr[
-                        np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)
-                    ]
-                )
+                angles = np.angle(statevector_arr[np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)])
 
                 # Test correct phase behavior
                 assert np.sum(np.abs(angles)) < 0.1

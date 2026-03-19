@@ -21,9 +21,7 @@ from qrisp.alg_primitives.qft import QFT
 from qrisp.jasp import jrange
 
 
-def QPE(
-    args, U, precision=None, target=None, iter_spec=False, ctrl_method=None, kwargs={}
-):
+def QPE(args, U, precision=None, target=None, iter_spec=False, ctrl_method=None, kwargs={}):
     r"""
     Evaluates the `quantum phase estimation algorithm
     <https://en.wikipedia.org/wiki/Quantum_phase_estimation_algorithm>`_.
@@ -128,10 +126,7 @@ def QPE(
 
     if target is None:
         if precision is None:
-            raise Exception(
-                "Tried to perform quantum phase estimation without"
-                "precision specification"
-            )
+            raise Exception("Tried to perform quantum phase estimation withoutprecision specification")
         qpe_res = QuantumFloat(precision, -precision, signed=False)
     else:
         qpe_res = target

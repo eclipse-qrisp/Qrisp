@@ -260,9 +260,7 @@ def qache_helper(func, jax_kwargs):
             flat_qv = list(flatten_qv(qv)[0])
             for i in range(len(flat_qv)):
                 if not flat_qv[i] is flattened_qvs.pop(0):
-                    raise Exception(
-                        f"Found in-place parameter modification of QuantumVariable {qv.name}"
-                    )
+                    raise Exception(f"Found in-place parameter modification of QuantumVariable {qv.name}")
 
         new_abs_qst = tr_qs.abs_qst
         # Return the result and the result AbstractQuantumState.

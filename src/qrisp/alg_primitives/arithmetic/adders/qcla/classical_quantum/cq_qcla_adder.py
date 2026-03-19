@@ -47,9 +47,7 @@ def cq_qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=N
         a = bin_rep(a % (2 ** len(b)), len(b))[::-1]
 
     if len(a) > len(b):
-        raise Exception(
-            "Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision"
-        )
+        raise Exception("Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision")
 
     R = radix_base**radix_exponent
 
@@ -92,9 +90,7 @@ def cq_qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=N
 
                 with invert():
                     # We use the redirect_qfunction decorator to steer the function onto c
-                    redirect_qfunction(cq_calc_carry)(
-                        a, b, radix_base, radix_exponent, target=c, ctrl=ctrl
-                    )
+                    redirect_qfunction(cq_calc_carry)(a, b, radix_base, radix_exponent, target=c, ctrl=ctrl)
 
                 # Flip the sum back
                 for i in range(len(b)):

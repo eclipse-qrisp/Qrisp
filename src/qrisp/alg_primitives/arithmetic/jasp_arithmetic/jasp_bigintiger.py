@@ -72,8 +72,7 @@ class BigInteger:
             return lax.fori_loop(
                 0,
                 self.digits.shape[0],
-                lambda i, val: jnp.float64(self.digits[i]) * BASE_FL ** jnp.float64(i)
-                + val,
+                lambda i, val: jnp.float64(self.digits[i]) * BASE_FL ** jnp.float64(i) + val,
                 0.0,
             )
         else:
@@ -138,7 +137,7 @@ class BigInteger:
         """
         if n < 0:
             raise ValueError(f"Input must be non-negative, got {n}.")
-    
+
         digits = []
         for i in range(size):
             digits.append(n % BASE)
@@ -271,9 +270,7 @@ class BigInteger:
                 jnp.uint64(a[i]) >= jnp.uint64(b[i]) + carry,
                 lambda: (jnp.uint32(a[i] - b[i] - carry), 0),
                 lambda: (
-                    jnp.uint32(
-                        jnp.uint64(a[i]) + jnp.uint64(BASE) - jnp.uint64(b[i]) - carry
-                    ),
+                    jnp.uint32(jnp.uint64(a[i]) + jnp.uint64(BASE) - jnp.uint64(b[i]) - carry),
                     1,
                 ),
             )
@@ -916,9 +913,7 @@ def _clz32(x):
     # Count leading zeros in a 32-bit word (simple loop)
     def cond_fun(state):
         x, s = state
-        return jnp.logical_and(
-            s < jnp.int32(32), (x & jnp.uint32(0x80000000)) == jnp.uint32(0)
-        )
+        return jnp.logical_and(s < jnp.int32(32), (x & jnp.uint32(0x80000000)) == jnp.uint32(0))
 
     def body_fun(state):
         x, s = state
@@ -992,9 +987,7 @@ def _shl_bits(arr: jnp.ndarray, s):
         def body(i, state):
             carry, out = state
             ai = arr[i]
-            low = jnp.uint32(
-                (jnp.uint64(ai) << jnp.uint64(s_u)) & jnp.uint64(0xFFFFFFFF)
-            )
+            low = jnp.uint32((jnp.uint64(ai) << jnp.uint64(s_u)) & jnp.uint64(0xFFFFFFFF))
             new_digit = jnp.uint32(low | carry)
             out = out.at[i].set(new_digit)
             # IMPORTANT: parentheses for precedence
@@ -1039,13 +1032,8 @@ def _shr_bits(arr: jnp.ndarray, s) -> jnp.ndarray:
             carry, out = state
             idx = n - 1 - i
             ai = arr[idx]
-            high = jnp.uint32(
-                (jnp.uint64(carry) << (jnp.uint64(32) - jnp.uint64(s_u)))
-                & jnp.uint64(0xFFFFFFFF)
-            )
-            new_digit = jnp.uint32(
-                (jnp.uint64(ai) >> jnp.uint64(s_u)) | jnp.uint64(high)
-            )
+            high = jnp.uint32((jnp.uint64(carry) << (jnp.uint64(32) - jnp.uint64(s_u))) & jnp.uint64(0xFFFFFFFF))
+            new_digit = jnp.uint32((jnp.uint64(ai) >> jnp.uint64(s_u)) | jnp.uint64(high))
             out = out.at[idx].set(new_digit)
             new_carry = jnp.uint32(ai & (jnp.uint32(1) << s_u) - jnp.uint32(1))
             return new_carry, out
@@ -1093,9 +1081,7 @@ def _divmod_single_limb(u: jnp.ndarray, d):
 
 
 @jax.jit
-def _remainder_division_knuth(
-    u: jnp.ndarray, v: jnp.ndarray
-) -> tuple[jnp.ndarray, jnp.ndarray]:
+def _remainder_division_knuth(u: jnp.ndarray, v: jnp.ndarray) -> tuple[jnp.ndarray, jnp.ndarray]:
     """
     Knuth long division (base 2^32) for arrays of equal length.
 
@@ -1148,9 +1134,7 @@ def _remainder_division_knuth(
 
                 v_norm, _ = _shl_bits(v, s)  # length N
                 u_norm_part, carry_u = _shl_bits(u, s)  # length N, carry
-                u_norm = jnp.concatenate(
-                    [u_norm_part, jnp.array([carry_u], dtype=jnp.uint32)], axis=0
-                )  # N+1
+                u_norm = jnp.concatenate([u_norm_part, jnp.array([carry_u], dtype=jnp.uint32)], axis=0)  # N+1
 
                 q = jnp.zeros_like(u)
                 # how many quotient positions we fill
@@ -1205,10 +1189,7 @@ def _remainder_division_knuth(
                             idx = j + i
                             u_di = u_norm[idx]
                             borrow = u_di < p_low
-                            new_u = jnp.uint32(
-                                (jnp.uint64(u_di) + BASE64 - jnp.uint64(p_low))
-                                & BASE_MASK
-                            )
+                            new_u = jnp.uint32((jnp.uint64(u_di) + BASE64 - jnp.uint64(p_low)) & BASE_MASK)
                             u_norm = u_norm.at[idx].set(new_u)
                             carry = p_high + jnp.uint64(borrow)
                             return u_norm, carry
@@ -1217,10 +1198,7 @@ def _remainder_division_knuth(
 
                         top_before = u_norm[ujm]
                         underflow = top_before < jnp.uint32(carry)
-                        top_after = jnp.uint32(
-                            (jnp.uint64(top_before) + BASE64 - jnp.uint64(carry))
-                            & BASE_MASK
-                        )
+                        top_after = jnp.uint32((jnp.uint64(top_before) + BASE64 - jnp.uint64(carry)) & BASE_MASK)
                         u_norm = u_norm.at[ujm].set(top_after)
 
                         def fix_underflow(uq_state):
@@ -1231,22 +1209,14 @@ def _remainder_division_knuth(
                             def add_body(i, astate):
                                 u_norm, carry2 = astate
                                 idx = j + i
-                                ssum = (
-                                    jnp.uint64(u_norm[idx])
-                                    + jnp.uint64(v_norm[i])
-                                    + carry2
-                                )
+                                ssum = jnp.uint64(u_norm[idx]) + jnp.uint64(v_norm[i]) + carry2
                                 new_digit = jnp.uint32(ssum & BASE_MASK)
                                 carry2 = ssum >> jnp.uint64(32)
                                 u_norm = u_norm.at[idx].set(new_digit)
                                 return u_norm, carry2
 
-                            u_norm, carry2 = lax.fori_loop(
-                                0, m, add_body, (u_norm, carry2)
-                            )
-                            u_norm = u_norm.at[ujm].set(
-                                jnp.uint32(jnp.uint64(u_norm[ujm]) + jnp.uint64(1))
-                            )
+                            u_norm, carry2 = lax.fori_loop(0, m, add_body, (u_norm, carry2))
+                            u_norm = u_norm.at[ujm].set(jnp.uint32(jnp.uint64(u_norm[ujm]) + jnp.uint64(1)))
                             return u_norm, q, qhat, j
 
                         u_norm, q, qhat, _ = lax.cond(
@@ -1259,9 +1229,7 @@ def _remainder_division_knuth(
                         q = q.at[j].set(jnp.uint32(qhat & BASE_MASK))
                         return u_norm, q
 
-                    u_norm, q = lax.cond(
-                        active, do_step, lambda state: state, operand=(u_norm, q)
-                    )
+                    u_norm, q = lax.cond(active, do_step, lambda state: state, operand=(u_norm, q))
                     return u_norm, q
 
                 u_norm, q = lax.fori_loop(0, N, body, (u_norm, q))
@@ -1403,9 +1371,7 @@ def bi_extended_euclidean(a, b):
 
 
 @jax.jit
-def bi_montgomery_encode(
-    x: BigInteger, R: BigInteger, modulus: BigInteger
-) -> BigInteger:
+def bi_montgomery_encode(x: BigInteger, R: BigInteger, modulus: BigInteger) -> BigInteger:
     """
     Montgomery encode: map x to (x * R) mod modulus, without intermediate wraparound.
 
@@ -1452,9 +1418,7 @@ def bi_montgomery_encode(
 
 
 @jax.jit
-def bi_montgomery_decode(
-    x_mon: BigInteger, R: BigInteger, modulus: BigInteger
-) -> BigInteger:
+def bi_montgomery_decode(x_mon: BigInteger, R: BigInteger, modulus: BigInteger) -> BigInteger:
     """
     Montgomery decode: map x_mon to (x_mon * R^{-1}) mod modulus, without wraparound.
 

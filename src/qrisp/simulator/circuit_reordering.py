@@ -63,9 +63,7 @@ import networkx as nx
 import numpy as np
 
 
-def nx_get_causal_graph(
-    qc, inverted=False, get_non_unitary_nodes=False, preferential_gates=[]
-):
+def nx_get_causal_graph(qc, inverted=False, get_non_unitary_nodes=False, preferential_gates=[]):
     from qrisp.circuit import Instruction, Operation
 
     # Create graph object
@@ -156,9 +154,7 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
         if qc.data[hash(non_unitary_nodes[i])].op.name == "final_op":
             node_costs.append((non_unitary_nodes[i], np.inf))
         else:
-            node_costs.append(
-                (non_unitary_nodes[i], len(descendants(G, non_unitary_nodes[i])))
-            )
+            node_costs.append((non_unitary_nodes[i], len(descendants(G, non_unitary_nodes[i]))))
 
     node_costs.sort(key=lambda x: x[1])
 
@@ -225,7 +221,6 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
     # Now we succesively determine the minimal circuit required to execute
     # for each non-unitary operation
     while node_costs:
-
         # This node contains the non-unitary operation
         evaluation_node = node_costs.pop(0)[0]
 

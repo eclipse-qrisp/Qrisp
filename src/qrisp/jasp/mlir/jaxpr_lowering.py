@@ -70,7 +70,6 @@ def lower_jaxpr_to_MLIR(jaxpr, lowering_rules=tuple([])):
 
     # Lower JAXPR to MLIR using Catalyst's method
     with ctx.context, ir.Location.unknown(ctx.context):
-
         ctx.module.operation.attributes["sym_name"] = ir.StringAttr.get("jasp_module")
 
         try:
@@ -80,10 +79,7 @@ def lower_jaxpr_to_MLIR(jaxpr, lowering_rules=tuple([])):
                 jaxpr,  # Pass the full ClosedJaxpr object
                 jaxpr.effects,
                 num_const_args=len(core.jaxpr_const_args(jaxpr.jaxpr)),
-                in_avals=[
-                    var.aval
-                    for var in core.jaxpr_const_args(jaxpr.jaxpr) + jaxpr.jaxpr.invars
-                ],
+                in_avals=[var.aval for var in core.jaxpr_const_args(jaxpr.jaxpr) + jaxpr.jaxpr.invars],
                 main_function=True,
             )
 

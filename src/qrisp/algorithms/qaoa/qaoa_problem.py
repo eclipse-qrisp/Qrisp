@@ -84,9 +84,7 @@ class QAOAProblem:
 
     """
 
-    def __init__(
-        self, cost_operator, mixer, cl_cost_function, init_function=None, callback=False
-    ):
+    def __init__(self, cost_operator, mixer, cl_cost_function, init_function=None, callback=False):
         self.cost_operator = cost_operator
         self.mixer = mixer
         self.cl_cost_function = cl_cost_function
@@ -270,9 +268,7 @@ class QAOAProblem:
         # Prepare initial state - if no init_function is specified, prepare uniform superposition
         if self.init_function is not None:
             self.init_function(qarg)
-        elif (
-            init_type == "tqa"
-        ):  # Prepare the ground state (eigenvalue -1) of the X mixer
+        elif init_type == "tqa":  # Prepare the ground state (eigenvalue -1) of the X mixer
             x(qarg)
             h(qarg)
         else:
@@ -295,9 +291,7 @@ class QAOAProblem:
 
         return compiled_qc, gamma + beta
 
-    def optimization_routine(
-        self, qarg_prep, depth, mes_kwargs, init_type, init_point, optimizer, options
-    ):
+    def optimization_routine(self, qarg_prep, depth, mes_kwargs, init_type, init_point, optimizer, options):
         """
         Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
 
@@ -332,7 +326,6 @@ class QAOAProblem:
         """
 
         if check_for_tracing_mode():
-
             # Define optimization wrapper function to be minimized using QAOA
             def optimization_wrapper(theta, state_prep, mes_kwargs):
                 """
@@ -404,7 +397,6 @@ class QAOAProblem:
                 return self.computeParams(p, dt_max)
 
         else:
-
             # Define optimization wrapper function to be minimized using QAOA
             def optimization_wrapper(theta, qarg, qc, symbols, mes_kwargs):
                 """
@@ -432,9 +424,7 @@ class QAOAProblem:
                 """
                 subs_dic = {symbols[i]: theta[i] for i in range(len(symbols))}
 
-                res_dic = qarg.get_measurement(
-                    subs_dic=subs_dic, precompiled_qc=qc, **mes_kwargs
-                )
+                res_dic = qarg.get_measurement(subs_dic=subs_dic, precompiled_qc=qc, **mes_kwargs)
 
                 cl_cost = self.cl_cost_function(res_dic)
 
@@ -495,9 +485,7 @@ class QAOAProblem:
                 # Prepare initial state - if no init_function is specified, prepare uniform superposition
                 if self.init_function is not None:
                     self.init_function(qarg)
-                elif (
-                    init_type == "tqa"
-                ):  # Prepare the ground state (eigenvalue -1) of the X mixer
+                elif init_type == "tqa":  # Prepare the ground state (eigenvalue -1) of the X mixer
                     x(qarg)
                     h(qarg)
                 else:
@@ -511,20 +499,16 @@ class QAOAProblem:
                 return qarg
 
         else:
-
             qarg = qarg_prep()
             compiled_qc, symbols = self.compile_circuit(qarg, depth, init_type)
 
         # Initialization for optimization parameters
         if init_point is None:
-
             if init_type == "random":
                 # Random initialization
                 if check_for_tracing_mode():
                     key = jax.random.key(11)
-                    init_point = (
-                        jax.random.uniform(key=key, shape=(2 * depth,)) * jnp.pi / 2
-                    )
+                    init_point = jax.random.uniform(key=key, shape=(2 * depth,)) * jnp.pi / 2
                 else:
                     init_point = np.random.rand(2 * depth) * np.pi / 2
 
@@ -533,17 +517,12 @@ class QAOAProblem:
                 if check_for_tracing_mode():
                     init_point = tqa_angles(depth, state_prep, mes_kwargs)
                 else:
-                    init_point = tqa_angles(
-                        depth, qarg, compiled_qc, symbols, mes_kwargs
-                    )
+                    init_point = tqa_angles(depth, qarg, compiled_qc, symbols, mes_kwargs)
 
             else:
-                raise Exception(
-                    f"Parameter initialization method {init_type} is not available."
-                )
+                raise Exception(f"Parameter initialization method {init_type} is not available.")
 
         if check_for_tracing_mode():
-
             res_sample = jasp_minimize(
                 optimization_wrapper,
                 init_point,
@@ -558,7 +537,6 @@ class QAOAProblem:
             return res_sample.x, res_sample.fun
 
         else:
-
             res_sample = minimize(
                 optimization_wrapper,
                 init_point,
@@ -653,9 +631,7 @@ class QAOAProblem:
             # Prepare initial state - if no init_function is specified, prepare uniform superposition
             if self.init_function is not None:
                 self.init_function(qarg)
-            elif (
-                init_type == "tqa"
-            ):  # Prepare the ground state (eigenvalue -1) of the X mixer
+            elif init_type == "tqa":  # Prepare the ground state (eigenvalue -1) of the X mixer
                 x(qarg)
                 h(qarg)
             else:
@@ -798,16 +774,13 @@ class QAOAProblem:
             # Prepare initial state - if no init_function is specified, prepare uniform superposition
             if self.init_function is not None:
                 self.init_function(qarg_gen)
-            elif (
-                init_type == "tqa"
-            ):  # Prepare the ground state (eigenvalue -1) of the X mixer
+            elif init_type == "tqa":  # Prepare the ground state (eigenvalue -1) of the X mixer
                 x(qarg_gen)
                 h(qarg_gen)
             else:
                 h(qarg_gen)
 
             for i in jrange(depth):
-
                 self.cost_operator(qarg_gen, opt_theta[i])
                 self.mixer(qarg_gen, opt_theta[i + depth])
 
@@ -932,7 +905,6 @@ class QAOAProblem:
             for s in shot_range:
                 for it in iter_range:
                     for k in range(repetitions):
-
                         start_time = time.time()
 
                         temp_mes_kwargs = dict(mes_kwargs)
@@ -969,9 +941,7 @@ class QAOAProblem:
         import matplotlib.pyplot as plt
 
         if not self.callback:
-            raise Exception(
-                "Visualization can only be performed for a QAOA instance with callback=True"
-            )
+            raise Exception("Visualization can only be performed for a QAOA instance with callback=True")
 
         x = list(range(len(self.optimization_costs)))
         y = self.optimization_costs

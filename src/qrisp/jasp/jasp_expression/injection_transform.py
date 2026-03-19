@@ -94,7 +94,6 @@ def injection_transform(jaspr, qubit_array_outvar):
     deleted_quantum_circuit_variable = None
 
     for i in range(len(jaspr.eqns)):
-
         eqn = jaspr.eqns[i]
 
         # Delete the equation by skipping the last line of the loop
@@ -106,31 +105,24 @@ def injection_transform(jaspr, qubit_array_outvar):
         # Recursively apply the injection transform
         elif eqn.primitive.name == "jit":
             if qubit_array_outvar in eqn.outvars:
-
                 # Retrieve the Jaspr to be transformed
                 sub_jaspr = eqn.params["jaxpr"]
 
                 # Retrieve the QubitArray to be injected
-                sub_qubit_array_outvar = sub_jaspr.outvars[
-                    eqn.outvars.index(qubit_array_outvar)
-                ]
+                sub_qubit_array_outvar = sub_jaspr.outvars[eqn.outvars.index(qubit_array_outvar)]
 
                 # Copy the equation to prevent in-place modification errors
                 eqn = copy_jaxpr_eqn(eqn)
 
                 # Modify the copied equation
-                eqn.params["jaxpr"] = injection_transform(
-                    sub_jaspr, sub_qubit_array_outvar
-                )
+                eqn.params["jaxpr"] = injection_transform(sub_jaspr, sub_qubit_array_outvar)
                 eqn.invars.insert(0, qubit_array_outvar)
                 eqn.outvars.remove(qubit_array_outvar)
 
         # Raise exception for the illegal case
         elif eqn.primitive.name == "jasp.slice":
             if eqn.outvars[0] is qubit_array_outvar:
-                raise Exception(
-                    "Tried to redirect quantum function returning a sliced qubit array"
-                )
+                raise Exception("Tried to redirect quantum function returning a sliced qubit array")
 
         # Replace the QuantumState invar
         if not deleted_quantum_circuit_variable is None:

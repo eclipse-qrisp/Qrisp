@@ -69,19 +69,13 @@ def qulacs_converter(qc):
             )
 
         elif instr.op.name == "rz":
-            qulacs_qc.add_gate(
-                gt.RZ(transpiled_qc.qubits.index(instr.qubits[0]), instr.op.params[0])
-            )
+            qulacs_qc.add_gate(gt.RZ(transpiled_qc.qubits.index(instr.qubits[0]), instr.op.params[0]))
 
         elif instr.op.name == "ry":
-            qulacs_qc.add_gate(
-                gt.RY(transpiled_qc.qubits.index(instr.qubits[0]), instr.op.params[0])
-            )
+            qulacs_qc.add_gate(gt.RY(transpiled_qc.qubits.index(instr.qubits[0]), instr.op.params[0]))
 
         elif instr.op.name == "rx":
-            qulacs_qc.add_gate(
-                gt.RX(transpiled_qc.qubits.index(instr.qubits[0]), instr.op.params[0])
-            )
+            qulacs_qc.add_gate(gt.RX(transpiled_qc.qubits.index(instr.qubits[0]), instr.op.params[0]))
 
         elif instr.op.name == "swap":
             qulacs_qc.add_gate(gt.SWAP(transpiled_qc.qubits.index(instr.qubits[0])))

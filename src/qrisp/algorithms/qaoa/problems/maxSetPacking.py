@@ -44,11 +44,7 @@ def max_set_packing_problem(sets):
     from qrisp.qaoa import QAOAProblem, RZ_mixer
 
     def non_empty_intersection(sets):
-        return [
-            (i, j)
-            for (i, s1), (j, s2) in combinations(enumerate(sets), 2)
-            if s1.intersection(s2)
-        ]
+        return [(i, j) for (i, s1), (j, s2) in combinations(enumerate(sets), 2) if s1.intersection(s2)]
 
     # create constraint graph
     G = nx.Graph()

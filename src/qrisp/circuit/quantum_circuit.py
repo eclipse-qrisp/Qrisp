@@ -224,15 +224,11 @@ class QuantumCircuit:
         self.abstract_params: Set = set()
 
         start_index = self.qubit_index_counter[0]
-        self.qubits: List[Qubit] = [
-            Qubit(f"qb_{start_index + i}") for i in range(num_qubits)
-        ]
+        self.qubits: List[Qubit] = [Qubit(f"qb_{start_index + i}") for i in range(num_qubits)]
         self.qubit_index_counter[0] += num_qubits
 
         start_index = self.clbit_index_counter[0]
-        self.clbits: List[Clbit] = [
-            Clbit(f"cb_{start_index + i}") for i in range(num_clbits)
-        ]
+        self.clbits: List[Clbit] = [Clbit(f"cb_{start_index + i}") for i in range(num_clbits)]
         self.clbit_index_counter[0] += num_clbits
 
     # Method to add qubit objects to the circuit
@@ -391,14 +387,10 @@ class QuantumCircuit:
         """
 
         if len(self.clbits) != 0:
-            raise Exception(
-                "Tried to turn a circuit including classical bits into unitary gate"
-            )
+            raise Exception("Tried to turn a circuit including classical bits into unitary gate")
         return self.to_op(name)
 
-    def extend(
-        self, other: "QuantumCircuit", translation_dic: Dict | None = None
-    ) -> None:
+    def extend(self, other: "QuantumCircuit", translation_dic: Dict | None = None) -> None:
         """
         Extends this QuantumCircuit in-place by appending instructions from another QuantumCircuit.
 
@@ -529,9 +521,7 @@ class QuantumCircuit:
                 )
             )
         except AttributeError:
-            raise Exception(
-                "Tried to print QuantumSession with uncompiled QuantumEnvironments"
-            )
+            raise Exception("Tried to print QuantumSession with uncompiled QuantumEnvironments")
 
         return res_str
 
@@ -606,11 +596,7 @@ class QuantumCircuit:
         if ignore_gphase:
             arg_max = np.argmax(np.abs(unitary_self.flatten()))
 
-            unitary_self = (
-                unitary_self
-                * unitary_other.flatten()[arg_max]
-                / unitary_self.flatten()[arg_max]
-            )
+            unitary_self = unitary_self * unitary_other.flatten()[arg_max] / unitary_self.flatten()[arg_max]
 
         from numpy.linalg import norm
 
@@ -632,13 +618,9 @@ class QuantumCircuit:
 
         if isinstance(input, int):
             try:
-                return self.convert_to_qubit_list(
-                    self.qubits[input], inner_recursion=inner_recursion
-                )
+                return self.convert_to_qubit_list(self.qubits[input], inner_recursion=inner_recursion)
             except IndexError:
-                raise Exception(
-                    "Not enough qubits in circuit to access qubit " + str(input) + "."
-                )
+                raise Exception("Not enough qubits in circuit to access qubit " + str(input) + ".")
 
         if isinstance(input, list):
             return_list = []
@@ -646,9 +628,7 @@ class QuantumCircuit:
                 return_list.append(self.convert_to_qubit_list(qb, inner_recursion=True))
             return return_list
 
-        raise Exception(
-            "Could not convert input type " + type(input) + " to qubit list"
-        )
+        raise Exception("Could not convert input type " + type(input) + " to qubit list")
 
     # Similar function as above but with classical bits
     def convert_to_clbit_list(self, input, inner_recursion=False):
@@ -660,13 +640,9 @@ class QuantumCircuit:
 
         if isinstance(input, int):
             try:
-                return self.convert_to_clbit_list(
-                    self.clbits[input], inner_recursion=inner_recursion
-                )
+                return self.convert_to_clbit_list(self.clbits[input], inner_recursion=inner_recursion)
             except IndexError:
-                raise Exception(
-                    "Not enough clbits in circuit to access clbit " + str(input) + "."
-                )
+                raise Exception("Not enough clbits in circuit to access clbit " + str(input) + ".")
 
         if isinstance(input, list):
             return_list = []
@@ -785,7 +761,7 @@ class QuantumCircuit:
                     for a in sympy.preorder_traversal(expression):
                         if isinstance(a, sympy.Float):
                             rounded_float = round(a, decimals)
-                            if abs(float(a) - 1) < 10 ** -(decimals):
+                            if abs(float(a) - 1) < 10**-(decimals):
                                 expression = expression.subs(a, 1)
                             else:
                                 expression = expression.subs(a, rounded_float)
@@ -1167,9 +1143,7 @@ class QuantumCircuit:
         if len(self.data) == 0:
             return 0
 
-        depth_dic = get_depth_dic(
-            self, transpile_qc=transpile, depth_indicator=depth_indicator
-        )
+        depth_dic = get_depth_dic(self, transpile_qc=transpile, depth_indicator=depth_indicator)
 
         return max(depth_dic.values())
 
@@ -1261,7 +1235,6 @@ class QuantumCircuit:
                 op = instr.op
 
                 for par in op.params:
-
                     par = int(np.round((par % (2 * np.pi)) / (2 * np.pi) * 2**15))
 
                     for i in range(max_circuit_prec):
@@ -1478,17 +1451,11 @@ class QuantumCircuit:
             # arg_list_len entries
             for arg_list_index in qb_argument_is_list:
                 if len(qubits[arg_list_index]) != arg_list_len:
-                    raise Exception(
-                        "Don't know how to combine appending arguments "
-                        + str((qubits + clbits))
-                    )
+                    raise Exception("Don't know how to combine appending arguments " + str((qubits + clbits)))
 
             for arg_list_index in cb_argument_is_list:
                 if len(clbits[arg_list_index]) != arg_list_len:
-                    raise Exception(
-                        "Don't know how to combine appending arguments "
-                        + str((qubits + clbits))
-                    )
+                    raise Exception("Don't know how to combine appending arguments " + str((qubits + clbits)))
 
             # Create argument constellations
             for i in range(arg_list_len):
@@ -1508,9 +1475,7 @@ class QuantumCircuit:
 
                 # Append instruction (qubit_constellation and clbit_constellation) now
                 # contains no lists but only qubit/clbit arguments
-                QuantumCircuit.append(
-                    self, operation, qubit_constellation, clbit_constellation
-                )
+                QuantumCircuit.append(self, operation, qubit_constellation, clbit_constellation)
 
             return
 
@@ -1529,9 +1494,7 @@ class QuantumCircuit:
             )
 
         if len(set(qubits)) != len(qubits):
-            raise Exception(
-                f"Duplicate qubit arguments in {qubits} for operation {operation.name}"
-            )
+            raise Exception(f"Duplicate qubit arguments in {qubits} for operation {operation.name}")
 
         # Building up the list of identifiers seems to slow down this function
         # We therefore check first if the qubit objects match and if this is not the
@@ -1542,21 +1505,15 @@ class QuantumCircuit:
 
             if not set(op_identifiers).issubset(qc_identifiers):
                 raise ValueError(
-                    "Instruction Qubits "
-                    + str(set(qubits) - set(self.qubits))
-                    + " not present in circuit"
+                    "Instruction Qubits " + str(set(qubits) - set(self.qubits)) + " not present in circuit"
                 )
             else:
-                qubits = [
-                    self.qubits[qc_identifiers.index(op_id)] for op_id in op_identifiers
-                ]
+                qubits = [self.qubits[qc_identifiers.index(op_id)] for op_id in op_identifiers]
 
         if len(set([cb.identifier for cb in clbits])) != len(clbits):
             raise Exception("Duplicate clbit arguments")
 
-        if not set([cb.identifier for cb in clbits]).issubset(
-            set([cb.identifier for cb in self.clbits])
-        ):
+        if not set([cb.identifier for cb in clbits]).issubset(set([cb.identifier for cb in self.clbits])):
             raise ValueError("Instruction Clbits not present in circuit")
 
         # Log which abstract parameters have been added to the circuit
@@ -1579,10 +1536,7 @@ class QuantumCircuit:
             if critical_qubits[0].lock_message:
                 raise Exception(critical_qubits[0].lock_message)
             else:
-                raise Exception(
-                    f"Tried to perform operation {operation.name}"
-                    "on locked qubit {critical_qubits[0]}"
-                )
+                raise Exception(f"Tried to perform operation {operation.name}on locked qubit {{critical_qubits[0]}}")
 
         # Check if there are non-permeable operations on pt_locked qubits
         critical_qubits = [qb for qb in qubits if qb.perm_lock]
@@ -1996,9 +1950,7 @@ class QuantumCircuit:
 
         from qrisp.interface import qrisp_to_stim
 
-        return qrisp_to_stim(
-            self, return_measurement_map, return_detector_map, return_observable_map
-        )
+        return qrisp_to_stim(self, return_measurement_map, return_detector_map, return_observable_map)
 
     def to_pytket(self):
         """
@@ -2123,9 +2075,7 @@ class QuantumCircuit:
             clbits = [clbits]
 
         # Create and append the parity operation
-        parity_op = ParityOperation(
-            len(clbits), expectation=expectation, observable=observable
-        )
+        parity_op = ParityOperation(len(clbits), expectation=expectation, observable=observable)
 
         # Append the operation (doesn't return the instruction)
         self.append(parity_op, clbits=clbits)
@@ -2662,14 +2612,10 @@ def convert_to_qb_list(input, circuit=None, top_level=True):
 
     elif isinstance(input, int):
         if isinstance(circuit, type(None)):
-            raise Exception(
-                "Tried to convert integer argument to qubit without given circuit"
-            )
+            raise Exception("Tried to convert integer argument to qubit without given circuit")
 
         if input >= len(circuit.qubits):
-            raise Exception(
-                f"Tried to adress qubit with index {input} in a circuit with {len(circuit.qubits)} qubits"
-            )
+            raise Exception(f"Tried to adress qubit with index {input} in a circuit with {len(circuit.qubits)} qubits")
 
         result = convert_to_qb_list(circuit.qubits[input], top_level=top_level)
 
@@ -2689,9 +2635,7 @@ def convert_to_cb_list(input, circuit=None, top_level=True):
 
     elif isinstance(input, int):
         if isinstance(circuit, type(None)):
-            raise Exception(
-                "Tried to convert integer argument to qubit without given circuit"
-            )
+            raise Exception("Tried to convert integer argument to qubit without given circuit")
 
         result = convert_to_cb_list(circuit.clbits[input], top_level=top_level)
 

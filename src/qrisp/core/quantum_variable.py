@@ -238,9 +238,7 @@ class QuantumVariable:
         if check_for_tracing_mode():
             self.qs = TracingQuantumSession.get_instance()
             if self.qs is None:
-                raise Exception(
-                    "Tried to trace Qrisp code using make_jaxpr (use make_jaspr instead)"
-                )
+                raise Exception("Tried to trace Qrisp code using make_jaxpr (use make_jaspr instead)")
 
             self.qubit_cache = {}
         else:
@@ -555,7 +553,6 @@ class QuantumVariable:
         # Register duplicate variable in session
 
         if name is not None:
-
             if name[-1] == "*":
                 self.user_given_name = False
                 name = name[:-1]
@@ -723,9 +720,7 @@ class QuantumVariable:
         if not isinstance(self.qs, TracingQuantumSession):
             if not permit_dirtyness:
                 if not check_if_fresh(self.reg, self.qs):
-                    raise Exception(
-                        "Tried to initialize qubits which are not fresh anymore."
-                    )
+                    raise Exception("Tried to initialize qubits which are not fresh anymore.")
 
         int_encoder(self, self.encoder(value))
 
@@ -900,7 +895,6 @@ class QuantumVariable:
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-
             if isinstance(position, int) and position in [0, -1]:
                 if position == -1:
                     self.reg = self.reg + insertion_qubits
@@ -909,17 +903,12 @@ class QuantumVariable:
             else:
                 self.reg = self.reg[:position] + insertion_qubits + self.reg[position:]
         else:
-
             if position == -1:
                 position = self.size
 
             for i in range(amount):
                 insertion_qubits[i].identifier = (
-                    self.name
-                    + "_ext_"
-                    + str(self.qs.qubit_index_counter[0])
-                    + "."
-                    + str(self.size)
+                    self.name + "_ext_" + str(self.qs.qubit_index_counter[0]) + "." + str(self.size)
                 )
                 self.reg.insert(position + i, insertion_qubits[i])
 
@@ -972,9 +961,7 @@ class QuantumVariable:
         for i in range(len(qubits)):
             for j in range(self.size):
                 if self.reg[j] == qubits[i]:
-                    self.reg[j].identifier = "reduced_" + str(
-                        self.qs.qubit_index_counter[0]
-                    )
+                    self.reg[j].identifier = "reduced_" + str(self.qs.qubit_index_counter[0])
                     self.qs.qubit_index_counter += 1
                     self.reg.pop(j)
                     break
@@ -1072,9 +1059,7 @@ class QuantumVariable:
 
         if precompiled_qc is None:
             if compile:
-                qc = qompiler(
-                    self.qs, intended_measurements=self.reg, **compilation_kwargs
-                )
+                qc = qompiler(self.qs, intended_measurements=self.reg, **compilation_kwargs)
             else:
                 qc = self.qs.copy()
         else:
@@ -1139,9 +1124,7 @@ class QuantumVariable:
                 try:
                     hash(temp)
                 except TypeError:
-                    raise Exception(
-                        "Outcome value " + str(self.decoder(i)) + " is not hashable"
-                    )
+                    raise Exception("Outcome value " + str(self.decoder(i)) + " is not hashable")
 
                 outcome_labels.append(temp)
 
@@ -1226,9 +1209,7 @@ class QuantumVariable:
 
     def __setitem__(self, key, value):
         if key != slice(None, None, None):
-            raise Exception(
-                "Tried to encode value into QuantumVariable using non-trivial slicing."
-            )
+            raise Exception("Tried to encode value into QuantumVariable using non-trivial slicing.")
 
         if isinstance(type(value), type(None)):
             return
@@ -1441,9 +1422,7 @@ class QuantumVariable:
 
     def __iter__(self):
         if not isinstance(self.reg, list):
-            raise Exception(
-                "Tried to perform a static iteration on a dynamic QuantumVariable"
-            )
+            raise Exception("Tried to perform a static iteration on a dynamic QuantumVariable")
         else:
             return self.reg.__iter__()
 
@@ -1514,9 +1493,7 @@ class QuantumVariable:
         """
 
         if not type(self) == type(other):
-            raise Exception(
-                "Tried to initialize " + str(type(self)) + " from " + str(type(other))
-            )
+            raise Exception("Tried to initialize " + str(type(self)) + " from " + str(type(other)))
 
         from qrisp.misc import check_if_fresh
 

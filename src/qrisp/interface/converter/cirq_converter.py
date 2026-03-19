@@ -25,9 +25,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
     try:
         from cirq import Circuit, LineQubit
     except (ModuleNotFoundError, ImportError):
-        raise ImportError(
-            "Cirq must be installed to be able to use the Qrisp to Cirq converter."
-        )
+        raise ImportError("Cirq must be installed to be able to use the Qrisp to Cirq converter.")
 
     from cirq import (
         CNOT,
@@ -117,15 +115,11 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
                     else:
                         return False
 
-                transpiled_qc = qrisp_circuit.transpile(
-                    transpile_predicate=transpile_predicate
-                )
+                transpiled_qc = qrisp_circuit.transpile(transpile_predicate=transpile_predicate)
                 return convert_to_cirq(transpiled_qc)
 
             except Exception:
-                raise ValueError(
-                    f"{op_i} gate is not supported by the Qrisp to Cirq converter."
-                )
+                raise ValueError(f"{op_i} gate is not supported by the Qrisp to Cirq converter.")
 
         if op_i == "gphase":
             cirq_circuit.append(GlobalPhaseGate(np.exp(1j * instr.op.params[0]))())
@@ -164,11 +158,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
         cirq_gate = qrisp_cirq_ops_dict[op_i]
 
         # for single qubit parametrized gates
-        if (
-            op_i != "id"
-            and instr.op.params
-            and not isinstance(instr.op, ControlledOperation)
-        ):
+        if op_i != "id" and instr.op.params and not isinstance(instr.op, ControlledOperation):
             # added op_i != 'id' becasue the identity gate has parameters (0, 0, 0)
             if op_i == "p":
                 # Cirq does not have a phase gate
@@ -176,9 +166,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
                 # the ZPowGate has a global phase in addition to the
                 # phase exponent. The default is to assume global_shift = 0 in cirq
                 exp_param = params[0]
-                cirq_circuit.append(
-                    ZPowGate(exponent=exp_param / np.pi)(*cirq_op_qubits)
-                )
+                cirq_circuit.append(ZPowGate(exponent=exp_param / np.pi)(*cirq_op_qubits))
 
             # elif op_i == 'gphase':
             # global phase gate in Cirq cannot be applied to specific qubits
@@ -205,13 +193,9 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
                 # if the controlled operation is also parametrized
                 if instr.op.params:
                     gate_instance = cirq_gate(*params)
-                    cirq_circuit.append(
-                        gate_instance(*cirq_ctrl_qubits, *cirq_target_qubits)
-                    )
+                    cirq_circuit.append(gate_instance(*cirq_ctrl_qubits, *cirq_target_qubits))
                 else:
-                    cirq_circuit.append(
-                        cirq_gate(*cirq_ctrl_qubits, *cirq_target_qubits)
-                    )
+                    cirq_circuit.append(cirq_gate(*cirq_ctrl_qubits, *cirq_target_qubits))
 
         else:
             # for simple single qubit gates

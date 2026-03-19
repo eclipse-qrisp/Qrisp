@@ -209,9 +209,7 @@ def boolean_simulation(*func: Callable, bit_array_padding: int = 2**16) -> Calla
         func = func[0]
 
     if bit_array_padding < 64:
-        raise Exception(
-            "Tried to initialize boolean_simulation with less than 512 bits"
-        )
+        raise Exception("Tried to initialize boolean_simulation with less than 512 bits")
 
     @jit
     def return_function(*args: Any) -> Any:
@@ -253,9 +251,7 @@ def boolean_simulation(*func: Callable, bit_array_padding: int = 2**16) -> Calla
 
         # Transform the Jaspr to a classical Jaxpr
         # flatten_environments() resolves any nested control flow structures
-        cl_func_jaxpr = jaspr_to_cl_func_jaxpr(
-            jaspr.flatten_environments(), bit_array_padding
-        )
+        cl_func_jaxpr = jaspr_to_cl_func_jaxpr(jaspr.flatten_environments(), bit_array_padding)
 
         # Initialize the boolean quantum circuit representation:
         # - bit_array: packed uint64 array storing qubit states (all zeros initially)
@@ -264,9 +260,7 @@ def boolean_simulation(*func: Callable, bit_array_padding: int = 2**16) -> Calla
         bit_array: Array = jnp.zeros(aval.shape, dtype=aval.dtype)
 
         # Create the free qubit pool as a flattened Jlist
-        free_qubit_list = Jlist(
-            jnp.arange(bit_array_padding), max_size=bit_array_padding
-        ).flatten()[0]
+        free_qubit_list = Jlist(jnp.arange(bit_array_padding), max_size=bit_array_padding).flatten()[0]
 
         # The boolean quantum circuit is represented as a tuple:
         # (bit_array, jlist_array, jlist_counter)

@@ -27,6 +27,7 @@ from itertools import product
 from qrisp import p, QuantumVariable, QuantumArray, OutcomeArray, h, mcx, QuantumBool
 import time
 
+
 def test_grovers_algorithm():
     qf1 = QuantumFloat(2)
     qf2 = QuantumFloat(2)
@@ -60,10 +61,7 @@ def test_grovers_algorithm():
     assert list(mes_res.keys())[0] == (0, 1)
 
     # check if the first tuple in the tuple contains expected values. Style example of the whole tuple: ((0, 1), 0.9592)
-    assert all(
-        (item in [ele for ele in product(range(0, 4), repeat=2)])
-        for item in mes_res.keys()
-    )
+    assert all((item in [ele for ele in product(range(0, 4), repeat=2)]) for item in mes_res.keys())
 
     ###################
     # Create quantum floats
@@ -113,15 +111,7 @@ def test_grovers_algorithm():
 
     # check if the first tuple in the tuple contains expected values. Style example of the whole tuple: ((0, 1), 0.9592)
     assert all(
-        (
-            item
-            in [
-                ele
-                for ele in product(
-                    [0.0, -0.5, 0.5, -1.0, 1.0, -1.5, 1.5, -2.0, 2.0], repeat=2
-                )
-            ]
-        )
+        (item in [ele for ele in product([0.0, -0.5, 0.5, -1.0, 1.0, -1.5, 1.5, -2.0, 2.0], repeat=2)])
         for item in mes_res.keys()
     )
 
@@ -143,7 +133,7 @@ def test_grovers_algorithm():
     # Test for input of type QuantumArray
 
     def oracle(qa):
-        tag_state({qa[0]:0, qa[1]:0, qa[2]:0})
+        tag_state({qa[0]: 0, qa[1]: 0, qa[2]: 0})
 
     qa = QuantumArray(QuantumFloat(2), shape=(3,))
 

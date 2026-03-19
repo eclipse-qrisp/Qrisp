@@ -79,7 +79,6 @@ def jasp_gidney_adder(a, b, ctrl=None):
         gidney_mcx_inv(a[i], b[i], gidney_anc[i])
 
         if ctrl is not None:
-
             gidney_mcx(ctrl, a[i], ctrl_anc[0])
             cx(ctrl_anc[0], b[i])
             gidney_mcx(ctrl, a[i], ctrl_anc[0])

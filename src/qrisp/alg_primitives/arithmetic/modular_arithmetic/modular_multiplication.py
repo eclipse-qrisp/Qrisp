@@ -107,7 +107,6 @@ def QREDC(t, N, m):
 
     # Perform the loop of the Montgomery reduction
     for k in range(m):
-
         # Set the alias similar to the classical version
         temp = S[0]
 
@@ -177,7 +176,7 @@ def montgomery_red(t, a, b, N, m, permeable_if_zero=False):
         # Perform the uncomputation as described in the paper
         for k in range(len(a)):
             with control(a[k]):
-                t.inpl_adder(-((2**k * b)) * modinv(N, 2 ** (m + 1)), u)
+                t.inpl_adder(-(2**k * b) * modinv(N, 2 ** (m + 1)), u)
 
     if permeable_if_zero:
         # cx(t[0], u[-1])
@@ -276,9 +275,7 @@ def montgomery_mod_semi_mul(a, b, output_qg=None, permeable_if_zero=False):
     t.inpl_adder = a.inpl_adder
 
     # Perform Montgomery reduction and return
-    return montgomery_red(
-        t, a, b_encoded, N, m_shift, permeable_if_zero=permeable_if_zero
-    )
+    return montgomery_red(t, a, b_encoded, N, m_shift, permeable_if_zero=permeable_if_zero)
 
 
 @custom_control
@@ -316,14 +313,11 @@ def semi_cl_inpl_mult(a, X, ctrl=None, treat_invalid=False):
 
     # Check some special cases
     if X == 0:
-        raise Exception(
-            "Tried to perform in-place multiplication with 0 (not invertible)"
-        )
+        raise Exception("Tried to perform in-place multiplication with 0 (not invertible)")
     if X == 1:
         return a
 
     with fast_append(2):
-
         # Create the temporary value
         tmp = a.duplicate(qs=a.qs)
 
@@ -348,9 +342,7 @@ def semi_cl_inpl_mult(a, X, ctrl=None, treat_invalid=False):
                     ft_swap(tmp[i], a[i])
 
         # Perform the out of place multiplication
-        tmp = montgomery_mod_semi_mul(
-            a, X, output_qg=tmp, permeable_if_zero=ctrl is not None
-        )
+        tmp = montgomery_mod_semi_mul(a, X, output_qg=tmp, permeable_if_zero=ctrl is not None)
 
         # Perform the intermediate swap
         if ctrl is not None:

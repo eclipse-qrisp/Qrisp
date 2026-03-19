@@ -176,9 +176,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
 
         for arg in args:
             if isinstance(arg, QuantumVariable):
-                raise Exception(
-                    "Tried to sample from state preparation function taking a quantum value"
-                )
+                raise Exception("Tried to sample from state preparation function taking a quantum value")
 
         # We now construct a loop to evaluate the expectation value via adding
         # the decoded and postprocessed measurement result into an accumulator.
@@ -196,9 +194,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
             # Ensure all results are QuantumVariables
             for qv in qv_tuple:
                 if not isinstance(qv, QuantumVariable):
-                    raise Exception(
-                        "Tried to sample from function not returning a QuantumVariable"
-                    )
+                    raise Exception("Tried to sample from function not returning a QuantumVariable")
 
             # Trace the DynamicQubitArray measurements
             # Since we execute the measurements on the .reg attribute, no decoding
@@ -249,14 +245,10 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
 
         try:
             # loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jax.lax.broadcast(0., (1,)), *args))
-            loop_res = jax.lax.fori_loop(
-                0, shots, sampling_body_func, (jnp.zeros(1), *args)
-            )
+            loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jnp.zeros(1), *args))
             return loop_res[0][0] / shots
         except AuxException:
-            loop_res = jax.lax.fori_loop(
-                0, shots, sampling_body_func, (jnp.zeros(return_amount), *args)
-            )
+            loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jnp.zeros(return_amount), *args))
             return loop_res[0] / shots
 
     if return_dict:

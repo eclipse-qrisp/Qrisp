@@ -27,9 +27,7 @@ from qrisp.alg_primitives.arithmetic.SBP_arithmetic import (
 )
 
 
-def q_matmul(
-    q_array_0, q_array_1, output_array=None, res_bit_shape="eq", phase_tolerant=False
-):
+def q_matmul(q_array_0, q_array_1, output_array=None, res_bit_shape="eq", phase_tolerant=False):
     """
     Matrix multiplication for QuantumArrays.
 
@@ -85,10 +83,7 @@ def q_matmul(
     """
 
     if q_array_0.shape[1] != q_array_1.shape[0]:
-        raise Exception(
-            "Tried to perform matrix multiplication"
-            "with differing contraction index size"
-        )
+        raise Exception("Tried to perform matrix multiplicationwith differing contraction index size")
 
     L = q_array_0.shape[0]
     K = q_array_0.shape[1]
@@ -118,9 +113,7 @@ def q_matmul(
 
             from qrisp.alg_primitives.arithmetic import create_output_qf
 
-            qtype = create_output_qf(
-                list(q_array_0.flatten()) + list(q_array_1.flatten()), poly
-            )
+            qtype = create_output_qf(list(q_array_0.flatten()) + list(q_array_1.flatten()), poly)
 
         if res_bit_shape == "eq":
             qtype = q_array_0[0, 0]
@@ -283,9 +276,7 @@ def semi_classic_matmul(q_matrix, cl_matrix, output_array=None, res_bit_shape="e
 
     """
     if q_matrix.shape[1] != cl_matrix.shape[0]:
-        raise Exception(
-            "Tried to apply matrix multiplication with unfitting dimensions"
-        )
+        raise Exception("Tried to apply matrix multiplication with unfitting dimensions")
 
     L = q_matrix.shape[0]
     K = q_matrix.shape[1]
@@ -316,10 +307,7 @@ def semi_classic_matmul(q_matrix, cl_matrix, output_array=None, res_bit_shape="e
         output_array = QuantumArray(shape=(L, J), qtype=qtype, qs=q_matrix.qs)
 
     if output_array.shape != (L, J):
-        raise Exception(
-            "Tried to to encode matrix multiplication"
-            "into Quantum Array of unfitting size"
-        )
+        raise Exception("Tried to to encode matrix multiplicationinto Quantum Array of unfitting size")
 
     from sympy.matrices import zeros
 
@@ -405,16 +393,12 @@ def inplace_matrix_app(vector, matrix):
     """
 
     if len(vector.shape) != 1:
-        raise Exception(
-            "Tried to multiply matrix with Quantum Array with unfitting shape"
-        )
+        raise Exception("Tried to multiply matrix with Quantum Array with unfitting shape")
 
     n = vector.shape[0]
 
     if n != matrix.shape[0] or n != matrix.shape[1]:
-        raise Exception(
-            "Tried to multiply matrix with Quantum Array with unfitting shape"
-        )
+        raise Exception("Tried to multiply matrix with Quantum Array with unfitting shape")
 
     bit = vector[0].size
 
@@ -474,9 +458,7 @@ def inplace_matrix_app(vector, matrix):
                 raise Exception("Could not find invertible element")
 
         # Generate inverse equation
-        eval_inverse = modinv(coeff, 2**bit) * (
-            -target_values[i].subs({x[j]: 0}) + ancilla_symbol
-        )
+        eval_inverse = modinv(coeff, 2**bit) * (-target_values[i].subs({x[j]: 0}) + ancilla_symbol)
 
         from qrisp.qtypes.quantum_float import trunc_poly
 
@@ -488,9 +470,7 @@ def inplace_matrix_app(vector, matrix):
 
         for k in range(i + 1, n):
             # Substitue in the following equations
-            target_values[k] = (
-                target_values[k].subs(subs_dic).subs({ancilla_symbol: x[j]})
-            )
+            target_values[k] = target_values[k].subs(subs_dic).subs({ancilla_symbol: x[j]})
 
             # Truncate coefficients
             target_values[k] = trunc_poly(target_values[k], (0, bit))
@@ -553,12 +533,7 @@ def auto_matmul_wrapper(a, b, out=None):
         return semi_classic_matmul(b.transpose(), a.transpose(), out).transpose()
 
     else:
-        raise Exception(
-            "Could not proccess input constellation "
-            + str(type(a))
-            + " and "
-            + str(type(b))
-        )
+        raise Exception("Could not proccess input constellation " + str(type(a)) + " and " + str(type(b)))
 
 
 def dot(a, b, out=None):
@@ -651,9 +626,7 @@ def dot(a, b, out=None):
             temp_0 = a.reshape((a.size // b.shape[-1], b.shape[-1]))
 
             temp_1 = np.swapaxes(b, 0, -2)
-            temp_1 = np.reshape(
-                temp_1, (temp_1.shape[0], temp_1.size // temp_1.shape[0])
-            )
+            temp_1 = np.reshape(temp_1, (temp_1.shape[0], temp_1.size // temp_1.shape[0]))
 
             res = auto_matmul_wrapper(temp_0, temp_1, out)
 

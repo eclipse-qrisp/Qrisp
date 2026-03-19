@@ -70,9 +70,7 @@ class AQTBackend(BatchedBackend):
     def __init__(self, api_token, device_instance, workspace):
 
         if not isinstance(api_token, str):
-            raise TypeError(
-                "api_token must be a string. You can create an API token on the AQT ARNICA website."
-            )
+            raise TypeError("api_token must be a string. You can create an API token on the AQT ARNICA website.")
 
         if not isinstance(workspace, str):
             raise TypeError("workspace must be a string.")
@@ -142,9 +140,7 @@ class AQTBackend(BatchedBackend):
                 qiskit_qc = qc.transpile().to_qiskit()
 
                 # Make circuit with one monolithic register
-                new_qiskit_qc = qiskit.QuantumCircuit(
-                    len(qiskit_qc.qubits), len(qiskit_qc.clbits)
-                )
+                new_qiskit_qc = qiskit.QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
                 for instr in qiskit_qc:
                     new_qiskit_qc.append(
                         instr.operation,

@@ -88,19 +88,13 @@ class BackendClient:
             ],
             "name": "",
         }
-        deployment_response = requests.post(
-            f"{self.api_endpoint}/deployments", json=deployment_data, verify=False
-        )
+        deployment_response = requests.post(f"{self.api_endpoint}/deployments", json=deployment_data, verify=False)
 
         if deployment_response.status_code == 422:
-            raise Exception(
-                f"Unprocessable quantum ciruict {deployment_response.status_code}"
-            )
+            raise Exception(f"Unprocessable quantum ciruict {deployment_response.status_code}")
         elif deployment_response.status_code != 201:
             print(deployment_response.status_code)
-            raise Exception(
-                f"Failed to deploy quantum circuit {deployment_response.status_code}"
-            )
+            raise Exception(f"Failed to deploy quantum circuit {deployment_response.status_code}")
 
         deployment_id = deployment_response.json()["id"]
 
@@ -114,32 +108,21 @@ class BackendClient:
             "deploymentId": deployment_id,
         }
 
-        job_post_response = requests.post(
-            f"{self.api_endpoint}/jobs", json=job_data, verify=False
-        )
+        job_post_response = requests.post(f"{self.api_endpoint}/jobs", json=job_data, verify=False)
         if deployment_response.status_code == 422:
-            raise Exception(
-                f"Unprocessable quantum ciruict (status code: {job_post_response.status_code})"
-            )
+            raise Exception(f"Unprocessable quantum ciruict (status code: {job_post_response.status_code})")
         elif deployment_response.status_code != 201:
-            raise Exception(
-                f"Failed to post job (status code: {job_post_response.status_code})"
-            )
+            raise Exception(f"Failed to post job (status code: {job_post_response.status_code})")
 
         job_id = job_post_response.json()["id"]
 
         job_running = True
 
         while True:
-
-            job_get_response = requests.get(
-                f"{self.api_endpoint}/jobs/{job_id}", json=job_data, verify=False
-            )
+            job_get_response = requests.get(f"{self.api_endpoint}/jobs/{job_id}", json=job_data, verify=False)
 
             if job_get_response.status_code != 201:
-                raise Exception(
-                    f'Quantum circuit execution failed: {job_get_response.json()["message"]}'
-                )
+                raise Exception(f"Quantum circuit execution failed: {job_get_response.json()['message']}")
 
             job_state = job_get_response.json()["state"]
 

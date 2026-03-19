@@ -43,10 +43,7 @@ def create_maxsat_cost_polynomials(problem):
     symbols = [sp.Symbol(f"x{i}") for i in range(1, problem[0] + 1)]
     cost_polynomials = []
     for clause in clauses:
-        C = 1 - sp.prod(
-            (1 - symbols[index - 1]) if index > 0 else symbols[-index - 1]
-            for index in clause
-        )
+        C = 1 - sp.prod((1 - symbols[index - 1]) if index > 0 else symbols[-index - 1] for index in clause)
 
         cost_polynomials.append(C)
 
@@ -79,12 +76,7 @@ def create_maxsat_cl_cost_function(problem):
                     -(
                         1
                         - math.prod(
-                            (
-                                (1 - int(state[index - 1]))
-                                if index > 0
-                                else int(state[-index - 1])
-                            )
-                            for index in clause
+                            ((1 - int(state[index - 1])) if index > 0 else int(state[-index - 1])) for index in clause
                         )
                     )
                     * prob

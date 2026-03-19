@@ -257,9 +257,7 @@ class DCQOProblem:
         for k in range(N_opt):
             sin_matrix[:, k] = np.sin(np.pi * (k + 1 + r_params[k]) * t_list / T)
             cos_matrix[:, k] = (
-                (np.pi * (k + 1 + r_params[k]))
-                * np.cos(np.pi * (k + 1 + r_params[k]) * self.g)
-                * self.g_deriv
+                (np.pi * (k + 1 + r_params[k])) * np.cos(np.pi * (k + 1 + r_params[k]) * self.g) * self.g_deriv
             )
 
         return sin_matrix, cos_matrix
@@ -298,7 +296,6 @@ class DCQOProblem:
 
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
-
             # Get alpha for the timestep
             coeffs = self.agp_coeffs(self.lam[s])
 
@@ -343,9 +340,7 @@ class DCQOProblem:
         # Precompute opt pulses
         dt = T / N_steps
         t_list = np.linspace(dt, T, int(N_steps))
-        sin_matrix, cos_matrix = self._precompute_opt_pulses(
-            N_steps, T, t_list, N_opt=len(opt_params), CRAB=CRAB
-        )
+        sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(opt_params), CRAB=CRAB)
         beta = opt_params
 
         # Trotterize Hamiltonian in different parts with each one needing different coefficients
@@ -361,7 +356,6 @@ class DCQOProblem:
 
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
-
             # Get alpha, f and f_deriv for the timestep
             f = sin_matrix[s, :] @ beta
             f_deriv = cos_matrix[s, :] @ beta
@@ -418,9 +412,7 @@ class DCQOProblem:
 
         return compiled_qc
 
-    def optimization_routine(
-        self, qarg, N_opt, N_steps, T, qc, CRAB, optimizer, options, objective, bounds
-    ):
+    def optimization_routine(self, qarg, N_opt, N_steps, T, qc, CRAB, optimizer, options, objective, bounds):
         """
         Subroutine for the optimization method used in COLD.
         The initial values are set and the optimization via is conducted here.
@@ -459,13 +451,9 @@ class DCQOProblem:
         # Expectation value of the QUBO Hamiltonian
         def objective_exp(params, CRAB):
             # Dict to assign the optimization parameters
-            subs_dic = {
-                sp.Symbol("par_" + str(i)): params[i] for i in range(len(params))
-            }
+            subs_dic = {sp.Symbol("par_" + str(i)): params[i] for i in range(len(params))}
 
-            cost = self.H_prob.expectation_value(
-                qarg, compile=False, subs_dic=subs_dic, precompiled_qc=qc
-            )()
+            cost = self.H_prob.expectation_value(qarg, compile=False, subs_dic=subs_dic, precompiled_qc=qc)()
 
             return cost
 
@@ -474,9 +462,7 @@ class DCQOProblem:
         def objective_mag(params, CRAB):
             # Precompute opt pulses to be multiplied with opt params
             t_list = np.linspace(T / N_steps, T, int(N_steps))
-            sin_matrix, cos_matrix = self._precompute_opt_pulses(
-                N_steps, T, t_list, N_opt=len(params), CRAB=CRAB
-            )
+            sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(params), CRAB=CRAB)
             magnitude = 0
 
             # Iterate through lambda(t)
@@ -484,9 +470,7 @@ class DCQOProblem:
                 # Get alpha, f and f_deriv for the timestep
                 f = sin_matrix[s, :] @ params
                 f_deriv = cos_matrix[s, :] @ params
-                alpha, gamma, chi = solve_alpha_gamma_chi(
-                    self.h, self.J, self.lam[s], f, f_deriv, uniform=True
-                )
+                alpha, gamma, chi = solve_alpha_gamma_chi(self.h, self.J, self.lam[s], f, f_deriv, uniform=True)
                 magnitude += np.abs(gamma[0]) + np.abs(chi[0]) + np.abs(alpha[0])
 
             return magnitude
@@ -641,9 +625,7 @@ class DCQOProblem:
             self.apply_lcd_hamiltonian(qarg, N_steps, T)
 
         else:
-            raise ValueError(
-                f'"{method}" is not an option for method. Choose "LCD" or "COLD".'
-            )
+            raise ValueError(f'"{method}" is not an option for method. Choose "LCD" or "COLD".')
 
         # Measure qarg
         if not "shots" in mes_kwargs:

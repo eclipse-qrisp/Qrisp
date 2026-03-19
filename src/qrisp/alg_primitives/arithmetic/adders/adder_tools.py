@@ -41,16 +41,14 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
             # can not be added to qf1 (rounding error)
             if not ignore_rounding_error and qf1.exponent > qf2.exponent:
                 raise Exception(
-                    "Tried to add QuantumFloat to QuantumFloat of lower precision"
-                    " (set ignore_rounding_error = True)"
+                    "Tried to add QuantumFloat to QuantumFloat of lower precision (set ignore_rounding_error = True)"
                 )
 
             # If qf2 has higher maximum significance than qf1, the qf2 bits with higher
             # significance than all of qf1 can not be added to qf1 (overflow error)
             if not ignore_overflow_error and qf1.mshape[1] < qf2.mshape[1]:
                 raise Exception(
-                    "Tried to add QuantumFloat to QuantumFloat of lower precision"
-                    " (set ignore_overflow_error = True)"
+                    "Tried to add QuantumFloat to QuantumFloat of lower precision (set ignore_overflow_error = True)"
                 )
 
             # Determine the significance range
@@ -60,9 +58,7 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
             significance_range_qf2 = list(range(qf2.mshape[0], qf2.mshape[1] + 1))
 
             # Determine the intersection of the significance ranges
-            signficance_range_intersetion = list(
-                set(significance_range_qf1).intersection(significance_range_qf2)
-            )
+            signficance_range_intersetion = list(set(significance_range_qf1).intersection(significance_range_qf2))
 
             # Determine maximum and minimum significance of the addition
             # The maximum significance is the maximum significance of qf1
@@ -84,9 +80,7 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
 
             if max_sig > max(significance_range_qf2):
                 # print(max_sig-max(significance_range_qf2))
-                ancilla_var = QuantumVariable(
-                    max_sig - max(significance_range_qf2) - int(qf2.signed)
-                )
+                ancilla_var = QuantumVariable(max_sig - max(significance_range_qf2) - int(qf2.signed))
                 augmented_qf2_qbs = qf2.reg + ancilla_var.reg
             else:
                 augmented_qf2_qbs = qf2.reg
@@ -124,9 +118,7 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
 
             # Now we treat the sign bits
             if qf2.signed and not qf1.signed:
-                raise Exception(
-                    "Tried to add signed QuantumFloat to non signed QuantumFloat"
-                )
+                raise Exception("Tried to add signed QuantumFloat to non signed QuantumFloat")
 
             # The signs are handled via modular arithmetic
             # According to the Cuccaro-Paper this is done via manipulating
@@ -176,11 +168,8 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
                 ancilla_var_2.delete()
 
         elif isinstance(qf2, (list, QuantumVariable)):
-
             if len(qf2) < len(qf1):
-                ancilla_var = QuantumVariable(
-                    len(qf1) - len(qf2), name="add_ammend_anc*", qs=qf1[0].qs()
-                )
+                ancilla_var = QuantumVariable(len(qf1) - len(qf2), name="add_ammend_anc*", qs=qf1[0].qs())
                 qf2 = list(qf2) + list(ancilla_var)
 
             if len(qf2) > len(qf1):
@@ -194,7 +183,6 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
                 pass
 
         elif isinstance(qf2, int) and ammend_cl_int:
-
             ancilla_var = QuantumFloat(len(qf1), name="add_ammend_anc*", qs=qf1[0].qs())
 
             ancilla_var.encode(qf2 % 2 ** len(qf1))

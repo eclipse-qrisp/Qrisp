@@ -75,9 +75,7 @@ def q_int_div(numerator, divisor, adder="thapliyal", n=None, log_output=True):
     qs = numerator.qs
 
     if numerator.exponent < 0 or divisor.exponent < 0:
-        raise Exception(
-            "Tried to call integer division with non integer quantum floats"
-        )
+        raise Exception("Tried to call integer division with non integer quantum floats")
 
     # n is the bitsize of the quotient
     # The largest possible number the quotient can take is
@@ -288,7 +286,7 @@ def q_int_div(numerator, divisor, adder="thapliyal", n=None, log_output=True):
 # Supports division for quantum float of arbitrary exponent.
 # And allows to give a precision threshold (prec)
 # The resulting quotient variable Q_res has the property |Q_res - Q_real| < 2**prec
-def q_divmod(numerator, divisor, adder = "thapliyal", prec=0):
+def q_divmod(numerator, divisor, adder="thapliyal", prec=0):
     """
     Performs division up to arbitrary precision. Returns the quotient and the remainder.
 

@@ -265,8 +265,7 @@ class BlockEncoding:
         self.alpha = alpha
         # Templates for the ancilla variables.
         self._anc_templates: list[QuantumVariableTemplate] = [
-            anc.template() if isinstance(anc, QuantumVariable) else anc
-            for anc in ancillas
+            anc.template() if isinstance(anc, QuantumVariable) else anc for anc in ancillas
         ]
         self.unitary = unitary
         self.is_hermitian = is_hermitian
@@ -315,9 +314,7 @@ class BlockEncoding:
         return cls(*children, *aux_data)
 
     @classmethod
-    def from_operator(
-        cls: "BlockEncoding", O: QubitOperator | FermionicOperator
-    ) -> BlockEncoding:
+    def from_operator(cls: "BlockEncoding", O: QubitOperator | FermionicOperator) -> BlockEncoding:
         r"""
         Constructs a BlockEncoding from an operator.
 
@@ -501,14 +498,10 @@ class BlockEncoding:
         alpha = np.sum(coeffs)
 
         if np.any(coeffs < 0):
-            raise ValueError(
-                f"Negative coefficients detected: {coeffs}. Only positive values are supported."
-            )
+            raise ValueError(f"Negative coefficients detected: {coeffs}. Only positive values are supported.")
 
         if m == 1:
-            return BlockEncoding(
-                alpha, [], unitaries[0], num_ops=num_ops, is_hermitian=is_hermitian
-            )
+            return BlockEncoding(alpha, [], unitaries[0], num_ops=num_ops, is_hermitian=is_hermitian)
 
         @qache
         def unitary(*args):
@@ -652,9 +645,7 @@ class BlockEncoding:
         """
 
         if len(operands) != self.num_ops:
-            raise ValueError(
-                f"Operation expected {self.num_ops} operands, but got {len(operands)}."
-            )
+            raise ValueError(f"Operation expected {self.num_ops} operands, but got {len(operands)}.")
 
         ancillas = self.create_ancillas()
         self.unitary(*ancillas, *operands)
@@ -718,9 +709,7 @@ class BlockEncoding:
         from qrisp.jasp import RUS
 
         if not callable(operand_prep):
-            raise TypeError(
-                f"Expected 'operand_prep' to be a callable, but got {type(operand_prep).__name__}."
-            )
+            raise TypeError(f"Expected 'operand_prep' to be a callable, but got {type(operand_prep).__name__}.")
 
         @RUS
         def rus_function(*args):
@@ -729,9 +718,7 @@ class BlockEncoding:
                 operands = (operands,)
 
             if len(operands) != self.num_ops:
-                raise ValueError(
-                    f"Operation expected {self.num_ops} operands, but got {len(operands)}."
-                )
+                raise ValueError(f"Operation expected {self.num_ops} operands, but got {len(operands)}.")
 
             ancillas = self.create_ancillas()
             self.unitary(*ancillas, *operands)
@@ -834,9 +821,7 @@ class BlockEncoding:
         from qrisp.jasp import expectation_value
 
         if not callable(operand_prep):
-            raise TypeError(
-                f"Expected 'operand_prep' to be a callable, but got {type(operand_prep).__name__}."
-            )
+            raise TypeError(f"Expected 'operand_prep' to be a callable, but got {type(operand_prep).__name__}.")
 
         def state_prep(*args):
             operands = operand_prep(*args)
@@ -844,9 +829,7 @@ class BlockEncoding:
                 operands = (operands,)
 
             if len(operands) != self.num_ops:
-                raise ValueError(
-                    f"Operation expected {self.num_ops} operands, but got {len(operands)}."
-                )
+                raise ValueError(f"Operation expected {self.num_ops} operands, but got {len(operands)}.")
 
             # Hadamard test
             qbl = QuantumBool()
@@ -864,9 +847,7 @@ class BlockEncoding:
                 return jnp.where(x == 0, 1, -1)
 
             def ev_function(*args):
-                ev = expectation_value(
-                    state_prep, shots=shots, post_processor=post_processor
-                )(*args)
+                ev = expectation_value(state_prep, shots=shots, post_processor=post_processor)(*args)
                 return ev * self.alpha
 
             return ev_function
@@ -967,9 +948,7 @@ class BlockEncoding:
         """
 
         if len(operands) != self.num_ops:
-            raise ValueError(
-                f"Operation expected {self.num_ops} operands, but got {len(operands)}."
-            )
+            raise ValueError(f"Operation expected {self.num_ops} operands, but got {len(operands)}.")
 
         ops_templates = [op.template() for op in operands]
 
@@ -983,13 +962,9 @@ class BlockEncoding:
             self.unitary(*ancillas, *operands)
             return operands
 
-        circuit_depth = depth(meas_behavior=meas_behavior, max_qubits=max_qubits)(
-            main
-        )()
+        circuit_depth = depth(meas_behavior=meas_behavior, max_qubits=max_qubits)(main)()
         gate_counts = count_ops(meas_behavior=meas_behavior)(main)()
-        qubit_counts = num_qubits(
-            meas_behavior=meas_behavior, max_allocations=max_allocations
-        )(main)()
+        qubit_counts = num_qubits(meas_behavior=meas_behavior, max_allocations=max_allocations)(main)()
         return {
             "gate counts": gate_counts,
             "depth": circuit_depth,
@@ -1190,9 +1165,7 @@ class BlockEncoding:
                 self.unitary(*args)
 
         new_alpha = self.alpha if k == 1 else 1
-        return BlockEncoding(
-            new_alpha, self._anc_templates, new_unitary, num_ops=self.num_ops
-        )
+        return BlockEncoding(new_alpha, self._anc_templates, new_unitary, num_ops=self.num_ops)
 
     #
     # Arithmetic
@@ -1288,9 +1261,7 @@ class BlockEncoding:
                 with control(args[0], ctrl_state=1):
                     other.unitary(*other_ancs, *operands)
 
-        new_anc_templates = (
-            [QuantumBool().template()] + self._anc_templates + other._anc_templates
-        )
+        new_anc_templates = [QuantumBool().template()] + self._anc_templates + other._anc_templates
         new_alpha = alpha + beta
         return BlockEncoding(
             new_alpha,
@@ -1392,9 +1363,7 @@ class BlockEncoding:
                 with control(args[0], ctrl_state=1):
                     other.unitary(*other_ancs, *operands)
 
-        new_anc_templates = (
-            [QuantumBool().template()] + self._anc_templates + other._anc_templates
-        )
+        new_anc_templates = [QuantumBool().template()] + self._anc_templates + other._anc_templates
         new_alpha = alpha + beta
         return BlockEncoding(
             new_alpha,
@@ -1565,9 +1534,7 @@ class BlockEncoding:
 
         new_anc_templates = self._anc_templates + other._anc_templates
         new_alpha = self.alpha * other.alpha
-        return BlockEncoding(
-            new_alpha, new_anc_templates, new_unitary, num_ops=self.num_ops
-        )
+        return BlockEncoding(new_alpha, new_anc_templates, new_unitary, num_ops=self.num_ops)
 
     __radd__ = __add__
     __rmul__ = __mul__
@@ -1852,7 +1819,6 @@ class BlockEncoding:
 
         # The operator is unitary (up to scaling).
         if self.num_ancs == 0:
-
             if not self.is_hermitian:
 
                 def new_unitary(*args):
@@ -1987,9 +1953,7 @@ class BlockEncoding:
 
         return hamiltonian_simulation(self, t, N)
 
-    def poly(
-        self, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial"
-    ) -> BlockEncoding:
+    def poly(self, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial") -> BlockEncoding:
         r"""
         Returns a BlockEncoding representing a polynomial transformation of the operator.
 

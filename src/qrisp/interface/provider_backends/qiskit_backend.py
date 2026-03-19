@@ -161,9 +161,7 @@ class QiskitBackend(VirtualBackend):
 def VirtualQiskitBackend(*args, **kwargs):
     import warnings
 
-    warnings.warn(
-        "VirtualQiskitBackend will be deprecated in a future release of Qrisp. Use QiskitBackend instead."
-    )
+    warnings.warn("VirtualQiskitBackend will be deprecated in a future release of Qrisp. Use QiskitBackend instead.")
     return QiskitBackend(*args, **kwargs)
 
 

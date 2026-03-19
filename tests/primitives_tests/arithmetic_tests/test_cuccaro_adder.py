@@ -21,17 +21,19 @@ import pytest
 
 import pytest
 
-@pytest.mark.parametrize("input_a, input_b, expected_a, expected_b", [
-    # both inputs are quantum in static mode, inputs are of unequal size
-    (QuantumFloat(13), QuantumFloat(14), {20: 1.0}, {34: 1.0}),
-    (QuantumFloat(14), QuantumFloat(13), {20: 1.0}, {34: 1.0}),
 
-    # both inputs are quantum in static mode, inputs are of equal size
-    (QuantumFloat(13), QuantumFloat(13), {20: 1.0}, {34: 1.0}),
-
-    # one input is classical, the other is quantum in static mode
-    (20, QuantumFloat(15), 20, {34: 1.0}),
-])
+@pytest.mark.parametrize(
+    "input_a, input_b, expected_a, expected_b",
+    [
+        # both inputs are quantum in static mode, inputs are of unequal size
+        (QuantumFloat(13), QuantumFloat(14), {20: 1.0}, {34: 1.0}),
+        (QuantumFloat(14), QuantumFloat(13), {20: 1.0}, {34: 1.0}),
+        # both inputs are quantum in static mode, inputs are of equal size
+        (QuantumFloat(13), QuantumFloat(13), {20: 1.0}, {34: 1.0}),
+        # one input is classical, the other is quantum in static mode
+        (20, QuantumFloat(15), 20, {34: 1.0}),
+    ],
+)
 def test_cuccaro_adder_valid_input_static_mode(input_a, input_b, expected_a, expected_b):
     """Verify the function works as expected for valid inputs in static mode."""
     if isinstance(input_a, QuantumFloat):
@@ -47,16 +49,18 @@ def test_cuccaro_adder_valid_input_static_mode(input_a, input_b, expected_a, exp
     assert calculated_out_a == expected_a
     assert calculated_out_b == expected_b
 
-@pytest.mark.parametrize("input_a, input_b, expected_a, expected_b", [
-    # both inputs are quantum in static mode, inputs are of unequal size
-    (QuantumFloat(13), QuantumFloat(14), {20: 1.0}, {34: 1.0}),
 
-    # both inputs are quantum in static mode, inputs are of equal size
-    (QuantumFloat(13), QuantumFloat(13), {20: 1.0}, {34: 1.0}),
-
-    # one input is classical, the other is quantum in static mode
-    (20, QuantumFloat(15), 20, {34: 1.0}),
-])
+@pytest.mark.parametrize(
+    "input_a, input_b, expected_a, expected_b",
+    [
+        # both inputs are quantum in static mode, inputs are of unequal size
+        (QuantumFloat(13), QuantumFloat(14), {20: 1.0}, {34: 1.0}),
+        # both inputs are quantum in static mode, inputs are of equal size
+        (QuantumFloat(13), QuantumFloat(13), {20: 1.0}, {34: 1.0}),
+        # one input is classical, the other is quantum in static mode
+        (20, QuantumFloat(15), 20, {34: 1.0}),
+    ],
+)
 def test_cuccaro_adder_valid_input_static_mode_with_cout(input_a, input_b, expected_a, expected_b):
     """Verify the function works as expected for valid inputs in static mode when c_out is provided."""
     if isinstance(input_a, QuantumFloat):
@@ -78,11 +82,11 @@ def test_cuccaro_adder_valid_input_static_mode_with_cout(input_a, input_b, expec
 
 def test_jaspr_mode_cuccaro_adder():
     """Verify the function works as expected in dynamic mode.
-     This test covers both cases where the inputs are of equal size and where they are of unequal size."""
+    This test covers both cases where the inputs are of equal size and where they are of unequal size."""
 
     @boolean_simulation
     def main(N, L, j, k):
-    
+
         A = QuantumFloat(N)
         B = QuantumFloat(L)
         A[:] = j
@@ -90,14 +94,14 @@ def test_jaspr_mode_cuccaro_adder():
 
         cuccaro_adder(j, B)
         return measure(A), measure(B)
-        
+
     for N in range(2, 5):
         for L in range(2, 5):
             for j in range(2**N):
                 for k in range(2**L):
                     A, B = main(N, L, j, k)
                     assert A == j
-                    assert B == (k+j)%(2**L)
+                    assert B == (k + j) % (2**L)
 
 
 def test_inputs_modified():
@@ -115,13 +119,16 @@ def test_inputs_modified():
     assert b.size == original_size_b
 
 
-@pytest.mark.parametrize("i, j, a_value, b_value, ctrl_qbl_value, expected_result", [
-    (10, 11, 3, 5, True, {8: 1.0}),  
-    (10, 11, 3, 5, False, {5: 1.0}),  
-])
+@pytest.mark.parametrize(
+    "i, j, a_value, b_value, ctrl_qbl_value, expected_result",
+    [
+        (10, 11, 3, 5, True, {8: 1.0}),
+        (10, 11, 3, 5, False, {5: 1.0}),
+    ],
+)
 def test_cuccaro_adder_static_mode_with_control(i, j, a_value, b_value, ctrl_qbl_value, expected_result):
     """Verify the CDKPM adder is triggered when the control qubit is in the |1> state
-    in static mode. """
+    in static mode."""
     a = QuantumFloat(i)
     b = QuantumFloat(j)
     a[:] = a_value
@@ -136,10 +143,11 @@ def test_cuccaro_adder_static_mode_with_control(i, j, a_value, b_value, ctrl_qbl
 
 def test_cuccaro_adder_dynamic_mode_with_control():
     """Verify the CDKPM adder is triggered when the control qubit is in the |1> state
-    in dynamic mode. """
+    in dynamic mode."""
+
     @boolean_simulation
     def main(N, L, j, k):
-        
+
         A = QuantumFloat(N)
         B = QuantumFloat(L)
         A[:] = j
@@ -150,11 +158,11 @@ def test_cuccaro_adder_dynamic_mode_with_control():
         with control(qbl):
             cuccaro_adder(A, B)
         return measure(A), measure(B)
-        
+
     for N in range(2, 5):
         for L in range(2, 5):
             for j in range(2**N):
                 for k in range(2**L):
                     A, B = main(N, L, j, k)
                     assert A == j
-                    assert B == (k+j)%(2**L)
+                    assert B == (k + j) % (2**L)

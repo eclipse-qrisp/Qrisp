@@ -18,14 +18,14 @@
 QuantumCircuit Extraction Interpreter
 =====================================
 
-This module implements the interpreter for converting Jaspr (JAX-based quantum 
+This module implements the interpreter for converting Jaspr (JAX-based quantum
 intermediate representation) into static QuantumCircuit objects.
 
 Overview
 --------
-Jaspr represents hybrid quantum-classical algorithms using JAX's tracing 
-infrastructure. While this representation is powerful for optimization and 
-compilation, it needs to be "lowered" to a QuantumCircuit for execution on 
+Jaspr represents hybrid quantum-classical algorithms using JAX's tracing
+infrastructure. While this representation is powerful for optimization and
+compilation, it needs to be "lowered" to a QuantumCircuit for execution on
 current quantum hardware or simulators that expect circuit-based input.
 
 The Challenge
@@ -39,7 +39,7 @@ The main challenge in this conversion is handling **measurement results**:
 2. **In QuantumCircuit**: Measurement results are represented as `Clbit` objects.
    These are non-JAX types that cannot be processed by JAX primitives.
 
-When we encounter classical post-processing of measurement results (e.g., 
+When we encounter classical post-processing of measurement results (e.g.,
 `meas_res * 2` or `parity(m1, m2)`), we cannot represent this computation
 in the QuantumCircuit itself. Instead, we use placeholder objects.
 
@@ -298,9 +298,7 @@ class MeasurementArray(np.ndarray):
         MeasurementArray
             New array with all entries set to ProcessedMeasurement().
         """
-        processed_data = np.array(
-            [ProcessedMeasurement() for _ in self.flat], dtype=object
-        )
+        processed_data = np.array([ProcessedMeasurement() for _ in self.flat], dtype=object)
         return MeasurementArray(processed_data.reshape(self.shape))
 
 
@@ -411,8 +409,7 @@ def apply_array_primitive(prim_name, params, invalues):
     elif prim_name == "dynamic_slice":
         # Start indices come from invalues[1:]
         start_indices = [
-            int(encoded[i]) if np.ndim(encoded[i]) == 0 else int(encoded[i].flat[0])
-            for i in range(1, len(encoded))
+            int(encoded[i]) if np.ndim(encoded[i]) == 0 else int(encoded[i].flat[0]) for i in range(1, len(encoded))
         ]
         slice_sizes = params["slice_sizes"]
         slices = tuple(slice(s, s + sz) for s, sz in zip(start_indices, slice_sizes))
@@ -426,11 +423,7 @@ def apply_array_primitive(prim_name, params, invalues):
             if isinstance(idx, (int, np.integer)):
                 idx = int(idx)
         elif np.ndim(indices) == 0:
-            idx = (
-                int(indices)
-                if isinstance(indices, (int, np.integer, np.ndarray))
-                else indices
-            )
+            idx = int(indices) if isinstance(indices, (int, np.integer, np.ndarray)) else indices
         else:
             idx = int(indices[0]) if len(indices) == 1 else indices
 
@@ -464,8 +457,7 @@ def apply_array_primitive(prim_name, params, invalues):
         update = encoded[1]
         # Start indices come from remaining invalues (already encoded)
         start_indices = tuple(
-            int(encoded[i]) if np.ndim(encoded[i]) == 0 else int(encoded[i].flat[0])
-            for i in range(2, len(encoded))
+            int(encoded[i]) if np.ndim(encoded[i]) == 0 else int(encoded[i].flat[0]) for i in range(2, len(encoded))
         )
 
         # Create a copy and update the slice
@@ -702,16 +694,15 @@ def make_qc_extraction_eqn_evaluator(qc):
         # -----------------------------------------------------------------
 
         if prim_name == "jit" and (
-            isinstance(eqn.params["jaxpr"], Jaspr)
-            or any(contains_measurement_data(v) for v in invalues)
+            isinstance(eqn.params["jaxpr"], Jaspr) or any(contains_measurement_data(v) for v in invalues)
         ):
             # Nested Jaspr (from @qache or similar) - evaluate with our interpreter
             from qrisp.jasp import eval_jaxpr
 
             definition_jaxpr = eqn.params["jaxpr"]
-            res = eval_jaxpr(
-                definition_jaxpr.jaxpr, eqn_evaluator=qc_extraction_eqn_evaluator
-            )(*(invalues + definition_jaxpr.consts))
+            res = eval_jaxpr(definition_jaxpr.jaxpr, eqn_evaluator=qc_extraction_eqn_evaluator)(
+                *(invalues + definition_jaxpr.consts)
+            )
 
             if len(definition_jaxpr.jaxpr.outvars) == 1:
                 res = [res]
@@ -795,8 +786,7 @@ def make_qc_extraction_eqn_evaluator(qc):
             if isinstance(inval, MeasurementArray):
                 # Check if converting to a non-boolean/non-integer type
                 if new_dtype is not None and not (
-                    np.issubdtype(new_dtype, np.bool_)
-                    or np.issubdtype(new_dtype, np.integer)
+                    np.issubdtype(new_dtype, np.bool_) or np.issubdtype(new_dtype, np.integer)
                 ):
                     # Converting to float type - mark as processed
                     context_dic[eqn.outvars[0]] = inval.mark_as_processed()
@@ -808,8 +798,7 @@ def make_qc_extraction_eqn_evaluator(qc):
                 # Clbit should pass through for bool->int conversions (used by cond)
                 # Only mark as processed for float conversions
                 if new_dtype is not None and not (
-                    np.issubdtype(new_dtype, np.bool_)
-                    or np.issubdtype(new_dtype, np.integer)
+                    np.issubdtype(new_dtype, np.bool_) or np.issubdtype(new_dtype, np.integer)
                 ):
                     context_dic[eqn.outvars[0]] = ProcessedMeasurement()
                 else:
@@ -819,11 +808,7 @@ def make_qc_extraction_eqn_evaluator(qc):
                 # ProcessedMeasurement stays processed
                 context_dic[eqn.outvars[0]] = ProcessedMeasurement()
                 return
-            elif (
-                isinstance(inval, list)
-                and len(inval)
-                and isinstance(inval[0], (ProcessedMeasurement, Clbit))
-            ):
+            elif isinstance(inval, list) and len(inval) and isinstance(inval[0], (ProcessedMeasurement, Clbit)):
                 # List of measurement data
                 if new_dtype is not None and not np.issubdtype(new_dtype, np.bool_):
                     context_dic[eqn.outvars[0]] = ProcessedMeasurement()
@@ -1156,9 +1141,7 @@ def jaspr_to_qc(jaspr, *args):
     # allowing jaspr_to_qc to be called from within a make_jaspr or
     # jit tracing context without TracerIntegerConversionError.
     with eval_context():
-        res = eval_jaxpr(jaspr, eqn_evaluator=make_qc_extraction_eqn_evaluator(qc))(
-            *ammended_args
-        )
+        res = eval_jaxpr(jaspr, eqn_evaluator=make_qc_extraction_eqn_evaluator(qc))(*ammended_args)
 
     # Resolve MeasurementArrays to numpy arrays with dtype=object
     res = resolve_measurement_arrays(res)

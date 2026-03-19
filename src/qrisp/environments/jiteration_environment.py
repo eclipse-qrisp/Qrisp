@@ -190,11 +190,9 @@ def iteration_env_evaluator(eqn, context_dic):
 
     # Iterate through the input variables of the equation of iteration 1
     for i in range(len(iteration_1_eqn.invars)):
-
         # If the input variable is not in the input variables of iteration 2,
         # it needs to be updated.
         if iter_1_invar_hashes[i] not in iter_2_invar_hashes:
-
             # Find the index in the outvars of iteration 1
             try:
                 res_index = iter_1_outvar_hashes.index(iter_2_invar_hashes[i])
@@ -290,7 +288,6 @@ def verify_semantic_equivalence(jaxpr_0, jaxpr_1):
     # translation_dic[jaxpr_0.invars[-1]] = jaxpr_1.eqns[0].outvars[0]
 
     while eqn_list_0:
-
         eqn_0 = eqn_list_0.pop(0)
         eqn_1 = eqn_list_1.pop(0)
 
@@ -298,10 +295,7 @@ def verify_semantic_equivalence(jaxpr_0, jaxpr_1):
         # differing semantics
 
         if eqn_0.primitive.name != eqn_1.primitive.name:
-            if (
-                eqn_0.primitive.name == "convert_element_type"
-                and eqn_0.invars[0] in jaxpr_0.invars
-            ):
+            if eqn_0.primitive.name == "convert_element_type" and eqn_0.invars[0] in jaxpr_0.invars:
                 eqn_list_1.insert(0, eqn_1)
                 continue
             raise Exception("Jax semantics changed during jrange iteration")
@@ -319,7 +313,6 @@ def verify_semantic_equivalence(jaxpr_0, jaxpr_1):
                     raise Exception("Jax semantics changed during jrange iteration")
             elif var_0 in translation_dic:
                 if translation_dic[var_0] != var_1:
-
                     raise Exception("Jax semantics changed during jrange iteration")
             else:
                 translation_dic[var_0] = var_1

@@ -23,17 +23,18 @@ from qrisp import QuantumVariable
 from qrisp.jasp import jaspify
 from qrisp.operators import X, Z
 
+
 def test_qdrift_ising_chain():
 
     # Helper functions
     def generate_chain_graph(N):
         G = nx.Graph()
-        G.add_edges_from((k, k+1) for k in range(N-1))
+        G.add_edges_from((k, k + 1) for k in range(N - 1))
         return G
 
     def create_ising_hamiltonian(G, J, B):
         # H = -J ∑ Z_i Z_{i+1} - B ∑ X_i
-        H = sum(-J * Z(i)*Z(j) for (i, j) in G.edges()) + sum(B * X(i) for i in G.nodes())
+        H = sum(-J * Z(i) * Z(j) for (i, j) in G.edges()) + sum(B * X(i) for i in G.nodes())
         return H
 
     def create_magnetization(G):
@@ -67,12 +68,12 @@ def test_jasp_qdrift_ising_chain():
     # Helper functions
     def generate_chain_graph(N):
         G = nx.Graph()
-        G.add_edges_from((k, k+1) for k in range(N-1))
+        G.add_edges_from((k, k + 1) for k in range(N - 1))
         return G
 
     def create_ising_hamiltonian(G, J, B):
         # H = -J ∑ Z_i Z_{i+1} - B ∑ X_i
-        H = sum(-J * Z(i)*Z(j) for (i, j) in G.edges()) + sum(B * X(i) for i in G.nodes())
+        H = sum(-J * Z(i) * Z(j) for (i, j) in G.edges()) + sum(B * X(i) for i in G.nodes())
         return H
 
     def create_magnetization(G):
@@ -95,14 +96,14 @@ def test_jasp_qdrift_ising_chain():
     # Compute magnetization expectation values over time
     @jaspify(terminal_sampling=True)
     def main(T_values):
-        
+
         M_values = jnp.zeros(len(T_values))
         for i in range(len(T_values)):
             ev_M = M.expectation_value(psi, precision=0.01)(T_values[i])
             M_values = M_values.at[i].set(ev_M)
 
         return M_values
-    
-    M_values = main(T_values) 
+
+    M_values = main(T_values)
 
     assert M_values[0] - M_values[-1] > 0.5

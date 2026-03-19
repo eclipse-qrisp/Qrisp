@@ -22,6 +22,7 @@ from qrisp.core import cx, swap
 from qrisp.environments import control
 from qrisp.jasp import check_for_tracing_mode, jlen, jrange, while_loop
 
+
 def demux(
     input,
     ctrl_qv,
@@ -132,17 +133,11 @@ def demux(
         if isinstance(output, QuantumArray):
             for qv in output.flatten()[1:]:
                 if qv.name == input.name:
-                    raise Exception(
-                        "Tried to in-place demux QuantumArray entry,"
-                        "which is not a 0-th position"
-                    )
+                    raise Exception("Tried to in-place demux QuantumArray entry,which is not a 0-th position")
         elif isinstance(output, QuantumVariable):
             for qb in output.reg[1:]:
                 if qb.identifier == input.identifier:
-                    raise Exception(
-                        "Tried to in-place demux QuantumVariable entry,"
-                        "which is not a 0-th position"
-                    )
+                    raise Exception("Tried to in-place demux QuantumVariable entry,which is not a 0-th position")
 
     n = int(np.ceil(np.log2(len(output))))
     N = 2**n
@@ -170,7 +165,6 @@ def demux(
         return output
 
     if n > 1:
-
         if parallelize_qc:
             demux_ancilla = QuantumVariable(len(ctrl_qv) - 1)
             cx(ctrl_qv[:-1], demux_ancilla)
@@ -268,7 +262,6 @@ def cyclic_shift(iterable, shift_amount=1):
     from qrisp import QuantumFloat, control, QuantumBool, cx
 
     if isinstance(shift_amount, QuantumFloat):
-
         if shift_amount.mshape[0] < 0:
             raise Exception("Tried to quantum shift by non-integer QuantumFloat")
 
@@ -294,7 +287,6 @@ def cyclic_shift(iterable, shift_amount=1):
             return cyclic_shift(iterable[::-1], -shift_amount)
 
         if shift_amount != 1:
-
             perm = np.arange(N)
             perm = (perm - shift_amount) % (N)
 
@@ -303,6 +295,7 @@ def cyclic_shift(iterable, shift_amount=1):
 
         singular_shift(iterable[: 2**n])
         singular_shift([iterable[0]] + list(iterable[2**n :]), use_saeedi=True)
+
 
 def _cyclic_shift_jasp(iterable, shift_amount):
     """
@@ -325,6 +318,7 @@ def _cyclic_shift_jasp(iterable, shift_amount):
 
     if shift_amount < 0:
         from qrisp import invert
+
         with invert():
             _cyclic_shift_jasp(iterable, -shift_amount)
         return
@@ -362,6 +356,7 @@ def compute_floor_log2(N):
     """
     Computes floor(log2(N)) in a JASP-compatible way using while_loop.
     """
+
     def body_fun(val):
         result, current = val
         current = current // 2
@@ -403,23 +398,24 @@ def compute_ladder_iterations(N):
     power, iterations = while_loop(cond_fun, body_fun, (power, iterations))
     return iterations
 
+
 def singular_shift(iterable, use_saeedi=False):
 
     N = jlen(iterable)
 
     if use_saeedi:
         for i in jrange(N // 2):
-            j = (N - i) % N   # equivalent to -i % N
+            j = (N - i) % N  # equivalent to -i % N
 
             expr_out = j != i + 1
-            expr_in =  i + 1 < N
+            expr_in = i + 1 < N
             with control(expr_out):
                 with control(expr_in):
                     swap(iterable[j], iterable[i + 1])
 
         for i in jrange(N // 2):
-            j = (N - i) % N   # equivalent to -i % N
-            
+            j = (N - i) % N  # equivalent to -i % N
+
             expr_out = j != i + 2
             expr_in = i + 2 < N
             with control(expr_out):
@@ -427,7 +423,6 @@ def singular_shift(iterable, use_saeedi=False):
                     swap(iterable[j], iterable[i + 2])
 
     else:
-
         iterations = compute_ladder_iterations(N)
         for j in jrange(iterations):
             step = 2 * 2**j

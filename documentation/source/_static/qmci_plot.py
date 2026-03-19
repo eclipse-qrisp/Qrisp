@@ -31,22 +31,22 @@ midpoints = left_edges + width / 2
 heights = left_edges**2
 
 # Plot bars
-plt.bar(left_edges+width/2, heights, width=width, color="#444444", label="Bar plot of x^2")
+plt.bar(left_edges + width / 2, heights, width=width, color="#444444", label="Bar plot of x^2")
 
 # Also plot the smooth curve
 x = np.linspace(0, 1, 100)
 y = x**2
 plt.plot(x, y, color="#20306f", linewidth=5, zorder=2)
 
-plt.xlabel(r'$x$', fontsize=18, color="#444444", fontname="Segoe UI")
-plt.ylabel(r'$f(x)$', fontsize=18, color="#444444", fontname="Segoe UI")
-plt.tick_params(axis='both',color="#444444", labelsize=18)
+plt.xlabel(r"$x$", fontsize=18, color="#444444", fontname="Segoe UI")
+plt.ylabel(r"$f(x)$", fontsize=18, color="#444444", fontname="Segoe UI")
+plt.tick_params(axis="both", color="#444444", labelsize=18)
 plt.grid()
 
 # Hide the top and right spines
-plt.gca().spines['top'].set_visible(False)
-plt.gca().spines['right'].set_visible(False)
+plt.gca().spines["top"].set_visible(False)
+plt.gca().spines["right"].set_visible(False)
 
 plt.tight_layout()
 plt.show()
-#plt.savefig("qmci.svg", format = "svg", dpi = 80, bbox_inches = "tight")
+# plt.savefig("qmci.svg", format = "svg", dpi = 80, bbox_inches = "tight")

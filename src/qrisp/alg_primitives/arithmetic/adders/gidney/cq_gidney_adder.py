@@ -58,20 +58,16 @@ def cq_gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     merge(qs_list)
 
     with fast_append(3):
-
         if isinstance(a, (int, np.int_)):
             a = int(a)
             a = bin_rep(a % 2 ** len(b), len(b))[::-1]
         elif not isinstance(a, str):
-            raise Exception(
-                f"Tried to call semi-classical carry calculator with invalid type {type(a)}"
-            )
+            raise Exception(f"Tried to call semi-classical carry calculator with invalid type {type(a)}")
 
         if len(a) != len(b):
             raise Exception("Tried to call Gidney adder with inputs of unequal length")
 
         if c_out is not None:
-
             # Convert to qubit if neccessary
             if isinstance(c_out, QuantumBool):
                 c_out = c_out[0]
@@ -80,7 +76,6 @@ def cq_gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
             a = a + "0"
 
         if c_in is not None:
-
             # Convert to qubit if neccessary
             if isinstance(c_in, QuantumBool):
                 c_in = c_in[0]
@@ -102,7 +97,6 @@ def cq_gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         # This loop now perform the iterations that are required to build up the circuit described
         # in the paper
         for i in range(len(b) - 1):
-
             # The relevant observation to turn Gidney's adder into a semi-classical adder
             # is that the "a_i" qubit (in his paper these qubits are called "i")
             # is only involved in two interactions:
@@ -118,7 +112,6 @@ def cq_gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
             # Combining these steps results in a quasi-toffoli with a modified control-state
             # If a is True, the quasi-toffoli receives the flipped value of the ancilla
             if i != 0:
-
                 if ctrl is not None:
                     if "1" == a[i]:
                         cx(ctrl, gidney_anc[i - 1])
@@ -168,18 +161,15 @@ def cq_gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         # We now perform the right branch of the V shaped circuit
 
         with invert():
-
             # Call merge to make the QuantumSession enter the inversion environment
             # (doesn't happen automatically with fast_append = 3)
             merge(b[0].qs())
 
             for i in range(len(b) - 1):
-
                 # Regarding the treatment of the classical values, a similar logic as
                 # above is applied
                 if i != 0:
                     if ctrl is not None:
-
                         if "1" == a[i]:
                             cx(ctrl, gidney_anc[i - 1])
                         mcx(
@@ -214,7 +204,6 @@ def cq_gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
             # Since the values of a (in his paper "i") are classically known we
             # can use a classical condition
             if a[i] == "1":
-
                 if c_in is not None and i == 0:
                     continue
                 # Here we need to again treat the control qubit, because in the
