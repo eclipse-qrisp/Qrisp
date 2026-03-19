@@ -187,7 +187,7 @@ def pseudo_inversion(
 
     """
 
-    p = _pseudo_inverse_cheb(theta, delta, eps, 100)
+    p = _pseudo_inversion_cheb(theta, delta, eps, 100)
 
     # Set _rescale=False to apply p(A/α) instead of p(A).
     A_pseudo_inv = GQSVT(A, p, kind="Chebyshev", rescale=False)
@@ -237,7 +237,7 @@ def _smooth_rectangle(
     return 0.5 * (erf_plus - erf_minus)
 
 
-def _pseudo_inverse_cheb(
+def _pseudo_inversion_cheb(
     theta: float,
     delta: float = None,
     eps: float = 1e-3,

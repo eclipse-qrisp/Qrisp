@@ -155,7 +155,7 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
     # Kernel Reflection
     # Rescale kappa to account for larger normalization factor of A_t
     kappa_t = kappa * (1.0 + 1.0 / t)
-    p = _kernel_reflection_poly(1.0 / kappa_t, eps)
+    p = _kernel_reflection_cheb(1.0 / kappa_t, eps)
     KR = GQSVT(G_t, p, kind="Chebyshev", parity="even", rescale=False)
 
     def new_unitary(*args):
@@ -170,9 +170,9 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
     return BlockEncoding(KR.alpha, new_anc_templates, new_unitary, num_ops=KR.num_ops-1)
 
 
-def _kernel_reflection_poly(delta: float, eps: float = 1e-3) -> npt.NDArray[np.float64]:
+def _kernel_reflection_cheb(delta: float, eps: float = 1e-3) -> npt.NDArray[np.float64]:
     """
-    Constructs the exact Chebyshev polynomial for the Kernel Reflection 
+    Constructs the Chebyshev polynomial for the Kernel Reflection 
     Polynomial $K_{\delta, \ell}(x)$ from `Dalzell (2024) <https://arxiv.org/pdf/2406.12086>`_ Eq 62.
     
     Parameters
@@ -217,6 +217,6 @@ def _kernel_reflection_poly(delta: float, eps: float = 1e-3) -> npt.NDArray[np.f
     T_ell_z0 = T_ell(z_0)
     
     # 2.5 Construct the final normalized Kernel Reflection Polynomial.
-    K_poly = -1.0 + 2.0 * (T_ell_z + 1.0) / (T_ell_z0 + 1.0)
+    K_cheb = -1.0 + 2.0 * (T_ell_z + 1.0) / (T_ell_z0 + 1.0)
     
-    return K_poly.coef
+    return K_cheb.coef
