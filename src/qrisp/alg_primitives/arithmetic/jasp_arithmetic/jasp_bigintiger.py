@@ -136,6 +136,9 @@ class BigInteger:
         BigInteger
             Fixed-width representation of `n` modulo 2^(32*size).
         """
+        if n < 0:
+            raise ValueError(f"Input must be non-negative, got {n}.")
+    
         digits = []
         for i in range(size):
             digits.append(n % BASE)

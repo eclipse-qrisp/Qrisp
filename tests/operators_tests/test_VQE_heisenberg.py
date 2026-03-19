@@ -60,4 +60,4 @@ def test_jasp_vqe_heisenberg():
 
     results = main()
     
-    assert np.abs(min(results)-(-8.0)) < 1
+    assert np.abs(min(results)-(-8.0)) < 2

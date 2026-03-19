@@ -64,6 +64,40 @@ def test_jasp_q_switch_quantum_index():
         assert res == index_val
 
 
+def test_jasp_q_switch_multiple_operands():
+    from qrisp import QuantumFloat, jaspify, measure, q_switch
+
+    @jaspify
+    def main(index_val):
+
+        def f0(x, y): pass
+
+        def f1(x ,y): 
+            x += 1
+            y += 1
+
+        def f2(x, y): 
+            x += 2
+            y += 2
+
+        def f3(x, y): 
+            x += 3
+            y += 3
+
+        index = QuantumFloat(2)
+        index[:] = index_val
+        branches = [f0, f1, f2, f3]
+        operand1 = QuantumFloat(2)
+        operand2 = QuantumFloat(2)
+
+        q_switch(index, branches, operand1, operand2)
+        return measure(operand1), measure(operand2)
+
+    for index_val in range(4):
+        res = main(index_val)
+        assert res[0] + res[1] == 2 * index_val
+
+
 def test_jasp_q_switch_hamiltonian_simulation():
     from qrisp import QuantumFloat, h, q_switch, terminal_sampling
     import numpy as np
