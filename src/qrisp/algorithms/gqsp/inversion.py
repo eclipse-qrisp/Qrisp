@@ -24,7 +24,7 @@ from qrisp.block_encodings import BlockEncoding
 from typing import Literal
 
 
-def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET", "GQSVT"] = "QET",) -> BlockEncoding:
+def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET", "GQSVT"] = "QET") -> BlockEncoding:
     r"""
     Quantum Linear System Solver via Quantum Eigenvalue Transformation (QET).
     Returns a BlockEncoding approximating the matrix inversion of the operator.
@@ -70,7 +70,7 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
 
     References
     ----------
-    - Childs et. al (2017) `Quantum algorithm for systems of linear equations with exponentially improved dependence on precision <https://arxiv.org/pdf/1511.02306>`_.
+    - Childs et al. (2017) `Quantum algorithm for systems of linear equations with exponentially improved dependence on precision <https://arxiv.org/pdf/1511.02306>`_.
 
     Examples
     --------
@@ -143,10 +143,9 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
         )
 
     # The inversion polynomial is constructed using cks_params and cks_coeffs.
-    # Since approximating 1/x over the relevant spectral interval [-1, -1/kappa] + [1/kappa,1]
+    # Since approximating 1/x over the relevant spectral interval [-1, -1/kappa] + [1/kappa, 1]
     # requires an odd Chebyshev series, cks_coeffs returns an array containing only the odd-degree coefficients.
-    # To remain compatible with the QET interface, this array is expanded into a full
-    # Chebyshev series by padding even-degree terms with zeros.
+    # This array is expanded into a full Chebyshev series by padding even-degree terms with zeros.
     j_0, beta = cks_params(eps, kappa)
     p_odd = cks_coeffs(j_0, beta)
     p_odd = p_odd * (-1) ** np.arange(len(p_odd))

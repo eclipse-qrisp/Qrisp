@@ -18,6 +18,7 @@ Algorithms & Applications
     hamiltonian_simulation
     inversion
     dalzell_inversion
+    pseudo_inversion
     convolve
     fourier_series_loader
 
