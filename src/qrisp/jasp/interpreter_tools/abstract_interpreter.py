@@ -20,8 +20,7 @@ from typing import Callable, Sequence
 
 import jax.numpy as jnp
 from jax import make_jaxpr
-from jax._src.core import JaxprEqn
-from jax.extend.core import ClosedJaxpr, Literal
+from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Literal
 
 from qrisp.jasp import check_for_tracing_mode
 
@@ -108,8 +107,19 @@ class ContextDict(dict):
         return res
 
 
-def exec_eqn(eqn, context_dic):
-    """Evaluate a single equation within the given context dictionary."""
+def exec_eqn(eqn: JaxprEqn, context_dic: ContextDict) -> None:
+    """
+    Evaluate a single equation within the given context dictionary.
+
+    Parameters
+    ----------
+    eqn : JaxprEqn
+        The equation to evaluate.
+
+    context_dic : ContextDict
+        The context dictionary mapping Jaxpr variables to their current values.
+
+    """
 
     invalues = extract_invalues(eqn, context_dic)
     res = eqn.primitive.bind(*invalues, **eqn.params)
@@ -182,16 +192,17 @@ def eval_jaxpr(
     return jaxpr_evaluator
 
 
-def reinterpret(jaxpr, eqn_evaluator=exec_eqn):
+def reinterpret(jaxpr: Jaxpr | ClosedJaxpr, eqn_evaluator: Callable = exec_eqn):
+    """Reinterpret a Jaxpr using the provided equation evaluator."""
 
     if isinstance(jaxpr, ClosedJaxpr):
         inter_jaxpr = jaxpr.jaxpr
     else:
         inter_jaxpr = jaxpr
 
-    res = make_jaxpr(eval_jaxpr(inter_jaxpr, eqn_evaluator=eqn_evaluator))(
-        *[var.aval for var in inter_jaxpr.constvars + inter_jaxpr.invars]
-    ).jaxpr
+    evaluator = eval_jaxpr(inter_jaxpr, eqn_evaluator=eqn_evaluator)
+    jaxpr_input_avals = [var.aval for var in inter_jaxpr.constvars + inter_jaxpr.invars]
+    res = make_jaxpr(evaluator)(*jaxpr_input_avals).jaxpr
 
     res.constvars.extend(res.invars[: len(inter_jaxpr.constvars)])
     temp = list(res.invars[len(inter_jaxpr.constvars) :])
@@ -211,6 +222,8 @@ def eval_jaxpr_with_context_dic(
 
     for eqn in jaxpr.eqns:
 
+        # TODO: We should probably find a more elegant way to handle
+        # control flow primitives without hardcoding them here.
         default_eval = eqn_evaluator(eqn, context_dic)
 
         if default_eval:
@@ -245,7 +258,20 @@ def extract_invalues(eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
 def insert_outvalues(
     eqn: JaxprEqn, context_dic: ContextDict, outvalues: Sequence
 ) -> None:
-    """Insert the output values of an equation into the context dictionary."""
+    """
+    Insert the output values of an equation into the context dictionary.
+
+    Parameters
+    ----------
+    eqn : JaxprEqn
+        The equation whose outputs are being inserted.
+
+    context_dic : ContextDict
+        The context dictionary where the output values will be stored.
+
+    outvalues : Sequence
+        The output values to be inserted into the context dictionary.
+    """
 
     if eqn.primitive.multiple_results:
         if len(outvalues) != len(eqn.outvars):
