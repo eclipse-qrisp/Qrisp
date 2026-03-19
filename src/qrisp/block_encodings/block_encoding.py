@@ -26,7 +26,8 @@ import numpy as np
 import numpy.typing as npt
 from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.reflection import reflection
-from qrisp.core.gate_application_functions import gphase, h, ry, x, z
+from qrisp.block_encodings.helper_functions import _flatten_qargs
+from qrisp.core.gate_application_functions import cx, gphase, h, mcx, reset, ry, x, z
 from qrisp.environments import conjugate, control, invert
 from qrisp.interface import BackendClient
 from qrisp.jasp import (
@@ -1414,7 +1415,7 @@ class BlockEncoding:
 
         Parameters
         ----------
-        other : ArrayLike
+        other : ArrayLike or BlockEncoding
             The scalar scaling factor (coefficient) to apply. Can be a Python float,
             a JAX/NumPy scalar, or a 0-dimensional array.
 
@@ -1486,6 +1487,42 @@ class BlockEncoding:
                 num_ops=self.num_ops,
                 is_hermitian=self.is_hermitian,
             )
+
+        if isinstance(other, BlockEncoding):
+            # Hadamard product https://arxiv.org/pdf/2402.16714, https://arxiv.org/abs/2509.15779
+
+            def new_unitary(*args):
+
+                it = iter(args)
+                flag = next(it)
+                self_ancs = [next(it) for _ in range(self.num_ancs)]
+                other_ancs = [next(it) for _ in range(other.num_ancs)]
+                operands = list(it)
+
+                operands_dupl = [operand.duplicate() for operand in operands]
+
+                for op, op_dupl in zip(operands, operands_dupl):
+                    cx(op, op_dupl)
+
+                self.unitary(*self_ancs, *operands)
+                other.unitary(*other_ancs, *operands_dupl)
+
+                for op, op_dupl in zip(operands, operands_dupl):
+                    cx(op, op_dupl)
+
+                x(flag)
+
+                flattened_operands_dupl = _flatten_qargs(operands_dupl)
+                qubits = sum([op_dupl.reg for op_dupl in flattened_operands_dupl], [])
+                mcx(qubits, flag, ctrl_state=0)
+
+                for operand_dupl in operands_dupl:
+                    reset(operand_dupl)
+                    operand_dupl.delete()
+
+            new_anc_templates = [QuantumBool().template()] + self._anc_templates + other._anc_templates
+            new_alpha = self.alpha * other.alpha
+            return BlockEncoding(new_alpha, new_anc_templates, new_unitary)
 
         return NotImplemented
 
