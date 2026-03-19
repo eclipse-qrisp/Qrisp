@@ -69,7 +69,8 @@ class TracingQuantumSession(metaclass=SingletonMeta):
     restores the previous state and returns the circuit traced in the nested scope.
     """
 
-    tr_qs_container: Deque = deque([None])
+    tr_qs_instance: "TracingQuantumSession | None" = None
+
     abs_qst_stack: List[AbstractQuantumState | None] = []
     qubit_cache_stack: List = []
 
@@ -81,11 +82,12 @@ class TracingQuantumSession(metaclass=SingletonMeta):
         Use :meth:`start_tracing` to begin recording into a provided abstract circuit object.
         """
 
+        TracingQuantumSession.tr_qs_instance = self
+
         self.abs_qst = None
         self.qv_list = []
         self.deleted_qv_list = []
         self.qubit_cache = None
-        TracingQuantumSession.tr_qs_container.appendleft(self)
         self.qv_stack = []
 
     def start_tracing(self, abs_qst: AbstractQuantumState) -> None:
@@ -242,12 +244,12 @@ class TracingQuantumSession(metaclass=SingletonMeta):
     @classmethod
     def release(cls) -> None:
         """Release the current tracing quantum session, allowing a new one to be created."""
-        cls.tr_qs_container.popleft()
+        cls.tr_qs_instance = None
 
     @classmethod
     def get_instance(cls) -> "TracingQuantumSession":
         """Get the current instance of the tracing quantum session."""
-        return cast("TracingQuantumSession", cls.tr_qs_container[0])
+        return cast("TracingQuantumSession", cls.tr_qs_instance)
 
 
 tracing_qs_singleton = TracingQuantumSession()
