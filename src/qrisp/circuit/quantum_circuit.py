@@ -660,66 +660,6 @@ class QuantumCircuit:
 
         return bool(norm(unitary_self - unitary_other) < 10**-precision)
 
-    # Converts several types of inputs to qubit lists.
-    # Possible inputs are
-    #
-    # A qubit object
-    # An integer
-    # A list of integers
-    # A list of qubits
-    def convert_to_qubit_list(self, input, inner_recursion=False):
-        if isinstance(input, Qubit):
-            if inner_recursion:
-                return input
-            else:
-                return [input]
-
-        if isinstance(input, int):
-            try:
-                return self.convert_to_qubit_list(
-                    self.qubits[input], inner_recursion=inner_recursion
-                )
-            except IndexError:
-                raise RuntimeError(
-                    "Not enough qubits in circuit to access qubit " + str(input) + "."
-                )
-
-        if isinstance(input, list):
-            return_list = []
-            for qb in input:
-                return_list.append(self.convert_to_qubit_list(qb, inner_recursion=True))
-            return return_list
-
-        raise ValueError(
-            "Could not convert input type " + str(type(input)) + " to qubit list"
-        )
-
-    # Similar function as above but with classical bits
-    def convert_to_clbit_list(self, input, inner_recursion=False):
-        if isinstance(input, Clbit):
-            if inner_recursion:
-                return input
-            else:
-                return [input]
-
-        if isinstance(input, int):
-            try:
-                return self.convert_to_clbit_list(
-                    self.clbits[input], inner_recursion=inner_recursion
-                )
-            except IndexError:
-                raise RuntimeError(
-                    "Not enough clbits in circuit to access clbit " + str(input) + "."
-                )
-
-        if isinstance(input, list):
-            return_list = []
-            for cb in input:
-                return_list.append(self.convert_to_clbit_list(cb, inner_recursion=True))
-            return return_list
-
-        return self.convert_to_clbit_list(list(input))
-
     def inverse(self) -> "QuantumCircuit":
         """
         Generates the inverse of this QuantumCircuit by applying the inverse gates in reversed order.
