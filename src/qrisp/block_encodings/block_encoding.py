@@ -1405,31 +1405,33 @@ class BlockEncoding:
             is_hermitian=self.is_hermitian and other.is_hermitian,
         )
 
-    def __mul__(self, other: "ArrayLike") -> BlockEncoding:
+    def __mul__(self, other: "ArrayLike" | BlockEncoding) -> BlockEncoding:
         r"""
-        Returns a BlockEncoding of the scaled operator.
+        Returns a BlockEncoding of the scaled operator, or the element-wise product of two operators.
 
-        This method implements the scalar multiplication $c \cdot A$, where $A$
-        is the operator encoded by this instance and $c$ is the
-        provided scalar.
+        If ``other`` is a scalar, this method returns a BlockEncoding of $c \cdot A$.
+        If ``other`` is another BlockEncoding, it returns the element-wise (Hadamard)
+        product of the encoded operators, $A \circ B$.
 
         Parameters
         ----------
         other : ArrayLike or BlockEncoding
-            The scalar scaling factor (coefficient) to apply. Can be a Python float,
-            a JAX/NumPy scalar, or a 0-dimensional array.
+            The scalar value or the BlockEncoding instance to be multiplied.
+            The scalar coefficient can be a Python float, a JAX/NumPy scalar, or a 0-dimensional array.
 
         Returns
         -------
         BlockEncoding
-            A new BlockEncoding instance representing the scaled operator.
+            A new BlockEncoding instance representing the scaled operator, or the element-wise operator product.
 
         Notes
         -----
-        - Multiplying by a scalar $c$ results in a new BlockEncoding of $cA$ by updating $\alpha \rightarrow c\alpha$.
+        - Multiplying by a scalar $c$ results in a new BlockEncoding of $cA$ by updating $\alpha \rightarrow c\cdot\alpha$.
 
         Examples
         --------
+
+        **Example 1: Scalar multiplication**
 
         Define two block-encodings and implement their scaled sum as a new block encoding.
 
@@ -1470,6 +1472,46 @@ class BlockEncoding:
             # Result from BE of 2 * H1 + H2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}
             # Result from 2 * BE1 + BE2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}
             # Result from BE1 * 2 + BE2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}
+
+        **Example 2: Element-wise (Hadamard) product**
+
+        Define two block-encodings and implement their Hadamard product.
+
+        ::
+
+            from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
+
+            A = np.array([[0.5,0.5],[0.5,0.5]])
+            B = np.array([[0.1,0.3],[0.3,0.0]])
+            b = np.array([1. ,0.])
+
+            BA = BlockEncoding.from_array(A)
+            BB = BlockEncoding.from_array(B)
+
+            C = A * B
+            BC = BA * BB
+
+            def prep_b():
+                qv = QuantumFloat(1)
+                prepare(qv, b)
+                return qv
+
+            @terminal_sampling
+            def main():
+                res = BC.apply_rus(prep_b)()
+                return res
+
+            res_dict = main()
+            amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
+            print("Result from BA * BB: ", amps)
+
+            c = C @ b / np.linalg.norm(C @ b)
+            c = c / np.linalg.norm(c)
+            print("Result from NumPy: ", c)
+            # Result from BA * BB:  [0.31622776 0.9486833 ]
+            # Result from NumPy:  [0.31622777 0.9486833 ]
+
         """
         from jax.typing import ArrayLike
 
@@ -1489,7 +1531,7 @@ class BlockEncoding:
             )
 
         if isinstance(other, BlockEncoding):
-            # Hadamard product https://arxiv.org/pdf/2402.16714, https://arxiv.org/abs/2509.15779
+            # Hadamard product https://arxiv.org/pdf/2402.16714, https://arxiv.org/abs/2509.15779.
 
             def new_unitary(*args):
 
@@ -1510,6 +1552,7 @@ class BlockEncoding:
                 for op, op_dupl in zip(operands, operands_dupl):
                     cx(op, op_dupl)
 
+                # Use a flag QuantumBool to indicate if all operand qubits are in the zero state.
                 x(flag)
 
                 flattened_operands_dupl = _flatten_qargs(operands_dupl)
@@ -1520,9 +1563,13 @@ class BlockEncoding:
                     reset(operand_dupl)
                     operand_dupl.delete()
 
-            new_anc_templates = [QuantumBool().template()] + self._anc_templates + other._anc_templates
+            new_anc_templates = (
+                [QuantumBool().template()] + self._anc_templates + other._anc_templates
+            )
             new_alpha = self.alpha * other.alpha
-            return BlockEncoding(new_alpha, new_anc_templates, new_unitary)
+            return BlockEncoding(
+                new_alpha, new_anc_templates, new_unitary, num_ops=self.num_ops
+            )
 
         return NotImplemented
 
