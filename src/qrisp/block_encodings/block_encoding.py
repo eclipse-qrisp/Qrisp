@@ -539,10 +539,10 @@ class BlockEncoding:
         ----------
         left : int | tuple of int | Callable
             An integer or a tuple of integers representing a computational basis state $\ket{\phi}$,
-            or a function ``left(*operands)`` preparing a state $\ket{\phi}$.
+            or a function ``left(*operands)`` preparing a state $\ket{\phi}$ from $\ket{0}$.
         right : int | tuple of int | Callable
             An integer or a tuple of integers representing a computational basis state $\ket{\psi}$,
-            or a function ``right(*operands)`` preparing a state $\ket{\psi}$.
+            or a function ``right(*operands)`` preparing a state $\ket{\psi}$ from $\ket{0}$.
             Defaults to ``left``.
         kernel : bool
             If True, the kernel projector $\mathbb I - \ket{\phi}\bra{\phi}$ is block-encoded.
@@ -556,6 +556,63 @@ class BlockEncoding:
         -------
         BlockEncoding
             A new BlockEncoding instance representing the projector $\ket{\phi}\bra{\psi}$.
+
+        Examples
+        --------
+
+        **Example 1: Computational basis states**
+
+        Define a block-encoding for the projector $P=\ket{1}\bra{3}$.
+
+        ::
+
+            from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
+
+            P = BlockEncoding.from_projector(1, 3)
+
+            # Prepare operand in superposition state
+            def operand_prep():
+                operand = QuantumFloat(2)
+                h(operand)
+                return operand
+
+            @terminal_sampling
+            def main():
+                operand = P.apply_rus(operand_prep)()
+                return operand
+
+            res_dict = main()
+            print(res_dict)
+            # {1.0: 1.0}
+
+        **Example 2: Custom states**
+
+        Define a block-encoding for the projector $P=\ket{\psi}\bra{\psi}$ where $\ket{\psi}\propto\ket{0}+\ket{1}+\ket{2}+\ket{3}$.
+
+        ::
+
+            from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
+
+            def prep_psi(qv):
+                h(qv)
+
+            P = BlockEncoding.from_projector(prep_psi)
+
+            # Prepare operand in |0> state
+            def operand_prep():
+                operand = QuantumFloat(2)
+                return operand
+
+            @terminal_sampling
+            def main():
+                operand = P.apply_rus(operand_prep)()
+                return operand
+
+            res_dict = main()
+            print(res_dict)
+            # {0.0: 0.25, 1.0: 0.25, 2.0: 0.25, 3.0: 0.25}
 
         """
 
