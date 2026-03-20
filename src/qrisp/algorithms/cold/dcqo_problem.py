@@ -137,14 +137,12 @@ class DCQOProblem:
         A_lam,
         agp_coeffs,
         lam_func,
-        g_func=None,
         H_control=None,
         qarg_prep=None,
     ):
 
         # Scheduling function
         self.lam_func = lam_func
-        self.g_func = g_func
 
         # Operators
         self.agp_coeffs = agp_coeffs
@@ -209,13 +207,10 @@ class DCQOProblem:
         # Functions for t = g(lam) and derivative (later needed for opt pulses)
         # must only be calculated for COLD, not for LCD
         if method == "COLD":
-            lam_sym = sp.Symbol("lam")
-            g_func = sp.lambdify((lam_sym, T_sym), self.g_func(), "numpy")
-            g_deriv_expr = sp.diff(self.g_func(), lam_sym)
-            g_deriv_func = sp.lambdify((lam_sym, T_sym), g_deriv_expr, "numpy")
-            g_deriv = g_deriv_func(self.lam, T)
+            g = t_list                        # g(lam[s]) = t[s] by definition
+            g_deriv = 1.0 / lamdot            # dt/dlambda = 1 / (dlambda/dt)
 
-            self.g = g_func(self.lam, T)
+            self.g = g
             self.g_deriv = g_deriv
 
     def _precompute_opt_pulses(self, N_steps, T, t_list, N_opt, CRAB=False):
@@ -301,6 +296,7 @@ class DCQOProblem:
 
             # Get alpha for the timestep
             coeffs = self.agp_coeffs(self.lam[s])
+            # print(f"Alpha = {coeffs}")
 
             # H_0 contribution scaled by dt
             U1(qarg, t=dt * (1 - self.lam[s]))

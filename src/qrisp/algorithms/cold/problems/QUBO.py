@@ -49,14 +49,8 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
 
     def lam():
         t, T = sp.symbols("t T", real=True)
-        lam_expr = t / T
+        lam_expr = sp.sin(sp.pi / 2 * sp.sin(sp.pi * t / (2 * T)) ** 2) ** 2
         return lam_expr
-
-    def g():
-        # Inverse of lam(t) giving t(lam)
-        lam, T = sp.symbols("lam T")
-        g_expr = lam * T
-        return g_expr
 
     # AGP coefficients
     if uniform_AGP_coeffs:
@@ -113,7 +107,7 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
     # Control Hamiltonian
     H_control = sum([Z(i) for i in range(N)])
 
-    collected_operators = (Q, H_init, H_prob, A_lam, alpha, lam, g, H_control)
+    collected_operators = (Q, H_init, H_prob, A_lam, alpha, lam, H_control)
 
     return collected_operators
 
