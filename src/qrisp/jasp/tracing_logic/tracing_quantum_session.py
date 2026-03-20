@@ -74,7 +74,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
     def _check_trace(self):
         """Check if the current trace is still active and valid for the session."""
         if not self.abs_qst._trace is jax.core.trace_ctx.trace:
-            raise RuntimeError(
+            raise Exception(
                 """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
             )
 
