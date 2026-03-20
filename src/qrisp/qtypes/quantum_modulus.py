@@ -245,12 +245,25 @@ class QuantumModulus(QuantumFloat):
         return montgomery_decoder(i, 2**self.m, self.modulus)
 
     def jdecoder(self, i):
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
-            montgomery_decoder,
-        )
-
-        return montgomery_decoder(i, 2**self.m, self.modulus)
-
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_decoder
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+        # Use pow(2, -m, N) to compute the decode factor as a plain int,
+        # which handles both positive and negative m correctly.
+        # For m >= 0:  decode_factor = 2^{-m} mod N (modular inverse)
+        # For m < 0:   decode_factor = 2^{|m|} mod N
+        m_val = int(self.m)
+        if m_val == 0:
+            return i
+        if isinstance(self.modulus, BigInteger):
+            N_int = self.modulus()
+            decode_factor_int = pow(2, -m_val, N_int)
+            decode_factor = BigInteger.create_static(decode_factor_int, self.modulus.digits.shape[0])
+            return (i * decode_factor) % self.modulus
+        else:
+            N_val = int(self.modulus)
+            decode_factor = pow(2, -m_val, N_val)
+            return (i * decode_factor) % N_val
+    
     def measure(self):
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
             BigInteger,
@@ -329,8 +342,6 @@ class QuantumModulus(QuantumFloat):
         )
 
         if isinstance(other, QuantumModulus):
-            if self.m != other.m:
-                raise ValueError("Both QuantumModuli must have the same shift")
             if self.modulus != other.modulus:
                 raise ValueError("Both QuantumModuli must have the same modulus")
             if check_for_tracing_mode():
@@ -411,7 +422,11 @@ class QuantumModulus(QuantumFloat):
     def __add__(self, other):
         if isinstance(other, int):
             other = self.encoder(other % self.modulus)
-        elif isinstance(other, QuantumModulus):
+        elif isinstance(other, (QuantumModulus, QuantumFloat)):
+            pass
+        else:
+            other = other % self.modulus
+        if isinstance(other, QuantumModulus):
             if self.m != other.m:
                 raise Exception(
                     "Tried to add two QuantumModulus with differing Montgomery shift"
@@ -437,7 +452,11 @@ class QuantumModulus(QuantumFloat):
     def __iadd__(self, other):
         if isinstance(other, int):
             other = self.encoder(other % self.modulus)
-        elif isinstance(other, QuantumModulus):
+        elif isinstance(other, (QuantumModulus, QuantumFloat)):
+            pass
+        else:
+            other = other % self.modulus
+        if isinstance(other, QuantumModulus):
             if self.m != other.m:
                 from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
                     montgomery_addition,
@@ -460,7 +479,11 @@ class QuantumModulus(QuantumFloat):
     def __sub__(self, other):
         if isinstance(other, int):
             other = self.encoder(other % self.modulus)
-        elif isinstance(other, QuantumModulus):
+        elif isinstance(other, (QuantumModulus, QuantumFloat)):
+            pass
+        else:
+            other = other % self.modulus
+        if isinstance(other, QuantumModulus):
             if self.m != other.m:
                 raise Exception(
                     "Tried to add subtract QuantumModulus with differing Montgomery shift"
@@ -485,7 +508,11 @@ class QuantumModulus(QuantumFloat):
     def __rsub__(self, other):
         if isinstance(other, int):
             other = self.encoder(other % self.modulus)
-        elif isinstance(other, QuantumModulus):
+        elif isinstance(other, (QuantumModulus, QuantumFloat)):
+            pass
+        else:
+            other = other % self.modulus
+        if isinstance(other, QuantumModulus):
             if self.m != other.m:
                 raise Exception(
                     "Tried to add subtract QuantumModulus with differing Montgomery shift"
@@ -510,7 +537,11 @@ class QuantumModulus(QuantumFloat):
     def __isub__(self, other):
         if isinstance(other, int):
             other = self.encoder(other % self.modulus)
-        elif isinstance(other, QuantumModulus):
+        elif isinstance(other, (QuantumModulus, QuantumFloat)):
+            pass
+        else:
+            other = other % self.modulus
+        if isinstance(other, QuantumModulus):
             if self.m != other.m:
                 raise Exception(
                     "Tried to add subtract QuantumModulus with differing Montgomery shift"
