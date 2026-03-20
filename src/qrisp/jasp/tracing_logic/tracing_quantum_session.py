@@ -18,11 +18,15 @@
 
 import weakref
 from collections import deque
-from typing import Deque, Dict, cast, List
+from typing import Deque, Dict, Sequence
 
 import jax
+from jax.extend.core import JaxprEqn
 from sympy import symbols
 
+from qrisp.circuit.clbit import Clbit
+from qrisp.circuit.operation import Operation
+from qrisp.circuit.qubit import Qubit
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.jasp.primitives import create_qubits, delete_qubits_p, quantum_gate_p
 from qrisp.jasp.primitives.abstract_quantum_state import AbstractQuantumState
@@ -50,8 +54,8 @@ class TracingQuantumSession(metaclass=SingletonMeta):
     """Manage tracing-time state for building quantum circuits in Jasp mode."""
 
     tr_qs_instance: "TracingQuantumSession | None" = None
-    abs_qst_stack: List[AbstractQuantumState | None] = []
-    qubit_cache_stack: List[Dict | None] = []
+    abs_qst_stack: Deque[AbstractQuantumState | None] = deque()
+    qubit_cache_stack: Deque[Dict | None] = deque()
 
     def __init__(self):
         """
@@ -72,7 +76,11 @@ class TracingQuantumSession(metaclass=SingletonMeta):
         self.qv_stack = []
 
     def _check_trace(self):
-        """Check if the current trace is still active and valid for the session."""
+        """Raise if current JAX trace no longer matches the session's quantum state."""
+
+        # NOTE: We use base Exception class (not a subclass) because JAX's tracing machinery
+        # uses broad `except Exception` guards internally. Subclasses can escape
+        # those guards, causing performance regressions as every call retrace.
         if not self.abs_qst._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
@@ -96,7 +104,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
     def conclude_tracing(self) -> AbstractQuantumState | None:
         """Conclude the current tracing context and return the traced circuit."""
 
-        temp = self.abs_qst
+        tmp_abs_qst = self.abs_qst
 
         # Restore previous tracing state
         self.abs_qst = TracingQuantumSession.abs_qst_stack.pop()
@@ -104,10 +112,34 @@ class TracingQuantumSession(metaclass=SingletonMeta):
 
         self.qv_list, self.deleted_qv_list = self.qv_stack.pop()
 
-        return temp
+        return tmp_abs_qst
 
-    def append(self, operation, qubits=None, clbits=None, param_tracers=None):
-        """Append an operation to the currently traced circuit, with the provided qubits, classical bits, and parameter tracers."""
+    def append(
+        self,
+        operation: Operation,
+        qubits: Sequence[Qubit] | None = None,
+        clbits: Sequence[Clbit] | None = None,
+        param_tracers: Sequence | None = None,
+    ):
+        """
+        Append an operation to the currently traced circuit, with the provided qubits, classical bits, and parameter tracers.
+
+
+        Parameters
+        ----------
+        operation : Operation
+            The operation to append to the circuit.
+
+        qubits : Sequence[Qubit] | None, optional
+            The qubits to which the operation should be applied. If None, defaults to an empty list.
+
+        clbits : Sequence[Clbit] | None, optional
+            The classical bits associated with the operation. If None, defaults to an empty list.
+
+        param_tracers : Sequence | None, optional
+            The parameter tracers for the operation, used for parameterized gates. If None, defaults to an empty list.
+
+        """
 
         self._check_trace()
 
@@ -163,17 +195,23 @@ class TracingQuantumSession(metaclass=SingletonMeta):
                 )
             return
 
-        temp_op = operation.copy()
-
-        temp_op.params = list(temp_op.params)
-        for i, _ in enumerate(temp_op.params):
-            temp_op.params[i] = greek_letters[i]
-
         args = list(qubits) + list(param_tracers) + [self.abs_qst]
         self.abs_qst = quantum_gate_p.bind(*args, gate=operation)
 
-    def register_qv(self, qv, size):
-        """Register a quantum variable in the session and allocate its qubits."""
+    def register_qv(self, qv: QuantumVariable, size: int | jax.Array) -> None:
+        """
+        Register a quantum variable in the session and allocate its qubits.
+
+        Parameters
+        ----------
+        qv : QuantumVariable
+            The quantum variable to register in the session.
+
+        size : int | jax.Array
+            The number of qubits to allocate for the quantum variable.
+            Can be a static integer or a JAX Tracer representing a dynamic size.
+
+        """
 
         self._check_trace()
 
@@ -181,7 +219,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
         if size is not None:
             qv.reg = self.request_qubits(size)
 
-        # Register in the list of active quantum variable
+        # Register in the list of active quantum variables
         self.qv_list.append(qv)
         qv.qs = self
 
@@ -189,13 +227,25 @@ class TracingQuantumSession(metaclass=SingletonMeta):
         qv.creation_time = int(QuantumVariable.creation_counter[0])
         QuantumVariable.creation_counter += 1
 
-    def request_qubits(self, amount) -> DynamicQubitArray:
+    def request_qubits(self, amount: int | jax.Array) -> DynamicQubitArray:
         """Request and allocate the specified number of qubits."""
         qb_array_tracer, self.abs_qst = create_qubits(amount, self.abs_qst)
         return DynamicQubitArray(qb_array_tracer)
 
     def delete_qv(self, qv: QuantumVariable, verify: bool = False) -> None:
-        """Delete the specified quantum variable and free its qubits."""
+        """
+        Delete the specified quantum variable and free its qubits.
+
+        Parameters
+        ----------
+        qv : QuantumVariable
+            The quantum variable to delete from the session.
+
+        verify : bool, optional
+            If True, perform additional checks to verify that the quantum variable can be safely deleted.
+            This is intended for use in non-tracing contexts and will raise an error if attempted during tracing.
+
+        """
 
         self._check_trace()
 
@@ -208,7 +258,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
                 "Tried to remove a non-existent quantum variable from quantum session"
             )
 
-        self.clear_qubits(qv.reg)
+        self._clear_qubits(qv.reg)
 
         # Remove quantum variable from list
         for idx, temp_qv in enumerate(self.qv_list):
@@ -218,8 +268,16 @@ class TracingQuantumSession(metaclass=SingletonMeta):
 
         self.deleted_qv_list.append(qv)
 
-    def clear_qubits(self, qubits) -> None:
-        """Free the specified qubits."""
+    def _clear_qubits(self, qubits: DynamicQubitArray) -> None:
+        """
+        Free the specified qubits.
+
+        Parameters
+        ----------
+        qubits : DynamicQubitArray
+            The qubits to free from the session.
+
+        """
         self.abs_qst = delete_qubits_p.bind(qubits.tracer, self.abs_qst)
 
     @classmethod
@@ -230,7 +288,9 @@ class TracingQuantumSession(metaclass=SingletonMeta):
     @classmethod
     def get_instance(cls) -> "TracingQuantumSession":
         """Get the current instance of the tracing quantum session."""
-        return cast("TracingQuantumSession", cls.tr_qs_instance)
+        if cls.tr_qs_instance is None:
+            raise RuntimeError("No active TracingQuantumSession instance found.")
+        return cls.tr_qs_instance
 
 
 tracing_qs_singleton = TracingQuantumSession()
@@ -241,13 +301,13 @@ def check_for_tracing_mode() -> bool:
     return hasattr(jax._src.core.trace_ctx.trace, "frame")
 
 
-def get_last_equation(i=-1):
-    """Get the last equation in the current JAX trace."""
+def get_last_equation(i: int = -1) -> JaxprEqn:
+    """Return the *i*-th equation recorded in the current JAX trace frame.
+
+    Parameters
+    ----------
+    i:
+        Index into the tracing equation list. Defaults to ``-1`` (the most
+        recent equation).
+    """
     return jax._src.core.trace_ctx.trace.frame.tracing_eqns[i]()
-
-
-def check_live(tracer):
-    """Check if the provided tracer is live (i.e., part of the current JAX trace)."""
-    if tracer is None:
-        return True
-    return tracer._trace.main.jaxpr_stack
