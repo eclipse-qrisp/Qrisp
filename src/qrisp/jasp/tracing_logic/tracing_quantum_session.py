@@ -18,7 +18,7 @@
 
 import weakref
 from collections import deque
-from typing import Deque, Dict, cast
+from typing import Deque, Dict, cast, List
 
 import jax
 from sympy import symbols
@@ -50,8 +50,6 @@ class TracingQuantumSession(metaclass=SingletonMeta):
     """Manage tracing-time state for building quantum circuits in Jasp mode."""
 
     tr_qs_instance: "TracingQuantumSession | None" = None
-    abs_qst_stack: Deque[AbstractQuantumState | None] = deque()
-    qubit_cache_stack: Deque = deque()
 
     def __init__(self):
         """
@@ -62,6 +60,9 @@ class TracingQuantumSession(metaclass=SingletonMeta):
         """
 
         TracingQuantumSession.tr_qs_instance = self
+
+        self.abs_qst_stack: List[AbstractQuantumState | None] = []
+        self.qubit_cache_stack: List[Dict | None] = []
 
         self.abs_qst = None
         self.qubit_cache = None
@@ -82,8 +83,8 @@ class TracingQuantumSession(metaclass=SingletonMeta):
         """Start a new tracing context with the provided abstract quantum state."""
 
         # Save current state to stacks
-        TracingQuantumSession.abs_qst_stack.append(self.abs_qst)
-        TracingQuantumSession.qubit_cache_stack.append(self.qubit_cache)
+        self.abs_qst_stack.append(self.abs_qst)
+        self.qubit_cache_stack.append(self.qubit_cache)
 
         self.qv_stack.append((self.qv_list, self.deleted_qv_list))
 
@@ -99,8 +100,8 @@ class TracingQuantumSession(metaclass=SingletonMeta):
         temp = self.abs_qst
 
         # Restore previous tracing state
-        self.abs_qst = TracingQuantumSession.abs_qst_stack.pop()
-        self.qubit_cache = TracingQuantumSession.qubit_cache_stack.pop()
+        self.abs_qst = self.abs_qst_stack.pop()
+        self.qubit_cache = self.qubit_cache_stack.pop()
 
         self.qv_list, self.deleted_qv_list = self.qv_stack.pop()
 
