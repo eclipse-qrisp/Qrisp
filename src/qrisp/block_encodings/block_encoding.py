@@ -26,7 +26,7 @@ import numpy as np
 import numpy.typing as npt
 from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.reflection import reflection
-from qrisp.core.gate_application_functions import gphase, h, ry, x, z
+from qrisp.core.gate_application_functions import gphase, h, mcx, ry, x, z
 from qrisp.environments import conjugate, control, invert
 from qrisp.interface import BackendClient
 from qrisp.jasp import (
@@ -41,7 +41,7 @@ from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool, QuantumFloat
 from scipy.sparse import csr_array, csr_matrix
-from typing import Any, Callable, TYPE_CHECKING, Union
+from typing import Any, Callable, Optional, Tuple, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -523,6 +523,155 @@ class BlockEncoding:
             num_ops=num_ops,
             is_hermitian=is_hermitian,
         )
+
+    @classmethod
+    def from_projector(
+        cls: "BlockEncoding",
+        left: Union[int, Tuple[int, ...], Callable], 
+        right: Optional[Union[int, Tuple[int, ...], Callable]] = None, 
+        kernel: bool = False,
+        num_ops: int = 1,
+    ) -> BlockEncoding:
+        r"""
+        Constructs a BlockEncoding from a projector.
+
+        Parameters
+        ----------
+        left : int | tuple of int | Callable
+            An integer or a tuple of integers representing a computational basis state $\ket{\phi}$,
+            or a function ``left(*operands)`` preparing a state $\ket{\phi}$ from $\ket{0}$.
+        right : int | tuple of int | Callable
+            An integer or a tuple of integers representing a computational basis state $\ket{\psi}$,
+            or a function ``right(*operands)`` preparing a state $\ket{\psi}$ from $\ket{0}$.
+            Defaults to ``left``.
+        kernel : bool
+            If True, the kernel projector $\mathbb I - \ket{\phi}\bra{\phi}$ is block-encoded.
+            If False the projector $\ket{\phi}\bra{\psi}$ is block-encoded. Defauts to False.
+        num_ops : int
+            The number of operand quantum variables.
+            Automatically inferred when ``left`` or ``right`` is an integer or tuple of integers.
+            Defaults to 1.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding instance representing the projector $\ket{\phi}\bra{\psi}$.
+
+        Examples
+        --------
+
+        **Example 1: Computational basis states**
+
+        Define a block-encoding for the projector $P=\ket{1}\bra{3}$.
+
+        ::
+
+            from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
+
+            P = BlockEncoding.from_projector(1, 3)
+
+            # Prepare operand in superposition state
+            def operand_prep():
+                operand = QuantumFloat(2)
+                h(operand)
+                return operand
+
+            @terminal_sampling
+            def main():
+                operand = P.apply_rus(operand_prep)()
+                return operand
+
+            res_dict = main()
+            print(res_dict)
+            # {1.0: 1.0}
+
+        **Example 2: Custom states**
+
+        Define a block-encoding for the projector $P=\ket{\psi}\bra{\psi}$ where $\ket{\psi}\propto\ket{0}+\ket{1}+\ket{2}+\ket{3}$.
+
+        ::
+
+            from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
+
+            def prep_psi(qv):
+                h(qv)
+
+            P = BlockEncoding.from_projector(prep_psi)
+
+            # Prepare operand in |0> state
+            def operand_prep():
+                operand = QuantumFloat(2)
+                return operand
+
+            @terminal_sampling
+            def main():
+                operand = P.apply_rus(operand_prep)()
+                return operand
+
+            res_dict = main()
+            print(res_dict)
+            # {0.0: 0.25, 1.0: 0.25, 2.0: 0.25, 3.0: 0.25}
+
+        """
+
+        if kernel or (right == None):
+            right = left
+
+        # left
+        num_left = 1
+        if isinstance(left, int):
+            def prep_left(arg):
+                arg.encode(left, permit_dirtyness=True)
+        elif isinstance(left, tuple):
+            num_left = len(left)
+            def prep_left(*args):
+                for i, arg in enumerate(args):
+                    arg.encode(left[i], permit_dirtyness=True)     
+        elif callable(left):
+            prep_left = left
+        else:
+            return NotImplemented
+
+        # right
+        num_right = 1
+        if isinstance(right, int):
+            def prep_right(arg):
+                arg.encode(right, permit_dirtyness=True)
+        elif isinstance(right, tuple):
+            num_right = len(right)
+            def prep_right(*args):
+                for i, arg in enumerate(args):
+                    arg.encode(right[i], permit_dirtyness=True)     
+        elif callable(right):
+            prep_right = right
+        else:
+            return NotImplemented
+
+        if not (isinstance(left, Callable) or isinstance(right, Callable)):
+            if num_left != num_right:
+                raise ValueError(
+                    f"Size mismatch: left has {num_left} elements, but right has {num_right}."
+                )
+        num_ops = max(num_left, num_right, num_ops)
+
+        def unitary(*args):
+            anc = args[0]
+            operands = args[1:]
+
+            if not kernel:
+                x(anc)
+
+            with invert():
+                prep_right(*operands)
+
+            qubits = sum([operand.reg for operand in operands], [])
+            mcx(qubits, anc[0], ctrl_state=0)
+
+            prep_left(*operands)
+
+        return BlockEncoding(1, [QuantumBool().template()], unitary, num_ops=num_ops)
 
     #
     # Utilities
@@ -1096,6 +1245,42 @@ class BlockEncoding:
                 num_ops=self.num_ops,
                 is_hermitian=True,
             )
+        
+    def _hermitianization(self) -> BlockEncoding:
+        r"""
+        Returns a BlockEncoding representing the `qubitization walk operator via Hermitianization <https://arxiv.org/pdf/2312.00723>`_.
+
+        For a block-encoded (**not** necessarily Hermitian) operator $A$,
+        this method returns a BlockEncoding of the qubitization walk operator via Hermitianization.
+        The operator $A$ is encoded in the upper right block (measure new ancilla QuantumBool in $\ket{1}$):
+
+        .. math::
+
+            \begin{pmatrix} \mathbb{0} & A \\ A^{\dagger} & \mathbb{0} \end{pmatrix}
+        
+        """
+
+        n = self.num_ancs
+
+        def new_unitary(*args):
+
+            anc = args[0]
+            self_ancs = args[1:n+1]
+            operands = args[n+1:]
+
+            x(anc)
+
+            with control(anc, ctrl_state=0):
+                self.unitary(*self_ancs, *operands)
+
+            with control(anc, ctrl_state=1):
+                with invert():
+                    self.unitary(*self_ancs, *operands)
+     
+            reflection(self_ancs)
+        
+        new_anc_templates = [QuantumBool().template()] + self._anc_templates
+        return BlockEncoding(self.alpha, new_anc_templates, new_unitary, num_ops=self.num_ops, is_hermitian=True)
 
     def chebyshev(self, k: int, rescale: bool = True) -> BlockEncoding:
         r"""

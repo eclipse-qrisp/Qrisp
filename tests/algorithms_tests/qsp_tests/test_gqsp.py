@@ -35,7 +35,7 @@ def expvalm(poly, k, A):
     (np.array([0.5, 0., 0.5]), 1), # cos
     (np.array([1., 1.]), 0),
 ])
-def test_qsp(poly, k):
+def test_gqsp(poly, k):
 
     # All terms in Hamiltonian commute -> e^{iH} is implemented exactly by trotterization
     H = Z(0)*Z(1) + X(0)*X(1)

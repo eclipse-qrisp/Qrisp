@@ -60,6 +60,33 @@ def test_block_encoding_from_operator():
     assert res == {3.0: 1.0}
 
 
+def test_block_encoding_from_projector():
+
+    # Define projector P = |1><+|
+    P = BlockEncoding.from_projector(1, lambda qv: h(qv))
+
+    # Prepare operand in superposition state
+    def operand_prep():
+        operand = QuantumFloat(2)
+        h(operand)
+        return operand
+
+    @terminal_sampling
+    def main():
+        return P.apply_rus(operand_prep)()
+
+    res = main()
+    assert res == {1.0: 1.0}
+
+
+def test_block_encoding_from_projector_value_error():
+
+    with pytest.raises(ValueError) as excinfo:
+        P = BlockEncoding.from_projector(1, (2, 3))
+
+    assert "Size mismatch: left has 1 elements, but right has 2" in str(excinfo.value)
+
+
 def test_block_encoding_apply():
     H = X(0)*X(1) + Z(0)*Z(1)
     BE = BlockEncoding.from_operator(H)
