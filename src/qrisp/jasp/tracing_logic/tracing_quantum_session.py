@@ -18,7 +18,7 @@
 
 import weakref
 from collections import deque
-from typing import Deque, Dict, List, cast
+from typing import Deque, Dict, cast
 
 import jax
 from sympy import symbols
@@ -47,32 +47,9 @@ class SingletonMeta(type):
 
 
 class TracingQuantumSession(metaclass=SingletonMeta):
-    """
-    Manage tracing-time state for building quantum circuits in Jasp mode.
-
-    This class acts as the central recording context while JAX traces a Python
-    function that constructs a quantum program. In particular, it maintains:
-
-    - a reference to the currently active :class:`~qrisp.jasp.AbstractQuantumState`
-      being built (``self.abs_qst``),
-
-    - a cache for qubits allocated during tracing (``self.qubit_cache``),
-
-    - a list of "live" quantum variables currently registered in this session
-      (``self.qv_list``),
-
-    - a garbage-collection policy controlling what happens when a quantum variable
-      goes out of scope during tracing (``self.gc_mode``).
-
-    The session supports nested tracing. Each call to :meth:`start_tracing`
-    pushes the previous tracing state onto internal stacks; :meth:`conclude_tracing`
-    restores the previous state and returns the circuit traced in the nested scope.
-    """
+    """Manage tracing-time state for building quantum circuits in Jasp mode."""
 
     tr_qs_instance: "TracingQuantumSession | None" = None
-
-    abs_qst_stack: List[AbstractQuantumState | None] = []
-    qubit_cache_stack: List = []
 
     def __init__(self):
         """
@@ -84,11 +61,23 @@ class TracingQuantumSession(metaclass=SingletonMeta):
 
         TracingQuantumSession.tr_qs_instance = self
 
+        self.abs_qst_stack: Deque[AbstractQuantumState | None] = deque()
+        self.qubit_cache_stack: Deque = deque()
+
         self.abs_qst = None
+        self.qubit_cache = None
+
+        # TODO: remove these (they should no longer be needed with the new garbage collection policy)
         self.qv_list = []
         self.deleted_qv_list = []
-        self.qubit_cache = None
         self.qv_stack = []
+
+    def _check_trace(self):
+        """Check if the current trace is still active and valid for the session."""
+        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
+            raise RuntimeError(
+                """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
+            )
 
     def start_tracing(self, abs_qst: AbstractQuantumState) -> None:
         """Start a new tracing context with the provided abstract quantum state."""
@@ -119,10 +108,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
     def append(self, operation, qubits=None, clbits=None, param_tracers=None):
         """Append an operation to the currently traced circuit, with the provided qubits, classical bits, and parameter tracers."""
 
-        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
-            raise Exception(
-                """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
-            )
+        self._check_trace()
 
         qubits = qubits if qubits is not None else []
         clbits = clbits if clbits is not None else []
@@ -188,10 +174,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
     def register_qv(self, qv, size):
         """Register a quantum variable in the session and allocate its qubits."""
 
-        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
-            raise Exception(
-                """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
-            )
+        self._check_trace()
 
         # Determine amount of required qubits
         if size is not None:
@@ -213,10 +196,7 @@ class TracingQuantumSession(metaclass=SingletonMeta):
     def delete_qv(self, qv: QuantumVariable, verify: bool = False) -> None:
         """Delete the specified quantum variable and free its qubits."""
 
-        if not self.abs_qst._trace is jax.core.trace_ctx.trace:
-            raise Exception(
-                """Lost track of QuantumState during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
-            )
+        self._check_trace()
 
         if verify:
             raise ValueError("Tried to verify deletion in tracing mode.")
