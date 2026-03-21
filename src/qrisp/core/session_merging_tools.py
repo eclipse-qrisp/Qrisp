@@ -335,8 +335,19 @@ def recursive_qs_search(input):
     if isinstance(input, str):
         return []
 
-    from qrisp.core import QuantumSession
+    from qrisp.core import QuantumSession, QuantumVariable
     from qrisp.environments import QuantumEnvironment
+
+    # Check for QuantumVariable before __iter__ to avoid
+    # iterating over qubits (which fails under JAX tracing).
+    if isinstance(input, QuantumVariable):
+        try:
+            qs = input.qs()
+            if isinstance(qs, QuantumSession):
+                return [qs]
+        except (TypeError, AttributeError):
+            pass
+        return []
 
     if hasattr(input, "__iter__"):
         iterable = True
