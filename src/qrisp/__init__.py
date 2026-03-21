@@ -46,6 +46,7 @@ for i in [
     "qite",
     "qmci",
     "cks",
+    "qsvt",
     "lanczos",
     "gqsp",
     "cold",
