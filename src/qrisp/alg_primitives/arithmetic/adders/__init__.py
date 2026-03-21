@@ -18,7 +18,7 @@
 
 from qrisp.alg_primitives.arithmetic.adders.adder_tools import *
 from qrisp.alg_primitives.arithmetic.adders.qcla import *
-from qrisp.alg_primitives.arithmetic.adders.gidney import *
+from qrisp.alg_primitives.arithmetic.adders.gidney_adder import *
 from qrisp.alg_primitives.arithmetic.adders.fourier_adder import *
 from qrisp.alg_primitives.arithmetic.adders.incrementation import *
 from qrisp.alg_primitives.arithmetic.adders.remaud import *

@@ -18,7 +18,7 @@
 
 from typing import Union
 
-from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder
+from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 from qrisp.qtypes import QuantumFloat, QuantumModulus
 from qrisp.jasp import jrange, check_for_tracing_mode, jlen, q_cond
 from qrisp.environments import control, invert, custom_control
