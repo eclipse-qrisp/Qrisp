@@ -503,8 +503,12 @@ def jasp_balauca_mcx(ctrls, target, ctrl_state):
     N = jlen(ctrls)
 
     from qrisp import mcx  # Double import
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 
-    ctrl_state = jnp.int64(ctrl_state)
+    if isinstance(ctrl_state, BigInteger):
+        ctrl_state = jnp.int64(ctrl_state())
+    else:
+        ctrl_state = jnp.int64(ctrl_state)
     ctrl_state = cond(ctrl_state == -1, lambda x: x + 2**N, lambda x: x, ctrl_state)
 
     with conjugate(ctrl_state_conjugator)(ctrls, ctrl_state):
