@@ -335,7 +335,8 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
         The montgomery product of the inputs.
     """
 
-    if x.modulus != y.modulus:
+    from qrisp.qtypes.quantum_modulus import _moduli_neq
+    if _moduli_neq(x.modulus, y.modulus):
         raise Exception("Tried to multiply two QuantumModulus with differing modulus")
 
     inpl_adder = x.inpl_adder
@@ -348,8 +349,18 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     # NOTE: We compute n from N (not from x.size) to keep it a plain Python int,
     # since x.size can be a JAX tracer during tracing.
     import numpy as np
-    n = int(np.ceil(np.log2(int(N))))
-    m = int(np.ceil(np.log2((int(N) - 1) ** 2) + 1)) - n
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+    if isinstance(N, BigInteger):
+        digits = np.asarray(N.digits)
+        N_int = 0
+        for i in range(len(digits)):
+            d = int(digits[i])
+            if d:
+                N_int += d << (32 * i)
+    else:
+        N_int = int(N)
+    n = int(np.ceil(np.log2(N_int)))
+    m = int(np.ceil(np.log2((N_int - 1) ** 2) + 1)) - n
 
     if check_for_tracing_mode():
         xrange = jrange

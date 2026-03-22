@@ -26,6 +26,14 @@ from qrisp.core import cx
 import jax
 
 
+def _moduli_neq(a, b):
+    """Compare two moduli for inequality, safe for BigInteger inside JIT."""
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+    if isinstance(a, BigInteger):
+        return np.any(np.asarray(a.digits) != np.asarray(b.digits))
+    return a != b
+
+
 def comparison_wrapper(func):
 
     def res_func(self, other):
@@ -43,7 +51,7 @@ def comparison_wrapper(func):
                     "Tried to evaluate QuantumModulus comparison with non-zero Montgomery shift"
                 )
 
-            if self.modulus != other.modulus:
+            if _moduli_neq(self.modulus, other.modulus):
                 raise Exception(
                     "Tried to compare QuantumModulus instances of differing modulus"
                 )
@@ -342,7 +350,7 @@ class QuantumModulus(QuantumFloat):
         )
 
         if isinstance(other, QuantumModulus):
-            if self.modulus != other.modulus:
+            if _moduli_neq(self.modulus, other.modulus):
                 raise ValueError("Both QuantumModuli must have the same modulus")
             if check_for_tracing_mode():
                 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
@@ -367,7 +375,8 @@ class QuantumModulus(QuantumFloat):
 
             shift = best_montgomery_shift(other, self.modulus)
             if isinstance(self.modulus, BigInteger):
-                assert isinstance(other, BigInteger)
+                if not isinstance(other, BigInteger):
+                    other = BigInteger.create(other, self.modulus.digits.shape[0])
                 return cq_montgomery_multiply(
                     other.get_larger(), self, self.modulus.get_larger(), shift
                 )
@@ -395,7 +404,8 @@ class QuantumModulus(QuantumFloat):
 
             shift = best_montgomery_shift(other, self.modulus)
             if isinstance(self.modulus, BigInteger):
-                assert isinstance(other, BigInteger)
+                if not isinstance(other, BigInteger):
+                    other = BigInteger.create(other, self.modulus.digits.shape[0])
                 cq_montgomery_multiply_inplace(
                     other.get_larger(),
                     self,

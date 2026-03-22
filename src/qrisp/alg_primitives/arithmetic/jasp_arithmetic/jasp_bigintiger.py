@@ -760,6 +760,27 @@ class BigInteger:
         r, q = self.remainder_division(other)
         return r
 
+    def __rmod__(self, other):
+        """
+        Reflected modulo: ``other % self``.
+
+        Converts `other` to a BigInteger with the same width as `self`,
+        then computes ``other % self``.
+
+        Parameters
+        ----------
+        other : int or jnp.integer
+            Dividend.
+
+        Returns
+        -------
+        BigInteger
+            Remainder of ``other // self``.
+        """
+        if not isinstance(other, BigInteger):
+            other = BigInteger.create(other, self.digits.shape[0])
+        return other % self
+
     @jax.jit
     def __floordiv__(self, other: "BigInteger"):
         """
