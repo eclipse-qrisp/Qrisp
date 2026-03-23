@@ -30,8 +30,9 @@ jobs:
           pip install -e ./
           pip install --upgrade pennylane-catalyst gast
           pip install git+https://github.com/tqec/tqecd.git 
-          pip install qiskit-aer
-          pip install qiskit-ibm-runtime   # To test `QiskitBackend` with `qiskit_ibm_runtime.fake_provider`
+          pip install qiskit==1.4.0
+          pip install qiskit-aer==0.17.1
+          pip install qiskit-ibm-runtime==0.43.1   # To test `QiskitBackend` with `qiskit_ibm_runtime.fake_provider`
           pip install iqm-client[qiskit]
           pip install 'numpy<2.3'          # To solve 'ImportError: Numba needs NumPy 2.3 or less.'
       - name: Test with pytest
