@@ -8,6 +8,9 @@ Backend Interface
    :hidden:
 
    Backend
+   Job
+   JobStatus
+   JobResult
    BackendServer
    BackendClient
    VirtualBackend
@@ -126,6 +129,30 @@ Finally, we can update the backend options after instantiation using the :meth:`
    >>> result = backend.run(circuit)
    >>> print(result)
    {'0': 1029, '1': 1019}   # Note that the actual counts may vary due to randomness
+
+
+:ref:`Job`
+----------
+
+The :class:`Job` class represents an asynchronous execution of a quantum circuit on a backend.
+It provides methods to query the status of the execution, retrieve results, and manage runtime options.
+
+
+
+:ref:`JobStatus`
+----------------
+
+The :class:`JobStatus` class defines the possible states of a :ref:`Job` during its lifecycle, 
+such as QUEUED, RUNNING, DONE, and ERROR.
+
+
+
+:ref:`JobResult`
+----------------
+
+The :class:`JobResult` class encapsulates the results of a completed :ref:`Job`, including measurement outcomes,
+execution metadata, and any error information if the job failed.
+
 
 
 :ref:`BackendServer`

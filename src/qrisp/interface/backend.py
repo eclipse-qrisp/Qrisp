@@ -34,7 +34,7 @@ class Backend(ABC):
     The only mandatory method for child classes is :meth:`run`, which submits
     one or more circuits for execution and returns a :class:`Job` handle
     immediately. The caller then decides when to wait for the result by
-    calling :meth:`Job.result`.
+    calling :meth:`Job.result <qrisp.interface.Job.result>`.
 
     .. rubric:: Design contract
 
@@ -54,17 +54,18 @@ class Backend(ABC):
     .. rubric:: Execution model
 
     :meth:`run` accepts a single circuit *or* a list of circuits and always
-    returns a :class:`Job` immediately. This follows the **Future** pattern:
+    returns a :class:`Job` immediately. This follows the *Future* pattern:
     execution happens independently of the caller, and the caller decides
-    *when* to block by calling :meth:`Job.result`. This design supports:
+    *when* to block by calling :meth:`Job.result <qrisp.interface.Job.result>`.
+    This design supports:
 
     * **Synchronous simulators**: the job is already done when returned.
     * **Asynchronous hardware backends**: the job is polled or awaited in
       a background process.
     * **Batch execution**: the backend decides internally whether to run
-      circuits sequentially or in parallel; the caller need not care.
-      Hardware backends may impose a limit on how many circuits a single
-      job may contain; this is a backend-defined constraint.
+      circuits sequentially or in parallel. That is, the caller does not need to
+      manage circuit grouping or batching. Hardware backends may impose a limit
+      on how many circuits a single job may contain. This is a backend-defined constraint.
 
     .. rubric:: Runtime options
 
@@ -116,11 +117,11 @@ class Backend(ABC):
 
     .. rubric:: Relationship to design patterns
 
-    ``Backend`` and :class:`Job` together form a **Bridge**: two independently
+    ``Backend`` and :class:`Job` together form a `Bridge <https://refactoring.guru/design-patterns/bridge>`_: two independently
     varying class hierarchies (submission interface and execution handle) that
     can be extended without affecting each other. :class:`Job` is additionally
-    a **Virtual Proxy** for the execution result. Concrete vendor backends
-    (e.g. ``IQMBackend``) act as **Adapters** that wrap a vendor SDK to
+    a `Virtual Proxy <https://refactoring.guru/design-patterns/proxy>`_ for the execution result. Concrete vendor backends
+    (e.g. ``IQMBackend``) act as `Adapters <https://refactoring.guru/design-patterns/adapter>`_ that wrap a vendor SDK to
     satisfy the ``Backend`` interface expected by Qrisp.
 
     Parameters
@@ -172,7 +173,7 @@ class Backend(ABC):
         Submit one or more circuits for execution and return a :class:`Job`.
 
         This method returns immediately. The caller blocks and retrieves the
-        outcome by calling :meth:`Job.result` on the returned object.
+        outcome by calling :meth:`Job.result <qrisp.interface.Job.result>` on the returned object.
 
         Parameters
         ----------
@@ -193,8 +194,8 @@ class Backend(ABC):
         Returns
         -------
         Job
-            A handle to the submitted execution. Call :meth:`Job.result`
-            to wait for completion and retrieve the :class:`JobResult`.
+            A handle to the submitted execution. Call :meth:`Job.result <qrisp.interface.Job.result>`
+            to wait for completion and retrieve the :class:`qrisp.interface.JobResult`.
         """
         raise NotImplementedError
 
