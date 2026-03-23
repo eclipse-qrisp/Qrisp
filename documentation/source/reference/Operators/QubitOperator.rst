@@ -13,6 +13,7 @@ Methods
    :toctree: generated/
    
    QubitOperator.adjoint
+   QubitOperator.coeffs
    QubitOperator.commutator
    QubitOperator.expectation_value
    QubitOperator.from_matrix
@@ -20,6 +21,7 @@ Methods
    QubitOperator.ground_state_energy
    QubitOperator.hermitize
    QubitOperator.pauli_block_encoding
+   QubitOperator.qdrift
    QubitOperator.to_array
    QubitOperator.to_sparse_matrix
    QubitOperator.to_pauli

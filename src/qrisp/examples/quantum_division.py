@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -35,7 +35,7 @@ divisor.encode(D)
 
 
 prec = 4
-quotient, remainder = q_divmod(numerator, divisor, prec=prec, adder="thapliyal")
+quotient, remainder = q_divmod(numerator, divisor, prec=prec, adder = "thapliyal")
 
 # Q, R = list(multi_measurement([quotient, remainder], backend = qasm_simulator))[0]
 Q, R = list(multi_measurement([quotient, remainder]))[0]

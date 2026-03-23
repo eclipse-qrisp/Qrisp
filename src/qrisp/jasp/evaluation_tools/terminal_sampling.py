@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -142,7 +142,7 @@ def terminal_sampling(func=None, shots=0):
     def return_function(*args):
         from qrisp.jasp import simulate_jaspr
 
-        jaspr = make_jaspr(tracing_function, garbage_collection=True)(*args)
+        jaspr = make_jaspr(tracing_function)(*args)
         return simulate_jaspr(jaspr, *args, terminal_sampling=True)
 
     return return_function

@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,6 +16,8 @@
 ********************************************************************************
 """
 
+from uuid import UUID
+
 from qrisp.interface import BatchedBackend
 
 
@@ -25,6 +27,9 @@ def IQMBackend(
     server_url=None,
     compilation_options=None,
     transpiler=None,
+    calibration_set_id: str | UUID | None = None,
+    use_metrics: bool = False,
+    use_timeslot: bool = False,
 ):
     """
     This function creates a :ref:`BatchedBackend` for executing circuits on IQM hardware.
@@ -46,6 +51,12 @@ def IQMBackend(
         A function receiving and returning a QuantumCircuit, mapping the given
         circuit to a hardware friendly circuit. By default the `transpile_to_iqm <https://iqm-finland.github.io/qiskit-on-iqm/api/iqm.qiskit_iqm.iqm_naive_move_pass.transpile_to_IQM.html>`_
         function will be used.
+    calibration_set_id: ID of the calibration set the backend will use.
+        ``None`` means the IQM Server will be queried for the current default
+        calibration set.
+    use_metrics: If True, the backend will query the server for calibration data and related
+        quality metrics, and pass these to the transpilation target(s). The default value is set
+        to False until quality metrics become available on the Resonance API.
 
     Examples
     --------
@@ -148,7 +159,9 @@ def IQMBackend(
     client = IQMClient(
         iqm_server_url=server_url, token=api_token, quantum_computer=device_instance
     )
-    backend = IQMBackend(client)
+    backend = IQMBackend(
+        client, calibration_set_id=calibration_set_id, use_metrics=use_metrics
+    )
 
     if compilation_options is None:
         compilation_options = CircuitCompilationOptions()
@@ -179,7 +192,10 @@ def IQMBackend(
             shot_batch.append(shots)
 
         job = client.submit_circuits(
-            circuit_batch, options=compilation_options, shots=max(shot_batch)
+            circuit_batch,
+            options=compilation_options,
+            shots=max(shot_batch),
+            use_timeslot=use_timeslot,
         )
 
         job.wait_for_completion()

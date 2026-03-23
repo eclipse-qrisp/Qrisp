@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -33,8 +33,8 @@ REQUIREMENTS = [
                 "pyyaml",
                 "requests",
                 "psutil",
-                "jax==0.6.2",
-                "jaxlib==0.6.2"]
+                "jax==0.7.1",
+                "jaxlib==0.7.1"]
 
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -57,5 +57,5 @@ setuptools.setup(
     setup_requires=REQUIREMENTS,
     extras_require={"iqm": ["iqm-client[qiskit]"]},
     packages=setuptools.find_packages(where="src"),
-    python_requires=">=3.10",
+    python_requires=">=3.11",
 )

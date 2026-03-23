@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -138,7 +138,7 @@ def test_mkcs_5nodes():
             break
     else: 
         assert False
-#    onehot = G_onehot
+
 
     def G_bin():
         qarg = QuantumArray(qtype = QuantumColor(color_list, one_hot_enc = False), shape = num_nodes) 
@@ -159,19 +159,8 @@ def test_mkcs_5nodes():
             return True
     
 
-    for _ in range(10):
+    for _ in range(5):
         if G_bin() == True:
             break
-        else: 
-            assert False
-#    bin = G_bin
-
-
-
-
-
-
-
-
-#  BINARY
-
+    else: 
+        assert False

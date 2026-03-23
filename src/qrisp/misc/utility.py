@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,12 +16,17 @@
 ********************************************************************************
 """
 
+import functools
 import traceback
 
+import jax.numpy as jnp
 import numpy as np
 import sympy
-from jax.lax import fori_loop, cond
-import functools
+from jax.typing import ArrayLike
+
+# A small epsilon value for numerical stability.
+# Defined here for convenience, so it can be imported elsewhere.
+_EPSILON = jnp.sqrt(jnp.finfo(jnp.float64).eps)
 
 
 def bin_rep(n, bits):
@@ -40,8 +45,8 @@ def bin_rep(n, bits):
 
 def int_encoder(qv, encoding_number):
 
-    from qrisp import x, control
-    from qrisp.jasp import TracingQuantumSession, jrange, check_for_tracing_mode
+    from qrisp import control, x
+    from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode, jrange
 
     if not check_for_tracing_mode():
         if encoding_number > 2 ** len(qv) - 1:
@@ -69,9 +74,9 @@ def int_encoder(qv, encoding_number):
                     x(qv[i])
 
         # def true_fun(qc, cond, qb):
-        #     tr_qs.abs_qc = qc
+        #     tr_qs.abs_qst = qc
         #     x(qb)
-        #     return tr_qs.abs_qc
+        #     return tr_qs.abs_qst
 
         # def false_fun(qc, cond, qb):
         #     return qc
@@ -82,8 +87,8 @@ def int_encoder(qv, encoding_number):
         #     qc = cond(cond_bool, true_fun, false_fun, qc, cond_bool, qb)
 
         #     return qc
-        # qc = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qc))
-        # tr_qs.abs_qc = qc
+        # qc = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qst))
+        # tr_qs.abs_qst = qc
 
 
 # Calculates the binary expression of a given integer and returns it as an array of
@@ -434,10 +439,10 @@ def gate_wrap_inner(
             return qached_function(*args, **kwargs)
 
         wrapped_function.__name__ = function.__name__
+        from qrisp import QuantumArray, QuantumVariable, merge
         from qrisp.circuit import Qubit
         from qrisp.core import recursive_qs_search, recursive_qv_search
         from qrisp.environments import GateWrapEnvironment
-        from qrisp import merge, QuantumVariable, QuantumArray
 
         try:
             qs = find_qs(args)
@@ -685,7 +690,7 @@ def find_qs(args):
     if hasattr(args, "qs"):
         return args.qs()
 
-    from qrisp import QuantumVariable, QuantumArray, Qubit
+    from qrisp import QuantumArray, QuantumVariable, Qubit
 
     for arg in args:
         if isinstance(arg, (QuantumVariable, QuantumArray)):
@@ -780,8 +785,8 @@ def multi_measurement(qv_list, shots=None, backend=None):
     from qrisp import (
         QuantumArray,
         QuantumVariable,
-        recursive_qv_search,
         recursive_qa_search,
+        recursive_qv_search,
     )
     from qrisp.core.compilation import qompiler
 
@@ -1240,34 +1245,68 @@ def custom_qv(labels, decoder=None, qs=None, name=None):
     return CustomQuantumVariable(qs=qs, name=name)
 
 
-def init_state(qv, target_array):
-    from qiskit.circuit.library.data_preparation.state_preparation import (
-        StatePreparation,
-    )
+# This is required in the qswitch-based state preparation,
+# where it is called inside jrange loops, because DynamicQubitArray
+# does not support reverse iteration.
+def bit_reverse(i, width):
+    """
+    Jasp-compatible bit-reversal function.
 
-    qiskit_qc = StatePreparation(target_array).definition
-    from qrisp import QuantumCircuit
+    Interprets ``i`` as a ``width``-bit binary integer
+    and returns the decimal integer corresponding to the bit-reversal of ``i``.
+    The maximum supported width is 64 bits.
 
-    init_qc = QuantumCircuit.from_qiskit(qiskit_qc)
+    This function can be used in Jasp-mode and within a `jrange` loop.
+    It does not use any Python or Jax control flow, but only Jax array operations.
 
-    # Find global phase correction
-    from qrisp.simulator import statevector_sim
+    Parameters
+    ----------
+    i : jnp.ndarray
+        Index to be bit-reversed.
+    width : jnp.ndarray
+        Bit-width for the reversal (scalar array).
 
-    init_qc.qubits.reverse()
-    sim_array = statevector_sim(init_qc)
-    init_qc.qubits.reverse()
+    Returns
+    -------
+    jnp.ndarray
+        Bit-reversed index.
 
-    arg_max = np.argmax(np.abs(sim_array))
 
-    gphase_dif = (np.angle(target_array[arg_max] / sim_array[arg_max])) % (2 * np.pi)
+    Examples
+    --------
 
-    init_qc.gphase(gphase_dif, 0)
+    For ``i=5`` and ``width=3``, the binary representation
+    of ``5`` is ``101``, and its bit-reversal is (again) ``101``, which is ``5`` in decimal.
 
-    init_gate = init_qc.to_gate()
+    >>> from qrisp.misc.utility import bit_reverse
+    >>> bit_reverse(5, 3)
+    5
 
-    init_gate.name = "state_init"
+    For ``i=3`` and ``width=4``, the binary representation
+    of ``3`` is ``0011``, and its bit-reversal is ``1100``, which is ``12`` in decimal.
 
-    qv.qs.append(init_gate, qv)
+    >>> bit_reverse(3, 4)
+    12
+
+    """
+    i = jnp.asarray(i, dtype=jnp.uint64)
+    width = jnp.asarray(width, dtype=jnp.uint64)
+
+    m1 = jnp.uint64(0x5555555555555555)
+    m2 = jnp.uint64(0x3333333333333333)
+    m3 = jnp.uint64(0x0F0F0F0F0F0F0F0F)
+    m4 = jnp.uint64(0x00FF00FF00FF00FF)
+    m5 = jnp.uint64(0x0000FFFF0000FFFF)
+    m6 = jnp.uint64(0x00000000FFFFFFFF)
+
+    i = ((i >> 1) & m1) | ((i & m1) << 1)
+    i = ((i >> 2) & m2) | ((i & m2) << 2)
+    i = ((i >> 4) & m3) | ((i & m3) << 4)
+    i = ((i >> 8) & m4) | ((i & m4) << 8)
+    i = ((i >> 16) & m5) | ((i & m5) << 16)
+    i = ((i >> 32) & m6) | ((i & m6) << 32)
+
+    return i >> jnp.asarray(64, jnp.uint64) - width
 
 
 def get_statevector_function(qs, decimals=None):
@@ -1400,7 +1439,7 @@ def find_calling_line(level=0):
 
 
 def retarget_instructions(data, source_qubits, target_qubits):
-    from qrisp import QuantumEnvironment, recursive_qs_search, multi_session_merge
+    from qrisp import QuantumEnvironment
 
     for i in range(len(data)):
         instr = data[i]
@@ -1491,54 +1530,60 @@ def redirect_qfunction(function_to_redirect):
 
 
     """
-    from qrisp import QuantumEnvironment, QuantumVariable, merge, QuantumArray
     import weakref
+
+    from qrisp import QuantumArray, QuantumEnvironment, QuantumVariable, merge
     from qrisp.jasp import (
-        check_for_tracing_mode,
-        make_jaspr,
-        injection_transform,
         TracingQuantumSession,
+        check_for_tracing_mode,
         eval_jaxpr,
+        injection_transform,
+        make_jaspr,
     )
 
     def redirected_qfunction(*args, target=None, **kwargs):
 
         if check_for_tracing_mode():
-            jaspr = make_jaspr(function_to_redirect, garbage_collection="manual")(
+            jaspr = make_jaspr(function_to_redirect)(
                 *args, **kwargs
             ).flatten_environments()
 
-            transformed_jaspr = injection_transform(jaspr, jaspr.outvars[0])
-
             qs = TracingQuantumSession.get_instance()
-            abs_qc = qs.abs_qc
+            abs_qst = qs.abs_qst
             from jax.tree_util import tree_flatten
 
             flattened_args = []
 
-            flattened_args.append(target.reg.tracer)
+            if isinstance(target, QuantumArray):
+                transformed_jaspr = injection_transform(jaspr, jaspr.outvars[2])
+                flattened_args.append(target.qb_array.reg.tracer)
+            else:
+                transformed_jaspr = injection_transform(jaspr, jaspr.outvars[0])
+                flattened_args.append(
+                    target.reg.tracer
+                )  # Traced<QubitArray>with<DynamicJaxprTrace>
 
             for arg in args:
                 flattened_args.extend(tree_flatten(arg)[0])
-
-            flattened_args.append(abs_qc)
+            # [Traced<QubitArray>with<DynamicJaxprTrace>, Traced<ShapedArray(int64[])>with<DynamicJaxprTrace>, Traced<ShapedArray(bool[])>with<DynamicJaxprTrace>]
+            flattened_args.append(abs_qst)
 
             res = eval_jaxpr(transformed_jaspr, [])(*flattened_args)
 
             if len(transformed_jaspr.outvars) == 1:
-                qs.abs_qc = res
+                qs.abs_qst = res
             else:
-                qs.abs_qc = res[-1]
+                qs.abs_qst = res[-1]
 
         else:
 
-            merge(
-                [
+            qargs = [
                     arg
                     for arg in list(args) + [target]
                     if isinstance(arg, (QuantumVariable, QuantumArray))
-                ]
-            )
+                    ]
+            merge(qargs)
+                
             env = QuantumEnvironment()
             env.manual_allocation_management = True
             qs = target.qs
@@ -1546,12 +1591,20 @@ def redirect_qfunction(function_to_redirect):
             with env:
                 res = function_to_redirect(*args, **kwargs)
 
-                if not isinstance(res, QuantumVariable):
+                merge([res] + qargs)
+
+                if isinstance(res, QuantumVariable):
+                    res_qubits = list(res)
+                    target_qubits = list(target)
+                elif isinstance(res, QuantumArray):
+                    res_qubits = [a for l in list(res) for a in list(l)]
+                    target_qubits = [a for l in list(target) for a in list(l)]
+                else:
                     raise Exception("Given function did not return a QuantumVariable")
 
-                target = list(target)
+                # target = list(target)
 
-                if len(res) != len(target):
+                if len(res) != len(target) or len(list(res)) != len(list(target)):
                     raise Exception(
                         "Tried to redirect quantum function into QuantumVariable of "
                         "differing size"
@@ -1565,7 +1618,7 @@ def redirect_qfunction(function_to_redirect):
 
                     if isinstance(instr, QuantumEnvironment):
                         pass
-                    elif instr.op.name == "qb_alloc" and instr.qubits[0] in list(res):
+                    elif instr.op.name == "qb_alloc" and instr.qubits[0] in res_qubits:
                         env.env_qs.data.pop(i)
                         res_is_new = True
                         continue
@@ -1575,21 +1628,26 @@ def redirect_qfunction(function_to_redirect):
 
                     i += 1
 
-                retarget_instructions(env.env_qs.data, list(res), target)
+                retarget_instructions(env.env_qs.data, res_qubits, target_qubits)
 
             if res_is_new:
                 # Remove all traces of res
                 res.delete()
 
-                for i in range(res.size):
-                    res.qs.qubits.remove(res[i])
+                for q in res_qubits:
+                    res.qs.qubits.remove(q)
                     res.qs.data.pop(-1)
 
                 for i in range(len(res.qs.deleted_qv_list)):
                     qv = res.qs.deleted_qv_list[i]
-                    if qv.name == res.name:
-                        res.qs.deleted_qv_list.pop(i)
-                        break
+                    if isinstance(res, QuantumVariable):
+                        if qv.name == res.name:
+                            res.qs.deleted_qv_list.pop(i)
+                            break
+                    elif isinstance(res, QuantumArray):
+                        if qv.name in [q.name for q in list(res)]:
+                            res.qs.deleted_qv_list.pop(i)
+                            break
 
             return target
 
@@ -1740,7 +1798,7 @@ def get_sympy_state(qs, decimals):
                 bit_string += int_string[compiled_qc.qubits.index(qb)]
 
             label = qv.decoder(int(bit_string[::-1], 2))
-            ket_expr *= OrthogonalKet((label))
+            ket_expr = ket_expr * OrthogonalKet((label))
 
         res += ket_expr
 
@@ -2107,7 +2165,7 @@ def inpl_adder_test(inpl_adder):
         print("The qcla_2_0 adder passed the tests without errors.")
 
     """
-    from qrisp import QuantumFloat, multi_measurement, h, control, QuantumBool
+    from qrisp import QuantumBool, QuantumFloat, control, h, multi_measurement
 
     for i in range(1, 7):
 

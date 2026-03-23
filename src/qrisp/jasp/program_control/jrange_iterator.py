@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -91,15 +91,6 @@ class JRangeIterator:
             created_qvs = list(created_qvs)
             created_qvs = sorted(created_qvs, key=lambda x: hash(x))
 
-            if qs.gc_mode == "auto":
-                for qv in created_qvs:
-                    reset(qv)
-                    qv.delete()
-            elif qs.gc_mode == "debug" and len(created_qvs):
-                raise Exception(
-                    f"QuantumVariables {created_qvs} went out of scope without deletion during jrange"
-                )
-
             # Perform the incrementation
             self.loop_index += self.step
 
@@ -119,15 +110,6 @@ class JRangeIterator:
             created_qvs = set(list(qs.get_instance().qv_list)) - set(self.iter_2_qvs)
             created_qvs = list(created_qvs)
             created_qvs = sorted(created_qvs, key=lambda x: hash(x))
-
-            if qs.gc_mode == "auto":
-                for qv in created_qvs:
-                    reset(qv)
-                    qv.delete()
-            elif qs.gc_mode == "debug" and len(created_qvs):
-                raise Exception(
-                    f"QuantumVariables {created_qvs} went out of scope without deletion during jrange"
-                )
 
             self.loop_index += self.step
 

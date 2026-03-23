@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -706,7 +706,7 @@ class SparseBiArray(BiArray):
 
         sparse_array_self.data = np.conjugate(sparse_array_self.data)
 
-        return sparse_matrix_mult(sparse_array_self, sparse_array_other).todense()[0]
+        return sparse_matrix_mult(sparse_array_self, sparse_array_other).todense()[0, 0]
 
         return sparse_array_self.conjugate().dot(sparse_array_other).todense()[0]
 
@@ -1256,7 +1256,7 @@ def tensordot(a, b, axes, contract_sparsity_threshold=0.01):
         # contract method of DenseBiArray)
         res_sparsity = 1 - (1 - a.sparsity * b.sparsity) ** contraction_size
 
-        res_size = a.size * b.size / contraction_size
+        res_size = a.size * b.size / contraction_size**2
     else:
         res_sparsity = a.sparsity * b.sparsity
 

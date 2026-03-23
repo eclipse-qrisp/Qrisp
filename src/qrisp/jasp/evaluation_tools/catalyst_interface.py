@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -25,11 +25,15 @@ import jax.numpy as jnp
 import pennylane as qml
 import catalyst
 from catalyst.jax_primitives import qalloc_p, device_init_p, AbstractQreg
+from catalyst.jax_extras.patches import patched_make_eqn
+from catalyst.utils.patching import Patcher
+from jax.interpreters.partial_eval import DynamicJaxprTrace
+
 
 from qrisp.jasp import (
     AbstractQubitArray,
     AbstractQubit,
-    AbstractQuantumCircuit,
+    AbstractQuantumState,
     eval_jaxpr,
     Jlist,
 )
@@ -57,11 +61,11 @@ def jaspr_to_catalyst_jaxpr(jaspr):
                         in the stack, and the second integer denotes the length
                         of the QubitArray.
 
-    AbstractQuantumCircuit -> A tuple of a AbstractQreg and an integer i. The integer
+    AbstractQuantumState -> A tuple of a AbstractQreg and an integer i. The integer
                             denotes the current "stack size", ie. if a new
                             QubitArray of size l is allocated it will be an
                             interval of qubits starting at position i and the
-                            new tuple representing the new AbstractQuantumCircuit
+                            new tuple representing the new AbstractQuantumState
                             will have i_new = i + l
 
     Parameters
@@ -79,7 +83,7 @@ def jaspr_to_catalyst_jaxpr(jaspr):
     # Translate the input args according to the above rules.
     args = []
     for invar in jaspr.jaxpr.invars:
-        if isinstance(invar.aval, AbstractQuantumCircuit):
+        if isinstance(invar.aval, AbstractQuantumState):
             # We initialize with the inverted list [... 3, 2, 1, 0] since the
             # pop method of the dynamic list always removes the last element
             args.append((AbstractQreg(), Jlist(jnp.arange(30, 0, -1), max_size=30)))
@@ -96,17 +100,24 @@ def jaspr_to_catalyst_jaxpr(jaspr):
             args.append(invar.aval)
 
     # Call the Catalyst interpreter
-    return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator))(*args)
+
+    # Hotfix according to: https://github.com/PennyLaneAI/catalyst/issues/2394#issuecomment-3752134787
+    with Patcher((DynamicJaxprTrace, "make_eqn", patched_make_eqn)):
+        return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator))(
+            *args
+        )
 
 
-def jaspr_to_catalyst_function(jaspr):
+def jaspr_to_catalyst_function(jaspr, device=None):
 
     # This function takes a jaspr and returns a function that performs a sequence
     # of .bind calls of Catalyst primitives, such that the function (when compiled)
     # by Catalyst reproduces the semantics of jaspr
 
     # Initiate Catalyst backend info
-    device = qml.device("lightning.qubit", wires=0)
+    if device == None:
+        device = qml.device("lightning.qubit", wires=0)
+
     backend_info = catalyst.device.extract_backend_info(device)
 
     def catalyst_function(*args):
@@ -116,7 +127,7 @@ def jaspr_to_catalyst_function(jaspr):
             rtd_lib=backend_info.lpath,
             rtd_name=backend_info.c_interface_name,
             rtd_kwargs=str(backend_info.kwargs),
-            auto_qubit_management = True
+            auto_qubit_management=True,
         )
 
         # Create the AbstractQreg
@@ -132,16 +143,19 @@ def jaspr_to_catalyst_function(jaspr):
 
         # Call the catalyst interpreter. The first return value will be the AbstractQreg
         # tuple, which is why we exclude it from the return values
-        return eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator)(*args)[:-1]
+
+        # Hotfix according to: https://github.com/PennyLaneAI/catalyst/issues/2394#issuecomment-3752134787
+        with Patcher((DynamicJaxprTrace, "make_eqn", patched_make_eqn)):
+            return eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator)(*args)[:-1]
 
     return catalyst_function
 
 
 @lru_cache(int(1e5))
-def jaspr_to_catalyst_qjit(jaspr, function_name="jaspr_function"):
+def jaspr_to_catalyst_qjit(jaspr, function_name="jaspr_function", device=None):
     # This function takes a jaspr and turns it into a Catalyst QJIT object.
     # Perform the code specified by the Catalyst developers
-    catalyst_function = jaspr_to_catalyst_function(jaspr)
+    catalyst_function = jaspr_to_catalyst_function(jaspr, device=device)
     catalyst_function.__name__ = function_name
     jit_object = catalyst.QJIT(catalyst_function, catalyst.CompileOptions())
     jit_object.jaxpr = make_jaxpr(catalyst_function)(

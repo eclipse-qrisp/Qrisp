@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,20 +16,16 @@
 ********************************************************************************
 """
 
+from hashlib import sha256
+from typing import Dict, List, Set
+
 import numpy as np
 import sympy
+from qiskit import QuantumCircuit as QiskitQuantumCircuit
+from qiskit.visualization import circuit_drawer
 
 import qrisp.circuit.standard_operations as ops
 from qrisp.circuit import Clbit, Instruction, Operation, Qubit
-
-# Class to describe quantum circuits
-# The naming of the attributes is rather similar to the qiskit equivalent
-# in order to allow compatibility of qiskit programs to qrisp
-# The key attributes are
-
-# The list of qubits (.qubits).
-# the list of classical bits (.clbits)
-# the list of instructions (.data)
 
 TO_GATE_COUNTER = np.zeros(1)
 
@@ -37,7 +33,7 @@ TO_GATE_COUNTER = np.zeros(1)
 class QuantumCircuit:
     """
     This class describes quantum circuits. Many of the attribute and method names are
-    oriented at the `Qiskit QuantumCircuit
+    oriented toward the `Qiskit QuantumCircuit
     <https://qiskit.org/documentation/stubs/qiskit.circuit.QuantumCircuit.html>`_ class
     in order to provide a high degree of compatibility.
 
@@ -52,11 +48,11 @@ class QuantumCircuit:
     ----------
 
     num_qubits : integer, optional
-        The amount of qubits, this QuantumCircuit is initialized with. The default is 0.
+        The amount of qubits this QuantumCircuit is initialized with. The default is 0.
     num_clbits : integer, optional
         The amount of classical bits. The default is 0.
     name : string, optional
-        A name for the QuantumCircuit. The default will generated a generic name.
+        A name for the QuantumCircuit. By default, a generic name is generated.
 
 
     Examples
@@ -65,7 +61,7 @@ class QuantumCircuit:
     We create a QuantumCircuit containing a so-called fan-out gate:
 
     >>> from qrisp import QuantumCircuit
-    >>> qc_0 = QuantumCircuit(4, name = "fan out")
+    >>> qc_0 = QuantumCircuit(4)
     >>> qc_0.cx(0, range(1,4))
     >>> print(qc_0)
 
@@ -90,7 +86,7 @@ class QuantumCircuit:
 
     >>> qc_1 = QuantumCircuit(4)
     >>> qc_1.h(0)
-    >>> qc_1.append(qc_0.to_gate(), qc_1.qubits)
+    >>> qc_1.append(qc_0.to_gate(name="fan-out"), qc_1.qubits)
     >>> print(qc_1)
 
     .. code-block:: none
@@ -99,7 +95,7 @@ class QuantumCircuit:
         qb_4: ┤ H ├┤0         ├
               └───┘│          │
         qb_5: ─────┤1         ├
-                   │  fan out │
+                   │  fan-out │
         qb_6: ─────┤2         ├
                    │          │
         qb_7: ─────┤3         ├
@@ -116,7 +112,7 @@ class QuantumCircuit:
         qb_4: ┤ H ├┤0         ├┤M├─────────
               └───┘│          │└╥┘┌─┐
         qb_5: ─────┤1         ├─╫─┤M├──────
-                   │  fan out │ ║ └╥┘┌─┐
+                   │  fan-out │ ║ └╥┘┌─┐
         qb_6: ─────┤2         ├─╫──╫─┤M├───
                    │          │ ║  ║ └╥┘┌─┐
         qb_7: ─────┤3         ├─╫──╫──╫─┤M├
@@ -134,7 +130,7 @@ class QuantumCircuit:
 
     **Converting from Qiskit**
 
-    We construct the very same fan out QuantumCircuit in Qiskit:
+    We construct the very same fan-out QuantumCircuit in Qiskit:
 
     >>> from qiskit import QuantumCircuit as QiskitQuantumCircuit
     >>> qc_2 = QiskitQuantumCircuit(4)
@@ -172,7 +168,7 @@ class QuantumCircuit:
 
     **Abstract Parameters**
 
-    Abstract parameters are represented by `Sympy symbols
+    Abstract parameters are represented by `SymPy symbols
     <https://docs.sympy.org/latest/modules/core.html#module-sympy.core.symbol>`_
     in Qrisp.
 
@@ -182,7 +178,7 @@ class QuantumCircuit:
     >>> from sympy import symbols
     >>> qc = QuantumCircuit(3)
 
-    Create some Sympy symbols and use them as abstract parameters for phase gates:
+    Create some SymPy symbols and use them as abstract parameters for phase gates:
 
     >>> abstract_parameters = symbols("a b c")
     >>> for i in range(3): qc.p(abstract_parameters[i], i)
@@ -205,34 +201,39 @@ class QuantumCircuit:
 
     """
 
-    qubit_index_counter = np.zeros(1, dtype=int)
-    clbit_index_counter = np.zeros(1, dtype=int)
-    xla_mode = 0
+    qubit_index_counter: np.ndarray = np.zeros(1, dtype=int)
+    clbit_index_counter: np.ndarray = np.zeros(1, dtype=int)
+    xla_mode: int = 0
 
-    def __init__(self, num_qubits=0, num_clbits=0):
+    def __init__(self, num_qubits: int = 0, num_clbits: int = 0) -> None:
+        """Initializes the QuantumCircuit."""
+
+        if not isinstance(num_qubits, int):
+            raise TypeError(
+                f"Tried to initialize QuantumCircuit with type {type(num_qubits).__name__} for num_qubits, expected int"
+            )
+        if not isinstance(num_clbits, int):
+            raise TypeError(
+                f"Tried to initialize QuantumCircuit with type {type(num_clbits).__name__} for num_clbits, expected int"
+            )
+
         object.__setattr__(self, "data", [])
         object.__setattr__(self, "qubits", [])
         object.__setattr__(self, "clbits", [])
 
-        self.abstract_params = set()
+        self.abstract_params: Set = set()
 
-        if isinstance(num_qubits, int):
-            for i in range(num_qubits):
-                self.qubits.append(Qubit("qb_" + str(self.qubit_index_counter[0] + i)))
-            self.qubit_index_counter[0] += num_qubits
-        else:
-            raise Exception(
-                f"Tried to initialize QuantumCircuit with type {type(num_qubits)}"
-            )
+        start_index = self.qubit_index_counter[0]
+        self.qubits: List[Qubit] = [
+            Qubit(f"qb_{start_index + i}") for i in range(num_qubits)
+        ]
+        self.qubit_index_counter[0] += num_qubits
 
-        if isinstance(num_clbits, int):
-            for i in range(num_clbits):
-                self.clbits.append(Clbit("cb_" + str(self.clbit_index_counter[0] + i)))
-            self.clbit_index_counter[0] += num_clbits
-        else:
-            raise Exception(
-                f"Tried to initialize QuantumCircuit with type {type(num_clbits)}"
-            )
+        start_index = self.clbit_index_counter[0]
+        self.clbits: List[Clbit] = [
+            Clbit(f"cb_{start_index + i}") for i in range(num_clbits)
+        ]
+        self.clbit_index_counter[0] += num_clbits
 
     # Method to add qubit objects to the circuit
     def add_qubit(self, qubit=None):
@@ -395,21 +396,24 @@ class QuantumCircuit:
             )
         return self.to_op(name)
 
-    # Method to extend the given circuit with another circuit
-    # The dic translation dic encodes how the qubits should be plugged into each other
-    def extend(self, other, translation_dic="id"):
+    def extend(
+        self, other: "QuantumCircuit", translation_dic: Dict | None = None
+    ) -> None:
         """
-        Extends self in-place by another QuantumCircuit.
+        Extends this QuantumCircuit in-place by appending instructions from another QuantumCircuit.
 
         Parameters
         ----------
         other : QuantumCircuit
-            The QuantumCircuit to extend by.
+            The QuantumCircuit whose instructions will be appended to this circuit.
+
         translation_dic : dict, optional
             The dictionary containing the information about which Qubits and Clbits
             should be plugged into each other. This dictionary should contain qubits of
-            other as keys and qubits of self as values. If given none, it is assumed
-            that both QuantumCircuits have matching Qubits.
+            `other` as keys and qubits of `self` as values.
+
+            If None (default), uses identity mapping by matching identifiers.
+            This only works if identifiers match between circuits.
 
 
         Examples
@@ -420,7 +424,6 @@ class QuantumCircuit:
 
         >>> from qrisp import QuantumCircuit
         >>> extension_qc = QuantumCircuit(4)
-        >>> qc_to_extend = QuantumCircuit(4)
         >>> extension_qc.cx(0, 1)
         >>> extension_qc.cy(0, 2)
         >>> extension_qc.cz(0, 3)
@@ -428,25 +431,24 @@ class QuantumCircuit:
 
         .. code-block:: none
 
-            qb_0: ──■────■────■──
-                  ┌─┴─┐  │    │
-            qb_1: ┤ X ├──┼────┼──
-                  └───┘┌─┴─┐  │
-            qb_2: ─────┤ Y ├──┼──
-                       └───┘┌─┴─┐
-            qb_3: ──────────┤ Z ├
-                            └───┘
+            qb_0: ──■────■───■─
+                  ┌─┴─┐  │   │
+            qb_1: ┤ X ├──┼───┼─
+                  └───┘┌─┴─┐ │
+            qb_2: ─────┤ Y ├─┼─
+                       └───┘ │
+            qb_3: ───────────■─
 
-        >>> translation_dic = {extension_qc.qubits[i] : qc_to_extend.qubits[-1-i]
-        >>> for i in range(4)}
+        >>> qc_to_extend = QuantumCircuit(4)
+        >>> translation_dic = {extension_qc.qubits[i] : qc_to_extend.qubits[-1-i] for i in range(4)}
         >>> qc_to_extend.extend(extension_qc, translation_dic)
         >>> print(qc_to_extend)
 
         .. code-block:: none
 
-                            ┌───┐
-            qb_4: ──────────┤ Z ├
-                       ┌───┐└─┬─┘
+
+            qb_4: ────────────■──
+                       ┌───┐  │
             qb_5: ─────┤ Y ├──┼──
                   ┌───┐└─┬─┘  │
             qb_6: ┤ X ├──┼────┼──
@@ -455,35 +457,20 @@ class QuantumCircuit:
 
         """
 
-        if translation_dic == "id":
-            translation_dic = {}
-            for qb in other.qubits:
-                translation_dic[qb] = qb
+        if translation_dic is None:
+            translation_dic = {qb.identifier: qb for qb in other.qubits}
+            translation_dic.update({cb.identifier: cb for cb in other.clbits})
+        else:
+            translation_dic = {
+                key.identifier if isinstance(key, (Qubit, Clbit)) else key: value
+                for key, value in translation_dic.items()
+            }
 
-            for cb in other.clbits:
-                translation_dic[cb] = cb
-
-        # Copy in order to prevent modification
-        translation_dic = dict(translation_dic)
-
-        for key in list(translation_dic.keys()):
-            if isinstance(key, (Qubit, Clbit)):
-                translation_dic[key.identifier] = translation_dic[key]
-
-        for i in range(len(other.data)):
-            instruction_other = other.data[i]
-            qubits = []
-            for qb in instruction_other.qubits:
-                qubits.append(translation_dic[qb.identifier])
-
-            clbits = []
-
-            for cb in instruction_other.clbits:
-                clbits.append(translation_dic[cb.identifier])
-
+        for instruction_other in other.data:
+            qubits = [translation_dic[qb.identifier] for qb in instruction_other.qubits]
+            clbits = [translation_dic[cb.identifier] for cb in instruction_other.clbits]
             self.append(instruction_other.op, qubits, clbits)
 
-    # Returns a copy of self
     def copy(self):
         """
         Returns a copy of the given QuantumCircuit.
@@ -527,12 +514,9 @@ class QuantumCircuit:
         self.data = temp_data
         return res
 
-    # TO-DO write qiskit independent printer
+    # TODO write qiskit independent printer
 
-    # Printing method
     def __str__(self):
-
-        from qiskit.visualization.circuit_visualization import circuit_drawer
 
         from qrisp.interface import convert_to_qiskit
 
@@ -933,7 +917,7 @@ class QuantumCircuit:
         return transpile(self, transpilation_level, **qiskit_kwargs)
 
     # Counts the amount of operations self contains and returns
-    # a dict {"operatio_name" : operation_count, ...}
+    # a dict {"operation_name" : operation_count, ...}
     def count_ops(self):
         """
         Counts the amount of operations of each kind. Note that operations are
@@ -1071,8 +1055,6 @@ class QuantumCircuit:
         from qrisp.interface import convert_to_qiskit
 
         qiskit_qc = convert_to_qiskit(self, transpile=False)
-
-        from qiskit.visualization import circuit_drawer
 
         return circuit_drawer(qiskit_qc, output="latex_source", **kwargs)
 
@@ -1559,7 +1541,7 @@ class QuantumCircuit:
             qc_identifiers = [qb.identifier for qb in self.qubits]
 
             if not set(op_identifiers).issubset(qc_identifiers):
-                raise Exception(
+                raise ValueError(
                     "Instruction Qubits "
                     + str(set(qubits) - set(self.qubits))
                     + " not present in circuit"
@@ -1575,7 +1557,7 @@ class QuantumCircuit:
         if not set([cb.identifier for cb in clbits]).issubset(
             set([cb.identifier for cb in self.clbits])
         ):
-            raise Exception("Instruction Clbits not present in circuit")
+            raise ValueError("Instruction Clbits not present in circuit")
 
         # Log which abstract parameters have been added to the circuit
         try:
@@ -1658,33 +1640,33 @@ class QuantumCircuit:
         return backend.run(self, shots)
 
     def statevector_array(self):
-        """
-        Performs a simulation of the statevector of self and returns a numpy array of
-        complex numbers.
+        r"""
+        Simulate the circuit statevector and return it as a NumPy array of complex
+        amplitudes.
 
         .. note::
 
-            Qrisps qubit ordering convention is reversed when compared to Qiskit,
-            because of simulation efficiency reasons.
-            As a rule of thumb you can remember:
+            The returned array uses **big-endian index ordering**. The array index
+            ``i`` maps to qubit values as
 
-            The statevector array of the following circuit has the amplitude 1 at the
-            index ``0010 = 2``
+            .. math::
 
-            .. code-block:: none
+                i = \sum_{k=0}^{n-1} q_k \, 2^{\,n-1-k},
 
-                qb.0: ─────
+            so :math:`q_0` is the most significant qubit. For two qubits this yields:
 
-                qb.1: ─────
-                      ┌───┐
-                qb.2: ┤ X ├
-                      └───┘
-                qb.3: ─────
+            - ``i = 0``  → :math:`|q_0=0, q_1=0\rangle`
+            - ``i = 1``  → :math:`|q_0=0, q_1=1\rangle`
+            - ``i = 2``  → :math:`|q_0=1, q_1=0\rangle`
+            - ``i = 3``  → :math:`|q_0=1, q_1=1\rangle`
+
+            This differs from Qrisp’s internal little-endian convention (only the
+            index-to-basis mapping changes).
 
         Returns
         -------
         numpy.ndarray
-            The statevector of this circuit.
+            The statevector of this circuit in big-endian order.
 
         Examples
         --------
@@ -1703,14 +1685,29 @@ class QuantumCircuit:
                 0.24999997+0.j, -0.24999997+0.j,  0.24999997+0.j, -0.24999997+0.j],
               dtype=complex64)
 
+        In this example, we create a :ref:`QuantumFloat` and prepare the normalized state
+        $\sum_{i=0}^3 \tilde b_i\ket{i}$ for $\tilde b=(0,1,2,3)/\sqrt{14}$.
 
+        >>> import numpy as np
+        >>> from qrisp import QuantumFloat
+        >>> b = np.array([0, 1, 2, 3], dtype=float)
+        >>> b /= np.linalg.norm(b)
+        >>> qf = QuantumFloat(2)
+        >>> qf.init_state(b)
+        >>> sv_array = qf.qs.statevector_array()
+        >>> print(f"b[1]: {b[1]:.6f} -> {sv_array[2]:.6f}")
+        b[1]: 0.267261 -> 0.267261-0.000000j
+        >>> print(f"b[2]: {b[2]:.6f} -> {sv_array[1]:.6f}")
+        b[2]: 0.534522 -> 0.534522-0.000000j
+
+        Here ``sv_array[2]`` corresponds to :math:`\ket{q_0=1, q_1=0}` and
+        ``sv_array[1]`` to :math:`\ket{q_0=0, q_1=1}`.
         """
         from qrisp.simulator import statevector_sim
 
         return statevector_sim(self)
 
     def __hash__(self):
-        from hashlib import sha256
 
         res = 0
 
@@ -1756,13 +1753,13 @@ class QuantumCircuit:
         return hash(res)
 
     @classmethod
-    def from_qasm_str(self, qasm_string):
+    def from_qasm_str(cls, qasm_string: str) -> "QuantumCircuit":
         """
         Loads a QuantumCircuit from a QASM String.
 
         Parameters
         ----------
-        qasm_string : string
+        qasm_string : str
             A string obeying the syntax of the OpenQASM specification.
 
         Returns
@@ -1772,22 +1769,17 @@ class QuantumCircuit:
 
         """
 
-        from qiskit import QuantumCircuit
-
-        qiskit_qc = QuantumCircuit().from_qasm_str(qasm_string)
-
-        from qrisp import QuantumCircuit
-
-        return QuantumCircuit.from_qiskit(qiskit_qc)
+        qiskit_qc = QiskitQuantumCircuit().from_qasm_str(qasm_string)
+        return cls.from_qiskit(qiskit_qc)
 
     @classmethod
-    def from_qasm_file(self, filename):
+    def from_qasm_file(cls, filename: str) -> "QuantumCircuit":
         """
         Loads a QuantumCircuit from a QASM file.
 
         Parameters
         ----------
-        filename : string
+        filename : str
             A string pointing to a file obeying the OpenQASM syntax.
 
         Returns
@@ -1796,16 +1788,12 @@ class QuantumCircuit:
             The corresponding QuantumCircuit.
 
         """
-        from qiskit import QuantumCircuit
 
-        qiskit_qc = QuantumCircuit().from_qasm_file(filename)
-
-        from qrisp import QuantumCircuit
-
-        return QuantumCircuit.from_qiskit(qiskit_qc)
+        qiskit_qc = QiskitQuantumCircuit().from_qasm_file(filename)
+        return cls.from_qiskit(qiskit_qc)
 
     @classmethod
-    def from_qiskit(self, qiskit_qc):
+    def from_qiskit(cls, qiskit_qc):
         """
         Class method to create QuantumCircuits from Qiskit QuantumCircuits.
 
@@ -1891,6 +1879,127 @@ class QuantumCircuit:
 
         return qml_converter(self)
 
+    def to_stim(
+        self,
+        return_measurement_map=False,
+        return_detector_map=False,
+        return_observable_map=False,
+    ):
+        """
+        Method to convert the given QuantumCircuit to a `Stim <https://github.com/quantumlib/Stim/>`_ Circuit.
+
+        .. note::
+
+            Stim can only process/represent Clifford operations.
+
+        Parameters
+        ----------
+        return_measurement_map : bool, optional
+            If set to True, the function returns the measurement_map, as described below.
+            The default is False.
+        return_detector_map : bool, optional
+            If set to True, the function returns the detector_map.
+            The default is False.
+        return_observable_map : bool, optional
+            If set to True, the function returns the observable_map.
+            The default is False.
+
+        Returns
+        -------
+        stim_circuit : stim.Circuit
+            The converted Stim circuit.
+        measurement_map : dict
+            (Optional) A dictionary mapping Qrisp Clbit objects to Stim measurement record indices.
+            For example, ``{Clbit(cb_1): 2, Clbit(cb_0): 1}`` means ``Clbit("cb_1")``
+            corresponds to index 2 in Stim's measurement record.
+        detector_map : dict
+            (Optional) A dictionary mapping :class:`~qrisp.jasp.ParityHandle` objects to Stim detector indices.
+            ParityHandle objects are compared by their index, so handles from to_qc() can
+            be used directly as keys.
+        observable_map : dict
+            (Optional) A dictionary mapping :class:`~qrisp.jasp.ParityHandle` objects to Stim observable indices.
+            ParityHandle objects are compared by their index, so handles from to_qc() can
+            be used directly as keys.
+
+        Examples
+        --------
+        Basic conversion:
+
+        >>> from qrisp import QuantumCircuit
+        >>> qc = QuantumCircuit(2, 2)
+        >>> qc.x(0)
+        >>> qc.cz(0, 1)
+        >>> qc.measure(0, 0)
+        >>> qc.measure(1, 1)
+        >>> print(qc)
+              ┌───┐   ┌─┐
+        qb_0: ┤ X ├─■─┤M├───
+              └───┘ │ └╥┘┌─┐
+        qb_1: ──────■──╫─┤M├
+                       ║ └╥┘
+        cb_0: ═════════╩══╬═
+                          ║
+        cb_1: ════════════╩═
+
+        >>> stim_circuit = qc.to_stim()
+        >>> print(stim_circuit)
+        X 0
+        CZ 0 1
+        M 0 1
+
+        Stim creates measurement indices in the order of how the measurements appear
+        in the circuit. This is different in Qrisp: It is for instance possible
+        for the first measurement of the circuit to target the second ``Clbit``.
+        The second measurement can in-principle then target either the first or
+        the second ``Clbit``. In order to still identify which ``Clbit`` corresponds to
+        which stim measurement index, we can use the ``return_measurement_map`` keyword
+        argument.
+
+        >>> qc = QuantumCircuit(2, 2)
+        >>> qc.x(0)
+        >>> qc.cz(0, 1)
+        >>> qc.measure(1, 1) # The first measurement of the circuit targets the second ClBit
+        >>> qc.measure(0, 0) # The second measurement of the circuit targets the first ClBit
+        >>> print(qc)
+              ┌───┐      ┌─┐
+        qb_0: ┤ X ├─■────┤M├
+              └───┘ │ ┌─┐└╥┘
+        qb_1: ──────■─┤M├─╫─
+                      └╥┘ ║
+        cb_0: ═════════╬══╩═
+                       ║
+        cb_1: ═════════╩════
+        >>> stim_circuit, measurement_map = qc.to_stim(return_measurement_map = True)
+        >>> print(stim_circuit)
+        X 0
+        CZ 0 1
+        M 1 0
+
+        We see that Stim now measures the qubit with index 1 first (``M 1 0``),
+        which is why in the measurement record the measurement result in ``Clbit("cb_1")``
+        will appear at index 0 and ``Clbit("cb_0")`` at index 1.
+        To retrieve the correct order, we inspect the ``measurement_map`` dictionary.
+
+        >>> print(measurement_map)  # Maps Clbit objects to Stim measurement indices
+        {Clbit(cb_1): 0, Clbit(cb_0): 1}
+
+        We can now check the samples drawn from this circuit for a given ``Clbit``
+        object by slicing the sampling result array.
+
+        >>> sampler = stim_circuit.compile_sampler()
+        >>> all_samples = sampler.sample(5)
+        >>> samples = all_samples[:, measurement_map[qc.clbits[0]]]
+        >>> print(samples)
+        array([ True,  True,  True,  True,  True])
+
+        """
+
+        from qrisp.interface import qrisp_to_stim
+
+        return qrisp_to_stim(
+            self, return_measurement_map, return_detector_map, return_observable_map
+        )
+
     def to_pytket(self):
         """
         Method to convert the given QuantumCircuit to a `PyTket <https://cqcl.github.io/tket/pytket/api/#>`_ Circuit.
@@ -1898,12 +2007,26 @@ class QuantumCircuit:
         Returns
         -------
         function
-            A function representing a pennylane QuantumCircuit.
+            A function representing a PyTket QuantumCircuit.
 
         """
         from qrisp.interface import pytket_converter
 
         return pytket_converter(self)
+
+    def to_cirq(self):
+        """
+        Method to convert the given QuantumCircuit to a Cirq Circuit.
+
+        Returns
+        -------
+        function
+            A function representing a Cirq QuantumCircuit.
+
+        """
+        from qrisp.interface import convert_to_cirq
+
+        return convert_to_cirq(self)
 
     # Several methods to apply the standard operation defined in standard_operations.py
     def measure(self, qubits, clbits=None):
@@ -1932,6 +2055,86 @@ class QuantumCircuit:
                 clbits = self.add_clbit()
 
         self.append(ops.Measurement(), [qubits], [clbits])
+
+    def parity(self, clbits, expectation=0, observable=False):
+        """
+        Instructs a parity operation on a set of classical bits.
+
+        This method creates a parity check (XOR) on measurement results, useful for
+        quantum error correction and when interfacing with Stim. When the circuit is
+        converted to Stim (via :meth:`to_stim`), this creates either a ``DETECTOR``
+        instruction (if ``observable=False``) or an ``OBSERVABLE_INCLUDE`` instruction
+        (if ``observable=True``).
+
+        Parameters
+        ----------
+        clbits : list[Clbit] or Clbit
+            The classical bits to compute parity over. Can be a single Clbit or a list
+            of Clbits representing measurement results.
+        expectation : int, optional
+            The expected parity value (0 or 1). Default is 0.
+        observable : bool, optional
+            If True, this parity is treated as a Stim observable rather than a detector.
+            Default is False.
+
+        Returns
+        -------
+        ParityHandle
+            A :class:`~qrisp.jasp.ParityHandle` object representing the parity result.
+            This handle can be used as a key to look up detector/observable indices in
+            the maps returned by :meth:`to_stim`.
+
+        Examples
+        --------
+
+        Create a simple detector checking that two qubits have even parity:
+
+        >>> from qrisp import QuantumCircuit
+        >>> qc = QuantumCircuit(2, 2)
+        >>> qc.h(0)
+        >>> qc.cx(0, 1)
+        >>> qc.measure([0, 1], [0, 1])
+        >>> handle = qc.parity([qc.clbits[0], qc.clbits[1]], expectation=0)
+        >>> print(handle)
+        ParityHandle(Clbit(cb_2), Clbit(cb_3))
+
+        Convert to Stim and check the detector:
+
+        >>> stim_circuit, meas_map, det_map = qc.to_stim(
+        ...     return_measurement_map=True,
+        ...     return_detector_map=True
+        ... )
+        >>> det_map[handle]  # Get the Stim detector index
+        0
+
+        See Also
+        --------
+        :func:`qrisp.parity` : The gate function version for use in QuantumSessions
+        :meth:`to_stim` : Convert to Stim circuit with detector/observable maps
+        :class:`qrisp.jasp.ParityHandle` : Documentation of the ParityHandle class
+        """
+        from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
+            ParityHandle,
+        )
+        from qrisp.jasp.primitives.parity_primitive import ParityOperation
+
+        # Ensure clbits is a list
+        if not isinstance(clbits, list):
+            clbits = [clbits]
+
+        # Create and append the parity operation
+        parity_op = ParityOperation(
+            len(clbits), expectation=expectation, observable=observable
+        )
+
+        # Append the operation (doesn't return the instruction)
+        self.append(parity_op, clbits=clbits)
+
+        # Get the last instruction that was just appended
+        instruction = self.data[-1]
+
+        # Return a ParityHandle wrapping this instruction
+        return ParityHandle(instruction)
 
     def cx(self, qubits_0, qubits_1):
         """

@@ -12,6 +12,7 @@ Methods
 .. autosummary::
    :toctree: generated/
    
+   FermionicOperator.coeffs
    FermionicOperator.dagger
    FermionicOperator.expectation_value
    FermionicOperator.from_openfermion

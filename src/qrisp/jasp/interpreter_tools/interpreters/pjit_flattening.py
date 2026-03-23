@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -46,7 +46,7 @@ def evaluate_pjit_eqn(pjit_eqn, context_dic):
 def flatten_pjit(jaxpr):
 
     def eqn_evaluator(eqn, context_dic):
-        if eqn.primitive.name == "pjit":
+        if eqn.primitive.name == "jit":
             evaluate_pjit_eqn(eqn, context_dic)
         else:
             return True

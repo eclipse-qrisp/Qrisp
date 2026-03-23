@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -15,6 +15,8 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
+
+# qswitch is deprecated, use q_switch instead
 
 from qrisp import inpl_mult, h, QuantumFloat, qswitch, multi_measurement, x
 def test_qswitch_case_list():

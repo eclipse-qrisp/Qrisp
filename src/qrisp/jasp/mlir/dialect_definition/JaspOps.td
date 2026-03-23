@@ -16,7 +16,7 @@ def CreateQubitsOp : JaspOp<"create_qubits"> {
     let arguments = (ins 0DTensorOf<[I64]>:$amount, QuantumStateType:$qst_in);
     let results = (outs QubitArrayType:$result, QuantumStateType:$qst_out);
     
-    let assemblyFormat = "$amount attr-dict `,` $qst_in  `:` type($qst_in) `,` type($amount) `->` type($result)";
+    let assemblyFormat = "$amount attr-dict `,` $qst_in  `:` type($qst_in) `,` type($amount) `->` type($result) `,` type($qst_out)";
 }
 
 def GetQubitOp : JaspOp<"get_qubit"> {
@@ -120,4 +120,14 @@ def QuantumGateOp : JaspOp<"quantum_gate"> {
     let results = (outs QuantumStateType:$out_qst);
     
     let assemblyFormat = "$gate_type `(` $gate_operands `)` `,` $in_qst attr-dict `:` `(` type($gate_operands) `)` `,` type($in_qst) `->` type($out_qst)";
+}
+
+def ParityOp : JaspOp<"parity"> {
+    let summary = "Computes parity of measurement results.";
+    let description = "Computes the parity (XOR sum) of a set of measurement results. Supports expectation and observable attributes for error correction contexts.";
+    
+    let arguments = (ins Variadic<0DTensorOf<[I1]>>:$measurements, I64Attr:$expectation, I64Attr:$observable);
+    let results = (outs 0DTensorOf<[I1]>:$result);
+    
+    let assemblyFormat = "$measurements attr-dict `:` type($measurements) `->` type($result)";
 }

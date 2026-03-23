@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2025 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -78,7 +78,7 @@ def test_qache():
     jaspr_id_dict = {}
     def eqn_evaluator(eqn, context_dic):
         
-        if eqn.primitive.name == "pjit":
+        if eqn.primitive.name == "jit":
             name = eqn.params["name"]
             if isinstance(eqn.params["jaxpr"].jaxpr, Jaspr) and name != "ctrl_env":
                 jaspr = eqn.params["jaxpr"].jaxpr
