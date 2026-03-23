@@ -51,7 +51,7 @@ class FakeJob:
 class FakeIQMProviderBackend:
     """A fake IQM Backend to mock IQMProviderBackend behavior."""
 
-    def __init__(self, client):
+    def __init__(self, client, *_, **__):
         self.client = client
 
     def serialize_circuit(self, _):
