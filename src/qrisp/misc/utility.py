@@ -1578,12 +1578,12 @@ def redirect_qfunction(function_to_redirect):
         else:
 
             qargs = [
-                    arg
-                    for arg in list(args) + [target]
-                    if isinstance(arg, (QuantumVariable, QuantumArray))
-                    ]
+                arg
+                for arg in list(args) + [target]
+                if isinstance(arg, (QuantumVariable, QuantumArray))
+            ]
             merge(qargs)
-                
+
             env = QuantumEnvironment()
             env.manual_allocation_management = True
             qs = target.qs
@@ -2406,3 +2406,34 @@ def batched_measurement(variables, backend, shots=None):
 
     # Inspect the results
     return results
+
+
+def _bitrev_indices(n: ArrayLike) -> jnp.ndarray:
+    """Return array r where r[j] = bitreverse(j) over n bits."""
+    idx = jnp.arange(1 << n, dtype=jnp.uint32)
+    rev = jnp.zeros_like(idx)
+    for k in range(n):
+        rev = (rev << 1) | ((idx >> k) & 1)
+    return rev
+
+
+def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jnp.ndarray:
+    """
+    Convert between big-endian and little-endian qubit ordering.
+
+    This transformation is its own inverse, so it works in both directions.
+
+    Parameters
+    ----------
+    vec : ArrayLike
+        The state vector to convert.
+    n : ArrayLike
+        The number of qubits.
+
+    Returns
+    -------
+    jnp.ndarray
+        The state vector with reversed qubit ordering.
+    """
+    r = _bitrev_indices(n)
+    return vec[r]

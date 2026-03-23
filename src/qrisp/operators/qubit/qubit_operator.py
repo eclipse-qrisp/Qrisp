@@ -2388,21 +2388,6 @@ class QubitOperator(Hamiltonian):
         the matrix $A$ is successfully applied.
 
         """
-        from qrisp.jasp import qache
-        from qrisp.alg_primitives import prepare, qswitch
+        from qrisp.block_encodings import BlockEncoding
 
-        unitaries, coeffs = self.unitaries()
-        alpha = np.sum(coeffs)
-
-        # Number of qubits for case variable
-        num_qubits = np.int64(np.ceil(np.log2(len(coeffs))))
-
-        @qache
-        def U(case, operand):
-            qswitch(operand, case, unitaries)
-
-        @qache
-        def state_prep(case):
-            prepare(case, np.sqrt(coeffs / alpha))
-
-        return U, state_prep, num_qubits
+        return BlockEncoding.from_operator(self)
