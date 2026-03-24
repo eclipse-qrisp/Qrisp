@@ -40,15 +40,16 @@ without duplicating or reimplementing vendor-specific data structures.
 :ref:`Backend`
 --------------
 
-The :class:`Backend` class is the abstract base class for all Qrisp backends.
+The :ref:`Backend` class is the abstract base class for all Qrisp backends.
 It defines the minimal interface required to submit quantum circuits for execution
 and optionally expose hardware metadata.
 
 Concrete backends may represent local simulators or remote quantum hardware clients.
 All backends must implement the :meth:`Backend.run` method, which submits one or more circuits
-for execution and returns a :class:`Job` handle immediately.
+for execution and returns a :ref:`Job` handle immediately.
 
-For example, we can define a simple backend that wraps the built-in Qrisp simulator:
+For example, we can define a simple backend that wraps the built-in Qrisp 
+``run`` function for synchronous circuit simulation:
 
 .. code-block:: python
 
@@ -59,61 +60,61 @@ For example, we can define a simple backend that wraps the built-in Qrisp simula
 
 
    class SimulatorJob(Job):
-       """Concrete Job for the synchronous simulator backend."""
+      """A simple synchronous Job implementation for the default Qrisp simulator."""
 
-       def __init__(self, backend, circuits, shots):
-           super().__init__(backend=backend)
-           self._circuits = circuits
-           self._shots = shots
-           self._status = JobStatus.INITIALIZING
-           self._result_data = None
-           self._error = None
-           self._done_event = threading.Event()
+      def __init__(self, backend, circuits, shots):
 
-       def submit(self):
-           self._status = JobStatus.RUNNING
-           try:
-               counts = [
-                   default_run(c, self._shots, self.backend.options.get("token", ""))
-                   for c in self._circuits
-               ]
+         super().__init__(backend=backend)
+         self._circuits = circuits
+         self._shots = shots
+         self._status = JobStatus.INITIALIZING
+         self._result_data = None
+         self._error = None
+         self._done_event = threading.Event()
+
+      def submit(self):
+
+         self._status = JobStatus.RUNNING
+         try:
+               counts = [default_run(c, self._shots) for c in self._circuits]
                self._result_data = JobResult(counts)
                self._status = JobStatus.DONE
-           except Exception as exc:
+         except Exception as exc:
                self._error = exc
                self._status = JobStatus.ERROR
-           finally:
+         finally:
                self._done_event.set()
 
-       def result(self, timeout=None):
-           if not self._done_event.wait(timeout=timeout):
+      def result(self, timeout=None):
+
+         if not self._done_event.wait(timeout=timeout):
                raise TimeoutError("Job did not complete in time.")
-           if self._status == JobStatus.ERROR:
+         if self._status == JobStatus.ERROR:
                raise RuntimeError(self._error)
-           return self._result_data
+         return self._result_data
 
-       def cancel(self):
-           return False   # synchronous jobs cannot be cancelled
+      def cancel(self):
+         return False  # synchronous jobs cannot be cancelled
 
-       def status(self):
-           return self._status
+      def status(self):
+         return self._status
 
 
    class DefaultBackend(Backend):
-       """A default backend that uses the built-in Qrisp simulator."""
+      """A default backend that uses the built-in Qrisp simulator."""
 
-       @classmethod
-       def _default_options(cls):
-           # shots=None means analytic (exact) execution for the simulator
-           return {"shots": None, "token": ""}
+      @classmethod
+      def _default_options(cls):
+         # shots=None means analytic (exact) execution for the simulator
+         return {"shots": None, "token": ""}
 
-       def run(self, circuits, shots=None):
-           if not isinstance(circuits, list):
-               circuits = [circuits]
-           n_shots = shots if shots is not None else self.options.get("shots")
-           job = SimulatorJob(backend=self, circuits=circuits, shots=n_shots)
-           job.submit()
-           return job
+      def run(self, circuits, shots=None):
+
+         circuits = [circuits] if not isinstance(circuits, list) else circuits
+         n_shots = shots if shots is not None else self.options.get("shots")
+         job = SimulatorJob(backend=self, circuits=circuits, shots=n_shots)
+         job.submit()
+         return job
 
 
 Let's create a quantum circuit that applies a Hadamard gate to a single qubit and measures it:
@@ -127,7 +128,7 @@ Let's create a quantum circuit that applies a Hadamard gate to a single qubit an
    circuit.measure(0)
 
 We can now create an instance of ``DefaultBackend`` and execute the circuit.
-The :meth:`Backend.run` method returns a :class:`Job` immediately.
+The :meth:`Backend.run` method returns a :ref:`Job` immediately.
 Results are retrieved by calling :meth:`Job.result`:
 
 .. code-block:: python
@@ -163,9 +164,6 @@ Only keys that were present at construction time may be modified:
    >>> print(result.get_counts())
    {'0': 1029, '1': 1019}   # Note: actual counts may vary due to randomness
 
-   >>> backend.update_options(unknown_option=99)
-   AttributeError: 'unknown_option' is not a valid backend option for DefaultBackend.
-
 It is also possible to submit a batch of circuits in a single call.
 The backend decides internally whether to run them sequentially or in parallel:
 
@@ -174,7 +172,7 @@ The backend decides internally whether to run them sequentially or in parallel:
    >>> circuit_b = QuantumCircuit(2)
    >>> circuit_b.h(0)
    >>> circuit_b.cx(0, 1)
-   >>> circuit_b.measure_all()
+   >>> circuit_b.measure([0, 1])
 
    >>> job = backend.run([circuit, circuit_b], shots=512)
    >>> result = job.result()
@@ -182,12 +180,14 @@ The backend decides internally whether to run them sequentially or in parallel:
    {'0': 254, '1': 258}
    >>> print(result.get_counts(1))   # second circuit
    {'00': 259, '11': 253}
+   >>> print(result.all_counts)      # all circuits
+   [{'0': 254, '1': 258}, {'00': 259, '11': 253}]
 
 
 :ref:`Job`
 ----------
 
-The :class:`Job` class is an abstract handle for a (potentially asynchronous) backend execution.
+The :ref:`Job` class is an abstract handle for a (potentially asynchronous) backend execution.
 It is returned by :meth:`Backend.run` immediately after submission, regardless of whether
 the execution is synchronous or asynchronous.
 
@@ -219,7 +219,7 @@ Concrete subclasses must implement the four abstract methods:
 - :meth:`Job.submit`: trigger the actual execution.
 - :meth:`Job.result`: block until the result is available and return it.
 - :meth:`Job.cancel`: attempt to cancel the job.
-- :meth:`Job.status`: return the current :class:`JobStatus` without blocking.
+- :meth:`Job.status`: return the current :ref:`JobStatus` without blocking.
 
 Several non-blocking convenience helpers are provided by the base class
 and derived from :meth:`Job.status`:
@@ -238,16 +238,8 @@ If ``result()`` is called on a job that has failed or been cancelled, a
 :ref:`JobStatus`
 ----------------
 
-The :class:`JobStatus` enumeration defines the possible states of a :class:`Job`
+The :ref:`JobStatus` enumeration defines the possible states of a :ref:`Job`
 during its lifecycle.
-
-The typical progression is:
-
-.. code-block:: text
-
-   INITIALIZING → QUEUED → RUNNING → DONE
-                                    ↘ ERROR
-                  ↘ CANCELLED (at any point before DONE)
 
 The six states are:
 
@@ -274,34 +266,9 @@ Once a job reaches any of these states, its outcome is final:
 :ref:`JobResult`
 ----------------
 
-The :class:`JobResult` class wraps the outcome of one or more circuit executions.
+The :ref:`JobResult` class wraps the outcome of one or more circuit executions.
 
-Results are stored as a list of measurement-outcome dictionaries, one per submitted circuit,
-preserving the order of submission.
-For single-circuit executions, index ``0`` is used by default:
-
-.. code-block:: python
-
-   # Single-circuit result
-   result = job.result()
-   counts = result.get_counts()         # dict for circuit 0
-   print(counts)
-   # {'0': 510, '1': 514}
-
-   # Batch result: one dict per circuit
-   batch_result = batch_job.result()
-   print(batch_result.get_counts(0))    # dict for the first circuit
-   print(batch_result.get_counts(1))    # dict for the second circuit
-   print(batch_result.num_circuits)     # total number of circuits
-   print(batch_result.all_counts)       # the full list of dicts
-
-Backends may also attach arbitrary execution metadata to the result:
-
-.. code-block:: python
-
-   print(result.metadata)
-   # {'mode': 'async', 'duration_ms': 423, ...}
-
+For more details, see the :ref:`JobResult` documentation.
 
 :ref:`BackendServer`
 --------------------

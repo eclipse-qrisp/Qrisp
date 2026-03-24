@@ -39,9 +39,10 @@ def _clear_progress_line():
     print("\r" + (" " * width), end="\r")
 
 
+# TODO: This function will be refactored
 # This functions determines the quantum state after executing a quantum circuit
 # and afterwards extracts the probability of measuring certain bit strings
-def run(qc, shots, token="", iqs=None, insert_reset=True):
+def run(qc, shots, token="", iqs=None, insert_reset=True) -> dict:
 
     if len(qc.data) == 0:
         return {"": shots}

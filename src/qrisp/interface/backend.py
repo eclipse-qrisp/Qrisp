@@ -56,9 +56,9 @@ class Backend(ABC):
     .. rubric:: Execution model
 
     :meth:`run` accepts a single circuit *or* a sequence of circuits and always
-    returns a :class:`Job` immediately. This follows the *Future* pattern:
-    execution happens independently of the caller, and the caller decides
-    *when* to block by calling :meth:`Job.result <qrisp.interface.Job.result>`.
+    returns a (subclass of) :class:`Job` immediately.
+    This follows the *Future* pattern: execution happens independently of the caller,
+    and the caller decides *when* to block by calling :meth:`Job.result <qrisp.interface.Job.result>`.
     This design supports:
 
     * **Synchronous simulators**: the job is already done when returned.
@@ -179,7 +179,8 @@ class Backend(ABC):
         Submit one or more circuits for execution and return a :class:`Job`.
 
         This method returns immediately. The caller blocks and retrieves the
-        outcome by calling :meth:`Job.result <qrisp.interface.Job.result>` on the returned object.
+        outcome by calling :meth:`Job.result <qrisp.interface.Job.result>`
+        on the returned object.
 
         Parameters
         ----------
