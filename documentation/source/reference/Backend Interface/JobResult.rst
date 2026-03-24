@@ -6,7 +6,15 @@ JobResult
 .. currentmodule:: qrisp.interface
 
 .. autoclass:: JobResult
-   :members:
+
+
+Properties
+----------
+.. autosummary::
+   :toctree: generated/
+
+   JobResult.all_counts
+   JobResult.num_circuits
 
 Methods
 -------
@@ -16,6 +24,4 @@ Methods
 
    JobResult.__init__
    JobResult.get_counts
-   JobResult.all_counts
-   JobResult.num_circuits
 

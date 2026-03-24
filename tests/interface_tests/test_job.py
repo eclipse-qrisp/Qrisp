@@ -24,6 +24,14 @@ from conftest import MinimalBackend, MinimalJob
 from qrisp.interface.job import JOB_FINAL_STATES, Job, JobResult, JobStatus
 
 
+# TODO: add tests for `cancelled` new method in the `Job` class
+
+# TODO: update tests to reflect the new behaviour of
+
+# TODO: add test for `metadata` attribute in the `Job` class
+# (should we combine them with the `metadata` tests in `JobResult` or keep them separate?)
+
+
 class TestJobStatusEnum:
     """Unit tests for the JobStatus enumeration."""
 

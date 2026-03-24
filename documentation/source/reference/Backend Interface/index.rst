@@ -24,61 +24,99 @@ Backend Interface
    
 The backend interface provides a minimal, hardware-agnostic abstraction for executing gate-based quantum circuits.
 
-The primary goal of the interface is to support both clients and providers of physical quantum hardware 
+The primary goal of the interface is to support both clients and providers of physical quantum hardware
 while remaining flexible enough to accommodate simulators, emulators, and experimental backends.
 
 Rather than enforcing a universal hardware model, the interface focuses on:
 
 - a minimal execution contract,
-
 - a lightweight mechanism for runtime configuration,
-
 - optional, backend-defined hardware metadata.
 
-This design allows Qrisp to interoperate with a wide range of existing hardware APIs and network architectures 
-without duplicating or reimplementing vendor-specific data structures
+This design allows Qrisp to interoperate with a wide range of existing hardware APIs
+without duplicating or reimplementing vendor-specific data structures.
 
 
 :ref:`Backend`
 --------------
 
 The :class:`Backend` class is the abstract base class for all Qrisp backends.
-It defines the minimal interface required to execute quantum circuits and optionally expose hardware metadata.
+It defines the minimal interface required to submit quantum circuits for execution
+and optionally expose hardware metadata.
 
-Concrete backends may represent simulators, local emulators, or remote quantum hardware.
+Concrete backends may represent local simulators, emulators, or remote quantum hardware clients.
+All backends must implement the :meth:`Backend.run` method, which submits one or more circuits
+for execution and returns a :class:`Job` handle immediately.
 
-All backends must implement the :meth:`Backend.run` method, which executes a quantum circuit on the backend.
-
-The exact execution semantics are backend-specific. A simulator may return a statevector, 
-while a hardware backend may return measurement counts or a job handle. 
-Users should treat the return value of run as backend-specific.
-
-For example, we can define a simple default backend implementation that uses the built-in simulator in Qrisp:
+For example, we can define a simple backend that wraps the built-in Qrisp simulator:
 
 .. code-block:: python
 
+   import threading
    from qrisp.interface.backend import Backend
+   from qrisp.interface.job import Job, JobResult, JobStatus
    from qrisp.simulator.simulator import run as default_run
 
 
+   class SimulatorJob(Job):
+       """Concrete Job for the synchronous simulator backend."""
+
+       def __init__(self, backend, circuits, shots):
+           super().__init__(backend=backend)
+           self._circuits = circuits
+           self._shots = shots
+           self._status = JobStatus.INITIALIZING
+           self._result_data = None
+           self._error = None
+           self._done_event = threading.Event()
+
+       def submit(self):
+           self._status = JobStatus.RUNNING
+           try:
+               counts = [
+                   default_run(c, self._shots, self.backend.options.get("token", ""))
+                   for c in self._circuits
+               ]
+               self._result_data = JobResult(counts)
+               self._status = JobStatus.DONE
+           except Exception as exc:
+               self._error = exc
+               self._status = JobStatus.ERROR
+           finally:
+               self._done_event.set()
+
+       def result(self, timeout=None):
+           if not self._done_event.wait(timeout=timeout):
+               raise TimeoutError("Job did not complete in time.")
+           if self._status == JobStatus.ERROR:
+               raise RuntimeError(self._error)
+           return self._result_data
+
+       def cancel(self):
+           return False   # synchronous jobs cannot be cancelled
+
+       def status(self):
+           return self._status
+
+
    class DefaultBackend(Backend):
-      """A default backend that uses the built-in simulator."""
+       """A default backend that uses the built-in Qrisp simulator."""
 
-      @classmethod
-      def _default_options(cls):
-         # shots=None means analytic (exact) execution for the simulator
-         return {"shots": None, "token": ""}
+       @classmethod
+       def _default_options(cls):
+           # shots=None means analytic (exact) execution for the simulator
+           return {"shots": None, "token": ""}
 
-      def run(self, circuit, shots: int | None = None):
-         shots = shots if shots is not None else self.options.get("shots", None)
-         token = self.options.get("token", "")
-         return default_run(circuit, shots, token)
+       def run(self, circuits, shots=None):
+           if not isinstance(circuits, list):
+               circuits = [circuits]
+           n_shots = shots if shots is not None else self.options.get("shots")
+           job = SimulatorJob(backend=self, circuits=circuits, shots=n_shots)
+           job.submit()
+           return job
 
 
-As clarified in the comment, `shots=None` means analytic (exact) execution for the simulator.
-
-We can then use this backend to run a simple quantum circuit.
-Let's start by creating a quantum circuit that applies a Hadamard gate to a single qubit and measures it.
+Let's create a quantum circuit that applies a Hadamard gate to a single qubit and measures it:
 
 .. code-block:: python
 
@@ -88,71 +126,183 @@ Let's start by creating a quantum circuit that applies a Hadamard gate to a sing
    circuit.h(0)
    circuit.measure(0)
 
-
-Now, we can create an instance of our `DefaultBackend` and execute the circuit.
-
-We have multiple ways to specify the number of shots for the execution. 
-We can either set it as a runtime option when creating the backend instance, or we can pass it directly to the :meth:`Backend.run` method.
-
+We can now create an instance of ``DefaultBackend`` and execute the circuit.
+The :meth:`Backend.run` method returns a :class:`Job` immediately.
+Results are retrieved by calling :meth:`Job.result`:
 
 .. code-block:: python
 
    >>> backend = DefaultBackend()
-   >>> result = backend.run(circuit)
-   >>> print(result)
+   >>> job = backend.run(circuit)
+   >>> print(job.status())
+   JobStatus.DONE
+
+   >>> result = job.result()
+   >>> print(result.get_counts())
    {'0': 0.5, '1': 0.5}
 
    >>> print(backend.options)
    {'shots': None, 'token': ''}
 
-
-We can also set different runtime options when creating the backend instance.
-
+We can also pass explicit runtime options at construction time:
 
 .. code-block:: python
 
    >>> backend = DefaultBackend(options={"shots": 1024, "token": "fake_token"})
-   >>> result = backend.run(circuit)
-   >>> print(result)
-   {'0': 510, '1': 514}   # Note that the actual counts may vary due to randomness
+   >>> result = backend.run(circuit).result()
+   >>> print(result.get_counts())
+   {'0': 510, '1': 514}   # Note: actual counts may vary due to randomness
 
-   >>> print(backend.options)
-   {'shots': 1024, 'token': 'fake_token'}
-
-
-Finally, we can update the backend options after instantiation using the :meth:`Backend.update_options` method.
-
+Runtime options can be updated after instantiation via :meth:`Backend.update_options`.
+Only keys that were present at construction time may be modified:
 
 .. code-block:: python
 
    >>> backend.update_options(shots=2048)
-   >>> result = backend.run(circuit)
-   >>> print(result)
-   {'0': 1029, '1': 1019}   # Note that the actual counts may vary due to randomness
+   >>> result = backend.run(circuit).result()
+   >>> print(result.get_counts())
+   {'0': 1029, '1': 1019}   # Note: actual counts may vary due to randomness
+
+   >>> backend.update_options(unknown_option=99)
+   AttributeError: 'unknown_option' is not a valid backend option for DefaultBackend.
+
+It is also possible to submit a batch of circuits in a single call.
+The backend decides internally whether to run them sequentially or in parallel:
+
+.. code-block:: python
+
+   >>> circuit_b = QuantumCircuit(2)
+   >>> circuit_b.h(0)
+   >>> circuit_b.cx(0, 1)
+   >>> circuit_b.measure_all()
+
+   >>> job = backend.run([circuit, circuit_b], shots=512)
+   >>> result = job.result()
+   >>> print(result.get_counts(0))   # first circuit
+   {'0': 254, '1': 258}
+   >>> print(result.get_counts(1))   # second circuit
+   {'00': 259, '11': 253}
 
 
 :ref:`Job`
 ----------
 
-The :class:`Job` class represents an asynchronous execution of a quantum circuit on a backend.
-It provides methods to query the status of the execution, retrieve results, and manage runtime options.
+The :class:`Job` class is an abstract handle for a (potentially asynchronous) backend execution.
+It is returned by :meth:`Backend.run` immediately after submission, regardless of whether
+the execution is synchronous or asynchronous.
 
+This follows the **Future** (or **Promise**) pattern: execution happens independently of the
+caller, and the caller decides when to block for the result.
+This is the same philosophy adopted by Qiskit — calling ``backend.run()`` returns a ``Job``
+object, and the caller invokes ``job.result()`` when it is ready to receive the outcome.
+
+The base ``Job`` class defines **only the observable contract**: four abstract methods that
+every concrete implementation must provide.
+It deliberately prescribes no internal synchronisation mechanism.
+A synchronous simulator may resolve the job inline; an asynchronous hardware backend
+may poll a remote queue in a background thread or coroutine.
+From the caller's perspective, both are used identically:
+
+.. code-block:: python
+
+   job = backend.run(circuit, shots=1024)
+
+   # Non-blocking: inspect the current state without waiting.
+   print(job.status())    # e.g. JobStatus.QUEUED or JobStatus.RUNNING
+
+   # Blocking: wait until the job finishes and retrieve the result.
+   result = job.result()
+
+   # Attempt cancellation (best-effort; may return False if already done).
+   accepted = job.cancel()
+
+Concrete subclasses must implement the four abstract methods:
+
+- :meth:`Job.submit` — trigger the actual execution.
+- :meth:`Job.result` — block until the result is available and return it.
+- :meth:`Job.cancel` — attempt to cancel the job.
+- :meth:`Job.status` — return the current :class:`JobStatus` without blocking.
+
+Several non-blocking convenience helpers are provided by the base class
+and derived from :meth:`Job.status`:
+
+.. code-block:: python
+
+   job.done()            # True if the job has reached a terminal state
+   job.running()         # True if the job is currently executing
+   job.queued()          # True if the job is waiting in the backend queue
+   job.in_final_state()  # Alias for done(), provided for Qiskit naming compatibility
+
+If ``result()`` is called on a job that has failed or been cancelled, a
+:exc:`RuntimeError` is raised.
 
 
 :ref:`JobStatus`
 ----------------
 
-The :class:`JobStatus` class defines the possible states of a :ref:`Job` during its lifecycle, 
-such as QUEUED, RUNNING, DONE, and ERROR.
+The :class:`JobStatus` enumeration defines the possible states of a :class:`Job`
+during its lifecycle.
 
+The typical progression is:
+
+.. code-block:: text
+
+   INITIALIZING → QUEUED → RUNNING → DONE
+                                    ↘ ERROR
+                  ↘ CANCELLED (at any point before DONE)
+
+The six states are:
+
+- ``INITIALIZING``: the job has been created but not yet submitted to the backend.
+- ``QUEUED``: the job has been submitted and is waiting for execution resources.
+- ``RUNNING``: the job is currently being executed.
+- ``DONE``: the job completed successfully. Results are available via :meth:`Job.result`.
+- ``CANCELLED``: the job was cancelled before or during execution.
+- ``ERROR``: the job failed due to an error during execution.
+
+The three terminal states (``DONE``, ``CANCELLED``, ``ERROR``) are collected in
+the module-level constant ``JOB_FINAL_STATES``.
+Once a job reaches any of these states, its outcome is final:
+
+.. code-block:: python
+
+   from qrisp.interface.job import JOB_FINAL_STATES, JobStatus
+
+   assert JobStatus.DONE      in JOB_FINAL_STATES
+   assert JobStatus.CANCELLED in JOB_FINAL_STATES
+   assert JobStatus.ERROR     in JOB_FINAL_STATES
 
 
 :ref:`JobResult`
 ----------------
 
-The :class:`JobResult` class encapsulates the results of a completed :ref:`Job`, including measurement outcomes,
-execution metadata, and any error information if the job failed.
+The :class:`JobResult` class wraps the outcome of one or more circuit executions.
 
+Results are stored as a list of measurement-outcome dictionaries, one per submitted circuit,
+preserving the order of submission.
+For single-circuit executions, index ``0`` is used by default:
+
+.. code-block:: python
+
+   # Single-circuit result
+   result = job.result()
+   counts = result.get_counts()         # dict for circuit 0
+   print(counts)
+   # {'0': 510, '1': 514}
+
+   # Batch result: one dict per circuit
+   batch_result = batch_job.result()
+   print(batch_result.get_counts(0))    # dict for the first circuit
+   print(batch_result.get_counts(1))    # dict for the second circuit
+   print(batch_result.num_circuits)     # total number of circuits
+   print(batch_result.all_counts)       # the full list of dicts
+
+Backends may also attach arbitrary execution metadata to the result:
+
+.. code-block:: python
+
+   print(result.metadata)
+   # {'mode': 'async', 'duration_ms': 423, ...}
 
 
 :ref:`BackendServer`

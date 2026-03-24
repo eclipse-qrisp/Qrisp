@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Dict, List
 
 if TYPE_CHECKING:
     from .backend import Backend
@@ -32,16 +32,9 @@ class JobStatus(Enum):
     """
     Enumeration of possible lifecycle states for a :class:`Job`.
 
-    The typical progression is:
-
-    .. code-block:: text
-
-        INITIALIZING → QUEUED → RUNNING → DONE
-                                        ↘ ERROR
-                       ↘ CANCELLED (at any point before DONE)
-
     Attributes
     ----------
+
     INITIALIZING :
         The job has been created but not yet submitted to the backend.
     QUEUED :
@@ -73,49 +66,77 @@ class JobResult:
     Wraps the outcome of one or more circuit executions.
 
     Counts are stored as a list with one dictionary per input circuit,
-    preserving the order of submission. For single-circuit executions,
-    index ``0`` is used.
+    preserving the input order.
 
     Parameters
     ----------
     counts : List[Dict[str, int]]
         A list of measurement-outcome dictionaries, one per circuit.
-        Keys are bitstring representations of measurement outcomes;
-        values are the number of times that outcome was observed.
+        Keys are bitstring representations of measurement outcomes.
+        Values are the number of times that outcome was observed.
 
-    metadata : Dict[str, Any] | None
-        Optional backend-specific metadata associated with the execution
-        (e.g. timing information, circuit identifiers, hardware calibration
-        snapshot). Defaults to an empty dict.
+    **kwargs
+        Optional backend-specific metadata associated with the execution.
 
     Examples
     --------
-    Single-circuit result:
+    Let's start with a simple example of a single circuit result:
 
+    >>> from qrisp.interface.job import JobResult
     >>> result = JobResult([{"00": 512, "11": 512}])
     >>> result.get_counts()
     {"00": 512, "11": 512}
 
-    Batch result:
+    For batch executions, we can store results for multiple circuits in a single object:
 
     >>> result = JobResult([{"0": 800, "1": 224}, {"00": 500, "11": 524}])
-    >>> result.get_counts(0)
-    {"0": 800, "1": 224}
+    >>> result.all_counts
+    [{'0': 800, '1': 224}, {'00': 500, '11': 524}]
+
+    Even in this case, we can access individual circuit results using the :meth:`get_counts` method:
+
     >>> result.get_counts(1)
-    {"00": 500, "11": 524}
+    {'00': 500, '11': 524}
+
+    Note that we can retrieve the number of circuits in the result using the :attr:`num_circuits` property:
+
+    >>> result.num_circuits
+    2
+
+    Finally, we can print the result object to see a summary of its contents:
+
+    >>> print(result)
+    JobResult(num_circuits=2, metadata={})
     """
 
-    def __init__(
-        self,
-        counts: List[Dict[str, int]],
-        metadata: Dict[str, Any] | None = None,
-    ):
+    def __init__(self, counts: List[Dict[str, int]], **kwargs):
+        """Initialize a JobResult instance."""
+
         if not isinstance(counts, list):
             raise TypeError(
                 f"'counts' must be a list of dicts, got {type(counts).__name__}"
             )
+
         self._counts = counts
-        self.metadata = metadata or {}
+        self.metadata = kwargs
+
+    # ------------------------------------------------------------------
+    # Properties
+    # ------------------------------------------------------------------
+
+    @property
+    def all_counts(self) -> List[Dict[str, int]]:
+        """All measurement-outcome counts, one dict per circuit."""
+        return self._counts
+
+    @property
+    def num_circuits(self) -> int:
+        """Number of circuits whose results are stored in this object."""
+        return len(self._counts)
+
+    # ------------------------------------------------------------------
+    # Methods
+    # ------------------------------------------------------------------
 
     def get_counts(self, index: int = 0) -> Dict[str, int]:
         """
@@ -131,11 +152,6 @@ class JobResult:
         Dict[str, int]
             Mapping from bitstring outcome to observed count.
 
-        Raises
-        ------
-        IndexError
-            If ``index`` is out of range for the number of circuits in this
-            result.
         """
         try:
             return self._counts[index]
@@ -145,15 +161,9 @@ class JobResult:
                 f"index {index} is out of range."
             ) from exc
 
-    @property
-    def all_counts(self) -> List[Dict[str, int]]:
-        """All measurement-outcome counts, one dict per circuit."""
-        return self._counts
-
-    @property
-    def num_circuits(self) -> int:
-        """Number of circuits whose results are stored in this object."""
-        return len(self._counts)
+    # ------------------------------------------------------------------
+    # Dunder methods
+    # ------------------------------------------------------------------
 
     def __repr__(self) -> str:
         return (
@@ -166,22 +176,21 @@ class Job(ABC):
     """
     Abstract handle for a (potentially asynchronous) backend execution.
 
-    A :class:`Job` is returned by :meth:`Backend.run` immediately after
+    A ``Job`` is returned by :meth:`Backend.run` immediately after
     submission. The caller can then:
 
     * call :meth:`result` to wait for the outcome and retrieve it, or
-    * poll :attr:`status` / :meth:`done` without blocking, or
+    * poll :attr:`status` / :meth:`done` / :meth:`running` / :meth:`queued` / :meth:`cancelled`
+      to check the current state, or
     * call :meth:`cancel` to attempt cancellation.
 
-    This follows the **Future** (or **Promise**) pattern: execution happens
+    This follows the *Future* (or *Promise*) pattern: execution happens
     independently of the caller, and the caller decides *when* to wait for
-    the outcome. This is the same philosophy adopted by Qiskit — calling
-    ``backend.run()`` returns a ``Job`` object, and the caller invokes
-    ``job.result()`` when it is ready to receive the outcome.
+    the outcome.
 
     .. rubric:: Design contract
 
-    The base class defines **only the observable contract** — the four
+    The ``Job`` base class defines *only the observable contract*. That is, the four
     abstract methods that every concrete job must implement. It deliberately
     prescribes no internal synchronisation mechanism (no threading, no
     asyncio, no polling loop). Each concrete subclass chooses whatever
@@ -189,29 +198,29 @@ class Job(ABC):
 
     * A synchronous simulator may compute the result inline and make it
       available before :meth:`result` is ever called.
+
     * An asynchronous hardware backend may submit to a remote queue and
-      poll in a background thread or coroutine.
-    * An asyncio-based backend may override :meth:`result` with a coroutine.
+      poll in a background thread until the result is ready.
 
     From the caller's perspective, all of the above are used identically.
-    This is the same approach taken by Qiskit's ``JobV1``.
 
     .. rubric:: Relationship to design patterns
 
-    ``Job`` is a **Virtual Proxy** for the execution result: it is a local
-    placeholder that controls access to an outcome that may be remote,
-    deferred, or not yet computed. Together with :class:`Backend`, it forms
-    a **Bridge**: the two abstract hierarchies (submission interface and
-    execution handle) can be varied and extended independently.
+    ``Job`` is a `Virtual Proxy <https://refactoring.guru/design-patterns/proxy>`_ for
+    the execution result: it is a local placeholder that controls access to
+    an outcome that may be remote, deferred, or not yet computed.
+    Together with :class:`Backend`, it forms a `Bridge <https://refactoring.guru/design-patterns/bridge>`_: the
+    two abstract hierarchies (submission interface and execution handle)
+    can be varied and extended independently.
 
     .. rubric:: Subclassing
 
-    Concrete subclasses **must** implement:
+    Concrete subclasses must implement the following methods:
 
-    * :meth:`submit` — trigger the actual execution.
-    * :meth:`result` — block (or await) until the result is available.
-    * :meth:`cancel` — attempt to cancel the job.
-    * :meth:`status` — return the current :class:`JobStatus`.
+    * :meth:`submit`: trigger the actual execution.
+    * :meth:`result`: block (or await) until the result is available.
+    * :meth:`cancel`: attempt to cancel the job.
+    * :meth:`status`: return the current :class:`JobStatus`.
 
     Parameters
     ----------
@@ -222,100 +231,19 @@ class Job(ABC):
         Optional caller-supplied identifier (e.g. a remote job ID assigned
         by a vendor API). If ``None``, the concrete subclass is responsible
         for assigning one.
+
+    **kwargs
+        Additional backend-specific metadata to associate with this job.
+        Included for qiskit compatibility, but may be used by any backend implementation as needed.
+
     """
 
-    def __init__(self, backend: "Backend", job_id: str | None = None):
+    def __init__(self, backend: "Backend", job_id: str | None = None, **kwargs):
+        """Initialize a Job instance."""
+
         self._backend = backend
         self._job_id = job_id
-
-    # ------------------------------------------------------------------
-    # Abstract interface
-    # ------------------------------------------------------------------
-
-    @abstractmethod
-    def submit(self) -> None:
-        """
-        Submit the job to the backend for execution.
-
-        This method triggers the actual execution. It is called by the
-        backend after the job object has been constructed.
-        """
-
-    @abstractmethod
-    def result(self) -> JobResult:
-        """
-        Block until the job finishes and return its :class:`JobResult`.
-
-        The internal mechanism used to wait for completion is left entirely
-        to the concrete implementation. It may use threading primitives,
-        asyncio, polling, or any other strategy appropriate for the backend.
-
-        Returns
-        -------
-        JobResult
-
-        Raises
-        ------
-        RuntimeError
-            If the job failed or was cancelled.
-        """
-
-    @abstractmethod
-    def cancel(self) -> bool:
-        """
-        Attempt to cancel the job.
-
-        Returns
-        -------
-        bool
-            ``True`` if the cancellation request was accepted;
-            ``False`` if the job has already reached a terminal state or
-            the backend does not support cancellation.
-
-        Notes
-        -----
-        Cancellation is best-effort. A return value of ``True`` indicates
-        that the request was accepted, not necessarily that execution has
-        already stopped.
-        """
-
-    @abstractmethod
-    def status(self) -> JobStatus:
-        """
-        Return the current :class:`JobStatus` of the job.
-
-        This method must be non-blocking. It should reflect the most
-        recently known state without waiting for any transition.
-
-        Returns
-        -------
-        JobStatus
-        """
-
-    # ------------------------------------------------------------------
-    # Concrete helpers derived from status()
-    # ------------------------------------------------------------------
-
-    def done(self) -> bool:
-        """
-        Return ``True`` if the job has reached a terminal state.
-
-        Terminal states are :attr:`~JobStatus.DONE`,
-        :attr:`~JobStatus.CANCELLED`, and :attr:`~JobStatus.ERROR`.
-        """
-        return self.status() in JOB_FINAL_STATES
-
-    def running(self) -> bool:
-        """Return ``True`` if the job is currently executing."""
-        return self.status() == JobStatus.RUNNING
-
-    def queued(self) -> bool:
-        """Return ``True`` if the job is waiting in the backend queue."""
-        return self.status() == JobStatus.QUEUED
-
-    def in_final_state(self) -> bool:
-        """Alias for :meth:`done`. Provided for Qiskit naming compatibility."""
-        return self.done()
+        self.metadata = kwargs
 
     # ------------------------------------------------------------------
     # Properties
@@ -332,7 +260,90 @@ class Job(ABC):
         return self._backend
 
     # ------------------------------------------------------------------
-    # Dunder
+    # Abstract methods
+    # ------------------------------------------------------------------
+
+    @abstractmethod
+    def submit(self) -> None:
+        """
+        Submit the job to the backend for execution.
+
+        This method triggers the actual execution. It is called by the
+        backend after the job object has been constructed.
+        """
+
+    @abstractmethod
+    def result(self) -> JobResult:
+        """
+        Returns the :class:`JobResult` of this job.
+
+        The internal mechanism used to wait for completion is left entirely
+        to the concrete implementation.
+
+        Returns
+        -------
+        JobResult
+
+        """
+
+    @abstractmethod
+    def cancel(self) -> bool:
+        """
+        Attempt to cancel the job.
+
+        Returns
+        -------
+        bool
+
+        """
+
+    @abstractmethod
+    def status(self) -> JobStatus:
+        """
+        Return the current :class:`JobStatus` of the job.
+
+        The returned status should reflect the most up-to-date information available to the backend,
+        and it should be among the values of the :class:`JobStatus` enumeration.
+
+        Returns
+        -------
+        JobStatus
+
+        """
+
+    # ------------------------------------------------------------------
+    # Methods (derived from status)
+    # ------------------------------------------------------------------
+
+    def done(self) -> bool:
+        """
+        Return ``True`` if the job has completed successfully and results are available.
+        """
+        return self.status() == JobStatus.DONE
+
+    def running(self) -> bool:
+        """Return ``True`` if the job is currently executing."""
+        return self.status() == JobStatus.RUNNING
+
+    def queued(self) -> bool:
+        """Return ``True`` if the job is waiting in the backend queue."""
+        return self.status() == JobStatus.QUEUED
+
+    def cancelled(self) -> bool:
+        """Return ``True`` if the job was cancelled."""
+        return self.status() == JobStatus.CANCELLED
+
+    def in_final_state(self) -> bool:
+        """
+        Return ``True`` if the job has reached a terminal state.
+
+        Terminal states are :attr:`~JobStatus.DONE`,
+        :attr:`~JobStatus.CANCELLED`, and :attr:`~JobStatus.ERROR`.
+        """
+        return self.status() in JOB_FINAL_STATES
+
+    # ------------------------------------------------------------------
+    # Dunder methods
     # ------------------------------------------------------------------
 
     def __repr__(self) -> str:

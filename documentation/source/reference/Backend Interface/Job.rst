@@ -6,7 +6,26 @@ Job
 .. currentmodule:: qrisp.interface
 
 .. autoclass:: Job
-   :members:
+
+Properties
+----------
+
+.. autosummary::
+   :toctree: generated/
+
+   Job.job_id
+   Job.backend
+
+Abstract Methods
+----------------
+
+.. autosummary::
+   :toctree: generated/
+
+   Job.submit
+   Job.result
+   Job.cancel
+   Job.status
 
 Methods
 -------
@@ -15,13 +34,8 @@ Methods
    :toctree: generated/
 
    Job.__init__
-   Job.submit
-   Job.result
-   Job.cancel
-   Job.status
    Job.done
    Job.running
    Job.queued
+   Job.cancelled
    Job.in_final_state
-   Job.job_id
-   Job.backend
