@@ -525,15 +525,108 @@ class BlockEncoding:
         )
 
     @classmethod
+    def from_eye(
+        cls: "BlockEncoding",
+        k: int = 0,
+    ) -> BlockEncoding:
+        r"""
+        Constructs a BlockEncoding of a 2-D array with ones on the diagonal and zeros elsewhere.
+
+        Parameters
+        ----------
+        k : int
+            Index of the diagonal: 0 (the default) refers to the main diagonal,
+            a positive value refers to an upper diagonal, and a negative value to a lower diagonal.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding instance representing an array where all elements are equal to zero,
+            except for the $k$-th diagonal, whose values are equal to one.
+
+        Examples
+        --------
+
+        ::
+
+            from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
+
+            # k = 0: ones on the main diagonal
+            BE1 = BlockEncoding.from_eye(k=0)
+
+            # k = -2: ones on the second lower subdiagonal
+            # (non-cyclic) shift |x> -> |x+2>
+            BE2 = BlockEncoding.from_eye(k=-2)
+
+            BE3 = BE1.kron(BE2)
+
+            def operand_prep():
+                operand1 = QuantumFloat(3)
+                operand2 = QuantumFloat(3)
+                h(operand1)
+                cx(operand1, operand2)
+                return operand1, operand2
+
+            @terminal_sampling
+            def main():
+                operand1, operand2 = BE3.apply_rus(operand_prep)()
+                return operand1, operand2
+
+            main()
+            # {(0.0, 2.0): 0.16666666666666666,
+            # (1.0, 3.0): 0.16666666666666666,
+            # (2.0, 4.0): 0.16666666666666666,
+            # (3.0, 5.0): 0.16666666666666666,
+            # (4.0, 6.0): 0.16666666666666666,
+            # (5.0, 7.0): 0.16666666666666666}
+
+        """
+
+        if k == 0:
+            return BlockEncoding(1, [], lambda operand: None, is_hermitian=True)
+
+        if k > 0:
+
+            def unitary(*args):
+                anc = args[0]
+                operand = args[1]
+                operand -= k
+                n = operand.size
+
+                def comp(a, b):
+                    return a >= b
+
+                injected_comp = anc << comp
+                injected_comp(operand, 2**n - k)
+
+            return BlockEncoding(1, [QuantumBool().template()], unitary)
+
+        if k < 0:
+
+            def unitary(*args):
+                anc = args[0]
+                operand = args[1]
+                operand -= k
+
+                def comp(a, b):
+                    return a < b
+
+                injected_comp = anc << comp
+                injected_comp(operand, -k)
+
+            return BlockEncoding(1, [QuantumBool().template()], unitary)
+
+    @classmethod
     def from_projector(
         cls: "BlockEncoding",
-        left: Union[int, Tuple[int, ...], Callable], 
-        right: Optional[Union[int, Tuple[int, ...], Callable]] = None, 
+        left: Union[int, Tuple[int, ...], Callable],
+        right: Optional[Union[int, Tuple[int, ...], Callable]] = None,
         kernel: bool = False,
         num_ops: int = 1,
     ) -> BlockEncoding:
         r"""
-        Constructs a BlockEncoding from a projector.
+        Constructs a BlockEncoding of a projector.
 
         Parameters
         ----------
@@ -622,13 +715,17 @@ class BlockEncoding:
         # left
         num_left = 1
         if isinstance(left, int):
+
             def prep_left(arg):
                 arg.encode(left, permit_dirtyness=True)
+
         elif isinstance(left, tuple):
             num_left = len(left)
+
             def prep_left(*args):
                 for i, arg in enumerate(args):
-                    arg.encode(left[i], permit_dirtyness=True)     
+                    arg.encode(left[i], permit_dirtyness=True)
+
         elif callable(left):
             prep_left = left
         else:
@@ -637,13 +734,17 @@ class BlockEncoding:
         # right
         num_right = 1
         if isinstance(right, int):
+
             def prep_right(arg):
                 arg.encode(right, permit_dirtyness=True)
+
         elif isinstance(right, tuple):
             num_right = len(right)
+
             def prep_right(*args):
                 for i, arg in enumerate(args):
-                    arg.encode(right[i], permit_dirtyness=True)     
+                    arg.encode(right[i], permit_dirtyness=True)
+
         elif callable(right):
             prep_right = right
         else:
@@ -1245,7 +1346,7 @@ class BlockEncoding:
                 num_ops=self.num_ops,
                 is_hermitian=True,
             )
-        
+
     def _hermitianization(self) -> BlockEncoding:
         r"""
         Returns a BlockEncoding representing the `qubitization walk operator via Hermitianization <https://arxiv.org/pdf/2312.00723>`_.
@@ -1257,7 +1358,7 @@ class BlockEncoding:
         .. math::
 
             \begin{pmatrix} \mathbb{0} & A \\ A^{\dagger} & \mathbb{0} \end{pmatrix}
-        
+
         """
 
         n = self.num_ancs
@@ -1265,8 +1366,8 @@ class BlockEncoding:
         def new_unitary(*args):
 
             anc = args[0]
-            self_ancs = args[1:n+1]
-            operands = args[n+1:]
+            self_ancs = args[1 : n + 1]
+            operands = args[n + 1 :]
 
             x(anc)
 
@@ -1276,11 +1377,17 @@ class BlockEncoding:
             with control(anc, ctrl_state=1):
                 with invert():
                     self.unitary(*self_ancs, *operands)
-     
+
             reflection(self_ancs)
-        
+
         new_anc_templates = [QuantumBool().template()] + self._anc_templates
-        return BlockEncoding(self.alpha, new_anc_templates, new_unitary, num_ops=self.num_ops, is_hermitian=True)
+        return BlockEncoding(
+            self.alpha,
+            new_anc_templates,
+            new_unitary,
+            num_ops=self.num_ops,
+            is_hermitian=True,
+        )
 
     def chebyshev(self, k: int, rescale: bool = True) -> BlockEncoding:
         r"""

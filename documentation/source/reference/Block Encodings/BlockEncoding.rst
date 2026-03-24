@@ -19,8 +19,10 @@ Constructors
      - Constructs a BlockEncoding using the Linear Combination of Unitaries (LCU) protocol.
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_operator`
      - Constructs a BlockEncoding from an operator.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.from_eye`
+     - Constructs a BlockEncoding of a 2-D array with ones on the diagonal and zeros elsewhere.
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_projector`
-     - Constructs a BlockEncoding from a projector.
+     - Constructs a BlockEncoding of a projector.
 
 .. toctree:: 
    :hidden:
@@ -28,6 +30,7 @@ Constructors
    methods/from_array
    methods/from_lcu
    methods/from_operator
+   methods/from_eye
    methods/from_projector
 
 Utilities

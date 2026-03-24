@@ -60,6 +60,33 @@ def test_block_encoding_from_operator():
     assert res == {3.0: 1.0}
 
 
+def test_block_encoding_from_eye():
+
+    # k = 0: ones on the main diagonal
+    BE1 = BlockEncoding.from_eye(k=0)
+
+    # k = -4: ones on the fourth lower subdiagonal
+    # (non-cyclic) shift |x> -> |x+4>
+    BE2 = BlockEncoding.from_eye(k=-4)
+
+    BE3 = BE1.kron(BE2)
+
+    def operand_prep():
+        operand1 = QuantumFloat(3)
+        operand2 = QuantumFloat(3)
+        h(operand1)
+        cx(operand1, operand2)
+        return operand1, operand2
+
+    @terminal_sampling
+    def main():
+        operand1, operand2 = BE3.apply_rus(operand_prep)()
+        return operand1, operand2
+
+    res_dict = main()
+    assert res_dict == {(0.0, 4.0): 0.25, (1.0, 5.0): 0.25, (2.0, 6.0): 0.25, (3.0, 7.0): 0.25}
+
+
 def test_block_encoding_from_projector():
 
     # Define projector P = |1><+|
