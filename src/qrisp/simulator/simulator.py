@@ -16,21 +16,21 @@
 ********************************************************************************
 """
 
-import threading
-import sys
 import shutil
-import numpy as np
-from tqdm import tqdm
-from numba import njit
+import sys
+import threading
 
-from qrisp.circuit import QuantumCircuit, fast_append, XGate
+import numpy as np
+from numba import njit
+from tqdm import tqdm
+
+from qrisp.circuit import QuantumCircuit, fast_append
 from qrisp.simulator.circuit_preprocessing import (
     circuit_preprocessor,
     count_measurements_and_treat_alloc,
     group_qc,
     insert_multiverse_measurements,
 )
-
 from qrisp.simulator.quantum_state import QuantumState
 
 
@@ -198,7 +198,6 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
             from numpy.random import choice
 
             # p_array = np.array(list(prob_dict.values()))
-
             # samples = choice(len(p_array), shots, p=p_array)
 
             samples = choice(len(cl_prob), shots, p=cl_prob)

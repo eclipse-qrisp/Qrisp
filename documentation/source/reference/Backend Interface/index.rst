@@ -22,10 +22,10 @@ Backend Interface
    QiskitRuntimeBackend
    StimBackend
    
-The backend interface provides a minimal, hardware-agnostic abstraction for executing gate-based quantum circuits.
+The backend interface provides a minimal, hardware-agnostic abstraction for executing quantum circuits.
 
 The primary goal of the interface is to support both clients and providers of physical quantum hardware
-while remaining flexible enough to accommodate simulators, emulators, and experimental backends.
+while remaining flexible enough to accommodate simulators and experimental backends.
 
 Rather than enforcing a universal hardware model, the interface focuses on:
 
@@ -44,7 +44,7 @@ The :class:`Backend` class is the abstract base class for all Qrisp backends.
 It defines the minimal interface required to submit quantum circuits for execution
 and optionally expose hardware metadata.
 
-Concrete backends may represent local simulators, emulators, or remote quantum hardware clients.
+Concrete backends may represent local simulators or remote quantum hardware clients.
 All backends must implement the :meth:`Backend.run` method, which submits one or more circuits
 for execution and returns a :class:`Job` handle immediately.
 
@@ -191,12 +191,10 @@ The :class:`Job` class is an abstract handle for a (potentially asynchronous) ba
 It is returned by :meth:`Backend.run` immediately after submission, regardless of whether
 the execution is synchronous or asynchronous.
 
-This follows the **Future** (or **Promise**) pattern: execution happens independently of the
+This follows the *Future* (or *Promise*) pattern: execution happens independently of the
 caller, and the caller decides when to block for the result.
-This is the same philosophy adopted by Qiskit — calling ``backend.run()`` returns a ``Job``
-object, and the caller invokes ``job.result()`` when it is ready to receive the outcome.
 
-The base ``Job`` class defines **only the observable contract**: four abstract methods that
+The base ``Job`` class defines *only the observable contract*: four abstract methods that
 every concrete implementation must provide.
 It deliberately prescribes no internal synchronisation mechanism.
 A synchronous simulator may resolve the job inline; an asynchronous hardware backend
@@ -218,10 +216,10 @@ From the caller's perspective, both are used identically:
 
 Concrete subclasses must implement the four abstract methods:
 
-- :meth:`Job.submit` — trigger the actual execution.
-- :meth:`Job.result` — block until the result is available and return it.
-- :meth:`Job.cancel` — attempt to cancel the job.
-- :meth:`Job.status` — return the current :class:`JobStatus` without blocking.
+- :meth:`Job.submit`: trigger the actual execution.
+- :meth:`Job.result`: block until the result is available and return it.
+- :meth:`Job.cancel`: attempt to cancel the job.
+- :meth:`Job.status`: return the current :class:`JobStatus` without blocking.
 
 Several non-blocking convenience helpers are provided by the base class
 and derived from :meth:`Job.status`:

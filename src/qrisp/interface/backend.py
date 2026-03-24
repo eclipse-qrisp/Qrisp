@@ -19,7 +19,9 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from copy import copy
-from typing import Any
+from typing import Any, Dict, Sequence
+
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 from .job import Job
 
@@ -48,12 +50,12 @@ class Backend(ABC):
     execution policies, which are delegated to concrete backends or external
     components.
 
-    Simulators are expected to implement ``run`` but may return ``None``
-    for all hardware metadata properties.
+    For example, simulators are expected to implement ``run`` but may
+    return ``None`` for all hardware metadata properties.
 
     .. rubric:: Execution model
 
-    :meth:`run` accepts a single circuit *or* a list of circuits and always
+    :meth:`run` accepts a single circuit *or* a sequence of circuits and always
     returns a :class:`Job` immediately. This follows the *Future* pattern:
     execution happens independently of the caller, and the caller decides
     *when* to block by calling :meth:`Job.result <qrisp.interface.Job.result>`.
@@ -80,8 +82,8 @@ class Backend(ABC):
     execution parameter for gate-based, shot-based backends, and may be
     ignored by backends for which it is not meaningful.
 
-    The ``options`` argument does not need to be a dict; any object satisfying
-    the :class:`collections.abc.Mapping` interface is accepted. This allows
+    The ``options`` argument does not need to be a dict. Any object satisfying
+    the ``collections.abc.Mapping`` interface is accepted. This allows
     interoperability with external frameworks such as Qiskit, which define
     their own structured ``Options`` classes.
 
@@ -117,12 +119,12 @@ class Backend(ABC):
 
     .. rubric:: Relationship to design patterns
 
-    ``Backend`` and :class:`Job` together form a `Bridge <https://refactoring.guru/design-patterns/bridge>`_: two independently
-    varying class hierarchies (submission interface and execution handle) that
-    can be extended without affecting each other. :class:`Job` is additionally
-    a `Virtual Proxy <https://refactoring.guru/design-patterns/proxy>`_ for the execution result. Concrete vendor backends
-    (e.g. ``IQMBackend``) act as `Adapters <https://refactoring.guru/design-patterns/adapter>`_ that wrap a vendor SDK to
-    satisfy the ``Backend`` interface expected by Qrisp.
+    ``Backend`` and :class:`Job` together form a `Bridge <https://refactoring.guru/design-patterns/bridge>`_: two
+    independently varying class hierarchies (submission interface and execution handle)
+    that can be extended without affecting each other. :class:`Job` is additionally
+    a `Virtual Proxy <https://refactoring.guru/design-patterns/proxy>`_ for the execution result.
+    Concrete vendor backends act as `Adapters <https://refactoring.guru/design-patterns/adapter>`_ that
+    wrap a vendor SDK to satisfy the ``Backend`` interface expected by Qrisp.
 
     Parameters
     ----------
@@ -133,23 +135,18 @@ class Backend(ABC):
     options : Mapping or None
         Runtime execution options for the backend.
         If omitted, :meth:`_default_options` is used.
+
+    **kwargs :
+        Additional backend-specific parameters. These are not defined at the base-class level
+        but may be accepted by concrete backend implementations (e.g. for authentication,
+        provider selection, or other configuration).
+
     """
 
-    def __init__(self, name: str | None = None, options: Mapping | None = None):
-        """
-        Initialise the backend.
-
-        Parameters
-        ----------
-        name : str or None
-            Optional user-defined name for this backend.
-            Defaults to the class name.
-
-        options : Mapping or None
-            Mapping of runtime execution options for the backend.
-            If omitted, the backend uses the class-level default options from
-            :meth:`_default_options`.
-        """
+    def __init__(
+        self, name: str | None = None, options: Mapping | None = None, **kwargs
+    ):
+        """Initialise the backend."""
         self.name = name or self.__class__.__name__
 
         if options is None:
@@ -161,14 +158,23 @@ class Backend(ABC):
                 f"got {type(options).__name__}"
             )
 
-        self._options = copy(options)
+        # We make a shallow copy to prevent external mutations from affecting the backend's internal state.
+        # Furthermore, we convert to a dict to ensure that a `__setitem__`-capable mapping is stored,
+        # which is required for `update_options`.
+        self._options = dict(copy(options))
+
+        self.metadata = kwargs
 
     # ------------------------------------------------------------------
-    # Abstract interface
+    # Abstract methods
     # ------------------------------------------------------------------
 
     @abstractmethod
-    def run(self, circuits, shots: int | None = None) -> Job:
+    def run(
+        self,
+        circuits: QuantumCircuit | Sequence[QuantumCircuit],
+        shots: int | None = None,
+    ) -> Job:
         """
         Submit one or more circuits for execution and return a :class:`Job`.
 
@@ -177,15 +183,14 @@ class Backend(ABC):
 
         Parameters
         ----------
-        circuits : circuit or list[circuit]
-            A single circuit or a list of circuits to execute. The circuit
-            type is backend-specific; no validation or introspection is
-            performed at the base-class level.
+        circuits : QuantumCircuit or Sequence[QuantumCircuit]
+            A single circuit or a sequence of circuits to execute.
+            No validation or introspection is performed at the base-class level.
 
-            When a list is provided, the backend decides internally whether
+            When a sequence is provided, the backend decides internally whether
             to run the circuits sequentially or in parallel. Hardware
             backends may impose a limit on how many circuits a single job
-            may contain; this is a backend-defined constraint.
+            may contain. This is a backend-defined constraint.
 
         shots : int or None, optional
             Number of shots (repetitions) for the execution. If ``None``,
@@ -204,7 +209,7 @@ class Backend(ABC):
     # ------------------------------------------------------------------
 
     @classmethod
-    def _default_options(cls) -> Mapping:
+    def _default_options(cls) -> Dict[str, Any]:
         """
         Default runtime options for the backend.
 
@@ -220,7 +225,7 @@ class Backend(ABC):
         return {"shots": 1024}
 
     @property
-    def options(self) -> Mapping:
+    def options(self) -> Dict[str, Any]:
         """
         Current runtime options for the backend.
 
@@ -236,23 +241,13 @@ class Backend(ABC):
         Only keys that were present at initialisation (i.e. defined in
         :meth:`_default_options` or the ``options`` argument passed to the
         constructor) may be updated. Attempting to set an unknown key raises
-        :exc:`AttributeError`.
+        an ``AttributeError``.
 
         Parameters
         ----------
         **kwargs :
             Key-value pairs to update in the backend's runtime options.
 
-        Raises
-        ------
-        AttributeError
-            If any key in ``kwargs`` is not a valid option for this backend.
-
-        Examples
-        --------
-        >>> backend.update_options(shots=4096)
-        >>> backend.options["shots"]
-        4096
         """
         for key, val in kwargs.items():
             if key not in self._options:

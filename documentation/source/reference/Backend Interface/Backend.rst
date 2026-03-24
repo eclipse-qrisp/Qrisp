@@ -9,7 +9,7 @@ Backend
 
 
 Methods
-=======
+-------
 
 .. autosummary::
    :toctree: generated/
@@ -27,6 +27,7 @@ Runtime options
 
    Backend.options
    Backend.update_options
+   Backend._default_options
 
 
 
