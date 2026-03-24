@@ -53,7 +53,6 @@ For example, we can define a simple backend that wraps the built-in Qrisp
 
 .. code-block:: python
 
-   import threading
    from qrisp.interface.backend import Backend
    from qrisp.interface.job import Job, JobResult, JobStatus
    from qrisp.simulator.simulator import run as default_run
@@ -70,10 +69,8 @@ For example, we can define a simple backend that wraps the built-in Qrisp
          self._status = JobStatus.INITIALIZING
          self._result_data = None
          self._error = None
-         self._done_event = threading.Event()
 
       def submit(self):
-
          self._status = JobStatus.RUNNING
          try:
                counts = [default_run(c, self._shots) for c in self._circuits]
@@ -82,15 +79,8 @@ For example, we can define a simple backend that wraps the built-in Qrisp
          except Exception as exc:
                self._error = exc
                self._status = JobStatus.ERROR
-         finally:
-               self._done_event.set()
 
-      def result(self, timeout=None):
-
-         if not self._done_event.wait(timeout=timeout):
-               raise TimeoutError("Job did not complete in time.")
-         if self._status == JobStatus.ERROR:
-               raise RuntimeError(self._error)
+      def result(self):
          return self._result_data
 
       def cancel(self):
