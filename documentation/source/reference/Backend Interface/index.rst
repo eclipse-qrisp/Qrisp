@@ -52,7 +52,6 @@ for execution and returns a :ref:`Job` handle immediately.
 Synchronous Backends
 ~~~~~~~~~~~~~~~~~~~~
 
-
 For example, we can define a simple backend that wraps the built-in Qrisp 
 ``run`` function for synchronous circuit simulation:
 
@@ -61,6 +60,7 @@ For example, we can define a simple backend that wraps the built-in Qrisp
    from qrisp.interface.backend import Backend
    from qrisp.interface.job import Job, JobResult, JobStatus
    from qrisp.simulator.simulator import run as default_run
+   from typing import cast
 
 
    class SimulatorJob(Job):
@@ -85,7 +85,9 @@ For example, we can define a simple backend that wraps the built-in Qrisp
                self._status = JobStatus.ERROR
 
       def result(self):
-         return self._result_data
+         if self._status == JobStatus.ERROR:
+            raise RuntimeError(self._error)
+         return cast(JobResult, self._result_data)
 
       def cancel(self):
          return False  # synchronous jobs cannot be cancelled
@@ -180,7 +182,6 @@ The backend decides internally whether to run them sequentially or in parallel:
 Asynchronous Backends
 ~~~~~~~~~~~~~~~~~~~~~
 
-
 For hardware backends, circuit execution is typically asynchronous: the job is submitted
 to a remote queue, and the caller does not block waiting for it to complete.
 We can simulate this behaviour locally by running circuits in parallel background threads,
@@ -195,6 +196,7 @@ separate thread so they all execute concurrently:
    from qrisp.interface.backend import Backend
    from qrisp.interface.job import Job, JobResult, JobStatus
    from qrisp.simulator.simulator import run as default_run
+   from typing import cast
 
 
    class AsyncSimulatorJob(Job):
@@ -240,7 +242,7 @@ separate thread so they all execute concurrently:
                for t in threads:
                   t.join()
 
-               self._result_data = JobResult(counts)
+               self._result_data = JobResult(counts)  # type: ignore
                self._status = JobStatus.DONE
 
          except Exception as exc:
@@ -256,7 +258,7 @@ separate thread so they all execute concurrently:
          self._done_event.wait()
          if self._status == JobStatus.ERROR:
                raise RuntimeError(self._error)
-         return self._result_data
+         return cast(JobResult, self._result_data)
 
       def cancel(self):
          # Python threads cannot be forcibly stopped, so cancellation is not supported.
@@ -332,18 +334,24 @@ of all circuit times. For a batch of many circuits, this can be significantly fa
 than sequential execution.
 
 Note that this example uses threads rather than processes. For CPU-bound workloads such
-as statevector simulation, the Python GIL limits true parallelism on a single machine.
-In practice, real hardware backends achieve genuine parallelism because the work happens
-on remote QPU hardware, not locally in Python. The threading model here is therefore
-a faithful simulation of the asynchronous contract (the caller submits and returns
-immediately) even if the local speedup is modest.
+as statevector simulation, the `Python GIL <https://docs.python.org/3/library/threading.html#gil-and-performance-considerations>`_ 
+limits true parallelism on a single machine. In practice, real hardware backends achieve 
+genuine parallelism because the work happens on remote QPU hardware, not locally in Python. 
+The threading model here is therefore a faithful simulation of the asynchronous contract 
+(the caller submits and returns immediately) even if the local speedup is modest.
+
+These two examples cover the most important local execution patterns: blocking simulation
+and parallelised asynchronous simulation. A third important case is the remote hardware
+backend that submits circuits to a vendor API, receives a job identifier, and polls for
+results over the network. This is architecturally distinct and will be covered in a dedicated
+example in a future release.
 
 
 :ref:`Job`
 ----------
 
 The :ref:`Job` class is an abstract handle for a (potentially asynchronous) backend execution.
-It is returned by :meth:`Backend.run` immediately after submission, regardless of whether
+It is returned by ``Backend.run`` immediately after submission, regardless of whether
 the execution is synchronous or asynchronous.
 
 This follows the *Future* (or *Promise*) pattern: execution happens independently of the
@@ -384,8 +392,10 @@ and derived from ``Job.status``:
    job.done()            # True only if the job completed successfully (JobStatus.DONE)
    job.in_final_state()  # True if the job has reached any terminal state (DONE, CANCELLED, or ERROR)
 
-If ``result()`` is called on a job that has failed or been cancelled, a
-:exc:`RuntimeError` is raised.
+
+Additional helpers ``running()``, ``queued()``, and ``cancelled()`` are also available 
+for polling-style workflows. If ``result()`` is called on a job that has 
+failed or been cancelled, a :exc:`RuntimeError` is raised.
 
 
 :ref:`JobStatus`
@@ -399,7 +409,7 @@ The six states are:
 - ``INITIALIZING``: the job has been created but not yet submitted to the backend.
 - ``QUEUED``: the job has been submitted and is waiting for execution resources.
 - ``RUNNING``: the job is currently being executed.
-- ``DONE``: the job completed successfully. Results are available via :meth:`Job.result`.
+- ``DONE``: the job completed successfully. Results are available via ``Job.result``.
 - ``CANCELLED``: the job was cancelled before or during execution.
 - ``ERROR``: the job failed due to an error during execution.
 
