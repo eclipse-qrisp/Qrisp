@@ -14,19 +14,9 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""
-Minimal tests for BatchedBackend.
-
-The test suite focuses on the four most important scenarios:
-
-1. The docstring example: two threads, manual dispatch.
-2. Single-threaded use: run() from the main thread auto-dispatches.
-3. Error propagation: an exception in batch_run_func reaches every waiting job.
-4. Timeout: result(timeout=...) raises TimeoutError when dispatch is never called.
-"""
+"""Minimal tests for BatchedBackend."""
 
 import threading
-
 
 from qrisp import QuantumFloat
 from qrisp.interface import BatchedBackend
@@ -183,3 +173,6 @@ def test_batched_backend_timeout():
 
     assert len(errors) == 1
     assert "dispatch" in errors[0].lower()
+
+
+# TODO: Add more tests for edge cases, e.g. invalid batch_run_func output, empty batch, etc.

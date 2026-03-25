@@ -70,10 +70,9 @@ class JobResult:
 
     Parameters
     ----------
-    counts : List[Dict[str, int]]
+    counts : List[Dict]
         A list of measurement-outcome dictionaries, one per circuit.
-        Keys are bitstring representations of measurement outcomes.
-        Values are the number of times that outcome was observed.
+        Keys and values can be of any type, as determined by the user.
 
     **kwargs
         Optional backend-specific metadata associated with the execution.
@@ -109,7 +108,7 @@ class JobResult:
     JobResult(num_circuits=2, metadata={})
     """
 
-    def __init__(self, counts: List[Dict[str, int]], **kwargs):
+    def __init__(self, counts: List[Dict], **kwargs):
         """Initialize a JobResult instance."""
 
         if not isinstance(counts, list):
@@ -125,7 +124,7 @@ class JobResult:
     # ------------------------------------------------------------------
 
     @property
-    def all_counts(self) -> List[Dict[str, int]]:
+    def all_counts(self) -> List[Dict]:
         """All measurement-outcome counts, one dict per circuit."""
         return self._counts
 
@@ -138,7 +137,7 @@ class JobResult:
     # Methods
     # ------------------------------------------------------------------
 
-    def get_counts(self, index: int = 0) -> Dict[str, int]:
+    def get_counts(self, index: int = 0) -> Dict:
         """
         Return the measurement-outcome counts for a single circuit.
 
@@ -149,7 +148,7 @@ class JobResult:
 
         Returns
         -------
-        Dict[str, int]
+        Dict
             Mapping from bitstring outcome to observed count.
 
         """
