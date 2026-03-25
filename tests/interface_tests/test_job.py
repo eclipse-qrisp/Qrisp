@@ -99,9 +99,7 @@ class TestJobResultConstruction:
 
     def test_metadata_custom_value_preserved(self):
         """Test that custom metadata values are preserved."""
-
-        meta = {"mode": "async", "backend": "test"}
-        r = JobResult([{"0": 1024}], metadata=meta)
+        r = JobResult([{"0": 1024}], mode="async", backend="test")
         assert r.metadata["mode"] == "async"
         assert r.metadata["backend"] == "test"
 
@@ -231,9 +229,7 @@ class TestJobConcreteHelpers:
         """Helper to create a MinimalJob with a specific status."""
         return MinimalJob(backend=backend, initial_status=status)
 
-    @pytest.mark.parametrize(
-        "status", [JobStatus.DONE, JobStatus.CANCELLED, JobStatus.ERROR]
-    )
+    @pytest.mark.parametrize("status", [JobStatus.DONE])
     def test_done_returns_true_for_terminal_states(self, backend, status):
         """Test that done() returns True for all terminal states."""
         assert self._job_with_status(backend, status).done() is True
@@ -257,11 +253,12 @@ class TestJobConcreteHelpers:
         assert self._job_with_status(backend, JobStatus.RUNNING).queued() is False
         assert self._job_with_status(backend, JobStatus.DONE).queued() is False
 
-    @pytest.mark.parametrize("status", list(JobStatus))
-    def test_in_final_state_equals_done_for_all_statuses(self, backend, status):
-        """Test that in_final_state() returns the same value as done() for all statuses."""
-        job = self._job_with_status(backend, status)
-        assert job.in_final_state() == job.done()
+    @pytest.mark.parametrize(
+        "status", [JobStatus.DONE, JobStatus.CANCELLED, JobStatus.ERROR]
+    )
+    def test_in_final_state_returns_true_for_all_terminal_states(self, backend, status):
+        """Test that in_final_state() returns True for all terminal states."""
+        assert self._job_with_status(backend, status).in_final_state() is True
 
     def test_job_id_none_by_default(self, backend):
         """Test that job_id is None by default."""

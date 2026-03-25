@@ -45,8 +45,13 @@ It defines the minimal interface required to submit quantum circuits for executi
 and optionally expose hardware metadata.
 
 Concrete backends may represent local simulators or remote quantum hardware clients.
-All backends must implement the :meth:`Backend.run` method, which submits one or more circuits
+All backends must implement the ``Backend.run`` method, which submits one or more circuits
 for execution and returns a :ref:`Job` handle immediately.
+
+
+Synchronous Backends
+~~~~~~~~~~~~~~~~~~~~
+
 
 For example, we can define a simple backend that wraps the built-in Qrisp 
 ``run`` function for synchronous circuit simulation:
@@ -62,7 +67,6 @@ For example, we can define a simple backend that wraps the built-in Qrisp
       """A simple synchronous Job implementation for the default Qrisp simulator."""
 
       def __init__(self, backend, circuits, shots):
-
          super().__init__(backend=backend)
          self._circuits = circuits
          self._shots = shots
@@ -99,7 +103,6 @@ For example, we can define a simple backend that wraps the built-in Qrisp
          return {"shots": None, "token": ""}
 
       def run(self, circuits, shots=None):
-
          circuits = [circuits] if not isinstance(circuits, list) else circuits
          n_shots = shots if shots is not None else self.options.get("shots")
          job = SimulatorJob(backend=self, circuits=circuits, shots=n_shots)
@@ -118,8 +121,8 @@ Let's create a quantum circuit that applies a Hadamard gate to a single qubit an
    circuit.measure(0)
 
 We can now create an instance of ``DefaultBackend`` and execute the circuit.
-The :meth:`Backend.run` method returns a :ref:`Job` immediately.
-Results are retrieved by calling :meth:`Job.result`:
+The ``Backend.run`` method returns a :ref:`Job` immediately.
+Results are retrieved by calling ``Job.result``:
 
 .. code-block:: python
 
@@ -144,7 +147,7 @@ We can also pass explicit runtime options at construction time:
    >>> print(result.get_counts())
    {'0': 510, '1': 514}   # Note: actual counts may vary due to randomness
 
-Runtime options can be updated after instantiation via :meth:`Backend.update_options`.
+Runtime options can be updated after instantiation via ``Backend.update_options``.
 Only keys that were present at construction time may be modified:
 
 .. code-block:: python
@@ -174,6 +177,168 @@ The backend decides internally whether to run them sequentially or in parallel:
    [{'0': 254, '1': 258}, {'00': 259, '11': 253}]
 
 
+Asynchronous Backends
+~~~~~~~~~~~~~~~~~~~~~
+
+
+For hardware backends, circuit execution is typically asynchronous: the job is submitted
+to a remote queue, and the caller does not block waiting for it to complete.
+We can simulate this behaviour locally by running circuits in parallel background threads,
+using Python's ``threading`` module.
+
+The following example wraps the same built-in simulator, but submits each circuit to a
+separate thread so they all execute concurrently:
+
+.. code-block:: python
+
+   import threading
+   from qrisp.interface.backend import Backend
+   from qrisp.interface.job import Job, JobResult, JobStatus
+   from qrisp.simulator.simulator import run as default_run
+
+
+   class AsyncSimulatorJob(Job):
+      """An asynchronous Job that runs each circuit in a separate background thread."""
+
+      def __init__(self, backend, circuits, shots):
+         super().__init__(backend=backend)
+         self._circuits = circuits
+         self._shots = shots
+         self._status = JobStatus.INITIALIZING
+         self._result_data = None
+         self._error = None
+         # threading.Event is the synchronisation primitive that allows
+         # result() to block cheaply until all threads have finished.
+         self._done_event = threading.Event()
+
+      def submit(self):
+         self._status = JobStatus.QUEUED
+         # Start a single coordinator thread that manages all circuit threads.
+         # daemon=True means the thread will not prevent the process from exiting.
+         threading.Thread(target=self._execute, daemon=True).start()
+
+      def _execute(self):
+         """Run all circuits in parallel and collect results."""
+         self._status = JobStatus.RUNNING
+         try:
+               # Pre-allocate a results list so each thread can write to its own slot
+               # without race conditions (list indexing is thread-safe in CPython).
+               counts = [None] * len(self._circuits)
+
+               def run_one(index, circuit):
+                  counts[index] = default_run(circuit, self._shots)
+
+               # Create one thread per circuit.
+               threads = [
+                  threading.Thread(target=run_one, args=(i, c))
+                  for i, c in enumerate(self._circuits)
+               ]
+               # Start all threads at once.
+               for t in threads:
+                  t.start()
+               # Wait for every thread to finish before proceeding.
+               for t in threads:
+                  t.join()
+
+               self._result_data = JobResult(counts)
+               self._status = JobStatus.DONE
+
+         except Exception as exc:
+               self._error = exc
+               self._status = JobStatus.ERROR
+
+         finally:
+               # Signal the event so that any caller blocked in result() wakes up.
+               self._done_event.set()
+
+      def result(self):
+         # Block here until _done_event is set by the coordinator thread.
+         self._done_event.wait()
+         if self._status == JobStatus.ERROR:
+               raise RuntimeError(self._error)
+         return self._result_data
+
+      def cancel(self):
+         # Python threads cannot be forcibly stopped, so cancellation is not supported.
+         return False
+
+      def status(self):
+         return self._status
+
+
+   class AsyncBackend(Backend):
+      """A backend that executes each circuit in a separate background thread."""
+
+      @classmethod
+      def _default_options(cls):
+         return {"shots": 1024}
+
+      def run(self, circuits, shots=None):
+         circuits = [circuits] if not isinstance(circuits, list) else circuits
+         n_shots = shots if shots is not None else self.options.get("shots")
+         job = AsyncSimulatorJob(backend=self, circuits=circuits, shots=n_shots)
+         # submit() returns immediately after starting the background thread.
+         job.submit()
+         return job
+
+
+The key difference from ``DefaultBackend`` is that ``run()`` returns to the caller
+before any circuit has finished executing.
+The coordinator thread is already running in the background:
+
+.. code-block:: python
+
+   from qrisp import QuantumCircuit
+
+   circuit_a = QuantumCircuit(1)
+   circuit_a.h(0)
+   circuit_a.measure(0)
+
+   circuit_b = QuantumCircuit(2)
+   circuit_b.h(0)
+   circuit_b.cx(0, 1)
+   circuit_b.measure([0, 1])
+
+   backend = AsyncBackend(options={"shots": 1024})
+   job = backend.run([circuit_a, circuit_b])
+
+   # At this point run() has already returned. The job is not yet done.
+   print(job.status())    # JobStatus.QUEUED or JobStatus.RUNNING
+
+
+We can check the status of the job without blocking, and then call ``result()`` 
+to block until all circuits have finished executing:
+
+
+.. code-block:: python
+
+   >>> result = job.result()   # result() blocks here until all threads have finished.
+   >>> print(job.status())    
+   JobStatus.DONE
+
+   >>> print(result.get_counts(0))   
+   {'0': 517, '1': 507}   # Note: actual counts may vary due to randomness
+
+   >>> print(result.get_counts(1))   
+   {'00': 537, '11': 487}   # Note: actual counts may vary due to randomness
+
+   >>> print(result.all_counts)  
+   [{'0': 517, '1': 507}, {'00': 537, '11': 487}]
+
+
+In this example, all circuits start running at the same time, so the total
+wall-clock time is roughly equal to the time of the slowest circuit rather than the sum
+of all circuit times. For a batch of many circuits, this can be significantly faster
+than sequential execution.
+
+Note that this example uses threads rather than processes. For CPU-bound workloads such
+as statevector simulation, the Python GIL limits true parallelism on a single machine.
+In practice, real hardware backends achieve genuine parallelism because the work happens
+on remote QPU hardware, not locally in Python. The threading model here is therefore
+a faithful simulation of the asynchronous contract (the caller submits and returns
+immediately) even if the local speedup is modest.
+
+
 :ref:`Job`
 ----------
 
@@ -201,25 +366,23 @@ From the caller's perspective, both are used identically:
    # Blocking: wait until the job finishes and retrieve the result.
    result = job.result()
 
-   # Attempt cancellation (best-effort; may return False if already done).
+   # Attempt cancellation (best-effort, may return False if already done).
    accepted = job.cancel()
 
 Concrete subclasses must implement the four abstract methods:
 
-- :meth:`Job.submit`: trigger the actual execution.
-- :meth:`Job.result`: block until the result is available and return it.
-- :meth:`Job.cancel`: attempt to cancel the job.
-- :meth:`Job.status`: return the current :ref:`JobStatus` without blocking.
+- ``Job.submit``: trigger the actual execution.
+- ``Job.result``: block until the result is available and return it.
+- ``Job.cancel``: attempt to cancel the job.
+- ``Job.status``: return the current :ref:`JobStatus` without blocking.
 
 Several non-blocking convenience helpers are provided by the base class
-and derived from :meth:`Job.status`:
+and derived from ``Job.status``:
 
 .. code-block:: python
 
-   job.done()            # True if the job has reached a terminal state
-   job.running()         # True if the job is currently executing
-   job.queued()          # True if the job is waiting in the backend queue
-   job.in_final_state()  # Alias for done(), provided for Qiskit naming compatibility
+   job.done()            # True only if the job completed successfully (JobStatus.DONE)
+   job.in_final_state()  # True if the job has reached any terminal state (DONE, CANCELLED, or ERROR)
 
 If ``result()`` is called on a job that has failed or been cancelled, a
 :exc:`RuntimeError` is raised.

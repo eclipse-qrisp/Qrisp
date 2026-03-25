@@ -14,7 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Test suite for the Backend abstraction layer."""
+"""Tests for the Backend-related classes."""
 
 from __future__ import annotations
 
@@ -48,18 +48,19 @@ class ExecutionMode:
 
 class TestJob(Job):
     """
-    Concrete `Job` produced by `TestBackend`.
+    Concrete :class:`Job` produced by :class:`TestBackend`.
 
     Demonstrates how a backend author implements the Job contract using
     internal threading, without any threading in the abstract base class.
 
     Extra attributes (``circuits``, ``shots``) and internal helpers
     (``_set_result``, ``_set_error``, ``_set_cancelled``, ``add_callback``)
-    are additions of this concrete class. That is, they are not part of the
+    are additions of this concrete class — they are not part of the
     base interface.
     """
 
     def __init__(self, backend, circuits, shots, job_id=None):
+        """Initialise the TestJob with the backend, circuits, shot count, and optional job ID."""
         super().__init__(backend=backend, job_id=job_id)
         self.circuits = circuits
         self.shots = shots
@@ -70,14 +71,13 @@ class TestJob(Job):
         self._cancel_requested = threading.Event()
         self._callbacks = []
 
-    ##########################
-    ### Abstract interface
-    ##########################
+    # ── Abstract interface ────────────────────────────────────────────
 
     def submit(self) -> None:
-        pass  # TestBackend triggers execution directly in run().
+        """Submit the job. TestBackend triggers execution directly in run()."""
 
     def result(self, timeout=None) -> JobResult | None:
+        """Block until the job finishes and return the JobResult, or raise on failure."""
         if not self._done_event.wait(timeout=timeout):
             raise TimeoutError(
                 f"Job '{self._job_id}' did not complete within {timeout}s."
@@ -89,29 +89,34 @@ class TestJob(Job):
         return self._result_data
 
     def cancel(self) -> bool:
-        if self.done():
+        """Request cancellation. Returns False if the job is already in a terminal state."""
+        if self.in_final_state():
             return False
         self._cancel_requested.set()
         return True
 
     def status(self) -> JobStatus:
+        """Return the current JobStatus of the job."""
         return self._status
 
-    ###########################
-    ### Convenience helpers
-    ###########################
+    # ── Convenience helpers (not part of the abstract contract) ──────
 
     def add_callback(self, fn) -> None:
-        """Register a callback invoked when the job reaches a terminal state."""
-        if self.done():
+        """Register a callback invoked when the job reaches a terminal state.
+
+        If the job is already done, the callback is fired immediately.
+        """
+        if self.in_final_state():
             fn(self)
         else:
             self._callbacks.append(fn)
 
     def _set_status(self, status: JobStatus) -> None:
+        """Set the job status directly."""
         self._status = status
 
     def _set_result(self, result: JobResult) -> None:
+        """Mark the job as DONE, store the result, and fire all registered callbacks."""
         self._result_data = result
         self._status = JobStatus.DONE
         self._done_event.set()
@@ -122,6 +127,7 @@ class TestJob(Job):
                 pass
 
     def _set_error(self, error: Exception) -> None:
+        """Mark the job as ERROR, store the exception, and fire all registered callbacks."""
         self._error = error
         self._status = JobStatus.ERROR
         self._done_event.set()
@@ -132,6 +138,7 @@ class TestJob(Job):
                 pass
 
     def _set_cancelled(self) -> None:
+        """Mark the job as CANCELLED and fire all registered callbacks."""
         self._status = JobStatus.CANCELLED
         self._done_event.set()
         for cb in self._callbacks:
@@ -142,7 +149,13 @@ class TestJob(Job):
 
 
 class TestBackend(Backend):
-    """Full-featured fake backend used by the integration tests."""
+    """
+    Full-featured fake backend used by the integration tests.
+
+    Supports four execution modes (sync, async, error, cancel) and generates
+    fake measurement counts using a NumPy multinomial draw over all
+    2^num_qubits bitstrings.
+    """
 
     def __init__(
         self,
@@ -153,6 +166,7 @@ class TestBackend(Backend):
         name: str | None = None,
         options=None,
     ):
+        """Initialise the TestBackend with an execution mode, qubit count, delay, and RNG seed."""
         super().__init__(name=name, options=options)
         valid_modes = {
             ExecutionMode.SYNC,
@@ -171,21 +185,26 @@ class TestBackend(Backend):
 
     @classmethod
     def _default_options(cls):
+        """Return the default runtime options for the TestBackend."""
         return {"shots": 1024}
 
     @property
     def num_qubits(self) -> int:
+        """Return the number of qubits exposed by this fake backend."""
         return self._num_qubits
 
     @property
     def backend_info(self):
+        """Return basic provider and version metadata for the test backend."""
         return {"provider": "Qrisp Test Suite", "version": "0.1.0"}
 
     @property
     def gate_set(self):
+        """Return the set of gate names supported by this fake backend."""
         return ["H", "X", "Y", "Z", "CNOT", "CZ", "RZ", "RX", "RY", "T", "S"]
 
     def run(self, circuits, shots=None) -> TestJob:
+        """Submit one or more circuits and return a TestJob according to the current mode."""
         if not isinstance(circuits, list):
             circuits = [circuits]
         n_shots = shots if shots is not None else self._options["shots"]
@@ -212,6 +231,7 @@ class TestBackend(Backend):
         return job
 
     def _fake_counts(self, shots: int) -> dict[str, int]:
+        """Generate a sparse dict of fake measurement counts using a multinomial draw."""
         n = 2**self._num_qubits
         raw = self._rng.multinomial(shots, np.ones(n) / n)
         return {
@@ -221,26 +241,31 @@ class TestBackend(Backend):
         }
 
     def _run_sync(self, job: TestJob) -> None:
+        """Execute all circuits synchronously and resolve the job before returning."""
         job._set_status(JobStatus.RUNNING)
         counts = [self._fake_counts(job.shots) for _ in job.circuits]
-        job._set_result(JobResult(counts, metadata={"mode": "sync"}))
+        job._set_result(JobResult(counts, mode="sync"))
 
     def _run_async(self, job: TestJob) -> None:
+        """Sleep for async_delay seconds, then resolve the job with fake counts."""
         job._set_status(JobStatus.RUNNING)
         time.sleep(self.async_delay)
         counts = [self._fake_counts(job.shots) for _ in job.circuits]
-        job._set_result(JobResult(counts, metadata={"mode": "async"}))
+        job._set_result(JobResult(counts, mode="async"))
 
     def _run_error_sync(self, job: TestJob) -> None:
+        """Fail the job synchronously with a simulated hardware fault."""
         job._set_status(JobStatus.RUNNING)
         job._set_error(RuntimeError("Simulated hardware fault."))
 
     def _run_error_async(self, job: TestJob) -> None:
+        """Sleep for async_delay seconds, then fail the job with a simulated hardware fault."""
         job._set_status(JobStatus.RUNNING)
         time.sleep(self.async_delay)
         job._set_error(RuntimeError("Simulated hardware fault."))
 
     def _run_cancellable(self, job: TestJob) -> None:
+        """Execute in steps of 0.5 s, honouring cancellation requests between steps."""
         step = 0.5
         total_steps = max(1, int(self.async_delay / step))
         job._set_status(JobStatus.RUNNING)
@@ -250,51 +275,60 @@ class TestBackend(Backend):
                 return
             time.sleep(step)
         counts = [self._fake_counts(job.shots) for _ in job.circuits]
-        job._set_result(JobResult(counts, metadata={"mode": "cancel"}))
+        job._set_result(JobResult(counts, mode="cancel"))
 
 
 # ===========================================================================
-# Minimal dummy backends used only for option / name tests
+# Minimal dummy backends used only for option / name / abstract-interface tests
 # ===========================================================================
 
 
 class DummyBackend(Backend):
-    """Minimal subclass of Backend for testing."""
+    """
+    Minimal subclass of Backend for unit tests.
+
+    The run() method returns a plain dict so tests can inspect the
+    arguments that were passed to it without any Job machinery.
+    """
 
     @classmethod
     def _default_options(cls):
+        """Return default options with a custom shots value and a flag field."""
         return {"shots": 1000, "flag": False}
 
     def run(self, circuits, shots: int | None = None):
+        """Return a dict containing the circuits, shots, and current options for inspection."""
         return {"circuits": circuits, "provided_shots": shots, "options": self.options}
 
 
 class BackendNoDefaultOptions(Backend):
-    """Backend instantiated without options — must use Backend._default_options()."""
+    """Backend instantiated without options — must fall back to Backend._default_options()."""
 
     def run(self, circuits, shots: int | None = None):
-        pass
+        """No-op run method used only to satisfy the abstract interface."""
 
 
 class BackendWithExplicitOptions(Backend):
-    """Backend instantiated with explicit options — must override defaults entirely."""
+    """Backend instantiated with explicit options — must override the base defaults entirely."""
 
     def __init__(self, options=None):
+        """Initialise with the provided options mapping."""
         super().__init__(options=options)
 
     def run(self, circuits, shots: int | None = None):
-        pass
+        """No-op run method used only to satisfy the abstract interface."""
 
 
 class BackendWithChildDefaultOptions(Backend):
-    """Backend with a custom _default_options() at the child level."""
+    """Backend that defines its own _default_options() at the child class level."""
 
     @classmethod
     def _default_options(cls):
+        """Return child-level defaults including a custom_default field."""
         return {"shots": 1024, "custom_default": 42}
 
     def run(self, circuits, shots: int | None = None):
-        pass
+        """No-op run method used only to satisfy the abstract interface."""
 
 
 # ===========================================================================
@@ -303,75 +337,75 @@ class BackendWithChildDefaultOptions(Backend):
 
 
 class TestBackendAbstractInterface:
-    """Tests that Backend enforces its abstract contract."""
+    """Tests that Backend enforces its abstract contract correctly."""
 
     def test_backend_cannot_be_instantiated_directly(self):
-        """Test that Backend is an abstract base class and cannot be instantiated."""
+        """Ensure that the abstract Backend class cannot be instantiated directly."""
         with pytest.raises(TypeError):
             Backend()
 
     def test_run_is_abstract(self):
-        """Test that Backend.run is an abstract method that must be implemented by subclasses."""
+        """Ensure that Backend.run is declared as an abstract method."""
         assert getattr(Backend.run, "__isabstractmethod__", False)
 
     def test_concrete_subclass_can_be_instantiated(self):
-        """Test that a concrete subclass of Backend can be instantiated."""
+        """Ensure that a concrete subclass implementing run() can be instantiated."""
         assert MinimalBackend() is not None
 
 
 class TestBackendName:
-    """Tests for backend name handling."""
+    """Tests for backend name handling at construction and after mutation."""
 
     def test_name_defaults_to_class_name(self):
-        """Test that the default name of a backend is its class name."""
+        """Ensure the backend name defaults to the class name when not provided."""
         assert MinimalBackend().name == "MinimalBackend"
 
     def test_name_can_be_set_explicitly(self):
-        """Test that the name of a backend can be set explicitly."""
+        """Ensure an explicitly provided name is stored correctly."""
         assert MinimalBackend(name="my_backend").name == "my_backend"
 
     def test_name_is_mutable(self):
-        """Test that the name of a backend can be changed after instantiation."""
+        """Ensure the backend name can be updated after construction."""
         b = MinimalBackend(name="first")
         b.name = "second"
         assert b.name == "second"
 
 
 class TestBackendOptions:
-    """Tests for backend options handling."""
+    """Tests for backend options: defaults, explicit overrides, copy semantics, and update guards."""
 
     def test_default_options_are_shots_1024(self):
-        """Test that the default options of a backend are {'shots': 1024}."""
+        """Ensure that the base default options contain shots=1024."""
         assert MinimalBackend().options == {"shots": 1024}
 
     def test_child_default_options_override_base(self):
-        """Test that child default options override base default options."""
+        """Ensure that a child class _default_options() replaces the base defaults."""
         b = BackendWithChildDefaultOptions()
         assert b.options["shots"] == 1024
         assert b.options["custom_default"] == 42
 
     def test_explicit_options_override_defaults_entirely(self):
-        """Test that providing explicit options in the constructor overrides defaults entirely."""
+        """Ensure that passing options to the constructor replaces the defaults entirely."""
         b = BackendWithExplicitOptions(options={"shots": 2048, "extra": "value"})
         assert b.options == {"shots": 2048, "extra": "value"}
 
     def test_no_options_uses_default_options(self):
-        """Test that if no options are provided, the backend uses the default options."""
+        """Ensure that omitting options falls back to Backend._default_options()."""
         b = BackendNoDefaultOptions()
         assert b.options == {"shots": 1024}
 
     def test_options_must_be_mapping_string_rejected(self):
-        """Test that providing a non-mapping (e.g. string) as options raises a TypeError."""
+        """Ensure that passing a string as options raises a TypeError."""
         with pytest.raises(TypeError, match="Mapping"):
-            MinimalBackend(options="not_a_mapping")
+            MinimalBackend(options="not_a_mapping")  # type: ignore[arg-type]
 
     def test_options_must_be_mapping_list_rejected(self):
-        """Test that providing a non-mapping (e.g. list) as options raises a TypeError."""
+        """Ensure that passing a list as options raises a TypeError."""
         with pytest.raises(TypeError):
-            MinimalBackend(options=[1, 2, 3])
+            MinimalBackend(options=[1, 2, 3])  # type: ignore[arg-type]
 
     def test_options_are_copied_from_constructor(self):
-        """Mutating the original mapping after construction must not affect the backend."""
+        """Ensure that mutating the original mapping after construction does not affect the backend."""
         original = {"shots": 1024, "flag": False}
         b = BackendWithExplicitOptions(options=original)
         original["flag"] = True
@@ -380,23 +414,24 @@ class TestBackendOptions:
         assert b.options["shots"] == 1024
 
     def test_update_options_valid_key(self):
-        """Test that update_options successfully updates a valid option key."""
+        """Ensure that a valid key can be updated via update_options()."""
         b = MinimalBackend()
         b.update_options(shots=4096)
         assert b.options["shots"] == 4096
 
     def test_update_options_multiple_valid_keys(self):
-        """Test that update_options can update multiple valid option keys at once."""
+        """Ensure that multiple valid keys can be updated in a single call."""
 
         class MultiBackend(Backend):
-            """Backend with multiple default options for testing update_options."""
+            """Backend with multiple configurable options for multi-key update tests."""
 
             @classmethod
             def _default_options(cls):
+                """Return options with shots, flag, and level fields."""
                 return {"shots": 1024, "flag": False, "level": 1}
 
             def run(self, circuits, shots=None):
-                pass
+                """No-op run method."""
 
         b = MultiBackend()
         b.update_options(shots=2048, flag=True, level=3)
@@ -405,13 +440,13 @@ class TestBackendOptions:
         assert b.options["level"] == 3
 
     def test_update_options_invalid_key_raises_attribute_error(self):
-        """Test that update_options raises an AttributeError for invalid keys."""
+        """Ensure that updating an unknown option key raises an AttributeError."""
         b = MinimalBackend()
         with pytest.raises(AttributeError, match="not a valid backend option"):
             b.update_options(unknown_key=42)
 
     def test_update_options_invalid_key_does_not_add_new_key(self):
-        """Test that update_options with an invalid key does not add that key to the options."""
+        """Ensure that a failed update_options() call does not add the rejected key."""
         b = MinimalBackend()
         try:
             b.update_options(new_key="value")
@@ -420,14 +455,14 @@ class TestBackendOptions:
         assert "new_key" not in b.options
 
     def test_options_are_independent_between_instances(self):
-        """Test that options are independent between different backend instances."""
+        """Ensure that updating one backend instance does not affect another."""
         b1 = MinimalBackend()
         b2 = MinimalBackend()
         b1.update_options(shots=2048)
         assert b2.options["shots"] == 1024
 
     def test_backend_with_explicit_options_update(self):
-        """Test that update_options works correctly on a backend instantiated with explicit options."""
+        """Ensure that an explicit-options backend allows updates to known keys and rejects unknown ones."""
         options = {"shots": 1024, "custom_option": "old_value"}
         b = BackendWithExplicitOptions(options=options)
         b.update_options(custom_option="new_value")
@@ -436,7 +471,7 @@ class TestBackendOptions:
             b.update_options(unknown_field=123)
 
     def test_backend_with_child_defaults_update(self):
-        """Test that update_options works correctly on a backend with child default options."""
+        """Ensure that a child-defaults backend allows updates to its custom keys and rejects unknown ones."""
         b = BackendWithChildDefaultOptions()
         b.update_options(shots=2048, custom_default="updated")
         assert b.options["shots"] == 2048
@@ -446,81 +481,82 @@ class TestBackendOptions:
 
 
 class TestBackendHardwareMetadata:
-    """Tests that all hardware metadata properties return None by default."""
+    """Tests that all hardware metadata properties return None (or empty dict) by default."""
 
     @pytest.fixture
     def backend(self):
+        """Return a fresh MinimalBackend instance for each test."""
         return MinimalBackend()
 
     def test_num_qubits_is_none(self, backend):
-        """Test that num_qubits property returns None by default."""
+        """Ensure num_qubits returns None when not overridden."""
         assert backend.num_qubits is None
 
     def test_connectivity_is_none(self, backend):
-        """Test that connectivity property returns None by default."""
+        """Ensure connectivity returns None when not overridden."""
         assert backend.connectivity is None
 
     def test_gate_set_is_none(self, backend):
-        """Test that gate_set property returns None by default."""
+        """Ensure gate_set returns None when not overridden."""
         assert backend.gate_set is None
 
     def test_error_rates_is_none(self, backend):
-        """Test that error_rates property returns None by default."""
+        """Ensure error_rates returns None when not overridden."""
         assert backend.error_rates is None
 
     def test_backend_health_is_none(self, backend):
-        """Test that backend_health property returns None by default."""
+        """Ensure backend_health returns None when not overridden."""
         assert backend.backend_health is None
 
     def test_backend_info_is_none(self, backend):
-        """Test that backend_info property returns None by default."""
+        """Ensure backend_info returns None when not overridden."""
         assert backend.backend_info is None
 
     def test_backend_queue_is_none(self, backend):
-        """Test that backend_queue property returns None by default."""
+        """Ensure backend_queue returns None when not overridden."""
         assert backend.backend_queue is None
 
     def test_capabilities_is_empty_dict(self, backend):
-        """Test that capabilities property returns an empty dict by default."""
+        """Ensure capabilities returns an empty dict when not overridden."""
         assert backend.capabilities == {}
 
     def test_num_qubits_can_be_overridden(self):
-        """Test that num_qubits can be overridden by a concrete backend."""
+        """Ensure a concrete backend can expose a meaningful num_qubits value."""
         assert TestBackend(num_qubits=5).num_qubits == 5
 
     def test_backend_info_can_be_overridden(self):
-        """Test that backend_info can be overridden by a concrete backend."""
+        """Ensure a concrete backend can expose a non-None backend_info dict."""
         info = TestBackend().backend_info
         assert isinstance(info, dict)
         assert "provider" in info
 
     def test_gate_set_can_be_overridden(self):
-        """Test that gate_set can be overridden by a concrete backend."""
+        """Ensure a concrete backend can expose a non-empty gate_set list."""
         gs = TestBackend().gate_set
         assert isinstance(gs, list)
         assert len(gs) > 0
 
 
 class TestDummyBackend:
-    """Tests for the minimal DummyBackend helper."""
+    """Tests for the DummyBackend helper, which returns a plain dict from run()."""
 
     def test_backend_is_abstract(self):
-        """Test that the Backend class is abstract and cannot be instantiated directly."""
+        """Ensure the base Backend class cannot be instantiated directly."""
         with pytest.raises(TypeError):
             Backend()
 
     def test_dummy_backend_instantiation_with_name(self):
-        """Test that DummyBackend can be instantiated with a custom name."""
+        """Ensure DummyBackend can be instantiated with an explicit name."""
         b = DummyBackend(name="test_backend")
         assert b.name == "test_backend"
 
     def test_dummy_backend_instantiation_without_name(self):
-        """Test that DummyBackend defaults to the class name when no name is provided."""
+        """Ensure DummyBackend defaults to its class name when no name is provided."""
         b = DummyBackend()
         assert b.name == "DummyBackend"
 
     def test_dummy_backend_run_returns_dict_with_correct_values(self):
-        """Test that DummyBackend.run returns a dict containing the provided circuits, shots, and options."""
+        """Ensure DummyBackend.run() returns a dict that reflects the arguments and options."""
         b = DummyBackend()
         result = b.run(circuits=None, shots=1024)
         assert b.options == {"shots": 1000, "flag": False}
@@ -536,22 +572,22 @@ class TestDummyBackend:
 
 
 class TestSyncExecution:
-    """Integration tests for synchronous (blocking) execution."""
+    """Integration tests for synchronous (blocking) execution via TestBackend."""
 
     def test_single_circuit_job_is_done_before_run_returns(self):
-        """Test that a single-circuit job is already done by the time run() returns in SYNC mode."""
+        """Ensure a sync job reaches DONE status before run() returns to the caller."""
         job = TestBackend(mode=ExecutionMode.SYNC, seed=0).run("c")
         assert job.status() == JobStatus.DONE
 
     def test_single_circuit_result_immediately_available(self):
-        """Test that the result of a single-circuit job is immediately available after run() returns in SYNC mode."""
+        """Ensure the result is accessible immediately after run() for a sync job."""
         backend = TestBackend(mode=ExecutionMode.SYNC, num_qubits=2, seed=0)
         result = backend.run("c", shots=256).result()
         assert result.num_circuits == 1
         assert sum(result.get_counts().values()) == 256
 
     def test_bitstring_width_matches_num_qubits(self):
-        """Test that the bitstrings in the counts dict have the correct width matching num_qubits."""
+        """Ensure generated bitstrings have exactly num_qubits characters."""
         for n in [1, 2, 3, 4]:
             backend = TestBackend(mode=ExecutionMode.SYNC, num_qubits=n, seed=0)
             result = backend.run("c", shots=128).result()
@@ -559,14 +595,14 @@ class TestSyncExecution:
                 assert len(bitstring) == n
 
     def test_batch_of_five_is_done_immediately(self):
-        """Test that a batch job with five circuits is already done by the time run() returns in SYNC mode."""
+        """Ensure a batch of five circuits reaches DONE status before run() returns."""
         job = TestBackend(mode=ExecutionMode.SYNC, seed=1).run(
             ["c0", "c1", "c2", "c3", "c4"]
         )
         assert job.status() == JobStatus.DONE
 
     def test_batch_result_has_one_dict_per_circuit(self):
-        """Test that the JobResult of a batch job contains one counts dict per circuit."""
+        """Ensure a batch result contains exactly one counts dict per submitted circuit."""
         result = (
             TestBackend(mode=ExecutionMode.SYNC, seed=1)
             .run(["c0", "c1", "c2", "c3", "c4"], shots=100)
@@ -575,20 +611,20 @@ class TestSyncExecution:
         assert result.num_circuits == 5
 
     def test_batch_each_counts_dict_sums_to_shots(self):
-        """Test that the counts dict for each circuit in a batch job sums to the total number of shots."""
+        """Ensure each per-circuit counts dict sums to the requested shot count."""
         backend = TestBackend(mode=ExecutionMode.SYNC, num_qubits=2, seed=2)
         result = backend.run(["c0", "c1", "c2"], shots=200).result()
         for i in range(3):
             assert sum(result.get_counts(i).values()) == 200
 
     def test_batch_index_out_of_range_raises(self):
-        """Test that requesting counts for a circuit index that is out of range in a batch job raises an IndexError."""
+        """Ensure get_counts() raises IndexError for an out-of-range index."""
         result = TestBackend(mode=ExecutionMode.SYNC, seed=0).run(["c0", "c1"]).result()
         with pytest.raises(IndexError):
             result.get_counts(2)
 
     def test_single_circuit_normalised_to_one_result(self):
-        """Test that running a single circuit (not in a list) is normalized to a batch of one circuit in the result."""
+        """Ensure a single circuit submitted as a non-list yields num_circuits == 1."""
         result = (
             TestBackend(mode=ExecutionMode.SYNC, seed=0)
             .run("single", shots=512)
@@ -597,31 +633,31 @@ class TestSyncExecution:
         assert result.num_circuits == 1
 
     def test_shots_override_respected(self):
-        """Test that providing a shots argument to run() overrides the default shots option."""
+        """Ensure the shots argument to run() overrides the backend's default."""
         backend = TestBackend(mode=ExecutionMode.SYNC, num_qubits=2, seed=0)
         result = backend.run("c", shots=333).result()
         assert sum(result.get_counts().values()) == 333
 
     def test_default_shots_used_when_none(self):
-        """Test that the default shots option is used when no shots argument is provided."""
+        """Ensure the backend's shots option is used when no shots argument is passed."""
         backend = TestBackend(mode=ExecutionMode.SYNC, num_qubits=2, seed=0)
         backend.update_options(shots=128)
         result = backend.run("c").result()
         assert sum(result.get_counts().values()) == 128
 
     def test_done_and_in_final_state_true_after_sync(self):
-        """Test that done() and in_final_state() both return True immediately after run() in SYNC mode."""
+        """Ensure done() and in_final_state() both return True after a successful sync job."""
         job = TestBackend(mode=ExecutionMode.SYNC, seed=0).run("c")
         assert job.done() is True
         assert job.in_final_state() is True
 
     def test_metadata_contains_sync_mode(self):
-        """Test that the metadata of the JobResult contains 'mode': 'sync' for a SYNC job."""
+        """Ensure the result metadata carries the mode key set by the sync worker."""
         result = TestBackend(mode=ExecutionMode.SYNC, seed=0).run("c").result()
         assert result.metadata.get("mode") == "sync"
 
     def test_different_seeds_give_different_counts(self):
-        """Test that using different seeds for the random number generator produces different counts distributions."""
+        """Ensure two backends with different seeds produce different count distributions."""
         counts_a = (
             TestBackend(mode=ExecutionMode.SYNC, num_qubits=3, seed=0)
             .run("c", shots=1024)
@@ -637,7 +673,7 @@ class TestSyncExecution:
         assert counts_a != counts_b
 
     def test_same_seed_gives_same_counts(self):
-        """Test that using the same seed for the random number generator produces the same counts distribution."""
+        """Ensure two backends with the same seed produce identical count distributions."""
         counts_a = (
             TestBackend(mode=ExecutionMode.SYNC, num_qubits=2, seed=42)
             .run("c", shots=512)
@@ -653,30 +689,30 @@ class TestSyncExecution:
         assert counts_a == counts_b
 
     def test_accepts_arbitrary_circuit_types(self):
-        """Test that the backend accepts arbitrary circuit representations without error."""
+        """Ensure run() accepts any Python object as a circuit without raising."""
         backend = TestBackend(mode=ExecutionMode.SYNC, seed=0)
         for circuit in ["string", 42, None, object(), {"name": "qft"}, 3.14]:
             assert backend.run(circuit, shots=10).done()
 
     def test_heterogeneous_batch_accepted(self):
-        """Test that the backend accepts a batch of heterogeneous circuit representations."""
+        """Ensure a batch of mixed Python objects is accepted and yields the correct num_circuits."""
         backend = TestBackend(mode=ExecutionMode.SYNC, seed=0)
         batch = ["bell", {"depth": 3}, None, 42, object()]
         assert backend.run(batch, shots=64).result().num_circuits == 5
 
     def test_cancel_on_finished_job_returns_false(self):
-        """Test that calling cancel() on a job that is already finished returns False."""
+        """Ensure cancel() returns False when called on a job that is already DONE."""
         job = TestBackend(mode=ExecutionMode.SYNC, seed=0).run("c")
         assert job.cancel() is False
 
     def test_cancel_on_finished_job_does_not_change_status(self):
-        """Test that calling cancel() on a job that is already finished does not change its status."""
+        """Ensure cancel() on a finished job leaves the status unchanged."""
         job = TestBackend(mode=ExecutionMode.SYNC, seed=0).run("c")
         job.cancel()
         assert job.status() == JobStatus.DONE
 
     def test_result_still_accessible_after_late_cancel(self):
-        """Test that calling cancel() on a job that is already finished does not prevent access to the result."""
+        """Ensure result() remains accessible even if cancel() is called after completion."""
         job = TestBackend(mode=ExecutionMode.SYNC, num_qubits=2, seed=0).run(
             "c", shots=256
         )
@@ -684,7 +720,7 @@ class TestSyncExecution:
         assert job.result().num_circuits == 1
 
     def test_multiple_sequential_jobs_from_same_backend(self):
-        """Test that multiple sequential jobs from the same backend produce correct results."""
+        """Ensure the same backend instance can run multiple sequential jobs correctly."""
         backend = TestBackend(mode=ExecutionMode.SYNC, num_qubits=2, seed=0)
         for _ in range(5):
             result = backend.run("c", shots=64).result()
@@ -697,20 +733,20 @@ class TestSyncExecution:
 
 
 class TestAsyncExecution:
-    """Integration tests for asynchronous execution."""
+    """Integration tests for asynchronous execution via TestBackend."""
 
     def test_run_returns_before_job_is_done(self):
-        """Test that run() returns immediately before the job is done in ASYNC mode."""
+        """Ensure run() returns immediately before the async job has completed."""
         job = TestBackend(mode=ExecutionMode.ASYNC, async_delay=2.0, seed=0).run("c")
         assert not job.done()
 
     def test_status_is_queued_or_running_immediately_after_run(self):
-        """Test that the job status is either QUEUED or RUNNING immediately after run() in ASYNC mode."""
+        """Ensure the job status is QUEUED or RUNNING right after an async run() call."""
         job = TestBackend(mode=ExecutionMode.ASYNC, async_delay=2.0, seed=0).run("c")
         assert job.status() in (JobStatus.QUEUED, JobStatus.RUNNING)
 
     def test_result_blocks_and_returns(self):
-        """Test that result() blocks until the job is done and then returns a JobResult in ASYNC mode."""
+        """Ensure result() blocks until the async job completes and returns valid counts."""
         backend = TestBackend(
             mode=ExecutionMode.ASYNC, num_qubits=2, async_delay=0.3, seed=0
         )
@@ -719,14 +755,14 @@ class TestAsyncExecution:
         assert sum(result.get_counts().values()) == 256
 
     def test_status_is_done_after_result(self):
-        """Test that the job status is DONE after result() returns in ASYNC mode."""
+        """Ensure the job status is DONE after result() has returned successfully."""
         backend = TestBackend(mode=ExecutionMode.ASYNC, async_delay=0.3, seed=0)
         job = backend.run("c")
         job.result()
         assert job.status() == JobStatus.DONE
 
     def test_async_batch_all_circuits_in_result(self):
-        """Test that the JobResult of a batch job contains all circuits in ASYNC mode."""
+        """Ensure an async batch result contains one counts dict per submitted circuit."""
         backend = TestBackend(
             mode=ExecutionMode.ASYNC, num_qubits=2, async_delay=0.3, seed=1
         )
@@ -736,7 +772,7 @@ class TestAsyncExecution:
             assert sum(result.get_counts(i).values()) == 100
 
     def test_metadata_contains_async_mode(self):
-        """Test that the metadata of the JobResult contains 'mode': 'async' for an ASYNC job."""
+        """Ensure the result metadata carries the mode key set by the async worker."""
         result = (
             TestBackend(mode=ExecutionMode.ASYNC, async_delay=0.3, seed=0)
             .run("c")
@@ -745,7 +781,7 @@ class TestAsyncExecution:
         assert result.metadata.get("mode") == "async"
 
     def test_callback_fires_when_job_completes(self):
-        """Test that a callback registered with add_callback() is fired when the job completes in ASYNC mode."""
+        """Ensure a registered callback is invoked with DONE status when the job completes."""
         backend = TestBackend(mode=ExecutionMode.ASYNC, async_delay=0.3, seed=0)
         job = backend.run("c")
         fired = []
@@ -754,14 +790,14 @@ class TestAsyncExecution:
         assert fired == [JobStatus.DONE]
 
     def test_callback_on_already_done_job_fires_immediately(self):
-        """Test that a callback registered with add_callback() on an already done job fires immediately."""
+        """Ensure a callback registered on an already-done job fires synchronously."""
         job = TestBackend(mode=ExecutionMode.SYNC, seed=0).run("c")
         fired = []
         job.add_callback(lambda j: fired.append(True))
         assert len(fired) == 1
 
     def test_multiple_callbacks_all_fire(self):
-        """Test that multiple callbacks registered with add_callback() all fire when the job completes in ASYNC mode."""
+        """Ensure all registered callbacks are invoked when the job reaches a terminal state."""
         backend = TestBackend(mode=ExecutionMode.ASYNC, async_delay=0.3, seed=0)
         job = backend.run("c")
         results = []
@@ -772,7 +808,7 @@ class TestAsyncExecution:
         assert "cb2" in results
 
     def test_misbehaving_callback_does_not_crash_job(self):
-        """Test that a callback that raises an exception does not crash the job or prevent other callbacks from firing in ASYNC mode."""
+        """Ensure an exception raised inside a callback does not prevent result() from returning."""
         backend = TestBackend(mode=ExecutionMode.ASYNC, async_delay=0.3, seed=0)
         job = backend.run("c")
         job.add_callback(lambda j: 1 / 0)
@@ -780,7 +816,7 @@ class TestAsyncExecution:
         assert result is not None
 
     def test_multiple_concurrent_jobs(self):
-        """Test that multiple concurrent jobs from the same backend execute correctly in ASYNC mode."""
+        """Ensure multiple async jobs submitted concurrently all complete successfully."""
         backend = TestBackend(
             mode=ExecutionMode.ASYNC, num_qubits=2, async_delay=0.3, seed=0
         )
@@ -796,16 +832,16 @@ class TestAsyncExecution:
 
 
 class TestTimeoutBehaviour:
-    """Tests for result() timeout behaviour."""
+    """Tests for the timeout parameter of Job.result()."""
 
     def test_timeout_raises_timeout_error(self):
-        """Test that result() raises a TimeoutError if the job does not complete within the specified timeout."""
+        """Ensure result(timeout=...) raises TimeoutError when the deadline expires."""
         job = TestBackend(mode=ExecutionMode.ASYNC, async_delay=5.0, seed=0).run("c")
         with pytest.raises(TimeoutError):
             job.result(timeout=0.1)
 
     def test_job_still_running_after_timeout(self):
-        """Test that the job is still running and not marked as done if result() times out."""
+        """Ensure the job continues executing after a TimeoutError from result()."""
         job = TestBackend(mode=ExecutionMode.ASYNC, async_delay=5.0, seed=0).run("c")
         try:
             job.result(timeout=0.1)
@@ -814,13 +850,13 @@ class TestTimeoutBehaviour:
         assert not job.done()
 
     def test_result_accessible_after_timeout_once_complete(self):
-        """Test that the result of a job is still accessible after a TimeoutError once the job eventually completes."""
+        """Ensure result() can be called again successfully after a prior TimeoutError."""
         backend = TestBackend(
             mode=ExecutionMode.ASYNC, num_qubits=2, async_delay=0.4, seed=0
         )
         job = backend.run("c", shots=128)
         try:
-            job.result(timeout=0.05)  # too short
+            job.result(timeout=0.05)  # too short; will time out
         except TimeoutError:
             pass
         result = job.result()  # now wait properly
@@ -833,32 +869,32 @@ class TestTimeoutBehaviour:
 
 
 class TestErrorBehaviour:
-    """Integration tests for error mode."""
+    """Integration tests for the error execution mode of TestBackend."""
 
     def test_sync_error_job_status_is_error(self):
-        """Test that a job run in ERROR mode with zero async_delay has status ERROR immediately after run()."""
+        """Ensure a synchronous error immediately sets the job status to ERROR."""
         job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run("c")
         assert job.status() == JobStatus.ERROR
 
     def test_sync_error_result_raises_runtime_error(self):
-        """Test that calling result() on a job run in ERROR mode with zero async_delay raises the expected RuntimeError."""
+        """Ensure result() raises RuntimeError for a synchronously failed job."""
         job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run("c")
         with pytest.raises(RuntimeError):
             job.result()
 
     def test_async_error_job_not_done_immediately(self):
-        """Test that a job run in ERROR mode with nonzero async_delay is not immediately marked as done after run()."""
+        """Ensure an async error job is not yet in a terminal state right after run()."""
         job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0.5, seed=0).run("c")
         assert not job.done()
 
     def test_async_error_result_raises_runtime_error(self):
-        """Test that calling result() on a job run in ERROR mode with nonzero async_delay raises the expected RuntimeError."""
+        """Ensure result() raises RuntimeError after an async error has been set."""
         job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0.3, seed=0).run("c")
         with pytest.raises(RuntimeError):
             job.result()
 
     def test_async_error_status_is_error_after_result(self):
-        """Test that a job run in ERROR mode with nonzero async_delay has status ERROR after calling result()."""
+        """Ensure the job status is ERROR after result() has raised on an async failure."""
         job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0.3, seed=0).run("c")
         try:
             job.result()
@@ -867,25 +903,29 @@ class TestErrorBehaviour:
         assert job.status() == JobStatus.ERROR
 
     def test_error_job_is_in_final_state(self):
-        """Test that a job run in ERROR mode is in a final state (done() and in_final_state() both return True) after the error is set."""
+        """Ensure a failed job is in a final state (in_final_state() is True).
+
+        Note that done() returns False because it means "completed successfully",
+        not "reached any terminal state".
+        """
         job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run("c")
-        assert job.done() is True
-        assert job.in_final_state() is True
+        assert job.done() is False  # done() means success only
+        assert job.in_final_state() is True  # in_final_state() covers ERROR too
 
     def test_error_job_cancel_returns_false(self):
-        """Test that calling cancel() on a job run in ERROR mode returns False and does not change the status."""
+        """Ensure cancel() returns False on a job that has already failed."""
         job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run("c")
         assert job.cancel() is False
 
     def test_error_in_batch_affects_whole_job(self):
-        """Test that if a job is run in ERROR mode, the entire batch is marked as ERROR and not just individual circuits."""
+        """Ensure that a hardware fault in a batch job marks the entire job as ERROR."""
         job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run(
             ["c0", "c1", "c2"]
         )
         assert job.status() == JobStatus.ERROR
 
     def test_callback_fires_on_error(self):
-        """Test that a callback registered with add_callback() is fired when the job encounters an error in ERROR mode."""
+        """Ensure a registered callback is invoked with ERROR status when the job fails."""
         backend = TestBackend(mode=ExecutionMode.ERROR, async_delay=0.3, seed=0)
         job = backend.run("c")
         fired = []
@@ -903,16 +943,16 @@ class TestErrorBehaviour:
 
 
 class TestCancellation:
-    """Integration tests for job cancellation."""
+    """Integration tests for job cancellation via TestBackend in CANCEL mode."""
 
     def test_cancel_returns_true_on_running_job(self):
-        """Test that cancel() returns True when called on a job that is currently running."""
+        """Ensure cancel() returns True when called on a running job."""
         job = TestBackend(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run("c")
         time.sleep(0.6)
         assert job.cancel() is True
 
     def test_cancel_job_reaches_cancelled_status(self):
-        """Test that a job that is cancelled while running eventually reaches the CANCELLED status."""
+        """Ensure the job status reaches CANCELLED after a successful cancel() call."""
         job = TestBackend(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run("c")
         time.sleep(0.6)
         job.cancel()
@@ -923,7 +963,7 @@ class TestCancellation:
         assert job.status() == JobStatus.CANCELLED
 
     def test_cancel_result_raises_runtime_error(self):
-        """Test that calling result() on a job that was cancelled while running raises a RuntimeError indicating cancellation."""
+        """Ensure result() raises RuntimeError after the job has been cancelled."""
         job = TestBackend(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run("c")
         time.sleep(0.6)
         job.cancel()
@@ -931,7 +971,11 @@ class TestCancellation:
             job.result()
 
     def test_cancelled_job_is_in_final_state(self):
-        """Test that a job that was cancelled while running is in a final state (done() and in_final_state() both return True) after cancellation."""
+        """Ensure a cancelled job is in a final state (in_final_state() is True).
+
+        Note that done() returns False because it means "completed successfully",
+        not "reached any terminal state".
+        """
         job = TestBackend(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run("c")
         time.sleep(0.6)
         job.cancel()
@@ -939,17 +983,17 @@ class TestCancellation:
             job.result()
         except RuntimeError:
             pass
-        assert job.done() is True
-        assert job.in_final_state() is True
+        assert job.done() is False  # done() means success only
+        assert job.in_final_state() is True  # in_final_state() covers CANCELLED too
 
     def test_cancel_returns_false_on_finished_job(self):
-        """Test that cancel() returns False when called on a job that has already finished (either successfully or with an error)."""
+        """Ensure cancel() returns False when the job has already completed successfully."""
         job = TestBackend(mode=ExecutionMode.CANCEL, async_delay=0.3, seed=0).run("c")
         job.result()
         assert job.cancel() is False
 
     def test_cancel_returns_false_on_already_cancelled_job(self):
-        """Test that cancel() returns False when called on a job that has already been cancelled."""
+        """Ensure cancel() returns False when called a second time on an already-cancelled job."""
         job = TestBackend(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run("c")
         time.sleep(0.6)
         job.cancel()
@@ -960,7 +1004,7 @@ class TestCancellation:
         assert job.cancel() is False
 
     def test_natural_completion_without_cancellation(self):
-        """Test that if cancel() is not called, a job in CANCEL mode eventually completes successfully with the expected results."""
+        """Ensure a CANCEL-mode job completes normally if cancel() is never called."""
         backend = TestBackend(
             mode=ExecutionMode.CANCEL, num_qubits=2, async_delay=0.5, seed=3
         )
@@ -968,7 +1012,7 @@ class TestCancellation:
         assert sum(result.get_counts().values()) == 128
 
     def test_cancel_batch_job(self):
-        """Test that cancel() can be called on a batch job that is currently running and returns True."""
+        """Ensure cancel() returns True when called on a running batch job."""
         job = TestBackend(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run(
             ["c0", "c1", "c2", "c3", "c4"]
         )
@@ -976,7 +1020,7 @@ class TestCancellation:
         assert job.cancel() is True
 
     def test_callback_fires_on_cancellation(self):
-        """Test that a callback registered with add_callback() is fired when the job is cancelled in CANCEL mode."""
+        """Ensure a registered callback is invoked with CANCELLED status after cancellation."""
         job = TestBackend(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run("c")
         fired = []
         job.add_callback(lambda j: fired.append(j.status()))
@@ -995,26 +1039,26 @@ class TestCancellation:
 
 
 def test_backend_client_deprecation_warning():
-    """BackendClient must raise a deprecation warning upon instantiation."""
+    """Ensure BackendClient raises a QrispDeprecationWarning upon instantiation."""
     with pytest.warns(QrispDeprecationWarning):
         _ = BackendClient(api_endpoint="not_used")
 
 
 def test_backend_server_deprecation_warning():
-    """BackendServer must raise a deprecation warning upon instantiation."""
+    """Ensure BackendServer raises a QrispDeprecationWarning upon instantiation."""
 
     def dummy_run():
-        pass
+        """No-op run function passed to BackendServer to satisfy its constructor."""
 
     with pytest.warns(QrispDeprecationWarning):
         _ = BackendServer(run_func=dummy_run)
 
 
 def test_virtual_backend_deprecation_warning():
-    """VirtualBackend must raise a deprecation warning upon instantiation."""
+    """Ensure VirtualBackend raises a QrispDeprecationWarning upon instantiation."""
 
     def dummy_run():
-        pass
+        """No-op run function passed to VirtualBackend to satisfy its constructor."""
 
     with pytest.warns(QrispDeprecationWarning):
         _ = VirtualBackend(run_func=dummy_run)
