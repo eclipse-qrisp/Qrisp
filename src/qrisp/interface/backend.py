@@ -16,14 +16,16 @@
 
 """This module defines the abstract :class:`Backend` interface for Qrisp-compatible backends."""
 
-from abc import ABC, abstractmethod
-from collections.abc import Mapping
-from copy import copy
-from typing import Any, Dict, Sequence
+from __future__ import annotations
 
-from qrisp.circuit.quantum_circuit import QuantumCircuit
+from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any
 
 from .job import Job
+
+if TYPE_CHECKING:
+    from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
 class Backend(ABC):
@@ -197,7 +199,7 @@ class Backend(ABC):
     # ------------------------------------------------------------------
 
     @classmethod
-    def _default_options(cls) -> Dict[str, Any]:
+    def _default_options(cls) -> Mapping[str, Any]:
         """
         Default runtime options for the backend.
 
@@ -207,13 +209,13 @@ class Backend(ABC):
 
         Returns
         -------
-        dict
+        Mapping[str, Any]
             A mapping of option names to their default values.
         """
         return {"shots": 1024}
 
     @property
-    def options(self) -> Dict[str, Any]:
+    def options(self) -> Mapping[str, Any]:
         """
         Current runtime options for the backend.
 
@@ -263,7 +265,7 @@ class Backend(ABC):
         return None
 
     @property
-    def backend_info(self) -> dict[str, Any]:
+    def backend_info(self):
         """
         General information about the backend.
 

@@ -21,8 +21,9 @@ Abstract :class:`Job` interface and related types for representing and managing 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from enum import Enum, auto
-from typing import TYPE_CHECKING, Dict, List
+from collections.abc import Mapping, Sequence
+from enum import StrEnum, auto
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .backend import Backend
@@ -56,9 +57,13 @@ class JobStatus(StrEnum):
     CANCELLED = auto()
     ERROR = auto()
 
+    @classmethod
+    def final_states(cls) -> tuple[JobStatus, ...]:
+        """Terminal states: once a Job reaches one of these, its state won't change anymore."""
+        return (cls.DONE, cls.CANCELLED, cls.ERROR)
 
-#: Terminal states: once a job reaches one of these, its outcome is final.
-JOB_FINAL_STATES = (JobStatus.DONE, JobStatus.CANCELLED, JobStatus.ERROR)
+
+JOB_FINAL_STATES = JobStatus.final_states()
 
 
 class JobResult:
@@ -108,7 +113,7 @@ class JobResult:
     JobResult(num_circuits=2, metadata={})
     """
 
-    def __init__(self, counts: List[Dict], **kwargs):
+    def __init__(self, counts: Sequence[Mapping], **kwargs):
         """Initialize a JobResult instance."""
 
         if not isinstance(counts, list):
@@ -124,7 +129,7 @@ class JobResult:
     # ------------------------------------------------------------------
 
     @property
-    def all_counts(self) -> List[Dict]:
+    def all_counts(self) -> Sequence[Mapping]:
         """All measurement-outcome counts, one dict per circuit."""
         return self._counts
 
@@ -137,7 +142,7 @@ class JobResult:
     # Methods
     # ------------------------------------------------------------------
 
-    def get_counts(self, index: int = 0) -> Dict:
+    def get_counts(self, index: int = 0) -> Mapping:
         """
         Return the measurement-outcome counts for a single circuit.
 
@@ -263,6 +268,8 @@ class Job(ABC):
         backend after the job object has been constructed.
         """
 
+        raise NotImplementedError
+
     @abstractmethod
     def result(self) -> JobResult:
         """
@@ -277,6 +284,8 @@ class Job(ABC):
 
         """
 
+        raise NotImplementedError
+
     @abstractmethod
     def cancel(self) -> bool:
         """
@@ -288,6 +297,8 @@ class Job(ABC):
             True iff the job was successfully cancelled.
 
         """
+
+        raise NotImplementedError
 
     @abstractmethod
     def status(self) -> JobStatus:
@@ -302,6 +313,8 @@ class Job(ABC):
         JobStatus
 
         """
+
+        raise NotImplementedError
 
     # ------------------------------------------------------------------
     # Methods (derived from status)

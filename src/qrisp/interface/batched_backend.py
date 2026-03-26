@@ -23,8 +23,9 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import TYPE_CHECKING, Callable, Dict, List, Mapping, Tuple, cast
+from typing import TYPE_CHECKING, Mapping, cast
 
+from collections.abc import Mapping, Sequence, Callable
 from qrisp.interface.backend import Backend
 from qrisp.interface.job import Job, JobResult, JobStatus
 
@@ -256,7 +257,9 @@ class BatchedBackend(Backend):
 
     def __init__(
         self,
-        batch_run_func: Callable[[List[Tuple[QuantumCircuit, int]]], List[Dict]],
+        batch_run_func: Callable[
+            [Sequence[tuple[QuantumCircuit, int]]], Sequence[Mapping]
+        ],
         name: str | None = None,
         options: Mapping | None = None,
     ):
@@ -264,7 +267,7 @@ class BatchedBackend(Backend):
         super().__init__(name=name, options=options)
         self.batch_run_func = batch_run_func
         # Pending jobs waiting to be dispatched.
-        self._pending: List[BatchedJob] = []
+        self._pending: list[BatchedJob] = []
         # Lock that protects _pending against concurrent modification.
         self._lock = threading.Lock()
 
@@ -356,7 +359,7 @@ class BatchedBackend(Backend):
         # Build the flat (circuit, shots) list expected by batch_run_func.
         # A single run() call may have submitted multiple circuits, so we
         # expand each job's circuit list individually.
-        flat_batch: List[Tuple[QuantumCircuit, int]] = []
+        flat_batch: list[tuple[QuantumCircuit, int]] = []
         for job in pending:
             for circuit in job._circuits:
                 flat_batch.append((circuit, job._shots))
