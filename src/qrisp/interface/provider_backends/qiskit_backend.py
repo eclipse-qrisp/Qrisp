@@ -1,93 +1,252 @@
-"""
-********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp Authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""This module defines :class:`QiskitBackend` and its associated :class:`QiskitJob`."""
+
+from __future__ import annotations
 
 import re
+from collections.abc import Mapping, Sequence
+from typing import cast
 
 from qiskit import QuantumCircuit, transpile
+from qiskit.providers import Backend as QiskitBackendBase
+from qiskit.providers import BackendV2
 
 from qrisp.interface.backend import Backend
+from qrisp.interface.job import Job, JobResult, JobStatus
 from qrisp.interface.virtual_backend import VirtualBackend
+
+
+def _map_qiskit_status(qiskit_job) -> JobStatus:
+    """Translate a Qiskit job's current status to the equivalent Qrisp JobStatus.
+
+    Qiskit's ``VALIDATING`` state has no direct Qrisp equivalent.
+    Therefore, it is mapped to ``QUEUED`` as the closest approximation.
+    """
+    try:
+        # qiskit-ibm-runtime jobs expose .status() directly
+        raw = qiskit_job.status()
+    except Exception:
+        return JobStatus.INITIALIZING
+
+    # status() may return a string (newer runtimes) or a JobStatus enum
+    name = raw.name if hasattr(raw, "name") else str(raw).upper()
+
+    mapping = {
+        "INITIALIZING": JobStatus.INITIALIZING,
+        "QUEUED": JobStatus.QUEUED,
+        "VALIDATING": JobStatus.QUEUED,  # no direct equivalent
+        "RUNNING": JobStatus.RUNNING,
+        "DONE": JobStatus.DONE,
+        "CANCELLED": JobStatus.CANCELLED,
+        "ERROR": JobStatus.ERROR,
+    }
+    return mapping.get(name, JobStatus.RUNNING)
+
+
+class QiskitJob(Job):
+    """
+    A :class:`~qrisp.interface.Job` that wraps a Qiskit ``SamplerV2`` job.
+
+    One ``QiskitJob`` is created per :meth:`QiskitBackend.run` call,
+    regardless of how many circuits were submitted.  Internally it holds
+    the underlying Qiskit job object and the number of circuits so it can
+    extract the right slice of results when :meth:`result` is called.
+
+    :meth:`result` blocks until the Qiskit job reaches a terminal state,
+    delegating the actual waiting to Qiskit's own ``job.result()`` call.
+    No Qrisp-level threading primitives are required here because Qiskit's
+    ``SamplerV2.run()`` is already asynchronous.
+    """
+
+    def __init__(
+        self,
+        backend: QiskitBackend,
+        qiskit_job,
+        num_circuits: int,
+    ):
+        """Initialise the wrapper with the Qrisp backend, the Qiskit job, and the circuit count."""
+        super().__init__(backend=backend)
+        self._qiskit_job = qiskit_job
+        self._num_circuits = num_circuits
+
+    # ------------------------------------------------------------------
+    # Abstract interface
+    # ------------------------------------------------------------------
+
+    def submit(self) -> None:
+        """No-op: the Qiskit job is submitted by the sampler inside QiskitBackend.run()."""
+
+    def result(self) -> JobResult:
+        """
+        Block until the Qiskit job finishes and return the :class:`~qrisp.interface.JobResult`.
+
+        Waiting is delegated to Qiskit's own blocking ``job.result()`` call,
+        so no additional synchronisation is needed on the Qrisp side.
+
+        Returns
+        -------
+        JobResult
+
+        Raises
+        ------
+        RuntimeError
+            If the Qiskit job failed or was cancelled.
+        """
+        if self.status() == JobStatus.CANCELLED:
+            raise RuntimeError("QiskitJob was cancelled.")
+
+        try:
+            qiskit_result = self._qiskit_job.result()
+        except Exception as exc:
+            raise RuntimeError(f"Qiskit job failed: {exc}") from exc
+
+        counts_list = []
+        for i in range(self._num_circuits):
+            counts_dict = {}
+            for reg_name in qiskit_result[i].data:
+                reg_data = getattr(qiskit_result[i].data, reg_name)
+                for key, val in reg_data.get_counts().items():
+                    clean_key = re.sub(r"\W", "", key)
+                    counts_dict[clean_key] = counts_dict.get(clean_key, 0) + val
+            counts_list.append(counts_dict)
+
+        return JobResult(counts_list)
+
+    def cancel(self) -> bool:
+        """
+        Attempt to cancel the underlying Qiskit job.
+
+        Returns
+        -------
+        bool
+            ``True`` if the cancellation request was accepted by Qiskit;
+            ``False`` if the job is already in a terminal state or the
+            backend does not support cancellation.
+        """
+        if self.in_final_state():
+            return False
+        try:
+            self._qiskit_job.cancel()
+            return True
+        except Exception:
+            return False
+
+    def status(self) -> JobStatus:
+        """Return the current :class:`~qrisp.interface.JobStatus` by querying the Qiskit job."""
+        return _map_qiskit_status(self._qiskit_job)
 
 
 class QiskitBackend(Backend):
     """
-    This class instantiates a :ref:`Backend` using a Qiskit backend.
+    A :class:`~qrisp.interface.Backend` that wraps a Qiskit backend.
 
-    This allows easy access to Qiskit backends through the qrisp interface.
+    This allows easy access to any Qiskit-compatible simulator or real
+    quantum hardware through the Qrisp backend interface.
+
+    Circuits are converted from Qrisp's internal representation to Qiskit
+    ``QuantumCircuit`` objects via OpenQASM 2, transpiled for the target
+    backend, and submitted through Qiskit's ``SamplerV2`` primitive.
+    A ``QiskitJob`` handle is returned immediately; call
+    :meth:`Job.result` to block and retrieve the :class:`~qrisp.interface.JobResult`.
 
     Parameters
     ----------
-
     backend : Qiskit backend object, optional
-        A Qiskit backend object, which runs QuantumCircuits. The default is
-        ``AerSimulator()``.
+        A Qiskit backend object that runs ``QuantumCircuit`` objects.
+        Defaults to ``AerSimulator()`` if not provided.
 
-    name : str, optional
-        A name for the backend. The default is None.
+    name : str or None, optional
+        A name for the backend.  Defaults to the Qiskit backend's own name.
 
-    options : dict, optional
-        Additional options for the backend. The default is None.
+    options : dict or None, optional
+        Runtime options.  Defaults to ``{"shots": 1024}``.
 
     Examples
     --------
 
-    We evaluate a :ref:`QuantumFloat` multiplication on the Aer simulator.
+    **Simulation on the Aer simulator**
 
-    >>> from qrisp import QuantumFloat
-    >>> from qrisp.interface import QiskitBackend
-    >>> from qiskit_aer import AerSimulator
-    >>> example_backend = QiskitBackend(backend = AerSimulator())
-    >>> qf = QuantumFloat(4)
-    >>> qf[:] = 3
-    >>> res = qf*qf
-    >>> res.get_measurement(backend = example_backend)
+    We start by creating a ``QiskitBackend`` wrapping the Qiskit Aer simulator,
+    and then measure a :ref:`QuantumFloat` multiplication:
+
+    .. code-block:: python
+
+        from qrisp import QuantumFloat
+        from qrisp.interface import QiskitBackend
+        from qiskit_aer import AerSimulator
+
+        qiskit_backend = QiskitBackend(backend=AerSimulator())
+
+        qf = QuantumFloat(4)
+        qf[:] = 3
+        res = qf * qf
+
+    When ``get_measurement`` is called, Qrisp compiles the computation into a
+    ``QuantumCircuit``, converts it to OpenQASM 2, rebuilds it as a Qiskit
+    ``QuantumCircuit``, transpiles it for the target backend, and submits it
+    through ``SamplerV2``. A ``QiskitJob`` is returned immediately, and
+    ``get_measurement`` then blocks on ``job.result()`` to retrieve the outcome:
+
+    >>> res.get_measurement(backend=qiskit_backend)
     {9: 1.0}
 
-    We evaluate a :ref:`QuantumFloat` multiplication on the FakeWashingtonV2 backend.
+    For local simulators the job is already ``DONE`` by the time ``run()``
+    returns. For remote hardware backends the job will initially be
+    ``QUEUED`` or ``RUNNING``, and ``result()`` will block until execution
+    completes on the device.
 
-    >>> from qrisp import QuantumFloat
-    >>> from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
-    >>> from qrisp.interface import QiskitBackend
-    >>> example_backend = QiskitBackend(backend = FakeWashingtonV2())
-    >>> qf = QuantumFloat(2)
-    >>> qf[:] = 2
-    >>> res = qf*qf
-    >>> res.get_measurement(backend = example_backend)
-    {4: 0.6962,
-    12: 0.0967,
-    0: 0.0607,
-    8: 0.0572,
-    6: 0.028,
-    2: 0.0128,
-    14: 0.0126,
-    5: 0.0103,
-    10: 0.0062,
-    3: 0.0057,
-    9: 0.0042,
-    13: 0.0037,
-    1: 0.0029,
-    7: 0.001,
-    15: 0.001,
-    11: 0.0008}
+    **Noisy simulation on a fake hardware backend**
 
+    The same interface works with Qiskit's fake hardware backends, which
+    model real device noise and connectivity constraints:
+
+
+    .. code-block:: python
+
+        from qrisp import QuantumFloat
+        from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
+        from qrisp.interface import QiskitBackend
+
+        qiskit_backend = QiskitBackend(backend=FakeWashingtonV2())
+
+        qf = QuantumFloat(2)
+        qf[:] = 2
+        res = qf * qf
+
+    Internally, ``run()`` transpiles the circuit to the device's native gate
+    set and qubit connectivity before submission, so the results reflect
+    realistic noise characteristics:
+
+    >>> res.get_measurement(backend=qiskit_backend)
+    {4: 0.6962, ...}   # Note: actual counts may vary due to noise and randomness
+
+    The result is no longer a sharp peak at ``{4: 1.0}`` because the noise
+    model introduces gate errors and readout errors, spreading probability
+    mass across neighbouring bitstrings.
     """
 
-    def __init__(self, backend=None, name=None, options=None):
+    def __init__(
+        self,
+        backend: QiskitBackendBase | None = None,
+        name: str | None = None,
+        options: Mapping | None = None,
+    ):
+        """Initialise the QiskitBackend, defaulting to AerSimulator if no backend is provided."""
         if backend is None:
             try:
                 from qiskit_aer import AerSimulator
@@ -95,7 +254,8 @@ class QiskitBackend(Backend):
                 backend = AerSimulator()
             except ImportError as exc:
                 raise ImportError(
-                    "Encountered ImportError when trying to import AerSimulator."
+                    "Encountered ImportError when trying to import AerSimulator. "
+                    "Install it with: pip install qiskit-aer"
                 ) from exc
 
         self.backend = backend
@@ -104,14 +264,15 @@ class QiskitBackend(Backend):
             from qiskit_ibm_runtime import SamplerV2
         except ImportError as exc:
             raise ImportError(
-                "Please install qiskit-ibm-runtime to use the QiskitBackend. You can do this by running `pip install qiskit-ibm-runtime`."
+                "Please install qiskit-ibm-runtime to use QiskitBackend: "
+                "pip install qiskit-ibm-runtime"
             ) from exc
-        self.sampler = SamplerV2(backend)
 
-        # If not specified, we use the Qiskit backend metadata
+        self.sampler = SamplerV2(cast(BackendV2, backend))
+
+        # Fall back to the Qiskit backend's own name/options when not provided.
         if name is None:
             name = getattr(backend, "name", None)
-
         if options is None:
             options = getattr(backend, "options", None)
 
@@ -119,50 +280,60 @@ class QiskitBackend(Backend):
 
     @classmethod
     def _default_options(cls):
+        """Return the default runtime options (shots=1024)."""
         return {"shots": 1024}
 
-    def run(self, circuit, shots: int | None = None):
+    def run(
+        self,
+        circuits: QuantumCircuit | Sequence[QuantumCircuit],
+        shots: int | None = None,
+    ) -> QiskitJob:
         """
-        Execute QASM code on a Qiskit backend using SamplerV2.
+        Transpile and submit one or more circuits to the Qiskit backend.
+
+        This method returns a :class:`QiskitJob` immediately.  Call
+        :meth:`Job.result` on the returned object to block and retrieve
+        the :class:`~qrisp.interface.JobResult`.
 
         Parameters
         ----------
-        circuit : QuantumCircuit
-            Qiskit QuantumCircuit object
+        circuits : QuantumCircuit or Sequence[QuantumCircuit]
+            One Qrisp circuit or a sequence of Qrisp circuits to execute.
 
-        **kwargs :
-            Additional keyword arguments.
+        shots : int or None, optional
+            Number of shots.  If ``None``, the backend's ``shots`` option is used.
 
         Returns
         -------
-        dict
-            Measurement results (bitstring → counts)
+        QiskitJob
         """
 
-        qasm_str = circuit.qasm()
-        shots = shots if shots is not None else self.options.get("shots", 1024)
+        circuits = [circuits] if not isinstance(circuits, Sequence) else circuits
+        n_shots = shots if shots is not None else self._options.get("shots", 1024)
 
-        qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
+        # Convert each Qrisp circuit to a Qiskit QuantumCircuit via OpenQASM 2,
+        # then rebuild with integer-indexed qubits and transpile for the target backend.
+        qiskit_circuits = []
+        for circuit in circuits:
+            qasm_str = circuit.qasm()
+            qc = QuantumCircuit.from_qasm_str(qasm_str)
 
-        new_qc = QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
-        for instr in qiskit_qc:
-            new_qc.append(
-                instr.operation,
-                [qiskit_qc.qubits.index(qb) for qb in instr.qubits],
-                [qiskit_qc.clbits.index(cb) for cb in instr.clbits],
-            )
+            # Rebuild with plain integer indices to avoid register-name mismatches.
+            new_qc = QuantumCircuit(len(qc.qubits), len(qc.clbits))
+            for instr in qc:
+                new_qc.append(
+                    instr.operation,
+                    [qc.qubits.index(qb) for qb in instr.qubits],
+                    [qc.clbits.index(cb) for cb in instr.clbits],
+                )
 
-        new_qc = transpile(new_qc, backend=self.backend)
+            qiskit_circuits.append(transpile(new_qc, backend=self.backend))
 
-        job = self.sampler.run([new_qc], shots=shots)
-        qiskit_counts = job.result()[0].data.c.get_counts()
-
-        result = {}
-        for key, value in qiskit_counts.items():
-            cleaned = re.sub(r"\W", "", key)
-            result[cleaned] = value
-
-        return result
+        # Submit all circuits in a single SamplerV2 call and wrap the result.
+        qiskit_job = self.sampler.run(qiskit_circuits, shots=n_shots)
+        job = QiskitJob(backend=self, qiskit_job=qiskit_job, num_circuits=len(circuits))
+        job.submit()
+        return job
 
 
 class QiskitRuntimeBackend(VirtualBackend):
@@ -171,6 +342,12 @@ class QiskitRuntimeBackend(VirtualBackend):
     This allows easy access to Qiskit Runtime backends through the qrisp interface.
     It is imporant to close the session after the execution of the algorithm
     (as reported in the example below).
+
+    .. warning::
+
+        This Backend has not been migrated to the new Backend API yet, and is not guaranteed to
+        work with the latest versions of Qiskit Runtime and qrisp.
+        Use with caution and refer to the documentation for the latest updates.
 
     Parameters
     ----------

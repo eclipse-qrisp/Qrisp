@@ -33,6 +33,10 @@ class VirtualBackend(BackendClient):
     The function that should be used to run a circuit can be specified during
     construction using the ``run_func`` parameter.
 
+    .. warning::
+
+        This Backend is not compatible with the new Backend API and is deprecated.
+        Please use the :ref:`Backend` abstract class to implement custom backends instead.
 
     Parameters
     ----------

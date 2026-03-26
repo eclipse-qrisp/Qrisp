@@ -38,6 +38,12 @@ class BackendClient:
     """
     This object allows connecting to Qunicorn backend servers.
 
+    .. warning::
+
+        This Backend is not compatible with the new Backend API and is deprecated.
+        Please use the :ref:`Backend` abstract class to implement custom backends instead.
+
+
     Parameters
     ----------
     socket_ip : string

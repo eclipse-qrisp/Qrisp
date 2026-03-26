@@ -1,77 +1,152 @@
-"""
-********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp Authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests for QiskitBackend and QiskitJob."""
 
 import numpy as np
+import pytest
 from qiskit_aer import AerSimulator
 from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
 
 from qrisp import QuantumCircuit, QuantumFloat
 from qrisp.interface import QiskitBackend, VirtualBackend
+from qrisp.interface.job import JobResult, JobStatus
+from qrisp.interface.provider_backends.qiskit_backend import QiskitJob
 
-aer_simulator_backend = AerSimulator()
+aer_backend = AerSimulator()
 fake_backend = FakeWashingtonV2()
 
 
-class TestQiskitBackend:
-    """Test QiskitBackend functionality."""
+class TestQiskitBackendConstruction:
+    """Tests for QiskitBackend construction and metadata."""
 
-    def test_backend_metadata(self):
-        """Test that QiskitBackend correctly retrieves metadata from the Qiskit backend."""
+    def test_name_taken_from_qiskit_backend(self):
+        """Ensure the backend name matches the wrapped Qiskit backend's name."""
+        backend = QiskitBackend(backend=aer_backend)
+        assert backend.name == aer_backend.name
 
-        backend = QiskitBackend(backend=aer_simulator_backend)
+    def test_options_taken_from_qiskit_backend(self):
+        """Ensure options are initialised from the wrapped Qiskit backend."""
+        backend = QiskitBackend(backend=aer_backend)
+        for key in aer_backend.options:
+            assert backend.options[key] == aer_backend.options[key]
 
-        assert backend.name == aer_simulator_backend.name
+    def test_default_backend_is_aer_simulator(self):
+        """Ensure that omitting the backend argument falls back to AerSimulator."""
+        backend = QiskitBackend()
+        assert backend is not None
+        assert "aer" in backend.name.lower()
 
-        for key in aer_simulator_backend.options:
-            assert backend.options[key] == aer_simulator_backend.options[key]
+    def test_update_options_shots(self):
+        """Ensure update_options correctly updates the shots value."""
+        backend = QiskitBackend(backend=aer_backend)
+        backend.update_options(shots=2048)
+        assert backend.options["shots"] == 2048
 
-    def test_update_options(self):
-        """Test updating options on QiskitBackend."""
+    def test_update_options_invalid_key_raises(self):
+        """Ensure update_options raises AttributeError for unknown keys."""
+        backend = QiskitBackend(backend=aer_backend)
+        with pytest.raises(AttributeError):
+            backend.update_options(nonexistent_option=42)
 
-        backend = QiskitBackend(backend=aer_simulator_backend)
-        opts = {"shots": 12345}
-        backend.update_options(**opts)
 
-        assert backend.options["shots"] == 12345
+class TestQiskitJobInterface:
+    """Tests that run() returns a proper QiskitJob and that the Job interface works."""
 
-        for key in aer_simulator_backend.options:
-            if key != "shots":
-                assert backend.options[key] == aer_simulator_backend.options[key]
+    def test_run_returns_qiskit_job(self):
+        """Ensure run() returns a QiskitJob instance, not a raw dict."""
+        backend = QiskitBackend(backend=aer_backend)
+        qf = QuantumFloat(2)
+        qf[:] = 1
+        qc = qf.qs.compile()
+        job = backend.run(qc, shots=256)
+        assert isinstance(job, QiskitJob)
 
-    def test_qiskit_aer_backend(self):
-        """Test QiskitBackend with Qiskit Aer simulator."""
+    def test_job_result_returns_job_result_instance(self):
+        """Ensure job.result() returns a JobResult object."""
+        backend = QiskitBackend(backend=aer_backend)
+        qf = QuantumFloat(2)
+        qf[:] = 1
+        qc = qf.qs.compile()
+        job = backend.run(qc, shots=256)
+        result = job.result()
+        assert isinstance(result, JobResult)
 
-        backend = QiskitBackend(backend=aer_simulator_backend)
+    def test_job_status_is_done_after_result(self):
+        """Ensure the job status is DONE after result() has been called."""
+        backend = QiskitBackend(backend=aer_backend)
+        qf = QuantumFloat(2)
+        qf[:] = 1
+        qc = qf.qs.compile()
+        job = backend.run(qc, shots=256)
+        job.result()
+        assert job.status() == JobStatus.DONE
+
+    def test_job_done_and_in_final_state_after_result(self):
+        """Ensure done() and in_final_state() are both True after result() returns."""
+        backend = QiskitBackend(backend=aer_backend)
+        qf = QuantumFloat(2)
+        qf[:] = 1
+        qc = qf.qs.compile()
+        job = backend.run(qc, shots=256)
+        job.result()
+        assert job.done() is True
+        assert job.in_final_state() is True
+
+    def test_cancel_on_finished_job_returns_false(self):
+        """Ensure cancel() returns False on a job that has already completed."""
+        backend = QiskitBackend(backend=aer_backend)
+        qf = QuantumFloat(2)
+        qf[:] = 1
+        qc = qf.qs.compile()
+        job = backend.run(qc, shots=256)
+        job.result()
+        assert job.cancel() is False
+
+
+class TestQiskitBackendExecution:
+    """Integration tests for circuit execution via QiskitBackend."""
+
+    def test_aer_simulator_exact_result(self):
+        """Verify that a deterministic computation yields the exact expected result."""
+        backend = QiskitBackend(backend=aer_backend)
         qf = QuantumFloat(4)
         qf[:] = 3
         res = qf * qf
-        meas_res = res.get_measurement(backend=backend)
-        assert meas_res == {9: 1.0}
+        assert res.get_measurement(backend=backend) == {9: 1.0}
 
-    def test_qiskit_fake_backend(self):
-        """Test QiskitBackend with Qiskit FakeWashingtonV2 backend."""
-
+    def test_fake_backend_dominant_result_is_correct(self):
+        """Verify that the most probable outcome is correct even under device noise."""
         backend = QiskitBackend(backend=fake_backend)
         qf = QuantumFloat(2)
         qf[:] = 2
         res = qf * qf
         meas_res = res.get_measurement(backend=backend)
+        # The correct answer (4) must be the dominant outcome despite noise.
         assert meas_res[4] > 0.5
+
+    def test_fake_backend_result_has_noise(self):
+        """Verify that a fake hardware backend produces a noisy (non-sharp) distribution."""
+        backend = QiskitBackend(backend=fake_backend)
+        qf = QuantumFloat(2)
+        qf[:] = 2
+        res = qf * qf
+        meas_res = res.get_measurement(backend=backend)
+        # A noiseless result would have exactly one key; noise spreads mass across others.
+        assert len(meas_res) > 1
 
 
 # We keep this test even though VirtualBackend is deprecated
