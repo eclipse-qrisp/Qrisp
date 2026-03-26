@@ -84,7 +84,10 @@ def test_block_encoding_from_eye():
         return operand1, operand2
 
     res_dict = main()
-    assert res_dict == {(0.0, 4.0): 0.25, (1.0, 5.0): 0.25, (2.0, 6.0): 0.25, (3.0, 7.0): 0.25}
+    assert res_dict == pytest.approx({
+        (0.0, 4.0): 0.25, (1.0, 5.0): 0.25, 
+        (2.0, 6.0): 0.25, (3.0, 7.0): 0.25
+    })
 
 
 def test_block_encoding_from_projector():
