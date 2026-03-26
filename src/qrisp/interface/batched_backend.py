@@ -23,9 +23,9 @@ from __future__ import annotations
 
 import threading
 import time
+from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Mapping, cast
 
-from collections.abc import Mapping, Sequence, Callable
 from qrisp.interface.backend import Backend
 from qrisp.interface.job import Job, JobResult, JobStatus
 
@@ -42,15 +42,13 @@ class BatchedJob(Job):
     ``QUEUED`` state until ``BatchedBackend.dispatch`` is called, at
     which point all pending jobs are resolved atomically.
 
-    Callers block in ``result`` via a ``threading.Event`` that is
-    set by the backend exactly once — when the batch result for this job
-    becomes available.  This replaces the polling loop used in the original
-    implementation and avoids the shared ``results_available`` flag that
-    required all threads to unblock simultaneously and race to read from a
-    shared dictionary.
+    Callers block in ``result`` via a private ``threading.Event`` that is
+    set by the backend when the batch result for this job becomes available.
     """
 
-    def __init__(self, backend: BatchedBackend, circuits, shots: int):
+    def __init__(
+        self, backend: BatchedBackend, circuits: Sequence[QuantumCircuit], shots: int
+    ):
         """Initialise the job with the backend, normalised circuit list, and shot count."""
         super().__init__(backend=backend)
         self._circuits = circuits
@@ -178,7 +176,7 @@ class BatchedBackend(Backend):
     We first define a simple batch_run_func that simulates the execution of a batch of circuits.
     Then, we provide it to BatchedBackend:
 
-    ::
+    .. code-block:: python
 
         from qrisp import *
         from qrisp.interface.batched_backend import BatchedBackend
@@ -199,7 +197,7 @@ class BatchedBackend(Backend):
 
     In this example, we create two threads that each measure a single QuantumFloat.
 
-    ::
+    .. code-block:: python
 
         import threading
 
@@ -290,7 +288,7 @@ class BatchedBackend(Backend):
 
         Parameters
         ----------
-        circuits : QuantumCircuit or list[QuantumCircuit]
+        circuits : QuantumCircuit or Sequence[QuantumCircuit]
             One circuit or a list of circuits to include in the batch.
 
         shots : int or None
@@ -301,7 +299,7 @@ class BatchedBackend(Backend):
         BatchedJob
         """
 
-        circuits = [circuits] if not isinstance(circuits, list) else circuits
+        circuits = [circuits] if not isinstance(circuits, Sequence) else circuits
         n_shots = shots if shots is not None else self._options["shots"]
 
         job = BatchedJob(backend=self, circuits=circuits, shots=n_shots)
