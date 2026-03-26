@@ -133,9 +133,15 @@ class BatchedBackend(Backend):
 
     Many physical backends have high per-call overhead from network latency,
     authentication, and compilation.  This overhead is typically amortised by
-    submitting several circuits together.  ``BatchedBackend`` bridges the gap
+    submitting several circuits together. ``BatchedBackend`` bridges the gap
     between Qrisp's per-variable programming model and this batched execution
     pattern.
+
+    In other words, this Backend does not parallelize the execution of circuits
+    within ``batch_run_func``. What it parallelizes is the preparation phase:
+    multiple threads can each be building Qrisp state, compiling circuits,
+    and doing post-processing concurrently. The benefit of batching is not circuit-level
+    parallelism but rather reduced overhead.
 
     **How it works**
 
@@ -173,8 +179,9 @@ class BatchedBackend(Backend):
     Examples
     --------
 
-    We first define a simple batch_run_func that simulates the execution of a batch of circuits.
-    Then, we provide it to BatchedBackend:
+    We first define a simple ``batch_run_func`` that simulates the execution of a batch of circuits.
+    Then, we provide it to :class:`BatchedBackend` and demonstrate how to use the backend in both multithreaded
+    and single-threaded contexts.
 
     .. code-block:: python
 
@@ -215,10 +222,8 @@ class BatchedBackend(Backend):
 
         results = []
 
-
         def eval_measurement(qv):
             results.append(qv.get_measurement(backend=batched_backend))
-
 
         thread_0 = threading.Thread(target=eval_measurement, args=(c,))
         thread_1 = threading.Thread(target=eval_measurement, args=(f,))
@@ -226,12 +231,17 @@ class BatchedBackend(Backend):
         thread_0.start()
         thread_1.start()
 
-        # Dispatch once both threads have queued their circuits.
+        # At this point, both threads have been started. They will each call get_measurement,
+        # which internally calls run() and registers their circuits as BatchedJobs
+        # in the backend's pending queue, where each BatchedJob is in QUEUED state.
+        # Each thread then blocks waiting for its result.
+
+        # Now we call dispatch to execute the batch of pending jobs.
+        # This will unblock both threads and deliver their results once the batch_run_func completes.
         batched_backend.dispatch(min_calls=2)
 
         thread_0.join()
         thread_1.join()
-        print(results)
 
 
     Each thread calls ``get_measurement`` with the ``batched_backend``,
@@ -241,6 +251,11 @@ class BatchedBackend(Backend):
     When the main thread calls ``dispatch``, the batch of pending jobs is executed,
     and each job's result is resolved and delivered to the waiting threads.
 
+    We can check the results:
+
+    >>> results
+    [{3: 1.0}, {5: 1.0}]
+
     This workflow is also automated by :func:`qrisp.batched_measurement`:
 
     >>> batched_measurement([c, f], backend=batched_backend)
@@ -249,7 +264,29 @@ class BatchedBackend(Backend):
 
     **Single-threaded Example**
 
-    TODO
+    In this example, we call ``run`` directly from the main thread.
+    This will automatically trigger a dispatch without needing to call it manually.
+
+    .. code-block:: python
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.measure([0, 1])
+
+        # When run() is called from the main thread, it will automatically dispatch
+        # the batch of pending jobs, so we don't need to call dispatch() manually here.
+        batched_job = batched_backend.run(qc, shots=1024)
+
+        job_result = batched_job.result()
+
+    We can check the status of the job and its results:
+
+    >>> batched_job.status()
+    JobStatus.DONE
+
+    >>> job_result.get_counts(0)
+    {'00': 553, '11': 471}
 
     """
 
@@ -276,7 +313,7 @@ class BatchedBackend(Backend):
 
     def run(self, circuits, shots: int | None = None) -> BatchedJob:
         """
-        Register one or more circuits in the batch and return a :class:`BatchedJob`.
+        Register one or more circuits in the batch and return a ``BatchedJob``.
 
         This method returns immediately.  The job stays in ``QUEUED`` state
         until :meth:`dispatch` resolves it.  Call :meth:`Job.result` on the
@@ -318,7 +355,7 @@ class BatchedBackend(Backend):
 
     def dispatch(self, min_calls: int = 0) -> None:
         """
-        Execute all pending batch jobs and resolve their :class:`BatchedJob` objects.
+        Execute all pending batch jobs and resolve their ``BatchedJob`` objects.
 
         This method may be called from any thread.  It waits until at least
         ``min_calls`` jobs are queued before proceeding, which is useful when
@@ -338,6 +375,7 @@ class BatchedBackend(Backend):
         re-assembled into :class:`JobResult` objects and delivered to each
         ``BatchedJob`` via its private ``threading.Event``.
         """
+
         # Wait until the required number of jobs has accumulated.
         while True:
             with self._lock:
@@ -363,6 +401,7 @@ class BatchedBackend(Backend):
                 flat_batch.append((circuit, job._shots))
 
         try:
+
             flat_results = self.batch_run_func(flat_batch)
 
             # NOTE: It might be worth validating the results here,
