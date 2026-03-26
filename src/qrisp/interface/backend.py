@@ -56,18 +56,9 @@ class Backend(ABC):
     .. rubric:: Execution model
 
     :meth:`run` accepts a single circuit *or* a sequence of circuits and always
-    returns a (subclass of) :class:`Job` immediately.
+    returns a :class:`Job` instance immediately.
     This follows the *Future* pattern: execution happens independently of the caller,
     and the caller decides *when* to block by calling :meth:`Job.result <qrisp.interface.Job.result>`.
-    This design supports:
-
-    * **Synchronous simulators**: the job is already done when returned.
-    * **Asynchronous hardware backends**: the job is polled or awaited in
-      a background process.
-    * **Batch execution**: the backend decides internally whether to run
-      circuits sequentially or in parallel. That is, the caller does not need to
-      manage circuit grouping or batching. Hardware backends may impose a limit
-      on how many circuits a single job may contain. This is a backend-defined constraint.
 
     .. rubric:: Runtime options
 
@@ -75,17 +66,13 @@ class Backend(ABC):
     number of shots). These can be provided:
 
     * by overriding :meth:`_default_options` at class level, or
-    * by passing a custom ``options`` mapping to the constructor.
+    * by passing a custom ``options`` mapping to :meth:`__init__`.
 
     The number of shots may also be overridden per-execution by passing
     the ``shots`` argument to :meth:`run`. It is treated as a conventional
     execution parameter for gate-based, shot-based backends, and may be
     ignored by backends for which it is not meaningful.
 
-    The ``options`` argument does not need to be a dict. Any object satisfying
-    the ``collections.abc.Mapping`` interface is accepted. This allows
-    interoperability with external frameworks such as Qiskit, which define
-    their own structured ``Options`` classes.
 
     Options are updated through :meth:`update_options`, but only keys that
     were present at initialisation may be modified.
@@ -99,7 +86,7 @@ class Backend(ABC):
     * number of qubits,
     * connectivity information,
     * supported native gates,
-    * error rates or calibration data.
+    * gate errors or calibration data.
 
     These properties are intentionally left loosely typed at the base-class
     level. Their purpose is to *signal the presence of a capability*, not to
@@ -161,7 +148,7 @@ class Backend(ABC):
         # We make a shallow copy to prevent external mutations from affecting the backend's internal state.
         # Furthermore, we convert to a dict to ensure that a `__setitem__`-capable mapping is stored,
         # which is required for `update_options`.
-        self._options = dict(copy(options))
+        self._options = dict(options)
 
         self.metadata = kwargs
 
@@ -276,7 +263,7 @@ class Backend(ABC):
         return None
 
     @property
-    def backend_info(self):
+    def backend_info(self) -> dict[str, Any]:
         """
         General information about the backend.
 

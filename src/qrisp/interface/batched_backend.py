@@ -49,7 +49,7 @@ class BatchedJob(Job):
     shared dictionary.
     """
 
-    def __init__(self, backend: "BatchedBackend", circuits, shots: int):
+    def __init__(self, backend: BatchedBackend, circuits, shots: int):
         """Initialise the job with the backend, normalised circuit list, and shot count."""
         super().__init__(backend=backend)
         self._circuits = circuits

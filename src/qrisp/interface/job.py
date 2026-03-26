@@ -15,7 +15,7 @@
 # ********************************************************************************
 
 """
-This module defines the abstract :class:`Job` interface and related types for representing and managing backend executions.
+Abstract :class:`Job` interface and related types for representing and managing backend executions.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from .backend import Backend
 
 
-class JobStatus(Enum):
+class JobStatus(StrEnum):
     """
     Enumeration of possible lifecycle states for a :class:`Job`.
 
@@ -212,14 +212,6 @@ class Job(ABC):
     two abstract hierarchies (submission interface and execution handle)
     can be varied and extended independently.
 
-    .. rubric:: Subclassing
-
-    Concrete subclasses must implement the following methods:
-
-    * :meth:`submit`: trigger the actual execution.
-    * :meth:`result`: block (or await) until the result is available.
-    * :meth:`cancel`: attempt to cancel the job.
-    * :meth:`status`: return the current :class:`JobStatus`.
 
     Parameters
     ----------
@@ -293,6 +285,7 @@ class Job(ABC):
         Returns
         -------
         bool
+            True iff the job was successfully cancelled.
 
         """
 
