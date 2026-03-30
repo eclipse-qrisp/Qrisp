@@ -29,6 +29,7 @@ from qrisp.jasp.interpreter_tools import (
     eval_jaxpr,
     make_profiling_eqn_evaluator,
 )
+from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     get_quantum_operations,
 )
@@ -257,7 +258,8 @@ def get_count_ops_profiler(
         profiling_dic["measure"] = -1
 
     count_ops_metric = CountOpsMetric(meas_behavior, profiling_dic)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(count_ops_metric)
+    _, call_graph_stats = analyze_call_graph(jaspr)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(count_ops_metric, call_graph_stats)
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def count_ops_profiler(*args):

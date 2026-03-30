@@ -29,6 +29,7 @@ from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
     eval_jaxpr,
     make_profiling_eqn_evaluator,
 )
+from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
 from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.jasp.primitives import (
     AbstractQubitArray,
@@ -303,7 +304,8 @@ def get_num_qubits_profiler(
     """
 
     num_qubits_metric = NumQubitsMetric(meas_behavior, max_allocations)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(num_qubits_metric)
+    _, call_graph_stats = analyze_call_graph(jaspr)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(num_qubits_metric, call_graph_stats)
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def num_qubits_profiler(*args):
