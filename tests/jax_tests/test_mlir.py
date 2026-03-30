@@ -418,3 +418,64 @@ def test_mlir_array_operations():
     assert "jasp.slice" in mlir_str or "jasp.get_qubit" in mlir_str, "Should contain array access operations"
     assert "jasp.quantum_gate" in mlir_str or "jasp.gate" in mlir_str, "Should contain quantum gates"
     
+
+def test_mlir_jasp_dialect_registration():
+    """
+    Test that the JASP dialect is properly registered in xDSL.
+
+    When the dialect is registered, types and op names are printed without
+    surrounding quotes.  An unregistered op would appear as::
+
+        "jasp.create_qubits"(...)
+
+    A registered op appears as::
+
+        jasp.create_qubits ...
+
+    Same rule applies to types: ``!jasp.QuantumState`` vs
+    ``!"jasp.QuantumState"``.
+    """
+    from qrisp import QuantumFloat, QuantumVariable, cx, h, measure, x
+    from qrisp.jasp import make_jaspr
+
+    def main():
+        qv = QuantumVariable(3)
+        qf = QuantumFloat(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        x(qf[0])
+        result = measure(qv[0])
+        return result
+
+    jaspr = make_jaspr(main)()
+    xdsl_module = jaspr.to_mlir()
+    mlir_str = str(xdsl_module)
+
+    # Types must appear without quotes
+    assert (
+        '!"jasp.QuantumState"' not in mlir_str
+    ), "QuantumState type is unregistered (printed with quotes)"
+    assert (
+        '!"jasp.QubitArray"' not in mlir_str
+    ), "QubitArray type is unregistered (printed with quotes)"
+    assert (
+        '!"jasp.Qubit"' not in mlir_str
+    ), "Qubit type is unregistered (printed with quotes)"
+    assert (
+        "!jasp.QuantumState" in mlir_str
+    ), "QuantumState type not found in MLIR output"
+
+    # Op names must appear without quotes
+    assert (
+        '"jasp.create_qubits"' not in mlir_str
+    ), "create_qubits op is unregistered (printed with quotes)"
+    assert (
+        '"jasp.quantum_gate"' not in mlir_str
+    ), "quantum_gate op is unregistered (printed with quotes)"
+    assert (
+        '"jasp.measure"' not in mlir_str
+    ), "measure op is unregistered (printed with quotes)"
+
+    assert "jasp.create_qubits" in mlir_str, "create_qubits op not found in MLIR output"
+    assert "jasp.quantum_gate" in mlir_str, "quantum_gate op not found in MLIR output"
+    assert "jasp.measure" in mlir_str, "measure op not found in MLIR output"

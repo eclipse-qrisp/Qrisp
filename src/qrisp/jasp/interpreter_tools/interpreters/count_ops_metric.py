@@ -18,7 +18,7 @@
 
 import types
 from functools import lru_cache
-from typing import Callable, Tuple
+from typing import Callable, Dict, List, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -44,7 +44,7 @@ class CountOpsMetric(BaseMetric):
 
     Parameters
     ----------
-    profiling_dic : dict
+    profiling_dic : Dict[str, int]
         A dictionary mapping quantum operation names to their profiling indices.
 
     meas_behavior : Callable
@@ -52,10 +52,45 @@ class CountOpsMetric(BaseMetric):
 
     """
 
-    def __init__(self, profiling_dic: dict, meas_behavior: Callable):
+    def __init__(self, meas_behavior: Callable, profiling_dic: Dict[str, int]) -> None:
         """Initialize the CountOpsMetric."""
 
-        super().__init__(meas_behavior=meas_behavior, profiling_dic=profiling_dic)
+        super().__init__(meas_behavior=meas_behavior)
+
+        self._profiling_dic: Dict[str, int] = profiling_dic
+
+    @property
+    def profiling_dic(self) -> Dict[str, int]:
+        return self._profiling_dic
+
+    @classmethod
+    def from_cache_key(cls, cache_key) -> "CountOpsMetric":
+        zipped_profiling_dic, meas_behavior = cache_key
+        profiling_dic = dict(zipped_profiling_dic)
+        return cls(meas_behavior, profiling_dic)
+
+    def cache_key(self) -> Tuple[Tuple, Callable]:
+        return (tuple(self.profiling_dic.items()), self.meas_behavior)
+
+    def initial_metric(self) -> Tuple[List[int], List[int]]:
+
+        # The XLA compiler showed some scalability problems in compile time.
+        # Through a process involving a lot of blood and sweat
+        # we reverse engineered what to do to improve these problems
+        # 1. represent the integers that count the gates as a list
+        # of integers (instead of an array)
+        # 2. Avoid telling the compiler that it is constants that
+        # are being added. To do this, we supply a list of the first
+        # few integers as arguments, which will be used to do the
+        # incrementation (i.e. CZ_count += 1). It therefore doesn't
+        # look like a constant is being added but a variable
+        initial_metric_value = ([0] * len(self.profiling_dic), list(range(1, 6)))
+
+        return initial_metric_value
+
+    ##############################################################
+    ### Quantum primitive handlers
+    ##############################################################
 
     def handle_measure(self, invalues, eqn, context_dic):
 
@@ -63,9 +98,6 @@ class CountOpsMetric(BaseMetric):
         counting_array = list(invalues[-1][0])
         incrementation_constants = invalues[-1][1]
 
-        # If I understand correctly the logic here,
-        # `meas_number` is the current count of measurements performed so far.
-        # It’s also the next available measurement id (offset) for key generation.
         meas_number = counting_array[counting_index]
 
         if isinstance(eqn.invars[0].aval, AbstractQubitArray):
@@ -76,13 +108,13 @@ class CountOpsMetric(BaseMetric):
             meas_res = jax.lax.fori_loop(0, invalues[0], body_fun, jnp.int64(0))
             counting_array[counting_index] += invalues[0]
 
-        else:  # measuring a single qubit
+        else:
 
             meas_res = self.meas_behavior(key(meas_number))
             self._validate_measurement_result(meas_res)
             counting_array[counting_index] += incrementation_constants[0]
 
-        return [meas_res, (counting_array, incrementation_constants)]
+        return (meas_res, (counting_array, incrementation_constants))
 
     # Since we don't need to track to which qubits a certain operation
     # is applied, we can implement a really simple behavior for most
@@ -170,7 +202,6 @@ class CountOpsMetric(BaseMetric):
         return invalues[-1]
 
     def handle_parity(self, invalues, eqn, context_dic):
-        """Handle the `jasp.parity` primitive"""
 
         # Parity is a classical operation on measurement results
         # Compute XOR and handle expectation
@@ -225,7 +256,7 @@ def get_count_ops_profiler(
     if "measure" not in profiling_dic:
         profiling_dic["measure"] = -1
 
-    count_ops_metric = CountOpsMetric(profiling_dic, meas_behavior)
+    count_ops_metric = CountOpsMetric(meas_behavior, profiling_dic)
     profiling_eqn_evaluator = make_profiling_eqn_evaluator(count_ops_metric)
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
@@ -237,20 +268,10 @@ def get_count_ops_profiler(
 
         STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
 
-        # The XLA compiler showed some scalability problems in compile time.
-        # Through a process involving a lot of blood and sweat
-        # we reverse engineered what to do to improve these problems
-        # 1. represent the integers that count the gates as a list
-        # of integers (instead of an array)
-        # 2. Avoid telling the compiler that it is constants that
-        # are being added. To do this, we supply a list of the first
-        # few integers as arguments, which will be used to do the
-        # incrementation (i.e. CZ_count += 1). It therefore doesn't
-        # look like a constant is being added but a variable
-        initial_metric_value = ([0] * len(profiling_dic), list(range(1, 6)))
+        initial_metric = count_ops_metric.initial_metric()
 
         filtered_args = [
-            x for x in args + (initial_metric_value,) if type(x) not in STATIC_TYPES
+            x for x in args + (initial_metric,) if type(x) not in STATIC_TYPES
         ]
 
         return jitted_evaluator(*filtered_args)

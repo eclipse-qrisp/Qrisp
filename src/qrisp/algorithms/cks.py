@@ -17,7 +17,6 @@
 """
 
 import numpy as np
-from scipy.special import comb
 import jax.numpy as jnp
 from qrisp import (
     QuantumVariable,
@@ -118,15 +117,25 @@ def cks_coeffs(j0: int, b: int) -> npt.NDArray[float]:
         corresponding to the odd degree Chebyshev polynomials of the first kind :math:`T_1, T_3, \\dotsc, T_{2j_0+1}`.
 
     """
-    coeffs = []
-    for j in range(j0 + 1):
-        sum_i = 0
-        for i in range(j + 1, b + 1):
-            sum_i += comb(2 * b, b + i)
+    from scipy.stats import binom
+    # Computes CKS coefficients using the Binomial Survival Function 
+    # to guarantee numerical stability for very large parameters.
+    # Original formula (https://arxiv.org/pdf/1511.02306, Lemma 19): 
+    # c_j = 4 * (2 ** (-2 * b)) * sum_{i=j+1}^{b} comb(2 * b, b + i)
+    # comb(2b, k) * (0.5 ** (2 * b)) is the probability mass function for a 
+    # Binomial distribution: X ~ Binomial(2b, 0.5)
+    # The sum is calculating the probability that X >= b + j + 1.
+    # The sum of the "upper tail" of the distribution is evaluated by
+    # the Binomial Survival Function.
 
-        coeff = 4 * (2 ** (-2 * b)) * sum_i
-        coeffs.append(coeff)
-    return np.array(coeffs)
+    # Create an array of all j values from 0 to j0.
+    j_values = np.arange(j0 + 1)
+    
+    # binom.sf(k, n, p) calculates P(X > k) for X ~ Binomial(n, p).
+    # We want P(X >= b + j + 1), which is identical to P(X > b + j).
+    coeffs = 4 * binom.sf(b + j_values, 2 * b, 0.5)
+    
+    return coeffs
 
 
 def _unary_angles(coeffs: "ArrayLike") -> "ArrayLike":

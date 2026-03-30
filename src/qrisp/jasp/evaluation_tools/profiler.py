@@ -87,7 +87,7 @@ METRIC_DISPATCH = {
 }
 
 
-def _normalize_meas_behavior(meas_behavior) -> Callable:
+def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
     """Normalize the measurement behavior into a callable."""
 
     if isinstance(meas_behavior, str):
@@ -393,9 +393,10 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
 
         -   The memory management operations ``reset`` and ``delete`` are currently ignored.
             Qubits freed by these calls still count toward the ``max_qubits`` limit.
-        
-        -   This metric can currently handle the slice operation correctly only when 
-            the lower bound of the slice is strictly smaller than the upper bound.
+
+        -   Slice bounds follow Python semantics for common cases (negative indices,
+            out-of-bounds clamping, empty slices, etc.). However, non-unit steps are not supported.
+
 
     """
 
