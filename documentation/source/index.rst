@@ -415,36 +415,6 @@ Qrisp is an open-source project developed across organizations. We are open to a
         :class-card: sd-border-0
         :shadow: none
     
-        .. image:: ./_static/ORNL_logo.png
-            :align: center
-            :width: 150
-            :class: no-scaled-link
-
-    .. grid-item-card::
-        :class-card: sd-border-0
-        :shadow: none
-    
-        .. image:: ./_static/FMF_UL_logo.svg
-            :align: center
-            :width: 150
-            :class: no-scaled-link
-            
-    .. grid-item-card::
-        :class-card: sd-border-0
-        :shadow: none
-    
-        .. image:: ./_static/FRI_UL_logo.png
-            :align: center
-            :width: 150
-            :class: no-scaled-link
-
-
-.. grid:: 1 1 5 5
-
-    .. grid-item-card::
-        :class-card: sd-border-0
-        :shadow: none
-    
         .. image:: ./_static/dlr_logo.svg
             :align: center
             :width: 150
@@ -476,6 +446,27 @@ Qrisp is an open-source project developed across organizations. We are open to a
             :align: center
             :width: 150
             :class: no-scaled-link
+
+
+.. raw:: html
+
+    <link rel="stylesheet" href="./_static/css/slider.css">
+
+    <section class="trusted-by">
+    <h2>Trusted By</h2>
+    
+    <div class="logo-slider">
+        <div class="logo-track">
+        <div class="slide"><img src="./_static/FMF_UL_logo.svg" alt="Logo 1"></div>
+        <div class="slide"><img src="./_static/FRI_UL_logo.png" alt="Logo 2"></div>
+        <div class="slide"><img src="./_static/ORNL_logo.png" alt="Logo 3"></div>
+        
+        <div class="slide"><img src="./_static/FMF_UL_logo.svg" alt="Logo 1"></div>
+        <div class="slide"><img src="./_static/FRI_UL_logo.png" alt="Logo 2"></div>
+        <div class="slide"><img src="./_static/ORNL_logo.png" alt="Logo 3"></div>
+        </div>
+    </div>
+    </section>
 
 
 .. toctree::
