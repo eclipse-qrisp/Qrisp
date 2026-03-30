@@ -314,6 +314,9 @@ def _should_use_profiling_callback(jaxpr, call_graph_stats):
     )
 
 
+# Cache for result shape specifications.  Computing result shapes requires
+# a full ``make_jaxpr`` trace of the evaluator, so we cache by evaluator
+# identity to avoid repeating this work on every call.
 _result_shapes_cache: dict[int, Any] = {}
 
 
@@ -321,10 +324,20 @@ def _get_result_shapes(jaxpr_evaluator, invalues):
     """
     Compute the output shape specification for ``jax.pure_callback``.
 
-    Traces ``jaxpr_evaluator`` via ``jax.make_jaxpr(return_shape=True)``
-    to obtain a pytree of ``ShapeDtypeStruct`` matching the output
-    structure.  The result is cached per evaluator identity so the
-    (potentially expensive) tracing is performed at most once.
+    ``jax.pure_callback`` needs a pytree of ``ShapeDtypeStruct`` that
+    describes the shape and dtype of every output *before* the callback
+    executes.  We cannot derive this from the raw sub-jaxpr outvars
+    because the profiling interpreter replaces quantum abstract types
+    (``AbstractQuantumState``, ``AbstractQubitArray``, …) with classical
+    metric-state values whose shapes depend on the metric.
+
+    Instead, we trace ``jaxpr_evaluator`` (the profiling-transformed
+    evaluator) via ``jax.make_jaxpr(return_shape=True)`` which gives us
+    a pytree of ``ShapeDtypeStruct`` matching the *transformed* output
+    structure — exactly what ``pure_callback`` expects.
+
+    The result is cached per evaluator identity so the (potentially
+    expensive) tracing is performed at most once.
     """
     key = id(jaxpr_evaluator)
     if key in _result_shapes_cache:
@@ -379,8 +392,17 @@ def get_compiled_profiler(
     metric = metric_cls.from_cache_key(cache_key)
     profiling_eqn_evaluator = make_profiling_eqn_evaluator(metric, call_graph_stats)
     jaxpr_evaluator = eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator)
+
+    # Always JIT-compile the profiler.  When the caller decides to wrap
+    # this in ``pure_callback``, JAX will invoke it with concrete numpy
+    # arrays (outside the trace), so the JIT is executed eagerly and
+    # the compiled HLO stays local to this callback — preventing XLA's
+    # ``flatten-call-graph`` pass from duplicating it at every call site.
     profiler = jax.jit(jaxpr_evaluator)
 
+    # We return both the JIT-compiled profiler (used for execution) and
+    # the raw evaluator (needed by ``_get_result_shapes`` to trace output
+    # shapes for ``pure_callback``).
     result = (profiler, jaxpr_evaluator)
     _profiler_cache[key] = result
     if len(_profiler_cache) > _PROFILER_CACHE_MAX_SIZE:
@@ -562,6 +584,16 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None) -> C
             # When call_graph_stats is available and the sub-jaxpr is reused
             # and large, we wrap the call in jax.pure_callback to prevent
             # XLA's flatten-call-graph pass from duplicating the HLO.
+            #
+            # Without callback wrapping, XLA inlines every call site's HLO
+            # into the parent computation, causing superlinear growth in
+            # compilation time and memory for programs with many @qache'd
+            # subroutine invocations.
+            #
+            # The profiler returned by get_compiled_profiler is always
+            # JIT-compiled.  When used via pure_callback, JAX calls it
+            # with concrete arrays outside the trace, so the JIT-compiled
+            # HLO is self-contained and opaque to the parent compilation.
 
             sub_jaxpr = eqn.params["jaxpr"]
             profiler, jaxpr_evaluator = get_compiled_profiler(
@@ -569,6 +601,11 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None) -> C
             )
 
             if _should_use_profiling_callback(sub_jaxpr, call_graph_stats):
+                # Compute output shape spec for pure_callback.  We use the
+                # raw (un-jitted) evaluator + make_jaxpr to trace the shapes,
+                # since the profiling transform replaces quantum abstract
+                # types with classical metric values whose shapes we can't
+                # read off the original jaxpr outvars.
                 result_shapes = _get_result_shapes(jaxpr_evaluator, invalues)
                 outvalues = pure_callback(profiler, result_shapes, *invalues)
             else:
