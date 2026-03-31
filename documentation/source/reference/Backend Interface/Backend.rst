@@ -15,6 +15,7 @@ Methods
    :toctree: generated/
 
    Backend.__init__
+   Backend.run_async
    Backend.run
 
 

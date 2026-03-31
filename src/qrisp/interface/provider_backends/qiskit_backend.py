@@ -62,7 +62,7 @@ class QiskitJob(Job):
     """
     A :class:`~qrisp.interface.Job` that wraps a Qiskit ``SamplerV2`` job.
 
-    One ``QiskitJob`` is created per :meth:`QiskitBackend.run` call,
+    One ``QiskitJob`` is created per :meth:`QiskitBackend.run_async` call,
     regardless of how many circuits were submitted.  Internally it holds
     the underlying Qiskit job object and the number of circuits so it can
     extract the right slice of results when :meth:`result` is called.
@@ -89,7 +89,7 @@ class QiskitJob(Job):
     # ------------------------------------------------------------------
 
     def submit(self) -> None:
-        """No-op: the Qiskit job is submitted by the sampler inside QiskitBackend.run()."""
+        """No-op: the Qiskit job is submitted by the sampler inside QiskitBackend.run_async()."""
 
     def result(self) -> JobResult:
         """
@@ -205,7 +205,7 @@ class QiskitBackend(Backend):
     >>> res.get_measurement(backend=qiskit_backend)
     {9: 1.0}
 
-    For local simulators the job is already ``DONE`` by the time ``run()``
+    For local simulators the job is already ``DONE`` by the time ``run_async()``
     returns. For remote hardware backends the job will initially be
     ``QUEUED`` or ``RUNNING``, and ``result()`` will block until execution
     completes on the device.
@@ -214,7 +214,6 @@ class QiskitBackend(Backend):
 
     The same interface works with Qiskit's fake hardware backends, which
     model real device noise and connectivity constraints:
-
 
     .. code-block:: python
 
@@ -228,7 +227,7 @@ class QiskitBackend(Backend):
         qf[:] = 2
         res = qf * qf
 
-    Internally, ``run()`` transpiles the circuit to the device's native gate
+    Internally, ``run_async()`` transpiles the circuit to the device's native gate
     set and qubit connectivity before submission, so the results reflect
     realistic noise characteristics:
 
@@ -283,9 +282,9 @@ class QiskitBackend(Backend):
         """Return the default runtime options (shots=1024)."""
         return {"shots": 1024}
 
-    def run(
+    def run_async(
         self,
-        circuits: QuantumCircuit | Sequence[QuantumCircuit],
+        circuits,
         shots: int | None = None,
     ) -> QiskitJob:
         """
@@ -307,7 +306,6 @@ class QiskitBackend(Backend):
         -------
         QiskitJob
         """
-
         circuits = [circuits] if not isinstance(circuits, Sequence) else circuits
         n_shots = shots if shots is not None else self._options.get("shots", 1024)
 

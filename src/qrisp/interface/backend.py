@@ -20,12 +20,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from .job import Job
 
 if TYPE_CHECKING:
     from qrisp.circuit.quantum_circuit import QuantumCircuit
+
+CircuitResult: TypeAlias = dict[str, Any]
 
 
 class Backend(ABC):
@@ -35,10 +37,17 @@ class Backend(ABC):
     This class provides a minimal, hardware-agnostic interface that all
     backends (simulators or quantum hardware clients) must follow.
 
-    The only mandatory method for child classes is :meth:`run`, which submits
-    one or more circuits for execution and returns a :class:`Job` handle
-    immediately. The caller then decides when to wait for the result by
-    calling :meth:`Job.result <qrisp.interface.Job.result>`.
+    The only mandatory method for child classes is :meth:`run_async`, which
+    submits one or more circuits for execution and returns a :class:`Job`
+    handle immediately. The caller then decides when to wait for the result
+    by calling :meth:`Job.result <qrisp.interface.Job.result>`.
+
+    A synchronous convenience method :meth:`run` is also provided. It calls
+    :meth:`run_async` internally, blocks until the job completes, and returns
+    the results as a plain sequence of measurement dictionaries. This exists
+    primarily for backward compatibility with existing Qrisp code that
+    previously called ``backend.run(circuit, shots)`` and expected a
+    dictionary directly.
 
     .. rubric:: Design contract
 
@@ -52,15 +61,24 @@ class Backend(ABC):
     execution policies, which are delegated to concrete backends or external
     components.
 
-    For example, simulators are expected to implement ``run`` but may
+    For example, simulators are expected to implement ``run_async`` but may
     return ``None`` for all hardware metadata properties.
 
     .. rubric:: Execution model
 
-    :meth:`run` accepts a single circuit *or* a sequence of circuits and always
-    returns a :class:`Job` instance immediately.
-    This follows the *Future* pattern: execution happens independently of the caller,
-    and the caller decides *when* to block by calling :meth:`Job.result <qrisp.interface.Job.result>`.
+    :meth:`run_async` accepts a single circuit *or* a sequence of circuits
+    and always returns a :class:`Job` instance immediately.
+    This follows the *Future* pattern: execution happens independently of the
+    caller, and the caller decides *when* to block by calling
+    :meth:`Job.result <qrisp.interface.Job.result>`.
+
+    :meth:`run` provides a simpler synchronous interface on top of
+    :meth:`run_async`. It blocks until execution completes and returns the
+    measurement results as a ``Sequence[Mapping]`` — one dictionary per
+    submitted circuit. New code should prefer :meth:`run_async` when the
+    :class:`Job` handle is needed (e.g. to poll status, cancel, or await
+    results concurrently). Existing code that relied on the previous
+    synchronous ``run`` method will continue to work without modification.
 
     .. rubric:: Runtime options
 
@@ -71,10 +89,9 @@ class Backend(ABC):
     * by passing a custom ``options`` mapping to :meth:`__init__`.
 
     The number of shots may also be overridden per-execution by passing
-    the ``shots`` argument to :meth:`run`. It is treated as a conventional
-    execution parameter for gate-based, shot-based backends, and may be
-    ignored by backends for which it is not meaningful.
-
+    the ``shots`` argument to :meth:`run_async` or :meth:`run`. It is
+    treated as a conventional execution parameter for gate-based, shot-based
+    backends, and may be ignored by backends for which it is not meaningful.
 
     Options are updated through :meth:`update_options`, but only keys that
     were present at initialisation may be modified.
@@ -126,10 +143,10 @@ class Backend(ABC):
         If omitted, :meth:`_default_options` is used.
 
     **kwargs :
-        Additional backend-specific parameters. These are not defined at the base-class level
-        but may be accepted by concrete backend implementations (e.g. for authentication,
-        provider selection, or other configuration).
-
+        Additional backend-specific parameters. These are not defined at the
+        base-class level but may be accepted by concrete backend
+        implementations (e.g. for authentication, provider selection, or
+        other configuration).
     """
 
     def __init__(
@@ -147,19 +164,21 @@ class Backend(ABC):
                 f"got {type(options).__name__}"
             )
 
-        # We make a shallow copy to prevent external mutations from affecting the backend's internal state.
-        # Furthermore, we convert to a dict to ensure that a `__setitem__`-capable mapping is stored,
-        # which is required for `update_options`.
+        # Shallow-copy and convert to dict so that:
+        # (a) external mutations of the original mapping do not affect the
+        #     backend's internal state, and
+        # (b) update_options can use __setitem__ regardless of the original
+        #     Mapping type.
         self._options = dict(options)
 
         self.metadata = kwargs
 
     # ------------------------------------------------------------------
-    # Abstract methods
+    # Abstract method
     # ------------------------------------------------------------------
 
     @abstractmethod
-    def run(
+    def run_async(
         self,
         circuits: QuantumCircuit | Sequence[QuantumCircuit],
         shots: int | None = None,
@@ -178,9 +197,9 @@ class Backend(ABC):
             No validation or introspection is performed at the base-class level.
 
             When a sequence is provided, the backend decides internally whether
-            to run the circuits sequentially or in parallel. Hardware
-            backends may impose a limit on how many circuits a single job
-            may contain. This is a backend-defined constraint.
+            to run the circuits sequentially or in parallel. Hardware backends
+            may impose a limit on how many circuits a single job may contain.
+            This is a backend-defined constraint.
 
         shots : int or None, optional
             Number of shots (repetitions) for the execution. If ``None``,
@@ -189,10 +208,57 @@ class Backend(ABC):
         Returns
         -------
         Job
-            A handle to the submitted execution. Call :meth:`Job.result <qrisp.interface.Job.result>`
-            to wait for completion and retrieve the :class:`qrisp.interface.JobResult`.
+            A handle to the submitted execution. Call
+            :meth:`Job.result <qrisp.interface.Job.result>` to wait for
+            completion and retrieve the
+            :class:`~qrisp.interface.JobResult`.
         """
         raise NotImplementedError
+
+    # ------------------------------------------------------------------
+    # Synchronous convenience method
+    # ------------------------------------------------------------------
+
+    def run(
+        self,
+        circuits: QuantumCircuit | Sequence[QuantumCircuit],
+        shots: int | None = None,
+    ) -> CircuitResult | list[CircuitResult]:
+        """
+        Submit one or more circuits, block until completion, and return results.
+
+        This is a synchronous convenience wrapper around :meth:`run_async`.
+        It calls :meth:`run_async`, waits for the :class:`Job` to finish by
+        calling :meth:`Job.result <qrisp.interface.Job.result>`, and returns
+        the measurement results. The return type mirrors the input: a single
+        ``CircuitResult`` for a single circuit, or a ``list[CircuitResult]`` for a list.
+
+        This method exists primarily for **backward compatibility** with
+        existing Qrisp code that previously called ``backend.run(circuit,
+        shots)`` and expected a measurement dictionary directly. New code
+        that needs the full :class:`Job` interface (status polling,
+        cancellation, concurrent awaiting) should call :meth:`run_async`
+        instead.
+
+        Parameters
+        ----------
+        circuits : QuantumCircuit or Sequence[QuantumCircuit]
+            A single circuit or a sequence of circuits to execute.
+
+        shots : int or None, optional
+            Number of shots. If ``None``, the backend's ``shots`` option
+            is used.
+
+        Returns
+        -------
+        CircuitResult or list[CircuitResult]
+            A single measurement dictionary when one circuit is submitted,
+            or a list of measurement dictionaries when multiple circuits are
+            submitted.
+        """
+        batch = isinstance(circuits, list)
+        all_counts = self.run_async(circuits, shots).result().all_counts
+        return all_counts if batch else all_counts[0]
 
     # ------------------------------------------------------------------
     # Runtime options
@@ -220,7 +286,7 @@ class Backend(ABC):
         Current runtime options for the backend.
 
         These options may influence execution behaviour (e.g. the number of
-        shots) and therefore may affect :meth:`run`.
+        shots) and therefore may affect :meth:`run_async` and :meth:`run`.
         """
         return self._options
 
@@ -237,7 +303,6 @@ class Backend(ABC):
         ----------
         **kwargs :
             Key-value pairs to update in the backend's runtime options.
-
         """
         for key, val in kwargs.items():
             if key not in self._options:
@@ -376,6 +441,7 @@ class Backend(ABC):
     # ------------------------------------------------------------------
 
     def __repr__(self) -> str:
+        """Return a concise string representation of the backend."""
         return (
             f"{self.__class__.__name__}("
             f"name={self.name!r}, "

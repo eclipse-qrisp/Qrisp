@@ -45,14 +45,22 @@ It defines the minimal interface required to submit quantum circuits for executi
 and optionally expose hardware metadata.
 
 Concrete backends may represent local simulators or remote quantum hardware clients.
-All backends must implement the ``Backend.run`` method, which submits one or more circuits
-for execution and returns a :ref:`Job` handle immediately.
+All backends must implement the ``Backend.run_async`` method, which submits one or more
+circuits for execution and returns a :ref:`Job` handle immediately.
+
+A synchronous convenience method ``Backend.run`` is also provided by the base class.
+It calls ``run_async`` internally, blocks until the job finishes, and returns the
+results as a plain list of measurement dictionaries (one per submitted circuit).
+This method exists primarily for *backward compatibility* with existing Qrisp code
+that previously called ``backend.run(circuit, shots)`` and expected a dictionary directly.
+New code that needs the full :ref:`Job` interface (status polling, cancellation, or
+concurrent execution) should call ``run_async`` instead.
 
 
 Synchronous Backends
 ~~~~~~~~~~~~~~~~~~~~
 
-For example, we can define a simple backend that wraps the built-in Qrisp 
+For example, we can define a simple backend that wraps the built-in Qrisp
 ``run`` function for synchronous circuit simulation:
 
 .. code-block:: python
@@ -104,7 +112,7 @@ For example, we can define a simple backend that wraps the built-in Qrisp
          # shots=None means analytic (exact) execution for the simulator
          return {"shots": None, "token": ""}
 
-      def run(self, circuits, shots=None):
+      def run_async(self, circuits, shots=None):
          circuits = [circuits] if not isinstance(circuits, list) else circuits
          n_shots = shots if shots is not None else self.options.get("shots")
          job = SimulatorJob(backend=self, circuits=circuits, shots=n_shots)
@@ -123,15 +131,16 @@ Let's create a quantum circuit that applies a Hadamard gate to a single qubit an
    circuit.measure(0)
 
 We can now create an instance of ``DefaultBackend`` and execute the circuit.
-The ``Backend.run`` method returns a :ref:`Job` immediately.
-Results are retrieved by calling ``Job.result``:
+Calling ``run_async`` returns a :ref:`Job` immediately — and because the simulator is
+synchronous the job is already ``DONE`` before ``run_async`` returns. Results are
+retrieved by calling ``job.result()``:
 
 .. code-block:: python
 
    >>> backend = DefaultBackend()
-   >>> job = backend.run(circuit)
+   >>> job = backend.run_async(circuit)
    >>> print(job.status())
-   JobStatus.DONE
+   done
 
    >>> result = job.result()
    >>> print(result.get_counts())
@@ -140,12 +149,22 @@ Results are retrieved by calling ``Job.result``:
    >>> print(backend.options)
    {'shots': None, 'token': ''}
 
+If all you need is the measurement dictionary and do not require the :ref:`Job` handle,
+the inherited ``run`` method provides a shorter path. It calls ``run_async`` internally,
+waits for completion, and returns the counts directly as a list:
+
+.. code-block:: python
+
+   >>> counts = backend.run(circuit)
+   >>> print(counts)
+   {'0': 0.5, '1': 0.5}
+
 We can also pass explicit runtime options at construction time:
 
 .. code-block:: python
 
    >>> backend = DefaultBackend(options={"shots": 1024, "token": "fake_token"})
-   >>> result = backend.run(circuit).result()
+   >>> result = backend.run_async(circuit).result()
    >>> print(result.get_counts())
    {'0': 510, '1': 514}   # Note: actual counts may vary due to randomness
 
@@ -155,7 +174,7 @@ Only keys that were present at construction time may be modified:
 .. code-block:: python
 
    >>> backend.update_options(shots=2048)
-   >>> result = backend.run(circuit).result()
+   >>> result = backend.run_async(circuit).result()
    >>> print(result.get_counts())
    {'0': 1029, '1': 1019}   # Note: actual counts may vary due to randomness
 
@@ -169,7 +188,7 @@ The backend decides internally whether to run them sequentially or in parallel:
    >>> circuit_b.cx(0, 1)
    >>> circuit_b.measure([0, 1])
 
-   >>> job = backend.run([circuit, circuit_b], shots=512)
+   >>> job = backend.run_async([circuit, circuit_b], shots=512)
    >>> result = job.result()
    >>> print(result.get_counts(0))   # first circuit
    {'0': 254, '1': 258}
@@ -177,6 +196,15 @@ The backend decides internally whether to run them sequentially or in parallel:
    {'00': 259, '11': 253}
    >>> print(result.all_counts)      # all circuits
    [{'0': 254, '1': 258}, {'00': 259, '11': 253}]
+
+On a synchronous backend, we can also use ``run`` with a batch of circuits.
+When a list is passed, the result is a list of dictionaries — one per circuit:
+
+.. code-block:: python
+
+   >>> result = backend.run([circuit, circuit_b], shots=10)
+   >>> print(result)
+   [{'0': 5, '1': 5}, {'00': 6, '11': 4}]   # Note: actual counts may vary
 
 
 Asynchronous Backends
@@ -275,7 +303,7 @@ separate thread so they all execute concurrently:
       def _default_options(cls):
          return {"shots": 1024}
 
-      def run(self, circuits, shots=None):
+      def run_async(self, circuits, shots=None):
          circuits = [circuits] if not isinstance(circuits, list) else circuits
          n_shots = shots if shots is not None else self.options.get("shots")
          job = AsyncSimulatorJob(backend=self, circuits=circuits, shots=n_shots)
@@ -284,7 +312,7 @@ separate thread so they all execute concurrently:
          return job
 
 
-The key difference from ``DefaultBackend`` is that ``run()`` returns to the caller
+The key difference from ``DefaultBackend`` is that ``run_async`` returns to the caller
 before any circuit has finished executing.
 The coordinator thread is already running in the background:
 
@@ -302,29 +330,28 @@ The coordinator thread is already running in the background:
    circuit_b.measure([0, 1])
 
    backend = AsyncBackend(options={"shots": 1024})
-   job = backend.run([circuit_a, circuit_b])
+   job = backend.run_async([circuit_a, circuit_b])
 
-   # At this point run() has already returned. The job is not yet done.
-   print(job.status())    # JobStatus.QUEUED or JobStatus.RUNNING
+   # At this point run_async() has already returned. The job is not yet done.
+   print(job.status())    # queued or running
 
 
-We can check the status of the job without blocking, and then call ``result()`` 
+We can check the status of the job without blocking, and then call ``result()``
 to block until all circuits have finished executing:
-
 
 .. code-block:: python
 
    >>> result = job.result()   # result() blocks here until all threads have finished.
-   >>> print(job.status())    
-   JobStatus.DONE
+   >>> print(job.status())
+   done
 
-   >>> print(result.get_counts(0))   
+   >>> print(result.get_counts(0))
    {'0': 517, '1': 507}   # Note: actual counts may vary due to randomness
 
-   >>> print(result.get_counts(1))   
+   >>> print(result.get_counts(1))
    {'00': 537, '11': 487}   # Note: actual counts may vary due to randomness
 
-   >>> print(result.all_counts)  
+   >>> print(result.all_counts)
    [{'0': 517, '1': 507}, {'00': 537, '11': 487}]
 
 
@@ -334,10 +361,10 @@ of all circuit times. For a batch of many circuits, this can be significantly fa
 than sequential execution.
 
 Note that this example uses threads rather than processes. For CPU-bound workloads such
-as statevector simulation, the `Python GIL <https://docs.python.org/3/library/threading.html#gil-and-performance-considerations>`_ 
-limits true parallelism on a single machine. In practice, real hardware backends achieve 
-genuine parallelism because the work happens on remote QPU hardware, not locally in Python. 
-The threading model here is therefore a faithful simulation of the asynchronous contract 
+as statevector simulation, the `Python GIL <https://docs.python.org/3/library/threading.html#gil-and-performance-considerations>`_
+limits true parallelism on a single machine. In practice, real hardware backends achieve
+genuine parallelism because the work happens on remote QPU hardware, not locally in Python.
+The threading model here is therefore a faithful simulation of the asynchronous contract
 (the caller submits and returns immediately) even if the local speedup is modest.
 
 These two examples cover the most important local execution patterns: blocking simulation
@@ -351,7 +378,7 @@ example in a future release.
 ----------
 
 The :ref:`Job` class is an abstract handle for a (potentially asynchronous) backend execution.
-It is returned by ``Backend.run`` immediately after submission, regardless of whether
+It is returned by ``Backend.run_async`` immediately after submission, regardless of whether
 the execution is synchronous or asynchronous.
 
 This follows the *Future* (or *Promise*) pattern: execution happens independently of the
@@ -366,7 +393,7 @@ From the caller's perspective, both are used identically:
 
 .. code-block:: python
 
-   job = backend.run(circuit, shots=1024)
+   job = backend.run_async(circuit, shots=1024)
 
    # Non-blocking: inspect the current state without waiting.
    print(job.status())    # e.g. JobStatus.QUEUED or JobStatus.RUNNING
@@ -393,8 +420,8 @@ and derived from ``Job.status``:
    job.in_final_state()  # True if the job has reached any terminal state (DONE, CANCELLED, or ERROR)
 
 
-Additional helpers ``running()``, ``queued()``, and ``cancelled()`` are also available 
-for polling-style workflows. If ``result()`` is called on a job that has 
+Additional helpers ``running()``, ``queued()``, and ``cancelled()`` are also available
+for polling-style workflows. If ``result()`` is called on a job that has
 failed or been cancelled, a :exc:`RuntimeError` is raised.
 
 
@@ -432,6 +459,7 @@ Once a job reaches any of these states, its outcome is final:
 The :ref:`JobResult` class wraps the outcome of one or more circuit executions.
 
 For more details, see the :ref:`JobResult` documentation.
+
 
 :ref:`BackendServer`
 --------------------

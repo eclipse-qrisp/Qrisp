@@ -67,12 +67,17 @@ class DefaultJob(Job):
         """Return the :class:`~qrisp.interface.JobResult`.
 
         Because the simulator is synchronous the result is already available
-        as soon as :meth:`submit` has been called by :meth:`DefaultBackend.run`.
+        as soon as :meth:`submit` has been called by
+        :meth:`DefaultBackend.run_async`.
 
         Returns
         -------
         JobResult
 
+        Raises
+        ------
+        RuntimeError
+            If the simulation raised an exception.
         """
         if self._status == JobStatus.ERROR:
             raise RuntimeError(f"DefaultJob failed: {self._error}") from self._error
@@ -92,10 +97,10 @@ class DefaultBackend(Backend):
     The default Qrisp backend, backed by the built-in statevector simulator.
 
     This is the simplest concrete :class:`~qrisp.interface.Backend`
-    implementation.  It executes circuits synchronously. That is, the
-    :class:`DefaultJob` returned by :meth:`run` is already
-    :attr:`~qrisp.interface.JobStatus.DONE` before :meth:`run` returns to
-    the caller.
+    implementation.  It executes circuits synchronously — the
+    :class:`DefaultJob` returned by :meth:`run_async` is already
+    :attr:`~qrisp.interface.JobStatus.DONE` before :meth:`run_async` returns
+    to the caller.
 
     Parameters
     ----------
@@ -107,15 +112,15 @@ class DefaultBackend(Backend):
 
     **Analytic execution (default)**
 
-    We first create a :class:`DefaultBackend` and a simple quantum circuit:
+    We first create a :class:`DefaultBackend`:
 
     >>> from qrisp import QuantumFloat
     >>> from qrisp.default_backend import DefaultBackend
     >>> backend = DefaultBackend()
 
     When ``get_measurement`` is called, Qrisp compiles the computation into a
-    circuit and passes it to the built-in simulator via :meth:`run`. A
-    :class:`DefaultJob` is returned immediately — and because the simulator
+    circuit and passes it to the built-in simulator via :meth:`run_async`. A
+    :class:`DefaultJob` is returned immediately. And, because the simulator
     is synchronous the job is already :attr:`~qrisp.interface.JobStatus.DONE`
     before ``get_measurement`` even calls :meth:`~qrisp.interface.Job.result`:
 
@@ -139,18 +144,19 @@ class DefaultBackend(Backend):
 
     **Using the Job interface directly**
 
-    :meth:`run` returns a :class:`DefaultJob` that supports the full
+    :meth:`run_async` returns a :class:`DefaultJob` that supports the full
     :class:`~qrisp.interface.Job` interface, even though the result is
     already available synchronously:
 
     >>> from qrisp import QuantumFloat
+    >>> from qrisp.default_backend import DefaultBackend
     >>> backend = DefaultBackend()
     >>> qf3 = QuantumFloat(2)
     >>> qf3[:] = 3
     >>> res3 = qf3 * qf3
     >>> qc = res3.qs.compile()
     >>> qc.measure(qc.qubits)
-    >>> job = backend.run(qc)
+    >>> job = backend.run_async(qc)
     >>> print(job.status())
     done
     >>> result = job.result()
@@ -160,15 +166,20 @@ class DefaultBackend(Backend):
 
     @classmethod
     def _default_options(cls):
-        """Return the default runtime options."""
+        """Return the default runtime options.
+
+        ``shots=None`` enables analytic (exact probability) execution.
+        ``token`` is passed through to the simulator for authenticated backends.
+        """
         return {"shots": None, "token": ""}
 
-    def run(self, circuits, shots: int | None = None) -> DefaultJob:
+    def run_async(self, circuits, shots: int | None = None) -> DefaultJob:
         """Submit one or more circuits to the built-in simulator.
 
         This method returns a :class:`DefaultJob` that is already
-        :attr:`~qrisp.interface.JobStatus.DONE` before :meth:`run` returns,
-        because the simulator executes synchronously inside :meth:`submit`.
+        :attr:`~qrisp.interface.JobStatus.DONE` before :meth:`run_async`
+        returns, because the simulator executes synchronously inside
+        :meth:`~DefaultJob.submit`.
 
         Parameters
         ----------

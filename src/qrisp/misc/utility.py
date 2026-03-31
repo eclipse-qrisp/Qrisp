@@ -1391,8 +1391,6 @@ def check_if_fresh(qubits, qs, ignore_q_envs=True):
 def get_measurement_from_qc(qc, qubits, backend, shots=None):
     # Add classical registers for the measurement results to be stored in
 
-    from qrisp.interface.job import Job
-
     cl = []
     for i in range(len(qubits)):
         cl.append(qc.add_clbit())
@@ -1402,12 +1400,7 @@ def get_measurement_from_qc(qc, qubits, backend, shots=None):
         qc.measure(qubits[i], cl[i])
 
     # Execute circuit
-    result = backend.run(qc, shots=shots)
-    if isinstance(result, Job):
-        counts = result.result().get_counts()
-    else:
-        # backward compatibility with any backend that still returns a dict of counts instead of a Job object
-        counts = result
+    counts = backend.run(qc, shots=shots)
 
     # Remove other measurements outcomes from counts dic
     new_counts_dic = {}

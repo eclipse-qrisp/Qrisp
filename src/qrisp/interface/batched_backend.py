@@ -24,7 +24,7 @@ from __future__ import annotations
 import threading
 import time
 from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING, Mapping, cast
+from typing import TYPE_CHECKING, cast
 
 from qrisp.interface.backend import Backend
 from qrisp.interface.job import Job, JobResult, JobStatus
@@ -37,7 +37,7 @@ class BatchedJob(Job):
     """
     A :class:`Job` produced by :class:`BatchedBackend`.
 
-    Each call to ``BatchedBackend.run`` creates one ``BatchedJob`` and
+    Each call to ``BatchedBackend.run_async`` creates one ``BatchedJob`` and
     registers it in the backend's pending queue.  The job stays in
     ``QUEUED`` state until ``BatchedBackend.dispatch`` is called, at
     which point all pending jobs are resolved atomically.
@@ -46,9 +46,7 @@ class BatchedJob(Job):
     set by the backend when the batch result for this job becomes available.
     """
 
-    def __init__(
-        self, backend: BatchedBackend, circuits: Sequence[QuantumCircuit], shots: int
-    ):
+    def __init__(self, backend: BatchedBackend, circuits: Sequence, shots: int):
         """Initialise the job with the backend, normalised circuit list, and shot count."""
         super().__init__(backend=backend)
         self._circuits = circuits
@@ -81,6 +79,14 @@ class BatchedJob(Job):
         -------
         JobResult
 
+        Raises
+        ------
+        TimeoutError
+            If ``timeout`` expires before the job is resolved.
+
+        RuntimeError
+            If the batch execution raised an exception, or if the job was
+            cancelled.
         """
         if not self._done_event.wait(timeout=timeout):
             raise TimeoutError(
@@ -110,7 +116,7 @@ class BatchedJob(Job):
         return self._status
 
     # ------------------------------------------------------------------
-    # Internal helpers
+    # Internal helpers — called only by BatchedBackend.dispatch()
     # ------------------------------------------------------------------
 
     def _resolve(self, result: JobResult) -> None:
@@ -145,20 +151,20 @@ class BatchedBackend(Backend):
 
     **How it works**
 
-    Each call to ``run`` (typically one per thread running Qrisp code)
+    Each call to ``run_async`` (typically one per thread running Qrisp code)
     registers the circuit(s) in a shared pending queue and returns a
     ``BatchedJob`` immediately.  The caller then blocks in
     :meth:`Job.result` waiting for its result.
 
     When ``dispatch`` is called (either explicitly from the main thread,
-    or automatically when ``run`` is called from the main thread) all
+    or automatically when ``run_async`` is called from the main thread) all
     pending jobs are collected, their circuits are forwarded to
     ``batch_run_func`` as a flat list, and the results are distributed back
     to each waiting job via private ``threading.Event`` objects.
 
     .. note::
 
-        Calling ``run`` from the *main thread* will automatically
+        Calling ``run_async`` from the *main thread* will automatically
         dispatch all currently pending queries, including the one just added.
         This ensures that single-threaded use works without any manual
         dispatch call.
@@ -232,7 +238,7 @@ class BatchedBackend(Backend):
         thread_1.start()
 
         # At this point, both threads have been started. They will each call get_measurement,
-        # which internally calls run() and registers their circuits as BatchedJobs
+        # which internally calls run_async() and registers their circuits as BatchedJobs
         # in the backend's pending queue, where each BatchedJob is in QUEUED state.
         # Each thread then blocks waiting for its result.
 
@@ -245,7 +251,7 @@ class BatchedBackend(Backend):
 
 
     Each thread calls ``get_measurement`` with the ``batched_backend``,
-    which internally calls ``run``. This registers the circuit
+    which internally calls ``run_async``. This registers the circuit
     as a ``BatchedJob`` in ``JobStatus.QUEUED`` state and returns immediately.
 
     When the main thread calls ``dispatch``, the batch of pending jobs is executed,
@@ -264,7 +270,7 @@ class BatchedBackend(Backend):
 
     **Single-threaded Example**
 
-    In this example, we call ``run`` directly from the main thread.
+    In this example, we call ``run_async`` directly from the main thread.
     This will automatically trigger a dispatch without needing to call it manually.
 
     .. code-block:: python
@@ -274,16 +280,16 @@ class BatchedBackend(Backend):
         qc.cx(0, 1)
         qc.measure([0, 1])
 
-        # When run() is called from the main thread, it will automatically dispatch
+        # When run_async() is called from the main thread, it automatically dispatches
         # the batch of pending jobs, so we don't need to call dispatch() manually here.
-        batched_job = batched_backend.run(qc, shots=1024)
+        batched_job = batched_backend.run_async(qc, shots=1024)
 
         job_result = batched_job.result()
 
     We can check the status of the job and its results:
 
-    >>> batched_job.status()
-    JobStatus.DONE
+    >>> print(batched_job.status())
+    done
 
     >>> job_result.get_counts(0)
     {'00': 553, '11': 471}
@@ -292,9 +298,7 @@ class BatchedBackend(Backend):
 
     def __init__(
         self,
-        batch_run_func: Callable[
-            [Sequence[tuple[QuantumCircuit, int]]], Sequence[Mapping]
-        ],
+        batch_run_func: Callable[[list[tuple["QuantumCircuit", int]]], list[Mapping]],
         name: str | None = None,
         options: Mapping | None = None,
     ):
@@ -311,7 +315,7 @@ class BatchedBackend(Backend):
         """Return the default runtime options (shots=1024)."""
         return {"shots": 1024}
 
-    def run(self, circuits, shots: int | None = None) -> BatchedJob:
+    def run_async(self, circuits, shots: int | None = None) -> BatchedJob:
         """
         Register one or more circuits in the batch and return a ``BatchedJob``.
 
@@ -326,7 +330,7 @@ class BatchedBackend(Backend):
         Parameters
         ----------
         circuits : QuantumCircuit or Sequence[QuantumCircuit]
-            One circuit or a list of circuits to include in the batch.
+            One circuit or a sequence of circuits to include in the batch.
 
         shots : int or None
             Number of shots.  Defaults to the backend's ``shots`` option.
@@ -335,7 +339,6 @@ class BatchedBackend(Backend):
         -------
         BatchedJob
         """
-
         circuits = [circuits] if not isinstance(circuits, Sequence) else circuits
         n_shots = shots if shots is not None else self._options["shots"]
 
@@ -371,11 +374,10 @@ class BatchedBackend(Backend):
         -----
         The ``batch_run_func`` receives a *flat* list of
         ``(QuantumCircuit, int)`` tuples, one entry per circuit (even when a
-        single :meth:`run` call submitted multiple circuits).  Results are
+        single :meth:`run_async` call submitted multiple circuits).  Results are
         re-assembled into :class:`JobResult` objects and delivered to each
         ``BatchedJob`` via its private ``threading.Event``.
         """
-
         # Wait until the required number of jobs has accumulated.
         while True:
             with self._lock:
@@ -384,7 +386,7 @@ class BatchedBackend(Backend):
             time.sleep(0.01)
 
         # Atomically snapshot and clear the pending queue so that new calls
-        # to run() during dispatch do not interfere with this batch.
+        # to run_async() during dispatch do not interfere with this batch.
         with self._lock:
             pending = list(self._pending)
             self._pending = []
@@ -393,16 +395,19 @@ class BatchedBackend(Backend):
             return
 
         # Build the flat (circuit, shots) list expected by batch_run_func.
-        # A single run() call may have submitted multiple circuits, so we
+        # A single run_async() call may have submitted multiple circuits, so we
         # expand each job's circuit list individually.
-        flat_batch: list[tuple[QuantumCircuit, int]] = []
+        flat_batch: list[tuple] = []
         for job in pending:
             for circuit in job._circuits:
                 flat_batch.append((circuit, job._shots))
 
         try:
-
             flat_results = self.batch_run_func(flat_batch)
+            flat_results = [
+                result if isinstance(result, dict) else dict(result)
+                for result in flat_results
+            ]
 
             # NOTE: It might be worth validating the results here,
             # since `batch_run_func` is user-provided and could return malformed data.

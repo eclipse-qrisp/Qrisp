@@ -21,7 +21,7 @@ Abstract :class:`Job` interface and related types for representing and managing 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from enum import StrEnum, auto
 from typing import TYPE_CHECKING
 
@@ -113,15 +113,24 @@ class JobResult:
     JobResult(num_circuits=2, metadata={})
     """
 
-    def __init__(self, counts: Sequence[Mapping], **kwargs):
+    def __init__(self, counts: Sequence[dict], **kwargs):
         """Initialize a JobResult instance."""
 
-        if not isinstance(counts, list):
+        if not isinstance(counts, Sequence) or isinstance(counts, (str, bytes)):
             raise TypeError(
-                f"'counts' must be a list of dicts, got {type(counts).__name__}"
+                f"'counts' must be a sequence of dicts, got {type(counts).__name__}"
             )
 
-        self._counts = counts
+        if len(counts) == 0:
+            raise ValueError("'counts' must contain at least one dict")
+
+        for i, count in enumerate(counts):
+            if not isinstance(count, dict):
+                raise TypeError(
+                    f"Each item in 'counts' must be a dict, got {type(count).__name__} at index {i}"
+                )
+
+        self._counts = list(counts)
         self.metadata = kwargs
 
     # ------------------------------------------------------------------
@@ -129,7 +138,7 @@ class JobResult:
     # ------------------------------------------------------------------
 
     @property
-    def all_counts(self) -> Sequence[Mapping]:
+    def all_counts(self) -> list[dict]:
         """All measurement-outcome counts, one dict per circuit."""
         return self._counts
 
@@ -142,7 +151,7 @@ class JobResult:
     # Methods
     # ------------------------------------------------------------------
 
-    def get_counts(self, index: int = 0) -> Mapping:
+    def get_counts(self, index: int = 0) -> dict:
         """
         Return the measurement-outcome counts for a single circuit.
 
@@ -153,7 +162,7 @@ class JobResult:
 
         Returns
         -------
-        Dict
+        dict
             Mapping from bitstring outcome to observed count.
 
         """
@@ -234,7 +243,7 @@ class Job(ABC):
 
     """
 
-    def __init__(self, backend: "Backend", job_id: str | None = None, **kwargs):
+    def __init__(self, backend: Backend, job_id: str | None = None, **kwargs):
         """Initialize a Job instance."""
 
         self._backend = backend
