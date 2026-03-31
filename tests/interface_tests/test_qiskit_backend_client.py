@@ -64,44 +64,49 @@ class TestQiskitBackendConstruction:
 
 
 class TestQiskitJobInterface:
-    """Tests that run() returns a proper QiskitJob and that the Job interface works."""
+    """Tests that run_async() returns a proper QiskitJob and the Job interface works.
 
-    def test_run_returns_qiskit_job(self):
-        """Ensure run() returns a QiskitJob instance, not a raw dict."""
+    Note: run_async() is used here (rather than run()) because these tests need the
+    Job handle. run() returns a plain dict for backward compatibility and does not
+    expose the Job object.
+    """
+
+    def test_run_async_returns_qiskit_job(self):
+        """Ensure run_async() returns a QiskitJob instance."""
         backend = QiskitBackend(backend=aer_backend)
-        qf = QuantumFloat(2)
-        qf[:] = 1
-        qc = qf.qs.compile()
-        job = backend.run(qc, shots=256)
+        qf = QuantumFloat(4)
+        qf[:] = 3
+        res = qf * qf
+        job = backend.run_async(res.qs.compile())
         assert isinstance(job, QiskitJob)
 
     def test_job_result_returns_job_result_instance(self):
         """Ensure job.result() returns a JobResult object."""
         backend = QiskitBackend(backend=aer_backend)
-        qf = QuantumFloat(2)
-        qf[:] = 1
-        qc = qf.qs.compile()
-        job = backend.run(qc, shots=256)
+        qf = QuantumFloat(4)
+        qf[:] = 3
+        res = qf * qf
+        job = backend.run_async(res.qs.compile())
         result = job.result()
         assert isinstance(result, JobResult)
 
     def test_job_status_is_done_after_result(self):
         """Ensure the job status is DONE after result() has been called."""
         backend = QiskitBackend(backend=aer_backend)
-        qf = QuantumFloat(2)
-        qf[:] = 1
-        qc = qf.qs.compile()
-        job = backend.run(qc, shots=256)
+        qf = QuantumFloat(4)
+        qf[:] = 3
+        res = qf * qf
+        job = backend.run_async(res.qs.compile())
         job.result()
         assert job.status() == JobStatus.DONE
 
     def test_job_done_and_in_final_state_after_result(self):
         """Ensure done() and in_final_state() are both True after result() returns."""
         backend = QiskitBackend(backend=aer_backend)
-        qf = QuantumFloat(2)
-        qf[:] = 1
-        qc = qf.qs.compile()
-        job = backend.run(qc, shots=256)
+        qf = QuantumFloat(4)
+        qf[:] = 3
+        res = qf * qf
+        job = backend.run_async(res.qs.compile())
         job.result()
         assert job.done() is True
         assert job.in_final_state() is True
@@ -109,10 +114,10 @@ class TestQiskitJobInterface:
     def test_cancel_on_finished_job_returns_false(self):
         """Ensure cancel() returns False on a job that has already completed."""
         backend = QiskitBackend(backend=aer_backend)
-        qf = QuantumFloat(2)
-        qf[:] = 1
-        qc = qf.qs.compile()
-        job = backend.run(qc, shots=256)
+        qf = QuantumFloat(4)
+        qf[:] = 3
+        res = qf * qf
+        job = backend.run_async(res.qs.compile())
         job.result()
         assert job.cancel() is False
 
@@ -126,6 +131,16 @@ class TestQiskitBackendExecution:
         qf = QuantumFloat(4)
         qf[:] = 3
         res = qf * qf
+        assert res.get_measurement(backend=backend) == {9: 1.0}
+
+    def test_shots_override_via_update_options(self):
+        """Verify that a custom shots value is respected and produces a correct result."""
+        backend = QiskitBackend(backend=aer_backend)
+        backend.update_options(shots=512)
+        qf = QuantumFloat(4)
+        qf[:] = 3
+        res = qf * qf
+        # With a deterministic computation the result is correct regardless of shot count.
         assert res.get_measurement(backend=backend) == {9: 1.0}
 
     def test_fake_backend_dominant_result_is_correct(self):
@@ -149,45 +164,24 @@ class TestQiskitBackendExecution:
         assert len(meas_res) > 1
 
 
-# We keep this test even though VirtualBackend is deprecated
+# We keep this test even though VirtualBackend is deprecated.
 def test_qiskit_virtual_backend():
-    """Test QiskitBackend client functionality with VirtualBackend."""
+    """Test that VirtualBackend still works via its legacy run() interface."""
+    # TO-DO: prevent this test from crashing regardless of functionality.
 
     qc = QuantumCircuit()
-
-    qc.add_qubit()
-    qc.add_qubit()
-
-    qc.h(0)
-
-    qc.rz(np.pi / 2, 0)
-
-    qc.x(0)
-    qc.cx(0, 1)
-
-    qc.append(qc.to_op("composed_op"), qc.qubits, qc.clbits)
-
-    qc.append(qc.to_op("multi_composed_op"), qc.qubits, qc.clbits)
-
-    qc.add_clbit()
-    qc.measure(1, 0)
-    # TO-DO prevent this test from crashing regardless of functionality
-    # Create QuantumSession
-    qc = QuantumCircuit()
-
     qc.add_qubit()
     qc.add_qubit()
     qc.add_clbit()
 
     qc.h(0)
-
     qc.rz(np.pi / 2, 0)
-
     qc.x(0)
     qc.cx(0, 1)
     qc.measure(1, 0)
 
     def sample_run_func(qc, shots=None, token=""):
+        """Return a trivial all-zero result for any circuit."""
         if shots is None:
             shots = 10000
         return {"0": shots}

@@ -35,16 +35,16 @@ class MinimalJob(Job):
     detail of this test helper (not a requirement of the base class).
     """
 
-    def __init__(self, backend, job_id=None, initial_status=JobStatus.INITIALIZING):
-        super().__init__(backend=backend, job_id=job_id)
+    def __init__(
+        self, backend, job_id=None, initial_status=JobStatus.INITIALIZING, **kwargs
+    ):
+        super().__init__(backend=backend, job_id=job_id, **kwargs)
         self._status = initial_status
         self._result_data = None
         self._error = None
         self._done_event = threading.Event()
 
-    ##########################
-    ### Abstract interface
-    ##########################
+    # ── Abstract interface ────────────────────────────────────────────
 
     def submit(self) -> None:
         pass
@@ -61,7 +61,7 @@ class MinimalJob(Job):
         return self._result_data
 
     def cancel(self) -> bool:
-        if self.done():
+        if self.in_final_state():
             return False
         self._status = JobStatus.CANCELLED
         self._done_event.set()
@@ -70,9 +70,7 @@ class MinimalJob(Job):
     def status(self) -> JobStatus:
         return self._status
 
-    ###########################
-    ### Internal helpers
-    ###########################
+    # ── Internal helpers (not part of the abstract contract) ─────────
 
     def _resolve(self, result: JobResult) -> None:
         """Mark the job as successfully done."""
@@ -99,7 +97,7 @@ class MinimalBackend(Backend):
     Counts are trivially ``{"0": n_shots}`` for each circuit.
     """
 
-    def run(self, circuits, shots=None) -> MinimalJob:
+    def run_async(self, circuits, shots=None) -> MinimalJob:
         if not isinstance(circuits, list):
             circuits = [circuits]
         n_shots = shots if shots is not None else self.options["shots"]

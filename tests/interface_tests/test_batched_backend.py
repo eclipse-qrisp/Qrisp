@@ -18,6 +18,7 @@
 
 import threading
 
+
 from qrisp import QuantumFloat
 from qrisp.interface import BatchedBackend
 
@@ -161,7 +162,7 @@ def test_batched_backend_timeout():
     def submit_without_dispatch():
         """Submit a job from a background thread and expect a TimeoutError."""
         c = a + b
-        job = bb.run(c.qs.compile())
+        job = bb.run_async(c.qs.compile())
         try:
             job.result(timeout=0.5)
         except TimeoutError as exc:
@@ -173,6 +174,3 @@ def test_batched_backend_timeout():
 
     assert len(errors) == 1
     assert "dispatch" in errors[0].lower()
-
-
-# TODO: Add more tests for edge cases, e.g. invalid batch_run_func output, empty batch, etc.

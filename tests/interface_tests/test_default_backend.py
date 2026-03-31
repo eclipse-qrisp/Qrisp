@@ -18,8 +18,8 @@
 
 import pytest
 
-from qrisp import QuantumFloat
-from qrisp.default_backend import DefaultBackend, DefaultJob
+from qrisp import QuantumFloat, h
+from qrisp.default_backend import DefaultBackend, DefaultJob, def_backend
 from qrisp.interface.job import JobResult, JobStatus
 
 
@@ -31,62 +31,60 @@ def _simple_computation():
 
 
 class TestDefaultJobInterface:
-    """Tests that run() returns a proper DefaultJob and the Job interface is correct."""
+    """Tests that run_async() returns a proper DefaultJob and the Job interface is correct.
 
-    def test_run_returns_default_job(self):
-        """Ensure run() returns a DefaultJob instance, not a raw dict."""
+    Note: run_async() is used here (rather than run()) because these tests need the
+    Job handle. run() returns a plain dict for backward compatibility and does not
+    expose the Job object.
+    """
+
+    def test_run_async_returns_default_job(self):
+        """Ensure run_async() returns a DefaultJob instance, not a raw dict."""
         backend = DefaultBackend()
         res = _simple_computation()
-        qc = res.qs.compile()
-        job = backend.run(qc)
+        job = backend.run_async(res.qs.compile())
         assert isinstance(job, DefaultJob)
 
-    def test_job_is_done_before_run_returns(self):
-        """Ensure the job is already DONE when run() returns to the caller."""
+    def test_job_is_done_before_run_async_returns(self):
+        """Ensure the job is already DONE when run_async() returns to the caller."""
         backend = DefaultBackend()
         res = _simple_computation()
-        qc = res.qs.compile()
-        job = backend.run(qc)
+        job = backend.run_async(res.qs.compile())
         assert job.status() == JobStatus.DONE
 
     def test_job_done_returns_true(self):
         """Ensure done() is True after synchronous execution."""
         backend = DefaultBackend()
         res = _simple_computation()
-        qc = res.qs.compile()
-        job = backend.run(qc)
+        job = backend.run_async(res.qs.compile())
         assert job.done() is True
 
     def test_job_in_final_state_returns_true(self):
         """Ensure in_final_state() is True after synchronous execution."""
         backend = DefaultBackend()
         res = _simple_computation()
-        qc = res.qs.compile()
-        job = backend.run(qc)
+        job = backend.run_async(res.qs.compile())
         assert job.in_final_state() is True
 
     def test_result_returns_job_result_instance(self):
         """Ensure job.result() returns a JobResult object."""
         backend = DefaultBackend()
         res = _simple_computation()
-        qc = res.qs.compile()
-        job = backend.run(qc)
+        job = backend.run_async(res.qs.compile())
         assert isinstance(job.result(), JobResult)
 
     def test_cancel_returns_false(self):
         """Ensure cancel() always returns False for a synchronous job."""
         backend = DefaultBackend()
         res = _simple_computation()
-        qc = res.qs.compile()
-        job = backend.run(qc)
+        job = backend.run_async(res.qs.compile())
         assert job.cancel() is False
 
     def test_status_unchanged_after_cancel(self):
         """Ensure cancel() does not change the job status."""
         backend = DefaultBackend()
         res = _simple_computation()
-        qc = res.qs.compile()
-        job = backend.run(qc)
+        job = backend.run_async(res.qs.compile())
         job.cancel()
         assert job.status() == JobStatus.DONE
 
@@ -104,8 +102,7 @@ class TestDefaultBackendAnalytic:
         """Verify that analytic result probabilities sum to 1.0."""
         backend = DefaultBackend()
         res = _simple_computation()
-        qc = res.qs.compile()
-        result = backend.run(qc).result()
+        result = backend.run_async(res.qs.compile()).result()
         total = sum(result.get_counts().values())
         assert abs(total - 1.0) < 1e-9
 
@@ -113,13 +110,42 @@ class TestDefaultBackendAnalytic:
         """Verify that analytic results are floating-point probabilities, not integer counts."""
         backend = DefaultBackend()
         res = _simple_computation()
-        qc = res.qs.compile()
-        result = backend.run(qc).result()
+        result = backend.run_async(res.qs.compile()).result()
         for value in result.get_counts().values():
             assert isinstance(value, float)
 
 
-# We could add some shots-based tests here as well
+class TestDefaultBackendShots:
+    """Tests for shot-based (sampled) execution."""
+
+    def test_shot_based_differs_from_analytic(self):
+        """Verify that shot-based execution gives a different result than analytic execution."""
+        qv = QuantumFloat(1)
+        h(qv[0])  # equal superposition of 0 and 1
+
+        analytic_backend = DefaultBackend()  # shots=None
+        analytic_result = qv.get_measurement(backend=analytic_backend)
+        assert analytic_result == {0: 0.5, 1: 0.5}
+
+        sampled_backend = DefaultBackend(options={"shots": 1, "token": ""})
+        sampled_result = qv.get_measurement(backend=sampled_backend)
+
+        # With 1 shot the outcome is definite: one key with probability 1.0.
+        assert len(sampled_result) == 1
+        assert list(sampled_result.values())[0] == 1.0
+        assert sampled_result != analytic_result
+
+    def test_backend_shots_option_used_when_not_overridden(self):
+        """Verify that the backend's shots option is used and produces a sampled result."""
+        qv = QuantumFloat(1)
+        h(qv[0])
+
+        backend = DefaultBackend(options={"shots": 1, "token": ""})
+        result = qv.get_measurement(backend=backend)
+
+        # With 1 shot the outcome must be a single definite value.
+        assert len(result) == 1
+        assert list(result.values())[0] == 1.0
 
 
 class TestDefaultBackendOptions:
@@ -154,6 +180,4 @@ class TestDefaultBackendOptions:
 
     def test_module_level_def_backend_is_default_backend(self):
         """Ensure the module-level def_backend singleton is a DefaultBackend instance."""
-        from qrisp.default_backend import def_backend
-
         assert isinstance(def_backend, DefaultBackend)

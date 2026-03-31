@@ -14,7 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Tests for the Job-related classes."""
+"""Tests for the Job-related classes defined in qrisp.interface.job"""
 
 from __future__ import annotations
 
@@ -22,14 +22,6 @@ import pytest
 from conftest import MinimalBackend, MinimalJob
 
 from qrisp.interface.job import JOB_FINAL_STATES, Job, JobResult, JobStatus
-
-
-# TODO: add tests for `cancelled` new method in the `Job` class
-
-# TODO: update tests to reflect the new behaviour of
-
-# TODO: add test for `metadata` attribute in the `Job` class
-# (should we combine them with the `metadata` tests in `JobResult` or keep them separate?)
 
 
 class TestJobStatusEnum:
@@ -74,7 +66,6 @@ class TestJobResultConstruction:
         [
             ([{"00": 512, "11": 512}], 1),
             ([{"0": 800, "1": 224}, {"00": 500, "11": 524}], 2),
-            ([], 0),
         ],
     )
     def test_job_result_construction(self, counts, expected_num_circuits):
@@ -82,44 +73,54 @@ class TestJobResultConstruction:
         r = JobResult(counts)
         assert r.num_circuits == expected_num_circuits
 
+    def test_empty_counts_raises_value_error(self):
+        """Test that an empty counts list raises a ValueError."""
+        with pytest.raises(ValueError):
+            JobResult([])
+
     def test_metadata_defaults_to_empty_dict(self):
-        """Test that the metadata defaults to an empty dictionary."""
+        """Test that the metadata attribute defaults to an empty dictionary."""
         r = JobResult([{"0": 1024}])
         assert r.metadata == {}
 
     def test_non_list_raises_type_error(self):
-        """Test that passing a non-list to JobResult raises a TypeError."""
-        with pytest.raises(TypeError, match="'counts' must be a list"):
+        """Test that passing a dict directly to JobResult raises a TypeError."""
+        with pytest.raises(TypeError):
             JobResult({"00": 512})
 
-    def test_tuple_raises_type_error(self):
-        """Test that passing a tuple to JobResult raises a TypeError."""
-        with pytest.raises(TypeError):
-            JobResult(({"00": 512},))
+    def test_metadata_kwargs_stored_correctly(self):
+        """Test that keyword arguments are stored in the metadata dict.
 
-    def test_metadata_custom_value_preserved(self):
-        """Test that custom metadata values are preserved."""
+        JobResult accepts metadata as **kwargs, so JobResult(counts, mode="async")
+        stores {"mode": "async"} in self.metadata — not {"metadata": {...}}.
+        """
         r = JobResult([{"0": 1024}], mode="async", backend="test")
         assert r.metadata["mode"] == "async"
         assert r.metadata["backend"] == "test"
+
+    def test_metadata_old_dict_style_is_nested(self):
+        """Test that passing metadata=dict nests it under the key 'metadata'.
+
+        This documents the expected behaviour after the **kwargs API change:
+        callers that use the old metadata={"key": val} style will find their
+        dict stored at r.metadata["metadata"], not at r.metadata["key"].
+        """
+        r = JobResult([{"0": 1024}], metadata={"mode": "sync"})
+        assert "metadata" in r.metadata
+        assert r.metadata["metadata"] == {"mode": "sync"}
 
 
 class TestJobResultAccess:
     """Unit tests for JobResult data access."""
 
-    def test_counts_sum_preserved(self):
-        """Test that the sum of counts is preserved in JobResult."""
-        r = JobResult([{"00": 600, "01": 100, "10": 200, "11": 124}])
-        assert sum(r.get_counts().values()) == 1024
-
     @pytest.fixture
     def single_result(self):
-        """Fixture that provides a JobResult with a single circuit's counts."""
+        """Fixture providing a JobResult with a single circuit's counts."""
         return JobResult([{"00": 512, "11": 512}])
 
     @pytest.fixture
     def batch_result(self):
-        """Fixture that provides a JobResult with multiple circuits' counts."""
+        """Fixture providing a JobResult with three circuits' counts."""
         return JobResult(
             [
                 {"0": 800, "1": 224},
@@ -140,6 +141,11 @@ class TestJobResultAccess:
         """Test that get_counts(-1) returns the last circuit's counts."""
         assert single_result.get_counts(-1) == {"00": 512, "11": 512}
 
+    def test_get_counts_out_of_range_raises_index_error(self, single_result):
+        """Test that get_counts() raises IndexError for an out-of-range index."""
+        with pytest.raises(IndexError, match="index 1 is out of range"):
+            single_result.get_counts(1)
+
     def test_get_counts_batch_default_index(self, batch_result):
         """Test that get_counts() with no index returns the first circuit's counts in a batch."""
         assert batch_result.get_counts() == {"0": 800, "1": 224}
@@ -153,14 +159,19 @@ class TestJobResultAccess:
         assert batch_result.get_counts(2) == {"000": 200, "111": 824}
 
     def test_all_counts_returns_full_list(self, batch_result):
-        """Test that all_counts returns the full list of counts."""
+        """Test that all_counts returns the complete list of counts dictionaries."""
         all_c = batch_result.all_counts
         assert len(all_c) == 3
         assert all_c[1] == {"00": 500, "11": 524}
 
     def test_num_circuits_matches_input(self, batch_result):
-        """Test that num_circuits matches the number of counts dictionaries provided."""
+        """Test that num_circuits equals the number of counts dictionaries provided."""
         assert batch_result.num_circuits == 3
+
+    def test_counts_sum_preserved(self):
+        """Test that the total count sum equals the number of shots."""
+        r = JobResult([{"00": 600, "01": 100, "10": 200, "11": 124}])
+        assert sum(r.get_counts().values()) == 1024
 
 
 class TestJobAbstractInterface:
@@ -172,45 +183,85 @@ class TestJobAbstractInterface:
             Job(backend=None)
 
     def test_submit_is_abstract(self):
-        """Test that submit() is an abstract method."""
+        """Test that submit() is declared as an abstract method."""
         assert getattr(Job.submit, "__isabstractmethod__", False)
 
     def test_result_is_abstract(self):
-        """Test that result() is an abstract method."""
+        """Test that result() is declared as an abstract method."""
         assert getattr(Job.result, "__isabstractmethod__", False)
 
     def test_cancel_is_abstract(self):
-        """Test that cancel() is an abstract method."""
+        """Test that cancel() is declared as an abstract method."""
         assert getattr(Job.cancel, "__isabstractmethod__", False)
 
     def test_status_is_abstract(self):
-        """Test that status() is an abstract method."""
+        """Test that status() is declared as an abstract method."""
         assert getattr(Job.status, "__isabstractmethod__", False)
 
     def test_concrete_subclass_with_all_methods_can_be_instantiated(self):
-        """Test that a concrete subclass of Job that implements all abstract methods can be instantiated."""
+        """Test that a concrete subclass implementing all abstract methods can be instantiated."""
         job = MinimalJob(backend=MinimalBackend())
         assert job is not None
 
-    def test_partial_subclass_missing_result_cannot_be_instantiated(self):
-        """Test that a subclass of Job that does not implement result() cannot be instantiated."""
+    def test_partial_subclass_missing_status_cannot_be_instantiated(self):
+        """Test that a subclass missing status() cannot be instantiated."""
 
         class IncompleteJob(Job):
-            """A Job subclass that does not implement result()."""
+            """A Job subclass missing status()."""
 
             def submit(self):
-                pass
+                """No-op submit."""
+
+            def result(self):
+                """No-op result."""
 
             def cancel(self):
+                """No-op cancel."""
+                return False
+
+            # status() is missing
+
+        with pytest.raises(TypeError):
+            IncompleteJob(backend=None)
+
+    def test_partial_subclass_missing_result_cannot_be_instantiated(self):
+        """Test that a subclass missing result() cannot be instantiated."""
+
+        class IncompleteJob(Job):
+            """A Job subclass missing result()."""
+
+            def submit(self):
+                """No-op submit."""
+
+            def cancel(self):
+                """No-op cancel."""
                 return False
 
             def status(self):
+                """Return a fixed status."""
                 return JobStatus.INITIALIZING
 
             # result() is missing
 
         with pytest.raises(TypeError):
             IncompleteJob(backend=None)
+
+    def test_job_metadata_attribute_exists(self):
+        """Test that a Job instance exposes a metadata attribute.
+
+        Metadata is passed as **kwargs to the Job constructor and stored
+        for backend-specific use.
+        """
+        backend = MinimalBackend()
+        job = MinimalJob(backend=backend)
+        assert hasattr(job, "metadata")
+
+    def test_job_metadata_stores_kwargs(self):
+        """Test that **kwargs passed to the Job constructor are accessible via metadata."""
+        backend = MinimalBackend()
+        job = MinimalJob(backend=backend, source="test_suite", run_id=42)
+        assert job.metadata.get("source") == "test_suite"
+        assert job.metadata.get("run_id") == 42
 
 
 class TestJobConcreteHelpers:
@@ -222,17 +273,25 @@ class TestJobConcreteHelpers:
 
     @pytest.fixture
     def backend(self):
-        """Fixture that provides a minimal backend."""
+        """Fixture providing a MinimalBackend instance."""
         return MinimalBackend()
 
     def _job_with_status(self, backend, status):
         """Helper to create a MinimalJob with a specific status."""
         return MinimalJob(backend=backend, initial_status=status)
 
-    @pytest.mark.parametrize("status", [JobStatus.DONE])
-    def test_done_returns_true_for_terminal_states(self, backend, status):
-        """Test that done() returns True for all terminal states."""
-        assert self._job_with_status(backend, status).done() is True
+    def test_done_returns_true_only_for_done_status(self, backend):
+        """Test that done() returns True only for JobStatus.DONE."""
+        assert self._job_with_status(backend, JobStatus.DONE).done() is True
+
+    def test_done_returns_false_for_cancelled_and_error(self, backend):
+        """Test that done() returns False for CANCELLED and ERROR.
+
+        done() means 'completed successfully' — it is not a synonym for
+        in_final_state(). Use in_final_state() to test for any terminal state.
+        """
+        assert self._job_with_status(backend, JobStatus.CANCELLED).done() is False
+        assert self._job_with_status(backend, JobStatus.ERROR).done() is False
 
     @pytest.mark.parametrize(
         "status", [JobStatus.INITIALIZING, JobStatus.QUEUED, JobStatus.RUNNING]
@@ -240,6 +299,22 @@ class TestJobConcreteHelpers:
     def test_done_returns_false_for_non_terminal_states(self, backend, status):
         """Test that done() returns False for all non-terminal states."""
         assert self._job_with_status(backend, status).done() is False
+
+    @pytest.mark.parametrize(
+        "status", [JobStatus.DONE, JobStatus.CANCELLED, JobStatus.ERROR]
+    )
+    def test_in_final_state_returns_true_for_all_terminal_states(self, backend, status):
+        """Test that in_final_state() returns True for all three terminal states."""
+        assert self._job_with_status(backend, status).in_final_state() is True
+
+    @pytest.mark.parametrize(
+        "status", [JobStatus.INITIALIZING, JobStatus.QUEUED, JobStatus.RUNNING]
+    )
+    def test_in_final_state_returns_false_for_non_terminal_states(
+        self, backend, status
+    ):
+        """Test that in_final_state() returns False for all non-terminal states."""
+        assert self._job_with_status(backend, status).in_final_state() is False
 
     def test_running_true_only_for_running(self, backend):
         """Test that running() returns True only for the RUNNING state."""
@@ -253,22 +328,22 @@ class TestJobConcreteHelpers:
         assert self._job_with_status(backend, JobStatus.RUNNING).queued() is False
         assert self._job_with_status(backend, JobStatus.DONE).queued() is False
 
-    @pytest.mark.parametrize(
-        "status", [JobStatus.DONE, JobStatus.CANCELLED, JobStatus.ERROR]
-    )
-    def test_in_final_state_returns_true_for_all_terminal_states(self, backend, status):
-        """Test that in_final_state() returns True for all terminal states."""
-        assert self._job_with_status(backend, status).in_final_state() is True
+    def test_cancelled_true_only_for_cancelled(self, backend):
+        """Test that cancelled() returns True only for the CANCELLED state."""
+        assert self._job_with_status(backend, JobStatus.CANCELLED).cancelled() is True
+        assert self._job_with_status(backend, JobStatus.DONE).cancelled() is False
+        assert self._job_with_status(backend, JobStatus.ERROR).cancelled() is False
+        assert self._job_with_status(backend, JobStatus.RUNNING).cancelled() is False
 
     def test_job_id_none_by_default(self, backend):
-        """Test that job_id is None by default."""
+        """Test that job_id is None when not explicitly provided."""
         assert MinimalJob(backend=backend).job_id is None
 
     def test_job_id_set_explicitly(self, backend):
-        """Test that job_id can be set explicitly."""
+        """Test that an explicitly provided job_id is stored correctly."""
         assert MinimalJob(backend=backend, job_id="abc-123").job_id == "abc-123"
 
     def test_backend_property_returns_creating_backend(self, backend):
-        """Test that the backend property returns the backend passed to the constructor."""
+        """Test that the backend property returns the backend passed at construction."""
         job = MinimalJob(backend=backend)
         assert job.backend is backend
