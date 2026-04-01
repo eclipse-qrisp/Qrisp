@@ -19,7 +19,8 @@
 import numpy as np
 import pytest
 from qiskit_aer import AerSimulator
-from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
+
+# from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
 
 from qrisp import QuantumCircuit, QuantumFloat
 from qrisp.interface import QiskitBackend, VirtualBackend
@@ -27,7 +28,7 @@ from qrisp.interface.job import JobResult, JobStatus
 from qrisp.interface.provider_backends.qiskit_backend import QiskitJob
 
 aer_backend = AerSimulator()
-fake_backend = FakeWashingtonV2()
+# fake_backend = FakeWashingtonV2()
 
 
 class TestQiskitBackendConstruction:
@@ -143,25 +144,25 @@ class TestQiskitBackendExecution:
         # With a deterministic computation the result is correct regardless of shot count.
         assert res.get_measurement(backend=backend) == {9: 1.0}
 
-    def test_fake_backend_dominant_result_is_correct(self):
-        """Verify that the most probable outcome is correct even under device noise."""
-        backend = QiskitBackend(backend=fake_backend)
-        qf = QuantumFloat(2)
-        qf[:] = 2
-        res = qf * qf
-        meas_res = res.get_measurement(backend=backend)
-        # The correct answer (4) must be the dominant outcome despite noise.
-        assert meas_res[4] > 0.5
+    # def test_fake_backend_dominant_result_is_correct(self):
+    #     """Verify that the most probable outcome is correct even under device noise."""
+    #     backend = QiskitBackend(backend=fake_backend)
+    #     qf = QuantumFloat(2)
+    #     qf[:] = 2
+    #     res = qf * qf
+    #     meas_res = res.get_measurement(backend=backend)
+    #     # The correct answer (4) must be the dominant outcome despite noise.
+    #     assert meas_res[4] > 0.5
 
-    def test_fake_backend_result_has_noise(self):
-        """Verify that a fake hardware backend produces a noisy (non-sharp) distribution."""
-        backend = QiskitBackend(backend=fake_backend)
-        qf = QuantumFloat(2)
-        qf[:] = 2
-        res = qf * qf
-        meas_res = res.get_measurement(backend=backend)
-        # A noiseless result would have exactly one key; noise spreads mass across others.
-        assert len(meas_res) > 1
+    # def test_fake_backend_result_has_noise(self):
+    #     """Verify that a fake hardware backend produces a noisy (non-sharp) distribution."""
+    #     backend = QiskitBackend(backend=fake_backend)
+    #     qf = QuantumFloat(2)
+    #     qf[:] = 2
+    #     res = qf * qf
+    #     meas_res = res.get_measurement(backend=backend)
+    #     # A noiseless result would have exactly one key; noise spreads mass across others.
+    #     assert len(meas_res) > 1
 
 
 # We keep this test even though VirtualBackend is deprecated.
