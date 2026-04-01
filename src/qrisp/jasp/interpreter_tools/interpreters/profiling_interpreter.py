@@ -34,11 +34,11 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 
 
 from abc import ABC, abstractmethod
-from functools import lru_cache
+from collections import OrderedDict
 from typing import Any, Callable, Dict, Sequence, Tuple
 
 import jax
-import numpy as np
+from jax import pure_callback, ShapeDtypeStruct
 from jax._src.core import Jaxpr, JaxprEqn
 from jax.typing import ArrayLike
 
@@ -278,47 +278,139 @@ class BaseMetric(ABC):
         }
 
 
-# This reconstructs the metric inside the cached function so caching not keyed
-# by the metric object identity.
-@lru_cache(int(1e5))
+# ---------------------------------------------------------------------------
+# Callback helper – decides whether a sub-jaxpr should be wrapped in
+# ``jax.pure_callback`` to prevent XLA from inlining it at every call site.
+# ---------------------------------------------------------------------------
+
+def _should_use_profiling_callback(jaxpr, call_graph_stats):
+    """
+    Decide whether *jaxpr* should be called via ``jax.pure_callback``.
+
+    A sub-jaxpr benefits from callback wrapping when it is **reused**
+    (``call_count >= 2``) and large enough to matter
+    (``call_count * inlined_eqn_count >= 500``).  Wrapping prevents XLA's
+    ``flatten-call-graph`` pass from cloning the HLO at every call site.
+
+    Parameters
+    ----------
+    jaxpr : Jaxpr | ClosedJaxpr
+        The sub-jaxpr under consideration.
+    call_graph_stats : dict | None
+        Output of ``analyze_call_graph``.  ``None`` disables callbacks.
+
+    Returns
+    -------
+    bool
+    """
+    if call_graph_stats is None:
+        return False
+    stats = call_graph_stats.get(id(jaxpr))
+    if stats is None:
+        return False
+    return (
+        stats.call_count > 1
+        and stats.call_count * stats.inlined_eqn_count >= 500
+    )
+
+
+# Cache for result shape specifications.  Computing result shapes requires
+# a full ``make_jaxpr`` trace of the evaluator, so we cache by evaluator
+# identity to avoid repeating this work on every call.
+_result_shapes_cache: dict[int, Any] = {}
+
+
+def _get_result_shapes(jaxpr_evaluator, invalues):
+    """
+    Compute the output shape specification for ``jax.pure_callback``.
+
+    ``jax.pure_callback`` needs a pytree of ``ShapeDtypeStruct`` that
+    describes the shape and dtype of every output *before* the callback
+    executes.  We cannot derive this from the raw sub-jaxpr outvars
+    because the profiling interpreter replaces quantum abstract types
+    (``AbstractQuantumState``, ``AbstractQubitArray``, …) with classical
+    metric-state values whose shapes depend on the metric.
+
+    Instead, we trace ``jaxpr_evaluator`` (the profiling-transformed
+    evaluator) via ``jax.make_jaxpr(return_shape=True)`` which gives us
+    a pytree of ``ShapeDtypeStruct`` matching the *transformed* output
+    structure — exactly what ``pure_callback`` expects.
+
+    The result is cached per evaluator identity so the (potentially
+    expensive) tracing is performed at most once.
+    """
+    key = id(jaxpr_evaluator)
+    if key in _result_shapes_cache:
+        return _result_shapes_cache[key]
+
+    _, result_shapes = jax.make_jaxpr(jaxpr_evaluator, return_shape=True)(*invalues)
+    _result_shapes_cache[key] = result_shapes
+    return result_shapes
+
+
+# ---------------------------------------------------------------------------
+# Compiled-profiler cache.  Keyed by ``(id(jaxpr), metric_cls, cache_key)``.
+# Uses ``OrderedDict`` for LRU eviction instead of ``@lru_cache`` because
+# ``call_graph_stats`` is an unhashable dict that must be threaded through.
+# ---------------------------------------------------------------------------
+
+_PROFILER_CACHE_MAX_SIZE: int = 10_000
+_profiler_cache: OrderedDict[tuple, tuple] = OrderedDict()
+
+
 def get_compiled_profiler(
     jaxpr: Jaxpr,
     metric_cls: type[BaseMetric],
     cache_key: Tuple,
-) -> Callable:
+    call_graph_stats=None,
+) -> Tuple[Callable, Callable]:
     """
     Get a compiled profiler for a given Jaxpr and metric configuration.
 
-    Args:
-        jaxpr (Jaxpr): The Jaxpr to be profiled.
-        metric_cls (type[BaseMetric]): A subclass of BaseMetric used to evaluate
-            and measure metrics during Jaxpr evaluation. This should be a class
-            (not an instance) that inherits from BaseMetric.
-        cache_key (tuple): A key used for caching the compiled profiler.
+    Parameters
+    ----------
+    jaxpr : Jaxpr
+        The Jaxpr to be profiled.
+    metric_cls : type[BaseMetric]
+        A subclass of BaseMetric.
+    cache_key : tuple
+        Hashable representation of the metric's configuration.
+    call_graph_stats : dict | None, optional
+        Call graph analysis results for callback optimization.
 
-    Returns:
-        callable: A profiler function that takes the same arguments as the Jaxpr
-            and returns the evaluated result with metric information.
+    Returns
+    -------
+    tuple[Callable, Callable]
+        ``(profiler, jaxpr_evaluator)`` – the compiled profiler function and the
+        raw evaluator (used for computing result shapes for ``pure_callback``).
     """
+    key = (id(jaxpr), metric_cls, cache_key)
+    if key in _profiler_cache:
+        _profiler_cache.move_to_end(key)
+        return _profiler_cache[key]
 
     metric = metric_cls.from_cache_key(cache_key)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(metric)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(metric, call_graph_stats)
     jaxpr_evaluator = eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator)
-    jitted_profiler = jax.jit(jaxpr_evaluator)
 
-    call_counter = np.zeros(1)
+    # Always JIT-compile the profiler.  When the caller decides to wrap
+    # this in ``pure_callback``, JAX will invoke it with concrete numpy
+    # arrays (outside the trace), so the JIT is executed eagerly and
+    # the compiled HLO stays local to this callback — preventing XLA's
+    # ``flatten-call-graph`` pass from duplicating it at every call site.
+    profiler = jax.jit(jaxpr_evaluator)
 
-    def profiler(*args):
-        if call_counter[0] < 3 or len(jaxpr.eqns) < 20:
-            call_counter[0] += 1
-            return jaxpr_evaluator(*args)
+    # We return both the JIT-compiled profiler (used for execution) and
+    # the raw evaluator (needed by ``_get_result_shapes`` to trace output
+    # shapes for ``pure_callback``).
+    result = (profiler, jaxpr_evaluator)
+    _profiler_cache[key] = result
+    if len(_profiler_cache) > _PROFILER_CACHE_MAX_SIZE:
+        _profiler_cache.popitem(last=False)
+    return result
 
-        return jitted_profiler(*args)
 
-    return profiler
-
-
-def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
+def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None) -> Callable:
     """
     Build a profiling equation evaluator for a given metric.
 
@@ -328,6 +420,10 @@ def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
         The metric to use for profiling. This should be an instance of a class
         that inherits from `BaseMetric`, which defines the profiling behavior for
         different quantum primitives and operations.
+
+    call_graph_stats : dict[int, JaxprStats] | None, optional
+        Call graph analysis results from ``analyze_call_graph``. When provided,
+        enables callback-based compilation optimization for reused sub-jaxprs.
 
     Returns
     -------
@@ -480,16 +576,40 @@ def make_profiling_eqn_evaluator(metric: BaseMetric) -> Callable:
             # the size of the intermediate representation limited.
 
             # We want to carry on this property. For this we use the lru_cache feature
-            # on the get_compiler_profiler function. This function returns a
+            # on the get_compiled_profiler function. This function returns a
             # jitted function, which will always return the same object if called
             # with the same object. Since identical qached function calls are
             # represented by the same jaxpr, we achieve our goal.
 
-            profiler = get_compiled_profiler(
-                eqn.params["jaxpr"], type(metric), metric.cache_key()
+            # When call_graph_stats is available and the sub-jaxpr is reused
+            # and large, we wrap the call in jax.pure_callback to prevent
+            # XLA's flatten-call-graph pass from duplicating the HLO.
+            #
+            # Without callback wrapping, XLA inlines every call site's HLO
+            # into the parent computation, causing superlinear growth in
+            # compilation time and memory for programs with many @qache'd
+            # subroutine invocations.
+            #
+            # The profiler returned by get_compiled_profiler is always
+            # JIT-compiled.  When used via pure_callback, JAX calls it
+            # with concrete arrays outside the trace, so the JIT-compiled
+            # HLO is self-contained and opaque to the parent compilation.
+
+            sub_jaxpr = eqn.params["jaxpr"]
+            profiler, jaxpr_evaluator = get_compiled_profiler(
+                sub_jaxpr, type(metric), metric.cache_key(), call_graph_stats
             )
 
-            outvalues = profiler(*invalues)
+            if _should_use_profiling_callback(sub_jaxpr, call_graph_stats):
+                # Compute output shape spec for pure_callback.  We use the
+                # raw (un-jitted) evaluator + make_jaxpr to trace the shapes,
+                # since the profiling transform replaces quantum abstract
+                # types with classical metric values whose shapes we can't
+                # read off the original jaxpr outvars.
+                result_shapes = _get_result_shapes(jaxpr_evaluator, invalues)
+                outvalues = pure_callback(profiler, result_shapes, *invalues)
+            else:
+                outvalues = profiler(*invalues)
 
             if len(eqn.outvars) == 1:
                 outvalues = (outvalues,)
