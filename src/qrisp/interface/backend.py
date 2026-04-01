@@ -74,8 +74,8 @@ class Backend(ABC):
 
     :meth:`run` provides a simpler synchronous interface on top of
     :meth:`run_async`. It blocks until execution completes and returns the
-    measurement results as a ``Sequence[Mapping]`` — one dictionary per
-    submitted circuit. New code should prefer :meth:`run_async` when the
+    measurement results as a ``list[Mapping]`` (one dictionary per
+    submitted circuit). New code should prefer :meth:`run_async` when the
     :class:`Job` handle is needed (e.g. to poll status, cancel, or await
     results concurrently). Existing code that relied on the previous
     synchronous ``run`` method will continue to work without modification.
@@ -122,6 +122,9 @@ class Backend(ABC):
 
     * require specific capabilities and raise if they are missing, or
     * ignore hardware metadata entirely and operate in a backend-agnostic mode.
+
+    Backend-specific capabilities that are not covered by the base interface
+    should be exposed as concrete typed properties on the subclass.
 
     .. rubric:: Relationship to design patterns
 
@@ -360,7 +363,12 @@ class Backend(ABC):
     @property
     def num_qubits(self):
         """
-        Number of qubits available on the backend.
+        Total number of physical qubits the backend exposes.
+
+        This reflects the full physical qubit count of the device, not a
+        snapshot of currently healthy or calibrated qubits. A qubit whose
+        calibration has degraded or whose gates have been removed from the
+        active gate set is still counted here.
 
         Returns ``None`` if the backend does not expose a fixed or meaningful
         qubit count (e.g. simulators, abstract backends, or backends where
@@ -371,14 +379,23 @@ class Backend(ABC):
     @property
     def connectivity(self):
         """
-        Connectivity information for the backend.
+        Currently executable qubit connectivity for the backend.
 
-        This property describes the qubit connectivity exposed by the backend
-        for compilation and execution purposes. If the physical device
-        consists of multiple disconnected components, the backend is expected
-        to expose **a single connected component**. The choice of which
-        component to expose (e.g. largest component, highest-fidelity
-        subset) is left to the concrete backend implementation.
+        This property describes which qubit pairs currently
+        have at least one multi-qubit gate available for execution. It
+        reflects the active gate set at the time the property is queried
+        (not the physical wiring of the device, not a theoretical maximum,
+        and not a snapshot of all pairs that have ever been calibrated).
+
+        If the physical device consists of multiple disconnected components,
+        the backend is expected to expose a single connected component.
+        The choice of which component to expose (e.g. largest component,
+        highest-fidelity subset) is left to the concrete backend
+        implementation.
+
+        Gates involving more than two qubits are not representable as edges
+        in a connectivity graph. Backends that support such operations should
+        document them separately (e.g. via :attr:`gate_set`).
 
         The returned object may encode qubit adjacency, coupling constraints,
         or other topology information in a backend-specific format.
@@ -394,9 +411,24 @@ class Backend(ABC):
         """
         Native gate set supported by the backend.
 
-        The exact meaning of this property is backend-specific. For hardware
-        backends this typically refers to native operations; for simulators
-        it may be omitted or ignored.
+        This property describes which operations the backend can execute
+        natively. The gate set is purely descriptive.
+        Qrisp does not assume the set is universal. Compilation passes that
+        require universality must verify this themselves.
+
+        Different qubit pairs may support
+        different gates (e.g. CZ on some pairs, iSWAP on others, or both).
+        Backends are expected to encode this granularity in the returned
+        object.
+
+        Measurement is not assumed. The availability of a measurement
+        operation on a given qubit is not guaranteed by this interface.
+        Backends that require explicit measurement declarations should
+        include them in the gate set.
+
+        The format of the returned object is backend-specific. For hardware
+        backends it typically refers to native operations; for simulators it
+        may be omitted or ignored.
 
         Returns ``None`` if the backend does not expose gate availability.
         """
@@ -407,34 +439,20 @@ class Backend(ABC):
         """
         Error rates or calibration-related information for the backend.
 
-        This may depend on a specific calibration snapshot and is typically
-        hardware- and vendor-specific.
+        This property is calibration-dependent: the values it exposes are
+        only meaningful relative to a specific calibration run. Concrete
+        backend implementations currently must include metadata that identifies
+        which calibration snapshot the data refers to. For example, a
+        timestamp, a calibration ID, or a version string. Returning bare
+        error values without any calibration anchor is discouraged,
+        as callers have no way to determine whether the data is current.
+
+        The format of the returned object is hardware (and vendor) specific.
 
         Returns ``None`` if the backend does not expose error or calibration
         data.
         """
         return None
-
-    # ------------------------------------------------------------------
-    # Extension point for backend-specific capabilities
-    # ------------------------------------------------------------------
-
-    @property
-    def capabilities(self) -> Mapping[str, Any]:
-        """
-        Backend-specific capabilities not covered by the base interface.
-
-        Keys and values are backend-defined. This property is intended as an
-        extension point for vendor backends to expose additional structured
-        information without modifying the base ``Backend`` API.
-
-        This may include, for example, calibration schedules, advanced
-        hardware features, quality metrics, or other backend-specific data.
-
-        Returns an empty dict if the backend does not expose additional
-        capabilities.
-        """
-        return {}
 
     # ------------------------------------------------------------------
     # Dunder methods

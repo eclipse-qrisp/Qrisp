@@ -515,10 +515,6 @@ class TestBackendHardwareMetadata:
         """Ensure backend_queue returns None when not overridden."""
         assert backend.backend_queue is None
 
-    def test_capabilities_is_empty_dict(self, backend):
-        """Ensure capabilities returns an empty dict when not overridden."""
-        assert backend.capabilities == {}
-
     def test_num_qubits_can_be_overridden(self):
         """Ensure a concrete backend can expose a meaningful num_qubits value."""
         assert TestBackend(num_qubits=5).num_qubits == 5

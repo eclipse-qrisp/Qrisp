@@ -54,4 +54,3 @@ Hardware metadata
    Backend.connectivity
    Backend.gate_set
    Backend.error_rates
-   Backend.capabilities
