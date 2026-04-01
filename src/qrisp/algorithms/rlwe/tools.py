@@ -33,7 +33,7 @@ from .classical import bitrev7, bitrevm, modpow_jax
 ############################################################
 
 # Efficient O(n log n) implementation
-def q_ntt(x : QuantumArray, q: int, n: int, root : int, inv = False):
+def q_ntt(x : QuantumArray, n: int, q: int, root : int, inv = False):
     """
     Number theoretic transform. (in-place)
 
@@ -48,7 +48,7 @@ def q_ntt(x : QuantumArray, q: int, n: int, root : int, inv = False):
     """
 
     if inv:
-        return q_ntt_inv(x, q, n, root)
+        return q_ntt_inv(x, n, q, root)
 
     m = jnp.int32(jnp.ceil(jnp.log2(n)))
 
@@ -89,7 +89,7 @@ def q_ntt(x : QuantumArray, q: int, n: int, root : int, inv = False):
     q_while_loop(cond_fun_outer, body_fun_outer, (n // 2, 1, x))
 
 # Efficient O(n log n) implementation
-def q_ntt_inv(x : QuantumArray, q: int, n: int, root : int):
+def q_ntt_inv(x : QuantumArray, n: int, q: int, root : int):
     """
     Number theoretic transform. (in-place)
 
@@ -224,7 +224,7 @@ def q_base_case_multipy(a0: QuantumModulus, a1: QuantumModulus, b0: QuantumModul
         tmp.delete()
     """
 
-def q_multiply_ntt(f: QuantumArray, g: QuantumArray, result: QuantumArray, q: int, n: int, root : int, inv = False):
+def q_multiply_ntts(f: QuantumArray, g: QuantumArray, result: QuantumArray, n: int, q: int, root : int, inv = False):
     """
     Computes the product of two NTT representations. Alg. 11.
 
@@ -253,9 +253,9 @@ def q_ntt_mat_mul(A, B, out, q, n, k, root):
         for i1 in jrange(k):
             def true_fun():
                 aux = QuantumArray(QuantumModulus(q), (n,))
-                q_multiply_ntt(B[i0,i1,:], A[i0,:], aux, q, n, root)
+                q_multiply_ntts(B[i0,i1,:], A[i0,:], aux, n, q, root)
                 out[i1,:] += aux
-                q_multiply_ntt(B[i0,i1,:], A[i0,:], aux, q, n, root, True)
+                q_multiply_ntts(B[i0,i1,:], A[i0,:], aux, n, q, root, True)
                 aux.delete()
             q_cond(A[i0, i1] != 0, true_fun, lambda: None)
 

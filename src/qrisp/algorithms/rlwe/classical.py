@@ -167,3 +167,27 @@ def compute_inv_ntt(f: np.ndarray, n: int, q: int, root: int) -> np.ndarray:
         f[idx] = (f[idx] * n_half_inv) % q 
         
     return f
+
+
+def base_case_multiply(a_0: int, a_1: int, b_0: int, b_1: int, gamma: int, q: int):
+
+    c = np.zeros(2, dtype=np.int64)
+
+    c[0] = (a_0 * b_0 + ((a_1 * b_1) % q) * gamma) % q
+    c[1] = (a_0 * b_1 + a_1 * b_0) % q
+    return c
+
+
+def multiply_ntts(f_hat, g_hat, n: int, q: int, root: int):
+
+    h_hat = np.zeros(n, dtype=np.int64)
+    m = int(np.ceil(np.log2(n)))
+
+    for i in range(n // 2):
+    
+        gamma = modpow_jax(root, int(2 * bitrevm(i, m-1)) + 1, q)        
+        h = base_case_multiply(f_hat[2*i], f_hat[2*i+1], g_hat[2*i], g_hat[2*i+1], gamma, q)
+        h_hat[2*i] = h[0]
+        h_hat[2*i+1] = h[1]
+        
+    return h_hat
