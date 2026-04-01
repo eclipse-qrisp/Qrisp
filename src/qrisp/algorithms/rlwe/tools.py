@@ -168,6 +168,40 @@ def q_base_case_multipy(a0: QuantumModulus, a1: QuantumModulus, b0: QuantumModul
         The modulus is $X^2-\gamma$.
     
     """
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import modinv
+
+    q = a0.modulus
+    aux = QuantumModulus(q)
+    injected_mul = (aux << (lambda a,b: a*b))
+
+    gamma_inv = modinv(gamma, q)
+    
+    with conjugate(injected_mul)(a0, b0):
+        if inv:
+            c0 -= aux
+        else:       
+            c0 += aux
+    with conjugate(injected_mul)(a1, b1):
+        aux *= gamma
+        if inv:
+            c0 -= aux
+        else:   
+            c0 += aux
+        aux *= gamma_inv
+    with conjugate(injected_mul)(a0, b1):
+        if inv:
+            c1 -= aux
+        else:
+            c1 += aux
+    with conjugate(injected_mul)(a1, b0):
+        if inv:
+            c1 -= aux
+        else:
+            c1 += aux
+
+    aux.delete()
+
+    """
     # More efficient
     p00 = a0 * b0
     p11 = a1 * b1
@@ -188,7 +222,7 @@ def q_base_case_multipy(a0: QuantumModulus, a1: QuantumModulus, b0: QuantumModul
 
     for tmp in (p10, p01, p11, p00):
         tmp.delete()
-
+    """
 
 def q_multiply_ntt(f: QuantumArray, g: QuantumArray, result: QuantumArray, q: int, n: int, root : int, inv = False):
     """
