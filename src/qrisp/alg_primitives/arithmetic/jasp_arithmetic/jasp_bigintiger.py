@@ -205,6 +205,21 @@ class BigInteger:
         """
         return BigInteger.create(n, size)
 
+    @staticmethod
+    def coerce(n, size):
+        """
+        Coerce ``n`` into a fixed-width BigInteger of ``size`` limbs.
+
+        Python integers are routed through ``create_static`` so very large
+        constants remain usable even when they exceed JAX's host int64 range.
+        Traced / array-like values still use ``create``.
+        """
+        if isinstance(n, BigInteger):
+            return n
+        if isinstance(n, int):
+            return BigInteger.create_static(n, size)
+        return BigInteger.create(n, size)
+
     @jax.jit
     def __add__(self, other: "BigInteger") -> "BigInteger":
         """
@@ -778,7 +793,7 @@ class BigInteger:
             Remainder of ``other // self``.
         """
         if not isinstance(other, BigInteger):
-            other = BigInteger.create(other, self.digits.shape[0])
+            other = BigInteger.coerce(other, self.digits.shape[0])
         return other % self
 
     @jax.jit
