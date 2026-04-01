@@ -25,7 +25,7 @@ import numpy as np
 import pytest
 from qiskit_aer import AerSimulator
 
-from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
+# from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
 
 from qrisp import QuantumCircuit, QuantumFloat
 from qrisp.interface import QiskitBackend, VirtualBackend
