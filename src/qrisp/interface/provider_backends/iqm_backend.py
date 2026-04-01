@@ -16,9 +16,11 @@
 ********************************************************************************
 """
 
+import warnings
 from uuid import UUID
 
 from qrisp.interface import BatchedBackend
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 def IQMBackend(
@@ -33,6 +35,10 @@ def IQMBackend(
 ):
     """
     This function creates a :ref:`BatchedBackend` for executing circuits on IQM hardware.
+
+    .. warning::
+
+        The ``IQMBackend`` function will be removed from qrisp in a future release.
 
     Parameters
     ----------
@@ -120,6 +126,12 @@ def IQMBackend(
         meas_res = qc.run(shots = 10000, backend = custom_transpiled_garnet)
 
     """
+
+    warnings.warn(
+        "DeprecationWarning: The IQMBackend function will be removed from qrisp in a future release.",
+        QrispDeprecationWarning,
+    )
+
     if not isinstance(api_token, str):
         raise TypeError(
             "api_token must be a string. You can create an API token on the IQM Resonance website."
@@ -147,10 +159,10 @@ def IQMBackend(
         from iqm.iqm_client.iqm_client import IQMClient
         from iqm.qiskit_iqm import transpile_to_IQM
         from iqm.qiskit_iqm.iqm_provider import IQMBackend
-    except ImportError as exc:
+    except ImportError:
         raise ImportError(
             "Please install qiskit-iqm to use the IQMBackend. You can do this by running `pip install qrisp[iqm]`."
-        ) from exc
+        )
 
     # Construct the server URL based on device_instance if server_url is not provided
     if server_url is None:
@@ -202,16 +214,26 @@ def IQMBackend(
         answer = job.result()
 
         counts_batch = []
-        for i, (_, shots) in enumerate(batch):
-
+        for i in range(len(batch)):
             counts = answer[i]
-            shots = shots or 1000
 
             counts_dic = {}
+
+            shots = batch[i][1]
+            if shots is None:
+                shots = 1000
+
             for j in range(shots):
 
-                key_str = "".join(str(counts[k][j][0]) for k in counts.keys())
-                counts_dic[key_str] = counts_dic.get(key_str, 0) + 1
+                key_str = ""
+
+                for k in counts.keys():
+                    key_str += str(counts[k][j][0])
+
+                if key_str in counts_dic:
+                    counts_dic[key_str] += 1
+                else:
+                    counts_dic[key_str] = 1
 
             counts_batch.append(counts_dic)
 
