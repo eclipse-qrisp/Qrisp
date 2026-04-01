@@ -17,12 +17,15 @@
 """
 
 from typing import Union
+import math
+import numpy as np
 
 from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder
 from qrisp.qtypes import QuantumFloat, QuantumModulus
 from qrisp.jasp import jrange, check_for_tracing_mode, jlen, q_cond
 from qrisp.environments import control, invert, custom_control
 from qrisp.core import swap, cx, x
+from jax.core import Tracer
 
 from .jasp_bigintiger import BigInteger
 from .jasp_mod_tools import (
@@ -31,6 +34,27 @@ from .jasp_mod_tools import (
     modinv,
     best_montgomery_shift,
 )
+
+
+def _concrete_modulus_to_int(value, name: str) -> int:
+    digits = value.digits if isinstance(value, BigInteger) else value
+
+    if isinstance(digits, Tracer):
+        raise TypeError(
+            f"{name} must be a concrete BigInteger so Qrisp can size the "
+            "Montgomery workspace during tracing."
+        )
+
+    digits = np.asarray(digits)
+    if digits.ndim == 0:
+        return int(digits.item())
+
+    result = 0
+    for i, digit in enumerate(digits):
+        digit = int(digit)
+        if digit:
+            result += digit << (32 * i)
+    return result
 
 
 def q_montgomery_reduction(
@@ -348,19 +372,9 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     # a*b fits in (n + m) bits, independent of the inputs' Montgomery shifts.
     # NOTE: We compute n from N (not from x.size) to keep it a plain Python int,
     # since x.size can be a JAX tracer during tracing.
-    import numpy as np
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
-    if isinstance(N, BigInteger):
-        digits = np.asarray(N.digits)
-        N_int = 0
-        for i in range(len(digits)):
-            d = int(digits[i])
-            if d:
-                N_int += d << (32 * i)
-    else:
-        N_int = int(N)
-    n = int(np.ceil(np.log2(N_int)))
-    m = int(np.ceil(np.log2((N_int - 1) ** 2) + 1)) - n
+    N_int = _concrete_modulus_to_int(N, "QuantumModulus modulus")
+    n = math.ceil(math.log2(N_int))
+    m = math.ceil(math.log2((N_int - 1) ** 2) + 1) - n
 
     if check_for_tracing_mode():
         xrange = jrange

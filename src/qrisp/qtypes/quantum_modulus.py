@@ -18,6 +18,7 @@
 
 import numpy as np
 import jax.numpy as jnp
+from jax.core import Tracer
 
 from qrisp import check_for_tracing_mode
 from qrisp.qtypes.quantum_float import QuantumFloat
@@ -27,11 +28,48 @@ import jax
 
 
 def _moduli_neq(a, b):
-    """Compare two moduli for inequality, safe for BigInteger inside JIT."""
+    """Compare two moduli for inequality, keeping BigInteger constants concrete."""
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
-    if isinstance(a, BigInteger):
-        return np.any(np.asarray(a.digits) != np.asarray(b.digits))
+
+    if isinstance(a, BigInteger) or isinstance(b, BigInteger):
+        if not isinstance(a, BigInteger) or not isinstance(b, BigInteger):
+            return True
+
+        if isinstance(a.digits, Tracer) or isinstance(b.digits, Tracer):
+            # SAFETY: current call sites require the modulus to be a static
+            # constant.  Returning False here assumes both traced moduli came
+            # from the *same* static value.  If dynamic (non-static) moduli are
+            # ever introduced, this must be revisited — e.g. by raising an
+            # error or materializing the digits for comparison.
+            import warnings
+            warnings.warn(
+                "_moduli_neq: comparing traced BigInteger moduli — "
+                "assuming they are equal.  This is only safe when the "
+                "modulus is a static constant.",
+                stacklevel=2,
+            )
+            return False
+
+        a_digits = np.asarray(a.digits)
+        b_digits = np.asarray(b.digits)
+        if a_digits.shape != b_digits.shape:
+            return True
+        return bool(np.any(a_digits != b_digits))
+
     return a != b
+
+
+def _coerce_bigint_operand(value, modulus):
+    """Coerce *value* to a BigInteger matching *modulus*'s limb count.
+
+    Delegates to :meth:`BigInteger.coerce` to avoid duplicating the
+    int-vs-traced dispatch logic.
+    """
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+
+    if isinstance(value, BigInteger):
+        return value
+    return BigInteger.coerce(value, modulus.digits.shape[0])
 
 
 def comparison_wrapper(func):
@@ -209,8 +247,12 @@ class QuantumModulus(QuantumFloat):
             self.m = 0
 
         else:
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+                smallest_power_of_two,
+            )
+
             self.modulus = modulus
-            self.m = int(np.ceil(np.log2(modulus)))
+            self.m = int(smallest_power_of_two(modulus))
 
             QuantumFloat.__init__(self, msize=self.m, qs=qs)
 
@@ -247,10 +289,21 @@ class QuantumModulus(QuantumFloat):
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
             montgomery_decoder,
         )
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+            BigInteger,
+        )
 
-        if i >= self.modulus:  # or (np.gcd(i, self.modulus) != 1 and i != 0):
+        i_value = i() if isinstance(i, BigInteger) else int(i)
+        modulus_value = (
+            self.modulus() if isinstance(self.modulus, BigInteger) else int(self.modulus)
+        )
+
+        if i_value >= modulus_value:  # or (np.gcd(i, self.modulus) != 1 and i != 0):
             return np.nan
-        return montgomery_decoder(i, 2**self.m, self.modulus)
+        decoded = montgomery_decoder(i_value, 2**self.m, modulus_value)
+        if isinstance(self.modulus, BigInteger):
+            return BigInteger.create_static(decoded, self.modulus.digits.shape[0])
+        return decoded
 
     def jdecoder(self, i):
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_decoder
@@ -323,22 +376,29 @@ class QuantumModulus(QuantumFloat):
                 return montgomery_encoder(i, 1 << self.m, self.modulus)
 
         else:
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+                BigInteger,
+            )
+            from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
+                montgomery_encoder,
+            )
 
-            if i >= self.modulus:
+            i_value = i() if isinstance(i, BigInteger) else int(i)
+            modulus_value = (
+                self.modulus() if isinstance(self.modulus, BigInteger) else int(self.modulus)
+            )
+
+            if i_value >= modulus_value:
                 raise Exception(
                     "Tried to encode a number into QuantumModulus, which is greator or equal to the modulus"
                 )
-            if i < 0:
+            if i_value < 0:
                 raise Exception("Tried to encode a negative number into QuantumModulus")
-
-        from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
-            montgomery_encoder,
-        )
 
         # if i >= self.modulus:  # or (np.gcd(i, self.modulus) != 1 and i != 0):
         #     return np.nan
 
-        return montgomery_encoder(i, 2**self.m, self.modulus)
+        return montgomery_encoder(i_value, 2**self.m, modulus_value)
 
     # def encode(self, i):
     #    QuantumVariable.encode(self, self.encoder(i))
@@ -376,7 +436,7 @@ class QuantumModulus(QuantumFloat):
             shift = best_montgomery_shift(other, self.modulus)
             if isinstance(self.modulus, BigInteger):
                 if not isinstance(other, BigInteger):
-                    other = BigInteger.create(other, self.modulus.digits.shape[0])
+                    other = _coerce_bigint_operand(other, self.modulus)
                 return cq_montgomery_multiply(
                     other.get_larger(), self, self.modulus.get_larger(), shift
                 )
@@ -405,7 +465,7 @@ class QuantumModulus(QuantumFloat):
             shift = best_montgomery_shift(other, self.modulus)
             if isinstance(self.modulus, BigInteger):
                 if not isinstance(other, BigInteger):
-                    other = BigInteger.create(other, self.modulus.digits.shape[0])
+                    other = _coerce_bigint_operand(other, self.modulus)
                 cq_montgomery_multiply_inplace(
                     other.get_larger(),
                     self,
