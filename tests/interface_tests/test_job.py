@@ -21,7 +21,14 @@ from __future__ import annotations
 import pytest
 from conftest import MinimalBackend, MinimalJob
 
-from qrisp.interface.job import JOB_FINAL_STATES, Job, JobResult, JobStatus
+from qrisp.interface.job import (
+    JOB_FINAL_STATES,
+    Job,
+    JobCancelledError,
+    JobFailureError,
+    JobResult,
+    JobStatus,
+)
 
 
 class TestJobStatusEnum:
@@ -347,3 +354,143 @@ class TestJobConcreteHelpers:
         """Test that the backend property returns the backend passed at construction."""
         job = MinimalJob(backend=backend)
         assert job.backend is backend
+
+
+class TestJobResultContract:
+    """Tests verifying the result() blocking contract and terminal-state exceptions."""
+
+    @pytest.fixture
+    def backend(self):
+        """Fixture providing a MinimalBackend instance."""
+        return MinimalBackend()
+
+    def test_result_returns_job_result_on_success(self, backend):
+        """result() returns the JobResult when the job completed successfully."""
+        job = MinimalJob(backend=backend)
+        expected = JobResult([{"0": 1024}])
+        job._resolve(expected)
+        assert job.result(timeout=1) is expected
+
+    def test_result_raises_job_failure_error_on_error_state(self, backend):
+        """result() raises JobFailureError when the job terminated in ERROR state."""
+        job = MinimalJob(backend=backend)
+        job._fail(RuntimeError("hardware error"))
+        with pytest.raises(JobFailureError):
+            job.result(timeout=1)
+
+    def test_result_raises_job_cancelled_error_on_cancelled_state(self, backend):
+        """result() raises JobCancelledError when the job was cancelled."""
+        job = MinimalJob(backend=backend)
+        job.cancel()
+        with pytest.raises(JobCancelledError):
+            job.result(timeout=1)
+
+    def test_result_raises_immediately_if_already_in_error_state(self, backend):
+        """result() raises immediately without blocking if the job is already in ERROR."""
+        job = MinimalJob(backend=backend)
+        job._fail(RuntimeError("pre-existing failure"))
+        # _fail() sets the done event, so result() must not block
+        with pytest.raises(JobFailureError):
+            job.result(timeout=0)
+
+    def test_result_raises_immediately_if_already_cancelled(self, backend):
+        """result() raises immediately without blocking if the job is already CANCELLED."""
+        job = MinimalJob(backend=backend)
+        job.cancel()
+        # cancel() sets the done event, so result() must not block
+        with pytest.raises(JobCancelledError):
+            job.result(timeout=0)
+
+    def test_job_failure_error_is_runtime_error(self, backend):
+        """JobFailureError is a RuntimeError subclass, so existing bare-except callers still work."""
+        job = MinimalJob(backend=backend)
+        job._fail(RuntimeError("oops"))
+        with pytest.raises(RuntimeError):
+            job.result(timeout=1)
+
+    def test_job_cancelled_error_is_runtime_error(self, backend):
+        """JobCancelledError is a RuntimeError subclass, so existing bare-except callers still work."""
+        job = MinimalJob(backend=backend)
+        job.cancel()
+        with pytest.raises(RuntimeError):
+            job.result(timeout=1)
+
+    def test_job_failure_error_message_contains_job_id(self, backend):
+        """JobFailureError message includes the job_id to aid debugging."""
+        job = MinimalJob(backend=backend, job_id="test-job-42")
+        job._fail(RuntimeError("bad calibration"))
+        with pytest.raises(JobFailureError, match="test-job-42"):
+            job.result(timeout=1)
+
+    def test_job_cancelled_error_message_contains_job_id(self, backend):
+        """JobCancelledError message includes the job_id to aid debugging."""
+        job = MinimalJob(backend=backend, job_id="test-job-99")
+        job.cancel()
+        with pytest.raises(JobCancelledError, match="test-job-99"):
+            job.result(timeout=1)
+
+
+class TestJobStatusCaching:
+    """Tests for last_known_status and refresh()."""
+
+    @pytest.fixture
+    def backend(self):
+        """Fixture providing a MinimalBackend instance."""
+        return MinimalBackend()
+
+    def test_last_known_status_initialises_to_initializing(self, backend):
+        """last_known_status is INITIALIZING before any refresh() call."""
+        job = MinimalJob(backend=backend)
+        assert job.last_known_status == JobStatus.INITIALIZING
+
+    def test_refresh_updates_last_known_status(self, backend):
+        """refresh() updates last_known_status to reflect the current status."""
+        job = MinimalJob(backend=backend)
+        job._set_status(JobStatus.QUEUED)
+        job.refresh()
+        assert job.last_known_status == JobStatus.QUEUED
+
+    def test_refresh_returns_current_status(self, backend):
+        """refresh() returns the freshly fetched status."""
+        job = MinimalJob(backend=backend)
+        job._set_status(JobStatus.RUNNING)
+        returned = job.refresh()
+        assert returned == JobStatus.RUNNING
+
+    def test_refresh_tracks_status_changes_across_calls(self, backend):
+        """Successive refresh() calls track status transitions correctly."""
+        job = MinimalJob(backend=backend)
+        job._set_status(JobStatus.QUEUED)
+        job.refresh()
+        assert job.last_known_status == JobStatus.QUEUED
+
+        job._set_status(JobStatus.RUNNING)
+        job.refresh()
+        assert job.last_known_status == JobStatus.RUNNING
+
+        job._resolve(JobResult([{"0": 1024}]))
+        job.refresh()
+        assert job.last_known_status == JobStatus.DONE
+
+    def test_status_call_does_not_update_last_known_status(self, backend):
+        """Calling status() directly does not mutate last_known_status."""
+        job = MinimalJob(backend=backend)
+        job._set_status(JobStatus.RUNNING)
+        job.status()  # live query — must not update the cache
+        assert job.last_known_status == JobStatus.INITIALIZING
+
+    def test_last_known_status_reflects_final_state_after_refresh(self, backend):
+        """last_known_status correctly caches terminal states."""
+        job = MinimalJob(backend=backend)
+        job._fail(RuntimeError("error"))
+        job.refresh()
+        assert job.last_known_status == JobStatus.ERROR
+
+    def test_last_known_status_is_independent_across_job_instances(self, backend):
+        """Each Job instance has its own independent last_known_status cache."""
+        job_a = MinimalJob(backend=backend)
+        job_b = MinimalJob(backend=backend)
+        job_a._set_status(JobStatus.RUNNING)
+        job_a.refresh()
+        assert job_a.last_known_status == JobStatus.RUNNING
+        assert job_b.last_known_status == JobStatus.INITIALIZING

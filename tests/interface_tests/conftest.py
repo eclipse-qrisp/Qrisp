@@ -54,10 +54,7 @@ class MinimalJob(Job):
             raise TimeoutError(
                 f"Job '{self._job_id}' did not complete within {timeout}s."
             )
-        if self._status == JobStatus.ERROR:
-            raise RuntimeError(f"Job failed: {self._error}") from self._error
-        if self._status == JobStatus.CANCELLED:
-            raise RuntimeError("Job was cancelled.")
+        self._raise_for_status()
         return self._result_data
 
     def cancel(self) -> bool:

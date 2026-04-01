@@ -39,3 +39,5 @@ Methods
    Job.queued
    Job.cancelled
    Job.in_final_state
+   Job.refresh
+   Job._raise_for_status

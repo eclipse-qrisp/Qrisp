@@ -66,6 +66,20 @@ class JobStatus(StrEnum):
 JOB_FINAL_STATES = JobStatus.final_states()
 
 
+class JobFailureError(RuntimeError):
+    """
+    Raised by :meth:`Job.result` when the job terminated in
+    :attr:`~JobStatus.ERROR` state.
+    """
+
+
+class JobCancelledError(RuntimeError):
+    """
+    Raised by :meth:`Job.result` when the job was cancelled
+    (:attr:`~JobStatus.CANCELLED`).
+    """
+
+
 class JobResult:
     """
     Wraps the outcome of one or more circuit executions.
@@ -249,6 +263,7 @@ class Job(ABC):
         self._backend = backend
         self._job_id = job_id
         self.metadata = kwargs
+        self._last_known_status: JobStatus = JobStatus.INITIALIZING
 
     # ------------------------------------------------------------------
     # Properties
@@ -263,6 +278,21 @@ class Job(ABC):
     def backend(self) -> "Backend":
         """The :class:`Backend` that created this job."""
         return self._backend
+
+    @property
+    def last_known_status(self) -> JobStatus:
+        """
+        The most recently cached :class:`JobStatus` for this job.
+
+        This value is updated only when :meth:`refresh` is called
+        explicitly. It is initialised to :attr:`~JobStatus.INITIALIZING`
+        and is never updated by :meth:`status` alone (reading it never
+        triggers a network call).
+
+        Use :meth:`refresh` to fetch the latest status from the backend
+        and update this property at the same time.
+        """
+        return self._last_known_status
 
     # ------------------------------------------------------------------
     # Abstract methods
@@ -282,15 +312,33 @@ class Job(ABC):
     @abstractmethod
     def result(self) -> JobResult:
         """
-        Returns the :class:`JobResult` of this job.
+        Block until the job reaches a terminal state and return its result.
 
-        The internal mechanism used to wait for completion is left entirely
-        to the concrete implementation.
+        This is a blocking call: it does not return until the job is in one
+        of the terminal states — :attr:`~JobStatus.DONE`,
+        :attr:`~JobStatus.CANCELLED`, or :attr:`~JobStatus.ERROR`. The
+        internal synchronisation mechanism (threading, polling, asyncio,
+        etc.) is left entirely to the concrete implementation.
+
+        If the job is already in a terminal state when this method is
+        called, it must return (or raise) immediately without blocking.
+
+        Concrete implementations should call :meth:`_raise_for_status`
+        once the terminal state has been reached, before returning.
 
         Returns
         -------
         JobResult
+            The measurement results, if the job completed successfully
+            (:attr:`~JobStatus.DONE`).
 
+        Raises
+        ------
+        JobFailureError
+            If the job terminated in :attr:`~JobStatus.ERROR` state.
+
+        JobCancelledError
+            If the job was cancelled (:attr:`~JobStatus.CANCELLED`).
         """
 
         raise NotImplementedError
@@ -312,10 +360,13 @@ class Job(ABC):
     @abstractmethod
     def status(self) -> JobStatus:
         """
-        Return the current :class:`JobStatus` of the job.
+        Query and return the current :class:`JobStatus` of the job.
 
-        The returned status should reflect the most up-to-date information available to the backend,
-        and it should be among the values of the :class:`JobStatus` enumeration.
+        This is a **live query**: every call fetches the most up-to-date
+        status available, which for remote backends may involve a network
+        call. Callers that want to read the last known status without
+        triggering a round-trip should use ``last_known_status``
+        instead and call :meth:`refresh` when an explicit update is needed.
 
         Returns
         -------
@@ -355,6 +406,56 @@ class Job(ABC):
         :attr:`~JobStatus.CANCELLED`, and :attr:`~JobStatus.ERROR`.
         """
         return self.status() in JOB_FINAL_STATES
+
+    def refresh(self) -> JobStatus:
+        """
+        Fetch the latest status from the backend and cache it.
+
+        Calls :meth:`status` (a live query that may involve a network
+        round-trip for remote backends), stores the result in
+        ``last_known_status``, and returns it.
+
+        Use this method when you want an up-to-date status *and* want
+        ``last_known_status`` to reflect it. Polling loops that need
+        to check progress without holding a result should call
+        :meth:`refresh` rather than :meth:`status` directly, so that the
+        cached value stays current.
+
+        Returns
+        -------
+        JobStatus
+            The freshly fetched status, which is also stored in
+            ``last_known_status``.
+        """
+        self._last_known_status = self.status()
+        return self._last_known_status
+
+    # ------------------------------------------------------------------
+    # Helper for concrete implementations
+    # ------------------------------------------------------------------
+
+    def _raise_for_status(self) -> None:
+        """
+        Raise the appropriate exception if the current status is not
+        ``DONE``.
+
+        Concrete implementations should call this inside :meth:`result`
+        *after* the job has reached a terminal state (i.e. after any
+        blocking wait).
+
+        Raises
+        ------
+        JobFailureError
+            If :attr:`status` is ``ERROR``.
+
+        JobCancelledError
+            If :attr:`status` is ``CANCELLED``.
+        """
+        s = self.status()
+        if s == JobStatus.ERROR:
+            raise JobFailureError(f"Job {self._job_id!r} terminated with status ERROR.")
+        if s == JobStatus.CANCELLED:
+            raise JobCancelledError(f"Job {self._job_id!r} was cancelled.")
 
     # ------------------------------------------------------------------
     # Dunder methods
