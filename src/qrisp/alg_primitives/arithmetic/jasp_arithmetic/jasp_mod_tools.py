@@ -217,18 +217,18 @@ def smallest_power_of_two(n: Union[int, BigInteger]):
         # bit_size already yields ceil(log2(n)) with 0 for n==0
         return n.bit_size()
 
+    if hasattr(n, "bit_length"):
+        return (n - 1).bit_length() if n > 1 else 0
+
     if check_for_tracing_mode():
         nj = jnp.asarray(n)
         # Avoid log2(0); define result 0 for n<=1
         return jnp.where(
             nj <= 1, jnp.int64(0), jnp.ceil(jnp.log2(nj)).astype(jnp.int64)
         )
-    else:
-        # Pure Python int path, exact and safe
-        if hasattr(n, "bit_length"):
-            return (n - 1).bit_length() if n > 1 else 0
-        # Fallback (should not occur in practice)
-        return 0
+
+    # Fallback (should not occur in practice)
+    return 0
 
 
 def best_montgomery_shift(n: Union[int, BigInteger], N: Union[int, BigInteger] = None):
