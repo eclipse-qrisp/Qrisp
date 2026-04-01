@@ -93,6 +93,18 @@ def test_modulus_biginteger_create_measure(seed, size):
     assert to_int(main()) == V_int
 
 
+def test_measure_to_big_integer():
+    @boolean_simulation
+    def main():
+        qv = QuantumVariable(40)
+        x(qv[0])
+        x(qv[5])
+        x(qv[33])
+        return measure_to_big_integer(qv, 2)
+
+    assert to_int(main()) == (1 << 0) + (1 << 5) + (1 << 33)
+
+
 @pytest.mark.parametrize("size", QC_INPLACE_SIZE)
 @pytest.mark.parametrize("seed", QC_INPLACE_SEEDS)
 def test_modulus_biginteger_qc_inplace(seed, size):
