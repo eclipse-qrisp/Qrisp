@@ -252,9 +252,9 @@ class QuantumModulus(QuantumFloat):
             )
 
             self.modulus = modulus
-            self.m = int(smallest_power_of_two(modulus))
+            aux = int(smallest_power_of_two(modulus))
 
-            QuantumFloat.__init__(self, msize=self.m, qs=qs)
+            QuantumFloat.__init__(self, msize=aux, qs=qs)
 
             if inpl_adder is None:
                 from qrisp.alg_primitives.arithmetic import fourier_adder
