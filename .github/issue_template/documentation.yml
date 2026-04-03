@@ -1,0 +1,79 @@
+name: Documentation
+description: Suggest improvements or report issues in the documentation
+labels: ["documentation"]
+body:
+  - type: dropdown
+
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+
+    validations:
+      required: true
+
+  - type: input
+
+    id: responsible
+    attributes:
+      label: Responsible
+      placeholder: "e.g. Jane Doe (Fraunhofer FOKUS)"
+    validations:
+      required: false
+
+  - type: dropdown
+
+    id: doc-type
+    attributes:
+      label: Type of Documentation Change
+      options:
+        - New documentation needed
+        - Existing documentation incorrect
+        - Existing documentation unclear
+        - Missing code example / tutorial
+        - API reference incomplete
+
+    validations:
+      required: true
+
+  - type: input
+
+    id: affected-page
+    attributes:
+      label: Affected Page / Section
+      placeholder: "e.g. https://qrisp.eu/... or module qrisp.grover"
+    validations:
+      required: false
+
+  - type: textarea
+
+    id: short-description
+    attributes:
+      label: Short Description
+      description: "Max 3 sentences. What needs to change?"
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: long-description
+    attributes:
+      label: Long Description
+      description: "Provide details, suggested text, or references."
+    validations:
+      required: false
+
+  - type: checkboxes
+
+    id: definition-of-done
+    attributes:
+      label: Definition of Done
+      options:
+        - label: Documentation written / updated
+        - label: Peer-reviewed for technical accuracy
+        - label: Code examples tested and working
+        - label: Renders correctly (checked locally or in preview)
