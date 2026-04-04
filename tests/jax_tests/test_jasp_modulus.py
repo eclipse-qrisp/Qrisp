@@ -377,11 +377,19 @@ def test_moduli_neq_static_different_shape():
 
 
 def test_moduli_neq_mixed_types():
-    """Comparing BigInteger with int should return True."""
+    """Comparing BigInteger(13) with int 13 should return False (they are equal)."""
     from qrisp.qtypes.quantum_modulus import _moduli_neq
     a = BigInteger.create_static(13, 1)
-    assert _moduli_neq(a, 13) is True
-    assert _moduli_neq(13, a) is True
+    assert _moduli_neq(a, 13) is False
+    assert _moduli_neq(13, a) is False
+
+
+def test_moduli_neq_mixed_types_different():
+    """Comparing BigInteger(13) with int 17 should return True."""
+    from qrisp.qtypes.quantum_modulus import _moduli_neq
+    a = BigInteger.create_static(13, 1)
+    assert _moduli_neq(a, 17) is True
+    assert _moduli_neq(17, a) is True
 
 
 def test_moduli_neq_plain_ints():
@@ -493,3 +501,54 @@ def test_coerce_bigint_operand_larger_raises():
     value = BigInteger.create_static(7, 3)
     with pytest.raises(ValueError, match="truncation"):
         _coerce_bigint_operand(value, modulus)
+
+
+# ----- comparison_wrapper tests (Montgomery shift handling) -----
+
+def test_comparison_same_nonzero_shift():
+    """Two QuantumModuli with the same non-zero Montgomery shift can be compared."""
+    a = QuantumModulus(13)
+    b = QuantumModulus(13)
+    a[:] = 5
+    b[:] = 5
+    a.m = 3
+    b.m = 3
+    # Same shift → comparison should work, not raise
+    res = a == b
+    assert measure(res)[0]
+
+
+def test_comparison_same_nonzero_shift_neq():
+    """Two QuantumModuli with the same non-zero shift but different values."""
+    a = QuantumModulus(13)
+    b = QuantumModulus(13)
+    a[:] = 5
+    b[:] = 7
+    a.m = 2
+    b.m = 2
+    res = a != b
+    assert measure(res)[0]
+
+
+def test_comparison_different_shifts_raises():
+    """Two QuantumModuli with different non-zero shifts must raise."""
+    a = QuantumModulus(13)
+    b = QuantumModulus(13)
+    a[:] = 5
+    b[:] = 5
+    a.m = 2
+    b.m = 3
+    with pytest.raises(Exception, match="differing Montgomery shifts"):
+        a == b
+
+
+def test_comparison_nonzero_shift_vs_non_modulus_raises():
+    """Comparing QuantumModulus(m!=0) with a QuantumFloat must raise."""
+    from qrisp import QuantumFloat
+    a = QuantumModulus(13)
+    a[:] = 5
+    a.m = 2
+    b = QuantumFloat(4)
+    b[:] = 5
+    with pytest.raises(Exception, match="non-zero Montgomery shift"):
+        a == b
