@@ -176,6 +176,41 @@ def test_quantum_array_element_wise_ops(op):
         assert np.array_equal(k, expected_c), f"Failed on operator {op.__name__}. Expected {expected_c}, got {k}"
 
 
+bool_ops = [
+    operator.and_, operator.or_, operator.xor  # &, |, ^
+]
+
+@pytest.mark.parametrize("op", bool_ops)
+def test_quantum_array_element_wise_bool_ops(op):
+    """Test element-wise boolean operations on QuantumArrays against their classical counterparts."""
+
+    a_c = np.array([[True, False], [False, True]])
+    b_c = np.array([[True, True], [False, False]])
+
+    # Initialize QuantumArrays
+    qtype = QuantumBool()
+    a_array = QuantumArray(qtype, shape=(2,2))
+    b_array = QuantumArray(qtype, shape=(2,2))
+
+    a_array[:] = a_c
+    b_array[:] = b_c
+
+    # Execute quantum operation
+    r_array = op(a_array, b_array)
+    
+    # Calculate classical reference
+    expected_c = op(a_c, b_c)
+    
+    # Validate measurements
+    results = r_array.get_measurement()
+    
+    assert len(results) > 0, "No measurement results found"
+    
+    for k in results.keys():
+        # k is an OutcomeArray; np.array_equal handles both floats and booleans
+        assert np.array_equal(k, expected_c), f"Failed on operator {op.__name__}. Expected {expected_c}, got {k}"
+
+
 def test_quantum_array_element_eq():
     a_c = np.array(3*[[0,1,2]])
     b_c = np.arange(0, 9).reshape((3,3))

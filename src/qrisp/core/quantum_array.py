@@ -19,6 +19,7 @@
 from __future__ import annotations
 import copy
 from itertools import product
+from math import prod
 
 import numpy as np
 import jax.numpy as jnp
@@ -518,6 +519,65 @@ class QuantumArray:
         res = copy.copy(self)
         res.ind_array = self.ind_array.swapaxes(axis_1, axis_2)
         return res
+
+    def _reduce_over_axes(self, operation, qtype, axis=None):
+        """
+        Generic method to apply a reduction operation along specified axes.
+        
+        Parameters
+        ----------
+        operation : Callable
+            A callable that takes a 1D list/array of QuantumVariables 
+            and returns a single QuantumVariable.
+        qtype : QuantumVariable
+            The type of the quantum variable to return.
+        axis : int or tuple of ints, optional
+            The axes to reduce over.
+
+        Returns
+        -------
+        QuantumVariable or QuantumArray
+            A new QuantumVariable or QuantumArray with the reduction applied along the specified axes.
+        """
+        ndim = len(self.shape)
+        
+        # 1. Normalize the axis argument
+        if axis is None:
+            axes_to_reduce = tuple(range(ndim))
+        elif isinstance(axis, int):
+            axes_to_reduce = (axis,)
+        else:
+            axes_to_reduce = tuple(axis)
+        
+        axes_to_reduce = tuple(a + ndim if a < 0 else a for a in axes_to_reduce)
+
+        # 2. Separate axes and determine target shapes
+        axes_to_keep = tuple(i for i in range(ndim) if i not in axes_to_reduce)
+        
+        kept_shape = tuple(self.shape[i] for i in axes_to_keep)
+        reduced_shape = tuple(self.shape[i] for i in axes_to_reduce)
+
+        # If reducing over all axes, return a single element (0D array)
+        if not axes_to_keep:
+            return operation(self.flatten())
+        
+        # 3. Transpose & 4. Reshape to 2D: (N_kept, N_reduced)
+        new_axes_order = axes_to_keep + axes_to_reduce
+        transposed_arr = self.transpose(new_axes_order)
+        
+        num_kept = prod(kept_shape)
+        num_reduced = prod(reduced_shape)
+        reshaped_arr = transposed_arr.reshape((num_kept, num_reduced))
+
+        # 5. Apply the core logic
+        result_array = QuantumArray(qtype, shape=(num_kept,))
+        for i in range(num_kept):
+            slice_to_reduce = reshaped_arr[i]
+            inj_operation = result_array[i] << (lambda input: operation(input))
+            inj_operation(slice_to_reduce)
+
+        # 6. Reshape
+        return result_array.reshape(kept_shape)
 
     def delete(self, verify=False):
         r"""
@@ -1048,22 +1108,30 @@ class QuantumArray:
                     (out_view[i] << fun)(self_view[i], other)
             return out
 
-    def _validate_arithmetic(self, other):
+    def _validate_arithmetic(self, other, mode="float"):
         """Internal helper to validate type and shape for element-wise operations."""
+        from qrisp.qtypes.quantum_bool import QuantumBool
         from qrisp.qtypes.quantum_float import QuantumFloat
 
-        # Self must always be QuantumFloat
-        if not isinstance(self.qtype, QuantumFloat):
+        if mode == "float":
+            valid_qtype = QuantumFloat
+        elif mode == "bool":
+            valid_qtype = QuantumBool
+        else:
+            raise ValueError(f"Unsupported mode for validation: {mode}")
+
+        # Self qtype must always be QuantumFloat or QuantumBool for element-wise operations
+        if not isinstance(self.qtype, valid_qtype):
             raise TypeError(
-                f"Element-wise operations require qtype 'QuantumFloat'. "
+                f"Element-wise operations require qtype '{valid_qtype.__name__}'. "
                 f"Got {type(self.qtype).__name__}."
             )
 
-        # If other is a QuantumArray, check its type and shape
+        # If other is a QuantumArray, check its qtype and shape
         if isinstance(other, QuantumArray):
-            if not isinstance(other.qtype, QuantumFloat):
+            if not isinstance(other.qtype, valid_qtype):
                 raise TypeError(
-                    f"Element-wise operations require both arrays to have qtype 'QuantumFloat'. "
+                    f"Element-wise operations require both arrays to have qtype '{valid_qtype.__name__}'. "
                     f"Got {type(self.qtype).__name__} and {type(other.qtype).__name__}."
                 )
             if self.shape != other.shape:
@@ -1406,6 +1474,203 @@ class QuantumArray:
         return self._element_wise_out_of_place_injection(
             other, lambda a, b: a <= b, QuantumBool()
         )
+    
+    def __and__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs element-wise ``&`` (bitwise AND) operation.
+        Note that this operation is only defined for QuantumArrays of QuantumBools.
+
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be combined with using bitwise AND.
+    
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray of QuantumBools containing the result of element-wise ``&``.
+        
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumBool
+        >>> a_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> a_array[:] = np.array([[True, False], [False, True]])
+        >>> b_array[:] = np.array([[True, True], [False, False]])
+        >>> r_array = a_array & b_array
+        >>> print(r_array)
+        # {OutcomeArray([[True, False], [False, False]], dtype=object): 1.0}
+        """
+        from qrisp.qtypes import QuantumBool
+
+        self._validate_arithmetic(other, mode="bool")
+        return self._element_wise_out_of_place_injection(
+            other, lambda a, b: a & b, QuantumBool()
+        )
+    
+    def __or__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs element-wise ``|`` (bitwise OR) operation.
+        Note that this operation is only defined for QuantumArrays of QuantumBools.
+
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be combined with using bitwise OR.
+
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray of QuantumBools containing the result of element-wise ``|``.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumBool
+        >>> a_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> a_array[:] = np.array([[True, False], [False, True]])
+        >>> b_array[:] = np.array([[True, True], [False, False]])
+        >>> r_array = a_array | b_array
+        >>> print(r_array)
+        # {OutcomeArray([[True, True], [False, True]], dtype=object): 1.0}
+        """
+        from qrisp.qtypes import QuantumBool
+
+        self._validate_arithmetic(other, mode="bool")
+        return self._element_wise_out_of_place_injection(
+            other, lambda a, b: a | b, QuantumBool()
+        )
+    
+    def __xor__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs element-wise ``^`` (bitwise XOR) operation.
+        Note that this operation is only defined for QuantumArrays of QuantumBools.
+
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be combined with using bitwise XOR.
+
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray of QuantumBools containing the result of element-wise ``^``.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumBool
+        >>> a_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> a_array[:] = np.array([[True, False], [False, True]])
+        >>> b_array[:] = np.array([[True, True], [False, False]])
+        >>> r_array = a_array ^ b_array
+        >>> print(r_array)
+        # {OutcomeArray([[False, True], [False, True]], dtype=object): 1.0}
+        """
+        from qrisp.qtypes import QuantumBool
+
+        self._validate_arithmetic(other, mode="bool")
+        return self._element_wise_out_of_place_injection(
+            other, lambda a, b: a ^ b, QuantumBool()
+        )
+
+    def all(self, axis=None):
+        """
+        Performs an element-wise logical AND reduction, returning True if all elements are True.
+
+        Parameters
+        ----------
+        axis : int or tuple of ints, optional
+            Axis or axes along which a logical AND reduction is performed. The default is None,
+            meaning that the reduction is performed over all elements.
+
+        Returns
+        -------
+        QuantumBool or QuantumArray
+            If axis is None, returns a single boolean value. If axis is specified, returns an array of boolean values.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumBool
+        >>> a_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> a_array[:] = np.array([[True, True], [True, True]])
+        >>> print(a_array.all())  # Output: True
+
+        >>> b_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> b_array[:] = np.array([[True, False], [True, True]])
+        >>> print(b_array.all())  # Output: False
+
+        >>> c_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> c_array[:] = np.array([[True, False], [True, True]])
+        >>> print(c_array.all(axis=0))  # Output: [True, False]
+        """
+        from qrisp.qtypes import QuantumBool
+
+        if not isinstance(self.qtype, QuantumBool):
+            raise TypeError("The 'all' method is only defined for QuantumArrays of QuantumBools.")
+        
+        def _all(elements):
+            from qrisp.core.gate_application_functions import mcx
+
+            res = QuantumBool()
+            qubits = sum([qv.reg for qv in elements], [])
+            mcx(qubits, res, ctrl_state=-1)
+            return res
+            
+        return self._reduce_over_axes(_all, QuantumBool(), axis=axis)
+    
+    def any(self, axis=None):
+        """
+        Performs an element-wise logical OR reduction, returning True if any element is True.
+
+        Parameters
+        ----------
+        axis : int or tuple of ints, optional
+            Axis or axes along which a logical OR reduction is performed. The default is None,
+            meaning that the reduction is performed over all elements.
+
+        Returns
+        -------
+        QuantumBool or QuantumArray
+            If axis is None, returns a single boolean value. If axis is specified, returns an array of boolean values.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumBool
+        >>> a_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> a_array[:] = np.array([[False, False], [False, False]])
+        >>> print(a_array.any())  # Output: False
+
+        >>> b_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> b_array[:] = np.array([[True, False], [False, False]])
+        >>> print(b_array.any())  # Output: True
+
+        >>> c_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> c_array[:] = np.array([[True, False], [False, False]])
+        >>> print(c_array.any(axis=0))  # Output: [True, False]
+        """
+        from qrisp.qtypes import QuantumBool
+
+        if not isinstance(self.qtype, QuantumBool):
+            raise TypeError("The 'any' method is only defined for QuantumArrays of QuantumBools.")
+        
+        def _any(elements):
+            from qrisp.core.gate_application_functions import mcx, x
+            from qrisp.environments import conjugate
+
+            res = QuantumBool()
+            with conjugate(x)(elements):
+                qubits = sum([qv.reg for qv in elements], [])
+                mcx(qubits, res, ctrl_state=-1)
+            x(res)
+            return res
+            
+        return self._reduce_over_axes(_any, QuantumBool(), axis=axis)
 
     # Delegation of element-wise in-place functions
 

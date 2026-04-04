@@ -52,8 +52,8 @@ Arithmetic
    QuantumArray.__ge__
    QuantumArray.__lt__
    QuantumArray.__le__
-
-   
-   
-   
-   
+   QuantumArray.__and__
+   QuantumArray.__or__
+   QuantumArray.__xor__
+   QuantumArray.all
+   QuantumArray.any
