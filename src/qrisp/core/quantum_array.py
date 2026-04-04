@@ -1063,7 +1063,7 @@ class QuantumArray:
         # Self qtype must always be QuantumFloat or QuantumBool for element-wise operations
         if not isinstance(self.qtype, valid_qtype):
             raise TypeError(
-                f"Element-wise operations require qtype {valid_qtype.__name__}. "
+                f"Element-wise operations require qtype '{valid_qtype.__name__}'. "
                 f"Got {type(self.qtype).__name__}."
             )
 
@@ -1071,7 +1071,7 @@ class QuantumArray:
         if isinstance(other, QuantumArray):
             if not isinstance(other.qtype, valid_qtype):
                 raise TypeError(
-                    f"Element-wise operations require both arrays to have qtype {valid_qtype.__name__}. "
+                    f"Element-wise operations require both arrays to have qtype '{valid_qtype.__name__}'. "
                     f"Got {type(self.qtype).__name__} and {type(other.qtype).__name__}."
                 )
             if self.shape != other.shape:
