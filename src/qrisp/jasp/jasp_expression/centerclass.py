@@ -17,28 +17,22 @@
 """
 
 from functools import lru_cache
+from typing import Callable
 
 import jax
 from jax import make_jaxpr
-from jax.extend.core import Jaxpr, Literal, ClosedJaxpr
-from jax.tree_util import tree_flatten, tree_unflatten
+from jax.extend.core import ClosedJaxpr, Jaxpr, Literal
+from jax.tree_util import tree_flatten
 
 from qrisp.jasp import (
     eval_jaxpr,
-    flatten_environments,
-    cond_to_cl_control,
     extract_invalues,
     flatten_environments,
     insert_outvalues,
 )
-from qrisp.jasp.primitives import (
-    AbstractQuantumState,
-    QuantumPrimitive,
-    ParityOperation,
-)
 from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement
-from qrisp.jasp.primitives import AbstractQuantumState, QuantumPrimitive
 from qrisp.jasp.jasp_expression import collect_environments, invert_jaspr
+from qrisp.jasp.primitives import AbstractQuantumState
 
 
 class Jaspr(ClosedJaxpr):
@@ -668,8 +662,8 @@ class Jaspr(ClosedJaxpr):
         qs = TracingQuantumSession.get_instance()
         abs_qst = qs.abs_qst
 
-        ammended_args = list(args) + [abs_qst]
-        res = eval_jaxpr(self)(*ammended_args)
+        amended_args = list(args) + [abs_qst]
+        res = eval_jaxpr(self)(*amended_args)
 
         if isinstance(res, tuple):
             new_abs_qst = res[-1]
@@ -703,9 +697,9 @@ class Jaspr(ClosedJaxpr):
         qs = TracingQuantumSession.get_instance()
         abs_qst = qs.abs_qst
 
-        ammended_args = list(args) + [abs_qst]
+        amended_args = list(args) + [abs_qst]
         if not inline:
-            res = jax.jit(eval_jaxpr(self))(*ammended_args)
+            res = jax.jit(eval_jaxpr(self))(*amended_args)
 
             eqn = get_last_equation()
 
@@ -713,7 +707,7 @@ class Jaspr(ClosedJaxpr):
             if name is not None:
                 eqn.params["name"] = name
         else:
-            res = eval_jaxpr(self)(*ammended_args)
+            res = eval_jaxpr(self)(*amended_args)
 
         if isinstance(res, tuple):
             new_abs_qst = res[-1]
@@ -1490,7 +1484,9 @@ def make_jaxpr_mod(fun, static_argnums=(), return_shape=False, abstracted_axes=N
     return jaxpr_creator
 
 
-def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
+def make_jaspr(
+    fun: Callable, flatten_envs: bool = True, return_shape: bool = False, **jax_kwargs
+) -> Callable:
     """
     Creates a function that returns the Jaspr representation of a quantum function.
 
@@ -1594,17 +1590,18 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
         check_for_tracing_mode,
     )
 
-    # Handle static_argnums adjustment for the ammended function
+    # Adjust static_argnums for the amended function (which has an extra kwarg)
+    #
+    # The traced function will effectively have an extra leading logical argument
+    # due to the injected abstract quantum state, so we need to adjust static_argnums accordingly.
+    # The user’s original argument positions move by one.
     adjusted_jax_kwargs = dict(jax_kwargs)
     if "static_argnums" in adjusted_jax_kwargs:
-        if isinstance(adjusted_jax_kwargs["static_argnums"], list):
-            adjusted_jax_kwargs["static_argnums"] = list(
-                adjusted_jax_kwargs["static_argnums"]
-            )
-            for i in range(len(adjusted_jax_kwargs["static_argnums"])):
-                adjusted_jax_kwargs["static_argnums"][i] += 1
+        static_argnums = adjusted_jax_kwargs["static_argnums"]
+        if isinstance(static_argnums, int):
+            adjusted_jax_kwargs["static_argnums"] = (static_argnums + 1,)
         else:
-            adjusted_jax_kwargs["static_argnums"] += 1
+            adjusted_jax_kwargs["static_argnums"] = tuple(i + 1 for i in static_argnums)
 
     def jaspr_creator(*args, **kwargs):
 
@@ -1618,8 +1615,9 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
 
         # This function will be traced by Jax.
         # Note that we add the abs_qst keyword as the tracing quantum circuit
-        def ammended_function(*args, **kwargs):
+        def amended_function(*args, **kwargs):
 
+            # Extract the abstract quantum state from the kwargs and start tracing
             abs_qst = kwargs[10 * "~"]
             del kwargs[10 * "~"]
 
@@ -1643,8 +1641,9 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
 
             return res, res_qc
 
-        ammended_kwargs = dict(kwargs)
-        ammended_kwargs[10 * "~"] = AbstractQuantumState()
+        # We inject an abstract quantum state into the kwargs to trigger the tracing of quantum operations.
+        amended_kwargs = dict(kwargs)
+        amended_kwargs[10 * "~"] = AbstractQuantumState()
 
         # Use make_jaxpr_mod to trace the function
         # Pass return_shape through to get the output tree if requested
@@ -1652,11 +1651,11 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
         abstracted_axes = adjusted_jax_kwargs.get("abstracted_axes", None)
 
         result = make_jaxpr_mod(
-            ammended_function,
+            amended_function,
             static_argnums=static_argnums,
             return_shape=return_shape,
             abstracted_axes=abstracted_axes,
-        )(*args, **ammended_kwargs)
+        )(*args, **amended_kwargs)
 
         if return_shape:
             closed_jaxpr, full_out_tree = result
