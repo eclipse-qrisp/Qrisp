@@ -19,6 +19,7 @@
 from __future__ import annotations
 import copy
 from itertools import product
+from math import prod
 
 import numpy as np
 import jax.numpy as jnp
@@ -518,6 +519,65 @@ class QuantumArray:
         res = copy.copy(self)
         res.ind_array = self.ind_array.swapaxes(axis_1, axis_2)
         return res
+
+    def _reduce_over_axes(self, operation, qtype, axis=None):
+        """
+        Generic method to apply a reduction operation along specified axes.
+        
+        Parameters
+        ----------
+        operation : Callable
+            A callable that takes a 1D list/array of QuantumVariables 
+            and returns a single QuantumVariable.
+        qtype : QuantumVariable
+            The type of the quantum variable to return.
+        axis : int or tuple of ints, optional
+            The axes to reduce over.
+
+        Returns
+        -------
+        QuantumVariable or QuantumArray
+            A new QuantumVariable or QuantumArray with the reduction applied along the specified axes.
+        """
+        ndim = len(self.shape)
+        
+        # 1. Normalize the axis argument
+        if axis is None:
+            axes_to_reduce = tuple(range(ndim))
+        elif isinstance(axis, int):
+            axes_to_reduce = (axis,)
+        else:
+            axes_to_reduce = tuple(axis)
+        
+        axes_to_reduce = tuple(a + ndim if a < 0 else a for a in axes_to_reduce)
+
+        # 2. Separate axes and determine target shapes
+        axes_to_keep = tuple(i for i in range(ndim) if i not in axes_to_reduce)
+        
+        kept_shape = tuple(self.shape[i] for i in axes_to_keep)
+        reduced_shape = tuple(self.shape[i] for i in axes_to_reduce)
+
+        # If reducing over all axes, return a single element (0D array)
+        if not axes_to_keep:
+            return operation(self.flatten())
+        
+        # 3. Transpose & 4. Reshape to 2D: (N_kept, N_reduced)
+        new_axes_order = axes_to_keep + axes_to_reduce
+        transposed_arr = self.transpose(new_axes_order)
+        
+        num_kept = prod(kept_shape)
+        num_reduced = prod(reduced_shape)
+        reshaped_arr = transposed_arr.reshape((num_kept, num_reduced))
+
+        # 5. Apply the core logic
+        result_array = QuantumArray(qtype, shape=(num_kept,))
+        for i in range(num_kept):
+            slice_to_reduce = reshaped_arr[i]
+            inj_operation = result_array[i] << (lambda input: operation(input))
+            inj_operation(slice_to_reduce)
+
+        # 6. Reshape
+        return result_array.reshape(kept_shape)
 
     def delete(self, verify=False):
         r"""
