@@ -16,10 +16,11 @@
 ********************************************************************************
 """
 
+import numpy as np
 import operator
 import pytest
-from qrisp import *
-from qrisp.jasp import *
+from qrisp import QuantumArray, QuantumBool, QuantumFloat, QuantumModulus, measure, x, h
+from qrisp.jasp import jaspify, qache, terminal_sampling
 
 
 def test_jasp_quantum_array():
