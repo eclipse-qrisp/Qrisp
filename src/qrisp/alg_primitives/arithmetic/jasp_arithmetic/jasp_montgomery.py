@@ -341,7 +341,7 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     """
 
     from qrisp.qtypes.quantum_modulus import _moduli_neq
-    if _moduli_neq(x.modulus, y.modulus):
+    if not check_for_tracing_mode() and _moduli_neq(x.modulus, y.modulus):
         raise Exception("Tried to multiply two QuantumModulus with differing modulus")
 
     inpl_adder = x.inpl_adder

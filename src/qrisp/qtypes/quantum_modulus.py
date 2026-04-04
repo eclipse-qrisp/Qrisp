@@ -28,7 +28,14 @@ import jax
 
 
 def _moduli_neq(a, b):
-    """Compare two moduli for inequality, keeping BigInteger constants concrete."""
+    """Compare two moduli for inequality.
+
+    This check is designed for **static** (non-tracing) contexts only.
+    When either operand contains JAX tracers (dynamic mode), the digits
+    cannot be materialised, so the function raises ``RuntimeError``
+    instead of guessing.  Callers in tracing code paths must skip the
+    check themselves (``if not check_for_tracing_mode(): …``).
+    """
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 
     if isinstance(a, BigInteger) or isinstance(b, BigInteger):
@@ -36,19 +43,11 @@ def _moduli_neq(a, b):
             return True
 
         if isinstance(a.digits, Tracer) or isinstance(b.digits, Tracer):
-            # SAFETY: current call sites require the modulus to be a static
-            # constant.  Returning False here assumes both traced moduli came
-            # from the *same* static value.  If dynamic (non-static) moduli are
-            # ever introduced, this must be revisited — e.g. by raising an
-            # error or materializing the digits for comparison.
-            import warnings
-            warnings.warn(
-                "_moduli_neq: comparing traced BigInteger moduli — "
-                "assuming they are equal.  This is only safe when the "
-                "modulus is a static constant.",
-                stacklevel=2,
+            raise RuntimeError(
+                "_moduli_neq cannot compare traced BigInteger moduli.  "
+                "This check should only be called in static (non-tracing) "
+                "mode.  Guard the call with `if not check_for_tracing_mode():`."
             )
-            return False
 
         a_digits = np.asarray(a.digits)
         b_digits = np.asarray(b.digits)
@@ -62,15 +61,24 @@ def _moduli_neq(a, b):
 def _coerce_bigint_operand(value, modulus):
     """Coerce *value* to a BigInteger matching *modulus*'s limb count.
 
-    Delegates to `BigInteger.coerce` to avoid duplicating the
-    int-vs-traced dispatch logic.
+    If *value* is already a BigInteger with fewer limbs it is zero-padded;
+    if it has more limbs than the modulus a ``ValueError`` is raised.
+    Non-BigInteger values are converted via ``BigInteger.coerce``.
+
+    Parameters
+    ----------
+    value : int, BigInteger, or array-like
+        Operand to coerce.
+    modulus : BigInteger
+        Reference modulus whose limb count determines the target width.
+
+    Returns
+    -------
+    BigInteger
+        Value with exactly ``modulus.digits.shape[0]`` limbs.
     """
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
-    
-    if isinstance(value, BigInteger):
-        if value.digits.shape[0] != modulus.digits.shape[0]:
-            raise ValueError("BigInteger operand limb count does not match modulus")
-        return value
+
     return BigInteger.coerce(value, modulus.digits.shape[0])
 
 
@@ -427,7 +435,7 @@ class QuantumModulus(QuantumFloat):
         )
 
         if isinstance(other, QuantumModulus):
-            if _moduli_neq(self.modulus, other.modulus):
+            if not check_for_tracing_mode() and _moduli_neq(self.modulus, other.modulus):
                 raise ValueError("Both QuantumModuli must have the same modulus")
             if check_for_tracing_mode():
                 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
