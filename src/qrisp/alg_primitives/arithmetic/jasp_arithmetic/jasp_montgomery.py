@@ -33,10 +33,26 @@ from .jasp_mod_tools import (
     montgomery_decoder,
     modinv,
     best_montgomery_shift,
+    smallest_power_of_two
 )
 
 
 def _concrete_modulus_to_int(value, name: str) -> int:
+    """Materialise *value* (int or BigInteger) to a plain Python int.
+
+    Parameters
+    ----------
+    value : int or BigInteger
+        The modulus to convert.
+    name : str
+        Human-readable label included in the error message when *value*
+        contains JAX tracers and therefore cannot be concretised.
+
+    Raises
+    ------
+    TypeError
+        If *value* is traced (dynamic) and cannot be concretised.
+    """
     digits = value.digits if isinstance(value, BigInteger) else value
 
     if isinstance(digits, Tracer):
@@ -63,13 +79,16 @@ def q_montgomery_reduction(
     """
     Perform the Montgomery reduction of a concatenated QuantumFloat in-place.
 
+    Implements the quantum Montgomery reduction from Rines & Chuang (2018),
+    https://arxiv.org/abs/1801.01081.
+
     Layout
     ------
     qf = aux[:] + res[:]
     - aux has m+1 qubits (for u-tilde including the folded sign bit),
     - res has n qubits (holds the reduced result).
 
-    Algorithm
+    Algorithm 
     ---------
     - Estimation (m steps): For each LSB, conditionally subtract floor(N/2) on the
       truncated slice (implicit right-shift).
@@ -366,15 +385,15 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     inpl_adder = x.inpl_adder
     N = x.modulus
 
-    # Compute the reduction shift from the modulus, exactly like montgomery_mod_mul:
-    #   m = ceil(log2((N-1)^2 + 1)) - n
-    # This is the number of extra bits needed so that the full integer product
-    # a*b fits in (n + m) bits, independent of the inputs' Montgomery shifts.
-    # NOTE: We compute n from N (not from x.size) to keep it a plain Python int,
-    # since x.size can be a JAX tracer during tracing.
-    N_int = _concrete_modulus_to_int(N, "QuantumModulus modulus")
-    n = math.ceil(math.log2(N_int))
-    m = math.ceil(math.log2((N_int - 1) ** 2) + 1) - n
+    # # Compute the reduction shift from the modulus, exactly like montgomery_mod_mul:
+    # #   m = ceil(log2((N-1)^2 + 1)) - n
+    # # This is the number of extra bits needed so that the full integer product
+    # # a*b fits in (n + m) bits, independent of the inputs' Montgomery shifts.
+    # # NOTE: We compute n from N (not from x.size) to keep it a plain Python int,
+    # # since x.size can be a JAX tracer during tracing.
+    # N_int = _concrete_modulus_to_int(N, "QuantumModulus modulus")
+    n = smallest_power_of_two(N)
+    m = smallest_power_of_two((N-1) ** 2 + 1) - n
 
     if check_for_tracing_mode():
         xrange = jrange

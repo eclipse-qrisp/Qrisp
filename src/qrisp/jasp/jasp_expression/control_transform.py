@@ -316,6 +316,11 @@ def multi_control_jaspr(jaspr, num_ctrl, ctrl_state):
     control_var_count[0] += num_ctrl
     ctrl_avals = [x.aval for x in ctrl_vars]
 
+    # control_jaspr() already preserves the original constvars and consts
+    # internally (see the Jaspr constructor call around line 283).  Therefore
+    # the multi-control wrapper must only add control qubits to the public
+    # signature — the captured constants must NOT be re-exposed as runtime
+    # arguments, or the resulting Jaspr will have a wrong arity.
     return make_jaspr(exec_multi_controlled_jaspr(jaspr, num_ctrl, ctrl_state))(
         *(ctrl_avals + [var.aval for var in jaspr.invars[:-1]])
     )
