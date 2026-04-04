@@ -385,15 +385,13 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     inpl_adder = x.inpl_adder
     N = x.modulus
 
-    # # Compute the reduction shift from the modulus, exactly like montgomery_mod_mul:
-    # #   m = ceil(log2((N-1)^2 + 1)) - n
-    # # This is the number of extra bits needed so that the full integer product
-    # # a*b fits in (n + m) bits, independent of the inputs' Montgomery shifts.
-    # # NOTE: We compute n from N (not from x.size) to keep it a plain Python int,
-    # # since x.size can be a JAX tracer during tracing.
-    # N_int = _concrete_modulus_to_int(N, "QuantumModulus modulus")
+    # Compute the reduction shift m = ceil(log2((N-1)^2 + 1)) - n.
+    # When N is a BigInteger with traced digits, both n and m will be
+    # JAX tracers.  That is fine: jrange / jlen handle traced loop bounds,
+    # QuantumFloat accepts traced sizes, and jdecoder handles a traced
+    # Montgomery shift (res.m) via BigInteger arithmetic.
     n = smallest_power_of_two(N)
-    m = smallest_power_of_two((N-1) ** 2 + 1) - n
+    m = smallest_power_of_two((N - 1) ** 2 + 1) - n
 
     if check_for_tracing_mode():
         xrange = jrange
