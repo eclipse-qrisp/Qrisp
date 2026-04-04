@@ -62,12 +62,14 @@ def _moduli_neq(a, b):
 def _coerce_bigint_operand(value, modulus):
     """Coerce *value* to a BigInteger matching *modulus*'s limb count.
 
-    Delegates to :meth:`BigInteger.coerce` to avoid duplicating the
+    Delegates to `BigInteger.coerce` to avoid duplicating the
     int-vs-traced dispatch logic.
     """
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
-
+    
     if isinstance(value, BigInteger):
+        if value.digits.shape[0] != modulus.digits.shape[0]:
+            raise ValueError("BigInteger operand limb count does not match modulus")
         return value
     return BigInteger.coerce(value, modulus.digits.shape[0])
 

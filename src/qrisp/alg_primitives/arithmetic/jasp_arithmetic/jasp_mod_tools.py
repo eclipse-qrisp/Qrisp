@@ -227,8 +227,10 @@ def smallest_power_of_two(n: Union[int, BigInteger]):
             nj <= 1, jnp.int64(0), jnp.ceil(jnp.log2(nj)).astype(jnp.int64)
         )
 
-    # Fallback (should not occur in practice)
-    return 0
+    raise TypeError(
+        "smallest_power_of_two expects int, BigInteger, or traced JAX scalar, "
+        f"got {type(n).__name__}"
+    )
 
 
 def best_montgomery_shift(n: Union[int, BigInteger], N: Union[int, BigInteger] = None):
