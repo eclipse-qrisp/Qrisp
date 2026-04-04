@@ -22,7 +22,6 @@ from jax.core import Tracer
 
 from qrisp import check_for_tracing_mode
 from qrisp.qtypes.quantum_float import QuantumFloat
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.misc import gate_wrap
 from qrisp.core import cx
 import jax
@@ -52,9 +51,13 @@ def _moduli_neq(a, b):
     
     """
 
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+
     if isinstance(a, BigInteger) or isinstance(b, BigInteger):
-        if not isinstance(a, BigInteger) or not isinstance(b, BigInteger):
-            return True
+        if not isinstance(a, BigInteger):
+            a = BigInteger.create_static(a, b.digits.shape[0])
+        elif not isinstance(b, BigInteger):
+            b = BigInteger.create_static(b, a.digits.shape[0])
 
         if isinstance(a.digits, Tracer) or isinstance(b.digits, Tracer):
             raise RuntimeError(
@@ -92,6 +95,7 @@ def _coerce_bigint_operand(value, modulus):
         Value with exactly ``modulus.digits.shape[0]`` limbs.
     """
 
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
     return BigInteger.coerce(value, modulus.digits.shape[0])
 
 
@@ -99,23 +103,24 @@ def comparison_wrapper(func):
 
     def res_func(self, other):
 
-        if not check_for_tracing_mode() and (self.m != 0):
-            raise Exception(
-                "Tried to evaluate QuantumModulus comparison with non-zero Montgomery shift"
-            )
-
-        # conversion_flag = False
         if not check_for_tracing_mode() and isinstance(other, QuantumModulus):
-
-            if other.m != 0:
+            # Two QuantumModuli can be compared as long as they share the
+            # same Montgomery shift (they're in the same representation).
+            if self.m != other.m:
                 raise Exception(
-                    "Tried to evaluate QuantumModulus comparison with non-zero Montgomery shift"
+                    "Tried to evaluate QuantumModulus comparison with differing Montgomery shifts"
                 )
 
             if _moduli_neq(self.modulus, other.modulus):
                 raise Exception(
                     "Tried to compare QuantumModulus instances of differing modulus"
                 )
+        elif not check_for_tracing_mode() and self.m != 0:
+            # Comparing against a non-QuantumModulus (e.g. QuantumFloat)
+            # requires standard representation (m == 0).
+            raise Exception(
+                "Tried to evaluate QuantumModulus comparison with non-zero Montgomery shift"
+            )
 
             # other.__class__ = QuantumFloat
             # conversion_flag = True
@@ -289,6 +294,12 @@ class QuantumModulus(QuantumFloat):
             self.m = 0
 
     def decoder(self, i):
+        """Decode a Montgomery-encoded value back to standard representation.
+        
+        Montgomery encoding stores k as k_hat = (k * 2^{-m}) mod N.
+        Decoding recovers k = (k_hat * 2^m) mod N = montgomery_decoder(k_hat, R, N)
+        where R = 2^m is the Montgomery radix.
+        """
         if check_for_tracing_mode():
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
                 BigInteger,
@@ -299,7 +310,9 @@ class QuantumModulus(QuantumFloat):
 
             if isinstance(i, BigInteger):
                 n = i.digits.shape[0]
+                # Montgomery radix R = 2^m as a BigInteger with n limbs.
                 R = BigInteger.create(1, n) << self.m
+                # Recover the original value: k = (k_hat * R) mod N.
                 return montgomery_decoder(i, R, self.modulus)
 
             else:
@@ -307,6 +320,7 @@ class QuantumModulus(QuantumFloat):
                     montgomery_decoder,
                 )
 
+                # Scalar path: R = 2^m as a plain integer.
                 return montgomery_decoder(i, 2**self.m, self.modulus)
 
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
