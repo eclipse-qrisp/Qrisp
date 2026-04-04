@@ -188,6 +188,7 @@ ops = [
 
 @pytest.mark.parametrize("op", ops)
 def test_quantum_array_element_wise_ops(op):
+    """Test element-wise operations on QuantumArrays against their classical counterparts."""
 
     a_c = np.array([[1, 0], [0, 1]])
     b_c = np.array([[0, 1], [1, 0]])
@@ -197,6 +198,41 @@ def test_quantum_array_element_wise_ops(op):
 
         # Initialize QuantumArrays
         qtype = QuantumFloat(3)
+        a_array = QuantumArray(qtype, shape=(2,2))
+        b_array = QuantumArray(qtype, shape=(2,2))
+    
+        a_array[:] = a_c
+        b_array[:] = b_c
+    
+        # Execute quantum operation
+        r_array = op(a_array, b_array)
+        return measure(r_array)
+    
+    # Calculate classical reference
+    expected_c = op(a_c, b_c)
+    
+    # Validate measurements
+    r_array = main()
+
+    assert np.array_equal(r_array, expected_c), f"Failed on operator {op.__name__}. Expected {expected_c}, got {r_array}"
+
+
+bool_ops = [
+    operator.and_, operator.or_, operator.xor  # &, |, ^
+]
+
+@pytest.mark.parametrize("op", bool_ops)
+def test_quantum_array_element_wise_bool_ops(op):
+    """Test element-wise boolean operations on QuantumArrays against their classical counterparts."""
+
+    a_c = np.array([[True, False], [False, True]])
+    b_c = np.array([[True, True], [False, False]])
+
+    @jaspify
+    def main():
+
+        # Initialize QuantumArrays
+        qtype = QuantumBool()
         a_array = QuantumArray(qtype, shape=(2,2))
         b_array = QuantumArray(qtype, shape=(2,2))
     

@@ -1048,22 +1048,30 @@ class QuantumArray:
                     (out_view[i] << fun)(self_view[i], other)
             return out
 
-    def _validate_arithmetic(self, other):
+    def _validate_arithmetic(self, other, mode="float"):
         """Internal helper to validate type and shape for element-wise operations."""
+        from qrisp.qtypes.quantum_bool import QuantumBool
         from qrisp.qtypes.quantum_float import QuantumFloat
 
-        # Self must always be QuantumFloat
-        if not isinstance(self.qtype, QuantumFloat):
+        if mode == "float":
+            valid_qtype = QuantumFloat
+        elif mode == "bool":
+            valid_qtype = QuantumBool
+        else:
+            raise ValueError(f"Unsupported mode for validation: {mode}")
+
+        # Self qtype must always be QuantumFloat or QuantumBool for element-wise operations
+        if not isinstance(self.qtype, valid_qtype):
             raise TypeError(
-                f"Element-wise operations require qtype 'QuantumFloat'. "
+                f"Element-wise operations require qtype {valid_qtype.__name__}. "
                 f"Got {type(self.qtype).__name__}."
             )
 
-        # If other is a QuantumArray, check its type and shape
+        # If other is a QuantumArray, check its qtype and shape
         if isinstance(other, QuantumArray):
-            if not isinstance(other.qtype, QuantumFloat):
+            if not isinstance(other.qtype, valid_qtype):
                 raise TypeError(
-                    f"Element-wise operations require both arrays to have qtype 'QuantumFloat'. "
+                    f"Element-wise operations require both arrays to have qtype {valid_qtype.__name__}. "
                     f"Got {type(self.qtype).__name__} and {type(other.qtype).__name__}."
                 )
             if self.shape != other.shape:
@@ -1405,6 +1413,108 @@ class QuantumArray:
         self._validate_arithmetic(other)
         return self._element_wise_out_of_place_injection(
             other, lambda a, b: a <= b, QuantumBool()
+        )
+    
+    def __and__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs element-wise ``&`` (bitwise AND) operation.
+        Note that this operation is only defined for QuantumArrays of QuantumBools.
+
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be combined with using bitwise AND.
+    
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray of QuantumBools containing the result of element-wise ``&``.
+        
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumBool
+        >>> a_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> a_array[:] = np.array([[True, False], [False, True]])
+        >>> b_array[:] = np.array([[True, True], [False, False]])
+        >>> r_array = a_array & b_array
+        >>> print(r_array)
+        # {OutcomeArray([[True, False], [False, False]], dtype=object): 1.0}
+        """
+        from qrisp.qtypes import QuantumBool
+
+        self._validate_arithmetic(other, mode="bool")
+        return self._element_wise_out_of_place_injection(
+            other, lambda a, b: a & b, QuantumBool()
+        )
+    
+    def __or__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs element-wise ``|`` (bitwise OR) operation.
+        Note that this operation is only defined for QuantumArrays of QuantumBools.
+
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be combined with using bitwise OR.
+
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray of QuantumBools containing the result of element-wise ``|``.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumBool
+        >>> a_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> a_array[:] = np.array([[True, False], [False, True]])
+        >>> b_array[:] = np.array([[True, True], [False, False]])
+        >>> r_array = a_array | b_array
+        >>> print(r_array)
+        # {OutcomeArray([[True, True], [False, True]], dtype=object): 1.0}
+        """
+        from qrisp.qtypes import QuantumBool
+
+        self._validate_arithmetic(other, mode="bool")
+        return self._element_wise_out_of_place_injection(
+            other, lambda a, b: a | b, QuantumBool()
+        )
+    
+    def __xor__(self, other: QuantumArray) -> QuantumArray:
+        """
+        Performs element-wise ``^`` (bitwise XOR) operation.
+        Note that this operation is only defined for QuantumArrays of QuantumBools.
+
+        Parameters
+        ----------
+        other : QuantumArray
+            The QuantumArray to be combined with using bitwise XOR.
+
+        Returns
+        -------
+        QuantumArray
+            A new QuantumArray of QuantumBools containing the result of element-wise ``^``.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumBool
+        >>> a_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> b_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> a_array[:] = np.array([[True, False], [False, True]])
+        >>> b_array[:] = np.array([[True, True], [False, False]])
+        >>> r_array = a_array ^ b_array
+        >>> print(r_array)
+        # {OutcomeArray([[False, True], [False, True]], dtype=object): 1.0}
+        """
+        from qrisp.qtypes import QuantumBool
+
+        self._validate_arithmetic(other, mode="bool")
+        return self._element_wise_out_of_place_injection(
+            other, lambda a, b: a ^ b, QuantumBool()
         )
 
     # Delegation of element-wise in-place functions
