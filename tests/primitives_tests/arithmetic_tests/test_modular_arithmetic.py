@@ -17,8 +17,38 @@
 """
 
 
+import pytest
 from qrisp import QuantumModulus, h, multi_measurement, cx, qcla, gidney_adder, QuantumBool, control
 import numpy as np
+
+MAX_UNIFORM_SUPERPOSITION_TEST_MODULUS = 128
+
+@pytest.mark.parametrize("modulus", range(1, MAX_UNIFORM_SUPERPOSITION_TEST_MODULUS + 1))
+def test_quantum_modulus_uniform_superposition(modulus):
+    qf = QuantumModulus(modulus)
+    h(qf)
+
+    measurement = qf.get_measurement()
+
+    if qf.size == 0:
+        assert measurement == {"": 1.0}
+        return
+
+    allowed_probability = 1 / (2**qf.size)
+    nan_probability = (2**qf.size - modulus) / (2**qf.size)
+
+    for value in range(modulus):
+        assert np.isclose(measurement[value], allowed_probability)
+
+    nan_keys = [key for key in measurement if isinstance(key, float) and np.isnan(key)]
+
+    if nan_probability:
+        assert len(nan_keys) == 1
+        assert np.isclose(measurement[nan_keys[0]], nan_probability)
+    else:
+        assert len(nan_keys) == 0
+
+    assert np.isclose(sum(measurement.values()), 1.0)
 
 def test_modular_arithmetic():
     

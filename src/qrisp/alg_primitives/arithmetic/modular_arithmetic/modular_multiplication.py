@@ -410,13 +410,15 @@ def montgomery_mod_mul(a, b, output_qg=None):
 
     from qrisp import h, merge, QFT, q_int_mult
 
-    if a.modulus != b.modulus:
+    from qrisp.qtypes.quantum_modulus import _moduli_neq
+
+    if _moduli_neq(a.modulus, b.modulus):
         raise Exception("Tried to multiply two QuantumModulus with differing modulus")
 
     if output_qg is None:
         t = QuantumFloat(a.size + m, signed=True)
     else:
-        if output_qg.modulus != a.modulus:
+        if _moduli_neq(output_qg.modulus, a.modulus):
             raise Exception("Output QuantumModulus has incompatible modulus")
 
         merge(output_qg.qs, a.qs)

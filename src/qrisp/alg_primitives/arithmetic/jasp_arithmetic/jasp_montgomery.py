@@ -17,6 +17,7 @@
 """
 
 from typing import Union
+import math
 
 from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder
 from qrisp.qtypes import QuantumFloat, QuantumModulus
@@ -30,6 +31,7 @@ from .jasp_mod_tools import (
     montgomery_decoder,
     modinv,
     best_montgomery_shift,
+    smallest_power_of_two
 )
 
 
@@ -39,13 +41,16 @@ def q_montgomery_reduction(
     """
     Perform the Montgomery reduction of a concatenated QuantumFloat in-place.
 
+    Implements the quantum Montgomery reduction from Rines & Chuang (2018),
+    https://arxiv.org/abs/1801.01081.
+
     Layout
     ------
     qf = aux[:] + res[:]
     - aux has m+1 qubits (for u-tilde including the folded sign bit),
     - res has n qubits (holds the reduced result).
 
-    Algorithm
+    Algorithm 
     ---------
     - Estimation (m steps): For each LSB, conditionally subtract floor(N/2) on the
       truncated slice (implicit right-shift).
@@ -154,7 +159,7 @@ def cq_montgomery_multiply(
         xrange = range
     n = jlen(y)
     if res is None:
-        res = QuantumFloat(n)
+        res = QuantumModulus(N)
     aux = QuantumFloat(m + 1)
     wqf = aux[:] + res[:]
 
@@ -312,9 +317,15 @@ def qq_montgomery_multiply(
 
 def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     """
-    Perform the montgomery product of two QuantumModuli. Note that both QuantumModuli must be in montgomery form.
-    Similiar to `qq_montgomery_multiply` but extracts the fields of the Moduli.
-    Assumes that both QuantumModuli share the same modulus and the montgomery shift.
+    Perform the montgomery product of two QuantumModuli.
+    Compatible with ``montgomery_mod_mul``: inputs can be in any Montgomery
+    representation (including standard form where ``m=0``).
+
+    The reduction shift *m* is computed from the modulus size (not from the
+    inputs' ``.m`` attributes), and the result's Montgomery shift is set to
+    ``x.m + y.m - m``, which matches the non-JASP ``montgomery_mod_mul``
+    semantics.  When both inputs are in standard form (``m=0``), the output
+    is also in standard form.
 
     Parameters
     ----------
@@ -326,15 +337,23 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     Returns
     ----------
     QuantumModulus
-        The mongomery product of the inputs.
+        The montgomery product of the inputs.
     """
+
+    from qrisp.qtypes.quantum_modulus import _moduli_neq
+    if not check_for_tracing_mode() and _moduli_neq(x.modulus, y.modulus):
+        raise Exception("Tried to multiply two QuantumModulus with differing modulus")
 
     inpl_adder = x.inpl_adder
     N = x.modulus
-    m = x.m
 
-    # res = qq_montgomery_multiply(x, y, N, m, inpl_adder)
-    # return res
+    # Compute the reduction shift m = ceil(log2((N-1)^2 + 1)) - n.
+    # When N is a BigInteger with traced digits, both n and m will be
+    # JAX tracers.  That is fine: jrange / jlen handle traced loop bounds,
+    # QuantumFloat accepts traced sizes, and jdecoder handles a traced
+    # Montgomery shift (res.m) via BigInteger arithmetic.
+    n = smallest_power_of_two(N)
+    m = smallest_power_of_two((N - 1) ** 2 + 1) - n
 
     if check_for_tracing_mode():
         xrange = jrange
@@ -353,7 +372,10 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
                 inpl_adder(cl_int // 2, operand[size - 1 - i :])
 
     res = QuantumModulus(N)
-    res.m = m
+    # The result's Montgomery shift after reduction: (x.m + y.m) - m
+    # (the reduction divides by 2^m, subtracting m from the accumulated shift)
+    res.m = int(x.m) + int(y.m) - m
+    res.inpl_adder = inpl_adder
     aux = QuantumFloat(m + 1)
     wqf = aux[:] + res[:]
 

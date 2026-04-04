@@ -44,6 +44,53 @@ from .jasp_bigintiger import (
 )
 
 
+def bi_pow2mod(exp, mod_bi):
+    """
+    Compute ``2 ** exp % mod_bi`` as a BigInteger.
+
+    Uses square-and-multiply in double-width BigInteger space so that
+    intermediate products cannot overflow.  Both *exp* and *mod_bi* may
+    contain traced JAX values.
+
+    Parameters
+    ----------
+    exp : int or jnp scalar
+        Non-negative exponent (may be a JAX tracer).
+    mod_bi : BigInteger
+        Modulus (same fixed width as the desired result).
+
+    Returns
+    -------
+    BigInteger
+        ``2 ** exp % mod_bi`` with the same limb count as *mod_bi*.
+    """
+    k = mod_bi.digits.shape[0]
+    # Double width to avoid wraparound in intermediate products
+    mod_w = mod_bi.get_larger()
+    init_result = BigInteger.create(1, 2 * k)
+    init_base = BigInteger.create(2, 2 * k)
+
+    def cond_fn(state):
+        _, _, e = state
+        return e > 0
+
+    def body_fn(state):
+        result, base, e = state
+        odd = (e & jnp.int64(1)) == jnp.int64(1)
+        new_result = (result * base) % mod_w
+        # Select without lax.cond to keep the pytree flat
+        result = BigInteger(jnp.where(odd, new_result.digits, result.digits))
+        base = (base * base) % mod_w
+        e = e >> jnp.int64(1)
+        return result, base, e
+
+    result, _, _ = lax.while_loop(
+        cond_fn, body_fn, (init_result, init_base, jnp.int64(exp))
+    )
+    # Truncate back — result < mod_bi < 2^(32k)
+    return BigInteger(result.digits[:k])
+
+
 def montgomery_encoder(
     x: Union[int, BigInteger], R: Union[int, BigInteger], N: Union[int, BigInteger]
 ):
@@ -109,6 +156,9 @@ def montgomery_decoder(
             N if isinstance(N, BigInteger) else BigInteger.create(N, Rb.digits.shape[0])
         )
         return bi_montgomery_decode(yb, Rb, Nb)
+    # Handle fractional R (from negative Montgomery shifts)
+    if isinstance(R, float) and 0 < R < 1:
+        R = modinv(int(R**-1), N)
     R1 = modinv(R, N)
     return ((y % N) * (R1 % N)) % N
 
@@ -214,18 +264,20 @@ def smallest_power_of_two(n: Union[int, BigInteger]):
         # bit_size already yields ceil(log2(n)) with 0 for n==0
         return n.bit_size()
 
+    if hasattr(n, "bit_length"):
+        return (n - 1).bit_length() if n > 1 else 0
+
     if check_for_tracing_mode():
         nj = jnp.asarray(n)
         # Avoid log2(0); define result 0 for n<=1
         return jnp.where(
             nj <= 1, jnp.int64(0), jnp.ceil(jnp.log2(nj)).astype(jnp.int64)
         )
-    else:
-        # Pure Python int path, exact and safe
-        if hasattr(n, "bit_length"):
-            return (n - 1).bit_length() if n > 1 else 0
-        # Fallback (should not occur in practice)
-        return 0
+
+    raise TypeError(
+        "smallest_power_of_two expects int, BigInteger, or traced JAX scalar, "
+        f"got {type(n).__name__}"
+    )
 
 
 def best_montgomery_shift(n: Union[int, BigInteger], N: Union[int, BigInteger] = None):
