@@ -18,14 +18,12 @@
 
 from typing import Union
 import math
-import numpy as np
 
 from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder
 from qrisp.qtypes import QuantumFloat, QuantumModulus
 from qrisp.jasp import jrange, check_for_tracing_mode, jlen, q_cond
 from qrisp.environments import control, invert, custom_control
 from qrisp.core import swap, cx, x
-from jax.core import Tracer
 
 from .jasp_bigintiger import BigInteger
 from .jasp_mod_tools import (
@@ -35,42 +33,6 @@ from .jasp_mod_tools import (
     best_montgomery_shift,
     smallest_power_of_two
 )
-
-
-def _concrete_modulus_to_int(value, name: str) -> int:
-    """Materialise *value* (int or BigInteger) to a plain Python int.
-
-    Parameters
-    ----------
-    value : int or BigInteger
-        The modulus to convert.
-    name : str
-        Human-readable label included in the error message when *value*
-        contains JAX tracers and therefore cannot be concretised.
-
-    Raises
-    ------
-    TypeError
-        If *value* is traced (dynamic) and cannot be concretised.
-    """
-    digits = value.digits if isinstance(value, BigInteger) else value
-
-    if isinstance(digits, Tracer):
-        raise TypeError(
-            f"{name} must be a concrete BigInteger so Qrisp can size the "
-            "Montgomery workspace during tracing."
-        )
-
-    digits = np.asarray(digits)
-    if digits.ndim == 0:
-        return int(digits.item())
-
-    result = 0
-    for i, digit in enumerate(digits):
-        digit = int(digit)
-        if digit:
-            result += digit << (32 * i)
-    return result
 
 
 def q_montgomery_reduction(
