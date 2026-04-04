@@ -308,24 +308,39 @@ class QuantumModulus(QuantumFloat):
         return decoded
 
     def jdecoder(self, i):
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_decoder
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
-        # Use pow(2, -m, N) to compute the decode factor as a plain int,
-        # which handles both positive and negative m correctly.
-        # For m >= 0:  decode_factor = 2^{-m} mod N (modular inverse)
-        # For m < 0:   decode_factor = 2^{|m|} mod N
+
+        if isinstance(self.modulus, BigInteger):
+            # Traced-safe path: self.m may be a JAX tracer when the modulus
+            # is a BigInteger passed into @jaspify.  All arithmetic is done
+            # in BigInteger / JAX space — no Python int() conversions.
+            import jax.lax as lax
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+                bi_pow2mod, bi_modinv, bi_montgomery_encode,
+            )
+            import jax.numpy as jnp
+
+            m = jnp.int64(self.m)
+            abs_m = jnp.abs(m)
+            # 2^|m| mod N  (= 1 when m == 0)
+            power = bi_pow2mod(abs_m, self.modulus)
+            # For m > 0  →  decode factor = modinv(2^m, N)
+            # For m <= 0 →  decode factor = 2^|m| mod N  (identity when m == 0)
+            factor = lax.cond(
+                m > 0,
+                lambda p: bi_modinv(p, self.modulus),
+                lambda p: p,
+                power,
+            )
+            return bi_montgomery_encode(i, factor, self.modulus)
+
+        # Concrete path for int modulus
         m_val = int(self.m)
         if m_val == 0:
             return i
-        if isinstance(self.modulus, BigInteger):
-            N_int = self.modulus()
-            decode_factor_int = pow(2, -m_val, N_int)
-            decode_factor = BigInteger.create_static(decode_factor_int, self.modulus.digits.shape[0])
-            return (i * decode_factor) % self.modulus
-        else:
-            N_val = int(self.modulus)
-            decode_factor = pow(2, -m_val, N_val)
-            return (i * decode_factor) % N_val
+        N_val = int(self.modulus)
+        decode_factor = pow(2, -m_val, N_val)
+        return (i * decode_factor) % N_val
     
     def measure(self):
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
