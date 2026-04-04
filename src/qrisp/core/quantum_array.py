@@ -1577,6 +1577,101 @@ class QuantumArray:
             other, lambda a, b: a ^ b, QuantumBool()
         )
 
+    def all(self, axis=None):
+        """
+        Performs an element-wise logical AND reduction, returning True if all elements are True.
+
+        Parameters
+        ----------
+        axis : int or tuple of ints, optional
+            Axis or axes along which a logical AND reduction is performed. The default is None,
+            meaning that the reduction is performed over all elements.
+
+        Returns
+        -------
+        QuantumBool or QuantumArray
+            If axis is None, returns a single boolean value. If axis is specified, returns an array of boolean values.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumBool
+        >>> a_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> a_array[:] = np.array([[True, True], [True, True]])
+        >>> print(a_array.all())  # Output: True
+
+        >>> b_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> b_array[:] = np.array([[True, False], [True, True]])
+        >>> print(b_array.all())  # Output: False
+
+        >>> c_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> c_array[:] = np.array([[True, False], [True, True]])
+        >>> print(c_array.all(axis=0))  # Output: [True, False]
+        """
+        from qrisp.qtypes import QuantumBool
+
+        if not isinstance(self.qtype, QuantumBool):
+            raise TypeError("The 'all' method is only defined for QuantumArrays of QuantumBools.")
+        
+        def _all(elements):
+            from qrisp.core.gate_application_functions import mcx
+
+            res = QuantumBool()
+            qubits = sum([qv.reg for qv in elements], [])
+            mcx(qubits, res, ctrl_state=-1)
+            return res
+            
+        return self._reduce_over_axes(_all, QuantumBool(), axis=axis)
+    
+    def any(self, axis=None):
+        """
+        Performs an element-wise logical OR reduction, returning True if any element is True.
+
+        Parameters
+        ----------
+        axis : int or tuple of ints, optional
+            Axis or axes along which a logical OR reduction is performed. The default is None,
+            meaning that the reduction is performed over all elements.
+
+        Returns
+        -------
+        QuantumBool or QuantumArray
+            If axis is None, returns a single boolean value. If axis is specified, returns an array of boolean values.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumBool
+        >>> a_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> a_array[:] = np.array([[False, False], [False, False]])
+        >>> print(a_array.any())  # Output: False
+
+        >>> b_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> b_array[:] = np.array([[True, False], [False, False]])
+        >>> print(b_array.any())  # Output: True
+
+        >>> c_array = QuantumArray(QuantumBool(), shape=(2,2))
+        >>> c_array[:] = np.array([[True, False], [False, False]])
+        >>> print(c_array.any(axis=0))  # Output: [True, False]
+        """
+        from qrisp.qtypes import QuantumBool
+
+        if not isinstance(self.qtype, QuantumBool):
+            raise TypeError("The 'any' method is only defined for QuantumArrays of QuantumBools.")
+        
+        def _any(elements):
+            from qrisp.core.gate_application_functions import mcx, x
+            from qrisp.environments import conjugate
+
+            res = QuantumBool()
+            with conjugate(x)(elements):
+                qubits = sum([qv.reg for qv in elements], [])
+                mcx(qubits, res, ctrl_state=-1)
+            x(res)
+            return res
+            
+        return self._reduce_over_axes(_any, QuantumBool(), axis=axis)
+
     # Delegation of element-wise in-place functions
 
     def _element_wise_in_place_call(self, other, fun):

@@ -55,3 +55,5 @@ Arithmetic
    QuantumArray.__and__
    QuantumArray.__or__
    QuantumArray.__xor__
+   QuantumArray.all
+   QuantumArray.any
