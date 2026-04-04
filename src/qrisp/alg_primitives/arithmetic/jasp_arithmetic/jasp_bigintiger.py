@@ -213,9 +213,36 @@ class BigInteger:
         Python integers are routed through ``create_static`` so very large
         constants remain usable even when they exceed JAX's host int64 range.
         Traced / array-like values still use ``create``.
+
+        If ``n`` is already a BigInteger whose limb count matches ``size``,
+        it is returned unchanged.  If the limb count is smaller, the value
+        is zero-padded.  If it is larger, a ``ValueError`` is raised
+        (truncation could silently discard significant bits).
+
+        Parameters
+        ----------
+        n : int, BigInteger, or array-like
+            Value to coerce.
+        size : int
+            Desired number of uint32 limbs.
+
+        Returns
+        -------
+        BigInteger
+            Fixed-width representation with exactly ``size`` limbs.
         """
         if isinstance(n, BigInteger):
-            return n
+            cur = n.digits.shape[0]
+            if cur == size:
+                return n
+            if cur > size:
+                raise ValueError(
+                    f"BigInteger has {cur} limbs but target size is {size}; "
+                    "truncation is not allowed (would lose significant bits)."
+                )
+            # cur < size: zero-pad
+            pad = jnp.zeros(size - cur, dtype=n.digits.dtype)
+            return BigInteger(jnp.concatenate([n.digits, pad], axis=0))
         if isinstance(n, int):
             return BigInteger.create_static(n, size)
         return BigInteger.create(n, size)
