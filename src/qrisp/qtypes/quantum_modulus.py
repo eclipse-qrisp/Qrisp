@@ -22,6 +22,7 @@ from jax.core import Tracer
 
 from qrisp import check_for_tracing_mode
 from qrisp.qtypes.quantum_float import QuantumFloat
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.misc import gate_wrap
 from qrisp.core import cx
 import jax
@@ -32,11 +33,24 @@ def _moduli_neq(a, b):
 
     This check is designed for **static** (non-tracing) contexts only.
     When either operand contains JAX tracers (dynamic mode), the digits
-    cannot be materialised, so the function raises ``RuntimeError``
-    instead of guessing.  Callers in tracing code paths must skip the
+    cannot be materialised, so the function raises ``RuntimeError``.
+    Callers in tracing code paths must skip the
     check themselves (``if not check_for_tracing_mode(): …``).
+    
+    Parameters
+    ----------
+    a : int or BigInteger
+        First modulus to compare.
+    b : int or BigInteger
+        Second modulus to compare.
+
+    Returns
+    -------
+    bool
+        ``True`` if the moduli are unequal, ``False`` if they represent
+        the same modulus.
+    
     """
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 
     if isinstance(a, BigInteger) or isinstance(b, BigInteger):
         if not isinstance(a, BigInteger) or not isinstance(b, BigInteger):
@@ -77,7 +91,6 @@ def _coerce_bigint_operand(value, modulus):
     BigInteger
         Value with exactly ``modulus.digits.shape[0]`` limbs.
     """
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 
     return BigInteger.coerce(value, modulus.digits.shape[0])
 
