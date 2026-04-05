@@ -47,11 +47,13 @@ class VirtualBackend(BackendClient):
 
 
     We set up a VirtualBackend, which prints the received QuantumCircuit and returns the
-    results of the QASM simulator. It is required that the run_func specifies a default
-    value for the `shots` parameter. ::
+    results of the QASM simulator. It is required that the `run_func` specifies a default
+    value of `None` for the `shots` parameter, substituting its own default. ::
 
 
-        def run_func(qasm_str, shots = 1000, token = ""):
+        def run_func(qasm_str, shots = None, token = ""):
+            if shots is None:
+                shots = 1000
 
             from qiskit import QuantumCircuit
 
