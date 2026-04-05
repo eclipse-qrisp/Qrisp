@@ -16,6 +16,8 @@
 ********************************************************************************
 """
 
+import numpy as np
+from numpy.testing import assert_allclose
 import operator
 import pytest
 from qrisp import *
@@ -148,6 +150,7 @@ ops = [
 
 @pytest.mark.parametrize("op", ops)
 def test_quantum_array_element_wise_ops(op):
+    """Test element-wise operations on QuantumArrays of QuantumFloats against their classical counterparts."""
 
     a_c = np.array([[1, 0], [0, 1]])
     b_c = np.array([[0, 1], [1, 0]])
@@ -164,16 +167,11 @@ def test_quantum_array_element_wise_ops(op):
     r_array = op(a_array, b_array)
     
     # Calculate classical reference
-    expected_c = op(a_c, b_c)
+    expected = op(a_c, b_c)
     
     # Validate measurements
-    results = r_array.get_measurement()
-    
-    assert len(results) > 0, "No measurement results found"
-    
-    for k in results.keys():
-        # k is an OutcomeArray; np.array_equal handles both floats and booleans
-        assert np.array_equal(k, expected_c), f"Failed on operator {op.__name__}. Expected {expected_c}, got {k}"
+    measured = r_array.most_likely()
+    assert np.allclose(measured, expected), f"Failed on operator {op.__name__}. Expected {expected}, got {measured}"
 
 
 bool_ops = [
@@ -182,7 +180,7 @@ bool_ops = [
 
 @pytest.mark.parametrize("op", bool_ops)
 def test_quantum_array_element_wise_bool_ops(op):
-    """Test element-wise boolean operations on QuantumArrays against their classical counterparts."""
+    """Test element-wise boolean operations on QuantumArrays of QuantumBools against their classical counterparts."""
 
     a_c = np.array([[True, False], [False, True]])
     b_c = np.array([[True, True], [False, False]])
@@ -199,16 +197,49 @@ def test_quantum_array_element_wise_bool_ops(op):
     r_array = op(a_array, b_array)
     
     # Calculate classical reference
-    expected_c = op(a_c, b_c)
+    expected = op(a_c, b_c)
     
     # Validate measurements
-    results = r_array.get_measurement()
+    measured = r_array.most_likely()
+    assert np.allclose(measured, expected), f"Failed on operator {op.__name__}. Expected {expected}, got {measured}"
+
+
+ops = [
+    operator.iadd, operator.isub, operator.imul,  # +=, -=, *=
+]
+rhs_types = ["quantum", "classical"]
+
+@pytest.mark.parametrize("rhs_type", rhs_types)
+@pytest.mark.parametrize("op", ops)
+def test_quantum_array_element_wise_inplace_ops(op, rhs_type):
+    """Test element-wise in-place operations on QuantumArrays of QuantumFloats against classical counterparts."""
     
-    assert len(results) > 0, "No measurement results found"
+    if op == operator.imul and rhs_type == "quantum":
+        pytest.skip("Quantum-quantum inplace multiplication is unsupported.")
+
+    a_c = np.array([[1.5, 2.0], [3.0, 4.0]])
+    b_c = np.array([[4.0, 3.0], [2.0, 1.0]])
     
-    for k in results.keys():
-        # k is an OutcomeArray; np.array_equal handles both floats and booleans
-        assert np.array_equal(k, expected_c), f"Failed on operator {op.__name__}. Expected {expected_c}, got {k}"
+    qtype = QuantumFloat(8, -1, signed=True)
+    a_array = QuantumArray(qtype, shape=(2, 2))
+    a_array[:] = a_c
+    
+    if rhs_type == "quantum":
+        b_array = QuantumArray(qtype, shape=(2, 2))
+        b_array[:] = b_c
+        rhs_operand = b_array
+    else:
+        rhs_operand = b_c
+
+    # Execute quantum operation
+    op(a_array, rhs_operand)
+
+    # Calculate classical reference
+    op(a_c, b_c)
+
+    # Validate measurements
+    measured = a_array.most_likely()
+    assert np.allclose(measured, a_c), f"Failed on operator {op.__name__} with {rhs_type} RHS. Expected {a_c}, got {measured}"
 
 
 def test_quantum_array_element_eq():
