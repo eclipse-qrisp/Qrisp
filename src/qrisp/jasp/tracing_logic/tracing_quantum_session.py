@@ -23,6 +23,7 @@ import jax
 from qrisp.jasp.primitives import create_qubits, delete_qubits_p, quantum_gate_p
 from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
 from qrisp.core.quantum_variable import QuantumVariable
+from typing import List
 
 from sympy import symbols
 
@@ -55,9 +56,9 @@ class TracingQuantumSession:
     nested scope.
     """
 
-    tr_qs_container = [None]
-    abs_qst_stack = []
-    qubit_cache_stack = []
+    tr_qs_container: List["TracingQuantumSession | None"] = [None]
+    abs_qst_stack: List = []
+    qubit_cache_stack: List = []
 
     def __init__(self):
         """
