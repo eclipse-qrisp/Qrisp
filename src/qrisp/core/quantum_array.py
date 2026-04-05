@@ -1815,10 +1815,16 @@ class QuantumArray:
         >>> qa *= np.array([[0.5, 1.5], [2.5, 3.5]])
         >>> print(qa)  # Output: [[1.0, 6.0], [15.0, 28.0]]
         """
+        from qrisp.alg_primitives.arithmetic import inpl_mult
+        from qrisp.qtypes.quantum_modulus import QuantumModulus
+
         self._validate_arithmetic(other)
 
         def f(a, b):
-            a *= b
+            if isinstance(self.qtype, QuantumModulus):
+                a *= b
+            else:
+                inpl_mult(a, b, treat_overflow=False)  
 
         self._element_wise_in_place_call(other, f)
         return self
