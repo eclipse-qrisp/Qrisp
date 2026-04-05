@@ -698,7 +698,7 @@ class QuantumFloat(QuantumVariable):
 
             polynomial_encoder(input_qf_list, self, poly)
 
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float, np.integer, np.floating)):
             if not int(other / 2**self.exponent) == other / 2**self.exponent:
                 raise Exception(
                     "Tried to perform in-place subtraction with invalid number. "
