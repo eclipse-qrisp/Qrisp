@@ -150,7 +150,7 @@ ops = [
 
 @pytest.mark.parametrize("op", ops)
 def test_quantum_array_element_wise_ops(op):
-    """Test element-wise operations on QuantumArrays of QuantumFloats against their classical counterparts."""
+    """Test element-wise operations on QuantumArrays of QuantumFloat against their classical counterparts."""
 
     a_c = np.array([[1, 0], [0, 1]])
     b_c = np.array([[0, 1], [1, 0]])
@@ -180,7 +180,7 @@ bool_ops = [
 
 @pytest.mark.parametrize("op", bool_ops)
 def test_quantum_array_element_wise_bool_ops(op):
-    """Test element-wise boolean operations on QuantumArrays of QuantumBools against their classical counterparts."""
+    """Test element-wise boolean operations on QuantumArrays of QuantumBool against their classical counterparts."""
 
     a_c = np.array([[True, False], [False, True]])
     b_c = np.array([[True, True], [False, False]])
@@ -208,19 +208,34 @@ ops = [
     operator.iadd, operator.isub, operator.imul,  # +=, -=, *=
 ]
 rhs_types = ["quantum", "classical"]
+params = [
+    pytest.param(
+        (np.array([[1.5, 2.0], [3.0, 4.0]]), np.array([[4.0, 3.0], [2.0, 1.0]]), QuantumFloat(8, -1, signed=True)), 
+        id="Signed QuantumFloat"
+    ),
+    pytest.param(
+        (np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 1]]), QuantumModulus(7)),
+        id="QuantumModulus"
+    )
+]
 
+@pytest.mark.parametrize("params", params)
 @pytest.mark.parametrize("rhs_type", rhs_types)
 @pytest.mark.parametrize("op", ops)
-def test_quantum_array_element_wise_inplace_ops(op, rhs_type):
-    """Test element-wise in-place operations on QuantumArrays of QuantumFloats against classical counterparts."""
+def test_quantum_array_element_wise_inplace_ops(op, rhs_type, params):
+    """Test element-wise in-place operations on QuantumArrays of QuantumFloat/QuantumModulus against classical counterparts."""
     
     if op == operator.imul and rhs_type == "quantum":
         pytest.skip("Quantum-quantum inplace multiplication is unsupported.")
 
-    a_c = np.array([[1.5, 2.0], [3.0, 4.0]])
-    b_c = np.array([[4.0, 3.0], [2.0, 1.0]])
+    a_c_ref, b_c_ref, qtype = params
+    a_c = a_c_ref.copy()
+    b_c = b_c_ref.copy()
     
-    qtype = QuantumFloat(8, -1, signed=True)
+    if op == operator.imul and isinstance(qtype, QuantumModulus):
+        pytest.skip("In-place modular multiplication is currently not supported for QuantumArrays of QuantumModulus.")
+
+    # Initialize QuantumArrays
     a_array = QuantumArray(qtype, shape=(2, 2))
     a_array[:] = a_c
     
@@ -236,6 +251,8 @@ def test_quantum_array_element_wise_inplace_ops(op, rhs_type):
 
     # Calculate classical reference
     op(a_c, b_c)
+    if isinstance(qtype, QuantumModulus):
+        a_c = a_c % qtype.modulus
 
     # Validate measurements
     measured = a_array.most_likely()
