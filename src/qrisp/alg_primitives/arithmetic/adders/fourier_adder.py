@@ -69,7 +69,7 @@ def fourier_adder(a, b, perform_QFT=True):
         b = list(b)
         b = b[::-1]
 
-        if isinstance(a, int):
+        if isinstance(a, (int, np.integer)):
             for i in range(len(b)):
                 p(a * np.pi * 2 ** (1 + i - len(b)), b[i])
 

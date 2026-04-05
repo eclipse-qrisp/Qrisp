@@ -1820,10 +1820,11 @@ class QuantumArray:
 
         self._validate_arithmetic(other)
 
-        def f(a, b):
-            if isinstance(self.qtype, QuantumModulus):
+        if isinstance(self.qtype, QuantumModulus):
+            def f(a, b):
                 a *= b
-            else:
+        else:
+            def f(a, b):
                 inpl_mult(a, b, treat_overflow=False)  
 
         self._element_wise_in_place_call(other, f)
