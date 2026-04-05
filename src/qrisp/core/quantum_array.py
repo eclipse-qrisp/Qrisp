@@ -1710,6 +1710,36 @@ class QuantumArray:
                     fun(self_view[i], other)
 
     def __iadd__(self, other):
+        """
+        Performs element-wise in-place addition.
+        Note that this modifies the original QuantumArray and does not return a new one.
+        
+        Parameters
+        ----------
+        other : QuantumArray, numpy array, or scalar
+            The value to be added to each element of the QuantumArray. 
+            If a QuantumArray is provided, it must have the same shape as the original QuantumArray. 
+            If a numpy array is provided, it must also have the same shape. 
+            If a scalar is provided, it will be added to each element of the QuantumArray.
+
+        Returns
+        -------
+        QuantumArray
+            The modified QuantumArray.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> qa = QuantumArray(QuantumFloat(8,-1), shape=(2,2))
+        >>> qa[:] = np.array([[1.0, 2.0], [3.0, 4.0]])
+        >>> qa += 1.0
+        >>> print(qa)  # Output: [[2.0, 3.0], [4.0, 5.0]]
+        >>> qb = QuantumArray(QuantumFloat(4,-1), shape=(2,2))
+        >>> qb[:] = np.array([[0.5, 1.5], [2.5, 3.5]])
+        >>> qa += qb
+        >>> print(qa)  # Output: [[2.5, 4.5], [6.5, 8.5]]
+        """
         self._validate_arithmetic(other)
 
         def f(a, b):
@@ -1719,6 +1749,36 @@ class QuantumArray:
         return self
 
     def __isub__(self, other):
+        """
+        Performs element-wise in-place subtraction.
+        Note that this modifies the original QuantumArray and does not return a new one.
+
+        Parameters
+        ----------
+        other : QuantumArray, numpy array, or scalar
+            The value to be subtracted from each element of the QuantumArray. 
+            If a QuantumArray is provided, it must have the same shape as the original QuantumArray. 
+            If a numpy array is provided, it must also have the same shape. 
+            If a scalar is provided, it will be subtracted from each element of the QuantumArray.
+
+        Returns
+        -------
+        QuantumArray
+            The modified QuantumArray.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> qa = QuantumArray(QuantumFloat(8,-1,signed=True), shape=(2,2))
+        >>> qa[:] = np.array([[1.0, 2.0], [3.0, 4.0]])
+        >>> qa -= 1.0
+        >>> print(qa)  # Output: [[0.0, 1.0], [2.0, 3.0]]
+        >>> qb = QuantumArray(QuantumFloat(4,-1), shape=(2,2))
+        >>> qb[:] = np.array([[0.5, 1.5], [2.5, 3.5]])
+        >>> qa -= qb
+        >>> print(qa)  # Output: [[-0.5, -0.5], [-0.5, -0.5]]
+        """
         self._validate_arithmetic(other)
 
         def f(a, b):
@@ -1728,6 +1788,33 @@ class QuantumArray:
         return self
 
     def __imul__(self, other):
+        """
+        Performs element-wise in-place multiplication.
+        Note that this modifies the original QuantumArray and does not return a new one.
+
+        Parameters
+        ----------
+        other : numpy array, or scalar
+            The value to be multiplied with each element of the QuantumArray. 
+            If a numpy array is provided, it must have the same shape as the original QuantumArray. 
+            If a scalar is provided, it will be multiplied with each element of the QuantumArray.
+
+        Returns
+        -------
+        QuantumArray
+            The modified QuantumArray.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> qa = QuantumArray(QuantumFloat(8,-1), shape=(2,2))
+        >>> qa[:] = np.array([[1.0, 2.0], [3.0, 4.0]])
+        >>> qa *= 2.0
+        >>> print(qa)  # Output: [[2.0, 4.0], [6.0, 8.0]]
+        >>> qa *= np.array([[0.5, 1.5], [2.5, 3.5]])
+        >>> print(qa)  # Output: [[1.0, 6.0], [15.0, 28.0]]
+        """
         self._validate_arithmetic(other)
 
         def f(a, b):
