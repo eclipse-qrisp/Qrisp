@@ -147,11 +147,15 @@ ops = [
     operator.gt,  operator.ge,                 # >, >=
     operator.lt,  operator.le                  # <, <=
 ]
-rhs_types = ["quantum"]
+rhs_types = ["quantum", "classical"]
 params = [
     pytest.param(
-        (np.array([[1, 0], [0, 1]]), np.array([[0, 1], [1, 0]]), QuantumFloat(3)), 
+        (np.array([[1, 2], [2, 1]]), np.array([[1, 1], [1, 1]]), QuantumFloat(3)), 
         id="QuantumFloat"
+    ),
+    pytest.param(
+        (np.array([[1, 0.5], [0.5, 1]]), np.array([[1, 1], [1, 1]]), QuantumFloat(4, -1, signed=True)), 
+        id="Signed QuantumFloat"
     ),
     pytest.param(
         (np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 3]]), QuantumModulus(7)),
