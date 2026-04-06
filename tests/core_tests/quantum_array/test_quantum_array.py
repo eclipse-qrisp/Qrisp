@@ -279,6 +279,36 @@ def test_quantum_array_element_wise_inplace_ops(op, rhs_type, params):
     assert np.allclose(measured, a_c), f"Failed on operator {op.__name__} with {rhs_type} RHS. Expected {a_c}, got {measured}"
 
 
+@pytest.mark.parametrize(" a_c, axis" , [
+    pytest.param(np.array([[True, True], [True, True]]), 0, id="All True, axis 0"),
+    pytest.param(np.array([[True, False], [True, True]]), 0, id="One False, axis 0"),
+    pytest.param(np.array([[True, True], [True, True]]), 1, id="All True, axis 1"),
+    pytest.param(np.array([[True, False], [True, True]]), 1, id="One False, axis 1"),
+])  
+def test_quantum_array_all(a_c, axis):
+    """Test the all() method on QuantumArrays of QuantumBool against their classical counterparts."""
+    q_array = QuantumArray(QuantumBool(), shape=(2,2))
+    q_array[:] = a_c
+    qbl = q_array.all(axis=axis)
+    measured = qbl.most_likely()
+    assert np.allclose(measured, a_c.all(axis=axis)), f"Expected {a_c.all(axis=axis)}, got {measured}" 
+
+
+@pytest.mark.parametrize(" a_c, axis" , [
+    pytest.param(np.array([[True, True], [True, True]]), 0, id="All True, axis 0"),
+    pytest.param(np.array([[True, False], [True, True]]), 0, id="One False, axis 0"),
+    pytest.param(np.array([[True, True], [True, True]]), 1, id="All True, axis 1"),
+    pytest.param(np.array([[True, False], [True, True]]), 1, id="One False, axis 1"),
+])
+def test_quantum_array_any(a_c, axis):
+    """Test the any() method on QuantumArrays of QuantumBool against their classical counterparts."""
+    q_array = QuantumArray(QuantumBool(), shape=(2,2))
+    q_array[:] = a_c
+    qbl = q_array.any(axis=axis)
+    measured = qbl.most_likely()
+    assert np.allclose(measured, a_c.any(axis=axis)), f"Expected {a_c.any(axis=axis)}, got {measured}"
+
+
 def test_quantum_array_element_eq():
     a_c = np.array(3*[[0,1,2]])
     b_c = np.arange(0, 9).reshape((3,3))
