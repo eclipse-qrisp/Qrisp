@@ -147,27 +147,46 @@ ops = [
     operator.gt,  operator.ge,                 # >, >=
     operator.lt,  operator.le                  # <, <=
 ]
+rhs_types = ["quantum"]
+params = [
+    pytest.param(
+        (np.array([[1, 0], [0, 1]]), np.array([[0, 1], [1, 0]]), QuantumFloat(3)), 
+        id="QuantumFloat"
+    ),
+    pytest.param(
+        (np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 3]]), QuantumModulus(7)),
+        id="QuantumModulus"
+    )
+]
 
 @pytest.mark.parametrize("op", ops)
-def test_quantum_array_element_wise_ops(op):
-    """Test element-wise operations on QuantumArrays of QuantumFloat against their classical counterparts."""
+@pytest.mark.parametrize("rhs_type", rhs_types)
+@pytest.mark.parametrize("params", params)
+def test_quantum_array_element_wise_ops(op, rhs_type, params):
+    """Test element-wise operations on QuantumArrays of QuantumFloat/QuantumModulus against their classical counterparts."""
 
-    a_c = np.array([[1, 0], [0, 1]])
-    b_c = np.array([[0, 1], [1, 0]])
+    a_c_ref, b_c_ref, qtype = params
+    a_c = a_c_ref.copy()
+    b_c = b_c_ref.copy()
     
     # Initialize QuantumArrays
-    qtype = QuantumFloat(3)
     a_array = QuantumArray(qtype, shape=(2,2))
-    b_array = QuantumArray(qtype, shape=(2,2))
-    
     a_array[:] = a_c
-    b_array[:] = b_c
+
+    if rhs_type == "quantum":
+        b_array = QuantumArray(qtype, shape=(2, 2))
+        b_array[:] = b_c
+        rhs_operand = b_array
+    else:
+        rhs_operand = b_c
     
     # Execute quantum operation
-    r_array = op(a_array, b_array)
+    r_array = op(a_array, rhs_operand)
     
     # Calculate classical reference
     expected = op(a_c, b_c)
+    if isinstance(qtype, QuantumModulus):
+        expected = expected % qtype.modulus
     
     # Validate measurements
     measured = r_array.most_likely()
@@ -219,9 +238,9 @@ params = [
     )
 ]
 
-@pytest.mark.parametrize("params", params)
-@pytest.mark.parametrize("rhs_type", rhs_types)
 @pytest.mark.parametrize("op", ops)
+@pytest.mark.parametrize("rhs_type", rhs_types)
+@pytest.mark.parametrize("params", params)
 def test_quantum_array_element_wise_inplace_ops(op, rhs_type, params):
     """Test element-wise in-place operations on QuantumArrays of QuantumFloat/QuantumModulus against classical counterparts."""
     
