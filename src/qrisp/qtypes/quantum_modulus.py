@@ -478,7 +478,8 @@ class QuantumModulus(QuantumFloat):
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
         from qrisp.environments import invert
 
-        res = self.duplicate(init=True)
+        res = self.duplicate()
+        cx(self, res)
 
         with invert():
             mod_adder(other, res, self.inpl_adder, self.modulus)
