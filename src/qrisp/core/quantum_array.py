@@ -1218,8 +1218,9 @@ class QuantumArray:
         if isinstance(other, QuantumArray):
             out_type = create_output_qf([self.qtype, other.qtype], "sub")
         else:
-            # For scalars and numpy arrays, subtraction may need signed output
-            out_type = create_output_qf([self.qtype, self.qtype], "sub")
+            # For scalars and numpy arrays, use self's type as output
+            # (scalar operations preserve size)
+            out_type = self.qtype
         return self._element_wise_out_of_place_injection(
             other, lambda a, b: a - b, out_type
         )
