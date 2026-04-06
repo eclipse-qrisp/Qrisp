@@ -231,9 +231,6 @@ def test_quantum_array_element_wise_inplace_ops(op, rhs_type, params):
     a_c_ref, b_c_ref, qtype = params
     a_c = a_c_ref.copy()
     b_c = b_c_ref.copy()
-    
-    if op == operator.imul and isinstance(qtype, QuantumModulus):
-        pytest.skip("In-place modular multiplication is currently not supported for QuantumArrays of QuantumModulus.")
 
     # Initialize QuantumArrays
     a_array = QuantumArray(qtype, shape=(2, 2))

@@ -382,6 +382,10 @@ class QuantumModulus(QuantumFloat):
                 best_montgomery_shift,
             )
 
+            # If other is a np.integer, convert to Python int for compatibility with best_montgomery_shift
+            if isinstance(other, np.integer):
+                other = int(other)
+
             shift = best_montgomery_shift(other, self.modulus)
             if isinstance(self.modulus, BigInteger):
                 assert isinstance(other, BigInteger)
