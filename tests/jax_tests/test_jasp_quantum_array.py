@@ -315,6 +315,111 @@ def test_quantum_array_element_wise_bool_ops(op):
     assert np.array_equal(r_array, expected_c), f"Failed on operator {op.__name__}. Expected {expected_c}, got {r_array}"
 
 
+ops = [
+    operator.iadd, operator.isub, operator.imul,  # +=, -=, *=
+]
+rhs_types = ["quantum", "classical"]
+instances = [
+    pytest.param(
+        (np.array([[3, 4], [5, 6]]), np.array([[1, 2], [3, 4]]), 4),
+        id="QuantumFloat"
+    )
+]
+
+@pytest.mark.parametrize("op", ops)
+@pytest.mark.parametrize("rhs_type", rhs_types)
+@pytest.mark.parametrize("instance", instances)
+def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
+    """Test element-wise in-place operations on QuantumArrays of QuantumFloat against classical counterparts."""
+    
+    if op == operator.imul and rhs_type == "quantum":
+        pytest.skip("Quantum-quantum inplace multiplication is unsupported.")
+
+    if op == operator.imul and rhs_type == "classical":
+        pytest.skip("Quantum-classical inplace multiplication currently is unsupported in Jasp.")
+
+    a_c_ref, b_c_ref, size = instance
+    a_c = a_c_ref.copy()
+    b_c = b_c_ref.copy()
+
+    @jaspify
+    def main():
+
+        # Initialize QuantumArrays
+        qtype = QuantumFloat(size)
+        a_array = QuantumArray(qtype, shape=(2, 2))
+        a_array[:] = a_c
+        
+        if rhs_type == "quantum":
+            b_array = QuantumArray(qtype, shape=(2, 2))
+            b_array[:] = b_c
+            rhs_operand = b_array
+        else:
+            rhs_operand = b_c
+
+        # Execute quantum operation
+        op(a_array, rhs_operand)
+        return measure(a_array)
+    
+    # Validate measurements
+    measured = main()
+
+    # Calculate classical reference
+    op(a_c, b_c)
+
+    assert np.allclose(measured, a_c), f"Failed on operator {op.__name__} with {rhs_type} RHS. Expected {a_c}, got {measured}"
+
+
+instances = [
+    pytest.param(
+        (np.array([[3, 4], [5, 6]]), np.array([[1, 2], [3, 4]]), 7),
+        id="QuantumModulus"
+    )
+]
+
+@pytest.mark.parametrize("op", ops)
+@pytest.mark.parametrize("rhs_type", rhs_types)
+@pytest.mark.parametrize("instance", instances)
+def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
+    """Test element-wise in-place operations on QuantumArrays of QuantumModulus against classical counterparts."""
+    
+    if op == operator.imul and rhs_type == "quantum":
+        # qq multiplication fixed in separate pull request, but for now we skip this test to avoid CI failures
+        pytest.skip("Quantum-quantum inplace multiplication is currently unsupported in Jasp.")
+
+    a_c_ref, b_c_ref, modulus = instance
+    a_c = a_c_ref.copy()
+    b_c = b_c_ref.copy()
+
+    @jaspify
+    def main():
+
+        # Initialize QuantumArrays
+        qtype = QuantumModulus(modulus)
+        a_array = QuantumArray(qtype, shape=(2, 2))
+        a_array[:] = a_c
+        
+        if rhs_type == "quantum":
+            b_array = QuantumArray(qtype, shape=(2, 2))
+            b_array[:] = b_c
+            rhs_operand = b_array
+        else:
+            rhs_operand = b_c
+
+        # Execute quantum operation
+        op(a_array, rhs_operand)
+        return measure(a_array)
+    
+    # Validate measurements
+    measured = main()
+
+    # Calculate classical reference
+    op(a_c, b_c)
+    a_c %= modulus
+
+    assert np.allclose(measured, a_c), f"Failed on operator {op.__name__} with {rhs_type} RHS. Expected {a_c}, got {measured}"
+
+
 @pytest.mark.parametrize(" a_c, axis" , [
     pytest.param(np.array([[True, True], [True, True]]), 0, id="All True, axis 0"),
     pytest.param(np.array([[True, False], [True, True]]), 0, id="One False, axis 0"),

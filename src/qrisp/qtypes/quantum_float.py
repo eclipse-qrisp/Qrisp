@@ -638,7 +638,7 @@ class QuantumFloat(QuantumVariable):
                     other[starting_digit - other.exponent :],
                     self[starting_digit - self.exponent :],
                 )
-            elif isinstance(other, (int, float)) or (
+            elif isinstance(other, (int, float, np.integer, np.floating)) or (
                 isinstance(other, Tracer) and isinstance(other, Array)
             ):
                 gidney_adder(self.encoder(other), self)
