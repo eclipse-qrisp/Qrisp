@@ -518,7 +518,7 @@ class QuantumFloat(QuantumVariable):
             else:
                 return sbp_add(self, other)
 
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float, Tracer)):
             res = self.duplicate()
             cx(self, res)
             res += other
@@ -542,7 +542,7 @@ class QuantumFloat(QuantumVariable):
             else:
                 return sbp_sub(self, other)
 
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float, Tracer)):
             res = self.duplicate()
             cx(self, res)
             res -= other

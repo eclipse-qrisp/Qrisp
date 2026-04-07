@@ -185,27 +185,43 @@ ops = [
     operator.gt,  operator.ge,                 # >, >=
     operator.lt,  operator.le                  # <, <=
 ]
+rhs_type = ["quantum", "classical"]
+instances = [
+    # Instances without overflow because of different overflow behavior of quantum and classical addition/subtraction for QuantumFloat
+    pytest.param(
+        (np.array([[3, 4], [5, 6]]), np.array([[1, 2], [3, 4]]), 4),
+        id="QuantumFloat"
+    )
+]
 
 @pytest.mark.parametrize("op", ops)
-def test_quantum_array_element_wise_ops(op):
+@pytest.mark.parametrize("rhs_type", rhs_type)
+@pytest.mark.parametrize("instance", instances)
+def test_quantum_array_element_wise_ops(op, rhs_type, instance):
     """Test element-wise operations on QuantumArrays of QuantumFloat against their classical counterparts."""
 
-    a_c = np.array([[1, 0], [0, 1]])
-    b_c = np.array([[0, 1], [1, 0]])
+    if op == operator.mul and rhs_type == "classical":
+        pytest.skip("Quantum-classical multiplication for QuantumFloat is currently unsupported in Jasp.")
+
+    a_c, b_c, size = instance
 
     @jaspify
     def main():
 
         # Initialize QuantumArrays
-        qtype = QuantumFloat(3)
+        qtype = QuantumFloat(size)
         a_array = QuantumArray(qtype, shape=(2,2))
-        b_array = QuantumArray(qtype, shape=(2,2))
-    
         a_array[:] = a_c
-        b_array[:] = b_c
+
+        if rhs_type == "quantum":   
+            b_array = QuantumArray(qtype, shape=(2,2))
+            b_array[:] = b_c
+            rhs_operand = b_array
+        else:
+            rhs_operand = b_c
     
         # Execute quantum operation
-        r_array = op(a_array, b_array)
+        r_array = op(a_array, rhs_operand)
         return measure(r_array)
     
     # Calculate classical reference
@@ -217,8 +233,7 @@ def test_quantum_array_element_wise_ops(op):
     assert np.array_equal(r_array, expected_c), f"Failed on operator {op.__name__}. Expected {expected_c}, got {r_array}"
 
 
-rhs_type = ["quantum", "classical"]
-instance = [
+instances = [
     pytest.param(
         (np.array([[1, 2], [3, 4]]), np.array([[1, 2], [3, 4]]), 7),
         id="QuantumModulus 7"
@@ -227,13 +242,13 @@ instance = [
 
 @pytest.mark.parametrize("op", ops)
 @pytest.mark.parametrize("rhs_type", rhs_type)
-@pytest.mark.parametrize("instance", instance)
+@pytest.mark.parametrize("instance", instances)
 def test_quantum_array_element_wise_ops_qm(op, rhs_type, instance):
     """Test element-wise operations on QuantumArrays of QuantumModulus against their classical counterparts."""
 
-    if op == operator.mul:
-        # qq and qc multiplication fixed in separate pull requests, but for now we skip this test to avoid CI failures
-        pytest.skip("Multiplication is currently unsupported in Jasp.")
+    if op == operator.mul and rhs_type == "quantum":
+        # qq multiplication fixed in separate pull request, but for now we skip this test to avoid CI failures
+        pytest.skip("Quantum-quantum multiplication for QuantumModulus is currently unsupported in Jasp.")
 
     a_c, b_c, modulus = instance
 
