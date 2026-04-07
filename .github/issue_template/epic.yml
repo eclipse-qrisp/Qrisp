@@ -2,6 +2,20 @@ name: Epic
 description: Track a larger initiative with multiple sub-issues
 labels: ["epic"]
 body:
+  - type: dropdown
+
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+
+    validations:
+      required: true
+      
   - type: input
 
     id: responsible

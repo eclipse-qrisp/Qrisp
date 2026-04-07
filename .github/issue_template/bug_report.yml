@@ -108,12 +108,12 @@ body:
       label: Means of Verification
       description: "Tests to verify the fix. At least 1 positive, 1 negative, and 2 boundary tests."
       value: |
-        | Test-ID | Type     | Description | Input | Expected Result |
-        |---------|----------|-------------|-------|-----------------|
-        | T-001   | Positive |             |       |                 |
-        | T-002   | Negative |             |       |                 |
-        | T-003   | Boundary |             |       |                 |
-        | T-004   | Boundary |             |       |                 |
+        | Test-ID | Type     | Description | Expected Result |
+        |---------|----------|-------------|-----------------|
+        | T-001   | Positive |             |                 |
+        | T-002   | Negative |             |                 |
+        | T-003   | Boundary |             |                 |
+        | T-004   | Boundary |             |                 |
     validations:
       required: false
 
