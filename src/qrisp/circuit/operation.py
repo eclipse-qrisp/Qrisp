@@ -84,7 +84,7 @@ class Operation:
         num_qubits=0,
         num_clbits=0,
         definition=None,
-        params=[],
+        params=None,
         init_op=None,
     ):
         if init_op is not None:
@@ -123,6 +123,8 @@ class Operation:
         else:
             self.definition = None
             self.abstract_params = set()
+
+        params = [] if params is None else params
 
         # Find abstract parameters (ie. sympy expressions and log them)
         for par in params:
