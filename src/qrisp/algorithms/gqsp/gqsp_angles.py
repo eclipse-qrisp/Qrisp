@@ -154,7 +154,7 @@ def _complementary_polynomial(b: "ArrayLike") -> Array:
 @jax.jit
 def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
     r"""
-    Perform inverse non-linear Fourier transform.
+    Computes the inverse non-linear Fourier transform using the layer stripping algorithm.
 
     .. math ::
 
@@ -175,23 +175,83 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
         1-D array containing the sequence, ordered from lowest order term to highest.
 
     """
-    d = len(a) - 1
 
-    a_star = jnp.conjugate(a)
+    # Layer stripping algorithm (https://arxiv.org/pdf/2505.12615, Equation (28))
+    # Define the single step of the scan loop
+    def step(carry, _):
+        a_star, b_arr = carry
 
-    F = jnp.zeros(d + 1, dtype=complex)
+        # Calculate F_k
+        Fk = b_arr[0] / a_star[0]
 
-    for k in range(d + 1):
-        Fk = b[0] / a_star[0]
-        F = F.at[k].set(Fk)
-
+        # Calculate intermediate scalar 's'
         s = jnp.sqrt(1.0 + jnp.abs(Fk) ** 2)
-        a_star_new = (a_star + jnp.conjugate(Fk) * b) / s
-        b_new = jnp.roll((b - Fk * a_star) / s, -1)  # divide by z
-        a_star = a_star_new
-        b = b_new
+
+        # Update arrays
+        a_star_new = (a_star + jnp.conjugate(Fk) * b_arr) / s
+        b_new = jnp.roll((b_arr - Fk * a_star) / s, -1)  # divide by z
+
+        # Return the new carry state and the output we want to accumulate (Fk)
+        return (a_star_new, b_new), Fk
+
+    # Initial state for the carry
+    initial_carry = (jnp.conjugate(a), b)
+
+    # Execute the scan loop for the length of 'a'
+    # jax.lax.scan returns the final state (which we ignore with '_') and the stacked outputs
+    _, F = jax.lax.scan(step, initial_carry, None, length=len(a))
 
     return F
+
+
+@jax.jit
+def _gqsp_angles_from_nlft_sequence(F: Array) -> Tuple[Array, Array, Array]:
+    r"""
+    Computes the GQSP angles form the NLFT sequence.
+
+    Parameters
+    ----------
+    F : ArrayLike
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+
+    Returns
+    -------
+    angles : tuple of (Array, Array, Array)
+        A collection containing:
+
+        - **theta** (Array): 1-D array of angles $(\theta_0,\dotsc,\theta_d)$.
+
+        - **phi** (Array): 1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
+
+        - **lambda** (Array): The scalar angle $\lambda$ as 0-D array.
+
+    """
+    thres = 1e-10
+    # pre-factor
+    psi = jnp.where(
+        jnp.abs(F) < thres,
+        0,
+        jnp.where(
+            jnp.abs(np.imag(F)) < thres,
+            -jnp.pi / 4,
+            -(1 / 2) * jnp.arctan(jnp.real(F) / jnp.imag(F)),
+        ),
+    )
+
+    # Theorem 9, formula (4) in https://arxiv.org/pdf/2503.03026
+    phi = jnp.arctan(-1.0j * jnp.exp(-2.0j * psi) * F)
+    psi_ = jnp.concatenate((psi, jnp.array([0])))
+    theta = jnp.roll(psi_, -1)[:-1] - psi
+    lambda_ = psi[0]
+
+    # Switch (Q,P) -> (P, iQ)
+    phi = phi.at[-1].set(phi[-1] + np.pi / 2)
+    theta = theta.at[-1].set(-theta[-1])
+
+    theta = jnp.real(theta)
+    phi = jnp.real(phi)
+    lambda_ = jnp.real(lambda_)
+    return theta, phi, lambda_
 
 
 # https://arxiv.org/pdf/2503.03026
@@ -233,6 +293,7 @@ def gqsp_angles(p: "ArrayLike") -> Tuple[Tuple[Array, Array, Array], Array]:
     # Multiply by 0.99 to ensure that |p(z)|<1 for |z|=1 for numerical stability of completion algorithm
     # This comes at the expense of a slightly smaller QSP success probability
     p = 0.99 * p
+    alpha = M / 0.99
     # Switch (Q,P) -> (P, iQ)
     p = -1.0j * p
 
@@ -242,33 +303,7 @@ def gqsp_angles(p: "ArrayLike") -> Tuple[Tuple[Array, Array, Array], Array]:
     # INLFT
     F = _inlft(q, p)
 
-    # Compute GQSP angles
-    thres = 1e-10
-    # pre-factor
-    psi = jnp.where(
-        jnp.abs(F) < thres,
-        0,
-        jnp.where(
-            jnp.abs(np.imag(F)) < thres,
-            -jnp.pi / 4,
-            -(1 / 2) * jnp.arctan(jnp.real(F) / jnp.imag(F)),
-        ),
-    )
-
-    # Theorem 9, formula (4) in https://arxiv.org/pdf/2503.03026
-    phi = jnp.arctan(-1.0j * jnp.exp(-2.0j * psi) * F)
-    psi_ = jnp.concatenate((psi, jnp.array([0])))
-    theta = jnp.roll(psi_, -1)[:-1] - psi
-    lambda_ = psi[0]
-
-    # Switch (Q,P) -> (P, iQ)
-    phi = phi.at[-1].set(phi[-1] + np.pi / 2)
-    theta = theta.at[-1].set(-theta[-1])
-
-    phi = jnp.real(phi)
-    theta = jnp.real(theta)
-    lambda_ = jnp.real(lambda_)
-
-    alpha = M / 0.99
+    # GQSP angles from NLFT sequence
+    theta, phi, lambda_ = _gqsp_angles_from_nlft_sequence(F)
 
     return (theta, phi, lambda_), alpha
