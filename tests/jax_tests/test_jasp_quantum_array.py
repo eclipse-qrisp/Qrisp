@@ -380,7 +380,7 @@ instances = [
 @pytest.mark.parametrize("op", ops)
 @pytest.mark.parametrize("rhs_type", rhs_types)
 @pytest.mark.parametrize("instance", instances)
-def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
+def test_quantum_array_element_wise_inplace_ops_qm(op, rhs_type, instance):
     """Test element-wise in-place operations on QuantumArrays of QuantumModulus against classical counterparts."""
     
     if op == operator.imul and rhs_type == "quantum":
