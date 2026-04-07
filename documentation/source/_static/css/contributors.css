@@ -1,0 +1,41 @@
+/* =============================================================================
+   Contributor-page-only styles — loaded via <link> in index.rst
+   ============================================================================= */
+
+/* ===== BASE LAYOUT ===== */
+.bd-sidebar-primary {
+    display: none;
+}
+
+/* ===== PARTNER LOGOS ===== */
+#who-is-behind-qrisp .sd-card {
+    transition: all 0.3s ease;
+    border-radius: 12px !important;
+}
+
+#who-is-behind-qrisp .sd-card:hover {
+    transform: translateY(-3px);
+}
+
+#who-is-behind-qrisp .sd-card img {
+    filter: grayscale(20%);
+    opacity: 0.85;
+    transition: all 0.3s ease;
+}
+
+#who-is-behind-qrisp .sd-card:hover img {
+    filter: grayscale(0%);
+    opacity: 1;
+}
+
+/* ===== SCROLL REVEAL ===== */
+.scroll-reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
