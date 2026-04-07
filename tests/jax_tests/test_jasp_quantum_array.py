@@ -188,7 +188,7 @@ ops = [
 
 @pytest.mark.parametrize("op", ops)
 def test_quantum_array_element_wise_ops(op):
-    """Test element-wise operations on QuantumArrays against their classical counterparts."""
+    """Test element-wise operations on QuantumArrays of QuantumFloat against their classical counterparts."""
 
     a_c = np.array([[1, 0], [0, 1]])
     b_c = np.array([[0, 1], [1, 0]])
@@ -210,6 +210,53 @@ def test_quantum_array_element_wise_ops(op):
     
     # Calculate classical reference
     expected_c = op(a_c, b_c)
+    
+    # Validate measurements
+    r_array = main()
+
+    assert np.array_equal(r_array, expected_c), f"Failed on operator {op.__name__}. Expected {expected_c}, got {r_array}"
+
+
+rhs_type = ["quantum", "classical"]
+instance = [
+    pytest.param(
+        (np.array([[1, 2], [3, 4]]), np.array([[1, 2], [3, 4]]), 7),
+        id="QuantumModulus 7"
+    )
+]
+
+@pytest.mark.parametrize("op", ops)
+@pytest.mark.parametrize("rhs_type", rhs_type)
+@pytest.mark.parametrize("instance", instance)
+def test_quantum_array_element_wise_ops_qm(op, rhs_type, instance):
+    """Test element-wise operations on QuantumArrays of QuantumModulus against their classical counterparts."""
+
+    if op == operator.mul and rhs_type == "quantum":
+        pytest.skip("Quantum-quantum multiplication is currently unsupported in Jasp.")
+
+    a_c, b_c, modulus = instance
+
+    @jaspify
+    def main():
+
+        # Initialize QuantumArrays
+        qtype = QuantumModulus(modulus)
+        a_array = QuantumArray(qtype, shape=(2,2))
+        a_array[:] = a_c
+
+        if rhs_type == "quantum":
+            b_array = QuantumArray(qtype, shape=(2,2))
+            b_array[:] = b_c
+            rhs_operand = b_array
+        else:
+            rhs_operand = b_c
+    
+        # Execute quantum operation
+        r_array = op(a_array, rhs_operand)
+        return measure(r_array)
+    
+    # Calculate classical reference
+    expected_c = op(a_c, b_c) % modulus
     
     # Validate measurements
     r_array = main()

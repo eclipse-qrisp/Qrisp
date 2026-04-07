@@ -148,7 +148,7 @@ ops = [
     operator.lt,  operator.le                  # <, <=
 ]
 rhs_types = ["quantum", "classical"]
-params = [
+instances = [
     pytest.param(
         (np.array([[1, 2], [2, 1]]), np.array([[1, 1], [1, 1]]), QuantumFloat(3)), 
         id="QuantumFloat"
@@ -165,11 +165,11 @@ params = [
 
 @pytest.mark.parametrize("op", ops)
 @pytest.mark.parametrize("rhs_type", rhs_types)
-@pytest.mark.parametrize("params", params)
-def test_quantum_array_element_wise_ops(op, rhs_type, params):
+@pytest.mark.parametrize("instance", instances)
+def test_quantum_array_element_wise_ops(op, rhs_type, instance):
     """Test element-wise operations on QuantumArrays of QuantumFloat/QuantumModulus against their classical counterparts."""
 
-    a_c_ref, b_c_ref, qtype = params
+    a_c_ref, b_c_ref, qtype = instance
     a_c = a_c_ref.copy()
     b_c = b_c_ref.copy()
     
@@ -231,7 +231,7 @@ ops = [
     operator.iadd, operator.isub, operator.imul,  # +=, -=, *=
 ]
 rhs_types = ["quantum", "classical"]
-params = [
+instances = [
     pytest.param(
         (np.array([[1.5, 2.0], [3.0, 4.0]]), np.array([[4.0, 3.0], [2.0, 1.0]]), QuantumFloat(8, -1, signed=True)), 
         id="Signed QuantumFloat"
@@ -244,14 +244,14 @@ params = [
 
 @pytest.mark.parametrize("op", ops)
 @pytest.mark.parametrize("rhs_type", rhs_types)
-@pytest.mark.parametrize("params", params)
-def test_quantum_array_element_wise_inplace_ops(op, rhs_type, params):
+@pytest.mark.parametrize("instance", instances)
+def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
     """Test element-wise in-place operations on QuantumArrays of QuantumFloat/QuantumModulus against classical counterparts."""
     
     if op == operator.imul and rhs_type == "quantum":
         pytest.skip("Quantum-quantum inplace multiplication is unsupported.")
 
-    a_c_ref, b_c_ref, qtype = params
+    a_c_ref, b_c_ref, qtype = instance
     a_c = a_c_ref.copy()
     b_c = b_c_ref.copy()
 
