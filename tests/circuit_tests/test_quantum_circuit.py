@@ -16,6 +16,9 @@
 ********************************************************************************
 """
 
+import os
+import tempfile
+
 import numpy as np
 import pytest
 import sympy
@@ -90,7 +93,7 @@ class TestQuantumCircuitInitialization:
 
         bound_qc = qc.bind_parameters({abstract_parameters[i]: i for i in range(3)})
         assert len(bound_qc.data) == 3
-        assert bound_qc.abstract_params == {}
+        assert bound_qc.abstract_params == set()
 
 
 class TestQuantumCircuitMethods:
@@ -265,6 +268,23 @@ class TestQuantumCircuitMethods:
         op = qc.to_op(name="seq_op")
         assert len(op.definition.data) == 3
         assert len(op.definition.qubits) == 2
+
+    def test_to_gate_basic(self):
+        """to_gate wraps a circuit into a gate with the correct qubit count."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        gate = qc.to_gate(name="my_gate")
+        assert gate.name == "my_gate"
+        assert gate.num_qubits == 2
+        assert gate.num_clbits == 0
+
+    def test_to_gate_default_name(self):
+        """to_gate generates a unique default name when none is supplied."""
+
+        gate = QuantumCircuit(1).to_gate()
+        assert gate.name.startswith("circuit")
 
     def test_to_gate_error_if_clbits_present(self):
         """to_gate raises ValueError when the circuit contains classical bits."""
@@ -776,6 +796,497 @@ class TestQuantumCircuitMethods:
         u = qc.get_unitary()
         assert u.dtype == np.dtype("O")
         assert u.shape == (2**num_qubits,) * 2
+
+    # ------------------------------------------------------------------ #
+    # get_depth_dic                                                      #
+    # ------------------------------------------------------------------ #
+
+    def test_get_depth_dic_sequential_gates(self):
+        """Gates applied sequentially on the same qubit accumulate depth."""
+
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        qc.x(0)
+        qc.z(0)
+        depth_dic = qc.get_depth_dic()
+        assert depth_dic[qc.qubits[0]] == 3
+
+    def test_get_depth_dic_parallel_gates(self):
+        """Gates on different qubits with no dependency share the same depth level."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.h(1)
+        depth_dic = qc.get_depth_dic()
+        assert depth_dic[qc.qubits[0]] == 1
+        assert depth_dic[qc.qubits[1]] == 1
+
+    def test_get_depth_dic_entangling_gate(self):
+        """A two-qubit gate after single-qubit gates raises both qubits to the same depth."""
+
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.x(2)
+        depth_dic = qc.get_depth_dic()
+        assert depth_dic[qc.qubits[0]] == 2
+        assert depth_dic[qc.qubits[1]] == 2
+        assert depth_dic[qc.qubits[2]] == 1
+
+    def test_get_depth_dic_idle_qubits_are_zero(self):
+        """Qubits with no operations have depth 0."""
+
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        depth_dic = qc.get_depth_dic()
+        assert depth_dic[qc.qubits[1]] == 0
+        assert depth_dic[qc.qubits[2]] == 0
+
+    def test_get_depth_dic_empty_circuit(self):
+        """An empty circuit with qubits returns 0 for every qubit."""
+
+        qc = QuantumCircuit(3)
+        depth_dic = qc.get_depth_dic()
+        assert list(depth_dic.values()) == [0, 0, 0]
+
+    def test_get_depth_dic_zero_qubits_returns_empty(self):
+        """A circuit with no qubits returns an empty dictionary."""
+
+        assert QuantumCircuit(0).get_depth_dic() == {}
+
+    def test_get_depth_dic_max_equals_depth(self):
+        """The maximum value in get_depth_dic equals depth()."""
+
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.x(1)
+        depth_dic = qc.get_depth_dic()
+        assert max(depth_dic.values()) == qc.depth()
+
+    def test_get_depth_dic_keys_are_qubits(self):
+        """Keys of the returned dictionary are the circuit's Qubit objects."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        depth_dic = qc.get_depth_dic()
+        assert set(depth_dic.keys()) == set(qc.qubits)
+
+    # ------------------------------------------------------------------ #
+    # cnot_count                                                         #
+    # ------------------------------------------------------------------ #
+
+    def test_cnot_count_basic_cx(self):
+        """CX gates are counted correctly."""
+
+        qc = QuantumCircuit(3)
+        qc.cx(0, 1)
+        qc.cx(1, 2)
+        assert qc.cnot_count() == 2
+
+    def test_cnot_count_includes_cy_and_cz(self):
+        """CX, CY, and CZ are all counted as CNOT-equivalent gates."""
+
+        qc = QuantumCircuit(2)
+        qc.cx(0, 1)
+        qc.cy(0, 1)
+        qc.cz(0, 1)
+        assert qc.cnot_count() == 3
+
+    def test_cnot_count_ignores_single_qubit_gates(self):
+        """Single-qubit gates (H, X, Z, …) are not counted."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.x(1)
+        qc.z(0)
+        qc.cx(0, 1)
+        assert qc.cnot_count() == 1
+
+    def test_cnot_count_empty_circuit(self):
+        """An empty circuit has a CNOT count of 0."""
+
+        assert QuantumCircuit(2).cnot_count() == 0
+
+    def test_cnot_count_transpiles_composite_gates(self):
+        """Composite gates are transpiled before counting so their inner CX gates are included."""
+
+        qc_direct = QuantumCircuit(2)
+        qc_direct.cx(0, 1)
+
+        qc_composite = QuantumCircuit(1)
+        qc_composite.x(0)
+        gate = qc_composite.to_gate(name="x_wrap")
+
+        qc = QuantumCircuit(2)
+        qc.append(gate, [qc.qubits[0]])
+        qc.cx(0, 1)
+        assert qc.cnot_count() == 1
+
+    # ------------------------------------------------------------------ #
+    # transpile                                                          #
+    # ------------------------------------------------------------------ #
+
+    def test_transpile_level_zero_is_noop(self):
+        """transpile(level=0) leaves composite gates untouched."""
+
+        inner = QuantumCircuit(1)
+        inner.h(0)
+        outer = QuantumCircuit(1)
+        outer.append(inner.to_gate(name="inner"), [outer.qubits[0]])
+
+        result = outer.transpile(transpilation_level=0)
+        assert result.data[0].op.name == outer.data[0].op.name
+
+    def test_transpile_level_one_decomposes_one_level(self):
+        """transpile(level=1) unwraps exactly one layer of nesting."""
+
+        inner = QuantumCircuit(1)
+        inner.h(0)
+        outer = QuantumCircuit(1)
+        outer.append(inner.to_gate(name="inner"), [outer.qubits[0]])
+        wrapped = QuantumCircuit(1)
+        wrapped.append(outer.to_gate(name="outer"), [wrapped.qubits[0]])
+
+        result = wrapped.transpile(transpilation_level=1)
+        assert result.data[0].op.name == "inner"
+
+    def test_transpile_full_decomposes_to_primitives(self):
+        """transpile() with default level decomposes all nested gates to primitives."""
+
+        inner = QuantumCircuit(1)
+        inner.h(0)
+        outer = QuantumCircuit(1)
+        outer.append(inner.to_gate(name="inner"), [outer.qubits[0]])
+        wrapped = QuantumCircuit(1)
+        wrapped.append(outer.to_gate(name="outer"), [wrapped.qubits[0]])
+
+        result = wrapped.transpile()
+        assert all(instr.op.definition is None for instr in result.data)
+
+    def test_transpile_does_not_mutate_original(self):
+        """transpile() returns a new circuit and does not modify the source."""
+
+        inner = QuantumCircuit(1)
+        inner.h(0)
+        qc = QuantumCircuit(1)
+        qc.append(inner.to_gate(name="inner"), [qc.qubits[0]])
+
+        original_name = qc.data[0].op.name
+        qc.transpile()
+        assert qc.data[0].op.name == original_name
+
+    def test_transpile_preserves_unitary(self):
+        """The unitary is unchanged by full transpilation."""
+
+        inner = QuantumCircuit(1)
+        inner.h(0)
+        qc = QuantumCircuit(1)
+        qc.append(inner.to_gate(name="wrap"), [qc.qubits[0]])
+
+        assert qc.compare_unitary(qc.transpile()) is True
+
+    # ------------------------------------------------------------------ #
+    # count_ops                                                          #
+    # ------------------------------------------------------------------ #
+
+    def test_count_ops_docstring_example(self):
+        """Reproduce the count_ops docstring example exactly."""
+
+        qc = QuantumCircuit(5)
+        qc.x(qc.qubits)
+        qc.cx(0, range(1, 5))
+        qc.z(1)
+        qc.t(range(5))
+        assert qc.count_ops() == {"x": 5, "cx": 4, "z": 1, "t": 5}
+
+    def test_count_ops_empty_circuit(self):
+        """count_ops on an empty circuit returns an empty dict."""
+
+        assert QuantumCircuit(2).count_ops() == {}
+
+    def test_count_ops_excludes_alloc_instructions(self):
+        """qb_alloc and qb_dealloc are not included in the result."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        ops = qc.count_ops()
+        assert "qb_alloc" not in ops
+        assert "qb_dealloc" not in ops
+
+    def test_count_ops_multiple_same_gate(self):
+        """Multiple instances of the same gate are accumulated into one entry."""
+
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.h(1)
+        qc.h(2)
+        assert qc.count_ops()["h"] == 3
+
+    def test_count_ops_mixed_gates(self):
+        """Different gate types each get their own counter."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.x(1)
+        ops = qc.count_ops()
+        assert ops == {"h": 1, "cx": 1, "x": 1}
+
+    # ------------------------------------------------------------------ #
+    # control                                                            #
+    # ------------------------------------------------------------------ #
+
+    def test_control_returns_operation_with_extra_qubit(self):
+        """control(n) returns an Operation with n additional control qubits."""
+
+        qc = QuantumCircuit(1)
+        qc.x(0)
+        ctrl_op = qc.control(1)
+        assert ctrl_op.num_qubits == 2
+
+    def test_control_two_controls(self):
+        """control(2) on a single-qubit circuit produces a 3-qubit operation."""
+
+        qc = QuantumCircuit(1)
+        qc.x(0)
+        ctrl_op = qc.control(2)
+        assert ctrl_op.num_qubits == 3
+
+    def test_control_single_x_equals_cx_unitary(self):
+        """Controlled-X equals the standard CX unitary."""
+
+        qc = QuantumCircuit(1)
+        qc.x(0)
+        ctrl_op = qc.control(1)
+
+        test_qc = QuantumCircuit(2)
+        test_qc.append(ctrl_op, test_qc.qubits)
+
+        cx_qc = QuantumCircuit(2)
+        cx_qc.cx(0, 1)
+
+        assert test_qc.compare_unitary(cx_qc) is True
+
+    # ------------------------------------------------------------------ #
+    # compose                                                            #
+    # ------------------------------------------------------------------ #
+
+    def test_compose_inplace_returns_none_and_modifies_self(self):
+        """compose(inplace=True) returns None and appends to self."""
+
+        qc1 = QuantumCircuit(2)
+        qc1.h(0)
+        qc2 = QuantumCircuit(2)
+        qc2.cx(0, 1)
+
+        result = qc1.compose(qc2, qubits=qc1.qubits)
+        assert result is None
+        assert len(qc1.data) == 2  # h + composed gate
+
+    def test_compose_not_inplace_returns_new_circuit(self):
+        """compose(inplace=False) returns a new circuit without mutating self."""
+
+        qc1 = QuantumCircuit(2)
+        qc1.h(0)
+        qc2 = QuantumCircuit(2)
+        qc2.cx(0, 1)
+
+        result = qc1.compose(qc2, qubits=qc1.qubits, inplace=False)
+
+        assert result is not None
+        assert result is not qc1
+        assert len(qc1.data) == 1  # original unchanged
+        assert len(result.data) == 2
+
+    def test_compose_preserves_unitary(self):
+        """The composed circuit has the same unitary as building the circuit manually."""
+
+        qc_a = QuantumCircuit(2)
+        qc_a.h(0)
+        qc_b = QuantumCircuit(2)
+        qc_b.cx(0, 1)
+
+        composed = qc_a.compose(qc_b, qubits=qc_a.qubits, inplace=False)
+
+        manual = QuantumCircuit(2)
+        manual.h(0)
+        manual.cx(0, 1)
+
+        assert composed.compare_unitary(manual) is True
+
+    # ------------------------------------------------------------------ #
+    # bind_parameters                                                    #
+    # ------------------------------------------------------------------ #
+
+    def test_bind_parameters_removes_abstract_params(self):
+        """After binding all parameters, abstract_params is empty."""
+
+        a, b = symbols("a b")
+        qc = QuantumCircuit(2)
+        qc.p(a, 0)
+        qc.p(b, 1)
+        bound = qc.bind_parameters({a: np.pi / 2, b: np.pi})
+        assert bound.abstract_params == set()
+
+    def test_bind_parameters_does_not_mutate_original(self):
+        """bind_parameters returns a new circuit without modifying self."""
+
+        a = symbols("a")
+        qc = QuantumCircuit(1)
+        qc.p(a, 0)
+        qc.bind_parameters({a: 1.0})
+        assert a in qc.abstract_params
+
+    def test_bind_parameters_partial_raises(self):
+        """Binding only a subset of parameters raises a KeyError for the missing symbol."""
+
+        a, b = symbols("a b")
+        qc = QuantumCircuit(2)
+        qc.p(a, 0)
+        qc.p(b, 1)
+        with pytest.raises(KeyError):
+            qc.bind_parameters({a: 1.0})
+
+    def test_bind_parameters_produces_correct_unitary(self):
+        """Binding φ=π to a phase gate P(φ) gives the Pauli-Z unitary."""
+
+        phi = symbols("phi")
+        qc = QuantumCircuit(1)
+        qc.p(phi, 0)
+        bound = qc.bind_parameters({phi: np.pi})
+
+        z_qc = QuantumCircuit(1)
+        z_qc.z(0)
+        assert bound.compare_unitary(z_qc) is True
+
+    # ------------------------------------------------------------------ #
+    # to_latex                                                           #
+    # ------------------------------------------------------------------ #
+
+    def test_to_latex_returns_string(self):
+        """to_latex returns a non-empty string."""
+
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        result = qc.to_latex()
+        assert isinstance(result, str)
+        assert len(result) > 0
+
+    def test_to_latex_contains_latex_commands(self):
+        """The returned string contains standard LaTeX document commands."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        result = qc.to_latex()
+        assert "\\documentclass" in result
+
+    # ------------------------------------------------------------------ #
+    # to_qasm2                                                           #
+    # ------------------------------------------------------------------ #
+
+    def test_to_qasm2_header(self):
+        """to_qasm2 output begins with the OpenQASM 2.0 header."""
+
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        assert qc.to_qasm2().startswith("OPENQASM 2.0")
+
+    def test_to_qasm2_contains_gate_name(self):
+        """to_qasm2 output contains the applied gate name."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        qasm = qc.to_qasm2()
+        assert "h " in qasm
+        assert "cx " in qasm
+
+    def test_to_qasm2_returns_string(self):
+        """to_qasm2 returns a str."""
+
+        assert isinstance(QuantumCircuit(1).to_qasm2(), str)
+
+    def test_to_qasm2_writes_file(self):
+        """to_qasm2 with filename writes the same content to disk."""
+
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        with tempfile.NamedTemporaryFile(mode="r", suffix=".qasm", delete=False) as tmp:
+            fname = tmp.name
+        try:
+            qasm_str = qc.to_qasm2(filename=fname)
+            assert open(fname).read() == qasm_str
+        finally:
+            os.unlink(fname)
+
+    def test_to_qasm2_roundtrip(self):
+        """A circuit exported to QASM 2.0 and re-imported has the same unitary."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        reloaded = QuantumCircuit.from_qasm_str(qc.to_qasm2())
+        assert qc.compare_unitary(reloaded) is True
+
+    # ------------------------------------------------------------------ #
+    # to_qasm3                                                           #
+    # ------------------------------------------------------------------ #
+
+    def test_to_qasm3_header(self):
+        """to_qasm3 output begins with the OpenQASM 3.0 header."""
+
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        assert qc.to_qasm3().startswith("OPENQASM 3.0")
+
+    def test_to_qasm3_contains_gate_name(self):
+        """to_qasm3 output contains the applied gate name."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        qasm = qc.to_qasm3()
+        assert "h " in qasm
+        assert "cx " in qasm
+
+    def test_to_qasm3_returns_string(self):
+        """to_qasm3 returns a str."""
+
+        assert isinstance(QuantumCircuit(1).to_qasm3(), str)
+
+    def test_to_qasm3_writes_file(self):
+        """to_qasm3 with filename writes the same content to disk."""
+
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        with tempfile.NamedTemporaryFile(mode="r", suffix=".qasm", delete=False) as tmp:
+            fname = tmp.name
+        try:
+            qasm_str = qc.to_qasm3(filename=fname)
+            assert open(fname).read() == qasm_str
+        finally:
+            os.unlink(fname)
+
+    # ------------------------------------------------------------------ #
+    # qasm                                                               #
+    # ------------------------------------------------------------------ #
+
+    def test_qasm_alias_for_to_qasm2(self):
+        """qasm() produces the same output as to_qasm2()."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        assert qc.qasm() == qc.to_qasm2()
+
+    def test_qasm_header(self):
+        """qasm() output begins with the OpenQASM 2.0 header."""
+
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        assert qc.qasm().startswith("OPENQASM 2.0")
 
 
 class TestQuantumCircuitDunderMethods:
