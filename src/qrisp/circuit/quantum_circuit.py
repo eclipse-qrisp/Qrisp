@@ -33,10 +33,15 @@ from qiskit.visualization import circuit_drawer
 
 import qrisp.circuit.standard_operations as ops
 from qrisp.circuit import Clbit, Instruction, Operation, Qubit
-from qrisp.misc import cnot_count, get_depth_dic
+from qrisp.misc import (
+    cnot_count,
+    cnot_depth_indicator,
+    get_depth_dic,
+    t_depth_indicator,
+)
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence, Set
+    from collections.abc import Callable, Sequence, Set
 
     from qrisp.circuit.operation import ControlledOperation, PTControlledOperation
 
@@ -1167,6 +1172,7 @@ class QuantumCircuit:
             The LaTeX source code for the circuit diagram.
 
         """
+        # NOTE: This is here to avoid circular imports
         from qrisp.interface import convert_to_qiskit
 
         qiskit_qc = convert_to_qiskit(self, transpile=False)
@@ -1312,25 +1318,46 @@ class QuantumCircuit:
         """
         return self.to_qasm2(**kwargs)
 
-    def depth(self, depth_indicator=lambda x: 1, transpile=True):
+    def depth(
+        self,
+        depth_indicator: Callable[[Operation], int] = lambda x: 1,
+        transpile: bool = True,
+    ) -> int:
         """
-        Returns the depth of the QuantumCircuit. Note that the depth on QuantumCircuit
-        which are not transpiled, might have very little correlation with the runtime.
+        Returns the depth of the QuantumCircuit.
+
+        .. note::
+            The depth of a circuit that has not been transpiled may have very
+            little correlation with its actual runtime, since composite gates
+            are counted as a single layer.
 
         Parameters
         ----------
-        depth_indicator : function, optional
-            A function which receives an :ref:`Operation` instance and returns the
-            time/logical depth this operation takes. By default every Operation takes
-            logical depth 1.
+        depth_indicator : Callable[[Operation], int], optional
+            A function that receives an :ref:`Operation` instance and returns
+            the time or logical depth that operation takes. By default every
+            operation contributes a depth of 1.
+
         transpile : bool, optional
-            Boolean to indicate wether the QuantumCircuit should be transpiled before
-            the depth is calculated. The default is True.
+            If ``True``, the circuit is transpiled before the depth is
+            calculated so that composite gates are fully decomposed into
+            primitive operations. The default is True.
 
         Returns
         -------
-        integer
+        int
             The depth of the QuantumCircuit.
+
+        Examples
+        --------
+
+        >>> from qrisp import QuantumCircuit
+        >>> qc = QuantumCircuit(3)
+        >>> qc.h(0)
+        >>> qc.cx(0, 1)
+        >>> qc.cx(1, 2)
+        >>> qc.depth()
+        3
 
         """
 
@@ -1341,86 +1368,90 @@ class QuantumCircuit:
             self, transpile_qc=transpile, depth_indicator=depth_indicator
         )
 
-        return max(depth_dic.values())
+        return int(max(depth_dic.values()))
 
-    def t_depth(self, epsilon=None):
+    def t_depth(self, epsilon: float | None = None) -> int:
         r"""
-        Estimates the T-depth of self. T-depth is an important metric for fault tolerant
-        quantum computing, because T gates are expected to be the bottleneck in fault tolerant
+        Estimates the T-depth of this QuantumCircuit.
+
+        T-depth is an important metric for fault-tolerant quantum computing,
+        because T gates are expected to be the bottleneck in fault-tolerant
         architectures.
-        
-        According to `this paper <https://arxiv.org/abs/1403.2975>`_, the synthesis of an $RZ(\phi)$
-        up to precision $\epsilon$ requires $3\text{log}_2(\frac{1}{\epsilon})$ 
-        T-gates.
-        
-        Based on this formula, this method performs a conservative estimate of the T-depth
-        of self.
-            
+
+        According to `this paper <https://arxiv.org/abs/1403.2975>`_, the
+        synthesis of an $RZ(\phi)$ up to precision $\epsilon$ requires
+        $3\log_2(\frac{1}{\epsilon})$ T-gates.
+
+        Based on this formula, this method performs a conservative estimate of
+        the T-depth of this circuit.
+
         Parameters
         ----------
         epsilon : float, optional
-            The precision up to which parametrized gates should be approximated. If not given,
-            Qrisp will determine the parameter with the highest precision. For more information
-            on this feature see the examples
-
+            The precision up to which parametrized gates should be
+            approximated. If not given, Qrisp will determine the precision
+            from the parameter with the highest required precision. See the
+            examples below for details.
 
         Returns
         -------
-        float
+        int
             The estimated T-depth.
 
         Examples
         --------
-        
+
         We create a QuantumCircuit and evaluate the T-depth:
-            
+
         >>> import numpy as np
         >>> from qrisp import QuantumCircuit
         >>> qc = QuantumCircuit(2)
         >>> qc.t(0)
-        >>> qc.cx(0,1)
+        >>> qc.cx(0, 1)
         >>> qc.rx(2*np.pi*3/2**4, 1)
-        >>> qc.t_depth(epsilon = 2**-5)
+        >>> qc.t_depth(epsilon=2**-5)
         16
-        
-        In this example we execute a T-Gate on the 0-th qubit (T-depth : 1) followed
-        by a CNOT gate (T-depth: 0) on qubits 0 and 1 and finally an RX gate.
-        
-        The RX-Gate can be executed by using the decomposition 
-        
-        .. math::
-            
-            RX(\phi) = \text{H } \text{RZ}(\phi) \text{ H}
 
-        The T-depth of executing a parametrized RX gate is therefore the same
-        as the parametrized RZ. To determine the T-depth of the RZ-gate, executed
-        with precision $2^{-5}$ we use the above formula:
-            
+        In this example we execute a T-gate on qubit 0 (T-depth: 1), followed
+        by a CNOT (T-depth: 0), and finally an RX gate on qubit 1.
+
+        The RX gate can be decomposed as
+
         .. math::
-            
-            \begin{align}
-            \text{TDEPTH}(\text{RZ}(\phi), \epsilon = 2^-5) = 3 \text{log}_2(2^5)\\
-            &= 15
-            \end{align}
-            
-        We therefore arrive at 16.
-        
+
+            RX(\phi) = H \cdot RZ(\phi) \cdot H
+
+        so its T-depth equals that of the parametrized RZ. To determine the
+        T-depth of $RZ(\phi)$ with precision $\epsilon = 2^{-5}$ we use the
+        formula above:
+
+        .. math::
+
+            \text{T-depth}(RZ(\phi),\; \epsilon = 2^{-5})
+            = 3 \log_2(2^5) = 15
+
+        Adding the 1 T-depth contribution from the T-gate gives a total of
+        16.
+
         **Automatic precision determination**
-        
-        In the case of unknown precision, Qrisp assumes that every parameter in the 
-        circuit is of the form.
-        
+
+        When ``epsilon`` is not provided, Qrisp assumes every parameter has
+        the form
+
         .. math::
-            
-            \phi = 2\pi\frac{m}{2^k}
-        
-        Where $m$ is an integer. Qrisp will then determine the parameter with the maximum $k$
-        and set $\epsilon = 2^{k_{max} +3}$.
-        
+
+            \phi = 2\pi \frac{m}{2^k}
+
+        where $m$ is an integer. It determines the maximum $k$ across all
+        parameters and sets $\epsilon = 2^{-(k_{\max}+3)}$, where the extra
+        $+3$ is a conservative buffer that slightly overestimates the required
+        precision.
+
         >>> qc.t_depth()
         22
-        
-        In this circuit $k_{max} = 4$ therefore, $\epsilon = 2^{-7}$ implying the T-depth is 22.
+
+        In this circuit $k_{\max} = 4$, so $\epsilon = 2^{-7}$, giving a
+        T-depth of 22.
         """
 
         if epsilon is None:
@@ -1431,79 +1462,88 @@ class QuantumCircuit:
                 op = instr.op
 
                 for par in op.params:
+                    # Normalize parameter to range [0, 2π) and convert to fixed-point representation
+                    normalized_par = (par % (2 * np.pi)) / (2 * np.pi)
+                    fixed_point_par = int(np.round(normalized_par * 2**15))
 
-                    par = int(np.round((par % (2 * np.pi)) / (2 * np.pi) * 2**15))
-
-                    for i in range(max_circuit_prec):
-                        if par % (2**i):
-                            max_circuit_prec = i
+                    # Find the position of the least significant bit
+                    for idx in range(max_circuit_prec):
+                        if fixed_point_par % (2**idx):
+                            max_circuit_prec = idx
                             break
 
+            # Convert precision index to actual precision value
             max_circuit_prec = 16 - max_circuit_prec
 
+            # Set epsilon based on the maximum precision across all parameters
             epsilon = 2 ** (-max_circuit_prec - 3)
-
-        from qrisp.misc.utility import t_depth_indicator
 
         return self.depth(depth_indicator=lambda x: t_depth_indicator(x, epsilon))
 
-    def cnot_depth(self):
+    def cnot_depth(self) -> int:
         """
-        This function returns the CNOT-depth of an self.
+        Returns the CNOT depth of this QuantumCircuit.
 
-        In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum
-        circuit execution. This function can be used as a gate-speed specifier for
-        the :meth:`compile <qrisp.QuantumSession.compile>` method.
-
+        In NISQ-era devices, CNOT gates are the restricting bottleneck for
+        quantum circuit execution. This method can be used as a gate-speed
+        specifier for the :meth:`compile <qrisp.QuantumSession.compile>`
+        method.
 
         Returns
         -------
         int
-            The CNOT depth of self.
+            The CNOT depth of this QuantumCircuit.
 
         Examples
         --------
 
-        We create a QuantumCircuit and evaluate it's CNOT depth.
+        We create a QuantumCircuit and evaluate its CNOT depth:
 
         >>> from qrisp import QuantumCircuit
         >>> qc = QuantumCircuit(4)
-        >>> qc.cx(0,1)
+        >>> qc.cx(0, 1)
         >>> qc.x(1)
-        >>> qc.cx(1,2)
+        >>> qc.cx(1, 2)
         >>> qc.y(2)
-        >>> qc.cx(2,3)
-        >>> qc.cx(1,0)
+        >>> qc.cx(2, 3)
+        >>> qc.cx(1, 0)
         >>> print(qc)
 
         .. code-block:: none
 
-                                  ┌───┐
-            qb_59: ──■────────────┤ X ├─────
-                   ┌─┴─┐┌───┐     └─┬─┘
-            qb_60: ┤ X ├┤ X ├──■────■───────
-                   └───┘└───┘┌─┴─┐┌───┐
-            qb_61: ──────────┤ X ├┤ Y ├──■──
-                             └───┘└───┘┌─┴─┐
-            qb_62: ────────────────────┤ X ├
-                                       └───┘
+                              ┌───┐
+            qb_0: ──■─────────┤ X ├─────
+                  ┌─┴─┐┌───┐  └─┬─┘
+            qb_1: ┤ X ├┤ X ├──■──■──────
+                  └───┘└───┘┌─┴─┐┌───┐
+            qb_2: ──────────┤ X ├┤ Y ├──■──
+                            └───┘└───┘┌─┴─┐
+            qb_3: ────────────────────┤ X ├
+                                      └───┘
 
         >>> qc.cnot_depth()
         3
 
         """
-        from qrisp.misc.utility import cnot_depth_indicator
 
         return self.depth(depth_indicator=cnot_depth_indicator)
 
-    def num_qubits(self):
+    def num_qubits(self) -> int:
         """
-        Returns the amount of qubits.
+        Returns the number of qubits in this QuantumCircuit.
 
         Returns
         -------
         int
-            Amount of Qubits.
+            The number of qubits.
+
+        Examples
+        --------
+
+        >>> from qrisp import QuantumCircuit
+        >>> qc = QuantumCircuit(5)
+        >>> qc.num_qubits()
+        5
 
         """
         return len(self.qubits)

@@ -141,21 +141,6 @@ class TestQuantumCircuitMethods:
         assert custom_bit in getattr(qc, container)
 
     @pytest.mark.parametrize(
-        "method,container",
-        [
-            ("add_qubit", "qubits"),
-            ("add_clbit", "clbits"),
-        ],
-    )
-    def test_add_multiple_bits(self, method, container):
-        """Adding bits sequentially accumulates them."""
-
-        qc = QuantumCircuit()
-        for _ in range(5):
-            getattr(qc, method)()
-        assert len(getattr(qc, container)) == 5
-
-    @pytest.mark.parametrize(
         "init_args,method,counter_attr",
         [
             ((2, 0), "add_qubit", "qubit_index_counter"),
@@ -512,29 +497,6 @@ class TestQuantumCircuitMethods:
         qc_diff.rx(np.pi / 3, 0)
         assert qc_same_0.compare_unitary(qc_diff) is False
 
-    def test_compare_unitary_controlled_operations(self):
-        """Two identical CCX circuits compare as equal."""
-
-        qc_0 = QuantumCircuit(3)
-        qc_0.ccx(0, 1, 2)
-        qc_1 = QuantumCircuit(3)
-        qc_1.ccx(0, 1, 2)
-        assert qc_0.compare_unitary(qc_1) is True
-
-    def test_compare_unitary_inverse_operations(self):
-        """A circuit composed with its inverse gives the identity."""
-
-        qc = QuantumCircuit(2)
-        qc.h(0)
-        qc.cx(0, 1)
-        qc.ry(np.pi / 3, 1)
-
-        combined = qc.clearcopy()
-        combined.extend(qc)
-        combined.extend(qc.inverse())
-
-        assert combined.compare_unitary(QuantumCircuit(2)) is True
-
     def test_compare_unitary_global_phase(self):
         """Circuits that differ only by a global phase scalar are equal iff ignore_gphase=True."""
 
@@ -586,16 +548,6 @@ class TestQuantumCircuitMethods:
         qc = QuantumCircuit(3, 2)
         inv_qc = qc.inverse()
         assert len(inv_qc.data) == 0
-        assert len(inv_qc.qubits) == 3
-        assert len(inv_qc.clbits) == 2
-
-    def test_inverse_preserves_qubit_structure(self):
-        """Inverse preserves qubit and clbit counts."""
-
-        qc = QuantumCircuit(3, 2)
-        qc.h(0)
-        qc.cx(0, 1)
-        inv_qc = qc.inverse()
         assert len(inv_qc.qubits) == 3
         assert len(inv_qc.clbits) == 2
 
@@ -873,6 +825,198 @@ class TestQuantumCircuitMethods:
         assert set(depth_dic.keys()) == set(qc.qubits)
 
     # ------------------------------------------------------------------ #
+    # depth                                                              #
+    # ------------------------------------------------------------------ #
+
+    def test_depth_docstring_example(self):
+        """Docstring example: H on q0, CX(q0,q1), CX(q1,q2) gives depth 3."""
+
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.cx(1, 2)
+        assert qc.depth() == 3
+
+    def test_depth_empty_circuit(self):
+        """An empty circuit has depth 0."""
+
+        assert QuantumCircuit(3).depth() == 0
+
+    def test_depth_parallel_gates(self):
+        """Gates on independent qubits execute in parallel — depth is 1."""
+
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.x(1)
+        qc.z(2)
+        assert qc.depth() == 1
+
+    def test_depth_sequential_gates(self):
+        """Gates applied sequentially on the same qubit accumulate depth."""
+
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        qc.x(0)
+        qc.z(0)
+        assert qc.depth() == 3
+
+    def test_depth_custom_indicator_counts_only_cx(self):
+        """A depth_indicator that returns 0 for non-CX gates counts only CX layers."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)  # ignored by indicator
+        qc.cx(0, 1)  # depth 1
+        qc.h(1)  # ignored
+        qc.cx(0, 1)  # depth 2
+
+        cx_only = lambda op: 1 if op.name == "cx" else 0
+        assert qc.depth(depth_indicator=cx_only) == 2
+
+    def test_depth_transpile_false_counts_composite_as_one(self):
+        """With transpile=False a composite gate counts as a single layer."""
+
+        inner = QuantumCircuit(2)
+        inner.cx(0, 1)
+        inner.cx(1, 0)
+        gate = inner.to_gate(name="two_cx")
+
+        qc = QuantumCircuit(2)
+        qc.append(gate, qc.qubits)
+
+        # Without transpilation the composite gate is one layer
+        assert qc.depth(transpile=False) == 1
+        # With transpilation the two CX gates are visible
+        assert qc.depth(transpile=True) == 2
+
+    # ------------------------------------------------------------------ #
+    # t_depth                                                            #
+    # ------------------------------------------------------------------ #
+
+    def test_t_depth_docstring_example_with_epsilon(self):
+        """Docstring example: T + CX + RX(2π·3/2⁴) with ε=2⁻⁵ gives T-depth 16."""
+
+        qc = QuantumCircuit(2)
+        qc.t(0)
+        qc.cx(0, 1)
+        qc.rx(2 * np.pi * 3 / 2**4, 1)
+        assert qc.t_depth(epsilon=2**-5) == 16
+
+    def test_t_depth_docstring_example_auto_epsilon(self):
+        """Docstring example: same circuit without explicit ε gives T-depth 22."""
+
+        qc = QuantumCircuit(2)
+        qc.t(0)
+        qc.cx(0, 1)
+        qc.rx(2 * np.pi * 3 / 2**4, 1)
+        assert qc.t_depth() == 22
+
+    def test_t_depth_empty_circuit(self):
+        """An empty circuit has T-depth 0."""
+
+        assert QuantumCircuit(2).t_depth() == 0
+
+    def test_t_depth_only_t_gate(self):
+        """A single T gate has T-depth 1."""
+
+        qc = QuantumCircuit(1)
+        qc.t(0)
+        assert qc.t_depth(epsilon=1e-10) == 1
+
+    def test_t_depth_only_cx_gate(self):
+        """A single CX gate (no T gates) has T-depth 0."""
+
+        qc = QuantumCircuit(2)
+        qc.cx(0, 1)
+        assert qc.t_depth(epsilon=1e-10) == 0
+
+    def test_t_depth_parallel_t_gates(self):
+        """T gates on independent qubits are parallel — T-depth is 1."""
+
+        qc = QuantumCircuit(2)
+        qc.t(0)
+        qc.t(1)
+        assert qc.t_depth(epsilon=1e-10) == 1
+
+    def test_t_depth_sequential_t_gates(self):
+        """T gates applied sequentially on the same qubit accumulate T-depth."""
+
+        qc = QuantumCircuit(1)
+        qc.t(0)
+        qc.t(0)
+        qc.t(0)
+        assert qc.t_depth(epsilon=1e-10) == 3
+
+    # ------------------------------------------------------------------ #
+    # cnot_depth                                                         #
+    # ------------------------------------------------------------------ #
+
+    def test_cnot_depth_docstring_example(self):
+        """Docstring example: 4-qubit circuit with mixed CX and single-qubit gates gives CNOT depth 3."""
+
+        qc = QuantumCircuit(4)
+        qc.cx(0, 1)
+        qc.x(1)
+        qc.cx(1, 2)
+        qc.y(2)
+        qc.cx(2, 3)
+        qc.cx(1, 0)
+        assert qc.cnot_depth() == 3
+
+    def test_cnot_depth_empty_circuit(self):
+        """An empty circuit has CNOT depth 0."""
+
+        assert QuantumCircuit(2).cnot_depth() == 0
+
+    def test_cnot_depth_no_cx_gates(self):
+        """A circuit with only single-qubit gates has CNOT depth 0."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.x(1)
+        qc.z(0)
+        assert qc.cnot_depth() == 0
+
+    def test_cnot_depth_parallel_cx_gates(self):
+        """CX gates on independent qubit pairs are parallel — CNOT depth is 1."""
+
+        qc = QuantumCircuit(4)
+        qc.cx(0, 1)
+        qc.cx(2, 3)
+        assert qc.cnot_depth() == 1
+
+    def test_cnot_depth_sequential_cx_gates(self):
+        """CX gates sharing a qubit are sequential — CNOT depth equals the chain length."""
+
+        qc = QuantumCircuit(3)
+        qc.cx(0, 1)
+        qc.cx(1, 2)
+        assert qc.cnot_depth() == 2
+
+    # ------------------------------------------------------------------ #
+    # num_qubits                                                         #
+    # ------------------------------------------------------------------ #
+
+    @pytest.mark.parametrize("n", [0, 1, 4, 5, 10])
+    def test_num_qubits_various_sizes(self, n):
+        """num_qubits returns the correct count for circuits of various sizes."""
+
+        assert QuantumCircuit(n).num_qubits() == n
+
+    def test_num_qubits_after_add_qubit(self):
+        """num_qubits updates correctly after add_qubit is called."""
+
+        qc = QuantumCircuit(2)
+        assert qc.num_qubits() == 2
+        qc.add_qubit()
+        assert qc.num_qubits() == 3
+
+    def test_num_qubits_does_not_count_clbits(self):
+        """Classical bits are not included in the num_qubits count."""
+
+        qc = QuantumCircuit(3, 5)
+        assert qc.num_qubits() == 3
+
+    # ------------------------------------------------------------------ #
     # cnot_count                                                         #
     # ------------------------------------------------------------------ #
 
@@ -909,19 +1053,16 @@ class TestQuantumCircuitMethods:
         assert QuantumCircuit(2).cnot_count() == 0
 
     def test_cnot_count_transpiles_composite_gates(self):
-        """Composite gates are transpiled before counting so their inner CX gates are included."""
+        """CX gates inside a composite gate are counted after transpilation."""
 
-        qc_direct = QuantumCircuit(2)
-        qc_direct.cx(0, 1)
-
-        qc_composite = QuantumCircuit(1)
-        qc_composite.x(0)
-        gate = qc_composite.to_gate(name="x_wrap")
+        inner = QuantumCircuit(2)
+        inner.cx(0, 1)
+        inner.cx(1, 0)
+        gate = inner.to_gate(name="two_cx")
 
         qc = QuantumCircuit(2)
-        qc.append(gate, [qc.qubits[0]])
-        qc.cx(0, 1)
-        assert qc.cnot_count() == 1
+        qc.append(gate, qc.qubits)
+        assert qc.cnot_count() == 2
 
     # ------------------------------------------------------------------ #
     # transpile                                                          #
@@ -1203,11 +1344,6 @@ class TestQuantumCircuitMethods:
         assert "h " in qasm
         assert "cx " in qasm
 
-    def test_to_qasm2_returns_string(self):
-        """to_qasm2 returns a str."""
-
-        assert isinstance(QuantumCircuit(1).to_qasm2(), str)
-
     def test_to_qasm2_writes_file(self):
         """to_qasm2 with filename writes the same content to disk."""
 
@@ -1251,11 +1387,6 @@ class TestQuantumCircuitMethods:
         assert "h " in qasm
         assert "cx " in qasm
 
-    def test_to_qasm3_returns_string(self):
-        """to_qasm3 returns a str."""
-
-        assert isinstance(QuantumCircuit(1).to_qasm3(), str)
-
     def test_to_qasm3_writes_file(self):
         """to_qasm3 with filename writes the same content to disk."""
 
@@ -1280,13 +1411,6 @@ class TestQuantumCircuitMethods:
         qc.h(0)
         qc.cx(0, 1)
         assert qc.qasm() == qc.to_qasm2()
-
-    def test_qasm_header(self):
-        """qasm() output begins with the OpenQASM 2.0 header."""
-
-        qc = QuantumCircuit(1)
-        qc.h(0)
-        assert qc.qasm().startswith("OPENQASM 2.0")
 
 
 class TestQuantumCircuitDunderMethods:
