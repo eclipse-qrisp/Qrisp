@@ -444,8 +444,11 @@ class QuantumFloat(QuantumVariable):
         return 2**self.exponent * poly
 
     def encode(self, encoding_number, rounding=False, permit_dirtyness=False):
-        from jax import lax
 
+        if not check_for_tracing_mode():
+            if not self.signed and encoding_number < 0:
+                raise ValueError("Tried to encode negative number in an unsigned QuantumFloat")
+        
         # calculate the integer bounds based on mantissa size (msize)
         max_int = 2**self.msize - 1
         if self.signed:
