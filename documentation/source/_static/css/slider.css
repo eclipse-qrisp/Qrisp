@@ -106,3 +106,14 @@
     transform: translateX(calc(var(--slide-width) * var(--original-logos) * -1));
   }
 }
+
+/* --- 7. Logo Specific Overrides --- */
+/* Scale up the FRI logo to compensate for its built-in white space */
+.slide img[src*="FRI_UL_logo"] {
+    transform: scale(1.25); 
+}
+
+/* Ensure the subtle zoom hover effect still works correctly */
+.slide img[src*="FRI_UL_logo"]:hover {
+    transform: scale(1.47); 
+}
