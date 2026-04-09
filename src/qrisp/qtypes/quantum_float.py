@@ -371,6 +371,7 @@ class QuantumFloat(QuantumVariable):
 
     # Define outcome_labels
     def decoder(self, i):
+        """Convert measurement outcome (integer) back to human-readable value."""
 
         if self.signed:
             res = _signed_int_iso_inv(i, self.msize) * jnp.float64(2) ** self.exponent
@@ -481,6 +482,7 @@ class QuantumFloat(QuantumVariable):
         return 2**self.exponent * poly
 
     def encode(self, encoding_number, rounding=False, permit_dirtyness=False):
+        """Initialize a QuantumFloat to a specific value."""
         if rounding:
             # Round value to closest fitting number
             outcome_labels = [self.decoder(i) for i in range(2**self.size)]
