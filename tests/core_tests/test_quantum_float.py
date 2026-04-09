@@ -122,7 +122,7 @@ def test_roundtrip_consistency_property(signed):
         (3, 0, True, 10),
         (3, 0, False, 10),
         (2, 0, True, -10),
-        (2, -4, False, 33),
+        (2, -4, False, 3),
     ],
 )
 def test_encoder_rejects_out_of_bounds_values(
