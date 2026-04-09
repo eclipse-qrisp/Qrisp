@@ -43,6 +43,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence, Set
 
     from qrisp.circuit.operation import ControlledOperation, PTControlledOperation
+    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
+        ParityHandle,
+    )
 
 TO_GATE_COUNTER = np.zeros(1)
 
@@ -67,8 +70,6 @@ class QuantumCircuit:
         The amount of qubits this QuantumCircuit is initialized with. The default is 0.
     num_clbits : int, optional
         The amount of classical bits. The default is 0.
-    name : str, optional
-        A name for the QuantumCircuit. By default, a generic name is generated.
 
 
     Examples
@@ -614,8 +615,9 @@ class QuantumCircuit:
             The QuantumCircuit to compare to.
 
         precision : int, optional
-            The precision of the comparison. This function will return True, if the norm
-            of the difference of the unitaries is below the precision. The default is 4.
+            The precision of the comparison. This function will return True if the norm
+            of the difference of the unitaries is below ``10**(-precision)``.
+            The default is 4.
 
         ignore_gphase: bool, optional
             If set to True, this method returns True if the unitaries only differ in a
@@ -2203,13 +2205,13 @@ class QuantumCircuit:
         detector_map : dict
             (Optional) A dictionary mapping :class:`~qrisp.jasp.ParityHandle`
             objects to Stim detector indices.
-            ParityHandle objects are compared by their index, so handles from to_qc() can
-            be used directly as keys.
+            ParityHandle objects are compared by their content, so handles returned by
+            :meth:`parity` can be used directly as keys.
         observable_map : dict
             (Optional) A dictionary mapping :class:`~qrisp.jasp.ParityHandle`
             objects to Stim observable indices.
-            ParityHandle objects are compared by their index, so handles from to_qc() can
-            be used directly as keys.
+            ParityHandle objects are compared by their content, so handles returned by
+            :meth:`parity` can be used directly as keys.
 
         Examples
         --------
@@ -2279,7 +2281,7 @@ class QuantumCircuit:
         >>> sampler = stim_circuit.compile_sampler()
         >>> all_samples = sampler.sample(5)
         >>> samples = all_samples[:, measurement_map[qc.clbits[0]]]
-        >>> print(samples)
+        >>> samples
         array([ True,  True,  True,  True,  True])
 
         """
@@ -2297,8 +2299,8 @@ class QuantumCircuit:
 
         Returns
         -------
-        function
-            A function representing a PyTket QuantumCircuit.
+        pytket.Circuit
+            The converted PyTket circuit.
 
         """
         # NOTE: This is here to avoid circular imports
@@ -2392,33 +2394,43 @@ class QuantumCircuit:
 
         self.append(ops.Measurement(), [qubits], [clbits])
 
-    def parity(self, clbits, expectation=0, observable=False):
+    def parity(
+        self,
+        clbits: Clbit | Sequence[Clbit],
+        expectation: int = 0,
+        observable: bool = False,
+    ) -> ParityHandle:
         """
-        Instructs a parity operation on a set of classical bits.
+        Append a parity (XOR) check over classical bits to the circuit.
 
-        This method creates a parity check (XOR) on measurement results, useful for
-        quantum error correction and when interfacing with Stim. When the circuit is
-        converted to Stim (via :meth:`to_stim`), this creates either a ``DETECTOR``
-        instruction (if ``observable=False``) or an ``OBSERVABLE_INCLUDE`` instruction
-        (if ``observable=True``).
+        The parity of a set of classical bits is the XOR of all their values:
+        ``p = b_0 ⊕ b_1 ⊕ … ⊕ b_{n-1}``.  This is useful for quantum error
+        correction and when interfacing with Stim.  When the circuit is
+        converted via :meth:`to_stim`, a parity instruction becomes either a
+        ``DETECTOR`` (if ``observable=False``) or an ``OBSERVABLE_INCLUDE``
+        (if ``observable=True``) instruction.
 
         Parameters
         ----------
-        clbits : list[Clbit] or Clbit
-            The classical bits to compute parity over. Can be a single Clbit or a list
-            of Clbits representing measurement results.
+        clbits : Clbit or Sequence[Clbit]
+            The classical bit(s) to compute parity over.  A single
+            :class:`Clbit` measures the parity of one bit; any sequence
+            (``list``, ``tuple``, ``range``, …) computes the XOR of all
+            elements.
+
         expectation : int, optional
-            The expected parity value (0 or 1). Default is 0.
+            The expected parity value (``0`` or ``1``).  Default is ``0``.
+
         observable : bool, optional
-            If True, this parity is treated as a Stim observable rather than a detector.
-            Default is False.
+            If ``True``, this parity is treated as a Stim observable rather
+            than a detector.  Default is ``False``.
 
         Returns
         -------
-        ParityHandle
-            A :class:`~qrisp.jasp.ParityHandle` object representing the parity result.
-            This handle can be used as a key to look up detector/observable indices in
-            the maps returned by :meth:`to_stim`.
+        :class:`~qrisp.jasp.ParityHandle`
+            A handle representing the parity result.  Use it as a key to look
+            up detector/observable indices in the maps returned by
+            :meth:`to_stim`.
 
         Examples
         --------
@@ -2449,28 +2461,22 @@ class QuantumCircuit:
         :meth:`to_stim` : Convert to Stim circuit with detector/observable maps
         :class:`qrisp.jasp.ParityHandle` : Documentation of the ParityHandle class
         """
+        # NOTE: This is here to avoid circular imports
         from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
             ParityHandle,
         )
+
+        # NOTE: This is here to avoid circular imports
         from qrisp.jasp.primitives.parity_primitive import ParityOperation
 
-        # Ensure clbits is a list
-        if not isinstance(clbits, list):
-            clbits = [clbits]
+        clbits = [clbits] if isinstance(clbits, Clbit) else clbits
 
-        # Create and append the parity operation
         parity_op = ParityOperation(
             len(clbits), expectation=expectation, observable=observable
         )
-
-        # Append the operation (doesn't return the instruction)
         self.append(parity_op, clbits=clbits)
 
-        # Get the last instruction that was just appended
-        instruction = self.data[-1]
-
-        # Return a ParityHandle wrapping this instruction
-        return ParityHandle(instruction)
+        return ParityHandle(self.data[-1])
 
     def cx(self, qubits_0, qubits_1):
         """

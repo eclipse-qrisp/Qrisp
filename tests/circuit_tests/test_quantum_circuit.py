@@ -1520,6 +1520,133 @@ class TestQuantumCircuitMethods:
         assert qc.data[0].clbits == [cb0]
         assert qc.data[1].clbits == [cb1]
 
+    # ------------------------------------------------------------------ #
+    # parity                                                             #
+    # ------------------------------------------------------------------ #
+
+    @pytest.mark.parametrize(
+        "get_clbits",
+        [
+            lambda qc: qc.clbits,
+            lambda qc: list(qc.clbits),
+            lambda qc: tuple(qc.clbits),
+        ],
+        ids=["qc.clbits", "list", "tuple"],
+    )
+    def test_parity_accepts_sequence_types(self, get_clbits):
+        """parity() accepts any sequence of Clbits (list, tuple, qc.clbits)."""
+
+        qc = QuantumCircuit(2, 2)
+        qc.measure([0, 1], [0, 1])
+        handle = qc.parity(get_clbits(qc))
+        assert len(handle.clbits) == 2
+
+    def test_parity_accepts_single_clbit(self):
+        """A single Clbit (not wrapped in a list) is accepted and treated as a
+        length-1 parity check."""
+
+        qc = QuantumCircuit(1, 1)
+        qc.measure(0, 0)
+        handle = qc.parity(qc.clbits[0])
+        assert len(handle.clbits) == 1
+
+    def test_parity_appends_one_instruction(self):
+        """Each call to parity() appends exactly one instruction to the circuit."""
+
+        qc = QuantumCircuit(2, 2)
+        qc.measure([0, 1], [0, 1])
+        n_before = len(qc.data)
+        qc.parity(qc.clbits)
+        assert len(qc.data) == n_before + 1
+
+    def test_parity_instruction_op_name(self):
+        """The appended instruction has op name 'parity'."""
+
+        qc = QuantumCircuit(2, 2)
+        qc.measure([0, 1], [0, 1])
+        qc.parity(qc.clbits)
+        assert qc.data[-1].op.name == "parity"
+
+    def test_parity_handle_clbits_match_input(self):
+        """The handle's clbits are exactly the Clbits passed to parity(), in order."""
+
+        qc = QuantumCircuit(3, 3)
+        qc.measure([0, 1, 2], [0, 1, 2])
+        handle = qc.parity(qc.clbits)
+        assert handle.clbits == list(qc.clbits)
+
+    @pytest.mark.parametrize("expectation", [0, 1])
+    def test_parity_expectation_stored(self, expectation):
+        """The expectation kwarg is stored in the handle."""
+
+        qc = QuantumCircuit(1, 1)
+        qc.measure(0, 0)
+        handle = qc.parity(qc.clbits[0], expectation=expectation)
+        assert handle.expectation == expectation
+
+    @pytest.mark.parametrize("observable", [False, True])
+    def test_parity_observable_flag_stored(self, observable):
+        """The observable kwarg is stored in the handle."""
+
+        qc = QuantumCircuit(1, 1)
+        qc.measure(0, 0)
+        handle = qc.parity(qc.clbits[0], observable=observable)
+        assert handle.observable == observable
+
+    def test_parity_multiple_calls_give_distinct_handles(self):
+        """Each call to parity() returns a distinct handle pointing to its own
+        instruction."""
+
+        qc = QuantumCircuit(3, 3)
+        qc.measure([0, 1, 2], [0, 1, 2])
+        h0 = qc.parity([qc.clbits[0], qc.clbits[1]])
+        h1 = qc.parity([qc.clbits[1], qc.clbits[2]])
+        assert h0.instruction is not h1.instruction
+
+    def test_parity_stim_detector_index(self):
+        """A non-observable parity call maps to a Stim DETECTOR with index 0."""
+
+        qc = QuantumCircuit(2, 2)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.measure([0, 1], [0, 1])
+        handle = qc.parity(qc.clbits, expectation=0)
+        _, _, det_map = qc.to_stim(
+            return_measurement_map=True,
+            return_detector_map=True,
+        )
+        assert handle in det_map
+        assert det_map[handle] == 0
+
+    def test_parity_stim_multiple_detectors_get_sequential_indices(self):
+        """Two parity detectors are assigned consecutive Stim detector indices."""
+
+        qc = QuantumCircuit(3, 3)
+        qc.measure([0, 1, 2], [0, 1, 2])
+        h0 = qc.parity([qc.clbits[0], qc.clbits[1]])
+        h1 = qc.parity([qc.clbits[1], qc.clbits[2]])
+        _, _, det_map = qc.to_stim(
+            return_measurement_map=True,
+            return_detector_map=True,
+        )
+        assert det_map[h0] == 0
+        assert det_map[h1] == 1
+
+    def test_parity_stim_observable_index(self):
+        """An observable=True parity call maps to a Stim OBSERVABLE_INCLUDE."""
+
+        qc = QuantumCircuit(2, 2)
+        qc.measure([0, 1], [0, 1])
+        handle = qc.parity(qc.clbits, observable=True)
+        _, _, det_map, obs_map = qc.to_stim(
+            return_measurement_map=True,
+            return_detector_map=True,
+            return_observable_map=True,
+        )
+        assert handle not in det_map
+        assert handle in obs_map
+        assert obs_map[handle] == 0
+
 
 class TestQuantumCircuitDunderMethods:
     """Tests for QuantumCircuit dunder methods."""
