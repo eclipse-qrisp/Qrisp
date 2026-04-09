@@ -18,7 +18,6 @@
 
 from __future__ import annotations
 
-from hashlib import sha256
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
@@ -1960,6 +1959,7 @@ class QuantumCircuit:
         Here ``sv_array[2]`` corresponds to :math:`\ket{q_0=1, q_1=0}` and
         ``sv_array[1]`` to :math:`\ket{q_0=0, q_1=1}`.
         """
+        # NOTE: This is here to avoid circular imports
         from qrisp.simulator import statevector_sim
 
         return statevector_sim(self)
@@ -2112,6 +2112,7 @@ class QuantumCircuit:
         Note that we don't need to create a QuantumCircuit object first as this is a
         class method.
 
+        >>> from qrisp import QuantumCircuit
         >>> qrisp_qc_2 = QuantumCircuit.from_qiskit(qc_2)
         >>> print(qrisp_qc_2)
 
@@ -2127,6 +2128,7 @@ class QuantumCircuit:
                              └───┘
 
         """
+        # NOTE: This is here to avoid circular imports
         from qrisp.interface import convert_from_qiskit
 
         return convert_from_qiskit(qiskit_qc)
@@ -2141,6 +2143,7 @@ class QuantumCircuit:
             The converted circuit.
 
         """
+        # NOTE: This is here to avoid circular imports
         from qrisp.interface import convert_to_qiskit
 
         return convert_to_qiskit(self, transpile=False)
@@ -2156,16 +2159,16 @@ class QuantumCircuit:
             A function representing a pennylane QuantumCircuit.
 
         """
-
+        # NOTE: This is here to avoid circular imports
         from qrisp.interface import qml_converter
 
         return qml_converter(self)
 
     def to_stim(
         self,
-        return_measurement_map=False,
-        return_detector_map=False,
-        return_observable_map=False,
+        return_measurement_map: bool = False,
+        return_detector_map: bool = False,
+        return_observable_map: bool = False,
     ):
         """
         Method to convert the given QuantumCircuit to a
@@ -2180,9 +2183,11 @@ class QuantumCircuit:
         return_measurement_map : bool, optional
             If set to True, the function returns the measurement_map, as described below.
             The default is False.
+
         return_detector_map : bool, optional
             If set to True, the function returns the detector_map.
             The default is False.
+
         return_observable_map : bool, optional
             If set to True, the function returns the observable_map.
             The default is False.
@@ -2278,7 +2283,7 @@ class QuantumCircuit:
         array([ True,  True,  True,  True,  True])
 
         """
-
+        # NOTE: This is here to avoid circular imports
         from qrisp.interface import qrisp_to_stim
 
         return qrisp_to_stim(
@@ -2296,6 +2301,7 @@ class QuantumCircuit:
             A function representing a PyTket QuantumCircuit.
 
         """
+        # NOTE: This is here to avoid circular imports
         from qrisp.interface import pytket_converter
 
         return pytket_converter(self)
@@ -2310,35 +2316,79 @@ class QuantumCircuit:
             A function representing a Cirq QuantumCircuit.
 
         """
+        # NOTE: This is here to avoid circular imports
         from qrisp.interface import convert_to_cirq
 
         return convert_to_cirq(self)
 
-    # Several methods to apply the standard operation defined in standard_operations.py
-    def measure(self, qubits, clbits=None):
+    def measure(
+        self,
+        qubits: Qubit | int | Sequence[Qubit | int],
+        clbits: Clbit | Sequence[Clbit] | None = None,
+    ) -> None:
         """
-        Instructs a measurement. If given no classical bits, the proper amount will be
-        created.
+        Append a measurement instruction to the circuit.
 
+        For each qubit in *qubits* a :class:`~qrisp.circuit.Measurement`
+        operation is added that stores the binary outcome in the corresponding
+        entry of *clbits*.  When *clbits* is omitted the required classical
+        bits are allocated automatically.
 
         Parameters
         ----------
-        qubits : Qubit
-            The Qubit to be measured.
-        clbits : ClBit, optional
-            The Clbit to store the measurement result. The default is None.
+        qubits : Qubit, int, or Sequence[Qubit | int]
+            The qubit(s) to measure.  A single :ref:`Qubit` object or
+            integer index measures one qubit; any sequence (``list``,
+            ``tuple``, ``range``, :ref:`QuantumVariable`, …) measures each
+            element independently.
+
+        clbits : Clbit, Sequence[Clbit], or None, optional
+            The classical bit(s) that receive the measurement results.  When
+            ``None`` (default), fresh classical bits are created automatically
+            (one per qubit being measured).
+
+        Examples
+        --------
+
+        In this example, we measure a single qubit.
+        One classical bit is allocated automatically:
+
+        >>> from qrisp import QuantumCircuit
+        >>> qc = QuantumCircuit(1)
+        >>> qc.x(0)
+        >>> qc.measure(0)
+        >>> len(qc.clbits)
+        1
+
+        Now we measure several qubits at once.
+        One classical bit is created per qubit:
+
+        >>> qc = QuantumCircuit(3)
+        >>> qc.measure([0, 1, 2])
+        >>> len(qc.clbits)
+        3
+
+        Finally, we provide explicit classical bits
+        to control where results are stored:
+
+        >>> qc = QuantumCircuit(2)
+        >>> cb0, cb1 = qc.add_clbit(), qc.add_clbit()
+        >>> qc.measure(0, cb0)
+        >>> qc.measure(1, cb1)
+        >>> qc.clbits == [cb0, cb1]
+        True
 
         """
-
         if clbits is None:
-            from qrisp import QuantumVariable
 
-            if isinstance(qubits, (list, QuantumVariable)):
-                clbits = []
-                for i in range(len(qubits)):
-                    clbits.append(self.add_clbit())
-            else:
+            if isinstance(qubits, (Qubit, int)):
+                # For single-qubit measurement,
+                # we allocate exactly one classical bit.
                 clbits = self.add_clbit()
+            else:
+                # For multi-qubit measurement,
+                # we allocate one classical bit per qubit.
+                clbits = [self.add_clbit() for _ in qubits]
 
         self.append(ops.Measurement(), [qubits], [clbits])
 

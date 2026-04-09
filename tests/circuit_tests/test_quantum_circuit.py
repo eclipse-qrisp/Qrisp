@@ -1414,6 +1414,112 @@ class TestQuantumCircuitMethods:
         qc.cx(0, 1)
         assert qc.qasm() == qc.to_qasm2()
 
+    # ------------------------------------------------------------------ #
+    # measure                                                            #
+    # ------------------------------------------------------------------ #
+
+    def test_measure_single_int_auto_allocates_one_clbit(self):
+        """measure(int) allocates exactly one new classical bit."""
+
+        qc = QuantumCircuit(2)
+        qc.measure(0)
+        assert len(qc.clbits) == 1
+
+    def test_measure_single_qubit_object_auto_allocates_one_clbit(self):
+        """measure(Qubit) allocates exactly one new classical bit."""
+
+        qc = QuantumCircuit(2)
+        qc.measure(qc.qubits[1])
+        assert len(qc.clbits) == 1
+
+    def test_measure_list_auto_allocates_one_clbit_per_qubit(self):
+        """measure(list) allocates one classical bit per qubit in the list."""
+
+        qc = QuantumCircuit(3)
+        qc.measure([0, 1, 2])
+        assert len(qc.clbits) == 3
+
+    def test_measure_range_auto_allocates_one_clbit_per_qubit(self):
+        """measure(range) allocates one classical bit per qubit in the range."""
+
+        qc = QuantumCircuit(4)
+        qc.measure(range(4))
+        assert len(qc.clbits) == 4
+
+    def test_measure_qubits_list_auto_allocates_matching_clbits(self):
+        """measure(qc.qubits) allocates a classical bit for every qubit."""
+
+        qc = QuantumCircuit(5)
+        qc.measure(qc.qubits)
+        assert len(qc.clbits) == len(qc.qubits)
+
+    def test_measure_explicit_clbit_no_new_allocation(self):
+        """Providing an explicit Clbit does not allocate additional classical bits."""
+
+        qc = QuantumCircuit(2)
+        cb = qc.add_clbit()
+        clbits_before = len(qc.clbits)
+        qc.measure(0, cb)
+        assert len(qc.clbits) == clbits_before
+
+    def test_measure_explicit_clbit_list_no_new_allocation(self):
+        """Providing an explicit list of Clbits does not allocate additional bits."""
+
+        qc = QuantumCircuit(3)
+        cb0, cb1, cb2 = qc.add_clbit(), qc.add_clbit(), qc.add_clbit()
+        clbits_before = len(qc.clbits)
+        qc.measure([0, 1, 2], [cb0, cb1, cb2])
+        assert len(qc.clbits) == clbits_before
+
+    def test_measure_single_appends_one_instruction(self):
+        """Measuring a single qubit appends exactly one instruction."""
+
+        qc = QuantumCircuit(1)
+        qc.measure(0)
+        assert len(qc.data) == 1
+
+    def test_measure_list_appends_one_instruction_per_qubit(self):
+        """Measuring a list of n qubits appends exactly n instructions."""
+
+        qc = QuantumCircuit(3)
+        qc.measure([0, 1, 2])
+        assert len(qc.data) == 3
+
+    def test_measure_instruction_has_measure_op_name(self):
+        """Each instruction appended by measure has the operation name 'measure'."""
+
+        qc = QuantumCircuit(2)
+        qc.measure([0, 1])
+        assert all(instr.op.name == "measure" for instr in qc.data)
+
+    def test_measure_auto_clbits_paired_with_correct_qubits(self):
+        """Each auto-allocated Clbit is paired with the corresponding Qubit."""
+
+        qc = QuantumCircuit(3)
+        qc.measure([0, 1, 2])
+
+        for i, instr in enumerate(qc.data):
+            assert instr.qubits == [qc.qubits[i]]
+            assert instr.clbits == [qc.clbits[i]]
+
+    def test_measure_explicit_clbit_used_in_instruction(self):
+        """The explicit Clbit provided to measure appears in the instruction."""
+
+        qc = QuantumCircuit(2)
+        cb = qc.add_clbit()
+        qc.measure(0, cb)
+        assert qc.data[-1].clbits == [cb]
+
+    def test_measure_explicit_clbit_list_preserves_pairing(self):
+        """Explicit Clbits are paired with qubits in the order given."""
+
+        qc = QuantumCircuit(2)
+        cb0, cb1 = qc.add_clbit(), qc.add_clbit()
+        qc.measure([0, 1], [cb0, cb1])
+
+        assert qc.data[0].clbits == [cb0]
+        assert qc.data[1].clbits == [cb1]
+
 
 class TestQuantumCircuitDunderMethods:
     """Tests for QuantumCircuit dunder methods."""
