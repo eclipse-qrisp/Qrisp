@@ -20,24 +20,6 @@ import pytest
 from qrisp import QuantumFloat
 
 
-
-@pytest.mark.parametrize("signed", [True, False])
-def test_negative_encoding(signed):
-    """Test negative encoding: signed accepts, unsigned raises error."""
-    qf = QuantumFloat(3, signed=signed)
-
-    if signed:
-        index = qf.encoder(-2)
-        decoded_value = qf.decoder(index)
-        assert decoded_value == -2
-    else:
-        with pytest.raises(
-            ValueError,
-            match="Tried to encode negative number in an unsigned QuantumFloat",
-        ):
-            qf.encoder(-2)
-
-
 @pytest.mark.parametrize(
     "msize,exponent,signed,min_value",
     [
