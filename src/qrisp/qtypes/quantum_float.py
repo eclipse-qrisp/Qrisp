@@ -371,6 +371,7 @@ class QuantumFloat(QuantumVariable):
 
     # Define outcome_labels
     def decoder(self, i):
+        """Convert measurement outcome (integer) back to human-readable value."""
 
         if self.signed:
             res = _signed_int_iso_inv(i, self.msize) * jnp.float64(2) ** self.exponent
@@ -389,6 +390,44 @@ class QuantumFloat(QuantumVariable):
         return self.decoder(i)
 
     def encoder(self, i):
+        """Convert human-readable value to qubit index (integer).
+        
+        Also validates that the input value can be represented within the bounds of the provided QuantumFloat.
+        """
+
+        # check if the encoding number if negative while the QuantumFloat is unsigned.
+        # We do this before converting to integer to prevent wrapping.
+        if not check_for_tracing_mode():
+            if not self.signed and i < 0:
+                raise ValueError("Tried to encode negative number in an unsigned QuantumFloat")
+        
+        # the following check is based on the math for fixed point arithmetic which varies according to the 
+        # size, exponent, and whether the QuantumFloat is signed or unsigned. 
+
+        # calculate the integer bounds based on mantissa size (msize)
+        max_int = 2**self.msize - 1
+        if self.signed:
+            # Signed range: -2^msize to 2^msize - 1
+            min_int = -2**self.msize
+        else:
+            # Unsigned range: 0 to 2^msize - 1
+            min_int = 0
+
+        # convert those integer bounds into actual Float values
+        # using the exponent.
+        scaling_factor = 2**self.exponent
+        max_float = max_int * scaling_factor
+        min_float = min_int * scaling_factor
+
+        # compare the input 'i' against the float limits.
+        # we do this before converting to integer to prevent wrapping.
+        is_out_of_bounds = (i > max_float) | (i < min_float)
+
+        # add a check that the provided value is safe to be encoded in the provided QuantumFloat
+        if not check_for_tracing_mode() and is_out_of_bounds:
+                sign_description = ["unsigned", "signed"][self.signed]
+                raise ValueError(f"Not enough qubits to encode value {i} in {sign_description} QuantumFloat"
+                                +f" of {self.msize} qubits and exponent {self.exponent}.")
 
         if self.signed:
             res = _signed_int_iso(i / jnp.float64(2) ** self.exponent, self.msize)
@@ -400,8 +439,6 @@ class QuantumFloat(QuantumVariable):
         else:
             return res.astype(int)
 
-    # not used anwhere in this file, worth removing? Ask raphael.
-    # function is also not used anywhere in the codebase
     def sb_poly(self, m=0):
         """
         Returns the semi-boolean polynomial of this `QuantumFloat` where `m` specifies
@@ -441,39 +478,9 @@ class QuantumFloat(QuantumVariable):
         if self.signed:
             poly += (2.0 ** (m + 1) - 2.0 ** (self.size)) * symbols[-1]
 
-        return 2**self.exponent * poly
 
     def encode(self, encoding_number, rounding=False, permit_dirtyness=False):
-
-        if not check_for_tracing_mode():
-            if not self.signed and encoding_number < 0:
-                raise ValueError("Tried to encode negative number in an unsigned QuantumFloat")
-        
-        # calculate the integer bounds based on mantissa size (msize)
-        max_int = 2**self.msize - 1
-        if self.signed:
-            # Signed range: -2^msize to 2^msize - 1
-            min_int = -2**self.msize
-        else:
-            # Unsigned range: 0 to 2^msize - 1
-            min_int = 0
-
-        # convert those integer bounds into actual Float values
-        # using the exponent.
-        scaling_factor = 2**self.exponent
-        max_float = max_int * scaling_factor
-        min_float = min_int * scaling_factor
-
-        # compare the input 'i' against the float limits.
-        # we do this before converting to integer to prevent wrapping.
-        is_out_of_bounds = (encoding_number > max_float) | (encoding_number < min_float)
-
-        # add a check that the provided value is safe to be encoded in the provided QuantumFloat
-        if not check_for_tracing_mode() and is_out_of_bounds:
-                sign_description = ["unsigned", "signed"][self.signed]
-                raise ValueError(f"Not enough qubits to encode value {encoding_number} in {sign_description} QuantumFloat"
-                                +f" of {self.msize} qubits and exponent {self.exponent}.")
-                
+        """Initialize a QuantumFloat to a specific value."""
         
         if rounding:
             # Round value to closest fitting number
