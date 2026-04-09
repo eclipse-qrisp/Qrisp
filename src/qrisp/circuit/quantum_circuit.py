@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 from hashlib import sha256
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 import sympy
@@ -227,11 +227,13 @@ class QuantumCircuit:
 
         if not isinstance(num_qubits, int):
             raise TypeError(
-                f"Tried to initialize QuantumCircuit with type {type(num_qubits).__name__} for num_qubits, expected int"
+                f"Tried to initialize QuantumCircuit with type "
+                f"{type(num_qubits).__name__} for num_qubits, expected int"
             )
         if not isinstance(num_clbits, int):
             raise TypeError(
-                f"Tried to initialize QuantumCircuit with type {type(num_clbits).__name__} for num_clbits, expected int"
+                f"Tried to initialize QuantumCircuit with type "
+                f"{type(num_clbits).__name__} for num_clbits, expected int"
             )
 
         object.__setattr__(self, "data", [])
@@ -360,7 +362,8 @@ class QuantumCircuit:
         Examples
         --------
 
-        We create a QuantumCircuit and turn it into an Operation which we append to another QuantumCircuit:
+        We create a QuantumCircuit and turn it into an Operation which we append to
+        another QuantumCircuit:
 
         >>> from qrisp import QuantumCircuit
         >>> qc_0 = QuantumCircuit(4)
@@ -430,7 +433,8 @@ class QuantumCircuit:
         Examples
         --------
 
-        We create a QuantumCircuit and turn it into an Operation which we append to another QuantumCircuit:
+        We create a QuantumCircuit and turn it into an Operation which we append to
+        another QuantumCircuit:
 
         >>> from qrisp import QuantumCircuit
         >>> qc_0 = QuantumCircuit(4)
@@ -679,7 +683,8 @@ class QuantumCircuit:
 
     def inverse(self) -> QuantumCircuit:
         """
-        Generates the inverse of this QuantumCircuit by applying the inverse gates in reversed order.
+        Generates the inverse of this QuantumCircuit by applying the inverse gates
+        in reversed order.
 
         Returns
         -------
@@ -1063,15 +1068,18 @@ class QuantumCircuit:
 
         qubits : Sequence[Qubit], optional
             The qubits to be used for the composition.
-            If None, the qubits of self and other will be matched by their identifiers. The default is None.
+            If None, the qubits of self and other will be matched by their identifiers.
+            The default is None.
 
         clbits : Sequence[Clbit], optional
             The classical bits to be used for the composition.
-            If None, the clbits of self and other will be matched by their identifiers. The default is None.
+            If None, the clbits of self and other will be matched by their identifiers.
+            The default is None.
 
         inplace : bool, optional
             If True, the composition is performed in-place and self is modified.
-            If False, a new QuantumCircuit is returned and self is not modified. The default is True.
+            If False, a new QuantumCircuit is returned and self is not modified.
+            The default is True.
 
         Returns
         -------
@@ -1548,6 +1556,7 @@ class QuantumCircuit:
         """
         return len(self.qubits)
 
+    # TODO: Refactor the `append` method
     # Interface for appending instructions
     # Can take either instruction or operations objects
     # Can apply multiple operations, if given the correct qubits
@@ -1630,12 +1639,16 @@ class QuantumCircuit:
                 if self.xla_mode <= 1:
                     if not isinstance(qubits, list):
                         raise Exception(
-                            f"Operation {operation_or_instruction.name} was appended with {qubits} in accelerated compilation mode (allowed is type List[Qubit])."
+                            f"Operation {operation_or_instruction.name} was appended with "
+                            f"{qubits} in accelerated compilation mode "
+                            "(allowed is type List[Qubit])."
                         )
                     for qb in qubits:
                         if not isinstance(qb, Qubit):
                             raise Exception(
-                                f"Operation {operation_or_instruction.name} was appended with {qubits} in accelerated compilation mode (allowed is type List[Qubit])."
+                                f"Operation {operation_or_instruction.name} was appended with "
+                                f"{qubits} in accelerated compilation mode "
+                                "(allowed is type List[Qubit])."
                             )
                 self.data.append(Instruction(operation_or_instruction, qubits, clbits))
             return
@@ -1820,47 +1833,71 @@ class QuantumCircuit:
 
         self.data.append(Instruction(operation, qubits, clbits))
 
-    def run(self, shots=None, backend=None):
+    # TODO: Update after PR #331 is merged
+    def run(
+        self,
+        shots: int | None = None,
+        backend: Any = None,
+    ) -> dict[str, Any]:
         """
-        Runs a QuantumCircuit on a given backend.
+        Executes a QuantumCircuit on a backend and returns the measurement results.
 
         Parameters
         ----------
-        shots : int, optional
-            The amount of shots to perform. The default is 10000.
-        backend : BackendClient, optional
-            The backend on which to evaluate the QuantumCircuit. The default is None.
+        shots : int or None, optional
+            Number of shots to sample. When set to ``None`` (default), the behaviour
+            depends on the backend. For simulators, the exact probability distribution
+            is returned. For real quantum devices, the number of shots is determined
+            by the backend's default settings.
+
+        backend : object, optional
+            The backend on which to evaluate the QuantumCircuit. When not provided,
+            Qrisp's built-in statevector simulator is used.
 
         Returns
         -------
-        dict
-            The resulting counts for the given QuantumCircuit.
+        dict[str, Any]
+            A dictionary mapping measurement outcome strings to integer counts
+            (when *shots* is given) or to exact float probabilities (when
+            *shots* is ``None`` and the backend is a simulator).
 
         Examples
         --------
 
-        We create a GHZ QuantumCircuit and evaluate the results.
+        In this example, we prepare a 3-qubit GHZ state and retrieve the exact
+        probability distribution by omitting *shots*:
 
         >>> from qrisp import QuantumCircuit
-        >>> qc = QuantumCircuit(5)
+        >>> qc = QuantumCircuit(3)
         >>> qc.h(0)
-        >>> qc.cx(0, range(1,5))
-        >>> qc.measure(range(5))
+        >>> qc.cx(0, [1, 2])
+        >>> qc.measure([0, 1, 2])
         >>> qc.run()
-        {'0': 5000, '1': 5000}
+        {'000': 0.5, '111': 0.5}
+
+        We can also pass an explicit shot count to obtain sampled integer counts instead.
+        In this example we prepare a 2-qubit state where we expect to get
+        the outcome ``11`` in all shots:
+
+        >>> qc_det = QuantumCircuit(2)
+        >>> qc_det.x([0, 1])
+        >>> qc_det.measure([0, 1])
+        >>> qc_det.run(shots=100)
+        {'11': 100}
 
         """
         if backend is None:
+            # NOTE: This is here to avoid circular imports
             from qrisp.default_backend import def_backend
 
             backend = def_backend
 
         return backend.run(self, shots)
 
-    def statevector_array(self):
+    def statevector_array(self) -> np.ndarray:
         r"""
-        Simulate the circuit statevector and return it as a NumPy array of complex
-        amplitudes.
+        Simulates the circuit and returns its statevector as a NumPy array of
+        complex amplitudes.
 
         .. note::
 
@@ -1884,7 +1921,9 @@ class QuantumCircuit:
         Returns
         -------
         numpy.ndarray
-            The statevector of this circuit in big-endian order.
+            A 1-D ``complex64`` array of statevector amplitudes in big-endian
+            order. The array has length :math:`2^n` where *n* is the number of
+            qubits.
 
         Examples
         --------
@@ -1925,50 +1964,74 @@ class QuantumCircuit:
 
         return statevector_sim(self)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
+        """
+        Compute a structural hash of this QuantumCircuit.
 
-        res = 0
+        Two circuits are intended to hash identically when they apply the
+        same sequence of operations to the same qubit *positions*, regardless
+        of qubit names or identifiers.  The hash captures four aspects:
 
-        def hash_(x):
-            temp = str(x).encode("utf-8")
-            hex_value = sha256(temp).hexdigest()
-            return int(hex_value, 16)
+        Qubit count
+            Circuits with a different number of qubits are scaled by
+            different factors (``n²``), making same-length collisions far
+            less likely.
 
-        transpiled_qc = self
+        Instruction order
+            Each instruction's contribution is multiplied by ``(i + 1)²``
+            (1-based squared position), so reordering instructions changes
+            the total.
 
+        Qubit positions
+            Each instruction records the circuit-global index of every qubit
+            it acts on (i.e. the 0-based position in ``self.qubits``), not
+            the qubit's name. Only the *positional* slot matters, not the
+            identity of the :class:`Qubit` object.
+
+        Gate identity and parameters
+            Composite gates (those with a sub-circuit ``definition``) are
+            identified by recursively hashing their definition. Primitive
+            gates are identified by their name string. Each gate parameter
+            is hashed together with the instruction's position so that the
+            same angle at two different circuit positions produces a
+            different contribution.
+
+        Returns
+        -------
+        int
+            The hash value.
+        """
         n = len(self.qubits)
-        for i in range(len(transpiled_qc.data)):
-            instr = transpiled_qc.data[i]
+        total = 0
 
-            qubit_indices = {}
+        for i, instr in enumerate(self.data):
+            # For each qubit the instruction acts on (in operand order),
+            # we record its position within self.qubits. Using
+            # circuit-global indices rather than Qubit object identities
+            # makes two structurally identical circuits hash the same even
+            # when their Qubit objects differ.
+            qubit_indices = tuple(self.qubits.index(qb) for qb in instr.qubits)
+            index_hash = hash(qubit_indices)
 
-            for j in range(n):
-                try:
-                    qubit_indices[instr.qubits.index(self.qubits[j])] = j
-                except ValueError:
-                    pass
+            # Couple each parameter value to the instruction's position so
+            # that the same angle at different positions is distinguished.
+            param_hash = hash(tuple(hash((p, i)) for p in instr.op.params))
 
-            qubit_indices = [qubit_indices[j] for j in range(len(instr.qubits))]
+            # Composite gates are identified by the hash of their
+            # sub-circuit, while primitive gates are identified by their name.
+            op_hash = (
+                hash(instr.op.definition)
+                if instr.op.definition
+                else hash(instr.op.name)
+            )
 
-            index_hash = hash(tuple(qubit_indices))
+            # Weight by (i+1)² so that swapping two instructions changes
+            # the total, making the hash order-sensitive.
+            total += hash((index_hash, param_hash, op_hash)) * (i + 1) ** 2
 
-            params = []
-            for j in range(len(instr.op.params)):
-                p = hash((instr.op.params[j], i))
-                params.append(p)
-
-            param_hash = hash(tuple(params))
-
-            if instr.op.definition:
-                op_hash = hash(instr.op.definition)
-            else:
-                op_hash = hash(instr.op.name)
-
-            res += hash((index_hash, param_hash, op_hash)) * (i + 1) ** 2
-
-        res *= len(self.qubits) ** 2
-
-        return hash(res)
+        # Scale by n² so that circuits with different qubit counts are
+        # unlikely to collide even when their instruction sequences match.
+        return hash(total * n**2)
 
     @classmethod
     def from_qasm_str(cls, qasm_string: str) -> QuantumCircuit:
@@ -2084,7 +2147,8 @@ class QuantumCircuit:
 
     def to_pennylane(self):
         """
-        Method to convert the given QuantumCircuit to a `Pennylane <https://pennylane.ai/>`_ Circuit.
+        Method to convert the given QuantumCircuit to a
+        `Pennylane <https://pennylane.ai/>`_ Circuit.
 
         Returns
         -------
@@ -2104,7 +2168,8 @@ class QuantumCircuit:
         return_observable_map=False,
     ):
         """
-        Method to convert the given QuantumCircuit to a `Stim <https://github.com/quantumlib/Stim/>`_ Circuit.
+        Method to convert the given QuantumCircuit to a
+        `Stim <https://github.com/quantumlib/Stim/>`_ Circuit.
 
         .. note::
 
@@ -2131,11 +2196,13 @@ class QuantumCircuit:
             For example, ``{Clbit(cb_1): 2, Clbit(cb_0): 1}`` means ``Clbit("cb_1")``
             corresponds to index 2 in Stim's measurement record.
         detector_map : dict
-            (Optional) A dictionary mapping :class:`~qrisp.jasp.ParityHandle` objects to Stim detector indices.
+            (Optional) A dictionary mapping :class:`~qrisp.jasp.ParityHandle`
+            objects to Stim detector indices.
             ParityHandle objects are compared by their index, so handles from to_qc() can
             be used directly as keys.
         observable_map : dict
-            (Optional) A dictionary mapping :class:`~qrisp.jasp.ParityHandle` objects to Stim observable indices.
+            (Optional) A dictionary mapping :class:`~qrisp.jasp.ParityHandle`
+            objects to Stim observable indices.
             ParityHandle objects are compared by their index, so handles from to_qc() can
             be used directly as keys.
 
@@ -2220,7 +2287,8 @@ class QuantumCircuit:
 
     def to_pytket(self):
         """
-        Method to convert the given QuantumCircuit to a `PyTket <https://cqcl.github.io/tket/pytket/api/#>`_ Circuit.
+        Method to convert the given QuantumCircuit to a
+        `PyTket <https://cqcl.github.io/tket/pytket/api/#>`_ Circuit.
 
         Returns
         -------
@@ -2857,6 +2925,9 @@ class QuantumCircuit:
         return PermeabilityGraph(self, remove_artificials=remove_artificials)
 
 
+# TODO: Refactor the convert_to_qb_list and convert_to_cb_list functions
+
+
 # Converts various inputs (eg. integers, qubits or quantum variables) to lists of qubit
 # used in the append method of QuantumCircuit and QuantumSession
 def convert_to_qb_list(input, circuit=None, top_level=True):
@@ -2886,7 +2957,8 @@ def convert_to_qb_list(input, circuit=None, top_level=True):
 
         if input >= len(circuit.qubits):
             raise Exception(
-                f"Tried to adress qubit with index {input} in a circuit with {len(circuit.qubits)} qubits"
+                f"Tried to adress qubit with index {input} "
+                f"in a circuit with {len(circuit.qubits)} qubits"
             )
 
         result = convert_to_qb_list(circuit.qubits[input], top_level=top_level)

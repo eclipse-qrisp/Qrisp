@@ -1418,4 +1418,166 @@ class TestQuantumCircuitMethods:
 class TestQuantumCircuitDunderMethods:
     """Tests for QuantumCircuit dunder methods."""
 
-    # TODO: Implement tests for __str__, __repr__, __eq__, __hash__, etc.
+    # ------------------------------------------------------------------ #
+    # __hash__                                                           #
+    # ------------------------------------------------------------------ #
+
+    def test_empty_circuit_is_hashable(self):
+        """An empty circuit (no instructions) can be hashed without error."""
+        qc = QuantumCircuit(3)
+        assert isinstance(hash(qc), int)
+
+    def test_hash_is_stable(self):
+        """Calling hash() on the same object twice returns the same value."""
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.cx(0, 1)
+        assert hash(qc) == hash(qc)
+
+    def test_circuit_usable_as_dict_key(self):
+        """A circuit can be stored and retrieved as a dictionary key."""
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        d = {qc: "value"}
+        assert d[qc] == "value"
+
+    def test_circuit_usable_in_set(self):
+        """A circuit can be added to a set. The same object is not duplicated."""
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        s = {qc, qc}
+        assert len(s) == 1
+
+    @pytest.mark.parametrize(
+        "build",
+        [
+            # Simple single-qubit circuit
+            lambda: ((lambda qc: (qc.h(0), qc)[-1])(QuantumCircuit(1))),
+            # Multi-qubit entangling circuit
+            lambda: (
+                (lambda qc: (qc.h(0), qc.cx(0, 1), qc.cx(1, 2), qc)[-1])(
+                    QuantumCircuit(3)
+                )
+            ),
+            # Parametrized rotation
+            lambda: ((lambda qc: (qc.rx(np.pi / 4, 0), qc)[-1])(QuantumCircuit(2))),
+        ],
+    )
+    def test_identical_circuits_have_equal_hash(self, build):
+        """Two circuits built with the same operations always hash identically."""
+        assert hash(build()) == hash(build())
+
+    def test_same_structure_different_qubit_names_equal_hash(self):
+        """Qubit names are irrelevant. Only positional structure affects the hash."""
+        qc1 = QuantumCircuit()
+        qb_a = qc1.add_qubit(Qubit("alice"))
+        qb_b = qc1.add_qubit(Qubit("bob"))
+        qc1.cx(qb_a, qb_b)
+
+        qc2 = QuantumCircuit()
+        qb_x = qc2.add_qubit(Qubit("x"))
+        qb_y = qc2.add_qubit(Qubit("y"))
+        qc2.cx(qb_x, qb_y)
+
+        assert hash(qc1) == hash(qc2)
+
+    def test_composite_gate_equivalent_definitions_equal_hash(self):
+        """Two circuits using structurally equivalent composite gates hash the same."""
+        sub1 = QuantumCircuit(2)
+        sub1.h(0)
+        sub1.cx(0, 1)
+
+        sub2 = QuantumCircuit(2)
+        sub2.h(0)
+        sub2.cx(0, 1)
+
+        qc1 = QuantumCircuit(2)
+        qc1.append(sub1.to_gate(), [0, 1])
+
+        qc2 = QuantumCircuit(2)
+        qc2.append(sub2.to_gate(), [0, 1])
+
+        assert hash(qc1) == hash(qc2)
+
+    def test_different_qubit_count_different_hash(self):
+        """Circuits with a different number of qubits hash differently."""
+        qc_small = QuantumCircuit(2)
+        qc_small.h(0)
+        qc_large = QuantumCircuit(4)
+        qc_large.h(0)
+        assert hash(qc_small) != hash(qc_large)
+
+    def test_different_instruction_order_different_hash(self):
+        """Reordering instructions changes the hash."""
+        qc1 = QuantumCircuit(2)
+        qc1.h(0)
+        qc1.x(1)
+
+        qc2 = QuantumCircuit(2)
+        qc2.x(1)
+        qc2.h(0)
+
+        assert hash(qc1) != hash(qc2)
+
+    def test_different_qubit_wiring_different_hash(self):
+        """Applying the same gate to different qubit positions changes the hash."""
+        qc1 = QuantumCircuit(3)
+        qc1.cx(0, 1)
+
+        qc2 = QuantumCircuit(3)
+        qc2.cx(0, 2)
+
+        assert hash(qc1) != hash(qc2)
+
+    def test_different_gate_same_position_different_hash(self):
+        """Replacing one gate with another at the same qubit changes the hash."""
+        qc1 = QuantumCircuit(1)
+        qc1.h(0)
+
+        qc2 = QuantumCircuit(1)
+        qc2.x(0)
+
+        assert hash(qc1) != hash(qc2)
+
+    def test_different_parameter_value_different_hash(self):
+        """Changing a rotation angle changes the hash."""
+        qc1 = QuantumCircuit(1)
+        qc1.rx(np.pi / 4, 0)
+
+        qc2 = QuantumCircuit(1)
+        qc2.rx(np.pi / 3, 0)
+
+        assert hash(qc1) != hash(qc2)
+
+    def test_same_parameters_swapped_positions_different_hash(self):
+        """The same parameter values in reversed instruction order hash differently."""
+        qc1 = QuantumCircuit(1)
+        qc1.rz(np.pi / 2, 0)
+        qc1.rz(np.pi / 4, 0)
+
+        qc2 = QuantumCircuit(1)
+        qc2.rz(np.pi / 4, 0)
+        qc2.rz(np.pi / 2, 0)
+
+        assert hash(qc1) != hash(qc2)
+
+    def test_composite_gate_different_definitions_different_hash(self):
+        """Two circuits using composite gates with different sub-circuits hash differently."""
+        sub1 = QuantumCircuit(2)
+        sub1.h(0)
+        sub1.cx(0, 1)
+
+        sub2 = QuantumCircuit(2)
+        sub2.h(1)  # gate applied to qubit 1 instead of qubit 0
+        sub2.cx(0, 1)
+
+        qc1 = QuantumCircuit(2)
+        qc1.append(sub1.to_gate(), [0, 1])
+
+        qc2 = QuantumCircuit(2)
+        qc2.append(sub2.to_gate(), [0, 1])
+
+        assert hash(qc1) != hash(qc2)
+
+    # TODO: Implement tests for __str__, __repr__, __eq__, etc.
