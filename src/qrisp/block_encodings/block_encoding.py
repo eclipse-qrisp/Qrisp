@@ -587,6 +587,8 @@ class BlockEncoding:
             return BlockEncoding(1, [], lambda operand: None, is_hermitian=True)
 
         if k > 0:
+            # Shift |x> -> |x-k> can be implemented as cyclic shift |x> -> |x-k mod N>
+            # followed by a comparator checking if x >= 2**n - k.
 
             def unitary(*args):
                 anc = args[0]
@@ -594,26 +596,50 @@ class BlockEncoding:
                 operand -= k
                 n = operand.size
 
-                def comp(a, b):
-                    return a >= b
+                if k == 1:
+                    # Comparator for x >= 2**n - 1 is equivalent to comparator for x == 2**n - 1.
 
-                injected_comp = anc << comp
-                injected_comp(operand, 2**n - k)
+                    def comp(a, b):
+                        return a == b
+
+                    injected_comp = anc << comp
+                    injected_comp(operand, 2**n - 1)
+
+                else:
+
+                    def comp(a, b):
+                        return a >= b
+
+                    injected_comp = anc << comp
+                    injected_comp(operand, 2**n - k)
 
             return BlockEncoding(1, [QuantumBool().template()], unitary)
 
         if k < 0:
+            # Shift |x> -> |x-k> can be implemented as cyclic shift |x> -> |x-k mod N>
+            # followed by a comparator checking if x < -k.
 
             def unitary(*args):
                 anc = args[0]
                 operand = args[1]
                 operand -= k
 
-                def comp(a, b):
-                    return a < b
+                if k == -1:
+                    # Comparator for x < 1 is equivalent to comparator for x == 0.
 
-                injected_comp = anc << comp
-                injected_comp(operand, -k)
+                    def comp(a, b):
+                        return a == b
+
+                    injected_comp = anc << comp
+                    injected_comp(operand, 0)
+
+                else:
+
+                    def comp(a, b):
+                        return a < b
+
+                    injected_comp = anc << comp
+                    injected_comp(operand, -k)
 
             return BlockEncoding(1, [QuantumBool().template()], unitary)
 
