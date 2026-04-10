@@ -22,7 +22,7 @@ from qrisp import *
 from qrisp.gqsp import convolve
 from scipy.ndimage import convolve as scipy_convolve
 
-def test_qsp_convolution():
+def test_gqsp_convolution():
 
     # A simple square wave signal
     psi = np.array([1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0])
