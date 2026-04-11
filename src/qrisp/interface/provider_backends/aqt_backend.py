@@ -17,7 +17,7 @@
 """
 
 import qiskit
-from qrisp.interface import VirtualBackend, BatchedBackend
+from qrisp.interface import BatchedBackend
 
 
 class AQTBackend(BatchedBackend):
@@ -26,6 +26,12 @@ class AQTBackend(BatchedBackend):
     This allows easy access to AQT backends through the qrisp interface.
 
     Using this backend requires addtional dependencies: ``pip install qiskit-aqt-provider``.
+
+    .. warning::
+
+        This Backend has not been migrated to the new Backend API yet, and is not guaranteed to
+        work with the latest versions of Qiskit Runtime and qrisp.
+        Use with caution and refer to the documentation for the latest updates.
 
     Parameters
     ----------

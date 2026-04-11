@@ -1,0 +1,469 @@
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""
+Abstract :class:`Job` interface and related types for representing and managing backend executions.
+"""
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from collections.abc import Sequence
+from enum import StrEnum, auto
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .backend import Backend
+
+
+class JobStatus(StrEnum):
+    """
+    Enumeration of possible lifecycle states for a :class:`Job`.
+
+    Attributes
+    ----------
+
+    INITIALIZING :
+        The job has been created but not yet submitted to the backend.
+    QUEUED :
+        The job has been submitted and is waiting for execution resources.
+    RUNNING :
+        The job is currently being executed.
+    DONE :
+        The job completed successfully. Results are available.
+    CANCELLED :
+        The job was cancelled before or during execution.
+    ERROR :
+        The job failed due to an error during execution.
+    """
+
+    INITIALIZING = auto()
+    QUEUED = auto()
+    RUNNING = auto()
+    DONE = auto()
+    CANCELLED = auto()
+    ERROR = auto()
+
+    @classmethod
+    def final_states(cls) -> tuple[JobStatus, ...]:
+        """Terminal states: once a Job reaches one of these, its state won't change anymore."""
+        return (cls.DONE, cls.CANCELLED, cls.ERROR)
+
+
+JOB_FINAL_STATES = JobStatus.final_states()
+
+
+class JobFailureError(RuntimeError):
+    """
+    Raised by :meth:`Job.result` when the job terminated in
+    :attr:`~JobStatus.ERROR` state.
+    """
+
+
+class JobCancelledError(RuntimeError):
+    """
+    Raised by :meth:`Job.result` when the job was cancelled
+    (:attr:`~JobStatus.CANCELLED`).
+    """
+
+
+class JobResult:
+    """
+    Wraps the outcome of one or more circuit executions.
+
+    Counts are stored as a list with one dictionary per input circuit,
+    preserving the input order.
+
+    Parameters
+    ----------
+    counts : List[Dict]
+        A list of measurement-outcome dictionaries, one per circuit.
+        Keys and values can be of any type, as determined by the user.
+
+    **kwargs
+        Optional backend-specific metadata associated with the execution.
+
+    Examples
+    --------
+    Let's start with a simple example of a single circuit result:
+
+    >>> from qrisp.interface.job import JobResult
+    >>> result = JobResult([{"00": 512, "11": 512}])
+    >>> result.get_counts()
+    {"00": 512, "11": 512}
+
+    For batch executions, we can store results for multiple circuits in a single object:
+
+    >>> result = JobResult([{"0": 800, "1": 224}, {"00": 500, "11": 524}])
+    >>> result.all_counts
+    [{'0': 800, '1': 224}, {'00': 500, '11': 524}]
+
+    Even in this case, we can access individual circuit results using the :meth:`get_counts` method:
+
+    >>> result.get_counts(1)
+    {'00': 500, '11': 524}
+
+    Note that we can retrieve the number of circuits in the result using the :attr:`num_circuits` property:
+
+    >>> result.num_circuits
+    2
+
+    Finally, we can print the result object to see a summary of its contents:
+
+    >>> print(result)
+    JobResult(num_circuits=2, metadata={})
+    """
+
+    def __init__(self, counts: Sequence[dict], **kwargs):
+        """Initialize a JobResult instance."""
+
+        if not isinstance(counts, Sequence) or isinstance(counts, (str, bytes)):
+            raise TypeError(
+                f"'counts' must be a sequence of dicts, got {type(counts).__name__}"
+            )
+
+        if len(counts) == 0:
+            raise ValueError("'counts' must contain at least one dict")
+
+        for i, count in enumerate(counts):
+            if not isinstance(count, dict):
+                raise TypeError(
+                    f"Each item in 'counts' must be a dict, got {type(count).__name__} at index {i}"
+                )
+
+        self._counts = list(counts)
+        self.metadata = kwargs
+
+    # ------------------------------------------------------------------
+    # Properties
+    # ------------------------------------------------------------------
+
+    @property
+    def all_counts(self) -> list[dict]:
+        """All measurement-outcome counts, one dict per circuit."""
+        return self._counts
+
+    @property
+    def num_circuits(self) -> int:
+        """Number of circuits whose results are stored in this object."""
+        return len(self._counts)
+
+    # ------------------------------------------------------------------
+    # Methods
+    # ------------------------------------------------------------------
+
+    def get_counts(self, index: int = 0) -> dict:
+        """
+        Return the measurement-outcome counts for a single circuit.
+
+        Parameters
+        ----------
+        index : int
+            Index of the circuit in the batch. Defaults to ``0``.
+
+        Returns
+        -------
+        dict
+            Mapping from bitstring outcome to observed count.
+
+        """
+        try:
+            return self._counts[index]
+        except IndexError as exc:
+            raise IndexError(
+                f"Result contains {len(self._counts)} circuit(s); "
+                f"index {index} is out of range."
+            ) from exc
+
+    # ------------------------------------------------------------------
+    # Dunder methods
+    # ------------------------------------------------------------------
+
+    def __repr__(self) -> str:
+        return (
+            f"JobResult(num_circuits={self.num_circuits}, "
+            f"metadata={self.metadata!r})"
+        )
+
+
+class Job(ABC):
+    """
+    Abstract handle for a (potentially asynchronous) backend execution.
+
+    A ``Job`` is returned by :meth:`Backend.run` immediately after
+    submission. The caller can then:
+
+    * call :meth:`result` to wait for the outcome and retrieve it, or
+    * poll :attr:`status` / :meth:`done` / :meth:`running` / :meth:`queued` / :meth:`cancelled`
+      to check the current state, or
+    * call :meth:`cancel` to attempt cancellation.
+
+    This follows the *Future* (or *Promise*) pattern: execution happens
+    independently of the caller, and the caller decides *when* to wait for
+    the outcome.
+
+    .. rubric:: Design contract
+
+    The ``Job`` base class defines *only the observable contract*. That is, the four
+    abstract methods that every concrete job must implement. It deliberately
+    prescribes no internal synchronisation mechanism (no threading, no
+    asyncio, no polling loop). Each concrete subclass chooses whatever
+    concurrency model suits its execution environment:
+
+    * A synchronous simulator may compute the result inline and make it
+      available before :meth:`result` is ever called.
+
+    * An asynchronous hardware backend may submit to a remote queue and
+      poll in a background thread until the result is ready.
+
+    From the caller's perspective, all of the above are used identically.
+
+    .. rubric:: Relationship to design patterns
+
+    ``Job`` is a `Virtual Proxy <https://refactoring.guru/design-patterns/proxy>`_ for
+    the execution result: it is a local placeholder that controls access to
+    an outcome that may be remote, deferred, or not yet computed.
+    Together with :class:`Backend`, it forms a `Bridge <https://refactoring.guru/design-patterns/bridge>`_: the
+    two abstract hierarchies (submission interface and execution handle)
+    can be varied and extended independently.
+
+
+    Parameters
+    ----------
+    backend : Backend
+        The backend that created this job.
+
+    job_id : str or None
+        Optional caller-supplied identifier (e.g. a remote job ID assigned
+        by a vendor API). If ``None``, the concrete subclass is responsible
+        for assigning one.
+
+    **kwargs
+        Additional backend-specific metadata to associate with this job.
+        Included for qiskit compatibility, but may be used by any backend implementation as needed.
+
+    """
+
+    def __init__(self, backend: Backend, job_id: str | None = None, **kwargs):
+        """Initialize a Job instance."""
+
+        self._backend = backend
+        self._job_id = job_id
+        self.metadata = kwargs
+        self._last_known_status: JobStatus = JobStatus.INITIALIZING
+
+    # ------------------------------------------------------------------
+    # Properties
+    # ------------------------------------------------------------------
+
+    @property
+    def job_id(self) -> str | None:
+        """Identifier for this job, or ``None`` if not yet assigned."""
+        return self._job_id
+
+    @property
+    def backend(self) -> "Backend":
+        """The :class:`Backend` that created this job."""
+        return self._backend
+
+    @property
+    def last_known_status(self) -> JobStatus:
+        """
+        The most recently cached :class:`JobStatus` for this job.
+
+        This value is updated only when :meth:`refresh` is called
+        explicitly. It is initialised to :attr:`~JobStatus.INITIALIZING`
+        and is never updated by :meth:`status` alone (reading it never
+        triggers a network call).
+
+        Use :meth:`refresh` to fetch the latest status from the backend
+        and update this property at the same time.
+        """
+        return self._last_known_status
+
+    # ------------------------------------------------------------------
+    # Abstract methods
+    # ------------------------------------------------------------------
+
+    @abstractmethod
+    def submit(self) -> None:
+        """
+        Submit the job to the backend for execution.
+
+        This method triggers the actual execution. It is called by the
+        backend after the job object has been constructed.
+        """
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def result(self) -> JobResult:
+        """
+        Block until the job reaches a terminal state and return its result.
+
+        This is a blocking call: it does not return until the job is in one
+        of the terminal states — :attr:`~JobStatus.DONE`,
+        :attr:`~JobStatus.CANCELLED`, or :attr:`~JobStatus.ERROR`. The
+        internal synchronisation mechanism (threading, polling, asyncio,
+        etc.) is left entirely to the concrete implementation.
+
+        If the job is already in a terminal state when this method is
+        called, it must return (or raise) immediately without blocking.
+
+        Concrete implementations should call :meth:`_raise_for_status`
+        once the terminal state has been reached, before returning.
+
+        Returns
+        -------
+        JobResult
+            The measurement results, if the job completed successfully
+            (:attr:`~JobStatus.DONE`).
+
+        Raises
+        ------
+        JobFailureError
+            If the job terminated in :attr:`~JobStatus.ERROR` state.
+
+        JobCancelledError
+            If the job was cancelled (:attr:`~JobStatus.CANCELLED`).
+        """
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def cancel(self) -> bool:
+        """
+        Attempt to cancel the job.
+
+        Returns
+        -------
+        bool
+            True iff the job was successfully cancelled.
+
+        """
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def status(self) -> JobStatus:
+        """
+        Query and return the current :class:`JobStatus` of the job.
+
+        This is a **live query**: every call fetches the most up-to-date
+        status available, which for remote backends may involve a network
+        call. Callers that want to read the last known status without
+        triggering a round-trip should use ``last_known_status``
+        instead and call :meth:`refresh` when an explicit update is needed.
+
+        Returns
+        -------
+        JobStatus
+
+        """
+
+        raise NotImplementedError
+
+    # ------------------------------------------------------------------
+    # Methods (derived from status)
+    # ------------------------------------------------------------------
+
+    def done(self) -> bool:
+        """
+        Return ``True`` if the job has completed successfully and results are available.
+        """
+        return self.status() == JobStatus.DONE
+
+    def running(self) -> bool:
+        """Return ``True`` if the job is currently executing."""
+        return self.status() == JobStatus.RUNNING
+
+    def queued(self) -> bool:
+        """Return ``True`` if the job is waiting in the backend queue."""
+        return self.status() == JobStatus.QUEUED
+
+    def cancelled(self) -> bool:
+        """Return ``True`` if the job was cancelled."""
+        return self.status() == JobStatus.CANCELLED
+
+    def in_final_state(self) -> bool:
+        """
+        Return ``True`` if the job has reached a terminal state.
+
+        Terminal states are :attr:`~JobStatus.DONE`,
+        :attr:`~JobStatus.CANCELLED`, and :attr:`~JobStatus.ERROR`.
+        """
+        return self.status() in JOB_FINAL_STATES
+
+    def refresh(self) -> JobStatus:
+        """
+        Fetch the latest status from the backend and cache it.
+
+        Calls :meth:`status` (a live query that may involve a network
+        round-trip for remote backends), stores the result in
+        ``last_known_status``, and returns it.
+
+        Use this method when you want an up-to-date status *and* want
+        ``last_known_status`` to reflect it. Polling loops that need
+        to check progress without holding a result should call
+        :meth:`refresh` rather than :meth:`status` directly, so that the
+        cached value stays current.
+
+        Returns
+        -------
+        JobStatus
+            The freshly fetched status, which is also stored in
+            ``last_known_status``.
+        """
+        self._last_known_status = self.status()
+        return self._last_known_status
+
+    # ------------------------------------------------------------------
+    # Helper for concrete implementations
+    # ------------------------------------------------------------------
+
+    def _raise_for_status(self) -> None:
+        """
+        Raise the appropriate exception if the current status is not
+        ``DONE``.
+
+        Concrete implementations should call this inside :meth:`result`
+        *after* the job has reached a terminal state (i.e. after any
+        blocking wait).
+
+        Raises
+        ------
+        JobFailureError
+            If :attr:`status` is ``ERROR``.
+
+        JobCancelledError
+            If :attr:`status` is ``CANCELLED``.
+        """
+        s = self.status()
+        if s == JobStatus.ERROR:
+            raise JobFailureError(f"Job {self._job_id!r} terminated with status ERROR.")
+        if s == JobStatus.CANCELLED:
+            raise JobCancelledError(f"Job {self._job_id!r} was cancelled.")
+
+    # ------------------------------------------------------------------
+    # Dunder methods
+    # ------------------------------------------------------------------
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"job_id={self._job_id!r}, "
+            f"status={self.status().name})"
+        )

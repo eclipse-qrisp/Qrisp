@@ -1,0 +1,467 @@
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp Authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""This module defines the abstract :class:`Backend` interface for Qrisp-compatible backends."""
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, TypeAlias
+
+from .job import Job
+
+if TYPE_CHECKING:
+    from qrisp.circuit.quantum_circuit import QuantumCircuit
+
+CircuitResult: TypeAlias = dict[str, Any]
+
+
+class Backend(ABC):
+    """
+    Abstract base class for Qrisp-compatible backends.
+
+    This class provides a minimal, hardware-agnostic interface that all
+    backends (simulators or quantum hardware clients) must follow.
+
+    The only mandatory method for child classes is :meth:`run_async`, which
+    submits one or more circuits for execution and returns a :class:`Job`
+    handle immediately. The caller then decides when to wait for the result
+    by calling :meth:`Job.result <qrisp.interface.Job.result>`.
+
+    A synchronous convenience method :meth:`run` is also provided. It calls
+    :meth:`run_async` internally, blocks until the job completes, and returns
+    the results as a plain sequence of measurement dictionaries. This exists
+    primarily for backward compatibility with existing Qrisp code that
+    previously called ``backend.run(circuit, shots)`` and expected a
+    dictionary directly.
+
+    .. rubric:: Design contract
+
+    The ``Backend`` class defines the minimal execution interface required by
+    Qrisp. It does not assume universality of the gate set, specific
+    connectivity constraints, or the presence of calibration data. Any such
+    assumptions must be made explicit by concrete backend implementations or
+    higher-level compilation policies.
+
+    This class intentionally avoids prescribing compilation, scheduling, or
+    execution policies, which are delegated to concrete backends or external
+    components.
+
+    For example, simulators are expected to implement ``run_async`` but may
+    return ``None`` for all hardware metadata properties.
+
+    .. rubric:: Execution model
+
+    :meth:`run_async` accepts a single circuit *or* a sequence of circuits
+    and always returns a :class:`Job` instance immediately.
+    This follows the *Future* pattern: execution happens independently of the
+    caller, and the caller decides *when* to block by calling
+    :meth:`Job.result <qrisp.interface.Job.result>`.
+
+    :meth:`run` provides a simpler synchronous interface on top of
+    :meth:`run_async`. It blocks until execution completes and returns the
+    measurement results as a ``list[Mapping]`` (one dictionary per
+    submitted circuit). New code should prefer :meth:`run_async` when the
+    :class:`Job` handle is needed (e.g. to poll status, cancel, or await
+    results concurrently). Existing code that relied on the previous
+    synchronous ``run`` method will continue to work without modification.
+
+    .. rubric:: Runtime options
+
+    Runtime options describe *how* the backend executes circuits (e.g. the
+    number of shots). These can be provided:
+
+    * by overriding :meth:`_default_options` at class level, or
+    * by passing a custom ``options`` mapping to :meth:`__init__`.
+
+    The number of shots may also be overridden per-execution by passing
+    the ``shots`` argument to :meth:`run_async` or :meth:`run`. It is
+    treated as a conventional execution parameter for gate-based, shot-based
+    backends, and may be ignored by backends for which it is not meaningful.
+
+    Options are updated through :meth:`update_options`, but only keys that
+    were present at initialisation may be modified.
+
+    .. rubric:: Hardware metadata
+
+    The backend may optionally expose hardware metadata such as:
+
+    * backend health or diagnostics,
+    * backend queue status,
+    * number of qubits,
+    * connectivity information,
+    * supported native gates,
+    * gate errors or calibration data.
+
+    These properties are intentionally left loosely typed at the base-class
+    level. Their purpose is to *signal the presence of a capability*, not to
+    enforce a universal hardware schema.
+
+    The absence of a value for a given property (``None``) explicitly means
+    *"capability not exposed by this backend"*. This is common for simulators,
+    abstract backends, or backends that choose not to provide hardware details.
+
+    Concrete backend implementations (e.g. vendor-specific backends) are
+    expected to override these properties and may return structured,
+    vendor-defined objects with richer semantics. Transpilers or compilation
+    passes may then either:
+
+    * require specific capabilities and raise if they are missing, or
+    * ignore hardware metadata entirely and operate in a backend-agnostic mode.
+
+    Backend-specific capabilities that are not covered by the base interface
+    should be exposed as concrete typed properties on the subclass.
+
+    .. rubric:: Relationship to design patterns
+
+    ``Backend`` and :class:`Job` together form a `Bridge <https://refactoring.guru/design-patterns/bridge>`_: two
+    independently varying class hierarchies (submission interface and execution handle)
+    that can be extended without affecting each other. :class:`Job` is additionally
+    a `Virtual Proxy <https://refactoring.guru/design-patterns/proxy>`_ for the execution result.
+    Concrete vendor backends act as `Adapters <https://refactoring.guru/design-patterns/adapter>`_ that
+    wrap a vendor SDK to satisfy the ``Backend`` interface expected by Qrisp.
+
+    Parameters
+    ----------
+    name : str or None
+        Optional user-defined name for the backend.
+        Defaults to the class name.
+
+    options : Mapping or None
+        Runtime execution options for the backend.
+        If omitted, :meth:`_default_options` is used.
+
+    **kwargs :
+        Additional backend-specific parameters. These are not defined at the
+        base-class level but may be accepted by concrete backend
+        implementations (e.g. for authentication, provider selection, or
+        other configuration).
+    """
+
+    def __init__(
+        self, name: str | None = None, options: Mapping | None = None, **kwargs
+    ):
+        """Initialise the backend."""
+        self.name = name or self.__class__.__name__
+
+        if options is None:
+            options = self._default_options()
+
+        if not isinstance(options, Mapping):
+            raise TypeError(
+                f"'options' must be a dict-like Mapping, "
+                f"got {type(options).__name__}"
+            )
+
+        # Shallow-copy and convert to dict so that:
+        # (a) external mutations of the original mapping do not affect the
+        #     backend's internal state, and
+        # (b) update_options can use __setitem__ regardless of the original
+        #     Mapping type.
+        self._options = dict(options)
+
+        self.metadata = kwargs
+
+    # ------------------------------------------------------------------
+    # Abstract method
+    # ------------------------------------------------------------------
+
+    @abstractmethod
+    def run_async(
+        self,
+        circuits: QuantumCircuit | Sequence[QuantumCircuit],
+        shots: int | None = None,
+    ) -> Job:
+        """
+        Submit one or more circuits for execution and return a :class:`Job`.
+
+        This method returns immediately. The caller blocks and retrieves the
+        outcome by calling :meth:`Job.result <qrisp.interface.Job.result>`
+        on the returned object.
+
+        Parameters
+        ----------
+        circuits : QuantumCircuit or Sequence[QuantumCircuit]
+            A single circuit or a sequence of circuits to execute.
+            No validation or introspection is performed at the base-class level.
+
+            When a sequence is provided, the backend decides internally whether
+            to run the circuits sequentially or in parallel. Hardware backends
+            may impose a limit on how many circuits a single job may contain.
+            This is a backend-defined constraint.
+
+        shots : int or None, optional
+            Number of shots (repetitions) for the execution. If ``None``,
+            the value from the backend's runtime options is used.
+
+        Returns
+        -------
+        Job
+            A handle to the submitted execution. Call
+            :meth:`Job.result <qrisp.interface.Job.result>` to wait for
+            completion and retrieve the
+            :class:`~qrisp.interface.JobResult`.
+        """
+        raise NotImplementedError
+
+    # ------------------------------------------------------------------
+    # Synchronous convenience method
+    # ------------------------------------------------------------------
+
+    def run(
+        self,
+        circuits: QuantumCircuit | Sequence[QuantumCircuit],
+        shots: int | None = None,
+    ) -> CircuitResult | list[CircuitResult]:
+        """
+        Submit one or more circuits, block until completion, and return results.
+
+        This is a synchronous convenience wrapper around :meth:`run_async`.
+        It calls :meth:`run_async`, waits for the :class:`Job` to finish by
+        calling :meth:`Job.result <qrisp.interface.Job.result>`, and returns
+        the measurement results. The return type mirrors the input: a single
+        ``CircuitResult`` for a single circuit, or a ``list[CircuitResult]`` for a list.
+
+        This method exists primarily for **backward compatibility** with
+        existing Qrisp code that previously called ``backend.run(circuit,
+        shots)`` and expected a measurement dictionary directly. New code
+        that needs the full :class:`Job` interface (status polling,
+        cancellation, concurrent awaiting) should call :meth:`run_async`
+        instead.
+
+        Parameters
+        ----------
+        circuits : QuantumCircuit or Sequence[QuantumCircuit]
+            A single circuit or a sequence of circuits to execute.
+
+        shots : int or None, optional
+            Number of shots. If ``None``, the backend's ``shots`` option
+            is used.
+
+        Returns
+        -------
+        CircuitResult or list[CircuitResult]
+            A single measurement dictionary when one circuit is submitted,
+            or a list of measurement dictionaries when multiple circuits are
+            submitted.
+        """
+        batch = isinstance(circuits, list)
+        all_counts = self.run_async(circuits, shots).result().all_counts
+        return all_counts if batch else all_counts[0]
+
+    # ------------------------------------------------------------------
+    # Runtime options
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def _default_options(cls) -> Mapping[str, Any]:
+        """
+        Default runtime options for the backend.
+
+        Child classes may override this method to provide custom default
+        options, or the defaults may be overridden entirely by passing an
+        ``options`` mapping to the constructor.
+
+        Returns
+        -------
+        Mapping[str, Any]
+            A mapping of option names to their default values.
+        """
+        return {"shots": 1024}
+
+    @property
+    def options(self) -> Mapping[str, Any]:
+        """
+        Current runtime options for the backend.
+
+        These options may influence execution behaviour (e.g. the number of
+        shots) and therefore may affect :meth:`run_async` and :meth:`run`.
+        """
+        return self._options
+
+    def update_options(self, **kwargs) -> None:
+        """
+        Update existing runtime options for the backend.
+
+        Only keys that were present at initialisation (i.e. defined in
+        :meth:`_default_options` or the ``options`` argument passed to the
+        constructor) may be updated. Attempting to set an unknown key raises
+        an ``AttributeError``.
+
+        Parameters
+        ----------
+        **kwargs :
+            Key-value pairs to update in the backend's runtime options.
+        """
+        for key, val in kwargs.items():
+            if key not in self._options:
+                raise AttributeError(
+                    f"'{key}' is not a valid backend option for "
+                    f"{self.__class__.__name__}. "
+                    f"Valid options: {list(self._options.keys())}"
+                )
+            self._options[key] = val
+
+    # ------------------------------------------------------------------
+    # Hardware / backend-specific status information
+    # ------------------------------------------------------------------
+
+    @property
+    def backend_health(self):
+        """
+        Current health status or diagnostics of the backend.
+
+        This may include uptime statistics or other backend-specific health
+        indicators.
+
+        Returns ``None`` if the backend does not expose health information.
+        """
+        return None
+
+    @property
+    def backend_info(self):
+        """
+        General information about the backend.
+
+        This may include backend version, provider details, or other
+        backend-specific information.
+
+        Returns ``None`` if the backend does not expose such information.
+        """
+        return None
+
+    @property
+    def backend_queue(self):
+        """
+        Current queue status or job backlog of the backend.
+
+        This may include estimated wait times, number of pending jobs, or
+        other backend-specific queue indicators.
+
+        Returns ``None`` if the backend does not expose queue information.
+        """
+        return None
+
+    # ------------------------------------------------------------------
+    # Hardware / backend-specific metadata
+    # ------------------------------------------------------------------
+
+    @property
+    def num_qubits(self):
+        """
+        Total number of physical qubits the backend exposes.
+
+        This reflects the full physical qubit count of the device, not a
+        snapshot of currently healthy or calibrated qubits. A qubit whose
+        calibration has degraded or whose gates have been removed from the
+        active gate set is still counted here.
+
+        Returns ``None`` if the backend does not expose a fixed or meaningful
+        qubit count (e.g. simulators, abstract backends, or backends where
+        this information is intentionally omitted).
+        """
+        return None
+
+    @property
+    def connectivity(self):
+        """
+        Currently executable qubit connectivity for the backend.
+
+        This property describes which qubit pairs currently
+        have at least one multi-qubit gate available for execution. It
+        reflects the active gate set at the time the property is queried
+        (not the physical wiring of the device, not a theoretical maximum,
+        and not a snapshot of all pairs that have ever been calibrated).
+
+        If the physical device consists of multiple disconnected components,
+        the backend is expected to expose a single connected component.
+        The choice of which component to expose (e.g. largest component,
+        highest-fidelity subset) is left to the concrete backend
+        implementation.
+
+        Gates involving more than two qubits are not representable as edges
+        in a connectivity graph. Backends that support such operations should
+        document them separately (e.g. via :attr:`gate_set`).
+
+        The returned object may encode qubit adjacency, coupling constraints,
+        or other topology information in a backend-specific format.
+
+        Returns ``None`` if the backend does not expose connectivity
+        information. Concrete backend implementations may return structured,
+        vendor-defined objects.
+        """
+        return None
+
+    @property
+    def gate_set(self):
+        """
+        Native gate set supported by the backend.
+
+        This property describes which operations the backend can execute
+        natively. The gate set is purely descriptive.
+        Qrisp does not assume the set is universal. Compilation passes that
+        require universality must verify this themselves.
+
+        Different qubit pairs may support
+        different gates (e.g. CZ on some pairs, iSWAP on others, or both).
+        Backends are expected to encode this granularity in the returned
+        object.
+
+        Measurement is not assumed. The availability of a measurement
+        operation on a given qubit is not guaranteed by this interface.
+        Backends that require explicit measurement declarations should
+        include them in the gate set.
+
+        The format of the returned object is backend-specific. For hardware
+        backends it typically refers to native operations; for simulators it
+        may be omitted or ignored.
+
+        Returns ``None`` if the backend does not expose gate availability.
+        """
+        return None
+
+    @property
+    def error_rates(self):
+        """
+        Error rates or calibration-related information for the backend.
+
+        This property is calibration-dependent: the values it exposes are
+        only meaningful relative to a specific calibration run. Concrete
+        backend implementations currently must include metadata that identifies
+        which calibration snapshot the data refers to. For example, a
+        timestamp, a calibration ID, or a version string. Returning bare
+        error values without any calibration anchor is discouraged,
+        as callers have no way to determine whether the data is current.
+
+        The format of the returned object is hardware (and vendor) specific.
+
+        Returns ``None`` if the backend does not expose error or calibration
+        data.
+        """
+        return None
+
+    # ------------------------------------------------------------------
+    # Dunder methods
+    # ------------------------------------------------------------------
+
+    def __repr__(self) -> str:
+        """Return a concise string representation of the backend."""
+        return (
+            f"{self.__class__.__name__}("
+            f"name={self.name!r}, "
+            f"options={dict(self._options)!r})"
+        )

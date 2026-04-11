@@ -26,13 +26,23 @@ https://qunicorn-core.readthedocs.io/en/latest/index.html
 
 
 """
-import requests
 import time
+import warnings
+
+import requests
+
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 class BackendClient:
     """
     This object allows connecting to Qunicorn backend servers.
+
+    .. warning::
+
+        This Backend is not compatible with the new Backend API and is deprecated.
+        Please use the :ref:`Backend` abstract class to implement custom backends instead.
+
 
     Parameters
     ----------
@@ -60,6 +70,12 @@ class BackendClient:
     """
 
     def __init__(self, api_endpoint, port=None, token=""):
+
+        warnings.warn(
+            "DeprecationWarning: BackendClient is deprecated and will be removed in a later release of Qrisp. "
+            "Please use the ``Backend`` abstract class to implement custom backends.",
+            QrispDeprecationWarning,
+        )
 
         # https anstatt http
         api_endpoint = "http://" + api_endpoint

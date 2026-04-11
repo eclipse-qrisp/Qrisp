@@ -30,6 +30,7 @@ from qrisp.operators.qubit.measurement import get_measurement
 from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge, invert
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 from qrisp.jasp import check_for_tracing_mode, jrange, qache
 
@@ -1629,7 +1630,8 @@ class QubitOperator(Hamiltonian):
         """
 
         warnings.warn(
-            "DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value."
+            "DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value.",
+            QrispDeprecationWarning,
         )
 
         return get_measurement(
