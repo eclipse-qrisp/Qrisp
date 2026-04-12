@@ -1629,7 +1629,7 @@ class QuantumArray:
     def __and__(self, other: QuantumArray) -> QuantumArray:
         """
         Performs element-wise ``&`` (bitwise AND) operation.
-        Note that this operation is only defined for QuantumArrays of QuantumBools.
+        This operation is only defined for QuantumArrays of QuantumBools.
 
         Parameters
         ----------
@@ -1663,7 +1663,7 @@ class QuantumArray:
     def __or__(self, other: QuantumArray) -> QuantumArray:
         """
         Performs element-wise ``|`` (bitwise OR) operation.
-        Note that this operation is only defined for QuantumArrays of QuantumBools.
+        This operation is only defined for QuantumArrays of QuantumBools.
 
         Parameters
         ----------
@@ -1697,7 +1697,7 @@ class QuantumArray:
     def __xor__(self, other: QuantumArray) -> QuantumArray:
         """
         Performs element-wise ``^`` (bitwise XOR) operation.
-        Note that this operation is only defined for QuantumArrays of QuantumBools.
+        This operation is only defined for QuantumArrays of QuantumBools.
 
         Parameters
         ----------
@@ -1731,6 +1731,7 @@ class QuantumArray:
     def all(self, axis=None):
         """
         Performs an element-wise logical AND reduction, returning True if all elements are True.
+        This operation is only defined for QuantumArrays of QuantumBools.
 
         Parameters
         ----------
@@ -1777,6 +1778,7 @@ class QuantumArray:
     def any(self, axis=None):
         """
         Performs an element-wise logical OR reduction, returning True if any element is True.
+        This operation is only defined for QuantumArrays of QuantumBools.
 
         Parameters
         ----------
@@ -1875,7 +1877,7 @@ class QuantumArray:
         Returns
         -------
         QuantumArray
-            The modified QuantumArray.
+            The modified QuantumArray containing the result of the in-place addition.
 
         Examples
         --------
@@ -1902,7 +1904,7 @@ class QuantumArray:
         self._element_wise_in_place_call(other, f)
         return self
 
-    def __isub__(self, other):
+    def __isub__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise in-place subtraction.
         Note that this modifies the original QuantumArray and does not create a new one.
@@ -1917,7 +1919,7 @@ class QuantumArray:
         Returns
         -------
         QuantumArray
-            The modified QuantumArray.
+            The modified QuantumArray containing the result of the in-place subtraction.
 
         Examples
         --------
@@ -1959,7 +1961,7 @@ class QuantumArray:
         Returns
         -------
         QuantumArray
-            The modified QuantumArray
+            The modified QuantumArray containing the result of the in-place multiplication.
 
         Examples
         --------
