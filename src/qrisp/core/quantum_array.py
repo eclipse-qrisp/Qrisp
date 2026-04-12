@@ -38,6 +38,9 @@ from qrisp.jasp import (
     TracingQuantumSession,
 )
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from jax.typing import ArrayLike
 
 class QuantumArray:
     """
@@ -1266,14 +1269,15 @@ class QuantumArray:
             other, lambda a, b: a * b, out_type
         )
 
-    def __eq__(self, other: QuantumArray) -> QuantumArray:
+    def __eq__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise ``==`` comparison.
 
         Parameters
         ----------
-        other : QuantumArray
-            The QuantumArray to be compared to.
+        other : QuantumArray | ArrayLike
+            The array to be compared to.
+            Must have the same shape as the original QuantumArray.
 
         Returns
         -------
@@ -1283,15 +1287,27 @@ class QuantumArray:
         Examples
         --------
 
+        Compare two QuantumArrays of QuantumFloats for equality:
+
         >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
         >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
         >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
-        >>> a_array[:] = np.eye(2)
-        >>> b_array[:] = np.eye(2)
+        >>> a_array[:] = np.array([[0, 1], [2, 3]])
+        >>> b_array[:] = np.array([[0, 3], [2, 1]])
         >>> r_array = a_array == b_array
         >>> print(r_array)
-        # {OutcomeArray([[True, True], [True, True]], dtype=object): 1.0}
+        # {OutcomeArray([[True, False], [True, False]], dtype=object): 1.0}
+
+        Compare a QuantumArray of QuantumFloats to a numpy array:
+        
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.array([[0, 1], [2, 3]])
+        >>> r_array = a_array == np.array([[0, 3], [2, 1]])
+        >>> print(r_array)
+        # {OutcomeArray([[True, False], [True, False]], dtype=object): 1.0}
 
         """
         from qrisp.qtypes import QuantumBool
@@ -1301,14 +1317,15 @@ class QuantumArray:
             other, lambda a, b: a == b, QuantumBool()
         )
 
-    def __ne__(self, other: QuantumArray) -> QuantumArray:
+    def __ne__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise ``!=`` comparison.
 
         Parameters
         ----------
-        other : QuantumArray
-            The QuantumArray to be compared to.
+        other : QuantumArray | ArrayLike
+            The array to be compared to.
+            Must have the same shape as the original QuantumArray.
 
         Returns
         -------
@@ -1318,15 +1335,27 @@ class QuantumArray:
         Examples
         --------
 
+        Compare two QuantumArrays of QuantumFloats for inequality:
+
         >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
         >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
         >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
-        >>> a_array[:] = np.eye(2)
-        >>> b_array[:] = np.eye(2)
+        >>> a_array[:] = np.array([[0, 1], [2, 3]])
+        >>> b_array[:] = np.array([[0, 3], [2, 1]])
         >>> r_array = a_array != b_array
         >>> print(r_array)
-        # {OutcomeArray([[False, False], [False, False]], dtype=object): 1.0}
+        # {OutcomeArray([[False, True], [False, True]], dtype=object): 1.0}
+
+        Compare a QuantumArray of QuantumFloats to a numpy array:
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.array([[0, 1], [2, 3]])     
+        >>> r_array = a_array != np.array([[0, 3], [2, 1]])
+        >>> print(r_array)
+        # {OutcomeArray([[False, True], [False, True]], dtype=object): 1.0}
 
         """
         from qrisp.qtypes import QuantumBool
@@ -1336,14 +1365,15 @@ class QuantumArray:
             other, lambda a, b: a != b, QuantumBool()
         )
 
-    def __gt__(self, other: QuantumArray) -> QuantumArray:
+    def __gt__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise ``>`` comparison.
 
         Parameters
         ----------
-        other : QuantumArray
-            The QuantumArray to be compared to.
+        other : QuantumArray | ArrayLike
+            The array to be compared to.
+            Must have the same shape as the original QuantumArray.
 
         Returns
         -------
@@ -1353,15 +1383,27 @@ class QuantumArray:
         Examples
         --------
 
+        Compare two QuantumArrays of QuantumFloats for greater-than:
+
         >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
         >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
         >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
-        >>> a_array[:] = np.eye(2)
-        >>> b_array[:] = np.eye(2)
+        >>> a_array[:] = np.array([[0, 1], [2, 3]])
+        >>> b_array[:] = np.array([[0, 3], [2, 1]])
         >>> r_array = a_array > b_array
         >>> print(r_array)
-        # {OutcomeArray([[False, False], [False, False]], dtype=object): 1.0}
+        # {OutcomeArray([[False, False], [False, True]], dtype=object): 1.0}
+
+        Compare a QuantumArray of QuantumFloats to a numpy array:
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.array([[0, 1], [2, 3]])     
+        >>> r_array = a_array > np.array([[0, 3], [2, 1]])
+        >>> print(r_array)
+        # {OutcomeArray([[False, False], [False, True]], dtype=object): 1.0}
 
         """
         from qrisp.qtypes import QuantumBool
@@ -1371,14 +1413,15 @@ class QuantumArray:
             other, lambda a, b: a > b, QuantumBool()
         )
 
-    def __ge__(self, other: QuantumArray) -> QuantumArray:
+    def __ge__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise ``>=`` comparison.
 
         Parameters
         ----------
-        other : QuantumArray
-            The QuantumArray to be compared to.
+        other : QuantumArray | ArrayLike
+            The array to be compared to.
+            Must have the same shape as the original QuantumArray.
 
         Returns
         -------
@@ -1388,15 +1431,27 @@ class QuantumArray:
         Examples
         --------
 
+        Compare two QuantumArrays of QuantumFloats for greater-than-or-equal:
+
         >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
         >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
         >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
-        >>> a_array[:] = np.eye(2)
-        >>> b_array[:] = np.eye(2)
+        >>> a_array[:] = np.array([[0, 1], [2, 3]])
+        >>> b_array[:] = np.array([[0, 3], [2, 1]])
         >>> r_array = a_array >= b_array
         >>> print(r_array)
-        # {OutcomeArray([[True, True], [True, True]], dtype=object): 1.0}
+        # {OutcomeArray([[True, False], [True, True]], dtype=object): 1.0}
+
+        Compare a QuantumArray of QuantumFloats to a numpy array:
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.array([[0, 1], [2, 3]])     
+        >>> r_array = a_array >= np.array([[0, 3], [2, 1]])
+        >>> print(r_array)
+        # {OutcomeArray([[True, False], [True, True]], dtype=object): 1.0}
 
         """
         from qrisp.qtypes import QuantumBool
@@ -1406,14 +1461,15 @@ class QuantumArray:
             other, lambda a, b: a >= b, QuantumBool()
         )
 
-    def __lt__(self, other: QuantumArray) -> QuantumArray:
+    def __lt__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise ``<`` comparison.
 
         Parameters
         ----------
-        other : QuantumArray
-            The QuantumArray to be compared to.
+        other : QuantumArray | ArrayLike
+            The array to be compared to.
+            Must have the same shape as the original QuantumArray.
 
         Returns
         -------
@@ -1423,15 +1479,27 @@ class QuantumArray:
         Examples
         --------
 
+        Compare two QuantumArrays of QuantumFloats for less-than:
+
         >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
         >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
         >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
-        >>> a_array[:] = np.eye(2)
-        >>> b_array[:] = np.eye(2)
+        >>> a_array[:] = np.array([[0, 1], [2, 3]])
+        >>> b_array[:] = np.array([[0, 3], [2, 1]])
         >>> r_array = a_array < b_array
         >>> print(r_array)
-        # {OutcomeArray([[False, False], [False, False]], dtype=object): 1.0}
+        # {OutcomeArray([[False, True], [False, False]], dtype=object): 1.0}
+
+        Compare a QuantumArray of QuantumFloats to a numpy array:
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.array([[0, 1], [2, 3]])     
+        >>> r_array = a_array < np.array([[0, 3], [2, 1]])
+        >>> print(r_array)
+        # {OutcomeArray([[False, True], [False, False]], dtype=object): 1.0}
 
         """
         from qrisp.qtypes import QuantumBool
@@ -1441,14 +1509,15 @@ class QuantumArray:
             other, lambda a, b: a < b, QuantumBool()
         )
 
-    def __le__(self, other: QuantumArray) -> QuantumArray:
+    def __le__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise ``<=`` comparison.
 
         Parameters
         ----------
-        other : QuantumArray
-            The QuantumArray to be compared to.
+        other : QuantumArray | ArrayLike
+            The array to be compared to.
+            Must have the same shape as the original QuantumArray.
 
         Returns
         -------
@@ -1458,15 +1527,27 @@ class QuantumArray:
         Examples
         --------
 
+        Compare two QuantumArrays of QuantumFloats for less-than-or-equal:
+
         >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
         >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
         >>> b_array = QuantumArray(QuantumFloat(2), shape=(2,2))
-        >>> a_array[:] = np.eye(2)
-        >>> b_array[:] = np.eye(2)
+        >>> a_array[:] = np.array([[0, 1], [2, 3]])
+        >>> b_array[:] = np.array([[0, 3], [2, 1]])
         >>> r_array = a_array <= b_array
         >>> print(r_array)
-        # {OutcomeArray([[True, True], [True, True]], dtype=object): 1.0}
+        # {OutcomeArray([[True, True], [True, False]], dtype=object): 1.0}
+
+        Compare a QuantumArray of QuantumFloats to a numpy array:
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.array([[0, 1], [2, 3]])     
+        >>> r_array = a_array <= np.array([[0, 3], [2, 1]])
+        >>> print(r_array)
+        # {OutcomeArray([[True, True], [True, False]], dtype=object): 1.0}
 
         """
         from qrisp.qtypes import QuantumBool
