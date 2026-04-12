@@ -845,6 +845,7 @@ class QuantumArray:
             Matrix multiplication is currently not supported in tracing mode if ``qtype`` is QuantumFloat.
             If ``qtype`` is QuantumModulus, matrix multiplication is supported in tracing mode and other must be a classical jax numpy array of integers.
 
+        Examples
         --------
 
         Multiplying two QuantumArrays of QuantumFloats.
@@ -1206,13 +1207,15 @@ class QuantumArray:
         # For scalar/QuantumVariable cases, no additional validation needed
         # (the underlying QuantumFloat operations will handle type checking)
 
-    def __add__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
+    def __add__(
+        self, other: QuantumArray | QuantumVariable | "ArrayLike"
+    ) -> QuantumArray:
         """
         Performs element-wise addition.
 
         Parameters
         ----------
-        other : QuantumArray | ArrayLike
+        other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be added.
                 If an array is provided, it must have the same shape as the original QuantumArray.
                 If a scalar is provided, it will be added to each element of the QuantumArray.
@@ -1221,8 +1224,8 @@ class QuantumArray:
         -------
         QuantumArray
             A new QuantumArray containing the element-wise sum.
-                If a QuantumArray is provided, the ``qtype`` of the output will be determined by the qtypes of the two arrays to prevent overflow.
-                If a scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
+                If a QuantumArray or QuantumVariable is provided, the ``qtype`` of the output will be determined by the qtypes of the two input objects to prevent overflow.
+                If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
 
         Examples
         --------
@@ -1265,6 +1268,8 @@ class QuantumArray:
         self._validate_arithmetic(other)
         if isinstance(other, QuantumArray):
             out_type = create_output_qf([self.qtype, other.qtype], "add")
+        elif isinstance(other, QuantumVariable):
+            out_type = create_output_qf([self.qtype, other], "add")
         else:
             # For scalars and numpy arrays, use self's type as output
             # (scalar operations preserve size)
@@ -1273,13 +1278,15 @@ class QuantumArray:
             other, lambda a, b: a + b, out_type
         )
 
-    def __sub__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
+    def __sub__(
+        self, other: QuantumArray | QuantumVariable | "ArrayLike"
+    ) -> QuantumArray:
         """
         Performs element-wise subtraction.
 
         Parameters
         ----------
-        other : QuantumArray | ArrayLike
+        other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be subtracted.
                 If an array is provided, it must have the same shape as the original QuantumArray.
                 If a scalar is provided, it will be subtracted from each element of the QuantumArray.
@@ -1288,8 +1295,8 @@ class QuantumArray:
         -------
         QuantumArray
             A new QuantumArray containing the element-wise difference.
-                If a QuantumArray is provided, the ``qtype`` of the output will be determined by the qtypes of the two arrays to prevent overflow.
-                If a scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
+                If a QuantumArray or QuantumVariable is provided, the ``qtype`` of the output will be determined by the qtypes of the two input objects to prevent overflow.
+                If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
 
         Examples
         --------
@@ -1333,6 +1340,8 @@ class QuantumArray:
         self._validate_arithmetic(other)
         if isinstance(other, QuantumArray):
             out_type = create_output_qf([self.qtype, other.qtype], "sub")
+        elif isinstance(other, QuantumVariable):
+            out_type = create_output_qf([self.qtype, other], "sub")
         else:
             # For scalars and numpy arrays, use self's type as output
             # (scalar operations preserve size)
@@ -1341,13 +1350,15 @@ class QuantumArray:
             other, lambda a, b: a - b, out_type
         )
 
-    def __mul__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
+    def __mul__(
+        self, other: QuantumArray | QuantumVariable | "ArrayLike"
+    ) -> QuantumArray:
         """
         Performs element-wise multiplication.
 
         Parameters
         ----------
-        other : QuantumArray | ArrayLike
+        other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be multiplied.
                 If an array is provided, it must have the same shape as the original QuantumArray.
                 If a scalar is provided, it will be multiplied with each element of the QuantumArray.
@@ -1356,8 +1367,8 @@ class QuantumArray:
         -------
         QuantumArray
             A new QuantumArray containing the element-wise product.
-                If a QuantumArray is provided, the ``qtype`` of the output will be determined by the qtypes of the two arrays to prevent overflow.
-                If a scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
+                If a QuantumArray or QuantumVariable is provided, the ``qtype`` of the output will be determined by the qtypes of the two input objects to prevent overflow.
+                If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
 
         Examples
         --------
@@ -1390,6 +1401,8 @@ class QuantumArray:
         self._validate_arithmetic(other)
         if isinstance(other, QuantumArray):
             out_type = create_output_qf([self.qtype, other.qtype], "mul")
+        elif isinstance(other, QuantumVariable):
+            out_type = create_output_qf([self.qtype, other], "mul")
         else:
             # For scalars and numpy arrays, use self's type as output
             # (scalar operations are handled by QuantumFloat)
@@ -1398,15 +1411,18 @@ class QuantumArray:
             other, lambda a, b: a * b, out_type
         )
 
-    def __eq__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
+    def __eq__(
+        self, other: QuantumArray | QuantumVariable | "ArrayLike"
+    ) -> QuantumArray:
         """
         Performs element-wise ``==`` comparison.
 
         Parameters
         ----------
-        other : QuantumArray | ArrayLike
-            The array to be compared to.
-            Must have the same shape as the original QuantumArray.
+        other : QuantumArray | QuantumVariable | ArrayLike
+            The array or scalar to be compared to.
+                If an array is provided, it must have the same shape as the original QuantumArray.
+                If a scalar is provided, it will be compared with each element of the QuantumArray.
 
         Returns
         -------
@@ -1446,15 +1462,18 @@ class QuantumArray:
             other, lambda a, b: a == b, QuantumBool()
         )
 
-    def __ne__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
+    def __ne__(
+        self, other: QuantumArray | QuantumVariable | "ArrayLike"
+    ) -> QuantumArray:
         """
         Performs element-wise ``!=`` comparison.
 
         Parameters
         ----------
-        other : QuantumArray | ArrayLike
-            The array to be compared to.
-            Must have the same shape as the original QuantumArray.
+        other : QuantumArray | QuantumVariable | ArrayLike
+            The array or scalar to be compared to.
+                If an array is provided, it must have the same shape as the original QuantumArray.
+                If a scalar is provided, it will be compared with each element of the QuantumArray.
 
         Returns
         -------
@@ -1494,15 +1513,18 @@ class QuantumArray:
             other, lambda a, b: a != b, QuantumBool()
         )
 
-    def __gt__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
+    def __gt__(
+        self, other: QuantumArray | QuantumVariable | "ArrayLike"
+    ) -> QuantumArray:
         """
         Performs element-wise ``>`` comparison.
 
         Parameters
         ----------
-        other : QuantumArray | ArrayLike
-            The array to be compared to.
-            Must have the same shape as the original QuantumArray.
+        other : QuantumArray | QuantumVariable | ArrayLike
+            The array or scalar to be compared to.
+                If an array is provided, it must have the same shape as the original QuantumArray.
+                If a scalar is provided, it will be compared with each element of the QuantumArray.
 
         Returns
         -------
@@ -1542,15 +1564,18 @@ class QuantumArray:
             other, lambda a, b: a > b, QuantumBool()
         )
 
-    def __ge__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
+    def __ge__(
+        self, other: QuantumArray | QuantumVariable | "ArrayLike"
+    ) -> QuantumArray:
         """
         Performs element-wise ``>=`` comparison.
 
         Parameters
         ----------
-        other : QuantumArray | ArrayLike
-            The array to be compared to.
-            Must have the same shape as the original QuantumArray.
+        other : QuantumArray | QuantumVariable | ArrayLike
+            The array or scalar to be compared to.
+                If an array is provided, it must have the same shape as the original QuantumArray.
+                If a scalar is provided, it will be compared with each element of the QuantumArray.
 
         Returns
         -------
@@ -1590,15 +1615,18 @@ class QuantumArray:
             other, lambda a, b: a >= b, QuantumBool()
         )
 
-    def __lt__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
+    def __lt__(
+        self, other: QuantumArray | QuantumVariable | "ArrayLike"
+    ) -> QuantumArray:
         """
         Performs element-wise ``<`` comparison.
 
         Parameters
         ----------
-        other : QuantumArray | ArrayLike
-            The array to be compared to.
-            Must have the same shape as the original QuantumArray.
+        other : QuantumArray | QuantumVariable | ArrayLike
+            The array or scalar to be compared to.
+                If an array is provided, it must have the same shape as the original QuantumArray.
+                If a scalar is provided, it will be compared with each element of the QuantumArray.
 
         Returns
         -------
@@ -1638,15 +1666,18 @@ class QuantumArray:
             other, lambda a, b: a < b, QuantumBool()
         )
 
-    def __le__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
+    def __le__(
+        self, other: QuantumArray | QuantumVariable | "ArrayLike"
+    ) -> QuantumArray:
         """
         Performs element-wise ``<=`` comparison.
 
         Parameters
         ----------
-        other : QuantumArray | ArrayLike
-            The array to be compared to.
-            Must have the same shape as the original QuantumArray.
+        other : QuantumArray | QuantumVariable | ArrayLike
+            The array or scalar to be compared to.
+                If an array is provided, it must have the same shape as the original QuantumArray.
+                If a scalar is provided, it will be compared with each element of the QuantumArray.
 
         Returns
         -------
@@ -1686,15 +1717,15 @@ class QuantumArray:
             other, lambda a, b: a <= b, QuantumBool()
         )
 
-    def __and__(self, other: QuantumArray) -> QuantumArray:
+    def __and__(self, other: QuantumArray | QuantumVariable) -> QuantumArray:
         """
         Performs element-wise ``&`` (bitwise AND) operation.
         This operation is only defined for QuantumArrays of QuantumBools.
 
         Parameters
         ----------
-        other : QuantumArray
-            The QuantumArray to be combined with using bitwise AND.
+        other : QuantumArray | QuantumVariable
+            The QuantumArray or QuantumVariable to be combined with using bitwise AND.
 
         Returns
         -------
@@ -1720,15 +1751,15 @@ class QuantumArray:
             other, lambda a, b: a & b, QuantumBool()
         )
 
-    def __or__(self, other: QuantumArray) -> QuantumArray:
+    def __or__(self, other: QuantumArray | QuantumVariable) -> QuantumArray:
         """
         Performs element-wise ``|`` (bitwise OR) operation.
         This operation is only defined for QuantumArrays of QuantumBools.
 
         Parameters
         ----------
-        other : QuantumArray
-            The QuantumArray to be combined with using bitwise OR.
+        other : QuantumArray | QuantumVariable
+            The QuantumArray or QuantumVariable to be combined with using bitwise OR.
 
         Returns
         -------
@@ -1754,15 +1785,15 @@ class QuantumArray:
             other, lambda a, b: a | b, QuantumBool()
         )
 
-    def __xor__(self, other: QuantumArray) -> QuantumArray:
+    def __xor__(self, other: QuantumArray | QuantumVariable) -> QuantumArray:
         """
         Performs element-wise ``^`` (bitwise XOR) operation.
         This operation is only defined for QuantumArrays of QuantumBools.
 
         Parameters
         ----------
-        other : QuantumArray
-            The QuantumArray to be combined with using bitwise XOR.
+        other : QuantumArray | QuantumVariable
+            The QuantumArray or QuantumVariable to be combined with using bitwise XOR.
 
         Returns
         -------
@@ -1926,14 +1957,16 @@ class QuantumArray:
                 for i in range(self_view.size):
                     fun(self_view[i], other)
 
-    def __iadd__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
+    def __iadd__(
+        self, other: QuantumArray | QuantumVariable | "ArrayLike"
+    ) -> QuantumArray:
         """
         Performs element-wise in-place addition.
         Note that this modifies the original QuantumArray and does not create a new one.
 
         Parameters
         ----------
-        other : QuantumArray | ArrayLike
+        other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be added to the QuantumArray.
                 If an array is provided, it must have the same shape as the original QuantumArray.
                 If a scalar is provided, it will be added to each element of the QuantumArray.
@@ -1942,12 +1975,13 @@ class QuantumArray:
         -------
         QuantumArray
             The modified QuantumArray containing the result of the in-place addition.
+                The ``qtype`` of the output will be the same as the ``qtype`` of self.
 
         Examples
         --------
 
         Adding a scalar to a QuantumArray of QuantumFloats,
-        and adding two QuantumArrays of QuantumFloats element-wise:
+        and adding two QuantumArrays:
 
         >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
@@ -1968,14 +2002,16 @@ class QuantumArray:
         self._element_wise_in_place_call(other, f)
         return self
 
-    def __isub__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
+    def __isub__(
+        self, other: QuantumArray | QuantumVariable | "ArrayLike"
+    ) -> QuantumArray:
         """
         Performs element-wise in-place subtraction.
         Note that this modifies the original QuantumArray and does not create a new one.
 
         Parameters
         ----------
-        other : QuantumArray | ArrayLike
+        other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be subtracted from the QuantumArray.
                 If an array is provided, it must have the same shape as the original QuantumArray.
                 If a scalar is provided, it will be subtracted from each element of the QuantumArray.
@@ -1984,12 +2020,13 @@ class QuantumArray:
         -------
         QuantumArray
             The modified QuantumArray containing the result of the in-place subtraction.
+                The ``qtype`` of the output will be the same as the ``qtype`` of self.
 
         Examples
         --------
 
         Subtracting a scalar from a QuantumArray of QuantumFloats,
-        and subtracting two QuantumArrays of QuantumFloats element-wise:
+        and subtracting two QuantumArrays:
 
         >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
@@ -2026,12 +2063,13 @@ class QuantumArray:
         -------
         QuantumArray
             The modified QuantumArray containing the result of the in-place multiplication.
+                The ``qtype`` of the output will be the same as the ``qtype`` of self.
 
         Examples
         --------
 
         Multiplying a scalar with a QuantumArray of QuantumFloats,
-        and scaling a QuantumArray of QuantumFloats by a numpy array:
+        and scaling a QuantumArray by a numpy array:
 
         >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
