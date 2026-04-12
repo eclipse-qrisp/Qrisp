@@ -830,9 +830,9 @@ class QuantumArray:
         ----------
         other : QuantumArray of QuantumFloat or QuantumModulus | ArrayLike
             The array to be multiplied.
-                Can be either a QuantumArray or a classical array (e.g. numpy array) of compatible shape.
-                If self is a QuantumArray of QuantumModulus, other must be a classical array of integers.
-                If self is a QuantumArray of QuantumFloat, other can be either a QuantumArray of QuantumFloat or a classical array of integers or floats.
+            Can be either a QuantumArray or a classical array (e.g. numpy array) of compatible shape.
+            If self is a QuantumArray of QuantumModulus, other must be a classical array of integers.
+            If self is a QuantumArray of QuantumFloat, other can be either a QuantumArray of QuantumFloat or a classical array of integers or floats.
 
         Returns
         -------
@@ -1217,15 +1217,15 @@ class QuantumArray:
         ----------
         other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be added.
-                If an array is provided, it must have the same shape as the original QuantumArray.
-                If a scalar is provided, it will be added to each element of the QuantumArray.
+            If an array is provided, it must have the same shape as the original QuantumArray.
+            If a scalar is provided, it will be added to each element of the QuantumArray.
 
         Returns
         -------
         QuantumArray
             A new QuantumArray containing the element-wise sum.
-                If a QuantumArray or QuantumVariable is provided, the ``qtype`` of the output will be determined by the qtypes of the two input objects to prevent overflow.
-                If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
+            If a QuantumArray or QuantumVariable is provided, the ``qtype`` of the output will be determined by the qtypes of the two input objects to prevent overflow.
+            If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
 
         Examples
         --------
@@ -1288,15 +1288,15 @@ class QuantumArray:
         ----------
         other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be subtracted.
-                If an array is provided, it must have the same shape as the original QuantumArray.
-                If a scalar is provided, it will be subtracted from each element of the QuantumArray.
+            If an array is provided, it must have the same shape as the original QuantumArray.
+            If a scalar is provided, it will be subtracted from each element of the QuantumArray.
 
         Returns
         -------
         QuantumArray
             A new QuantumArray containing the element-wise difference.
-                If a QuantumArray or QuantumVariable is provided, the ``qtype`` of the output will be determined by the qtypes of the two input objects to prevent overflow.
-                If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
+            If a QuantumArray or QuantumVariable is provided, the ``qtype`` of the output will be determined by the qtypes of the two input objects to prevent overflow.
+            If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
 
         Examples
         --------
@@ -1360,15 +1360,15 @@ class QuantumArray:
         ----------
         other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be multiplied.
-                If an array is provided, it must have the same shape as the original QuantumArray.
-                If a scalar is provided, it will be multiplied with each element of the QuantumArray.
+            If an array is provided, it must have the same shape as the original QuantumArray.
+            If a scalar is provided, it will be multiplied with each element of the QuantumArray.
 
         Returns
         -------
         QuantumArray
             A new QuantumArray containing the element-wise product.
-                If a QuantumArray or QuantumVariable is provided, the ``qtype`` of the output will be determined by the qtypes of the two input objects to prevent overflow.
-                If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
+            If a QuantumArray or QuantumVariable is provided, the ``qtype`` of the output will be determined by the qtypes of the two input objects to prevent overflow.
+            If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
 
         Examples
         --------
@@ -1421,8 +1421,8 @@ class QuantumArray:
         ----------
         other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be compared to.
-                If an array is provided, it must have the same shape as the original QuantumArray.
-                If a scalar is provided, it will be compared with each element of the QuantumArray.
+            If an array is provided, it must have the same shape as the original QuantumArray.
+            If a scalar is provided, it will be compared with each element of the QuantumArray.
 
         Returns
         -------
@@ -1472,8 +1472,8 @@ class QuantumArray:
         ----------
         other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be compared to.
-                If an array is provided, it must have the same shape as the original QuantumArray.
-                If a scalar is provided, it will be compared with each element of the QuantumArray.
+            If an array is provided, it must have the same shape as the original QuantumArray.
+            If a scalar is provided, it will be compared with each element of the QuantumArray.
 
         Returns
         -------
@@ -1523,8 +1523,8 @@ class QuantumArray:
         ----------
         other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be compared to.
-                If an array is provided, it must have the same shape as the original QuantumArray.
-                If a scalar is provided, it will be compared with each element of the QuantumArray.
+            If an array is provided, it must have the same shape as the original QuantumArray.
+            If a scalar is provided, it will be compared with each element of the QuantumArray.
 
         Returns
         -------
@@ -1574,8 +1574,8 @@ class QuantumArray:
         ----------
         other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be compared to.
-                If an array is provided, it must have the same shape as the original QuantumArray.
-                If a scalar is provided, it will be compared with each element of the QuantumArray.
+            If an array is provided, it must have the same shape as the original QuantumArray.
+            If a scalar is provided, it will be compared with each element of the QuantumArray.
 
         Returns
         -------
@@ -1625,8 +1625,8 @@ class QuantumArray:
         ----------
         other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be compared to.
-                If an array is provided, it must have the same shape as the original QuantumArray.
-                If a scalar is provided, it will be compared with each element of the QuantumArray.
+            If an array is provided, it must have the same shape as the original QuantumArray.
+            If a scalar is provided, it will be compared with each element of the QuantumArray.
 
         Returns
         -------
@@ -1676,8 +1676,8 @@ class QuantumArray:
         ----------
         other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be compared to.
-                If an array is provided, it must have the same shape as the original QuantumArray.
-                If a scalar is provided, it will be compared with each element of the QuantumArray.
+            If an array is provided, it must have the same shape as the original QuantumArray.
+            If a scalar is provided, it will be compared with each element of the QuantumArray.
 
         Returns
         -------
@@ -1968,14 +1968,14 @@ class QuantumArray:
         ----------
         other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be added to the QuantumArray.
-                If an array is provided, it must have the same shape as the original QuantumArray.
-                If a scalar is provided, it will be added to each element of the QuantumArray.
+            If an array is provided, it must have the same shape as the original QuantumArray.
+            If a scalar is provided, it will be added to each element of the QuantumArray.
 
         Returns
         -------
         QuantumArray
             The modified QuantumArray containing the result of the in-place addition.
-                The ``qtype`` of the output will be the same as the ``qtype`` of self.
+            The ``qtype`` of the output will be the same as the ``qtype`` of self.
 
         Examples
         --------
@@ -2013,14 +2013,14 @@ class QuantumArray:
         ----------
         other : QuantumArray | QuantumVariable | ArrayLike
             The array or scalar to be subtracted from the QuantumArray.
-                If an array is provided, it must have the same shape as the original QuantumArray.
-                If a scalar is provided, it will be subtracted from each element of the QuantumArray.
+            If an array is provided, it must have the same shape as the original QuantumArray.
+            If a scalar is provided, it will be subtracted from each element of the QuantumArray.
 
         Returns
         -------
         QuantumArray
             The modified QuantumArray containing the result of the in-place subtraction.
-                The ``qtype`` of the output will be the same as the ``qtype`` of self.
+            The ``qtype`` of the output will be the same as the ``qtype`` of self.
 
         Examples
         --------
@@ -2056,14 +2056,14 @@ class QuantumArray:
         ----------
         other : ArrayLike
             The array or scalar to be multiplied with the QuantumArray.
-                If an array is provided, it must have the same shape as the original QuantumArray.
-                If a scalar is provided, it will be multiplied with each element of the QuantumArray.
+            If an array is provided, it must have the same shape as the original QuantumArray.
+            If a scalar is provided, it will be multiplied with each element of the QuantumArray.
 
         Returns
         -------
         QuantumArray
             The modified QuantumArray containing the result of the in-place multiplication.
-                The ``qtype`` of the output will be the same as the ``qtype`` of self.
+            The ``qtype`` of the output will be the same as the ``qtype`` of self.
 
         Examples
         --------
