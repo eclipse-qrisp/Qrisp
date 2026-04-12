@@ -254,7 +254,7 @@ class QuantumArray:
 
     def __getitem__(self, key):
 
-        from qrisp.environments import conjugate
+        from qrisp.environments.conjugation_environment import conjugate
 
         # These cases represent the quantum indexing features
         if isinstance(key, QuantumVariable):
@@ -603,7 +603,7 @@ class QuantumArray:
                 self.qv_list[i].delete(verify=verify)
 
     def measure(self):
-        from qrisp import measure
+        from qrisp.core.gate_application_functions import measure
 
         dtype = self.qtype.jdecoder(jnp.zeros(1)[0]).dtype
 
@@ -916,19 +916,24 @@ class QuantumArray:
                 )
 
             if isinstance(other, QuantumArray):
-                from qrisp.alg_primitives.arithmetic import q_matmul
+                from qrisp.alg_primitives.arithmetic.matrix_multiplication import (
+                    q_matmul,
+                )
 
                 return q_matmul(self, other)
 
             elif isinstance(other, np.ndarray):
-                from qrisp.alg_primitives.arithmetic import semi_classic_matmul
+                from qrisp.alg_primitives.arithmetic.matrix_multiplication import (
+                    semi_classic_matmul,
+                )
 
                 return semi_classic_matmul(self, other)
 
         return NotImplemented
 
     def __rmatmul__(self, other):
-        from qrisp import QuantumFloat, QuantumModulus
+        from qrisp.qtypes.quantum_float import QuantumFloat
+        from qrisp.qtypes.quantum_modulus import QuantumModulus
 
         if isinstance(self.qtype, QuantumFloat):
             return (self.transpose() @ other.transpose()).transpose()
@@ -972,7 +977,7 @@ class QuantumArray:
 
         """
 
-        from qrisp.qtypes import QuantumFloat
+        from qrisp.qtypes.quantum_float import QuantumFloat
 
         # How can we make this more secure?
         if check_for_tracing_mode():
@@ -1434,7 +1439,7 @@ class QuantumArray:
         # {OutcomeArray([[True, False], [True, False]], dtype=object): 1.0}
 
         """
-        from qrisp.qtypes import QuantumBool
+        from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other)
         return self._element_wise_out_of_place_injection(
@@ -1482,7 +1487,7 @@ class QuantumArray:
         # {OutcomeArray([[False, True], [False, True]], dtype=object): 1.0}
 
         """
-        from qrisp.qtypes import QuantumBool
+        from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other)
         return self._element_wise_out_of_place_injection(
@@ -1530,7 +1535,7 @@ class QuantumArray:
         # {OutcomeArray([[False, False], [False, True]], dtype=object): 1.0}
 
         """
-        from qrisp.qtypes import QuantumBool
+        from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other)
         return self._element_wise_out_of_place_injection(
@@ -1578,7 +1583,7 @@ class QuantumArray:
         # {OutcomeArray([[True, False], [True, True]], dtype=object): 1.0}
 
         """
-        from qrisp.qtypes import QuantumBool
+        from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other)
         return self._element_wise_out_of_place_injection(
@@ -1626,7 +1631,7 @@ class QuantumArray:
         # {OutcomeArray([[False, True], [False, False]], dtype=object): 1.0}
 
         """
-        from qrisp.qtypes import QuantumBool
+        from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other)
         return self._element_wise_out_of_place_injection(
@@ -1674,7 +1679,7 @@ class QuantumArray:
         # {OutcomeArray([[True, True], [True, False]], dtype=object): 1.0}
 
         """
-        from qrisp.qtypes import QuantumBool
+        from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other)
         return self._element_wise_out_of_place_injection(
@@ -1708,7 +1713,7 @@ class QuantumArray:
         >>> print(r_array)
         # {OutcomeArray([[True, False], [False, False]], dtype=object): 1.0}
         """
-        from qrisp.qtypes import QuantumBool
+        from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other, mode="bool")
         return self._element_wise_out_of_place_injection(
@@ -1742,7 +1747,7 @@ class QuantumArray:
         >>> print(r_array)
         # {OutcomeArray([[True, True], [False, True]], dtype=object): 1.0}
         """
-        from qrisp.qtypes import QuantumBool
+        from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other, mode="bool")
         return self._element_wise_out_of_place_injection(
@@ -1776,7 +1781,7 @@ class QuantumArray:
         >>> print(r_array)
         # {OutcomeArray([[False, True], [False, True]], dtype=object): 1.0}
         """
-        from qrisp.qtypes import QuantumBool
+        from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other, mode="bool")
         return self._element_wise_out_of_place_injection(
@@ -1815,7 +1820,7 @@ class QuantumArray:
         >>> c_array[:] = np.array([[True, False], [True, True]])
         >>> print(c_array.all(axis=0))  # Output: [True, False]
         """
-        from qrisp.qtypes import QuantumBool
+        from qrisp.qtypes.quantum_bool import QuantumBool
 
         if not isinstance(self.qtype, QuantumBool):
             raise TypeError(
@@ -1864,7 +1869,7 @@ class QuantumArray:
         >>> c_array[:] = np.array([[True, False], [False, False]])
         >>> print(c_array.any(axis=0))  # Output: [True, False]
         """
-        from qrisp.qtypes import QuantumBool
+        from qrisp.qtypes.quantum_bool import QuantumBool
 
         if not isinstance(self.qtype, QuantumBool):
             raise TypeError(
@@ -1873,7 +1878,7 @@ class QuantumArray:
 
         def _any(elements):
             from qrisp.core.gate_application_functions import mcx, x
-            from qrisp.environments import conjugate
+            from qrisp.environments.conjugation_environment import conjugate
 
             res = QuantumBool()
             with conjugate(x)(elements):
@@ -1890,7 +1895,7 @@ class QuantumArray:
         self_view = self.flatten()
         if isinstance(other, QuantumArray):
             if self.shape != other.shape:
-                raise Exception(
+                raise ValueError(
                     f"Tried to perform element-wise function call with missmatching array shapes ({self.shape} vs {other.shape})"
                 )
             other_view = other.flatten()
@@ -1902,7 +1907,7 @@ class QuantumArray:
                     fun(self_view[i], other_view[i])
         elif isinstance(other, (np.ndarray, jnp.ndarray)):
             if self.shape != other.shape:
-                raise Exception(
+                raise ValueError(
                     f"Tried to perform element-wise function call with missmatching array shapes ({self.shape} vs {other.shape})"
                 )
             flattened_other = other.flatten()
@@ -2037,7 +2042,7 @@ class QuantumArray:
         >>> qa *= np.array([[0.5, 1.5], [2.5, 3.5]])
         >>> print(qa)  # Output: [[1.0, 6.0], [15.0, 28.0]]
         """
-        from qrisp.alg_primitives.arithmetic import inpl_mult
+        from qrisp.alg_primitives.arithmetic.SBP_arithmetic import inpl_mult
         from qrisp.qtypes.quantum_modulus import QuantumModulus
 
         self._validate_arithmetic(other)
