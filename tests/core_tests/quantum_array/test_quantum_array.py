@@ -16,6 +16,8 @@
 ********************************************************************************
 """
 
+import numpy as np
+from numpy.testing import assert_allclose
 import operator
 import pytest
 from qrisp import *
@@ -145,35 +147,166 @@ ops = [
     operator.gt,  operator.ge,                 # >, >=
     operator.lt,  operator.le                  # <, <=
 ]
+rhs_types = ["quantum", "classical"]
+instances = [
+    pytest.param(
+        (np.array([[1, 2], [2, 1]]), np.array([[1, 1], [1, 1]]), QuantumFloat(3)), 
+        id="QuantumFloat"
+    ),
+    pytest.param(
+        (np.array([[1, 0.5], [0.5, 1]]), np.array([[1, 1], [1, 1]]), QuantumFloat(4, -1, signed=True)), 
+        id="Signed QuantumFloat"
+    ),
+    pytest.param(
+        (np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 3]]), QuantumModulus(7)),
+        id="QuantumModulus"
+    )
+]
 
 @pytest.mark.parametrize("op", ops)
-def test_quantum_array_element_wise_ops(op):
+@pytest.mark.parametrize("rhs_type", rhs_types)
+@pytest.mark.parametrize("instance", instances)
+def test_quantum_array_element_wise_ops(op, rhs_type, instance):
+    """Test element-wise operations on QuantumArrays of QuantumFloat/QuantumModulus against their classical counterparts."""
 
-    a_c = np.array([[1, 0], [0, 1]])
-    b_c = np.array([[0, 1], [1, 0]])
+    a_c_ref, b_c_ref, qtype = instance
+    a_c = a_c_ref.copy()
+    b_c = b_c_ref.copy()
     
     # Initialize QuantumArrays
-    qtype = QuantumFloat(3)
+    a_array = QuantumArray(qtype, shape=(2,2))
+    a_array[:] = a_c
+
+    if rhs_type == "quantum":
+        b_array = QuantumArray(qtype, shape=(2, 2))
+        b_array[:] = b_c
+        rhs_operand = b_array
+    else:
+        rhs_operand = b_c
+    
+    # Execute quantum operation
+    r_array = op(a_array, rhs_operand)
+    
+    # Calculate classical reference
+    expected = op(a_c, b_c)
+    if isinstance(qtype, QuantumModulus):
+        expected = expected % qtype.modulus
+    
+    # Validate measurements
+    measured = r_array.most_likely()
+    assert np.allclose(measured, expected), f"Failed on operator {op.__name__}. Expected {expected}, got {measured}"
+
+
+bool_ops = [
+    operator.and_, operator.or_, operator.xor  # &, |, ^
+]
+
+@pytest.mark.parametrize("op", bool_ops)
+def test_quantum_array_element_wise_bool_ops(op):
+    """Test element-wise boolean operations on QuantumArrays of QuantumBool against their classical counterparts."""
+
+    a_c = np.array([[True, False], [False, True]])
+    b_c = np.array([[True, True], [False, False]])
+
+    # Initialize QuantumArrays
+    qtype = QuantumBool()
     a_array = QuantumArray(qtype, shape=(2,2))
     b_array = QuantumArray(qtype, shape=(2,2))
-    
+
     a_array[:] = a_c
     b_array[:] = b_c
-    
+
     # Execute quantum operation
     r_array = op(a_array, b_array)
     
     # Calculate classical reference
-    expected_c = op(a_c, b_c)
+    expected = op(a_c, b_c)
     
     # Validate measurements
-    results = r_array.get_measurement()
+    measured = r_array.most_likely()
+    assert np.allclose(measured, expected), f"Failed on operator {op.__name__}. Expected {expected}, got {measured}"
+
+
+ops = [
+    operator.iadd, operator.isub, operator.imul,  # +=, -=, *=
+]
+rhs_types = ["quantum", "classical"]
+instances = [
+    pytest.param(
+        (np.array([[1.5, 2.0], [3.0, 4.0]]), np.array([[4.0, 3.0], [2.0, 1.0]]), QuantumFloat(8, -1, signed=True)), 
+        id="Signed QuantumFloat"
+    ),
+    pytest.param(
+        (np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 1]]), QuantumModulus(7)),
+        id="QuantumModulus"
+    )
+]
+
+@pytest.mark.parametrize("op", ops)
+@pytest.mark.parametrize("rhs_type", rhs_types)
+@pytest.mark.parametrize("instance", instances)
+def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
+    """Test element-wise in-place operations on QuantumArrays of QuantumFloat/QuantumModulus against classical counterparts."""
     
-    assert len(results) > 0, "No measurement results found"
+    if op == operator.imul and rhs_type == "quantum":
+        pytest.skip("Quantum-quantum inplace multiplication is unsupported.")
+
+    a_c_ref, b_c_ref, qtype = instance
+    a_c = a_c_ref.copy()
+    b_c = b_c_ref.copy()
+
+    # Initialize QuantumArrays
+    a_array = QuantumArray(qtype, shape=(2, 2))
+    a_array[:] = a_c
     
-    for k in results.keys():
-        # k is an OutcomeArray; np.array_equal handles both floats and booleans
-        assert np.array_equal(k, expected_c), f"Failed on operator {op.__name__}. Expected {expected_c}, got {k}"
+    if rhs_type == "quantum":
+        b_array = QuantumArray(qtype, shape=(2, 2))
+        b_array[:] = b_c
+        rhs_operand = b_array
+    else:
+        rhs_operand = b_c
+
+    # Execute quantum operation
+    op(a_array, rhs_operand)
+
+    # Calculate classical reference
+    op(a_c, b_c)
+    if isinstance(qtype, QuantumModulus):
+        a_c = a_c % qtype.modulus
+
+    # Validate measurements
+    measured = a_array.most_likely()
+    assert np.allclose(measured, a_c), f"Failed on operator {op.__name__} with {rhs_type} RHS. Expected {a_c}, got {measured}"
+
+
+@pytest.mark.parametrize(" a_c, axis" , [
+    pytest.param(np.array([[True, True], [True, True]]), 0, id="All True, axis 0"),
+    pytest.param(np.array([[True, False], [True, True]]), 0, id="One False, axis 0"),
+    pytest.param(np.array([[True, True], [True, True]]), 1, id="All True, axis 1"),
+    pytest.param(np.array([[True, False], [True, True]]), 1, id="One False, axis 1"),
+])  
+def test_quantum_array_all(a_c, axis):
+    """Test the all() method on QuantumArrays of QuantumBool against their classical counterparts."""
+    q_array = QuantumArray(QuantumBool(), shape=(2,2))
+    q_array[:] = a_c
+    qbl = q_array.all(axis=axis)
+    measured = qbl.most_likely()
+    assert np.allclose(measured, a_c.all(axis=axis)), f"Expected {a_c.all(axis=axis)}, got {measured}" 
+
+
+@pytest.mark.parametrize(" a_c, axis" , [
+    pytest.param(np.array([[True, True], [True, True]]), 0, id="All True, axis 0"),
+    pytest.param(np.array([[True, False], [True, True]]), 0, id="One False, axis 0"),
+    pytest.param(np.array([[True, True], [True, True]]), 1, id="All True, axis 1"),
+    pytest.param(np.array([[True, False], [True, True]]), 1, id="One False, axis 1"),
+])
+def test_quantum_array_any(a_c, axis):
+    """Test the any() method on QuantumArrays of QuantumBool against their classical counterparts."""
+    q_array = QuantumArray(QuantumBool(), shape=(2,2))
+    q_array[:] = a_c
+    qbl = q_array.any(axis=axis)
+    measured = qbl.most_likely()
+    assert np.allclose(measured, a_c.any(axis=axis)), f"Expected {a_c.any(axis=axis)}, got {measured}"
 
 
 def test_quantum_array_element_eq():

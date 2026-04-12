@@ -518,7 +518,7 @@ class QuantumFloat(QuantumVariable):
             else:
                 return sbp_add(self, other)
 
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float, Tracer)):
             res = self.duplicate()
             cx(self, res)
             res += other
@@ -542,7 +542,7 @@ class QuantumFloat(QuantumVariable):
             else:
                 return sbp_sub(self, other)
 
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float, Tracer)):
             res = self.duplicate()
             cx(self, res)
             res -= other
@@ -638,7 +638,7 @@ class QuantumFloat(QuantumVariable):
                     other[starting_digit - other.exponent :],
                     self[starting_digit - self.exponent :],
                 )
-            elif isinstance(other, (int, float)) or (
+            elif isinstance(other, (int, float, np.integer, np.floating)) or (
                 isinstance(other, Tracer) and isinstance(other, Array)
             ):
                 gidney_adder(self.encoder(other), self)
@@ -698,7 +698,7 @@ class QuantumFloat(QuantumVariable):
 
             polynomial_encoder(input_qf_list, self, poly)
 
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float, np.integer, np.floating)):
             if not int(other / 2**self.exponent) == other / 2**self.exponent:
                 raise Exception(
                     "Tried to perform in-place subtraction with invalid number. "
