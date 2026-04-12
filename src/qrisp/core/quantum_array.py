@@ -1146,22 +1146,28 @@ class QuantumArray:
         # For scalar/QuantumVariable cases, no additional validation needed
         # (the underlying QuantumFloat operations will handle type checking)
 
-    def __add__(self, other: QuantumArray) -> QuantumArray:
+    def __add__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise addition.
 
         Parameters
         ----------
-        other : QuantumArray
-            The QuantumArray to be added.
-
+        other : QuantumArray | ArrayLike
+            The array or scalar to be added.
+                If an array is provided, it must have the same shape as the original QuantumArray.
+                If a scalar is provided, it will be added to each element of the QuantumArray.
+        
         Returns
         -------
         QuantumArray
             A new QuantumArray containing the element-wise sum.
+                If a QuantumArray is provided, the ``qtype`` of the output will be determined by the qtypes of the two arrays to prevent overflow. 
+                If a scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
 
         Examples
         --------
+
+        Adding two QuantumArrays of QuantumFloats element-wise:
 
         >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
@@ -1170,6 +1176,26 @@ class QuantumArray:
         >>> a_array[:] = np.eye(2)
         >>> b_array[:] = np.eye(2)
         >>> r_array = a_array + b_array
+        >>> print(r_array)
+        # {OutcomeArray([[2, 0], [0, 2]]): 1.0}
+
+        Adding a scalar to a QuantumArray of QuantumFloats:
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.eye(2)
+        >>> r_array = a_array + 2
+        >>> print(r_array)
+        # {OutcomeArray([[3, 2], [2, 3]]): 1.0}
+
+        Adding a numpy array to a QuantumArray of QuantumFloats:
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.eye(2)
+        >>> r_array = a_array + np.eye(2)
         >>> print(r_array)
         # {OutcomeArray([[2, 0], [0, 2]]): 1.0}
 
@@ -1187,22 +1213,28 @@ class QuantumArray:
             other, lambda a, b: a + b, out_type
         )
 
-    def __sub__(self, other: QuantumArray) -> QuantumArray:
+    def __sub__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise subtraction.
 
         Parameters
         ----------
-        other : QuantumArray
-            The QuantumArray to be subtracted.
+        other : QuantumArray | ArrayLike
+            The array or scalar to be subtracted.
+                If an array is provided, it must have the same shape as the original QuantumArray.
+                If a scalar is provided, it will be subtracted from each element of the QuantumArray.
 
         Returns
         -------
         QuantumArray
             A new QuantumArray containing the element-wise difference.
+                If a QuantumArray is provided, the ``qtype`` of the output will be determined by the qtypes of the two arrays to prevent overflow. 
+                If a scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
 
         Examples
         --------
+
+        Subtracting two QuantumArrays of QuantumFloats element-wise:
 
         >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
@@ -1211,6 +1243,27 @@ class QuantumArray:
         >>> a_array[:] = np.eye(2)
         >>> b_array[:] = np.eye(2)
         >>> r_array = a_array - b_array
+        >>> print(r_array)
+        # {OutcomeArray([[0, 0], [0, 0]]): 1.0}
+
+        Subtracting a scalar from a QuantumArray of QuantumFloats:
+        Overflow occurs here, which is why the output is 3 instead of -1.
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.eye(2)
+        >>> r_array = a_array - 2
+        >>> print(r_array)
+        # {OutcomeArray([[3, 2], [2, 3]]): 1.0}
+
+        Subtracting a numpy array from a QuantumArray of QuantumFloats:
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.eye(2)
+        >>> r_array = a_array - np.eye(2)
         >>> print(r_array)
         # {OutcomeArray([[0, 0], [0, 0]]): 1.0}
 
@@ -1228,22 +1281,28 @@ class QuantumArray:
             other, lambda a, b: a - b, out_type
         )
 
-    def __mul__(self, other: QuantumArray) -> QuantumArray:
+    def __mul__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise multiplication.
 
         Parameters
         ----------
-        other : QuantumArray
-            The QuantumArray to be multiplied.
+        other : QuantumArray | ArrayLike
+            The array or scalar to be multiplied.
+                If an array is provided, it must have the same shape as the original QuantumArray.
+                If a scalar is provided, it will be multiplied with each element of the QuantumArray.
 
         Returns
         -------
         QuantumArray
             A new QuantumArray containing the element-wise product.
+                If a QuantumArray is provided, the ``qtype`` of the output will be determined by the qtypes of the two arrays to prevent overflow. 
+                If a scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
 
         Examples
         --------
+
+        Multiplying two QuantumArrays of QuantumFloats element-wise:
 
         >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
@@ -1254,6 +1313,16 @@ class QuantumArray:
         >>> r_array = a_array * b_array
         >>> print(r_array)
         # {OutcomeArray([[1, 0], [0, 1]]): 1.0}
+
+        Multiplying a scalar with a QuantumArray of QuantumFloats:
+
+        >>> import numpy as np
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
+        >>> a_array[:] = np.eye(2)
+        >>> r_array = a_array * 2
+        >>> print(r_array)
+        # {OutcomeArray([[2, 0], [0, 2]]): 1.0}
 
         """
         from qrisp.qtypes.quantum_float import create_output_qf
@@ -1791,18 +1860,17 @@ class QuantumArray:
                 for i in range(self_view.size):
                     fun(self_view[i], other)
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise in-place addition.
-        Note that this modifies the original QuantumArray and does not return a new one.
+        Note that this modifies the original QuantumArray and does not create a new one.
         
         Parameters
         ----------
-        other : QuantumArray, numpy array, or scalar
-            The value to be added to each element of the QuantumArray. 
-            If a QuantumArray is provided, it must have the same shape as the original QuantumArray. 
-            If a numpy array is provided, it must also have the same shape. 
-            If a scalar is provided, it will be added to each element of the QuantumArray.
+        other : QuantumArray | ArrayLike
+            The array or scalar to be added to the QuantumArray. 
+                If an array is provided, it must have the same shape as the original QuantumArray.
+                If a scalar is provided, it will be added to each element of the QuantumArray.
 
         Returns
         -------
@@ -1811,6 +1879,10 @@ class QuantumArray:
 
         Examples
         --------
+
+        Adding a scalar to a QuantumArray of QuantumFloats, 
+        and adding two QuantumArrays of QuantumFloats element-wise:
+
         >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
         >>> qa = QuantumArray(QuantumFloat(8,-1), shape=(2,2))
@@ -1833,15 +1905,14 @@ class QuantumArray:
     def __isub__(self, other):
         """
         Performs element-wise in-place subtraction.
-        Note that this modifies the original QuantumArray and does not return a new one.
+        Note that this modifies the original QuantumArray and does not create a new one.
 
         Parameters
         ----------
-        other : QuantumArray, numpy array, or scalar
-            The value to be subtracted from each element of the QuantumArray. 
-            If a QuantumArray is provided, it must have the same shape as the original QuantumArray. 
-            If a numpy array is provided, it must also have the same shape. 
-            If a scalar is provided, it will be subtracted from each element of the QuantumArray.
+        other : QuantumArray | ArrayLike
+            The array or scalar to be subtracted from the QuantumArray. 
+                If an array is provided, it must have the same shape as the original QuantumArray.
+                If a scalar is provided, it will be subtracted from each element of the QuantumArray.
 
         Returns
         -------
@@ -1850,6 +1921,10 @@ class QuantumArray:
 
         Examples
         --------
+
+        Subtracting a scalar from a QuantumArray of QuantumFloats,
+        and subtracting two QuantumArrays of QuantumFloats element-wise:
+
         >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
         >>> qa = QuantumArray(QuantumFloat(8,-1,signed=True), shape=(2,2))
@@ -1869,25 +1944,29 @@ class QuantumArray:
         self._element_wise_in_place_call(other, f)
         return self
 
-    def __imul__(self, other):
+    def __imul__(self, other: "ArrayLike") -> QuantumArray:
         """
         Performs element-wise in-place multiplication.
-        Note that this modifies the original QuantumArray and does not return a new one.
+        Note that this modifies the original QuantumArray and does not create a new one.
 
         Parameters
         ----------
-        other : numpy array, or scalar
-            The value to be multiplied with each element of the QuantumArray. 
-            If a numpy array is provided, it must have the same shape as the original QuantumArray. 
-            If a scalar is provided, it will be multiplied with each element of the QuantumArray.
+        other : ArrayLike
+            The array or scalar to be multiplied with the QuantumArray. 
+                If an array is provided, it must have the same shape as the original QuantumArray. 
+                If a scalar is provided, it will be multiplied with each element of the QuantumArray.
 
         Returns
         -------
         QuantumArray
-            The modified QuantumArray.
+            The modified QuantumArray
 
         Examples
         --------
+
+        Multiplying a scalar with a QuantumArray of QuantumFloats,
+        and scaling a QuantumArray of QuantumFloats by a numpy array:
+
         >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
         >>> qa = QuantumArray(QuantumFloat(8,-1), shape=(2,2))
