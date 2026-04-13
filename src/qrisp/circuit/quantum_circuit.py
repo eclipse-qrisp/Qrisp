@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     # TODO: These should be moved into a separate module (which does not exist yet)
     QubitLike: TypeAlias = Qubit | int | Sequence[Qubit | int]
     ClbitLike: TypeAlias = Clbit | int | Sequence[Clbit | int]
+    Param: TypeAlias = float | sympy.Expr
 
 TO_GATE_COUNTER = np.zeros(1)
 
@@ -2479,257 +2480,257 @@ class QuantumCircuit:
 
         return ParityHandle(self.data[-1])
 
-    def cx(self, qubits_0, qubits_1):
+    def cx(self, qubits_0: QubitLike, qubits_1: QubitLike) -> None:
         """
         Instruct a CX-gate.
 
         Parameters
         ----------
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to control on.
-        qubits_1 : Qubit
+        qubits_1 : QubitLike
             The target Qubit.
 
         """
         self.append(ops.CXGate(), [qubits_0, qubits_1])
 
-    def cy(self, qubits_0, qubits_1):
+    def cy(self, qubits_0: QubitLike, qubits_1: QubitLike) -> None:
         """
         Instruct a CY-gate.
 
         Parameters
         ----------
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to control on.
-        qubits_1 : Qubit
+        qubits_1 : QubitLike
             The target Qubit.
 
         """
         self.append(ops.CYGate(), [qubits_0, qubits_1])
 
-    def cz(self, qubits_0, qubits_1):
+    def cz(self, qubits_0: QubitLike, qubits_1: QubitLike) -> None:
         """
         Instruct a CZ-gate.
 
         Parameters
         ----------
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to control on.
-        qubits_1 : Qubit
+        qubits_1 : QubitLike
             The target Qubit.
 
         """
         self.append(ops.CZGate(), [qubits_0, qubits_1])
 
-    def h(self, qubits):
+    def h(self, qubits: QubitLike) -> None:
         """
         Instruct a Hadamard-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
-
         self.append(ops.HGate(), [qubits])
 
-    def x(self, qubits):
+    def x(self, qubits: QubitLike) -> None:
         """
         Instruct a Pauli-X-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.XGate(), [qubits])
 
-    def y(self, qubits):
+    def y(self, qubits: QubitLike) -> None:
         """
         Instruct a Pauli-Y-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.YGate(), [qubits])
 
-    def z(self, qubits):
+    def z(self, qubits: QubitLike) -> None:
         """
         Instruct a Pauli-Z-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.ZGate(), [qubits])
 
-    def rx(self, phi, qubits):
+    def rx(self, phi: Param, qubits: QubitLike) -> None:
         """
         Instruct a parametrized RX-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : Param
             The angle parameter.
-
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         if phi == 0:
             return
         self.append(ops.RXGate(phi), [qubits])
 
-    def ry(self, phi, qubits):
+    def ry(self, phi: Param, qubits: QubitLike) -> None:
         """
         Instruct a parametrized RY-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : Param
             The angle parameter.
-
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
-
         if phi == 0:
             return
         self.append(ops.RYGate(phi), [qubits])
 
-    def rz(self, phi, qubits):
+    def rz(self, phi: Param, qubits: QubitLike) -> None:
         """
         Instruct a parametrized RZ-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : Param
             The angle parameter.
-
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         if phi == 0:
             return
         self.append(ops.RZGate(phi), [qubits])
 
-    def cp(self, phi, qubits_0, qubits_1):
+    def cp(self, phi: Param, qubits_0: QubitLike, qubits_1: QubitLike) -> None:
         """
         Instruct a controlled phase-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : Param
             The angle parameter.
-
-        qubits_0 : Qubit
-            The Qubit to apply the gate on.
-        qubits_1 : Qubit
-            The other Qubit to apply the gate on.
+        qubits_0 : QubitLike
+            The Qubit to control on.
+        qubits_1 : QubitLike
+            The target Qubit.
         """
         if phi == 0:
             return
         self.append(ops.CPGate(phi), [qubits_0, qubits_1])
 
-    def p(self, phi, qubits):
+    def p(self, phi: Param, qubits: QubitLike) -> None:
         """
         Instruct a phase-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : Param
             The angle parameter.
-
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         if phi == 0:
             return
         self.append(ops.PGate(phi), [qubits])
 
-    def rxx(self, phi, qubits_0, qubits_1):
+    def rxx(self, phi: Param, qubits_0: QubitLike, qubits_1: QubitLike) -> None:
         """
         Instruct an RXX-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : Param
             The angle parameter.
-
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to apply the gate on.
-        qubits_1 : Qubit
+        qubits_1 : QubitLike
             The other Qubit to apply the gate on.
         """
-
         if phi == 0:
             return
         self.append(ops.RXXGate(phi), [qubits_0, qubits_1])
 
-    def rzz(self, phi, qubits_0, qubits_1):
+    def rzz(self, phi: Param, qubits_0: QubitLike, qubits_1: QubitLike) -> None:
         """
         Instruct an RZZ-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : Param
             The angle parameter.
-
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to apply the gate on.
-        qubits_1 : Qubit
+        qubits_1 : QubitLike
             The other Qubit to apply the gate on.
         """
-
         if phi == 0:
             return
         self.append(ops.RZZGate(phi), [qubits_0, qubits_1])
 
-    def xxyy(self, phi, beta, qubits_0, qubits_1):
+    def xxyy(
+        self,
+        phi: Param,
+        beta: Param,
+        qubits_0: QubitLike,
+        qubits_1: QubitLike,
+    ) -> None:
         """
         Instruct an XXYY-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
-            The angle parameter.
-        beta : float or sympi.Symbol
-            The other angle parameter
-        qubits_0 : Qubit
+        phi : Param
+            The first angle parameter.
+        beta : Param
+            The second angle parameter.
+        qubits_0 : QubitLike
             The Qubit to apply the gate on.
-        qubits_1 : Qubit
+        qubits_1 : QubitLike
             The other Qubit to apply the gate on.
         """
-
         if phi == 0:
             return
         self.append(ops.XXYYGate(phi, beta), [qubits_0, qubits_1])
 
-    def swap(self, qubits_0, qubits_1):
+    def swap(self, qubits_0: QubitLike, qubits_1: QubitLike) -> None:
         """
         Instruct a SWAP-gate.
 
         Parameters
         ----------
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The qubit to swap.
-        qubits_1 : Qubit
+        qubits_1 : QubitLike
             The other qubit to swap.
 
         """
         self.append(ops.SwapGate(), [qubits_0, qubits_1])
 
-    def mcx(self, control_qubits, target_qubits, method="gray", ctrl_state=-1):
+    def mcx(
+        self,
+        control_qubits: list[QubitLike],
+        target_qubits: QubitLike,
+        method: str = "gray",
+        ctrl_state: str | int = -1,
+    ) -> None:
         """
         Instruct a multi-controlled X-gate.
 
         Parameters
         ----------
-        control_qubits : list
+        control_qubits : list[QubitLike]
             The list of Qubits to control on.
-        target_qubits : Qubit
+        target_qubits : QubitLike
             The target Qubit.
         method : str, optional
             The algorithm to synthesize the mcx gate. The default is "gray".
@@ -2737,147 +2738,158 @@ class QuantumCircuit:
             The state on which the X gate is activated. Can be supplied as a string
             (i.e. "010110...") or an integer. The default is all ones ("11111...").
 
-
         """
         self.append(
             ops.MCXGate(len(control_qubits), ctrl_state=ctrl_state, method=method),
             control_qubits + [target_qubits],
         )
 
-    def ccx(self, ctrl_qubit_0, ctrl_qubit_1, target_qubit, method="gray"):
+    def ccx(
+        self,
+        ctrl_qubit_0: QubitLike,
+        ctrl_qubit_1: QubitLike,
+        target_qubit: QubitLike,
+        method: str = "gray",
+    ) -> None:
         """
         Instruct a Toffoli-gate.
 
         Parameters
         ----------
-        ctrl_qubit_0 : list
+        ctrl_qubit_0 : QubitLike
             The first control Qubit.
-        ctrl_qubit_1 : Qubit
+        ctrl_qubit_1 : QubitLike
             The second control Qubit.
-        target_qubit : Qubit.
+        target_qubit : QubitLike
             The target Qubit.
         method : str, optional
             The algorithm to synthesize the mcx gate. The default is "gray".
         """
-
         self.mcx([ctrl_qubit_0, ctrl_qubit_1], target_qubit, method=method)
 
-    def crx(self, phi, qubits_0, qubits_1):
+    def crx(self, phi: Param, qubits_0: QubitLike, qubits_1: QubitLike) -> None:
         """
-        Instruct a controlled rx-gate.
+        Instruct a controlled RX-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : Param
             The angle parameter.
-
-        qubits_0 : Qubit
-            The Qubit to apply the gate on.
-        qubits_1 : Qubit
-            The other Qubit to apply the gate on.
+        qubits_0 : QubitLike
+            The Qubit to control on.
+        qubits_1 : QubitLike
+            The target Qubit.
         """
         if phi == 0:
             return
         self.append(ops.MCRXGate(phi, 1), [qubits_0, qubits_1])
 
-    def t(self, qubits):
+    def t(self, qubits: QubitLike) -> None:
         """
         Instruct a T-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.TGate(), [qubits])
 
-    def t_dg(self, qubits):
+    def t_dg(self, qubits: QubitLike) -> None:
         """
         Instruct a dagger T-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.TGate().inverse(), [qubits])
 
-    def s(self, qubits):
+    def s(self, qubits: QubitLike) -> None:
         """
         Instruct an S-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.SGate(), [qubits])
 
-    def s_dg(self, qubits):
+    def s_dg(self, qubits: QubitLike) -> None:
         """
         Instruct a daggered S-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.SGate().inverse(), [qubits])
 
-    def sx(self, qubits):
+    def sx(self, qubits: QubitLike) -> None:
         """
         Instruct a SX-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.SXGate(), [qubits])
 
-    def sx_dg(self, qubits):
+    def sx_dg(self, qubits: QubitLike) -> None:
         """
         Instruct a daggered SX-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.SXGate().inverse(), [qubits])
 
-    def barrier(self, qubits=None, clbits=None):
+    def barrier(
+        self,
+        qubits: QubitLike | None = None,
+        clbits: ClbitLike | None = None,
+    ) -> None:
         """
         Instruct a Barrier onto the given Qubit. Barriers can be used as visual markers
         and compiler directives.
 
         Parameters
         ----------
-        qubits : Qubit
-            The Qubit to apply the barrier on.
-        clbits : Clbit
-            The Clbits to apply the barrier on.
+        qubits : QubitLike, optional
+            The Qubit(s) to apply the barrier on. If None, all qubits are used.
+        clbits : ClbitLike, optional
+            The Clbit(s) to apply the barrier on.
         """
-
         if qubits is None:
             qubits = self.qubits
 
         self.append(ops.Barrier(len(qubits)), qubits)
 
-    def reset(self, qubits):
+    def reset(self, qubits: QubitLike) -> None:
         r"""
         Instruct a reset. This resets this Qubit into the $\ket{0}$ state regardless
         of its previous state.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to reset.
         """
-
         self.append(ops.Reset(), [qubits])
 
-    def u3(self, theta, phi, lam, qubits):
+    def u3(
+        self,
+        theta: Param,
+        phi: Param,
+        lam: Param,
+        qubits: QubitLike,
+    ) -> None:
         r"""
         Instruct a U3-gate from given Euler angles.
 
@@ -2892,34 +2904,45 @@ class QuantumCircuit:
 
         Parameters
         ----------
-        theta : float or sympy.Symbol
+        theta : Param
             The theta parameter.
-        phi : float or sympy.Symbol
+        phi : Param
             The phi parameter.
-        lam : float or sympy.Symbol
+        lam : Param
             The lambda parameter.
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the u3 gate on.
 
         """
         self.append(ops.u3Gate(theta, phi, lam), [qubits])
 
-    def r(self, phi, theta, qubits):
+    def r(self, phi: Param, theta: Param, qubits: QubitLike) -> None:
+        """
+        Instruct an R-gate.
+
+        Parameters
+        ----------
+        phi : Param
+            The phi angle parameter.
+        theta : Param
+            The theta angle parameter.
+        qubits : QubitLike
+            The Qubit to apply the gate on.
+        """
         self.append(ops.RGate(phi, theta), [qubits])
 
-    def unitary(self, unitary_array, qubits):
+    def unitary(self, unitary_array: np.ndarray, qubits: QubitLike) -> None:
         """
-        Instruct a U3-gate from a given U3 matrix.
+        Instruct a gate from a given unitary matrix.
 
         Parameters
         ----------
         unitary_array : numpy.ndarray
-            The U3 matrix to apply.
-        qubits : Qubit
+            The unitary matrix to apply.
+        qubits : QubitLike
             The Qubit to apply the gate on.
 
         """
-
         mat = unitary_array
         coeff = 1 / np.sqrt(np.linalg.det(mat))
         gphase = -np.angle(coeff) % (2 * np.pi)
@@ -2946,7 +2969,7 @@ class QuantumCircuit:
         self.append(U3Gate(theta, phi, lam, global_phase=gphase), qubits)
         # self.u3(theta, phi, lam, [qubits], global_phase = gphase)
 
-    def gphase(self, phi, qubits):
+    def gphase(self, phi: Param, qubits: QubitLike) -> None:
         """
         Instruct a global phase. Global phases do not directly influence the
         QuantumCircuits outcome however they can become physical if used as a base gate
@@ -2954,26 +2977,23 @@ class QuantumCircuit:
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : Param
             The angle parameter.
-        qubits : TYPE
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
-
         self.append(ops.GPhaseGate(phi), [qubits])
 
-    def id(self, qubits):
+    def id(self, qubits: QubitLike) -> None:
         """
         Instruct an identity gate. Identity gates are simply placeholders and have no
         effect on the quantum state.
 
         Parameters
         ----------
-
-        qubits : TYPE
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
-
         self.append(ops.IDGate(), [qubits])
 
     def to_pdag(self, remove_artificials=False):
