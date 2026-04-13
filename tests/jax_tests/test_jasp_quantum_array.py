@@ -394,7 +394,7 @@ def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
     # Calculate classical reference
     op(a_c, b_c)
 
-    assert np.allclose(measured, a_c), f"Failed on operator {op.__name__} with {rhs_type} RHS. Expected {a_c}, got {measured}"
+    assert np.array_equal(measured, a_c), f"Failed on operator {op.__name__} with {rhs_type} RHS. Expected {a_c}, got {measured}"
 
 
 instances = [
@@ -453,7 +453,7 @@ def test_quantum_array_element_wise_inplace_ops_qm(op, rhs_type, instance):
     op(a_c, b_c)
     a_c %= modulus
 
-    assert np.allclose(measured, a_c), f"Failed on operator {op.__name__} with {rhs_type} RHS. Expected {a_c}, got {measured}"
+    assert np.array_equal(measured, a_c), f"Failed on operator {op.__name__} with {rhs_type} RHS. Expected {a_c}, got {measured}"
 
 
 @pytest.mark.parametrize(" a_c, axis" , [
@@ -473,7 +473,7 @@ def test_quantum_array_all(a_c, axis):
         return measure(qbl)
 
     measured = main()
-    assert np.allclose(measured, a_c.all(axis=axis)), f"Expected {a_c.all(axis=axis)}, got {measured}" 
+    assert np.array_equal(measured, a_c.all(axis=axis)), f"Expected {a_c.all(axis=axis)}, got {measured}" 
 
 
 @pytest.mark.parametrize(" a_c, axis" , [
@@ -493,4 +493,4 @@ def test_quantum_array_any(a_c, axis):
         return measure(qbl)
 
     measured = main()
-    assert np.allclose(measured, a_c.any(axis=axis)), f"Expected {a_c.any(axis=axis)}, got {measured}"
+    assert np.array_equal(measured, a_c.any(axis=axis)), f"Expected {a_c.any(axis=axis)}, got {measured}"

@@ -828,7 +828,7 @@ class QuantumArray:
 
         Parameters
         ----------
-        other : QuantumArray of QuantumFloat or QuantumModulus | ArrayLike
+        other : QuantumArray | ArrayLike
             The array to be multiplied.
             Can be either a QuantumArray or a classical array (e.g. numpy array) of compatible shape.
             If self is a QuantumArray of QuantumModulus, other must be a classical array of integers.

@@ -207,7 +207,7 @@ def test_quantum_array_element_wise_ops(op, rhs_type, instance):
     
     # Validate measurements
     measured = r_array.most_likely()
-    assert np.allclose(measured, expected), f"Failed on operator {op.__name__}. Expected {expected}, got {measured}"
+    assert np.array_equal(measured, expected), f"Failed on operator {op.__name__}. Expected {expected}, got {measured}"
 
 
 bool_ops = [
@@ -237,7 +237,7 @@ def test_quantum_array_element_wise_bool_ops(op):
     
     # Validate measurements
     measured = r_array.most_likely()
-    assert np.allclose(measured, expected), f"Failed on operator {op.__name__}. Expected {expected}, got {measured}"
+    assert np.array_equal(measured, expected), f"Failed on operator {op.__name__}. Expected {expected}, got {measured}"
 
 
 ops = [
@@ -302,7 +302,7 @@ def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
 
     # Validate measurements
     measured = a_array.most_likely()
-    assert np.allclose(measured, a_c), f"Failed on operator {op.__name__} with {rhs_type} RHS. Expected {a_c}, got {measured}"
+    assert np.array_equal(measured, a_c), f"Failed on operator {op.__name__} with {rhs_type} RHS. Expected {a_c}, got {measured}"
 
 
 @pytest.mark.parametrize(" a_c, axis" , [
@@ -317,7 +317,7 @@ def test_quantum_array_all(a_c, axis):
     q_array[:] = a_c
     qbl = q_array.all(axis=axis)
     measured = qbl.most_likely()
-    assert np.allclose(measured, a_c.all(axis=axis)), f"Expected {a_c.all(axis=axis)}, got {measured}" 
+    assert np.array_equal(measured, a_c.all(axis=axis)), f"Expected {a_c.all(axis=axis)}, got {measured}" 
 
 
 @pytest.mark.parametrize(" a_c, axis" , [
@@ -332,7 +332,7 @@ def test_quantum_array_any(a_c, axis):
     q_array[:] = a_c
     qbl = q_array.any(axis=axis)
     measured = qbl.most_likely()
-    assert np.allclose(measured, a_c.any(axis=axis)), f"Expected {a_c.any(axis=axis)}, got {measured}"
+    assert np.array_equal(measured, a_c.any(axis=axis)), f"Expected {a_c.any(axis=axis)}, got {measured}"
 
 
 def test_quantum_array_element_eq():
