@@ -190,8 +190,12 @@ instances = [
     # Instances without overflow because of different overflow behavior of quantum and classical addition/subtraction for QuantumFloat
     pytest.param(
         (np.array([[3, 4], [5, 6]]), np.array([[1, 2], [3, 4]]), 4),
-        id="QuantumFloat"
-    )
+        id="QuantumFloat; array RHS"
+    ),
+    pytest.param(
+        (np.array([[1, 2], [2, 1]]), 1, 3),
+        id="QuantumFloat; scalar RHS"
+    ),
 ]
 
 @pytest.mark.parametrize("op", ops)
@@ -213,10 +217,15 @@ def test_quantum_array_element_wise_ops(op, rhs_type, instance):
         a_array = QuantumArray(qtype, shape=(2,2))
         a_array[:] = a_c
 
-        if rhs_type == "quantum":   
-            b_array = QuantumArray(qtype, shape=(2,2))
-            b_array[:] = b_c
-            rhs_operand = b_array
+        if rhs_type == "quantum":
+            if isinstance(b_c, (np.ndarray, jnp.ndarray)):
+                b_array = QuantumArray(qtype, shape=(2,2))
+                b_array[:] = b_c
+                rhs_operand = b_array
+            else:
+                b_qv = qtype.duplicate()
+                b_qv[:] = b_c
+                rhs_operand = b_qv
         else:
             rhs_operand = b_c
     
@@ -236,7 +245,11 @@ def test_quantum_array_element_wise_ops(op, rhs_type, instance):
 instances = [
     pytest.param(
         (np.array([[1, 2], [3, 4]]), np.array([[1, 2], [3, 4]]), 7),
-        id="QuantumModulus 7"
+        id="QuantumModulus; array RHS"
+    ),
+    pytest.param(
+        (np.array([[0, 1], [2, 1]]), 2, 3),
+        id="QuantumModulus; scalar RHS"
     )
 ]
 
@@ -261,9 +274,14 @@ def test_quantum_array_element_wise_ops_qm(op, rhs_type, instance):
         a_array[:] = a_c
 
         if rhs_type == "quantum":
-            b_array = QuantumArray(qtype, shape=(2,2))
-            b_array[:] = b_c
-            rhs_operand = b_array
+            if isinstance(b_c, (np.ndarray, jnp.ndarray)):
+                b_array = QuantumArray(qtype, shape=(2,2))
+                b_array[:] = b_c
+                rhs_operand = b_array
+            else:
+                b_qv = qtype.duplicate()
+                b_qv[:] = b_c
+                rhs_operand = b_qv
         else:
             rhs_operand = b_c
     
@@ -322,8 +340,12 @@ rhs_types = ["quantum", "classical"]
 instances = [
     pytest.param(
         (np.array([[3, 4], [5, 6]]), np.array([[1, 2], [3, 4]]), 4),
-        id="QuantumFloat"
-    )
+        id="QuantumFloat; array RHS"
+    ),
+    pytest.param(
+        (np.array([[1, 2], [2, 1]]), 1, 3),
+        id="QuantumFloat; scalar RHS"
+    ),
 ]
 
 @pytest.mark.parametrize("op", ops)
@@ -340,7 +362,7 @@ def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
 
     a_c_ref, b_c_ref, size = instance
     a_c = a_c_ref.copy()
-    b_c = b_c_ref.copy()
+    b_c = b_c_ref.copy() if isinstance(b_c_ref, np.ndarray) else b_c_ref
 
     @jaspify
     def main():
@@ -351,9 +373,14 @@ def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
         a_array[:] = a_c
         
         if rhs_type == "quantum":
-            b_array = QuantumArray(qtype, shape=(2, 2))
-            b_array[:] = b_c
-            rhs_operand = b_array
+            if isinstance(b_c, (np.ndarray, jnp.ndarray)):
+                b_array = QuantumArray(qtype, shape=(2,2))
+                b_array[:] = b_c
+                rhs_operand = b_array
+            else:
+                b_qv = qtype.duplicate()
+                b_qv[:] = b_c
+                rhs_operand = b_qv
         else:
             rhs_operand = b_c
 
@@ -373,7 +400,11 @@ def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
 instances = [
     pytest.param(
         (np.array([[3, 4], [5, 6]]), np.array([[1, 2], [3, 4]]), 7),
-        id="QuantumModulus"
+        id="QuantumModulus; array RHS"
+    ),
+    pytest.param(
+        (np.array([[1, 2], [2, 1]]), 1, 3),
+        id="QuantumModulus; scalar RHS"
     )
 ]
 
@@ -389,7 +420,7 @@ def test_quantum_array_element_wise_inplace_ops_qm(op, rhs_type, instance):
 
     a_c_ref, b_c_ref, modulus = instance
     a_c = a_c_ref.copy()
-    b_c = b_c_ref.copy()
+    b_c = b_c_ref.copy() if isinstance(b_c_ref, np.ndarray) else b_c_ref
 
     @jaspify
     def main():
@@ -400,9 +431,14 @@ def test_quantum_array_element_wise_inplace_ops_qm(op, rhs_type, instance):
         a_array[:] = a_c
         
         if rhs_type == "quantum":
-            b_array = QuantumArray(qtype, shape=(2, 2))
-            b_array[:] = b_c
-            rhs_operand = b_array
+            if isinstance(b_c, (np.ndarray, jnp.ndarray)):
+                b_array = QuantumArray(qtype, shape=(2,2))
+                b_array[:] = b_c
+                rhs_operand = b_array
+            else:
+                b_qv = qtype.duplicate()
+                b_qv[:] = b_c
+                rhs_operand = b_qv
         else:
             rhs_operand = b_c
 
