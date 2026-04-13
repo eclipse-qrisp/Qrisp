@@ -322,7 +322,7 @@ def test_cl_control_env():
         qf = QuantumFloat(5)
         
         with invert():
-            jasp_cq_gidney_adder(3, qf)
+            jasp_gidney_adder(3, qf)
             
         return measure(qf)
     
