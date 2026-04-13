@@ -38,7 +38,7 @@ from qrisp.jasp import (
     TracingQuantumSession,
 )
 
-from typing import TYPE_CHECKING
+from typing import Callable, Literal, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -1133,8 +1133,14 @@ class QuantumArray:
 
     # Delegation of element-wise out-of-place functions
 
-    def _element_wise_out_of_place_injection(self, other, fun, out_type):
-        out_type.qs = self.qs  #######
+    def _element_wise_out_of_place_injection(
+        self,
+        other: QuantumArray | QuantumVariable | "ArrayLike",
+        fun: Callable,
+        out_type: QuantumVariable,
+    ) -> QuantumArray:
+        """Internal helper to perform element-wise out-of-place operations."""
+        out_type.qs = self.qs
         out = QuantumArray(out_type, self.shape)
         out_view = out.flatten()
         self_view = self.flatten()
@@ -1172,7 +1178,11 @@ class QuantumArray:
                     (out_view[i] << fun)(self_view[i], other)
             return out
 
-    def _validate_arithmetic(self, other, mode="float"):
+    def _validate_arithmetic(
+        self,
+        other: QuantumArray | QuantumVariable | "ArrayLike",
+        mode: Literal["float", "bool"] = "float",
+    ) -> None:
         """Internal helper to validate type and shape for element-wise operations."""
         from qrisp.qtypes.quantum_bool import QuantumBool
         from qrisp.qtypes.quantum_float import QuantumFloat
@@ -1819,7 +1829,9 @@ class QuantumArray:
             other, lambda a, b: a ^ b, QuantumBool()
         )
 
-    def all(self, axis=None):
+    def all(
+        self, axis: int | tuple[int, ...] | None = None
+    ) -> QuantumArray | QuantumVariable:
         """
         Performs an element-wise logical AND reduction, returning True if all elements are True.
         This operation is only defined for QuantumArrays of QuantumBools.
@@ -1868,7 +1880,9 @@ class QuantumArray:
 
         return self._reduce_over_axes(_all, QuantumBool(), axis=axis)
 
-    def any(self, axis=None):
+    def any(
+        self, axis: int | tuple[int, ...] | None = None
+    ) -> QuantumArray | QuantumVariable:
         """
         Performs an element-wise logical OR reduction, returning True if any element is True.
         This operation is only defined for QuantumArrays of QuantumBools.
@@ -1922,7 +1936,10 @@ class QuantumArray:
 
     # Delegation of element-wise in-place functions
 
-    def _element_wise_in_place_call(self, other, fun):
+    def _element_wise_in_place_call(
+        self, other: QuantumArray | QuantumVariable | "ArrayLike", fun: Callable
+    ) -> None:
+        """Helper function to perform element-wise in-place calls for in-place arithmetic operations."""
         self_view = self.flatten()
         if isinstance(other, QuantumArray):
             if self.shape != other.shape:
@@ -2100,7 +2117,8 @@ class QuantumArray:
 
     # Element-wise implementation of the injection operator
 
-    def __lshift_o__(self, other):
+    def __lshift_o__(self, other: Callable) -> Callable:
+        """Implements the injection operator for element-wise function application."""
         if not callable(other):
             raise Exception("Tried to inject QuantumVariable into non-callable")
 
@@ -2111,7 +2129,8 @@ class QuantumArray:
 
         return return_function
 
-    def __lshift__(self, other):
+    def __lshift__(self, other: Callable) -> Callable:
+        """Implements the injection operator for element-wise function application."""
         if not callable(other):
             raise Exception("Tried to inject QuantumVariable into non-callable")
 
