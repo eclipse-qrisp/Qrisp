@@ -525,7 +525,12 @@ class QuantumArray:
         res.ind_array = self.ind_array.swapaxes(axis_1, axis_2)
         return res
 
-    def _reduce_over_axes(self, operation, qtype, axis=None):
+    def _reduce_over_axes(
+        self,
+        operation: Callable,
+        qtype: QuantumVariable,
+        axis: int | tuple[int, ...] | None = None,
+    ) -> QuantumArray | QuantumVariable:
         """
         Generic method to apply a reduction operation along specified axes.
 
@@ -932,14 +937,8 @@ class QuantumArray:
 
         return NotImplemented
 
-    def __rmatmul__(self, other):
-        from qrisp.qtypes.quantum_float import QuantumFloat
-        from qrisp.qtypes.quantum_modulus import QuantumModulus
-
-        if isinstance(self.qtype, QuantumFloat):
-            return (self.transpose() @ other.transpose()).transpose()
-        if isinstance(self.qtype, QuantumModulus):
-            return (self.transpose() @ other.transpose()).transpose()
+    def __rmatmul__(self, other: QuantumArray | "ArrayLike") -> QuantumArray:
+        return (self.transpose() @ other.transpose()).transpose()
 
     def __iter__(self):
         return QuantumArrayIterator(self.flatten())
