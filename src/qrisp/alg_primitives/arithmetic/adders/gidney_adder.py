@@ -124,7 +124,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
 
         mcx([a[0], b[0]], gidney_anc[0], method="gidney_inv")
 
-        gidney_anc.delete(verify=False)
+        gidney_anc.delete()
 
 
     if c_in is None:
@@ -140,4 +140,4 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     if zero_anc is not None:
         zero_anc.delete()
 
-    a_ext.delete(verify=False)
+    a_ext.delete()
