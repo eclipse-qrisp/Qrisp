@@ -311,3 +311,39 @@ def test_gidney_adder_empty_string_input():
 
     result_b = b.get_measurement()
     assert result_b == {42: 1.0}  # 42 + 0 = 42
+
+
+def test_gidney_adder_t_depth_significantly_lower_than_cuccaro():
+    """Verify that the gidney adder achieves significant T-depth reduction across inputs of
+    different sizes.
+    
+    The Gidney adder is specifically designed to minimize T-depth.
+    """
+    from qrisp import t_depth_indicator
+    
+    # Test with multiple bit widths to ensure consistent advantage
+    for qf_size in [8, 12, 16]:
+        # Cuccaro adder T-depth
+        a_cuccaro = QuantumFloat(qf_size)
+        b_cuccaro = QuantumFloat(qf_size)
+        a_cuccaro[:] = 5
+        b_cuccaro[:] = 10
+        
+        cuccaro_adder(a_cuccaro, b_cuccaro)
+        
+        cuccaro_circuit = b_cuccaro.qs.compile()
+        cuccaro_t_depth = cuccaro_circuit.t_depth()
+        
+        # Gidney adder T-depth
+        a_gidney = QuantumFloat(qf_size)
+        b_gidney = QuantumFloat(qf_size)
+        a_gidney[:] = 5
+        b_gidney[:] = 10
+        
+        gidney_adder(a_gidney, b_gidney)
+        
+        gidney_circuit = b_gidney.qs.compile()
+        gidney_t_depth = gidney_circuit.t_depth()
+        
+        # Gidney should have lower T-depth
+        assert gidney_t_depth < cuccaro_t_depth
