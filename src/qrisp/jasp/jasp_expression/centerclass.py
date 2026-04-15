@@ -1059,7 +1059,7 @@ class Jaspr(ClosedJaxpr):
 
         return jaspr_to_qir(self.flatten_environments())
 
-    def to_mlir(self):
+    def to_mlir(self, lower_stablehlo = False):
         """
         Compiles the Jaspr to an xDSL module using the Jasp Dialect.
         Requires the xDSL package to be installed (``pip install xdsl``).
@@ -1130,7 +1130,7 @@ class Jaspr(ClosedJaxpr):
         """
         from qrisp.jasp.mlir import jaspr_to_mlir
 
-        return jaspr_to_mlir(self)
+        return jaspr_to_mlir(self, lower_stablehlo)
 
     def to_catalyst_mlir(self):
         """

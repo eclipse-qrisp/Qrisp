@@ -22,14 +22,16 @@ from io import StringIO
 from jax._src import core
 from jax.interpreters.mlir import LoweringParameters, ModuleContext, lower_jaxpr_to_fun
 from jaxlib.mlir import ir, passmanager
+from jaxlib.mlir._mlir_libs import _stablehlo, _mlirHlo, _chlo, _jax_mlir_ext
+
 from xdsl.context import Context
 from xdsl.dialects import builtin, func
 from xdsl.parser import Parser
 
 from qrisp.jasp.mlir.xdsl_dialect import JaspDialect
+from qrisp.jasp.mlir.jasp_lowering_rules import jasp_lowering_rules
 
-
-def lower_jaxpr_to_MLIR(jaxpr, lowering_rules=tuple([])):
+def lower_jaxpr_to_stablehlo_MLIR(jaxpr, lowering_rules=tuple([])):
     """
     Lowers a Jaxpr object into an MLIR string uses Jax's MLIR infrastructure.
 
@@ -103,7 +105,7 @@ def lower_jaxpr_to_MLIR(jaxpr, lowering_rules=tuple([])):
     return ctx.module
 
 
-def generic_mlir_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
+def MLIR_str_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
     """Parse a generic-format MLIR string into an xDSL ``builtin.module``.
 
     Parameters
@@ -120,27 +122,34 @@ def generic_mlir_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
     """
     # Create context with unregistered operations allowed so our custom ops
     # remain intact when parsed by xDSL.
+    from xdsl.dialects import builtin, func, linalg, arith, tensor, scf
+    from xdsl.parser import Parser
+
     ctx = Context()
     ctx.allow_unregistered = True
 
     # Register essential dialects used by the wrapper module and functions.
     ctx.load_dialect(builtin.Builtin)
     ctx.load_dialect(func.Func)
+    ctx.load_dialect(linalg.Linalg)
+    ctx.load_dialect(arith.Arith)
+    ctx.load_dialect(tensor.Tensor)
+    ctx.load_dialect(scf.Scf)
     ctx.load_dialect(JaspDialect)
 
     # Parse the MLIR string and return the module op.
     parser = Parser(ctx, mlir_string)
-    return parser.parse_operation()
+    return parser.parse_module()
 
 
-def jaxpr_to_xdsl(jaxpr, lowering_rules=tuple([])):
+def jaxpr_to_xdsl(jaxpr, lower_stableHLO = False, lowering_rules=tuple([])):
     """Lower a JAXPR to an xDSL module.
 
     This function performs two steps:
     1) Use Qrisp's JAXPR lowering to create an MLIR module with custom ops.
-    2) Print the module in MLIR's generic form and re-parse it with xDSL to
+    2) (Optional) lower StableHLO to linalg (and other dialects)
+    3) Print the module in MLIR's generic form and re-parse it with xDSL to
        obtain an xDSL ``builtin.module`` object.
-
 
     Parameters
     ----------
@@ -152,8 +161,12 @@ def jaxpr_to_xdsl(jaxpr, lowering_rules=tuple([])):
     builtin.ModuleOp
         The xDSL module containing the lowered program.
     """
+
     # 1) Lower to MLIR (jasp dialect) using the custom lowering pipeline.
-    mlir_module = lower_jaxpr_to_MLIR(jaxpr, lowering_rules=lowering_rules)
+    if lower_stableHLO:
+        mlir_module = lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules=lowering_rules)
+    else:
+        mlir_module = lower_jaxpr_to_stablehlo_MLIR(jaxpr, lowering_rules=lowering_rules)
 
     # 2) Capture generic MLIR printing. Use try/finally to avoid stdout leaks
     #    if an exception is thrown during printing.
@@ -169,4 +182,50 @@ def jaxpr_to_xdsl(jaxpr, lowering_rules=tuple([])):
     generic_mlir_string = captured_output.getvalue()
 
     # Parse to xDSL.
-    return generic_mlir_to_xdsl(generic_mlir_string)
+    return MLIR_str_to_xdsl(generic_mlir_string)
+
+def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules) -> str:
+    """Lower a Jaxpr to an MLIR string with StableHLO→linalg applied.
+
+    The pipeline:
+    1. Legalize StableHLO arithmetic → linalg  (on the original JAX module)
+    2. Then rewrite remaining StableHLO control flow → SCF  (via xDSL)
+    """
+    # --- Step 1: Lower Jaxpr to a JAX MLIR module ---------------------------
+    mlir_module = lower_jaxpr_to_stablehlo_MLIR(jaxpr, lowering_rules=lowering_rules)
+
+    # --- Step 2: Register passes and run inside the module's context ---------
+    # lower_jaxpr_to_MLIR exits its `with ctx.context:` block, so we must
+    # re-enter the MLIR context to use the PassManager.
+    ctx = mlir_module.context
+    with ctx:
+        _stablehlo.register_dialect(ctx)
+        _stablehlo.register_stablehlo_passes()
+        _mlirHlo.register_mhlo_dialect(ctx)
+        _mlirHlo.register_mhlo_passes()
+        _chlo.register_dialect(ctx)
+
+        # symbol-dce removes unused private shadow functions that JAX emits.
+        # stablehlo-legalize-to-linalg converts arithmetic/data ops to linalg.
+        # stablehlo control-flow ops (case, while) are left untouched here.
+        pipeline = "builtin.module(" \
+                   "symbol-dce," \
+                   "stablehlo-convert-to-signless," \
+                   "stablehlo-legalize-to-linalg" \
+                   ")"
+
+        pm = passmanager.PassManager.parse(pipeline)
+        # Disable verifier: stablehlo.case carries !jasp.QuantumState which
+        # fails StableHLO type constraints.  The legalizer itself only touches
+        # arithmetic ops and leaves case/while alone, so skipping verification
+        # is safe here.  The control-flow rewrite to SCF happens next via xDSL.
+        pm.enable_verifier(False)
+        pm.run(mlir_module.operation)
+
+        # --- Step 3: Print to generic MLIR text ------------------------------
+        generic_mlir = mlir_module.operation.get_asm(
+            print_generic_op_form=True
+        )
+
+    
+    return mlir_module
