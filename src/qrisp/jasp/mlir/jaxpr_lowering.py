@@ -145,16 +145,24 @@ def MLIR_str_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
 def jaxpr_to_xdsl(jaxpr, lower_stableHLO = False, lowering_rules=tuple([])):
     """Lower a JAXPR to an xDSL module.
 
-    This function performs two steps:
-    1) Use Qrisp's JAXPR lowering to create an MLIR module with custom ops.
-    2) (Optional) lower StableHLO to linalg (and other dialects)
-    3) Print the module in MLIR's generic form and re-parse it with xDSL to
+    This function performs three steps:
+    
+    1. Use Qrisp's JAXPR lowering to create an MLIR module with custom ops.
+    2. (Optional) Lower StableHLO to linalg and other lower-level dialects.
+    3. Print the module in MLIR's generic form and re-parse it with xDSL to
        obtain an xDSL ``builtin.module`` object.
 
     Parameters
     ----------
-    jaspr:
+    jaxpr : ClosedJaxpr
         A ClosedJaxpr (or JAXPR-like) object produced by Qrisp/JAX tracing.
+    lower_stableHLO : bool, optional
+        If True, runs MLIR passes to lower StableHLO arithmetic and data ops
+        to linalg, arith, and tensor dialects. StableHLO control flow ops
+        (case, while) are preserved for xDSL rewriting. The default is False.
+    lowering_rules : tuple, optional
+        Additional lowering rules to apply to custom primitives.
+        The default is tuple([]).
 
     Returns
     -------
@@ -184,12 +192,33 @@ def jaxpr_to_xdsl(jaxpr, lower_stableHLO = False, lowering_rules=tuple([])):
     # Parse to xDSL.
     return MLIR_str_to_xdsl(generic_mlir_string)
 
-def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules) -> str:
-    """Lower a Jaxpr to an MLIR string with StableHLO→linalg applied.
+def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
+    """Lower a Jaxpr to an MLIR module with StableHLO ops lowered to linalg.
 
-    The pipeline:
-    1. Legalize StableHLO arithmetic → linalg  (on the original JAX module)
-    2. Then rewrite remaining StableHLO control flow → SCF  (via xDSL)
+    This function applies MLIR passes to convert StableHLO arithmetic and
+    data operations to lower-level dialects (linalg, arith, tensor).
+    StableHLO control flow operations (case, while) that carry quantum types
+    are left intact because they fail StableHLO type constraints - these are
+    subsequently rewritten to SCF by xDSL.
+
+    The pipeline applied:
+    
+    1. symbol-dce: removes unused private shadow functions that JAX emits
+    2. stablehlo-convert-to-signless: converts to signless integers
+    3. stablehlo-legalize-to-linalg: converts arithmetic/data ops to linalg
+
+    Parameters
+    ----------
+    jaxpr : ClosedJaxpr
+        The Jaxpr to lower.
+    lowering_rules : tuple
+        The lowering rules to apply to custom primitives.
+
+    Returns
+    -------
+    MLIRModule
+        An MLIR module object in JAX's MLIR infrastructure with StableHLO
+        arithmetic lowered to linalg.
     """
     # --- Step 1: Lower Jaxpr to a JAX MLIR module ---------------------------
     mlir_module = lower_jaxpr_to_stablehlo_MLIR(jaxpr, lowering_rules=lowering_rules)
