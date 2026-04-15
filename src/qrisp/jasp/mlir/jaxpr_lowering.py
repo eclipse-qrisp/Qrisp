@@ -201,6 +201,13 @@ def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
     are left intact because they fail StableHLO type constraints - these are
     subsequently rewritten to SCF by xDSL.
 
+    .. note::
+    
+        Not all StableHLO operations are lowered. Operations like 
+        ``stablehlo.scatter`` (used for indexed array updates) remain as-is
+        because they require specialized lowering not covered by the standard
+        ``stablehlo-legalize-to-linalg`` pass.
+
     The pipeline applied:
     
     1. symbol-dce: removes unused private shadow functions that JAX emits
