@@ -110,6 +110,23 @@ from qrisp.jasp.mlir.quake_lowering.gate_mapping import get_gate_info
 
 
 # ---------------------------------------------------------------------------
+# xDSL version compatibility
+# ---------------------------------------------------------------------------
+
+def _replace_all_uses_with(val: SSAValue, new_val: SSAValue) -> None:
+    """Replace all uses of *val* with *new_val*.
+
+    Provides compatibility between xDSL < 0.57 (which uses
+    ``SSAValue.replace_by``) and xDSL >= 0.57 (which uses
+    ``SSAValue.replace_all_uses_with``).
+    """
+    if hasattr(val, "replace_all_uses_with"):
+        val.replace_all_uses_with(new_val)
+    else:  # xDSL < 0.57
+        val.replace_by(new_val)  # type: ignore[attr-defined]
+
+
+# ---------------------------------------------------------------------------
 # Helpers to identify Jasp types
 # ---------------------------------------------------------------------------
 
@@ -337,7 +354,7 @@ def _thread_qst(op) -> None:
 
     for i, qst_out in enumerate(qst_outputs):
         if i < len(qst_inputs):
-            qst_out.replace_all_uses_with(qst_inputs[i])
+            _replace_all_uses_with(qst_out, qst_inputs[i])
         else:
             # No corresponding input – erase all uses (create_quantum_kernel)
             qst_out.erase(safe_erase=False)
@@ -361,7 +378,7 @@ def _lower_consume_quantum_kernel(op, block: Block) -> None:
             DenseIntOrFPElementsAttr.from_list(op.results[0].type, [1])
         )
         block.insert_ops_before([true_const], op)
-        op.results[0].replace_all_uses_with(true_const.result)
+        _replace_all_uses_with(op.results[0], true_const.result)
     Rewriter.erase_op(op)
 
 
@@ -379,7 +396,7 @@ def _lower_create_qubits(op, block: Block) -> None:
     # Map QubitArray result → veq result
     for r in op.results:
         if _is_qubit_array(r.type):
-            r.replace_all_uses_with(alloca.result)
+            _replace_all_uses_with(r, alloca.result)
 
     _thread_qst(op)
     Rewriter.erase_op(op)
@@ -396,7 +413,7 @@ def _lower_get_qubit(op, block: Block) -> None:
 
     for r in op.results:
         if _is_qubit(r.type):
-            r.replace_all_uses_with(extract.result)
+            _replace_all_uses_with(r, extract.result)
 
     Rewriter.erase_op(op)
 
@@ -412,7 +429,7 @@ def _lower_get_size(op, block: Block) -> None:
     result_tensor_type = op.results[0].type
     wrapped = _wrap_scalar(veq_size.result, result_tensor_type, block, op)
 
-    op.results[0].replace_all_uses_with(wrapped)
+    _replace_all_uses_with(op.results[0], wrapped)
     Rewriter.erase_op(op)
 
 
@@ -429,7 +446,7 @@ def _lower_slice(op, block: Block) -> None:
 
     for r in op.results:
         if _is_qubit_array(r.type):
-            r.replace_all_uses_with(subveq.result)
+            _replace_all_uses_with(r, subveq.result)
 
     Rewriter.erase_op(op)
 
@@ -442,7 +459,7 @@ def _lower_fuse(op, block: Block) -> None:
 
     for r in op.results:
         if _is_qubit_array(r.type):
-            r.replace_all_uses_with(concat.result)
+            _replace_all_uses_with(r, concat.result)
 
     Rewriter.erase_op(op)
 
@@ -557,7 +574,7 @@ def _lower_measure(op, block: Block) -> None:
 
         # Wrap back to tensor<i1> if downstream expects it
         wrapped = _wrap_scalar(scalar_bit, meas_result.type, block, op)
-        meas_result.replace_all_uses_with(wrapped)
+        _replace_all_uses_with(meas_result, wrapped)
     else:
         # Array: emit mz on the whole veq – result is !quake.measure
         # Wrap it back to the expected tensor<i64> type via a placeholder constant.
@@ -570,7 +587,7 @@ def _lower_measure(op, block: Block) -> None:
             DenseIntOrFPElementsAttr.from_list(meas_result.type, [0])
         )
         block.insert_ops_before([zero_const], op)
-        meas_result.replace_all_uses_with(zero_const.result)
+        _replace_all_uses_with(meas_result, zero_const.result)
         warnings.warn(
             "Array measurement lowered to quake.mz (raw) + zero placeholder for "
             "classical result.  Full bit-packing support is deferred.",

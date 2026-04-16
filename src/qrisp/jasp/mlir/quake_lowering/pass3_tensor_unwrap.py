@@ -58,8 +58,25 @@ from xdsl.dialects.builtin import (
     i64,
     f64,
 )
-from xdsl.ir import Block, Region
+from xdsl.ir import Block, Region, SSAValue
 from xdsl.rewriter import Rewriter
+
+
+# ---------------------------------------------------------------------------
+# xDSL version compatibility
+# ---------------------------------------------------------------------------
+
+
+def _replace_all_uses_with(val: SSAValue, new_val: SSAValue) -> None:
+    """Replace all uses of *val* with *new_val*.
+
+    Provides compatibility between xDSL < 0.57 (``SSAValue.replace_by``)
+    and xDSL >= 0.57 (``SSAValue.replace_all_uses_with``).
+    """
+    if hasattr(val, "replace_all_uses_with"):
+        val.replace_all_uses_with(new_val)
+    else:  # xDSL < 0.57
+        val.replace_by(new_val)  # type: ignore[attr-defined]
 
 
 # ---------------------------------------------------------------------------
@@ -166,7 +183,7 @@ def _fold_dense_constant(const_op, block: Block) -> bool:
 
     # Replace all extract uses with the scalar constant
     for extr in extract_ops:
-        extr.results[0].replace_all_uses_with(scalar_const.result)
+        _replace_all_uses_with(extr.results[0], scalar_const.result)
         Rewriter.erase_op(extr, safe_erase=False)
 
     Rewriter.erase_op(const_op, safe_erase=False)
@@ -181,7 +198,7 @@ def _fold_extract(extr_op, block: Block) -> bool:
     if isinstance(src.type, TensorType):
         return False  # Source is still a tensor – can't fold yet.
     # Source is already a scalar
-    extr_op.results[0].replace_all_uses_with(src)
+    _replace_all_uses_with(extr_op.results[0], src)
     Rewriter.erase_op(extr_op, safe_erase=False)
     return True
 
