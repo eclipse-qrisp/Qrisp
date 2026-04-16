@@ -428,8 +428,13 @@ class MzOp(IRDLOperation):
         printer.print_ssa_value(self.qubit)
         printer.print_string(" : (")
         printer.print_attribute(self.qubit.type)
-        printer.print_string(") -> ")
-        printer.print_attribute(self.result.type)
+        if isinstance(self.qubit.type, QuakeVeqType):
+            # Always emit the literal string; bypasses xDSL ParametrizedAttribute
+            # printing which may omit <i1> when no ParameterDef fields are declared.
+            printer.print_string(") -> !cc.stdvec<i1>")
+        else:
+            printer.print_string(") -> ")
+            printer.print_attribute(self.result.type)
 
 
 @irdl_op_definition
