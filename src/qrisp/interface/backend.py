@@ -16,16 +16,14 @@
 
 """This module defines the abstract :class:`Backend` interface for Qrisp-compatible backends."""
 
-from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import Any, TypeAlias
+
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 from .job import Job
-
-if TYPE_CHECKING:
-    from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 CircuitResult: TypeAlias = dict[str, Any]
 
@@ -259,7 +257,8 @@ class Backend(ABC):
             or a list of measurement dictionaries when multiple circuits are
             submitted.
         """
-        batch = isinstance(circuits, list)
+
+        batch = not isinstance(circuits, QuantumCircuit)
         all_counts = self.run_async(circuits, shots).result().all_counts
         return all_counts if batch else all_counts[0]
 

@@ -24,13 +24,17 @@ from __future__ import annotations
 import threading
 import time
 from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
-from qrisp.interface.job import Job, JobResult, JobStatus
-
-if TYPE_CHECKING:
-    from qrisp.circuit.quantum_circuit import QuantumCircuit
+from qrisp.interface.job import (
+    Job,
+    JobCancelledError,
+    JobFailureError,
+    JobResult,
+    JobStatus,
+)
 
 
 class BatchedJob(Job):
@@ -94,11 +98,11 @@ class BatchedJob(Job):
                 "Has dispatch() been called?"
             )
         if self._status == JobStatus.ERROR:
-            raise RuntimeError(
+            raise JobFailureError(
                 f"Batch execution failed: {self._error}"
             ) from self._error
         if self._status == JobStatus.CANCELLED:
-            raise RuntimeError("BatchedJob was cancelled.")
+            raise JobCancelledError(f"Job {self._job_id!r} was cancelled.")
         return cast(JobResult, self._result_data)
 
     def cancel(self) -> bool:
@@ -339,7 +343,10 @@ class BatchedBackend(Backend):
         -------
         BatchedJob
         """
-        circuits = [circuits] if not isinstance(circuits, Sequence) else circuits
+        if isinstance(circuits, QuantumCircuit):
+            circuits = [circuits]
+        else:
+            circuits = list(circuits)
         n_shots = shots if shots is not None else self._options["shots"]
 
         job = BatchedJob(backend=self, circuits=circuits, shots=n_shots)

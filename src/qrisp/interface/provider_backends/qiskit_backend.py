@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from typing import cast
 
 from qiskit import QuantumCircuit, transpile
@@ -306,7 +306,12 @@ class QiskitBackend(Backend):
         -------
         QiskitJob
         """
-        circuits = [circuits] if not isinstance(circuits, Sequence) else circuits
+        from qrisp.circuit.quantum_circuit import QuantumCircuit as QrispQuantumCircuit
+
+        if isinstance(circuits, QrispQuantumCircuit):
+            circuits = [circuits]
+        else:
+            circuits = list(circuits)
         n_shots = shots if shots is not None else self._options.get("shots", 1024)
 
         # Convert each Qrisp circuit to a Qiskit QuantumCircuit via OpenQASM 2,

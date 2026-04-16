@@ -26,6 +26,7 @@ import pytest
 from conftest import MinimalBackend
 from qrisp.interface.backend import Backend
 from qrisp.interface.job import Job, JobResult, JobStatus
+from typing import cast
 from qrisp.interface.qunicorn.backend_client import BackendClient
 from qrisp.interface.qunicorn.backend_server import BackendServer
 from qrisp.interface.virtual_backend import VirtualBackend
@@ -76,17 +77,14 @@ class TestJob(Job):
     def submit(self) -> None:
         """Submit the job. TestBackend triggers execution directly in run()."""
 
-    def result(self, timeout=None):
+    def result(self, timeout=None) -> JobResult:
         """Block until the job finishes and return the JobResult, or raise on failure."""
         if not self._done_event.wait(timeout=timeout):
             raise TimeoutError(
                 f"Job '{self._job_id}' did not complete within {timeout}s."
             )
-        if self._status == JobStatus.ERROR:
-            raise RuntimeError(f"Job failed: {self._error}") from self._error
-        if self._status == JobStatus.CANCELLED:
-            raise RuntimeError("Job was cancelled.")
-        return self._result_data
+        self._raise_for_status()
+        return cast(JobResult, self._result_data)
 
     def cancel(self) -> bool:
         """Request cancellation. Returns False if the job is already in a terminal state."""
@@ -205,8 +203,10 @@ class TestBackend(Backend):
 
     def run_async(self, circuits, shots=None) -> TestJob:
         """Submit one or more circuits and return a TestJob according to the current mode."""
-        if not isinstance(circuits, list):
+        if not isinstance(circuits, (list, tuple)):
             circuits = [circuits]
+        else:
+            circuits = list(circuits)
         n_shots = shots if shots is not None else self._options["shots"]
         job = TestJob(circuits=circuits, shots=n_shots, backend=self)
 
@@ -719,6 +719,29 @@ class TestSyncExecution:
         for _ in range(5):
             result = backend.run_async("c", shots=64).result()
             assert sum(result.get_counts().values()) == 64
+
+    def test_run_async_accepts_tuple_of_circuits(self):
+        """run_async() must treat a tuple of circuits as a batch, not as a single circuit."""
+        backend = TestBackend(mode=ExecutionMode.SYNC, seed=0)
+        circuits = ("a", "b", "c")
+        result = backend.run_async(circuits, shots=32).result()  # type: ignore[arg-type]
+        assert result.num_circuits == 3
+
+    def test_run_accepts_tuple_of_circuits(self):
+        """run() must return a list of results when a tuple of circuits is submitted."""
+        backend = TestBackend(mode=ExecutionMode.SYNC, seed=0)
+        circuits = ("a", "b")
+        result = backend.run(circuits, shots=32)  # type: ignore[arg-type]
+        assert isinstance(result, list)
+        assert len(result) == 2
+
+    def test_run_async_tuple_and_list_produce_same_result(self):
+        """run_async() must produce the same number of results for a tuple and an equivalent list."""
+        backend = TestBackend(mode=ExecutionMode.SYNC, seed=42)
+        circuits = ["x", "y", "z"]
+        result_list = backend.run_async(circuits, shots=16).result()  # type: ignore[arg-type]
+        result_tuple = backend.run_async(tuple(circuits), shots=16).result()  # type: ignore[arg-type]
+        assert result_list.num_circuits == result_tuple.num_circuits
 
 
 # ===========================================================================

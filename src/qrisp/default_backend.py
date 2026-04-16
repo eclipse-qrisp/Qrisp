@@ -16,10 +16,10 @@
 
 """This module defines :class:`DefaultBackend` and its associated :class:`DefaultJob`."""
 
-from __future__ import annotations
 
 from typing import Sequence, cast
 
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
 from qrisp.interface.job import Job, JobResult, JobStatus
 from qrisp.simulator.simulator import run as default_run
@@ -79,8 +79,7 @@ class DefaultJob(Job):
         RuntimeError
             If the simulation raised an exception.
         """
-        if self._status == JobStatus.ERROR:
-            raise RuntimeError(f"DefaultJob failed: {self._error}") from self._error
+        self._raise_for_status()
         return cast(JobResult, self._result_data)
 
     def cancel(self) -> bool:
@@ -184,7 +183,7 @@ class DefaultBackend(Backend):
         Parameters
         ----------
         circuits : QuantumCircuit or list[QuantumCircuit]
-            One circuit or a list of circuits to simulate.
+            One circuit or a sequence of circuits to simulate.
 
         shots : int or None, optional
             Number of shots.  ``None`` selects analytic execution.
@@ -194,7 +193,10 @@ class DefaultBackend(Backend):
         -------
         DefaultJob
         """
-        circuits = [circuits] if not isinstance(circuits, list) else circuits
+        if isinstance(circuits, QuantumCircuit):
+            circuits = [circuits]
+        else:
+            circuits = list(circuits)
         n_shots = shots if shots is not None else self.options.get("shots")
         job = DefaultJob(backend=self, circuits=circuits, shots=n_shots)
         job.submit()
