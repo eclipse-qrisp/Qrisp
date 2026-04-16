@@ -60,20 +60,20 @@ from xdsl.printer import Printer
 
 @irdl_attr_definition
 class CcStdVecType(ParametrizedAttribute, TypeAttribute):
-    """CUDA-Q CC ``!cc.stdvec<i1>`` type — return type of ``quake.mz`` on a veq.
+    """CUDA-Q CC ``!cc.stdvec<!quake.measure>`` type — return type of ``quake.mz`` on a veq.
 
-    This is a span-like proxy for ``std::vector<bool>`` in CUDA-Q's CC dialect.
-    Used as the result type when measuring a ``!quake.veq<?>``.
+    Each qubit in a ``!quake.veq<?>`` produces a ``!quake.measure`` value; measuring
+    the whole register returns a span of those values.
 
     Example::
 
-        %ms = quake.mz %veq : (!quake.veq<?>) -> !cc.stdvec<i1>
+        %ms = quake.mz %veq : (!quake.veq<?>) -> !cc.stdvec<!quake.measure>
     """
 
     name = "cc.stdvec"
 
     def print_parameters(self, printer: Printer) -> None:
-        printer.print_string("<i1>")
+        printer.print_string("<!quake.measure>")
 
 
 # ---------------------------------------------------------------------------

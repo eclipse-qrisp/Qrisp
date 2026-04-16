@@ -402,11 +402,11 @@ class MzOp(IRDLOperation):
     """Measure in the Z basis.
 
     - Single qubit: ``quake.mz %ref : (!quake.ref) -> !quake.measure``
-    - Register:     ``quake.mz %veq : (!quake.veq<?>) -> !cc.stdvec<i1>``
+    - Register:     ``quake.mz %veq : (!quake.veq<?>) -> !cc.stdvec<!quake.measure>``
 
-    Per the CUDA-Q Quake dialect, measuring a ``veq`` returns ``!cc.stdvec<i1>``
-    (a CC span-like proxy for ``std::vector<bool>``), not the non-existent
-    ``!quake.measurements<?>`` type.
+    Per the CUDA-Q Quake dialect, measuring a ``veq`` returns
+    ``!cc.stdvec<!quake.measure>`` — a CC span of single-qubit measurement
+    values, matching the CUDA-Q reference output.
     """
 
     name = "quake.mz"
@@ -416,7 +416,7 @@ class MzOp(IRDLOperation):
     def __init__(self, qubit: SSAValue) -> None:
         # Choose result type based on whether we're measuring a single qubit or a veq.
         if isinstance(qubit.type, QuakeVeqType):
-            # Veq measurement → !cc.stdvec<i1>
+            # Veq measurement → !cc.stdvec<!quake.measure>
             from qrisp.jasp.mlir.quake_lowering.cc_dialect import CcStdVecType
             result_type = CcStdVecType()
         else:
@@ -429,9 +429,9 @@ class MzOp(IRDLOperation):
         printer.print_string(" : (")
         printer.print_attribute(self.qubit.type)
         if isinstance(self.qubit.type, QuakeVeqType):
-            # Always emit the literal string; bypasses xDSL ParametrizedAttribute
-            # printing which may omit <i1> when no ParameterDef fields are declared.
-            printer.print_string(") -> !cc.stdvec<i1>")
+            # Emit the literal string to avoid xDSL ParametrizedAttribute printing
+            # issues (missing element type) across different xDSL versions.
+            printer.print_string(") -> !cc.stdvec<!quake.measure>")
         else:
             printer.print_string(") -> ")
             printer.print_attribute(self.result.type)
