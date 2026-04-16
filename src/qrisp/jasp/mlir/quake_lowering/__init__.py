@@ -44,6 +44,7 @@ from qrisp.jasp.mlir.quake_lowering.jaspr_to_quake import jaspr_to_quake  # noqa
 from qrisp.jasp.mlir.quake_lowering.quake_dialect import (  # noqa: F401
     QuakeDialect,
     QuakeMeasureType,
+    QuakeMeasurementsType,
     QuakeRefType,
     QuakeVeqType,
 )
@@ -55,5 +56,6 @@ __all__ = [
     "QuakeRefType",
     "QuakeVeqType",
     "QuakeMeasureType",
+    "QuakeMeasurementsType",
     "CcDialect",
 ]

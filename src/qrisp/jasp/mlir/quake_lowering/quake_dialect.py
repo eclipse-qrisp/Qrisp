@@ -85,9 +85,19 @@ class QuakeVeqType(ParametrizedAttribute, TypeAttribute):
 
 @irdl_attr_definition
 class QuakeMeasureType(ParametrizedAttribute, TypeAttribute):
-    """Quake measurement-result type ``!quake.measure``."""
+    """Quake single-measurement result type ``!quake.measure``."""
 
     name = "quake.measure"
+
+
+@irdl_attr_definition
+class QuakeMeasurementsType(ParametrizedAttribute, TypeAttribute):
+    """Quake multi-measurement result type ``!quake.measurements<?>`` (dynamic size)."""
+
+    name = "quake.measurements"
+
+    def print_parameters(self, printer: Printer) -> None:
+        printer.print_string("<?>")
 
 
 # Shorthand aliases used in operand constraints
@@ -149,11 +159,22 @@ class DeallocOp(IRDLOperation):
 
 @irdl_op_definition
 class ExtractRefOp(IRDLOperation):
-    """Extract a qubit by index: ``quake.extract_ref %veq[%i] : !quake.veq<?>``."""
+    """Extract a qubit by index.
+
+    Assembly format (CUDA-Q Quake dialect functional-type)::
+
+        %ref = quake.extract_ref %veq[%i] : (!quake.veq<?>, i64) -> !quake.ref
+
+    The CUDA-Q Quake spec defines ``extract_ref``'s index as
+    ``Optional<AnySignlessIntegerOrIndex>`` — accepting ``i32``, ``i64``, or
+    ``index`` type.  Using ``AnyAttr()`` here keeps the xDSL constraint open so
+    the Jasp pipeline (which produces ``i64`` indices) works without an explicit
+    cast.  The printer always includes the actual index type in the output.
+    """
 
     name = "quake.extract_ref"
     veq = operand_def(QuakeVeqType)
-    index = operand_def(i64)
+    index = operand_def(AnyAttr())  # AnySignlessIntegerOrIndex: i32, i64, or index
     result = result_def(QuakeRefType)
 
     def __init__(self, veq: SSAValue, index: SSAValue) -> None:
@@ -164,7 +185,11 @@ class ExtractRefOp(IRDLOperation):
         printer.print_ssa_value(self.veq)
         printer.print_string("[")
         printer.print_ssa_value(self.index)
-        printer.print_string("] : !quake.veq<?> -> !quake.ref")
+        printer.print_string("] : (")
+        printer.print_attribute(self.veq.type)
+        printer.print_string(", ")
+        printer.print_attribute(self.index.type)
+        printer.print_string(") -> !quake.ref")
 
 
 @irdl_op_definition
@@ -181,7 +206,7 @@ class VeqSizeOp(IRDLOperation):
     def print(self, printer: Printer) -> None:
         printer.print_string(" ")
         printer.print_ssa_value(self.veq)
-        printer.print_string(" : !quake.veq<?> -> i64")
+        printer.print_string(" : (!quake.veq<?>) -> i64")
 
 
 @irdl_op_definition
@@ -204,9 +229,14 @@ class SubVeqOp(IRDLOperation):
         printer.print_ssa_value(self.lo)
         printer.print_string(", ")
         printer.print_ssa_value(self.hi)
-        printer.print_string(
-            " : (!quake.veq<?>, i64, i64) -> !quake.veq<?>"
-        )
+        # Use functional-type format: (veq_type, lo_type, hi_type) -> result_type
+        printer.print_string(" : (")
+        printer.print_attribute(self.veq.type)
+        printer.print_string(", ")
+        printer.print_attribute(self.lo.type)
+        printer.print_string(", ")
+        printer.print_attribute(self.hi.type)
+        printer.print_string(") -> !quake.veq<?>")
 
 
 @irdl_op_definition
@@ -240,7 +270,11 @@ def _quake_gate_print(self: IRDLOperation, printer: Printer) -> None:  # noqa: N
 
     Format (following Quake assembly format)::
 
-        quake.h [%ctrl0, %ctrl1] (%param0 : f64) %tgt : [ctrl-types](param-types, tgt-types) -> ()
+        quake.h [%ctrl0] (%param0) %tgt : (param-types, ctrl-types, tgt-types) -> ()
+
+    The type signature uses MLIR's ``functional-type`` format (flat list of all
+    SSA operand types in order: parameters, controls, targets) as defined by
+    the CUDA-Q Quake dialect's ``AttrSizedOperandSegments`` assemblyFormat.
     """
     # Controls
     ctrl_list = list(self.controls)
@@ -253,13 +287,7 @@ def _quake_gate_print(self: IRDLOperation, printer: Printer) -> None:  # noqa: N
     param_list = list(self.params)
     if param_list:
         printer.print_string(" (")
-        first = True
-        for p in param_list:
-            if not first:
-                printer.print_string(", ")
-            printer.print_ssa_value(p)
-            printer.print_string(" : f64")
-            first = False
+        printer.print_list(param_list, printer.print_ssa_value)
         printer.print_string(")")
 
     # Target qubits (always at least one)
@@ -268,16 +296,12 @@ def _quake_gate_print(self: IRDLOperation, printer: Printer) -> None:  # noqa: N
         printer.print_string(" ")
         printer.print_ssa_value(t)
 
-    # Type signature
-    printer.print_string(" : ")
-    if ctrl_list:
-        printer.print_string("[")
-        printer.print_list(ctrl_list, lambda v: printer.print_attribute(v.type))
-        printer.print_string("]")
-    printer.print_string("(")
-    all_typed = param_list + tgt_list
+    # Type signature: functional-type over ALL SSA operands (params, controls, targets)
+    # This matches CUDA-Q's assemblyFormat which uses functional-type(operands, results).
+    all_operands = param_list + ctrl_list + tgt_list
+    printer.print_string(" : (")
     printer.print_list(
-        all_typed, lambda v: printer.print_attribute(v.type)
+        all_operands, lambda v: printer.print_attribute(v.type)
     )
     printer.print_string(") -> ()")
 
@@ -385,29 +409,50 @@ def make_gate_op(
 
 @irdl_op_definition
 class MzOp(IRDLOperation):
-    """Measure a qubit in the Z basis: ``quake.mz %ref : (!quake.ref) -> !quake.measure``."""
+    """Measure in the Z basis.
+
+    - Single qubit: ``quake.mz %ref : (!quake.ref) -> !quake.measure``
+    - Register:     ``quake.mz %veq : (!quake.veq<?>) -> !quake.measurements<?>``
+    """
 
     name = "quake.mz"
     qubit = operand_def(AnyAttr())
-    result = result_def(QuakeMeasureType)
+    result = result_def(AnyAttr())
 
     def __init__(self, qubit: SSAValue) -> None:
-        super().__init__(operands=[qubit], result_types=[QuakeMeasureType()])
+        # Choose result type based on whether we're measuring a single qubit or a veq.
+        if isinstance(qubit.type, QuakeVeqType):
+            result_type = QuakeMeasurementsType()
+        else:
+            result_type = QuakeMeasureType()
+        super().__init__(operands=[qubit], result_types=[result_type])
 
     def print(self, printer: Printer) -> None:
         printer.print_string(" ")
         printer.print_ssa_value(self.qubit)
         printer.print_string(" : (")
         printer.print_attribute(self.qubit.type)
-        printer.print_string(") -> !quake.measure")
+        printer.print_string(") -> ")
+        printer.print_attribute(self.result.type)
 
 
 @irdl_op_definition
 class DiscriminateOp(IRDLOperation):
-    """Convert a measurement to an i1: ``quake.discriminate %meas : (!quake.measure) -> i1``."""
+    """Convert a measurement to a classical value.
+
+    - Single: ``quake.discriminate %meas : (!quake.measure) -> i1``
+    - Multi:  ``quake.discriminate %meas : (!quake.measurements<?>) -> i1``
+
+    The CUDA-Q Quake spec allows ``discriminate`` to accept either
+    ``!quake.measure`` (single-qubit) or ``!quake.measurements<N>``
+    (multi-qubit) as its input.  Using ``AnyAttr()`` for the operand
+    constraint accommodates both ``QuakeMeasureType`` and
+    ``QuakeMeasurementsType`` without requiring a common base class.
+    The actual type is reflected accurately in the printed output.
+    """
 
     name = "quake.discriminate"
-    meas = operand_def(QuakeMeasureType)
+    meas = operand_def(AnyAttr())  # QuakeMeasureType or QuakeMeasurementsType
     result = result_def(i1)
 
     def __init__(self, meas: SSAValue) -> None:
@@ -416,7 +461,9 @@ class DiscriminateOp(IRDLOperation):
     def print(self, printer: Printer) -> None:
         printer.print_string(" ")
         printer.print_ssa_value(self.meas)
-        printer.print_string(" : (!quake.measure) -> i1")
+        printer.print_string(" : (")
+        printer.print_attribute(self.meas.type)
+        printer.print_string(") -> i1")
 
 
 @irdl_op_definition
@@ -461,4 +508,4 @@ class QuakeDialect(Dialect):
         ResetOp,
         *_ALL_GATE_CLASSES,
     ]
-    attributes = [QuakeRefType, QuakeVeqType, QuakeMeasureType]
+    attributes = [QuakeRefType, QuakeVeqType, QuakeMeasureType, QuakeMeasurementsType]
