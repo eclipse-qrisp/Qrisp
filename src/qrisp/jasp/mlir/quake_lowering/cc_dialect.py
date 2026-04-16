@@ -54,6 +54,29 @@ from xdsl.printer import Printer
 
 
 # ---------------------------------------------------------------------------
+# CC types
+# ---------------------------------------------------------------------------
+
+
+@irdl_attr_definition
+class CcStdVecType(ParametrizedAttribute, TypeAttribute):
+    """CUDA-Q CC ``!cc.stdvec<i1>`` type — return type of ``quake.mz`` on a veq.
+
+    This is a span-like proxy for ``std::vector<bool>`` in CUDA-Q's CC dialect.
+    Used as the result type when measuring a ``!quake.veq<?>``.
+
+    Example::
+
+        %ms = quake.mz %veq : (!quake.veq<?>) -> !cc.stdvec<i1>
+    """
+
+    name = "cc.stdvec"
+
+    def print_parameters(self, printer: Printer) -> None:
+        printer.print_string("<i1>")
+
+
+# ---------------------------------------------------------------------------
 # CC ops for structured classical control flow
 # ---------------------------------------------------------------------------
 
@@ -220,4 +243,4 @@ class CcDialect(Dialect):
         CcContinueOp,
         CcConditionOp,
     ]
-    attributes = []
+    attributes = [CcStdVecType]

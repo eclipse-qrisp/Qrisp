@@ -90,16 +90,6 @@ class QuakeMeasureType(ParametrizedAttribute, TypeAttribute):
     name = "quake.measure"
 
 
-@irdl_attr_definition
-class QuakeMeasurementsType(ParametrizedAttribute, TypeAttribute):
-    """Quake multi-measurement result type ``!quake.measurements<?>`` (dynamic size)."""
-
-    name = "quake.measurements"
-
-    def print_parameters(self, printer: Printer) -> None:
-        printer.print_string("<?>")
-
-
 # Shorthand aliases used in operand constraints
 _QubitOrVeq = AnyAttr()  # accepts both QuakeRefType and QuakeVeqType
 
@@ -412,7 +402,11 @@ class MzOp(IRDLOperation):
     """Measure in the Z basis.
 
     - Single qubit: ``quake.mz %ref : (!quake.ref) -> !quake.measure``
-    - Register:     ``quake.mz %veq : (!quake.veq<?>) -> !quake.measurements<?>``
+    - Register:     ``quake.mz %veq : (!quake.veq<?>) -> !cc.stdvec<i1>``
+
+    Per the CUDA-Q Quake dialect, measuring a ``veq`` returns ``!cc.stdvec<i1>``
+    (a CC span-like proxy for ``std::vector<bool>``), not the non-existent
+    ``!quake.measurements<?>`` type.
     """
 
     name = "quake.mz"
@@ -422,7 +416,9 @@ class MzOp(IRDLOperation):
     def __init__(self, qubit: SSAValue) -> None:
         # Choose result type based on whether we're measuring a single qubit or a veq.
         if isinstance(qubit.type, QuakeVeqType):
-            result_type = QuakeMeasurementsType()
+            # Veq measurement → !cc.stdvec<i1>
+            from qrisp.jasp.mlir.quake_lowering.cc_dialect import CcStdVecType
+            result_type = CcStdVecType()
         else:
             result_type = QuakeMeasureType()
         super().__init__(operands=[qubit], result_types=[result_type])
@@ -508,4 +504,4 @@ class QuakeDialect(Dialect):
         ResetOp,
         *_ALL_GATE_CLASSES,
     ]
-    attributes = [QuakeRefType, QuakeVeqType, QuakeMeasureType, QuakeMeasurementsType]
+    attributes = [QuakeRefType, QuakeVeqType, QuakeMeasureType]

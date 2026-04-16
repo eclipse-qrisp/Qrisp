@@ -367,8 +367,12 @@ def test_parameterized_gate_functional_type():
     assert_no_jasp(mlir)
 
 
-def test_veq_measurement_returns_measurements_type():
-    """Measuring a veq returns !quake.measurements<?>, not !quake.measure."""
+def test_veq_measurement_returns_cc_stdvec_type():
+    """Measuring a veq returns !cc.stdvec<i1>, not !quake.measurements<?>.
+
+    Per the CUDA-Q spec, measuring a veq returns !cc.stdvec<i1> (a CC dialect
+    span proxy for std::vector<bool>), not the non-existent !quake.measurements<?>.
+    """
 
     def circuit():
         qv = QuantumVariable(2)
@@ -378,15 +382,18 @@ def test_veq_measurement_returns_measurements_type():
 
     mlir = _lower(circuit)
     assert "quake.mz" in mlir
-    # Multi-qubit measurement result type must be !quake.measurements<?>
-    assert "!quake.measurements<?>" in mlir, (
-        "Measuring a veq should return !quake.measurements<?>, not !quake.measure"
+    # Must use CC type, not the invalid !quake.measurements<?>
+    assert "!cc.stdvec<i1>" in mlir, (
+        "Measuring a veq should return !cc.stdvec<i1>, not !quake.measurements<?>"
+    )
+    assert "!quake.measurements<?>" not in mlir, (
+        "!quake.measurements<?> is not a valid CUDA-Q type; use !cc.stdvec<i1>"
     )
     assert_no_jasp(mlir)
 
 
 def test_single_qubit_measurement_result_type():
-    """Measuring a single qubit returns !quake.measure."""
+    """Measuring a qubit register always returns !cc.stdvec<i1>."""
 
     def circuit():
         qv = QuantumVariable(1)
@@ -394,9 +401,11 @@ def test_single_qubit_measurement_result_type():
         return measure(qv)
 
     mlir = _lower(circuit)
-    # Since we always measure a veq (even 1-qubit), the result is measurements<?>
-    # This test documents the current behavior.
+    # Even a 1-qubit circuit measures the full veq → !cc.stdvec<i1>
     assert "quake.mz" in mlir
+    assert "!cc.stdvec<i1>" in mlir, (
+        "mz on a veq (even 1-qubit) should return !cc.stdvec<i1>"
+    )
     assert_no_jasp(mlir)
 
 
@@ -463,8 +472,10 @@ def test_bell_circuit_full_format():
     # CX gate (quake.x with control)
     assert "(!quake.ref, !quake.ref) -> ()" in mlir
 
-    # Measurement with correct multi-qubit type
-    assert "!quake.measurements<?>" in mlir
+    # Measurement with correct CUDA-Q CC type
+    assert "!cc.stdvec<i1>" in mlir, (
+        "veq measurement must return !cc.stdvec<i1>"
+    )
 
     assert_no_jasp(mlir)
 
