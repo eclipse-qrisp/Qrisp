@@ -131,7 +131,9 @@ class TestJob(Job):
 
     def _set_error(self, error: Exception) -> None:
         """Mark the job as ERROR, store the exception, and fire all registered callbacks."""
-        self._failure_cause = error  # base-class attribute; chained by _raise_for_status
+        self._failure_cause = (
+            error  # base-class attribute; chained by _raise_for_status
+        )
         self._status = JobStatus.ERROR
         self._done_event.set()
         for cb in self._callbacks:
@@ -402,12 +404,12 @@ class TestBackendOptions:
     def test_options_must_be_mapping_string_rejected(self):
         """Ensure that passing a string as options raises a TypeError."""
         with pytest.raises(TypeError, match="Mapping"):
-            MinimalBackend(options="not_a_mapping")  # type: ignore[arg-type]
+            MinimalBackend(options="not_a_mapping")
 
     def test_options_must_be_mapping_list_rejected(self):
         """Ensure that passing a list as options raises a TypeError."""
         with pytest.raises(TypeError):
-            MinimalBackend(options=[1, 2, 3])  # type: ignore[arg-type]
+            MinimalBackend(options=[1, 2, 3])
 
     def test_options_are_copied_from_constructor(self):
         """Ensure that mutating the original mapping after construction does not affect the backend."""
@@ -730,14 +732,14 @@ class TestSyncExecution:
         """run_async() must treat a tuple of circuits as a batch, not as a single circuit."""
         backend = TestBackend(mode=ExecutionMode.SYNC, seed=0)
         circuits = ("a", "b", "c")
-        result = backend.run_async(circuits, shots=32).result()  # type: ignore[arg-type]
+        result = backend.run_async(circuits, shots=32).result()
         assert result.num_circuits == 3
 
     def test_run_accepts_tuple_of_circuits(self):
         """run() must return a list of results when a tuple of circuits is submitted."""
         backend = TestBackend(mode=ExecutionMode.SYNC, seed=0)
         circuits = ("a", "b")
-        result = backend.run(circuits, shots=32)  # type: ignore[arg-type]
+        result = backend.run(circuits, shots=32)
         assert isinstance(result, list)
         assert len(result) == 2
 
@@ -745,8 +747,8 @@ class TestSyncExecution:
         """run_async() must produce the same number of results for a tuple and an equivalent list."""
         backend = TestBackend(mode=ExecutionMode.SYNC, seed=42)
         circuits = ["x", "y", "z"]
-        result_list = backend.run_async(circuits, shots=16).result()  # type: ignore[arg-type]
-        result_tuple = backend.run_async(tuple(circuits), shots=16).result()  # type: ignore[arg-type]
+        result_list = backend.run_async(circuits, shots=16).result()
+        result_tuple = backend.run_async(tuple(circuits), shots=16).result()
         assert result_list.num_circuits == result_tuple.num_circuits
 
 
@@ -1239,7 +1241,9 @@ class TestJobRepr:
         """repr(job) must not invoke status() — it must read last_known_status instead."""
         backend = MinimalBackend()
         job = backend.run_async("c")
-        with unittest.mock.patch.object(type(job), "status", wraps=job.status) as mock_status:
+        with unittest.mock.patch.object(
+            type(job), "status", wraps=job.status
+        ) as mock_status:
             _ = repr(job)
             mock_status.assert_not_called()
 
@@ -1293,12 +1297,12 @@ class TestShotsValidation:
     def test_shots_string_raises_type_error(self, backend):
         """shots='100' (a string) must raise TypeError."""
         with pytest.raises(TypeError, match="shots"):
-            backend.run(object(), shots="100")  # type: ignore[arg-type]
+            backend.run(object(), shots="100")
 
     def test_shots_bool_raises_type_error(self, backend):
         """shots=True (a bool) must raise TypeError even though bool is a subclass of int."""
         with pytest.raises(TypeError, match="shots"):
-            backend.run(object(), shots=True)  # type: ignore[arg-type]
+            backend.run(object(), shots=True)
 
     def test_shots_none_is_accepted(self, backend):
         """shots=None must not raise — it means 'use the backend default'."""
@@ -1435,48 +1439,48 @@ class TestMaxCircuits:
         """run() must raise ValueError when more circuits than max_circuits are submitted."""
         b = _LimitedBackend(2)
         with pytest.raises(ValueError, match="circuit"):
-            b.run(["a", "b", "c"])  # type: ignore[arg-type]
+            b.run(["a", "b", "c"])
 
     def test_run_accepts_batch_equal_to_limit(self):
         """run() must accept a batch whose size exactly equals max_circuits."""
         b = _LimitedBackend(3)
-        result = b.run(["a", "b", "c"])  # type: ignore[arg-type]
+        result = b.run(["a", "b", "c"])
         assert len(result) == 3
 
     def test_run_accepts_batch_below_limit(self):
         """run() must accept a batch whose size is smaller than max_circuits."""
         b = _LimitedBackend(5)
-        result = b.run(["a", "b"])  # type: ignore[arg-type]
+        result = b.run(["a", "b"])
         assert len(result) == 2
 
     def test_single_circuit_never_rejected(self):
         """A list of exactly one circuit is always within any positive limit."""
         b = _LimitedBackend(1)
-        result = b.run(["only_one"])  # type: ignore[arg-type]
+        result = b.run(["only_one"])
         assert len(result) == 1
 
     def test_error_message_contains_class_name(self):
         """The ValueError message must name the backend class to aid debugging."""
         b = _LimitedBackend(1)
         with pytest.raises(ValueError, match="_LimitedBackend"):
-            b.run(["a", "b"])  # type: ignore[arg-type]
+            b.run(["a", "b"])
 
     def test_error_message_mentions_limit(self):
         """The ValueError message must state the actual limit."""
         b = _LimitedBackend(2)
         with pytest.raises(ValueError, match="2"):
-            b.run(["a", "b", "c"])  # type: ignore[arg-type]
+            b.run(["a", "b", "c"])
 
     def test_check_circuit_limit_helper_is_no_op_when_limit_is_none(self):
         """_check_circuit_limit must not raise when max_circuits is None."""
         b = MinimalBackend()
-        b._check_circuit_limit(["a", "b", "c", "d", "e"])  # type: ignore[arg-type]
+        b._check_circuit_limit(["a", "b", "c", "d", "e"])
 
     def test_check_circuit_limit_helper_raises_over_limit(self):
         """_check_circuit_limit must raise ValueError when the batch is too large."""
         b = _LimitedBackend(2)
         with pytest.raises(ValueError):
-            b._check_circuit_limit(["a", "b", "c"])  # type: ignore[arg-type]
+            b._check_circuit_limit(["a", "b", "c"])
 
 
 # ===========================================================================
@@ -1529,23 +1533,27 @@ class TestJobFailureCause:
 
     def test_sync_failure_cause_is_chained(self):
         """The original hardware exception must be the __cause__ of JobFailureError."""
-        job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async("c")  # type: ignore[arg-type]
+        job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async(
+            "c"
+        )
         with pytest.raises(JobFailureError) as exc_info:
             job.result()
         assert exc_info.value.__cause__ is not None
 
     def test_sync_failure_cause_preserves_original_message(self):
         """The __cause__ must carry the original exception message."""
-        job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async("c")  # type: ignore[arg-type]
+        job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async(
+            "c"
+        )
         with pytest.raises(JobFailureError) as exc_info:
             job.result()
         assert "Simulated hardware fault" in str(exc_info.value.__cause__)
 
     def test_async_failure_cause_is_chained(self):
         """Cause chaining must work for async (threaded) failures too."""
-        job = TestBackend(
-            mode=ExecutionMode.ERROR, async_delay=0.3, seed=0
-        ).run_async("c")  # type: ignore[arg-type]
+        job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0.3, seed=0).run_async(
+            "c"
+        )
         with pytest.raises(JobFailureError) as exc_info:
             job.result()
         assert exc_info.value.__cause__ is not None
@@ -1564,6 +1572,6 @@ class TestJobFailureCause:
 
     def test_done_job_does_not_raise_on_raise_for_status(self):
         """_raise_for_status must be a no-op when the job completed successfully."""
-        job = TestBackend(mode=ExecutionMode.SYNC, seed=0).run_async("c")  # type: ignore[arg-type]
+        job = TestBackend(mode=ExecutionMode.SYNC, seed=0).run_async("c")
         # Should not raise
         job._raise_for_status(JobStatus.DONE)
