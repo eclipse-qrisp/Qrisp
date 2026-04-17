@@ -116,6 +116,26 @@ class TestJobResultConstruction:
         assert "metadata" in r.metadata
         assert r.metadata["metadata"] == {"mode": "sync"}
 
+    def test_string_counts_raises_type_error(self):
+        """JobResult must reject a bare string — strings are Sequences but not lists of dicts."""
+        with pytest.raises(TypeError):
+            JobResult("0011")
+
+    def test_bytes_counts_raises_type_error(self):
+        """JobResult must reject bytes — bytes are Sequences but not lists of dicts."""
+        with pytest.raises(TypeError):
+            JobResult(b"0011")
+
+    def test_list_containing_non_dict_raises_type_error(self):
+        """JobResult must reject a list where any element is not a dict."""
+        with pytest.raises(TypeError):
+            JobResult([{"0": 1}, "not_a_dict"])
+
+    def test_list_containing_none_raises_type_error(self):
+        """JobResult must reject a list that contains None."""
+        with pytest.raises(TypeError):
+            JobResult([None])
+
 
 class TestJobResultAccess:
     """Unit tests for JobResult data access."""
@@ -428,6 +448,26 @@ class TestJobResultContract:
         job.cancel()
         with pytest.raises(JobCancelledError, match="test-job-99"):
             job.result(timeout=1)
+
+    def test_raise_for_status_without_argument_raises_for_error(self, backend):
+        """_raise_for_status() with no argument must call status() live and raise JobFailureError."""
+        job = MinimalJob(backend=backend)
+        job._fail(RuntimeError("live-status-path"))
+        with pytest.raises(JobFailureError):
+            job._raise_for_status()  # no argument — falls back to self.status()
+
+    def test_raise_for_status_without_argument_is_no_op_for_done(self, backend):
+        """_raise_for_status() with no argument must not raise when status is DONE."""
+        job = MinimalJob(backend=backend)
+        job._resolve(JobResult([{"0": 1}]))
+        job._raise_for_status()  # no argument, no exception expected
+
+    def test_raise_for_status_without_argument_raises_for_cancelled(self, backend):
+        """_raise_for_status() with no argument must raise JobCancelledError for CANCELLED."""
+        job = MinimalJob(backend=backend)
+        job.cancel()
+        with pytest.raises(JobCancelledError):
+            job._raise_for_status()  # no argument — falls back to self.status()
 
 
 class TestJobStatusCaching:

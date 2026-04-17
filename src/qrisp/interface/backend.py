@@ -125,15 +125,6 @@ class Backend(ABC):
     Backend-specific capabilities that are not covered by the base interface
     should be exposed as concrete typed properties on the subclass.
 
-    .. rubric:: Relationship to design patterns
-
-    ``Backend`` and :class:`Job` together form a `Bridge <https://refactoring.guru/design-patterns/bridge>`_: two
-    independently varying class hierarchies (submission interface and execution handle)
-    that can be extended without affecting each other. :class:`Job` is additionally
-    a `Virtual Proxy <https://refactoring.guru/design-patterns/proxy>`_ for the execution result.
-    Concrete vendor backends act as `Adapters <https://refactoring.guru/design-patterns/adapter>`_ that
-    wrap a vendor SDK to satisfy the ``Backend`` interface expected by Qrisp.
-
     Parameters
     ----------
     name : str or None
@@ -188,9 +179,13 @@ class Backend(ABC):
         """
         Submit one or more circuits for execution and return a :class:`Job`.
 
-        This method returns immediately. The caller blocks and retrieves the
-        outcome by calling :meth:`Job.result <qrisp.interface.Job.result>`
-        on the returned object.
+        .. rubric:: Implementor contract
+
+        Before returning, every concrete implementation must call
+        :meth:`job.submit() <qrisp.interface.Job.submit>` on the newly created
+        job. ``submit()`` is the hook that transitions the job from
+        ``INITIALIZING`` to ``QUEUED``, signalling that execution
+        has been handed off to the backend.
 
         Parameters
         ----------
@@ -235,7 +230,7 @@ class Backend(ABC):
         the measurement results. The return type mirrors the input: a single
         ``CircuitResult`` for a single circuit, or a ``list[CircuitResult]`` for a list.
 
-        This method exists primarily for **backward compatibility** with
+        This method exists primarily for *backward compatibility* with
         existing Qrisp code that previously called ``backend.run(circuit,
         shots)`` and expected a measurement dictionary directly. New code
         that needs the full :class:`Job` interface (status polling,
@@ -279,7 +274,7 @@ class Backend(ABC):
         process restart or network interruption, provided the backend
         stores job history server-side.
 
-        This is an **optional capability**. The default implementation
+        This is an *optional capability*. The default implementation
         raises :exc:`NotImplementedError`. Backends that support job
         recovery must override this method.
 
@@ -379,9 +374,7 @@ class Backend(ABC):
                 f"'shots' must be a positive integer, got {type(shots).__name__!r}"
             )
         if shots <= 0:
-            raise ValueError(
-                f"'shots' must be a positive integer, got {shots!r}"
-            )
+            raise ValueError(f"'shots' must be a positive integer, got {shots!r}")
 
     # ------------------------------------------------------------------
     # Runtime options
@@ -413,7 +406,7 @@ class Backend(ABC):
 
         The returned mapping is read-only. Use :meth:`update_options` to
         change existing keys. Direct mutation (e.g.
-        ``backend.options["shots"] = n``) raises :exc:`TypeError`.
+        ``backend.options["shots"] = n``) raises ``TypeError``.
         """
         return MappingProxyType(self._options)
 
@@ -515,11 +508,11 @@ class Backend(ABC):
         Submitting a batch larger than this limit causes an opaque error
         from the vendor SDK. Exposing the limit here lets Qrisp provide an
         early, clear :exc:`ValueError` via :meth:`run` and
-        :meth:`_check_circuit_limit` before any network call is made.
+        ``_check_circuit_limit`` before any network call is made.
 
         Concrete backends should override this property and return the
         actual limit. Implementations of :meth:`run_async` should also
-        call :meth:`_check_circuit_limit` before submitting to the
+        call ``_check_circuit_limit`` before submitting to the
         hardware so that users who bypass :meth:`run` still get the same
         early error.
 

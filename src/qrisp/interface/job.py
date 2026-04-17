@@ -231,16 +231,6 @@ class Job(ABC):
 
     From the caller's perspective, all of the above are used identically.
 
-    .. rubric:: Relationship to design patterns
-
-    ``Job`` is a `Virtual Proxy <https://refactoring.guru/design-patterns/proxy>`_ for
-    the execution result: it is a local placeholder that controls access to
-    an outcome that may be remote, deferred, or not yet computed.
-    Together with :class:`Backend`, it forms a `Bridge <https://refactoring.guru/design-patterns/bridge>`_: the
-    two abstract hierarchies (submission interface and execution handle)
-    can be varied and extended independently.
-
-
     Parameters
     ----------
     backend : Backend
@@ -319,7 +309,7 @@ class Job(ABC):
         Block until the job reaches a terminal state and return its result.
 
         This is a blocking call: it does not return until the job is in one
-        of the terminal states — :attr:`~JobStatus.DONE`,
+        of the terminal states: :attr:`~JobStatus.DONE`,
         :attr:`~JobStatus.CANCELLED`, or :attr:`~JobStatus.ERROR`. The
         internal synchronisation mechanism (threading, polling, asyncio,
         etc.) is left entirely to the concrete implementation.
@@ -492,7 +482,7 @@ class Job(ABC):
         status : JobStatus or None, optional
             The terminal :class:`JobStatus` that was already determined by
             the caller's wait mechanism. When provided, this value is used
-            directly and no additional :meth:`status` call is made — which
+            directly and no additional :meth:`status` call is made: which
             avoids a redundant network round-trip on remote backends.
             If omitted (or ``None``), :meth:`status` is called to obtain
             the current state.

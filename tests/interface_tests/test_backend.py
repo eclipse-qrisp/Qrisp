@@ -27,7 +27,8 @@ import pytest
 
 from conftest import MinimalBackend, MinimalJob
 from qrisp.interface.backend import Backend
-from qrisp.interface.job import Job, JobFailureError, JobResult, JobStatus
+from qrisp.circuit.quantum_circuit import QuantumCircuit
+from qrisp.interface.job import Job, JobCancelledError, JobFailureError, JobResult, JobStatus
 from typing import cast
 from qrisp.interface.qunicorn.backend_client import BackendClient
 from qrisp.interface.qunicorn.backend_server import BackendServer
@@ -486,6 +487,13 @@ class TestBackendOptions:
         with pytest.raises(AttributeError):
             b.update_options(new_param=999)
 
+    def test_update_options_no_args_is_no_op(self):
+        """Calling update_options() with no arguments must leave options unchanged and not raise."""
+        b = MinimalBackend()
+        original = dict(b.options)
+        b.update_options()
+        assert dict(b.options) == original
+
 
 class TestBackendHardwareMetadata:
     """Tests that all hardware metadata properties return None (or empty dict) by default."""
@@ -751,6 +759,68 @@ class TestSyncExecution:
         result_tuple = backend.run_async(tuple(circuits), shots=16).result()
         assert result_list.num_circuits == result_tuple.num_circuits
 
+    def test_result_idempotent_on_done_job(self):
+        """Calling result() twice on a completed job must return consistent counts without raising."""
+        backend = MinimalBackend()
+        job = backend.run_async("c", shots=128)
+        first = job.result()
+        second = job.result()
+        assert second.all_counts == first.all_counts
+
+
+# ===========================================================================
+# Integration tests: run() return-type contract (QuantumCircuit vs batch)
+# ===========================================================================
+
+
+class TestRunReturnType:
+    """Tests that Backend.run() returns a dict for a single QuantumCircuit and a list for a batch.
+
+    This is the primary backward-compatibility guarantee of the run() method.
+    The distinction is driven by isinstance(circuits, QuantumCircuit) in the base class.
+    """
+
+    def test_run_single_quantum_circuit_returns_dict(self):
+        """run() must return a plain dict (not a list) when passed a single QuantumCircuit."""
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        qc.measure(0)
+        result = MinimalBackend().run(qc, shots=128)
+        assert isinstance(result, dict)
+
+    def test_run_single_quantum_circuit_dict_has_string_keys(self):
+        """The dict returned for a single QuantumCircuit must have string bitstring keys."""
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        qc.measure(0)
+        result = MinimalBackend().run(qc, shots=64)
+        assert all(isinstance(k, str) for k in result)
+
+    def test_run_list_of_quantum_circuits_returns_list(self):
+        """run() must return a list when passed a list of QuantumCircuits."""
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        qc.measure(0)
+        result = MinimalBackend().run([qc, qc], shots=64)
+        assert isinstance(result, list)
+        assert len(result) == 2
+
+    def test_run_list_of_quantum_circuits_each_element_is_dict(self):
+        """Each element of the list returned by run([qc, qc]) must be a dict."""
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        qc.measure(0)
+        result = MinimalBackend().run([qc, qc], shots=64)
+        assert all(isinstance(r, dict) for r in result)
+
+    def test_run_async_single_quantum_circuit_num_circuits_is_one(self):
+        """run_async() must return a job with num_circuits==1 for a single QuantumCircuit."""
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        qc.measure(0)
+        job = MinimalBackend().run_async(qc, shots=64)
+        assert job.result().num_circuits == 1
+
 
 # ===========================================================================
 # Integration tests: asynchronous execution
@@ -853,6 +923,36 @@ class TestAsyncExecution:
         results = [job.result() for job in jobs]
         for result in results:
             assert result.num_circuits == 1
+
+    def test_concurrent_result_calls_return_same_data(self):
+        """Multiple threads calling result() on the same job simultaneously must all succeed.
+
+        This guards against implementations that clear or overwrite the stored
+        result on first access, which would cause a race condition.
+        """
+        backend = TestBackend(
+            mode=ExecutionMode.ASYNC, num_qubits=2, async_delay=0.3, seed=7
+        )
+        job = backend.run_async("c", shots=100)
+        results = []
+        errors = []
+
+        def fetch():
+            try:
+                results.append(job.result())
+            except Exception as exc:  # noqa: BLE001
+                errors.append(exc)
+
+        threads = [threading.Thread(target=fetch) for _ in range(5)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert not errors, f"Unexpected errors: {errors}"
+        assert len(results) == 5
+        first = results[0].all_counts
+        assert all(r.all_counts == first for r in results)
 
 
 # ===========================================================================
@@ -983,6 +1083,30 @@ class TestErrorBehaviour:
             pass
         assert fired == [JobStatus.ERROR]
 
+    def test_sync_error_result_raises_job_failure_error(self):
+        """result() must raise JobFailureError (not just RuntimeError) for a failed job.
+
+        Vendor code and framework internals that want to distinguish a hardware
+        fault from a cancellation or timeout can catch JobFailureError specifically.
+        JobFailureError is a RuntimeError subclass, so existing ``except RuntimeError``
+        blocks continue to work.
+        """
+        job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async(
+            "c"
+        )
+        with pytest.raises(JobFailureError):
+            job.result()
+
+    def test_backend_run_raises_job_failure_error(self):
+        """Backend.run() (the blocking convenience wrapper) must also surface JobFailureError.
+
+        This verifies the full call-stack: run() → run_async() → job.result(),
+        so that callers using the high-level API can still distinguish error types.
+        """
+        backend = TestBackend(mode=ExecutionMode.ERROR, async_delay=0, seed=0)
+        with pytest.raises(JobFailureError):
+            backend.run("c")
+
 
 # ===========================================================================
 # Integration tests: cancellation
@@ -1092,6 +1216,21 @@ class TestCancellation:
         except RuntimeError:
             pass
         assert fired == [JobStatus.CANCELLED]
+
+    def test_cancel_result_raises_job_cancelled_error(self):
+        """result() must raise JobCancelledError (not just RuntimeError) for a cancelled job.
+
+        This lets callers distinguish a user-initiated cancellation from a hardware
+        fault. JobCancelledError is a RuntimeError subclass, so existing
+        ``except RuntimeError`` blocks continue to work.
+        """
+        job = TestBackend(mode=ExecutionMode.CANCEL, async_delay=5.0, seed=0).run_async(
+            "c"
+        )
+        time.sleep(0.6)
+        job.cancel()
+        with pytest.raises(JobCancelledError):
+            job.result()
 
 
 # ===========================================================================
@@ -1575,3 +1714,31 @@ class TestJobFailureCause:
         job = TestBackend(mode=ExecutionMode.SYNC, seed=0).run_async("c")
         # Should not raise
         job._raise_for_status(JobStatus.DONE)
+
+
+# ===========================================================================
+# Backend __repr__ tests
+# ===========================================================================
+
+
+class TestBackendRepr:
+    """Tests that Backend.__repr__ exposes useful information for debugging.
+
+    A good repr lets developers identify a backend at a glance in logs,
+    notebooks, and interactive sessions.
+    """
+
+    def test_repr_contains_class_name(self):
+        """repr(backend) must include the concrete class name."""
+        b = MinimalBackend()
+        assert "MinimalBackend" in repr(b)
+
+    def test_repr_contains_backend_name(self):
+        """repr(backend) must include the backend's name attribute."""
+        b = MinimalBackend(name="my_hw")
+        assert "my_hw" in repr(b)
+
+    def test_repr_contains_options_key(self):
+        """repr(backend) must mention 'options' so users know options are configurable."""
+        b = MinimalBackend()
+        assert "options" in repr(b).lower()
