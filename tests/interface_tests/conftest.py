@@ -47,14 +47,18 @@ class MinimalJob(Job):
     # ── Abstract interface ────────────────────────────────────────────
 
     def submit(self) -> None:
-        pass
+        # Honour the INITIALIZING → QUEUED transition so the lifecycle
+        # contract is visible even in this minimal helper.
+        self._status = JobStatus.QUEUED
 
     def result(self, timeout=None) -> JobResult | None:
         if not self._done_event.wait(timeout=timeout):
             raise TimeoutError(
                 f"Job '{self._job_id}' did not complete within {timeout}s."
             )
-        self._raise_for_status()
+        # Pass the already-known terminal status to avoid a redundant
+        # live status() call inside _raise_for_status.
+        self._raise_for_status(self._status)
         return self._result_data
 
     def cancel(self) -> bool:
@@ -77,7 +81,7 @@ class MinimalJob(Job):
 
     def _fail(self, error: Exception) -> None:
         """Mark the job as failed."""
-        self._error = error
+        self._failure_cause = error  # base-class attribute; chained by _raise_for_status
         self._status = JobStatus.ERROR
         self._done_event.set()
 
@@ -99,7 +103,8 @@ class MinimalBackend(Backend):
             circuits = [circuits]
         n_shots = shots if shots is not None else self.options["shots"]
         job = MinimalJob(backend=self)
-        job._set_status(JobStatus.RUNNING)
+        job.submit()                          # INITIALIZING → QUEUED
+        job._set_status(JobStatus.RUNNING)    # QUEUED → RUNNING
         counts = [{"0": n_shots} for _ in circuits]
-        job._resolve(JobResult(counts))
+        job._resolve(JobResult(counts))       # RUNNING → DONE
         return job

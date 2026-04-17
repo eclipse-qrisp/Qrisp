@@ -264,6 +264,10 @@ class Job(ABC):
         self._job_id = job_id
         self.metadata = kwargs
         self._last_known_status: JobStatus = JobStatus.INITIALIZING
+        # Concrete implementations should set this to the original exception
+        # when they mark the job as ERROR (e.g. inside _set_error() or _fail()).
+        # _raise_for_status() chains it automatically via ``raise ... from``.
+        self._failure_cause: BaseException | None = None
 
     # ------------------------------------------------------------------
     # Properties
@@ -310,7 +314,7 @@ class Job(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def result(self) -> JobResult:
+    def result(self, timeout: float | None = None) -> JobResult:
         """
         Block until the job reaches a terminal state and return its result.
 
@@ -325,6 +329,21 @@ class Job(ABC):
 
         Concrete implementations should call :meth:`_raise_for_status`
         once the terminal state has been reached, before returning.
+        Pass the already-known terminal :class:`JobStatus` to avoid a
+        redundant live :meth:`status` call:
+
+        .. code-block:: python
+
+            terminal_status = ...  # determined by the wait mechanism
+            self._raise_for_status(terminal_status)
+
+        Parameters
+        ----------
+        timeout : float or None, optional
+            Maximum number of seconds to wait for the job to finish.
+            ``None`` (default) waits indefinitely. Implementations that
+            support this parameter should raise :exc:`TimeoutError` when
+            the deadline expires.
 
         Returns
         -------
@@ -339,6 +358,9 @@ class Job(ABC):
 
         JobCancelledError
             If the job was cancelled (:attr:`~JobStatus.CANCELLED`).
+
+        TimeoutError
+            If *timeout* is specified and the job does not finish in time.
         """
 
         raise NotImplementedError
@@ -351,7 +373,23 @@ class Job(ABC):
         Returns
         -------
         bool
-            True iff the job was successfully cancelled.
+            ``True`` if the cancellation was initiated: either the job is
+            already in :attr:`~JobStatus.CANCELLED` state (for synchronous
+            or in-process backends), or the cancel request has been
+            dispatched to the remote backend (for asynchronous hardware
+            backends; the transition to ``CANCELLED`` may not yet be
+            visible in :meth:`status`).
+
+            ``False`` if the job is already in a terminal state and no
+            action was taken.
+
+            .. note::
+
+                For asynchronous remote backends, ``True`` means the
+                cancel *request* was accepted by the server, **not** that
+                the job has confirmed cancellation.  Callers should check
+                :meth:`status` (or call :meth:`result`) to determine the
+                final outcome.
 
         """
 
@@ -362,7 +400,7 @@ class Job(ABC):
         """
         Query and return the current :class:`JobStatus` of the job.
 
-        This is a **live query**: every call fetches the most up-to-date
+        This is a *live query*: every call fetches the most up-to-date
         status available, which for remote backends may involve a network
         call. Callers that want to read the last known status without
         triggering a round-trip should use ``last_known_status``
@@ -378,6 +416,13 @@ class Job(ABC):
 
     # ------------------------------------------------------------------
     # Methods (derived from status)
+    #
+    # NOTE: every method in this block calls :meth:`status` on each
+    # invocation. For remote backends, :meth:`status` may involve a
+    # network round-trip. Callers that need to minimise round-trips
+    # should use :meth:`refresh` once and then read
+    # :attr:`last_known_status` rather than calling these helpers
+    # repeatedly.
     # ------------------------------------------------------------------
 
     def done(self) -> bool:
@@ -434,27 +479,41 @@ class Job(ABC):
     # Helper for concrete implementations
     # ------------------------------------------------------------------
 
-    def _raise_for_status(self) -> None:
+    def _raise_for_status(self, status: JobStatus | None = None) -> None:
         """
-        Raise the appropriate exception if the current status is not
-        ``DONE``.
+        Raise the appropriate exception if the job did not complete successfully.
 
         Concrete implementations should call this inside :meth:`result`
         *after* the job has reached a terminal state (i.e. after any
         blocking wait).
 
+        Parameters
+        ----------
+        status : JobStatus or None, optional
+            The terminal :class:`JobStatus` that was already determined by
+            the caller's wait mechanism. When provided, this value is used
+            directly and no additional :meth:`status` call is made — which
+            avoids a redundant network round-trip on remote backends.
+            If omitted (or ``None``), :meth:`status` is called to obtain
+            the current state.
+
         Raises
         ------
         JobFailureError
-            If :attr:`status` is ``ERROR``.
+            If *status* is ``ERROR``.
 
         JobCancelledError
-            If :attr:`status` is ``CANCELLED``.
+            If *status* is ``CANCELLED``.
         """
-        s = self.status()
-        if s == JobStatus.ERROR:
-            raise JobFailureError(f"Job {self._job_id!r} terminated with status ERROR.")
-        if s == JobStatus.CANCELLED:
+        if status is None:
+            status = self.status()
+        if status == JobStatus.ERROR:
+            # Chain the original exception stored by the concrete implementation
+            # so that callers and tracebacks show the root cause automatically.
+            raise JobFailureError(
+                f"Job {self._job_id!r} terminated with status ERROR."
+            ) from self._failure_cause
+        if status == JobStatus.CANCELLED:
             raise JobCancelledError(f"Job {self._job_id!r} was cancelled.")
 
     # ------------------------------------------------------------------
@@ -462,8 +521,14 @@ class Job(ABC):
     # ------------------------------------------------------------------
 
     def __repr__(self) -> str:
+        # Use last_known_status rather than calling status() here.
+        # status() is a live query that may involve a network round-trip
+        # on remote backends; triggering it inside __repr__ (e.g. during
+        # logging, debugging, or pytest failure messages) would be
+        # surprising and potentially expensive.  Callers that want the
+        # current status should call refresh() before printing.
         return (
             f"{self.__class__.__name__}("
             f"job_id={self._job_id!r}, "
-            f"status={self.status().name})"
+            f"status={self._last_known_status.name})"
         )

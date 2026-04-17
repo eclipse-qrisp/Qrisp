@@ -17,15 +17,17 @@
 """Tests for the Backend-related classes defined in qrisp.interface.backend"""
 from __future__ import annotations
 
+import inspect
 import threading
 import time
+import unittest.mock
 
 import numpy as np
 import pytest
 
-from conftest import MinimalBackend
+from conftest import MinimalBackend, MinimalJob
 from qrisp.interface.backend import Backend
-from qrisp.interface.job import Job, JobResult, JobStatus
+from qrisp.interface.job import Job, JobFailureError, JobResult, JobStatus
 from typing import cast
 from qrisp.interface.qunicorn.backend_client import BackendClient
 from qrisp.interface.qunicorn.backend_server import BackendServer
@@ -75,7 +77,8 @@ class TestJob(Job):
     # ── Abstract interface ────────────────────────────────────────────
 
     def submit(self) -> None:
-        """Submit the job. TestBackend triggers execution directly in run()."""
+        """Transition to QUEUED. TestBackend then drives further state changes."""
+        self._status = JobStatus.QUEUED
 
     def result(self, timeout=None) -> JobResult:
         """Block until the job finishes and return the JobResult, or raise on failure."""
@@ -83,7 +86,9 @@ class TestJob(Job):
             raise TimeoutError(
                 f"Job '{self._job_id}' did not complete within {timeout}s."
             )
-        self._raise_for_status()
+        # Pass the already-known terminal status so _raise_for_status
+        # does not make a redundant status() call.
+        self._raise_for_status(self._status)
         return cast(JobResult, self._result_data)
 
     def cancel(self) -> bool:
@@ -126,7 +131,7 @@ class TestJob(Job):
 
     def _set_error(self, error: Exception) -> None:
         """Mark the job as ERROR, store the exception, and fire all registered callbacks."""
-        self._error = error
+        self._failure_cause = error  # base-class attribute; chained by _raise_for_status
         self._status = JobStatus.ERROR
         self._done_event.set()
         for cb in self._callbacks:
@@ -209,22 +214,23 @@ class TestBackend(Backend):
             circuits = list(circuits)
         n_shots = shots if shots is not None else self._options["shots"]
         job = TestJob(circuits=circuits, shots=n_shots, backend=self)
+        # Honour the lifecycle contract: every run_async implementation
+        # must call submit() so the job transitions out of INITIALIZING.
+        job.submit()  # INITIALIZING → QUEUED
 
         if self.mode == ExecutionMode.SYNC:
-            self._run_sync(job)
+            self._run_sync(job)  # QUEUED → RUNNING → DONE
         elif self.mode == ExecutionMode.ASYNC:
-            job._set_status(JobStatus.QUEUED)
+            # submit() already set QUEUED; just start the worker thread.
             threading.Thread(target=self._run_async, args=(job,), daemon=True).start()
         elif self.mode == ExecutionMode.ERROR:
             if self.async_delay == 0:
-                self._run_error_sync(job)
+                self._run_error_sync(job)  # QUEUED → RUNNING → ERROR
             else:
-                job._set_status(JobStatus.QUEUED)
                 threading.Thread(
                     target=self._run_error_async, args=(job,), daemon=True
                 ).start()
         elif self.mode == ExecutionMode.CANCEL:
-            job._set_status(JobStatus.QUEUED)
             threading.Thread(
                 target=self._run_cancellable, args=(job,), daemon=True
             ).start()
@@ -1115,3 +1121,449 @@ def test_virtual_backend_deprecation_warning():
 
     with pytest.warns(QrispDeprecationWarning):
         _ = VirtualBackend(run_func=dummy_run)
+
+
+# ===========================================================================
+# Job lifecycle tests
+# ===========================================================================
+
+
+class TestJobLifecycle:
+    """Tests that the INITIALIZING → QUEUED → RUNNING → DONE lifecycle is honoured."""
+
+    def test_job_starts_in_initializing_state(self):
+        """A newly constructed job must start in INITIALIZING before submit() is called."""
+        backend = MinimalBackend()
+        job = MinimalJob(backend=backend)
+        assert job.status() == JobStatus.INITIALIZING
+
+    def test_last_known_status_starts_as_initializing(self):
+        """last_known_status must mirror INITIALIZING right after construction."""
+        backend = MinimalBackend()
+        job = MinimalJob(backend=backend)
+        assert job.last_known_status == JobStatus.INITIALIZING
+
+    def test_submit_transitions_to_queued(self):
+        """Calling submit() must move the job out of INITIALIZING into QUEUED."""
+        backend = MinimalBackend()
+        job = MinimalJob(backend=backend)
+        job.submit()
+        assert job.status() == JobStatus.QUEUED
+
+    def test_run_async_does_not_leave_job_in_initializing(self):
+        """After run_async() returns, the job must no longer be in INITIALIZING state.
+
+        This guards against backends that forget to call submit() before returning.
+        """
+        backend = MinimalBackend()
+        job = backend.run_async("c")
+        assert job.status() != JobStatus.INITIALIZING
+
+    def test_sync_job_reaches_done_after_run_async(self):
+        """A synchronous backend must fully resolve the job before run_async() returns."""
+        backend = MinimalBackend()
+        job = backend.run_async("c")
+        assert job.status() == JobStatus.DONE
+
+    def test_full_lifecycle_order_via_set_status(self):
+        """States must progress in the documented order (no skipping QUEUED)."""
+        backend = MinimalBackend()
+        job = MinimalJob(backend=backend)
+        assert job.status() == JobStatus.INITIALIZING
+
+        job.submit()
+        assert job.status() == JobStatus.QUEUED
+
+        job._set_status(JobStatus.RUNNING)
+        assert job.status() == JobStatus.RUNNING
+
+        job._resolve(JobResult([{"0": 1}]))
+        assert job.status() == JobStatus.DONE
+
+
+# ===========================================================================
+# refresh() / last_known_status tests
+# ===========================================================================
+
+
+class TestRefreshAndLastKnownStatus:
+    """Tests for refresh() and the cached last_known_status property."""
+
+    def test_last_known_status_not_updated_by_status_call_alone(self):
+        """Reading status() must NOT update last_known_status — only refresh() does."""
+        backend = MinimalBackend()
+        job = MinimalJob(backend=backend)
+        job._set_status(JobStatus.RUNNING)
+        _ = job.status()  # live query — must not touch the cache
+        assert job.last_known_status == JobStatus.INITIALIZING
+
+    def test_refresh_updates_last_known_status(self):
+        """refresh() must update last_known_status and return the new value."""
+        backend = MinimalBackend()
+        job = backend.run_async("c")  # job is DONE after MinimalBackend.run_async
+        returned = job.refresh()
+        assert returned == JobStatus.DONE
+        assert job.last_known_status == JobStatus.DONE
+
+    def test_refresh_return_equals_last_known_status(self):
+        """The value returned by refresh() must equal last_known_status afterwards."""
+        backend = MinimalBackend()
+        job = backend.run_async("c")
+        returned = job.refresh()
+        assert returned == job.last_known_status
+
+    def test_last_known_status_stays_stale_without_refresh(self):
+        """last_known_status must remain at its previous value until refresh() is called."""
+        backend = MinimalBackend()
+        job = MinimalJob(backend=backend)
+        # Advance the job to DONE without calling refresh
+        job.submit()
+        job._set_status(JobStatus.RUNNING)
+        job._resolve(JobResult([{"0": 10}]))
+        # last_known_status is still INITIALIZING (set at construction time)
+        assert job.last_known_status == JobStatus.INITIALIZING
+        # Only after refresh() does it reflect reality
+        job.refresh()
+        assert job.last_known_status == JobStatus.DONE
+
+
+# ===========================================================================
+# __repr__ side-effect tests
+# ===========================================================================
+
+
+class TestJobRepr:
+    """Tests that Job.__repr__ is side-effect free (no live status() call)."""
+
+    def test_repr_does_not_call_status(self):
+        """repr(job) must not invoke status() — it must read last_known_status instead."""
+        backend = MinimalBackend()
+        job = backend.run_async("c")
+        with unittest.mock.patch.object(type(job), "status", wraps=job.status) as mock_status:
+            _ = repr(job)
+            mock_status.assert_not_called()
+
+    def test_repr_shows_last_known_status_not_live_status(self):
+        """repr(job) must reflect last_known_status, not the live status."""
+        backend = MinimalBackend()
+        job = MinimalJob(backend=backend)
+        # job is INITIALIZING; advance it without refreshing the cache
+        job.submit()
+        job._set_status(JobStatus.RUNNING)
+        job._resolve(JobResult([{"0": 1}]))
+        # live status is DONE, but last_known_status is still INITIALIZING
+        assert "initializing" in repr(job).lower()
+
+    def test_repr_after_refresh_shows_current_status(self):
+        """After refresh(), repr(job) must show the updated cached status."""
+        backend = MinimalBackend()
+        job = backend.run_async("c")
+        job.refresh()
+        assert "done" in repr(job).lower()
+
+
+# ===========================================================================
+# shots validation tests
+# ===========================================================================
+
+
+class TestShotsValidation:
+    """Tests that Backend.run() rejects invalid shot counts early."""
+
+    @pytest.fixture
+    def backend(self):
+        """Return a fresh MinimalBackend for each test."""
+        return MinimalBackend()
+
+    def test_shots_zero_raises_value_error(self, backend):
+        """shots=0 must raise ValueError."""
+        with pytest.raises(ValueError, match="shots"):
+            backend.run(object(), shots=0)
+
+    def test_shots_negative_raises_value_error(self, backend):
+        """shots=-1 must raise ValueError."""
+        with pytest.raises(ValueError, match="shots"):
+            backend.run(object(), shots=-1)
+
+    def test_shots_float_raises_type_error(self, backend):
+        """shots=10.5 (a float) must raise TypeError."""
+        with pytest.raises(TypeError, match="shots"):
+            backend.run(object(), shots=10.5)
+
+    def test_shots_string_raises_type_error(self, backend):
+        """shots='100' (a string) must raise TypeError."""
+        with pytest.raises(TypeError, match="shots"):
+            backend.run(object(), shots="100")  # type: ignore[arg-type]
+
+    def test_shots_bool_raises_type_error(self, backend):
+        """shots=True (a bool) must raise TypeError even though bool is a subclass of int."""
+        with pytest.raises(TypeError, match="shots"):
+            backend.run(object(), shots=True)  # type: ignore[arg-type]
+
+    def test_shots_none_is_accepted(self, backend):
+        """shots=None must not raise — it means 'use the backend default'."""
+        # "c" is not a QuantumCircuit so run() treats it as a batch and returns a list;
+        # what matters here is that _validate_shots(None) does not raise.
+        result = backend.run("c", shots=None)
+        assert result is not None
+
+    def test_shots_positive_integer_is_accepted(self, backend):
+        """A positive integer shot count must be accepted without error."""
+        result = backend.run("c", shots=128)
+        assert result is not None
+
+    def test_validate_shots_static_method_zero(self):
+        """Backend._validate_shots(0) must raise ValueError."""
+        with pytest.raises(ValueError):
+            Backend._validate_shots(0)
+
+    def test_validate_shots_static_method_negative(self):
+        """Backend._validate_shots(-5) must raise ValueError."""
+        with pytest.raises(ValueError):
+            Backend._validate_shots(-5)
+
+    def test_validate_shots_static_method_none_accepted(self):
+        """Backend._validate_shots(None) must not raise."""
+        Backend._validate_shots(None)  # no exception
+
+    def test_validate_shots_static_method_positive_accepted(self):
+        """Backend._validate_shots(512) must not raise."""
+        Backend._validate_shots(512)  # no exception
+
+
+# ===========================================================================
+# Additional Backend options tests (atomicity + read-only)
+# ===========================================================================
+
+
+class TestBackendOptionsExtended:
+    """Additional options tests: atomic update and read-only proxy."""
+
+    def test_update_options_is_atomic_valid_key_not_changed_on_failure(self):
+        """update_options must not apply any change if any key in the call is invalid.
+
+        Previously the loop updated keys one-by-one: a valid key that appeared
+        before an invalid key would be silently written even though the call
+        ultimately raised.
+        """
+
+        class MultiBackend(Backend):
+            @classmethod
+            def _default_options(cls):
+                return {"shots": 1024, "level": 1}
+
+            def run_async(self, circuits, shots=None):
+                pass
+
+        b = MultiBackend()
+        original_shots = b.options["shots"]
+        with pytest.raises(AttributeError, match="not a valid backend option"):
+            b.update_options(shots=9999, totally_unknown=42)
+        # shots must be unchanged — the whole call must be rolled back
+        assert b.options["shots"] == original_shots
+
+    def test_options_property_is_read_only(self):
+        """Direct mutation of backend.options must raise TypeError (MappingProxyType)."""
+        b = MinimalBackend()
+        with pytest.raises(TypeError):
+            b.options["shots"] = 9999  # type: ignore[index]
+
+    def test_options_property_does_not_allow_new_keys(self):
+        """Injecting a new key via backend.options must raise TypeError."""
+        b = MinimalBackend()
+        with pytest.raises(TypeError):
+            b.options["injected"] = "value"  # type: ignore[index]
+
+    def test_options_read_access_still_works(self):
+        """Read access to backend.options must still work after making it read-only."""
+        b = MinimalBackend()
+        assert b.options["shots"] == 1024
+
+    def test_options_equality_with_plain_dict(self):
+        """MappingProxyType must compare equal to an equivalent plain dict."""
+        b = MinimalBackend()
+        assert b.options == {"shots": 1024}
+
+
+# ===========================================================================
+# Abstract result() signature test
+# ===========================================================================
+
+
+def test_result_abstract_signature_has_timeout_parameter():
+    """Job.result() must declare a 'timeout' parameter in its abstract signature.
+
+    Without this, vendor implementations have no signal that timeout support
+    is expected, and Qrisp internals cannot safely call job.result(timeout=...).
+    """
+    sig = inspect.signature(Job.result)
+    assert "timeout" in sig.parameters, (
+        "Job.result() is missing the 'timeout' parameter. "
+        "Add 'timeout: float | None = None' to the abstract signature."
+    )
+
+
+# ===========================================================================
+# max_circuits constraint tests
+# ===========================================================================
+
+
+class _LimitedBackend(MinimalBackend):
+    """MinimalBackend subclass that exposes a fixed max_circuits limit."""
+
+    def __init__(self, limit: int):
+        super().__init__()
+        self._limit = limit
+
+    @property
+    def max_circuits(self) -> int:
+        return self._limit
+
+
+class TestMaxCircuits:
+    """Tests for the max_circuits execution constraint on Backend."""
+
+    def test_max_circuits_is_none_by_default(self):
+        """The base Backend must return None for max_circuits (no limit)."""
+        assert MinimalBackend().max_circuits is None
+
+    def test_max_circuits_can_be_overridden(self):
+        """A concrete backend must be able to expose a positive integer limit."""
+        assert _LimitedBackend(5).max_circuits == 5
+
+    def test_run_raises_when_batch_exceeds_limit(self):
+        """run() must raise ValueError when more circuits than max_circuits are submitted."""
+        b = _LimitedBackend(2)
+        with pytest.raises(ValueError, match="circuit"):
+            b.run(["a", "b", "c"])  # type: ignore[arg-type]
+
+    def test_run_accepts_batch_equal_to_limit(self):
+        """run() must accept a batch whose size exactly equals max_circuits."""
+        b = _LimitedBackend(3)
+        result = b.run(["a", "b", "c"])  # type: ignore[arg-type]
+        assert len(result) == 3
+
+    def test_run_accepts_batch_below_limit(self):
+        """run() must accept a batch whose size is smaller than max_circuits."""
+        b = _LimitedBackend(5)
+        result = b.run(["a", "b"])  # type: ignore[arg-type]
+        assert len(result) == 2
+
+    def test_single_circuit_never_rejected(self):
+        """A list of exactly one circuit is always within any positive limit."""
+        b = _LimitedBackend(1)
+        result = b.run(["only_one"])  # type: ignore[arg-type]
+        assert len(result) == 1
+
+    def test_error_message_contains_class_name(self):
+        """The ValueError message must name the backend class to aid debugging."""
+        b = _LimitedBackend(1)
+        with pytest.raises(ValueError, match="_LimitedBackend"):
+            b.run(["a", "b"])  # type: ignore[arg-type]
+
+    def test_error_message_mentions_limit(self):
+        """The ValueError message must state the actual limit."""
+        b = _LimitedBackend(2)
+        with pytest.raises(ValueError, match="2"):
+            b.run(["a", "b", "c"])  # type: ignore[arg-type]
+
+    def test_check_circuit_limit_helper_is_no_op_when_limit_is_none(self):
+        """_check_circuit_limit must not raise when max_circuits is None."""
+        b = MinimalBackend()
+        b._check_circuit_limit(["a", "b", "c", "d", "e"])  # type: ignore[arg-type]
+
+    def test_check_circuit_limit_helper_raises_over_limit(self):
+        """_check_circuit_limit must raise ValueError when the batch is too large."""
+        b = _LimitedBackend(2)
+        with pytest.raises(ValueError):
+            b._check_circuit_limit(["a", "b", "c"])  # type: ignore[arg-type]
+
+
+# ===========================================================================
+# retrieve_job tests
+# ===========================================================================
+
+
+class TestRetrieveJob:
+    """Tests for Backend.retrieve_job()."""
+
+    def test_retrieve_job_raises_not_implemented_by_default(self):
+        """The base implementation must raise NotImplementedError."""
+        with pytest.raises(NotImplementedError):
+            MinimalBackend().retrieve_job("some-id")
+
+    def test_retrieve_job_error_mentions_class_name(self):
+        """The NotImplementedError message must name the backend class."""
+        with pytest.raises(NotImplementedError, match="MinimalBackend"):
+            MinimalBackend().retrieve_job("some-id")
+
+    def test_retrieve_job_error_suggests_override(self):
+        """The NotImplementedError message must hint that override is needed."""
+        with pytest.raises(NotImplementedError, match="[Oo]verride"):
+            MinimalBackend().retrieve_job("some-id")
+
+    def test_retrieve_job_can_be_overridden(self):
+        """A concrete backend must be able to override retrieve_job to return a job."""
+
+        class RecoverableBackend(MinimalBackend):
+            """Backend that can reconnect to jobs by ID."""
+
+            def retrieve_job(self, job_id: str) -> MinimalJob:
+                """Return a synthetic job stub with the requested ID."""
+                job = MinimalJob(backend=self, job_id=job_id)
+                return job
+
+        b = RecoverableBackend()
+        job = b.retrieve_job("job-42")
+        assert job.job_id == "job-42"
+        assert isinstance(job, MinimalJob)
+
+
+# ===========================================================================
+# JobFailureError cause-chaining tests
+# ===========================================================================
+
+
+class TestJobFailureCause:
+    """Tests that JobFailureError preserves the original exception as __cause__."""
+
+    def test_sync_failure_cause_is_chained(self):
+        """The original hardware exception must be the __cause__ of JobFailureError."""
+        job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async("c")  # type: ignore[arg-type]
+        with pytest.raises(JobFailureError) as exc_info:
+            job.result()
+        assert exc_info.value.__cause__ is not None
+
+    def test_sync_failure_cause_preserves_original_message(self):
+        """The __cause__ must carry the original exception message."""
+        job = TestBackend(mode=ExecutionMode.ERROR, async_delay=0, seed=0).run_async("c")  # type: ignore[arg-type]
+        with pytest.raises(JobFailureError) as exc_info:
+            job.result()
+        assert "Simulated hardware fault" in str(exc_info.value.__cause__)
+
+    def test_async_failure_cause_is_chained(self):
+        """Cause chaining must work for async (threaded) failures too."""
+        job = TestBackend(
+            mode=ExecutionMode.ERROR, async_delay=0.3, seed=0
+        ).run_async("c")  # type: ignore[arg-type]
+        with pytest.raises(JobFailureError) as exc_info:
+            job.result()
+        assert exc_info.value.__cause__ is not None
+        assert "Simulated hardware fault" in str(exc_info.value.__cause__)
+
+    def test_failure_cause_is_none_when_not_set(self):
+        """If _failure_cause is not set by the implementation, __cause__ is None."""
+        backend = MinimalBackend()
+        job = MinimalJob(backend=backend)
+        job._set_status(JobStatus.ERROR)
+        job._done_event.set()
+        # _failure_cause was never set, so __cause__ should be None
+        with pytest.raises(JobFailureError) as exc_info:
+            job.result()
+        assert exc_info.value.__cause__ is None
+
+    def test_done_job_does_not_raise_on_raise_for_status(self):
+        """_raise_for_status must be a no-op when the job completed successfully."""
+        job = TestBackend(mode=ExecutionMode.SYNC, seed=0).run_async("c")  # type: ignore[arg-type]
+        # Should not raise
+        job._raise_for_status(JobStatus.DONE)

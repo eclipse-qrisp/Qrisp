@@ -65,6 +65,7 @@ For example, we can define a simple backend that wraps the built-in Qrisp
 
 .. code-block:: python
 
+   from qrisp import QuantumCircuit
    from qrisp.interface.backend import Backend
    from qrisp.interface.job import Job, JobResult, JobStatus
    from qrisp.simulator.simulator import run as default_run
@@ -80,7 +81,6 @@ For example, we can define a simple backend that wraps the built-in Qrisp
          self._shots = shots
          self._status = JobStatus.INITIALIZING
          self._result_data = None
-         self._error = None
 
       def submit(self):
          self._status = JobStatus.RUNNING
@@ -89,12 +89,12 @@ For example, we can define a simple backend that wraps the built-in Qrisp
                self._result_data = JobResult(counts)
                self._status = JobStatus.DONE
          except Exception as exc:
-               self._error = exc
+               self._failure_cause = exc
                self._status = JobStatus.ERROR
 
-      def result(self):
-         if self._status == JobStatus.ERROR:
-            raise RuntimeError(self._error)
+      def result(self, timeout=None):
+         # This job is synchronous and completes inside submit(); timeout is ignored.
+         self._raise_for_status(self._status)
          return cast(JobResult, self._result_data)
 
       def cancel(self):
@@ -113,7 +113,10 @@ For example, we can define a simple backend that wraps the built-in Qrisp
          return {"shots": None, "token": ""}
 
       def run_async(self, circuits, shots=None):
-         circuits = [circuits] if not isinstance(circuits, list) else circuits
+         if not isinstance(circuits, QuantumCircuit):
+            circuits = list(circuits)
+         else:
+            circuits = [circuits]
          n_shots = shots if shots is not None else self.options.get("shots")
          job = SimulatorJob(backend=self, circuits=circuits, shots=n_shots)
          job.submit()
@@ -221,6 +224,7 @@ separate thread so they all execute concurrently:
 .. code-block:: python
 
    import threading
+   from qrisp import QuantumCircuit
    from qrisp.interface.backend import Backend
    from qrisp.interface.job import Job, JobResult, JobStatus
    from qrisp.simulator.simulator import run as default_run
@@ -236,7 +240,6 @@ separate thread so they all execute concurrently:
          self._shots = shots
          self._status = JobStatus.INITIALIZING
          self._result_data = None
-         self._error = None
          # threading.Event is the synchronisation primitive that allows
          # result() to block cheaply until all threads have finished.
          self._done_event = threading.Event()
@@ -274,18 +277,18 @@ separate thread so they all execute concurrently:
                self._status = JobStatus.DONE
 
          except Exception as exc:
-               self._error = exc
+               self._failure_cause = exc
                self._status = JobStatus.ERROR
 
          finally:
                # Signal the event so that any caller blocked in result() wakes up.
                self._done_event.set()
 
-      def result(self):
+      def result(self, timeout=None):
          # Block here until _done_event is set by the coordinator thread.
-         self._done_event.wait()
-         if self._status == JobStatus.ERROR:
-               raise RuntimeError(self._error)
+         if not self._done_event.wait(timeout=timeout):
+               raise TimeoutError(f"Job did not complete within {timeout}s.")
+         self._raise_for_status(self._status)
          return cast(JobResult, self._result_data)
 
       def cancel(self):
@@ -304,7 +307,10 @@ separate thread so they all execute concurrently:
          return {"shots": 1024}
 
       def run_async(self, circuits, shots=None):
-         circuits = [circuits] if not isinstance(circuits, list) else circuits
+         if not isinstance(circuits, QuantumCircuit):
+            circuits = list(circuits)
+         else:
+            circuits = [circuits]
          n_shots = shots if shots is not None else self.options.get("shots")
          job = AsyncSimulatorJob(backend=self, circuits=circuits, shots=n_shots)
          # submit() returns immediately after starting the background thread.
@@ -421,8 +427,10 @@ and derived from ``Job.status``:
 
 
 Additional helpers ``running()``, ``queued()``, and ``cancelled()`` are also available
-for polling-style workflows. If ``result()`` is called on a job that has
-failed or been cancelled, a :exc:`RuntimeError` is raised.
+for polling-style workflows. If ``result()`` is called on a job that has failed, a
+:exc:`~qrisp.interface.JobFailureError` is raised; if the job was cancelled, a
+:exc:`~qrisp.interface.JobCancelledError` is raised. Both are subclasses of
+:exc:`RuntimeError`.
 
 
 :ref:`JobStatus`

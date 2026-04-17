@@ -15,6 +15,7 @@ Properties
 
    Job.job_id
    Job.backend
+   Job.last_known_status
 
 Abstract Methods
 ----------------
@@ -41,3 +42,11 @@ Methods
    Job.in_final_state
    Job.refresh
    Job._raise_for_status
+
+
+Exceptions
+----------
+
+.. autoexception:: JobFailureError
+
+.. autoexception:: JobCancelledError

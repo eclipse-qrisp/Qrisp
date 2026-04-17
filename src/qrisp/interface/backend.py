@@ -19,6 +19,7 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
+from types import MappingProxyType
 from typing import Any, TypeAlias
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
@@ -256,11 +257,131 @@ class Backend(ABC):
             A single measurement dictionary when one circuit is submitted,
             or a list of measurement dictionaries when multiple circuits are
             submitted.
-        """
 
+        Raises
+        ------
+        TypeError
+            If *shots* is not an integer.
+        ValueError
+            If *shots* is not a positive integer.
+        """
+        self._validate_shots(shots)
+        self._check_circuit_limit(circuits)
         batch = not isinstance(circuits, QuantumCircuit)
         all_counts = self.run_async(circuits, shots).result().all_counts
         return all_counts if batch else all_counts[0]
+
+    def retrieve_job(self, job_id: str) -> Job:
+        """
+        Reconnect to a previously submitted job by its identifier.
+
+        This method allows users to recover a :class:`Job` handle after a
+        process restart or network interruption, provided the backend
+        stores job history server-side.
+
+        This is an **optional capability**. The default implementation
+        raises :exc:`NotImplementedError`. Backends that support job
+        recovery must override this method.
+
+        Parameters
+        ----------
+        job_id : str
+            The identifier of the job to retrieve. This is the value
+            returned by :attr:`Job.job_id <qrisp.interface.Job.job_id>`
+            after a previous call to :meth:`run_async`.
+
+        Returns
+        -------
+        Job
+            A handle to the previously submitted job, in whatever state
+            it currently is.
+
+        Raises
+        ------
+        NotImplementedError
+            If this backend does not support job recovery (the default).
+        LookupError
+            If no job with the given *job_id* can be found on the backend.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support job recovery. "
+            "Override retrieve_job() to enable this feature."
+        )
+
+    def _check_circuit_limit(
+        self,
+        circuits: "QuantumCircuit | Sequence[QuantumCircuit]",
+    ) -> None:
+        """
+        Raise :exc:`ValueError` if the number of submitted circuits exceeds
+        :attr:`max_circuits`.
+
+        This helper is called automatically by :meth:`run`. Implementations
+        of :meth:`run_async` should also call it before submitting to the
+        hardware so that users who bypass :meth:`run` get the same early
+        error.
+
+        Parameters
+        ----------
+        circuits : QuantumCircuit or Sequence[QuantumCircuit]
+            The circuit(s) about to be submitted.
+
+        Raises
+        ------
+        ValueError
+            If *circuits* is a sequence whose length exceeds
+            :attr:`max_circuits`.
+        """
+        limit = self.max_circuits
+        if limit is None:
+            return
+        if isinstance(circuits, QuantumCircuit):
+            return  # a single circuit is always within any positive limit
+        try:
+            n = len(circuits)
+        except TypeError:
+            return  # length unknown (e.g. a lazy iterable). We skip the check
+        if n > limit:
+            raise ValueError(
+                f"{self.__class__.__name__} accepts at most {limit} "
+                f"circuit(s) per job, but {n} were submitted. "
+                "Split the batch into smaller chunks and submit separately."
+            )
+
+    @staticmethod
+    def _validate_shots(shots: int | None) -> None:
+        """
+        Raise an informative error if *shots* is not a valid positive integer.
+
+        Intended to be called at the top of :meth:`run` (and optionally
+        inside :meth:`run_async` implementations) before submitting circuits
+        to the backend.
+
+        Parameters
+        ----------
+        shots : int or None
+            The shot count to validate.  ``None`` is accepted and means
+            "use the backend default"; no error is raised.
+
+        Raises
+        ------
+        TypeError
+            If *shots* is not an :class:`int` (or is a :class:`bool`,
+            which is a subclass of ``int`` but almost certainly a
+            caller mistake).
+        ValueError
+            If *shots* is zero or negative.
+        """
+        if shots is None:
+            return
+        if isinstance(shots, bool) or not isinstance(shots, int):
+            raise TypeError(
+                f"'shots' must be a positive integer, got {type(shots).__name__!r}"
+            )
+        if shots <= 0:
+            raise ValueError(
+                f"'shots' must be a positive integer, got {shots!r}"
+            )
 
     # ------------------------------------------------------------------
     # Runtime options
@@ -289,8 +410,12 @@ class Backend(ABC):
 
         These options may influence execution behaviour (e.g. the number of
         shots) and therefore may affect :meth:`run_async` and :meth:`run`.
+
+        The returned mapping is read-only. Use :meth:`update_options` to
+        change existing keys. Direct mutation (e.g.
+        ``backend.options["shots"] = n``) raises :exc:`TypeError`.
         """
-        return self._options
+        return MappingProxyType(self._options)
 
     def update_options(self, **kwargs) -> None:
         """
@@ -301,19 +426,24 @@ class Backend(ABC):
         constructor) may be updated. Attempting to set an unknown key raises
         an ``AttributeError``.
 
+        This method is *atomic*: all keys are validated before any value
+        is written. If one key is invalid, no options are changed.
+
         Parameters
         ----------
         **kwargs :
             Key-value pairs to update in the backend's runtime options.
         """
-        for key, val in kwargs.items():
-            if key not in self._options:
-                raise AttributeError(
-                    f"'{key}' is not a valid backend option for "
-                    f"{self.__class__.__name__}. "
-                    f"Valid options: {list(self._options.keys())}"
-                )
-            self._options[key] = val
+        # Validate ALL keys first so that a single bad key does not leave
+        # the options dict in a partially-updated state.
+        unknown = [k for k in kwargs if k not in self._options]
+        if unknown:
+            raise AttributeError(
+                f"'{unknown[0]}' is not a valid backend option for "
+                f"{self.__class__.__name__}. "
+                f"Valid options: {list(self._options.keys())}"
+            )
+        self._options.update(kwargs)
 
     # ------------------------------------------------------------------
     # Hardware / backend-specific status information
@@ -372,6 +502,29 @@ class Backend(ABC):
         Returns ``None`` if the backend does not expose a fixed or meaningful
         qubit count (e.g. simulators, abstract backends, or backends where
         this information is intentionally omitted).
+        """
+        return None
+
+    @property
+    def max_circuits(self) -> int | None:
+        """
+        Maximum number of circuits this backend can execute in a single job.
+
+        Many hardware backends impose a per-job circuit limit (e.g. a
+        cloud provider may accept at most 300 circuits per submission).
+        Submitting a batch larger than this limit causes an opaque error
+        from the vendor SDK. Exposing the limit here lets Qrisp provide an
+        early, clear :exc:`ValueError` via :meth:`run` and
+        :meth:`_check_circuit_limit` before any network call is made.
+
+        Concrete backends should override this property and return the
+        actual limit. Implementations of :meth:`run_async` should also
+        call :meth:`_check_circuit_limit` before submitting to the
+        hardware so that users who bypass :meth:`run` still get the same
+        early error.
+
+        Returns ``None`` if the backend imposes no limit (simulators) or
+        does not expose this information.
         """
         return None
 

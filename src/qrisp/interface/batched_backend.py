@@ -30,8 +30,6 @@ from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
 from qrisp.interface.job import (
     Job,
-    JobCancelledError,
-    JobFailureError,
     JobResult,
     JobStatus,
 )
@@ -57,7 +55,6 @@ class BatchedJob(Job):
         self._shots = shots
         self._status = JobStatus.INITIALIZING
         self._result_data = None
-        self._error = None
         # Each job owns its private event so it can be unblocked independently
         # of all other pending jobs.
         self._done_event = threading.Event()
@@ -97,12 +94,9 @@ class BatchedJob(Job):
                 f"BatchedJob did not complete within {timeout}s. "
                 "Has dispatch() been called?"
             )
-        if self._status == JobStatus.ERROR:
-            raise JobFailureError(
-                f"Batch execution failed: {self._error}"
-            ) from self._error
-        if self._status == JobStatus.CANCELLED:
-            raise JobCancelledError(f"Job {self._job_id!r} was cancelled.")
+        # _raise_for_status chains self._failure_cause (set by _fail()) so the
+        # original exception from batch_run_func is preserved as __cause__.
+        self._raise_for_status(self._status)
         return cast(JobResult, self._result_data)
 
     def cancel(self) -> bool:
@@ -131,7 +125,7 @@ class BatchedJob(Job):
 
     def _fail(self, error: Exception) -> None:
         """Mark the job as ERROR, store the exception, and unblock result()."""
-        self._error = error
+        self._failure_cause = error  # base-class attribute; chained by _raise_for_status
         self._status = JobStatus.ERROR
         self._done_event.set()
 
@@ -347,7 +341,7 @@ class BatchedBackend(Backend):
             circuits = [circuits]
         else:
             circuits = list(circuits)
-        n_shots = shots if shots is not None else self._options["shots"]
+        n_shots = shots if shots is not None else self._options.get("shots", 1024)
 
         job = BatchedJob(backend=self, circuits=circuits, shots=n_shots)
 
@@ -363,7 +357,7 @@ class BatchedBackend(Backend):
 
         return job
 
-    def dispatch(self, min_calls: int = 0) -> None:
+    def dispatch(self, min_calls: int = 0, timeout: float | None = None) -> None:
         """
         Execute all pending batch jobs and resolve their ``BatchedJob`` objects.
 
@@ -377,6 +371,24 @@ class BatchedBackend(Backend):
             Minimum number of pending jobs to wait for before dispatching.
             Defaults to ``0`` (dispatch whatever is currently queued).
 
+        timeout : float or None, optional
+            Maximum number of seconds to wait for ``min_calls`` jobs to
+            accumulate before raising :exc:`TimeoutError`.  ``None``
+            (default) waits indefinitely.
+
+            .. warning::
+
+                Without a timeout, ``dispatch(min_calls=N)`` will block
+                forever if fewer than *N* circuits are ever submitted
+                (e.g. because a worker thread crashed before calling
+                :meth:`run_async`). Always supply a *timeout* when the
+                number of submitting threads cannot be guaranteed.
+
+        Raises
+        ------
+        TimeoutError
+            If *timeout* expires before ``min_calls`` jobs have accumulated.
+
         Notes
         -----
         The ``batch_run_func`` receives a *flat* list of
@@ -386,10 +398,19 @@ class BatchedBackend(Backend):
         ``BatchedJob`` via its private ``threading.Event``.
         """
         # Wait until the required number of jobs has accumulated.
+        deadline = time.monotonic() + timeout if timeout is not None else None
         while True:
             with self._lock:
                 if len(self._pending) >= min_calls:
                     break
+            if deadline is not None and time.monotonic() >= deadline:
+                with self._lock:
+                    n_queued = len(self._pending)
+                raise TimeoutError(
+                    f"dispatch() timed out after {timeout}s waiting for "
+                    f"{min_calls} pending job(s); "
+                    f"only {n_queued} are currently queued."
+                )
             time.sleep(0.01)
 
         # Atomically snapshot and clear the pending queue so that new calls

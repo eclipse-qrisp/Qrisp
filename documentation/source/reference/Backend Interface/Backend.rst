@@ -17,6 +17,7 @@ Methods
    Backend.__init__
    Backend.run_async
    Backend.run
+   Backend.retrieve_job
 
 
 
@@ -51,6 +52,7 @@ Hardware metadata
    :toctree: generated/
 
    Backend.num_qubits
+   Backend.max_circuits
    Backend.connectivity
    Backend.gate_set
    Backend.error_rates
