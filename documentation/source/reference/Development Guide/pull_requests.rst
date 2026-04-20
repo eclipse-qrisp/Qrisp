@@ -1,0 +1,95 @@
+.. _DevGuidePullRequests:
+
+Pull Requests
+=============
+
+This page covers how to open a pull request, how to ask for help, and the most
+common pitfalls to avoid.
+
+Asking questions
+----------------
+
+There are no stupid questions. If something is unclear, or if you are unsure
+whether a change is appropriate, please ask before implementing it. Asking
+early almost always saves time.
+
+Good places to reach out:
+
+- **GitHub Issues** — for specific bugs, questions about behaviour, or
+  suggestions: https://github.com/eclipse-qrisp/Qrisp/issues
+- **Discord** — for broader design conversations:
+  https://discord.gg/fUCFcBAS
+
+Opening a pull request
+-----------------------
+
+Before opening a PR, run the test suite for the subsystem(s) you modified:
+
+.. code-block:: bash
+
+    pytest tests/circuit_tests/   # adjust path to match your changes
+
+CI will catch failures, but catching them locally first saves time and
+conserves GitHub runner resources.
+
+**Prefer small, focused pull requests.** A PR that does one thing well is
+significantly easier to review and gets merged faster. Large refactors should
+be split into multiple PRs whenever possible.
+
+When opening a PR, use the following template:
+
+.. code-block:: text
+
+    **Context:**
+    <What motivated this change? Link any related issues.>
+
+    **Description of the Change:**
+    <What does this PR do? Keep it concise.>
+
+    **Benefits:**
+    <What improves as a result?>
+
+    **Possible Drawbacks:**
+    <Any trade-offs or known limitations?>
+
+    **Related GitHub Issues:**
+    <e.g., Closes #42>
+
+Useful references:
+
+- GitHub guide on pull requests: https://docs.github.com/en/pull-requests
+- How to write a good commit message: https://cbea.ms/git-commit/
+
+Common mistakes to avoid
+-------------------------
+
+These are the most frequent issues in early contributions. Being aware of them
+upfront makes the review process smoother for everyone.
+
+**Unintended breaking changes**
+  Changes to public APIs require explicit discussion with maintainers. If a
+  breaking change is necessary, document it clearly in the PR description.
+
+**Overly large pull requests**
+  Large PRs are difficult to review and often delay integration. Keep PRs
+  focused on a single issue or improvement.
+
+**Mixing unrelated changes**
+  Avoid combining unrelated fixes, style changes, and new features in the same
+  PR. Keeping changes cohesive makes review and debugging significantly easier.
+
+**New functionality without tests**
+  Any new feature or behaviour change should be accompanied by appropriate
+  tests. See :ref:`WritingTests`.
+
+**Ignoring existing project conventions**
+  Follow the code structure, naming conventions, and patterns already present
+  in the repository unless there is a documented reason to change them.
+
+**Introducing unnecessary dependencies**
+  New runtime dependencies should only be added when strictly necessary and
+  should be discussed with maintainers first.
+
+**Not running tests before opening the PR**
+  Always run ``pytest tests/<subsystem>/`` locally before pushing. CI will
+  catch failures, but local validation saves everyone time.

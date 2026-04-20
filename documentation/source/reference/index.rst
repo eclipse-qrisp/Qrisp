@@ -336,3 +336,4 @@ These implementations benefit directly from Qrisp's compilation infrastructure: 
    Backend Interface/index
    Utilities/index
    Examples/index
+   Development Guide/index

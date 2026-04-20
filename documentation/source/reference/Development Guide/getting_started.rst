@@ -1,0 +1,65 @@
+.. _DevGuideGettingStarted:
+
+Getting Started
+===============
+
+Welcome, and thank you for contributing to Qrisp!
+
+This page walks you through setting up a local development environment and
+verifying that everything works before you make any changes.
+
+Environment setup
+-----------------
+
+Qrisp currently requires **Python 3.11 or later**. We recommend working inside a virtual
+environment (e.g. ``venv``, ``conda``, or any other tool you prefer).
+
+We recommend installing Qrisp in *editable* mode so that every change you make to the source is
+reflected immediately without reinstalling:
+
+.. code-block:: bash
+
+    pip install -e .
+
+To also install the documentation build dependencies:
+
+.. code-block:: bash
+
+    pip install -r documentation/requirements_doc.txt
+
+Running the test suite
+----------------------
+
+Before making any changes, confirm that the existing test suite passes on your
+machine. This gives you a clean baseline to compare against.
+
+.. code-block:: bash
+
+    # Run the full suite (note: this currently takes up to ~1 hour)
+    pytest tests/
+
+    # Run only a specific subsystem — much faster during development
+    pytest tests/circuit_tests/
+
+    # Run a single file
+    pytest tests/circuit_tests/test_quantum_circuit.py
+
+If any tests fail *before* you have made changes, please open a GitHub issue
+rather than working around the failure.
+
+.. note::
+
+    The test suite is organised by subsystem and mirrors the layout of the
+    source tree. See :ref:`WritingTests` for the full directory structure and
+    guidance on adding new tests.
+
+Next steps
+----------
+
+Once your environment is set up and the baseline tests pass, continue with the
+rest of this guide:
+
+- :ref:`DevGuideCodeQuality` — static analysis, style, and type annotations
+- :ref:`WritingTests` — how to write and structure tests
+- :ref:`DevGuideDocumentation` — building and checking the documentation
+- :ref:`DevGuidePullRequests` — opening a pull request and asking for help
