@@ -576,6 +576,54 @@ def _lower_measure(op, block: Block) -> None:
         wrapped = _wrap_scalar(scalar_bit, meas_result.type, block, op)
         _replace_all_uses_with(meas_result, wrapped)
     else:
+        # Array: We avoid !cc.stdvec by looping over the veq, measuring 
+        # element-by-element, and packing the discriminated bits into an i64.
+
+        # 1. Get the size of the array
+        veq_size = VeqSizeOp(qubit_val)
+        block.insert_ops_before([veq_size], op)
+
+        # 2. Set up loop constants (0, 1)
+        from xdsl.dialects.builtin import IntegerAttr
+        c0 = arith.ConstantOp(IntegerAttr.from_int_and_width(0, 64))
+        c1 = arith.ConstantOp(IntegerAttr.from_int_and_width(1, 64))
+        block.insert_ops_before([c0, c1], op)
+
+        # 3. Create the loop body block
+        # Args: iv (index), acc (accumulated i64 value)
+        loop_body = Block(arg_types=[i64, i64])
+        iv, acc = loop_body.args
+
+        # 4. Populate the loop body
+        extract = ExtractRefOp(qubit_val, iv)
+        mz_single = MzOp(extract.result)
+        disc = DiscriminateOp(mz_single.result)
+        
+        # Zero-extend the i1 to i64
+        extui = arith.ExtUIOp(disc.result, i64)
+        
+        # Shift the bit left by 'iv' positions (assuming little-endian packing)
+        shift = arith.ShLIOp(extui.result, iv)
+        
+        # Accumulate using bitwise OR
+        new_acc = arith.OrIOp(acc, shift.result)
+        
+        # Yield the new accumulator to the next iteration
+        yield_op = scf.YieldOp(new_acc.result)
+
+        loop_body.add_ops([
+            extract, mz_single, disc, extui, shift, new_acc, yield_op
+        ])
+
+        # 5. Create the scf.for loop
+        for_op = scf.ForOp(c0.result, veq_size.result, c1.result, [c0.result], Region([loop_body]))
+        block.insert_ops_before([for_op], op)
+
+        # 6. Wrap the final packed i64 back to tensor<i64> for downstream compatibility
+        wrapped = _wrap_scalar(for_op.results[0], meas_result.type, block, op)
+        _replace_all_uses_with(meas_result, wrapped)
+    """
+    else:
         # Array: emit mz on the whole veq – result is !quake.measure
         # Wrap it back to the expected tensor<i64> type via a placeholder constant.
         block.insert_ops_before(new_ops, op)
@@ -593,7 +641,7 @@ def _lower_measure(op, block: Block) -> None:
             "classical result.  Full bit-packing support is deferred.",
             stacklevel=4,
         )
-
+    """
     _thread_qst(op)
     Rewriter.erase_op(op)
 

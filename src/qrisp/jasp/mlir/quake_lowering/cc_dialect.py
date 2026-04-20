@@ -49,6 +49,8 @@ from xdsl.irdl import (
     region_def,
     var_operand_def,
     var_result_def,
+    attr_def,
+    result_def,
 )
 from xdsl.printer import Printer
 
@@ -74,6 +76,79 @@ class CcStdVecType(ParametrizedAttribute, TypeAttribute):
 
     def print_parameters(self, printer: Printer) -> None:
         printer.print_string("<!quake.measure>")
+
+@irdl_attr_definition
+class CcPtrType(ParametrizedAttribute, TypeAttribute):
+    """Pointer type for the CC dialect: !cc.ptr<T>"""
+    name = "cc.ptr"
+    
+    # In xDSL 0.55.4, this class-level annotation defines the attribute's parameters
+    element_type: Attribute
+
+    def __init__(self, element_type: Attribute) -> None:
+        # Pass the parameter directly (without the list brackets!)
+        super().__init__(element_type)
+
+
+# ---------------------------------------------------------------------------
+# CC ops for local memory management
+# ---------------------------------------------------------------------------
+
+
+@irdl_op_definition
+class CcAllocaOp(IRDLOperation):
+    """Allocates memory for a given type: cc.alloca i64 -> !cc.ptr<i64>"""
+    name = "cc.alloca"
+    elem_type = attr_def(Attribute)
+    result = result_def(AnyAttr())
+
+    def __init__(self, elem_type: Attribute) -> None:
+        super().__init__(
+            attributes={"elem_type": elem_type},
+            result_types=[CcPtrType(elem_type)]
+        )
+
+    def print(self, printer: Printer) -> None:
+        printer.print_string(" ")
+        printer.print_attribute(self.elem_type)
+
+
+@irdl_op_definition
+class CcStoreOp(IRDLOperation):
+    """Stores a value into a pointer: cc.store %val, %ptr : !cc.ptr<i64>"""
+    name = "cc.store"
+    value = operand_def(AnyAttr())
+    ptr = operand_def(AnyAttr())
+
+    def __init__(self, value: SSAValue, ptr: SSAValue) -> None:
+        super().__init__(operands=[value, ptr])
+
+    def print(self, printer: Printer) -> None:
+        printer.print_string(" ")
+        printer.print_ssa_value(self.value)
+        printer.print_string(", ")
+        printer.print_ssa_value(self.ptr)
+        printer.print_string(" : ")
+        printer.print_attribute(self.ptr.type)
+
+
+@irdl_op_definition
+class CcLoadOp(IRDLOperation):
+    """Loads a value from a pointer: %res = cc.load %ptr : !cc.ptr<i64>"""
+    name = "cc.load"
+    ptr = operand_def(AnyAttr())
+    result = result_def(AnyAttr())
+
+    def __init__(self, ptr: SSAValue) -> None:
+        # Infer the result type from the pointer's inner element type
+        res_type = ptr.type.element_type if hasattr(ptr.type, "element_type") else ptr.type
+        super().__init__(operands=[ptr], result_types=[res_type])
+
+    def print(self, printer: Printer) -> None:
+        printer.print_string(" ")
+        printer.print_ssa_value(self.ptr)
+        printer.print_string(" : ")
+        printer.print_attribute(self.ptr.type)
 
 
 # ---------------------------------------------------------------------------
@@ -201,7 +276,7 @@ class CcContinueOp(IRDLOperation):
 
 @irdl_op_definition
 class CcConditionOp(IRDLOperation):
-    """Loop back-edge condition for ``cc.loop`` while-region: ``cc.condition (%cond : i1)``."""
+    """Loop back-edge condition for ``cc.loop`` while-region: ``cc.condition %cond``."""
 
     name = "cc.condition"
     cond = operand_def(i1)
@@ -215,11 +290,10 @@ class CcConditionOp(IRDLOperation):
         super().__init__(operands=(cond, args))
 
     def print(self, printer: Printer) -> None:
-        printer.print_string(" (")
+        printer.print_string(" ")
         printer.print_ssa_value(self.cond)
-        printer.print_string(" : i1)")
         if list(self.arguments):
-            printer.print_string(" ")
+            printer.print_string(", ")
             printer.print_list(self.arguments, printer.print_ssa_value)
             printer.print_string(" : ")
             printer.print_list(
@@ -242,5 +316,8 @@ class CcDialect(Dialect):
         CcBreakOp,
         CcContinueOp,
         CcConditionOp,
+        CcAllocaOp,
+        CcStoreOp,
+        CcLoadOp,
     ]
-    attributes = [CcStdVecType]
+    attributes = [CcStdVecType, CcPtrType]
