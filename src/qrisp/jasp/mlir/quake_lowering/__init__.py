@@ -40,17 +40,19 @@ jaspr_to_quake
     Pipeline entry-point (:func:`jaspr_to_quake`).
 """
 
-from qrisp.jasp.mlir.quake_lowering.jaspr_to_quake import jaspr_to_quake  # noqa: F401
-from qrisp.jasp.mlir.quake_lowering.quake_dialect import (  # noqa: F401
+from qrisp.jasp.mlir.quake_lowering.jaspr_to_quake import jaspr_to_quake
+from qrisp.jasp.mlir.quake_lowering.execution_tools import run_quake_mlir   
+from qrisp.jasp.mlir.quake_lowering.quake_dialect import (
     QuakeDialect,
     QuakeMeasureType,
     QuakeRefType,
     QuakeVeqType,
 )
-from qrisp.jasp.mlir.quake_lowering.cc_dialect import CcDialect, CcStdVecType  # noqa: F401
+from qrisp.jasp.mlir.quake_lowering.cc_dialect import CcDialect, CcStdVecType
 
 __all__ = [
     "jaspr_to_quake",
+    "run_quake_mlir",
     "QuakeDialect",
     "QuakeRefType",
     "QuakeVeqType",
