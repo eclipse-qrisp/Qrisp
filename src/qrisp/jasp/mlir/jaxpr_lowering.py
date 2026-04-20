@@ -30,10 +30,7 @@ from xdsl.parser import Parser
 
 from qrisp.jasp.mlir.xdsl_dialect import JaspDialect
 from qrisp.jasp.mlir.jasp_lowering_rules import jasp_lowering_rules
-from qrisp.jasp.mlir.scalar_linalg_folding import FoldRedundantMeasurementCondition, FoldRedundantBoolChain
 
-from xdsl.transforms.canonicalize import CanonicalizePass
-from xdsl.transforms.dead_code_elimination import DeadCodeElimination
 
 def lower_jaxpr_to_stablehlo_MLIR(jaxpr, lowering_rules=tuple([])):
     """
@@ -198,29 +195,8 @@ def jaxpr_to_xdsl(jaxpr, lower_stableHLO = False, lowering_rules=tuple([])):
 
     # Parse to xDSL.
     xdsl_ctx, xdsl_module = MLIR_str_to_xdsl(generic_mlir_string)
-
-    # 4) Run xDSL cleanup passes on the parsed module.
-    #    FoldRedundantMeasurementCondition eliminates the verbose
-    #    scalar linalg.generic → extui → cmpi chains that the
-    #    stablehlo-legalize-to-linalg pass introduces for boolean
-    #    conditions (e.g., measurement-based classical control).
-    #    This pass is only meaningful when StableHLO was lowered.
-    #if lower_stableHLO:
-    #    xdsl_ctx = xdsl_module
-    #    FoldRedundantMeasurementCondition().apply(xdsl_ctx, xdsl_module)
-    if lower_stableHLO:
-
-        # Optional: your custom folding of scalar linalg.generic chains
-        FoldRedundantMeasurementCondition().apply(xdsl_ctx, xdsl_module)
-        #FoldRedundantBoolChain().apply(xdsl_ctx, xdsl_module)
-
-        # Canonicalize: applies all registered canonicalization patterns
-        #CanonicalizePass().apply(xdsl_ctx, xdsl_module)
-
-        # Dead Code Elimination: remove ops whose results are unused
-        #DeadCodeElimination().apply(xdsl_ctx, xdsl_module)
-
-    return xdsl_module
+    
+    return xdsl_ctx, xdsl_module
 
 def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
     """Lower a Jaxpr to an MLIR module with StableHLO ops lowered to linalg.
