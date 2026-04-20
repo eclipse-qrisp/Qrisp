@@ -30,24 +30,8 @@ Problem:
     original measurement result.
 
 Solution:
-    Two composable rewrite patterns that, together with upstream canonicalize
-    and DCE passes, collapse the chain:
-
-    1. FoldScalarLinalgGeneric  — inlines 0-d linalg.generic into scalar ops
-    2. FoldCmpiExtui            — folds cmpi(extui(i1), 0) into the original i1
-
-Usage:
-    >>> from xdsl.ir import Context
-    >>> ctx = Context()
-    >>> FoldRedundantMeasurementCondition().apply(ctx, module)
-
-    Or as part of a pass pipeline:
-        pass_pipeline = [
-            FoldRedundantMeasurementCondition,
-            Canonicalize,
-            CommonSubexpressionElimination,
-            DeadCodeElimination,
-        ]
+    Three composable rewrite patterns that, together with upstream canonicalize
+    and DCE passes, collapse the chain.
 """
 
 from xdsl.context import Context
