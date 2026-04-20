@@ -21,9 +21,6 @@ and preview them:
     # One-shot build — output lands in documentation/build/html/
     make html
 
-    # Live-reload server — rebuilds on every file save and opens a browser tab
-    sphinx-autobuild source build/html --open-browser
-
 Open ``documentation/build/html/index.html`` in your browser to inspect the
 result. Always verify that pages render correctly before submitting a pull
 request — formatting that looks fine in raw reStructuredText may not render

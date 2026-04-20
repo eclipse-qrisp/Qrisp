@@ -33,14 +33,6 @@ request.
 - Pylint documentation: https://pylint.readthedocs.io/
 - Ruff documentation: https://docs.astral.sh/ruff/
 
-.. code-block:: bash
-
-    # Analyse a single file
-    ruff check src/qrisp/circuit/quantum_circuit.py
-
-    # Analyse the full source tree
-    ruff check src/
-
 Issues worth prioritising include the ones related to code logic, efficiency, and maintainability:
 
 - Mutable default arguments
@@ -53,11 +45,6 @@ Issues worth prioritising include the ones related to code logic, efficiency, an
 
 Some warnings are cosmetic (e.g., ``line-too-long``) and can be deferred.
 Others point to real quality issues and should be addressed.
-
-You can also configure **pre-commit** to run linting automatically before every
-commit, catching issues as early as possible:
-
-- pre-commit documentation: https://pre-commit.com/
 
 Relevant style guides:
 
