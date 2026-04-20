@@ -32,9 +32,10 @@ well in Sphinx.
 Docstrings
 ----------
 
-Public functions and classes should have docstrings that follow the
-`NumPy docstring style <https://numpydoc.readthedocs.io/en/latest/format.html>`_,
-which is the convention used throughout Qrisp.
+Public functions and classes should have docstrings that use section headers
+separated by dashes (``Parameters``, ``Returns``, ``Examples``, etc.),
+following the `NumPy docstring style <https://numpydoc.readthedocs.io/en/latest/format.html>`_.
+This is the pattern already used in the existing codebase.
 
 Checklist for documentation contributions:
 

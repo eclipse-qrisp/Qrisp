@@ -41,7 +41,7 @@ request.
     # Analyse the full source tree
     ruff check src/
 
-Issues worth prioritising include:
+Issues worth prioritising include the ones related to code logic, efficiency, and maintainability:
 
 - Mutable default arguments
 - Unnecessary ``elif`` or ``return`` statements
@@ -49,6 +49,7 @@ Issues worth prioritising include:
 - Deeply nested functions
 - Unused imports or arguments
 - Missing docstrings for public functions and classes
+- etc.
 
 Some warnings are cosmetic (e.g., ``line-too-long``) and can be deferred.
 Others point to real quality issues and should be addressed.
