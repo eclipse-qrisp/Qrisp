@@ -14,142 +14,213 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     In-place Gidney adder performing ``b += a``.
 
     Based on https://arxiv.org/abs/1709.06648. Works in both standard
-    Python and jasp tracing modes.
+    Python and jasp tracing modes. A single circuit body handles both
+    the quantum-quantum and classical-quantum cases via an
+    ``a_is_quantum`` flag; when ``a`` is classical no QuantumVariable
+    is allocated for it. Classical ``a`` must be an ``int``.
     """
 
     # ------------------------------------------------------------------
-    # Classical a: encode into a temp register and recurse into the
-    # quantum-quantum path.
+    # Classify a as quantum or classical and normalize the classical
+    # form into a jnp int.
     # ------------------------------------------------------------------
-    if not isinstance(a, (QuantumVariable, DynamicQubitArray, list)):
+    if isinstance(a, (QuantumVariable, DynamicQubitArray, list)):
+        a_is_quantum = True
+    else:
+        a_is_quantum = False
+        if isinstance(a, int):
+            a = jnp.array(a, dtype=jnp.int64)
 
-        if isinstance(a, str):
-            a = int(a[::-1], 2) if a else 0
-
-        # Pin q_a to b's QuantumSession in static mode so the recursive
-        # call's ancillas live in the scope the caller is tracking.
-        if not check_for_tracing_mode():
-            qs = b[0].qs()
-            q_a = QuantumVariable(jlen(b), qs=qs)
-        else:
-            q_a = QuantumVariable(jlen(b))
-
-        with conjugate(int_encoder)(q_a, a):
-            gidney_adder(q_a, b, c_in=c_in, c_out=c_out, ctrl=ctrl)
-        q_a.delete()
-        return
-
-    # ------------------------------------------------------------------
-    # Resolve b's session once. Every subsequent ancilla allocation
-    # passes this as qs= in static mode so all temporaries land on the
-    # session the caller is tracking (important for callers like
-    # cq_qcla that wrap us in a QuantumEnvironment).
-    # ------------------------------------------------------------------
     qs = None if check_for_tracing_mode() else b[0].qs()
 
     # ------------------------------------------------------------------
-    # Size normalization: truncate a if longer than b, pad with zero
-    # ancillas if a is shorter. After this block, a and b share width.
+    # Size normalization (quantum-a only).
     # ------------------------------------------------------------------
-    dim_a = jlen(a)
-    dim_b = jlen(b)
+    a_ext = None
+    if a_is_quantum:
+        dim_a = jlen(a)
+        dim_b = jlen(b)
+        effective_size_a = jnp.minimum(dim_a, dim_b)
+        a = a[:effective_size_a]
+        extension_size = jnp.maximum(0, dim_b - dim_a)
+        a_ext = (QuantumVariable(extension_size, name="gidney_a_ext*", qs=qs)
+                 if qs is not None
+                 else QuantumVariable(extension_size, name="gidney_a_ext*"))
+        a_qubits = a[:] + a_ext[:]
+    else:
+        a_qubits = None
 
-    # Truncate a to b's width when a is larger (modular addition).
-    effective_size_a = jnp.minimum(dim_a, dim_b)
-    a = a[:effective_size_a]
-
-    extension_size = jnp.maximum(0, dim_b - dim_a)
-    a_ext = (QuantumVariable(extension_size, name="gidney_a_ext*", qs=qs)
-             if qs is not None
-             else QuantumVariable(extension_size, name="gidney_a_ext*"))
-
-    a = a[:] + a_ext[:]
-    b = b[:]
+    b_eff = b[:]
 
     # ------------------------------------------------------------------
-    # c_in: prepend with a fresh |1> ancilla on the a side.
+    # c_in plumbing.
     # ------------------------------------------------------------------
     one_anc = None
     if c_in is not None:
         c_in_qbs = c_in[:] if isinstance(c_in, QuantumBool) else [c_in]
-        one_anc = (QuantumBool(name="gidney_cin_one*", qs=qs)
-                   if qs is not None
-                   else QuantumBool(name="gidney_cin_one*"))
-        x(one_anc[0])
-        a = one_anc[:] + a
-        b = c_in_qbs + b
+        b_eff = c_in_qbs + b_eff
+        if a_is_quantum:
+            one_anc = (QuantumBool(name="gidney_cin_one*", qs=qs)
+                       if qs is not None
+                       else QuantumBool(name="gidney_cin_one*"))
+            x(one_anc[0])
+            a_qubits = one_anc[:] + a_qubits
+        else:
+            a = (a << 1) | jnp.int64(1)
 
     # ------------------------------------------------------------------
-    # c_out: append with a fresh |0> ancilla on the a side.
+    # c_out plumbing.
     # ------------------------------------------------------------------
     zero_anc = None
     if c_out is not None:
         c_out_qbs = c_out[:] if isinstance(c_out, QuantumBool) else [c_out]
-        zero_anc = (QuantumBool(name="gidney_cout_zero*", qs=qs)
-                    if qs is not None
-                    else QuantumBool(name="gidney_cout_zero*"))
-        a = a + zero_anc[:]
-        b = b + c_out_qbs
+        b_eff = b_eff + c_out_qbs
+        if a_is_quantum:
+            zero_anc = (QuantumBool(name="gidney_cout_zero*", qs=qs)
+                        if qs is not None
+                        else QuantumBool(name="gidney_cout_zero*"))
+            a_qubits = a_qubits + zero_anc[:]
+        # Classical case: reads past the MSB of a naturally return 0.
 
-    n = jlen(a)
+    n = jlen(b_eff)
 
     # ------------------------------------------------------------------
-    # Main V-shaped circuit. Skipped when n == 1; that single-bit case
-    # is handled by the top-right CX below.
+    # Main V circuit. Structurally identical in both cases; the only
+    # differences are:
+    #   - q-q: a[i] is a qubit; Toffolis use it as a direct control,
+    #     and the left-V does cx(g_{i-1}, a[i]) to mutate it.
+    #   - c-q: a[i] is a classical bit; the "mutation" cx(g_{i-1}, a[i])
+    #     is skipped, and the Toffoli's a-control is realized by
+    #     conjugating with X on g_{i-1} when the classical bit is 1
+    #     (which reproduces the effective (a[i] XOR g_{i-1}) control
+    #     that the q-q path gets from mutating a[i]).
     # ------------------------------------------------------------------
     with control(n > 1):
         gidney_anc = (QuantumVariable(n - 1, name="gidney_anc*", qs=qs)
                       if qs is not None
                       else QuantumVariable(n - 1, name="gidney_anc*"))
 
-        mcx([a[0], b[0]], gidney_anc[0], method="gidney")
+        # --- Initial Toffoli ---------------------------------------
+        if a_is_quantum:
+            mcx([a_qubits[0], b_eff[0]], gidney_anc[0], method="gidney")
+        else:
+            with control(jnp.bool((a >> 0) & 1)):
+                if ctrl is None:
+                    cx(b_eff[0], gidney_anc[0])
+                else:
+                    mcx([ctrl, b_eff[0]], gidney_anc[0], method="gidney")
 
+        # --- Left V -------------------------------------------------
         for j in jrange(n - 2):
             i = j + 1
-            cx(gidney_anc[i - 1], a[i])
-            cx(gidney_anc[i - 1], b[i])
-            mcx([a[i], b[i]], gidney_anc[i], method="gidney")
-            cx(gidney_anc[i - 1], gidney_anc[i])
+            if a_is_quantum:
+                cx(gidney_anc[i - 1], a_qubits[i])
+                cx(gidney_anc[i - 1], b_eff[i])
+                mcx([a_qubits[i], b_eff[i]], gidney_anc[i], method="gidney")
+                cx(gidney_anc[i - 1], gidney_anc[i])
+            else:
+                cx(gidney_anc[i - 1], b_eff[i])
+                with control(jnp.bool((a >> i) & 1)):
+                    if ctrl is None:
+                        x(gidney_anc[i - 1])
+                    else:
+                        cx(ctrl, gidney_anc[i - 1])
+                mcx([gidney_anc[i - 1], b_eff[i]], gidney_anc[i],
+                    method="gidney")
+                with control(jnp.bool((a >> i) & 1)):
+                    if ctrl is None:
+                        x(gidney_anc[i - 1])
+                    else:
+                        cx(ctrl, gidney_anc[i - 1])
+                cx(gidney_anc[i - 1], gidney_anc[i])
 
-        if ctrl is not None:
-            mcx([ctrl, gidney_anc[n - 2]], b[n - 1])
-            mcx([ctrl, a[n - 1]], b[n - 1])
+        # --- Tip of V ----------------------------------------------
+        if a_is_quantum:
+            if ctrl is not None:
+                mcx([ctrl, gidney_anc[n - 2]], b_eff[n - 1])
+                mcx([ctrl, a_qubits[n - 1]], b_eff[n - 1])
+            else:
+                cx(gidney_anc[n - 2], b_eff[n - 1])
+                cx(a_qubits[n - 1], b_eff[n - 1])
         else:
-            cx(gidney_anc[n - 2], b[n - 1])
-            cx(a[n - 1], b[n - 1])
+            if ctrl is not None:
+                mcx([ctrl, gidney_anc[n - 2]], b_eff[n - 1])
+                with control(jnp.bool((a >> (n - 1)) & 1)):
+                    cx(ctrl, b_eff[n - 1])
+            else:
+                cx(gidney_anc[n - 2], b_eff[n - 1])
+                with control(jnp.bool((a >> (n - 1)) & 1)):
+                    x(b_eff[n - 1])
 
+        # --- Right V -----------------------------------------------
         for j in jrange(n - 2):
             i = n - j - 2
-            cx(gidney_anc[i - 1], gidney_anc[i])
-            mcx([a[i], b[i]], gidney_anc[i], method="gidney_inv")
-
-            if ctrl is not None:
-                mcx([ctrl, a[i]], b[i])
-                cx(gidney_anc[i - 1], a[i])
-                cx(gidney_anc[i - 1], b[i])
+            if a_is_quantum:
+                cx(gidney_anc[i - 1], gidney_anc[i])
+                mcx([a_qubits[i], b_eff[i]], gidney_anc[i], method="gidney_inv")
+                if ctrl is not None:
+                    mcx([ctrl, a_qubits[i]], b_eff[i])
+                    cx(gidney_anc[i - 1], a_qubits[i])
+                    cx(gidney_anc[i - 1], b_eff[i])
+                else:
+                    cx(gidney_anc[i - 1], a_qubits[i])
+                    cx(a_qubits[i], b_eff[i])
             else:
-                cx(gidney_anc[i - 1], a[i])
-                cx(a[i], b[i])
+                cx(gidney_anc[i - 1], gidney_anc[i])
+                with control(jnp.bool((a >> i) & 1)):
+                    if ctrl is None:
+                        x(gidney_anc[i - 1])
+                    else:
+                        cx(ctrl, gidney_anc[i - 1])
+                mcx([gidney_anc[i - 1], b_eff[i]], gidney_anc[i],
+                    method="gidney_inv")
+                with control(jnp.bool((a >> i) & 1)):
+                    if ctrl is None:
+                        x(gidney_anc[i - 1])
+                    else:
+                        cx(ctrl, gidney_anc[i - 1])
 
-        mcx([a[0], b[0]], gidney_anc[0], method="gidney_inv")
+        # --- Final Toffoli -----------------------------------------
+        if a_is_quantum:
+            mcx([a_qubits[0], b_eff[0]], gidney_anc[0], method="gidney_inv")
+        else:
+            with control(jnp.bool((a >> 0) & 1)):
+                if ctrl is None:
+                    cx(b_eff[0], gidney_anc[0])
+                else:
+                    mcx([ctrl, b_eff[0]], gidney_anc[0], method="gidney_inv")
 
         gidney_anc.delete()
 
     # ------------------------------------------------------------------
-    # Top-right CX at position 0. Skipped when c_in is set so we don't
-    # flip the c_in qubit (a[0] is the |1> one_anc in that case).
+    # Final top-right XOR sweep. In q-q this is a single CX at bit 0
+    # (the rest of b got its a-contributions from the right-V). In c-q
+    # the right-V does not emit b[i] ^= a[i] inline, so we emit the
+    # full sweep here, skipping bit 0 when c_in is set (to avoid
+    # flipping the c_in qubit).
     # ------------------------------------------------------------------
-    if c_in is None:
-        if ctrl is not None:
-            mcx([ctrl, a[0]], b[0])
-        else:
-            cx(a[0], b[0])
+    if a_is_quantum:
+        if c_in is None:
+            if ctrl is not None:
+                mcx([ctrl, a_qubits[0]], b_eff[0])
+            else:
+                cx(a_qubits[0], b_eff[0])
+    else:
+        a_final = (a & ~jnp.int64(1)) if c_in is not None else a
+        for i in jrange(n):
+            with control(jnp.bool((a_final >> i) & 1)):
+                if ctrl is not None:
+                    cx(ctrl, b_eff[i])
+                else:
+                    x(b_eff[i])
 
+    # ------------------------------------------------------------------
+    # Cleanup.
+    # ------------------------------------------------------------------
     if one_anc is not None:
         x(one_anc[0])
         one_anc.delete()
-
     if zero_anc is not None:
         zero_anc.delete()
-
-    a_ext.delete()
+    if a_ext is not None:
+        a_ext.delete()
