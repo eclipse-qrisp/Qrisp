@@ -174,7 +174,7 @@ class QiskitBackend(Backend):
         A name for the backend.  Defaults to the Qiskit backend's own name.
 
     options : dict or None, optional
-        Runtime options.  Defaults to ``{"shots": 1024}``.
+        Runtime options.  Defaults to ``{"shots": 1000}``.
 
     Examples
     --------
@@ -199,8 +199,10 @@ class QiskitBackend(Backend):
     When ``get_measurement`` is called, Qrisp compiles the computation into a
     ``QuantumCircuit``, converts it to OpenQASM 2, rebuilds it as a Qiskit
     ``QuantumCircuit``, transpiles it for the target backend, and submits it
-    through ``SamplerV2``. A ``QiskitJob`` is returned immediately, and
-    ``get_measurement`` then blocks on ``job.result()`` to retrieve the outcome:
+    through ``SamplerV2``. Internally, ``run_async`` returns a ``QiskitJob``
+    immediately; :meth:`~qrisp.interface.Backend.run` then blocks on
+    ``job.result()`` until execution completes and the counts are returned to
+    ``get_measurement``:
 
     >>> res.get_measurement(backend=qiskit_backend)
     {9: 1.0}
@@ -312,7 +314,7 @@ class QiskitBackend(Backend):
             circuits = [circuits]
         else:
             circuits = list(circuits)
-        n_shots = shots if shots is not None else self._options.get("shots", 1024)
+        n_shots = shots if shots is not None else self._options.get("shots", 1000)
 
         # Convert each Qrisp circuit to a Qiskit QuantumCircuit via OpenQASM 2,
         # then rebuild with integer-indexed qubits and transpile for the target backend.
