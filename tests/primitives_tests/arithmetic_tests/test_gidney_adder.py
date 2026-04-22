@@ -347,3 +347,33 @@ def test_gidney_adder_t_depth_significantly_lower_than_cuccaro():
         
         # Gidney should have lower T-depth
         assert gidney_t_depth < cuccaro_t_depth
+
+
+def test_gidney_adder_classical_a_modulo():
+    """
+    Verify that a classical `a` larger than b's range is reduced mod 2**len(b).
+
+    If the modulo is skipped (e.g. only applied outside tracing mode),
+    int_encoder will encode extra bits and corrupt the result.
+    """
+
+    @boolean_simulation
+    def main(b_bits, b_val, a_val):
+        B = QuantumFloat(b_bits)
+        B[:] = b_val
+        gidney_adder(a_val, B)
+        return measure(B)
+
+    b_bits = 4  # b can represent 0..15
+
+    test_cases = [
+        (0, 17),    # 17 % 16 = 1, expect 0 + 1 = 1
+        (3, 19),    # 19 % 16 = 3, expect 3 + 3 = 6
+        (5, 32),    # 32 % 16 = 0, expect 5 + 0 = 5
+        (7, 255),   # 255 % 16 = 15, expect (7 + 15) % 16 = 6
+    ]
+
+    for b_val, a_val in test_cases:
+        result = int(main(b_bits, b_val, a_val))
+        expected = (b_val + a_val) % (1 << b_bits)
+        assert result == expected
