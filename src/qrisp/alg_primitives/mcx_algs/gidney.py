@@ -107,7 +107,7 @@ def gidney_mcx_inv_impl(a, b, c):
     bl = measure(c)
     with control(bl):
         cz(a, b)
-    x(c)
+        x(c)
 
 class GidneyMCXJaspr(Jaspr):
     def __init__(self, inv):
