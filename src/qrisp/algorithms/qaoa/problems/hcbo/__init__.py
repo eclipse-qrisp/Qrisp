@@ -16,14 +16,4 @@
 ********************************************************************************
 """
 
-from qrisp.algorithms.qaoa.problems.maxCut import *
-from qrisp.algorithms.qaoa.problems.maxKColorableSubgraph import *
-from qrisp.algorithms.qaoa.problems.QUBO import *
-
-from qrisp.algorithms.qaoa.problems.maxSat import *
-from qrisp.algorithms.qaoa.problems.eThrLinTwo import *
-from qrisp.algorithms.qaoa.problems.maxIndepSet import *
-from qrisp.algorithms.qaoa.problems.maxClique import *
-from qrisp.algorithms.qaoa.problems.maxSetPacking import *
-from qrisp.algorithms.qaoa.problems.minSetCover import *
-from qrisp.algorithms.qaoa.problems.hcbo import *
+from qrisp.algorithms.qaoa.problems.hcbo.hcbo import HCBO

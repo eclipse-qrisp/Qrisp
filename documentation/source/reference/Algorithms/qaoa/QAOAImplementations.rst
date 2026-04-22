@@ -12,6 +12,7 @@ Implementations
      implementations/maxSat
      implementations/eThrLinTwo
      implementations/QUBO
+     implementations/HCBO
      implementations/maxIndepSet
      implementations/maxClique
      implementations/maxSetPack
