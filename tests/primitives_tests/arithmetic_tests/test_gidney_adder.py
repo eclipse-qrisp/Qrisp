@@ -377,3 +377,27 @@ def test_gidney_adder_classical_a_modulo():
         result = int(main(b_bits, b_val, a_val))
         expected = (b_val + a_val) % (1 << b_bits)
         assert result == expected
+
+
+def test_gidney_adder_t_count():
+    """Verify that the Gidney adder for two n-qubit inputs uses 4*(n-1) T gates.
+
+    This follows from Fig. 1 of the Gidney paper (https://arxiv.org/abs/1709.06648):
+    each of the (n-1) forward Toffolis decomposes into 4 T gates via the logical-AND
+    construction, while the (n-1) inverse Toffolis use measurement-based uncomputation
+    with 0 T gates, giving a total T count of 4*(n-1).
+    """
+    for n in [3, 5, 8, 12]:
+        a = QuantumFloat(n)
+        b = QuantumFloat(n)
+        a[:] = 2
+        b[:] = 3
+
+        gidney_adder(a, b)
+
+        qc = b.qs.compile(compile_mcm=True).transpile()
+        ops = qc.count_ops()
+        t_count = ops.get("t", 0) + ops.get("t_dg", 0)
+
+        expected_t_count = 4 * (n - 1)
+        assert t_count == expected_t_count
