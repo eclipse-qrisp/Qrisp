@@ -39,7 +39,8 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         # this is helpful given that the addition is performed in-place on b
         # so any bits of a beyond the length of b would not affect the result
         # and can be safely ignored
-        a = a % (1 << jlen(b))
+        if not check_for_tracing_mode() and isinstance(a, (int, np.integer)):
+            a = int(a) % (1 << len(b))
 
         qs = None if check_for_tracing_mode() else b[0].qs()
         q_a = QuantumVariable(jlen(b), qs=qs)
