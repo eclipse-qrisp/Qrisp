@@ -8,7 +8,7 @@ Who is behind Qrisp
 
     <link rel="stylesheet" href="../_static/css/contributors.css">
     <hr class="section-divider">
-    <div class="code-example-text">
+    <div class="scroll-reveal">
 
 Qrisp is an open-source project developed across organizations. We are open to all kinds of contribution - feel free to contact us, if you or your organization intend to contribute.
 
@@ -59,6 +59,33 @@ Adaptors
         :shadow: none
     
         .. image:: ../_static/eleqtron_logo.png
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ../_static/FMF_UL_logo.svg
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ../_static/FRI_UL_logo.png
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ../_static/ORNL_logo.png
             :align: center
             :width: 150
             :class: no-scaled-link
