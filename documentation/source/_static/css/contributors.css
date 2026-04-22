@@ -26,7 +26,13 @@
     filter: grayscale(20%);
     opacity: 0.85;
     scale: 1;
-    transition: all 0.3s ease
+    transition: all 0.3s ease;
+}
+
+#who-is-behind-qrisp .sd-card-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #who-is-behind-qrisp .sd-card:hover img {
