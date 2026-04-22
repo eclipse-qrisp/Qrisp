@@ -17,7 +17,8 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     Python and jasp tracing modes. A single circuit body handles both
     the quantum-quantum and classical-quantum cases via an
     ``a_is_quantum`` flag; when ``a`` is classical no QuantumVariable
-    is allocated for it. Classical ``a`` must be an ``int``.
+    is allocated for it. Classical ``a`` may be an ``int`` or a
+    little-endian bit-string (as produced e.g. by ``cq_qcla``).
     """
 
     # ------------------------------------------------------------------
@@ -28,6 +29,8 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         a_is_quantum = True
     else:
         a_is_quantum = False
+        if isinstance(a, str):
+            a = int(a[::-1], 2) if a else 0
         if isinstance(a, int):
             a = jnp.array(a, dtype=jnp.int64)
 
@@ -85,15 +88,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     n = jlen(b_eff)
 
     # ------------------------------------------------------------------
-    # Main V circuit. Structurally identical in both cases; the only
-    # differences are:
-    #   - q-q: a[i] is a qubit; Toffolis use it as a direct control,
-    #     and the left-V does cx(g_{i-1}, a[i]) to mutate it.
-    #   - c-q: a[i] is a classical bit; the "mutation" cx(g_{i-1}, a[i])
-    #     is skipped, and the Toffoli's a-control is realized by
-    #     conjugating with X on g_{i-1} when the classical bit is 1
-    #     (which reproduces the effective (a[i] XOR g_{i-1}) control
-    #     that the q-q path gets from mutating a[i]).
+    # Main V circuit.
     # ------------------------------------------------------------------
     with control(n > 1):
         gidney_anc = (QuantumVariable(n - 1, name="gidney_anc*", qs=qs)
@@ -193,11 +188,17 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         gidney_anc.delete()
 
     # ------------------------------------------------------------------
-    # Final top-right XOR sweep. In q-q this is a single CX at bit 0
-    # (the rest of b got its a-contributions from the right-V). In c-q
-    # the right-V does not emit b[i] ^= a[i] inline, so we emit the
-    # full sweep here, skipping bit 0 when c_in is set (to avoid
-    # flipping the c_in qubit).
+    # Final top-right XOR sweep.
+    #
+    # q-q: single CX at bit 0 (the right-V already applied a[i] to
+    # b[i] for i in 1..n-2 inline, and the tip-of-V applied a[n-1]
+    # to b[n-1]).
+    #
+    # c-q: the right-V does NOT apply a[i] to b[i] inline, so we must
+    # emit b[i] ^= a[i] for i in 0..n-2 here. Bit n-1 is NOT in the
+    # sweep because the tip-of-V already handled it. Bit 0 is skipped
+    # when c_in is set (that position holds the c_in qubit, which must
+    # not be flipped).
     # ------------------------------------------------------------------
     if a_is_quantum:
         if c_in is None:
@@ -207,7 +208,8 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
                 cx(a_qubits[0], b_eff[0])
     else:
         a_final = (a & ~jnp.int64(1)) if c_in is not None else a
-        for i in jrange(n):
+        # Sweep covers indices 0..n-2 only; n-1 was handled by tip-of-V.
+        for i in jrange(n - 1):
             with control(jnp.bool((a_final >> i) & 1)):
                 if ctrl is not None:
                     cx(ctrl, b_eff[i])
