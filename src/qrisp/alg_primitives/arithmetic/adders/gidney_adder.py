@@ -8,15 +8,6 @@ from qrisp.misc import int_encoder
 from qrisp.jasp import jrange, jlen, DynamicQubitArray, check_for_tracing_mode
 
 
-def _session_of(b):
-    """Return b's QuantumSession in static mode, or None under tracing."""
-    if check_for_tracing_mode():
-        return None
-    # b may be a QuantumVariable, a list of Qubits, or a DQA.
-    first = b[0]
-    return first.qs()
-
-
 @custom_control
 def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     """
@@ -26,18 +17,32 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     Python and jasp tracing modes.
     """
 
-
+    # when a is classical
     if not isinstance(a, (QuantumVariable, DynamicQubitArray, list)):
 
+        # If `a` is a binary string (e.g. "011"), it is assumed to be in
+        # little-endian order — meaning the first character represents the
+        # least significant bit (LSB), i.e. the 2^0 place, the second
+        # character represents 2^1, the third represents 2^2, and so on.
+        # This matches how qubits are indexed: qubit 0 holds the smallest
+        # power of two. Python's int(..., 2) expects big-endian order
+        # (MSB first), so we reverse the string before parsing.
+        # Example: "011" (little-endian) → reversed "110" → int("110", 2) = 6
+        # An empty string is treated as 0.
+
+        # a is used as a string input by the QCLA adder (For example, cq_sum_path.py)
+        # using the Gidney adder. 
         if isinstance(a, str):
             a = int(a[::-1], 2) if a else 0
 
-        if not check_for_tracing_mode() and isinstance(a, (int, np.integer)):
-            a = int(a) % (1 << len(b))
+        # modulo operation to ensure a fits within the number of bits in b
+        # this is helpful given that the addition is performed in-place on b
+        # so any bits of a beyond the length of b would not affect the result
+        # and can be safely ignored
+        a = a % (1 << jlen(b))
 
-        qs = _session_of(b)
-        q_a = QuantumVariable(jlen(b), qs=qs) if qs is not None \
-            else QuantumVariable(jlen(b))
+        qs = None if check_for_tracing_mode() else b[0].qs()
+        q_a = QuantumVariable(jlen(b), qs=qs)
 
         with conjugate(int_encoder)(q_a, a):
             gidney_adder(q_a, b, c_in=c_in, c_out=c_out, ctrl=ctrl)
@@ -45,17 +50,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         return
 
 
-    qs = _session_of(b)
-
-    def _qv(size, name):
-        if qs is not None:
-            return QuantumVariable(size, name=name, qs=qs)
-        return QuantumVariable(size, name=name)
-
-    def _qbool(name):
-        if qs is not None:
-            return QuantumBool(name=name, qs=qs)
-        return QuantumBool(name=name)
+    qs = None if check_for_tracing_mode() else b[0].qs()
 
 
     dim_a = jlen(a)
@@ -65,7 +60,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     a = a[:effective_size_a]
 
     extension_size = jnp.maximum(0, dim_b - dim_a)
-    a_ext = _qv(extension_size, "gidney_a_ext*")
+    a_ext = QuantumVariable(extension_size, name="gidney_a_ext*", qs=qs)
 
     a = a[:] + a_ext[:]
     b = b[:]
@@ -74,7 +69,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     one_anc = None
     if c_in is not None:
         c_in_qbs = c_in[:] if isinstance(c_in, QuantumBool) else [c_in]
-        one_anc = _qbool("gidney_cin_one*")
+        one_anc = QuantumBool(name="gidney_cin_one*", qs=qs)
         x(one_anc[0])
         a = one_anc[:] + a
         b = c_in_qbs + b
@@ -83,7 +78,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     zero_anc = None
     if c_out is not None:
         c_out_qbs = c_out[:] if isinstance(c_out, QuantumBool) else [c_out]
-        zero_anc = _qbool("gidney_cout_zero*")
+        zero_anc = QuantumBool(name="gidney_cout_zero*", qs=qs)
         a = a + zero_anc[:]
         b = b + c_out_qbs
 
@@ -91,7 +86,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
 
 
     with control(n > 1):
-        gidney_anc = _qv(n - 1, "gidney_anc*")
+        gidney_anc = QuantumVariable(n - 1, name="gidney_anc*", qs=qs)
 
         mcx([a[0], b[0]], gidney_anc[0], method="gidney")
 
