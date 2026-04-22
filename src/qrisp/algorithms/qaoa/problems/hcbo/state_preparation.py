@@ -73,7 +73,8 @@ def make_distinct(qv1, qv2, n):
         with control(qv1[i]):
             quasi_swap(qv2[n], qv2[i])
 
-def prepare_pbs_state(graph, root, N, q_array):
+
+def prepare_constraints_state(graph, root, N, q_array):
     """
     This algorithm prepares a superposition state of all feasible solutions for a product breakdown structure (PBS) problem.
     We call this state the PBS superposition state. For this, it utilizes the PBS tree structure: A node (part) and all its (direct) predecessors can never be in the same state (site).
@@ -81,16 +82,16 @@ def prepare_pbs_state(graph, root, N, q_array):
     Parameters
     ----------
     graph : networkx.DiGraph
-        The directed graph representing the PBS.
+        The directed graph representing the constraints.
     root : int
         The root of the graph.
     N : int
         The number sites.
 
     """
-    M = graph.number_of_nodes()
+    #M = graph.number_of_nodes()
     
-    assert M == len(q_array)
+    #assert M == len(q_array)
 
     W(q_array[root],N)
     
@@ -138,3 +139,36 @@ def add_predecessors(graph, node, N, q_array):
     # Recursivley add predecessors
     for pred in predecessors:
         add_predecessors(graph, pred, N ,q_array)
+
+
+def build_predecessor_graph(data, G=None):
+    """
+    Recursively builds a directed graph from a nested tuple structure.
+    The first element of a tuple is the root, and subsequent elements 
+    (or the first elements of sub-tuples) point to it.
+    """
+    # Initialize the graph on the first call
+    if G is None:
+        G = nx.DiGraph()
+        
+    # Base case: empty or invalid data
+    if not isinstance(data, tuple) or len(data) == 0:
+        return G
+        
+    root = data[0]
+    G.add_node(root) # Ensure the root is added even if it has no predecessors
+    
+    # Iterate through all predecessors
+    for item in data[1:]:
+        if isinstance(item, tuple):
+            if len(item) > 0:
+                sub_root = item[0]
+                # Add edge from the sub-tuple's root to the current root
+                G.add_edge(sub_root, root)
+                # Recursively process the sub-tuple
+                build_predecessor_graph(item, G)
+        else:
+            # If it's just an integer, add a direct edge
+            G.add_edge(item, root)
+            
+    return G, root
