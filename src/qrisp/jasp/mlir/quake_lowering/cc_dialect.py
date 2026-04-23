@@ -189,7 +189,7 @@ class CcIfOp(IRDLOperation):
     def print(self, printer: Printer) -> None:
         printer.print_string(" (")
         printer.print_ssa_value(self.cond)
-        printer.print_string(" : i1)")
+        printer.print_string(")")
         printer.print_string(" ")
         printer.print_region(self.then_region)
         # Always emit else, even if empty – required by CC dialect parser.
