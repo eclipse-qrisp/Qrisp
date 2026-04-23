@@ -2289,6 +2289,26 @@ class QuantumCircuit:
 
         return convert_to_cirq(self)
 
+    def to_pdag(self, remove_artificials: bool = False):
+        """
+        Method to convert the given QuantumCircuit to a PermeabilityGraph.
+
+        Parameters
+        ----------
+        remove_artificials : bool, optional
+            Whether to remove artificial nodes from the PermeabilityGraph. The default is False.
+
+        Returns
+        -------
+        PermeabilityGraph
+            The resulting PermeabilityGraph.
+        """
+
+        # NOTE: This is here to avoid circular imports
+        from qrisp.permeability import PermeabilityGraph
+
+        return PermeabilityGraph(self, remove_artificials=remove_artificials)
+
     def measure(
         self,
         qubits: QubitLike,
@@ -2957,11 +2977,6 @@ class QuantumCircuit:
         """
         self.append(ops.IDGate(), [qubits])
 
-    def to_pdag(self, remove_artificials=False):
-        from qrisp.permeability import PermeabilityGraph
-
-        return PermeabilityGraph(self, remove_artificials=remove_artificials)
-
 
 # TODO: Refactor the convert_to_qb_list and convert_to_cb_list functions
 
@@ -3019,6 +3034,7 @@ def convert_to_qb_list(
     TypeError
         If *value* cannot be converted to a qubit list.
     """
+    # NOTE: This is here to avoid circular imports
     from qrisp import QuantumArray
 
     if isinstance(value, Qubit):
