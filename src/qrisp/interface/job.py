@@ -295,10 +295,27 @@ class Job(ABC):
     @abstractmethod
     def submit(self) -> None:
         """
-        Submit the job to the backend for execution.
+        Move the job out of :attr:`~JobStatus.INITIALIZING`.
 
-        This method triggers the actual execution. It is called by the
-        backend after the job object has been constructed.
+        This method is called by :meth:`~qrisp.interface.Backend.run_async`
+        immediately after the job object has been constructed. Its
+        responsibility is to signal that execution has been handed off to the
+        backend by transitioning the job out of ``INITIALIZING``.
+
+        The target state depends on the backend type:
+
+        * ``QUEUED``: the job has been registered with a remote or local queue
+          and is waiting for execution resources.
+
+        * ``RUNNING``: for synchronous backends that begin execution
+          immediately inside this method.
+
+        For backends where submission to the vendor SDK already happened
+        inside :meth:`~qrisp.interface.Backend.run_async` before this method
+        is called (e.g. because the vendor SDK returns a job handle
+        immediately), ``submit()`` may be a no-op. In that case the job's
+        live :meth:`status` reflects the vendor-side state, which will already
+        be ``QUEUED`` or higher.
         """
 
         raise NotImplementedError

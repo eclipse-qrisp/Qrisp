@@ -183,9 +183,15 @@ class Backend(ABC):
 
         Before returning, every concrete implementation must call
         :meth:`job.submit() <qrisp.interface.Job.submit>` on the newly created
-        job. ``submit()`` is the hook that transitions the job from
-        ``INITIALIZING`` to ``QUEUED``, signalling that execution
-        has been handed off to the backend.
+        job. ``submit()`` is the hook that moves the job out of
+        ``INITIALIZING``, signalling that execution has been handed off to the
+        backend. The exact state the job enters depends on the backend type:
+
+        * ``QUEUED``: for asynchronous or remote backends where the job waits
+          in a queue before execution begins.
+
+        * ``RUNNING``: for synchronous simulators that start execution
+          immediately inside ``submit()``.
 
         Parameters
         ----------

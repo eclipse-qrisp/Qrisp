@@ -1270,7 +1270,13 @@ def test_virtual_backend_deprecation_warning():
 
 
 class TestJobLifecycle:
-    """Tests that the INITIALIZING → QUEUED → RUNNING → DONE lifecycle is honoured."""
+    """Tests that the job lifecycle contract is honoured.
+
+    The only hard guarantee is that a job must exit INITIALIZING before
+    run_async() returns.  The exact post-submit state depends on the backend:
+    asynchronous backends transition to QUEUED; synchronous simulators may
+    go directly to RUNNING or DONE inside submit().
+    """
 
     def test_job_starts_in_initializing_state(self):
         """A newly constructed job must start in INITIALIZING before submit() is called."""
@@ -1285,7 +1291,11 @@ class TestJobLifecycle:
         assert job.last_known_status == JobStatus.INITIALIZING
 
     def test_submit_transitions_to_queued(self):
-        """Calling submit() must move the job out of INITIALIZING into QUEUED."""
+        """MinimalJob.submit() transitions to QUEUED (the async-backend pattern).
+
+        Note: this tests a specific implementation. Synchronous simulators are
+        allowed to transition to RUNNING or DONE instead.
+        """
         backend = MinimalBackend()
         job = MinimalJob(backend=backend)
         job.submit()
