@@ -71,7 +71,7 @@ def scalar_linalg_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> N
 
     walker.rewrite_module(xdsl_module)
 
-#====================================================================== #
+# ====================================================================== #
 
 class FoldScalarLinalgGeneric(RewritePattern):
     """Fold a 0-dimensional `linalg.generic` with a single operation into
@@ -109,49 +109,61 @@ class FoldScalarLinalgGeneric(RewritePattern):
     def match_and_rewrite(
         self, op: linalg.GenericOp, rewriter: PatternRewriter
     ) -> None:
-        # ── Guard: only 0-d generics (no iteration dimensions) ──────────
+        # Guard: only 0-d generics
         if len(op.iterator_types.data) != 0:
             return
 
-        # ── Guard: body must be exactly <one_op> + <yield> ──────────────
-        body = op.body.block
-        if len(body.ops) != 2:
+        # Guard: single output only
+        if len(op.outputs) != 1:
             return
 
-        inner_op = body.first_op  # the single computation op
-        # body.last_op is the linalg.yield (unused but implied)
+        body = op.body.block
+        yield_op = body.last_op  # The last op is always the yield
 
-        # ── Step 1: Extract scalars from each 0-d tensor input ──────────
-        # For every tensor<T> input, insert a `tensor.extract %input[]`
-        # to obtain the bare scalar value.
-        scalar_inputs: list = []
-        for inp in op.inputs:
-            # 1. Get the element type of the input tensor (e.g., i1 or i64)
-            # inp.type is typically a TensorType or RankedTensorType
-            res_type = inp.type.element_type
-            extract = tensor.ExtractOp(inp, [], res_type)
-            rewriter.insert_op_before_matched_op(extract)
-            scalar_inputs.append(extract.result)
-
-        # ── Step 2: Clone the inner op with scalar operands ─────────────
-        # The inner op originally uses block arguments as operands.
-        # We remap them to the freshly extracted scalars.
+        # Step 1: Extract scalars from ALL tensor operands (ins + outs)
+        all_tensors = list(op.inputs) + list(op.outputs)
         mapping: dict = {}
-        for block_arg, scalar in zip(body.args, scalar_inputs):
-            mapping[block_arg] = scalar
 
-        cloned = inner_op.clone()
-        for i, operand in enumerate(cloned.operands):
-            if operand in mapping:
-                cloned.operands[i] = mapping[operand]
-        rewriter.insert_op_before_matched_op(cloned)
+        for block_arg, tensor_val in zip(body.args, all_tensors):
+            if len(list(block_arg.uses)) == 0:
+                continue  # Skip extraction
 
-        # ── Step 3: Wrap the scalar result back into a 0-d tensor ───────
+            extract = tensor.ExtractOp(tensor_val, [], tensor_val.type.element_type)
+            rewriter.insert_op_before_matched_op(extract)
+            mapping[block_arg] = extract.results[
+                0
+            ]
+
+        # Step 2: Clone the body sequentially
+        # Convert BlockOps to a standard Python list so we can slice it
+        ops_list = list(body.ops)
+
+        # Iterate over all ops EXCEPT the yield
+        for op_in_body in ops_list[:-1]:
+            cloned = op_in_body.clone()
+
+            # Safely remap operands based on our running dictionary
+            new_operands = [
+                mapping.get(operand, operand) for operand in cloned.operands
+            ]
+            cloned.operands = tuple(new_operands)  # Reassign safely
+
+            rewriter.insert_op_before_matched_op(cloned)
+
+            # Map the original op's results to the cloned op's results
+            for orig_res, cloned_res in zip(op_in_body.results, cloned.results):
+                mapping[orig_res] = cloned_res
+
+        # Step 3: Determine what the yield returns
+        yield_val = yield_op.operands[0]
+
+        # If it's a block arg or an intermediate result, it's in `mapping`.
+        # If it's a constant captured from outside, fallback to itself.
+        scalar_result = mapping.get(yield_val, yield_val)
+
+        # Step 4: Wrap back into 0-d tensor
         from_elements = tensor.FromElementsOp(
-            operands=[cloned.results[0]], 
-            result_types=[op.res[0].type]
+            operands=[scalar_result],
+            result_types=[op.results[0].type],  # Note: commonly .results over .res
         )
-        #from_elements = tensor.FromElementsOp.get(
-        #    cloned.results[0], op.res[0].type
-        #)
         rewriter.replace_matched_op(from_elements)
