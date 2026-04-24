@@ -141,7 +141,11 @@ class CcLoadOp(IRDLOperation):
 
     def __init__(self, ptr: SSAValue) -> None:
         # Infer the result type from the pointer's inner element type
-        res_type = ptr.type.element_type if hasattr(ptr.type, "element_type") else ptr.type
+        if not hasattr(ptr.type, "element_type"):
+            raise TypeError(
+                f"CcLoadOp requires a CcPtrType operand, got {ptr.type}"
+            )
+        res_type = ptr.type.element_type
         super().__init__(operands=[ptr], result_types=[res_type])
 
     def print(self, printer: Printer) -> None:

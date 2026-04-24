@@ -19,27 +19,20 @@
 """
 PASS 2 – SCF → CC dialect lowering.
 
-Replaces structured control-flow ops (``scf.if``, ``scf.while``) with their
-CC-dialect equivalents (``cc.if``, ``cc.loop``).  This keeps the IR in
-structured form, suitable for the CUDA-Q kernel compilation pipeline.
+Replaces structured control-flow ops (``scf.if``, ``scf.for``, ``scf.while``)
+with their CC-dialect equivalents (``cc.if``, ``cc.loop``).
 
-Design notes
-------------
-* ``scf.if`` with **no results** maps trivially to ``cc.if``.
-* ``scf.if`` with results is converted by introducing ``cc.alloca`` /
-  ``cc.store`` / ``cc.load`` patterns for each yielded value – *not* yet
-  implemented; such ops are left in SCF form (a warning is emitted).
-* ``scf.while`` with **no results** (after Pass 1 qst removal) maps to
-  ``cc.loop``.
-* ``scf.while`` with non-void results is similarly not yet supported and is
-  left in place.
+Strategy
+--------
+Loop-carried SSA values are promoted to memory via ``cc.alloca`` /
+``cc.store`` / ``cc.load``, so the resulting ``cc.loop`` has **no** SSA
+results and no block arguments in its regions.  This matches the style
+emitted by the CUDA-Q compiler.
 
-Extending
----------
-To add support for SCF ops with results, implement
-:func:`_convert_yielded_value` and call it from the converter functions.
+The promotion is factored into five reusable helpers (see *Shared helpers*
+section) that are called by both ``_convert_scf_for`` and
+``_convert_scf_while``.
 """
-
 
 import warnings
 from typing import Sequence
@@ -60,10 +53,9 @@ from qrisp.jasp.mlir.quake_lowering.cc_dialect import (
 )
 
 
-# ---------------------------------------------------------------------------
+# ===================================================================
 # Public entry point
-# ---------------------------------------------------------------------------
-
+# ===================================================================
 
 def lower_scf_to_cc(module) -> None:
     """In-place PASS 2: lower SCF structured control flow to the CC dialect.
@@ -71,28 +63,43 @@ def lower_scf_to_cc(module) -> None:
     Parameters
     ----------
     module:
-        An xDSL ``builtin.ModuleOp`` that has already been processed by
-        :func:`~qrisp.jasp.mlir.quake_lowering.pass1_jasp_to_quake.lower_jasp_to_quake`.
+        An xDSL ``builtin.ModuleOp`` already processed by Pass 1.
     """
     for op in list(module.body.blocks[0].ops):
         if op.name == "func.func":
             _process_region(op.body)
 
-# ---------------------------------------------------------------------------
-# helper
-# ---------------------------------------------------------------------------
+
+# ===================================================================
+# xDSL compatibility helpers
+# ===================================================================
 
 def _replace_all_uses_with(val: SSAValue, new_val: SSAValue) -> None:
-    """Provide compatibility between xDSL < 0.57 and xDSL >= 0.57."""
+    """Compat shim for xDSL < 0.57 vs >= 0.57."""
     if hasattr(val, "replace_all_uses_with"):
         val.replace_all_uses_with(new_val)
-    else:  
+    else:
         val.replace_by(new_val)
 
-# ---------------------------------------------------------------------------
-# Recursive region/block/op processing
-# ---------------------------------------------------------------------------
 
+def _get_arith_addi():
+    """Return the arith addi op class, fail-fast if missing."""
+    cls = getattr(arith, "Addi", None) or getattr(arith, "AddiOp", None)
+    if cls is None:
+        raise ImportError(
+            "Cannot find arith.Addi or arith.AddiOp in this xDSL version"
+        )
+    return cls
+
+
+def _get_results(op) -> list:
+    """Return the SSA results of *op* as a list (compat shim)."""
+    return list(getattr(op, "results", getattr(op, "res", [])))
+
+
+# ===================================================================
+# Recursive region / block / op traversal
+# ===================================================================
 
 def _process_region(region: Region) -> None:
     for block in region.blocks:
@@ -103,21 +110,7 @@ def _process_block(block: Block) -> None:
     for op in list(block.ops):
         _process_op(op, block)
 
-"""
-def _process_op(op, block: Block) -> None:
-    if op.name == "scf.if":
-        _convert_scf_if(op, block)
-    elif op.name == "scf.while":
-        _convert_scf_while(op, block)
-    elif op.name in ("scf.for", "scf.index_switch"):
-        # Recurse into nested regions; leave the op itself in place.
-        for region in op.regions:
-            _process_region(region)
-    else:
-        # Recurse into any nested regions (e.g. linalg.generic bodies).
-        for region in op.regions:
-            _process_region(region)
-"""
+
 def _process_op(op, block: Block) -> None:
     if op.name == "scf.if":
         _convert_scf_if(op, block)
@@ -125,41 +118,147 @@ def _process_op(op, block: Block) -> None:
         _convert_scf_while(op, block)
     elif op.name == "scf.for":
         _convert_scf_for(op, block)
-    elif op.name == "scf.index_switch":
-        # Recurse into nested regions; leave the op itself in place.
-        for region in op.regions:
-            _process_region(region)
     else:
-        # Recurse into any nested regions (e.g. linalg.generic bodies).
+        # Recurse into any nested regions (func bodies, linalg, etc.).
         for region in op.regions:
             _process_region(region)
 
-# ---------------------------------------------------------------------------
-# scf.if → cc.if
-# ---------------------------------------------------------------------------
 
+# ===================================================================
+# Shared helpers: alloca / store / load memory promotion for loops
+# ===================================================================
+
+def _alloca_and_init(
+    outer_block: Block,
+    init_values: Sequence[SSAValue],
+    insert_before,
+) -> list:
+    """Create ``cc.alloca`` + ``cc.store`` for each value in *init_values*.
+
+    All ops are inserted into *outer_block* just before *insert_before*.
+    Returns a list of :class:`CcAllocaOp` (one per value).
+    """
+    allocas = []
+    for init_val in init_values:
+        alloca = CcAllocaOp(init_val.type)
+        store = CcStoreOp(init_val, alloca.result)
+        outer_block.insert_ops_before([alloca, store], insert_before)
+        allocas.append(alloca)
+    return allocas
+
+
+def _rewrite_block_with_loads(
+    old_block: Block,
+    allocas: Sequence,
+) -> tuple:
+    """Create a fresh ``Region([Block()])``, insert ``cc.load`` for each alloca,
+    replace the corresponding *old_block* arg uses, and move all ops.
+
+    The new block has **no** block arguments.
+
+    Returns ``(new_region, new_block, loads)``.
+
+    .. note::
+       ``_replace_all_uses_with`` is called while the consuming ops still
+       reside in *old_block*.  This is safe because SSA use-def replacement
+       only updates pointers; the ops are moved immediately afterwards.
+    """
+    new_region = Region([Block()])
+    new_block = new_region.blocks[0]
+
+    loads = []
+    for barg, alloca in zip(list(old_block.args), allocas):
+        load = CcLoadOp(alloca.result)
+        new_block.add_op(load)
+        _replace_all_uses_with(barg, load.result)
+        loads.append(load)
+
+    for op in list(old_block.ops):
+        op.detach()
+        new_block.add_op(op)
+
+    return new_region, new_block, loads
+
+
+def _replace_yield_with_stores_and_continue(
+    block: Block,
+    allocas: Sequence,
+) -> None:
+    """Replace the trailing ``scf.yield`` with stores to *allocas* +
+    ``cc.continue``.
+
+    If the block has no trailing ``scf.yield``, this is a no-op.
+    """
+    ops = list(block.ops)
+    if not ops or ops[-1].name != "scf.yield":
+        return
+    yield_op = ops[-1]
+
+    for operand, alloca in zip(yield_op.operands, allocas):
+        block.insert_ops_before([CcStoreOp(operand, alloca.result)], yield_op)
+
+    block.insert_ops_before([CcContinueOp()], yield_op)
+    yield_op.detach()
+
+
+def _replace_condition_with_stores(
+    block: Block,
+    allocas: Sequence,
+) -> None:
+    """Replace ``scf.condition(%c) %fwd…`` with stores of forwarded args +
+    ``cc.condition(%c)``."""
+    for op in list(block.ops):
+        if op.name == "scf.condition":
+            cond = op.operands[0]
+            forwarded = list(op.operands)[1:]
+            for val, alloca in zip(forwarded, allocas):
+                block.insert_ops_before(
+                    [CcStoreOp(val, alloca.result)], op
+                )
+            block.insert_ops_before([CcConditionOp(cond)], op)
+            op.detach()
+            break  # exactly one scf.condition per block
+
+
+def _load_final_and_replace(
+    outer_block: Block,
+    allocas: Sequence,
+    original_results: Sequence[SSAValue],
+    insert_before,
+) -> None:
+    """After a loop: load final values from *allocas* and replace
+    *original_results*."""
+    for alloca, res in zip(allocas, original_results):
+        load = CcLoadOp(alloca.result)
+        outer_block.insert_ops_before([load], insert_before)
+        _replace_all_uses_with(res, load.result)
+
+
+# ===================================================================
+# scf.if  →  cc.if
+# ===================================================================
 
 def _convert_scf_if(if_op, outer_block: Block) -> None:
     """Convert ``scf.if`` to ``cc.if``.
 
-    Only no-result ``scf.if`` ops are converted.  Ops with results are left
-    in SCF form with a warning.
+    Only no-result ``scf.if`` is converted.  Ops with results are left in
+    SCF form (a warning is emitted).
     """
     # Recurse into branches first so nested SCF ops are also lowered.
     for region in if_op.regions:
         _process_region(region)
 
     if list(if_op.result_types):
-        # Has results – not yet supported.
         warnings.warn(
-            "scf.if with results cannot be lowered to cc.if yet; left in SCF form.",
+            "scf.if with results cannot be lowered to cc.if yet; "
+            "left in SCF form.",
             stacklevel=4,
         )
         return
 
     cond = if_op.cond
 
-    # Convert scf.yield terminators to cc.continue inside both regions
+    # After detaching regions[0], the former regions[1] shifts to index 0.
     true_region = if_op.detach_region(if_op.regions[0])
     false_region = if_op.detach_region(if_op.regions[0])
 
@@ -171,187 +270,157 @@ def _convert_scf_if(if_op, outer_block: Block) -> None:
 
 
 def _replace_yield_with_continue(region: Region) -> None:
-    """Replace ``scf.yield`` (no-op yield) with ``cc.continue`` in *region*."""
+    """Replace no-operand ``scf.yield`` with ``cc.continue`` (for ``cc.if``)."""
     for block in region.blocks:
         for op in list(block.ops):
             if op.name == "scf.yield" and not list(op.operands):
-                continue_op = CcContinueOp()
-                block.insert_ops_before([continue_op], op)
+                block.insert_ops_before([CcContinueOp()], op)
                 Rewriter.erase_op(op, safe_erase=False)
             elif op.name == "scf.yield":
-                # Has operands – can't trivially replace; leave for now.
-                pass
+                warnings.warn(
+                    "scf.yield with operands inside cc.if region; "
+                    "left in place.",
+                    stacklevel=4,
+                )
 
 
-# ---------------------------------------------------------------------------
-# scf.while → cc.loop
-# ---------------------------------------------------------------------------
-
-
-def _convert_scf_while(while_op, outer_block: Block) -> None:
-    """Convert ``scf.while`` to ``cc.loop``.
-
-    Only no-result ``scf.while`` ops (after Pass 1 qst removal) are converted.
-    """
-    # Recurse first
-    for region in while_op.regions:
-        _process_region(region)
-
-    result_types = list(while_op.res.types)
-    if result_types:
-        warnings.warn(
-            "scf.while with results cannot be lowered to cc.loop yet; left in SCF form.",
-            stacklevel=4,
-        )
-        return
-
-    # Build the cc.loop while-region (condition) and body-region
-    before = while_op.detach_region(while_op.before_region)
-    after = while_op.detach_region(while_op.after_region)
-
-    # Convert scf.condition → cc.condition inside before-region
-    _convert_condition_op(before)
-
-    # Convert scf.yield → cc.continue inside after-region
-    _replace_yield_with_continue(after)
-
-    cc_loop = CcLoopOp(
-        arguments=[],
-        result_types=[],
-        while_region=before,
-        body_region=after,
-    )
-    Rewriter.replace_op(while_op, cc_loop, [], safe_erase=False)
-
-
-def _convert_condition_op(region: Region) -> None:
-    """Replace ``scf.condition`` with ``cc.condition`` inside *region*."""
-    for block in region.blocks:
-        for op in list(block.ops):
-            if op.name == "scf.condition":
-                cond = op.operands[0]
-                extra_args = list(op.operands)[1:]  # loop-carried (should be empty)
-                cc_cond = CcConditionOp(cond, *extra_args)
-                block.insert_ops_before([cc_cond], op)
-                Rewriter.erase_op(op, safe_erase=False)
-
-# ---------------------------------------------------------------------------
-# scf.for → cc.loop
-# ---------------------------------------------------------------------------
+# ===================================================================
+# scf.for  →  cc.loop
+# ===================================================================
 
 def _convert_scf_for(for_op, outer_block: Block) -> None:
-    """Convert ``scf.for`` to ``cc.loop``.
-    
-    Uses the cc.alloca / cc.store / cc.load pattern to support yielded values 
-    and the loop induction variable.
+    """Convert ``scf.for`` to ``cc.loop`` using alloca/store/load promotion.
+
+    The induction variable (IV) and every iter-arg are promoted to memory.
+    A synthetic condition region (``iv < ub``) is built; the body region is
+    moved from the original ``scf.for``.
     """
-    # 1. Recurse first to process inner SCF/QST ops
+    # Recurse first.
     for region in for_op.regions:
         _process_region(region)
 
-    lb = for_op.operands[0]
-    ub = for_op.operands[1]
-    step = for_op.operands[2]
+    lb, ub, step = for_op.operands[0], for_op.operands[1], for_op.operands[2]
     iter_args = list(for_op.operands[3:])
-
-    # Extract block args from the original loop body
     body_block = for_op.regions[0].blocks[0]
     iv_arg = body_block.args[0]
-    iter_block_args = list(body_block.args[1:])
 
-    # 2. Allocate and initialize memory for iter_args and Induction Variable (IV)
-    allocas = []
-    for arg, init_val in zip(iter_block_args, iter_args):
-        alloca = CcAllocaOp(arg.type)
-        store = CcStoreOp(init_val, alloca.result)
-        outer_block.insert_ops_before([alloca, store], for_op)
-        allocas.append(alloca)
+    # ---- 1. Alloca + init ------------------------------------------------
+    iter_allocas = _alloca_and_init(outer_block, iter_args, for_op)
+    iv_alloca = _alloca_and_init(outer_block, [lb], for_op)[0]
 
-    iv_alloca = CcAllocaOp(iv_arg.type)
-    iv_store = CcStoreOp(lb, iv_alloca.result)
-    outer_block.insert_ops_before([iv_alloca, iv_store], for_op)
-
-    # 3. Build the condition region: `while (IV < UB)`
+    # ---- 2. Synthetic condition region: while (iv < ub) -------------------
     cond_region = Region([Block()])
     cond_block = cond_region.blocks[0]
-    
+
     cond_iv_load = CcLoadOp(iv_alloca.result)
     cond_block.add_op(cond_iv_load)
-    
-    cmp_op = arith.CmpiOp(cond_iv_load.result, ub, "slt")
-    cond_block.add_op(cmp_op)
-    
-    cond_op = CcConditionOp(cmp_op.result)
-    cond_block.add_op(cond_op)
+    cmp = arith.CmpiOp(cond_iv_load.result, ub, "slt")
+    cond_block.add_op(cmp)
+    cond_block.add_op(CcConditionOp(cmp.result))
 
-    # 4. Build the loop body region
-    body_region = Region([Block()])
-    new_body_block = body_region.blocks[0]
+    # ---- 3. Body region: load IV + iter-args, move ops --------------------
+    all_allocas = [iv_alloca] + iter_allocas
+    body_region, new_body_block, loads = _rewrite_block_with_loads(
+        body_block, all_allocas
+    )
+    iv_load = loads[0]  # needed for the IV increment below
 
-    # Load IV at the start of the body block
-    iv_load = CcLoadOp(iv_alloca.result)
-    new_body_block.add_op(iv_load)
-    _replace_all_uses_with(iv_arg, iv_load.result)
+    # ---- 4. Replace scf.yield: stores + IV increment + continue -----------
+    ops = list(new_body_block.ops)
+    yield_op = ops[-1] if ops and ops[-1].name == "scf.yield" else None
 
-    # Load iter args at the start of the body block
-    for i, iter_b_arg in enumerate(iter_block_args):
-        iload = CcLoadOp(allocas[i].result)
-        new_body_block.add_op(iload)
-        _replace_all_uses_with(iter_b_arg, iload.result)
+    if yield_op is not None:
+        # Store yielded iter-arg values back to their slots.
+        for operand, alloca in zip(yield_op.operands, iter_allocas):
+            new_body_block.insert_ops_before(
+                [CcStoreOp(operand, alloca.result)], yield_op
+            )
 
-    # Move all original operations from scf.for body into new_body_block
-    for op in list(body_block.ops):
-        op.detach()
-        new_body_block.add_op(op)
-
-    # 5. Process scf.yield: Replace with cc.store, IV increment, and cc.continue
-    # FIX: Use list(ops)[-1] because .last_op doesn't exist in older xDSL
-    body_ops = list(new_body_block.ops)
-    yield_op = body_ops[-1] if body_ops else None
-    
-    if yield_op and yield_op.name == "scf.yield":
-        # Store the yielded variables back into memory
-        stores_to_insert = []
-        for i, operand in enumerate(yield_op.operands):
-            store = CcStoreOp(operand, allocas[i].result)
-            stores_to_insert.append(store)
-        
-        if stores_to_insert:
-            new_body_block.insert_ops_before(stores_to_insert, yield_op)
-
-        # Increment IV: next_iv = iv + step
-        # FIX: Check for both Addi and AddiOp depending on the exact xDSL patch
-        addi_cls = getattr(arith, "Addi", getattr(arith, "AddiOp", None))
+        # IV increment: next_iv = iv + step; store back.
+        addi_cls = _get_arith_addi()
         next_iv = addi_cls(iv_load.result, step)
-        
-        iv_update_store = CcStoreOp(next_iv.result, iv_alloca.result)
-        new_body_block.insert_ops_before([next_iv, iv_update_store], yield_op)
+        iv_store = CcStoreOp(next_iv.result, iv_alloca.result)
+        new_body_block.insert_ops_before([next_iv, iv_store], yield_op)
 
-        # Insert continue and safely detach the original yield
-        continue_op = CcContinueOp()
-        new_body_block.insert_ops_before([continue_op], yield_op)
-        yield_op.detach()  
+        new_body_block.insert_ops_before([CcContinueOp()], yield_op)
+        yield_op.detach()
 
-    # 6. Create the final cc.loop op
+    # ---- 5. Create cc.loop ------------------------------------------------
     cc_loop = CcLoopOp(
         arguments=[],
         result_types=[],
         while_region=cond_region,
-        body_region=body_region
+        body_region=body_region,
     )
     outer_block.insert_ops_before([cc_loop], for_op)
 
-    # 7. Extract the final accumulated results and replace uses of scf.for
-    final_loads = []
-    for alloca in allocas:
-        load = CcLoadOp(alloca.result)
-        final_loads.append(load)
-        outer_block.insert_ops_before([load], for_op)
+    # ---- 6. Final loads + replace results ---------------------------------
+    _load_final_and_replace(
+        outer_block, iter_allocas, _get_results(for_op), for_op
+    )
 
-    # FIX: Check for both .results and .res depending on xDSL patch
-    loop_results = getattr(for_op, "results", getattr(for_op, "res", []))
-    for i, res in enumerate(loop_results):
-        _replace_all_uses_with(res, final_loads[i].result)
-
-    # FIX: Safely detach the old scf.for instead of using the Rewriter
+    # ---- 7. Remove original -----------------------------------------------
     for_op.detach()
+
+
+# ===================================================================
+# scf.while  →  cc.loop
+# ===================================================================
+
+def _convert_scf_while(while_op, outer_block: Block) -> None:
+    """Convert ``scf.while`` to ``cc.loop`` using alloca/store/load promotion.
+
+    Handles **both** no-result and with-result ``scf.while`` ops uniformly.
+    When the loop carries N values:
+
+    * N ``cc.alloca`` + ``cc.store`` pairs are inserted before the loop.
+    * The *before* (condition) region loads from the slots, computes the
+      condition, stores the forwarded values, and emits ``cc.condition``.
+    * The *after* (body) region loads from the slots, executes the body,
+      stores the yielded values, and emits ``cc.continue``.
+    * N ``cc.load`` ops after the loop replace the original SSA results.
+
+    When N = 0 the helpers degenerate to no-ops and the result is equivalent
+    to the previous no-result-only implementation.
+    """
+    # Recurse first.
+    for region in while_op.regions:
+        _process_region(region)
+
+    init_args = list(while_op.operands)
+    before_block = while_op.regions[0].blocks[0]
+    after_block = while_op.regions[1].blocks[0]
+
+    # ---- 1. Alloca + init -------------------------------------------------
+    allocas = _alloca_and_init(outer_block, init_args, while_op)
+
+    # ---- 2. Before (condition) region -------------------------------------
+    #   load → original condition ops → store forwarded → cc.condition
+    before_region, new_before_block, _ = _rewrite_block_with_loads(
+        before_block, allocas
+    )
+    _replace_condition_with_stores(new_before_block, allocas)
+
+    # ---- 3. After (body) region -------------------------------------------
+    #   load → original body ops → store yields → cc.continue
+    after_region, new_after_block, _ = _rewrite_block_with_loads(
+        after_block, allocas
+    )
+    _replace_yield_with_stores_and_continue(new_after_block, allocas)
+
+    # ---- 4. Create cc.loop ------------------------------------------------
+    cc_loop = CcLoopOp(
+        arguments=[],
+        result_types=[],
+        while_region=before_region,
+        body_region=after_region,
+    )
+    outer_block.insert_ops_before([cc_loop], while_op)
+
+    # ---- 5. Final loads + replace results ---------------------------------
+    _load_final_and_replace(
+        outer_block, allocas, _get_results(while_op), while_op
+    )
+
+    # ---- 6. Remove original -----------------------------------------------
+    while_op.detach()
