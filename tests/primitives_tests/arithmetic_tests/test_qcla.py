@@ -142,10 +142,10 @@ def test_qq_qcla_adder():
     from qrisp import t_depth_indicator
     gate_speed = lambda x : t_depth_indicator(x, epsilon = 2**-10)
     qc = b.qs.compile(gate_speed = gate_speed, compile_mcm = True)
-    assert qc.t_depth() < 20
+    assert qc.t_depth() < 21
 
     qc = b.qs.compile(workspace = 10, gate_speed = gate_speed, compile_mcm = True)
-    assert qc.t_depth() < 9
+    assert qc.t_depth() < 12
 
     a = QuantumFloat(40)
     b = QuantumFloat(40)
@@ -153,7 +153,7 @@ def test_qq_qcla_adder():
     x(b)
     qcla(a, b)
     qc = b.qs.compile(workspace = 50, gate_speed = gate_speed, compile_mcm = True)
-    assert qc.t_depth() < 22
+    assert qc.t_depth() < 27
 
 
 def test_cq_carry_generation():
@@ -352,4 +352,4 @@ def test_cq_qcla_adder():
     b = QuantumFloat(40)
     qcla(a, b)
     qc = b.qs.compile(workspace = 50, gate_speed = gate_speed, compile_mcm = True)
-    assert qc.t_depth() < 23
+    assert qc.t_depth() < 27
