@@ -75,6 +75,13 @@ def assert_no_jasp(mlir_str: str) -> None:
     )
 
 
+def assert_return_type(mlir: str, expected_type: str):
+    """Assert the MLIR contains a func.return with the given type."""
+    pattern = rf'func\.return\s+%\w+\s*:\s*{re.escape(expected_type)}'
+    assert re.search(pattern, mlir), \
+        f"Expected return type '{expected_type}', not found in:\n{mlir}"
+
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
@@ -91,6 +98,9 @@ def test_alloc_and_dealloc():
     assert "quake.alloca" in mlir, "Expected quake.alloca in output"
     assert_no_jasp(mlir)
 
+# ---------------------------------------------------------------------------
+# Test gate application functions acting on qubits
+# ---------------------------------------------------------------------------
 
 def test_single_qubit_gates():
     """Standard single-qubit gates lower to the corresponding quake.* ops."""
@@ -144,19 +154,77 @@ def test_controlled_gate_cx():
     assert "[%"  in mlir, "Expected control qubit in bracket notation"
     assert_no_jasp(mlir)
 
+# ---------------------------------------------------------------------------
+# Test measure qubit
+# ---------------------------------------------------------------------------
 
 def test_measure_single_qubit():
     """Single-qubit measure: quake.mz + quake.discriminate."""
 
     def circuit():
         qv = QuantumVariable(1)
-        h(qv[0])
-        return measure(qv)
+        x(qv[0])
+        return measure(qv[0])
 
     mlir = _lower(circuit)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i1")
     assert_no_jasp(mlir)
 
+# ---------------------------------------------------------------------------
+# Test measure QuantumVariable
+# ---------------------------------------------------------------------------
+
+def test_measure_quantum_variable():
+    """QuantumVariable measure"""
+
+    def circuit():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        return measure(qv)
+    
+    mlir = _lower(circuit)
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i64")
+    assert_no_jasp(mlir)
+
+
+def test_measure_single_qubit_quantum_variable():
+    """QuantumVariable measure"""
+
+    def circuit():
+        qv = QuantumVariable(1)
+        x(qv[0])
+        return measure(qv)
+    
+    mlir = _lower(circuit)
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i64")
+    assert_no_jasp(mlir)
+
+# ---------------------------------------------------------------------------
+# Test control
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Test q_cond
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Test q_while_loop
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Test q_fori_loop
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Test gate application functions acting on QuantumVariables
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Test 
+# ---------------------------------------------------------------------------
 
 def test_extract_ref():
     """get_qubit → quake.extract_ref."""
@@ -367,48 +435,6 @@ def test_parameterized_gate_functional_type():
     assert_no_jasp(mlir)
 
 
-def test_veq_measurement_returns_cc_stdvec_type():
-    """Measuring a veq returns !cc.stdvec<!quake.measure>, matching the CUDA-Q reference.
-
-    Per the CUDA-Q spec, measuring a veq returns !cc.stdvec<!quake.measure> — a CC
-    span of single-qubit measurement values. Not !quake.measurements<?> (invalid) and
-    not !cc.stdvec<i1>.
-    """
-
-    def circuit():
-        qv = QuantumVariable(2)
-        h(qv[0])
-        cx(qv[0], qv[1])
-        return measure(qv)
-
-    mlir = _lower(circuit)
-    assert "quake.mz" in mlir
-    # Must use CC type with !quake.measure element type, matching CUDA-Q reference
-    assert "!cc.stdvec<!quake.measure>" in mlir, (
-        "Measuring a veq should return !cc.stdvec<!quake.measure>"
-    )
-    assert "!quake.measurements<?>" not in mlir, (
-        "!quake.measurements<?> is not a valid CUDA-Q type"
-    )
-    assert_no_jasp(mlir)
-
-
-def test_single_qubit_measurement_result_type():
-    """Measuring any qubit register (even 1 qubit) returns !cc.stdvec<!quake.measure>."""
-
-    def circuit():
-        qv = QuantumVariable(1)
-        h(qv[0])
-        return measure(qv)
-
-    mlir = _lower(circuit)
-    # Even a 1-qubit circuit measures the full veq → !cc.stdvec<!quake.measure>
-    assert "quake.mz" in mlir
-    assert "!cc.stdvec<!quake.measure>" in mlir, (
-        "mz on a veq (even 1-qubit) should return !cc.stdvec<!quake.measure>"
-    )
-    assert_no_jasp(mlir)
-
 
 def test_veq_size_functional_type():
     """quake.veq_size must use functional-type: (!quake.veq<?>) -> i64."""
@@ -443,6 +469,9 @@ def test_alloca_veq_format():
     )
     assert_no_jasp(mlir)
 
+# ---------------------------------------------------------------------------
+# Test algorithms
+# ---------------------------------------------------------------------------
 
 def test_bell_circuit_full_format():
     """Full Bell circuit MLIR format validation — spot-check every key op."""
