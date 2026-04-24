@@ -18,8 +18,8 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         if isinstance(a, str):
             a = int(a[::-1], 2) if a else 0
         
-        if not check_for_tracing_mode() and isinstance(a, (int, np.integer)):
-            a = int(a) % (1 << len(b))
+        if isinstance(a, (int, np.integer)):
+            a = int(a) % (1 << jlen(b))
 
         qs = None if check_for_tracing_mode() else b[0].qs()
         q_a = QuantumVariable(jlen(b), qs=qs) if qs is not None \
