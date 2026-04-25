@@ -232,14 +232,14 @@ class EraseDeadTensorConstant(RewritePattern):
 # ------------------------------------------------------------------ #
 
 class UnwrapScalarReturn(RewritePattern):
-    """Rewrite ``func.return %tensor : tensor<T>`` (rank-0) into a scalar
-    return and update the enclosing ``func.func`` signature.
+    """Rewrite ``func.return`` operands from rank-0 ``tensor<T>`` to scalar ``T``
+    and update the enclosing ``func.func`` signature.
 
-    Only applies when:
+    Handles any number of return operands. Each operand is processed
+    independently — non-tensor operands and higher-rank tensors are
+    left untouched.
 
-    * The return op has exactly one operand.
-    * The enclosing op is a ``func.func``.
-
+    Handles two source patterns per operand:
     Handles two source patterns:
 
     1. ``arith.constant dense<V> : tensor<T>`` → ``arith.constant V : T``
@@ -258,68 +258,81 @@ class UnwrapScalarReturn(RewritePattern):
 
         // After (both cases)
         func.return %scalar : T
-
-    .. warning::
-
-        This changes the function's external ABI.
     """
 
     @op_type_rewrite_pattern
     def match_and_rewrite(
         self, op: func_dialect.ReturnOp, rewriter: PatternRewriter
     ) -> None:
-        if len(op.operands) != 1:
+        if not op.operands:
             return
 
-        ret_val = op.operands[0]
-        ret_type = ret_val.type
-
-        if not isinstance(ret_type, TensorType):
-            return
-        if ret_type.get_shape():
-            return
-
-        scalar_type = ret_type.element_type
-        defn = ret_val.owner
-        new_scalar = None
-
-        # Case 1: arith.constant dense<V> : tensor<T>
-        if isinstance(defn, arith.ConstantOp):
-            scalar_attr = _dense_to_scalar_attr(defn.value, scalar_type)
-            if scalar_attr is None:
-                return
-            new_scalar = arith.ConstantOp(scalar_attr)
-            rewriter.insert_op_before_matched_op(new_scalar)
-            scalar_val = new_scalar.result
-
-        # Case 2: tensor.from_elements %s : tensor<T>
-        elif isinstance(defn, tensor.FromElementsOp):
-            if len(defn.operands) != 1:
-                return
-            scalar_val = defn.operands[0]
-
-        else:
+        # Check if ANY operand is a rank-0 tensor — if not, bail early.
+        any_tensor = False
+        for ret_val in op.operands:
+            if (isinstance(ret_val.type, TensorType)
+                    and not ret_val.type.get_shape()):
+                any_tensor = True
+                break
+        if not any_tensor:
             return
 
-        # Capture parent before replacement
+        # Build the new operand list, replacing rank-0 tensors with scalars.
+        new_operands = []
+        new_output_types = []
+        changed = False
+
+        for ret_val in op.operands:
+            ret_type = ret_val.type
+
+            if not isinstance(ret_type, TensorType) or ret_type.get_shape():
+                # Not a rank-0 tensor — keep as-is.
+                new_operands.append(ret_val)
+                new_output_types.append(ret_type)
+                continue
+
+            scalar_type = ret_type.element_type
+            defn = ret_val.owner
+            scalar_val = None
+
+            # Case 1: arith.constant dense<V> : tensor<T>
+            if isinstance(defn, arith.ConstantOp):
+                scalar_attr = _dense_to_scalar_attr(defn.value, scalar_type)
+                if scalar_attr is not None:
+                    new_const = arith.ConstantOp(scalar_attr)
+                    rewriter.insert_op_before_matched_op(new_const)
+                    scalar_val = new_const.result
+
+            # Case 2: tensor.from_elements %s : tensor<T>
+            elif isinstance(defn, tensor.FromElementsOp):
+                if len(defn.operands) == 1:
+                    scalar_val = defn.operands[0]
+
+            if scalar_val is not None:
+                new_operands.append(scalar_val)
+                new_output_types.append(scalar_type)
+                changed = True
+            else:
+                # Could not unwrap — keep original.
+                new_operands.append(ret_val)
+                new_output_types.append(ret_type)
+
+        if not changed:
+            return
+
+        # Capture parent before replacement.
         func_op = op.parent_op()
 
-        # Replace return
-        new_return = func_dialect.ReturnOp(scalar_val)
+        # Replace return op with updated operands.
+        new_return = func_dialect.ReturnOp(*new_operands)
         rewriter.replace_matched_op(new_return)
 
-        # Update function signature
+        # Update function signature.
         if isinstance(func_op, func_dialect.FuncOp):
             old_ftype = func_op.properties["function_type"]
-            new_outputs = [
-                scalar_type
-                if isinstance(t, TensorType) and not t.get_shape()
-                else t
-                for t in old_ftype.outputs
-            ]
             new_ftype = FunctionType.from_lists(
                 list(old_ftype.inputs),
-                new_outputs,
+                new_output_types,
             )
             func_op.properties["function_type"] = new_ftype
 
