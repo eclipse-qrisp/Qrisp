@@ -1,63 +1,18 @@
 """
-********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
-
-"""
 PASS 3 – Tensor unwrapping and scalar return rewriting.
 =========================================================
 
-After earlier lowering passes, the IR may still contain rank-0 tensor
-round-trips introduced by the JAX / StableHLO → arith lowering:
+This pass applies a suite of greedy rewrite patterns to clean up rank-0 
+tensor round-trips and unwrap scalar return types.
 
-.. code-block:: mlir
-
-    %t = arith.constant dense<42> : tensor<i64>
-    %s = tensor.extract %t[] : tensor<i64>
-    // ... %s used as a scalar i64 ...
-
-Additionally, ``func.func`` return types may still be declared as
-``tensor<T>`` even though the value is a trivial rank-0 constant.
-
-This pass applies four greedy rewrite patterns to clean this up:
-
-Pattern 1 – ``FoldExtractOfDenseConstant``
-    Matches a ``tensor.extract`` whose source is an ``arith.constant
-    dense<V> : tensor<T>`` with rank-0 shape.  Replaces the extract with
-    a scalar ``arith.constant V : T``.
-
-Pattern 2 – ``FoldExtractOfScalar``
-    Matches a ``tensor.extract %v[]`` where ``%v`` already has a scalar
-    type (not a ``TensorType``).  Forwards ``%v`` directly, eliminating
-    the redundant extract.
-
-Pattern 3 – ``EraseDeadTensorConstant``
-    Erases any ``arith.constant dense<...> : tensor<T>`` that has no
-    remaining uses (typically left behind after Pattern 1 folds all
-    extracts).
-
-Pattern 4 – ``UnwrapScalarReturn``
-    Matches a ``func.return`` whose operand is an ``arith.constant
-    dense<V> : tensor<T>`` (rank-0).  Replaces the operand with a scalar
-    constant and rewrites the enclosing ``func.func`` signature from
-    ``-> tensor<T>`` to ``-> T``.
-
-All patterns are applied via a ``PatternRewriteWalker`` with
-``apply_recursively=True`` so that fold chains are resolved
-automatically.
+Architecture:
+1. UnwrapFuncAndReturn: Rewrites func signatures and inserts tensor.extract
+   at the return boundary to bridge the type gap.
+2. FoldExtractOfDenseConstant: extract(constant dense<V>) -> constant V
+3. FoldExtractOfFromElements: extract(from_elements V) -> V
+4. ForwardExtractOfScalar: extract(scalar V) -> V (cleans up stale extracts)
+5. EraseDeadTensorConstant: Cleans up orphaned dense constants.
+6. EraseDeadFromElements: Cleans up orphaned from_elements.
 
 Compatible with **xDSL ≥ 0.55**.
 """
@@ -94,22 +49,7 @@ from xdsl.pattern_rewriter import (
 # Helper
 # ------------------------------------------------------------------ #
 def _dense_to_scalar_attr(dense_attr, scalar_type):
-    """Extract a scalar attribute from a rank-0 ``DenseIntOrFPElementsAttr``.
-
-    Parameters
-    ----------
-    dense_attr : DenseIntOrFPElementsAttr
-        The dense attribute to unwrap.  Must contain exactly one element.
-    scalar_type : Attribute
-        The target scalar type (e.g. ``i64``, ``f64``).
-
-    Returns
-    -------
-    IntegerAttr | FloatAttr | None
-        The corresponding scalar attribute, or ``None`` if the conversion
-        is not supported.
-    """
-
+    """Extract a scalar attribute from a rank-0 DenseIntOrFPElementsAttr."""
     if not isinstance(dense_attr, DenseIntOrFPElementsAttr):
         return None
 
@@ -132,22 +72,191 @@ def _dense_to_scalar_attr(dense_attr, scalar_type):
 
 
 # ------------------------------------------------------------------ #
-# Pattern 1: tensor.extract of a dense constant → scalar constant
+# Pattern 1: Unwrap func signatures and return boundaries
+# ------------------------------------------------------------------ #
+class UnwrapFuncAndReturn(RewritePattern):
+    """Updates func.func signatures and func.return operands from 
+    rank-0 tensor to scalar by injecting a tensor.extract at the boundary.
+    """
+    @op_type_rewrite_pattern
+    def match_and_rewrite(
+        self, op: func_dialect.ReturnOp, rewriter: PatternRewriter
+    ) -> None:
+        func_op = op.parent_op()
+        if not isinstance(func_op, func_dialect.FuncOp):
+            return
+
+        changed = False
+        new_operands = []
+        new_return_types = []
+
+        for operand in op.operands:
+            t = operand.type
+            if isinstance(t, TensorType) and not t.get_shape():
+                # Isolate the boundary by inserting an extract
+                extract_op = tensor.ExtractOp(operand, [], t.element_type)
+                rewriter.insert_op_before_matched_op(extract_op)
+                
+                new_operands.append(extract_op.result)
+                new_return_types.append(t.element_type)
+                changed = True
+            else:
+                new_operands.append(operand)
+                new_return_types.append(t)
+
+        if not changed:
+            return
+
+        # 1. Replace the return op
+        new_return = func_dialect.ReturnOp(*new_operands)
+        rewriter.replace_matched_op(new_return)
+
+        # 2. Update the function signature
+        old_ftype = func_op.properties["function_type"]
+        func_op.properties["function_type"] = FunctionType.from_lists(
+            list(old_ftype.inputs), new_return_types
+        )
+
+
+class UnwrapFuncArgs(RewritePattern):
+    """Updates func.func signatures from tensor<T> to T for arguments,
+    injecting a tensor.from_elements at the start of the block.
+    """
+    @op_type_rewrite_pattern
+    def match_and_rewrite(
+        self, op: func_dialect.FuncOp, rewriter: PatternRewriter
+    ) -> None:
+        if not op.body.blocks:
+            return
+
+        # Safely get function_type across different xDSL versions
+        ftype = op.function_type if hasattr(op, "function_type") else op.properties.get("function_type")
+        if not ftype:
+            return
+
+        changed = False
+        new_inputs = []
+        args_to_wrap = []
+
+        for i, t in enumerate(ftype.inputs):
+            if isinstance(t, TensorType) and not t.get_shape():
+                new_inputs.append(t.element_type)
+                args_to_wrap.append((i, t, t.element_type))
+                changed = True
+            else:
+                new_inputs.append(t)
+
+        if not changed:
+            return
+
+        # 1. Update the function signature
+        new_ftype = FunctionType.from_lists(new_inputs, list(ftype.outputs))
+        if hasattr(op, "function_type"):
+            op.function_type = new_ftype
+        else:
+            op.properties["function_type"] = new_ftype
+
+        # 2. Update block arguments and insert boundary ops
+        block = op.body.blocks[0]
+        
+        # Process in reverse to avoid index shifting issues
+        for i, old_type, new_type in reversed(args_to_wrap):
+            old_arg = block.args[i]
+
+            # Canonical MLIR/xDSL way to change argument type:
+            # 1. Insert a new argument of the scalar type at the same index
+            new_arg = block.insert_arg(new_type, i)
+
+            # 2. Create the from_elements op to bridge the gap
+            #    (Takes the NEW scalar arg, outputs the OLD tensor type)
+            from_elem = tensor.FromElementsOp.create(
+                operands=[new_arg],
+                result_types=[old_type]
+            )
+
+            # 3. Insert it at the top of the block
+            if block.first_op is not None:
+                block.insert_op_before(from_elem, block.first_op)
+            else:
+                block.add_op(from_elem)
+
+            # 4. Replace all uses of the OLD tensor argument with our new from_elements result
+            old_arg.replace_by(from_elem.results[0])
+
+            # 5. Erase the old argument (which is now completely unused) safely
+            block.erase_arg(old_arg)
+
+
+class UnwrapCall(RewritePattern):
+    """Updates func.call operations to pass and expect scalar types 
+    instead of rank-0 tensors, injecting extracts/from_elements at boundaries.
+    """
+    @op_type_rewrite_pattern
+    def match_and_rewrite(
+        self, op: func_dialect.CallOp, rewriter: PatternRewriter
+    ) -> None:
+        changed = False
+        
+        new_operands = []
+        new_result_types = []
+        
+        ops_to_insert_before = []
+        ops_to_insert_after = []
+        
+        # 1. Handle Operands (Arguments passed to the call)
+        for operand in op.operands:
+            t = operand.type
+            if isinstance(t, TensorType) and not t.get_shape():
+                # Inject a tensor.extract before the call
+                extract = tensor.ExtractOp(operand, [], t.element_type)
+                ops_to_insert_before.append(extract)
+                new_operands.append(extract.result)
+                changed = True
+            else:
+                new_operands.append(operand)
+
+        # 2. Handle Results (Returns from the call)
+        for res in op.results:
+            t = res.type
+            if isinstance(t, TensorType) and not t.get_shape():
+                new_result_types.append(t.element_type)
+                changed = True
+            else:
+                new_result_types.append(t)
+
+        if not changed:
+            return
+
+        # 3. Create the new call expecting scalars
+        new_call = func_dialect.CallOp(op.callee, new_operands, new_result_types)
+        
+        # 4. Bridge the return boundary
+        replacements = []
+        for old_res, new_res in zip(op.results, new_call.results):
+            if old_res.type != new_res.type:
+                from_elem = tensor.FromElementsOp.create(
+                    operands=[new_res],
+                    result_types=[old_res.type]
+                )
+                ops_to_insert_after.append(from_elem)
+                replacements.append(from_elem.results[0])
+            else:
+                replacements.append(new_res)
+
+        # 5. Insert operations and replace
+        for ext_op in ops_to_insert_before:
+            rewriter.insert_op_before_matched_op(ext_op)
+            
+        rewriter.replace_matched_op([new_call] + ops_to_insert_after, replacements)
+
+
+# ------------------------------------------------------------------ #
+# Pattern 2: tensor.extract of a dense constant → scalar constant
 # ------------------------------------------------------------------ #
 class FoldExtractOfDenseConstant(RewritePattern):
-    """Replace a rank-0 ``tensor.extract`` of an ``arith.constant dense<V>``
-    with a scalar ``arith.constant V``.
-
-    .. code-block:: mlir
-
-        // Before
-        %t = arith.constant dense<42> : tensor<i64>
-        %s = tensor.extract %t[] : tensor<i64>
-
-        // After
-        %s = arith.constant 42 : i64
+    """Replace a rank-0 tensor.extract of an arith.constant dense<V>
+    with a scalar arith.constant V.
     """
-
     @op_type_rewrite_pattern
     def match_and_rewrite(
         self, op: tensor.ExtractOp, rewriter: PatternRewriter
@@ -156,19 +265,14 @@ class FoldExtractOfDenseConstant(RewritePattern):
             return
 
         src = op.tensor
-        src_type = src.type
-
-        if not isinstance(src_type, TensorType):
-            return
-        if src_type.get_shape():
+        if not isinstance(src.type, TensorType) or src.type.get_shape():
             return
 
         defn = src.owner
         if not isinstance(defn, arith.ConstantOp):
             return
 
-        scalar_type = src_type.element_type
-        scalar_attr = _dense_to_scalar_attr(defn.value, scalar_type)
+        scalar_attr = _dense_to_scalar_attr(defn.value, src.type.element_type)
         if scalar_attr is None:
             return
 
@@ -177,222 +281,79 @@ class FoldExtractOfDenseConstant(RewritePattern):
 
 
 # ------------------------------------------------------------------ #
-# Pattern 2: tensor.extract of an already-scalar value → forward
+# Pattern 3: tensor.extract of a from_elements → forward scalar
 # ------------------------------------------------------------------ #
-class FoldExtractOfScalar(RewritePattern):
-    """Eliminate a ``tensor.extract`` whose source is already a scalar.
-
-    This can occur after earlier passes have rewritten a producer's
-    result type from ``tensor<T>`` to ``T`` but left a stale extract
-    in place.
-
-    .. code-block:: mlir
-
-        // Before  (source already has type i64, not tensor<i64>)
-        %s = tensor.extract %v[] : tensor<i64>
-
-        // After
-        // (uses of %s replaced by %v; extract erased)
+class FoldExtractOfFromElements(RewritePattern):
+    """Eliminate a tensor.extract by forwarding the scalar input 
+    directly from the producing tensor.from_elements op.
     """
-
     @op_type_rewrite_pattern
     def match_and_rewrite(
         self, op: tensor.ExtractOp, rewriter: PatternRewriter
     ) -> None:
         if len(op.indices) != 0:
             return
-        src = op.tensor
-        if isinstance(src.type, TensorType):
-            return
-        rewriter.replace_matched_op([], [src])
+        
+        defn = op.tensor.owner
+        if isinstance(defn, tensor.FromElementsOp) and len(defn.operands) == 1:
+            rewriter.replace_matched_op([], [defn.operands[0]])
 
 
 # ------------------------------------------------------------------ #
-# Pattern 3: erase dead tensor constants
+# Pattern 4: tensor.extract of an already-scalar value → forward
+# ------------------------------------------------------------------ #
+class FoldExtractOfScalar(RewritePattern):
+    """Eliminate a tensor.extract whose source is already a scalar."""
+    @op_type_rewrite_pattern
+    def match_and_rewrite(
+        self, op: tensor.ExtractOp, rewriter: PatternRewriter
+    ) -> None:
+        if len(op.indices) != 0:
+            return
+        if not isinstance(op.tensor.type, TensorType):
+            rewriter.replace_matched_op([], [op.tensor])
+
+
+# ------------------------------------------------------------------ #
+# Patterns 5 & 6: Erase dead ops
 # ------------------------------------------------------------------ #
 class EraseDeadTensorConstant(RewritePattern):
-    """Erase ``arith.constant dense<...> : tensor<T>`` ops with no uses.
-
-    These are typically left behind after Pattern 1 has folded all
-    ``tensor.extract`` consumers into scalar constants.
-    """
-
+    """Erase arith.constant dense<...> : tensor<T> ops with no uses."""
     @op_type_rewrite_pattern
     def match_and_rewrite(
         self, op: arith.ConstantOp, rewriter: PatternRewriter
     ) -> None:
-        if not isinstance(op.result.type, TensorType):
-            return
-        if any(True for _ in op.result.uses):
-            return
-        rewriter.erase_matched_op()
+        if isinstance(op.result.type, TensorType) and not any(op.result.uses):
+            rewriter.erase_matched_op()
 
-# ------------------------------------------------------------------ #
-# Pattern 4 – unwrap scalar func.return operands + update signature
-# ------------------------------------------------------------------ #
-
-class UnwrapScalarReturn(RewritePattern):
-    """Rewrite ``func.return`` operands from rank-0 ``tensor<T>`` to scalar ``T``
-    and update the enclosing ``func.func`` signature.
-
-    Handles any number of return operands. Each operand is processed
-    independently — non-tensor operands and higher-rank tensors are
-    left untouched.
-
-    Handles two source patterns per operand:
-    Handles two source patterns:
-
-    1. ``arith.constant dense<V> : tensor<T>`` → ``arith.constant V : T``
-    2. ``tensor.from_elements %s : tensor<T>`` → forward ``%s``
-
-    .. code-block:: mlir
-
-        // Before (case 1)
-        %t = arith.constant dense<0> : tensor<i64>
-        func.return %t : tensor<i64>
-
-        // Before (case 2)
-        %s = quake.discriminate ... : i1
-        %t = tensor.from_elements %s : tensor<i1>
-        func.return %t : tensor<i1>
-
-        // After (both cases)
-        func.return %scalar : T
-    """
-
-    @op_type_rewrite_pattern
-    def match_and_rewrite(
-        self, op: func_dialect.ReturnOp, rewriter: PatternRewriter
-    ) -> None:
-        if not op.operands:
-            return
-
-        # Check if ANY operand is a rank-0 tensor — if not, bail early.
-        any_tensor = False
-        for ret_val in op.operands:
-            if (isinstance(ret_val.type, TensorType)
-                    and not ret_val.type.get_shape()):
-                any_tensor = True
-                break
-        if not any_tensor:
-            return
-
-        # Build the new operand list, replacing rank-0 tensors with scalars.
-        new_operands = []
-        new_output_types = []
-        changed = False
-
-        for ret_val in op.operands:
-            ret_type = ret_val.type
-
-            if not isinstance(ret_type, TensorType) or ret_type.get_shape():
-                # Not a rank-0 tensor — keep as-is.
-                new_operands.append(ret_val)
-                new_output_types.append(ret_type)
-                continue
-
-            scalar_type = ret_type.element_type
-            defn = ret_val.owner
-            scalar_val = None
-
-            # Case 1: arith.constant dense<V> : tensor<T>
-            if isinstance(defn, arith.ConstantOp):
-                scalar_attr = _dense_to_scalar_attr(defn.value, scalar_type)
-                if scalar_attr is not None:
-                    new_const = arith.ConstantOp(scalar_attr)
-                    rewriter.insert_op_before_matched_op(new_const)
-                    scalar_val = new_const.result
-
-            # Case 2: tensor.from_elements %s : tensor<T>
-            elif isinstance(defn, tensor.FromElementsOp):
-                if len(defn.operands) == 1:
-                    scalar_val = defn.operands[0]
-
-            if scalar_val is not None:
-                new_operands.append(scalar_val)
-                new_output_types.append(scalar_type)
-                changed = True
-            else:
-                # Could not unwrap — keep original.
-                new_operands.append(ret_val)
-                new_output_types.append(ret_type)
-
-        if not changed:
-            return
-
-        # Capture parent before replacement.
-        func_op = op.parent_op()
-
-        # Replace return op with updated operands.
-        new_return = func_dialect.ReturnOp(*new_operands)
-        rewriter.replace_matched_op(new_return)
-
-        # Update function signature.
-        if isinstance(func_op, func_dialect.FuncOp):
-            old_ftype = func_op.properties["function_type"]
-            new_ftype = FunctionType.from_lists(
-                list(old_ftype.inputs),
-                new_output_types,
-            )
-            func_op.properties["function_type"] = new_ftype
-
-# ------------------------------------------------------------------ #
-# Pattern 5 – erase dead tensor.from_elements ops
-# ------------------------------------------------------------------ #
 
 class EraseDeadFromElements(RewritePattern):
-    """Erase ``tensor.from_elements`` ops that have no remaining uses.
-
-    After Pattern 4 (``UnwrapScalarReturn``) rewrites a ``func.return``
-    to consume the scalar operand directly, the ``tensor.from_elements``
-    that originally wrapped the scalar into a rank-0 tensor may become
-    dead.  This pattern removes such ops to keep the IR clean.
-
-    .. code-block:: mlir
-
-        // Before
-        %t = tensor.from_elements %s : tensor<T>
-        // no remaining uses of %t
-
-        // After
-        // (the tensor.from_elements op is erased)
-    """
-
+    """Erase tensor.from_elements ops with no uses."""
     @op_type_rewrite_pattern
     def match_and_rewrite(
         self, op: tensor.FromElementsOp, rewriter: PatternRewriter
     ) -> None:
-        if any(True for _ in op.result.uses):
-            return
-        rewriter.erase_matched_op()
+        if not any(op.result.uses):
+            rewriter.erase_matched_op()
+
 
 # ------------------------------------------------------------------ #
 # Pass
 # ------------------------------------------------------------------ #
 class TensorUnwrapPass(ModulePass):
-    """xDSL ``ModulePass`` that applies all four tensor-unwrapping
-    patterns in a single greedy walk.
-
-    Usage from Python::
-
-        from pass4_tensor_unwrap import unwrap_tensors
-        unwrap_tensors(module)
-
-    Or as a registered pass::
-
-        ctx.register_pass(TensorUnwrapPass)
-    """
-
     name = "tensor-unwrap"
 
     def apply(self, ctx: Context, op: ModuleOp) -> None:
         PatternRewriteWalker(
             GreedyRewritePatternApplier(
                 [
+                    UnwrapFuncAndReturn(),
+                    UnwrapFuncArgs(),
+                    UnwrapCall(),
                     FoldExtractOfDenseConstant(),
+                    FoldExtractOfFromElements(),
                     FoldExtractOfScalar(),
                     EraseDeadTensorConstant(),
-                    UnwrapScalarReturn(),
                     EraseDeadFromElements(),
                 ]
             ),

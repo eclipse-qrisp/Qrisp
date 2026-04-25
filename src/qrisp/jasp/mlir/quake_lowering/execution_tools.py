@@ -305,6 +305,8 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
         f'}}\n'
     )
 
+    print("Adapted MLIR for CUDA-Q execution:")
+    print(adapted_mlir)
     # ------------------------------------------------------------------ #
     # Step 5: Parse the adapted MLIR
     # ------------------------------------------------------------------ #
