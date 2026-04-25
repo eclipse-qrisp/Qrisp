@@ -231,45 +231,54 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
     data_layout_attr, target_triple_attr = _get_llvm_attributes()
 
     # ------------------------------------------------------------------ #
-    # Step 2: Extract the function body from the input MLIR.
+    # Step 2: Extract the inner MLIR and separate @main from other funcs
     # ------------------------------------------------------------------ #
-    func_start = mlir_str.index('func.func')
+    # Start capturing from the first function definition to strip module wrappers
+    func_start = mlir_str.find('func.func')
+    last_brace = mlir_str.rfind('}')
+    inner_mlir = mlir_str[func_start:last_brace].strip()
 
+    # Locate the @main function signature specifically
+    main_match = re.search(r'func\.func\s+(?:public\s+)?@main[^{]*\{', inner_mlir)
+    if not main_match:
+        raise ValueError("Could not find @main function in MLIR string.")
+
+    # Extract the exact block of @main using brace counting
+    start_idx = main_match.end() - 1  # Points to the '{'
     depth = 0
-    brace_groups = []
-    i = func_start
-    while i < len(mlir_str):
-        if mlir_str[i] == '{':
-            if depth == 0: group_start = i
+    end_idx = -1
+    for i in range(start_idx, len(inner_mlir)):
+        if inner_mlir[i] == '{': 
             depth += 1
-        elif mlir_str[i] == '}':
+        elif inner_mlir[i] == '}':
             depth -= 1
             if depth == 0:
-                brace_groups.append((group_start, i))
-                if len(brace_groups) == 2: break
-        i += 1
-
-    body_start, body_end = brace_groups[1]
-    func_body = mlir_str[body_start + 1 : body_end].strip()
+                end_idx = i
+                break
+                
+    main_func_body = inner_mlir[start_idx+1:end_idx].strip()
+    
+    # Keep any other functions (like @closed_call) perfectly intact
+    other_functions = inner_mlir[:main_match.start()] + inner_mlir[end_idx+1:]
 
     # ------------------------------------------------------------------ #
     # Step 3: Determine the return type and build the ".run" variant.
     # ------------------------------------------------------------------ #
-    return_match = re.search(r'func\.return\s+(%\w+)\s*:\s*(.+)', func_body)
+    return_match = re.search(r'func\.return\s+(%\w+)\s*:\s*(.+)', main_func_body)
     if return_match:
         return_type_str = return_match.group(2).strip()
         return_sig = f' -> {return_type_str}'
         run_body = re.sub(
             r'func\.return\s+(%\w+)\s*:\s*(.+)',
             r'cc.log_output \1 : \2\n    return',
-            func_body
+            main_func_body
         )
     else:
         return_type_str = None
         return_sig = ''
-        run_body = func_body
+        run_body = main_func_body
 
-    # ------------------------------------------------------------------ #
+# ------------------------------------------------------------------ #
     # Step 4: Assemble the complete CUDA-Q-compatible MLIR module.
     # ------------------------------------------------------------------ #
     run_func_name = func_name + ".run"
@@ -288,19 +297,29 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
     )
     attributes_str = ",\n  ".join(mod_attributes)
 
-    adapted_mlir = (
-        f'module attributes {{\n  {attributes_str}\n}} {{\n'
+    adapted_mlir = f'module attributes {{\n  {attributes_str}\n}} {{\n'
+    
+    # 1. Inject all helper functions first (e.g. @closed_call)
+    if other_functions.strip():
+        adapted_mlir += f'  {other_functions.strip()}\n\n'
+        
+    # 2. Inject the main function and rename it to the CUDA-Q target name
+    adapted_mlir += (
         f'  func.func @{func_name}(){return_sig} attributes '
-        f'{{"cudaq-entrypoint", "cudaq-kernel"}} {{\n    {func_body}\n  }}\n'
-        f'  func.func @{run_func_name}() attributes '
-        f'{{"cudaq-entrypoint", "cudaq-kernel", no_this'
+        f'{{"cudaq-entrypoint", "cudaq-kernel"}} {{\n    {main_func_body}\n  }}\n'
     )
 
+    # 3. Inject the .run variant for state measurements
+    run_attrs = f'{{"cudaq-entrypoint", "cudaq-kernel", no_this'
     if return_type_str:
-        adapted_mlir += f', quake.cudaq_run = [{return_type_str}]'
-
+        run_attrs += f', quake.cudaq_run = [{return_type_str}]'
+    run_attrs += '}'
     adapted_mlir += (
-        f'}} {{\n    {run_body}\n  }}\n'
+        f'  func.func @{run_func_name}() attributes {run_attrs} {{\n    {run_body}\n  }}\n'
+    )
+
+    # 4. Inject the dummy entry
+    adapted_mlir += (
         f'  func.func @{run_entry_name}() attributes {{no_this}} {{\n    return\n  }}\n'
         f'}}\n'
     )

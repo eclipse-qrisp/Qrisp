@@ -163,7 +163,6 @@ class UnwrapFuncArgs(RewritePattern):
         for i, old_type, new_type in reversed(args_to_wrap):
             old_arg = block.args[i]
 
-            # Canonical MLIR/xDSL way to change argument type:
             # 1. Insert a new argument of the scalar type at the same index
             new_arg = block.insert_arg(new_type, i)
 
