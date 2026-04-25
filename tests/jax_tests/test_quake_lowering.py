@@ -33,19 +33,16 @@ Coverage
 
 import warnings
 import pytest
+import re
 
 from qrisp import QuantumVariable, h, x, y, z, cx, rz, rx, s, t, measure
 from qrisp.jasp import make_jaspr, jrange
 
-
-def _import_or_skip():
-    """Skip tests if the required optional packages are not installed."""
-    try:
-        from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake
-        return jaspr_to_quake
-    except ImportError as exc:
-        pytest.skip(f"quake_lowering unavailable: {exc}")
-
+try:
+    from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake, validate_quake_mlir, run_quake_mlir
+except ImportError as exc:
+    # Skip the entire test file if the import fails
+    pytest.skip(f"quake_lowering unavailable: {exc}", allow_module_level=True)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -58,21 +55,11 @@ def _lower(circuit_fn, *trace_args) -> str:
     Returns the MLIR as a string.  Deprecation warnings from xDSL internals
     are silenced.
     """
-    jaspr_to_quake = _import_or_skip()
     jaspr = make_jaspr(circuit_fn)(*trace_args)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         module = jaspr_to_quake(jaspr)
     return str(module)
-
-
-def assert_no_jasp(mlir_str: str) -> None:
-    """Assert that no ``!jasp.*`` types remain in *mlir_str*."""
-    import re
-    jasp_types = re.findall(r"!jasp\.\w+", mlir_str)
-    assert not jasp_types, (
-        f"Expected no !jasp.* types in Quake output, but found: {set(jasp_types)}"
-    )
 
 
 def assert_return_type(mlir: str, expected_type: str):
@@ -86,7 +73,6 @@ def assert_return_type(mlir: str, expected_type: str):
 # Tests
 # ---------------------------------------------------------------------------
 
-
 def test_alloc_and_dealloc():
     """create_qubits → quake.alloca / delete_qubits → quake.dealloc."""
 
@@ -96,7 +82,7 @@ def test_alloc_and_dealloc():
 
     mlir = _lower(circuit)
     assert "quake.alloca" in mlir, "Expected quake.alloca in output"
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 # ---------------------------------------------------------------------------
 # Test gate application functions acting on qubits
@@ -118,7 +104,7 @@ def test_single_qubit_gates():
     mlir = _lower(circuit)
     for gate in ("quake.h", "quake.x", "quake.y", "quake.z", "quake.s", "quake.t"):
         assert gate in mlir, f"Expected {gate!r} in output"
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 
 def test_parameterized_gate():
@@ -135,7 +121,7 @@ def test_parameterized_gate():
     assert "quake.rx" in mlir, "Expected quake.rx in output"
     # Parameters should appear as f64 scalars
     assert "f64" in mlir, "Expected f64 parameter type in output"
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 
 def test_controlled_gate_cx():
@@ -152,7 +138,7 @@ def test_controlled_gate_cx():
     assert "quake.x" in mlir
     # Control qubit should be present in square brackets
     assert "[%"  in mlir, "Expected control qubit in bracket notation"
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 # ---------------------------------------------------------------------------
 # Test measure qubit
@@ -169,7 +155,7 @@ def test_measure_single_qubit():
     mlir = _lower(circuit)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i1")
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 # ---------------------------------------------------------------------------
 # Test measure QuantumVariable
@@ -186,7 +172,7 @@ def test_measure_quantum_variable():
     mlir = _lower(circuit)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 
 def test_measure_single_qubit_quantum_variable():
@@ -200,7 +186,7 @@ def test_measure_single_qubit_quantum_variable():
     mlir = _lower(circuit)
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 # ---------------------------------------------------------------------------
 # Test control
@@ -237,7 +223,7 @@ def test_extract_ref():
 
     mlir = _lower(circuit)
     assert "quake.extract_ref" in mlir, "Expected quake.extract_ref in output"
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 
 def test_jrange_loop():
@@ -254,7 +240,7 @@ def test_jrange_loop():
         "Expected scf.while or cc.loop in output"
     )
     assert "quake.h" in mlir, "Expected quake.h inside loop"
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 
 def test_no_jasp_types_in_output():
@@ -267,7 +253,7 @@ def test_no_jasp_types_in_output():
         return measure(qv)
 
     mlir = _lower(bell)
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 
 def test_cudaq_kernel_attribute():
@@ -281,6 +267,7 @@ def test_cudaq_kernel_attribute():
     mlir = _lower(simple)
     assert "cudaq.kernel" in mlir, "Expected cudaq.kernel attribute on function"
     assert "cudaq.entrypoint" in mlir, "Expected cudaq.entrypoint attribute on function"
+    validate_quake_mlir(mlir)
 
 
 def test_quake_types_present():
@@ -296,6 +283,7 @@ def test_quake_types_present():
         "Expected Quake qubit types in output"
     )
     assert "quake." in mlir, "Expected Quake ops in output"
+    validate_quake_mlir(mlir)
 
 
 def test_unsupported_gate_warning():
@@ -351,7 +339,7 @@ def test_multi_qubit_alloc():
     # At least two alloca ops
     alloca_count = mlir.count("quake.alloca")
     assert alloca_count >= 2, f"Expected ≥2 quake.alloca ops, got {alloca_count}"
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 
 # ---------------------------------------------------------------------------
@@ -385,7 +373,7 @@ def test_extract_ref_functional_type_format():
         "extract_ref should use functional-type format: (!quake.veq<?>, idx_type) -> !quake.ref"
     )
     assert "-> !quake.ref" in mlir
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 
 def test_gate_type_signature_no_bracket_prefix():
@@ -415,7 +403,7 @@ def test_gate_type_signature_no_bracket_prefix():
     assert "(!quake.ref, !quake.ref) -> ()" in mlir, (
         "CX gate should have '(!quake.ref, !quake.ref) -> ()' type sig"
     )
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 
 def test_parameterized_gate_functional_type():
@@ -432,8 +420,7 @@ def test_parameterized_gate_functional_type():
     assert "(f64, !quake.ref) -> ()" in mlir, (
         "rz gate should have '(f64, !quake.ref) -> ()' type sig"
     )
-    assert_no_jasp(mlir)
-
+    validate_quake_mlir(mlir)
 
 
 def test_veq_size_functional_type():
@@ -452,7 +439,7 @@ def test_veq_size_functional_type():
         assert "(!quake.veq<?>) -> i64" in mlir, (
             "veq_size should use functional-type: (!quake.veq<?>) -> i64"
         )
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 
 def test_alloca_veq_format():
@@ -467,7 +454,7 @@ def test_alloca_veq_format():
     assert "quake.alloca !quake.veq<?>[" in mlir, (
         "alloca format should be '!quake.veq<?>[%n : i64]'"
     )
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 # ---------------------------------------------------------------------------
 # Test algorithms
@@ -506,8 +493,7 @@ def test_bell_circuit_full_format():
     assert "!cc.stdvec<!quake.measure>" in mlir, (
         "veq measurement must return !cc.stdvec<!quake.measure>"
     )
-
-    assert_no_jasp(mlir)
+    validate_quake_mlir(mlir)
 
 
 if __name__ == "__main__":
