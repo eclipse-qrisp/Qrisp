@@ -33,7 +33,10 @@
 #    `@cudaq.kernel` to trigger the CUDA-Q compiler pipeline. This forces 
 #    the underlying LLVM compiler to generate the exact, natively-matched 
 #    layout and target triple for the host environment, which we then 
-#    extract via regular expressions.
+#    extract via regular expressions. If that fails
+#    (e.g. in CI environments where str() doesn't trigger full LLVM
+#    lowering), we fall back to well-known platform defaults derived from
+#    the host's architecture and OS.
 #
 # 2. Interface Adaptation: We inject the extracted hardware specifications 
 #    into the Qrisp-generated MLIR. Crucially, we also clone the primary 
@@ -49,11 +52,128 @@
 #    valid kernel object that the C++ backend can safely execute.
 # ====================================================================== #
 
+import platform
 import re
+import sys
+import warnings
+
 import cudaq
 from cudaq import cudaq_runtime
 from cudaq.mlir.ir import Module, NoneType
 from cudaq.mlir.dialects import quake, cc
+
+
+# ------------------------------------------------------------------ #
+# Platform-aware LLVM attribute defaults
+# ------------------------------------------------------------------ #
+
+# These are the standard LLVM data layouts and target triples for
+# platforms commonly used with CUDA-Q.  They describe the host's
+# classical memory architecture and are deterministic per (arch, OS).
+_PLATFORM_DEFAULTS = {
+    # (machine, sys.platform prefix) → (data_layout, target_triple)
+    ("x86_64", "linux"): (
+        'e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128',
+        'x86_64-unknown-linux-gnu',
+    ),
+    ("aarch64", "linux"): (
+        'e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128',
+        'aarch64-unknown-linux-gnu',
+    ),
+    ("arm64", "darwin"): (
+        'e-m:o-i64:64-i128:128-n32:64-S128-Fn32',
+        'arm64-apple-macosx14.0.0',
+    ),
+    ("x86_64", "darwin"): (
+        'e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128',
+        'x86_64-apple-macosx14.0.0',
+    ),
+}
+
+
+def _detect_platform_key() -> tuple:
+    """Return ``(machine, os_prefix)`` for the current host."""
+    machine = platform.machine().lower()
+    if sys.platform.startswith("linux"):
+        os_key = "linux"
+    elif sys.platform == "darwin":
+        os_key = "darwin"
+    else:
+        os_key = sys.platform
+    return (machine, os_key)
+
+
+def _get_llvm_attributes() -> tuple:
+    """Extract ``llvm.data_layout`` and ``llvm.target_triple`` strings.
+
+    Strategy:
+    1. Compile a dummy ``@cudaq.kernel`` and regex-search its MLIR string.
+    2. If that fails, fall back to platform-based defaults.
+
+    Returns
+    -------
+    (data_layout_attr, target_triple_attr)
+        Each is a string like ``'llvm.data_layout = "..."'`` ready for
+        insertion into a ``module attributes { }`` block.  The target
+        triple may be ``None`` if not available.
+
+    Raises
+    ------
+    RuntimeError
+        If neither extraction nor platform defaults succeed.
+    """
+    data_layout_str = None
+    target_triple_str = None
+
+    # --- Method 1: Extract from a compiled dummy kernel ---
+    try:
+        @cudaq.kernel
+        def _dummy_extractor():
+            pass
+
+        dummy_mlir = str(_dummy_extractor)
+        dl_match = re.search(r'llvm\.data_layout\s*=\s*"([^"]+)"', dummy_mlir)
+        tt_match = re.search(r'llvm\.target_triple\s*=\s*"([^"]+)"', dummy_mlir)
+
+        if dl_match:
+            data_layout_str = dl_match.group(1)
+        if tt_match:
+            target_triple_str = tt_match.group(1)
+    except Exception:
+        pass  # Fall through to platform defaults
+
+    # --- Method 2: Platform-based defaults ---
+    if data_layout_str is None:
+        key = _detect_platform_key()
+        defaults = _PLATFORM_DEFAULTS.get(key)
+
+        if defaults is None:
+            raise RuntimeError(
+                f"Failed to extract llvm.data_layout from the active "
+                f"CUDA-Q environment, and no platform default is available "
+                f"for {key}.  Supported platforms: "
+                f"{list(_PLATFORM_DEFAULTS.keys())}"
+            )
+
+        data_layout_str, target_triple_str = defaults
+        warnings.warn(
+            f"Could not extract llvm.data_layout from CUDA-Q; "
+            f"using platform default for {key}.",
+            stacklevel=3,
+        )
+
+    data_layout_attr = f'llvm.data_layout = "{data_layout_str}"'
+    target_triple_attr = (
+        f'llvm.target_triple = "{target_triple_str}"'
+        if target_triple_str else None
+    )
+    return data_layout_attr, target_triple_attr
+
+
+# ------------------------------------------------------------------ #
+# Main entry point
+# ------------------------------------------------------------------ #
+
 
 def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
     """
@@ -103,23 +223,12 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
     #         conventions, and extract native LLVM layouts from a fully
     #         compiled dummy kernel to prevent missing layout errors.
     # ------------------------------------------------------------------ #
-    # 1a. Generate the execution context
     kernel = cudaq.make_kernel()
-    func_name = kernel.funcName              
-    entry_point = kernel.funcNameEntryPoint  
-    uniq_name = func_name.replace("__nvqpp__mlirgen__", "")  
+    func_name = kernel.funcName
+    entry_point = kernel.funcNameEntryPoint
+    uniq_name = func_name.replace("__nvqpp__mlirgen__", "")
 
-    # 1b. Force CUDA-Q to generate a valid hardware layout
-    @cudaq.kernel
-    def _dummy_extractor():
-        pass
-    
-    dummy_mlir = str(_dummy_extractor)
-    data_layout_match = re.search(r'llvm\.data_layout\s*=\s*"[^"]+"', dummy_mlir)
-    target_triple_match = re.search(r'llvm\.target_triple\s*=\s*"[^"]+"', dummy_mlir)
-
-    if not data_layout_match:
-        raise RuntimeError("Failed to extract llvm.data_layout from the active CUDA-Q environment.")
+    data_layout_attr, target_triple_attr = _get_llvm_attributes()
 
     # ------------------------------------------------------------------ #
     # Step 2: Extract the function body from the input MLIR.
@@ -167,9 +276,9 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
     run_entry_name = func_name + ".run.entry"
 
     mod_attributes = [f'cc.python_uniqued = "{uniq_name}"']
-    mod_attributes.append(data_layout_match.group(0))
-    if target_triple_match:
-        mod_attributes.append(target_triple_match.group(0))
+    mod_attributes.append(data_layout_attr)
+    if target_triple_attr:
+        mod_attributes.append(target_triple_attr)
 
     mod_attributes.append(
         f'quake.mangled_name_map = {{\n'
