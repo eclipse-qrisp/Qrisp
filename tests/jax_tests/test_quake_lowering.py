@@ -35,8 +35,8 @@ import warnings
 import pytest
 import re
 
-from qrisp import QuantumVariable, h, x, y, z, cx, rz, rx, s, t, measure
-from qrisp.jasp import make_jaspr, jrange
+from qrisp import QuantumVariable, h, x, y, z, cx, rz, rx, s, t, measure, control
+from qrisp.jasp import make_jaspr, jrange, q_while_loop
 
 try:
     from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake, validate_quake_mlir, run_quake_mlir
@@ -85,128 +85,116 @@ def test_alloc_and_dealloc():
     validate_quake_mlir(mlir)
 
 # ---------------------------------------------------------------------------
-# Test gate application functions acting on qubits
+# MLIR format validity tests
+# These tests verify that the generated MLIR conforms to the CUDA-Q Quake
+# dialect assembly format (functional-type format, correct type signatures).
 # ---------------------------------------------------------------------------
 
-def test_single_qubit_gates():
-    """Standard single-qubit gates lower to the corresponding quake.* ops."""
+def test_extract_ref_functional_type_format():
+    """quake.extract_ref must use functional-type: (!quake.veq<?>, <idx>) -> !quake.ref.
 
-    def circuit():
-        qv = QuantumVariable(4)
-        h(qv[0])
-        x(qv[1])
-        y(qv[2])
-        z(qv[3])
-        s(qv[0])
-        t(qv[1])
-        return qv
-
-    mlir = _lower(circuit)
-    for gate in ("quake.h", "quake.x", "quake.y", "quake.z", "quake.s", "quake.t"):
-        assert gate in mlir, f"Expected {gate!r} in output"
-    validate_quake_mlir(mlir)
-
-
-def test_parameterized_gate():
-    """rz / rx gates carry floating-point parameters."""
+    Per CUDA-Q Quake dialect spec, the assemblyFormat uses functional-type
+    (all operand types in parens) rather than a bare ``veq -> ref``.
+    """
 
     def circuit():
         qv = QuantumVariable(2)
-        rz(0.5, qv[0])
-        rx(1.0, qv[1])
+        h(qv[0])
         return qv
 
     mlir = _lower(circuit)
-    assert "quake.rz" in mlir, "Expected quake.rz in output"
-    assert "quake.rx" in mlir, "Expected quake.rx in output"
-    # Parameters should appear as f64 scalars
-    assert "f64" in mlir, "Expected f64 parameter type in output"
+    # The correct format includes parentheses and the index type
+    assert "quake.extract_ref" in mlir
+    # Must NOT have the bare (pre-fix) format "!quake.veq<?> -> !quake.ref"
+    assert "!quake.veq<?> -> !quake.ref" not in mlir, (
+        "extract_ref should use functional-type format, not bare 'veq -> ref'"
+    )
+    # Must have the functional-type format with both input types in parens
+    assert "(!quake.veq<?>" in mlir, (
+        "extract_ref should use functional-type format: (!quake.veq<?>, idx_type) -> !quake.ref"
+    )
+    assert "-> !quake.ref" in mlir
     validate_quake_mlir(mlir)
 
 
-def test_controlled_gate_cx():
-    """cx maps to quake.x with one control qubit."""
+def test_gate_type_signature_no_bracket_prefix():
+    """Gate ops must NOT use [ctrl-types](tgt-types) format — only flat functional-type.
+
+    The CUDA-Q Quake dialect uses functional-type(operands, results) where all
+    operand types (params + controls + targets) appear in a single flat list.
+    """
 
     def circuit():
         qv = QuantumVariable(2)
         h(qv[0])
         cx(qv[0], qv[1])
-        return measure(qv)
+        return qv
 
     mlir = _lower(circuit)
+    # H gate: single target, no controls
     assert "quake.h" in mlir
+    assert "(!quake.ref) -> ()" in mlir, "H gate should have '(!quake.ref) -> ()' type sig"
+    # CX gate: control + target, both refs → flat list
     assert "quake.x" in mlir
-    # Control qubit should be present in square brackets
-    assert "[%"  in mlir, "Expected control qubit in bracket notation"
+    # Should NOT have the old bracket prefix format [!quake.ref](!quake.ref)
+    assert "[!quake.ref]" not in mlir, (
+        "Gate type signatures must not use [ctrl-types] prefix — use flat functional-type"
+    )
+    # Should have flat format for CX: (!quake.ref, !quake.ref)
+    assert "(!quake.ref, !quake.ref) -> ()" in mlir, (
+        "CX gate should have '(!quake.ref, !quake.ref) -> ()' type sig"
+    )
     validate_quake_mlir(mlir)
 
-# ---------------------------------------------------------------------------
-# Test measure qubit
-# ---------------------------------------------------------------------------
 
-def test_measure_single_qubit():
-    """Single-qubit measure: quake.mz + quake.discriminate."""
+def test_parameterized_gate_functional_type():
+    """Parameterized gates use flat (f64, !quake.ref) -> () format."""
 
     def circuit():
         qv = QuantumVariable(1)
-        x(qv[0])
-        return measure(qv[0])
+        rz(0.5, qv[0])
+        return qv
 
     mlir = _lower(circuit)
-    assert "quake.mz" in mlir, "Expected quake.mz in output"
-    assert_return_type(mlir, "i1")
+    assert "quake.rz" in mlir
+    # The type signature must include both the f64 param and the quake.ref target
+    assert "(f64, !quake.ref) -> ()" in mlir, (
+        "rz gate should have '(f64, !quake.ref) -> ()' type sig"
+    )
     validate_quake_mlir(mlir)
 
-# ---------------------------------------------------------------------------
-# Test measure QuantumVariable
-# ---------------------------------------------------------------------------
 
-def test_measure_quantum_variable():
-    """QuantumVariable measure"""
+def test_veq_size_functional_type():
+    """quake.veq_size must use functional-type: (!quake.veq<?>) -> i64."""
+    from qrisp.jasp import jrange
 
     def circuit():
         qv = QuantumVariable(3)
-        x(qv[0])
-        return measure(qv)
-    
+        h(qv[qv.size - 1])
+        return qv
+
     mlir = _lower(circuit)
-    assert "quake.mz" in mlir, "Expected quake.mz in output"
-    assert_return_type(mlir, "i64")
+    # veq_size op should use functional-type with parens if present
+    if "quake.veq_size" in mlir:
+        assert "(!quake.veq<?>) -> i64" in mlir, (
+            "veq_size should use functional-type: (!quake.veq<?>) -> i64"
+        )
     validate_quake_mlir(mlir)
 
 
-def test_measure_single_qubit_quantum_variable():
-    """QuantumVariable measure"""
+def test_alloca_veq_format():
+    """quake.alloca !quake.veq<?>[%n : i64] — type before size in brackets."""
 
     def circuit():
-        qv = QuantumVariable(1)
-        x(qv[0])
-        return measure(qv)
-    
+        qv = QuantumVariable(4)
+        return qv
+
     mlir = _lower(circuit)
-    assert "quake.mz" in mlir, "Expected quake.mz in output"
-    assert_return_type(mlir, "i64")
+    # The alloca must print the type first, then size in brackets
+    assert "quake.alloca !quake.veq<?>[" in mlir, (
+        "alloca format should be '!quake.veq<?>[%n : i64]'"
+    )
     validate_quake_mlir(mlir)
-
-# ---------------------------------------------------------------------------
-# Test control
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
-# Test q_cond
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
-# Test q_while_loop
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
-# Test q_fori_loop
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
-# Test gate application functions acting on QuantumVariables
-# ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
 # Test 
@@ -223,23 +211,6 @@ def test_extract_ref():
 
     mlir = _lower(circuit)
     assert "quake.extract_ref" in mlir, "Expected quake.extract_ref in output"
-    validate_quake_mlir(mlir)
-
-
-def test_jrange_loop():
-    """A jrange loop produces a scf.while with !quake.veq<?> loop-carried value."""
-
-    def circuit():
-        qv = QuantumVariable(3)
-        for i in jrange(3):
-            h(qv[i])
-        return qv
-
-    mlir = _lower(circuit)
-    assert "scf.while" in mlir or "cc.loop" in mlir, (
-        "Expected scf.while or cc.loop in output"
-    )
-    assert "quake.h" in mlir, "Expected quake.h inside loop"
     validate_quake_mlir(mlir)
 
 
@@ -324,6 +295,10 @@ def test_gate_mapping_standard_gates():
         info = get_gate_info(gate)
         assert info is not None, f"Expected gate '{gate}' in GATE_MAP"
 
+# ---------------------------------------------------------------------------
+# Test quantum variable allocation 
+# and gate application functions acting on qubits
+# ---------------------------------------------------------------------------
 
 def test_multi_qubit_alloc():
     """Multiple QuantumVariable allocations produce multiple quake.alloca ops."""
@@ -333,7 +308,7 @@ def test_multi_qubit_alloc():
         qv2 = QuantumVariable(3)
         h(qv1[0])
         x(qv2[0])
-        return measure(qv1), measure(qv2)
+        return measure(qv1[0]), measure(qv2[0])
 
     mlir = _lower(circuit)
     # At least two alloca ops
@@ -341,91 +316,179 @@ def test_multi_qubit_alloc():
     assert alloca_count >= 2, f"Expected ≥2 quake.alloca ops, got {alloca_count}"
     validate_quake_mlir(mlir)
 
-
 # ---------------------------------------------------------------------------
-# MLIR format validity tests
-# These tests verify that the generated MLIR conforms to the CUDA-Q Quake
-# dialect assembly format (functional-type format, correct type signatures).
+# Test gate application functions acting on qubits
 # ---------------------------------------------------------------------------
 
-
-def test_extract_ref_functional_type_format():
-    """quake.extract_ref must use functional-type: (!quake.veq<?>, <idx>) -> !quake.ref.
-
-    Per CUDA-Q Quake dialect spec, the assemblyFormat uses functional-type
-    (all operand types in parens) rather than a bare ``veq -> ref``.
-    """
+def test_single_qubit_gates():
+    """Standard single-qubit gates (h,x,y,z,s,t) lower to the corresponding quake.* ops."""
 
     def circuit():
-        qv = QuantumVariable(2)
+        qv = QuantumVariable(4)
         h(qv[0])
+        x(qv[1])
+        y(qv[2])
+        z(qv[3])
+        s(qv[0])
+        t(qv[1])
         return qv
 
     mlir = _lower(circuit)
-    # The correct format includes parentheses and the index type
-    assert "quake.extract_ref" in mlir
-    # Must NOT have the bare (pre-fix) format "!quake.veq<?> -> !quake.ref"
-    assert "!quake.veq<?> -> !quake.ref" not in mlir, (
-        "extract_ref should use functional-type format, not bare 'veq -> ref'"
-    )
-    # Must have the functional-type format with both input types in parens
-    assert "(!quake.veq<?>" in mlir, (
-        "extract_ref should use functional-type format: (!quake.veq<?>, idx_type) -> !quake.ref"
-    )
-    assert "-> !quake.ref" in mlir
+    for gate in ("quake.h", "quake.x", "quake.y", "quake.z", "quake.s", "quake.t"):
+        assert gate in mlir, f"Expected {gate!r} in output"
     validate_quake_mlir(mlir)
 
 
-def test_gate_type_signature_no_bracket_prefix():
-    """Gate ops must NOT use [ctrl-types](tgt-types) format — only flat functional-type.
+def test_parameterized_gate():
+    """rz / rx gates carry floating-point parameters."""
 
-    The CUDA-Q Quake dialect uses functional-type(operands, results) where all
-    operand types (params + controls + targets) appear in a single flat list.
-    """
+    def circuit():
+        qv = QuantumVariable(2)
+        rz(0.5, qv[0])
+        rx(1.0, qv[1])
+        return qv
+
+    mlir = _lower(circuit)
+    assert "quake.rz" in mlir, "Expected quake.rz in output"
+    assert "quake.rx" in mlir, "Expected quake.rx in output"
+    # Parameters should appear as f64 scalars
+    assert "f64" in mlir, "Expected f64 parameter type in output"
+    validate_quake_mlir(mlir)
+
+
+def test_controlled_gate_cx():
+    """cx maps to quake.x with one control qubit."""
 
     def circuit():
         qv = QuantumVariable(2)
         h(qv[0])
         cx(qv[0], qv[1])
-        return qv
+        return measure(qv)
 
     mlir = _lower(circuit)
-    # H gate: single target, no controls
     assert "quake.h" in mlir
-    assert "(!quake.ref) -> ()" in mlir, "H gate should have '(!quake.ref) -> ()' type sig"
-    # CX gate: control + target, both refs → flat list
     assert "quake.x" in mlir
-    # Should NOT have the old bracket prefix format [!quake.ref](!quake.ref)
-    assert "[!quake.ref]" not in mlir, (
-        "Gate type signatures must not use [ctrl-types] prefix — use flat functional-type"
-    )
-    # Should have flat format for CX: (!quake.ref, !quake.ref)
-    assert "(!quake.ref, !quake.ref) -> ()" in mlir, (
-        "CX gate should have '(!quake.ref, !quake.ref) -> ()' type sig"
-    )
+    # Control qubit should be present in square brackets
+    assert "[%"  in mlir, "Expected control qubit in bracket notation"
     validate_quake_mlir(mlir)
 
+# ---------------------------------------------------------------------------
+# Test measure qubit
+# ---------------------------------------------------------------------------
 
-def test_parameterized_gate_functional_type():
-    """Parameterized gates use flat (f64, !quake.ref) -> () format."""
+def test_measure_single_qubit():
+    """Single-qubit measure: quake.mz + quake.discriminate."""
 
     def circuit():
         qv = QuantumVariable(1)
-        rz(0.5, qv[0])
-        return qv
+        x(qv[0])
+        return measure(qv[0])
 
     mlir = _lower(circuit)
-    assert "quake.rz" in mlir
-    # The type signature must include both the f64 param and the quake.ref target
-    assert "(f64, !quake.ref) -> ()" in mlir, (
-        "rz gate should have '(f64, !quake.ref) -> ()' type sig"
-    )
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i1")
     validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[1]
+
+# ---------------------------------------------------------------------------
+# Test measure QuantumVariable
+# ---------------------------------------------------------------------------
+
+def test_measure_quantum_variable():
+    """QuantumVariable measure"""
+
+    def circuit():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        return measure(qv)
+    
+    mlir = _lower(circuit)
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i64")
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[1]
 
 
-def test_veq_size_functional_type():
-    """quake.veq_size must use functional-type: (!quake.veq<?>) -> i64."""
-    from qrisp.jasp import jrange
+def test_measure_single_qubit_quantum_variable():
+    """QuantumVariable measure"""
+
+    def circuit():
+        qv = QuantumVariable(1)
+        x(qv[0])
+        return measure(qv)
+    
+    mlir = _lower(circuit)
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i64")
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[1]
+
+# ---------------------------------------------------------------------------
+# Test control
+# ---------------------------------------------------------------------------
+
+def test_classcial_control():
+
+    def circuit():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        c = measure(qv[0])
+        with control(c):
+            x(qv[1])
+        return measure(qv)
+    
+    mlir = _lower(circuit)
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i64")
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+
+# ---------------------------------------------------------------------------
+# Test q_cond
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Test q_while_loop
+# ---------------------------------------------------------------------------
+
+def test_q_while_loop():
+
+    def circuit():
+        qv = QuantumVariable(10)
+
+        def cond_fun(val):
+            i, qv = val
+            return i < 10
+        
+        def body_fun(val):
+            i, qv = val
+            x(qv[i])
+            return i+1, qv
+
+        q_while_loop(cond_fun, body_fun, (0,qv))
+        return measure(qv)    
+
+    mlir = _lower(circuit)
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i64")
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[1023]
+
+# ---------------------------------------------------------------------------
+# Test q_fori_loop
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Test jrange loop
+# ---------------------------------------------------------------------------
+
+def test_jrange_loop():
+    """A jrange loop produces a scf.while with !quake.veq<?> loop-carried value."""
 
     def circuit():
         qv = QuantumVariable(3)
@@ -434,27 +497,51 @@ def test_veq_size_functional_type():
         return qv
 
     mlir = _lower(circuit)
-    # veq_size op should use functional-type with parens if present
-    if "quake.veq_size" in mlir:
-        assert "(!quake.veq<?>) -> i64" in mlir, (
-            "veq_size should use functional-type: (!quake.veq<?>) -> i64"
-        )
+    assert "scf.while" in mlir or "cc.loop" in mlir, (
+        "Expected scf.while or cc.loop in output"
+    )
+    assert "quake.h" in mlir, "Expected quake.h inside loop"
     validate_quake_mlir(mlir)
 
+# ---------------------------------------------------------------------------
+# Test gate application functions acting on QuantumVariables
+# (uses while loop)
+# ---------------------------------------------------------------------------
 
-def test_alloca_veq_format():
-    """quake.alloca !quake.veq<?>[%n : i64] — type before size in brackets."""
+def test_single_gate_application_quantum_variable():
+    """Gate application function (x) applied to QuantumVariable"""
+
+    def circuit():
+        qv = QuantumVariable(10)
+        x(qv)
+        return measure(qv)
+
+    mlir = _lower(circuit)
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i64")
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[1023]
+
+
+def test_gate_application_quantum_variable():
+    """Gate application functions (h,x,y,z,s,t) applied to QuantumVariable"""
 
     def circuit():
         qv = QuantumVariable(4)
-        return qv
+        h(qv)
+        x(qv)
+        y(qv)
+        z(qv)
+        s(qv)
+        t(qv)
+        return measure(qv)
 
     mlir = _lower(circuit)
-    # The alloca must print the type first, then size in brackets
-    assert "quake.alloca !quake.veq<?>[" in mlir, (
-        "alloca format should be '!quake.veq<?>[%n : i64]'"
-    )
+    for gate in ("quake.h", "quake.x", "quake.y", "quake.z", "quake.s", "quake.t"):
+        assert gate in mlir, f"Expected {gate!r} in output"
     validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
 
 # ---------------------------------------------------------------------------
 # Test algorithms
