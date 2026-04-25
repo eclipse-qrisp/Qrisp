@@ -432,7 +432,7 @@ def test_measure_single_qubit_quantum_variable():
 # ---------------------------------------------------------------------------
 
 def test_classcial_control():
-
+    """Control on a measurement result."""
     def circuit():
         qv = QuantumVariable(2)
         h(qv[0])
@@ -446,6 +446,23 @@ def test_classcial_control():
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
+
+
+def test_quantum_control():
+    """Control on a qubit value (not measurement result)."""
+    def circuit():
+        qv = QuantumVariable(2)
+        x(qv[0])
+        with control(qv[0]):
+            x(qv[1])
+        return measure(qv[1])
+    
+    mlir = _lower(circuit)
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i1")
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[1]
 
 # ---------------------------------------------------------------------------
 # Test q_cond
@@ -478,7 +495,7 @@ def test_q_cond():
     assert_return_type(mlir, "i1")
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
-    #assert result == 10*[1] # Needs fix of issue #538
+    assert result == 10*[1]
 
 # ---------------------------------------------------------------------------
 # Test q_while_loop
@@ -591,7 +608,7 @@ def test_nested_q_fori_loop_control():
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
-    #assert result == 10*[0] # Needs fix of issue #538
+    assert result == 10*[0]
 
 # ---------------------------------------------------------------------------
 # Test classical control flow
