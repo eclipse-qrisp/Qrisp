@@ -35,8 +35,8 @@ import warnings
 import pytest
 import re
 
-from qrisp import QuantumVariable, h, x, y, z, cx, rz, rx, s, t, measure, control
-from qrisp.jasp import make_jaspr, jrange, q_while_loop
+from qrisp import QuantumVariable, QuantumBool, h, x, y, z, cx, rz, rx, s, t, measure, control
+from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop    
 
 try:
     from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake, validate_quake_mlir, run_quake_mlir
@@ -450,11 +450,41 @@ def test_classcial_control():
 # Test q_cond
 # ---------------------------------------------------------------------------
 
+def test_q_cond():
+
+    def circuit():
+
+        def false_fun(qbl):
+            x(qbl[0])
+            return qbl
+
+        def true_fun(qbl):
+            return qbl
+
+        qbl = QuantumBool()
+        h(qbl[0])
+        pred = measure(qbl[0])
+
+        qbl = q_cond(pred,
+                    true_fun,
+                    false_fun,
+                    qbl)
+
+        return measure(qbl[0])
+    
+    mlir = _lower(circuit)
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i1")
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    #assert result == 10*[1] # Needs fix of issue #538
+
 # ---------------------------------------------------------------------------
 # Test q_while_loop
 # ---------------------------------------------------------------------------
 
 def test_q_while_loop():
+    """While loop with loop-carried quantum variable."""
 
     def circuit():
         qv = QuantumVariable(10)
@@ -468,7 +498,7 @@ def test_q_while_loop():
             x(qv[i])
             return i+1, qv
 
-        q_while_loop(cond_fun, body_fun, (0,qv))
+        q_while_loop(cond_fun, body_fun, (0, qv))
         return measure(qv)    
 
     mlir = _lower(circuit)
@@ -478,10 +508,89 @@ def test_q_while_loop():
     result = run_quake_mlir(mlir, shots=10)
     assert result == 10*[1023]
 
+
+def test_q_while_loop_acc():
+    """While loop-carried quantum variable and accumulator."""
+
+    def circuit():
+        qv = QuantumVariable(10)
+
+        def cond_fun(val):
+            i, acc, qv = val
+            return i < 5
+        
+        def body_fun(val):
+            i, acc, qv = val
+            x(qv[i])
+            acc += measure(qv[i])
+            return i+1, acc, qv
+
+        i, acc, qv = q_while_loop(cond_fun, body_fun, (0, 0, qv))
+        return acc   
+
+    mlir = _lower(circuit)
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i64")
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[5]
+
 # ---------------------------------------------------------------------------
 # Test q_fori_loop
 # ---------------------------------------------------------------------------
 
+def test_q_fori_loop():
+    """Fori loop with loop-carried quantum variable and accumulator."""
+
+    def circuit():
+        qv = QuantumVariable(10)
+
+        def body_fun(i, val):
+            acc, qv = val
+            x(qv[i])
+            acc += measure(qv[i])
+            return acc, qv
+
+        acc, qv = q_fori_loop(0, 5, body_fun, (0, qv))
+
+        return acc
+
+    mlir = _lower(circuit)
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i64")
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[5]
+
+# ---------------------------------------------------------------------------
+# Test nested control flow
+# ---------------------------------------------------------------------------
+
+def test_nested_q_fori_loop_control():
+    """Nested fori loop with control inside."""
+
+    def circuit():
+        qv = QuantumVariable(10)
+
+        def body_fun(i, val):
+            acc, qv = val
+            x(qv[i])
+            c = measure(qv[i])
+            with control(c):
+                x(qv[i])
+            acc += measure(qv[i])
+            return acc, qv
+
+        acc, qv = q_fori_loop(0, 5, body_fun, (0, qv))
+
+        return acc
+
+    mlir = _lower(circuit)
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i64")
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    #assert result == 10*[0] # Needs fix of issue #538
 
 # ---------------------------------------------------------------------------
 # Test jrange loop
@@ -581,7 +690,7 @@ def test_bell_circuit_full_format():
     # Measurement with correct i64 type
     assert "quake.mz" in mlir, "Expected quake.mz in output"
     assert_return_type(mlir, "i64")
-    
+
     validate_quake_mlir(mlir)
 
 
