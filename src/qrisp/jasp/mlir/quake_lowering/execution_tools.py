@@ -233,21 +233,46 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
     # ------------------------------------------------------------------ #
     # Step 2: Extract the inner MLIR and separate @main from other funcs
     # ------------------------------------------------------------------ #
-    # Start capturing from the first function definition to strip module wrappers
     func_start = mlir_str.find('func.func')
     last_brace = mlir_str.rfind('}')
     inner_mlir = mlir_str[func_start:last_brace].strip()
 
     # Locate the @main function signature specifically
-    main_match = re.search(r'func\.func\s+(?:public\s+)?@main[^{]*\{', inner_mlir)
+    main_match = re.search(r'func\.func\s+(?:public\s+)?@main', inner_mlir)
     if not main_match:
         raise ValueError("Could not find @main function in MLIR string.")
 
+    # Robustly find the function body, skipping optional `attributes { ... }`
+    anchor = main_match.end()
+    search_idx = anchor
+    body_start_idx = -1
+    
+    while search_idx < len(inner_mlir):
+        if inner_mlir[search_idx] == '{':
+            text_before = inner_mlir[anchor:search_idx].strip()
+            if text_before.endswith('attributes'):
+                # This is an attributes block, skip it
+                depth = 1
+                search_idx += 1
+                while search_idx < len(inner_mlir) and depth > 0:
+                    if inner_mlir[search_idx] == '{': depth += 1
+                    elif inner_mlir[search_idx] == '}': depth -= 1
+                    search_idx += 1
+                anchor = search_idx  # move anchor past the attributes block
+                continue
+            else:
+                # Found the actual body
+                body_start_idx = search_idx
+                break
+        search_idx += 1
+
+    if body_start_idx == -1:
+        raise ValueError("Could not find body for @main.")
+
     # Extract the exact block of @main using brace counting
-    start_idx = main_match.end() - 1  # Points to the '{'
     depth = 0
     end_idx = -1
-    for i in range(start_idx, len(inner_mlir)):
+    for i in range(body_start_idx, len(inner_mlir)):
         if inner_mlir[i] == '{': 
             depth += 1
         elif inner_mlir[i] == '}':
@@ -256,7 +281,7 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
                 end_idx = i
                 break
                 
-    main_func_body = inner_mlir[start_idx+1:end_idx].strip()
+    main_func_body = inner_mlir[body_start_idx+1:end_idx].strip()
     
     # Keep any other functions (like @closed_call) perfectly intact
     other_functions = inner_mlir[:main_match.start()] + inner_mlir[end_idx+1:]
