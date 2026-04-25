@@ -347,6 +347,7 @@ def test_parameterized_gate():
         qv = QuantumVariable(2)
         rz(0.5, qv[0])
         rx(1.0, qv[1])
+        rx(1, qv[1]) # Test that integer literals are also accepted as parameters and correctly typed as f64
         return qv
 
     mlir = _lower(circuit)

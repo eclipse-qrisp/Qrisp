@@ -159,6 +159,70 @@ def _quake_type_for(jasp_type: Attribute) -> Attribute | None:
 
 
 # ---------------------------------------------------------------------------
+# Numeric-type helpers
+# ---------------------------------------------------------------------------
+
+def _is_qubit_type(t: Attribute) -> bool:
+    """Return True if *t* is any qubit/veq type (Jasp or Quake)."""
+    return (isinstance(t, (QuakeRefType, QuakeVeqType))
+            or _is_qubit(t) or _is_qubit_array(t))
+
+
+def _is_numeric_type(t: Attribute) -> bool:
+    """Return True if *t* is a scalar or rank-0 tensor of int/float."""
+    from xdsl.dialects.builtin import IntegerType, TensorType
+    scalar = t
+    if isinstance(t, TensorType):
+        if t.get_shape():        # only rank-0
+            return False
+        scalar = t.element_type
+    return isinstance(scalar, IntegerType) or _is_float_type(scalar)
+
+
+def _is_float_type(t: Attribute) -> bool:
+    """Return True for any xDSL float type."""
+    from xdsl.dialects.builtin import Float16Type, Float32Type, Float64Type, BFloat16Type
+    return isinstance(t, (Float16Type, Float32Type, Float64Type, BFloat16Type))
+
+
+def _scalar_type_of(t: Attribute) -> Attribute:
+    """Return the scalar element type (unwrap rank-0 tensor if needed)."""
+    from xdsl.dialects.builtin import TensorType
+    if isinstance(t, TensorType) and not t.get_shape():
+        return t.element_type
+    return t
+
+
+def _coerce_to_f64(val: SSAValue, block: Block, insert_before) -> SSAValue:
+    """Extract from tensor if needed, then cast int→f64 if needed.
+    
+    Returns an SSAValue of type f64.
+    """
+    from xdsl.dialects.builtin import IntegerType, TensorType
+
+    # Step 1: unwrap rank-0 tensor → scalar
+    scalar_type = _scalar_type_of(val.type)
+    scalar = _extract_scalar(val, scalar_type, block, insert_before)
+
+    # Step 2: already f64 → done
+    if scalar.type == f64:
+        return scalar
+
+    # Step 3: other float → fpext/fptrunc to f64
+    if _is_float_type(scalar.type):
+        cast = arith.ExtFOp(scalar, f64)  # or SIToFPOp etc.
+        block.insert_ops_before([cast], insert_before)
+        return cast.result
+
+    # Step 4: integer → sitofp to f64
+    if isinstance(scalar.type, IntegerType):
+        cast = arith.SIToFPOp(scalar, f64)
+        block.insert_ops_before([cast], insert_before)
+        return cast.result
+
+    raise ValueError(f"Cannot coerce {scalar.type} to f64")
+
+# ---------------------------------------------------------------------------
 # Tensor-extract helper
 # ---------------------------------------------------------------------------
 
@@ -494,18 +558,12 @@ def _lower_quantum_gate(op, block: Block) -> None:
     param_operands = []
     for v in op.operands:
         if _is_qst(v.type):
-            continue  # will be threaded
-        elif (isinstance(v.type, (QuakeRefType, QuakeVeqType))
-              or _is_qubit(v.type) or _is_qubit_array(v.type)):
+            continue
+        elif _is_qubit_type(v.type):
             qubit_operands.append(v)
-        elif v.type == f64:
-            param_operands.append(v)
-        elif hasattr(v.type, "element_type") and v.type.element_type == f64:
-            # tensor<f64> parameter – extract scalar
-            scalar = _extract_scalar(v, f64, block, op)
-            param_operands.append(scalar)
+        elif _is_numeric_type(v.type):
+            param_operands.append(_coerce_to_f64(v, block, op))
         else:
-            # Unknown type – treat as qubit operand
             qubit_operands.append(v)
 
     gate_info = get_gate_info(gate_name)
