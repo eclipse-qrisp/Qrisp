@@ -274,8 +274,13 @@ def _fix_func_signature(func_op, mark_cudaq_kernel: bool = False) -> None:
     new_ftype = FunctionType.from_lists(new_inputs, new_outputs)
     func_op.function_type = new_ftype
 
-    if mark_cudaq_kernel:
-        func_op.attributes["cudaq.kernel"] = StringAttr("true")
+    #if mark_cudaq_kernel:
+    #    func_op.attributes["cudaq.kernel"] = StringAttr("true")
+    #    func_op.attributes["cudaq.entrypoint"] = StringAttr("true")
+    func_op.attributes["cudaq.kernel"] = StringAttr("true")
+
+    # Only apply entrypoint to the host-callable main function
+    if func_op.sym_name.data == "main":
         func_op.attributes["cudaq.entrypoint"] = StringAttr("true")
 
 
@@ -332,6 +337,8 @@ def _process_op(op, block: Block) -> None:
         _process_scf_index_switch(op, block)
     elif n == "func.return":
         _fix_return_op(op)
+    elif n == "func.call":
+        _fix_call_op(op)
     # All other ops (arith, tensor, linalg, …): no action needed.
 
 
@@ -656,13 +663,35 @@ def _lower_reset(op, block: Block) -> None:
 
 
 # ---------------------------------------------------------------------------
-# func.return fixup
+# func.return and func.call fixup
 # ---------------------------------------------------------------------------
 
 def _fix_return_op(op) -> None:
     """Remove ``!jasp.QuantumState`` values from ``func.return``."""
     non_qst = [v for v in op.operands if not _is_qst(v.type)]
     op.operands = non_qst
+
+
+def _fix_call_op(op) -> None:
+    """Remove ``!jasp.QuantumState`` values from ``func.call`` operands and results."""
+    new_operands = [v for v in op.operands if not _is_qst(v.type)]
+    new_result_types = [t for t in op.result_types if not _is_qst(t)]
+    
+    # Create the new call operation
+    new_call = func.CallOp(op.callee, new_operands, new_result_types)
+    
+    # Map old results to new results, ignoring the deleted QuantumState results
+    replacement_results = []
+    new_res_idx = 0
+    for old_res in op.results:
+        if _is_qst(old_res.type):
+            replacement_results.append(None)
+        else:
+            replacement_results.append(new_call.results[new_res_idx])
+            new_res_idx += 1
+    
+    # Replace the op and update SSA users
+    Rewriter.replace_op(op, new_call, replacement_results, safe_erase=False)
 
 
 # ---------------------------------------------------------------------------
