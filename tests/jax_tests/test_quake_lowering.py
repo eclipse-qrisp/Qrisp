@@ -32,6 +32,7 @@ Coverage
 """
 
 import warnings
+import jax
 import pytest
 import re
 
@@ -591,6 +592,23 @@ def test_nested_q_fori_loop_control():
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
     #assert result == 10*[0] # Needs fix of issue #538
+
+# ---------------------------------------------------------------------------
+# Test classical control flow
+# ---------------------------------------------------------------------------
+
+def test_jax_fori_loop():
+    """Test that a JAX fori_loop is correctly lowered to MLIR and can be validated."""
+
+    def circuit():
+        result = jax.lax.fori_loop(0, 10, lambda i, x: x+i, 0)
+        return result
+
+    mlir = _lower(circuit)
+    assert_return_type(mlir, "i64")
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[45], f"Expected sum of 0..9 to be 45, got {result}"
 
 # ---------------------------------------------------------------------------
 # Test jrange loop
