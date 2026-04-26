@@ -505,14 +505,24 @@ def _lower_get_size(op, block: Block) -> None:
 
 
 def _lower_slice(op, block: Block) -> None:
-    """``jasp.slice %arr, %start, %end`` → ``quake.subveq %veq, %lo, %hi``."""
+    """``jasp.slice %arr, %start, %end`` → ``quake.subveq %veq, %lo, %hi-1``.
+
+    jasp.slice uses exclusive upper bound (Python-style: [start, end)),
+    while quake.subveq uses inclusive bounds [lo, hi].
+    """
     arr = op.operands[0]
     start_t = op.operands[1]
     end_t = op.operands[2]
 
     lo = _extract_scalar(start_t, i64, block, op)
     hi = _extract_scalar(end_t, i64, block, op)
-    subveq = SubVeqOp(arr, lo, hi)
+
+    # Convert exclusive upper bound → inclusive upper bound for quake.subveq
+    one_const = arith.ConstantOp(IntegerAttr.from_int_and_width(1, 64))
+    hi_inclusive = arith.SubiOp(hi, one_const.result)
+    block.insert_ops_before([one_const, hi_inclusive], op)
+
+    subveq = SubVeqOp(arr, lo, hi_inclusive.result)
     block.insert_ops_before([subveq], op)
 
     for r in op.results:

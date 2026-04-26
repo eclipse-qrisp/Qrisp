@@ -36,7 +36,7 @@ import jax
 import pytest
 import re
 
-from qrisp import QuantumVariable, QuantumBool, h, x, y, z, cx, rz, rx, s, t, measure, control
+from qrisp import QuantumVariable, QuantumBool, h, x, y, z, cx, rz, rx, s, t, measure, control, invert, conjugate
 from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop    
 
 try:
@@ -429,6 +429,47 @@ def test_measure_single_qubit_quantum_variable():
     assert result == 10*[1]
 
 # ---------------------------------------------------------------------------
+# Test invert and cojugate
+# ---------------------------------------------------------------------------
+
+def test_invert():
+
+    def circuit():
+
+        def inner(qv):
+            rx(0.5, qv[0])
+            z(qv[0])
+            h(qv[0])
+        
+        qv = QuantumVariable(1)
+
+        inner(qv)
+
+        with invert():
+            inner(qv)
+
+        return measure(qv)
+
+    mlir = _lower(circuit)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[0]
+
+
+def test_conjugate():
+
+    def circuit():
+        qv = QuantumVariable(1)
+        with conjugate(h)(qv[0]):
+            z(qv[0])
+        return measure(qv[0])
+
+    mlir = _lower(circuit)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[1]
+
+# ---------------------------------------------------------------------------
 # Test control
 # ---------------------------------------------------------------------------
 
@@ -668,7 +709,23 @@ def test_single_gate_application_quantum_variable():
     assert_return_type(mlir, "i64")
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
-    assert result == 10*[1023]
+    assert result == 10*[1023], f"Expected all qubits measured as 1 (1023), got {result}"
+
+
+def test_gate_application_quantum_variable_slice():
+    """Gate application function (x) applied to a slice of QuantumVariable"""
+
+    def circuit():
+        qv = QuantumVariable(10)
+        x(qv[:5])
+        return measure(qv)
+
+    mlir = _lower(circuit)
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i64")
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[31], f"Expected lower 5 qubits measured as 1 (31), got {result}"
 
 
 def test_gate_application_quantum_variable():
@@ -689,6 +746,9 @@ def test_gate_application_quantum_variable():
         assert gate in mlir, f"Expected {gate!r} in output"
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
+
+
+
 
 # ---------------------------------------------------------------------------
 # Test algorithms
