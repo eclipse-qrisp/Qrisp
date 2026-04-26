@@ -86,6 +86,7 @@ GATE_MAP: dict[str, GateInfo] = {
     # For mcx with N controls, all qubits except the last are controls.
     # This is handled specially in pass1; we include a sentinel entry here
     # so presence in the map indicates "supported".
+    "2cx":   GateInfo(num_controls=2, quake_gate="x"),
     "ccx":   GateInfo(num_controls=2, quake_gate="x"),
     "mcx":   GateInfo(num_controls=-1, quake_gate="x"),   # -1 = all-but-last
     "mcp":   GateInfo(num_controls=-1, quake_gate="r1",  num_params=1),
