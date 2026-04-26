@@ -36,7 +36,7 @@ import jax
 import pytest
 import re
 
-from qrisp import QuantumVariable, QuantumBool, h, x, y, z, cx, rz, rx, s, t, measure, control, invert, conjugate
+from qrisp import QuantumVariable, QuantumBool, h, mcx, x, y, z, cx, rz, rx, s, t, measure, control, invert, conjugate
 from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop    
 
 try:
@@ -747,8 +747,37 @@ def test_gate_application_quantum_variable():
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
 
+# ---------------------------------------------------------------------------
+# Test mcx
+# ---------------------------------------------------------------------------
 
+def test_mcx():
+    """Multi-controlled X gate (mcx) with variable number of controls."""
 
+    def circuit():
+        """Test mcx with 2 controls and 1 target."""
+        qv = QuantumVariable(3)
+        x(qv[0])
+        x(qv[1])
+        mcx(qv[:2], qv[2])
+        return measure(qv)
+
+    mlir = _lower(circuit)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[7], f"Expected target qubit flipped to 1 when both controls are 1 (7), got {result}"
+
+    def circuit():
+        """Test mcx with 9 controls and 1 target."""
+        qv = QuantumVariable(10)
+        x(qv[:9])
+        mcx(qv[:9], qv[9])
+        return measure(qv)
+
+    mlir = _lower(circuit)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[1023], f"Expected target qubit flipped to 1 when all 9 controls are 1 (1023), got {result}"
 
 # ---------------------------------------------------------------------------
 # Test algorithms
