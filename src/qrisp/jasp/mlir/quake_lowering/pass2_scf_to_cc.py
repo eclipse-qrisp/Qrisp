@@ -369,30 +369,67 @@ def _process_op(op, block: Block) -> None:
 # ===================================================================
 
 def _convert_scf_if(if_op, outer_block: Block) -> None:
-    """Convert ``scf.if`` → ``cc.if`` (no-result only)."""
+    """Convert ``scf.if`` → ``cc.if``, including the case with results."""
     for region in if_op.regions:
         _process_region(region)
 
-    if list(if_op.result_types):
-        warnings.warn(
-            "scf.if with results cannot be lowered to cc.if yet; "
-            "left in SCF form.",
-            stacklevel=4,
-        )
-        return
-
+    result_types = list(if_op.result_types)
     cond = if_op.cond
 
-    # After detaching regions[0], the former regions[1] shifts to index 0.
+    # --- No results: simple conversion (unchanged) ------------------------
+    if not result_types:
+        true_region = if_op.detach_region(if_op.regions[0])
+        false_region = if_op.detach_region(if_op.regions[0])
+
+        _replace_yield_with_continue(true_region)
+        _replace_yield_with_continue(false_region)
+
+        cc_if = CcIfOp(cond, true_region, false_region)
+        Rewriter.replace_op(if_op, cc_if, [], safe_erase=False)
+        return
+
+    # --- Has results: promote to memory slots -----------------------------
+
+    # 1. Create one uninitialized alloca per result (reuse _MemorySlot directly)
+    slots = []
+    for rt in result_types:
+        original_type = rt
+        alloca_type = rt
+        is_wrapped = False
+
+        if _is_rank0_tensor(alloca_type):
+            alloca_type = alloca_type.element_type
+            is_wrapped = True
+
+        alloca = CcAllocaOp(alloca_type)
+        outer_block.insert_ops_before([alloca], if_op)
+        slots.append(_MemorySlot(alloca, is_wrapped, original_type))
+
+    # 2. Detach regions
     true_region = if_op.detach_region(if_op.regions[0])
     false_region = if_op.detach_region(if_op.regions[0])
 
-    _replace_yield_with_continue(true_region)
-    _replace_yield_with_continue(false_region)
+    # 3. In each branch: replace scf.yield with stores + cc.continue
+    for region in (true_region, false_region):
+        for block in region.blocks:
+            for op in list(block.ops):
+                if op.name == "scf.yield":
+                    for operand, slot in zip(list(op.operands), slots):
+                        _store_to_slot(slot, operand, block, op)
+                    block.insert_ops_before([CcContinueOp()], op)
+                    Rewriter.erase_op(op, safe_erase=False)
 
+    # 4. Build cc.if (result-free)
     cc_if = CcIfOp(cond, true_region, false_region)
-    # replace_op erases the old op and releases operand references.
-    Rewriter.replace_op(if_op, cc_if, [], safe_erase=False)
+    outer_block.insert_ops_before([cc_if], if_op)
+
+    # 5. After cc.if, load from each slot to replace original results
+    for slot, res in zip(slots, _get_results(if_op)):
+        final_val = _load_from_slot(slot, outer_block, if_op)
+        _replace_all_uses_with(res, final_val)
+
+    # 6. Erase original scf.if
+    Rewriter.erase_op(if_op, safe_erase=False)
 
 
 def _replace_yield_with_continue(region: Region) -> None:
