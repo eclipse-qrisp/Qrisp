@@ -36,7 +36,7 @@ import jax
 import pytest
 import re
 
-from qrisp import QuantumVariable, QuantumBool, h, mcx, x, y, z, cx, rz, rx, s, t, measure, control, invert, conjugate
+from qrisp import QuantumVariable, QuantumBool, h, mcx, x, y, z, cx, rz, rx, s, sx, t, measure, control, invert, conjugate
 from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop    
 
 try:
@@ -337,6 +337,24 @@ def test_single_qubit_gates():
     mlir = _lower(circuit)
     for gate in ("quake.h", "quake.x", "quake.y", "quake.z", "quake.s", "quake.t"):
         assert gate in mlir, f"Expected {gate!r} in output"
+    validate_quake_mlir(mlir)
+
+
+def test_decomposed_gates_sx():
+    """Decomposed gates (sx, sx_dg) emit the expected sequence of quake ops."""
+
+    def circuit():
+        qv = QuantumVariable(2)
+        sx(qv[0])
+        with invert():
+            sx(qv[0])
+        return qv
+
+    mlir = _lower(circuit)
+    # Check that the expected sequence of ops for sx/sx_dg is present
+    assert "quake.h" in mlir, "Expected quake.h in output for sx decomposition"
+    assert "quake.s" in mlir, "Expected quake.s in output for sx decomposition"
+    assert "quake.s<adj>" in mlir, "Expected quake.s<adj> in output for sx_dg decomposition"
     validate_quake_mlir(mlir)
 
 

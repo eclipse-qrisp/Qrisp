@@ -40,19 +40,66 @@ The ``gate_type`` string stored in ``jasp.quantum_gate`` comes from
 """
 
 
-from typing import NamedTuple
+from dataclasses import dataclass, field
+from typing import Callable, Optional
 
 
-class GateInfo(NamedTuple):
-    """Lowering information for a single Jasp gate."""
+@dataclass(frozen=True)
+class GateInfo:
+    """Lowering information for a single Jasp gate.
+
+    For simple 1:1 mappings, set ``quake_gate`` and leave ``emit`` as None.
+    For multi-op decompositions, provide an ``emit`` callable.
+    """
 
     #: Number of leading qubit operands that are *control* qubits.
+    #: -1 = all-but-last (mcx family).
     num_controls: int
-    #: Quake gate name (without the ``quake.`` prefix) to emit.
-    quake_gate: str
+
+    #: Quake gate name (without ``quake.`` prefix).  Ignored when ``emit``
+    #: is provided.
+    quake_gate: str = ""
+
     #: Number of floating-point parameters expected.
     num_params: int = 0
 
+    #: Optional custom emitter.  Signature:
+    #:   (controls: list[SSAValue], params: list[SSAValue],
+    #:    targets: list[SSAValue]) -> list[Operation]
+    #: When provided, this is called *instead* of ``make_gate_op``.
+    emit: Optional[Callable] = field(default=None, repr=False, compare=False)
+
+
+# ===================================================================
+# Decomposition emitters
+# ===================================================================
+
+
+def _emit_sx(controls, params, targets):
+    """sx(q) = H(q) · S(q) · H(q)"""
+    from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+    t = targets[0]
+    return [
+        make_gate_op("h", [], [], [t]),
+        make_gate_op("s", controls, [], [t]),
+        make_gate_op("h", [], [], [t]),
+    ]
+
+
+def _emit_sx_dg(controls, params, targets):
+    """sx†(q) = H(q) · S†(q) · H(q)"""
+    from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+    t = targets[0]
+    return [
+        make_gate_op("h", [], [], [t]),
+        make_gate_op("s_dg", controls, [], [t]),
+        make_gate_op("h", [], [], [t]),
+    ]
+
+
+# ===================================================================
+# Gate map
+# ===================================================================
 
 # Jasp gate name → GateInfo
 GATE_MAP: dict[str, GateInfo] = {
@@ -65,6 +112,9 @@ GATE_MAP: dict[str, GateInfo] = {
     "t":     GateInfo(num_controls=0, quake_gate="t"),
     "s_dg":  GateInfo(num_controls=0, quake_gate="s<adj>"),
     "t_dg":  GateInfo(num_controls=0, quake_gate="t<adj>"),
+    # ---- 1-qubit, 0-param, DECOMPOSED -----------------------------------
+    "sx":     GateInfo(num_controls=0, quake_gate="", emit=_emit_sx),
+    "sx_dg":  GateInfo(num_controls=0, quake_gate="", emit=_emit_sx_dg),
     # ---- 1-qubit, 1-param ------------------------------------------------
     "rx":    GateInfo(num_controls=0, quake_gate="rx",  num_params=1),
     "ry":    GateInfo(num_controls=0, quake_gate="ry",  num_params=1),
@@ -87,6 +137,7 @@ GATE_MAP: dict[str, GateInfo] = {
     # This is handled specially in pass1; we include a sentinel entry here
     # so presence in the map indicates "supported".
     "2cx":   GateInfo(num_controls=2, quake_gate="x"),
+    "pt2cx": GateInfo(num_controls=2, quake_gate="x"),
     "ccx":   GateInfo(num_controls=2, quake_gate="x"),
     "mcx":   GateInfo(num_controls=-1, quake_gate="x"),   # -1 = all-but-last
     "mcp":   GateInfo(num_controls=-1, quake_gate="r1",  num_params=1),

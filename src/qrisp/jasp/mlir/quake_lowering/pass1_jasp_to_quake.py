@@ -601,22 +601,34 @@ def _lower_quantum_gate(op, block: Block) -> None:
         controls = qubit_operands[:num_ctrl]
         targets = qubit_operands[num_ctrl:]
 
-    # Extract float params from tensor<f64> if needed
-    final_params = []
-    for p in param_operands[: gate_info.num_params]:
-        final_params.append(p)
+    final_params = list(param_operands[:gate_info.num_params])
 
-    gate_op = make_gate_op(gate_name, controls, final_params, targets)
-    if gate_op is None:
-        warnings.warn(
-            f"Gate '{gate_name}' not in Quake gate class table – skipping.",
-            stacklevel=4,
-        )
-        _thread_qst(op)
-        _strip_qst_from_op(op, block)
-        return
+    # ---- Emit gate(s) ----------------------------------------------------
+    if gate_info.emit is not None:
+        # Multi-op decomposition path
+        ops = gate_info.emit(controls, final_params, targets)
+        if not ops:
+            warnings.warn(
+                f"Gate '{gate_name}' emit() returned empty list – skipping.",
+                stacklevel=4,
+            )
+            _thread_qst(op)
+            _strip_qst_from_op(op, block)
+            return
+        block.insert_ops_before(ops, op)
+    else:
+        # Single-op path
+        gate_op = make_gate_op(gate_name, controls, final_params, targets)
+        if gate_op is None:
+            warnings.warn(
+                f"Gate '{gate_name}' not in Quake gate class table – skipping.",
+                stacklevel=4,
+            )
+            _thread_qst(op)
+            _strip_qst_from_op(op, block)
+            return
+        block.insert_ops_before([gate_op], op)
 
-    block.insert_ops_before([gate_op], op)
     _thread_qst(op)
     Rewriter.erase_op(op)
 
