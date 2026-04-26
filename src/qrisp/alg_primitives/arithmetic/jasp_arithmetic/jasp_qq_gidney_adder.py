@@ -36,7 +36,7 @@ def jasp_qq_gidney_adder(a, b, ctrl=None):
         n = min(len(a), len(b))
         perform_incrementation = n < len(b)
     else:
-        n = jnp.min(jnp.array([a.size, b.size]))
+        n = jnp.minimum(a.size, b.size)
         perform_incrementation = n < b.size
 
     if ctrl is not None:
