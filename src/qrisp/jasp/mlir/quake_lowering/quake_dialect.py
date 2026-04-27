@@ -282,9 +282,9 @@ def _quake_gate_print(self: IRDLOperation, printer: Printer) -> None:  # noqa: N
 
     # Target qubits (always at least one)
     tgt_list = list(self.targets)
-    for t in tgt_list:
+    if tgt_list:
         printer.print_string(" ")
-        printer.print_ssa_value(t)
+        printer.print_list(tgt_list, printer.print_ssa_value)
 
     # Type signature: functional-type over ALL SSA operands (params, controls, targets)
     # This matches CUDA-Q's assemblyFormat which uses functional-type(operands, results).
