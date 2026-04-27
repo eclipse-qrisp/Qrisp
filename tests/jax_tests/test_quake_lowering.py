@@ -37,7 +37,7 @@ import operator
 import pytest
 import re
 
-from qrisp import QuantumVariable, QuantumBool, QuantumFloat, h, mcx, x, y, z, cx, rz, rx, s, swap, sx, t, measure, control, invert, conjugate
+from qrisp import QuantumVariable, QuantumBool, QuantumFloat, h, mcx, x, y, z, cx, rx, rxx, rz, rzz, s, swap, sx, t, xxyy, measure, control, invert, conjugate
 from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop    
 
 try:
@@ -269,10 +269,7 @@ def test_unsupported_gate_warning():
     # we test the gate_mapping module directly.
     from qrisp.jasp.mlir.quake_lowering.gate_mapping import get_gate_info
 
-    assert get_gate_info("rxx") is None, "rxx should not be in GATE_MAP"
     assert get_gate_info("gphase") is None, "gphase should not be in GATE_MAP"
-    assert get_gate_info("rzz") is None, "rzz should not be in GATE_MAP"
-    assert get_gate_info("xxyy") is None, "xxyy should not be in GATE_MAP"
 
 
 def test_parity_not_lowered():
@@ -356,6 +353,28 @@ def test_decomposed_gates_sx():
     assert "quake.h" in mlir, "Expected quake.h in output for sx decomposition"
     assert "quake.s" in mlir, "Expected quake.s in output for sx decomposition"
     assert "quake.s<adj>" in mlir, "Expected quake.s<adj> in output for sx_dg decomposition"
+    validate_quake_mlir(mlir)
+
+
+def test_decomposed_gates():
+    """Decomposed gates (rxx, rzz, xxyy) emit the expected sequence of quake ops."""
+    def circuit():
+        qv = QuantumVariable(4) 
+
+        rxx(0.3, qv[0], qv[1])
+        with invert():
+            rxx(0.3, qv[0], qv[1])
+
+        rzz(0.2, qv[1], qv[2])
+        with invert():
+            rzz(0.2, qv[1], qv[2])  
+
+        xxyy(0.5, 0.1, qv[0], qv[1])
+        with invert():
+            xxyy(0.5, 0.1, qv[0], qv[1])
+        
+        return qv
+    mlir = _lower(circuit)
     validate_quake_mlir(mlir)
 
 
