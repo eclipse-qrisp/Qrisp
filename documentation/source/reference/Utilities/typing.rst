@@ -10,7 +10,7 @@ Qrisp. Import them directly from the top-level package:
 
 .. code-block:: python
 
-    from qrisp import QubitLike, ClbitLike
+    from qrisp import QubitLike, ClbitLike, ScalarLike, NDArrayLike, ArrayLike
 
 ----
 
@@ -32,23 +32,28 @@ Qrisp. Import them directly from the top-level package:
    :class:`~qrisp.circuit.Clbit` object or by its integer index within the
    circuit. A list of either represents multiple classical bits.
 
+.. py:data:: ScalarLike
+   :type: TypeAlias
+   :value: int | float | complex | bool | np.generic
+
+   A Python or NumPy scalar value. Covers Python built-in scalars and all
+   NumPy scalar types (``np.float64``, ``np.int32``, etc. via ``np.generic``).
+   Variables typed as ``ScalarLike`` do not have a ``.shape`` attribute.
+
+.. py:data:: NDArrayLike
+   :type: TypeAlias
+   :value: np.ndarray | jax.Array | jax.core.Tracer
+
+   A multi-dimensional array value. Covers NumPy arrays, JAX arrays, and JAX
+   tracers. All types in this alias expose a ``.shape`` attribute, so Pylance
+   will not warn on attribute access when a parameter is typed as
+   ``NDArrayLike``.
+
 .. py:data:: ArrayLike
    :type: TypeAlias
-   :value: int | float | complex | bool | np.ndarray | np.generic | jax.Array | jax.core.Tracer
+   :value: ScalarLike | NDArrayLike
 
-   A type for all array-like numeric data accepted by Qrisp. Covers Python
-   scalars, NumPy arrays and scalars, JAX arrays, and JAX tracers. JAX tracers
-   appear whenever Qrisp code runs inside a Jasp-traced function (e.g. under
-   ``@jaspify`` or ``jax.jit``).
-
-   Because this alias contains only concrete types, ``isinstance`` checks work
-   at runtime:
-
-   .. code-block:: python
-
-       from qrisp import ArrayLike
-       import numpy as np
-
-       isinstance(3.14, ArrayLike)           # True
-       isinstance(np.array([1, 2, 3]), ArrayLike)  # True
-       isinstance(np.float32(1.0), ArrayLike)      # True
+   Union of :data:`ScalarLike` and :data:`NDArrayLike`. Use this when a
+   parameter accepts either scalars or arrays. Use the narrower aliases when
+   only one kind is expected, to avoid spurious Pylance warnings about missing
+   attributes such as ``.shape``.

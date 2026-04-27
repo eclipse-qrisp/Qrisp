@@ -24,7 +24,7 @@ from jax.core import Tracer
 
 from qrisp.circuit.clbit import Clbit
 from qrisp.circuit.qubit import Qubit
-from qrisp.typing import ArrayLike, ClbitLike, QubitLike
+from qrisp.typing import ArrayLike, ClbitLike, NDArrayLike, QubitLike, ScalarLike
 
 
 class TestQubitLike:
@@ -69,26 +69,79 @@ class TestClbitLike:
         assert not isinstance("not_a_clbit", ClbitLike)
 
 
-class TestArrayLike:
-    """Tests for the ArrayLike type alias.
-
-    ArrayLike contains only concrete types, so isinstance checks work for all
-    component types, including JAX tracers (using from jax.core import Tracer,
-    consistent with how the rest of the codebase checks for tracers).
-    """
-
-    # ------------------------------------------------------------------ #
-    # Python scalars                                                      #
-    # ------------------------------------------------------------------ #
+class TestScalarLike:
+    """Tests for the ScalarLike type alias."""
 
     @pytest.mark.parametrize("value", [1, 1.0, 1 + 0j, True])
     def test_python_scalars(self, value):
-        """Python scalar types (int, float, complex, bool) are instances of ArrayLike."""
-        assert isinstance(value, ArrayLike)
+        """Python built-in scalar types are instances of ScalarLike."""
+        assert isinstance(value, ScalarLike)
 
-    # ------------------------------------------------------------------ #
-    # NumPy                                                               #
-    # ------------------------------------------------------------------ #
+    @pytest.mark.parametrize(
+        "value",
+        [np.float32(1.0), np.int64(1), np.complex128(1 + 2j)],
+    )
+    def test_numpy_scalars(self, value):
+        """NumPy typed scalars (np.generic subclasses) are instances of ScalarLike."""
+        assert isinstance(value, ScalarLike)
+
+    def test_numpy_array_is_rejected(self):
+        """A NumPy ndarray is not a ScalarLike."""
+        assert not isinstance(np.array([1, 2, 3]), ScalarLike)
+
+    def test_jax_array_is_rejected(self):
+        """A JAX array is not a ScalarLike."""
+        assert not isinstance(jnp.array([1.0, 2.0]), ScalarLike)
+
+    def test_string_is_rejected(self):
+        """A plain string is not a ScalarLike."""
+        assert not isinstance("not_a_scalar", ScalarLike)
+
+
+class TestNDArrayLike:
+    """Tests for the NDArrayLike type alias."""
+
+    def test_numpy_array(self):
+        """A NumPy ndarray is an instance of NDArrayLike."""
+        assert isinstance(np.array([1, 2, 3]), NDArrayLike)
+
+    def test_jax_array(self):
+        """A concrete jax.Array is an instance of NDArrayLike."""
+        assert isinstance(jnp.array([1.0, 2.0, 3.0]), NDArrayLike)
+
+    def test_jax_tracer(self):
+        """JAX tracers encountered during tracing are instances of NDArrayLike.
+
+        Uses jax.make_jaxpr to trace a function, which passes abstract Tracer
+        objects as inputs. This is the same pattern used throughout Qrisp.
+        """
+        results = []
+
+        def f(x):
+            results.append(isinstance(x, Tracer))
+            results.append(isinstance(x, NDArrayLike))
+            return x
+
+        jax.make_jaxpr(f)(1.0)
+        assert results[0], "make_jaxpr did not produce a Tracer (test precondition failed)"
+        assert results[1], "Tracer is not an instance of NDArrayLike"
+
+    def test_python_scalar_is_rejected(self):
+        """A plain Python float is not an NDArrayLike."""
+        assert not isinstance(3.14, NDArrayLike)
+
+    def test_numpy_scalar_is_rejected(self):
+        """A NumPy scalar (np.float32) is not an NDArrayLike."""
+        assert not isinstance(np.float32(1.0), NDArrayLike)
+
+
+class TestArrayLike:
+    """Tests for the ArrayLike type alias (union of ScalarLike and NDArrayLike)."""
+
+    @pytest.mark.parametrize("value", [1, 1.0, 1 + 0j, True])
+    def test_python_scalars(self, value):
+        """Python scalar types are instances of ArrayLike."""
+        assert isinstance(value, ArrayLike)
 
     @pytest.mark.parametrize(
         "value",
@@ -103,10 +156,6 @@ class TestArrayLike:
     def test_numpy_arrays_and_scalars(self, value):
         """NumPy arrays and typed scalars are instances of ArrayLike."""
         assert isinstance(value, ArrayLike)
-
-    # ------------------------------------------------------------------ #
-    # JAX                                                                 #
-    # ------------------------------------------------------------------ #
 
     def test_jax_array(self):
         """A concrete jax.Array is an instance of ArrayLike."""
@@ -126,14 +175,8 @@ class TestArrayLike:
             return x
 
         jax.make_jaxpr(f)(1.0)
-        assert results[
-            0
-        ], "make_jaxpr did not produce a Tracer (test precondition failed)"
+        assert results[0], "make_jaxpr did not produce a Tracer (test precondition failed)"
         assert results[1], "Tracer is not an instance of ArrayLike"
-
-    # ------------------------------------------------------------------ #
-    # Rejection of non-array types                                        #
-    # ------------------------------------------------------------------ #
 
     @pytest.mark.parametrize("value", ["string", [1, 2, 3], {"key": 1}, None, (1, 2)])
     def test_non_array_types_are_rejected(self, value):

@@ -27,7 +27,7 @@ import numpy as np
 from qrisp.circuit.clbit import Clbit
 from qrisp.circuit.qubit import Qubit
 
-__all__ = ["QubitLike", "ClbitLike", "ArrayLike"]
+__all__ = ["QubitLike", "ClbitLike", "ScalarLike", "NDArrayLike", "ArrayLike"]
 
 QubitLike: TypeAlias = Qubit | int | list
 """Accepted as a qubit specifier in circuit methods and gate functions.
@@ -45,17 +45,49 @@ A single classical bit can be identified either by its
 circuit. A list of either represents multiple classical bits.
 """
 
-ArrayLike: TypeAlias = (
-    int | float | complex | bool | np.ndarray | np.generic | jax.Array | jax.core.Tracer
-)
-"""A type for all array-like numeric data accepted by Qrisp.
+ScalarLike: TypeAlias = int | float | complex | bool | np.generic
+"""A Python or NumPy scalar value.
 
-Covers Python scalars, NumPy arrays and scalars, JAX arrays, and JAX tracers.
-JAX tracers appear whenever Qrisp code runs inside a Jasp-traced function
-(e.g. under ``@jaspify`` or ``jax.jit``).
+Covers Python built-in scalars (``int``, ``float``, ``complex``, ``bool``) and
+all NumPy scalar types (``np.float64``, ``np.int32``, etc. via ``np.generic``).
+Variables typed as ``ScalarLike`` do not have a ``.shape`` attribute.
 
-Because this alias contains only concrete types, ``isinstance`` checks work
-at runtime:
+Examples
+--------
+
+>>> from qrisp import ScalarLike
+>>> import numpy as np
+>>> isinstance(3.14, ScalarLike)
+True
+>>> isinstance(np.float32(1.0), ScalarLike)
+True
+"""
+
+NDArrayLike: TypeAlias = np.ndarray | jax.Array | jax.core.Tracer
+"""A multi-dimensional array value.
+
+Covers NumPy arrays, JAX arrays, and JAX tracers (the latter appear when Qrisp
+code runs inside a Jasp-traced function, e.g. under ``@jaspify`` or
+``jax.jit``). All types in this alias expose a ``.shape`` attribute, so
+Pylance will not warn on attribute access when a parameter is typed as
+``NDArrayLike``.
+
+Examples
+--------
+
+>>> from qrisp import NDArrayLike
+>>> import numpy as np
+>>> isinstance(np.array([1, 2, 3]), NDArrayLike)
+True
+"""
+
+ArrayLike: TypeAlias = ScalarLike | NDArrayLike
+"""A scalar or multi-dimensional array value.
+
+Union of :data:`ScalarLike` and :data:`NDArrayLike`. Use this type when a
+parameter accepts either scalars or arrays. Use the narrower aliases when only
+one kind is expected, to avoid spurious Pylance warnings about missing
+attributes such as ``.shape``.
 
 Examples
 --------

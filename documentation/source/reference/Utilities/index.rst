@@ -41,8 +41,8 @@ Utilities
      - Tests if an inplace adder is working correctly.
    * - :data:`~qrisp.QubitLike`, :data:`~qrisp.ClbitLike`
      - Type aliases for qubit and classical bit specifiers.
-   * - :data:`~qrisp.ArrayLike`
-     - Type alias for all array-like numeric data accepted by Qrisp, including JAX arrays and tracers.
+   * - :data:`~qrisp.ScalarLike`, :data:`~qrisp.NDArrayLike`, :data:`~qrisp.ArrayLike`
+     - Type aliases for scalar values, multi-dimensional arrays, and their union.
 
 .. toctree::
    :hidden:
