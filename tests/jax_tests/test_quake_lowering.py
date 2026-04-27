@@ -855,6 +855,27 @@ def test_bell_circuit_full_format():
     validate_quake_mlir(mlir)
 
 # ---------------------------------------------------------------------------
+# Test qrisp cudaq kernel decorator
+# ---------------------------------------------------------------------------
+
+def test_qrisp_cudaq_kernel_decorator():
+    """Test that the @qrisp_cudaq_kernel decorator compiles a function to MLIR and runs it on CUDA-Q."""
+
+    from qrisp import QuantumVariable, h, cx, measure, x
+    from qrisp.jasp.mlir.quake_lowering import qrisp_cudaq_kernel
+
+    @qrisp_cudaq_kernel(shots=10)
+    def bell():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        return measure(qv)
+
+    # When `bell()` is called, it will be compiled to MLIR and executed on CUDA-Q.
+    result = bell()
+    print(result)
+
+# ---------------------------------------------------------------------------
 # Test QuantumFloat
 # ---------------------------------------------------------------------------
 

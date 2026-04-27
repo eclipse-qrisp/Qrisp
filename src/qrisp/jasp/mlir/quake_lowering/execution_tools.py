@@ -52,6 +52,7 @@
 #    valid kernel object that the C++ backend can safely execute.
 # ====================================================================== #
 
+import functools
 import platform
 import re
 import sys
@@ -61,6 +62,9 @@ import cudaq
 from cudaq import cudaq_runtime
 from cudaq.mlir.ir import Module, NoneType
 from cudaq.mlir.dialects import quake, cc
+
+from qrisp.jasp import make_jaspr
+from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake
 
 
 # ------------------------------------------------------------------ #
@@ -374,3 +378,65 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
         None,   # noise_model
         0       # qpu_id
     )
+
+
+# ------------------------------------------------------------------ #
+# Decorator for user-friendly API
+# ------------------------------------------------------------------ #
+
+
+def qrisp_cudaq_kernel(shots=100):
+    """
+    Decorator that compiles a Qrisp function to Quake MLIR 
+    and executes it on a CUDA-Q backend.
+
+    Parameters
+    ----------
+    shots : int
+        The number of shots to execute the kernel for. Default is 100.
+
+    Returns
+    -------
+    function
+        A decorated function that, when called, compiles the original
+        function to Quake MLIR and executes it on CUDA-Q, returning the results.
+
+    Examples
+    --------
+    Example usage of `@qrisp_cudaq_kernel`:
+
+    ::
+
+        from qrisp import QuantumVariable, h, cx, measure, x
+        from qrisp.jasp.mlir.quake_lowering import qrisp_cudaq_kernel
+
+        @qrisp_cudaq_kernel(shots=10)
+        def bell():
+            qv = QuantumVariable(2)
+            h(qv[0])
+            cx(qv[0], qv[1])
+            return measure(qv)
+
+        # When `bell()` is called, it will be compiled to MLIR and executed on CUDA-Q.
+        result = bell()
+        print(result) 
+        # [0, 0, 3, 0, 3, 0, 3, 3, 0, 0]  
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            
+            try:
+                mlir_str = str(jaspr_to_quake(make_jaspr(func)(*args, **kwargs)))
+            except Exception as e:
+                raise RuntimeError(f"Failed to compile Qrisp function '{func.__name__}' to MLIR: {e}")
+
+            try:
+                results = run_quake_mlir(mlir_str, shots=shots)
+            except Exception as e:
+                raise RuntimeError(f"CUDA-Q execution failed for '{func.__name__}': {e}")
+
+            return results
+            
+        return wrapper
+    return decorator
