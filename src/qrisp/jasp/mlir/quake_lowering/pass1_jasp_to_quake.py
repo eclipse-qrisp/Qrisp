@@ -505,26 +505,55 @@ def _lower_get_size(op, block: Block) -> None:
 
 
 def _lower_slice(op, block: Block) -> None:
-    """``jasp.slice %arr, %start, %end`` → ``quake.subveq %veq, %lo, %hi-1``.
+    """``jasp.slice %arr, %start, %end`` → ``quake.subveq %veq, %lo, %hi_inclusive``.
 
     jasp.slice uses exclusive upper bound (Python-style: [start, end)),
     while quake.subveq uses inclusive bounds [lo, hi].
+
+    Assumptions:
+    - start index is already a non-negative absolute index.
+    - end index may be negative (Python slice semantics).
     """
     arr = op.operands[0]
     start_t = op.operands[1]
     end_t = op.operands[2]
 
+    # start is already an absolute i64 index
     lo = _extract_scalar(start_t, i64, block, op)
-    hi = _extract_scalar(end_t, i64, block, op)
 
-    # Convert exclusive upper bound → inclusive upper bound for quake.subveq
-    one_const = arith.ConstantOp(IntegerAttr.from_int_and_width(1, 64))
-    hi_inclusive = arith.SubiOp(hi, one_const.result)
-    block.insert_ops_before([one_const, hi_inclusive], op)
+    # end may be negative
+    hi_raw = _extract_scalar(end_t, i64, block, op)
 
+    # Get length of the veq: len = quake.veq_size %arr
+    veq_size = VeqSizeOp(arr)
+
+    # Constants 0 and 1
+    zero = arith.ConstantOp(IntegerAttr.from_int_and_width(0, 64))
+    one  = arith.ConstantOp(IntegerAttr.from_int_and_width(1, 64))
+
+    # hi_raw < 0 ?
+    hi_is_neg = arith.CmpiOp(hi_raw, zero.result, "slt")
+
+    # hi_plus_len = hi_raw + len
+    hi_plus_len = arith.AddiOp(hi_raw, veq_size.result)
+
+    # end_abs = hi_is_neg ? (hi_raw + len) : hi_raw
+    hi_abs = arith.SelectOp(hi_is_neg.result, hi_plus_len.result, hi_raw)
+
+    # Convert exclusive upper bound → inclusive upper bound: hi_inclusive = end_abs - 1
+    hi_inclusive = arith.SubiOp(hi_abs.result, one.result)
+
+    # Insert all arithmetic before the jasp.slice op
+    block.insert_ops_before(
+        [veq_size, zero, one, hi_is_neg, hi_plus_len, hi_abs, hi_inclusive],
+        op,
+    )
+
+    # Lower to quake.subveq
     subveq = SubVeqOp(arr, lo, hi_inclusive.result)
     block.insert_ops_before([subveq], op)
 
+    # Replace jasp slice result with the quake.subveq result
     for r in op.results:
         if _is_qubit_array(r.type):
             _replace_all_uses_with(r, subveq.result)

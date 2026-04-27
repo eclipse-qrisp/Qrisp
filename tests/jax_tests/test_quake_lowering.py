@@ -778,6 +778,19 @@ def test_gate_application_quantum_variable_slice():
     result = run_quake_mlir(mlir, shots=10)
     assert result == 10*[31], f"Expected lower 5 qubits measured as 1 (31), got {result}"
 
+    """Gate application function (x) applied to a slice of QuantumVariable with negative upper bound"""
+    def circuit():
+        qv = QuantumVariable(10)
+        x(qv[:-5])
+        return measure(qv)
+
+    mlir = _lower(circuit)
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert_return_type(mlir, "i64")
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[31], f"Expected lower 5 qubits measured as 1 (31), got {result}"
+
 
 def test_gate_application_quantum_variable():
     """Gate application functions (h,x,y,z,s,t) applied to QuantumVariable"""
