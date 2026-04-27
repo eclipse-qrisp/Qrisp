@@ -25,5 +25,6 @@ from qrisp.circuit.passes.gray_synth_toffoli import gray_synth_toffoli, is_toffo
 from qrisp.circuit.passes.remove_barriers import remove_barriers
 from qrisp.circuit.passes.resolve_swaps import resolve_swaps
 from qrisp.circuit.passes.reverse_parallelize import reverse_parallelize
+from qrisp.circuit.passes.manual_layout import manual_layout
 
-__all__ = ["PassManager", "arange_swaps", "cancel_zero_controls", "commute_swaps", "convert_to_cz", "gray_synth_toffoli", "is_toffoli", "remove_barriers", "resolve_swaps", "reverse_parallelize"]
+__all__ = ["PassManager", "arange_swaps", "cancel_zero_controls", "commute_swaps", "convert_to_cz", "gray_synth_toffoli", "is_toffoli", "manual_layout", "remove_barriers", "resolve_swaps", "reverse_parallelize"]
