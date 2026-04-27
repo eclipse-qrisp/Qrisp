@@ -19,5 +19,6 @@
 from qrisp.circuit.passes.pass_manager import PassManager
 from qrisp.circuit.passes.arange_swaps import arange_swaps
 from qrisp.circuit.passes.cancel_zero_controls import cancel_zero_controls
+from qrisp.circuit.passes.commute_swaps import commute_swaps
 
-__all__ = ["PassManager", "arange_swaps", "cancel_zero_controls"]
+__all__ = ["PassManager", "arange_swaps", "cancel_zero_controls", "commute_swaps"]
