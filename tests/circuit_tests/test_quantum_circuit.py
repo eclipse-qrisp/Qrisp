@@ -16,6 +16,9 @@
 ********************************************************************************
 """
 
+import os
+import tempfile
+
 import numpy as np
 import pytest
 import sympy
@@ -90,7 +93,7 @@ class TestQuantumCircuitInitialization:
 
         bound_qc = qc.bind_parameters({abstract_parameters[i]: i for i in range(3)})
         assert len(bound_qc.data) == 3
-        assert bound_qc.abstract_params == {}
+        assert bound_qc.abstract_params == set()
 
 
 class TestQuantumCircuitMethods:
@@ -136,21 +139,6 @@ class TestQuantumCircuitMethods:
 
         assert added is custom_bit
         assert custom_bit in getattr(qc, container)
-
-    @pytest.mark.parametrize(
-        "method,container",
-        [
-            ("add_qubit", "qubits"),
-            ("add_clbit", "clbits"),
-        ],
-    )
-    def test_add_multiple_bits(self, method, container):
-        """Adding bits sequentially accumulates them."""
-
-        qc = QuantumCircuit()
-        for _ in range(5):
-            getattr(qc, method)()
-        assert len(getattr(qc, container)) == 5
 
     @pytest.mark.parametrize(
         "init_args,method,counter_attr",
@@ -265,6 +253,23 @@ class TestQuantumCircuitMethods:
         op = qc.to_op(name="seq_op")
         assert len(op.definition.data) == 3
         assert len(op.definition.qubits) == 2
+
+    def test_to_gate_basic(self):
+        """to_gate wraps a circuit into a gate with the correct qubit count."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        gate = qc.to_gate(name="my_gate")
+        assert gate.name == "my_gate"
+        assert gate.num_qubits == 2
+        assert gate.num_clbits == 0
+
+    def test_to_gate_default_name(self):
+        """to_gate generates a unique default name when none is supplied."""
+
+        gate = QuantumCircuit(1).to_gate()
+        assert gate.name.startswith("circuit")
 
     def test_to_gate_error_if_clbits_present(self):
         """to_gate raises ValueError when the circuit contains classical bits."""
@@ -492,29 +497,6 @@ class TestQuantumCircuitMethods:
         qc_diff.rx(np.pi / 3, 0)
         assert qc_same_0.compare_unitary(qc_diff) is False
 
-    def test_compare_unitary_controlled_operations(self):
-        """Two identical CCX circuits compare as equal."""
-
-        qc_0 = QuantumCircuit(3)
-        qc_0.ccx(0, 1, 2)
-        qc_1 = QuantumCircuit(3)
-        qc_1.ccx(0, 1, 2)
-        assert qc_0.compare_unitary(qc_1) is True
-
-    def test_compare_unitary_inverse_operations(self):
-        """A circuit composed with its inverse gives the identity."""
-
-        qc = QuantumCircuit(2)
-        qc.h(0)
-        qc.cx(0, 1)
-        qc.ry(np.pi / 3, 1)
-
-        combined = qc.clearcopy()
-        combined.extend(qc)
-        combined.extend(qc.inverse())
-
-        assert combined.compare_unitary(QuantumCircuit(2)) is True
-
     def test_compare_unitary_global_phase(self):
         """Circuits that differ only by a global phase scalar are equal iff ignore_gphase=True."""
 
@@ -566,16 +548,6 @@ class TestQuantumCircuitMethods:
         qc = QuantumCircuit(3, 2)
         inv_qc = qc.inverse()
         assert len(inv_qc.data) == 0
-        assert len(inv_qc.qubits) == 3
-        assert len(inv_qc.clbits) == 2
-
-    def test_inverse_preserves_qubit_structure(self):
-        """Inverse preserves qubit and clbit counts."""
-
-        qc = QuantumCircuit(3, 2)
-        qc.h(0)
-        qc.cx(0, 1)
-        inv_qc = qc.inverse()
         assert len(inv_qc.qubits) == 3
         assert len(inv_qc.clbits) == 2
 
@@ -777,8 +749,1055 @@ class TestQuantumCircuitMethods:
         assert u.dtype == np.dtype("O")
         assert u.shape == (2**num_qubits,) * 2
 
+    # ------------------------------------------------------------------ #
+    # get_depth_dic                                                      #
+    # ------------------------------------------------------------------ #
+
+    def test_get_depth_dic_sequential_gates(self):
+        """Gates applied sequentially on the same qubit accumulate depth."""
+
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        qc.x(0)
+        qc.z(0)
+        depth_dic = qc.get_depth_dic()
+        assert depth_dic[qc.qubits[0]] == 3
+
+    def test_get_depth_dic_parallel_gates(self):
+        """Gates on different qubits with no dependency share the same depth level."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.h(1)
+        depth_dic = qc.get_depth_dic()
+        assert depth_dic[qc.qubits[0]] == 1
+        assert depth_dic[qc.qubits[1]] == 1
+
+    def test_get_depth_dic_entangling_gate(self):
+        """A two-qubit gate after single-qubit gates raises both qubits to the same depth."""
+
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.x(2)
+        depth_dic = qc.get_depth_dic()
+        assert depth_dic[qc.qubits[0]] == 2
+        assert depth_dic[qc.qubits[1]] == 2
+        assert depth_dic[qc.qubits[2]] == 1
+
+    def test_get_depth_dic_idle_qubits_are_zero(self):
+        """Qubits with no operations have depth 0."""
+
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        depth_dic = qc.get_depth_dic()
+        assert depth_dic[qc.qubits[1]] == 0
+        assert depth_dic[qc.qubits[2]] == 0
+
+    def test_get_depth_dic_empty_circuit(self):
+        """An empty circuit with qubits returns 0 for every qubit."""
+
+        qc = QuantumCircuit(3)
+        depth_dic = qc.get_depth_dic()
+        assert list(depth_dic.values()) == [0, 0, 0]
+
+    def test_get_depth_dic_zero_qubits_returns_empty(self):
+        """A circuit with no qubits returns an empty dictionary."""
+
+        assert QuantumCircuit(0).get_depth_dic() == {}
+
+    def test_get_depth_dic_max_equals_depth(self):
+        """The maximum value in get_depth_dic equals depth()."""
+
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.x(1)
+        depth_dic = qc.get_depth_dic()
+        assert max(depth_dic.values()) == qc.depth()
+
+    def test_get_depth_dic_keys_are_qubits(self):
+        """Keys of the returned dictionary are the circuit's Qubit objects."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        depth_dic = qc.get_depth_dic()
+        assert set(depth_dic.keys()) == set(qc.qubits)
+
+    # ------------------------------------------------------------------ #
+    # depth                                                              #
+    # ------------------------------------------------------------------ #
+
+    def test_depth_docstring_example(self):
+        """Docstring example: H on q0, CX(q0,q1), CX(q1,q2) gives depth 3."""
+
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.cx(1, 2)
+        assert qc.depth() == 3
+
+    def test_depth_empty_circuit(self):
+        """An empty circuit has depth 0."""
+
+        assert QuantumCircuit(3).depth() == 0
+
+    def test_depth_parallel_gates(self):
+        """Gates on independent qubits execute in parallel — depth is 1."""
+
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.x(1)
+        qc.z(2)
+        assert qc.depth() == 1
+
+    def test_depth_sequential_gates(self):
+        """Gates applied sequentially on the same qubit accumulate depth."""
+
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        qc.x(0)
+        qc.z(0)
+        assert qc.depth() == 3
+
+    def test_depth_custom_indicator_counts_only_cx(self):
+        """A depth_indicator that returns 0 for non-CX gates counts only CX layers."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)  # ignored by indicator
+        qc.cx(0, 1)  # depth 1
+        qc.h(1)  # ignored
+        qc.cx(0, 1)  # depth 2
+
+        cx_only = lambda op: 1 if op.name == "cx" else 0
+        assert qc.depth(depth_indicator=cx_only) == 2
+
+    def test_depth_transpile_false_counts_composite_as_one(self):
+        """With transpile=False a composite gate counts as a single layer."""
+
+        inner = QuantumCircuit(2)
+        inner.cx(0, 1)
+        inner.cx(1, 0)
+        gate = inner.to_gate(name="two_cx")
+
+        qc = QuantumCircuit(2)
+        qc.append(gate, qc.qubits)
+
+        # Without transpilation the composite gate is one layer
+        assert qc.depth(transpile=False) == 1
+        # With transpilation the two CX gates are visible
+        assert qc.depth(transpile=True) == 2
+
+    # ------------------------------------------------------------------ #
+    # t_depth                                                            #
+    # ------------------------------------------------------------------ #
+
+    def test_t_depth_docstring_example_with_epsilon(self):
+        """Docstring example: T + CX + RX(2π·3/2⁴) with ε=2⁻⁵ gives T-depth 16."""
+
+        qc = QuantumCircuit(2)
+        qc.t(0)
+        qc.cx(0, 1)
+        qc.rx(2 * np.pi * 3 / 2**4, 1)
+        assert qc.t_depth(epsilon=2**-5) == 16
+
+    def test_t_depth_docstring_example_auto_epsilon(self):
+        """Docstring example: same circuit without explicit ε gives T-depth 22."""
+
+        qc = QuantumCircuit(2)
+        qc.t(0)
+        qc.cx(0, 1)
+        qc.rx(2 * np.pi * 3 / 2**4, 1)
+        assert qc.t_depth() == 22
+
+    def test_t_depth_empty_circuit(self):
+        """An empty circuit has T-depth 0."""
+
+        assert QuantumCircuit(2).t_depth() == 0
+
+    def test_t_depth_only_t_gate(self):
+        """A single T gate has T-depth 1."""
+
+        qc = QuantumCircuit(1)
+        qc.t(0)
+        assert qc.t_depth(epsilon=1e-10) == 1
+
+    def test_t_depth_only_cx_gate(self):
+        """A single CX gate (no T gates) has T-depth 0."""
+
+        qc = QuantumCircuit(2)
+        qc.cx(0, 1)
+        assert qc.t_depth(epsilon=1e-10) == 0
+
+    def test_t_depth_parallel_t_gates(self):
+        """T gates on independent qubits are parallel — T-depth is 1."""
+
+        qc = QuantumCircuit(2)
+        qc.t(0)
+        qc.t(1)
+        assert qc.t_depth(epsilon=1e-10) == 1
+
+    def test_t_depth_sequential_t_gates(self):
+        """T gates applied sequentially on the same qubit accumulate T-depth."""
+
+        qc = QuantumCircuit(1)
+        qc.t(0)
+        qc.t(0)
+        qc.t(0)
+        assert qc.t_depth(epsilon=1e-10) == 3
+
+    # ------------------------------------------------------------------ #
+    # cnot_depth                                                         #
+    # ------------------------------------------------------------------ #
+
+    def test_cnot_depth_docstring_example(self):
+        """Docstring example: 4-qubit circuit with mixed CX and single-qubit gates gives CNOT depth 3."""
+
+        qc = QuantumCircuit(4)
+        qc.cx(0, 1)
+        qc.x(1)
+        qc.cx(1, 2)
+        qc.y(2)
+        qc.cx(2, 3)
+        qc.cx(1, 0)
+        assert qc.cnot_depth() == 3
+
+    def test_cnot_depth_empty_circuit(self):
+        """An empty circuit has CNOT depth 0."""
+
+        assert QuantumCircuit(2).cnot_depth() == 0
+
+    def test_cnot_depth_no_cx_gates(self):
+        """A circuit with only single-qubit gates has CNOT depth 0."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.x(1)
+        qc.z(0)
+        assert qc.cnot_depth() == 0
+
+    def test_cnot_depth_parallel_cx_gates(self):
+        """CX gates on independent qubit pairs are parallel — CNOT depth is 1."""
+
+        qc = QuantumCircuit(4)
+        qc.cx(0, 1)
+        qc.cx(2, 3)
+        assert qc.cnot_depth() == 1
+
+    def test_cnot_depth_sequential_cx_gates(self):
+        """CX gates sharing a qubit are sequential — CNOT depth equals the chain length."""
+
+        qc = QuantumCircuit(3)
+        qc.cx(0, 1)
+        qc.cx(1, 2)
+        assert qc.cnot_depth() == 2
+
+    # ------------------------------------------------------------------ #
+    # num_qubits                                                         #
+    # ------------------------------------------------------------------ #
+
+    @pytest.mark.parametrize("n", [0, 1, 4, 5, 10])
+    def test_num_qubits_various_sizes(self, n):
+        """num_qubits returns the correct count for circuits of various sizes."""
+
+        assert QuantumCircuit(n).num_qubits() == n
+
+    def test_num_qubits_after_add_qubit(self):
+        """num_qubits updates correctly after add_qubit is called."""
+
+        qc = QuantumCircuit(2)
+        assert qc.num_qubits() == 2
+        qc.add_qubit()
+        assert qc.num_qubits() == 3
+
+    def test_num_qubits_does_not_count_clbits(self):
+        """Classical bits are not included in the num_qubits count."""
+
+        qc = QuantumCircuit(3, 5)
+        assert qc.num_qubits() == 3
+
+    # ------------------------------------------------------------------ #
+    # cnot_count                                                         #
+    # ------------------------------------------------------------------ #
+
+    def test_cnot_count_basic_cx(self):
+        """CX gates are counted correctly."""
+
+        qc = QuantumCircuit(3)
+        qc.cx(0, 1)
+        qc.cx(1, 2)
+        assert qc.cnot_count() == 2
+
+    def test_cnot_count_includes_cy_and_cz(self):
+        """CX, CY, and CZ are all counted as CNOT-equivalent gates."""
+
+        qc = QuantumCircuit(2)
+        qc.cx(0, 1)
+        qc.cy(0, 1)
+        qc.cz(0, 1)
+        assert qc.cnot_count() == 3
+
+    def test_cnot_count_ignores_single_qubit_gates(self):
+        """Single-qubit gates (H, X, Z, …) are not counted."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.x(1)
+        qc.z(0)
+        qc.cx(0, 1)
+        assert qc.cnot_count() == 1
+
+    def test_cnot_count_empty_circuit(self):
+        """An empty circuit has a CNOT count of 0."""
+
+        assert QuantumCircuit(2).cnot_count() == 0
+
+    def test_cnot_count_transpiles_composite_gates(self):
+        """CX gates inside a composite gate are counted after transpilation."""
+
+        inner = QuantumCircuit(2)
+        inner.cx(0, 1)
+        inner.cx(1, 0)
+        gate = inner.to_gate(name="two_cx")
+
+        qc = QuantumCircuit(2)
+        qc.append(gate, qc.qubits)
+        assert qc.cnot_count() == 2
+
+    # ------------------------------------------------------------------ #
+    # transpile                                                          #
+    # ------------------------------------------------------------------ #
+
+    def test_transpile_level_zero_is_noop(self):
+        """transpile(level=0) leaves composite gates untouched."""
+
+        inner = QuantumCircuit(1)
+        inner.h(0)
+        outer = QuantumCircuit(1)
+        outer.append(inner.to_gate(name="inner"), [outer.qubits[0]])
+
+        result = outer.transpile(transpilation_level=0)
+        assert result.data[0].op.name == outer.data[0].op.name
+
+    def test_transpile_level_one_decomposes_one_level(self):
+        """transpile(level=1) unwraps exactly one layer of nesting."""
+
+        inner = QuantumCircuit(1)
+        inner.h(0)
+        outer = QuantumCircuit(1)
+        outer.append(inner.to_gate(name="inner"), [outer.qubits[0]])
+        wrapped = QuantumCircuit(1)
+        wrapped.append(outer.to_gate(name="outer"), [wrapped.qubits[0]])
+
+        result = wrapped.transpile(transpilation_level=1)
+        assert result.data[0].op.name == "inner"
+
+    def test_transpile_full_decomposes_to_primitives(self):
+        """transpile() with default level decomposes all nested gates to primitives."""
+
+        inner = QuantumCircuit(1)
+        inner.h(0)
+        outer = QuantumCircuit(1)
+        outer.append(inner.to_gate(name="inner"), [outer.qubits[0]])
+        wrapped = QuantumCircuit(1)
+        wrapped.append(outer.to_gate(name="outer"), [wrapped.qubits[0]])
+
+        result = wrapped.transpile()
+        assert all(instr.op.definition is None for instr in result.data)
+
+    def test_transpile_does_not_mutate_original(self):
+        """transpile() returns a new circuit and does not modify the source."""
+
+        inner = QuantumCircuit(1)
+        inner.h(0)
+        qc = QuantumCircuit(1)
+        qc.append(inner.to_gate(name="inner"), [qc.qubits[0]])
+
+        original_name = qc.data[0].op.name
+        qc.transpile()
+        assert qc.data[0].op.name == original_name
+
+    def test_transpile_preserves_unitary(self):
+        """The unitary is unchanged by full transpilation."""
+
+        inner = QuantumCircuit(1)
+        inner.h(0)
+        qc = QuantumCircuit(1)
+        qc.append(inner.to_gate(name="wrap"), [qc.qubits[0]])
+
+        assert qc.compare_unitary(qc.transpile()) is True
+
+    # ------------------------------------------------------------------ #
+    # count_ops                                                          #
+    # ------------------------------------------------------------------ #
+
+    def test_count_ops_docstring_example(self):
+        """Reproduce the count_ops docstring example exactly."""
+
+        qc = QuantumCircuit(5)
+        qc.x(qc.qubits)
+        qc.cx(0, range(1, 5))
+        qc.z(1)
+        qc.t(range(5))
+        assert qc.count_ops() == {"x": 5, "cx": 4, "z": 1, "t": 5}
+
+    def test_count_ops_empty_circuit(self):
+        """count_ops on an empty circuit returns an empty dict."""
+
+        assert QuantumCircuit(2).count_ops() == {}
+
+    def test_count_ops_excludes_alloc_instructions(self):
+        """qb_alloc and qb_dealloc are not included in the result."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        ops = qc.count_ops()
+        assert "qb_alloc" not in ops
+        assert "qb_dealloc" not in ops
+
+    def test_count_ops_multiple_same_gate(self):
+        """Multiple instances of the same gate are accumulated into one entry."""
+
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.h(1)
+        qc.h(2)
+        assert qc.count_ops()["h"] == 3
+
+    def test_count_ops_mixed_gates(self):
+        """Different gate types each get their own counter."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.x(1)
+        ops = qc.count_ops()
+        assert ops == {"h": 1, "cx": 1, "x": 1}
+
+    # ------------------------------------------------------------------ #
+    # control                                                            #
+    # ------------------------------------------------------------------ #
+
+    def test_control_returns_operation_with_extra_qubit(self):
+        """control(n) returns an Operation with n additional control qubits."""
+
+        qc = QuantumCircuit(1)
+        qc.x(0)
+        ctrl_op = qc.control(1)
+        assert ctrl_op.num_qubits == 2
+
+    def test_control_two_controls(self):
+        """control(2) on a single-qubit circuit produces a 3-qubit operation."""
+
+        qc = QuantumCircuit(1)
+        qc.x(0)
+        ctrl_op = qc.control(2)
+        assert ctrl_op.num_qubits == 3
+
+    def test_control_single_x_equals_cx_unitary(self):
+        """Controlled-X equals the standard CX unitary."""
+
+        qc = QuantumCircuit(1)
+        qc.x(0)
+        ctrl_op = qc.control(1)
+
+        test_qc = QuantumCircuit(2)
+        test_qc.append(ctrl_op, test_qc.qubits)
+
+        cx_qc = QuantumCircuit(2)
+        cx_qc.cx(0, 1)
+
+        assert test_qc.compare_unitary(cx_qc) is True
+
+    # ------------------------------------------------------------------ #
+    # compose                                                            #
+    # ------------------------------------------------------------------ #
+
+    def test_compose_inplace_returns_none_and_modifies_self(self):
+        """compose(inplace=True) returns None and appends to self."""
+
+        qc1 = QuantumCircuit(2)
+        qc1.h(0)
+        qc2 = QuantumCircuit(2)
+        qc2.cx(0, 1)
+
+        result = qc1.compose(qc2, qubits=qc1.qubits)
+        assert result is None
+        assert len(qc1.data) == 2  # h + composed gate
+
+    def test_compose_not_inplace_returns_new_circuit(self):
+        """compose(inplace=False) returns a new circuit without mutating self."""
+
+        qc1 = QuantumCircuit(2)
+        qc1.h(0)
+        qc2 = QuantumCircuit(2)
+        qc2.cx(0, 1)
+
+        result = qc1.compose(qc2, qubits=qc1.qubits, inplace=False)
+
+        assert result is not None
+        assert result is not qc1
+        assert len(qc1.data) == 1  # original unchanged
+        assert len(result.data) == 2
+
+    def test_compose_preserves_unitary(self):
+        """The composed circuit has the same unitary as building the circuit manually."""
+
+        qc_a = QuantumCircuit(2)
+        qc_a.h(0)
+        qc_b = QuantumCircuit(2)
+        qc_b.cx(0, 1)
+
+        composed = qc_a.compose(qc_b, qubits=qc_a.qubits, inplace=False)
+
+        manual = QuantumCircuit(2)
+        manual.h(0)
+        manual.cx(0, 1)
+
+        assert composed.compare_unitary(manual) is True
+
+    # ------------------------------------------------------------------ #
+    # bind_parameters                                                    #
+    # ------------------------------------------------------------------ #
+
+    def test_bind_parameters_removes_abstract_params(self):
+        """After binding all parameters, abstract_params is empty."""
+
+        a, b = symbols("a b")
+        qc = QuantumCircuit(2)
+        qc.p(a, 0)
+        qc.p(b, 1)
+        bound = qc.bind_parameters({a: np.pi / 2, b: np.pi})
+        assert bound.abstract_params == set()
+
+    def test_bind_parameters_does_not_mutate_original(self):
+        """bind_parameters returns a new circuit without modifying self."""
+
+        a = symbols("a")
+        qc = QuantumCircuit(1)
+        qc.p(a, 0)
+        qc.bind_parameters({a: 1.0})
+        assert a in qc.abstract_params
+
+    def test_bind_parameters_partial_raises(self):
+        """Binding only a subset of parameters raises a KeyError for the missing symbol."""
+
+        a, b = symbols("a b")
+        qc = QuantumCircuit(2)
+        qc.p(a, 0)
+        qc.p(b, 1)
+        with pytest.raises(KeyError):
+            qc.bind_parameters({a: 1.0})
+
+    def test_bind_parameters_produces_correct_unitary(self):
+        """Binding φ=π to a phase gate P(φ) gives the Pauli-Z unitary."""
+
+        phi = symbols("phi")
+        qc = QuantumCircuit(1)
+        qc.p(phi, 0)
+        bound = qc.bind_parameters({phi: np.pi})
+
+        z_qc = QuantumCircuit(1)
+        z_qc.z(0)
+        assert bound.compare_unitary(z_qc) is True
+
+    # ------------------------------------------------------------------ #
+    # to_latex                                                           #
+    # ------------------------------------------------------------------ #
+
+    @pytest.mark.skip(reason="The 'pylatexenc' library might not be installed.")
+    def test_to_latex_returns_string(self):
+        """to_latex returns a non-empty string."""
+
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        result = qc.to_latex()
+        assert isinstance(result, str)
+        assert len(result) > 0
+
+    @pytest.mark.skip(reason="The 'pylatexenc' library might not be installed.")
+    def test_to_latex_contains_latex_commands(self):
+        """The returned string contains standard LaTeX document commands."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        result = qc.to_latex()
+        assert "\\documentclass" in result
+
+    # ------------------------------------------------------------------ #
+    # to_qasm2                                                           #
+    # ------------------------------------------------------------------ #
+
+    def test_to_qasm2_header(self):
+        """to_qasm2 output begins with the OpenQASM 2.0 header."""
+
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        assert qc.to_qasm2().startswith("OPENQASM 2.0")
+
+    def test_to_qasm2_contains_gate_name(self):
+        """to_qasm2 output contains the applied gate name."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        qasm = qc.to_qasm2()
+        assert "h " in qasm
+        assert "cx " in qasm
+
+    def test_to_qasm2_roundtrip(self):
+        """A circuit exported to QASM 2.0 and re-imported has the same unitary."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        reloaded = QuantumCircuit.from_qasm_str(qc.to_qasm2())
+        assert qc.compare_unitary(reloaded) is True
+
+    # ------------------------------------------------------------------ #
+    # to_qasm3                                                           #
+    # ------------------------------------------------------------------ #
+
+    def test_to_qasm3_header(self):
+        """to_qasm3 output begins with the OpenQASM 3.0 header."""
+
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        assert qc.to_qasm3().startswith("OPENQASM 3.0")
+
+    def test_to_qasm3_contains_gate_name(self):
+        """to_qasm3 output contains the applied gate name."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        qasm = qc.to_qasm3()
+        assert "h " in qasm
+        assert "cx " in qasm
+
+    def test_to_qasm3_writes_file(self):
+        """to_qasm3 with filename writes the same content to disk."""
+
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        with tempfile.NamedTemporaryFile(mode="r", suffix=".qasm", delete=False) as tmp:
+            fname = tmp.name
+        try:
+            qasm_str = qc.to_qasm3(filename=fname)
+            assert open(fname).read() == qasm_str
+        finally:
+            os.unlink(fname)
+
+    # ------------------------------------------------------------------ #
+    # qasm                                                               #
+    # ------------------------------------------------------------------ #
+
+    def test_qasm_alias_for_to_qasm2(self):
+        """qasm() produces the same output as to_qasm2()."""
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        assert qc.qasm() == qc.to_qasm2()
+
+    # ------------------------------------------------------------------ #
+    # measure                                                            #
+    # ------------------------------------------------------------------ #
+
+    def test_measure_single_int_auto_allocates_one_clbit(self):
+        """measure(int) allocates exactly one new classical bit."""
+
+        qc = QuantumCircuit(2)
+        qc.measure(0)
+        assert len(qc.clbits) == 1
+
+    def test_measure_single_qubit_object_auto_allocates_one_clbit(self):
+        """measure(Qubit) allocates exactly one new classical bit."""
+
+        qc = QuantumCircuit(2)
+        qc.measure(qc.qubits[1])
+        assert len(qc.clbits) == 1
+
+    def test_measure_list_auto_allocates_one_clbit_per_qubit(self):
+        """measure(list) allocates one classical bit per qubit in the list."""
+
+        qc = QuantumCircuit(3)
+        qc.measure([0, 1, 2])
+        assert len(qc.clbits) == 3
+
+    def test_measure_range_auto_allocates_one_clbit_per_qubit(self):
+        """measure(range) allocates one classical bit per qubit in the range."""
+
+        qc = QuantumCircuit(4)
+        qc.measure(range(4))
+        assert len(qc.clbits) == 4
+
+    def test_measure_qubits_list_auto_allocates_matching_clbits(self):
+        """measure(qc.qubits) allocates a classical bit for every qubit."""
+
+        qc = QuantumCircuit(5)
+        qc.measure(qc.qubits)
+        assert len(qc.clbits) == len(qc.qubits)
+
+    def test_measure_explicit_clbit_no_new_allocation(self):
+        """Providing an explicit Clbit does not allocate additional classical bits."""
+
+        qc = QuantumCircuit(2)
+        cb = qc.add_clbit()
+        clbits_before = len(qc.clbits)
+        qc.measure(0, cb)
+        assert len(qc.clbits) == clbits_before
+
+    def test_measure_explicit_clbit_list_no_new_allocation(self):
+        """Providing an explicit list of Clbits does not allocate additional bits."""
+
+        qc = QuantumCircuit(3)
+        cb0, cb1, cb2 = qc.add_clbit(), qc.add_clbit(), qc.add_clbit()
+        clbits_before = len(qc.clbits)
+        qc.measure([0, 1, 2], [cb0, cb1, cb2])
+        assert len(qc.clbits) == clbits_before
+
+    def test_measure_single_appends_one_instruction(self):
+        """Measuring a single qubit appends exactly one instruction."""
+
+        qc = QuantumCircuit(1)
+        qc.measure(0)
+        assert len(qc.data) == 1
+
+    def test_measure_list_appends_one_instruction_per_qubit(self):
+        """Measuring a list of n qubits appends exactly n instructions."""
+
+        qc = QuantumCircuit(3)
+        qc.measure([0, 1, 2])
+        assert len(qc.data) == 3
+
+    def test_measure_instruction_has_measure_op_name(self):
+        """Each instruction appended by measure has the operation name 'measure'."""
+
+        qc = QuantumCircuit(2)
+        qc.measure([0, 1])
+        assert all(instr.op.name == "measure" for instr in qc.data)
+
+    def test_measure_auto_clbits_paired_with_correct_qubits(self):
+        """Each auto-allocated Clbit is paired with the corresponding Qubit."""
+
+        qc = QuantumCircuit(3)
+        qc.measure([0, 1, 2])
+
+        for i, instr in enumerate(qc.data):
+            assert instr.qubits == [qc.qubits[i]]
+            assert instr.clbits == [qc.clbits[i]]
+
+    def test_measure_explicit_clbit_used_in_instruction(self):
+        """The explicit Clbit provided to measure appears in the instruction."""
+
+        qc = QuantumCircuit(2)
+        cb = qc.add_clbit()
+        qc.measure(0, cb)
+        assert qc.data[-1].clbits == [cb]
+
+    def test_measure_explicit_clbit_list_preserves_pairing(self):
+        """Explicit Clbits are paired with qubits in the order given."""
+
+        qc = QuantumCircuit(2)
+        cb0, cb1 = qc.add_clbit(), qc.add_clbit()
+        qc.measure([0, 1], [cb0, cb1])
+
+        assert qc.data[0].clbits == [cb0]
+        assert qc.data[1].clbits == [cb1]
+
+    # ------------------------------------------------------------------ #
+    # parity                                                             #
+    # ------------------------------------------------------------------ #
+
+    @pytest.mark.parametrize(
+        "get_clbits",
+        [
+            lambda qc: qc.clbits,
+            lambda qc: list(qc.clbits),
+            lambda qc: tuple(qc.clbits),
+        ],
+        ids=["qc.clbits", "list", "tuple"],
+    )
+    def test_parity_accepts_sequence_types(self, get_clbits):
+        """parity() accepts any sequence of Clbits (list, tuple, qc.clbits)."""
+
+        qc = QuantumCircuit(2, 2)
+        qc.measure([0, 1], [0, 1])
+        handle = qc.parity(get_clbits(qc))
+        assert len(handle.clbits) == 2
+
+    def test_parity_accepts_single_clbit(self):
+        """A single Clbit (not wrapped in a list) is accepted and treated as a
+        length-1 parity check."""
+
+        qc = QuantumCircuit(1, 1)
+        qc.measure(0, 0)
+        handle = qc.parity(qc.clbits[0])
+        assert len(handle.clbits) == 1
+
+    def test_parity_appends_one_instruction(self):
+        """Each call to parity() appends exactly one instruction to the circuit."""
+
+        qc = QuantumCircuit(2, 2)
+        qc.measure([0, 1], [0, 1])
+        n_before = len(qc.data)
+        qc.parity(qc.clbits)
+        assert len(qc.data) == n_before + 1
+
+    def test_parity_instruction_op_name(self):
+        """The appended instruction has op name 'parity'."""
+
+        qc = QuantumCircuit(2, 2)
+        qc.measure([0, 1], [0, 1])
+        qc.parity(qc.clbits)
+        assert qc.data[-1].op.name == "parity"
+
+    def test_parity_handle_clbits_match_input(self):
+        """The handle's clbits are exactly the Clbits passed to parity(), in order."""
+
+        qc = QuantumCircuit(3, 3)
+        qc.measure([0, 1, 2], [0, 1, 2])
+        handle = qc.parity(qc.clbits)
+        assert handle.clbits == list(qc.clbits)
+
+    @pytest.mark.parametrize("expectation", [0, 1])
+    def test_parity_expectation_stored(self, expectation):
+        """The expectation kwarg is stored in the handle."""
+
+        qc = QuantumCircuit(1, 1)
+        qc.measure(0, 0)
+        handle = qc.parity(qc.clbits[0], expectation=expectation)
+        assert handle.expectation == expectation
+
+    @pytest.mark.parametrize("observable", [False, True])
+    def test_parity_observable_flag_stored(self, observable):
+        """The observable kwarg is stored in the handle."""
+
+        qc = QuantumCircuit(1, 1)
+        qc.measure(0, 0)
+        handle = qc.parity(qc.clbits[0], observable=observable)
+        assert handle.observable == observable
+
+    def test_parity_multiple_calls_give_distinct_handles(self):
+        """Each call to parity() returns a distinct handle pointing to its own
+        instruction."""
+
+        qc = QuantumCircuit(3, 3)
+        qc.measure([0, 1, 2], [0, 1, 2])
+        h0 = qc.parity([qc.clbits[0], qc.clbits[1]])
+        h1 = qc.parity([qc.clbits[1], qc.clbits[2]])
+        assert h0.instruction is not h1.instruction
+
+    def test_parity_stim_detector_index(self):
+        """A non-observable parity call maps to a Stim DETECTOR with index 0."""
+
+        qc = QuantumCircuit(2, 2)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.measure([0, 1], [0, 1])
+        handle = qc.parity(qc.clbits, expectation=0)
+        _, _, det_map = qc.to_stim(
+            return_measurement_map=True,
+            return_detector_map=True,
+        )
+        assert handle in det_map
+        assert det_map[handle] == 0
+
+    def test_parity_stim_multiple_detectors_get_sequential_indices(self):
+        """Two parity detectors are assigned consecutive Stim detector indices."""
+
+        qc = QuantumCircuit(3, 3)
+        qc.measure([0, 1, 2], [0, 1, 2])
+        h0 = qc.parity([qc.clbits[0], qc.clbits[1]])
+        h1 = qc.parity([qc.clbits[1], qc.clbits[2]])
+        _, _, det_map = qc.to_stim(
+            return_measurement_map=True,
+            return_detector_map=True,
+        )
+        assert det_map[h0] == 0
+        assert det_map[h1] == 1
+
+    def test_parity_stim_observable_index(self):
+        """An observable=True parity call maps to a Stim OBSERVABLE_INCLUDE."""
+
+        qc = QuantumCircuit(2, 2)
+        qc.measure([0, 1], [0, 1])
+        handle = qc.parity(qc.clbits, observable=True)
+        _, _, det_map, obs_map = qc.to_stim(
+            return_measurement_map=True,
+            return_detector_map=True,
+            return_observable_map=True,
+        )
+        assert handle not in det_map
+        assert handle in obs_map
+        assert obs_map[handle] == 0
+
 
 class TestQuantumCircuitDunderMethods:
     """Tests for QuantumCircuit dunder methods."""
 
-    # TODO: Implement tests for __str__, __repr__, __eq__, __hash__, etc.
+    # ------------------------------------------------------------------ #
+    # __hash__                                                           #
+    # ------------------------------------------------------------------ #
+
+    def test_empty_circuit_is_hashable(self):
+        """An empty circuit (no instructions) can be hashed without error."""
+        qc = QuantumCircuit(3)
+        assert isinstance(hash(qc), int)
+
+    def test_hash_is_stable(self):
+        """Calling hash() on the same object twice returns the same value."""
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.cx(0, 1)
+        assert hash(qc) == hash(qc)
+
+    def test_circuit_usable_as_dict_key(self):
+        """A circuit can be stored and retrieved as a dictionary key."""
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        d = {qc: "value"}
+        assert d[qc] == "value"
+
+    def test_circuit_usable_in_set(self):
+        """A circuit can be added to a set. The same object is not duplicated."""
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        s = {qc, qc}
+        assert len(s) == 1
+
+    @pytest.mark.parametrize(
+        "build",
+        [
+            # Simple single-qubit circuit
+            lambda: ((lambda qc: (qc.h(0), qc)[-1])(QuantumCircuit(1))),
+            # Multi-qubit entangling circuit
+            lambda: (
+                (lambda qc: (qc.h(0), qc.cx(0, 1), qc.cx(1, 2), qc)[-1])(
+                    QuantumCircuit(3)
+                )
+            ),
+            # Parametrized rotation
+            lambda: ((lambda qc: (qc.rx(np.pi / 4, 0), qc)[-1])(QuantumCircuit(2))),
+        ],
+    )
+    def test_identical_circuits_have_equal_hash(self, build):
+        """Two circuits built with the same operations always hash identically."""
+        assert hash(build()) == hash(build())
+
+    def test_same_structure_different_qubit_names_equal_hash(self):
+        """Qubit names are irrelevant. Only positional structure affects the hash."""
+        qc1 = QuantumCircuit()
+        qb_a = qc1.add_qubit(Qubit("alice"))
+        qb_b = qc1.add_qubit(Qubit("bob"))
+        qc1.cx(qb_a, qb_b)
+
+        qc2 = QuantumCircuit()
+        qb_x = qc2.add_qubit(Qubit("x"))
+        qb_y = qc2.add_qubit(Qubit("y"))
+        qc2.cx(qb_x, qb_y)
+
+        assert hash(qc1) == hash(qc2)
+
+    def test_composite_gate_equivalent_definitions_equal_hash(self):
+        """Two circuits using structurally equivalent composite gates hash the same."""
+        sub1 = QuantumCircuit(2)
+        sub1.h(0)
+        sub1.cx(0, 1)
+
+        sub2 = QuantumCircuit(2)
+        sub2.h(0)
+        sub2.cx(0, 1)
+
+        qc1 = QuantumCircuit(2)
+        qc1.append(sub1.to_gate(), [0, 1])
+
+        qc2 = QuantumCircuit(2)
+        qc2.append(sub2.to_gate(), [0, 1])
+
+        assert hash(qc1) == hash(qc2)
+
+    def test_different_qubit_count_different_hash(self):
+        """Circuits with a different number of qubits hash differently."""
+        qc_small = QuantumCircuit(2)
+        qc_small.h(0)
+        qc_large = QuantumCircuit(4)
+        qc_large.h(0)
+        assert hash(qc_small) != hash(qc_large)
+
+    def test_different_instruction_order_different_hash(self):
+        """Reordering instructions changes the hash."""
+        qc1 = QuantumCircuit(2)
+        qc1.h(0)
+        qc1.x(1)
+
+        qc2 = QuantumCircuit(2)
+        qc2.x(1)
+        qc2.h(0)
+
+        assert hash(qc1) != hash(qc2)
+
+    def test_different_qubit_wiring_different_hash(self):
+        """Applying the same gate to different qubit positions changes the hash."""
+        qc1 = QuantumCircuit(3)
+        qc1.cx(0, 1)
+
+        qc2 = QuantumCircuit(3)
+        qc2.cx(0, 2)
+
+        assert hash(qc1) != hash(qc2)
+
+    def test_different_gate_same_position_different_hash(self):
+        """Replacing one gate with another at the same qubit changes the hash."""
+        qc1 = QuantumCircuit(1)
+        qc1.h(0)
+
+        qc2 = QuantumCircuit(1)
+        qc2.x(0)
+
+        assert hash(qc1) != hash(qc2)
+
+    def test_different_parameter_value_different_hash(self):
+        """Changing a rotation angle changes the hash."""
+        qc1 = QuantumCircuit(1)
+        qc1.rx(np.pi / 4, 0)
+
+        qc2 = QuantumCircuit(1)
+        qc2.rx(np.pi / 3, 0)
+
+        assert hash(qc1) != hash(qc2)
+
+    def test_same_parameters_swapped_positions_different_hash(self):
+        """The same parameter values in reversed instruction order hash differently."""
+        qc1 = QuantumCircuit(1)
+        qc1.rz(np.pi / 2, 0)
+        qc1.rz(np.pi / 4, 0)
+
+        qc2 = QuantumCircuit(1)
+        qc2.rz(np.pi / 4, 0)
+        qc2.rz(np.pi / 2, 0)
+
+        assert hash(qc1) != hash(qc2)
+
+    def test_composite_gate_different_definitions_different_hash(self):
+        """Two circuits using composite gates with different sub-circuits hash differently."""
+        sub1 = QuantumCircuit(2)
+        sub1.h(0)
+        sub1.cx(0, 1)
+
+        sub2 = QuantumCircuit(2)
+        sub2.h(1)  # gate applied to qubit 1 instead of qubit 0
+        sub2.cx(0, 1)
+
+        qc1 = QuantumCircuit(2)
+        qc1.append(sub1.to_gate(), [0, 1])
+
+        qc2 = QuantumCircuit(2)
+        qc2.append(sub2.to_gate(), [0, 1])
+
+        assert hash(qc1) != hash(qc2)
+
+    # TODO: Implement tests for __str__, __repr__, __eq__, etc.

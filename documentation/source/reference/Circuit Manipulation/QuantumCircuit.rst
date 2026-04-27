@@ -26,6 +26,8 @@ Constructing QuantumCircuits
    QuantumCircuit.extend
    QuantumCircuit.bind_parameters
    QuantumCircuit.transpile
+   QuantumCircuit.control
+   QuantumCircuit.compose
 
 Evaluating QuantumCircuits
 --------------------------
@@ -42,7 +44,11 @@ Evaluating QuantumCircuits
    QuantumCircuit.count_ops
    QuantumCircuit.get_unitary
    QuantumCircuit.compare_unitary
+   QuantumCircuit.get_depth_dic
+   QuantumCircuit.cnot_count
    QuantumCircuit.to_latex
+   QuantumCircuit.to_qasm2
+   QuantumCircuit.to_qasm3
    QuantumCircuit.qasm
    
  
@@ -125,5 +131,8 @@ Operation application methods
    QuantumCircuit.unitary
    QuantumCircuit.gphase
    QuantumCircuit.id
+   QuantumCircuit.crx
+   QuantumCircuit.barrier
+   QuantumCircuit.r
 
   
