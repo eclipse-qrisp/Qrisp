@@ -1,3 +1,20 @@
+"""
+********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************
+"""
 
 from contextlib import nullcontext
 
@@ -30,7 +47,9 @@ def _extract_boolean_digit(integer, digit):
     jnp.bool_
         ``True`` when bit ``digit`` of ``integer`` is 1, ``False`` otherwise.
     """
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+        BigInteger,
+    )
 
     # during JAX tracing, integers are represented as BigInteger objects that
     # store their bits symbolically – use the dedicated accessor in that case
@@ -42,7 +61,9 @@ def _extract_boolean_digit(integer, digit):
     return jnp.bool_(integer >> digit & 1)
 
 
-def _apply_gidney_adder_gates(n, tracing, qs, b_qbs, ctrl_qb=None, a_int=None, a_qbs=None):
+def _apply_gidney_adder_gates(
+    n, tracing, qs, b_qbs, ctrl_qb=None, a_int=None, a_qbs=None
+):
     """Run the Gidney carry ladder for semi-classical and quantum-quantum modes.
 
     Parameters
@@ -78,11 +99,15 @@ def _apply_gidney_adder_gates(n, tracing, qs, b_qbs, ctrl_qb=None, a_int=None, a
     with control(n > 1):
         # allocate n-1 ancilla qubits, one per carry position between adjacent
         # bit pairs (bit i and bit i+1 share ancilla i)
-        gidney_anc = QuantumVariable(n - 1, name="gidney_anc*") if tracing \
+        gidney_anc = (
+            QuantumVariable(n - 1, name="gidney_anc*")
+            if tracing
             else QuantumVariable(n - 1, name="gidney_anc*", qs=qs)
+        )
 
         # init: seed the carry chain with carry_0 = a[0] AND b[0]
         if a_qbs is None:
+
             def first_forward_carry():
                 if ctrl_qb is None:
                     cx(b_qbs[0], gidney_anc[0])
@@ -100,6 +125,7 @@ def _apply_gidney_adder_gates(n, tracing, qs, b_qbs, ctrl_qb=None, a_int=None, a
             cx(gidney_anc[i - 1], b_qbs[i])
 
             if a_qbs is None:
+
                 def toggle_forward_anc():
                     if ctrl_qb is None:
                         x(gidney_anc[i - 1])
@@ -136,18 +162,28 @@ def _apply_gidney_adder_gates(n, tracing, qs, b_qbs, ctrl_qb=None, a_int=None, a
 
             if a_qbs is None:
                 if ctrl_qb is not None:
+
                     def toggle_backward_ctrl():
                         cx(ctrl_qb, gidney_anc[i - 1])
 
                     _apply_if_classical_bit_set(a_int, i, tracing, toggle_backward_ctrl)
-                    mcx([gidney_anc[i - 1], b_qbs[i]], gidney_anc[i], method="gidney_inv")
+                    mcx(
+                        [gidney_anc[i - 1], b_qbs[i]],
+                        gidney_anc[i],
+                        method="gidney_inv",
+                    )
                     _apply_if_classical_bit_set(a_int, i, tracing, toggle_backward_ctrl)
                 else:
+
                     def toggle_backward_anc():
                         x(gidney_anc[i - 1])
 
                     _apply_if_classical_bit_set(a_int, i, tracing, toggle_backward_anc)
-                    mcx([gidney_anc[i - 1], b_qbs[i]], gidney_anc[i], method="gidney_inv")
+                    mcx(
+                        [gidney_anc[i - 1], b_qbs[i]],
+                        gidney_anc[i],
+                        method="gidney_inv",
+                    )
                     _apply_if_classical_bit_set(a_int, i, tracing, toggle_backward_anc)
             else:
                 mcx([a_qbs[i], b_qbs[i]], gidney_anc[i], method="gidney_inv")
@@ -161,6 +197,7 @@ def _apply_gidney_adder_gates(n, tracing, qs, b_qbs, ctrl_qb=None, a_int=None, a
 
         # final: erase carry_0 (mirror of init)
         if a_qbs is None:
+
             def first_backward_carry():
                 if ctrl_qb is None:
                     cx(b_qbs[0], gidney_anc[0])
@@ -266,7 +303,9 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
 
         # any of the above qualifies as a semi-classical source – the value
         # provides classical bit information but is not a qubit array
-        if is_concrete_int or (check_for_tracing_mode() and (is_scalar_like or is_biginteger_like)):
+        if is_concrete_int or (
+            check_for_tracing_mode() and (is_scalar_like or is_biginteger_like)
+        ):
             # truncate classical a to the width of b so higher bits don't produce spurious
             # gates (addition is mod 2^n)
             if is_concrete_int:
@@ -312,13 +351,16 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
             # when the target register is a single qubit, the carry ladder
             # degenerates (no carries to propagate) – just conditionally flip that qubit
             if (not check_for_tracing_mode()) and n == 1:
+
                 def single_bit_update():
                     if ctrl is None:
                         x(b_qbs[0])
                     else:
                         cx(ctrl, b_qbs[0])
 
-                _apply_if_classical_bit_set(a, 0, check_for_tracing_mode(), single_bit_update)
+                _apply_if_classical_bit_set(
+                    a, 0, check_for_tracing_mode(), single_bit_update
+                )
                 return
 
             # fast_append batches gate emissions for better performance in
@@ -352,7 +394,9 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
 
                     # only emit the XOR gate when the corresponding
                     # classical bit of a is 1
-                    _apply_if_classical_bit_set(a, i, check_for_tracing_mode(), final_sum_update)
+                    _apply_if_classical_bit_set(
+                        a, i, check_for_tracing_mode(), final_sum_update
+                    )
 
             return
 
@@ -372,8 +416,11 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
 
     # allocate zero-initialised ancillas to extend a to the same width as b
     extension_size = jnp.maximum(0, dim_b - dim_a)
-    a_ext = QuantumVariable(extension_size, name="gidney_a_ext*", qs=qs) if qs is not None \
+    a_ext = (
+        QuantumVariable(extension_size, name="gidney_a_ext*", qs=qs)
+        if qs is not None
         else QuantumVariable(extension_size, name="gidney_a_ext*")
+    )
     # build flat qubit lists so indexing works uniformly for both paths
     a = a[:] + a_ext[:]
     b = b[:]
@@ -388,8 +435,11 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     # the ladder then computes carry_0 = 1 AND c_in, which equals c_in.
     one_anc = None
     if c_in_qb is not None:
-        one_anc = QuantumBool(name="gidney_cin_one*", qs=qs) if qs is not None \
+        one_anc = (
+            QuantumBool(name="gidney_cin_one*", qs=qs)
+            if qs is not None
             else QuantumBool(name="gidney_cin_one*")
+        )
         # flip the ancilla to |1> so the Toffoli in the init step fires when
         # c_in is |1>
         x(one_anc[0])
@@ -399,8 +449,11 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     # propagate naturally into the appended carry-out target qubit in b.
     zero_anc = None
     if c_out_qb is not None:
-        zero_anc = QuantumBool(name="gidney_cout_zero*", qs=qs) if qs is not None \
+        zero_anc = (
+            QuantumBool(name="gidney_cout_zero*", qs=qs)
+            if qs is not None
             else QuantumBool(name="gidney_cout_zero*")
+        )
         a = a + zero_anc[:]
 
     # n is the matched width after padding and carry extensions
