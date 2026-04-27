@@ -21,20 +21,25 @@ import inspect
 import threading
 import time
 import unittest.mock
+from typing import cast
 
 import numpy as np
 import pytest
-
 from conftest import MinimalBackend, MinimalJob
-from qrisp.interface.backend import Backend
+
 from qrisp.circuit.quantum_circuit import QuantumCircuit
-from qrisp.interface.job import Job, JobCancelledError, JobFailureError, JobResult, JobStatus
-from typing import cast
+from qrisp.interface.backend import Backend
+from qrisp.interface.job import (
+    Job,
+    JobCancelledError,
+    JobFailureError,
+    JobResult,
+    JobStatus,
+)
 from qrisp.interface.qunicorn.backend_client import BackendClient
 from qrisp.interface.qunicorn.backend_server import BackendServer
 from qrisp.interface.virtual_backend import VirtualBackend
 from qrisp.misc.exceptions import QrispDeprecationWarning
-
 
 # ===========================================================================
 # Full-featured fake backend used by the integration tests
