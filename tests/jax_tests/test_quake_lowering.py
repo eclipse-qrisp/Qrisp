@@ -693,7 +693,7 @@ def test_nested_q_fori_loop_control():
 # ---------------------------------------------------------------------------
 
 def test_jax_fori_loop():
-    """Test that a JAX fori_loop is correctly lowered to MLIR and can be validated."""
+    """Test that a JAX fori_loop is correctly lowered to MLIR."""
 
     def circuit():
         result = jax.lax.fori_loop(0, 10, lambda i, x: x+i, 0)
@@ -710,22 +710,18 @@ def test_jax_fori_loop():
 # ---------------------------------------------------------------------------
 
 def test_jrange_loop():
-    """A jrange loop produces a scf.while with !quake.veq<?> loop-carried value."""
-
-    pytest.skip("jrange loop test skipped")
+    """Test that a jrange loop is correctly lowered to MLIR."""
 
     def circuit():
         qv = QuantumVariable(3)
         for i in jrange(3):
-            h(qv[i])
-        return qv
+            x(qv[i])
+        return measure(qv)
 
     mlir = _lower(circuit)
-    assert "scf.while" in mlir or "cc.loop" in mlir, (
-        "Expected scf.while or cc.loop in output"
-    )
-    assert "quake.h" in mlir, "Expected quake.h inside loop"
     validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[7], f"Expected all qubits measured as 1 (7), got {result}"
 
 # ---------------------------------------------------------------------------
 # Test gate application functions acting on QuantumVariables
