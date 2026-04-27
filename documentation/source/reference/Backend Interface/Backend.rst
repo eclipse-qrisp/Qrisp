@@ -39,9 +39,9 @@ Hardware status information
 .. autosummary::
    :toctree: generated/
 
-   Backend.backend_health
-   Backend.backend_info
-   Backend.backend_queue
+   Backend.health
+   Backend.info
+   Backend.queue
 
 
 

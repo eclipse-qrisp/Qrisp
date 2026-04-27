@@ -3,4 +3,4 @@
 
 .. currentmodule:: qrisp.interface
 
-.. autoproperty:: Backend.backend_info
+.. autoproperty:: Backend.info

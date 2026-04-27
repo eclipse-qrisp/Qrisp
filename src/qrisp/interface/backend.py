@@ -449,7 +449,7 @@ class Backend(ABC):
     # ------------------------------------------------------------------
 
     @property
-    def backend_health(self):
+    def health(self):
         """
         Current health status or diagnostics of the backend.
 
@@ -461,7 +461,7 @@ class Backend(ABC):
         return None
 
     @property
-    def backend_info(self):
+    def info(self):
         """
         General information about the backend.
 
@@ -473,7 +473,7 @@ class Backend(ABC):
         return None
 
     @property
-    def backend_queue(self):
+    def queue(self):
         """
         Current queue status or job backlog of the backend.
 

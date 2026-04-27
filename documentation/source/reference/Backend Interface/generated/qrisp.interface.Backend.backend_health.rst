@@ -3,4 +3,4 @@
 
 .. currentmodule:: qrisp.interface
 
-.. autoproperty:: Backend.backend_health
+.. autoproperty:: Backend.health

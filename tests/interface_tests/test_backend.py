@@ -200,7 +200,7 @@ class TestBackend(Backend):
         return self._num_qubits
 
     @property
-    def backend_info(self):
+    def info(self):
         """Return basic provider and version metadata for the test backend."""
         return {"provider": "Qrisp Test Suite", "version": "0.1.0"}
 
@@ -519,25 +519,25 @@ class TestBackendHardwareMetadata:
         """Ensure error_rates returns None when not overridden."""
         assert backend.error_rates is None
 
-    def test_backend_health_is_none(self, backend):
-        """Ensure backend_health returns None when not overridden."""
-        assert backend.backend_health is None
+    def test_health_is_none(self, backend):
+        """Ensure health returns None when not overridden."""
+        assert backend.health is None
 
-    def test_backend_info_is_none(self, backend):
-        """Ensure backend_info returns None when not overridden."""
-        assert backend.backend_info is None
+    def test_info_is_none(self, backend):
+        """Ensure info returns None when not overridden."""
+        assert backend.info is None
 
-    def test_backend_queue_is_none(self, backend):
-        """Ensure backend_queue returns None when not overridden."""
-        assert backend.backend_queue is None
+    def test_queue_is_none(self, backend):
+        """Ensure queue returns None when not overridden."""
+        assert backend.queue is None
 
     def test_num_qubits_can_be_overridden(self):
         """Ensure a concrete backend can expose a meaningful num_qubits value."""
         assert TestBackend(num_qubits=5).num_qubits == 5
 
-    def test_backend_info_can_be_overridden(self):
-        """Ensure a concrete backend can expose a non-None backend_info dict."""
-        info = TestBackend().backend_info
+    def test_info_can_be_overridden(self):
+        """Ensure a concrete backend can expose a non-None info dict."""
+        info = TestBackend().info
         assert isinstance(info, dict)
         assert "provider" in info
 
