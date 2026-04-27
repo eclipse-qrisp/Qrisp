@@ -25,7 +25,6 @@ import jax
 jax.config.update("jax_enable_x64", True)
 
 from qrisp.circuit import *
-from qrisp.typing import *
 from qrisp.core import *
 from qrisp.misc import *
 from qrisp.circuit import *

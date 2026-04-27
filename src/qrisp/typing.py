@@ -18,7 +18,7 @@
 
 from __future__ import annotations
 
-from typing import TypeAlias
+from typing import Sequence, TypeAlias
 
 import jax
 import jax.core
@@ -29,20 +29,20 @@ from qrisp.circuit.qubit import Qubit
 
 __all__ = ["QubitLike", "ClbitLike", "ScalarLike", "NDArrayLike", "ArrayLike"]
 
-QubitLike: TypeAlias = Qubit | int | list
+QubitLike: TypeAlias = Qubit | int | Sequence[Qubit | int]
 """Accepted as a qubit specifier in circuit methods and gate functions.
 
-A single qubit can be identified either by its :class:`~qrisp.circuit.Qubit`
-object or by its integer index within the circuit. A list of either
-represents multiple qubits.
+A single qubit can be identified either by its ``Qubit`` object or by its
+integer index within the circuit. A sequence of either represents multiple
+qubits.
 """
 
-ClbitLike: TypeAlias = Clbit | int | list
+ClbitLike: TypeAlias = Clbit | int | Sequence[Clbit | int]
 """Accepted as a classical bit specifier in circuit methods.
 
-A single classical bit can be identified either by its
-:class:`~qrisp.circuit.Clbit` object or by its integer index within the
-circuit. A list of either represents multiple classical bits.
+A single classical bit can be identified either by its ``Clbit`` object or by
+its integer index within the circuit. A sequence of either represents multiple
+classical bits.
 """
 
 ScalarLike: TypeAlias = int | float | complex | bool | np.generic
@@ -50,7 +50,6 @@ ScalarLike: TypeAlias = int | float | complex | bool | np.generic
 
 Covers Python built-in scalars (``int``, ``float``, ``complex``, ``bool``) and
 all NumPy scalar types (``np.float64``, ``np.int32``, etc. via ``np.generic``).
-Variables typed as ``ScalarLike`` do not have a ``.shape`` attribute.
 
 Examples
 --------
@@ -67,10 +66,7 @@ NDArrayLike: TypeAlias = np.ndarray | jax.Array | jax.core.Tracer
 """A multi-dimensional array value.
 
 Covers NumPy arrays, JAX arrays, and JAX tracers (the latter appear when Qrisp
-code runs inside a Jasp-traced function, e.g. under ``@jaspify`` or
-``jax.jit``). All types in this alias expose a ``.shape`` attribute, so
-Pylance will not warn on attribute access when a parameter is typed as
-``NDArrayLike``.
+code runs inside a Jasp-traced function, e.g. under ``@jaspify``). 
 
 Examples
 --------

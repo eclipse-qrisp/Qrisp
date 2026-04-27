@@ -28,45 +28,40 @@ from qrisp.typing import ArrayLike, ClbitLike, NDArrayLike, QubitLike, ScalarLik
 
 
 class TestQubitLike:
-    """Tests for the QubitLike type alias."""
+    """Tests for the QubitLike type alias.
+
+    QubitLike = Qubit | int | Sequence[Qubit | int]. The Sequence arm is a
+    subscripted generic: Python short-circuits on True (so Qubit and int checks
+    work), but raises TypeError when checking a non-matching value against
+    Sequence[Qubit | int]. Rejection tests are therefore not possible at
+    runtime (that arm is enforced by static type checkers only).
+    """
 
     def test_qubit_object(self):
         """A Qubit object is an instance of QubitLike."""
-        assert isinstance(Qubit("test_qubit"), QubitLike)
+        assert isinstance(Qubit("test_qubit"), QubitLike)  # type: ignore[arg-type]
 
     @pytest.mark.parametrize("index", [0, 1, 5])
     def test_integer_index(self, index):
         """Integer indices are valid qubit specifiers."""
-        assert isinstance(index, QubitLike)
-
-    def test_list_of_qubits_and_ints(self):
-        """A list of Qubit objects and integer indices is an instance of QubitLike."""
-        assert isinstance([Qubit("q0"), Qubit("q1"), 2], QubitLike)
-
-    def test_string_is_rejected(self):
-        """A plain string is not a valid QubitLike specifier."""
-        assert not isinstance("not_a_qubit", QubitLike)
+        assert isinstance(index, QubitLike)  # type: ignore[arg-type]
 
 
 class TestClbitLike:
-    """Tests for the ClbitLike type alias."""
+    """Tests for the ClbitLike type alias.
+
+    ClbitLike = Clbit | int | Sequence[Clbit | int]. Same isinstance
+    limitation as QubitLike: only the concrete arms can be runtime-checked.
+    """
 
     def test_clbit_object(self):
         """A Clbit object is an instance of ClbitLike."""
-        assert isinstance(Clbit("test_clbit"), ClbitLike)
+        assert isinstance(Clbit("test_clbit"), ClbitLike)  # type: ignore[arg-type]
 
     @pytest.mark.parametrize("index", [0, 1, 5])
     def test_integer_index(self, index):
         """Integer indices are valid classical bit specifiers."""
-        assert isinstance(index, ClbitLike)
-
-    def test_list_of_clbits_and_ints(self):
-        """A list of Clbit objects and integer indices is an instance of ClbitLike."""
-        assert isinstance([Clbit("c0"), Clbit("c1"), 2], ClbitLike)
-
-    def test_string_is_rejected(self):
-        """A plain string is not a valid ClbitLike specifier."""
-        assert not isinstance("not_a_clbit", ClbitLike)
+        assert isinstance(index, ClbitLike)  # type: ignore[arg-type]
 
 
 class TestScalarLike:
@@ -123,7 +118,9 @@ class TestNDArrayLike:
             return x
 
         jax.make_jaxpr(f)(1.0)
-        assert results[0], "make_jaxpr did not produce a Tracer (test precondition failed)"
+        assert results[
+            0
+        ], "make_jaxpr did not produce a Tracer (test precondition failed)"
         assert results[1], "Tracer is not an instance of NDArrayLike"
 
     def test_python_scalar_is_rejected(self):
@@ -175,7 +172,9 @@ class TestArrayLike:
             return x
 
         jax.make_jaxpr(f)(1.0)
-        assert results[0], "make_jaxpr did not produce a Tracer (test precondition failed)"
+        assert results[
+            0
+        ], "make_jaxpr did not produce a Tracer (test precondition failed)"
         assert results[1], "Tracer is not an instance of ArrayLike"
 
     @pytest.mark.parametrize("value", ["string", [1, 2, 3], {"key": 1}, None, (1, 2)])

@@ -43,16 +43,13 @@ from qrisp.misc import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence, Set
-    from typing import TypeAlias
 
     from qrisp.circuit.operation import ControlledOperation, PTControlledOperation
     from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
         ParityHandle,
     )
+    from qrisp.typing import ClbitLike, QubitLike
 
-    # TODO: These should be moved into a separate module (which does not exist yet)
-    QubitLike: TypeAlias = Qubit | int | Sequence[Qubit | int]
-    ClbitLike: TypeAlias = Clbit | int | Sequence[Clbit | int]
 
 TO_GATE_COUNTER = np.zeros(1)
 

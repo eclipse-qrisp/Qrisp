@@ -16,7 +16,9 @@
 ********************************************************************************
 """
 
-from typing import Callable, Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Callable, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -24,6 +26,10 @@ import numpy as np
 from jax import lax
 
 from qrisp.misc.utility import _EPSILON, swap_endianness
+
+if TYPE_CHECKING:
+    from qrisp.core import QuantumVariable
+    from qrisp.typing import NDArrayLike, ScalarLike
 
 
 def _rot_params_from_state(
@@ -264,7 +270,9 @@ def _preprocess(
     return thetas, u_params, phases
 
 
-def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
+def prepare_qswitch(
+    qv: QuantumVariable, target_array: NDArrayLike, big_endianness: bool = False
+) -> None:
     """
     Prepare the quantum state encoded in ``qv`` so that it matches the given
     ``target_array`` by constructing a binary-tree decomposition of the target
@@ -283,7 +291,7 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
     qv : QuantumVariable
         The quantum variable representing the qubits to be prepared.
 
-    target_array : jnp.ndarray
+    target_array : NDArrayLike
         A normalized complex vector representing the target state to prepare.
 
     big_endianness : bool, optional
@@ -320,9 +328,9 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
     # We could use jrange even in static mode, but this would add overhead.
     xrange = jrange if check_for_tracing_mode() else range
 
-    thetas, u_params, phases = _preprocess(target_array)
+    thetas, u_params, phases = _preprocess(target_array)  # type: ignore[arg-type]
 
-    def make_case_fn(layer_size: int, is_final: bool = False) -> Callable:
+    def make_case_fn(layer_size: ScalarLike, is_final: bool = False) -> Callable:
         """Create a case function for q_switch at a given layer."""
 
         def case_fn(i, qb):
@@ -350,7 +358,7 @@ def prepare_qswitch(qv, target_array, big_endianness: bool = False) -> None:
 
         q_switch(
             qv[:layer_size],
-            make_case_fn(layer_size),
+            make_case_fn(layer_size),  # type: ignore[arg-type]
             qv[layer_size],
         )
 
