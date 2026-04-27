@@ -16,12 +16,34 @@
 ********************************************************************************
 """
 
-from qrisp.circuit.passes.pass_manager import PassManager
-from qrisp.circuit.passes.arange_swaps import arange_swaps
-from qrisp.circuit.passes.cancel_zero_controls import cancel_zero_controls
-from qrisp.circuit.passes.commute_swaps import commute_swaps
-from qrisp.circuit.passes.convert_to_cz import convert_to_cz
-from qrisp.circuit.passes.gray_synth_toffoli import gray_synth_toffoli, is_toffoli
-from qrisp.circuit.passes.remove_barriers import remove_barriers
+from __future__ import annotations
 
-__all__ = ["PassManager", "arange_swaps", "cancel_zero_controls", "commute_swaps", "convert_to_cz", "gray_synth_toffoli", "is_toffoli", "remove_barriers"]
+from qrisp.circuit.quantum_circuit import QuantumCircuit
+
+
+def remove_barriers(qc: QuantumCircuit) -> QuantumCircuit:
+    """Return a copy of *qc* with all barrier instructions removed.
+
+    Parameters
+    ----------
+    qc : QuantumCircuit
+        The input circuit, potentially containing barrier instructions.
+
+    Returns
+    -------
+    QuantumCircuit
+        A new circuit identical to *qc* but without any barriers.
+
+    Example
+    -------
+    >>> from qrisp import PassManager, remove_barriers
+    >>> pm = PassManager()
+    >>> pm.add_pass(remove_barriers)
+    >>> clean_qc = pm.run(qc)
+    """
+    qc_new = qc.clearcopy()
+    for instr in qc.data:
+        if instr.op.name == "barrier":
+            continue
+        qc_new.append(instr)
+    return qc_new
