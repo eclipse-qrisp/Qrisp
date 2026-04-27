@@ -17,5 +17,6 @@
 """
 
 from qrisp.circuit.passes.pass_manager import PassManager
+from qrisp.circuit.passes.arange_swaps import arange_swaps
 
-__all__ = ["PassManager"]
+__all__ = ["PassManager", "arange_swaps"]
