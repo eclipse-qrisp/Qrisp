@@ -23,5 +23,6 @@ from qrisp.circuit.passes.commute_swaps import commute_swaps
 from qrisp.circuit.passes.convert_to_cz import convert_to_cz
 from qrisp.circuit.passes.gray_synth_toffoli import gray_synth_toffoli, is_toffoli
 from qrisp.circuit.passes.remove_barriers import remove_barriers
+from qrisp.circuit.passes.resolve_swaps import resolve_swaps
 
-__all__ = ["PassManager", "arange_swaps", "cancel_zero_controls", "commute_swaps", "convert_to_cz", "gray_synth_toffoli", "is_toffoli", "remove_barriers"]
+__all__ = ["PassManager", "arange_swaps", "cancel_zero_controls", "commute_swaps", "convert_to_cz", "gray_synth_toffoli", "is_toffoli", "remove_barriers", "resolve_swaps"]
