@@ -222,6 +222,31 @@ def _coerce_to_f64(val: SSAValue, block: Block, insert_before) -> SSAValue:
 
     raise ValueError(f"Cannot coerce {scalar.type} to f64")
 
+
+def _normalize_index_for_veq(
+    veq: SSAValue, idx: SSAValue, block: Block, insert_before_op
+) -> SSAValue:
+    """Implement Python-style negative indexing on a veq index.
+
+    If idx < 0, return idx + size(veq), else idx.
+
+    All ops are inserted before `insert_before_op`.
+    Assumes `idx` is an i64 scalar.
+    """
+    # len = quake.veq_size %veq
+    size = VeqSizeOp(veq)
+
+    zero = arith.ConstantOp(IntegerAttr.from_int_and_width(0, 64))
+    is_neg = arith.CmpiOp(idx, zero.result, "slt")     # idx < 0 ?
+    idx_plus_size = arith.AddiOp(idx, size.result)      # idx + len
+    norm = arith.SelectOp(is_neg.result, idx_plus_size.result, idx)
+
+    block.insert_ops_before(
+        [size, zero, is_neg, idx_plus_size, norm],
+        insert_before_op,
+    )
+    return norm.result
+
 # ---------------------------------------------------------------------------
 # Tensor-extract helper
 # ---------------------------------------------------------------------------
@@ -479,7 +504,11 @@ def _lower_get_qubit(op, block: Block) -> None:
     idx_tensor = op.operands[1]
 
     idx = _extract_scalar(idx_tensor, i64, block, op)
-    extract = ExtractRefOp(arr, idx)
+
+    # Normalize index: if idx < 0, use idx + size(arr)
+    norm_idx = _normalize_index_for_veq(arr, idx, block, op)
+
+    extract = ExtractRefOp(arr, norm_idx)
     block.insert_ops_before([extract], op)
 
     for r in op.results:

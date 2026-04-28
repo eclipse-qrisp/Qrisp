@@ -435,6 +435,20 @@ def test_swap_gate():
     )
     validate_quake_mlir(mlir)
 
+
+def test_negative_indexing():
+
+    def main():
+        qv = QuantumVariable(3)
+        x(qv[-1])
+        return measure(qv[2])
+    
+    mlir = _lower(main)
+    assert "quake.x" in mlir, "Expected quake.x in output"
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[1], f"Expected qubit 2 to be flipped by x(qv[-1]), got {result}"
+
 # ---------------------------------------------------------------------------
 # Test measure qubit
 # ---------------------------------------------------------------------------
