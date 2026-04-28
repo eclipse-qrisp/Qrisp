@@ -28,6 +28,10 @@ work through every section in order as each page stands on its own.
      - Building the docs locally and writing correct docstrings.
    * - :ref:`DevGuidePullRequests`
      - Opening pull requests, asking for help, and common mistakes to avoid.
+   * - :ref:`DevGuideWriteaTutorial`
+     - Writing a tutorial or example for your implementation.
+   * - :ref:`DevGuideFirstIssues`
+     - First issues to tackle and feature requests.
 
 .. toctree::
    :hidden:
@@ -38,3 +42,5 @@ work through every section in order as each page stands on its own.
    writing_tests
    documentation
    pull_requests
+   write_a_tutorial
+   issues_to_tackle

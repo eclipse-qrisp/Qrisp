@@ -60,6 +60,17 @@ Useful references:
 - GitHub guide on pull requests: https://docs.github.com/en/pull-requests
 - How to write a good commit message: https://cbea.ms/git-commit/
 
+Advertise for your PR!
+----------------------
+
+You created a pull request? Great! Let us know about it and make a name for yourself! 
+
+How? Our `Discord <https://discord.gg/fUCFcBAS>`_ is a great starting point - post the link to your PR there and give a quick overview. You will see how helpful and supportive our developers are about your contributions!
+Feel free to post about it on social media (LinkedIn).
+Additionally, you can write a tutorial about your implementation, granted that it is suited. For a how-to on tutorials check out the respective section! 
+Receive your hard-earned recognition and make a name for yourself!
+
+
 Common mistakes to avoid
 -------------------------
 
