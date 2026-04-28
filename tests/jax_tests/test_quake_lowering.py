@@ -484,7 +484,8 @@ def test_measure_single_qubit_quantum_variable():
     assert result == 10*[1]
 
 # ---------------------------------------------------------------------------
-# Test invert and cojugate
+# Test invert and cojugate 
+# (with qubit-wise gate application functions acting on qubits)
 # ---------------------------------------------------------------------------
 
 def test_invert():
@@ -810,6 +811,27 @@ def test_gate_application_quantum_variable():
         assert gate in mlir, f"Expected {gate!r} in output"
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
+
+
+def test_invert_quantum_variable():
+    """Test that invert works when applied to a QuantumVariable.
+    
+    Previouly, the condition lowering for the while loop used in invert was incorrectly treating the sge (signed greater-than-or-equal) condition as a strict greater-than, 
+    causing the loop to miss the final iteration where the last qubit is flipped. This test verifies that all qubits are correctly flipped to 1, 
+    confirming that the loop boundary condition is now correctly implemented (hotfix in _scf_to_cc.py to convert sge to sgt).
+    https://github.com/NVIDIA/cuda-quantum/issues/4401
+    """
+
+    def main():
+        qv = QuantumVariable(3)
+        with invert():
+            x(qv)
+        return measure(qv)
+
+    mlir = _lower(main)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[7], f"Expected all qubits flipped to 1 (7), got {result}"
 
 # ---------------------------------------------------------------------------
 # Test mcx
