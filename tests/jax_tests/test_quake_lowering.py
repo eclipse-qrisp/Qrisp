@@ -837,7 +837,10 @@ def test_invert_quantum_variable():
 # Test mcx
 # ---------------------------------------------------------------------------
 
-def test_mcx():
+methods = ["balauca", "khattar"]
+
+@pytest.mark.parametrize("method", methods)
+def test_mcx(method):
     """Multi-controlled X gate (mcx) with variable number of controls."""
 
     def circuit():
@@ -845,7 +848,7 @@ def test_mcx():
         qv = QuantumVariable(3)
         x(qv[0])
         x(qv[1])
-        mcx(qv[:2], qv[2])
+        mcx(qv[:2], qv[2], method=method)
         return measure(qv)
 
     mlir = _lower(circuit)
@@ -857,7 +860,7 @@ def test_mcx():
         """Test mcx with 9 controls and 1 target."""
         qv = QuantumVariable(10)
         x(qv[:9])
-        mcx(qv[:9], qv[9])
+        mcx(qv[:9], qv[9], method=method)
         return measure(qv)
 
     mlir = _lower(circuit)
