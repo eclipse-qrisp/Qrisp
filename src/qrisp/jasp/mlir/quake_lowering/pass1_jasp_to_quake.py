@@ -608,13 +608,14 @@ def _lower_quantum_gate(op, block: Block) -> None:
     gate_info = get_gate_info(gate_name)
     if gate_info is None:
         warnings.warn(
-            f"Unsupported Jasp gate '{gate_name}' – skipping (keeping jasp.quantum_gate in IR).",
+            f"Unsupported Jasp gate '{gate_name}' – removing jasp.quantum_gate from IR).",
             stacklevel=4,
         )
         _thread_qst(op)
         # Don't erase – leave the op (minus qst threading) in place.
         # Re-insert op without qst
         _strip_qst_from_op(op, block)
+        Rewriter.erase_op(op)
         return
 
     # Determine controls vs targets
