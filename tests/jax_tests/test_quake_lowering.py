@@ -934,7 +934,7 @@ rhs_type = ["classical", "quantum"]
 instances = [
     # (size1, exp1, val1, size2, exp2, val2)
     pytest.param(3, 0, 2, 4, 0, 1, id="QuantumFloat case 1"),
-    pytest.param(3, 0, 2, 4, 0, 3, id="QuantumFloat case 2"),
+    pytest.param(3, 0, 3, 4, 0, 2, id="QuantumFloat case 2"),
 ]
 
 @pytest.mark.parametrize("op", ops)
@@ -942,9 +942,6 @@ instances = [
 @pytest.mark.parametrize("size1, exp1, val1, size2, exp2, val2", instances)
 def test_quantum_float_arithmetic(op, rhs_type, size1, exp1, val1, size2, exp2, val2):
     """Arithmetic operations on QuantumFloat with classical or quantum RHS."""
-
-    if op == operator.sub:
-        pytest.skip("Subtraction of QuantumFloats is not currently supported")
 
     def main():
         a = QuantumFloat(size1, exponent=exp1)
@@ -980,9 +977,6 @@ instances = [
 @pytest.mark.parametrize("size1, exp1, val1, size2, exp2, val2", instances)
 def test_quantum_float_arithmetic_inpl(op, rhs_type, size1, exp1, val1, size2, exp2, val2):
     """In-place arithmetic operations on QuantumFloat."""
-
-    if op == operator.isub:
-        pytest.skip("In-place subtraction of QuantumFloats is not currently supported")
 
     def main():
         a = QuantumFloat(size1, exponent=exp1)
