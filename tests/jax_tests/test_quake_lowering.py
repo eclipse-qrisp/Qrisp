@@ -33,11 +33,13 @@ Coverage
 
 import warnings
 import jax
+import numpy as np
 import operator
 import pytest
 import re
 
-from qrisp import QuantumVariable, QuantumBool, QuantumFloat, h, mcx, x, y, z, cp, cx, cy, cz, rx, rxx, rz, rzz, s, swap, sx, t, xxyy, measure, control, invert, conjugate
+from qrisp import QuantumVariable, QuantumBool, QuantumFloat, h, mcx, x, y, z, cp, cx, cy, cz, rx, ry, rz, rxx, rz, rzz, s, swap, sx, t, xxyy, measure, control, invert, conjugate
+from qrisp.alg_primitives import amplitude_amplification
 from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop    
 
 try:
@@ -926,6 +928,45 @@ def test_bell_circuit_full_format():
     assert_return_type(mlir, "i64")
 
     validate_quake_mlir(mlir)
+
+
+def test_amplitude_amplification():
+    """Test amplitude amplification algorithm with a simple oracle and state function."""
+
+    def state_function(qb):
+        ry(np.pi/8,qb)
+
+    def oracle_function(qb):
+        z(qb)
+
+    def main():
+        qb = QuantumBool()
+        state_function(qb)
+        amplitude_amplification([qb], state_function, oracle_function, iter=3)
+        return measure(qb[0])
+    
+    mlir = _lower(main)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert np.mean(result) >= 0.8, f"Expected amplitude amplification to yield mostly 1s, got {result}"
+
+
+def test_trotterization():
+    """Test that a simple Trotterized Hamiltonian evolution produces valid results."""
+    from qrisp.operators import X, Y, Z
+
+    def main():
+        qv = QuantumVariable(2)
+        H = X(0)*X(1) + Y(0)*Y(1) + Z(0)*Z(1) + X(0) + X(1)
+        U = H.trotterization()
+        U(qv, t=1.0, steps=10)
+        return measure(qv)
+    
+    mlir = _lower(main)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    # We can't predict the exact result, but we can check that it's a valid measurement (0, 1, 2, or 3)
+    assert all(0 <= r <= 3 for r in result), f"Expected valid measurement results (0-3), got {result}"
 
 # ---------------------------------------------------------------------------
 # Test qrisp cudaq kernel decorator
