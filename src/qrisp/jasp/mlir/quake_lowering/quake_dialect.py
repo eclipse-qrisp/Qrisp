@@ -266,12 +266,6 @@ def _quake_gate_print(self: IRDLOperation, printer: Printer) -> None:  # noqa: N
     SSA operand types in order: parameters, controls, targets) as defined by
     the CUDA-Q Quake dialect's ``AttrSizedOperandSegments`` assemblyFormat.
     """
-    # Controls
-    ctrl_list = list(self.controls)
-    if ctrl_list:
-        printer.print_string(" [")
-        printer.print_list(ctrl_list, printer.print_ssa_value)
-        printer.print_string("]")
 
     # Float parameters
     param_list = list(self.params)
@@ -279,6 +273,13 @@ def _quake_gate_print(self: IRDLOperation, printer: Printer) -> None:  # noqa: N
         printer.print_string(" (")
         printer.print_list(param_list, printer.print_ssa_value)
         printer.print_string(")")
+
+    # Controls
+    ctrl_list = list(self.controls)
+    if ctrl_list:
+        printer.print_string(" [")
+        printer.print_list(ctrl_list, printer.print_ssa_value)
+        printer.print_string("]")
 
     # Target qubits (always at least one)
     tgt_list = list(self.targets)

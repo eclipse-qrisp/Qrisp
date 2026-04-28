@@ -37,7 +37,7 @@ import operator
 import pytest
 import re
 
-from qrisp import QuantumVariable, QuantumBool, QuantumFloat, h, mcx, x, y, z, cx, rx, rxx, rz, rzz, s, swap, sx, t, xxyy, measure, control, invert, conjugate
+from qrisp import QuantumVariable, QuantumBool, QuantumFloat, h, mcx, x, y, z, cp, cx, cy, cz, rx, rxx, rz, rzz, s, swap, sx, t, xxyy, measure, control, invert, conjugate
 from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop    
 
 try:
@@ -396,18 +396,24 @@ def test_parameterized_gate():
     validate_quake_mlir(mlir)
 
 
-def test_controlled_gate_cx():
+def test_controlled_gates():
     """cx maps to quake.x with one control qubit."""
 
     def circuit():
         qv = QuantumVariable(2)
         h(qv[0])
         cx(qv[0], qv[1])
+        cy(qv[0], qv[1])
+        cz(qv[0], qv[1])
+        cp(0.5, qv[0], qv[1])
         return qv
 
     mlir = _lower(circuit)
     assert "quake.h" in mlir
     assert "quake.x" in mlir
+    assert "quake.y" in mlir
+    assert "quake.z" in mlir
+    assert "quake.r1" in mlir
     # Control qubit should be present in square brackets
     assert "[%"  in mlir, "Expected control qubit in bracket notation"
     validate_quake_mlir(mlir)
