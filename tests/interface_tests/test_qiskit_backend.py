@@ -14,13 +14,12 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Tests for QiskitBackend and QiskitJob.
+"""Tests for QiskitBackend and QiskitJob."""
 
-All tests are fully mocked — no real IBM Quantum credentials or hardware
-are required.  The qiskit-aer package is used as the real backend device
-(so transpile works correctly), while SamplerV2 is replaced by a mock so
-no actual job submission takes place.
-"""
+# All tests are fully mocked, so no real IBM Quantum credentials or hardware
+# are required. The qiskit-aer package is used as the real backend device
+# (so transpile works correctly), while SamplerV2 is replaced by a mock so
+# no actual job submission takes place.
 
 import sys
 from unittest.mock import MagicMock

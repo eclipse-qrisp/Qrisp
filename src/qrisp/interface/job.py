@@ -416,7 +416,7 @@ class Job(ABC):
         observed state.
 
         Callers that want to avoid the cost of a live query should read
-        :attr:`last_known_status` directly; call :meth:`refresh` (or
+        :attr:`last_known_status` directly. Call :meth:`refresh` (or
         :meth:`status`) when an explicit update is needed.
 
         Returns
