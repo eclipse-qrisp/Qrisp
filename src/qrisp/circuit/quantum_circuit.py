@@ -2476,89 +2476,89 @@ class QuantumCircuit:
 
         return ParityHandle(self.data[-1])
 
-    def cx(self, qubits_0, qubits_1):
+    def cx(self, qubits_0: QubitLike, qubits_1: QubitLike):
         """
         Instruct a CX-gate.
 
         Parameters
         ----------
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to control on.
-        qubits_1 : Qubit
+        qubits_1 : QubitLike
             The target Qubit.
 
         """
         self.append(ops.CXGate(), [qubits_0, qubits_1])
 
-    def cy(self, qubits_0, qubits_1):
+    def cy(self, qubits_0: QubitLike, qubits_1: QubitLike):
         """
         Instruct a CY-gate.
 
         Parameters
         ----------
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to control on.
-        qubits_1 : Qubit
+        qubits_1 : QubitLike
             The target Qubit.
 
         """
         self.append(ops.CYGate(), [qubits_0, qubits_1])
 
-    def cz(self, qubits_0, qubits_1):
+    def cz(self, qubits_0: QubitLike, qubits_1: QubitLike):
         """
         Instruct a CZ-gate.
 
         Parameters
         ----------
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to control on.
-        qubits_1 : Qubit
+        qubits_1 : QubitLike
             The target Qubit.
 
         """
         self.append(ops.CZGate(), [qubits_0, qubits_1])
 
-    def h(self, qubits):
+    def h(self, qubits: QubitLike):
         """
         Instruct a Hadamard-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
 
         self.append(ops.HGate(), [qubits])
 
-    def x(self, qubits):
+    def x(self, qubits: QubitLike):
         """
         Instruct a Pauli-X-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.XGate(), [qubits])
 
-    def y(self, qubits):
+    def y(self, qubits: QubitLike):
         """
         Instruct a Pauli-Y-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.YGate(), [qubits])
 
-    def z(self, qubits):
+    def z(self, qubits: QubitLike):
         """
         Instruct a Pauli-Z-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.ZGate(), [qubits])
