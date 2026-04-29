@@ -16,7 +16,6 @@
 
 """This module defines the abstract :class:`Backend` interface for Qrisp-compatible backends."""
 
-
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from types import MappingProxyType

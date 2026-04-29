@@ -26,8 +26,15 @@ from qiskit import QuantumCircuit, transpile
 from qiskit.providers import Backend as QiskitBackendBase
 from qiskit.providers import BackendV2
 
+from qrisp.circuit.quantum_circuit import QuantumCircuit as QrispQuantumCircuit
 from qrisp.interface.backend import Backend
-from qrisp.interface.job import Job, JobResult, JobStatus
+from qrisp.interface.job import (
+    Job,
+    JobCancelledError,
+    JobFailureError,
+    JobResult,
+    JobStatus,
+)
 from qrisp.interface.virtual_backend import VirtualBackend
 
 
@@ -41,7 +48,7 @@ def _map_qiskit_status(qiskit_job) -> JobStatus:
         # qiskit-ibm-runtime jobs expose .status() directly
         raw = qiskit_job.status()
     except Exception:
-        return JobStatus.INITIALIZING
+        return JobStatus.RUNNING
 
     # status() may return a string (newer runtimes) or a JobStatus enum
     name = raw.name if hasattr(raw, "name") else str(raw).upper()
@@ -89,14 +96,21 @@ class QiskitJob(Job):
     # ------------------------------------------------------------------
 
     def submit(self) -> None:
-        """No-op: the Qiskit job is submitted by the sampler inside QiskitBackend.run_async()."""
+        """Mark the job as QUEUED. The Qiskit job is already submitted by the sampler in run_async()."""
+        self._last_known_status = JobStatus.QUEUED
 
-    def result(self) -> JobResult:
+    def result(self, timeout: float | None = None) -> JobResult:
         """
         Block until the Qiskit job finishes and return the :class:`~qrisp.interface.JobResult`.
 
         Waiting is delegated to Qiskit's own blocking ``job.result()`` call,
         so no additional synchronisation is needed on the Qrisp side.
+
+        Parameters
+        ----------
+        timeout : float or None, optional
+            Not currently forwarded to the Qiskit job. Included for interface
+            compatibility. Pass ``None`` (the default) to wait indefinitely.
 
         Returns
         -------
@@ -104,17 +118,24 @@ class QiskitJob(Job):
 
         Raises
         ------
-        RuntimeError
-            If the Qiskit job failed or was cancelled.
-        """
-        if self.status() == JobStatus.CANCELLED:
-            raise RuntimeError("QiskitJob was cancelled.")
+        JobFailureError
+            If the Qiskit job failed or raised an exception.
 
+        JobCancelledError
+            If the Qiskit job was cancelled.
+        """
         try:
             qiskit_result = self._qiskit_job.result()
         except Exception as exc:
-            raise RuntimeError(f"Qiskit job failed: {exc}") from exc
+            terminal_status = _map_qiskit_status(self._qiskit_job)
+            self._last_known_status = terminal_status
+            if terminal_status == JobStatus.CANCELLED:
+                raise JobCancelledError(
+                    f"Qiskit job {self._job_id!r} was cancelled."
+                ) from exc
+            raise JobFailureError(f"Qiskit job {self._job_id!r} failed: {exc}") from exc
 
+        self._last_known_status = JobStatus.DONE
         counts_list = []
         for i in range(self._num_circuits):
             counts_dict = {}
@@ -308,7 +329,9 @@ class QiskitBackend(Backend):
         -------
         QiskitJob
         """
-        from qrisp.circuit.quantum_circuit import QuantumCircuit as QrispQuantumCircuit
+
+        self._validate_shots(shots)
+        self._check_circuit_limit(circuits)
 
         if isinstance(circuits, QrispQuantumCircuit):
             circuits = [circuits]
