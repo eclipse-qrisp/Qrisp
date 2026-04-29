@@ -19,6 +19,8 @@
 from qrisp.qtypes import QuantumFloat, QuantumVariable
 from qrisp.jasp import check_for_tracing_mode
 
+import numpy as np
+
 
 def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
 
@@ -208,3 +210,183 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
             raw_inpl_adder(qf2, qf1, *args, **kwargs)
 
     return ammended_adder
+
+
+def inpl_adder_test(inpl_adder):
+    """
+    This function runs tests on a desired inplace addition function.
+    An inplace addition function is a function mapping (a, b) to (a, a+b),
+    where a is a :ref:`QuantumVariable`, list[:ref:`Qubit`] or an integer
+    and b is either a :ref:`QuantumVariable` or a list[:ref:`Qubit`].
+
+    Parameters
+    ----------
+    inpl_adder : callable
+        A quantum inplace addition function that can either act on single QuantumVariables or on lists of Qubits
+        by adding the first one to the second.
+
+    Returns
+    -------
+    Bool:
+        True if all tests are passed, else False/ Exceptions.
+
+    Examples
+    --------
+
+    We test the built-in Cuccaro adder:
+
+    ::
+
+        from qrisp import cuccaro_adder, inpl_adder_test
+
+        inpl_adder_test(cuccaro_adder)
+        print("The cuccaro adder passed the tests without errors.")
+
+    And now a new user-defined qcla adder:
+    ::
+
+        from qrisp import inpl_adder_test, qcla
+
+        qcla_2_0 = lambda x, y : qcla(x, y, radix_base = 2, radix_exponent = 0)
+        inpl_adder_test(qcla_2_0)
+        print("The qcla_2_0 adder passed the tests without errors.")
+
+    """
+    from qrisp import QuantumBool, QuantumFloat, control, h, multi_measurement
+
+    for i in range(1, 7):
+
+        for j in range(1, i + 1):
+            a = QuantumFloat(j)
+            b = QuantumFloat(i)
+            c = QuantumFloat(i)
+
+            h(a)
+            h(b)
+
+            c[:] = b
+
+            inpl_adder(a, c)
+
+            statevector_arr = a.qs.compile().statevector_array()
+            angles = np.angle(
+                statevector_arr[
+                    np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)
+                ]
+            )
+
+            # Test correct phase behavior
+            assert (
+                np.sum(np.abs(angles)) < 0.1
+            ), f"Quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
+
+            mes_res = multi_measurement([a, b, c])
+
+            for a, b, c in mes_res.keys():
+                assert (a + b) % (
+                    2**i
+                ) == c, f"Quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
+
+        if i < 6:
+            for j in range(1, 2**i):
+                a = QuantumFloat(i)
+                b = QuantumFloat(i)
+
+                h(a)
+
+                b[:] = a
+
+                inpl_adder(j, a)
+
+                statevector_arr = a.qs.compile().statevector_array()
+                angles = np.angle(
+                    statevector_arr[
+                        np.abs(statevector_arr) > 1 / 2 ** ((a.size) / 2 + 1)
+                    ]
+                )
+                assert (
+                    np.sum(np.abs(angles)) < 0.1
+                ), f"Classical-quantum adder produced a faulty phase shift on input size {i}."
+
+                mes_res = multi_measurement([a, b])
+
+                for a, b in mes_res.keys():
+                    assert (b + j) % (
+                        2**i
+                    ) == a, f"Classical-quantum addition result was incorrect for input values {a} += {c} on input size {i}."
+
+    for i in range(1, 7):
+
+        for j in range(1, i + 1):
+            a = QuantumFloat(j)
+            b = QuantumFloat(i)
+            c = QuantumFloat(i)
+            qbl = QuantumBool()
+
+            h(qbl)
+            h(a)
+            h(b)
+
+            c[:] = b
+
+            with control(qbl):
+                inpl_adder(a, c)
+
+            statevector_arr = a.qs.compile().statevector_array()
+            angles = np.angle(
+                statevector_arr[
+                    np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)
+                ]
+            )
+            assert (
+                np.sum(np.abs(angles)) < 0.1
+            ), f"Controlled quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
+
+            mes_res = multi_measurement([a, b, c, qbl])
+
+            for a, b, c, qbl in mes_res.keys():
+
+                if qbl:
+                    assert (a + b) % (
+                        2**i
+                    ) == c, f"Controlled quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
+                else:
+                    assert (
+                        c == b
+                    ), f"Controlled quantum-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state.Faulty input sizes: {i},{j}"
+
+        if i < 6:
+            for j in range(1, 2**i):
+                a = QuantumFloat(i)
+                b = QuantumFloat(i)
+                qbl = QuantumBool()
+
+                h(qbl)
+                h(a)
+
+                b[:] = a
+
+                with control(qbl):
+                    inpl_adder(j, a)
+
+                statevector_arr = a.qs.compile().statevector_array()
+                angles = np.angle(
+                    statevector_arr[
+                        np.abs(statevector_arr) > 1 / 2 ** ((a.size) / 2 + 1)
+                    ]
+                )
+                assert (
+                    np.sum(np.abs(angles)) < 0.1
+                ), f"Controlled classical-quantum adder produced a faulty phase shift on input size {i}."
+
+                mes_res = multi_measurement([a, b, qbl])
+
+                for a, b, qbl in mes_res.keys():
+                    if qbl:
+                        assert (b + j) % (
+                            2**i
+                        ) == a, f"Controlled classical-quantum addition result was incorrect for input values {b} += {j} on input size, {i}."
+                    else:
+                        assert (
+                            b == a
+                        ), f"Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"
