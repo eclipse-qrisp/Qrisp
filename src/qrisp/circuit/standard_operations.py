@@ -18,9 +18,6 @@
 
 from __future__ import annotations
 
-# This file uses the gate constructor from operation.py to define
-# some standard operations
-
 import types
 from typing import TYPE_CHECKING
 
@@ -110,7 +107,7 @@ def RYGate(phi: Param = 0):
 
 
 def RZGate(phi: Param = 0):
-    res = U3Gate(0, phi, 0, name="rz", global_phase=-phi / 2)
+    res = U3Gate(0, phi, 0, name="rz", global_phase=-phi / 2)  # type: ignore[operator]
     return res
 
 
