@@ -20,11 +20,13 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
+import sympy
 from jax.core import Tracer
+from sympy import Symbol
 
 from qrisp.circuit.clbit import Clbit
 from qrisp.circuit.qubit import Qubit
-from qrisp.typing import ArrayLike, ClbitLike, NDArrayLike, QubitLike, ScalarLike
+from qrisp.typing import ArrayLike, ClbitLike, NDArrayLike, Param, QubitLike, ScalarLike
 
 
 class TestQubitLike:
@@ -181,3 +183,66 @@ class TestArrayLike:
     def test_non_array_types_are_rejected(self, value):
         """Strings, plain lists, dicts, None, and tuples are not instances of ArrayLike."""
         assert not isinstance(value, ArrayLike)
+
+
+class TestParam:
+    """Tests for the Param type alias.
+
+    Param = float | int | complex | np.number | sympy.Expr | jax.Array.
+    All arms are concrete classes, so isinstance works cleanly for both
+    acceptance and rejection tests. jax.core.Tracer is a subclass of jax.Array,
+    so the tracer check still passes.
+    """
+
+    @pytest.mark.parametrize("value", [1.5, 0.0, -3.14])
+    def test_python_float(self, value):
+        """Python floats are valid gate parameters."""
+        assert isinstance(value, Param)
+
+    @pytest.mark.parametrize("value", [0, 1, -5])
+    def test_python_int(self, value):
+        """Python ints are valid gate parameters."""
+        assert isinstance(value, Param)
+
+    @pytest.mark.parametrize("value", [1 + 2j, 0j, complex(0, -1)])
+    def test_python_complex(self, value):
+        """Python complex numbers are valid gate parameters."""
+        assert isinstance(value, Param)
+
+    @pytest.mark.parametrize(
+        "value",
+        [np.float64(1.0), np.float32(0.5), np.int32(3), np.complex128(1 + 2j)],
+    )
+    def test_numpy_numeric_scalars(self, value):
+        """NumPy numeric scalars (np.number subclasses) are valid gate parameters."""
+        assert isinstance(value, Param)
+
+    def test_sympy_symbol(self):
+        """A sympy.Symbol is a valid gate parameter."""
+        assert isinstance(Symbol("phi"), Param)
+
+    def test_sympy_expression(self):
+        """An arbitrary sympy expression is a valid gate parameter."""
+        phi = Symbol("phi")
+        assert isinstance(2 * phi + sympy.pi, Param)
+
+    def test_jax_tracer(self):
+        """JAX tracers encountered during tracing are valid gate parameters.
+
+        Uses jax.make_jaxpr to produce an actual Tracer object.
+        """
+        results = []
+
+        def f(x):
+            results.append(isinstance(x, Tracer))
+            results.append(isinstance(x, Param))
+            return x
+
+        jax.make_jaxpr(f)(1.0)
+        assert results[0], "make_jaxpr did not produce a Tracer (test precondition failed)"
+        assert results[1], "Tracer is not an instance of Param"
+
+    @pytest.mark.parametrize("value", ["phi", [1.0], None, np.array([1.0])])
+    def test_non_param_types_are_rejected(self, value):
+        """Strings, lists, None, and NumPy arrays are not valid gate parameters."""
+        assert not isinstance(value, Param)

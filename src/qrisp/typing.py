@@ -23,11 +23,12 @@ from typing import Sequence, TypeAlias
 import jax
 import jax.core
 import numpy as np
+from sympy import Expr
 
 from qrisp.circuit.clbit import Clbit
 from qrisp.circuit.qubit import Qubit
 
-__all__ = ["QubitLike", "ClbitLike", "ScalarLike", "NDArrayLike", "ArrayLike"]
+__all__ = ["QubitLike", "ClbitLike", "ScalarLike", "NDArrayLike", "ArrayLike", "Param"]
 
 QubitLike: TypeAlias = Qubit | int | Sequence[Qubit | int]
 """Accepted as a qubit specifier in circuit methods and gate functions.
@@ -95,5 +96,26 @@ True
 >>> isinstance(np.array([1, 2, 3]), ArrayLike)
 True
 >>> isinstance(np.float32(1.0), ArrayLike)
+True
+"""
+
+Param: TypeAlias = float | int | complex | np.number | Expr | jax.Array
+"""A gate parameter value.
+
+Covers all types accepted as gate parameters throughout Qrisp: Python numeric
+scalars (``float``, ``int``, ``complex``), NumPy numeric scalars
+(``np.float64``, ``np.int32``, etc. via ``np.number``), symbolic expressions
+(``sympy.Symbol``, ``sympy.Expr``, and any SymPy expression), and JAX arrays
+(``jax.Array``, which includes concrete arrays and tracers encountered when
+Qrisp code runs inside a Jasp-traced function, e.g. under ``@jaspify``).
+
+Examples
+--------
+
+>>> from qrisp.typing import Param
+>>> import sympy
+>>> isinstance(1.5, Param)
+True
+>>> isinstance(sympy.Symbol("phi"), Param)
 True
 """

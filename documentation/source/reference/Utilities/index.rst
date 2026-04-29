@@ -43,6 +43,8 @@ Utilities
      - Type aliases for qubit and classical bit specifiers.
    * - :data:`~qrisp.ScalarLike`, :data:`~qrisp.NDArrayLike`, :data:`~qrisp.ArrayLike`
      - Type aliases for scalar values, multi-dimensional arrays, and their union.
+   * - :data:`~qrisp.Param`
+     - Type alias for gate parameter values (numerics, SymPy expressions, JAX tracers).
 
 .. toctree::
    :hidden:

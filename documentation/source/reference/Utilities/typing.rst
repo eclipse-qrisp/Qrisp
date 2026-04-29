@@ -55,3 +55,17 @@ Qrisp. Import them directly from the top-level package:
    parameter accepts either scalars or arrays. Use the narrower aliases when
    only one kind is expected, to avoid spurious Pylance warnings about missing
    attributes such as ``.shape``.
+
+.. py:data:: Param
+   :type: TypeAlias
+   :value: float | int | complex | np.number | sympy.Expr | jax.Array
+
+   A gate parameter value.
+
+   Covers all types accepted as gate parameters throughout Qrisp: Python
+   numeric scalars (``float``, ``int``, ``complex``), NumPy numeric scalars
+   (``np.float64``, ``np.int32``, etc. via ``np.number``), symbolic
+   expressions (``sympy.Symbol``, ``sympy.Expr``, and any SymPy expression),
+   and JAX arrays (``jax.Array``, which covers both concrete arrays and tracers
+   encountered when Qrisp runs inside a Jasp-traced function, e.g. under
+   ``@jaspify``).
