@@ -1062,6 +1062,44 @@ def test_quantum_float_arithmetic_inpl(op, rhs_type, size1, exp1, val1, size2, e
     result = run_quake_mlir(mlir, shots=10)
     assert result == 10*[expected], f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {result}"
 
+
+ops_comp = [operator.eq, operator.ne, operator.lt, operator.le, operator.gt, operator.ge]
+rhs_type = ["classical", "quantum"]
+instances = [
+    # (size1, exp1, val1, size2, exp2, val2)
+    pytest.param(3, 0, 2, 3, 0, 1, id="QuantumFloat case 1"),
+    #pytest.param(3, 0, 3, 4, 0, 3, id="QuantumFloat case 2"),
+]
+
+@pytest.mark.parametrize("op", ops_comp)
+@pytest.mark.parametrize("rhs_type", rhs_type)
+@pytest.mark.parametrize("size1, exp1, val1, size2, exp2, val2", instances)
+def test_quantum_float_comparison(op, rhs_type, size1, exp1, val1, size2, exp2, val2):
+    """Comparison operations on QuantumFloat with classical or quantum RHS."""
+
+    if op in (operator.eq, operator.ne):
+        pytest.skip("Equality and inequality comparisons on QuantumFloat are not supported.")
+
+    def main():
+        a = QuantumFloat(size1, exponent=exp1)
+        a[:] = val1
+
+        if rhs_type == "classical":
+            b = val2
+        else:
+            b = QuantumFloat(size2, exponent=exp2)
+            b[:] = val2
+
+        c = op(a, b)
+        return measure(c)
+    
+    expected = op(val1, val2)
+    
+    mlir = _lower(main)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=1)
+    assert result == 1*[expected], f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {result}"
+
 # ---------------------------------------------------------------------------
 
 
