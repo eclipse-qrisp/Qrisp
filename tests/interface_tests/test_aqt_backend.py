@@ -14,12 +14,11 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Tests for AQTBackend and AQTJob.
+"""Tests for AQTBackend and AQTJob."""
 
-Real AQT credentials and hardware are not required.  The ``qiskit_aqt_provider``
-package is injected as a mock via ``sys.modules`` so the tests run in any CI
-environment without optional dependencies.
-"""
+# Real AQT credentials and hardware are not required.  The ``qiskit_aqt_provider``
+# package is injected as a mock via ``sys.modules`` so the tests run in any CI
+# environment without optional dependencies.
 
 import sys
 from unittest.mock import MagicMock
@@ -27,7 +26,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from qrisp import QuantumCircuit
-from qrisp.interface.job import JobFailureError, JobResult, JobStatus
+from qrisp.interface.job import JobCancelledError, JobFailureError, JobResult, JobStatus
 from qrisp.interface.provider_backends.aqt_backend import AQTBackend, AQTJob
 
 
@@ -43,8 +42,8 @@ def aqt_mocks(monkeypatch):
     Returns
     -------
     tuple[MagicMock, MagicMock]
-        ``(mock_provider_cls, mock_sampler_cls)`` — the mock class objects
-        for ``AQTProvider`` and ``AQTSampler`` respectively.
+        ``(mock_provider_cls, mock_sampler_cls)``, which are the mock class
+        objects for ``AQTProvider`` and ``AQTSampler`` respectively.
     """
     mock_provider_cls = MagicMock(name="AQTProvider")
     mock_sampler_cls = MagicMock(name="AQTSampler")
@@ -135,14 +134,17 @@ class TestAQTBackendConstruction:
     """Constructor validation and name-extraction behaviour."""
 
     def test_wrong_api_token_type_raises(self):
+        """API token must be a string, not an integer."""
         with pytest.raises(TypeError, match="api_token"):
             AQTBackend(123, "ibex", "workspace")
 
     def test_wrong_workspace_type_raises(self):
+        """Workspace must be a string, not an integer."""
         with pytest.raises(TypeError, match="workspace"):
             AQTBackend("token", "ibex", 999)
 
     def test_wrong_device_instance_type_raises(self):
+        """Device instance must be a string, not an integer."""
         with pytest.raises(TypeError, match="device_instance"):
             AQTBackend("token", 42, "workspace")
 
@@ -199,9 +201,11 @@ class TestAQTBackendOptions:
     """Default options and shot-count propagation."""
 
     def test_default_options_shots_100(self):
+        """The default shot count is 100 if not overridden by the user."""
         assert AQTBackend._default_options() == {"shots": 100}
 
     def test_instance_default_shots_100(self, aqt_backend):
+        """AQTBackend instance starts with the default shot count of 100."""
         backend, _ = aqt_backend
         assert backend.options["shots"] == 100
 
@@ -325,10 +329,17 @@ class TestAQTJob:
             cl_bits_per_circuit=[1],
         )
 
-    def test_submit_is_noop(self):
-        """submit() does not raise and does not alter observable state."""
+    def test_submit_does_not_raise(self):
+        """submit() completes without raising."""
         job = self._make_job()
-        job.submit()  # must not raise
+        job.submit()
+
+    def test_submit_sets_last_known_status_to_queued(self):
+        """submit() transitions last_known_status from INITIALIZING to QUEUED."""
+        job = self._make_job()
+        assert job.last_known_status == JobStatus.INITIALIZING
+        job.submit()
+        assert job.last_known_status == JobStatus.QUEUED
 
     def test_cancel_always_returns_false(self):
         """AQT does not expose a cancellation API."""
@@ -348,6 +359,7 @@ class TestAQTJob:
         assert job_result.get_counts() == {"0": 0.6, "1": 0.4}
 
     def test_result_returns_job_result_instance(self):
+        """result() returns an instance of JobResult."""
         job = self._make_job()
         assert isinstance(job.result(), JobResult)
 
@@ -363,6 +375,31 @@ class TestAQTJob:
         with pytest.raises(JobFailureError) as exc_info:
             job.result()
         assert "network timeout" in str(exc_info.value.__cause__)
+
+    def test_result_sets_last_known_status_to_done_on_success(self):
+        """result() updates last_known_status to DONE after a successful execution."""
+        job = self._make_job(quasi_dists=[{0: 1.0}])
+        job.result()
+        assert job.last_known_status == JobStatus.DONE
+
+    def test_result_raises_job_cancelled_error_when_cancelled(self):
+        """A cancelled AQT job raises JobCancelledError, not JobFailureError."""
+        aqt_job = _make_aqt_job(fail=RuntimeError("job was cancelled by user"))
+        aqt_job.status.return_value = MagicMock()
+        aqt_job.status.return_value.name = "CANCELLED"
+        job = AQTJob(backend=MagicMock(), aqt_job=aqt_job, cl_bits_per_circuit=[1])
+        with pytest.raises(JobCancelledError):
+            job.result()
+
+    def test_result_sets_last_known_status_to_cancelled_on_cancellation(self):
+        """result() updates last_known_status to CANCELLED when the job was cancelled."""
+        aqt_job = _make_aqt_job(fail=RuntimeError("cancelled"))
+        aqt_job.status.return_value = MagicMock()
+        aqt_job.status.return_value.name = "CANCELLED"
+        job = AQTJob(backend=MagicMock(), aqt_job=aqt_job, cl_bits_per_circuit=[1])
+        with pytest.raises(JobCancelledError):
+            job.result()
+        assert job.last_known_status == JobStatus.CANCELLED
 
     def test_status_done_when_aqt_job_done(self):
         """status() returns DONE when the AQT job reports DONE."""
@@ -396,6 +433,7 @@ class TestAQTJob:
         assert job.status() == JobStatus.RUNNING
 
     def test_done_returns_true_when_aqt_job_done(self):
+        """done() returns True when the AQT job reports DONE."""
         aqt_job = _make_aqt_job()
         aqt_job.status.return_value = MagicMock(name="DONE")
         aqt_job.status.return_value.name = "DONE"
@@ -403,6 +441,7 @@ class TestAQTJob:
         assert job.done() is True
 
     def test_in_final_state_true_when_done(self):
+        """in_final_state() returns True when the AQT job reports DONE."""
         aqt_job = _make_aqt_job()
         aqt_job.status.return_value = MagicMock(name="DONE")
         aqt_job.status.return_value.name = "DONE"

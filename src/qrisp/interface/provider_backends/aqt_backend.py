@@ -20,7 +20,13 @@ from qiskit import QuantumCircuit as QiskitQuantumCircuit
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
-from qrisp.interface.job import Job, JobFailureError, JobResult, JobStatus
+from qrisp.interface.job import (
+    Job,
+    JobCancelledError,
+    JobFailureError,
+    JobResult,
+    JobStatus,
+)
 
 __all__ = ["AQTBackend", "AQTJob"]
 
@@ -55,8 +61,8 @@ class AQTJob(Job):
     A :class:`~qrisp.interface.Job` that wraps a single AQT primitive job.
 
     One ``AQTJob`` is created per :meth:`AQTBackend.run_async` call.
-    The underlying AQT job is already submitted before this object is returned,
-    so :meth:`submit` is a no-op.
+    The underlying AQT job is already submitted before this object is returned;
+    :meth:`submit` only updates :attr:`~qrisp.interface.Job.last_known_status` to ``QUEUED``.
 
     :meth:`result` blocks until the AQT hardware finishes, delegating the wait
     to the AQT job's own ``result()`` call.
@@ -79,7 +85,8 @@ class AQTJob(Job):
     # ------------------------------------------------------------------
 
     def submit(self) -> None:
-        """No-op: the AQT job is submitted by the sampler inside AQTBackend.run_async()."""
+        """Mark the job as QUEUED; the AQT job is already submitted by the sampler in run_async()."""
+        self._last_known_status = JobStatus.QUEUED
 
     def result(self, timeout: float | None = None) -> JobResult:
         """
@@ -91,7 +98,7 @@ class AQTJob(Job):
         ----------
         timeout : float or None, optional
             Not currently forwarded to the AQT job. Included for interface
-            compatibility; pass ``None`` (the default) to wait indefinitely.
+            compatibility. Pass ``None`` (the default) to wait indefinitely.
 
         Returns
         -------
@@ -101,14 +108,23 @@ class AQTJob(Job):
         ------
         JobFailureError
             If the AQT job failed or raised an exception.
+        JobCancelledError
+            If the AQT job was cancelled.
         """
         try:
             aqt_result = self._aqt_job.result()
         except Exception as exc:
+            terminal_status = _map_aqt_status(self._aqt_job)
+            self._last_known_status = terminal_status
+            if terminal_status == JobStatus.CANCELLED:
+                raise JobCancelledError(
+                    f"AQT job {self._job_id!r} was cancelled."
+                ) from exc
             raise JobFailureError(
                 f"AQT job {self._job_id!r} failed during execution."
             ) from exc
 
+        self._last_known_status = JobStatus.DONE
         result_dicts = [
             {
                 bin(outcome)[2:].zfill(self._cl_bits_per_circuit[i]): prob
