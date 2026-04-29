@@ -512,12 +512,13 @@ class TestJobStatusCaching:
         job.refresh()
         assert job.last_known_status == JobStatus.DONE
 
-    def test_status_call_does_not_update_last_known_status(self, backend):
-        """Calling status() directly does not mutate last_known_status."""
+    def test_status_call_updates_last_known_status(self, backend):
+        """Calling status() updates last_known_status as a side effect."""
         job = MinimalJob(backend=backend)
         job._set_status(JobStatus.RUNNING)
-        job.status()  # live query — must not update the cache
-        assert job.last_known_status == JobStatus.INITIALIZING
+        returned = job.status()
+        assert returned == JobStatus.RUNNING
+        assert job.last_known_status == JobStatus.RUNNING
 
     def test_last_known_status_reflects_final_state_after_refresh(self, backend):
         """last_known_status correctly caches terminal states."""

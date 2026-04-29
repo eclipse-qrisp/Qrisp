@@ -41,7 +41,6 @@ class DefaultJob(Job):
         super().__init__(backend=backend)
         self._circuits = circuits
         self._shots = shots
-        self._status = JobStatus.INITIALIZING
         self._result_data = None
         self._error = None
 
@@ -52,16 +51,16 @@ class DefaultJob(Job):
     def submit(self) -> None:
         """Execute all circuits synchronously and store the result."""
         token = self._backend.options.get("token", "")
-        self._status = JobStatus.RUNNING
+        self._last_known_status = JobStatus.RUNNING
         try:
             counts_list = [
                 default_run(circuit, self._shots, token) for circuit in self._circuits
             ]
             self._result_data = JobResult(counts_list)
-            self._status = JobStatus.DONE
+            self._last_known_status = JobStatus.DONE
         except Exception as exc:
             self._error = exc
-            self._status = JobStatus.ERROR
+            self._last_known_status = JobStatus.ERROR
 
     def result(self) -> JobResult:
         """Return the :class:`~qrisp.interface.JobResult`.
@@ -79,7 +78,7 @@ class DefaultJob(Job):
         RuntimeError
             If the simulation raised an exception.
         """
-        self._raise_for_status()
+        self._raise_for_status(self._last_known_status)
         return cast(JobResult, self._result_data)
 
     def cancel(self) -> bool:
@@ -88,7 +87,7 @@ class DefaultJob(Job):
 
     def status(self) -> JobStatus:
         """Return the current :class:`~qrisp.interface.JobStatus` of the job."""
-        return self._status
+        return self._last_known_status
 
 
 class DefaultBackend(Backend):

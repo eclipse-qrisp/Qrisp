@@ -203,7 +203,7 @@ class Job(ABC):
     """
     Abstract handle for a (potentially asynchronous) backend execution.
 
-    A ``Job`` is returned by :meth:`Backend.run` immediately after
+    A ``Job`` is returned by :meth:`Backend.run_async` immediately after
     submission. The caller can then:
 
     * call :meth:`result` to wait for the outcome and retrieve it, or
@@ -254,9 +254,6 @@ class Job(ABC):
         self._job_id = job_id
         self.metadata = kwargs
         self._last_known_status: JobStatus = JobStatus.INITIALIZING
-        # Concrete implementations should set this to the original exception
-        # when they mark the job as ERROR (e.g. inside _set_error() or _fail()).
-        # _raise_for_status() chains it automatically via ``raise ... from``.
         self._failure_cause: BaseException | None = None
 
     # ------------------------------------------------------------------
@@ -278,13 +275,17 @@ class Job(ABC):
         """
         The most recently cached :class:`JobStatus` for this job.
 
-        This value is updated only when :meth:`refresh` is called
-        explicitly. It is initialised to :attr:`~JobStatus.INITIALIZING`
-        and is never updated by :meth:`status` alone (reading it never
-        triggers a network call).
+        This value is initialised to :attr:`~JobStatus.INITIALIZING` and is
+        updated at the following points:
 
-        Use :meth:`refresh` to fetch the latest status from the backend
-        and update this property at the same time.
+        * :meth:`status` — every live query updates the cache as a side effect.
+        * :meth:`submit` — transitions to ``QUEUED`` (or ``RUNNING`` for
+          synchronous backends) once execution has been handed off.
+        * :meth:`result` — transitions to ``DONE``, ``CANCELLED``, or
+          ``ERROR`` when the job reaches a terminal state.
+        * :meth:`refresh` — explicitly fetches the live status and caches it
+          (semantically identical to calling :meth:`status`, but signals intent
+          clearly when the sole purpose is to refresh the cache).
         """
         return self._last_known_status
 
@@ -313,9 +314,9 @@ class Job(ABC):
         For backends where submission to the vendor SDK already happened
         inside :meth:`~qrisp.interface.Backend.run_async` before this method
         is called (e.g. because the vendor SDK returns a job handle
-        immediately), ``submit()`` may be a no-op. In that case the job's
-        live :meth:`status` reflects the vendor-side state, which will already
-        be ``QUEUED`` or higher.
+        immediately), no additional network call is needed. However,
+        ``submit()`` must still update :attr:`last_known_status` to reflect
+        that the job is no longer ``INITIALIZING`` (at minimum ``QUEUED``).
         """
 
         raise NotImplementedError
@@ -409,9 +410,14 @@ class Job(ABC):
 
         This is a *live query*: every call fetches the most up-to-date
         status available, which for remote backends may involve a network
-        call. Callers that want to read the last known status without
-        triggering a round-trip should use ``last_known_status``
-        instead and call :meth:`refresh` when an explicit update is needed.
+        call. As a side effect, concrete implementations must store the
+        result in :attr:`_last_known_status` before returning, so that
+        :attr:`last_known_status` always reflects the most recently
+        observed state.
+
+        Callers that want to avoid the cost of a live query should read
+        :attr:`last_known_status` directly; call :meth:`refresh` (or
+        :meth:`status`) when an explicit update is needed.
 
         Returns
         -------
@@ -425,11 +431,10 @@ class Job(ABC):
     # Methods (derived from status)
     #
     # NOTE: every method in this block calls :meth:`status` on each
-    # invocation. For remote backends, :meth:`status` may involve a
-    # network round-trip. Callers that need to minimise round-trips
-    # should use :meth:`refresh` once and then read
-    # :attr:`last_known_status` rather than calling these helpers
-    # repeatedly.
+    # invocation, which for remote backends may involve a network
+    # round-trip. Callers that need to minimise round-trips should read
+    # :attr:`last_known_status` directly after a single :meth:`status`
+    # or :meth:`refresh` call rather than using these helpers repeatedly.
     # ------------------------------------------------------------------
 
     def done(self) -> bool:
@@ -461,26 +466,19 @@ class Job(ABC):
 
     def refresh(self) -> JobStatus:
         """
-        Fetch the latest status from the backend and cache it.
+        Fetch the latest status from the backend and return it.
 
-        Calls :meth:`status` (a live query that may involve a network
-        round-trip for remote backends), stores the result in
-        ``last_known_status``, and returns it.
-
-        Use this method when you want an up-to-date status *and* want
-        ``last_known_status`` to reflect it. Polling loops that need
-        to check progress without holding a result should call
-        :meth:`refresh` rather than :meth:`status` directly, so that the
-        cached value stays current.
+        Delegates to :meth:`status`, which already updates
+        :attr:`last_known_status` as a side effect.  This method exists as
+        a named alias that makes the intent explicit: the caller wants to
+        refresh the cached status, not merely query it.
 
         Returns
         -------
         JobStatus
-            The freshly fetched status, which is also stored in
-            ``last_known_status``.
+            The freshly fetched status.
         """
-        self._last_known_status = self.status()
-        return self._last_known_status
+        return self.status()
 
     # ------------------------------------------------------------------
     # Helper for concrete implementations
@@ -515,11 +513,11 @@ class Job(ABC):
         if status is None:
             status = self.status()
         if status == JobStatus.ERROR:
-            # Chain the original exception stored by the concrete implementation
-            # so that callers and tracebacks show the root cause automatically.
-            raise JobFailureError(
-                f"Job {self._job_id!r} terminated with status ERROR."
-            ) from self._failure_cause
+            if self._failure_cause is not None:
+                raise JobFailureError(
+                    f"Job {self._job_id!r} terminated with status ERROR."
+                ) from self._failure_cause
+            raise JobFailureError(f"Job {self._job_id!r} terminated with status ERROR.")
         if status == JobStatus.CANCELLED:
             raise JobCancelledError(f"Job {self._job_id!r} was cancelled.")
 

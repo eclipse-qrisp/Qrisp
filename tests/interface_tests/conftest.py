@@ -39,7 +39,7 @@ class MinimalJob(Job):
         self, backend, job_id=None, initial_status=JobStatus.INITIALIZING, **kwargs
     ):
         super().__init__(backend=backend, job_id=job_id, **kwargs)
-        self._status = initial_status
+        self._last_known_status = initial_status
         self._result_data = None
         self._error = None
         self._done_event = threading.Event()
@@ -49,7 +49,7 @@ class MinimalJob(Job):
     def submit(self) -> None:
         # Honour the INITIALIZING → QUEUED transition so the lifecycle
         # contract is visible even in this minimal helper.
-        self._status = JobStatus.QUEUED
+        self._last_known_status = JobStatus.QUEUED
 
     def result(self, timeout=None) -> JobResult | None:
         if not self._done_event.wait(timeout=timeout):
@@ -58,35 +58,35 @@ class MinimalJob(Job):
             )
         # Pass the already-known terminal status to avoid a redundant
         # live status() call inside _raise_for_status.
-        self._raise_for_status(self._status)
+        self._raise_for_status(self._last_known_status)
         return self._result_data
 
     def cancel(self) -> bool:
         if self.in_final_state():
             return False
-        self._status = JobStatus.CANCELLED
+        self._last_known_status = JobStatus.CANCELLED
         self._done_event.set()
         return True
 
     def status(self) -> JobStatus:
-        return self._status
+        return self._last_known_status
 
     # ── Internal helpers (not part of the abstract contract) ─────────
 
     def _resolve(self, result: JobResult) -> None:
         """Mark the job as successfully done."""
         self._result_data = result
-        self._status = JobStatus.DONE
+        self._last_known_status = JobStatus.DONE
         self._done_event.set()
 
     def _fail(self, error: Exception) -> None:
         """Mark the job as failed."""
         self._failure_cause = error  # base-class attribute; chained by _raise_for_status
-        self._status = JobStatus.ERROR
+        self._last_known_status = JobStatus.ERROR
         self._done_event.set()
 
     def _set_status(self, status: JobStatus) -> None:
-        self._status = status
+        self._last_known_status = status
 
 
 class MinimalBackend(Backend):

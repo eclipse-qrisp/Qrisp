@@ -233,7 +233,8 @@ class Backend(ABC):
         It calls :meth:`run_async`, waits for the :class:`Job` to finish by
         calling :meth:`Job.result <qrisp.interface.Job.result>`, and returns
         the measurement results. The return type mirrors the input: a single
-        ``CircuitResult`` for a single circuit, or a ``list[CircuitResult]`` for a list.
+        ``CircuitResult`` for a single circuit, or a ``list[CircuitResult]``
+        for a sequence of circuits.
 
         This method exists primarily for *backward compatibility* with
         existing Qrisp code that previously called ``backend.run(circuit,

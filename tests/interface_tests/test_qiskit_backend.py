@@ -23,7 +23,7 @@ no actual job submission takes place.
 """
 
 import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from qiskit_aer import AerSimulator
@@ -36,7 +36,10 @@ from qrisp.interface.job import (
     JobResult,
     JobStatus,
 )
-from qrisp.interface.provider_backends.qiskit_backend import QiskitJob
+from qrisp.interface.provider_backends.qiskit_backend import (
+    QiskitJob,
+    _map_qiskit_status,
+)
 
 
 class _MockCircuitData:
@@ -275,8 +278,6 @@ class TestQiskitJob:
 class TestMapQiskitStatus:
     """Tests for the _map_qiskit_status helper."""
 
-    from qrisp.interface.provider_backends.qiskit_backend import _map_qiskit_status
-
     def _job_with_status(self, name: str) -> MagicMock:
         mock_job = MagicMock()
         mock_job.status.return_value = MagicMock(name=name)
@@ -284,43 +285,36 @@ class TestMapQiskitStatus:
         return mock_job
 
     def test_done_maps_to_done(self):
-        from qrisp.interface.provider_backends.qiskit_backend import _map_qiskit_status
-
+        """A Qiskit job with status DONE maps to JobStatus.DONE."""
         assert _map_qiskit_status(self._job_with_status("DONE")) == JobStatus.DONE
 
     def test_running_maps_to_running(self):
-        from qrisp.interface.provider_backends.qiskit_backend import _map_qiskit_status
-
+        """A Qiskit job with status RUNNING maps to JobStatus.RUNNING."""
         assert _map_qiskit_status(self._job_with_status("RUNNING")) == JobStatus.RUNNING
 
     def test_queued_maps_to_queued(self):
-        from qrisp.interface.provider_backends.qiskit_backend import _map_qiskit_status
-
+        """A Qiskit job with status QUEUED maps to JobStatus.QUEUED."""
         assert _map_qiskit_status(self._job_with_status("QUEUED")) == JobStatus.QUEUED
 
     def test_validating_maps_to_queued(self):
-        from qrisp.interface.provider_backends.qiskit_backend import _map_qiskit_status
-
+        """A Qiskit job with status VALIDATING maps to JobStatus.QUEUED."""
         assert (
             _map_qiskit_status(self._job_with_status("VALIDATING")) == JobStatus.QUEUED
         )
 
     def test_cancelled_maps_to_cancelled(self):
-        from qrisp.interface.provider_backends.qiskit_backend import _map_qiskit_status
-
+        """A Qiskit job with status CANCELLED maps to JobStatus.CANCELLED."""
         assert (
             _map_qiskit_status(self._job_with_status("CANCELLED"))
             == JobStatus.CANCELLED
         )
 
     def test_error_maps_to_error(self):
-        from qrisp.interface.provider_backends.qiskit_backend import _map_qiskit_status
-
+        """A Qiskit job with status ERROR maps to JobStatus.ERROR."""
         assert _map_qiskit_status(self._job_with_status("ERROR")) == JobStatus.ERROR
 
     def test_unknown_status_falls_back_to_running(self):
-        from qrisp.interface.provider_backends.qiskit_backend import _map_qiskit_status
-
+        """A Qiskit job with an unrecognized status maps to JobStatus.RUNNING."""
         assert (
             _map_qiskit_status(self._job_with_status("SOME_VENDOR_STATE"))
             == JobStatus.RUNNING
@@ -328,7 +322,6 @@ class TestMapQiskitStatus:
 
     def test_status_raises_falls_back_to_running(self):
         """If querying job status raises, _map_qiskit_status returns RUNNING."""
-        from qrisp.interface.provider_backends.qiskit_backend import _map_qiskit_status
 
         mock_job = MagicMock()
         mock_job.status.side_effect = RuntimeError("connection error")

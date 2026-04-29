@@ -53,7 +53,6 @@ class BatchedJob(Job):
         super().__init__(backend=backend)
         self._circuits = circuits
         self._shots = shots
-        self._status = JobStatus.INITIALIZING
         self._result_data = None
         # Each job owns its private event so it can be unblocked independently
         # of all other pending jobs.
@@ -65,7 +64,7 @@ class BatchedJob(Job):
 
     def submit(self) -> None:
         """Mark the job as QUEUED after it has been added to the batch."""
-        self._status = JobStatus.QUEUED
+        self._last_known_status = JobStatus.QUEUED
 
     def result(self, timeout: float | None = None) -> JobResult:
         """
@@ -96,7 +95,7 @@ class BatchedJob(Job):
             )
         # _raise_for_status chains self._failure_cause (set by _fail()) so the
         # original exception from batch_run_func is preserved as __cause__.
-        self._raise_for_status(self._status)
+        self._raise_for_status(self._last_known_status)
         return cast(JobResult, self._result_data)
 
     def cancel(self) -> bool:
@@ -111,7 +110,7 @@ class BatchedJob(Job):
 
     def status(self) -> JobStatus:
         """Return the current :class:`JobStatus` of this job."""
-        return self._status
+        return self._last_known_status
 
     # ------------------------------------------------------------------
     # Internal helpers — called only by BatchedBackend.dispatch()
@@ -120,13 +119,13 @@ class BatchedJob(Job):
     def _resolve(self, result: JobResult) -> None:
         """Mark the job as DONE, store the result, and unblock result()."""
         self._result_data = result
-        self._status = JobStatus.DONE
+        self._last_known_status = JobStatus.DONE
         self._done_event.set()
 
     def _fail(self, error: Exception) -> None:
         """Mark the job as ERROR, store the exception, and unblock result()."""
         self._failure_cause = error  # base-class attribute; chained by _raise_for_status
-        self._status = JobStatus.ERROR
+        self._last_known_status = JobStatus.ERROR
         self._done_event.set()
 
 

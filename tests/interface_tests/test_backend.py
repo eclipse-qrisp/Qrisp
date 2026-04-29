@@ -73,7 +73,6 @@ class TestJob(Job):
         super().__init__(backend=backend, job_id=job_id)
         self.circuits = circuits
         self.shots = shots
-        self._status = JobStatus.INITIALIZING
         self._result_data = None
         self._error = None
         self._done_event = threading.Event()
@@ -84,7 +83,7 @@ class TestJob(Job):
 
     def submit(self) -> None:
         """Transition to QUEUED. TestBackend then drives further state changes."""
-        self._status = JobStatus.QUEUED
+        self._last_known_status = JobStatus.QUEUED
 
     def result(self, timeout=None) -> JobResult:
         """Block until the job finishes and return the JobResult, or raise on failure."""
@@ -94,7 +93,7 @@ class TestJob(Job):
             )
         # Pass the already-known terminal status so _raise_for_status
         # does not make a redundant status() call.
-        self._raise_for_status(self._status)
+        self._raise_for_status(self._last_known_status)
         return cast(JobResult, self._result_data)
 
     def cancel(self) -> bool:
@@ -106,7 +105,7 @@ class TestJob(Job):
 
     def status(self) -> JobStatus:
         """Return the current JobStatus of the job."""
-        return self._status
+        return self._last_known_status
 
     # ── Convenience helpers (not part of the abstract contract) ──────
 
@@ -122,12 +121,12 @@ class TestJob(Job):
 
     def _set_status(self, status: JobStatus) -> None:
         """Set the job status directly."""
-        self._status = status
+        self._last_known_status = status
 
     def _set_result(self, result: JobResult) -> None:
         """Mark the job as DONE, store the result, and fire all registered callbacks."""
         self._result_data = result
-        self._status = JobStatus.DONE
+        self._last_known_status = JobStatus.DONE
         self._done_event.set()
         for cb in self._callbacks:
             try:
@@ -140,7 +139,7 @@ class TestJob(Job):
         self._failure_cause = (
             error  # base-class attribute; chained by _raise_for_status
         )
-        self._status = JobStatus.ERROR
+        self._last_known_status = JobStatus.ERROR
         self._done_event.set()
         for cb in self._callbacks:
             try:
@@ -150,7 +149,7 @@ class TestJob(Job):
 
     def _set_cancelled(self) -> None:
         """Mark the job as CANCELLED and fire all registered callbacks."""
-        self._status = JobStatus.CANCELLED
+        self._last_known_status = JobStatus.CANCELLED
         self._done_event.set()
         for cb in self._callbacks:
             try:
@@ -1345,13 +1344,14 @@ class TestJobLifecycle:
 class TestRefreshAndLastKnownStatus:
     """Tests for refresh() and the cached last_known_status property."""
 
-    def test_last_known_status_not_updated_by_status_call_alone(self):
-        """Reading status() must NOT update last_known_status — only refresh() does."""
+    def test_last_known_status_updated_by_status_call(self):
+        """Calling status() must update last_known_status as a side effect."""
         backend = MinimalBackend()
         job = MinimalJob(backend=backend)
         job._set_status(JobStatus.RUNNING)
-        _ = job.status()  # live query — must not touch the cache
-        assert job.last_known_status == JobStatus.INITIALIZING
+        returned = job.status()
+        assert returned == JobStatus.RUNNING
+        assert job.last_known_status == JobStatus.RUNNING
 
     def test_refresh_updates_last_known_status(self):
         """refresh() must update last_known_status and return the new value."""
@@ -1368,18 +1368,16 @@ class TestRefreshAndLastKnownStatus:
         returned = job.refresh()
         assert returned == job.last_known_status
 
-    def test_last_known_status_stays_stale_without_refresh(self):
-        """last_known_status must remain at its previous value until refresh() is called."""
+    def test_last_known_status_updates_on_state_transitions(self):
+        """last_known_status always reflects the most recent state change."""
         backend = MinimalBackend()
         job = MinimalJob(backend=backend)
-        # Advance the job to DONE without calling refresh
-        job.submit()
-        job._set_status(JobStatus.RUNNING)
-        job._resolve(JobResult([{"0": 10}]))
-        # last_known_status is still INITIALIZING (set at construction time)
         assert job.last_known_status == JobStatus.INITIALIZING
-        # Only after refresh() does it reflect reality
-        job.refresh()
+        job.submit()
+        assert job.last_known_status == JobStatus.QUEUED
+        job._set_status(JobStatus.RUNNING)
+        assert job.last_known_status == JobStatus.RUNNING
+        job._resolve(JobResult([{"0": 10}]))
         assert job.last_known_status == JobStatus.DONE
 
 
@@ -1401,16 +1399,15 @@ class TestJobRepr:
             _ = repr(job)
             mock_status.assert_not_called()
 
-    def test_repr_shows_last_known_status_not_live_status(self):
-        """repr(job) must reflect last_known_status, not the live status."""
+    def test_repr_reflects_current_last_known_status(self):
+        """repr(job) always reflects the current last_known_status."""
         backend = MinimalBackend()
         job = MinimalJob(backend=backend)
-        # job is INITIALIZING; advance it without refreshing the cache
         job.submit()
         job._set_status(JobStatus.RUNNING)
         job._resolve(JobResult([{"0": 1}]))
-        # live status is DONE, but last_known_status is still INITIALIZING
-        assert "initializing" in repr(job).lower()
+        # last_known_status is DONE after _resolve — repr shows it immediately
+        assert "done" in repr(job).lower()
 
     def test_repr_after_refresh_shows_current_status(self):
         """After refresh(), repr(job) must show the updated cached status."""

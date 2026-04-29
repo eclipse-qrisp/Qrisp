@@ -85,7 +85,7 @@ class AQTJob(Job):
     # ------------------------------------------------------------------
 
     def submit(self) -> None:
-        """Mark the job as QUEUED; the AQT job is already submitted by the sampler in run_async()."""
+        """Mark the job as QUEUED. The AQT job is already submitted by the sampler in run_async()."""
         self._last_known_status = JobStatus.QUEUED
 
     def result(self, timeout: float | None = None) -> JobResult:
@@ -147,7 +147,8 @@ class AQTJob(Job):
 
     def status(self) -> JobStatus:
         """Return the current :class:`~qrisp.interface.JobStatus` by querying the AQT job."""
-        return _map_aqt_status(self._aqt_job)
+        self._last_known_status = _map_aqt_status(self._aqt_job)
+        return self._last_known_status
 
 
 class AQTBackend(Backend):

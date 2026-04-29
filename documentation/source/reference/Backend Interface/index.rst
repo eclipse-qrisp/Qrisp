@@ -79,29 +79,28 @@ For example, we can define a simple backend that wraps the built-in Qrisp
          super().__init__(backend=backend)
          self._circuits = circuits
          self._shots = shots
-         self._status = JobStatus.INITIALIZING
          self._result_data = None
 
       def submit(self):
-         self._status = JobStatus.RUNNING
+         self._last_known_status = JobStatus.RUNNING
          try:
                counts = [default_run(c, self._shots) for c in self._circuits]
                self._result_data = JobResult(counts)
-               self._status = JobStatus.DONE
+               self._last_known_status = JobStatus.DONE
          except Exception as exc:
                self._failure_cause = exc
-               self._status = JobStatus.ERROR
+               self._last_known_status = JobStatus.ERROR
 
       def result(self, timeout=None):
          # This job is synchronous and completes inside submit(); timeout is ignored.
-         self._raise_for_status(self._status)
+         self._raise_for_status(self._last_known_status)
          return cast(JobResult, self._result_data)
 
       def cancel(self):
          return False  # synchronous jobs cannot be cancelled
 
       def status(self):
-         return self._status
+         return self._last_known_status
 
 
    class DefaultBackend(Backend):
@@ -238,21 +237,20 @@ separate thread so they all execute concurrently:
          super().__init__(backend=backend)
          self._circuits = circuits
          self._shots = shots
-         self._status = JobStatus.INITIALIZING
          self._result_data = None
          # threading.Event is the synchronisation primitive that allows
          # result() to block cheaply until all threads have finished.
          self._done_event = threading.Event()
 
       def submit(self):
-         self._status = JobStatus.QUEUED
+         self._last_known_status = JobStatus.QUEUED
          # Start a single coordinator thread that manages all circuit threads.
          # daemon=True means the thread will not prevent the process from exiting.
          threading.Thread(target=self._execute, daemon=True).start()
 
       def _execute(self):
          """Run all circuits in parallel and collect results."""
-         self._status = JobStatus.RUNNING
+         self._last_known_status = JobStatus.RUNNING
          try:
                # Pre-allocate a results list so each thread can write to its own slot
                # without race conditions (list indexing is thread-safe in CPython).
@@ -274,11 +272,11 @@ separate thread so they all execute concurrently:
                   t.join()
 
                self._result_data = JobResult(counts)  # type: ignore
-               self._status = JobStatus.DONE
+               self._last_known_status = JobStatus.DONE
 
          except Exception as exc:
                self._failure_cause = exc
-               self._status = JobStatus.ERROR
+               self._last_known_status = JobStatus.ERROR
 
          finally:
                # Signal the event so that any caller blocked in result() wakes up.
@@ -288,7 +286,7 @@ separate thread so they all execute concurrently:
          # Block here until _done_event is set by the coordinator thread.
          if not self._done_event.wait(timeout=timeout):
                raise TimeoutError(f"Job did not complete within {timeout}s.")
-         self._raise_for_status(self._status)
+         self._raise_for_status(self._last_known_status)
          return cast(JobResult, self._result_data)
 
       def cancel(self):
@@ -296,7 +294,7 @@ separate thread so they all execute concurrently:
          return False
 
       def status(self):
-         return self._status
+         return self._last_known_status
 
 
    class AsyncBackend(Backend):

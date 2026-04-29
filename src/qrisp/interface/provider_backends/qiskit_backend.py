@@ -169,7 +169,8 @@ class QiskitJob(Job):
 
     def status(self) -> JobStatus:
         """Return the current :class:`~qrisp.interface.JobStatus` by querying the Qiskit job."""
-        return _map_qiskit_status(self._qiskit_job)
+        self._last_known_status = _map_qiskit_status(self._qiskit_job)
+        return self._last_known_status
 
 
 class QiskitBackend(Backend):
