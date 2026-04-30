@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import threading
 
+from qrisp.circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
 from qrisp.interface.job import Job, JobResult, JobStatus
 
@@ -81,7 +82,9 @@ class MinimalJob(Job):
 
     def _fail(self, error: Exception) -> None:
         """Mark the job as failed."""
-        self._failure_cause = error  # base-class attribute; chained by _raise_for_status
+        self._failure_cause = (
+            error  # base-class attribute; chained by _raise_for_status
+        )
         self._last_known_status = JobStatus.ERROR
         self._done_event.set()
 
@@ -99,12 +102,14 @@ class MinimalBackend(Backend):
     """
 
     def run_async(self, circuits, shots=None) -> MinimalJob:
-        if not isinstance(circuits, list):
+        if isinstance(circuits, QuantumCircuit):
             circuits = [circuits]
-        n_shots = shots if shots is not None else self.options["shots"]
+        else:
+            circuits = list(circuits)
+        n_shots = shots if shots is not None else self.options.get("shots", 1024)
         job = MinimalJob(backend=self)
-        job.submit()                          # INITIALIZING → QUEUED
-        job._set_status(JobStatus.RUNNING)    # QUEUED → RUNNING
+        job.submit()  # INITIALIZING → QUEUED
+        job._set_status(JobStatus.RUNNING)  # QUEUED → RUNNING
         counts = [{"0": n_shots} for _ in circuits]
-        job._resolve(JobResult(counts))       # RUNNING → DONE
+        job._resolve(JobResult(counts))  # RUNNING → DONE
         return job

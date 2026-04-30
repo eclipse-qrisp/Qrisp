@@ -1,30 +1,27 @@
-import pytest
-import numpy as np
-
-from cirq import unitary
-
+from math import pi
 from unittest.mock import MagicMock
-from qrisp.circuit import QuantumCircuit, ClControlledOperation
+
+import numpy as np
+import pytest
+from cirq import final_state_vector, num_qubits, unitary
+
+from qrisp import (
+    QPE,
+    QuantumBool,
+    QuantumFloat,
+    QuantumVariable,
+    auto_uncompute,
+    cx,
+    h,
+    mcx,
+    p,
+    reflection,
+    x,
+    z,
+)
+from qrisp.circuit import ClControlledOperation, QuantumCircuit
 from qrisp.grover import diffuser
 from qrisp.interface.converter.cirq_converter import convert_to_cirq
-from qrisp import (
-    QuantumVariable,
-    mcx,
-    cx,
-    QuantumBool,
-    h,
-    x,
-    reflection,
-    p,
-    QPE,
-    auto_uncompute,
-    z,
-    QuantumFloat,
-)
-from cirq import final_state_vector, num_qubits
-
-
-from math import pi
 
 
 def test_n_qubit_gate_circuit():

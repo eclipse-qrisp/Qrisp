@@ -75,8 +75,7 @@ class Backend(ABC):
     measurement results as a ``list[Mapping]`` (one dictionary per
     submitted circuit). New code should prefer :meth:`run_async` when the
     :class:`Job` handle is needed (e.g. to poll status, cancel, or await
-    results concurrently). Existing code that relied on the previous
-    synchronous ``run`` method will continue to work without modification.
+    results concurrently).
 
     .. rubric:: Runtime options
 
@@ -178,9 +177,7 @@ class Backend(ABC):
         """
         Submit one or more circuits for execution and return a :class:`Job`.
 
-        .. rubric:: Implementor contract
-
-        Before returning, every concrete implementation must call
+        Before returning, every concrete implementation should call
         :meth:`job.submit() <qrisp.interface.Job.submit>` on the newly created
         job. ``submit()`` is the hook that moves the job out of
         ``INITIALIZING``, signalling that execution has been handed off to the
@@ -198,14 +195,14 @@ class Backend(ABC):
             A single circuit or a sequence of circuits to execute.
             No validation or introspection is performed at the base-class level.
 
-            When a sequence is provided, the backend decides internally whether
-            to run the circuits sequentially or in parallel. Hardware backends
-            may impose a limit on how many circuits a single job may contain.
-            This is a backend-defined constraint.
+            When a sequence is provided, the backend decides internally how to
+            handle the circuit execution. Hardware backends may impose a limit
+            on how many circuits a single job may contain. This is a
+            backend-defined constraint.
 
         shots : int or None, optional
             Number of shots (repetitions) for the execution. If ``None``,
-            the value from the backend's runtime options is used.
+            the value from the backend's runtime options should be used.
 
         Returns
         -------
@@ -250,7 +247,7 @@ class Backend(ABC):
 
         shots : int or None, optional
             Number of shots. If ``None``, the backend's ``shots`` option
-            is used.
+            is used by default.
 
         Returns
         -------
@@ -263,14 +260,20 @@ class Backend(ABC):
         ------
         TypeError
             If *shots* is not an integer.
+
         ValueError
             If *shots* is not a positive integer.
         """
         self._validate_shots(shots)
         self._check_circuit_limit(circuits)
         batch = not isinstance(circuits, QuantumCircuit)
+        shots = shots or self.options.get("shots")
         all_counts = self.run_async(circuits, shots).result().all_counts
         return all_counts if batch else all_counts[0]
+
+    # ------------------------------------------------------------------
+    # Optional job retrieval and utility methods
+    # ------------------------------------------------------------------
 
     def retrieve_job(self, job_id: str) -> Job:
         """
@@ -281,7 +284,7 @@ class Backend(ABC):
         stores job history server-side.
 
         This is an *optional capability*. The default implementation
-        raises :exc:`NotImplementedError`. Backends that support job
+        raises ``NotImplementedError``. Backends that support job
         recovery must override this method.
 
         Parameters
@@ -301,6 +304,7 @@ class Backend(ABC):
         ------
         NotImplementedError
             If this backend does not support job recovery (the default).
+
         LookupError
             If no job with the given *job_id* can be found on the backend.
         """
@@ -311,14 +315,14 @@ class Backend(ABC):
 
     def _check_circuit_limit(
         self,
-        circuits: "QuantumCircuit | Sequence[QuantumCircuit]",
+        circuits: QuantumCircuit | Sequence[QuantumCircuit],
     ) -> None:
         """
-        Raise :exc:`ValueError` if the number of submitted circuits exceeds
+        Raise ``ValueError`` if the number of submitted circuits exceeds
         :attr:`max_circuits`.
 
         This helper is called automatically by :meth:`run`. Implementations
-        of :meth:`run_async` should also call it before submitting to the
+        of :meth:`run_async` can call it before submitting to the
         hardware so that users who bypass :meth:`run` get the same early
         error.
 
@@ -361,8 +365,8 @@ class Backend(ABC):
         Parameters
         ----------
         shots : int or None
-            The shot count to validate.  ``None`` is accepted and means
-            "use the backend default"; no error is raised.
+            The shot count to validate. ``None`` is accepted and means
+            "use the backend default". No error is raised.
 
         Raises
         ------
@@ -370,6 +374,7 @@ class Backend(ABC):
             If *shots* is not an :class:`int` (or is a :class:`bool`,
             which is a subclass of ``int`` but almost certainly a
             caller mistake).
+
         ValueError
             If *shots* is zero or negative.
         """
@@ -433,8 +438,7 @@ class Backend(ABC):
         **kwargs :
             Key-value pairs to update in the backend's runtime options.
         """
-        # Validate ALL keys first so that a single bad key does not leave
-        # the options dict in a partially-updated state.
+
         unknown = [k for k in kwargs if k not in self._options]
         if unknown:
             raise AttributeError(
@@ -496,7 +500,7 @@ class Backend(ABC):
         This reflects the full physical qubit count of the device, not a
         snapshot of currently healthy or calibrated qubits. A qubit whose
         calibration has degraded or whose gates have been removed from the
-        active gate set is still counted here.
+        active gate set should still be counted here.
 
         Returns ``None`` if the backend does not expose a fixed or meaningful
         qubit count (e.g. simulators, abstract backends, or backends where
@@ -513,7 +517,7 @@ class Backend(ABC):
         cloud provider may accept at most 300 circuits per submission).
         Submitting a batch larger than this limit causes an opaque error
         from the vendor SDK. Exposing the limit here lets Qrisp provide an
-        early, clear :exc:`ValueError` via :meth:`run` and
+        early, clear ``ValueError`` via :meth:`run` and
         ``_check_circuit_limit`` before any network call is made.
 
         Concrete backends should override this property and return the
@@ -567,10 +571,9 @@ class Backend(ABC):
         Qrisp does not assume the set is universal. Compilation passes that
         require universality must verify this themselves.
 
-        Different qubit pairs may support
-        different gates (e.g. CZ on some pairs, iSWAP on others, or both).
-        Backends are expected to encode this granularity in the returned
-        object.
+        Different qubit pairs may support different gates (e.g. CZ on some
+        pairs, iSWAP on others, or both). Backends are expected to encode
+        this granularity in the returned object.
 
         Measurement is not assumed. The availability of a measurement
         operation on a given qubit is not guaranteed by this interface.
@@ -578,7 +581,7 @@ class Backend(ABC):
         include them in the gate set.
 
         The format of the returned object is backend-specific. For hardware
-        backends it typically refers to native operations; for simulators it
+        backends it typically refers to native operations. For simulators it
         may be omitted or ignored.
 
         Returns ``None`` if the backend does not expose gate availability.

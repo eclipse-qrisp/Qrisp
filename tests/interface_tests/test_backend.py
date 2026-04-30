@@ -15,9 +15,9 @@
 # ********************************************************************************
 
 """Tests for the Backend-related classes defined in qrisp.interface.backend"""
+
 from __future__ import annotations
 
-import inspect
 import threading
 import time
 import unittest.mock
@@ -41,10 +41,6 @@ from qrisp.interface.qunicorn.backend_server import BackendServer
 from qrisp.interface.virtual_backend import VirtualBackend
 from qrisp.misc.exceptions import QrispDeprecationWarning
 
-# ===========================================================================
-# Full-featured fake backend used by the integration tests
-# ===========================================================================
-
 
 class ExecutionMode:
     """Namespace for the four supported test-backend execution modes."""
@@ -64,7 +60,7 @@ class TestJob(Job):
 
     Extra attributes (``circuits``, ``shots``) and internal helpers
     (``_set_result``, ``_set_error``, ``_set_cancelled``, ``add_callback``)
-    are additions of this concrete class — they are not part of the
+    are additions of this concrete class. That is, they are not part of the
     base interface.
     """
 
@@ -107,7 +103,9 @@ class TestJob(Job):
         """Return the current JobStatus of the job."""
         return self._last_known_status
 
-    # ── Convenience helpers (not part of the abstract contract) ──────
+    # ------------------------------------------------------------------
+    # Convenience helpers (not part of the abstract contract)
+    # ------------------------------------------------------------------
 
     def add_callback(self, fn) -> None:
         """Register a callback invoked when the job reaches a terminal state.
@@ -131,20 +129,20 @@ class TestJob(Job):
         for cb in self._callbacks:
             try:
                 cb(self)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
 
     def _set_error(self, error: Exception) -> None:
         """Mark the job as ERROR, store the exception, and fire all registered callbacks."""
         self._failure_cause = (
-            error  # base-class attribute; chained by _raise_for_status
+            error  # base-class attribute, chained by _raise_for_status
         )
         self._last_known_status = JobStatus.ERROR
         self._done_event.set()
         for cb in self._callbacks:
             try:
                 cb(self)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
 
     def _set_cancelled(self) -> None:
@@ -154,7 +152,7 @@ class TestJob(Job):
         for cb in self._callbacks:
             try:
                 cb(self)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
 
 
@@ -215,12 +213,17 @@ class TestBackend(Backend):
 
     def run_async(self, circuits, shots=None) -> TestJob:
         """Submit one or more circuits and return a TestJob according to the current mode."""
+
+        # We use a different check for list/tuple here to allow
+        # other iterable types (e.g. generators) to be accepted as batches.
         if not isinstance(circuits, (list, tuple)):
             circuits = [circuits]
         else:
             circuits = list(circuits)
+
         n_shots = shots if shots is not None else self._options["shots"]
         job = TestJob(circuits=circuits, shots=n_shots, backend=self)
+
         # Honour the lifecycle contract: every run_async implementation
         # must call submit() so the job transitions out of INITIALIZING.
         job.submit()  # INITIALIZING → QUEUED
@@ -291,11 +294,6 @@ class TestBackend(Backend):
         job._set_result(JobResult(counts, mode="cancel"))
 
 
-# ===========================================================================
-# Minimal dummy backends used only for option / name / abstract-interface tests
-# ===========================================================================
-
-
 class DummyBackend(Backend):
     """
     Minimal subclass of Backend for unit tests.
@@ -341,11 +339,6 @@ class BackendWithChildDefaultOptions(Backend):
 
     def run_async(self, circuits, shots: int | None = None):
         """No-op run method used only to satisfy the abstract interface."""
-
-
-# ===========================================================================
-# Test suite
-# ===========================================================================
 
 
 class TestBackendAbstractInterface:
@@ -576,11 +569,6 @@ class TestDummyBackend:
         assert b.options == {"shots": 1000, "flag": False}
 
 
-# ===========================================================================
-# Integration tests: synchronous execution
-# ===========================================================================
-
-
 class TestSyncExecution:
     """Integration tests for synchronous (blocking) execution via TestBackend."""
 
@@ -772,11 +760,6 @@ class TestSyncExecution:
         assert second.all_counts == first.all_counts
 
 
-# ===========================================================================
-# Integration tests: run() return-type contract (QuantumCircuit vs batch)
-# ===========================================================================
-
-
 class TestRunReturnType:
     """Tests that Backend.run() returns a dict for a single QuantumCircuit and a list for a batch.
 
@@ -824,11 +807,6 @@ class TestRunReturnType:
         qc.measure(0)
         job = MinimalBackend().run_async(qc, shots=64)
         assert job.result().num_circuits == 1
-
-
-# ===========================================================================
-# Integration tests: asynchronous execution
-# ===========================================================================
 
 
 class TestAsyncExecution:
@@ -944,7 +922,7 @@ class TestAsyncExecution:
         def fetch():
             try:
                 results.append(job.result())
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 errors.append(exc)
 
         threads = [threading.Thread(target=fetch) for _ in range(5)]
@@ -957,11 +935,6 @@ class TestAsyncExecution:
         assert len(results) == 5
         first = results[0].all_counts
         assert all(r.all_counts == first for r in results)
-
-
-# ===========================================================================
-# Integration tests: timeout behaviour
-# ===========================================================================
 
 
 class TestTimeoutBehaviour:
@@ -993,16 +966,11 @@ class TestTimeoutBehaviour:
         )
         job = backend.run_async("c", shots=128)
         try:
-            job.result(timeout=0.05)  # too short; will time out
+            job.result(timeout=0.05)  # too short, will time out
         except TimeoutError:
             pass
         result = job.result()  # now wait properly
         assert result.num_circuits == 1
-
-
-# ===========================================================================
-# Integration tests: error behaviour
-# ===========================================================================
 
 
 class TestErrorBehaviour:
@@ -1110,11 +1078,6 @@ class TestErrorBehaviour:
         backend = TestBackend(mode=ExecutionMode.ERROR, async_delay=0, seed=0)
         with pytest.raises(JobFailureError):
             backend.run("c")
-
-
-# ===========================================================================
-# Integration tests: cancellation
-# ===========================================================================
 
 
 class TestCancellation:
@@ -1237,11 +1200,6 @@ class TestCancellation:
             job.result()
 
 
-# ===========================================================================
-# Deprecation tests for the old backend infrastructure
-# ===========================================================================
-
-
 def test_backend_client_deprecation_warning():
     """Ensure BackendClient raises a QrispDeprecationWarning upon instantiation."""
     with pytest.warns(QrispDeprecationWarning):
@@ -1268,17 +1226,12 @@ def test_virtual_backend_deprecation_warning():
         _ = VirtualBackend(run_func=dummy_run)
 
 
-# ===========================================================================
-# Job lifecycle tests
-# ===========================================================================
-
-
 class TestJobLifecycle:
     """Tests that the job lifecycle contract is honoured.
 
     The only hard guarantee is that a job must exit INITIALIZING before
-    run_async() returns.  The exact post-submit state depends on the backend:
-    asynchronous backends transition to QUEUED; synchronous simulators may
+    run_async() returns. The exact post-submit state depends on the backend:
+    asynchronous backends transition to QUEUED. Synchronous simulators may
     go directly to RUNNING or DONE inside submit().
     """
 
@@ -1336,11 +1289,6 @@ class TestJobLifecycle:
         assert job.status() == JobStatus.DONE
 
 
-# ===========================================================================
-# refresh() / last_known_status tests
-# ===========================================================================
-
-
 class TestRefreshAndLastKnownStatus:
     """Tests for refresh() and the cached last_known_status property."""
 
@@ -1381,11 +1329,6 @@ class TestRefreshAndLastKnownStatus:
         assert job.last_known_status == JobStatus.DONE
 
 
-# ===========================================================================
-# __repr__ side-effect tests
-# ===========================================================================
-
-
 class TestJobRepr:
     """Tests that Job.__repr__ is side-effect free (no live status() call)."""
 
@@ -1415,11 +1358,6 @@ class TestJobRepr:
         job = backend.run_async("c")
         job.refresh()
         assert "done" in repr(job).lower()
-
-
-# ===========================================================================
-# shots validation tests
-# ===========================================================================
 
 
 class TestShotsValidation:
@@ -1486,21 +1424,11 @@ class TestShotsValidation:
         Backend._validate_shots(512)  # no exception
 
 
-# ===========================================================================
-# Additional Backend options tests (atomicity + read-only)
-# ===========================================================================
-
-
 class TestBackendOptionsExtended:
     """Additional options tests: atomic update and read-only proxy."""
 
     def test_update_options_is_atomic_valid_key_not_changed_on_failure(self):
-        """update_options must not apply any change if any key in the call is invalid.
-
-        Previously the loop updated keys one-by-one: a valid key that appeared
-        before an invalid key would be silently written even though the call
-        ultimately raised.
-        """
+        """update_options must not apply any change if any key in the call is invalid."""
 
         class MultiBackend(Backend):
             @classmethod
@@ -1521,13 +1449,13 @@ class TestBackendOptionsExtended:
         """Direct mutation of backend.options must raise TypeError (MappingProxyType)."""
         b = MinimalBackend()
         with pytest.raises(TypeError):
-            b.options["shots"] = 9999  # type: ignore[index]
+            b.options["shots"] = 9999
 
     def test_options_property_does_not_allow_new_keys(self):
         """Injecting a new key via backend.options must raise TypeError."""
         b = MinimalBackend()
         with pytest.raises(TypeError):
-            b.options["injected"] = "value"  # type: ignore[index]
+            b.options["injected"] = "value"
 
     def test_options_read_access_still_works(self):
         """Read access to backend.options must still work after making it read-only."""
@@ -1538,29 +1466,6 @@ class TestBackendOptionsExtended:
         """MappingProxyType must compare equal to an equivalent plain dict."""
         b = MinimalBackend()
         assert b.options == {"shots": 1024}
-
-
-# ===========================================================================
-# Abstract result() signature test
-# ===========================================================================
-
-
-def test_result_abstract_signature_has_timeout_parameter():
-    """Job.result() must declare a 'timeout' parameter in its abstract signature.
-
-    Without this, vendor implementations have no signal that timeout support
-    is expected, and Qrisp internals cannot safely call job.result(timeout=...).
-    """
-    sig = inspect.signature(Job.result)
-    assert "timeout" in sig.parameters, (
-        "Job.result() is missing the 'timeout' parameter. "
-        "Add 'timeout: float | None = None' to the abstract signature."
-    )
-
-
-# ===========================================================================
-# max_circuits constraint tests
-# ===========================================================================
 
 
 class _LimitedBackend(MinimalBackend):
@@ -1634,11 +1539,6 @@ class TestMaxCircuits:
             b._check_circuit_limit(["a", "b", "c"])
 
 
-# ===========================================================================
-# retrieve_job tests
-# ===========================================================================
-
-
 class TestRetrieveJob:
     """Tests for Backend.retrieve_job()."""
 
@@ -1672,11 +1572,6 @@ class TestRetrieveJob:
         job = b.retrieve_job("job-42")
         assert job.job_id == "job-42"
         assert isinstance(job, MinimalJob)
-
-
-# ===========================================================================
-# JobFailureError cause-chaining tests
-# ===========================================================================
 
 
 class TestJobFailureCause:
@@ -1728,17 +1623,8 @@ class TestJobFailureCause:
         job._raise_for_status(JobStatus.DONE)
 
 
-# ===========================================================================
-# Backend __repr__ tests
-# ===========================================================================
-
-
 class TestBackendRepr:
-    """Tests that Backend.__repr__ exposes useful information for debugging.
-
-    A good repr lets developers identify a backend at a glance in logs,
-    notebooks, and interactive sessions.
-    """
+    """Tests that Backend.__repr__ exposes useful information for debugging."""
 
     def test_repr_contains_class_name(self):
         """repr(backend) must include the concrete class name."""

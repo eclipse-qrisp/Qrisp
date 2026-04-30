@@ -19,6 +19,7 @@
 from qrisp import QuantumCircuit
 from qrisp.interface import StimBackend
 
+
 def _build_deterministic_circuit():
     qc = QuantumCircuit(2)
     qc.x(0)

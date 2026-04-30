@@ -243,18 +243,18 @@ class Job(ABC):
 
     **kwargs
         Additional backend-specific metadata to associate with this job.
-        Included for qiskit compatibility, but may be used by any backend implementation as needed.
+        It can be used by any backend implementation as needed.
 
     """
 
     def __init__(self, backend: Backend, job_id: str | None = None, **kwargs):
         """Initialize a Job instance."""
 
-        self._backend = backend
-        self._job_id = job_id
-        self.metadata = kwargs
+        self._backend: Backend = backend
+        self._job_id: str | None = job_id
         self._last_known_status: JobStatus = JobStatus.INITIALIZING
         self._failure_cause: BaseException | None = None
+        self.metadata: dict = kwargs
 
     # ------------------------------------------------------------------
     # Properties
@@ -315,7 +315,8 @@ class Job(ABC):
         inside :meth:`~qrisp.interface.Backend.run_async` before this method
         is called (e.g. because the vendor SDK returns a job handle
         immediately), no additional network call is needed. However,
-        ``submit()`` must still update :attr:`last_known_status` to reflect
+        the vendor is responsible for ensuring that the job's status is
+        updated appropriately via :attr:`last_known_status` to reflect
         that the job is no longer ``INITIALIZING`` (at minimum ``QUEUED``).
         """
 
@@ -337,20 +338,13 @@ class Job(ABC):
 
         Concrete implementations should call :meth:`_raise_for_status`
         once the terminal state has been reached, before returning.
-        Pass the already-known terminal :class:`JobStatus` to avoid a
-        redundant live :meth:`status` call:
-
-        .. code-block:: python
-
-            terminal_status = ...  # determined by the wait mechanism
-            self._raise_for_status(terminal_status)
 
         Parameters
         ----------
         timeout : float or None, optional
             Maximum number of seconds to wait for the job to finish.
             ``None`` (default) waits indefinitely. Implementations that
-            support this parameter should raise :exc:`TimeoutError` when
+            support this parameter should raise ``TimeoutError`` when
             the deadline expires.
 
         Returns
@@ -385,7 +379,7 @@ class Job(ABC):
             already in :attr:`~JobStatus.CANCELLED` state (for synchronous
             or in-process backends), or the cancel request has been
             dispatched to the remote backend (for asynchronous hardware
-            backends; the transition to ``CANCELLED`` may not yet be
+            backends, the transition to ``CANCELLED`` may not yet be
             visible in :meth:`status`).
 
             ``False`` if the job is already in a terminal state and no
@@ -394,7 +388,7 @@ class Job(ABC):
             .. note::
 
                 For asynchronous remote backends, ``True`` means the
-                cancel *request* was accepted by the server, **not** that
+                cancel *request* was accepted by the server, not that
                 the job has confirmed cancellation.  Callers should check
                 :meth:`status` (or call :meth:`result`) to determine the
                 final outcome.
@@ -410,7 +404,7 @@ class Job(ABC):
 
         This is a *live query*: every call fetches the most up-to-date
         status available, which for remote backends may involve a network
-        call. As a side effect, concrete implementations must store the
+        call. As a side effect, concrete implementations should store the
         result in :attr:`_last_known_status` before returning, so that
         :attr:`last_known_status` always reflects the most recently
         observed state.
@@ -528,9 +522,9 @@ class Job(ABC):
     def __repr__(self) -> str:
         # Use last_known_status rather than calling status() here.
         # status() is a live query that may involve a network round-trip
-        # on remote backends; triggering it inside __repr__ (e.g. during
+        # on remote backends, and triggering it inside __repr__ (e.g. during
         # logging, debugging, or pytest failure messages) would be
-        # surprising and potentially expensive.  Callers that want the
+        # surprising and potentially expensive. Callers that want the
         # current status should call refresh() before printing.
         return (
             f"{self.__class__.__name__}("
