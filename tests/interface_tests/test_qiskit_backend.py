@@ -81,6 +81,7 @@ def _make_primitive_result(counts_per_circuit: list[dict]) -> MagicMock:
 def _make_qiskit_job(
     counts_per_circuit: list[dict] | None = None,
     fail: Exception | None = None,
+    job_id: str = "mock-job-id",
 ) -> MagicMock:
     """Return a mock Qiskit primitive job.
 
@@ -90,8 +91,11 @@ def _make_qiskit_job(
         If provided, ``result()`` returns a mock carrying these distributions.
     fail
         If provided, ``result()`` raises this exception instead.
+    job_id
+        The value returned by ``mock_job.job_id()``.
     """
     mock_job = MagicMock()
+    mock_job.job_id.return_value = job_id
     if fail is not None:
         mock_job.result.side_effect = fail
     else:
@@ -164,11 +168,6 @@ class TestQiskitJob:
 
     # --- result (success path) ---
 
-    def test_result_returns_job_result_instance(self):
-        """result() returns a JobResult instance on success."""
-        job = self._make_job()
-        assert isinstance(job.result(), JobResult)
-
     def test_result_parses_counts_correctly(self):
         """result() maps bitstring keys to their counts."""
         job = self._make_job(counts_per_circuit=[{"0": 600, "1": 400}])
@@ -181,23 +180,6 @@ class TestQiskitJob:
         assert "00" in counts
         assert "11" in counts
         assert "0 0" not in counts
-
-    def test_result_sets_last_known_status_to_done_on_success(self):
-        """result() updates last_known_status to DONE after a successful execution."""
-        job = self._make_job()
-        job.result()
-        assert job.last_known_status == JobStatus.DONE
-
-    def test_result_batch_splits_per_circuit(self):
-        """result() returns one counts dict per submitted circuit."""
-        job = self._make_job(
-            counts_per_circuit=[{"0": 700, "1": 300}, {"0": 400, "1": 600}],
-            num_circuits=2,
-        )
-        jr = job.result()
-        assert jr.num_circuits == 2
-        assert jr.get_counts(0) == {"0": 700, "1": 300}
-        assert jr.get_counts(1) == {"0": 400, "1": 600}
 
     # --- result (failure path) ---
 
@@ -247,14 +229,6 @@ class TestQiskitJob:
 
     # --- cancel ---
 
-    def test_cancel_returns_false_when_in_final_state(self):
-        """cancel() returns False once the job has reached a terminal state."""
-        qiskit_job = _make_qiskit_job()
-        qiskit_job.status.return_value = MagicMock(name="DONE")
-        qiskit_job.status.return_value.name = "DONE"
-        job = QiskitJob(backend=MagicMock(), qiskit_job=qiskit_job, num_circuits=1)
-        assert job.cancel() is False
-
     def test_cancel_returns_true_when_running(self):
         """cancel() returns True and delegates to the underlying Qiskit job."""
         qiskit_job = _make_qiskit_job()
@@ -272,6 +246,61 @@ class TestQiskitJob:
         qiskit_job.cancel.side_effect = RuntimeError("cannot cancel")
         job = QiskitJob(backend=MagicMock(), qiskit_job=qiskit_job, num_circuits=1)
         assert job.cancel() is False
+
+    def test_job_id_falls_back_to_none_when_extraction_fails(self):
+        """QiskitJob.job_id is None when job_id() raises."""
+        qiskit_job = _make_qiskit_job()
+        qiskit_job.job_id.side_effect = RuntimeError("id unavailable")
+        job = QiskitJob(backend=MagicMock(), qiskit_job=qiskit_job, num_circuits=1)
+        assert job.job_id is None
+
+    def test_result_forwards_timeout_to_qiskit(self):
+        """result(timeout=5) passes timeout=5 to the underlying Qiskit job."""
+        job = self._make_job()
+        job.result(timeout=5)
+        job._qiskit_job.result.assert_called_once_with(timeout=5)
+
+    def test_result_does_not_pass_timeout_when_none(self):
+        """result() with no timeout calls the Qiskit job's result() without any kwargs.
+
+        Local backends such as AerSimulator's PrimitiveJob reject an explicit
+        timeout=None argument, so it must only be forwarded when not None.
+        """
+        job = self._make_job()
+        job.result()
+        job._qiskit_job.result.assert_called_once_with()
+
+    def test_result_propagates_timeout_error(self):
+        """TimeoutError from the Qiskit job is re-raised, not wrapped as JobFailureError."""
+        job = self._make_job(fail=TimeoutError("deadline exceeded"))
+        with pytest.raises(TimeoutError):
+            job.result()
+
+    def test_result_raises_immediately_when_already_cancelled(self):
+        """result() raises JobCancelledError without calling Qiskit when already CANCELLED."""
+        qiskit_job = _make_qiskit_job(fail=RuntimeError("cancelled"))
+        qiskit_job.status.return_value = MagicMock()
+        qiskit_job.status.return_value.name = "CANCELLED"
+        job = QiskitJob(backend=MagicMock(), qiskit_job=qiskit_job, num_circuits=1)
+        with pytest.raises(JobCancelledError):
+            job.result()
+        qiskit_job.result.reset_mock()
+        with pytest.raises(JobCancelledError):
+            job.result()
+        qiskit_job.result.assert_not_called()
+
+    def test_result_raises_immediately_when_already_errored(self):
+        """result() raises JobFailureError without calling Qiskit when already ERROR."""
+        qiskit_job = _make_qiskit_job(fail=RuntimeError("fault"))
+        qiskit_job.status.return_value = MagicMock()
+        qiskit_job.status.return_value.name = "ERROR"
+        job = QiskitJob(backend=MagicMock(), qiskit_job=qiskit_job, num_circuits=1)
+        with pytest.raises(JobFailureError):
+            job.result()
+        qiskit_job.result.reset_mock()
+        with pytest.raises(JobFailureError):
+            job.result()
+        qiskit_job.result.assert_not_called()
 
 
 class TestMapQiskitStatus:
@@ -395,6 +424,18 @@ class TestQiskitBackendRunAsync:
         assert isinstance(job, QiskitJob)
         sampler_mock.return_value.run.assert_called_once()
 
+    def test_run_async_default_shots_fallback_is_1024(self, sampler_mock):
+        """When 'shots' is absent from _options, run_async() falls back to 1024 not 1000."""
+        # Use a real AerSimulator device so transpile() works, but pass options
+        # without a 'shots' key to exercise the fallback path in run_async().
+        backend = QiskitBackend(backend=AerSimulator(), options={"custom_key": "val"})
+        sampler_mock.return_value.run.return_value = _make_qiskit_job()
+
+        backend.run_async(_simple_circuit())
+
+        _, run_kwargs = sampler_mock.return_value.run.call_args
+        assert run_kwargs["shots"] == 1024
+
 
 class TestQiskitBackendConstruction:
     """Tests for QiskitBackend constructor branches not covered by the run_async fixture."""
@@ -419,3 +460,114 @@ class TestQiskitBackendConstruction:
         mock_device.options = None
         backend = QiskitBackend(backend=mock_device)
         assert backend.options["shots"] == 1024
+
+
+class TestQiskitBackendIntegration:
+    """End-to-end tests that use a real AerSimulator and real SamplerV2."""
+
+    # These tests exercise the full stack — Qrisp circuit → QASM → Qiskit
+    # QuantumCircuit → transpile → SamplerV2 submission → DataBin parsing —
+    # without any substitution of Qiskit internals.
+
+    # They are deliberately narrow: each test targets the specific behaviour
+    # introduced or fixed in the current implementation and would not be
+    # caught by the mocked unit tests above.
+
+    @pytest.fixture()
+    def real_backend(self):
+        """QiskitBackend backed by a real AerSimulator and real SamplerV2."""
+        return QiskitBackend(backend=AerSimulator(), options={"shots": 100})
+
+    def test_run_returns_counts_that_sum_to_shots(self, real_backend):
+        """run() produces a counts dict whose values sum to the requested shot count."""
+        counts = real_backend.run(_simple_circuit(), shots=80)
+        assert sum(counts.values()) == 80
+
+    @pytest.mark.parametrize(
+        "circuits",
+        [
+            [_simple_circuit()],
+            [_simple_circuit(), _simple_circuit()],
+            (_simple_circuit(), _simple_circuit(), _simple_circuit()),
+        ],
+    )
+    def test_run_multiple_circuits_returns_list_of_counts_dicts(
+        self, circuits, real_backend
+    ):
+        """run() with a sequence of circuits returns a list of counts dicts."""
+        results = real_backend.run(circuits, shots=20)
+        assert isinstance(results, list)
+        assert len(results) == len(circuits)
+        assert all(isinstance(r, dict) for r in results)
+
+    def test_run_async_result_returns_job_result_instance(self, real_backend):
+        """run_async().result() returns a JobResult on a real Aer execution."""
+        job = real_backend.run_async(_simple_circuit(), shots=10)
+        assert isinstance(job.result(), JobResult)
+
+    def test_job_id_is_non_empty_string(self, real_backend):
+        """job_id is a non-empty string extracted from the real Aer job, not None."""
+        job = real_backend.run_async(_simple_circuit(), shots=10)
+        assert isinstance(job.job_id, str)
+        assert len(job.job_id) > 0
+
+    # Forwarding a non-None timeout to IBM Runtime's RuntimeJobV2.result() is
+    # verified by the unit test test_result_forwards_timeout_to_qiskit.
+    # Here we verify that the default (timeout=None) path works correctly on a
+    # real Aer job — local PrimitiveJob.result() does not accept a timeout kwarg
+    # at all, so it must not be passed when None.
+
+    def test_result_with_default_timeout_completes_successfully(self, real_backend):
+        """result(timeout=None) completes without raising on a real Aer job."""
+        job = real_backend.run_async(_simple_circuit(), shots=10)
+        result = job.result(timeout=None)
+        assert isinstance(result, JobResult)
+
+    def test_result_called_twice_returns_same_cached_object(self, real_backend):
+        """Calling result() twice returns the identical cached JobResult instance."""
+        job = real_backend.run_async(_simple_circuit(), shots=10)
+        r1 = job.result()
+        r2 = job.result()
+        assert r1 is r2
+
+    def test_last_known_status_is_done_after_result(self, real_backend):
+        """last_known_status is DONE after result() completes."""
+        job = real_backend.run_async(_simple_circuit(), shots=10)
+        job.result()
+        assert job.last_known_status == JobStatus.DONE
+
+    # The mocked tests set mock_job.status.return_value.name = "DONE", which
+    # trivially satisfies _map_qiskit_status. The real Aer/IBM Runtime job
+    # returns a different object (JobStatus enum or string) whose .name value
+    # may not match if _map_qiskit_status is wrong.
+
+    def test_status_returns_done_after_completed_job(self, real_backend):
+        """status() returns DONE (not RUNNING or INITIALIZING) after Aer execution."""
+        job = real_backend.run_async(_simple_circuit(), shots=10)
+        job.result()
+        assert job.status() == JobStatus.DONE
+
+    # The mocked batch test only validates the indexing loop against
+    # _MockCircuitData. The real DataBin.__iter__ and getattr path
+    # never runs in the mocked suite.
+
+    def test_batch_of_two_circuits_produces_correct_per_circuit_counts(
+        self, real_backend
+    ):
+        """Batch submission of 2 circuits returns individually correct count dicts."""
+        job = real_backend.run_async([_simple_circuit(), _simple_circuit()], shots=50)
+        jr = job.result()
+        assert jr.num_circuits == 2
+        assert sum(jr.get_counts(0).values()) == 50
+        assert sum(jr.get_counts(1).values()) == 50
+
+    # The mocked cancel() test controls in_final_state() by faking the Qiskit
+    # status. On a real job, cancel() calls status() → _map_qiskit_status on
+    # a real object. If the mapping is wrong, in_final_state() returns False
+    # and the code tries to cancel an already-done job, which may raise.
+
+    def test_cancel_on_completed_job_returns_false(self, real_backend):
+        """cancel() returns False for a real completed Aer job without raising."""
+        job = real_backend.run_async(_simple_circuit(), shots=10)
+        job.result()
+        assert job.cancel() is False

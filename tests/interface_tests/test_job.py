@@ -292,11 +292,7 @@ class TestJobAbstractInterface:
 
 
 class TestJobConcreteHelpers:
-    """
-    Tests for the non-abstract helpers on Job.
-
-    All helpers are derived from status() and contain no concurrency logic.
-    """
+    """Tests for the non-abstract helpers on Job."""
 
     @pytest.fixture
     def backend(self):
@@ -312,11 +308,10 @@ class TestJobConcreteHelpers:
         assert self._job_with_status(backend, JobStatus.DONE).done() is True
 
     def test_done_returns_false_for_cancelled_and_error(self, backend):
-        """Test that done() returns False for CANCELLED and ERROR.
+        """Test that done() returns False for CANCELLED and ERROR."""
 
-        done() means 'completed successfully' — it is not a synonym for
-        in_final_state(). Use in_final_state() to test for any terminal state.
-        """
+        # done() means 'completed successfully' — it is not a synonym for
+        # in_final_state(). Use in_final_state() to test for any terminal state.
         assert self._job_with_status(backend, JobStatus.CANCELLED).done() is False
         assert self._job_with_status(backend, JobStatus.ERROR).done() is False
 

@@ -29,6 +29,7 @@ from qiskit.providers import BackendV2
 from qrisp.circuit.quantum_circuit import QuantumCircuit as QrispQuantumCircuit
 from qrisp.interface.backend import Backend
 from qrisp.interface.job import (
+    JOB_FINAL_STATES,
     Job,
     JobCancelledError,
     JobFailureError,
@@ -87,9 +88,14 @@ class QiskitJob(Job):
         num_circuits: int,
     ):
         """Initialise the wrapper with the Qrisp backend, the Qiskit job, and the circuit count."""
-        super().__init__(backend=backend)
+        try:
+            job_id = qiskit_job.job_id()
+        except Exception:
+            job_id = None
+        super().__init__(backend=backend, job_id=job_id)
         self._qiskit_job = qiskit_job
         self._num_circuits = num_circuits
+        self._cached_result: JobResult | None = None
 
     # ------------------------------------------------------------------
     # Abstract interface
@@ -103,14 +109,16 @@ class QiskitJob(Job):
         """
         Block until the Qiskit job finishes and return the :class:`~qrisp.interface.JobResult`.
 
-        Waiting is delegated to Qiskit's own blocking ``job.result()`` call,
-        so no additional synchronisation is needed on the Qrisp side.
+        Waiting is delegated to Qiskit's own blocking ``job.result()`` call.
+        If the job is already in a terminal state, this method returns (or
+        raises) immediately without making a second call to Qiskit.
 
         Parameters
         ----------
         timeout : float or None, optional
-            Not currently forwarded to the Qiskit job. Included for interface
-            compatibility. Pass ``None`` (the default) to wait indefinitely.
+            Maximum number of seconds to wait. Forwarded to the underlying
+            Qiskit job's ``result()`` call. ``None`` (the default) waits
+            indefinitely. Raises :exc:`TimeoutError` if the deadline expires.
 
         Returns
         -------
@@ -123,9 +131,23 @@ class QiskitJob(Job):
 
         JobCancelledError
             If the Qiskit job was cancelled.
+
+        TimeoutError
+            If *timeout* expires before the job completes.
         """
+        if self._last_known_status in JOB_FINAL_STATES:
+            self._raise_for_status(self._last_known_status)
+            return cast(JobResult, self._cached_result)
+
         try:
-            qiskit_result = self._qiskit_job.result()
+            # Only pass timeout when explicitly requested: local backends such
+            # as AerSimulator's PrimitiveJob do not accept a timeout argument.
+            if timeout is not None:
+                qiskit_result = self._qiskit_job.result(timeout=timeout)
+            else:
+                qiskit_result = self._qiskit_job.result()
+        except TimeoutError:
+            raise
         except Exception as exc:
             terminal_status = _map_qiskit_status(self._qiskit_job)
             self._last_known_status = terminal_status
@@ -146,7 +168,8 @@ class QiskitJob(Job):
                     counts_dict[clean_key] = counts_dict.get(clean_key, 0) + val
             counts_list.append(counts_dict)
 
-        return JobResult(counts_list)
+        self._cached_result = JobResult(counts_list)
+        return self._cached_result
 
     def cancel(self) -> bool:
         """
@@ -338,7 +361,8 @@ class QiskitBackend(Backend):
             circuits = [circuits]
         else:
             circuits = list(circuits)
-        n_shots = shots if shots is not None else self._options.get("shots", 1000)
+
+        n_shots = shots if shots is not None else self._options.get("shots", 1024)
 
         # Convert each Qrisp circuit to a Qiskit QuantumCircuit via OpenQASM 2,
         # then rebuild with integer-indexed qubits and transpile for the target backend.
