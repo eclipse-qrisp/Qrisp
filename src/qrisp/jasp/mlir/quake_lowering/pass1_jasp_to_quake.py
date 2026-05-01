@@ -812,9 +812,23 @@ def _fix_return_op(op) -> None:
 
 
 def _fix_call_op(op) -> None:
-    """Remove ``!jasp.QuantumState`` values from ``func.call`` operands and results."""
+    """
+    Remove ``!jasp.QuantumState`` values from ``func.call`` operands and results.
+    Convert qubit types in the results to their Quake equivalents.
+    """
     new_operands = [v for v in op.operands if not _is_qst(v.type)]
-    new_result_types = [t for t in op.result_types if not _is_qst(t)]
+
+    # Convert result types: drop QST, map QubitArray→veq, Qubit→ref
+    new_result_types = []
+    for t in op.result_types:
+        if _is_qst(t):
+            continue
+        elif _is_qubit_array(t):
+            new_result_types.append(QuakeVeqType())
+        elif _is_qubit(t):
+            new_result_types.append(QuakeRefType())
+        else:
+            new_result_types.append(t)
     
     # Create the new call operation
     new_call = func.CallOp(op.callee, new_operands, new_result_types)
