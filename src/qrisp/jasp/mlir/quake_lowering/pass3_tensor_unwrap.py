@@ -343,12 +343,19 @@ class TensorUnwrapPass(ModulePass):
     name = "tensor-unwrap"
 
     def apply(self, ctx: Context, op: ModuleOp) -> None:
+
+        # Phase A: Call unwrapping (single pass, no recursion)
+        PatternRewriteWalker(
+            GreedyRewritePatternApplier([UnwrapCall()]),
+            apply_recursively=False,
+        ).rewrite_module(op)
+
+        # Phase B: Func signature unwrapping + extract folding (recursive)
         PatternRewriteWalker(
             GreedyRewritePatternApplier(
                 [
                     UnwrapFuncAndReturn(),
                     UnwrapFuncArgs(),
-                    UnwrapCall(),
                     FoldExtractOfDenseConstant(),
                     FoldExtractOfFromElements(),
                     FoldExtractOfScalar(),
