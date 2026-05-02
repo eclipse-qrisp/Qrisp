@@ -33,6 +33,7 @@ Coverage
 
 import warnings
 import jax
+import jax.numpy as jnp
 import numpy as np
 import operator
 import pytest
@@ -474,6 +475,24 @@ def test_negative_indexing():
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
     assert result == 10*[1], f"Expected qubit 2 to be flipped by x(qv[-1]), got {result}"
+
+
+def test_math():
+    """Test that classical math operations are correctly lowered to arith/math ops and can be used in the quantum program."""
+
+    def main():
+        a = QuantumFloat(1)
+        h(a[0])
+        b = measure(a)
+        c = 2.0 ** b
+        d = jnp.log(c)
+        return d
+    
+    mlir = _lower(main)
+    assert "math.powf" in mlir, "Expected math.powf for exponentiation"
+    assert "math.log" in mlir, "Expected math.log for logarithm"
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
 
 # ---------------------------------------------------------------------------
 # Test measure qubit
