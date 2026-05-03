@@ -159,25 +159,24 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
 
         A = QuantumCircuit(1)
 
-        A.p(alpha, A.qubits[0])
+        A.rz(alpha, A.qubits[0])
         A.ry(theta / 2, A.qubits[0])
 
         B = QuantumCircuit(1)
 
         B.ry(-theta / 2, B.qubits[0])
-        B.p(-(alpha + beta) / 2, B.qubits[0])
+        B.rz(-(alpha + beta) / 2, B.qubits[0])
 
         C = QuantumCircuit(1)
 
-        C.p((beta - alpha) / 2, C.qubits[0])
+        C.rz((beta - alpha) / 2, C.qubits[0])
 
         # Treat global phases and the fact that X P(phi) X = exp(2 phi) P(-phi)
         if method not in ["gray_pt", "gray_pt_inv"]:
-            control_phase = -u3_gate.global_phase / 2 - (alpha + beta)
             gray_phase_synth_qb_list(
                 qc,
                 qc.qubits[:-1],
-                (2 ** (control_amount) - 1) * [0] + [-control_phase / 2],
+                (2 ** (control_amount) - 1) * [0] + [u3_gate.global_phase + (alpha+beta)/2],
             )
 
         qc.append(A.to_gate("A"), [qc.qubits[-1]])
