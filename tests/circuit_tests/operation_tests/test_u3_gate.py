@@ -274,6 +274,7 @@ class TestU3GateControl:
             (0.5, 1.2, 0.8, 2.1),
             (np.pi, np.pi / 2, np.pi / 4, np.pi / 3),
             (0.0, 0.0, 0.0, 0.0),
+            (0.0, 0.0, 0.0, 1.5),
             (1.5, 0.0, 0.0, 0.0),
             (0.0, 1.5, 0.0, 0.0),
             (0.0, 0.0, 1.5, 0.0),
@@ -306,7 +307,7 @@ class TestU3GateControl:
 class TestU3GateMultiControl:
     """Tests for U3Gate with multiple control qubits."""
 
-    @pytest.mark.parametrize("num_ctrl", [2])
+    @pytest.mark.parametrize("num_ctrl", [2, 3])
     @pytest.mark.parametrize(
         "theta, phi, lam, gp",
         [
@@ -466,6 +467,7 @@ class TestU3GateNamedVariantControl:
         "name, gate_factory, args",
         [
             ("p", PGate, (1.5,)),
+            ("rz", RZGate, (2.0,)),
             ("rx", RXGate, (1.2,)),
             ("ry", RYGate, (0.8,)),
         ],
