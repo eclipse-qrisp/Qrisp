@@ -40,7 +40,7 @@ import pytest
 import re
 
 from qrisp import QuantumVariable, QuantumBool, QuantumFloat, h, mcx, x, y, z, cp, cx, cy, cz, rx, ry, rz, rxx, rz, rzz, s, swap, sx, t, xxyy, measure, control, invert, conjugate
-from qrisp.alg_primitives import amplitude_amplification
+from qrisp.alg_primitives import amplitude_amplification, q_switch
 from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop, qache
 
 try:
@@ -1011,7 +1011,32 @@ def test_trotterization():
     # We can't predict the exact result, but we can check that it's a valid measurement (0, 1, 2, or 3)
     assert all(0 <= r <= 3 for r in result), f"Expected valid measurement results (0-3), got {result}"
 
-# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("method", ["tree", "sequential"])
+def test_q_switch(method):
+    """Test q_switch with multiple branches and a quantum float index."""
+
+    def main():
+
+        def f0(x): x += 1
+        def f1(x): x += 2
+        def f2(x): pass
+        def f3(x): h(x[1])
+        branches = [f0, f1, f2, f3]
+
+        operand = QuantumFloat(4)
+        operand[:] = 1
+        index = QuantumFloat(2)
+        h(index)
+
+        q_switch(index, branches, operand, method=method)
+        return measure(operand)
+    
+    mlir = _lower(main)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+
+    # ---------------------------------------------------------------------------
 # Test qrisp cudaq kernel decorator
 # ---------------------------------------------------------------------------
 
