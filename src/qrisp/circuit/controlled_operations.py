@@ -124,8 +124,17 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
         if method == "gray_pt_inv":
             qc = qc.inverse()
 
-    elif u3_gate.phi == 0 and u3_gate.lam == 0 and u3_gate.theta == 0:
+    elif u3_gate.phi == 0 and u3_gate.lam == 0 and u3_gate.theta == 0 and u3_gate.global_phase == 0:
         pass
+
+    elif u3_gate.phi == 0 and u3_gate.lam == 0 and u3_gate.theta == 0:
+        # Treat global phase
+        if method not in ["gray_pt", "gray_pt_inv"]:
+            gray_phase_synth_qb_list(
+                qc,
+                qc.qubits[:-1],
+                (2 ** (control_amount) - 1) * [0] + [u3_gate.global_phase],
+            )
 
     # Treat pauli gates
     elif u3_gate.name == "y":
@@ -171,7 +180,7 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
 
         C.rz((beta - alpha) / 2, C.qubits[0])
 
-        # Treat global phases and the fact that X P(phi) X = exp(2 phi) P(-phi)
+        # Treat global phase
         if method not in ["gray_pt", "gray_pt_inv"]:
             gray_phase_synth_qb_list(
                 qc,
@@ -183,10 +192,10 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
 
         # To perform the controlled x gate, we can use the phase tolerant algorithm
 
-        if control_amount == 2:
+        if control_amount <= 3:
             from qrisp.alg_primitives import gray_pt_mcx
 
-            mcx_gate = gray_pt_mcx(2, "11")
+            mcx_gate = gray_pt_mcx(control_amount, control_amount*"1")
         else:
             mcx_gate = XGate().control(control_amount, method="gray_pt")
 
