@@ -23,6 +23,7 @@ from collections.abc import Mapping
 from typing import cast
 
 from qiskit import QuantumCircuit, transpile
+from qiskit.primitives import BackendSamplerV2
 from qiskit.providers import Backend as QiskitBackendBase
 from qiskit.providers import BackendV2
 
@@ -304,16 +305,7 @@ class QiskitBackend(Backend):
                 ) from exc
 
         self.backend = backend
-
-        try:
-            from qiskit_ibm_runtime import SamplerV2
-        except ImportError as exc:
-            raise ImportError(
-                "Please install qiskit-ibm-runtime to use QiskitBackend: "
-                "pip install qiskit-ibm-runtime"
-            ) from exc
-
-        self.sampler = SamplerV2(cast(BackendV2, backend))
+        self.sampler = BackendSamplerV2(backend=cast(BackendV2, backend))
 
         # Fall back to the Qiskit backend's own name/options when not provided.
         # Only use the backend's options when they are a plain Mapping (e.g. dict).
@@ -469,17 +461,20 @@ class QiskitRuntimeBackend(QiskitBackend):
             service.least_busy() if backend is None else service.backend(backend)
         )
 
-        # Delegate common setup (self.backend, self.sampler, options) to QiskitBackend.
+        # Delegate common setup (self.backend, name, options) to QiskitBackend.
         # Pass _default_options() explicitly so the IBM hardware backend's internal
         # options (device config, noise model settings, etc.) do not bleed through
         # into the runtime options seen by Qrisp callers.
         super().__init__(backend=ibm_backend, options=self._default_options())
 
-        # For session mode, replace the default sampler with a session-bound one.
+        # Replace the BackendSamplerV2 created by the parent with the IBM Runtime
+        # SamplerV2, which is required for actual IBM hardware execution.
         if mode == "session":
             self.session = Session(ibm_backend)
             self.sampler = SamplerV2(self.session)
-        elif mode != "job":
+        elif mode == "job":
+            self.sampler = SamplerV2(ibm_backend)
+        else:
             raise ValueError(
                 f"Execution mode {mode!r} not available. Choose 'job' or 'session'."
             )

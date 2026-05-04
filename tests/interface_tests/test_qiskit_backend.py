@@ -131,11 +131,12 @@ def _simple_circuit() -> QrispQuantumCircuit:
 
 @pytest.fixture()
 def sampler_mock(monkeypatch):
-    """Inject a mock SamplerV2 into qiskit_ibm_runtime for the duration of a test."""
-    mock_sampler_cls = MagicMock(name="SamplerV2")
-    mock_module = MagicMock()
-    mock_module.SamplerV2 = mock_sampler_cls
-    monkeypatch.setitem(sys.modules, "qiskit_ibm_runtime", mock_module)
+    """Replace BackendSamplerV2 in the qiskit_backend module with a mock for the duration of a test."""
+    mock_sampler_cls = MagicMock(name="BackendSamplerV2")
+    monkeypatch.setattr(
+        "qrisp.interface.provider_backends.qiskit_backend.BackendSamplerV2",
+        mock_sampler_cls,
+    )
     return mock_sampler_cls
 
 
