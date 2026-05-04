@@ -62,7 +62,15 @@ def _extract_boolean_digit(integer, digit):
 
 
 def _apply_gidney_adder_gates(
-    n, tracing, qs, b_qbs, ctrl_qb=None, a_int=None, a_qbs=None
+    n,
+    tracing,
+    qs,
+    b_qbs,
+    ctrl_qb=None,
+    a_int=None,
+    a_qbs=None,
+    c_in_qb=None,
+    c_out_qb=None,
 ):
     """Run the Gidney carry ladder for semi-classical and quantum-quantum modes.
 
@@ -82,17 +90,18 @@ def _apply_gidney_adder_gates(
         Classical addend for the semi-classical mode.
     a_qbs : list of Qubit or None
         Quantum addend qubit list for the quantum-quantum mode.
+    c_in_qb : Qubit or None
+        Optional carry-in qubit for the quantum-quantum mode.
+    c_out_qb : Qubit or None
+        Optional carry-out qubit for the quantum-quantum mode.
     """
-    # the Gidney adder uses a "carry ladder" – a chain of ancilla qubits where
-    # each ancilla stores the carry bit produced at that position.  the ladder
-    # has three phases:
-    #   forward  – compute carries from the least-significant towards the
-    #              most-significant bit
-    #   midpoint – finalise the MSB sum bit using the last carry
-    #   backward – uncompute all intermediate carries so the ancillas return
-    #              to |0> and can be released
-    # jrange is safe in both tracing and static modes, so use it uniformly
-    # for loop bounds.
+    # Carry-ladder structure:
+    # forward  -> compute carries from LSB towards MSB
+    # midpoint -> apply MSB update using the last carry
+    # backward -> uncompute carries and restore ancillas
+    # jrange works in both tracing and static modes, so loop code stays shared.
+    is_quantum_mode = a_qbs is not None
+    is_controlled = ctrl_qb is not None
 
     # when the operand is only one bit wide there are no carries to propagate,
     # so the entire ladder is skipped – the control() environment guards this
@@ -106,7 +115,7 @@ def _apply_gidney_adder_gates(
         )
 
         # init: seed the carry chain with carry_0 = a[0] AND b[0]
-        if a_qbs is None:
+        if not is_quantum_mode:
 
             def first_forward_carry():
                 if ctrl_qb is None:
@@ -115,6 +124,12 @@ def _apply_gidney_adder_gates(
                     mcx([ctrl_qb, b_qbs[0]], gidney_anc[0], method="gidney")
 
             _apply_if_classical_bit_set(a_int, 0, tracing, first_forward_carry)
+        elif c_in_qb is not None:
+            # Carry-in trick: inject c_in directly at i=0 without extending a.
+            cx(c_in_qb, b_qbs[0])
+            cx(c_in_qb, a_qbs[0])
+            mcx([a_qbs[0], b_qbs[0]], gidney_anc[0], method="gidney")
+            cx(c_in_qb, gidney_anc[0])
         else:
             mcx([a_qbs[0], b_qbs[0]], gidney_anc[0], method="gidney")
 
@@ -124,7 +139,7 @@ def _apply_gidney_adder_gates(
             i = j + 1
             cx(gidney_anc[i - 1], b_qbs[i])
 
-            if a_qbs is None:
+            if not is_quantum_mode:
 
                 def toggle_forward_anc():
                     if ctrl_qb is None:
@@ -143,15 +158,17 @@ def _apply_gidney_adder_gates(
 
         # midpoint – the last carry (ancilla[n-2]) together with the MSBs
         # determines the MSB of the sum; after this the backward pass begins
-        if a_qbs is None:
+        if not is_quantum_mode:
             cx(gidney_anc[n - 2], b_qbs[n - 1])
         else:
-            if ctrl_qb is not None:
+            if is_controlled:
                 mcx([ctrl_qb, gidney_anc[n - 2]], b_qbs[n - 1])
-                mcx([ctrl_qb, a_qbs[n - 1]], b_qbs[n - 1])
+                if c_out_qb is None:
+                    mcx([ctrl_qb, a_qbs[n - 1]], b_qbs[n - 1])
             else:
                 cx(gidney_anc[n - 2], b_qbs[n - 1])
-                cx(a_qbs[n - 1], b_qbs[n - 1])
+                if c_out_qb is None:
+                    cx(a_qbs[n - 1], b_qbs[n - 1])
 
         # backward pass – walk back from the MSB to bit 1, reversing the
         # carry computation so each ancilla is restored to |0> while
@@ -160,8 +177,8 @@ def _apply_gidney_adder_gates(
             i = n - j - 2
             cx(gidney_anc[i - 1], gidney_anc[i])
 
-            if a_qbs is None:
-                if ctrl_qb is not None:
+            if not is_quantum_mode:
+                if is_controlled:
 
                     def toggle_backward_ctrl():
                         cx(ctrl_qb, gidney_anc[i - 1])
@@ -187,7 +204,7 @@ def _apply_gidney_adder_gates(
                     _apply_if_classical_bit_set(a_int, i, tracing, toggle_backward_anc)
             else:
                 mcx([a_qbs[i], b_qbs[i]], gidney_anc[i], method="gidney_inv")
-                if ctrl_qb is not None:
+                if is_controlled:
                     mcx([ctrl_qb, a_qbs[i]], b_qbs[i])
                     cx(gidney_anc[i - 1], a_qbs[i])
                     cx(gidney_anc[i - 1], b_qbs[i])
@@ -196,7 +213,7 @@ def _apply_gidney_adder_gates(
                     cx(a_qbs[i], b_qbs[i])
 
         # final: erase carry_0 (mirror of init)
-        if a_qbs is None:
+        if not is_quantum_mode:
 
             def first_backward_carry():
                 if ctrl_qb is None:
@@ -205,6 +222,25 @@ def _apply_gidney_adder_gates(
                     mcx([ctrl_qb, b_qbs[0]], gidney_anc[0], method="gidney_inv")
 
             _apply_if_classical_bit_set(a_int, 0, tracing, first_backward_carry)
+        elif c_in_qb is not None:
+            cx(c_in_qb, gidney_anc[0])
+            mcx([a_qbs[0], b_qbs[0]], gidney_anc[0], method="gidney_inv")
+
+            # In controlled mode, convert the unconditional c_in toggle on b[0]
+            # into a controlled one while keeping the same gate family.
+            if is_controlled:
+                lsb_ctrl_anc = (
+                    QuantumBool(name="gidney_lsb_ctrl_anc*")
+                    if tracing
+                    else QuantumBool(name="gidney_lsb_ctrl_anc*", qs=qs)
+                )
+                mcx([ctrl_qb, c_in_qb], lsb_ctrl_anc[0], method="gidney")
+                cx(lsb_ctrl_anc[0], b_qbs[0])
+                mcx([ctrl_qb, c_in_qb], lsb_ctrl_anc[0], method="gidney_inv")
+                cx(c_in_qb, b_qbs[0])
+                lsb_ctrl_anc.delete()
+
+            cx(c_in_qb, a_qbs[0])
         else:
             mcx([a_qbs[0], b_qbs[0]], gidney_anc[0], method="gidney_inv")
 
@@ -281,12 +317,12 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     >>> print(b)
     {9: 1.0}
     """
-    # unwrap optional carry qubits
+    # ---- Normalize Optional Qubit Inputs ----
     c_in_qb = c_in[0] if isinstance(c_in, QuantumBool) else c_in
     c_out_qb = c_out[0] if isinstance(c_out, QuantumBool) else c_out
+    is_tracing = check_for_tracing_mode()
 
-    # semi-classical path: a is a known classical value (int, string, JAX
-    # scalar, or BigInteger) and b is a quantum register.
+    # ---- Semi-Classical Path (classical a, quantum b) ----
     if not isinstance(a, (QuantumVariable, DynamicQubitArray, list)):
         # accept binary strings like "1101" (LSB-first) and convert to int
         if isinstance(a, str):
@@ -303,9 +339,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
 
         # any of the above qualifies as a semi-classical source – the value
         # provides classical bit information but is not a qubit array
-        if is_concrete_int or (
-            check_for_tracing_mode() and (is_scalar_like or is_biginteger_like)
-        ):
+        if is_concrete_int or (is_tracing and (is_scalar_like or is_biginteger_like)):
             # truncate classical a to the width of b so higher bits don't produce spurious
             # gates (addition is mod 2^n)
             if is_concrete_int:
@@ -313,7 +347,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
 
             # in JAX tracing mode, wrap the integer in a JAX array so
             # subsequent bit-shift operations stay within the JAX graph
-            if check_for_tracing_mode():
+            if is_tracing:
                 if isinstance(a, int):
                     a = jnp.array(a, dtype=jnp.int64)
             else:
@@ -328,16 +362,13 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
                         qs_list.append(qb.qs())
                 merge(qs_list)
 
-            # obtain a flat qubit list from the quantum variable b;
-            # slicing is JAX-safe and works in both tracing and static modes
+            # build a flat target list (works in tracing and static modes)
             b_qbs = b[:]
 
-            # carry-in is modelled by prepending the carry-in qubit to b and
-            # treating a as if it had an extra LSB of 1.  this way the carry
-            # chain naturally absorbs the incoming carry without special logic
+            # Encode carry-in by prepending c_in to b and setting the extra
+            # classical LSB of a to 1.
             if c_in_qb is not None:
                 b_qbs = [c_in_qb] + b_qbs
-                # shift a left by one and set bit 0 to represent the carry-in
                 a = (a << 1) + 1
 
             # carry-out is modelled by appending a fresh qubit to b; the
@@ -350,7 +381,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
 
             # when the target register is a single qubit, the carry ladder
             # degenerates (no carries to propagate) – just conditionally flip that qubit
-            if (not check_for_tracing_mode()) and n == 1:
+            if (not is_tracing) and n == 1:
 
                 def single_bit_update():
                     if ctrl is None:
@@ -359,19 +390,19 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
                         cx(ctrl, b_qbs[0])
 
                 _apply_if_classical_bit_set(
-                    a, 0, check_for_tracing_mode(), single_bit_update
+                    a, 0, is_tracing, single_bit_update
                 )
                 return
 
             # fast_append batches gate emissions for better performance in
             # static mode; in tracing mode no batching is needed
-            ctx = fast_append(3) if not check_for_tracing_mode() else nullcontext()
+            ctx = fast_append(3) if not is_tracing else nullcontext()
             with ctx:
                 # run the three-phase carry ladder (forward, mid, backward)
                 _apply_gidney_adder_gates(
                     n=n,
-                    tracing=check_for_tracing_mode(),
-                    qs=None if check_for_tracing_mode() else b_qbs[0].qs(),
+                    tracing=is_tracing,
+                    qs=None if is_tracing else b_qbs[0].qs(),
                     b_qbs=b_qbs,
                     ctrl_qb=ctrl,
                     a_int=a,
@@ -395,17 +426,14 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
                     # only emit the XOR gate when the corresponding
                     # classical bit of a is 1
                     _apply_if_classical_bit_set(
-                        a, i, check_for_tracing_mode(), final_sum_update
+                        a, i, is_tracing, final_sum_update
                     )
 
             return
 
-    # quantum-quantum path: both a and b are quantum registers.
-    # the ladder requires both operands to have the same width, so we
-    # truncate or pad a to match b
-    # in tracing mode there is no concrete QuantumSession; in static mode
-    # all qubits share one session
-    qs = None if check_for_tracing_mode() else b[0].qs()
+    # ---- Quantum-Quantum Path ----
+    # The ladder requires matching widths, so truncate/pad a to b.
+    qs = None if is_tracing else b[0].qs()
 
     # if a is wider than b, extra high bits cannot affect the (mod 2^n)
     # result – drop them.  if a is narrower, pad with |0> ancillas below
@@ -414,7 +442,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     effective_size_a = jnp.minimum(dim_a, dim_b)
     a = a[:effective_size_a]
 
-    # allocate zero-initialised ancillas to extend a to the same width as b
+    # extend a with |0> ancillas up to b width
     extension_size = jnp.maximum(0, dim_b - dim_a)
     a_ext = (
         QuantumVariable(extension_size, name="gidney_a_ext*", qs=qs)
@@ -425,69 +453,30 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     a = a[:] + a_ext[:]
     b = b[:]
 
-    # wire carry-in/out on b.
-    if c_in_qb is not None:
-        b = [c_in_qb] + b
+    # include optional carry-out in the target carry chain
     if c_out_qb is not None:
         b = b + [c_out_qb]
 
-    # carry-in handling for the qq path: prepend a |1> ancilla to a.
-    # the ladder then computes carry_0 = 1 AND c_in, which equals c_in.
-    one_anc = None
-    if c_in_qb is not None:
-        one_anc = (
-            QuantumBool(name="gidney_cin_one*", qs=qs)
-            if qs is not None
-            else QuantumBool(name="gidney_cin_one*")
-        )
-        # flip the ancilla to |1> so the Toffoli in the init step fires when
-        # c_in is |1>
-        x(one_anc[0])
-        a = one_anc[:] + a
-
-    # carry-out handling: append a |0> ancilla to a; the MSB carry will
-    # propagate naturally into the appended carry-out target qubit in b.
-    zero_anc = None
-    if c_out_qb is not None:
-        zero_anc = (
-            QuantumBool(name="gidney_cout_zero*", qs=qs)
-            if qs is not None
-            else QuantumBool(name="gidney_cout_zero*")
-        )
-        a = a + zero_anc[:]
-
-    # n is the matched width after padding and carry extensions
-    n = jlen(a)
+    # ladder width follows the active target chain
+    n = jlen(b)
 
     # run the three-phase carry ladder for the quantum-quantum case
     _apply_gidney_adder_gates(
         n=n,
-        tracing=check_for_tracing_mode(),
+        tracing=is_tracing,
         qs=qs,
         b_qbs=b,
         ctrl_qb=ctrl,
         a_qbs=a,
+        c_in_qb=c_in_qb,
+        c_out_qb=c_out_qb,
     )
 
-    # the ladder handles carries and sum bits for positions 1..n-1, but the
-    # LSB sum bit (b[0] ^= a[0]) is not produced by the ladder.  when carry-in
-    # is present the LSB was the carry-in qubit and was already handled above
-    if c_in is None:
-        if ctrl is not None:
-            # controlled XOR of a[0] onto b[0]
-            mcx([ctrl, a[0]], b[0])
-        else:
-            cx(a[0], b[0])
-
-    # clean up temporary ancillas that were created for carry-in / carry-out
-    if one_anc is not None:
-        # reset the |1> ancilla back to |0> before deletion
-        x(one_anc[0])
-        one_anc.delete()
-
-    if zero_anc is not None:
-        # the carry-out ancilla is already |0> after the ladder uncomputation
-        zero_anc.delete()
+    # Ladder handles carries and upper-bit sums; apply the LSB a[0] contribution.
+    if ctrl is not None:
+        mcx([ctrl, a[0]], b[0])
+    else:
+        cx(a[0], b[0])
 
     # release the zero-padding ancillas that extended a to match b's width
     a_ext.delete(verify=False)
