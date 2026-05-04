@@ -14,6 +14,55 @@
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
+
+Circut pass that cancels adjacent gate–inverse-gate pairs by building a
+directed acyclic graph (DAG) and fusing neighbouring instructions.
+
+**Architecture**
+
+The module is layered in three tiers:
+
+1. **Operation-level fusion** — domain logic that decides whether two
+   :class:`~qrisp.circuit.Operation` objects cancel, fuse into a single
+   operation, or cannot be combined.  A dispatcher,
+   :func:`_fuse_operations`, delegates to specialised handlers in order:
+
+   * :func:`_fuse_swap_with_neighbour` — SWAP·{CX,CP,RZZ} and vice
+     versa, replacing the pair with a cheaper compound gate.
+   * :func:`_fuse_parameterized_1q` — same-site Rz, P, Rx, Ry, gphase
+     fusion by parameter addition; cross-type Rz↔P fusion with global
+     phase absorption.
+   * :func:`_fuse_gidney_and` — compute/uncompute cancellation of
+     :class:`~qrisp.alg_primitives.GidneyLogicalAND`.
+   * :func:`_fuse_controlled_ops` — recursion into
+     :class:`~qrisp.circuit.ControlledOperation` and
+     :class:`~qrisp.environments.CustomControlOperation` wrappers.
+   * :func:`_check_inverse_cancel` — generic final fallback via
+     ``op_a.inverse().name == op_b.name``.
+
+2. **Instruction-level layer** — :func:`_fuse_instructions` validates
+   qubit alignment, delegates symmetric-gate set-matching to
+   :func:`_resolve_qubit_order`, then calls :func:`_fuse_operations`.
+
+3. **DAG orchestration** — :func:`cancel_inverses` builds a DAG where
+   each instruction is a node and edges track qubit/clbit flow.  When
+   an instruction has a single predecessor (meaning the pair is locally
+   adjacent on every qubit), fusion is attempted.  Cancelled or fused
+   nodes are removed and edges rewired via :func:`_rewire_past_node`.
+   Surviving instructions are emitted in topological order by
+   :func:`_emit_surviving_circuit`.
+
+**Sentinel**
+
+Fusion functions return :data:`_FUSION_CANCEL` (a unique sentinel
+object) to signal total cancellation, avoiding the ambiguity of magic
+integers.
+
+**Global phase**
+
+Rotations that carry a ``global_phase`` attribute contribute it to a
+running accumulator.  Non-zero accumulated phase is emitted as a single
+``gphase`` gate at the end of the pass.
 """
 
 from __future__ import annotations
@@ -35,14 +84,25 @@ from qrisp.circuit import (
     ControlledOperation,
 )
 
-
-# ---------------------------------------------------------------------------
-# Private helpers — instruction fusion for cancel_inverses
-# ---------------------------------------------------------------------------
+# Sentinel object returned when two operations cancel completely.
+_FUSION_CANCEL = object()
 
 
-def _fuse_operations(op_a, op_b, gphase_array):
-    """Try to fuse two operations into one (or return 1 for cancellation).
+# =============================================================================
+# Operation-level fusion logic — dispatched by _fuse_operations
+# =============================================================================
+
+
+def _fuse_swap_with_neighbour(op_a, op_b):
+    """Try to fuse a SWAP gate with a neighbouring symmetric two-qubit gate.
+
+    When a SWAP immediately precedes (or follows) one of these symmetric
+    two-qubit gates (CX, CP, RZZ), the pair can be replaced by a simpler
+    compound gate that uses fewer CX gates than the naive decomposition
+    of SWAP then gate.
+
+    The "half_*_qc" circuits below are the gate that remains after
+    absorbing part of the SWAP into the neighbouring operation.
 
     Parameters
     ----------
@@ -50,31 +110,13 @@ def _fuse_operations(op_a, op_b, gphase_array):
         The first operation (earlier in time).
     op_b : Operation
         The second operation (later in time).
-    gphase_array : list
-        Single-element list tracking accumulated global phase.
 
     Returns
     -------
-    Operation or int or None
-        * ``Operation`` — the fused result.
-        * ``1`` — the two operations cancel completely.
-        * ``None`` — no fusion possible.
+    Operation or None
+        The fused operation, or ``None`` if neither op is a SWAP or
+        the neighbour is not a recognised symmetric two-qubit gate.
     """
-
-    # Lazy imports to avoid circular dependencies at module load time.
-    from qrisp.alg_primitives import GidneyLogicalAND
-    from qrisp.environments import CustomControlOperation
-
-    # ------------------------------------------------------------------
-    # Special-case: SWAP fused with a following CP, CZ, CX or RZZ gate.
-    #
-    # When a SWAP immediately precedes one of these symmetric two-qubit
-    # gates, the pair can be replaced by a simpler compound gate that
-    # uses fewer CX gates than the naive decomposition of SWAP then gate.
-    #
-    # The "half_*_qc" circuits below are the gate that remains after
-    # absorbing part of the SWAP into the neighbouring operation.
-    # ------------------------------------------------------------------
     with fast_append(0):
         # --- swap-a then something ---
         if "swap" == op_a.name:
@@ -131,166 +173,355 @@ def _fuse_operations(op_a, op_b, gphase_array):
                 half_cp_qc.p(op_a.params[0] / 2, 1)
                 return half_cp_qc.to_gate()
 
-    # ------------------------------------------------------------------
-    # Parameterised single-qubit gates: fuse by adding parameters.
-    #
-    # Rz(θ₁) · Rz(θ₂) → Rz(θ₁+θ₂), and if θ₁+θ₂ = 0 the pair cancels.
-    # P(θ₁)  · P(θ₂)  → P(θ₁+θ₂), same logic.
-    # Cross-type fusion (Rz+P) absorbs the Rz global phase into the
-    # gphase tracker and emits a single P gate.
-    #
-    # Note: global phases from Rz are tracked in gphase_array and
-    # collapsed at the very end of the main pass.
-    # ------------------------------------------------------------------
-    if op_a.params:
-        param_sum = sum(op_a.params + op_b.params)
+    return None
 
-        # --- Rz + Rz / Rz + P ---
-        if op_a.name == "rz":
-            if op_b.name == "rz":
-                gphase_array[0] += op_a.global_phase + op_b.global_phase
-                if param_sum == 0:
-                    return 1  # perfect cancellation
-                else:
-                    return RZGate(param_sum)
-            if op_b.name == "p":
-                gphase_array[0] += op_a.global_phase
-                if param_sum == 0:
-                    return 1
-                else:
-                    return PGate(param_sum)
 
-        # --- P + Rz / P + P ---
-        elif op_a.name == "p":
-            if op_b.name == "rz":
-                gphase_array[0] += op_b.global_phase
-                if param_sum == 0:
-                    return 1
-                else:
-                    return PGate(param_sum)
-            if op_b.name == "p":
-                if param_sum == 0:
-                    return 1
-                else:
-                    return PGate(param_sum)
+def _fuse_parameterized_1q(op_a, op_b, gphase_array):
+    """Try to fuse two parameterised single-qubit gates.
 
-        # --- Rx, Ry, gphase (same-name only) ---
-        if op_a.name == op_b.name:
-            if op_a.name == "rx":
-                if param_sum == 0:
-                    return 1
-                else:
-                    return RXGate(param_sum)
-            elif op_a.name == "ry":
-                if param_sum == 0:
-                    return 1
-                else:
-                    return RYGate(param_sum)
-            if op_a.name == "gphase":
-                return GPhaseGate(op_a.global_phase + op_b.global_phase)
-            # Other parameterised gates with matching names (e.g. cp, rzz)
-            # are handled by the generic inverse check further below.
+    Rz(θ₁)·Rz(θ₂) → Rz(θ₁+θ₂), and if θ₁+θ₂ = 0 the pair cancels.
+    P(θ₁)·P(θ₂)  → P(θ₁+θ₂), same logic.
+    Cross-type fusion (Rz+P) absorbs the Rz global phase into the
+    gphase tracker and emits a single P gate.
 
-    # ------------------------------------------------------------------
-    # Gates that carry a *definition* (decomposable composite gates)
-    # or are explicitly known to be CX, CY, CZ.
-    #
-    # We try to recurse into the definition to fuse inner operations.
-    # For ControlledOperations we recurse into the base operation;
-    # for GidneyLogicalAND we check the inv flag;
-    # for CustomControlOperation we unwrap one level.
-    #
-    # IMPORTANT: this block does NOT return None when no special case
-    # matches — it falls through to the generic inverse check below.
-    # This is necessary because SWAP and many other gates have a
-    # definition (their CX decomposition) yet are still their own
-    # inverse and should cancel via the generic path.
-    # ------------------------------------------------------------------
-    if op_a.definition or op_a.name in ["cx", "cy", "cz"]:
+    Also handles same-name Rx, Ry, and gphase gates.
 
-        # -- Controlled operations with matching control states --
-        if isinstance(op_a, ControlledOperation) and isinstance(
-            op_b, ControlledOperation
-        ):
-            if op_a.ctrl_state == op_b.ctrl_state:
-                # Recurse into the base (target) operations.
-                temp = _fuse_operations(
-                    op_a.base_operation, op_b.base_operation, gphase_array
-                )
-                if temp == 1:
-                    return 1
-                elif temp is not None:
-                    # Re-wrap the fused base in a controlled wrapper.
-                    return ControlledOperation(
-                        temp,
-                        num_ctrl_qubits=len(op_a.controls),
-                        ctrl_state=op_a.ctrl_state,
-                    )
+    Note: global phases from Rz are tracked in gphase_array and
+    collapsed at the very end of the main pass.
 
-        # -- Gidney logical-AND pairs (measurement-based Toffoli) --
-        elif isinstance(op_a, GidneyLogicalAND) and isinstance(
-            op_b, GidneyLogicalAND
-        ):
-            if op_a.ctrl_state == op_b.ctrl_state:
-                # A compute/uncompute pair cancels.
-                if op_a.inv != op_b.inv:
-                    return 1
-            return None
+    Parameters
+    ----------
+    op_a : Operation
+        The first operation (earlier in time).
+    op_b : Operation
+        The second operation (later in time).
+    gphase_array : list
+        Single-element list tracking accumulated global phase.
 
-        # -- Custom control operations (unusual control schemes) --
-        if isinstance(op_a, CustomControlOperation) and isinstance(
-            op_b, CustomControlOperation
-        ):
-            # Unwrap one level of the custom control and recurse.
+    Returns
+    -------
+    Operation or _FUSION_CANCEL or None
+        * ``Operation`` — the fused result.
+        * ``_FUSION_CANCEL`` — the two operations cancel completely.
+        * ``None`` — no parameterised fusion possible.
+    """
+    if not op_a.params:
+        return None
+
+    param_sum = sum(op_a.params + op_b.params)
+
+    # --- Rz + Rz / Rz + P ---
+    if op_a.name == "rz":
+        if op_b.name == "rz":
+            gphase_array[0] += op_a.global_phase + op_b.global_phase
+            if param_sum == 0:
+                return _FUSION_CANCEL  # perfect cancellation
+            else:
+                return RZGate(param_sum)
+        if op_b.name == "p":
+            gphase_array[0] += op_a.global_phase
+            if param_sum == 0:
+                return _FUSION_CANCEL
+            else:
+                return PGate(param_sum)
+
+    # --- P + Rz / P + P ---
+    elif op_a.name == "p":
+        if op_b.name == "rz":
+            gphase_array[0] += op_b.global_phase
+            if param_sum == 0:
+                return _FUSION_CANCEL
+            else:
+                return PGate(param_sum)
+        if op_b.name == "p":
+            if param_sum == 0:
+                return _FUSION_CANCEL
+            else:
+                return PGate(param_sum)
+
+    # --- Rx, Ry, gphase (same-name only) ---
+    if op_a.name == op_b.name:
+        if op_a.name == "rx":
+            if param_sum == 0:
+                return _FUSION_CANCEL
+            else:
+                return RXGate(param_sum)
+        elif op_a.name == "ry":
+            if param_sum == 0:
+                return _FUSION_CANCEL
+            else:
+                return RYGate(param_sum)
+        if op_a.name == "gphase":
+            return GPhaseGate(op_a.global_phase + op_b.global_phase)
+        # Other parameterised gates with matching names (e.g. cp, rzz)
+        # are handled by the generic inverse check further below.
+
+    return None
+
+
+def _fuse_gidney_and(op_a, op_b):
+    """Cancel a GidneyLogicalAND compute/uncompute pair.
+
+    This is a definitive check — if the ops are GidneyLogicalAND
+    instances, no further fusion paths should be attempted.
+
+    Parameters
+    ----------
+    op_a : Operation
+        The first operation (earlier in time).
+    op_b : Operation
+        The second operation (later in time).
+
+    Returns
+    -------
+    _FUSION_CANCEL or None
+        ``_FUSION_CANCEL`` if the compute/uncompute pair cancels,
+        ``None`` otherwise (including "definitive no match").
+    """
+    # Lazy import to avoid circular dependencies at module load time.
+    from qrisp.alg_primitives import GidneyLogicalAND
+
+    if not (
+        isinstance(op_a, GidneyLogicalAND)
+        and isinstance(op_b, GidneyLogicalAND)
+    ):
+        return None
+
+    if op_a.ctrl_state == op_b.ctrl_state:
+        # A compute/uncompute pair cancels.
+        if op_a.inv != op_b.inv:
+            return _FUSION_CANCEL
+
+    # Definitive no-match for GidneyLogicalAND pairs — do not fall
+    # through to any other fusion path.
+    return None
+
+
+def _fuse_controlled_ops(op_a, op_b, gphase_array):
+    """Try to fuse two operations by recursing into their definitions.
+
+    Handles ControlledOperation and CustomControlOperation wrappers.
+
+    IMPORTANT: when this function returns ``None`` it means "no
+    controlled-op match was found, but a generic inverse cancellation
+    should still be attempted".  This is deliberate because many gates
+    with definitions (SWAP, circuit wrappers, etc.) are self-inverse
+    and need the fallback path.
+
+    Parameters
+    ----------
+    op_a : Operation
+        The first operation (earlier in time).
+    op_b : Operation
+        The second operation (later in time).
+    gphase_array : list
+        Single-element list tracking accumulated global phase.
+
+    Returns
+    -------
+    Operation or _FUSION_CANCEL or None
+        * ``Operation`` — the fused result (re-wrapped in the
+          appropriate controlled wrapper).
+        * ``_FUSION_CANCEL`` — the two operations cancel completely.
+        * ``None`` — not handled here; fall through to generic inverse check.
+    """
+    # Lazy import to avoid circular dependencies at module load time.
+    from qrisp.environments import CustomControlOperation
+
+    # -- Controlled operations with matching control states --
+    if isinstance(op_a, ControlledOperation) and isinstance(
+        op_b, ControlledOperation
+    ):
+        if op_a.ctrl_state == op_b.ctrl_state:
+            # Recurse into the base (target) operations.
             temp = _fuse_operations(
-                op_a.definition.data[0].op,
-                op_b.definition.data[0].op,
-                gphase_array,
+                op_a.base_operation, op_b.base_operation, gphase_array
             )
-            if temp == 1:
-                return 1
+            if temp is _FUSION_CANCEL:
+                return _FUSION_CANCEL
             elif temp is not None:
-                return CustomControlOperation(temp, op_a.targeting_control)
+                # Re-wrap the fused base in a controlled wrapper.
+                return ControlledOperation(
+                    temp,
+                    num_ctrl_qubits=len(op_a.controls),
+                    ctrl_state=op_a.ctrl_state,
+                )
 
-        # Deliberately fall through to the generic inverse check.
-        # Many gates with definitions (SWAP, circuits wrapped as
-        # gates, etc.) need to be tested for self-inverse cancellation.
+    # -- Custom control operations (unusual control schemes) --
+    if isinstance(op_a, CustomControlOperation) and isinstance(
+        op_b, CustomControlOperation
+    ):
+        # Unwrap one level of the custom control and recurse.
+        temp = _fuse_operations(
+            op_a.definition.data[0].op,
+            op_b.definition.data[0].op,
+            gphase_array,
+        )
+        if temp is _FUSION_CANCEL:
+            return _FUSION_CANCEL
+        elif temp is not None:
+            return CustomControlOperation(temp, op_a.targeting_control)
 
-    # ------------------------------------------------------------------
-    # Generic inverse cancellation — the final fallback.
-    #
-    # If op_b's name equals the inverse of op_a's name, the pair
-    # cancels.  This handles:
-    #   * Self-inverse gates: X·X, H·H, CX·CX, CZ·CZ, SWAP·SWAP, …
-    #   * Param gates with zero sum not caught above (e.g. cp·cp⁻¹)
-    #
-    # The "alloc" suffix guard prevents confusing qb_alloc / qb_dealloc
-    # with proper gates.
-    # ------------------------------------------------------------------
+    # Deliberately fall through to the generic inverse check.
+    # Many gates with definitions (SWAP, circuits wrapped as
+    # gates, etc.) need to be tested for self-inverse cancellation.
+    return None
+
+
+def _check_inverse_cancel(op_a, op_b):
+    """Check whether op_b is the exact inverse of op_a.
+
+    This is the generic final fallback for inverse cancellation.
+    Handles:
+      * Self-inverse gates: X·X, H·H, CX·CX, CZ·CZ, SWAP·SWAP, …
+      * Param gates with zero sum not caught by _fuse_parameterized_1q
+        (e.g. cp·cp⁻¹)
+
+    The "alloc" suffix guard prevents confusing qb_alloc / qb_dealloc
+    with proper gates.
+
+    Parameters
+    ----------
+    op_a : Operation
+        The first operation (earlier in time).
+    op_b : Operation
+        The second operation (later in time).
+
+    Returns
+    -------
+    _FUSION_CANCEL or None
+        ``_FUSION_CANCEL`` if the pair cancels, ``None`` otherwise.
+    """
     if op_a.inverse().name == op_b.name and op_a.name[-5:] != "alloc":
-        return 1
+        return _FUSION_CANCEL
 
-    # No fusion possible.
     return None
 
 
 # =============================================================================
-# Private helper: instruction-level fusion
+# Operation-level dispatcher
 # =============================================================================
+
+
+def _fuse_operations(op_a, op_b, gphase_array):
+    """Try to fuse two operations into one (or cancel them).
+
+    Dispatches through the specialised fusion helpers in order:
+    1. SWAP fusion with neighbouring two-qubit gates.
+    2. Parameterised single-qubit gate fusion.
+    3. GidneyLogicalAND compute/uncompute cancellation.
+    4. Controlled-operation recursion (if op_a has a definition).
+    5. Generic inverse cancellation.
+
+    Parameters
+    ----------
+    op_a : Operation
+        The first operation (earlier in time).
+    op_b : Operation
+        The second operation (later in time).
+    gphase_array : list
+        Single-element list tracking accumulated global phase.
+
+    Returns
+    -------
+    Operation or _FUSION_CANCEL or None
+        * ``Operation`` — the fused result.
+        * ``_FUSION_CANCEL`` — the two operations cancel completely.
+        * ``None`` — no fusion possible.
+    """
+    # 1. SWAP fusion with neighbouring two-qubit gates.
+    result = _fuse_swap_with_neighbour(op_a, op_b)
+    if result is not None:
+        return result
+
+    # 2. Parameterised single-qubit gate fusion.
+    result = _fuse_parameterized_1q(op_a, op_b, gphase_array)
+    if result is not None:
+        return result
+
+    # 3. GidneyLogicalAND — must be checked before the generic path
+    #    and does NOT fall through to inverse check.
+    result = _fuse_gidney_and(op_a, op_b)
+    if result is not None:
+        return result
+
+    # 4. Composite gate handling (controlled ops) — falls through
+    #    to generic inverse check if no controlled-op match is found.
+    if op_a.definition or op_a.name in ["cx", "cy", "cz"]:
+        result = _fuse_controlled_ops(op_a, op_b, gphase_array)
+        if result is not None:
+            return result
+        # Deliberately fall through to the generic inverse check.
+        # Many gates with definitions (SWAP, circuits wrapped as
+        # gates, etc.) need to be tested for self-inverse cancellation.
+
+    # 5. Generic inverse cancellation — the final fallback.
+    return _check_inverse_cancel(op_a, op_b)
+
+
+# =============================================================================
+# Instruction-level fusion
+# =============================================================================
+
+# Gates whose qubit arguments are symmetric (set-based matching).
+_SYMMETRIC_GATES = frozenset({"cz", "swap", "cp", "rzz"})
+
+
+def _resolve_qubit_order(instr_a, instr_b):
+    """Determine the correct qubit order for the fused instruction.
+
+    For symmetric two-qubit gates (CZ, SWAP, CP, RZZ) the qubit order
+    does not matter — CZ(0,1) followed by CZ(1,0) is still the same
+    pair.  We match by qubit *set* rather than by position.
+
+    For non-symmetric gates, exact positional qubit match is required.
+
+    Parameters
+    ----------
+    instr_a : Instruction
+        The first instruction (earlier in time).
+    instr_b : Instruction
+        The second instruction (later in time).
+
+    Returns
+    -------
+    list of Qubit or None
+        The qubit list to use for the fused instruction, or ``None``
+        if the qubits cannot be matched.
+    """
+    a_sym = instr_a.op.name in _SYMMETRIC_GATES
+    b_sym = instr_b.op.name in _SYMMETRIC_GATES
+
+    if a_sym or b_sym:
+        # Symmetric match by set — qubit order difference is tolerated.
+        if set(instr_a.qubits) != set(instr_b.qubits):
+            return None
+        # Preserve the non-symmetric side's qubit order if there is one.
+        # If only op_a is symmetric, keep op_b's order (the successor's).
+        # If only op_b is symmetric (or both), keep op_a's order.
+        if a_sym and not b_sym:
+            return instr_b.qubits
+        return instr_a.qubits
+    else:
+        # Non-symmetric gate: require exact positional qubit match.
+        for i, qb in enumerate(instr_a.qubits):
+            if instr_b.qubits[i] != qb:
+                return None
+        return instr_a.qubits
 
 
 def _fuse_instructions(instr_a, instr_b, gphase_array):
     """Try to fuse two neighbouring instructions.
 
     This is a thin wrapper around ``_fuse_operations`` that additionally
-    validates qubit alignment and handles *symmetric* gates whose qubit
-    order can be freely permuted (CZ, SWAP, CP, RZZ).
+    validates qubit alignment and handles *symmetric* gates (via
+    ``_resolve_qubit_order``).
 
     Returns
     -------
-    Instruction or int or None
+    Instruction or _FUSION_CANCEL or None
         * ``Instruction`` — the fused result.
-        * ``1`` — the two instructions cancel.
+        * ``_FUSION_CANCEL`` — the two instructions cancel.
         * ``None`` — no fusion possible.
     """
     # Must operate on the same number of qubits.
@@ -303,49 +534,149 @@ def _fuse_instructions(instr_a, instr_b, gphase_array):
     ):
         return None
 
-    # ------------------------------------------------------------------
-    # Determine whether either instruction is a *symmetric* two-qubit
-    # gate.  For symmetric gates the qubit order does not matter —
-    # CZ(0,1) followed by CZ(1,0) is still the same pair.  We match
-    # by qubit *set* rather than by position.
-    #
-    # Flag which side (if any) is symmetric so we know which qubit
-    # order to preserve in the output instruction.
-    # ------------------------------------------------------------------
-    symmetric_instruction = None
-    if instr_a.op.name in ["cz", "swap", "cp", "rzz"]:
-        symmetric_instruction = "a"
-    if instr_b.op.name in ["cz", "swap", "cp", "rzz"]:
-        symmetric_instruction = "b"
-
-    if symmetric_instruction and set(instr_a.qubits) == set(instr_b.qubits):
-        # Symmetric match by set — qubit order difference is tolerated.
-        pass
-    else:
-        # Non-symmetric gate: require exact positional qubit match.
-        for i, qb in enumerate(instr_a.qubits):
-            if instr_b.qubits[i] != qb:
-                return None
+    # Resolve the correct qubit order (handles symmetric gates).
+    qubits = _resolve_qubit_order(instr_a, instr_b)
+    if qubits is None:
+        return None
 
     # Delegate to the operation-level fusion logic.
-    temp = _fuse_operations(instr_a.op, instr_b.op, gphase_array)
+    result = _fuse_operations(instr_a.op, instr_b.op, gphase_array)
 
-    # If the result is a new Operation, wrap it in an Instruction with
-    # the correct qubit ordering:
-    #   * No symmetric gate involved → use op_a's qubit order.
-    #   * Only op_a is symmetric   → use op_b's qubit order (op_a was
-    #     the predecessor; after fusion the order from op_b wins).
-    #   * Only op_b is symmetric   → use op_a's qubit order.
-    if isinstance(temp, Operation):
-        if symmetric_instruction is None:
-            return Instruction(temp, instr_a.qubits)
-        elif symmetric_instruction == "a":
-            return Instruction(temp, instr_b.qubits)
-        elif symmetric_instruction == "b":
-            return Instruction(temp, instr_a.qubits)
-    else:
-        # Propagate 1 (cancellation) or None (no fusion) as-is.
-        return temp
+    # If the result is a new Operation, wrap it in an Instruction.
+    # Otherwise propagate _FUSION_CANCEL or None as-is.
+    if isinstance(result, Operation):
+        return Instruction(result, qubits)
+    return result
+
+
+# =============================================================================
+# Public pass
+# =============================================================================
+# DAG management helpers — used by cancel_inverses
+# =============================================================================
+
+
+def _init_dag(qc):
+    """Initialize the DAG with virtual nodes for every qubit and clbit.
+
+    Nodes are identified by integers:
+      * Negative numbers (-1, -2, …) represent qubits and clbits
+        at the *start* of time (before any gate acts on them).
+      * Non-negative numbers (0, 1, 2, …) represent instructions.
+
+    qubit_dic / clbit_dic map each (c)bit to the *last* node that
+    touched it, so we can connect each new instruction to its
+    immediate predecessors.
+
+    edge_dic maps DAG edges → lists of qubits, so that when we
+    delete a node we know which qubit_dic entries to rewire.
+
+    Parameters
+    ----------
+    qc : QuantumCircuit
+        The input circuit.
+
+    Returns
+    -------
+    tuple
+        (G, qubit_dic, clbit_dic, edge_dic, data_list)
+    """
+    G = nx.DiGraph()
+    qubit_dic = {}
+    clbit_dic = {}
+    edge_dic = {}
+
+    # Seed the DAG with "virtual" nodes for every qubit and clbit.
+    for i in range(qc.num_qubits()):
+        qubit_dic[qc.qubits[i]] = -i - 1
+        G.add_node(-i - 1)
+
+    for i in range(len(qc.clbits)):
+        clbit_dic[qc.clbits[i]] = -i - 1
+        G.add_node(-qc.num_qubits() - i - 1)
+
+    # Work on a copy so we can mutate instructions in-place (for
+    # fusion replacements) without affecting the original circuit.
+    data_list = list(qc.data)
+
+    return G, qubit_dic, clbit_dic, edge_dic, data_list
+
+
+def _rewire_past_node(G, node_id, qubit_dic, edge_dic):
+    """Rewire incoming edges of *node_id* to skip past it.
+
+    After rewiring, subsequent gates that would have seen *node_id*
+    as a predecessor now see *node_id*'s predecessor instead.
+    The node itself is NOT removed (the caller decides when to do that).
+
+    Parameters
+    ----------
+    G : nx.DiGraph
+        The DAG.
+    node_id : int
+        The node whose incoming edges should be rewired.
+    qubit_dic : dict
+        Maps each qubit → last node that touched it.
+    edge_dic : dict
+        Maps DAG edges → list of qubits travelling on that edge.
+    """
+    for edge in G.in_edges(node_id):
+        for qb in edge_dic[edge]:
+            qubit_dic[qb] = edge[0]
+        del edge_dic[edge]
+
+
+def _emit_surviving_circuit(G, data_list, qc, gphase_array):
+    """Emit the surviving instructions in topological order.
+
+    Topological sort guarantees that earlier instructions appear
+    before later ones in the dependency chain — even after nodes have
+    been deleted and edges rewired.
+
+    Parameters
+    ----------
+    G : nx.DiGraph
+        The DAG containing only surviving instruction nodes and
+        virtual qubit/clbit nodes.
+    data_list : list
+        The working copy of circuit instructions (mutated for fusions).
+    qc : QuantumCircuit
+        The original circuit (used for clearcopy and clbit lookup).
+    gphase_array : list
+        Single-element list tracking accumulated global phase.
+
+    Returns
+    -------
+    QuantumCircuit
+        A new circuit containing only the surviving instructions.
+    """
+    qc_new = qc.clearcopy()
+    topo_sort = list(nx.topological_sort(G))
+
+    with fast_append(3):
+        for i in topo_sort:
+            if i < 0:
+                # Virtual qubit/clbit node — skip.
+                continue
+            else:
+                # If this is the very last instruction and accumulated
+                # global phase is non-zero, emit a gphase gate first.
+                if i == topo_sort[-1]:
+                    if data_list[i].op.name == "gphase":
+                        gphase_array[0] += data_list[i].op.params[0]
+                    if gphase_array[0] != 0:
+                        qc_new.gphase(gphase_array[0], data_list[i].qubits[0])
+
+                # Emit the instruction (unless it's a gphase whose value
+                # was already absorbed into the accumulated counter).
+                if data_list[i].op.name != "gphase":
+                    qc_new.append(
+                        data_list[i].op, data_list[i].qubits, qc.data[i].clbits
+                    )
+                else:
+                    gphase_array[0] += data_list[i].op.params[0]
+
+    return qc_new
 
 
 # =============================================================================
@@ -368,7 +699,7 @@ def cancel_inverses(qc: QuantumCircuit) -> QuantumCircuit:
         every qubit it touches), call ``_fuse_instructions`` to attempt
         to merge or cancel the pair.
 
-    3.  When a pair is cancelled (return value ``1``), both nodes are
+    3.  When a pair is cancelled, both nodes are
         removed from the DAG and their qubit edges are rewired to
         bridge over the gap.
 
@@ -422,42 +753,11 @@ def cancel_inverses(qc: QuantumCircuit) -> QuantumCircuit:
     >>> pm.add_pass(cancel_inverses)
     >>> optimized_qc = pm.run(qc)   # empty circuit
     """
-    # ------------------------------------------------------------------
-    # Step 1: initialise the DAG.
-    #
-    # Nodes are identified by integers:
-    #   * Negative numbers (-1, -2, …) represent qubits and clbits
-    #     at the *start* of time (before any gate acts on them).
-    #   * Non-negative numbers (0, 1, 2, …) represent instructions.
-    #
-    # qubit_dic / clbit_dic map each (c)bit to the *last* node that
-    # touched it, so we can connect each new instruction to its
-    # immediate predecessors.
-    #
-    # edge_dic maps DAG edges → lists of qubits, so that when we
-    # delete a node we know which qubit_dic entries to rewire.
-    # ------------------------------------------------------------------
-    G = nx.DiGraph()
-    qubit_dic = {}
-    clbit_dic = {}
-    edge_dic = {}
-
     gphase_array = [0]  # mutable accumulator for global phase
 
-    # Seed the DAG with "virtual" nodes for every qubit and clbit.
-    for i in range(qc.num_qubits()):
-        qubit_dic[qc.qubits[i]] = -i - 1
-        G.add_node(-i - 1)
+    # Step 1: initialise the DAG.
+    G, qubit_dic, clbit_dic, edge_dic, data_list = _init_dag(qc)
 
-    for i in range(len(qc.clbits)):
-        clbit_dic[qc.clbits[i]] = -i - 1
-        G.add_node(-qc.num_qubits() - i - 1)
-
-    # Work on a copy so we can mutate instructions in-place (for
-    # fusion replacements) without affecting the original circuit.
-    data_list = list(qc.data)
-
-    # ------------------------------------------------------------------
     # Step 2: build the DAG and attempt fusion/cancellation on the fly.
     #
     # For each instruction we:
@@ -466,7 +766,6 @@ def cancel_inverses(qc: QuantumCircuit) -> QuantumCircuit:
     #   c) If ALL those edges come from the SAME node, the instruction
     #      is "locally adjacent" to its predecessor and we can attempt
     #      to fuse/cancel them.
-    # ------------------------------------------------------------------
     for i in range(len(data_list)):
 
         G.add_node(i)
@@ -509,69 +808,31 @@ def cancel_inverses(qc: QuantumCircuit) -> QuantumCircuit:
             if pred < 0:
                 continue  # predecessor is the initial |0⟩ — nothing to fuse
 
-            fused_gate = _fuse_instructions(
+            result = _fuse_instructions(
                 data_list[pred], data_list[i], gphase_array
             )
 
-            if fused_gate is not None:
-                if fused_gate == 1:
+            if result is not None:
+                if result is _FUSION_CANCEL:
                     # ---- Total cancellation ----
                     # Both gates cancel out.  Remove the predecessor
                     # node and rewire its incoming edges so that
                     # subsequent gates see the predecessor of 'pred'.
-                    for edge in G.in_edges(pred):
-                        for qb in edge_dic[edge]:
-                            qubit_dic[qb] = edge[0]
-                        del edge_dic[edge]
+                    _rewire_past_node(G, pred, qubit_dic, edge_dic)
                     G.remove_node(pred)
                 else:
                     # ---- Partial fusion ----
                     # The two gates are replaced by a single fused gate.
                     # The predecessor node gets the new operation.
-                    data_list[pred] = fused_gate
+                    data_list[pred] = result
 
                     # Rewire the incoming edges of the *successor* node
                     # to point past it (since it is being removed).
-                    for edge in G.in_edges(i):
-                        for qb in edge_dic[edge]:
-                            qubit_dic[qb] = edge[0]
-                        del edge_dic[edge]
+                    _rewire_past_node(G, i, qubit_dic, edge_dic)
 
                 # In both cases the successor node (i) is removed.
                 G.remove_node(i)
 
-    # ------------------------------------------------------------------
     # Step 3: emit the surviving instructions in topological order.
-    #
-    # Topological sort guarantees that earlier instructions appear
-    # before later ones in the dependency chain — even after we've
-    # deleted nodes and rewired edges.
-    # ------------------------------------------------------------------
-    qc_new = qc.clearcopy()
-
-    topo_sort = list(nx.topological_sort(G))
-    with fast_append(3):
-        for i in topo_sort:
-            if i < 0:
-                # Virtual qubit/clbit node — skip.
-                continue
-            else:
-                # If this is the very last instruction and accumulated
-                # global phase is non-zero, emit a gphase gate first.
-                if i == topo_sort[-1]:
-                    if data_list[i].op.name == "gphase":
-                        gphase_array[0] += data_list[i].op.params[0]
-                    if gphase_array[0] != 0:
-                        qc_new.gphase(gphase_array[0], data_list[i].qubits[0])
-
-                # Emit the instruction (unless it's a gphase whose value
-                # was already absorbed into the accumulated counter).
-                if data_list[i].op.name != "gphase":
-                    qc_new.append(
-                        data_list[i].op, data_list[i].qubits, qc.data[i].clbits
-                    )
-                else:
-                    gphase_array[0] += data_list[i].op.params[0]
-
-    return qc_new
+    return _emit_surviving_circuit(G, data_list, qc, gphase_array)
 
