@@ -1,0 +1,81 @@
+name: Epic
+description: Track a larger initiative with multiple sub-issues
+labels: ["epic"]
+body:
+  - type: dropdown
+
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+
+    validations:
+      required: true
+      
+  - type: input
+
+    id: responsible
+    attributes:
+      label: Responsible
+      placeholder: "e.g. Jane Doe (Fraunhofer FOKUS)"
+    validations:
+      required: true
+
+  - type: input
+
+    id: milestone
+    attributes:
+      label: Target Milestone
+      placeholder: "e.g. CI Refactoring, v0.9"
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: goal
+    attributes:
+      label: Goal
+      description: "What is the overall objective? Max 5 sentences."
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: sub-issues
+    attributes:
+      label: Sub-Issues
+      description: "List all sub-issues. Link them as they are created."
+      value: |
+        - [ ] #issue Sub-issue title
+        - [ ] #issue Sub-issue title
+        - [ ] #issue Sub-issue title
+
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: dependencies
+    attributes:
+      label: Dependencies & Order
+      description: "Describe dependencies between sub-issues. Use a diagram if helpful."
+    validations:
+      required: false
+
+  - type: textarea
+
+    id: done
+    attributes:
+      label: Definition of Done
+      description: "When is this epic considered complete?"
+      value: |
+        - [ ] All sub-issues closed
+        - [ ] Documentation updated
+        - [ ] Peer-reviewed
+
+    validations:
+      required: true

@@ -84,7 +84,7 @@ class Operation:
         num_qubits=0,
         num_clbits=0,
         definition=None,
-        params=[],
+        params=None,
         init_op=None,
     ):
         if init_op is not None:
@@ -123,6 +123,8 @@ class Operation:
         else:
             self.definition = None
             self.abstract_params = set()
+
+        params = [] if params is None else params
 
         # Find abstract parameters (ie. sympy expressions and log them)
         for par in params:
@@ -277,6 +279,9 @@ class Operation:
                 res = inverse_circ.to_op(name=self.name[:-3])
             else:
                 res = inverse_circ.to_op(name=self.name + "_dg")
+            
+            res.params = list(self.params)
+            res.abstract_params = set(self.abstract_params)
 
         elif self.name == "qb_alloc":
             from qrisp.circuit import QubitDealloc
@@ -298,7 +303,6 @@ class Operation:
 
         return res
 
-    # Method to create a controlled gate
     def control(self, num_ctrl_qubits=1, ctrl_state=-1, method=None):
         """
         Returns the controlled version of this Operation (if applicable).

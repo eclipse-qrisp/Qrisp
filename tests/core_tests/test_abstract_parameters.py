@@ -21,7 +21,7 @@ import time
 import random
 import numpy as np
 
-from qrisp.core import QuantumSession, QuantumVariable
+from qrisp.core import QuantumSession, QuantumVariable, xxyy
 from qrisp.circuit import RYGate, RXGate, transpile, HGate, ZGate, PGate, XGate, MCXGate
 from sympy import Symbol, simplify
 
@@ -92,3 +92,16 @@ def test_abstract_parameters():
 
     duration = time.time() - start_time
     print("Took " + str(duration/m) + " per binding iteration")
+
+    # Test the fix for https://github.com/eclipse-qrisp/Qrisp/issues/540
+    phi = Symbol("phi")
+    psi = Symbol("psi")
+
+    qv = QuantumVariable(2)
+    xxyy(phi, psi, qv[0], qv[1])
+
+    op = qv.qs.data[2].op
+
+    inv_op = op.inverse()
+
+    assert len(inv_op.params)
