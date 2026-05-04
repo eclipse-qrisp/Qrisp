@@ -16,8 +16,9 @@
 ********************************************************************************
 """
 
-from qrisp.circuit import QuantumCircuit, Qubit, XGate
+import numpy as np
 
+from qrisp.circuit import QuantumCircuit, Qubit, XGate
 
 # This function takes a circuit and turns it into it's controlled version
 def multi_controlled_circuit(
@@ -191,13 +192,19 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
         qc.append(A.to_gate("A"), [qc.qubits[-1]])
 
         # To perform the controlled x gate, we can use the phase tolerant algorithm
+        # We construct the mcx gate using the GraySynthGate class
+        from qrisp.alg_primitives.logic_synthesis.gray_synthesis import GraySynthGate
 
-        if control_amount <= 3:
-            from qrisp.alg_primitives import gray_pt_mcx
+        target_phases = (2**(control_amount+1) - 1)*[0]
+        target_phases.insert(2*int(ctrl_state, 2), np.pi)
+        synth_gate = GraySynthGate(target_phases, phase_tolerant = True)
 
-            mcx_gate = gray_pt_mcx(control_amount, control_amount*"1")
-        else:
-            mcx_gate = XGate().control(control_amount, method="gray_pt")
+        temp_qc = QuantumCircuit(control_amount+1)
+        temp_qc.h(-1)
+        temp_qc.append(synth_gate, temp_qc.qubits)
+        temp_qc.h(-1)
+
+        mcx_gate = temp_qc.to_gate("gray_pt_mcx")
 
         qc.append(mcx_gate, qc.qubits)
 
