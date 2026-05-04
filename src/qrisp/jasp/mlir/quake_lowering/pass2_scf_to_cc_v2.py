@@ -85,7 +85,7 @@ from xdsl.dialects.builtin import IntegerAttr, i1, i64
 from xdsl.ir import Block, Region, SSAValue, Operation
 from xdsl.rewriter import Rewriter
 
-from qrisp.jasp.mlir.quake_lowering.cc_dialect import (
+from qrisp.jasp.mlir.quake_lowering.cc_dialect_v2 import (
     CcConditionOp,
     CcContinueOp,
     CcIfOp,

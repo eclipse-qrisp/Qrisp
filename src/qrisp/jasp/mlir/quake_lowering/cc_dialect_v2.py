@@ -1,3 +1,4 @@
+
 """
 ********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
@@ -45,148 +46,48 @@ from xdsl.irdl import (
     irdl_attr_definition,
     irdl_op_definition,
     operand_def,
-    opt_result_def,
     region_def,
     var_operand_def,
     var_result_def,
-    attr_def,
-    result_def,
 )
 from xdsl.printer import Printer
 
 
-# ---------------------------------------------------------------------------
-# CC types
-# ---------------------------------------------------------------------------
-
-
 @irdl_attr_definition
 class CcStdVecType(ParametrizedAttribute, TypeAttribute):
-    """CUDA-Q CC ``!cc.stdvec<!quake.measure>`` type — return type of ``quake.mz`` on a veq.
-
-    Each qubit in a ``!quake.veq<?>`` produces a ``!quake.measure`` value; measuring
-    the whole register returns a span of those values.
-
-    Example::
-
-        %ms = quake.mz %veq : (!quake.veq<?>) -> !cc.stdvec<!quake.measure>
-    """
-
+    """CUDA-Q CC ``!cc.stdvec<!quake.measure>`` type."""
     name = "cc.stdvec"
 
     def print_parameters(self, printer: Printer) -> None:
         printer.print_string("<!quake.measure>")
-
-@irdl_attr_definition
-class CcPtrType(ParametrizedAttribute, TypeAttribute):
-    """Pointer type for the CC dialect: !cc.ptr<T>"""
-    name = "cc.ptr"
-    
-    # In xDSL 0.55.4, this class-level annotation defines the attribute's parameters
-    element_type: Attribute
-
-    def __init__(self, element_type: Attribute) -> None:
-        # Pass the parameter directly (without the list brackets!)
-        super().__init__(element_type)
-
-
-# ---------------------------------------------------------------------------
-# CC ops for local memory management
-# ---------------------------------------------------------------------------
-
-
-@irdl_op_definition
-class CcAllocaOp(IRDLOperation):
-    """Allocates memory for a given type: cc.alloca i64 -> !cc.ptr<i64>"""
-    name = "cc.alloca"
-    elem_type = attr_def(Attribute)
-    result = result_def(AnyAttr())
-
-    def __init__(self, elem_type: Attribute) -> None:
-        super().__init__(
-            attributes={"elem_type": elem_type},
-            result_types=[CcPtrType(elem_type)]
-        )
-
-    def print(self, printer: Printer) -> None:
-        printer.print_string(" ")
-        printer.print_attribute(self.elem_type)
-
-
-@irdl_op_definition
-class CcStoreOp(IRDLOperation):
-    """Stores a value into a pointer: cc.store %val, %ptr : !cc.ptr<i64>"""
-    name = "cc.store"
-    value = operand_def(AnyAttr())
-    ptr = operand_def(AnyAttr())
-
-    def __init__(self, value: SSAValue, ptr: SSAValue) -> None:
-        super().__init__(operands=[value, ptr])
-
-    def print(self, printer: Printer) -> None:
-        printer.print_string(" ")
-        printer.print_ssa_value(self.value)
-        printer.print_string(", ")
-        printer.print_ssa_value(self.ptr)
-        printer.print_string(" : ")
-        printer.print_attribute(self.ptr.type)
-
-
-@irdl_op_definition
-class CcLoadOp(IRDLOperation):
-    """Loads a value from a pointer: %res = cc.load %ptr : !cc.ptr<i64>"""
-    name = "cc.load"
-    ptr = operand_def(AnyAttr())
-    result = result_def(AnyAttr())
-
-    def __init__(self, ptr: SSAValue) -> None:
-        # Infer the result type from the pointer's inner element type
-        if not hasattr(ptr.type, "element_type"):
-            raise TypeError(
-                f"CcLoadOp requires a CcPtrType operand, got {ptr.type}"
-            )
-        res_type = ptr.type.element_type
-        super().__init__(operands=[ptr], result_types=[res_type])
-
-    def print(self, printer: Printer) -> None:
-        printer.print_string(" ")
-        printer.print_ssa_value(self.ptr)
-        printer.print_string(" : ")
-        printer.print_attribute(self.ptr.type)
 
 
 # ---------------------------------------------------------------------------
 # CC ops for structured classical control flow
 # ---------------------------------------------------------------------------
 
-
 @irdl_op_definition
 class CcIfOp(IRDLOperation):
-    """Classical conditional: ``cc.if (%cond : i1) { ... } else { ... }``
-
-    Unlike ``scf.if``, ``cc.if`` does **not** return values.  Value passing
-    across branches should be done via ``cc.alloca`` / ``cc.store`` / ``cc.load``
-    (handled by the calling compiler).  For this lowering we only emit the
-    structural shell; downstream passes are responsible for value threading.
-
-    The then-region and else-region each contain exactly one block.
-    """
+    """Classical conditional: ``%res... = cc.if (%cond : i1) -> (types) { ... } else { ... }``"""
 
     name = "cc.if"
     cond = operand_def(i1)
     then_region = region_def()
     else_region = region_def()
+    res = var_result_def(AnyAttr())
 
     def __init__(
         self,
         cond: SSAValue,
+        result_types: Sequence[Attribute],
         then_region: Region,
         else_region: Region | None = None,
     ) -> None:
         if else_region is None:
-            else_region = Region(Block())
+            else_region = Region([Block()])
         super().__init__(
             operands=[cond],
+            result_types=[result_types],
             regions=[then_region, else_region],
         )
 
@@ -194,28 +95,27 @@ class CcIfOp(IRDLOperation):
         printer.print_string(" (")
         printer.print_ssa_value(self.cond)
         printer.print_string(")")
+        
+        # Output result types if the IF operation returns values
+        if self.results:
+            printer.print_string(" -> (")
+            printer.print_list(self.results, lambda v: printer.print_attribute(v.type))
+            printer.print_string(")")
+            
         printer.print_string(" ")
         printer.print_region(self.then_region)
-        # Always emit else, even if empty – required by CC dialect parser.
         printer.print_string(" else ")
         printer.print_region(self.else_region)
 
 
 @irdl_op_definition
 class CcLoopOp(IRDLOperation):
-    """Classical loop: ``cc.loop while { cond } do { body } step { }``
-
-    Maps to the CC dialect's general ``cc.loop`` construct which can represent
-    both *while* and *for* loops depending on the step region.
-
-    Block arguments carry the loop-carried values (same semantics as
-    ``scf.while``).
-    """
+    """Classical loop: ``cc.loop while { cond } do { body } step { }``"""
 
     name = "cc.loop"
-    while_region = region_def()   # condition evaluation (like scf.while before)
-    body_region = region_def()    # loop body       (like scf.while after)
-    step_region = region_def()    # step / update   (empty for plain while)
+    while_region = region_def()   
+    body_region = region_def()       
+    step_region = region_def()       
     arguments = var_operand_def(AnyAttr())
     res = var_result_def(AnyAttr())
 
@@ -237,25 +137,44 @@ class CcLoopOp(IRDLOperation):
 
     def print(self, printer: Printer) -> None:
         printer.print_string(" while ")
-        printer.print_region(self.while_region)
+        
+        if self.arguments:
+            # Format: ((%arg = %init) -> (types))
+            printer.print_string("((")
+            block_args = self.while_region.blocks[0].args
+            for i, (b_arg, init_val) in enumerate(zip(block_args, self.arguments)):
+                if i > 0:
+                    printer.print_string(", ")
+                printer.print_ssa_value(b_arg)
+                printer.print_string(" = ")
+                printer.print_ssa_value(init_val)
+            printer.print_string(") -> (")
+            for i, res in enumerate(self.results):
+                if i > 0:
+                    printer.print_string(", ")
+                printer.print_attribute(res.type)
+            printer.print_string(")) ")
+            
+            # CUDA-Q parser expects the while block to omit the `^bb0(%arg):` header 
+            # if args are declared in the loop signature.
+            try:
+                printer.print_region(self.while_region, print_entry_block_args=False)
+            except TypeError:
+                # Fallback for older xDSL versions
+                printer.print_region(self.while_region)
+        else:
+            printer.print_region(self.while_region)
+
         printer.print_string(" do ")
         printer.print_region(self.body_region)
+
         printer.print_string(" step ")
         printer.print_region(self.step_region)
-        if self.arguments:
-            printer.print_string(" (")
-            printer.print_list(self.arguments, printer.print_ssa_value)
-            printer.print_string(" : ")
-            printer.print_list(
-                self.arguments, lambda v: printer.print_attribute(v.type)
-            )
-            printer.print_string(")")
 
 
 @irdl_op_definition
 class CcBreakOp(IRDLOperation):
     """Break out of a ``cc.loop``: ``cc.break``."""
-
     name = "cc.break"
 
     def __init__(self) -> None:
@@ -267,20 +186,24 @@ class CcBreakOp(IRDLOperation):
 
 @irdl_op_definition
 class CcContinueOp(IRDLOperation):
-    """Continue to next ``cc.loop`` iteration: ``cc.continue``."""
-
+    """Continue to next ``cc.loop`` iteration: ``cc.continue %args...``."""
     name = "cc.continue"
+    operands_ = var_operand_def(AnyAttr())
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, *operands: SSAValue) -> None:
+        super().__init__(operands=[operands])
 
     def print(self, printer: Printer) -> None:
-        pass
+        if self.operands_:
+            printer.print_string(" ")
+            printer.print_list(self.operands_, printer.print_ssa_value)
+            printer.print_string(" : ")
+            printer.print_list(self.operands_, lambda v: printer.print_attribute(v.type))
 
 
 @irdl_op_definition
 class CcConditionOp(IRDLOperation):
-    """Loop back-edge condition for ``cc.loop`` while-region: ``cc.condition %cond``."""
+    """Loop back-edge condition for ``cc.loop`` while-region: ``cc.condition %cond (%args...)``."""
 
     name = "cc.condition"
     cond = operand_def(i1)
@@ -296,23 +219,20 @@ class CcConditionOp(IRDLOperation):
     def print(self, printer: Printer) -> None:
         printer.print_string(" ")
         printer.print_ssa_value(self.cond)
-        if list(self.arguments):
-            printer.print_string(", ")
+        
+        if self.arguments:
+            # Requires parentheses around forwarded arguments, not commas
+            printer.print_string("(")
             printer.print_list(self.arguments, printer.print_ssa_value)
             printer.print_string(" : ")
             printer.print_list(
                 self.arguments, lambda v: printer.print_attribute(v.type)
             )
-
-
-# ---------------------------------------------------------------------------
-# Dialect registration
-# ---------------------------------------------------------------------------
+            printer.print_string(")")
 
 
 class CcDialect(Dialect):
     """Minimal xDSL dialect for CUDA-Q's CC (classical-control) dialect."""
-
     name = "cc"
     operations = [
         CcIfOp,
@@ -320,8 +240,5 @@ class CcDialect(Dialect):
         CcBreakOp,
         CcContinueOp,
         CcConditionOp,
-        CcAllocaOp,
-        CcStoreOp,
-        CcLoadOp,
     ]
-    attributes = [CcStdVecType, CcPtrType]
+    attributes = [CcStdVecType]
