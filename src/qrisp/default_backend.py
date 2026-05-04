@@ -16,7 +16,6 @@
 
 """This module defines :class:`DefaultBackend` and its associated :class:`DefaultJob`."""
 
-
 from typing import Sequence, cast
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
@@ -27,14 +26,7 @@ from qrisp.simulator.simulator import run as default_run
 
 class DefaultJob(Job):
     """
-    A synchronous :class:`~qrisp.interface.Job` produced by :class:`DefaultBackend`.
-
-    Because the built-in Qrisp simulator executes circuits inline,
-    the result is fully available before :meth:`result` is ever called.
-    :meth:`submit` performs the actual execution and transitions the job
-    to :attr:`~qrisp.interface.JobStatus.DONE` (or
-    :attr:`~qrisp.interface.JobStatus.ERROR`) synchronously.
-    """
+    A synchronous :class:`~qrisp.interface.Job` produced by :class:`DefaultBackend`."""
 
     def __init__(self, backend: "DefaultBackend", circuits: Sequence, shots):
         """Initialise the job with the backend, normalised circuit list, and shot count."""
@@ -49,7 +41,15 @@ class DefaultJob(Job):
     # ------------------------------------------------------------------
 
     def submit(self) -> None:
-        """Execute all circuits synchronously and store the result."""
+        """Execute all circuits synchronously and store the result.
+
+        Because the built-in Qrisp simulator executes circuits inline,
+        the result is fully available before :meth:`result` is ever called.
+        :meth:`submit` performs the actual execution and transitions the job
+        to :attr:`~qrisp.interface.JobStatus.DONE` (or
+        :attr:`~qrisp.interface.JobStatus.ERROR`) synchronously.
+        """
+
         token = self._backend.options.get("token", "")
         self._last_known_status = JobStatus.RUNNING
         try:
@@ -62,12 +62,14 @@ class DefaultJob(Job):
             self._error = exc
             self._last_known_status = JobStatus.ERROR
 
-    def result(self) -> JobResult:
+    def result(self, timeout: float | None = None) -> JobResult:
         """Return the :class:`~qrisp.interface.JobResult`.
 
         Because the simulator is synchronous the result is already available
-        as soon as :meth:`submit` has been called by
-        :meth:`DefaultBackend.run_async`.
+        as soon as :meth:`submit` has been called by ``DefaultBackend.run_async``.
+        The *timeout* parameter is accepted for interface compatibility but has
+        no effect: the job is always already in a terminal state before this
+        method can be called.
 
         Returns
         -------
@@ -95,15 +97,20 @@ class DefaultBackend(Backend):
     The default Qrisp backend, backed by the built-in statevector simulator.
 
     This is the simplest concrete :class:`~qrisp.interface.Backend`
-    implementation.  It executes circuits synchronously — the
+    implementation. It executes circuits synchronously. That is, the
     :class:`DefaultJob` returned by :meth:`run_async` is already
     :attr:`~qrisp.interface.JobStatus.DONE` before :meth:`run_async` returns
     to the caller.
+
+    This class is a *Singleton*: every call to ``DefaultBackend()`` returns
+    the same object in memory, so there is only ever one shared instance of the
+    built-in simulator backend per process.
 
     Parameters
     ----------
     options : Mapping or None, optional
         Runtime options.  Defaults to ``{"shots": None, "token": ""}``.
+        Ignored on subsequent calls once the singleton has been created.
 
     Examples
     --------
@@ -161,6 +168,19 @@ class DefaultBackend(Backend):
     >>> print(result.get_counts())
     {'0100111': 1.0}
     """
+
+    _instance: "DefaultBackend | None" = None
+
+    def __new__(cls, *_, **_kw):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self, name: str | None = None, options=None, **kwargs):
+        if hasattr(self, "_initialized"):
+            return
+        super().__init__(name=name, options=options, **kwargs)
+        self._initialized = True
 
     @classmethod
     def _default_options(cls):

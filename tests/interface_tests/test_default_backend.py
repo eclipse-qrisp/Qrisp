@@ -118,17 +118,23 @@ class TestDefaultBackendAnalytic:
 class TestDefaultBackendShots:
     """Tests for shot-based (sampled) execution."""
 
+    @pytest.fixture(autouse=True)
+    def _restore_options(self):
+        """Reset the singleton's options to defaults after each test in this class."""
+        yield
+        DefaultBackend()._options.update(DefaultBackend._default_options())
+
     def test_shot_based_differs_from_analytic(self):
         """Verify that shot-based execution gives a different result than analytic execution."""
         qv = QuantumFloat(1)
         h(qv[0])  # equal superposition of 0 and 1
 
-        analytic_backend = DefaultBackend()  # shots=None
-        analytic_result = qv.get_measurement(backend=analytic_backend)
+        backend = DefaultBackend()  # shots=None
+        analytic_result = qv.get_measurement(backend=backend)
         assert analytic_result == {0: 0.5, 1: 0.5}
 
-        sampled_backend = DefaultBackend(options={"shots": 1, "token": ""})
-        sampled_result = qv.get_measurement(backend=sampled_backend)
+        backend.update_options(shots=1)
+        sampled_result = qv.get_measurement(backend=backend)
 
         # With 1 shot the outcome is definite: one key with probability 1.0.
         assert len(sampled_result) == 1
@@ -140,7 +146,8 @@ class TestDefaultBackendShots:
         qv = QuantumFloat(1)
         h(qv[0])
 
-        backend = DefaultBackend(options={"shots": 1, "token": ""})
+        backend = DefaultBackend()
+        backend.update_options(shots=1)
         result = qv.get_measurement(backend=backend)
 
         # With 1 shot the outcome must be a single definite value.
@@ -150,6 +157,12 @@ class TestDefaultBackendShots:
 
 class TestDefaultBackendOptions:
     """Tests for DefaultBackend options handling."""
+
+    @pytest.fixture(autouse=True)
+    def _restore_options(self):
+        """Reset the singleton's options to defaults after each test in this class."""
+        yield
+        DefaultBackend()._options.update(DefaultBackend._default_options())
 
     def test_default_shots_is_none(self):
         """Ensure the default shots option is None (analytic execution)."""
@@ -171,13 +184,25 @@ class TestDefaultBackendOptions:
         with pytest.raises(AttributeError):
             backend.update_options(nonexistent=42)
 
-    def test_options_independent_between_instances(self):
-        """Ensure updating one instance does not affect another."""
-        b1 = DefaultBackend()
-        b2 = DefaultBackend()
-        b1.update_options(shots=512)
-        assert b2.options["shots"] is None
-
     def test_module_level_def_backend_is_default_backend(self):
         """Ensure the module-level def_backend singleton is a DefaultBackend instance."""
         assert isinstance(def_backend, DefaultBackend)
+
+
+class TestDefaultBackendSingleton:
+    """Tests that DefaultBackend is a true singleton."""
+
+    def test_two_calls_return_same_object(self):
+        """Repeated construction must yield the exact same object in memory."""
+        assert DefaultBackend() is DefaultBackend()
+
+    def test_singleton_is_module_level_instance(self):
+        """The module-level def_backend must be the same object as DefaultBackend()."""
+        assert DefaultBackend() is def_backend
+
+    def test_constructor_args_ignored_after_init(self):
+        """Passing options to a subsequent constructor call must be silently ignored."""
+        first = DefaultBackend()
+        second = DefaultBackend(options={"shots": 9999, "token": "x"})
+        assert first is second
+        assert first.options["shots"] != 9999
