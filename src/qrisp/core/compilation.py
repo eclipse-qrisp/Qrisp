@@ -553,47 +553,6 @@ def gen_hybrid_mcx_data(
 
     return data
 
-
-# Function to combine any sequences of single qubit gates into a single U3
-def combine_single_qubit_gates(qc):
-    def apply_combined_gates(qc_new, gate_list, qb):
-        if not len(gate_list):
-            return
-
-        n = len(gate_list)
-
-        m = np.eye(2)
-        while gate_list:
-            gate = gate_list.pop(-1)
-            m = np.dot(m, gate.get_unitary())
-
-        if np.linalg.norm(m - np.eye(2)) < 1e-10:
-            return
-
-        if n == 1:
-            qc_new.append(gate, [qb])
-            return
-
-        qc_new.unitary(m, [qb])
-
-    qb_dic = {qb: [] for qb in qc.qubits}
-
-    qc_new = qc.clearcopy()
-
-    for instr in qc.data:
-        if not isinstance(instr.op, U3Gate):
-            for qb in instr.qubits:
-                apply_combined_gates(qc_new, qb_dic[qb], qb)
-            qc_new.append(instr)
-        else:
-            qb_dic[instr.qubits[0]].append(instr.op)
-
-    for qb in qc.qubits:
-        apply_combined_gates(qc_new, qb_dic[qb], qb)
-
-    return qc_new
-
-
 def update_depth_dic(instruction, depth_dic, depth_indicator=None):
 
     if depth_indicator is None:
