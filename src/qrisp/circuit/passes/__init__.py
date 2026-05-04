@@ -19,6 +19,7 @@
 from qrisp.circuit.passes.pass_manager import PassManager
 from qrisp.circuit.passes.arange_swaps import arange_swaps
 from qrisp.circuit.passes.cancel_zero_controls import cancel_zero_controls
+from qrisp.circuit.passes.combine_single_qubit_gates import combine_single_qubit_gates
 from qrisp.circuit.passes.commute_swaps import commute_swaps
 from qrisp.circuit.passes.convert_to_cz import convert_to_cz
 from qrisp.circuit.passes.gray_synth_toffoli import gray_synth_toffoli, is_toffoli
@@ -27,4 +28,4 @@ from qrisp.circuit.passes.resolve_swaps import resolve_swaps
 from qrisp.circuit.passes.reverse_parallelize import reverse_parallelize
 from qrisp.circuit.passes.manual_layout import manual_layout
 
-__all__ = ["PassManager", "arange_swaps", "cancel_zero_controls", "commute_swaps", "convert_to_cz", "gray_synth_toffoli", "is_toffoli", "manual_layout", "remove_barriers", "resolve_swaps", "reverse_parallelize"]
+__all__ = ["PassManager", "arange_swaps", "cancel_zero_controls", "combine_single_qubit_gates", "commute_swaps", "convert_to_cz", "gray_synth_toffoli", "is_toffoli", "manual_layout", "remove_barriers", "resolve_swaps", "reverse_parallelize"]
