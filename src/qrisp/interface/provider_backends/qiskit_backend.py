@@ -36,7 +36,6 @@ from qrisp.interface.job import (
     JobResult,
     JobStatus,
 )
-from qrisp.interface.virtual_backend import VirtualBackend
 
 
 def _map_qiskit_status(qiskit_job) -> JobStatus:
@@ -317,10 +316,14 @@ class QiskitBackend(Backend):
         self.sampler = SamplerV2(cast(BackendV2, backend))
 
         # Fall back to the Qiskit backend's own name/options when not provided.
+        # Only use the backend's options when they are a plain Mapping (e.g. dict).
+        # Non-Mapping Qiskit Options objects are ignored so that _default_options()
+        # applies, keeping the Backend contract satisfied.
         if name is None:
             name = getattr(backend, "name", None)
         if options is None:
-            options = getattr(backend, "options", None)
+            candidate = getattr(backend, "options", None)
+            options = candidate if isinstance(candidate, Mapping) else None
 
         super().__init__(name=name, options=options)
 
@@ -389,51 +392,50 @@ class QiskitBackend(Backend):
         return job
 
 
-class QiskitRuntimeBackend(VirtualBackend):
+class QiskitRuntimeBackend(QiskitBackend):
     """
-    This class instantiates a VirtualBackend using a Qiskit Runtime backend.
-    This allows easy access to Qiskit Runtime backends through the qrisp interface.
-    It is imporant to close the session after the execution of the algorithm
-    (as reported in the example below).
+    A :class:`~qrisp.interface.Backend` that wraps an IBM Quantum Runtime backend.
 
-    .. warning::
+    This allows easy access to IBM Quantum Runtime backends through the Qrisp
+    backend interface. Circuits are transpiled and submitted through Qiskit's
+    ``SamplerV2`` primitive, using either a direct job or a persistent session.
 
-        This Backend has not been migrated to the new Backend API yet, and is not guaranteed to
-        work with the latest versions of Qiskit Runtime and qrisp.
-        Use with caution and refer to the documentation for the latest updates.
+    It is important to close the session after execution when using
+    ``mode="session"`` (see :meth:`close_session`).
 
     Parameters
     ----------
     api_token : str
-        The token is necessary to create correctly the Qiskit Runtime
-        service and be able to run algorithms on their backends.
-    backend : str, optional
-        A string associated to the name of a Qiskit Runtime backend.
-        By default, the least busy available backend is selected.
+        IBM Cloud API token used to authenticate with the Qiskit Runtime service.
+    backend : str or None, optional
+        Name of the IBM Quantum backend. If ``None``, the least-busy available
+        backend is selected automatically.
     channel : str, optional
-        The channel type. Available are ``ibm_cloud`` or ``ibm_quantum_platform``.
-        The default is ``ibm_cloud``.
+        Channel type for the Runtime service. Available: ``"ibm_cloud"`` or
+        ``"ibm_quantum_platform"``. Defaults to ``"ibm_cloud"``.
     mode : str, optional
-        The `execution mode <https://quantum.cloud.ibm.com/docs/en/guides/execution-modes>`_. Available are ``job`` and ``session``.
-        The default is ``job``.
+        Execution mode. ``"job"`` submits each circuit batch as an independent
+        job; ``"session"`` opens a persistent session for lower latency across
+        multiple submissions. Defaults to ``"job"``.
 
     Attributes
     ----------
     session : Session
         The `Qiskit Runtime session <https://quantum.cloud.ibm.com/docs/en/api/qiskit-ibm-runtime/session>`_.
+        Only set when ``mode="session"`` is passed at construction time.
 
     Examples
     --------
 
     >>> from qrisp import QuantumFloat
     >>> from qrisp.interface import QiskitRuntimeBackend
-    >>> example_backend = QiskitRuntimeBackend(api_token = "YOUR_IBM_CLOUD_TOKEN", backend = "ibm_brisbane", channel = "ibm_cloud")
+    >>> example_backend = QiskitRuntimeBackend(api_token="YOUR_IBM_CLOUD_TOKEN", backend="ibm_brisbane", channel="ibm_cloud")
     >>> qf = QuantumFloat(2)
     >>> qf[:] = 2
-    >>> res = qf*qf
-    >>> result = res.get_measurement(backend = example_backend)
+    >>> res = qf * qf
+    >>> result = res.get_measurement(backend=example_backend)
     >>> print(result)
-    >>> # example_backend.close_session() # Use only when mode = "session"
+    >>> # example_backend.close_session()  # Only needed when mode="session"
     {4: 0.6133,
     8: 0.1126,
     0: 0.0838,
@@ -454,67 +456,42 @@ class QiskitRuntimeBackend(VirtualBackend):
     """
 
     def __init__(self, api_token, backend=None, channel="ibm_cloud", mode="job"):
-
         try:
             from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2, Session
         except ImportError as exc:
             raise ImportError(
-                "Please install qiskit-ibm-runtime to use the QiskitBackend. You can do this by running `pip install qiskit-ibm-runtime`."
+                "Please install qiskit-ibm-runtime to use QiskitRuntimeBackend: "
+                "pip install qiskit-ibm-runtime"
             ) from exc
 
         service = QiskitRuntimeService(channel=channel, token=api_token)
-        if backend is None:
-            backend = service.least_busy()
-        else:
-            backend = service.backend(backend)
+        ibm_backend = (
+            service.least_busy() if backend is None else service.backend(backend)
+        )
 
+        # Delegate common setup (self.backend, self.sampler, options) to QiskitBackend.
+        # Pass _default_options() explicitly so the IBM hardware backend's internal
+        # options (device config, noise model settings, etc.) do not bleed through
+        # into the runtime options seen by Qrisp callers.
+        super().__init__(backend=ibm_backend, options=self._default_options())
+
+        # For session mode, replace the default sampler with a session-bound one.
         if mode == "session":
-            self.session = Session(backend)
-            sampler = SamplerV2(self.session)
-        elif mode == "job":
-            sampler = SamplerV2(backend)
-        else:
-            raise ValueError("Execution mode" + str(mode) + " not available.")
-
-        # Create the run method
-        def run(qasm_str, shots=None, token=""):
-            if shots is None:
-                shots = 1000
-
-            # Convert to qiskit
-            qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
-
-            # Make circuit with one monolithic register
-            new_qiskit_qc = QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
-            for instr in qiskit_qc:
-                new_qiskit_qc.append(
-                    instr.operation,
-                    [qiskit_qc.qubits.index(qb) for qb in instr.qubits],
-                    [qiskit_qc.clbits.index(cb) for cb in instr.clbits],
-                )
-
-            qiskit_qc = transpile(new_qiskit_qc, backend=backend)
-
-            job = sampler.run([qiskit_qc], shots=shots)
-
-            qiskit_result = (
-                job.result()[0].data.c.get_counts()
-                # https://docs.quantum.ibm.com/migration-guides/v2-primitives
+            self.session = Session(ibm_backend)
+            self.sampler = SamplerV2(self.session)
+        elif mode != "job":
+            raise ValueError(
+                f"Execution mode {mode!r} not available. Choose 'job' or 'session'."
             )
 
-            # Remove the spaces in the qiskit result keys
-            result_dic = {}
-
-            for key in qiskit_result.keys():
-                counts_string = re.sub(r"\W", "", key)
-                result_dic[counts_string] = qiskit_result[key]
-
-            return result_dic
-
-        super().__init__(run)
+    @classmethod
+    def _default_options(cls):
+        """Return the default runtime options (shots=1000)."""
+        return {"shots": 1000}
 
     def close_session(self):
-        """
-        Method to call in order to close the session started by the init method.
+        """Close the IBM Runtime session opened during construction.
+
+        Only call this when ``mode="session"`` was passed at construction time.
         """
         self.session.close()

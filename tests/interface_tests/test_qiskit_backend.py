@@ -14,7 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Tests for QiskitBackend and QiskitJob."""
+"""Tests for QiskitBackend, QiskitJob, and QiskitRuntimeBackend."""
 
 # All tests are fully mocked, so no real IBM Quantum credentials or hardware
 # are required. The qiskit-aer package is used as the real backend device
@@ -29,6 +29,7 @@ from qiskit_aer import AerSimulator
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit as QrispQuantumCircuit
 from qrisp.interface import QiskitBackend
+from qrisp.interface.backend import Backend
 from qrisp.interface.job import (
     JobCancelledError,
     JobFailureError,
@@ -37,6 +38,7 @@ from qrisp.interface.job import (
 )
 from qrisp.interface.provider_backends.qiskit_backend import (
     QiskitJob,
+    QiskitRuntimeBackend,
     _map_qiskit_status,
 )
 
@@ -571,3 +573,244 @@ class TestQiskitBackendIntegration:
         job = real_backend.run_async(_simple_circuit(), shots=10)
         job.result()
         assert job.cancel() is False
+
+
+# ---------------------------------------------------------------------------
+# QiskitRuntimeBackend tests
+# ---------------------------------------------------------------------------
+# All tests are fully mocked: no real IBM Quantum credentials or network calls
+# are made. QiskitRuntimeService, SamplerV2, and Session are replaced by
+# MagicMock objects. Where transpile() is exercised (run_async tests), the
+# mocked IBM backend is swapped for a real AerSimulator after construction so
+# that transpile works correctly without hitting real hardware.
+
+
+@pytest.fixture()
+def runtime_mocks(monkeypatch):
+    """Patch qiskit_ibm_runtime with mocks for the duration of a test.
+
+    The IBM backend returned by the mock service has ``options = None`` so that
+    ``Backend.__init__`` falls through to ``_default_options()`` instead of
+    trying to use a non-Mapping Qiskit Options object.
+    """
+    mock_ibm_backend = MagicMock()
+    mock_ibm_backend.name = "ibm_brisbane"
+    mock_ibm_backend.options = None
+
+    mock_service = MagicMock()
+    mock_service.least_busy.return_value = mock_ibm_backend
+    mock_service.backend.return_value = mock_ibm_backend
+
+    mock_sampler_cls = MagicMock(name="SamplerV2")
+    mock_session_cls = MagicMock(name="Session")
+    mock_service_cls = MagicMock(return_value=mock_service)
+
+    mock_module = MagicMock()
+    mock_module.QiskitRuntimeService = mock_service_cls
+    mock_module.SamplerV2 = mock_sampler_cls
+    mock_module.Session = mock_session_cls
+    monkeypatch.setitem(sys.modules, "qiskit_ibm_runtime", mock_module)
+
+    return {
+        "ibm_backend": mock_ibm_backend,
+        "service": mock_service,
+        "service_cls": mock_service_cls,
+        "sampler_cls": mock_sampler_cls,
+        "session_cls": mock_session_cls,
+    }
+
+
+class TestQiskitRuntimeBackendConstruction:
+    """Tests for QiskitRuntimeBackend.__init__ with a fully-mocked IBM Runtime."""
+
+    def test_service_constructed_with_token_and_channel(self, runtime_mocks):
+        """QiskitRuntimeService is called with the supplied api_token and channel."""
+        QiskitRuntimeBackend(api_token="my-token", channel="ibm_quantum_platform")
+        runtime_mocks["service_cls"].assert_called_once_with(
+            channel="ibm_quantum_platform", token="my-token"
+        )
+
+    def test_least_busy_selected_when_backend_is_none(self, runtime_mocks):
+        """service.least_busy() is called when no backend name is supplied."""
+        QiskitRuntimeBackend(api_token="token")
+        runtime_mocks["service"].least_busy.assert_called_once()
+        runtime_mocks["service"].backend.assert_not_called()
+
+    def test_named_backend_resolved_via_service(self, runtime_mocks):
+        """service.backend(name) is called when a backend name string is supplied."""
+        QiskitRuntimeBackend(api_token="token", backend="ibm_brisbane")
+        runtime_mocks["service"].backend.assert_called_once_with("ibm_brisbane")
+        runtime_mocks["service"].least_busy.assert_not_called()
+
+    def test_is_instance_of_qiskit_backend(self, runtime_mocks):
+        """QiskitRuntimeBackend is a subclass of QiskitBackend."""
+        assert isinstance(QiskitRuntimeBackend(api_token="token"), QiskitBackend)
+
+    def test_is_instance_of_backend(self, runtime_mocks):
+        """QiskitRuntimeBackend satisfies the Backend abstract interface."""
+        assert isinstance(QiskitRuntimeBackend(api_token="token"), Backend)
+
+    def test_job_mode_does_not_create_session(self, runtime_mocks):
+        """In mode='job', no Session is created and self.session is not set."""
+        backend = QiskitRuntimeBackend(api_token="token", mode="job")
+        assert not hasattr(backend, "session")
+        runtime_mocks["session_cls"].assert_not_called()
+
+    def test_session_mode_creates_session_bound_to_ibm_backend(self, runtime_mocks):
+        """In mode='session', Session is instantiated with the resolved IBM backend."""
+        ibm_backend = runtime_mocks["ibm_backend"]
+        backend = QiskitRuntimeBackend(api_token="token", mode="session")
+        runtime_mocks["session_cls"].assert_called_once_with(ibm_backend)
+        assert backend.session is runtime_mocks["session_cls"].return_value
+
+    def test_session_mode_sampler_bound_to_session(self, runtime_mocks):
+        """In mode='session', the final SamplerV2 call receives the Session instance."""
+        backend = QiskitRuntimeBackend(api_token="token", mode="session")  # noqa: F841
+        session_instance = runtime_mocks["session_cls"].return_value
+        # The last SamplerV2(...) call must have received the session, not the backend.
+        last_sampler_arg = runtime_mocks["sampler_cls"].call_args[0][0]
+        assert last_sampler_arg is session_instance
+
+    def test_invalid_mode_raises_value_error(self, runtime_mocks):
+        """An unrecognised mode string raises ValueError with a descriptive message."""
+        with pytest.raises(ValueError, match="not available"):
+            QiskitRuntimeBackend(api_token="token", mode="batch")
+
+    def test_missing_dependency_raises_import_error(self, monkeypatch):
+        """Missing qiskit-ibm-runtime raises ImportError with a pip install hint."""
+        monkeypatch.delitem(sys.modules, "qiskit_ibm_runtime", raising=False)
+        monkeypatch.setitem(sys.modules, "qiskit_ibm_runtime", None)
+        with pytest.raises(ImportError, match="qiskit-ibm-runtime"):
+            QiskitRuntimeBackend(api_token="token")
+
+
+class TestQiskitRuntimeBackendOptions:
+    """Tests for QiskitRuntimeBackend default options."""
+
+    def test_default_shots_is_1000(self, runtime_mocks):
+        """Default shots is 1000, distinct from QiskitBackend's 1024."""
+        backend = QiskitRuntimeBackend(api_token="token")
+        assert backend.options["shots"] == 1000
+
+    def test_default_options_differ_from_parent(self, runtime_mocks):
+        """QiskitRuntimeBackend._default_options() overrides the parent's 1024 default."""
+        assert (
+            QiskitRuntimeBackend._default_options() != QiskitBackend._default_options()
+        )
+
+
+class TestQiskitRuntimeBackendSession:
+    """Tests for session lifecycle management."""
+
+    def test_close_session_delegates_to_session_close(self, runtime_mocks):
+        """close_session() calls close() on the underlying Session object."""
+        backend = QiskitRuntimeBackend(api_token="token", mode="session")
+        backend.close_session()
+        runtime_mocks["session_cls"].return_value.close.assert_called_once()
+
+    def test_close_session_not_available_in_job_mode(self, runtime_mocks):
+        """close_session() raises AttributeError in mode='job' (no session is created)."""
+        backend = QiskitRuntimeBackend(api_token="token", mode="job")
+        with pytest.raises(AttributeError):
+            backend.close_session()
+
+    def test_run_async_returns_qiskit_job_in_session_mode(self, runtime_mocks):
+        """run_async() returns a QiskitJob when mode='session'.
+
+        Session mode cannot be exercised with a real IBM backend in CI, so the
+        IBM authentication layer and Session class are mocked here. The sampler
+        is also mocked because a real Session requires live IBM credentials.
+        """
+        backend = QiskitRuntimeBackend(api_token="token", mode="session")
+        backend.backend = AerSimulator()
+        runtime_mocks["sampler_cls"].return_value.run.return_value = _make_qiskit_job()
+        job = backend.run_async(_simple_circuit(), shots=50)
+        assert isinstance(job, QiskitJob)
+        runtime_mocks["sampler_cls"].return_value.run.assert_called_once()
+
+
+class TestQiskitRuntimeBackendIntegration:
+    """End-to-end tests using a real AerSimulator and real SamplerV2."""
+
+    # Only QiskitRuntimeService (IBM authentication) is mocked. The actual
+    # circuit-execution pipeline (Qrisp → QASM → Qiskit → transpile → SamplerV2
+    # → DataBin parsing) is exercised without any substitution.
+
+    @pytest.fixture()
+    def backend(self, monkeypatch):
+        """QiskitRuntimeBackend backed by a real AerSimulator and real SamplerV2."""
+        from qiskit_ibm_runtime import SamplerV2
+
+        aer = AerSimulator()
+        mock_service = MagicMock()
+        mock_service.least_busy.return_value = aer
+
+        mock_module = MagicMock()
+        mock_module.QiskitRuntimeService = MagicMock(return_value=mock_service)
+        mock_module.SamplerV2 = SamplerV2
+        mock_module.Session = MagicMock()
+        monkeypatch.setitem(sys.modules, "qiskit_ibm_runtime", mock_module)
+
+        return QiskitRuntimeBackend(api_token="fake-token")
+
+    def test_run_returns_counts_that_sum_to_shots(self, backend):
+        """run() produces a counts dict whose values sum to the requested shot count."""
+        counts = backend.run(_simple_circuit(), shots=80)
+        assert sum(counts.values()) == 80
+
+    @pytest.mark.parametrize(
+        "circuits",
+        [
+            [_simple_circuit()],
+            [_simple_circuit(), _simple_circuit()],
+            (_simple_circuit(), _simple_circuit(), _simple_circuit()),
+        ],
+    )
+    def test_run_multiple_circuits_returns_list_of_counts_dicts(
+        self, circuits, backend
+    ):
+        """run() with a sequence of circuits returns a list of counts dicts."""
+        results = backend.run(circuits, shots=20)
+        assert isinstance(results, list)
+        assert len(results) == len(circuits)
+        assert all(isinstance(r, dict) for r in results)
+
+    def test_run_async_result_returns_job_result_instance(self, backend):
+        """run_async().result() returns a JobResult on a real Aer execution."""
+        job = backend.run_async(_simple_circuit(), shots=10)
+        assert isinstance(job.result(), JobResult)
+
+    def test_default_shots_of_1000_applied_in_real_execution(self, backend):
+        """When no shots are given, the default of 1000 is used and the count sums match."""
+        counts = backend.run(_simple_circuit())
+        assert sum(counts.values()) == 1000
+
+    def test_last_known_status_is_queued_immediately_after_run_async(self, backend):
+        """last_known_status is QUEUED right after run_async(), before result() is called."""
+        job = backend.run_async(_simple_circuit(), shots=10)
+        assert job.last_known_status == JobStatus.QUEUED
+
+    def test_result_called_twice_returns_same_cached_object(self, backend):
+        """Calling result() twice returns the identical cached JobResult instance."""
+        job = backend.run_async(_simple_circuit(), shots=10)
+        assert job.result() is job.result()
+
+    def test_last_known_status_is_done_after_result(self, backend):
+        """last_known_status is DONE after result() completes."""
+        job = backend.run_async(_simple_circuit(), shots=10)
+        job.result()
+        assert job.last_known_status == JobStatus.DONE
+
+    def test_cancel_on_completed_job_returns_false(self, backend):
+        """cancel() returns False for a real completed Aer job without raising."""
+        job = backend.run_async(_simple_circuit(), shots=10)
+        job.result()
+        assert job.cancel() is False
+
+    def test_batch_of_two_circuits_produces_correct_per_circuit_counts(self, backend):
+        """Batch submission of 2 circuits returns individually correct count dicts."""
+        job = backend.run_async([_simple_circuit(), _simple_circuit()], shots=50)
+        jr = job.result()
+        assert jr.num_circuits == 2
+        assert sum(jr.get_counts(0).values()) == 50
+        assert sum(jr.get_counts(1).values()) == 50
