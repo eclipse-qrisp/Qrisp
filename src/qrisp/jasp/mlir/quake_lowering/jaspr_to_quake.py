@@ -56,6 +56,7 @@ from xdsl.dialects.builtin import ModuleOp
 
 from qrisp.jasp.mlir.quake_lowering.pass1_jasp_to_quake import lower_jasp_to_quake
 from qrisp.jasp.mlir.quake_lowering.pass2_scf_to_cc_v3 import lower_scf_to_cc
+from qrisp.jasp.mlir.quake_lowering.pass3a_ranked_tensor import lower_ranked_tensors
 from qrisp.jasp.mlir.quake_lowering.pass3_tensor_unwrap import unwrap_tensors
 from qrisp.jasp.mlir.mlir_rewrites.scalar_tensor_folding import scalar_tensor_folding
 
@@ -93,7 +94,10 @@ def jaspr_to_quake(jaspr, lower_stableHLO: bool = True) -> ModuleOp:
     # Step 3 – PASS 2: SCF→CC lowering.
     lower_scf_to_cc(module)
 
-    # Step 4 – PASS 3: tensor unwrapping + scalar constant folding.
+    # Step 4 – PASS 3a: ranked tensor lowering.
+    lower_ranked_tensors(module)
+
+    # Step 5 – PASS 3b: tensor unwrapping + scalar constant folding.
     unwrap_tensors(module)
 
     scalar_tensor_folding(Context(), module)

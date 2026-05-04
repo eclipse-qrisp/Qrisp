@@ -382,6 +382,119 @@ class CcConditionOp(IRDLOperation):
             )
             printer.print_string(")")
 
+# ---------------------------------------------------------------------------
+# CC Array type and pointer arithmetic ops
+# ---------------------------------------------------------------------------
+
+from xdsl.dialects.builtin import IntegerAttr, i64 as i64_type
+
+
+@irdl_attr_definition
+class CcArrayType(ParametrizedAttribute, TypeAttribute):
+    """Fixed-size array type: ``!cc.array<T x N>``."""
+
+    name = "cc.array"
+
+    element_type: Attribute
+    size: IntegerAttr
+
+    def __init__(self, element_type: Attribute, size: int) -> None:
+        super().__init__(element_type, IntegerAttr(size, i64_type))
+
+    def print_parameters(self, printer: Printer) -> None:
+        size_val = self.size.value.data
+        printer.print_string("<")
+        printer.print_attribute(self.element_type)
+        printer.print_string(f" x {size_val}>")
+
+
+@irdl_op_definition
+class CcComputePtrOp(IRDLOperation):
+    """Compute a pointer to an array element.
+
+    Static index::
+
+        %ptr = cc.compute_ptr %arr[2] : (!cc.ptr<!cc.array<f64 x 5>>) -> !cc.ptr<f64>
+
+    Dynamic index::
+
+        %ptr = cc.compute_ptr %arr[%i] : (!cc.ptr<!cc.array<f64 x 5>>, i64) -> !cc.ptr<f64>
+    """
+
+    name = "cc.compute_ptr"
+    base = operand_def(AnyAttr())
+    dynamic_index = var_operand_def(AnyAttr())  # empty for static, [i64] for dynamic
+    static_index = attr_def(Attribute, default=None)  # IntegerAttr or None
+    result = result_def(AnyAttr())
+
+    def __init__(self, base: SSAValue, index, element_type: Attribute) -> None:
+        """
+        Parameters
+        ----------
+        base : SSAValue
+            Pointer to the array (!cc.ptr<!cc.array<T x N>>).
+        index : int | SSAValue
+            Static integer index or dynamic SSAValue (i64).
+        element_type : Attribute
+            The element type (T) for the result pointer type.
+        """
+        from xdsl.dialects.builtin import IntegerAttr, i64 as i64_type
+
+        if isinstance(index, int):
+            # Static index
+            super().__init__(
+                operands=[base, []],
+                attributes={"static_index": IntegerAttr(index, i64_type)},
+                result_types=[CcPtrType(element_type)],
+            )
+        else:
+            # Dynamic index
+            super().__init__(
+                operands=[base, [index]],
+                result_types=[CcPtrType(element_type)],
+            )
+
+    def print(self, printer: Printer) -> None:
+        printer.print_string(" ")
+        printer.print_ssa_value(self.base)
+        printer.print_string("[")
+        dyn = list(self.dynamic_index)
+        if dyn:
+            printer.print_ssa_value(dyn[0])
+        elif self.static_index is not None:
+            idx = getattr(self.static_index, "value", self.static_index)
+            idx_val = getattr(idx, "data", idx)
+            printer.print_string(str(idx_val))
+        printer.print_string("] : (")
+        printer.print_attribute(self.base.type)
+        if dyn:
+            printer.print_string(", ")
+            printer.print_attribute(dyn[0].type)
+        printer.print_string(") -> ")
+        printer.print_attribute(self.result.type)
+
+
+@irdl_op_definition
+class CcCastOp(IRDLOperation):
+    """Cast between CC pointer types.
+
+    ``%ptr_elem = cc.cast %ptr_arr : (!cc.ptr<!cc.array<f64 x 5>>) -> !cc.ptr<f64>``
+    """
+
+    name = "cc.cast"
+    value = operand_def(AnyAttr())
+    result = result_def(AnyAttr())
+
+    def __init__(self, value: SSAValue, result_type: Attribute) -> None:
+        super().__init__(operands=[value], result_types=[result_type])
+
+    def print(self, printer: Printer) -> None:
+        printer.print_string(" ")
+        printer.print_ssa_value(self.value)
+        printer.print_string(" : (")
+        printer.print_attribute(self.value.type)
+        printer.print_string(") -> ")
+        printer.print_attribute(self.result.type)
 
 # ---------------------------------------------------------------------------
 # Dialect registration
@@ -401,5 +514,7 @@ class CcDialect(Dialect):
         CcAllocaOp,
         CcStoreOp,
         CcLoadOp,
+        CcComputePtrOp,
+        CcCastOp,
     ]
-    attributes = [CcStdVecType, CcPtrType]
+    attributes = [CcStdVecType, CcPtrType, CcArrayType]

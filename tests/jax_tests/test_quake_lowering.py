@@ -1036,7 +1036,7 @@ def test_q_switch(method):
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
 
-    # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Test qrisp cudaq kernel decorator
 # ---------------------------------------------------------------------------
 
@@ -1087,6 +1087,63 @@ def test_qrisp_algorithm_in_cudaq_kernel():
 
     result = main()
     assert isinstance(result, list) and len(result) == 10, f"Expected a list of 10 measurement results, got {result}"
+
+# ---------------------------------------------------------------------------
+# Test arrays
+# ---------------------------------------------------------------------------
+
+def test_array():
+    """Test that we can create classical (traced) arrays and access them in the quantum program."""
+
+    def main():
+        """Static indexing."""
+
+        arr = jnp.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        a = QuantumVariable(5)
+        rz(arr[0], a[0])
+
+        return measure(a[0])
+
+    mlir = _lower(main)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[0], f"Expected a measurement result of 0, got {result}"
+
+
+    def main():
+        """Dynamic indexing."""
+
+        arr = jnp.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        a = QuantumVariable(5)
+        b = QuantumVariable(1)
+        ind = jnp.int32(measure(b[0]))
+        rz(arr[ind], a[0])
+
+        return measure(a[0])
+
+    mlir = _lower(main)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[0], f"Expected a measurement result of 0, got {result}"
+
+
+    @qache
+    def test(arr, qv):
+        rz(arr[0], qv[0])
+        return measure(qv[0])
+
+    def main():
+        """Test that we can pass traced arrays as arguments to a @qache function and use them in the quantum program."""
+        arr = jnp.array([1.0, 2.0, 3.0, 4.0, 5.0])
+
+        a = QuantumVariable(5)
+        res = test(arr, a)
+        return res
+
+    mlir = _lower(main)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10*[0], f"Expected a measurement result of 0, got {result}"
 
 # ---------------------------------------------------------------------------
 # Test QuantumFloat
