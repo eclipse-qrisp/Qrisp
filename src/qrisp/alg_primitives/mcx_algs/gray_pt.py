@@ -64,16 +64,16 @@ def pt_multi_cx(n, reduced=False):
 
 
 def gray_pt_mcx(n, ctrl_state):
-    input_qv = QuantumVariable(n)
-    output_qv = QuantumVariable(1, qs=input_qv.qs)
 
-    tt_str = 2**n * ["0"]
-    tt_str[int(ctrl_state[::-1], 2)] = "1"
-    from qrisp import TruthTable
+    from qrisp.alg_primitives.logic_synthesis.gray_synthesis import GraySynthGate
 
-    tt = TruthTable([tt_str])
+    target_phases = (2**(n+1) - 1)*[0]
+    target_phases.insert(2*int(ctrl_state, 2), np.pi)
+    synth_gate = GraySynthGate(target_phases, phase_tolerant = True)
 
-    tt.q_synth(input_qv, output_qv, method="gray_pt")
+    qc = QuantumCircuit(n+1)
+    qc.h(-1)
+    qc.append(synth_gate, qc.qubits)
+    qc.h(-1)
 
-    res = input_qv.qs.copy()
-    return res.to_gate(f"pt{n}cx")
+    return qc.to_gate("gray_pt_mcx")
