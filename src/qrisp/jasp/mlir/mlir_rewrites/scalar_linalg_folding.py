@@ -43,6 +43,7 @@ from xdsl.pattern_rewriter import (
     PatternRewriteWalker,
     RewritePattern,
 )
+from xdsl.rewriter import InsertPoint
 
 
 def scalar_linalg_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> None:
@@ -129,7 +130,7 @@ class FoldScalarLinalgGeneric(RewritePattern):
                 continue  # Skip extraction
 
             extract = tensor.ExtractOp(tensor_val, [], tensor_val.type.element_type)
-            rewriter.insert_op_before_matched_op(extract)
+            rewriter.insert_op(extract, InsertPoint.before(op))
             mapping[block_arg] = extract.results[
                 0
             ]
@@ -148,7 +149,7 @@ class FoldScalarLinalgGeneric(RewritePattern):
             ]
             cloned.operands = tuple(new_operands)  # Reassign safely
 
-            rewriter.insert_op_before_matched_op(cloned)
+            rewriter.insert_op(cloned, InsertPoint.before(op))
 
             # Map the original op's results to the cloned op's results
             for orig_res, cloned_res in zip(op_in_body.results, cloned.results):
