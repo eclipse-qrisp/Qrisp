@@ -374,7 +374,7 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     res = QuantumModulus(N)
     # The result's Montgomery shift after reduction: (x.m + y.m) - m
     # (the reduction divides by 2^m, subtracting m from the accumulated shift)
-    res.m = int(x.m) + int(y.m) - m
+    res.m = x.m + y.m - m
     res.inpl_adder = inpl_adder
     aux = QuantumFloat(m + 1)
     wqf = aux[:] + res[:]
