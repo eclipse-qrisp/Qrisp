@@ -200,9 +200,9 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
         synth_gate = GraySynthGate(target_phases, phase_tolerant = True)
 
         temp_qc = QuantumCircuit(control_amount+1)
-        temp_qc.h(-1)
+        temp_qc.h(temp_qc.qubits[-1])
         temp_qc.append(synth_gate, temp_qc.qubits)
-        temp_qc.h(-1)
+        temp_qc.h(temp_qc.qubits[-1])
 
         mcx_gate = temp_qc.to_gate("gray_pt_mcx")
 
