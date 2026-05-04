@@ -120,4 +120,4 @@ class EraseDeadFromElements(RewritePattern):
     def match_and_rewrite(self, op: tensor.FromElementsOp, rewriter: PatternRewriter) -> None:
         # If the result has zero uses, we are safe to delete it
         if not op.result.uses:
-            rewriter.erase_matched_op()
+            rewriter.erase_op(op)

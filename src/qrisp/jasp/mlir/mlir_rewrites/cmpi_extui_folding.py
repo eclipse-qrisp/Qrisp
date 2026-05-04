@@ -151,8 +151,7 @@ class FoldCmpiExtui(RewritePattern):
             # NOT via XOR with 1
             true_const = arith.ConstantOp.from_int_and_width(1, 1)
             xor_op = arith.XOrIOp(orig_bool, true_const.result)
-            rewriter.insert_op_before_matched_op(true_const)
-            rewriter.replace_matched_op(xor_op)
+            rewriter.replace_matched_op([true_const, xor_op], [xor_op.result])
 
         elif result == self._Result.TRUE:
             # Replace with constant true (1 : i1)
