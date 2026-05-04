@@ -81,15 +81,6 @@ def _replace_all_uses_with(val: SSAValue, new_val: SSAValue) -> None:
         val.replace_by(new_val)
 
 
-def _get_arith_addi():
-    cls = getattr(arith, "Addi", None) or getattr(arith, "AddiOp", None)
-    if cls is None:
-        raise ImportError(
-            "Cannot find arith.Addi or arith.AddiOp in this xDSL version"
-        )
-    return cls
-
-
 def _get_results(op) -> list:
     return list(getattr(op, "results", getattr(op, "res", [])))
 
@@ -220,12 +211,8 @@ def _apply_cudaq_while_hotfix(block: Block) -> None:
     ``cc.loop`` while-conditions, causing premature loop termination.
     """
     for op in list(block.ops):
-        if op.name == "arith.cmpi":
-            pred_attr = getattr(op, "predicate", None)
-            if pred_attr is None and hasattr(op, "properties"):
-                pred_attr = op.properties.get("predicate")
-            if pred_attr is None:
-                pred_attr = op.attributes.get("predicate")
+        if isinstance(op, arith.CmpiOp):
+            pred_attr = op.predicate
             if pred_attr is None:
                 continue
 
@@ -365,8 +352,7 @@ def _convert_scf_for(for_op, outer_block: Block) -> None:
     step_block = step_region.blocks[0]
 
     iv_step = step_block.args[0]
-    addi_cls = _get_arith_addi()
-    next_iv = addi_cls(iv_step, unwrapped_step)
+    next_iv = arith.AddiOp(iv_step, unwrapped_step)
     step_block.add_op(next_iv)
 
     next_args = [next_iv.result] + list(step_block.args[1:])

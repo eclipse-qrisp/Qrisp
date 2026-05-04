@@ -35,11 +35,7 @@ Architecture:
 Compatible with **xDSL ≥ 0.55**.
 """
 
-try:
-    from xdsl.context import Context
-except ImportError:
-    from xdsl.ir import Context
-
+from xdsl.context import Context
 from xdsl.dialects import arith, func as func_dialect, tensor
 from xdsl.dialects.builtin import (
     DenseIntOrFPElementsAttr,
@@ -61,6 +57,7 @@ from xdsl.pattern_rewriter import (
     RewritePattern,
     op_type_rewrite_pattern,
 )
+from xdsl.rewriter import InsertPoint
 
 
 # ------------------------------------------------------------------ #
@@ -113,7 +110,7 @@ class UnwrapFuncAndReturn(RewritePattern):
             if isinstance(t, TensorType) and not t.get_shape():
                 # Isolate the boundary by inserting an extract
                 extract_op = tensor.ExtractOp(operand, [], t.element_type)
-                rewriter.insert_op_before_matched_op(extract_op)
+                rewriter.insert_op(extract_op, InsertPoint.before(op))
                 
                 new_operands.append(extract_op.result)
                 new_return_types.append(t.element_type)
@@ -262,7 +259,7 @@ class UnwrapCall(RewritePattern):
 
         # 5. Insert operations and replace
         for ext_op in ops_to_insert_before:
-            rewriter.insert_op_before_matched_op(ext_op)
+            rewriter.insert_op(ext_op, InsertPoint.before(op))
             
         rewriter.replace_matched_op([new_call] + ops_to_insert_after, replacements)
 
@@ -341,7 +338,7 @@ class EraseDeadTensorConstant(RewritePattern):
         self, op: arith.ConstantOp, rewriter: PatternRewriter
     ) -> None:
         if isinstance(op.result.type, TensorType) and not any(op.result.uses):
-            rewriter.erase_matched_op()
+            rewriter.erase_op(op)
 
 
 class EraseDeadFromElements(RewritePattern):
@@ -351,7 +348,7 @@ class EraseDeadFromElements(RewritePattern):
         self, op: tensor.FromElementsOp, rewriter: PatternRewriter
     ) -> None:
         if not any(op.result.uses):
-            rewriter.erase_matched_op()
+            rewriter.erase_op(op)
 
 
 # ------------------------------------------------------------------ #
