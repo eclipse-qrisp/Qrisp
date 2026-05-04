@@ -27,6 +27,18 @@ from unittest.mock import MagicMock
 import pytest
 from qiskit_aer import AerSimulator
 
+try:
+    import qiskit_ibm_runtime
+
+    _qiskit_ibm_runtime_available = True
+except ImportError:
+    _qiskit_ibm_runtime_available = False
+
+_skip_if_no_runtime = pytest.mark.skipif(
+    not _qiskit_ibm_runtime_available,
+    reason="qiskit-ibm-runtime is not installed",
+)
+
 from qrisp.circuit.quantum_circuit import QuantumCircuit as QrispQuantumCircuit
 from qrisp.interface import QiskitBackend
 from qrisp.interface.backend import Backend
@@ -620,6 +632,7 @@ def runtime_mocks(monkeypatch):
     }
 
 
+@_skip_if_no_runtime
 class TestQiskitRuntimeBackendConstruction:
     """Tests for QiskitRuntimeBackend.__init__ with a fully-mocked IBM Runtime."""
 
@@ -684,6 +697,7 @@ class TestQiskitRuntimeBackendConstruction:
             QiskitRuntimeBackend(api_token="token")
 
 
+@_skip_if_no_runtime
 class TestQiskitRuntimeBackendOptions:
     """Tests for QiskitRuntimeBackend default options."""
 
@@ -699,6 +713,7 @@ class TestQiskitRuntimeBackendOptions:
         )
 
 
+@_skip_if_no_runtime
 class TestQiskitRuntimeBackendSession:
     """Tests for session lifecycle management."""
 
@@ -729,6 +744,7 @@ class TestQiskitRuntimeBackendSession:
         runtime_mocks["sampler_cls"].return_value.run.assert_called_once()
 
 
+@_skip_if_no_runtime
 class TestQiskitRuntimeBackendIntegration:
     """End-to-end tests using a real AerSimulator and real SamplerV2."""
 

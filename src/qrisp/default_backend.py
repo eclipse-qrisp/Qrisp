@@ -102,15 +102,10 @@ class DefaultBackend(Backend):
     :attr:`~qrisp.interface.JobStatus.DONE` before :meth:`run_async` returns
     to the caller.
 
-    This class is a *Singleton*: every call to ``DefaultBackend()`` returns
-    the same object in memory, so there is only ever one shared instance of the
-    built-in simulator backend per process.
-
     Parameters
     ----------
     options : Mapping or None, optional
         Runtime options.  Defaults to ``{"shots": None, "token": ""}``.
-        Ignored on subsequent calls once the singleton has been created.
 
     Examples
     --------
@@ -168,19 +163,6 @@ class DefaultBackend(Backend):
     >>> print(result.get_counts())
     {'0100111': 1.0}
     """
-
-    _instance: "DefaultBackend | None" = None
-
-    def __new__(cls, *_, **_kw):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-    def __init__(self, name: str | None = None, options=None, **kwargs):
-        if hasattr(self, "_initialized"):
-            return
-        super().__init__(name=name, options=options, **kwargs)
-        self._initialized = True
 
     @classmethod
     def _default_options(cls):
