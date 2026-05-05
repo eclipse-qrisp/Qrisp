@@ -10,7 +10,7 @@ expected to meet: static analysis, code style, and type annotations.
 
     The checks described on this page are not yet enforced automatically by the
     CI pipeline or pre-commit hooks. They are recommended practices that
-    contributors are encouraged to follow. Automated enforcement may be
+    contributors are encouraged to follow for the changes they introduce. Automated enforcement will be
     introduced in the future.
 
 Preserving existing behaviour
@@ -68,7 +68,7 @@ description.
 
 AI-assisted development tools (such as GitHub Copilot) can help identify
 simplifications, but manual review is essential: these tools sometimes change
-code logic subtly. Always verify generated output carefully.
+code logic subtly. Always verify generated output carefully and that all associated unit tests pass.
 
 Type annotations
 ----------------
