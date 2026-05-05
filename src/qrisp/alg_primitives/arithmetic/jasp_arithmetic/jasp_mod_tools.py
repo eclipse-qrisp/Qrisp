@@ -31,7 +31,7 @@ Notes
 """
 
 from typing import Union
-
+from jax import jit
 import jax.numpy as jnp
 import jax.lax as lax
 from qrisp import check_for_tracing_mode
@@ -43,7 +43,41 @@ from .jasp_bigintiger import (
     bi_montgomery_decode,
 )
 
+@jit
+def pow2_mod_N(m, N):
+    """
+    Computes (2 ** m) % N in a JAX-traceable way.
+    """
+    # Ensure inputs are 64-bit integers to delay overflow as much as possible
+    m = jnp.asarray(m, dtype=jnp.uint64)
+    N = jnp.asarray(N, dtype=jnp.uint64)
+    base = jnp.array(2, dtype=jnp.uint64)
+    
+    # State tuple: (result, base, exponent, modulus)
+    init_state = (jnp.array(1, dtype=jnp.uint64), base % N, m, N)
 
+    def cond_fun(state):
+        _, _, exp, _ = state
+        return exp > 0
+
+    def body_fun(state):
+        res, b, exp, mod = state
+        
+        # If exp is odd, update result: res = (res * b) % mod
+        # jax.lax.select acts like an if-else statement without breaking traceability
+        is_odd = (exp % 2 == 1)
+        res = lax.select(
+            is_odd,
+            (res * b) % mod,
+            res
+        )
+        
+        # Square the base and halve the exponent
+        b = (b * b) % mod
+        exp = exp // 2
+        
+        return (res, b, exp, mod)
+    
 def bi_pow2mod(exp, mod_bi):
     """
     Compute ``2 ** exp % mod_bi`` as a BigInteger.
@@ -124,7 +158,43 @@ def montgomery_encoder(
         return bi_montgomery_encode(xb, Rb, Nb)
     return ((x % N) * (R % N)) % N
 
+def new_montgomery_decoder(
+    y: Union[int, BigInteger], m: Union[int, BigInteger], N: Union[int, BigInteger]
+):
+    
 
+    if isinstance(N, BigInteger):
+        # Traced-safe path: self.m may be a JAX tracer when the modulus
+        # is a BigInteger passed into @jaspify.  All arithmetic is done
+        # in BigInteger / JAX space — no Python int() conversions.
+        import jax.lax as lax
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+            bi_pow2mod, bi_modinv, bi_montgomery_encode,
+        )
+        import jax.numpy as jnp
+
+        m = jnp.int64(m)
+        abs_m = jnp.abs(m)
+        # 2^|m| mod N  (= 1 when m == 0)
+        power = bi_pow2mod(abs_m, N)
+        # For m > 0  →  decode factor = modinv(2^m, N)
+        # For m <= 0 →  decode factor = 2^|m| mod N  (identity when m == 0)
+        factor = lax.cond(
+            m > 0,
+            lambda p: bi_modinv(p, N),
+            lambda p: p,
+            power,
+        )
+        return bi_montgomery_encode(i, factor, N)
+
+    # Concrete path for int modulus
+    m_val = int(m)
+    if m_val == 0:
+        return y
+    N_val = int(N)
+    decode_factor = pow(2, -m_val, N_val)
+    return (y * decode_factor) % N_val
+    
 def montgomery_decoder(
     y: Union[int, BigInteger], R: Union[int, BigInteger], N: Union[int, BigInteger]
 ):
@@ -161,6 +231,7 @@ def montgomery_decoder(
         R = modinv(int(R**-1), N)
     R1 = modinv(R, N)
     return ((y % N) * (R1 % N)) % N
+
 
 
 def egcd(a: int, b: int):
