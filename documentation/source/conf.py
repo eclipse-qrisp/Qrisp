@@ -200,8 +200,27 @@ html_extra_path = ['_extra']  # copies contents of docs/_extra/ to _build/html/
 #
 
 tutorial_authors = {
-    'general/tutorial/Shor': {'name': 'Alice Quantum', 'role': 'Core Developer'},
-    'general/tutorial/Jasp': {'name': 'Bob Qubit', 'role': 'Contributor'}
+    'general/tutorial/BE_tutorial/BE_vol1': {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/BE_tutorial/BE_vol2': {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'}, 
+    'general/tutorial/BigInteger': {'name': 'Eric Kühnke', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/CD': {'name': 'Carlotta Koroll, Sebastian Bock', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/FT_compilation': {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/Jasp': {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/JaspQAOAtutorial': {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/GQSP_filtering': {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'}, 
+    'general/tutorial/HHL': {'name': 'René Zander, Raphael Seidel, Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/H2': {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/QAOAtutorial/ConstrainedMixers': {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/QAOAtutorial/MaxCut': {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/QAOAtutorial/MkCS': {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/QAOAtutorial/PortfolioRebalancing': {'name': 'Niklas Steinmann', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/QAOAtutorial/QUBO': {'name': 'Matic Petrič, René Zander', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/QIROtutorial': {'name': 'Niklas Steinmann', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/QMCItutorial': {'name': 'Niklas Steinmann, René Zander', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/Shor': {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/Sudoku': {'name': 'Raphael Seidel, René Zander, Matic Petrič, Niklas Steinmann', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/TSP': {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},    
+    'general/tutorial/tutorial': {'name': 'The Qrisp authors', 'role': 'Eclipse Qrisp Contributor'},
 }
 
 class AuthorBioDirective(Directive):
