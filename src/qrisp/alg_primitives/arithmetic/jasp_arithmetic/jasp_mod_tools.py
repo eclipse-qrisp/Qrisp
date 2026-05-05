@@ -48,13 +48,12 @@ def pow2_mod_N(m, N):
     """
     Computes (2 ** m) % N in a JAX-traceable way.
     """
-    # Ensure inputs are 64-bit integers to delay overflow as much as possible
-    m = jnp.asarray(m, dtype=jnp.uint64)
-    N = jnp.asarray(N, dtype=jnp.uint64)
-    base = jnp.array(2, dtype=jnp.uint64)
+    m = jnp.asarray(m, dtype=jnp.int64)
+    N = jnp.asarray(N)
+    base = jnp.asarray(2, dtype=N.dtype)
     
     # State tuple: (result, base, exponent, modulus)
-    init_state = (jnp.array(1, dtype=jnp.uint64), base % N, m, N)
+    init_state = (jnp.asarray(1, dtype=N.dtype), base % N, m, N)
 
     def cond_fun(state):
         _, _, exp, _ = state
@@ -77,6 +76,11 @@ def pow2_mod_N(m, N):
         exp = exp // 2
         
         return (res, b, exp, mod)
+
+    result, _, _, _ = lax.while_loop(cond_fun, body_fun, init_state)
+    return result
+
+
     
 def bi_pow2mod(exp, mod_bi):
     """
@@ -124,6 +128,15 @@ def bi_pow2mod(exp, mod_bi):
     # Truncate back — result < mod_bi < 2^(32k)
     return BigInteger(result.digits[:k])
 
+def pow2mod(exp, modulus: Union[int, BigInteger]):
+    """
+    Compute ``2 ** exp % modulus`` across static ints, traced ints, and BigInteger.
+    """
+    if isinstance(modulus, BigInteger):
+        return bi_pow2mod(exp, modulus)
+    if check_for_tracing_mode():
+        return pow2_mod_N(exp, modulus)
+    return pow(2, int(exp), int(modulus))
 
 def montgomery_encoder(
     x: Union[int, BigInteger], R: Union[int, BigInteger], N: Union[int, BigInteger]
@@ -161,39 +174,22 @@ def montgomery_encoder(
 def new_montgomery_decoder(
     y: Union[int, BigInteger], m: Union[int, BigInteger], N: Union[int, BigInteger]
 ):
-    
-
-    if isinstance(N, BigInteger):
-        # Traced-safe path: self.m may be a JAX tracer when the modulus
-        # is a BigInteger passed into @jaspify.  All arithmetic is done
-        # in BigInteger / JAX space — no Python int() conversions.
-        import jax.lax as lax
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
-            bi_pow2mod, bi_modinv, bi_montgomery_encode,
-        )
-        import jax.numpy as jnp
-
+    if check_for_tracing_mode():
         m = jnp.int64(m)
         abs_m = jnp.abs(m)
-        # 2^|m| mod N  (= 1 when m == 0)
-        power = bi_pow2mod(abs_m, N)
-        # For m > 0  →  decode factor = modinv(2^m, N)
-        # For m <= 0 →  decode factor = 2^|m| mod N  (identity when m == 0)
+        power = pow2mod(abs_m, N)
         factor = lax.cond(
             m > 0,
-            lambda p: bi_modinv(p, N),
+            lambda p: modinv(p, N),
             lambda p: p,
             power,
         )
-        return bi_montgomery_encode(i, factor, N)
+    else:
+        abs_m = abs(m)
+        power = pow2mod(abs_m, N)
+        factor = modinv(power, N) if m > 0 else power
 
-    # Concrete path for int modulus
-    m_val = int(m)
-    if m_val == 0:
-        return y
-    N_val = int(N)
-    decode_factor = pow(2, -m_val, N_val)
-    return (y * decode_factor) % N_val
+    return montgomery_encoder(y, factor, N)
     
 def montgomery_decoder(
     y: Union[int, BigInteger], R: Union[int, BigInteger], N: Union[int, BigInteger]
@@ -296,6 +292,11 @@ def modinv(a: Union[int, BigInteger], m: Union[int, BigInteger]):
         return bi_modinv(a_bi, m_bi)
 
     if check_for_tracing_mode():
+        dtype = jnp.asarray(m).dtype
+        zero = jnp.asarray(0, dtype=dtype)
+        one = jnp.asarray(1, dtype=dtype)
+        a = jnp.asarray(a, dtype=dtype)
+        m = jnp.asarray(m, dtype=dtype)
 
         def cf(val):
             t, nt, r, nr = val
@@ -306,8 +307,8 @@ def modinv(a: Union[int, BigInteger], m: Union[int, BigInteger]):
             q = r // nr
             return (nt, t - q * nt, nr, r - q * nr)
 
-        t, nt, r, nr = lax.while_loop(cf, bf, (0, 1, m, a))
-        return jnp.where(t < 0, t + m, t)
+        t, nt, r, nr = lax.while_loop(cf, bf, (zero, one, m, a))
+        return jnp.where(t < zero, t + m, t)
     else:
         t, nt, r, nr = 0, 1, m, a
         while nr != 0:

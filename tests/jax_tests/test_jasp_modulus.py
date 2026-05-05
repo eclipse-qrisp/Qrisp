@@ -350,6 +350,44 @@ def test_jdecoder_roundtrip_traced_biginteger():
     assert result == 9
 
 
+def test_measure_traced_scalar_modulus_static_shift():
+    """Regression: traced scalar modulus with non-zero static shift must decode."""
+
+    @jaspify
+    def run():
+        qf = QuantumFloat(4)
+        qf[:] = 7
+        modulus = jnp.int32(measure(qf))
+
+        qm = QuantumModulus(modulus)
+        qm[:] = 3
+        qm.m = 1
+        return measure(qm)
+
+    assert int(run()) == (3 * pow(2, -1, 7)) % 7
+
+
+def test_measure_traced_scalar_modulus_traced_shift():
+    """Regression: traced scalar modulus with traced shift must decode."""
+
+    @jaspify
+    def run():
+        qf = QuantumFloat(4)
+        qf[:] = 7
+        modulus = jnp.int32(measure(qf))
+
+        qf_shift = QuantumFloat(2)
+        qf_shift[:] = 2
+        shift = jnp.int32(measure(qf_shift))
+
+        qm = QuantumModulus(modulus)
+        qm[:] = 3
+        qm.m = shift
+        return measure(qm)
+
+    assert int(run()) == (3 * pow(2, -2, 7)) % 7
+
+
 # ----- _moduli_neq tests -----
 
 def test_moduli_neq_static_equal():
