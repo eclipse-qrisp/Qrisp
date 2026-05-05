@@ -36,25 +36,6 @@ conserves GitHub runner resources.
 significantly easier to review and gets merged faster. Large refactors should
 be split into multiple PRs whenever possible.
 
-When opening a PR, use the following template:
-
-.. code-block:: text
-
-    **Context:**
-    <What motivated this change? Link any related issues.>
-
-    **Description of the Change:**
-    <What does this PR do? Keep it concise.>
-
-    **Benefits:**
-    <What improves as a result?>
-
-    **Possible Drawbacks:**
-    <Any trade-offs or known limitations?>
-
-    **Related GitHub Issues:**
-    <e.g., Closes #42>
-
 Useful references:
 
 - GitHub guide on pull requests: https://docs.github.com/en/pull-requests
