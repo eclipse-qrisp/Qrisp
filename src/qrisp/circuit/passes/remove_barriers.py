@@ -19,8 +19,10 @@
 from __future__ import annotations
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
+from qrisp.circuit.passes.pass_manager import CircuitPass
 
 
+@CircuitPass
 def remove_barriers(qc: QuantumCircuit) -> QuantumCircuit:
     """Return a copy of *qc* with all barrier instructions removed.
 

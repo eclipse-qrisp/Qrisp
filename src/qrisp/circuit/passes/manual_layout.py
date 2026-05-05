@@ -25,6 +25,7 @@ from collections.abc import Callable
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.qubit import Qubit
+from qrisp.circuit.passes.pass_manager import CircuitPass
 
 
 def manual_layout(
@@ -56,6 +57,7 @@ def manual_layout(
         index is negative, or if there are duplicate indices.
     """
 
+    @CircuitPass
     def _manual_layout(qc: QuantumCircuit) -> QuantumCircuit:
         num_circuit_qubits = qc.num_qubits()
 

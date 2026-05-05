@@ -22,8 +22,10 @@ two-qubit gates.
 from __future__ import annotations
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
+from qrisp.circuit.passes.pass_manager import CircuitPass
 
 
+@CircuitPass
 def reverse_parallelize(qc: QuantumCircuit) -> QuantumCircuit:
     """Run parallelization on the reversed instruction order.
 

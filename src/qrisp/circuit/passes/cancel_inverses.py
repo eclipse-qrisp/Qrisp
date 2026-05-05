@@ -83,6 +83,7 @@ from qrisp.circuit import (
     ClControlledOperation,
     ControlledOperation,
 )
+from qrisp.circuit.passes.pass_manager import CircuitPass
 
 # Sentinel object returned when two operations cancel completely.
 _FUSION_CANCEL = object()
@@ -684,6 +685,7 @@ def _emit_surviving_circuit(G, data_list, qc, gphase_array):
 # =============================================================================
 
 
+@CircuitPass
 def cancel_inverses(qc: QuantumCircuit) -> QuantumCircuit:
     """Cancel adjacent gate–inverse-gate pairs.
 

@@ -21,6 +21,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
+from qrisp.circuit.passes.pass_manager import CircuitPass
 
 
 def convert_to_cz(
@@ -65,6 +66,7 @@ def convert_to_cz(
     >>> transpiled_qc = pm.run(qc)
     """
 
+    @CircuitPass
     def _convert_to_cz(qc: QuantumCircuit) -> QuantumCircuit:
         qc_new = qc.clearcopy()
 

@@ -19,8 +19,10 @@
 from __future__ import annotations
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
+from qrisp.circuit.passes.pass_manager import CircuitPass
 
 
+@CircuitPass
 def resolve_swaps(qc: QuantumCircuit) -> QuantumCircuit:
     """Remove SWAP gates by folding them into qubit index remapping.
 

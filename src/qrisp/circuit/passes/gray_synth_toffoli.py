@@ -23,6 +23,7 @@ import numpy as np
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.operation import ControlledOperation
+from qrisp.circuit.passes.pass_manager import CircuitPass
 
 
 # The gray-synthesis Toffoli circuit is built lazily (on first call) rather than
@@ -60,6 +61,7 @@ def is_toffoli(op) -> bool:
     )
 
 
+@CircuitPass
 def gray_synth_toffoli(qc: QuantumCircuit) -> QuantumCircuit:
     """Replace Toffoli gates with a gray-synthesis decomposition.
 

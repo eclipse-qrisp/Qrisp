@@ -22,6 +22,7 @@ import numpy as np
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.operation import ControlledOperation
+from qrisp.circuit.passes.pass_manager import CircuitPass
 
 
 def _apply_combined_gates(qc_new: QuantumCircuit, gate_list: list, qb) -> None:
@@ -69,6 +70,7 @@ def _apply_combined_gates(qc_new: QuantumCircuit, gate_list: list, qb) -> None:
     qc_new.unitary(m, [qb])
 
 
+@CircuitPass
 def combine_single_qubit_gates(qc: QuantumCircuit) -> QuantumCircuit:
     """Combine adjacent single-qubit gates into unitary operations.
 

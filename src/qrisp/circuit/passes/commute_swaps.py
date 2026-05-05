@@ -21,8 +21,10 @@ from __future__ import annotations
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.operation import Operation
 from qrisp.circuit.qubit import Qubit
+from qrisp.circuit.passes.pass_manager import CircuitPass
 
 
+@CircuitPass
 def commute_swaps(qc: QuantumCircuit) -> QuantumCircuit:
     """
     Commute single-qubit instructions past SWAP gates.

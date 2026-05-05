@@ -19,8 +19,10 @@
 from __future__ import annotations
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
+from qrisp.circuit.passes.pass_manager import CircuitPass
 
 
+@CircuitPass
 def arange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
     """
     Optimize SWAP gate arrangements for better compilation efficiency.

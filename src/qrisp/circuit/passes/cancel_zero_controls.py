@@ -25,6 +25,7 @@ from qrisp.circuit.operation import (
     PTControlledOperation,
 )
 from qrisp.circuit.qubit import Qubit
+from qrisp.circuit.passes.pass_manager import CircuitPass
 
 
 # Single-qubit diagonal gates that map |0⟩ → e^{iφ}|0⟩
@@ -62,6 +63,7 @@ def _is_cancelled_by_zero(
     return False
 
 
+@CircuitPass
 def cancel_zero_controls(qc: QuantumCircuit) -> QuantumCircuit:
     """Cancel controlled gates whose control qubit is guaranteed to be |0⟩.
 
