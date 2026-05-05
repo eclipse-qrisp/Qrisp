@@ -23,7 +23,8 @@ Good places to reach out:
 Opening a pull request
 -----------------------
 
-Before opening a PR, run the test suite for the subsystem(s) you modified. For example, if the changes you made affected the functionality in `circuit_tests`:
+Before opening a PR, run the test suite for the subsystem(s) you modified. 
+For example, if the changes you made affected the functionality in the ``circuit`` module, run:
 
 .. code-block:: bash
 
