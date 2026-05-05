@@ -314,6 +314,186 @@ class TestCircuitPassCompareUnitary:
 
 
 # ---------------------------------------------------------------------------
+# compare_measurement
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def ghz_measured() -> QuantumCircuit:
+    """A measured 3-qubit GHZ circuit: |000>+|111> with equal probability."""
+    qc = QuantumCircuit(3)
+    for _ in range(3):
+        qc.add_clbit()
+    qc.h(qc.qubits[0])
+    qc.cx(qc.qubits[0], qc.qubits[1])
+    qc.cx(qc.qubits[1], qc.qubits[2])
+    qc.measure(qc.qubits, qc.clbits)
+    return qc
+
+
+@pytest.fixture
+def equal_superposition_measured() -> QuantumCircuit:
+    """A measured 2-qubit equal superposition: all outcomes p=0.25."""
+    qc = QuantumCircuit(2)
+    for _ in range(2):
+        qc.add_clbit()
+    qc.h(qc.qubits[0])
+    qc.h(qc.qubits[1])
+    qc.measure(qc.qubits, qc.clbits)
+    return qc
+
+
+class TestCircuitPassCompareMeasurement:
+    """Test verification that a CircuitPass preserves measurement statistics."""
+
+    # --- Basic correctness ---
+
+    def test_identity_pass_preserves_distribution(self, ghz_measured):
+        cp = CircuitPass(identity_pass)
+        assert cp.compare_measurement(ghz_measured)
+
+    def test_identity_pass_empty_circuit(self):
+        qc = QuantumCircuit(2)
+        cp = CircuitPass(identity_pass)
+        assert cp.compare_measurement(qc)
+
+    def test_pass_that_adds_x_flips_distribution(self, ghz_measured):
+        """Adding an X gate before measurement changes the measurement outcomes."""
+        def add_x_before_measure(qc: QuantumCircuit) -> QuantumCircuit:
+            from qrisp.circuit import Instruction
+            # Insert X on qubit 0 just before the measurement instructions
+            new_qc = qc.clearcopy()
+            for instr in qc.data:
+                if instr.op.name == "measure":
+                    new_qc.x(qc.qubits[0])
+                new_qc.append(instr.op, instr.qubits, instr.clbits)
+            return new_qc
+
+        cp = CircuitPass(add_x_before_measure)
+        assert not cp.compare_measurement(ghz_measured)
+
+    def test_pass_that_adds_h_changes_distribution(self, ghz_measured):
+        """Adding an H gate before measurement changes the measurement statistics."""
+        def add_h_before_measure(qc: QuantumCircuit) -> QuantumCircuit:
+            new_qc = qc.clearcopy()
+            for instr in qc.data:
+                if instr.op.name == "measure":
+                    new_qc.h(qc.qubits[0])
+                new_qc.append(instr.op, instr.qubits, instr.clbits)
+            return new_qc
+
+        cp = CircuitPass(add_h_before_measure)
+        assert not cp.compare_measurement(ghz_measured)
+
+    # --- Precision parameter ---
+
+    def test_precision_loose_enough(self, equal_superposition_measured):
+        """With precision=-1 (tolerance 10), even a wrong distribution 'passes'."""
+        def add_x_pass(qc: QuantumCircuit) -> QuantumCircuit:
+            qc = qc.copy()
+            qc.x(qc.qubits[0])
+            return qc
+
+        cp = CircuitPass(add_x_pass)
+        assert cp.compare_measurement(equal_superposition_measured, precision=-1)
+
+    def test_precision_tight(self, equal_superposition_measured):
+        """With very tight precision, identity still passes."""
+        cp = CircuitPass(identity_pass)
+        assert cp.compare_measurement(equal_superposition_measured, precision=10)
+
+    # --- Input validation ---
+
+    def test_non_qc_raises_typeerror(self):
+        cp = CircuitPass(identity_pass)
+        with pytest.raises(TypeError, match="Expected a QuantumCircuit"):
+            cp.compare_measurement(42)
+
+    # --- Integration: real passes ---
+
+    def test_cancel_inverses_measured(self, ghz_measured):
+        """cancel_inverses should preserve measurement statistics."""
+        from qrisp.circuit.passes.cancel_inverses import cancel_inverses
+
+        qc = QuantumCircuit(3)
+        for _ in range(3):
+            qc.add_clbit()
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.x(1)
+        qc.x(1)  # cancels
+        qc.cx(1, 2)
+        qc.measure(qc.qubits, qc.clbits)
+
+        cp = CircuitPass(cancel_inverses)
+        assert cp.compare_measurement(qc)
+
+    def test_convert_to_cz_measured(self):
+        """convert_to_cz should preserve measurement statistics."""
+        from qrisp.circuit.passes.convert_to_cz import convert_to_cz
+
+        qc = QuantumCircuit(2)
+        for _ in range(2):
+            qc.add_clbit()
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.h(1)
+        qc.measure(qc.qubits, qc.clbits)
+
+        cp = CircuitPass(convert_to_cz())
+        assert cp.compare_measurement(qc)
+
+    def test_combine_single_qubit_gates_measured(self):
+        """combine_single_qubit_gates should preserve measurement statistics."""
+        from qrisp.circuit.passes.combine_single_qubit_gates import combine_single_qubit_gates
+
+        qc = QuantumCircuit(2)
+        for _ in range(2):
+            qc.add_clbit()
+        qc.h(0)
+        qc.z(0)
+        qc.x(0)
+        qc.cx(0, 1)
+        qc.h(1)
+        qc.measure(qc.qubits, qc.clbits)
+
+        cp = CircuitPass(combine_single_qubit_gates)
+        assert cp.compare_measurement(qc)
+
+    # --- Mutation safety ---
+
+    def test_original_circuit_not_mutated(self, ghz_measured):
+        """compare_measurement must not modify the input circuit."""
+        original_data_len = len(ghz_measured.data)
+        cp = CircuitPass(identity_pass)
+        cp.compare_measurement(ghz_measured)
+        assert len(ghz_measured.data) == original_data_len
+
+    # --- Outcome mismatch detection ---
+
+    def test_detects_new_outcome_key(self):
+        """When the pass introduces a completely new measurement outcome,
+        compare_measurement should detect it."""
+        def swap_qubits_pass(qc: QuantumCircuit) -> QuantumCircuit:
+            new_qc = qc.clearcopy()
+            for instr in qc.data:
+                if instr.op.name == "measure":
+                    new_qc.swap(qc.qubits[0], qc.qubits[1])
+                new_qc.append(instr.op, instr.qubits, instr.clbits)
+            return new_qc
+
+        # Circuit where qubit 0 is always |1> and qubit 1 is always |0>
+        qc = QuantumCircuit(2)
+        for _ in range(2):
+            qc.add_clbit()
+        qc.x(qc.qubits[0])
+        qc.measure(qc.qubits, qc.clbits)
+
+        cp = CircuitPass(swap_qubits_pass)
+        assert not cp.compare_measurement(qc)
+
+
+# ---------------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------------
 

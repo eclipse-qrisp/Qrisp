@@ -198,6 +198,87 @@ class CircuitPass:
 
         return qc.compare_unitary(transformed_qc, precision, ignore_gphase)
 
+    def compare_measurement(
+        self,
+        qc: QuantumCircuit,
+        precision: int = 6,
+        backend: Any = None,
+    ) -> bool:
+        """
+        Verify that this :class:`CircuitPass` leaves measurement statistics
+        invariant when applied to the given :class:`~qrisp.QuantumCircuit`.
+
+        The method copies *qc*, applies the pass to the copy, and then
+        compares the measurement distributions of the original and the
+        transformed circuit using :meth:`QuantumCircuit.run`.
+
+        By default, the method runs in analytic mode (no shot noise): the
+        default backend's ``shots`` option is ``None``, yielding exact
+        probability distributions of type ``dict[bitstring, float]``.
+
+        Parameters
+        ----------
+        qc : QuantumCircuit
+            The input quantum circuit to test the pass against.
+        precision : int, optional
+            The number of decimal places of agreement required between
+            corresponding probabilities. A pair of outcomes contributes a
+            mismatch when ``abs(p_original - p_transformed) >= 10 ** -precision``.
+            The default is 6.
+        backend : Backend or None, optional
+            The backend used for simulation. If ``None``, the Qrisp default
+            backend is used (which runs in analytic mode with ``shots=None``).
+
+        Returns
+        -------
+        bool
+            ``True`` if the pass preserves the measurement distribution up
+            to the given precision, ``False`` otherwise.
+
+        Raises
+        ------
+        TypeError
+            If *qc* is not a :class:`~qrisp.QuantumCircuit`.
+        """
+        if not isinstance(qc, QuantumCircuit):
+            raise TypeError(
+                f"Expected a QuantumCircuit, got {type(qc).__name__}."
+            )
+
+        if backend is None:
+            from qrisp.default_backend import def_backend
+
+            backend = def_backend
+
+        # Apply the pass to a copy to avoid mutating the original
+        transformed_qc = self(qc.copy())
+
+        # Obtain measurement statistics. When shots is None (the default
+        # for DefaultBackend) the results are exact probability
+        # distributions (dict[str, float]).
+        original_counts = qc.run(shots=None, backend=backend)
+        transformed_counts = transformed_qc.run(shots=None, backend=backend)
+
+        # Gather all observed outcome keys
+        all_keys = set(original_counts.keys()) | set(transformed_counts.keys())
+        tolerance = 10.0**-precision
+
+        for key in all_keys:
+            p_orig = original_counts.get(key, 0.0)
+            p_trans = transformed_counts.get(key, 0.0)
+
+            # Handle the empty-circuit / no-measurement case where
+            # the simulator may return {"": None} when shots=None.
+            if p_orig is None:
+                p_orig = 0.0
+            if p_trans is None:
+                p_trans = 0.0
+
+            if abs(p_orig - p_trans) >= tolerance:
+                return False
+
+        return True
+
 
 class PassManager:
     """
