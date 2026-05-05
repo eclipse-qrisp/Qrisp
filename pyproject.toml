@@ -15,13 +15,51 @@ disable = ["import-error"]
 line-length = 88
 target-version = ["py311", "py312", "py313"]
 
+[project]
+dependencies = [
+    "numpy~=2.2",
+    "sympy~=1.13",
+    "qiskit~=1.2",
+    "matplotlib~=3.10",
+    "scipy~=1.17",
+    "numba~=0.65",
+    "networkx~=3.6",
+    "tqdm~=4.67",
+    "dill~=0.4",
+    "flask~=2.2",
+    "waitress~=3.0",
+    "pyyaml~=6.0",
+    "requests~=2.32",
+    "psutil~=7.2",
+    "jax~=0.7.1",
+    "jaxlib~=0.7.1",
+]
+
 [dependency-groups]
+core = [
+    {include-group = "project.dependencies"},
+]
 test = [
     "pytest~=9.0",
 ]
-
+docs = [
+    "sphinx~=8.0",
+    "sphinx-toolbox~=3.5",
+    "sphinx-fontawesome~=0.0.6",
+    "nbsphinx~=0.9",
+    "myst-parser~=5.0",
+    "texext~=0.6",
+    "numpydoc~=1.10",
+    "sphinx-sitemap~=2.9",
+    "sphinx-copybutton~=0.5",
+    "sphinx-design~=0.7",
+    "sphinx-thebe~=0.3",
+    "sphinx-new-tab-link~=0.8",
+    "pydata-sphinx-theme~=0.17",
+]
 dev = [
     {include-group = "ci"},
+    {include-group = "docs"},
 ]
 quantum-backends = [
     "qiskit-aer~=0.15",
