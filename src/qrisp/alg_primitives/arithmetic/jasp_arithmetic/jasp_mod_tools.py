@@ -43,15 +43,32 @@ from .jasp_bigintiger import (
     bi_montgomery_decode,
 )
 
+
 @jit
 def pow2_mod_N(m, N):
     """
-    Computes (2 ** m) % N in a JAX-traceable way.
+    Compute ``2 ** m % N`` for traced scalar inputs.
+
+    Uses square-and-multiply inside ``lax.while_loop`` so the computation
+    remains valid under JAX tracing.
+
+    Parameters
+    ----------
+    m : int or jnp scalar
+        Non-negative exponent, typically traced under JAX.
+    N : int or jnp scalar
+        Modulus.
+
+    Returns
+    -------
+    jnp scalar
+        ``2 ** m % N`` with the modulus dtype.
+
     """
     m = jnp.asarray(m, dtype=jnp.int64)
     N = jnp.asarray(N)
     base = jnp.asarray(2, dtype=N.dtype)
-    
+
     # State tuple: (result, base, exponent, modulus)
     init_state = (jnp.asarray(1, dtype=N.dtype), base % N, m, N)
 
@@ -61,27 +78,22 @@ def pow2_mod_N(m, N):
 
     def body_fun(state):
         res, b, exp, mod = state
-        
+
         # If exp is odd, update result: res = (res * b) % mod
         # jax.lax.select acts like an if-else statement without breaking traceability
-        is_odd = (exp % 2 == 1)
-        res = lax.select(
-            is_odd,
-            (res * b) % mod,
-            res
-        )
-        
+        is_odd = exp % 2 == 1
+        res = lax.select(is_odd, (res * b) % mod, res)
+
         # Square the base and halve the exponent
         b = (b * b) % mod
         exp = exp // 2
-        
+
         return (res, b, exp, mod)
 
     result, _, _, _ = lax.while_loop(cond_fun, body_fun, init_state)
     return result
 
 
-    
 def bi_pow2mod(exp, mod_bi):
     """
     Compute ``2 ** exp % mod_bi`` as a BigInteger.
@@ -128,15 +140,32 @@ def bi_pow2mod(exp, mod_bi):
     # Truncate back — result < mod_bi < 2^(32k)
     return BigInteger(result.digits[:k])
 
+
 def pow2mod(exp, modulus: Union[int, BigInteger]):
     """
     Compute ``2 ** exp % modulus`` across static ints, traced ints, and BigInteger.
+
+    Dispatches to ``bi_pow2mod`` for BigInteger moduli, ``pow2_mod_N`` for
+    traced scalar moduli, and Python ``pow`` in static scalar mode.
+
+    Parameters
+    ----------
+    exp : int or jnp scalar
+        Non-negative exponent.
+    modulus : int or BigInteger
+        Modulus.
+
+    Returns
+    -------
+    int, jnp scalar, or BigInteger
+        ``2 ** exp % modulus`` in the representation matching ``modulus``.
     """
     if isinstance(modulus, BigInteger):
         return bi_pow2mod(exp, modulus)
     if check_for_tracing_mode():
         return pow2_mod_N(exp, modulus)
     return pow(2, int(exp), int(modulus))
+
 
 def montgomery_encoder(
     x: Union[int, BigInteger], R: Union[int, BigInteger], N: Union[int, BigInteger]
@@ -171,9 +200,32 @@ def montgomery_encoder(
         return bi_montgomery_encode(xb, Rb, Nb)
     return ((x % N) * (R % N)) % N
 
+
 def new_montgomery_decoder(
     y: Union[int, BigInteger], m: Union[int, BigInteger], N: Union[int, BigInteger]
 ):
+    """
+    Montgomery-decode y using the shift exponent m instead of an explicit radix.
+
+    The helper supports plain Python ints, traced JAX scalars, and BigInteger
+    moduli by routing the power-of-two and modular inverse computations
+    through the matching helper implementations.
+
+    Parameters
+    ----------
+    y : int or BigInteger
+        Montgomery-encoded value.
+    m : int or jnp scalar
+        Montgomery shift. Positive shifts decode with ``(2**m)^{-1} mod N``;
+        non-positive shifts decode with ``2**abs(m) mod N``.
+    N : int or BigInteger
+        Modulus.
+
+    Returns
+    -------
+    int or BigInteger
+        Decoded value in standard representation.
+    """
     if check_for_tracing_mode():
         m = jnp.int64(m)
         abs_m = jnp.abs(m)
@@ -190,7 +242,8 @@ def new_montgomery_decoder(
         factor = modinv(power, N) if m > 0 else power
 
     return montgomery_encoder(y, factor, N)
-    
+
+
 def montgomery_decoder(
     y: Union[int, BigInteger], R: Union[int, BigInteger], N: Union[int, BigInteger]
 ):
@@ -227,7 +280,6 @@ def montgomery_decoder(
         R = modinv(int(R**-1), N)
     R1 = modinv(R, N)
     return ((y % N) * (R1 % N)) % N
-
 
 
 def egcd(a: int, b: int):
