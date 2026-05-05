@@ -138,6 +138,53 @@ class TestControlledOperations:
         assert len(meaningful) == 0
 
 
+# ---------------------------------------------------------------------------
+# Correctness: compare_measurement (not compare_unitary)
+#
+# cancel_zero_controls removes gates based on the |0...0⟩ initial state
+# assumption.  This preserves measurement statistics (all qubits start in |0⟩)
+# but changes the full unitary matrix.  Use compare_measurement for correctness
+# verification and compare_unitary only for circuits where the pass is a no-op.
+# ---------------------------------------------------------------------------
+
+
+class TestCancelZeroControlsCorrectness:
+    """Verify cancel_zero_controls preserves measurement statistics."""
+
+    def test_measurement_preserved_simple_cp(self):
+        """CP on a fresh qubit should be removed; measurement stats preserved."""
+        qc = QuantumCircuit(2)
+        for _ in range(2):
+            qc.add_clbit()
+        qc.h(0)
+        qc.cp(np.pi / 4, 0, 1)
+        qc.measure(qc.qubits, qc.clbits)
+        assert cancel_zero_controls.compare_measurement(qc)
+
+    def test_measurement_preserved_mixed(self):
+        qc = QuantumCircuit(3)
+        for _ in range(3):
+            qc.add_clbit()
+        qc.h(0)
+        qc.cz(0, 1)
+        qc.cx(1, 2)
+        qc.measure(qc.qubits, qc.clbits)
+        assert cancel_zero_controls.compare_measurement(qc)
+
+    def test_unitary_preserved_when_no_fresh_qubits(self):
+        """When all qubits are active, no gates are removed → unitary preserved."""
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.h(1)
+        qc.cp(np.pi / 4, 0, 1)
+        qc.cz(0, 1)
+        assert cancel_zero_controls.compare_unitary(qc)
+
+    def test_unitary_preserved_empty(self):
+        qc = QuantumCircuit(3)
+        assert cancel_zero_controls.compare_unitary(qc)
+
+
 class TestAllocDealloc:
     def test_qb_alloc_restores_freshness(self):
         qc, qubits = _make_circuit(2)

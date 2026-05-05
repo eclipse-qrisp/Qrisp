@@ -87,3 +87,40 @@ class TestArangeSwaps:
         result = arange_swaps(qc)
 
         assert len(result.data) == len(qc.data)
+
+
+# ---------------------------------------------------------------------------
+# Correctness: compare_unitary
+# ---------------------------------------------------------------------------
+
+
+class TestArangeSwapsCorrectness:
+    """Verify arange_swaps preserves the circuit unitary."""
+
+    def test_unitary_preserved_used_unused_swap(self):
+        qc = QuantumCircuit(4)
+        qc.h(0)
+        qc.swap(0, 2)
+        assert arange_swaps.compare_unitary(qc)
+
+    def test_unitary_preserved_both_used_swap(self):
+        qc = QuantumCircuit(4)
+        qc.h(0)
+        qc.x(1)
+        qc.swap(0, 1)
+        assert arange_swaps.compare_unitary(qc)
+
+    def test_unitary_preserved_both_unused_identity(self):
+        """Unused qubits never touched → pass is a no-op → unitary preserved."""
+        qc = QuantumCircuit(4)
+        qc.h(0)
+        qc.x(1)
+        assert arange_swaps.compare_unitary(qc)
+
+    def test_unitary_preserved_mixed_swaps(self):
+        qc = QuantumCircuit(4)
+        qc.h(0)
+        qc.x(1)
+        qc.swap(0, 2)
+        qc.swap(1, 3)
+        assert arange_swaps.compare_unitary(qc)

@@ -99,3 +99,65 @@ class TestCommuteSwapsMultipleGates:
         assert op_names == ["swap", "h", "x", "z"]
         for instr in result.data[1:]:
             assert result.qubits.index(instr.qubits[0]) == 1
+
+
+# ---------------------------------------------------------------------------
+# Correctness: compare_unitary + compare_measurement
+# ---------------------------------------------------------------------------
+
+
+class TestCommuteSwapsCorrectness:
+    """Verify commute_swaps preserves the circuit unitary and measurement statistics."""
+
+    def test_unitary_preserved_simple_swap(self):
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.x(1)
+        qc.swap(0, 1)
+        assert commute_swaps.compare_unitary(qc)
+
+    def test_unitary_preserved_multi_qubit(self):
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.z(2)
+        qc.swap(1, 2)
+        qc.x(0)
+        assert commute_swaps.compare_unitary(qc)
+
+    def test_unitary_preserved_sequential_swaps(self):
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.x(1)
+        qc.swap(0, 1)
+        qc.z(0)
+        qc.swap(1, 2)
+        qc.h(2)
+        assert commute_swaps.compare_unitary(qc)
+
+    def test_measurement_preserved(self):
+        qc = QuantumCircuit(2)
+        cb0 = Clbit("c0")
+        cb1 = Clbit("c1")
+        qc.add_clbit(cb0)
+        qc.add_clbit(cb1)
+        qc.h(0)
+        qc.h(1)
+        qc.x(0)
+        qc.swap(0, 1)
+        qc.measure(qc.qubits, [cb0, cb1])
+        assert commute_swaps.compare_measurement(qc)
+
+    def test_measurement_preserved_multiple(self):
+        qc = QuantumCircuit(3)
+        for _ in range(3):
+            qc.add_clbit()
+        qc.h(0)
+        qc.h(1)
+        qc.h(2)
+        qc.z(0)
+        qc.x(1)
+        qc.swap(0, 1)
+        qc.swap(1, 2)
+        qc.measure(qc.qubits, qc.clbits)
+        assert commute_swaps.compare_measurement(qc)

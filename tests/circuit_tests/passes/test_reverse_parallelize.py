@@ -74,3 +74,36 @@ class TestReverseParallelizeParallelism:
         assert sorted(i.op.name for i in once.data) == sorted(
             i.op.name for i in twice.data
         )
+
+
+# ---------------------------------------------------------------------------
+# Correctness: compare_unitary
+# ---------------------------------------------------------------------------
+
+
+class TestReverseParallelizeCorrectness:
+    """Verify reverse_parallelize preserves the circuit unitary."""
+
+    def test_unitary_preserved_simple(self):
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.cz(0, 1)
+        qc.swap(1, 2)
+        qc.cz(0, 1)
+        qc.x(2)
+        assert reverse_parallelize.compare_unitary(qc)
+
+    def test_unitary_preserved_layer_circuit(self):
+        qc = QuantumCircuit(4)
+        for i in range(4):
+            qc.h(i)
+        for i in range(3):
+            qc.cx(i, i + 1)
+        assert reverse_parallelize.compare_unitary(qc)
+
+    def test_unitary_preserved_single_qubit(self):
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        qc.x(0)
+        qc.z(0)
+        assert reverse_parallelize.compare_unitary(qc)

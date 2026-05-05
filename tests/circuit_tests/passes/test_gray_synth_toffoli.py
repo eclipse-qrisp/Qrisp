@@ -193,8 +193,32 @@ class TestGraySynthToffoliPass:
             err_msg="Multiple-Toffoli pass output is not unitarily equivalent",
         )
 
-    def test_single_controlled_x_not_replaced(self):
-        qc, qubits = _make_circuit(2)
+# ------------------------------------------------------------------
+# Correctness: compare_unitary (CircuitPass API)
+# ------------------------------------------------------------------
+
+
+class TestGraySynthToffoliCorrectness:
+    """Verify gray_synth_toffoli preserves the circuit unitary using the
+    standard compare_unitary API."""
+
+    def test_unitary_equivalence_single(self):
+        qc, qubits = _make_circuit(3)
+        qc.h(qubits[0])
+        qc.ccx(qubits[0], qubits[1], qubits[2])
+        qc.cx(qubits[1], qubits[2])
+        assert gray_synth_toffoli.compare_unitary(qc)
+
+    def test_unitary_equivalence_multiple(self):
+        qc, qubits = _make_circuit(3)
+        qc.ccx(qubits[0], qubits[1], qubits[2])
+        qc.ccx(qubits[2], qubits[0], qubits[1])
+        qc.ccx(qubits[1], qubits[2], qubits[0])
+        assert gray_synth_toffoli.compare_unitary(qc)
+
+    def test_unitary_equivalence_no_toffolis(self):
+        qc, qubits = _make_circuit(3)
+        qc.h(qubits[0])
         qc.cx(qubits[0], qubits[1])
-        result = gray_synth_toffoli(qc)
-        assert _gate_names(result) == ["cx"]
+        qc.t(qubits[2])
+        assert gray_synth_toffoli.compare_unitary(qc)

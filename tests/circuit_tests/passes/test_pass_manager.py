@@ -17,7 +17,7 @@
 """
 
 import pytest
-from qrisp import PassManager
+from qrisp import PassManager, CircuitPass
 from qrisp.circuit import QuantumCircuit
 from qrisp.circuit.passes import PassManager as PassManagerFromCircuit
 
@@ -26,21 +26,17 @@ from qrisp.circuit.passes import PassManager as PassManagerFromCircuit
 # Simple pass helpers used across tests
 # ---------------------------------------------------------------------------
 
-def identity_pass(qc: QuantumCircuit) -> QuantumCircuit:
-    """Pass that returns the circuit unchanged."""
-    return qc
+identity_pass = CircuitPass(lambda qc: qc)
+identity_pass.__name__ = "identity_pass"
+identity_pass.__doc__ = "Pass that returns the circuit unchanged."
 
+add_h_pass = CircuitPass(lambda qc: qc.h(qc.qubits[0]) or qc)
+add_h_pass.__name__ = "add_h_pass"
+add_h_pass.__doc__ = "Pass that appends an H gate on qubit 0."
 
-def add_h_pass(qc: QuantumCircuit) -> QuantumCircuit:
-    """Pass that appends an H gate on qubit 0."""
-    qc.h(qc.qubits[0])
-    return qc
-
-
-def add_cx_pass(qc: QuantumCircuit) -> QuantumCircuit:
-    """Pass that appends a CX gate on qubits 0 and 1."""
-    qc.cx(qc.qubits[0], qc.qubits[1])
-    return qc
+add_cx_pass = CircuitPass(lambda qc: qc.cx(qc.qubits[0], qc.qubits[1]) or qc)
+add_cx_pass.__name__ = "add_cx_pass"
+add_cx_pass.__doc__ = "Pass that appends a CX gate on qubits 0 and 1."
 
 
 # ---------------------------------------------------------------------------
@@ -177,13 +173,10 @@ class TestPassManagerRun:
         """Passes are applied sequentially; order of side-effects must be correct."""
         log = []
 
-        def pass_a(qc):
-            log.append("a")
-            return qc
-
-        def pass_b(qc):
-            log.append("b")
-            return qc
+        pass_a = CircuitPass(lambda qc: log.append("a") or qc)
+        pass_a.__name__ = "pass_a"
+        pass_b = CircuitPass(lambda qc: log.append("b") or qc)
+        pass_b.__name__ = "pass_b"
 
         pm = PassManager([pass_a, pass_b])
         pm.run(QuantumCircuit(1))
