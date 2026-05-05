@@ -22,7 +22,7 @@ import numpy as np
 import pytest
 from qrisp import QuantumCircuit, Qubit, U3Gate
 from qrisp.circuit import ControlledOperation, Operation, PTControlledOperation
-from qrisp.circuit.passes.cancel_zero_controls import cancel_zero_controls
+from qrisp.circuit.pass_management.passes.cancel_zero_controls import cancel_zero_controls
 
 
 def _make_circuit(n: int = 4):

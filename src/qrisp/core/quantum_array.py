@@ -662,7 +662,7 @@ class QuantumArray:
         # Bind parameters
         if subs_dic:
             qc = qc.bind_parameters(subs_dic)
-            from qrisp.circuit.passes.combine_single_qubit_gates import combine_single_qubit_gates
+            from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
 
             qc = combine_single_qubit_gates(qc)
 

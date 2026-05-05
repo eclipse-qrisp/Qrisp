@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 from qrisp import QuantumCircuit, Qubit
-from qrisp.circuit.passes.remove_barriers import remove_barriers
+from qrisp.circuit.pass_management.passes.remove_barriers import remove_barriers
 
 
 def _make_circuit(n: int = 2):

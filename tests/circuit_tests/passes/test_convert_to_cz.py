@@ -18,7 +18,7 @@
 
 import pytest
 from qrisp import QuantumCircuit, Qubit
-from qrisp.circuit.passes.convert_to_cz import convert_to_cz
+from qrisp.circuit.pass_management.passes.convert_to_cz import convert_to_cz
 
 
 def _make_circuit(n: int = 2):

@@ -25,7 +25,7 @@ from qrisp import QuantumCircuit, Qubit
 from qrisp.circuit import ControlledOperation, XGate
 from qrisp.circuit.standard_operations import MCXGate
 
-from qrisp.circuit.passes.gray_synth_toffoli import (
+from qrisp.circuit.pass_management.passes.gray_synth_toffoli import (
     is_toffoli,
     _get_gray_toffoli_qc,
     gray_synth_toffoli,

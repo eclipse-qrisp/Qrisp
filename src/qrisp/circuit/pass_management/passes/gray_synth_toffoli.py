@@ -23,7 +23,7 @@ import numpy as np
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.operation import ControlledOperation
-from qrisp.circuit.passes.pass_manager import CircuitPass
+from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 
 
 # The gray-synthesis Toffoli circuit is built lazily (on first call) rather than

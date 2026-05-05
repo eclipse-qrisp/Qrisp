@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
-from qrisp.circuit.passes.pass_manager import CircuitPass
+from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 
 
 @CircuitPass

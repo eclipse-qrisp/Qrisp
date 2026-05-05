@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 from qrisp import QuantumCircuit, Qubit
-from qrisp.circuit.passes.resolve_swaps import resolve_swaps
+from qrisp.circuit.pass_management.passes.resolve_swaps import resolve_swaps
 
 
 def _make_circuit(n: int = 4):

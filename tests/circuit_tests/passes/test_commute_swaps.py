@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import pytest
 from qrisp import QuantumCircuit, Clbit
-from qrisp.circuit.passes.commute_swaps import commute_swaps
+from qrisp.circuit.pass_management.passes.commute_swaps import commute_swaps
 
 
 class TestCommuteSwapsMeasurement:

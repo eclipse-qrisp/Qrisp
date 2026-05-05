@@ -263,7 +263,7 @@ class TestCircuitPassCompareUnitary:
 
     def test_cancel_inverses_preserves_unitary(self):
         """cancel_inverses removes inverse pairs and should preserve the unitary."""
-        from qrisp.circuit.passes.cancel_inverses import cancel_inverses
+        from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
 
         qc = QuantumCircuit(2)
         qc.h(0)
@@ -278,7 +278,7 @@ class TestCircuitPassCompareUnitary:
 
     def test_combine_single_qubit_gates_preserves_unitary(self):
         """combine_single_qubit_gates merges adjacent gates and should preserve the unitary."""
-        from qrisp.circuit.passes.combine_single_qubit_gates import combine_single_qubit_gates
+        from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
 
         qc = QuantumCircuit(2)
         qc.h(0)
@@ -292,7 +292,7 @@ class TestCircuitPassCompareUnitary:
 
     def test_convert_to_cz_preserves_unitary(self):
         """convert_to_cz rewrites CX→CZ·H and should preserve the unitary."""
-        from qrisp.circuit.passes.convert_to_cz import convert_to_cz
+        from qrisp.circuit.pass_management.passes.convert_to_cz import convert_to_cz
 
         qc = QuantumCircuit(2)
         qc.h(0)
@@ -412,7 +412,7 @@ class TestCircuitPassCompareMeasurement:
 
     def test_cancel_inverses_measured(self, ghz_measured):
         """cancel_inverses should preserve measurement statistics."""
-        from qrisp.circuit.passes.cancel_inverses import cancel_inverses
+        from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
 
         qc = QuantumCircuit(3)
         for _ in range(3):
@@ -429,7 +429,7 @@ class TestCircuitPassCompareMeasurement:
 
     def test_convert_to_cz_measured(self):
         """convert_to_cz should preserve measurement statistics."""
-        from qrisp.circuit.passes.convert_to_cz import convert_to_cz
+        from qrisp.circuit.pass_management.passes.convert_to_cz import convert_to_cz
 
         qc = QuantumCircuit(2)
         for _ in range(2):
@@ -444,7 +444,7 @@ class TestCircuitPassCompareMeasurement:
 
     def test_combine_single_qubit_gates_measured(self):
         """combine_single_qubit_gates should preserve measurement statistics."""
-        from qrisp.circuit.passes.combine_single_qubit_gates import combine_single_qubit_gates
+        from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
 
         qc = QuantumCircuit(2)
         for _ in range(2):
@@ -584,7 +584,7 @@ class TestCircuitPassVisualize:
 
     def test_visualize_with_real_pass(self, capsys):
         """Integration: visualize with cancel_inverses on a circuit with CX-CX."""
-        from qrisp.circuit.passes.cancel_inverses import cancel_inverses
+        from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
 
         qc = QuantumCircuit(2)
         qc.cx(0, 1)
@@ -609,9 +609,9 @@ class TestCircuitPassImports:
         assert CP is CircuitPass
 
     def test_import_from_qrisp_circuit_passes(self):
-        from qrisp.circuit.passes import CircuitPass as CP
+        from qrisp.circuit.pass_management import CircuitPass as CP
         assert CP is CircuitPass
 
     def test_import_from_leaf_module(self):
-        from qrisp.circuit.passes.pass_manager import CircuitPass as CP
+        from qrisp.circuit.pass_management.circuit_pass import CircuitPass as CP
         assert CP is CircuitPass

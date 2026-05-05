@@ -37,7 +37,7 @@ from qrisp.circuit import (
     ClControlledOperation,
     U3Gate,
 )
-from qrisp.circuit.passes.cancel_inverses import cancel_inverses
+from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
 from qrisp.misc import get_depth_dic, retarget_instructions
 from qrisp.permeability import optimize_allocations, parallelize_qc, lightcone_reduction
 

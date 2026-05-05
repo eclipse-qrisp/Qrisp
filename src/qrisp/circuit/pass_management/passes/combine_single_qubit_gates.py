@@ -22,7 +22,7 @@ import numpy as np
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.operation import ControlledOperation
-from qrisp.circuit.passes.pass_manager import CircuitPass
+from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 
 
 def _apply_combined_gates(qc_new: QuantumCircuit, gate_list: list, qb) -> None:

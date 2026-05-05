@@ -83,7 +83,7 @@ from qrisp.circuit import (
     ClControlledOperation,
     ControlledOperation,
 )
-from qrisp.circuit.passes.pass_manager import CircuitPass
+from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 
 # Sentinel object returned when two operations cancel completely.
 _FUSION_CANCEL = object()

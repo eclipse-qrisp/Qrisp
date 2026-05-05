@@ -25,7 +25,7 @@ from qrisp.circuit.operation import (
     PTControlledOperation,
 )
 from qrisp.circuit.qubit import Qubit
-from qrisp.circuit.passes.pass_manager import CircuitPass
+from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 
 
 # Single-qubit diagonal gates that map |0⟩ → e^{iφ}|0⟩

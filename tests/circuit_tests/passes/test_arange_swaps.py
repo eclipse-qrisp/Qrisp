@@ -18,7 +18,7 @@
 
 import pytest
 from qrisp.circuit import QuantumCircuit
-from qrisp.circuit.passes.arange_swaps import arange_swaps
+from qrisp.circuit.pass_management.passes.arange_swaps import arange_swaps
 
 
 class TestArangeSwaps:

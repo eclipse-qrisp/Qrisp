@@ -2,7 +2,7 @@
 import pytest
 
 from qrisp.circuit import QuantumCircuit
-from qrisp.circuit.passes import manual_layout
+from qrisp.circuit.pass_management.passes import manual_layout
 
 
 class TestManualLayoutFactory:

@@ -2,7 +2,7 @@
 import pytest
 
 from qrisp.circuit import QuantumCircuit
-from qrisp.circuit.passes import reverse_parallelize
+from qrisp.circuit.pass_management.passes import reverse_parallelize
 
 
 class TestReverseParallelizeBasic:

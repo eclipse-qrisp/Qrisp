@@ -22,7 +22,7 @@ import numpy as np
 import pytest
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.operation import ControlledOperation
-from qrisp.circuit.passes.combine_single_qubit_gates import (
+from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import (
     combine_single_qubit_gates,
     _apply_combined_gates,
 )

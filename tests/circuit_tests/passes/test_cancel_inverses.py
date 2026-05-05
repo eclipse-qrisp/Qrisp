@@ -21,7 +21,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from qrisp.circuit.quantum_circuit import QuantumCircuit
-from qrisp.circuit.passes.cancel_inverses import cancel_inverses
+from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
 
 
 # ---------------------------------------------------------------------------

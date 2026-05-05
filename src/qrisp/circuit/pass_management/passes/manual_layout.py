@@ -25,7 +25,7 @@ from collections.abc import Callable
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.qubit import Qubit
-from qrisp.circuit.passes.pass_manager import CircuitPass
+from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 
 
 def manual_layout(
