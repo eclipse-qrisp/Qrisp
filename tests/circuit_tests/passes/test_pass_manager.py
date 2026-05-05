@@ -217,3 +217,163 @@ class TestPassManagerDunder:
     def test_repr_empty(self):
         pm = PassManager()
         assert repr(pm) == "PassManager([])"
+
+
+# ---------------------------------------------------------------------------
+# verify
+# ---------------------------------------------------------------------------
+
+
+class TestPassManagerVerify:
+    """Test PassManager.verify with unitary and measurement verification."""
+
+    # --- Helper: bad passes ---
+
+    @staticmethod
+    def _bad_unitary_pass() -> CircuitPass:
+        def _bad(qc: QuantumCircuit) -> QuantumCircuit:
+            new_qc = qc.copy()
+            new_qc.x(0)
+            return new_qc
+
+        cp = CircuitPass(_bad)
+        cp.__name__ = "bad_unitary"
+        return cp
+
+    @staticmethod
+    def _make_ghz_measured(n: int = 3) -> QuantumCircuit:
+        qc = QuantumCircuit(n)
+        for _ in range(n):
+            qc.add_clbit()
+        qc.h(qc.qubits[0])
+        for i in range(n - 1):
+            qc.cx(qc.qubits[i], qc.qubits[i + 1])
+        qc.measure(qc.qubits, qc.clbits)
+        return qc
+
+    # --- Unitary verification ---
+
+    def test_unitary_all_pass(self):
+        from qrisp.circuit.passes.cancel_inverses import cancel_inverses
+
+        pm = PassManager([cancel_inverses, identity_pass])
+        qc = QuantumCircuit(2)
+        qc.cx(0, 1)
+        qc.cx(0, 1)
+        results = pm.verify(qc, "unitary")
+        assert results == [("cancel_inverses", True), ("identity_pass", True)]
+
+    def test_unitary_one_fails(self):
+        from qrisp.circuit.passes.cancel_inverses import cancel_inverses
+
+        pm = PassManager([cancel_inverses, self._bad_unitary_pass()])
+        qc = QuantumCircuit(2)
+        qc.cx(0, 1)
+        qc.cx(0, 1)
+        results = pm.verify(qc, "unitary")
+        assert results == [("cancel_inverses", True), ("bad_unitary", False)]
+
+    def test_unitary_first_fails(self):
+        pm = PassManager([self._bad_unitary_pass(), identity_pass])
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        results = pm.verify(qc, "unitary")
+        assert results == [("bad_unitary", False), ("identity_pass", True)]
+
+    def test_unitary_all_fail(self):
+        pm = PassManager([self._bad_unitary_pass(), self._bad_unitary_pass()])
+        qc = QuantumCircuit(2)
+        results = pm.verify(qc, "unitary")
+        assert results == [("bad_unitary", False), ("bad_unitary", False)]
+
+    def test_unitary_empty_manager(self):
+        pm = PassManager()
+        qc = QuantumCircuit(2)
+        results = pm.verify(qc, "unitary")
+        assert results == []
+
+    def test_unitary_passes_kwargs(self):
+        """verify forwards kwargs like precision to compare_unitary."""
+        bad = self._bad_unitary_pass()
+        pm = PassManager([bad])
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        # Very loose precision: X should be treated as identity-ish
+        results = pm.verify(qc, "unitary", precision=-5)
+        assert results == [("bad_unitary", True)]
+
+    def test_unitary_returns_correct_length(self):
+        from qrisp.circuit.passes.cancel_inverses import cancel_inverses
+        from qrisp.circuit.passes.combine_single_qubit_gates import combine_single_qubit_gates
+
+        pm = PassManager([cancel_inverses, combine_single_qubit_gates, identity_pass])
+        qc = QuantumCircuit(2)
+        qc.cx(0, 1)
+        qc.cx(0, 1)
+        qc.h(0)
+        qc.z(0)
+        results = pm.verify(qc, "unitary")
+        assert len(results) == 3
+
+    # --- Measurement verification ---
+
+    def test_measurement_all_pass(self):
+        qc = self._make_ghz_measured(3)
+        pm = PassManager([identity_pass, identity_pass])
+        results = pm.verify(qc, "measurements")
+        assert results == [("identity_pass", True), ("identity_pass", True)]
+
+    def test_measurement_one_fails(self):
+        def add_x_before_measure(qc: QuantumCircuit) -> QuantumCircuit:
+            new_qc = qc.clearcopy()
+            for instr in qc.data:
+                if instr.op.name == "measure":
+                    new_qc.x(0)
+                new_qc.append(instr.op, instr.qubits, instr.clbits)
+            return new_qc
+
+        bad_meas = CircuitPass(add_x_before_measure)
+        bad_meas.__name__ = "bad_meas"
+
+        qc = self._make_ghz_measured(3)
+        pm = PassManager([identity_pass, bad_meas])
+        results = pm.verify(qc, "measurements")
+        assert results == [("identity_pass", True), ("bad_meas", False)]
+
+    # --- Error handling ---
+
+    def test_unknown_verification_type_raises(self):
+        pm = PassManager([identity_pass])
+        qc = QuantumCircuit(2)
+        with pytest.raises(ValueError, match="Unknown verification_type"):
+            pm.verify(qc, "bogus")
+
+    # --- visualize_culprits ---
+
+    def test_visualize_culprits_does_not_crash(self, capsys):
+        """visualize_culprits calls visualize on failing passes
+        without raising exceptions."""
+        pm = PassManager([self._bad_unitary_pass(), identity_pass])
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        results = pm.verify(qc, "unitary", visualize_culprits=True)
+        assert results == [("bad_unitary", False), ("identity_pass", True)]
+        captured = capsys.readouterr()
+        # visualize should have produced output for the bad pass
+        assert "bad_unitary" in captured.out
+        assert "Before" in captured.out
+        assert "After" in captured.out
+
+    def test_visualize_culprits_only_bad_passes(self, capsys):
+        """Only failing passes should be visualized."""
+        from qrisp.circuit.passes.cancel_inverses import cancel_inverses
+
+        pm = PassManager([cancel_inverses, self._bad_unitary_pass()])
+        qc = QuantumCircuit(2)
+        qc.cx(0, 1)
+        qc.cx(0, 1)
+        results = pm.verify(qc, "unitary", visualize_culprits=True)
+        assert results == [("cancel_inverses", True), ("bad_unitary", False)]
+        captured = capsys.readouterr()
+        assert "cancel_inverses" not in captured.out
+        assert "bad_unitary" in captured.out
