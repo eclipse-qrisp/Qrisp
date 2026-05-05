@@ -8,14 +8,6 @@ This is a standing cross-reference to our `open issues on GitHub <https://github
 If you want to get involved but don't know where to start, look no further! 
 We have separated possible issues to work on into different levels of (our perceived) difficulty.
 
-Quick start 
------------
-
-* `Issue x` - **Create abc**
-
-    Required prerequisites:
-    
-    * None
 
 
 Intermediate contributors

@@ -63,3 +63,20 @@ rest of this guide:
 - :ref:`WritingTests` — how to write and structure tests
 - :ref:`DevGuideDocumentation` — building and checking the documentation
 - :ref:`DevGuidePullRequests` — opening a pull request and asking for help
+
+Further reading 
+---------------
+
+If you are completly new to open source development of scientific software, please give the resources below a read. 
+
+* `pythonpackaging.info <https://pythonpackaging.info/>`_
+
+    A guide covering current best practices for developing, publishing, and maintaining a scientific Python package.
+
+* `Research Software Engineering with Python <https://third-bit.com/py-rse/>`_
+
+    Full workflow of building reliable research software covering topics like Git, testing, automation, and project organization.
+
+* `GitHub Docs – Creating a Pull Request <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`_
+
+    Proposing changes to a repository by opening a pull request, covering how to create one from a branch, add a description, and submit it for review.
