@@ -14,3 +14,36 @@ disable = ["import-error"]
 [tool.black]
 line-length = 88
 target-version = ["py311", "py312", "py313"]
+
+[dependency-groups]
+test = [
+    "pytest~=9.0",
+]
+
+dev = [
+    {include-group = "ci"},
+]
+quantum-backends = [
+    "qiskit-aer~=0.15",
+    "qiskit-iqm~=18.2",
+    "cirq~=1.6",
+    "pennylane-catalyst~=0.14",
+    "gast~=0.7",
+]
+chemistry = [
+    "pyscf~=2.13",
+]
+qec = [
+    "stim~=1.15",
+    "tqecd @ git+https://github.com/tqec/tqecd.git",
+]
+compiler = [
+    "xdsl~=0.55",
+]
+ci = [
+    {include-group = "test"},
+    {include-group = "quantum-backends"},
+    {include-group = "chemistry"},
+    {include-group = "qec"},
+    {include-group = "compiler"},
+]
