@@ -200,8 +200,8 @@ html_extra_path = ['_extra']  # copies contents of docs/_extra/ to _build/html/
 #
 
 tutorial_authors = {
-    'general/tutorial/BE_tutorial/BE_vol1': {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/BE_tutorial/BE_vol2': {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'}, 
+    'general/tutorial/BE_tutorial/BE_vol1': {'name': 'Matic Petrič, René Zander', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/BE_tutorial/BE_vol2': {'name': 'Matic Petrič, René Zander', 'role': 'Eclipse Qrisp Contributor'}, 
     'general/tutorial/BigInteger': {'name': 'Eric Kühnke', 'role': 'Eclipse Qrisp Contributor'},
     'general/tutorial/CD': {'name': 'Carlotta Koroll, Sebastian Bock', 'role': 'Eclipse Qrisp Contributor'},
     'general/tutorial/FT_compilation': {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
