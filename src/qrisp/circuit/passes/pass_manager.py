@@ -457,6 +457,76 @@ class PassManager:
             result = circuit_pass(result)
         return result
 
+    def verify(
+        self,
+        qc: QuantumCircuit,
+        verification_type: str,
+        visualize_culprits: bool = False,
+        **verification_kwargs: Any,
+    ) -> list[tuple[str, bool]]:
+        """
+        Verify every pass in the manager against *qc* one by one.
+
+        For each pass, the method captures the circuit state before
+        applying the pass and then verifies that the pass preserves it
+        using either :meth:`CircuitPass.compare_unitary` or
+        :meth:`CircuitPass.compare_measurement`.
+
+        Parameters
+        ----------
+        qc : QuantumCircuit
+            The input quantum circuit to test the pipeline against.
+        verification_type : str
+            Which verification method to use — ``"unitary"`` or
+            ``"measurements"``.
+        visualize_culprits : bool, optional
+            If ``True``, call :meth:`CircuitPass.visualize` on any
+            pass that fails verification. The default is ``False``.
+        **verification_kwargs : Any
+            Keyword arguments forwarded to the verification method
+            (e.g. ``precision``, ``ignore_gphase``, ``backend``).
+
+        Returns
+        -------
+        list of tuple(str, bool)
+            A list of ``(pass_name, passed)`` pairs, one for each
+            pass in verification order.
+
+        Raises
+        ------
+        ValueError
+            If *verification_type* is not ``"unitary"`` or
+            ``"measurements"``.
+        """
+        if verification_type not in ("unitary", "measurements"):
+            raise ValueError(
+                f"Unknown verification_type {verification_type!r}. "
+                f"Expected 'unitary' or 'measurements'."
+            )
+
+        results: list[tuple[str, bool]] = []
+        current = qc
+        for circuit_pass in self._passes:
+            if verification_type == "unitary":
+                passed = circuit_pass.compare_unitary(
+                    current, **verification_kwargs
+                )
+            else:
+                passed = circuit_pass.compare_measurement(
+                    current, **verification_kwargs
+                )
+
+            results.append((circuit_pass.__name__, passed))
+
+            if not passed and visualize_culprits:
+                circuit_pass.visualize(current)
+
+            # Always apply the pass so subsequent passes see a realistic
+            # circuit state — even if this one failed verification.
+            current = circuit_pass(current)
+
+        return results
+
     def __len__(self) -> int:
         """Return the number of passes."""
         return len(self._passes)
