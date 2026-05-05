@@ -28,7 +28,6 @@ quantum-backends = [
     "qiskit-iqm~=18.2",
     "cirq~=1.6",
     "pennylane-catalyst~=0.14",
-    "gast~=0.7",
 ]
 chemistry = [
     "pyscf~=2.13",
