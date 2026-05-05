@@ -31,6 +31,8 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../../src/qrisp'))
+from docutils import nodes
+from docutils.parsers.rst import Directive
 
 # -- Project information -----------------------------------------------------
 
@@ -192,3 +194,46 @@ source_suffix = ['.rst', '.md']
 # }
 
 html_extra_path = ['_extra']  # copies contents of docs/_extra/ to _build/html/
+
+#
+# Custom directive to inject author bios into notebook pages
+#
+
+tutorial_authors = {
+    'general/tutorial/Shor': {'name': 'Alice Quantum', 'role': 'Core Developer'},
+    'general/tutorial/Jasp': {'name': 'Bob Qubit', 'role': 'Contributor'}
+}
+
+class AuthorBioDirective(Directive):
+    has_content = False
+    
+    def run(self):
+        # Get the current document name (e.g., 'tutorials/shor_algorithm')
+        env = self.state.document.settings.env
+        docname = env.docname
+        
+        # Check if we have author info for this notebook
+        if docname in tutorial_authors:
+            author = tutorial_authors[docname]
+            
+            # Create the raw HTML string for your website
+            html_content = f"""
+            <div class="author-bio" style="margin-bottom: 20px; padding: 10px; background: #f9f9f9; border-left: 4px solid #007acc;">
+                <strong>Author:</strong> {author['name']} <br>
+                <em>{author['role']}</em>
+            </div>
+            """
+            return [nodes.raw('', html_content, format='html')]
+        
+        return [] # Return nothing if no author is found
+
+# Register the directive with Sphinx
+def setup(app):
+    app.add_directive('author-bio', AuthorBioDirective)
+
+# conf.py
+
+# This injects our custom directive at the very top of every rendered notebook page
+nbsphinx_prolog = """
+.. author-bio::
+"""
