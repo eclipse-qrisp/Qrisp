@@ -1,21 +1,18 @@
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
-]
+requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.isort]
-profile = "black"
-
-[tool.pylint. messages_control]
-disable = ["import-error"]
-
-[tool.black]
-line-length = 88
-target-version = ["py311", "py312", "py313"]
-
 [project]
+name = "qrisp"
+version = "0.8.2"
+description = "A high-level quantum programming language"
+readme = "README.md"
+license = "EPL-2.0"
+requires-python = ">=3.11"
+authors = [
+    {name = "The Qrisp authors", email = "raphael.seidel@meetiqm.com"},
+]
+
 dependencies = [
     "numpy~=2.2",
     "sympy~=1.13",
@@ -35,10 +32,28 @@ dependencies = [
     "jaxlib~=0.7.1",
 ]
 
+[project.urls]
+Homepage = "https://github.com/eclipse-qrisp/Qrisp"
+"Bug Tracker" = "https://github.com/eclipse-qrisp/Qrisp/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["./tests"]
+pythonpath = ["."]
+
+[tool.isort]
+profile = "black"
+
+[tool.pylint.messages_control]
+disable = ["import-error"]
+
+[tool.black]
+line-length = 88
+target-version = ["py311", "py312", "py313"]
+
 [dependency-groups]
-core = [
-    {include-group = "project.dependencies"},
-]
 test = [
     "pytest~=9.0",
 ]
@@ -66,6 +81,7 @@ quantum-backends = [
     "qiskit-iqm~=18.2",
     "cirq~=1.6",
     "pennylane-catalyst~=0.14",
+    "gast~=0.7",
 ]
 chemistry = [
     "pyscf~=2.13",
