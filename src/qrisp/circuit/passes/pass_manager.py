@@ -128,6 +128,76 @@ class CircuitPass:
 
         return result
 
+    def compare_unitary(
+        self,
+        qc: QuantumCircuit,
+        precision: int = 4,
+        ignore_gphase: bool = False,
+    ) -> bool:
+        """
+        Verify that this :class:`CircuitPass` leaves the unitary invariant
+        when applied to the given :class:`~qrisp.QuantumCircuit`.
+
+        The method copies *qc*, applies the pass to the copy, and then
+        compares the original and transformed unitaries using
+        :meth:`QuantumCircuit.compare_unitary`.
+
+        Measurements are not allowed because they break unitarity and would
+        cause the underlying unitary computation to fail.
+
+        Parameters
+        ----------
+        qc : QuantumCircuit
+            The input quantum circuit to test the pass against.
+        precision : int, optional
+            The precision passed to
+            :meth:`QuantumCircuit.compare_unitary`. The default is 4.
+        ignore_gphase : bool, optional
+            If ``True``, ignore global phase differences. The default is
+            ``False``.
+
+        Returns
+        -------
+        bool
+            ``True`` if the pass preserves the unitary up to the given
+            precision, ``False`` otherwise.
+
+        Raises
+        ------
+        TypeError
+            If *qc* is not a :class:`~qrisp.QuantumCircuit`.
+        ValueError
+            If either the input or the transformed circuit contains
+            measurement instructions.
+        """
+        if not isinstance(qc, QuantumCircuit):
+            raise TypeError(
+                f"Expected a QuantumCircuit, got {type(qc).__name__}."
+            )
+
+        # Check that the input circuit contains no measurements
+        for instr in qc.data:
+            if instr.op.name == "measure":
+                raise ValueError(
+                    "The input circuit contains measurement instructions, "
+                    "which break unitarity. Remove measurements before "
+                    "calling compare_unitary."
+                )
+
+        # Apply the pass to a copy to avoid mutating the original
+        transformed_qc = self(qc.copy())
+
+        # Check that the transformed circuit contains no measurements
+        for instr in transformed_qc.data:
+            if instr.op.name == "measure":
+                raise ValueError(
+                    "The transformed circuit contains measurement "
+                    "instructions, which break unitarity. The pass should "
+                    "not introduce measurements."
+                )
+
+        return qc.compare_unitary(transformed_qc, precision, ignore_gphase)
+
 
 class PassManager:
     """
