@@ -198,6 +198,48 @@ class CircuitPass:
 
         return qc.compare_unitary(transformed_qc, precision, ignore_gphase)
 
+    def visualize(self, qc: QuantumCircuit) -> None:
+        """
+        Print a before/after visualisation of this pass applied to *qc*.
+
+        The method copies *qc*, applies the pass, and prints both the
+        original and the transformed circuit to the console.
+
+        Parameters
+        ----------
+        qc : QuantumCircuit
+            The input quantum circuit to visualise.
+
+        Examples
+        --------
+        >>> from qrisp import QuantumCircuit, CircuitPass
+        >>> from qrisp.circuit.passes.cancel_inverses import cancel_inverses
+        >>> qc = QuantumCircuit(2)
+        >>> qc.cx(0, 1)
+        >>> qc.cx(0, 1)
+        >>> cancel_inverses.visualize(qc)
+        """
+        # Apply the pass to a copy to avoid mutating the original
+        transformed_qc = self(qc.copy())
+
+        pass_name = self.__name__
+        width = 60
+
+        # ── Banner ────────────────────────────────────────────────────
+        print(f"  {pass_name}  ".center(width, "="))
+
+        # ── Before ────────────────────────────────────────────────────
+        print(" Before ".center(width, "─"))
+
+        print(qc)
+
+        # ── After ─────────────────────────────────────────────────────
+        print(" After ".center(width, "─"))
+        print(transformed_qc)
+
+        # ── Footer ────────────────────────────────────────────────────
+        print("=" * width)
+
     def compare_measurement(
         self,
         qc: QuantumCircuit,

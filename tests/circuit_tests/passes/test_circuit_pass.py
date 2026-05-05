@@ -493,6 +493,110 @@ class TestCircuitPassCompareMeasurement:
 
 
 # ---------------------------------------------------------------------------
+# visualize
+# ---------------------------------------------------------------------------
+
+
+class TestCircuitPassVisualize:
+    """Test the visualize() console output method."""
+
+    def test_visualize_does_not_mutate_input(self, two_qubit_qc):
+        """visualize must not modify the input circuit."""
+        original_data = list(two_qubit_qc.data)
+        cp = CircuitPass(identity_pass)
+        cp.visualize(two_qubit_qc)
+        assert list(two_qubit_qc.data) == original_data
+
+    def test_visualize_output_contains_pass_name(self, capsys, two_qubit_qc):
+        """Output must contain the pass name."""
+        def my_pass(qc):
+            return qc
+
+        cp = CircuitPass(my_pass)
+        cp.visualize(two_qubit_qc)
+
+        captured = capsys.readouterr()
+        assert "my_pass" in captured.out
+
+    def test_visualize_output_contains_before_after_headers(self, capsys, two_qubit_qc):
+        """Output must contain Before and After section headers."""
+        cp = CircuitPass(identity_pass)
+        cp.visualize(two_qubit_qc)
+
+        captured = capsys.readouterr()
+        assert "Before" in captured.out
+        assert "After" in captured.out
+
+    def test_visualize_output_contains_banner_separators(self, capsys, two_qubit_qc):
+        """Output must contain the === banner and ─── section lines."""
+        cp = CircuitPass(identity_pass)
+        cp.visualize(two_qubit_qc)
+
+        captured = capsys.readouterr()
+        lines = captured.out.splitlines()
+        # First line should be the ===== banner
+        assert "=" in lines[0]
+        # Second line should be the ───── Before ───── section header
+        assert "─" in lines[1]
+        # Last line should be the ===== footer
+        assert "=" in lines[-1]
+
+    def test_visualize_all_lines_same_width(self, capsys, two_qubit_qc):
+        """The banner, section headers, and footer must all be the same width."""
+        cp = CircuitPass(identity_pass)
+        cp.visualize(two_qubit_qc)
+
+        captured = capsys.readouterr()
+        lines = captured.out.splitlines()
+        # Check banner (line 0), Before (line 1), After, and footer (line -1)
+        separator_lines = [lines[0], lines[1], lines[-1]]
+        widths = {len(line) for line in separator_lines}
+        # The Before/After headers are reconstructed by finding them
+        before_idx = next(i for i, l in enumerate(lines) if "Before" in l)
+        after_idx = next(i for i, l in enumerate(lines) if "After" in l)
+        separator_lines = [lines[0], lines[before_idx], lines[after_idx], lines[-1]]
+        widths = {len(line) for line in separator_lines}
+        assert len(widths) == 1, f"Separators have mismatched widths: {widths}"
+
+    def test_visualize_after_differs_from_before(self, capsys):
+        """When the pass modifies the circuit, before/after outputs differ."""
+        def reverse_circuit(qc: QuantumCircuit) -> QuantumCircuit:
+            new_qc = qc.clearcopy()
+            for instr in reversed(qc.data):
+                new_qc.append(instr.op, instr.qubits, instr.clbits)
+            return new_qc
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+
+        cp = CircuitPass(reverse_circuit)
+        cp.visualize(qc)
+
+        captured = capsys.readouterr()
+        before_start = captured.out.find("Before")
+        before_end = captured.out.find("After")
+        after_start = captured.out.find("After", before_end + 1)
+
+        before_section = captured.out[before_start:before_end]
+        after_section = captured.out[after_start:]
+        assert before_section != after_section
+
+    def test_visualize_with_real_pass(self, capsys):
+        """Integration: visualize with cancel_inverses on a circuit with CX-CX."""
+        from qrisp.circuit.passes.cancel_inverses import cancel_inverses
+
+        qc = QuantumCircuit(2)
+        qc.cx(0, 1)
+        qc.cx(0, 1)
+
+        cancel_inverses.visualize(qc)
+
+        captured = capsys.readouterr()
+        assert "cancel_inverses" in captured.out
+
+
+# ---------------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------------
 
