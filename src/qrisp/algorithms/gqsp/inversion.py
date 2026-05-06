@@ -70,7 +70,10 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
 
     Notes
     -----
-    - **Complexity**: The polynomial degree scales as :math:`\mathcal{O}(\kappa \log(\kappa/\epsilon))`.
+    - **Complexity**: The query complexity of the algorithm scales as :math:`\mathcal{O}(\kappa^2 \log(\kappa/\epsilon))`:
+      The polynomial degree scales as :math:`\mathcal{O}(\kappa \log(\kappa/\epsilon))`, 
+      Guaranteeing successful inversion with high probability requires repeating the procedure :math:`\mathcal{O}(\kappa)` times,
+      and each application of the polynomial requires :math:`\mathcal{O}(\kappa \log(\kappa/\epsilon))` (the polynomial degree) queries to the block-encoding of $A$.
 
     References
     ----------

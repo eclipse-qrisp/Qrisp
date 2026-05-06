@@ -35,6 +35,43 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
 
         The returned BlockEncoding must be applied to operands in state $\ket{0}$ (and not in state $\ket{b}$).
 
+    Instead of solving the system $Ax=b$ directly, we consider the augmented system $A_t x_t = b'$, i.e.,
+    
+    .. math::
+
+            A_t = \begin{pmatrix} A & 0 \\ 0 & t^{-1} \end{pmatrix} \begin{pmatrix} x \\ t \end{pmatrix} = \begin{pmatrix} b \\ 1 \end{pmatrix} = b'
+
+    Equivalently, we can write the augmented system as $A\ket{x_t}=\ket{b'}$ where
+
+    .. math::
+    
+        A_t = \ket{0}_a\bra{0}_a \otimes A + t^{-1} \ket{1}_a\bra{1}_a \otimes \ket{0}_s\bra{0}_s,\\
+        \ket{b'} \propto \ket{0}_a\ket{b}_s + \ket{1}_a\ket{0}_s, \quad \ket{x_t} \propto \|x\|_2\ket{0}_a\ket{x}_s + t\ket{1}_a\ket{0}_s
+
+    Here, the subscript $a$ denotes a 1-qubit ancilla variable and $s$ denotes the system variable.
+
+    If $A_t x_t = b'$, then 
+    
+    .. math:: 
+    
+        G_tx_t=(\mathbb{I} - \ket{b'}\bra{b'})A_t x_t = (\mathbb{I} - \ket{b'}\bra{b'})\ket{b'} = 0
+    
+    Hence, the solution state $\ket{x_t}$ is a kernel state (sigular value 0) of the operator $G_t=(\mathbb{I} - \ket{b'}\bra{b'})A_t$.
+    The **kernel reflection** operator $K(G_t)$ reflects about the solution state $\ket{x_t}$ to the augmented system, 
+    and can be implemented via (G)QSVT using a polynomial approximation of the kernel reflection function 
+    $K(\sigma)\colon [0,1] \to [-1,1]$ which maps the sigular value 0 to 1 and all other singular values to -1.
+
+    The algorithm consists of the following steps:
+
+    - Introduce extra basis state $\ket{e_n}=\ket{1}_a\ket{0}_s$ and prepare it as the initial state.
+    - Choose $t\simeq \|x\|_2$ and form the augmented linear system $A_tx_t=b'$.
+    - Apply the kernel reflection operator $K(G_t)$, which **reflects about the solution state to the augmented system**.
+    - Project the resulting state onto the $\ket{0}_a$ subspace to obtain $\ket{x}$.
+
+    The projection step can be implemented by post-selecting on the ancilla qubit being in state $\ket{0}$ after applying the kernel reflection.
+    The success probability of the algorithm depends on the choice of $t$. 
+    If $t$ is chosen to be on the order of $\|x\|_2$, the algorithm succeeds with constant probability and only requires a constant number of repetitions.
+
     .. image:: /_static/chebyshev_kernel_reflection.png
        :align: center
 
@@ -63,7 +100,9 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
 
     Notes
     -----
-    - **Complexity**: The query complexitiy of the algorithm (determined by the polynomial degree) scales as $\mathcal O(\kappa\log(1/\epsilon))$.
+    - **Complexity**: The query complexitiy of the algorithm is determined by the polynomial degree and scales as $\mathcal O(\kappa\log(1/\epsilon))$.
+      The success probability of the algorithm depends on the choice of $t$. 
+      If $t$ is chosen to be on the order of $\|x\|_2$, the algorithm succeeds with constant probability and only requires a constant number of repetitions.
     - The polynomial is applied to operator $G_t=(\mathbb I - \ket{b'}\bra{b'})A_t$.
       Each application of $G_t$ requires 1 call to the block-encoding oracle for $A$
       and 2 calls to the state preparation oracle for $b$. 
