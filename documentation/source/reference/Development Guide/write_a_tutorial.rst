@@ -14,6 +14,11 @@ Any contribution deserves its explanation on how it amazingly solves an importan
 
 So let us talk about writing a tutorial!
 
+Reach Out!
+----------
+
+First of all - don't hesitate to talk to us! Do you have any questions? Is anything unclear? Do you want to get started but don't know how? **Reach out to us via our Discord!**
+
 Tutorial or example
 -------------------
 
@@ -59,6 +64,7 @@ All of these aspects will be required for your tutorial. Our existing tutorials 
 * We put heavy emphasis on didactical value. Each step should build on the previous. 
 * Your tutorial should leave the reader thinking: "*I learned how to translate these concepts to solve the problem into Qrisp code!*" and not "*I learned about these concepts and separately learned about the Qrisp code that solves the problem.*" 
 * Keep it short and concise, especially when it comes to maths. We want to understand how to implement things in Qrisp; mathematical rigour can be counterproductive. 
+* Our examples are generally ``.ipynb`` (Jupyter Notebook Python) files, so please format your tutorial as such! And make sure that it can be executed as is.
 
 Don't be afraid of getting started — it can feel overwhelming at first. We are happy to help, so please reach out! 
 
@@ -73,10 +79,4 @@ Each example gives the reader an idea of:
 * How to actually use it
 * Possible limitations
 
-After reading your example the user should be equipped to employ your implementation in their workflow with ease, resulting in a quality-of-life improvement for their development needs!
-
-
-Reach Out!
-----------
-
-Do you have any questions? Is anything unclear? Do you want to get started but don't know how? **Reach out to us via our Discord!**
+After reading your example the user should be equipped to employ your implementation in their workflow with ease, resulting in a quality-of-life improvement for their development needs! Our examples are generally ``.rst`` (reStructuredText) files, so please stick to the same formatting.
