@@ -1,16 +1,102 @@
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
-]
+requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "qrisp"
+version = "0.8.2"
+description = "A high-level quantum programming language"
+readme = "README.md"
+license = "EPL-2.0"
+requires-python = ">=3.11"
+authors = [
+    {name = "The Qrisp authors", email = "raphael.seidel@meetiqm.com"},
+]
+
+dependencies = [
+    "numpy~=2.2",
+    "sympy==1.13",
+    "qiskit~=1.2",
+    "matplotlib~=3.10",
+    "scipy~=1.17",
+    "numba~=0.65",
+    "networkx~=3.6",
+    "tqdm~=4.67",
+    "dill~=0.4",
+    "flask~=2.2",
+    "waitress~=3.0",
+    "pyyaml~=6.0",
+    "requests~=2.32",
+    "psutil~=7.2",
+    "jax~=0.7.1",
+    "jaxlib~=0.7.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/eclipse-qrisp/Qrisp"
+"Bug Tracker" = "https://github.com/eclipse-qrisp/Qrisp/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["./tests"]
+pythonpath = ["."]
 
 [tool.isort]
 profile = "black"
 
-[tool.pylint. messages_control]
+[tool.pylint.messages_control]
 disable = ["import-error"]
 
 [tool.black]
 line-length = 88
 target-version = ["py311", "py312", "py313"]
+
+[dependency-groups]
+test = [
+    "pytest~=9.0",
+]
+docs = [
+    "sphinx~=8.0",
+    "sphinx-toolbox~=3.5",
+    "sphinx-fontawesome~=0.0.6",
+    "nbsphinx~=0.9",
+    "myst-parser~=5.0",
+    "texext~=0.6",
+    "numpydoc~=1.10",
+    "sphinx-sitemap~=2.9",
+    "sphinx-copybutton~=0.5",
+    "sphinx-design~=0.7",
+    "sphinx-thebe~=0.3",
+    "sphinx-new-tab-link~=0.8",
+    "pydata-sphinx-theme~=0.17",
+]
+dev = [
+    {include-group = "ci"},
+    {include-group = "docs"},
+]
+quantum-backends = [
+    "qiskit-aer~=0.15",
+    "qiskit-iqm~=18.2",
+    "cirq~=1.6",
+    "pennylane-catalyst~=0.14",
+    "gast~=0.7",
+]
+chemistry = [
+    "pyscf~=2.13",
+]
+qec = [
+    "stim~=1.15",
+    "tqecd @ git+https://github.com/tqec/tqecd.git",
+]
+compiler = [
+    "xdsl~=0.55",
+]
+ci = [
+    {include-group = "test"},
+    {include-group = "quantum-backends"},
+    {include-group = "chemistry"},
+    {include-group = "qec"},
+    {include-group = "compiler"},
+]
