@@ -81,7 +81,7 @@ Qrisp is the work of [many people](https://projects.eclipse.org/projects/technol
 
 If you have comments, questions or love letters, feel free to reach out to us:
 
-raphael.seidel [at] meetiqm.com
+raphael.seidel [at] iqm.tech
 
 sebastian.bock [at] fokus.fraunhofer.de
 
@@ -90,6 +90,10 @@ nikolay.tcholtchev [at] fokus.fraunhofer.de
 rene.zander [at] fokus.fraunhofer.de
 
 matic.petric [at] fokus.fraunhofer.de
+
+pietropaolo.frisoni [at] iqm.tech
+
+purva.thakre [at] iqm.tech
 
 If you want to cite Qrisp in your work, please use:
 
