@@ -95,6 +95,8 @@ pietropaolo.frisoni [at] iqm.tech
 
 purva.thakre [at] iqm.tech
 
+diego.polimeni [at] hs-rm.de
+
 If you want to cite Qrisp in your work, please use:
 
 ```
