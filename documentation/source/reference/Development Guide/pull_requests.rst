@@ -49,7 +49,7 @@ You created a pull request? Great! Let us know about it and make a name for your
 
 How? Our `Discord <https://discord.gg/fUCFcBAS>`_ is a great starting point - post the link to your PR there and give a quick overview. You will see how helpful and supportive our developers are about your contributions!
 Feel free to post about it on social media (LinkedIn).
-Additionally, you can write a tutorial about your implementation, granted that it is suited. For a how-to on tutorials check out the respective section! 
+Additionally, you can write a tutorial about your implementation, granted that it is suited. For a how-to on tutorials check out the :ref:`respective section <DevGuideWriteaTutorial>`! 
 Receive your hard-earned recognition and make a name for yourself!
 
 
