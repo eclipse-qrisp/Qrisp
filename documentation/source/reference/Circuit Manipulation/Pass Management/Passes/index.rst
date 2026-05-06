@@ -1,0 +1,58 @@
+.. _Passes:
+
+Built-in Passes
+===============
+
+.. currentmodule:: qrisp
+
+Qrisp ships with the following circuit transformation passes. Each pass is a
+:class:`~qrisp.CircuitPass` that transforms a
+:class:`~qrisp.QuantumCircuit` and can be used standalone or as part of a
+:class:`~qrisp.PassManager` pipeline.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Pass
+     - Description
+   * - :doc:`arange_swaps <arange_swaps>`
+     - Rearrange SWAP gates for better cancellation later
+   * - :doc:`cancel_inverses <cancel_inverses>`
+     - Cancel adjacent gate–inverse-gate pairs via DAG analysis
+   * - :doc:`cancel_zero_controls <cancel_zero_controls>`
+     - Remove gates controlled on \|0⟩ states
+   * - :doc:`combine_single_qubit_gates <combine_single_qubit_gates>`
+     - Fuse consecutive single-qubit gates into one
+   * - :doc:`commute_swaps <commute_swaps>`
+     - Commute single-qubit ops past SWAP gates
+   * - :doc:`convert_to_cz <convert_to_cz>`
+     - Convert two-qubit gates (CX, CY, SWAP) to CZ-based form
+   * - :doc:`gray_synth_toffoli <gray_synth_toffoli>`
+     - Synthesize Toffoli gates using Gray-code decomposition
+   * - :doc:`is_toffoli <is_toffoli>`
+     - Check whether an instruction is a Toffoli gate
+   * - :doc:`manual_layout <manual_layout>`
+     - Re-index qubits according to a user-supplied mapping
+   * - :doc:`remove_barriers <remove_barriers>`
+     - Remove barrier instructions from the circuit
+   * - :doc:`resolve_swaps <resolve_swaps>`
+     - Resolve SWAP gates by physically permuting qubits
+   * - :doc:`reverse_parallelize <reverse_parallelize>`
+     - Reverse-parallelize the circuit for reuse in conjugate
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   arange_swaps
+   cancel_inverses
+   cancel_zero_controls
+   combine_single_qubit_gates
+   commute_swaps
+   convert_to_cz
+   gray_synth_toffoli
+   is_toffoli
+   manual_layout
+   remove_barriers
+   resolve_swaps
+   reverse_parallelize
