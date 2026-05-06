@@ -243,6 +243,15 @@ def _emit_xxyy_dg(controls, params, targets):
     ]
 
 
+def _emit_cgphase(controls, params, targets):
+    """cgphase(ϕ) between targets q0 and q1 = p(ϕ, q0)"""
+    from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+    t0, t1 = targets
+    phi = params[0]
+    return [
+        make_gate_op("p", [], [phi], [t0]),
+    ]
+
 # ===================================================================
 # Gate map
 # ===================================================================
@@ -283,6 +292,7 @@ GATE_MAP: dict[str, GateInfo] = {
     "rzz_dg":  GateInfo(num_controls=0, quake_gate="", emit=_emit_rzz_dg, num_params=1),
     "rxx":     GateInfo(num_controls=0, quake_gate="", emit=_emit_rxx, num_params=1),
     "rxx_dg":  GateInfo(num_controls=0, quake_gate="", emit=_emit_rxx_dg, num_params=1),
+    "cgphase": GateInfo(num_controls=0, quake_gate="", emit=_emit_cgphase, num_params=1),
     # ---- 2-qubit, 1-param, DECOMPOSED ------------------------------------
     "xxyy":    GateInfo(num_controls=0, quake_gate="", emit=_emit_xxyy, num_params=2),
     "xxyy_dg": GateInfo(num_controls=0, quake_gate="", emit=_emit_xxyy_dg, num_params=2),

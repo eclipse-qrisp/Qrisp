@@ -39,7 +39,7 @@ import operator
 import pytest
 import re
 
-from qrisp import QuantumVariable, QuantumBool, QuantumFloat, h, mcx, x, y, z, cp, cx, cy, cz, rx, ry, rz, rxx, rz, rzz, s, swap, sx, t, xxyy, measure, control, invert, conjugate
+from qrisp import QuantumVariable, QuantumBool, QuantumFloat, h, mcx, x, y, z, cp, cx, cy, cz, gphase, rx, ry, rz, rxx, rz, rzz, s, swap, sx, t, xxyy, measure, control, invert, conjugate
 from qrisp.alg_primitives import amplitude_amplification, q_switch
 from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop, qache
 
@@ -460,6 +460,23 @@ def test_swap_gate():
     assert "(!quake.ref, !quake.ref) -> ()" in mlir, (
         "Expected quake.swap to have '(!quake.ref, !quake.ref) -> ()' type sig"
     )
+    validate_quake_mlir(mlir)
+
+
+def test_cgphase_gate():
+    """cgphase maps to quake.r1."""
+
+    def main():
+
+        qv = QuantumVariable(2)
+        h(qv[0])
+        with control(qv[0]):
+            gphase(np.pi/2, qv[1])
+        h(qv[0])
+        return measure(qv[0]) # P(0) = P(1) = 0.5
+    
+    mlir = _lower(main)
+    assert "quake.r1" in mlir, "Expected quake.r1 in output"
     validate_quake_mlir(mlir)
 
 
