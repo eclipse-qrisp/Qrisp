@@ -98,7 +98,7 @@ def _fuse_swap_with_neighbour(op_a, op_b):
     """Try to fuse a SWAP gate with a neighbouring symmetric two-qubit gate.
 
     When a SWAP immediately precedes (or follows) one of these symmetric
-    two-qubit gates (CX, CP, RZZ), the pair can be replaced by a simpler
+    two-qubit gates (CX, CP, RZZ, CZ), the pair can be replaced by a simpler
     compound gate that uses fewer CX gates than the naive decomposition
     of SWAP then gate.
 
@@ -173,6 +173,14 @@ def _fuse_swap_with_neighbour(op_a, op_b):
                 half_cp_qc.p(op_a.params[0] / 2, 0)
                 half_cp_qc.p(op_a.params[0] / 2, 1)
                 return half_cp_qc.to_gate()
+            elif op_a.name == "cz":
+                # CZ(0,1) · SWAP ⇒ H(1), CX(1,0), CX(0,1), H(0)
+                half_cz_qc = QuantumCircuit(2)
+                half_cz_qc.h(1)
+                half_cz_qc.cx(1, 0)
+                half_cz_qc.cx(0, 1)
+                half_cz_qc.h(0)
+                return half_cz_qc.to_gate()
 
     return None
 
@@ -369,6 +377,47 @@ def _fuse_controlled_ops(op_a, op_b, gphase_array):
     return None
 
 
+def _fuse_via_transpile(op_a, op_b, gphase_array):
+    """Try to fuse two composite gates by transpiling and cancelling.
+
+    Some cancellations are only visible after decomposing composite
+    gates into their constituent operations.  This escape hatch:
+
+    1. Builds a two-instruction circuit from ``op_a`` and ``op_b``.
+    2. Transpiles it (decomposes the definitions).
+    3. Runs ``cancel_inverses`` on the decomposition.
+    4. If anything cancelled (gate count changed), returns the fused
+       result as a new gate.
+
+    Parameters
+    ----------
+    op_a : Operation
+        The first operation (earlier in time).
+    op_b : Operation
+        The second operation (later in time).
+    gphase_array : list
+        Single-element list tracking accumulated global phase.
+        (Unused here but accepted for dispatch consistency.)
+
+    Returns
+    -------
+    Operation or None
+        The fused operation, or ``None`` if nothing cancelled.
+    """
+    qc = QuantumCircuit(op_a.num_qubits)
+    qc.append(op_a, qc.qubits)
+    qc.append(op_b, qc.qubits)
+    qc = qc.transpile()
+    op_counts = qc.count_ops()
+    qc = cancel_inverses(qc)
+    if op_counts != qc.count_ops():
+        # If all gates cancelled → full cancellation.
+        if len(qc.data) == 0:
+            return _FUSION_CANCEL
+        return qc.to_gate()
+    return None
+
+
 def _check_inverse_cancel(op_a, op_b):
     """Check whether op_b is the exact inverse of op_a.
 
@@ -413,6 +462,7 @@ def _fuse_operations(op_a, op_b, gphase_array):
     3. GidneyLogicalAND compute/uncompute cancellation.
     4. Controlled-operation recursion (if op_a has a definition).
     5. Generic inverse cancellation.
+    6. Recursive transpile-and-cancel for composite gates.
 
     Parameters
     ----------
@@ -456,8 +506,22 @@ def _fuse_operations(op_a, op_b, gphase_array):
         # Many gates with definitions (SWAP, circuits wrapped as
         # gates, etc.) need to be tested for self-inverse cancellation.
 
-    # 5. Generic inverse cancellation — the final fallback.
-    return _check_inverse_cancel(op_a, op_b)
+    # 5. Generic inverse cancellation — catches self-inverse gates
+    #    (X·X, H·H, SWAP·SWAP, …) and param gates with zero sum.
+    result = _check_inverse_cancel(op_a, op_b)
+    if result is not None:
+        return result
+
+    # 6. Recursive transpile-and-cancel for composite gates whose
+    #    cancellation only becomes visible after decomposition.
+    #    This is an escape hatch for cases where the inverse names
+    #    don't match but the decompositions partially cancel.
+    if (op_a.definition or op_b.definition) and op_a.num_clbits == 0 == op_b.num_clbits:
+        result = _fuse_via_transpile(op_a, op_b, gphase_array)
+        if result is not None:
+            return result
+
+    return None
 
 
 # =============================================================================
