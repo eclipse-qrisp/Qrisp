@@ -17,6 +17,7 @@ Each page needs to be integrated via index.rst file.\
 Of further interest is the conf.py, check out the recommended tutorial for its functionality.
 
 # Creating the actual html page
+```bash
     make docs-install
     make html
 The `make docs-install` command installs the Python documentation requirements
