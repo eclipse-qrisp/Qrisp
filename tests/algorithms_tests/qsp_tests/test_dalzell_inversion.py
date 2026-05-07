@@ -30,7 +30,8 @@ from qrisp.gqsp import dalzell_inversion
     [-0.1 ,  0.08, -0.15,  0.88]]), 
     np.array([1, 1, 1, 1])),
 ])
-def test_pseudo_inversion(A, b):
+def test_dalzell_inversion(A, b):
+    """Test Dalzell's inversion algorithm on a small 4x4 matrix."""
 
     BA = BlockEncoding.from_array(A)
 

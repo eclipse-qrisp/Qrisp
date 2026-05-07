@@ -47,6 +47,7 @@ def polyvalm(poly, A):
     (6, np.array([0., 1., 0., -1.])),
 ])
 def test_gqet(L, poly):
+    """Test GQET on a 1D Heisenberg chain with a simple polynomial transformation."""
 
     # Define Heisenberg Hamiltonian 
     G = generate_1D_chain_graph(L)

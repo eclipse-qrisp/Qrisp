@@ -32,6 +32,7 @@ def threshold_pseudoinverse(A, threshold):
 
 
 def test_pseudo_inversion():
+    """Test GQSVT-based pseudo-inversion algorithm on a small 4x4 matrix."""
 
     # Define non-Hermitian matrix A
     #[[0.  1.4 0.  1.1]

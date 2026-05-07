@@ -41,7 +41,7 @@ from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool, QuantumFloat
 from scipy.sparse import csr_array, csr_matrix
-from typing import Any, Callable, Optional, Tuple, TYPE_CHECKING, Union
+from typing import Any, Callable, Literal, Optional, Tuple, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -2075,13 +2075,19 @@ class BlockEncoding:
     # Transformations
     #
 
-    def inv(self, eps: float, kappa: float) -> BlockEncoding:
+    def inv(self, eps: float, kappa: float, method: Literal["QET", "GQSVT"] = "QET") -> BlockEncoding:
         r"""
         Returns a BlockEncoding approximating the matrix inversion of the operator.
 
-        For a block-encoded **Hermitian** matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
+        For a block-encoded matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
         operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$.
-        The inversion is implemented via Quantum Eigenvalue Transformation (QET)
+
+        The inversion is implemented via
+
+        - Quantum Eigenvalue Transformation (QET) ($A$ must be **Hermitian**)
+
+        - Generalized Quantum Singular Value Transform (GQSVT)
+
         using a polynomial approximation of $1/x$ over the domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$.
 
         Parameters
@@ -2091,6 +2097,14 @@ class BlockEncoding:
         kappa : float
             An upper bound for the condition number $\kappa$ of $A$.
             This value defines the "gap" around zero where the function $1/x$ is not approximated.
+        method : {"QET", "GQSVT"}
+            The method for implementing the inversion.
+
+            - ``"QET"``: Quantum Eigenvalue Transform ($A$ must be Hermitian)
+
+            - ``"GQSVT"``: Generalized Quantum Singular Value Transform
+
+            Default is ``"QET"``.
 
         Returns
         -------
@@ -2099,7 +2113,9 @@ class BlockEncoding:
 
         Notes
         -----
-        - **Complexity**: The polynomial degree scales as $\mathcal{O}(\kappa \log(\kappa/\epsilon))$.
+        - **Complexity**: The query complexity of the algorithm scales as :math:`\mathcal{O}(\kappa^2 \log(\kappa/\epsilon))`:
+          Guaranteeing successful inversion with high probability requires repeating the procedure :math:`\mathcal{O}(\kappa)` times,
+          and each application of the polynomial requires :math:`\mathcal{O}(\kappa \log(\kappa/\epsilon))` (the polynomial degree) queries to the block-encoding of $A$.
         - It is assumed that the eigenvalues of $A/\alpha$ lie within $D_{\kappa}$.
 
         References
@@ -2189,7 +2205,7 @@ class BlockEncoding:
                 is_hermitian=self.is_hermitian,
             )
 
-        return inversion(self, eps, kappa)
+        return inversion(self, eps, kappa, method=method)
 
     def sim(self, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
         r"""

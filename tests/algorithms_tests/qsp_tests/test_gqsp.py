@@ -36,6 +36,7 @@ def expvalm(poly, k, A):
     (np.array([1., 1.]), 0),
 ])
 def test_gqsp(poly, k):
+    """Test GQSP on a small 4x4 unitary with a simple polynomial transformation."""
 
     # All terms in Hamiltonian commute -> e^{iH} is implemented exactly by trotterization
     H = Z(0)*Z(1) + X(0)*X(1)

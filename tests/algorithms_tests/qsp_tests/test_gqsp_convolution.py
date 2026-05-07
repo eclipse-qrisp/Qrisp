@@ -23,6 +23,7 @@ from qrisp.gqsp import convolve
 from scipy.ndimage import convolve as scipy_convolve
 
 def test_gqsp_convolution():
+    """Test GQSP convolution on a simple 8-point signal and a 3-point filter."""
 
     # A simple square wave signal
     psi = np.array([1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0])

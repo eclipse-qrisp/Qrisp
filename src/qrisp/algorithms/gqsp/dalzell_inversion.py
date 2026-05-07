@@ -48,7 +48,7 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
         A_t = \ket{0}_a\bra{0}_a \otimes A + t^{-1} \ket{1}_a\bra{1}_a \otimes \ket{0}_s\bra{0}_s,\\
         \ket{b'} \propto \ket{0}_a\ket{b}_s + \ket{1}_a\ket{0}_s, \quad \ket{x_t} \propto \|x\|_2\ket{0}_a\ket{x}_s + t\ket{1}_a\ket{0}_s
 
-    Here, the subscript $a$ denotes a 1-qubit ancilla variable and $s$ denotes the system variable.
+    Here, $\ket{\cdot}_a$ denotes the state of the (1-qubit) ancilla variable, and $\ket{\cdot}_s$ denotes the state of the system variable.
 
     If $A_t x_t = b'$, then 
     

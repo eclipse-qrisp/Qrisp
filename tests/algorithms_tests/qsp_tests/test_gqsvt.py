@@ -30,6 +30,7 @@ from qrisp.gqsp import GQSVT, inversion
     (np.array([2.,1.,0.,1.,2.,3.]), "odd"),
 ])
 def test_gqsvt(poly, parity):
+    """Test GQSVT on a small 4x4 matrix with a simple polynomial transformation."""
 
     # Define non-Hermitian matrix A
     # [[3. 1. 0. 0.]
@@ -83,6 +84,7 @@ def test_gqsvt(poly, parity):
 
 
 def test_gqsvt_inversion():
+    """Test GQSVT-based inversion on a small 4x4 matrix."""
 
     # Define non-Hermitian matrix A
     # [[3. 1. 0. 0.]
