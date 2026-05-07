@@ -3,12 +3,6 @@ This README gives an overview of the relevant files of the documentation page de
 The documentation is build with sphinx. For further information I recommend the following tutorial:\
 [How to Document using Sphinx: Part 1—Setting up](https://www.youtube.com/watch?v=WcUhGT4rs5o)
 
-# Installing sphinx and extensions
-    pip install -U sphinx
-    pip install sphinx_fontawesome
-    pip install sphinx-toolbox
-    pip install nbsphinx
-
 # Running the documentation server for preview
 Using sphinx-autobuild package, you can run a local server to preview the documentation page.
 
