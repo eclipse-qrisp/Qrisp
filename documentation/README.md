@@ -20,10 +20,8 @@ Of further interest is the conf.py, check out the recommended tutorial for its f
 ```bash
     make docs-install
     make html
+```
 The `make docs-install` command installs the Python documentation requirements
 and the `pandoc` system package. The `make html` command generates the html
 pages inside the build/html folder.\
 Opening the index.html file in the browser displays the build version of the documentation page.
-
-
-sphinx-apidoc --separate -o source/srcfolder ../src/qrisp
