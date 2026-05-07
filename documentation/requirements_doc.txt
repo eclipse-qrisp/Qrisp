@@ -16,5 +16,3 @@ sphinx-design
 sphinx-thebe
 sphinx-new-tab-link
 pydata-sphinx-theme
-# Bundles pandoc for notebook conversion; build_docs_temp_env.sh exposes it via venv/bin/pandoc.
-pypandoc-binary

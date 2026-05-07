@@ -23,19 +23,12 @@ Each page needs to be integrated via index.rst file.\
 Of further interest is the conf.py, check out the recommended tutorial for its functionality.
 
 # Creating the actual html page
+    make docs-install
     make html
-The make html command generates the html pages inside the build/html folder.\
+The `make docs-install` command installs the Python documentation requirements
+and the `pandoc` system package. The `make html` command generates the html
+pages inside the build/html folder.\
 Opening the index.html file in the browser displays the build version of the documentation page.
-
-# Building docs in a fresh temporary venv
-Run the helper script from the documentation folder or by absolute path:
-
-```bash
-    ./build_docs_temp_env.sh
-```
-
-The script creates a temporary virtual environment, installs the documentation
-requirements, exposes the bundled pandoc binary, and runs `make html`.
 
 
 sphinx-apidoc --separate -o source/srcfolder ../src/qrisp
