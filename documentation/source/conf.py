@@ -200,48 +200,116 @@ html_extra_path = ['_extra']  # copies contents of docs/_extra/ to _build/html/
 #
 
 tutorial_authors = {
-    'general/tutorial/BE_tutorial/BE_vol1': {'name': 'Matic Petrič, René Zander', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/BE_tutorial/BE_vol2': {'name': 'Matic Petrič, René Zander', 'role': 'Eclipse Qrisp Contributor'}, 
-    'general/tutorial/BigInteger': {'name': 'Eric Kühnke', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/CD': {'name': 'Carlotta Koroll, Sebastian Bock', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/FT_compilation': {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/Jasp': {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/JaspQAOAtutorial': {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/GQSP_filtering': {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'}, 
-    'general/tutorial/HHL': {'name': 'René Zander, Raphael Seidel, Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/H2': {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/QAOAtutorial/ConstrainedMixers': {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/QAOAtutorial/MaxCut': {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/QAOAtutorial/MkCS': {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/QAOAtutorial/PortfolioRebalancing': {'name': 'Niklas Steinmann', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/QAOAtutorial/QUBO': {'name': 'Matic Petrič, René Zander', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/QIROtutorial': {'name': 'Niklas Steinmann', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/QMCItutorial': {'name': 'Niklas Steinmann, René Zander', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/Shor': {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/Sudoku': {'name': 'Raphael Seidel, René Zander, Matic Petrič, Niklas Steinmann', 'role': 'Eclipse Qrisp Contributor'},
-    'general/tutorial/TSP': {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},    
-    'general/tutorial/tutorial': {'name': 'The Qrisp authors', 'role': 'Eclipse Qrisp Contributor'},
+    'general/tutorial/BE_tutorial/BE_vol1': [
+        {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/BE_tutorial/BE_vol2': [
+        {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/BigInteger': [
+        {'name': 'Eric Kühnke', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/CD': [
+        {'name': 'Carlotta Koroll', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Sebastian Bock', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/FT_compilation': [
+        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/Jasp': [
+        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/JaspQAOAtutorial': [
+        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/GQSP_filtering': [
+        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/HHL': [
+        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/H2': [
+        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/QAOAtutorial/ConstrainedMixers': [
+        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/QAOAtutorial/MaxCut': [
+        {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/QAOAtutorial/MkCS': [
+        {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/QAOAtutorial/PortfolioRebalancing': [
+        {'name': 'Niklas Steinmann', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/QAOAtutorial/QUBO': [
+        {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/QIROtutorial': [
+        {'name': 'Niklas Steinmann', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/QMCItutorial': [
+        {'name': 'Niklas Steinmann', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/Shor': [
+        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/Sudoku': [
+        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Niklas Steinmann', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/TSP': [
+        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+    ],
+    'general/tutorial/tutorial': [
+        {'name': 'The Qrisp authors', 'role': 'Eclipse Qrisp Contributor'},
+    ],
 }
+
 
 class AuthorBioDirective(Directive):
     has_content = False
     
     def run(self):
-        # Get the current document name (e.g., 'tutorials/shor_algorithm')
         env = self.state.document.settings.env
         docname = env.docname
         
         # Check if we have author info for this notebook
         if docname in tutorial_authors:
-            author = tutorial_authors[docname]
+            # This is now a LIST of author dictionaries
+            author_list = tutorial_authors[docname] 
             
-            # Create the raw HTML string for your website
+            # Start building the HTML block
             html_content = f"""
-            <div class="author-bio" style="margin-bottom: 20px; padding: 10px; background: #f9f9f9; border-left: 4px solid #007acc;">
-                <strong>Author:</strong> {author['name']} <br>
-                <em>{author['role']}</em>
+            <div class="author-bio" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-left: 4px solid #007acc; border-radius: 4px;">
+                <strong style="display: block; margin-bottom: 8px; font-size: 1.1em;">Authors:</strong>
+                <ul style="list-style-type: none; padding-left: 0; margin: 0;">
+            """
+            
+            # Loop through the list and add each author
+            for author in author_list:
+                html_content += f"""
+                    <li style="margin-bottom: 4px;">
+                        <strong>{author['name']}</strong> 
+                        <span style="color: #555;">— <em>{author['role']}</em></span>
+                    </li>
+                """
+                
+            # Close the HTML tags
+            html_content += """
+                </ul>
             </div>
             """
+            
             return [nodes.raw('', html_content, format='html')]
         
         return [] # Return nothing if no author is found
