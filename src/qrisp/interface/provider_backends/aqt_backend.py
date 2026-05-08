@@ -184,9 +184,11 @@ class AQTBackend(Backend):
         API token for AQT ARNICA.
     device_instance : str
         The device instance to target, e.g. ``"ibex"`` or
-        ``"simulator_noise"``. For an up-to-date list see the AQT ARNICA
-        website.
-    workspace : str
+        ``"simulator_noise"``. The offline simulators
+        ``"offline_simulator_no_noise"`` and ``"offline_simulator_noise"``
+        are available with any API token.
+        For an up-to-date list see the AQT ARNICA website.
+    workspace : str | None = None
         The workspace identifier for your company or project.
 
     Examples
@@ -208,13 +210,15 @@ class AQTBackend(Backend):
     {4: 0.49, 8: 0.11, 2: 0.08, 0: 0.06, ...}
     """
 
-    def __init__(self, api_token: str, device_instance: str, workspace: str):
+    def __init__(
+        self, api_token: str, device_instance: str, workspace: str | None = None
+    ):
         if not isinstance(api_token, str):
             raise TypeError(
                 "api_token must be a string. "
                 "You can create an API token on the AQT ARNICA website."
             )
-        if not isinstance(workspace, str):
+        if workspace is not None and not isinstance(workspace, str):
             raise TypeError("workspace must be a string.")
         if not isinstance(device_instance, str):
             raise TypeError(

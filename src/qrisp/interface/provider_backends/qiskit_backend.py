@@ -409,6 +409,9 @@ class QiskitRuntimeBackend(QiskitBackend):
         Execution mode. ``"job"`` submits each circuit batch as an independent
         job; ``"session"`` opens a persistent session for lower latency across
         multiple submissions. Defaults to ``"job"``.
+    instance : str or None, optional
+        The Cloud Resource Name (CRN) for IBM Cloud. Passed to
+        ``QiskitRuntimeService``. Defaults to ``None``.
 
     Attributes
     ----------
@@ -447,7 +450,9 @@ class QiskitRuntimeBackend(QiskitBackend):
 
     """
 
-    def __init__(self, api_token, backend=None, channel="ibm_cloud", mode="job"):
+    def __init__(
+        self, api_token, backend=None, channel="ibm_cloud", mode="job", instance=None
+    ):
         try:
             from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2, Session
         except ImportError as exc:
@@ -456,7 +461,9 @@ class QiskitRuntimeBackend(QiskitBackend):
                 "pip install qiskit-ibm-runtime"
             ) from exc
 
-        service = QiskitRuntimeService(channel=channel, token=api_token)
+        service = QiskitRuntimeService(
+            channel=channel, token=api_token, instance=instance
+        )
         ibm_backend = (
             service.least_busy() if backend is None else service.backend(backend)
         )
