@@ -204,9 +204,6 @@ instances = [
 def test_quantum_array_element_wise_ops(op, rhs_type, instance):
     """Test element-wise operations on QuantumArrays of QuantumFloat against their classical counterparts."""
 
-    if op == operator.mul and rhs_type == "classical":
-        pytest.skip("Quantum-classical multiplication for QuantumFloat is currently unsupported in Jasp.")
-
     a_c, b_c, size = instance
 
     @jaspify
@@ -233,13 +230,14 @@ def test_quantum_array_element_wise_ops(op, rhs_type, instance):
         r_array = op(a_array, rhs_operand)
         return measure(r_array)
     
-    # Calculate classical reference
-    expected_c = op(a_c, b_c)
-    
     # Validate measurements
-    r_array = main()
-
-    assert np.array_equal(r_array, expected_c)
+    if op == operator.mul and rhs_type == "classical":
+        with pytest.raises(NotImplementedError, match="Quantum-classical multiplication is not supported in tracing mode for non-QuantumModulus types"):
+            main()
+    else:
+        measured = main()
+        expected = op(a_c, b_c)
+        assert np.array_equal(measured, expected)
 
 
 instances = [
@@ -353,19 +351,17 @@ instances = [
 @pytest.mark.parametrize("instance", instances)
 def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
     """Test element-wise in-place operations on QuantumArrays of QuantumFloat against classical counterparts."""
-    
-    if op == operator.imul and rhs_type == "quantum":
-        pytest.skip("Quantum-quantum inplace multiplication is unsupported.")
-
-    if op == operator.imul and rhs_type == "classical":
-        pytest.skip("Quantum-classical inplace multiplication currently is unsupported in Jasp.")
 
     a_c_ref, b_c_ref, size = instance
     a_c = a_c_ref.copy()
     b_c = b_c_ref.copy() if isinstance(b_c_ref, np.ndarray) else b_c_ref
 
+    def main_classical(a_c, b_c):
+        op(a_c, b_c)
+        return a_c
+
     @jaspify
-    def main():
+    def main_quantum():
 
         # Initialize QuantumArrays
         qtype = QuantumFloat(size)
@@ -389,12 +385,16 @@ def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
         return measure(a_array)
     
     # Validate measurements
-    measured = main()
-
-    # Calculate classical reference
-    op(a_c, b_c)
-
-    assert np.array_equal(measured, a_c)
+    if op == operator.imul and rhs_type == "quantum":
+        with pytest.raises(TypeError, match="Quantum-quantum in-place multiplication is not supported"):
+            main_quantum()
+    elif op == operator.imul and rhs_type == "classical":
+        with pytest.raises(NotImplementedError, match="Quantum-classical in-place multiplication is not supported in tracing mode for non-QuantumModulus types"):
+            main_quantum()
+    else:
+        measured = main_quantum()
+        expected = main_classical(a_c, b_c)
+        assert np.array_equal(measured, expected)
 
 
 instances = [
@@ -413,17 +413,18 @@ instances = [
 @pytest.mark.parametrize("instance", instances)
 def test_quantum_array_element_wise_inplace_ops_qm(op, rhs_type, instance):
     """Test element-wise in-place operations on QuantumArrays of QuantumModulus against classical counterparts."""
-    
-    if op == operator.imul and rhs_type == "quantum":
-        # qq multiplication fixed in separate pull request, but for now we skip this test to avoid CI failures
-        pytest.skip("Quantum-quantum inplace multiplication is currently unsupported in Jasp.")
 
     a_c_ref, b_c_ref, modulus = instance
     a_c = a_c_ref.copy()
     b_c = b_c_ref.copy() if isinstance(b_c_ref, np.ndarray) else b_c_ref
 
+    def main_classical(a_c, b_c):
+        op(a_c, b_c)
+        a_c %= modulus
+        return a_c
+
     @jaspify
-    def main():
+    def main_quantum():
 
         # Initialize QuantumArrays
         qtype = QuantumModulus(modulus)
@@ -447,13 +448,13 @@ def test_quantum_array_element_wise_inplace_ops_qm(op, rhs_type, instance):
         return measure(a_array)
     
     # Validate measurements
-    measured = main()
-
-    # Calculate classical reference
-    op(a_c, b_c)
-    a_c %= modulus
-
-    assert np.array_equal(measured, a_c)
+    if op == operator.imul and rhs_type == "quantum":
+        with pytest.raises(TypeError, match="Quantum-quantum in-place multiplication is not supported"):
+            main_quantum()
+    else:
+        measured = main_quantum()
+        expected = main_classical(a_c, b_c)
+        assert np.array_equal(measured, expected)
 
 
 @pytest.mark.parametrize(" a_c, axis" , [

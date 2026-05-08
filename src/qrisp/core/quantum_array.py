@@ -1379,6 +1379,12 @@ class QuantumArray:
             If a QuantumArray or QuantumVariable is provided, the ``qtype`` of the output will be determined by the qtypes of the two input objects to prevent overflow.
             If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
 
+        Raises
+        ------
+        NotImplementedError
+            If in tracing mode and ``qtype`` of self is not QuantumModulus and ``other`` is a classical scalar or numpy array,
+            since quantum-classical multiplication is not supported in this case.
+
         Examples
         --------
 
@@ -1406,6 +1412,7 @@ class QuantumArray:
 
         """
         from qrisp.qtypes.quantum_float import create_output_qf
+        from qrisp.qtypes.quantum_modulus import QuantumModulus
 
         self._validate_arithmetic(other)
         if isinstance(other, QuantumArray):
@@ -1413,6 +1420,10 @@ class QuantumArray:
         elif isinstance(other, QuantumVariable):
             out_type = create_output_qf([self.qtype, other], "mul")
         else:
+            if check_for_tracing_mode() and not isinstance(self.qtype, QuantumModulus):
+                raise NotImplementedError(
+                    "Quantum-classical multiplication is not supported in tracing mode for non-QuantumModulus types."
+                )   
             # For scalars and numpy arrays, use self's type as output
             # (scalar operations are handled by QuantumFloat)
             out_type = self.qtype
@@ -2081,6 +2092,14 @@ class QuantumArray:
             The modified QuantumArray containing the result of the in-place multiplication.
             The ``qtype`` of the output will be the same as the ``qtype`` of self.
 
+        Raises
+        ------
+        TypeError
+            If other is a QuantumArray or QuantumVariable, since quantum-quantum in-place multiplication is not supported. 
+            Use out-of-place multiplication instead.
+        NotImplementedError
+            If in tracing mode and self's ``qtype`` is not QuantumModulus, since quantum-classical in-place multiplication is not supported in tracing mode for non-QuantumModulus types.
+         
         Examples
         --------
 
@@ -2098,6 +2117,16 @@ class QuantumArray:
         """
         from qrisp.alg_primitives.arithmetic.SBP_arithmetic import inpl_mult
         from qrisp.qtypes.quantum_modulus import QuantumModulus
+
+        if isinstance(other, (QuantumArray, QuantumVariable)):
+            raise TypeError(
+                "Quantum-quantum in-place multiplication is not supported. Use out-of-place multiplication instead."
+            )
+        
+        if check_for_tracing_mode() and not isinstance(self.qtype, QuantumModulus):
+            raise NotImplementedError(
+                "Quantum-classical in-place multiplication is not supported in tracing mode for non-QuantumModulus types."
+            )
 
         self._validate_arithmetic(other)
 

@@ -268,41 +268,46 @@ instances = [
 @pytest.mark.parametrize("instance", instances)
 def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
     """Test element-wise in-place operations on QuantumArrays of QuantumFloat/QuantumModulus against classical counterparts."""
-    
-    if op == operator.imul and rhs_type == "quantum":
-        pytest.skip("Quantum-quantum inplace multiplication is unsupported.")
 
     a_c_ref, b_c_ref, qtype = instance
     a_c = a_c_ref.copy()
     b_c = b_c_ref.copy() if isinstance(b_c_ref, np.ndarray) else b_c_ref
 
-    # Initialize QuantumArrays
-    a_array = QuantumArray(qtype, shape=(2, 2))
-    a_array[:] = a_c
-    
-    if rhs_type == "quantum":
-        if isinstance(b_c, np.ndarray):
-            b_array = QuantumArray(qtype, shape=(2, 2))
-            b_array[:] = b_c
-            rhs_operand = b_array
+    def main_classical():
+        op(a_c, b_c)
+        if isinstance(qtype, QuantumModulus):
+            a_c = a_c % qtype.modulus
+        return a_c
+
+    def main_quantum():
+        # Initialize QuantumArrays
+        a_array = QuantumArray(qtype, shape=(2, 2))
+        a_array[:] = a_c
+        
+        if rhs_type == "quantum":
+            if isinstance(b_c, np.ndarray):
+                b_array = QuantumArray(qtype, shape=(2, 2))
+                b_array[:] = b_c
+                rhs_operand = b_array
+            else:
+                b_qv = qtype.duplicate()
+                b_qv[:] = b_c
+                rhs_operand = b_qv
         else:
-            b_qv = qtype.duplicate()
-            b_qv[:] = b_c
-            rhs_operand = b_qv
-    else:
-        rhs_operand = b_c
+            rhs_operand = b_c
 
-    # Execute quantum operation
-    op(a_array, rhs_operand)
-
-    # Calculate classical reference
-    op(a_c, b_c)
-    if isinstance(qtype, QuantumModulus):
-        a_c = a_c % qtype.modulus
+        # Execute quantum operation
+        op(a_array, rhs_operand)
+        return a_array.most_likely()
 
     # Validate measurements
-    measured = a_array.most_likely()
-    assert np.array_equal(measured, a_c)
+    if op == operator.imul and rhs_type == "quantum":
+        with pytest.raises(TypeError, match="Quantum-quantum in-place multiplication is not supported"):
+            main_quantum()
+    else:
+        measured = main_quantum()
+        expected = main_classical()
+        assert np.array_equal(measured, expected), f"Failed on operator {op.__name__}. Expected {expected}, got {measured}"
 
 
 @pytest.mark.parametrize(" a_c, axis" , [
