@@ -199,79 +199,87 @@ html_extra_path = ['_extra']  # copies contents of docs/_extra/ to _build/html/
 # Custom directive to inject author bios into notebook pages
 #
 
+LINKEDIN_ICON = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#0077b5" '
+    'viewBox="0 0 24 24" style="vertical-align: middle; margin-left: 4px; position: relative; top: -1px;">'
+    '<path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>'
+    '</svg>'
+)
+
 tutorial_authors = {
     'general/tutorial/BE_tutorial/BE_vol1': [
-        {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
-        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Matic Petrič', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
+        {'name': 'René Zander', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/BE_tutorial/BE_vol2': [
-        {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
-        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Matic Petrič', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
+        {'name': 'René Zander', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/BigInteger': [
-        {'name': 'Eric Kühnke', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Eric Kühnke', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
+        {'name': 'Raphael Seidel', 'affiliation': 'IQM Quantum Computers', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/CD': [
-        {'name': 'Carlotta Koroll', 'role': 'Eclipse Qrisp Contributor'},
-        {'name': 'Sebastian Bock', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Carlotta Koroll', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
+        {'name': 'Sebastian Bock', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/FT_compilation': [
-        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Raphael Seidel', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/Jasp': [
-        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Raphael Seidel', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/JaspQAOAtutorial': [
-        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'René Zander', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/GQSP_filtering': [
-        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'René Zander', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/HHL': [
-        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
-        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
-        {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'René Zander', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
+        {'name': 'Raphael Seidel', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
+        {'name': 'Matic Petrič', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/H2': [
-        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Raphael Seidel', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/QAOAtutorial/ConstrainedMixers': [
-        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Raphael Seidel', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/QAOAtutorial/MaxCut': [
-        {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Matic Petrič', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/QAOAtutorial/MkCS': [
-        {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Matic Petrič', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/QAOAtutorial/PortfolioRebalancing': [
-        {'name': 'Niklas Steinmann', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Niklas Steinmann', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/QAOAtutorial/QUBO': [
-        {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
-        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Matic Petrič', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
+        {'name': 'René Zander', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/QIROtutorial': [
-        {'name': 'Niklas Steinmann', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Niklas Steinmann', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/QMCItutorial': [
-        {'name': 'Niklas Steinmann', 'role': 'Eclipse Qrisp Contributor'},
-        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Niklas Steinmann', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
+        {'name': 'René Zander', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/Shor': [
-        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Raphael Seidel', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/Sudoku': [
-        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
-        {'name': 'René Zander', 'role': 'Eclipse Qrisp Contributor'},
-        {'name': 'Matic Petrič', 'role': 'Eclipse Qrisp Contributor'},
-        {'name': 'Niklas Steinmann', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Raphael Seidel', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
+        {'name': 'René Zander', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
+        {'name': 'Matic Petrič', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
+        {'name': 'Niklas Steinmann', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/TSP': [
-        {'name': 'Raphael Seidel', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'Raphael Seidel', 'affiliation': 'Fraunhofer FOKUS', 'role': 'Eclipse Qrisp Contributor', 'linkedin': None},
     ],
     'general/tutorial/tutorial': [
-        {'name': 'The Qrisp authors', 'role': 'Eclipse Qrisp Contributor'},
+        {'name': 'The Qrisp authors', 'affiliation': 'Eclipse Qrisp Contributors', 'role': 'Eclipse Qrisp Contributors', 'linkedin': None},
     ],
 }
 
@@ -283,42 +291,56 @@ class AuthorBioDirective(Directive):
         env = self.state.document.settings.env
         docname = env.docname
         
-        # Check if we have author info for this notebook
         if docname in tutorial_authors:
-            # This is now a LIST of author dictionaries
-            author_list = tutorial_authors[docname] 
+            author_list = tutorial_authors[docname]
             
-            # Start building the HTML block
+            # --- Build the Grouped Dictionary by Affiliation ---
+            affiliations_dict = {}
+            for author in author_list:
+                # Using .get() provides a fallback just in case the key is missing
+                affiliation = author.get('affiliation', 'Unaffiliated')
+                name = author['name']
+                linkedin_url = author.get('linkedin')
+                
+                # Build the individual author's HTML (Name + Optional Icon)
+                author_html = f"<span style='font-weight: 600; color: #222;'>{name}</span>"
+                
+                if linkedin_url:
+                    author_html += f'<a href="{linkedin_url}" target="_blank" title="{name} on LinkedIn" style="text-decoration: none;">{LINKEDIN_ICON}</a>'
+                
+                # Group by affiliation
+                if affiliation not in affiliations_dict:
+                    affiliations_dict[affiliation] = []
+                    
+                # Append the fully formatted HTML string
+                affiliations_dict[affiliation].append(author_html)
+            
+            # --- Render the Output ---
             html_content = f"""
-            <div class="author-bio" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-left: 4px solid #007acc; border-radius: 4px;">
-                <strong style="display: block; margin-bottom: 8px; font-size: 1.1em;">Authors:</strong>
+            <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif;">
+                <strong style="display: block; margin-bottom: 10px; color: #333;">Authors:</strong>
                 <ul style="list-style-type: none; padding-left: 0; margin: 0;">
             """
             
-            # Loop through the list and add each author
-            for author in author_list:
+            for affiliation, author_html_list in affiliations_dict.items():
+                # Join the HTML blocks with a comma and space
+                names_joined = ", ".join(author_html_list)
+                
                 html_content += f"""
-                    <li style="margin-bottom: 4px;">
-                        <strong>{author['name']}</strong> 
-                        <span style="color: #555;">— <em>{author['role']}</em></span>
+                    <li style="margin-bottom: 6px; display: flex; align-items: baseline; flex-wrap: wrap;">
+                        <span style="line-height: 1.5;">{names_joined}</span>
+                        <span style="margin: 0 8px; color: #ccc;">—</span>
+                        <span style="color: #666; font-style: italic; font-size: 0.95em;">{affiliation}</span>
                     </li>
                 """
                 
-            # Close the HTML tags
-            html_content += """
-                </ul>
-            </div>
-            """
-            
+            html_content += "</ul></div>"
             return [nodes.raw('', html_content, format='html')]
         
-        return [] # Return nothing if no author is found
+        return []
 
-# Register the directive with Sphinx
 def setup(app):
     app.add_directive('author-bio', AuthorBioDirective)
-
-# conf.py
 
 # This injects our custom directive at the very top of every rendered notebook page
 nbsphinx_prolog = """
