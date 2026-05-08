@@ -2265,6 +2265,35 @@ class QubitOperator(Hamiltonian):
 
         return unitaries, np.array(coefficients, dtype=float)
 
+    def to_pauli_coeff_dict(self):
+        r"""
+        TODO: DOC
+        Return a dictionary representation of the QubitOperator in Pauli terms.
+
+        Example output:
+            {
+                ((0, "X"),): 0.7,
+                ((1, "Z"),): -0.2,
+                ((0, "X"), (1, "X")): 1.3,
+                ((2, "Y"), (3, "Y")): -0.5,
+            }
+
+        The empty tuple () represents a constant/identity term.
+        """
+        O = self.to_pauli()
+        result = {}
+
+        for term, coeff in O.terms_dict.items():
+            factors = tuple(
+                sorted(
+                    (int(index), str(pauli))
+                    for index, pauli in term.factor_dict.items()
+                )
+            )
+            result[factors] = result.get(factors, 0) + coeff
+
+        return result
+
     @qache
     def pauli_block_encoding(self):
         r"""
