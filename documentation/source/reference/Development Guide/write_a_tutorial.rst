@@ -42,7 +42,6 @@ Write an *example* if your implementation
 Write a tutorial
 ----------------
 
-
 Each tutorial is a self-contained overview of: 
 
 **The problem formulation**
@@ -62,11 +61,11 @@ All of these aspects will be required for your tutorial. Our existing tutorials 
 **Important**:
 
 * We put heavy emphasis on didactical value. Each step should build on the previous. 
-* Your tutorial should leave the reader thinking: "*I learned how to translate these concepts to solve the problem into Qrisp code!*" and not "*I learned about these concepts and separately learned about the Qrisp code that solves the problem.*" 
+* Your tutorial should leave the reader thinking: "*I learned how to translate these concepts to solve the problem into Qrisp code!*" or "*In parallel to learning about these concepts I learned how to use the Qrisp code that solves the problem and can now tackle it myself!*" 
 * Keep it short and concise, especially when it comes to maths. We want to understand how to implement things in Qrisp; mathematical rigour can be counterproductive. 
-* Our examples are generally ``.ipynb`` (Jupyter Notebook Python) files, so please format your tutorial as such! And make sure that it can be executed as is.
+* Our tutorials are ``.ipynb`` (Jupyter Notebook Python) files, so please format your tutorial as such! And make sure that it can be executed as is.
 
-Don't be afraid of getting started — it can feel overwhelming at first. We are happy to help, so please reach out! 
+Don't be afraid of getting started! We are happy to help, so please reach out! 
 
 
 Write an example
