@@ -17,9 +17,10 @@
 """
 
 import numpy as np
+import pytest
 from qrisp.block_encodings import BlockEncoding
 from qrisp import QuantumVariable, terminal_sampling, multi_measurement
-from qrisp.block_encodings import foqcs_prep_heisenberg_1D
+from qrisp.block_encodings import foqcs_prep_heisenberg_1D, is_operator_foqcs_compatible, foqcs_analyze_operator
 from functools import partial
 
 def _heisenberg_from_def(L: int, g: dict, J: dict):
@@ -479,5 +480,202 @@ def test_block_encoding_from_foqcs_lcu_bench_lcu():
     print("Counts:", counts2)
     print("Depth:", tqc2.depth())
     print("Qubits:", tqc2.num_qubits)
+
+    assert True
+
+###########################################################################################################
+#### Operator analysis tests ##############################################################################
+###########################################################################################################
+
+def test_foqcs_operator_analysis_failures():
+    from qrisp.operators import X, Y, Z
+
+    def empty_must_fail():
+        O = 0 * X(0)
+        with pytest.raises(ValueError) as exc_info:
+            foqcs_analyze_operator(O)
+
+        print(exc_info.value)
+        assert f"empty or constant operator: {O}" in str(exc_info.value)
+    
+    def constant_must_fail():
+        O = X(0) * X(0)
+        with pytest.raises(ValueError) as exc_info:
+            foqcs_analyze_operator(O)
+
+        print(exc_info.value)
+        assert f"empty or constant operator: {O}" in str(exc_info.value)
+    
+    def bad_length_must_fail():
+        O = X(0) + X(1) + X(2) + X(3) + X(4)
+        with pytest.raises(ValueError) as exc_info:
+            foqcs_analyze_operator(O, L=2)
+
+        print(exc_info.value)
+        assert f"Received L = {2}" in str(exc_info.value)
+
+    def const_in_op_must_fail():
+        O = Y(0) + (0.18 + 0.5j) * Z(1) * Z(3) + X(0) * X(0)
+        with pytest.raises(ValueError) as exc_info:
+            foqcs_analyze_operator(O)
+
+        print(exc_info.value)
+        assert f"FOQCS-LCU does not support constant/identity terms" in str(exc_info.value)
+    
+    def cross_axis_couple_must_fail():
+        O = X(0) * Y(3) + X(0) * X(1) + Z(0)
+        with pytest.raises(ValueError) as exc_info:
+            foqcs_analyze_operator(O)
+
+        print(exc_info.value)
+        assert f"FOQCS-LCU supports only same-axis couplings, but received: X({0}) * Y({3})" in str(exc_info.value)
+
+    def three_body_couple_must_fail():
+        O = X(0) * X(1) + Z(0) + Y(0) * Y(1) * Y(2)
+        with pytest.raises(ValueError) as exc_info:
+            foqcs_analyze_operator(O)
+
+        print(exc_info.value)
+        assert f"FOQCS-LCU supports only one and two-body interactions" in str(exc_info.value)
+
+    print("\n")
+    empty_must_fail()
+    constant_must_fail()
+    bad_length_must_fail()
+    const_in_op_must_fail()
+    cross_axis_couple_must_fail()
+    three_body_couple_must_fail()
+
+def test_foqcs_operator_heisenberg():
+    from qrisp.operators import X, Y, Z
+    def make_heisenberg_pass_cases():
+        cases = {}
+        # Full uniform nearest-neighbor XYZ/Heisenberg chain with 2 qubits.
+        cases["L2_full_uniform"] = (
+            X(0) + X(1)
+            + 0.5 * Y(0) + 0.5 * Y(1)
+            - 0.3 * Z(0) - 0.3 * Z(1)
+            + 0.7 * X(0) * X(1)
+            - 0.2 * Y(0) * Y(1)
+            + 0.4 * Z(0) * Z(1)
+        )
+        # Full uniform nearest-neighbor XYZ/Heisenberg chain with 4 qubits.
+        H = 0
+        L = 4
+        H += 1.0 * X(0)
+        H += 0.5 * Y(0)
+        H += -0.3 * Z(0)
+        for i in range(1, L):
+            H += 1.0 * X(i)
+            H += 0.5 * Y(i)
+            H += -0.3 * Z(i)
+            H += 0.7 * X(i - 1) * X(i)
+            H += -0.2 * Y(i - 1) * Y(i)
+            H += 0.4 * Z(i - 1) * Z(i)
+        cases["L4_full_uniform"] = H
+        # Uniform local X field only.
+        cases["uniform_X_field_only"] = X(0) + X(1) + X(2) + X(3)
+        # Uniform ZZ NN coupling only.
+        cases["uniform_ZZ_coupling_only"] = (
+            Z(0) * Z(1)
+            + Z(1) * Z(2)
+            + Z(2) * Z(3)
+        )
+        # Zero coefficient in one Pauli family.
+        cases["uniform_with_some_zero_families"] = (
+            0.8 * X(0) + 0.8 * X(1) + 0.8 * X(2)
+            + 0.0 * Y(0) + 0.0 * Y(1) + 0.0 * Y(2)
+            + 0.2 * Z(0) * Z(1)
+            + 0.2 * Z(1) * Z(2)
+        )
+        return cases
+
+    def make_heisenberg_fail_cases():
+        cases = {}
+        # Non-uniform local fields
+        cases["non_uniform_local_X"] = (
+            1.0 * X(0)
+            + 0.5 * X(1)
+            + 1.0 * X(2)
+        )
+        # Local fields on different sites/axes only.
+        cases["position_dependent_local_fields"] = (
+            X(0)
+            + 0.5 * Y(1)
+            + 0.2 * Z(0) * Z(1)
+        )
+        # Long-range same-axis coupling
+        cases["long_range_XX"] = X(0) * X(2)
+        # Non-uniform nearest-neighbor couplings
+        cases["non_uniform_NN_ZZ"] = (
+            0.2 * Z(0) * Z(1)
+            + 0.7 * Z(1) * Z(2)
+        )
+        # Missing one NN bond while L is inferred as 4 because of X(3).
+        cases["missing_NN_bonds_due_to_L"] = (
+            X(3)
+            + 0.2 * Z(0) * Z(1)
+        )
+        # Same-axis arbitrary pair couplings.
+        cases["sparse_spin_glass_pairs"] = (
+            0.3 * X(0) * X(3)
+            - 0.4 * Y(1) * Y(2)
+            + 0.9 * Z(0)
+        )
+        return cases
+
+    for name, O in make_heisenberg_pass_cases().items():
+        check, res = is_operator_foqcs_compatible(O)
+        assert check, f"Passing operator failed analysis: {O} "
+        assert res["method"] == "heisenberg", name
+
+    for name, O in make_heisenberg_fail_cases().items():
+        check, res = is_operator_foqcs_compatible(O)
+        assert check, f"Passing operator failed analysis: {O} "
+        assert res["method"] == "spin_glass", name
+
+# Manual verification test, for now
+def test_foqcs_operator_analysis():
+    from qrisp.operators import X, Y, Z, A, C, P1
+    H_good = X(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(2)
+    H_heis = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)
+    H_bad = X(0) * Z(1)
+    H = 1+2*X(0)+3*X(0)*Y(1)*A(2)+C(4)*P1(0)
+
+    print(f"\n-----------------------------------------\nFrom H_good = {H_good}")
+    comp, res = is_operator_foqcs_compatible(H_good)
+    print(f"H_good: {comp}, res = {res}")
+
+    print(f"-----------------------------------------\nFrom H_bad = {H_bad}")
+    comp, res = is_operator_foqcs_compatible(H_bad)
+    print(f"H_bad: {comp}, res = {res}")
+
+    print(f"-----------------------------------------\nFrom H_heis = {H_heis}")
+    comp, res = is_operator_foqcs_compatible(H_heis)
+    print(f"H_heis: {comp}, res = {res}")
+
+    print(f"-----------------------------------------\nFrom H = {H}")
+    comp, res = is_operator_foqcs_compatible(H)
+    print(f"H: {comp}, res = {res}")
+    
+    assert True
+
+
+
+# FIXME! I need to be made into a test and put in some appropriate place. How cruel of you to leave me like this!
+def test_pauli_coeff_dict_extraction():
+    from qrisp.operators import X, Y, Z, A, C, P1
+    from qrisp.operators.qubit import QubitOperator
+
+    H_good = X(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(2)
+    H_bad = X(0) * Z(1)
+    H = 1+2*X(0)+3*X(0)*Y(1)*A(2)+C(4)*P1(0)
+
+    res_good = H_good.to_pauli_coeff_dict()
+    print(res_good)
+    res_bad = H_bad.to_pauli_coeff_dict()
+    print(res_bad)
+    res = H.to_pauli_coeff_dict()
+    print(res)
 
     assert True
