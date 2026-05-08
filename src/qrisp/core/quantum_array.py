@@ -847,8 +847,8 @@ class QuantumArray:
 
         .. warning::
 
-            Matrix multiplication is currently not supported in tracing mode if ``qtype`` is QuantumFloat.
-            If ``qtype`` is QuantumModulus, matrix multiplication is supported in tracing mode and other must be a classical jax numpy array of integers.
+            Matrix multiplication is currently not supported in tracing mode if ``qtype`` of self is QuantumFloat.
+            If ``qtype`` of self is QuantumModulus, matrix multiplication is supported in tracing mode and other must be a classical jax numpy array of integers.
 
         Examples
         --------
