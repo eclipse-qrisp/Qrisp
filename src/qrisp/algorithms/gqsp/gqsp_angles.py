@@ -212,7 +212,7 @@ def _gqsp_angles_from_nlft_sequence(F: Array) -> Tuple[Array, Array, Array]:
     Parameters
     ----------
     F : ArrayLike
-        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+        1-D array containing the sequence, ordered from lowest order term to highest.
 
     Returns
     -------
@@ -254,6 +254,79 @@ def _gqsp_angles_from_nlft_sequence(F: Array) -> Tuple[Array, Array, Array]:
     return theta, phi, lambda_
 
 
+@jax.jit
+def _xqsp_angles_from_nlft_sequence(F: Array) -> Array:
+    r"""
+    Computes the XQSP angles form the NLFT sequence.
+
+    Parameters
+    ----------
+    F : ArrayLike
+        1-D array containing the sequence, ordered from lowest order term to highest.
+
+    Returns
+    -------
+    angles : Array
+        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
+
+    """
+    return jnp.arctan(jnp.imag(F))
+
+
+@jax.jit
+def _yqsp_angles_from_nlft_sequence(F: Array) -> Array:
+    r"""
+    Computes the YQSP angles form the NLFT sequence.
+
+    Parameters
+    ----------
+    F : ArrayLike
+        1-D array containing the sequence, ordered from lowest order term to highest.
+
+    Returns
+    -------
+    angles : Array
+        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
+
+    """
+    return jnp.arctan(jnp.real(F))
+
+
+def _poly_to_nlft_sequence(p: "ArrayLike") -> Array:
+    r"""
+    Computes the NLFT sequence for a given polynomial.
+
+    Parameters
+    ----------
+    p : ArrayLike
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+
+    Returns
+    -------
+    F : Array
+        1-D array containing the sequence, ordered from lowest order term to highest.
+
+    """
+    # Comupute the maximum of |p(z)| for |z|=1
+    M = _maximum(p, N=1024)
+
+    # Rescale p(z)
+    # Divide by M such that |p(z)|<=1 for |z|=1 and QSP success probability is maximized
+    p = p / M
+    # Multiply by 0.99 to ensure that |p(z)|<1 for |z|=1 for numerical stability of completion algorithm
+    # This comes at the expense of a slightly smaller QSP success probability
+    p = 0.99 * p
+    alpha = M / 0.99
+    # Switch (Q,P) -> (P, iQ)
+    p = -1.0j * p
+
+    # Find completion q(z) of p(z) such that |p(z)|^2 + |q(z)|^2 = 1 for |z|=1
+    q = _complementary_polynomial(p)
+
+    F = _inlft(q, p)
+    return F, alpha
+
+
 # https://arxiv.org/pdf/2503.03026
 def gqsp_angles(p: "ArrayLike") -> Tuple[Tuple[Array, Array, Array], Array]:
     r"""
@@ -283,27 +356,94 @@ def gqsp_angles(p: "ArrayLike") -> Tuple[Tuple[Array, Array, Array], Array]:
     - The resulting angles correspond to a rescaled version of the input polynomial.
 
     """
-
-    # Comupute the maximum of |p(z)| for |z|=1
-    M = _maximum(p, N=1024)
-
-    # Rescale p(z)
-    # Divide by M such that |p(z)|<=1 for |z|=1 and QSP success probability is maximized
-    p = p / M
-    # Multiply by 0.99 to ensure that |p(z)|<1 for |z|=1 for numerical stability of completion algorithm
-    # This comes at the expense of a slightly smaller QSP success probability
-    p = 0.99 * p
-    alpha = M / 0.99
-    # Switch (Q,P) -> (P, iQ)
-    p = -1.0j * p
-
-    # Find completion q(z) of p(z) such that |p(z)|^2 + |q(z)|^2 = 1 for |z|=1
-    q = _complementary_polynomial(p)
-
-    # INLFT
-    F = _inlft(q, p)
-
-    # GQSP angles from NLFT sequence
+    F, alpha = _poly_to_nlft_sequence(p)
     theta, phi, lambda_ = _gqsp_angles_from_nlft_sequence(F)
 
     return (theta, phi, lambda_), alpha
+
+
+def xqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
+    r"""
+    Computes the XQSP angles for a given polynomial.
+
+    Parameters
+    ----------
+    p : ArrayLike
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+
+    Returns
+    -------
+    angles : Array
+        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
+    alpha : Array
+        The scalar scaling factor as 0-D array.
+
+    Notes
+    -----
+    - The resulting angles correspond to a rescaled version of the input polynomial.
+
+    """
+    F, alpha = _poly_to_nlft_sequence(p)
+    phi = _xqsp_angles_from_nlft_sequence(F)
+
+    return phi, alpha
+
+
+def yqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
+    r"""
+    Computes the YQSP angles for a given polynomial.
+
+    Parameters
+    ----------
+    p : ArrayLike
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+
+    Returns
+    -------
+    angles : Array
+        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
+    alpha : Array
+        The scalar scaling factor as 0-D array.
+
+    Notes
+    -----
+    - The resulting angles correspond to a rescaled version of the input polynomial.
+
+    """
+    F, alpha = _poly_to_nlft_sequence(p)
+    phi = _yqsp_angles_from_nlft_sequence(F)
+
+    return phi, alpha
+
+
+def qsvt_angles(p: "ArrayLike") -> Tuple[Array, Array]:
+    r"""
+    Computes the QSVT angles for a given polynomial.
+
+    Parameters
+    ----------
+    p : ArrayLike
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+
+    Returns
+    -------
+    angles : Array
+        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
+    alpha : Array
+        The scalar scaling factor as 0-D array.
+
+    Notes
+    -----
+    - The resulting angles correspond to a rescaled version of the input polynomial.
+
+    """
+    F, alpha = _poly_to_nlft_sequence(p)
+    phi_xqsp = _xqsp_angles_from_nlft_sequence(F)
+    d = len(p) - 1
+
+    phi_qsvt = jnp.zeros(d + 1)
+    phi_qsvt = phi_qsvt.at[0].set(phi_xqsp[0] + (2 * d - 1) * np.pi / 4)
+    phi_qsvt = phi_qsvt.at[1:].set(phi_xqsp[1:] - np.pi / 2)
+    phi_qsvt = phi_qsvt.at[d].set(phi_xqsp[d] - np.pi / 4)
+
+    return phi_qsvt, alpha
