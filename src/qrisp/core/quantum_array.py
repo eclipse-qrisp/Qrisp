@@ -1382,7 +1382,7 @@ class QuantumArray:
         Raises
         ------
         NotImplementedError
-            If in tracing mode and ``qtype`` of self is not QuantumModulus and ``other`` is a classical scalar or numpy array,
+            If ``qtype`` of self is not QuantumModulus and other is a classical scalar or numpy array,
             since quantum-classical multiplication is not supported in this case.
 
         Examples
@@ -1400,16 +1400,6 @@ class QuantumArray:
         >>> print(r_array)
         # {OutcomeArray([[1, 0], [0, 1]]): 1.0}
 
-        Multiplying a scalar with a QuantumArray of QuantumFloats:
-
-        >>> import numpy as np
-        >>> from qrisp import QuantumArray, QuantumFloat
-        >>> a_array = QuantumArray(QuantumFloat(2), shape=(2,2))
-        >>> a_array[:] = np.eye(2)
-        >>> r_array = a_array * 2
-        >>> print(r_array)
-        # {OutcomeArray([[2, 0], [0, 2]]): 1.0}
-
         """
         from qrisp.qtypes.quantum_float import create_output_qf
         from qrisp.qtypes.quantum_modulus import QuantumModulus
@@ -1420,9 +1410,9 @@ class QuantumArray:
         elif isinstance(other, QuantumVariable):
             out_type = create_output_qf([self.qtype, other], "mul")
         else:
-            if check_for_tracing_mode() and not isinstance(self.qtype, QuantumModulus):
+            if not isinstance(self.qtype, QuantumModulus):
                 raise NotImplementedError(
-                    "Quantum-classical multiplication is not supported in tracing mode for non-QuantumModulus types."
+                    "Quantum-classical multiplication is not supported for non-QuantumModulus types."
                 )   
             # For scalars and numpy arrays, use self's type as output
             # (scalar operations are handled by QuantumFloat)

@@ -232,7 +232,7 @@ def test_quantum_array_element_wise_ops(op, rhs_type, instance):
     
     # Validate measurements
     if op == operator.mul and rhs_type == "classical":
-        with pytest.raises(NotImplementedError, match="Quantum-classical multiplication is not supported in tracing mode for non-QuantumModulus types"):
+        with pytest.raises(NotImplementedError, match="Quantum-classical multiplication is not supported for non-QuantumModulus types"):
             main()
     else:
         measured = main()

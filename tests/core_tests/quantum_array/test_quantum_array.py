@@ -180,34 +180,42 @@ def test_quantum_array_element_wise_ops(op, rhs_type, instance):
     a_c_ref, b_c_ref, qtype = instance
     a_c = a_c_ref.copy()
     b_c = b_c_ref.copy() if isinstance(b_c_ref, np.ndarray) else b_c_ref
-    
-    # Initialize QuantumArrays
-    a_array = QuantumArray(qtype, shape=(2,2))
-    a_array[:] = a_c
 
-    if rhs_type == "quantum":
-        if isinstance(b_c, np.ndarray):
-            b_array = QuantumArray(qtype, shape=(2, 2))
-            b_array[:] = b_c
-            rhs_operand = b_array
+    def main_classical(a_c, b_c):
+        result = op(a_c, b_c)
+        if isinstance(qtype, QuantumModulus):
+            result = result % qtype.modulus
+        return result
+    
+    def main_quantum(a_c, b_c):
+        # Initialize QuantumArrays
+        a_array = QuantumArray(qtype, shape=(2,2))
+        a_array[:] = a_c
+
+        if rhs_type == "quantum":
+            if isinstance(b_c, np.ndarray):
+                b_array = QuantumArray(qtype, shape=(2, 2))
+                b_array[:] = b_c
+                rhs_operand = b_array
+            else:
+                b_qv = qtype.duplicate()
+                b_qv[:] = b_c
+                rhs_operand = b_qv
         else:
-            b_qv = qtype.duplicate()
-            b_qv[:] = b_c
-            rhs_operand = b_qv
-    else:
-        rhs_operand = b_c
-    
-    # Execute quantum operation
-    r_array = op(a_array, rhs_operand)
-    
-    # Calculate classical reference
-    expected = op(a_c, b_c)
-    if isinstance(qtype, QuantumModulus):
-        expected = expected % qtype.modulus
-    
+            rhs_operand = b_c
+        
+        # Execute quantum operation
+        r_array = op(a_array, rhs_operand)
+        return r_array.most_likely()
+
     # Validate measurements
-    measured = r_array.most_likely()
-    assert np.array_equal(measured, expected)
+    if op == operator.mul and rhs_type == "classical" and not isinstance(qtype, QuantumModulus):
+        with pytest.raises(NotImplementedError, match="Quantum-classical multiplication is not supported for non-QuantumModulus types"):
+            main_quantum(a_c, b_c)
+    else:
+        measured = main_quantum(a_c, b_c)
+        expected = main_classical(a_c, b_c)
+        assert np.array_equal(measured, expected)
 
 
 bool_ops = [
@@ -273,13 +281,13 @@ def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
     a_c = a_c_ref.copy()
     b_c = b_c_ref.copy() if isinstance(b_c_ref, np.ndarray) else b_c_ref
 
-    def main_classical():
+    def main_classical(a_c, b_c):
         op(a_c, b_c)
         if isinstance(qtype, QuantumModulus):
             a_c = a_c % qtype.modulus
         return a_c
 
-    def main_quantum():
+    def main_quantum(a_c, b_c):
         # Initialize QuantumArrays
         a_array = QuantumArray(qtype, shape=(2, 2))
         a_array[:] = a_c
@@ -303,10 +311,10 @@ def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
     # Validate measurements
     if op == operator.imul and rhs_type == "quantum":
         with pytest.raises(TypeError, match="Quantum-quantum in-place multiplication is not supported"):
-            main_quantum()
+            main_quantum(a_c, b_c)
     else:
-        measured = main_quantum()
-        expected = main_classical()
+        measured = main_quantum(a_c, b_c)
+        expected = main_classical(a_c, b_c)
         assert np.array_equal(measured, expected), f"Failed on operator {op.__name__}. Expected {expected}, got {measured}"
 
 
