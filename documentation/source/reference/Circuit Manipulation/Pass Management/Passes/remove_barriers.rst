@@ -33,7 +33,7 @@ Example
 ::
 
     pm = PassManager()
-    pm.add_pass(remove_barriers)
+    pm += remove_barriers
     clean_qc = pm.run(qc)
 
     print("After:", clean_qc, sep="\n")

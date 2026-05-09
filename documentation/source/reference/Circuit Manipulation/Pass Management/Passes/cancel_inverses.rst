@@ -32,7 +32,7 @@ Example
 ::
 
     pm = PassManager()
-    pm.add_pass(cancel_inverses)
+    pm += cancel_inverses
     optimized_qc = pm.run(qc)
 
     print("After:", optimized_qc, sep="\n")

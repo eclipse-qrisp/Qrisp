@@ -31,8 +31,8 @@ Example
 ::
 
     pm = PassManager()
-    pm.add_pass(convert_to_cz())           # lenient: unknown gates pass through
-    # pm.add_pass(convert_to_cz(strict=True))  # strict: raises on unknown gates
+    pm += convert_to_cz()           # lenient: unknown gates pass through
+    # pm += convert_to_cz(strict=True)  # strict: raises on unknown gates
     optimized_qc = pm.run(qc)
 
     print("After:", optimized_qc, sep="\n")

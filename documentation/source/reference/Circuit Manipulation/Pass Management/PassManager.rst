@@ -13,6 +13,7 @@ Methods
 .. autosummary::
    :toctree: generated/
 
+   PassManager.__iadd__
    PassManager.add_pass
    PassManager.insert_pass
    PassManager.remove_pass

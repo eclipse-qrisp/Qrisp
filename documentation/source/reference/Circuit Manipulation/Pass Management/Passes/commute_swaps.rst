@@ -31,7 +31,7 @@ Example
 ::
 
     pm = PassManager()
-    pm.add_pass(commute_swaps)
+    pm += commute_swaps
     optimized_qc = pm.run(qc)
 
     print("After:", optimized_qc, sep="\n")

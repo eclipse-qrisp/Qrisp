@@ -34,7 +34,7 @@ Example
 ::
 
     pm = PassManager()
-    pm.add_pass(manual_layout([2, 0, 1]))  # Logical 0→2, 1→0, 2→1
+    pm += manual_layout([2, 0, 1])  # Logical 0→2, 1→0, 2→1
     optimized_qc = pm.run(qc)
 
     print("After:", optimized_qc, sep="\n")

@@ -33,7 +33,7 @@ Example
 ::
 
     pm = PassManager()
-    pm.add_pass(gray_synth_toffoli)
+    pm += gray_synth_toffoli
     optimized_qc = pm.run(qc)
 
     # Toffoli replaced by Gray-synthesis decomposition (6 CNOT)

@@ -47,9 +47,9 @@ Build a compilation pipeline by chaining passes together::
 ::
 
     pm = PassManager()
-    pm.add_pass(cancel_inverses)
-    pm.add_pass(commute_swaps)
-    pm.add_pass(combine_single_qubit_gates)
+    pm += cancel_inverses
+    pm += commute_swaps
+    pm += combine_single_qubit_gates
 
     optimized_qc = pm.run(qc)
     print("After:", optimized_qc, sep="\n")
@@ -129,9 +129,9 @@ Verify that each pass preserves the circuit's unitary or measurement
 statistics::
 
     pm = PassManager()
-    pm.add_pass(convert_to_cz())
-    pm.add_pass(cancel_inverses)
-    pm.add_pass(combine_single_qubit_gates)
+    pm += convert_to_cz()
+    pm += cancel_inverses
+    pm += combine_single_qubit_gates
 
     qc = QuantumCircuit(2)
     qc.rx(0.4, 0)
@@ -184,9 +184,9 @@ Combine passes to convert circuits to hardware-native gate sets::
 ::
 
     pm = PassManager()
-    pm.add_pass(convert_to_cz())           # CX → CZ + single-qubit gates
-    pm.add_pass(combine_single_qubit_gates) # Fuse adjacent single-qubit gates
-    pm.add_pass(remove_barriers)            # Remove scheduling barriers
+    pm += convert_to_cz()           # CX → CZ + single-qubit gates
+    pm += combine_single_qubit_gates # Fuse adjacent single-qubit gates
+    pm += remove_barriers            # Remove scheduling barriers
 
     hw_ready_qc = pm.run(qc)
     print("After:", hw_ready_qc, sep="\n")

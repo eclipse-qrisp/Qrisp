@@ -32,6 +32,6 @@ Example
 ::
 
     pm = PassManager()
-    pm.add_pass(reverse_parallelize)
+    pm += reverse_parallelize
     optimized_qc = pm.run(qc)
     # Reverse-parallelization exposes SWAP commutation opportunities

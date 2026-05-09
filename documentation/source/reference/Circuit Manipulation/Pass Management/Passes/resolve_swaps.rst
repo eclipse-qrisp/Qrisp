@@ -33,7 +33,7 @@ Example
 ::
 
     pm = PassManager()
-    pm.add_pass(resolve_swaps)
+    pm += resolve_swaps
     routable_qc = pm.run(qc)
 
     print("After:", routable_qc, sep="\n")

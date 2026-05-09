@@ -31,7 +31,7 @@ Example
 ::
 
     pm = PassManager()
-    pm.add_pass(combine_single_qubit_gates)
+    pm += combine_single_qubit_gates
     optimized_qc = pm.run(qc)
 
     print("After:", optimized_qc, sep="\n")

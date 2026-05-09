@@ -41,9 +41,9 @@ class PassManager:
     >>> from qrisp import PassManager, CircuitPass
     >>>
     >>> pm = PassManager()
-    >>> pm.add_pass(CircuitPass(some_layout_pass(coupling_map=[(0,1), (1,2)])))
-    >>> pm.add_pass(CircuitPass(some_routing_pass(coupling_map=[(0,1), (1,2)])))
-    >>> pm.add_pass(CircuitPass(some_direct_pass))
+    >>> pm += CircuitPass(some_layout_pass(coupling_map=[(0,1), (1,2)]))
+    >>> pm += CircuitPass(some_routing_pass(coupling_map=[(0,1), (1,2)]))
+    >>> pm += CircuitPass(some_direct_pass)
     >>>
     >>> transpiled_qc = pm.run(qc)
     """

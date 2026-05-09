@@ -33,7 +33,7 @@ Example
 ::
 
     pm = PassManager()
-    pm.add_pass(arange_swaps)
+    pm += arange_swaps
     optimized_qc = pm.run(qc)
 
     print("After:", optimized_qc, sep="\n")
