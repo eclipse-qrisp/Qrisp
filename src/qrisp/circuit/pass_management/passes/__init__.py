@@ -28,6 +28,7 @@ from qrisp.circuit.pass_management.passes.manual_layout import manual_layout
 from qrisp.circuit.pass_management.passes.remove_barriers import remove_barriers
 from qrisp.circuit.pass_management.passes.resolve_swaps import resolve_swaps
 from qrisp.circuit.pass_management.passes.reverse_parallelize import reverse_parallelize
+from qrisp.circuit.pass_management.passes.visualize import visualize
 
 __all__ = [
     "arange_swaps",
@@ -43,4 +44,5 @@ __all__ = [
     "remove_barriers",
     "resolve_swaps",
     "reverse_parallelize",
+    "visualize",
 ]
