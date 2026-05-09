@@ -220,6 +220,85 @@ class TestPassManagerDunder:
 
 
 # ---------------------------------------------------------------------------
+# __iadd__ operator
+# ---------------------------------------------------------------------------
+
+
+class TestPassManagerIAdd:
+    """Test the ``+=`` in-place operator on :class:`PassManager`."""
+
+    def test_iadd_single_pass_appends(self):
+        """``pm += circuit_pass`` must append a single pass."""
+        pm = PassManager()
+        pm += identity_pass
+        assert len(pm) == 1
+        assert pm._passes[0] is identity_pass
+
+    def test_iadd_multiple_single_passes(self):
+        """Repeated ``+=`` must accumulate passes in the correct order."""
+        pm = PassManager()
+        pm += identity_pass
+        pm += add_h_pass
+        pm += add_cx_pass
+        assert len(pm) == 3
+        assert pm._passes[0] is identity_pass
+        assert pm._passes[1] is add_h_pass
+        assert pm._passes[2] is add_cx_pass
+
+    def test_iadd_pass_manager_extends(self):
+        """``pm += other_pm`` must extend *pm* with all passes from *other_pm*."""
+        pm = PassManager([identity_pass])
+        other = PassManager([add_h_pass, add_cx_pass])
+        pm += other
+        assert len(pm) == 3
+        assert pm._passes[0] is identity_pass
+        assert pm._passes[1] is add_h_pass
+        assert pm._passes[2] is add_cx_pass
+
+    def test_iadd_pass_manager_returns_self(self):
+        """``pm += other_pm`` must return self."""
+        pm = PassManager([identity_pass])
+        other = PassManager([add_h_pass])
+        result = pm.__iadd__(other)
+        assert result is pm
+
+    def test_iadd_pass_manager_empty(self):
+        """Extending with an empty PassManager is a no-op."""
+        pm = PassManager([identity_pass])
+        other = PassManager()
+        pm += other
+        assert len(pm) == 1
+        assert pm._passes[0] is identity_pass
+
+    def test_iadd_into_empty_from_pass_manager(self):
+        """Extending an empty PassManager with a non-empty one works."""
+        pm = PassManager()
+        other = PassManager([add_h_pass, add_cx_pass])
+        pm += other
+        assert len(pm) == 2
+        assert pm._passes[0] is add_h_pass
+        assert pm._passes[1] is add_cx_pass
+
+    def test_iadd_rejects_non_pass_non_passmanager(self):
+        """``pm += x`` where *x* is neither a CircuitPass nor PassManager must raise TypeError."""
+        pm = PassManager()
+        with pytest.raises(TypeError, match="only accepts CircuitPass or PassManager"):
+            pm += "not_a_pass"
+
+    def test_iadd_rejects_int(self):
+        """``pm += 42`` must raise TypeError."""
+        pm = PassManager()
+        with pytest.raises(TypeError):
+            pm += 42
+
+    def test_iadd_rejects_none(self):
+        """``pm += None`` must raise TypeError."""
+        pm = PassManager()
+        with pytest.raises(TypeError):
+            pm += None
+
+
+# ---------------------------------------------------------------------------
 # verify
 # ---------------------------------------------------------------------------
 

@@ -230,6 +230,34 @@ class PassManager:
 
         return results
 
+    def __iadd__(self, other: CircuitPass | PassManager) -> PassManager:
+        """
+        Add a pass or extend with the passes of another PassManager in-place.
+
+        Usage: ``pm += circuit_pass`` or ``pm += other_pass_manager``.
+
+        Parameters
+        ----------
+        other : CircuitPass or PassManager
+            The pass or pass manager whose passes to add.
+
+        Returns
+        -------
+        PassManager
+            Returns self after modification.
+        """
+        if isinstance(other, CircuitPass):
+            self._validate_pass(other)
+            self._passes.append(other)
+        elif isinstance(other, PassManager):
+            self._passes.extend(other._passes)
+        else:
+            raise TypeError(
+                f"PassManager only accepts CircuitPass or PassManager instances, "
+                f"got {type(other).__name__}."
+            )
+        return self
+
     def __len__(self) -> int:
         """Return the number of passes."""
         return len(self._passes)
