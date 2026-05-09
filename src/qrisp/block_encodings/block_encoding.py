@@ -19,6 +19,7 @@
 from __future__ import annotations
 import inspect
 from dataclasses import dataclass
+from functools import partial
 from jax.tree_util import register_pytree_node_class
 import jax
 import jax.numpy as jnp
@@ -42,7 +43,11 @@ from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool, QuantumFloat
 from scipy.sparse import csr_array, csr_matrix
 from typing import Any, Callable, TYPE_CHECKING, Union
-from qrisp.block_encodings.block_encoding_methods import get_foqcs_lcu_prep_num_of_ancillae
+from qrisp.block_encodings.block_encoding_methods import (
+    get_foqcs_lcu_prep_num_of_ancillae,
+    foqcs_analyze_operator,
+    foqcs_prep_heisenberg_1D,
+    )
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -526,6 +531,94 @@ class BlockEncoding:
         )
 
     @classmethod
+    def from_foqcs_lcu_operator(
+        cls: "BlockEncoding",
+        O: QubitOperator,
+        L: int = -1,
+        tol: float = 1e-12
+    ) -> BlockEncoding:
+        r"""
+        TODO DOC
+        Raises ValueError - Operator incompatible with FOQCS-LCU and KeyError - Got unsupported FOQCS-LCU PREP method
+        """
+        # Analyze the Qubit operator
+        aresult = foqcs_analyze_operator(O, L = L, tol = tol, raise_errors = True)
+        
+        if aresult["method"] == "heisenberg":
+            print("Parsing as Heisenberg model")
+            # Do Heisenberg model preprocessing here
+            heis_L = aresult["L"]
+            g = aresult["g"]
+            J = aresult["J"]
+            is_hermitian = aresult["is_hermitian"]
+
+            # Preprocess coefficients into sqrt-amplitude dictionaries.
+            paulis = ("X", "Y", "Z")
+            _g = {
+                "X": np.sqrt(g["X"] * heis_L),
+                "Y": np.sqrt(g["Y"] * heis_L * -1j),
+                "Z": np.sqrt(g["Z"] * heis_L),
+            }
+            _J = {
+                "X": np.sqrt(J["X"] * (heis_L - 1)),
+                "Y": np.sqrt(J["Y"] * -(heis_L - 1)),
+                "Z": np.sqrt(J["Z"] * (heis_L - 1)),
+            }
+            # Normalization for state preparation.
+            coeff_vec = np.array(
+                [_g[p] for p in paulis] + [_J[p] for p in paulis],
+                dtype=complex,
+            )
+            norm = np.linalg.norm(coeff_vec)
+
+            _g = {
+                p: _g[p] / norm
+                for p in paulis
+            }
+            _J = {
+                p: _J[p] / norm
+                for p in paulis
+            }
+            # Calculate the norm factor
+            alpha = norm**2
+            # Create partial PREP_R and PREP_L functions
+            prep = partial(
+                foqcs_prep_heisenberg_1D,
+                L=heis_L,
+                g=_g,
+                J=_J,
+            )
+            unprep = partial(
+                foqcs_prep_heisenberg_1D,
+                L=heis_L,
+                g=_g,
+                J=_J,
+                conjugate=True
+            )
+
+            return cls.from_foqcs_lcu_prep(
+                    prep = prep,
+                    num_q_ops = heis_L,
+                    unprep = unprep,
+                    is_hermitian = is_hermitian,
+                    norm = alpha
+                )
+
+        elif aresult["method"] == "spin_glass":
+            print("Parsing as Spin-Glass model")
+            # Do spin-glass preprocessing here
+
+            # return cls.from_foqcs_lcu_prep(
+            #         prep = prep,
+            #         num_q_ops = heis_L,
+            #         unprep = unprep,
+            #         is_hermitian = is_hermitian,
+            #         norm = alpha
+            #     )
+
+        raise KeyError(f"Failed to handle FOQCS-LCU method: \"{aresult['method']}\"")
+
+    @classmethod
     def from_foqcs_lcu_prep(
         cls: "BlockEncoding",
         prep: Callable[[QuantumVariable], None],
@@ -637,8 +730,6 @@ class BlockEncoding:
             print(result_rus)
 
         """
-        from qrisp.jasp import q_switch
-
         n_anc = get_foqcs_lcu_prep_num_of_ancillae(prep, num_q_ops)
 
         # FOQCS-LCU SELECT

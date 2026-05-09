@@ -44,10 +44,20 @@ def foqcs_prep_heisenberg_1D(
         Number of system qubits in the Heisenberg chain.
 
     g : dict (length 3)
-        Dictionary of local field coefficients. {"X": gx, "Y": gy, "Z": gz}
+        Dictionary of preprocessed local field coefficients.
+        {
+            "X": sqrt(gx * L) / norm,
+            "Y": sqrt(gy * L * -1j) / norm,
+            "Z": sqrt(gz * L) / norm
+        }
 
     J : dict (length 3)
-        Dictionary of coupling coefficients for the Heisenberg interaction. {"X": Jx, "Y": Jy, "Z": Jz}
+        Dictionary of preprocessed coupling coefficients for the Heisenberg interaction.
+        {
+            "X": sqrt(Jx * (L - 1)) / norm,
+            "Y": sqrt(Jy * -(L - 1)) / norm,
+            "Z": sqrt(Jz * (L - 1)) / norm
+        }
 
     conjugate : bool = False
         Indicates whether the prep is PREP_R or PREP_L.
@@ -87,17 +97,24 @@ def foqcs_prep_heisenberg_1D(
     _g = np.zeros((3,), dtype="complex")
     _J = np.zeros((3,), dtype="complex")
 
-    _g[0] = np.sqrt(g["X"] * L)
-    _g[1] = np.sqrt(g["Y"] * L * -1j)
-    _g[2] = np.sqrt(g["Z"] * L)
-    _J[0] = np.sqrt(J["X"] * (L - 1))
-    _J[1] = np.sqrt(J["Y"] * -(L - 1))
-    _J[2] = np.sqrt(J["Z"] * (L - 1))
+    # _g[0] = np.sqrt(g["X"] * L)
+    # _g[1] = np.sqrt(g["Y"] * L * -1j)
+    # _g[2] = np.sqrt(g["Z"] * L)
+    # _J[0] = np.sqrt(J["X"] * (L - 1))
+    # _J[1] = np.sqrt(J["Y"] * -(L - 1))
+    # _J[2] = np.sqrt(J["Z"] * (L - 1))
 
-    # Normalization for state preparation
-    norm = np.linalg.norm(np.block([_g, _J]))
-    _g /= norm
-    _J /= norm
+    # # Normalization for state preparation
+    # norm = np.linalg.norm(np.block([_g, _J]))
+    # _g /= norm
+    # _J /= norm
+
+    _g[0] = g["X"]
+    _g[1] = g["Y"]
+    _g[2] = g["Z"]
+    _J[0] = J["X"]
+    _J[1] = J["Y"]
+    _J[2] = J["Z"]
 
     if conjugate:
         _g = np.conj(_g)
@@ -202,7 +219,7 @@ def foqcs_analyze_operator(
         "L": int (number of intracting qubits)
         "g": dict ("X": np.arr, "Z": np.arr, "Y": np.arr)
         "J": dict ("X": np.arr, "Z": np.arr, "Y": np.arr) (In case of spin_glass, numpy arrays are 2-dim)
-        is_hermitian: bool (Whether the operator is Hermitian - no imaginary coeffs)
+        "is_hermitian": bool (Whether the operator is Hermitian - no imaginary coeffs)
     }
     """
     terms = O.to_pauli_coeff_dict()

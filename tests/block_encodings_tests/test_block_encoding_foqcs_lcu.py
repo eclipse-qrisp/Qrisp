@@ -22,6 +22,7 @@ from qrisp.block_encodings import BlockEncoding
 from qrisp import QuantumVariable, terminal_sampling, multi_measurement
 from qrisp.block_encodings import foqcs_prep_heisenberg_1D, is_operator_foqcs_compatible, foqcs_analyze_operator
 from functools import partial
+from qrisp.operators import X, Y, Z
 
 def _heisenberg_from_def(L: int, g: dict, J: dict):
 
@@ -68,18 +69,6 @@ def test_foqcs_lcu_prep():
     g /= norm
     J /= norm
 
-    heis_g = {"X": g[0], "Y": g[1], "Z": g[2]}
-    heis_J = {"X": J[0], "Y": J[1], "Z": J[2]}
-
-    d_state = QuantumVariable(L * 2 + 6)
-
-    # Prep base state using qv + Do FOQCS-LCU magic using prep function
-    foqcs_prep_heisenberg_1D(d_state, L, heis_g, heis_J)
-    #sv = d_state.qs.statevector("function")
-    # Take out the statevector from the compiled circuit
-    qc = d_state.qs.compile()
-    statev = qc.statevector_array()
-
     # Modify the original coefficients for the manual state building.
     g[0] = np.sqrt(g[0] * L)
     g[1] = np.sqrt(g[1] * L * -1j)
@@ -91,6 +80,18 @@ def test_foqcs_lcu_prep():
     norm = np.linalg.norm(np.block([g, J]))
     g /= norm
     J /= norm
+
+    heis_g = {"X": g[0], "Y": g[1], "Z": g[2]}
+    heis_J = {"X": J[0], "Y": J[1], "Z": J[2]}
+
+    d_state = QuantumVariable(L * 2 + 6)
+
+    # Prep base state using qv + Do FOQCS-LCU magic using prep function
+    foqcs_prep_heisenberg_1D(d_state, L, heis_g, heis_J)
+    #sv = d_state.qs.statevector("function")
+    # Take out the statevector from the compiled circuit
+    qc = d_state.qs.compile()
+    statev = qc.statevector_array()
 
     # Build Dicke states manually, give them all unique weights from g[0] to J[2]: base, double, 2NN, 2NN double...
     dicke_1_norm = 1 / (np.sqrt(L))
@@ -215,18 +216,22 @@ def test_block_encoding_from_foqcs_lcu_prep():
     # actual parameters for the PREP
     _g = np.zeros((3,), dtype="complex")
     _J = np.zeros((3,), dtype="complex")
-    for i in range(3):
-        _g[i] = np.sqrt(g[i] * L)
-        _J[i] = np.sqrt(J[i] * (L - 1))
-    # Correction for XZ = -iY
-    _J[1] = 1j * _J[1]
-    _g[1] = (1 - 1j) * _g[1] / np.sqrt(2)
-    # normalization for state preparation
+
+    # Modify the original coefficients for the manual state building.
+    _g[0] = np.sqrt(g[0] * L)
+    _g[1] = np.sqrt(g[1] * L * -1j)
+    _g[2] = np.sqrt(g[2] * L)
+    _J[0] = np.sqrt(J[0] * (L - 1))
+    _J[1] = np.sqrt(J[1] * -(L - 1))
+    _J[2] = np.sqrt(J[2] * (L - 1))
+
     norm = np.linalg.norm(np.block([_g, _J]))
+    _g /= norm
+    _J /= norm
 
     # Construct dictionary input expected by foqcs_prep_heisenberg_1D()
-    heis_g = {"X": g[0], "Y": g[1], "Z": g[2]}
-    heis_J = {"X": J[0], "Y": J[1], "Z": J[2]}
+    heis_g = {"X": _g[0], "Y": _g[1], "Z": _g[2]}
+    heis_J = {"X": _J[0], "Y": _J[1], "Z": _J[2]}
 
     # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
     prep = partial(
@@ -298,18 +303,21 @@ def test_block_encoding_from_foqcs_lcu_prep_jax():
     # actual parameters for the PREP
     _g = np.zeros((3,), dtype="complex")
     _J = np.zeros((3,), dtype="complex")
-    for i in range(3):
-        _g[i] = np.sqrt(g[i] * L)
-        _J[i] = np.sqrt(J[i] * (L - 1))
-    # Correction for XZ = -iY
-    _J[1] = 1j * _J[1]
-    _g[1] = (1 - 1j) * _g[1] / np.sqrt(2)
-    # normalization for block encoding
+    # Modify the original coefficients for the manual state building.
+    _g[0] = np.sqrt(g[0] * L)
+    _g[1] = np.sqrt(g[1] * L * -1j)
+    _g[2] = np.sqrt(g[2] * L)
+    _J[0] = np.sqrt(J[0] * (L - 1))
+    _J[1] = np.sqrt(J[1] * -(L - 1))
+    _J[2] = np.sqrt(J[2] * (L - 1))
+
     norm = np.linalg.norm(np.block([_g, _J]))
+    _g /= norm
+    _J /= norm
 
     # Construct dictionary input expected by foqcs_prep_heisenberg_1D()
-    heis_g = {"X": g[0], "Y": g[1], "Z": g[2]}
-    heis_J = {"X": J[0], "Y": J[1], "Z": J[2]}
+    heis_g = {"X": _g[0], "Y": _g[1], "Z": _g[2]}
+    heis_J = {"X": _J[0], "Y": _J[1], "Z": _J[2]}
 
     # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
     prep = partial(
@@ -374,8 +382,149 @@ def test_block_encoding_from_foqcs_lcu_prep_jax():
                        [result_rus[k] for k in sorted(result_rus)],
                        atol = 1e-4)
 
+def test_block_encoding_from_foqcs_lcu_operator():
+    # Initialize variables + their values
+    L = 4
+    g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
+    J = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
+
+    # Fix coefficients for debugging
+    # g = np.array([0.80054361+0.j,  0.50905072+0.j, -0.89045545+0.j])
+    # J = np.array([0.98167489+0.j, -0.32435597+0.j,  0.42262456+0.j])
+
+    # Normalize
+    norm = np.linalg.norm(np.block([g, J]))
+    g /= norm
+    J /= norm
+
+    # Build the operator
+    terms = []
+    for i in range(L):
+        terms.append(g[0] * X(i))
+        terms.append(g[1] * Y(i))
+        terms.append(g[2] * Z(i))
+    for i in range(L - 1):
+        terms.append(J[0] * X(i) * X(i + 1))
+        terms.append(J[1] * Y(i) * Y(i + 1))
+        terms.append(J[2] * Z(i) * Z(i + 1))
+    O = sum(terms[1:], terms[0])
+
+    be = BlockEncoding.from_foqcs_lcu_operator(O, L)
+
+    qv = QuantumVariable(4)
+    psi = _prep_psi(L)
+    qv.init_state(psi, method="qswitch")
+
+    def main(BE):
+        operand = qv
+        ancillas = BE.apply(operand)
+        return operand, ancillas
+
+    operand, ancillas = main(be)
+
+    qc = operand.qs.compile()
+    sv = qc.statevector_array()
+
+    def bit_reverse(i: int, n: int) -> int:
+        return int(f"{i:0{n}b}"[::-1], 2)
+
+    # Take out the resulting operands with zero ancillas amplitude.
+    res_ops = []
+    for i in range(0, 2 ** L):
+        qi = bit_reverse(i, L)
+        ind = qi << (len(ancillas[0]))
+        res_ops.append(sv[ind])
+
+    # Construct reference state vector
+    H = _heisenberg_from_def(L, g, J) / be.alpha # Normalisation can be taken from BE
+    ref_state = H @ psi
+
+    print(f"Ref state = {ref_state}")
+    print(f"Resulting operands = {res_ops}")
+
+    assert np.allclose(res_ops, ref_state, atol=1e-6)
+
+def test_block_encoding_from_foqcs_lcu_operator_jax():
+    # Initialize variables + their values
+    L = 4
+    g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
+    J = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
+
+    # Fix coefficients for debugging
+    # g = np.array([0.80054361+0.j,  0.50905072+0.j, -0.89045545+0.j])
+    # J = np.array([0.98167489+0.j, -0.32435597+0.j,  0.42262456+0.j])
+
+    # Normalize
+    norm = np.linalg.norm(np.block([g, J]))
+    g /= norm
+    J /= norm
+
+    # Normalize
+    norm = np.linalg.norm(np.block([g, J]))
+    g /= norm
+    J /= norm
+
+    # Build the operator
+    terms = []
+    for i in range(L):
+        terms.append(g[0] * X(i))
+        terms.append(g[1] * Y(i))
+        terms.append(g[2] * Z(i))
+    for i in range(L - 1):
+        terms.append(J[0] * X(i) * X(i + 1))
+        terms.append(J[1] * Y(i) * Y(i + 1))
+        terms.append(J[2] * Z(i) * Z(i + 1))
+    O = sum(terms[1:], terms[0])
+
+    be = BlockEncoding.from_foqcs_lcu_operator(O, L)
+
+    psi = _prep_psi(L)
+
+    def operand_prep(psi):
+        qv = QuantumVariable(4)
+        qv.init_state(psi, method="qswitch")
+        return qv
+
+    qv_manual = operand_prep(psi)
+    def main_apply(BE):
+        operand = qv_manual
+        ancillas = BE.apply(operand)
+        return operand, ancillas
+
+    @terminal_sampling
+    def main_apply_rus(BE):
+        return BE.apply_rus(operand_prep)(psi)
+
+    # Do the measurement manually
+    operand, ancillas = main_apply(be)
+
+    res_dict = multi_measurement([operand] + ancillas)
+    # Filtering only zero ancillae entries
+    zero_anc = "0" * len(ancillas[0])
+    filtered = {
+        key: value
+        for key, value in res_dict.items()
+        if key[1] == zero_anc
+    }
+    success_prob = sum(filtered.values())
+    filtered_conditional = {
+        int(operand_bits[::-1], 2): prob / success_prob
+        for (operand_bits, anc_bits), prob in filtered.items()
+    }
+
+    print(f"\n\nFiltered dict = {filtered_conditional}")
+    print(f"Filtered dict amps sum: {sum(filtered_conditional.values())}")
+
+    # Do the measurement using RUS
+    result_rus = main_apply_rus(be)
+    print(result_rus)
+    print(sum(result_rus.values()))
+
+    assert np.allclose([filtered_conditional[k] for k in sorted(filtered_conditional)],
+                       [result_rus[k] for k in sorted(result_rus)],
+                       atol = 1e-4)
+
 def test_block_encoding_from_foqcs_lcu_bench_lcu():
-    from qrisp.operators import X, Y, Z
     from qiskit import transpile
     # Test FOQCS-LCU resources agains normal LCU
     # Initialize variables + their values
@@ -488,8 +637,6 @@ def test_block_encoding_from_foqcs_lcu_bench_lcu():
 ###########################################################################################################
 
 def test_foqcs_operator_analysis_failures():
-    from qrisp.operators import X, Y, Z
-
     def empty_must_fail():
         O = 0 * X(0)
         with pytest.raises(ValueError) as exc_info:
@@ -547,7 +694,6 @@ def test_foqcs_operator_analysis_failures():
     three_body_couple_must_fail()
 
 def test_foqcs_operator_heisenberg():
-    from qrisp.operators import X, Y, Z
     def make_heisenberg_pass_cases():
         cases = {}
         # Full uniform nearest-neighbor XYZ/Heisenberg chain with 2 qubits.
@@ -636,7 +782,7 @@ def test_foqcs_operator_heisenberg():
 
 # Manual verification test, for now
 def test_foqcs_operator_analysis():
-    from qrisp.operators import X, Y, Z, A, C, P1
+    from qrisp.operators import A, C, P1
     H_good = X(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(2)
     H_heis = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)
     H_bad = X(0) * Z(1)
@@ -664,8 +810,7 @@ def test_foqcs_operator_analysis():
 
 # FIXME! I need to be made into a test and put in some appropriate place. How cruel of you to leave me like this!
 def test_pauli_coeff_dict_extraction():
-    from qrisp.operators import X, Y, Z, A, C, P1
-    from qrisp.operators.qubit import QubitOperator
+    from qrisp.operators import A, C, P1
 
     H_good = X(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(2)
     H_bad = X(0) * Z(1)
