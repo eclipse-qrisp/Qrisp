@@ -53,7 +53,30 @@ def _get_gray_toffoli_qc() -> QuantumCircuit:
 
 
 def is_toffoli(op) -> bool:
-    """Return True if *op* is a Toffoli (doubly-controlled X) gate."""
+    """Return True if *op* is a Toffoli (doubly-controlled X) gate.
+
+    Parameters
+    ----------
+    op : Operation
+        The operation to check.
+
+    Returns
+    -------
+    bool
+        ``True`` if *op* is a :class:`~qrisp.circuit.ControlledOperation`
+        with two controls whose base operation is an ``x`` gate.
+
+    Examples
+    --------
+    >>> from qrisp import QuantumCircuit
+    >>> from qrisp import is_toffoli
+    >>>
+    >>> qc = QuantumCircuit(3)
+    >>> qc.ccx(0, 1, 2)
+    >>>
+    >>> is_toffoli(qc.data[0].op)
+    True
+    """
     return (
         isinstance(op, ControlledOperation)
         and len(op.controls) == 2
@@ -87,6 +110,21 @@ def gray_synth_toffoli(qc: QuantumCircuit) -> QuantumCircuit:
     QuantumCircuit
         A new circuit with every Toffoli replaced by the gray-synthesis
         decomposition.
+
+    Examples
+    --------
+    >>> from qrisp import QuantumCircuit, PassManager
+    >>> from qrisp import gray_synth_toffoli
+    >>>
+    >>> qc = QuantumCircuit(3)
+    >>> qc.ccx(0, 1, 2)
+    >>>
+    >>> pm = PassManager()
+    >>> pm += gray_synth_toffoli
+    >>> optimized_qc = pm.run(qc)
+    >>> # Toffoli replaced by Gray-synthesis decomposition (6 CNOT)
+    >>> len(optimized_qc.data)
+    1
     """
     qc_new = qc.clearcopy()
 

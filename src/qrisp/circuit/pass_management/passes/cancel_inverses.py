@@ -387,7 +387,7 @@ def _fuse_via_transpile(op_a, op_b, gphase_array):
     2. Transpiles it (decomposes the definitions).
     3. Runs ``cancel_inverses`` on the decomposition.
     4. If anything cancelled (gate count changed), returns the fused
-       result as a new gate.
+       result as a new gate. 
 
     Parameters
     ----------

@@ -42,6 +42,20 @@ def reverse_parallelize(qc: QuantumCircuit) -> QuantumCircuit:
     -------
     QuantumCircuit
         Circuit after reverse-order parallelization.
+
+    Examples
+    --------
+    >>> from qrisp import QuantumCircuit, PassManager
+    >>> from qrisp import reverse_parallelize
+    >>>
+    >>> qc = QuantumCircuit(2)
+    >>> qc.swap(0, 1)
+    >>> qc.cx(0, 1)
+    >>>
+    >>> pm = PassManager()
+    >>> pm += reverse_parallelize
+    >>> optimized_qc = pm.run(qc)
+    >>> # Reverse-parallelization exposes SWAP commutation opportunities
     """
     # Defer import: qrisp.permeability loads *after* qrisp.circuit, so
     # importing at module level would create a circular import.
