@@ -1391,7 +1391,7 @@ def check_if_fresh(qubits, qs, ignore_q_envs=True):
 
 
 def get_measurement_from_qc(qc, qubits, backend, shots=None):
-    from qrisp.interface.measurement_result import _IntKeyedResult
+    from qrisp.interface.measurement_result import _IntKeyedResult, MeasurementResult
 
     cl = []
     for i in range(len(qubits)):
@@ -1401,6 +1401,11 @@ def get_measurement_from_qc(qc, qubits, backend, shots=None):
         qc.measure(qubits[i], cl[i])
 
     raw = backend.run(qc, shots=shots)
+    if not isinstance(raw, MeasurementResult):
+        # Legacy backends (e.g. VirtualBackend) return a plain dict directly.
+        mr = MeasurementResult()
+        mr._inject(raw)
+        raw = mr
     return _IntKeyedResult(raw, len(cl))
 
 

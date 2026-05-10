@@ -648,7 +648,7 @@ class DCQOProblem:
         # Measure qarg
         if not "shots" in mes_kwargs:
             mes_kwargs["shots"] = 5000
-        res_dict = qarg.get_measurement(**mes_kwargs)
+        res_dict = dict(qarg.get_measurement(**mes_kwargs))
 
         # Add qubo cost in result dict
         for res in res_dict.keys():

@@ -25,14 +25,14 @@ called.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import cast
+from types import MappingProxyType
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
 from qrisp.interface.measurement_result import MeasurementResult
 
 
-class BatchedBackend(Backend):
+class BatchedBackend:
     """
     A backend that buffers circuit submissions and executes them on an explicit
     :meth:`dispatch` call.
@@ -114,35 +114,16 @@ class BatchedBackend(Backend):
         name: str | None = None,
         options: Mapping | None = None,
     ):
-        if options is None:
-            options = dict(backend._options)
-        super().__init__(name=name, options=options)
+        self.name = name or self.__class__.__name__
+        self._options = dict(options if options is not None else backend._options)
         self._backend = backend
         # Each entry: (circuit, shots, MeasurementResult)
         self._queries: list[tuple] = []
 
-    @classmethod
-    def _default_options(cls):
-        return {"shots": 1024}
-
-    # ------------------------------------------------------------------
-    # Backend interface
-    # ------------------------------------------------------------------
-
-    def run_async(self, circuits, shots=None):
-        """Not supported — :class:`BatchedBackend` uses an explicit dispatch model.
-
-        Use :meth:`run` to queue circuits and :meth:`dispatch` to execute them.
-
-        Raises
-        ------
-        NotImplementedError
-            Always. This method is intentionally unsupported.
-        """
-        raise NotImplementedError(
-            "BatchedBackend does not support run_async(). "
-            "Submit circuits via run() and execute them with dispatch()."
-        )
+    @property
+    def options(self) -> Mapping:
+        """Current runtime options (read-only)."""
+        return MappingProxyType(self._options)
 
     def run(self, circuits, shots: int | None = None):
         """Register one or more circuits in the queue and return lazy result(s).
@@ -186,11 +167,14 @@ class BatchedBackend(Backend):
     def dispatch(self) -> None:
         """Execute all pending circuits and populate their results.
 
-        Each queued circuit is forwarded to the wrapped backend's
-        :meth:`~qrisp.interface.Backend.run`.  Results are injected into the
-        corresponding :class:`~qrisp.interface.MeasurementResult` objects.
+        Circuits are grouped by shot count and each group is submitted as a
+        single :meth:`~qrisp.interface.Backend.run_async` call.  For the
+        common case where all circuits share the same shot count this reduces
+        N separate hardware jobs to a single one, eliminating redundant
+        network round-trips and queue-wait overhead.  Results are injected into
+        the corresponding :class:`~qrisp.interface.MeasurementResult` objects.
 
-        If the wrapped backend raises for any circuit, that error is stored in
+        If the wrapped backend raises for any group, that error is stored in
         every not-yet-populated :class:`~qrisp.interface.MeasurementResult`
         and then re-raised.  Accessing any of those results later will re-raise
         the stored exception.
@@ -211,10 +195,19 @@ class BatchedBackend(Backend):
         if not queries:
             return
 
+        # Group by effective shot count so each group becomes one hardware job.
+        groups: dict[int | None, list] = {}
         for qc, shots, raw in queries:
+            key = shots if shots is not None else self._options.get("shots")
+            groups.setdefault(key, []).append((qc, raw))
+
+        for shots, items in groups.items():
+            circuits = [qc for qc, _ in items]
+            raws = [raw for _, raw in items]
             try:
-                result = cast(MeasurementResult, self._backend.run(qc, shots=shots))
-                raw._inject(result._data)
+                all_counts = self._backend.run_async(circuits, shots=shots).result().all_counts
+                for raw, counts in zip(raws, all_counts):
+                    raw._inject(counts)
             except Exception as exc:
                 for _, _, r in queries:
                     if not r._populated:

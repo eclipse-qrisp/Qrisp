@@ -161,21 +161,6 @@ def test_exception_propagates_to_all_results():
 
 
 # ---------------------------------------------------------------------------
-# run_async is unsupported
-# ---------------------------------------------------------------------------
-
-
-def test_run_async_raises_not_implemented():
-    """BatchedBackend.run_async() must raise NotImplementedError."""
-    bb = _make_batched_backend()
-    a = QuantumFloat(4); a[:] = 1
-    b = QuantumFloat(3); b[:] = 2
-    c = a + b
-    with pytest.raises(NotImplementedError):
-        bb.run_async(c.qs.compile())
-
-
-# ---------------------------------------------------------------------------
 # MeasurementResult unit tests
 # ---------------------------------------------------------------------------
 
