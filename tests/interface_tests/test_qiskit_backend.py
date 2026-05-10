@@ -509,11 +509,12 @@ class TestQiskitBackendIntegration:
     def test_run_multiple_circuits_returns_list_of_counts_dicts(
         self, circuits, real_backend
     ):
-        """run() with a sequence of circuits returns a list of counts dicts."""
+        """run() with a sequence of circuits returns a list of MeasurementResult objects."""
+        from collections.abc import Mapping
         results = real_backend.run(circuits, shots=20)
         assert isinstance(results, list)
         assert len(results) == len(circuits)
-        assert all(isinstance(r, dict) for r in results)
+        assert all(isinstance(r, Mapping) for r in results)
 
     def test_run_async_result_returns_job_result_instance(self, real_backend):
         """run_async().result() returns a JobResult on a real Aer execution."""
@@ -587,6 +588,20 @@ class TestQiskitBackendIntegration:
         job.result()
         assert job.cancel() is False
 
+    def test_batched_workflow_populates_lazy_result(self, real_backend):
+        """batched() wraps QiskitBackend; dispatch() populates the lazy result via the real Aer stack."""
+        from qrisp import QuantumFloat
+        from qrisp.interface.measurement_result import LazyDict
+
+        a = QuantumFloat(2)
+        a[:] = 3  # deterministic: always 3
+        bb = real_backend.batched()
+        res = a.get_measurement(backend=bb)
+        assert isinstance(res, LazyDict)
+        assert not res._populated
+        bb.dispatch()
+        assert res == {3: 1.0}
+
 
 # ---------------------------------------------------------------------------
 # QiskitRuntimeBackend tests
@@ -641,7 +656,7 @@ class TestQiskitRuntimeBackendConstruction:
         """QiskitRuntimeService is called with the supplied api_token and channel."""
         QiskitRuntimeBackend(api_token="my-token", channel="ibm_quantum_platform")
         runtime_mocks["service_cls"].assert_called_once_with(
-            channel="ibm_quantum_platform", token="my-token"
+            channel="ibm_quantum_platform", token="my-token", instance=None
         )
 
     def test_least_busy_selected_when_backend_is_none(self, runtime_mocks):
@@ -786,11 +801,12 @@ class TestQiskitRuntimeBackendIntegration:
     def test_run_multiple_circuits_returns_list_of_counts_dicts(
         self, circuits, backend
     ):
-        """run() with a sequence of circuits returns a list of counts dicts."""
+        """run() with a sequence of circuits returns a list of MeasurementResult objects."""
+        from collections.abc import Mapping
         results = backend.run(circuits, shots=20)
         assert isinstance(results, list)
         assert len(results) == len(circuits)
-        assert all(isinstance(r, dict) for r in results)
+        assert all(isinstance(r, Mapping) for r in results)
 
     def test_run_async_result_returns_job_result_instance(self, backend):
         """run_async().result() returns a JobResult on a real Aer execution."""

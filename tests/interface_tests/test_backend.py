@@ -767,13 +767,15 @@ class TestRunReturnType:
     The distinction is driven by isinstance(circuits, QuantumCircuit) in the base class.
     """
 
-    def test_run_single_quantum_circuit_returns_dict(self):
-        """run() must return a plain dict (not a list) when passed a single QuantumCircuit."""
+    def test_run_single_quantum_circuit_returns_mapping(self):
+        """run() must return a Mapping (not a list) when passed a single QuantumCircuit."""
+        from collections.abc import Mapping
+
         qc = QuantumCircuit(1)
         qc.h(0)
         qc.measure(0)
         result = MinimalBackend().run(qc, shots=128)
-        assert isinstance(result, dict)
+        assert isinstance(result, Mapping)
 
     def test_run_single_quantum_circuit_dict_has_string_keys(self):
         """The dict returned for a single QuantumCircuit must have string bitstring keys."""
@@ -792,13 +794,15 @@ class TestRunReturnType:
         assert isinstance(result, list)
         assert len(result) == 2
 
-    def test_run_list_of_quantum_circuits_each_element_is_dict(self):
-        """Each element of the list returned by run([qc, qc]) must be a dict."""
+    def test_run_list_of_quantum_circuits_each_element_is_mapping(self):
+        """Each element of the list returned by run([qc, qc]) must be a Mapping."""
+        from collections.abc import Mapping
+
         qc = QuantumCircuit(1)
         qc.h(0)
         qc.measure(0)
         result = MinimalBackend().run([qc, qc], shots=64)
-        assert all(isinstance(r, dict) for r in result)
+        assert all(isinstance(r, Mapping) for r in result)
 
     def test_run_async_single_quantum_circuit_num_circuits_is_one(self):
         """run_async() must return a job with num_circuits==1 for a single QuantumCircuit."""

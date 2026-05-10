@@ -16,8 +16,9 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumCircuit
+from qrisp import QuantumCircuit, QuantumVariable
 from qrisp.interface import StimBackend
+from qrisp.interface.measurement_result import LazyDict
 
 
 def _build_deterministic_circuit():
@@ -34,3 +35,15 @@ def test_stim_backend_run_counts():
     counts = backend.run(qc, shots=200)
     assert sum(counts.values()) == 200
     assert counts == {"11": 200}
+
+
+def test_stim_backend_batched_workflow():
+    """StimBackend().batched() buffers the circuit and populates the result after dispatch()."""
+    qv = QuantumVariable(2)
+    qv[:] = "10"
+    bb = StimBackend().batched()
+    res = qv.get_measurement(backend=bb)
+    assert isinstance(res, LazyDict)
+    assert not res._populated
+    bb.dispatch()
+    assert res == {"10": 1.0}

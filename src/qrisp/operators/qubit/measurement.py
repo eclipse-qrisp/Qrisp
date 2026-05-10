@@ -17,7 +17,6 @@
 """
 
 import math
-import threading
 
 import numpy as np
 from numba import njit
@@ -240,21 +239,11 @@ class QubitOperatorMeasurement:
             meas_coeffs[i] = temp_coeff
             meas_ops[i] = temp_meas_ops
 
-        threads = []
-
         for i in range(len(self.measurement_operators)):
-
-            if isinstance(backend, BatchedBackend):
-                thread = threading.Thread(target=measurement_thread, args=(i,))
-                thread.start()
-                threads.append(thread)
-            else:
-                measurement_thread(i)
+            measurement_thread(i)
 
         if isinstance(backend, BatchedBackend):
-            backend.dispatch(min_calls=len(self.measurement_operators))
-            for thread in threads:
-                thread.join()
+            backend.dispatch()
 
         samples = create_padded_array([list(res.keys()) for res in results]).astype(
             np.int64

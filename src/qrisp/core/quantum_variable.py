@@ -1101,55 +1101,26 @@ class QuantumVariable:
         # qc = qc.transpile()
 
         from qrisp.misc import get_measurement_from_qc
+        from qrisp.interface.measurement_result import DecodedMeasurementResult
 
         counts = get_measurement_from_qc(qc, self.reg, backend, shots)
-
-        # Insert outcome labels (if available and hashable)
-        try:
-            new_counts_dic = {}
-
-            sorted_keys = list(counts.keys())
-            sorted_keys.sort()
-
-            for key in sorted_keys:
-                new_counts_dic[self.decoder(key)] = counts[key]
-
-            counts = new_counts_dic
-
-            # Sort keys
-            sorted_key_list = list(counts.keys())
-            sorted_key_list.sort(key=lambda x: -counts[x])
-            counts = {key: counts[key] for key in sorted_key_list}
-
-        except TypeError:
-            counts_tuple_list = []
-
-            for key in counts.keys():
-                counts_tuple_list.append((key, counts[key]))
-
-            counts = counts_tuple_list
-
-            counts.sorted(key=lambda x: x[1])
+        result = DecodedMeasurementResult(counts, self.decoder)
 
         if plot:
             outcome_labels = []
             for i in range(2**self.size):
                 temp = self.decoder(i)
-
                 try:
                     hash(temp)
                 except TypeError:
                     raise Exception(
                         "Outcome value " + str(self.decoder(i)) + " is not hashable"
                     )
-
                 outcome_labels.append(temp)
-
-            plot_histogram(outcome_labels, counts, filename)
+            plot_histogram(outcome_labels, dict(result), filename)
             plt.show()
 
-        # Return dictionary of measurement results
-        return counts
+        return result
 
     def most_likely(self, **kwargs):
         """

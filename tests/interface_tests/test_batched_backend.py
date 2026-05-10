@@ -14,234 +14,260 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Minimal tests for BatchedBackend."""
+"""Tests for BatchedBackend — lazy queue + explicit dispatch architecture."""
 
 import threading
 
 import pytest
 
 from qrisp import QuantumFloat
+from qrisp.default_backend import DefaultBackend
 from qrisp.interface import BatchedBackend
-from qrisp.interface.job import JobStatus
+from qrisp.interface.measurement_result import (
+    DecodedMeasurementResult,
+    LazyDict,
+    MeasurementResult,
+)
 
 
-def _make_batch_run_func():
-    """Return a batch_run_func that delegates to each circuit's own run method."""
-
-    def run_func_batch(batch):
-        """Execute each (circuit, shots) pair and return the list of result dicts."""
-        return [qc.run(shots=shots) for qc, shots in batch]
-
-    return run_func_batch
+def _make_batched_backend():
+    return DefaultBackend().batched()
 
 
-def test_batched_backend_docstring_example():
-    """Reproduce the docstring example: two threads measuring two QuantumFloats.
+# ---------------------------------------------------------------------------
+# Core batching behaviour
+# ---------------------------------------------------------------------------
 
-    Verifies that both results are correct after a manual dispatch with min_calls=2.
-    This is the primary integration test for BatchedBackend.
+
+def test_batched_returns_batched_backend_instance():
+    """Backend.batched() must return a BatchedBackend."""
+    backend = DefaultBackend()
+    bb = backend.batched()
+    assert isinstance(bb, BatchedBackend)
+    assert bb._backend is backend
+
+
+def test_explicit_dispatch_batches_two_variables():
+    """Two get_measurement calls followed by dispatch() must both return correct results.
+
+    This is the primary integration test: no threading needed because
+    get_measurement() returns a lazy result immediately and dispatch() populates
+    both results by calling the wrapped backend once per circuit.
     """
-    a = QuantumFloat(4)
-    b = QuantumFloat(3)
-    a[:] = 1
-    b[:] = 2
-    c = a + b  # expected result: 3
+    a = QuantumFloat(4); a[:] = 1
+    b = QuantumFloat(3); b[:] = 2
+    c = a + b  # expected: 3
 
-    d = QuantumFloat(4)
-    e = QuantumFloat(3)
-    d[:] = 2
-    e[:] = 2
-    f = d + e  # expected result: 4
+    d = QuantumFloat(4); d[:] = 2
+    e = QuantumFloat(3); e[:] = 2
+    f = d + e  # expected: 4
 
-    bb = BatchedBackend(_make_batch_run_func())
+    bb = _make_batched_backend()
 
-    results = []
+    res_c = c.get_measurement(backend=bb)
+    res_f = f.get_measurement(backend=bb)
 
-    def eval_measurement(qv):
-        """Measure qv and append the result to the shared list."""
-        results.append(qv.get_measurement(backend=bb))
+    # Results are lazy before dispatch
+    assert isinstance(res_c, LazyDict)
+    assert isinstance(res_f, LazyDict)
+    assert not res_c._populated
+    assert not res_f._populated
 
-    thread_0 = threading.Thread(target=eval_measurement, args=(c,))
-    thread_1 = threading.Thread(target=eval_measurement, args=(f,))
+    bb.dispatch()
 
-    thread_0.start()
-    thread_1.start()
-
-    bb.dispatch(min_calls=2)
-
-    thread_0.join()
-    thread_1.join()
-
-    assert {3: 1.0} in results
-    assert {4: 1.0} in results
+    assert res_c == {3: 1.0}
+    assert res_f == {4: 1.0}
 
 
-def test_batched_backend_main_thread_auto_dispatch():
-    """Verify that run() from the main thread auto-dispatches without a manual call.
+def test_dispatch_returns_correct_results_with_single_variable():
+    """A single get_measurement + dispatch() works as a degenerate batch of one."""
+    a = QuantumFloat(4); a[:] = 1
+    b = QuantumFloat(3); b[:] = 2
+    c = a + b  # expected: 3
 
-    This ensures that single-threaded use (e.g. a plain script) works correctly
-    without the user having to call dispatch() explicitly.
-    """
-    a = QuantumFloat(4)
-    b = QuantumFloat(3)
-    a[:] = 1
-    b[:] = 2
-    c = a + b  # expected result: 3
+    bb = _make_batched_backend()
+    res = c.get_measurement(backend=bb)
+    bb.dispatch()
 
-    bb = BatchedBackend(_make_batch_run_func())
-
-    # Called from the main thread — dispatch happens automatically.
-    result = c.get_measurement(backend=bb)
-
-    assert result == {3: 1.0}
+    assert res == {3: 1.0}
 
 
-def test_batched_backend_exception_propagates_to_all_jobs():
-    """Verify that an exception raised by batch_run_func reaches every waiting thread.
-
-    If the batch call fails, all threads blocked in result() must receive a
-    RuntimeError rather than hanging indefinitely.
-    """
-
-    def failing_batch_run(batch):
-        """Always raises to simulate a hardware or network fault."""
-        raise RuntimeError("Simulated hardware fault")
-
-    bb = BatchedBackend(failing_batch_run)
-
-    a = QuantumFloat(4)
-    b = QuantumFloat(3)
-    a[:] = 1
-    b[:] = 2
+def test_result_is_lazy_before_dispatch():
+    """Accessing a result before dispatch() raises RuntimeError."""
+    a = QuantumFloat(4); a[:] = 1
+    b = QuantumFloat(3); b[:] = 2
     c = a + b
 
-    d = QuantumFloat(4)
-    e = QuantumFloat(3)
-    d[:] = 2
-    e[:] = 2
+    bb = _make_batched_backend()
+    res = c.get_measurement(backend=bb)
+
+    with pytest.raises(RuntimeError, match="dispatch"):
+        len(res)
+
+
+# ---------------------------------------------------------------------------
+# Exception propagation
+# ---------------------------------------------------------------------------
+
+
+def test_exception_propagates_to_all_results():
+    """An exception from the wrapped backend must surface when any result is accessed.
+
+    All pending MeasurementResult objects receive the error via _inject_error(),
+    so every subsequent access raises, preventing silent data loss.
+    """
+    from qrisp.interface.backend import Backend
+    from qrisp.interface.job import Job, JobStatus
+
+    class _FailJob(Job):
+        def submit(self):
+            self._last_known_status = JobStatus.ERROR
+        def result(self, timeout=None):
+            raise RuntimeError("Simulated hardware fault")
+        def cancel(self):
+            return False
+        def status(self):
+            return self._last_known_status
+
+    class FailingBackend(Backend):
+        def run_async(self, circuits, shots=None):
+            raise RuntimeError("Simulated hardware fault")
+
+    bb = FailingBackend().batched()
+
+    a = QuantumFloat(4); a[:] = 1
+    b = QuantumFloat(3); b[:] = 2
+    c = a + b
+
+    d = QuantumFloat(4); d[:] = 2
+    e = QuantumFloat(3); e[:] = 2
     f = d + e
 
+    res_c = c.get_measurement(backend=bb)
+    res_f = f.get_measurement(backend=bb)
+
+    with pytest.raises(RuntimeError, match="Simulated hardware fault"):
+        bb.dispatch()
+
     errors = []
-
-    def eval_measurement(qv):
-        """Attempt to measure qv and record any RuntimeError."""
+    for res in [res_c, res_f]:
         try:
-            qv.get_measurement(backend=bb)
+            len(res)
         except RuntimeError as exc:
-            cause_str = str(exc.__cause__) if exc.__cause__ is not None else ""
-            errors.append(str(exc) + " " + cause_str)
+            errors.append(str(exc))
 
-    thread_0 = threading.Thread(target=eval_measurement, args=(c,))
-    thread_1 = threading.Thread(target=eval_measurement, args=(f,))
-
-    thread_0.start()
-    thread_1.start()
-
-    bb.dispatch(min_calls=2)
-
-    thread_0.join()
-    thread_1.join()
-
-    # Both threads must have received the error.
     assert len(errors) == 2
     assert all("Simulated hardware fault" in e for e in errors)
 
 
-def test_batched_backend_timeout():
-    """Verify that result(timeout=...) raises TimeoutError when dispatch is never called.
-
-    This guards against the case where a thread submits a circuit but the
-    coordinating dispatch call is accidentally omitted.
-    """
-    bb = BatchedBackend(_make_batch_run_func())
-
-    a = QuantumFloat(4)
-    b = QuantumFloat(3)
-    a[:] = 1
-    b[:] = 2
-
-    errors = []
-
-    def submit_without_dispatch():
-        """Submit a job from a background thread and expect a TimeoutError."""
-        c = a + b
-        job = bb.run_async(c.qs.compile())
-        try:
-            job.result(timeout=0.5)
-        except TimeoutError as exc:
-            errors.append(str(exc))
-
-    t = threading.Thread(target=submit_without_dispatch)
-    t.start()
-    t.join()
-
-    assert len(errors) == 1
-    assert "dispatch" in errors[0].lower()
+# ---------------------------------------------------------------------------
+# run_async is unsupported
+# ---------------------------------------------------------------------------
 
 
-def test_dispatch_timeout_raises_timeout_error():
-    """dispatch(min_calls=N, timeout=T) must raise TimeoutError if T expires before N jobs arrive.
-
-    Without a timeout, a dispatch() waiting for a thread that never arrives
-    would block forever. This guards against that deadlock.
-    """
-    bb = BatchedBackend(_make_batch_run_func())
-    with pytest.raises(TimeoutError, match="timed out"):
-        bb.dispatch(min_calls=999, timeout=0.1)
-
-
-def test_batched_job_cancel_always_returns_false():
-    """BatchedJob.cancel() must always return False — cancellation is not supported.
-
-    Since circuits are registered in a shared batch before execution starts,
-    there is no safe point at which an individual job can be withdrawn.
-    Callers must not rely on cancel() to prevent execution.
-    """
-    bb = BatchedBackend(_make_batch_run_func())
-
-    # Submit and complete a job via auto-dispatch (main-thread call).
-    a = QuantumFloat(4)
-    a[:] = 1
-    b = QuantumFloat(3)
-    b[:] = 2
+def test_run_async_raises_not_implemented():
+    """BatchedBackend.run_async() must raise NotImplementedError."""
+    bb = _make_batched_backend()
+    a = QuantumFloat(4); a[:] = 1
+    b = QuantumFloat(3); b[:] = 2
     c = a + b
-
-    job = bb.run_async(c.qs.compile(), shots=32)
-    job.result()
-
-    assert job.status() == JobStatus.DONE
-    assert job.cancel() is False
+    with pytest.raises(NotImplementedError):
+        bb.run_async(c.qs.compile())
 
 
-def test_batched_job_cancel_returns_false_while_queued():
-    """BatchedJob.cancel() must return False even when the job is still in QUEUED state."""
-    bb = BatchedBackend(_make_batch_run_func())
+# ---------------------------------------------------------------------------
+# MeasurementResult unit tests
+# ---------------------------------------------------------------------------
 
-    job_holder = []
-    ready = threading.Event()
 
-    def worker():
-        a = QuantumFloat(4)
-        a[:] = 1
-        b = QuantumFloat(3)
-        b[:] = 2
-        c = a + b
-        job = bb.run_async(c.qs.compile(), shots=32)
-        job_holder.append(job)
-        ready.set()
-        try:
-            job.result(timeout=5.0)
-        except Exception:
-            pass
+def test_measurement_result_raises_before_inject():
+    """MeasurementResult must raise RuntimeError if accessed before _inject()."""
+    raw = MeasurementResult()
+    with pytest.raises(RuntimeError, match="dispatch"):
+        len(raw)
 
-    t = threading.Thread(target=worker)
-    t.start()
-    ready.wait(timeout=5.0)
 
-    job = job_holder[0]
-    assert job.status() == JobStatus.QUEUED
-    assert job.cancel() is False
+def test_measurement_result_is_accessible_after_inject():
+    """MeasurementResult is fully readable after _inject()."""
+    raw = MeasurementResult()
+    raw._inject({"00": 512, "11": 512})
+    assert raw["00"] == 512
+    assert set(raw) == {"00", "11"}
+    assert len(raw) == 2
 
-    # Let the worker finish cleanly.
+
+def test_measurement_result_error_propagates_on_access():
+    """After _inject_error(), every access raises the stored exception."""
+    raw = MeasurementResult()
+    raw._inject_error(RuntimeError("backend error"))
+    with pytest.raises(RuntimeError, match="backend error"):
+        len(raw)
+    with pytest.raises(RuntimeError, match="backend error"):
+        iter(raw)
+
+
+def test_decoded_measurement_result_equals_dict():
+    """DecodedMeasurementResult must compare equal to the equivalent plain dict."""
+    raw = MeasurementResult()
+    raw._inject({"0": 0.5, "1": 0.5})
+    decoded = DecodedMeasurementResult(raw, lambda key: int(key, 2))
+    assert decoded == {0: 0.5, 1: 0.5}
+    assert {0: 0.5, 1: 0.5} == decoded
+
+
+def test_decoded_measurement_result_repr_pending():
+    """repr() on an unpopulated result must include 'pending'."""
+    raw = MeasurementResult()
+    decoded = DecodedMeasurementResult(raw, lambda k: k)
+    assert "pending" in repr(decoded).lower()
+
+
+# ---------------------------------------------------------------------------
+# Docstring examples
+# ---------------------------------------------------------------------------
+
+
+def test_docstring_basic_usage_example():
+    """Exact values from the BatchedBackend class docstring example.
+
+    a=1, b=2 → c=3; d=2, e=3 → f=5.
+    """
+    backend = DefaultBackend()
+    bb = backend.batched()
+
+    a = QuantumFloat(4); a[:] = 1
+    b = QuantumFloat(3); b[:] = 2
+    c = a + b  # expected: 3
+
+    d = QuantumFloat(4); d[:] = 2
+    e = QuantumFloat(3); e[:] = 3
+    f = d + e  # expected: 5
+
+    res_c = c.get_measurement(backend=bb)
+    res_f = f.get_measurement(backend=bb)
+
     bb.dispatch()
-    t.join(timeout=5.0)
+
+    assert res_c == {3: 1.0}
+    assert res_f == {5: 1.0}
+
+
+def test_batched_measurement_function():
+    """batched_measurement helper matches the usage shown in its docstring."""
+    from qrisp import batched_measurement
+
+    backend = DefaultBackend()
+    bb = backend.batched()
+
+    a = QuantumFloat(4); a[:] = 1
+    b = QuantumFloat(3); b[:] = 2
+    c = a + b  # expected: 3
+
+    d = QuantumFloat(4); d[:] = 2
+    e = QuantumFloat(3); e[:] = 3
+    f = d + e  # expected: 5
+
+    results = batched_measurement([c, f], backend=bb)
+
+    assert results[0] == {3: 1.0}
+    assert results[1] == {5: 1.0}

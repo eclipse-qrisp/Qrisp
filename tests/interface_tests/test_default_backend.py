@@ -182,3 +182,29 @@ class TestDefaultBackendOptions:
     def test_module_level_def_backend_is_default_backend(self):
         """Ensure the module-level def_backend is a DefaultBackend instance."""
         assert isinstance(def_backend, DefaultBackend)
+
+
+class TestDefaultBackendBatched:
+    """Verify that DefaultBackend.batched() produces correct lazy results."""
+
+    def test_batched_workflow_populates_lazy_result(self):
+        """batched() buffers the circuit; dispatch() populates the result via DefaultBackend.run()."""
+        from qrisp.interface import BatchedBackend
+        from qrisp.interface.measurement_result import LazyDict
+
+        backend = DefaultBackend()
+        bb = backend.batched()
+        assert isinstance(bb, BatchedBackend)
+        assert bb._backend is backend
+
+        res = _simple_computation().get_measurement(backend=bb)
+        assert isinstance(res, LazyDict)
+        assert not res._populated
+        bb.dispatch()
+        assert res == {9: 1.0}
+
+    def test_batched_inherits_shots_from_wrapped_backend(self):
+        """BatchedBackend created via batched() inherits the wrapped backend's options."""
+        backend = DefaultBackend(options={"shots": 256, "token": ""})
+        bb = backend.batched()
+        assert bb.options["shots"] == 256

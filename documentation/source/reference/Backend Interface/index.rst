@@ -50,9 +50,10 @@ circuits for execution and returns a :ref:`Job` handle immediately.
 
 A synchronous convenience method ``Backend.run`` is also provided by the base class.
 It calls ``run_async`` internally, blocks until the job finishes, and returns the
-results as a plain list of measurement dictionaries (one per submitted circuit).
-This method exists primarily for *backward compatibility* with existing Qrisp code
-that previously called ``backend.run(circuit, shots)`` and expected a dictionary directly.
+results as :class:`~qrisp.interface.MeasurementResult` objects — a single object for a
+single circuit, or a list of them for a sequence. :class:`~qrisp.interface.MeasurementResult`
+is a :class:`collections.abc.Mapping`, so all dict-style access (``result[key]``,
+``.items()``, ``len()``, equality with a plain dict) works unchanged.
 New code that needs the full :ref:`Job` interface (status polling, cancellation, or
 concurrent execution) should call ``run_async`` instead.
 
@@ -151,9 +152,9 @@ retrieved by calling ``job.result()``:
    >>> print(backend.options)
    {'shots': None, 'token': ''}
 
-If all you need is the measurement dictionary and do not require the :ref:`Job` handle,
+If all you need is the measurement result and do not require the :ref:`Job` handle,
 the inherited ``run`` method provides a shorter path. It calls ``run_async`` internally,
-waits for completion, and returns the counts directly as a list:
+waits for completion, and returns a :class:`~qrisp.interface.MeasurementResult` directly:
 
 .. code-block:: python
 
@@ -200,7 +201,8 @@ The backend decides internally whether to run them sequentially or in parallel:
    [{'0': 254, '1': 258}, {'00': 259, '11': 253}]
 
 On a synchronous backend, we can also use ``run`` with a batch of circuits.
-When a list is passed, the result is a list of dictionaries — one per circuit:
+When a list is passed, the result is a list of :class:`~qrisp.interface.MeasurementResult`
+objects — one per circuit. Each supports the same dict-style access as above:
 
 .. code-block:: python
 
@@ -590,11 +592,30 @@ Devices available via AQT Cloud currently support up to 2000 shots.
 :ref:`StimBackend`
 ---------------------
 
-The StimBackend function returns a :ref:`BatchedBackend` that uses `Stim <https://github.com/quantumlib/Stim>`_ 
-for fast Clifford circuit simulation. Stim is particularly well-suited for simulating quantum error correction circuits.
+:class:`~qrisp.interface.StimBackend` is a :ref:`Backend` that simulates Clifford circuits
+via `Stim <https://github.com/quantumlib/Stim>`_. Stim is particularly well-suited for
+simulating quantum error correction circuits with thousands of qubits.
+
+For synchronous use, call ``run`` directly:
 
 ::
 
    from qrisp.interface import StimBackend
-   
+
    backend = StimBackend()
+
+For lazy, buffered execution, obtain a :ref:`BatchedBackend` via ``batched()``:
+
+::
+
+   from qrisp import QuantumVariable
+   from qrisp.interface import StimBackend
+
+   bb = StimBackend().batched()
+
+   qv = QuantumVariable(2)
+   qv[:] = "10"
+
+   res = qv.get_measurement(backend=bb)  # lazy — returns immediately
+   bb.dispatch()
+   print(res)   # {'10': 1.0}

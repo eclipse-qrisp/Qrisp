@@ -16,16 +16,23 @@
 
 """This module defines the abstract :class:`Backend` interface for Qrisp-compatible backends."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from types import MappingProxyType
-from typing import Any, TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias
+
+from qrisp.interface.measurement_result import MeasurementResult
+
+if TYPE_CHECKING:
+    from qrisp.interface.batched_backend import BatchedBackend
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 from .job import Job
 
-CircuitResult: TypeAlias = dict[str, Any]
+CircuitResult: TypeAlias = MeasurementResult
 
 
 class Backend(ABC):
@@ -227,18 +234,18 @@ class Backend(ABC):
         Submit one or more circuits, block until completion, and return results.
 
         This is a synchronous convenience wrapper around :meth:`run_async`.
-        It calls :meth:`run_async`, waits for the :class:`Job` to finish by
-        calling :meth:`Job.result <qrisp.interface.Job.result>`, and returns
-        the measurement results. The return type mirrors the input: a single
-        ``CircuitResult`` for a single circuit, or a ``list[CircuitResult]``
-        for a sequence of circuits.
+        It calls :meth:`run_async`, waits for the :class:`Job` to finish, and
+        returns the measurement results wrapped in
+        :class:`~qrisp.interface.MeasurementResult` objects.  The result type
+        mirrors the input: a single :class:`~qrisp.interface.MeasurementResult`
+        for a single circuit, or a ``list`` of them for a sequence.
 
-        This method exists primarily for *backward compatibility* with
-        existing Qrisp code that previously called ``backend.run(circuit,
-        shots)`` and expected a measurement dictionary directly. New code
-        that needs the full :class:`Job` interface (status polling,
-        cancellation, concurrent awaiting) should call :meth:`run_async`
-        instead.
+        :class:`~qrisp.interface.MeasurementResult` is a
+        :class:`collections.abc.Mapping`, so all dict-style access
+        (``result[key]``, ``.items()``, ``len()``, equality with a plain dict)
+        works unchanged.  The only observable difference from the previous
+        behaviour is that ``isinstance(result, dict)`` is now ``False``; use
+        ``isinstance(result, Mapping)`` instead.
 
         Parameters
         ----------
@@ -251,10 +258,9 @@ class Backend(ABC):
 
         Returns
         -------
-        CircuitResult or list[CircuitResult]
-            A single measurement dictionary when one circuit is submitted,
-            or a list of measurement dictionaries when multiple circuits are
-            submitted.
+        MeasurementResult or list[MeasurementResult]
+            A pre-populated :class:`~qrisp.interface.MeasurementResult` when
+            one circuit is submitted, or a list of them for multiple circuits.
 
         Raises
         ------
@@ -269,11 +275,33 @@ class Backend(ABC):
         batch = not isinstance(circuits, QuantumCircuit)
         shots = shots or self.options.get("shots")
         all_counts = self.run_async(circuits, shots).result().all_counts
-        return all_counts if batch else all_counts[0]
+
+        results = []
+        for counts in all_counts:
+            raw = MeasurementResult()
+            raw._inject(counts)
+            results.append(raw)
+
+        return results if batch else results[0]
 
     # ------------------------------------------------------------------
     # Optional job retrieval and utility methods
     # ------------------------------------------------------------------
+
+    def batched(self) -> "BatchedBackend":
+        """Return a :class:`BatchedBackend` that wraps this backend.
+
+        The returned object buffers circuits submitted via :meth:`run` and
+        executes them by forwarding each to this backend's :meth:`run` when
+        :meth:`BatchedBackend.dispatch` is called.
+
+        Returns
+        -------
+        BatchedBackend
+        """
+        from qrisp.interface.batched_backend import BatchedBackend
+
+        return BatchedBackend(self)
 
     def retrieve_job(self, job_id: str) -> Job:
         """
