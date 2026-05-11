@@ -84,6 +84,45 @@ def cancel_zero_controls(qc: QuantumCircuit) -> QuantumCircuit:
     -------
     QuantumCircuit
         A new circuit with redundant controlled gates removed.
+
+    Examples
+    --------
+    Cancel a CX whose control qubit is still in |0⟩::
+
+        >>> from qrisp import QuantumCircuit, PassManager
+        >>> from qrisp import cancel_zero_controls
+        >>> qc = QuantumCircuit(2)
+        >>> qc.cx(0, 1)  # Qubit 0 starts in |0⟩ — the CX is a no-op
+        >>> qc.h(1)       # Now qubit 1 is marked as used
+        >>> print(qc)
+        qb_58: ──■───────
+               ┌─┴─┐┌───┐
+        qb_59: ┤ X ├┤ H ├
+               └───┘└───┘
+        >>> pm = PassManager()
+        >>> pm += cancel_zero_controls
+        >>> optimized_qc = pm.run(qc)
+        >>> print(optimized_qc)
+        <BLANKLINE>             
+        qb_58: ─────
+               ┌───┐
+        qb_59: ┤ H ├
+               └───┘
+
+    Symmetric controlled-phase gates (CZ, CP) cancel when *either*
+    qubit is |0⟩::
+
+        >>> qc = QuantumCircuit(2)
+        >>> qc.cz(0, 1)   # both qubits start in |0⟩ — CZ is a no-op
+        >>> pm = PassManager()
+        >>> pm += cancel_zero_controls
+        >>> optimized = pm.run(qc)
+        >>> print(optimized)
+        <BLANKLINE>                    
+        qb_60:
+        <BLANKLINE>
+        qb_61: 
+        <BLANKLINE>    
     """
     fresh = set(qc.qubits)  # all qubits start in |0⟩
     qc_new = qc.clearcopy()
