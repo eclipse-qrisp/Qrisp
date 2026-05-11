@@ -21,7 +21,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias, overload
 
 from qrisp.interface.measurement_result import MeasurementResult
 
@@ -224,6 +224,16 @@ class Backend(ABC):
     # ------------------------------------------------------------------
     # Synchronous convenience method
     # ------------------------------------------------------------------
+
+    @overload
+    def run(
+        self, circuits: QuantumCircuit, shots: int | None = None
+    ) -> MeasurementResult: ...
+
+    @overload
+    def run(
+        self, circuits: Sequence[QuantumCircuit], shots: int | None = None
+    ) -> list[MeasurementResult]: ...
 
     def run(
         self,

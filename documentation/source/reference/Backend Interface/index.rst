@@ -11,6 +11,7 @@ Backend Interface
    Job
    JobStatus
    JobResult
+   MeasurementResult
    BackendServer
    BackendClient
    VirtualBackend
@@ -467,6 +468,34 @@ Once a job reaches any of these states, its outcome is final:
 The :ref:`JobResult` class wraps the outcome of one or more circuit executions.
 
 For more details, see the :ref:`JobResult` documentation.
+
+
+:ref:`MeasurementResult` and :ref:`DecodedMeasurementResult`
+-------------------------------------------------------------
+
+:class:`~qrisp.interface.MeasurementResult` is the return type of
+:meth:`~qrisp.interface.Backend.run`.  It is a
+:class:`~collections.abc.Mapping` of raw bitstring keys to counts, so all
+dict-style access (``result["0"]``, ``.items()``, ``len()``, ``==`` with a
+plain dict) works unchanged.
+
+For standard backends the object arrives pre-populated.  For
+:class:`~qrisp.interface.BatchedBackend` it starts empty and is filled when
+:meth:`~qrisp.interface.BatchedBackend.dispatch` is called; accessing it
+before that raises ``RuntimeError``.
+
+:class:`~qrisp.interface.DecodedMeasurementResult` is what
+:meth:`QuantumVariable.get_measurement <qrisp.QuantumVariable.get_measurement>`
+returns to the user.  It wraps a raw result together with the variable's
+decoder and translates raw bitstring indices into user-facing labels (e.g.
+integers for :class:`~qrisp.QuantumFloat`).  Decoding is deferred: the
+plain dict representation is built the first time any key is accessed.
+
+Both classes inherit from :class:`~qrisp.interface.LazyDict`, an abstract
+:class:`~collections.abc.Mapping` whose data is computed exactly once on
+first access and cached for all subsequent reads.
+
+For more details, see the :ref:`MeasurementResult` documentation.
 
 
 :ref:`BackendServer`
