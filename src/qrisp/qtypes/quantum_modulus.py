@@ -22,6 +22,9 @@ from jax.core import Tracer
 
 from qrisp import check_for_tracing_mode
 from qrisp.qtypes.quantum_float import QuantumFloat
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+    smallest_power_of_two,
+)
 from qrisp.misc import gate_wrap
 from qrisp.core import cx
 import jax
@@ -35,7 +38,7 @@ def _moduli_neq(a, b):
     cannot be materialised, so the function raises ``RuntimeError``.
     Callers in tracing code paths must skip the
     check themselves (``if not check_for_tracing_mode(): …``).
-    
+
     Parameters
     ----------
     a : int or BigInteger
@@ -48,10 +51,12 @@ def _moduli_neq(a, b):
     bool
         ``True`` if the moduli are unequal, ``False`` if they represent
         the same modulus.
-    
+
     """
 
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+        BigInteger,
+    )
 
     if isinstance(a, BigInteger) or isinstance(b, BigInteger):
         if not isinstance(a, BigInteger):
@@ -95,7 +100,10 @@ def _coerce_bigint_operand(value, modulus):
         Value with exactly ``modulus.digits.shape[0]`` limbs.
     """
 
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+        BigInteger,
+    )
+
     return BigInteger.coerce(value, modulus.digits.shape[0])
 
 
@@ -250,52 +258,29 @@ class QuantumModulus(QuantumFloat):
 
     def __init__(self, modulus, inpl_adder=None, qs=None):
 
+        self.modulus = modulus
+        aux = smallest_power_of_two(modulus)
+        QuantumFloat.__init__(self, msize=aux, qs=qs)
+        # Dynamic modular arithmetic uses gidney_adder while static uses fourier_adder.
+        # Consider reconciling it.
         if check_for_tracing_mode():
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
-                smallest_power_of_two,
-            )
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
-                BigInteger,
-            )
-
-            # if isinstance(modulus, BigInteger):
-            #    pad = jnp.zeros(modulus.digits.shape[0], dtype=modulus.digits.dtype)
-            #    self.modulus_double = BigInteger(jnp.concatenate([modulus.digits, pad], axis=0))
-            self.modulus = modulus
-            aux = smallest_power_of_two(modulus)
-
-            QuantumFloat.__init__(self, msize=aux, qs=qs)
             if inpl_adder is None:
                 from qrisp.alg_primitives.arithmetic import gidney_adder
 
                 inpl_adder = gidney_adder
 
-            self.inpl_adder = inpl_adder
-
-            self.m = 0
-
         else:
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
-                smallest_power_of_two,
-            )
-
-            self.modulus = modulus
-            aux = int(smallest_power_of_two(modulus))
-
-            QuantumFloat.__init__(self, msize=aux, qs=qs)
-
             if inpl_adder is None:
                 from qrisp.alg_primitives.arithmetic import fourier_adder
 
                 inpl_adder = fourier_adder
 
-            self.inpl_adder = inpl_adder
-
-            self.m = 0
+        self.inpl_adder = inpl_adder
+        self.m = 0
 
     def decoder(self, i):
         """Decode a Montgomery-encoded value back to standard representation.
-        
+
         Montgomery encoding stores k as k_hat = (k * 2^{-m}) mod N.
         Decoding recovers k = (k_hat * 2^m) mod N = montgomery_decoder(k_hat, R, N)
         where R = 2^m is the Montgomery radix.
@@ -332,7 +317,9 @@ class QuantumModulus(QuantumFloat):
 
         i_value = i() if isinstance(i, BigInteger) else int(i)
         modulus_value = (
-            self.modulus() if isinstance(self.modulus, BigInteger) else int(self.modulus)
+            self.modulus()
+            if isinstance(self.modulus, BigInteger)
+            else int(self.modulus)
         )
 
         if i_value >= modulus_value:  # or (np.gcd(i, self.modulus) != 1 and i != 0):
@@ -348,7 +335,7 @@ class QuantumModulus(QuantumFloat):
         )
 
         return new_montgomery_decoder(i, self.m, self.modulus)
-    
+
     def measure(self):
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
             BigInteger,
@@ -409,7 +396,9 @@ class QuantumModulus(QuantumFloat):
 
             i_value = i() if isinstance(i, BigInteger) else int(i)
             modulus_value = (
-                self.modulus() if isinstance(self.modulus, BigInteger) else int(self.modulus)
+                self.modulus()
+                if isinstance(self.modulus, BigInteger)
+                else int(self.modulus)
             )
 
             if i_value >= modulus_value:
@@ -434,7 +423,9 @@ class QuantumModulus(QuantumFloat):
         )
 
         if isinstance(other, QuantumModulus):
-            if not check_for_tracing_mode() and _moduli_neq(self.modulus, other.modulus):
+            if not check_for_tracing_mode() and _moduli_neq(
+                self.modulus, other.modulus
+            ):
                 raise ValueError("Both QuantumModuli must have the same modulus")
             if check_for_tracing_mode():
                 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
