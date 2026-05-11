@@ -206,6 +206,20 @@ def test_modulus_numpy_scalar_add_with_nonzero_shift():
     assert test_add() == (9, (9 + 10) % 13)
 
 
+def test_modulus_scalar_sub_with_nonzero_shift():
+    from qrisp import QuantumModulus, jaspify, measure
+
+    @jaspify
+    def test_sub():
+        a = QuantumModulus(13)
+        a.m = 3
+        a[:] = 9
+        b = a - 10
+        return measure(a), measure(b)
+
+    assert test_sub() == (9, (9 - 10) % 13)
+
+
 def test_modulus_qq_multiply():
     from qrisp import QuantumModulus, jaspify, measure
 
