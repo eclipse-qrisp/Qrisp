@@ -31,8 +31,6 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
      - Recursively dissolve synthesized gates into elementary gates
    * - :doc:`gray_synth_toffoli <gray_synth_toffoli>`
      - Synthesize Toffoli gates using Gray-code decomposition
-   * - :doc:`is_toffoli <is_toffoli>`
-     - Check whether an instruction is a Toffoli gate
    * - :doc:`manual_layout <manual_layout>`
      - Re-index qubits according to a user-supplied mapping
    * - :doc:`remove_barriers <remove_barriers>`
@@ -54,7 +52,6 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
    convert_to_cz
    decompose
    gray_synth_toffoli
-   is_toffoli
    manual_layout
    remove_barriers
    resolve_swaps
