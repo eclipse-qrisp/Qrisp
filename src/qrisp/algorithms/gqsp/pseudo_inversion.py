@@ -21,7 +21,6 @@ import numpy.typing as npt
 from numpy.polynomial import Chebyshev
 from qrisp.algorithms.cks import cks_coeffs, cks_params
 from qrisp.algorithms.gqsp.gqsvt import GQSVT
-from qrisp.algorithms.gqsp.qet import QET
 from qrisp.algorithms.gqsp.helper_functions import chebyshev_approx
 from qrisp.block_encodings import BlockEncoding
 from scipy.special import erf
@@ -264,7 +263,7 @@ def _pseudo_inversion_cheb(
         The target precision $\epsilon$ for the approximation. Defaults to 1e-3.
     max_N : int, optional
         The maximum polynomial degree to evaluate when interpolating the 
-        even cutoff polynomial (the smooth rectangle). Defaults to 100.
+        even cutoff polynomial (the smooth rectangle). Defaults to 2048.
 
     Returns
     -------
