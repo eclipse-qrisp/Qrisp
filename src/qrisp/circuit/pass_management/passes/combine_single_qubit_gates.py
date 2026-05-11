@@ -106,22 +106,23 @@ def combine_single_qubit_gates(qc: QuantumCircuit) -> QuantumCircuit:
     QuantumCircuit
         A new circuit with adjacent single-qubit gates combined.
 
-    Example
-    -------
+    Examples
+    --------
+
     >>> from qrisp import PassManager, combine_single_qubit_gates
     >>> from qrisp import QuantumCircuit
-    >>>
     >>> qc = QuantumCircuit(1)
     >>> qc.x(0)
     >>> qc.z(0)
-    >>> qc.y(0)   # X, Z, Y on the same qubit
-    >>>
+    >>> qc.h(0)   # X, Z, Y on the same qubit
     >>> pm = PassManager()
     >>> pm += combine_single_qubit_gates
     >>> optimized_qc = pm.run(qc)
     >>> # X, Z, Y combined into a single U3 gate
-    >>> len(optimized_qc.data)
-    1
+    >>> print(optimized_qc)
+           ┌──────────────┐
+    qb_64: ┤ U3(π/2,3π,0) ├
+           └──────────────┘
     """
     # Per-qubit stacks of single-qubit gates waiting to be flushed.
     qb_dic = {qb: [] for qb in qc.qubits}
