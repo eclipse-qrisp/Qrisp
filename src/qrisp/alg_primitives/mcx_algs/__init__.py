@@ -18,6 +18,7 @@
 
 from qrisp.alg_primitives.mcx_algs.multi_cx import *
 from qrisp.alg_primitives.mcx_algs.amy import *
+from qrisp.alg_primitives.mcx_algs.approx import *
 from qrisp.alg_primitives.mcx_algs.balauca import *
 from qrisp.alg_primitives.mcx_algs.gidney import *
 from qrisp.alg_primitives.mcx_algs.gms import *
