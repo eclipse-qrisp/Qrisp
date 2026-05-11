@@ -187,7 +187,7 @@ def pseudo_inversion(
 
     """
 
-    p = _pseudo_inversion_cheb(theta, delta, eps, 100)
+    p = _pseudo_inversion_cheb(theta, delta, eps)
 
     # Set _rescale=False to apply p(A/α) instead of p(A).
     A_pseudo_inv = GQSVT(A, p, kind="Chebyshev", rescale=False)
@@ -241,7 +241,7 @@ def _pseudo_inversion_cheb(
     theta: float,
     delta: float = None,
     eps: float = 1e-3,
-    max_N: int = 100,
+    max_N: int = 2024,
 ) -> npt.NDArray[np.float64]:
     r"""
     Constructs a Chebyshev polynomial approximation of the pseudo-inversion.
