@@ -806,18 +806,49 @@ def cancel_inverses(qc: QuantumCircuit) -> QuantumCircuit:
     QuantumCircuit
         A new circuit with adjacent inverse gates cancelled.
 
-    Example
-    -------
-    >>> from qrisp import PassManager, cancel_inverses
-    >>> from qrisp import QuantumCircuit
-    >>>
-    >>> qc = QuantumCircuit(2)
-    >>> qc.cx(0, 1)
-    >>> qc.cx(0, 1)   # CX is self-inverse → cancelled
-    >>>
-    >>> pm = PassManager()
-    >>> pm.add_pass(cancel_inverses)
-    >>> optimized_qc = pm.run(qc)   # empty circuit
+    Examples
+    --------
+    Cancel adjacent self-inverse gates (e.g. CX·CX)::
+
+        >>> from qrisp import QuantumCircuit, PassManager
+        >>> from qrisp import cancel_inverses
+        >>> qc = QuantumCircuit(2)
+        >>> qc.cx(0, 1)
+        >>> qc.cx(0, 1)   # CX is self-inverse → cancelled
+        >>> print(qc)
+        <BLANKLINE>
+        qb_96: ──■────■──
+               ┌─┴─┐┌─┴─┐
+        qb_97: ┤ X ├┤ X ├
+               └───┘└───┘
+        >>>
+        >>> pm = PassManager()
+        >>> pm += cancel_inverses
+        >>> optimized_qc = pm.run(qc)
+        >>> print(optimized_qc)
+        <BLANKLINE>
+        qb_96: 
+        <BLANKLINE>
+        qb_97: 
+        <BLANKLINE>
+
+    Fuse a SWAP with a neighbouring CX into fewer gates::
+
+        >>> qc = QuantumCircuit(2)
+        >>> qc.swap(0, 1)
+        >>> qc.cx(0, 1)
+        >>> pm = PassManager()
+        >>> pm += cancel_inverses
+        >>> pm += decompose()
+        >>> optimized = pm.run(qc)
+        >>> # SWAP·CX fused into a cheaper compound gate rather than
+        >>> # decomposing into 3 CX + 1 CX = 4 CX gates.
+        >>> print(optimized)
+                     ┌───┐
+        qb_110: ──■──┤ X ├
+                ┌─┴─┐└─┬─┘
+        qb_111: ┤ X ├──■──
+                └───┘     
     """
     gphase_array = [0]  # mutable accumulator for global phase
 
