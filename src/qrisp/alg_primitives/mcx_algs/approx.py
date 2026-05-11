@@ -48,7 +48,7 @@ def sample_approx_mcx_masks(control_amount, k, seed=None):
         rng = seed
     else:
         rng = random.Random(seed)
-        
+
     return [rng.getrandbits(control_amount) for _ in range(k)]
 
 

@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp.core.gate_application_functions import x, cx, mcx
@@ -141,7 +141,7 @@ def ladder1_synth_jax(qf):
         cx(qf[2 * i], qf[2 * i + 1])
 
 
-def ladder2_synth_jax(x, y, method="khattar"):
+def ladder2_synth_jax(x, y, method="khattar", mcx_kwargs=None):
     """
     Iteratively synthesizes a polylogarithmic-depth MCX circuit equivalent to a Toffoli ladder of length n-1.
     This construction is based on the recursive algorithm described in `Algorithm 2 <https://arxiv.org/abs/2501.16802>`__.
@@ -156,17 +156,22 @@ def ladder2_synth_jax(x, y, method="khattar"):
             The second set of qubits.
         method: str
             The method to use for synthesizing the MCX gates. Default is 'khattar'.
+        mcx_kwargs: dict, optional
+            Additional keyword arguments forwarded to :func:`qrisp.mcx`.
     """
 
     N = jlen(x)
+    if mcx_kwargs is None:
+        mcx_kwargs = {}
 
     for i in jrange(1, (N + 1) // 2 - 1):
         mcx(
             x[2 * i - 1] + y[2 * i - 1],
             x[2 * i],
             method=method,
+            **mcx_kwargs,
         )
-    mcx(x[-2] + y[-1], x[-1], method=method)  # CHANGED
+    mcx(x[-2] + y[-1], x[-1], method=method, **mcx_kwargs)  # CHANGED
 
     max_iterations = compute_ladder_iterations(N)
     for k in jrange(max_iterations - 2):
@@ -180,6 +185,7 @@ def ladder2_synth_jax(x, y, method="khattar"):
             ],
             x[X_prime_func((N >> (k + 1)) - 1, k, N >> k)],
             method=method,
+            **mcx_kwargs,
         )
 
         for i in jrange(1, ((N >> (k + 1)) + 1) // 2 - 1):
@@ -191,6 +197,7 @@ def ladder2_synth_jax(x, y, method="khattar"):
                 ],
                 x[X_prime_func(2 * i, k, N >> k)],
                 method=method,
+                **mcx_kwargs,
             )
 
     with control(N >> (max_iterations - 1) == 2):
@@ -203,6 +210,7 @@ def ladder2_synth_jax(x, y, method="khattar"):
             ],
             x[X_prime_func(1, max_iterations - 2, N >> (max_iterations - 2))],
             method=method,
+            **mcx_kwargs,
         )
 
     with invert():
@@ -213,6 +221,7 @@ def ladder2_synth_jax(x, y, method="khattar"):
                 + y[X_prime_func(0, k, N >> k) : X_prime_func(1, k, N >> k)],
                 x[X_prime_func(1, k, N >> k)],
                 method=method,
+                **mcx_kwargs,
             )
 
             for i in jrange(1, ((N >> (k + 1)) + 1) // 2 - 1):
@@ -225,14 +234,15 @@ def ladder2_synth_jax(x, y, method="khattar"):
                     ],
                     x[X_prime_func(2 * i + 1, k, N >> k)],
                     method=method,
+                    **mcx_kwargs,
                 )
 
-    mcx([x[0], y[0]], x[1], method=method)
+    mcx([x[0], y[0]], x[1], method=method, **mcx_kwargs)
     for i in jrange(1, (N + 1) // 2 - 1):
-        mcx([x[2 * i], y[2 * i]], x[2 * i + 1], method=method)
+        mcx([x[2 * i], y[2 * i]], x[2 * i + 1], method=method, **mcx_kwargs)
 
 
-def remaud_adder(a, b, z):
+def remaud_adder(a, b, z, method="khattar", mcx_kwargs=None):
     """
     In-place adder function based on `this paper, Algorithm 3 <https://arxiv.org/abs/2501.16802>`__.
     Performs the addition:
@@ -252,6 +262,11 @@ def remaud_adder(a, b, z):
         The value that should be modified in the in-place addition.
     z : Qubit
         The carry value resulting from the overflow of the addition.
+    method : str, optional
+        MCX synthesis method used by the ladder construction. The default is
+        ``"khattar"``.
+    mcx_kwargs : dict, optional
+        Additional keyword arguments forwarded to :func:`qrisp.mcx`.
 
     Examples
     --------
@@ -278,14 +293,14 @@ def remaud_adder(a, b, z):
     ladder1_synth_jax(a[1:] + z[:])
 
     with invert():
-        ladder2_synth_jax(a[:] + z[:], b[:])
+        ladder2_synth_jax(a[:] + z[:], b[:], method=method, mcx_kwargs=mcx_kwargs)
 
     for i in jrange(1, n):
         cx(a[i], b[i])
 
     x(b[1:-1])
 
-    ladder2_synth_jax(a[:], b[:-1])
+    ladder2_synth_jax(a[:], b[:-1], method=method, mcx_kwargs=mcx_kwargs)
 
     x(b[1:-1])
 
