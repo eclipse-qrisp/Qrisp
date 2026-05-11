@@ -18,11 +18,15 @@
 
 import functools
 import traceback
+from typing import TYPE_CHECKING
 
 import jax.numpy as jnp
 import numpy as np
 import sympy
 from jax.typing import ArrayLike
+
+if TYPE_CHECKING:
+    from qrisp.interface.measurement_result import _IntKeyedResult
 
 # A small epsilon value for numerical stability.
 # Defined here for convenience, so it can be imported elsewhere.
@@ -1390,7 +1394,33 @@ def check_if_fresh(qubits, qs, ignore_q_envs=True):
     return True
 
 
-def get_measurement_from_qc(qc, qubits, backend, shots=None):
+def get_measurement_from_qc(qc, qubits, backend, shots=None) -> "_IntKeyedResult":
+    """Run *qc*, measure *qubits*, and return a lazy int-keyed probability mapping.
+
+    Appends measurement gates for each qubit in *qubits*, submits the circuit
+    to *backend*, and wraps the raw result in an
+    :class:`~qrisp.interface.measurement_result._IntKeyedResult` that converts
+    bitstrings to integers and normalises shot counts to probabilities on first
+    access.
+
+    Parameters
+    ----------
+    qc : QuantumCircuit
+        The circuit to execute. Measurement gates are added in-place.
+    qubits : sequence
+        The qubits to measure, in order.
+    backend : Backend
+        A Qrisp-compatible backend implementing
+        :meth:`~qrisp.interface.Backend.run`.
+    shots : int or None, optional
+        Number of shots. If ``None``, the backend's default is used.
+
+    Returns
+    -------
+    _IntKeyedResult
+        Lazy mapping from integer bitstring indices to normalised probabilities.
+        Population is deferred until the first access.
+    """
     from qrisp.interface.measurement_result import _IntKeyedResult, MeasurementResult
 
     cl = []
@@ -2335,8 +2365,9 @@ def batched_measurement(variables, backend, shots=None):
     """
 
     # Each get_measurement call returns a lazy DecodedMeasurementResult immediately
-    # and registers the circuit in backend._queries.  A single dispatch() call
-    # then executes all circuits together and populates every result.
+    # and registers the circuit in backend._queries.
+    # A single dispatch() call then executes all circuits
+    # together and populates every result.
     results = [var.get_measurement(backend=backend, shots=shots) for var in variables]
     backend.dispatch()
     return results

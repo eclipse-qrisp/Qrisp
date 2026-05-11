@@ -17,12 +17,16 @@
 """
 
 import copy
+from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
 from jax import tree_util
 
 from qrisp.core.compilation import qompiler
+
+if TYPE_CHECKING:
+    from qrisp.interface.measurement_result import DecodedMeasurementResult
 
 
 class QuantumVariable:
@@ -993,11 +997,13 @@ class QuantumVariable:
         circuit_preprocessor=None,
         filename=None,
         precompiled_qc=None,
-    ) -> dict:
+    ) -> "DecodedMeasurementResult":
         r"""
         Method for quick access to the measurement results of the state of the variable.
-        This method returns a dictionary of the type {value : p} where p indicates the
-        probability with which that value is measured.
+        Returns a :class:`~qrisp.interface.DecodedMeasurementResult`, which behaves like
+        a dictionary of the type ``{value: p}`` where ``p`` is the measurement probability.
+        All standard dict-style operations (``result[key]``, ``.items()``, ``len()``,
+        equality with a plain dict) work unchanged.
 
 
         Parameters
@@ -1034,8 +1040,9 @@ class QuantumVariable:
 
         Returns
         -------
-        dict
-            A dictionary of values and their corresponding measurement probabilities.
+        DecodedMeasurementResult
+            A lazy :class:`~qrisp.interface.DecodedMeasurementResult` mapping each
+            decoded value to its measurement probability.
 
         Examples
         --------
@@ -1100,8 +1107,8 @@ class QuantumVariable:
 
         # qc = qc.transpile()
 
-        from qrisp.misc import get_measurement_from_qc
         from qrisp.interface.measurement_result import DecodedMeasurementResult
+        from qrisp.misc import get_measurement_from_qc
 
         counts = get_measurement_from_qc(qc, self.reg, backend, shots)
         result = DecodedMeasurementResult(counts, self.decoder)

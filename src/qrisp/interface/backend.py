@@ -32,8 +32,6 @@ from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 from .job import Job
 
-CircuitResult: TypeAlias = MeasurementResult
-
 
 class Backend(ABC):
     """
@@ -239,7 +237,7 @@ class Backend(ABC):
         self,
         circuits: QuantumCircuit | Sequence[QuantumCircuit],
         shots: int | None = None,
-    ) -> CircuitResult | list[CircuitResult]:
+    ) -> MeasurementResult | list[MeasurementResult]:
         """
         Submit one or more circuits, block until completion, and return results.
 

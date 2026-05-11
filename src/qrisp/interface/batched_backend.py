@@ -15,11 +15,7 @@
 # ********************************************************************************
 
 """
-This module defines :class:`BatchedBackend`, obtained via
-:meth:`Backend.batched() <qrisp.interface.Backend.batched>`.  It wraps any
-:class:`~qrisp.interface.Backend`, buffers circuit submissions in an explicit
-request queue, and executes them all when :meth:`~BatchedBackend.dispatch` is
-called.
+This module defines :class:`BatchedBackend`, obtained via :meth:`Backend.batched() <qrisp.interface.Backend.batched>`.
 """
 
 from __future__ import annotations
@@ -34,14 +30,15 @@ from qrisp.interface.measurement_result import MeasurementResult
 
 class BatchedBackend:
     """
-    A backend that buffers circuit submissions and executes them on an explicit
-    :meth:`dispatch` call.
+    A class that buffers circuit submissions and executes them on an explicit
+    :meth:`dispatch` call. Notice that this is not a :class:`Backend` subclass
+    and does not implement the full :class:`Backend` interface.
 
     Obtain an instance via :meth:`Backend.batched`:
 
     .. code-block:: python
 
-        bb = my_backend.batched()
+        batched_backend = my_backend.batched()
 
     .. rubric:: How it works
 
@@ -73,7 +70,7 @@ class BatchedBackend:
     Examples
     --------
 
-    **Basic usage** — collect two measurements, then dispatch:
+    In this example, we collect two measurements, then dispatch:
 
     .. code-block:: python
 
@@ -81,7 +78,7 @@ class BatchedBackend:
         from qrisp.default_backend import DefaultBackend
 
         backend = DefaultBackend()
-        bb = backend.batched()
+        batched_backend = backend.batched()
 
         a = QuantumFloat(4); a[:] = 1
         b = QuantumFloat(3); b[:] = 2
@@ -91,10 +88,10 @@ class BatchedBackend:
         e = QuantumFloat(3); e[:] = 3
         f = d + e  # expected: 5
 
-        res_c = c.get_measurement(backend=bb)  # lazy — returns immediately
-        res_f = f.get_measurement(backend=bb)  # same
+        res_c = c.get_measurement(backend=batched_backend)  # lazy (returns immediately)
+        res_f = f.get_measurement(backend=batched_backend)  # same
 
-        bb.dispatch()  # runs both circuits via backend.run(), then populates results
+        batched_backend.dispatch()  # runs both circuits via backend.run(), then populates results
 
         print(res_c)  # {3: 1.0}
         print(res_f)  # {5: 1.0}
@@ -105,7 +102,8 @@ class BatchedBackend:
     .. code-block:: python
 
         from qrisp import batched_measurement
-        results = batched_measurement([c, f], backend=bb)
+        results = batched_measurement([c, f], backend=batched_backend)
+        print(results)  # [{3: 1.0}, {5: 1.0}]
     """
 
     def __init__(
@@ -205,7 +203,9 @@ class BatchedBackend:
             circuits = [qc for qc, _ in items]
             raws = [raw for _, raw in items]
             try:
-                all_counts = self._backend.run_async(circuits, shots=shots).result().all_counts
+                all_counts = (
+                    self._backend.run_async(circuits, shots=shots).result().all_counts
+                )
                 for raw, counts in zip(raws, all_counts):
                     raw._inject(counts)
             except Exception as exc:

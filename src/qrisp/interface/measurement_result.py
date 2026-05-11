@@ -349,7 +349,7 @@ class _IntKeyedResult(LazyDict):
     """Internal: lazily converts raw bitstring counts to normalised int-keyed probabilities.
 
     Created by ``get_measurement_from_qc`` after calling
-    :meth:`~qrisp.interface.Backend.run`.  On first access it reads the raw
+    :meth:`~qrisp.interface.Backend.run`. On first access it reads the raw
     bitstring counts, strips spaces, truncates each key to *num_bits* bits,
     converts to an integer, merges colliding keys by summing, and normalises
     to probabilities when the total count differs from 1 by more than 1e-3.
