@@ -113,18 +113,54 @@ def gray_synth_toffoli(qc: QuantumCircuit) -> QuantumCircuit:
 
     Examples
     --------
+
+    We showcase the distinction in Toffoli decompositions.
+
     >>> from qrisp import QuantumCircuit, PassManager
-    >>> from qrisp import gray_synth_toffoli
-    >>>
+    >>> from qrisp import gray_synth_toffoli, decompose
     >>> qc = QuantumCircuit(3)
     >>> qc.ccx(0, 1, 2)
-    >>>
-    >>> pm = PassManager()
-    >>> pm += gray_synth_toffoli
-    >>> optimized_qc = pm.run(qc)
-    >>> # Toffoli replaced by Gray-synthesis decomposition (6 CNOT)
-    >>> len(optimized_qc.data)
-    1
+    >>> print(qc)
+    <BLANKLINE>            
+    qb_95: ──■──
+             │  
+    qb_96: ──■──
+           ┌─┴─┐
+    qb_97: ┤ X ├
+           └───┘
+
+    >>> pm_0 = PassManager()
+    >>> pm_0 += decompose()
+    >>> decomposed_qc = pm_0.run(qc)
+    >>> print(decomposed_qc)
+           ┌─────┐                                                 
+    qb_95: ┤ Tdg ├───────■─────────■────■───────────────────────■──
+           ├─────┤┌───┐  │  ┌───┐┌─┴─┐  │  ┌─────┐┌───┐ ┌───┐ ┌─┴─┐
+    qb_96: ┤ Tdg ├┤ X ├──┼──┤ T ├┤ X ├──┼──┤ Tdg ├┤ X ├─┤ T ├─┤ X ├
+           └┬───┬┘└─┬─┘┌─┴─┐├───┤└───┘┌─┴─┐└─────┘└─┬─┘┌┴───┴┐├───┤
+    qb_97: ─┤ H ├───■──┤ X ├┤ T ├─────┤ X ├─────────■──┤ Tdg ├┤ H ├
+            └───┘      └───┘└───┘     └───┘            └─────┘└───┘
+
+    While this implementation has only a T-depth of 4, the CX gates
+    essentially "cycle" through the connectivity requirements. On
+    a linear chain connectivity, several swaps would be required.
+    
+    >>> pm_1 = PassManager()
+    >>> pm_1 += gray_synth_toffoli
+    >>> pm_1 += decompose()
+    >>> optimized_qc = pm_1.run(qc)
+    >>> print(optimized_qc)
+           ┌───┐                                                  ┌────────┐     
+    qb_95: ┤ T ├───────────────────■─────────────────────■────■───┤ gphase ├──■──
+           ├───┤                   │                     │  ┌─┴─┐┌┴────────┤┌─┴─┐
+    qb_96: ┤ T ├───────■───────────┼─────────■───────────┼──┤ X ├┤ P(-π/4) ├┤ X ├
+           ├───┤┌───┐┌─┴─┐┌─────┐┌─┴─┐┌───┐┌─┴─┐┌─────┐┌─┴─┐├───┤└─────────┘└───┘
+    qb_97: ┤ H ├┤ T ├┤ X ├┤ Tdg ├┤ X ├┤ T ├┤ X ├┤ Tdg ├┤ X ├┤ H ├────────────────
+           └───┘└───┘└───┘└─────┘└───┘└───┘└───┘└─────┘└───┘└───┘      
+    
+    This implementation has T-depth 5 but the first 4 CX gates can be implemented
+    swap-free on a linear chain connectivity. After this, a single SWAP (that can 
+    be fused with one of the CX) is suffificient to execute the remaining CX.
     """
     qc_new = qc.clearcopy()
 
