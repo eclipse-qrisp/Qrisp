@@ -36,12 +36,33 @@ def remove_barriers(qc: QuantumCircuit) -> QuantumCircuit:
     QuantumCircuit
         A new circuit identical to *qc* but without any barriers.
 
-    Example
-    -------
-    >>> from qrisp import PassManager, remove_barriers
-    >>> pm = PassManager()
-    >>> pm.add_pass(remove_barriers)
-    >>> clean_qc = pm.run(qc)
+    Examples
+    --------
+    Remove a barrier from a circuit::
+
+        >>> from qrisp import QuantumCircuit, PassManager
+        >>> from qrisp import remove_barriers
+        >>> qc = QuantumCircuit(2)
+        >>> qc.h(0)
+        >>> qc.barrier()
+        >>> qc.cx(0, 1)
+        >>> print(qc)
+                ┌───┐ ░      
+        qb_124: ┤ H ├─░───■──
+                └───┘ ░ ┌─┴─┐
+        qb_125: ──────░─┤ X ├
+                      ░ └───┘
+        
+        >>> pm = PassManager()
+        >>> pm += remove_barriers
+        >>> clean_qc = pm.run(qc)
+        >>> print(clean_qc)
+                ┌───┐     
+        qb_124: ┤ H ├──■──
+                └───┘┌─┴─┐
+        qb_125: ─────┤ X ├
+                     └───┘
+                     
     """
     qc_new = qc.clearcopy()
     for instr in qc.data:
