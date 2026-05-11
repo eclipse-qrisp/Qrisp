@@ -60,9 +60,9 @@ def arange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
         >>> from qrisp import QuantumCircuit, PassManager, decompose
         >>> from qrisp import arange_swaps, cancel_zero_controls
         >>>
-        >>> qc = QuantumCircuit(3)
-        >>> qc.cx(0, 1)
-        >>> qc.swap(1, 2)          # qubit 2 is untouched
+        >>> qc = QuantumCircuit(2)
+        >>> qc.x(0)
+        >>> qc.swap(0, 1)          # qubit 1 is untouched
 
     Without ``arange_swaps``, the SWAP decomposes into three CX gates.
     The first CX targets the unused qubit (qubit 2), but since that qubit
@@ -71,12 +71,11 @@ def arange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
         >>> pm_raw = PassManager()
         >>> pm_raw += decompose()
         >>> print(pm_raw.run(qc)) # doctest: +SKIP
-        qb_0: ──■─────■──────────
-              ┌─┴─┐┌─┴─┐
-        qb_1: ┤ X ├┤ X ├──■────■──
-              └───┘└───┘┌─┴─┐┌─┴─┐
-        qb_2: ─────────┤ X ├┤ X ├
-                       └───┘└───┘
+              ┌───┐     ┌───┐     
+        qb_0: ┤ X ├──■──┤ X ├──■──
+              └───┘┌─┴─┐└─┬─┘┌─┴─┐
+        qb_1: ─────┤ X ├──■──┤ X ├
+                   └───┘     └───┘
 
     With ``arange_swaps`` the qubit order is flipped so the unused qubit
     comes first.  ``cancel_zero_controls`` then removes the first CX
@@ -84,24 +83,27 @@ def arange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
 
         >>> pm = PassManager()
         >>> pm += arange_swaps
-        >>> pm += cancel_zero_controls
         >>> pm += decompose()
-        >>> optimized = pm.run(qc)
-        >>> print(f"{len(optimized.data)} gates after optimization "
-        ...       f"(vs {len(pm_raw.run(qc))} gates without)")
-        3 gates after optimization (vs 4 gates without)
+        >>> pm += cancel_zero_controls
+        >>> print(pm.run(qc))
+              ┌───┐     ┌───┐
+        qb_0: ┤ X ├──■──┤ X ├
+              └───┘┌─┴─┐└─┬─┘
+        qb_1: ─────┤ X ├──■──
+                   └───┘     
 
     A SWAP between **two** untouched qubits is dropped entirely (a SWAP
     between |0⟩ states is the identity):
 
     >>> qc = QuantumCircuit(2)
     >>> qc.swap(0, 1)
-    >>>
-    >>> pm = PassManager()
-    >>> pm += arange_swaps
     >>> result = pm.run(qc)
-    >>> len(result.data)
-    0
+    >>> print(pm.run(qc))
+    <BLANKLINE>
+    qb_0: 
+    <BLANKLINE>
+    qb_1: 
+        
     """
     qc_new = qc.clearcopy()
 
