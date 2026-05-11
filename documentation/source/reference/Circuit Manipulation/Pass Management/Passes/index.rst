@@ -39,6 +39,8 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
      - Resolve SWAP gates by physically permuting qubits
    * - :doc:`reverse_parallelize <reverse_parallelize>`
      - Reverse-parallelize the circuit for reuse in conjugate
+   * - :doc:`visualize <visualize>`
+     - Print the circuit to stdout for debugging
 
 .. toctree::
    :maxdepth: 1
@@ -56,3 +58,4 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
    remove_barriers
    resolve_swaps
    reverse_parallelize
+   visualize

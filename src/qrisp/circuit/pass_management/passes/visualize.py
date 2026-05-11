@@ -33,13 +33,43 @@ def visualize(qc: QuantumCircuit) -> QuantumCircuit:
 
     The pass is always the identity — it never modifies the circuit.
 
-    Example
-    -------
-    >>> from qrisp import PassManager, visualize, decompose
+    Examples
+    --------
+
+    We showcase how a Toffoli gate is decomposed step by step, inserting
+    a visualization pass after each pass to show the progression.
+
+    >>> from qrisp import PassManager, visualize, decompose, QuantumCircuit
+    >>> qc = QuantumCircuit(3)
+    >>> qc.ccx(0, 1, 2)
     >>> pm = PassManager()
-    >>> pm += decompose()
+    >>> pm += visualize
+    >>> pm += decompose(1)
+    >>> pm += visualize
+    >>> pm += decompose(1)
     >>> pm += visualize
     >>> pm.run(qc)
+    <BLANKLINE>                    
+    qb_82: ──■──
+             │  
+    qb_83: ──■──
+           ┌─┴─┐
+    qb_84: ┤ X ├
+           └───┘
+           ┌────────────────┐
+    qb_82: ┤0               ├
+           │                │
+    qb_83: ┤1 gray multi cx ├
+           │                │
+    qb_84: ┤2               ├
+           └────────────────┘
+           ┌─────┐                                                 
+    qb_82: ┤ Tdg ├───────■─────────■────■───────────────────────■──
+           ├─────┤┌───┐  │  ┌───┐┌─┴─┐  │  ┌─────┐┌───┐ ┌───┐ ┌─┴─┐
+    qb_83: ┤ Tdg ├┤ X ├──┼──┤ T ├┤ X ├──┼──┤ Tdg ├┤ X ├─┤ T ├─┤ X ├
+           └┬───┬┘└─┬─┘┌─┴─┐├───┤└───┘┌─┴─┐└─────┘└─┬─┘┌┴───┴┐├───┤
+    qb_84: ─┤ H ├───■──┤ X ├┤ T ├─────┤ X ├─────────■──┤ Tdg ├┤ H ├
+            └───┘      └───┘└───┘     └───┘            └─────┘└───┘
     """
     print(qc)
     return qc
