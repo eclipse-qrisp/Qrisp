@@ -81,7 +81,7 @@ def combine_single_qubit_gates(qc: QuantumCircuit) -> QuantumCircuit:
     emitted as a single operation, cancelling any sequences that reduce to
     the identity.
 
-    Recursive processing
+    **Recursive processing**
 
     Composite gates (gates with a ``definition``) are processed
     recursively so that single-qubit gate sequences inside compound

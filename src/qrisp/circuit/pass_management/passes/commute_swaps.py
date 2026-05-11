@@ -49,12 +49,30 @@ def commute_swaps(qc: QuantumCircuit) -> QuantumCircuit:
     QuantumCircuit
         Circuit with single-qubit instructions commuted past SWAPs.
 
-    Example
-    -------
-    >>> from qrisp import PassManager, commute_swaps
-    >>> pm = PassManager()
-    >>> pm.add_pass(commute_swaps)
-    >>> transpiled_qc = pm.run(qc)
+    Examples
+    --------
+    Commute a Hadamard past a SWAP::
+
+        >>> from qrisp import QuantumCircuit, PassManager
+        >>> from qrisp import commute_swaps
+        >>> qc = QuantumCircuit(2)
+        >>> qc.h(0)
+        >>> qc.swap(0, 1)
+        >>> print(qc)
+               ┌───┐   
+        qb_65: ┤ H ├─X─
+               └───┘ │ 
+        qb_66: ──────X─
+
+        >>> pm = PassManager()
+        >>> pm += commute_swaps
+        >>> optimized_qc = pm.run(qc)
+        >>> print(optimized_qc)
+        <BLANKLINE>                          
+        qb_65: ─X──────
+                │ ┌───┐
+        qb_66: ─X─┤ H ├
+                  └───┘
     """
     qc_new = qc.clearcopy()
     last_instruction_dic: dict[Qubit, list[int]] = {qb: [] for qb in qc_new.qubits}
