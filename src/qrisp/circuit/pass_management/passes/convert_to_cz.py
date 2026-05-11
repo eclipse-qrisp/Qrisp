@@ -32,7 +32,7 @@ def convert_to_cz(
 
     This pass converts CX (CNOT), CY, and SWAP gates to their CZ-based
     equivalents using single-qubit gate decompositions. CZ gates are native to
-    many superconducting quantum computers including IQM systems.
+    many superconducting quantum computers.
 
     Two-qubit gates that are already CZ or barrier instructions are always left
     unchanged. Any other two-qubit gate that has no known CZ decomposition is
@@ -57,13 +57,30 @@ def convert_to_cz(
     - CY(control, target)  -> S†(target), H(target), CZ(control, target), H(target), S(target)
     - SWAP(a, b)           -> three CX-style CZ sequences
 
-    Example
-    -------
-    >>> from qrisp import PassManager, convert_to_cz
-    >>> pm = PassManager()
-    >>> pm.add_pass(convert_to_cz())           # lenient: unknown gates pass through
-    >>> pm.add_pass(convert_to_cz(strict=True))  # strict: raises on unknown gates
-    >>> transpiled_qc = pm.run(qc)
+
+    Examples
+    --------
+    Convert a CX gate to H—CZ—H::
+
+        >>> from qrisp import QuantumCircuit, PassManager
+        >>> from qrisp import convert_to_cz
+        >>> qc = QuantumCircuit(2)
+        >>> qc.cx(0, 1)
+        >>> print(qc)
+        <BLANKLINE>                            
+        qb_69: ──■──
+               ┌─┴─┐
+        qb_70: ┤ X ├
+               └───┘
+        >>> pm = PassManager()
+        >>> pm += convert_to_cz()
+        >>> optimized_qc = pm.run(qc)
+        >>> print(optimized_qc)
+        qb_69: ──────■──────
+               ┌───┐ │ ┌───┐
+        qb_70: ┤ H ├─■─┤ H ├
+               └───┘   └───┘
+
     """
 
     @CircuitPass

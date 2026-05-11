@@ -63,18 +63,43 @@ def decompose(
         A pass function suitable for :meth:`PassManager.add_pass` or
         :meth:`PassManager.__iadd__`.
 
-    Example
-    -------
-    Decompose all synthesized gates down to elementary gates::
+    Examples
+    --------
+    Decompose an MCX gate down to elementary gates::
 
-        >>> from qrisp import PassManager, decompose
+        >>> from qrisp import QuantumCircuit, PassManager
+        >>> from qrisp import decompose
+        >>> qc = QuantumCircuit(3)
+        >>> qc.mcx([0, 1], 2)
+        >>> print(qc)
+        qb_71: ──■──
+                 │  
+        qb_72: ──■──
+               ┌─┴─┐
+        qb_73: ┤ X ├
+               └───┘
+        
         >>> pm = PassManager()
         >>> pm += decompose()
-        >>> transpiled_qc = pm.run(qc)
+        >>> decomposed_qc = pm.run(qc)
+        >>> print(decomposed_qc)
+               ┌─────┐                                                 
+        qb_71: ┤ Tdg ├───────■─────────■────■───────────────────────■──
+               ├─────┤┌───┐  │  ┌───┐┌─┴─┐  │  ┌─────┐┌───┐ ┌───┐ ┌─┴─┐
+        qb_72: ┤ Tdg ├┤ X ├──┼──┤ T ├┤ X ├──┼──┤ Tdg ├┤ X ├─┤ T ├─┤ X ├
+               └┬───┬┘└─┬─┘┌─┴─┐├───┤└───┘┌─┴─┐└─────┘└─┬─┘┌┴───┴┐├───┤
+        qb_73: ─┤ H ├───■──┤ X ├┤ T ├─────┤ X ├─────────■──┤ Tdg ├┤ H ├
+                └───┘      └───┘└───┘     └───┘            └─────┘└───┘
 
-    Decompose only ``mcx`` gates::
+    Decompose only specific gates with a predicate::
 
-        >>> pm += decompose(decompose_predicate=lambda op: op.name == "mcx")
+        >>> pm2 = PassManager()
+        >>> pm2 += decompose(decompose_predicate=lambda op: "cx" in op.name)
+
+    Decompose only one layer::
+
+        >>> pm3 = PassManager()
+        >>> pm3 += decompose(level=1)
     """
 
     @CircuitPass
