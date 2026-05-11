@@ -35,7 +35,8 @@ def resolve_swaps(qc: QuantumCircuit) -> QuantumCircuit:
     each SWAP into three CX gates, it tracks a running qubit permutation and
     remaps all subsequent gate operands accordingly.  After processing, the
     circuit contains no SWAP gates and produces the same unitary up to a final
-    qubit permutation (which the router will handle).
+    qubit permutation. This especially means that the circuit statistics remain
+    unchanged as the measurement instructions get permuted as well.
 
     Parameters
     ----------
@@ -47,12 +48,32 @@ def resolve_swaps(qc: QuantumCircuit) -> QuantumCircuit:
     QuantumCircuit
         A new circuit with all SWAP gates removed and operands remapped.
 
-    Example
-    -------
-    >>> from qrisp import PassManager, resolve_swaps
-    >>> pm = PassManager()
-    >>> pm.add_pass(resolve_swaps)
-    >>> routable_qc = pm.run(qc)
+    Examples
+    --------
+    Resolve a SWAP by remapping subsequent gate operands::
+
+        >>> from qrisp import QuantumCircuit, PassManager
+        >>> from qrisp import resolve_swaps
+        >>> qc = QuantumCircuit(2)
+        >>> qc.h(0)
+        >>> qc.swap(0, 1)
+        >>> qc.cx(0, 1)
+        >>> print(qc)
+                ┌───┐        
+        qb_126: ┤ H ├─X───■──
+                └───┘ │ ┌─┴─┐
+        qb_127: ──────X─┤ X ├
+                        └───┘
+        
+        >>> pm = PassManager()
+        >>> pm += resolve_swaps
+        >>> routable_qc = pm.run(qc)
+        >>> print(routable_qc)
+                ┌───┐┌───┐
+        qb_126: ┤ H ├┤ X ├
+                └───┘└─┬─┘
+        qb_127: ───────■──
+                        
     """
     n = qc.num_qubits()
     qubits = qc.qubits
