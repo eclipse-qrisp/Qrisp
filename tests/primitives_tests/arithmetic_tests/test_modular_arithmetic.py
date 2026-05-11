@@ -50,6 +50,30 @@ def test_quantum_modulus_uniform_superposition(modulus):
 
     assert np.isclose(sum(measurement.values()), 1.0)
 
+
+def test_quantum_modulus_numpy_scalar_add_sub_respect_montgomery_shift():
+    modulus = 13
+
+    add_qm = QuantumModulus(modulus)
+    add_qm.m = 3
+    add_qm[:] = 9
+    add_result = add_qm + np.int64(10)
+
+    for outcome in multi_measurement([add_result]).keys():
+        if outcome[0] is np.nan:
+            continue
+        assert outcome[0] == (9 + 10) % modulus
+
+    sub_qm = QuantumModulus(modulus)
+    sub_qm.m = 3
+    sub_qm[:] = 9
+    sub_result = sub_qm - np.int64(10)
+
+    for outcome in multi_measurement([sub_result]).keys():
+        if outcome[0] is np.nan:
+            continue
+        assert outcome[0] == (9 - 10) % modulus
+
 def test_modular_arithmetic():
     
     #Test In-Place addition

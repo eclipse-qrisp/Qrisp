@@ -192,6 +192,20 @@ def test_modulus_qc_multiply():
     assert test_r() == (7, (7*3) % 13)
 
 
+def test_modulus_numpy_scalar_add_with_nonzero_shift():
+    from qrisp import QuantumModulus, jaspify, measure
+
+    @jaspify
+    def test_add():
+        a = QuantumModulus(13)
+        a.m = 3
+        a[:] = 9
+        b = a + np.int64(10)
+        return measure(a), measure(b)
+
+    assert test_add() == (9, (9 + 10) % 13)
+
+
 def test_modulus_qq_multiply():
     from qrisp import QuantumModulus, jaspify, measure
 

@@ -22,9 +22,6 @@ from jax.core import Tracer
 
 from qrisp import check_for_tracing_mode
 from qrisp.qtypes.quantum_float import QuantumFloat
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
-    smallest_power_of_two,
-)
 from qrisp.misc import gate_wrap
 from qrisp.core import cx
 import jax
@@ -105,6 +102,13 @@ def _coerce_bigint_operand(value, modulus):
     )
 
     return BigInteger.coerce(value, modulus.digits.shape[0])
+
+
+def _normalize_modular_arithmetic_operand(qm, other):
+    if isinstance(other, QuantumFloat):
+        return other
+
+    return qm.encoder(other % qm.modulus)
 
 
 def comparison_wrapper(func):
@@ -257,6 +261,10 @@ class QuantumModulus(QuantumFloat):
     """
 
     def __init__(self, modulus, inpl_adder=None, qs=None):
+
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+            smallest_power_of_two,
+        )
 
         self.modulus = modulus
         aux = smallest_power_of_two(modulus)
@@ -505,12 +513,7 @@ class QuantumModulus(QuantumFloat):
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __add__(self, other):
-        if isinstance(other, int):
-            other = self.encoder(other % self.modulus)
-        elif isinstance(other, (QuantumModulus, QuantumFloat)):
-            pass
-        else:
-            other = other % self.modulus
+        other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
             if self.m != other.m:
                 raise Exception(
@@ -535,12 +538,7 @@ class QuantumModulus(QuantumFloat):
 
     @gate_wrap(permeability=[1], is_qfree=True)
     def __iadd__(self, other):
-        if isinstance(other, int):
-            other = self.encoder(other % self.modulus)
-        elif isinstance(other, (QuantumModulus, QuantumFloat)):
-            pass
-        else:
-            other = other % self.modulus
+        other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
             if self.m != other.m:
                 from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
@@ -562,12 +560,7 @@ class QuantumModulus(QuantumFloat):
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __sub__(self, other):
-        if isinstance(other, int):
-            other = self.encoder(other % self.modulus)
-        elif isinstance(other, (QuantumModulus, QuantumFloat)):
-            pass
-        else:
-            other = other % self.modulus
+        other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
             if self.m != other.m:
                 raise Exception(
@@ -591,12 +584,7 @@ class QuantumModulus(QuantumFloat):
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __rsub__(self, other):
-        if isinstance(other, int):
-            other = self.encoder(other % self.modulus)
-        elif isinstance(other, (QuantumModulus, QuantumFloat)):
-            pass
-        else:
-            other = other % self.modulus
+        other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
             if self.m != other.m:
                 raise Exception(
@@ -620,12 +608,7 @@ class QuantumModulus(QuantumFloat):
 
     @gate_wrap(permeability=[1], is_qfree=True)
     def __isub__(self, other):
-        if isinstance(other, int):
-            other = self.encoder(other % self.modulus)
-        elif isinstance(other, (QuantumModulus, QuantumFloat)):
-            pass
-        else:
-            other = other % self.modulus
+        other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
             if self.m != other.m:
                 raise Exception(
