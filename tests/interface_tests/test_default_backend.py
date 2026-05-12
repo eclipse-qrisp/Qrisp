@@ -20,7 +20,10 @@ import pytest
 
 from qrisp import QuantumFloat, h
 from qrisp.default_backend import DefaultBackend, DefaultJob, def_backend
+from qrisp.interface import BatchedBackend
 from qrisp.interface.job import JobResult, JobStatus
+from qrisp.interface.measurement_result import LazyDict
+from tests.interface_tests.conftest import CountingWrapper
 
 
 def _simple_computation():
@@ -93,7 +96,7 @@ class TestDefaultBackendAnalytic:
     """Tests for analytic (exact probability) execution with shots=None."""
 
     def test_analytic_result_is_correct(self):
-        """Verify that a deterministic computation yields probability 1.0 for the correct outcome."""
+        """Verify that a deterministic computation yields probability 1.0."""
         backend = DefaultBackend()  # shots=None by default
         res = _simple_computation()
         assert res.get_measurement(backend=backend) == {9: 1.0}
@@ -187,21 +190,54 @@ class TestDefaultBackendOptions:
 class TestDefaultBackendBatched:
     """Verify that DefaultBackend.batched() produces correct lazy results."""
 
-    def test_batched_workflow_populates_lazy_result(self):
-        """batched() buffers the circuit; dispatch() populates the result via DefaultBackend.run()."""
-        from qrisp.interface import BatchedBackend
-        from qrisp.interface.measurement_result import LazyDict
-
+    def test_batched_returns_batched_backend(self):
+        """batched() must return a BatchedBackend wrapping the original backend."""
         backend = DefaultBackend()
         bb = backend.batched()
         assert isinstance(bb, BatchedBackend)
         assert bb._backend is backend
 
+    def test_result_is_lazy_before_dispatch(self):
+        """get_measurement via batched DefaultBackend must raise before dispatch."""
+        bb = DefaultBackend().batched()
         res = _simple_computation().get_measurement(backend=bb)
         assert isinstance(res, LazyDict)
-        assert not res._populated
+        with pytest.raises(RuntimeError, match="dispatch"):
+            len(res)
         bb.dispatch()
         assert res == {9: 1.0}
+
+    def test_dispatch_populates_two_results(self):
+        """dispatch() must populate both results correctly for two independent circuits."""
+        qf1 = QuantumFloat(3)
+        qf1[:] = 3
+        qf2 = QuantumFloat(3)
+        qf2[:] = 5
+
+        bb = DefaultBackend().batched()
+        res1 = qf1.get_measurement(backend=bb)
+        res2 = qf2.get_measurement(backend=bb)
+        bb.dispatch()
+
+        assert res1 == {3: 1.0}
+        assert res2 == {5: 1.0}
+
+    def test_n_circuits_one_run_async_call(self):
+        """Two circuits queued with DefaultBackend must produce exactly one run_async call."""
+        counting = CountingWrapper(DefaultBackend())
+        bb = counting.batched()
+
+        qf1 = QuantumFloat(3)
+        qf1[:] = 1
+        qf2 = QuantumFloat(3)
+        qf2[:] = 2
+
+        qf1.get_measurement(backend=bb)
+        qf2.get_measurement(backend=bb)
+
+        assert counting.run_async_call_count == 0
+        bb.dispatch()
+        assert counting.run_async_call_count == 1
 
     def test_batched_inherits_shots_from_wrapped_backend(self):
         """BatchedBackend created via batched() inherits the wrapped backend's options."""

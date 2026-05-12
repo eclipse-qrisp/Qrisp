@@ -113,3 +113,27 @@ class MinimalBackend(Backend):
         counts = [{"0": n_shots} for _ in circuits]
         job._resolve(JobResult(counts))  # RUNNING → DONE
         return job
+
+
+class CountingWrapper(Backend):
+    """Backend wrapper that counts ``run_async`` invocations and delegates to an inner backend.
+
+    Used to verify that N circuits queued in a :class:`~qrisp.interface.BatchedBackend`
+    with a uniform shot count are submitted in a single ``run_async`` call.
+    """
+
+    def __init__(self, inner: Backend):
+        """Initialise with the backend to delegate execution to."""
+        super().__init__()
+        self._inner = inner
+        self.run_async_call_count = 0
+
+    @classmethod
+    def _default_options(cls):
+        """Return empty options; shots are resolved by the inner backend."""
+        return {}
+
+    def run_async(self, circuits, shots=None):
+        """Increment the call counter and forward execution to the inner backend."""
+        self.run_async_call_count += 1
+        return self._inner.run_async(circuits, shots=shots)

@@ -14,15 +14,17 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Tests for BatchedBackend — lazy queue + explicit dispatch architecture."""
+"""Tests for BatchedBackend."""
 
-import threading
+import warnings
 
 import pytest
 
-from qrisp import QuantumFloat
+from qrisp import QuantumFloat, batched_measurement
 from qrisp.default_backend import DefaultBackend
 from qrisp.interface import BatchedBackend
+from qrisp.interface.backend import Backend
+from qrisp.interface.job import Job, JobResult, JobStatus
 from qrisp.interface.measurement_result import (
     DecodedMeasurementResult,
     LazyDict,
@@ -31,12 +33,8 @@ from qrisp.interface.measurement_result import (
 
 
 def _make_batched_backend():
+    """Return a fresh BatchedBackend wrapping DefaultBackend."""
     return DefaultBackend().batched()
-
-
-# ---------------------------------------------------------------------------
-# Core batching behaviour
-# ---------------------------------------------------------------------------
 
 
 def test_batched_returns_batched_backend_instance():
@@ -54,12 +52,16 @@ def test_explicit_dispatch_batches_two_variables():
     get_measurement() returns a lazy result immediately and dispatch() populates
     both results by calling the wrapped backend once per circuit.
     """
-    a = QuantumFloat(4); a[:] = 1
-    b = QuantumFloat(3); b[:] = 2
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
     c = a + b  # expected: 3
 
-    d = QuantumFloat(4); d[:] = 2
-    e = QuantumFloat(3); e[:] = 2
+    d = QuantumFloat(4)
+    d[:] = 2
+    e = QuantumFloat(3)
+    e[:] = 2
     f = d + e  # expected: 4
 
     bb = _make_batched_backend()
@@ -81,8 +83,10 @@ def test_explicit_dispatch_batches_two_variables():
 
 def test_dispatch_returns_correct_results_with_single_variable():
     """A single get_measurement + dispatch() works as a degenerate batch of one."""
-    a = QuantumFloat(4); a[:] = 1
-    b = QuantumFloat(3); b[:] = 2
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
     c = a + b  # expected: 3
 
     bb = _make_batched_backend()
@@ -94,8 +98,10 @@ def test_dispatch_returns_correct_results_with_single_variable():
 
 def test_result_is_lazy_before_dispatch():
     """Accessing a result before dispatch() raises RuntimeError."""
-    a = QuantumFloat(4); a[:] = 1
-    b = QuantumFloat(3); b[:] = 2
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
     c = a + b
 
     bb = _make_batched_backend()
@@ -105,9 +111,12 @@ def test_result_is_lazy_before_dispatch():
         len(res)
 
 
-# ---------------------------------------------------------------------------
-# Exception propagation
-# ---------------------------------------------------------------------------
+class _FailingBackend(Backend):
+    """Backend whose run_async always raises RuntimeError."""
+
+    def run_async(self, circuits, shots=None):
+        """Raise RuntimeError unconditionally."""
+        raise RuntimeError("Simulated hardware fault")
 
 
 def test_exception_propagates_to_all_results():
@@ -116,31 +125,18 @@ def test_exception_propagates_to_all_results():
     All pending MeasurementResult objects receive the error via _inject_error(),
     so every subsequent access raises, preventing silent data loss.
     """
-    from qrisp.interface.backend import Backend
-    from qrisp.interface.job import Job, JobStatus
+    bb = _FailingBackend().batched()
 
-    class _FailJob(Job):
-        def submit(self):
-            self._last_known_status = JobStatus.ERROR
-        def result(self, timeout=None):
-            raise RuntimeError("Simulated hardware fault")
-        def cancel(self):
-            return False
-        def status(self):
-            return self._last_known_status
-
-    class FailingBackend(Backend):
-        def run_async(self, circuits, shots=None):
-            raise RuntimeError("Simulated hardware fault")
-
-    bb = FailingBackend().batched()
-
-    a = QuantumFloat(4); a[:] = 1
-    b = QuantumFloat(3); b[:] = 2
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
     c = a + b
 
-    d = QuantumFloat(4); d[:] = 2
-    e = QuantumFloat(3); e[:] = 2
+    d = QuantumFloat(4)
+    d[:] = 2
+    e = QuantumFloat(3)
+    e[:] = 2
     f = d + e
 
     res_c = c.get_measurement(backend=bb)
@@ -158,11 +154,6 @@ def test_exception_propagates_to_all_results():
 
     assert len(errors) == 2
     assert all("Simulated hardware fault" in e for e in errors)
-
-
-# ---------------------------------------------------------------------------
-# MeasurementResult unit tests
-# ---------------------------------------------------------------------------
 
 
 def test_measurement_result_raises_before_inject():
@@ -207,11 +198,6 @@ def test_decoded_measurement_result_repr_pending():
     assert "pending" in repr(decoded).lower()
 
 
-# ---------------------------------------------------------------------------
-# Docstring examples
-# ---------------------------------------------------------------------------
-
-
 def test_docstring_basic_usage_example():
     """Exact values from the BatchedBackend class docstring example.
 
@@ -220,12 +206,16 @@ def test_docstring_basic_usage_example():
     backend = DefaultBackend()
     bb = backend.batched()
 
-    a = QuantumFloat(4); a[:] = 1
-    b = QuantumFloat(3); b[:] = 2
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
     c = a + b  # expected: 3
 
-    d = QuantumFloat(4); d[:] = 2
-    e = QuantumFloat(3); e[:] = 3
+    d = QuantumFloat(4)
+    d[:] = 2
+    e = QuantumFloat(3)
+    e[:] = 3
     f = d + e  # expected: 5
 
     res_c = c.get_measurement(backend=bb)
@@ -239,20 +229,264 @@ def test_docstring_basic_usage_example():
 
 def test_batched_measurement_function():
     """batched_measurement helper matches the usage shown in its docstring."""
-    from qrisp import batched_measurement
-
     backend = DefaultBackend()
     bb = backend.batched()
 
-    a = QuantumFloat(4); a[:] = 1
-    b = QuantumFloat(3); b[:] = 2
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
     c = a + b  # expected: 3
 
-    d = QuantumFloat(4); d[:] = 2
-    e = QuantumFloat(3); e[:] = 3
+    d = QuantumFloat(4)
+    d[:] = 2
+    e = QuantumFloat(3)
+    e[:] = 3
     f = d + e  # expected: 5
 
     results = batched_measurement([c, f], backend=bb)
 
     assert results[0] == {3: 1.0}
     assert results[1] == {5: 1.0}
+
+
+def test_options_delegates_to_wrapped_backend():
+    """bb.options must reflect the wrapped backend's options, not an independent copy.
+
+    Changes made directly to the backend must be visible through bb.options,
+    proving that no separate copy is held.
+    """
+    backend = DefaultBackend()
+    bb = backend.batched()
+
+    assert bb.options["shots"] == backend.options["shots"]
+
+    backend.update_options(shots=512)
+    assert bb.options["shots"] == 512
+
+
+def test_update_options_valid_key():
+    """update_options() with a valid key must update both bb.options and backend.options."""
+    backend = DefaultBackend()
+    bb = backend.batched()
+
+    bb.update_options(shots=512)
+
+    assert bb.options["shots"] == 512
+    assert backend.options["shots"] == 512
+
+
+def test_update_options_invalid_key_raises():
+    """update_options() with an unknown key must raise AttributeError."""
+    bb = _make_batched_backend()
+    with pytest.raises(AttributeError, match="not_a_real_option"):
+        bb.update_options(not_a_real_option=42)
+
+
+def test_pending_count_starts_at_zero():
+    """A freshly created BatchedBackend must have pending_count == 0."""
+    bb = _make_batched_backend()
+    assert bb.pending_count == 0
+
+
+def test_pending_count_increments_on_run():
+    """Each get_measurement() call must increment pending_count by one."""
+    bb = _make_batched_backend()
+
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
+    c = a + b
+
+    d = QuantumFloat(4)
+    d[:] = 2
+    e = QuantumFloat(3)
+    e[:] = 3
+    f = d + e
+
+    c.get_measurement(backend=bb)
+    assert bb.pending_count == 1
+
+    f.get_measurement(backend=bb)
+    assert bb.pending_count == 2
+
+
+def test_pending_count_resets_after_dispatch():
+    """dispatch() must drain the queue, leaving pending_count == 0."""
+    bb = _make_batched_backend()
+
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
+    c = a + b
+
+    c.get_measurement(backend=bb)
+    assert bb.pending_count == 1
+
+    bb.dispatch()
+    assert bb.pending_count == 0
+
+
+def test_dispatch_on_empty_queue_is_a_noop():
+    """dispatch() on an empty queue must not raise and pending_count stays 0."""
+    bb = _make_batched_backend()
+    bb.dispatch()
+    assert bb.pending_count == 0
+
+
+def test_clear_empties_the_queue():
+    """clear() must set pending_count to 0 without dispatching."""
+    bb = _make_batched_backend()
+
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
+    c = a + b
+
+    c.get_measurement(backend=bb)
+    assert bb.pending_count == 1
+
+    bb.clear()
+    assert bb.pending_count == 0
+
+
+def test_clear_leaves_results_unpopulated():
+    """Results returned before clear() must remain unpopulated (RuntimeError on access)."""
+    bb = _make_batched_backend()
+
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
+    c = a + b
+
+    res = c.get_measurement(backend=bb)
+    bb.clear()
+
+    with pytest.raises(RuntimeError, match="dispatch"):
+        len(res)
+
+
+def test_dispatch_with_timeout_succeeds_for_fast_backend():
+    """dispatch(timeout=30) must complete normally for a local simulator."""
+    bb = _make_batched_backend()
+
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
+    c = a + b
+
+    res = c.get_measurement(backend=bb)
+    bb.dispatch(timeout=30)
+
+    assert res == {3: 1.0}
+
+
+class _RecordingJob(Job):
+    """Job that records the timeout value passed to result() and returns a fixed count."""
+
+    def __init__(self, backend, received_timeouts):
+        """Initialise with a reference to the shared list that records timeouts."""
+        super().__init__(backend)
+        self._received_timeouts = received_timeouts
+
+    def submit(self):
+        """Mark job as running."""
+        self._last_known_status = JobStatus.RUNNING
+
+    def result(self, timeout=None):
+        """Record the timeout and return a single-circuit dummy result."""
+        self._received_timeouts.append(timeout)
+        self._last_known_status = JobStatus.DONE
+        return JobResult([{"0": 1024}])
+
+    def cancel(self):
+        """Cancel is not supported; always returns False."""
+        return False
+
+    def status(self):
+        """Return the last known status."""
+        return self._last_known_status
+
+
+class _RecordingBackend(Backend):
+    """Backend that creates _RecordingJob instances to capture Job.result() arguments."""
+
+    def __init__(self, received_timeouts):
+        """Initialise with a reference to the shared list that records timeouts."""
+        super().__init__()
+        self._received_timeouts = received_timeouts
+
+    def run_async(self, circuits, shots=None):
+        """Submit circuits by creating a _RecordingJob."""
+        job = _RecordingJob(self, self._received_timeouts)
+        job.submit()
+        return job
+
+
+def test_dispatch_timeout_propagates_to_job_result():
+    """dispatch(timeout=...) must pass the timeout value through to Job.result()."""
+    received_timeouts = []
+    bb = _RecordingBackend(received_timeouts).batched()
+
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
+    c = a + b
+    c.get_measurement(backend=bb)
+
+    bb.dispatch(timeout=99)
+
+    assert received_timeouts == [99]
+
+
+def test_dispatch_warns_on_mixed_shot_counts():
+    """dispatch() must emit UserWarning when circuits use different shot counts."""
+    bb = _make_batched_backend()
+
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
+    c = a + b
+
+    d = QuantumFloat(4)
+    d[:] = 2
+    e = QuantumFloat(3)
+    e[:] = 3
+    f = d + e
+
+    c.get_measurement(backend=bb, shots=100)
+    f.get_measurement(backend=bb, shots=200)
+
+    with pytest.warns(UserWarning, match="shot count"):
+        bb.dispatch()
+
+
+def test_dispatch_no_warning_on_uniform_shot_counts():
+    """dispatch() must not emit any warning when all circuits share the same shot count."""
+    bb = _make_batched_backend()
+
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
+    c = a + b
+
+    d = QuantumFloat(4)
+    d[:] = 2
+    e = QuantumFloat(3)
+    e[:] = 3
+    f = d + e
+
+    c.get_measurement(backend=bb, shots=100)
+    f.get_measurement(backend=bb, shots=100)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        bb.dispatch()  # must not raise

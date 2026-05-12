@@ -20,8 +20,8 @@ This module defines :class:`BatchedBackend`, obtained via :meth:`Backend.batched
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Mapping
-from types import MappingProxyType
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
@@ -63,9 +63,6 @@ class BatchedBackend:
 
     name : str or None
         Optional name for this backend.
-
-    options : Mapping or None
-        Runtime options.  Defaults to the wrapped backend's current options.
 
     Examples
     --------
@@ -110,18 +107,36 @@ class BatchedBackend:
         self,
         backend: Backend,
         name: str | None = None,
-        options: Mapping | None = None,
     ):
         self.name = name or self.__class__.__name__
-        self._options = dict(options if options is not None else backend._options)
         self._backend = backend
         # Each entry: (circuit, shots, MeasurementResult)
         self._queries: list[tuple] = []
 
     @property
     def options(self) -> Mapping:
-        """Current runtime options (read-only)."""
-        return MappingProxyType(self._options)
+        """Current runtime options (read-only). Delegates to the wrapped backend."""
+        return self._backend.options
+
+    @property
+    def pending_count(self) -> int:
+        """Number of circuits currently queued, waiting for :meth:`dispatch`."""
+        return len(self._queries)
+
+    def update_options(self, **kwargs) -> None:
+        """Update existing runtime options.
+
+        Delegates to the wrapped backend's
+        :meth:`~qrisp.interface.Backend.update_options`, which validates keys
+        and raises ``AttributeError`` for unknown ones.  Changes are visible
+        through both ``self.options`` and the wrapped backend's ``options``.
+
+        Parameters
+        ----------
+        **kwargs
+            Key-value pairs to update.
+        """
+        self._backend.update_options(**kwargs)
 
     def run(self, circuits, shots: int | None = None):
         """Register one or more circuits in the queue and return lazy result(s).
@@ -148,7 +163,7 @@ class BatchedBackend:
         if not batch:
             circuits = [circuits]
 
-        n_shots = shots if shots is not None else self._options.get("shots")
+        n_shots = shots if shots is not None else self._backend.options.get("shots")
 
         raw_list: list[MeasurementResult] = []
         for qc in circuits:
@@ -162,7 +177,7 @@ class BatchedBackend:
     # Dispatch
     # ------------------------------------------------------------------
 
-    def dispatch(self) -> None:
+    def dispatch(self, timeout: float | None = None) -> None:
         """Execute all pending circuits and populate their results.
 
         Circuits are grouped by shot count and each group is submitted as a
@@ -172,17 +187,32 @@ class BatchedBackend:
         network round-trips and queue-wait overhead.  Results are injected into
         the corresponding :class:`~qrisp.interface.MeasurementResult` objects.
 
+        .. warning::
+
+            If the queued circuits use more than one distinct shot count, they
+            are split into multiple hardware jobs (one per shot count).
+            To avoid the split, ensure all circuits are queued with the
+            same shot count.
+
         If the wrapped backend raises for any group, that error is stored in
         every not-yet-populated :class:`~qrisp.interface.MeasurementResult`
-        and then re-raised.  Accessing any of those results later will re-raise
+        and then re-raised. Accessing any of those results later will re-raise
         the stored exception.
 
-        Returns
-        -------
-        None
+        Parameters
+        ----------
+        timeout : float or None, optional
+            Maximum seconds to wait for each hardware job.  ``None`` (default)
+            waits indefinitely.  Passed through to
+            :meth:`Job.result <qrisp.interface.Job.result>`.
 
         Raises
         ------
+        TimeoutError
+            If *timeout* is given and a hardware job does not finish in time.
+            Results for the timed-out group and any remaining groups are left
+            unpopulated.
+
         Exception
             Re-raises any exception thrown by the wrapped backend during
             execution, after injecting the error into all pending results.
@@ -196,15 +226,27 @@ class BatchedBackend:
         # Group by effective shot count so each group becomes one hardware job.
         groups: dict[int | None, list] = {}
         for qc, shots, raw in queries:
-            key = shots if shots is not None else self._options.get("shots")
+            key = shots if shots is not None else self._backend.options.get("shots")
             groups.setdefault(key, []).append((qc, raw))
+
+        if len(groups) > 1:
+            warnings.warn(
+                f"BatchedBackend.dispatch(): circuits use {len(groups)} different "
+                f"shot counts ({list(groups.keys())}), requiring {len(groups)} "
+                "separate hardware jobs. For a single hardware job, ensure all "
+                "queued circuits use the same shot count.",
+                UserWarning,
+                stacklevel=2,
+            )
 
         for shots, items in groups.items():
             circuits = [qc for qc, _ in items]
             raws = [raw for _, raw in items]
             try:
                 all_counts = (
-                    self._backend.run_async(circuits, shots=shots).result().all_counts
+                    self._backend.run_async(circuits, shots=shots)
+                    .result(timeout=timeout)
+                    .all_counts
                 )
                 for raw, counts in zip(raws, all_counts):
                     raw._inject(counts)
@@ -213,3 +255,12 @@ class BatchedBackend:
                     if not r._populated:
                         r._inject_error(exc)
                 raise
+
+    def clear(self) -> None:
+        """Discard all queued circuits without dispatching.
+
+        Any :class:`~qrisp.interface.MeasurementResult` objects previously
+        returned by :meth:`run` for the cleared circuits remain unpopulated.
+        Accessing them after ``clear()`` raises ``RuntimeError``.
+        """
+        self._queries = []

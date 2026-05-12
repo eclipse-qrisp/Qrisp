@@ -39,8 +39,9 @@ _skip_if_no_runtime = pytest.mark.skipif(
     reason="qiskit-ibm-runtime is not installed",
 )
 
+from qrisp import QuantumFloat
 from qrisp.circuit.quantum_circuit import QuantumCircuit as QrispQuantumCircuit
-from qrisp.interface import QiskitBackend
+from qrisp.interface import BatchedBackend, QiskitBackend
 from qrisp.interface.backend import Backend
 from qrisp.interface.job import (
     JobCancelledError,
@@ -48,11 +49,13 @@ from qrisp.interface.job import (
     JobResult,
     JobStatus,
 )
+from qrisp.interface.measurement_result import LazyDict
 from qrisp.interface.provider_backends.qiskit_backend import (
     QiskitJob,
     QiskitRuntimeBackend,
     _map_qiskit_status,
 )
+from tests.interface_tests.conftest import CountingWrapper
 
 
 class _MockCircuitData:
@@ -847,3 +850,56 @@ class TestQiskitRuntimeBackendIntegration:
         assert jr.num_circuits == 2
         assert sum(jr.get_counts(0).values()) == 50
         assert sum(jr.get_counts(1).values()) == 50
+
+
+class TestQiskitBackendBatched:
+    """Verify the four BatchedBackend properties for QiskitBackend (AerSimulator)."""
+
+    def test_batched_returns_batched_backend(self):
+        """QiskitBackend.batched() must return a BatchedBackend instance."""
+        assert isinstance(QiskitBackend(backend=AerSimulator()).batched(), BatchedBackend)
+
+    def test_result_is_lazy_before_dispatch(self):
+        """get_measurement via batched QiskitBackend must raise before dispatch() is called."""
+        bb = QiskitBackend(backend=AerSimulator()).batched()
+        qf = QuantumFloat(3)
+        qf[:] = 4
+        res = qf.get_measurement(backend=bb)
+        assert isinstance(res, LazyDict)
+        with pytest.raises(RuntimeError, match="dispatch"):
+            len(res)
+        bb.dispatch()
+        assert res == {4: 1.0}
+
+    def test_dispatch_populates_two_results(self):
+        """dispatch() must populate both results correctly for two circuits."""
+        bb = QiskitBackend(backend=AerSimulator()).batched()
+
+        qf1 = QuantumFloat(3)
+        qf1[:] = 3
+        qf2 = QuantumFloat(3)
+        qf2[:] = 5
+
+        res1 = qf1.get_measurement(backend=bb)
+        res2 = qf2.get_measurement(backend=bb)
+        bb.dispatch()
+
+        assert res1 == {3: 1.0}
+        assert res2 == {5: 1.0}
+
+    def test_n_circuits_one_run_async_call(self):
+        """Two circuits queued with QiskitBackend must produce exactly one run_async call."""
+        counting = CountingWrapper(QiskitBackend(backend=AerSimulator()))
+        bb = counting.batched()
+
+        qf1 = QuantumFloat(3)
+        qf1[:] = 1
+        qf2 = QuantumFloat(3)
+        qf2[:] = 2
+
+        qf1.get_measurement(backend=bb)
+        qf2.get_measurement(backend=bb)
+
+        assert counting.run_async_call_count == 0
+        bb.dispatch()
+        assert counting.run_async_call_count == 1

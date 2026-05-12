@@ -26,6 +26,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from qrisp import QuantumCircuit
+from qrisp.interface.backend import Backend
 from qrisp.interface.job import JobCancelledError, JobFailureError, JobResult, JobStatus
 from qrisp.interface.provider_backends.aqt_backend import AQTBackend, AQTJob
 
@@ -525,3 +526,60 @@ class TestAQTErrorPropagation:
 
         assert exc_info.value.__cause__ is not None
         assert "network timeout" in str(exc_info.value.__cause__)
+
+
+class TestAQTBackendBatched:
+    """Contract-only tests for AQTBackend batching support.
+
+    Integration tests are skipped unconditionally because they require AQT hardware
+    credentials and the real ``qiskit-aqt-provider`` package.  These contract tests
+    verify the class-level interface and constructor validation, which fire before any
+    import of optional dependencies or network call.
+    """
+
+    def test_aqt_backend_is_backend_subclass(self):
+        """AQTBackend must be a subclass of Backend."""
+        assert issubclass(AQTBackend, Backend)
+
+    def test_aqt_backend_has_batched_method(self):
+        """AQTBackend must expose the batched() method inherited from Backend."""
+        assert callable(getattr(AQTBackend, "batched", None))
+
+    def test_rejects_non_string_api_token(self):
+        """AQTBackend.__init__ must raise TypeError for a non-string api_token."""
+        with pytest.raises(TypeError, match="api_token"):
+            AQTBackend(api_token=42, device_instance="ibex")  # type: ignore[arg-type]
+
+    def test_rejects_non_string_device_instance(self):
+        """AQTBackend.__init__ must raise TypeError for a non-string device_instance."""
+        with pytest.raises(TypeError, match="device_instance"):
+            AQTBackend(api_token="token", device_instance=99)  # type: ignore[arg-type]
+
+    def test_rejects_non_string_workspace(self):
+        """AQTBackend.__init__ must raise TypeError for a non-string workspace."""
+        with pytest.raises(TypeError, match="workspace"):
+            AQTBackend(api_token="token", device_instance="ibex", workspace=42)  # type: ignore[arg-type]
+
+    @pytest.mark.skip(reason="requires AQT hardware credentials and qiskit-aqt-provider")
+    def test_integration_batching_properties(self):
+        """Placeholder: full batching integration test for AQTBackend.
+
+        To run manually, replace the credentials and remove the skip mark::
+
+            from tests.interface_tests.conftest import CountingWrapper
+            counting = CountingWrapper(
+                AQTBackend(
+                    api_token="YOUR_TOKEN",
+                    device_instance="offline_simulator_no_noise",
+                )
+            )
+            bb = counting.batched()
+            qf1 = QuantumFloat(3); qf1[:] = 3
+            qf2 = QuantumFloat(3); qf2[:] = 5
+            res1 = qf1.get_measurement(backend=bb)
+            res2 = qf2.get_measurement(backend=bb)
+            bb.dispatch()
+            assert res1 == {3: 1.0}
+            assert res2 == {5: 1.0}
+            assert counting.run_async_call_count == 1
+        """
