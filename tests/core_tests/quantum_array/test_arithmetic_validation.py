@@ -23,6 +23,33 @@ from qrisp import QuantumArray, QuantumFloat, QuantumBool, QuantumChar
 
 class TestArithmeticValidation:
     """Tests for the _validate_arithmetic method and arithmetic operations."""
+
+    def test_validate_arithmetic(self):
+        """Test that _validate_arithmetic raises errors for invalid operations."""
+        qa_float = QuantumArray(QuantumFloat(5), shape=(2, 2))
+        qa_bool = QuantumArray(QuantumBool(), shape=(2, 2))
+        qa_char = QuantumArray(QuantumChar(), shape=(2, 2))
+
+        # Should raise TypeError for non-QuantumFloat qtype of self
+        with pytest.raises(TypeError, match="Element-wise operations require qtype 'QuantumFloat'"):
+            qa_char._validate_arithmetic(qa_float)
+
+        # Should raise TypeError for non-QuantumFloat qtype of other array
+        with pytest.raises(TypeError, match="Element-wise operations require qtype 'QuantumFloat'"):
+            qa_float._validate_arithmetic(qa_char)
+
+        # Should raise TypeError for non-QuantumBool qtype of self
+        with pytest.raises(TypeError, match="Element-wise operations require qtype 'QuantumBool'"):
+            qa_float._validate_arithmetic(qa_bool, mode="bool")
+
+        # Should raise TypeError for non-QuantumBool qtype of other array
+        with pytest.raises(TypeError, match="Element-wise operations require qtype 'QuantumBool'"):
+            qa_bool._validate_arithmetic(qa_float, mode="bool")
+
+        # Should raise ValueError for shape mismatch
+        qa_wrong_shape = QuantumArray(QuantumFloat(5), shape=(3, 3))
+        with pytest.raises(ValueError, match="Shape mismatch"):
+            qa_float._validate_arithmetic(qa_wrong_shape)
     
     def test_validate_qtype_requirement(self):
         """Test that operations require QuantumFloat qtype."""

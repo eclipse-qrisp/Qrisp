@@ -1189,7 +1189,7 @@ class QuantumArray:
         from qrisp.qtypes.quantum_float import QuantumFloat
 
         if mode == "float":
-            valid_qtype = QuantumFloat
+            valid_qtype = QuantumFloat #QuantumModulus is subclass of QuantumFloat, so this covers both cases
         elif mode == "bool":
             valid_qtype = QuantumBool
         else:
@@ -1237,6 +1237,13 @@ class QuantumArray:
             A new QuantumArray containing the element-wise sum.
             If a QuantumArray or QuantumVariable is provided, the ``qtype`` of the output will be determined by the qtypes of the two input objects to prevent overflow.
             If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
+
+        Raises
+        ------
+        TypeError
+            If the qtypes of self and other are incompatible for addition.
+        ValueError
+            If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
 
         Examples
         --------
@@ -1308,6 +1315,13 @@ class QuantumArray:
             A new QuantumArray containing the element-wise difference.
             If a QuantumArray or QuantumVariable is provided, the ``qtype`` of the output will be determined by the qtypes of the two input objects to prevent overflow.
             If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
+
+        Raises
+        ------
+        TypeError
+            If the qtypes of self and other are incompatible for subtraction.
+        ValueError
+            If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
 
         Examples
         --------
@@ -1383,6 +1397,10 @@ class QuantumArray:
 
         Raises
         ------
+        TypeError
+            If the qtypes of self and other are incompatible for multiplication.
+        ValueError
+            If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
         NotImplementedError
             If ``qtype`` of self is not QuantumModulus and other is a classical scalar or numpy array,
             since quantum-classical multiplication is not supported in this case.
@@ -1441,6 +1459,13 @@ class QuantumArray:
         QuantumArray
             A new QuantumArray of QuantumBools containing the result of element-wise ``==``.
 
+        Raises
+        ------
+        TypeError
+            If the qtypes of self and other are incompatible for comparison.
+        ValueError
+            If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
+
         Examples
         --------
 
@@ -1491,6 +1516,13 @@ class QuantumArray:
         -------
         QuantumArray
             A new QuantumArray of QuantumBools containing the result of element-wise ``!=``.
+
+        Raises
+        ------
+        TypeError
+            If the qtypes of self and other are incompatible for comparison.
+        ValueError
+            If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
 
         Examples
         --------
@@ -1543,6 +1575,13 @@ class QuantumArray:
         QuantumArray
             A new QuantumArray of QuantumBools containing the result of element-wise ``>``.
 
+        Raises
+        ------
+        TypeError
+            If the qtypes of self and other are incompatible for comparison.
+        ValueError
+            If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
+
         Examples
         --------
 
@@ -1593,6 +1632,13 @@ class QuantumArray:
         -------
         QuantumArray
             A new QuantumArray of QuantumBools containing the result of element-wise ``>=``.
+
+        Raises
+        ------
+        TypeError
+            If the qtypes of self and other are incompatible for comparison.
+        ValueError
+            If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
 
         Examples
         --------
@@ -1645,6 +1691,13 @@ class QuantumArray:
         QuantumArray
             A new QuantumArray of QuantumBools containing the result of element-wise ``<``.
 
+        Raises
+        ------
+        TypeError
+            If the qtypes of self and other are incompatible for comparison.
+        ValueError
+            If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
+
         Examples
         --------
 
@@ -1696,6 +1749,13 @@ class QuantumArray:
         QuantumArray
             A new QuantumArray of QuantumBools containing the result of element-wise ``<=``.
 
+        Raises
+        ------
+        TypeError
+            If the qtypes of self and other are incompatible for comparison.
+        ValueError
+            If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
+
         Examples
         --------
 
@@ -1732,7 +1792,6 @@ class QuantumArray:
     def __and__(self, other: QuantumArray | QuantumVariable) -> QuantumArray:
         """
         Performs element-wise ``&`` (bitwise AND) operation.
-        This operation is only defined for QuantumArrays of QuantumBools.
 
         Parameters
         ----------
@@ -1744,6 +1803,13 @@ class QuantumArray:
         QuantumArray
             A new QuantumArray of QuantumBools containing the result of element-wise ``&``.
 
+        Raises
+        ------
+        TypeError
+            If the qtypes of self and other are not QuantumBool.
+        ValueError
+            If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
+    
         Examples
         --------
         >>> import numpy as np
@@ -1766,7 +1832,6 @@ class QuantumArray:
     def __or__(self, other: QuantumArray | QuantumVariable) -> QuantumArray:
         """
         Performs element-wise ``|`` (bitwise OR) operation.
-        This operation is only defined for QuantumArrays of QuantumBools.
 
         Parameters
         ----------
@@ -1777,6 +1842,13 @@ class QuantumArray:
         -------
         QuantumArray
             A new QuantumArray of QuantumBools containing the result of element-wise ``|``.
+
+        Raises
+        ------
+        TypeError
+            If the qtypes of self and other are not QuantumBool.
+        ValueError
+            If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
 
         Examples
         --------
@@ -1800,7 +1872,6 @@ class QuantumArray:
     def __xor__(self, other: QuantumArray | QuantumVariable) -> QuantumArray:
         """
         Performs element-wise ``^`` (bitwise XOR) operation.
-        This operation is only defined for QuantumArrays of QuantumBools.
 
         Parameters
         ----------
@@ -1811,6 +1882,13 @@ class QuantumArray:
         -------
         QuantumArray
             A new QuantumArray of QuantumBools containing the result of element-wise ``^``.
+
+        Raises
+        ------
+        TypeError
+            If the qtypes of self and other are not QuantumBool.
+        ValueError
+            If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
 
         Examples
         --------
@@ -1836,7 +1914,6 @@ class QuantumArray:
     ) -> QuantumArray | QuantumVariable:
         """
         Performs an element-wise logical AND reduction, returning True if all elements are True.
-        This operation is only defined for QuantumArrays of QuantumBools.
 
         Parameters
         ----------
@@ -1874,7 +1951,7 @@ class QuantumArray:
 
         if not isinstance(self.qtype, QuantumBool):
             raise TypeError(
-                f"Reduction operation 'all' requires qtype QuantumBool, got qtype {type(self.qtype).__name__} instead."
+                f"Reduction operation 'all' requires qtype 'QuantumBool', got qtype '{type(self.qtype).__name__}' instead."
             )
 
         def _all(elements):
@@ -1892,7 +1969,6 @@ class QuantumArray:
     ) -> QuantumArray | QuantumVariable:
         """
         Performs an element-wise logical OR reduction, returning True if any element is True.
-        This operation is only defined for QuantumArrays of QuantumBools.
 
         Parameters
         ----------
@@ -1930,7 +2006,7 @@ class QuantumArray:
 
         if not isinstance(self.qtype, QuantumBool):
             raise TypeError(
-                f"Reduction operation 'any' requires qtype QuantumBool, got qtype {type(self.qtype).__name__} instead."
+                f"Reduction operation 'any' requires qtype 'QuantumBool', got qtype '{type(self.qtype).__name__}' instead."
             )
 
         def _any(elements):
@@ -2006,6 +2082,13 @@ class QuantumArray:
             The modified QuantumArray containing the result of the in-place addition.
             The ``qtype`` of the output will be the same as the ``qtype`` of self.
 
+        Raises
+        ------
+        TypeError
+            If the qtypes of self and other are incompatible for addition.
+        ValueError
+            If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
+
         Examples
         --------
 
@@ -2050,6 +2133,13 @@ class QuantumArray:
         QuantumArray
             The modified QuantumArray containing the result of the in-place subtraction.
             The ``qtype`` of the output will be the same as the ``qtype`` of self.
+
+        Raises
+        ------
+        TypeError
+            If the qtypes of self and other are incompatible for subtraction.
+        ValueError
+            If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
 
         Examples
         --------
@@ -2097,11 +2187,15 @@ class QuantumArray:
         Raises
         ------
         TypeError
+            If the qtypes of self and other are incompatible for multiplication.
+        ValueError
+            If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
+        TypeError
             If other is a QuantumArray or QuantumVariable, since quantum-quantum in-place multiplication is not supported. 
             Use out-of-place multiplication instead.
         NotImplementedError
             If in tracing mode and self's ``qtype`` is not QuantumModulus, since quantum-classical in-place multiplication is not supported in tracing mode for non-QuantumModulus types.
-         
+ 
         Examples
         --------
 
