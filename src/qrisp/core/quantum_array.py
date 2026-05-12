@@ -2214,6 +2214,8 @@ class QuantumArray:
         from qrisp.alg_primitives.arithmetic.SBP_arithmetic import inpl_mult
         from qrisp.qtypes.quantum_modulus import QuantumModulus
 
+        self._validate_arithmetic(other)
+
         if isinstance(other, (QuantumArray, QuantumVariable)):
             raise TypeError(
                 "Quantum-quantum in-place multiplication is not supported. Use out-of-place multiplication instead."
@@ -2223,8 +2225,6 @@ class QuantumArray:
             raise NotImplementedError(
                 "Quantum-classical in-place multiplication is not supported in tracing mode for non-QuantumModulus types."
             )
-
-        self._validate_arithmetic(other)
 
         if isinstance(self.qtype, QuantumModulus):
 
