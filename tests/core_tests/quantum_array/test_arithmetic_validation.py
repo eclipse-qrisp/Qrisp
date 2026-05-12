@@ -19,7 +19,7 @@
 import pytest
 import numpy as np
 import operator
-from qrisp import QuantumArray, QuantumFloat, QuantumBool, QuantumChar
+from qrisp import QuantumArray, QuantumFloat, QuantumBool, QuantumChar, QuantumModulus
 
 ops = [
     operator.add, operator.sub, operator.mul,  # +, -, *
@@ -162,6 +162,30 @@ class TestArithmeticValidation:
         
         with pytest.raises(TypeError, match="Reduction operation 'any' requires qtype 'QuantumBool'"):
             qa_float.any()
+
+    def test_matmul_validation(self):
+        """Test that matrix multiplication validates shapes and qtypes."""
+        qa1 = QuantumArray(QuantumFloat(5), shape=(2, 3))
+        qa2 = QuantumArray(QuantumFloat(5), shape=(4, 2))
+        
+        # Should raise ValueError for incompatible shapes
+        with pytest.raises(ValueError, match="Incompatible shapes for matrix multiplication"):
+            qa1 @ qa2
+
+        # Should raise TypeError for non-QuantumFloat/QuantumModulus qtype of self
+        with pytest.raises(TypeError, match="Matrix multiplication requires qtype 'QuantumFloat' or 'QuantumModulus'"):
+            qa_char = QuantumArray(QuantumChar(), shape=(3, 2))
+            qa_char @ qa1
+
+        # Should raise TypeError for non-QuantumFloat/QuantumModulus qtype of other array
+        with pytest.raises(TypeError, match="Matrix multiplication requires both arrays to have qtype 'QuantumFloat' or 'QuantumModulus'"):
+            qa_char = QuantumArray(QuantumChar(), shape=(3, 2))
+            qa1 @ qa_char
+        
+        # Should raise NotImplementedError for QuantumModulus self with QuantumArray other
+        qa_modulus = QuantumArray(QuantumModulus(5), shape=(3, 3))
+        with pytest.raises(NotImplementedError, match="Matrix multiplication between a QuantumArray of QuantumModulus and another QuantumArray is not supported"):
+            qa_modulus @ qa_modulus
 
 
 class TestArithmeticExecution:

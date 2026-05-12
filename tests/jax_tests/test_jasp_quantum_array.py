@@ -128,6 +128,17 @@ def test_error_invalid_slice_step():
     ):
         main()
 
+def test_error_matmul_invalid_qtype():
+    """Test that an error is raised when trying to apply matrix multiplication to a QuantumArray of unsupported qtype"""
+
+    @jaspify
+    def main():
+        qa_float = QuantumArray(QuantumFloat(2), shape=(2, 2))
+        qa_float @ qa_float
+
+    with pytest.raises(NotImplementedError, match="Matrix multiplication between QuantumArrays of QuantumFloat in tracing mode is not supported"):
+        main()
+
 def test_injection():
     @jaspify
     def test():

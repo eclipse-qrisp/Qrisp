@@ -847,10 +847,19 @@ class QuantumArray:
             A new QuantumArray containing the multiplication result.
                 The ``qtype`` of the output array is the same as the ``qtype`` of self.
 
-        .. warning::
-
-            Matrix multiplication is currently not supported in tracing mode if ``qtype`` of self is QuantumFloat.
-            If ``qtype`` of self is QuantumModulus, matrix multiplication is supported in tracing mode and other must be a classical jax numpy array of integers.
+        Raises
+        ------
+        ValueError
+            If the shapes of self and other are incompatible for matrix multiplication.
+        TypeError
+            If the types of self and other are incompatible for matrix multiplication: 
+                - If self is not a QuantumArray of QuantumFloat or QuantumModulus, matrix multiplication is not supported.
+                - If other is a QuantumArray but not of QuantumFloat or QuantumModulus, matrix multiplication is not supported.
+        NotImplementedError
+            If matrix multiplication between the given types is not supported:
+                - If self is a QuantumArray of QuantumModulus, matrix multiplication with another QuantumArray is not supported. 
+                  Other must be a classical array of integers.
+                - If self is a QuantumArray of QuantumFloat, matrix multiplication is not supported in tracing mode.
 
         Examples
         --------
@@ -897,12 +906,24 @@ class QuantumArray:
             raise ValueError(
                 f"Incompatible shapes for matrix multiplication: {self.shape} and {other.shape}"
             )
+        
+        if not isinstance(self.qtype, (QuantumFloat, QuantumModulus)):
+            raise TypeError(
+                f"Matrix multiplication requires qtype 'QuantumFloat' or 'QuantumModulus'. "
+                f"Got {type(self.qtype).__name__}."
+            )
+        
+        if isinstance(other, QuantumArray) and not isinstance(other.qtype, (QuantumFloat, QuantumModulus)):
+            raise TypeError(
+                f"Matrix multiplication requires both arrays to have qtype 'QuantumFloat' or 'QuantumModulus'. "
+                f"Got {type(self.qtype).__name__} and {type(other.qtype).__name__}."
+            )
 
         if isinstance(self.qtype, QuantumModulus):
             if isinstance(other, QuantumArray):
-                raise TypeError(
-                    "Cannot apply matrix multiplication between a QuantumArray of QuantumModulus "
-                    "and another QuantumArray. The second array must be a classical array of integers."
+                raise NotImplementedError(
+                    "Matrix multiplication between a QuantumArray of QuantumModulus and another QuantumArray "
+                    "is not supported. The second array must be a classical array of integers."
                 )
 
             if isinstance(other, (np.ndarray, jnp.ndarray)):
@@ -920,7 +941,7 @@ class QuantumArray:
             if check_for_tracing_mode():
                 raise NotImplementedError(
                     "Matrix multiplication between QuantumArrays of QuantumFloat in tracing mode "
-                    "is currently not supported."
+                    "is not supported."
                 )
 
             if isinstance(other, QuantumArray):
