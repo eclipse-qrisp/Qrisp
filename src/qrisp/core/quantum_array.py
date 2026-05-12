@@ -542,7 +542,9 @@ class QuantumArray:
         qtype : QuantumVariable
             The type of the quantum variable to return.
         axis : int or tuple of ints, optional
-            The axes to reduce over.
+            The axes to reduce over. If None (default), reduces over all axes. 
+            If an integer is provided, it is treated as a single axis. 
+            If a tuple of integers is provided, it specifies multiple axes to reduce over.
 
         Returns
         -------
@@ -1847,6 +1849,11 @@ class QuantumArray:
         QuantumBool or QuantumArray
             If axis is None, returns a single boolean value. If axis is specified, returns an array of boolean values.
 
+        Raises
+        ------
+        TypeError
+            If the qtype of self is not QuantumBool.
+
         Examples
         --------
         >>> import numpy as np
@@ -1867,7 +1874,7 @@ class QuantumArray:
 
         if not isinstance(self.qtype, QuantumBool):
             raise TypeError(
-                "The 'all' method is only defined for QuantumArrays of QuantumBools."
+                f"Reduction operation 'all' requires qtype QuantumBool, got qtype {type(self.qtype).__name__} instead."
             )
 
         def _all(elements):
@@ -1898,6 +1905,11 @@ class QuantumArray:
         QuantumBool or QuantumArray
             If axis is None, returns a single boolean value. If axis is specified, returns an array of boolean values.
 
+        Raises
+        ------
+        TypeError
+            If the qtype of self is not QuantumBool.
+
         Examples
         --------
         >>> import numpy as np
@@ -1918,7 +1930,7 @@ class QuantumArray:
 
         if not isinstance(self.qtype, QuantumBool):
             raise TypeError(
-                "The 'any' method is only defined for QuantumArrays of QuantumBools."
+                f"Reduction operation 'any' requires qtype QuantumBool, got qtype {type(self.qtype).__name__} instead."
             )
 
         def _any(elements):

@@ -128,6 +128,18 @@ class TestArithmeticValidation:
         with pytest.raises(TypeError, match="Element-wise operations require"):
             qa_float < qa_char
 
+    def test_all_any_validation(self):
+        """Test that all and any methods validate qtype."""
+        qa_bool = QuantumArray(QuantumBool(), shape=(2, 2))
+        qa_float = QuantumArray(QuantumFloat(5), shape=(2, 2))
+        
+        # Should raise TypeError for wrong qtype
+        with pytest.raises(TypeError, match="Reduction operation 'all' requires qtype QuantumBool"):
+            qa_float.all()
+        
+        with pytest.raises(TypeError, match="Reduction operation 'any' requires qtype QuantumBool"):
+            qa_float.any()
+
 
 class TestArithmeticExecution:
     """Tests for actual arithmetic operations execution."""
