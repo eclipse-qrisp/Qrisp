@@ -23,7 +23,7 @@ from qrisp.default_backend import DefaultBackend, DefaultJob, def_backend
 from qrisp.interface import BatchedBackend
 from qrisp.interface.job import JobResult, JobStatus
 from qrisp.interface.measurement_result import LazyDict
-from tests.interface_tests.conftest import CountingWrapper
+from conftest import CountingWrapper
 
 
 def _simple_computation():

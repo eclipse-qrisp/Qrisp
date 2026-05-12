@@ -55,7 +55,7 @@ from qrisp.interface.provider_backends.qiskit_backend import (
     QiskitRuntimeBackend,
     _map_qiskit_status,
 )
-from tests.interface_tests.conftest import CountingWrapper
+from conftest import CountingWrapper
 
 
 class _MockCircuitData:

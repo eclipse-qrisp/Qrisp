@@ -568,7 +568,7 @@ class TestAQTBackendBatched:
 
         To run manually, replace the credentials and remove the skip mark::
 
-            from tests.interface_tests.conftest import CountingWrapper
+            from conftest import CountingWrapper
             counting = CountingWrapper(
                 AQTBackend(
                     api_token="YOUR_TOKEN",

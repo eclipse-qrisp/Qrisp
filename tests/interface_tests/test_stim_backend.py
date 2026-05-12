@@ -21,7 +21,7 @@ import pytest
 from qrisp import QuantumCircuit, QuantumFloat, QuantumVariable
 from qrisp.interface import BatchedBackend, StimBackend
 from qrisp.interface.measurement_result import LazyDict
-from tests.interface_tests.conftest import CountingWrapper
+from conftest import CountingWrapper
 
 
 def _build_deterministic_circuit():
