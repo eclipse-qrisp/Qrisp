@@ -27,6 +27,13 @@ from qrisp.misc import bin_rep
 from qrisp.qtypes import QuantumBool
 
 
+def _resolve_rng(seed):
+    if isinstance(seed, random.Random):
+        return seed
+
+    return random.Random(seed)
+
+
 def sample_approx_mcx_masks(control_amount, k, seed=None):
     """
     Sample the parity masks used by :func:`approx_mcx`.
@@ -45,7 +52,7 @@ def sample_approx_mcx_masks(control_amount, k, seed=None):
     control_amount = int(control_amount)
     k = int(k)
 
-    rng = random.Random(seed)
+    rng = _resolve_rng(seed)
     return [rng.getrandbits(control_amount) for _ in range(k)]
 
 
