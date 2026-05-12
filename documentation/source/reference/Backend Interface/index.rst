@@ -475,14 +475,14 @@ For more details, see the :ref:`JobResult` documentation.
 
 :class:`~qrisp.interface.MeasurementResult` is the return type of
 :meth:`~qrisp.interface.Backend.run`.  It is a
-:class:`~collections.abc.Mapping` of raw bitstring keys to counts, so all
+``Mapping`` of raw bitstring keys to counts, so all
 dict-style access (``result["0"]``, ``.items()``, ``len()``, ``==`` with a
 plain dict) works unchanged.
 
 For standard backends the object arrives pre-populated.  For
 :class:`~qrisp.interface.BatchedBackend` it starts empty and is filled when
-:meth:`~qrisp.interface.BatchedBackend.dispatch` is called; accessing it
-before that raises ``RuntimeError``.
+:meth:`~qrisp.interface.BatchedBackend.dispatch` is called (accessing it
+before that raises ``RuntimeError``).
 
 :class:`~qrisp.interface.DecodedMeasurementResult` is what
 :meth:`QuantumVariable.get_measurement <qrisp.QuantumVariable.get_measurement>`
@@ -492,10 +492,117 @@ integers for :class:`~qrisp.QuantumFloat`).  Decoding is deferred: the
 plain dict representation is built the first time any key is accessed.
 
 Both classes inherit from :class:`~qrisp.interface.LazyDict`, an abstract
-:class:`~collections.abc.Mapping` whose data is computed exactly once on
+``Mapping`` whose data is computed exactly once on
 first access and cached for all subsequent reads.
 
-For more details, see the :ref:`MeasurementResult` documentation.
+For more details, see the :ref:`MeasurementResult` 
+and :ref:`DecodedMeasurementResult` documentation.
+
+
+:ref:`BatchedBackend`
+---------------------
+
+:class:`~qrisp.interface.BatchedBackend` wraps any :ref:`Backend` and changes
+the execution model: instead of submitting one circuit per
+:meth:`~qrisp.QuantumVariable.get_measurement` call, all circuits are
+collected and then submitted together in a single
+:meth:`~qrisp.interface.Backend.run_async` call when
+:meth:`~qrisp.interface.BatchedBackend.dispatch` is invoked.
+
+.. note::
+
+   ``BatchedBackend`` is not a subclass of :ref:`Backend`.  It is a
+   *wrapper* (Virtual Proxy pattern): it holds a reference to a concrete
+   backend and intercepts ``run()`` calls.  Inheriting from ``Backend``
+   would violate the :ref:`Backend` contract, which guarantees that
+   ``run()`` returns a populated result immediately.
+
+Obtain a ``BatchedBackend`` from any existing backend via
+:meth:`~qrisp.interface.Backend.batched`:
+
+.. code-block:: python
+
+   from qrisp.default_backend import DefaultBackend
+
+   backend = DefaultBackend()
+   batched_backend = backend.batched()
+
+The key benefit is visible when measuring multiple quantum variables.
+Below, a ``CountingBackend`` wrapper records every ``run_async``
+invocation so we can observe exactly how many hardware calls are made.
+
+**Standard backend** (one hardware call per circuit):
+
+.. code-block:: python
+
+   from qrisp import QuantumFloat, h
+   from qrisp.default_backend import DefaultBackend
+
+   class CountingBackend(DefaultBackend):
+       def __init__(self):
+           super().__init__()
+           self.run_async_calls = 0
+
+       def run_async(self, circuits, shots=None):
+           n = len(circuits) if hasattr(circuits, '__len__') else 1
+           self.run_async_calls += 1
+           print(f"run_async called (call #{self.run_async_calls}) "
+                 f"with {n} circuit(s)")
+           return super().run_async(circuits, shots)
+
+   backend = CountingBackend()
+
+   qf1 = QuantumFloat(3); qf1[:] = 2
+   qf2 = QuantumFloat(3); qf2[:] = 5
+   qf3 = QuantumFloat(3); h(qf3[0])
+
+   r1 = qf1.get_measurement(backend=backend)
+   r2 = qf2.get_measurement(backend=backend)
+   r3 = qf3.get_measurement(backend=backend)
+
+   # Output:
+   # run_async called (call #1) with 1 circuit(s)
+   # run_async called (call #2) with 1 circuit(s)
+   # run_async called (call #3) with 1 circuit(s)
+
+   print(backend.run_async_calls)   # 3 (one per circuit)
+
+**BatchedBackend** (one hardware call for all circuits):
+
+.. code-block:: python
+
+   backend = CountingBackend()
+   batched_backend = backend.batched()
+
+   qf1 = QuantumFloat(3); qf1[:] = 2
+   qf2 = QuantumFloat(3); qf2[:] = 5
+   qf3 = QuantumFloat(3); h(qf3[0])
+
+   # Each call returns immediately — no hardware submission yet.
+   r1 = qf1.get_measurement(backend=batched_backend)
+   r2 = qf2.get_measurement(backend=batched_backend)
+   r3 = qf3.get_measurement(backend=batched_backend)
+
+   print(backend.run_async_calls)   # 0 (nothing submitted yet)
+   print(r1._populated)             # False (result is still empty)
+
+   # One call submits all circuits in a single job.
+   batched_backend.dispatch()
+
+   # Output:
+   # run_async called (call #1) with 3 circuit(s)
+
+   print(backend.run_async_calls)   # 1 (one call for all circuits)
+   print(r1, r2, r3)               # {2: 1.0} {5: 1.0} {0: 0.5, 1: 0.5}
+
+The lazy :class:`~qrisp.interface.DecodedMeasurementResult` objects
+returned by :meth:`~qrisp.QuantumVariable.get_measurement` are what
+make this possible: they act as empty placeholders that
+:meth:`~qrisp.interface.BatchedBackend.dispatch` populates all at once.
+Decoding (e.g. from bitstring indices to ``QuantumFloat`` values) is
+further deferred and happens on first access.
+
+For more details, see the :ref:`BatchedBackend` documentation.
 
 
 :ref:`BackendServer`
@@ -586,6 +693,10 @@ Naturally, this also works for non-simulator Qiskit backends (e.g. IBM quantum c
 
 :ref:`IQMBackend`
 ---------------------
+
+.. note::
+
+   The `IQMBackend` class is deprecated and will be removed in future releases from the qrisp package.
 
 The IQMBackend class allows to run Qrisp programs on IQM quantum computers available via 
 `IQM Resonance <https://resonance.meetiqm.com/>`_. 

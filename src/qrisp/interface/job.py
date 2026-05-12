@@ -89,7 +89,7 @@ class JobResult:
 
     Parameters
     ----------
-    counts : List[Dict]
+    counts : list[dict]
         A list of measurement-outcome dictionaries, one per circuit.
         Keys and values can be of any type, as determined by the user.
 
@@ -296,7 +296,7 @@ class Job(ABC):
     @abstractmethod
     def submit(self) -> None:
         """
-        Move the job out of :attr:`~JobStatus.INITIALIZING`.
+        Move the job out of ``INITIALIZING``.
 
         This method is called by :meth:`~qrisp.interface.Backend.run_async`
         immediately after the job object has been constructed. Its

@@ -34,7 +34,7 @@ class BatchedBackend:
     :meth:`dispatch` call. Notice that this is not a :class:`Backend` subclass
     and does not implement the full :class:`Backend` interface.
 
-    Obtain an instance via :meth:`Backend.batched`:
+    Obtain an instance via :meth:`~qrisp.interface.Backend.batched`:
 
     .. code-block:: python
 
@@ -82,16 +82,16 @@ class BatchedBackend:
 
         a = QuantumFloat(4); a[:] = 1
         b = QuantumFloat(3); b[:] = 2
-        c = a + b  # expected: 3
+        c = a + b
 
         d = QuantumFloat(4); d[:] = 2
         e = QuantumFloat(3); e[:] = 3
-        f = d + e  # expected: 5
+        f = d + e
 
         res_c = c.get_measurement(backend=batched_backend)  # lazy (returns immediately)
-        res_f = f.get_measurement(backend=batched_backend)  # same
+        res_f = f.get_measurement(backend=batched_backend)  # lazy (returns immediately)
 
-        batched_backend.dispatch()  # runs both circuits via backend.run(), then populates results
+        batched_backend.dispatch()  # runs both circuits, then populates results
 
         print(res_c)  # {3: 1.0}
         print(res_f)  # {5: 1.0}

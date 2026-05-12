@@ -18,6 +18,7 @@ Methods
    Backend.run_async
    Backend.run
    Backend.retrieve_job
+   Backend.batched
 
 
 
