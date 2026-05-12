@@ -188,12 +188,8 @@ class TestLazyDict:
         """__eq__ must return NotImplemented for non-Mapping operands."""
         ld = _Ready({"a": 1})
         # Must call __eq__ directly to observe NotImplemented (== swallows it).
-        assert (
-            ld.__eq__(42) is NotImplemented
-        )  # pylint: disable=unnecessary-dunder-call
-        assert (
-            ld.__eq__("string") is NotImplemented
-        )  # pylint: disable=unnecessary-dunder-call
+        assert ld.__eq__(42) is NotImplemented
+        assert ld.__eq__("string") is NotImplemented
 
     def test_is_unhashable(self):
         """LazyDict instances must not be hashable (Mapping convention)."""

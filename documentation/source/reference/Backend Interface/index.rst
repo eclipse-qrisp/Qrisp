@@ -274,7 +274,7 @@ separate thread so they all execute concurrently:
                for t in threads:
                   t.join()
 
-               self._result_data = JobResult(counts)  # type: ignore
+               self._result_data = JobResult(counts)
                self._last_known_status = JobStatus.DONE
 
          except Exception as exc:

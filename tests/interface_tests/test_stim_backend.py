@@ -1,4 +1,3 @@
-# pylint: disable=protected-access
 # ********************************************************************************
 # * Copyright (c) 2026 the Qrisp authors
 # *

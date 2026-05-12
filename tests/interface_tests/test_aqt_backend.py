@@ -548,19 +548,21 @@ class TestAQTBackendBatched:
     def test_rejects_non_string_api_token(self):
         """AQTBackend.__init__ must raise TypeError for a non-string api_token."""
         with pytest.raises(TypeError, match="api_token"):
-            AQTBackend(api_token=42, device_instance="ibex")  # type: ignore[arg-type]
+            AQTBackend(api_token=42, device_instance="ibex")
 
     def test_rejects_non_string_device_instance(self):
         """AQTBackend.__init__ must raise TypeError for a non-string device_instance."""
         with pytest.raises(TypeError, match="device_instance"):
-            AQTBackend(api_token="token", device_instance=99)  # type: ignore[arg-type]
+            AQTBackend(api_token="token", device_instance=99)
 
     def test_rejects_non_string_workspace(self):
         """AQTBackend.__init__ must raise TypeError for a non-string workspace."""
         with pytest.raises(TypeError, match="workspace"):
-            AQTBackend(api_token="token", device_instance="ibex", workspace=42)  # type: ignore[arg-type]
+            AQTBackend(api_token="token", device_instance="ibex", workspace=42)
 
-    @pytest.mark.skip(reason="requires AQT hardware credentials and qiskit-aqt-provider")
+    @pytest.mark.skip(
+        reason="requires AQT hardware credentials and qiskit-aqt-provider"
+    )
     def test_integration_batching_properties(self):
         """Placeholder: full batching integration test for AQTBackend.
 
