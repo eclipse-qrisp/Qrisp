@@ -19,10 +19,9 @@
 from functools import lru_cache
 
 import numpy as np
-from numba import njit
-from jax.extend.core import ClosedJaxpr, JaxprEqn, Literal, Jaxpr
 from jax.api_util import debug_info
-
+from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Literal
+from numba import njit
 
 # In newer versions, Jax enforces providing a debug info object
 # to the Jaxpr constructor. This object contains metadata information
@@ -79,7 +78,7 @@ def collect_environments(closed_jaxpr):
     eqn_var_tracker = VarTracker(eqn_list)
     new_eqn_var_tracker = VarTracker(new_eqn_list)
 
-    from qrisp.jasp import Jaspr, AbstractQuantumState
+    from qrisp.jasp import AbstractQuantumState, Jaspr
 
     if isinstance(closed_jaxpr, Jaspr) and closed_jaxpr.envs_flattened:
         return closed_jaxpr

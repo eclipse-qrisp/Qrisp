@@ -19,12 +19,11 @@
 from functools import lru_cache
 
 import numpy as np
+from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Var
 
-from jax.extend.core import JaxprEqn, ClosedJaxpr, Var, Jaxpr
-
+from qrisp.jasp import TracingQuantumSession
 from qrisp.jasp.jasp_expression.centerclass import Jaspr
 from qrisp.jasp.primitives import AbstractQubit
-from qrisp.jasp import TracingQuantumSession
 
 
 class ControlledJaspr(Jaspr):
@@ -113,7 +112,7 @@ def control_eqn(eqn, ctrl_qubit_var):
         The equation with inverted operation.
 
     """
-    from qrisp.jasp import Jaspr, AbstractQuantumState
+    from qrisp.jasp import AbstractQuantumState, Jaspr
 
     if eqn.primitive.name == "jit":
 
@@ -256,7 +255,7 @@ def control_jaspr(jaspr):
 
     """
 
-    from qrisp.jasp import Jaspr, AbstractQubit
+    from qrisp.jasp import AbstractQubit, Jaspr
 
     ctrl_qubit_var = Var(aval=AbstractQubit())
     control_var_count[0] += 1
