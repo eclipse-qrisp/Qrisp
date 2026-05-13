@@ -127,7 +127,7 @@ def uncompute(qs, uncomp_vars, recompute=False):
                 incorrectly_allocated_qvs.append(qv)
 
         incorrectly_allocated_qvs = [qv.name for qv in incorrectly_allocated_qvs]
-        raise Exception(
+        raise RuntimeError(
             f"Could not uncompute QuantumVariables {incorrectly_allocated_qvs} "
             f"because they were not created within this QuantumEnvironment"
         )
