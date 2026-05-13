@@ -17,3 +17,4 @@
 """
 
 from qrisp.jasp.mlir.mlir_emission import jaspr_to_mlir
+from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake
