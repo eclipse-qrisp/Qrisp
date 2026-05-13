@@ -173,7 +173,7 @@ def jaspr_to_catalyst_qjit(jaspr, function_name="jaspr_function", device=None):
 def jaspr_to_qir(jaspr):
     # This function returns the QIR code for a given jaspr
     qjit_obj = jaspr_to_catalyst_qjit(jaspr)
-    return qjit_obj.qir
+    return qjit_obj.llvmir
 
 
 def jaspr_to_mlir(jaspr):
