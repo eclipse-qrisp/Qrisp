@@ -45,12 +45,13 @@ class Backend(ABC):
     handle immediately. The caller then decides when to wait for the result
     by calling :meth:`Job.result <qrisp.interface.Job.result>`.
 
-    A synchronous convenience method :meth:`run` is also provided. It calls
+    A synchronous :meth:`run` method is also provided. It calls
     :meth:`run_async` internally, blocks until the job completes, and returns
-    the results as a plain sequence of measurement dictionaries. This exists
-    primarily for backward compatibility with existing Qrisp code that
-    previously called ``backend.run(circuit, shots)`` and expected a
-    dictionary directly.
+    the results as :class:`~qrisp.interface.MeasurementResult` objects. This
+    is the standard execution path for most users, and is what
+    :meth:`~qrisp.QuantumVariable.get_measurement` uses internally. Use
+    :meth:`run_async` directly only when you need the :class:`Job` handle
+    itself (e.g. to poll status, cancel, or wait concurrently).
 
     .. rubric:: Design contract
 
@@ -75,12 +76,9 @@ class Backend(ABC):
     caller, and the caller decides *when* to block by calling
     :meth:`Job.result <qrisp.interface.Job.result>`.
 
-    :meth:`run` provides a simpler synchronous interface on top of
-    :meth:`run_async`. It blocks until execution completes and returns the
-    measurement results as a ``list[Mapping]`` (one dictionary per
-    submitted circuit). New code should prefer :meth:`run_async` when the
-    :class:`Job` handle is needed (e.g. to poll status, cancel, or await
-    results concurrently).
+    :meth:`run` is the standard synchronous execution path.
+    It blocks until execution completes and returns the measurement results
+    (one per submitted circuit).
 
     .. rubric:: Runtime options
 

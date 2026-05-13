@@ -1002,9 +1002,6 @@ class QuantumVariable:
         Method for quick access to the measurement results of the state of the variable.
         Returns a :class:`~qrisp.interface.DecodedMeasurementResult`, which behaves like
         a dictionary of the type ``{value: p}`` where ``p`` is the measurement probability.
-        All standard dict-style operations (``result[key]``, ``.items()``, ``len()``,
-        equality with a plain dict) work unchanged.
-
 
         Parameters
         ----------
