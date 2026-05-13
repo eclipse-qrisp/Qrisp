@@ -19,17 +19,11 @@
 import numpy as np
 import pytest
 import jax
-from qrisp import Qubit, QuantumVariable
-from qrisp.core import x, cx
+from qrisp import QuantumVariable
+from qrisp.core import x
 from qrisp.alg_primitives.unbalanced_w_state import unbalanced_W_state
 from qrisp.alg_primitives.dicke_state_prep import dicke_state
-from collections.abc import Sequence
 from qrisp.jasp import terminal_sampling
-
-def _cx_ladder(qv: QuantumVariable | Sequence[Qubit], k: int = 1) -> None:
-    n = len(qv)
-    for i in reversed(range(0, n - k)):
-        cx(qv[i], qv[i + k])
 
 #############################################################
 ##################### Dicke state tests #####################
