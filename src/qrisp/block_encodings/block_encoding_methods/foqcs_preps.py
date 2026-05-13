@@ -147,6 +147,165 @@ def foqcs_prep_heisenberg_1D(
     # One spec CNOT
     cx(prep_qv[1], prep_qv[4]) # from gy to Jy
 
+def foqcs_prep_spin_glass(
+    prep_qv: QuantumVariable | Sequence[Qubit],
+    L: int,
+    g: dict,
+    J: dict,
+    conjugate: bool = False
+) -> None:
+    """
+    Parameters
+    ----------
+    prep_qv : QuantumVariable | Sequence[Qubit]
+        Ancillae qubits register for PREP.
+
+    L : int
+        Number of system qubits.
+
+    g : dict (length 3)
+        Dictionary of local field coefficients.
+        {"X" : [gx_1, gx_2, ..., gx_k],
+         "Y" : [gy_1, gy_2, ..., gy_k],
+         "Z" : [gz_1, gz_2, ..., gz_k]}
+
+    J : dict (length 3)
+        Dictionary of coupling coefficients.
+        {"X" : [[Jx_12, Jx_23, ..., Jx_(n-1)n], ...],
+         "Y" : [[Jy_12, Jy_23, ..., Jy_(n-1)n], ...],
+         "Z" : [[Jz_12, Jz_23, ..., Jz_(n-1)n], ...]}
+
+    conjugate : bool = False
+        Indicates whether the prep is PREP_R or PREP_L.
+        In case of PREP_L, the conjugates of g and J are used.
+        The default is False, which indicates it is PREP_R.
+
+    Raises
+    ------
+    ValueError
+        If ``g`` or ``J`` has length .
+
+    """
+    # g = {"X" : [], "Y" : [], "Z" : []}
+    # J = {"X" : [[]], "Y" : [[]], "Z" : [[]]}
+    # g = {"X" : [gx_1, gx_2, ..., gx_k], "Y" : [gy_1, gy_2, ..., gy_k], "Z" : [gz_1, gz_2, ..., gz_k]}
+    # J = {"X" : [[Jx_12, Jx_23, ..., Jx_(n-1)n], ...], "Y" : [[Jy_12, Jy_23, ..., Jy_(n-1)n], ...], "Z" : [[Jz_12, Jz_23, ..., Jz_(n-1)n], ...]}
+    g_betas = [] # Squared normalization factors for all g components (X, Y, Z) --> [g_beta_X, g_beta_Y, g_beta_Z]
+    J_betas = [[], [], []] # Squared normalization factors for all J components and diagonals (X, Y, Z) --> [[J_beta_X1, J_beta_X2, ...], [J_beta_Y1, J_beta_Y2, ...], [J_beta_Z1, J_beta_Z2, ...]]
+    g_hats = [[], [], []] # Normalized g coefficients
+    J_hats = [[], [], []] # Normalized J coefficients
+
+    # Normalization for state preparation
+    for i in range(3):
+
+        for j in range(len(J["X"])):
+
+            J_hats[i].append([])
+
+    for i in range(3):
+
+        s_sum = 0
+        components = ["X", "Z", "Y"]
+        dimension = components[i]
+
+        for j in range(len(g[dimension])):
+
+            s_sum += abs(g[dimension][j]) ** 2
+
+        g_betas.append(s_sum)
+
+    for i in range(3):
+
+        components = ["X", "Z", "Y"]
+        dimension = components[i]
+
+        for j in range(len(J[dimension])):
+
+            s_sum = 0
+
+            for k in range(len(J[dimension][j])):
+
+                s_sum += abs(J[dimension][j][k] ** 2)
+
+            J_betas[i].append(s_sum)
+
+    for i in range(3):
+
+        components = ["X", "Z", "Y"]
+        dimension = components[i]
+
+        for j in range(len(g[dimension])):
+
+            new_g = g[dimension][j] / (g_betas[i] ** 0.5)
+            g_hats[i].append(new_g)
+
+    for i in range(3):
+
+        components = ["X", "Z", "Y"]
+        dimension = components[i]
+
+        for j in range(len(J[dimension])):
+
+            for k in range(len(J[dimension][j])):
+
+                new_J = J[dimension][j][k] / ((J_betas[i][j]) ** 0.5)
+                J_hats[i][j].append(new_J)
+
+    final_betas = [g_betas[0], g_betas[1], g_betas[2]]
+
+    for i in range(len(J_betas[0])):
+
+        for j in range(3):
+
+            final_betas.append(J_betas[j][i])
+
+    # SUBPREP
+    extra_anc = len(g_betas) + (3 * len(J_betas[0]))
+    unbalanced_W_state(prep_qv[:extra_anc], final_betas, extra_anc)
+
+    # PREP
+    fh1 = extra_anc                # First qubit first half
+    lh1 = extra_anc + L - 1        # Last qubit first half
+    fh2 = extra_anc + L            # First qubit second half
+    lh2 = extra_anc + (L * 2) - 1  # Last qubit second half
+
+    # Unbalanced Dicke state
+    with control([prep_qv[0]]):
+
+        unbalanced_W_state(prep_qv[fh1:lh1 + 1], g_hats[0], reversed=True)
+
+    # Unbalanced Dicke state
+    with control([prep_qv[1]]):
+
+        unbalanced_W_state(prep_qv[fh2:], g_hats[1], reversed=True)
+
+    # Unbalanced Double Dicke state
+    with control([prep_qv[2]]):
+
+        unbalanced_W_state(prep_qv[fh1:lh1 + 1], g_hats[2], reversed=True)
+        cx(prep_qv[fh1:lh1 + 1], prep_qv[fh2:])
+
+    for i in range(len(J_betas[0])):
+
+        # Unbalanced 2kN
+        with control([prep_qv[(3 * i) + 3]]):
+
+            unbalanced_W_state(prep_qv[fh1:lh1 + 1 - (1 + i)], J_hats[0][i], reversed=True)
+            _cx_ladder(prep_qv, len(J_betas[0]))
+
+        # Unbalanced 2kN
+        with control([prep_qv[(3 * i) + 4]]):
+
+            unbalanced_W_state(prep_qv[fh2:lh2 + 1 - (1 + i)], J_hats[1][i], reversed=True)
+            _cx_ladder(prep_qv, len(J_betas[0]))
+
+        # Unbalanced Double 2kN
+        with control([prep_qv[(3 * i) + 5]]):
+
+            unbalanced_W_state(prep_qv[fh1:lh1 + 1 - (1 + i)], J_hats[2][i], reversed=True)
+            _cx_ladder(prep_qv, len(J_betas[0]))
+            cx(prep_qv[fh1:lh1 + 1], prep_qv[fh2:])
+
 def foqcs_prep_placeholder( qv: QuantumVariable, coeffs: list, some_param: float ) -> None:
     """
     TO-DO DOC
