@@ -21,7 +21,7 @@ import numpy as np
 from qrisp.core import cx, ry
 
 
-def dicke_state(qv, k):
+def dicke_state(qv, k, num_qubits: int = 0):
     """
     Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358.
     This algorithm creates an equal superposition of Dicke states for a given Hamming weight. The initial input variable has to be within this subspace.
@@ -31,7 +31,9 @@ def dicke_state(qv, k):
     qv : QuantumVariable
         Initial quantum variable to be prepared. Has to be in target subspace.
     k : Int
-        The Hamming weight (i.e. number of "ones") for the desired dicke state
+        The Hamming weight (i.e. number of "ones") for the desired dicke state.
+    num_qubits: Int
+        Number of passed qubits, used instead of `len(qv)` call if specified to any value other than 0. Default is 0
 
 
     Examples
@@ -50,7 +52,11 @@ def dicke_state(qv, k):
 
     """
 
-    n = len(qv)
+    if num_qubits == 0:
+        n = len(qv)
+    else:
+        n = num_qubits
+
     for index2 in reversed(range(k + 1, n + 1)):
         split_cycle_shift(qv, index2, k)
 
