@@ -270,7 +270,7 @@ def _xqsp_angles_from_nlft_sequence(F: Array) -> Array:
         1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
 
     """
-    return jnp.arctan(jnp.imag(F))
+    return jnp.arctan(-jnp.imag(F))
 
 
 @jax.jit
@@ -444,6 +444,6 @@ def qsvt_angles(p: "ArrayLike") -> Tuple[Array, Array]:
     phi_qsvt = jnp.zeros(d + 1)
     phi_qsvt = phi_qsvt.at[0].set(phi_xqsp[0] + (2 * d - 1) * np.pi / 4)
     phi_qsvt = phi_qsvt.at[1:].set(phi_xqsp[1:] - np.pi / 2)
-    phi_qsvt = phi_qsvt.at[d].set(phi_xqsp[d] - np.pi / 4)
+    phi_qsvt = phi_qsvt.at[d].set(phi_xqsp[d] - 3 * np.pi / 4)
 
     return phi_qsvt, alpha
