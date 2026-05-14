@@ -2198,6 +2198,7 @@ class QuantumArray:
             The array or scalar to be multiplied with the QuantumArray.
             If an array is provided, it must have the same shape as the original QuantumArray.
             If a scalar is provided, it will be multiplied with each element of the QuantumArray.
+            If the ``qtype`` of self is an unsigned QuantumFloat, the right-hand side must be non-negative.
 
         Returns
         -------
