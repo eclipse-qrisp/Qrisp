@@ -1112,7 +1112,8 @@ class QuantumVariable:
             sorted_keys.sort()
 
             for key in sorted_keys:
-                new_counts_dic[self.decoder(key)] = counts[key]
+                decoded = self.decoder(key)
+                new_counts_dic[decoded] = new_counts_dic.get(decoded, 0) + counts[key]
 
             counts = new_counts_dic
 
