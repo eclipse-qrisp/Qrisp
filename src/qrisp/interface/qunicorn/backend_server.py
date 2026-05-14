@@ -16,10 +16,13 @@
 ********************************************************************************
 """
 
-from flask import Flask, request, jsonify, make_response
-import yaml
-from datetime import date, datetime
 import threading
+import warnings
+from datetime import date, datetime
+
+from flask import Flask, jsonify, make_response, request
+
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 """
 
@@ -55,6 +58,12 @@ def get_ip():
 class BackendServer:
     """
     This class allows convenient setup of a server respecting the `Qunicorn <https://qunicorn-core.readthedocs.io/en/latest/index.html>`_ interface.
+
+
+    .. warning::
+
+        This Backend is not compatible with the new Backend API and is deprecated.
+        Please use the :ref:`Backend` abstract class to implement custom backends instead.
 
     Parameters
     ----------
@@ -97,6 +106,12 @@ class BackendServer:
     """
 
     def __init__(self, run_func, ip_address=None, port=None):
+
+        warnings.warn(
+            "DeprecationWarning: BackendServer is deprecated and will be removed in a later release of Qrisp. "
+            "Please use the ``Backend`` abstract class to implement custom backends.",
+            QrispDeprecationWarning,
+        )
 
         self.app = Flask(__name__)
         self.deployments = []

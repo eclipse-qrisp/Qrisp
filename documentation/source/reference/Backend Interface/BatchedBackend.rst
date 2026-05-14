@@ -7,3 +7,14 @@ BatchedBackend
 
 .. autoclass:: BatchedBackend
 
+
+Methods
+-------
+
+.. autosummary::
+   :toctree: generated/
+
+   BatchedBackend.__init__
+   BatchedBackend.run
+   BatchedBackend.dispatch
+

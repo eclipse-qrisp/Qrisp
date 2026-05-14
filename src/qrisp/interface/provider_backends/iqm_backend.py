@@ -16,9 +16,11 @@
 ********************************************************************************
 """
 
+import warnings
 from uuid import UUID
 
 from qrisp.interface import BatchedBackend
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 def IQMBackend(
@@ -33,6 +35,10 @@ def IQMBackend(
 ):
     """
     This function creates a :ref:`BatchedBackend` for executing circuits on IQM hardware.
+
+    .. warning::
+
+        The ``IQMBackend`` function will be removed from qrisp in a future release.
 
     Parameters
     ----------
@@ -120,6 +126,12 @@ def IQMBackend(
         meas_res = qc.run(shots = 10000, backend = custom_transpiled_garnet)
 
     """
+
+    warnings.warn(
+        "DeprecationWarning: The IQMBackend function will be removed from qrisp in a future release.",
+        QrispDeprecationWarning,
+    )
+
     if not isinstance(api_token, str):
         raise TypeError(
             "api_token must be a string. You can create an API token on the IQM Resonance website."

@@ -1004,7 +1004,7 @@ class QuantumVariable:
         ----------
         plot : Bool, optional
             Plots the measurement results as a historgram. The default is False.
-        backend : BackendClient, optional
+        backend : Backend, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
         shots : integer, optional
@@ -1083,7 +1083,7 @@ class QuantumVariable:
         # Bind parameters
         if subs_dic:
             qc = qc.bind_parameters(subs_dic)
-            from qrisp.core.compilation import combine_single_qubit_gates
+            from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
 
             qc = combine_single_qubit_gates(qc)
 
