@@ -17,6 +17,7 @@
 """
 
 import numpy as np
+import pytest
 from qrisp import QuantumVariable
 from qrisp.core import x
 from qrisp.alg_primitives.unbalanced_w_state import unbalanced_W_state
@@ -159,3 +160,15 @@ def test_unbalanced_W_state_one_qubit():
     print(f"Expected statevector:\n{expected_sv}")
 
     assert np.allclose(prepared_sv, expected_sv, atol=1e-6)
+
+def test_unbalanced_W_state_fail_len_check():
+    n = 1 # Number of qubits
+    amps = np.array([0.25 + 0.2j, 2, 3, 4, 5, 6, 7], dtype=complex)
+
+    # Prepare unbalanced Dicke state
+    qv = QuantumVariable(n)
+    with pytest.raises(ValueError) as exc_info:
+        unbalanced_W_state(qv, amps, reversed=True)
+
+    print(exc_info.value)
+    assert f"Length of amplitudes" in str(exc_info.value)

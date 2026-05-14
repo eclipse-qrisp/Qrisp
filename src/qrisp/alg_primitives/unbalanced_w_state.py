@@ -18,7 +18,7 @@
 
 import jax.numpy as jnp
 from qrisp import QuantumVariable, Qubit, x, xxyy, p
-from qrisp.jasp import jlen, q_fori_loop
+from qrisp.jasp import jlen, q_fori_loop, check_for_tracing_mode
 from collections.abc import Sequence
 
 def unbalanced_W_state(
@@ -97,6 +97,11 @@ def unbalanced_W_state(
 
     if reversed:
         a = a[::-1]
+
+    if not check_for_tracing_mode() and len(a) != n:
+        raise ValueError(
+            f"Length of amplitudes ({len(a)}) must match qv.size ({n})."
+        )
 
     # Normalize so that <a|a> = 1
     norm = jnp.sqrt(jnp.vdot(a, a).real)
