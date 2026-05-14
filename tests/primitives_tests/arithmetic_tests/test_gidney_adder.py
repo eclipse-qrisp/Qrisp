@@ -16,151 +16,353 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumFloat, gidney_adder, QuantumBool, x, control, boolean_simulation, measure
-from qrisp import cuccaro_adder
+import numpy as np
 import pytest
+from qrisp import (
+    QuantumBool,
+    QuantumFloat,
+    QuantumVariable,
+    boolean_simulation,
+    control,
+    cuccaro_adder,
+    gidney_adder,
+    measure,
+    x,
+)
+@pytest.mark.parametrize(
+    "a_spec, a_val, b_bits, b_val, expected_a, expected_b",
+    [
+        # Quantum-quantum (various sizes)
+        (("qf", 13), 20, 14, 14, {20: 1.0}, {34: 1.0}),
+        (("qf", 10), 15, 5, 7, {15: 1.0}, {(7 + 15) % 32: 1.0}),
+        # Classical int
+        (("classical", None), 20, 15, 14, 20, {34: 1.0}),
+        # Edge cases: zero, single qubit
+        (("qf", 10), 0, 10, 42, {0: 1.0}, {42: 1.0}),
+        (("classical", None), 0, 10, 42, 0, {42: 1.0}),
+        (("qf", 1), 0, 1, 1, {0: 1.0}, {1: 1.0}),
+        # Various sizes
+        (("qf", 5), 7, 10, 15, {7: 1.0}, {22: 1.0}),
+        (("qf", 8), 100, 8, 50, {100: 1.0}, {150: 1.0}),
+        (("qf", 16), 255, 4, 3, {255: 1.0}, {(3 + 255) % 16: 1.0}),
+        # String and special inputs
+        (("classical", None), "10", 8, 5, "10", {6: 1.0}),
+        (("classical", None), "", 8, 42, "", {42: 1.0}),
+        (("classical", None), np.int64(5), 8, 10, np.int64(5), {15: 1.0}),
+        # Classical modulo reduction
+        (("classical", None), 17, 4, 0, 17, {1: 1.0}),
+        (("classical", None), 255, 4, 7, 255, {6: 1.0}),
+        # Negative classical a
+        (("classical", None), -3, 4, 5, -3, {2: 1.0}),
+        (("classical", None), -1, 8, 0, -1, {255: 1.0}),
+        # List-of-qubits input
+        (("qf_list", 4), 5, 4, 3, None, {8: 1.0}),
+        (("qf_list", 3), 7, 8, 100, None, {107: 1.0}),
+    ],
+)
+def test_gidney_adder_basic(a_spec, a_val, b_bits, b_val, expected_a, expected_b):
+    """Verify b += a for various input types and sizes."""
+    kind, n = a_spec
+    if kind == "qf":
+        a = QuantumFloat(n)
+        a[:] = a_val
+    elif kind == "qf_list":
+        a = QuantumFloat(n)
+        a[:] = a_val
+        a = a[:]
+    else:
+        a = a_val
+
+    b = QuantumFloat(b_bits)
+    b[:] = b_val
+    gidney_adder(a, b)
+
+    assert b.get_measurement() == expected_b
+    if expected_a is not None and isinstance(a, QuantumFloat):
+        assert a.get_measurement() == expected_a
 
 
 @pytest.mark.parametrize(
-    "input_a, input_b, expected_a, expected_b",
+    "a_spec, a_val, b_bits, b_val, expected_b, expected_cout",
     [
-        # Both inputs are quantum in static mode, inputs are of unequal size
-        (QuantumFloat(13), QuantumFloat(14), {20: 1.0}, {34: 1.0}),
-        (QuantumFloat(14), QuantumFloat(13), {20: 1.0}, {34: 1.0}),
-        # Both inputs are quantum in static mode, inputs are of equal size
-        (QuantumFloat(13), QuantumFloat(13), {20: 1.0}, {34: 1.0}),
-        # One input is classical, the other is quantum in static mode
-        (20, QuantumFloat(15), 20, {34: 1.0}),
+        # Quantum-quantum (no overflow)
+        (("qf", 13), 20, 14, 14, {34: 1.0}, {0: 1.0}),
+        (("qf", 13), 20, 13, 14, {34: 1.0}, {0: 1.0}),
+        # Classical int (no overflow, overflow)
+        (("classical", None), 20, 15, 14, {34: 1.0}, {0: 1.0}),
+        (("classical", None), 10, 8, 20, {30: 1.0}, {0: 1.0}),
+        (("qf", 1), 1, 1, 1, {0: 1.0}, {1: 1.0}),
+        # Classical overflow
+        (("classical", None), 255, 8, 128, {127: 1.0}, {1: 1.0}),
+        (("classical", None), 200, 8, 100, {44: 1.0}, {1: 1.0}),
+        (("classical", None), 100, 8, 200, {44: 1.0}, {1: 1.0}),
     ],
 )
-def test_gidney_adder_valid_input_static_mode(input_a, input_b, expected_a, expected_b):
-    """Verify the function works as expected for valid inputs in static mode."""
-    if isinstance(input_a, QuantumFloat):
-        input_a[:] = 20
-    if isinstance(input_b, QuantumFloat):
-        input_b[:] = 14
-
-    gidney_adder(input_a, input_b)
-
-    calculated_out_b = (
-        input_b.get_measurement() if isinstance(input_b, QuantumFloat) else input_b
-    )
-    calculated_out_a = (
-        input_a.get_measurement() if isinstance(input_a, QuantumFloat) else input_a
-    )
-
-    assert calculated_out_a == expected_a
-    assert calculated_out_b == expected_b
-
-
-@pytest.mark.parametrize(
-    "input_a, input_b, expected_a, expected_b",
-    [
-        # Both inputs are quantum in static mode, inputs are of unequal size
-        (QuantumFloat(13), QuantumFloat(14), {20: 1.0}, {34: 1.0}),
-        # Both inputs are quantum in static mode, inputs are of equal size
-        (QuantumFloat(13), QuantumFloat(13), {20: 1.0}, {34: 1.0}),
-        # One input is classical, the other is quantum in static mode
-        (20, QuantumFloat(15), 20, {34: 1.0}),
-    ],
-)
-def test_gidney_adder_valid_input_static_mode_with_cout(
-    input_a, input_b, expected_a, expected_b
+def test_gidney_adder_with_carry_out(
+    a_spec, a_val, b_bits, b_val, expected_b, expected_cout
 ):
-    """Verify the function works as expected for valid inputs in static mode when c_out is provided."""
-    if isinstance(input_a, QuantumFloat):
-        input_a[:] = 20
-    if isinstance(input_b, QuantumFloat):
-        input_b[:] = 14
+    """Verify b += a with carry-out for overflow detection."""
+    kind, n = a_spec
+    if kind == "qf":
+        a = QuantumFloat(n)
+        a[:] = a_val
+    elif kind == "qf_list":
+        qf = QuantumFloat(n)
+        qf[:] = a_val
+        a = qf[:]
+    else:
+        a = a_val
 
+    b = QuantumFloat(b_bits)
+    b[:] = b_val
     c_out = QuantumBool()
-    gidney_adder(input_a, input_b, c_out=c_out)
 
-    calculated_out_b = (
-        input_b.get_measurement() if isinstance(input_b, QuantumFloat) else input_b
-    )
-    calculated_out_a = (
-        input_a.get_measurement() if isinstance(input_a, QuantumFloat) else input_a
-    )
-    calculated_out_cout = c_out.get_measurement()
+    gidney_adder(a, b, c_out=c_out)
 
-    assert calculated_out_a == expected_a
-    assert calculated_out_b == expected_b
-    assert calculated_out_cout == {0: 1.0}  # No overflow expected in these test cases
+    assert b.get_measurement() == expected_b
+    assert c_out.get_measurement() == expected_cout
 
 
 @pytest.mark.parametrize(
-    "input_a, input_b, c_in_val, expected_b",
+    "a_spec, a_val, b_val, c_in_val, expected_b",
     [
-        # Test with carry in, no overflow
-        (5, QuantumFloat(8), 0, {5: 1.0}),  # 0 + 5 = 5
-        (5, QuantumFloat(8), 1, {6: 1.0}),  # 1 + 5 = 6
-        # Test with larger values and carry in
-        (20, QuantumFloat(10), 1, {21: 1.0}),  # 0 + 20 + 1 = 21 (mod 2^10)
+        # Classical a, c_in=0 (implicit: 5+0+0=5)
+        # Classical a, c_in=1
+        (("classical", None), 5, 0, 1, {6: 1.0}),
+        (("classical", None), 20, 0, 1, {21: 1.0}),
+        # Quantum a, c_in effects
+        (("qf", 8), 50, 100, 1, {151: 1.0}),
+        (("qf", 8), 50, 100, 0, {150: 1.0}),
+        (("qf", 8), 10, 0, 1, {11: 1.0}),
     ],
 )
-def test_gidney_adder_with_carry_in(input_a, input_b, c_in_val, expected_b):
-    """Verify the function works correctly with carry_in parameter."""
-    if isinstance(input_b, QuantumFloat):
-        input_b[:] = 0
+def test_gidney_adder_with_carry_in(a_spec, a_val, b_val, c_in_val, expected_b):
+    """Verify b += a + c_in."""
+    kind, n = a_spec
+    if kind == "qf":
+        a = QuantumFloat(n)
+        a[:] = a_val
+    elif kind == "qf_list":
+        qf = QuantumFloat(n)
+        qf[:] = a_val
+        a = qf[:]
+    else:
+        a = a_val
+
+    b = QuantumFloat(8 if a_spec[1] is None else max(a_spec[1], 8))
+    b[:] = b_val
 
     c_in = QuantumBool()
     if c_in_val:
         x(c_in[0])
 
-    gidney_adder(input_a, input_b, c_in=c_in)
+    gidney_adder(a, b, c_in=c_in)
 
-    calculated_out_b = input_b.get_measurement()
-    assert calculated_out_b == expected_b
+    assert b.get_measurement() == expected_b
 
 
 @pytest.mark.parametrize(
-    "a_val, b_val_init, expected_sum, expected_cout",
+    "a_spec, a_val, b_val, expected_b, expected_cout",
     [
-        # Test overflow cases where carry out should be 1
-        (255, 128, {127: 1.0}, {1: 1.0}),  # 255 + 128 = 383 = 127 (mod 256), cout=1
-        (128, 128, {0: 1.0}, {1: 1.0}),  # 128 + 128 = 256 = 0 (mod 256), cout=1
-        (200, 100, {44: 1.0}, {1: 1.0}),  # 200 + 100 = 300 = 44 (mod 256), cout=1
+        # Quantum a, various results
+        (("qf", 8), 100, 150, {251: 1.0}, {0: 1.0}),
+        (("qf", 8), 200, 55, {0: 1.0}, {1: 1.0}),
+        # Classical a, c_in edge cases
+        (("classical", None), 0, 255, {0: 1.0}, {1: 1.0}),
+        (("classical", None), 127, 128, {0: 1.0}, {1: 1.0}),
+        (("classical", None), 1, 1, {3: 1.0}, {0: 1.0}),
     ],
 )
-def test_gidney_adder_carry_out_overflow(
-    a_val, b_val_init, expected_sum, expected_cout
+def test_gidney_adder_with_carry_in_and_carry_out(
+    a_spec, a_val, b_val, expected_b, expected_cout
 ):
-    """Verify carry out is correctly set when overflow occurs."""
-    b_val = QuantumFloat(8)
-    b_val[:] = b_val_init
+    """Verify b += a + c_in with carry-out."""
+    kind, n = a_spec
+    if kind == "qf":
+        a = QuantumFloat(n)
+        a[:] = a_val
+    elif kind == "qf_list":
+        qf = QuantumFloat(n)
+        qf[:] = a_val
+        a = qf[:]
+    else:
+        a = a_val
 
+    b = QuantumFloat(8)
+    b[:] = b_val
+
+    c_in = QuantumBool()
+    x(c_in[0])
     c_out = QuantumBool()
-    gidney_adder(a_val, b_val, c_out=c_out)
 
-    result_b = b_val.get_measurement()
-    result_cout = c_out.get_measurement()
+    gidney_adder(a, b, c_in=c_in, c_out=c_out)
 
-    assert result_b == expected_sum
-    assert result_cout == expected_cout
+    assert b.get_measurement() == expected_b
+    assert c_out.get_measurement() == expected_cout
 
 
-def test_gidney_adder_jasp_mode():
-    """Verify the function works as expected in dynamic (jasp) mode.
-    This test covers both cases where inputs are of equal and unequal size."""
+@pytest.mark.parametrize(
+    "a_spec, a_val, b_bits, b_val, ctrl_on, expected_b",
+    [
+        # Quantum a, ctrl on
+        (("qf", 10), 3, 11, 5, True, {8: 1.0}),
+        # Quantum a, ctrl off
+        (("qf", 10), 3, 11, 5, False, {5: 1.0}),
+        # Classical a, ctrl on
+        (("classical", None), 5, 8, 10, True, {15: 1.0}),
+        # Classical a, ctrl off
+        (("classical", None), 5, 8, 10, False, {10: 1.0}),
+        # Classical zero with ctrl on
+        (("classical", None), 0, 8, 42, True, {42: 1.0}),
+        # Single-qubit classical a with ctrl on
+        (("classical", None), 1, 1, 0, True, {1: 1.0}),
+        # Quantum a + c_in, ctrl off (nothing should happen)
+        (("qf", 8), 50, 8, 100, False, {100: 1.0}),
+    ],
+    ids=[
+        "quantum_a_ctrl_on",
+        "quantum_a_ctrl_off",
+        "classical_a_ctrl_on",
+        "classical_a_ctrl_off",
+        "classical_zero_ctrl_on",
+        "single_qubit_classical_ctrl_on",
+        "quantum_a_cin_ctrl_off",
+    ],
+)
+def test_gidney_adder_with_control(
+    a_spec, a_val, b_bits, b_val, ctrl_on, expected_b
+):
+    """Verify controlled addition only fires when ctrl=|1⟩."""
+    kind, n = a_spec
+    if kind == "qf":
+        a = QuantumFloat(n)
+        a[:] = a_val
+    elif kind == "qf_list":
+        qf = QuantumFloat(n)
+        qf[:] = a_val
+        a = qf[:]
+    else:
+        a = a_val
 
-    @boolean_simulation
-    def main(N, L, j, k):
-        A = QuantumFloat(N)
-        B = QuantumFloat(L)
-        A[:] = j
-        B[:] = k
+    b = QuantumFloat(b_bits)
+    b[:] = b_val
+    ctrl_qb = QuantumBool()
+    if ctrl_on:
+        x(ctrl_qb[0])
 
-        gidney_adder(A, B)
-        return measure(A), measure(B)
+    # For the c_in + ctrl_off case, also set up c_in
+    use_c_in = (a_spec[0] == "qf" and not ctrl_on and a_val == 50)
+    c_in = None
+    if use_c_in:
+        c_in = QuantumBool()
+        x(c_in[0])
 
-    for N in range(2, 5):
-        for L in range(2, 5):
-            for j in range(2**N):
-                for k in range(2**L):
-                    A, B = main(N, L, j, k)
-                    assert A == j
-                    assert B == (k + j) % (2**L)
+    with control(ctrl_qb):
+        gidney_adder(a, b, c_in=c_in)
+
+    assert b.get_measurement() == expected_b
+
+
+def test_gidney_adder_carry_in_carry_out_ctrl_quantum_a():
+    """All optional params active with quantum a — exercises the lsb_ctrl_anc allocation."""
+    a = QuantumFloat(8)
+    b = QuantumFloat(8)
+    a[:] = 50
+    b[:] = 100
+    c_in = QuantumBool()
+    x(c_in[0])
+    c_out = QuantumBool()
+    ctrl_qb = QuantumBool()
+    x(ctrl_qb[0])
+
+    with control(ctrl_qb):
+        gidney_adder(a, b, c_in=c_in, c_out=c_out)
+
+    assert b.get_measurement() == {151: 1.0}
+    assert c_out.get_measurement() == {0: 1.0}
+
+
+@pytest.mark.parametrize(
+    "a_val, b_val, ctrl_on, expected_b, expected_cout",
+    [
+        (55, 200, True, {0: 1.0}, {1: 1.0}),    # ctrl on: 200+55+1=256→0, cout=1
+        (55, 200, False, {200: 1.0}, {0: 1.0}),  # ctrl off: unchanged
+    ],
+)
+def test_gidney_adder_classical_a_cin_cout_ctrl(
+    a_val, b_val, ctrl_on, expected_b, expected_cout
+):
+    """All optional params (c_in, c_out, ctrl) active with classical a."""
+    b = QuantumFloat(8)
+    b[:] = b_val
+    c_in = QuantumBool()
+    x(c_in[0])
+    c_out = QuantumBool()
+    ctrl_qb = QuantumBool()
+    if ctrl_on:
+        x(ctrl_qb[0])
+
+    with control(ctrl_qb):
+        gidney_adder(a_val, b, c_in=c_in, c_out=c_out)
+
+    assert b.get_measurement() == expected_b
+    assert c_out.get_measurement() == expected_cout
+
+
+@pytest.mark.parametrize(
+    "a_spec, a_val, b_bits, b_val",
+    [
+        (("qf", 6), 5, 10, 7),
+        (("classical", None), 17, 10, 42),
+    ],
+    ids=["quantum_a", "classical_a"],
+)
+def test_gidney_adder_ancilla_cleanup(a_spec, a_val, b_bits, b_val):
+    """Verify that internal ancillas (gidney_anc*, gidney_a_ext*) are deallocated."""
+    kind, n = a_spec
+    if kind == "qf":
+        a = QuantumFloat(n)
+        a[:] = a_val
+    elif kind == "qf_list":
+        qf = QuantumFloat(n)
+        qf[:] = a_val
+        a = qf[:]
+    else:
+        a = a_val
+
+    b = QuantumFloat(b_bits)
+    b[:] = b_val
+
+    gidney_adder(a, b)
+
+    remaining = [v.name for v in b.qs.qv_list if "gidney" in v.name]
+    assert remaining == [], f"Leaked ancilla variables: {remaining}"
+
+
+def test_gidney_adder_raw_qubit_carry_in():
+    """Pass a raw Qubit instead of QuantumBool as c_in."""
+    c_in_var = QuantumVariable(1)
+    x(c_in_var[0])
+
+    b = QuantumFloat(8)
+    b[:] = 10
+
+    gidney_adder(5, b, c_in=c_in_var[0])
+
+    assert b.get_measurement() == {16: 1.0}
+
+
+def test_gidney_adder_raw_qubit_carry_out():
+    """Pass a raw Qubit instead of QuantumBool as c_out."""
+    c_out_var = QuantumVariable(1)
+
+    b = QuantumFloat(8)
+    b[:] = 200
+
+    gidney_adder(100, b, c_out=c_out_var[0])
+
+    assert b.get_measurement() == {44: 1.0}
+    assert c_out_var.get_measurement() == {"1": 1.0}
 
 
 def test_gidney_adder_inputs_unmodified_size():
@@ -178,242 +380,25 @@ def test_gidney_adder_inputs_unmodified_size():
     assert b.size == original_size_b
 
 
-@pytest.mark.parametrize(
-    "i, j, a_value, b_value, ctrl_qbl_value, expected_result",
-    [
-        (10, 11, 3, 5, True, {8: 1.0}),  # Control on: 5 + 3 = 8
-        (10, 11, 3, 5, False, {5: 1.0}),  # Control off: 5 remains 5
-    ],
-)
-def test_gidney_adder_static_mode_with_control(
-    i, j, a_value, b_value, ctrl_qbl_value, expected_result
-):
-    """Verify the gidney adder is triggered when the control qubit is in the |1> state
-    in static mode."""
-    a = QuantumFloat(i)
-    b = QuantumFloat(j)
-    a[:] = a_value
-    b[:] = b_value
-    ctrl_qbl = QuantumBool()
-    if ctrl_qbl_value:
-        x(ctrl_qbl[0])
-
-    gidney_adder(a, b, ctrl=ctrl_qbl)
-    result = b.get_measurement()
-    assert result == expected_result
-
-
-def test_gidney_adder_dynamic_mode_with_control():
-    """Verify the gidney adder is triggered when the control qubit is in the |1> state
-    in dynamic (jasp) mode."""
-
-    @boolean_simulation
-    def main(N, L, j, k):
-        A = QuantumFloat(N)
-        B = QuantumFloat(L)
-        A[:] = j
-        B[:] = k
-        qbl = QuantumBool()
-        qbl.flip()
-
-        with control(qbl):
-            gidney_adder(A, B)
-        return measure(A), measure(B)
-
-    for N in range(2, 5):
-        for L in range(2, 5):
-            for j in range(2**N):
-                for k in range(2**L):
-                    A, B = main(N, L, j, k)
-                    assert A == j
-                    assert B == (k + j) % (2**L)
-
-
-def test_gidney_adder_with_carry_in_and_carry_out():
-    """Verify the function works correctly when both c_in and c_out are provided."""
-    a = QuantumFloat(8)
-    b = QuantumFloat(8)
-    a[:] = 100
-    b[:] = 150
-
-    c_in = QuantumBool()
-    x(c_in[0])  # Set carry in to 1
-
-    c_out = QuantumBool()
-
-    gidney_adder(a, b, c_in=c_in, c_out=c_out)
-
-    result_b = b.get_measurement()
-    result_cout = c_out.get_measurement()
-
-    # 150 + 100 + 1 = 251, no overflow
-    assert result_b == {251: 1.0}
-    assert result_cout == {0: 1.0}
-
-
-def test_gidney_adder_single_qubit():
-    """Verify the function works correctly with single-qubit inputs."""
-    a = QuantumFloat(1)
-    b = QuantumFloat(1)
-    a[:] = 0
-    b[:] = 1
-
-    gidney_adder(a, b)
-
-    result_b = b.get_measurement()
-    assert result_b == {1: 1.0}
-
-
-def test_gidney_adder_single_qubit_with_carry():
-    """Verify single-qubit addition with carry out."""
-    a = QuantumFloat(1)
-    b = QuantumFloat(1)
-    a[:] = 1
-    b[:] = 1
-
-    c_out = QuantumBool()
-    gidney_adder(a, b, c_out=c_out)
-
-    result_b = b.get_measurement()
-    result_cout = c_out.get_measurement()
-
-    # 1 + 1 = 2 = 0 (mod 2), with carry out 1
-    assert result_b == {0: 1.0}
-    assert result_cout == {1: 1.0}
-
-
-def test_gidney_adder_zero_addition():
-    """Verify adding zero to a quantum variable produces the original value."""
-    a = 0
-    b = QuantumFloat(10)
-    b[:] = 42
-
-    gidney_adder(a, b)
-
-    result_b = b.get_measurement()
-    assert result_b == {42: 1.0}
-
-
-def test_gidney_adder_quantum_zero():
-    """Verify adding a quantum zero to another quantum variable."""
-    a = QuantumFloat(10)
-    b = QuantumFloat(10)
-    a[:] = 0
-    b[:] = 42
-
-    gidney_adder(a, b)
-
-    result_a = a.get_measurement()
-    result_b = b.get_measurement()
-    assert result_a == {0: 1.0}
-    assert result_b == {42: 1.0}
-
-
-@pytest.mark.parametrize(
-    "size_a, size_b, val_a, val_b",
-    [
-        (5, 10, 7, 15),
-        (10, 5, 15, 7),
-        (8, 8, 100, 50),
-        (16, 4, 255, 3),
-    ],
-)
-def test_gidney_adder_various_sizes(size_a, size_b, val_a, val_b):
-    """Verify the function works with various input sizes."""
-    a = QuantumFloat(size_a)
-    b = QuantumFloat(size_b)
-    a[:] = val_a
-    b[:] = val_b
-
-    gidney_adder(a, b)
-
-    result_a = a.get_measurement()
-    result_b = b.get_measurement()
-
-    assert result_a == {val_a: 1.0}
-    # Result should be (val_b + val_a) mod 2^size_b
-    expected_b = (val_b + val_a) % (2**size_b)
-    assert result_b == {expected_b: 1.0}
-
-
-def test_gidney_adder_string_input():
-    """Verify the function handles string inputs (little-endian bit strings) correctly."""
-    b = QuantumFloat(8)
-    b[:] = 5
-
-    # "10" in little-endian = "01" in big-endian = 1 in decimal
-    gidney_adder("10", b)
-
-    result_b = b.get_measurement()
-    assert result_b == {6: 1.0}  # 5 + 1 = 6
-
-
-def test_gidney_adder_empty_string_input():
-    """Verify the function handles empty string input (zero)."""
-    b = QuantumFloat(8)
-    b[:] = 42
-
-    gidney_adder("", b)
-
-    result_b = b.get_measurement()
-    assert result_b == {42: 1.0}  # 42 + 0 = 42
-
-
 def test_gidney_adder_t_depth_significantly_lower_than_cuccaro():
     """Verify that the gidney adder achieves significant T-depth reduction across inputs of
-    different sizes.
-
-    The Gidney adder is specifically designed to minimize T-depth.
-    """
-
-    # Test with multiple bit widths to ensure consistent advantage
+    different sizes."""
     for qf_size in [8, 12, 16]:
-        # Cuccaro adder T-depth
         a_cuccaro = QuantumFloat(qf_size)
         b_cuccaro = QuantumFloat(qf_size)
         a_cuccaro[:] = 5
         b_cuccaro[:] = 10
-
         cuccaro_adder(a_cuccaro, b_cuccaro)
+        cuccaro_t_depth = b_cuccaro.qs.compile().t_depth()
 
-        cuccaro_circuit = b_cuccaro.qs.compile()
-        cuccaro_t_depth = cuccaro_circuit.t_depth()
-
-        # Gidney adder T-depth
         a_gidney = QuantumFloat(qf_size)
         b_gidney = QuantumFloat(qf_size)
         a_gidney[:] = 5
         b_gidney[:] = 10
-
         gidney_adder(a_gidney, b_gidney)
+        gidney_t_depth = b_gidney.qs.compile().t_depth()
 
-        gidney_circuit = b_gidney.qs.compile()
-        gidney_t_depth = gidney_circuit.t_depth()
-
-        # Gidney should have lower T-depth
         assert gidney_t_depth < cuccaro_t_depth
-
-
-def test_gidney_adder_classical_a_modulo():
-    """
-    Verify that a classical `a` larger than b's range is reduced mod 2**len(b).
-    """
-    b_bits = 4
-
-    test_cases = [
-        (0, 17),  # 17 % 16 = 1, expect 0 + 1 = 1
-        (3, 19),  # 19 % 16 = 3, expect 3 + 3 = 6
-        (5, 32),  # 32 % 16 = 0, expect 5 + 0 = 5
-        (7, 255),  # 255 % 16 = 15, expect (7 + 15) % 16 = 6
-    ]
-
-    for b_val, a_val in test_cases:
-        b = QuantumFloat(b_bits)
-        b[:] = b_val
-        gidney_adder(a_val, b)
-        result = b.get_measurement()
-        expected = {(b_val + a_val) % (1 << b_bits): 1.0}
-        assert result == expected
 
 
 def test_gidney_adder_t_count():
@@ -436,5 +421,106 @@ def test_gidney_adder_t_count():
         ops = qc.count_ops()
         t_count = ops.get("t", 0) + ops.get("t_dg", 0)
 
-        expected_t_count = 4 * (n - 1)
-        assert t_count == expected_t_count
+        assert t_count == 4 * (n - 1)
+
+
+def test_gidney_adder_jasp_mode():
+    """Verify the function works as expected in dynamic (jasp) mode.
+    This test covers both cases where inputs are of equal and unequal size."""
+
+    @boolean_simulation
+    def main(N, L, j, k):
+        A = QuantumFloat(N)
+        B = QuantumFloat(L)
+        A[:] = j
+        B[:] = k
+        gidney_adder(A, B)
+        return measure(A), measure(B)
+
+    for N in range(2, 5):
+        j_max = 1 << N
+        for L in range(2, 5):
+            k_max = 1 << L
+            mod = 1 << L
+            for j in range(j_max):
+                for k in range(k_max):
+                    A, B = main(N, L, j, k)
+                    assert A == j
+                    assert B == (k + j) % mod
+
+
+def test_gidney_adder_jasp_mode_with_control():
+    """Verify the gidney adder is triggered when the control qubit is in the |1⟩ state
+    in dynamic (jasp) mode."""
+
+    @boolean_simulation
+    def main(N, L, j, k):
+        A = QuantumFloat(N)
+        B = QuantumFloat(L)
+        A[:] = j
+        B[:] = k
+        qbl = QuantumBool()
+        qbl.flip()
+
+        with control(qbl):
+            gidney_adder(A, B)
+        return measure(A), measure(B)
+
+    for N in range(2, 5):
+        j_max = 1 << N
+        for L in range(2, 5):
+            k_max = 1 << L
+            mod = 1 << L
+            for j in range(j_max):
+                for k in range(k_max):
+                    A, B = main(N, L, j, k)
+                    assert A == j
+                    assert B == (k + j) % mod
+
+
+def test_gidney_adder_jasp_mode_with_carry_in():
+    """Carry-in in dynamic mode with quantum a."""
+
+    @boolean_simulation
+    def main(N, j, k):
+        A = QuantumFloat(N)
+        B = QuantumFloat(N)
+        A[:] = j
+        B[:] = k
+        c_in = QuantumBool()
+        c_in.flip()
+        gidney_adder(A, B, c_in=c_in)
+        return measure(A), measure(B)
+
+    for N in range(2, 5):
+        vals_max = 1 << N
+        mod = 1 << N
+        for j in range(vals_max):
+            for k in range(vals_max):
+                A, B = main(N, j, k)
+                assert A == j
+                assert B == (k + j + 1) % mod
+
+
+def test_gidney_adder_jasp_mode_ctrl_off():
+    """In dynamic mode, ctrl=|0⟩ means b is untouched."""
+
+    @boolean_simulation
+    def main(N, j, k):
+        A = QuantumFloat(N)
+        B = QuantumFloat(N)
+        A[:] = j
+        B[:] = k
+        qbl = QuantumBool()
+
+        with control(qbl):
+            gidney_adder(A, B)
+        return measure(A), measure(B)
+
+    for N in range(2, 4):
+        vals_max = 1 << N
+        for j in range(vals_max):
+            for k in range(vals_max):
+                A, B = main(N, j, k)
+                assert A == j
+                assert B == k
