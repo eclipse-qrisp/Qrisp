@@ -18,64 +18,51 @@
 
 import pytest
 import numpy as np
-from qrisp import QuantumArray, QuantumFloat, QuantumBool, QuantumChar
+import operator
+from qrisp import QuantumArray, QuantumFloat, QuantumBool, QuantumChar, QuantumModulus
 
+ops = [
+    operator.add, operator.sub, operator.mul,  # +, -, *
+    operator.eq,  operator.ne,                 # ==, !=
+    operator.gt,  operator.ge,                 # >, >=
+    operator.lt,  operator.le,                 # <, <=
+    operator.iadd, operator.isub, operator.imul   # +=, -=, *=
+]
+
+logical_ops = [
+    operator.and_, operator.or_, operator.xor,  # &, |, ^
+]
 
 class TestArithmeticValidation:
     """Tests for the _validate_arithmetic method and arithmetic operations."""
-    
-    def test_validate_qtype_requirement(self):
-        """Test that operations require QuantumFloat qtype."""
-        # Create a QuantumArray with non-QuantumFloat qtype
-        qa_char = QuantumArray(QuantumChar(), shape=(2, 2))
+
+    def test_validation_errors(self):
+        """Test that _validate_arithmetic raises errors for invalid operations."""
         qa_float = QuantumArray(QuantumFloat(5), shape=(2, 2))
-        
-        # Should raise TypeError for non-QuantumFloat qtype
-        with pytest.raises(TypeError, match="Element-wise operations require qtype 'QuantumFloat'"):
-            qa_char + qa_float
-        
-        with pytest.raises(TypeError, match="Element-wise operations require qtype 'QuantumFloat'"):
-            qa_char - qa_float
-            
-        with pytest.raises(TypeError, match="Element-wise operations require qtype 'QuantumFloat'"):
-            qa_char * qa_float
-    
-    def test_validate_array_vs_array_qtype(self):
-        """Test that array-vs-array operations require matching QuantumFloat qtypes."""
-        qa_float = QuantumArray(QuantumFloat(5), shape=(2, 2))
+        qa_bool = QuantumArray(QuantumBool(), shape=(2, 2))
         qa_char = QuantumArray(QuantumChar(), shape=(2, 2))
-        
-        # Should raise TypeError when other array has wrong qtype
+
+        # Should raise TypeError for non-QuantumFloat qtype of self
+        with pytest.raises(TypeError, match="Element-wise operations require qtype 'QuantumFloat'"):
+            qa_char._validate_arithmetic(qa_float)
+
+        # Should raise TypeError for non-QuantumFloat qtype of other array
         with pytest.raises(TypeError, match="Element-wise operations require both arrays to have qtype 'QuantumFloat'"):
-            qa_float + qa_char
-    
-    def test_validate_array_vs_array_shape(self):
-        """Test that array-vs-array operations require matching shapes."""
-        qa1 = QuantumArray(QuantumFloat(5), shape=(2, 2))
-        qa2 = QuantumArray(QuantumFloat(5), shape=(3, 3))
-        
+            qa_float._validate_arithmetic(qa_char)
+
+        # Should raise TypeError for non-QuantumBool qtype of self
+        with pytest.raises(TypeError, match="Element-wise operations require qtype 'QuantumBool'"):
+            qa_float._validate_arithmetic(qa_bool, mode="bool")
+
+        # Should raise TypeError for non-QuantumBool qtype of other array
+        with pytest.raises(TypeError, match="Element-wise operations require both arrays to have qtype 'QuantumBool'"):
+            qa_bool._validate_arithmetic(qa_float, mode="bool")
+
         # Should raise ValueError for shape mismatch
+        qa_wrong_shape = QuantumArray(QuantumFloat(5), shape=(3, 3))
         with pytest.raises(ValueError, match="Shape mismatch"):
-            qa1 + qa2
-        
-        with pytest.raises(ValueError, match="Shape mismatch"):
-            qa1 - qa2
-            
-        with pytest.raises(ValueError, match="Shape mismatch"):
-            qa1 * qa2
-    
-    def test_validate_array_vs_numpy_shape(self):
-        """Test that array-vs-numpy operations require matching shapes."""
-        qa = QuantumArray(QuantumFloat(5), shape=(2, 2))
-        np_arr_wrong_shape = np.ones((3, 3))
-        
-        # Should raise ValueError for shape mismatch with numpy array
-        with pytest.raises(ValueError, match="Shape mismatch"):
-            qa + np_arr_wrong_shape
-        
-        with pytest.raises(ValueError, match="Shape mismatch"):
-            qa - np_arr_wrong_shape
-    
+            qa_float._validate_arithmetic(qa_wrong_shape)
+
     def test_scalar_operations_no_validation_error(self):
         """Test that scalar operations pass validation."""
         qa = QuantumArray(QuantumFloat(5), shape=(2, 2))
@@ -101,32 +88,104 @@ class TestArithmeticValidation:
         # With numpy array
         np_arr = np.ones((2, 3))
         qa1._validate_arithmetic(np_arr)
+
+    @pytest.mark.parametrize("op", ops)
+    def test_validate_qtype_requirement(self, op):
+        """Test that operations require QuantumFloat qtype."""
+        # Create a QuantumArray with non-QuantumFloat qtype
+        qa_char = QuantumArray(QuantumChar(), shape=(2, 2))
+        qa_float = QuantumArray(QuantumFloat(5), shape=(2, 2))
+        
+        # Should raise TypeError for non-QuantumFloat qtype
+        with pytest.raises(TypeError, match="Element-wise operations require qtype 'QuantumFloat'"):
+            op(qa_char, qa_float)
     
-    def test_in_place_operations_use_validation(self):
-        """Test that in-place operations use _validate_arithmetic."""
+    @pytest.mark.parametrize("op", ops)
+    def test_validate_array_vs_array_qtype(self, op):
+        """Test that array-vs-array operations require matching QuantumFloat qtypes."""
         qa_float = QuantumArray(QuantumFloat(5), shape=(2, 2))
         qa_char = QuantumArray(QuantumChar(), shape=(2, 2))
         
-        # Should raise TypeError for wrong qtype
-        with pytest.raises(TypeError, match="Element-wise operations require"):
-            qa_float += qa_char
+        # Should raise TypeError when other array has wrong qtype
+        with pytest.raises(TypeError, match="Element-wise operations require both arrays to have qtype 'QuantumFloat'"):
+            op(qa_float, qa_char)
+
+    @pytest.mark.parametrize("op", logical_ops)
+    def test_validate_qtype_requirement_logical(self, op):
+        """Test that logical operations require QuantumBool qtype."""
+        # Create a QuantumArray with non-QuantumBool qtype
+        qa_char = QuantumArray(QuantumChar(), shape=(2, 2))
+        qa_bool = QuantumArray(QuantumBool(), shape=(2, 2))
         
-        # Should raise ValueError for wrong shape
-        qa_wrong_shape = QuantumArray(QuantumFloat(5), shape=(3, 3))
+        # Should raise TypeError for non-QuantumBool qtype
+        with pytest.raises(TypeError, match="Element-wise operations require qtype 'QuantumBool'"):
+            op(qa_char, qa_bool)
+    
+    @pytest.mark.parametrize("op", logical_ops)
+    def test_validate_array_vs_array_qtype_logical(self, op):
+        """Test that array-vs-array logical operations require matching QuantumBool qtypes."""
+        qa_bool = QuantumArray(QuantumBool(), shape=(2, 2))
+        qa_char = QuantumArray(QuantumChar(), shape=(2, 2))
+        
+        # Should raise TypeError when other array has wrong qtype
+        with pytest.raises(TypeError, match="Element-wise operations require both arrays to have qtype 'QuantumBool'"):
+            op(qa_bool, qa_char)
+    
+    @pytest.mark.parametrize("op", ops)
+    def test_validate_array_vs_array_shape(self, op):
+        """Test that array-vs-array operations require matching shapes."""
+        qa1 = QuantumArray(QuantumFloat(5), shape=(2, 2))
+        qa2 = QuantumArray(QuantumFloat(5), shape=(3, 3))
+        
+        # Should raise ValueError for shape mismatch
         with pytest.raises(ValueError, match="Shape mismatch"):
-            qa_float += qa_wrong_shape
+            op(qa1, qa2)
     
-    def test_comparison_operations_use_validation(self):
-        """Test that comparison operations use _validate_arithmetic."""
+    @pytest.mark.parametrize("op", ops)
+    def test_validate_array_vs_numpy_shape(self, op):
+        """Test that array-vs-numpy operations require matching shapes."""
+        qa = QuantumArray(QuantumFloat(5), shape=(2, 2))
+        np_arr_wrong_shape = np.ones((3, 3))
+        
+        # Should raise ValueError for shape mismatch with numpy array
+        with pytest.raises(ValueError, match="Shape mismatch"):
+            op(qa, np_arr_wrong_shape)
+
+    def test_reduction_validation(self):
+        """Test that all and any methods validate qtype."""
+        qa_bool = QuantumArray(QuantumBool(), shape=(2, 2))
         qa_float = QuantumArray(QuantumFloat(5), shape=(2, 2))
-        qa_char = QuantumArray(QuantumChar(), shape=(2, 2))
         
         # Should raise TypeError for wrong qtype
-        with pytest.raises(TypeError, match="Element-wise operations require"):
-            qa_float == qa_char
+        with pytest.raises(TypeError, match="Reduction operation 'all' requires qtype 'QuantumBool'"):
+            qa_float.all()
         
-        with pytest.raises(TypeError, match="Element-wise operations require"):
-            qa_float < qa_char
+        with pytest.raises(TypeError, match="Reduction operation 'any' requires qtype 'QuantumBool'"):
+            qa_float.any()
+
+    def test_matmul_validation(self):
+        """Test that matrix multiplication validates shapes and qtypes."""
+        qa1 = QuantumArray(QuantumFloat(5), shape=(2, 3))
+        qa2 = QuantumArray(QuantumFloat(5), shape=(4, 2))
+        
+        # Should raise ValueError for incompatible shapes
+        with pytest.raises(ValueError, match="Incompatible shapes for matrix multiplication"):
+            qa1 @ qa2
+
+        # Should raise TypeError for non-QuantumFloat/QuantumModulus qtype of self
+        with pytest.raises(TypeError, match="Matrix multiplication requires qtype 'QuantumFloat' or 'QuantumModulus'"):
+            qa_char = QuantumArray(QuantumChar(), shape=(3, 2))
+            qa_char @ qa1
+
+        # Should raise TypeError for non-QuantumFloat/QuantumModulus qtype of other array
+        with pytest.raises(TypeError, match="Matrix multiplication requires both arrays to have qtype 'QuantumFloat' or 'QuantumModulus'"):
+            qa_char = QuantumArray(QuantumChar(), shape=(3, 2))
+            qa1 @ qa_char
+        
+        # Should raise NotImplementedError for QuantumModulus self with QuantumArray other
+        qa_modulus = QuantumArray(QuantumModulus(5), shape=(3, 3))
+        with pytest.raises(NotImplementedError, match="Matrix multiplication between a QuantumArray of QuantumModulus and another QuantumArray is not supported"):
+            qa_modulus @ qa_modulus
 
 
 class TestArithmeticExecution:
