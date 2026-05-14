@@ -16,9 +16,10 @@
 ********************************************************************************
 """
 
-import numpy as np
+import jax.numpy as jnp
 
 from qrisp.core import cx, ry
+from qrisp.jasp import jlen, jrange
 
 
 def dicke_state(qv, k):
@@ -31,7 +32,7 @@ def dicke_state(qv, k):
     qv : QuantumVariable
         Initial quantum variable to be prepared. Has to be in target subspace.
     k : Int
-        The Hamming weight (i.e. number of "ones") for the desired dicke state
+        The Hamming weight (i.e. number of "ones") for the desired dicke state.
 
 
     Examples
@@ -49,12 +50,14 @@ def dicke_state(qv, k):
         dicke_state(qv, 2)
 
     """
+    n = jlen(qv)
 
-    n = len(qv)
-    for index2 in reversed(range(k + 1, n + 1)):
+    for offset in jrange(n - k):
+        index2 = n - offset
         split_cycle_shift(qv, index2, k)
 
-    for index in reversed(range(2, k + 1)):
+    for offset in jrange(k - 1):
+        index = k - offset
         split_cycle_shift(qv, index, index - 1)
 
 
@@ -71,21 +74,21 @@ def split_cycle_shift(qv, highIndex, lowIndex):
     lowIndex : Int
         Index for indication of preparation steps, as seen in original algorithm.
     """
-
     from qrisp import control
 
-    index_range = [highIndex - i for i in range(lowIndex)]
-    for index in index_range:
-        param = 2 * np.arccos(np.sqrt((highIndex - index + 1) / (highIndex)))
+    # index == highIndex
+    param = 2 * jnp.arccos(jnp.sqrt(1 / highIndex))
+    cx(qv[highIndex - 2], qv[highIndex - 1])
+    with control(qv[highIndex - 1]):
+        ry(param, qv[highIndex - 2])
+    cx(qv[highIndex - 2], qv[highIndex - 1])
 
-        if index == highIndex:
-            cx(qv[highIndex - 2], qv[highIndex - 1])
-            with control(qv[highIndex - 1]):
-                ry(param, qv[highIndex - 2])
-            cx(qv[highIndex - 2], qv[highIndex - 1])
+    # index != highIndex
+    for i in jrange(1, lowIndex):
+        index = highIndex - i
+        param = 2 * jnp.arccos(jnp.sqrt((highIndex - index + 1) / (highIndex)))
 
-        else:
-            cx(qv[index - 2], qv[highIndex - 1])
-            with control([qv[highIndex - 1], qv[index - 1]]):
-                ry(param, qv[index - 2])
-            cx(qv[index - 2], qv[highIndex - 1])
+        cx(qv[index - 2], qv[highIndex - 1])
+        with control([qv[highIndex - 1], qv[index - 1]]):
+            ry(param, qv[index - 2])
+        cx(qv[index - 2], qv[highIndex - 1])
