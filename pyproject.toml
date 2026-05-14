@@ -14,3 +14,24 @@ disable = ["import-error"]
 [tool.black]
 line-length = 88
 target-version = ["py311", "py312", "py313"]
+
+[dependency-groups]
+#pip install --group test
+test = [
+"pytest<=9.0.3",
+"pytest-xdist<=3.8.0",
+"qiskit-aer<=0.17.2",
+"qiskit-iqm<=18.2",
+"pyscf<=2.13.0",
+"stim<=1.15.0",
+"cirq<=1.6.1",
+"xdsl<=0.62.1",
+"pennylane-catalyst<=0.14.1",
+"gast<=0.7.0",
+"tqecd @ git+https://github.com/tqec/tqecd.git"
+]
+
+dev = [
+{include-group= "test"}
+#{include-group= "lint"}
+]
