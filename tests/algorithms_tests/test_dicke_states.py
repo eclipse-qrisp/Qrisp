@@ -17,8 +17,6 @@
 """
 
 import numpy as np
-import pytest
-import jax
 from qrisp import QuantumVariable
 from qrisp.core import x
 from qrisp.alg_primitives.unbalanced_w_state import unbalanced_W_state
@@ -59,7 +57,7 @@ def test_dicke_state_balanced_jasp_pass():
     def main():
         qv = QuantumVariable(n)
         x(qv[n - 1])
-        dicke_state(qv, k, n)
+        dicke_state(qv, k)
         return qv
     
     result = main()
@@ -80,27 +78,6 @@ def test_dicke_state_balanced_jasp_pass():
     print(f"Expected distribution:\n{expected_arr}")
 
     assert np.allclose(res_arr, expected_arr, atol=1e-6)
-
-def test_dicke_state_balanced_jasp_fail():
-    n = 3 # Number of qubits
-    k = 1 # Excitations
-    expected = []
-    # Prepare balanced Dicke state
-    
-    @terminal_sampling
-    def main():
-        qv = QuantumVariable(n)
-        x(qv[n - 1])
-        dicke_state(qv, k)
-        return qv
-    
-    # dicke_state internally attempts to call len(qv) on a traced variable. Should cause an error.
-    with pytest.raises(jax.errors.TracerIntegerConversionError) as exc_info:
-        result = main()
-
-    print(exc_info.value)
-    assert f"The __index__() method was called on traced array with shape int64[]" in str(exc_info.value)
-
 
 ##############################################################
 ################## Unbalanced W state tests ##################
