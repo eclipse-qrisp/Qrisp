@@ -130,7 +130,7 @@ def GQSVT(
         res_dict = main()
         amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
         print(amps)
-        # [0.85184732 0.21296187 0.07098729 0.47324855]
+        # [0.85184734 0.47324852 0.07098728 0.21296184]
 
     Finally, compare the quantum simulation result with the classical solution:
 
@@ -147,7 +147,7 @@ def GQSVT(
 
         res = A_poly @ b / np.linalg.norm(A_poly @ b)
         print(res)
-        # [0.85184734, 0.21296184, 0.07098728, 0.47324852]
+        # [0.85184734, 0.47324852, 0.07098728, 0.21296184]
 
     .. warning:: 
 
