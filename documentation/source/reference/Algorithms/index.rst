@@ -68,6 +68,8 @@ Beyond simulation, this section includes advanced solvers for linear systems of 
      - Solving quantum linear systems problems.
    * - :ref:`Generalized Quantum Signal Processing <GQSP>`
      - Performing quantum signal processing for eigenstate filtering, Hamiltonian simulation, or solving quantum linear systems problems.
+   * - :ref:`Quantum Singular Value Transform <QSVT>`
+     - applying polynomial transformations to singular values of a block of a unitary
 
 
 We encourage you to explore these algorithms, delve into their documentation, and experiment with their implementations.
@@ -93,3 +95,4 @@ We encourage you to explore these algorithms, delve into their documentation, an
    Lanczos
    CKS
    GQSP
+   QSVT

@@ -27,5 +27,6 @@ import qrisp.algorithms.qite as qite
 import qrisp.algorithms.qmci as qmci
 import qrisp.algorithms.lanczos as lanczos
 import qrisp.algorithms.cks as cks
+import qrisp.algorithms.qsvt as qsvt
 import qrisp.algorithms.gqsp as gqsp
 import qrisp.algorithms.cold as cold
