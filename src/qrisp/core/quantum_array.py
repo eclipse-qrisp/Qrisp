@@ -1257,7 +1257,7 @@ class QuantumArray:
         QuantumArray
             A new QuantumArray containing the element-wise sum.
             If a QuantumArray or QuantumVariable is provided, the ``qtype`` of the output will be determined by the qtypes of the two input objects to prevent overflow.
-            If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
+            If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self. This may lead to overflow.
 
         Raises
         ------
@@ -1335,7 +1335,7 @@ class QuantumArray:
         QuantumArray
             A new QuantumArray containing the element-wise difference.
             If a QuantumArray or QuantumVariable is provided, the ``qtype`` of the output will be determined by the qtypes of the two input objects to prevent overflow.
-            If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
+            If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self. This may lead to overflow.
 
         Raises
         ------
@@ -1414,7 +1414,7 @@ class QuantumArray:
         QuantumArray
             A new QuantumArray containing the element-wise product.
             If a QuantumArray or QuantumVariable is provided, the ``qtype`` of the output will be determined by the qtypes of the two input objects to prevent overflow.
-            If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self.
+            If a classical scalar or numpy array is provided, the ``qtype`` of the output will be the same as the ``qtype`` of self. This may lead to overflow.
 
         Raises
         ------
@@ -2101,7 +2101,7 @@ class QuantumArray:
         -------
         QuantumArray
             The modified QuantumArray containing the result of the in-place addition.
-            The ``qtype`` of the output will be the same as the ``qtype`` of self.
+            The ``qtype`` of the output will be the same as the ``qtype`` of self. This may lead to overflow.
 
         Raises
         ------
@@ -2153,7 +2153,7 @@ class QuantumArray:
         -------
         QuantumArray
             The modified QuantumArray containing the result of the in-place subtraction.
-            The ``qtype`` of the output will be the same as the ``qtype`` of self.
+            The ``qtype`` of the output will be the same as the ``qtype`` of self. This may lead to overflow.
 
         Raises
         ------
@@ -2203,7 +2203,7 @@ class QuantumArray:
         -------
         QuantumArray
             The modified QuantumArray containing the result of the in-place multiplication.
-            The ``qtype`` of the output will be the same as the ``qtype`` of self.
+            The ``qtype`` of the output will be the same as the ``qtype`` of self. This may lead to overflow.
 
         Raises
         ------
