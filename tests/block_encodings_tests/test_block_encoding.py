@@ -60,6 +60,63 @@ def test_block_encoding_from_operator():
     assert res == {3.0: 1.0}
 
 
+def test_block_encoding_from_eye():
+
+    # k = 0: ones on the main diagonal
+    BE1 = BlockEncoding.from_eye(k=0)
+
+    # k = -4: ones on the fourth lower subdiagonal
+    # (non-cyclic) shift |x> -> |x+4>
+    BE2 = BlockEncoding.from_eye(k=-4)
+
+    BE3 = BE1.kron(BE2)
+
+    def operand_prep():
+        operand1 = QuantumFloat(3)
+        operand2 = QuantumFloat(3)
+        h(operand1)
+        cx(operand1, operand2)
+        return operand1, operand2
+
+    @terminal_sampling
+    def main():
+        operand1, operand2 = BE3.apply_rus(operand_prep)()
+        return operand1, operand2
+
+    res_dict = main()
+    assert res_dict == pytest.approx({
+        (0.0, 4.0): 0.25, (1.0, 5.0): 0.25, 
+        (2.0, 6.0): 0.25, (3.0, 7.0): 0.25
+    })
+
+
+def test_block_encoding_from_projector():
+
+    # Define projector P = |1><+|
+    P = BlockEncoding.from_projector(1, lambda qv: h(qv))
+
+    # Prepare operand in superposition state
+    def operand_prep():
+        operand = QuantumFloat(2)
+        h(operand)
+        return operand
+
+    @terminal_sampling
+    def main():
+        return P.apply_rus(operand_prep)()
+
+    res = main()
+    assert res == {1.0: 1.0}
+
+
+def test_block_encoding_from_projector_value_error():
+
+    with pytest.raises(ValueError) as excinfo:
+        P = BlockEncoding.from_projector(1, (2, 3))
+
+    assert "Size mismatch: left has 1 elements, but right has 2" in str(excinfo.value)
+
+
 def test_block_encoding_apply():
     H = X(0)*X(1) + Z(0)*Z(1)
     BE = BlockEncoding.from_operator(H)

@@ -54,7 +54,8 @@ def main(n, alpha):
     (6, 4),
     (6, 10),
 ])
-def test_qsp_gaussian(n, alpha):
+def test_gqsp_gaussian(n, alpha):
+    """Test GQSP Fourier series loader on a Gaussian function with different widths."""
 
     # Run the simulation for n-qubit state
     res_dict = main(n, alpha)
