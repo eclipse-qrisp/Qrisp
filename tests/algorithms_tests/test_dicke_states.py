@@ -111,6 +111,35 @@ def test_unbalanced_W_state():
 
     assert np.allclose(prepared_sv, expected_sv * phase, atol=1e-6)
 
+def test_unbalanced_W_state_jasp():
+    n = 3 # Number of qubits
+    amps = np.array([0.25 + 0.2j, 0.375 + 0.18j, 0.375], dtype=complex)
+    
+    # Prepare unbalanced Dicke state
+    @terminal_sampling
+    def main():
+        qv = QuantumVariable(n)
+        unbalanced_W_state(qv, amps)
+        return qv
+    result = main()
+    # Manual expected state:
+    # |ψ> = a0 |001> + a1 |010> + a2 |100>
+    norm = np.linalg.norm(amps)
+    normalized_amps = amps / norm
+    expected = {
+        2**i: float(abs(normalized_amps[i]) ** 2)
+        for i in range(n)
+    }
+
+    print(f"Prepared measurement:\n{result}")
+    print(f"Expected measurement:\n{expected}")
+
+    keys = sorted(set(result) | set(expected))
+    result_arr = np.array([result.get(k, 0.0) for k in keys])
+    expected_arr = np.array([expected.get(k, 0.0) for k in keys])
+
+    assert np.allclose(result_arr, expected_arr, atol=1e-6)
+
 def test_unbalanced_W_state_one_qubit():
     n = 1 # Number of qubits
     amps = np.array([0.25 + 0.2j], dtype=complex)
