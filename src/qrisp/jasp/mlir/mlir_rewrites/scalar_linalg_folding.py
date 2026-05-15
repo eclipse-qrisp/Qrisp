@@ -70,14 +70,16 @@ def scalar_linalg_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> N
 
     walker.rewrite_module(xdsl_module)
 
+
 # ====================================================================== #
+
 
 class FoldScalarLinalgGeneric(RewritePattern):
     """Fold 0-dimensional `linalg.generic` operations into
     scalar arithmetic wrapped in `tensor.extract` / `tensor.from_elements`.
 
-    This pattern extracts the scalar operands, sequentially clones all 
-    intermediate operations within the generic block, and repacks the 
+    This pattern extracts the scalar operands, sequentially clones all
+    intermediate operations within the generic block, and repacks the
     final yielded scalar into a 0-dimensional tensor.
 
     0-dimensional `linalg.generic` ops operate on scalar tensors (tensor<T>
@@ -133,9 +135,7 @@ class FoldScalarLinalgGeneric(RewritePattern):
 
             extract = tensor.ExtractOp(tensor_val, [], tensor_val.type.element_type)
             rewriter.insert_op(extract, InsertPoint.before(op))
-            mapping[block_arg] = extract.results[
-                0
-            ]
+            mapping[block_arg] = extract.results[0]
 
         # Step 2: Clone the body sequentially
         # Convert BlockOps to a standard Python list so we can slice it

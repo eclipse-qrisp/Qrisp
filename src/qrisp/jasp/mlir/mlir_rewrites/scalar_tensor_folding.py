@@ -73,12 +73,17 @@ def scalar_tensor_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> N
     CanonicalizePass().apply(xdsl_ctx, xdsl_module)
     DeadCodeElimination().apply(xdsl_ctx, xdsl_module)
 
-#====================================================================== #
+
+# ====================================================================== #
+
 
 class FoldExtractFromElements(RewritePattern):
     """Folds a tensor.extract from a 0-D tensor created by tensor.from_elements back into the original scalar value."""
+
     @op_type_rewrite_pattern
-    def match_and_rewrite(self, op: tensor.ExtractOp, rewriter: PatternRewriter) -> None:
+    def match_and_rewrite(
+        self, op: tensor.ExtractOp, rewriter: PatternRewriter
+    ) -> None:
         # Only handle 0-D case (no index operands)
         if len(op.indices) != 0:
             return
@@ -100,22 +105,25 @@ class EraseDeadFromElements(RewritePattern):
     Eliminates dead `tensor.from_elements` operations that have no active uses.
 
     Why is this necessary?
-    In MLIR and xDSL, the standard `DeadCodeElimination` (DCE) pass will only 
-    remove an unused operation if it possesses the `Pure` trait. This trait 
-    guarantees to the compiler that the operation has no side effects (such as 
+    In MLIR and xDSL, the standard `DeadCodeElimination` (DCE) pass will only
+    remove an unused operation if it possesses the `Pure` trait. This trait
+    guarantees to the compiler that the operation has no side effects (such as
     memory allocation, I/O, or halting).
 
-    If the xDSL implementation of `tensor.from_elements` lacks the `Pure` trait, 
-    the standard DCE pass must conservatively assume that executing the operation 
-    might produce side effects. Consequently, it will refuse to delete it, even 
+    If the xDSL implementation of `tensor.from_elements` lacks the `Pure` trait,
+    the standard DCE pass must conservatively assume that executing the operation
+    might produce side effects. Consequently, it will refuse to delete it, even
     if its resulting tensor is completely unused.
 
-    This rewrite pattern acts as a targeted DCE fallback. It explicitly checks 
-    if the result of the `tensor.from_elements` operation has any active uses 
+    This rewrite pattern acts as a targeted DCE fallback. It explicitly checks
+    if the result of the `tensor.from_elements` operation has any active uses
     in the IR; if the use count is zero, it safely erases the operation.
     """
+
     @op_type_rewrite_pattern
-    def match_and_rewrite(self, op: tensor.FromElementsOp, rewriter: PatternRewriter) -> None:
+    def match_and_rewrite(
+        self, op: tensor.FromElementsOp, rewriter: PatternRewriter
+    ) -> None:
         # If the result has zero uses, we are safe to delete it
         if not op.result.uses:
             rewriter.erase_op(op)

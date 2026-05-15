@@ -74,7 +74,9 @@ def cmpi_extui_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> None
     CanonicalizePass().apply(xdsl_ctx, xdsl_module)
     DeadCodeElimination().apply(xdsl_ctx, xdsl_module)
 
-#====================================================================== #
+
+# ====================================================================== #
+
 
 class FoldCmpiExtui(RewritePattern):
     """
@@ -83,10 +85,10 @@ class FoldCmpiExtui(RewritePattern):
     """
 
     class _Result(Enum):
-        IDENTITY = "identity"   # result is %x
-        NOT      = "not"   # result is NOT %x
-        TRUE     = "true"   # always true
-        FALSE    = "false"   # always false
+        IDENTITY = "identity"  # result is %x
+        NOT = "not"  # result is NOT %x
+        TRUE = "true"  # always true
+        FALSE = "false"  # always false
 
     # Lookup table: (predicate_int, rhs_const) -> _Result
     #
@@ -94,26 +96,26 @@ class FoldCmpiExtui(RewritePattern):
     #
     _FOLD_TABLE: dict[tuple[int, int], _Result] = {
         # ---- vs 0 ----
-        (0, 0): _Result.NOT,       # eq  0 → NOT %x
+        (0, 0): _Result.NOT,  # eq  0 → NOT %x
         (1, 0): _Result.IDENTITY,  # ne  0 →     %x
-        (2, 0): _Result.FALSE,     # slt 0 → false
-        (3, 0): _Result.NOT,       # sle 0 → NOT %x
+        (2, 0): _Result.FALSE,  # slt 0 → false
+        (3, 0): _Result.NOT,  # sle 0 → NOT %x
         (4, 0): _Result.IDENTITY,  # sgt 0 →     %x
-        (5, 0): _Result.TRUE,      # sge 0 → true
-        (6, 0): _Result.FALSE,     # ult 0 → false
-        (7, 0): _Result.NOT,       # ule 0 → NOT %x
+        (5, 0): _Result.TRUE,  # sge 0 → true
+        (6, 0): _Result.FALSE,  # ult 0 → false
+        (7, 0): _Result.NOT,  # ule 0 → NOT %x
         (8, 0): _Result.IDENTITY,  # ugt 0 →     %x
-        (9, 0): _Result.TRUE,      # uge 0 → true
+        (9, 0): _Result.TRUE,  # uge 0 → true
         # ---- vs 1 ----
         (0, 1): _Result.IDENTITY,  # eq  1 →     %x
-        (1, 1): _Result.NOT,       # ne  1 → NOT %x
-        (2, 1): _Result.NOT,       # slt 1 → NOT %x
-        (3, 1): _Result.TRUE,      # sle 1 → true
-        (4, 1): _Result.FALSE,     # sgt 1 → false
+        (1, 1): _Result.NOT,  # ne  1 → NOT %x
+        (2, 1): _Result.NOT,  # slt 1 → NOT %x
+        (3, 1): _Result.TRUE,  # sle 1 → true
+        (4, 1): _Result.FALSE,  # sgt 1 → false
         (5, 1): _Result.IDENTITY,  # sge 1 →     %x
-        (6, 1): _Result.NOT,       # ult 1 → NOT %x
-        (7, 1): _Result.TRUE,      # ule 1 → true
-        (8, 1): _Result.FALSE,     # ugt 1 → false
+        (6, 1): _Result.NOT,  # ult 1 → NOT %x
+        (7, 1): _Result.TRUE,  # ule 1 → true
+        (8, 1): _Result.FALSE,  # ugt 1 → false
         (9, 1): _Result.IDENTITY,  # uge 1 →     %x
     }
 
@@ -121,7 +123,9 @@ class FoldCmpiExtui(RewritePattern):
     def match_and_rewrite(self, op: arith.CmpiOp, rewriter: PatternRewriter):
         # 1. RHS must be constant 0 or 1
         rhs_op = op.rhs.owner
-        if not isinstance(rhs_op, arith.ConstantOp) or not isinstance(rhs_op.value, IntegerAttr):
+        if not isinstance(rhs_op, arith.ConstantOp) or not isinstance(
+            rhs_op.value, IntegerAttr
+        ):
             return
         rhs_val = rhs_op.value.value.data
         if rhs_val not in (0, 1):
