@@ -224,7 +224,7 @@ def quantum_step(k, N, init_function, state_function, oracle_function, mes_kwarg
     if check_for_tracing_mode():
         a_i = expectation_value(state_prep, shots=N)(k)
     else:
-        mes_kwargs["shots"] = N
+        mes_kwargs["shots"] = int(N)
         res_dict = state_prep(k).get_measurement(**mes_kwargs)
         a_i = res_dict.get(True, 0)
 
