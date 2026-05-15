@@ -1,0 +1,199 @@
+name: Change Request
+description: Propose a change to existing functionality in Eclipse Qrisp
+labels: ["change request"]
+body:
+  - type: dropdown
+
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+
+    validations:
+      required: true
+
+  - type: input
+
+    id: responsible
+    attributes:
+      label: Responsible
+      placeholder: "e.g. Jane Doe (Fraunhofer FOKUS)"
+    validations:
+      required: true
+
+  - type: input
+
+    id: target-version
+    attributes:
+      label: Target Version / Milestone
+      placeholder: "e.g. v0.10, Backlog"
+    validations:
+      required: false
+
+  - type: dropdown
+
+    id: change-type
+    attributes:
+      label: Type of Change
+      description: "What kind of change is this?"
+      options:
+        - Refactoring (no behavior change)
+        - API change (breaking)
+        - API change (non-breaking)
+        - Performance improvement
+        - Dependency update
+        - Configuration change
+
+    validations:
+      required: true
+
+  - type: dropdown
+
+    id: breaking-change
+    attributes:
+      label: Breaking Change?
+      description: "Will this change break existing user code or APIs?"
+      options:
+        - "Yes"
+        - "No"
+        - "Unclear — needs investigation"
+
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: short-description
+    attributes:
+      label: Short Description
+      description: "Max 3 sentences. What should change and why?"
+      placeholder: "Briefly describe what you want to change and the motivation."
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: current-behavior
+    attributes:
+      label: Current Behavior
+      description: "Describe the current state. Include code examples if helpful."
+      placeholder: |
+        Currently, the function `xyz()` works as follows:
+        ```python
+        # current usage
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: desired-behavior
+    attributes:
+      label: Desired Behavior
+      description: "Describe the desired state after the change."
+      placeholder: |
+        After the change, the function should:
+        ```python
+        # new usage
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: rationale
+    attributes:
+      label: Rationale / Justification
+      description: >
+        Why is this change necessary? Include references to papers, standards,
+        performance benchmarks, user feedback, or related issues/PRs.
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: migration
+    attributes:
+      label: Migration Path
+      description: >
+        If this is a breaking change, how should existing users update their code?
+        Describe deprecation strategy if applicable.
+      placeholder: |
+        1. Deprecate `old_function()` in v0.5 with a warning
+        2. Remove `old_function()` in v0.6
+        3. Users replace `old_function(x)` with `new_function(x, mode="default")`
+
+    validations:
+      required: false
+
+  - type: textarea
+
+    id: affected-components
+    attributes:
+      label: Affected Components
+      description: "Which modules, classes, or functions are impacted?"
+      placeholder: |
+        - `qrisp.core.QuantumFloat`
+        - `qrisp.algorithms.grover`
+        - Documentation: API reference, tutorial X
+
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: "Checklist of conditions that must be met."
+      value: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: tests
+    attributes:
+      label: Means of Verification
+      description: "At least 1 positive, 1 negative, and 2 boundary tests."
+      value: |
+        | Test-ID | Type     | Description | Expected Result |
+        |---------|----------|-------------|-----------------|
+        | T-001   | Positive |             |                 |
+        | T-002   | Negative |             |                 |
+        | T-003   | Boundary |             |                 |
+        | T-004   | Boundary |             |                 |
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: "List any blocking issues, external libraries, or related PRs."
+    validations:
+      required: false
+
+  - type: checkboxes
+
+    id: definition-of-done
+    attributes:
+      label: Definition of Done
+      options:
+        - label: Code implemented and peer-reviewed
+        - label: All existing tests updated / still passing
+        - label: New regression tests added
+        - label: All tests pass (CI green)
+        - label: Migration path documented (if breaking)
+        - label: Deprecation warnings added (if applicable)
+        - label: Documentation updated
+        - label: Changelog entry added
