@@ -558,3 +558,20 @@ def test_mlir_jasp_dialect_registration(lower_stablehlo):
     # Verify StableHLO arithmetic operations are lowered when lower_stablehlo=True
     if lower_stablehlo:
         assert_stablehlo_arithmetic_lowered(mlir_str)
+
+
+def test_mlir_linalg_folding_after_stablehlo_lowering():
+    """Test that 0-d linalg.generic operations are folded after lowering StableHLO control flow."""
+
+    def main():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        c = measure(qv[1])
+        with control(c==0):
+            x(qv[1])
+        return measure(qv[1])
+
+    jaspr = make_jaspr(main)()
+    xdsl_module = jaspr.to_mlir(lower_stablehlo=True)
+    mlir_str = str(xdsl_module)
+    assert "linalg.generic" not in mlir_str, "0-d linalg.generic should be folded after lowering StableHLO control flow"
