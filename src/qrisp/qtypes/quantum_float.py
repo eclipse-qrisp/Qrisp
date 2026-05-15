@@ -629,7 +629,7 @@ class QuantumFloat(QuantumVariable):
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            from qrisp.alg_primitives.arithmetic import gidney_adder
+            from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 
             if isinstance(other, QuantumFloat):
                 starting_digit = jnp.maximum(other.exponent, self.exponent)

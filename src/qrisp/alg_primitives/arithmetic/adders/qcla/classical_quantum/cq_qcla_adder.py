@@ -26,7 +26,7 @@ from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_sum_path i
     cq_sum_path,
     cq_sum_path_direct_uncomputation,
 )
-from qrisp.alg_primitives.arithmetic.adders.gidney import cq_gidney_adder
+from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
 from qrisp.misc.utility import bin_rep, redirect_qfunction
 from qrisp.circuit import fast_append
 from qrisp.environments import QuantumEnvironment, invert, custom_control
@@ -64,7 +64,7 @@ def cq_qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=N
                     cx(ctrl, b[0])
             return
         elif len(b) <= R:
-            cq_gidney_adder(a, b, ctrl=ctrl)
+            gidney_adder(a, b, ctrl=ctrl)
             return
 
         # Calculate the carry

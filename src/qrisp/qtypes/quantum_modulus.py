@@ -192,7 +192,7 @@ class QuantumModulus(QuantumFloat):
 
             QuantumFloat.__init__(self, msize=aux, qs=qs)
             if inpl_adder is None:
-                from qrisp.alg_primitives.arithmetic import gidney_adder
+                from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 
                 inpl_adder = gidney_adder
 
