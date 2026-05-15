@@ -5,5 +5,6 @@ AQTBackend
 
 .. currentmodule:: qrisp.interface
 
-.. autofunction:: AQTBackend
+.. autoclass:: AQTBackend
+   :members:
 

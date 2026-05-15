@@ -16,27 +16,14 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumCircuit
-from qrisp.interface import BatchedBackend
+from typing import Sequence, cast
+
+from qrisp.circuit.quantum_circuit import QuantumCircuit
+from qrisp.interface.backend import Backend
+from qrisp.interface.job import Job, JobResult, JobStatus
 
 
-def run_on_stim(qc: QuantumCircuit, shots: int | None):
-    """
-    Simulate a Qrisp QuantumCircuit via Stim.
-
-    Parameters
-    ----------
-    qc : QuantumCircuit
-        The Qrisp quantum circuit to simulate.
-    shots : int, optional
-        Number of measurement shots to perform. If None, defaults to 10000.
-
-    Returns
-    -------
-    dict[str, int]
-        Dictionary mapping bitstrings to counts.
-    """
-
+def _run_on_stim(qc: QuantumCircuit, shots: int | None):
     if shots is None:
         shots = 10000
 
@@ -45,56 +32,70 @@ def run_on_stim(qc: QuantumCircuit, shots: int | None):
     sampler = stim_circuit.compile_sampler()
     shot_array = sampler.sample(shots=shots)
 
-    # Reorder columns to match Qrisp clbit order
     permutation = [measurement_map[cb] for cb in qc.clbits]
     permuted_shot_array = shot_array[:, permutation]
 
-    # Convert each row to a bitstring and count occurrences
     counts = {}
     for row in permuted_shot_array:
-        # Convert boolean array to bitstring (reversed for little-endian convention)
         bitstring = "".join(str(int(b)) for b in reversed(row))
         counts[bitstring] = counts.get(bitstring, 0) + 1
 
     return counts
 
 
-def run_on_stim_batch(batch):
+class _StimJob(Job):
+    """Synchronous :class:`~qrisp.interface.Job` for :class:`StimBackend`."""
+
+    def __init__(self, backend: "StimBackend", circuits: Sequence, shots):
+        super().__init__(backend=backend)
+        self._circuits = circuits
+        self._shots = shots
+        self._result_data = None
+        self._error = None
+
+    def submit(self) -> None:
+        self._last_known_status = JobStatus.RUNNING
+        try:
+            counts_list = [_run_on_stim(qc, self._shots) for qc in self._circuits]
+            self._result_data = JobResult(counts_list)
+            self._last_known_status = JobStatus.DONE
+        except Exception as exc:
+            self._error = exc
+            self._last_known_status = JobStatus.ERROR
+
+    def result(self, timeout=None) -> JobResult:
+        if self._last_known_status == JobStatus.ERROR:
+            raise self._error
+        self._raise_for_status(self._last_known_status)
+        return cast(JobResult, self._result_data)
+
+    def cancel(self) -> bool:
+        return False
+
+    def status(self) -> JobStatus:
+        return self._last_known_status
+
+
+class StimBackend(Backend):
     """
-    Simulate a batch of Qrisp QuantumCircuits via Stim.
+    A :class:`~qrisp.interface.Backend` that simulates Clifford circuits via
+    `Stim <https://github.com/quantumlib/Stim>`_.
+
+    :meth:`run` returns a :class:`~qrisp.interface.MeasurementResult` immediately.
+    For lazy, buffered execution call :meth:`~qrisp.interface.Backend.batched`
+    first::
+
+        bb = StimBackend().batched()
+        res = qv.get_measurement(backend=bb)
+        bb.dispatch()
 
     Parameters
     ----------
-    batch : list[tuple[QuantumCircuit, int]]
-        List of (circuit, shots) pairs.
-
-    Returns
-    -------
-    list[dict[str, int]]
-        List of result dictionaries, one per circuit.
-    """
-    return [run_on_stim(qc, shots) for qc, shots in batch]
-
-
-def StimBackend():
-    """
-    This function creates a :ref:`BatchedBackend` for simulating Qrisp QuantumCircuits
-    using the Stim simulator.
-
-    `Stim <https://github.com/quantumlib/Stim>`_ is a fast stabilizer circuit simulator
-    designed for quantum error correction research. It efficiently simulates Clifford
-    circuits and is particularly well-suited for simulating quantum error correction codes
-    with thousands of qubits and millions of gates.
-
-    Returns
-    -------
-    BatchedBackend
-        A backend instance that dispatches circuit simulation to Stim.
+    options : Mapping or None, optional
+        Runtime options.  Defaults to ``{"shots": 10000}``.
 
     Examples
     --------
-
-    Basic usage with a QuantumVariable:
 
     ::
 
@@ -106,6 +107,19 @@ def StimBackend():
         res = qv.get_measurement(backend=StimBackend())
         print(res)
         # Yields: {'10': 1.0}
-
     """
-    return BatchedBackend(run_on_stim_batch)
+
+    @classmethod
+    def _default_options(cls):
+        return {"shots": 10000}
+
+    def run_async(self, circuits, shots=None) -> _StimJob:
+        self._check_circuit_limit(circuits)
+        if isinstance(circuits, QuantumCircuit):
+            circuits = [circuits]
+        else:
+            circuits = list(circuits)
+        n_shots = shots if shots is not None else self.options.get("shots")
+        job = _StimJob(backend=self, circuits=circuits, shots=n_shots)
+        job.submit()
+        return job

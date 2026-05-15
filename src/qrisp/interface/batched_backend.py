@@ -1,236 +1,289 @@
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp Authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
 """
-********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
+This module defines :class:`BatchedBackend`, obtained via :meth:`Backend.batched() <qrisp.interface.Backend.batched>`.
 """
 
-import time
-import threading
+from __future__ import annotations
 
-from qrisp.interface import VirtualBackend
+import warnings
+from collections.abc import Mapping
+
+from qrisp.circuit.quantum_circuit import QuantumCircuit
+from qrisp.interface.backend import Backend
+from qrisp.interface.measurement_result import MeasurementResult
 
 
-class BatchedBackend(VirtualBackend):
+class BatchedBackend:
     """
-    This class tackles the problem that many physical backends have a high-overhead
-    regarding individual circuit execution. This overhead typically comes
-    from finite network latency, authentication procedures, compilation steps etc.
-    Typically this overhead is remedied through supporting the execution of
-    batches of circuits, which however doesn't really fit that well into the Qrisp
-    programming model, which shields the user from handling individual circuits
-    and automatically decodes the measurement results into human readable labels.
+    A class that buffers circuit submissions and executes them on an explicit
+    :meth:`dispatch` call.
 
-    In order to bridge these worlds and still allow automatic decoding, the
-    ``BatchedBackend`` allows Qrisp users to evaluate measurements from a
-    multi-threading perspective. The idea is here that the circuit
-    batch is collected through several threads, which each execute Qrisp code
-    until a individual backend call is required. This backend call is then saved
-    until the batch is complete. The batch can then be sent through the ``.dispatch``
-    method, which resumes each thread to execute the post-processing logic.
+    Obtain an instance via :meth:`~qrisp.interface.Backend.batched`:
+
+    .. code-block:: python
+
+        batched_backend = my_backend.batched()
+
+    .. rubric:: How it works
+
+    Each call to :meth:`run` registers the circuit in an internal queue and
+    returns a :class:`~qrisp.interface.MeasurementResult` immediately.  The
+    result is *lazy*: its data is not available until :meth:`dispatch` is
+    called.  Accessing the result before dispatch raises ``RuntimeError``.
+
+    After :meth:`dispatch`, every pending
+    :class:`~qrisp.interface.MeasurementResult` is populated with raw
+    bitstring counts by forwarding each circuit to the wrapped backend's
+    :meth:`~qrisp.interface.Backend.run_async`. Higher-level decoding (performed by
+    :meth:`QuantumVariable.get_measurement
+    <qrisp.QuantumVariable.get_measurement>`) is deferred until the user
+    actually reads the decoded result.
+
+    :class:`BatchedBackend` intentionally does not inherit from
+    :class:`~qrisp.interface.Backend`. :meth:`~qrisp.interface.Backend.run`
+    is contractually required to return a fully populated result. A
+    :class:`BatchedBackend` cannot honour that contract because its
+    :meth:`run` returns an empty placeholder that is only populated after
+    :meth:`dispatch` is called. Inheriting from
+    :class:`~qrisp.interface.Backend` would therefore violate the Liskov
+    Substitution Principle.
 
     .. note::
 
-        Calling the ``.run`` method of a BatchedBackend from the
-        main thread will automatically dispatch all queries
-        (including the query set up by the main thread).
-
+        :class:`BatchedBackend` is not thread-safe. :meth:`run` and
+        :meth:`dispatch` must be called from the same thread. Concurrent
+        calls from multiple threads can silently drop queued circuits.
 
     Parameters
     ----------
-    batch_run_func : function
-        A function that recieves a list of tuples in the form
-        list[tuple[QuantumCircuit, int]], which represents the quantum circuits
-        and the corresponding shots to execute on the backend. It should return
-        a list of dictionaries, where each dictionary corresponds to the measurement
-        results of the appropriate backend call.
+    backend : Backend
+        The backend whose :meth:`~qrisp.interface.Backend.run` is called for
+        each queued circuit when :meth:`dispatch` is invoked.
+
+    name : str or None
+        Optional name for this backend.
 
     Examples
     --------
 
-    We set up a BatchedBackend, which sequentially executes the QuantumCircuits
-    on the Qrisp simulator.
+    In this example, we collect two measurements, then dispatch:
 
-    ::
+    .. code-block:: python
 
-        from qrisp import *
-        from qrisp.interface import BatchedBackend
+        from qrisp import QuantumFloat
+        from qrisp.default_backend import DefaultBackend
 
-        def run_func_batch(batch):
-            # Parameters
-            # ----------
-            # batch : list[tuple[QuantumCircuit, int]]
-            #     The circuit and shot batch indicating the backend queries.
+        backend = DefaultBackend()
+        batched_backend = backend.batched()
 
-            # Returns
-            # -------
-            # results : list[dict[string, int]]
-            #     The list of results.
-
-            results = []
-            for i in range(len(batch)):
-                qc = batch[i][0]
-                shots = batch[i][1]
-                results.append(qc.run(shots = shots))
-
-            return results
-
-        # Set up batched backend
-        bb = BatchedBackend(run_func_batch)
-
-    Create some backend calls
-
-    ::
-
-        a = QuantumFloat(4)
-        b = QuantumFloat(3)
-        a[:] = 1
-        b[:] = 2
+        a = QuantumFloat(4); a[:] = 1
+        b = QuantumFloat(3); b[:] = 2
         c = a + b
 
-        d = QuantumFloat(4)
-        e = QuantumFloat(3)
-        d[:] = 2
-        e[:] = 3
+        d = QuantumFloat(4); d[:] = 2
+        e = QuantumFloat(3); e[:] = 3
         f = d + e
 
-    Create threads
+        res_c = c.get_measurement(backend=batched_backend)  # lazy (returns immediately)
+        res_f = f.get_measurement(backend=batched_backend)  # lazy (returns immediately)
 
-    ::
+        batched_backend.dispatch()  # runs both circuits, then populates results
 
-        import threading
+        print(res_c)  # {3: 1.0}
+        print(res_f)  # {5: 1.0}
 
-        results = []
-        def eval_measurement(qv):
-            results.append(qv.get_measurement(backend = bb))
+    The same pattern is available via
+    :func:`~qrisp.batched_measurement`:
 
-        thread_0 = threading.Thread(target = eval_measurement, args = (c,))
-        thread_1 = threading.Thread(target = eval_measurement, args = (f,))
+    .. code-block:: python
 
-    Start the threads and subsequently dispatch the batch.
-
-    ::
-
-        # Start the threads
-        thread_0.start()
-        thread_1.start()
-
-        # Call the dispatch routine
-        # The min_calls keyword will make it wait
-        # until the batch has a size of 2
-        bb.dispatch(min_calls = 2)
-
-        # Wait for the threads to join
-        thread_0.join()
-        thread_1.join()
-
-        # Inspect the results
-        print(results)
-
-    This is automated by the :meth:`batched_measurement <qrisp.batched_measurement>`:
-
-    >>> batched_measurement([c,f], backend=bb)
-    [{3: 1.0}, {5: 1.0}]
-
+        from qrisp import batched_measurement
+        results = batched_measurement([c, f], backend=batched_backend)
+        print(results)  # [{3: 1.0}, {5: 1.0}]
     """
 
-    def __init__(self, batch_run_func):
+    def __init__(
+        self,
+        backend: Backend,
+        name: str | None = None,
+    ):
+        self.name = name or self.__class__.__name__
+        self._backend = backend
+        # Each entry: (circuit, shots, MeasurementResult)
+        self._queries: list[tuple] = []
 
-        # The function to call the backend
-        self.batch_run_func = batch_run_func
+    @property
+    def options(self) -> Mapping:
+        """Current runtime options (read-only). Delegates to the wrapped backend."""
+        return self._backend.options
 
-        # A list[tuple[QuantumCircuit, int]] representing the quantum circuits and
-        # the shots of the batch
-        self.batch = []
+    @property
+    def pending_count(self) -> int:
+        """Number of circuits currently queued, waiting for :meth:`dispatch`."""
+        return len(self._queries)
 
-        # This attribute tracks if the backend evaluation concluded. Having
-        # this attribute is important because it facilitates the communication
-        # of threaded execution model
-        self.results_available = False
+    def update_options(self, **kwargs) -> None:
+        """Update existing runtime options.
 
-        # A dictionary of the form dict[QuantumCircuit,dict[str, int]] indicating
-        # which QuantumCircuit gave which results
-        self.results = {}
-
-        # This attributes stores any potential exception that might have occured
-        # during the backed evaluation and transmits them to the main thread
-        # to be properly raised.
-        self.backend_exception = None
-
-    def run(self, qc, shots):
-
-        # Appends the circuit-shot tuple
-        self.batch.append((qc, shots))
-
-        # If the run function is called from the main thread, the backend is evaluated
-        # immediately. This makes sure that users who are not interested in batched
-        # execution can still use the backend like an unbatched backend.
-        if threading.current_thread() is threading.main_thread():
-            dispatching_thread = threading.Thread(target=self.dispatch)
-            dispatching_thread.start()
-
-        # Wait for the results to be available
-        while not self.results_available:
-            time.sleep(0.01)
-
-        # Raise any potential execption
-        if self.backend_exception is not None:
-            temp = self.backend_exception
-            self.backend_exception = None
-            raise temp
-
-        result = self.results[id(qc)]
-        del self.results[id(qc)]
-
-        if threading.current_thread() is threading.main_thread():
-            dispatching_thread.join()
-
-        return result
-
-    def dispatch(self, min_calls=0):
-        """
-        This method dispatches all collected queries and
-        subsequently resumes their threads.
+        Delegates to the wrapped backend's
+        :meth:`~qrisp.interface.Backend.update_options`, which validates keys
+        and raises ``AttributeError`` for unknown ones.  Changes are visible
+        through both ``self.options`` and the wrapped backend's ``options``.
 
         Parameters
         ----------
-        min_calls : int, optional
-            If specified, the dispatch will be delayed until that
-            many queries have been collected. The default is 0.
-
+        **kwargs
+            Key-value pairs to update.
         """
+        self._backend.update_options(**kwargs)
 
-        while len(self.batch) < min_calls:
-            time.sleep(0.01)
+    def run(self, circuits, shots: int | None = None):
+        """Register one or more circuits in the queue and return lazy result(s).
 
-        # We now perform the backend call and catch potential exceptions
-        try:
-            run_func_results = self.batch_run_func(self.batch)
-            self.results = {
-                id(self.batch[i][0]): run_func_results[i]
-                for i in range(len(self.batch))
-            }
-        except Exception as e:
-            if threading.current_thread() is threading.main_thread():
-                raise e
-            else:
-                self.backend_exception = e
+        Each circuit is stored alongside its shot count.  The corresponding
+        :class:`~qrisp.interface.MeasurementResult` objects are *empty* until
+        :meth:`dispatch` is called.
 
-        self.batch = []
-        self.results_available = True
+        Parameters
+        ----------
+        circuits : QuantumCircuit or Sequence[QuantumCircuit]
+            One circuit or a sequence of circuits to include in the batch.
 
-        while len(self.results) or not self.backend_exception is None:
-            time.sleep(0.01)
+        shots : int or None
+            Number of shots.  Defaults to the backend's ``shots`` option.
 
-        self.results_available = False
+        Returns
+        -------
+        MeasurementResult or list[MeasurementResult]
+            A single lazy result for a single circuit, or a list of lazy
+            results when multiple circuits are given.
+        """
+        Backend._validate_shots(shots)
+        batch = not isinstance(circuits, QuantumCircuit)
+        if not batch:
+            circuits = [circuits]
+
+        n_shots = shots if shots is not None else self._backend.options.get("shots")
+
+        raw_list: list[MeasurementResult] = []
+        for qc in circuits:
+            raw = MeasurementResult()
+            self._queries.append((qc, n_shots, raw))
+            raw_list.append(raw)
+
+        return raw_list if batch else raw_list[0]
+
+    # ------------------------------------------------------------------
+    # Dispatch
+    # ------------------------------------------------------------------
+
+    def dispatch(self, timeout: float | None = None) -> None:
+        """Execute all pending circuits and populate their results.
+
+        Circuits are grouped by shot count and each group is submitted as a
+        single :meth:`~qrisp.interface.Backend.run_async` call.  For the
+        common case where all circuits share the same shot count this reduces
+        N separate hardware jobs to a single one, eliminating redundant
+        network round-trips and queue-wait overhead.  Results are injected into
+        the corresponding :class:`~qrisp.interface.MeasurementResult` objects.
+
+        Circuit-limit enforcement (see :attr:`~qrisp.interface.Backend.max_circuits`)
+        is the responsibility of the wrapped backend's
+        :meth:`~qrisp.interface.Backend.run_async` implementation. Backends
+        that override :attr:`~qrisp.interface.Backend.max_circuits` should
+        check this limit inside
+        :meth:`~qrisp.interface.Backend.run_async` so that the check applies
+        whether circuits are submitted directly or via :meth:`dispatch`.
+
+        .. warning::
+
+            If the queued circuits use more than one distinct shot count, they
+            are split into multiple hardware jobs (one per shot count).
+            To avoid the split, ensure all circuits are queued with the
+            same shot count.
+
+        If the wrapped backend raises for any group, that error is stored in
+        every not-yet-populated :class:`~qrisp.interface.MeasurementResult`
+        and then re-raised. Accessing any of those results later will re-raise
+        the stored exception.
+
+        Parameters
+        ----------
+        timeout : float or None, optional
+            Maximum seconds to wait for each hardware job.  ``None`` (default)
+            waits indefinitely.  Passed through to
+            :meth:`Job.result <qrisp.interface.Job.result>`.
+
+        Raises
+        ------
+        TimeoutError
+            If *timeout* is given and a hardware job does not finish in time.
+            Results for the timed-out group and any remaining groups are left
+            unpopulated.
+
+        Exception
+            Re-raises any exception thrown by the wrapped backend during
+            execution, after injecting the error into all pending results.
+        """
+        queries = list(self._queries)
+        self._queries = []
+
+        if not queries:
+            return
+
+        # Group by effective shot count so each group becomes one hardware job.
+        groups: dict[int | None, list] = {}
+        for qc, shots, raw in queries:
+            key = shots if shots is not None else self._backend.options.get("shots")
+            groups.setdefault(key, []).append((qc, raw))
+
+        if len(groups) > 1:
+            warnings.warn(
+                f"BatchedBackend.dispatch(): circuits use {len(groups)} different "
+                f"shot counts ({list(groups.keys())}), requiring {len(groups)} "
+                "separate hardware jobs. For a single hardware job, ensure all "
+                "queued circuits use the same shot count.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+        for shots, items in groups.items():
+            circuits = [qc for qc, _ in items]
+            raws = [raw for _, raw in items]
+            try:
+                all_counts = (
+                    self._backend.run_async(circuits, shots=shots)
+                    .result(timeout=timeout)
+                    .all_counts
+                )
+                for raw, counts in zip(raws, all_counts):
+                    raw._inject(counts)
+            except Exception as exc:
+                for _, _, r in queries:
+                    if not r._populated:
+                        r._inject_error(exc)
+                raise
+
+    def clear(self) -> None:
+        """Discard all queued circuits without dispatching.
+
+        Any :class:`~qrisp.interface.MeasurementResult` objects previously
+        returned by :meth:`run` for the cleared circuits remain unpopulated.
+        Accessing them after ``clear()`` raises ``RuntimeError``.
+        """
+        self._queries = []

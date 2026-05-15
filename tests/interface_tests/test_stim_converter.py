@@ -18,6 +18,7 @@
 
 from qrisp import QuantumCircuit
 
+
 def test_basic_gates():
     """Test conversion of basic single-qubit gates."""
     qc = QuantumCircuit(3)
@@ -115,7 +116,7 @@ def test_sx_and_sxdg_gates():
 def test_transpilation():
     """Test that transpilation works correctly."""
     from qrisp import QuantumVariable, h
-    
+
     # Create a circuit with composite gates
     qv = QuantumVariable(2)
     h(qv)  # Hadamard on all qubits
@@ -202,7 +203,7 @@ def test_error_on_non_clifford():
 def test_stim_errors():
     """Test conversion of Stim noise channels via StimNoiseGate."""
     from qrisp.misc.stim_tools import StimNoiseGate
-    
+
     # Test 1-qubit errors
     qc = QuantumCircuit(1)
     
@@ -321,8 +322,9 @@ def test_detector_operation_conversion():
 
 
 def test_detector_permutation():
-    import stim
     import numpy as np
+    import stim
+
     from qrisp.misc.stim_tools.detector_permutation import permute_detectors
 
     # Test 1: Validation
@@ -533,7 +535,9 @@ def test_observable_map():
 
 def test_qc_parity_method_basic():
     """Test the QuantumCircuit.parity method with basic usage."""
-    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityHandle
+    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
+        ParityHandle,
+    )
     
     qc = QuantumCircuit(2, 2)
     qc.h(0)
@@ -554,7 +558,9 @@ def test_qc_parity_method_basic():
 
 def test_qc_parity_method_single_clbit():
     """Test the QuantumCircuit.parity method with a single clbit."""
-    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityHandle
+    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
+        ParityHandle,
+    )
     
     qc = QuantumCircuit(1, 1)
     qc.h(0)

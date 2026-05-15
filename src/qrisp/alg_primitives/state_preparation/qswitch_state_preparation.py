@@ -23,7 +23,7 @@ import jax.numpy as jnp
 import numpy as np
 from jax import lax
 
-from qrisp.misc.utility import _EPSILON, swap_endianness
+from qrisp.misc.utility import EPSILON, swap_endianness
 
 
 def _rot_params_from_state(
@@ -59,7 +59,7 @@ def _rot_params_from_state(
     # This step avoids warning about casting complex to real.
     a = jnp.clip(jnp.real(a), -1.0, 1.0)
     theta = 2.0 * jnp.arccos(a)
-    phi = jnp.where(jnp.abs(b) > _EPSILON, jnp.angle(b), 0.0)
+    phi = jnp.where(jnp.abs(b) > EPSILON, jnp.angle(b), 0.0)
     lam = jnp.float64(0.0)
     return theta, phi, lam
 
@@ -108,7 +108,7 @@ def _normalize_with_phase(
         return norm, v_adj, acc
 
     return lax.cond(
-        norm > _EPSILON,
+        norm > EPSILON,
         lambda _: branch_nonzero(None),
         lambda _: branch_zero(None),
         operand=None,
