@@ -152,9 +152,6 @@ def jaxpr_to_xdsl(jaxpr, lower_stableHLO = False, lowering_rules=tuple([])):
     2. (Optional) Lower StableHLO to linalg and other lower-level dialects.
     3. Print the module in MLIR's generic form and re-parse it with xDSL to
        obtain an xDSL ``builtin.module`` object.
-    4. Run xDSL optimization passes to clean up lowering artifacts
-       (e.g., redundant scalar ``linalg.generic`` chains produced by
-       ``stablehlo-legalize-to-linalg``).
 
     Parameters
     ----------
