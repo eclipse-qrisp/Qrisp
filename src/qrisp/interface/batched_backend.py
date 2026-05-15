@@ -31,8 +31,7 @@ from qrisp.interface.measurement_result import MeasurementResult
 class BatchedBackend:
     """
     A class that buffers circuit submissions and executes them on an explicit
-    :meth:`dispatch` call. Notice that this is not a :class:`Backend` subclass
-    and does not implement the full :class:`Backend` interface.
+    :meth:`dispatch` call.
 
     Obtain an instance via :meth:`~qrisp.interface.Backend.batched`:
 
@@ -50,14 +49,23 @@ class BatchedBackend:
     After :meth:`dispatch`, every pending
     :class:`~qrisp.interface.MeasurementResult` is populated with raw
     bitstring counts by forwarding each circuit to the wrapped backend's
-    :meth:`~qrisp.interface.Backend.run`.  Higher-level decoding (performed by
+    :meth:`~qrisp.interface.Backend.run_async`. Higher-level decoding (performed by
     :meth:`QuantumVariable.get_measurement
     <qrisp.QuantumVariable.get_measurement>`) is deferred until the user
     actually reads the decoded result.
 
+    :class:`BatchedBackend` intentionally does not inherit from
+    :class:`~qrisp.interface.Backend`. :meth:`~qrisp.interface.Backend.run`
+    is contractually required to return a fully populated result. A
+    :class:`BatchedBackend` cannot honour that contract because its
+    :meth:`run` returns an empty placeholder that is only populated after
+    :meth:`dispatch` is called. Inheriting from
+    :class:`~qrisp.interface.Backend` would therefore violate the Liskov
+    Substitution Principle.
+
     .. note::
 
-        :class:`BatchedBackend` is not thread-safe.  :meth:`run` and
+        :class:`BatchedBackend` is not thread-safe. :meth:`run` and
         :meth:`dispatch` must be called from the same thread. Concurrent
         calls from multiple threads can silently drop queued circuits.
 
@@ -197,7 +205,7 @@ class BatchedBackend:
         Circuit-limit enforcement (see :attr:`~qrisp.interface.Backend.max_circuits`)
         is the responsibility of the wrapped backend's
         :meth:`~qrisp.interface.Backend.run_async` implementation. Backends
-        that override :attr:`~qrisp.interface.Backend.max_circuits` should 
+        that override :attr:`~qrisp.interface.Backend.max_circuits` should
         check this limit inside
         :meth:`~qrisp.interface.Backend.run_async` so that the check applies
         whether circuits are submitted directly or via :meth:`dispatch`.

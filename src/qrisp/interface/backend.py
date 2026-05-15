@@ -21,7 +21,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any, Protocol, overload, runtime_checkable
 
 from qrisp.interface.measurement_result import MeasurementResult
 
@@ -31,6 +31,46 @@ if TYPE_CHECKING:
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 from .job import Job
+
+
+# This protocol is required because `BatchedBackend` intentionally
+# does not inherit from `Backend`, as this would violate the Liskov
+# Substitution Principle (the `run` method in `BatchedBackend`
+# has different behaviour and return type than in `Backend`).
+@runtime_checkable
+class BackendLike(Protocol):
+    """Structural protocol satisfied by both :class:`Backend` and
+    :class:`~qrisp.interface.BatchedBackend`.
+
+    Use this as the type hint for parameters that accept either a concrete
+    backend or a :class:`~qrisp.interface.BatchedBackend`.
+    Both :class:`Backend` and :class:`~qrisp.interface.BatchedBackend`
+    satisfy this protocol structurally (i.e. without explicit inheritance),
+    so type checkers accept either wherever :class:`BackendLike` is required.
+
+    """
+
+    @property
+    def name(self) -> str:
+        """Human-readable name of the backend."""
+        ...
+
+    def run(
+        self,
+        circuits: QuantumCircuit | Sequence[QuantumCircuit],
+        shots: int | None = None,
+    ):
+        """Submit circuits and return measurement result(s)."""
+        ...
+
+    @property
+    def options(self) -> Mapping:
+        """Current runtime options (read-only)."""
+        ...
+
+    def update_options(self, **kwargs) -> None:
+        """Update existing runtime options."""
+        ...
 
 
 class Backend(ABC):
@@ -245,13 +285,6 @@ class Backend(ABC):
         :class:`~qrisp.interface.MeasurementResult` objects.  The result type
         mirrors the input: a single :class:`~qrisp.interface.MeasurementResult`
         for a single circuit, or a ``list`` of them for a sequence.
-
-        :class:`~qrisp.interface.MeasurementResult` is a
-        :class:`collections.abc.Mapping`, so all dict-style access
-        (``result[key]``, ``.items()``, ``len()``, equality with a plain dict)
-        works unchanged.  The only observable difference from the previous
-        behaviour is that ``isinstance(result, dict)`` is now ``False``; use
-        ``isinstance(result, Mapping)`` instead.
 
         Parameters
         ----------

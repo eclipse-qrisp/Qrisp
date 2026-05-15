@@ -27,6 +27,7 @@ from jax.typing import ArrayLike
 
 if TYPE_CHECKING:
     from qrisp.interface.measurement_result import _IntKeyedResult
+    from qrisp.interface.backend import BackendLike
 
 # A small epsilon value for numerical stability.
 # Defined here for convenience, so it can be imported elsewhere.
@@ -732,7 +733,7 @@ def multi_measurement(qv_list, shots=None, backend=None):
         A list of QuantumVariables.
     shots : int, optional
         The amount of shots to perform. The default is given by the backend used.
-    backend : BackendClient, optional
+    backend : BackendLike, optional
         The backend to evaluate the compiled QuantumCircuit on. By default, the backend
         from default_backend.py will be used.
 
@@ -1394,7 +1395,7 @@ def check_if_fresh(qubits, qs, ignore_q_envs=True):
     return True
 
 
-def get_measurement_from_qc(qc, qubits, backend, shots=None) -> "_IntKeyedResult":
+def get_measurement_from_qc(qc, qubits, backend: "BackendLike", shots=None) -> "_IntKeyedResult":
     """Run *qc*, measure *qubits*, and return a lazy int-keyed probability mapping.
 
     Appends measurement gates for each qubit in *qubits*, submits the circuit
@@ -1409,9 +1410,10 @@ def get_measurement_from_qc(qc, qubits, backend, shots=None) -> "_IntKeyedResult
         The circuit to execute. Measurement gates are added in-place.
     qubits : sequence
         The qubits to measure, in order.
-    backend : Backend
-        A Qrisp-compatible backend implementing
-        :meth:`~qrisp.interface.Backend.run`.
+    backend : BackendLike
+        Any Qrisp-compatible backend (either a concrete
+        :class:`~qrisp.interface.Backend` subclass or a
+        :class:`~qrisp.interface.BatchedBackend`).
     shots : int or None, optional
         Number of shots. If ``None``, the backend's default is used.
 

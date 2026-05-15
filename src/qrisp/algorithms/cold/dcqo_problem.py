@@ -577,7 +577,7 @@ class DCQOProblem:
             Additional options for the Scipy solver.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
-        backend : :ref:`BackendClient`, optional
+        backend : BackendLike, optional
             The backend to be used for the quantum simulation.
             By default, the Qrisp simulator is used.
         shots: : int

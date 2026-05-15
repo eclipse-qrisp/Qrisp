@@ -578,7 +578,7 @@ class QuantumArray:
 
         Parameters
         ----------
-        backend : BackendClient, optional
+        backend : BackendLike, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
         shots : integer, optional

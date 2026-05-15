@@ -28,7 +28,7 @@ import pytest
 from conftest import MinimalBackend, MinimalJob
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
-from qrisp.interface.backend import Backend
+from qrisp.interface.backend import Backend, BackendLike
 from qrisp.interface.job import (
     Job,
     JobCancelledError,
@@ -1625,6 +1625,84 @@ class TestJobFailureCause:
         job = TestBackend(mode=ExecutionMode.SYNC, seed=0).run_async("c")
         # Should not raise
         job._raise_for_status(JobStatus.DONE)
+
+
+class TestBackendLikeProtocol:
+    """Tests for the BackendLike structural protocol.
+
+    BackendLike is @runtime_checkable, so isinstance() checks must work without
+    explicit inheritance. Both Backend subclasses and BatchedBackend must satisfy
+    it (arbitrary objects must not).
+    """
+
+    def test_backend_subclass_satisfies_protocol(self):
+        """Any concrete Backend subclass must satisfy BackendLike at runtime."""
+        assert isinstance(MinimalBackend(), BackendLike)
+
+    def test_batched_backend_satisfies_protocol(self):
+        """BatchedBackend must satisfy BackendLike even though it does not inherit Backend."""
+        batched = MinimalBackend().batched()
+        assert isinstance(batched, BackendLike)
+
+    def test_partial_implementation_missing_run_does_not_satisfy(self):
+        """An object missing run() must not satisfy BackendLike."""
+
+        class NoRun:
+            name = "no-run"
+
+            @property
+            def options(self):
+                return {}
+
+            def update_options(self, **kwargs):
+                pass
+
+        assert not isinstance(NoRun(), BackendLike)
+
+    def test_structural_match_satisfies_protocol(self):
+        """A third-party class with all required members must satisfy BackendLike without inheritance."""
+
+        class ThirdPartyBackend:
+            @property
+            def name(self):
+                return "third-party"
+
+            def run(self, circuits, shots=None):
+                return {}
+
+            @property
+            def options(self):
+                return {}
+
+            def update_options(self, **kwargs):
+                pass
+
+        assert isinstance(ThirdPartyBackend(), BackendLike)
+
+    def test_multiple_backend_instances_all_satisfy_protocol(self):
+        """Every Backend subclass in the test suite must satisfy BackendLike."""
+        for backend in [
+            MinimalBackend(),
+            DummyBackend(),
+            BackendNoDefaultOptions(),
+            BackendWithChildDefaultOptions(),
+        ]:
+            assert isinstance(
+                backend, BackendLike
+            ), f"{type(backend).__name__} does not satisfy BackendLike"
+
+    def test_batched_backend_is_not_backend_subclass(self):
+        """BatchedBackend must NOT be a subclass of Backend — that is the LSP design decision."""
+        batched = MinimalBackend().batched()
+        assert not isinstance(batched, Backend)
+
+    def test_batched_backend_update_options_delegates(self):
+        """BatchedBackend.update_options must delegate to the wrapped backend."""
+        backend = MinimalBackend()
+        batched = backend.batched()
+        batched.update_options(shots=512)
+        assert backend.options["shots"] == 512
+        assert batched.options["shots"] == 512
 
 
 class TestBackendRepr:

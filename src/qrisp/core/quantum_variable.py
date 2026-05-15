@@ -1007,9 +1007,9 @@ class QuantumVariable:
         ----------
         plot : Bool, optional
             Plots the measurement results as a historgram. The default is False.
-        backend : Backend, optional
-            The backend on which to evaluate the quantum circuit. The default can be
-            specified in the file default_backend.py.
+        backend : BackendLike, optional
+            The backend on which to evaluate the quantum circuit. 
+            The default can be specified in the file default_backend.py.
         shots : integer, optional
             The amount of shots to evaluate the circuit. The default is given by the backend it runs on.
         compile : bool, optional
