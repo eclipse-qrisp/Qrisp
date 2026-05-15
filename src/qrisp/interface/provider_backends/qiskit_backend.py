@@ -324,6 +324,17 @@ class QiskitBackend(Backend):
         """Return the default runtime options (shots=1024)."""
         return {"shots": 1024}
 
+    @property
+    def max_circuits(self) -> int | None:
+        """Maximum circuits per job, as reported by the underlying Qiskit backend.
+
+        Delegates to the wrapped backend's own ``max_circuits`` attribute.
+        Returns ``None`` if the backend does not expose a limit (e.g. local
+        simulators such as ``AerSimulator``).
+        """
+        value = getattr(self.backend, "max_circuits", None)
+        return value if isinstance(value, int) else None
+
     def run_async(
         self,
         circuits,

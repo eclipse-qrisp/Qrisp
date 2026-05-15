@@ -114,6 +114,7 @@ class StimBackend(Backend):
         return {"shots": 10000}
 
     def run_async(self, circuits, shots=None) -> _StimJob:
+        self._check_circuit_limit(circuits)
         if isinstance(circuits, QuantumCircuit):
             circuits = [circuits]
         else:

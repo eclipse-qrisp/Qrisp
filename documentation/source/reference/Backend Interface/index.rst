@@ -46,17 +46,16 @@ It defines the minimal interface required to submit quantum circuits for executi
 and optionally expose hardware metadata.
 
 Concrete backends may represent local simulators or remote quantum hardware clients.
-All backends must implement the ``Backend.run_async`` method, which submits one or more
+All backends must implement the :meth:`~qrisp.interface.Backend.run_async` method, which submits one or more
 circuits for execution and returns a :ref:`Job` handle immediately.
 
-A synchronous convenience method ``Backend.run`` is also provided by the base class.
-It calls ``run_async`` internally, blocks until the job finishes, and returns the
-results as :class:`~qrisp.interface.MeasurementResult` objects — a single object for a
-single circuit, or a list of them for a sequence. :class:`~qrisp.interface.MeasurementResult`
-is a :class:`collections.abc.Mapping`, so all dict-style access (``result[key]``,
-``.items()``, ``len()``, equality with a plain dict) works unchanged.
+A synchronous convenience method :meth:`~qrisp.interface.Backend.run` is also provided by the base class.
+It calls :meth:`~qrisp.interface.Backend.run_async` internally, blocks until the job finishes, and returns the
+results as :class:`~qrisp.interface.MeasurementResult` objects (a single object for a
+single circuit, or a list of them for a sequence). :class:`~qrisp.interface.MeasurementResult`
+is a :class:`~collections.abc.Mapping`, so all dict-style access works unchanged.
 New code that needs the full :ref:`Job` interface (status polling, cancellation, or
-concurrent execution) should call ``run_async`` instead.
+concurrent execution) should call :meth:`~qrisp.interface.Backend.run_async` instead.
 
 
 Synchronous Backends
@@ -135,7 +134,7 @@ Let's create a quantum circuit that applies a Hadamard gate to a single qubit an
    circuit.measure(0)
 
 We can now create an instance of ``DefaultBackend`` and execute the circuit.
-Calling ``run_async`` returns a :ref:`Job` immediately — and because the simulator is
+Calling ``run_async`` returns a :ref:`Job` immediately, and because the simulator is
 synchronous the job is already ``DONE`` before ``run_async`` returns. Results are
 retrieved by calling ``job.result()``:
 
@@ -172,7 +171,7 @@ We can also pass explicit runtime options at construction time:
    >>> print(result.get_counts())
    {'0': 510, '1': 514}   # Note: actual counts may vary due to randomness
 
-Runtime options can be updated after instantiation via ``Backend.update_options``.
+Runtime options can be updated after instantiation via :meth:`~qrisp.interface.Backend.update_options`.
 Only keys that were present at construction time may be modified:
 
 .. code-block:: python
@@ -203,7 +202,7 @@ The backend decides internally whether to run them sequentially or in parallel:
 
 On a synchronous backend, we can also use ``run`` with a batch of circuits.
 When a list is passed, the result is a list of :class:`~qrisp.interface.MeasurementResult`
-objects — one per circuit. Each supports the same dict-style access as above:
+objects (one per circuit). Each supports the same dict-style access as above:
 
 .. code-block:: python
 
@@ -413,13 +412,13 @@ From the caller's perspective, both are used identically:
 
 Concrete subclasses must implement the four abstract methods:
 
-- ``Job.submit``: trigger the actual execution.
-- ``Job.result``: block until the result is available and return it.
-- ``Job.cancel``: attempt to cancel the job.
-- ``Job.status``: return the current :ref:`JobStatus` without blocking.
+- :meth:`~qrisp.interface.Job.submit`: trigger the actual execution.
+- :meth:`~qrisp.interface.Job.result`: block until the result is available and return it.
+- :meth:`~qrisp.interface.Job.cancel`: attempt to cancel the job.
+- :meth:`~qrisp.interface.Job.status`: return the current :ref:`JobStatus` without blocking.
 
 Several non-blocking convenience helpers are provided by the base class
-and derived from ``Job.status``:
+and derived from :meth:`~qrisp.interface.Job.status`:
 
 .. code-block:: python
 
@@ -428,7 +427,7 @@ and derived from ``Job.status``:
 
 
 Additional helpers ``running()``, ``queued()``, and ``cancelled()`` are also available
-for polling-style workflows. If ``result()`` is called on a job that has failed, a
+for polling-style workflows. If :meth:`~qrisp.interface.Job.result` is called on a job that has failed, a
 :exc:`~qrisp.interface.JobFailureError` is raised; if the job was cancelled, a
 :exc:`~qrisp.interface.JobCancelledError` is raised. Both are subclasses of
 :exc:`RuntimeError`.
@@ -445,7 +444,7 @@ The six states are:
 - ``INITIALIZING``: the job has been created but not yet submitted to the backend.
 - ``QUEUED``: the job has been submitted and is waiting for execution resources.
 - ``RUNNING``: the job is currently being executed.
-- ``DONE``: the job completed successfully. Results are available via ``Job.result``.
+- ``DONE``: the job completed successfully. Results are available via :meth:`~qrisp.interface.Job.result`.
 - ``CANCELLED``: the job was cancelled before or during execution.
 - ``ERROR``: the job failed due to an error during execution.
 
@@ -475,14 +474,14 @@ For more details, see the :ref:`JobResult` documentation.
 
 :class:`~qrisp.interface.MeasurementResult` is the return type of
 :meth:`~qrisp.interface.Backend.run`.  It is a
-``Mapping`` of raw bitstring keys to counts, so all
+:class:`~collections.abc.Mapping` of raw bitstring keys to counts, so all
 dict-style access (``result["0"]``, ``.items()``, ``len()``, ``==`` with a
 plain dict) works unchanged.
 
 For standard backends the object arrives pre-populated.  For
 :class:`~qrisp.interface.BatchedBackend` it starts empty and is filled when
 :meth:`~qrisp.interface.BatchedBackend.dispatch` is called (accessing it
-before that raises ``RuntimeError``).
+before that raises :exc:`RuntimeError`).
 
 :class:`~qrisp.interface.DecodedMeasurementResult` is what
 :meth:`QuantumVariable.get_measurement <qrisp.QuantumVariable.get_measurement>`
@@ -492,7 +491,7 @@ integers for :class:`~qrisp.QuantumFloat`).  Decoding is deferred: the
 plain dict representation is built the first time any key is accessed.
 
 Both classes inherit from :class:`~qrisp.interface.LazyDict`, an abstract
-``Mapping`` whose data is computed exactly once on
+:class:`~collections.abc.Mapping` whose data is computed exactly once on
 first access and cached for all subsequent reads.
 
 For more details, see the :ref:`MeasurementResult` 
@@ -513,9 +512,7 @@ collected and then submitted together in a single
 
    ``BatchedBackend`` is not a subclass of :ref:`Backend`.  It is a
    *wrapper* (Virtual Proxy pattern): it holds a reference to a concrete
-   backend and intercepts ``run()`` calls.  Inheriting from ``Backend``
-   would violate the :ref:`Backend` contract, which guarantees that
-   ``run()`` returns a populated result immediately.
+   backend and intercepts :meth:`~qrisp.interface.Backend.run` calls.
 
 Obtain a ``BatchedBackend`` from any existing backend via
 :meth:`~qrisp.interface.Backend.batched`:
@@ -578,7 +575,7 @@ invocation so we can observe exactly how many hardware calls are made.
    qf2 = QuantumFloat(3); qf2[:] = 5
    qf3 = QuantumFloat(3); h(qf3[0])
 
-   # Each call returns immediately — no hardware submission yet.
+   # Each call returns immediately (no hardware submission yet).
    r1 = qf1.get_measurement(backend=batched_backend)
    r2 = qf2.get_measurement(backend=batched_backend)
    r3 = qf3.get_measurement(backend=batched_backend)
@@ -736,7 +733,7 @@ Devices available via AQT Cloud currently support up to 2000 shots.
 via `Stim <https://github.com/quantumlib/Stim>`_. Stim is particularly well-suited for
 simulating quantum error correction circuits with thousands of qubits.
 
-For synchronous use, call ``run`` directly:
+For synchronous use, call :meth:`~qrisp.interface.Backend.run` directly:
 
 ::
 
@@ -744,7 +741,7 @@ For synchronous use, call ``run`` directly:
 
    backend = StimBackend()
 
-For lazy, buffered execution, obtain a :ref:`BatchedBackend` via ``batched()``:
+For lazy, buffered execution, obtain a :ref:`BatchedBackend` via :meth:`~qrisp.interface.Backend.batched`:
 
 ::
 
@@ -756,6 +753,6 @@ For lazy, buffered execution, obtain a :ref:`BatchedBackend` via ``batched()``:
    qv = QuantumVariable(2)
    qv[:] = "10"
 
-   res = qv.get_measurement(backend=bb)  # lazy — returns immediately
+   res = qv.get_measurement(backend=bb)  # lazy (returns immediately)
    bb.dispatch()
    print(res)   # {'10': 1.0}

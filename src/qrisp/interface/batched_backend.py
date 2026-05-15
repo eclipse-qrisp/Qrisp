@@ -55,6 +55,12 @@ class BatchedBackend:
     <qrisp.QuantumVariable.get_measurement>`) is deferred until the user
     actually reads the decoded result.
 
+    .. note::
+
+        :class:`BatchedBackend` is not thread-safe.  :meth:`run` and
+        :meth:`dispatch` must be called from the same thread. Concurrent
+        calls from multiple threads can silently drop queued circuits.
+
     Parameters
     ----------
     backend : Backend
@@ -159,6 +165,7 @@ class BatchedBackend:
             A single lazy result for a single circuit, or a list of lazy
             results when multiple circuits are given.
         """
+        Backend._validate_shots(shots)
         batch = not isinstance(circuits, QuantumCircuit)
         if not batch:
             circuits = [circuits]
@@ -186,6 +193,14 @@ class BatchedBackend:
         N separate hardware jobs to a single one, eliminating redundant
         network round-trips and queue-wait overhead.  Results are injected into
         the corresponding :class:`~qrisp.interface.MeasurementResult` objects.
+
+        Circuit-limit enforcement (see :attr:`~qrisp.interface.Backend.max_circuits`)
+        is the responsibility of the wrapped backend's
+        :meth:`~qrisp.interface.Backend.run_async` implementation. Backends
+        that override :attr:`~qrisp.interface.Backend.max_circuits` should 
+        check this limit inside
+        :meth:`~qrisp.interface.Backend.run_async` so that the check applies
+        whether circuits are submitted directly or via :meth:`dispatch`.
 
         .. warning::
 

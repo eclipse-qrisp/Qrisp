@@ -194,6 +194,7 @@ class DefaultBackend(Backend):
         -------
         DefaultJob
         """
+        self._check_circuit_limit(circuits)
         if isinstance(circuits, QuantumCircuit):
             circuits = [circuits]
         else:

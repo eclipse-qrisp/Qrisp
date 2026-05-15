@@ -253,6 +253,17 @@ class AQTBackend(Backend):
         """Return the default runtime options (shots=100, matching the original AQT default)."""
         return {"shots": 100}
 
+    @property
+    def max_circuits(self) -> int | None:
+        """Maximum circuits per job, as reported by the underlying AQT device.
+
+        Delegates to the AQT device's own ``max_circuits`` attribute, which is
+        part of the Qiskit-compatible ``BackendV2`` interface that AQT exposes.
+        Returns ``None`` if the device does not expose a limit.
+        """
+        value = getattr(self._aqt_device, "max_circuits", None)
+        return value if isinstance(value, int) else None
+
     def run_async(self, circuits, shots: int | None = None) -> AQTJob:
         """
         Transpile and submit one or more circuits to the AQT backend.

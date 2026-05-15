@@ -278,12 +278,12 @@ class Job(ABC):
         This value is initialised to :attr:`~JobStatus.INITIALIZING` and is
         updated at the following points:
 
-        * :meth:`status` — every live query updates the cache as a side effect.
-        * :meth:`submit` — transitions to ``QUEUED`` (or ``RUNNING`` for
+        * :meth:`status`: every live query updates the cache as a side effect.
+        * :meth:`submit`: transitions to ``QUEUED`` (or ``RUNNING`` for
           synchronous backends) once execution has been handed off.
-        * :meth:`result` — transitions to ``DONE``, ``CANCELLED``, or
+        * :meth:`result`: transitions to ``DONE``, ``CANCELLED``, or
           ``ERROR`` when the job reaches a terminal state.
-        * :meth:`refresh` — explicitly fetches the live status and caches it
+        * :meth:`refresh`: explicitly fetches the live status and caches it
           (semantically identical to calling :meth:`status`, but signals intent
           clearly when the sole purpose is to refresh the cache).
         """
@@ -405,7 +405,7 @@ class Job(ABC):
         This is a *live query*: every call fetches the most up-to-date
         status available, which for remote backends may involve a network
         call. As a side effect, concrete implementations should store the
-        result in :attr:`_last_known_status` before returning, so that
+        result in ``_last_known_status`` before returning, so that
         :attr:`last_known_status` always reflects the most recently
         observed state.
 

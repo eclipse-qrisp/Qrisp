@@ -21,7 +21,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, overload
 
 from qrisp.interface.measurement_result import MeasurementResult
 
@@ -65,7 +65,7 @@ class Backend(ABC):
     execution policies, which are delegated to concrete backends or external
     components.
 
-    For example, simulators are expected to implement ``run_async`` but may
+    For example, simulators are expected to implement :meth:`run_async` but may
     return ``None`` for all hardware metadata properties.
 
     .. rubric:: Execution model
@@ -182,15 +182,15 @@ class Backend(ABC):
 
         Before returning, every concrete implementation should call
         :meth:`job.submit() <qrisp.interface.Job.submit>` on the newly created
-        job. ``submit()`` is the hook that moves the job out of
-        ``INITIALIZING``, signalling that execution has been handed off to the
+        job. :meth:`~qrisp.interface.Job.submit` is the hook that moves the job out of
+        :attr:`~qrisp.interface.JobStatus.INITIALIZING`, signalling that execution has been handed off to the
         backend. The exact state the job enters depends on the backend type:
 
-        * ``QUEUED``: for asynchronous or remote backends where the job waits
+        * :attr:`~qrisp.interface.JobStatus.QUEUED`: for asynchronous or remote backends where the job waits
           in a queue before execution begins.
 
-        * ``RUNNING``: for synchronous simulators that start execution
-          immediately inside ``submit()``.
+        * :attr:`~qrisp.interface.JobStatus.RUNNING`: for synchronous simulators that start execution
+          immediately inside :meth:`~qrisp.interface.Job.submit`.
 
         Parameters
         ----------
@@ -279,7 +279,7 @@ class Backend(ABC):
         self._validate_shots(shots)
         self._check_circuit_limit(circuits)
         batch = not isinstance(circuits, QuantumCircuit)
-        shots = shots or self.options.get("shots")
+        shots = shots if shots is not None else self.options.get("shots")
         all_counts = self.run_async(circuits, shots).result().all_counts
 
         results = []
@@ -318,7 +318,7 @@ class Backend(ABC):
         stores job history server-side.
 
         This is an *optional capability*. The default implementation
-        raises ``NotImplementedError``. Backends that support job
+        raises :exc:`NotImplementedError`. Backends that support job
         recovery must override this method.
 
         Parameters
@@ -352,7 +352,7 @@ class Backend(ABC):
         circuits: QuantumCircuit | Sequence[QuantumCircuit],
     ) -> None:
         """
-        Raise ``ValueError`` if the number of submitted circuits exceeds
+        Raise :exc:`ValueError` if the number of submitted circuits exceeds
         :attr:`max_circuits`.
 
         This helper is called automatically by :meth:`run`. Implementations
@@ -406,7 +406,7 @@ class Backend(ABC):
         ------
         TypeError
             If *shots* is not an :class:`int` (or is a :class:`bool`,
-            which is a subclass of ``int`` but almost certainly a
+            which is a subclass of :class:`int` but almost certainly a
             caller mistake).
 
         ValueError
@@ -451,7 +451,7 @@ class Backend(ABC):
 
         The returned mapping is read-only. Use :meth:`update_options` to
         change existing keys. Direct mutation (e.g.
-        ``backend.options["shots"] = n``) raises ``TypeError``.
+        ``backend.options["shots"] = n``) raises :exc:`TypeError`.
         """
         return MappingProxyType(self._options)
 
@@ -462,7 +462,7 @@ class Backend(ABC):
         Only keys that were present at initialisation (i.e. defined in
         :meth:`_default_options` or the ``options`` argument passed to the
         constructor) may be updated. Attempting to set an unknown key raises
-        an ``AttributeError``.
+        an :exc:`AttributeError`.
 
         This method is *atomic*: all keys are validated before any value
         is written. If one key is invalid, no options are changed.
@@ -480,6 +480,8 @@ class Backend(ABC):
                 f"{self.__class__.__name__}. "
                 f"Valid options: {list(self._options.keys())}"
             )
+        if "shots" in kwargs:
+            self._validate_shots(kwargs["shots"])
         self._options.update(kwargs)
 
     # ------------------------------------------------------------------
@@ -551,12 +553,12 @@ class Backend(ABC):
         cloud provider may accept at most 300 circuits per submission).
         Submitting a batch larger than this limit causes an opaque error
         from the vendor SDK. Exposing the limit here lets Qrisp provide an
-        early, clear ``ValueError`` via :meth:`run` and
-        ``_check_circuit_limit`` before any network call is made.
+        early, clear :exc:`ValueError` via :meth:`run` and
+        :meth:`_check_circuit_limit` before any network call is made.
 
         Concrete backends should override this property and return the
         actual limit. Implementations of :meth:`run_async` should also
-        call ``_check_circuit_limit`` before submitting to the
+        call :meth:`_check_circuit_limit` before submitting to the
         hardware so that users who bypass :meth:`run` still get the same
         early error.
 
