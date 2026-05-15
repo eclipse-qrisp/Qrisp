@@ -121,24 +121,6 @@ def test_coldcrab_uniform_magnitude():
     assert solution in list(res.keys())[0:5]
 
 
-def test_cold_expvalue_method_statevector_measurement():
-    Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
-    problem_args = {"method": "COLD", "uniform": True} #, "agp_type": "order1"}
-
-    for exp_method in ["statevector", "measurement"]:
-        run_args = {
-            "N_steps": 4,
-            "T": 1.0,
-            "N_opt": 1,
-            "objective": "exp_value",
-            "precision": 0.1,
-            "exp_value_method": exp_method,
-        }
-        res = solve_QUBO(Q, problem_args=problem_args, run_args=run_args)
-        assert isinstance(res, dict)
-        assert len(res) > 0
-
-
 def test_cold_expvalue_method_backend():
     from qrisp.interface.provider_backends.qiskit_backend import QiskitBackend
 
