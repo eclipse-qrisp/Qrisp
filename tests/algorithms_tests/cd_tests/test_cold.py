@@ -151,7 +151,6 @@ def test_cold_expvalue_method_backend():
         "objective": "exp_value",
         "N_opt": 1,
         "precision": 0.1,
-        "exp_value_method": "backend",
         "exp_value_backend": backend,
     }
     res = solve_QUBO(Q, problem_args=problem_args, run_args=run_args)

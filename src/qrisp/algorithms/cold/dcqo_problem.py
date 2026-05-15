@@ -459,9 +459,10 @@ class DCQOProblem:
         precision : float, optional
             Precision for expectation value calculations. Default is 0.01.
         exp_value_method : str, optional
-            Method for exp_value objective: "auto" (try statevector, fallback to measurement), "statevector", "measurement", "backend". Default is "auto".
+            Method for exp_value objective: "statevector", "measurement", or "auto" (try statevector, fallback to measurement).
+            Ignored if exp_value_backend is provided. Default is "auto".
         exp_value_backend : BackendClient, optional
-            Backend for exp_value calculations when using "measurement" or "backend" method. Default is None (uses qarg's backend).
+            Backend for expectation value calculations. If provided, overrides exp_value_method. Default is None.
 
         Returns
         -------
@@ -486,7 +487,17 @@ class DCQOProblem:
                 sp.Symbol("par_" + str(i)): params[i] for i in range(len(params))
             }
 
-            if exp_value_method == "statevector":
+            if exp_value_backend is not None:
+                # Use provided backend
+                exp_val = self.H_prob.expectation_value(
+                    qarg,
+                    precision=precision,
+                    compile=False,
+                    subs_dic=subs_dic,
+                    precompiled_qc=qc,
+                    backend=exp_value_backend,
+                )()
+            elif exp_value_method == "statevector":
                 # Force statevector-based expectation
                 bound_qc = qc.bind_parameters(subs_dic)
                 sv = bound_qc.statevector_array()
@@ -501,20 +512,6 @@ class DCQOProblem:
                     subs_dic=subs_dic,
                     precompiled_qc=qc,
                 )()
-            elif exp_value_method == "backend":
-                # Use backend for expectation (temporarily set qarg backend)
-                original_backend = qarg.qs.backend
-                try:
-                    qarg.qs.backend = exp_value_backend
-                    exp_val = self.H_prob.expectation_value(
-                        qarg,
-                        precision=precision,
-                        compile=False,
-                        subs_dic=subs_dic,
-                        precompiled_qc=qc,
-                    )()
-                finally:
-                    qarg.qs.backend = original_backend
             elif exp_value_method == "auto":
                 # Try statevector first, fallback to measurement
                 try:
@@ -522,7 +519,7 @@ class DCQOProblem:
                     sv = bound_qc.statevector_array()
                     probs = np.abs(sv) ** 2
                     exp_val = float(np.dot(probs, costs))
-                except (MemoryError, ValueError, RuntimeError) as e:
+                except (MemoryError, ValueError, RuntimeError):
                     exp_val = self.H_prob.expectation_value(
                         qarg,
                         precision=precision,
@@ -649,9 +646,10 @@ class DCQOProblem:
         precision : float, optional
             Precision for expectation value calculations. Default is 0.01.
         exp_value_method : str, optional
-            Method for exp_value objective: "auto" (try statevector, fallback to measurement), "statevector", "measurement", "backend". Default is "auto".
+            Method for exp_value objective: "statevector", "measurement", or "auto" (try statevector, fallback to measurement).
+            Ignored if exp_value_backend is provided. Default is "auto".
         exp_value_backend : BackendClient, optional
-            Backend for exp_value calculations when using "measurement" or "backend" method. Default is None (uses qarg's backend).
+            Backend for expectation value calculations. If provided, overrides exp_value_method. Default is None.
         backend : :ref:`BackendClient`, optional
             The backend to be used for the quantum simulation.
             By default, the Qrisp simulator is used.
