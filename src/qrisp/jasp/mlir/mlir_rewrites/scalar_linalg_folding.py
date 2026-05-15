@@ -48,7 +48,7 @@ from xdsl.rewriter import InsertPoint
 
 def scalar_linalg_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> None:
     """
-    Applies custom rewrite patterns to fold a 0-dimensional `linalg.generic` with a single operation into
+    Applies custom rewrite patterns to fold 0-dimensional `linalg.generic` operations into
     scalar arithmetic wrapped in `tensor.extract` / `tensor.from_elements`.
 
     Parameters
@@ -59,8 +59,6 @@ def scalar_linalg_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> N
         The xDSL module to be rewritten. The transformation is applied
         greedily and recursively over the whole module.
     """
-    # Build the pattern set. Keep it small and focused so the greedy rewriter
-    # converges quickly.
     patterns = [FoldScalarLinalgGeneric()]
 
     # Apply patterns using a greedy rewriter over the entire module.
@@ -75,8 +73,12 @@ def scalar_linalg_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> N
 # ====================================================================== #
 
 class FoldScalarLinalgGeneric(RewritePattern):
-    """Fold a 0-dimensional `linalg.generic` with a single operation into
+    """Fold 0-dimensional `linalg.generic` operations into
     scalar arithmetic wrapped in `tensor.extract` / `tensor.from_elements`.
+
+    This pattern extracts the scalar operands, sequentially clones all 
+    intermediate operations within the generic block, and repacks the 
+    final yielded scalar into a 0-dimensional tensor.
 
     0-dimensional `linalg.generic` ops operate on scalar tensors (tensor<T>
     with no dimensions). They carry significant overhead — region, block
@@ -85,7 +87,7 @@ class FoldScalarLinalgGeneric(RewritePattern):
 
     Preconditions (all must hold for the pattern to fire):
         - The generic has zero iterator types (i.e., all operands are 0-d).
-        - The body contains exactly one computation op followed by a yield.
+        - The generic produces exactly one output tensor.
 
     Example:
         Before:

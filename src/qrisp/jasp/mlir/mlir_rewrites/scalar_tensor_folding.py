@@ -60,8 +60,6 @@ def scalar_tensor_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> N
         The xDSL module to be rewritten. The transformation is applied
         greedily and recursively over the whole module.
     """
-    # Build the pattern set. Keep it small and focused so the greedy rewriter
-    # converges quickly.
     patterns = [FoldExtractFromElements(), EraseDeadFromElements()]
 
     # Apply patterns using a greedy rewriter over the entire module.
