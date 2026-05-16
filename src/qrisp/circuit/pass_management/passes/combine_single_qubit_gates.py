@@ -21,7 +21,7 @@ from __future__ import annotations
 import numpy as np
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
-from qrisp.circuit.operation import ControlledOperation
+from qrisp.circuit.operation import ControlledOperation, U3Gate
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 
 
@@ -134,10 +134,7 @@ def combine_single_qubit_gates(qc: QuantumCircuit) -> QuantumCircuit:
 
         # Determine whether this instruction is a "barrier" that forces
         # us to flush the accumulated single-qubit gates first.
-        is_single_qubit_gate = (
-            op.num_qubits == 1
-            and op.name not in ("qb_alloc", "qb_dealloc", "reset", "measure")
-        )
+        is_single_qubit_gate = isinstance(op, U3Gate)
 
         if not is_single_qubit_gate:
             # Flush pending gates for every qubit touched by this instruction.

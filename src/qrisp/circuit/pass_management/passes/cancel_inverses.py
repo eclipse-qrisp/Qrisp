@@ -442,7 +442,12 @@ def _check_inverse_cancel(op_a, op_b):
     _FUSION_CANCEL or None
         ``_FUSION_CANCEL`` if the pair cancels, ``None`` otherwise.
     """
-    if op_a.inverse().name == op_b.name and op_a.name[-5:] != "alloc":
+    try:
+        inv_op = op_a.inverse()
+    except:
+        return None
+
+    if inv_op.name == op_b.name and op_a.name[-5:] != "alloc":
         return _FUSION_CANCEL
 
     return None
