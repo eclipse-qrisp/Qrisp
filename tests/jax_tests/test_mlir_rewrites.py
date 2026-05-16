@@ -17,7 +17,7 @@
 """
 
 import pytest
-from qrisp.jasp.mlir.mlir_rewrites import cmpi_extui_folding, scalar_linalg_folding
+from qrisp.jasp.mlir.mlir_rewrites import cmpi_extui_folding, scalar_linalg_folding, scalar_tensor_folding
 from xdsl.context import Context
 from xdsl.dialects import arith, builtin, func, linalg, tensor
 from xdsl.ir import Block, Region
@@ -116,6 +116,124 @@ class TestFoldScalarLinalgGeneric:
         assert any(isinstance(op, linalg.GenericOp) for op in ops), f"Failed on: {reason}"
         assert not any(isinstance(op, tensor.ExtractOp) for op in ops)
         assert not any(isinstance(op, tensor.FromElementsOp) for op in ops)
+
+
+class TestScalarTensorFolding:
+    """Unit tests for the scalar_tensor_folding rewrite pattern."""
+
+    @staticmethod
+    def build_extract_test_ir():
+        """
+        Constructs a standard, perfectly valid 0-D scalar tensor extraction sequence:
+          %tensor = tensor.from_elements %arg0
+          %extracted = tensor.extract %tensor
+          func.return %extracted
+        """
+        f32 = builtin.f32
+        block = Block(arg_types=[f32])
+        scalar_input = block.args[0]
+        
+        tensor_type = builtin.TensorType(f32, [])
+        from_elements_op = tensor.FromElementsOp(
+            operands=[scalar_input],
+            result_types=[tensor_type]
+        )
+        defining_val = from_elements_op.result
+        ops_to_add = [from_elements_op]
+        
+        extract_op = tensor.ExtractOp.create(
+            operands=[defining_val],
+            result_types=[f32]
+        )
+        ops_to_add.append(extract_op)
+        
+        return_op = func.ReturnOp(extract_op.result)
+        ops_to_add.append(return_op)
+        
+        block.add_ops(ops_to_add)
+        
+        func_op = func.FuncOp(
+            "test_extract_wrapper",
+            ([f32], [f32]),
+            Region([block])
+        )
+        
+        return builtin.ModuleOp([func_op]), block
+
+    @staticmethod
+    def build_dead_from_elements_ir(has_uses: bool = False):
+        """
+        Constructs a test function containing an orphaned tensor.from_elements
+        to verify custom targeted Dead Code Elimination (DCE).
+        """
+        f32 = builtin.f32
+        block = Block(arg_types=[f32])
+        scalar_input = block.args[0]
+        
+        tensor_type = builtin.TensorType(f32, [])
+        
+        from_elements_op = tensor.FromElementsOp(
+            operands=[scalar_input],
+            result_types=[tensor_type]
+        )
+        
+        ops = [from_elements_op]
+        
+        if has_uses:
+            return_op = func.ReturnOp(from_elements_op.result)
+            ops.append(return_op)
+            ret_types = [tensor_type]
+        else:
+            return_op = func.ReturnOp(scalar_input)
+            ops.append(return_op)
+            ret_types = [f32]
+            
+        block.add_ops(ops)
+        
+        func_op = func.FuncOp(
+            "test_dce_wrapper",
+            ([f32], ret_types),
+            Region([block])
+        )
+        
+        return builtin.ModuleOp([func_op]), block
+
+    def test_successful_bypass_extract(self, ctx):
+        """Tests that tensor.extract on a 0-D tensor bypasses to the raw element."""
+        module, block = self.build_extract_test_ir()
+        scalar_tensor_folding(ctx, module)
+        
+        ops = list(block.ops)
+        
+        # 1. The tensor.extract operation should be completely bypassed and erased
+        assert not any(isinstance(op, tensor.ExtractOp) for op in ops)
+        
+        # 2. EraseDeadFromElements should clean up the stranded tensor.from_elements op
+        assert not any(isinstance(op, tensor.FromElementsOp) for op in ops)
+        
+        # 3. The return should point directly to the function block input argument
+        return_op = next(op for op in ops if isinstance(op, func.ReturnOp))
+        assert return_op.operands[0] == block.args[0]
+
+    def test_erase_dead_from_elements(self, ctx):
+        """Tests that EraseDeadFromElements successfully purges an abandoned tensor."""
+        module, block = self.build_dead_from_elements_ir(has_uses=False)
+        scalar_tensor_folding(ctx, module)
+        
+        ops = list(block.ops)
+        
+        # The abandoned from_elements operation must be erased
+        assert not any(isinstance(op, tensor.FromElementsOp) for op in ops)
+
+    def test_preserve_live_from_elements(self, ctx):
+        """Tests that EraseDeadFromElements preserves tensors that actually have users."""
+        module, block = self.build_dead_from_elements_ir(has_uses=True)
+        scalar_tensor_folding(ctx, module)
+        
+        ops = list(block.ops)
+        
+        # It has a user (the ReturnOp), so it must be preserved
+        assert any(isinstance(op, tensor.FromElementsOp) for op in ops)
 
 
 class TestCmpiExtUIFolding:
