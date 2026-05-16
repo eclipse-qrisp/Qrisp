@@ -1014,8 +1014,8 @@ class QuantumArray:
         out = QuantumArray(out_type, self.shape)
         out_view = out.flatten()
         self_view = self.flatten()
-        # If other is a QuantumArray, do element-wise
-        if isinstance(other, QuantumArray):
+        # If other is an array, do element-wise
+        if isinstance(other, (QuantumArray, jnp.ndarray, np.ndarray)):
             other_view = other.flatten()
             if check_for_tracing_mode():
                 for i in jrange(self_view.size):

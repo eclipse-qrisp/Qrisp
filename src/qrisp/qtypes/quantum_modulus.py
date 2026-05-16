@@ -24,6 +24,7 @@ from qrisp.qtypes.quantum_float import QuantumFloat
 from qrisp.misc import gate_wrap
 from qrisp.core import cx
 import jax
+from jax._src.interpreters.partial_eval import DynamicJaxprTracer
 
 
 def comparison_wrapper(func):
@@ -346,7 +347,7 @@ class QuantumModulus(QuantumFloat):
 
                 return montgomery_mod_mul(self, other)
 
-        elif isinstance(other, (int, np.integer, jnp.integer, BigInteger)):
+        elif isinstance(other, (int, np.integer, jnp.integer, BigInteger, DynamicJaxprTracer)):
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
                 cq_montgomery_multiply,
             )
