@@ -31,6 +31,7 @@ from xdsl.parser import Parser
 from qrisp.jasp.mlir.xdsl_dialect import JaspDialect
 from qrisp.jasp.mlir.jasp_lowering_rules import jasp_lowering_rules
 
+
 def lower_jaxpr_to_stablehlo_MLIR(jaxpr, lowering_rules=tuple([])):
     """
     Lowers a Jaxpr object into an MLIR string uses Jax's MLIR infrastructure.
@@ -139,7 +140,7 @@ def MLIR_str_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
 
     # Parse the MLIR string and return the module op.
     parser = Parser(ctx, mlir_string)
-    return parser.parse_module()
+    return ctx, parser.parse_module()
 
 
 def jaxpr_to_xdsl(jaxpr, lower_stableHLO = False, lowering_rules=tuple([])):
@@ -190,7 +191,9 @@ def jaxpr_to_xdsl(jaxpr, lower_stableHLO = False, lowering_rules=tuple([])):
     generic_mlir_string = captured_output.getvalue()
 
     # Parse to xDSL.
-    return MLIR_str_to_xdsl(generic_mlir_string)
+    xdsl_ctx, xdsl_module = MLIR_str_to_xdsl(generic_mlir_string)
+    
+    return xdsl_ctx, xdsl_module
 
 def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
     """Lower a Jaxpr to an MLIR module with StableHLO ops lowered to linalg.
