@@ -19,6 +19,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.polynomial.chebyshev as cheb
 import numpy.polynomial.polynomial as poly
 import numpy.typing as npt
 from typing import Union
@@ -407,3 +408,187 @@ def assert_gqsp_angles_match_target(
     )
     
     assert max_error <= atol, error_msg
+
+
+def evaluate_qsp_polynomial(
+    angles: npt.NDArray[np.float64], 
+    x_values: Union[npt.NDArray[np.float64], npt.NDArray[np.complex128]],
+    signal_basis: str = 'X',
+    phase_basis: str = 'Z'
+) -> npt.NDArray[np.complex128]:
+    """
+    Evaluates the classical Quantum Signal Processing (QSP) / QSVT matrix response
+    with customizable bases for the signal and phase operators.
+
+    This function simulates the QSP unitary sequence and returns the 
+    top-left matrix element U_{00}(x), which encodes the target polynomial.
+
+    The sequence is defined as:
+    U(x) = S(phi_0) * W(x) * S(phi_1) * ... * W(x) * S(phi_d)
+
+    Parameters
+    ----------
+    angles : numpy.ndarray
+        A 1D array of float64 representing the sequence of phase angles.
+        Expected length is d + 1, where d is the polynomial degree.
+    x_values : numpy.ndarray
+        A 1D array of floats or complex numbers representing the evaluation points. 
+        For standard QSP, these should lie in the domain [-1, 1].
+    signal_basis : str, optional
+        The Pauli basis for the signal operator W(x). 
+        - 'X' (default): W_x(x) = exp(i * arccos(x) * X) = [[x, i*sqrt(1-x^2)], [i*sqrt(1-x^2), x]]
+        - 'Z': W_z(x) = exp(i * arccos(x) * Z) = [[x + i*sqrt(1-x^2), 0], [0, x - i*sqrt(1-x^2)]]
+    phase_basis : str, optional
+        The Pauli basis for the phase operator S(phi).
+        - 'Z' (default): S_z(phi) = exp(i * phi * Z) = [[exp(i*phi), 0], [0, exp(-i*phi)]]
+        - 'X': S_x(phi) = exp(i * phi * X) = [[cos(phi), i*sin(phi)], [i*sin(phi), cos(phi)]]
+
+    Returns
+    -------
+    numpy.ndarray
+        A 1D complex128 array containing the evaluated polynomial response U_{00}(x) 
+        for each input x in `x_values`.
+        
+    Raises
+    ------
+    ValueError
+        If an invalid `signal_basis` or `phase_basis` is provided.
+    """
+    x = np.asarray(x_values, dtype=complex)
+    num_x = len(x)
+    
+    # Pre-compute the shared imaginary root for efficiency
+    sqrt_term = 1j * np.sqrt(1 - x**2 + 0j)
+    
+    # Helper to generate the Phase Operator S(phi)
+    def get_phase_operator(phi: float) -> npt.NDArray[np.complex128]:
+        S = np.zeros((num_x, 2, 2), dtype=complex)
+        if phase_basis.upper() == 'Z':
+            S[:, 0, 0] = np.exp(1j * phi)
+            S[:, 1, 1] = np.exp(-1j * phi)
+        elif phase_basis.upper() == 'X':
+            cos_phi = np.cos(phi)
+            sin_phi = 1j * np.sin(phi)
+            S[:, 0, 0] = cos_phi
+            S[:, 1, 1] = cos_phi
+            S[:, 0, 1] = sin_phi
+            S[:, 1, 0] = sin_phi
+        else:
+            raise ValueError("phase_basis must be 'X' or 'Z'")
+        return S
+
+    # Helper to generate the Signal Operator W(x)
+    def get_signal_operator() -> npt.NDArray[np.complex128]:
+        W = np.zeros((num_x, 2, 2), dtype=complex)
+        if signal_basis.upper() == 'X':
+            W[:, 0, 0] = x
+            W[:, 1, 1] = x
+            W[:, 0, 1] = sqrt_term
+            W[:, 1, 0] = sqrt_term
+        elif signal_basis.upper() == 'Z':
+            W[:, 0, 0] = x + sqrt_term
+            W[:, 1, 1] = x - sqrt_term
+            # Off-diagonals remain 0
+        else:
+            raise ValueError("signal_basis must be 'X' or 'Z'")
+        return W
+
+    # 1. Initialize U = S(phi_0)
+    U = get_phase_operator(angles[0])
+    
+    # Only calculate W(x) once since it does not depend on phi
+    if len(angles) > 1:
+        W_x = get_signal_operator()
+        
+    # 2. Iteratively apply W(x) and S(phi_k)
+    for phi in angles[1:]:
+        S_k = get_phase_operator(phi)
+        # Multiply: U = U @ W @ S
+        U = np.matmul(U, np.matmul(W_x, S_k))
+        
+    return U[:, 0, 0]
+
+
+def assert_qsp_angles_match_target(
+    angles: npt.NDArray[np.float64], 
+    alpha: float, 
+    target_cheb_coeffs: npt.NDArray[np.float64], 
+    num_test_points: int = 500, 
+    atol: float = 1e-6,
+    signal_basis: str = 'X',
+    phase_basis: str = 'Z'
+) -> None:
+    """
+    Tests if a set of QSP angles accurately reconstructs the target Chebyshev polynomial.
+    
+    Automatically searches the 4 standard complex axes (Re, Im, -Re, -Im) of U_{00} 
+    to account for the arbitrary global phase rotations introduced by switching 
+    between different signal (Wx vs Wz) and phase (Sx vs Sz) operator bases.
+    
+    Parameters
+    ----------
+    angles : numpy.ndarray
+        The generated phase angles from the QSP algorithm.
+    alpha : float
+        The QSP scaling factor (usually <= 1.0).
+    target_cheb_coeffs : numpy.ndarray
+        The Chebyshev coefficients of the target polynomial in domain [-1, 1].
+    num_test_points : int
+        Number of points to evaluate in the domain [-1, 1]. Default is 500.
+    atol : float
+        Absolute tolerance for the maximum error. Default is 1e-6.
+    signal_basis : str, optional
+        The Pauli basis for the signal operator W(x). ('X' or 'Z').
+    phase_basis : str, optional
+        The Pauli basis for the phase operator S(phi). ('X' or 'Z').
+        
+    Raises
+    ------
+    AssertionError
+        If the maximum absolute error between the target and the closest QSP axis 
+        mapping exceeds `atol`.
+    """
+    # 1. Generate Domain & Evaluate Target
+    x_range = np.linspace(-1, 1, num_test_points)
+    expected_values = cheb.chebval(x_range, target_cheb_coeffs)
+    
+    # 2. Evaluate classical matrix reconstruction (using the universal helper)
+    u00_response = evaluate_qsp_polynomial(
+        angles, 
+        x_range, 
+        signal_basis=signal_basis, 
+        phase_basis=phase_basis
+    )
+    
+    # 3. Scale back by alpha
+    reconstructed_real = u00_response.real * alpha
+    reconstructed_imag = u00_response.imag * alpha
+    
+    # 4. Determine which axis houses the encoded polynomial
+    # We calculate the max absolute error against all 4 possible axis alignments
+    err_real = np.max(np.abs(reconstructed_real - expected_values))
+    err_imag = np.max(np.abs(reconstructed_imag - expected_values))
+    err_real_neg = np.max(np.abs(-reconstructed_real - expected_values))
+    err_imag_neg = np.max(np.abs(-reconstructed_imag - expected_values))
+    
+    errors = {
+        "Real (+1)": err_real,
+        "Imaginary (+i)": err_imag,
+        "Negative Real (-1)": err_real_neg,
+        "Negative Imaginary (-i)": err_imag_neg
+    }
+    
+    best_match_component = min(errors, key=errors.get)
+    min_error = errors[best_match_component]
+    
+    # 5. Assert with detailed debugging message
+    error_msg = (
+        f"\nQSP Angle Verification Failed!\n"
+        f"Bases Used: Signal=W_{signal_basis.lower()}, Phase=S_{phase_basis.lower()}\n"
+        f"Maximum Absolute Error: {min_error:.2e} (Tolerance: {atol})\n"
+        f"Closest Component Axis: {best_match_component}\n"
+        f"Angle Array Length: {len(angles)}\n"
+        f"Check sequence endianness (angles[::-1]) or alpha scaling."
+    )
+    
+    assert min_error <= atol, error_msg
