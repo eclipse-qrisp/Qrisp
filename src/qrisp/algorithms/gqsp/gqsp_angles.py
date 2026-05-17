@@ -362,6 +362,8 @@ def gqsp_angles(p: "ArrayLike") -> Tuple[Tuple[Array, Array, Array], Array]:
     return (theta, phi, lambda_), alpha
 
 
+# https://arxiv.org/pdf/2503.03026 
+# Not verified to be correct.
 def xqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
     r"""
     Computes the XQSP angles for a given polynomial.
@@ -389,6 +391,8 @@ def xqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
     return phi, alpha
 
 
+# https://arxiv.org/pdf/2503.03026 
+# Not verified to be correct.
 def yqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
     r"""
     Computes the YQSP angles for a given polynomial.
@@ -516,7 +520,7 @@ def qsp_angles(
     return phi, alpha
 
 
-def qsvt_angles(p: "ArrayLike") -> Tuple[Array, Array]:
+def qsvt_angles(p: "ArrayLike", parity: Literal["even", "odd"] = "odd") -> Tuple[Array, Array]:
     r"""
     Computes the QSVT angles for a given polynomial.
 
@@ -524,6 +528,9 @@ def qsvt_angles(p: "ArrayLike") -> Tuple[Array, Array]:
     ----------
     p : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+    parity : Literal["even", "odd"]
+        The structural parity of the target polynomial ('even' or 'odd'). Defaults to 'odd'.
+        Must be known at compile time for JAX tracing.
 
     Returns
     -------
@@ -537,13 +544,12 @@ def qsvt_angles(p: "ArrayLike") -> Tuple[Array, Array]:
     - The resulting angles correspond to a rescaled version of the input polynomial.
 
     """
-    F, alpha = poly_to_nlft_sequence(p)
-    phi_xqsp = _xqsp_angles_from_nlft_sequence(F)
-    d = len(p) - 1
+    phi_qsp, alpha = qsp_angles(p, parity=parity, signal_basis="X")
+
+    d = len(phi_qsp) - 1
 
     phi_qsvt = jnp.zeros(d + 1)
-    phi_qsvt = phi_qsvt.at[0].set(phi_xqsp[0] + (2 * d - 1) * np.pi / 4)
-    phi_qsvt = phi_qsvt.at[1:].set(phi_xqsp[1:] - np.pi / 2)
-    phi_qsvt = phi_qsvt.at[d].set(phi_xqsp[d] - 3 * np.pi / 4)
-
+    phi_qsvt = phi_qsvt.at[0].set(phi_qsp[0] + (2 * d - 1) * np.pi / 4)
+    phi_qsvt = phi_qsvt.at[1:].set(phi_qsp[1:] - np.pi / 2)
+    phi_qsvt = phi_qsvt.at[d].set(phi_qsp[d] - np.pi / 4)
     return phi_qsvt, alpha
