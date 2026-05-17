@@ -416,42 +416,44 @@ def yqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
     return phi, alpha
 
 
-def laurent_to_analytic_coeffs(target_coeffs: "ArrayLike", parity: Literal["even", "odd"] = 'odd') -> Array:
+def laurent_to_analytic_coeffs(
+    target_coeffs: "ArrayLike", parity: Literal["even", "odd"] = "odd"
+) -> Array:
     """
     Converts a target polynomial from the Laurent QSP framework to the Analytic QSP framework.
-    
-    In standard QSP, signal operators enforce strict parity (even or odd). Analytic QSP 
-    (like GQSP) natively builds polynomials in strictly positive powers of a variable 
-    without parity constraints. 
-    
-    This helper performs the algebraic mapping required to trick an analytic solver 
-    into solving a Laurent polynomial. Specifically, it factors out x^{-d} and 
+
+    In standard QSP, signal operators enforce strict parity (even or odd). Analytic QSP
+    (like GQSP) natively builds polynomials in strictly positive powers of a variable
+    without parity constraints.
+
+    This helper performs the algebraic mapping required to trick an analytic solver
+    into solving a Laurent polynomial. Specifically, it factors out x^{-d} and
     substitutes y = x^2 to create a dense analytic polynomial A(y).
-    
+
     Mathematical Example (Odd):
         Target: P(x) = a_1*x + a_3*x^3  (Coeffs: [0, a_1, 0, a_3], degree d=3)
         1. Factor out x^{-d}: P(x) = x^{-3} * (a_1*x^4 + a_3*x^6)
         2. Substitute y = x^2: A(y) = a_1*y^2 + a_3*y^3
         3. Expanded A(y): 0*y^0 + 0*y^1 + a_1*y^2 + a_3*y^3
         4. Analytic Coeffs: [0.0, 0.0, a_1, a_3]
-        
-    Once the analytic solver finds the angles for A(y), Lemma 2 from Laneve (2025) 
-    is used to shift the phases, effectively multiplying the x^{-d} shift back 
+
+    Once the analytic solver finds the angles for A(y), Lemma 2 from Laneve (2025)
+    is used to shift the phases, effectively multiplying the x^{-d} shift back
     into the quantum circuit.
-    
+
     Parameters
     ----------
     target_coeffs : jax.Array
         The standard coefficients of the target polynomial (a_0, a_1, a_2, ...).
     parity : Literal["even", "odd"]
-        The structural parity of the target polynomial ('even' or 'odd'). Defaults to 'odd'. 
+        The structural parity of the target polynomial ('even' or 'odd'). Defaults to 'odd'.
         Must be known at compile time for JAX tracing.
-        
+
     Returns
     -------
     jax.Array
-        The mapped Analytic QSP coefficient array A(y). The first half consists 
-        of zeros (representing the skipped lower-degree y terms), and the second 
+        The mapped Analytic QSP coefficient array A(y). The first half consists
+        of zeros (representing the skipped lower-degree y terms), and the second
         half consists of the extracted parity coefficients.
     """
     if parity == "odd":
@@ -464,17 +466,21 @@ def laurent_to_analytic_coeffs(target_coeffs: "ArrayLike", parity: Literal["even
         num_zeros = extracted_coeffs.shape[0] - 1
     else:
         raise ValueError("Parity must be either 'even' or 'odd'.")
-        
+
     # Create an array of zeros matching the input dtype
     zeros = jnp.zeros(num_zeros, dtype=target_coeffs.dtype)
-    
+
     # Concatenate the zeros with the extracted coefficients
     analytic_coeffs = jnp.concatenate((zeros, extracted_coeffs))
-    
+
     return analytic_coeffs
 
 
-def qsp_angles(p: "ArrayLike", parity: Literal["even", "odd"] = "odd") -> Tuple[Array, Array]:
+def qsp_angles(
+    p: "ArrayLike",
+    parity: Literal["even", "odd"] = "odd",
+    signal_basis: Literal["X", "Z"] = "Z",
+) -> Tuple[Array, Array]:
     r"""
     Computes the QSP angles for a given polynomial.
 
@@ -483,16 +489,18 @@ def qsp_angles(p: "ArrayLike", parity: Literal["even", "odd"] = "odd") -> Tuple[
     p : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
     parity : Literal["even", "odd"]
-        The structural parity of the target polynomial ('even' or 'odd'). Defaults to 'odd'. 
+        The structural parity of the target polynomial ('even' or 'odd'). Defaults to 'odd'.
         Must be known at compile time for JAX tracing.
-    
+    signal_basis : Literal["X", "Z"]
+        The signal basis for the QSP angles ('X' or 'Z'). Defaults to 'Z'.
+
     Returns
     -------
     angles : Array
         1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
     alpha : Array
         The scalar scaling factor as 0-D array.
-    
+
     Notes
     -----
     - The resulting angles correspond to a rescaled version of the input polynomial.
@@ -500,6 +508,11 @@ def qsp_angles(p: "ArrayLike", parity: Literal["even", "odd"] = "odd") -> Tuple[
     """
     p_analytic = laurent_to_analytic_coeffs(p, parity=parity)
     (theta, phi, lambda_), alpha = gqsp_angles(p_analytic)
+
+    if signal_basis == "X":
+        phi = phi.at[0].set(phi[0] - np.pi / 4)
+        phi = phi.at[-1].set(phi[-1] + np.pi / 4)
+
     return phi, alpha
 
 
