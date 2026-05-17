@@ -661,6 +661,29 @@ def assert_qsvt_angles_match_target(
 ) -> None:
     """
     Tests if a set of QSVT angles accurately reconstructs the target Chebyshev polynomial.
+    
+    Automatically searches the 4 standard complex axes (Re, Im, -Re, -Im) of U_{00} 
+    to account for the arbitrary global phase rotations introduced by switching 
+    between different signal (Wx vs Wz) and phase (Sx vs Sz) operator bases.
+    
+    Parameters
+    ----------
+    angles : numpy.ndarray
+        The generated phase angles from the QSP algorithm.
+    alpha : float
+        The QSP scaling factor (usually <= 1.0).
+    target_cheb_coeffs : numpy.ndarray
+        The Chebyshev coefficients of the target polynomial in domain [-1, 1].
+    num_test_points : int
+        Number of points to evaluate in the domain [-1, 1]. Default is 500.
+    atol : float
+        Absolute tolerance for the maximum error. Default is 1e-6.
+        
+    Raises
+    ------
+    AssertionError
+        If the maximum absolute error between the target and the closest QSP axis 
+        mapping exceeds `atol`.
     """
     x_range = np.linspace(-1, 1, num_test_points)
     expected_values = cheb.chebval(x_range, target_cheb_coeffs)
