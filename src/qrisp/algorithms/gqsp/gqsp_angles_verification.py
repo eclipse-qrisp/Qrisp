@@ -592,3 +592,103 @@ def assert_qsp_angles_match_target(
     )
     
     assert min_error <= atol, error_msg
+
+
+import numpy as np
+import numpy.typing as npt
+from typing import Union
+
+def evaluate_qsvt_polynomial(
+    angles: npt.NDArray[np.float64], 
+    x_values: Union[npt.NDArray[np.float64], npt.NDArray[np.complex128]]
+) -> npt.NDArray[np.complex128]:
+    """
+    Evaluates the classical Quantum Singular Value Transformation (QSVT) matrix response.
+
+    This function simulates the standard QSVT unitary sequence in the 2x2 subspace 
+    and returns the top-left matrix element U_{00}(x).
+
+    Parameters
+    ----------
+    angles : numpy.ndarray
+        A 1D array of QSVT phase angles of length d + 1.
+    x_values : numpy.ndarray
+        A 1D array of evaluation points in the domain [-1, 1].
+
+    Returns
+    -------
+    numpy.ndarray
+        A 1D complex128 array containing the evaluated response U_{00}(x).
+    """
+    x = np.asarray(x_values, dtype=complex)
+    num_x = len(x)
+    
+    # Pre-compute the real square root for the off-diagonals
+    sqrt_term = np.sqrt(1 - x**2 + 0j)
+    
+    # Helper to generate the QSVT Phase Operator S(phi)
+    def get_phase_operator(phi: float) -> npt.NDArray[np.complex128]:
+        S = np.zeros((num_x, 2, 2), dtype=complex)
+        S[:, 0, 0] = np.exp(1j * phi)
+        S[:, 1, 1] = np.exp(-1j * phi)
+        return S
+
+    # Helper to generate the QSVT Reflection Operator R(x)
+    R = np.zeros((num_x, 2, 2), dtype=complex)
+    R[:, 0, 0] = x
+    R[:, 1, 1] = -x
+    R[:, 0, 1] = sqrt_term
+    R[:, 1, 0] = sqrt_term
+
+    # 1. Initialize U = S(phi_0)
+    U = get_phase_operator(angles[0])
+    
+    # 2. Iteratively apply R(x) and S(phi_k)
+    for phi in angles[1:]:
+        S_k = get_phase_operator(phi)
+        # Multiply: U = U @ R @ S
+        U = np.matmul(U, np.matmul(R, S_k))
+        
+    return U[:, 0, 0]
+
+
+def assert_qsvt_angles_match_target(
+    angles: npt.NDArray[np.float64], 
+    alpha: float, 
+    target_cheb_coeffs: npt.NDArray[np.float64], 
+    num_test_points: int = 500, 
+    atol: float = 1e-6
+) -> None:
+    """
+    Tests if a set of QSVT angles accurately reconstructs the target Chebyshev polynomial.
+    """
+    x_range = np.linspace(-1, 1, num_test_points)
+    expected_values = cheb.chebval(x_range, target_cheb_coeffs)
+    
+    # Evaluate classical QSVT matrix reconstruction 
+    u00_response = evaluate_qsvt_polynomial(angles, x_range)
+    
+    # Scale back by alpha
+    reconstructed_real = u00_response.real * alpha
+    reconstructed_imag = u00_response.imag * alpha
+    
+    # Determine which axis houses the encoded polynomial
+    errors = {
+        "Real (+1)": np.max(np.abs(reconstructed_real - expected_values)),
+        "Imaginary (+i)": np.max(np.abs(reconstructed_imag - expected_values)),
+        "Negative Real (-1)": np.max(np.abs(-reconstructed_real - expected_values)),
+        "Negative Imaginary (-i)": np.max(np.abs(-reconstructed_imag - expected_values))
+    }
+    
+    best_match_component = min(errors, key=errors.get)
+    min_error = errors[best_match_component]
+    
+    error_msg = (
+        f"\nQSVT Angle Verification Failed!\n"
+        f"Maximum Absolute Error: {min_error:.2e} (Tolerance: {atol})\n"
+        f"Closest Component Axis: {best_match_component}\n"
+        f"Angle Array Length: {len(angles)}\n"
+        f"Check sequence endianness or alpha scaling."
+    )
+    
+    assert min_error <= atol, error_msg
