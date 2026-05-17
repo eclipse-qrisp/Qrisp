@@ -120,6 +120,135 @@ def plot_reconstruction_vs_target(
     plt.show()
 
 
+def evaluate_nlft_sequence(
+    F_sequence: npt.NDArray[np.complex128], 
+    z_values: Union[npt.NDArray[np.complex128], npt.NDArray[np.float64]]
+) -> npt.NDArray[np.complex128]:
+    """
+    Evaluates the Non-Linear Fourier Transform (NLFT) sequence by classically 
+    reconstructing the matrix response using forward synthesis on the unit circle.
+
+    This function simulates the layer-by-layer mixing of the NLFT. Note that 
+    this specific implementation returns the top-right matrix element U_{01}(z), 
+    which typically encodes the complementary polynomial in QSP/NLFT frameworks.
+
+    Parameters
+    ----------
+    F_sequence : numpy.ndarray
+        A 1D array of complex numbers representing the reflection coefficients 
+        (the NLFT sequence) generated from layer-peeling algorithms.
+    z_values : numpy.ndarray
+        A 1D array of complex numbers (or floats) representing the evaluation 
+        points. Typically, these lie on the unit circle z = exp(i * omega).
+
+    Returns
+    -------
+    numpy.ndarray
+        A 1D complex128 array containing the evaluated complementary response 
+        U_{01}(z) for each input z in `z_values`.
+    """
+    z = np.asarray(z_values, dtype=complex)
+    num_z = len(z)
+    
+    # Initialize the state (Identity matrix)
+    U = np.zeros((num_z, 2, 2), dtype=complex)
+    U[:, 0, 0] = 1.0
+    U[:, 1, 1] = 1.0
+    
+    # Forward NLFT synthesis
+    for F_k in F_sequence:
+        # 1. The z-shift matrix 
+        Z = np.zeros((num_z, 2, 2), dtype=complex)
+        Z[:, 0, 0] = z
+        Z[:, 1, 1] = 1.0
+        
+        # 2. The NLFT SU(2) mixing layer
+        norm = 1.0 / np.sqrt(1.0 + np.abs(F_k)**2)
+        L = np.zeros((num_z, 2, 2), dtype=complex)
+        L[:, 0, 0] = norm
+        L[:, 0, 1] = F_k * norm
+        L[:, 1, 0] = -np.conj(F_k) * norm
+        L[:, 1, 1] = norm
+        
+        # Apply layer: U = L @ Z @ U
+        # Note: Depending on the array endianness from the generator, you might 
+        # need to reverse the sequence of F_k.
+        U = np.matmul(L, np.matmul(Z, U))
+        
+    return U[:, 0, 1]
+
+
+def assert_nlft_sequence_match_target(
+    F_sequence: npt.NDArray[np.complex128], 
+    alpha: float, 
+    target_coeffs: npt.NDArray[np.float64], 
+    num_test_points: int = 500, 
+    atol: float = 1e-6,
+    check_magnitude_only: bool = True
+) -> None:
+    """
+    Tests if a Non-Linear Fourier Transform (NLFT) sequence accurately reconstructs 
+    the target polynomial on the complex unit circle.
+    
+    Parameters
+    ----------
+    F_sequence : numpy.ndarray
+        A 1D array of complex numbers representing the reflection coefficients.
+    alpha : float
+        The scalar scaling factor used during sequence generation.
+    target_coeffs : numpy.ndarray
+        The standard polynomial coefficients (e.g., [a_0, a_1, a_2] for a_0 + a_1*z + a_2*z^2).
+    num_test_points : int
+        Number of points to evaluate on the unit circle [0, 2pi). Default is 500.
+    atol : float
+        Absolute tolerance for the maximum error. Default is 1e-6.
+    check_magnitude_only : bool
+        If True (default), checks if the absolute magnitudes match |U_01(z)| == |P(z)|, 
+        bypassing z^d phase shifts common in raw NLFT synthesis. If False, checks 
+        exact complex plane equality.
+        
+    Raises
+    ------
+    AssertionError
+        If the maximum absolute error between the target and the reconstructed 
+        response exceeds `atol`.
+    """
+    # Evaluate over the full unit circle
+    omegas = np.linspace(0, 2 * np.pi, num_test_points)
+    z_circle = np.exp(1j * omegas)
+    
+    # 1. Evaluate target analytically using standard polynomial basis
+    expected_values = poly.polyval(z_circle, target_coeffs)
+    
+    # 2. Evaluate classical matrix reconstruction 
+    u01_response = evaluate_nlft_sequence(F_sequence, z_circle)
+    
+    # 3. Scale back by alpha
+    reconstructed_complex = u01_response * alpha
+    
+    # 4. Calculate error
+    if check_magnitude_only:
+        # Just compare |U_01| to |P(z)|
+        diff = np.abs(reconstructed_complex) - np.abs(expected_values)
+        max_error = np.max(np.abs(diff))
+        error_type = "Magnitude Error"
+    else:
+        # Compare distance in the complex plane: |U_01 - P(z)|
+        diff = reconstructed_complex - expected_values
+        max_error = np.max(np.abs(diff))
+        error_type = "Complex Plane Error"
+    
+    # 5. Assert with detailed error message
+    error_msg = (
+        f"\nNLFT Sequence Verification Failed!\n"
+        f"Maximum {error_type}: {max_error:.2e} (Tolerance: {atol})\n"
+        f"Sequence Length (d): {len(F_sequence)}\n"
+        f"Ensure array endianness (F_sequence[::-1]) is correct for your convention."
+    )
+    
+    assert max_error <= atol, error_msg
+
+
 def evaluate_gqsp_polynomial(
     theta_angles: npt.NDArray[np.float64], 
     phi_angles: npt.NDArray[np.float64], 
@@ -237,6 +366,12 @@ def assert_gqsp_angles_match_target(
     check_magnitude_only : bool
         If True, only checks if the absolute magnitudes match |U_00(z)| == |P(z)|. 
         If False, checks for exact equality in the complex plane (default).
+
+    Raises
+    ------
+    AssertionError
+        If the maximum absolute error between the target and the reconstructed 
+        response exceeds `atol`.
     """
     # Evaluate over the full unit circle
     omegas = np.linspace(0, 2 * np.pi, num_test_points)

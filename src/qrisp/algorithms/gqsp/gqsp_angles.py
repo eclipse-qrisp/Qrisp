@@ -292,7 +292,7 @@ def _yqsp_angles_from_nlft_sequence(F: Array) -> Array:
     return jnp.arctan(jnp.real(F))
 
 
-def _poly_to_nlft_sequence(p: "ArrayLike") -> Array:
+def poly_to_nlft_sequence(p: "ArrayLike") -> Array:
     r"""
     Computes the NLFT sequence for a given polynomial.
 
@@ -356,7 +356,7 @@ def gqsp_angles(p: "ArrayLike") -> Tuple[Tuple[Array, Array, Array], Array]:
     - The resulting angles correspond to a rescaled version of the input polynomial.
 
     """
-    F, alpha = _poly_to_nlft_sequence(p)
+    F, alpha = poly_to_nlft_sequence(p)
     theta, phi, lambda_ = _gqsp_angles_from_nlft_sequence(F)
 
     return (theta, phi, lambda_), alpha
@@ -383,7 +383,7 @@ def xqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
     - The resulting angles correspond to a rescaled version of the input polynomial.
 
     """
-    F, alpha = _poly_to_nlft_sequence(p)
+    F, alpha = poly_to_nlft_sequence(p)
     phi = _xqsp_angles_from_nlft_sequence(F)
 
     return phi, alpha
@@ -410,7 +410,7 @@ def yqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
     - The resulting angles correspond to a rescaled version of the input polynomial.
 
     """
-    F, alpha = _poly_to_nlft_sequence(p)
+    F, alpha = poly_to_nlft_sequence(p)
     phi = _yqsp_angles_from_nlft_sequence(F)
 
     return phi, alpha
@@ -437,7 +437,7 @@ def qsvt_angles(p: "ArrayLike") -> Tuple[Array, Array]:
     - The resulting angles correspond to a rescaled version of the input polynomial.
 
     """
-    F, alpha = _poly_to_nlft_sequence(p)
+    F, alpha = poly_to_nlft_sequence(p)
     phi_xqsp = _xqsp_angles_from_nlft_sequence(F)
     d = len(p) - 1
 
