@@ -17,10 +17,107 @@
 """
 
 
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.polynomial.polynomial as poly
 import numpy.typing as npt
 from typing import Union
+
+
+def plot_reconstruction_vs_target(
+    domain: npt.NDArray[np.float64],
+    target_values: npt.NDArray[np.float64],
+    reconstructed_values: npt.NDArray[np.float64],
+    domain_label: str = "Singular Value (x)",
+    title: str = "Input Target vs. Reconstructed Polynomial"
+):
+    """
+    Plots the target polynomial against the reconstructed QSP/GQSP response,
+    along with a subplot showing the absolute residual error.
+    
+    Parameters:
+    -----------
+    domain : numpy.ndarray
+        The x-axis values (e.g., x in [-1, 1] for QSP, or omega in [0, pi] for GQSP).
+    target_values : numpy.ndarray
+        The expected theoretical values of the polynomial.
+    reconstructed_values : numpy.ndarray
+        The actual reconstructed values (scaled by alpha, and mapped to the correct real/imag/mag axis).
+    domain_label : str
+        The label for the X-axis.
+    title : str
+        The main title of the plot.
+
+    Examles
+    -------
+
+    ::
+
+        import numpy as np
+        import numpy.polynomial.polynomial as poly
+        from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
+        from qrisp.algorithms.gqsp.gqsp_angles_verification import *
+
+        # 1. Generate Domain & Target
+        omega_domain = np.linspace(0, np.pi, 400)
+        z_circle = np.exp(1j * omega_domain)
+
+        target_coeffs = np.array([0.0, 1.1, 0.0, -1.0, 0.4, 0.7, 0.4, 0.4, 0.6])
+        # Target is standard polynomial evaluated on z_circle
+        target_vals_complex = poly.polyval(z_circle, target_coeffs)
+        target_magnitude = np.abs(target_vals_complex)
+
+        # 2. Reconstruct (using evaluate_gqsp_polynomial)
+        (theta, phi, lambd), alpha = gqsp_angles(target_coeffs)
+        U00_complex = evaluate_gqsp_polynomial(theta, phi, lambd, z_circle)
+        reconstructed_magnitude = np.abs(U00_complex) * alpha
+
+        # 3. Plot!
+        plot_reconstruction_vs_target(
+            domain=omega_domain,
+            target_values=target_magnitude,
+            reconstructed_values=reconstructed_magnitude,
+            domain_label=r"Angle $\omega$ (where $z = e^{i\omega}$)",
+            title="GQSP Reconstruction (Magnitude on Unit Circle)"
+        )
+    """
+    # Calculate absolute error
+    residuals = np.abs(reconstructed_values - target_values)
+    max_error = np.max(residuals)
+
+    # Setup the figure with 2 subplots (Main plot and Error plot)
+    fig, (ax1, ax2) = plt.subplots(
+        nrows=2, 
+        ncols=1, 
+        figsize=(10, 8), 
+        gridspec_kw={'height_ratios': [3, 1]}, 
+        sharex=True
+    )
+    
+    # --- Top Panel: Overlay ---
+    ax1.plot(domain, target_values, label="Target (Input)", 
+             color="black", linewidth=5, alpha=0.3)
+    ax1.plot(domain, reconstructed_values, label="Reconstructed", 
+             color="red", linestyle="--", linewidth=2)
+    
+    ax1.set_title(title, fontsize=14)
+    ax1.set_ylabel("Amplitude", fontsize=12)
+    ax1.grid(True, linestyle=":", alpha=0.6)
+    ax1.legend(loc="best", fontsize=11)
+    
+    # --- Bottom Panel: Residuals ---
+    ax2.plot(domain, residuals, label=f"Absolute Error (Max: {max_error:.2e})", 
+             color="blue", linewidth=1.5)
+    ax2.fill_between(domain, 0, residuals, color="blue", alpha=0.1)
+    
+    ax2.set_xlabel(domain_label, fontsize=12)
+    ax2.set_ylabel("Error $\Delta$", fontsize=12)
+    ax2.set_yscale("log") # Log scale is best for viewing numerical precision errors
+    ax2.grid(True, linestyle=":", alpha=0.6)
+    ax2.legend(loc="upper right", fontsize=10)
+    
+    plt.tight_layout()
+    plt.show()
 
 
 def evaluate_gqsp_polynomial(
