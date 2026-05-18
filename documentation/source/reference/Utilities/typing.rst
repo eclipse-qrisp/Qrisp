@@ -52,9 +52,9 @@ Qrisp. These can be imported directly from the top-level package:
    :value: ScalarLike | NDArrayLike
 
    Union of :data:`ScalarLike` and :data:`NDArrayLike`. Use this when a
-   parameter accepts either scalars or arrays. Use the narrower aliases when
-   only one kind is expected, to avoid spurious Pylance warnings about missing
-   attributes (such as ``.shape``, etc.).
+   parameter accepts either scalars or arrays. This is similar in spirit to
+   ``jax.typing.ArrayLike``, but is defined within Qrisp for consistency with
+   the rest of this typing module.
 
 .. py:data:: Param
    :type: TypeAlias

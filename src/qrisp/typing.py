@@ -66,8 +66,7 @@ True
 NDArrayLike: TypeAlias = np.ndarray | jax.Array | jax.core.Tracer
 """A multi-dimensional array value.
 
-Covers NumPy arrays, JAX arrays, and JAX tracers (the latter appear when Qrisp
-code runs inside a Jasp-traced function, e.g. under ``@jaspify``). 
+Covers NumPy arrays, JAX arrays, and JAX tracers. 
 
 Examples
 --------
@@ -83,8 +82,8 @@ ArrayLike: TypeAlias = ScalarLike | NDArrayLike
 
 Union of :data:`ScalarLike` and :data:`NDArrayLike`. Use this type when a
 parameter accepts either scalars or arrays. Use the narrower aliases when only
-one kind is expected, to avoid spurious Pylance warnings about missing
-attributes such as ``.shape``.
+one kind is expected, to avoid spurious warnings about missing
+attributes such as ``.shape``, etc. when working with scalars.
 
 Examples
 --------
@@ -106,8 +105,7 @@ Covers all types accepted as gate parameters throughout Qrisp: Python numeric
 scalars (``float``, ``int``, ``complex``), NumPy numeric scalars
 (``np.float64``, ``np.int32``, etc. via ``np.number``), symbolic expressions
 (``sympy.Symbol``, ``sympy.Expr``, and any SymPy expression), and JAX arrays
-(``jax.Array``, which includes concrete arrays and tracers encountered when
-Qrisp code runs inside a Jasp-traced function, e.g. under ``@jaspify``).
+(``jax.Array``, which includes concrete arrays and tracers).
 
 Examples
 --------
