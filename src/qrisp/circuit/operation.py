@@ -102,7 +102,7 @@ class Operation:
 
         elif not isinstance(name, str):
             raise Exception(
-                "Tried to create a Operation with name of type({type(name)} (required is str)"
+                f"Tried to create a Operation with name of type({type(name)} (required is str)"
             )
 
         # Name of the operation - this is how the backend behind the interface will
