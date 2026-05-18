@@ -6,11 +6,11 @@ Typing
 .. currentmodule:: qrisp
 
 Type aliases for use in function signatures and type annotations throughout
-Qrisp. Import them directly from the top-level package:
+Qrisp. These can be imported directly from the top-level package:
 
 .. code-block:: python
 
-    from qrisp.typing import QubitLike, ClbitLike, ScalarLike, NDArrayLike, ArrayLike
+    from qrisp.typing import QubitLike, ClbitLike   # etc.
 
 ----
 
@@ -19,7 +19,7 @@ Qrisp. Import them directly from the top-level package:
    :value: Qubit | int | Sequence[Qubit | int]
 
    Accepted as a qubit specifier in circuit methods and gate functions.
-   A single qubit can be identified either by its ``Qubit`` object or by its
+   A single qubit can be identified either by its :ref:`Qubit` object or by its
    integer index within the circuit. A sequence of either represents multiple
    qubits.
 
@@ -28,7 +28,7 @@ Qrisp. Import them directly from the top-level package:
    :value: Clbit | int | Sequence[Clbit | int]
 
    Accepted as a classical bit specifier in circuit methods.
-   A single classical bit can be identified either by its ``Clbit`` object or
+   A single classical bit can be identified either by its :ref:`Clbit` object or
    by its integer index within the circuit. A sequence of either represents
    multiple classical bits.
 
@@ -54,7 +54,7 @@ Qrisp. Import them directly from the top-level package:
    Union of :data:`ScalarLike` and :data:`NDArrayLike`. Use this when a
    parameter accepts either scalars or arrays. Use the narrower aliases when
    only one kind is expected, to avoid spurious Pylance warnings about missing
-   attributes such as ``.shape``.
+   attributes (such as ``.shape``, etc.).
 
 .. py:data:: Param
    :type: TypeAlias
@@ -66,6 +66,4 @@ Qrisp. Import them directly from the top-level package:
    numeric scalars (``float``, ``int``, ``complex``), NumPy numeric scalars
    (``np.float64``, ``np.int32``, etc. via ``np.number``), symbolic
    expressions (``sympy.Symbol``, ``sympy.Expr``, and any SymPy expression),
-   and JAX arrays (``jax.Array``, which covers both concrete arrays and tracers
-   encountered when Qrisp runs inside a Jasp-traced function, e.g. under
-   ``@jaspify``).
+   and JAX arrays (``jax.Array``, which covers both concrete arrays and tracers).
