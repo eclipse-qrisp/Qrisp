@@ -459,9 +459,17 @@ def test_foqcs_lcu_spin_glass_prep():
 def test_foqcs_lcu_spin_glass_subprep():
 
     L = 5
-
     g = {"X" : [2, 1, 3, 2, 4], "Y" : [1, 2, 3, 4, 5], "Z" : [6, 7, 8, 9, 10]}
     J = {"X" : [[3, 5, 6, 7], [1, 2, 1], [1, 0], [4]], "Y" : [[1, 2, 3, 4], [5, 6, 7], [9, 10], [11]], "Z" : [[12, 13, 14, 15], [16, 17, 18], [19, 20], [21]]}
+
+    g_flat = np.concatenate([np.array(v) for v in g.values()])
+    J_flat = np.concatenate([
+        np.concatenate([np.array(sub) for sub in v])
+        for v in J.values()
+    ])
+
+    all_terms = np.concatenate([g_flat, J_flat])
+    norm = np.linalg.norm(all_terms)
 
     g_betas = [] # Squared normalization factors for all g components (X, Y, Z) --> [g_beta_X, g_beta_Y, g_beta_Z]
     J_betas = [[], [], []] # Squared normalization factors for all J components and diagonals (X, Y, Z) --> [[J_beta_X1, J_beta_X2, ...], [J_beta_Y1, J_beta_Y2, ...], [J_beta_Z1, J_beta_Z2, ...]]
@@ -478,7 +486,8 @@ def test_foqcs_lcu_spin_glass_subprep():
     for i in range(3):
 
         s_sum = 0
-        components = ["X", "Z", "Y"]
+        # components = ["X", "Z", "Y"]
+        components = ["X", "Y", "Z"]
         dimension = components[i]
 
         for j in range(len(g[dimension])):
@@ -489,7 +498,8 @@ def test_foqcs_lcu_spin_glass_subprep():
 
     for i in range(3):
 
-        components = ["X", "Z", "Y"]
+        # components = ["X", "Z", "Y"]
+        components = ["X", "Y", "Z"]
         dimension = components[i]
 
         for j in range(len(J[dimension])):
@@ -498,13 +508,14 @@ def test_foqcs_lcu_spin_glass_subprep():
 
             for k in range(len(J[dimension][j])):
 
-                s_sum += abs(J[dimension][j][k] ** 2)
+                s_sum += abs(J[dimension][j][k]) ** 2
 
             J_betas[i].append(s_sum)
 
     for i in range(3):
 
-        components = ["X", "Z", "Y"]
+        # components = ["X", "Z", "Y"]
+        components = ["X", "Y", "Z"]
         dimension = components[i]
 
         for j in range(len(g[dimension])):
@@ -514,7 +525,8 @@ def test_foqcs_lcu_spin_glass_subprep():
 
     for i in range(3):
 
-        components = ["X", "Z", "Y"]
+        # components = ["X", "Z", "Y"]
+        components = ["X", "Y", "Z"]
         dimension = components[i]
 
         for j in range(len(J[dimension])):
@@ -524,19 +536,62 @@ def test_foqcs_lcu_spin_glass_subprep():
                 new_J = J[dimension][j][k] / ((J_betas[i][j]) ** 0.5)
                 J_hats[i][j].append(new_J)
 
-    final_betas = [g_betas[0], g_betas[1], g_betas[2]]
+    final_betas = []
 
-    for i in range(len(J_betas[0])):
+    for i in range(3):
 
-        for j in range(3):
+        final_betas.append(g_betas[i])
 
-            final_betas.append(J_betas[j][i])
+        for j in range(len(J_betas[i])):
 
-    prep_qv = QuantumVariable(5 * L)
+            final_betas.append(J_betas[i][j])
+
+    final_betas = np.sqrt(np.array(final_betas))
+    final_betas = final_betas / np.linalg.norm(final_betas)
 
     # SUBPREP
     extra_anc = len(g_betas) + (3 * len(J_betas[0]))
-    unbalanced_W_state(prep_qv[:extra_anc], final_betas, extra_anc)
+    prep_qv = QuantumVariable(extra_anc)
+    unbalanced_W_state(prep_qv, final_betas, extra_anc, reversed=True)
+
+    qc = prep_qv.qs.compile()
+    statev = qc.statevector_array()
+
+    ref_state = np.zeros(2 ** (3 * L))
+    components = ["X", "Y", "Z"]
+
+    for x in range(3):
+
+        # g term
+        ket = np.zeros(2 ** (3 * L))
+        ket[2 ** (x * L)] = 1
+        ref_state += np.linalg.norm(g[components[x]]) * ket
+
+        # J terms
+        for k in range(1, L):
+
+            J_kNN = J[components[x]][k - 1]
+
+            ket = np.zeros(2 ** (3 * L))
+            ket[2 ** (k + x * L)] = 1
+
+            ref_state += np.linalg.norm(J_kNN) * ket
+
+    ref_state = ref_state / np.linalg.norm(ref_state)
+
+    idx = np.argmax(np.abs(statev))
+    phase = ref_state[idx] / statev[idx]
+    phase /= abs(phase)
+    
+    statev[np.isclose(statev, 0j, atol=1e-6)] = 0
+
+    for i in range(0, len(statev)):
+        if statev[i] != 0:
+            print(f"s[{i}] = {statev[i]}")
+        if ref_state[i] != 0:
+            print(f"r[{i}] = {ref_state[i]}")
+
+    assert np.allclose(statev * phase, ref_state)
 
 def test_block_encoding_from_foqcs_lcu_prep():
     # Initialize variables + their values
