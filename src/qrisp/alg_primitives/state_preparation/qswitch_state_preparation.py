@@ -18,7 +18,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Tuple
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import jax
 import jax.numpy as jnp
@@ -34,7 +35,7 @@ if TYPE_CHECKING:
 
 def _rot_params_from_state(
     vec: jax.Array,
-) -> Tuple[jax.Array, jax.Array, jax.Array]:
+) -> tuple[jax.Array, jax.Array, jax.Array]:
     """
     Computes the rotation angles to prepare a single qubit state,
     where the amplitude of the |0> basis state is real and non-negative.
@@ -72,7 +73,7 @@ def _rot_params_from_state(
 
 def _normalize_with_phase(
     v: jax.Array, acc: jax.Array
-) -> Tuple[jax.Array, jax.Array, jax.Array]:
+) -> tuple[jax.Array, jax.Array, jax.Array]:
     """
     Normalizes a given vector and adjusts its phase.
 
@@ -123,7 +124,7 @@ def _normalize_with_phase(
 
 def _compute_thetas(
     vec: jax.Array, acc: jax.Array
-) -> Tuple[jax.Array, jax.Array, jax.Array]:
+) -> tuple[jax.Array, jax.Array, jax.Array]:
     """
     For a given input vector, this function computes the rotation angles
     needed for the uniformly controlled RY at this tree layer, normalizes its child vectors,
@@ -169,7 +170,7 @@ def _compute_thetas(
 
 def _compute_u3_params(
     qubit_vec: jax.Array, acc: jax.Array
-) -> Tuple[jax.Array, jax.Array]:
+) -> tuple[jax.Array, jax.Array]:
     """
     For a given length-2 vector, this function computes the U3 gate parameters needed
     to prepare the corresponding state, normalizes the vector, and updates the accumulated phase.
@@ -220,7 +221,7 @@ def _compute_u3_params(
 #
 def _preprocess(
     target_array: jax.Array,
-) -> Tuple[jax.Array, jax.Array, jax.Array]:
+) -> tuple[jax.Array, jax.Array, jax.Array]:
     """
     This preprocessing function returns three data structures needed for state preparation.
 
