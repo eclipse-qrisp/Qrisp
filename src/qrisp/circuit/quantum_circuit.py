@@ -1,20 +1,22 @@
-# ********************************************************************************
-# * Copyright (c) 2026 the Qrisp authors
-# *
-# * This program and the accompanying materials are made available under the
-# * terms of the Eclipse Public License 2.0 which is available at
-# * http://www.eclipse.org/legal/epl-2.0.
-# *
-# * This Source Code may also be made available under the following Secondary
-# * Licenses when the conditions for such availability set forth in the Eclipse
-# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-# * with the GNU Classpath Exception which is
-# * available at https://www.gnu.org/software/classpath/license.html.
-# *
-# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-# ********************************************************************************
+"""
+********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************
 
-"""This module contains the QuantumCircuit class, which is the main class to describe quantum circuits in Qrisp."""
+This module contains the QuantumCircuit class, which is the main class to describe quantum circuits in Qrisp.
+"""
 
 from __future__ import annotations
 
@@ -1971,14 +1973,10 @@ class QuantumCircuit:
         """
         n = len(self.qubits)
         total = 0
+        qubit_index_map = {qb: idx for idx, qb in enumerate(self.qubits)}
 
         for i, instr in enumerate(self.data):
-            # For each qubit the instruction acts on (in operand order),
-            # we record its position within self.qubits. Using
-            # circuit-global indices rather than Qubit object identities
-            # makes two structurally identical circuits hash the same even
-            # when their Qubit objects differ.
-            qubit_indices = tuple(self.qubits.index(qb) for qb in instr.qubits)
+            qubit_indices = tuple(qubit_index_map[qb] for qb in instr.qubits)
             index_hash = hash(qubit_indices)
 
             # Couple each parameter value to the instruction's position so
@@ -2390,12 +2388,12 @@ class QuantumCircuit:
         """
         Append a parity (XOR) check over classical bits to the circuit.
 
-        The parity of a set of classical bits is the XOR of all their values:
-        ``p = b_0 ⊕ b_1 ⊕ … ⊕ b_{n-1}``.  This is useful for quantum error
-        correction and when interfacing with Stim.  When the circuit is
-        converted via :meth:`to_stim`, a parity instruction becomes either a
-        ``DETECTOR`` (if ``observable=False``) or an ``OBSERVABLE_INCLUDE``
-        (if ``observable=True``) instruction.
+        Computes ``p = b_0 ⊕ b_1 ⊕ … ⊕ b_{n-1} ⊕ expectation``, so
+        ``p = 0`` whenever the measured parity matches the expected value.
+        This is useful for quantum error correction and when interfacing with Stim.
+        When the circuit is converted via :meth:`to_stim`, a parity
+        instruction becomes either a ``DETECTOR`` (if ``observable=False``)
+        or an ``OBSERVABLE_INCLUDE`` (if ``observable=True``) instruction.
 
         Parameters
         ----------
@@ -2406,7 +2404,9 @@ class QuantumCircuit:
             elements.
 
         expectation : int, optional
-            The expected parity value (``0`` or ``1``).  Default is ``0``.
+            The expected parity value (``0`` or ``1``), XORed into the result
+            so that ``p = 0`` when the measured parity equals the expectation.
+            Default is ``0``.
 
         observable : bool, optional
             If ``True``, this parity is treated as a Stim observable rather

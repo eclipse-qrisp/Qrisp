@@ -96,7 +96,7 @@ class Operation:
 
         elif not isinstance(name, str):
             raise Exception(
-                "Tried to create a Operation with name of type({type(name)} (required is str)"
+                f"Tried to create a Operation with name of type({type(name)} (required is str)"
             )
 
         # Name of the operation - this is how the backend behind the interface will
@@ -279,6 +279,9 @@ class Operation:
                 res = inverse_circ.to_op(name=self.name[:-3])
             else:
                 res = inverse_circ.to_op(name=self.name + "_dg")
+            
+            res.params = list(self.params)
+            res.abstract_params = set(self.abstract_params)
 
         elif self.name == "qb_alloc":
             from qrisp.circuit import QubitDealloc
