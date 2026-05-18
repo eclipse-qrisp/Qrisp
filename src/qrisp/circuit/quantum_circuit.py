@@ -15,7 +15,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 
-This module contains the QuantumCircuit class, which is the main class to describe quantum circuits in Qrisp.
+This module contains the main class to describe quantum circuits in Qrisp.
 """
 
 from __future__ import annotations
@@ -52,6 +52,33 @@ if TYPE_CHECKING:
 
 
 TO_GATE_COUNTER = np.zeros(1)
+
+
+def _check_qubit_locks(qubits: list, operation) -> None:
+    """Raise RuntimeError if any qubit is locked or perm-locked for this operation."""
+    critical_qubits = [qb for qb in qubits if qb.lock]
+    if critical_qubits:
+        msg = getattr(critical_qubits[0], "lock_message", None)
+        if msg:
+            raise RuntimeError(msg)
+        raise RuntimeError(
+            f"Tried to perform operation {operation.name} "
+            f"on locked qubit {critical_qubits[0]}"
+        )
+
+    critical_qubits = [qb for qb in qubits if qb.perm_lock]
+    if critical_qubits:
+        from qrisp.permeability import is_permeable
+
+        critical_qubit_indices = [qubits.index(qb) for qb in critical_qubits]
+        if not is_permeable(operation, critical_qubit_indices):
+            msg = getattr(critical_qubits[0], "perm_lock_message", None)
+            if msg:
+                raise RuntimeError(msg)
+            raise RuntimeError(
+                f"Tried to perform non-permeable operation {operation.name} on"
+                f" perm_locked qubit {critical_qubits[0]}"
+            )
 
 
 class QuantumCircuit:
@@ -1176,7 +1203,8 @@ class QuantumCircuit:
         ----------
         **kwargs : dict
             Keyword arguments forwarded to Qiskit's
-            `circuit_drawer <https://docs.quantum.ibm.com/api/qiskit/qiskit.visualization.circuit_drawer>`_
+            `circuit_drawer
+            <https://docs.quantum.ibm.com/api/qiskit/qiskit.visualization.circuit_drawer>`_
             function.
 
         Returns
@@ -1243,7 +1271,7 @@ class QuantumCircuit:
         qiskit_qc = self.to_qiskit()
         try:
             return qiskit_qc.qasm(formatted, filename, encoding)
-        except:
+        except AttributeError:
             try:
                 return dumps_qasm2(qiskit_qc)
             except (QASM2ExportError, TypeError):
@@ -1311,6 +1339,7 @@ class QuantumCircuit:
 
         """
 
+        _ = formatted  # accepted for backward compatibility, has no effect
         qiskit_qc = self.to_qiskit()
         qasm_str = dumps_qasm3(qiskit_qc)
 
@@ -1556,7 +1585,6 @@ class QuantumCircuit:
         """
         return len(self.qubits)
 
-    # TODO: Refactor the `append` method
     # Interface for appending instructions
     # Can take either instruction or operations objects
     # Can apply multiple operations, if given the correct qubits
@@ -1566,6 +1594,103 @@ class QuantumCircuit:
     # execute qc.append(CXGate(), [[qubit1, qubit3, qubit5], [qubit2, qubit4, qubit6]])
     # If it is required to apply a cx gate to the qubit pairs (1,2), (1,3), (1,4)
     # execute qc.append(CXGate(), [qubit_1, [qubit2, qubit3, qubit4]])
+
+    def _append_xla_fast_path(
+        self,
+        operation_or_instruction: Operation | Instruction,
+        qubits: list,
+        clbits: list,
+    ) -> None:
+        """Handle the XLA accelerated compilation fast path."""
+        if isinstance(operation_or_instruction, Instruction):
+            self.data.append(operation_or_instruction)
+            return
+        if self.xla_mode <= 1:
+            if not isinstance(qubits, list):
+                raise TypeError(
+                    f"Operation {operation_or_instruction.name} was appended with "
+                    f"{qubits} in accelerated compilation mode "
+                    "(allowed is type List[Qubit])."
+                )
+            for qb in qubits:
+                if not isinstance(qb, Qubit):
+                    raise TypeError(
+                        f"Operation {operation_or_instruction.name} was appended with "
+                        f"{qubits} in accelerated compilation mode "
+                        "(allowed is type List[Qubit])."
+                    )
+        self.data.append(Instruction(operation_or_instruction, qubits, clbits))
+
+    def _apply_broadcast(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+        self,
+        operation: Operation,
+        qubits: list,
+        clbits: list,
+        qb_argument_is_list: list,
+        cb_argument_is_list: list,
+    ) -> None:
+        """Apply the operation once per broadcast index."""
+        if qb_argument_is_list:
+            arg_list_len = len(qubits[qb_argument_is_list[0]])
+        else:
+            arg_list_len = len(clbits[cb_argument_is_list[0]])
+
+        for arg_list_index in qb_argument_is_list:
+            if len(qubits[arg_list_index]) != arg_list_len:
+                raise ValueError(
+                    f"Don't know how to combine appending arguments {qubits + clbits}"
+                )
+
+        for arg_list_index in cb_argument_is_list:
+            if len(clbits[arg_list_index]) != arg_list_len:
+                raise ValueError(
+                    f"Don't know how to combine appending arguments {qubits + clbits}"
+                )
+
+        for i in range(arg_list_len):
+            qubit_constellation = [
+                qubits[j][i] if j in qb_argument_is_list else qubits[j]
+                for j in range(len(qubits))
+            ]
+            clbit_constellation = [
+                clbits[j][i] if j in cb_argument_is_list else clbits[j]
+                for j in range(len(clbits))
+            ]
+            QuantumCircuit.append(
+                self, operation, qubit_constellation, clbit_constellation
+            )
+
+    def _resolve_qubits(self, qubits: list, operation: Operation) -> list:
+        """Validate qubit count and membership; return the resolved qubit list."""
+        if len(qubits) != operation.num_qubits:
+            raise ValueError(
+                f"Provided incorrect amount ({len(qubits)}) of qubits for operation "
+                f"{operation.name} (requires {operation.num_qubits})"
+            )
+
+        if len(set(qubits)) != len(qubits):
+            raise ValueError(
+                f"Duplicate qubit arguments in {qubits} for operation {operation.name}"
+            )
+
+        # Comparing object identity first is fast; falling back to identifier comparison
+        # handles qubits equal by name but not by identity (e.g. after unpickling).
+        if not set(qubits).issubset(set(self.qubits)):
+            op_identifiers = [qb.identifier for qb in qubits]
+            qc_identifiers = [qb.identifier for qb in self.qubits]
+
+            if not set(op_identifiers).issubset(qc_identifiers):
+                raise ValueError(
+                    f"Instruction Qubits {set(qubits) - set(self.qubits)} "
+                    "not present in circuit"
+                )
+
+            qubits = [
+                self.qubits[qc_identifiers.index(op_id)] for op_id in op_identifiers
+            ]
+
+        return qubits
+
     def append(
         self,
         operation_or_instruction: Operation | Instruction,
@@ -1637,24 +1762,7 @@ class QuantumCircuit:
         clbits = [] if clbits is None else clbits
 
         if self.xla_mode > 0:
-            if isinstance(operation_or_instruction, Instruction):
-                self.data.append(operation_or_instruction)
-            else:
-                if self.xla_mode <= 1:
-                    if not isinstance(qubits, list):
-                        raise TypeError(
-                            f"Operation {operation_or_instruction.name} was appended with "
-                            f"{qubits} in accelerated compilation mode "
-                            "(allowed is type List[Qubit])."
-                        )
-                    for qb in qubits:
-                        if not isinstance(qb, Qubit):
-                            raise TypeError(
-                                f"Operation {operation_or_instruction.name} was appended with "
-                                f"{qubits} in accelerated compilation mode "
-                                "(allowed is type List[Qubit])."
-                            )
-                self.data.append(Instruction(operation_or_instruction, qubits, clbits))
+            self._append_xla_fast_path(operation_or_instruction, qubits, clbits)
             return
 
         if isinstance(operation_or_instruction, Instruction):
@@ -1662,14 +1770,13 @@ class QuantumCircuit:
             self.append(instruction.op, instruction.qubits, instruction.clbits)
             return
 
-        if isinstance(operation_or_instruction, Operation):
-            operation = operation_or_instruction
-        else:
+        if not isinstance(operation_or_instruction, Operation):
             raise TypeError(
                 f"Tried to append object of type {type(operation_or_instruction)} "
                 "which is neither Instruction nor Operation"
             )
 
+        operation = operation_or_instruction
         # Convert arguments (possibly integers) to lists of Qubit / Clbit objects.
         # The list structure is preserved:
         #   [[0, 1], 2]  →  [[qubit_0, qubit_1], qubit_2]
@@ -1687,74 +1794,18 @@ class QuantumCircuit:
         cb_argument_is_list = [i for i, cb in enumerate(clbits) if isinstance(cb, list)]
 
         if qb_argument_is_list or cb_argument_is_list:
-            # Determine n, the number of gate applications.
-            if qb_argument_is_list:
-                arg_list_len = len(qubits[qb_argument_is_list[0]])
-            else:
-                arg_list_len = len(clbits[cb_argument_is_list[0]])
-
-            # All list arguments must have the same length.
-            for arg_list_index in qb_argument_is_list:
-                if len(qubits[arg_list_index]) != arg_list_len:
-                    raise ValueError(
-                        f"Don't know how to combine appending arguments {qubits + clbits}"
-                    )
-
-            for arg_list_index in cb_argument_is_list:
-                if len(clbits[arg_list_index]) != arg_list_len:
-                    raise ValueError(
-                        f"Don't know how to combine appending arguments {qubits + clbits}"
-                    )
-
-            # Apply the operation once per index, resolving each broadcast dimension.
-            for i in range(arg_list_len):
-                qubit_constellation = [
-                    qubits[j][i] if j in qb_argument_is_list else qubits[j]
-                    for j in range(len(qubits))
-                ]
-                clbit_constellation = [
-                    clbits[j][i] if j in cb_argument_is_list else clbits[j]
-                    for j in range(len(clbits))
-                ]
-                QuantumCircuit.append(
-                    self, operation, qubit_constellation, clbit_constellation
-                )
-
+            self._apply_broadcast(
+                operation, qubits, clbits, qb_argument_is_list, cb_argument_is_list
+            )
             return
 
-        if len(qubits) != operation.num_qubits:
-            raise ValueError(
-                f"Provided incorrect amount ({len(qubits)}) of qubits for operation "
-                f"{operation.name} (requires {operation.num_qubits})"
-            )
+        qubits = self._resolve_qubits(qubits, operation)
 
         if len(clbits) != operation.num_clbits:
             raise ValueError(
                 f"Provided incorrect amount ({len(clbits)}) of clbits for operation "
                 f"{operation.name} (requires {operation.num_clbits})"
             )
-
-        if len(set(qubits)) != len(qubits):
-            raise ValueError(
-                f"Duplicate qubit arguments in {qubits} for operation {operation.name}"
-            )
-
-        # Check qubit membership. Comparing object identity first is fast; falling back
-        # to identifier comparison handles qubits that are equal by name but not by
-        # identity (e.g. after unpickling).
-        if not set(qubits).issubset(set(self.qubits)):
-            op_identifiers = [qb.identifier for qb in qubits]
-            qc_identifiers = [qb.identifier for qb in self.qubits]
-
-            if not set(op_identifiers).issubset(qc_identifiers):
-                raise ValueError(
-                    f"Instruction Qubits {set(qubits) - set(self.qubits)} "
-                    "not present in circuit"
-                )
-
-            qubits = [
-                self.qubits[qc_identifiers.index(op_id)] for op_id in op_identifiers
-            ]
 
         if len({cb.identifier for cb in clbits}) != len(clbits):
             raise ValueError("Duplicate clbit arguments")
@@ -1764,37 +1815,12 @@ class QuantumCircuit:
         ):
             raise ValueError("Instruction Clbits not present in circuit")
 
-        # Log which abstract parameters have been added to the circuit.
         try:
             self.abstract_params.update(operation.abstract_params)
         except AttributeError:
             pass
 
-        # Check for locked qubits.
-        critical_qubits = [qb for qb in qubits if qb.lock]
-        if critical_qubits:
-            if critical_qubits[0].lock_message:
-                raise RuntimeError(critical_qubits[0].lock_message)
-            else:
-                raise RuntimeError(
-                    f"Tried to perform operation {operation.name} "
-                    f"on locked qubit {critical_qubits[0]}"
-                )
-
-        # Check for non-permeable operations on perm-locked qubits.
-        critical_qubits = [qb for qb in qubits if qb.perm_lock]
-        if critical_qubits:
-            from qrisp.permeability import is_permeable
-
-            critical_qubit_indices = [qubits.index(qb) for qb in critical_qubits]
-            if not is_permeable(operation, critical_qubit_indices):
-                if critical_qubits[0].perm_lock_message:
-                    raise RuntimeError(critical_qubits[0].perm_lock_message)
-                else:
-                    raise RuntimeError(
-                        f"Tried to perform non-permeable operation {operation.name} on"
-                        f" perm_locked qubit {critical_qubits[0]}"
-                    )
+        _check_qubit_locks(qubits, operation)
 
         self.data.append(Instruction(operation, qubits, clbits))
 
@@ -2837,17 +2863,17 @@ class QuantumCircuit:
         """
         self.append(ops.SXGate().inverse(), [qubits])
 
-    def barrier(self, qubits: QubitLike | None = None, clbits: ClbitLike | None = None):
+    def barrier(self, qubits: QubitLike | None = None):
         """
         Instruct a Barrier onto the given Qubit. Barriers can be used as visual markers
-        and compiler directives. The `clbits` argument is currently ignored but can be used in the future to also apply barriers to classical bits.
+        and compiler directives. The ``clbits`` argument is currently ignored but can be
+        used in the future to also apply barriers to classical bits.
 
         Parameters
         ----------
         qubits : QubitLike | None
             The Qubit to apply the barrier on.
-        clbits : ClbitLike | None
-            The Clbits to apply the barrier on. Currently ignored.
+
         """
         if qubits is None:
             qubits = self.qubits
@@ -2893,8 +2919,22 @@ class QuantumCircuit:
         """
         self.append(ops.u3Gate(theta, phi, lam), [qubits])
 
-    def r(self, phi: Param, theta: Param, qubits: QubitLike):
-        self.append(ops.RGate(phi, theta), [qubits])
+    def r(self, theta: Param, phi: Param, qubits: QubitLike):
+        """
+        Instruct an R-gate from given angles.
+
+        Parameters
+        ----------
+        theta : Param
+            The theta parameter.
+        phi : Param
+            The phi parameter.
+        qubits : QubitLike
+            The Qubit to apply the r gate on.
+
+        """
+
+        self.append(ops.RGate(theta, phi), [qubits])
 
     def unitary(self, unitary_array, qubits: QubitLike):
         """
@@ -2908,24 +2948,18 @@ class QuantumCircuit:
             The Qubit to apply the gate on.
 
         """
+        from qrisp.simulator.unitary_management import u3matrix
+
         mat = unitary_array
         coeff = 1 / np.sqrt(np.linalg.det(mat))
-        gphase = -np.angle(coeff) % (2 * np.pi)
-        tmp_10 = np.abs((coeff * mat[1][0]))
-        tmp_00 = np.abs((coeff * mat[0][0]))
-        theta = 2 * np.arctan2(tmp_10, tmp_00)
+        theta = 2 * np.arctan2(np.abs(coeff * mat[1][0]), np.abs(coeff * mat[0][0]))
         phiplambda2 = np.angle(coeff * mat[1][1]) % (2 * np.pi)
         phimlambda2 = np.angle(coeff * mat[1][0]) % (2 * np.pi)
         phi = phiplambda2 + phimlambda2
         lam = phiplambda2 - phimlambda2
 
-        # gphase -= (phi + lam)
-
         arg_max = np.argmax(np.abs(mat).flatten())
-        from qrisp.simulator.unitary_management import u3matrix
-
         temp_u3 = u3matrix(theta, phi, lam, 0).flatten()
-
         gphase = (-np.angle(temp_u3[arg_max] / mat.flatten()[arg_max])) % (2 * np.pi)
 
         self.append(U3Gate(theta, phi, lam, global_phase=gphase), qubits)
@@ -2959,13 +2993,44 @@ class QuantumCircuit:
         self.append(ops.IDGate(), [qubits])
 
 
-# TODO: Refactor the convert_to_qb_list and convert_to_cb_list functions
+def _convert_qb_item(
+    value: Any,
+    circuit: QuantumCircuit | None = None,
+) -> Qubit | list[Any]:
+    """Recursive helper for convert_to_qb_list; may return a bare Qubit or a list."""
+    # NOTE: This is here to avoid circular imports
+    from qrisp import QuantumArray
+
+    if isinstance(value, Qubit):
+        return value
+
+    if isinstance(value, QuantumArray):
+        return [qb for qv in value.flatten() for qb in qv.reg]
+
+    if hasattr(value, "__iter__"):
+        return [_convert_qb_item(item, circuit) for item in value]
+
+    if hasattr(value, "reg"):
+        return list(value.reg)
+
+    if isinstance(value, int):
+        if circuit is None:
+            raise ValueError(
+                "Tried to convert integer index to Qubit without a circuit"
+            )
+        if value >= len(circuit.qubits):
+            raise ValueError(
+                f"Tried to address qubit with index {value} "
+                f"in a circuit with {len(circuit.qubits)} qubits"
+            )
+        return _convert_qb_item(circuit.qubits[value], circuit)
+
+    raise TypeError(f"Cannot convert type {type(value)} to a qubit list")
 
 
 def convert_to_qb_list(
     value: Any,
     circuit: QuantumCircuit | None = None,
-    top_level: bool = True,
 ) -> list[Any]:
     """
     Convert a qubit specification to a (possibly nested) list of :class:`.Qubit` objects.
@@ -2974,8 +3039,7 @@ def convert_to_qb_list(
     *qubits* argument before an instruction is recorded.  The function accepts every form
     that ``append`` advertises:
 
-    * A :class:`.Qubit` instance — returned as ``[qubit]`` (top-level) or as-is
-      (recursive call).
+    * A :class:`.Qubit` instance — returned as ``[qubit]``.
     * An :class:`int` — resolved to ``circuit.qubits[value]`` and then re-processed.
     * A :class:`~qrisp.QuantumArray` — flattened to a single list of its constituent
       qubits.
@@ -2993,12 +3057,6 @@ def convert_to_qb_list(
         The circuit whose ``qubits`` list is used to resolve integer indices.
         Required when *value* (or any nested element) is an integer.
         The default is ``None``.
-    top_level : bool, optional
-        When ``True`` (the default, used for the outermost call), a scalar
-        :class:`.Qubit` is wrapped in a one-element list.  When ``False``
-        (used for recursive calls on iterable elements), a scalar :class:`.Qubit`
-        is returned as-is so that the caller can append it directly to the
-        enclosing list.
 
     Returns
     -------
@@ -3015,40 +3073,34 @@ def convert_to_qb_list(
     TypeError
         If *value* cannot be converted to a qubit list.
     """
-    # NOTE: This is here to avoid circular imports
-    from qrisp import QuantumArray
+    item = _convert_qb_item(value, circuit)
+    return item if isinstance(item, list) else [item]
 
-    if isinstance(value, Qubit):
-        return [value] if top_level else value
 
-    if isinstance(value, QuantumArray):
-        return [qb for qv in value.flatten() for qb in qv.reg]
+def _convert_cb_item(
+    value: Any,
+    circuit: QuantumCircuit | None = None,
+) -> Clbit | list[Any]:
+    """Recursive helper for convert_to_cb_list; may return a bare Clbit or a list."""
+    if isinstance(value, Clbit):
+        return value
 
     if hasattr(value, "__iter__"):
-        return [convert_to_qb_list(item, circuit, top_level=False) for item in value]
-
-    if hasattr(value, "reg"):
-        return list(value.reg)
+        return [_convert_cb_item(item, circuit) for item in value]
 
     if isinstance(value, int):
         if circuit is None:
             raise ValueError(
-                "Tried to convert integer index to Qubit without a circuit"
+                "Tried to convert integer index to Clbit without a circuit"
             )
-        if value >= len(circuit.qubits):
-            raise ValueError(
-                f"Tried to address qubit with index {value} "
-                f"in a circuit with {len(circuit.qubits)} qubits"
-            )
-        return convert_to_qb_list(circuit.qubits[value], top_level=top_level)
+        return _convert_cb_item(circuit.clbits[value], circuit)
 
-    raise TypeError(f"Cannot convert type {type(value)} to a qubit list")
+    raise TypeError(f"Cannot convert type {type(value)} to a classical-bit list")
 
 
 def convert_to_cb_list(
     value: Any,
     circuit: QuantumCircuit | None = None,
-    top_level: bool = True,
 ) -> list[Any]:
     """
     Convert a classical-bit specification to a (possibly nested) list of
@@ -3058,8 +3110,7 @@ def convert_to_cb_list(
     *clbits* argument before an instruction is recorded.  It mirrors the behaviour of
     :func:`convert_to_qb_list` for classical bits:
 
-    * A :class:`.Clbit` instance — returned as ``[clbit]`` (top-level) or as-is
-      (recursive call).
+    * A :class:`.Clbit` instance — returned as ``[clbit]``.
     * An :class:`int` — resolved to ``circuit.clbits[value]`` and then re-processed.
     * Any other iterable — each element is recursively processed and the results are
       collected into a list.
@@ -3072,12 +3123,6 @@ def convert_to_cb_list(
         The circuit whose ``clbits`` list is used to resolve integer indices.
         Required when *value* (or any nested element) is an integer.
         The default is ``None``.
-    top_level : bool, optional
-        When ``True`` (the default, used for the outermost call), a scalar
-        :class:`.Clbit` is wrapped in a one-element list.  When ``False``
-        (used for recursive calls on iterable elements), a scalar :class:`.Clbit`
-        is returned as-is so that the caller can append it directly to the
-        enclosing list.
 
     Returns
     -------
@@ -3091,17 +3136,5 @@ def convert_to_cb_list(
     TypeError
         If *value* cannot be converted to a classical-bit list.
     """
-    if isinstance(value, Clbit):
-        return [value] if top_level else value
-
-    if hasattr(value, "__iter__"):
-        return [convert_to_cb_list(item, circuit, top_level=False) for item in value]
-
-    if isinstance(value, int):
-        if circuit is None:
-            raise ValueError(
-                "Tried to convert integer index to Clbit without a circuit"
-            )
-        return convert_to_cb_list(circuit.clbits[value], top_level=top_level)
-
-    raise TypeError(f"Cannot convert type {type(value)} to a classical-bit list")
+    item = _convert_cb_item(value, circuit)
+    return item if isinstance(item, list) else [item]

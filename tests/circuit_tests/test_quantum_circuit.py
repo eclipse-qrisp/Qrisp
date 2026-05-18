@@ -1896,6 +1896,76 @@ class TestQuantumCircuitAppend:
         assert len(qc.data) == 3
         assert all(instr.op.name == "x" for instr in qc.data)
 
+    def test_append_broadcast_two_qubit_gate(self):
+        """Broadcasting a 2-qubit gate over two aligned lists applies it n times."""
+        qc = QuantumCircuit(4)
+        # Apply CX to pairs (0,1) and (2,3)
+        qc.append(CXGate(), [[qc.qubits[0], qc.qubits[2]], [qc.qubits[1], qc.qubits[3]]])
+        assert len(qc.data) == 2
+        assert qc.data[0].qubits == [qc.qubits[0], qc.qubits[1]]
+        assert qc.data[1].qubits == [qc.qubits[2], qc.qubits[3]]
+
+    def test_append_broadcast_mismatched_lengths_raises(self):
+        """Broadcast lists of unequal length raise ValueError."""
+        qc = QuantumCircuit(4)
+        with pytest.raises(ValueError, match="Don't know how to combine"):
+            qc.append(
+                CXGate(),
+                [[qc.qubits[0], qc.qubits[1]], [qc.qubits[2]]],
+            )
+
+    def test_append_duplicate_clbits_raises(self):
+        """Appending with the same clbit listed twice raises ValueError."""
+        from qrisp.circuit.operation import Operation
+        qc = QuantumCircuit(1, 2)
+        op = Operation("dual_meas", num_qubits=1, num_clbits=2)
+        with pytest.raises(ValueError, match="Duplicate clbit"):
+            qc.append(op, [qc.qubits[0]], [qc.clbits[0], qc.clbits[0]])
+
+    def test_append_foreign_clbit_raises(self):
+        """Appending a clbit that belongs to another circuit raises ValueError."""
+        qc1 = QuantumCircuit(1, 1)
+        qc2 = QuantumCircuit(1, 1)
+        with pytest.raises(ValueError, match="Clbits not present"):
+            qc1.append(Measurement(), [qc1.qubits[0]], [qc2.clbits[0]])
+
+    def test_append_updates_abstract_params(self):
+        """Appending a parametric gate adds its symbols to circuit.abstract_params."""
+        from qrisp.circuit.standard_operations import RZGate
+        phi = sympy.Symbol("phi")
+        qc = QuantumCircuit(1)
+        qc.append(RZGate(phi), [qc.qubits[0]])
+        assert phi in qc.abstract_params
+
+    def test_append_locked_qubit_raises(self):
+        """Appending to a locked qubit raises RuntimeError."""
+        qc = QuantumCircuit(1)
+        qc.qubits[0].lock = True
+        with pytest.raises(RuntimeError, match="locked qubit"):
+            qc.append(XGate(), [qc.qubits[0]])
+        qc.qubits[0].lock = False  # restore
+
+    def test_append_qubit_resolved_by_identifier_fallback(self):
+        """A qubit that matches by identifier (not identity) is resolved correctly."""
+        import pickle
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        # Round-trip through pickle replaces Qubit objects; identity comparison fails
+        qc2 = pickle.loads(pickle.dumps(qc))
+        # Appending using the unpickled qubits should succeed via identifier fallback
+        qc2.append(XGate(), [qc2.qubits[0]])
+        assert qc2.data[-1].op.name == "x"
+
+    def test_append_instruction_ignores_qubit_argument(self):
+        """When an Instruction is passed, the qubits/clbits arguments are ignored."""
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        instr = qc.data[0]
+        qc2 = qc.clearcopy()
+        # Pass qubits[1] explicitly — it should be ignored; the instruction's own qubit wins
+        qc2.append(instr, [qc2.qubits[1]])
+        assert qc2.data[0].qubits[0] is qc2.qubits[0]
+
 
 class TestQuantumCircuitRunAndStatevector:
     """Tests for QuantumCircuit.run and QuantumCircuit.statevector_array."""
