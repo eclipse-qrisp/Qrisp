@@ -1059,8 +1059,8 @@ class QuantumCircuit:
     def compose(
         self,
         other: QuantumCircuit,
-        qubits: QubitLike | None = None,
-        clbits: ClbitLike | None = None,
+        qubits: Sequence[QubitLike] | None = None,
+        clbits: Sequence[ClbitLike] | None = None,
         inplace: bool = True,
     ) -> QuantumCircuit | None:
         """
@@ -1071,12 +1071,12 @@ class QuantumCircuit:
         other : QuantumCircuit
             The QuantumCircuit to be appended to self.
 
-        qubits : QubitLike | None, optional
+        qubits : Sequence[QubitLike] | None, optional
             The qubits to be used for the composition.
             If None, the qubits of self and other will be matched by their identifiers.
             The default is None.
 
-        clbits : ClbitLike | None, optional
+        clbits : Sequence[ClbitLike] | None, optional
             The classical bits to be used for the composition.
             If None, the clbits of self and other will be matched by their identifiers.
             The default is None.
@@ -2780,11 +2780,12 @@ class QuantumCircuit:
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : Param
             The angle parameter.
 
         qubits_0 : QubitLike
             The Qubit to apply the gate on.
+
         qubits_1 : QubitLike
             The other Qubit to apply the gate on.
         """

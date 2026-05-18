@@ -29,7 +29,7 @@ from qrisp.misc.utility import _EPSILON, swap_endianness
 
 if TYPE_CHECKING:
     from qrisp.core import QuantumVariable
-    from qrisp.typing import NDArrayLike, ScalarLike
+    from qrisp.typing import NDArrayLike
 
 
 def _rot_params_from_state(
@@ -330,7 +330,7 @@ def prepare_qswitch(
 
     thetas, u_params, phases = _preprocess(target_array)  # type: ignore[arg-type]
 
-    def make_case_fn(layer_size: ScalarLike, is_final: bool = False) -> Callable:
+    def make_case_fn(layer_size, is_final: bool = False) -> Callable:
         """Create a case function for q_switch at a given layer."""
 
         def case_fn(i, qb):
@@ -358,7 +358,7 @@ def prepare_qswitch(
 
         q_switch(
             qv[:layer_size],
-            make_case_fn(layer_size),  # type: ignore[arg-type]
+            make_case_fn(layer_size),
             qv[layer_size],
         )
 
