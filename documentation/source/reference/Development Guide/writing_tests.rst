@@ -48,30 +48,7 @@ start with ``test_``. Tests should be:
   behaviour is being validated.
 
 We refer to the official pytest documentation for more detailed guidance 
-on writing tests (see the Useful references section below).
-
-Parametrised tests
-------------------
-
-Use ``@pytest.mark.parametrize`` to test multiple inputs without duplicating
-code. The following example is taken from
-``tests/circuit_tests/test_quantum_circuit.py`` and checks that the unitary of
-an empty circuit is the identity matrix for several qubit counts:
-
-.. code-block:: python
-
-    import pytest
-    import numpy as np
-    from qrisp.circuit.quantum_circuit import QuantumCircuit
-
-    class TestQuantumCircuitMethods:
-        """Tests for QuantumCircuit methods."""
-
-        @pytest.mark.parametrize("num_qubits", [1, 2, 3])
-        def test_get_unitary_empty_circuit_is_identity(self, num_qubits):
-            """Empty circuit of n qubits has the 2ⁿ × 2ⁿ identity as its unitary."""
-            dim = 2**num_qubits
-            assert np.allclose(QuantumCircuit(num_qubits).get_unitary(), np.eye(dim))
+on writing tests (see the ``Useful references`` section below).
 
 Running the tests
 -----------------
