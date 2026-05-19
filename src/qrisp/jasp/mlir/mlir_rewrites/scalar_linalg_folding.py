@@ -16,23 +16,28 @@
 ********************************************************************************
 """
 
+
 """
-Optimization passes for folding redundant scalar linalg.generic operations
-and simplifying boolean condition chains in MLIR/xDSL.
+Optimization pass for unwrapping 0-dimensional linalg.generic operations
+in MLIR/xDSL.
 
-Problem:
-    The JAX-to-MLIR lowering sometimes produces verbose chains of 0-dimensional
-    linalg.generic operations to evaluate simple boolean conditions, e.g.:
+General Context:
+    The JAX-to-MLIR lowering frequently produces verbose operation chains to
+    evaluate simple scalar and boolean conditions. This pass is part of a suite
+    of rewrite patterns designed to collapse unnecessarily verbose chains.
 
-        measure (i1) → extui (i64) → cmpi eq 0 (i1) → extui (i32) → extract → cmpi ne 0
-
-    This entire chain is semantically equivalent to a single NOT of the
-    original measurement result.
+Specific Problem:
+    Simple scalar operations are sometimes unnecessarily wrapped in 0-dimensional 
+    `linalg.generic` ops. These ops carry significant structural overhead - such 
+    as regions, block arguments, and affine maps - for what is semantically just 
+    scalar instructions.
 
 Solution:
-    Three composable rewrite patterns that, together with upstream canonicalize
-    and DCE passes, collapse the chain.
+    A rewrite pattern that eliminates the `linalg.generic` shell. It extracts
+    the scalar operands using `tensor.extract`, clones the generic's inner block
+    operations sequentially, and repacks the final result with `tensor.from_elements`.
 """
+
 
 from xdsl.context import Context
 from xdsl.dialects import builtin, linalg, tensor
@@ -84,8 +89,8 @@ class FoldScalarLinalgGeneric(RewritePattern):
 
     0-dimensional `linalg.generic` ops operate on scalar tensors (tensor<T>
     with no dimensions). They carry significant overhead — region, block
-    arguments, affine maps — for what is semantically a single scalar
-    instruction. This pattern eliminates that overhead.
+    arguments, affine maps — for what is semantically scalar
+    instructions. This pattern eliminates that overhead.
 
     Preconditions (all must hold for the pattern to fire):
         - The generic has zero iterator types (i.e., all operands are 0-d).

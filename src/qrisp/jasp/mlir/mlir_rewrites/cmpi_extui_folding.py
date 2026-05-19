@@ -16,23 +16,29 @@
 ********************************************************************************
 """
 
+
 """
-Optimization passes for folding redundant scalar linalg.generic operations
-and simplifying boolean condition chains in MLIR/xDSL.
+Optimization pass for simplifying verbose boolean condition chains in MLIR/xDSL.
 
-Problem:
-    The JAX-to-MLIR lowering sometimes produces verbose chains of 0-dimensional
-    linalg.generic operations to evaluate simple boolean conditions, e.g.:
+General Context:
+    The JAX-to-MLIR lowering frequently produces verbose operation chains to
+    evaluate simple scalar and boolean conditions. This pass is part of a suite
+    of rewrite patterns designed to collapse unnecessarily verbose chains.
 
-        measure (i1) → extui (i64) → cmpi eq 0 (i1) → extui (i32) → extract → cmpi ne 0
-
-    This entire chain is semantically equivalent to a single NOT of the
-    original measurement result.
+Specific Problem:
+    Booleans (i1) are often zero-extended into wider integers (e.g., i32, i64)
+    only to be immediately compared against 0 or 1 to yield another boolean.
+    For example: `measure (i1) → extui (i64) → cmpi eq 0 (i1) → extui (i32) → cmpi ne 0`.
+    This whole sequence is semantically equivalent to a simple boolean NOT 
+    of the original measurement.
 
 Solution:
-    Three composable rewrite patterns that, together with upstream canonicalize
-    and DCE passes, collapse the chain.
+    A rewrite pattern that statically resolves comparisons of zero-extended
+    booleans against 0 or 1. It bypasses the integer extension and folds the 
+    chain directly into the original boolean condition, its logical NOT, or a 
+    constant True/False.
 """
+
 
 from enum import Enum
 from xdsl.context import Context

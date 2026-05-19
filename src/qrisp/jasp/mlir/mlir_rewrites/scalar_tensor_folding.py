@@ -16,23 +16,28 @@
 ********************************************************************************
 """
 
+
 """
-Optimization passes for folding redundant scalar linalg.generic operations
-and simplifying boolean condition chains in MLIR/xDSL.
+Optimization pass for unwrapping scalar tensor packing and eliminating
+dead tensor operations in MLIR/xDSL.
 
-Problem:
-    The JAX-to-MLIR lowering sometimes produces verbose chains of 0-dimensional
-    linalg.generic operations to evaluate simple boolean conditions, e.g.:
+General Context:
+    The JAX-to-MLIR lowering frequently produces verbose operation chains to
+    evaluate simple scalar and boolean conditions. This pass is part of a suite
+    of rewrite patterns designed to collapse unnecessarily verbose chains.
 
-        measure (i1) → extui (i64) → cmpi eq 0 (i1) → extui (i32) → extract → cmpi ne 0
-
-    This entire chain is semantically equivalent to a single NOT of the
-    original measurement result.
+Specific Problem:
+    Intermediate lowering or folding steps often leave behind trivial, cancelling 
+    tensor operations. A scalar might be packed into a 0-D tensor only to be 
+    immediately extracted again. Furthermore, xDSL might leave unused 0-D tensors 
+    behind if standard DCE assumes they lack the `Pure` trait.
 
 Solution:
-    Three composable rewrite patterns that, together with upstream canonicalize
-    and DCE passes, collapse the chain.
+    Rewrite patterns that fold `tensor.extract(tensor.from_elements(X))` directly 
+    back into the original scalar `X`. It also provides a targeted dead code 
+    elimination fallback to safely erase any unused `tensor.from_elements` operations.
 """
+
 
 from xdsl.context import Context
 from xdsl.dialects import builtin, tensor
