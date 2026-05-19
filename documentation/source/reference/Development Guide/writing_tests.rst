@@ -47,38 +47,14 @@ start with ``test_``. Tests should be:
 - *Explicit*: the test name and body should make it clear exactly which
   behaviour is being validated.
 
-The following example is taken from
-``tests/circuit_tests/test_quantum_circuit.py``. It groups related tests in a
-class, documents each test with a one-line docstring, and covers both the
-happy path and an error case:
-
-.. code-block:: python
-
-    import pytest
-    from qrisp.circuit.quantum_circuit import QuantumCircuit
-
-    class TestQuantumCircuitInitialization:
-        """Tests for QuantumCircuit initialization."""
-
-        def test_initialization(self):
-            """Test basic initialization with qubit and clbit counts."""
-            qc = QuantumCircuit(num_qubits=3, num_clbits=2)
-            assert len(qc.qubits) == 3
-            assert len(qc.clbits) == 2
-
-        def test_error_wrong_type_initialization(self):
-            """Test that wrong argument types raise TypeError."""
-            with pytest.raises(TypeError, match="type str for num_qubits"):
-                QuantumCircuit(num_qubits="3")
-
-            with pytest.raises(TypeError, match="type float for num_clbits"):
-                QuantumCircuit(num_clbits=2.5)
+We refer to the official pytest documentation for more detailed guidance 
+on writing tests (see the Useful references section below).
 
 Parametrised tests
 ------------------
 
 Use ``@pytest.mark.parametrize`` to test multiple inputs without duplicating
-code. The following example is also from
+code. The following example is taken from
 ``tests/circuit_tests/test_quantum_circuit.py`` and checks that the unitary of
 an empty circuit is the identity matrix for several qubit counts:
 
