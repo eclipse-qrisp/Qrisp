@@ -194,6 +194,7 @@ def foqcs_prep_spin_glass(
     J_betas = [[], [], []] # Squared normalization factors for all J components and diagonals (X, Y, Z) --> [[J_beta_X1, J_beta_X2, ...], [J_beta_Y1, J_beta_Y2, ...], [J_beta_Z1, J_beta_Z2, ...]]
     g_hats = [[], [], []] # Normalized g coefficients
     J_hats = [[], [], []] # Normalized J coefficients
+    components = ["X", "Y", "Z"]
 
     # Normalization for state preparation
     for i in range(3):
@@ -205,7 +206,6 @@ def foqcs_prep_spin_glass(
     for i in range(3):
 
         s_sum = 0
-        components = ["X", "Z", "Y"]
         dimension = components[i]
 
         for j in range(len(g[dimension])):
@@ -216,7 +216,6 @@ def foqcs_prep_spin_glass(
 
     for i in range(3):
 
-        components = ["X", "Z", "Y"]
         dimension = components[i]
 
         for j in range(len(J[dimension])):
@@ -225,13 +224,12 @@ def foqcs_prep_spin_glass(
 
             for k in range(len(J[dimension][j])):
 
-                s_sum += abs(J[dimension][j][k] ** 2)
+                s_sum += abs(J[dimension][j][k]) ** 2
 
             J_betas[i].append(s_sum)
 
     for i in range(3):
 
-        components = ["X", "Z", "Y"]
         dimension = components[i]
 
         for j in range(len(g[dimension])):
@@ -241,7 +239,6 @@ def foqcs_prep_spin_glass(
 
     for i in range(3):
 
-        components = ["X", "Z", "Y"]
         dimension = components[i]
 
         for j in range(len(J[dimension])):
@@ -251,17 +248,22 @@ def foqcs_prep_spin_glass(
                 new_J = J[dimension][j][k] / ((J_betas[i][j]) ** 0.5)
                 J_hats[i][j].append(new_J)
 
-    final_betas = [g_betas[0], g_betas[1], g_betas[2]]
+    final_betas = []
 
-    for i in range(len(J_betas[0])):
+    for i in range(3):
 
-        for j in range(3):
+        final_betas.append(g_betas[i])
 
-            final_betas.append(J_betas[j][i])
+        for j in range(len(J_betas[i])):
+
+            final_betas.append(J_betas[i][j])
+
+    final_betas = np.sqrt(np.array(final_betas))
+    final_betas = final_betas / np.linalg.norm(final_betas)
 
     # SUBPREP
     extra_anc = len(g_betas) + (3 * len(J_betas[0]))
-    unbalanced_W_state(prep_qv[:extra_anc], final_betas, extra_anc)
+    unbalanced_W_state(prep_qv[:extra_anc], final_betas, extra_anc, reversed=True)
 
     # PREP
     fh1 = extra_anc                # First qubit first half
@@ -269,41 +271,44 @@ def foqcs_prep_spin_glass(
     fh2 = extra_anc + L            # First qubit second half
     lh2 = extra_anc + (L * 2) - 1  # Last qubit second half
 
-    # Unbalanced Dicke state
+    J_skip = len(J_betas[0])
+    block_skip = J_skip + 1
+
+    # Unbalanced Dicke state (X0)
     with control([prep_qv[0]]):
 
         unbalanced_W_state(prep_qv[fh1:lh1 + 1], g_hats[0], reversed=True)
 
-    # Unbalanced Dicke state
-    with control([prep_qv[1]]):
+    # Unbalanced Dicke state (Z0)
+    with control([prep_qv[2 * block_skip]]):
 
-        unbalanced_W_state(prep_qv[fh2:], g_hats[1], reversed=True)
+        unbalanced_W_state(prep_qv[fh2:], g_hats[2], reversed=True)
 
-    # Unbalanced Double Dicke state
-    with control([prep_qv[2]]):
+    # Unbalanced Double Dicke state (Y0)
+    with control([prep_qv[block_skip]]):
 
-        unbalanced_W_state(prep_qv[fh1:lh1 + 1], g_hats[2], reversed=True)
+        unbalanced_W_state(prep_qv[fh1:lh1 + 1], g_hats[1], reversed=True)
         cx(prep_qv[fh1:lh1 + 1], prep_qv[fh2:])
 
     for i in range(len(J_betas[0])):
 
-        # Unbalanced 2kN
-        with control([prep_qv[(3 * i) + 3]]):
+        # Unbalanced 2kN (Xi)
+        with control([prep_qv[i + 1]]):
 
             unbalanced_W_state(prep_qv[fh1:lh1 + 1 - (1 + i)], J_hats[0][i], reversed=True)
-            _cx_ladder(prep_qv, len(J_betas[0]))
+            _cx_ladder(prep_qv[fh1:lh1 + 1], len(J_betas[0]), i + 1)
 
-        # Unbalanced 2kN
-        with control([prep_qv[(3 * i) + 4]]):
+        # Unbalanced 2kN (Zi)
+        with control([prep_qv[i + 1 + 2 * block_skip]]):
 
-            unbalanced_W_state(prep_qv[fh2:lh2 + 1 - (1 + i)], J_hats[1][i], reversed=True)
-            _cx_ladder(prep_qv, len(J_betas[0]))
+            unbalanced_W_state(prep_qv[fh2:lh2 + 1 - (1 + i)], J_hats[2][i], reversed=True)
+            _cx_ladder(prep_qv[fh2:lh2 + 1], len(J_betas[0]), i + 1)
 
-        # Unbalanced Double 2kN
-        with control([prep_qv[(3 * i) + 5]]):
+        # Unbalanced Double 2kN (Yi)
+        with control([prep_qv[i + 1 + block_skip]]):
 
-            unbalanced_W_state(prep_qv[fh1:lh1 + 1 - (1 + i)], J_hats[2][i], reversed=True)
-            _cx_ladder(prep_qv, len(J_betas[0]))
+            unbalanced_W_state(prep_qv[fh1:lh1 + 1 - (1 + i)], J_hats[1][i], reversed=True)
+            _cx_ladder(prep_qv[fh1:lh1 + 1], len(J_betas[0]), i + 1)
             cx(prep_qv[fh1:lh1 + 1], prep_qv[fh2:])
 
 def foqcs_prep_placeholder( qv: QuantumVariable, coeffs: list, some_param: float ) -> None:
