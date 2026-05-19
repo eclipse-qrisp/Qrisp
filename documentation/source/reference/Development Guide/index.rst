@@ -1,7 +1,7 @@
 Development Guide
 =================
 
-Welcome, and thank you for contributing to Qrisp!
+Welcome, and thank you for your interest in contributing to Qrisp!
 
 This guide collects the engineering standards and conventions that help keep
 the codebase maintainable and welcoming to new contributors. It is intended
