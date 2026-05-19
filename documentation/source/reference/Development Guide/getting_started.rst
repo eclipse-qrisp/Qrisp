@@ -3,7 +3,7 @@
 Getting Started
 ===============
 
-Welcome, and thank you for contributing to Qrisp!
+Welcome, and thank you for your interest in contributing to Qrisp!
 
 This page walks you through setting up a local development environment and
 verifying that everything works before you make any changes.
