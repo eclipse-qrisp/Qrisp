@@ -25,7 +25,8 @@ To also install the documentation build dependencies:
 
 .. code-block:: bash
 
-    pip install -r documentation/requirements_doc.txt
+    cd documentation
+    make docs-install
 
 Running the test suite
 ----------------------
@@ -45,7 +46,10 @@ machine. This gives you a clean baseline to compare against.
     pytest tests/circuit_tests/test_quantum_circuit.py
 
 If any tests fail *before* you have made changes, please open a GitHub issue
-rather than working around the failure.
+rather than working around the failure. Keep in mind that some tests are
+stochastic (depending on random seeds, a test may fail in one run and pass in
+another). If you see an isolated failure that disappears on a second run, try
+running the test a few more times before concluding there is a bug.
 
 .. note::
 

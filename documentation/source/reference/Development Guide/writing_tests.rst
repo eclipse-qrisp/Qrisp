@@ -114,6 +114,20 @@ Running the tests
     # Run with verbose output
     pytest -v tests/circuit_tests/test_quantum_circuit.py
 
+Checking test coverage
+----------------------
+
+To verify that the code you added is actually exercised by your tests, you can
+use `coverage <https://coverage.readthedocs.io>`_:
+
+.. code-block:: bash
+
+    pip install coverage
+    coverage run -m pytest tests/circuit_tests/test_quantum_circuit.py
+    coverage html
+
+This is a useful sanity check before opening a pull request.
+
 A good starting point when looking for what to test is the docstring examples
 of the function or class you are working on. If those examples exist, they
 should all pass as tests. If they do not exist, adding them is a contribution
