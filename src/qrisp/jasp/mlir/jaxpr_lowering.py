@@ -117,6 +117,8 @@ def MLIR_str_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
 
     Returns
     -------
+    Context
+        The xDSL context in which the module resides.
     builtin.ModuleOp
         The parsed xDSL module operation. Unregistered ops are allowed so that
         custom JASP ops survive the round-trip.
@@ -167,6 +169,8 @@ def jaxpr_to_xdsl(jaxpr, lower_stableHLO = False, lowering_rules=tuple([])):
 
     Returns
     -------
+    Context
+        The xDSL context in which the module resides.
     builtin.ModuleOp
         The xDSL module containing the lowered program.
     """
