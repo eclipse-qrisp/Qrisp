@@ -22,7 +22,7 @@ from qrisp.core import cx, ry
 from qrisp.jasp import jlen, jrange
 
 
-def dicke_state(qv, k, num_qubits: int = 0):
+def dicke_state(qv, k):
     """
     Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358.
     This algorithm creates an equal superposition of Dicke states for a given Hamming weight. The initial input variable has to be within this subspace.
