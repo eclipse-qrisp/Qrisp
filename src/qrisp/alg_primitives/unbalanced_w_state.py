@@ -16,14 +16,14 @@
 ********************************************************************************
 """
 
-import numpy as np
+import jax.numpy as jnp
 from qrisp import QuantumVariable, Qubit, x, xxyy, p
+from qrisp.jasp import jlen, q_fori_loop, check_for_tracing_mode
 from collections.abc import Sequence
 
 def unbalanced_W_state(
     qv: QuantumVariable | Sequence[Qubit],
     amplitudes: list,
-    num_qubits: int = 0,
     reversed: bool = False
 ) -> None:
     r"""
@@ -49,8 +49,6 @@ def unbalanced_W_state(
     amplitudes : array_like
         A 1-D sequence of complex (or real) target amplitudes, one per qubit.
         Its length must equal ``qv.size``.
-    num_qubits : int
-        Number of passed qubits, used instead of `len(qv)` call if specified to any value other than 0. Default is 0
     reversed : bool, optional
         If ``True``, reverse the order of the received amplitudes before
         preparing the state. Default is ``False``
@@ -94,51 +92,49 @@ def unbalanced_W_state(
     >>> unbalanced_W_state(qv, a)
     >>> print(qv.qs.statevector())
     """
-    if num_qubits == 0:
-        n = len(qv)
-    else:
-        n = num_qubits
-
-    a = np.asarray(amplitudes, dtype=complex)
+    n = jlen(qv)
+    a = jnp.asarray(amplitudes, dtype=complex)
 
     if reversed:
         a = a[::-1]
 
-    if len(a) != n:
+    if not check_for_tracing_mode() and len(a) != n:
         raise ValueError(
             f"Length of amplitudes ({len(a)}) must match qv.size ({n})."
         )
 
     # Normalize so that <a|a> = 1
-    norm = np.sqrt(np.vdot(a, a).real)
-    if norm < 1e-15:
-        raise ValueError("Amplitude vector must be non-zero.")
+    norm = jnp.sqrt(jnp.vdot(a, a).real)
     a = a / norm
-    abs_a = np.abs(a)
+    abs_a = jnp.abs(a)
 
     # --- Step 1: place the single excitation on qubit 0  --->  |10...0>
     x(qv[0])
 
     # --- Step 2: redistribute amplitude along the qubit chain
-    # `remaining` tracks the magnitude still carried by the "active" qubit
+    # `remaining` (i.e. `carry`) tracks the magnitude still carried by the "active" qubit
     # (the one that has not yet been peeled off).
-    remaining = 1.0
-    for i in range(n - 1):
-        # Choose θ so that cos(θ/2) = |a_i| / remaining,
+    phase_correction = (n - 1) * (jnp.pi / 4)
+    def body_for(i, carry):
+        # Choose θ so that cos(θ/2) = |a_i| / remaining (i.e. carry),
         # i.e. qubit i retains exactly magnitude |a_i|.
-        theta = 2 * np.arccos(np.clip(abs_a[i] / remaining, -1.0, 1.0))
+        theta = 2 * jnp.arccos(jnp.clip(abs_a[i] / carry, -1.0, 1.0))
 
         # XXYY(θ, π/2) performs a parametrized partial swap in the
         # single-excitation subspace {|01>, |10>}:
         #   |10> -> cos(θ/2)|10> - sin(θ/2)|01>
-        xxyy(theta, np.pi / 2, qv[i], qv[i + 1])
+        xxyy(theta, jnp.pi / 2, qv[i], qv[i + 1])
 
         # Update the undistributed amplitude magnitude for the next step
-        remaining *= np.sin(theta / 2)
+        new_carry = carry * jnp.sin(theta / 2)
 
         # Imprint the complex phase of a_i onto qubit i
-        p(np.angle(a[i]), qv[i])
+        p(jnp.angle(a[i]) + phase_correction, qv[i])
+
+        return new_carry
+
+    remaining = jnp.asarray(1.0)
+    q_fori_loop(0, n-1, body_for, remaining)
 
     # --- Step 3: imprint the phase on the last qubit
-    p(np.angle(a[-1]), qv[-1])
-
+    p(jnp.angle(a[-1]) + phase_correction, qv[-1])

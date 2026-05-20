@@ -20,9 +20,10 @@ import numpy as np
 import pytest
 from qrisp.block_encodings import BlockEncoding
 from qrisp import QuantumVariable, terminal_sampling, multi_measurement
-from qrisp.block_encodings import foqcs_prep_heisenberg_1D, is_operator_foqcs_compatible, foqcs_analyze_operator
+from qrisp.block_encodings import foqcs_prep_heisenberg_1D, is_operator_foqcs_compatible, foqcs_analyze_operator, foqcs_prep_spin_glass
 from functools import partial
 from qrisp.operators import X, Y, Z
+from qrisp.alg_primitives.unbalanced_w_state import unbalanced_W_state
 
 def _heisenberg_from_def(L: int, g: dict, J: dict):
 
@@ -195,8 +196,381 @@ def test_foqcs_lcu_prep():
     #    if ref_state[i] != 0:
     #        print(f"r[{i}] = {ref_state[i]}")
 
+    # Test that the state received is the same as the reference up to a global phase.
+    idx = np.argmax(np.abs(ref_state))
+    if np.isclose(ref_state[idx], 0, atol=1e-06):
+        assert np.allclose(statev, ref_state, atol=1e-06)
+
+    phase = statev[idx] / ref_state[idx]
+    phase /= abs(phase)
+
+    assert np.allclose(statev, phase * ref_state, atol=1e-06), (
+        f"States differ beyond global phase {phase}"
+    )
+
+def test_foqcs_lcu_spin_glass_prep():
+    # g = {"X" : [], "Y" : [], "Z" : []}
+    # J = {"X" : [[]], "Y" : [[]], "Z" : [[]]}
+
+    # Initialize variables + their values
+    L = 3
+    coeff = np.random.uniform(-1, 1, (3, L, L))
+    g = []
+    J = []
+
+    for i in range(3):
+    
+        g.append(np.diag(coeff[i]))
+        coeff[i] = (coeff[i] + coeff[i].T) / 2.0
+        J.append(coeff[i] - np.diag(g[i]))
+    
+    g = np.array(g, dtype=complex)
+    J = np.array(J, dtype=complex)
+    d_state = QuantumVariable(5 * L)
+
+    # g = np.array(np.random.uniform(-1, 1, (3, L)), dtype=object)
+    # Jx = np.array([np.random.uniform(-1, 1, size=i) for i in range(L - 1, 0, -1)], dtype=object)
+    # Jx = [row.tolist() for row in Jx]
+    # Jz = np.array([np.random.uniform(-1, 1, size=i) for i in range(L - 1, 0, -1)], dtype=object)
+    # Jz = [row.tolist() for row in Jz]
+    # Jy = np.array([np.random.uniform(-1, 1, size=i) for i in range(L - 1, 0, -1)], dtype=object)
+    # Jy = [row.tolist() for row in Jy]
+    # J = {"X": Jx, "Y": Jy, "Z": Jz}
+
+    # Fix coefficients for debugging
+    g = np.array( [[-0.4808829 +0.j, -0.86150457+0.j,  0.22114172+0.j],
+                   [-0.1736148 +0.j,  0.49011868+0.j,  0.78437336+0.j],
+                   [-0.33825609+0.j, -0.19728503+0.j, -0.5482909 +0.j]])
+    J = np.array([[[ 0.        +0.j,  0.45669928+0.j, -0.29835039+0.j],
+                   [ 0.45669928+0.j,  0.        +0.j, -0.66928103+0.j],
+                   [-0.29835039+0.j, -0.66928103+0.j,  0.        +0.j]],
+                  [[ 0.        +0.j, -0.24574681+0.j,  0.07099358+0.j],
+                   [-0.24574681+0.j,  0.        +0.j, -0.08502734+0.j],
+                   [ 0.07099358+0.j, -0.08502734+0.j,  0.        +0.j]],
+                  [[ 0.        +0.j, -0.49783128+0.j,  0.68088956+0.j],
+                   [-0.49783128+0.j,  0.        +0.j, -0.82130807+0.j],
+                   [ 0.68088956+0.j, -0.82130807+0.j,  0.        +0.j]]])
+
+    # Normalize
+    norms_kNN = np.zeros((3, L))
+
+    for x in range(3):
+
+        norms_kNN[x, 0] = np.linalg.norm(g[x])
+
+        for k in range(1, L):
+
+            J_kNN = []
+
+            for i in range(L - k):
+
+                J_kNN.append(J[x, i, i + k])
+
+            norms_kNN[x, k] = np.linalg.norm(J_kNN)
+
+    spin_glass_g = {"X": g[0], "Y": g[1], "Z": g[2]}
+
+    J_diags = []
+
+    for i in range(3):
+
+        result = [list(J[i].diagonal(offset=k)) for k in range(1, J[i].shape[0])]
+        J_diags.append(result)
+
+    spin_glass_J = {"X": J_diags[0], "Y": J_diags[1], "Z": J_diags[2]}
+
+    # Prep base state using qv + Do FOQCS-LCU magic using prep function
+    foqcs_prep_spin_glass(d_state, L, spin_glass_g, spin_glass_J)
+
+    # sv = d_state.qs.statevector("function")
+    # Take out the statevector from the compiled circuit
+    qc = d_state.qs.compile()
+    statev = qc.statevector_array()
+
+    g_betas = [] # Squared normalization factors for all g components (X, Y, Z) --> [g_beta_X, g_beta_Y, g_beta_Z]
+    J_betas = [[], [], []] # Squared normalization factors for all J components and diagonals (X, Y, Z) --> [[J_beta_X1, J_beta_X2, ...], [J_beta_Y1, J_beta_Y2, ...], [J_beta_Z1, J_beta_Z2, ...]]
+    g_hats = [[], [], []] # Normalized g coefficients
+    J_hats = [[], [], []] # Normalized J coefficients
+    components = ["X", "Y", "Z"]
+
+	# Normalization for state preparation
+    for i in range(3):
+
+        for j in range(len(spin_glass_J["X"])):
+
+            J_hats[i].append([])
+
+    for i in range(3):
+
+        s_sum = 0
+        dimension = components[i]
+
+        for j in range(len(spin_glass_g[dimension])):
+
+            s_sum += abs(spin_glass_g[dimension][j]) ** 2
+
+        g_betas.append(s_sum)
+
+    for i in range(3):
+
+        dimension = components[i]
+
+        for j in range(len(spin_glass_J[dimension])):
+
+            s_sum = 0
+
+            for k in range(len(spin_glass_J[dimension][j])):
+
+                s_sum += abs(spin_glass_J[dimension][j][k]) ** 2
+
+            J_betas[i].append(s_sum)
+
+    for i in range(3):
+
+        dimension = components[i]
+
+        for j in range(len(spin_glass_g[dimension])):
+
+            new_g = spin_glass_g[dimension][j] / (g_betas[i] ** 0.5)
+            g_hats[i].append(new_g)
+
+    for i in range(3):
+
+        dimension = components[i]
+
+        for j in range(len(spin_glass_J[dimension])):
+
+            for k in range(len(spin_glass_J[dimension][j])):
+
+                new_J = spin_glass_J[dimension][j][k] / ((J_betas[i][j]) ** 0.5)
+                J_hats[i][j].append(new_J)
+
+    final_betas = []
+
+    for i in range(3):
+
+        final_betas.append(g_betas[i])
+
+        for j in range(len(J_betas[i])):
+
+            final_betas.append(J_betas[i][j])
+
+    final_betas = np.sqrt(np.array(final_betas))
+    final_betas = final_betas / np.linalg.norm(final_betas)
+
+    ref_state = np.zeros(2 ** (5 * L), dtype=complex)
+    zero_n = np.array([1] + [0] * (2**L - 1))
+
+    # Modify the original coefficients for the manual state building.
+    for k in range(L):
+        for i in range(0, L - k):
+            # g terms
+            if k == 0:
+                ket = np.zeros(2**L)
+                ket[2 ** (L - i - 1)] = 1
+                # gx
+                ref_state += g[0, i] * np.kron(
+                    [
+                        1 if j == 2 ** (3 * L - 1) else 0
+                        for j in range(2 ** (3 * L))
+                    ],
+                    np.kron(ket, zero_n),
+                )
+                # gz
+                ref_state += g[2, i] * np.kron(
+                    [1 if j == 2 ** (L - 1) else 0 for j in range(2 ** (3 * L))],
+                    np.kron(zero_n, ket),
+                )
+                double_ket = np.zeros(2 ** (2 * L))
+                double_ket[2 ** (L - i - 1) + 2 ** (2 * L - i - 1)] = 1
+                # gy
+                ref_state += g[1, i] * np.kron(
+                    [
+                        1 if j == 2 ** (2 * L - 1) else 0
+                        for j in range(2 ** (3 * L))
+                    ],
+                    double_ket,
+                )
+            # J terms
+            else:
+                ket = np.zeros(2**L)
+                ket[2 ** (L - i - 1) + 2 ** (L - i - k - 1)] = 1
+                # gx
+                ref_state += J[0, i, i + k] * np.kron(
+                    [
+                        1 if j == 2 ** (3 * L - k - 1) else 0
+                        for j in range(2 ** (3 * L))
+                    ],
+                    np.kron(ket, zero_n),
+                )
+                # gz
+                ref_state += J[2, i, i + k] * np.kron(
+                    [
+                        1 if j == 2 ** (L - k - 1) else 0
+                        for j in range(2 ** (3 * L))
+                    ],
+                    np.kron(zero_n, ket),
+                )
+                double_ket = np.zeros(2 ** (2 * L))
+                double_ket[
+                    2 ** (L - i - 1)
+                    + 2 ** (L - i - k - 1)
+                    + 2 ** (2 * L - i - 1)
+                    + 2 ** (2 * L - i - k - 1)
+                ] = 1
+                # gy
+                ref_state += J[1, i, i + k] * np.kron(
+                    [
+                        1 if j == 2 ** (2 * L - k - 1) else 0
+                        for j in range(2 ** (3 * L))
+                    ],
+                    double_ket,
+                )
+    ref_state = ref_state / np.linalg.norm(ref_state)
+
+    statev[np.isclose(statev, 0j, atol=1e-6)] = 0
+
+    for i in range(0, len(statev)):
+        if statev[i] != 0:
+            print(f"s[{i}] = {statev[i]}")
+        if ref_state[i] != 0:
+            print(f"r[{i}] = {ref_state[i]}")
+
+    # Test that the state received is the same as the reference up to a global phase.
+    idx = np.argmax(np.abs(ref_state))
+    if np.isclose(ref_state[idx], 0, atol=1e-06):
+        assert np.allclose(statev, ref_state, atol=1e-06)
+
+    phase = statev[idx] / ref_state[idx]
+    phase /= abs(phase)
+
+    assert np.allclose(statev, phase * ref_state, atol=1e-06), (
+        f"States differ beyond global phase {phase}"
+    )
+
     # Test that the state received is the same as the reference.
-    assert np.allclose(statev, ref_state, atol=1e-06)
+    #assert np.allclose(statev, ref_state, atol=1e-06)
+
+def test_foqcs_lcu_spin_glass_subprep():
+
+    L = 5
+    g = {"X" : [2, 1, 3, 2, 4], "Y" : [1, 2, 3, 4, 5], "Z" : [6, 7, 8, 9, 10]}
+    J = {"X" : [[3, 5, 6, 7], [1, 2, 1], [1, 0], [4]], "Y" : [[1, 2, 3, 4], [5, 6, 7], [9, 10], [11]], "Z" : [[12, 13, 14, 15], [16, 17, 18], [19, 20], [21]]}
+
+    g_betas = [] # Squared normalization factors for all g components (X, Y, Z) --> [g_beta_X, g_beta_Y, g_beta_Z]
+    J_betas = [[], [], []] # Squared normalization factors for all J components and diagonals (X, Y, Z) --> [[J_beta_X1, J_beta_X2, ...], [J_beta_Y1, J_beta_Y2, ...], [J_beta_Z1, J_beta_Z2, ...]]
+    g_hats = [[], [], []] # Normalized g coefficients
+    J_hats = [[], [], []] # Normalized J coefficients
+    components = ["X", "Y", "Z"]
+
+    # Normalization for state preparation
+    for i in range(3):
+
+        for j in range(len(J["X"])):
+
+            J_hats[i].append([])
+
+    for i in range(3):
+
+        s_sum = 0
+        dimension = components[i]
+
+        for j in range(len(g[dimension])):
+
+            s_sum += abs(g[dimension][j]) ** 2
+
+        g_betas.append(s_sum)
+
+    for i in range(3):
+
+        dimension = components[i]
+
+        for j in range(len(J[dimension])):
+
+            s_sum = 0
+
+            for k in range(len(J[dimension][j])):
+
+                s_sum += abs(J[dimension][j][k]) ** 2
+
+            J_betas[i].append(s_sum)
+
+    for i in range(3):
+
+        dimension = components[i]
+
+        for j in range(len(g[dimension])):
+
+            new_g = g[dimension][j] / (g_betas[i] ** 0.5)
+            g_hats[i].append(new_g)
+
+    for i in range(3):
+
+        dimension = components[i]
+
+        for j in range(len(J[dimension])):
+
+            for k in range(len(J[dimension][j])):
+
+                new_J = J[dimension][j][k] / ((J_betas[i][j]) ** 0.5)
+                J_hats[i][j].append(new_J)
+
+    final_betas = []
+
+    for i in range(3):
+
+        final_betas.append(g_betas[i])
+
+        for j in range(len(J_betas[i])):
+
+            final_betas.append(J_betas[i][j])
+
+    final_betas = np.sqrt(np.array(final_betas))
+    final_betas = final_betas / np.linalg.norm(final_betas)
+
+    # SUBPREP
+    extra_anc = len(g_betas) + (3 * len(J_betas[0]))
+    prep_qv = QuantumVariable(extra_anc)
+    unbalanced_W_state(prep_qv, final_betas, reversed=True)
+
+    qc = prep_qv.qs.compile()
+    statev = qc.statevector_array()
+
+    ref_state = np.zeros(2 ** (3 * L))
+    components = ["X", "Y", "Z"]
+
+    for x in range(3):
+
+        # g term
+        ket = np.zeros(2 ** (3 * L))
+        ket[2 ** (x * L)] = 1
+        ref_state += np.linalg.norm(g[components[x]]) * ket
+
+        # J terms
+        for k in range(1, L):
+
+            J_kNN = J[components[x]][k - 1]
+
+            ket = np.zeros(2 ** (3 * L))
+            ket[2 ** (k + x * L)] = 1
+
+            ref_state += np.linalg.norm(J_kNN) * ket
+
+    ref_state = ref_state / np.linalg.norm(ref_state)
+
+    idx = np.argmax(np.abs(statev))
+    phase = ref_state[idx] / statev[idx]
+    phase /= abs(phase)
+    
+    statev[np.isclose(statev, 0j, atol=1e-6)] = 0
+
+    for i in range(0, len(statev)):
+        if statev[i] != 0:
+            print(f"s[{i}] = {statev[i]}")
+        if ref_state[i] != 0:
+            print(f"r[{i}] = {ref_state[i]}")
+
+    assert np.allclose(statev * phase, ref_state)
 
 def test_block_encoding_from_foqcs_lcu_prep():
     # Initialize variables + their values
