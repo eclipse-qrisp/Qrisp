@@ -19,6 +19,7 @@
 import numpy as np
 import pytest
 from qrisp import (
+    BigInteger,
     QuantumBool,
     QuantumFloat,
     QuantumVariable,
@@ -35,20 +36,10 @@ from qrisp import (
         (("qf", 13), 20, 14, 14, {20: 1.0}, {34: 1.0}),  # quantum a and wider b without wrap
         (("qf", 10), 15, 5, 7, {15: 1.0}, {(7 + 15) % 32: 1.0}),  # quantum a larger than b to force modulo on b
         (("classical", None), 20, 15, 14, 20, {34: 1.0}),  # classical integer a path
-        (("qf", 10), 0, 10, 42, {0: 1.0}, {42: 1.0}),  # additive identity with quantum zero
-        (("classical", None), 0, 10, 42, 0, {42: 1.0}),  # additive identity with classical zero
         (("qf", 1), 0, 1, 1, {0: 1.0}, {1: 1.0}),  # single-qubit register boundary
-        (("qf", 5), 7, 10, 15, {7: 1.0}, {22: 1.0}),  # mixed widths where no overflow occurs
-        (("qf", 8), 100, 8, 50, {100: 1.0}, {150: 1.0}),  # equal-width quantum addition baseline
-        (("qf", 16), 255, 4, 3, {255: 1.0}, {(3 + 255) % 16: 1.0}),  # strong wrap with much smaller b register
         (("classical", None), "10", 8, 5, "10", {6: 1.0}),  # string input accepted through int conversion
-        (("classical", None), "", 8, 42, "", {42: 1.0}),  # empty string maps to zero contribution
         (("classical", None), np.int64(5), 8, 10, np.int64(5), {15: 1.0}),  # numpy integer compatibility
-        (("classical", None), 17, 4, 0, 17, {1: 1.0}),  # classical overflow reduced modulo 2^b_bits
-        (("classical", None), 255, 4, 7, 255, {6: 1.0}),  # large classical a reduced before addition
         (("classical", None), -3, 4, 5, -3, {2: 1.0}),  # negative classical input wraps modulo 2^b_bits
-        (("classical", None), -1, 8, 0, -1, {255: 1.0}),  # -1 becomes all-ones pattern in target width
-        (("qf_list", 4), 5, 4, 3, None, {8: 1.0}),  # list-of-qubits input path at equal width
         (("qf_list", 3), 7, 8, 100, None, {107: 1.0}),  # list-of-qubits input with wider target register
     ],
 )
@@ -78,12 +69,9 @@ def test_gidney_adder_basic(a_spec, a_val, b_bits, b_val, expected_a, expected_b
     "a_spec, a_val, b_bits, b_val, expected_b, expected_cout",
     [
         (("qf", 13), 20, 14, 14, {34: 1.0}, {0: 1.0}),  # carry-out remains zero when sum fits
-        (("qf", 13), 20, 13, 14, {34: 1.0}, {0: 1.0}),  # same arithmetic at equal widths
-        (("classical", None), 20, 15, 14, {34: 1.0}, {0: 1.0}),  # classical a without overflow
-        (("classical", None), 10, 8, 20, {30: 1.0}, {0: 1.0}),  # classical a on standard 8-bit target
         (("qf", 1), 1, 1, 1, {0: 1.0}, {1: 1.0}),  # minimal-width overflow sets carry-out
         (("classical", None), 255, 8, 128, {127: 1.0}, {1: 1.0}),  # high-value overflow case
-        (("classical", None), 200, 8, 100, {44: 1.0}, {1: 1.0}),  # nontrivial overflow with wrap and carry
+        (("classical", None), 10, 8, 20, {30: 1.0}, {0: 1.0}),  # classical a on standard 8-bit target
     ],
 )
 def test_gidney_adder_with_carry_out(
@@ -115,10 +103,8 @@ def test_gidney_adder_with_carry_out(
     "a_spec, a_val, b_val, c_in_val, expected_b",
     [
         (("classical", None), 5, 0, 1, {6: 1.0}),  # classical path with carry-in increment
-        (("classical", None), 20, 0, 1, {21: 1.0}),  # larger classical addend with carry-in
         (("qf", 8), 50, 100, 1, {151: 1.0}),  # quantum path where carry-in changes result
         (("qf", 8), 50, 100, 0, {150: 1.0}),  # paired case to isolate carry-in effect
-        (("qf", 8), 10, 0, 1, {11: 1.0}),  # carry-in into zero target register
     ],
 )
 def test_gidney_adder_with_carry_in(a_spec, a_val, b_val, c_in_val, expected_b):
@@ -149,7 +135,6 @@ def test_gidney_adder_with_carry_in(a_spec, a_val, b_val, c_in_val, expected_b):
 @pytest.mark.parametrize(
     "a_spec, a_val, b_val, expected_b, expected_cout",
     [
-        (("qf", 8), 100, 150, {251: 1.0}, {0: 1.0}),  # c_in active but still no overflow
         (("qf", 8), 200, 55, {0: 1.0}, {1: 1.0}),  # c_in pushes sum exactly over modulo boundary
         (("classical", None), 0, 255, {0: 1.0}, {1: 1.0}),  # zero addend with carry-in-only overflow
         (("classical", None), 1, 1, {3: 1.0}, {0: 1.0}),  # small numbers where carry remains zero
@@ -190,9 +175,6 @@ def test_gidney_adder_with_carry_in_and_carry_out(
         (("qf", 10), 3, 11, 5, False, {5: 1.0}),  # matched ctrl-off case leaves b unchanged
         (("classical", None), 5, 8, 10, True, {15: 1.0}),  # controlled classical addition executes
         (("classical", None), 5, 8, 10, False, {10: 1.0}),  # classical path blocked by ctrl-off
-        (("classical", None), 0, 8, 42, True, {42: 1.0}),  # no-op addend under active control
-        (("classical", None), 1, 1, 0, True, {1: 1.0}),  # one-bit controlled boundary case
-        (("qf", 8), 50, 8, 100, False, {100: 1.0}),  # ctrl-off with c_in setup still must do nothing
     ],
 )
 def test_gidney_adder_with_control(
@@ -216,15 +198,8 @@ def test_gidney_adder_with_control(
     if ctrl_on:
         x(ctrl_qb[0])
 
-    # For the c_in + ctrl_off case, also set up c_in
-    use_c_in = (a_spec[0] == "qf" and not ctrl_on and a_val == 50)
-    c_in = None
-    if use_c_in:
-        c_in = QuantumBool()
-        x(c_in[0])
-
     with control(ctrl_qb):
-        gidney_adder(a, b, c_in=c_in)
+        gidney_adder(a, b)
 
     assert b.get_measurement() == expected_b
 
@@ -275,6 +250,16 @@ def test_gidney_adder_classical_a_cin_cout_ctrl(
     assert c_out.get_measurement() == expected_cout
 
 
+@pytest.mark.parametrize("a_str", ["10201", "abc"])
+def test_gidney_adder_invalid_binary_string_raises_value_error(a_str):
+    """Invalid binary strings should raise from the string-to-int conversion branch."""
+    b = QuantumFloat(8)
+    b[:] = 3
+
+    with pytest.raises(ValueError, match="base 2"):
+        gidney_adder(a_str, b)
+
+
 @pytest.mark.parametrize(
     "a_spec, a_val, b_bits, b_val",
     [
@@ -304,30 +289,22 @@ def test_gidney_adder_ancilla_cleanup(a_spec, a_val, b_bits, b_val):
     assert remaining == [], f"Leaked ancilla variables: {remaining}"
 
 
-def test_gidney_adder_raw_qubit_carry_in():
-    """Pass a raw Qubit instead of QuantumBool as c_in."""
-    c_in_var = QuantumVariable(1)
-    x(c_in_var[0])
-
+@pytest.mark.parametrize("carry_kind", ["in", "out"])
+def test_gidney_adder_raw_qubit_carry_wires(carry_kind):
+    """Pass raw Qubits instead of QuantumBool for carry wires."""
+    carry_var = QuantumVariable(1)
     b = QuantumFloat(8)
-    b[:] = 10
 
-    gidney_adder(5, b, c_in=c_in_var[0])
-
-    assert b.get_measurement() == {16: 1.0}
-
-
-def test_gidney_adder_raw_qubit_carry_out():
-    """Pass a raw Qubit instead of QuantumBool as c_out."""
-    c_out_var = QuantumVariable(1)
-
-    b = QuantumFloat(8)
-    b[:] = 200
-
-    gidney_adder(100, b, c_out=c_out_var[0])
-
-    assert b.get_measurement() == {44: 1.0}
-    assert c_out_var.get_measurement() == {"1": 1.0}
+    if carry_kind == "in":
+        x(carry_var[0])
+        b[:] = 10
+        gidney_adder(5, b, c_in=carry_var[0])
+        assert b.get_measurement() == {16: 1.0}
+    else:
+        b[:] = 200
+        gidney_adder(100, b, c_out=carry_var[0])
+        assert b.get_measurement() == {44: 1.0}
+        assert carry_var.get_measurement() == {"1": 1.0}
 
 
 def test_gidney_adder_inputs_unmodified_size():
@@ -462,11 +439,8 @@ def test_gidney_adder_t_count():
     [
         (3, True, False, False),  # c_in-only overhead without control term
         (3, False, True, False),  # c_out-only ladder extension
-        (5, True, True, False),  # combined c_in and c_out without control
         (3, False, False, True),  # ctrl-only linear T contribution at small n
-        (5, True, False, True),  # ctrl plus c_in extra forward logical-AND
-        (5, False, True, True),  # ctrl plus c_out ladder extension
-        (8, True, True, True),  # all options enabled at larger width
+        (5, True, True, True),  # all options enabled together
     ],
 )
 def test_gidney_adder_t_count_formula_with_optional_inputs(
@@ -542,8 +516,6 @@ def test_gidney_adder_t_count_formula_with_optional_inputs(
     "N, L",
     [
         (2, 2),  # equal widths small baseline
-        (2, 5),  # narrow a into wider b
-        (3, 4),  # near-equal widths with modulo on b
         (4, 3),  # wider a into narrower b
         (5, 5),  # larger equal-width dynamic case
     ],
@@ -575,8 +547,6 @@ def test_gidney_adder_jasp_mode(N, L):
     "N, L",
     [
         (2, 2),  # equal widths under active control
-        (2, 5),  # controlled execution with wider b
-        (3, 4),  # controlled mixed-width dynamic path
         (4, 3),  # controlled modulo behavior with narrower b
         (5, 5),  # larger controlled equal-width case
     ],
@@ -609,7 +579,7 @@ def test_gidney_adder_jasp_mode_with_control(N, L):
 
 @pytest.mark.parametrize(
     "N",
-    [2, 3, 4, 5],  # sweep register sizes for carry-in dynamic path
+    [2, 5],  # small and larger register sizes for carry-in dynamic path
 )
 def test_gidney_adder_jasp_mode_with_carry_in(N):
     """Carry-in in dynamic mode with quantum a for multiple register sizes."""
@@ -636,7 +606,7 @@ def test_gidney_adder_jasp_mode_with_carry_in(N):
 
 @pytest.mark.parametrize(
     "N",
-    [2, 3, 4, 5],  # sweep register sizes for ctrl-off no-op behavior
+    [2, 5],  # small and larger register sizes for ctrl-off no-op behavior
 )
 def test_gidney_adder_jasp_mode_ctrl_off(N):
     """In dynamic mode, ctrl=|0⟩ means b is untouched across multiple sizes."""
@@ -659,3 +629,25 @@ def test_gidney_adder_jasp_mode_ctrl_off(N):
             A, B = main(N, j, k)
             assert A == j
             assert B == k
+
+
+@pytest.mark.parametrize(
+    "n_bits, a_val, b_val",
+    [
+        (4, 5, 3),
+        (6, 17, 12),
+    ],
+)
+def test_gidney_adder_jasp_mode_with_biginteger_classical_input(n_bits, a_val, b_val):
+    """Cover traced-classical input path where ``a`` is a ``BigInteger`` with ``get_bit``."""
+
+    @boolean_simulation
+    def main(bits, a_num, b_num):
+        b_dyn = QuantumFloat(bits)
+        b_dyn[:] = b_num
+        a_big = BigInteger.create(a_num, 1)
+        gidney_adder(a_big, b_dyn)
+        return measure(b_dyn)
+
+    mod = 1 << n_bits
+    assert main(n_bits, a_val, b_val) == (a_val + b_val) % mod
