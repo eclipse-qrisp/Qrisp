@@ -17,183 +17,158 @@
 """
 
 import numpy as np
-from qrisp import Qubit, QuantumVariable, x, dicke_state, cx, unbalanced_W_state
-from collections.abc import Sequence
+import pytest
+from qrisp import QuantumVariable
+from qrisp.core import x
+from qrisp.alg_primitives.unbalanced_w_state import unbalanced_W_state
+from qrisp.alg_primitives.dicke_state_prep import dicke_state
+from qrisp.jasp import terminal_sampling
 
-def _cx_ladder(qv: QuantumVariable | Sequence[Qubit], k: int = 1) -> None:
-    n = len(qv)
-    for i in reversed(range(0, n - k)):
-        cx(qv[i], qv[i + k])
+#############################################################
+##################### Dicke state tests #####################
+#############################################################
 
 def test_dicke_state_balanced():
-    expected = QuantumVariable(3)
-    amp = 1 / np.sqrt(3)
-    expected.init_state({
-        "001": amp,
-        "010": amp,
-        "100": amp
-    }, method="qswitch")
-    qv = QuantumVariable(3)
+    n = 3 # Number of qubits
+    k = 1 # Excitations
+    # Prepare balanced Dicke state
+    qv = QuantumVariable(n)
+    x(qv[n - 1])
+    dicke_state(qv, k)
+    prepared_sv = qv.qs.compile().statevector_array()
 
-    # Prepare Balanced Dicke state.
-    x(qv[2])
-    dicke_state(qv, 1)
+    # Manual expected state:
+    # |D^3_1> = (|001> + |010> + |100>) / sqrt(3)
+    expected_sv = np.zeros(2 ** n, dtype=complex)
+    amp = 1 / np.sqrt(n)
+    for i in range(n):
+        expected_sv[2 ** i] = amp
 
-    print(f"Prepared: {qv}")
-    print(f"Expected: {expected}")
-    assert qv.get_measurement() == expected.get_measurement()
+    print(f"Prepared statevector:\n{prepared_sv}")
+    print(f"Expected statevector:\n{expected_sv}")
 
-def test_dicke_state_unbalanced():
-    expected = QuantumVariable(3)
-    expected.init_state({
-        "001": 0.25,
-        "010": 0.375,
-        "100": 0.375
-    }, method="qswitch")
-    qv = QuantumVariable(3)
+    assert np.allclose(prepared_sv, expected_sv, atol=1e-6)
 
-    amps = np.array([0.25, 0.375, 0.375], dtype=complex)
+def test_dicke_state_balanced_jasp_pass():
+    n = 3 # Number of qubits
+    k = 1 # Excitations
 
-    # Prepare Unbalanced Dicke state.
+    # Prepare balanced Dicke state
+    @terminal_sampling
+    def main():
+        qv = QuantumVariable(n)
+        x(qv[n - 1])
+        dicke_state(qv, k)
+        return qv
+    
+    result = main()
+    #prepared_sv = result.qs.compile().statevector_array()
+    print(result)
+
+    res_arr = np.zeros(2 ** n)
+    for key in result:
+        res_arr[int(key)] = result[key]
+
+    # Manual expected measurement:
+    expected_arr = np.zeros(2 ** n)
+    amp = 1 / n
+    for i in range(n):
+        expected_arr[2 ** i] = amp
+
+    print(f"Measured distribution:\n{res_arr}")
+    print(f"Expected distribution:\n{expected_arr}")
+
+    assert np.allclose(res_arr, expected_arr, atol=1e-6)
+
+##############################################################
+################## Unbalanced W state tests ##################
+##############################################################
+
+def test_unbalanced_W_state():
+    n = 3 # Number of qubits
+    amps = np.array([0.25 + 0.2j, 0.375 + 0.18j, 0.375], dtype=complex)
+    
+    # Prepare unbalanced Dicke state
+    qv = QuantumVariable(n)
     unbalanced_W_state(qv, amps, reversed=True)
+    prepared_sv = qv.qs.compile().statevector_array()
 
-    print(f"Prepared: {qv}")
-    print(f"Expected: {expected}")
-    assert qv.get_measurement() == expected.get_measurement()
+    # Manual expected state:
+    # |ψ> = a0 |001> + a1 |010> + a2 |100>
+    expected_sv = np.zeros(2 ** n, dtype=complex)
+    norm = np.linalg.norm(amps)
+    normalized_amps = amps / norm
+    for i in range(n):
+        expected_sv[2 ** i] = normalized_amps[i]
 
-def test_dicke_state_balanced_2kN():
-    n = 5
-    k = 2
-    expected = QuantumVariable(n)
-    amp = 1 / np.sqrt(3)
-    expected.init_state({
-        "00101": amp,
-        "01010": amp,
-        "10100": amp
-    }, method="qswitch")
+    # Consider the global phase
+    idx = np.argmax(np.abs(expected_sv))
+    phase = prepared_sv[idx] / expected_sv[idx]
+    phase /= abs(phase)
+
+    print(f"Prepared statevector:\n{prepared_sv}")
+    print(f"Expected statevector:\n{expected_sv}")
+    print(f"Expected statevector with global phase correction:\n{expected_sv * phase}")
+
+    assert np.allclose(prepared_sv, expected_sv * phase, atol=1e-6)
+
+def test_unbalanced_W_state_jasp():
+    n = 3 # Number of qubits
+    amps = np.array([0.25 + 0.2j, 0.375 + 0.18j, 0.375], dtype=complex)
+    
+    # Prepare unbalanced Dicke state
+    @terminal_sampling
+    def main():
+        qv = QuantumVariable(n)
+        unbalanced_W_state(qv, amps)
+        return qv
+    result = main()
+    # Manual expected state:
+    # |ψ> = a0 |001> + a1 |010> + a2 |100>
+    norm = np.linalg.norm(amps)
+    normalized_amps = amps / norm
+    expected = {
+        2**i: float(abs(normalized_amps[i]) ** 2)
+        for i in range(n)
+    }
+
+    print(f"Prepared measurement:\n{result}")
+    print(f"Expected measurement:\n{expected}")
+
+    keys = sorted(set(result) | set(expected))
+    result_arr = np.array([result.get(k, 0.0) for k in keys])
+    expected_arr = np.array([expected.get(k, 0.0) for k in keys])
+
+    assert np.allclose(result_arr, expected_arr, atol=1e-6)
+
+def test_unbalanced_W_state_one_qubit():
+    n = 1 # Number of qubits
+    amps = np.array([0.25 + 0.2j], dtype=complex)
+    
+    # Prepare unbalanced Dicke state
     qv = QuantumVariable(n)
+    unbalanced_W_state(qv, amps, reversed=True)
+    prepared_sv = qv.qs.compile().statevector_array()
 
-    # Prepare Balanced Dicke state on all qubits except last k.
-    x(qv[n - k - 1])
-    dicke_state(qv[:n - k], 1)
+    # Manual expected state
+    expected_sv = np.zeros(2 ** n, dtype=complex)
+    norm = np.linalg.norm(amps)
+    normalized_amps = amps / norm
+    expected_sv[1] = normalized_amps[0]
 
-    # Make it 2kN by using CNOT ladder
-    _cx_ladder(qv, k)
+    print(f"Prepared statevector:\n{prepared_sv}")
+    print(f"Expected statevector:\n{expected_sv}")
 
-    print(f"Prepared: {qv}")
-    print(f"Expected: {expected}")
-    assert qv.get_measurement() == expected.get_measurement()
+    assert np.allclose(prepared_sv, expected_sv, atol=1e-6)
 
-def test_dicke_state_unbalanced_2kN():
-    n = 6
-    k = 2
-    expected = QuantumVariable(n)
-    expected.init_state({
-        "000101": 0.5,
-        "001010": 0.2,
-        "010100": 0.3,
-        "101000": 0.1
-    }, method="qswitch")
+def test_unbalanced_W_state_fail_len_check():
+    n = 1 # Number of qubits
+    amps = np.array([0.25 + 0.2j, 2, 3, 4, 5, 6, 7], dtype=complex)
+
+    # Prepare unbalanced Dicke state
     qv = QuantumVariable(n)
+    with pytest.raises(ValueError) as exc_info:
+        unbalanced_W_state(qv, amps, reversed=True)
 
-    amps = np.array([0.1, 0.3, 0.2, 0.5], dtype=complex)
-
-    # Prepare Unbalanced Dicke state on all qubits except last k.
-    unbalanced_W_state(qv[:n - k], amps)
-
-    # Make it 2kN by using CNOT ladder
-    _cx_ladder(qv, k)
-
-    print(f"\nDepth = {qv.qs.depth()}")
-    print(f"CNOT count = {qv.qs.cnot_count()}")
-
-    print(f"Prepared: {qv}")
-    print(f"Expected: {expected}")
-    assert qv.get_measurement() == expected.get_measurement()
-
-def test_dicke_state_balanced_double():
-    expected = QuantumVariable(6)
-    amp = 1 / np.sqrt(3)
-    expected.init_state({
-        "001001": amp,
-        "010010": amp,
-        "100100": amp
-    }, method="qswitch")
-    qv = QuantumVariable(6)
-
-    # Prepare Balanced Dicke state on first half of qubits.
-    x(qv[2])
-    dicke_state(qv[:3], 1)
-
-    # Make it double by dragging down control to the second half.
-    cx(qv[:3], qv[3:])
-
-    print(f"Prepared: {qv}")
-    print(f"Expected: {expected}")
-    assert qv.get_measurement() == expected.get_measurement()
-
-def test_dicke_state_unbalanced_double():
-    expected = QuantumVariable(6)
-    expected.init_state({
-        "001001": 0.25,
-        "010010": 0.375,
-        "100100": 0.375
-    }, method="qswitch")
-    qv = QuantumVariable(6)
-
-    amps = np.array([0.375, 0.375, 0.25], dtype=complex)
-
-    # Prepare Unbalanced Dicke state on first half of qubits.
-    unbalanced_W_state(qv[:3], amps)
-
-    # Make it double by dragging down control to the second half.
-    cx(qv[:3], qv[3:])
-
-    print(f"Prepared: {qv}")
-    print(f"Expected: {expected}")
-    assert qv.get_measurement() == expected.get_measurement()
-
-def test_dicke_state_balanced_double_2kN():
-    n = 6
-    k = 1
-    expected = QuantumVariable(n)
-    expected.init_state({
-        "011011": 0.5,
-        "110110": 0.5,
-    }, method="qswitch")
-    qv = QuantumVariable(n)
-
-    # Prepare NN Dicke state on first half of qubits.
-    x(qv[n // 2 - k - 1])
-    dicke_state(qv[:n // 2 - k], 1)
-    _cx_ladder(qv[:n // 2], k)
-
-    # Make it double by dragging down control to the second half.
-    cx(qv[:n // 2], qv[n // 2:])
-
-    print(f"Prepared: {qv}")
-    print(f"Expected: {expected}")
-    assert qv.get_measurement() == expected.get_measurement()
-
-def test_dicke_state_unbalanced_double_2kN():
-    n = 6
-    k = 1
-    expected = QuantumVariable(n)
-    expected.init_state({
-        "011011": 0.6,
-        "110110": 0.4,
-    }, method="qswitch")
-    qv = QuantumVariable(n)
-
-    amps = np.array([0.4, 0.6], dtype=complex)
-
-    # Prepare Unbalanced Dicke state on first half of qubits.
-    unbalanced_W_state(qv[:n // 2 - k], amps)
-    _cx_ladder(qv[:n // 2], k)
-
-    # Make it double by dragging down control to the second half.
-    cx(qv[:n // 2], qv[n // 2:])
-
-    print(f"Prepared: {qv}")
-    print(f"Expected: {expected}")
-    assert qv.get_measurement() == expected.get_measurement()
+    print(exc_info.value)
+    assert f"Length of amplitudes" in str(exc_info.value)
