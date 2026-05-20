@@ -103,7 +103,7 @@ def foqcs_prep_heisenberg_1D(
         _J = np.conj(_J)
 
     # SUBPREP
-    unbalanced_W_state(prep_qv[:extra_anc], np.block([_g, _J]), extra_anc)
+    unbalanced_W_state(prep_qv[:extra_anc], np.block([_g, _J]))
     
     # PREP
     fh1 = extra_anc                # First qubit first half
@@ -263,7 +263,7 @@ def foqcs_prep_spin_glass(
 
     # SUBPREP
     extra_anc = len(g_betas) + (3 * len(J_betas[0]))
-    unbalanced_W_state(prep_qv[:extra_anc], final_betas, extra_anc)
+    unbalanced_W_state(prep_qv[:extra_anc], final_betas)
 
     # PREP
     fh1 = extra_anc                # First qubit first half

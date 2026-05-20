@@ -529,7 +529,7 @@ def test_foqcs_lcu_spin_glass_subprep():
     # SUBPREP
     extra_anc = len(g_betas) + (3 * len(J_betas[0]))
     prep_qv = QuantumVariable(extra_anc)
-    unbalanced_W_state(prep_qv, final_betas, extra_anc, reversed=True)
+    unbalanced_W_state(prep_qv, final_betas, reversed=True)
 
     qc = prep_qv.qs.compile()
     statev = qc.statevector_array()
