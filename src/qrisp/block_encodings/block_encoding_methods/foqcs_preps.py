@@ -18,7 +18,7 @@
 
 import numpy as np
 from qrisp.core import QuantumVariable, Qubit
-from qrisp.core.gate_application_functions import x, cx, ry
+from qrisp.core.gate_application_functions import x, cx, ry, p
 from qrisp.alg_primitives.unbalanced_w_state import unbalanced_W_state
 from qrisp.alg_primitives.dicke_state_prep import dicke_state
 from qrisp.environments import control
@@ -273,6 +273,14 @@ def foqcs_prep_spin_glass(
 
     J_skip = len(J_betas[0])
     block_skip = J_skip + 1
+    
+    # FOQCS-LCU phase convention correction for one-qubit J branches.
+    for ctrl in (
+        J_skip,
+        block_skip + J_skip,
+        2 * block_skip + J_skip,
+    ):
+        p(np.pi / 4, prep_qv[ctrl])
 
     # Unbalanced Dicke state (X0)
     with control([prep_qv[0]]):
