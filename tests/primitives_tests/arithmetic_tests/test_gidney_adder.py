@@ -326,10 +326,14 @@ def test_gidney_adder_inputs_unmodified_size():
     "mode, validation_case, should_raise",
     [
         ("static", "invalid_a", True),
+        ("static", "invalid_a_list", True),
         ("static", "invalid_b", True),
+        ("static", "invalid_b_empty_list", True),
         ("static", "valid_list_b", False),
         ("dynamic", "invalid_a", True),
+        ("dynamic", "invalid_a_list", True),
         ("dynamic", "invalid_b", True),
+        ("dynamic", "invalid_b_empty_list", True),
         ("dynamic", "valid_list_b", False),
     ],
 )
@@ -346,8 +350,12 @@ def test_gidney_adder_invalid_inputs_raise_value_error(mode, validation_case, sh
             with pytest.raises(ValueError, match=expected_msg):
                 if validation_case == "invalid_a":
                     gidney_adder(object(), b)
-                else:
+                elif validation_case == "invalid_a_list":
+                    gidney_adder([1, 0], b)
+                elif validation_case == "invalid_b":
                     gidney_adder(a, 7)
+                else:
+                    gidney_adder(a, [])
             return
 
         b_list = QuantumFloat(3)
@@ -366,10 +374,24 @@ def test_gidney_adder_invalid_inputs_raise_value_error(mode, validation_case, sh
         return measure(b_dyn)
 
     @boolean_simulation
+    def main_invalid_a_list(n_bits):
+        b_dyn = QuantumFloat(n_bits)
+        b_dyn[:] = 0
+        gidney_adder([1, 0], b_dyn)
+        return measure(b_dyn)
+
+    @boolean_simulation
     def main_invalid_b(n_bits):
         a_dyn = QuantumFloat(n_bits)
         a_dyn[:] = 1
         gidney_adder(a_dyn, 7)
+        return measure(a_dyn)
+
+    @boolean_simulation
+    def main_invalid_b_empty_list(n_bits):
+        a_dyn = QuantumFloat(n_bits)
+        a_dyn[:] = 1
+        gidney_adder(a_dyn, [])
         return measure(a_dyn)
 
     @boolean_simulation
@@ -383,8 +405,12 @@ def test_gidney_adder_invalid_inputs_raise_value_error(mode, validation_case, sh
         with pytest.raises(ValueError, match=expected_msg):
             if validation_case == "invalid_a":
                 main_invalid_a(3)
-            else:
+            elif validation_case == "invalid_a_list":
+                main_invalid_a_list(3)
+            elif validation_case == "invalid_b":
                 main_invalid_b(3)
+            else:
+                main_invalid_b_empty_list(3)
         return
 
     assert main_valid_list_b(3, 1, 2) == 3

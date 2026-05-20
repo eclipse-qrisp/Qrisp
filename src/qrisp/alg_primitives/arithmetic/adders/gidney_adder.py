@@ -6,6 +6,15 @@ from qrisp.environments import control, custom_control
 from qrisp.jasp import jrange, jlen, DynamicQubitArray, check_for_tracing_mode
 
 
+def _is_qubit_list(value, allow_empty=False):
+    """Return True when ``value`` is a list of qubit-like objects."""
+    if not isinstance(value, list):
+        return False
+    if not allow_empty and len(value) == 0:
+        return False
+    return all(callable(getattr(qb, "qs", None)) for qb in value)
+
+
 def _extract_bit(a_int, digit_index, a_int_is_bigint):
     """Extract one bit from a classical scalar as a JAX boolean.
 
@@ -398,8 +407,30 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
 
     # Validate input combination: allowed pairs are
     # (classical a, quantum b) and (quantum a, quantum b).
-    b_is_quantum = isinstance(b, (QuantumVariable, DynamicQubitArray, list))
-    a_is_quantum = isinstance(a, (QuantumVariable, DynamicQubitArray, list))
+    invalid_input_pair_msg = (
+        "gidney_adder expects inputs to be either classical-quantum "
+        "(classical a, quantum b) or quantum-quantum (quantum a, quantum b)."
+    )
+
+    b_is_quantum_obj = isinstance(b, (QuantumVariable, DynamicQubitArray))
+    a_is_quantum_obj = isinstance(a, (QuantumVariable, DynamicQubitArray))
+    b_is_qubit_list = _is_qubit_list(b, allow_empty=False)
+    a_is_qubit_list = _is_qubit_list(a, allow_empty=True)
+
+    if isinstance(b, list) and not b_is_qubit_list:
+        raise ValueError(
+            invalid_input_pair_msg
+            + " Received invalid list for b; expected a non-empty list of qubits."
+        )
+
+    if isinstance(a, list) and not a_is_qubit_list:
+        raise ValueError(
+            invalid_input_pair_msg
+            + " Received invalid list for a; expected a list of qubits."
+        )
+
+    b_is_quantum = b_is_quantum_obj or b_is_qubit_list
+    a_is_quantum = a_is_quantum_obj or a_is_qubit_list
     is_concrete_int = isinstance(a, (int, np.integer, str))
     is_scalar_like = getattr(a, "ndim", None) == 0
     is_biginteger_like = hasattr(a, "get_bit")
@@ -408,10 +439,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     )
     valid_input_pair = b_is_quantum and (a_is_quantum or is_valid_classical)
     if not valid_input_pair:
-        raise ValueError(
-            "gidney_adder expects inputs to be either classical-quantum "
-            "(classical a, quantum b) or quantum-quantum (quantum a, quantum b)."
-        )
+        raise ValueError(invalid_input_pair_msg)
 
     # Normalize optional carry wires so downstream code always sees raw qubits.
     c_in_qb = c_in[0] if isinstance(c_in, QuantumBool) else c_in
@@ -534,14 +562,14 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
                 ctrl,
             )
 
-        gidney_anc.delete(verify=False)
+        gidney_anc.delete()
 
     # ---- Final sum stage ----
     if a_is_quantum:
         # Final LSB sum update happens after carry ancillas are cleaned.
         _apply_quantum_final_sum(a_qbs, b_qbs, ctrl)
 
-        a_ext.delete(verify=False)
+        a_ext.delete()
         return
 
     _apply_classical_final_sum(b_qbs, n, c_in_qb, a_int, a_bits, a_int_is_bigint, ctrl)
