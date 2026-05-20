@@ -371,8 +371,12 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         JAX scalar, or ``BigInteger``), the semi-classical path is taken
         and no quantum encoding of ``a`` is created.  When ``a`` is a
         quantum register or qubit list, the quantum-quantum path is used.
+        If a list, must contain only qubit-like objects (elements with a callable
+        ``qs`` attribute); the list may be empty for quantum-quantum mode.
     b : QuantumVariable, DynamicQubitArray, or list
         The target register that is updated in-place: ``b ← b + a``.
+        If a list, must be a non-empty list of qubit-like objects
+        (elements with a callable ``qs`` attribute).
     c_in : QuantumBool, Qubit, or None
         Optional single-qubit carry-in.  When provided, the addition
         becomes ``b ← b + a + c_in``.
