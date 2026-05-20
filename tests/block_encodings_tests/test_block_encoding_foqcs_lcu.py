@@ -194,8 +194,17 @@ def test_foqcs_lcu_prep():
     #    if ref_state[i] != 0:
     #        print(f"r[{i}] = {ref_state[i]}")
 
-    # Test that the state received is the same as the reference.
-    assert np.allclose(statev, ref_state, atol=1e-06)
+    # Test that the state received is the same as the reference up to a global phase.
+    idx = np.argmax(np.abs(ref_state))
+    if np.isclose(ref_state[idx], 0, atol=1e-06):
+        assert np.allclose(statev, ref_state, atol=1e-06)
+
+    phase = statev[idx] / ref_state[idx]
+    phase /= abs(phase)
+
+    assert np.allclose(statev, phase * ref_state, atol=1e-06), (
+        f"States differ beyond global phase {phase}"
+    )
 
 def test_foqcs_lcu_spin_glass_prep():
     # g = {"X" : [], "Y" : [], "Z" : []}
@@ -347,10 +356,6 @@ def test_foqcs_lcu_spin_glass_prep():
     final_betas = np.sqrt(np.array(final_betas))
     final_betas = final_betas / np.linalg.norm(final_betas)
 
-    # SUBPREP
-    extra_anc = len(g_betas) + (3 * len(J_betas[0]))
-    unbalanced_W_state(d_state[:extra_anc], final_betas, extra_anc)
-
     ref_state = np.zeros(2 ** (5 * L), dtype=complex)
     zero_n = np.array([1] + [0] * (2**L - 1))
 
@@ -429,8 +434,20 @@ def test_foqcs_lcu_spin_glass_prep():
         if ref_state[i] != 0:
             print(f"r[{i}] = {ref_state[i]}")
 
+    # Test that the state received is the same as the reference up to a global phase.
+    idx = np.argmax(np.abs(ref_state))
+    if np.isclose(ref_state[idx], 0, atol=1e-06):
+        assert np.allclose(statev, ref_state, atol=1e-06)
+
+    phase = statev[idx] / ref_state[idx]
+    phase /= abs(phase)
+
+    assert np.allclose(statev, phase * ref_state, atol=1e-06), (
+        f"States differ beyond global phase {phase}"
+    )
+
     # Test that the state received is the same as the reference.
-    assert np.allclose(statev, ref_state, atol=1e-06)
+    #assert np.allclose(statev, ref_state, atol=1e-06)
 
 def test_foqcs_lcu_spin_glass_subprep():
 

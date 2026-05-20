@@ -263,7 +263,7 @@ def foqcs_prep_spin_glass(
 
     # SUBPREP
     extra_anc = len(g_betas) + (3 * len(J_betas[0]))
-    unbalanced_W_state(prep_qv[:extra_anc], final_betas, extra_anc, reversed=True)
+    unbalanced_W_state(prep_qv[:extra_anc], final_betas, extra_anc)
 
     # PREP
     fh1 = extra_anc                # First qubit first half

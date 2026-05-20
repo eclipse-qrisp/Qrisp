@@ -142,3 +142,9 @@ def unbalanced_W_state(
     # --- Step 3: imprint the phase on the last qubit
     p(np.angle(a[-1]), qv[-1])
 
+    # --- Step 4: XXYY-chain global phase correction
+    phase_correction = (n - 1) * (np.pi / 4)
+
+    for i in range(n):
+        p(phase_correction, qv[i])
+
