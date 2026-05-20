@@ -374,6 +374,13 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         Optional control qubit.  When provided, the entire addition is
         executed only if ``ctrl`` is in state |1⟩ (controlled addition).
 
+    Raises
+    ------
+    ValueError
+        If inputs do not match one of the supported combinations:
+        classical-quantum (classical ``a``, quantum ``b``) or
+        quantum-quantum (quantum ``a``, quantum ``b``).
+
     Examples
     --------
 
