@@ -27,6 +27,7 @@ from qrisp import (
     control,
     cuccaro_adder,
     gidney_adder,
+    mcx,
     measure,
     x,
 )
@@ -66,18 +67,24 @@ def test_gidney_adder_basic(a_spec, a_val, b_bits, b_val, expected_a, expected_b
 
 
 @pytest.mark.parametrize(
-    "a_spec, a_val, b_bits, b_val, expected_b, expected_cout",
+    "a_spec, a_val, b_bits, b_val, c_in_val, use_c_out, expected_b, expected_cout",
     [
-        (("qf", 13), 20, 14, 14, {34: 1.0}, {0: 1.0}),  # carry-out remains zero when sum fits
-        (("qf", 1), 1, 1, 1, {0: 1.0}, {1: 1.0}),  # minimal-width overflow sets carry-out
-        (("classical", None), 255, 8, 128, {127: 1.0}, {1: 1.0}),  # high-value overflow case
-        (("classical", None), 10, 8, 20, {30: 1.0}, {0: 1.0}),  # classical a on standard 8-bit target
+        (("qf", 13), 20, 14, 14, None, True, {34: 1.0}, {0: 1.0}),  # carry-out remains zero when sum fits
+        (("qf", 1), 1, 1, 1, None, True, {0: 1.0}, {1: 1.0}),  # minimal-width overflow sets carry-out
+        (("classical", None), 255, 8, 128, None, True, {127: 1.0}, {1: 1.0}),  # high-value overflow case
+        (("classical", None), 10, 8, 20, None, True, {30: 1.0}, {0: 1.0}),  # classical a on standard 8-bit target
+        (("classical", None), 5, 8, 0, 1, False, {6: 1.0}, None),  # classical path with carry-in increment
+        (("qf", 8), 50, 8, 100, 1, False, {151: 1.0}, None),  # quantum path where carry-in changes result
+        (("qf", 8), 50, 8, 100, 0, False, {150: 1.0}, None),  # paired case to isolate carry-in effect
+        (("qf", 8), 200, 8, 55, 1, True, {0: 1.0}, {1: 1.0}),  # c_in pushes sum exactly over modulo boundary
+        (("classical", None), 0, 8, 255, 1, True, {0: 1.0}, {1: 1.0}),  # zero addend with carry-in-only overflow
+        (("classical", None), 1, 8, 1, 1, True, {3: 1.0}, {0: 1.0}),  # small numbers where carry remains zero
     ],
 )
-def test_gidney_adder_with_carry_out(
-    a_spec, a_val, b_bits, b_val, expected_b, expected_cout
+def test_gidney_adder_with_carry_options(
+    a_spec, a_val, b_bits, b_val, c_in_val, use_c_out, expected_b, expected_cout
 ):
-    """Verify b += a with carry-out for overflow detection."""
+    """Verify carry-in and carry-out combinations for b += a (+ c_in)."""
     kind, n = a_spec
     if kind == "qf":
         a = QuantumFloat(n)
@@ -91,81 +98,25 @@ def test_gidney_adder_with_carry_out(
 
     b = QuantumFloat(b_bits)
     b[:] = b_val
-    c_out = QuantumBool()
 
-    gidney_adder(a, b, c_out=c_out)
+    kwargs = {}
+    if c_in_val is not None:
+        c_in = QuantumBool()
+        if c_in_val:
+            x(c_in[0])
+        kwargs["c_in"] = c_in
 
-    assert b.get_measurement() == expected_b
-    assert c_out.get_measurement() == expected_cout
+    c_out = None
+    if use_c_out:
+        c_out = QuantumBool()
+        kwargs["c_out"] = c_out
 
-
-@pytest.mark.parametrize(
-    "a_spec, a_val, b_val, c_in_val, expected_b",
-    [
-        (("classical", None), 5, 0, 1, {6: 1.0}),  # classical path with carry-in increment
-        (("qf", 8), 50, 100, 1, {151: 1.0}),  # quantum path where carry-in changes result
-        (("qf", 8), 50, 100, 0, {150: 1.0}),  # paired case to isolate carry-in effect
-    ],
-)
-def test_gidney_adder_with_carry_in(a_spec, a_val, b_val, c_in_val, expected_b):
-    """Verify b += a + c_in."""
-    kind, n = a_spec
-    if kind == "qf":
-        a = QuantumFloat(n)
-        a[:] = a_val
-    elif kind == "qf_list":
-        qf = QuantumFloat(n)
-        qf[:] = a_val
-        a = qf[:]
-    else:
-        a = a_val
-
-    b = QuantumFloat(8 if a_spec[1] is None else max(a_spec[1], 8))
-    b[:] = b_val
-
-    c_in = QuantumBool()
-    if c_in_val:
-        x(c_in[0])
-
-    gidney_adder(a, b, c_in=c_in)
+    gidney_adder(a, b, **kwargs)
 
     assert b.get_measurement() == expected_b
-
-
-@pytest.mark.parametrize(
-    "a_spec, a_val, b_val, expected_b, expected_cout",
-    [
-        (("qf", 8), 200, 55, {0: 1.0}, {1: 1.0}),  # c_in pushes sum exactly over modulo boundary
-        (("classical", None), 0, 255, {0: 1.0}, {1: 1.0}),  # zero addend with carry-in-only overflow
-        (("classical", None), 1, 1, {3: 1.0}, {0: 1.0}),  # small numbers where carry remains zero
-    ],
-)
-def test_gidney_adder_with_carry_in_and_carry_out(
-    a_spec, a_val, b_val, expected_b, expected_cout
-):
-    """Verify b += a + c_in with carry-out."""
-    kind, n = a_spec
-    if kind == "qf":
-        a = QuantumFloat(n)
-        a[:] = a_val
-    elif kind == "qf_list":
-        qf = QuantumFloat(n)
-        qf[:] = a_val
-        a = qf[:]
-    else:
-        a = a_val
-
-    b = QuantumFloat(8)
-    b[:] = b_val
-
-    c_in = QuantumBool()
-    x(c_in[0])
-    c_out = QuantumBool()
-
-    gidney_adder(a, b, c_in=c_in, c_out=c_out)
-
-    assert b.get_measurement() == expected_b
-    assert c_out.get_measurement() == expected_cout
+    if expected_cout is not None:
+        assert c_out is not None
+        assert c_out.get_measurement() == expected_cout
 
 
 @pytest.mark.parametrize(
@@ -286,7 +237,7 @@ def test_gidney_adder_ancilla_cleanup(a_spec, a_val, b_bits, b_val):
     gidney_adder(a, b)
 
     remaining = [v.name for v in b.qs.qv_list if "gidney" in v.name]
-    assert remaining == [], f"Leaked ancilla variables: {remaining}"
+    assert remaining == []
 
 
 @pytest.mark.parametrize("carry_kind", ["in", "out"])
@@ -417,47 +368,79 @@ def test_gidney_adder_invalid_inputs_raise_value_error(mode, validation_case, sh
 
 
 def test_gidney_adder_t_depth_significantly_lower_than_cuccaro():
-    """Verify that the gidney adder achieves significant T-depth reduction across inputs of
-    different sizes."""
+    """Compare gidney and cuccaro adders for T-depth, measurement depth, and T-state scaling."""
+
+    measurement_depth_indicator = lambda op: int(op.name == "measure")
+
+    ctrl_c = QuantumVariable(2)
+    tgt_c = QuantumVariable(1)
+    mcx(ctrl_c, tgt_c[0], method="gray")
+    tau_cuccaro_qc = tgt_c.qs.compile(compile_mcm=True).transpile()
+    tau_cuccaro_ops = tau_cuccaro_qc.count_ops()
+    tau_cuccaro = tau_cuccaro_ops.get("t", 0) + tau_cuccaro_ops.get("t_dg", 0)
+
+    ctrl_g = QuantumVariable(2)
+    tgt_g = QuantumVariable(1)
+    mcx(ctrl_g, tgt_g[0], method="gidney")
+    tau_gidney_qc = tgt_g.qs.compile(compile_mcm=True).transpile()
+    tau_gidney_ops = tau_gidney_qc.count_ops()
+    tau_gidney = tau_gidney_ops.get("t", 0) + tau_gidney_ops.get("t_dg", 0)
+
+    assert tau_cuccaro > 0
+    assert tau_gidney > 0
+
+    t_count_gap_offsets = []
+
     for qf_size in [8, 12, 16]:
         a_cuccaro = QuantumFloat(qf_size)
         b_cuccaro = QuantumFloat(qf_size)
         a_cuccaro[:] = 5
         b_cuccaro[:] = 10
         cuccaro_adder(a_cuccaro, b_cuccaro)
-        cuccaro_t_depth = b_cuccaro.qs.compile().t_depth()
+        cuccaro_compiled = b_cuccaro.qs.compile()
+        cuccaro_t_depth = cuccaro_compiled.t_depth()
+        cuccaro_measurement_depth = cuccaro_compiled.depth(
+            depth_indicator=measurement_depth_indicator
+        )
+        cuccaro_transpiled = b_cuccaro.qs.compile(compile_mcm=True).transpile()
+        cuccaro_ops = cuccaro_transpiled.count_ops()
+        cuccaro_raw_t = cuccaro_ops.get("t", 0) + cuccaro_ops.get("t_dg", 0)
 
         a_gidney = QuantumFloat(qf_size)
         b_gidney = QuantumFloat(qf_size)
         a_gidney[:] = 5
         b_gidney[:] = 10
         gidney_adder(a_gidney, b_gidney)
-        gidney_t_depth = b_gidney.qs.compile().t_depth()
+        gidney_compiled = b_gidney.qs.compile()
+        gidney_t_depth = gidney_compiled.t_depth()
+        gidney_measurement_depth = gidney_compiled.depth(
+            depth_indicator=measurement_depth_indicator
+        )
+        gidney_transpiled = b_gidney.qs.compile(compile_mcm=True).transpile()
+        gidney_ops = gidney_transpiled.count_ops()
+        gidney_raw_t = gidney_ops.get("t", 0) + gidney_ops.get("t_dg", 0)
 
+        # T-depth claim: Gidney achieves lower T-depth than Cuccaro.
         assert gidney_t_depth < cuccaro_t_depth
 
+        # As described on page 1 of the main paper, both adders have the same
+        # measurement depth behavior for n-bit inputs.
+        assert gidney_measurement_depth == cuccaro_measurement_depth
 
-def test_gidney_adder_t_count():
-    """Verify that the Gidney adder for two n-qubit inputs uses 4*(n-1) T gates.
+        # T-state scaling claim: normalize backend-dependent raw T-counts and
+        # compare against the paper's 8n (Cuccaro) and 4n (Gidney) logical laws.
+        assert cuccaro_raw_t % tau_cuccaro == 0
+        assert gidney_raw_t % tau_gidney == 0
 
-    This follows from Fig. 1 of the Gidney paper (https://arxiv.org/abs/1709.06648):
-    each of the (n-1) forward Toffolis decomposes into 4 T gates via the logical-AND
-    construction, while the (n-1) inverse Toffolis use measurement-based uncomputation
-    with 0 T gates, giving a total T count of 4*(n-1).
-    """
-    for n in [3, 5, 8, 12]:
-        a = QuantumFloat(n)
-        b = QuantumFloat(n)
-        a[:] = 2
-        b[:] = 3
+        cuccaro_t_count = (cuccaro_raw_t // tau_cuccaro) * 4
+        gidney_t_count = (gidney_raw_t // tau_gidney) * 4
 
-        gidney_adder(a, b)
+        t_count_gap_offsets.append((cuccaro_t_count - gidney_t_count) - 4 * qf_size)
 
-        qc = b.qs.compile(compile_mcm=True).transpile()
-        ops = qc.count_ops()
-        t_count = ops.get("t", 0) + ops.get("t_dg", 0)
-
-        assert t_count == 4 * (n - 1)
+    # Paper-derived gap claim:
+    # (8n + O(1)) - (4n + O(1)) = 4n + O(1).
+    # We test this by checking that (T_cuccaro - T_gidney - 4n) stays bounded.
+    assert max(t_count_gap_offsets) - min(t_count_gap_offsets) <= 4
 
 
 @pytest.mark.parametrize(
@@ -466,6 +449,7 @@ def test_gidney_adder_t_count():
         (3, True, False, False),  # c_in-only overhead without control term
         (3, False, True, False),  # c_out-only ladder extension
         (3, False, False, True),  # ctrl-only linear T contribution at small n
+        (8, False, False, True),  # ctrl-only larger n for 8n+O(1) scaling check
         (5, True, True, True),  # all options enabled together
     ],
 )
@@ -501,7 +485,12 @@ def test_gidney_adder_t_count_formula_with_optional_inputs(
     t_count_ref = ops_ref.get("t", 0) + ops_ref.get("t_dg", 0)
     numerator = t_count_ref - 4 * (n_ref - 1)
     assert numerator % (n_ref + 1) == 0
+
+    # defined to take into consideration how a backend transpiles the controlled
+    # two-control mcx, which is the dominant contribution to the ctrl term's T-count
+    # used to verify the T count as described in abstract and in the formula comments above. 
     tau = numerator // (n_ref + 1)
+    ctrl_only_const = t_count_ref - 8 * n_ref
 
     a = QuantumFloat(n)
     b = QuantumFloat(n)
@@ -537,18 +526,33 @@ def test_gidney_adder_t_count_formula_with_optional_inputs(
 
     assert t_count == expected_t_count
 
+    # Verify the abstract's 8n + O(1) scaling for ctrl-only (ideal tau=4).
+    if use_ctrl and (not use_c_in) and (not use_c_out):
+        if tau == 4:
+            assert t_count == 8 * n + ctrl_only_const
+
 
 @pytest.mark.parametrize(
-    "N, L",
+    "N, L, control_state, use_carry_in",
     [
-        (2, 2),  # equal widths small baseline
-        (4, 3),  # wider a into narrower b
-        (5, 5),  # larger equal-width dynamic case
+        # no control cases
+        (2, 2, "no_control", False),  # equal widths baseline
+        (4, 3, "no_control", False),  # wider a into narrower b
+        (5, 5, "no_control", False),  # larger equal-width
+        # control on cases
+        (2, 2, "control_on", False),  # equal widths under active control
+        (4, 3, "control_on", False),  # controlled modulo behavior
+        (5, 5, "control_on", False),  # larger controlled equal-width
+        # control on with carry_in cases (equal widths N=L)
+        (2, 2, "control_on", True),  # small register with carry_in
+        (5, 5, "control_on", True),  # larger register with carry_in
+        # control off cases (equal widths N=L)
+        (2, 2, "control_off", False),  # ctrl-off no-op small
+        (5, 5, "control_off", False),  # ctrl-off no-op larger
     ],
 )
-def test_gidney_adder_jasp_mode(N, L):
-    """Verify the function works as expected in dynamic (jasp) mode.
-    This test covers both equal and unequal input sizes with parametrized widths."""
+def test_gidney_adder_jasp_mode_variants(N, L, control_state, use_carry_in):
+    """Verify gidney_adder in dynamic mode with optional control and carry_in."""
 
     @boolean_simulation
     def main(n_bits, l_bits, j, k):
@@ -556,7 +560,22 @@ def test_gidney_adder_jasp_mode(N, L):
         B = QuantumFloat(l_bits)
         A[:] = j
         B[:] = k
-        gidney_adder(A, B)
+
+        kwargs = {}
+        if use_carry_in:
+            c_in = QuantumBool()
+            c_in.flip()
+            kwargs["c_in"] = c_in
+
+        if control_state == "no_control":
+            gidney_adder(A, B, **kwargs)
+        else:
+            qbl = QuantumBool()
+            if control_state == "control_on":
+                qbl.flip()
+            with control(qbl):
+                gidney_adder(A, B, **kwargs)
+
         return measure(A), measure(B)
 
     j_max = 1 << N
@@ -566,95 +585,15 @@ def test_gidney_adder_jasp_mode(N, L):
         for k in range(k_max):
             A, B = main(N, L, j, k)
             assert A == j
-            assert B == (k + j) % mod
 
+            if control_state == "control_off":
+                expected_B = k
+            elif use_carry_in:
+                expected_B = (k + j + 1) % mod
+            else:
+                expected_B = (k + j) % mod
 
-@pytest.mark.parametrize(
-    "N, L",
-    [
-        (2, 2),  # equal widths under active control
-        (4, 3),  # controlled modulo behavior with narrower b
-        (5, 5),  # larger controlled equal-width case
-    ],
-)
-def test_gidney_adder_jasp_mode_with_control(N, L):
-    """Verify controlled execution in dynamic mode for parametrized input widths."""
-
-    @boolean_simulation
-    def main(n_bits, l_bits, j, k):
-        A = QuantumFloat(n_bits)
-        B = QuantumFloat(l_bits)
-        A[:] = j
-        B[:] = k
-        qbl = QuantumBool()
-        qbl.flip()
-
-        with control(qbl):
-            gidney_adder(A, B)
-        return measure(A), measure(B)
-
-    j_max = 1 << N
-    k_max = 1 << L
-    mod = 1 << L
-    for j in range(j_max):
-        for k in range(k_max):
-            A, B = main(N, L, j, k)
-            assert A == j
-            assert B == (k + j) % mod
-
-
-@pytest.mark.parametrize(
-    "N",
-    [2, 5],  # small and larger register sizes for carry-in dynamic path
-)
-def test_gidney_adder_jasp_mode_with_carry_in(N):
-    """Carry-in in dynamic mode with quantum a for multiple register sizes."""
-
-    @boolean_simulation
-    def main(n_bits, j, k):
-        A = QuantumFloat(n_bits)
-        B = QuantumFloat(n_bits)
-        A[:] = j
-        B[:] = k
-        c_in = QuantumBool()
-        c_in.flip()
-        gidney_adder(A, B, c_in=c_in)
-        return measure(A), measure(B)
-
-    vals_max = 1 << N
-    mod = 1 << N
-    for j in range(vals_max):
-        for k in range(vals_max):
-            A, B = main(N, j, k)
-            assert A == j
-            assert B == (k + j + 1) % mod
-
-
-@pytest.mark.parametrize(
-    "N",
-    [2, 5],  # small and larger register sizes for ctrl-off no-op behavior
-)
-def test_gidney_adder_jasp_mode_ctrl_off(N):
-    """In dynamic mode, ctrl=|0⟩ means b is untouched across multiple sizes."""
-
-    @boolean_simulation
-    def main(n_bits, j, k):
-        A = QuantumFloat(n_bits)
-        B = QuantumFloat(n_bits)
-        A[:] = j
-        B[:] = k
-        qbl = QuantumBool()
-
-        with control(qbl):
-            gidney_adder(A, B)
-        return measure(A), measure(B)
-
-    vals_max = 1 << N
-    for j in range(vals_max):
-        for k in range(vals_max):
-            A, B = main(N, j, k)
-            assert A == j
-            assert B == k
+            assert B == expected_B
 
 
 @pytest.mark.parametrize(

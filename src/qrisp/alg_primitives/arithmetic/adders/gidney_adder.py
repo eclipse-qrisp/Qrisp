@@ -449,17 +449,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     c_in_qb = c_in[0] if isinstance(c_in, QuantumBool) else c_in
     c_out_qb = c_out[0] if isinstance(c_out, QuantumBool) else c_out
 
-    # Variables to decide whether we run the semi-classical or quantum-quantum variant.
-    a_int = None
-    a_bits = None
-    a_bit0 = None
-    a_qbs = None
-    a_ext = None
-    b_qbs = None
-    n = None
-    qs = None
-
-    # ---- Semi-classical setup (classical a, quantum b) ----
+    # ---- Semi-classical path (classical a, quantum b) ----
     if not a_is_quantum:
         if isinstance(a, str):
             # Strings are little-endian bit strings in this API.
@@ -468,8 +458,11 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         is_concrete_int = isinstance(a, (int, np.integer))
         is_scalar_like = getattr(a, "ndim", None) == 0
         is_biginteger_like = hasattr(a, "get_bit")
-        # In tracing mode we accept scalar-like symbolic values as classical input.
-        if is_concrete_int or (check_for_tracing_mode() and (is_scalar_like or is_biginteger_like)):
+        is_classical_here = is_concrete_int or (
+            check_for_tracing_mode() and (is_scalar_like or is_biginteger_like)
+        )
+
+        if is_classical_here:
             if is_concrete_int:
                 # Match the target register width for deterministic static behavior.
                 a = int(a) % (1 << jlen(b))
@@ -497,6 +490,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
             n = jlen(b_qbs)
             qs = None if check_for_tracing_mode() else b_qbs[0].qs()
             a_int = a
+            a_bits = None
             if not check_for_tracing_mode():
                 a_int_py = int(a_int)
                 # Precompute classical input bits for the static branch.
@@ -509,41 +503,71 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
                         else:
                             cx(ctrl, b_qbs[0])
                     return
-        else:
-            # Non-classical input falls through to the full quantum path.
-            a_is_quantum = True
 
-    # ---- Quantum setup (quantum a, quantum b) ----
-    if a_is_quantum:
-        qs = None if check_for_tracing_mode() else b[0].qs()
+            # BigInteger appears in traced modulus workflows (jasp_modulus).
+            a_int_is_bigint = (
+                check_for_tracing_mode() and isinstance(a_int, BigInteger)
+            )
+            a_bit0 = None
+            if check_for_tracing_mode():
+                a_bit0 = _extract_bit(a_int, 0, a_int_is_bigint)
 
-        dim_a = jlen(a)
-        dim_b = jlen(b)
-        # Arithmetic is in-place on b, so ignore input-a bits beyond len(b).
-        effective_size_a = jnp.minimum(dim_a, dim_b)
-        a = a[:effective_size_a]
+            with control(n > 1):
+                # The carry chain only exists when there are at least two participating bits.
+                gidney_anc = (
+                    QuantumVariable(n - 1, name="gidney_anc*")
+                    if check_for_tracing_mode()
+                    else QuantumVariable(n - 1, name="gidney_anc*", qs=qs)
+                )
 
-        extension_size = jnp.maximum(0, dim_b - dim_a)
-        # Pad shorter a with |0> ancilla bits so index arithmetic stays uniform.
-        a_ext = (
-            QuantumVariable(extension_size, name="gidney_a_ext*", qs=qs)
-            if qs is not None
-            else QuantumVariable(extension_size, name="gidney_a_ext*")
-        )
+                _apply_classical_carry_chain(
+                    gidney_anc,
+                    b_qbs,
+                    n,
+                    a_int,
+                    a_bits,
+                    a_bit0,
+                    a_int_is_bigint,
+                    ctrl,
+                )
 
-        a_qbs = a[:] + a_ext[:]
-        b_qbs = b[:]
-        if c_out_qb is not None:
-            b_qbs = b_qbs + [c_out_qb]
+                gidney_anc.delete()
 
-        n = jlen(b_qbs)
+            _apply_classical_final_sum(
+                b_qbs,
+                n,
+                c_in_qb,
+                a_int,
+                a_bits,
+                a_int_is_bigint,
+                ctrl,
+            )
+            return
 
-    # BigInteger appears in traced modulus workflows (jasp_modulus).
-    a_int_is_bigint = (not a_is_quantum) and check_for_tracing_mode() and isinstance(a_int, BigInteger)
-    if (not a_is_quantum) and check_for_tracing_mode():
-        a_bit0 = _extract_bit(a_int, 0, a_int_is_bigint)
+    # ---- Quantum path (quantum a, quantum b) ----
+    qs = None if check_for_tracing_mode() else b[0].qs()
 
-    # ---- Shared carry chain ----
+    dim_a = jlen(a)
+    dim_b = jlen(b)
+    # Arithmetic is in-place on b, so ignore input-a bits beyond len(b).
+    effective_size_a = jnp.minimum(dim_a, dim_b)
+    a = a[:effective_size_a]
+
+    extension_size = jnp.maximum(0, dim_b - dim_a)
+    # Pad shorter a with |0> ancilla bits so index arithmetic stays uniform.
+    a_ext = (
+        QuantumVariable(extension_size, name="gidney_a_ext*", qs=qs)
+        if qs is not None
+        else QuantumVariable(extension_size, name="gidney_a_ext*")
+    )
+
+    a_qbs = a[:] + a_ext[:]
+    b_qbs = b[:]
+    if c_out_qb is not None:
+        b_qbs = b_qbs + [c_out_qb]
+
+    n = jlen(b_qbs)
+
     with control(n > 1):
         # The carry chain only exists when there are at least two participating bits.
         gidney_anc = (
@@ -552,28 +576,13 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
             else QuantumVariable(n - 1, name="gidney_anc*", qs=qs)
         )
 
-        if a_is_quantum:
-            _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, ctrl, qs)
-        else:
-            _apply_classical_carry_chain(
-                gidney_anc,
-                b_qbs,
-                n,
-                a_int,
-                a_bits,
-                a_bit0,
-                a_int_is_bigint,
-                ctrl,
-            )
+        _apply_quantum_carry_chain(
+            gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, ctrl, qs
+        )
 
         gidney_anc.delete()
 
-    # ---- Final sum stage ----
-    if a_is_quantum:
-        # Final LSB sum update happens after carry ancillas are cleaned.
-        _apply_quantum_final_sum(a_qbs, b_qbs, ctrl)
+    # Final LSB sum update happens after carry ancillas are cleaned.
+    _apply_quantum_final_sum(a_qbs, b_qbs, ctrl)
 
-        a_ext.delete()
-        return
-
-    _apply_classical_final_sum(b_qbs, n, c_in_qb, a_int, a_bits, a_int_is_bigint, ctrl)
+    a_ext.delete()
