@@ -1179,22 +1179,3 @@ def test_foqcs_operator_analysis():
     print(f"H: {comp}, res = {res}")
     
     assert True
-
-
-
-# FIXME! I need to be made into a test and put in some appropriate place. How cruel of you to leave me like this!
-def test_pauli_coeff_dict_extraction():
-    from qrisp.operators import A, C, P1
-
-    H_good = X(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(2)
-    H_bad = X(0) * Z(1)
-    H = 1+2*X(0)+3*X(0)*Y(1)*A(2)+C(4)*P1(0)
-
-    res_good = H_good.to_pauli_coeff_dict()
-    print(res_good)
-    res_bad = H_bad.to_pauli_coeff_dict()
-    print(res_bad)
-    res = H.to_pauli_coeff_dict()
-    print(res)
-
-    assert True

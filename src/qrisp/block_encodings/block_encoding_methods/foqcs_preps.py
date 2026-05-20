@@ -394,7 +394,7 @@ def foqcs_analyze_operator(
         "is_hermitian": bool (Whether the operator is Hermitian - no imaginary coeffs)
     }
     """
-    terms = O.to_pauli_coeff_dict()
+    terms = O._to_pauli_coeff_dict()
 
     # When analyzys fails, it either throws a ValueError with failure reason,
     # or silently returns None if raise_errors flag is set to False.

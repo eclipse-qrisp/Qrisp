@@ -870,7 +870,7 @@ class QubitOperator(Hamiltonian):
         ::
             from qrisp.operators import X, Y, Z, A, C, P1
             H = 1 + 2 * X(0) + 3 * X(0) * Y(1) * A(2) + C(4) * P1(0)
-            res = H.to_pauli_coeff_dict()
+            res = H._to_pauli_coeff_dict()
             print(res) # Yields example output
 
         Example output:
@@ -2328,35 +2328,6 @@ class QubitOperator(Hamiltonian):
             coefficients.append(np.abs(coeff_))
 
         return unitaries, np.array(coefficients, dtype=float)
-
-    def to_pauli_coeff_dict(self):
-        r"""
-        TODO: DOC
-        Return a dictionary representation of the QubitOperator in Pauli terms.
-
-        Example output:
-            {
-                ((0, "X"),): 0.7,
-                ((1, "Z"),): -0.2,
-                ((0, "X"), (1, "X")): 1.3,
-                ((2, "Y"), (3, "Y")): -0.5,
-            }
-
-        The empty tuple () represents a constant/identity term.
-        """
-        O = self.to_pauli()
-        result = {}
-
-        for term, coeff in O.terms_dict.items():
-            factors = tuple(
-                sorted(
-                    (int(index), str(pauli))
-                    for index, pauli in term.factor_dict.items()
-                )
-            )
-            result[factors] = result.get(factors, 0) + coeff
-
-        return result
 
     @qache
     def pauli_block_encoding(self):
