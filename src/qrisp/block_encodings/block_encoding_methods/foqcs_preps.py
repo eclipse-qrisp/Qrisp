@@ -277,17 +277,17 @@ def foqcs_prep_spin_glass(
     # Unbalanced Dicke state (X0)
     with control([prep_qv[0]]):
 
-        unbalanced_W_state(prep_qv[fh1:lh1 + 1], g_hats[0], reversed=True)
+        unbalanced_W_state(prep_qv[fh1:lh1 + 1], g_hats[0])
 
     # Unbalanced Dicke state (Z0)
     with control([prep_qv[2 * block_skip]]):
 
-        unbalanced_W_state(prep_qv[fh2:], g_hats[2], reversed=True)
+        unbalanced_W_state(prep_qv[fh2:], g_hats[2])
 
     # Unbalanced Double Dicke state (Y0)
     with control([prep_qv[block_skip]]):
 
-        unbalanced_W_state(prep_qv[fh1:lh1 + 1], g_hats[1], reversed=True)
+        unbalanced_W_state(prep_qv[fh1:lh1 + 1], g_hats[1])
         cx(prep_qv[fh1:lh1 + 1], prep_qv[fh2:])
 
     for i in range(len(J_betas[0])):
@@ -295,20 +295,20 @@ def foqcs_prep_spin_glass(
         # Unbalanced 2kN (Xi)
         with control([prep_qv[i + 1]]):
 
-            unbalanced_W_state(prep_qv[fh1:lh1 + 1 - (1 + i)], J_hats[0][i], reversed=True)
-            _cx_ladder(prep_qv[fh1:lh1 + 1], len(J_betas[0]), i + 1)
+            unbalanced_W_state(prep_qv[fh1:lh1 + 1 - (1 + i)], J_hats[0][i])
+            _cx_ladder(prep_qv[fh1:lh1 + 1], L, i + 1)
 
         # Unbalanced 2kN (Zi)
         with control([prep_qv[i + 1 + 2 * block_skip]]):
 
-            unbalanced_W_state(prep_qv[fh2:lh2 + 1 - (1 + i)], J_hats[2][i], reversed=True)
-            _cx_ladder(prep_qv[fh2:lh2 + 1], len(J_betas[0]), i + 1)
+            unbalanced_W_state(prep_qv[fh2:lh2 + 1 - (1 + i)], J_hats[2][i])
+            _cx_ladder(prep_qv[fh2:lh2 + 1], L, i + 1)
 
         # Unbalanced Double 2kN (Yi)
         with control([prep_qv[i + 1 + block_skip]]):
 
-            unbalanced_W_state(prep_qv[fh1:lh1 + 1 - (1 + i)], J_hats[1][i], reversed=True)
-            _cx_ladder(prep_qv[fh1:lh1 + 1], len(J_betas[0]), i + 1)
+            unbalanced_W_state(prep_qv[fh1:lh1 + 1 - (1 + i)], J_hats[1][i])
+            _cx_ladder(prep_qv[fh1:lh1 + 1], L, i + 1)
             cx(prep_qv[fh1:lh1 + 1], prep_qv[fh2:])
 
 def foqcs_prep_placeholder( qv: QuantumVariable, coeffs: list, some_param: float ) -> None:
