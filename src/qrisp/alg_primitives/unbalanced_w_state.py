@@ -114,6 +114,7 @@ def unbalanced_W_state(
     # --- Step 2: redistribute amplitude along the qubit chain
     # `remaining` (i.e. `carry`) tracks the magnitude still carried by the "active" qubit
     # (the one that has not yet been peeled off).
+    phase_correction = (n - 1) * (jnp.pi / 4)
     def body_for(i, carry):
         # Choose θ so that cos(θ/2) = |a_i| / remaining (i.e. carry),
         # i.e. qubit i retains exactly magnitude |a_i|.
@@ -125,15 +126,15 @@ def unbalanced_W_state(
         xxyy(theta, jnp.pi / 2, qv[i], qv[i + 1])
 
         # Update the undistributed amplitude magnitude for the next step
-        carry *= jnp.sin(theta / 2)
+        new_carry = carry * jnp.sin(theta / 2)
 
         # Imprint the complex phase of a_i onto qubit i
-        p(jnp.angle(a[i]), qv[i])
+        p(jnp.angle(a[i]) + phase_correction, qv[i])
 
-        return carry
+        return new_carry
 
-    remaining = 1.0
+    remaining = jnp.asarray(1.0)
     q_fori_loop(0, n-1, body_for, remaining)
 
     # --- Step 3: imprint the phase on the last qubit
-    p(jnp.angle(a[-1]), qv[-1])
+    p(jnp.angle(a[-1]) + phase_correction, qv[-1])
