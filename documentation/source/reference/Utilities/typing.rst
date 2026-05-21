@@ -34,36 +34,34 @@ Qrisp. These can be imported directly from the top-level package:
 
 .. py:data:: ScalarLike
    :type: TypeAlias
-   :value: int | float | complex | bool | np.generic
+   :value: int | float | complex | bool | np.generic | jax.core.Tracer
 
-   A Python or NumPy scalar value. Covers Python built-in scalars and all
-   NumPy scalar types (``np.float64``, ``np.int32``, etc. via ``np.generic``).
+   A Python, NumPy, or JAX scalar value. Covers Python built-in scalars, all
+   NumPy scalar types, and JAX tracers.
 
 .. py:data:: NDArrayLike
    :type: TypeAlias
    :value: np.ndarray | jax.Array | jax.core.Tracer
 
    A multi-dimensional array value. Covers NumPy arrays, JAX arrays, and JAX
-   tracers. Use this when a parameter is expected to be an array, 
+   tracers. Useful when a parameter is expected to be an array, 
    and the function should be compatible with both NumPy and JAX. 
 
 .. py:data:: ArrayLike
    :type: TypeAlias
    :value: ScalarLike | NDArrayLike
 
-   Union of :data:`ScalarLike` and :data:`NDArrayLike`. Use this when a
+   Union of :data:`ScalarLike` and :data:`NDArrayLike`. Useful when a
    parameter accepts either scalars or arrays. This is similar in spirit to
    ``jax.typing.ArrayLike``, but is defined within Qrisp for consistency with
    the rest of this typing module.
 
 .. py:data:: Param
    :type: TypeAlias
-   :value: float | int | complex | np.number | sympy.Expr | jax.Array
+   :value: float | int | complex | np.number | sympy.Expr | jax.Array | jax.core.Tracer
 
    A gate parameter value.
 
    Covers all types accepted as gate parameters throughout Qrisp: Python
-   numeric scalars (``float``, ``int``, ``complex``), NumPy numeric scalars
-   (``np.float64``, ``np.int32``, etc. via ``np.number``), symbolic
-   expressions (``sympy.Symbol``, ``sympy.Expr``, and any SymPy expression),
-   and JAX arrays (``jax.Array``, which covers both concrete arrays and tracers).
+   numeric scalars, NumPy numeric scalars, symbolic expressions,
+   concrete JAX arrays, and JAX tracers.
