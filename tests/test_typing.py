@@ -30,14 +30,7 @@ from qrisp.typing import ArrayLike, ClbitLike, NDArrayLike, Param, QubitLike, Sc
 
 
 class TestQubitLike:
-    """Tests for the QubitLike type alias.
-
-    QubitLike = Qubit | int | Sequence[Qubit | int]. The Sequence arm is a
-    subscripted generic: Python short-circuits on True (so Qubit and int checks
-    work), but raises TypeError when checking a non-matching value against
-    Sequence[Qubit | int]. Rejection tests are therefore not possible at
-    runtime (that arm is enforced by static type checkers only).
-    """
+    """Tests for the QubitLike type alias."""
 
     def test_qubit_object(self):
         """A Qubit object is an instance of QubitLike."""
@@ -50,11 +43,7 @@ class TestQubitLike:
 
 
 class TestClbitLike:
-    """Tests for the ClbitLike type alias.
-
-    ClbitLike = Clbit | int | Sequence[Clbit | int]. Same isinstance
-    limitation as QubitLike: only the concrete arms can be runtime-checked.
-    """
+    """Tests for the ClbitLike type alias."""
 
     def test_clbit_object(self):
         """A Clbit object is an instance of ClbitLike."""
@@ -82,12 +71,27 @@ class TestScalarLike:
         """NumPy typed scalars (np.generic subclasses) are instances of ScalarLike."""
         assert isinstance(value, ScalarLike)
 
+    def test_jax_tracer(self):
+        """JAX tracers encountered during tracing are instances of ScalarLike."""
+        results = []
+
+        def f(x):
+            results.append(isinstance(x, Tracer))
+            results.append(isinstance(x, ScalarLike))
+            return x
+
+        jax.make_jaxpr(f)(1.0)
+        assert results[
+            0
+        ], "make_jaxpr did not produce a Tracer (test precondition failed)"
+        assert results[1], "Tracer is not an instance of ScalarLike"
+
     def test_numpy_array_is_rejected(self):
         """A NumPy ndarray is not a ScalarLike."""
         assert not isinstance(np.array([1, 2, 3]), ScalarLike)
 
     def test_jax_array_is_rejected(self):
-        """A JAX array is not a ScalarLike."""
+        """A concrete JAX array is not a ScalarLike."""
         assert not isinstance(jnp.array([1.0, 2.0]), ScalarLike)
 
     def test_string_is_rejected(self):
@@ -107,11 +111,7 @@ class TestNDArrayLike:
         assert isinstance(jnp.array([1.0, 2.0, 3.0]), NDArrayLike)
 
     def test_jax_tracer(self):
-        """JAX tracers encountered during tracing are instances of NDArrayLike.
-
-        Uses jax.make_jaxpr to trace a function, which passes abstract Tracer
-        objects as inputs. This is the same pattern used throughout Qrisp.
-        """
+        """JAX tracers encountered during tracing are instances of NDArrayLike."""
         results = []
 
         def f(x):
@@ -161,11 +161,7 @@ class TestArrayLike:
         assert isinstance(jnp.array([1.0, 2.0, 3.0]), ArrayLike)
 
     def test_jax_tracer(self):
-        """JAX tracers encountered during tracing are instances of ArrayLike.
-
-        Uses jax.make_jaxpr to trace a function, which passes abstract Tracer
-        objects as inputs. This is the same pattern used throughout Qrisp.
-        """
+        """JAX tracers encountered during tracing are instances of ArrayLike."""
         results = []
 
         def f(x):
@@ -186,13 +182,7 @@ class TestArrayLike:
 
 
 class TestParam:
-    """Tests for the Param type alias.
-
-    Param = float | int | complex | np.number | sympy.Expr | jax.Array.
-    All arms are concrete classes, so isinstance works cleanly for both
-    acceptance and rejection tests. jax.core.Tracer is a subclass of jax.Array,
-    so the tracer check still passes.
-    """
+    """Tests for the Param type alias."""
 
     @pytest.mark.parametrize("value", [1.5, 0.0, -3.14])
     def test_python_float(self, value):
@@ -224,13 +214,10 @@ class TestParam:
     def test_sympy_expression(self):
         """An arbitrary sympy expression is a valid gate parameter."""
         phi = Symbol("phi")
-        assert isinstance(2 * phi + sympy.pi, Param)
+        assert isinstance(sympy.Integer(2) * phi + sympy.pi, Param)
 
     def test_jax_tracer(self):
-        """JAX tracers encountered during tracing are valid gate parameters.
-
-        Uses jax.make_jaxpr to produce an actual Tracer object.
-        """
+        """JAX tracers encountered during tracing are valid gate parameters."""
         results = []
 
         def f(x):
@@ -239,7 +226,9 @@ class TestParam:
             return x
 
         jax.make_jaxpr(f)(1.0)
-        assert results[0], "make_jaxpr did not produce a Tracer (test precondition failed)"
+        assert results[
+            0
+        ], "make_jaxpr did not produce a Tracer (test precondition failed)"
         assert results[1], "Tracer is not an instance of Param"
 
     @pytest.mark.parametrize("value", ["phi", [1.0], None, np.array([1.0])])

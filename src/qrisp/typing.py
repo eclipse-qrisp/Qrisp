@@ -46,11 +46,10 @@ its integer index within the circuit. A sequence of either represents multiple
 classical bits.
 """
 
-ScalarLike: TypeAlias = int | float | complex | bool | np.generic
-"""A Python or NumPy scalar value.
+ScalarLike: TypeAlias = int | float | complex | bool | np.generic | jax.core.Tracer
+"""A Python, NumPy, or JAX scalar value.
 
-Covers Python built-in scalars (``int``, ``float``, ``complex``, ``bool``) and
-all NumPy scalar types (``np.float64``, ``np.int32``, etc. via ``np.generic``).
+Covers Python built-in scalars, all NumPy scalar types, and JAX tracers.
 
 Examples
 --------
@@ -80,10 +79,8 @@ True
 ArrayLike: TypeAlias = ScalarLike | NDArrayLike
 """A scalar or multi-dimensional array value.
 
-Union of :data:`ScalarLike` and :data:`NDArrayLike`. Use this type when a
-parameter accepts either scalars or arrays. Use the narrower aliases when only
-one kind is expected, to avoid spurious warnings about missing
-attributes such as ``.shape``, etc. when working with scalars.
+Union of :data:`ScalarLike` and :data:`NDArrayLike`. Useful when a
+parameter accepts either scalars or arrays.
 
 Examples
 --------
@@ -98,14 +95,17 @@ True
 True
 """
 
-Param: TypeAlias = float | int | complex | np.number | Expr | jax.Array
+Param: TypeAlias = (
+    float | int | complex | np.number | Expr | jax.Array | jax.core.Tracer
+)
 """A gate parameter value.
 
 Covers all types accepted as gate parameters throughout Qrisp: Python numeric
 scalars (``float``, ``int``, ``complex``), NumPy numeric scalars
 (``np.float64``, ``np.int32``, etc. via ``np.number``), symbolic expressions
-(``sympy.Symbol``, ``sympy.Expr``, and any SymPy expression), and JAX arrays
-(``jax.Array``, which includes concrete arrays and tracers).
+(``sympy.Symbol``, ``sympy.Expr``, and any SymPy expression), concrete JAX
+arrays (``jax.Array``, including 0-d arrays), and JAX tracers
+(``jax.core.Tracer``, produced during ``jax.jit``, ``jax.grad``, etc.).
 
 Examples
 --------
