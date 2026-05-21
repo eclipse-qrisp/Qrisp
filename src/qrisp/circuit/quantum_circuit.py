@@ -1621,7 +1621,7 @@ class QuantumCircuit:
                     )
         self.data.append(Instruction(operation_or_instruction, qubits, clbits))
 
-    def _apply_broadcast(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    def _apply_broadcast(
         self,
         operation: Operation,
         qubits: list,
@@ -3039,14 +3039,14 @@ def convert_to_qb_list(
     *qubits* argument before an instruction is recorded.  The function accepts every form
     that ``append`` advertises:
 
-    * A :class:`.Qubit` instance — returned as ``[qubit]``.
-    * An :class:`int` — resolved to ``circuit.qubits[value]`` and then re-processed.
-    * A :class:`~qrisp.QuantumArray` — flattened to a single list of its constituent
+    * A :class:`.Qubit` instance, returned as ``[qubit]``.
+    * An :class:`int` and then re-processed.
+    * A :class:`~qrisp.QuantumArray`, flattened to a single list of its constituent
       qubits.
     * Any object with a ``.reg`` attribute (e.g. a :class:`~qrisp.QuantumVariable`) —
       converted via ``list(value.reg)``.
-    * Any other iterable — each element is recursively processed and the results are
-      collected into a list.  This is what enables the multi-gate broadcasting feature
+    * Any other iterable. Each element is recursively processed and the results are
+      collected into a list. This is what enables the multi-gate broadcasting feature
       of ``append``.
 
     Parameters
@@ -3081,7 +3081,8 @@ def _convert_cb_item(
     value: Any,
     circuit: QuantumCircuit | None = None,
 ) -> Clbit | list[Any]:
-    """Recursive helper for convert_to_cb_list; may return a bare Clbit or a list."""
+    """Recursive helper for convert_to_cb_list. May return a bare Clbit or a list."""
+
     if isinstance(value, Clbit):
         return value
 
@@ -3110,9 +3111,9 @@ def convert_to_cb_list(
     *clbits* argument before an instruction is recorded.  It mirrors the behaviour of
     :func:`convert_to_qb_list` for classical bits:
 
-    * A :class:`.Clbit` instance — returned as ``[clbit]``.
-    * An :class:`int` — resolved to ``circuit.clbits[value]`` and then re-processed.
-    * Any other iterable — each element is recursively processed and the results are
+    * A :class:`.Clbit` instance, returned as ``[clbit]``.
+    * An :class:`int` and then re-processed.
+    * Any other iterable. Each element is recursively processed and the results are
       collected into a list.
 
     Parameters
