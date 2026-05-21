@@ -1409,6 +1409,9 @@ def barrier(qubits):
     if isinstance(qubits, Qubit):
         qubits = [qubits]
 
+    if check_for_tracing_mode():
+        return qubits
+
     append_operation(std_ops.Barrier(len(qubits)), qubits)
 
     return qubits

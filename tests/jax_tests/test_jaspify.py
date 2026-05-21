@@ -74,6 +74,17 @@ def test_jasp_simulation():
 
     assert main(4) == 9
 
+
+def test_barrier_is_ignored_during_jasp_tracing():
+    @jaspify
+    def main():
+        qv = QuantumVariable(1)
+        barrier(qv)
+        return measure(qv[0])
+
+    assert main() == False
+
+
 def test_parity_simulation():
     """Test parity function simulation with scalar inputs."""
     
