@@ -1,358 +1,155 @@
 """
-********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
+Unit tests for Gidney Figure 1 gate implementations (symbolic parity version).
+These helpers are dynamic-mode only and rely on JASP tracing semantics.
 """
 
-
 import pytest
-from qrisp import QuantumVariable, h, measure, multi_measurement, x
+from qrisp import QuantumVariable, x, measure, multi_measurement
 from qrisp.jasp import jaspify
 
 from qrisp.alg_primitives.arithmetic.adders.gidney_venting_adder import (
-    bit_inverted_controlled_gate,
-    bit_inverted_cx,
-    bit_inverted_cz,
-    dual_zz_controlled_gate,
-    dual_zz_controlled_x,
-    dual_zz_controlled_z,
-    zz_parity_controlled_gate,
-    zz_parity_controlled_x,
-    zz_parity_controlled_z,
+    bit_inverted_mcx,
+    zz_mcx,
+    zz_zz_mcx,
 )
 
 
+
+# bit_inverted_mcx: fires when (control XOR b) == 1 (symbolic parity)
 BIT_INVERTED_CASES = [
-    (0, False, 0),
-    (1, False, 1),
-    (0, True, 1),
-    (1, True, 0),
+    (0, False, 0),    # control=0, b=False -> (0 XOR 0)=0 -> no fire
+    (1, False, 1),    # control=1, b=False -> (1 XOR 0)=1 -> fires
+    (0, True,  1),    # control=0, b=True  -> (0 XOR 1)=1 -> fires
+    (1, True,  0),    # control=1, b=True  -> (1 XOR 1)=0 -> no fire
 ]
 
-BIT_INVERTED_WRAPPER_CASES = [
-    ("cz", 1, False, 1),
-    ("gate", 0, True, 1),
-]
-
-BIT_INVERTED_DYNAMIC_CASES = [
-    ("cx", 1, True, 0),
-    ("cz", 0, True, 1),
-    ("gate", 1, False, 1),
-]
-
+# zz_mcx: fires when z0 != z1 (odd parity, per Gidney's paper)
 ZZ_PARITY_CASES = [
-    (0, 0, True),
-    (1, 1, True),
-    (0, 1, False),
-    (1, 0, False),
+    (0, 0, 0),    # both 0 -> equal -> no fire
+    (1, 1, 0),    # both 1 -> equal -> no fire
+    (0, 1, 1),    # different -> fires
+    (1, 0, 1),    # different -> fires
 ]
 
-ZZ_PARITY_WRAPPER_CASES = [
-    ("z", 1, 1, True),
-    ("gate", 0, 1, False),
-]
-
-ZZ_PARITY_DYNAMIC_CASES = [
-    ("x", 1, 0, False),
-    ("z", 0, 0, True),
-    ("gate", 1, 1, True),
-]
-
+# zz_zz_mcx: fires when (z_left!=z_left_right) AND (z_left_right!=z_right) (both odd parity, per Gidney's paper)
+# New signature: (z_left, z_left_right, z_right, target) with z_left_right shared between both pairs
 DUAL_ZZ_CASES = [
-    (0, 0, 0, 0, True),
-    (1, 1, 1, 1, True),
-    (1, 0, 0, 0, False),
-    (0, 0, 1, 0, False),
+    (0, 0, 0, 0),    # z_left⊕z_left_right=0, z_left_right⊕z_right=0 (both even) -> no fire
+    (1, 1, 1, 0),    # z_left⊕z_left_right=0, z_left_right⊕z_right=0 (both even) -> no fire
+    (1, 0, 0, 0),    # z_left⊕z_left_right=1, z_left_right⊕z_right=0 (left odd, right even) -> no fire
+    (0, 0, 1, 0),    # z_left⊕z_left_right=0, z_left_right⊕z_right=1 (left even, right odd) -> no fire
+    (1, 0, 1, 1),    # z_left⊕z_left_right=1, z_left_right⊕z_right=1 (both odd) -> fires
 ]
 
-DUAL_ZZ_WRAPPER_CASES = [
-    ("z", 1, 1, 1, 1, True),
-    ("gate", 0, 0, 1, 0, False),
-]
 
-DUAL_ZZ_DYNAMIC_CASES = [
-    ("x", 0, 0, 0, 0, True),
-    ("z", 1, 1, 1, 1, True),
-    ("gate", 1, 0, 0, 0, False),
-]
+@pytest.mark.parametrize(
+    "gate_kind",
+    ["bit_inverted", "zz", "zz_zz"],
+)
+def test_dynamic_only_helpers_reject_static_mode(gate_kind):
+    """All Figure 1 helpers are dynamic-only and must fail in static mode."""
+    if gate_kind == "bit_inverted":
+        ctrl = QuantumVariable(1)
+        always_one = QuantumVariable(1)
+        tgt = QuantumVariable(1)
+
+        with pytest.raises(RuntimeError, match="requires JASP dynamic mode"):
+            bit_inverted_mcx(ctrl[0], always_one[0], tgt[0], False)
+        return
+
+    if gate_kind == "zz":
+        q0 = QuantumVariable(1)
+        q1 = QuantumVariable(1)
+        ctrl = QuantumVariable(1)
+        tgt = QuantumVariable(1)
+
+        with pytest.raises(RuntimeError, match="requires JASP dynamic mode"):
+            zz_mcx(q0[0], q1[0], ctrl[0], tgt[0])
+        return
+
+    z_left = QuantumVariable(1)
+    z_left_right = QuantumVariable(1)
+    z_right = QuantumVariable(1)
+    tgt = QuantumVariable(1)
+
+    with pytest.raises(RuntimeError, match="requires JASP dynamic mode"):
+        zz_zz_mcx(z_left[0], z_left_right[0], z_right[0], tgt[0])
+
 
 
 @pytest.mark.parametrize("ctrl_val, b, expected_tgt", BIT_INVERTED_CASES)
-def test_bit_inverted_cx_static(ctrl_val, b, expected_tgt):
-    """Verify the full bit-inverted CX truth table in static mode."""
-    ctrl = QuantumVariable(1)
-    tgt = QuantumVariable(1)
-
-    if ctrl_val:
-        x(ctrl[0])
-
-    bit_inverted_cx(ctrl[0], tgt[0], b)
-
-    result = multi_measurement([ctrl, tgt])
-    assert len(result) == 1
-    got = tuple(int(v) for v in next(iter(result.keys())))
-    expected = (ctrl_val, expected_tgt)
-    assert got == expected, f"expected {expected}, got {got}"
-
-
-@pytest.mark.parametrize("op_name, ctrl_val, b, expected_tgt", BIT_INVERTED_WRAPPER_CASES)
-def test_bit_inverted_wrappers_static(op_name, ctrl_val, b, expected_tgt):
-    """Verify the CZ and generic controlled-gate wrappers on representative inputs."""
-    ctrl = QuantumVariable(1)
-    tgt = QuantumVariable(1)
-
-    if ctrl_val:
-        x(ctrl[0])
-
-    if op_name == "cz":
-        h(tgt[0])
-        bit_inverted_cz(ctrl[0], tgt[0], b)
-        h(tgt[0])
-    else:
-        bit_inverted_controlled_gate(ctrl[0], b, lambda: x(tgt[0]))
-
-    result = multi_measurement([ctrl, tgt])
-    assert len(result) == 1
-    got = tuple(int(v) for v in next(iter(result.keys())))
-    expected = (ctrl_val, expected_tgt)
-    assert got == expected, f"expected {expected}, got {got}"
-
-
-@pytest.mark.parametrize("op_name, ctrl_val, b, expected_tgt", BIT_INVERTED_DYNAMIC_CASES)
-def test_bit_inverted_dynamic(op_name, ctrl_val, b, expected_tgt):
-    """Smoke-test bit-inverted helpers in dynamic mode."""
-
+def test_bit_inverted_mcx_jasp(ctrl_val, b, expected_tgt):
+    """Verify bit_inverted_mcx works in JASP dynamic mode (explicit parity extraction)."""
     @jaspify
     def run():
         ctrl = QuantumVariable(1)
+        always_one = QuantumVariable(1)
         tgt = QuantumVariable(1)
 
         if ctrl_val:
             x(ctrl[0])
+        x(always_one[0])  # always set to 1
 
-        if op_name == "cx":
-            bit_inverted_cx(ctrl[0], tgt[0], b)
-        elif op_name == "cz":
-            h(tgt[0])
-            bit_inverted_cz(ctrl[0], tgt[0], b)
-            h(tgt[0])
-        else:
-            bit_inverted_controlled_gate(ctrl[0], b, lambda: x(tgt[0]))
+        bit_inverted_mcx(ctrl[0], always_one[0], tgt[0], b)
 
-        return measure(ctrl), measure(tgt)
+        return measure(ctrl), measure(always_one), measure(tgt)
 
-    measured_ctrl, measured_tgt = run()
-    assert (int(measured_ctrl), int(measured_tgt)) == (ctrl_val, expected_tgt)
+    measured_ctrl, measured_always_one, measured_tgt = run()
+    assert int(measured_ctrl) == ctrl_val
+    assert int(measured_always_one) == 1
+    assert int(measured_tgt) == expected_tgt
 
 
 @pytest.mark.parametrize("q0v, q1v, expected_tgt", ZZ_PARITY_CASES)
-def test_zz_parity_controlled_x_static(q0v, q1v, expected_tgt):
-    """Verify the full ZZ-parity controlled-X truth table in static mode."""
-    q0 = QuantumVariable(1)
-    q1 = QuantumVariable(1)
-    tgt = QuantumVariable(1)
-
-    if q0v:
-        x(q0[0])
-    if q1v:
-        x(q1[0])
-
-    zz_parity_controlled_x(q0[0], q1[0], tgt[0])
-
-    result = multi_measurement([q0, q1, tgt])
-    assert len(result) == 1
-    got = tuple(int(v) for v in next(iter(result.keys())))
-    expected = (q0v, q1v, int(expected_tgt))
-    assert got == expected, f"expected {expected}, got {got}"
-
-
-@pytest.mark.parametrize("op_name, q0v, q1v, expected_tgt", ZZ_PARITY_WRAPPER_CASES)
-def test_zz_parity_wrappers_static(op_name, q0v, q1v, expected_tgt):
-    """Verify the ZZ-parity Z and generic-gate wrappers on representative inputs."""
-    q0 = QuantumVariable(1)
-    q1 = QuantumVariable(1)
-    tgt = QuantumVariable(1)
-
-    if q0v:
-        x(q0[0])
-    if q1v:
-        x(q1[0])
-
-    if op_name == "z":
-        h(tgt[0])
-        zz_parity_controlled_z(q0[0], q1[0], tgt[0])
-        h(tgt[0])
-    else:
-        zz_parity_controlled_gate(q0[0], q1[0], lambda: x(tgt[0]))
-
-    result = multi_measurement([q0, q1, tgt])
-    assert len(result) == 1
-    got = tuple(int(v) for v in next(iter(result.keys())))
-    expected = (q0v, q1v, int(expected_tgt))
-    assert got == expected, f"expected {expected}, got {got}"
-
-
-@pytest.mark.parametrize("op_name, q0v, q1v, expected_tgt", ZZ_PARITY_DYNAMIC_CASES)
-def test_zz_parity_controlled_dynamic(op_name, q0v, q1v, expected_tgt):
-    """Smoke-test ZZ-parity helpers in dynamic mode."""
-
+def test_zz_mcx_jasp(q0v, q1v, expected_tgt):
+    """Verify zz_mcx works in JASP dynamic mode (explicit parity extraction)."""
     @jaspify
     def run():
         q0 = QuantumVariable(1)
         q1 = QuantumVariable(1)
+        ctrl = QuantumVariable(1)
         tgt = QuantumVariable(1)
 
         if q0v:
             x(q0[0])
         if q1v:
             x(q1[0])
+        x(ctrl[0])  # always set control to 1
 
-        if op_name == "x":
-            zz_parity_controlled_x(q0[0], q1[0], tgt[0])
-        elif op_name == "z":
-            h(tgt[0])
-            zz_parity_controlled_z(q0[0], q1[0], tgt[0])
-            h(tgt[0])
-        else:
-            zz_parity_controlled_gate(q0[0], q1[0], lambda: x(tgt[0]))
+        zz_mcx(q0[0], q1[0], ctrl[0], tgt[0])
 
-        return measure(q0), measure(q1), measure(tgt)
+        return measure(q0), measure(q1), measure(ctrl), measure(tgt)
 
-    measured_q0, measured_q1, measured_tgt = run()
-    assert (int(measured_q0), int(measured_q1), int(measured_tgt)) == (
-        q0v,
-        q1v,
-        int(expected_tgt),
-    )
+    measured_q0, measured_q1, measured_ctrl, measured_tgt = run()
+    assert int(measured_q0) == q0v
+    assert int(measured_q1) == q1v
+    assert int(measured_ctrl) == 1
+    assert int(measured_tgt) == expected_tgt
 
 
-@pytest.mark.parametrize("a0v, a1v, b0v, b1v, expected_tgt", DUAL_ZZ_CASES)
-def test_dual_zz_controlled_x_static(a0v, a1v, b0v, b1v, expected_tgt):
-    """Verify the core dual-ZZ controlled-X behavior on representative inputs."""
-    a0 = QuantumVariable(1)
-    a1 = QuantumVariable(1)
-    b0 = QuantumVariable(1)
-    b1 = QuantumVariable(1)
-    tgt = QuantumVariable(1)
-
-    if a0v:
-        x(a0[0])
-    if a1v:
-        x(a1[0])
-    if b0v:
-        x(b0[0])
-    if b1v:
-        x(b1[0])
-
-    dual_zz_controlled_x(a0[0], a1[0], b0[0], b1[0], tgt[0])
-
-    result = multi_measurement([a0, a1, b0, b1, tgt])
-    assert len(result) == 1
-    got = tuple(int(v) for v in next(iter(result.keys())))
-    expected = (a0v, a1v, b0v, b1v, int(expected_tgt))
-    assert got == expected, f"expected {expected}, got {got}"
-
-
-@pytest.mark.parametrize("op_name, a0v, a1v, b0v, b1v, expected_tgt", DUAL_ZZ_WRAPPER_CASES)
-def test_dual_zz_wrappers_static(op_name, a0v, a1v, b0v, b1v, expected_tgt):
-    """Verify the dual-ZZ Z and generic-gate wrappers on representative inputs."""
-    a0 = QuantumVariable(1)
-    a1 = QuantumVariable(1)
-    b0 = QuantumVariable(1)
-    b1 = QuantumVariable(1)
-    tgt = QuantumVariable(1)
-
-    if a0v:
-        x(a0[0])
-    if a1v:
-        x(a1[0])
-    if b0v:
-        x(b0[0])
-    if b1v:
-        x(b1[0])
-
-    if op_name == "z":
-        h(tgt[0])
-        dual_zz_controlled_z(a0[0], a1[0], b0[0], b1[0], tgt[0])
-        h(tgt[0])
-    else:
-        dual_zz_controlled_gate(a0[0], a1[0], b0[0], b1[0], lambda: x(tgt[0]))
-
-    result = multi_measurement([a0, a1, b0, b1, tgt])
-    assert len(result) == 1
-    got = tuple(int(v) for v in next(iter(result.keys())))
-    expected = (a0v, a1v, b0v, b1v, int(expected_tgt))
-    assert got == expected, f"expected {expected}, got {got}"
-
-
-def test_dual_zz_controlled_x_static_inputs_restored():
-    """Verify dual-ZZ controlled X does not disturb the input controls."""
-    a0 = QuantumVariable(1)
-    a1 = QuantumVariable(1)
-    b0 = QuantumVariable(1)
-    b1 = QuantumVariable(1)
-    tgt = QuantumVariable(1)
-
-    x(a0[0])
-    x(b1[0])
-    dual_zz_controlled_x(a0[0], a1[0], b0[0], b1[0], tgt[0])
-
-    result = multi_measurement([a0, a1, b0, b1, tgt])
-    assert len(result) == 1
-    got = tuple(int(v) for v in next(iter(result.keys())))
-    expected = (1, 0, 0, 1, 0)
-    assert got == expected, f"expected {expected}, got {got}"
-
-
-@pytest.mark.parametrize("op_name, a0v, a1v, b0v, b1v, expected_tgt", DUAL_ZZ_DYNAMIC_CASES)
-def test_dual_zz_controlled_dynamic(op_name, a0v, a1v, b0v, b1v, expected_tgt):
-    """Smoke-test dual-ZZ helpers in dynamic mode."""
-
+@pytest.mark.parametrize("z_left_v, z_left_right_v, z_right_v, expected_tgt", DUAL_ZZ_CASES)
+def test_zz_zz_mcx_jasp(z_left_v, z_left_right_v, z_right_v, expected_tgt):
+    """Verify zz_zz_mcx works in JASP dynamic mode (with shared z_left_right qubit)."""
     @jaspify
     def run():
-        a0 = QuantumVariable(1)
-        a1 = QuantumVariable(1)
-        b0 = QuantumVariable(1)
-        b1 = QuantumVariable(1)
+        z_left = QuantumVariable(1)
+        z_left_right = QuantumVariable(1)
+        z_right = QuantumVariable(1)
         tgt = QuantumVariable(1)
 
-        if a0v:
-            x(a0[0])
-        if a1v:
-            x(a1[0])
-        if b0v:
-            x(b0[0])
-        if b1v:
-            x(b1[0])
+        if z_left_v:
+            x(z_left[0])
+        if z_left_right_v:
+            x(z_left_right[0])
+        if z_right_v:
+            x(z_right[0])
 
-        if op_name == "x":
-            dual_zz_controlled_x(a0[0], a1[0], b0[0], b1[0], tgt[0])
-        elif op_name == "z":
-            h(tgt[0])
-            dual_zz_controlled_z(a0[0], a1[0], b0[0], b1[0], tgt[0])
-            h(tgt[0])
-        else:
-            dual_zz_controlled_gate(a0[0], a1[0], b0[0], b1[0], lambda: x(tgt[0]))
+        zz_zz_mcx(z_left[0], z_left_right[0], z_right[0], tgt[0])
 
-        return measure(a0), measure(a1), measure(b0), measure(b1), measure(tgt)
+        return measure(z_left), measure(z_left_right), measure(z_right), measure(tgt)
 
-    measured = run()
-    assert tuple(int(value) for value in measured) == (
-        a0v,
-        a1v,
-        b0v,
-        b1v,
-        int(expected_tgt),
-    )
+    measured_z_left, measured_z_left_right, measured_z_right, measured_tgt = run()
+    assert int(measured_z_left) == z_left_v
+    assert int(measured_z_left_right) == z_left_right_v
+    assert int(measured_z_right) == z_right_v
+    assert int(measured_tgt) == expected_tgt
