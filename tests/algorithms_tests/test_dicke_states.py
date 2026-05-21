@@ -50,7 +50,7 @@ def test_dicke_state_balanced():
 
     assert np.allclose(prepared_sv, expected_sv, atol=1e-6)
 
-def test_dicke_state_balanced_jasp_pass():
+def test_dicke_state_balanced_jasp():
     n = 3 # Number of qubits
     k = 1 # Excitations
 
@@ -75,6 +75,38 @@ def test_dicke_state_balanced_jasp_pass():
     amp = 1 / n
     for i in range(n):
         expected_arr[2 ** i] = amp
+
+    print(f"Measured distribution:\n{res_arr}")
+    print(f"Expected distribution:\n{expected_arr}")
+
+    assert np.allclose(res_arr, expected_arr, atol=1e-6)
+
+def test_dicke_state_balanced_jasp_inverse():
+    n = 3 # Number of qubits
+    k = 1 # Excitations
+
+    # Prepare balanced Dicke state
+    @terminal_sampling
+    def main():
+        qv = QuantumVariable(n)
+        x(qv[n - 1])
+        dicke_state(qv, k)
+        with invert():
+            x(qv[n - 1])
+            dicke_state(qv, k)
+        return qv
+    
+    result = main()
+    #prepared_sv = result.qs.compile().statevector_array()
+    print(result)
+
+    res_arr = np.zeros(2 ** n)
+    for key in result:
+        res_arr[int(key)] = result[key]
+
+    # Manual expected measurement:
+    expected_arr = np.zeros(2 ** n)
+    expected_arr[0] = 1
 
     print(f"Measured distribution:\n{res_arr}")
     print(f"Expected distribution:\n{expected_arr}")
