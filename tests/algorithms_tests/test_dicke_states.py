@@ -134,16 +134,10 @@ def test_unbalanced_W_state():
     for i in range(n):
         expected_sv[2 ** i] = normalized_amps[i]
 
-    # Consider the global phase
-    idx = np.argmax(np.abs(expected_sv))
-    phase = prepared_sv[idx] / expected_sv[idx]
-    phase /= abs(phase)
-
     print(f"Prepared statevector:\n{prepared_sv}")
     print(f"Expected statevector:\n{expected_sv}")
-    print(f"Expected statevector with global phase correction:\n{expected_sv * phase}")
 
-    assert np.allclose(prepared_sv, expected_sv * phase, atol=1e-6)
+    assert np.allclose(prepared_sv, expected_sv, atol=1e-6)
 
 def test_unbalanced_W_state_trailing_zeroes():
     n = 3 # Number of qubits
@@ -162,16 +156,10 @@ def test_unbalanced_W_state_trailing_zeroes():
     for i in range(n):
         expected_sv[2 ** i] = normalized_amps[i]
 
-    # Consider the global phase
-    idx = np.argmax(np.abs(expected_sv))
-    phase = prepared_sv[idx] / expected_sv[idx]
-    phase /= abs(phase)
-
     print(f"Prepared statevector:\n{prepared_sv}")
     print(f"Expected statevector:\n{expected_sv}")
-    print(f"Expected statevector with global phase correction:\n{expected_sv * phase}")
 
-    assert np.allclose(prepared_sv, expected_sv * phase, atol=1e-6)
+    assert np.allclose(prepared_sv, expected_sv, atol=1e-6)
 
 def test_unbalanced_W_state_jasp():
     n = 3 # Number of qubits
