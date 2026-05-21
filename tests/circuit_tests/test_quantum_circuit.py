@@ -16,6 +16,8 @@
 ********************************************************************************
 """
 
+"""Tests for the QuantumCircuit class in qrisp.circuit.quantum_circuit."""
+
 import os
 import tempfile
 
@@ -1900,7 +1902,9 @@ class TestQuantumCircuitAppend:
         """Broadcasting a 2-qubit gate over two aligned lists applies it n times."""
         qc = QuantumCircuit(4)
         # Apply CX to pairs (0,1) and (2,3)
-        qc.append(CXGate(), [[qc.qubits[0], qc.qubits[2]], [qc.qubits[1], qc.qubits[3]]])
+        qc.append(
+            CXGate(), [[qc.qubits[0], qc.qubits[2]], [qc.qubits[1], qc.qubits[3]]]
+        )
         assert len(qc.data) == 2
         assert qc.data[0].qubits == [qc.qubits[0], qc.qubits[1]]
         assert qc.data[1].qubits == [qc.qubits[2], qc.qubits[3]]
@@ -1917,6 +1921,7 @@ class TestQuantumCircuitAppend:
     def test_append_duplicate_clbits_raises(self):
         """Appending with the same clbit listed twice raises ValueError."""
         from qrisp.circuit.operation import Operation
+
         qc = QuantumCircuit(1, 2)
         op = Operation("dual_meas", num_qubits=1, num_clbits=2)
         with pytest.raises(ValueError, match="Duplicate clbit"):
@@ -1932,6 +1937,7 @@ class TestQuantumCircuitAppend:
     def test_append_updates_abstract_params(self):
         """Appending a parametric gate adds its symbols to circuit.abstract_params."""
         from qrisp.circuit.standard_operations import RZGate
+
         phi = sympy.Symbol("phi")
         qc = QuantumCircuit(1)
         qc.append(RZGate(phi), [qc.qubits[0]])
@@ -1948,6 +1954,7 @@ class TestQuantumCircuitAppend:
     def test_append_qubit_resolved_by_identifier_fallback(self):
         """A qubit that matches by identifier (not identity) is resolved correctly."""
         import pickle
+
         qc = QuantumCircuit(2)
         qc.h(0)
         # Round-trip through pickle replaces Qubit objects; identity comparison fails
@@ -2366,6 +2373,141 @@ class TestQuantumCircuitGateMethods:
         qc = QuantumCircuit(1)
         qc.id(0)
         assert qc.compare_unitary(QuantumCircuit(1)) is True
+
+
+class TestQuantumCircuitGateMethodUnitaries:
+    """Unitary-correctness tests for parametric gate methods on QuantumCircuit."""
+
+    # single-qubit rotation gates
+
+    @pytest.mark.parametrize("phi", [np.pi / 6, np.pi / 3, np.pi / 2, np.pi, 2.1])
+    def test_rx_unitary(self, phi):
+        """qc.rx(phi) produces the RX(phi) unitary."""
+        from qrisp.circuit.standard_operations import RXGate
+
+        qc = QuantumCircuit(1)
+        qc.rx(phi, 0)
+        assert np.allclose(qc.get_unitary(), RXGate(phi).get_unitary(), atol=1e-10)
+
+    @pytest.mark.parametrize("phi", [np.pi / 6, np.pi / 3, np.pi / 2, np.pi, 2.1])
+    def test_ry_unitary(self, phi):
+        """qc.ry(phi) produces the RY(phi) unitary."""
+        from qrisp.circuit.standard_operations import RYGate
+
+        qc = QuantumCircuit(1)
+        qc.ry(phi, 0)
+        assert np.allclose(qc.get_unitary(), RYGate(phi).get_unitary(), atol=1e-10)
+
+    @pytest.mark.parametrize("phi", [np.pi / 6, np.pi / 3, np.pi / 2, np.pi, 2.1])
+    def test_rz_unitary(self, phi):
+        """qc.rz(phi) produces the RZ(phi) unitary."""
+        from qrisp.circuit.standard_operations import RZGate
+
+        qc = QuantumCircuit(1)
+        qc.rz(phi, 0)
+        assert np.allclose(qc.get_unitary(), RZGate(phi).get_unitary(), atol=1e-10)
+
+    @pytest.mark.parametrize("phi", [np.pi / 6, np.pi / 3, np.pi / 2, np.pi, 2.1])
+    def test_p_unitary(self, phi):
+        """qc.p(phi) produces the P(phi) unitary."""
+        from qrisp.circuit.standard_operations import PGate
+
+        qc = QuantumCircuit(1)
+        qc.p(phi, 0)
+        assert np.allclose(qc.get_unitary(), PGate(phi).get_unitary(), atol=1e-10)
+
+    @pytest.mark.parametrize(
+        "theta, phi",
+        [(np.pi / 4, 0.0), (np.pi / 2, np.pi / 4), (1.2, 0.7), (2.5, -1.3)],
+    )
+    def test_r_unitary(self, theta, phi):
+        """qc.r(theta, phi) produces the R(theta, phi) unitary.
+
+        This is the regression test for the parameter-order bug: the method
+        previously called RGate(phi, theta) instead of RGate(theta, phi).
+        """
+        from qrisp.circuit.standard_operations import RGate
+
+        qc = QuantumCircuit(1)
+        qc.r(theta, phi, 0)
+        assert np.allclose(
+            qc.get_unitary(), RGate(theta, phi).get_unitary(), atol=1e-10
+        )
+
+    def test_r_theta_phi_order_is_not_commutative(self):
+        """r(theta, phi) and r(phi, theta) produce different unitaries when theta ≠ phi."""
+        qc1 = QuantumCircuit(1)
+        qc1.r(0.3, 1.1, 0)
+        qc2 = QuantumCircuit(1)
+        qc2.r(1.1, 0.3, 0)
+        assert not np.allclose(qc1.get_unitary(), qc2.get_unitary(), atol=1e-6)
+
+    @pytest.mark.parametrize(
+        "theta, phi, lam",
+        [(np.pi / 2, 0.0, np.pi), (1.0, 2.0, 3.0), (0.5, -0.5, 1.5)],
+    )
+    def test_u3_unitary(self, theta, phi, lam):
+        """qc.u3(theta, phi, lam) produces the U3(theta, phi, lam) unitary."""
+        from qrisp.circuit import U3Gate
+
+        qc = QuantumCircuit(1)
+        qc.u3(theta, phi, lam, 0)
+        assert np.allclose(
+            qc.get_unitary(), U3Gate(theta, phi, lam).get_unitary(), atol=1e-10
+        )
+
+    # two-qubit parametric gates
+
+    @pytest.mark.parametrize("phi", [np.pi / 4, np.pi / 2, 1.5])
+    def test_cp_unitary(self, phi):
+        """qc.cp(phi) produces the CP(phi) unitary."""
+        from qrisp.circuit.standard_operations import CPGate
+
+        qc = QuantumCircuit(2)
+        qc.cp(phi, 0, 1)
+        assert np.allclose(qc.get_unitary(), CPGate(phi).get_unitary(), atol=1e-10)
+
+    @pytest.mark.parametrize("phi", [np.pi / 4, np.pi / 2, 1.5])
+    def test_rxx_unitary(self, phi):
+        """qc.rxx(phi) produces the RXX(phi) unitary."""
+        from qrisp.circuit.standard_operations import RXXGate
+
+        qc = QuantumCircuit(2)
+        qc.rxx(phi, 0, 1)
+        assert np.allclose(qc.get_unitary(), RXXGate(phi).get_unitary(), atol=1e-6)
+
+    @pytest.mark.parametrize("phi", [np.pi / 4, np.pi / 2, 1.5])
+    def test_rzz_unitary(self, phi):
+        """qc.rzz(phi) produces the RZZ(phi) unitary."""
+        from qrisp.circuit.standard_operations import RZZGate
+
+        qc = QuantumCircuit(2)
+        qc.rzz(phi, 0, 1)
+        assert np.allclose(qc.get_unitary(), RZZGate(phi).get_unitary(), atol=1e-10)
+
+    @pytest.mark.parametrize("phi, beta", [(1.2, 0.5), (np.pi / 3, np.pi / 4)])
+    def test_xxyy_unitary(self, phi, beta):
+        """qc.xxyy(phi, beta) produces the XXYY(phi, beta) unitary."""
+        from qrisp.circuit.standard_operations import XXYYGate
+
+        qc = QuantumCircuit(2)
+        qc.xxyy(phi, beta, 0, 1)
+        assert np.allclose(
+            qc.get_unitary(), XXYYGate(phi, beta).get_unitary(), atol=1e-6
+        )
+
+    @pytest.mark.parametrize("phi", [np.pi / 4, np.pi / 2, 1.5])
+    def test_crx_unitary(self, phi):
+        """qc.crx(phi) applies RX only when the control qubit is |1⟩."""
+        from qrisp.circuit.standard_operations import RXGate
+
+        qc = QuantumCircuit(2)
+        qc.crx(phi, 0, 1)
+        u = qc.get_unitary()
+        rx_u = RXGate(phi).get_unitary()
+        expected = np.eye(4, dtype=complex)
+        expected[2:4, 2:4] = rx_u
+        assert np.allclose(u, expected, atol=1e-10)
 
 
 class TestQuantumCircuitExternalConversions:
