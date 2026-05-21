@@ -4,30 +4,14 @@ Issues to Tackle and Feature Requests
 ======================================
 
 
-This is a standing cross-reference to our `open issues on GitHub <https://github.com/eclipse-qrisp/Qrisp/issues>`_, meant to give you an overview of good first issues to tackle for your contribution. 
+This is a standing cross-reference to our `open good first issues on GitHub <https://github.com/eclipse-qrisp/Qrisp/issues?q=state%3Aopen%20label%3A%22good%20first%20issue%22>`_.
 If you want to get involved but don't know where to start, look no further! 
-We have separated possible issues to work on into different levels of (our perceived) difficulty.
+We have also added a ``non-quantum`` tag incase are not too familiar with Quantum computing just yet.
 
+**Why to start here? ** 
 
-
-Intermediate contributors
--------------------------
-
-* `Issue 498 <https://github.com/eclipse-qrisp/Qrisp/issues/498>`_ - **Add convert_from_cirq**
-
-    Required prerequisites:
-    * `convert_to_cirq <https://github.com/eclipse-qrisp/Qrisp/pull/307>`_ functionality
-    * Cirq - general functionality
-
-Advanced contributors
----------------------
-
-* `Issue 62 <https://github.com/eclipse-qrisp/Qrisp/issues/62>`_ - **Sparse state preparation algorithm**
-
-    Required prerequisites:
-
-    * Knowledge of `related paper <https://arxiv.org/abs/2406.16142>`_
-    * Compilation techniques using ancillary qubits
+These issues designated as ``good first issue`` are usually low in complexity. So a beginner or first time contributor like yourself will hopefully not be overwhelmed by the proposed task! 
+Additionally they should be separated from core functionalities, which require more deep understanding of the inner workings of Qrisp. This gives you the opportunity to start working on them without deep-diving into the code just yet!
 
 
 Request a feature
