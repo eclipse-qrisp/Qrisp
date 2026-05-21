@@ -110,6 +110,13 @@ class TestParameterisedCancellation:
         result = cancel_inverses(qc)
         assert _num_gates(result) == 0
 
+    def test_rz_cancelation_preserves_gphase(self):
+        qc = QuantumCircuit(1)
+        qc.rz(np.pi/2, 0)
+        qc.rz(-np.pi/4, 0)
+        result = cancel_inverses(qc)
+        assert result.compare_unitary(qc, ignore_gphase = False)
+
     def test_rx_positive_then_negative_cancels(self):
         qc = QuantumCircuit(1)
         qc.rx(1.2, 0)

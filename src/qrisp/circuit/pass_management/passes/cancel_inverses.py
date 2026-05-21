@@ -222,7 +222,6 @@ def _fuse_parameterized_1q(op_a, op_b, gphase_array):
     # --- Rz + Rz / Rz + P ---
     if op_a.name == "rz":
         if op_b.name == "rz":
-            gphase_array[0] += op_a.global_phase + op_b.global_phase
             if param_sum == 0:
                 return _FUSION_CANCEL  # perfect cancellation
             else:
