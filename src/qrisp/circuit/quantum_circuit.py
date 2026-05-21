@@ -2862,7 +2862,7 @@ class QuantumCircuit:
     def barrier(self, qubits: QubitLike | None = None, clbits: ClbitLike | None = None):
         """
         Instruct a Barrier onto the given Qubit. Barriers can be used as visual markers
-        and compiler directives. The `clbits` argument is currently ignored but can be used in the future to also apply barriers to classical bits.
+        and compiler directives. The `clbits` argument is currently ignored.
 
         Parameters
         ----------

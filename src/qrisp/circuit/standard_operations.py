@@ -107,7 +107,7 @@ def RYGate(phi: Param = 0):
 
 
 def RZGate(phi: Param = 0):
-    res = U3Gate(0, phi, 0, name="rz", global_phase=-phi / 2)  # type: ignore[operator]
+    res = U3Gate(0, phi, 0, name="rz", global_phase=-phi / 2)
     return res
 
 
@@ -151,7 +151,7 @@ def RXXGate(phi: Param = 0):
     from qrisp.circuit.quantum_circuit import QuantumCircuit
 
     qc = QuantumCircuit(2)
-    qc.gphase(-phi / 2, qc.qubits[0])  # type: ignore[operator]
+    qc.gphase(-phi / 2, qc.qubits[0])
     qc.h(qc.qubits[0])
     qc.h(qc.qubits[1])
     qc.cx(qc.qubits[0], qc.qubits[1])
@@ -173,7 +173,7 @@ def RZZGate(phi: Param = 0):
 
     qc = QuantumCircuit(2)
     qc.cx(qc.qubits[0], qc.qubits[1])
-    qc.gphase(-phi / 2, qc.qubits[0])  # type: ignore[operator]
+    qc.gphase(-phi / 2, qc.qubits[0])
     qc.p(phi, qc.qubits[1])
     qc.cx(qc.qubits[0], qc.qubits[1])
 
@@ -196,8 +196,8 @@ def XXYYGate(phi: Param = 0, beta: Param = 0):
     qc.rz(np.pi / 2, qc.qubits[1])
     qc.s(qc.qubits[0])
     qc.cx(qc.qubits[1], qc.qubits[0])
-    qc.ry(-phi / 2, qc.qubits[1])  # type: ignore[operator]
-    qc.ry(-phi / 2, qc.qubits[0])  # type: ignore[operator]
+    qc.ry(-phi / 2, qc.qubits[1])
+    qc.ry(-phi / 2, qc.qubits[0])
     qc.cx(qc.qubits[1], qc.qubits[0])
     qc.s_dg(qc.qubits[0])
     qc.rz(-np.pi / 2, qc.qubits[1])
