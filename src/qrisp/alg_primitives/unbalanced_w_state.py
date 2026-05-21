@@ -16,9 +16,10 @@
 ********************************************************************************
 """
 
+import numpy as np
 import jax.numpy as jnp
 from qrisp import QuantumVariable, Qubit, x, xxyy, p
-from qrisp.jasp import jlen, q_fori_loop, check_for_tracing_mode
+from qrisp.jasp import jrange, check_for_tracing_mode
 from collections.abc import Sequence
 
 def unbalanced_W_state(
@@ -64,6 +65,9 @@ def unbalanced_W_state(
     The circuit distributes a single excitation across all qubits using a
     linear chain of ``XXYY`` gates:
 
+    0. Precompute all required :math:`\theta` angles using
+       :math:`r_i = \sqrt{ \sum_{ j = i }^{ n - 1 }{ |a_j| ^ 2 } }`
+       and :math:`\theta = 2\arccos(|a_i|\,/\,r_i)`.
     1. Apply ``X`` to qubit 0, producing :math:`|10\dots0\rangle`.
     2. For each qubit :math:`i = 0, \dots, n{-}2`:
 
@@ -92,48 +96,58 @@ def unbalanced_W_state(
     >>> unbalanced_W_state(qv, a)
     >>> print(qv.qs.statevector())
     """
-    n = jlen(qv)
     a = jnp.asarray(amplitudes, dtype=complex)
 
     if reversed:
         a = a[::-1]
 
-    if not check_for_tracing_mode() and len(a) != n:
-        raise ValueError(
-            f"Length of amplitudes ({len(a)}) must match qv.size ({n})."
-        )
+    n = a.shape[0] # Use the static shape of amplitudes
+
+    if not check_for_tracing_mode():
+        if len(qv) != n:
+            raise ValueError(
+                f"Length of amplitudes ({n}) must match qv.size ({len(qv)})."
+            )
+        if np.linalg.norm(np.asarray(amplitudes, dtype=complex)) < 1e-15:
+            raise ValueError("Amplitude vector must be non-zero.")
 
     # Normalize so that <a|a> = 1
     norm = jnp.sqrt(jnp.vdot(a, a).real)
     a = a / norm
     abs_a = jnp.abs(a)
+    phases = jnp.angle(a)
+
+    # --- Step 0: Precomputing angles
+    # Precompute remaining values following:
+    # r_i = \sqrt{ \sum_{ j = i }^{ n - 1 }{ |a_j| ^ 2 } }
+    # abs_a_squared : [a0^2, a1^2, a2^2, a3^2]
+    # flip          : [a3^2, a2^2, a1^2, a0^2]
+    # cumsum        : [a3^2, a3^2 + a2^2, a3^2 + a2^2 + a1^2 , a3^2 + a2^2 + a1^2 + a0^2]
+    # flip          : [a3^2 + a2^2 + a1^2 + a0^2, a3^2 + a2^2 + a1^2 , a3^2 + a2^2 , a3^2]
+    abs_a_squared = abs_a ** 2
+    remaining_arr = jnp.sqrt(jnp.flip(jnp.cumsum(jnp.flip(abs_a_squared))))
+    # Calculate rations for arccos. Replace 0/0 division by 1
+    # for `arccos(1) = 0` to do nothing.
+    numerators = abs_a[:-1] # Strip one last fraction, as num_{n-1} / rem_{n-1} is not needed.
+    denominators = remaining_arr[:-1]
+    denominators_no_zeroes = jnp.where(denominators > 1e-15, denominators, 1.0)
+    # remaining_arr = 0 only when abs_a = 0, so it is safe.
+    ratio_arr = jnp.where(denominators > 1e-15, numerators / denominators_no_zeroes, 1.0)
+    # Get precomputed angles. Choose θ so that cos(θ/2) = |a_i| / remaining
+    # i.e. qubit i retains exactly magnitude |a_i|
+    theta_arr = 2 * jnp.arccos(jnp.clip(ratio_arr, -1.0, 1.0))
 
     # --- Step 1: place the single excitation on qubit 0  --->  |10...0>
     x(qv[0])
 
     # --- Step 2: redistribute amplitude along the qubit chain
-    # `remaining` (i.e. `carry`) tracks the magnitude still carried by the "active" qubit
-    # (the one that has not yet been peeled off).
-    def body_for(i, carry):
-        # Choose θ so that cos(θ/2) = |a_i| / remaining (i.e. carry),
-        # i.e. qubit i retains exactly magnitude |a_i|.
-        theta = 2 * jnp.arccos(jnp.clip(abs_a[i] / carry, -1.0, 1.0))
-
+    for i in jrange(n - 1):
         # XXYY(θ, π/2) performs a parametrized partial swap in the
         # single-excitation subspace {|01>, |10>}:
         #   |10> -> cos(θ/2)|10> - sin(θ/2)|01>
-        xxyy(theta, jnp.pi / 2, qv[i], qv[i + 1])
-
-        # Update the undistributed amplitude magnitude for the next step
-        carry *= jnp.sin(theta / 2)
-
+        xxyy(theta_arr[i], jnp.pi / 2, qv[i], qv[i + 1])
         # Imprint the complex phase of a_i onto qubit i
-        p(jnp.angle(a[i]), qv[i])
-
-        return carry
-
-    remaining = 1.0
-    q_fori_loop(0, n-1, body_for, remaining)
+        p(phases[i], qv[i])
 
     # --- Step 3: imprint the phase on the last qubit
-    p(jnp.angle(a[-1]), qv[-1])
+    p(phases[n - 1], qv[n - 1])
