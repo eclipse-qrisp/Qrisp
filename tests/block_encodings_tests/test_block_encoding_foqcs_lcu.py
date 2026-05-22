@@ -244,16 +244,9 @@ def test_foqcs_lcu_prep():
     #    if ref_state[i] != 0:
     #        print(f"r[{i}] = {ref_state[i]}")
 
-    # Test that the state received is the same as the reference up to a global phase.
-    idx = np.argmax(np.abs(ref_state))
-    if np.isclose(ref_state[idx], 0, atol=1e-06):
-        assert np.allclose(statev, ref_state, atol=1e-06)
-
-    phase = statev[idx] / ref_state[idx]
-    phase /= abs(phase)
-
-    assert np.allclose(statev, phase * ref_state, atol=1e-06), (
-        f"States differ beyond global phase {phase}"
+    # Test that the state received is the same as the reference
+    assert np.allclose(statev, ref_state, atol=1e-06), (
+        f"States differ"
     )
 
 def test_foqcs_lcu_spin_glass_prep():
@@ -484,16 +477,9 @@ def test_foqcs_lcu_spin_glass_prep():
         if ref_state[i] != 0:
             print(f"r[{i}] = {ref_state[i]}")
 
-    # Test that the state received is the same as the reference up to a global phase.
-    idx = np.argmax(np.abs(ref_state))
-    if np.isclose(ref_state[idx], 0, atol=1e-06):
-        assert np.allclose(statev, ref_state, atol=1e-06)
-
-    phase = statev[idx] / ref_state[idx]
-    phase /= abs(phase)
-
-    assert np.allclose(statev, phase * ref_state, atol=1e-06), (
-        f"States differ beyond global phase {phase}"
+    # Test that the state received is the same as the reference
+    assert np.allclose(statev, ref_state, atol=1e-06), (
+        f"States differ"
     )
 
     # Test that the state received is the same as the reference.
@@ -605,10 +591,6 @@ def test_foqcs_lcu_spin_glass_subprep():
             ref_state += np.linalg.norm(J_kNN) * ket
 
     ref_state = ref_state / np.linalg.norm(ref_state)
-
-    idx = np.argmax(np.abs(statev))
-    phase = ref_state[idx] / statev[idx]
-    phase /= abs(phase)
     
     statev[np.isclose(statev, 0j, atol=1e-6)] = 0
 
@@ -618,7 +600,7 @@ def test_foqcs_lcu_spin_glass_subprep():
         if ref_state[i] != 0:
             print(f"r[{i}] = {ref_state[i]}")
 
-    assert np.allclose(statev * phase, ref_state)
+    assert np.allclose(statev, ref_state)
 
 def test_block_encoding_from_foqcs_lcu_prep():
     # Initialize variables + their values
