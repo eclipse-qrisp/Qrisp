@@ -1,0 +1,119 @@
+/* --- 1. CSS Variables (The Control Center) --- */
+:root {
+  /* Desktop Sizes (Larger) */
+  --slide-width: 280px; 
+  --logo-max-height: 120px; 
+  
+  /* Animation Math (Do not change these unless you add/remove logos) */
+  --original-logos: 3;
+  --total-logos: 12; 
+}
+
+/* Mobile Sizes (Triggers on screens smaller than 768px) */
+@media (max-width: 768px) {
+  :root {
+    --slide-width: 150px;
+    --logo-max-height: 70px;
+  }
+}
+
+/* --- 2. Main Section Styling --- */
+.trusted-by {
+  text-align: center;
+  padding: 60px 0;
+  background-color: transparent; /* Changed to transparent to match Sphinx themes better */
+  font-family: inherit;
+}
+
+.trusted-by h2 {
+  margin-bottom: 40px;
+  color: inherit;
+  font-size: 24px;
+}
+
+/* --- 3. The Slider Container --- */
+.logo-slider {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  max-width: 1400px; /* Widened to allow for larger desktop logos */
+  margin: 0 auto;
+}
+
+/* Faded edges for a polished look */
+.logo-slider::before,
+.logo-slider::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 15%; /* Uses percentage so fades shrink on mobile */
+  height: 100%;
+  z-index: 2;
+}
+
+.logo-slider::before {
+  left: 0;
+  background: linear-gradient(to right, var(--theme-bg, white) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+.logo-slider::after {
+  right: 0;
+  background: linear-gradient(to left, var(--theme-bg, white) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+/* --- 4. The Moving Track --- */
+.logo-track {
+  display: flex;
+  /* Automatically calculates total width using our variables */
+  width: calc(var(--slide-width) * var(--total-logos));
+  animation: scroll 40s linear infinite; /* Slightly slower for larger logos */
+}
+
+.logo-track:hover {
+  animation-play-state: paused;
+}
+
+/* --- 5. Individual Slides & Logos --- */
+.slide {
+  width: var(--slide-width);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.slide img {
+  max-width: 100%;
+  max-height: var(--logo-max-height);
+  /* Original colors preserved (removed grayscale and opacity rules) */
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+/* Subtle zoom effect on hover instead of color change */
+.slide img:hover {
+  transform: scale(1.05);
+}
+
+/* --- 6. The Animation --- */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    /* Automatically translates by exactly the width of the original set */
+    transform: translateX(calc(var(--slide-width) * var(--original-logos) * -1));
+  }
+}
+
+/* --- 7. Logo Specific Overrides --- */
+/* Scale up the FRI logo to compensate for its built-in white space */
+.slide img[src*="FRI_UL_logo"] {
+    transform: scale(1.25); 
+}
+
+/* Ensure the subtle zoom hover effect still works correctly */
+.slide img[src*="FRI_UL_logo"]:hover {
+    transform: scale(1.3); 
+}
