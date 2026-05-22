@@ -23,6 +23,7 @@ from qrisp.core import x
 from qrisp.alg_primitives.unbalanced_w_state import unbalanced_W_state
 from qrisp.alg_primitives.dicke_state_prep import dicke_state
 from qrisp.jasp import terminal_sampling
+from qrisp.environments import invert
 
 #############################################################
 ##################### Dicke state tests #####################
@@ -49,7 +50,7 @@ def test_dicke_state_balanced():
 
     assert np.allclose(prepared_sv, expected_sv, atol=1e-6)
 
-def test_dicke_state_balanced_jasp_pass():
+def test_dicke_state_balanced_jasp():
     n = 3 # Number of qubits
     k = 1 # Excitations
 
@@ -80,6 +81,38 @@ def test_dicke_state_balanced_jasp_pass():
 
     assert np.allclose(res_arr, expected_arr, atol=1e-6)
 
+def test_dicke_state_balanced_jasp_inverse():
+    n = 3 # Number of qubits
+    k = 1 # Excitations
+
+    # Prepare balanced Dicke state
+    @terminal_sampling
+    def main():
+        qv = QuantumVariable(n)
+        x(qv[n - 1])
+        dicke_state(qv, k)
+        with invert():
+            x(qv[n - 1])
+            dicke_state(qv, k)
+        return qv
+    
+    result = main()
+    #prepared_sv = result.qs.compile().statevector_array()
+    print(result)
+
+    res_arr = np.zeros(2 ** n)
+    for key in result:
+        res_arr[int(key)] = result[key]
+
+    # Manual expected measurement:
+    expected_arr = np.zeros(2 ** n)
+    expected_arr[0] = 1
+
+    print(f"Measured distribution:\n{res_arr}")
+    print(f"Expected distribution:\n{expected_arr}")
+
+    assert np.allclose(res_arr, expected_arr, atol=1e-6)
+
 ##############################################################
 ################## Unbalanced W state tests ##################
 ##############################################################
@@ -101,16 +134,32 @@ def test_unbalanced_W_state():
     for i in range(n):
         expected_sv[2 ** i] = normalized_amps[i]
 
-    # Consider the global phase
-    idx = np.argmax(np.abs(expected_sv))
-    phase = prepared_sv[idx] / expected_sv[idx]
-    phase /= abs(phase)
+    print(f"Prepared statevector:\n{prepared_sv}")
+    print(f"Expected statevector:\n{expected_sv}")
+
+    assert np.allclose(prepared_sv, expected_sv, atol=1e-6)
+
+def test_unbalanced_W_state_trailing_zeroes():
+    n = 3 # Number of qubits
+    amps = np.array([0.25 + 0.2j, 0, 0], dtype=complex)
+    
+    # Prepare unbalanced Dicke state
+    qv = QuantumVariable(n)
+    unbalanced_W_state(qv, amps, reversed=True)
+    prepared_sv = qv.qs.compile().statevector_array()
+
+    # Manual expected state:
+    # |ψ> = a0 |001> + a1 |010> + a2 |100>
+    expected_sv = np.zeros(2 ** n, dtype=complex)
+    norm = np.linalg.norm(amps)
+    normalized_amps = amps / norm
+    for i in range(n):
+        expected_sv[2 ** i] = normalized_amps[i]
 
     print(f"Prepared statevector:\n{prepared_sv}")
     print(f"Expected statevector:\n{expected_sv}")
-    print(f"Expected statevector with global phase correction:\n{expected_sv * phase}")
 
-    assert np.allclose(prepared_sv, expected_sv * phase, atol=1e-6)
+    assert np.allclose(prepared_sv, expected_sv, atol=1e-6)
 
 def test_unbalanced_W_state_jasp():
     n = 3 # Number of qubits
@@ -131,6 +180,32 @@ def test_unbalanced_W_state_jasp():
         2**i: float(abs(normalized_amps[i]) ** 2)
         for i in range(n)
     }
+
+    print(f"Prepared measurement:\n{result}")
+    print(f"Expected measurement:\n{expected}")
+
+    keys = sorted(set(result) | set(expected))
+    result_arr = np.array([result.get(k, 0.0) for k in keys])
+    expected_arr = np.array([expected.get(k, 0.0) for k in keys])
+
+    assert np.allclose(result_arr, expected_arr, atol=1e-6)
+
+def test_unbalanced_W_state_jasp_inverse():
+    n = 3 # Number of qubits
+    amps = np.array([0.25 + 0.2j, 0.375 + 0.18j, 0.375], dtype=complex)
+    
+    # Prepare unbalanced Dicke state
+    @terminal_sampling
+    def main():
+        qv = QuantumVariable(n)
+        unbalanced_W_state(qv, amps)
+        with invert():
+            unbalanced_W_state(qv, amps)
+        return qv
+    result = main()
+    # Manual expected state:
+    # |ψ> = 1 |000>
+    expected = {0: 1.0}
 
     print(f"Prepared measurement:\n{result}")
     print(f"Expected measurement:\n{expected}")
@@ -172,3 +247,15 @@ def test_unbalanced_W_state_fail_len_check():
 
     print(exc_info.value)
     assert f"Length of amplitudes" in str(exc_info.value)
+
+def test_unbalanced_W_state_fail_zero_vector():
+    n = 3 # Number of qubits
+    amps = np.array([0, 0, 0], dtype=complex)
+
+    # Prepare unbalanced Dicke state
+    qv = QuantumVariable(n)
+    with pytest.raises(ValueError) as exc_info:
+        unbalanced_W_state(qv, amps, reversed=True)
+
+    print(exc_info.value)
+    assert f"Amplitude vector must be non-zero." in str(exc_info.value)
