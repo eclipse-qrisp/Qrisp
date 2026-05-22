@@ -291,14 +291,6 @@ def foqcs_prep_spin_glass(
 
     J_skip = len(J_betas[0])
     block_skip = J_skip + 1
-    
-    # FOQCS-LCU phase convention correction for one-qubit J branches.
-    for ctrl in (
-        J_skip,
-        block_skip + J_skip,
-        2 * block_skip + J_skip,
-    ):
-        p(np.pi / 4, prep_qv[ctrl])
 
     # Unbalanced Dicke state (X0)
     with control([prep_qv[0]]):
