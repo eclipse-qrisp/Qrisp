@@ -39,6 +39,54 @@ def _heisenberg_from_def(L: int, g: dict, J: dict):
             H = H + g[k] * np.kron(np.identity(2**i), np.kron(sigma, np.identity(2**(L-i-1))))
     return H
 
+def _spin_glass_from_def(L: int, g: dict, J: dict):
+    """
+    Reference matrix matching foqcs_prep_spin_glass's current site ordering.
+
+    H = sum_a sum_i g_a[i] sigma_a(L - 1 - i)
+      + sum_a sum_k sum_i J_a[k-1][i]
+            sigma_a(L - 1 - i) sigma_a(L - 1 - (i+k))
+    """
+
+    paulis = {
+        "X": np.array([[0, 1], [1, 0]], dtype=complex),
+        "Y": np.array([[0, -1j], [1j, 0]], dtype=complex),
+        "Z": np.array([[1, 0], [0, -1]], dtype=complex),
+    }
+
+    def pauli_string(sites, sigma):
+        ops = []
+        for q in range(L):
+            ops.append(sigma if q in sites else np.eye(2, dtype=complex))
+
+        res = ops[0]
+        for op in ops[1:]:
+            res = np.kron(res, op)
+        return res
+
+    H = np.zeros((2**L, 2**L), dtype=complex)
+
+    for axis, sigma in paulis.items():
+        for i in range(L):
+            site = L - 1 - i
+            H += g[axis][i] * pauli_string({site}, sigma)
+
+        for k in range(1, L):
+            for i in range(L - k):
+                site_0 = L - 1 - i
+                site_1 = L - 1 - (i + k)
+                H += J[axis][k - 1][i] * pauli_string({site_0, site_1}, sigma)
+
+    return H
+
+def _flatten_spin_glass_coeffs(g: dict, J: dict):
+    coeffs = []
+    for axis in ["X", "Y", "Z"]:
+        coeffs.extend(g[axis])
+        for diag in J[axis]:
+            coeffs.extend(diag)
+    return np.array(coeffs, dtype=complex)
+
 def _prep_psi(q_num):
     # Generate state amplitudes.
     psi = np.random.uniform(-1, 1, 2 ** (q_num)) + 1j * np.random.uniform(
@@ -658,6 +706,124 @@ def test_block_encoding_from_foqcs_lcu_prep():
     print(f"Resulting operands = {res_ops}")
 
     assert np.allclose(res_ops, ref_state, atol=1e-6)
+
+def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
+    L = 3
+
+    # Physical Hamiltonian coefficients.
+    # Keep these real if you want a Hermitian reference Hamiltonian.
+    g = {
+        "X": np.array([0.31, -0.47, 0.22], dtype=complex),
+        "Y": np.array([-0.18, 0.29, 0.41], dtype=complex),
+        "Z": np.array([0.52, -0.13, -0.36], dtype=complex),
+    }
+
+    # J[axis][k - 1][i] couples sites i and i + k.
+    J = {
+        "X": [
+            np.array([0.17, -0.24], dtype=complex),  # distance 1: (0,1), (1,2)
+            np.array([0.33], dtype=complex),         # distance 2: (0,2)
+        ],
+        "Y": [
+            np.array([-0.21, 0.15], dtype=complex),
+            np.array([-0.28], dtype=complex),
+        ],
+        "Z": [
+            np.array([0.39, -0.11], dtype=complex),
+            np.array([0.26], dtype=complex),
+        ],
+    }
+
+    # Normalize the physical coefficients, same style as the Heisenberg test.
+    # This is not strictly necessary, but keeps amplitudes well-conditioned.
+    phys_norm = np.linalg.norm(_flatten_spin_glass_coeffs(g, J))
+    for axis in ["X", "Y", "Z"]:
+        g[axis] = g[axis] / phys_norm
+        J[axis] = [diag / phys_norm for diag in J[axis]]
+
+    # Physical Hamiltonian coefficients.
+    phys_g = g
+    phys_J = J
+
+    # PREP coefficients.
+    #
+    # SELECT convention:
+    #   X branch  -> X
+    #   Z branch  -> Z
+    #   Y branch  -> iY
+    #   YY branch -> -YY
+    #
+    # Therefore:
+    #   local Y needs sqrt(-i * coeff)
+    #   YY needs sqrt(-coeff)
+    prep_g = {
+        "X": np.sqrt(phys_g["X"]),
+        "Y": np.sqrt(-1j * phys_g["Y"]),
+        "Z": np.sqrt(phys_g["Z"]),
+    }
+
+    prep_J = {
+        "X": [np.sqrt(diag) for diag in phys_J["X"]],
+        "Y": [np.sqrt(-diag) for diag in phys_J["Y"]],
+        "Z": [np.sqrt(diag) for diag in phys_J["Z"]],
+    }
+
+    alpha = np.linalg.norm(_flatten_spin_glass_coeffs(prep_g, prep_J)) ** 2
+
+    prep = partial(
+        foqcs_prep_spin_glass,
+        L=L,
+        g=prep_g,
+        J=prep_J,
+    )
+
+    unprep = partial(
+        foqcs_prep_spin_glass,
+        L=L,
+        g=prep_g,
+        J=prep_J,
+        conjugate=True,
+    )
+
+    be = BlockEncoding.from_foqcs_lcu_prep(
+        prep=prep,
+        num_q_ops=L,
+        unprep=unprep,
+        norm=alpha,
+    )
+
+    qv = QuantumVariable(L)
+    psi = _prep_psi(L)
+    qv.init_state(psi, method="qswitch")
+
+    def main(BE):
+        operand = qv
+        ancillas = BE.apply(operand)
+        return operand, ancillas
+
+    operand, ancillas = main(be)
+
+    qc = operand.qs.compile()
+    sv = qc.statevector_array()
+
+    def bit_reverse(i: int, n: int) -> int:
+        return int(f"{i:0{n}b}"[::-1], 2)
+
+    # Extract the operand amplitudes where all FOQCS-LCU ancillae are zero.
+    res_ops = []
+    for i in range(2**L):
+        qi = bit_reverse(i, L)
+        ind = qi << len(ancillas[0])
+        res_ops.append(sv[ind])
+    
+    H = _spin_glass_from_def(L, phys_g, phys_J) / alpha
+    ref_state = H @ psi
+
+    print(f"Ref state = {ref_state}")
+    print(f"Resulting operands = {res_ops}")
+
+    assert np.allclose(res_ops, ref_state, atol=1e-6)
+
 
 def test_block_encoding_from_foqcs_lcu_prep_jax():
     # Initialize variables + their values

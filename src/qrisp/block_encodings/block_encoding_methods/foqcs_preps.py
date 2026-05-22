@@ -208,11 +208,27 @@ def foqcs_prep_spin_glass(
     # J = {"X" : [[]], "Y" : [[]], "Z" : [[]]}
     # g = {"X" : [gx_1, gx_2, ..., gx_k], "Y" : [gy_1, gy_2, ..., gy_k], "Z" : [gz_1, gz_2, ..., gz_k]}
     # J = {"X" : [[Jx_12, Jx_23, ..., Jx_(n-1)n], ...], "Y" : [[Jy_12, Jy_23, ..., Jy_(n-1)n], ...], "Z" : [[Jz_12, Jz_23, ..., Jz_(n-1)n], ...]}
+    
+    components = ["X", "Y", "Z"]
+
+    if conjugate:
+        g = {
+            dim: np.conj(np.asarray(g[dim], dtype=complex))
+            for dim in components
+        }
+
+        J = {
+            dim: [
+                np.conj(np.asarray(diag, dtype=complex))
+                for diag in J[dim]
+            ]
+            for dim in components
+        }
+    
     g_betas = [] # Squared normalization factors for all g components (X, Y, Z) --> [g_beta_X, g_beta_Y, g_beta_Z]
     J_betas = [[], [], []] # Squared normalization factors for all J components and diagonals (X, Y, Z) --> [[J_beta_X1, J_beta_X2, ...], [J_beta_Y1, J_beta_Y2, ...], [J_beta_Z1, J_beta_Z2, ...]]
     g_hats = [[], [], []] # Normalized g coefficients
     J_hats = [[], [], []] # Normalized J coefficients
-    components = ["X", "Y", "Z"]
 
     # Normalization for state preparation
     for i in range(3):
@@ -367,6 +383,8 @@ def get_foqcs_lcu_prep_num_of_ancillae(prep: partial, num_ops: int = 1) -> int:
     """
     if prep.func == foqcs_prep_heisenberg_1D:
         return num_ops * 2 + 6
+    elif prep.func == foqcs_prep_spin_glass:
+        return num_ops * 5
     elif prep.func == foqcs_prep_placeholder:
         return 0
     else:
