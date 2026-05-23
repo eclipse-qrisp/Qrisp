@@ -57,7 +57,7 @@ def diffuser(
     ----------
     input_object : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
         The (list of) QuantumVariables to apply the Grover diffuser on.
-    phase : float or sympy.Symbol, optional
+    phase : qrisp.Param, optional
         Specifies the phase shift. The default is $\pi$, i.e. a
         multi-controlled Z gate.
     state_function : function, optional
@@ -274,7 +274,9 @@ def grovers_alg(
     --------
 
     We construct an oracle that tags the states -3 and 2 on two QuantumFloats and apply
-    Grover's algorithm to it. ::
+    Grover's algorithm. 
+
+    ::
 
         from qrisp import QuantumFloat
 
@@ -382,7 +384,7 @@ def grovers_alg(
      '00111': 0.1}
 
     We see that contrary to regular Grover's algorithm, the states which have not been
-    tagged by the oracle have 0 percent measurement probability.
+    tagged by the oracle have zero percent measurement probability.
 
     """
 
