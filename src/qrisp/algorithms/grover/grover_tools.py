@@ -40,7 +40,7 @@ from qrisp import (
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.jasp import check_for_tracing_mode, jrange
 from qrisp.typing import Param
-from typing import List, Callable, Dict, Any
+from typing import Callable, Any
 
 
 # Applies the grover diffuser onto the (list of) quantum variable input_object
@@ -48,7 +48,7 @@ def diffuser(
     input_object: QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray],
     phase: Param = np.pi,
     state_function: Callable = None,
-    reflection_indices: List[int] = None,
+    reflection_indices: list[int] = None,
 ):
     r"""
     Applies the Grover diffuser onto (multiple) QuantumVariables.
@@ -125,7 +125,7 @@ def diffuser(
 
 
 def tag_state(
-    tag_specificator: Dict[QuantumVariable, float],
+    tag_specificator: dict[QuantumVariable, float],
     binary_values: bool = False,
     phase: Param = np.pi,
 ):
@@ -233,9 +233,9 @@ def tag_state(
 
 
 def grovers_alg(
-    qv_list: QuantumVariable | QuantumArray | List[QuantumVariable | QuantumArray],
+    args: QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray],
     oracle_function: Callable,
-    kwargs: Dict[str, Any] = {},
+    kwargs: dict[str, Any] | None = None,
     iterations: int | None = None,
     winner_state_amount: int | None = None,
     exact: bool = False,
@@ -245,23 +245,29 @@ def grovers_alg(
 
     Parameters
     ----------
-    qv_list : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
-        A (list of) QuantumVariables on which to execute Grover's algorithm.
+    args : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
+        The quantum variable, array, or collection thereof that defines the search space
+        for Grover's algorithm.
     oracle_function : Callable
-        A Python function tagging the winner states.
+        The quantum oracle function. This callable must accept ``args`` as its argument
+        and apply a phase flip to tag the target winner state(s).
+        Must uncompute any auxiliary QuantumVariables it uses.
+        If ``exact`` is set to True, the oracle function must also support the keyword argument
+        ``phase``, which specifies how much the winner states are phase-shifted
+        (in standard Grover, this would be $\pi$).
     kwargs : dict, optional
-        A dictionary containing keyword arguments for the oracle. The default is {}.
+        A dictionary containing keyword arguments to be passed to the oracle. The default is None.
     iterations : int, optional
-        The amount of Grover iterations to perfrom.
+        The exact amount of Grover iterations to perform.
     winner_state_amount : int, optional
-        If not given the amount of iterations, the established formula will be used
-        based on the amount of winner states. The default is 1.
+        If ``iterations`` is not specified, the optimal number of iterations is calculated
+        using the established mathematical formula based on the number of winner states.
+        The default assumption (if omitted) is 1.
     exact : bool, optional
-        If set to True, the `exact version <https://arxiv.org/pdf/quant-ph/0106071.pdf>`
+        If set to True, the `exact version <https://arxiv.org/pdf/quant-ph/0106071.pdf>`_
         of Grover's algorithm will be evaluated. For this, the correct
-        ``winner_state_amount`` has to be supplied and the oracle has to support the
-        keyword argument ``phase`` which specifies how much the winner states are
-        phaseshifted (in standard Grover this would be $\pi$).
+        ``winner_state_amount`` must be supplied, and the oracle must support the
+        keyword argument ``phase`` to apply the calculated fractional phase shift.
 
     Raises
     ------
@@ -274,7 +280,7 @@ def grovers_alg(
     --------
 
     We construct an oracle that tags the states -3 and 2 on two QuantumFloats and apply
-    Grover's algorithm. 
+    Grover's algorithm.
 
     ::
 
@@ -394,6 +400,9 @@ def grovers_alg(
     else:
         import numpy as jnp
 
+    if kwargs is None:
+        kwargs = {}
+
     if exact and winner_state_amount is None:
         raise ValueError(
             "Exact Grover's algorithm requires 'winner_state_amount' to be specified."
@@ -401,12 +410,12 @@ def grovers_alg(
     elif winner_state_amount is None:
         winner_state_amount = 1
 
-    if isinstance(qv_list, list):
-        N = 2 ** jnp.sum(jnp.array([qv.size for qv in qv_list]))
-    elif isinstance(qv_list, QuantumArray):
-        N = 2 ** sum(jnp.array([qv.size for qv in qv_list.flatten()]))
-    elif isinstance(qv_list, QuantumVariable):
-        N = 2**qv_list.size
+    if isinstance(args, list):
+        N = 2 ** jnp.sum(jnp.array([qv.size for qv in args]))
+    elif isinstance(args, QuantumArray):
+        N = 2 ** sum(jnp.array([qv.size for qv in args.flatten()]))
+    elif isinstance(args, QuantumVariable):
+        N = 2**args.size
 
     if exact:
         # Implementation for phase calculation for exact grovers alg as in
@@ -425,34 +434,34 @@ def grovers_alg(
         iterations = jnp.pi / 4 * jnp.sqrt(N / winner_state_amount)
         iterations = jnp.int64(jnp.round(iterations))
 
-    if isinstance(qv_list, (list, QuantumArray)):
-        [h(qv) for qv in qv_list]
+    if isinstance(args, (list, QuantumArray)):
+        [h(qv) for qv in args]
     else:
-        h(qv_list)
+        h(args)
 
     if check_for_tracing_mode():
 
         for i in jrange(iterations):
             if exact:
-                oracle_function(qv_list, phase=phi, **kwargs)
-                diffuser(qv_list, phase=phi)
+                oracle_function(args, phase=phi, **kwargs)
+                diffuser(args, phase=phi)
             else:
-                oracle_function(qv_list, **kwargs)
-                diffuser(qv_list)
+                oracle_function(args, **kwargs)
+                diffuser(args)
 
     elif iterations > 0:
 
-        merge(qv_list)
-        qs = recursive_qs_search(qv_list)[0]
+        merge(args)
+        qs = recursive_qs_search(args)[0]
         # qv_amount = len(qs.qv_list)
 
         with IterationEnvironment(qs, iterations):
             if exact:
-                oracle_function(qv_list, phase=phi, **kwargs)
-                diffuser(qv_list, phase=phi)
+                oracle_function(args, phase=phi, **kwargs)
+                diffuser(args, phase=phi)
             else:
-                oracle_function(qv_list, **kwargs)
-                diffuser(qv_list)
+                oracle_function(args, **kwargs)
+                diffuser(args)
 
         # if qv_amount != len(qs.qv_list):
         #    raise Exception(
