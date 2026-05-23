@@ -39,10 +39,17 @@ from qrisp import (
 )
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.jasp import check_for_tracing_mode, jrange
+from qrisp.typing import Param
+from typing import List, Callable, Dict, Any
 
 
 # Applies the grover diffuser onto the (list of) quantum variable input_object
-def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=None):
+def diffuser(
+    input_object: QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray],
+    phase: Param = np.pi,
+    state_function: Callable = None,
+    reflection_indices: List[int] = None,
+):
     r"""
     Applies the Grover diffuser onto (multiple) QuantumVariables.
 
@@ -116,74 +123,17 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
         input_object, state_function, phase=phase, reflection_indices=reflection_indices
     )
 
-    """
-    if isinstance(input_object, QuantumArray):
-        input_object = [qv for qv in input_object.flatten()]
 
-    if isinstance(input_object, (list, tuple)) and reflection_indices is None:
-        reflection_indices = [i for i in range(len(input_object))]
-
-    if state_function is not None:
-
-        if isinstance(input_object, (list, tuple)):
-            def inv_state_function(args):
-                with invert():
-                    state_function(*args)
-        
-        else:
-            
-            def inv_state_function(args):
-                    with invert():
-                        state_function(args)
-
-    else:
-        if isinstance(input_object, list):
-
-            def inv_state_function(args):
-                [h(qv) for qv in args]
-
-        else:
-
-            def inv_state_function(args):
-                h(args)
-
-    if isinstance(input_object, (list, tuple)):
-        with conjugate(inv_state_function)(input_object):
-            if check_for_tracing_mode():
-                tag_state({input_object[i]: 0 for i in reflection_indices}, phase=phase)
-            else:
-                tag_state(
-                    {
-                        input_object[i]: "0" * input_object[i].size
-                        for i in reflection_indices
-                    },
-                    binary_values=True,
-                    phase=phase,
-                )
-        gphase(np.pi, input_object[0][0])
-    else:
-        with conjugate(inv_state_function)(input_object):
-            if check_for_tracing_mode():
-                tag_state({input_object: 0}, phase=phase)
-            else:
-                tag_state(
-                    {input_object: input_object.size * "0"},
-                    binary_values=True,
-                    phase=phase,
-                )
-        gphase(np.pi, input_object[0])
-
-    return input_object
-    """
-
-
-def tag_state(tag_specificator, binary_values=False, phase=np.pi):
-    """
+def tag_state(
+    tag_specificator: Dict[QuantumVariable, float],
+    binary_values: bool = False,
+    phase: Param = np.pi,
+):
+    r"""
     Applies a phase tag to (multiple) QuantumVariables. The tagged state is specified in
     the dictionary ``tag_specificator``. This dictionary should contain the
     QuantumVariables as keys and the labels of the states which should be tagged as
     values.
-
 
     Parameters
     ----------
@@ -192,15 +142,16 @@ def tag_state(tag_specificator, binary_values=False, phase=np.pi):
     binary_values : bool, optional
         If set to True, the values in the tag_specificator dict have to be bitstrings
         instead of labels. The default is False.
-    phase : float or sympy.Symbol, optional
-        Specify the phase shift the tag should perform. The default is pi, i.e. a
+    phase : qrisp.Param, optional
+        Specify the phase shift the tag should perform. The default is $\pi$, i.e. a
         multi-controlled Z gate.
-
 
     Examples
     --------
 
-    We construct an oracle that tags the states -3 and 2 on two QuantumFloats ::
+    We construct an oracle that tags the states -3 and 2 on two QuantumFloats
+
+    ::
 
         from qrisp.grover import tag_state
 
@@ -282,12 +233,12 @@ def tag_state(tag_specificator, binary_values=False, phase=np.pi):
 
 
 def grovers_alg(
-    qv_list,
-    oracle_function,
-    kwargs={},
-    iterations=0,
-    winner_state_amount=None,
-    exact=False,
+    qv_list: QuantumVariable | QuantumArray | List[QuantumVariable | QuantumArray],
+    oracle_function: Callable,
+    kwargs: Dict[str, Any] = {},
+    iterations: int | None = None,
+    winner_state_amount: int | None = None,
+    exact: bool = False,
 ):
     r"""
     Applies Grover's algorithm to a given oracle (in the form of a Python function).
@@ -296,7 +247,7 @@ def grovers_alg(
     ----------
     qv_list : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
         A (list of) QuantumVariables on which to execute Grover's algorithm.
-    oracle_function : function
+    oracle_function : Callable
         A Python function tagging the winner states.
     kwargs : dict, optional
         A dictionary containing keyword arguments for the oracle. The default is {}.
@@ -314,9 +265,10 @@ def grovers_alg(
 
     Raises
     ------
-
-    Exception
-        Applied oracle introducing new QuantumVariables without uncomputing/deleting
+    ValueError
+        If ``exact`` is set to True but ``winner_state_amount`` is not specified.
+    ZeroDivisionError
+        If ``winner_state_amount`` is 0.
 
     Examples
     --------
@@ -434,18 +386,18 @@ def grovers_alg(
 
     """
 
-    if exact and winner_state_amount is None:
-        raise Exception(
-            "Tried to call exact Grover's algorithm without specifying "
-            "winner_state_amount"
-        )
-    elif winner_state_amount is None:
-        winner_state_amount = 1
-
+    # Necessary to prevent errors in recursive_qs_search when applied to jax arrays.
     if check_for_tracing_mode():
         import jax.numpy as jnp
     else:
         import numpy as jnp
+
+    if exact and winner_state_amount is None:
+        raise ValueError(
+            "Exact Grover's algorithm requires 'winner_state_amount' to be specified."
+        )
+    elif winner_state_amount is None:
+        winner_state_amount = 1
 
     if isinstance(qv_list, list):
         N = 2 ** jnp.sum(jnp.array([qv.size for qv in qv_list]))
@@ -457,20 +409,19 @@ def grovers_alg(
     if exact:
         # Implementation for phase calculation for exact grovers alg as in
         # https://arxiv.org/pdf/quant-ph/0106071.pdf
-    
+
         theta = jnp.arcsin(jnp.sqrt(winner_state_amount / N))
-        
-        iterations = jnp.int32(jnp.ceil(jnp.pi / (4 * theta) - 0.5))
-        
+
+        iterations = jnp.int64(jnp.ceil(jnp.pi / (4 * theta) - 0.5))
+
         phi = 2 * jnp.arcsin(
             jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
             * (N / winner_state_amount) ** 0.5
         )
 
-    else:
-        if iterations == 0:
-            iterations = jnp.pi / 4 * jnp.sqrt(N / winner_state_amount)
-            iterations = jnp.int64(jnp.round(iterations))
+    elif iterations is None:
+        iterations = jnp.pi / 4 * jnp.sqrt(N / winner_state_amount)
+        iterations = jnp.int64(jnp.round(iterations))
 
     if isinstance(qv_list, (list, QuantumArray)):
         [h(qv) for qv in qv_list]
@@ -487,11 +438,11 @@ def grovers_alg(
                 oracle_function(qv_list, **kwargs)
                 diffuser(qv_list)
 
-    else:
+    elif iterations > 0:
 
         merge(qv_list)
         qs = recursive_qs_search(qv_list)[0]
-        qv_amount = len(qs.qv_list)
+        # qv_amount = len(qs.qv_list)
 
         with IterationEnvironment(qs, iterations):
             if exact:
@@ -501,10 +452,10 @@ def grovers_alg(
                 oracle_function(qv_list, **kwargs)
                 diffuser(qv_list)
 
-        if qv_amount != len(qs.qv_list):
-            raise Exception(
-                "Applied oracle introducing new QuantumVariables without uncomputing/deleting"
-            )
+        # if qv_amount != len(qs.qv_list):
+        #    raise Exception(
+        #        "Applied oracle introducing new QuantumVariables without uncomputing/deleting"
+        #    )
 
 
 # Workaround to keep the docstring but still gatewrap
