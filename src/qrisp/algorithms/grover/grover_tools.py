@@ -457,35 +457,11 @@ def grovers_alg(
     if exact:
         # Implementation for phase calculation for exact grovers alg as in
         # https://arxiv.org/pdf/quant-ph/0106071.pdf
-        iterations = 1
-        tmp = (
-            jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
-            * (N / winner_state_amount) ** 0.5
-        )
-
-        def body_fun(state):
-            iterations, tmp = state
-            return (
-                iterations + 1,
-                jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
-                * (N / winner_state_amount) ** 0.5,
-            )
-
-        def cond_fun(state):
-            iterations, tmp = state
-            return tmp > 1
-
-        state = (iterations, tmp)
-
-        if check_for_tracing_mode():
-            from jax.lax import while_loop
-
-            iterations, tmp = while_loop(cond_fun, body_fun, state)
-        else:
-            while cond_fun(state):
-                state = body_fun(state)
-            iterations, tmp = state
-
+    
+        theta = jnp.arcsin(jnp.sqrt(winner_state_amount / N))
+        
+        iterations = jnp.int32(jnp.ceil(jnp.pi / (4 * theta) - 0.5))
+        
         phi = 2 * jnp.arcsin(
             jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
             * (N / winner_state_amount) ** 0.5
