@@ -43,24 +43,24 @@ def QAE(
     Parameters
     ----------
     args : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
-        The quantum variable, array, or collection thereof on which quantum amplitude estimation 
-        is performed. These variables must initially be in the zero state (:math:`\ket{0}`). 
-        The QAE algorithm will internally apply the ``state_function`` to these variables 
+        The quantum variable, array, or collection thereof on which quantum amplitude estimation
+        is performed. These variables must initially be in the zero state (:math:`\ket{0}`).
+        The QAE algorithm will internally apply the ``state_function`` to these variables
         to prepare the initial state :math:`\ket{\Psi}`.
     state_function : Callable
         A Python function preparing the state :math:`\ket{\Psi}` from the zero state.
-        This function is applied internally by the algorithm. 
-        The required signature of this function depends on the input ``args``: 
+        This function is applied internally by the algorithm.
+        The required signature of this function depends on the input ``args``:
 
-        - if ``args`` is a single variable or array, it receives that single object. 
-        - if ``args`` is a list, the elements are unpacked and passed as separate 
-          positional arguments (e.g., for ``args=[qv1, qv2]``, the signature 
+        - if ``args`` is a single variable or array, it receives that single object.
+        - if ``args`` is a list, the elements are unpacked and passed as separate
+          positional arguments (e.g., for ``args=[qv1, qv2]``, the signature
           must be ``state_function(qv1, qv2)``).
 
     oracle_function : Callable
         A Python function tagging the good state :math:`\ket{\Psi_1}`.
         Like ``state_function``, its required signature matches the structure of ``args``:
-        it takes a single argument if ``args`` is a single object, or unpacked 
+        it takes a single argument if ``args`` is a single object, or unpacked
         positional arguments if ``args`` is a list.
     kwargs_oracle : dict, optional
         A dictionary containing keyword arguments for the oracle. The default is None.
@@ -193,16 +193,16 @@ def QAE(
 
     if kwargs_oracle is None:
         kwargs_oracle = {}
-        
+
     if precision is None and target is None:
         raise ValueError(
             "Tried to call Quantum Amplitude Estimation without specifying "
             "either 'precision' or 'target'."
         )
-    
+
     if isinstance(args, (QuantumVariable, QuantumArray)):
         args = [args]
-    
+
     state_function(*args)
     res = QPE(
         args,
