@@ -50,16 +50,28 @@ def amplitude_amplification(
     Parameters
     ----------
     args : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
-        The quantum variable, array, or collection thereof on which amplitude amplification
-        is performed. These variables must initially be in the zero state (:math:`\ket{0}`),
-        upon which the ``state_function`` will be applied to prepare the initial
-        state :math:`\ket{\Psi}`.
+        The quantum variable, array, or collection thereof on which amplitude amplification 
+        is performed. These variables must already be prepared in the initial state 
+        :math:`\ket{\Psi}` before calling this method (i.e., the user is responsible 
+        for applying the ``state_function`` to the zero state prior to execution).
     state_function : Callable
-        A Python function preparing the state :math:`\ket{\Psi}`.
-        This function will receive the variables in ``args`` as arguments during execution.
+        A Python function preparing the state :math:`\ket{\Psi}` from the zero state.
+        The required signature of this function depends on the input ``args``: 
+
+        - if ``args`` is a single variable or array, it receives that single object. 
+        - if ``args`` is a list, the elements are unpacked and passed as separate 
+          positional arguments (e.g., for ``args=[qv1, qv2]``, the signature 
+          must be ``state_function(qv1, qv2)``).
+
+        Although ``args`` must already be in the state :math:`\ket{\Psi}` upon input, 
+        this function is strictly required internally to construct the amplitude 
+        amplification operator :math:`\mathcal{Q}` (specifically to perform the 
+        reflection about the initial state).
     oracle_function : Callable
         A Python function tagging the good state :math:`\ket{\Psi_1}`.
-        This function will receive the variables in ``args`` as arguments during execution.
+        Like ``state_function``, its required signature matches the structure of ``args``:
+        it takes a single argument if ``args`` is a single object, or unpacked 
+        positional arguments if ``args`` is a list.
     kwargs_oracle : dict, optional
         A dictionary containing keyword arguments for the oracle. The default is None.
     iter : int, optional
@@ -116,6 +128,9 @@ def amplitude_amplification(
 
     if kwargs_oracle is None:
         kwargs_oracle = {}
+
+    if isinstance(args, (QuantumVariable, QuantumArray)):
+        args = [args]
 
     if check_for_tracing_mode():
         for i in jrange(iter):
