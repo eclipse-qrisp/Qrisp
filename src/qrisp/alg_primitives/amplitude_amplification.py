@@ -16,14 +16,19 @@
 ********************************************************************************
 """
 
+from qrisp.core import QuantumVariable, QuantumArray, merge, recursive_qs_search
+from qrisp.environments import IterationEnvironment
+from qrisp.jasp import check_for_tracing_mode, jrange
+from typing import Any, Callable
+
 
 def amplitude_amplification(
-    args,
-    state_function,
-    oracle_function,
-    kwargs_oracle={},
-    iter=1,
-    reflection_indices=None,
+    args: QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray],
+    state_function: Callable,
+    oracle_function: Callable,
+    kwargs_oracle: dict[str, Any] | None = None,
+    iter: int = 1,
+    reflection_indices: list[int] | None = None,
 ):
     r"""
     This method performs `quantum amplitude amplification <https://arxiv.org/abs/quant-ph/0005055>`_.
@@ -32,40 +37,40 @@ def amplitude_amplification(
 
     * Given a unitary operator :math:`\mathcal{A}`, let :math:`\ket{\Psi}=\mathcal{A}\ket{0}`.
     * Write :math:`\ket{\Psi}=\ket{\Psi_1}+\ket{\Psi_0}` as a superposition of the orthogonal good and bad components of :math:`\ket{\Psi}`.
-    * Enhance the probability :math:`a=\langle\Psi_1|\Psi_1\rangle` that a measurement of $\ket{\Psi}$ yields a good state.
+    * Enhance the probability :math:`a=\langle\Psi_1|\Psi_1\rangle` that a measurement of :math:`\ket{\Psi}` yields a good state.
 
-    Let $\theta_a\in [0,\pi/2]$ such that $\sin^2(\theta_a)=a$. Then the amplitude amplification operator $\mathcal Q$ acts as
+    Let :math:`\theta_a\in [0,\pi/2]` such that :math:`\sin^2(\theta_a)=a`. Then the amplitude amplification operator :math:`\mathcal Q` acts as
 
     .. math::
 
         \mathcal Q^j\ket{\Psi}=\frac{1}{\sqrt{a}}\sin((2j+1)\theta_a)\ket{\Psi_1}+\frac{1}{\sqrt{1-a}}\cos((2j+1)\theta_a)\ket{\Psi_0}.
 
-    Therefore, after $m$ iterations the probability of measuring a good state is $\sin^2((2m+1)\theta_a)$.
+    Therefore, after :math:`m` iterations the probability of measuring a good state is :math:`\sin^2((2m+1)\theta_a)`.
 
     Parameters
     ----------
-
     args : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
-        The (list of) QuantumVariables which represent the state,
-        the amplitude amplification is performed on.
-    state_function : function
-        A Python function preparing the state $\ket{\Psi}$.
-        This function will receive the variables in the list ``args`` as arguments in the
-        course of this algorithm.
-    oracle_function : function
-        A Python function tagging the good state $\ket{\Psi_1}$.
-        This function will receive the variables in the list ``args`` as arguments in the
-        course of this algorithm.
+        The quantum variable, array, or collection thereof on which amplitude amplification
+        is performed. These variables must initially be in the zero state (:math:`\ket{0}`),
+        upon which the ``state_function`` will be applied to prepare the initial
+        state :math:`\ket{\Psi}`.
+    state_function : Callable
+        A Python function preparing the state :math:`\ket{\Psi}`.
+        This function will receive the variables in ``args`` as arguments during execution.
+    oracle_function : Callable
+        A Python function tagging the good state :math:`\ket{\Psi_1}`.
+        This function will receive the variables in ``args`` as arguments during execution.
     kwargs_oracle : dict, optional
-        A dictionary containing keyword arguments for the oracle. The default is {}.
+        A dictionary containing keyword arguments for the oracle. The default is None.
     iter : int, optional
-        The amount of amplitude amplification iterations to perform. The default is 1.
-    refection_indices : list[int], optional
-        A list of indices indicating with respect to which variables the reflection is performed, i.e.
+        The exact amount of amplitude amplification iterations to perform. The default is 1.
+    reflection_indices : list[int], optional
+        A list of indices indicating with respect to which variables the reflection is performed, i.e.,
         `oblivious amplitude amplification <https://arxiv.org/pdf/1312.1414>`_ is performed.
-        Indices correspond to the flattened ``args``, e.g., if ``args = QuantumArray(QuantumFloat(3), (6,))``,
-        ``reflection_indices=[0,1,2,3]`` corresponds to the first four variables in the array.
-        By default, the reflection is performed with respect to all variables in ``args``, i.e. standard amplitude amplification is performed.
+        Indices correspond to the flattened ``args`` (e.g., if ``args = QuantumArray(QuantumFloat(3), (6,))``,
+        ``reflection_indices=[0,1,2,3]`` corresponds to the first four variables in the array).
+        By default, the reflection is performed with respect to all variables in ``args``
+        (standard amplitude amplification).
 
     Examples
     --------
@@ -107,9 +112,10 @@ def amplitude_amplification(
 
     """
 
-    from qrisp.alg_primitives import reflection
-    from qrisp import merge, recursive_qs_search, IterationEnvironment
-    from qrisp.jasp import check_for_tracing_mode, jrange
+    from qrisp.alg_primitives.reflection import reflection
+
+    if kwargs_oracle is None:
+        kwargs_oracle = {}
 
     if check_for_tracing_mode():
         for i in jrange(iter):
