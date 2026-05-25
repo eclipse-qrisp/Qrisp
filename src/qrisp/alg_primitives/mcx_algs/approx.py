@@ -27,66 +27,45 @@ from qrisp.misc import bin_rep
 from qrisp.qtypes import QuantumBool
 
 
-def _resolve_rng(seed):
-    if isinstance(seed, random.Random):
-        return seed
-
-    return random.Random(seed)
-
-
 def sample_approx_mcx_masks(control_amount, k, seed=None):
     """
     Sample the parity masks used by :func:`approx_mcx`.
 
-    The sampling follows the construction in Gosset, Kothari, and Zhang,
-    "Multi-qubit Toffoli with exponentially fewer T gates"
-    (arXiv:2510.07223).
+    Parameters
+    ----------
+    control_amount : int
+        Number of control qubits in the MCX gate.
+    k : int
+        Number of random parity masks to sample.
+    seed : int or random.Random, optional
+        Randomness seed or random number generator object.
     """
-
-    if not isinstance(control_amount, Integral) or int(control_amount) < 0:
-        raise Exception("control_amount must be a non-negative integer")
-
-    if not isinstance(k, Integral) or int(k) < 1:
-        raise Exception("k must be a positive integer")
 
     control_amount = int(control_amount)
     k = int(k)
 
-    rng = _resolve_rng(seed)
+    if isinstance(seed, random.Random):
+        rng = seed
+    else:
+        rng = random.Random(seed)
+        
     return [rng.getrandbits(control_amount) for _ in range(k)]
 
 
-def _normalize_ctrl_state(ctrl_state, control_amount):
-    if isinstance(ctrl_state, str):
-        normalized_ctrl_state = ctrl_state
-    else:
-        if ctrl_state == -1:
-            ctrl_state += 2**control_amount
-        normalized_ctrl_state = bin_rep(ctrl_state, control_amount)[::-1]
-
-    if len(normalized_ctrl_state) != control_amount:
-        raise Exception(
-            f"Given control state {ctrl_state} does not match "
-            f"control qubit amount {control_amount}"
-        )
-
-    return normalized_ctrl_state
-
-
 def _resolve_sample_count(epsilon, k):
-    if epsilon is None and k is None:
-        raise Exception('approx_mcx requires either "epsilon" or "k"')
+    """
+    Resolve the number of random parity masks used by :func:`approx_mcx`.
 
-    if k is not None:
-        if not isinstance(k, Integral) or int(k) < 1:
-            raise Exception("k must be a positive integer")
-        k = int(k)
+    Parameters
+    ----------
+    epsilon : float, optional
+        Target error bound for choosing the number of masks.
+    k : int, optional
+        Number of random parity masks to sample.
+    """
 
     if epsilon is None:
         return k
-
-    if not 0 < epsilon < 1:
-        raise Exception("epsilon must satisfy 0 < epsilon < 1")
 
     min_k = max(1, math.ceil(math.log2(1 / epsilon)))
 
@@ -100,35 +79,6 @@ def _resolve_sample_count(epsilon, k):
         )
 
     return k
-
-
-def _normalize_controls(controls):
-    normalized_controls = []
-
-    for control in list(controls):
-        if isinstance(control, QuantumBool):
-            normalized_controls.append(control[0])
-        else:
-            normalized_controls.append(control)
-
-    return normalized_controls
-
-
-def _normalize_target(target):
-    if isinstance(target, QuantumBool):
-        return target[0]
-
-    if isinstance(target, QuantumVariable):
-        if len(target) != 1:
-            raise Exception("approx_mcx target is not of type Qubit or QuantumBool")
-        return target[0]
-
-    if isinstance(target, list):
-        if len(target) != 1:
-            raise Exception("approx_mcx target is not of type Qubit or QuantumBool")
-        return target[0]
-
-    return target
 
 
 def approx_mcx(
@@ -169,47 +119,68 @@ def approx_mcx(
     """
 
     if check_for_tracing_mode():
-        raise Exception("approx_mcx is currently not supported in tracing mode")
+        raise Exception("approx_mcx is not supported in tracing mode")
 
     if inner_method in ["approx", "gray_pt", "gray_pt_inv"]:
         raise Exception(
             f'inner_method "{inner_method}" is not supported for approx_mcx'
         )
 
-    controls = _normalize_controls(controls)
-    target = _normalize_target(target)
+    # Input conversion
+    controls = list(controls)
+    for i in range(len(controls)):
+        if isinstance(controls[i], QuantumBool):
+            controls[i] = controls[i][0]
+    # Target conversion
+    if isinstance(target, QuantumBool):
+        target = target[0]
+    elif isinstance(target, (QuantumVariable, list)):
+        if len(target) != 1:
+            raise Exception("approx_mcx target is not of type Qubit or QuantumBool")
+        target = target[0]
 
     control_amount = len(controls)
+    # Control state conversion
+    if not isinstance(ctrl_state, str):
+        if ctrl_state == -1:
+            ctrl_state += 2**control_amount
+        ctrl_state = bin_rep(ctrl_state, control_amount)[::-1]
 
-    if control_amount == 0:
-        return controls, target
+    if len(ctrl_state) != control_amount:
+        raise Exception(
+            f"Given control state {ctrl_state} does not match "
+            f"control qubit amount {control_amount}"
+        )
 
-    ctrl_state = _normalize_ctrl_state(ctrl_state, control_amount)
     k = _resolve_sample_count(epsilon, k)
     masks = sample_approx_mcx_masks(control_amount, k, seed=seed)
 
     parity_register = QuantumVariable(
         k, qs=controls[0].qs(), name="approx_mcx_parity*"
     )
-
+    # create a mask integer with only control bits set
     ctrl_one_mask = 0
     for index, desired_bit in enumerate(ctrl_state):
         if desired_bit == "1":
             ctrl_one_mask |= 1 << index
-
+    # compute parity ancillas
     for ancilla_index, mask in enumerate(masks):
         ancilla = parity_register[ancilla_index]
 
         for control_index, control in enumerate(controls):
+            # is bit control_index of mask set
             if (mask >> control_index) & 1:
                 cx(control, ancilla)
 
         # The paper approximates OR over mismatch bits y_i = x_i xor ctrl_state_i.
-        # We therefore compute XOR over the raw controls and then correct it by the
+        # So compute XOR over the raw controls and then correct it by the
         # parity of the selected desired-one bits.
+        # & 1 is a cool trick to check if odd 
         if (mask & ctrl_one_mask).bit_count() & 1:
             x(ancilla)
-
+        # So here ancilla is xor over selected mismatch bits
+    
+    # Do inner mcx flipping target only if all k parity register entries are 0
     mcx(
         parity_register,
         target,
@@ -217,6 +188,7 @@ def approx_mcx(
         ctrl_state="0" * k,
     )
 
+    # Uncomputation
     for ancilla_index in range(k - 1, -1, -1):
         ancilla = parity_register[ancilla_index]
         mask = masks[ancilla_index]
