@@ -38,7 +38,7 @@ def qq_gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
 
     if len(b) == 1:
         if ctrl is not None:
-            mcx([ctrl, a[0]], b)
+            mcx([ctrl, a[0]], b[0])
         else:
             cx(a[0], b[0])
         if c_in is not None:
@@ -47,7 +47,7 @@ def qq_gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
             if ctrl is not None:
                 cx(c_in, b[0])
             else:
-                mcx([c_in, b[0]], b)
+                cx(c_in, b[0])
         return
 
     if ctrl is not None:

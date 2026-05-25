@@ -18,6 +18,7 @@
 
 from qrisp.qtypes import QuantumFloat, QuantumVariable
 from qrisp.jasp import check_for_tracing_mode
+from qrisp.environments import control
 
 
 def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
@@ -32,7 +33,26 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
     ):
 
         if check_for_tracing_mode():
-            return raw_inpl_adder(qf2, qf1)
+            if not isinstance(qf2, QuantumVariable):
+                raw_inpl_adder(qf2, qf1)
+                return
+
+            a_reg = qf2.reg  # DynamicQubitArray in Jasp mode
+            b_reg = qf1.reg  # DynamicQubitArray in Jasp mode
+            a_size = a_reg.size
+            b_size = b_reg.size
+
+            # a is shorter: pad a with ancilla zeros, then add
+            with control(a_size < b_size):
+                padding = QuantumVariable(b_size - a_size, name="add_ammend_anc*")
+                raw_inpl_adder(a_reg + padding.reg, b_reg)
+                padding.delete(verify=False)
+
+            # a is longer or equal: truncate or pass a directly
+            with control(a_size >= b_size):
+                raw_inpl_adder(a_reg[:b_size], b_reg)
+
+            return
 
         if isinstance(qf1, QuantumFloat) and isinstance(qf2, QuantumFloat) and False:
             qs = qf1.qs
