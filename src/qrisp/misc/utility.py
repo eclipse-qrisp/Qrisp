@@ -2127,7 +2127,7 @@ def cnot_depth_indicator(op):
         raise Exception(f"Gate {op.name} not implemented")
 
 
-def inpl_adder_test(inpl_adder):
+def inpl_adder_test(inpl_adder, test_jasp=False):
     """
     This function runs tests on a desired inplace addition function.
     An inplace addition function is a function mapping (a, b) to (a, a+b),
@@ -2139,6 +2139,10 @@ def inpl_adder_test(inpl_adder):
     inpl_adder : callable
         A quantum inplace addition function that can either act on single QuantumVariables or on lists of Qubits
         by adding the first one to the second.
+    test_jasp : bool, optional
+        If True, additionally runs quantum-quantum and classical-quantum tests in
+        dynamic (Jasp) mode using ``boolean_simulation``. The adder must be
+        Jasp-traceable for this to pass. The default is False.
 
     Returns
     -------
@@ -2156,6 +2160,12 @@ def inpl_adder_test(inpl_adder):
 
         inpl_adder_test(cuccaro_adder)
         print("The cuccaro adder passed the tests without errors.")
+
+    To also test in dynamic (Jasp) mode:
+
+    ::
+
+        inpl_adder_test(cuccaro_adder, test_jasp=True)
 
     And now a new user-defined qcla adder:
     ::
@@ -2305,6 +2315,51 @@ def inpl_adder_test(inpl_adder):
                         assert (
                             b == a
                         ), f"Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"
+
+    if test_jasp:
+        from qrisp.core.gate_application_functions import measure
+        from qrisp.jasp.evaluation_tools import boolean_simulation
+
+        # Quantum–Quantum test
+        @boolean_simulation
+        def qq(i, j, asize, bsize):
+            a = QuantumFloat(asize)
+            a[:] = i
+            b = QuantumFloat(bsize)
+            b[:] = j
+            inpl_adder(a, b)
+            return measure(a), measure(b)
+
+        for asize in range(1, 7):
+            for bsize in range(1, 7):
+                for i in range(2**asize):
+                    for j in range(2**bsize):
+                        a_out, b_out = qq(i, j, asize, bsize)
+                        assert a_out == i, (
+                            f"Jasp QQ: first operand was modified. "
+                            f"asize={asize}, bsize={bsize}, i={i}, j={j}"
+                        )
+                        assert b_out == (i % (2**bsize) + j) % (2**bsize), (
+                            f"Jasp QQ: wrong result. "
+                            f"asize={asize}, bsize={bsize}, i={i}, j={j}"
+                        )
+
+        # Classical–Quantum test
+        @boolean_simulation
+        def cq(cl_val, j, bsize):
+            b = QuantumFloat(bsize)
+            b[:] = j
+            inpl_adder(cl_val, b)
+            return measure(b)
+
+        for bsize in range(1, 6):
+            for cl_val in range(1, 2**bsize):
+                for j in range(2**bsize):
+                    b_out = cq(cl_val, j, bsize)
+                    assert b_out == (cl_val + j) % (2**bsize), (
+                        f"Jasp CQ: wrong result. "
+                        f"bsize={bsize}, cl_val={cl_val}, j={j}"
+                    )
 
 
 def batched_measurement(variables, backend, shots=None):

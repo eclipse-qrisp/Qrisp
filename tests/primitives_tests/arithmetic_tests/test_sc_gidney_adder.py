@@ -18,7 +18,20 @@
 
 import numpy as np
 
-from qrisp import QuantumFloat, gidney_adder, h, cx, multi_measurement, QuantumBool, control
+from qrisp import (
+    QuantumFloat,
+    gidney_adder,
+    h,
+    cx,
+    multi_measurement,
+    QuantumBool,
+    control,
+    inpl_adder_test,
+)
+
+
+def test_gidney_adder_jasp():
+    inpl_adder_test(gidney_adder, test_jasp=True)
 
 
 def test_sc_gidney_adder():
@@ -58,8 +71,26 @@ def test_sc_gidney_adder():
                     assert (k[1] + j)%(2**n) == k[0]
                 else:
                     assert k[1] == k[0]
-                    
-    
+
+        # QQ controlled: exercises the len(b)==1 + ctrl path in qq_gidney_adder
+        for j in range(2**n):
+            a = QuantumFloat(n)
+            b = QuantumFloat(n)
+            c = QuantumFloat(n)
+            ctrl = QuantumBool()
+            a[:] = j
+            h(ctrl)
+            h(b)
+            cx(b, c)
+            with ctrl:
+                gidney_adder(a, b)
+            mes_res = multi_measurement([b, c, ctrl])
+            for b_out, c_out, ctrl_out in mes_res.keys():
+                if ctrl_out:
+                    assert (c_out + j) % (2**n) == b_out
+                else:
+                    assert c_out == b_out
+
     n = 6
     b = QuantumFloat(n)
     d = b.duplicate()

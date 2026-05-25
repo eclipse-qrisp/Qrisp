@@ -19,7 +19,10 @@
 from qrisp import *
 import pytest
 
-import pytest
+
+def test_cuccaro_adder_jasp():
+    inpl_adder_test(cuccaro_adder, test_jasp=True)
+
 
 @pytest.mark.parametrize("input_a, input_b, expected_a, expected_b", [
     # both inputs are quantum in static mode, inputs are of unequal size
