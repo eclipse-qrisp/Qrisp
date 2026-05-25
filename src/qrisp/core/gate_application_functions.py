@@ -564,7 +564,7 @@ def mcx(
     else:
         if method == "approx":
             raise Exception(
-                "The approx mcx method is currently not available in tracing mode"
+                "The approx mcx method is not available in tracing mode"
             )
 
         qubits_0 = controls
