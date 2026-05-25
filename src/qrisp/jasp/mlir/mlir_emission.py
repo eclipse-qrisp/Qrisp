@@ -30,6 +30,9 @@ from xdsl.dialects import builtin
 from qrisp.jasp.mlir.jaxpr_lowering import jaxpr_to_xdsl
 from qrisp.jasp.mlir.jasp_lowering_rules import jasp_lowering_rules
 from qrisp.jasp.mlir.quantum_control_flow import fix_quantum_control_flow
+from qrisp.jasp.mlir.mlir_rewrites.scalar_tensor_folding import scalar_tensor_folding
+from qrisp.jasp.mlir.mlir_rewrites.scalar_linalg_folding import scalar_linalg_folding
+from qrisp.jasp.mlir.mlir_rewrites.cmpi_extui_folding import cmpi_extui_folding
 
 from qrisp.jasp.jasp_expression import Jaspr
 
@@ -57,7 +60,15 @@ def jaspr_to_mlir(jaspr: Jaspr, lower_stableHLO = False) -> builtin.ModuleOp:
         The xDSL module representing the quantum computation with the JASP
         dialect and optionally lowered StableHLO operations.
     """
-    xdsl_module = jaxpr_to_xdsl(jaspr, lower_stableHLO, lowering_rules=jasp_lowering_rules)
+    xdsl_ctx, xdsl_module = jaxpr_to_xdsl(jaspr, lower_stableHLO, lowering_rules=jasp_lowering_rules)
     fix_quantum_control_flow(xdsl_module)
+
+    # Run xDSL optimization passes to clean up lowering artifacts
+    # (e.g., redundant scalar ``linalg.generic`` chains produced by
+    # ``stablehlo-legalize-to-linalg``).
+    if lower_stableHLO:
+        scalar_linalg_folding(xdsl_ctx, xdsl_module)
+        scalar_tensor_folding(xdsl_ctx, xdsl_module)
+        cmpi_extui_folding(xdsl_ctx, xdsl_module)
 
     return xdsl_module
