@@ -36,8 +36,6 @@ from qrisp.interface.job import (
     JobResult,
     JobStatus,
 )
-from qrisp.interface.qunicorn.backend_client import BackendClient
-from qrisp.interface.qunicorn.backend_server import BackendServer
 from qrisp.interface.virtual_backend import VirtualBackend
 from qrisp.misc.exceptions import QrispDeprecationWarning
 
@@ -1202,22 +1200,6 @@ class TestCancellation:
         job.cancel()
         with pytest.raises(JobCancelledError):
             job.result()
-
-
-def test_backend_client_deprecation_warning():
-    """Ensure BackendClient raises a QrispDeprecationWarning upon instantiation."""
-    with pytest.warns(QrispDeprecationWarning):
-        _ = BackendClient(api_endpoint="not_used")
-
-
-def test_backend_server_deprecation_warning():
-    """Ensure BackendServer raises a QrispDeprecationWarning upon instantiation."""
-
-    def dummy_run():
-        """No-op run function passed to BackendServer to satisfy its constructor."""
-
-    with pytest.warns(QrispDeprecationWarning):
-        _ = BackendServer(run_func=dummy_run)
 
 
 def test_virtual_backend_deprecation_warning():
