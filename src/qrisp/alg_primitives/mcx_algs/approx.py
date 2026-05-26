@@ -64,6 +64,9 @@ def _resolve_sample_count(epsilon, k):
         Number of random parity masks to sample.
     """
 
+    if epsilon is None and k is None:
+        raise Exception('approx_mcx requires either "epsilon" or "k"')
+
     if epsilon is None:
         return k
 
