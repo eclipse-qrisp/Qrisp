@@ -47,6 +47,7 @@ from qrisp.block_encodings.block_encoding_methods import (
     get_foqcs_lcu_prep_num_of_ancillae,
     foqcs_analyze_operator,
     foqcs_prep_heisenberg_1D,
+    foqcs_prep_spin_glass
     )
 
 if TYPE_CHECKING:
@@ -606,15 +607,95 @@ class BlockEncoding:
 
         elif aresult["method"] == "spin_glass":
             print("Parsing as Spin-Glass model")
-            # Do spin-glass preprocessing here
 
-            # return cls.from_foqcs_lcu_prep(
-            #         prep = prep,
-            #         num_q_ops = heis_L,
-            #         unprep = unprep,
-            #         is_hermitian = is_hermitian,
-            #         norm = alpha
-            #     )
+            sg_L = aresult["L"]
+            g = aresult["g"]
+            J = aresult["J"]
+            is_hermitian = aresult["is_hermitian"]
+
+            paulis = ("X", "Y", "Z")
+
+            # Convert matrix-form J from foqcs_analyze_operator into the
+            # diagonal-list format expected by foqcs_prep_spin_glass:
+            #
+            #   _J[p][k - 1][i] couples sites i and i + k.
+            #
+            # Example for L = 4:
+            #   _J[p][0] = [J_01, J_12, J_23]
+            #   _J[p][1] = [J_02, J_13]
+            #   _J[p][2] = [J_03]
+
+            J_diag = {
+                p: [
+                    np.array(
+                        [J[p][i, i + k] for i in range(sg_L - k)],
+                        dtype=complex,
+                    )
+                    for k in range(1, sg_L)
+                ]
+                for p in paulis
+            }
+
+            # Preprocess physical coefficients into square-root PREP amplitudes.
+            #
+            # SELECT convention used by from_foqcs_lcu_prep:
+            #   X  branch -> X
+            #   Z  branch -> Z
+            #   Y  branch -> iY
+            #   YY branch -> -YY
+            _g = {
+                "X": np.sqrt(np.asarray(g["X"], dtype=complex)),
+                "Y": np.sqrt(-1j * np.asarray(g["Y"], dtype=complex)),
+                "Z": np.sqrt(np.asarray(g["Z"], dtype=complex)),
+            }
+
+            _J = {
+                "X": [np.sqrt(diag) for diag in J_diag["X"]],
+                "Y": [np.sqrt(-diag) for diag in J_diag["Y"]],
+                "Z": [np.sqrt(diag) for diag in J_diag["Z"]],
+            }
+
+            # Normalization factor alpha.
+            #
+            # foqcs_prep_spin_glass internally normalizes the PREP state group-wise,
+            # but the amplitudes it prepares are proportional to the entries we pass.
+            # Hence alpha is the squared 2-norm of the flattened PREP-amplitude vector.
+            coeff_vec = []
+
+            for p in paulis:
+
+                coeff_vec.extend(_g[p])
+
+                for diag in _J[p]:
+
+                    coeff_vec.extend(diag)
+
+            coeff_vec = np.array(coeff_vec, dtype=complex)
+            norm = np.linalg.norm(coeff_vec)
+            alpha = norm**2
+
+            prep = partial(
+                foqcs_prep_spin_glass,
+                L=sg_L,
+                g=_g,
+                J=_J,
+            )
+
+            unprep = partial(
+                foqcs_prep_spin_glass,
+                L=sg_L,
+                g=_g,
+                J=_J,
+                conjugate=True,
+            )
+
+            return cls.from_foqcs_lcu_prep(
+                prep=prep,
+                num_q_ops=sg_L,
+                unprep=unprep,
+                is_hermitian=is_hermitian,
+                norm=alpha,
+            )
 
         raise KeyError(f"Failed to handle FOQCS-LCU method: \"{aresult['method']}\"")
 

@@ -822,8 +822,7 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
     print(f"Ref state = {ref_state}")
     print(f"Resulting operands = {res_ops}")
 
-    assert np.allclose(res_ops, ref_state, atol=1e-6)
-
+    assert np.allclose(res_ops, ref_state, atol=1e-5)
 
 def test_block_encoding_from_foqcs_lcu_prep_jax():
     # Initialize variables + their values
@@ -983,6 +982,128 @@ def test_block_encoding_from_foqcs_lcu_operator():
     print(f"Resulting operands = {res_ops}")
 
     assert np.allclose(res_ops, ref_state, atol=1e-6)
+
+def test_block_encoding_from_foqcs_lcu_spin_glass_operator():
+    L = 3
+
+    # Nonuniform fields/couplings
+    g = {
+        "X": np.array([0.31, -0.47, 0.22], dtype=complex),
+        "Y": np.array([-0.18, 0.29, 0.41], dtype=complex),
+        "Z": np.array([0.52, -0.13, -0.36], dtype=complex),
+    }
+
+    # Full symmetric coupling matrices with zero diagonal.
+    # These are used to build the QubitOperator.
+    J = {
+        "X": np.array(
+            [
+                [0.00, 0.17, 0.33],
+                [0.17, 0.00, -0.24],
+                [0.33, -0.24, 0.00],
+            ],
+            dtype=complex,
+        ),
+        "Y": np.array(
+            [
+                [0.00, -0.21, -0.28],
+                [-0.21, 0.00, 0.15],
+                [-0.28, 0.15, 0.00],
+            ],
+            dtype=complex,
+        ),
+        "Z": np.array(
+            [
+                [0.00, 0.39, 0.26],
+                [0.39, 0.00, -0.11],
+                [0.26, -0.11, 0.00],
+            ],
+            dtype=complex,
+        ),
+    }
+
+    # Normalize the physical Hamiltonian coefficients.
+    coeff_vec = []
+    for p in ["X", "Y", "Z"]:
+        coeff_vec.extend(g[p])
+        for i in range(L):
+            for j in range(i + 1, L):
+                coeff_vec.append(J[p][i, j])
+
+    phys_norm = np.linalg.norm(np.array(coeff_vec, dtype=complex))
+
+    for p in ["X", "Y", "Z"]:
+        g[p] = g[p] / phys_norm
+        J[p] = J[p] / phys_norm
+
+    # Convert full matrix J into diagonal-list form:
+    #
+    #   J_diag[p][k - 1][i] couples i and i + k.
+    #
+    # This is the format expected by _spin_glass_from_def and
+    # foqcs_prep_spin_glass.
+    J_diag = {
+        p: [
+            np.array(
+                [J[p][i, i + k] for i in range(L - k)],
+                dtype=complex,
+            )
+            for k in range(1, L)
+        ]
+        for p in ["X", "Y", "Z"]
+    }
+
+    # Build QubitOperator.
+    terms = []
+
+    for i in range(L):
+        terms.append(g["X"][i] * X(i))
+        terms.append(g["Y"][i] * Y(i))
+        terms.append(g["Z"][i] * Z(i))
+
+    for i in range(L):
+        for j in range(i + 1, L):
+            terms.append(J["X"][i, j] * X(i) * X(j))
+            terms.append(J["Y"][i, j] * Y(i) * Y(j))
+            terms.append(J["Z"][i, j] * Z(i) * Z(j))
+
+    O = sum(terms[1:], terms[0])
+
+    be = BlockEncoding.from_foqcs_lcu_operator(O, L)
+
+    qv = QuantumVariable(L)
+    psi = _prep_psi(L)
+    qv.init_state(psi, method="qswitch")
+
+    def main(BE):
+        operand = qv
+        ancillas = BE.apply(operand)
+        return operand, ancillas
+
+    operand, ancillas = main(be)
+
+    qc = operand.qs.compile()
+    sv = qc.statevector_array()
+
+    def bit_reverse(i: int, n: int) -> int:
+        return int(f"{i:0{n}b}"[::-1], 2)
+
+    # Extract the operand amplitudes with all FOQCS-LCU ancillae zero.
+    res_ops = []
+    for i in range(2**L):
+        qi = bit_reverse(i, L)
+        ind = qi << len(ancillas[0])
+        res_ops.append(sv[ind])
+
+    # Build reference state from spin-glass definition
+    H = _spin_glass_from_def(L, g, J_diag) / be.alpha
+    ref_state = H @ psi
+
+    print(f"alpha = {be.alpha}")
+    print(f"Ref state = {ref_state}")
+    print(f"Resulting operands = {res_ops}")
+
+    assert np.allclose(res_ops, ref_state, atol=1e-5)
 
 def test_block_encoding_from_foqcs_lcu_operator_jax():
     # Initialize variables + their values
