@@ -20,39 +20,40 @@
 # CUSTOM INGESTION PIPELINE: Bridging External MLIR to CUDA-Q
 # ====================================================================== #
 # Rationale:
-# CUDA-Q's execution backend (C++) strictly requires an MLIR module to 
-# specify the host machine's exact memory architecture (llvm.data_layout) 
-# and hardware target (llvm.target_triple) to successfully compile and 
-# allocate memory. Currently, the CUDA-Q Python API lacks a native 
-# mechanism to cleanly ingest externally compiled MLIR strings. Omitting 
-# these hardware attributes results in fatal "missing data layout" 
+# CUDA-Q's execution backend (C++) strictly requires an MLIR module to
+# specify the host machine's exact memory architecture (llvm.data_layout)
+# and hardware target (llvm.target_triple) to successfully compile and
+# allocate memory. Currently, the CUDA-Q Python API lacks a native
+# mechanism to cleanly ingest externally compiled MLIR strings. Omitting
+# these hardware attributes results in fatal "missing data layout"
 # runtime crashes.
 #
 # Workflow & Mechanism:
-# 1. Target Extraction: We define an empty Python function decorated with 
-#    `@cudaq.kernel` to trigger the CUDA-Q compiler pipeline. This forces 
-#    the underlying LLVM compiler to generate the exact, natively-matched 
-#    layout and target triple for the host environment, which we then 
+# 1. Target Extraction: We define an empty Python function decorated with
+#    `@cudaq.kernel` to trigger the CUDA-Q compiler pipeline. This forces
+#    the underlying LLVM compiler to generate the exact, natively-matched
+#    layout and target triple for the host environment, which we then
 #    extract via regular expressions. If that fails
 #    (e.g. in CI environments where str() doesn't trigger full LLVM
 #    lowering), we fall back to well-known platform defaults derived from
 #    the host's architecture and OS.
 #
-# 2. Interface Adaptation: We inject the extracted hardware specifications 
-#    into the Qrisp-generated MLIR. Crucially, we also clone the primary 
-#    entry function to create a required `.run` variant. During this cloning, 
-#    we translate standard `func.return` instructions into `cc.log_output` 
-#    operations. This structural change is required, as it is the exact 
-#    mechanism CUDA-Q uses to capture and aggregate individual per-shot 
+# 2. Interface Adaptation: We inject the extracted hardware specifications
+#    into the Qrisp-generated MLIR. Crucially, we also clone the primary
+#    entry function to create a required `.run` variant. During this cloning,
+#    we translate standard `func.return` instructions into `cc.log_output`
+#    operations. This structural change is required, as it is the exact
+#    mechanism CUDA-Q uses to capture and aggregate individual per-shot
 #    measurement data during simulation.
 #
-# 3. Re-Compilation: The fully adapted, hardware-aware MLIR string is fed 
-#    back into CUDA-Q's internal compiler via `Module.parse()`. This 
-#    re-compiles the string within the active MLIR context, resulting in a 
+# 3. Re-Compilation: The fully adapted, hardware-aware MLIR string is fed
+#    back into CUDA-Q's internal compiler via `Module.parse()`. This
+#    re-compiles the string within the active MLIR context, resulting in a
 #    valid kernel object that the C++ backend can safely execute.
 # ====================================================================== #
 
 import functools
+import inspect
 import platform
 import re
 import sys
@@ -60,12 +61,12 @@ import warnings
 
 import cudaq
 from cudaq import cudaq_runtime
+from cudaq.kernel.kernel_decorator import PyKernelDecorator
 from cudaq.mlir.ir import Module, NoneType
 from cudaq.mlir.dialects import quake, cc
 
 from qrisp.jasp import make_jaspr
 from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake
-
 
 # ------------------------------------------------------------------ #
 # Platform-aware LLVM attribute defaults
@@ -77,20 +78,20 @@ from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake
 _PLATFORM_DEFAULTS = {
     # (machine, sys.platform prefix) → (data_layout, target_triple)
     ("x86_64", "linux"): (
-        'e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128',
-        'x86_64-unknown-linux-gnu',
+        "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128",
+        "x86_64-unknown-linux-gnu",
     ),
     ("aarch64", "linux"): (
-        'e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128',
-        'aarch64-unknown-linux-gnu',
+        "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128",
+        "aarch64-unknown-linux-gnu",
     ),
     ("arm64", "darwin"): (
-        'e-m:o-i64:64-i128:128-n32:64-S128-Fn32',
-        'arm64-apple-macosx14.0.0',
+        "e-m:o-i64:64-i128:128-n32:64-S128-Fn32",
+        "arm64-apple-macosx14.0.0",
     ),
     ("x86_64", "darwin"): (
-        'e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128',
-        'x86_64-apple-macosx14.0.0',
+        "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128",
+        "x86_64-apple-macosx14.0.0",
     ),
 }
 
@@ -131,6 +132,7 @@ def _get_llvm_attributes() -> tuple:
 
     # --- Method 1: Extract from a compiled dummy kernel ---
     try:
+
         @cudaq.kernel
         def _dummy_extractor():
             pass
@@ -168,8 +170,7 @@ def _get_llvm_attributes() -> tuple:
 
     data_layout_attr = f'llvm.data_layout = "{data_layout_str}"'
     target_triple_attr = (
-        f'llvm.target_triple = "{target_triple_str}"'
-        if target_triple_str else None
+        f'llvm.target_triple = "{target_triple_str}"' if target_triple_str else None
     )
     return data_layout_attr, target_triple_attr
 
@@ -179,33 +180,43 @@ def _get_llvm_attributes() -> tuple:
 # ------------------------------------------------------------------ #
 
 
-def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
+def cudaq_kernel_from_mlir(mlir_str: str) -> PyKernelDecorator:
     """
-    Executes a given MLIR string (representing a quantum kernel) using the CUDA-Q runtime. The input MLIR is expected to define a function with the 
-    `cudaq-entrypoint` attribute. The function can return a value, which will be captured and returned as a list of measurement results.
-    
+    Compiles a Quake MLIR string into a native ``cudaq.kernel.kernel_decorator.PyKernelDecorator``.
+
+    The input MLIR must define a ``@main`` function with a ``cudaq-entrypoint``
+    attribute.  The function may optionally return a value (e.g. an ``i64``
+    measurement result).
+
+    The returned kernel is a first-class CUDA-Q kernel object and supports all
+    standard CUDA-Q execution patterns:
+
+    * ``kernel()`` — single-shot execution via
+      ``cudaq_runtime.marshal_and_launch_module``, returning the measurement
+      result directly.
+    * ``cudaq.run(kernel, shots_count=N)`` — multi-shot sampling using
+      CUDA-Q's native run infrastructure (requires the ``.run`` variant
+      injected during compilation).
+
     Parameters
     ----------
     mlir_str : str
-        The MLIR code as a string. Must contain a function with the `cudaq-entrypoint` attribute.
-    shots : int
-        The number of times to execute the kernel for statistical sampling. Default is 100.
+        Quake MLIR source string.  Must contain a ``@main`` function with
+        the ``cudaq-entrypoint`` attribute.
 
     Returns
     -------
-    list
-        A list of measurement results captured from the kernel execution.
+    cudaq.kernel.kernel_decorator.PyKernelDecorator
+        A compiled, callable CUDA-Q kernel.
 
     Examples
     --------
-
-    Example usage of `run_quake_mlir`:
-
     ::
 
-        from qrisp import QuantumVariable, h, cx, measure,x 
+        from qrisp import QuantumVariable, h, cx, measure
         from qrisp.jasp import make_jaspr
-        from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake, run_quake_mlir
+        from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake, cudaq_kernel_from_mlir
+        import cudaq
 
         def bell():
             qv = QuantumVariable(2)
@@ -213,13 +224,14 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
             cx(qv[0], qv[1])
             return measure(qv)
 
-        # Qrisp → Jaspr → Quake MLIR → CUDA-Q execution
-        module = jaspr_to_quake(make_jaspr(bell)())
-        mlir_str = str(module)
+        mlir_str = str(jaspr_to_quake(make_jaspr(bell)()))
+        kernel = cudaq_kernel_from_mlir(mlir_str)
 
-        result = run_quake_mlir(mlir_str, shots=10)
-        print(result) 
-        # [0, 0, 3, 0, 3, 0, 3, 3, 0, 0]  
+        # Single-shot call
+        print(kernel())            # e.g. 0 or 3
+
+        # Multi-shot sampling
+        print(cudaq.run(kernel, shots_count=100))
 
     """
     # ------------------------------------------------------------------ #
@@ -237,12 +249,12 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
     # ------------------------------------------------------------------ #
     # Step 2: Extract the inner MLIR and separate @main from other funcs
     # ------------------------------------------------------------------ #
-    func_start = mlir_str.find('func.func')
-    last_brace = mlir_str.rfind('}')
+    func_start = mlir_str.find("func.func")
+    last_brace = mlir_str.rfind("}")
     inner_mlir = mlir_str[func_start:last_brace].strip()
 
     # Locate the @main function signature specifically
-    main_match = re.search(r'func\.func\s+(?:public\s+)?@main', inner_mlir)
+    main_match = re.search(r"func\.func\s+(?:public\s+)?@main", inner_mlir)
     if not main_match:
         raise ValueError("Could not find @main function in MLIR string.")
 
@@ -250,17 +262,19 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
     anchor = main_match.end()
     search_idx = anchor
     body_start_idx = -1
-    
+
     while search_idx < len(inner_mlir):
-        if inner_mlir[search_idx] == '{':
+        if inner_mlir[search_idx] == "{":
             text_before = inner_mlir[anchor:search_idx].strip()
-            if text_before.endswith('attributes'):
+            if text_before.endswith("attributes"):
                 # This is an attributes block, skip it
                 depth = 1
                 search_idx += 1
                 while search_idx < len(inner_mlir) and depth > 0:
-                    if inner_mlir[search_idx] == '{': depth += 1
-                    elif inner_mlir[search_idx] == '}': depth -= 1
+                    if inner_mlir[search_idx] == "{":
+                        depth += 1
+                    elif inner_mlir[search_idx] == "}":
+                        depth -= 1
                     search_idx += 1
                 anchor = search_idx  # move anchor past the attributes block
                 continue
@@ -277,37 +291,37 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
     depth = 0
     end_idx = -1
     for i in range(body_start_idx, len(inner_mlir)):
-        if inner_mlir[i] == '{': 
+        if inner_mlir[i] == "{":
             depth += 1
-        elif inner_mlir[i] == '}':
+        elif inner_mlir[i] == "}":
             depth -= 1
             if depth == 0:
                 end_idx = i
                 break
-                
-    main_func_body = inner_mlir[body_start_idx+1:end_idx].strip()
-    
+
+    main_func_body = inner_mlir[body_start_idx + 1 : end_idx].strip()
+
     # Keep any other functions (like @closed_call) perfectly intact
-    other_functions = inner_mlir[:main_match.start()] + inner_mlir[end_idx+1:]
+    other_functions = inner_mlir[: main_match.start()] + inner_mlir[end_idx + 1 :]
 
     # ------------------------------------------------------------------ #
     # Step 3: Determine the return type and build the ".run" variant.
     # ------------------------------------------------------------------ #
-    return_match = re.search(r'func\.return\s+(%\w+)\s*:\s*(.+)', main_func_body)
+    return_match = re.search(r"func\.return\s+(%\w+)\s*:\s*(.+)", main_func_body)
     if return_match:
         return_type_str = return_match.group(2).strip()
-        return_sig = f' -> {return_type_str}'
+        return_sig = f" -> {return_type_str}"
         run_body = re.sub(
-            r'func\.return\s+(%\w+)\s*:\s*(.+)',
-            r'cc.log_output \1 : \2\n    return',
-            main_func_body
+            r"func\.return\s+(%\w+)\s*:\s*(.+)",
+            r"cc.log_output \1 : \2\n    return",
+            main_func_body,
         )
     else:
         return_type_str = None
-        return_sig = ''
+        return_sig = ""
         run_body = main_func_body
 
-# ------------------------------------------------------------------ #
+    # ------------------------------------------------------------------ #
     # Step 4: Assemble the complete CUDA-Q-compatible MLIR module.
     # ------------------------------------------------------------------ #
     run_func_name = func_name + ".run"
@@ -319,38 +333,36 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
         mod_attributes.append(target_triple_attr)
 
     mod_attributes.append(
-        f'quake.mangled_name_map = {{\n'
+        f"quake.mangled_name_map = {{\n"
         f'    {func_name} = "{entry_point}",\n'
         f'    {run_func_name} = "{run_entry_name}"\n'
-        f'  }}'
+        f"  }}"
     )
     attributes_str = ",\n  ".join(mod_attributes)
 
-    adapted_mlir = f'module attributes {{\n  {attributes_str}\n}} {{\n'
-    
+    adapted_mlir = f"module attributes {{\n  {attributes_str}\n}} {{\n"
+
     # 1. Inject all helper functions first (e.g. @closed_call)
     if other_functions.strip():
-        adapted_mlir += f'  {other_functions.strip()}\n\n'
-        
+        adapted_mlir += f"  {other_functions.strip()}\n\n"
+
     # 2. Inject the main function and rename it to the CUDA-Q target name
     adapted_mlir += (
-        f'  func.func @{func_name}(){return_sig} attributes '
+        f"  func.func @{func_name}(){return_sig} attributes "
         f'{{"cudaq-entrypoint", "cudaq-kernel"}} {{\n    {main_func_body}\n  }}\n'
     )
 
     # 3. Inject the .run variant for state measurements
     run_attrs = f'{{"cudaq-entrypoint", "cudaq-kernel", no_this'
     if return_type_str:
-        run_attrs += f', quake.cudaq_run = [{return_type_str}]'
-    run_attrs += '}'
-    adapted_mlir += (
-        f'  func.func @{run_func_name}() attributes {run_attrs} {{\n    {run_body}\n  }}\n'
-    )
+        run_attrs += f", quake.cudaq_run = [{return_type_str}]"
+    run_attrs += "}"
+    adapted_mlir += f"  func.func @{run_func_name}() attributes {run_attrs} {{\n    {run_body}\n  }}\n"
 
     # 4. Inject the dummy entry
     adapted_mlir += (
-        f'  func.func @{run_entry_name}() attributes {{no_this}} {{\n    return\n  }}\n'
-        f'}}\n'
+        f"  func.func @{run_entry_name}() attributes {{no_this}} {{\n    return\n  }}\n"
+        f"}}\n"
     )
 
     # ------------------------------------------------------------------ #
@@ -370,14 +382,79 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
     # ------------------------------------------------------------------ #
     # Step 6: Execute via the CUDA-Q runtime.
     # ------------------------------------------------------------------ #
-    return cudaq_runtime.run_impl(
-        uniq_name + ".run",
-        kernel.module,
-        ret_type,
-        shots,
-        None,   # noise_model
-        0       # qpu_id
-    )
+    # result = cudaq_runtime.run_impl(
+    #    uniq_name + ".run",
+    #    kernel.module,
+    #    ret_type,
+    #    shots,
+    #    None,   # noise_model
+    #    0       # qpu_id
+    # )
+
+    # ------------------------------------------------------------------ #
+    # Step 7: Wrap the compiled module in a genuine PyKernelDecorator.
+    # ------------------------------------------------------------------ #
+    # PyKernelDecorator(None, kernelName=..., module=...) uses the
+    # `module` construction path: it skips Python AST compilation, stores
+    # the pre-parsed MLIR directly, and parses the signature (including
+    # return type) from the MLIR via KernelSignature.parse_from_mlir.
+    # Calling the resulting kernel routes through
+    # cudaq_runtime.marshal_and_launch_module — the correct dispatcher for
+    # non-void entry points — instead of the raw PyKernel builder's
+    # pyAltLaunchKernel path which requires a void entry.
+    #
+    # cudaq.run(pykd, shots_count=N) also works because the adapted MLIR
+    # contains the .run variant with cc.log_output that cudaq.run expects.
+    pykd = PyKernelDecorator(None, kernelName=uniq_name, module=kernel.module)
+    return pykd
+
+
+def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
+    """
+    Executes a given MLIR string (representing a quantum kernel) using the CUDA-Q runtime. The input MLIR is expected to define a function with the
+    `cudaq-entrypoint` attribute. The function can return a value, which will be captured and returned as a list of measurement results.
+
+    Parameters
+    ----------
+    mlir_str : str
+        The MLIR code as a string. Must contain a function with the `cudaq-entrypoint` attribute.
+    shots : int
+        The number of times to execute the kernel for statistical sampling. Default is 100.
+
+    Returns
+    -------
+    list
+        A list of measurement results captured from the kernel execution.
+
+    Examples
+    --------
+
+    Example usage of `run_quake_mlir`:
+
+    ::
+
+        from qrisp import QuantumVariable, h, cx, measure,x
+        from qrisp.jasp import make_jaspr
+        from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake, run_quake_mlir
+
+        def bell():
+            qv = QuantumVariable(2)
+            h(qv[0])
+            cx(qv[0], qv[1])
+            return measure(qv)
+
+        # Qrisp → Jaspr → Quake MLIR → CUDA-Q execution
+        module = jaspr_to_quake(make_jaspr(bell)())
+        mlir_str = str(module)
+
+        result = run_quake_mlir(mlir_str, shots=10)
+        print(result)
+        # [0, 0, 3, 0, 3, 0, 3, 3, 0, 0]
+
+    """
+    pykd = cudaq_kernel_from_mlir(mlir_str)
+    result = cudaq.run(pykd, shots_count=shots)
+    return result
 
 
 # ------------------------------------------------------------------ #
@@ -385,58 +462,76 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
 # ------------------------------------------------------------------ #
 
 
-def qrisp_cudaq_kernel(shots=100):
+def qrisp_cudaq_kernel(func):
     """
-    Decorator that compiles a Qrisp function to Quake MLIR 
-    and executes it on a CUDA-Q backend.
+    Decorator that compiles a Qrisp function to a native CUDA-Q kernel.
+
+    Behavior mirrors ``@cudaq.kernel``: for functions with no parameters the
+    kernel is compiled **eagerly at decoration time** and the name is bound
+    directly to the resulting ``PyKernelDecorator``.  This means the
+    decorated name can be passed to ``cudaq.run`` without calling it first,
+    just like a native CUDA-Q kernel.
+
+    For functions that accept parameters, compilation is **deferred to call
+    time** — calling the decorated function with concrete arguments returns
+    a compiled ``PyKernelDecorator`` for those arguments.
 
     Parameters
     ----------
-    shots : int
-        The number of shots to execute the kernel for. Default is 100.
+    func : callable
+        A Qrisp function that can be traced with ``make_jaspr``.
 
     Returns
     -------
-    function
-        A decorated function that, when called, compiles the original
-        function to Quake MLIR and executes it on CUDA-Q, returning the results.
+    PyKernelDecorator or callable
+        * **No-parameter functions**: a ``PyKernelDecorator`` is returned
+          directly.  The decorated name IS the kernel and can be used
+          anywhere a native CUDA-Q kernel is accepted.
+        * **Functions with parameters**: a wrapper callable is returned;
+          calling it with the required arguments compiles and returns a
+          ``PyKernelDecorator``.
 
     Examples
     --------
-    Example usage of `@qrisp_cudaq_kernel`:
-
     ::
 
-        from qrisp import QuantumVariable, h, cx, measure, x
+        from qrisp import QuantumVariable, h, cx, measure
         from qrisp.jasp.mlir.quake_lowering import qrisp_cudaq_kernel
+        import cudaq
 
-        @qrisp_cudaq_kernel(shots=10)
+        @qrisp_cudaq_kernel
         def bell():
             qv = QuantumVariable(2)
             h(qv[0])
             cx(qv[0], qv[1])
             return measure(qv)
 
-        # When `bell()` is called, it will be compiled to MLIR and executed on CUDA-Q.
-        result = bell()
-        print(result) 
-        # [0, 0, 3, 0, 3, 0, 3, 3, 0, 0]  
+        # `bell` is a PyKernelDecorator — use it exactly like @cudaq.kernel
+        print(bell())                            # single-shot, e.g. 0 or 3
+        print(cudaq.run(bell, shots_count=100))  # multi-shot, no () needed
+
     """
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            
-            try:
-                mlir_str = str(jaspr_to_quake(make_jaspr(func)(*args, **kwargs)))
-            except Exception as e:
-                raise RuntimeError(f"Failed to compile Qrisp function '{func.__name__}' to MLIR: {e}")
+    sig = inspect.signature(func)
+    if not sig.parameters:
+        # Eager compilation: return the kernel directly so the decorated name
+        # IS the PyKernelDecorator, identical in usage to @cudaq.kernel.
+        try:
+            mlir_str = str(jaspr_to_quake(make_jaspr(func)()))
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to compile Qrisp function '{func.__name__}' to MLIR: {e}"
+            )
+        return cudaq_kernel_from_mlir(mlir_str)
 
-            try:
-                results = run_quake_mlir(mlir_str, shots=shots)
-            except Exception as e:
-                raise RuntimeError(f"CUDA-Q execution failed for '{func.__name__}': {e}")
+    # Deferred compilation for parameterised functions.
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            mlir_str = str(jaspr_to_quake(make_jaspr(func)(*args, **kwargs)))
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to compile Qrisp function '{func.__name__}' to MLIR: {e}"
+            )
+        return cudaq_kernel_from_mlir(mlir_str)
 
-            return results
-            
-        return wrapper
-    return decorator
+    return wrapper
