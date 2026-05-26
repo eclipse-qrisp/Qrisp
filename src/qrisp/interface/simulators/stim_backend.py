@@ -18,6 +18,8 @@
 
 from typing import Sequence, cast
 
+import numpy as np
+
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
 from qrisp.interface.job import Job, JobResult, JobStatus
@@ -31,6 +33,18 @@ def _run_on_stim(qc: QuantumCircuit, shots: int | None):
 
     sampler = stim_circuit.compile_sampler()
     shot_array = sampler.sample(shots=shots)
+
+    # Some clbits may not have been measured (e.g. ancilla clbits).
+    # Pad shot_array with zero columns and extend measurement_map so the
+    # permutation below works for all clbits — in a single hstack call.
+    missing = [cb for cb in qc.clbits if cb not in measurement_map]
+    if missing:
+        n_missing = len(missing)
+        old_cols = shot_array.shape[1]
+        zero_cols = np.zeros((shot_array.shape[0], n_missing), dtype=shot_array.dtype)
+        shot_array = np.hstack([shot_array, zero_cols])
+        for i, cb in enumerate(missing):
+            measurement_map[cb] = old_cols + i
 
     permutation = [measurement_map[cb] for cb in qc.clbits]
     permuted_shot_array = shot_array[:, permutation]

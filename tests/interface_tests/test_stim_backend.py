@@ -41,6 +41,16 @@ def test_stim_backend_run_counts():
     assert sum(counts.values()) == 200
     assert counts == {"11": 200}
 
+def test_stim_unused_clbit():
+    """run() on a Clifford circuit with unused Clbits returns the expected bitstring counts."""
+    backend = StimBackend()
+
+    qc = QuantumCircuit(2, 2)
+    qc.x(0)
+    qc.measure(0)
+    counts = backend.run(qc, shots = 100)
+    assert counts == {"100" : 100}
+
 
 class TestStimBackendBatched:
     """Verify the four BatchedBackend properties for StimBackend."""
