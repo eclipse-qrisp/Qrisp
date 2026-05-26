@@ -157,7 +157,8 @@ def ladder2_synth_jax(x, y, method="khattar", mcx_kwargs=None):
         method: str
             The method to use for synthesizing the MCX gates. Default is 'khattar'.
         mcx_kwargs: dict, optional
-            Additional keyword arguments forwarded to :func:`qrisp.mcx`.
+            Additional keyword arguments forwarded to :func:`qrisp.mcx`. 
+            This is needed for e.g. approx_mcx, which requires additional epsilon, seed and k arguments.
     """
 
     N = jlen(x)
@@ -267,6 +268,8 @@ def remaud_adder(a, b, z, method="khattar", mcx_kwargs=None):
         ``"khattar"``.
     mcx_kwargs : dict, optional
         Additional keyword arguments forwarded to :func:`qrisp.mcx`.
+        These are needed in e.g. when using approx_mcx,
+         which takes additional keyword arguments.
 
     Examples
     --------
