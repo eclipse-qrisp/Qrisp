@@ -52,7 +52,6 @@
 #    valid kernel object that the C++ backend can safely execute.
 # ====================================================================== #
 
-import functools
 import inspect
 import platform
 import re
@@ -305,6 +304,30 @@ def cudaq_kernel_from_mlir(mlir_str: str) -> PyKernelDecorator:
     other_functions = inner_mlir[: main_match.start()] + inner_mlir[end_idx + 1 :]
 
     # ------------------------------------------------------------------ #
+    # Step 2b: Extract the parameter list from the @main header.
+    # ------------------------------------------------------------------ #
+    # The header text between @main and the body { contains the parameter
+    # list, optional return type, and optional attributes block, e.g.:
+    #   (%0: i64) -> (i64) attributes {cudaq.kernel = "true", ...}
+    # We extract the first balanced-parentheses group as the param list.
+    # It must be preserved in ALL three adapted variants so that:
+    #  (a) the main function body's SSA values (%0 etc.) are valid, and
+    #  (b) cudaq.run(kernel, arg, shots_count=N) can pass arguments through.
+    header_raw = inner_mlir[main_match.end() : body_start_idx]
+    first_paren = header_raw.find("(")
+    param_list = ""
+    if first_paren != -1:
+        depth = 0
+        for i, ch in enumerate(header_raw[first_paren:], first_paren):
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+                if depth == 0:
+                    param_list = header_raw[first_paren : i + 1]
+                    break
+
+    # ------------------------------------------------------------------ #
     # Step 3: Determine the return type and build the ".run" variant.
     # ------------------------------------------------------------------ #
     return_match = re.search(r"func\.return\s+(%\w+)\s*:\s*(.+)", main_func_body)
@@ -348,7 +371,7 @@ def cudaq_kernel_from_mlir(mlir_str: str) -> PyKernelDecorator:
 
     # 2. Inject the main function and rename it to the CUDA-Q target name
     adapted_mlir += (
-        f"  func.func @{func_name}(){return_sig} attributes "
+        f"  func.func @{func_name}{param_list}{return_sig} attributes "
         f'{{"cudaq-entrypoint", "cudaq-kernel"}} {{\n    {main_func_body}\n  }}\n'
     )
 
@@ -357,11 +380,11 @@ def cudaq_kernel_from_mlir(mlir_str: str) -> PyKernelDecorator:
     if return_type_str:
         run_attrs += f", quake.cudaq_run = [{return_type_str}]"
     run_attrs += "}"
-    adapted_mlir += f"  func.func @{run_func_name}() attributes {run_attrs} {{\n    {run_body}\n  }}\n"
+    adapted_mlir += f"  func.func @{run_func_name}{param_list} attributes {run_attrs} {{\n    {run_body}\n  }}\n"
 
-    # 4. Inject the dummy entry
+    # 4. Inject the dummy entry (also parameterised to match the mangled_name_map)
     adapted_mlir += (
-        f"  func.func @{run_entry_name}() attributes {{no_this}} {{\n    return\n  }}\n"
+        f"  func.func @{run_entry_name}{param_list} attributes {{no_this}} {{\n    return\n  }}\n"
         f"}}\n"
     )
 
@@ -462,38 +485,52 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
 # ------------------------------------------------------------------ #
 
 
+# Maps Python type annotations to dummy argument values for Jaspr tracing.
+# The concrete type of the dummy value determines the MLIR type in @main's
+# parameter list (e.g. int → i64, float → f64, bool → i1).
+_ANNOTATION_TO_DUMMY = {
+    int: 0,
+    float: 0.0,
+    bool: False,
+}
+
+
 def qrisp_cudaq_kernel(func):
     """
     Decorator that compiles a Qrisp function to a native CUDA-Q kernel.
 
-    Behavior mirrors ``@cudaq.kernel``: for functions with no parameters the
-    kernel is compiled **eagerly at decoration time** and the name is bound
-    directly to the resulting ``PyKernelDecorator``.  This means the
-    decorated name can be passed to ``cudaq.run`` without calling it first,
-    just like a native CUDA-Q kernel.
+    Mirrors ``@cudaq.kernel`` exactly: the decorated name is bound directly
+    to a ``PyKernelDecorator`` — compiled **eagerly at decoration time** —
+    and can be passed to ``cudaq.run`` without calling it first.
 
-    For functions that accept parameters, compilation is **deferred to call
-    time** — calling the decorated function with concrete arguments returns
-    a compiled ``PyKernelDecorator`` for those arguments.
+    For functions with parameters, each parameter **must carry a type
+    annotation** (``int``, ``float``, or ``bool``), just as ``@cudaq.kernel``
+    requires them.  The annotation is used to generate a correctly-typed
+    dummy value for Jaspr tracing, producing parametric MLIR whose
+    ``@main`` function retains the parameter in its signature.  The
+    resulting kernel accepts runtime arguments via ``cudaq.run`` or direct
+    calls.
 
     Parameters
     ----------
     func : callable
-        A Qrisp function that can be traced with ``make_jaspr``.
+        A Qrisp function that can be traced with ``make_jaspr``.  Parameters,
+        if any, must be annotated with ``int``, ``float``, or ``bool``.
 
     Returns
     -------
-    PyKernelDecorator or callable
-        * **No-parameter functions**: a ``PyKernelDecorator`` is returned
-          directly.  The decorated name IS the kernel and can be used
-          anywhere a native CUDA-Q kernel is accepted.
-        * **Functions with parameters**: a wrapper callable is returned;
-          calling it with the required arguments compiles and returns a
-          ``PyKernelDecorator``.
+    PyKernelDecorator
+        A compiled, callable CUDA-Q kernel bound to the decorated name.
+
+    Raises
+    ------
+    RuntimeError
+        If a parameter is missing a type annotation or has an unsupported
+        annotation type.
 
     Examples
     --------
-    ::
+    No-argument kernel — identical usage to ``@cudaq.kernel``::
 
         from qrisp import QuantumVariable, h, cx, measure
         from qrisp.jasp.mlir.quake_lowering import qrisp_cudaq_kernel
@@ -506,32 +543,46 @@ def qrisp_cudaq_kernel(func):
             cx(qv[0], qv[1])
             return measure(qv)
 
-        # `bell` is a PyKernelDecorator — use it exactly like @cudaq.kernel
         print(bell())                            # single-shot, e.g. 0 or 3
         print(cudaq.run(bell, shots_count=100))  # multi-shot, no () needed
 
+    Parameterised kernel with type annotations::
+
+        @qrisp_cudaq_kernel
+        def circuit(k: int):
+            qv = QuantumFloat(2)
+            h(qv[0])
+            return measure(qv[0]) + k
+
+        print(circuit(3))                             # single-shot
+        print(cudaq.run(circuit, 3, shots_count=100)) # multi-shot
+
     """
     sig = inspect.signature(func)
-    if not sig.parameters:
-        # Eager compilation: return the kernel directly so the decorated name
-        # IS the PyKernelDecorator, identical in usage to @cudaq.kernel.
-        try:
-            mlir_str = str(jaspr_to_quake(make_jaspr(func)()))
-        except Exception as e:
-            raise RuntimeError(
-                f"Failed to compile Qrisp function '{func.__name__}' to MLIR: {e}"
-            )
-        return cudaq_kernel_from_mlir(mlir_str)
+    params = list(sig.parameters.values())
 
-    # Deferred compilation for parameterised functions.
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            mlir_str = str(jaspr_to_quake(make_jaspr(func)(*args, **kwargs)))
-        except Exception as e:
+    # Validate annotations for all parameters
+    for p in params:
+        if p.annotation is inspect.Parameter.empty:
             raise RuntimeError(
-                f"Failed to compile Qrisp function '{func.__name__}' to MLIR: {e}"
+                f"@qrisp_cudaq_kernel: parameter '{p.name}' of "
+                f"'{func.__name__}' requires a type annotation. "
+                f"Supported types: {list(_ANNOTATION_TO_DUMMY.keys())}."
             )
-        return cudaq_kernel_from_mlir(mlir_str)
+        if p.annotation not in _ANNOTATION_TO_DUMMY:
+            raise RuntimeError(
+                f"@qrisp_cudaq_kernel: unsupported annotation "
+                f"'{p.annotation.__name__}' for parameter '{p.name}' of "
+                f"'{func.__name__}'. "
+                f"Supported types: {list(_ANNOTATION_TO_DUMMY.keys())}."
+            )
 
-    return wrapper
+    dummy_args = [_ANNOTATION_TO_DUMMY[p.annotation] for p in params]
+
+    try:
+        mlir_str = str(jaspr_to_quake(make_jaspr(func)(*dummy_args)))
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to compile Qrisp function '{func.__name__}' to MLIR: {e}"
+        )
+    return cudaq_kernel_from_mlir(mlir_str)
