@@ -195,7 +195,7 @@ class UnwrapFuncArgs(RewritePattern):
                 block.add_op(from_elem)
 
             # 4. Replace all uses of the OLD tensor argument with our new from_elements result
-            old_arg.replace_by(from_elem.results[0])
+            old_arg.replace_all_uses_with(from_elem.results[0])
 
             # 5. Erase the old argument (which is now completely unused) safely
             block.erase_arg(old_arg)

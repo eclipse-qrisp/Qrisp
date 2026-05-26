@@ -236,7 +236,7 @@ def _normalize_index_for_veq(
     # len = quake.veq_size %veq
     size = VeqSizeOp(veq)
 
-    zero = arith.ConstantOp(IntegerAttr.from_int_and_width(0, 64))
+    zero = arith.ConstantOp(IntegerAttr(0, 64))
     is_neg = arith.CmpiOp(idx, zero.result, "slt")     # idx < 0 ?
     idx_plus_size = arith.AddiOp(idx, size.result)      # idx + len
     norm = arith.SelectOp(is_neg.result, idx_plus_size.result, idx)
@@ -557,8 +557,8 @@ def _lower_slice(op, block: Block) -> None:
     veq_size = VeqSizeOp(arr)
 
     # Constants 0 and 1
-    zero = arith.ConstantOp(IntegerAttr.from_int_and_width(0, 64))
-    one  = arith.ConstantOp(IntegerAttr.from_int_and_width(1, 64))
+    zero = arith.ConstantOp(IntegerAttr(0, 64))
+    one  = arith.ConstantOp(IntegerAttr(1, 64))
 
     # hi_raw < 0 ?
     hi_is_neg = arith.CmpiOp(hi_raw, zero.result, "slt")
@@ -730,9 +730,8 @@ def _lower_measure(op, block: Block) -> None:
         block.insert_ops_before([veq_size], op)
 
         # 2. Set up loop constants (0, 1)
-        from xdsl.dialects.builtin import IntegerAttr
-        c0 = arith.ConstantOp(IntegerAttr.from_int_and_width(0, 64))
-        c1 = arith.ConstantOp(IntegerAttr.from_int_and_width(1, 64))
+        c0 = arith.ConstantOp(IntegerAttr(0, 64))
+        c1 = arith.ConstantOp(IntegerAttr(1, 64))
         block.insert_ops_before([c0, c1], op)
 
         # 3. Create the loop body block

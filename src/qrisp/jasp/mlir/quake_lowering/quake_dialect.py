@@ -317,7 +317,7 @@ def _mk_gate_cls(quake_name: str) -> type:
 
     ns: dict = {
         "name": quake_name,
-        "irdl_options": [AttrSizedOperandSegments()],
+        "irdl_options": (AttrSizedOperandSegments(),),
         "controls": var_operand_def(AnyAttr()),
         "params": var_operand_def(AnyAttr()),
         "targets": var_operand_def(AnyAttr()),
