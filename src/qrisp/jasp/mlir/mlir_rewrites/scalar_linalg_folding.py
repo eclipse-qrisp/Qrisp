@@ -16,23 +16,28 @@
 ********************************************************************************
 """
 
+
 """
-Optimization passes for folding redundant scalar linalg.generic operations
-and simplifying boolean condition chains in MLIR/xDSL.
+Optimization pass for unwrapping 0-dimensional linalg.generic operations
+in MLIR/xDSL.
 
-Problem:
-    The JAX-to-MLIR lowering sometimes produces verbose chains of 0-dimensional
-    linalg.generic operations to evaluate simple boolean conditions, e.g.:
+General Context:
+    The JAX-to-MLIR lowering frequently produces verbose operation chains to
+    evaluate simple scalar and boolean conditions. This pass is part of a suite
+    of rewrite patterns designed to collapse unnecessarily verbose chains.
 
-        measure (i1) → extui (i64) → cmpi eq 0 (i1) → extui (i32) → extract → cmpi ne 0
-
-    This entire chain is semantically equivalent to a single NOT of the
-    original measurement result.
+Specific Problem:
+    Simple scalar operations are sometimes unnecessarily wrapped in 0-dimensional 
+    `linalg.generic` ops. These ops carry significant structural overhead - such 
+    as regions, block arguments, and affine maps - for what is semantically just 
+    scalar instructions.
 
 Solution:
-    Three composable rewrite patterns that, together with upstream canonicalize
-    and DCE passes, collapse the chain.
+    A rewrite pattern that eliminates the `linalg.generic` shell. It extracts
+    the scalar operands using `tensor.extract`, clones the generic's inner block
+    operations sequentially, and repacks the final result with `tensor.from_elements`.
 """
+
 
 from xdsl.context import Context
 from xdsl.dialects import builtin, linalg, tensor
@@ -48,7 +53,7 @@ from xdsl.rewriter import InsertPoint
 
 def scalar_linalg_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> None:
     """
-    Applies custom rewrite patterns to fold a 0-dimensional `linalg.generic` with a single operation into
+    Applies custom rewrite patterns to fold 0-dimensional `linalg.generic` operations into
     scalar arithmetic wrapped in `tensor.extract` / `tensor.from_elements`.
 
     Parameters
@@ -59,8 +64,6 @@ def scalar_linalg_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> N
         The xDSL module to be rewritten. The transformation is applied
         greedily and recursively over the whole module.
     """
-    # Build the pattern set. Keep it small and focused so the greedy rewriter
-    # converges quickly.
     patterns = [FoldScalarLinalgGeneric()]
 
     # Apply patterns using a greedy rewriter over the entire module.
@@ -72,20 +75,26 @@ def scalar_linalg_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> N
 
     walker.rewrite_module(xdsl_module)
 
+
 # ====================================================================== #
 
+
 class FoldScalarLinalgGeneric(RewritePattern):
-    """Fold a 0-dimensional `linalg.generic` with a single operation into
+    """Fold 0-dimensional `linalg.generic` operations into
     scalar arithmetic wrapped in `tensor.extract` / `tensor.from_elements`.
+
+    This pattern extracts the scalar operands, sequentially clones all
+    intermediate operations within the generic block, and repacks the
+    final yielded scalar into a 0-dimensional tensor.
 
     0-dimensional `linalg.generic` ops operate on scalar tensors (tensor<T>
     with no dimensions). They carry significant overhead — region, block
-    arguments, affine maps — for what is semantically a single scalar
-    instruction. This pattern eliminates that overhead.
+    arguments, affine maps — for what is semantically scalar
+    instructions. This pattern eliminates that overhead.
 
     Preconditions (all must hold for the pattern to fire):
         - The generic has zero iterator types (i.e., all operands are 0-d).
-        - The body contains exactly one computation op followed by a yield.
+        - The generic produces exactly one output tensor.
 
     Example:
         Before:
@@ -131,9 +140,7 @@ class FoldScalarLinalgGeneric(RewritePattern):
 
             extract = tensor.ExtractOp(tensor_val, [], tensor_val.type.element_type)
             rewriter.insert_op(extract, InsertPoint.before(op))
-            mapping[block_arg] = extract.results[
-                0
-            ]
+            mapping[block_arg] = extract.results[0]
 
         # Step 2: Clone the body sequentially
         # Convert BlockOps to a standard Python list so we can slice it

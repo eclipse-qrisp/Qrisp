@@ -16,23 +16,29 @@
 ********************************************************************************
 """
 
+
 """
-Optimization passes for folding redundant scalar linalg.generic operations
-and simplifying boolean condition chains in MLIR/xDSL.
+Optimization pass for simplifying verbose boolean condition chains in MLIR/xDSL.
 
-Problem:
-    The JAX-to-MLIR lowering sometimes produces verbose chains of 0-dimensional
-    linalg.generic operations to evaluate simple boolean conditions, e.g.:
+General Context:
+    The JAX-to-MLIR lowering frequently produces verbose operation chains to
+    evaluate simple scalar and boolean conditions. This pass is part of a suite
+    of rewrite patterns designed to collapse unnecessarily verbose chains.
 
-        measure (i1) → extui (i64) → cmpi eq 0 (i1) → extui (i32) → extract → cmpi ne 0
-
-    This entire chain is semantically equivalent to a single NOT of the
-    original measurement result.
+Specific Problem:
+    Booleans (i1) are often zero-extended into wider integers (e.g., i32, i64)
+    only to be immediately compared against 0 or 1 to yield another boolean.
+    For example: `measure (i1) → extui (i64) → cmpi eq 0 (i1) → extui (i32) → cmpi ne 0`.
+    This whole sequence is semantically equivalent to a simple boolean NOT 
+    of the original measurement.
 
 Solution:
-    Three composable rewrite patterns that, together with upstream canonicalize
-    and DCE passes, collapse the chain.
+    A rewrite pattern that statically resolves comparisons of zero-extended
+    booleans against 0 or 1. It bypasses the integer extension and folds the 
+    chain directly into the original boolean condition, its logical NOT, or a 
+    constant True/False.
 """
+
 
 from enum import Enum
 from xdsl.context import Context
@@ -61,8 +67,6 @@ def cmpi_extui_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> None
         The xDSL module to be rewritten. The transformation is applied
         greedily and recursively over the whole module.
     """
-    # Build the pattern set. Keep it small and focused so the greedy rewriter
-    # converges quickly.
     patterns = [FoldCmpiExtui()]
 
     # Apply patterns using a greedy rewriter over the entire module.
@@ -76,7 +80,9 @@ def cmpi_extui_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> None
     CanonicalizePass().apply(xdsl_ctx, xdsl_module)
     DeadCodeElimination().apply(xdsl_ctx, xdsl_module)
 
-#====================================================================== #
+
+# ====================================================================== #
+
 
 class FoldCmpiExtui(RewritePattern):
     """
@@ -85,10 +91,10 @@ class FoldCmpiExtui(RewritePattern):
     """
 
     class _Result(Enum):
-        IDENTITY = "identity"   # result is %x
-        NOT      = "not"   # result is NOT %x
-        TRUE     = "true"   # always true
-        FALSE    = "false"   # always false
+        IDENTITY = "identity"  # result is %x
+        NOT = "not"  # result is NOT %x
+        TRUE = "true"  # always true
+        FALSE = "false"  # always false
 
     # Lookup table: (predicate_int, rhs_const) -> _Result
     #
@@ -96,26 +102,26 @@ class FoldCmpiExtui(RewritePattern):
     #
     _FOLD_TABLE: dict[tuple[int, int], _Result] = {
         # ---- vs 0 ----
-        (0, 0): _Result.NOT,       # eq  0 → NOT %x
+        (0, 0): _Result.NOT,  # eq  0 → NOT %x
         (1, 0): _Result.IDENTITY,  # ne  0 →     %x
-        (2, 0): _Result.FALSE,     # slt 0 → false
-        (3, 0): _Result.NOT,       # sle 0 → NOT %x
+        (2, 0): _Result.FALSE,  # slt 0 → false
+        (3, 0): _Result.NOT,  # sle 0 → NOT %x
         (4, 0): _Result.IDENTITY,  # sgt 0 →     %x
-        (5, 0): _Result.TRUE,      # sge 0 → true
-        (6, 0): _Result.FALSE,     # ult 0 → false
-        (7, 0): _Result.NOT,       # ule 0 → NOT %x
+        (5, 0): _Result.TRUE,  # sge 0 → true
+        (6, 0): _Result.FALSE,  # ult 0 → false
+        (7, 0): _Result.NOT,  # ule 0 → NOT %x
         (8, 0): _Result.IDENTITY,  # ugt 0 →     %x
-        (9, 0): _Result.TRUE,      # uge 0 → true
+        (9, 0): _Result.TRUE,  # uge 0 → true
         # ---- vs 1 ----
         (0, 1): _Result.IDENTITY,  # eq  1 →     %x
-        (1, 1): _Result.NOT,       # ne  1 → NOT %x
-        (2, 1): _Result.NOT,       # slt 1 → NOT %x
-        (3, 1): _Result.TRUE,      # sle 1 → true
-        (4, 1): _Result.FALSE,     # sgt 1 → false
+        (1, 1): _Result.NOT,  # ne  1 → NOT %x
+        (2, 1): _Result.NOT,  # slt 1 → NOT %x
+        (3, 1): _Result.TRUE,  # sle 1 → true
+        (4, 1): _Result.FALSE,  # sgt 1 → false
         (5, 1): _Result.IDENTITY,  # sge 1 →     %x
-        (6, 1): _Result.NOT,       # ult 1 → NOT %x
-        (7, 1): _Result.TRUE,      # ule 1 → true
-        (8, 1): _Result.FALSE,     # ugt 1 → false
+        (6, 1): _Result.NOT,  # ult 1 → NOT %x
+        (7, 1): _Result.TRUE,  # ule 1 → true
+        (8, 1): _Result.FALSE,  # ugt 1 → false
         (9, 1): _Result.IDENTITY,  # uge 1 →     %x
     }
 
@@ -123,7 +129,9 @@ class FoldCmpiExtui(RewritePattern):
     def match_and_rewrite(self, op: arith.CmpiOp, rewriter: PatternRewriter):
         # 1. RHS must be constant 0 or 1
         rhs_op = op.rhs.owner
-        if not isinstance(rhs_op, arith.ConstantOp) or not isinstance(rhs_op.value, IntegerAttr):
+        if not isinstance(rhs_op, arith.ConstantOp) or not isinstance(
+            rhs_op.value, IntegerAttr
+        ):
             return
         rhs_val = rhs_op.value.value.data
         if rhs_val not in (0, 1):

@@ -1,0 +1,140 @@
+name: Bug Report
+description: Report a bug in Eclipse Qrisp
+labels: ["bug"]
+body:
+  - type: dropdown
+
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+
+    validations:
+      required: true
+
+  - type: input
+
+    id: responsible
+    attributes:
+      label: Responsible
+      placeholder: "e.g. Jane Doe (Fraunhofer FOKUS)"
+    validations:
+      required: false
+
+  - type: input
+
+    id: qrisp-version
+    attributes:
+      label: Qrisp Version
+      placeholder: "e.g. 0.4.1"
+    validations:
+      required: true
+
+  - type: input
+
+    id: python-version
+    attributes:
+      label: Python Version
+      placeholder: "e.g. 3.11.4"
+    validations:
+      required: true
+
+  - type: dropdown
+
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: short-description
+    attributes:
+      label: Short Description
+      description: "Max 3 sentences. What is the bug?"
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: "Provide a minimal, reproducible example."
+      value: |
+        1. ...
+        2. ...
+        3. ...
+
+        ```python
+        # Minimal code example
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: "What did you expect to happen?"
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: "What actually happened? Include error messages or tracebacks."
+    validations:
+      required: true
+
+  - type: textarea
+
+    id: tests
+    attributes:
+      label: Means of Verification
+      description: "Tests to verify the fix. At least 1 positive, 1 negative, and 2 boundary tests."
+      value: |
+        | Test-ID | Type     | Description | Expected Result |
+        |---------|----------|-------------|-----------------|
+        | T-001   | Positive |             |                 |
+        | T-002   | Negative |             |                 |
+        | T-003   | Boundary |             |                 |
+        | T-004   | Boundary |             |                 |
+    validations:
+      required: false
+
+  - type: textarea
+
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: "Any additional information: logs, screenshots, related issues."
+    validations:
+      required: false
+
+  - type: checkboxes
+
+    id: definition-of-done
+    attributes:
+      label: Definition of Done
+      description: "To be checked off during development and review."
+      options:
+        - label: Root cause identified
+        - label: Fix implemented and peer-reviewed
+        - label: Regression test added
+        - label: All tests pass (CI green)
+        - label: Changelog entry added

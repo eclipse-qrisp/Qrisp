@@ -16,23 +16,28 @@
 ********************************************************************************
 """
 
+
 """
-Optimization passes for folding redundant scalar linalg.generic operations
-and simplifying boolean condition chains in MLIR/xDSL.
+Optimization pass for unwrapping scalar tensor packing and eliminating
+dead tensor operations in MLIR/xDSL.
 
-Problem:
-    The JAX-to-MLIR lowering sometimes produces verbose chains of 0-dimensional
-    linalg.generic operations to evaluate simple boolean conditions, e.g.:
+General Context:
+    The JAX-to-MLIR lowering frequently produces verbose operation chains to
+    evaluate simple scalar and boolean conditions. This pass is part of a suite
+    of rewrite patterns designed to collapse unnecessarily verbose chains.
 
-        measure (i1) → extui (i64) → cmpi eq 0 (i1) → extui (i32) → extract → cmpi ne 0
-
-    This entire chain is semantically equivalent to a single NOT of the
-    original measurement result.
+Specific Problem:
+    Intermediate lowering or folding steps often leave behind trivial, cancelling 
+    tensor operations. A scalar might be packed into a 0-D tensor only to be 
+    immediately extracted again. Furthermore, xDSL might leave unused 0-D tensors 
+    behind if standard DCE assumes they lack the `Pure` trait.
 
 Solution:
-    Three composable rewrite patterns that, together with upstream canonicalize
-    and DCE passes, collapse the chain.
+    Rewrite patterns that fold `tensor.extract(tensor.from_elements(X))` directly 
+    back into the original scalar `X`. It also provides a targeted dead code 
+    elimination fallback to safely erase any unused `tensor.from_elements` operations.
 """
+
 
 from xdsl.context import Context
 from xdsl.dialects import builtin, tensor
@@ -60,8 +65,6 @@ def scalar_tensor_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> N
         The xDSL module to be rewritten. The transformation is applied
         greedily and recursively over the whole module.
     """
-    # Build the pattern set. Keep it small and focused so the greedy rewriter
-    # converges quickly.
     patterns = [FoldExtractFromElements(), EraseDeadFromElements()]
 
     # Apply patterns using a greedy rewriter over the entire module.
@@ -75,12 +78,17 @@ def scalar_tensor_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> N
     CanonicalizePass().apply(xdsl_ctx, xdsl_module)
     DeadCodeElimination().apply(xdsl_ctx, xdsl_module)
 
-#====================================================================== #
+
+# ====================================================================== #
+
 
 class FoldExtractFromElements(RewritePattern):
     """Folds a tensor.extract from a 0-D tensor created by tensor.from_elements back into the original scalar value."""
+
     @op_type_rewrite_pattern
-    def match_and_rewrite(self, op: tensor.ExtractOp, rewriter: PatternRewriter) -> None:
+    def match_and_rewrite(
+        self, op: tensor.ExtractOp, rewriter: PatternRewriter
+    ) -> None:
         # Only handle 0-D case (no index operands)
         if len(op.indices) != 0:
             return
@@ -102,22 +110,25 @@ class EraseDeadFromElements(RewritePattern):
     Eliminates dead `tensor.from_elements` operations that have no active uses.
 
     Why is this necessary?
-    In MLIR and xDSL, the standard `DeadCodeElimination` (DCE) pass will only 
-    remove an unused operation if it possesses the `Pure` trait. This trait 
-    guarantees to the compiler that the operation has no side effects (such as 
+    In MLIR and xDSL, the standard `DeadCodeElimination` (DCE) pass will only
+    remove an unused operation if it possesses the `Pure` trait. This trait
+    guarantees to the compiler that the operation has no side effects (such as
     memory allocation, I/O, or halting).
 
-    If the xDSL implementation of `tensor.from_elements` lacks the `Pure` trait, 
-    the standard DCE pass must conservatively assume that executing the operation 
-    might produce side effects. Consequently, it will refuse to delete it, even 
+    If the xDSL implementation of `tensor.from_elements` lacks the `Pure` trait,
+    the standard DCE pass must conservatively assume that executing the operation
+    might produce side effects. Consequently, it will refuse to delete it, even
     if its resulting tensor is completely unused.
 
-    This rewrite pattern acts as a targeted DCE fallback. It explicitly checks 
-    if the result of the `tensor.from_elements` operation has any active uses 
+    This rewrite pattern acts as a targeted DCE fallback. It explicitly checks
+    if the result of the `tensor.from_elements` operation has any active uses
     in the IR; if the use count is zero, it safely erases the operation.
     """
+
     @op_type_rewrite_pattern
-    def match_and_rewrite(self, op: tensor.FromElementsOp, rewriter: PatternRewriter) -> None:
+    def match_and_rewrite(
+        self, op: tensor.FromElementsOp, rewriter: PatternRewriter
+    ) -> None:
         # If the result has zero uses, we are safe to delete it
         if not op.result.uses:
             rewriter.erase_op(op)

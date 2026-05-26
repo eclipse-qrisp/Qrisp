@@ -117,6 +117,8 @@ def MLIR_str_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
 
     Returns
     -------
+    Context
+        The xDSL context in which the module resides.
     builtin.ModuleOp
         The parsed xDSL module operation. Unregistered ops are allowed so that
         custom JASP ops survive the round-trip.
@@ -153,9 +155,6 @@ def jaxpr_to_xdsl(jaxpr, lower_stableHLO = False, lowering_rules=tuple([])):
     2. (Optional) Lower StableHLO to linalg and other lower-level dialects.
     3. Print the module in MLIR's generic form and re-parse it with xDSL to
        obtain an xDSL ``builtin.module`` object.
-    4. Run xDSL optimization passes to clean up lowering artifacts
-       (e.g., redundant scalar ``linalg.generic`` chains produced by
-       ``stablehlo-legalize-to-linalg``).
 
     Parameters
     ----------
@@ -171,6 +170,8 @@ def jaxpr_to_xdsl(jaxpr, lower_stableHLO = False, lowering_rules=tuple([])):
 
     Returns
     -------
+    Context
+        The xDSL context in which the module resides.
     builtin.ModuleOp
         The xDSL module containing the lowered program.
     """
