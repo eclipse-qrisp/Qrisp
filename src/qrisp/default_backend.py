@@ -15,21 +15,27 @@
 # ********************************************************************************
 
 """
-Backward-compatibility shim.
+Default backend configuration.
 
-:class:`DefaultBackend`, :class:`DefaultJob`, and :data:`def_backend` have
-moved to :mod:`qrisp.interface.simulators.default_backend`.  This module
-re-exports them so that existing code using
-``from qrisp.default_backend import DefaultBackend`` (or equivalent) continues
-to work without changes.
+:data:`def_backend` is the module-level singleton used as the default backend
+throughout Qrisp when no explicit backend is provided. It is an instance of
+:class:`~qrisp.interface.simulators.default_backend.QrispSimulator`.
 
-.. deprecated::
-    Import directly from :mod:`qrisp.interface.simulators.default_backend`
-    in new code.
+To change the global default, replace *def_backend* with a different backend
+instance, e.g.::
+
+    import qrisp.default_backend as db
+    from my_custom_backend import MyBackend
+    db.def_backend = MyBackend()
+
+The implementing classes live in
+:mod:`qrisp.interface.simulators.default_backend` and are re-exported here
+for convenience.
 """
 
 from qrisp.interface.simulators.default_backend import (
-    DefaultBackend,
-    DefaultJob,
-    def_backend,
+    QrispSimulator,
+    QrispSimulatorJob,
 )
+
+def_backend = QrispSimulator()

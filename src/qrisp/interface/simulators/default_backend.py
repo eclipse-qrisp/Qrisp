@@ -14,7 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""This module defines :class:`DefaultBackend` and its associated :class:`DefaultJob`."""
+"""This module defines :class:`QrispSimulator` and its associated :class:`QrispSimulatorJob`."""
 
 from typing import Sequence, cast
 
@@ -24,11 +24,11 @@ from qrisp.interface.job import Job, JobResult, JobStatus
 from qrisp.simulator.simulator import run as default_run
 
 
-class DefaultJob(Job):
+class QrispSimulatorJob(Job):
     """
-    A synchronous :class:`~qrisp.interface.Job` produced by :class:`DefaultBackend`."""
+    A synchronous :class:`~qrisp.interface.Job` produced by :class:`QrispSimulator`."""
 
-    def __init__(self, backend: "DefaultBackend", circuits: Sequence, shots):
+    def __init__(self, backend: "QrispSimulator", circuits: Sequence, shots):
         """Initialise the job with the backend, normalised circuit list, and shot count."""
         super().__init__(backend=backend)
         self._circuits = circuits
@@ -66,7 +66,7 @@ class DefaultJob(Job):
         """Return the :class:`~qrisp.interface.JobResult`.
 
         Because the simulator is synchronous the result is already available
-        as soon as :meth:`submit` has been called by ``DefaultBackend.run_async``.
+        as soon as :meth:`submit` has been called by ``QrispSimulator.run_async``.
         The *timeout* parameter is accepted for interface compatibility but has
         no effect: the job is always already in a terminal state before this
         method can be called.
@@ -92,15 +92,21 @@ class DefaultJob(Job):
         return self._last_known_status
 
 
-class DefaultBackend(Backend):
+class QrispSimulator(Backend):
     """
-    The default Qrisp backend, backed by the built-in statevector simulator.
+    The built-in Qrisp statevector simulator backend.
 
     This is the simplest concrete :class:`~qrisp.interface.Backend`
     implementation. It executes circuits synchronously. That is, the
-    :class:`DefaultJob` returned by :meth:`run_async` is already
+    :class:`QrispSimulatorJob` returned by :meth:`run_async` is already
     :attr:`~qrisp.interface.JobStatus.DONE` before :meth:`run_async` returns
     to the caller.
+
+    .. note::
+        The module-level singleton :data:`~qrisp.default_backend.def_backend`
+        (an instance of this class) is used as the default backend throughout
+        Qrisp when no explicit backend is specified. To change the global
+        default, edit :mod:`qrisp.default_backend`.
 
     Parameters
     ----------
@@ -112,15 +118,15 @@ class DefaultBackend(Backend):
 
     **Analytic execution (default)**
 
-    We first create a :class:`DefaultBackend`:
+    We first create a :class:`QrispSimulator`:
 
     >>> from qrisp import QuantumFloat
-    >>> from qrisp.interface.simulators.default_backend import DefaultBackend
-    >>> backend = DefaultBackend()
+    >>> from qrisp.interface.simulators.default_backend import QrispSimulator
+    >>> backend = QrispSimulator()
 
     When ``get_measurement`` is called, Qrisp compiles the computation into a
     circuit and passes it to the built-in simulator via :meth:`run_async`. A
-    :class:`DefaultJob` is returned immediately. And, because the simulator
+    :class:`QrispSimulatorJob` is returned immediately. And, because the simulator
     is synchronous the job is already :attr:`~qrisp.interface.JobStatus.DONE`
     before ``get_measurement`` even calls :meth:`~qrisp.interface.Job.result`:
 
@@ -144,13 +150,13 @@ class DefaultBackend(Backend):
 
     **Using the Job interface directly**
 
-    :meth:`run_async` returns a :class:`DefaultJob` that supports the full
+    :meth:`run_async` returns a :class:`QrispSimulatorJob` that supports the full
     :class:`~qrisp.interface.Job` interface, even though the result is
     already available synchronously:
 
     >>> from qrisp import QuantumFloat
-    >>> from qrisp.interface.simulators.default_backend import DefaultBackend
-    >>> backend = DefaultBackend()
+    >>> from qrisp.interface.simulators.default_backend import QrispSimulator
+    >>> backend = QrispSimulator()
     >>> qf3 = QuantumFloat(2)
     >>> qf3[:] = 3
     >>> res3 = qf3 * qf3
@@ -173,13 +179,13 @@ class DefaultBackend(Backend):
         """
         return {"shots": None, "token": ""}
 
-    def run_async(self, circuits, shots: int | None = None) -> DefaultJob:
+    def run_async(self, circuits, shots: int | None = None) -> QrispSimulatorJob:
         """Submit one or more circuits to the built-in simulator.
 
-        This method returns a :class:`DefaultJob` that is already
+        This method returns a :class:`QrispSimulatorJob` that is already
         :attr:`~qrisp.interface.JobStatus.DONE` before :meth:`run_async`
         returns, because the simulator executes synchronously inside
-        :meth:`~DefaultJob.submit`.
+        :meth:`~QrispSimulatorJob.submit`.
 
         Parameters
         ----------
@@ -192,7 +198,7 @@ class DefaultBackend(Backend):
 
         Returns
         -------
-        DefaultJob
+        QrispSimulatorJob
         """
         self._check_circuit_limit(circuits)
         if isinstance(circuits, QuantumCircuit):
@@ -200,9 +206,6 @@ class DefaultBackend(Backend):
         else:
             circuits = list(circuits)
         n_shots = shots if shots is not None else self.options.get("shots")
-        job = DefaultJob(backend=self, circuits=circuits, shots=n_shots)
+        job = QrispSimulatorJob(backend=self, circuits=circuits, shots=n_shots)
         job.submit()
         return job
-
-
-def_backend = DefaultBackend()
