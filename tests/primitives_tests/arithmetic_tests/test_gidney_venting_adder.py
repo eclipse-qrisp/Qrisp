@@ -297,20 +297,48 @@ def test_dirty_ancillae_adder_preserves_dirty():
 
 ALL_GIDNEY_CQ_CASES = [
     # (init, d, c_in_val, expected, n, ctrl_val)
-    # uncontrolled
+    # --- basic uncontrolled ---
     (1, 1, 0, 2, 3, None),
     (15, 1, 0, 16, 6, None),
-    # truncation: d=8 truncated to 3 bits → d & 7 = 0
-    (1, 8, 0, 1, 3, None),
-    (1, 17, 0, 2, 4, None),
-    # ctrl=1 → matches uncontrolled
+    (5, 2, None, 7, 3, None),       # n=3 (smallest split)
+    (7, 4, None, 11, 4, None),      # n=4 (h=1, minimal split)
+    # --- zero addend / zero target ---
+    (13, 0, None, 13, 5, None),     # adding 0 is identity
+    (0, 7, None, 7, 5, None),       # adding to zero
+    # --- modular overflow: result wraps at 2^n ---
+    (15, 3, 0, 2, 4, None),         # 15+3=18 is too large for 4 bits (max 15),
+                                     # so only the low 4 bits remain: 18 % 16 = 2
+    (31, 31, 0, 30, 5, None),       # 31+31=62, 5-bit max is 31 → 62 % 32 = 30
+    (63, 1, 0, 0, 6, None),         # 63+1=64, but 6-bit wraps at 64 → 64 % 64 = 0
+    # --- truncation: d is masked to n bits before adding ---
+    (1, 8, 0, 1, 3, None),          # d=8 is 1000 in binary; only bottom 3 bits
+                                     # (000) are kept → effectively d=0, so 1+0=1
+    (1, 17, 0, 2, 4, None),         # d=17 is 10001; bottom 4 bits are 0001=1
+                                     # → effectively d=1, so 1+1=2
+    (5, 31, 0, 4, 4, None),         # d=31 is 11111; bottom 4 bits are 1111=15
+                                     # → effectively d=15, so (5+15)%16=4
+    # --- with carry-in ---
+    (3, 2, 1, 6, 3, None),          # 3+2+carry_in=6 (straightforward, no overflow)
+    (15, 1, 1, 1, 4, None),         # 15+1+carry_in=17, but 4-bit max is 15
+                                     # → 17 % 16 = 1 (wraps around like an odometer)
+    # --- controlled: ctrl=1 matches uncontrolled ---
     (1, 1, 0, 2, 3, 1),
-    # ctrl=0 → no-op
+    (10, 5, None, 15, 5, 1),
+    # --- controlled: ctrl=0 → identity ---
     (1, 1, 0, 1, 3, 0),
+    (10, 5, None, 10, 5, 0),
+    # --- larger register ---
+    (512, 256, 0, 768, 10, None),   # n=10
+    # --- alternating bit patterns ---
+    (0b101010, 0b010101, 0, 0b111111, 6, None),  # 42+21=63
 ]
 
 @pytest.mark.parametrize("init, d, c_in_val, expected, n, ctrl_val", ALL_GIDNEY_CQ_CASES)
 def test_gidney_cq_venting_adder_jasp(init, d, c_in_val, expected, n, ctrl_val):
+    # The register is only n bits wide, so the result is always
+    # (init + d + c_in) mod 2^n, with d trimmed to n bits before addition.
+    # That's why some cases don't match a plain init + d — the value
+    # wraps around like an odometer when it exceeds 2^n-1.
     @jaspify
     def run():
         target = QuantumFloat(n)
