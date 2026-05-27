@@ -241,6 +241,7 @@ def test_dynamic_index_into_array_parameter():
     result = cudaq.run(circuit, angles, shots_count=10)
     assert result == 10 * [0]
 
+
 def test_dynamic_index_into_array_parameter_in_nested_function():
     """Dynamic index into a FixedShapeNDArray parameter inside a nested function."""
 
@@ -283,6 +284,22 @@ def test_dynamic_index_into_array_parameter_in_loop():
     angles = np.array([1.57, 0.78, 0.39, 0.25, 0.12])
     result = cudaq.run(test_circuit, angles, shots_count=10)
     assert result is not None
+
+
+def test_static_index_into_array_parameter():
+    """Static index into a FixedShapeNDArray parameter. Parametrized ansatz with 4 layers, each taking an angle from the array."""
+
+    @qrisp_cudaq_kernel
+    def ansatz_kernel(params: FixedShapeNDArray(float, 4)):
+        qv = QuantumVariable(4)
+        for layer in range(4):
+            beta = params[layer]
+            for i in range(4):
+                rx(2.0 * beta, qv[i])
+        return measure(qv)
+
+    results = cudaq.run(ansatz_kernel, np.array([1.57, 0.78, 0.39, 0.25]), shots_count=10)
+    assert results is not None
 
 
 # ---------------------------------------------------------------------------

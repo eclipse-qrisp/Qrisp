@@ -462,7 +462,12 @@ def _rewrite_tensor_extract(extract_op, block: Block, array_map: dict) -> None:
 
 
 def _rewrite_extract_slice_chain(slice_op, block: Block, array_map: dict) -> None:
-    """Rewrite extract_slice → collapse_shape → extract[] chain."""
+    """Rewrite extract_slice → collapse_shape → extract[] chain.
+    
+    Handles the case where the collapse_shape result has multiple
+    tensor.extract users (e.g., when the same array element is read
+    multiple times).
+    """
     source = slice_op.operands[0]
     if source not in array_map:
         return
@@ -472,24 +477,43 @@ def _rewrite_extract_slice_chain(slice_op, block: Block, array_map: dict) -> Non
     collapse_op = _find_single_user(slice_op.results[0], "tensor.collapse_shape")
     if collapse_op is None:
         return
-    extract_op = _find_single_user(collapse_op.results[0], "tensor.extract")
-    if extract_op is None:
+
+    # Find ALL tensor.extract users of the collapse_shape result
+    extract_ops = _find_all_users(collapse_op.results[0], "tensor.extract")
+    if not extract_ops:
         return
 
-    if offset is not None:
-        loaded = _emit_load_from_array(arr_ptr, offset, elem_type, block, extract_op)
-    else:
-        dynamic_offsets = list(slice_op.offsets)
-        if not dynamic_offsets:
-            return
-        loaded = _emit_load_from_array(arr_ptr, dynamic_offsets[0], elem_type, block, extract_op)
+    # Rewrite each extract op
+    for extract_op in extract_ops:
+        if offset is not None:
+            loaded = _emit_load_from_array(arr_ptr, offset, elem_type, block, extract_op)
+        else:
+            dynamic_offsets = list(slice_op.offsets)
+            if not dynamic_offsets:
+                continue
+            loaded = _emit_load_from_array(arr_ptr, dynamic_offsets[0], elem_type, block, extract_op)
 
-    extract_op.result.replace_by(loaded)
-    Rewriter.erase_op(extract_op, safe_erase=False)
+        extract_op.result.replace_by(loaded)
+        Rewriter.erase_op(extract_op, safe_erase=False)
+
+    # Clean up collapse_shape and extract_slice if no remaining uses
     if not any(collapse_op.results[0].uses):
         Rewriter.erase_op(collapse_op, safe_erase=False)
     if not any(slice_op.results[0].uses):
         Rewriter.erase_op(slice_op, safe_erase=False)
+
+
+def _find_all_users(value: SSAValue, op_name: str) -> list:
+    """Find all users of a value with the given operation name.
+
+    Returns a list of operations (may be empty).
+    """
+    results = []
+    for use in value.uses:
+        if use.operation.name == op_name:
+            if use.operation not in results:
+                results.append(use.operation)
+    return results
 
 
 def _get_static_offset(slice_op) -> int | None:
