@@ -290,6 +290,8 @@ def carry_venting_adder(
     if carry_in is not None:
         bit_inverted_mcx(carry_in, target[0], clean_anc[1], d0, ctrl=ctrl)
         qrisp.cx(carry_in, target[0])
+    else:
+        bit_inverted_mcx(clean_anc[0], target[0], clean_anc[1], d0, ctrl=ctrl)
 
     # X on clean_anc[1] when d0=1: corrects the carry for the flipped
     # target[0] bit so the carry chain still computes the right value.
@@ -608,15 +610,30 @@ def gidney_cq_venting_adder(
     target ← (target + d + c_in) mod 2^n
 
     Uses 3 clean ancillae allocated internally (1 carry_mid + 2 streaming
+    carry) and no external dirty workspace — the target register is split
+    in half, and each half serves as dirty storage for the other half's
+    carry chain.
+
+    Algorithm:
+      1. Swap carry_mid into the target register at the split point.
+      2. Vented addition on the bottom half using the first 2 ancillae.
+      3. Swap carry_mid back out — it now holds the carry into the top half.
+      4. Dirty-ancilla addition on the top half, using the bottom half as
+         dirty workspace (carry_mid as carry-in).
+      5. Measure the overflow carry (carry_mid) in the X-basis.
+      6. Phase correction for the bottom half using two carry_xor_block
+         passes (the fused first pass was consumed by step 4).
+
+    Requires n ≥ 3 (the splitting degenerates for n < 3).
 
     Parameters
     ----------
-    d : int
-        The classical value to add.
     target : qrisp.QuantumVariable | list[qrisp.Qubit]
-        The quantum register to add to (modified in place).
+        Target register, little-endian (index 0 = LSB). Modified in place.
+    d : int
+        Classical addend (compile-time constant).
     c_in : qrisp.Qubit | qrisp.QuantumVariable | None
-        Quantum carry-in.  ``None`` is treated as ``|0⟩``.
+        Quantum carry-in. None is treated as |0⟩.
     a_int_is_bigint : bool
         If True, read bits from *d* via ``d.get_bit(i)`` (BigInteger).
         If False (default), use shift-and-mask extraction.
@@ -680,13 +697,18 @@ def gidney_cq_venting_adder(
 
     # Step 4: Top half addition using dirty ancillas.
     # target[h:] has n-h bits (top half).  carry_mid is the carry-in.
-    # target[:h] (bottom h bits) are borrowed as dirty workspace — they
-    # will be restored by dirty_ancillae_adder's internal phase correction.
+    # target[:max(1, n-h-2)] (bottom n-h-2 bits, at least 1) are borrowed as
+    # dirty workspace — they will be restored by dirty_ancillae_adder's internal
+    # phase correction.
     # The same anc_clean2 is passed as the clean ancilla register, so the
     # total clean ancilla count is just 3 (shared between both halves).
+    # NOTE: n-h-2 may be less than h (e.g. n=5, h=2: n-h-2=1).  We use
+    # n-h-2 dirty qubits (at least 1) because dirty_ancillae_adder expects
+    # exactly num_targets - 2 dirty qubits.  The remaining bottom bit(s) stay
+    # untouched and keep their value from the bottom-half sum.
     dirty_ancillae_adder(
         d_hi, target[h:],
-        dirty_ancillas=target[:h],
+        dirty_ancillas=target[:jnp.maximum(1, num_targets - h - 2)],
         ancilla=anc_clean2,
         c_in=carry_mid,
         a_int_is_bigint=a_int_is_bigint,
