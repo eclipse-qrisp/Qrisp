@@ -121,7 +121,7 @@ class QrispSimulatorBackend(Backend):
     We first create a :class:`QrispSimulatorBackend`:
 
     >>> from qrisp import QuantumFloat
-    >>> from qrisp.interface.simulators.default_backend import QrispSimulatorBackend
+    >>> from qrisp.interface import QrispSimulatorBackend
     >>> backend = QrispSimulatorBackend()
 
     When ``get_measurement`` is called, Qrisp compiles the computation into a
@@ -155,7 +155,7 @@ class QrispSimulatorBackend(Backend):
     already available synchronously:
 
     >>> from qrisp import QuantumFloat
-    >>> from qrisp.interface.simulators.default_backend import QrispSimulatorBackend
+    >>> from qrisp.interface import QrispSimulatorBackend
     >>> backend = QrispSimulatorBackend()
     >>> qf3 = QuantumFloat(2)
     >>> qf3[:] = 3

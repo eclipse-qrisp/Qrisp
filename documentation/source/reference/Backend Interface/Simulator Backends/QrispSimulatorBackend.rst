@@ -3,7 +3,7 @@
 QrispSimulatorBackend
 =====================
 
-.. currentmodule:: qrisp.interface.simulators.default_backend
+.. currentmodule:: qrisp.interface.simulators.qrisp_simulator_backend
 
 .. autoclass:: QrispSimulatorBackend
 
