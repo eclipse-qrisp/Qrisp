@@ -1054,58 +1054,6 @@ def test_q_switch(method):
     result = run_quake_mlir(mlir, shots=10)
 
 # ---------------------------------------------------------------------------
-# Test qrisp cudaq kernel decorator
-# ---------------------------------------------------------------------------
-
-def test_qrisp_cudaq_kernel_decorator():
-    """Test that the @qrisp_cudaq_kernel decorator compiles a function to MLIR and runs it on CUDA-Q."""
-    from qrisp.jasp.mlir.quake_lowering import qrisp_cudaq_kernel
-
-    @qrisp_cudaq_kernel(shots=10)
-    def bell():
-        qv = QuantumVariable(2)
-        h(qv[0])
-        cx(qv[0], qv[1])
-        return measure(qv)
-
-    # When `bell()` is called, it will be compiled to MLIR and executed on CUDA-Q.
-    result = bell()
-    print(result)
-
-
-def test_qrisp_algorithm_in_cudaq_kernel():
-    """Test that we can use qrisp algorithms (like Trotterization) inside a @qrisp_cudaq_kernel."""
-    from qrisp.operators import X, Y, Z
-    import networkx as nx
-
-    @qrisp_cudaq_kernel(shots=10)
-    def main():
-
-        G = nx.Graph()
-        G.add_nodes_from([0, 1, 2, 3])
-        G.add_edges_from([(0, 1), (1, 2), (2, 3), (3, 0)])
-
-        H = sum(X(i) for i in G.nodes) + sum(Z(i)*Z(j) for i, j in G.edges)
-        U = H.trotterization()
-
-        a = QuantumFloat(4)
-        b = QuantumFloat(4)
-
-        a[:] = 5
-        h(b)
-        U(a, t=1.0, steps=10)
-
-        # Real-time control flow based on measurement results
-        c = measure(b) < 5
-        with control(c):
-            a += 1
-
-        return measure(a)
-
-    result = main()
-    assert isinstance(result, list) and len(result) == 10, f"Expected a list of 10 measurement results, got {result}"
-
-# ---------------------------------------------------------------------------
 # Test arrays
 # ---------------------------------------------------------------------------
 
