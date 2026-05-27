@@ -58,6 +58,8 @@ import re
 import sys
 import warnings
 
+import numpy as np
+
 import cudaq
 from cudaq import cudaq_runtime
 from cudaq.kernel.kernel_decorator import PyKernelDecorator
@@ -172,6 +174,159 @@ def _get_llvm_attributes() -> tuple:
         f'llvm.target_triple = "{target_triple_str}"' if target_triple_str else None
     )
     return data_layout_attr, target_triple_attr
+
+
+# ------------------------------------------------------------------ #
+# FixedShapeNDArray annotation
+# ------------------------------------------------------------------ #
+
+
+class FixedShapeNDArray:
+    """Type annotation for a fixed-size numpy array parameter in
+    ``@qrisp_cudaq_kernel``.
+
+    Mirrors the role of ``list[float]`` / ``list[int]`` in ``@cudaq.kernel``
+    but requires an explicit size, because JAX/Jaspr traces with concrete
+    shapes.  The decorator uses the element type and size to generate a
+    correctly-typed dummy value for tracing, producing parametric MLIR
+    whose parameter type is then rewritten from the static
+    ``!cc.ptr<!cc.array<T x N>>`` to the CUDA-Q-marshaling-compatible
+    ``!cc.stdvec<T>``.
+
+    Parameters
+    ----------
+    dtype : type
+        Element type.  Supported: ``float`` (→ ``f64``), ``int`` (→ ``i64``),
+        ``bool`` (→ ``i1``).
+    size : int
+        Number of elements.  Must match the runtime array length.
+
+    Examples
+    --------
+    ::
+
+        @qrisp_cudaq_kernel
+        def circuit(angles: FixedShapeNDArray(float, 3)):
+            qv = QuantumFloat(2)
+            ry(angles[0], qv[0])
+            return measure(qv[0])
+
+        angles = np.array([1.57, 0.78, 0.39])
+        print(cudaq.run(circuit, angles, shots_count=100))
+
+    """
+
+    #: Maps Python dtype to NumPy dtype and MLIR element type string.
+    _DTYPE_MAP = {
+        float: (np.float64, "f64"),
+        int: (np.int64, "i64"),
+        bool: (np.bool_, "i1"),
+    }
+
+    def __init__(self, dtype: type, size: int):
+        if dtype not in self._DTYPE_MAP:
+            raise TypeError(
+                f"FixedShapeNDArray: unsupported dtype '{dtype}'. "
+                f"Supported: {list(self._DTYPE_MAP.keys())}."
+            )
+        if not isinstance(size, int) or size <= 0:
+            raise ValueError("FixedShapeNDArray: size must be a positive integer.")
+        self.dtype = dtype
+        self.size = size
+        self._np_dtype, self.mlir_elem_type = self._DTYPE_MAP[dtype]
+
+    def make_dummy(self) -> np.ndarray:
+        """Return a zero-filled NumPy array of the correct dtype and size."""
+        return np.zeros(self.size, dtype=self._np_dtype)
+
+    def __repr__(self):
+        return f"FixedShapeNDArray({self.dtype.__name__}, {self.size})"
+
+
+# ------------------------------------------------------------------ #
+# MLIR rewriting pass: static array params → stdvec
+# ------------------------------------------------------------------ #
+
+
+def _rewrite_array_params_to_stdvec(
+    param_list: str, body: str
+) -> tuple:
+    """Rewrite ``!cc.ptr<!cc.array<T x N>>`` parameters to ``!cc.stdvec<T>``.
+
+    Jaspr traces numpy arrays as fixed-size C-array pointers.  CUDA-Q's
+    Python marshaling layer only understands ``!cc.stdvec<T>`` for
+    list / array arguments passed from Python.  This pass:
+
+    1. Replaces the parameter type in the function signature.
+    2. Inserts a ``cc.stdvec_data`` instruction at the top of the body to
+       obtain a raw ``!cc.ptr<!cc.array<T x ?>>`` from the stdvec.
+    3. Rewrites all ``cc.compute_ptr`` references that used the argument
+       directly to use the new raw-pointer SSA value, and updates their
+       type annotations from the static ``T x N`` to the dynamic ``T x ?``.
+
+    Parameters
+    ----------
+    param_list : str
+        The ``(...)`` parameter list text extracted from the ``@main`` header.
+    body : str
+        The function body text (content between the outer braces).
+
+    Returns
+    -------
+    (new_param_list, new_body)
+        Rewritten strings ready to be injected into the adapted MLIR.
+    """
+    # Find all parameters with static array types.
+    array_params = re.findall(
+        r"(%arg\w+)\s*:\s*!cc\.ptr<!cc\.array<([a-z0-9]+)\s*x\s*(\d+)>>",
+        param_list,
+    )
+    if not array_params:
+        return param_list, body
+
+    new_param_list = param_list
+    preamble_lines = []
+    new_body = body
+
+    for arg_name, elem_type, size in array_params:
+        static_type = f"!cc.ptr<!cc.array<{elem_type} x {size}>>"
+        stdvec_type = f"!cc.stdvec<{elem_type}>"
+        dyn_ptr_type = f"!cc.ptr<!cc.array<{elem_type} x ?>>"
+        data_var = f"{arg_name}_ptr"
+
+        # 1. Rewrite signature
+        new_param_list = new_param_list.replace(
+            f"{arg_name}: {static_type}",
+            f"{arg_name}: {stdvec_type}",
+        )
+
+        # 2. Preamble: extract raw pointer from the stdvec
+        preamble_lines.append(
+            f"{data_var} = cc.stdvec_data {arg_name} "
+            f": ({stdvec_type}) -> {dyn_ptr_type}"
+        )
+
+        # 3. Redirect compute_ptr from %argN to %argN_ptr
+        new_body = re.sub(
+            rf"cc\.compute_ptr\s+{re.escape(arg_name)}\[",
+            f"cc.compute_ptr {data_var}[",
+            new_body,
+        )
+
+        # 4. Update the static type annotations in compute_ptr calls
+        #    (!cc.ptr<!cc.array<T x N>>, ...) → (!cc.ptr<!cc.array<T x ?>>, ...)
+        new_body = new_body.replace(
+            f"({static_type},", f"({dyn_ptr_type},"
+        )
+        new_body = new_body.replace(
+            f"({static_type})", f"({dyn_ptr_type})"
+        )
+
+    if preamble_lines:
+        preamble_str = "\n    ".join(preamble_lines)
+        new_body = preamble_str + "\n    " + new_body
+
+    return new_param_list, new_body
 
 
 # ------------------------------------------------------------------ #
@@ -328,6 +483,18 @@ def cudaq_kernel_from_mlir(mlir_str: str) -> PyKernelDecorator:
                     break
 
     # ------------------------------------------------------------------ #
+    # Step 2c: Rewrite static array parameters to !cc.stdvec<T>.
+    # ------------------------------------------------------------------ #
+    # Jaspr traces numpy arrays as !cc.ptr<!cc.array<T x N>> (fixed-size
+    # C-array pointers).  CUDA-Q's marshaling layer only understands
+    # !cc.stdvec<T> for list/array arguments, so we rewrite the signature
+    # and element-access instructions here before assembly.
+    param_list, main_func_body = _rewrite_array_params_to_stdvec(
+        param_list, main_func_body
+    )
+    run_body = main_func_body  # run_body is derived from main_func_body below
+
+    # ------------------------------------------------------------------ #
     # Step 3: Determine the return type and build the ".run" variant.
     # ------------------------------------------------------------------ #
     return_match = re.search(r"func\.return\s+(%\w+)\s*:\s*(.+)", main_func_body)
@@ -342,7 +509,7 @@ def cudaq_kernel_from_mlir(mlir_str: str) -> PyKernelDecorator:
     else:
         return_type_str = None
         return_sig = ""
-        run_body = main_func_body
+        # run_body already set to main_func_body in Step 2c
 
     # ------------------------------------------------------------------ #
     # Step 4: Assemble the complete CUDA-Q-compatible MLIR module.
@@ -488,6 +655,7 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
 # Maps Python type annotations to dummy argument values for Jaspr tracing.
 # The concrete type of the dummy value determines the MLIR type in @main's
 # parameter list (e.g. int → i64, float → f64, bool → i1).
+# FixedShapeNDArray instances are handled separately via FixedShapeNDArray.make_dummy().
 _ANNOTATION_TO_DUMMY = {
     int: 0,
     float: 0.0,
@@ -546,7 +714,7 @@ def qrisp_cudaq_kernel(func):
         print(bell())                            # single-shot, e.g. 0 or 3
         print(cudaq.run(bell, shots_count=100))  # multi-shot, no () needed
 
-    Parameterised kernel with type annotations::
+    Parameterised kernel with scalar and array type annotations::
 
         @qrisp_cudaq_kernel
         def circuit(k: int):
@@ -557,27 +725,42 @@ def qrisp_cudaq_kernel(func):
         print(circuit(3))                             # single-shot
         print(cudaq.run(circuit, 3, shots_count=100)) # multi-shot
 
+        @qrisp_cudaq_kernel
+        def circuit_arr(angles: FixedShapeNDArray(float, 3)):
+            qv = QuantumFloat(2)
+            ry(angles[0], qv[0])
+            return measure(qv[0])
+
+        angles = np.array([1.57, 0.78, 0.39])
+        print(circuit_arr(angles))                             # single-shot
+        print(cudaq.run(circuit_arr, angles, shots_count=100)) # multi-shot
+
     """
     sig = inspect.signature(func)
     params = list(sig.parameters.values())
 
-    # Validate annotations for all parameters
+    _supported = list(_ANNOTATION_TO_DUMMY.keys()) + ["FixedShapeNDArray(dtype, size)"]
+
+    # Validate annotations for all parameters and build dummy args
+    dummy_args = []
     for p in params:
         if p.annotation is inspect.Parameter.empty:
             raise RuntimeError(
                 f"@qrisp_cudaq_kernel: parameter '{p.name}' of "
                 f"'{func.__name__}' requires a type annotation. "
-                f"Supported types: {list(_ANNOTATION_TO_DUMMY.keys())}."
+                f"Supported: {_supported}."
             )
-        if p.annotation not in _ANNOTATION_TO_DUMMY:
+        if isinstance(p.annotation, FixedShapeNDArray):
+            dummy_args.append(p.annotation.make_dummy())
+        elif p.annotation in _ANNOTATION_TO_DUMMY:
+            dummy_args.append(_ANNOTATION_TO_DUMMY[p.annotation])
+        else:
+            ann_name = getattr(p.annotation, "__name__", repr(p.annotation))
             raise RuntimeError(
                 f"@qrisp_cudaq_kernel: unsupported annotation "
-                f"'{p.annotation.__name__}' for parameter '{p.name}' of "
-                f"'{func.__name__}'. "
-                f"Supported types: {list(_ANNOTATION_TO_DUMMY.keys())}."
+                f"'{ann_name}' for parameter '{p.name}' of "
+                f"'{func.__name__}'. Supported: {_supported}."
             )
-
-    dummy_args = [_ANNOTATION_TO_DUMMY[p.annotation] for p in params]
 
     try:
         mlir_str = str(jaspr_to_quake(make_jaspr(func)(*dummy_args)))

@@ -41,7 +41,7 @@ jaspr_to_quake
 """
 
 from qrisp.jasp.mlir.quake_lowering.jaspr_to_quake import jaspr_to_quake
-from qrisp.jasp.mlir.quake_lowering.execution_tools import run_quake_mlir, qrisp_cudaq_kernel, cudaq_kernel_from_mlir
+from qrisp.jasp.mlir.quake_lowering.execution_tools import run_quake_mlir, qrisp_cudaq_kernel, cudaq_kernel_from_mlir, FixedShapeNDArray
 from qrisp.jasp.mlir.quake_lowering.validation_tools import validate_quake_mlir
 from qrisp.jasp.mlir.quake_lowering.quake_dialect import (
     QuakeDialect,
@@ -56,6 +56,7 @@ __all__ = [
     "run_quake_mlir",
     "qrisp_cudaq_kernel",
     "cudaq_kernel_from_mlir",
+    "FixedShapeNDArray",
     "QuakeDialect",
     "QuakeRefType",
     "QuakeVeqType",
