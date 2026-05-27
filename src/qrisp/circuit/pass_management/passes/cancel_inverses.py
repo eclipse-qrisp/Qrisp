@@ -36,7 +36,6 @@ The module is layered in three tiers:
      :class:`~qrisp.alg_primitives.GidneyLogicalAND`.
    * :func:`_fuse_controlled_ops` — recursion into
      :class:`~qrisp.circuit.ControlledOperation` and
-     :class:`~qrisp.environments.CustomControlOperation` wrappers.
    * :func:`_check_inverse_cancel` — generic final fallback via
      ``op_a.inverse().name == op_b.name``.
 
@@ -68,6 +67,7 @@ running accumulator.  Non-zero accumulated phase is emitted as a single
 from __future__ import annotations
 
 import networkx as nx
+import numpy as np
 
 from qrisp.circuit import (
     QuantumCircuit,
@@ -419,12 +419,33 @@ def _check_inverse_cancel(op_a, op_b):
     _FUSION_CANCEL or None
         ``_FUSION_CANCEL`` if the pair cancels, ``None`` otherwise.
     """
+
+    # If the name of the inverse of gate a is the same
+    # as gate b, chances are they are indeed inverse to each other
+    # We confirm this by comparing their unitaries
     try:
         inv_op = op_a.inverse()
     except:
         return None
 
     if inv_op.name == op_b.name and op_a.name[-5:] != "alloc":
+
+        # Avoid calculating very large unitaries
+        if inv_op.num_qubits > 4 or op_b.num_qubits > 4:
+            return None
+
+        # Retrieve the unitaries
+        try:
+            unitary_a = inv_op.get_unitary()
+            unitary_b = op_b.get_unitary()
+        except:
+            return None
+        
+        # Compare
+        if np.linalg.norm(unitary_a - unitary_b) > 1E-4:
+            return None
+
+        # Mark as cancelled
         return _FUSION_CANCEL
 
     return None

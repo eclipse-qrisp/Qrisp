@@ -330,6 +330,24 @@ class TestControlledOperations:
 
         assert _num_gates(result) == 0
 
+    def test_non_trivial_control_state(self):
+        """Tests that XGates with differing control state
+        are not canceling"""
+
+        from qrisp.circuit import XGate
+
+        qc = QuantumCircuit(2)
+
+        gate_a = XGate().control(ctrl_state = "0")
+        gate_b = XGate().control(ctrl_state = "1")
+
+        qc.append(gate_a, qc.qubits)
+        qc.append(gate_b, qc.qubits)
+
+        result = cancel_inverses(qc)
+
+        assert _num_gates(result) == 2
+
 # ---------------------------------------------------------------------------
 # Tests: circuit identity preservation
 # ---------------------------------------------------------------------------
