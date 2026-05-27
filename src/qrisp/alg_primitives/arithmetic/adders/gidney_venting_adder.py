@@ -73,7 +73,13 @@ def bit_inverted_mcx(
             qrisp.x(parity_check_ctrl)
         else:
             qrisp.cx(ctrl, parity_check_ctrl)
+
+    # MCX stays 2-control — ctrl is NOT added as a third control because
+    # ctrl conditions the parity flips above, not the MCX itself.
+    # When ctrl=|0⟩ and b=1, the CX flips are no-ops → MCX sees un-flipped
+    # parity (= same as b=0) → d_i=1 effectively becomes d_i=0.
     qrisp.mcx([parity_check_ctrl, simple_ctrl], target)
+
     with control(b):
         if ctrl is None:
             qrisp.x(parity_check_ctrl)
@@ -181,7 +187,11 @@ def bit_inverted_zz_zz_mcx(
         else:
             qrisp.cx(ctrl, parity_ctrl1)
             qrisp.cx(ctrl, parity_ctrl2)
+
+    # MCX stays 2-control — same reasoning as bit_inverted_mcx.
+    # ctrl conditions the parity flips above, not the MCX itself.
     qrisp.mcx([parity_ctrl1, parity_ctrl2], target)
+    
     with control(b):
         if ctrl is None:
             qrisp.x(parity_ctrl1)
@@ -191,8 +201,8 @@ def bit_inverted_zz_zz_mcx(
             qrisp.cx(ctrl, parity_ctrl2)
 
 def carry_venting_adder(
-    target: list[qrisp.Qubit] | qrisp.QuantumVariable,
     d: int,
+    target: list[qrisp.Qubit] | qrisp.QuantumVariable,
     ancilla: qrisp.QuantumVariable,
     c_in: qrisp.Qubit | qrisp.QuantumVariable | None = None,
     carry_xor_target: qrisp.QuantumVariable | None = None,
@@ -418,9 +428,9 @@ def carry_venting_adder(
 
 
 def carry_xor_block(
-    target: list[qrisp.Qubit] | qrisp.QuantumVariable,
-    dirty_ancillas: list[qrisp.Qubit] | qrisp.QuantumVariable,
     d: int,
+    dirty_ancillas: list[qrisp.Qubit] | qrisp.QuantumVariable,
+    target: list[qrisp.Qubit] | qrisp.QuantumVariable,
     c_in: qrisp.Qubit | qrisp.QuantumVariable | None = None,
     a_int_is_bigint: bool = False,
     ctrl: qrisp.Qubit | qrisp.QuantumVariable | None = None,
@@ -502,8 +512,8 @@ def carry_xor_block(
 
 
 def dirty_ancillae_adder(
-    target: list[qrisp.Qubit] | qrisp.QuantumVariable,
     d: int,
+    target: list[qrisp.Qubit] | qrisp.QuantumVariable,
     dirty_ancillas: list[qrisp.Qubit] | qrisp.QuantumVariable,
     ancilla: list[qrisp.Qubit] | qrisp.QuantumVariable,
     c_in: qrisp.Qubit | qrisp.QuantumVariable | None = None,
@@ -555,7 +565,7 @@ def dirty_ancillae_adder(
 
     # Step 1: Vented addition with fused first carry-xor
     ventmask = carry_venting_adder(
-        target, d, ancilla=ancilla, c_in=c_in, carry_xor_target=dirty_qubits, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
+        d, target, ancilla=ancilla, c_in=c_in, carry_xor_target=dirty_qubits, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
 
 
     # Step 2: Phase correction
@@ -568,7 +578,7 @@ def dirty_ancillae_adder(
             qrisp.z(dirty_qubits[k])
 
     # Second carry-xor pass: recompute carries against the flipped sum
-    carry_xor_block(target[:-1], dirty_qubits, d, c_in, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
+    carry_xor_block(d, dirty_qubits, target[:-1], c_in, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
 
     # CZ pass 2: correct Z-phases again
     for k in jrange(num_dirty):
@@ -584,8 +594,8 @@ def dirty_ancillae_adder(
 
 @custom_control
 def gidney_cq_venting_adder(
-    target: qrisp.QuantumVariable | list[qrisp.Qubit],
     d: int,
+    target: qrisp.QuantumVariable | list[qrisp.Qubit],
     c_in: qrisp.Qubit | qrisp.QuantumVariable | None = None,
     a_int_is_bigint: bool = False,
     ctrl: qrisp.Qubit | qrisp.QuantumVariable | None = None,
@@ -669,7 +679,7 @@ def gidney_cq_venting_adder(
     qrisp.cx(carry_mid, target[h])
 
     # Step 2: Vented addition on bottom half
-    ventmask_lo = carry_venting_adder(target[:h + 1], d_lo, anc_clean2, c_in=c_in, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
+    ventmask_lo = carry_venting_adder(d_lo, target[:h + 1], anc_clean2, c_in=c_in, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
 
     # Step 3: Swap carry_mid back out of target[h].
     # target[h] is restored to its original qubit and carry_mid now
@@ -685,7 +695,7 @@ def gidney_cq_venting_adder(
     # The same anc_clean2 is passed as the clean ancilla register, so the
     # total clean ancilla count is just 3 (shared between both halves).
     dirty_ancillae_adder(
-        target[h:], d_hi,
+        d_hi, target[h:],
         dirty_ancillas=target[:h],
         ancilla=anc_clean2,
         c_in=carry_mid,
@@ -726,7 +736,7 @@ def gidney_cq_venting_adder(
             qrisp.z(workspace[k])
 
     # 6c — First carry_xor pass (explicit, no fused pass for bottom half)
-    carry_xor_block(bottom, workspace, d_lo, c_in, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
+    carry_xor_block(d_lo, workspace, bottom, c_in, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
 
     # 6d — CZ(workspace[k], vent[k+1]) again
     for k in jrange(h):
@@ -734,7 +744,7 @@ def gidney_cq_venting_adder(
             qrisp.z(workspace[k])
 
     # 6e — Second carry_xor pass
-    carry_xor_block(bottom, workspace, d_lo, c_in, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
+    carry_xor_block(d_lo, workspace, bottom, c_in, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
 
     # 6f — Restore bottom half: NOT cancels the complement from 6a
     for i in jrange(h):

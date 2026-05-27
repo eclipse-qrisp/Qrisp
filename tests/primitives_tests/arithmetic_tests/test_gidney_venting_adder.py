@@ -211,7 +211,7 @@ def test_carry_venting_adder_jasp(init, d, c_in_val, expected, n, ctrl_val):
         if ctrl_val is not None and ctrl_val:
             x(ctrl_qbl[0])
         anc = QuantumVariable(2)
-        ventmask = carry_venting_adder(target, d, anc, c_in=c_in, ctrl=ctrl_qbl[0] if ctrl_val is not None else None)
+        ventmask = carry_venting_adder(d, target, anc, c_in=c_in, ctrl=ctrl_qbl[0] if ctrl_val is not None else None)
         return measure(target), measure(ctrl_qbl), ventmask
     result_target, result_ctrl, ventmask = run()
     assert int(result_target) == expected
@@ -239,7 +239,7 @@ def test_carry_xor_block_jasp(init, d, c_in_val):
             c_in = QuantumVariable(1)
             if c_in_val:
                 x(c_in[0])
-        carry_xor_block(target, dirty_ancillas, d, c_in)
+        carry_xor_block(d, dirty_ancillas, target, c_in)
         if c_in is None:
             return measure(target), measure(dirty_ancillas)
         return measure(target), measure(dirty_ancillas), measure(c_in)
@@ -283,7 +283,7 @@ def test_dirty_ancillae_adder_jasp(init, d, c_in_val, expected, n, ctrl_val):
         for i in range(n - 2):
             h(dirty[i])
         anc = QuantumVariable(2)
-        ventmask = dirty_ancillae_adder(target, d, dirty, anc, c_in=c_in, ctrl=ctrl_qbl[0] if ctrl_val is not None else None)
+        ventmask = dirty_ancillae_adder(d, target, dirty, anc, c_in=c_in, ctrl=ctrl_qbl[0] if ctrl_val is not None else None)
         for i in range(n - 2):
             h(dirty[i])
         return measure(target), measure(dirty), measure(ctrl_qbl), ventmask
@@ -303,7 +303,7 @@ def test_dirty_ancillae_adder_preserves_dirty():
         dirty = QuantumVariable(2)
         x(dirty[0])
         anc = QuantumVariable(2)
-        dirty_ancillae_adder(target, 1, dirty, anc)
+        dirty_ancillae_adder(1, target, dirty, anc)
         return measure(target), measure(dirty)
     result_target, result_dirty = run()
     assert int(result_target) == 2
@@ -342,10 +342,10 @@ def test_gidney_cq_venting_adder_jasp(init, d, c_in_val, expected, n, ctrl_val):
         if ctrl_val is not None and ctrl_val:
             x(ctrl_qbl[0])
         if ctrl_val is None:
-            ventmask = gidney_cq_venting_adder(target, d, c_in)
+            ventmask = gidney_cq_venting_adder(d, target, c_in)
         else:
             with control(ctrl_qbl[0]):
-                ventmask = gidney_cq_venting_adder(target, d, c_in)
+                ventmask = gidney_cq_venting_adder(d, target, c_in)
         return measure(target), measure(ctrl_qbl), ventmask
     result_target, result_ctrl, ventmask = run()
     assert int(result_target) == expected
@@ -384,7 +384,7 @@ def test_non_jasp_mode_raises_error():
     """Verify that calling gidney_cq_venting_adder outside JASP mode raises RuntimeError."""
     target = QuantumVariable(3)
     with pytest.raises(RuntimeError, match="The Gidney Classical-Quantum adder does not work in standard python execution mode."):
-        gidney_cq_venting_adder(target, 1)
+        gidney_cq_venting_adder(1, target)
 
 
 def test_no_additional_toffoli_cost():
@@ -401,7 +401,7 @@ def test_no_additional_toffoli_cost():
         target = QuantumVariable(5)
         _set_qubits(target, 7, 5)
         anc = QuantumVariable(2)
-        carry_venting_adder(target, 3, anc)
+        carry_venting_adder(3, target, anc)
         return measure(target)
 
     @count_ops(meas_behavior="0")
@@ -411,7 +411,7 @@ def test_no_additional_toffoli_cost():
         anc = QuantumVariable(2)
         ctrl_qbl = QuantumVariable(1)
         x(ctrl_qbl[0])
-        carry_venting_adder(target, 3, anc, ctrl=ctrl_qbl[0])
+        carry_venting_adder(3, target, anc, ctrl=ctrl_qbl[0])
         return measure(target)
 
     a = unctrl()
