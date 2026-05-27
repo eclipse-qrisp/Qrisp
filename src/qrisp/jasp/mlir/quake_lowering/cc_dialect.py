@@ -1,3 +1,4 @@
+# cc_dialect.py
 """
 ********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
@@ -72,15 +73,37 @@ from xdsl.printer import Printer
 
 @irdl_attr_definition
 class CcStdVecType(ParametrizedAttribute, TypeAttribute):
-    """CUDA-Q CC ``!cc.stdvec<!quake.measure>`` type.
+    """CUDA-Q CC ``!cc.stdvec<T>`` type.
 
-    Return type of ``quake.mz`` when measuring an entire ``!quake.veq<?>``.
+    When used without an explicit element_type parameter, prints as
+    ``!cc.stdvec<!quake.measure>`` (the return type of quake.mz on veq).
+    
+    When constructed with an element_type parameter, prints as
+    ``!cc.stdvec<T>`` for the given element type (used for array params).
     """
 
     name = "cc.stdvec"
 
+    element_type: Attribute
+
+    def __init__(self, element_type: Attribute | None = None) -> None:
+        if element_type is None:
+            # Sentinel: use a StringAttr to mark "quake.measure" without importing it
+            from xdsl.dialects.builtin import StringAttr
+            element_type = StringAttr("!quake.measure")
+        super().__init__(element_type)
+
     def print_parameters(self, printer: Printer) -> None:
-        printer.print_string("<!quake.measure>")
+        from xdsl.dialects.builtin import StringAttr
+        if isinstance(self.element_type, StringAttr):
+            # Legacy: print as <!quake.measure>
+            printer.print_string("<")
+            printer.print_string(self.element_type.data)
+            printer.print_string(">")
+        else:
+            printer.print_string("<")
+            printer.print_attribute(self.element_type)
+            printer.print_string(">")
 
 
 @irdl_attr_definition
@@ -391,7 +414,10 @@ from xdsl.dialects.builtin import IntegerAttr, i64 as i64_type
 
 @irdl_attr_definition
 class CcArrayType(ParametrizedAttribute, TypeAttribute):
-    """Fixed-size array type: ``!cc.array<T x N>``."""
+    """Fixed-size or dynamic-size array type: ``!cc.array<T x N>`` or ``!cc.array<T x ?>``.
+    
+    Use size=-1 to represent dynamic size (prints as ``?``).
+    """
 
     name = "cc.array"
 
@@ -405,7 +431,10 @@ class CcArrayType(ParametrizedAttribute, TypeAttribute):
         size_val = self.size.value.data
         printer.print_string("<")
         printer.print_attribute(self.element_type)
-        printer.print_string(f" x {size_val}>")
+        if size_val < 0:
+            printer.print_string(" x ?>")
+        else:
+            printer.print_string(f" x {size_val}>")
 
 
 @irdl_op_definition
@@ -496,6 +525,35 @@ class CcCastOp(IRDLOperation):
         printer.print_string(") -> ")
         printer.print_attribute(self.result.type)
 
+
+# ---------------------------------------------------------------------------
+# StdVec ops (used by pass4 array-to-stdvec lowering)
+# ---------------------------------------------------------------------------
+
+
+@irdl_op_definition
+class CcStdVecDataOp(IRDLOperation):
+    """Extract raw data pointer from a stdvec.
+
+    ``%ptr = cc.stdvec_data %vec : (!cc.stdvec<T>) -> !cc.ptr<!cc.array<T x ?>>``
+    """
+
+    name = "cc.stdvec_data"
+    vec = operand_def(AnyAttr())
+    result = result_def(AnyAttr())
+
+    def __init__(self, vec: SSAValue, result_type: Attribute) -> None:
+        super().__init__(operands=[vec], result_types=[result_type])
+
+    def print(self, printer: Printer) -> None:
+        printer.print_string(" ")
+        printer.print_ssa_value(self.vec)
+        printer.print_string(" : (")
+        printer.print_attribute(self.vec.type)
+        printer.print_string(") -> ")
+        printer.print_attribute(self.result.type)
+
+
 # ---------------------------------------------------------------------------
 # Dialect registration
 # ---------------------------------------------------------------------------
@@ -516,5 +574,7 @@ class CcDialect(Dialect):
         CcLoadOp,
         CcComputePtrOp,
         CcCastOp,
+        CcStdVecDataOp,
     ]
     attributes = [CcStdVecType, CcPtrType, CcArrayType]
+    

@@ -37,7 +37,7 @@ Usage example::
 
 Pipeline
 --------
-The lowering consists of three passes:
+The lowering consists of the following passes:
 
 1. **PASS 1** (:mod:`.pass1_jasp_to_quake`) – Replace every ``jasp.*`` op by
    its Quake equivalent and eliminate the ``!jasp.QuantumState`` threading.
@@ -45,9 +45,13 @@ The lowering consists of three passes:
    (where they have no SSA results) with ``cc.if`` / ``cc.loop``.
 3. **PASS 3** (:mod:`.pass3_tensor_unwrap`) – Fold trivial rank-0 tensor
    constants / extracts into scalars.
+3a. **PASS 3a** (:mod:`.pass3a_ranked_tensor`) – Lower ranked tensor constants
+    and accesses to CC array operations.
+4. **PASS 4** (:mod:`.pass4_array_to_stdvec`) – Rewrite static array pointer
+   parameters to ``!cc.stdvec<T>`` for CUDA-Q runtime compatibility.
 
-The returned ``builtin.ModuleOp`` contains only Quake + CC + arith/tensor/func
-ops; no ``!jasp.*`` types remain.
+The returned ``builtin.ModuleOp`` contains only Quake + CC + arith/func ops;
+no ``!jasp.*`` types or tensor ops remain.
 """
 
 
@@ -58,6 +62,7 @@ from qrisp.jasp.mlir.quake_lowering.pass1_jasp_to_quake import lower_jasp_to_qua
 from qrisp.jasp.mlir.quake_lowering.pass2_scf_to_cc import lower_scf_to_cc
 from qrisp.jasp.mlir.quake_lowering.pass3a_ranked_tensor import lower_ranked_tensors
 from qrisp.jasp.mlir.quake_lowering.pass3_tensor_unwrap import unwrap_tensors
+from qrisp.jasp.mlir.quake_lowering.pass4_array_to_stdvec import lower_array_params_to_stdvec
 from qrisp.jasp.mlir.mlir_rewrites.scalar_tensor_folding import scalar_tensor_folding
 
 
@@ -95,14 +100,14 @@ def jaspr_to_quake(jaspr, lower_stableHLO: bool = True) -> ModuleOp:
     lower_scf_to_cc(module)
 
     # Step 4 – PASS 3b: tensor unwrapping + scalar constant folding.
-    # Must run BEFORE pass 3a so that 0-rank returns are rewritten to
-    # scalar returns (inserting tensor.extract []) before the ranked-tensor
-    # lowering tries to match the extract_slice → collapse_shape → extract chain.
     unwrap_tensors(module)
 
     scalar_tensor_folding(Context(), module)
 
     # Step 5 – PASS 3a: ranked tensor → CC array lowering.
     lower_ranked_tensors(module)
+
+    # Step 6 – PASS 4: array ptr params → stdvec (CUDA-Q runtime compat).
+    lower_array_params_to_stdvec(module)
 
     return module

@@ -226,6 +226,47 @@ def test_multishot_array_param_with_cudaq_run():
         assert outcome == 0
 
 
+def test_dynamic_index_into_array_parameter():
+    """Dynamic index into a FixedShapeNDArray parameter: qubit is |0⟩ so
+    measure returns 0 and angles[0] = 0.0 is selected, leaving the qubit in |0⟩."""
+
+    @qrisp_cudaq_kernel
+    def circuit(angles: FixedShapeNDArray(float, 3)):
+        qv = QuantumVariable(1)
+        ind = jnp.int32(measure(qv[0]))
+        rx(angles[ind], qv[0])
+        return measure(qv[0])
+
+    angles = np.array([0.0, 1.57, 3.14])
+    result = cudaq.run(circuit, angles, shots_count=10)
+    assert result == 10 * [0]
+
+
+def test_dynamic_index_into_array_parameter_in_loop():
+    """Dynamic index into a FixedShapeNDArray parameter inside a loop."""
+
+    @qrisp_cudaq_kernel
+    def test_circuit(angles: FixedShapeNDArray(float, 5)):
+        qv = QuantumFloat(5)
+
+        def cond_fun(val):
+            i, qv = val
+            return i < 5
+    
+        def body_fun(val):
+            i, qv = val
+            ry(angles[i], qv[i])
+            return i+1, qv
+
+        q_while_loop(cond_fun, body_fun, (0, qv))
+
+        return measure(qv)
+
+    angles = np.array([1.57, 0.78, 0.39, 0.25, 0.12])
+    result = cudaq.run(test_circuit, angles, shots_count=10)
+    assert result is not None
+
+
 # ---------------------------------------------------------------------------
 # Negative tests: FixedShapeNDArray construction
 # ---------------------------------------------------------------------------
@@ -284,22 +325,6 @@ def test_unsupported_annotation_raises():
         def bad_ann(k: str):
             qv = QuantumFloat(1)
             return measure(qv[0])
-
-
-def test_dynamic_index_into_array_parameter():
-    """Dynamic index into a FixedShapeNDArray parameter: qubit is |0⟩ so
-    measure returns 0 and angles[0] = 0.0 is selected, leaving the qubit in |0⟩."""
-
-    @qrisp_cudaq_kernel
-    def circuit(angles: FixedShapeNDArray(float, 3)):
-        qv = QuantumVariable(1)
-        ind = jnp.int32(measure(qv[0]))
-        rx(angles[ind], qv[0])
-        return measure(qv[0])
-
-    angles = np.array([0.0, 1.57, 3.14])
-    result = cudaq.run(circuit, angles, shots_count=10)
-    assert result == 10 * [0]
 
 
 if __name__ == "__main__":

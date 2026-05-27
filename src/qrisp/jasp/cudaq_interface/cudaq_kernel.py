@@ -27,11 +27,12 @@
 #    CUDA-Q C++ backend.
 #  - Synthesising the .run / .run.entry function variants that CUDA-Q's
 #    shot-based sampling infrastructure expects.
-#  - Rewriting !cc.ptr<!cc.array<T x N>> parameters to !cc.stdvec<T> so
-#    that CUDA-Q's Python marshaling layer can handle numpy array arguments.
 #  - Wrapping the compiled module in a genuine PyKernelDecorator so the
 #    result behaves exactly like a @cudaq.kernel-decorated function.
 #  - Providing the @qrisp_cudaq_kernel user-facing decorator.
+#
+# The array-param → stdvec rewriting is now handled by pass4_array_to_stdvec
+# at the xDSL IR level, before the MLIR string is produced.
 #
 # Public API is re-exported via qrisp.jasp.cudaq_interface.__init__.
 # cudaq is an optional dependency; an ImportError here is caught by callers.
@@ -160,80 +161,6 @@ def _get_llvm_attributes() -> tuple:
 
 
 # ------------------------------------------------------------------ #
-# MLIR rewriting pass: static array params → stdvec
-# ------------------------------------------------------------------ #
-
-
-def _rewrite_array_params_to_stdvec(param_list: str, body: str) -> tuple:
-    """Rewrite ``!cc.ptr<!cc.array<T x N>>`` parameters to ``!cc.stdvec<T>``.
-
-    Jaspr traces numpy arrays as fixed-size C-array pointers.  CUDA-Q's
-    Python marshaling layer only understands ``!cc.stdvec<T>`` for
-    list / array arguments passed from Python.  This pass:
-
-    1. Replaces the parameter type in the function signature.
-    2. Inserts a ``cc.stdvec_data`` instruction at the top of the body to
-       obtain a raw ``!cc.ptr<!cc.array<T x ?>>`` from the stdvec.
-    3. Rewrites all ``cc.compute_ptr`` references that used the argument
-       directly to use the new raw-pointer SSA value, and updates their
-       type annotations from the static ``T x N`` to the dynamic ``T x ?``.
-
-    Parameters
-    ----------
-    param_list : str
-        The ``(...)`` parameter list text extracted from the ``@main`` header.
-    body : str
-        The function body text (content between the outer braces).
-
-    Returns
-    -------
-    (new_param_list, new_body)
-        Rewritten strings ready to be injected into the adapted MLIR.
-    """
-    array_params = re.findall(
-        r"(%arg\w+)\s*:\s*!cc\.ptr<!cc\.array<([a-z0-9]+)\s*x\s*(\d+)>>",
-        param_list,
-    )
-    if not array_params:
-        return param_list, body
-
-    new_param_list = param_list
-    preamble_lines = []
-    new_body = body
-
-    for arg_name, elem_type, size in array_params:
-        static_type = f"!cc.ptr<!cc.array<{elem_type} x {size}>>"
-        stdvec_type = f"!cc.stdvec<{elem_type}>"
-        dyn_ptr_type = f"!cc.ptr<!cc.array<{elem_type} x ?>>"
-        data_var = f"{arg_name}_ptr"
-
-        new_param_list = new_param_list.replace(
-            f"{arg_name}: {static_type}",
-            f"{arg_name}: {stdvec_type}",
-        )
-
-        preamble_lines.append(
-            f"{data_var} = cc.stdvec_data {arg_name} "
-            f": ({stdvec_type}) -> {dyn_ptr_type}"
-        )
-
-        new_body = re.sub(
-            rf"cc\.compute_ptr\s+{re.escape(arg_name)}\[",
-            f"cc.compute_ptr {data_var}[",
-            new_body,
-        )
-
-        new_body = new_body.replace(f"({static_type},", f"({dyn_ptr_type},")
-        new_body = new_body.replace(f"({static_type})", f"({dyn_ptr_type})")
-
-    if preamble_lines:
-        preamble_str = "\n    ".join(preamble_lines)
-        new_body = preamble_str + "\n    " + new_body
-
-    return new_param_list, new_body
-
-
-# ------------------------------------------------------------------ #
 # Main entry point
 # ------------------------------------------------------------------ #
 
@@ -245,6 +172,9 @@ def cudaq_kernel_from_mlir(mlir_str: str) -> PyKernelDecorator:
     The input MLIR must define a ``@main`` function with a
     ``cudaq-entrypoint`` attribute.  The function may optionally return a
     value (e.g. an ``i64`` measurement result).
+
+    The MLIR is expected to already have array parameters in
+    ``!cc.stdvec<T>`` form (as produced by pass4_array_to_stdvec).
 
     The returned kernel is a first-class CUDA-Q kernel object and supports
     all standard CUDA-Q execution patterns:
@@ -355,9 +285,6 @@ def cudaq_kernel_from_mlir(mlir_str: str) -> PyKernelDecorator:
                     param_list = header_raw[first_paren : i + 1]
                     break
 
-    param_list, main_func_body = _rewrite_array_params_to_stdvec(
-        param_list, main_func_body
-    )
     run_body = main_func_body
 
     return_match = re.search(r"func\.return\s+(%\w+)\s*:\s*(.+)", main_func_body)
@@ -535,9 +462,7 @@ def qrisp_cudaq_kernel(func):
         print(bell())                            # single-shot, e.g. 0 or 3
         print(cudaq.run(bell, shots_count=100))  # multi-shot, no () needed
 
-    Parameterised kernel with scalar and array annotations#
-
-    ::
+    Parameterised kernel with scalar and array annotations::
 
         import cudaq
         import numpy as np
@@ -564,11 +489,6 @@ def qrisp_cudaq_kernel(func):
         print(cudaq.run(circuit_arr, angles, shots_count=100))
 
     """
-    # The MLIR parameter is automatically
-    # rewritten from the static ``!cc.ptr<!cc.array<T x N>>`` type produced
-    # by Jaspr to the ``!cc.stdvec<T>`` type required by CUDA-Q's marshaling
-    # layer.
-
     sig = inspect.signature(func)
     params = list(sig.parameters.values())
 
