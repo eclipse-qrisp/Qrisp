@@ -18,33 +18,28 @@
 """
 
 """
-PASS 4 – CC Array Pointer → CC StdVec Lowering (Entrypoint Only)
-=================================================================
+PASS 4 – CC Array Pointer → CC StdVec Lowering (Entrypoint + Propagation)
+===========================================================================
 
-Rewrites ``!cc.ptr<!cc.array<T x N>>`` function parameters to
-``!cc.stdvec<T>`` for CUDA-Q runtime compatibility.
+Rewrites ``!cc.ptr<!cc.array<T x N>>`` function parameters for CUDA-Q
+runtime compatibility.
 
-**Only the entrypoint function** (marked with ``cudaq.entrypoint = "true"``)
-is rewritten, because only the entrypoint receives arguments from the Python
-runtime via CUDA-Q's marshaling layer (which uses ``!cc.stdvec<T>``).
+**Entrypoint function** (marked with ``cudaq.entrypoint = "true"``):
+  - Parameter type → ``!cc.stdvec<T>``
+  - Inserts ``cc.stdvec_data`` to extract ``!cc.ptr<!cc.array<T x ?>>``
+  - All uses of the parameter get the dynamic ptr
 
-Internal helper functions called from the entrypoint receive their array
-arguments as raw ``!cc.ptr<!cc.array<T x N>>`` pointers directly and do
-NOT need stdvec conversion.
+**Internal helper functions**:
+  - Only params that receive a dynamic-ptr value from the entrypoint
+    (traced through call sites) are converted to ``!cc.ptr<!cc.array<T x ?>>``.
+  - Params that receive locally-allocated arrays (``cc.alloca``) are left
+    unchanged.
 
-This pass:
-1. Changes the entrypoint's parameter type to ``!cc.stdvec<T>``.
-2. Inserts a ``cc.stdvec_data`` op at the top of the entrypoint body
-   to extract a raw ``!cc.ptr<!cc.array<T x ?>>`` pointer.
-3. Replaces all uses of the original parameter with the extracted pointer.
-4. Updates type annotations in any cc.loop ops that carry the pointer
-   as a loop-carried value.
-
-This pass operates on the xDSL IR level (not string-based), ensuring
-correctness across all uses including inside nested regions (cc.loop,
-cc.if, etc.).
+This ensures type consistency at ALL call sites without breaking functions
+that receive concrete locally-allocated arrays.
 """
 
+from xdsl.dialects import func as func_dialect
 from xdsl.dialects.builtin import FunctionType, StringAttr
 from xdsl.ir import Block, Region, SSAValue
 from xdsl.rewriter import Rewriter
@@ -64,57 +59,109 @@ from qrisp.jasp.mlir.quake_lowering.cc_dialect import (
 
 
 def lower_array_params_to_stdvec(module) -> None:
-    """In-place pass: rewrite !cc.ptr<!cc.array<T x N>> params to !cc.stdvec<T>.
+    """In-place pass: rewrite !cc.ptr<!cc.array<T x N>> params.
 
-    Only processes the entrypoint function (cudaq.entrypoint = "true").
-    Internal helper functions are left unchanged.
+    1. Process entrypoint: param → !cc.stdvec<T> + cc.stdvec_data
+    2. Trace which dynamic ptrs flow into internal function calls
+    3. Update only those internal function params that receive dynamic ptrs
     """
+    # Find the entrypoint and all functions
+    entrypoint = None
+    all_funcs = {}
     for op in list(module.body.blocks[0].ops):
-        if op.name == "func.func" and _is_entrypoint(op):
-            _process_func(op)
+        if op.name == "func.func":
+            name = _get_func_name(op)
+            all_funcs[name] = op
+            if _is_entrypoint(op):
+                entrypoint = op
+
+    if entrypoint is None:
+        return
+
+    # Step 1: Process the entrypoint (stdvec + stdvec_data)
+    dynamic_ptrs = _process_entrypoint(entrypoint)
+
+    # Step 2: Trace dynamic ptrs through call sites and propagate to callees
+    if dynamic_ptrs:
+        _propagate_dynamic_types(entrypoint, all_funcs, dynamic_ptrs)
+
+
+def _get_func_name(func_op) -> str:
+    """Get the function name from a func.func op."""
+    if hasattr(func_op, "sym_name"):
+        name = func_op.sym_name
+        if hasattr(name, "data"):
+            return name.data
+        return str(name)
+    return ""
 
 
 def _is_entrypoint(func_op) -> bool:
     """Check if a function has the cudaq.entrypoint attribute."""
-    ep_attr = func_op.attributes.get("cudaq.entrypoint")
+    # func_op.attributes is a dict-like mapping in xDSL
+    try:
+        ep_attr = func_op.attributes.get("cudaq.entrypoint")
+    except (TypeError, AttributeError):
+        ep_attr = None
+
     if ep_attr is None:
-        return False
+        # Fallback: check if this is the "main" function
+        return _get_func_name(func_op) == "main"
+
     if isinstance(ep_attr, StringAttr):
         return ep_attr.data == "true"
     return bool(ep_attr)
 
 
-def _process_func(func_op) -> None:
-    """Process the entrypoint function: find array ptr params and rewrite them.
+def _get_func_inputs(func_op) -> list:
+    """Get function input types as a Python list (handles ArrayAttr)."""
+    ftype = func_op.function_type
+    inputs = ftype.inputs
+    if hasattr(inputs, "data"):
+        return list(inputs.data)
+    return list(inputs)
 
-    Strategy for each array ptr param:
-    1. Insert cc.stdvec_data op that takes the param as input
-    2. Replace all OTHER uses of the param with the stdvec_data result
-    3. Update cc.loop block args and result types that carried the old ptr type
-    4. Mutate the param's type to !cc.stdvec<T> in-place
+
+def _get_func_outputs(func_op) -> list:
+    """Get function output types as a Python list (handles ArrayAttr)."""
+    ftype = func_op.function_type
+    outputs = ftype.outputs
+    if hasattr(outputs, "data"):
+        return list(outputs.data)
+    return list(outputs)
+
+
+# ===================================================================
+# Entrypoint processing (stdvec + stdvec_data)
+# ===================================================================
+
+
+def _process_entrypoint(func_op) -> set:
+    """Process the entrypoint function: array ptr → stdvec + stdvec_data.
+
+    Returns a set of SSAValues that are dynamic ptrs (stdvec_data results).
     """
     if not func_op.body.blocks:
-        return
+        return set()
 
-    ftype = func_op.function_type
     block = func_op.body.blocks[0]
+    inputs = _get_func_inputs(func_op)
 
     # Identify which args are !cc.ptr<!cc.array<T x N>> with static size
     rewrites = []  # list of (arg_idx, elem_type, static_size)
-    for i, inp_type in enumerate(ftype.inputs):
-        if (isinstance(inp_type, CcPtrType)
-                and isinstance(inp_type.element_type, CcArrayType)):
+    for i, inp_type in enumerate(inputs):
+        if _is_static_array_ptr(inp_type):
             arr_type = inp_type.element_type
             elem_type = arr_type.element_type
             size = arr_type.size.value.data
-            if size > 0:  # Skip already-dynamic arrays (size == -1)
-                rewrites.append((i, elem_type, size))
+            rewrites.append((i, elem_type, size))
 
     if not rewrites:
-        return
+        return set()
 
     # Build new function signature
-    new_inputs = list(ftype.inputs)
+    new_inputs = list(inputs)
+    dynamic_ptrs = set()
 
     # Process each array param
     first_op = block.first_op
@@ -156,16 +203,147 @@ def _process_func(func_op) -> None:
         # 9. Mutate the arg's type to stdvec in-place.
         _set_block_arg_type(arg, stdvec_type)
 
+        # 10. Track the dynamic ptr
+        dynamic_ptrs.add(stdvec_data_op.result)
+
     # Update the function type
-    func_op.function_type = FunctionType.from_lists(new_inputs, list(ftype.outputs))
+    outputs = _get_func_outputs(func_op)
+    func_op.function_type = FunctionType.from_lists(new_inputs, outputs)
+
+    return dynamic_ptrs
+
+
+# ===================================================================
+# Propagation: trace dynamic ptrs through calls to internal functions
+# ===================================================================
+
+
+def _propagate_dynamic_types(func_op, all_funcs: dict, dynamic_ptrs: set) -> None:
+    """Trace dynamic ptrs through call sites and update callee signatures.
+
+    Walks the function body looking for func.call ops. For each call, checks
+    which operands are dynamic ptrs. For those operands, updates the callee's
+    corresponding parameter type to !cc.ptr<!cc.array<T x ?>>.
+
+    Then recursively propagates into the callee (the callee's updated params
+    become dynamic ptrs that may flow into further calls).
+    """
+    if not func_op.body.blocks:
+        return
+
+    # Also consider loop results as dynamic ptrs if they carry a dynamic ptr type
+    _collect_dynamic_ptrs_from_loops(func_op.body, dynamic_ptrs)
+
+    # Find all call sites in this function
+    for block in func_op.body.blocks:
+        for op in list(block.ops):
+            if isinstance(op, func_dialect.CallOp):
+                callee_name = op.callee.string_value()
+                callee_op = all_funcs.get(callee_name)
+                if callee_op is None:
+                    continue
+
+                # Check which operands are dynamic ptrs
+                callee_dynamic_ptrs = set()
+                for i, operand in enumerate(op.operands):
+                    if operand in dynamic_ptrs or _is_dynamic_array_ptr(operand.type):
+                        # This operand is a dynamic ptr — update callee's param
+                        _update_callee_param(callee_op, i)
+                        # The callee's block arg at this index is now also a dynamic ptr
+                        if callee_op.body.blocks:
+                            callee_block = callee_op.body.blocks[0]
+                            if i < len(callee_block.args):
+                                callee_dynamic_ptrs.add(callee_block.args[i])
+
+                # Recursively propagate into the callee
+                if callee_dynamic_ptrs:
+                    _propagate_dynamic_types(callee_op, all_funcs, callee_dynamic_ptrs)
+
+
+def _collect_dynamic_ptrs_from_loops(region: Region, dynamic_ptrs: set) -> None:
+    """Collect loop results that carry dynamic ptr types into the dynamic_ptrs set."""
+    for block in region.blocks:
+        for op in list(block.ops):
+            if isinstance(op, CcLoopOp):
+                for res in op.res:
+                    if _is_dynamic_array_ptr(res.type):
+                        dynamic_ptrs.add(res)
+                for nested_region in op.regions:
+                    _collect_dynamic_ptrs_from_loops(nested_region, dynamic_ptrs)
+            else:
+                for nested_region in op.regions:
+                    _collect_dynamic_ptrs_from_loops(nested_region, dynamic_ptrs)
+
+
+def _update_callee_param(callee_op, param_idx: int) -> None:
+    """Update a single parameter of a callee to dynamic ptr type.
+
+    Only updates if the param is currently a static array ptr.
+    """
+    if not callee_op.body.blocks:
+        return
+
+    inputs = _get_func_inputs(callee_op)
+    if param_idx >= len(inputs):
+        return
+
+    current_type = inputs[param_idx]
+    if not _is_static_array_ptr(current_type):
+        return  # Already dynamic or not an array ptr — skip
+
+    # Determine the dynamic ptr type
+    arr_type = current_type.element_type
+    elem_type = arr_type.element_type
+    old_size = arr_type.size.value.data
+    dyn_arr_type = CcArrayType(elem_type, -1)
+    dyn_ptr_type = CcPtrType(dyn_arr_type)
+
+    old_static_arr_type = CcArrayType(elem_type, old_size)
+    old_static_ptr_type = CcPtrType(old_static_arr_type)
+
+    # Update function signature
+    new_inputs = list(inputs)
+    new_inputs[param_idx] = dyn_ptr_type
+    outputs = _get_func_outputs(callee_op)
+    callee_op.function_type = FunctionType.from_lists(new_inputs, outputs)
+
+    # Update block arg type
+    block = callee_op.body.blocks[0]
+    if param_idx < len(block.args):
+        _set_block_arg_type(block.args[param_idx], dyn_ptr_type)
+
+    # Update any loops that carry this type
+    _update_loop_types_recursive(callee_op.body, old_static_ptr_type, dyn_ptr_type)
+
+
+# ===================================================================
+# Type predicates
+# ===================================================================
+
+
+def _is_static_array_ptr(t) -> bool:
+    """Check if type is !cc.ptr<!cc.array<T x N>> with N > 0."""
+    return (isinstance(t, CcPtrType)
+            and isinstance(t.element_type, CcArrayType)
+            and t.element_type.size.value.data > 0)
+
+
+def _is_dynamic_array_ptr(t) -> bool:
+    """Check if type is !cc.ptr<!cc.array<T x ?>> (size == -1)."""
+    return (isinstance(t, CcPtrType)
+            and isinstance(t.element_type, CcArrayType)
+            and t.element_type.size.value.data < 0)
+
+
+# ===================================================================
+# Shared helpers
+# ===================================================================
 
 
 def _update_loop_types_recursive(region: Region, old_type, new_type) -> None:
     """Recursively walk all cc.loop ops and update block arg / result types.
 
     Any block arg or result that has `old_type` is changed to `new_type`.
-    This ensures type annotations in cc.condition, cc.continue, and the
-    loop header are consistent with the actual operand types.
     """
     for block in region.blocks:
         for op in list(block.ops):
@@ -191,10 +369,7 @@ def _update_loop_types_recursive(region: Region, old_type, new_type) -> None:
 
 
 def _types_match(t1, t2) -> bool:
-    """Check if two types are structurally equivalent.
-
-    Compares CcPtrType<CcArrayType<elem, size>> structures.
-    """
+    """Check if two types are structurally equivalent."""
     if type(t1) != type(t2):
         return False
     if isinstance(t1, CcPtrType) and isinstance(t2, CcPtrType):
@@ -206,12 +381,7 @@ def _types_match(t1, t2) -> bool:
 
 
 def _set_block_arg_type(arg, new_type) -> None:
-    """Mutate a BlockArgument's type in-place.
-
-    xDSL's BlockArgument.type is a read-only property. We access the
-    underlying storage attribute to change it without creating a new
-    SSA value (which would mangle the name).
-    """
+    """Mutate a BlockArgument's type in-place."""
     if hasattr(arg, "_type"):
         arg._type = new_type
     elif hasattr(arg, "typ"):
@@ -251,10 +421,7 @@ def _set_ssa_value_type(val: SSAValue, new_type) -> None:
 
 
 def _replace_uses_except(old_val: SSAValue, new_val: SSAValue, except_op) -> None:
-    """Replace all uses of old_val with new_val, except in except_op.
-
-    This iterates over all uses and directly patches the operand reference.
-    """
+    """Replace all uses of old_val with new_val, except in except_op."""
     for use in list(old_val.uses):
         if use.operation is not except_op:
             use.operation.operands[use.index] = new_val
