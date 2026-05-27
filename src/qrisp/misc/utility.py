@@ -2345,9 +2345,9 @@ def batched_measurement(variables, backend, shots=None):
     ::
 
         from qrisp import QuantumFloat, batched_measurement
-        from qrisp.default_backend import QrispSimulator
+        from qrisp.default_backend import QrispSimulatorBackend
 
-        bb = QrispSimulator().batched()
+        bb = QrispSimulatorBackend().batched()
 
         a = QuantumFloat(4)
         b = QuantumFloat(3)

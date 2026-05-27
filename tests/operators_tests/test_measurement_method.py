@@ -19,11 +19,11 @@
 import random
 from qrisp.operators import X, Y, Z, A, C, P0, P1
 from qrisp import *
-from qrisp.default_backend import QrispSimulator
+from qrisp.default_backend import QrispSimulatorBackend
 
 def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
 
-    non_sampling_backend = QrispSimulator()
+    non_sampling_backend = QrispSimulatorBackend()
 
     def testing_helper(qv, operator_combinations):
         for H in operator_combinations:
@@ -104,7 +104,7 @@ def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
 
     H = Z(0)*Z(1)*Z(2)*Z(3) + X(0)*X(1)*X(2)*X(3)
 
-    bb = QrispSimulator().batched()
+    bb = QrispSimulatorBackend().batched()
 
     ev = H.expectation_value(lambda : f, backend = bb)()
     

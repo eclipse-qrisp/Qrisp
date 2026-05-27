@@ -14,7 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""This module defines :class:`QrispSimulator` and its associated :class:`QrispSimulatorJob`."""
+"""This module defines :class:`QrispSimulatorBackend` and its associated :class:`QrispSimulatorJob`."""
 
 from typing import Sequence, cast
 
@@ -26,9 +26,9 @@ from qrisp.simulator.simulator import run as default_run
 
 class QrispSimulatorJob(Job):
     """
-    A synchronous :class:`~qrisp.interface.Job` produced by :class:`QrispSimulator`."""
+    A synchronous :class:`~qrisp.interface.Job` produced by :class:`QrispSimulatorBackend`."""
 
-    def __init__(self, backend: "QrispSimulator", circuits: Sequence, shots):
+    def __init__(self, backend: "QrispSimulatorBackend", circuits: Sequence, shots):
         """Initialise the job with the backend, normalised circuit list, and shot count."""
         super().__init__(backend=backend)
         self._circuits = circuits
@@ -66,7 +66,7 @@ class QrispSimulatorJob(Job):
         """Return the :class:`~qrisp.interface.JobResult`.
 
         Because the simulator is synchronous the result is already available
-        as soon as :meth:`submit` has been called by ``QrispSimulator.run_async``.
+        as soon as :meth:`submit` has been called by ``QrispSimulatorBackend.run_async``.
         The *timeout* parameter is accepted for interface compatibility but has
         no effect: the job is always already in a terminal state before this
         method can be called.
@@ -92,7 +92,7 @@ class QrispSimulatorJob(Job):
         return self._last_known_status
 
 
-class QrispSimulator(Backend):
+class QrispSimulatorBackend(Backend):
     """
     The built-in Qrisp statevector simulator backend.
 
@@ -118,11 +118,11 @@ class QrispSimulator(Backend):
 
     **Analytic execution (default)**
 
-    We first create a :class:`QrispSimulator`:
+    We first create a :class:`QrispSimulatorBackend`:
 
     >>> from qrisp import QuantumFloat
-    >>> from qrisp.interface.simulators.default_backend import QrispSimulator
-    >>> backend = QrispSimulator()
+    >>> from qrisp.interface.simulators.default_backend import QrispSimulatorBackend
+    >>> backend = QrispSimulatorBackend()
 
     When ``get_measurement`` is called, Qrisp compiles the computation into a
     circuit and passes it to the built-in simulator via :meth:`run_async`. A
@@ -155,8 +155,8 @@ class QrispSimulator(Backend):
     already available synchronously:
 
     >>> from qrisp import QuantumFloat
-    >>> from qrisp.interface.simulators.default_backend import QrispSimulator
-    >>> backend = QrispSimulator()
+    >>> from qrisp.interface.simulators.default_backend import QrispSimulatorBackend
+    >>> backend = QrispSimulatorBackend()
     >>> qf3 = QuantumFloat(2)
     >>> qf3[:] = 3
     >>> res3 = qf3 * qf3

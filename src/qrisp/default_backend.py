@@ -19,7 +19,7 @@ Default backend configuration.
 
 :data:`def_backend` is the module-level singleton used as the default backend
 throughout Qrisp when no explicit backend is provided. It is an instance of
-:class:`~qrisp.interface.simulators.default_backend.QrispSimulator`.
+:class:`~qrisp.interface.simulators.default_backend.QrispSimulatorBackend`.
 
 To change the global default, replace *def_backend* with a different backend
 instance, e.g.::
@@ -34,8 +34,8 @@ for convenience.
 """
 
 from qrisp.interface.simulators.default_backend import (
-    QrispSimulator,
+    QrispSimulatorBackend,
     QrispSimulatorJob,
 )
 
-def_backend = QrispSimulator()
+def_backend = QrispSimulatorBackend()

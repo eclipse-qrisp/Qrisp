@@ -14,12 +14,12 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Tests for QrispSimulator and QrispSimulatorJob."""
+"""Tests for QrispSimulatorBackend and QrispSimulatorJob."""
 
 import pytest
 
 from qrisp import QuantumFloat, h
-from qrisp.default_backend import QrispSimulator, QrispSimulatorJob, def_backend
+from qrisp.default_backend import QrispSimulatorBackend, QrispSimulatorJob, def_backend
 from qrisp.interface import BatchedBackend
 from qrisp.interface.job import JobResult, JobStatus
 from qrisp.interface.measurement_result import LazyDict
@@ -43,67 +43,67 @@ class TestQrispSimulatorJobInterface:
 
     def test_run_async_returns_qrisp_simulator_job(self):
         """Ensure run_async() returns a QrispSimulatorJob instance, not a raw dict."""
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
         res = _simple_computation()
         job = backend.run_async(res.qs.compile())
         assert isinstance(job, QrispSimulatorJob)
 
     def test_job_is_done_before_run_async_returns(self):
         """Ensure the job is already DONE when run_async() returns to the caller."""
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
         res = _simple_computation()
         job = backend.run_async(res.qs.compile())
         assert job.status() == JobStatus.DONE
 
     def test_job_done_returns_true(self):
         """Ensure done() is True after synchronous execution."""
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
         res = _simple_computation()
         job = backend.run_async(res.qs.compile())
         assert job.done() is True
 
     def test_job_in_final_state_returns_true(self):
         """Ensure in_final_state() is True after synchronous execution."""
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
         res = _simple_computation()
         job = backend.run_async(res.qs.compile())
         assert job.in_final_state() is True
 
     def test_result_returns_job_result_instance(self):
         """Ensure job.result() returns a JobResult object."""
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
         res = _simple_computation()
         job = backend.run_async(res.qs.compile())
         assert isinstance(job.result(), JobResult)
 
     def test_cancel_returns_false(self):
         """Ensure cancel() always returns False for a synchronous job."""
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
         res = _simple_computation()
         job = backend.run_async(res.qs.compile())
         assert job.cancel() is False
 
     def test_status_unchanged_after_cancel(self):
         """Ensure cancel() does not change the job status."""
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
         res = _simple_computation()
         job = backend.run_async(res.qs.compile())
         job.cancel()
         assert job.status() == JobStatus.DONE
 
 
-class TestQrispSimulatorAnalytic:
+class TestQrispSimulatorBackendAnalytic:
     """Tests for analytic (exact probability) execution with shots=None."""
 
     def test_analytic_result_is_correct(self):
         """Verify that a deterministic computation yields probability 1.0."""
-        backend = QrispSimulator()  # shots=None by default
+        backend = QrispSimulatorBackend()  # shots=None by default
         res = _simple_computation()
         assert res.get_measurement(backend=backend) == {9: 1.0}
 
     def test_analytic_probabilities_sum_to_one(self):
         """Verify that analytic result probabilities sum to 1.0."""
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
         res = _simple_computation()
         result = backend.run_async(res.qs.compile()).result()
         total = sum(result.get_counts().values())
@@ -111,14 +111,14 @@ class TestQrispSimulatorAnalytic:
 
     def test_analytic_result_contains_floats(self):
         """Verify that analytic results are floating-point probabilities, not integer counts."""
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
         res = _simple_computation()
         result = backend.run_async(res.qs.compile()).result()
         for value in result.get_counts().values():
             assert isinstance(value, float)
 
 
-class TestQrispSimulatorShots:
+class TestQrispSimulatorBackendShots:
     """Tests for shot-based (sampled) execution."""
 
     def test_shot_based_differs_from_analytic(self):
@@ -126,7 +126,7 @@ class TestQrispSimulatorShots:
         qv = QuantumFloat(1)
         h(qv[0])  # equal superposition of 0 and 1
 
-        backend = QrispSimulator()  # shots=None
+        backend = QrispSimulatorBackend()  # shots=None
         analytic_result = qv.get_measurement(backend=backend)
         assert analytic_result == {0: 0.5, 1: 0.5}
 
@@ -143,7 +143,7 @@ class TestQrispSimulatorShots:
         qv = QuantumFloat(1)
         h(qv[0])
 
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
         backend.update_options(shots=1)
         result = qv.get_measurement(backend=backend)
 
@@ -152,54 +152,54 @@ class TestQrispSimulatorShots:
         assert list(result.values())[0] == 1.0
 
 
-class TestQrispSimulatorOptions:
-    """Tests for QrispSimulator options handling."""
+class TestQrispSimulatorBackendOptions:
+    """Tests for QrispSimulatorBackend options handling."""
 
     def test_default_shots_is_none(self):
         """Ensure the default shots option is None (analytic execution)."""
-        assert QrispSimulator().options["shots"] is None
+        assert QrispSimulatorBackend().options["shots"] is None
 
     def test_default_token_is_empty_string(self):
         """Ensure the default token option is an empty string."""
-        assert QrispSimulator().options["token"] == ""
+        assert QrispSimulatorBackend().options["token"] == ""
 
     def test_update_options_shots(self):
         """Ensure shots can be updated via update_options."""
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
         backend.update_options(shots=512)
         assert backend.options["shots"] == 512
 
     def test_update_options_invalid_key_raises(self):
         """Ensure update_options raises AttributeError for an unknown key."""
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
         with pytest.raises(AttributeError):
             backend.update_options(nonexistent=42)
 
     def test_options_independent_between_instances(self):
         """Updating one instance must not affect another independent instance."""
-        b1 = QrispSimulator()
-        b2 = QrispSimulator()
+        b1 = QrispSimulatorBackend()
+        b2 = QrispSimulatorBackend()
         b1.update_options(shots=512)
         assert b2.options["shots"] is None
 
     def test_module_level_def_backend_is_qrisp_simulator(self):
-        """Ensure the module-level def_backend is a QrispSimulator instance."""
-        assert isinstance(def_backend, QrispSimulator)
+        """Ensure the module-level def_backend is a QrispSimulatorBackend instance."""
+        assert isinstance(def_backend, QrispSimulatorBackend)
 
 
-class TestQrispSimulatorBatched:
-    """Verify that QrispSimulator.batched() produces correct lazy results."""
+class TestQrispSimulatorBackendBatched:
+    """Verify that QrispSimulatorBackend.batched() produces correct lazy results."""
 
     def test_batched_returns_batched_backend(self):
         """batched() must return a BatchedBackend wrapping the original backend."""
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
         bb = backend.batched()
         assert isinstance(bb, BatchedBackend)
         assert bb._backend is backend
 
     def test_result_is_lazy_before_dispatch(self):
-        """get_measurement via batched QrispSimulator must raise before dispatch."""
-        bb = QrispSimulator().batched()
+        """get_measurement via batched QrispSimulatorBackend must raise before dispatch."""
+        bb = QrispSimulatorBackend().batched()
         res = _simple_computation().get_measurement(backend=bb)
         assert isinstance(res, LazyDict)
         with pytest.raises(RuntimeError, match="dispatch"):
@@ -214,7 +214,7 @@ class TestQrispSimulatorBatched:
         qf2 = QuantumFloat(3)
         qf2[:] = 5
 
-        bb = QrispSimulator().batched()
+        bb = QrispSimulatorBackend().batched()
         res1 = qf1.get_measurement(backend=bb)
         res2 = qf2.get_measurement(backend=bb)
         bb.dispatch()
@@ -223,8 +223,8 @@ class TestQrispSimulatorBatched:
         assert res2 == {5: 1.0}
 
     def test_n_circuits_one_run_async_call(self):
-        """Two circuits queued with QrispSimulator must produce exactly one run_async call."""
-        counting = CountingWrapper(QrispSimulator())
+        """Two circuits queued with QrispSimulatorBackend must produce exactly one run_async call."""
+        counting = CountingWrapper(QrispSimulatorBackend())
         bb = counting.batched()
 
         qf1 = QuantumFloat(3)
@@ -241,6 +241,6 @@ class TestQrispSimulatorBatched:
 
     def test_batched_inherits_shots_from_wrapped_backend(self):
         """BatchedBackend created via batched() inherits the wrapped backend's options."""
-        backend = QrispSimulator(options={"shots": 256, "token": ""})
+        backend = QrispSimulatorBackend(options={"shots": 256, "token": ""})
         bb = backend.batched()
         assert bb.options["shots"] == 256

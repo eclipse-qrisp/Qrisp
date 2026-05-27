@@ -115,7 +115,7 @@ class VirtualBackend(Backend):
 
         ``VirtualBackend`` is deprecated.  New code should subclass
         :class:`~qrisp.interface.Backend` directly instead.  See
-        :class:`~qrisp.default_backend.QrispSimulator` for a reference
+        :class:`~qrisp.default_backend.QrispSimulatorBackend` for a reference
         implementation.
 
     Parameters

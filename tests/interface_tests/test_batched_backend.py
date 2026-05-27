@@ -21,7 +21,7 @@ import warnings
 import pytest
 
 from qrisp import QuantumFloat, batched_measurement
-from qrisp.default_backend import QrispSimulator
+from qrisp.default_backend import QrispSimulatorBackend
 from qrisp.interface import BatchedBackend
 from qrisp.interface.backend import Backend
 from qrisp.interface.job import Job, JobResult, JobStatus
@@ -33,13 +33,13 @@ from qrisp.interface.measurement_result import (
 
 
 def _make_batched_backend():
-    """Return a fresh BatchedBackend wrapping QrispSimulator."""
-    return QrispSimulator().batched()
+    """Return a fresh BatchedBackend wrapping QrispSimulatorBackend."""
+    return QrispSimulatorBackend().batched()
 
 
 def test_batched_returns_batched_backend_instance():
     """Backend.batched() must return a BatchedBackend."""
-    backend = QrispSimulator()
+    backend = QrispSimulatorBackend()
     bb = backend.batched()
     assert isinstance(bb, BatchedBackend)
     assert bb._backend is backend
@@ -203,7 +203,7 @@ def test_docstring_basic_usage_example():
 
     a=1, b=2 → c=3; d=2, e=3 → f=5.
     """
-    backend = QrispSimulator()
+    backend = QrispSimulatorBackend()
     bb = backend.batched()
 
     a = QuantumFloat(4)
@@ -229,7 +229,7 @@ def test_docstring_basic_usage_example():
 
 def test_batched_measurement_function():
     """batched_measurement helper matches the usage shown in its docstring."""
-    backend = QrispSimulator()
+    backend = QrispSimulatorBackend()
     bb = backend.batched()
 
     a = QuantumFloat(4)
@@ -256,7 +256,7 @@ def test_options_delegates_to_wrapped_backend():
     Changes made directly to the backend must be visible through bb.options,
     proving that no separate copy is held.
     """
-    backend = QrispSimulator()
+    backend = QrispSimulatorBackend()
     bb = backend.batched()
 
     assert bb.options["shots"] == backend.options["shots"]
@@ -267,7 +267,7 @@ def test_options_delegates_to_wrapped_backend():
 
 def test_update_options_valid_key():
     """update_options() with a valid key must update both bb.options and backend.options."""
-    backend = QrispSimulator()
+    backend = QrispSimulatorBackend()
     bb = backend.batched()
 
     bb.update_options(shots=512)

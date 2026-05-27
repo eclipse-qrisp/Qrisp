@@ -86,9 +86,9 @@ class BatchedBackend:
     .. code-block:: python
 
         from qrisp import QuantumFloat
-        from qrisp.default_backend import QrispSimulator
+        from qrisp.default_backend import QrispSimulatorBackend
 
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
         batched_backend = backend.batched()
 
         a = QuantumFloat(4); a[:] = 1

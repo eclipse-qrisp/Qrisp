@@ -139,13 +139,13 @@ class MeasurementResult(LazyDict):
     .. code-block:: python
 
         from qrisp import QuantumCircuit
-        from qrisp.default_backend import QrispSimulator
+        from qrisp.default_backend import QrispSimulatorBackend
 
         circuit = QuantumCircuit(1)
         circuit.h(0)
         circuit.measure(0)
 
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
         result = backend.run(circuit, shots=1024)
 
     The object supports all standard dict-style operations:
@@ -180,9 +180,9 @@ class MeasurementResult(LazyDict):
     .. code-block:: python
 
         from qrisp import QuantumFloat
-        from qrisp.default_backend import QrispSimulator
+        from qrisp.default_backend import QrispSimulatorBackend
 
-        batched_backend = QrispSimulator().batched()
+        batched_backend = QrispSimulatorBackend().batched()
 
         qf = QuantumFloat(3)
         qf[:] = 5
@@ -275,9 +275,9 @@ class DecodedMeasurementResult(LazyDict):
     .. code-block:: python
 
         from qrisp import QuantumFloat
-        from qrisp.default_backend import QrispSimulator
+        from qrisp.default_backend import QrispSimulatorBackend
 
-        backend = QrispSimulator()
+        backend = QrispSimulatorBackend()
 
         qf = QuantumFloat(4)
         qf[:] = 7
@@ -308,9 +308,9 @@ class DecodedMeasurementResult(LazyDict):
     .. code-block:: python
 
         from qrisp import QuantumFloat
-        from qrisp.default_backend import QrispSimulator
+        from qrisp.default_backend import QrispSimulatorBackend
 
-        batched_backend = QrispSimulator().batched()
+        batched_backend = QrispSimulatorBackend().batched()
 
         a = QuantumFloat(4); a[:] = 3
         b = QuantumFloat(4); b[:] = 5
