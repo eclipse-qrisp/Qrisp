@@ -44,6 +44,7 @@ from qrisp.alg_primitives import amplitude_amplification, q_switch
 from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop, qache
 
 try:
+    import cudaq
     from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake, validate_quake_mlir
     from qrisp.jasp.cudaq_interface import run_quake_mlir, qrisp_cudaq_kernel, FixedShapeNDArray
 except ImportError as exc:
@@ -196,7 +197,6 @@ def test_multiple_scalar_params():
 
 def test_multishot_with_cudaq_run():
     """cudaq.run works directly on the kernel without calling it first."""
-    import cudaq
 
     @qrisp_cudaq_kernel
     def bell2():
@@ -213,7 +213,6 @@ def test_multishot_with_cudaq_run():
 
 def test_multishot_array_param_with_cudaq_run():
     """cudaq.run works with a FixedShapeNDArray kernel and zero angles."""
-    import cudaq
 
     @qrisp_cudaq_kernel
     def ry_kernel(angles: FixedShapeNDArray(float, 2)):
@@ -285,6 +284,22 @@ def test_unsupported_annotation_raises():
         def bad_ann(k: str):
             qv = QuantumFloat(1)
             return measure(qv[0])
+
+
+def test_dynamic_index_into_array_parameter():
+    """Dynamic index into a FixedShapeNDArray parameter: qubit is |0⟩ so
+    measure returns 0 and angles[0] = 0.0 is selected, leaving the qubit in |0⟩."""
+
+    @qrisp_cudaq_kernel
+    def circuit(angles: FixedShapeNDArray(float, 3)):
+        qv = QuantumVariable(1)
+        ind = jnp.int32(measure(qv[0]))
+        rx(angles[ind], qv[0])
+        return measure(qv[0])
+
+    angles = np.array([0.0, 1.57, 3.14])
+    result = cudaq.run(circuit, angles, shots_count=10)
+    assert result == 10 * [0]
 
 
 if __name__ == "__main__":

@@ -1112,8 +1112,68 @@ def test_array():
     assert result == 10*[0], f"Expected a measurement result of 0, got {result}"
 
 # ---------------------------------------------------------------------------
-# Test QuantumFloat
+# Test dynamic classical array indexing
 # ---------------------------------------------------------------------------
+
+def test_array_dynamic_index_return():
+    """Dynamic index into a classical array used as the return value."""
+
+    def main():
+        arr = jnp.array([1.57, 0.78, 0.39, 0.25, 0.12])
+        qv = QuantumVariable(1)
+        # qubit is |0⟩ so measure returns 0 → pick first element
+        ind = jnp.int32(measure(qv[0]))
+        return arr[ind]
+
+    mlir = _lower(main)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=5)
+    assert all(abs(r - 1.57) < 1e-6 for r in result), (
+        f"Expected all shots to return 1.57, got {result}"
+    )
+
+
+def test_array_dynamic_index_gate_angle():
+    """Dynamic index into a classical array used as a gate rotation angle."""
+
+    def main():
+        arr = jnp.array([0.0, 3.14159265])
+        qv = QuantumVariable(2)
+        # qubit 0 is |0⟩ → measure returns 0 → arr[0] = 0.0 → rz(0) leaves |0⟩
+        ind = jnp.int32(measure(qv[0]))
+        rz(arr[ind], qv[1])
+        return measure(qv[1])
+
+    mlir = _lower(main)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10 * [0], f"Expected all shots to return 0, got {result}"
+
+
+def test_array_dynamic_index_in_qache():
+    """Dynamic index into an array inside a @qache-decorated subroutine."""
+
+    @qache
+    def apply_angle(arr, qv):
+        ind = jnp.int32(measure(qv[0]))
+        rz(arr[ind], qv[1])
+        return measure(qv[1])
+
+    def main():
+        arr = jnp.array([0.0, 3.14159265])
+        qv = QuantumVariable(2)
+        return apply_angle(arr, qv)
+
+    mlir = _lower(main)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10 * [0], f"Expected all shots to return 0, got {result}"
+
+
+# ---------------------------------------------------------------------------
+# Test QuantumFloat and arithmetic operations
+# ---------------------------------------------------------------------------
+
 
 ops = [operator.add, operator.sub]
 rhs_type = ["classical", "quantum"]

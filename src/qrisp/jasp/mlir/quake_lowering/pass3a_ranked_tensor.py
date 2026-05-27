@@ -157,9 +157,22 @@ def _process_block_recursive(region: Region, array_map: dict, func_rewrites: dic
     for block in region.blocks:
         _process_block(block, array_map)
         _rewrite_calls_in_block(block, func_rewrites, array_map)
+        # Second dead-constant sweep: call rewriting may have removed the last
+        # use of a tensor constant that Phase 3 inside _process_block couldn't
+        # erase yet (because the call site still held a reference).
+        _erase_dead_tensor_constants(block)
         for op in list(block.ops):
             for nested_region in op.regions:
                 _process_block_recursive(nested_region, array_map, func_rewrites)
+
+
+def _erase_dead_tensor_constants(block: Block) -> None:
+    """Erase ranked-1 tensor constants that have no remaining uses."""
+    for op in list(block.ops):
+        if (isinstance(op, arith.ConstantOp)
+                and _is_ranked_1_tensor(op.result.type)
+                and not any(op.result.uses)):
+            Rewriter.erase_op(op, safe_erase=False)
 
 
 def _process_block(block: Block, array_map: dict) -> None:
@@ -170,10 +183,11 @@ def _process_block(block: Block, array_map: dict) -> None:
             inner = arg.type.element_type
             array_map[arg] = (arg, inner.element_type, inner.size.value.data)
 
-    # Phase 1: Materialize ranked tensor constants.
+    # Phase 1: Materialize ranked tensor constants (only if they have uses).
     for op in list(block.ops):
         if isinstance(op, arith.ConstantOp) and _is_ranked_1_tensor(op.result.type):
-            _materialize_array(op, block, array_map)
+            if any(op.result.uses):
+                _materialize_array(op, block, array_map)
 
     # Phase 2: Rewrite tensor access patterns.
     for op in list(block.ops):

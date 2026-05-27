@@ -94,12 +94,15 @@ def jaspr_to_quake(jaspr, lower_stableHLO: bool = True) -> ModuleOp:
     # Step 3 – PASS 2: SCF→CC lowering.
     lower_scf_to_cc(module)
 
-    # Step 4 – PASS 3a: ranked tensor lowering.
-    lower_ranked_tensors(module)
-
-    # Step 5 – PASS 3b: tensor unwrapping + scalar constant folding.
+    # Step 4 – PASS 3b: tensor unwrapping + scalar constant folding.
+    # Must run BEFORE pass 3a so that 0-rank returns are rewritten to
+    # scalar returns (inserting tensor.extract []) before the ranked-tensor
+    # lowering tries to match the extract_slice → collapse_shape → extract chain.
     unwrap_tensors(module)
 
     scalar_tensor_folding(Context(), module)
+
+    # Step 5 – PASS 3a: ranked tensor → CC array lowering.
+    lower_ranked_tensors(module)
 
     return module
