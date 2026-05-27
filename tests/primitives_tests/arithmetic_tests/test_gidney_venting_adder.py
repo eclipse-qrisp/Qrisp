@@ -1,66 +1,97 @@
 """
-Unit tests for Gidney Figure 1 gate implementations (symbolic parity version).
-These helpers are dynamic-mode only and rely on JASP tracing semantics.
+Unit tests for Gidney Figure 1-4 gate implementations.
 """
 
 import pytest
-from qrisp import QuantumFloat, QuantumVariable, x, measure, multi_measurement
+from qrisp import QuantumVariable, x, h, z, measure, control, multi_measurement
 from qrisp.jasp import jaspify
 
 from qrisp.alg_primitives.arithmetic.adders.gidney_venting_adder import (
+    _extract_bit,
     bit_inverted_mcx,
     zz_mcx,
     zz_zz_mcx,
     bit_inverted_zz_zz_mcx,
     carry_venting_adder,
     carry_xor_block,
+    dirty_ancillae_adder,
+    gidney_cq_venting_adder,
 )
 
+EXTRACT_BIT_CASES = [
+    (10, 0, 0),
+    (10, 1, 1),
+    (10, 2, 0),
+    (10, 3, 1),
+    (0, 0, 0),
+    (15, 0, 1),
+    (15, 3, 1),
+]
+
+@pytest.mark.parametrize("val, bit, expected", EXTRACT_BIT_CASES)
+def test_extract_bit_int(val, bit, expected):
+    assert bool(_extract_bit(val, bit, False)) == bool(expected)
+
+EXTRACT_BIT_BIGINT_CASES = [
+    (0, True),
+    (1, False),
+    (2, True),
+    (3, True),
+]
+
+@pytest.mark.parametrize("idx, expected", EXTRACT_BIT_BIGINT_CASES)
+def test_extract_bit_bigint(idx, expected):
+    class _MockBigInt:
+        def __init__(self, bits):
+            self.bits = bits
+        def get_bit(self, i):
+            return self.bits[i]
+
+    b = _MockBigInt([1, 0, 1, 1])
+    assert bool(_extract_bit(b, idx, True)) == expected
 
 
-# bit_inverted_mcx: fires when (control XOR b) == 1 (symbolic parity)
 BIT_INVERTED_CASES = [
-    (0, False, 0),    # control=0, b=False -> (0 XOR 0)=0 -> no fire
-    (1, False, 1),    # control=1, b=False -> (1 XOR 0)=1 -> fires
-    (0, True,  1),    # control=0, b=True  -> (0 XOR 1)=1 -> fires
-    (1, True,  0),    # control=1, b=True  -> (1 XOR 1)=0 -> no fire
+    (0, False, 0),
+    (1, False, 1),
+    (0, True,  1),
+    (1, True,  0),
 ]
 
-# zz_mcx: fires when z0 != z1 (odd parity, per Gidney's paper)
 ZZ_PARITY_CASES = [
-    (0, 0, 0),    # both 0 -> equal -> no fire
-    (1, 1, 0),    # both 1 -> equal -> no fire
-    (0, 1, 1),    # different -> fires
-    (1, 0, 1),    # different -> fires
+    (0, 0, 0),
+    (1, 1, 0),
+    (0, 1, 1),
+    (1, 0, 1),
 ]
 
-# zz_zz_mcx: fires when (z_left!=z_left_right) AND (z_left_right!=z_right) (both odd parity, per Gidney's paper)
-# New signature: (z_left, z_left_right, z_right, target) with z_left_right shared between both pairs
 DUAL_ZZ_CASES = [
-    (0, 0, 0, 0),    # z_left⊕z_left_right=0, z_left_right⊕z_right=0 (both even) -> no fire
-    (1, 1, 1, 0),    # z_left⊕z_left_right=0, z_left_right⊕z_right=0 (both even) -> no fire
-    (1, 0, 0, 0),    # z_left⊕z_left_right=1, z_left_right⊕z_right=0 (left odd, right even) -> no fire
-    (0, 0, 1, 0),    # z_left⊕z_left_right=0, z_left_right⊕z_right=1 (left even, right odd) -> no fire
-    (1, 0, 1, 1),    # z_left⊕z_left_right=1, z_left_right⊕z_right=1 (both odd) -> fires
+    (0, 0, 0, 0),
+    (1, 1, 1, 0),
+    (1, 0, 0, 0),
+    (0, 0, 1, 0),
+    (1, 0, 1, 1),
 ]
 
-# bit_inverted_zz_zz_mcx: fires when (ctrl1 XOR b) AND (ctrl2 XOR b) == 1
 BIT_INVERTED_ZZ_ZZ_CASES = [
-    (0, 0, False, 0),    # (0⊕0) AND (0⊕0) = 0 AND 0 = 0 -> no fire
-    (1, 1, False, 1),    # (1⊕0) AND (1⊕0) = 1 AND 1 = 1 -> fires
-    (0, 1, False, 0),    # (0⊕0) AND (1⊕0) = 0 AND 1 = 0 -> no fire
-    (1, 0, False, 0),    # (1⊕0) AND (0⊕0) = 1 AND 0 = 0 -> no fire
-    (0, 0, True,  1),    # (0⊕1) AND (0⊕1) = 1 AND 1 = 1 -> fires
-    (1, 1, True,  0),    # (1⊕1) AND (1⊕1) = 0 AND 0 = 0 -> no fire
-    (0, 1, True,  0),    # (0⊕1) AND (1⊕1) = 1 AND 0 = 0 -> no fire
-    (1, 0, True,  0),    # (1⊕1) AND (0⊕1) = 0 AND 1 = 0 -> no fire
+    (0, 0, False, 0),
+    (1, 1, False, 1),
+    (0, 1, False, 0),
+    (1, 0, False, 0),
+    (0, 0, True,  1),
+    (1, 1, True,  0),
+    (0, 1, True,  0),
+    (1, 0, True,  0),
 ]
 
+def _set_qubits(qv, val, n):
+    for i in range(n):
+        if (val >> i) & 1:
+            x(qv[i])
 
 
 @pytest.mark.parametrize("ctrl_val, b, expected_tgt", BIT_INVERTED_CASES)
 def test_bit_inverted_mcx_jasp(ctrl_val, b, expected_tgt):
-    """Verify bit_inverted_mcx works in JASP dynamic mode (explicit parity extraction)."""
     @jaspify
     def run():
         ctrl = QuantumVariable(1)
@@ -69,7 +100,7 @@ def test_bit_inverted_mcx_jasp(ctrl_val, b, expected_tgt):
 
         if ctrl_val:
             x(ctrl[0])
-        x(always_one[0])  # always set to 1
+        x(always_one[0])
 
         bit_inverted_mcx(ctrl[0], always_one[0], tgt[0], b)
 
@@ -83,7 +114,6 @@ def test_bit_inverted_mcx_jasp(ctrl_val, b, expected_tgt):
 
 @pytest.mark.parametrize("q0v, q1v, expected_tgt", ZZ_PARITY_CASES)
 def test_zz_mcx_jasp(q0v, q1v, expected_tgt):
-    """Verify zz_mcx works in JASP dynamic mode (explicit parity extraction)."""
     @jaspify
     def run():
         q0 = QuantumVariable(1)
@@ -95,7 +125,7 @@ def test_zz_mcx_jasp(q0v, q1v, expected_tgt):
             x(q0[0])
         if q1v:
             x(q1[0])
-        x(ctrl[0])  # always set control to 1
+        x(ctrl[0])
 
         zz_mcx(q0[0], q1[0], ctrl[0], tgt[0])
 
@@ -110,7 +140,6 @@ def test_zz_mcx_jasp(q0v, q1v, expected_tgt):
 
 @pytest.mark.parametrize("z_left_v, z_left_right_v, z_right_v, expected_tgt", DUAL_ZZ_CASES)
 def test_zz_zz_mcx_jasp(z_left_v, z_left_right_v, z_right_v, expected_tgt):
-    """Verify zz_zz_mcx works in JASP dynamic mode (with shared z_left_right qubit)."""
     @jaspify
     def run():
         z_left = QuantumVariable(1)
@@ -138,104 +167,75 @@ def test_zz_zz_mcx_jasp(z_left_v, z_left_right_v, z_right_v, expected_tgt):
 
 @pytest.mark.parametrize("ctrl1_v, ctrl2_v, b, expected_tgt", BIT_INVERTED_ZZ_ZZ_CASES)
 def test_bit_inverted_zz_zz_mcx_jasp(ctrl1_v, ctrl2_v, b, expected_tgt):
-    """Verify bit_inverted_zz_zz_mcx fires when both (ctrl_i XOR b) == 1."""
     @jaspify
     def run():
         ctrl1 = QuantumVariable(1)
         ctrl2 = QuantumVariable(1)
         tgt = QuantumVariable(1)
- 
+
         if ctrl1_v:
             x(ctrl1[0])
         if ctrl2_v:
             x(ctrl2[0])
- 
+
         bit_inverted_zz_zz_mcx(ctrl1[0], ctrl2[0], tgt[0], b)
- 
+
         return measure(ctrl1), measure(ctrl2), measure(tgt)
- 
+
     measured_ctrl1, measured_ctrl2, measured_tgt = run()
     assert int(measured_ctrl1) == ctrl1_v
     assert int(measured_ctrl2) == ctrl2_v
     assert int(measured_tgt) == expected_tgt
- 
- 
+
+
 CARRY_VENTING_CASES = [
-    (0b01, 1, 0, 0b10),   # simple: 1 + 1 = 2
-    (0b01, 1, 1, 0b11),   # carry-in: 1 + 1 + 1 = 3
-    (0b11, 1, 0, 0b00),   # overflow: 3 + 1 = 0 mod 4
-    (0b01, 0, 0, 0b01),   # zero addend: 1 + 0 = 1
-    (0b11, 3, 0, 0b10),   # all ones: 3 + 3 = 2 mod 4
+    # init, d, c_in_val, expected, n
+    # With carry-in
+    (1, 1, 0, 2, 2),
+    (1, 1, 1, 3, 2),
+    (3, 1, 0, 0, 2),
+    (1, 0, 0, 1, 2),
+    (3, 3, 0, 2, 2),
+    (152, 55, 0, 207, 8),
+    # Without carry-in (c_in_val=None)
+    (1, 2, None, 3, 2),
+    (3, 2, None, 5, 3),
+    (152, 54, None, 206, 8),
 ]
 
-@pytest.mark.parametrize("init, d, c_in_val, expected", CARRY_VENTING_CASES)
-def test_carry_venting_adder_jasp(init, d, c_in_val, expected):
-    """Test carry_venting_adder first block with various 2-bit additions."""
+@pytest.mark.parametrize("init, d, c_in_val, expected, n", CARRY_VENTING_CASES)
+def test_carry_venting_adder_jasp(init, d, c_in_val, expected, n):
     @jaspify
     def run():
-        target = QuantumVariable(2)
+        target = QuantumVariable(n)
+        _set_qubits(target, init, n)
+        if c_in_val is not None:
+            c_in = QuantumVariable(1)
+            if c_in_val:
+                x(c_in[0])
+        else:
+            c_in = None
+        anc = QuantumVariable(2)
+        ventmask = carry_venting_adder(target, d, anc, c_in=c_in)
+        return measure(target), ventmask
 
-        for i in range(2):
-            if (init >> i) & 1:
-                x(target[i])
-
-        c_in = QuantumVariable(1)
-        if c_in_val:
-            x(c_in[0])
-
-        carry_venting_adder(target, d, c_in)
-
-        return measure(target)
-
-    result_target = run()
-    result_val = int(result_target)
-
-    assert result_val == expected
+    result_target, ventmask = run()
+    assert int(result_target) == expected
+    assert ventmask >= 0
 
 
-def test_carry_venting_adder_jasp_large_register():
-    """Test carry_venting_adder arithmetic on larger registers."""
-    @jaspify
-    def run():
-        target = QuantumVariable(8)
-
-        for i in [3, 4, 7]:
-            x(target[i])
-
-        d = 55
-        c_in = QuantumVariable(1)
-
-        vented = carry_venting_adder(target, d, c_in)
-
-        return measure(target), len(vented)
-
-    result_target, num_vented = run()
-    result_val = int(result_target)
-
-    # init=152 (bits 3,4,7), d=55, c_in=0 → expected = (152+55) % 256 = 207
-    assert result_val == 207, f"Expected 207, got {result_val}"
-
-    # The vented list captures trace-time appends (2 from jrange tracing).
-    # Actual runtime vents = n-2 = 6.
-    assert num_vented == 4
- 
- 
 CARRY_XOR_CASES = [
-    (0b0101, 3, None),    # target=5, d=3, no carry-in
-    (0b0111, 2, 1),       # target=7, d=2, carry-in=1
+    (5, 3, None),
+    (7, 2, 1),
 ]
 
 @pytest.mark.parametrize("init, d, c_in_val", CARRY_XOR_CASES)
 def test_carry_xor_block_jasp(init, d, c_in_val):
-    """Test carry_xor_block executes without error."""
     @jaspify
     def run():
         target = QuantumVariable(4)
         dirty_ancillas = QuantumVariable(4)
-
-        for i in range(4):
-            if (init >> i) & 1:
-                x(target[i])
+        _set_qubits(target, init, 4)
 
         if c_in_val is None:
             c_in = None
@@ -256,5 +256,127 @@ def test_carry_xor_block_jasp(init, d, c_in_val):
     assert dirty_result is not None
     if c_in_val is not None:
         assert int(result[2]) == c_in_val
- 
- 
+
+
+DIRTY_ADD_CASES = [
+    # init, d, c_in_val, expected, n
+    # With carry-in
+    (1, 1, 0, 2, 3),
+    (1, 1, 1, 3, 3),
+    (7, 1, 0, 8, 5),
+    (5, 3, 0, 8, 5),
+    (7, 2, 1, 10, 5),
+    (3, 5, 0, 8, 4),
+    (4, 7, 0, 11, 5),
+    # Without carry-in (c_in_val=None)
+    (1, 2, None, 3, 3),
+    (7, 2, None, 9, 5),
+    (5, 2, None, 7, 4),
+]
+
+@pytest.mark.parametrize("init, d, c_in_val, expected, n", DIRTY_ADD_CASES)
+def test_dirty_ancillae_adder_jasp(init, d, c_in_val, expected, n):
+    @jaspify
+    def run():
+        target = QuantumVariable(n)
+        _set_qubits(target, init, n)
+        if c_in_val is not None:
+            c_in = QuantumVariable(1)
+            if c_in_val:
+                x(c_in[0])
+        else:
+            c_in = None
+        dirty = QuantumVariable(n - 2)
+        for i in range(n - 2):
+            h(dirty[i])
+        anc = QuantumVariable(2)
+        ventmask = dirty_ancillae_adder(target, d, dirty, anc, c_in=c_in)
+        for i in range(n - 2):
+            h(dirty[i])
+        return measure(target), measure(dirty), ventmask
+
+    result_target, result_dirty, ventmask = run()
+    assert int(result_target) == expected
+    assert int(result_dirty) == 0
+    assert ventmask >= 0
+
+
+def test_dirty_ancillae_adder_preserves_dirty():
+    @jaspify
+    def run():
+        target = QuantumVariable(4)
+        x(target[0])
+        dirty = QuantumVariable(2)
+        x(dirty[0])
+        anc = QuantumVariable(2)
+        dirty_ancillae_adder(target, 1, dirty, anc)
+        return measure(target), measure(dirty)
+
+    result_target, result_dirty = run()
+    assert int(result_target) == 2
+    assert int(result_dirty) & 1 == 1
+
+
+GIDNEY_CQ_CASES = [
+    # init, d, c_in_val, expected, n
+    # With carry-in
+    (1, 1, 0, 2, 3),
+    (1, 1, 1, 3, 3),
+    (7, 1, 0, 8, 5),
+    (5, 3, 0, 8, 4),
+    (7, 2, 1, 10, 4),
+    (3, 5, 0, 8, 4),
+    (2, 3, 0, 5, 4),
+    (5, 3, 0, 8, 5),
+    (152, 55, 0, 207, 8),
+    (3, 1, 0, 4, 4),
+    (15, 1, 0, 16, 6),
+    # Without carry-in (c_in_val=None)
+    (1, 1, None, 2, 4),
+    (7, 2, None, 9, 5),
+]
+
+@pytest.mark.parametrize("init, d, c_in_val, expected, n", GIDNEY_CQ_CASES)
+def test_gidney_cq_venting_adder_jasp(init, d, c_in_val, expected, n):
+    @jaspify
+    def run():
+        target = QuantumVariable(n)
+        _set_qubits(target, init, n)
+        if c_in_val is not None:
+            c_in = QuantumVariable(1)
+            if c_in_val:
+                x(c_in[0])
+        else:
+            c_in = None
+        ventmask = gidney_cq_venting_adder(target, d, c_in)
+        return measure(target), ventmask
+
+    result_target, ventmask = run()
+    assert int(result_target) == expected
+    assert ventmask >= 0
+
+
+# Phase-indexing tests for CZ correction
+PHASE_Z_CASES = [
+    ("correct > > k",                  0b010, 3, lambda k: k,       "010"),
+    ("wrong > > (k+1)",                0b010, 3, lambda k: k + 1,   "100"),
+    ("carry_mid at bit h-1",           0b10,  2, lambda k: k,     "01"),
+]
+
+@pytest.mark.parametrize("desc, ventmask, nq, shift, expected", PHASE_Z_CASES,
+                         ids=[c[0] for c in PHASE_Z_CASES])
+def test_phase_z_bit_indexing(desc, ventmask, nq, shift, expected):
+    qv = QuantumVariable(nq)
+    for i in range(nq):
+        h(qv[i])
+
+    for k in range(nq):
+        with control(bool((ventmask >> shift(k)) & 1)):
+            z(qv[k])
+
+    for i in range(nq):
+        h(qv[i])
+
+    res = multi_measurement([qv])
+    val, = next(iter(res.keys()))
+    assert val == expected
