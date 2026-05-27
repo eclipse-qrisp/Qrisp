@@ -117,6 +117,46 @@ class TestParameterisedCancellation:
         result = cancel_inverses(qc)
         assert result.compare_unitary(qc, ignore_gphase = False)
 
+    def test_controlled_preserves_gphase(self):
+        from qrisp import QuantumVariable, control
+        from qrisp.core import h, rz, p
+        from qrisp.simulator import statevector_sim
+
+        theta = 0.73
+
+        qv = QuantumVariable(2)
+
+        # Put the control qubit into superposition.
+        h(qv[0])
+
+        # RZ(theta) P(-theta) = exp(-i theta/2) I
+        # That is only a global phase if it is NOT controlled.
+        # Under control, it becomes a relative phase on the qv[0] = 1 branch.
+        with control(qv[0]):
+            rz(theta, qv[1])
+            p(-theta, qv[1])
+
+        # Convert the relative phase on the control branch into amplitudes/probabilities.
+        h(qv[0])
+
+        raw_qc = qv.qs.copy()
+        raw_sv = statevector_sim(raw_qc)
+
+        compiled_qc = qv.qs.compile()
+
+        compiled_sv = compiled_qc.statevector_array()
+
+        # Compare up to one global phase.
+        idx = np.argmax(np.abs(raw_sv))
+        phase = compiled_sv[idx] / raw_sv[idx]
+        phase /= abs(phase)
+
+        print(f"Raw statevector:\n{raw_sv}")
+        print(f"Compiled statevector:\n{compiled_sv}")
+        print(f"Compiled statevector, phase corrected:\n{compiled_sv / phase}")
+
+        assert np.allclose(compiled_sv, phase * raw_sv, atol=1e-6)
+
     def test_rx_positive_then_negative_cancels(self):
         qc = QuantumCircuit(1)
         qc.rx(1.2, 0)
@@ -139,12 +179,12 @@ class TestParameterisedCancellation:
         assert _num_gates(result) == 0
 
     def test_rz_plus_p_cross_fusion(self):
-        """Rz(θ)·P(−θ) on same qubit cancels."""
+        """Rz(θ)·P(−θ) on same qubit cancels into gphase."""
         qc = QuantumCircuit(1)
         qc.rz(np.pi / 4, 0)
         qc.p(-np.pi / 4, 0)
         result = cancel_inverses(qc)
-        assert _num_gates(result) == 0
+        assert _num_gates(result) == 1
 
     def test_different_qubits_no_cancel(self):
         """Rz(θ) on q0 and Rz(−θ) on q1 should NOT cancel."""

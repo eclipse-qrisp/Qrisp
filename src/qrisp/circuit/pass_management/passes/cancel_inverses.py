@@ -335,7 +335,7 @@ def _fuse_controlled_ops(op_a, op_b, gphase_array):
 
     if op_a.ctrl_state == op_b.ctrl_state:
         # Recurse into the base (target) operations.
-        temp = _fuse_operations(
+        temp = _fuse_via_transpile(
             op_a.base_operation, op_b.base_operation, gphase_array
         )
         if temp is _FUSION_CANCEL:
@@ -727,14 +727,6 @@ def _emit_surviving_circuit(G, data_list, qc, gphase_array):
                 # Virtual qubit/clbit node — skip.
                 continue
             else:
-                # If this is the very last instruction and accumulated
-                # global phase is non-zero, emit a gphase gate first.
-                if i == topo_sort[-1]:
-                    if data_list[i].op.name == "gphase":
-                        gphase_array[0] += data_list[i].op.params[0]
-                    if gphase_array[0] != 0:
-                        qc_new.gphase(gphase_array[0], data_list[i].qubits[0])
-
                 # Emit the instruction (unless it's a gphase whose value
                 # was already absorbed into the accumulated counter).
                 if data_list[i].op.name != "gphase":
@@ -743,6 +735,10 @@ def _emit_surviving_circuit(G, data_list, qc, gphase_array):
                     )
                 else:
                     gphase_array[0] += data_list[i].op.params[0]
+
+    # If accumulated global phase is non-zero, emit a gphase gate.
+    if gphase_array[0] != 0:
+        qc_new.gphase(gphase_array[0], qc_new.qubits[0])
 
     return qc_new
 
