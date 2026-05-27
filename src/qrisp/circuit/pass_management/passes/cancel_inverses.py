@@ -306,9 +306,8 @@ def _fuse_gidney_and(op_a, op_b):
 
 
 def _fuse_controlled_ops(op_a, op_b, gphase_array):
-    """Try to fuse two operations by recursing into their definitions.
-
-    Handles ControlledOperation and CustomControlOperation wrappers.
+    """Try to fuse two controlled operations by recursing into their 
+    base operations.
 
     IMPORTANT: when this function returns ``None`` it means "no
     controlled-op match was found, but a generic inverse cancellation
@@ -318,9 +317,9 @@ def _fuse_controlled_ops(op_a, op_b, gphase_array):
 
     Parameters
     ----------
-    op_a : Operation
+    op_a : ControlledOperation
         The first operation (earlier in time).
-    op_b : Operation
+    op_b : ControlledOperation
         The second operation (later in time).
     gphase_array : list
         Single-element list tracking accumulated global phase.
@@ -333,42 +332,21 @@ def _fuse_controlled_ops(op_a, op_b, gphase_array):
         * ``_FUSION_CANCEL`` — the two operations cancel completely.
         * ``None`` — not handled here; fall through to generic inverse check.
     """
-    # Lazy import to avoid circular dependencies at module load time.
-    from qrisp.environments import CustomControlOperation
 
-    # -- Controlled operations with matching control states --
-    if isinstance(op_a, ControlledOperation) and isinstance(
-        op_b, ControlledOperation
-    ):
-        if op_a.ctrl_state == op_b.ctrl_state:
-            # Recurse into the base (target) operations.
-            temp = _fuse_operations(
-                op_a.base_operation, op_b.base_operation, gphase_array
-            )
-            if temp is _FUSION_CANCEL:
-                return _FUSION_CANCEL
-            elif temp is not None:
-                # Re-wrap the fused base in a controlled wrapper.
-                return ControlledOperation(
-                    temp,
-                    num_ctrl_qubits=len(op_a.controls),
-                    ctrl_state=op_a.ctrl_state,
-                )
-
-    # -- Custom control operations (unusual control schemes) --
-    if isinstance(op_a, CustomControlOperation) and isinstance(
-        op_b, CustomControlOperation
-    ):
-        # Unwrap one level of the custom control and recurse.
+    if op_a.ctrl_state == op_b.ctrl_state:
+        # Recurse into the base (target) operations.
         temp = _fuse_operations(
-            op_a.definition.data[0].op,
-            op_b.definition.data[0].op,
-            gphase_array,
+            op_a.base_operation, op_b.base_operation, gphase_array
         )
         if temp is _FUSION_CANCEL:
             return _FUSION_CANCEL
         elif temp is not None:
-            return CustomControlOperation(temp, op_a.targeting_control)
+            # Re-wrap the fused base in a controlled wrapper.
+            return ControlledOperation(
+                temp,
+                num_ctrl_qubits=len(op_a.controls),
+                ctrl_state=op_a.ctrl_state,
+            )
 
     # Deliberately fall through to the generic inverse check.
     # Many gates with definitions (SWAP, circuits wrapped as
@@ -502,7 +480,7 @@ def _fuse_operations(op_a, op_b, gphase_array):
 
     # 4. Composite gate handling (controlled ops) — falls through
     #    to generic inverse check if no controlled-op match is found.
-    if op_a.definition or op_a.name in ["cx", "cy", "cz"]:
+    if isinstance(op_a, ControlledOperation) and isinstance(op_b, ControlledOperation):
         result = _fuse_controlled_ops(op_a, op_b, gphase_array)
         if result is not None:
             return result

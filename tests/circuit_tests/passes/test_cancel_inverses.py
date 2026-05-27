@@ -313,6 +313,22 @@ class TestControlledOperations:
         result = cancel_inverses(qc)
         assert _num_gates(result) == 0
 
+    def test_controlled_x_then_controlled_x_cancels(self):
+        """Test non-trivial base operation cancels"""
+        qc_a = QuantumCircuit(1)
+        qc_a.x(0)
+        qc_a.x(0)
+
+        controlled_gate = qc_a.to_gate().control(1)
+
+        qc_b = QuantumCircuit(2)
+
+        qc_b.append(controlled_gate, qc_b.qubits)
+        qc_b.append(controlled_gate, qc_b.qubits)
+
+        result = cancel_inverses(qc_b)
+
+        assert _num_gates(result) == 0
 
 # ---------------------------------------------------------------------------
 # Tests: circuit identity preservation
