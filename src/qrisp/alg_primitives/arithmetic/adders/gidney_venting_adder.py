@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import jax.numpy as jnp
 import qrisp
-from qrisp.environments import control
+from qrisp.environments import control, custom_control
 from qrisp.jasp import check_for_tracing_mode
 
 
@@ -48,6 +48,7 @@ def bit_inverted_mcx(
     simple_ctrl: qrisp.Qubit | qrisp.QuantumVariable,
     target: qrisp.Qubit | qrisp.QuantumVariable,
     b: bool | jnp.bool_,
+    ctrl: qrisp.Qubit | qrisp.QuantumVariable | None = None,
 ) -> None:
     """Fig. 1 left: Toffoli with one inverted (Z⊕b) control and one normal control. 
     Done by flipping the parity-check qubit, running a Toffoli gate, then flipping it back.
@@ -68,10 +69,19 @@ def bit_inverted_mcx(
     Used in the carry chain when the classical addend bit decides whether the control fires on zero or one.
     """
     with control(b):
-        qrisp.x(parity_check_ctrl)
-    qrisp.mcx([parity_check_ctrl, simple_ctrl], target)
+        if ctrl is None:
+            qrisp.x(parity_check_ctrl)
+        else:
+            qrisp.cx(ctrl, parity_check_ctrl)
+    if ctrl is None:
+        qrisp.mcx([parity_check_ctrl, simple_ctrl], target)
+    else:
+        qrisp.mcx([ctrl, parity_check_ctrl, simple_ctrl], target)
     with control(b):
-        qrisp.x(parity_check_ctrl)
+        if ctrl is None:
+            qrisp.x(parity_check_ctrl)
+        else:
+            qrisp.cx(ctrl, parity_check_ctrl)
 
 
 
@@ -146,6 +156,7 @@ def bit_inverted_zz_zz_mcx(
     parity_ctrl2: qrisp.Qubit | qrisp.QuantumVariable,
     target: qrisp.Qubit | qrisp.QuantumVariable,
     b: bool | jnp.bool_,
+    ctrl: qrisp.Qubit | qrisp.QuantumVariable | None = None,
 ) -> None:
     """MCX with two inverted controls. Flips the parity qubits before and after the
     Toffoli so the control condition depends on the classical bit b.
@@ -167,12 +178,23 @@ def bit_inverted_zz_zz_mcx(
     Used in the carry XOR block for the first slot, where the classical addend decides whether to flip both controls.
     """
     with control(b):
-        qrisp.x(parity_ctrl1)
-        qrisp.x(parity_ctrl2)
-    qrisp.mcx([parity_ctrl1, parity_ctrl2], target)
+        if ctrl is None:
+            qrisp.x(parity_ctrl1)
+            qrisp.x(parity_ctrl2)
+        else:
+            qrisp.cx(ctrl, parity_ctrl1)
+            qrisp.cx(ctrl, parity_ctrl2)
+    if ctrl is None:
+        qrisp.mcx([parity_ctrl1, parity_ctrl2], target)
+    else:
+        qrisp.mcx([ctrl, parity_ctrl1, parity_ctrl2], target)
     with control(b):
-        qrisp.x(parity_ctrl1)
-        qrisp.x(parity_ctrl2)
+        if ctrl is None:
+            qrisp.x(parity_ctrl1)
+            qrisp.x(parity_ctrl2)
+        else:
+            qrisp.cx(ctrl, parity_ctrl1)
+            qrisp.cx(ctrl, parity_ctrl2)
 
 def carry_venting_adder(
     target: list[qrisp.Qubit] | qrisp.QuantumVariable,
@@ -181,6 +203,7 @@ def carry_venting_adder(
     c_in: qrisp.Qubit | qrisp.QuantumVariable | None = None,
     carry_xor_target: qrisp.QuantumVariable | None = None,
     a_int_is_bigint: bool = False,
+    ctrl: qrisp.Qubit | qrisp.QuantumVariable | None = None,
 ) -> int:
     """Fig. 2 — carry-venting CQ in-place adder.
 
@@ -249,7 +272,10 @@ def carry_venting_adder(
     for i in jrange(num_qubits):
         d_i = _extract_bit(d, i, a_int_is_bigint)
         with control(d_i):
-            qrisp.x(target[i])
+            if ctrl is None:
+                qrisp.x(target[i])
+            else:
+                qrisp.cx(ctrl, target[i])
 
     # First building block (bits 0 and 1) that have to be handled before the loop
     # The remaining bits are handled by a loop that applies the same gate
@@ -258,15 +284,18 @@ def carry_venting_adder(
     d1 = _extract_bit(d, 1, a_int_is_bigint)
 
     if carry_in is not None:
-        bit_inverted_mcx(carry_in, target[0], clean_anc[1], d0)
+        bit_inverted_mcx(carry_in, target[0], clean_anc[1], d0, ctrl=ctrl)
         qrisp.cx(carry_in, target[0])
 
     # X on clean_anc[1] when d0=1: corrects the carry for the flipped
     # target[0] bit so the carry chain still computes the right value.
     with control(d0):
-        qrisp.x(clean_anc[1])
+        if ctrl is None:
+            qrisp.x(clean_anc[1])
+        else:
+            qrisp.cx(ctrl, clean_anc[1])
 
-    bit_inverted_mcx(clean_anc[1], target[1], clean_anc[0], d1)
+    bit_inverted_mcx(clean_anc[1], target[1], clean_anc[0], d1, ctrl=ctrl)
     qrisp.cx(clean_anc[1], target[1])
 
     # Fused first carry-xor: write carry at clean_anc[1] into carry_xor_target[0].
@@ -302,13 +331,16 @@ def carry_venting_adder(
         nxt = clean_anc[(i + 1) % 2]
 
         with control(d_prev):
-            qrisp.x(cur)
+            if ctrl is None:
+                qrisp.x(cur)
+            else:
+                qrisp.cx(ctrl, cur)
 
-        bit_inverted_mcx(cur, target[i], nxt, d_i)
+        bit_inverted_mcx(cur, target[i], nxt, d_i, ctrl=ctrl)
         qrisp.cx(cur, target[i])
 
         if carry_xor_target is not None:
-            qrisp.cx(cur, carry_xor_target[i - 1])  # carry into bit i : carry_xor_target[i-1]
+            qrisp.cx(cur, carry_xor_target[i - 1])
 
         qrisp.h(cur)
         m_i = qrisp.measure(cur)
@@ -341,7 +373,10 @@ def carry_venting_adder(
         # the previous step's carry computation.
         d_correction = _extract_bit(d, jnp.maximum(1, num_qubits - 3), a_int_is_bigint)
         with control(d_correction):
-            qrisp.x(cur)
+            if ctrl is None:
+                qrisp.x(cur)
+            else:
+                qrisp.cx(ctrl, cur)
 
         # For n=3, the carry into bit 2 is already in clean_anc[0] (computed by the
         # first block).  Just CX it into target[2] — no MCX needed.
@@ -350,7 +385,7 @@ def carry_venting_adder(
 
         # Full MCX-based last block: write the carry into target[n-1].
         with control(num_qubits > 3):
-            bit_inverted_mcx(cur, target[last_i], target[num_qubits - 1], d_last)
+            bit_inverted_mcx(cur, target[last_i], target[num_qubits - 1], d_last, ctrl=ctrl)
             qrisp.cx(cur, target[last_i])
             # Fused carry-xor: write the last carry into carry_xor_target[last_i-1].
             # NOTE: For n=3 this write is intentionally NOT done here (it's
@@ -371,7 +406,10 @@ def carry_venting_adder(
         # was never X^{d} in the initial setup because d_last = d_2).
         with control(num_qubits > 3):
             with control(d_last):
-                qrisp.x(target[num_qubits - 1])
+                if ctrl is None:
+                    qrisp.x(target[num_qubits - 1])
+                else:
+                    qrisp.cx(ctrl, target[num_qubits - 1])
 
         return target, clean_anc, ventmask
 
@@ -391,6 +429,7 @@ def carry_xor_block(
     d: int,
     c_in: qrisp.Qubit | qrisp.QuantumVariable | None = None,
     a_int_is_bigint: bool = False,
+    ctrl: qrisp.Qubit | qrisp.QuantumVariable | None = None,
 ) -> None:
     """Fig. 3 — carry-XOR block: second pass of the two-pass phase correction.
 
@@ -442,24 +481,27 @@ def carry_xor_block(
     for j in jrange(num_dirty_qubits - 1):
         i = (num_dirty_qubits - 1) - j
         bit_i = _extract_bit(d, i, a_int_is_bigint)
-        bit_inverted_mcx(target[i], dirty_ancillas[i - 1], dirty_ancillas[i], bit_i)
+        bit_inverted_mcx(target[i], dirty_ancillas[i - 1], dirty_ancillas[i], bit_i, ctrl=ctrl)
 
     # Flip each dirty slot if the addend bit is 1
     for i in jrange(num_dirty_qubits):
         bit_i = _extract_bit(d, i, a_int_is_bigint)
         with control(bit_i):
-            qrisp.x(dirty_ancillas[i])
+            if ctrl is None:
+                qrisp.x(dirty_ancillas[i])
+            else:
+                qrisp.cx(ctrl, dirty_ancillas[i])
 
     if carry_in is not None:
         d0 = _extract_bit(d, 0, a_int_is_bigint)
-        bit_inverted_zz_zz_mcx(carry_in, target[0], dirty_ancillas[0], d0)
+        bit_inverted_zz_zz_mcx(carry_in, target[0], dirty_ancillas[0], d0, ctrl=ctrl)
 
     # Forward chain
     # Walk dirty slots from least significant bit to most significant bit.
     for j in jrange(num_dirty_qubits - 1):
         i = j + 1
         bit_i = _extract_bit(d, i, a_int_is_bigint)
-        bit_inverted_zz_zz_mcx(dirty_ancillas[i - 1], target[i], dirty_ancillas[i], bit_i)
+        bit_inverted_zz_zz_mcx(dirty_ancillas[i - 1], target[i], dirty_ancillas[i], bit_i, ctrl=ctrl)
 
 
 
@@ -472,6 +514,7 @@ def dirty_ancillae_adder(
     ancilla: list[qrisp.Qubit] | qrisp.QuantumVariable,
     c_in: qrisp.Qubit | qrisp.QuantumVariable | None = None,
     a_int_is_bigint: bool = False,
+    ctrl: qrisp.Qubit | qrisp.QuantumVariable | None = None,
 ) -> int:
     """Fig. 4 — dirty-ancilla CQ in-place adder.
 
@@ -518,7 +561,7 @@ def dirty_ancillae_adder(
 
     # Step 1: Vented addition with fused first carry-xor
     ventmask = carry_venting_adder(
-        target, d, ancilla=ancilla, c_in=c_in, carry_xor_target=dirty_qubits, a_int_is_bigint=a_int_is_bigint)
+        target, d, ancilla=ancilla, c_in=c_in, carry_xor_target=dirty_qubits, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
 
 
     # Step 2: Phase correction
@@ -531,7 +574,7 @@ def dirty_ancillae_adder(
             qrisp.z(dirty_qubits[k])
 
     # Second carry-xor pass: recompute carries against the flipped sum
-    carry_xor_block(target[:-1], dirty_qubits, d, c_in, a_int_is_bigint=a_int_is_bigint)
+    carry_xor_block(target[:-1], dirty_qubits, d, c_in, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
 
     # CZ pass 2: correct Z-phases again
     for k in jrange(num_dirty):
@@ -545,11 +588,13 @@ def dirty_ancillae_adder(
     return ventmask
 
 
+@custom_control
 def gidney_cq_venting_adder(
     target: qrisp.QuantumVariable | list[qrisp.Qubit],
     d: int,
     c_in: qrisp.Qubit | qrisp.QuantumVariable | None = None,
     a_int_is_bigint: bool = False,
+    ctrl: qrisp.Qubit | qrisp.QuantumVariable | None = None,
 ) -> int:
     """Fig. 5 — borrowing/splitting CQ in-place adder (3 clean ancillae).
 
@@ -596,9 +641,16 @@ def gidney_cq_venting_adder(
     from qrisp.jasp import jrange, jlen
 
     if not check_for_tracing_mode():
-        raise RuntimeError("gidney_cq_venting_adder requires JASP dynamic mode")
+        raise RuntimeError("The Gidney Classical-Quantum adder does not work in standard python execution mode.")
 
     num_targets = jlen(target)
+
+    # Truncate the classical addend if it has more bits than the target register.
+    # Zero-extension for addends narrower than the target is already the default
+    # (bits beyond the value read as 0 in _extract_bit).
+    if not a_int_is_bigint:
+        d = d & ((1 << num_targets) - 1)
+
     h = (num_targets - 1) >> 1  # bottom half size (needs num_targets >= 3 for a meaningful split)
 
     # initialize 3 clean ancillae
@@ -623,7 +675,7 @@ def gidney_cq_venting_adder(
     qrisp.cx(carry_mid, target[h])
 
     # Step 2: Vented addition on bottom half
-    ventmask_lo = carry_venting_adder(target[:h + 1], d_lo, anc_clean2, c_in=c_in, a_int_is_bigint=a_int_is_bigint)
+    ventmask_lo = carry_venting_adder(target[:h + 1], d_lo, anc_clean2, c_in=c_in, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
 
     # Step 3: Swap carry_mid back out of target[h].
     # target[h] is restored to its original qubit and carry_mid now
@@ -644,6 +696,7 @@ def gidney_cq_venting_adder(
         ancilla=anc_clean2,
         c_in=carry_mid,
         a_int_is_bigint=a_int_is_bigint,
+        ctrl=ctrl,
     )
 
     # Step 5: MX measurement on carry_mid.
@@ -679,7 +732,7 @@ def gidney_cq_venting_adder(
             qrisp.z(workspace[k])
 
     # 6c — First carry_xor pass (explicit, no fused pass for bottom half)
-    carry_xor_block(bottom, workspace, d_lo, c_in, a_int_is_bigint=a_int_is_bigint)
+    carry_xor_block(bottom, workspace, d_lo, c_in, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
 
     # 6d — CZ(workspace[k], vent[k+1]) again
     for k in jrange(h):
@@ -687,7 +740,7 @@ def gidney_cq_venting_adder(
             qrisp.z(workspace[k])
 
     # 6e — Second carry_xor pass
-    carry_xor_block(bottom, workspace, d_lo, c_in, a_int_is_bigint=a_int_is_bigint)
+    carry_xor_block(bottom, workspace, d_lo, c_in, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
 
     # 6f — Restore bottom half: NOT cancels the complement from 6a
     for i in jrange(h):
