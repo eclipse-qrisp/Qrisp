@@ -73,10 +73,7 @@ def bit_inverted_mcx(
             qrisp.x(parity_check_ctrl)
         else:
             qrisp.cx(ctrl, parity_check_ctrl)
-    if ctrl is None:
-        qrisp.mcx([parity_check_ctrl, simple_ctrl], target)
-    else:
-        qrisp.mcx([ctrl, parity_check_ctrl, simple_ctrl], target)
+    qrisp.mcx([parity_check_ctrl, simple_ctrl], target)
     with control(b):
         if ctrl is None:
             qrisp.x(parity_check_ctrl)
@@ -184,10 +181,7 @@ def bit_inverted_zz_zz_mcx(
         else:
             qrisp.cx(ctrl, parity_ctrl1)
             qrisp.cx(ctrl, parity_ctrl2)
-    if ctrl is None:
-        qrisp.mcx([parity_ctrl1, parity_ctrl2], target)
-    else:
-        qrisp.mcx([ctrl, parity_ctrl1, parity_ctrl2], target)
+    qrisp.mcx([parity_ctrl1, parity_ctrl2], target)
     with control(b):
         if ctrl is None:
             qrisp.x(parity_ctrl1)
