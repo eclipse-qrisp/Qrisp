@@ -3,5 +3,6 @@
 CUDA-Q Interface
 ================
 
-.. currentmodule:: qrisp.jasp.mlir.quake_lowering
+.. currentmodule:: qrisp.jasp.cudaq_interface
 .. autofunction:: qrisp_cudaq_kernel
+.. autoclass:: FixedShapeNDArray

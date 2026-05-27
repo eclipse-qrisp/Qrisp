@@ -16,20 +16,30 @@
 ********************************************************************************
 """
 
-from qrisp.jasp.evaluation_tools.boolean_simulation import *
-from qrisp.jasp.evaluation_tools.terminal_sampling import *
-from qrisp.jasp.evaluation_tools.jaspification import *
-from qrisp.jasp.evaluation_tools.catalyst_qjit import *
-from qrisp.jasp.evaluation_tools.profiler import *
-from qrisp.jasp.evaluation_tools.stim_extraction import *
+"""
+``qrisp.jasp.cudaq_interface`` — CUDA-Q backend for Qrisp/Jasp.
 
-# Optional CUDA-Q backend — only exposed when cudaq is installed.
-try:
-    from qrisp.jasp.cudaq_interface import (
-        FixedShapeNDArray,
-        cudaq_kernel_from_mlir,
-        run_quake_mlir,
-        qrisp_cudaq_kernel,
-    )
-except ImportError:
-    pass
+Provides the CUDA-Q execution tools for Qrisp functions compiled via
+Jasp/Quake MLIR.  ``cudaq`` is an optional dependency; importing this
+package when ``cudaq`` is not installed raises an ``ImportError``.
+
+Preferred import paths::
+
+    from qrisp.jasp import qrisp_cudaq_kernel, FixedShapeNDArray
+    from qrisp.jasp.cudaq_interface import qrisp_cudaq_kernel, FixedShapeNDArray
+
+"""
+
+from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray  # noqa: F401
+from qrisp.jasp.cudaq_interface.cudaq_kernel import (  # noqa: F401
+    cudaq_kernel_from_mlir,
+    run_quake_mlir,
+    qrisp_cudaq_kernel,
+)
+
+__all__ = [
+    "FixedShapeNDArray",
+    "cudaq_kernel_from_mlir",
+    "run_quake_mlir",
+    "qrisp_cudaq_kernel",
+]

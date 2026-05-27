@@ -44,16 +44,11 @@ from qrisp.alg_primitives import amplitude_amplification, q_switch
 from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop, qache
 
 try:
-    from qrisp.jasp.mlir.quake_lowering import (
-        jaspr_to_quake,
-        validate_quake_mlir,
-        run_quake_mlir,
-        qrisp_cudaq_kernel,
-        FixedShapeNDArray,
-    )
+    from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake, validate_quake_mlir
+    from qrisp.jasp.cudaq_interface import run_quake_mlir, qrisp_cudaq_kernel, FixedShapeNDArray
 except ImportError as exc:
     # Skip the entire test file if the import fails
-    pytest.skip(f"quake_lowering unavailable: {exc}", allow_module_level=True)
+    pytest.skip(f"cudaq unavailable: {exc}", allow_module_level=True)
 
 
 # ---------------------------------------------------------------------------
@@ -62,8 +57,6 @@ except ImportError as exc:
 
 def test_qrisp_cudaq_kernel():
     """Test that a simple @qrisp_cudaq_kernel compiles and runs, returning a valid measurement outcome."""
-    from qrisp.jasp.mlir.quake_lowering import qrisp_cudaq_kernel
-
     @qrisp_cudaq_kernel
     def bell():
         qv = QuantumVariable(2)
