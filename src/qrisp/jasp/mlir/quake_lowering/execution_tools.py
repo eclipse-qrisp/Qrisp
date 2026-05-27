@@ -672,18 +672,25 @@ def qrisp_cudaq_kernel(func):
     and can be passed to ``cudaq.run`` without calling it first.
 
     For functions with parameters, each parameter **must carry a type
-    annotation** (``int``, ``float``, or ``bool``), just as ``@cudaq.kernel``
-    requires them.  The annotation is used to generate a correctly-typed
-    dummy value for Jaspr tracing, producing parametric MLIR whose
-    ``@main`` function retains the parameter in its signature.  The
-    resulting kernel accepts runtime arguments via ``cudaq.run`` or direct
-    calls.
+    annotation**, just as ``@cudaq.kernel`` requires them.  The annotation
+    is used to generate a correctly-typed dummy value for Jaspr tracing,
+    producing parametric MLIR whose ``@main`` function retains the parameter
+    in its signature.  The resulting kernel accepts runtime arguments via
+    ``cudaq.run`` or direct calls.
+
+    Supported annotations:
+
+    * ``int``, ``float``, ``bool`` — scalar values passed directly.
+    * :class:`FixedShapeNDArray` ``(dtype, size)`` — fixed-size NumPy array.
+      Specify the element type (``float``, ``int``, or ``bool``) and the
+      number of elements.
 
     Parameters
     ----------
     func : callable
         A Qrisp function that can be traced with ``make_jaspr``.  Parameters,
-        if any, must be annotated with ``int``, ``float``, or ``bool``.
+        if any, must be annotated with ``int``, ``float``, ``bool``, or
+        :class:`FixedShapeNDArray`.
 
     Returns
     -------
