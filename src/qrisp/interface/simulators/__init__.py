@@ -16,4 +16,5 @@
 ********************************************************************************
 """
 
+from qrisp.interface.simulators.default_backend import *
 from qrisp.interface.simulators.stim_backend import *
