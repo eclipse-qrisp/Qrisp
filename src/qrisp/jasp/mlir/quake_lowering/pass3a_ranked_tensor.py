@@ -67,6 +67,9 @@ from qrisp.jasp.mlir.quake_lowering.cc_dialect import (
     CcLoadOp,
     CcPtrType,
     CcStoreOp,
+    CcLoopOp,
+    CcConditionOp,
+    CcContinueOp,
 )
 
 
@@ -162,8 +165,13 @@ def _process_block_recursive(region: Region, array_map: dict, func_rewrites: dic
         # erase yet (because the call site still held a reference).
         _erase_dead_tensor_constants(block)
         for op in list(block.ops):
-            for nested_region in op.regions:
-                _process_block_recursive(nested_region, array_map, func_rewrites)
+            if isinstance(op, CcLoopOp):
+                _rewrite_cc_loop_tensor_args(op, array_map)
+                for nested_region in op.regions:
+                    _process_block_recursive(nested_region, array_map, func_rewrites)
+            else:
+                for nested_region in op.regions:
+                    _process_block_recursive(nested_region, array_map, func_rewrites)
 
 
 def _erase_dead_tensor_constants(block: Block) -> None:
@@ -202,6 +210,99 @@ def _process_block(block: Block, array_map: dict) -> None:
                 and _is_ranked_1_tensor(op.result.type)
                 and not any(op.result.uses)):
             Rewriter.erase_op(op, safe_erase=False)
+
+
+# ===================================================================
+# CC Loop tensor arg rewriting
+# ===================================================================
+
+
+def _rewrite_cc_loop_tensor_args(loop_op: CcLoopOp, array_map: dict) -> None:
+    """Rewrite tensor<NxT> loop-carried values in a cc.loop to !cc.ptr<!cc.array<T x N>>.
+
+    The key insight: after the function signature rewrite (Step 2), the init
+    operands to the loop may already have been changed to ptr types, but the
+    loop's internal block arguments still have the old tensor types. We detect
+    this by looking at the **while-region block arg types** (which reflect what
+    the loop was originally created with).
+
+    This updates:
+    - The cc.loop's init operands (replace tensor value with ptr from array_map)
+    - Block args in while, body, and step regions
+    - The cc.loop's result types
+    """
+    # Look at the while-region block args to find which are still tensor types
+    if not loop_op.while_region.blocks:
+        return
+
+    while_block = loop_op.while_region.blocks[0]
+    tensor_arg_indices = []
+    for i, arg in enumerate(while_block.args):
+        if _is_ranked_1_tensor(arg.type):
+            tensor_arg_indices.append(i)
+
+    if not tensor_arg_indices:
+        return
+
+    # For each tensor arg, determine the ptr type and find the source in array_map
+    arguments = list(loop_op.arguments)
+    rewrites = {}  # index -> (ptr_value, ptr_type, elem_type, size)
+    for idx in tensor_arg_indices:
+        # Get the tensor type from the block arg
+        tensor_type = while_block.args[idx].type
+        size = tensor_type.get_shape()[0]
+        elem_type = tensor_type.element_type
+        arr_type = CcArrayType(elem_type, size)
+        ptr_type = CcPtrType(arr_type)
+
+        # The init operand may already be a ptr (if the function arg was rewritten)
+        init_val = arguments[idx]
+        if isinstance(init_val.type, CcPtrType) and isinstance(init_val.type.element_type, CcArrayType):
+            # Already a ptr — use it directly
+            ptr_val = init_val
+        elif init_val in array_map:
+            ptr_val = array_map[init_val][0]
+        else:
+            # Try to find it by identity in array_map
+            ptr_val = None
+            for mapped_tensor, (mapped_ptr, _, _) in array_map.items():
+                if mapped_tensor is init_val:
+                    ptr_val = mapped_ptr
+                    break
+            if ptr_val is None:
+                # Cannot find a ptr for this tensor - skip
+                continue
+
+        rewrites[idx] = (ptr_val, ptr_type, elem_type, size)
+
+    if not rewrites:
+        return
+
+    # 1. Update the init operands of the cc.loop
+    new_arguments = list(loop_op.arguments)
+    for idx, (ptr_val, ptr_type, elem_type, size) in rewrites.items():
+        new_arguments[idx] = ptr_val
+    loop_op.operands = new_arguments
+
+    # 2. Update block args in all three regions (while, body, step)
+    for region in loop_op.regions:
+        if not region.blocks:
+            continue
+        block = region.blocks[0]
+        for idx, (ptr_val, ptr_type, elem_type, size) in rewrites.items():
+            if idx < len(block.args):
+                old_arg = block.args[idx]
+                Rewriter.replace_value_with_new_type(old_arg, ptr_type)
+                # Register in array_map so nested accesses can find it
+                array_map[old_arg] = (old_arg, elem_type, size)
+
+    # 3. Update the cc.loop's result types
+    for idx, (ptr_val, ptr_type, elem_type, size) in rewrites.items():
+        if idx < len(loop_op.res):
+            res = loop_op.res[idx]
+            Rewriter.replace_value_with_new_type(res, ptr_type)
+            # Register the loop result in array_map too
+            array_map[res] = (res, elem_type, size)
 
 
 # ===================================================================

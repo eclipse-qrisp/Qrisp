@@ -130,9 +130,13 @@ def _process_region(region: Region) -> None:
 # ===================================================================
 
 
+def _is_rank0_tensor(t) -> bool:
+    """Return True if *t* is a rank-0 TensorType."""
+    return getattr(t, "name", "") == "tensor" and not t.get_shape()
+
 def _is_tensor(t) -> bool:
-    """Return True if *t* is a TensorType (any rank)."""
-    return getattr(t, "name", "") == "tensor"
+    """Return True if *t* is a rank-0 TensorType (only these get unwrapped)."""
+    return _is_rank0_tensor(t)
 
 
 def _get_element_type(t):
