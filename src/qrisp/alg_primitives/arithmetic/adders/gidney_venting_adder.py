@@ -624,8 +624,6 @@ def gidney_cq_venting_adder(
       6. Phase correction for the bottom half using two carry_xor_block
          passes (the fused first pass was consumed by step 4).
 
-    Requires n ≥ 3 (the splitting degenerates for n < 3).
-
     Parameters
     ----------
     target : qrisp.QuantumVariable | list[qrisp.Qubit]
@@ -643,6 +641,55 @@ def gidney_cq_venting_adder(
     int
         Vented carry measurement bitmask.  The k-th bit is the X-basis
         measurement outcome of the k-th vented carry.
+
+    Examples
+    --------
+    Basic addition in dynamic (JASP) mode::
+
+        from qrisp import QuantumFloat, measure
+        from qrisp.jasp import jaspify
+
+        @jaspify
+        def main():
+            target = QuantumFloat(5)
+            target[:] = 2
+            gidney_cq_venting_adder(7, target)
+            return measure(target)
+
+        result = main()
+        # result is 9 (2 + 7 = 9)
+
+    Addition with a carry-in qubit::
+
+        @jaspify
+        def main():
+            target = QuantumFloat(4)
+            target[:] = 5
+            c_in = QuantumFloat(1)
+            c_in[:] = 1
+            gidney_cq_venting_adder(2, target, c_in=c_in[0])
+            return measure(target)
+
+        result = main()
+        # result is 8 (5 + 2 + carry_in = 8)
+
+    Controlled addition (zero extra Toffoli cost)::
+
+        from qrisp import control, QuantumBool
+
+        @jaspify
+        def main():
+            target = QuantumFloat(5)
+            target[:] = 10
+            ctrl = QuantumBool()
+            ctrl[:] = 1
+            with control(ctrl):
+                gidney_cq_venting_adder(5, target)
+            return measure(target)
+
+        result = main()
+        # result is 15 (10 + 5 = 15)
+        # when ctrl = 0, target stays unchanged
     """
     from qrisp.jasp import jrange, jlen
 
