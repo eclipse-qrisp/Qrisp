@@ -27,6 +27,7 @@ EXTRACT_BIT_CASES = [
 
 @pytest.mark.parametrize("val, bit, expected", EXTRACT_BIT_CASES)
 def test_extract_bit_int(val, bit, expected):
+    # Verify bit extraction via shift-and-mask for small integers
     assert bool(_extract_bit(val, bit, False)) == bool(expected)
 
 EXTRACT_BIT_BIGINT_CASES = [
@@ -43,6 +44,7 @@ def test_extract_bit_bigint(idx, expected):
             return self.bits[i]
 
     b = _MockBigInt([1, 0, 1, 1])
+    # Verify bit extraction via the BigInteger interface
     assert bool(_extract_bit(b, idx, True)) == expected
 
 
@@ -62,8 +64,6 @@ def _set_qubits(qv, val, n):
         if (val >> i) & 1:
             x(qv[i])
 
-
-# ── bit_inverted_mcx ─────────────────────────────────────────────────
 
 ALL_BIT_INVERTED_CASES = [
     # (ctrl_val, b, expected_tgt, ctrl_qbl_val)
@@ -86,7 +86,7 @@ def test_bit_inverted_mcx_jasp(ctrl_val, b, expected_tgt, ctrl_qbl_val):
         ctrl_qbl = QuantumVariable(1)
         if ctrl_val:
             x(ctrl[0])
-        x(always_one[0])
+        x(always_one[0])  # ensure simple_ctrl is |1⟩ so MCX fires based on parity
         if ctrl_qbl_val is not None and ctrl_qbl_val:
             x(ctrl_qbl[0])
         bit_inverted_mcx(ctrl[0], always_one[0], tgt[0], b, ctrl=ctrl_qbl[0] if ctrl_qbl_val is not None else None)
@@ -94,6 +94,7 @@ def test_bit_inverted_mcx_jasp(ctrl_val, b, expected_tgt, ctrl_qbl_val):
     measured_ctrl, measured_always_one, measured_tgt, measured_ctrl_qbl = run()
     assert int(measured_ctrl) == ctrl_val
     assert int(measured_always_one) == 1
+    # target toggles when (ctrl_val XOR b) = 1; always_one=1 ensures simple_ctrl fires
     assert int(measured_tgt) == expected_tgt
     if ctrl_qbl_val is not None:
         assert int(measured_ctrl_qbl) == ctrl_qbl_val
@@ -111,13 +112,15 @@ def test_zz_mcx_jasp(q0v, q1v, expected_tgt):
             x(q0[0])
         if q1v:
             x(q1[0])
-        x(ctrl[0])
+        x(ctrl[0])  # ensure control is |1⟩
+        # zz_mcx fires when q0 and q1 disagree (parity=1)
         zz_mcx(q0[0], q1[0], ctrl[0], tgt[0])
         return measure(q0), measure(q1), measure(ctrl), measure(tgt)
     measured_q0, measured_q1, measured_ctrl, measured_tgt = run()
     assert int(measured_q0) == q0v
     assert int(measured_q1) == q1v
     assert int(measured_ctrl) == 1
+    # target toggles iff q0v XOR q1v = 1
     assert int(measured_tgt) == expected_tgt
 
 
@@ -135,6 +138,8 @@ def test_zz_zz_mcx_jasp(z_left_v, z_left_right_v, z_right_v, expected_tgt):
             x(z_left_right[0])
         if z_right_v:
             x(z_right[0])
+        # zz_zz_mcx fires when left pair disagrees AND right pair disagrees
+        # z_left_right is shared between both pairs
         zz_zz_mcx(z_left[0], z_left_right[0], z_right[0], tgt[0])
         return measure(z_left), measure(z_left_right), measure(z_right), measure(tgt)
     measured_z_left, measured_z_left_right, measured_z_right, measured_tgt = run()
@@ -143,8 +148,6 @@ def test_zz_zz_mcx_jasp(z_left_v, z_left_right_v, z_right_v, expected_tgt):
     assert int(measured_z_right) == z_right_v
     assert int(measured_tgt) == expected_tgt
 
-
-# ── bit_inverted_zz_zz_mcx ──────────────────────────────────────────
 
 ALL_BIT_INVERTED_ZZ_ZZ_CASES = [
     # (ctrl1_v, ctrl2_v, b, expected_tgt, ctrl_qbl_val)
@@ -172,6 +175,8 @@ def test_bit_inverted_zz_zz_mcx_jasp(ctrl1_v, ctrl2_v, b, expected_tgt, ctrl_qbl
             x(ctrl2[0])
         if ctrl_qbl_val is not None and ctrl_qbl_val:
             x(ctrl_qbl[0])
+        # When b=1: target toggles when both controls are |0⟩ (inverted parity)
+        # When b=0: target toggles when both controls are |1⟩
         bit_inverted_zz_zz_mcx(ctrl1[0], ctrl2[0], tgt[0], b, ctrl=ctrl_qbl[0] if ctrl_qbl_val is not None else None)
         return measure(ctrl1), measure(ctrl2), measure(tgt), measure(ctrl_qbl)
     measured_ctrl1, measured_ctrl2, measured_tgt, measured_ctrl_qbl = run()
@@ -182,7 +187,6 @@ def test_bit_inverted_zz_zz_mcx_jasp(ctrl1_v, ctrl2_v, b, expected_tgt, ctrl_qbl
         assert int(measured_ctrl_qbl) == ctrl_qbl_val
 
 
-# ── carry_venting_adder ─────────────────────────────────────────────
 
 ALL_VENTING_CASES = [
     # (init, d, c_in_val, expected, n, ctrl_val)
@@ -211,6 +215,7 @@ def test_carry_venting_adder_jasp(init, d, c_in_val, expected, n, ctrl_val):
         if ctrl_val is not None and ctrl_val:
             x(ctrl_qbl[0])
         anc = QuantumVariable(2)
+        # ctrl=None: uncontrolled addition; ctrl=1: controlled; ctrl=0: no-op
         ventmask = carry_venting_adder(d, target, anc, c_in=c_in, ctrl=ctrl_qbl[0] if ctrl_val is not None else None)
         return measure(target), measure(ctrl_qbl), ventmask
     result_target, result_ctrl, ventmask = run()
@@ -220,7 +225,6 @@ def test_carry_venting_adder_jasp(init, d, c_in_val, expected, n, ctrl_val):
     assert ventmask >= 0
 
 
-# ── carry_xor_block ─────────────────────────────────────────────────
 
 CARRY_XOR_CASES = [
     (5, 3, None),
@@ -239,6 +243,7 @@ def test_carry_xor_block_jasp(init, d, c_in_val):
             c_in = QuantumVariable(1)
             if c_in_val:
                 x(c_in[0])
+        # carry_xor_block recomputes carries from sum and XORs them into dirty_ancillas
         carry_xor_block(d, dirty_ancillas, target, c_in)
         if c_in is None:
             return measure(target), measure(dirty_ancillas)
@@ -251,7 +256,6 @@ def test_carry_xor_block_jasp(init, d, c_in_val):
         assert int(result[2]) == c_in_val
 
 
-# ── dirty_ancillae_adder ────────────────────────────────────────────
 
 ALL_DIRTY_ADD_CASES = [
     # (init, d, c_in_val, expected, n, ctrl_val)
@@ -281,15 +285,16 @@ def test_dirty_ancillae_adder_jasp(init, d, c_in_val, expected, n, ctrl_val):
             x(ctrl_qbl[0])
         dirty = QuantumVariable(n - 2)
         for i in range(n - 2):
-            h(dirty[i])
+            h(dirty[i])  # initialize dirty qubits in |+⟩
         anc = QuantumVariable(2)
+        # dirty_ancillae_adder must restore dirty qubits to |+⟩ (measurable as |0⟩ after H)
         ventmask = dirty_ancillae_adder(d, target, dirty, anc, c_in=c_in, ctrl=ctrl_qbl[0] if ctrl_val is not None else None)
         for i in range(n - 2):
-            h(dirty[i])
+            h(dirty[i])  # undo |+⟩ → measure in Z-basis
         return measure(target), measure(dirty), measure(ctrl_qbl), ventmask
     result_target, result_dirty, result_ctrl, ventmask = run()
     assert int(result_target) == expected
-    assert int(result_dirty) == 0
+    assert int(result_dirty) == 0  # dirty qubits restored to |0⟩
     if ctrl_val is not None:
         assert int(result_ctrl) == ctrl_val
     assert ventmask >= 0
@@ -299,18 +304,17 @@ def test_dirty_ancillae_adder_preserves_dirty():
     @jaspify
     def run():
         target = QuantumVariable(4)
-        x(target[0])
+        x(target[0])  # target = 1
         dirty = QuantumVariable(2)
-        x(dirty[0])
+        x(dirty[0])   # dirty[0] = 1
         anc = QuantumVariable(2)
         dirty_ancillae_adder(1, target, dirty, anc)
         return measure(target), measure(dirty)
     result_target, result_dirty = run()
-    assert int(result_target) == 2
-    assert int(result_dirty) & 1 == 1
+    assert int(result_target) == 2   # 1 + 1 = 2
+    assert int(result_dirty) & 1 == 1  # dirty[0] preserved (phase-corrected back to original)
 
 
-# ── gidney_cq_venting_adder ─────────────────────────────────────────
 
 ALL_GIDNEY_CQ_CASES = [
     # (init, d, c_in_val, expected, n, ctrl_val)
@@ -344,6 +348,7 @@ def test_gidney_cq_venting_adder_jasp(init, d, c_in_val, expected, n, ctrl_val):
         if ctrl_val is None:
             ventmask = gidney_cq_venting_adder(d, target, c_in)
         else:
+            # Test the @custom_control path via the with control(...) context
             with control(ctrl_qbl[0]):
                 ventmask = gidney_cq_venting_adder(d, target, c_in)
         return measure(target), measure(ctrl_qbl), ventmask
@@ -368,6 +373,7 @@ def test_phase_z_bit_indexing(desc, ventmask, nq, shift, expected):
     for i in range(nq):
         h(qv[i])
 
+    # Apply CZ corrections based on ventmask bits at shifted positions
     for k in range(nq):
         with control(bool((ventmask >> shift(k)) & 1)):
             z(qv[k])
@@ -385,6 +391,17 @@ def test_non_jasp_mode_raises_error():
     target = QuantumVariable(3)
     with pytest.raises(RuntimeError, match="The Gidney Classical-Quantum adder does not work in standard python execution mode."):
         gidney_cq_venting_adder(1, target)
+
+
+def test_type_errors():
+    """Verify that type errors are raised for invalid argument types."""
+    from qrisp import QuantumVariable
+
+    qv = QuantumVariable(3)
+    with pytest.raises(TypeError, match="The first argument must be a classical integer"):
+        gidney_cq_venting_adder(qv, qv)
+    with pytest.raises(TypeError, match="The second argument must be a QuantumVariable"):
+        gidney_cq_venting_adder(1, 2)
 
 
 def test_no_additional_toffoli_cost():

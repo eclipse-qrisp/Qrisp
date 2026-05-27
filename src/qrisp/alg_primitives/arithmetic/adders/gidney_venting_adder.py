@@ -608,30 +608,15 @@ def gidney_cq_venting_adder(
     target ← (target + d + c_in) mod 2^n
 
     Uses 3 clean ancillae allocated internally (1 carry_mid + 2 streaming
-    carry) and no external dirty workspace — the target register is split
-    in half, and each half serves as dirty storage for the other half's
-    carry chain.
-
-    Algorithm:
-      1. Swap carry_mid into the target register at the split point.
-      2. Vented addition on the bottom half using the first 2 ancillae.
-      3. Swap carry_mid back out — it now holds the carry into the top half.
-      4. Dirty-ancilla addition on the top half, using the bottom half as
-         dirty workspace (carry_mid as carry-in).
-      5. Measure the overflow carry (carry_mid) in the X-basis.
-      6. Phase correction for the bottom half using two carry_xor_block
-         passes (the fused first pass was consumed by step 4).
-
-    Requires n ≥ 3 (the splitting degenerates for n < 3).
 
     Parameters
     ----------
-    target : qrisp.QuantumVariable | list[qrisp.Qubit]
-        Target register, little-endian (index 0 = LSB). Modified in place.
     d : int
-        Classical addend (compile-time constant).
+        The classical value to add.
+    target : qrisp.QuantumVariable | list[qrisp.Qubit]
+        The quantum register to add to (modified in place).
     c_in : qrisp.Qubit | qrisp.QuantumVariable | None
-        Quantum carry-in. None is treated as |0⟩.
+        Quantum carry-in.  ``None`` is treated as ``|0⟩``.
     a_int_is_bigint : bool
         If True, read bits from *d* via ``d.get_bit(i)`` (BigInteger).
         If False (default), use shift-and-mask extraction.
@@ -643,6 +628,11 @@ def gidney_cq_venting_adder(
         measurement outcome of the k-th vented carry.
     """
     from qrisp.jasp import jrange, jlen
+
+    if isinstance(d, (qrisp.QuantumVariable, list)):
+        raise TypeError("The first argument must be a classical integer.")
+    if not isinstance(target, (qrisp.QuantumVariable, list)):
+        raise TypeError("The second argument must be a QuantumVariable or list of Qubits.")
 
     if not check_for_tracing_mode():
         raise RuntimeError("The Gidney Classical-Quantum adder does not work in standard python execution mode.")
