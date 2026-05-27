@@ -7,18 +7,10 @@ Backend Interface
    :maxdepth: 2
    :hidden:
 
-   Backend
-   Job
-   JobStatus
-   JobResult
-   MeasurementResult
+   Hardware Backends/index
+   Simulator Backends/index
+   Abstract Backend Interface/index
    BatchedBackend
-   DockerSimulators
-   QiskitBackend
-   IQMBackend
-   AQTBackend
-   QiskitRuntimeBackend
-   StimBackend
    VirtualBackend
    
 The backend interface provides a minimal, hardware-agnostic abstraction for executing quantum circuits.
@@ -56,8 +48,8 @@ New code that needs the full :ref:`Job` interface (status polling, cancellation,
 concurrent execution) should call :meth:`~qrisp.interface.Backend.run_async` instead.
 
 
-Synchronous Backends
-~~~~~~~~~~~~~~~~~~~~
+Example: Building a Synchronous Backend
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For example, we can define a simple backend that wraps the built-in Qrisp
 ``run`` function for synchronous circuit simulation:
@@ -102,7 +94,7 @@ For example, we can define a simple backend that wraps the built-in Qrisp
          return self._last_known_status
 
 
-   class DefaultBackend(Backend):
+   class QrispSimulatorBackend(Backend):
       """A default backend that uses the built-in Qrisp simulator."""
 
       @classmethod
@@ -131,14 +123,14 @@ Let's create a quantum circuit that applies a Hadamard gate to a single qubit an
    circuit.h(0)
    circuit.measure(0)
 
-We can now create an instance of ``DefaultBackend`` and execute the circuit.
+We can now create an instance of ``QrispSimulatorBackend`` and execute the circuit.
 Calling ``run_async`` returns a :ref:`Job` immediately, and because the simulator is
 synchronous the job is already ``DONE`` before ``run_async`` returns. Results are
 retrieved by calling ``job.result()``:
 
 .. code-block:: python
 
-   >>> backend = DefaultBackend()
+   >>> backend = QrispSimulatorBackend()
    >>> job = backend.run_async(circuit)
    >>> print(job.status())
    done
@@ -164,7 +156,7 @@ We can also pass explicit runtime options at construction time:
 
 .. code-block:: python
 
-   >>> backend = DefaultBackend(options={"shots": 1024, "token": "fake_token"})
+   >>> backend = QrispSimulatorBackend(options={"shots": 1024, "token": "fake_token"})
    >>> result = backend.run_async(circuit).result()
    >>> print(result.get_counts())
    {'0': 510, '1': 514}   # Note: actual counts may vary due to randomness
@@ -316,7 +308,7 @@ separate thread so they all execute concurrently:
          return job
 
 
-The key difference from ``DefaultBackend`` is that ``run_async`` returns to the caller
+The key difference from ``QrispSimulatorBackend`` is that ``run_async`` returns to the caller
 before any circuit has finished executing.
 The coordinator thread is already running in the background:
 
@@ -517,9 +509,9 @@ Obtain a ``BatchedBackend`` from any existing backend via
 
 .. code-block:: python
 
-   from qrisp.default_backend import DefaultBackend
+   from qrisp.default_backend import QrispSimulatorBackend
 
-   backend = DefaultBackend()
+   backend = QrispSimulatorBackend()
    batched_backend = backend.batched()
 
 The key benefit is visible when measuring multiple quantum variables.
@@ -531,9 +523,9 @@ invocation so we can observe exactly how many hardware calls are made.
 .. code-block:: python
 
    from qrisp import QuantumFloat, h
-   from qrisp.default_backend import DefaultBackend
+   from qrisp.default_backend import QrispSimulatorBackend
 
-   class CountingBackend(DefaultBackend):
+   class CountingBackend(QrispSimulatorBackend):
        def __init__(self):
            super().__init__()
            self.run_async_calls = 0

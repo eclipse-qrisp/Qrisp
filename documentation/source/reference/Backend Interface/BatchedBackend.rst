@@ -24,7 +24,6 @@ Methods
 .. autosummary::
    :toctree: generated/
 
-   BatchedBackend.__init__
    BatchedBackend.run
    BatchedBackend.dispatch
    BatchedBackend.update_options
