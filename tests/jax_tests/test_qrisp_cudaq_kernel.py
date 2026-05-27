@@ -45,7 +45,6 @@ from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop, qa
 
 try:
     import cudaq
-    from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake, validate_quake_mlir
     from qrisp.jasp.cudaq_interface import run_quake_mlir, qrisp_cudaq_kernel, FixedShapeNDArray
 except ImportError as exc:
     # Skip the entire test file if the import fails
@@ -360,6 +359,22 @@ def test_unsupported_annotation_raises():
         def bad_ann(k: str):
             qv = QuantumFloat(1)
             return measure(qv[0])
+
+
+def test_traced_jax_array_arithmetic_triggers_helpful_safeguard_error():
+    """Arithmetic on traced jax.numpy arrays should fail early with a helpful
+    safeguard message for users."""
+
+    with pytest.raises(RuntimeError, match="traced jax.numpy arrays"):
+
+        @qrisp_cudaq_kernel
+        def bad_kernel(k: int):
+            qv = QuantumFloat(2)
+            arr1 = jnp.array([1.57, 0.78, 0.39])
+            arr2 = jnp.array([1.57, 0.78, 0.39])
+            arr3 = arr1 + arr2
+            rx(arr3[0], qv[0])
+            return measure(qv[0]) + k
 
 
 if __name__ == "__main__":

@@ -63,6 +63,9 @@ from qrisp.jasp.mlir.quake_lowering.pass2_scf_to_cc import lower_scf_to_cc
 from qrisp.jasp.mlir.quake_lowering.pass3a_ranked_tensor import lower_ranked_tensors
 from qrisp.jasp.mlir.quake_lowering.pass3_tensor_unwrap import unwrap_tensors
 from qrisp.jasp.mlir.quake_lowering.pass4_array_to_stdvec import lower_array_params_to_stdvec
+from qrisp.jasp.mlir.quake_lowering.safeguard_no_ranked_tensor_linalg import (
+    verify_no_ranked_tensor_linalg,
+)
 from qrisp.jasp.mlir.mlir_rewrites.scalar_tensor_folding import scalar_tensor_folding
 
 
@@ -88,10 +91,15 @@ def jaspr_to_quake(jaspr, lower_stableHLO: bool = True) -> ModuleOp:
     ------
     ImportError
         If the ``xdsl`` package is not installed.
+    LinalgRankedTensorError
+        If the emitted module contains ``linalg.generic`` on ranked tensors.
     """
     # Step 1 – Produce the initial xDSL module with Jasp IR.
     from qrisp.jasp.mlir.mlir_emission import jaspr_to_mlir
     module: ModuleOp = jaspr_to_mlir(jaspr, lower_stableHLO=lower_stableHLO)
+
+    # Step 1b – Safeguard: reject ranked-tensor linalg.generic early.
+    verify_no_ranked_tensor_linalg(module)
 
     # Step 2 – PASS 1: QuantumState elimination + Jasp→Quake rewriting.
     lower_jasp_to_quake(module)

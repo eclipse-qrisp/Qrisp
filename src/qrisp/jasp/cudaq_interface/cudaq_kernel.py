@@ -443,6 +443,9 @@ def qrisp_cudaq_kernel(func):
     RuntimeError
         If a parameter is missing a type annotation or has an unsupported
         annotation type.
+    RuntimeError
+        If tracing or lowering the function to CUDA-Q fails. This can
+        happen when the kernel uses unsupported traced array arithmetic.
 
     Examples
     --------
