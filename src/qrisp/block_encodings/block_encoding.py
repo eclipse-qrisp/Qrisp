@@ -44,9 +44,9 @@ from qrisp.qtypes import QuantumBool, QuantumFloat
 from scipy.sparse import csr_array, csr_matrix
 from typing import Any, Callable, TYPE_CHECKING, Union
 from qrisp.block_encodings.block_encoding_methods import (
-    get_foqcs_lcu_prep_num_of_ancillae,
+    _get_foqcs_lcu_prep_num_of_ancillae,
     foqcs_analyze_operator,
-    foqcs_prep_heisenberg_1D,
+    foqcs_prep_heisenberg,
     foqcs_prep_spin_glass
     )
 
@@ -558,6 +558,7 @@ class BlockEncoding:
         
         KeyError
             If function received an unsupported FOQCS-LCU PREP method
+
         """
         # Analyze the Qubit operator
         aresult = foqcs_analyze_operator(O, L = L, tol = tol, raise_errors = True)
@@ -601,13 +602,13 @@ class BlockEncoding:
             alpha = norm**2
             # Create partial PREP_R and PREP_L functions
             prep = partial(
-                foqcs_prep_heisenberg_1D,
+                foqcs_prep_heisenberg,
                 L=heis_L,
                 g=_g,
                 J=_J,
             )
             unprep = partial(
-                foqcs_prep_heisenberg_1D,
+                foqcs_prep_heisenberg,
                 L=heis_L,
                 g=_g,
                 J=_J,
@@ -743,7 +744,7 @@ class BlockEncoding:
             The default is None, in which case the unprep is calculated using the prep parameter.
 
         is_hermitian : bool
-            Indicates whether the block-encoding unitary is Hermitian. (???) Set to True, if all provided unitaries are Hermitian.
+            Indicates whether the operator encoded by this block encoding is Hermitian.
             The default is False.
         
         norm : "ArrayLike"
@@ -791,19 +792,19 @@ class BlockEncoding:
         # Normalization for block encoding
         norm = np.linalg.norm(np.block([_g, _J]))
 
-        # Construct dictionary input expected by foqcs_prep_heisenberg_1D()
+        # Construct dictionary input expected by foqcs_prep_heisenberg()
         heis_g = {"X": g[0], "Y": g[1], "Z": g[2]}
         heis_J = {"X": J[0], "Y": J[1], "Z": J[2]}
 
         # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
         prep = partial(
-            foqcs_prep_heisenberg_1D,
+            foqcs_prep_heisenberg,
             L=L,
             g=heis_g,
             J=heis_J,
         )
         unprep = partial(
-            foqcs_prep_heisenberg_1D,
+            foqcs_prep_heisenberg,
             L=L,
             g=heis_g,
             J=heis_J,
@@ -828,7 +829,7 @@ class BlockEncoding:
             print(result_rus)
 
         """
-        n_anc = get_foqcs_lcu_prep_num_of_ancillae(prep, num_q_ops)
+        n_anc = _get_foqcs_lcu_prep_num_of_ancillae(prep, num_q_ops)
 
         # FOQCS-LCU SELECT
         def _select(num_q_ops: int, n_anc: int, ancillae, *operands):

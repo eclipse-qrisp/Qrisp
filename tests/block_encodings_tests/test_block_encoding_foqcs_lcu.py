@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 from qrisp.block_encodings import BlockEncoding
 from qrisp import QuantumVariable, terminal_sampling, multi_measurement
-from qrisp.block_encodings import foqcs_prep_heisenberg_1D, is_operator_foqcs_compatible, foqcs_analyze_operator, foqcs_prep_spin_glass
+from qrisp.block_encodings import foqcs_prep_heisenberg, is_operator_foqcs_compatible, foqcs_analyze_operator, foqcs_prep_spin_glass
 from functools import partial
 from qrisp.operators import X, Y, Z
 from qrisp.alg_primitives.unbalanced_w_state import unbalanced_W_state
@@ -136,8 +136,7 @@ def test_foqcs_lcu_prep():
     d_state = QuantumVariable(L * 2 + 6)
 
     # Prep base state using qv + Do FOQCS-LCU magic using prep function
-    foqcs_prep_heisenberg_1D(d_state, L, heis_g, heis_J)
-    #sv = d_state.qs.statevector("function")
+    foqcs_prep_heisenberg(d_state, L, heis_g, heis_J)
     # Take out the statevector from the compiled circuit
     qc = d_state.qs.compile()
     statev = qc.statevector_array()
@@ -200,45 +199,10 @@ def test_foqcs_lcu_prep():
         np.kron(zero_n, dicke_2NN),
     )
 
-    #comp_arr = []
-    #comp_arr_ref = []
+    # Zero out entries that are close to zero
+    # statev[np.isclose(statev, 0j, atol=1e-6)] = 0
 
-    # print("State:")
-    # for i in range(2**14):
-    #     bits = format(i, "014b")
-    #     amp = sv({d_state: bits})
-    #     if np.isclose(amp, 0j, atol=1e-6) == False:
-    #         print(bits, amp)
-    #         comp_arr.append(amp)
-
-    # print()
-    # print("Ref state:")
-    # init_ref = {}
-    # q = 0
-    # for i in ref_state:
-    #     bits = format(q, "014b")
-    #     if i != 0:
-    #         init_ref[bits] = i
-    #         print(bits, i)
-    #         comp_arr_ref.append(i)
-    #     q += 1
-
-    # print(f"Array: {comp_arr}")
-    # print(f"Array REF: {comp_arr_ref}")
-    # print(f"Comparison of shortened arrays: {np.allclose(comp_arr, comp_arr_ref, atol=1e-06)}")
-
-    # print(init_ref)
-
-    # expected = QuantumVariable(14)
-    # expected.init_state(init_ref, method="qiskit")
-
-    # print(f"State:\n{d_state}")
-    # print(f"Expected state:\n{expected}")
-
-    #Zero out entries that are close to zero
-    #statev[np.isclose(statev, 0j, atol=1e-6)] = 0
-
-    #for i in range(0, len(statev)):
+    # for i in range(0, len(statev)):
     #    if statev[i] != 0:
     #        print(f"s[{i}] = {statev[i]}")
     #    if ref_state[i] != 0:
@@ -250,8 +214,6 @@ def test_foqcs_lcu_prep():
     )
 
 def test_foqcs_lcu_spin_glass_prep():
-    # g = {"X" : [], "Y" : [], "Z" : []}
-    # J = {"X" : [[]], "Y" : [[]], "Z" : [[]]}
 
     # Initialize variables + their values
     L = 3
@@ -269,28 +231,19 @@ def test_foqcs_lcu_spin_glass_prep():
     J = np.array(J, dtype=complex)
     d_state = QuantumVariable(5 * L)
 
-    # g = np.array(np.random.uniform(-1, 1, (3, L)), dtype=object)
-    # Jx = np.array([np.random.uniform(-1, 1, size=i) for i in range(L - 1, 0, -1)], dtype=object)
-    # Jx = [row.tolist() for row in Jx]
-    # Jz = np.array([np.random.uniform(-1, 1, size=i) for i in range(L - 1, 0, -1)], dtype=object)
-    # Jz = [row.tolist() for row in Jz]
-    # Jy = np.array([np.random.uniform(-1, 1, size=i) for i in range(L - 1, 0, -1)], dtype=object)
-    # Jy = [row.tolist() for row in Jy]
-    # J = {"X": Jx, "Y": Jy, "Z": Jz}
-
     # Fix coefficients for debugging
-    g = np.array( [[-0.4808829 +0.j, -0.86150457+0.j,  0.22114172+0.j],
-                   [-0.1736148 +0.j,  0.49011868+0.j,  0.78437336+0.j],
-                   [-0.33825609+0.j, -0.19728503+0.j, -0.5482909 +0.j]])
-    J = np.array([[[ 0.        +0.j,  0.45669928+0.j, -0.29835039+0.j],
-                   [ 0.45669928+0.j,  0.        +0.j, -0.66928103+0.j],
-                   [-0.29835039+0.j, -0.66928103+0.j,  0.        +0.j]],
-                  [[ 0.        +0.j, -0.24574681+0.j,  0.07099358+0.j],
-                   [-0.24574681+0.j,  0.        +0.j, -0.08502734+0.j],
-                   [ 0.07099358+0.j, -0.08502734+0.j,  0.        +0.j]],
-                  [[ 0.        +0.j, -0.49783128+0.j,  0.68088956+0.j],
-                   [-0.49783128+0.j,  0.        +0.j, -0.82130807+0.j],
-                   [ 0.68088956+0.j, -0.82130807+0.j,  0.        +0.j]]])
+    # g = np.array( [[-0.4808829 +0.j, -0.86150457+0.j,  0.22114172+0.j],
+    #                [-0.1736148 +0.j,  0.49011868+0.j,  0.78437336+0.j],
+    #                [-0.33825609+0.j, -0.19728503+0.j, -0.5482909 +0.j]])
+    # J = np.array([[[ 0.        +0.j,  0.45669928+0.j, -0.29835039+0.j],
+    #                [ 0.45669928+0.j,  0.        +0.j, -0.66928103+0.j],
+    #                [-0.29835039+0.j, -0.66928103+0.j,  0.        +0.j]],
+    #               [[ 0.        +0.j, -0.24574681+0.j,  0.07099358+0.j],
+    #                [-0.24574681+0.j,  0.        +0.j, -0.08502734+0.j],
+    #                [ 0.07099358+0.j, -0.08502734+0.j,  0.        +0.j]],
+    #               [[ 0.        +0.j, -0.49783128+0.j,  0.68088956+0.j],
+    #                [-0.49783128+0.j,  0.        +0.j, -0.82130807+0.j],
+    #                [ 0.68088956+0.j, -0.82130807+0.j,  0.        +0.j]]])
 
     # Normalize
     norms_kNN = np.zeros((3, L))
@@ -323,7 +276,6 @@ def test_foqcs_lcu_spin_glass_prep():
     # Prep base state using qv + Do FOQCS-LCU magic using prep function
     foqcs_prep_spin_glass(d_state, L, spin_glass_g, spin_glass_J)
 
-    # sv = d_state.qs.statevector("function")
     # Take out the statevector from the compiled circuit
     qc = d_state.qs.compile()
     statev = qc.statevector_array()
@@ -471,19 +423,16 @@ def test_foqcs_lcu_spin_glass_prep():
 
     statev[np.isclose(statev, 0j, atol=1e-6)] = 0
 
-    for i in range(0, len(statev)):
-        if statev[i] != 0:
-            print(f"s[{i}] = {statev[i]}")
-        if ref_state[i] != 0:
-            print(f"r[{i}] = {ref_state[i]}")
+    # for i in range(0, len(statev)):
+    #     if statev[i] != 0:
+    #         print(f"s[{i}] = {statev[i]}")
+    #     if ref_state[i] != 0:
+    #         print(f"r[{i}] = {ref_state[i]}")
 
     # Test that the state received is the same as the reference
     assert np.allclose(statev, ref_state, atol=1e-06), (
         f"States differ"
     )
-
-    # Test that the state received is the same as the reference.
-    #assert np.allclose(statev, ref_state, atol=1e-06)
 
 def test_foqcs_lcu_spin_glass_subprep():
 
@@ -602,7 +551,7 @@ def test_foqcs_lcu_spin_glass_subprep():
 
     assert np.allclose(statev, ref_state)
 
-def test_block_encoding_from_foqcs_lcu_prep():
+def test_block_encoding_from_foqcs_lcu_heisenberg_prep():
     # Initialize variables + their values
     L = 4
     g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
@@ -617,7 +566,7 @@ def test_block_encoding_from_foqcs_lcu_prep():
     g /= norm
     J /= norm
 
-    # actual parameters for the PREP
+    # Actual parameters for the PREP
     _g = np.zeros((3,), dtype="complex")
     _J = np.zeros((3,), dtype="complex")
 
@@ -633,19 +582,19 @@ def test_block_encoding_from_foqcs_lcu_prep():
     _g /= norm
     _J /= norm
 
-    # Construct dictionary input expected by foqcs_prep_heisenberg_1D()
+    # Construct dictionary input expected by foqcs_prep_heisenberg()
     heis_g = {"X": _g[0], "Y": _g[1], "Z": _g[2]}
     heis_J = {"X": _J[0], "Y": _J[1], "Z": _J[2]}
 
     # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
     prep = partial(
-        foqcs_prep_heisenberg_1D,
+        foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
         J=heis_J,
     )
     unprep = partial(
-        foqcs_prep_heisenberg_1D,
+        foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
         J=heis_J,
@@ -806,7 +755,7 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
 
     assert np.allclose(res_ops, ref_state, atol=1e-5)
 
-def test_block_encoding_from_foqcs_lcu_prep_jax():
+def test_block_encoding_from_foqcs_lcu_heisenberg_prep_jasp():
     # Initialize variables + their values
     L = 4
     g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
@@ -836,19 +785,19 @@ def test_block_encoding_from_foqcs_lcu_prep_jax():
     _g /= norm
     _J /= norm
 
-    # Construct dictionary input expected by foqcs_prep_heisenberg_1D()
+    # Construct dictionary input expected by foqcs_prep_heisenberg()
     heis_g = {"X": _g[0], "Y": _g[1], "Z": _g[2]}
     heis_J = {"X": _J[0], "Y": _J[1], "Z": _J[2]}
 
     # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
     prep = partial(
-        foqcs_prep_heisenberg_1D,
+        foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
         J=heis_J,
     )
     unprep = partial(
-        foqcs_prep_heisenberg_1D,
+        foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
         J=heis_J,
@@ -903,7 +852,7 @@ def test_block_encoding_from_foqcs_lcu_prep_jax():
                        [result_rus[k] for k in sorted(result_rus)],
                        atol = 1e-4)
 
-def test_block_encoding_from_foqcs_lcu_operator():
+def test_block_encoding_from_foqcs_lcu_heisenberg_operator():
     # Initialize variables + their values
     L = 4
     g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
@@ -1087,7 +1036,7 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_operator():
 
     assert np.allclose(res_ops, ref_state, atol=1e-5)
 
-def test_block_encoding_from_foqcs_lcu_operator_jax():
+def test_block_encoding_from_foqcs_lcu_heisenberg_operator_jasp():
     # Initialize variables + their values
     L = 4
     g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
@@ -1096,11 +1045,6 @@ def test_block_encoding_from_foqcs_lcu_operator_jax():
     # Fix coefficients for debugging
     # g = np.array([0.80054361+0.j,  0.50905072+0.j, -0.89045545+0.j])
     # J = np.array([0.98167489+0.j, -0.32435597+0.j,  0.42262456+0.j])
-
-    # Normalize
-    norm = np.linalg.norm(np.block([g, J]))
-    g /= norm
-    J /= norm
 
     # Normalize
     norm = np.linalg.norm(np.block([g, J]))
@@ -1184,7 +1128,7 @@ def test_block_encoding_from_foqcs_lcu_bench_lcu():
     g /= norm
     J /= norm
 
-    # actual parameters for the PREP
+    # Actual parameters for the PREP
     _g = np.zeros((3,), dtype="complex")
     _J = np.zeros((3,), dtype="complex")
     for i in range(3):
@@ -1193,22 +1137,22 @@ def test_block_encoding_from_foqcs_lcu_bench_lcu():
     # Correction for XZ = -iY
     _J[1] = 1j * _J[1]
     _g[1] = (1 - 1j) * _g[1] / np.sqrt(2)
-    # normalization for block encoding
+    # Normalization for block encoding
     norm = np.linalg.norm(np.block([_g, _J]))
 
-    # Construct dictionary input expected by foqcs_prep_heisenberg_1D()
+    # Construct dictionary input expected by foqcs_prep_heisenberg()
     heis_g = {"X": g[0], "Y": g[1], "Z": g[2]}
     heis_J = {"X": J[0], "Y": J[1], "Z": J[2]}
 
     # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
     prep = partial(
-        foqcs_prep_heisenberg_1D,
+        foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
         J=heis_J,
     )
     unprep = partial(
-        foqcs_prep_heisenberg_1D,
+        foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
         J=heis_J,
@@ -1286,7 +1230,7 @@ def test_foqcs_operator_analysis_failures():
             foqcs_analyze_operator(O)
 
         print(exc_info.value)
-        assert f"empty or constant operator: {O}" in str(exc_info.value)
+        assert f"Empty or constant operator: {O}" in str(exc_info.value)
     
     def constant_must_fail():
         O = X(0) * X(0)
@@ -1294,7 +1238,7 @@ def test_foqcs_operator_analysis_failures():
             foqcs_analyze_operator(O)
 
         print(exc_info.value)
-        assert f"empty or constant operator: {O}" in str(exc_info.value)
+        assert f"Empty or constant operator: {O}" in str(exc_info.value)
     
     def bad_length_must_fail():
         O = X(0) + X(1) + X(2) + X(3) + X(4)
@@ -1422,29 +1366,3 @@ def test_foqcs_operator_heisenberg():
         check, res = is_operator_foqcs_compatible(O)
         assert check, f"Passing operator failed analysis: {O} "
         assert res["method"] == "spin_glass", name
-
-# Manual verification test, for now
-def test_foqcs_operator_analysis():
-    from qrisp.operators import A, C, P1
-    H_good = X(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(2)
-    H_heis = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)
-    H_bad = X(0) * Z(1)
-    H = 1+2*X(0)+3*X(0)*Y(1)*A(2)+C(4)*P1(0)
-
-    print(f"\n-----------------------------------------\nFrom H_good = {H_good}")
-    comp, res = is_operator_foqcs_compatible(H_good)
-    print(f"H_good: {comp}, res = {res}")
-
-    print(f"-----------------------------------------\nFrom H_bad = {H_bad}")
-    comp, res = is_operator_foqcs_compatible(H_bad)
-    print(f"H_bad: {comp}, res = {res}")
-
-    print(f"-----------------------------------------\nFrom H_heis = {H_heis}")
-    comp, res = is_operator_foqcs_compatible(H_heis)
-    print(f"H_heis: {comp}, res = {res}")
-
-    print(f"-----------------------------------------\nFrom H = {H}")
-    comp, res = is_operator_foqcs_compatible(H)
-    print(f"H: {comp}, res = {res}")
-    
-    assert True
