@@ -44,7 +44,7 @@ from qrisp.qtypes import QuantumBool, QuantumFloat
 from scipy.sparse import csr_array, csr_matrix
 from typing import Any, Callable, TYPE_CHECKING, Union
 from qrisp.block_encodings.block_encoding_methods import (
-    _get_foqcs_lcu_prep_num_of_ancillae,
+    get_foqcs_lcu_prep_num_of_ancillae,
     foqcs_analyze_operator,
     foqcs_prep_heisenberg,
     foqcs_prep_spin_glass
@@ -829,7 +829,7 @@ class BlockEncoding:
             print(result_rus)
 
         """
-        n_anc = _get_foqcs_lcu_prep_num_of_ancillae(prep, num_q_ops)
+        n_anc = get_foqcs_lcu_prep_num_of_ancillae(prep, num_q_ops)
 
         # FOQCS-LCU SELECT
         def _select(num_q_ops: int, n_anc: int, ancillae, *operands):

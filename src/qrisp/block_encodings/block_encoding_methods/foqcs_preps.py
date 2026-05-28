@@ -333,7 +333,7 @@ def foqcs_prep_spin_glass(
 ############# Helpers #############
 ###################################
     
-def _get_foqcs_lcu_prep_num_of_ancillae(prep: partial, num_ops: int = 1) -> int:
+def get_foqcs_lcu_prep_num_of_ancillae(prep: partial, num_ops: int = 1) -> int:
     r"""
         Constructs a BlockEncoding using the Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) protocol.
 
