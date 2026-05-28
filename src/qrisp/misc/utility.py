@@ -26,8 +26,8 @@ import sympy
 from jax.typing import ArrayLike
 
 if TYPE_CHECKING:
-    from qrisp.interface.measurement_result import _IntKeyedResult
     from qrisp.interface.backend import BackendLike
+    from qrisp.interface.measurement_result import _IntKeyedResult
 
 # A small epsilon value for numerical stability.
 # Defined here for convenience, so it can be imported elsewhere.
@@ -766,6 +766,7 @@ def multi_measurement(qv_list, shots=None, backend=None):
 
     """
 
+    from qrisp.interface.measurement_result import MultiMeasurementResult
     from qrisp.jasp import check_for_tracing_mode
 
     if check_for_tracing_mode():
@@ -805,7 +806,6 @@ def multi_measurement(qv_list, shots=None, backend=None):
     compiled_qc = qompiler(
         qv_list[0].qs, intended_measurements=sum([qv.reg for qv in temp], [])
     )
-    # compiled_qc = qv_list[0].qs.copy()
     # Add classical registers for the measurement results to be stored in
     cl_reg_list = []
 
@@ -827,63 +827,8 @@ def multi_measurement(qv_list, shots=None, backend=None):
         # Add measurement instruction
         compiled_qc.measure(qubits, cl_reg)
 
-    # counts = execute(qs_temp, backend, basis_gates = basis_gates,
-    # noise_model = noise_model, shots = shots).result().get_counts()
-    counts = backend.run(compiled_qc, shots)
-    counts = {k: counts[k] for k in sorted(counts)}
-    shots = sum(counts.values())
-
-    # Convert the labeling bistrings of counts into list of labels
-    new_counts = {}
-    for i in range(len(counts)):
-        # Retrieve the separated strings of each measurement variable
-
-        counts_strings = []
-        counts_bitstring = list(counts.keys())[i]
-
-        bitstring_adress = 0
-        for j in range(len(cl_reg_list)):
-            cl_reg = cl_reg_list[::-1][j]
-            counts_strings.append(
-                counts_bitstring[bitstring_adress : bitstring_adress + len(cl_reg)][
-                    ::-1
-                ]
-            )
-            bitstring_adress += len(cl_reg)
-
-        # Convert to integers and insert outcome labels
-        counts_values = []
-        for j in range(len(counts_strings)):
-            outcome_int = int(counts_strings[j][::-1], 2)
-            try:
-                label = qv_list[j].decoder(outcome_int)
-                if isinstance(label, np.ndarray):
-                    from qrisp import OutcomeArray
-
-                    label = OutcomeArray(label)
-                counts_values.append(label)
-            except AttributeError:
-                counts_values.append(outcome_int)
-
-        # Create array
-        array_state = tuple(counts_values)
-        try:
-            no_of_shots_executed = sum(counts.values())
-            new_counts[array_state] = (
-                counts[list(counts.keys())[i]] / no_of_shots_executed
-            )
-        except TypeError:
-            raise Exception(
-                "Tried to create measurement outcome dic for QuantumVariable "
-                "with unhashable labels"
-            )
-        # Append to the counts list
-        # counts_list.append((array_state, counts[list(counts.keys())[i]]/shots))
-
-    # Sort counts_list such the most probable values come first
-    new_counts = dict(sorted(new_counts.items(), key=lambda item: -item[1]))
-
-    return new_counts
+    raw = backend.run(compiled_qc, shots)
+    return MultiMeasurementResult(raw, qv_list, cl_reg_list)
 
 
 # Function to apply a phase function of signature phase_function(x,y,z..) -> float
@@ -1395,7 +1340,9 @@ def check_if_fresh(qubits, qs, ignore_q_envs=True):
     return True
 
 
-def get_measurement_from_qc(qc, qubits, backend: "BackendLike", shots=None) -> "_IntKeyedResult":
+def get_measurement_from_qc(
+    qc, qubits, backend: "BackendLike", shots=None
+) -> "_IntKeyedResult":
     """Run *qc*, measure *qubits*, and return a lazy int-keyed probability mapping.
 
     Appends measurement gates for each qubit in *qubits*, submits the circuit
@@ -1423,7 +1370,7 @@ def get_measurement_from_qc(qc, qubits, backend: "BackendLike", shots=None) -> "
         Lazy mapping from integer bitstring indices to normalised probabilities.
         Population is deferred until the first access.
     """
-    from qrisp.interface.measurement_result import _IntKeyedResult, MeasurementResult
+    from qrisp.interface.measurement_result import MeasurementResult, _IntKeyedResult
 
     cl = []
     for i in range(len(qubits)):

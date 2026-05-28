@@ -27,6 +27,7 @@ from qrisp.interface.measurement_result import (
     LazyDict,
     MeasurementResult,
     _IntKeyedResult,
+    MultiMeasurementResult,
 )
 
 # ---------------------------------------------------------------------------
@@ -450,4 +451,57 @@ class TestIntKeyedResult:
         raw._inject_error(RuntimeError("hardware error"))
         r = _IntKeyedResult(raw, num_bits=4)
         with pytest.raises(RuntimeError, match="hardware error"):
+            len(r)
+
+
+class TestMultiMeasurementResult:
+    """Unit tests for MultiMeasurementResult."""
+
+    def test_lazy_before_dispatch(self):
+        """Result must be unpopulated until the raw MeasurementResult is injected."""
+        from qrisp import QuantumFloat, multi_measurement
+        from qrisp.default_backend import QrispSimulatorBackend
+
+        qf_0 = QuantumFloat(4)
+        qf_1 = QuantumFloat(4)
+        qf_0[:] = 3
+        qf_1[:] = 5
+
+        bb = QrispSimulatorBackend().batched()
+        res = multi_measurement([qf_0, qf_1], backend=bb)
+
+        assert isinstance(res, MultiMeasurementResult)
+        assert isinstance(res, LazyDict)
+        assert not res._populated
+
+        bb.dispatch()
+
+        assert res == {(3, 5): 1.0}
+
+    def test_correct_results_after_dispatch(self):
+        """Decoded labels and probabilities must match a direct (non-batched) execution."""
+        from qrisp import QuantumFloat, h, multi_measurement
+        from qrisp.default_backend import QrispSimulatorBackend
+
+        qf_0 = QuantumFloat(4)
+        qf_1 = QuantumFloat(4)
+        qf_0[:] = 3
+        qf_1[:] = 2
+        h(qf_1[0])
+        qf_sum = qf_0 + qf_1
+
+        bb = QrispSimulatorBackend().batched()
+        res = multi_measurement([qf_0, qf_1, qf_sum], backend=bb)
+        bb.dispatch()
+
+        assert set(res.keys()) == {(3, 2, 5), (3, 3, 6)}
+        assert abs(res[(3, 2, 5)] - 0.5) < 1e-6
+        assert abs(res[(3, 3, 6)] - 0.5) < 1e-6
+
+    def test_propagates_error_from_raw(self):
+        """If the raw result carries an error, accessing the decoded result re-raises it."""
+        raw = MeasurementResult()
+        raw._inject_error(RuntimeError("backend fault"))
+        r = MultiMeasurementResult(raw, qv_list=[], cl_reg_list=[])
+        with pytest.raises(RuntimeError, match="backend fault"):
             len(r)

@@ -24,6 +24,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping
 from typing import Any
 
+import numpy as np
+
 
 class LazyDict(Mapping[Any, Any], ABC):
     """Abstract lazy mapping whose data is computed exactly once on first access.
@@ -111,9 +113,6 @@ class LazyDict(Mapping[Any, Any], ABC):
         if isinstance(other, Mapping):
             self._ensure_populated()
             assert self._data is not None
-            if isinstance(other, LazyDict):
-                other._ensure_populated()
-                return self._data == other._data
             return self._data == dict(other)
         return NotImplemented
 
@@ -335,6 +334,7 @@ class DecodedMeasurementResult(LazyDict):
         self._decoder = decoder
 
     def _populate(self) -> None:
+
         self._raw._ensure_populated()
         assert self._raw._data is not None
         d: dict = {}
@@ -345,6 +345,95 @@ class DecodedMeasurementResult(LazyDict):
             self._data = dict(sorted(d.items(), key=lambda x: -x[1]))
         except TypeError:
             self._data = d
+
+
+class MultiMeasurementResult(LazyDict):
+    """Lazy result for :func:`~qrisp.multi_measurement`.
+
+    Defers decoding of the combined bitstring into per-variable labels until
+    first access, so the result can be returned before
+    :meth:`~qrisp.interface.BatchedBackend.dispatch` is called when using a
+    :class:`~qrisp.interface.BatchedBackend`.
+
+    Parameters
+    ----------
+    raw : MeasurementResult
+        The raw bitstring counts returned by
+        :meth:`~qrisp.interface.Backend.run`.
+    qv_list : list
+        The :class:`~qrisp.QuantumVariable` instances whose joint measurement
+        is being decoded, in the same order as passed to
+        :func:`~qrisp.multi_measurement`.
+    cl_reg_list : list[list]
+        Classical-bit sub-registers, one per variable in *qv_list* (reversed),
+        produced by the circuit construction inside
+        :func:`~qrisp.multi_measurement`.
+    """
+
+    def __init__(
+        self, raw: MeasurementResult, qv_list: list, cl_reg_list: list
+    ) -> None:
+        super().__init__()
+        self._raw = raw
+        self._qv_list = qv_list
+        self._cl_reg_list = cl_reg_list
+
+    def _populate(self) -> None:
+
+        from qrisp import OutcomeArray
+
+        self._raw._ensure_populated()
+        assert self._raw._data is not None
+
+        # Sort for deterministic decoding order.
+        raw_counts = dict(sorted(self._raw._data.items()))
+        # Normalise to probabilities in case the backend returned raw counts.
+        total = sum(raw_counts.values())
+
+        # The circuit in multi_measurement adds classical registers in
+        # qv_list[::-1] order (last variable first), so cl_reg_list is stored
+        # in that same reversed order.
+        # Many simulators put the most recently added classical bits at the
+        # left of the bitstring.
+        # Reversing cl_reg_list here re-aligns index j with qv_list[j] and
+        # with the corresponding slice in the bitstring.
+        regs = self._cl_reg_list[::-1]
+
+        new_counts: dict = {}
+        for bitstring, count in raw_counts.items():
+            labels = []
+            offset = 0
+            for j, cl_reg in enumerate(regs):
+                # Slice out the bits for variable j. The [::-1] pair is an
+                # artifact of the original bit-order convention: reversing and
+                # then reversing back is a no-op, so outcome_int is simply
+                # int(bitstring[offset : offset + len(cl_reg)], 2).
+                sub = bitstring[offset : offset + len(cl_reg)][::-1]
+                offset += len(cl_reg)
+                outcome_int = int(sub[::-1], 2)
+
+                # Apply the variable's decoder. If the variable has no decoder
+                # (AttributeError), fall back to the raw integer.
+                try:
+                    label = self._qv_list[j].decoder(outcome_int)
+                    if isinstance(label, np.ndarray):
+                        label = OutcomeArray(label)
+                except AttributeError:
+                    label = outcome_int
+                labels.append(label)
+
+            outcome = tuple(labels)
+            try:
+                new_counts[outcome] = count / total
+            except TypeError as exc:
+                raise TypeError(
+                    "Tried to create measurement outcome dic for QuantumVariable "
+                    "with unhashable labels"
+                ) from exc
+
+        # Sort descending by probability, matching the convention used by
+        # QuantumVariable.get_measurement() and DecodedMeasurementResult.
+        self._data = dict(sorted(new_counts.items(), key=lambda item: -item[1]))
 
 
 class _IntKeyedResult(LazyDict):
@@ -363,6 +452,7 @@ class _IntKeyedResult(LazyDict):
         self._num_bits = num_bits
 
     def _populate(self) -> None:
+
         self._raw._ensure_populated()
         assert self._raw._data is not None
         new_counts: dict[int, float] = {}
