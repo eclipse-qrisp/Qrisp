@@ -447,9 +447,6 @@ def test_dispatch_timeout_propagates_to_job_result():
     assert received_timeouts == [99]
 
 
-# Before the fix, dispatch() grouped circuits by shot count,
-# producing N separate run_async calls for N distinct shot budgets.
-# After the fix it collects all circuits and passes a shots list in a single call.
 def test_dispatch_mixed_shots_uses_single_run_async_call():
     """dispatch() must issue exactly one run_async call even when circuits use different shot counts."""
 
@@ -565,14 +562,7 @@ def test_run_async_shots_list_length_mismatch_raises():
 
 
 def test_hamiltonian_measurement_uses_single_run_async_call():
-    """Measuring a Hermitian observable via BatchedBackend must produce exactly one run_async call.
-
-    With unequal coefficients (3*X(0) + Z(0)) the two commuting groups receive
-    genuinely different shot counts (~799 vs ~266 at precision=0.1).  Before the
-    fix, dispatch() grouped circuits by shot count and made one run_async call per
-    distinct shot value — two separate hardware jobs.  After the fix a single
-    run_async call is made with a per-circuit shots list.
-    """
+    """Measuring a Hermitian observable via BatchedBackend must produce exactly one run_async call."""
     from qrisp import QuantumVariable
     from qrisp.operators import X, Z
 
@@ -580,8 +570,6 @@ def test_hamiltonian_measurement_uses_single_run_async_call():
 
     # Unequal coefficients → different operator variances → different shot budgets
     # per group (~799 shots for 3*X(0), ~266 shots for Z(0) at precision=0.1).
-    # Using X(0) + Z(0) would give equal shot counts and the old dispatch() would
-    # also have produced a single call, masking the bug.
     H = 3 * X(0) + Z(0)
 
     counting = CountingWrapper(QrispSimulatorBackend())
@@ -589,8 +577,8 @@ def test_hamiltonian_measurement_uses_single_run_async_call():
 
     H.get_measurement(qv, precision=0.1, backend=bb)
 
-    # One run_async call regardless of how many commuting groups the Hamiltonian
-    # decomposes into — this is the core property the fix must guarantee.
+    # One run_async call regardless of how many commuting groups
+    # the Hamiltonian decomposes into
     assert counting.run_async_call_count == 1
     # The shots list must be non-uniform, confirming dispatch() took the
     # per-circuit-shots path rather than the "all equal → scalar" branch.
