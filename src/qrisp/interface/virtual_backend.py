@@ -1,18 +1,20 @@
-# ********************************************************************************
-# * Copyright (c) 2026 the Qrisp Authors
-# *
-# * This program and the accompanying materials are made available under the
-# * terms of the Eclipse Public License 2.0 which is available at
-# * http://www.eclipse.org/legal/epl-2.0.
-# *
-# * This Source Code may also be made available under the following Secondary
-# * Licenses when the conditions for such availability set forth in the Eclipse
-# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-# * with the GNU Classpath Exception which is
-# * available at https://www.gnu.org/software/classpath/license.html.
-# *
-# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-# ********************************************************************************
+"""
+********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************
+"""
 
 """This module defines :class:`VirtualBackend` and its associated :class:`VirtualJob`."""
 
@@ -38,7 +40,7 @@ class VirtualJob(Job):
         self,
         backend: "VirtualBackend",
         circuits: Sequence[QuantumCircuit],
-        shots: int | None,
+        shots: int | list[int] | None,
         token: str,
     ):
         """Initialise the job with the backend, normalised circuit list, shot count, and token."""
@@ -62,10 +64,16 @@ class VirtualJob(Job):
         self._last_known_status = JobStatus.RUNNING
         try:
             run_func = self._backend.run_func
-            counts_list = [
-                run_func(circuit.qasm(), self._shots, self._token)
-                for circuit in self._circuits
-            ]
+            if isinstance(self._shots, list):
+                counts_list = [
+                    run_func(circuit.qasm(), s, self._token)
+                    for circuit, s in zip(self._circuits, self._shots)
+                ]
+            else:
+                counts_list = [
+                    run_func(circuit.qasm(), self._shots, self._token)
+                    for circuit in self._circuits
+                ]
             self._result_data = JobResult(counts_list)
             self._last_known_status = JobStatus.DONE
         except Exception as exc:
@@ -199,7 +207,7 @@ class VirtualBackend(Backend):
     def run_async(
         self,
         circuits: QuantumCircuit | Sequence[QuantumCircuit],
-        shots: int | None = None,
+        shots: int | list[int] | None = None,
     ) -> VirtualJob:
         """Submit one or more circuits for execution via the user-provided ``run_func``.
 
@@ -225,10 +233,10 @@ class VirtualBackend(Backend):
             circuits = [circuits]
         else:
             circuits = list(circuits)
+        if isinstance(shots, list):
+            self._validate_shots_length(shots, circuits)
         n_shots = shots if shots is not None else self.options.get("shots")
         token = self.options.get("token", "")
-        job = VirtualJob(
-            backend=self, circuits=circuits, shots=n_shots, token=token
-        )
+        job = VirtualJob(backend=self, circuits=circuits, shots=n_shots, token=token)
         job.submit()
         return job

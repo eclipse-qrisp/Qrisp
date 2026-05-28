@@ -1,5 +1,6 @@
+# """
 # ********************************************************************************
-# * Copyright (c) 2026 the Qrisp Authors
+# * Copyright (c) 2026 the Qrisp authors
 # *
 # * This program and the accompanying materials are made available under the
 # * terms of the Eclipse Public License 2.0 which is available at
@@ -13,10 +14,13 @@
 # *
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
+# """
 
 """This module defines :class:`QiskitBackend` and its associated :class:`QiskitJob`."""
 
 from __future__ import annotations
+
+import warnings
 
 import re
 from collections.abc import Mapping
@@ -335,11 +339,7 @@ class QiskitBackend(Backend):
         value = getattr(self.backend, "max_circuits", None)
         return value if isinstance(value, int) else None
 
-    def run_async(
-        self,
-        circuits,
-        shots: int | None = None,
-    ) -> QiskitJob:
+    def run_async(self, circuits, shots: int | list[int] | None = None) -> QiskitJob:
         """
         Transpile and submit one or more circuits to the Qiskit backend.
 
@@ -352,23 +352,36 @@ class QiskitBackend(Backend):
         circuits : QuantumCircuit or Sequence[QuantumCircuit]
             One Qrisp circuit or a sequence of Qrisp circuits to execute.
 
-        shots : int or None, optional
-            Number of shots.  If ``None``, the backend's ``shots`` option is used.
+        shots : int or list[int] or None, optional
+            Number of shots.  If ``None``, the backend's ``shots`` option is
+            used. If a ``list[int]`` is provided, the Qiskit sampler does not
+            support per-circuit shot counts, so all circuits are run at
+            ``max(shots)`` and a ``UserWarning`` is emitted.
 
         Returns
         -------
         QiskitJob
         """
 
-        self._validate_shots(shots)
-        self._check_circuit_limit(circuits)
-
         if isinstance(circuits, QrispQuantumCircuit):
             circuits = [circuits]
         else:
             circuits = list(circuits)
 
-        n_shots = shots if shots is not None else self._options.get("shots", 1024)
+        if isinstance(shots, list):
+            self._validate_shots_length(shots, circuits)
+            warnings.warn(
+                "QiskitBackend does not support per-circuit shot counts. "
+                f"Running all {len(circuits)} circuits at max(shots)={max(shots)}.",
+                UserWarning,
+                stacklevel=2,
+            )
+            n_shots = max(shots)
+        else:
+            self._validate_shots(shots)
+            n_shots = shots if shots is not None else self._options.get("shots", 1024)
+
+        self._check_circuit_limit(circuits)
 
         # Convert each Qrisp circuit to a Qiskit QuantumCircuit via OpenQASM 2,
         # then rebuild with integer-indexed qubits and transpile for the target backend.

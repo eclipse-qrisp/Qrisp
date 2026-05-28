@@ -16,6 +16,8 @@
 ********************************************************************************
 """
 
+import warnings
+
 from qiskit import QuantumCircuit as QiskitQuantumCircuit
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
@@ -264,7 +266,7 @@ class AQTBackend(Backend):
         value = getattr(self._aqt_device, "max_circuits", None)
         return value if isinstance(value, int) else None
 
-    def run_async(self, circuits, shots: int | None = None) -> AQTJob:
+    def run_async(self, circuits, shots: int | list[int] | None = None) -> AQTJob:
         """
         Transpile and submit one or more circuits to the AQT backend.
 
@@ -277,22 +279,36 @@ class AQTBackend(Backend):
         circuits : QuantumCircuit or Sequence[QuantumCircuit]
             One Qrisp circuit or a sequence of Qrisp circuits to execute.
 
-        shots : int or None, optional
-            Number of shots.  If ``None``, the backend's ``shots`` option is used.
+        shots : int or list[int] or None, optional
+            Number of shots.  If ``None``, the backend's ``shots`` option is
+            used. If a ``list[int]`` is provided, the AQT sampler does not
+            support per-circuit shot counts, so all circuits are run at
+            ``max(shots)`` and a ``UserWarning`` is emitted.
 
         Returns
         -------
         AQTJob
         """
 
-        self._validate_shots(shots)
-        self._check_circuit_limit(circuits)
-
         if isinstance(circuits, QuantumCircuit):
             circuits = [circuits]
         else:
             circuits = list(circuits)
-        n_shots = shots if shots is not None else self._options.get("shots", 100)
+
+        if isinstance(shots, list):
+            self._validate_shots_length(shots, circuits)
+            warnings.warn(
+                "AQTBackend does not support per-circuit shot counts. "
+                f"Running all {len(circuits)} circuits at max(shots)={max(shots)}.",
+                UserWarning,
+                stacklevel=2,
+            )
+            n_shots = max(shots)
+        else:
+            self._validate_shots(shots)
+            n_shots = shots if shots is not None else self._options.get("shots", 100)
+
+        self._check_circuit_limit(circuits)
 
         # Transpile each Qrisp circuit and convert to a Qiskit QuantumCircuit.
         # Re-index to a single monolithic register to avoid register-name issues.

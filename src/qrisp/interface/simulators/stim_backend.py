@@ -60,7 +60,9 @@ def _run_on_stim(qc: QuantumCircuit, shots: int | None):
 class _StimJob(Job):
     """Synchronous :class:`~qrisp.interface.Job` for :class:`StimBackend`."""
 
-    def __init__(self, backend: "StimBackend", circuits: Sequence, shots):
+    def __init__(
+        self, backend: "StimBackend", circuits: Sequence, shots: int | list[int] | None
+    ):
         super().__init__(backend=backend)
         self._circuits = circuits
         self._shots = shots
@@ -70,7 +72,12 @@ class _StimJob(Job):
     def submit(self) -> None:
         self._last_known_status = JobStatus.RUNNING
         try:
-            counts_list = [_run_on_stim(qc, self._shots) for qc in self._circuits]
+            if isinstance(self._shots, list):
+                counts_list = [
+                    _run_on_stim(qc, s) for qc, s in zip(self._circuits, self._shots)
+                ]
+            else:
+                counts_list = [_run_on_stim(qc, self._shots) for qc in self._circuits]
             self._result_data = JobResult(counts_list)
             self._last_known_status = JobStatus.DONE
         except Exception as exc:
@@ -127,12 +134,14 @@ class StimBackend(Backend):
     def _default_options(cls):
         return {"shots": 10000}
 
-    def run_async(self, circuits, shots=None) -> _StimJob:
+    def run_async(self, circuits, shots: int | list[int] | None = None) -> _StimJob:
         self._check_circuit_limit(circuits)
         if isinstance(circuits, QuantumCircuit):
             circuits = [circuits]
         else:
             circuits = list(circuits)
+        if isinstance(shots, list):
+            self._validate_shots_length(shots, circuits)
         n_shots = shots if shots is not None else self.options.get("shots")
         job = _StimJob(backend=self, circuits=circuits, shots=n_shots)
         job.submit()

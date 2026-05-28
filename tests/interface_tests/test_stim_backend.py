@@ -1,27 +1,29 @@
-# ********************************************************************************
-# * Copyright (c) 2026 the Qrisp authors
-# *
-# * This program and the accompanying materials are made available under the
-# * terms of the Eclipse Public License 2.0 which is available at
-# * http://www.eclipse.org/legal/epl-2.0.
-# *
-# * This Source Code may also be made available under the following Secondary
-# * Licenses when the conditions for such availability set forth in the Eclipse
-# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-# * with the GNU Classpath Exception which is
-# * available at https://www.gnu.org/software/classpath/license.html.
-# *
-# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-# ********************************************************************************
+"""
+********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************
+"""
 
 """Tests for StimBackend."""
 
 import pytest
+from conftest import CountingWrapper
 
 from qrisp import QuantumCircuit, QuantumFloat, QuantumVariable
 from qrisp.interface import BatchedBackend, StimBackend
 from qrisp.interface.measurement_result import LazyDict
-from conftest import CountingWrapper
 
 
 def _build_deterministic_circuit():
@@ -41,6 +43,7 @@ def test_stim_backend_run_counts():
     assert sum(counts.values()) == 200
     assert counts == {"11": 200}
 
+
 def test_stim_unused_clbit():
     """run() on a Clifford circuit with unused Clbits returns the expected bitstring counts."""
     backend = StimBackend()
@@ -48,8 +51,8 @@ def test_stim_unused_clbit():
     qc = QuantumCircuit(2, 2)
     qc.x(0)
     qc.measure(0)
-    counts = backend.run(qc, shots = 100)
-    assert counts == {"100" : 100}
+    counts = backend.run(qc, shots=100)
+    assert counts == {"100": 100}
 
 
 class TestStimBackendBatched:
@@ -103,3 +106,15 @@ class TestStimBackendBatched:
         assert counting.run_async_call_count == 0
         bb.dispatch()
         assert counting.run_async_call_count == 1
+
+
+def test_stim_run_async_with_shots_list_uses_per_circuit_counts():
+    """run_async with a list of shots must run each circuit with its own shot count."""
+    qc = _build_deterministic_circuit()
+    backend = StimBackend()
+
+    job = backend.run_async([qc, qc], shots=[100, 300])
+    result = job.result()
+
+    assert sum(result.all_counts[0].values()) == 100
+    assert sum(result.all_counts[1].values()) == 300

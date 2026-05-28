@@ -1,5 +1,6 @@
+# """
 # ********************************************************************************
-# * Copyright (c) 2026 the Qrisp Authors
+# * Copyright (c) 2026 the Qrisp authors
 # *
 # * This program and the accompanying materials are made available under the
 # * terms of the Eclipse Public License 2.0 which is available at
@@ -13,6 +14,7 @@
 # *
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
+# """
 
 """This module defines the abstract :class:`Backend` interface for Qrisp-compatible backends."""
 
@@ -215,7 +217,7 @@ class Backend(ABC):
     def run_async(
         self,
         circuits: QuantumCircuit | Sequence[QuantumCircuit],
-        shots: int | None = None,
+        shots: int | list[int] | None = None,
     ) -> Job:
         """
         Submit one or more circuits for execution and return a :class:`Job`.
@@ -243,9 +245,15 @@ class Backend(ABC):
             on how many circuits a single job may contain. This is a
             backend-defined constraint.
 
-        shots : int or None, optional
+        shots : int or list[int] or None, optional
             Number of shots (repetitions) for the execution. If ``None``,
             the value from the backend's runtime options should be used.
+            When a ``list[int]`` is provided, each entry specifies the shot
+            count for the circuit at the corresponding index.
+
+            Backends whose SDK does not natively support per-circuit shot
+            counts should fall back to ``max(shots)`` and issue a
+            ``UserWarning``.
 
         Returns
         -------
@@ -453,6 +461,41 @@ class Backend(ABC):
             )
         if shots <= 0:
             raise ValueError(f"'shots' must be a positive integer, got {shots!r}")
+
+    @staticmethod
+    def _validate_shots_length(
+        shots: list[int],
+        circuits: "QuantumCircuit | Sequence[QuantumCircuit]",
+    ) -> None:
+        """
+        Raise :exc:`ValueError` if the length of a per-circuit *shots* list
+        does not match the number of submitted circuits.
+
+        This method can be called inside :meth:`run_async` implementations
+        immediately after normalising *circuits* to a list and before any execution,
+        whenever *shots* is a ``list``.
+
+        Parameters
+        ----------
+        shots : list[int]
+            The per-circuit shot counts to validate.
+
+        circuits : QuantumCircuit or Sequence[QuantumCircuit]
+            The circuits that will be executed.  A single
+            :class:`~qrisp.circuit.QuantumCircuit` counts as one circuit.
+
+        Raises
+        ------
+        ValueError
+            If ``len(shots)`` does not equal the number of circuits.
+        """
+        n = 1 if isinstance(circuits, QuantumCircuit) else len(circuits)
+        if len(shots) != n:
+            raise ValueError(
+                f"'shots' list has {len(shots)} element(s) but {n} circuit(s) "
+                "were submitted. When passing per-circuit shot counts, provide "
+                "exactly one value per circuit."
+            )
 
     # ------------------------------------------------------------------
     # Runtime options

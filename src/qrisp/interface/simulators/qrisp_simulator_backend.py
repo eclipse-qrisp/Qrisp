@@ -1,18 +1,20 @@
-# ********************************************************************************
-# * Copyright (c) 2026 the Qrisp Authors
-# *
-# * This program and the accompanying materials are made available under the
-# * terms of the Eclipse Public License 2.0 which is available at
-# * http://www.eclipse.org/legal/epl-2.0.
-# *
-# * This Source Code may also be made available under the following Secondary
-# * Licenses when the conditions for such availability set forth in the Eclipse
-# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-# * with the GNU Classpath Exception which is
-# * available at https://www.gnu.org/software/classpath/license.html.
-# *
-# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-# ********************************************************************************
+"""
+********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************
+"""
 
 """This module defines :class:`QrispSimulatorBackend` and its associated :class:`QrispSimulatorJob`."""
 
@@ -26,9 +28,15 @@ from qrisp.simulator.simulator import run as default_run
 
 class QrispSimulatorJob(Job):
     """
-    A synchronous :class:`~qrisp.interface.Job` produced by :class:`QrispSimulatorBackend`."""
+    A synchronous :class:`~qrisp.interface.Job` produced by :class:`QrispSimulatorBackend`.
+    """
 
-    def __init__(self, backend: "QrispSimulatorBackend", circuits: Sequence, shots):
+    def __init__(
+        self,
+        backend: "QrispSimulatorBackend",
+        circuits: Sequence,
+        shots: int | list[int] | None,
+    ):
         """Initialise the job with the backend, normalised circuit list, and shot count."""
         super().__init__(backend=backend)
         self._circuits = circuits
@@ -53,9 +61,16 @@ class QrispSimulatorJob(Job):
         token = self._backend.options.get("token", "")
         self._last_known_status = JobStatus.RUNNING
         try:
-            counts_list = [
-                default_run(circuit, self._shots, token) for circuit in self._circuits
-            ]
+            if isinstance(self._shots, list):
+                counts_list = [
+                    default_run(circuit, shot, token)
+                    for circuit, shot in zip(self._circuits, self._shots)
+                ]
+            else:
+                counts_list = [
+                    default_run(circuit, self._shots, token)
+                    for circuit in self._circuits
+                ]
             self._result_data = JobResult(counts_list)
             self._last_known_status = JobStatus.DONE
         except Exception as exc:
@@ -179,7 +194,9 @@ class QrispSimulatorBackend(Backend):
         """
         return {"shots": None, "token": ""}
 
-    def run_async(self, circuits, shots: int | None = None) -> QrispSimulatorJob:
+    def run_async(
+        self, circuits, shots: int | list[int] | None = None
+    ) -> QrispSimulatorJob:
         """Submit one or more circuits to the built-in simulator.
 
         This method returns a :class:`QrispSimulatorJob` that is already
@@ -192,9 +209,11 @@ class QrispSimulatorBackend(Backend):
         circuits : QuantumCircuit or list[QuantumCircuit]
             One circuit or a sequence of circuits to simulate.
 
-        shots : int or None, optional
+        shots : int or list[int] or None, optional
             Number of shots.  ``None`` selects analytic execution.
-            If not provided, the backend's ``shots`` option is used.
+            If a ``list[int]`` is provided, each circuit is executed with its
+            own shot count.  If not provided, the backend's ``shots`` option
+            is used.
 
         Returns
         -------
@@ -205,6 +224,8 @@ class QrispSimulatorBackend(Backend):
             circuits = [circuits]
         else:
             circuits = list(circuits)
+        if isinstance(shots, list):
+            self._validate_shots_length(shots, circuits)
         n_shots = shots if shots is not None else self.options.get("shots")
         job = QrispSimulatorJob(backend=self, circuits=circuits, shots=n_shots)
         job.submit()

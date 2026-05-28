@@ -1,18 +1,20 @@
-# ********************************************************************************
-# * Copyright (c) 2026 the Qrisp Authors
-# *
-# * This program and the accompanying materials are made available under the
-# * terms of the Eclipse Public License 2.0 which is available at
-# * http://www.eclipse.org/legal/epl-2.0.
-# *
-# * This Source Code may also be made available under the following Secondary
-# * Licenses when the conditions for such availability set forth in the Eclipse
-# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-# * with the GNU Classpath Exception which is
-# * available at https://www.gnu.org/software/classpath/license.html.
-# *
-# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-# ********************************************************************************
+"""
+********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************
+"""
 
 """Tests for AQTBackend and AQTJob."""
 
@@ -312,6 +314,19 @@ class TestAQTRunAsync:
 
         job = backend.run_async(_simple_circuit(), shots=100)
         assert isinstance(job, AQTJob)
+
+    def test_run_async_shots_list_warns_and_uses_max(self, aqt_backend):
+        """run_async with a list of shots must warn and run all circuits at max(shots)."""
+        backend, mock_sampler_cls = aqt_backend
+        mock_sampler_cls.return_value.run.return_value = _make_aqt_job(
+            [{0: 1.0}, {0: 1.0}]
+        )
+
+        with pytest.warns(UserWarning, match="per-circuit shot counts"):
+            backend.run_async([_simple_circuit(), _simple_circuit()], shots=[100, 300])
+
+        _, run_kwargs = mock_sampler_cls.return_value.run.call_args
+        assert run_kwargs["shots"] == 300  # max([100, 300])
 
 
 class TestAQTJob:

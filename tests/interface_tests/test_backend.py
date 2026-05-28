@@ -1,5 +1,6 @@
+# """
 # ********************************************************************************
-# * Copyright (c) 2026 the Qrisp Authors
+# * Copyright (c) 2026 the Qrisp authors
 # *
 # * This program and the accompanying materials are made available under the
 # * terms of the Eclipse Public License 2.0 which is available at
@@ -13,6 +14,7 @@
 # *
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
+# """
 
 """Tests for the Backend-related classes defined in qrisp.interface.backend"""
 
@@ -209,7 +211,7 @@ class BackendTest(Backend):
         """Return the set of gate names supported by this fake backend."""
         return ["H", "X", "Y", "Z", "CNOT", "CZ", "RZ", "RX", "RY", "T", "S"]
 
-    def run_async(self, circuits, shots=None) -> JobTest:
+    def run_async(self, circuits, shots: int | list[int] | None = None) -> JobTest:
         """Submit one or more circuits and return a JobTest according to the current mode."""
 
         # We use a different check for list/tuple here to allow
@@ -305,14 +307,14 @@ class DummyBackend(Backend):
         """Return default options with a custom shots value and a flag field."""
         return {"shots": 1000, "flag": False}
 
-    def run_async(self, circuits, shots: int | None = None):
+    def run_async(self, circuits, shots: int | list[int] | None = None):
         """No-op run_async used only for instantiation and options tests."""
 
 
 class BackendNoDefaultOptions(Backend):
     """Backend instantiated without options — must fall back to Backend._default_options()."""
 
-    def run_async(self, circuits, shots: int | None = None):
+    def run_async(self, circuits, shots: int | list[int] | None = None):
         """No-op run method used only to satisfy the abstract interface."""
 
 
@@ -323,7 +325,7 @@ class BackendWithExplicitOptions(Backend):
         """Initialise with the provided options mapping."""
         super().__init__(options=options)
 
-    def run_async(self, circuits, shots: int | None = None):
+    def run_async(self, circuits, shots: int | list[int] | None = None):
         """No-op run method used only to satisfy the abstract interface."""
 
 
@@ -335,7 +337,7 @@ class BackendWithChildDefaultOptions(Backend):
         """Return child-level defaults including a custom_default field."""
         return {"shots": 1024, "custom_default": 42}
 
-    def run_async(self, circuits, shots: int | None = None):
+    def run_async(self, circuits, shots: int | list[int] | None = None):
         """No-op run method used only to satisfy the abstract interface."""
 
 

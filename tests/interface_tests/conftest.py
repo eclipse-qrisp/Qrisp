@@ -1,5 +1,6 @@
+# """
 # ********************************************************************************
-# * Copyright (c) 2026 the Qrisp Authors
+# * Copyright (c) 2026 the Qrisp authors
 # *
 # * This program and the accompanying materials are made available under the
 # * terms of the Eclipse Public License 2.0 which is available at
@@ -13,6 +14,7 @@
 # *
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
+# """
 
 """Shared test utilities for the Backend abstraction layer test suite."""
 
@@ -101,7 +103,7 @@ class MinimalBackend(Backend):
     Counts are trivially ``{"0": n_shots}`` for each circuit.
     """
 
-    def run_async(self, circuits, shots=None) -> MinimalJob:
+    def run_async(self, circuits, shots: int | list[int] | None = None) -> MinimalJob:
         if isinstance(circuits, QuantumCircuit):
             circuits = [circuits]
         else:
@@ -120,6 +122,14 @@ class CountingWrapper(Backend):
 
     Used to verify that N circuits queued in a :class:`~qrisp.interface.BatchedBackend`
     with a uniform shot count are submitted in a single ``run_async`` call.
+
+    Attributes
+    ----------
+    run_async_call_count : int
+        Number of times ``run_async`` has been called.
+
+    shots_received : list
+        The ``shots`` argument passed on each ``run_async`` call, in order.
     """
 
     def __init__(self, inner: Backend):
@@ -127,13 +137,15 @@ class CountingWrapper(Backend):
         super().__init__()
         self._inner = inner
         self.run_async_call_count = 0
+        self.shots_received: list = []
 
     @classmethod
     def _default_options(cls):
         """Return empty options; shots are resolved by the inner backend."""
         return {}
 
-    def run_async(self, circuits, shots=None):
-        """Increment the call counter and forward execution to the inner backend."""
+    def run_async(self, circuits, shots: int | list[int] | None = None):
+        """Increment the call counter, record shots, and forward to the inner backend."""
         self.run_async_call_count += 1
+        self.shots_received.append(shots)
         return self._inner.run_async(circuits, shots=shots)

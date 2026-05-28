@@ -1,5 +1,6 @@
+# """
 # ********************************************************************************
-# * Copyright (c) 2026 the Qrisp Authors
+# * Copyright (c) 2026 the Qrisp authors
 # *
 # * This program and the accompanying materials are made available under the
 # * terms of the Eclipse Public License 2.0 which is available at
@@ -13,6 +14,7 @@
 # *
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
+# """
 
 """
 This module defines :class:`BatchedBackend`, obtained via :meth:`Backend.batched() <qrisp.interface.Backend.batched>`.
@@ -20,8 +22,7 @@ This module defines :class:`BatchedBackend`, obtained via :meth:`Backend.batched
 
 from __future__ import annotations
 
-import warnings
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
@@ -72,8 +73,8 @@ class BatchedBackend:
     Parameters
     ----------
     backend : Backend
-        The backend whose :meth:`~qrisp.interface.Backend.run` is called for
-        each queued circuit when :meth:`dispatch` is invoked.
+        The backend whose :meth:`~qrisp.interface.Backend.run_async` is called
+        with all queued circuits when :meth:`dispatch` is invoked.
 
     name : str or None
         Optional name for this backend.
@@ -152,7 +153,11 @@ class BatchedBackend:
         """
         self._backend.update_options(**kwargs)
 
-    def run(self, circuits, shots: int | None = None):
+    def run(
+        self,
+        circuits: QuantumCircuit | Sequence[QuantumCircuit],
+        shots: int | None = None,
+    ) -> MeasurementResult | list[MeasurementResult]:
         """Register one or more circuits in the queue and return lazy result(s).
 
         Each circuit is stored alongside its shot count.  The corresponding
@@ -195,12 +200,18 @@ class BatchedBackend:
     def dispatch(self, timeout: float | None = None) -> None:
         """Execute all pending circuits and populate their results.
 
-        Circuits are grouped by shot count and each group is submitted as a
-        single :meth:`~qrisp.interface.Backend.run_async` call.  For the
-        common case where all circuits share the same shot count this reduces
-        N separate hardware jobs to a single one, eliminating redundant
-        network round-trips and queue-wait overhead.  Results are injected into
-        the corresponding :class:`~qrisp.interface.MeasurementResult` objects.
+        All queued circuits are submitted in a single
+        :meth:`~qrisp.interface.Backend.run_async` call, eliminating redundant
+        network round-trips and queue-wait overhead regardless of whether the
+        circuits were queued with the same or different shot counts.
+
+        When all queued circuits share the same shot count a scalar is passed
+        to :meth:`~qrisp.interface.Backend.run_async` (backwards-compatible
+        with backends that have not yet been updated to accept a list).
+        When circuits carry different shot counts the full per-circuit list is
+        passed, enabling each circuit to be executed with its own shot budget.
+        Backends whose SDK does not natively support per-circuit shot counts
+        should fall back to ``max(shots)`` and emit a ``UserWarning``.
 
         Circuit-limit enforcement (see :attr:`~qrisp.interface.Backend.max_circuits`)
         is the responsibility of the wrapped backend's
@@ -210,31 +221,23 @@ class BatchedBackend:
         :meth:`~qrisp.interface.Backend.run_async` so that the check applies
         whether circuits are submitted directly or via :meth:`dispatch`.
 
-        .. warning::
-
-            If the queued circuits use more than one distinct shot count, they
-            are split into multiple hardware jobs (one per shot count).
-            To avoid the split, ensure all circuits are queued with the
-            same shot count.
-
-        If the wrapped backend raises for any group, that error is stored in
-        every not-yet-populated :class:`~qrisp.interface.MeasurementResult`
-        and then re-raised. Accessing any of those results later will re-raise
-        the stored exception.
+        If the wrapped backend raises, that error is stored in every
+        not-yet-populated :class:`~qrisp.interface.MeasurementResult` and then
+        re-raised. Accessing any of those results later will re-raise the stored
+        exception.
 
         Parameters
         ----------
         timeout : float or None, optional
-            Maximum seconds to wait for each hardware job.  ``None`` (default)
+            Maximum seconds to wait for the hardware job. ``None`` (default)
             waits indefinitely.  Passed through to
             :meth:`Job.result <qrisp.interface.Job.result>`.
 
         Raises
         ------
         TimeoutError
-            If *timeout* is given and a hardware job does not finish in time.
-            Results for the timed-out group and any remaining groups are left
-            unpopulated.
+            If *timeout* is given and the hardware job does not finish in time.
+            Results for all circuits in the batch are left unpopulated.
 
         Exception
             Re-raises any exception thrown by the wrapped backend during
@@ -246,38 +249,26 @@ class BatchedBackend:
         if not queries:
             return
 
-        # Group by effective shot count so each group becomes one hardware job.
-        groups: dict[int | None, list] = {}
-        for qc, shots, raw in queries:
-            key = shots if shots is not None else self._backend.options.get("shots")
-            groups.setdefault(key, []).append((qc, raw))
+        circuits, shots_list, raws = map(list, zip(*queries))
 
-        if len(groups) > 1:
-            warnings.warn(
-                f"BatchedBackend.dispatch(): circuits use {len(groups)} different "
-                f"shot counts ({list(groups.keys())}), requiring {len(groups)} "
-                "separate hardware jobs. For a single hardware job, ensure all "
-                "queued circuits use the same shot count.",
-                UserWarning,
-                stacklevel=2,
+        # Pass a single int when all shot counts are identical,
+        # otherwise pass the full per-circuit list.
+        unique_shots = set(shots_list)
+        effective_shots = shots_list[0] if len(unique_shots) == 1 else shots_list
+
+        try:
+            all_counts = (
+                self._backend.run_async(circuits, shots=effective_shots)
+                .result(timeout=timeout)
+                .all_counts
             )
-
-        for shots, items in groups.items():
-            circuits = [qc for qc, _ in items]
-            raws = [raw for _, raw in items]
-            try:
-                all_counts = (
-                    self._backend.run_async(circuits, shots=shots)
-                    .result(timeout=timeout)
-                    .all_counts
-                )
-                for raw, counts in zip(raws, all_counts):
-                    raw._inject(counts)
-            except Exception as exc:
-                for _, _, r in queries:
-                    if not r._populated:
-                        r._inject_error(exc)
-                raise
+            for raw, counts in zip(raws, all_counts):
+                raw._inject(counts)
+        except Exception as exc:
+            for _, _, r in queries:
+                if not r._populated:
+                    r._inject_error(exc)
+            raise
 
     def clear(self) -> None:
         """Discard all queued circuits without dispatching.

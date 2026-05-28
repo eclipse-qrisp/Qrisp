@@ -1,24 +1,26 @@
-# ********************************************************************************
-# * Copyright (c) 2026 the Qrisp Authors
-# *
-# * This program and the accompanying materials are made available under the
-# * terms of the Eclipse Public License 2.0 which is available at
-# * http://www.eclipse.org/legal/epl-2.0.
-# *
-# * This Source Code may also be made available under the following Secondary
-# * Licenses when the conditions for such availability set forth in the Eclipse
-# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-# * with the GNU Classpath Exception which is
-# * available at https://www.gnu.org/software/classpath/license.html.
-# *
-# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-# ********************************************************************************
+"""
+********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************
+"""
 
 """Tests for BatchedBackend."""
 
-import warnings
 
 import pytest
+from conftest import CountingWrapper
 
 from qrisp import QuantumFloat, batched_measurement
 from qrisp.default_backend import QrispSimulatorBackend
@@ -114,7 +116,7 @@ def test_result_is_lazy_before_dispatch():
 class _FailingBackend(Backend):
     """Backend whose run_async always raises RuntimeError."""
 
-    def run_async(self, circuits, shots=None):
+    def run_async(self, circuits, shots: int | list[int] | None = None):
         """Raise RuntimeError unconditionally."""
         raise RuntimeError("Simulated hardware fault")
 
@@ -421,7 +423,7 @@ class _RecordingBackend(Backend):
         super().__init__()
         self._received_timeouts = received_timeouts
 
-    def run_async(self, circuits, shots=None):
+    def run_async(self, circuits, shots: int | list[int] | None = None):
         """Submit circuits by creating a _RecordingJob."""
         job = _RecordingJob(self, self._received_timeouts)
         job.submit()
@@ -445,9 +447,14 @@ def test_dispatch_timeout_propagates_to_job_result():
     assert received_timeouts == [99]
 
 
-def test_dispatch_warns_on_mixed_shot_counts():
-    """dispatch() must emit UserWarning when circuits use different shot counts."""
-    bb = _make_batched_backend()
+# Before the fix, dispatch() grouped circuits by shot count,
+# producing N separate run_async calls for N distinct shot budgets.
+# After the fix it collects all circuits and passes a shots list in a single call.
+def test_dispatch_mixed_shots_uses_single_run_async_call():
+    """dispatch() must issue exactly one run_async call even when circuits use different shot counts."""
+
+    counting = CountingWrapper(QrispSimulatorBackend())
+    bb = counting.batched()
 
     a = QuantumFloat(4)
     a[:] = 1
@@ -464,13 +471,41 @@ def test_dispatch_warns_on_mixed_shot_counts():
     c.get_measurement(backend=bb, shots=100)
     f.get_measurement(backend=bb, shots=200)
 
-    with pytest.warns(UserWarning, match="shot count"):
-        bb.dispatch()
+    assert counting.run_async_call_count == 0
+    bb.dispatch()
+    assert counting.run_async_call_count == 1
 
 
-def test_dispatch_no_warning_on_uniform_shot_counts():
-    """dispatch() must not emit any warning when all circuits share the same shot count."""
-    bb = _make_batched_backend()
+def test_dispatch_mixed_shots_passes_shots_list_to_run_async():
+    """dispatch() must forward the per-circuit shot counts as a list to run_async."""
+
+    counting = CountingWrapper(QrispSimulatorBackend())
+    bb = counting.batched()
+
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
+    c = a + b
+
+    d = QuantumFloat(4)
+    d[:] = 2
+    e = QuantumFloat(3)
+    e[:] = 3
+    f = d + e
+
+    c.get_measurement(backend=bb, shots=100)
+    f.get_measurement(backend=bb, shots=200)
+    bb.dispatch()
+
+    assert counting.shots_received == [[100, 200]]
+
+
+def test_dispatch_uniform_shots_passes_scalar_to_run_async():
+    """dispatch() must pass a scalar when all circuits share the same shot count."""
+
+    counting = CountingWrapper(QrispSimulatorBackend())
+    bb = counting.batched()
 
     a = QuantumFloat(4)
     a[:] = 1
@@ -486,7 +521,78 @@ def test_dispatch_no_warning_on_uniform_shot_counts():
 
     c.get_measurement(backend=bb, shots=100)
     f.get_measurement(backend=bb, shots=100)
+    bb.dispatch()
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        bb.dispatch()  # must not raise
+    assert counting.shots_received == [100]
+
+
+def test_dispatch_mixed_shots_returns_correct_results():
+    """dispatch() with mixed shot counts must still return correct results for each circuit."""
+    bb = _make_batched_backend()
+
+    a = QuantumFloat(4)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 2
+    c = a + b  # expected: 3
+
+    d = QuantumFloat(4)
+    d[:] = 2
+    e = QuantumFloat(3)
+    e[:] = 3
+    f = d + e  # expected: 5
+
+    res_c = c.get_measurement(backend=bb, shots=100)
+    res_f = f.get_measurement(backend=bb, shots=200)
+    bb.dispatch()
+
+    assert res_c == {3: 1.0}
+    assert res_f == {5: 1.0}
+
+
+def test_run_async_shots_list_length_mismatch_raises():
+    """run_async with a shots list whose length differs from the circuit count must raise ValueError."""
+    from qrisp import QuantumCircuit
+
+    backend = QrispSimulatorBackend()
+
+    qc = QuantumCircuit(1)
+    qc.x(0)
+    qc.measure(0)
+
+    with pytest.raises(ValueError, match="shots.*list"):
+        backend.run_async([qc, qc], shots=[100])  # 2 circuits, 1 shot value
+
+
+def test_hamiltonian_measurement_uses_single_run_async_call():
+    """Measuring a Hermitian observable via BatchedBackend must produce exactly one run_async call.
+
+    With unequal coefficients (3*X(0) + Z(0)) the two commuting groups receive
+    genuinely different shot counts (~799 vs ~266 at precision=0.1).  Before the
+    fix, dispatch() grouped circuits by shot count and made one run_async call per
+    distinct shot value — two separate hardware jobs.  After the fix a single
+    run_async call is made with a per-circuit shots list.
+    """
+    from qrisp import QuantumVariable
+    from qrisp.operators import X, Z
+
+    qv = QuantumVariable(1)  # |0> state
+
+    # Unequal coefficients → different operator variances → different shot budgets
+    # per group (~799 shots for 3*X(0), ~266 shots for Z(0) at precision=0.1).
+    # Using X(0) + Z(0) would give equal shot counts and the old dispatch() would
+    # also have produced a single call, masking the bug.
+    H = 3 * X(0) + Z(0)
+
+    counting = CountingWrapper(QrispSimulatorBackend())
+    bb = counting.batched()
+
+    H.get_measurement(qv, precision=0.1, backend=bb)
+
+    # One run_async call regardless of how many commuting groups the Hamiltonian
+    # decomposes into — this is the core property the fix must guarantee.
+    assert counting.run_async_call_count == 1
+    # The shots list must be non-uniform, confirming dispatch() took the
+    # per-circuit-shots path rather than the "all equal → scalar" branch.
+    assert isinstance(counting.shots_received[0], list)
+    assert len(set(counting.shots_received[0])) > 1
