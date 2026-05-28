@@ -539,8 +539,25 @@ class BlockEncoding:
         tol: float = 1e-12
     ) -> BlockEncoding:
         r"""
-        TODO DOC
-        Raises ValueError - Operator incompatible with FOQCS-LCU and KeyError - Got unsupported FOQCS-LCU PREP method
+        Parameters
+        ----------
+        O : QubitOperator
+            Qubit operator of form: O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)
+
+        L : int = -1
+            Number of interacting qubits.
+            If not specified, will default to -1, and infer the number of interacting qubits from the operator
+
+        tol : float = 1e-12
+            Tolerance for considering the entry zero
+
+        Raises
+        ----------
+        ValueError
+            If operator is incompatible with FOQCS-LCU
+        
+        KeyError
+            If function received an unsupported FOQCS-LCU PREP method
         """
         # Analyze the Qubit operator
         aresult = foqcs_analyze_operator(O, L = L, tol = tol, raise_errors = True)

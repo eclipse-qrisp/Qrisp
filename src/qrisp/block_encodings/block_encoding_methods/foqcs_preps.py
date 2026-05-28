@@ -97,6 +97,7 @@ def foqcs_prep_heisenberg_1D(
     _g = np.zeros((3,), dtype="complex")
     _J = np.zeros((3,), dtype="complex")
 
+    # RELEVANT TO DEBUGGING !!!
     # _g[0] = np.sqrt(g["X"] * L)
     # _g[1] = np.sqrt(g["Y"] * L * -1j)
     # _g[2] = np.sqrt(g["Z"] * L)
@@ -189,9 +190,9 @@ def foqcs_prep_spin_glass(
 
     J : dict (length 3)
         Dictionary of coupling coefficients.
-        {"X" : [[Jx_12, Jx_23, ..., Jx_(n-1)n], ...],
-         "Y" : [[Jy_12, Jy_23, ..., Jy_(n-1)n], ...],
-         "Z" : [[Jz_12, Jz_23, ..., Jz_(n-1)n], ...]}
+        {"X" : [[Jx_12, Jx_23, ...], [Jx_13, Jx_24, ...], ...],
+         "Y" : [[Jy_12, Jy_23, ...], [Jy_13, Jy_24, ...], ...],
+         "Z" : [[Jz_12, Jz_23, ...], [Jz_13, Jz_24, ...], ...]}
 
     conjugate : bool = False
         Indicates whether the prep is PREP_R or PREP_L.
@@ -204,11 +205,6 @@ def foqcs_prep_spin_glass(
         If ``g`` or ``J`` has length .
 
     """
-    # g = {"X" : [], "Y" : [], "Z" : []}
-    # J = {"X" : [[]], "Y" : [[]], "Z" : [[]]}
-    # g = {"X" : [gx_1, gx_2, ..., gx_k], "Y" : [gy_1, gy_2, ..., gy_k], "Z" : [gz_1, gz_2, ..., gz_k]}
-    # J = {"X" : [[Jx_12, Jx_23, ..., Jx_(n-1)n], ...], "Y" : [[Jy_12, Jy_23, ..., Jy_(n-1)n], ...], "Z" : [[Jz_12, Jz_23, ..., Jz_(n-1)n], ...]}
-    
     components = ["X", "Y", "Z"]
 
     if conjugate:
@@ -282,6 +278,7 @@ def foqcs_prep_spin_glass(
                 new_J = J[dimension][j][k] / ((J_betas[i][j]) ** 0.5)
                 J_hats[i][j].append(new_J)
 
+    # Beta calculations
     final_betas = []
 
     for i in range(3):
@@ -348,6 +345,7 @@ def foqcs_prep_spin_glass(
 def foqcs_prep_placeholder( qv: QuantumVariable, coeffs: list, some_param: float ) -> None:
     """
     TO-DO DOC
+    ???
     """
     print("I am doing nothing")
 
@@ -388,14 +386,24 @@ def foqcs_analyze_operator(
         tol: float = 1e-12,
         raise_errors: bool = True
 ) -> dict:
-    """
-    TODO: DOC
-    O: Qubit operator of form: O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)
-    L: Number of interacting qubits. If not specified / set to -1, will infer the number of interacting qubits from the operator
-    tol: Tolerance for considering the entry zero
-    raise_errors: Flag deternmining whether to raise ValueError in case if operator is not compatible with FOQCS-LCU.
+    r"""
+    Parameters
+    ----------
+    O : QubitOperator
+            Qubit operator of form: O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)
 
-    Returns:
+    L : int = -1
+        Number of operand qubits.
+        If not specified, will default to -1, and infer the number of operand qubits from the operator
+
+    tol : float = 1e-12
+        Tolerance for considering the entry zero
+
+    raise_errors : bool
+        Flag determining whether to raise ValueError in the case of operator being incompatible with FOQCS-LCU.
+
+    Returns
+    ----------
     dict {
         "method": str ("heisenberg" || "spin_glass")
         "L": int (number of intracting qubits)
@@ -403,10 +411,15 @@ def foqcs_analyze_operator(
         "J": dict ("X": np.arr, "Z": np.arr, "Y": np.arr) (In case of spin_glass, numpy arrays are 2-dim)
         "is_hermitian": bool (Whether the operator is Hermitian - no imaginary coeffs)
     }
+
+    Raises
+    ----------
+    ???
+    
     """
     terms = O._to_pauli_coeff_dict()
 
-    # When analyzys fails, it either throws a ValueError with failure reason,
+    # When analysis fails, it either throws a ValueError with the reason for failure,
     # or silently returns None if raise_errors flag is set to False.
     def fail(arg: str):
         if raise_errors:
@@ -428,6 +441,7 @@ def foqcs_analyze_operator(
     elif L < max_ind + 1:
         return fail(f"Received L = {L}, while operator acts on {max_ind + 1} qubits.")
 
+    # ???
     pauli_to_ind = {"X": 0, "Z": 1, "Y": 2}
 
     g_dict = {"X": np.zeros(L, dtype="complex"), "Y": np.zeros(L, dtype="complex"), "Z": np.zeros(L, dtype="complex")}
@@ -467,8 +481,9 @@ def foqcs_analyze_operator(
             if pauli_i != pauli_j:
                 return fail(f"FOQCS-LCU supports only same-axis couplings, but received: {pauli_i}({i}) * {pauli_j}({j})")
 
+            # ???
             # Should not happen.
-            #if i == j:
+            # if i == j:
             #    return fail(f"Coupling: {pauli_i}({i}) * {pauli_j}({j}) has the same index. This was not supposed to trigger.")
 
             J_dict[pauli_i][i, j] += coeff
@@ -479,7 +494,6 @@ def foqcs_analyze_operator(
             return fail(f"FOQCS-LCU supports only one and two-body interactions.")
 
     # Spin-glass has passed by this point. YAY! :D
-
 
     # Verify ourselves against more specific heisenberg-model.
         # Spin-glass-compatible
@@ -498,7 +512,7 @@ def foqcs_analyze_operator(
 
         if not np.allclose(values, values[0], atol=tol):
             is_heisenberg = False
-            #print("Heisenberg Rejected: non-uniform local interactions")
+            #print("Heisenberg Rejected: non-uniform local interactions") ???
             break
 
         g_heis_dict[pauli] = values[0]
@@ -517,7 +531,7 @@ def foqcs_analyze_operator(
             # All same-axis nearest-neighbours interactions must be uniform
             if not np.allclose(nn_val, nn_val[0], atol=tol):
                 is_heisenberg = False
-                #print("Heisenberg Rejected: non-uniform NN interactions")
+                #print("Heisenberg Rejected: non-uniform NN interactions") ???
                 break
 
             J_heis_dict[pauli] = nn_val[0]
@@ -529,7 +543,7 @@ def foqcs_analyze_operator(
                         continue
                     if not np.isclose(J_dict[pauli][i, j], 0, atol=tol):
                         is_heisenberg = False
-                        #print("Heisenberg Rejected: not NN interactions present")
+                        #print("Heisenberg Rejected: not NN interactions present") ???
                         break
                 if not is_heisenberg:
                     break
@@ -559,10 +573,28 @@ def is_operator_foqcs_compatible(
         O: QubitOperator,
         L: int = -1,
         tol: float = 1e-12
-) -> tuple: #(bool, dict || None)
-    """
-    TODO: DOC
-    Returns tuple of boolean with the check result and the output of foqcs_analyze_operator
+) -> tuple: #(bool, dict || None) ???
+    r"""
+    Parameters
+    ----------
+    O : QubitOperator
+            Qubit operator of form: O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)
+
+    L : int = -1
+        Number of operand qubits.
+        If not specified, will default to -1, and infer the number of operand qubits from the operator
+
+    tol : float = 1e-12
+        Tolerance for considering the entry zero
+
+    Returns
+    ----------
+    ???
+
+    Raises
+    ----------
+    ???
+
     """
     res = foqcs_analyze_operator(O, L = L, tol = tol, raise_errors = False)
     return (res != None, res)
