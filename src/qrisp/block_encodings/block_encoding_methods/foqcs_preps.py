@@ -387,7 +387,6 @@ def foqcs_analyze_operator(
         "L": int (number of intracting qubits)
         "g": dict ("X": np.arr, "Z": np.arr, "Y": np.arr)
         "J": dict ("X": np.arr, "Z": np.arr, "Y": np.arr) (In case of spin_glass, numpy arrays are 2-dim)
-        "is_hermitian": bool (Whether the operator is Hermitian - no imaginary coeffs)
     }
 
     Raises
@@ -423,8 +422,6 @@ def foqcs_analyze_operator(
     g_dict = {"X": np.zeros(L, dtype="complex"), "Y": np.zeros(L, dtype="complex"), "Z": np.zeros(L, dtype="complex")}
     J_dict = {"X": np.zeros((L, L), dtype="complex"), "Y": np.zeros((L, L), dtype="complex"), "Z": np.zeros((L, L), dtype="complex")}
 
-    is_hermitian = True # Assume hermitian until check
-
     # Verify operator against the spin-glass model.
         # Every non-zero term is Xi, Yi, Zi, XiXj, YiYj, ZiZj.
         # Fails if:
@@ -439,10 +436,6 @@ def foqcs_analyze_operator(
         # Fail on a constant: cI
         if len(pauli_str) == 0:
             return fail(f"FOQCS-LCU does not support constant/identity terms, but received {(pauli_str, coeff)}")
-
-        # Check for imaginary coeffs. Finding any means that the operator is not hermitian.
-        if not np.isclose(np.imag(coeff), 0, atol = tol):
-            is_hermitian = False
 
         # Inspect one-body terms Xi, Yi, Zi:
         if len(pauli_str) == 1:
@@ -529,7 +522,6 @@ def foqcs_analyze_operator(
             "L": L,
             "g": g_heis_dict,
             "J": J_heis_dict,
-            "is_hermitian": is_hermitian,
         }
     # General spin-glass / position-dependent XYZ spin model.
     else:
@@ -538,7 +530,6 @@ def foqcs_analyze_operator(
             "L": L,
             "g": g_dict,
             "J": J_dict,
-            "is_hermitian": is_hermitian,
         }
 
 def is_operator_foqcs_compatible(

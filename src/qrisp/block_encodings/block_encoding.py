@@ -569,7 +569,6 @@ class BlockEncoding:
             heis_L = aresult["L"]
             g = aresult["g"]
             J = aresult["J"]
-            is_hermitian = aresult["is_hermitian"]
 
             # Preprocess coefficients into sqrt-amplitude dictionaries.
             paulis = ("X", "Y", "Z")
@@ -619,7 +618,7 @@ class BlockEncoding:
                     prep = prep,
                     num_q_ops = heis_L,
                     unprep = unprep,
-                    is_hermitian = is_hermitian,
+                    is_hermitian = False,
                     norm = alpha
                 )
 
@@ -629,7 +628,6 @@ class BlockEncoding:
             sg_L = aresult["L"]
             g = aresult["g"]
             J = aresult["J"]
-            is_hermitian = aresult["is_hermitian"]
 
             paulis = ("X", "Y", "Z")
 
@@ -711,7 +709,7 @@ class BlockEncoding:
                 prep=prep,
                 num_q_ops=sg_L,
                 unprep=unprep,
-                is_hermitian=is_hermitian,
+                is_hermitian=False,
                 norm=alpha,
             )
 
@@ -744,7 +742,7 @@ class BlockEncoding:
             The default is None, in which case the unprep is calculated using the prep parameter.
 
         is_hermitian : bool
-            Indicates whether the operator encoded by this block encoding is Hermitian.
+            Indicates whether the block-encoding unitary is Hermitian.
             The default is False.
         
         norm : "ArrayLike"
