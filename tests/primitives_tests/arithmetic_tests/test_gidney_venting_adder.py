@@ -399,13 +399,21 @@ def test_non_jasp_mode_raises_error():
 
 
 def test_type_errors():
-    """Verify that type errors are raised for invalid argument types."""
+    """Verify that type errors are raised for invalid argument types (dynamic mode)."""
 
-    qv = QuantumFloat(3)
-    with pytest.raises(TypeError, match="The first argument must be a classical integer"):
+    @jaspify
+    def first_arg_type_error():
+        qv = QuantumFloat(3)
         gidney_cq_venting_adder(qv, qv)
-    with pytest.raises(TypeError, match="The second argument must be a QuantumVariable"):
+
+    @jaspify
+    def second_arg_type_error():
         gidney_cq_venting_adder(1, 2)
+
+    with pytest.raises(TypeError, match="The first argument must be a classical integer"):
+        first_arg_type_error()
+    with pytest.raises(TypeError, match="The second argument must be a QuantumVariable"):
+        second_arg_type_error()
 
 
 def test_no_additional_toffoli_cost():

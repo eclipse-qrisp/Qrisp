@@ -642,6 +642,15 @@ def gidney_cq_venting_adder(
         Vented carry measurement bitmask.  The k-th bit is the X-basis
         measurement outcome of the k-th vented carry.
 
+    Raises
+    ------
+    TypeError
+        If ``d`` is a :class:`QuantumVariable` or list (must be a classical integer).
+    TypeError
+        If ``target`` is not a :class:`QuantumVariable` or list of :class:`Qubit`.
+    RuntimeError
+        If called outside dynamic (JASP) tracing mode.
+
     Examples
     --------
     Basic addition in dynamic (JASP) mode::
@@ -749,7 +758,7 @@ def gidney_cq_venting_adder(
     # phase correction.
     # The same anc_clean2 is passed as the clean ancilla register, so the
     # total clean ancilla count is just 3 (shared between both halves).
-    # NOTE: n-h-2 may be less than h (e.g. n=5, h=2: n-h-2=1).  We use
+    # note: n-h-2 may be less than h (e.g. n=5, h=2: n-h-2=1).  We use
     # n-h-2 dirty qubits (at least 1) because dirty_ancillae_adder expects
     # exactly num_targets - 2 dirty qubits.  The remaining bottom bit(s) stay
     # untouched and keep their value from the bottom-half sum.
