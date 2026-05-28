@@ -1230,7 +1230,7 @@ def test_foqcs_operator_analysis_failures():
             foqcs_analyze_operator(O)
 
         print(exc_info.value)
-        assert f"Empty or constant operator: {O}" in str(exc_info.value)
+        assert f"empty or constant operator: {O}" in str(exc_info.value)
     
     def constant_must_fail():
         O = X(0) * X(0)
@@ -1238,7 +1238,7 @@ def test_foqcs_operator_analysis_failures():
             foqcs_analyze_operator(O)
 
         print(exc_info.value)
-        assert f"Empty or constant operator: {O}" in str(exc_info.value)
+        assert f"empty or constant operator: {O}" in str(exc_info.value)
     
     def bad_length_must_fail():
         O = X(0) + X(1) + X(2) + X(3) + X(4)
