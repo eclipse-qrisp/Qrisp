@@ -19,11 +19,11 @@
 import numpy as np
 import pytest
 from qrisp import QuantumVariable
-from qrisp.core import x
+from qrisp.core import h, x
 from qrisp.alg_primitives.unbalanced_w_state import unbalanced_W_state
 from qrisp.alg_primitives.dicke_state_prep import dicke_state
 from qrisp.jasp import terminal_sampling
-from qrisp.environments import invert
+from qrisp.environments import control, invert
 
 #############################################################
 ##################### Dicke state tests #####################
@@ -259,3 +259,44 @@ def test_unbalanced_W_state_fail_zero_vector():
 
     print(exc_info.value)
     assert f"Amplitude vector must be non-zero." in str(exc_info.value)
+
+def test_unbalanced_W_state_one_qubit_jasp():
+    phi = 0.73
+    amps = np.array([np.exp(1j * phi)], dtype=complex)
+
+    @terminal_sampling
+    def main():
+        ctrl = QuantumVariable(1)
+        target = QuantumVariable(1)
+
+        # Prepare (|0> + |1>) / sqrt(2) on the control.
+        h(ctrl[0])
+
+        # On the ctrl=1 branch:
+        #   unbalanced_W_state(target, [exp(i phi)]) prepares exp(i phi)|1>.
+        #   x(target) maps |1> back to |0>, leaving exp(i phi) as a
+        #   relative phase on the control branch.
+        with control(ctrl[0]):
+            unbalanced_W_state(target, amps)
+            x(target[0])
+
+        # Convert the relative phase into measurement probabilities.
+        h(ctrl[0])
+
+        return ctrl
+
+    result = main()
+
+    expected = {
+        0: float(np.cos(phi / 2) ** 2),
+        1: float(np.sin(phi / 2) ** 2),
+    }
+
+    print(f"Measured distribution:\n{result}")
+    print(f"Expected distribution:\n{expected}")
+
+    keys = sorted(set(result) | set(expected))
+    result_arr = np.array([result.get(k, 0.0) for k in keys])
+    expected_arr = np.array([expected.get(k, 0.0) for k in keys])
+
+    assert np.allclose(result_arr, expected_arr, atol=1e-6)

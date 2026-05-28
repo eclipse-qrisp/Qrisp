@@ -117,6 +117,12 @@ def unbalanced_W_state(
     abs_a = jnp.abs(a)
     phases = jnp.angle(a)
 
+    # Explicitly handle single-qubit case
+    if n == 1:
+        x(qv[0])
+        p(phases[0], qv[0])
+        return
+
     # --- Step 0: Precomputing angles
     # Precompute remaining values following:
     # r_i = \sqrt{ \sum_{ j = i }^{ n - 1 }{ |a_j| ^ 2 } }
