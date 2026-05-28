@@ -382,5 +382,5 @@ class TensorUnwrapPass(ModulePass):
         ).rewrite_module(op)
 
 
-def unwrap_tensors(module: ModuleOp) -> None:
+def unwrap_scalar_tensors(module: ModuleOp) -> None:
     TensorUnwrapPass().apply(Context(), module)

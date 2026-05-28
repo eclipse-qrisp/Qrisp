@@ -32,25 +32,30 @@ Usage example::
         return measure(qv)
 
     jaspr = make_jaspr(bell)()
-    module = jaspr_to_quake(jaspr)
+    module = jaspr_to_quake_mlir(jaspr)
     print(module)
 
 Pipeline
 --------
 The lowering consists of the following passes:
 
+0. **Emission** (:mod:`.mlir_emission`) – Translate the :class:`~qrisp.jasp.Jaspr`
+   to an initial xDSL ``builtin.ModuleOp`` via ``jaspr_to_mlir``.
+0a. **Safeguard** (:mod:`.safeguard_no_ranked_tensor_linalg`) – Reject any module
+    that contains ``linalg.generic`` ops on ranked tensors before lowering begins.
 1. **PASS 1** (:mod:`.pass1_jasp_to_quake`) – Replace every ``jasp.*`` op by
-   its Quake equivalent and eliminate the ``!jasp.QuantumState`` threading.
+   its Quake equivalent, eliminate the ``!jasp.QuantumState`` threading, and
+   perform QuantumState elimination.
 2. **PASS 2** (:mod:`.pass2_scf_to_cc`) – Replace ``scf.if`` / ``scf.while``
    (where they have no SSA results) with ``cc.if`` / ``cc.loop``.
-3. **PASS 3** (:mod:`.pass3_tensor_unwrap`) – Fold trivial rank-0 tensor
+3. **PASS 3** (:mod:`.pass3_scalar_tensor_unwrap`) – Fold trivial rank-0 tensor
    constants / extracts into scalars.
-3a. **PASS 3a** (:mod:`.pass3a_ranked_tensor`) – Lower ranked tensor constants
+3a. **PASS 3** (:mod:`.pass3_ranked_tensor_to_array`) – Lower ranked tensor constants
     and accesses to CC array operations.
 4. **PASS 4** (:mod:`.pass4_array_to_stdvec`) – Rewrite static array pointer
    parameters to ``!cc.stdvec<T>`` for CUDA-Q runtime compatibility.
 
-The returned ``builtin.ModuleOp`` contains only Quake + CC + arith/func ops;
+The returned ``builtin.ModuleOp`` contains only Quake + CC + arith, math, func ops;
 no ``!jasp.*`` types or tensor ops remain.
 """
 
@@ -60,16 +65,15 @@ from xdsl.dialects.builtin import ModuleOp
 
 from qrisp.jasp.mlir.quake_lowering.pass1_jasp_to_quake import lower_jasp_to_quake
 from qrisp.jasp.mlir.quake_lowering.pass2_scf_to_cc import lower_scf_to_cc
-from qrisp.jasp.mlir.quake_lowering.pass3a_ranked_tensor import lower_ranked_tensors
-from qrisp.jasp.mlir.quake_lowering.pass3_tensor_unwrap import unwrap_tensors
+from qrisp.jasp.mlir.quake_lowering.pass3_ranked_tensor_to_array import lower_ranked_tensors
+from qrisp.jasp.mlir.quake_lowering.pass3_scalar_tensor_unwrap import unwrap_scalar_tensors
 from qrisp.jasp.mlir.quake_lowering.pass4_array_to_stdvec import lower_array_params_to_stdvec
 from qrisp.jasp.mlir.quake_lowering.safeguard_no_ranked_tensor_linalg import (
     verify_no_ranked_tensor_linalg,
 )
-from qrisp.jasp.mlir.mlir_rewrites.scalar_tensor_folding import scalar_tensor_folding
 
 
-def jaspr_to_quake(jaspr, lower_stableHLO: bool = True) -> ModuleOp:
+def jaspr_to_quake_mlir(jaspr, lower_stableHLO: bool = True) -> ModuleOp:
     """Lower a :class:`~qrisp.jasp.Jaspr` to a Quake+CC ``builtin.ModuleOp``.
 
     Parameters
@@ -94,28 +98,26 @@ def jaspr_to_quake(jaspr, lower_stableHLO: bool = True) -> ModuleOp:
     LinalgRankedTensorError
         If the emitted module contains ``linalg.generic`` on ranked tensors.
     """
-    # Step 1 – Produce the initial xDSL module with Jasp IR.
+    # Step 0 – Produce the initial xDSL module with Jasp IR.
     from qrisp.jasp.mlir.mlir_emission import jaspr_to_mlir
     module: ModuleOp = jaspr_to_mlir(jaspr, lower_stableHLO=lower_stableHLO)
 
-    # Step 1b – Safeguard: reject ranked-tensor linalg.generic early.
+    # Step 0a – Safeguard: reject ranked-tensor linalg.generic early.
     verify_no_ranked_tensor_linalg(module)
 
-    # Step 2 – PASS 1: QuantumState elimination + Jasp→Quake rewriting.
+    # Step 1 – PASS 1: QuantumState elimination + Jasp → Quake rewriting.
     lower_jasp_to_quake(module)
 
-    # Step 3 – PASS 2: SCF→CC lowering.
+    # Step 2 – PASS 2: SCF → CC lowering.
     lower_scf_to_cc(module)
 
-    # Step 4 – PASS 3b: tensor unwrapping + scalar constant folding.
-    unwrap_tensors(module)
+    # Step 3 – PASS 3: scalar tensor unwrapping + scalar constant folding.
+    unwrap_scalar_tensors(module)
 
-    scalar_tensor_folding(Context(), module)
-
-    # Step 5 – PASS 3a: ranked tensor → CC array lowering.
+    # Step 3a – PASS 3: ranked tensor → CC array lowering.
     lower_ranked_tensors(module)
 
-    # Step 6 – PASS 4: array ptr params → stdvec (CUDA-Q runtime compat).
+    # Step 4 – PASS 4: array ptr params → stdvec (CUDA-Q runtime compatibility).
     lower_array_params_to_stdvec(module)
 
     return module

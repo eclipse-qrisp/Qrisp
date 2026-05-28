@@ -457,7 +457,7 @@ def _rewrite_tensor_extract(extract_op, block: Block, array_map: dict) -> None:
         return
     arr_ptr, elem_type, _ = array_map[source]
     loaded = _emit_load_from_array(arr_ptr, indices[0], elem_type, block, extract_op)
-    extract_op.result.replace_by(loaded)
+    extract_op.result.replace_all_uses_with(loaded)
     Rewriter.erase_op(extract_op, safe_erase=False)
 
 
@@ -493,7 +493,8 @@ def _rewrite_extract_slice_chain(slice_op, block: Block, array_map: dict) -> Non
                 continue
             loaded = _emit_load_from_array(arr_ptr, dynamic_offsets[0], elem_type, block, extract_op)
 
-        extract_op.result.replace_by(loaded)
+        extract_op.result.replace_all_uses_with(loaded)
+
         Rewriter.erase_op(extract_op, safe_erase=False)
 
     # Clean up collapse_shape and extract_slice if no remaining uses

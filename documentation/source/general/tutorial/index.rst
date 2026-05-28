@@ -637,3 +637,4 @@ The quantum landscape is evolving rapidly. By mastering these utorials, you’re
    BE_tutorial/index
    GQSP_filtering.ipynb
    HHL.ipynb 
+   CUDAQ.ipynb

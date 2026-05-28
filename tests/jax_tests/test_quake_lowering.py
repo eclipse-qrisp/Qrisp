@@ -44,7 +44,7 @@ from qrisp.alg_primitives import amplitude_amplification, q_switch
 from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop, qache
 
 try:
-    from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake, validate_quake_mlir
+    from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir, validate_quake_mlir
     from qrisp.jasp.cudaq_interface import run_quake_mlir
 except ImportError as exc:
     # Skip the entire test file if the import fails
@@ -64,7 +64,7 @@ def _lower(circuit_fn, *trace_args) -> str:
     jaspr = make_jaspr(circuit_fn)(*trace_args)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        module = jaspr_to_quake(jaspr)
+        module = jaspr_to_quake_mlir(jaspr)
     return str(module)
 
 
@@ -265,7 +265,7 @@ def test_quake_types_present():
 
 def test_unsupported_gate_warning():
     """An unsupported gate should emit a warning and leave the op in place."""
-    from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake
+    from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir
 
     # Build a custom jaspr with an exotic gate – use rxx which is not in GATE_MAP
     # We do this by patching the Jaspr IR after construction.

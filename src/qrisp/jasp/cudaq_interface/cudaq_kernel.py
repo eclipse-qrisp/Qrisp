@@ -56,7 +56,7 @@ from cudaq.mlir.dialects import quake, cc
 # imports: qrisp.jasp.__init__ imports evaluation_tools which optionally
 # imports qrisp.jasp.cudaq_interface, so qrisp.jasp is not yet fully initialised here.
 from qrisp.jasp.jasp_expression import make_jaspr
-from qrisp.jasp.mlir.quake_lowering.jaspr_to_quake import jaspr_to_quake
+from qrisp.jasp.mlir.quake_lowering.jaspr_to_quake import jaspr_to_quake_mlir
 from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray  
 
 # ------------------------------------------------------------------ #
@@ -199,7 +199,7 @@ def cudaq_kernel_from_mlir(mlir_str: str) -> PyKernelDecorator:
 
         from qrisp import QuantumVariable, h, cx, measure
         from qrisp.jasp import make_jaspr
-        from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake
+        from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir
         from qrisp.jasp.cudaq_interface import cudaq_kernel_from_mlir
         import cudaq
 
@@ -209,7 +209,7 @@ def cudaq_kernel_from_mlir(mlir_str: str) -> PyKernelDecorator:
             cx(qv[0], qv[1])
             return measure(qv)
 
-        mlir_str = str(jaspr_to_quake(make_jaspr(bell)()))
+        mlir_str = str(jaspr_to_quake_mlir(make_jaspr(bell)()))
         kernel = cudaq_kernel_from_mlir(mlir_str)
 
         print(kernel())                          # single-shot, e.g. 0 or 3
@@ -375,7 +375,7 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
 
         from qrisp import QuantumVariable, h, cx, measure
         from qrisp.jasp import make_jaspr
-        from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake
+        from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir
         from qrisp.jasp.cudaq_interface import run_quake_mlir
 
         def bell():
@@ -384,7 +384,7 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
             cx(qv[0], qv[1])
             return measure(qv)
 
-        result = run_quake_mlir(str(jaspr_to_quake(make_jaspr(bell)())), shots=10)
+        result = run_quake_mlir(str(jaspr_to_quake_mlir(make_jaspr(bell)())), shots=10)
         print(result)  # e.g. [0, 0, 3, 0, 3, 0, 3, 3, 0, 0]
 
     """
@@ -518,7 +518,7 @@ def qrisp_cudaq_kernel(func):
             )
 
     try:
-        mlir_str = str(jaspr_to_quake(make_jaspr(func)(*dummy_args)))
+        mlir_str = str(jaspr_to_quake_mlir(make_jaspr(func)(*dummy_args)))
     except Exception as e:
         raise RuntimeError(
             f"Failed to compile Qrisp function '{func.__name__}' to MLIR: {e}"
