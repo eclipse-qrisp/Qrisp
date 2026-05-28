@@ -29,6 +29,12 @@ from qrisp.interface.backend import Backend
 from qrisp.interface.measurement_result import MeasurementResult
 
 
+# NOTE: ``BatchedBackend`` intentionally does not inherit from
+# ``Backend``. ``Backend.run`` is contractually required to return
+# a fully populated result. A ``BatchedBackend`` cannot honour that
+# contract because its ``run`` returns an empty placeholder that is
+# only populated after ``dispatch`` is called. Inheriting from
+# ``Backend`` would therefore violate the Liskov Substitution Principle.
 class BatchedBackend:
     """
     A class that buffers circuit submissions and executes them on an explicit
@@ -54,15 +60,6 @@ class BatchedBackend:
     :meth:`QuantumVariable.get_measurement
     <qrisp.QuantumVariable.get_measurement>`) is deferred until the user
     actually reads the decoded result.
-
-    :class:`BatchedBackend` intentionally does not inherit from
-    :class:`~qrisp.interface.Backend`. :meth:`~qrisp.interface.Backend.run`
-    is contractually required to return a fully populated result. A
-    :class:`BatchedBackend` cannot honour that contract because its
-    :meth:`run` returns an empty placeholder that is only populated after
-    :meth:`dispatch` is called. Inheriting from
-    :class:`~qrisp.interface.Backend` would therefore violate the Liskov
-    Substitution Principle.
 
     .. note::
 
