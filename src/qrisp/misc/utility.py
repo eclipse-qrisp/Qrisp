@@ -20,6 +20,7 @@ import functools
 import traceback
 from typing import TYPE_CHECKING
 
+import jax
 import jax.numpy as jnp
 import numpy as np
 import sympy
@@ -2322,7 +2323,7 @@ def batched_measurement(variables, backend, shots=None):
     return results
 
 
-def _bitrev_indices(n: ArrayLike) -> jnp.ndarray:
+def _bitrev_indices(n: ArrayLike) -> jax.Array:
     """Return array r where r[j] = bitreverse(j) over n bits."""
     idx = jnp.arange(1 << n, dtype=jnp.uint32)
     rev = jnp.zeros_like(idx)
@@ -2331,7 +2332,7 @@ def _bitrev_indices(n: ArrayLike) -> jnp.ndarray:
     return rev
 
 
-def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jnp.ndarray:
+def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jax.Array:
     """
     Convert between big-endian and little-endian qubit ordering.
 
@@ -2346,7 +2347,7 @@ def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jnp.ndarray:
 
     Returns
     -------
-    jnp.ndarray
+    jax.Array
         The state vector with reversed qubit ordering.
     """
     r = _bitrev_indices(n)
