@@ -1322,7 +1322,7 @@ class Jaspr(ClosedJaxpr):
         """
         from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir
 
-        return str(jaspr_to_quake_mlir(self))
+        return jaspr_to_quake_mlir(self)
 
     def to_qasm(self, *args):
         """

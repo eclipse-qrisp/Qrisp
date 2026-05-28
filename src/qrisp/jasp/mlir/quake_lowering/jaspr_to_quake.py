@@ -32,8 +32,8 @@ Usage example::
         return measure(qv)
 
     jaspr = make_jaspr(bell)()
-    module = jaspr_to_quake_mlir(jaspr)
-    print(module)
+    mlir_str = jaspr_to_quake_mlir(jaspr)
+    print(mlir_str)
 
 Pipeline
 --------
@@ -55,7 +55,7 @@ The lowering consists of the following passes:
 4. **PASS 4** (:mod:`.pass4_array_to_stdvec`) – Rewrite static array pointer
    parameters to ``!cc.stdvec<T>`` for CUDA-Q runtime compatibility.
 
-The returned ``builtin.ModuleOp`` contains only Quake + CC + arith, math, func ops;
+The returned string contains only Quake + CC + arith, math, func ops;
 no ``!jasp.*`` types or tensor ops remain.
 """
 
@@ -88,8 +88,8 @@ def jaspr_to_quake_mlir(jaspr, lower_stableHLO: bool = True) -> ModuleOp:
 
     Returns
     -------
-    builtin.ModuleOp
-        An xDSL module containing Quake (memory-semantics) + CC ops.
+    str
+        A string representation of an xDSL module containing Quake (memory-semantics) + CC ops.
 
     Raises
     ------
@@ -120,4 +120,4 @@ def jaspr_to_quake_mlir(jaspr, lower_stableHLO: bool = True) -> ModuleOp:
     # Step 4 – PASS 4: array ptr params → stdvec (CUDA-Q runtime compatibility).
     lower_array_params_to_stdvec(module)
 
-    return module
+    return str(module)

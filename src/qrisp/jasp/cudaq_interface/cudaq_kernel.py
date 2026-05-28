@@ -518,7 +518,7 @@ def qrisp_cudaq_kernel(func):
             )
 
     try:
-        mlir_str = str(jaspr_to_quake_mlir(make_jaspr(func)(*dummy_args)))
+        mlir_str = jaspr_to_quake_mlir(make_jaspr(func)(*dummy_args))
     except Exception as e:
         raise RuntimeError(
             f"Failed to compile Qrisp function '{func.__name__}' to MLIR: {e}"

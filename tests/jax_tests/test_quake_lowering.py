@@ -64,8 +64,8 @@ def _lower(circuit_fn, *trace_args) -> str:
     jaspr = make_jaspr(circuit_fn)(*trace_args)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        module = jaspr_to_quake_mlir(jaspr)
-    return str(module)
+        mlir_str = jaspr_to_quake_mlir(jaspr)
+    return mlir_str
 
 
 def assert_return_type(mlir: str, expected_type: str):
