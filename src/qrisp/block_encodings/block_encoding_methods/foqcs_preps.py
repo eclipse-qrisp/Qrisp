@@ -571,6 +571,8 @@ def _gamma_gate(qv_rot: Any, qv_x: Any, theta: float):
     cx(qv_rot, qv_x)
 
 def _delta_gate(qv: QuantumVariable | Sequence[Qubit], theta_coeffs):
+    if len(theta_coeffs) == 0:
+        return
     if len(theta_coeffs) == 1:
         _gamma_gate(qv[0], qv[1], theta_coeffs[0])
     else:

@@ -564,7 +564,7 @@ class BlockEncoding:
         aresult = foqcs_analyze_operator(O, L = L, tol = tol, raise_errors = True)
         
         if aresult["method"] == "heisenberg":
-            print("Parsing as Heisenberg model")
+            #print("Parsing as Heisenberg model")
             # Do Heisenberg model preprocessing here
             heis_L = aresult["L"]
             g = aresult["g"]
@@ -623,7 +623,7 @@ class BlockEncoding:
                 )
 
         elif aresult["method"] == "spin_glass":
-            print("Parsing as Spin-Glass model")
+            #print("Parsing as Spin-Glass model")
 
             sg_L = aresult["L"]
             g = aresult["g"]
