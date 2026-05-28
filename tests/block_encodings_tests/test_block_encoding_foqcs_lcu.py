@@ -881,7 +881,7 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_operator():
 
     be = BlockEncoding.from_foqcs_lcu_operator(O, L)
 
-    qv = QuantumVariable(4)
+    qv = QuantumVariable(L)
     psi = _prep_psi(L)
     qv.init_state(psi, method="qswitch")
 
@@ -1110,6 +1110,141 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_operator_jasp():
     assert np.allclose([filtered_conditional[k] for k in sorted(filtered_conditional)],
                        [result_rus[k] for k in sorted(result_rus)],
                        atol = 1e-4)
+
+def test_foqcs_lcu_resources():
+    L = 3
+
+    O = (
+        0.31 * X(0) - 0.47 * X(1) + 0.22 * X(2)
+        - 0.18 * Y(0) + 0.29 * Y(1) + 0.41 * Y(2)
+        + 0.52 * Z(0) - 0.13 * Z(1) - 0.36 * Z(2)
+        + 0.17 * X(0) * X(1) - 0.24 * X(1) * X(2) + 0.33 * X(0) * X(2)
+        - 0.21 * Y(0) * Y(1) + 0.15 * Y(1) * Y(2) - 0.28 * Y(0) * Y(2)
+        + 0.39 * Z(0) * Z(1) - 0.11 * Z(1) * Z(2) + 0.26 * Z(0) * Z(2)
+    )
+
+    be = BlockEncoding.from_foqcs_lcu_operator(O, L)
+    res = be.resources(QuantumVariable(L))
+
+    print(f"Spin-glass FOQCS-LCU resources:\n{res}")
+
+    assert set(res) == {"gate counts", "depth", "qubits"}
+    assert isinstance(res["gate counts"], dict)
+    assert res["gate counts"]
+    assert res["depth"] > 0
+    assert res["qubits"] > 0
+
+###########################################################################################################
+#### Transformations tests ################################################################################
+###########################################################################################################
+def test_foqcs_lcu_qubitization():
+    L = 2
+
+    O = (
+        0.31 * X(0) - 0.18 * Y(0) + 0.52 * Z(0)
+        + 0.31 * X(1) - 0.18 * Y(1) + 0.52 * Z(1)
+        + 0.17 * X(0) * X(1)
+        - 0.21 * Y(0) * Y(1)
+        + 0.39 * Z(0) * Z(1)
+    )
+
+    be = BlockEncoding.from_foqcs_lcu_operator(O, L)
+    qbe = be.qubitization()
+
+    qv = QuantumVariable(L)
+    ancillas = qbe.apply(qv)
+    qc = qv.qs.compile()
+
+    print("be.alpha", be.alpha)
+    print("be.is_hermitian", be.is_hermitian)
+    print("qbe.alpha", qbe.alpha)
+    print("qbe.is_hermitian", qbe.is_hermitian)
+    print("ancilla lengths", [len(a) for a in ancillas])
+
+    assert np.isclose(qbe.alpha, be.alpha)
+    assert qbe.is_hermitian
+    assert len(ancillas) == be.num_ancs + 1
+    assert len(ancillas[0]) == 1
+    assert qc.num_qubits() >= L + sum(len(a) for a in ancillas)
+
+def test_foqcs_lcu_chebyshev():
+    L = 2
+
+    gx, gy, gz = 0.31, -0.18, 0.52
+    Jx, Jy, Jz = 0.17, -0.21, 0.39
+
+    O = (
+        gx * X(0) + gy * Y(0) + gz * Z(0)
+        + gx * X(1) + gy * Y(1) + gz * Z(1)
+        + Jx * X(0) * X(1)
+        + Jy * Y(0) * Y(1)
+        + Jz * Z(0) * Z(1)
+    )
+
+    be = BlockEncoding.from_foqcs_lcu_operator(O, L)
+    cheb_be = be.chebyshev(2, rescale=False)
+
+    psi = np.array(
+        [0.31 + 0.17j, -0.42 + 0.53j, 0.26 - 0.61j, -0.18 - 0.22j],
+        dtype=complex,
+    )
+    psi /= np.linalg.norm(psi)
+
+    qv = QuantumVariable(L)
+    qv.init_state(psi, method="qswitch")
+    ancillas = cheb_be.apply(qv)
+
+    qc = qv.qs.compile()
+    sv = qc.statevector_array()
+
+    pos = {qb.identifier: i for i, qb in enumerate(qc.qubits)}
+    res = []
+
+    for i in range(2 ** L):
+        ind = 0
+
+        for j in range(L):
+            if (i >> j) & 1:
+                ind += 2 ** (len(qc.qubits) - 1 - pos[qv[j].identifier])
+
+        for anc in ancillas:
+            for qb in anc:
+                # Ancillae are projected onto |0>, so they add nothing to ind.
+                assert qb.identifier in pos
+
+        res.append(sv[ind])
+
+    sx = np.array([[0, 1], [1, 0]], dtype=complex)
+    sy = np.array([[0, -1j], [1j, 0]], dtype=complex)
+    sz = np.array([[1, 0], [0, -1]], dtype=complex)
+    I = np.eye(2, dtype=complex)
+
+    H = (
+        gx * np.kron(sx, I) + gy * np.kron(sy, I) + gz * np.kron(sz, I)
+        + gx * np.kron(I, sx) + gy * np.kron(I, sy) + gz * np.kron(I, sz)
+        + Jx * np.kron(sx, sx)
+        + Jy * np.kron(sy, sy)
+        + Jz * np.kron(sz, sz)
+    )
+
+    H_scaled = H / be.alpha
+    ref = (2 * H_scaled @ H_scaled - np.eye(2 ** L)) @ psi
+
+    print(f"Chebyshev result:\n{res}")
+    print(f"Reference:\n{ref}")
+
+    assert np.isclose(cheb_be.alpha, 1)
+    assert np.allclose(res, ref, atol=1e-5)
+
+    # .poly 
+    # .inv 
+    # .sim
+
+# Arithmetic / composition tests
+    # +, -
+    # @ (__matmul__)
+    # .kron
+    # __mul__, __rmul__, __neg__
 
 def test_block_encoding_from_foqcs_lcu_bench_lcu():
     from qiskit import transpile
