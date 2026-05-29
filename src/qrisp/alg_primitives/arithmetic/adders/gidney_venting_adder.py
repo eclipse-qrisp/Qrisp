@@ -220,7 +220,7 @@ def carry_venting_adder(
     to O(1).
 
     Two provided clean ancillae alternate roles: one holds the current carry,
-    the other receives the next carry.  After each bit the current-carry
+    the other receives the next carry.  After each bit the current carry
     ancilla is vented and reset, becoming available two steps later.
 
     When *carry_xor_target* is provided, each carry is also copied into the
@@ -333,24 +333,24 @@ def carry_venting_adder(
         d_i = _extract_bit(d, i, a_int_is_bigint)
         d_prev = _extract_bit(d, i - 1, a_int_is_bigint)
 
-        cur = clean_anc[i % 2]
-        nxt = clean_anc[(i + 1) % 2]
+        current_carry = clean_anc[i % 2]
+        next_carry = clean_anc[(i + 1) % 2]
 
         with control(d_prev):
             if ctrl is None:
-                qrisp.x(cur)
+                qrisp.x(current_carry)
             else:
-                qrisp.cx(ctrl, cur)
+                qrisp.cx(ctrl, current_carry)
 
-        bit_inverted_mcx(cur, target[i], nxt, d_i, ctrl=ctrl)
-        qrisp.cx(cur, target[i])
+        bit_inverted_mcx(current_carry, target[i], next_carry, d_i, ctrl=ctrl)
+        qrisp.cx(current_carry, target[i])
 
         if carry_xor_target is not None:
-            qrisp.cx(cur, carry_xor_target[i - 1])
+            qrisp.cx(current_carry, carry_xor_target[i - 1])
 
-        qrisp.h(cur)
-        m_i = qrisp.measure(cur)
-        qrisp.reset(cur)
+        qrisp.h(current_carry)
+        m_i = qrisp.measure(current_carry)
+        qrisp.reset(current_carry)
         # Record the vent measurement at bit position (j+1) of the ventmask
         ventmask = ventmask + (m_i.astype(jnp.int64) << (j + 1))
 
@@ -373,38 +373,38 @@ def carry_venting_adder(
     def write_final_carry_to_msb(target, clean_anc, ventmask):
         last_i = num_qubits - 2
         d_last = _extract_bit(d, last_i, a_int_is_bigint)
-        cur = clean_anc[num_main % 2]              # carry lives in the alternator that didn't just vent
+        current_carry = clean_anc[num_main % 2]              # carry lives in the alternator that didn't just vent
 
-        # Correction: X^{d_{last_i-1}} on cur to account for d's effect on
+        # Correction: X^{d_{last_i-1}} on current_carry to account for d's effect on
         # the previous step's carry computation.
         d_correction = _extract_bit(d, jnp.maximum(1, num_qubits - 3), a_int_is_bigint)
         with control(d_correction):
             if ctrl is None:
-                qrisp.x(cur)
+                qrisp.x(current_carry)
             else:
-                qrisp.cx(ctrl, cur)
+                qrisp.cx(ctrl, current_carry)
 
         # For n=3, the carry into bit 2 is already in clean_anc[0] (computed by the
         # first block).  Just CX it into target[2] — no MCX needed.
         with control(num_qubits == 3):
-            qrisp.cx(cur, target[last_i + 1])
+            qrisp.cx(current_carry, target[last_i + 1])
 
         # Full MCX-based last block: write the carry into target[n-1].
         with control(num_qubits > 3):
-            bit_inverted_mcx(cur, target[last_i], target[num_qubits - 1], d_last, ctrl=ctrl)
-            qrisp.cx(cur, target[last_i])
+            bit_inverted_mcx(current_carry, target[last_i], target[num_qubits - 1], d_last, ctrl=ctrl)
+            qrisp.cx(current_carry, target[last_i])
             # Fused carry-xor: write the last carry into carry_xor_target[last_i-1].
             # NOTE: For n=3 this write is intentionally NOT done here (it's
             # inside the n>3 branch).  For n=3, the first block already wrote
             # to carry_xor_target[0], and a second write to the same slot would create a
             # double-write that the phase correction cannot undo.
             if carry_xor_target is not None:
-                qrisp.cx(cur, carry_xor_target[last_i - 1])
+                qrisp.cx(current_carry, carry_xor_target[last_i - 1])
 
         # Vent (common to both paths) — X-basis measurement
-        qrisp.h(cur)
-        m_last = qrisp.measure(cur)
-        qrisp.reset(cur)
+        qrisp.h(current_carry)
+        m_last = qrisp.measure(current_carry)
+        qrisp.reset(current_carry)
         # Record the vent measurement at bit position (1 + num_main) of the ventmask
         ventmask = ventmask + (m_last.astype(jnp.int64) << (1 + num_main))
 
