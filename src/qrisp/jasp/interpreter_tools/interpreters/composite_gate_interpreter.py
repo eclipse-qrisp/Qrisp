@@ -46,7 +46,7 @@ def _apply_op(op, qubit_tracers, abs_qst):
     if op.definition is None:
         return quantum_gate_p.bind(*qubit_tracers, abs_qst, gate=op)
 
-    defn = op.definition
+    defn = op.definition.transpile()
     for instr in defn.data:
         qubit_indices = [defn.qubits.index(qb) for qb in instr.qubits]
         sub_qubits = [qubit_tracers[i] for i in qubit_indices]
