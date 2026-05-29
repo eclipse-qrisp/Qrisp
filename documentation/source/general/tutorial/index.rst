@@ -463,7 +463,6 @@ You'll also discover how to leverage Jasp and the BigInteger class to compile an
 
             </div>
 
-
 Scientific Computing and Quantum Numerical Linear Algebra
 ---------------------------------------------------------
 Unlock the potential of quantum computers for scientific discovery and advanced mathematics. 
