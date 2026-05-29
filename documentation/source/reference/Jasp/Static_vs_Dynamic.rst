@@ -6,7 +6,7 @@ Standard Python Execution Mode vs Jasp Mode
 Qrisp supports two execution modes that share the same high-level code but differ in how that code is processed.
 
 **Static mode** (Standard Python Execution Mode)
-    QuantumVariable allocations, gate applications, and classical conditionals execute
+    :doc:`QuantumVariable </reference/Core/QuantumVariable>` allocations, gate applications, and classical conditionals execute
     immediately as Python encounters them, building a circuit instruction by instruction.
 
     No special decorators or functions are required; this is the standard way Qrisp
@@ -19,7 +19,7 @@ Qrisp supports two execution modes that share the same high-level code but diffe
     a JAX-compatible intermediate representation. The resulting IR can be lowered for
     scalable compilation and real-time classical computation.
 
-    Dynamic mode is entered via ``@jaspify``, ``make_jaspr``, or the ``QuantumKernel``
+    Dynamic mode is entered via :doc:`@jaspify </reference/Jasp/Simulation Tools/Jaspify>`, :doc:`make_jaspr </reference/Jasp/Simulation Tools/Jaspify>`
     decorator.
 
 The same code can be used in both modes under certain circumstances. However, Python's dynamic semantics include several patterns that **cannot** be traced - they either raise an exception at trace time or silently produce incorrect results.
@@ -67,7 +67,12 @@ The same function works in dynamic mode because the string is a concrete value, 
 
 The return value of ``make_jaspr`` is a :doc:`Jaspr </reference/Jasp/Jaspr>` --- a JAX-compatible intermediate representation that captures the traced function. The Jaspr can be inspected, converted to other representations (`QIR <https://qrisp.eu/reference/Jasp/generated/qrisp.jasp.Jaspr.to_qir.html#qrisp.jasp.Jaspr.to_qir>`_, `MLIR <https://qrisp.eu/reference/Jasp/generated/qrisp.jasp.Jaspr.to_mlir.html#qrisp.jasp.Jaspr.to_mlir>`_, `QuantumCircuit <https://qrisp.eu/reference/Jasp/generated/qrisp.jasp.Jaspr.to_qc.html#qrisp.jasp.Jaspr.to_qc>`_), or executed. Calling ``print(jaspr)`` displays the internal Jaxpr IR.
 
-When ``print()`` receives a JAX tracer instead of a concrete string, it prints the tracer's representation, not the runtime value:
+Entry points into dynamic mode:
+
+* ``make_jaspr(func)(*args)`` --- traces a function and returns a :doc:`Jaspr </reference/Jasp/Jaspr>` object that you can inspect, convert, or execute manually. Best when you need access to the Jaspr for analysis or conversion.
+* ``@jaspify`` --- a decorator that handles tracing, caching, and execution transparently. Best for production code where you just want the result. The function is compiled on the first call and cached for subsequent calls.
+
+In Jasp mode, when ``print()`` receives a tracer instead of a concrete string, it prints the tracer's representation, not the runtime value:
 
 .. code-block:: python
 
@@ -178,16 +183,16 @@ As expected, using ``jnp`` instead works. Here we evaluate the trigonometric ide
     # Output:
     Result: 1.0
 
-2.2 Boolean Short-Circuit Operators
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2.2 Boolean Operators
+~~~~~~~~~~~~~~~~~~~~~~
 
-Boolean short-circuit operators (``and``/``or``/``not``, etc.) require concrete Python bools. On traced values they raise ``TracerBoolConversionError``.
+The ``and``, ``or``, and ``not`` operators require concrete Python bools. On traced values they raise ``TracerBoolConversionError``.
 
 Here we define a function to verify whether the provided year is a leap year using ``and`` and ``or``:
 
 .. code-block:: python
 
-    # Boolean short-circuit operators on traced values - breaks
+    # and/or/not on traced values - breaks
     from qrisp.jasp import make_jaspr
 
     def leap_year_bad(year):
@@ -226,6 +231,3 @@ Fix the leap year function by using ``jnp.logical_or`` and ``jnp.logical_and``, 
 
     # Output:
     2024 is a leap year: True
-
-
-
