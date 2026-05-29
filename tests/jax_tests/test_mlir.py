@@ -120,6 +120,25 @@ def test_mlir_basic_dialect_operations():
     assert "jasp.measure" in mlir_str, "measure operation not found in MLIR"
     assert "jasp.quantum_gate" in mlir_str or "jasp.gate" in mlir_str, "gate operations not found in MLIR"
 
+def test_mlir_symbolic_gate_parameter_expression_lowering():
+    """Composite-gate decomposition may produce primitive gates whose parameter
+    is a symbolic expression of a runtime tracer, e.g. gphase(-alpha/2) inside
+    rxx(alpha). MLIR lowering must materialize that expression instead of
+    forwarding the raw tracer unchanged.
+    """
+
+    def circuit(phi):
+        qv = QuantumVariable(2)
+        rxx(phi, qv[0], qv[1])
+        return measure(qv[0])
+
+    jaspr = make_jaspr(circuit)(1.57)
+    mlir_str = str(jaspr.to_mlir())
+
+    assert 'jasp.quantum_gate "gphase"' in mlir_str, "Expected decomposed gphase gate in MLIR"
+    assert "stablehlo.multiply" in mlir_str, "Expected MLIR arithmetic for gphase(-alpha/2)"
+    assert "dense<-5.000000e-01>" in mlir_str, "Expected -0.5 constant factor for gphase(-alpha/2)"
+
 def test_mlir_quantum_control_flow_rewriting():
     """
     Test that StableHLO control flow is properly rewritten to SCF for quantum types.

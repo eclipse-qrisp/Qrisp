@@ -16,6 +16,9 @@
 ********************************************************************************
 """
 
+import numpy as np
+from sympy import Add, Expr, Mul, Pow
+
 from qrisp.jasp.primitives import (
     create_qubits_p,
     get_qubit_p,
@@ -33,12 +36,15 @@ from qrisp.jasp.primitives import (
     AbstractQubitArray,
     AbstractQubit,
 )
+from qrisp.jasp.primitives.operation_primitive import greek_letters as _greek_letters
 
 
 import qrisp.jasp.mlir.dialect_implementation._jasp_ops_gen as jasp_dialect
 
+from jax.interpreters import mlir as jax_mlir
 from jax.interpreters.mlir import ir_type_handlers
 from jaxlib.mlir import ir
+from jaxlib.mlir.dialects import stablehlo
 
 ##########################
 # Register type lowering #
@@ -91,6 +97,104 @@ def _aqb_lowering(aval):
 ir_type_handlers[AbstractQuantumState] = _aqc_lowering
 ir_type_handlers[AbstractQubitArray] = _aqa_lowering
 ir_type_handlers[AbstractQubit] = _aqb_lowering
+
+
+_greek_letter_order = {sym: i for i, sym in enumerate(_greek_letters)}
+
+
+def _as_ir_value(value):
+    if isinstance(value, (tuple, list)):
+        if len(value) != 1:
+            raise ValueError(f"Expected a single MLIR value, got {len(value)} values")
+        return value[0]
+    return value
+
+
+def _sorted_param_symbols(param_exprs):
+    symbols = set()
+    for expr in param_exprs:
+        if isinstance(expr, Expr):
+            symbols.update(expr.free_symbols)
+    return sorted(symbols, key=lambda sym: _greek_letter_order.get(sym, len(_greek_letters)))
+
+
+def _lower_f64_constant(ctx, value):
+    return _as_ir_value(
+        jax_mlir.ir_constant(
+            np.asarray(float(value), dtype=np.float64),
+            const_lowering=ctx.const_lowering,
+        )
+    )
+
+
+def _lower_gate_param_expr(ctx, expr, symbol_bindings):
+    """Lower a sympy gate-parameter expression to a tensor<f64> SSA value.
+
+    quantum_gate_p stores gate parameters symbolically in ``gate.params`` while the
+    runtime tracer operands are provided positionally. MLIR lowering must rebuild
+    the symbolic expression explicitly; otherwise a gate such as ``gphase(-alpha/2)``
+    is emitted as if its parameter were just ``alpha``.
+    """
+    if isinstance(expr, np.number):
+        expr = expr.item()
+
+    if isinstance(expr, (int, float)):
+        return _lower_f64_constant(ctx, expr)
+
+    if isinstance(expr, Expr):
+        if expr.is_Symbol:
+            try:
+                return symbol_bindings[expr]
+            except KeyError as exc:
+                raise KeyError(f"Missing MLIR operand for symbolic gate parameter {expr}") from exc
+
+        if not expr.free_symbols:
+            return _lower_f64_constant(ctx, expr)
+
+        if isinstance(expr, Add):
+            values = [_lower_gate_param_expr(ctx, arg, symbol_bindings) for arg in expr.args]
+            acc = values[0]
+            for value in values[1:]:
+                acc = stablehlo.AddOp(acc, value).result
+            return acc
+
+        if isinstance(expr, Mul):
+            values = [_lower_gate_param_expr(ctx, arg, symbol_bindings) for arg in expr.args]
+            acc = values[0]
+            for value in values[1:]:
+                acc = stablehlo.MulOp(acc, value).result
+            return acc
+
+        if isinstance(expr, Pow):
+            base_expr, exponent_expr = expr.args
+
+            if isinstance(exponent_expr, Expr) and exponent_expr.free_symbols:
+                raise NotImplementedError(
+                    f"Dynamic exponent in gate parameter expression is not supported: {expr}"
+                )
+
+            exponent_value = float(exponent_expr)
+            if not exponent_value.is_integer():
+                raise NotImplementedError(
+                    f"Non-integer powers in gate parameter expressions are not supported: {expr}"
+                )
+
+            exponent = int(exponent_value)
+            if exponent == 0:
+                return _lower_f64_constant(ctx, 1.0)
+
+            base_value = _lower_gate_param_expr(ctx, base_expr, symbol_bindings)
+            power_value = base_value
+            for _ in range(abs(exponent) - 1):
+                power_value = stablehlo.MulOp(power_value, base_value).result
+
+            if exponent < 0:
+                return stablehlo.DivOp(_lower_f64_constant(ctx, 1.0), power_value).result
+            return power_value
+
+    raise NotImplementedError(
+        f"Unsupported gate parameter expression for MLIR lowering: {expr!r}"
+    )
 
 
 ###############################
@@ -262,10 +366,27 @@ def quantum_gate_lowering(ctx, *args, **params):
     # Convert gate_type string to MLIR string attribute
     gate_type_attr = ir.StringAttr.get(op.name)
 
-    # args contains: [gate_operands..., quantum_state]
-    # Separate gate operands from the quantum state (last argument)
-    gate_operands = args[:-1]  # All arguments except the last
-    quantum_state = args[-1]  # Last argument is the quantum state
+    # args contains: [qubits..., raw_param_operands..., quantum_state]. Rebuild
+    # the gate's symbolic parameter expressions from gate.params so expressions
+    # like -0.5 * alpha survive into MLIR as StableHLO arithmetic.
+    qubit_operands = list(args[: op.num_qubits])
+    raw_param_operands = list(args[op.num_qubits:-1])
+    quantum_state = args[-1]
+
+    sorted_symbols = _sorted_param_symbols(op.params)
+    if len(raw_param_operands) != len(sorted_symbols):
+        raise ValueError(
+            f"Gate '{op.name}' expected {len(sorted_symbols)} raw parameter operand(s) "
+            f"for symbols {sorted_symbols}, got {len(raw_param_operands)}"
+        )
+
+    symbol_bindings = {
+        sym: raw_param_operands[i] for i, sym in enumerate(sorted_symbols)
+    }
+    lowered_param_operands = [
+        _lower_gate_param_expr(ctx, expr, symbol_bindings) for expr in op.params
+    ]
+    gate_operands = qubit_operands + lowered_param_operands
 
     # Create our quantum_gate operation using the generated class
     quantum_gate_op = jasp_dialect.QuantumGateOp(
