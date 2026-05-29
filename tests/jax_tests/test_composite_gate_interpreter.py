@@ -175,3 +175,44 @@ def test_decompose_nested_jaspr():
     # The jaspr must still be executable
     result = decomposed()
     assert result is not None
+
+
+def test_call_graph_compression_preserved():
+    """When the same @qache function is called twice, both jit equations in the
+    original jaspr share the exact same ClosedJaxpr object (call-graph compression).
+    After decompose_composite_gates, the two jit equations in the decomposed jaspr
+    must still reference the same ClosedJaxpr object — not two distinct copies."""
+
+    @qache
+    def test(qv):
+        prepare(qv, np.array([0.2, 0.4, 0.7, 0.5]))
+
+    def main():
+        qv = QuantumFloat(2)
+        test(qv)
+        test(qv)
+        return measure(qv)
+
+    jaspr = make_jaspr(main)()
+
+    # Collect the ClosedJaxpr objects from all top-level jit equations
+    def _jit_jaxprs(jaxpr):
+        return [
+            eqn.params["jaxpr"]
+            for eqn in jaxpr.eqns
+            if eqn.primitive.name == "jit"
+        ]
+
+    orig_jaxprs = _jit_jaxprs(jaspr)
+    assert len(orig_jaxprs) >= 2
+    # Verify that the original already shares the same object
+    assert orig_jaxprs[0] is orig_jaxprs[1]
+
+    decomposed = decompose_composite_gates(jaspr)
+
+    decomp_jaxprs = _jit_jaxprs(decomposed)
+    assert len(decomp_jaxprs) >= 2
+    assert decomp_jaxprs[0] is decomp_jaxprs[1]
+
+    # Correctness: decomposed jaspr must still produce the same distribution
+    assert_same_distribution(jaspr, decomposed)

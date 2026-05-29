@@ -16,6 +16,8 @@
 ********************************************************************************
 """
 
+from functools import lru_cache
+
 from jax.extend.core import JaxprEqn
 
 from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret, extract_invalues, insert_outvalues
@@ -99,6 +101,7 @@ def decompose_eqn_evaluator(eqn, context_dic):
     return True  # fall back to default execution
 
 
+@lru_cache(maxsize=int(1e5))
 def _decompose_sub_jaxpr(jaxpr):
     """Apply decompose_composite_gates to a sub-jaxpr (ClosedJaxpr or Jaspr)."""
     from qrisp.jasp import Jaspr
@@ -113,6 +116,7 @@ def _decompose_sub_jaxpr(jaxpr):
         return jaxpr
 
 
+@lru_cache(maxsize=int(1e5))
 def decompose_composite_gates(jaspr):
     """Return a new Jaspr with all composite (non-primitive) gates recursively inlined."""
     from qrisp.jasp import Jaspr
