@@ -27,6 +27,8 @@ from qrisp.circuit import Operation, QuantumCircuit, Instruction
 from qrisp.environments.iteration_environment import IterationEnvironment
 from qrisp.core import merge
 
+import functools
+
 from qrisp.jasp import (
     check_for_tracing_mode,
     qache,
@@ -167,6 +169,7 @@ def custom_control(*func, **cusc_kwargs):
 
     qashed_func = qache(func, **qache_kwargs)
 
+    @functools.wraps(func)
     def adaptive_control_function(*args, **kwargs):
 
         if not check_for_tracing_mode():
