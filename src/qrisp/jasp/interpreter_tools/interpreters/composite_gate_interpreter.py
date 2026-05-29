@@ -20,16 +20,76 @@ from functools import lru_cache
 
 from jax.extend.core import JaxprEqn
 
+from sympy import Add, Mul, Pow, Number, Symbol
+
 from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret, extract_invalues, insert_outvalues
 from qrisp.jasp.primitives import quantum_gate_p
 from qrisp.jasp.primitives.operation_primitive import greek_letters as _greek_letters
+import qrisp.circuit.standard_operations as _std_ops
 
-# quantum_gate_p.append_impl binds runtime parameter slot i to greek_letters[i].
-# When a decomposed primitive gate uses only a subset of the parent symbols
-# (for example a sub-gate depending only on beta), we must first recover the
-# symbols in canonical greek_letters order and then remap them to a dense
-# prefix alpha, beta, ... before binding the tracers positionally.
 _greek_letter_order = {sym: i for i, sym in enumerate(_greek_letters)}
+
+# Gate factories that produce a fresh U3Gate-derived gate whose params are
+# exactly [alpha] (identity), so that append_impl and other consumers can call
+# bind_parameters({alpha: val}) and get back a fully concrete gate with params=[val].
+_U3_IDENTITY_FACTORIES = {
+    "gphase": lambda: _std_ops.GPhaseGate(_greek_letters[0]),
+    "rx":     lambda: _std_ops.RXGate(_greek_letters[0]),
+    "ry":     lambda: _std_ops.RYGate(_greek_letters[0]),
+    "rz":     lambda: _std_ops.RZGate(_greek_letters[0]),
+    "p":      lambda: _std_ops.PGate(_greek_letters[0]),
+}
+
+
+def _eval_param_expr(expr, param_dict):
+    """Recursively evaluate a sympy expression to a JAX tracer using param_dict."""
+    if isinstance(expr, (int, float)):
+        return expr
+    if isinstance(expr, Number):
+        return float(expr)
+    if isinstance(expr, Symbol):
+        return param_dict[expr]
+    if isinstance(expr, Add):
+        result = _eval_param_expr(expr.args[0], param_dict)
+        for arg in expr.args[1:]:
+            result = result + _eval_param_expr(arg, param_dict)
+        return result
+    if isinstance(expr, Mul):
+        result = _eval_param_expr(expr.args[0], param_dict)
+        for arg in expr.args[1:]:
+            result = result * _eval_param_expr(arg, param_dict)
+        return result
+    if isinstance(expr, Pow):
+        base = _eval_param_expr(expr.args[0], param_dict)
+        exp = _eval_param_expr(expr.args[1], param_dict)
+        return base ** exp
+    raise NotImplementedError(f"Cannot evaluate sympy expr of type {type(expr)}: {expr}")
+
+
+def _make_identity_param_op(op):
+    """Return a version of op whose params are [alpha, beta, ...] (identity expressions).
+
+    For standard single-param U3Gate types (gphase, rx, ry, rz, p) a fresh gate
+    is created via the corresponding factory with greek_letters[0] as the argument.
+    This ensures that U3Gate.bind_parameters correctly passes the value through
+    without re-applying the original symbolic expression a second time.
+
+    For all other operations a copy is returned with params and abstract_params
+    patched directly to the dense greek-letter prefix.
+    """
+    n = len(op.params)
+    if n == 0:
+        return op
+    factory = _U3_IDENTITY_FACTORIES.get(op.name)
+    if factory is not None:
+        return factory()
+    # Generic fallback: patch params and abstract_params on a copy.
+    identity = op.copy()
+    identity.params = list(_greek_letters[:n])
+    identity.abstract_params = set(_greek_letters[:n])
+    if hasattr(identity, "lambdified_params"):
+        del identity.lambdified_params
+    return identity
 
 
 def _copy_eqn(eqn):
@@ -59,29 +119,16 @@ def _apply_op(op, qubit_tracers, abs_qst, param_dict=None):
 
     if op.definition is None:
         if op.abstract_params and param_dict:
-            # Recover the gate's free symbols in the same canonical order used
-            # when traced operations are constructed: alpha, beta, gamma, ...
-            # The order matters because append_impl later substitutes the
-            # incoming parameter tracers positionally into greek_letters[i].
-            sorted_syms = sorted(
-                op.abstract_params,
-                key=lambda s: _greek_letter_order.get(s, len(_greek_letters)),
-            )
-            # Re-index the gate onto a dense greek-letter prefix. This is the
-            # critical step for sparse subsets such as {beta}: we normalize
-            # beta -> alpha so that passing a single tracer still lands in slot 0.
-            # The symbolic expressions themselves stay intact under this rename,
-            # e.g. rz(beta) becomes rz(alpha) and -beta/2 becomes -alpha/2.
-            remap = {sym: _greek_letters[i] for i, sym in enumerate(sorted_syms)}
-            normalized_op = op.bind_parameters(remap)
-            # Pass one tracer per normalized symbol in the same positional order.
-            # We intentionally forward the raw tracers here; append_impl and
-            # bind_parameters still need to evaluate the gate's sympy expression
-            # (for example -alpha/2) at concrete execution time.
-            param_tracer_list = [param_dict[sym] for sym in sorted_syms]
-            return quantum_gate_p.bind(
-                *qubit_tracers, *param_tracer_list, abs_qst, gate=normalized_op
-            )
+            # Evaluate each symbolic parameter expression (e.g. -alpha/2) against
+            # the parent gate's symbol->tracer bindings to produce a concrete JAX
+            # tracer for each parameter slot.
+            computed_tracers = [_eval_param_expr(expr, param_dict) for expr in op.params]
+            # Create an identity-param version of the gate (params = [alpha, beta, ...]).
+            # This is required so that append_impl's bind_parameters({alpha: val})
+            # call simply passes 'val' through rather than re-applying the original
+            # symbolic expression a second time.
+            identity_op = _make_identity_param_op(op)
+            return quantum_gate_p.bind(*qubit_tracers, *computed_tracers, abs_qst, gate=identity_op)
         else:
             return quantum_gate_p.bind(*qubit_tracers, abs_qst, gate=op)
 
