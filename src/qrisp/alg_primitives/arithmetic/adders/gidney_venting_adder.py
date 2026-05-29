@@ -58,7 +58,9 @@ def bit_inverted_mcx(
     - When b is 1: flip the target qubit if the parity-check qubit is in the zero state and the simple control qubit is
       in the one state. This is an MCX gate controlled on 01, i.e. one inverted control and one normal control.
 
-    Circuit diagram — two X gates conditioned on classical b wrap a standard MCX::
+    Circuit diagram — two X gates conditioned on classical b wrap a standard MCX:
+
+    .. code-block:: text
 
         parity_check_ctrl: ───[X^b]──•──[X^b]──
                                      │
@@ -102,7 +104,9 @@ def zz_mcx(
     the two qubits disagree.  z1_left is temporarily modified by a CX and
     restored, so both Z-box qubits are returned to their original state.
 
-    Circuit diagram — three columns (CX, MCX, CX)::
+    Circuit diagram — three columns (CX, MCX, CX):
+
+    .. code-block:: text
 
         z0_left:   ──•──────────────────────•──
                      │                      │
@@ -132,7 +136,9 @@ def zz_zz_mcx(
     from each other AND the two Z qubits on the right are different from
     each other. The middle qubit (z_left_right) belongs to both pairs.
 
-    Circuit diagram — five columns (CX, CX, MCX, CX, CX)::
+    Circuit diagram — five columns (CX, CX, MCX, CX, CX):
+
+    .. code-block:: text
 
         z_left:       ──X───────────•───────────X──
                         │           │           │
@@ -167,7 +173,9 @@ def bit_inverted_zz_zz_mcx(
     - When b is 0: flip the target qubit if both parity controls are in the one state (MCX on 11).
     - When b is 1: flip the target qubit if both parity controls are in the zero state (MCX on 00).
 
-    Circuit diagram — two X gates on each control wrap a standard MCX::
+    Circuit diagram — two X gates on each control wrap a standard MCX:
+
+    .. code-block:: text
 
         parity_ctrl1: ──[X^b]──•──[X^b]──
                                │
@@ -177,7 +185,7 @@ def bit_inverted_zz_zz_mcx(
 
     This gate is not explicitly defined as a standalone circuit in the paper
     but appears as a building block of the carry-xor block in Fig. 3.
-    
+
     Used in the carry XOR block for the first slot, where the classical addend decides whether to flip both controls.
     """
     with control(b):
@@ -607,21 +615,22 @@ def gidney_cq_venting_adder(
     Heavily adapted from the reference implementation released with
     https://arxiv.org/pdf/2507.23079 at https://zenodo.org/records/15866587.
 
-    target ← (target + d + c_in) mod 2^n
+    :math:`\\text{target} \\leftarrow (\\text{target} + d + c_{\\text{in}}) \\bmod 2^n`
 
-    Uses 3 clean ancillae allocated internally (1 carry_mid + 2 streaming
-    carry) and no external dirty workspace — the target register is split
-    in half, and each half serves as dirty storage for the other half's
-    carry chain.
+    Uses 3 clean ancillae allocated internally (1 for the mid-carry + 2
+    streaming carry) and no external dirty workspace — the target register
+    is split in half, and each half serves as dirty storage for the other
+    half's carry chain.
 
     Algorithm:
-      1. Swap carry_mid into the target register at the split point.
+      1. Swap the mid-carry ancilla into the target register at the split point.
       2. Vented addition on the bottom half using the first 2 ancillae.
-      3. Swap carry_mid back out — it now holds the carry into the top half.
+      3. Swap the mid-carry ancilla back out — it now holds the carry into
+         the top half.
       4. Dirty-ancilla addition on the top half, using the bottom half as
-         dirty workspace (carry_mid as carry-in).
-      5. Measure the overflow carry (carry_mid) in the X-basis.
-      6. Phase correction for the bottom half using two carry_xor_block
+         dirty workspace (the mid-carry ancilla as carry-in).
+      5. Measure the overflow carry (the mid-carry ancilla) in the X-basis.
+      6. Phase correction for the bottom half using two carry-xor
          passes (the fused first pass was consumed by step 4).
 
     Parameters
@@ -631,7 +640,7 @@ def gidney_cq_venting_adder(
     d : int
         Classical addend (compile-time constant).
     c_in : qrisp.Qubit | qrisp.QuantumVariable | None
-        Quantum carry-in. None is treated as |0⟩.
+        Quantum carry-in. None is treated as :math:`\\ket{0}`.
     a_int_is_bigint : bool
         If True, read bits from *d* via ``d.get_bit(i)`` (BigInteger).
         If False (default), use shift-and-mask extraction.
@@ -698,7 +707,7 @@ def gidney_cq_venting_adder(
 
         result = main()
         # result is 15 (10 + 5 = 15)
-        # when ctrl = 0, target stays unchanged
+        # when ctrl is not provided, target stays unchanged
     """
     from qrisp.jasp import jrange, jlen
 
