@@ -12,7 +12,7 @@ Qrisp supports two execution modes that share the same high-level code but diffe
     No special decorators or functions are required; this is the standard way Qrisp
     operates.
 
-**Dynamic mode (Jasp)**
+**Dynamic mode (Jasp mode)**
     In dynamic mode, the same code is traced through `JAX <https://jax.readthedocs.io/>`_.
     Instead of running with concrete values, JAX sends *tracer* objects through the function
     and records every operation into a `Jaspr <https://qrisp.eu/reference/Jasp/Jaspr.html>`_,
@@ -123,4 +123,109 @@ The following example uses ``@jaspify`` to demonstrate both:
     Trace time: JitTracer<int64[]>
     Runtime: 42
     Returned: 43
+
+
+
+2. Standard Math Operations
+----------------------------
+
+Standard Python operators (``+``, ``-``, ``*``, ``==``, ``<``, etc.) are available in Jasp mode for most quantum data types. Support varies by type: see the respective :doc:`QuantumFloat </reference/Quantum Types/QuantumFloat>`, :doc:`QuantumModulus </reference/Quantum Types/QuantumModulus>`, :doc:`QuantumBool </reference/Quantum Types/QuantumBool>`, and related documentation for details on which operators are supported in dynamic mode.
+
+2.1 Using ``jnp`` Instead of ``numpy``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When writing Jasp code, use `jax.numpy <https://docs.jax.dev/en/latest/jax.numpy.html>`_ (``jnp``) instead of standard `numpy <https://numpy.org/doc/stable/>`_ (``np``) or the `math <https://docs.python.org/3/library/math.html>`_ module for operations on traced values. ``numpy`` functions expect concrete values and fail on tracers, while ``jnp`` functions are JAX-aware and work transparently in dynamic mode.
+
+Calling ``numpy`` functions on a traced value fails:
+
+.. code-block:: python
+
+    # numpy functions fail on tracers
+    from qrisp.jasp import make_jaspr
+    import numpy as np
+
+    def compute_bad(x):
+        return np.sin(x)   # expects concrete value
+
+    try:
+        jaspr = make_jaspr(compute_bad)(1.0)
+    except Exception as e:
+        print(f"{type(e).__name__}: numpy on tracer breaks")
+
+
+.. code-block:: text
+
+    # Output:
+    TracerBoolConversionError: numpy on tracer breaks
+
+As expected, using ``jnp`` instead works. Here we evaluate the trigonometric identity :math:`\sin^2 x + \cos^2 x = 1` on a traced value:
+
+.. code-block:: python
+
+    # Works with jnp instead
+    from qrisp.jasp import make_jaspr
+    import jax.numpy as jnp
+
+    def compute(x):
+        return jnp.sin(x)**2 + jnp.cos(x)**2
+
+    jaspr = make_jaspr(compute)(1.0)
+    print("Result:", jaspr(1.0))
+
+
+.. code-block:: text
+
+    # Output:
+    Result: 1.0
+
+2.2 Boolean Short-Circuit Operators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Boolean short-circuit operators (``and``/``or``/``not``, etc.) require concrete Python bools. On traced values they raise ``TracerBoolConversionError``.
+
+Here we define a function to verify whether the provided year is a leap year using ``and`` and ``or``:
+
+.. code-block:: python
+
+    # Boolean short-circuit operators on traced values - breaks
+    from qrisp.jasp import make_jaspr
+
+    def leap_year_bad(year):
+        return (year % 400 == 0) or ((year % 4 == 0) and (year % 100 != 0))
+
+    try:
+        jaspr = make_jaspr(leap_year_bad)(2024)
+    except Exception as e:
+        print(f"{type(e).__name__}: traced bool in `or`/`and` breaks")
+
+
+.. code-block:: text
+
+    # Output:
+    TracerBoolConversionError: traced bool in `or`/`and` breaks
+
+Fix the leap year function by using ``jnp.logical_or`` and ``jnp.logical_and``, which operate on traced bools and compile to the correct runtime logic:
+
+.. code-block:: python
+
+    # Fix: use jnp.logical_and / jnp.logical_or for traced values
+    from qrisp.jasp import make_jaspr
+    import jax.numpy as jnp
+
+    def leap_year_fixed(year):
+        return jnp.logical_or(
+            year % 400 == 0,
+            jnp.logical_and(year % 4 == 0, year % 100 != 0)
+        )
+
+    jaspr = make_jaspr(leap_year_fixed)(2024)
+    print("2024 is a leap year:", jaspr(2024))
+
+
+.. code-block:: text
+
+    # Output:
+    2024 is a leap year: True
+
+
 
