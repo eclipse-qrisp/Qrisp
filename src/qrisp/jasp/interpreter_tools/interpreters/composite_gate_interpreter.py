@@ -98,6 +98,12 @@ def decompose_eqn_evaluator(eqn, context_dic):
         exec_eqn(new_eqn, context_dic)
         return False
 
+    elif eqn.primitive.name == "scan":
+        new_eqn = _copy_eqn(eqn)
+        new_eqn.params["jaxpr"] = _decompose_sub_jaxpr(eqn.params["jaxpr"])
+        exec_eqn(new_eqn, context_dic)
+        return False
+
     return True  # fall back to default execution
 
 

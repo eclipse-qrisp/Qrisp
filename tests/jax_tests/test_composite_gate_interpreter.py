@@ -17,6 +17,8 @@
 """
 
 import numpy as np
+import jax.numpy as jnp
+import jax.lax as lax
 from qrisp import *
 from qrisp.jasp import make_jaspr
 from qrisp.jasp.interpreter_tools import decompose_composite_gates
@@ -54,6 +56,11 @@ def _collect_gates_from_jaxpr(jaxpr):
             for branch in eqn.params["branches"]:
                 inner = branch.jaxpr if isinstance(branch, ClosedJaxpr) else branch
                 yield from _collect_gates_from_jaxpr(inner)
+
+        elif eqn.primitive.name == "scan":
+            sub = eqn.params["jaxpr"]
+            inner = sub.jaxpr if isinstance(sub, ClosedJaxpr) else sub
+            yield from _collect_gates_from_jaxpr(inner)
 
 
 def assert_no_composite_gates(jaspr):
@@ -216,3 +223,44 @@ def test_call_graph_compression_preserved():
 
     # Correctness: decomposed jaspr must still produce the same distribution
     assert_same_distribution(jaspr, decomposed)
+
+
+def test_decompose_scan_body():
+    """Qrisp code called inside a jax.lax.scan body must also be decomposed.
+    A @quantum_kernel using prepare() introduces a composite gate inside the
+    scan body jaxpr.  decompose_composite_gates must recurse into it."""
+
+    @quantum_kernel
+    def random_number():
+        qv = QuantumFloat(2)
+        prepare(qv, np.array([0.3, 0.7, 0.2, 0.8]))
+        return measure(qv)
+
+    def main():
+        def scan_body(carry, x):
+            rnd = random_number()
+            return carry + x + rnd, carry + x + rnd
+
+        xs = jnp.array([1, 2, 3, 4, 5])
+        final_carry, cumulative_sums = lax.scan(scan_body, 0, xs)
+        return final_carry, cumulative_sums
+
+    jaspr = make_jaspr(main)()
+
+    # Confirm a scan equation is present at the top level
+    scan_eqns = [e for e in jaspr.eqns if e.primitive.name == "scan"]
+    assert len(scan_eqns) >= 1
+
+    # Confirm the scan body contains composite gates before decomposition
+    all_gates = list(_collect_gates_from_jaxpr(jaspr))
+    assert any(g.definition is not None for g in all_gates)
+
+    decomposed = decompose_composite_gates(jaspr)
+
+    # After decomposition no composite gates must remain anywhere, including
+    # inside the scan body
+    assert_no_composite_gates(decomposed)
+
+    # The decomposed jaspr must still be executable and return sensible values
+    result = decomposed()
+    assert result is not None
