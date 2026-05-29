@@ -20,7 +20,7 @@ from functools import lru_cache
 
 from jax.extend.core import JaxprEqn
 
-from sympy import Add, Mul, Pow, Number, Symbol
+from sympy import lambdify as _lambdify
 
 from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret, extract_invalues, insert_outvalues
 from qrisp.jasp.primitives import quantum_gate_p
@@ -39,31 +39,6 @@ _U3_IDENTITY_FACTORIES = {
     "rz":     lambda: _std_ops.RZGate(_greek_letters[0]),
     "p":      lambda: _std_ops.PGate(_greek_letters[0]),
 }
-
-
-def _eval_param_expr(expr, param_dict):
-    """Recursively evaluate a sympy expression to a JAX tracer using param_dict."""
-    if isinstance(expr, (int, float)):
-        return expr
-    if isinstance(expr, Number):
-        return float(expr)
-    if isinstance(expr, Symbol):
-        return param_dict[expr]
-    if isinstance(expr, Add):
-        result = _eval_param_expr(expr.args[0], param_dict)
-        for arg in expr.args[1:]:
-            result = result + _eval_param_expr(arg, param_dict)
-        return result
-    if isinstance(expr, Mul):
-        result = _eval_param_expr(expr.args[0], param_dict)
-        for arg in expr.args[1:]:
-            result = result * _eval_param_expr(arg, param_dict)
-        return result
-    if isinstance(expr, Pow):
-        base = _eval_param_expr(expr.args[0], param_dict)
-        exp = _eval_param_expr(expr.args[1], param_dict)
-        return base ** exp
-    raise NotImplementedError(f"Cannot evaluate sympy expr of type {type(expr)}: {expr}")
 
 
 def _make_identity_param_op(op):
@@ -122,7 +97,9 @@ def _apply_op(op, qubit_tracers, abs_qst, param_dict=None):
             # Evaluate each symbolic parameter expression (e.g. -alpha/2) against
             # the parent gate's symbol->tracer bindings to produce a concrete JAX
             # tracer for each parameter slot.
-            computed_tracers = [_eval_param_expr(expr, param_dict) for expr in op.params]
+            sorted_syms = sorted(op.abstract_params, key=lambda s: _greek_letter_order[s])
+            sorted_tracers = [param_dict[sym] for sym in sorted_syms]
+            computed_tracers = [_lambdify(sorted_syms, expr)(*sorted_tracers) for expr in op.params]
             # Create an identity-param version of the gate (params = [alpha, beta, ...]).
             # This is required so that append_impl's bind_parameters({alpha: val})
             # call simply passes 'val' through rather than re-applying the original
