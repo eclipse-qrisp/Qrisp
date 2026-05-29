@@ -20,13 +20,15 @@
 Utilities to lower a JAXPR produced by Qrisp to MLIR using the JASP dialect
 and convert it into an xDSL module for downstream transformations.
 
-Two key steps happen here:
-1) Lower JAX primitives to our custom JASP dialect (via ``jaxpr_to_xdsl`` and ``jasp_lowering_rules``).
-2) Run xDSL-based rewrites (e.g., control-flow fixes for quantum types).
+Three key steps happen here:
+1) Decompose composite gates in the Jaspr into their constituent gates (via ``decompose_composite_gates``).
+2) Lower JAX primitives to our custom JASP dialect (via ``jaxpr_to_xdsl`` and ``jasp_lowering_rules``).
+3) Run xDSL-based rewrites (e.g., control-flow fixes for quantum types).
 """
 
 from xdsl.dialects import builtin
 
+from qrisp.jasp.interpreter_tools.interpreters.composite_gate_interpreter import decompose_composite_gates
 from qrisp.jasp.mlir.jaxpr_lowering import jaxpr_to_xdsl
 from qrisp.jasp.mlir.jasp_lowering_rules import jasp_lowering_rules
 from qrisp.jasp.mlir.quantum_control_flow import fix_quantum_control_flow
@@ -36,7 +38,8 @@ from qrisp.jasp.jasp_expression import Jaspr
 
 def jaspr_to_mlir(jaspr: Jaspr) -> builtin.ModuleOp:
 
-    xdsl_module = jaxpr_to_xdsl(jaspr, lowering_rules=jasp_lowering_rules)
+    jaspr_no_composite_gates = decompose_composite_gates(jaspr)
+    xdsl_module = jaxpr_to_xdsl(jaspr_no_composite_gates, lowering_rules=jasp_lowering_rules)
     fix_quantum_control_flow(xdsl_module)
 
     return xdsl_module
