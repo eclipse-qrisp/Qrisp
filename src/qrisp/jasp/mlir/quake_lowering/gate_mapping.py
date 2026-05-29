@@ -252,6 +252,20 @@ def _emit_cgphase(controls, params, targets):
         make_gate_op("p", [], [phi], [t0]),
     ]
 
+
+def _emit_gphase(controls, params, targets):
+    """gphase(ϕ) on target q0 = p(ϕ, q0)"""
+    from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+    t0 = targets[0]
+    phi = params[0]
+    two = arith.ConstantOp(FloatAttr(2.0, f64))
+    two_phi = arith.MulfOp(two.result, phi)
+    neg_two_phi = arith.NegfOp(two_phi.result)
+    return [
+        make_gate_op("rz", [], [neg_two_phi], [t0]),
+        make_gate_op("p", [], [two_phi], [t0]),
+    ]
+
 # ===================================================================
 # Gate map
 # ===================================================================
@@ -276,6 +290,7 @@ GATE_MAP: dict[str, GateInfo] = {
     "rz":    GateInfo(num_controls=0, quake_gate="rz",  num_params=1),
     "p":     GateInfo(num_controls=0, quake_gate="r1",  num_params=1),
     "r1":    GateInfo(num_controls=0, quake_gate="r1",  num_params=1),
+    "gphase": GateInfo(num_controls=0, quake_gate="", emit=_emit_gphase, num_params=1),
     # ---- 1-qubit, 3-param ------------------------------------------------
     "u3":    GateInfo(num_controls=0, quake_gate="u3",  num_params=3),
     # ---- 2-qubit, 0-param ------------------------------------------------
