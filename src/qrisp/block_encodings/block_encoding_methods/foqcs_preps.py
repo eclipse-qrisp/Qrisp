@@ -18,7 +18,7 @@
 
 import numpy as np
 from qrisp.core import QuantumVariable, Qubit
-from qrisp.core.gate_application_functions import x, cx, ry, p
+from qrisp.core.gate_application_functions import x, cx, ry, p, h, rz
 from qrisp.alg_primitives.unbalanced_w_state import unbalanced_W_state
 from qrisp.alg_primitives.dicke_state_prep import dicke_state
 from qrisp.environments import control
@@ -26,6 +26,8 @@ from collections.abc import Sequence
 from functools import partial
 from typing import Any
 from qrisp.operators import QubitOperator
+
+_FOQCS_SPIN_GLASS_TOL = 1e-12
 
 def foqcs_prep_heisenberg(
     prep_qv: QuantumVariable | Sequence[Qubit],
@@ -153,7 +155,7 @@ def foqcs_prep_heisenberg(
     # One spec CNOT
     cx(prep_qv[1], prep_qv[4]) # from gy to Jy
 
-def foqcs_prep_spin_glass(
+def foqcs_prep_spin_glass_old(
     prep_qv: QuantumVariable | Sequence[Qubit],
     L: int,
     g: dict,
@@ -329,6 +331,224 @@ def foqcs_prep_spin_glass(
             _cx_ladder(prep_qv[fh1:lh1 + 1], L, i + 1)
             cx(prep_qv[fh1:lh1 + 1], prep_qv[fh2:])
 
+def foqcs_prep_spin_glass(
+    prep_qv: QuantumVariable | Sequence[Qubit],
+    L: int,
+    g: dict,
+    J: dict,
+    conjugate: bool = False
+) -> None:
+    r"""
+    Parameters
+    ----------
+    prep_qv : QuantumVariable | Sequence[Qubit]
+        Ancillae qubits register for PREP.
+
+    L : int
+        Number of system qubits.
+
+    g : dict (length 3)
+        Dictionary of local field coefficients.
+        {"X" : [gx_1, gx_2, ..., gx_k],
+         "Y" : [gy_1, gy_2, ..., gy_k],
+         "Z" : [gz_1, gz_2, ..., gz_k]}
+
+    J : dict (length 3)
+        Dictionary of coupling coefficients.
+        {"X" : [[Jx_12, Jx_23, ...], [Jx_13, Jx_24, ...], ...],
+         "Y" : [[Jy_12, Jy_23, ...], [Jy_13, Jy_24, ...], ...],
+         "Z" : [[Jz_12, Jz_23, ...], [Jz_13, Jz_24, ...], ...]}
+
+    conjugate : bool = False
+        Indicates whether the prep is PREP_R or PREP_L.
+        In case of PREP_L, the conjugates of g and J are used.
+        The default is False, which indicates it is PREP_R.
+
+    Raises
+    ------
+    ValueError
+        If ``g`` or ``J`` has length not equal to 3.
+
+    """
+    components = ["X", "Y", "Z"]
+
+    # Normalize input representation.
+    g_arr = {
+        dim: np.asarray(g[dim], dtype=complex)
+        for dim in components
+    }
+
+    J_arr = {
+        dim: [
+            np.asarray(J[dim][k - 1], dtype=complex)
+            for k in range(1, L)
+        ]
+        for dim in components
+    }
+
+    if conjugate:
+        g_arr = {
+            dim: np.conj(g_arr[dim])
+            for dim in components
+        }
+        J_arr = {
+            dim: [np.conj(diag) for diag in J_arr[dim]]
+            for dim in components
+        }
+
+    # Selector layout:
+    #   X block: controls 0, ..., L-1
+    #   Y block: controls L, ..., 2L-1
+    #   Z block: controls 2L, ..., 3L-1
+    #
+    # Within each block:
+    #   offset 0 selects g
+    #   offset k selects J at distance k, for k = 1, ..., L-1
+    extra_anc = 3 * L
+
+    fh1 = extra_anc
+    lh1 = extra_anc + L - 1
+    fh2 = extra_anc + L
+    lh2 = extra_anc + 2 * L - 1
+
+    # SUBPREP over the 3L selector qubits.
+    subprep_coeffs = []
+
+    for dim in components:
+        subprep_coeffs.append(np.linalg.norm(g_arr[dim]))
+
+        for k in range(1, L):
+            subprep_coeffs.append(np.linalg.norm(J_arr[dim][k - 1]))
+
+    subprep_coeffs = np.asarray(subprep_coeffs, dtype=complex)
+    subprep_norm = np.linalg.norm(subprep_coeffs)
+
+    if subprep_norm <= _FOQCS_SPIN_GLASS_TOL:
+        raise ValueError("Cannot prepare spin-glass PREP state: all coefficients are zero.")
+
+    unbalanced_W_state(prep_qv[:extra_anc], subprep_coeffs / subprep_norm)
+
+    # Compute unbalanced Dicke/W angles using absolute values.
+    theta, cutoff = _theta_cutoff_foqcs_spin_glass_optimal(
+        L,
+        g_arr,
+        J_arr
+    )
+
+    # Main optimal unbalanced-Dicke construction.
+    for i in range(L - 1):
+        # Activating CNOTs.
+        cx(prep_qv[i], prep_qv[extra_anc + L - 1 - i])              # X branch
+        cx(prep_qv[2 * L + i], prep_qv[extra_anc + 2 * L - 1 - i])  # Z branch
+        cx(prep_qv[L + i], prep_qv[extra_anc + L - 1 - i])          # Y branch
+
+        # X and Y branches share the first half register.
+        theta_list = []
+        qubit_list = []
+
+        for k in range(i + 1):
+            for axis in range(2):  # X, Y
+                if cutoff[axis][k] >= i - k:
+                    theta_list.append(theta[axis][k][i - k])
+                    qubit_list.append(prep_qv[axis * L + k])
+
+        _cgamma_opt_qrisp(
+            qubit_list,
+            prep_qv[extra_anc + L - 2 - i],
+            prep_qv[extra_anc + L - 1 - i],
+            theta_list,
+        )
+
+        # Z branches use the second half register.
+        theta_list = []
+        qubit_list = []
+
+        for k in range(i + 1):
+            if cutoff[2][k] >= i - k:
+                theta_list.append(theta[2][k][i - k])
+                qubit_list.append(prep_qv[2 * L + k])
+
+        _cgamma_opt_qrisp(
+            qubit_list,
+            prep_qv[extra_anc + 2 * L - 2 - i],
+            prep_qv[extra_anc + 2 * L - 1 - i],
+            theta_list,
+        )
+
+    # Final activation CNOTs.
+    cx(prep_qv[L - 1], prep_qv[extra_anc])          # X g/J last selector
+    cx(prep_qv[2 * L - 1], prep_qv[extra_anc])      # Y g/J last selector
+    cx(prep_qv[3 * L - 1], prep_qv[extra_anc + L])  # Z g/J last selector
+
+    # Phase fixes for g branches.
+    with control(prep_qv[0]):
+        _phase_fix_dicke1_unbalanced_qrisp(
+            prep_qv[fh1:lh1 + 1],
+            g_arr["X"],
+            cutoff[0][0]
+        )
+
+    with control(prep_qv[L]):
+        _phase_fix_dicke1_unbalanced_qrisp(
+            prep_qv[fh1:lh1 + 1],
+            g_arr["Y"],
+            cutoff[1][0]
+        )
+
+    with control(prep_qv[2 * L]):
+        _phase_fix_dicke1_unbalanced_qrisp(
+            prep_qv[fh2:lh2 + 1],
+            g_arr["Z"],
+            cutoff[2][0]
+        )
+
+    # Phase fixes for J branches.
+    for k in range(1, L):
+        with control(prep_qv[k]):
+            _phase_fix_dicke1_unbalanced_qrisp(
+                prep_qv[fh1:fh1 + L - k],
+                J_arr["X"][k - 1],
+                cutoff[0][k]
+            )
+
+        with control(prep_qv[L + k]):
+            _phase_fix_dicke1_unbalanced_qrisp(
+                prep_qv[fh1:fh1 + L - k],
+                J_arr["Y"][k - 1],
+                cutoff[1][k]
+            )
+
+        with control(prep_qv[2 * L + k]):
+            _phase_fix_dicke1_unbalanced_qrisp(
+                prep_qv[fh2:fh2 + L - k],
+                J_arr["Z"][k - 1],
+                cutoff[2][k]
+            )
+
+    # CNOT ladders complete the two-body J terms.
+    for k in range(1, L):
+        # Activate X -> Y branch so the same controlled ladder handles X and Y.
+        cx(prep_qv[k], prep_qv[L + k])
+
+        with control(prep_qv[L + k]):
+            _cx_ladder(prep_qv[fh1:lh1 + 1], L, k)
+
+        with control(prep_qv[2 * L + k]):
+            _cx_ladder(prep_qv[fh2:lh2 + 1], L, k)
+
+        # Undo activation.
+        cx(prep_qv[k], prep_qv[L + k])
+
+    # Element-wise CNOT for all Y terms.
+    for i in range(L, 2 * L - 1):
+        cx(prep_qv[i], prep_qv[i + 1])
+
+    with control(prep_qv[2 * L - 1]):
+        cx(prep_qv[fh1:lh1 + 1], prep_qv[fh2:lh2 + 1])
+
+    for i in reversed(range(L, 2 * L - 1)):
+        cx(prep_qv[i], prep_qv[i + 1])
+
 ###################################
 ############# Helpers #############
 ###################################
@@ -361,7 +581,7 @@ def get_foqcs_lcu_prep_num_of_ancillae(prep: partial, num_ops: int = 1) -> int:
 def foqcs_analyze_operator(
         O: QubitOperator,
         L: int = -1,
-        tol: float = 1e-12,
+        tol: float = _FOQCS_SPIN_GLASS_TOL,
         raise_errors: bool = True
 ) -> dict:
     r"""
@@ -374,7 +594,7 @@ def foqcs_analyze_operator(
         Number of operand qubits.
         If not specified, will default to -1, and infer the number of operand qubits from the operator
 
-    tol : float = 1e-12
+    tol : float = _FOQCS_SPIN_GLASS_TOL (1e-12)
         Tolerance for considering the entry zero
 
     raise_errors : bool
@@ -535,7 +755,7 @@ def foqcs_analyze_operator(
 def is_operator_foqcs_compatible(
         O: QubitOperator,
         L: int = -1,
-        tol: float = 1e-12
+        tol: float = _FOQCS_SPIN_GLASS_TOL
 ) -> tuple: # tuple is of the form -> (bool, dict || None)
     r"""
     Parameters
@@ -547,7 +767,7 @@ def is_operator_foqcs_compatible(
         Number of operand qubits.
         If not specified, will default to -1, and infer the number of operand qubits from the operator
 
-    tol : float = 1e-12
+    tol : float = _FOQCS_SPIN_GLASS_TOL (1e-12)
         Tolerance for considering the entry zero
 
     Returns
@@ -559,6 +779,160 @@ def is_operator_foqcs_compatible(
     """
     res = foqcs_analyze_operator(O, L = L, tol = tol, raise_errors = False)
     return (res != None, res)
+
+def _angles_dicke1_unbalanced_qrisp(coeff: Sequence[float]) -> tuple[list[float], int]:
+    """
+    Qrisp helper equivalent of angles_dicke1_unbalanced from foqcs-lcu.
+
+    coeff must be normalized, real, and non-negative.
+    """
+
+    coeff = np.asarray(coeff, dtype=float)
+    L = len(coeff)
+
+    theta = []
+    sum_squared = 0.0
+    cutoff = L - 1
+
+    for i in reversed(range(L)):
+        if sum_squared >= 1:
+            cutoff = L - i - 1
+            break
+
+        denom = np.sqrt(max(1 - sum_squared, 0.0))
+
+        if denom == 0:
+            angle = 0.0
+        else:
+            angle = 2 * np.arccos(np.clip(coeff[i] / denom, -1, 1))
+
+        theta.append(angle)
+        sum_squared += coeff[i] ** 2
+
+    return theta, cutoff
+
+def _theta_cutoff_foqcs_spin_glass_optimal(
+    L: int,
+    g: dict,
+    J: dict
+) -> tuple[list[list[list[float]]], list[list[int]]]:
+    """
+    Computes the angle/cutoff data used by foqcs_prep_spin_glass_optimal.
+
+    theta[axis][k] contains the unbalanced-Dicke angles for:
+        k = 0: local field g[axis]
+        k > 0: kth-nearest-neighbour coupling J[axis][k - 1]
+    """
+
+    components = ["X", "Y", "Z"]
+
+    theta = []
+    cutoff = []
+
+    for dim in components:
+        theta_k = []
+        cutoff_k = []
+
+        # k = 0: g branch.
+        coeff = np.abs(np.asarray(g[dim], dtype=complex))
+        norm = np.linalg.norm(coeff)
+
+        if norm > _FOQCS_SPIN_GLASS_TOL:
+            theta_g, cutoff_g = _angles_dicke1_unbalanced_qrisp(coeff / norm)
+        else:
+            theta_g = [0.0] * L
+            cutoff_g = 0
+
+        theta_k.append(theta_g)
+        cutoff_k.append(cutoff_g)
+
+        # k = 1, ..., L-1: J branches.
+        for k in range(1, L):
+            coeff = np.abs(np.asarray(J[dim][k - 1], dtype=complex))
+            norm = np.linalg.norm(coeff)
+
+            if norm > _FOQCS_SPIN_GLASS_TOL:
+                theta_J, cutoff_J = _angles_dicke1_unbalanced_qrisp(coeff / norm)
+            else:
+                theta_J = [0.0] * (L - k)
+                cutoff_J = 0
+
+            theta_k.append(theta_J)
+            cutoff_k.append(cutoff_J)
+
+        theta.append(theta_k)
+        cutoff.append(cutoff_k)
+
+    return theta, cutoff
+
+def _phase_fix_dicke1_unbalanced_qrisp(
+    qv: QuantumVariable | Sequence[Qubit],
+    coeff: Sequence[complex],
+    cutoff: int | None = None
+) -> None:
+    """
+    Qrisp helper equivalent of phase_fix_dicke1_unbalanced from foqcs-lcu.
+    """
+
+    coeff = np.asarray(coeff, dtype=complex)
+
+    if cutoff is None:
+        cutoff = len(coeff) - 1
+    
+    max_i = min(cutoff, len(coeff) - 1)
+
+    for i in range(max_i + 1):
+        angle = np.mod(np.angle(coeff[i]), 2 * np.pi)
+
+        if angle > _FOQCS_SPIN_GLASS_TOL:
+            p(angle, qv[i])
+
+def _cgamma_opt_qrisp(
+    controls: Sequence[Qubit],
+    qv_rot: Qubit,
+    qv_x: Qubit,
+    theta_list: Sequence[float],
+) -> None:
+    """
+    Qrisp implementation of the compressed controlled-gamma gate cgamma_opt.
+
+    This follows the upstream decomposition:
+
+        S(rot), H(rot),
+        controlled RZs on rot,
+        CX(rot, x),
+        controlled inverse RZs on x,
+        H(rot), H(x), Sdg(x),
+        CX(rot, x),
+        S(rot), H(rot)
+    """
+
+    if len(theta_list) == 0:
+        return
+
+    p(np.pi / 2, qv_rot)
+    h(qv_rot)
+
+    for ctrl, theta in zip(controls, theta_list):
+        ang = (np.pi - theta) / 2.0
+        with control(ctrl):
+            rz(ang, qv_rot)
+
+    cx(qv_rot, qv_x)
+
+    for ctrl, theta in zip(controls, theta_list):
+        ang = (np.pi - theta) / 2.0
+        with control(ctrl):
+            rz(-ang, qv_x)
+
+    h(qv_rot)
+    h(qv_x)
+    p(-np.pi / 2, qv_x)
+
+    cx(qv_rot, qv_x)
+
+    p(np.pi / 2, qv_rot)
+    h(qv_rot)
 
 def _cx_ladder(qv: QuantumVariable | Sequence[Qubit], n: int, k: int = 1) -> None:
 

@@ -232,18 +232,18 @@ def test_foqcs_lcu_spin_glass_prep():
     d_state = QuantumVariable(5 * L)
 
     # Fix coefficients for debugging
-    # g = np.array( [[-0.4808829 +0.j, -0.86150457+0.j,  0.22114172+0.j],
-    #                [-0.1736148 +0.j,  0.49011868+0.j,  0.78437336+0.j],
-    #                [-0.33825609+0.j, -0.19728503+0.j, -0.5482909 +0.j]])
-    # J = np.array([[[ 0.        +0.j,  0.45669928+0.j, -0.29835039+0.j],
-    #                [ 0.45669928+0.j,  0.        +0.j, -0.66928103+0.j],
-    #                [-0.29835039+0.j, -0.66928103+0.j,  0.        +0.j]],
-    #               [[ 0.        +0.j, -0.24574681+0.j,  0.07099358+0.j],
-    #                [-0.24574681+0.j,  0.        +0.j, -0.08502734+0.j],
-    #                [ 0.07099358+0.j, -0.08502734+0.j,  0.        +0.j]],
-    #               [[ 0.        +0.j, -0.49783128+0.j,  0.68088956+0.j],
-    #                [-0.49783128+0.j,  0.        +0.j, -0.82130807+0.j],
-    #                [ 0.68088956+0.j, -0.82130807+0.j,  0.        +0.j]]])
+    g = np.array( [[-0.4808829 +0.j, -0.86150457+0.j,  0.22114172+0.j],
+                   [-0.1736148 +0.j,  0.49011868+0.j,  0.78437336+0.j],
+                   [-0.33825609+0.j, -0.19728503+0.j, -0.5482909 +0.j]])
+    J = np.array([[[ 0.        +0.j,  0.45669928+0.j, -0.29835039+0.j],
+                   [ 0.45669928+0.j,  0.        +0.j, -0.66928103+0.j],
+                   [-0.29835039+0.j, -0.66928103+0.j,  0.        +0.j]],
+                  [[ 0.        +0.j, -0.24574681+0.j,  0.07099358+0.j],
+                   [-0.24574681+0.j,  0.        +0.j, -0.08502734+0.j],
+                   [ 0.07099358+0.j, -0.08502734+0.j,  0.        +0.j]],
+                  [[ 0.        +0.j, -0.49783128+0.j,  0.68088956+0.j],
+                   [-0.49783128+0.j,  0.        +0.j, -0.82130807+0.j],
+                   [ 0.68088956+0.j, -0.82130807+0.j,  0.        +0.j]]])
 
     # Normalize
     norms_kNN = np.zeros((3, L))
@@ -423,11 +423,11 @@ def test_foqcs_lcu_spin_glass_prep():
 
     statev[np.isclose(statev, 0j, atol=1e-6)] = 0
 
-    # for i in range(0, len(statev)):
-    #     if statev[i] != 0:
-    #         print(f"s[{i}] = {statev[i]}")
-    #     if ref_state[i] != 0:
-    #         print(f"r[{i}] = {ref_state[i]}")
+    for i in range(0, len(statev)):
+        if statev[i] != 0:
+            print(f"s[{i}] = {statev[i]}")
+        if ref_state[i] != 0:
+            print(f"r[{i}] = {ref_state[i]}")
 
     # Test that the state received is the same as the reference
     assert np.allclose(statev, ref_state, atol=1e-06), (
@@ -851,6 +851,139 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep_jasp():
     assert np.allclose([filtered_conditional[k] for k in sorted(filtered_conditional)],
                        [result_rus[k] for k in sorted(result_rus)],
                        atol = 1e-4)
+
+def test_block_encoding_from_operator_spin_glass_jasp():
+    L = 3
+
+    g = {
+        "X": np.array([0.31, -0.47, 0.22], dtype=complex),
+        "Y": np.array([-0.18, 0.29, 0.41], dtype=complex),
+        "Z": np.array([0.52, -0.13, -0.36], dtype=complex),
+    }
+
+    # J[axis][k - 1][i] couples sites i and i + k.
+    J = {
+        "X": [
+            np.array([0.17, -0.24], dtype=complex),
+            np.array([0.33], dtype=complex),
+        ],
+        "Y": [
+            np.array([-0.21, 0.15], dtype=complex),
+            np.array([-0.28], dtype=complex),
+        ],
+        "Z": [
+            np.array([0.39, -0.11], dtype=complex),
+            np.array([0.26], dtype=complex),
+        ],
+    }
+
+    # Normalize physical coefficients. This is not required mathematically,
+    # but it keeps the sampled probabilities well-conditioned.
+    phys_norm = np.linalg.norm(_flatten_spin_glass_coeffs(g, J))
+
+    for axis in ["X", "Y", "Z"]:
+        g[axis] = g[axis] / phys_norm
+        J[axis] = [diag / phys_norm for diag in J[axis]]
+
+    # Build the Qrisp operator.
+    #
+    # This uses the same site convention as _spin_glass_from_def:
+    #   g_axis[i] acts on site L - 1 - i
+    #   J_axis[k - 1][i] acts on sites L - 1 - i and L - 1 - (i + k)
+    terms = []
+
+    pauli = {
+        "X": X,
+        "Y": Y,
+        "Z": Z,
+    }
+
+    for axis in ["X", "Y", "Z"]:
+        P = pauli[axis]
+
+        for i in range(L):
+            site = L - 1 - i
+            terms.append(g[axis][i] * P(site))
+
+        for k in range(1, L):
+            for i in range(L - k):
+                site_0 = L - 1 - i
+                site_1 = L - 1 - (i + k)
+
+                terms.append(J[axis][k - 1][i] * P(site_0) * P(site_1))
+
+    O = sum(terms[1:], terms[0])
+
+    be = BlockEncoding.from_foqcs_lcu_operator(O, L=L)
+
+    psi = _prep_psi(L)
+
+    def operand_prep(psi):
+        qv = QuantumVariable(L)
+        qv.init_state(psi, method="qswitch")
+        return qv
+
+    qv_manual = operand_prep(psi)
+
+    def main_apply(BE):
+        operand = qv_manual
+        ancillas = BE.apply(operand)
+        return operand, ancillas
+
+    @terminal_sampling
+    def main_apply_rus(BE):
+        return BE.apply_rus(operand_prep)(psi)
+
+    def measurement_key_to_int(x):
+        if isinstance(x, str):
+            return int(x[::-1], 2)
+        return x
+
+    def is_zero_measurement(x):
+        if isinstance(x, str):
+            return set(x) <= {"0"}
+        return x == 0
+
+    # Manual post-selection version.
+    operand, ancillas = main_apply(be)
+    res_dict = multi_measurement([operand] + ancillas)
+
+    filtered = {
+        key: value
+        for key, value in res_dict.items()
+        if all(is_zero_measurement(anc_res) for anc_res in key[1:])
+    }
+
+    success_prob = sum(filtered.values())
+
+    assert success_prob > 0
+
+    filtered_conditional = {
+        measurement_key_to_int(key[0]): prob / success_prob
+        for key, prob in filtered.items()
+    }
+
+    print(f"\n\nFiltered dict = {filtered_conditional}")
+    print(f"Filtered dict probs sum: {sum(filtered_conditional.values())}")
+
+    # RUS version.
+    result_rus = main_apply_rus(be)
+
+    result_rus_int = {
+        measurement_key_to_int(k): v
+        for k, v in result_rus.items()
+    }
+
+    print(result_rus_int)
+    print(sum(result_rus_int.values()))
+
+    keys = sorted(set(filtered_conditional) | set(result_rus_int))
+    
+    assert np.allclose(
+        [filtered_conditional.get(k, 0) for k in keys],
+        [result_rus_int.get(k, 0) for k in keys],
+        atol=1e-4,
+    )
 
 def test_block_encoding_from_foqcs_lcu_heisenberg_operator():
     # Initialize variables + their values
