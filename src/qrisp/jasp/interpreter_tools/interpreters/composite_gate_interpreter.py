@@ -22,6 +22,14 @@ from jax.extend.core import JaxprEqn
 
 from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret, extract_invalues, insert_outvalues
 from qrisp.jasp.primitives import quantum_gate_p
+from qrisp.jasp.primitives.operation_primitive import greek_letters as _greek_letters
+
+# quantum_gate_p.append_impl binds runtime parameter slot i to greek_letters[i].
+# When a decomposed primitive gate uses only a subset of the parent symbols
+# (for example a sub-gate depending only on beta), we must first recover the
+# symbols in canonical greek_letters order and then remap them to a dense
+# prefix alpha, beta, ... before binding the tracers positionally.
+_greek_letter_order = {sym: i for i, sym in enumerate(_greek_letters)}
 
 
 def _copy_eqn(eqn):
@@ -36,21 +44,52 @@ def _copy_eqn(eqn):
     )
 
 
-def _apply_op(op, qubit_tracers, abs_qst):
+def _apply_op(op, qubit_tracers, abs_qst, param_dict=None):
     """Recursively inline a gate.
 
     - Primitive gates (op.definition is None) are bound directly via quantum_gate_p.
     - Composite gates are expanded by iterating their definition circuit and
       recursively calling _apply_op for each sub-instruction.
+
+    param_dict maps the sympy symbols that appear in sub-gate param expressions
+    (i.e. the parent gate's abstract params) to their corresponding JAX tracers.
     """
+    if param_dict is None:
+        param_dict = {}
+
     if op.definition is None:
-        return quantum_gate_p.bind(*qubit_tracers, abs_qst, gate=op)
+        if op.abstract_params and param_dict:
+            # Recover the gate's free symbols in the same canonical order used
+            # when traced operations are constructed: alpha, beta, gamma, ...
+            # The order matters because append_impl later substitutes the
+            # incoming parameter tracers positionally into greek_letters[i].
+            sorted_syms = sorted(
+                op.abstract_params,
+                key=lambda s: _greek_letter_order.get(s, len(_greek_letters)),
+            )
+            # Re-index the gate onto a dense greek-letter prefix. This is the
+            # critical step for sparse subsets such as {beta}: we normalize
+            # beta -> alpha so that passing a single tracer still lands in slot 0.
+            # The symbolic expressions themselves stay intact under this rename,
+            # e.g. rz(beta) becomes rz(alpha) and -beta/2 becomes -alpha/2.
+            remap = {sym: _greek_letters[i] for i, sym in enumerate(sorted_syms)}
+            normalized_op = op.bind_parameters(remap)
+            # Pass one tracer per normalized symbol in the same positional order.
+            # We intentionally forward the raw tracers here; append_impl and
+            # bind_parameters still need to evaluate the gate's sympy expression
+            # (for example -alpha/2) at concrete execution time.
+            param_tracer_list = [param_dict[sym] for sym in sorted_syms]
+            return quantum_gate_p.bind(
+                *qubit_tracers, *param_tracer_list, abs_qst, gate=normalized_op
+            )
+        else:
+            return quantum_gate_p.bind(*qubit_tracers, abs_qst, gate=op)
 
     defn = op.definition.transpile()
     for instr in defn.data:
         qubit_indices = [defn.qubits.index(qb) for qb in instr.qubits]
         sub_qubits = [qubit_tracers[i] for i in qubit_indices]
-        abs_qst = _apply_op(instr.op, sub_qubits, abs_qst)
+        abs_qst = _apply_op(instr.op, sub_qubits, abs_qst, param_dict=param_dict)
 
     return abs_qst
 
@@ -72,8 +111,14 @@ def decompose_eqn_evaluator(eqn, context_dic):
         invalues = extract_invalues(eqn, context_dic)
         qubit_tracers = invalues[: gate.num_qubits]
         abs_qst = invalues[-1]
+        param_tracers = invalues[gate.num_qubits : -1]
 
-        abs_qst = _apply_op(gate, qubit_tracers, abs_qst)
+        # Preserve the parent gate's symbol -> tracer association so primitive
+        # sub-gates can recover the correct tracer even when they reference only
+        # a subset of the parent's parameters.
+        param_dict = {gate.params[i]: param_tracers[i] for i in range(len(param_tracers))}
+
+        abs_qst = _apply_op(gate, qubit_tracers, abs_qst, param_dict=param_dict)
         insert_outvalues(eqn, context_dic, abs_qst)
         return False  # equation handled; skip default exec_eqn
 

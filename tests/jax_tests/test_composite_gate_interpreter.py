@@ -19,8 +19,9 @@
 import numpy as np
 import jax.numpy as jnp
 import jax.lax as lax
+from jax.extend.core import ClosedJaxpr
 from qrisp import *
-from qrisp.jasp import make_jaspr
+from qrisp.jasp import make_jaspr, Jaspr
 from qrisp.jasp.interpreter_tools import decompose_composite_gates
 from qrisp.jasp.primitives import quantum_gate_p
 
@@ -33,8 +34,6 @@ from qrisp.jasp.primitives import quantum_gate_p
 def _collect_gates_from_jaxpr(jaxpr):
     """Yield every gate object found in quantum_gate_p equations, recursing
     into jit/while/cond sub-jaxprs."""
-    from jax.extend.core import ClosedJaxpr
-    from qrisp.jasp import Jaspr
 
     for eqn in jaxpr.eqns:
         if eqn.primitive == quantum_gate_p:
@@ -264,3 +263,47 @@ def test_decompose_scan_body():
     # The decomposed jaspr must still be executable and return sensible values
     result = decomposed()
     assert result is not None
+
+
+def test_decompose_parametrized_rxx():
+    """rxx is a composite gate whose sub-gates (gphase, p) carry parametrized
+    expressions (-phi/2 and phi respectively).  Before the fix, the param
+    tracers were silently dropped during decomposition, leaving those sub-gates
+    with no dynamic parameter invars.
+
+    After the fix:
+    * Every primitive gate that has abstract_params must have exactly
+      len(abstract_params) parameter invars in the decomposed jaspr.
+    * Evaluating both jasprs with the same concrete angle must yield the same
+      measurement probability distribution.
+    """
+
+    def circuit(phi):
+        qv = QuantumVariable(2)
+        rxx(phi, qv[0], qv[1])
+        return measure(qv)
+
+    jaspr = make_jaspr(circuit)(0.5)
+    decomposed = decompose_composite_gates(jaspr)
+
+    # --- structural check ---
+    assert_no_composite_gates(decomposed)
+
+    for eqn in decomposed.eqns:
+        if eqn.primitive == quantum_gate_p:
+            gate = eqn.params["gate"]
+            if gate.abstract_params:
+                num_param_invars = len(eqn.invars) - gate.num_qubits - 1
+                assert num_param_invars == len(gate.abstract_params)
+
+    # --- numerical check ---
+    def circuit_fixed():
+        qv = QuantumVariable(2)
+        rxx(0.5, qv[0], qv[1])
+        return measure(qv)
+
+    jaspr_fixed = make_jaspr(circuit_fixed)()
+    decomposed_fixed = decompose_composite_gates(jaspr_fixed)
+
+    assert_same_distribution(jaspr_fixed, decomposed_fixed)
+
