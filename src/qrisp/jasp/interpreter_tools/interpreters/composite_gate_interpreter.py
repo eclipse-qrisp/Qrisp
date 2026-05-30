@@ -17,9 +17,8 @@
 """
 
 from functools import lru_cache
-
 from jax.extend.core import JaxprEqn
-
+import jax.numpy as jnp
 from sympy import lambdify as _lambdify
 
 from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret, extract_invalues, insert_outvalues
@@ -39,6 +38,8 @@ _U3_IDENTITY_FACTORIES = {
     "ry":     lambda: _std_ops.RYGate(_greek_letters[0]),
     "rz":     lambda: _std_ops.RZGate(_greek_letters[0]),
     "p":      lambda: _std_ops.PGate(_greek_letters[0]),
+    "u1":     lambda: _std_ops.U1Gate(_greek_letters[0]),
+    "u3":     lambda: _U3Gate(_greek_letters[0], _greek_letters[1], _greek_letters[2]),
 }
 
 
@@ -126,6 +127,18 @@ def _apply_op(op, qubit_tracers, abs_qst, param_dict=None):
             # time: bind_parameters({alpha: val}) would yield -val/2 instead of val.
             identity_op = _make_identity_param_op(op)
             return quantum_gate_p.bind(*qubit_tracers, *computed_tracers, abs_qst, gate=identity_op)
+        elif op.params:
+            # Gate has only constant (non-symbolic) parameters — e.g. rz(-π/2)
+            # emitted as an internal fixed rotation inside a composite gate
+            # definition.  Without this branch the parameter value stays embedded
+            # in the gate object and no param invar is emitted.  The MLIR lowering
+            # expects every parametrised gate to have its angle(s) as explicit
+            # input variables, so we promote each constant to a JAX float64 literal
+            # tracer and emit an identity-param gate, exactly as in the symbolic
+            # branch above.
+            const_tracers = [jnp.float64(float(p)) for p in op.params]
+            identity_op = _make_identity_param_op(op)
+            return quantum_gate_p.bind(*qubit_tracers, *const_tracers, abs_qst, gate=identity_op)
         else:
             return quantum_gate_p.bind(*qubit_tracers, abs_qst, gate=op)
 
