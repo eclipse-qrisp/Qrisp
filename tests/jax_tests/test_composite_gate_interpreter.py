@@ -20,8 +20,10 @@ import numpy as np
 import jax.numpy as jnp
 import jax.lax as lax
 from jax.extend.core import ClosedJaxpr
-from qrisp import *
-from qrisp.jasp import make_jaspr, Jaspr
+import sympy
+
+from qrisp import QuantumVariable, prepare, measure, x, h, cx, mcx, rxx, xxyy
+from qrisp.jasp import make_jaspr, qache, quantum_kernel
 from qrisp.jasp.interpreter_tools import decompose_composite_gates
 from qrisp.jasp.primitives import quantum_gate_p
 
@@ -106,7 +108,7 @@ def test_decompose_state_preparation():
     unchanged."""
 
     def main():
-        qv = QuantumFloat(2)
+        qv = QuantumVariable(2)
         prepare(qv, np.array([0.2, 0.4, 0.7, 0.5]))
         return measure(qv)
 
@@ -130,7 +132,7 @@ def test_decompose_mcx():
     the correct deterministic measurement outcome."""
 
     def main():
-        qv = QuantumFloat(4)
+        qv = QuantumVariable(4)
         x(qv[0])
         x(qv[1])
         x(qv[2])
@@ -178,7 +180,7 @@ def test_decompose_nested_jaspr():
     BE = BlockEncoding.from_operator(H_op)
 
     def main():
-        qv = QuantumFloat(2)
+        qv = QuantumVariable(2)
         ancs = BE.apply(qv)
         return measure(qv)
 
@@ -203,7 +205,7 @@ def test_call_graph_compression_preserved():
         prepare(qv, np.array([0.2, 0.4, 0.7, 0.5]))
 
     def main():
-        qv = QuantumFloat(2)
+        qv = QuantumVariable(2)
         test(qv)
         test(qv)
         return measure(qv)
@@ -240,7 +242,7 @@ def test_decompose_scan_body():
 
     @quantum_kernel
     def random_number():
-        qv = QuantumFloat(2)
+        qv = QuantumVariable(2)
         prepare(qv, np.array([0.3, 0.7, 0.2, 0.8]))
         return measure(qv)
 
@@ -272,6 +274,74 @@ def test_decompose_scan_body():
     # The decomposed jaspr must still be executable and return sensible values
     result = decomposed()
     assert result is not None
+
+
+def test_decompose_constant_param_subgates():
+    """Composite gates whose internal sub-gates carry plain numeric constants
+    as params (empty abstract_params, non-empty params) must have those
+    constants promoted to explicit JAX literal invars after decomposition.
+
+    xxyy(phi, beta) is the canonical example: its definition includes sub-gates
+    such as rz(-π/2) whose angle is a fixed Python float — not derived from phi
+    or beta.  Before the fix those values were embedded in the gate object and
+    not passed as invars, so the MLIR lowering received a gate without its
+    expected angle input variable.
+
+    Invariant checked here (distinct from test_decompose_parametrized_xxyy):
+    after decomposition every gate's params list must contain only sympy
+    expressions (symbols or symbolic expressions), never raw Python numerics.
+    A raw float/int in gate.params means the angle is still embedded rather
+    than lifted to an invar.
+    """
+
+    def circuit(phi, beta):
+        qv = QuantumVariable(2)
+        xxyy(phi, beta, qv[0], qv[1])
+        return qv
+
+    jaspr = make_jaspr(circuit)(0.5, 0.4)
+
+    # Sanity-check: at least one sub-gate with constant (non-symbolic) params
+    # exists in the original composite definition so the test is meaningful.
+    found_const_param_gate = False
+    for gate in _collect_gates_from_jaxpr(jaspr):
+        if gate.definition is not None:
+            for instr in gate.definition.data:
+                sub = instr.op
+                if sub.params and not sub.abstract_params:
+                    found_const_param_gate = True
+                    break
+    assert found_const_param_gate, (
+        "Expected at least one sub-gate with constant params inside the "
+        "composite gate definition; the test may need updating."
+    )
+
+    decomposed = decompose_composite_gates(jaspr)
+    assert_no_composite_gates(decomposed)
+
+    # Core assertion: no gate may retain a raw Python numeric in its params
+    # list.  All parameter values must be sympy expressions so that the MLIR
+    # lowering can find them as explicit input variables.
+    for eqn in decomposed.eqns:
+        if eqn.primitive == quantum_gate_p:
+            gate = eqn.params["gate"]
+            for param in gate.params:
+                assert isinstance(param, sympy.Basic), (
+                    f"Gate '{gate.name}' has a raw numeric param {param!r} "
+                    f"({type(param).__name__}) embedded in the gate object "
+                    f"after decomposition.  It must be a sympy expression so "
+                    f"that every angle is an explicit invar for MLIR lowering."
+                )
+
+    # Unitary check: use hardcoded params so to_qc() needs no arguments.
+    def circuit_fixed():
+        qv = QuantumVariable(2)
+        xxyy(0.5, 0.4, qv[0], qv[1])
+        return qv
+
+    jaspr_fixed = make_jaspr(circuit_fixed)()
+    decomposed_fixed = decompose_composite_gates(jaspr_fixed)
+    assert_same_unitary(jaspr_fixed, decomposed_fixed)
 
 
 def test_decompose_parametrized_rxx():
@@ -346,7 +416,7 @@ def test_decompose_parametrized_xxyy():
 
     # --- numerical check ---
     def circuit_fixed():
-        qv = QuantumFloat(2)
+        qv = QuantumVariable(2)
         h(qv)
         xxyy(1.1, 0.4, qv[0], qv[1])
         h(qv)
