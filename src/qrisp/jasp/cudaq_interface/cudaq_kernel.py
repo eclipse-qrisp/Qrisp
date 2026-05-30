@@ -287,15 +287,63 @@ def cudaq_kernel_from_mlir(mlir_str: str) -> PyKernelDecorator:
 
     run_body = main_func_body
 
-    return_match = re.search(r"func\.return\s+(%\w+)\s*:\s*(.+)", main_func_body)
+    # Match single or multi-value func.return:
+    #   single: func.return %a : T
+    #   multi:  func.return %a, %b, %c : T1, T2, T3
+    return_match = re.search(
+        r"func\.return\s+((?:%[\w.]+)(?:\s*,\s*(?:%[\w.]+))*)\s*:\s*(.+)",
+        main_func_body,
+    )
     if return_match:
-        return_type_str = return_match.group(2).strip()
-        return_sig = f" -> {return_type_str}"
-        run_body = re.sub(
-            r"func\.return\s+(%\w+)\s*:\s*(.+)",
-            r"cc.log_output \1 : \2\n    return",
-            main_func_body,
-        )
+        return_values = [v.strip() for v in return_match.group(1).split(",")]
+        return_types = [t.strip() for t in return_match.group(2).split(",")]
+
+        if len(return_values) == 1:
+            # Single return value — original behaviour.
+            return_type_str = return_types[0]
+            return_sig = f" -> {return_type_str}"
+            run_body = re.sub(
+                r"func\.return\s+(?:%[\w.]+)\s*:\s*(.+)",
+                r"cc.log_output " + return_values[0] + r" : \1\n    return",
+                main_func_body,
+            )
+        else:
+            # Multiple return values: pack into !cc.struct<"tuple" {T1, T2, ...}>
+            # This matches the MLIR emitted by native @cudaq.kernel for Tuple[...] returns.
+            types_joined = ", ".join(return_types)
+            struct_type = f'!cc.struct<"tuple" {{{types_joined}}}>'
+            return_type_str = struct_type
+            return_sig = f" -> {struct_type}"
+
+            # Build struct-packing ops to inject before func.return.
+            # cc.insert_value syntax: %result = cc.insert_value %prev[i], %val : (S, T) -> S
+            insert_lines = [f"%__qrisp_tuple_0 = cc.undef {struct_type}"]
+            prev = "%__qrisp_tuple_0"
+            for i, (val, typ) in enumerate(zip(return_values, return_types)):
+                next_name = f"%__qrisp_tuple_{i + 1}"
+                insert_lines.append(
+                    f"{next_name} = cc.insert_value {prev}[{i}], {val}"
+                    f" : ({struct_type}, {typ}) -> {struct_type}"
+                )
+                prev = next_name
+
+            insert_block = "\n    ".join(insert_lines)
+            final_struct = prev  # last SSA value holding the fully-populated struct
+
+            return_re = re.compile(
+                r"func\.return\s+(?:%[\w.]+)(?:\s*,\s*(?:%[\w.]+))*\s*:\s*.+"
+            )
+            # Main function body: replace multi-return with single struct return.
+            main_func_body = return_re.sub(
+                f"{insert_block}\n    func.return {final_struct} : {struct_type}",
+                main_func_body,
+            )
+            # .run function body: log the struct, then void return.
+            # run_body still holds the original body (before main_func_body was rebound).
+            run_body = return_re.sub(
+                f"{insert_block}\n    cc.log_output {final_struct} : {struct_type}\n    return",
+                run_body,
+            )
     else:
         return_type_str = None
         return_sig = ""
@@ -432,6 +480,7 @@ def qrisp_cudaq_kernel(func):
         A Qrisp function that can be traced with ``make_jaspr``.  Parameters,
         if any, must be annotated with ``int``, ``float``, ``bool``, or
         :class:`FixedShapeNDArray`.
+        The function may return ``int``, ``float``, ``bool``, or a tuple of those types.
 
     Returns
     -------

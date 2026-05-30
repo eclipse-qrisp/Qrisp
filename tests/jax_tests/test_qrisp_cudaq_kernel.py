@@ -68,6 +68,22 @@ def test_qrisp_cudaq_kernel():
     assert result in {0, 3}
 
 
+def test_qrisp_cudaq_kernel_multiple_returns():
+    """Test that a @qrisp_cudaq_kernel can return multiple values of different types."""
+    @qrisp_cudaq_kernel
+    def bell():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+
+        qb = QuantumBool()
+
+        return measure(qv), measure(qb), 1.5
+
+    result = bell()
+    assert result in {(0, False, 1.5), (0, True, 1.5), (3, False, 1.5), (3, True, 1.5)}
+
+
 def test_qrisp_cudaq_kernel_algorithm():
     """Test that a more complex algorithm can be expressed in a @qrisp_cudaq_kernel and executed."""
     from qrisp.operators import X, Y, Z
