@@ -31,6 +31,7 @@ Coverage
 - Negative test: unsupported gate emits a warning and is left in place.
 """
 
+from collections import Counter
 import warnings
 import jax
 import jax.numpy as jnp
@@ -71,7 +72,7 @@ from qrisp import (
 )
 from qrisp.alg_primitives import amplitude_amplification, q_switch
 from qrisp.block_encodings import BlockEncoding
-from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop, qache
+from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop, qache, terminal_sampling
 from qrisp.operators import X, Y, Z
 
 try:
@@ -1407,6 +1408,15 @@ def test_quantum_float_comparison(op, rhs_type, size1, exp1, val1, size2, exp2, 
 # ---------------------------------------------------------------------------
 
 
+def _post_selection(res_dict):
+    # Post-selection on ancillas being in |0> state
+    filtered_dict = {k[0]: p for k, p in res_dict.items() \
+                    if all(x == 0 for x in k[1:])}
+    success_prob = sum(filtered_dict.values())
+    filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
+    return filtered_dict
+
+
 @pytest.mark.parametrize("operator", [X(0), X(0) + Z(1), X(0) * X(1) + Z(0) * Z(1)])
 def test_simple_block_encoding(operator):
     """Test that we can create a BlockEncoding from a simple Hamiltonian and apply it to a quantum variable."""
@@ -1423,6 +1433,47 @@ def test_simple_block_encoding(operator):
     validate_quake_mlir(mlir)
     result = run_quake_mlir(mlir, shots=10)
 
+
+@pytest.mark.parametrize("operator", [X(0) + Z(1), X(0) * X(1) + Z(0) * Z(1)])
+def test_simple_block_encoding_results(operator):
+    """
+    Test that applying a BlockEncoding of a simple Hamiltonian produces the expected
+    measurement distribution on the operand qubits after post-selection on ancillas.
+    """
+
+    BE = BlockEncoding.from_operator(operator)
+
+    def main():
+
+        operand = QuantumVariable(2)
+        ancs = BE.apply(operand)
+        return measure(operand), measure(ancs[0])
+
+    mlir = _lower(main)
+    validate_quake_mlir(mlir)
+    results = run_quake_mlir(mlir, shots=500)
+    counts = Counter(results)
+    counts_dict = dict(counts)
+    res_dict = {outcome: count / len(results) for outcome, count in counts.items()}
+    filtered_dict = _post_selection(res_dict)
+
+    # Now do the same thing with JASP's terminal_sampling to get the expected distribution for comparison
+    @terminal_sampling
+    def main():
+
+        operand = QuantumVariable(2)
+        ancs = BE.apply(operand)
+        return operand, ancs[0]
+    
+    res_dict_jasp = main()
+    filtered_dict_jasp = _post_selection(res_dict_jasp)
+
+    all_keys = set(filtered_dict.keys()).union(set(filtered_dict_jasp.keys()))
+    
+    for key in all_keys:
+        val1 = filtered_dict.get(key, 0.0)
+        val2 = filtered_dict_jasp.get(key, 0.0)
+        assert np.isclose(val1, val2, atol=1e-1)
 
 # ---------------------------------------------------------------------------
 
