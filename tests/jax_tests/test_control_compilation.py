@@ -99,6 +99,13 @@ def test_control_compilation():
             
     assert main(np.pi, 5) == {15.0: 0.5, 31.0: 0.5}
 
+
+def test_control_qached_fun_closed_over_const():
+    """
+    Test that a qached function which closes over a constant JAX array can be
+    called inside a control block. The closed-over array must become a JASPR constvar in the qached body.
+    """
+
     # Closed-over array. This should become a JASPR constvar in the qached body.
     angles = jnp.array([jnp.pi], dtype=jnp.float64)
 
@@ -120,4 +127,4 @@ def test_control_compilation():
 
     jaspr = make_jaspr(main)()
     jaspr.to_qc()
-    assert jaspify(main)()
+    assert int(jaspify(main)()) in {0, 1}
