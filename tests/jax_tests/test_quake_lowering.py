@@ -263,19 +263,6 @@ def test_quake_types_present():
     validate_quake_mlir(mlir)
 
 
-def test_unsupported_gate_warning():
-    """An unsupported gate should emit a warning and leave the op in place."""
-    from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir
-
-    # Build a custom jaspr with an exotic gate – use rxx which is not in GATE_MAP
-    # We do this by patching the Jaspr IR after construction.
-    # Since we can't easily inject an exotic gate via the Python API,
-    # we test the gate_mapping module directly.
-    from qrisp.jasp.mlir.quake_lowering.gate_mapping import get_gate_info
-
-    assert get_gate_info("gphase") is None, "gphase should not be in GATE_MAP"
-
-
 def test_parity_not_lowered():
     """jasp.parity ops are left in place (not lowered to Quake)."""
     from qrisp.jasp.mlir.quake_lowering.gate_mapping import get_gate_info
@@ -291,8 +278,7 @@ def test_gate_mapping_standard_gates():
     expected_gates = {
         "h", "x", "y", "z", "s", "t",
         "rx", "ry", "rz", "p", "r1",
-        "cx", "cy", "cz", "swap",
-        "mcx",
+        "cx", "cy", "cz", "swap", "u3"
     }
     for gate in expected_gates:
         info = get_gate_info(gate)
@@ -448,7 +434,7 @@ def test_controlled_gates():
 
 
 def test_swap_gate():
-    """swap maps to quake.swap with two qubit operands."""
+    """swap is decomposed and maps to quake.x gates with two qubit operands."""
 
     def circuit():
         qv = QuantumVariable(2)
@@ -456,10 +442,10 @@ def test_swap_gate():
         return qv
 
     mlir = _lower(circuit)
-    assert "quake.swap" in mlir
+    assert "quake.x" in mlir
     # Both qubits should be present as operands
     assert "(!quake.ref, !quake.ref) -> ()" in mlir, (
-        "Expected quake.swap to have '(!quake.ref, !quake.ref) -> ()' type sig"
+        "Expected quake.x to have '(!quake.ref, !quake.ref) -> ()' type sig"
     )
     validate_quake_mlir(mlir)
 
