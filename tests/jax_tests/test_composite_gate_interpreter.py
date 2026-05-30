@@ -328,7 +328,7 @@ def test_decompose_parametrized_xxyy():
 
     def circuit(phi):
         qv = QuantumVariable(2)
-        rxx(phi, qv[0], qv[1])
+        xxyy(phi, qv[0], qv[1])
         return qv
 
     jaspr = make_jaspr(circuit)(0.5)

@@ -106,16 +106,24 @@ def _apply_op(op, qubit_tracers, abs_qst, param_dict=None):
 
     if op.definition is None:
         if op.abstract_params and param_dict:
+            # op.abstract_params is a set, so iteration order is non-deterministic.
+            # lambdify maps positional arguments to symbols in the order given, so
+            # the symbol list passed to lambdify and the tracer list must agree on
+            # the same ordering.  We sort by _greek_letter_order (the canonical
+            # index of each symbol in the greek_letters sequence) to get a stable,
+            # deterministic ordering regardless of Python's set hash randomisation.
+            sorted_syms = sorted(op.abstract_params, key=lambda s: _greek_letter_order[s])
+            sorted_tracers = [param_dict[sym] for sym in sorted_syms]
             # Evaluate each symbolic parameter expression (e.g. -alpha/2) against
             # the parent gate's symbol->tracer bindings to produce a concrete JAX
             # tracer for each parameter slot.
-            sorted_syms = sorted(op.abstract_params, key=lambda s: _greek_letter_order[s])
-            sorted_tracers = [param_dict[sym] for sym in sorted_syms]
             computed_tracers = [_lambdify(sorted_syms, expr)(*sorted_tracers) for expr in op.params]
-            # Create an identity-param version of the gate (params = [alpha, beta, ...]).
-            # This is required so that append_impl's bind_parameters({alpha: val})
-            # call simply passes 'val' through rather than re-applying the original
-            # symbolic expression a second time.
+            # Emit an identity-param version of the gate (params = [alpha, beta, ...])
+            # together with the pre-computed tracers.  This is required because
+            # append_impl later calls gate.bind_parameters({alpha: val}), which
+            # must map val -> val (identity).  Using the original gate (e.g.
+            # gphase(-alpha/2)) would cause the expression to be applied a second
+            # time: bind_parameters({alpha: val}) would yield -val/2 instead of val.
             identity_op = _make_identity_param_op(op)
             return quantum_gate_p.bind(*qubit_tracers, *computed_tracers, abs_qst, gate=identity_op)
         else:
