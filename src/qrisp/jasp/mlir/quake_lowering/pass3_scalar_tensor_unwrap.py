@@ -365,7 +365,11 @@ class TensorUnwrapPass(ModulePass):
             apply_recursively=False,
         ).rewrite_module(op)
 
-        # Phase B: Func signature unwrapping + extract folding (recursive)
+        # Phase B: Func signature unwrapping + extract folding (recursive).
+        # Erase-dead patterns are intentionally excluded here.
+        # Mixing erase patterns with apply_recursively=True causes xDSL's
+        # worklist to retain references to already-erased ops, leading to
+        # "Operation insertion point must have a parent block" crashes.
         PatternRewriteWalker(
             GreedyRewritePatternApplier(
                 [
@@ -374,11 +378,21 @@ class TensorUnwrapPass(ModulePass):
                     FoldExtractOfDenseConstant(),
                     FoldExtractOfFromElements(),
                     FoldExtractOfScalar(),
+                ]
+            ),
+            apply_recursively=True,
+        ).rewrite_module(op)
+
+        # Phase C: Erase dead tensor ops — separate non-recursive pass to avoid
+        # the worklist retaining references to ops that were erased in Phase B.
+        PatternRewriteWalker(
+            GreedyRewritePatternApplier(
+                [
                     EraseDeadTensorConstant(),
                     EraseDeadFromElements(),
                 ]
             ),
-            apply_recursively=True,
+            apply_recursively=False,
         ).rewrite_module(op)
 
 
