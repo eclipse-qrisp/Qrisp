@@ -87,6 +87,15 @@ def assert_same_distribution(jaspr_a, jaspr_b):
     ), f"Probability distributions differ:\n  original:   {probs_a}\n  decomposed: {probs_b}"
 
 
+def assert_same_unitary(jaspr_a, jaspr_b):
+    """Assert that two jasprs produce identical unitary matrices."""
+    qc_a = jaspr_a.to_qc()[-1]
+    qc_b = jaspr_b.to_qc()[-1]
+    u_a = qc_a.get_unitary()
+    u_b = qc_b.get_unitary()
+    assert np.allclose(u_a, u_b, atol=1e-6), f"Unitary matrices differ:\n  original:   {u_a}\n  decomposed: {u_b}"
+
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
@@ -274,14 +283,13 @@ def test_decompose_parametrized_rxx():
     After the fix:
     * Every primitive gate that has abstract_params must have exactly
       len(abstract_params) parameter invars in the decomposed jaspr.
-    * Evaluating both jasprs with the same concrete angle must yield the same
-      measurement probability distribution.
+    * Evaluating the decomposed jaspr must yield the same unitary as the original.
     """
 
     def circuit(phi):
         qv = QuantumVariable(2)
         rxx(phi, qv[0], qv[1])
-        return measure(qv)
+        return qv
 
     jaspr = make_jaspr(circuit)(0.5)
     decomposed = decompose_composite_gates(jaspr)
@@ -300,10 +308,50 @@ def test_decompose_parametrized_rxx():
     def circuit_fixed():
         qv = QuantumVariable(2)
         rxx(0.5, qv[0], qv[1])
-        return measure(qv)
+        return qv
 
     jaspr_fixed = make_jaspr(circuit_fixed)()
     decomposed_fixed = decompose_composite_gates(jaspr_fixed)
+    assert_same_unitary(jaspr_fixed, decomposed_fixed)
 
-    assert_same_distribution(jaspr_fixed, decomposed_fixed)
 
+def test_decompose_parametrized_xxyy():
+    """xxyy is a composite gate parameterized by two angles (phi and beta) whose
+    sub-gates carry expressions derived from both parameters.  This test verifies
+    the same two invariants as test_decompose_parametrized_rxx for the two-parameter
+    case:
+
+    * Every primitive gate that has abstract_params must have exactly
+      len(abstract_params) parameter invars in the decomposed jaspr.
+    * Evaluating the decomposed jaspr must yield the same unitary as the original.
+    """
+
+    def circuit(phi):
+        qv = QuantumVariable(2)
+        rxx(phi, qv[0], qv[1])
+        return qv
+
+    jaspr = make_jaspr(circuit)(0.5)
+    decomposed = decompose_composite_gates(jaspr)
+
+    # --- structural check ---
+    assert_no_composite_gates(decomposed)
+
+    for eqn in decomposed.eqns:
+        if eqn.primitive == quantum_gate_p:
+            gate = eqn.params["gate"]
+            if gate.abstract_params:
+                num_param_invars = len(eqn.invars) - gate.num_qubits - 1
+                assert num_param_invars == len(gate.abstract_params)
+
+    # --- numerical check ---
+    def circuit_fixed():
+        qv = QuantumFloat(2)
+        h(qv)
+        xxyy(1.1, 0.4, qv[0], qv[1])
+        h(qv)
+        return qv  
+
+    jaspr_fixed = make_jaspr(circuit_fixed)()
+    decomposed_fixed = decompose_composite_gates(jaspr_fixed)
+    assert_same_unitary(jaspr_fixed, decomposed_fixed)

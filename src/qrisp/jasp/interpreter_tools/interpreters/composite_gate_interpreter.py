@@ -25,6 +25,7 @@ from sympy import lambdify as _lambdify
 from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret, extract_invalues, insert_outvalues
 from qrisp.jasp.primitives import quantum_gate_p
 from qrisp.jasp.primitives.operation_primitive import greek_letters as _greek_letters
+from qrisp.circuit.operation import U3Gate as _U3Gate
 import qrisp.circuit.standard_operations as _std_ops
 
 _greek_letter_order = {sym: i for i, sym in enumerate(_greek_letters)}
@@ -44,21 +45,32 @@ _U3_IDENTITY_FACTORIES = {
 def _make_identity_param_op(op):
     """Return a version of op whose params are [alpha, beta, ...] (identity expressions).
 
-    For standard single-param U3Gate types (gphase, rx, ry, rz, p) a fresh gate
-    is created via the corresponding factory with greek_letters[0] as the argument.
-    This ensures that U3Gate.bind_parameters correctly passes the value through
-    without re-applying the original symbolic expression a second time.
+    Two cases require different treatment:
 
-    For all other operations a copy is returned with params and abstract_params
-    patched directly to the dense greek-letter prefix.
+    U3Gate instances (gphase, rx, ry, rz, p, ...):
+        U3Gate.bind_parameters evaluates its internal fields (theta, phi, lam,
+        global_phase) directly — it does NOT read self.params.  Patching params
+        on a copy therefore has no effect.  Instead, a fresh gate must be
+        constructed via its factory function so that the internal fields carry
+        the identity symbolic structure (e.g. GPhaseGate(alpha) has
+        global_phase=alpha, not -alpha/2).
+
+    Generic Operation instances:
+        Operation.bind_parameters lambdifies over self.params, so patching
+        params=[alpha, beta, ...] and clearing the lambdify cache is sufficient.
     """
     n = len(op.params)
     if n == 0:
         return op
-    factory = _U3_IDENTITY_FACTORIES.get(op.name)
-    if factory is not None:
+    if isinstance(op, _U3Gate):
+        factory = _U3_IDENTITY_FACTORIES.get(op.name)
+        if factory is None:
+            raise NotImplementedError(
+                f"_make_identity_param_op: no identity factory registered for "
+                f"U3Gate '{op.name}'.  Add an entry to _U3_IDENTITY_FACTORIES."
+            )
         return factory()
-    # Generic fallback: patch params and abstract_params on a copy.
+    # Generic Operation fallback: patch params and abstract_params on a copy.
     identity = op.copy()
     identity.params = list(_greek_letters[:n])
     identity.abstract_params = set(_greek_letters[:n])
