@@ -65,9 +65,15 @@ from xdsl.dialects.builtin import ModuleOp
 
 from qrisp.jasp.mlir.quake_lowering.pass1_jasp_to_quake import lower_jasp_to_quake
 from qrisp.jasp.mlir.quake_lowering.pass2_scf_to_cc import lower_scf_to_cc
-from qrisp.jasp.mlir.quake_lowering.pass3_ranked_tensor_to_array import lower_ranked_tensors
-from qrisp.jasp.mlir.quake_lowering.pass3_scalar_tensor_unwrap import unwrap_scalar_tensors
-from qrisp.jasp.mlir.quake_lowering.pass4_array_to_stdvec import lower_array_params_to_stdvec
+from qrisp.jasp.mlir.quake_lowering.pass3_ranked_tensor_to_array import (
+    lower_ranked_tensors,
+)
+from qrisp.jasp.mlir.quake_lowering.pass3_scalar_tensor_unwrap import (
+    unwrap_scalar_tensors,
+)
+from qrisp.jasp.mlir.quake_lowering.pass4_array_to_stdvec import (
+    lower_array_params_to_stdvec,
+)
 from qrisp.jasp.mlir.quake_lowering.safeguard_no_ranked_tensor_linalg import (
     verify_no_ranked_tensor_linalg,
 )
@@ -100,6 +106,7 @@ def jaspr_to_quake_mlir(jaspr, lower_stableHLO: bool = True) -> ModuleOp:
     """
     # Step 0 – Produce the initial xDSL module with Jasp IR.
     from qrisp.jasp.mlir.mlir_emission import jaspr_to_mlir
+
     module: ModuleOp = jaspr_to_mlir(jaspr, lower_stableHLO=lower_stableHLO)
 
     # Step 0a – Safeguard: reject ranked-tensor linalg.generic early.

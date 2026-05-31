@@ -90,9 +90,10 @@ def _dense_to_scalar_attr(dense_attr, scalar_type):
 # Pattern 1: Unwrap func signatures and return boundaries
 # ------------------------------------------------------------------ #
 class UnwrapFuncAndReturn(RewritePattern):
-    """Updates func.func signatures and func.return operands from 
+    """Updates func.func signatures and func.return operands from
     rank-0 tensor to scalar by injecting a tensor.extract at the boundary.
     """
+
     @op_type_rewrite_pattern
     def match_and_rewrite(
         self, op: func_dialect.ReturnOp, rewriter: PatternRewriter
@@ -111,7 +112,7 @@ class UnwrapFuncAndReturn(RewritePattern):
                 # Isolate the boundary by inserting an extract
                 extract_op = tensor.ExtractOp(operand, [], t.element_type)
                 rewriter.insert_op(extract_op, InsertPoint.before(op))
-                
+
                 new_operands.append(extract_op.result)
                 new_return_types.append(t.element_type)
                 changed = True
@@ -137,6 +138,7 @@ class UnwrapFuncArgs(RewritePattern):
     """Updates func.func signatures from tensor<T> to T for arguments,
     injecting a tensor.from_elements at the start of the block.
     """
+
     @op_type_rewrite_pattern
     def match_and_rewrite(
         self, op: func_dialect.FuncOp, rewriter: PatternRewriter
@@ -145,7 +147,11 @@ class UnwrapFuncArgs(RewritePattern):
             return
 
         # Safely get function_type across different xDSL versions
-        ftype = op.function_type if hasattr(op, "function_type") else op.properties.get("function_type")
+        ftype = (
+            op.function_type
+            if hasattr(op, "function_type")
+            else op.properties.get("function_type")
+        )
         if not ftype:
             return
 
@@ -173,7 +179,7 @@ class UnwrapFuncArgs(RewritePattern):
 
         # 2. Update block arguments and insert boundary ops
         block = op.body.blocks[0]
-        
+
         # Process in reverse to avoid index shifting issues
         for i, old_type, new_type in reversed(args_to_wrap):
             old_arg = block.args[i]
@@ -184,8 +190,7 @@ class UnwrapFuncArgs(RewritePattern):
             # 2. Create the from_elements op to bridge the gap
             #    (Takes the NEW scalar arg, outputs the OLD tensor type)
             from_elem = tensor.FromElementsOp.create(
-                operands=[new_arg],
-                result_types=[old_type]
+                operands=[new_arg], result_types=[old_type]
             )
 
             # 3. Insert it at the top of the block
@@ -202,21 +207,22 @@ class UnwrapFuncArgs(RewritePattern):
 
 
 class UnwrapCall(RewritePattern):
-    """Updates func.call operations to pass and expect scalar types 
+    """Updates func.call operations to pass and expect scalar types
     instead of rank-0 tensors, injecting extracts/from_elements at boundaries.
     """
+
     @op_type_rewrite_pattern
     def match_and_rewrite(
         self, op: func_dialect.CallOp, rewriter: PatternRewriter
     ) -> None:
         changed = False
-        
+
         new_operands = []
         new_result_types = []
-        
+
         ops_to_insert_before = []
         ops_to_insert_after = []
-        
+
         # 1. Handle Operands (Arguments passed to the call)
         for operand in op.operands:
             t = operand.type
@@ -243,14 +249,13 @@ class UnwrapCall(RewritePattern):
 
         # 3. Create the new call expecting scalars
         new_call = func_dialect.CallOp(op.callee, new_operands, new_result_types)
-        
+
         # 4. Bridge the return boundary
         replacements = []
         for old_res, new_res in zip(op.results, new_call.results):
             if old_res.type != new_res.type:
                 from_elem = tensor.FromElementsOp.create(
-                    operands=[new_res],
-                    result_types=[old_res.type]
+                    operands=[new_res], result_types=[old_res.type]
                 )
                 ops_to_insert_after.append(from_elem)
                 replacements.append(from_elem.results[0])
@@ -260,7 +265,7 @@ class UnwrapCall(RewritePattern):
         # 5. Insert operations and replace
         for ext_op in ops_to_insert_before:
             rewriter.insert_op(ext_op, InsertPoint.before(op))
-            
+
         rewriter.replace_matched_op([new_call] + ops_to_insert_after, replacements)
 
 
@@ -271,6 +276,7 @@ class FoldExtractOfDenseConstant(RewritePattern):
     """Replace a rank-0 tensor.extract of an arith.constant dense<V>
     with a scalar arith.constant V.
     """
+
     @op_type_rewrite_pattern
     def match_and_rewrite(
         self, op: tensor.ExtractOp, rewriter: PatternRewriter
@@ -298,16 +304,17 @@ class FoldExtractOfDenseConstant(RewritePattern):
 # Pattern 3: tensor.extract of a from_elements → forward scalar
 # ------------------------------------------------------------------ #
 class FoldExtractOfFromElements(RewritePattern):
-    """Eliminate a tensor.extract by forwarding the scalar input 
+    """Eliminate a tensor.extract by forwarding the scalar input
     directly from the producing tensor.from_elements op.
     """
+
     @op_type_rewrite_pattern
     def match_and_rewrite(
         self, op: tensor.ExtractOp, rewriter: PatternRewriter
     ) -> None:
         if len(op.indices) != 0:
             return
-        
+
         defn = op.tensor.owner
         if isinstance(defn, tensor.FromElementsOp) and len(defn.operands) == 1:
             rewriter.replace_matched_op([], [defn.operands[0]])
@@ -318,6 +325,7 @@ class FoldExtractOfFromElements(RewritePattern):
 # ------------------------------------------------------------------ #
 class FoldExtractOfScalar(RewritePattern):
     """Eliminate a tensor.extract whose source is already a scalar."""
+
     @op_type_rewrite_pattern
     def match_and_rewrite(
         self, op: tensor.ExtractOp, rewriter: PatternRewriter
@@ -333,6 +341,7 @@ class FoldExtractOfScalar(RewritePattern):
 # ------------------------------------------------------------------ #
 class EraseDeadTensorConstant(RewritePattern):
     """Erase arith.constant dense<...> : tensor<T> ops with no uses."""
+
     @op_type_rewrite_pattern
     def match_and_rewrite(
         self, op: arith.ConstantOp, rewriter: PatternRewriter
@@ -343,6 +352,7 @@ class EraseDeadTensorConstant(RewritePattern):
 
 class EraseDeadFromElements(RewritePattern):
     """Erase tensor.from_elements ops with no uses."""
+
     @op_type_rewrite_pattern
     def match_and_rewrite(
         self, op: tensor.FromElementsOp, rewriter: PatternRewriter

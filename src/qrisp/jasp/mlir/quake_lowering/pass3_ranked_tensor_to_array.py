@@ -72,7 +72,6 @@ from qrisp.jasp.mlir.quake_lowering.cc_dialect import (
     CcContinueOp,
 )
 
-
 # MLIR's sentinel for "dynamic dimension/offset"
 _MLIR_DYNAMIC = -9223372036854775808
 
@@ -155,7 +154,9 @@ def _process_func(func_op, func_rewrites: dict) -> None:
     _process_block_recursive(func_op.body, func_array_map, func_rewrites)
 
 
-def _process_block_recursive(region: Region, array_map: dict, func_rewrites: dict) -> None:
+def _process_block_recursive(
+    region: Region, array_map: dict, func_rewrites: dict
+) -> None:
     """Recursively process all blocks."""
     for block in region.blocks:
         _process_block(block, array_map)
@@ -181,9 +182,11 @@ def _process_block_recursive(region: Region, array_map: dict, func_rewrites: dic
 def _erase_dead_tensor_constants(block: Block) -> None:
     """Erase ranked-1 tensor constants that have no remaining uses."""
     for op in list(block.ops):
-        if (isinstance(op, arith.ConstantOp)
-                and _is_ranked_1_tensor(op.result.type)
-                and not any(op.result.uses)):
+        if (
+            isinstance(op, arith.ConstantOp)
+            and _is_ranked_1_tensor(op.result.type)
+            and not any(op.result.uses)
+        ):
             Rewriter.erase_op(op, safe_erase=False)
 
 
@@ -191,7 +194,9 @@ def _process_block(block: Block, array_map: dict) -> None:
     """Materialize arrays, rewrite accesses."""
     # Phase 0: Register ptr-typed block arguments.
     for arg in block.args:
-        if isinstance(arg.type, CcPtrType) and isinstance(arg.type.element_type, CcArrayType):
+        if isinstance(arg.type, CcPtrType) and isinstance(
+            arg.type.element_type, CcArrayType
+        ):
             inner = arg.type.element_type
             array_map[arg] = (arg, inner.element_type, inner.size.value.data)
 
@@ -210,9 +215,11 @@ def _process_block(block: Block, array_map: dict) -> None:
 
     # Phase 3: Erase dead tensor constants.
     for op in list(block.ops):
-        if (isinstance(op, arith.ConstantOp)
-                and _is_ranked_1_tensor(op.result.type)
-                and not any(op.result.uses)):
+        if (
+            isinstance(op, arith.ConstantOp)
+            and _is_ranked_1_tensor(op.result.type)
+            and not any(op.result.uses)
+        ):
             Rewriter.erase_op(op, safe_erase=False)
 
 
@@ -261,7 +268,9 @@ def _rewrite_cc_loop_tensor_args(loop_op: CcLoopOp, array_map: dict) -> None:
 
         # The init operand may already be a ptr (if the function arg was rewritten)
         init_val = arguments[idx]
-        if isinstance(init_val.type, CcPtrType) and isinstance(init_val.type.element_type, CcArrayType):
+        if isinstance(init_val.type, CcPtrType) and isinstance(
+            init_val.type.element_type, CcArrayType
+        ):
             # Already a ptr — use it directly
             ptr_val = init_val
         elif init_val in array_map:
@@ -467,7 +476,7 @@ def _rewrite_tensor_extract(extract_op, block: Block, array_map: dict) -> None:
 
 def _rewrite_extract_slice_chain(slice_op, block: Block, array_map: dict) -> None:
     """Rewrite extract_slice → collapse_shape → extract[] chain.
-    
+
     Handles the case where the collapse_shape result has multiple
     tensor.extract users (e.g., when the same array element is read
     multiple times).
@@ -490,12 +499,16 @@ def _rewrite_extract_slice_chain(slice_op, block: Block, array_map: dict) -> Non
     # Rewrite each extract op
     for extract_op in extract_ops:
         if offset is not None:
-            loaded = _emit_load_from_array(arr_ptr, offset, elem_type, block, extract_op)
+            loaded = _emit_load_from_array(
+                arr_ptr, offset, elem_type, block, extract_op
+            )
         else:
             dynamic_offsets = list(slice_op.offsets)
             if not dynamic_offsets:
                 continue
-            loaded = _emit_load_from_array(arr_ptr, dynamic_offsets[0], elem_type, block, extract_op)
+            loaded = _emit_load_from_array(
+                arr_ptr, dynamic_offsets[0], elem_type, block, extract_op
+            )
 
         extract_op.result.replace_all_uses_with(loaded)
 

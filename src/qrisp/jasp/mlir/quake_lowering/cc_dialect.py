@@ -65,7 +65,6 @@ from xdsl.irdl import (
 )
 from xdsl.printer import Printer
 
-
 # ---------------------------------------------------------------------------
 # CC types
 # ---------------------------------------------------------------------------
@@ -77,7 +76,7 @@ class CcStdVecType(ParametrizedAttribute, TypeAttribute):
 
     When used without an explicit element_type parameter, prints as
     ``!cc.stdvec<!quake.measure>`` (the return type of quake.mz on veq).
-    
+
     When constructed with an element_type parameter, prints as
     ``!cc.stdvec<T>`` for the given element type (used for array params).
     """
@@ -90,11 +89,13 @@ class CcStdVecType(ParametrizedAttribute, TypeAttribute):
         if element_type is None:
             # Sentinel: use a StringAttr to mark "quake.measure" without importing it
             from xdsl.dialects.builtin import StringAttr
+
             element_type = StringAttr("!quake.measure")
         super().__init__(element_type)
 
     def print_parameters(self, printer: Printer) -> None:
         from xdsl.dialects.builtin import StringAttr
+
         if isinstance(self.element_type, StringAttr):
             # Legacy: print as <!quake.measure>
             printer.print_string("<")
@@ -172,9 +173,7 @@ class CcLoadOp(IRDLOperation):
 
     def __init__(self, ptr: SSAValue) -> None:
         if not hasattr(ptr.type, "element_type"):
-            raise TypeError(
-                f"CcLoadOp requires a CcPtrType operand, got {ptr.type}"
-            )
+            raise TypeError(f"CcLoadOp requires a CcPtrType operand, got {ptr.type}")
         super().__init__(operands=[ptr], result_types=[ptr.type.element_type])
 
     def print(self, printer: Printer) -> None:
@@ -247,9 +246,7 @@ class CcIfOp(IRDLOperation):
                 printer.print_attribute(res_list[0].type)
             else:
                 printer.print_string("(")
-                printer.print_list(
-                    res_list, lambda v: printer.print_attribute(v.type)
-                )
+                printer.print_list(res_list, lambda v: printer.print_attribute(v.type))
                 printer.print_string(")")
 
         printer.print_string(" ")
@@ -308,9 +305,7 @@ class CcLoopOp(IRDLOperation):
             # Format: ((%arg = %init) -> (types))
             printer.print_string("((")
             block_args = list(self.while_region.blocks[0].args)
-            for i, (b_arg, init_val) in enumerate(
-                zip(block_args, self.arguments)
-            ):
+            for i, (b_arg, init_val) in enumerate(zip(block_args, self.arguments)):
                 if i > 0:
                     printer.print_string(", ")
                 printer.print_ssa_value(b_arg)
@@ -324,9 +319,7 @@ class CcLoopOp(IRDLOperation):
                 printer.print_attribute(r.type)
             printer.print_string(")) ")
             try:
-                printer.print_region(
-                    self.while_region, print_entry_block_args=False
-                )
+                printer.print_region(self.while_region, print_entry_block_args=False)
             except TypeError:
                 printer.print_region(self.while_region)
         else:
@@ -373,9 +366,7 @@ class CcContinueOp(IRDLOperation):
             printer.print_string(" ")
             printer.print_list(ops, printer.print_ssa_value)
             printer.print_string(" : ")
-            printer.print_list(
-                ops, lambda v: printer.print_attribute(v.type)
-            )
+            printer.print_list(ops, lambda v: printer.print_attribute(v.type))
 
 
 @irdl_op_definition
@@ -400,10 +391,9 @@ class CcConditionOp(IRDLOperation):
             printer.print_string("(")
             printer.print_list(args, printer.print_ssa_value)
             printer.print_string(" : ")
-            printer.print_list(
-                args, lambda v: printer.print_attribute(v.type)
-            )
+            printer.print_list(args, lambda v: printer.print_attribute(v.type))
             printer.print_string(")")
+
 
 # ---------------------------------------------------------------------------
 # CC Array type and pointer arithmetic ops
@@ -415,7 +405,7 @@ from xdsl.dialects.builtin import IntegerAttr, i64 as i64_type
 @irdl_attr_definition
 class CcArrayType(ParametrizedAttribute, TypeAttribute):
     """Fixed-size or dynamic-size array type: ``!cc.array<T x N>`` or ``!cc.array<T x ?>``.
-    
+
     Use size=-1 to represent dynamic size (prints as ``?``).
     """
 
@@ -577,4 +567,3 @@ class CcDialect(Dialect):
         CcStdVecDataOp,
     ]
     attributes = [CcStdVecType, CcPtrType, CcArrayType]
-    

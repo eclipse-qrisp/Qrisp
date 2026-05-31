@@ -108,10 +108,10 @@ from qrisp.jasp.mlir.quake_lowering.quake_dialect import (
 )
 from qrisp.jasp.mlir.quake_lowering.gate_mapping import get_gate_info
 
-
 # ---------------------------------------------------------------------------
 # xDSL version compatibility
 # ---------------------------------------------------------------------------
+
 
 def _replace_all_uses_with(val: SSAValue, new_val: SSAValue) -> None:
     """Replace all uses of *val* with *new_val*.
@@ -129,6 +129,7 @@ def _replace_all_uses_with(val: SSAValue, new_val: SSAValue) -> None:
 # ---------------------------------------------------------------------------
 # Helpers to identify Jasp types
 # ---------------------------------------------------------------------------
+
 
 def _is_qst(t: Attribute) -> bool:
     """Return True if *t* is ``!jasp.QuantumState``."""
@@ -162,18 +163,23 @@ def _quake_type_for(jasp_type: Attribute) -> Attribute | None:
 # Numeric-type helpers
 # ---------------------------------------------------------------------------
 
+
 def _is_qubit_type(t: Attribute) -> bool:
     """Return True if *t* is any qubit/veq type (Jasp or Quake)."""
-    return (isinstance(t, (QuakeRefType, QuakeVeqType))
-            or _is_qubit(t) or _is_qubit_array(t))
+    return (
+        isinstance(t, (QuakeRefType, QuakeVeqType))
+        or _is_qubit(t)
+        or _is_qubit_array(t)
+    )
 
 
 def _is_numeric_type(t: Attribute) -> bool:
     """Return True if *t* is a scalar or rank-0 tensor of int/float."""
     from xdsl.dialects.builtin import IntegerType, TensorType
+
     scalar = t
     if isinstance(t, TensorType):
-        if t.get_shape():        # only rank-0
+        if t.get_shape():  # only rank-0
             return False
         scalar = t.element_type
     return isinstance(scalar, IntegerType) or _is_float_type(scalar)
@@ -181,13 +187,20 @@ def _is_numeric_type(t: Attribute) -> bool:
 
 def _is_float_type(t: Attribute) -> bool:
     """Return True for any xDSL float type."""
-    from xdsl.dialects.builtin import Float16Type, Float32Type, Float64Type, BFloat16Type
+    from xdsl.dialects.builtin import (
+        Float16Type,
+        Float32Type,
+        Float64Type,
+        BFloat16Type,
+    )
+
     return isinstance(t, (Float16Type, Float32Type, Float64Type, BFloat16Type))
 
 
 def _scalar_type_of(t: Attribute) -> Attribute:
     """Return the scalar element type (unwrap rank-0 tensor if needed)."""
     from xdsl.dialects.builtin import TensorType
+
     if isinstance(t, TensorType) and not t.get_shape():
         return t.element_type
     return t
@@ -195,7 +208,7 @@ def _scalar_type_of(t: Attribute) -> Attribute:
 
 def _coerce_to_f64(val: SSAValue, block: Block, insert_before) -> SSAValue:
     """Extract from tensor if needed, then cast int→f64 if needed.
-    
+
     Returns an SSAValue of type f64.
     """
     from xdsl.dialects.builtin import IntegerType, TensorType
@@ -237,8 +250,8 @@ def _normalize_index_for_veq(
     size = VeqSizeOp(veq)
 
     zero = arith.ConstantOp(IntegerAttr(0, 64))
-    is_neg = arith.CmpiOp(idx, zero.result, "slt")     # idx < 0 ?
-    idx_plus_size = arith.AddiOp(idx, size.result)      # idx + len
+    is_neg = arith.CmpiOp(idx, zero.result, "slt")  # idx < 0 ?
+    idx_plus_size = arith.AddiOp(idx, size.result)  # idx + len
     norm = arith.SelectOp(is_neg.result, idx_plus_size.result, idx)
 
     block.insert_ops_before(
@@ -247,9 +260,11 @@ def _normalize_index_for_veq(
     )
     return norm.result
 
+
 # ---------------------------------------------------------------------------
 # Tensor-extract helper
 # ---------------------------------------------------------------------------
+
 
 def _extract_scalar(
     val: SSAValue, scalar_type: Attribute, block: Block, insert_before_op
@@ -274,9 +289,7 @@ def _wrap_scalar(
     """
     if val.type == tensor_type:
         return val
-    from_elem = tensor.FromElementsOp(
-        operands=[[val]], result_types=[tensor_type]
-    )
+    from_elem = tensor.FromElementsOp(operands=[[val]], result_types=[tensor_type])
     block.insert_ops_before([from_elem], insert_before_op)
     return from_elem.result
 
@@ -284,6 +297,7 @@ def _wrap_scalar(
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
+
 
 def lower_jasp_to_quake(module) -> None:
     """In-place PASS 1: eliminate QuantumState and lower all Jasp ops to Quake.
@@ -303,6 +317,7 @@ def lower_jasp_to_quake(module) -> None:
 # ---------------------------------------------------------------------------
 # Function-level processing
 # ---------------------------------------------------------------------------
+
 
 def _process_func(func_op) -> None:
     """Process a single ``func.func`` op: rewrite body, fix signature."""
@@ -349,21 +364,17 @@ def _fix_func_signature(func_op, mark_cudaq_kernel: bool = False) -> None:
             else:
                 new_inputs.append(arg.type)
     else:
-        new_inputs = [
-            t for t in old_ftype.inputs.data if not _is_qst(t)
-        ]
+        new_inputs = [t for t in old_ftype.inputs.data if not _is_qst(t)]
 
     # Compute new return types (drop qst, convert qubit types)
     new_outputs = [
-        _quake_type_for(t) or t
-        for t in old_ftype.outputs.data
-        if not _is_qst(t)
+        _quake_type_for(t) or t for t in old_ftype.outputs.data if not _is_qst(t)
     ]
 
     new_ftype = FunctionType.from_lists(new_inputs, new_outputs)
     func_op.function_type = new_ftype
 
-    #if mark_cudaq_kernel:
+    # if mark_cudaq_kernel:
     #    func_op.attributes["cudaq.kernel"] = StringAttr("true")
     #    func_op.attributes["cudaq.entrypoint"] = StringAttr("true")
     func_op.attributes["cudaq.kernel"] = StringAttr("true")
@@ -377,6 +388,7 @@ def _fix_func_signature(func_op, mark_cudaq_kernel: bool = False) -> None:
 # Block-level processing
 # ---------------------------------------------------------------------------
 
+
 def _process_block(block: Block) -> None:
     """Process all ops in *block* (forward order)."""
     for op in list(block.ops):
@@ -386,6 +398,7 @@ def _process_block(block: Block) -> None:
 # ---------------------------------------------------------------------------
 # Op dispatch
 # ---------------------------------------------------------------------------
+
 
 def _process_op(op, block: Block) -> None:
     """Dispatch a single op for lowering."""
@@ -435,6 +448,7 @@ def _process_op(op, block: Block) -> None:
 # QuantumState threading helper
 # ---------------------------------------------------------------------------
 
+
 def _thread_qst(op) -> None:
     """For ops with a QuantumState result, thread it backwards.
 
@@ -459,6 +473,7 @@ def _thread_qst(op) -> None:
 # ---------------------------------------------------------------------------
 # Jasp op lowerings
 # ---------------------------------------------------------------------------
+
 
 def _lower_create_quantum_kernel(op, block: Block) -> None:
     """``jasp.create_quantum_kernel`` → dropped; mark enclosing func as kernel."""
@@ -526,6 +541,7 @@ def _lower_get_size(op, block: Block) -> None:
 
     # Wrap i64 result back into tensor<i64> for compatibility with downstream ops
     from xdsl.dialects.builtin import TensorType
+
     result_tensor_type = op.results[0].type
     wrapped = _wrap_scalar(veq_size.result, result_tensor_type, block, op)
 
@@ -558,7 +574,7 @@ def _lower_slice(op, block: Block) -> None:
 
     # Constants 0 and 1
     zero = arith.ConstantOp(IntegerAttr(0, 64))
-    one  = arith.ConstantOp(IntegerAttr(1, 64))
+    one = arith.ConstantOp(IntegerAttr(1, 64))
 
     # hi_raw < 0 ?
     hi_is_neg = arith.CmpiOp(hi_raw, zero.result, "slt")
@@ -660,7 +676,7 @@ def _lower_quantum_gate(op, block: Block) -> None:
         controls = qubit_operands[:num_ctrl]
         targets = qubit_operands[num_ctrl:]
 
-    final_params = list(param_operands[:gate_info.num_params])
+    final_params = list(param_operands[: gate_info.num_params])
 
     # ---- Emit gate(s) ----------------------------------------------------
     if gate_info.emit is not None:
@@ -722,7 +738,7 @@ def _lower_measure(op, block: Block) -> None:
         wrapped = _wrap_scalar(scalar_bit, meas_result.type, block, op)
         _replace_all_uses_with(meas_result, wrapped)
     else:
-        # Array: We avoid !cc.stdvec by looping over the veq, measuring 
+        # Array: We avoid !cc.stdvec by looping over the veq, measuring
         # element-by-element, and packing the discriminated bits into an i64.
 
         # 1. Get the size of the array
@@ -743,25 +759,25 @@ def _lower_measure(op, block: Block) -> None:
         extract = ExtractRefOp(qubit_val, iv)
         mz_single = MzOp(extract.result)
         disc = DiscriminateOp(mz_single.result)
-        
+
         # Zero-extend the i1 to i64
         extui = arith.ExtUIOp(disc.result, i64)
-        
+
         # Shift the bit left by 'iv' positions (assuming little-endian packing)
         shift = arith.ShLIOp(extui.result, iv)
-        
+
         # Accumulate using bitwise OR
         new_acc = arith.OrIOp(acc, shift.result)
-        
+
         # Yield the new accumulator to the next iteration
         yield_op = scf.YieldOp(new_acc.result)
 
-        loop_body.add_ops([
-            extract, mz_single, disc, extui, shift, new_acc, yield_op
-        ])
+        loop_body.add_ops([extract, mz_single, disc, extui, shift, new_acc, yield_op])
 
         # 5. Create the scf.for loop
-        for_op = scf.ForOp(c0.result, veq_size.result, c1.result, [c0.result], Region([loop_body]))
+        for_op = scf.ForOp(
+            c0.result, veq_size.result, c1.result, [c0.result], Region([loop_body])
+        )
         block.insert_ops_before([for_op], op)
 
         # 6. Wrap the final packed i64 back to tensor<i64> for downstream compatibility
@@ -804,6 +820,7 @@ def _lower_reset(op, block: Block) -> None:
 # func.return and func.call fixup
 # ---------------------------------------------------------------------------
 
+
 def _fix_return_op(op) -> None:
     """Remove ``!jasp.QuantumState`` values from ``func.return``."""
     non_qst = [v for v in op.operands if not _is_qst(v.type)]
@@ -828,10 +845,10 @@ def _fix_call_op(op) -> None:
             new_result_types.append(QuakeRefType())
         else:
             new_result_types.append(t)
-    
+
     # Create the new call operation
     new_call = func.CallOp(op.callee, new_operands, new_result_types)
-    
+
     # Map old results to new results, ignoring the deleted QuantumState results
     replacement_results = []
     new_res_idx = 0
@@ -841,7 +858,7 @@ def _fix_call_op(op) -> None:
         else:
             replacement_results.append(new_call.results[new_res_idx])
             new_res_idx += 1
-    
+
     # Replace the op and update SSA users
     Rewriter.replace_op(op, new_call, replacement_results, safe_erase=False)
 
@@ -849,6 +866,7 @@ def _fix_call_op(op) -> None:
 # ---------------------------------------------------------------------------
 # SCF op processing
 # ---------------------------------------------------------------------------
+
 
 def _update_non_qst_block_arg_types(block: Block) -> None:
     """Update QubitArray/Qubit block args to their Quake equivalents."""
@@ -905,9 +923,7 @@ def _strip_qst_from_while(while_op, outer_block: Block) -> None:
     # Also convert QubitArray/Qubit types to Quake equivalents.
     non_qst_ops = [v for v in while_op.arguments if not _is_qst(v.type)]
     non_qst_res_types = [
-        _quake_type_for(t) or t
-        for t in while_op.res.types
-        if not _is_qst(t)
+        _quake_type_for(t) or t for t in while_op.res.types if not _is_qst(t)
     ]
 
     # Detach regions and create new scf.while (if anything changed)
@@ -924,6 +940,7 @@ def _strip_qst_from_while(while_op, outer_block: Block) -> None:
     after = while_op.detach_region(after_ref)
 
     from xdsl.dialects.scf import WhileOp
+
     new_while = WhileOp(non_qst_ops, non_qst_res_types, before, after)
 
     # Map old non-qst results → new results; qst results → None (erase)
@@ -972,9 +989,7 @@ def _strip_qst_from_if(if_op, outer_block: Block) -> None:
         return  # Nothing to do
 
     non_qst_res_types = [
-        _quake_type_for(t) or t
-        for t in if_op.result_types
-        if not _is_qst(t)
+        _quake_type_for(t) or t for t in if_op.result_types if not _is_qst(t)
     ]
 
     # Detach regions
@@ -982,6 +997,7 @@ def _strip_qst_from_if(if_op, outer_block: Block) -> None:
     false_region = if_op.detach_region(if_op.regions[0])  # now index 0 again
 
     from xdsl.dialects.scf import IfOp
+
     cond = if_op.operands[0]
     new_if = IfOp(cond, non_qst_res_types, true_region, false_region)
 
@@ -1030,18 +1046,15 @@ def _strip_qst_from_for(for_op, outer_block: Block) -> None:
     if not has_qst:
         return
 
-    non_qst_init_args = [
-        v for v in list(for_op.operands)[3:] if not _is_qst(v.type)
-    ]
+    non_qst_init_args = [v for v in list(for_op.operands)[3:] if not _is_qst(v.type)]
     non_qst_res_types = [
-        _quake_type_for(t) or t
-        for t in for_op.result_types
-        if not _is_qst(t)
+        _quake_type_for(t) or t for t in for_op.result_types if not _is_qst(t)
     ]
 
     body = for_op.detach_region(for_op.regions[0])
 
     from xdsl.dialects.scf import ForOp
+
     new_for = ForOp(
         for_op.operands[0],  # lb
         for_op.operands[1],  # ub

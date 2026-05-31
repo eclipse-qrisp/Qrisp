@@ -52,7 +52,6 @@ from qrisp.jasp.mlir.quake_lowering.cc_dialect import (
     CcStdVecType,
 )
 
-
 # ===================================================================
 # Public entry point
 # ===================================================================
@@ -323,16 +322,20 @@ def _update_callee_param(callee_op, param_idx: int) -> None:
 
 def _is_static_array_ptr(t) -> bool:
     """Check if type is !cc.ptr<!cc.array<T x N>> with N > 0."""
-    return (isinstance(t, CcPtrType)
-            and isinstance(t.element_type, CcArrayType)
-            and t.element_type.size.value.data > 0)
+    return (
+        isinstance(t, CcPtrType)
+        and isinstance(t.element_type, CcArrayType)
+        and t.element_type.size.value.data > 0
+    )
 
 
 def _is_dynamic_array_ptr(t) -> bool:
     """Check if type is !cc.ptr<!cc.array<T x ?>> (size == -1)."""
-    return (isinstance(t, CcPtrType)
-            and isinstance(t.element_type, CcArrayType)
-            and t.element_type.size.value.data < 0)
+    return (
+        isinstance(t, CcPtrType)
+        and isinstance(t.element_type, CcArrayType)
+        and t.element_type.size.value.data < 0
+    )
 
 
 # ===================================================================
@@ -375,8 +378,10 @@ def _types_match(t1, t2) -> bool:
     if isinstance(t1, CcPtrType) and isinstance(t2, CcPtrType):
         return _types_match(t1.element_type, t2.element_type)
     if isinstance(t1, CcArrayType) and isinstance(t2, CcArrayType):
-        return (t1.element_type == t2.element_type and
-                t1.size.value.data == t2.size.value.data)
+        return (
+            t1.element_type == t2.element_type
+            and t1.size.value.data == t2.size.value.data
+        )
     return t1 == t2
 
 

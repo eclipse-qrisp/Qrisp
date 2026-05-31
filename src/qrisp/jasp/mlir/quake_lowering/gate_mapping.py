@@ -80,6 +80,7 @@ class GateInfo:
 def _emit_sx(controls, params, targets):
     """sx(q) = H(q) · S(q) · H(q)"""
     from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+
     t = targets[0]
     return [
         make_gate_op("h", [], [], [t]),
@@ -91,6 +92,7 @@ def _emit_sx(controls, params, targets):
 def _emit_sx_dg(controls, params, targets):
     """sx†(q) = H(q) · S†(q) · H(q)"""
     from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+
     t = targets[0]
     return [
         make_gate_op("h", [], [], [t]),
@@ -246,6 +248,7 @@ def _emit_xxyy_dg(controls, params, targets):
 def _emit_cgphase(controls, params, targets):
     """cgphase(ϕ) between targets q0 and q1 = p(ϕ, q0)"""
     from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+
     t0, t1 = targets
     phi = params[0]
     return [
@@ -256,6 +259,7 @@ def _emit_cgphase(controls, params, targets):
 def _emit_gphase(controls, params, targets):
     """gphase(ϕ) on target q0 = p(ϕ, q0)"""
     from qrisp.jasp.mlir.quake_lowering.quake_dialect import make_gate_op
+
     t0 = targets[0]
     phi = params[0]
     two = arith.ConstantOp(FloatAttr(2.0, f64))
@@ -269,6 +273,7 @@ def _emit_gphase(controls, params, targets):
         make_gate_op("p", [], [two_phi], [t0]),
     ]
 
+
 # ===================================================================
 # Gate map
 # ===================================================================
@@ -277,58 +282,60 @@ def _emit_gphase(controls, params, targets):
 # Composite gates are decomposed at JASPR level via `decompose_composite_gates`.
 GATE_MAP: dict[str, GateInfo] = {
     # ---- 1-qubit, 0-param ------------------------------------------------
-    "h":     GateInfo(num_controls=0, quake_gate="h"),
-    "x":     GateInfo(num_controls=0, quake_gate="x"),
-    "y":     GateInfo(num_controls=0, quake_gate="y"),
-    "z":     GateInfo(num_controls=0, quake_gate="z"),
-    "s":     GateInfo(num_controls=0, quake_gate="s"),
-    "t":     GateInfo(num_controls=0, quake_gate="t"),
-    "s_dg":  GateInfo(num_controls=0, quake_gate="s<adj>"),
-    "t_dg":  GateInfo(num_controls=0, quake_gate="t<adj>"),
+    "h": GateInfo(num_controls=0, quake_gate="h"),
+    "x": GateInfo(num_controls=0, quake_gate="x"),
+    "y": GateInfo(num_controls=0, quake_gate="y"),
+    "z": GateInfo(num_controls=0, quake_gate="z"),
+    "s": GateInfo(num_controls=0, quake_gate="s"),
+    "t": GateInfo(num_controls=0, quake_gate="t"),
+    "s_dg": GateInfo(num_controls=0, quake_gate="s<adj>"),
+    "t_dg": GateInfo(num_controls=0, quake_gate="t<adj>"),
     # ---- 1-qubit, 0-param, DECOMPOSED ------------------------------------
-    "sx":     GateInfo(num_controls=0, quake_gate="", emit=_emit_sx),
-    "sx_dg":  GateInfo(num_controls=0, quake_gate="", emit=_emit_sx_dg),
+    "sx": GateInfo(num_controls=0, quake_gate="", emit=_emit_sx),
+    "sx_dg": GateInfo(num_controls=0, quake_gate="", emit=_emit_sx_dg),
     # ---- 1-qubit, 1-param ------------------------------------------------
-    "rx":    GateInfo(num_controls=0, quake_gate="rx",  num_params=1),
-    "ry":    GateInfo(num_controls=0, quake_gate="ry",  num_params=1),
-    "rz":    GateInfo(num_controls=0, quake_gate="rz",  num_params=1),
-    "p":     GateInfo(num_controls=0, quake_gate="r1",  num_params=1),
-    "r1":    GateInfo(num_controls=0, quake_gate="r1",  num_params=1),
+    "rx": GateInfo(num_controls=0, quake_gate="rx", num_params=1),
+    "ry": GateInfo(num_controls=0, quake_gate="ry", num_params=1),
+    "rz": GateInfo(num_controls=0, quake_gate="rz", num_params=1),
+    "p": GateInfo(num_controls=0, quake_gate="r1", num_params=1),
+    "r1": GateInfo(num_controls=0, quake_gate="r1", num_params=1),
     "gphase": GateInfo(num_controls=0, quake_gate="", emit=_emit_gphase, num_params=1),
     # ---- 1-qubit, 3-param ------------------------------------------------
-    "u3":    GateInfo(num_controls=0, quake_gate="u3",  num_params=3),
+    "u3": GateInfo(num_controls=0, quake_gate="u3", num_params=3),
     # ---- 2-qubit, 0-param ------------------------------------------------
-    "swap":  GateInfo(num_controls=0, quake_gate="swap"),
+    "swap": GateInfo(num_controls=0, quake_gate="swap"),
     # ---- 2-qubit, 1-control (= CX / CNOT family) -------------------------
-    "cx":    GateInfo(num_controls=1, quake_gate="x"),
-    "cy":    GateInfo(num_controls=1, quake_gate="y"),
-    "cz":    GateInfo(num_controls=1, quake_gate="z"),
-    "ch":    GateInfo(num_controls=1, quake_gate="h"),
-    "cs":    GateInfo(num_controls=1, quake_gate="s"),
-    "ct":    GateInfo(num_controls=1, quake_gate="t"),
+    "cx": GateInfo(num_controls=1, quake_gate="x"),
+    "cy": GateInfo(num_controls=1, quake_gate="y"),
+    "cz": GateInfo(num_controls=1, quake_gate="z"),
+    "ch": GateInfo(num_controls=1, quake_gate="h"),
+    "cs": GateInfo(num_controls=1, quake_gate="s"),
+    "ct": GateInfo(num_controls=1, quake_gate="t"),
     # ---- 2-qubit, 1-param, DECOMPOSED ------------------------------------
-    #"rzz":     GateInfo(num_controls=0, quake_gate="", emit=_emit_rzz, num_params=1),
-    #"rzz_dg":  GateInfo(num_controls=0, quake_gate="", emit=_emit_rzz_dg, num_params=1),
-    #"rxx":     GateInfo(num_controls=0, quake_gate="", emit=_emit_rxx, num_params=1),
-    #"rxx_dg":  GateInfo(num_controls=0, quake_gate="", emit=_emit_rxx_dg, num_params=1),
-    "cgphase": GateInfo(num_controls=0, quake_gate="", emit=_emit_cgphase, num_params=1),
+    # "rzz":     GateInfo(num_controls=0, quake_gate="", emit=_emit_rzz, num_params=1),
+    # "rzz_dg":  GateInfo(num_controls=0, quake_gate="", emit=_emit_rzz_dg, num_params=1),
+    # "rxx":     GateInfo(num_controls=0, quake_gate="", emit=_emit_rxx, num_params=1),
+    # "rxx_dg":  GateInfo(num_controls=0, quake_gate="", emit=_emit_rxx_dg, num_params=1),
+    "cgphase": GateInfo(
+        num_controls=0, quake_gate="", emit=_emit_cgphase, num_params=1
+    ),
     # ---- 2-qubit, 1-param, DECOMPOSED ------------------------------------
-    #"xxyy":    GateInfo(num_controls=0, quake_gate="", emit=_emit_xxyy, num_params=2),
-    #"xxyy_dg": GateInfo(num_controls=0, quake_gate="", emit=_emit_xxyy_dg, num_params=2),
+    # "xxyy":    GateInfo(num_controls=0, quake_gate="", emit=_emit_xxyy, num_params=2),
+    # "xxyy_dg": GateInfo(num_controls=0, quake_gate="", emit=_emit_xxyy_dg, num_params=2),
     # ---- multi-controlled-X (Toffoli-family) -----------------------------
     # For mcx with N controls, all qubits except the last are controls.
     # This is handled specially in pass1; we include a sentinel entry here
     # so presence in the map indicates "supported".
-    #"2cx":   GateInfo(num_controls=2, quake_gate="x"),
-    #"pt2cx": GateInfo(num_controls=2, quake_gate="x"),
-    #"ccx":   GateInfo(num_controls=2, quake_gate="x"),
-    #"mcx":   GateInfo(num_controls=-1, quake_gate="x"),   # -1 = all-but-last
-    #"mcp":   GateInfo(num_controls=-1, quake_gate="r1",  num_params=1),
+    # "2cx":   GateInfo(num_controls=2, quake_gate="x"),
+    # "pt2cx": GateInfo(num_controls=2, quake_gate="x"),
+    # "ccx":   GateInfo(num_controls=2, quake_gate="x"),
+    # "mcx":   GateInfo(num_controls=-1, quake_gate="x"),   # -1 = all-but-last
+    # "mcp":   GateInfo(num_controls=-1, quake_gate="r1",  num_params=1),
     # ---- 2-qubit, 1-param, controlled ------------------------------------
-    #"crx":   GateInfo(num_controls=1, quake_gate="rx",   num_params=1),
-    #"cry":   GateInfo(num_controls=1, quake_gate="ry",   num_params=1),
-    #"crz":   GateInfo(num_controls=1, quake_gate="rz",   num_params=1),
-    "cp":    GateInfo(num_controls=1, quake_gate="r1",   num_params=1),
+    # "crx":   GateInfo(num_controls=1, quake_gate="rx",   num_params=1),
+    # "cry":   GateInfo(num_controls=1, quake_gate="ry",   num_params=1),
+    # "crz":   GateInfo(num_controls=1, quake_gate="rz",   num_params=1),
+    "cp": GateInfo(num_controls=1, quake_gate="r1", num_params=1),
 }
 
 

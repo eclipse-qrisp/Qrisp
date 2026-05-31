@@ -56,7 +56,6 @@ from qrisp.jasp.mlir.quake_lowering.cc_dialect import (
     CcLoopOp,
 )
 
-
 # ===================================================================
 # Public entry point
 # ===================================================================
@@ -133,6 +132,7 @@ def _process_region(region: Region) -> None:
 def _is_rank0_tensor(t) -> bool:
     """Return True if *t* is a rank-0 TensorType."""
     return getattr(t, "name", "") == "tensor" and not t.get_shape()
+
 
 def _is_tensor(t) -> bool:
     """Return True if *t* is a rank-0 TensorType (only these get unwrapped)."""

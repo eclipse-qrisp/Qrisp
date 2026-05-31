@@ -60,7 +60,6 @@ from xdsl.irdl import (
 )
 from xdsl.printer import Printer
 
-
 # ---------------------------------------------------------------------------
 # Types
 # ---------------------------------------------------------------------------
@@ -244,9 +243,7 @@ class ConcatOp(IRDLOperation):
         printer.print_string(" ")
         printer.print_list(self.operands_, printer.print_ssa_value)
         printer.print_string(" : (")
-        printer.print_list(
-            self.operands_, lambda v: printer.print_attribute(v.type)
-        )
+        printer.print_list(self.operands_, lambda v: printer.print_attribute(v.type))
         printer.print_string(") -> !quake.veq<?>")
 
 
@@ -291,9 +288,7 @@ def _quake_gate_print(self: IRDLOperation, printer: Printer) -> None:  # noqa: N
     # This matches CUDA-Q's assemblyFormat which uses functional-type(operands, results).
     all_operands = param_list + ctrl_list + tgt_list
     printer.print_string(" : (")
-    printer.print_list(
-        all_operands, lambda v: printer.print_attribute(v.type)
-    )
+    printer.print_list(all_operands, lambda v: printer.print_attribute(v.type))
     printer.print_string(") -> ()")
 
 
@@ -343,15 +338,24 @@ _QUAKE_GATE_CLASSES: dict[str, type] = {}
 
 for _gname in [
     # 1-qubit, 0-param
-    "h", "x", "y", "z", "s", "t",
+    "h",
+    "x",
+    "y",
+    "z",
+    "s",
+    "t",
     # 1-qubit, 1-param
-    "rx", "ry", "rz", "r1",
+    "rx",
+    "ry",
+    "rz",
+    "r1",
     # 1-qubit, 3-param
     "u3",
     # 2-qubit, 0-param
     "swap",
     # Adjoint forms
-    "s<adj>", "t<adj>",
+    "s<adj>",
+    "t<adj>",
 ]:
     _QUAKE_GATE_CLASSES[_gname] = _mk_gate_cls(f"quake.{_gname}")
 
@@ -381,6 +385,7 @@ def make_gate_op(
         A new Quake gate op instance, or *None* if the gate is not supported.
     """
     from qrisp.jasp.mlir.quake_lowering.gate_mapping import GATE_MAP
+
     gate_info = GATE_MAP.get(gate_name)
     if gate_info is None:
         return None
@@ -419,6 +424,7 @@ class MzOp(IRDLOperation):
         if isinstance(qubit.type, QuakeVeqType):
             # Veq measurement → !cc.stdvec<!quake.measure>
             from qrisp.jasp.mlir.quake_lowering.cc_dialect import CcStdVecType
+
             result_type = CcStdVecType()
         else:
             result_type = QuakeMeasureType()
