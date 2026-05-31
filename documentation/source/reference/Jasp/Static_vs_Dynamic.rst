@@ -666,24 +666,27 @@ Unsupported control flow in dynamic mode
 --------------------------------------------
 
 ``break`` and ``continue`` work in static mode but fail in dynamic mode because they alter control
-flow at runtime in a way JAX cannot represent in a single static trace. The code below tries to
-break out of a loop early based on a traced condition, which fails:
+flow at runtime in a way JAX cannot represent in a single static trace. Inside a ``jrange`` loop,
+``break`` exits the loop before the second required trace completes:
 
 .. code-block:: python
 
-   from qrisp.jasp import make_jaspr
+   from qrisp.jasp import make_jaspr, jrange
+   from qrisp import QuantumFloat, x, measure
 
    def bad_break(n):
-       for i in range(10):
-           if i >= n:     # n is traced
-               break
+       qf = QuantumFloat(4)
+       for i in jrange(10):
+           x(qf[0])
+           break
+       return measure(qf)
 
    jaspr = make_jaspr(bad_break)(3)
 
 .. code-block:: text
 
    # Output:
-   TracerBoolConversionError: Attempted boolean conversion of traced array
+   KeyError: Var(id=...):QuantumState
 
 Replace with ``jrange`` and let the iteration count express the bound directly:
 
@@ -707,12 +710,58 @@ Replace with ``jrange`` and let the iteration count express the bound directly:
    result: 1.0
 
 ``try`` / ``except`` always fails in dynamic mode. The ``except`` branch is never entered at trace
-time (no error occurs with tracer values), so JAX cannot record it. No replacement exists
-(restructure the code to avoid exception handling inside traced functions.
+time (no error occurs with tracer values), so JAX cannot record it. The code below silently
+ignores the ``except`` branch — at runtime ``n = 0`` returns ``inf`` instead of ``0``:
+
+.. code-block:: python
+
+   from qrisp.jasp import make_jaspr
+
+   def bad_try(n):
+       try:
+           result = 1 / n
+       except ZeroDivisionError:
+           result = 0
+       return result
+
+   jaspr = make_jaspr(bad_try)(3)
+   print("n = 3:", jaspr(3))
+   print("n = 0:", jaspr(0))
+
+.. code-block:: text
+
+   # Output:
+   n = 3: 0.3333333333333333
+   n = 0: inf    # except was NOT compiled
+
+No replacement exists; restructure the code to avoid exception handling inside traced functions.
 
 ``match`` / ``case`` fails in dynamic mode on traced values because Python's ``match`` requires
-concrete patterns to compare against. Use
-:func:`~qrisp.jasp.q_switch` instead. It takes a traced index, a list of case functions, and the
+concrete patterns to compare against. The code below matches a traced value against integer cases,
+which produces a traced boolean:
+
+.. code-block:: python
+
+   from qrisp.jasp import make_jaspr
+
+   def bad_match(n):
+       match n:
+           case 0:
+               result = "zero"
+           case 1:
+               result = "one"
+           case _:
+               result = "other"
+       return result
+
+   jaspr = make_jaspr(bad_match)(3)
+
+.. code-block:: text
+
+   # Output:
+   TracerBoolConversionError: Attempted boolean conversion of traced array
+
+Use :func:`~qrisp.jasp.q_switch` instead. It takes a traced index, a list of case functions, and the
 quantum variables they operate on. The function at the matching index is compiled and executed.
 
 The example below measures a 2-qubit register to get a random index (0-3), then applies the
@@ -746,9 +795,8 @@ which index was measured:
 
 
 
-
 Extended ``jrange`` example
---------------------------------
+-------------------------------
 
 ``jrange`` replaces ``range(n)``, ``break``/``continue``, and convergence loops where each
 iteration is independent (no carry values). Each example below shows a different use.
@@ -846,4 +894,210 @@ several restrictions:
 * No nested ``jrange`` with a data-dependent inner bound (the inner loop would need re-tracing
   per outer iteration).
 * No negative step (use index arithmetic instead, as shown in the reverse iteration example
-  above).
+   above).
+
+
+Lists and arrays in dynamic mode
+========================================
+
+Dynamic mode traces through JAX, which replaces all values with tracer objects. Python lists
+and standard NumPy operations expect concrete values and fail when they encounter tracers.
+Use ``jax.numpy`` (``jnp``) and JAX's array primitives instead.
+
+**List indexing with a traced index**
+
+Python lists require a concrete integer index. A traced index raises
+``TracerIntegerConversionError``:
+
+.. code-block:: python
+
+   from qrisp.jasp import make_jaspr
+
+   def bad_index(n):
+       items = [10, 20, 30]
+       return items[n]       # n is traced
+
+   jaspr = make_jaspr(bad_index)(1)
+
+.. code-block:: text
+
+   # Output:
+   TracerIntegerConversionError: The __index__() method was called on traced array
+
+Use a ``jnp`` array and ``jax.lax.dynamic_index_in_dim`` or ``jnp.take`` instead:
+
+.. code-block:: python
+
+   from qrisp.jasp import make_jaspr
+   import jax.numpy as jnp
+
+   def good_index(n):
+       items = jnp.array([10, 20, 30])
+       return jnp.take(items, n)
+
+   jaspr = make_jaspr(good_index)(1)
+   print("result:", jaspr(1))
+
+.. code-block:: text
+
+   # Output:
+   result: 20
+
+**The** ``in`` **operator on a list**
+
+Python's ``in`` operator tries to compare the traced value against each list element,
+producing a traced boolean that Python cannot evaluate:
+
+.. code-block:: python
+
+   from qrisp.jasp import make_jaspr
+
+   def bad_in(n):
+       items = [1, 2, 3, 4, 5]
+       return n in items
+
+   jaspr = make_jaspr(bad_in)(3)
+
+.. code-block:: text
+
+   # Output:
+   TracerBoolConversionError: Attempted boolean conversion of traced array
+
+Use ``jnp.any`` with an element-wise comparison instead:
+
+.. code-block:: python
+
+   from qrisp.jasp import make_jaspr
+   import jax.numpy as jnp
+
+   def good_in(n):
+       items = jnp.array([1, 2, 3, 4, 5])
+       return jnp.any(items == n)
+
+   jaspr = make_jaspr(good_in)(3)
+   print("result:", jaspr(3))
+
+.. code-block:: text
+
+   # Output:
+   result: True
+
+**Python max/min on traced values**
+
+``max`` and ``min`` compare values using ``<`` and ``>``, which produce traced booleans
+when applied to tracers. Python cannot evaluate the comparison:
+
+.. code-block:: python
+
+   from qrisp.jasp import make_jaspr
+
+   def bad_max(n):
+       return max(n, n + 5, n + 2)
+
+   jaspr = make_jaspr(bad_max)(3)
+
+.. code-block:: text
+
+   # Output:
+   TracerBoolConversionError: Attempted boolean conversion of traced array
+
+Use ``jnp.maximum`` / ``jnp.minimum`` instead:
+
+.. code-block:: python
+
+   from qrisp.jasp import make_jaspr
+   import jax.numpy as jnp
+
+   def good_max(n):
+       return jnp.maximum(jnp.maximum(n, n + 5), n + 2)
+
+   jaspr = make_jaspr(good_max)(3)
+   print("result:", jaspr(3))
+
+.. code-block:: text
+
+   # Output:
+   result: 8
+
+**Boolean (mask) indexing on jnp arrays**
+
+Boolean indexing on a ``jnp`` array requires a concrete mask at trace time; a traced mask
+raises ``NonConcreteBooleanIndexError``:
+
+.. code-block:: python
+
+   from qrisp.jasp import make_jaspr
+   import jax.numpy as jnp
+
+   def bad_mask(n):
+       arr = jnp.array([1, 2, 3, 4, 5])
+       mask = arr > n
+       return arr[mask]       # mask is traced
+
+   jaspr = make_jaspr(bad_mask)(2)
+
+.. code-block:: text
+
+   # Output:
+   NonConcreteBooleanIndexError: Array boolean indices must be concrete
+
+Use ``jnp.where`` to select between two arrays based on a traced condition:
+
+.. code-block:: python
+
+   from qrisp.jasp import make_jaspr
+   import jax.numpy as jnp
+
+   def good_mask(n):
+       arr = jnp.array([1, 2, 3, 4, 5])
+       mask = arr > n
+       return jnp.where(mask, arr, 0)
+
+   jaspr = make_jaspr(good_mask)(2)
+   print("result:", jaspr(2))
+
+.. code-block:: text
+
+   # Output:
+   result: [0 0 3 4 5]
+
+**Dynamic slicing**
+
+Python / NumPy slice syntax requires static start/stop/step values; traced bounds raise an
+error:
+
+.. code-block:: python
+
+   from qrisp.jasp import make_jaspr
+   import jax.numpy as jnp
+
+   def bad_slice(n):
+       arr = jnp.array([1, 2, 3, 4, 5])
+       return arr[n:]         # n is traced
+
+   jaspr = make_jaspr(bad_slice)(2)
+
+.. code-block:: text
+
+   # Output:
+   IndexError: Array slice indices must have static start/stop/step
+
+Use `jax.lax.dynamic_slice <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.dynamic_slice.html>`_ or `jax.lax.slice_in_dim <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.slice_in_dim.html>`_ instead:
+
+.. code-block:: python
+
+   from qrisp.jasp import make_jaspr
+   import jax.lax as lax
+   import jax.numpy as jnp
+
+   def good_slice(n):
+       arr = jnp.array([1, 2, 3, 4, 5])
+       return lax.dynamic_slice(arr, (n,), (3,))
+
+   jaspr = make_jaspr(good_slice)(2)
+   print("result:", jaspr(2))
+
+.. code-block:: text
+
+   # Output:
+   result: [3 4 5]
