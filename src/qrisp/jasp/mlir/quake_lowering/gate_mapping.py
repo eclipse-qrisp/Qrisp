@@ -294,7 +294,7 @@ GATE_MAP: dict[str, GateInfo] = {
     "rz":    GateInfo(num_controls=0, quake_gate="rz",  num_params=1),
     "p":     GateInfo(num_controls=0, quake_gate="r1",  num_params=1),
     "r1":    GateInfo(num_controls=0, quake_gate="r1",  num_params=1),
-    "gphase": GateInfo(num_controls=0, quake_gate="", emit=_emit_gphase, num_params=1),
+    #"gphase": GateInfo(num_controls=0, quake_gate="", emit=_emit_gphase, num_params=1),
     # ---- 1-qubit, 3-param ------------------------------------------------
     "u3":    GateInfo(num_controls=0, quake_gate="u3",  num_params=3),
     # ---- 2-qubit, 0-param ------------------------------------------------

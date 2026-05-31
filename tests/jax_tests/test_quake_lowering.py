@@ -1475,6 +1475,24 @@ def test_simple_block_encoding_results(operator):
         val2 = filtered_dict_jasp.get(key, 0.0)
         assert np.isclose(val1, val2, atol=1e-1)
 
+
+@pytest.mark.parametrize("operator", [X(0) + Z(1), X(0) * X(1) + Z(0) * Z(1)])
+def test_simple_block_encoding_poly(operator):
+    """Test that we can create a polynomial from a BlockEncoding and apply it to a quantum variable."""
+
+    BE = BlockEncoding.from_operator(operator)
+    BE_poly = BE.poly(np.array([0.5, 0.5]))
+
+    def main():
+
+        operand = QuantumVariable(2)
+        ancs = BE_poly.apply(operand)
+        return measure(operand)
+
+    mlir = _lower(main)
+    validate_quake_mlir(mlir)
+    results = run_quake_mlir(mlir, shots=10)
+
 # ---------------------------------------------------------------------------
 
 
