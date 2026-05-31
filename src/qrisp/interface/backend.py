@@ -25,14 +25,13 @@ from collections.abc import Mapping, Sequence
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Protocol, overload, runtime_checkable
 
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.measurement_result import MeasurementResult
+
+from .job import Job
 
 if TYPE_CHECKING:
     from qrisp.interface.batched_backend import BatchedBackend
-
-from qrisp.circuit.quantum_circuit import QuantumCircuit
-
-from .job import Job
 
 
 # This protocol is required because `BatchedBackend` intentionally
@@ -225,14 +224,16 @@ class Backend(ABC):
         Before returning, every concrete implementation should call
         :meth:`job.submit() <qrisp.interface.Job.submit>` on the newly created
         job. :meth:`~qrisp.interface.Job.submit` is the hook that moves the job out of
-        :attr:`~qrisp.interface.JobStatus.INITIALIZING`, signalling that execution has been handed off to the
-        backend. The exact state the job enters depends on the backend type:
+        :attr:`~qrisp.interface.JobStatus.INITIALIZING`, signalling that execution
+        has been handed off to the backend. The exact state the job enters depends
+        on the backend type:
 
-        * :attr:`~qrisp.interface.JobStatus.QUEUED`: for asynchronous or remote backends where the job waits
-          in a queue before execution begins.
+        * :attr:`~qrisp.interface.JobStatus.QUEUED`: for asynchronous or remote
+          backends where the job waits in a queue before execution begins.
 
-        * :attr:`~qrisp.interface.JobStatus.RUNNING`: for synchronous simulators that start execution
-          immediately inside :meth:`~qrisp.interface.Job.submit`.
+        * :attr:`~qrisp.interface.JobStatus.RUNNING`: for synchronous simulators
+          that start execution immediately inside
+          :meth:`~qrisp.interface.Job.submit`.
 
         Parameters
         ----------

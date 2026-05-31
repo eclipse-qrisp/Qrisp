@@ -144,6 +144,11 @@ class CountingWrapper(Backend):
         """Return empty options; shots are resolved by the inner backend."""
         return {}
 
+    @property
+    def max_circuits(self):
+        """Delegate max_circuits to the inner backend."""
+        return self._inner.max_circuits
+
     def run_async(self, circuits, shots: int | list[int] | None = None):
         """Increment the call counter, record shots, and forward to the inner backend."""
         self.run_async_call_count += 1

@@ -17,12 +17,15 @@
 # """
 
 """
-This module defines :class:`BatchedBackend`, obtained via :meth:`Backend.batched() <qrisp.interface.Backend.batched>`.
+This module defines :class:`BatchedBackend`, obtained via
+:meth:`Backend.batched() <qrisp.interface.Backend.batched>`.
 """
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Mapping, Sequence
+from typing import overload
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
@@ -150,6 +153,16 @@ class BatchedBackend:
         """
         self._backend.update_options(**kwargs)
 
+    @overload
+    def run(
+        self, circuits: QuantumCircuit, shots: int | None = None
+    ) -> MeasurementResult: ...
+
+    @overload
+    def run(
+        self, circuits: Sequence[QuantumCircuit], shots: int | None = None
+    ) -> list[MeasurementResult]: ...
+
     def run(
         self,
         circuits: QuantumCircuit | Sequence[QuantumCircuit],
@@ -157,7 +170,7 @@ class BatchedBackend:
     ) -> MeasurementResult | list[MeasurementResult]:
         """Register one or more circuits in the queue and return lazy result(s).
 
-        Each circuit is stored alongside its shot count.  The corresponding
+        Each circuit is stored alongside its shot count. The corresponding
         :class:`~qrisp.interface.MeasurementResult` objects are *empty* until
         :meth:`dispatch` is called.
 
@@ -167,7 +180,7 @@ class BatchedBackend:
             One circuit or a sequence of circuits to include in the batch.
 
         shots : int or None
-            Number of shots.  Defaults to the backend's ``shots`` option.
+            Number of shots. Defaults to the backend's ``shots`` option.
 
         Returns
         -------
@@ -197,26 +210,22 @@ class BatchedBackend:
     def dispatch(self, timeout: float | None = None) -> None:
         """Execute all pending circuits and populate their results.
 
-        All queued circuits are submitted in a single
-        :meth:`~qrisp.interface.Backend.run_async` call, eliminating redundant
+        All queued circuits are submitted via
+        :meth:`~qrisp.interface.Backend.run_async`, eliminating redundant
         network round-trips and queue-wait overhead regardless of whether the
         circuits were queued with the same or different shot counts.
 
         When all queued circuits share the same shot count a scalar is passed
-        to :meth:`~qrisp.interface.Backend.run_async` (backwards-compatible
-        with backends that have not yet been updated to accept a list).
+        to :meth:`~qrisp.interface.Backend.run_async`.
         When circuits carry different shot counts the full per-circuit list is
         passed, enabling each circuit to be executed with its own shot budget.
         Backends whose SDK does not natively support per-circuit shot counts
-        should fall back to ``max(shots)`` and emit a ``UserWarning``.
+        should fall back to a fixed shot count and emit a ``UserWarning``.
 
-        Circuit-limit enforcement (see :attr:`~qrisp.interface.Backend.max_circuits`)
-        is the responsibility of the wrapped backend's
-        :meth:`~qrisp.interface.Backend.run_async` implementation. Backends
-        that override :attr:`~qrisp.interface.Backend.max_circuits` should
-        check this limit inside
-        :meth:`~qrisp.interface.Backend.run_async` so that the check applies
-        whether circuits are submitted directly or via :meth:`dispatch`.
+        If the wrapped backend's :attr:`~qrisp.interface.Backend.max_circuits`
+        limit is set and the queued batch exceeds it, the batch is
+        automatically split into smaller jobs and a :exc:`UserWarning` is
+        emitted.
 
         If the wrapped backend raises, that error is stored in every
         not-yet-populated :class:`~qrisp.interface.MeasurementResult` and then
@@ -226,14 +235,18 @@ class BatchedBackend:
         Parameters
         ----------
         timeout : float or None, optional
-            Maximum seconds to wait for the hardware job. ``None`` (default)
-            waits indefinitely.  Passed through to
+            Maximum seconds to wait for each hardware job. ``None`` (default)
+            waits indefinitely. Passed through to
             :meth:`Job.result <qrisp.interface.Job.result>`.
 
         Raises
         ------
+        UserWarning
+            If the batch is split across multiple jobs due to
+            :attr:`~qrisp.interface.Backend.max_circuits`.
+
         TimeoutError
-            If *timeout* is given and the hardware job does not finish in time.
+            If *timeout* is given and a hardware job does not finish in time.
             Results for all circuits in the batch are left unpopulated.
 
         Exception
@@ -248,24 +261,50 @@ class BatchedBackend:
 
         circuits, shots_list, raws = map(list, zip(*queries))
 
-        # Pass a single int when all shot counts are identical,
-        # otherwise pass the full per-circuit list.
-        unique_shots = set(shots_list)
-        effective_shots = shots_list[0] if len(unique_shots) == 1 else shots_list
+        limit = self._backend.max_circuits
+        chunk_size = limit if limit is not None else len(circuits)
+
+        if limit is not None and len(circuits) > limit:
+            n_jobs = -(-len(circuits) // limit)
+            warnings.warn(
+                f"The number of queued circuits ({len(circuits)}) exceeds the "
+                f"backend's per-job circuit limit ({limit}). "
+                f"Splitting into {n_jobs} jobs automatically.",
+                UserWarning,
+                stacklevel=2,
+            )
 
         try:
-            all_counts = (
-                self._backend.run_async(circuits, shots=effective_shots)
-                .result(timeout=timeout)
-                .all_counts
-            )
-            for raw, counts in zip(raws, all_counts):
-                raw._inject(counts)
+            for start in range(0, len(circuits), chunk_size):
+                self._submit_chunk(
+                    circuits[start : start + chunk_size],
+                    shots_list[start : start + chunk_size],
+                    raws[start : start + chunk_size],
+                    timeout,
+                )
         except Exception as exc:
             for _, _, r in queries:
                 if not r._populated:
                     r._inject_error(exc)
             raise
+
+    def _submit_chunk(
+        self,
+        chunk_circuits: list,
+        chunk_shots: list,
+        chunk_raws: list,
+        timeout: float | None,
+    ) -> None:
+        """Submit one chunk of circuits and inject results into the corresponding placeholders."""
+        unique = set(chunk_shots)
+        effective_shots = chunk_shots[0] if len(unique) == 1 else chunk_shots
+        chunk_counts = (
+            self._backend.run_async(chunk_circuits, shots=effective_shots)
+            .result(timeout=timeout)
+            .all_counts
+        )
+        for raw, counts in zip(chunk_raws, chunk_counts):
+            raw._inject(counts)
 
     def clear(self) -> None:
         """Discard all queued circuits without dispatching.

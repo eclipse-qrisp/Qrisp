@@ -633,3 +633,100 @@ def test_hamiltonian_measurement_uses_single_run_async_call():
     # per-circuit-shots path rather than the "all equal → scalar" branch.
     assert isinstance(counting.shots_received[0], list)
     assert len(set(counting.shots_received[0])) > 1
+
+
+class _LimitedBackend(Backend):
+    """QrispSimulatorBackend wrapper that reports a max_circuits limit."""
+
+    def __init__(self, limit: int):
+        super().__init__()
+        self._inner = QrispSimulatorBackend()
+        self._limit = limit
+
+    @property
+    def max_circuits(self) -> int:
+        return self._limit
+
+    def run_async(self, circuits, shots=None):
+        return self._inner.run_async(circuits, shots=shots)
+
+
+def test_dispatch_splits_when_exceeding_max_circuits_warns():
+    """dispatch() must emit a UserWarning when the batch is split across jobs."""
+    bb = _LimitedBackend(limit=2).batched()
+    for _ in range(3):
+        bb.run(_det_circuit(), shots=10)
+    with pytest.warns(UserWarning, match="per-job circuit limit"):
+        bb.dispatch()
+
+
+def test_dispatch_splits_when_exceeding_max_circuits_correct_results():
+    """All results must be correctly populated after an automatic split."""
+    bb = _LimitedBackend(limit=2).batched()
+    r0 = bb.run(_det_circuit(value=0), shots=50)
+    r1 = bb.run(_det_circuit(value=1), shots=50)
+    r2 = bb.run(_det_circuit(value=0), shots=50)
+    with pytest.warns(UserWarning):
+        bb.dispatch()
+    assert r0["0"] == 50
+    assert r1["1"] == 50
+    assert r2["0"] == 50
+
+
+def test_dispatch_splits_uses_multiple_run_async_calls():
+    """dispatch() must call run_async once per chunk, not once for the whole batch."""
+    counting = CountingWrapper(_LimitedBackend(limit=2))
+    bb = counting.batched()
+    for _ in range(5):
+        bb.run(_det_circuit(), shots=10)
+    with pytest.warns(UserWarning):
+        bb.dispatch()
+    assert counting.run_async_call_count == 3
+
+
+def test_dispatch_no_split_when_within_max_circuits():
+    """dispatch() must not warn or split when the batch fits within max_circuits."""
+    counting = CountingWrapper(_LimitedBackend(limit=4))
+    bb = counting.batched()
+    for _ in range(4):
+        bb.run(_det_circuit(), shots=10)
+    bb.dispatch()
+    assert counting.run_async_call_count == 1
+
+
+def test_dispatch_split_error_propagates_to_all_results():
+    """If a chunk fails, the error must be injected into all unpopulated results."""
+
+    class _FailAfterFirst(Backend):
+        """Backend that succeeds for the first run_async call, then fails."""
+
+        def __init__(self):
+            super().__init__()
+            self._inner = QrispSimulatorBackend()
+            self._calls = 0
+
+        @property
+        def max_circuits(self) -> int:
+            return 1
+
+        def run_async(self, circuits, shots=None):
+            self._calls += 1
+            if self._calls > 1:
+                raise RuntimeError("second chunk failed")
+            return self._inner.run_async(circuits, shots=shots)
+
+    bb = _FailAfterFirst().batched()
+    r0 = bb.run(_det_circuit(), shots=10)
+    r1 = bb.run(_det_circuit(), shots=10)
+
+    with (
+        pytest.warns(UserWarning),
+        pytest.raises(RuntimeError, match="second chunk failed"),
+    ):
+        bb.dispatch()
+
+    # First result was populated before the failure.
+    assert r0["1"] == 10
+    # Second result must carry the error.
+    with pytest.raises(RuntimeError, match="second chunk failed"):
+        len(r1)
