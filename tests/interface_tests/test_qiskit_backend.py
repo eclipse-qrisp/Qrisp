@@ -297,6 +297,17 @@ class TestQiskitJob:
         with pytest.raises(TimeoutError):
             job.result()
 
+    def test_result_timeout_updates_last_known_status(self):
+        """last_known_status reflects the Qiskit job's actual state after a TimeoutError."""
+        qiskit_job = _make_qiskit_job(fail=TimeoutError("deadline exceeded"))
+        qiskit_job.status.return_value = MagicMock()
+        qiskit_job.status.return_value.name = "RUNNING"
+        job = QiskitJob(backend=MagicMock(), qiskit_job=qiskit_job, num_circuits=1)
+        job.submit()
+        with pytest.raises(TimeoutError):
+            job.result()
+        assert job.last_known_status == JobStatus.RUNNING
+
     def test_result_raises_immediately_when_already_cancelled(self):
         """result() raises JobCancelledError without calling Qiskit when already CANCELLED."""
         qiskit_job = _make_qiskit_job(fail=RuntimeError("cancelled"))

@@ -115,6 +115,9 @@ class AQTJob(Job):
         """
         try:
             aqt_result = self._aqt_job.result()
+        except TimeoutError:
+            self._last_known_status = _map_aqt_status(self._aqt_job)
+            raise
         except Exception as exc:
             terminal_status = _map_aqt_status(self._aqt_job)
             self._last_known_status = terminal_status

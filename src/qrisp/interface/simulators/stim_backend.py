@@ -25,10 +25,8 @@ from qrisp.interface.backend import Backend
 from qrisp.interface.job import Job, JobResult, JobStatus
 
 
-def _run_on_stim(qc: QuantumCircuit, shots: int | None):
-    if shots is None:
-        shots = 10000
-
+def _run_on_stim(qc: QuantumCircuit, shots: int):
+    """Run a single circuit on Stim and return the counts."""
     stim_circuit, measurement_map = qc.to_stim(return_measurement_map=True)
 
     sampler = stim_circuit.compile_sampler()
@@ -61,7 +59,7 @@ class _StimJob(Job):
     """Synchronous :class:`~qrisp.interface.Job` for :class:`StimBackend`."""
 
     def __init__(
-        self, backend: "StimBackend", circuits: Sequence, shots: int | list[int] | None
+        self, backend: "StimBackend", circuits: Sequence, shots: int | list[int]
     ):
         super().__init__(backend=backend)
         self._circuits = circuits
@@ -85,7 +83,7 @@ class _StimJob(Job):
             self._last_known_status = JobStatus.ERROR
 
     def result(self, timeout=None) -> JobResult:
-        if self._last_known_status == JobStatus.ERROR:
+        if self._error is not None:
             raise self._error
         self._raise_for_status(self._last_known_status)
         return cast(JobResult, self._result_data)
@@ -142,7 +140,10 @@ class StimBackend(Backend):
             circuits = list(circuits)
         if isinstance(shots, list):
             self._validate_shots_length(shots, circuits)
-        n_shots = shots if shots is not None else self.options.get("shots")
+        default_shots: int = self._default_options()["shots"]
+        n_shots: int | list[int] = (
+            shots if shots is not None else self.options.get("shots", default_shots)
+        )
         job = _StimJob(backend=self, circuits=circuits, shots=n_shots)
         job.submit()
         return job

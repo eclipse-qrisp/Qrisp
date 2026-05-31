@@ -385,6 +385,23 @@ class TestAQTJob:
         with pytest.raises(JobFailureError):
             job.result()
 
+    def test_result_propagates_timeout_error(self):
+        """TimeoutError from the AQT job is re-raised, not wrapped as JobFailureError."""
+        job = self._make_job(fail=TimeoutError("deadline exceeded"))
+        with pytest.raises(TimeoutError):
+            job.result()
+
+    def test_result_timeout_updates_last_known_status(self):
+        """last_known_status reflects the AQT job's actual state after a TimeoutError."""
+        aqt_job = _make_aqt_job(fail=TimeoutError("deadline exceeded"))
+        aqt_job.status.return_value = MagicMock()
+        aqt_job.status.return_value.name = "RUNNING"
+        job = AQTJob(backend=MagicMock(), aqt_job=aqt_job, cl_bits_per_circuit=[1])
+        job.submit()
+        with pytest.raises(TimeoutError):
+            job.result()
+        assert job.last_known_status == JobStatus.RUNNING
+
     def test_original_exception_preserved_as_cause(self):
         """The original AQT exception is chained so the root cause is visible."""
         job = self._make_job(fail=RuntimeError("network timeout"))

@@ -22,7 +22,7 @@
 import pytest
 from conftest import CountingWrapper
 
-from qrisp import QuantumFloat, batched_measurement
+from qrisp import QuantumCircuit, QuantumFloat, batched_measurement
 from qrisp.default_backend import QrispSimulatorBackend
 from qrisp.interface import BatchedBackend
 from qrisp.interface.backend import Backend
@@ -111,6 +111,55 @@ def test_result_is_lazy_before_dispatch():
 
     with pytest.raises(RuntimeError, match="dispatch"):
         len(res)
+
+
+def _det_circuit(value: int = 1) -> QuantumCircuit:
+    """Return a 1-qubit deterministic circuit: X (when value=1) then measure.
+
+    - value=1 → always measures '1'
+    - value=0 → always measures '0'.
+    """
+    qc = QuantumCircuit(1, 1)
+    if value:
+        qc.x(0)
+    qc.measure(0, 0)
+    return qc
+
+
+def test_run_with_multiple_circuits_returns_list_of_measurement_results():
+    """run([c1, c2]) must return a list of two MeasurementResult objects, not a single one."""
+    bb = _make_batched_backend()
+    results = bb.run([_det_circuit(), _det_circuit()])
+    assert isinstance(results, list)
+    assert len(results) == 2
+    assert all(isinstance(r, MeasurementResult) for r in results)
+
+
+def test_run_with_multiple_circuits_increments_pending_count_by_n():
+    """run([c1, c2]) must add two entries to the queue, not one."""
+    bb = _make_batched_backend()
+    assert bb.pending_count == 0
+    bb.run([_det_circuit(), _det_circuit()])
+    assert bb.pending_count == 2
+
+
+def test_run_with_multiple_circuits_results_are_lazy_before_dispatch():
+    """All results from run([c1, c2]) must be inaccessible until dispatch() is called."""
+    bb = _make_batched_backend()
+    results = bb.run([_det_circuit(), _det_circuit()])
+    for r in results:
+        with pytest.raises(RuntimeError, match="dispatch"):
+            len(r)
+
+
+def test_run_with_multiple_circuits_all_results_populated_after_dispatch():
+    """After dispatch(), every result from run([c1, c2]) contains the correct counts."""
+    bb = _make_batched_backend()
+    shots = 100
+    results = bb.run([_det_circuit(value=0), _det_circuit(value=1)], shots=shots)
+    bb.dispatch()
+    assert results[0]["0"] == shots
+    assert results[1]["1"] == shots
 
 
 class _FailingBackend(Backend):

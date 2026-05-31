@@ -151,6 +151,7 @@ class QiskitJob(Job):
             else:
                 qiskit_result = self._qiskit_job.result()
         except TimeoutError:
+            self._last_known_status = _map_qiskit_status(self._qiskit_job)
             raise
         except Exception as exc:
             terminal_status = _map_qiskit_status(self._qiskit_job)

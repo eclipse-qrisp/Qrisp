@@ -210,37 +210,27 @@ class QubitOperatorMeasurement:
 
         from qrisp.misc import get_measurement_from_qc
 
-        results = [0] * len(self.measurement_operators)
-        meas_coeffs = list(results)
-        meas_ops = list(results)
+        results = []
+        meas_coeffs = []
+        meas_ops = []
 
-        def measurement_thread(i):
+        for group, gate, shots_base in zip(
+            self.measurement_operators,
+            self.change_of_basis_gates,
+            self.shots_list,
+        ):
+            shots = int(shots_base / precision**2)
 
-            group = self.measurement_operators[i]
-
-            shots = int(self.shots_list[i] / precision**2)
-
-            qubits = [
-                qubit_list[j] for j in range(self.change_of_basis_gates[i].num_qubits)
-            ]
+            qubits = [qubit_list[j] for j in range(gate.num_qubits)]
 
             curr = qc.copy()
-            curr.append(self.change_of_basis_gates[i], qubits)
+            curr.append(gate, qubits)
 
-            res = get_measurement_from_qc(curr, list(qubit_list), backend, shots)
-            results[i] = res
-
-            temp_meas_ops = []
-            temp_coeff = []
-            for term, coeff in group.terms_dict.items():
-                temp_meas_ops.append(term.serialize())
-                temp_coeff.append(coeff)
-
-            meas_coeffs[i] = temp_coeff
-            meas_ops[i] = temp_meas_ops
-
-        for i in range(len(self.measurement_operators)):
-            measurement_thread(i)
+            results.append(
+                get_measurement_from_qc(curr, list(qubit_list), backend, shots)
+            )
+            meas_ops.append([term.serialize() for term in group.terms_dict])
+            meas_coeffs.append(list(group.terms_dict.values()))
 
         if isinstance(backend, BatchedBackend):
             backend.dispatch()
