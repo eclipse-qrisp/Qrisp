@@ -515,6 +515,19 @@ class TestVirtualBackendErrors:
         with pytest.raises(JobFailureError):
             job.result()
 
+    def test_run_func_error_message_contains_cause(self, vb_fail):
+        """The JobFailureError message must include the underlying run_func exception's description."""
+        job = vb_fail.run_async(_simple_qc())
+        with pytest.raises(JobFailureError, match="Simulated run_func failure"):
+            job.result()
+
+    def test_run_func_error_chains_original_exception(self, vb_fail):
+        """The original run_func exception must be chained as __cause__ of JobFailureError."""
+        job = vb_fail.run_async(_simple_qc())
+        with pytest.raises(JobFailureError) as exc_info:
+            job.result()
+        assert exc_info.value.__cause__ is not None
+
 
 # ---------------------------------------------------------------------------
 # Job lifecycle

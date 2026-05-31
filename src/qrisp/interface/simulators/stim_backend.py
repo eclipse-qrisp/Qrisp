@@ -65,7 +65,6 @@ class _StimJob(Job):
         self._circuits = circuits
         self._shots = shots
         self._result_data = None
-        self._error = None
 
     def submit(self) -> None:
         self._last_known_status = JobStatus.RUNNING
@@ -79,12 +78,10 @@ class _StimJob(Job):
             self._result_data = JobResult(counts_list)
             self._last_known_status = JobStatus.DONE
         except Exception as exc:
-            self._error = exc
+            self._failure_cause = exc
             self._last_known_status = JobStatus.ERROR
 
     def result(self, timeout=None) -> JobResult:
-        if self._error is not None:
-            raise self._error
         self._raise_for_status(self._last_known_status)
         return cast(JobResult, self._result_data)
 

@@ -42,7 +42,6 @@ class QrispSimulatorJob(Job):
         self._circuits = circuits
         self._shots = shots
         self._result_data = None
-        self._error = None
 
     # ------------------------------------------------------------------
     # Abstract interface
@@ -74,7 +73,7 @@ class QrispSimulatorJob(Job):
             self._result_data = JobResult(counts_list)
             self._last_known_status = JobStatus.DONE
         except Exception as exc:
-            self._error = exc
+            self._failure_cause = exc
             self._last_known_status = JobStatus.ERROR
 
     def result(self, timeout: float | None = None) -> JobResult:

@@ -126,7 +126,7 @@ class AQTJob(Job):
                     f"AQT job {self._job_id!r} was cancelled."
                 ) from exc
             raise JobFailureError(
-                f"AQT job {self._job_id!r} failed during execution."
+                f"AQT job {self._job_id!r} failed: {exc}"
             ) from exc
 
         self._last_known_status = JobStatus.DONE

@@ -23,6 +23,7 @@ from conftest import CountingWrapper
 
 from qrisp import QuantumCircuit, QuantumFloat, QuantumVariable
 from qrisp.interface import BatchedBackend, StimBackend
+from qrisp.interface.job import JobFailureError
 from qrisp.interface.measurement_result import LazyDict
 
 
@@ -106,6 +107,29 @@ class TestStimBackendBatched:
         assert counting.run_async_call_count == 0
         bb.dispatch()
         assert counting.run_async_call_count == 1
+
+
+def test_stim_failure_raises_job_failure_error():
+    """result() must raise JobFailureError (not a raw exception) when Stim cannot run the circuit."""
+    backend = StimBackend()
+    qc = QuantumCircuit(1, 1)
+    qc.t(0)  # T gate is non-Clifford; to_stim() will fail
+    qc.measure(0, 0)
+    job = backend.run_async(qc, shots=100)
+    with pytest.raises(JobFailureError):
+        job.result()
+
+
+def test_stim_failure_error_message_contains_cause():
+    """The JobFailureError message must include the underlying exception's description."""
+    backend = StimBackend()
+    qc = QuantumCircuit(1, 1)
+    qc.t(0)
+    qc.measure(0, 0)
+    job = backend.run_async(qc, shots=100)
+    with pytest.raises(JobFailureError) as exc_info:
+        job.result()
+    assert exc_info.value.__cause__ is not None
 
 
 def test_stim_run_async_with_shots_list_uses_per_circuit_counts():

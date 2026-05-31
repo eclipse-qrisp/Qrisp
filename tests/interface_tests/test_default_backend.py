@@ -20,10 +20,11 @@
 
 import pytest
 
-from qrisp import QuantumFloat, h
+from qrisp import QuantumCircuit, QuantumFloat, h
+from qrisp.circuit import Operation
 from qrisp.default_backend import QrispSimulatorBackend, QrispSimulatorJob, def_backend
 from qrisp.interface import BatchedBackend
-from qrisp.interface.job import JobResult, JobStatus
+from qrisp.interface.job import JobFailureError, JobResult, JobStatus
 from qrisp.interface.measurement_result import LazyDict
 from conftest import CountingWrapper
 
@@ -92,6 +93,38 @@ class TestQrispSimulatorJobInterface:
         job = backend.run_async(res.qs.compile())
         job.cancel()
         assert job.status() == JobStatus.DONE
+
+
+    def test_failure_raises_job_failure_error(self):
+        """result() must raise JobFailureError (not a raw simulator exception) on failure."""
+        backend = QrispSimulatorBackend()
+        qc = QuantumCircuit(1, 1)
+        qc.append(Operation(name="unknown_gate", num_qubits=1), [0])
+        qc.measure(0, 0)
+        job = backend.run_async(qc)
+        with pytest.raises(JobFailureError):
+            job.result()
+
+    def test_failure_error_message_contains_cause(self):
+        """The JobFailureError message must include the underlying exception's description."""
+        backend = QrispSimulatorBackend()
+        qc = QuantumCircuit(1, 1)
+        qc.append(Operation(name="unknown_gate", num_qubits=1), [0])
+        qc.measure(0, 0)
+        job = backend.run_async(qc)
+        with pytest.raises(JobFailureError, match="unknown_gate"):
+            job.result()
+
+    def test_failure_error_chains_original_exception(self):
+        """The original simulator exception must be chained as __cause__ of JobFailureError."""
+        backend = QrispSimulatorBackend()
+        qc = QuantumCircuit(1, 1)
+        qc.append(Operation(name="unknown_gate", num_qubits=1), [0])
+        qc.measure(0, 0)
+        job = backend.run_async(qc)
+        with pytest.raises(JobFailureError) as exc_info:
+            job.result()
+        assert exc_info.value.__cause__ is not None
 
 
 class TestQrispSimulatorBackendAnalytic:

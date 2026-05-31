@@ -209,8 +209,8 @@ class QiskitBackend(Backend):
     quantum hardware through the Qrisp backend interface.
 
     Circuits are converted from Qrisp's internal representation to Qiskit
-    ``QuantumCircuit`` objects via OpenQASM 2, transpiled for the target
-    backend, and submitted through Qiskit's ``SamplerV2`` primitive.
+    ``QuantumCircuit`` objects, transpiled for the target backend, and
+    submitted through Qiskit's ``SamplerV2`` primitive.
     A ``QiskitJob`` handle is returned immediately; call
     :meth:`Job.result` to block and retrieve the :class:`~qrisp.interface.JobResult`.
 
@@ -247,9 +247,8 @@ class QiskitBackend(Backend):
         res = qf * qf
 
     When ``get_measurement`` is called, Qrisp compiles the computation into a
-    ``QuantumCircuit``, converts it to OpenQASM 2, rebuilds it as a Qiskit
-    ``QuantumCircuit``, transpiles it for the target backend, and submits it
-    through ``SamplerV2``. Internally, ``run_async`` returns a ``QiskitJob``
+    ``QuantumCircuit``, converts it directly to a Qiskit ``QuantumCircuit``,
+    transpiles it for the target backend, and submits it through ``SamplerV2``. Internally, ``run_async`` returns a ``QiskitJob``
     immediately; :meth:`~qrisp.interface.Backend.run` then blocks on
     ``job.result()`` until execution completes and the counts are returned to
     ``get_measurement``:
@@ -384,12 +383,11 @@ class QiskitBackend(Backend):
 
         self._check_circuit_limit(circuits)
 
-        # Convert each Qrisp circuit to a Qiskit QuantumCircuit via OpenQASM 2,
-        # then rebuild with integer-indexed qubits and transpile for the target backend.
+        # Convert each Qrisp circuit to a Qiskit QuantumCircuit, then rebuild
+        # with integer-indexed qubits and transpile for the target backend.
         qiskit_circuits = []
         for circuit in circuits:
-            qasm_str = circuit.qasm()
-            qc = QuantumCircuit.from_qasm_str(qasm_str)
+            qc = circuit.to_qiskit()
 
             # Rebuild with plain integer indices to avoid register-name mismatches.
             new_qc = QuantumCircuit(len(qc.qubits), len(qc.clbits))

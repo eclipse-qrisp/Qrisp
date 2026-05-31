@@ -511,7 +511,7 @@ class Job(ABC):
         if status == JobStatus.ERROR:
             if self._failure_cause is not None:
                 raise JobFailureError(
-                    f"Job {self._job_id!r} terminated with status ERROR."
+                    f"Job {self._job_id!r} failed: {self._failure_cause}"
                 ) from self._failure_cause
             raise JobFailureError(f"Job {self._job_id!r} terminated with status ERROR.")
         if status == JobStatus.CANCELLED:
