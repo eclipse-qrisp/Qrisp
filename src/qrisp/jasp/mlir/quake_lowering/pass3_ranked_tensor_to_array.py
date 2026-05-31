@@ -172,6 +172,10 @@ def _process_block_recursive(region: Region, array_map: dict, func_rewrites: dic
             else:
                 for nested_region in op.regions:
                     _process_block_recursive(nested_region, array_map, func_rewrites)
+        # Third dead-constant sweep: cc.loop arg rewriting may have removed the
+        # last use of a tensor constant that the second sweep above couldn't erase
+        # yet (because cc.loop still held references at that point).
+        _erase_dead_tensor_constants(block)
 
 
 def _erase_dead_tensor_constants(block: Block) -> None:
