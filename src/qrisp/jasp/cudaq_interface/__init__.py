@@ -25,21 +25,21 @@ package when ``cudaq`` is not installed raises an ``ImportError``.
 
 Preferred import paths::
 
-    from qrisp.jasp import qrisp_cudaq_kernel, FixedShapeNDArray
-    from qrisp.jasp.cudaq_interface import qrisp_cudaq_kernel, FixedShapeNDArray
+    from qrisp.jasp import cudaq_kernel, FixedShapeNDArray
+    from qrisp.jasp.cudaq_interface import cudaq_kernel, FixedShapeNDArray
 
 """
 
-from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray  # noqa: F401
-from qrisp.jasp.cudaq_interface.cudaq_kernel import (  # noqa: F401
+from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray
+from qrisp.jasp.cudaq_interface.cudaq_kernel import (
     cudaq_kernel_from_mlir,
     run_quake_mlir,
-    qrisp_cudaq_kernel,
+    cudaq_kernel,
 )
 
 __all__ = [
     "FixedShapeNDArray",
     "cudaq_kernel_from_mlir",
     "run_quake_mlir",
-    "qrisp_cudaq_kernel",
+    "cudaq_kernel",
 ]

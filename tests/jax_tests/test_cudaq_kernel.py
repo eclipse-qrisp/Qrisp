@@ -45,7 +45,7 @@ from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop, qa
 
 try:
     import cudaq
-    from qrisp.jasp.cudaq_interface import run_quake_mlir, qrisp_cudaq_kernel, FixedShapeNDArray
+    from qrisp.jasp.cudaq_interface import run_quake_mlir, cudaq_kernel, FixedShapeNDArray
 except ImportError as exc:
     # Skip the entire test file if the import fails
     pytest.skip(f"cudaq unavailable: {exc}", allow_module_level=True)
@@ -55,9 +55,9 @@ except ImportError as exc:
 # Test qrisp cudaq kernel decorator
 # ---------------------------------------------------------------------------
 
-def test_qrisp_cudaq_kernel():
-    """Test that a simple @qrisp_cudaq_kernel compiles and runs, returning a valid measurement outcome."""
-    @qrisp_cudaq_kernel
+def test_cudaq_kernel():
+    """Test that a simple @cudaq_kernel compiles and runs, returning a valid measurement outcome."""
+    @cudaq_kernel
     def bell():
         qv = QuantumVariable(2)
         h(qv[0])
@@ -68,9 +68,9 @@ def test_qrisp_cudaq_kernel():
     assert result in {0, 3}
 
 
-def test_qrisp_cudaq_kernel_multiple_returns():
-    """Test that a @qrisp_cudaq_kernel can return multiple values of different types."""
-    @qrisp_cudaq_kernel
+def test_cudaq_kernel_multiple_returns():
+    """Test that a @cudaq_kernel can return multiple values of different types."""
+    @cudaq_kernel
     def bell():
         qv = QuantumVariable(2)
         h(qv[0])
@@ -84,12 +84,12 @@ def test_qrisp_cudaq_kernel_multiple_returns():
     assert result in {(0, False, 1.5), (0, True, 1.5), (3, False, 1.5), (3, True, 1.5)}
 
 
-def test_qrisp_cudaq_kernel_algorithm():
-    """Test that a more complex algorithm can be expressed in a @qrisp_cudaq_kernel and executed."""
+def test_cudaq_kernel_algorithm():
+    """Test that a more complex algorithm can be expressed in a @cudaq_kernel and executed."""
     from qrisp.operators import X, Y, Z
     import networkx as nx
 
-    @qrisp_cudaq_kernel
+    @cudaq_kernel
     def main():
 
         G = nx.Graph()
@@ -125,7 +125,7 @@ def test_qrisp_cudaq_kernel_algorithm():
 def test_int_parameter():
     """Kernel with int parameter: result is measure + classical offset."""
 
-    @qrisp_cudaq_kernel
+    @cudaq_kernel
     def int_kernel(k: int):
         qv = QuantumFloat(2)
         h(qv[0])
@@ -139,7 +139,7 @@ def test_int_parameter():
 def test_float_parameter():
     """Kernel with float rotation angle: ry(0.0) deterministically leaves qubit in |0>."""
 
-    @qrisp_cudaq_kernel
+    @cudaq_kernel
     def float_kernel(angle: float):
         qv = QuantumFloat(1)
         ry(angle, qv[0])
@@ -151,7 +151,7 @@ def test_float_parameter():
 def test_bool_parameter():
     """Kernel with bool parameter: flips qubit if True, leaves in |0> if False."""
 
-    @qrisp_cudaq_kernel
+    @cudaq_kernel
     def bool_kernel(flag: bool):
         qv = QuantumVariable(1)
         with control(flag):
@@ -170,7 +170,7 @@ def test_bool_parameter():
 def test_fixed_shape_ndarray_float():
     """FixedShapeNDArray(float, 3): zero angles leave qubit in |0> deterministically."""
 
-    @qrisp_cudaq_kernel
+    @cudaq_kernel
     def float_arr_kernel(angles: FixedShapeNDArray(float, 3)):
         qv = QuantumFloat(1)
         ry(angles[0], qv[0])
@@ -182,7 +182,7 @@ def test_fixed_shape_ndarray_float():
 def test_fixed_shape_ndarray_int():
     """FixedShapeNDArray(int, 2): integer element added to measurement."""
 
-    @qrisp_cudaq_kernel
+    @cudaq_kernel
     def int_arr_kernel(offsets: FixedShapeNDArray(int, 2)):
         qv = QuantumFloat(2)
         h(qv[0])
@@ -200,7 +200,7 @@ def test_fixed_shape_ndarray_int():
 def test_multiple_scalar_params():
     """Kernel with mixed scalar parameters (float angle + int offset)."""
 
-    @qrisp_cudaq_kernel
+    @cudaq_kernel
     def multi_kernel(angle: float, k: int):
         qv = QuantumFloat(2)
         ry(angle, qv[0])
@@ -213,7 +213,7 @@ def test_multiple_scalar_params():
 def test_multishot_with_cudaq_run():
     """cudaq.run works directly on the kernel without calling it first."""
 
-    @qrisp_cudaq_kernel
+    @cudaq_kernel
     def bell2():
         qv = QuantumVariable(2)
         h(qv[0])
@@ -229,7 +229,7 @@ def test_multishot_with_cudaq_run():
 def test_multishot_array_param_with_cudaq_run():
     """cudaq.run works with a FixedShapeNDArray kernel and zero angles."""
 
-    @qrisp_cudaq_kernel
+    @cudaq_kernel
     def ry_kernel(angles: FixedShapeNDArray(float, 2)):
         qv = QuantumFloat(1)
         ry(angles[0], qv[0])
@@ -245,7 +245,7 @@ def test_dynamic_index_into_array_parameter():
     """Dynamic index into a FixedShapeNDArray parameter: qubit is |0⟩ so
     measure returns 0 and angles[0] = 0.0 is selected, leaving the qubit in |0⟩."""
 
-    @qrisp_cudaq_kernel
+    @cudaq_kernel
     def circuit(angles: FixedShapeNDArray(float, 3)):
         qv = QuantumVariable(1)
         ind = jnp.int32(measure(qv[0]))
@@ -264,7 +264,7 @@ def test_dynamic_index_into_array_parameter_in_nested_function():
     def inner(arr, qv):
         rz(arr[0], qv[0])
 
-    @qrisp_cudaq_kernel
+    @cudaq_kernel
     def test_circuit(angles: FixedShapeNDArray(float, 5)):
         qv = QuantumFloat(5)
 
@@ -279,7 +279,7 @@ def test_dynamic_index_into_array_parameter_in_nested_function():
 def test_dynamic_index_into_array_parameter_in_loop():
     """Dynamic index into a FixedShapeNDArray parameter inside a loop."""
 
-    @qrisp_cudaq_kernel
+    @cudaq_kernel
     def test_circuit(angles: FixedShapeNDArray(float, 5)):
         qv = QuantumFloat(5)
 
@@ -304,7 +304,7 @@ def test_dynamic_index_into_array_parameter_in_loop():
 def test_static_index_into_array_parameter():
     """Static index into a FixedShapeNDArray parameter. Parametrized ansatz with 4 layers, each taking an angle from the array."""
 
-    @qrisp_cudaq_kernel
+    @cudaq_kernel
     def ansatz_kernel(params: FixedShapeNDArray(float, 4)):
         qv = QuantumVariable(4)
         for layer in range(4):
@@ -353,25 +353,25 @@ def test_fixed_shape_ndarray_float_size():
 
 
 # ---------------------------------------------------------------------------
-# Negative tests: @qrisp_cudaq_kernel decorator
+# Negative tests: @cudaq_kernel decorator
 # ---------------------------------------------------------------------------
 
 
 def test_missing_annotation_raises():
-    """@qrisp_cudaq_kernel raises RuntimeError when a parameter lacks a type annotation."""
+    """@cudaq_kernel raises RuntimeError when a parameter lacks a type annotation."""
     with pytest.raises(RuntimeError, match="requires a type annotation"):
 
-        @qrisp_cudaq_kernel
+        @cudaq_kernel
         def missing_ann(k):
             qv = QuantumFloat(1)
             return measure(qv[0])
 
 
 def test_unsupported_annotation_raises():
-    """@qrisp_cudaq_kernel raises RuntimeError for an unsupported annotation type."""
+    """@cudaq_kernel raises RuntimeError for an unsupported annotation type."""
     with pytest.raises(RuntimeError, match="unsupported annotation"):
 
-        @qrisp_cudaq_kernel
+        @cudaq_kernel
         def bad_ann(k: str):
             qv = QuantumFloat(1)
             return measure(qv[0])
@@ -383,7 +383,7 @@ def test_traced_jax_array_arithmetic_triggers_helpful_safeguard_error():
 
     with pytest.raises(RuntimeError, match="traced jax.numpy arrays"):
 
-        @qrisp_cudaq_kernel
+        @cudaq_kernel
         def bad_kernel(k: int):
             qv = QuantumFloat(2)
             arr1 = jnp.array([1.57, 0.78, 0.39])

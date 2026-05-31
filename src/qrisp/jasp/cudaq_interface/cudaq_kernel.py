@@ -29,7 +29,7 @@
 #    shot-based sampling infrastructure expects.
 #  - Wrapping the compiled module in a genuine PyKernelDecorator so the
 #    result behaves exactly like a @cudaq.kernel-decorated function.
-#  - Providing the @qrisp_cudaq_kernel user-facing decorator.
+#  - Providing the @cudaq_kernel user-facing decorator.
 #
 # The array-param → stdvec rewriting is now handled by pass4_array_to_stdvec
 # at the xDSL IR level, before the MLIR string is produced.
@@ -441,7 +441,7 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
 
 
 # ------------------------------------------------------------------ #
-# @qrisp_cudaq_kernel decorator
+# @cudaq_kernel decorator
 # ------------------------------------------------------------------ #
 
 _ANNOTATION_TO_DUMMY = {
@@ -451,7 +451,7 @@ _ANNOTATION_TO_DUMMY = {
 }
 
 
-def qrisp_cudaq_kernel(func):
+def cudaq_kernel(func):
     """
     Decorator that compiles a Qrisp function to a native CUDA-Q kernel.
 
@@ -502,9 +502,9 @@ def qrisp_cudaq_kernel(func):
 
         import cudaq
         from qrisp import *
-        from qrisp.jasp.cudaq_interface import qrisp_cudaq_kernel
+        from qrisp.jasp.cudaq_interface import cudaq_kernel
 
-        @qrisp_cudaq_kernel
+        @cudaq_kernel
         def bell():
             qv = QuantumVariable(2)
             h(qv[0])
@@ -514,14 +514,32 @@ def qrisp_cudaq_kernel(func):
         print(bell())                            # single-shot, e.g. 0 or 3
         print(cudaq.run(bell, shots_count=100))  # multi-shot, no () needed
 
+    Multiple returns are supported; they are returned as a single tuple::    
+
+        import cudaq
+        from qrisp import *
+        from qrisp.jasp.cudaq_interface import cudaq_kernel
+
+        @cudaq_kernel
+        def main():
+            a = QuantumFloat(3)
+            b = QuantumFloat(2)
+            a[:] = 3
+            h(b)
+            a += b
+            return measure(a), measure(b)
+
+        print(cudaq.run(main, shots_count=5))
+        # e.g. [(3.0, 0.0), (3.0, 0.0), (5.0, 2.0), (5.0, 2.0), (6.0, 3.0)]
+
     Parameterised kernel with scalar and array annotations::
 
         import cudaq
         import numpy as np
         from qrisp import *
-        from qrisp.jasp.cudaq_interface import qrisp_cudaq_kernel, FixedShapeNDArray
+        from qrisp.jasp.cudaq_interface import cudaq_kernel, FixedShapeNDArray
 
-        @qrisp_cudaq_kernel
+        @cudaq_kernel
         def circuit(k: int):
             qv = QuantumFloat(2)
             h(qv[0])
@@ -530,7 +548,7 @@ def qrisp_cudaq_kernel(func):
         print(circuit(3))
         print(cudaq.run(circuit, 3, shots_count=100))
 
-        @qrisp_cudaq_kernel
+        @cudaq_kernel
         def circuit_arr(angles: FixedShapeNDArray(float, 3)):
             qv = QuantumFloat(2)
             ry(angles[0], qv[0])
@@ -550,7 +568,7 @@ def qrisp_cudaq_kernel(func):
     for p in params:
         if p.annotation is inspect.Parameter.empty:
             raise RuntimeError(
-                f"@qrisp_cudaq_kernel: parameter '{p.name}' of "
+                f"@cudaq_kernel: parameter '{p.name}' of "
                 f"'{func.__name__}' requires a type annotation. "
                 f"Supported: {_supported}."
             )
@@ -561,7 +579,7 @@ def qrisp_cudaq_kernel(func):
         else:
             ann_name = getattr(p.annotation, "__name__", repr(p.annotation))
             raise RuntimeError(
-                f"@qrisp_cudaq_kernel: unsupported annotation "
+                f"@cudaq_kernel: unsupported annotation "
                 f"'{ann_name}' for parameter '{p.name}' of "
                 f"'{func.__name__}'. Supported: {_supported}."
             )

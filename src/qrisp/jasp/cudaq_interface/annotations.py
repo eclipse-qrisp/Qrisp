@@ -18,7 +18,7 @@
 
 # ====================================================================== #
 # qrisp.jasp.cudaq_interface.annotations
-# Type annotations for @qrisp_cudaq_kernel parameters.
+# Type annotations for @cudaq_kernel parameters.
 # ====================================================================== #
 
 import numpy as np
@@ -26,7 +26,7 @@ import numpy as np
 
 class FixedShapeNDArray:
     """Type annotation for a fixed-size numpy array parameter in
-    ``@qrisp_cudaq_kernel``.
+    ``@cudaq_kernel``.
 
     Mirrors the role of ``list[float]`` / ``list[int]`` in ``@cudaq.kernel``
     but requires an explicit size, because JAX traces with concrete
@@ -47,9 +47,9 @@ class FixedShapeNDArray:
         import cudaq
         import numpy as np
         from qrisp import *
-        from qrisp.jasp.cudaq_interface import qrisp_cudaq_kernel, FixedShapeNDArray
+        from qrisp.jasp.cudaq_interface import cudaq_kernel, FixedShapeNDArray
 
-        @qrisp_cudaq_kernel
+        @cudaq_kernel
         def circuit(angles: FixedShapeNDArray(float, 3)):
             qv = QuantumFloat(2)
             ry(angles[0], qv[0])

@@ -4,5 +4,5 @@ CUDA-Q Interface
 ================
 
 .. currentmodule:: qrisp.jasp.cudaq_interface
-.. autofunction:: qrisp_cudaq_kernel
+.. autofunction:: cudaq_kernel
 .. autoclass:: FixedShapeNDArray
