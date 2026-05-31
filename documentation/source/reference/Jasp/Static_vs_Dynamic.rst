@@ -104,6 +104,38 @@ values it shows the tracer repr. To inspect runtime values inside a traced funct
    For cases requiring integers beyond 64 bits, see the :doc:`BigInteger <Scalable Integer
    Type>` type.
 
+**String formatting with traced values**
+
+f-strings and ``str.format()`` evaluate at **trace time**, converting the tracer to its string
+representation. The traced value is silently discarded from the computation, producing
+unexpected results:
+
+.. code-block:: python
+
+   # Bad — f-string evaluates at trace time, traced value is dropped
+   from qrisp.jasp import make_jaspr
+
+   def bad_fstring(n):
+       s = f"value is {n}"
+       return s
+
+   jaspr = make_jaspr(bad_fstring)(3)
+   print("result:", jaspr(3))
+
+.. code-block:: text
+
+   # Output:
+   result: None
+
+The jaspr confirms the traced value ``n`` was dropped from the computation:
+
+.. code-block:: text
+
+   { lambda ; a:i64[] b:QuantumState. let  in (b,) }
+
+To format values at runtime, use ``jax.debug.print`` (shown above) or concatenate with
+:func:`jax.numpy.array` operations if the result needs to stay in the traced computation.
+
 
 Pure functions --- globals, iterators, and mutation
 -------------------------------------------------------
@@ -1101,3 +1133,177 @@ Use `jax.lax.dynamic_slice <https://jax.readthedocs.io/en/latest/_autosummary/ja
 
    # Output:
    result: [3 4 5]
+
+**Dictionary access with a traced key**
+
+Python dictionaries require hashable keys. A traced key raises ``TypeError``:
+
+.. code-block:: python
+
+   # Bad — traced value used as dictionary key
+   from qrisp.jasp import make_jaspr
+
+   def bad_dict(n):
+       d = {0: "zero", 1: "one", 2: "two"}
+       return d[n]
+
+   jaspr = make_jaspr(bad_dict)(1)
+
+.. code-block:: text
+
+   # Output:
+   TypeError: unhashable type: 'DynamicJaxprTracer'
+
+Use a ``jnp`` array with integer indexing instead:
+
+.. code-block:: python
+
+   # Good — jnp array with traced index
+   from qrisp.jasp import make_jaspr
+   import jax.numpy as jnp
+
+   def good_dict(n):
+       arr = jnp.array([10, 20, 30])
+       return arr[n]
+
+   jaspr = make_jaspr(good_dict)(1)
+   print("result:", jaspr(1))
+
+.. code-block:: text
+
+   # Output:
+   result: 20
+
+**Python ``random`` module on traced values**
+
+Functions from Python's ``random`` module expect concrete integers. A traced value raises
+``TracerIntegerConversionError``:
+
+.. code-block:: python
+
+   # Bad — random.randint with traced bound
+   import random
+   from qrisp.jasp import make_jaspr
+
+   def bad_random(n):
+       return random.randint(0, n)
+
+   jaspr = make_jaspr(bad_random)(5)
+
+.. code-block:: text
+
+   # Output:
+   TracerIntegerConversionError: The __index__() method was called on traced array
+
+Use ``jax.random.randint`` with a PRNG key instead:
+
+.. code-block:: python
+
+   # Good — jax.random.randint with explicit key
+   from qrisp.jasp import make_jaspr
+   import jax.random as jrand
+
+   key = jrand.PRNGKey(42)
+
+   def good_random(key):
+       return jrand.randint(key, (), 0, 10)
+
+   jaspr = make_jaspr(good_random)(key)
+   print("result:", jaspr(key))
+
+.. code-block:: text
+
+   # Output:
+   result: 5
+
+**Conditional QuantumVariable allocation**
+
+Allocating a :class:`~qrisp.QuantumVariable` inside ``if``/``else`` with a traced condition
+fails because the branch is chosen at trace time, but the other branch's allocation is never
+recorded:
+
+.. code-block:: python
+
+   # Bad — conditional QV allocation on traced condition
+   from qrisp.jasp import make_jaspr
+   from qrisp import QuantumFloat, measure
+
+   def bad_qv(n):
+       if n > 0:
+           qf = QuantumFloat(4)
+       else:
+           qf = QuantumFloat(3)
+       return measure(qf)
+
+   jaspr = make_jaspr(bad_qv)(1)
+
+.. code-block:: text
+
+   # Output:
+   TracerBoolConversionError: Attempted boolean conversion of traced array
+
+Allocate the largest needed size unconditionally and only use the qubits you need:
+
+.. code-block:: python
+
+   # Good — allocate fixed size, independent of traced condition
+   from qrisp.jasp import make_jaspr
+   from qrisp import QuantumFloat, measure
+
+   def good_qv(n):
+       qf = QuantumFloat(4)
+       return measure(qf)
+
+   jaspr = make_jaspr(good_qv)(1)
+   print("result:", jaspr(1))
+
+.. code-block:: text
+
+   # Output:
+   result: 0.0
+
+**``enumerate`` and ``zip`` with traced values**
+
+``enumerate`` and ``zip`` are Python-level iteration helpers that work correctly in dynamic
+mode. They evaluate at trace time, producing Python tuples of traced values. The traced values
+remain in the computation:
+
+.. code-block:: python
+
+   # enumerate with jrange — works in dynamic mode
+   from qrisp.jasp import make_jaspr, jrange
+   from qrisp import QuantumFloat, x, measure
+
+   def demo_enumerate(n):
+       qf = QuantumFloat(4)
+       for i, j in enumerate(jrange(n)):
+           x(qf[0])
+       return measure(qf)
+
+   jaspr = make_jaspr(demo_enumerate)(3)
+   print("result:", jaspr(3))
+
+.. code-block:: text
+
+   # Output:
+   result: 1.0
+
+.. code-block:: python
+
+   # zip with traced values — works in dynamic mode
+   from qrisp.jasp import make_jaspr
+   import jax.numpy as jnp
+
+   def demo_zip(n):
+       total = 0
+       for a, b in zip([1, 2, 3], [n, n + 1, n + 2]):
+           total = total + a + b
+       return total
+
+   jaspr = make_jaspr(demo_zip)(3)
+   print("result:", jaspr(3))
+
+.. code-block:: text
+
+   # Output:
+   result: 18
