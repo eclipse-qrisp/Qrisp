@@ -604,7 +604,7 @@ def is_operator_foqcs_compatible(
     res = foqcs_analyze_operator(O, L = L, tol = tol, raise_errors = False)
     return (res != None, res)
 
-def _angles_dicke1_unbalanced_qrisp(coeff: Sequence[float]) -> tuple[list[float], int]:
+def _angles_dicke_unbalanced(coeff: Sequence[float]) -> tuple[list[float], int]:
     """
     Qrisp helper equivalent of angles_dicke1_unbalanced from foqcs-lcu.
 
@@ -620,7 +620,7 @@ def _angles_dicke1_unbalanced_qrisp(coeff: Sequence[float]) -> tuple[list[float]
 
     for i in reversed(range(L)):
         if sum_squared >= 1:
-            cutoff = L - i - 1
+            cutoff = max(L - i - 2, 0)
             break
 
         denom = np.sqrt(max(1 - sum_squared, 0.0))
@@ -662,7 +662,7 @@ def _theta_cutoff_foqcs_spin_glass_optimal(
         norm = np.linalg.norm(coeff)
 
         if norm > _FOQCS_SPIN_GLASS_TOL:
-            theta_g, cutoff_g = _angles_dicke1_unbalanced_qrisp(coeff / norm)
+            theta_g, cutoff_g = _angles_dicke_unbalanced(coeff / norm)
         else:
             theta_g = [0.0] * L
             cutoff_g = 0
@@ -676,7 +676,7 @@ def _theta_cutoff_foqcs_spin_glass_optimal(
             norm = np.linalg.norm(coeff)
 
             if norm > _FOQCS_SPIN_GLASS_TOL:
-                theta_J, cutoff_J = _angles_dicke1_unbalanced_qrisp(coeff / norm)
+                theta_J, cutoff_J = _angles_dicke_unbalanced(coeff / norm)
             else:
                 theta_J = [0.0] * (L - k)
                 cutoff_J = 0
