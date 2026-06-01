@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 from qrisp.core import x
 from qrisp.block_encodings import BlockEncoding
-from qrisp import QuantumVariable, terminal_sampling, multi_measurement
+from qrisp import QuantumVariable, QuantumFloat, terminal_sampling, multi_measurement
 from qrisp.block_encodings import foqcs_prep_heisenberg, is_operator_foqcs_compatible, foqcs_analyze_operator, foqcs_prep_spin_glass
 from functools import partial
 from qrisp.operators import X, Y, Z
@@ -1193,6 +1193,28 @@ def test_foqcs_lcu_resources():
     assert res["depth"] > 0
     assert res["qubits"] > 0
 
+def test_block_encoding_foqcs_lcu_is_controllable():
+    from qrisp import QuantumBool, h
+    from qrisp.environments import control
+    H = X(0)*X(1) + 0.2*Y(0)*Y(1)
+    n = H.find_minimal_qubit_amount()
+
+    BE = BlockEncoding.from_foqcs_lcu_operator(H, L=n)
+
+    @terminal_sampling
+    def main():
+        ctrl = QuantumBool()
+        qv = QuantumVariable(n)
+
+        h(ctrl)
+
+        with control(ctrl):
+            BE.apply(qv)
+
+        return qv
+
+    main()
+
 ###########################################################################################################
 #### Transformations tests ################################################################################
 ###########################################################################################################
@@ -1469,8 +1491,193 @@ def test_foqcs_lcu_sim():
     assert np.isfinite(np.asarray(sim_be.alpha, dtype=complex)).all()
     assert np.allclose(res, ref, atol=1e-3)
 
-# Arithmetic / composition tests
-    # +, -
+###########################################################################################################
+#### Arithmetic / composition tests #######################################################################
+###########################################################################################################
+
+def _compare_results(res_dict_1, res_dict_2, n):
+    for k in range(2 ** n):
+        val_1 = res_dict_1.get(k, 0)
+        val_2 = res_dict_2.get(k, 0)
+        assert np.isclose(val_1, val_2, atol=1e-6), f"Mismatch at state |{k}>: {val_1} vs {val_2}"    
+
+# +
+@pytest.mark.parametrize("H1, H2", [
+    (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2)),
+    (0.5*X(1) + 0.7*Y(1) + 0.3*X(4), Z(0) + Z(1) + X(2)),
+    (X(0)*X(1), Z(0) + 0.9*Z(1) + X(3)),
+])
+def test_block_encoding_foqcs_lcu_addition(H1, H2):
+    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
+
+    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
+    BE2 = BlockEncoding.from_operator(H2)
+
+    H3 = H1 + H2
+    BE3 = H3.pauli_block_encoding()
+    BE_addition = BE1 + BE2
+
+    @terminal_sampling
+    def main(BE):
+        return BE.apply_rus(lambda: QuantumVariable(n))()
+
+    res_be3 = main(BE3)
+    res_be_add = main(BE_addition)
+    _compare_results(res_be3, res_be_add, n)
+
+# -
+@pytest.mark.parametrize("H1, H2", [
+    (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2)),
+    (0.5*X(1) + 0.7*Y(1) + 0.3*X(4), Z(0) + Z(1) + X(2)),
+    (X(0)*X(1), Z(0) + 0.9*Z(1) + X(3)),
+])
+def test_block_encoding_foqcs_lcu_subtraction(H1, H2):
+    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
+
+    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
+    BE2 = BlockEncoding.from_operator(H2)
+
+    H3 = H1 - H2
+    BE3 = BlockEncoding.from_operator(H3)
+    BE_subtraction = BE1 - BE2
+
+    @terminal_sampling
+    def main(BE):
+        return BE.apply_rus(lambda: QuantumVariable(n))()
+    
+    res_be3 = main(BE3)
+    res_be_sub = main(BE_subtraction)
+    _compare_results(res_be3, res_be_sub, n)
+
+# @ (__matmul__)
+
+# The product of two Hermitian operators A and B is Hermitian if and only if they commute, i.e., AB = BA.
+# Thus, to ensure that the multiplication test is valid, we should choose pairs of operators that commute.
+@pytest.mark.parametrize("H1, H2", [
+    (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2)),
+    (0.5*X(1) + 0.7*Y(1) + 0.3*X(4), X(0) + X(4)),
+    (X(0)*X(1), Z(0)*Z(1) + Y(3)),
+])
+def test_block_encoding_foqcs_lcu_multiplication(H1, H2):
+    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
+
+    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
+    BE2 = BlockEncoding.from_operator(H2)
+
+    H3 = H1 * H2
+    BE3 = BlockEncoding.from_operator(H3)
+    BE_multiplication = BE1 @ BE2
+
+
+    @terminal_sampling
+    def main(BE):
+        return BE.apply_rus(lambda: QuantumVariable(n))()
+    
+    res_be3 = main(BE3)
+    res_be_mul = main(BE_multiplication)
+    _compare_results(res_be3, res_be_mul, n)
+
+# __mul__, __rmul__
+@pytest.mark.parametrize("H1, H2, scalar", [
+    (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2), -2),
+    (0.5*X(1) + 0.7*Y(1), Z(0) + X(2), 0.5),
+    (X(0), Z(0), 1),
+])
+def test_block_encoding_foqcs_lcu_scalar_multiplication(H1, H2, scalar):
+    H_target = scalar * H1 + H2
+    BE_target = BlockEncoding.from_operator(H_target)
+
+    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
+
+    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
+    BE2 = BlockEncoding.from_operator(H2)
+
+    BE_left = scalar * BE1 + BE2
+    BE_right = BE1 * scalar + BE2
+    
+
+    @terminal_sampling
+    def main(BE):
+        return BE.apply_rus(lambda: QuantumVariable(n))()
+
+    res_target = main(BE_target)
+    res_left = main(BE_left)
+    res_right = main(BE_right)
+    _compare_results(res_target, res_left, n)
+    _compare_results(res_target, res_right, n)
+
+# .kron
+@pytest.mark.parametrize("H1, H2", [
+    (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2)),
+    (X(0)*X(1), Z(0)*Z(1)),
+])
+def test_block_encoding_foqcs_lcu_kron(H1, H2):
+
+    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1)
+    BE2 = BlockEncoding.from_operator(H2)
+
+    BE_kron = BE1.kron(BE2)
+
+    n1 = H1.find_minimal_qubit_amount()
+    n2 = H2.find_minimal_qubit_amount()
+
+    def operand_prep():
+        qv1 = QuantumFloat(n1)
+        qv2 = QuantumFloat(n2)
+        return qv1, qv2
+
+    @terminal_sampling
+    def main(BE):
+        return BE.apply_rus(operand_prep)()
+
+    result_be_kron = main(BE_kron)
+
+    @terminal_sampling
+    def main(BE1, BE2):
+        qv1 = BE1.apply_rus(lambda : QuantumFloat(n1))()
+        qv2 = BE2.apply_rus(lambda : QuantumFloat(n2))()
+        return qv1, qv2
+
+    result_be1_be2 = main(BE1, BE2)
+
+    for k in range(2 ** n1):
+        for l in range(2 ** n2):
+            val_be_kron = result_be_kron.get((k, l), 0)
+            val_be1_be2 = result_be1_be2.get((k, l), 0)
+            assert np.isclose(val_be_kron, val_be1_be2), f"Mismatch at state |{k}>: {val_be_kron} vs {val_be1_be2}"
+
+# __neg__
+@pytest.mark.parametrize("H1, H2", [
+    (X(0)*X(1) - 0.2*Y(0)*Y(1), 0.2*Y(0)*Y(1) - X(0)*X(1)),
+    (0.5*X(1) - 0.7*Y(1) + 0.3*X(4), 0.7*Y(1) - 0.5*X(1) - 0.3*X(4)),
+    (Z(0)*Z(1) - Y(3), Y(3) - Z(0)*Z(1)),
+])
+def test_block_encoding_foqcs_lcu_negation(H1, H2):
+
+    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
+
+    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
+    BE_neg = -BE1
+
+    BE2 = BlockEncoding.from_operator(H2)
+
+    #n = H1.find_minimal_qubit_amount()
+
+    @terminal_sampling
+    def main(BE):
+        return BE.apply_rus(lambda: QuantumVariable(n))()
+    
+    res_be2 = main(BE2)
+    res_be_neg = main(BE_neg)
+    _compare_results(res_be2, res_be_neg, n)
+
+
+
+
+
+
+# Some weird shenanigans. May be exposing some compiler bug, but it is not verified.
+
 def test_foqcs_lcu_add():
     L = 2
 
@@ -1648,10 +1855,7 @@ def test_compile_preserves_foqcs_lcu_addition_with_identity():
     # This is the compiler regression check.
     assert np.allclose(compiled_res, raw_res, atol=1e-5)
 
-    # @ (__matmul__)
-    # .kron
-    # __mul__, __rmul__, __neg__
-
+    
 
 
 
