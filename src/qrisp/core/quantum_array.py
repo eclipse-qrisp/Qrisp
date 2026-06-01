@@ -650,7 +650,7 @@ class QuantumArray:
 
         Parameters
         ----------
-        backend : BackendClient, optional
+        backend : BackendLike, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
         shots : integer, optional
@@ -742,25 +742,11 @@ class QuantumArray:
         if circuit_preprocessor is not None:
             qc = circuit_preprocessor(qc)
 
+        from qrisp.interface.measurement_result import DecodedMeasurementResult
         from qrisp.misc import get_measurement_from_qc
 
         counts = get_measurement_from_qc(qc, qubits, backend, shots)
-
-        # Insert outcome labels (if available and hashable)
-        new_counts_dic = {}
-        for key in counts.keys():
-            outcome_label = self.decoder(key)
-
-            new_counts_dic[outcome_label] = counts[key]
-
-        counts = new_counts_dic
-
-        # Sort keys
-        sorted_key_list = list(counts.keys())
-        sorted_key_list.sort(key=lambda x: -counts[x])
-        counts = {key: counts[key] for key in sorted_key_list}
-
-        return counts
+        return DecodedMeasurementResult(counts, self.decoder)
 
     def decoder(self, code_int):
         """
