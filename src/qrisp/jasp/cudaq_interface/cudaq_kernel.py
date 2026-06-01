@@ -165,7 +165,9 @@ def _get_llvm_attributes() -> tuple:
 # ------------------------------------------------------------------ #
 
 
-def cudaq_kernel_from_mlir(mlir_str: str) -> PyKernelDecorator:
+def cudaq_kernel_from_mlir(
+    mlir_str: str, execution_mode: str = "run"
+) -> PyKernelDecorator:
     """
     Compiles a Quake MLIR string into a native ``PyKernelDecorator``.
 
@@ -181,12 +183,21 @@ def cudaq_kernel_from_mlir(mlir_str: str) -> PyKernelDecorator:
 
     * ``kernel()`` — single-shot execution, returning the measurement result.
     * ``cudaq.run(kernel, shots_count=N)`` — multi-shot sampling.
+    * ``cudaq.sample(kernel, shots_count=N)`` — histogram sampling
+      (requires ``execution_mode="sample"``).
 
     Parameters
     ----------
     mlir_str : str
         Quake MLIR source string.  Must contain a ``@main`` function with
         the ``cudaq-entrypoint`` attribute.
+    execution_mode : str
+        ``"run"`` *(default)* — wraps the kernel with ``cc.log_output`` and
+        synthesises ``.run`` / ``.run.entry`` helper functions so that
+        ``cudaq.run`` can return classical measurement results.
+        ``"sample"`` — emits a minimal void-return module with a single
+        ``{"cudaq-entrypoint", "cudaq-kernel"}`` function, suitable for
+        ``cudaq.sample``.
 
     Returns
     -------
@@ -285,6 +296,50 @@ def cudaq_kernel_from_mlir(mlir_str: str) -> PyKernelDecorator:
                     param_list = header_raw[first_paren : i + 1]
                     break
 
+    # ------------------------------------------------------------------
+    # Sample mode: simple void-return kernel, no .run/.run.entry variants.
+    # ------------------------------------------------------------------
+    if execution_mode == "sample":
+        # Convert bare "func.return" (operands already stripped by pass1)
+        # to the plain "return" form expected by the CUDAQ MLIR frontend.
+        sample_body = main_func_body.replace("func.return", "return")
+
+        mod_attributes = [f'cc.python_uniqued = "{uniq_name}"']
+        mod_attributes.append(data_layout_attr)
+        if target_triple_attr:
+            mod_attributes.append(target_triple_attr)
+        mod_attributes.append(
+            f"quake.mangled_name_map = {{\n"
+            f'    {func_name} = "{entry_point}"\n'
+            f"  }}"
+        )
+        attributes_str = ",\n  ".join(mod_attributes)
+
+        adapted_mlir = f"module attributes {{\n  {attributes_str}\n}} {{\n"
+        if other_functions.strip():
+            adapted_mlir += f"  {other_functions.strip()}\n\n"
+        adapted_mlir += (
+            f"  func.func @{func_name}{param_list} attributes "
+            f'{{"cudaq-entrypoint", "cudaq-kernel"}} {{\n    {sample_body}\n  }}\n'
+            f"}}\n"
+        )
+
+        with kernel.ctx:
+            try:
+                new_module = Module.parse(adapted_mlir, kernel.ctx)
+            except Exception:
+                quake.register_dialect(context=kernel.ctx)
+                cc.register_dialect(context=kernel.ctx)
+                new_module = Module.parse(adapted_mlir, kernel.ctx)
+
+            kernel.module = new_module
+            NoneType.get(context=kernel.ctx)
+
+        return PyKernelDecorator(None, kernelName=uniq_name, module=kernel.module)
+
+    # ------------------------------------------------------------------
+    # Run mode (default): cc.log_output + .run / .run.entry variants.
+    # ------------------------------------------------------------------
     run_body = main_func_body
 
     # Match single or multi-value func.return:
