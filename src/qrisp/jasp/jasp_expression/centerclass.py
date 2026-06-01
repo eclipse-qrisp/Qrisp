@@ -17,6 +17,7 @@
 """
 
 from functools import lru_cache
+from typing import Literal as TypingLiteral
 
 import jax
 from jax import make_jaxpr
@@ -1234,13 +1235,35 @@ class Jaspr(ClosedJaxpr):
 
         return jaspr_to_mlir(self.flatten_environments())
     
-    def to_quake_mlir(self):
+    def to_quake_mlir(self, execution_mode: TypingLiteral["run", "sample"] = "run"):
         """
         Compiles the Jaspr to MLIR using the `Quake dialect <https://nvidia.github.io/cuda-quantum/latest/specification/quake-dialect.html>`__.
 
         Parameters
         ----------
-        None
+        execution_mode : Literal["run", "sample"], optional
+            Controls how quantum measurements are lowered and how the function
+            signature is generated.  Two values are accepted:
+
+            ``"run"`` *(default)*
+                Targets ``cudaq.run``.  Array measurements are lowered to a
+                ``cc.loop`` that extracts each qubit, calls ``quake.mz`` +
+                ``quake.discriminate``, and packs the resulting bits into an
+                ``i64`` accumulator.  Single-qubit measurements are lowered to
+                ``quake.mz`` + ``quake.discriminate`` returning ``tensor<i1>``.
+                Classical return values are preserved in the function signature.
+
+            ``"sample"``
+                Targets ``cudaq.sample``.  Every ``quake.mz`` is emitted on the
+                full operand (``!quake.ref`` or ``!quake.veq<?>``), leaving the
+                ``!quake.measure`` / ``!cc.stdvec<!quake.measure>`` result for the
+                CUDAQ runtime to collect across shots.  To keep SSA valid through
+                all intermediate passes, a zero dummy constant (``tensor<i1>``
+                for single qubits, ``tensor<i64>`` for arrays) is substituted
+                wherever the classical measurement result would otherwise be used.
+                All classical return values are then stripped from ``func.return``
+                and the function signature so that the kernel has a ``void``
+                return type, as required by ``cudaq.sample``.
 
         Returns
         -------
@@ -1322,7 +1345,7 @@ class Jaspr(ClosedJaxpr):
         """
         from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir
 
-        return jaspr_to_quake_mlir(self)
+        return jaspr_to_quake_mlir(self, execution_mode=execution_mode)
 
     def to_qasm(self, *args):
         """

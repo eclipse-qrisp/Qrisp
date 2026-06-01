@@ -299,7 +299,7 @@ def _wrap_scalar(
 # ---------------------------------------------------------------------------
 
 
-def lower_jasp_to_quake(module, mode: str = "run") -> None:
+def lower_jasp_to_quake(module, execution_mode: str = "run") -> None:
     """In-place PASS 1: eliminate QuantumState and lower all Jasp ops to Quake.
 
     Parameters
@@ -308,7 +308,7 @@ def lower_jasp_to_quake(module, mode: str = "run") -> None:
         An xDSL ``builtin.ModuleOp`` containing the Jasp IR emitted by
         :func:`~qrisp.jasp.mlir.mlir_emission.jaspr_to_mlir`.  The module is
         modified in-place.
-    mode:
+    execution_mode:
         ``"run"`` (default) packs array measurement results into an ``i64``
         return value, suitable for ``cudaq.run``.  ``"sample"`` emits a raw
         ``quake.mz`` on the whole veq and strips classical return values from
@@ -316,7 +316,7 @@ def lower_jasp_to_quake(module, mode: str = "run") -> None:
     """
     for op in list(module.body.blocks[0].ops):
         if op.name == "func.func":
-            _process_func(op, mode)
+            _process_func(op, execution_mode)
 
 
 # ---------------------------------------------------------------------------
@@ -324,15 +324,15 @@ def lower_jasp_to_quake(module, mode: str = "run") -> None:
 # ---------------------------------------------------------------------------
 
 
-def _process_func(func_op, mode: str = "run") -> None:
+def _process_func(func_op, execution_mode: str = "run") -> None:
     """Process a single ``func.func`` op: rewrite body, fix signature."""
     # Check if this function contains create_quantum_kernel → cudaq.kernel
     is_quantum = _func_has_any_jasp(func_op)
 
     for block in func_op.body.blocks:
-        _process_block(block, mode)
+        _process_block(block, execution_mode)
 
-    _fix_func_signature(func_op, is_quantum, mode)
+    _fix_func_signature(func_op, is_quantum, execution_mode)
 
 
 def _func_has_any_jasp(func_op) -> bool:
@@ -344,7 +344,7 @@ def _func_has_any_jasp(func_op) -> bool:
     return False
 
 
-def _fix_func_signature(func_op, mark_cudaq_kernel: bool = False, mode: str = "run") -> None:
+def _fix_func_signature(func_op, mark_cudaq_kernel: bool = False, execution_mode: str = "run") -> None:
     """Remove ``!jasp.QuantumState`` from function argument/return types.
 
     Also updates the entry block's argument list and adds ``cudaq.kernel``
@@ -372,9 +372,9 @@ def _fix_func_signature(func_op, mark_cudaq_kernel: bool = False, mode: str = "r
         new_inputs = [t for t in old_ftype.inputs.data if not _is_qst(t)]
 
     # Compute new return types (drop qst, convert qubit types).
-    # For sample mode the kernel must return void – cudaq.sample collects
+    # For sample execution_mode the kernel must return void – cudaq.sample collects
     # measurement results via the runtime, not as classical return values.
-    if mode == "sample":
+    if execution_mode == "sample":
         new_outputs = []
     else:
         new_outputs = [
@@ -399,10 +399,10 @@ def _fix_func_signature(func_op, mark_cudaq_kernel: bool = False, mode: str = "r
 # ---------------------------------------------------------------------------
 
 
-def _process_block(block: Block, mode: str = "run") -> None:
+def _process_block(block: Block, execution_mode: str = "run") -> None:
     """Process all ops in *block* (forward order)."""
     for op in list(block.ops):
-        _process_op(op, block, mode)
+        _process_op(op, block, execution_mode)
 
 
 # ---------------------------------------------------------------------------
@@ -410,7 +410,7 @@ def _process_block(block: Block, mode: str = "run") -> None:
 # ---------------------------------------------------------------------------
 
 
-def _process_op(op, block: Block, mode: str = "run") -> None:
+def _process_op(op, block: Block, execution_mode: str = "run") -> None:
     """Dispatch a single op for lowering."""
     n = op.name
 
@@ -433,22 +433,22 @@ def _process_op(op, block: Block, mode: str = "run") -> None:
     elif n == "jasp.quantum_gate":
         _lower_quantum_gate(op, block)
     elif n == "jasp.measure":
-        _lower_measure(op, block, mode)
+        _lower_measure(op, block, execution_mode)
     elif n == "jasp.reset":
         _lower_reset(op, block)
     elif n == "jasp.parity":
         # Intentionally not lowered – left in place.
         pass
     elif n == "scf.while":
-        _process_scf_while(op, block, mode)
+        _process_scf_while(op, block, execution_mode)
     elif n == "scf.if":
-        _process_scf_if(op, block, mode)
+        _process_scf_if(op, block, execution_mode)
     elif n == "scf.for":
-        _process_scf_for(op, block, mode)
+        _process_scf_for(op, block, execution_mode)
     elif n == "scf.index_switch":
-        _process_scf_index_switch(op, block, mode)
+        _process_scf_index_switch(op, block, execution_mode)
     elif n == "func.return":
-        _fix_return_op(op, mode)
+        _fix_return_op(op, execution_mode)
     elif n == "func.call":
         _fix_call_op(op)
     # All other ops (arith, tensor, linalg, …): no action needed.
@@ -724,7 +724,7 @@ def _strip_qst_from_op(op, block: Block) -> None:
     op.operands = non_qst
 
 
-def _lower_measure(op, block: Block, mode: str = "run") -> None:
+def _lower_measure(op, block: Block, execution_mode: str = "run") -> None:
     """``jasp.measure %q, %qst`` → ``quake.mz %q`` + ``quake.discriminate``."""
     qubit_val = op.operands[0]  # !jasp.Qubit or !jasp.QubitArray
 
@@ -737,8 +737,8 @@ def _lower_measure(op, block: Block, mode: str = "run") -> None:
         qubit_val.type, QuakeVeqType
     )
 
-    if not is_array and mode != "sample":
-        # Run mode, single qubit: discriminate → i1, then wrap to tensor<i1>
+    if not is_array and execution_mode != "sample":
+        # Run execution_mode, single qubit: discriminate → i1, then wrap to tensor<i1>
         disc = DiscriminateOp(mz.result)
         new_ops.append(disc)
         block.insert_ops_before(new_ops, op)
@@ -747,8 +747,8 @@ def _lower_measure(op, block: Block, mode: str = "run") -> None:
         # Wrap back to tensor<i1> if downstream expects it
         wrapped = _wrap_scalar(scalar_bit, meas_result.type, block, op)
         _replace_all_uses_with(meas_result, wrapped)
-    elif not is_array and mode == "sample":
-        # Sample mode, single qubit: emit raw quake.mz (→ !quake.measure) and
+    elif not is_array and execution_mode == "sample":
+        # Sample execution_mode, single qubit: emit raw quake.mz (→ !quake.measure) and
         # use a zero i1 placeholder to keep SSA valid.
         block.insert_ops_before(new_ops, op)
         zero_const = arith.ConstantOp(
@@ -756,8 +756,8 @@ def _lower_measure(op, block: Block, mode: str = "run") -> None:
         )
         block.insert_ops_before([zero_const], op)
         _replace_all_uses_with(meas_result, zero_const.result)
-    elif mode == "sample":
-        # Sample mode: emit a single quake.mz on the whole veq.
+    elif execution_mode == "sample":
+        # Sample execution_mode: emit a single quake.mz on the whole veq.
         # Its !cc.stdvec<!quake.measure> result is consumed by the cudaq runtime;
         # we do not need the classical value here.  A zero i64 placeholder keeps
         # SSA valid for all downstream passes; _fix_return_op will strip it from
@@ -769,7 +769,7 @@ def _lower_measure(op, block: Block, mode: str = "run") -> None:
         block.insert_ops_before([zero_const], op)
         _replace_all_uses_with(meas_result, zero_const.result)
     else:
-        # Run mode: bit-pack discriminated bits into an i64 via scf.for loop.
+        # Run execution_mode: bit-pack discriminated bits into an i64 via scf.for loop.
 
         # 1. Get the size of the array
         veq_size = VeqSizeOp(qubit_val)
@@ -832,9 +832,9 @@ def _lower_reset(op, block: Block) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _fix_return_op(op, mode: str = "run") -> None:
+def _fix_return_op(op, execution_mode: str = "run") -> None:
     """Remove ``!jasp.QuantumState`` values from ``func.return``."""
-    if mode == "sample":
+    if execution_mode == "sample":
         # cudaq.sample kernels return void; drop all return operands.
         op.operands = []
         return
@@ -893,7 +893,7 @@ def _update_non_qst_block_arg_types(block: Block) -> None:
         # QuantumState args: leave for _strip_qst_from_* to handle
 
 
-def _process_scf_while(while_op, outer_block: Block, mode: str = "run") -> None:
+def _process_scf_while(while_op, outer_block: Block, execution_mode: str = "run") -> None:
     """Lower a ``scf.while`` op: update types, recurse, then strip qst."""
     # 1. Update block arg types in both regions
     for region in while_op.regions:
@@ -903,7 +903,7 @@ def _process_scf_while(while_op, outer_block: Block, mode: str = "run") -> None:
     # 2. Process inner blocks recursively
     for region in while_op.regions:
         for b in region.blocks:
-            _process_block(b, mode)
+            _process_block(b, execution_mode)
 
     # 3. Strip qst from the SCF while structure
     _strip_qst_from_while(while_op, outer_block)
@@ -971,7 +971,7 @@ def _strip_qst_from_while(while_op, outer_block: Block) -> None:
     Rewriter.replace_op(while_op, new_while, new_results, safe_erase=False)
 
 
-def _process_scf_if(if_op, outer_block: Block, mode: str = "run") -> None:
+def _process_scf_if(if_op, outer_block: Block, execution_mode: str = "run") -> None:
     """Lower a ``scf.if`` op: recurse into branches, then strip qst."""
     # 1. Update block arg types (scf.if branches typically have no block args,
     #    but handle in case of unusual lowering patterns)
@@ -982,7 +982,7 @@ def _process_scf_if(if_op, outer_block: Block, mode: str = "run") -> None:
     # 2. Process inner ops
     for region in if_op.regions:
         for b in region.blocks:
-            _process_block(b, mode)
+            _process_block(b, execution_mode)
 
     # 3. Strip qst from scf.if yields and reconstruct
     _strip_qst_from_if(if_op, outer_block)
@@ -1029,7 +1029,7 @@ def _strip_qst_from_if(if_op, outer_block: Block) -> None:
     Rewriter.replace_op(if_op, new_if, new_results, safe_erase=False)
 
 
-def _process_scf_for(for_op, outer_block: Block, mode: str = "run") -> None:
+def _process_scf_for(for_op, outer_block: Block, execution_mode: str = "run") -> None:
     """Lower a ``scf.for`` op: update types, recurse, strip qst."""
     for region in for_op.regions:
         for b in region.blocks:
@@ -1037,7 +1037,7 @@ def _process_scf_for(for_op, outer_block: Block, mode: str = "run") -> None:
 
     for region in for_op.regions:
         for b in region.blocks:
-            _process_block(b, mode)
+            _process_block(b, execution_mode)
 
     _strip_qst_from_for(for_op, outer_block)
 
@@ -1090,7 +1090,7 @@ def _strip_qst_from_for(for_op, outer_block: Block) -> None:
     Rewriter.replace_op(for_op, new_for, new_results, safe_erase=False)
 
 
-def _process_scf_index_switch(op, outer_block: Block, mode: str = "run") -> None:
+def _process_scf_index_switch(op, outer_block: Block, execution_mode: str = "run") -> None:
     """Lower a ``scf.index_switch`` op by recursing into its regions."""
     for region in op.regions:
         for b in region.blocks:
@@ -1098,7 +1098,7 @@ def _process_scf_index_switch(op, outer_block: Block, mode: str = "run") -> None
 
     for region in op.regions:
         for b in region.blocks:
-            _process_block(b, mode)
+            _process_block(b, execution_mode)
 
     # Strip qst from yields and results
     for region in op.regions:
