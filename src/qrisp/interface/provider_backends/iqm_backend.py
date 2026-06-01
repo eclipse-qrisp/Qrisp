@@ -36,7 +36,7 @@ def IQMBackend(
     """
     This function creates a :ref:`BatchedBackend` for executing circuits on IQM hardware.
 
-    .. warning::
+    .. deprecated:: 0.8
 
         The ``IQMBackend`` function will be removed from qrisp in a future release.
 

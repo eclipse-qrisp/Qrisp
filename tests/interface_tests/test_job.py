@@ -1,5 +1,6 @@
+# """
 # ********************************************************************************
-# * Copyright (c) 2026 the Qrisp Authors
+# * Copyright (c) 2026 the Qrisp authors
 # *
 # * This program and the accompanying materials are made available under the
 # * terms of the Eclipse Public License 2.0 which is available at
@@ -13,6 +14,7 @@
 # *
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
+# """
 
 """Tests for the Job-related classes defined in qrisp.interface.job"""
 
@@ -292,11 +294,7 @@ class TestJobAbstractInterface:
 
 
 class TestJobConcreteHelpers:
-    """
-    Tests for the non-abstract helpers on Job.
-
-    All helpers are derived from status() and contain no concurrency logic.
-    """
+    """Tests for the non-abstract helpers on Job."""
 
     @pytest.fixture
     def backend(self):
@@ -312,11 +310,10 @@ class TestJobConcreteHelpers:
         assert self._job_with_status(backend, JobStatus.DONE).done() is True
 
     def test_done_returns_false_for_cancelled_and_error(self, backend):
-        """Test that done() returns False for CANCELLED and ERROR.
+        """Test that done() returns False for CANCELLED and ERROR."""
 
-        done() means 'completed successfully' — it is not a synonym for
-        in_final_state(). Use in_final_state() to test for any terminal state.
-        """
+        # done() means 'completed successfully' — it is not a synonym for
+        # in_final_state(). Use in_final_state() to test for any terminal state.
         assert self._job_with_status(backend, JobStatus.CANCELLED).done() is False
         assert self._job_with_status(backend, JobStatus.ERROR).done() is False
 
@@ -512,12 +509,13 @@ class TestJobStatusCaching:
         job.refresh()
         assert job.last_known_status == JobStatus.DONE
 
-    def test_status_call_does_not_update_last_known_status(self, backend):
-        """Calling status() directly does not mutate last_known_status."""
+    def test_status_call_updates_last_known_status(self, backend):
+        """Calling status() updates last_known_status as a side effect."""
         job = MinimalJob(backend=backend)
         job._set_status(JobStatus.RUNNING)
-        job.status()  # live query — must not update the cache
-        assert job.last_known_status == JobStatus.INITIALIZING
+        returned = job.status()
+        assert returned == JobStatus.RUNNING
+        assert job.last_known_status == JobStatus.RUNNING
 
     def test_last_known_status_reflects_final_state_after_refresh(self, backend):
         """last_known_status correctly caches terminal states."""

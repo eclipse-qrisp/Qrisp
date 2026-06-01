@@ -28,10 +28,6 @@ REQUIREMENTS = [
                 "networkx",
                 "tqdm",
                 "dill",
-                "flask<2.3.0",
-                "waitress",
-                "pyyaml",
-                "requests",
                 "psutil",
                 "jax==0.7.1",
                 "jaxlib==0.7.1"]
