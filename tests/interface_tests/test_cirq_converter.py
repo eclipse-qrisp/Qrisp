@@ -1,30 +1,27 @@
-import pytest
-import numpy as np
-
-from cirq import unitary
-
+from math import pi
 from unittest.mock import MagicMock
-from qrisp.circuit import QuantumCircuit, ClControlledOperation
+
+import numpy as np
+import pytest
+from cirq import final_state_vector, num_qubits, unitary
+
+from qrisp import (
+    QPE,
+    QuantumBool,
+    QuantumFloat,
+    QuantumVariable,
+    auto_uncompute,
+    cx,
+    h,
+    mcx,
+    p,
+    reflection,
+    x,
+    z,
+)
+from qrisp.circuit import ClControlledOperation, QuantumCircuit
 from qrisp.grover import diffuser
 from qrisp.interface.converter.cirq_converter import convert_to_cirq
-from qrisp import (
-    QuantumVariable,
-    mcx,
-    cx,
-    QuantumBool,
-    h,
-    x,
-    reflection,
-    p,
-    QPE,
-    auto_uncompute,
-    z,
-    QuantumFloat,
-)
-from cirq import final_state_vector, num_qubits
-
-
-from math import pi
 
 
 def test_n_qubit_gate_circuit():
@@ -85,7 +82,7 @@ def test_unsupported_gate(op, expected_msg):
 
 
 def test_gphase():
-    
+
     qc = QuantumCircuit(1)
 
     qc.x(0)
@@ -93,11 +90,12 @@ def test_gphase():
     qc.gphase(0.5, 0)
     circuit = qc.to_cirq()
     U = unitary(circuit)
-    first_non_zero_val = U[0,0]
+    first_non_zero_val = U[0, 0]
     # Calculate the phase angle
     phase_angle = np.angle(first_non_zero_val)
-    
+
     assert phase_angle == 0.5
+
 
 def test_converter_compiled_qs():
     """Verify the converter works as expected on a simple compiled QuantumSession circuit."""
@@ -192,6 +190,7 @@ def test_grover_example():
         ),
         np.round(qrisp_sv - cirq_sv),
     )
+
 
 def test_recursive_conversion():
     """Verify an op that is non-elementary and has the definition attribute can be converted recursively."""
