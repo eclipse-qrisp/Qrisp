@@ -32,6 +32,7 @@ from qrisp.interface.measurement_result import (
     LazyDict,
     MeasurementResult,
 )
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 def _make_batched_backend():
@@ -295,10 +296,23 @@ def test_batched_measurement_function():
     e[:] = 3
     f = d + e  # expected: 5
 
-    results = batched_measurement([c, f], backend=bb)
+    with pytest.warns(match="batched_measurement is deprecated"):
+        results = batched_measurement([c, f], backend=bb)
 
     assert results[0] == {3: 1.0}
     assert results[1] == {5: 1.0}
+
+
+def test_batched_measurement_emits_deprecation_warning():
+    """batched_measurement must emit a QrispDeprecationWarning on every call."""
+    bb = QrispSimulatorBackend().batched()
+    a = QuantumFloat(3)
+    a[:] = 7
+
+    with pytest.warns(
+        QrispDeprecationWarning, match="batched_measurement is deprecated"
+    ):
+        batched_measurement([a], backend=bb)
 
 
 def test_options_delegates_to_wrapped_backend():

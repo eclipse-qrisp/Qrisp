@@ -18,6 +18,7 @@
 
 import functools
 import traceback
+import warnings
 from typing import TYPE_CHECKING
 
 import jax
@@ -25,6 +26,8 @@ import jax.numpy as jnp
 import numpy as np
 import sympy
 from jax.typing import ArrayLike
+
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 if TYPE_CHECKING:
     from qrisp.interface.backend import BackendLike
@@ -2272,6 +2275,18 @@ def batched_measurement(variables, backend, shots=None):
     immediately), then :meth:`~qrisp.interface.BatchedBackend.dispatch` is
     called once to execute every circuit and populate all results together.
 
+    .. deprecated:: 0.8
+
+        ``batched_measurement`` is deprecated. You can call
+        :meth:`~qrisp.QuantumVariable.get_measurement` on each variable with a
+        :class:`~qrisp.interface.BatchedBackend`, then call
+        :meth:`~qrisp.interface.BatchedBackend.dispatch` directly instead::
+
+            bb = backend.batched()
+            r1 = qv1.get_measurement(backend=bb)
+            r2 = qv2.get_measurement(backend=bb)
+            bb.dispatch()
+
     Parameters
     ----------
     variables : list[:ref:`QuantumVariable`]
@@ -2313,11 +2328,14 @@ def batched_measurement(variables, backend, shots=None):
         # Yields: [{3: 1.0}, {5: 1.0}]
 
     """
+    warnings.warn(
+        "batched_measurement is deprecated and will be removed in a future release. "
+        "Call get_measurement() on each variable with a BatchedBackend, "
+        "then call backend.dispatch() directly.",
+        QrispDeprecationWarning,
+        stacklevel=2,
+    )
 
-    # Each get_measurement call returns a lazy DecodedMeasurementResult immediately
-    # and registers the circuit in backend._queries.
-    # A single dispatch() call then executes all circuits
-    # together and populates every result.
     results = [var.get_measurement(backend=backend, shots=shots) for var in variables]
     backend.dispatch()
     return results

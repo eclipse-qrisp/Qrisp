@@ -594,16 +594,31 @@ For more details, see the :ref:`BatchedBackend` documentation.
 :ref:`QiskitBackend`
 ---------------------------
 
-This class is a wrapper for the VirtualBackend to quickly integrate Qiskit backend instances.
+:class:`~qrisp.interface.QiskitBackend` is a :ref:`Backend` that wraps any
+Qiskit-compatible backend (simulators or real hardware). Circuits are converted
+directly to Qiskit ``QuantumCircuit`` objects, transpiled for the target device,
+and submitted through Qiskit's ``SamplerV2`` primitive.
 
 .. code-block:: python
 
    from qiskit_aer import AerSimulator
    from qrisp.interface import QiskitBackend
-   qiskit_backend = AerSimulator()
-   vrtl_aer_sim = QiskitBackend(qiskit_backend)
 
-Naturally, this also works for non-simulator Qiskit backends (e.g. IBM quantum computers).
+   backend = QiskitBackend(backend=AerSimulator())
+
+The same interface works for real IBM Quantum hardware via
+:class:`~qrisp.interface.QiskitRuntimeBackend`, which authenticates with the
+Qiskit Runtime service and supports both single-job and session execution modes:
+
+.. code-block:: python
+
+   from qrisp.interface import QiskitRuntimeBackend
+
+   backend = QiskitRuntimeBackend(
+       api_token="YOUR_IBM_CLOUD_TOKEN",
+       backend="ibm_brisbane",
+       channel="ibm_cloud",
+   )
 
 
 :ref:`IQMBackend`
@@ -611,12 +626,13 @@ Naturally, this also works for non-simulator Qiskit backends (e.g. IBM quantum c
 
 .. note::
 
-   The `IQMBackend` class is deprecated and will be removed in future releases from the qrisp package.
+   ``IQMBackend`` is deprecated and will be removed in a future release.
 
-The IQMBackend class allows to run Qrisp programs on IQM quantum computers available via 
-`IQM Resonance <https://resonance.meetiqm.com/>`_. 
-For an up-to-date list of device instance names check the IQM Resonance Dashboard. 
-Devices available via IQM Resonance currently support up to 20 000 shots. 
+``IQMBackend`` is a factory function (not a class) that returns a :ref:`BatchedBackend`
+for executing circuits on IQM quantum computers available via
+`IQM Resonance <https://resonance.meetiqm.com/>`_.
+For an up-to-date list of device instance names check the IQM Resonance Dashboard.
+Devices available via IQM Resonance currently support up to 20 000 shots.
 
 .. code-block:: python
 

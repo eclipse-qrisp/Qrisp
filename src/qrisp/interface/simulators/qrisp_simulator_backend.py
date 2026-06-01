@@ -85,6 +85,12 @@ class QrispSimulatorJob(Job):
         no effect: the job is always already in a terminal state before this
         method can be called.
 
+        Parameters
+        ----------
+        timeout : float or None, optional
+            Maximum time to wait for the result.
+            Ignored by this implementation because the result is always available immediately.  Defaults to ``None``.
+
         Returns
         -------
         JobResult
@@ -148,7 +154,7 @@ class QrispSimulatorBackend(Backend):
     >>> qf[:] = 4
     >>> res = qf * qf
     >>> res.get_measurement(backend=backend)
-    {16: 1.0}
+    Simulating ... {16: 1.0}
 
     With ``shots=None`` the result is an exact probability distribution, so
     ``{16: 1.0}`` means the outcome ``16`` has probability ``1.0``.
@@ -177,6 +183,7 @@ class QrispSimulatorBackend(Backend):
     >>> qc = res3.qs.compile()
     >>> qc.measure(qc.qubits)
     >>> job = backend.run_async(qc)
+    Simulating ...
     >>> print(job.status())
     done
     >>> result = job.result()

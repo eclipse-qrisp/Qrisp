@@ -119,12 +119,12 @@ class VirtualBackend(Backend):
     executes circuits synchronously by calling the user-supplied
     ``run_func`` for each circuit.
 
-    .. warning::
+    .. deprecated:: 0.8
 
-        ``VirtualBackend`` is deprecated.  New code should subclass
-        :class:`~qrisp.interface.Backend` directly instead.  See
-        :class:`~qrisp.default_backend.QrispSimulatorBackend` for a reference
-        implementation.
+        ``VirtualBackend`` is deprecated. New code should subclass
+        :class:`~qrisp.interface.Backend` directly instead. See
+        :class:`~qrisp.interface.simulators.qrisp_simulator_backend.QrispSimulatorBackend`
+        for a reference implementation.
 
     Parameters
     ----------

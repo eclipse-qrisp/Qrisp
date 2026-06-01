@@ -69,7 +69,7 @@ class LazyDict(Mapping[Any, Any], ABC):
     def _ensure_populated(self) -> None:
         """Trigger population if it has not happened yet.
 
-        Calls :meth:`_populate` exactly once on first access.  If
+        Calls :meth:`_populate` exactly once on first access. If
         ``_populate`` raises, ``_populated`` stays ``False`` and the next
         access will call ``_populate`` again.
         """
@@ -79,9 +79,11 @@ class LazyDict(Mapping[Any, Any], ABC):
 
     @abstractmethod
     def _populate(self) -> None:
-        """Fill ``self._data``.  Called at most once by :meth:`_ensure_populated`."""
+        """Fill ``self._data``. Called at most once by :meth:`_ensure_populated`."""
 
-    # --- Mapping protocol -------------------------------------------------------
+    # ------------------------------------------------------------------
+    # Mapping protocol
+    # ------------------------------------------------------------------
 
     def __getitem__(self, key: Any) -> Any:
         self._ensure_populated()
@@ -98,7 +100,9 @@ class LazyDict(Mapping[Any, Any], ABC):
         assert self._data is not None
         return len(self._data)
 
-    # --- Extras for usability ---------------------------------------------------
+    # ------------------------------------------------------------------
+    # Extras for usability
+    # ------------------------------------------------------------------
 
     def __repr__(self) -> str:
         if not self._populated:
@@ -234,7 +238,7 @@ class MeasurementResult(LazyDict):
 
         After this call ``_populated`` remains ``False``, so every subsequent
         access calls :meth:`_populate`, which immediately re-raises the stored
-        exception.  This ensures the error is visible no matter how many times
+        exception. This ensures the error is visible no matter how many times
         the result is accessed.
 
         Parameters
@@ -250,13 +254,13 @@ class DecodedMeasurementResult(LazyDict):
     :meth:`QuantumVariable.get_measurement() <qrisp.QuantumVariable.get_measurement>`.
 
     Wraps a raw or intermediate :class:`LazyDict` together with a *decoder*
-    callable.  On first access the raw data is read, *decoder* is applied to
+    callable. On first access the raw data is read, *decoder* is applied to
     every key, duplicate labels are merged by summing their counts, and the
     result is cached sorted by probability (descending).
 
     Because decoding is deferred, this object can be returned *before*
     :meth:`~qrisp.interface.BatchedBackend.dispatch` is called when using a
-    :class:`~qrisp.interface.BatchedBackend`.  The decoded data becomes
+    :class:`~qrisp.interface.BatchedBackend`. The decoded data becomes
     available automatically once the underlying raw result is populated.
 
     Parameters
@@ -265,7 +269,7 @@ class DecodedMeasurementResult(LazyDict):
         The source of integer-keyed, normalised probability data (typically
         an :class:`_IntKeyedResult` returned by ``get_measurement_from_qc``).
     decoder : Callable[[int], object]
-        Maps an integer bitstring index to a user-facing label.  This is
+        Maps an integer bitstring index to a user-facing label. This is
         ``QuantumVariable.decoder``.
 
     Examples
