@@ -34,6 +34,7 @@ from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray
 from qrisp.jasp.cudaq_interface.cudaq_kernel import (
     cudaq_kernel_from_mlir,
     run_quake_mlir,
+    sample_quake_mlir,
     cudaq_kernel,
 )
 
@@ -41,5 +42,6 @@ __all__ = [
     "FixedShapeNDArray",
     "cudaq_kernel_from_mlir",
     "run_quake_mlir",
+    "sample_quake_mlir",
     "cudaq_kernel",
 ]

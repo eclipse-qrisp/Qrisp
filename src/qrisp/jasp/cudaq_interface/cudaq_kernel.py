@@ -462,10 +462,10 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
     Parameters
     ----------
     mlir_str : str
-        Quake MLIR source.  Must contain a ``@main`` function with the
+        Quake MLIR source. Must contain a ``@main`` function with the
         ``cudaq-entrypoint`` attribute.
     shots : int
-        Number of shots.  Default is 100.
+        Number of shots. Default is 100.
 
     Returns
     -------
@@ -487,12 +487,58 @@ def run_quake_mlir(mlir_str: str, shots: int = 100) -> list:
             cx(qv[0], qv[1])
             return measure(qv)
 
-        result = run_quake_mlir(str(jaspr_to_quake_mlir(make_jaspr(bell)())), shots=10)
+        mlir_str = jaspr_to_quake_mlir(make_jaspr(bell)())
+        result = run_quake_mlir(mlir_str, shots=10)
         print(result)  # e.g. [0, 0, 3, 0, 3, 0, 3, 3, 0, 0]
 
     """
-    pykd = cudaq_kernel_from_mlir(mlir_str)
+    pykd = cudaq_kernel_from_mlir(mlir_str, execution_mode="run")
     return cudaq.run(pykd, shots_count=shots)
+
+
+def sample_quake_mlir(mlir_str: str, shots: int = 100) -> dict[str, int]:
+    """
+    Executes a Quake MLIR string on the CUDA-Q runtime.
+
+    Parameters
+    ----------
+    mlir_str : str
+        Quake MLIR source. Must contain a ``@main`` function with the
+        ``cudaq-entrypoint`` attribute.
+    shots : int
+        Number of shots. Default is 100.
+
+    Returns
+    -------
+    dict
+        Measurement results from all shots.
+
+    Examples
+    --------
+    ::
+
+        from qrisp import QuantumVariable, h, cx, measure
+        from qrisp.jasp import make_jaspr
+        from qrisp.jasp.mlir.quake_lowering import jaspr_to_quake_mlir
+        from qrisp.jasp.cudaq_interface import sample_quake_mlir
+
+        def bell():
+            qv = QuantumVariable(2)
+            h(qv[0])
+            cx(qv[0], qv[1])
+            return measure(qv)
+
+        mlir_str = jaspr_to_quake_mlir(make_jaspr(bell)(), execution_mode="sample")
+        result = sample_quake_mlir(mlir_str, shots=10)
+        print(result)  # e.g. { 00:4 11:6 }
+
+    """
+    pykd = cudaq_kernel_from_mlir(mlir_str, execution_mode="sample")
+    result = cudaq.sample(pykd, shots_count=shots)
+    result_dict = dict()
+    for key, value in result.items():
+        result_dict[key] = value
+    return result_dict
 
 
 # ------------------------------------------------------------------ #
@@ -506,7 +552,7 @@ _ANNOTATION_TO_DUMMY = {
 }
 
 
-def cudaq_kernel(func):
+def cudaq_kernel(func, execution_mode: str = "run") -> PyKernelDecorator:
     """
     Decorator that compiles a Qrisp function to a native CUDA-Q kernel.
 
@@ -614,6 +660,10 @@ def cudaq_kernel(func):
         print(cudaq.run(circuit_arr, angles, shots_count=100))
 
     """
+
+    if func is None:
+        return lambda x: cudaq_kernel(x, execution_mode=execution_mode)
+
     sig = inspect.signature(func)
     params = list(sig.parameters.values())
 
@@ -640,9 +690,9 @@ def cudaq_kernel(func):
             )
 
     try:
-        mlir_str = jaspr_to_quake_mlir(make_jaspr(func)(*dummy_args))
+        mlir_str = jaspr_to_quake_mlir(make_jaspr(func)(*dummy_args), execution_mode=execution_mode)
     except Exception as e:
         raise RuntimeError(
             f"Failed to compile Qrisp function '{func.__name__}' to MLIR: {e}"
         )
-    return cudaq_kernel_from_mlir(mlir_str)
+    return cudaq_kernel_from_mlir(mlir_str, execution_mode=execution_mode)
