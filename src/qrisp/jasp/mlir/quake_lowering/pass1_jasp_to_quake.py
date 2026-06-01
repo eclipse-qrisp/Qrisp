@@ -68,14 +68,19 @@ SCF ops are handled inside-out:
 
 
 import warnings
-from typing import Sequence
 
 from xdsl.dialects import arith, func, scf, tensor
 from xdsl.dialects.builtin import (
     DenseIntOrFPElementsAttr,
     FunctionType,
     IntegerAttr,
+    IntegerType,
+    Float16Type,
+    Float32Type,
+    Float64Type,
+    BFloat16Type,
     StringAttr,
+    TensorType,
     i1,
     i64,
     f64,
@@ -175,7 +180,6 @@ def _is_qubit_type(t: Attribute) -> bool:
 
 def _is_numeric_type(t: Attribute) -> bool:
     """Return True if *t* is a scalar or rank-0 tensor of int/float."""
-    from xdsl.dialects.builtin import IntegerType, TensorType
 
     scalar = t
     if isinstance(t, TensorType):
@@ -187,19 +191,12 @@ def _is_numeric_type(t: Attribute) -> bool:
 
 def _is_float_type(t: Attribute) -> bool:
     """Return True for any xDSL float type."""
-    from xdsl.dialects.builtin import (
-        Float16Type,
-        Float32Type,
-        Float64Type,
-        BFloat16Type,
-    )
 
     return isinstance(t, (Float16Type, Float32Type, Float64Type, BFloat16Type))
 
 
 def _scalar_type_of(t: Attribute) -> Attribute:
     """Return the scalar element type (unwrap rank-0 tensor if needed)."""
-    from xdsl.dialects.builtin import TensorType
 
     if isinstance(t, TensorType) and not t.get_shape():
         return t.element_type
@@ -211,7 +208,6 @@ def _coerce_to_f64(val: SSAValue, block: Block, insert_before) -> SSAValue:
 
     Returns an SSAValue of type f64.
     """
-    from xdsl.dialects.builtin import IntegerType, TensorType
 
     # Step 1: unwrap rank-0 tensor → scalar
     scalar_type = _scalar_type_of(val.type)
@@ -550,7 +546,6 @@ def _lower_get_size(op, block: Block) -> None:
     block.insert_ops_before([veq_size], op)
 
     # Wrap i64 result back into tensor<i64> for compatibility with downstream ops
-    from xdsl.dialects.builtin import TensorType
 
     result_tensor_type = op.results[0].type
     wrapped = _wrap_scalar(veq_size.result, result_tensor_type, block, op)
@@ -576,7 +571,7 @@ def _lower_slice(op, block: Block) -> None:
     # start is already an absolute i64 index
     lo = _extract_scalar(start_t, i64, block, op)
 
-    # end may be negative
+    # end may be negative -> need to normalize and convert to inclusive bound
     hi_raw = _extract_scalar(end_t, i64, block, op)
 
     # Get length of the veq: len = quake.veq_size %arr
