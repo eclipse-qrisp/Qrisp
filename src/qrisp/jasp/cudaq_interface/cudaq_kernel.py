@@ -58,7 +58,7 @@ from cudaq.mlir.dialects import quake, cc
 # imports qrisp.jasp.cudaq_interface, so qrisp.jasp is not yet fully initialised here.
 from qrisp.jasp.jasp_expression import make_jaspr
 from qrisp.jasp.mlir.quake_lowering.jaspr_to_quake import jaspr_to_quake_mlir
-from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray  
+from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray
 
 # ------------------------------------------------------------------ #
 # Platform-aware LLVM attribute defaults
@@ -553,7 +553,9 @@ _ANNOTATION_TO_DUMMY = {
 }
 
 
-def cudaq_kernel(func: Callable | None = None, execution_mode: Literal["run", "sample"] = "run") -> PyKernelDecorator:
+def cudaq_kernel(
+    func: Callable | None = None, execution_mode: Literal["run", "sample"] = "run"
+) -> PyKernelDecorator:
     """
     Decorator that compiles a Qrisp function to a native CUDA-Q kernel.
 
@@ -586,11 +588,11 @@ def cudaq_kernel(func: Callable | None = None, execution_mode: Literal["run", "s
         When ``None``, the decorator is used in its parameterised form
         (``@cudaq_kernel(execution_mode=...)``).
     execution_mode : Literal["run", "sample"], optional
-        ``"run"`` *(default)* — compile the kernel for use with ``cudaq.run``;
-        measurement results are returned as classical values per shot.
-        ``"sample"`` — compile the kernel for use with ``cudaq.sample``;
-        measurements are collected by the runtime across all shots and returned
-        as a ``SampleResult`` histogram.
+        - ``"run"`` *(default)* — compile the kernel for use with ``cudaq.run``;
+          measurement results are returned as classical values per shot.
+        - ``"sample"`` — compile the kernel for use with ``cudaq.sample``;
+          measurements are collected by the runtime across all shots and returned
+          as a ``SampleResult`` histogram.
 
     Returns
     -------
@@ -624,7 +626,7 @@ def cudaq_kernel(func: Callable | None = None, execution_mode: Literal["run", "s
         print(bell())                            # single-shot, e.g. 0 or 3
         print(cudaq.run(bell, shots_count=100))  # multi-shot, no () needed
 
-    Multiple returns are supported; they are returned as a single tuple::    
+    Multiple returns are supported; they are returned as a single tuple::
 
         import cudaq
         from qrisp import *
@@ -715,7 +717,9 @@ def cudaq_kernel(func: Callable | None = None, execution_mode: Literal["run", "s
             )
 
     try:
-        mlir_str = jaspr_to_quake_mlir(make_jaspr(func)(*dummy_args), execution_mode=execution_mode)
+        mlir_str = jaspr_to_quake_mlir(
+            make_jaspr(func)(*dummy_args), execution_mode=execution_mode
+        )
     except Exception as e:
         raise RuntimeError(
             f"Failed to compile Qrisp function '{func.__name__}' to MLIR: {e}"

@@ -67,6 +67,24 @@ def test_cudaq_kernel():
     result = bell()
     assert result in {0, 3}
 
+    results = cudaq.run(bell, shots_count=10)
+    for outcome in results:
+        assert outcome in {0, 3}
+
+
+def test_cudaq_kernel_sample():
+    """Test that a simple @cudaq_kernel compiles and samples, returning a valid measurement outcome."""
+    @cudaq_kernel(execution_mode="sample")
+    def bell():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        measure(qv)
+
+    results = cudaq.sample(bell, shots_count=10)
+    for outcome in results:
+        assert outcome in {"00", "11"}
+
 
 def test_cudaq_kernel_multiple_returns():
     """Test that a @cudaq_kernel can return multiple values of different types."""
