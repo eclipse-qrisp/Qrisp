@@ -172,7 +172,7 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
     Returns
     -------
     F : Array
-        1-D array containing the sequence, ordered from lowest order term to highest.
+        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.
 
     """
 
@@ -207,12 +207,12 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
 @jax.jit
 def _gqsp_angles_from_nlft_sequence(F: Array) -> Tuple[Array, Array, Array]:
     r"""
-    Computes the GQSP angles form the NLFT sequence.
+    Computes the GQSP angles form the non-linear Fourier sequence.
 
     Parameters
     ----------
     F : ArrayLike
-        1-D array containing the sequence, ordered from lowest order term to highest.
+        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.
 
     Returns
     -------
@@ -257,12 +257,12 @@ def _gqsp_angles_from_nlft_sequence(F: Array) -> Tuple[Array, Array, Array]:
 @jax.jit
 def _xqsp_angles_from_nlft_sequence(F: Array) -> Array:
     r"""
-    Computes the XQSP angles form the NLFT sequence.
+    Computes the XQSP angles form the non-linear Fourier sequence.
 
     Parameters
     ----------
     F : ArrayLike
-        1-D array containing the sequence, ordered from lowest order term to highest.
+        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.
 
     Returns
     -------
@@ -284,12 +284,12 @@ def _xqsp_angles_from_nlft_sequence(F: Array) -> Array:
 @jax.jit
 def _yqsp_angles_from_nlft_sequence(F: Array) -> Array:
     r"""
-    Computes the YQSP angles form the NLFT sequence.
+    Computes the YQSP angles form the non-linear Fourier sequence.
 
     Parameters
     ----------
     F : ArrayLike
-        1-D array containing the sequence, ordered from lowest order term to highest.
+        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.
 
     Returns
     -------
@@ -310,7 +310,7 @@ def _yqsp_angles_from_nlft_sequence(F: Array) -> Array:
 
 def poly_to_nlft_sequence(p: "ArrayLike") -> Array:
     r"""
-    Computes the NLFT sequence for a given polynomial.
+    Computes the non-linear Fourier sequence for a given polynomial.
 
     Parameters
     ----------
@@ -320,7 +320,7 @@ def poly_to_nlft_sequence(p: "ArrayLike") -> Array:
     Returns
     -------
     F : Array
-        1-D array containing the sequence, ordered from lowest order term to highest.
+        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.
 
     """
     # Comupute the maximum of |p(z)| for |z|=1
