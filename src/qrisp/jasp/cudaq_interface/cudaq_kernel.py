@@ -42,6 +42,7 @@ import inspect
 import platform
 import re
 import sys
+from typing import Callable, Literal
 import warnings
 
 import numpy as np
@@ -166,7 +167,7 @@ def _get_llvm_attributes() -> tuple:
 
 
 def cudaq_kernel_from_mlir(
-    mlir_str: str, execution_mode: str = "run"
+    mlir_str: str, execution_mode: Literal["run", "sample"] = "run"
 ) -> PyKernelDecorator:
     """
     Compiles a Quake MLIR string into a native ``PyKernelDecorator``.
@@ -191,7 +192,7 @@ def cudaq_kernel_from_mlir(
     mlir_str : str
         Quake MLIR source string.  Must contain a ``@main`` function with
         the ``cudaq-entrypoint`` attribute.
-    execution_mode : str
+    execution_mode : Literal["run", "sample"]
         ``"run"`` *(default)* — wraps the kernel with ``cc.log_output`` and
         synthesises ``.run`` / ``.run.entry`` helper functions so that
         ``cudaq.run`` can return classical measurement results.
@@ -552,7 +553,7 @@ _ANNOTATION_TO_DUMMY = {
 }
 
 
-def cudaq_kernel(func, execution_mode: str = "run") -> PyKernelDecorator:
+def cudaq_kernel(func: Callable | None = None, execution_mode: Literal["run", "sample"] = "run") -> PyKernelDecorator:
     """
     Decorator that compiles a Qrisp function to a native CUDA-Q kernel.
 
@@ -577,11 +578,19 @@ def cudaq_kernel(func, execution_mode: str = "run") -> PyKernelDecorator:
 
     Parameters
     ----------
-    func : callable
+    func : callable, optional
         A Qrisp function that can be traced with ``make_jaspr``.  Parameters,
         if any, must be annotated with ``int``, ``float``, ``bool``, or
         :class:`FixedShapeNDArray`.
         The function may return ``int``, ``float``, ``bool``, or a tuple of those types.
+        When ``None``, the decorator is used in its parameterised form
+        (``@cudaq_kernel(execution_mode=...)``).
+    execution_mode : Literal["run", "sample"], optional
+        ``"run"`` *(default)* — compile the kernel for use with ``cudaq.run``;
+        measurement results are returned as classical values per shot.
+        ``"sample"`` — compile the kernel for use with ``cudaq.sample``;
+        measurements are collected by the runtime across all shots and returned
+        as a ``SampleResult`` histogram.
 
     Returns
     -------
@@ -658,6 +667,22 @@ def cudaq_kernel(func, execution_mode: str = "run") -> PyKernelDecorator:
         angles = np.array([1.57, 0.78, 0.39])
         print(circuit_arr(angles))
         print(cudaq.run(circuit_arr, angles, shots_count=100))
+
+    Sample mode — use ``@cudaq_kernel(execution_mode="sample")`` for
+    ``cudaq.sample`` (void-return kernel, measurements collected by runtime)::
+
+        import cudaq
+        from qrisp import *
+        from qrisp.jasp.cudaq_interface import cudaq_kernel
+
+        @cudaq_kernel(execution_mode="sample")
+        def bell():
+            qv = QuantumVariable(2)
+            h(qv[0])
+            cx(qv[0], qv[1])
+            return measure(qv)
+
+        print(cudaq.sample(bell, shots_count=100))
 
     """
 
