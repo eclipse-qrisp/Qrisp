@@ -269,8 +269,16 @@ def _xqsp_angles_from_nlft_sequence(F: Array) -> Array:
     angles : Array
         1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
 
+    Raises
+    ------
+    NotImplementedError
+        Always raised until the XQSP convention is mathematically verified.
     """
-    return jnp.arctan(-jnp.imag(F))
+    raise NotImplementedError(
+            "The XQSP angle calculation is currently unverified and disabled. "
+            "Please use QSP, GQSP, or QSVT conventions instead."
+        )
+    #return jnp.arctan(-jnp.imag(F))
 
 
 @jax.jit
@@ -288,8 +296,16 @@ def _yqsp_angles_from_nlft_sequence(F: Array) -> Array:
     angles : Array
         1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
 
+    Raises
+    ------
+    NotImplementedError
+        Always raised until the YQSP convention is mathematically verified.
     """
-    return jnp.arctan(jnp.real(F))
+    raise NotImplementedError(
+            "The YQSP angle calculation is currently unverified and disabled. "
+            "Please use QSP, GQSP, or QSVT conventions instead."
+        )
+    #return jnp.arctan(jnp.real(F))
 
 
 def poly_to_nlft_sequence(p: "ArrayLike") -> Array:
@@ -380,15 +396,23 @@ def xqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
     alpha : Array
         The scalar scaling factor as 0-D array.
 
+    Raises
+    ------
+    NotImplementedError
+        Always raised until the XQSP convention is mathematically verified.
+
     Notes
     -----
     - The resulting angles correspond to a rescaled version of the input polynomial.
 
     """
-    F, alpha = poly_to_nlft_sequence(p)
-    phi = _xqsp_angles_from_nlft_sequence(F)
-
-    return phi, alpha
+    raise NotImplementedError(
+            "The XQSP angle calculation is currently unverified and disabled. "
+            "Please use QSP, GQSP, or QSVT conventions instead."
+        )
+    #F, alpha = poly_to_nlft_sequence(p)
+    #phi = _xqsp_angles_from_nlft_sequence(F)
+    #return phi, alpha
 
 
 # https://arxiv.org/pdf/2503.03026 
@@ -409,15 +433,23 @@ def yqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
     alpha : Array
         The scalar scaling factor as 0-D array.
 
+    Raises
+    ------
+    NotImplementedError
+        Always raised until the YQSP convention is mathematically verified.
+
     Notes
     -----
     - The resulting angles correspond to a rescaled version of the input polynomial.
 
     """
-    F, alpha = poly_to_nlft_sequence(p)
-    phi = _yqsp_angles_from_nlft_sequence(F)
-
-    return phi, alpha
+    raise NotImplementedError(
+            "The YQSP angle calculation is currently unverified and disabled. "
+            "Please use QSP, GQSP, or QSVT conventions instead."
+        )
+    #F, alpha = poly_to_nlft_sequence(p)
+    #phi = _yqsp_angles_from_nlft_sequence(F)
+    #return phi, alpha
 
 
 def laurent_to_analytic_coeffs(
