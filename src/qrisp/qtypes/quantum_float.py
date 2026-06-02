@@ -396,7 +396,7 @@ class QuantumFloat(QuantumVariable):
         QuantumFloat in static mode.
         """
 
-        # check if the encoding number if negative while the QuantumFloat is unsigned.
+        # check if the encoding number is negative while the QuantumFloat is unsigned.
         # We do this before converting to integer to prevent wrapping.
         if not check_for_tracing_mode() and not self.signed and i < 0:
                 raise ValueError(
