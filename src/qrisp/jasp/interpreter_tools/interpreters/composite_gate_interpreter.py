@@ -61,7 +61,7 @@ def _make_identity_param_op(op):
         params=[alpha, beta, ...] and clearing the lambdify cache is sufficient.
     """
     n = len(op.params)
-    if n == 0:
+    if not n:
         return op
     if isinstance(op, _U3Gate):
         factory = _U3_IDENTITY_FACTORIES.get(op.name)
@@ -127,7 +127,7 @@ def _apply_op(op, qubit_tracers, abs_qst, param_dict=None):
             # time: bind_parameters({alpha: val}) would yield -val/2 instead of val.
             identity_op = _make_identity_param_op(op)
             return quantum_gate_p.bind(*qubit_tracers, *computed_tracers, abs_qst, gate=identity_op)
-        elif op.params:
+        if op.params:
             # Gate has only constant (non-symbolic) parameters — e.g. rz(-π/2)
             # emitted as an internal fixed rotation inside a composite gate
             # definition.  Without this branch the parameter value stays embedded
