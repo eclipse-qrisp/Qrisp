@@ -120,18 +120,18 @@ def comparison_wrapper(func):
             # Two QuantumModuli can be compared as long as they share the
             # same Montgomery shift (they're in the same representation).
             if self.m != other.m:
-                raise Exception(
+                raise ValueError(
                     "Tried to evaluate QuantumModulus comparison with differing Montgomery shifts"
                 )
 
             if _moduli_neq(self.modulus, other.modulus):
-                raise Exception(
+                raise ValueError(
                     "Tried to compare QuantumModulus instances of differing modulus"
                 )
         elif not check_for_tracing_mode() and self.m != 0:
             # Comparing against a non-QuantumModulus (e.g. QuantumFloat)
             # requires standard representation (m == 0).
-            raise Exception(
+            raise ValueError(
                 "Tried to evaluate QuantumModulus comparison with non-zero Montgomery shift"
             )
 
@@ -389,11 +389,13 @@ class QuantumModulus(QuantumFloat):
             )
 
             if i_value >= modulus_value:
-                raise Exception(
+                raise ValueError(
                     "Tried to encode a number into QuantumModulus, which is greator or equal to the modulus"
                 )
             if i_value < 0:
-                raise Exception("Tried to encode a negative number into QuantumModulus")
+                raise ValueError(
+                    "Tried to encode a negative number into QuantumModulus"
+                )
 
         # if i >= self.modulus:  # or (np.gcd(i, self.modulus) != 1 and i != 0):
         #     return np.nan
@@ -444,7 +446,7 @@ class QuantumModulus(QuantumFloat):
                 )
             return cq_montgomery_multiply(other, self, self.modulus, shift)
         else:
-            raise Exception(
+            raise TypeError(
                 f"Quantum modular multiplication with type {type(other)} not implemented"
             )
 
@@ -490,7 +492,7 @@ class QuantumModulus(QuantumFloat):
 
             return self
         else:
-            raise Exception(
+            raise TypeError(
                 f"Quantum modular in-place multiplication with type {type(other)} not implemented"
             )
 
@@ -499,12 +501,12 @@ class QuantumModulus(QuantumFloat):
         other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
             if self.m != other.m:
-                raise Exception(
+                raise ValueError(
                     "Tried to add two QuantumModulus with differing Montgomery shift"
                 )
         elif isinstance(other, QuantumFloat):
             if self.m != 0:
-                raise Exception(
+                raise ValueError(
                     "Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift"
                 )
 
@@ -532,7 +534,7 @@ class QuantumModulus(QuantumFloat):
                 return self
         elif isinstance(other, QuantumFloat):
             if self.m != 0:
-                raise Exception(
+                raise ValueError(
                     "Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift"
                 )
 
@@ -546,12 +548,12 @@ class QuantumModulus(QuantumFloat):
         other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
             if self.m != other.m:
-                raise Exception(
+                raise ValueError(
                     "Tried to add subtract QuantumModulus with differing Montgomery shift"
                 )
         elif isinstance(other, QuantumFloat):
             if self.m != 0:
-                raise Exception(
+                raise ValueError(
                     "Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift"
                 )
 
@@ -571,12 +573,12 @@ class QuantumModulus(QuantumFloat):
         other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
             if self.m != other.m:
-                raise Exception(
+                raise ValueError(
                     "Tried to subtract QuantumModulus with differing Montgomery shift"
                 )
         elif isinstance(other, QuantumFloat):
             if self.m != 0:
-                raise Exception(
+                raise ValueError(
                     "Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift"
                 )
 
@@ -595,12 +597,12 @@ class QuantumModulus(QuantumFloat):
         other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
             if self.m != other.m:
-                raise Exception(
+                raise ValueError(
                     "Tried to subtract QuantumModulus with differing Montgomery shift"
                 )
         elif isinstance(other, QuantumFloat):
             if self.m != 0:
-                raise Exception(
+                raise ValueError(
                     "Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift"
                 )
 
