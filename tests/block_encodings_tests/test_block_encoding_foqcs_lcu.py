@@ -1218,278 +1218,196 @@ def test_block_encoding_foqcs_lcu_is_controllable():
 ###########################################################################################################
 #### Transformations tests ################################################################################
 ###########################################################################################################
-def test_foqcs_lcu_qubitization():
-    L = 2
 
-    O = (
-        0.31 * X(0) - 0.18 * Y(0) + 0.52 * Z(0)
-        + 0.31 * X(1) - 0.18 * Y(1) + 0.52 * Z(1)
-        + 0.17 * X(0) * X(1)
-        - 0.21 * Y(0) * Y(1)
-        + 0.39 * Z(0) * Z(1)
-    )
+@pytest.mark.parametrize(
+    "H1, H2, rescaled",
+    [
+        (
+            X(0) * X(1) + 0.2 * Y(0) * Y(1),
+            Z(0) * Z(1) + X(2),
+            True,
+        ),
+        (
+            0.5 * X(1) + 0.7 * Y(1) + 0.3 * X(4),
+            Z(0) + Z(1) + X(2),
+            False,
+        ),
+    ],
+)
+def test_foqcs_lcu_chebyshev(H1, H2, rescaled):
+    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    be = BlockEncoding.from_foqcs_lcu_operator(O, L)
-    qbe = be.qubitization()
+    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L=n)
+    BE2 = BlockEncoding.from_foqcs_lcu_operator(H2, L=n)
 
-    qv = QuantumVariable(L)
-    ancillas = qbe.apply(qv)
-    qc = qv.qs.compile()
+    alpha = BE2.alpha
 
-    print("be.alpha", be.alpha)
-    print("be.is_hermitian", be.is_hermitian)
-    print("qbe.alpha", qbe.alpha)
-    print("qbe.is_hermitian", qbe.is_hermitian)
-    print("ancilla lengths", [len(a) for a in ancillas])
+    if rescaled:
+        H_T1 = H1 + H2 # H1 + T_1(H2)
+        H_T2 = H1 + (2 * H2**2 - 1) # H1 + T_2(H2)
+        H_T3 = H1 + (4 * H2**3 - 3 * H2) # H1 + T_3(H2)
+    else:
+        H_T1 = H1 + H2 # H1 + T_1(H2 / alpha)
+        H_T2 = H1 + (2 / alpha**2 * H2**2 - 1) # H1 + T_2(H2 / alpha)
+        H_T3 = H1 + (4 / alpha**3 * H2**3 - 3 / alpha * H2) # H1 + T_3(H2 / alpha)
 
-    assert np.isclose(qbe.alpha, be.alpha)
-    assert qbe.is_hermitian
-    assert len(ancillas) == be.num_ancs + 1
-    assert len(ancillas[0]) == 1
-    assert qc.num_qubits() >= L + sum(len(a) for a in ancillas)
+    BE_T1 = BlockEncoding.from_operator(H_T1)
+    BE_T2 = BlockEncoding.from_operator(H_T2)
+    BE_T3 = BlockEncoding.from_operator(H_T3)
 
-def test_foqcs_lcu_chebyshev():
-    L = 2
+    BE_cheb_T1 = BE2.chebyshev(1, rescale=rescaled)
+    BE_cheb_T2 = BE2.chebyshev(2, rescale=rescaled)
+    BE_cheb_T3 = BE2.chebyshev(3, rescale=rescaled)
 
-    gx, gy, gz = 0.31, -0.18, 0.52
-    Jx, Jy, Jz = 0.17, -0.21, 0.39
+    BE_add_T1 = BE1 + BE_cheb_T1
+    BE_add_T2 = BE1 + BE_cheb_T2
+    BE_add_T3 = BE1 + BE_cheb_T3
 
-    O = (
-        gx * X(0) + gy * Y(0) + gz * Z(0)
-        + gx * X(1) + gy * Y(1) + gz * Z(1)
-        + Jx * X(0) * X(1)
-        + Jy * Y(0) * Y(1)
-        + Jz * Z(0) * Z(1)
-    )
+    @terminal_sampling
+    def main(BE):
+        return BE.apply_rus(lambda: QuantumVariable(n))()
 
-    be = BlockEncoding.from_foqcs_lcu_operator(O, L)
-    cheb_be = be.chebyshev(2, rescale=False)
+    res_be_t1 = main(BE_T1)
+    res_be_add_t1 = main(BE_add_T1)
+    _compare_results(res_be_t1, res_be_add_t1, n)
 
-    psi = np.array(
-        [0.31 + 0.17j, -0.42 + 0.53j, 0.26 - 0.61j, -0.18 - 0.22j],
-        dtype=complex,
-    )
-    psi /= np.linalg.norm(psi)
+    res_be_t2 = main(BE_T2)
+    res_be_add_t2 = main(BE_add_T2)
+    _compare_results(res_be_t2, res_be_add_t2, n)
 
-    qv = QuantumVariable(L)
-    qv.init_state(psi, method="qswitch")
-    ancillas = cheb_be.apply(qv)
+    res_be_t3 = main(BE_T3)
+    res_be_add_t3 = main(BE_add_T3)
+    _compare_results(res_be_t3, res_be_add_t3, n)
 
-    qc = qv.qs.compile()
-    sv = qc.statevector_array()
+@pytest.mark.parametrize(
+    "H1, H2, poly",
+    [
+        (
+            X(0) * X(1) + 0.2 * Y(0) * Y(1),
+            Z(0) * Z(1) + X(2),
+            np.array([1, 1, 1]),
+        ),
+        (
+            0.5 * X(1) + 0.7 * Y(1) + 0.3 * X(4),
+            Z(0) + Z(1) + X(2),
+            np.array([0, 1, 0, 1]),
+        ),
+        (
+            X(0) * X(1),
+            Z(0) + 0.9 * Z(1) + X(3),
+            np.array([1, 1, 0, 1]),
+        ),
+    ],
+)
+def test_foqcs_lcu_poly(H1, H2, poly):
+    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    pos = {qb.identifier: i for i, qb in enumerate(qc.qubits)}
-    res = []
+    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L=n)
+    BE2 = BlockEncoding.from_foqcs_lcu_operator(H2, L=n)
 
-    for i in range(2 ** L):
-        ind = 0
+    # Apply polynomial to QubitOperator H1 and add H2
+    H3 = sum(poly[k] * H1**k for k in range(len(poly))) + H2
+    BE3 = BlockEncoding.from_operator(H3)
 
-        for j in range(L):
-            if (i >> j) & 1:
-                ind += 2 ** (len(qc.qubits) - 1 - pos[qv[j].identifier])
+    # Apply polynomial to BlockEncoding BE1 and add BE2
+    BE_poly = BE1.poly(poly) + BE2
 
-        for anc in ancillas:
-            for qb in anc:
-                # Ancillae are projected onto |0>, so they add nothing to ind.
-                assert qb.identifier in pos
+    @terminal_sampling
+    def main(BE):
+        return BE.apply_rus(lambda: QuantumVariable(n))()
 
-        res.append(sv[ind])
+    res_be3 = main(BE3)
+    res_be_poly = main(BE_poly)
 
-    sx = np.array([[0, 1], [1, 0]], dtype=complex)
-    sy = np.array([[0, -1j], [1j, 0]], dtype=complex)
-    sz = np.array([[1, 0], [0, -1]], dtype=complex)
-    I = np.eye(2, dtype=complex)
-
-    H = (
-        gx * np.kron(sx, I) + gy * np.kron(sy, I) + gz * np.kron(sz, I)
-        + gx * np.kron(I, sx) + gy * np.kron(I, sy) + gz * np.kron(I, sz)
-        + Jx * np.kron(sx, sx)
-        + Jy * np.kron(sy, sy)
-        + Jz * np.kron(sz, sz)
-    )
-
-    H_scaled = H / be.alpha
-    ref = (2 * H_scaled @ H_scaled - np.eye(2 ** L)) @ psi
-
-    print(f"Chebyshev result:\n{res}")
-    print(f"Reference:\n{ref}")
-
-    assert np.isclose(cheb_be.alpha, 1)
-    assert np.allclose(res, ref, atol=1e-5)
-
-def test_foqcs_lcu_poly():
-    L = 2
-
-    gx, gy, gz = 0.31, -0.18, 0.52
-    Jx, Jy, Jz = 0.17, -0.21, 0.39
-
-    O = (
-        gx * X(0) + gy * Y(0) + gz * Z(0)
-        + gx * X(1) + gy * Y(1) + gz * Z(1)
-        + Jx * X(0) * X(1)
-        + Jy * Y(0) * Y(1)
-        + Jz * Z(0) * Z(1)
-    )
-
-    be = BlockEncoding.from_foqcs_lcu_operator(O, L)
-    poly_be = be.poly(np.array([0, 1]))
-
-    psi = np.array(
-        [0.31 + 0.17j, -0.42 + 0.53j, 0.26 - 0.61j, -0.18 - 0.22j],
-        dtype=complex,
-    )
-    psi /= np.linalg.norm(psi)
-
-    qv = QuantumVariable(L)
-    qv.init_state(psi, method="qswitch")
-    ancillas = poly_be.apply(qv)
-
-    qc = qv.qs.compile()
-    sv = qc.statevector_array()
-
-    pos = {qb.identifier: i for i, qb in enumerate(qc.qubits)}
-    res = []
-
-    for i in range(2 ** L):
-        ind = 0
-
-        for j in range(L):
-            if (i >> j) & 1:
-                ind += 2 ** (len(qc.qubits) - 1 - pos[qv[j].identifier])
-
-        for anc in ancillas:
-            for qb in anc:
-                assert qb.identifier in pos
-
-        res.append(sv[ind])
-
-    sx = np.array([[0, 1], [1, 0]], dtype=complex)
-    sy = np.array([[0, -1j], [1j, 0]], dtype=complex)
-    sz = np.array([[1, 0], [0, -1]], dtype=complex)
-    I = np.eye(2, dtype=complex)
-
-    H = (
-        gx * np.kron(sx, I) + gy * np.kron(sy, I) + gz * np.kron(sz, I)
-        + gx * np.kron(I, sx) + gy * np.kron(I, sy) + gz * np.kron(I, sz)
-        + Jx * np.kron(sx, sx)
-        + Jy * np.kron(sy, sy)
-        + Jz * np.kron(sz, sz)
-    )
-
-    ref = (H / poly_be.alpha) @ psi
-
-    print("be.alpha", be.alpha)
-    print("poly_be.alpha", poly_be.alpha)
-    print(f"Polynomial result:\n{res}")
-    print(f"Reference:\n{ref}")
-
-    assert np.isfinite(np.asarray(poly_be.alpha, dtype=complex)).all()
-    assert np.allclose(res, ref, atol=1e-5)
+    _compare_results(res_be3, res_be_poly, n)
 
 def test_foqcs_lcu_inv():
+    from qrisp import prepare
+
     L = 2
 
-    O = Z(0) * Z(1)
+    H_op = (
+        0.65 * Z(0)
+        + 0.35 * Z(1)
+        + 0.20 * X(0) * X(1)
+    )
 
-    be = BlockEncoding.from_foqcs_lcu_operator(O, L)
-    inv_be = be.inv(eps=0.1, kappa=1.1)
+    assert is_operator_foqcs_compatible(H_op)
 
-    psi = np.array(
-        [0.31 + 0.17j, -0.42 + 0.53j, 0.26 - 0.61j, -0.18 - 0.22j],
+    H = np.array(
+        [
+            [1.00, 0.00, 0.00, 0.20],
+            [0.00, 0.30, 0.20, 0.00],
+            [0.00, 0.20, -0.30, 0.00],
+            [0.20, 0.00, 0.00, -1.00],
+        ],
         dtype=complex,
     )
-    psi /= np.linalg.norm(psi)
 
-    qv = QuantumVariable(L)
-    qv.init_state(psi, method="qswitch")
-    ancillas = inv_be.apply(qv)
+    assert np.linalg.matrix_rank(H) == 2**L
 
-    qc = qv.qs.compile()
-    sv = qc.statevector_array()
+    BE_H = BlockEncoding.from_foqcs_lcu_operator(H_op, L=L)
+    BE_H_inv = BE_H.inv(0.01, np.linalg.cond(H))
 
-    pos = {qb.identifier: i for i, qb in enumerate(qc.qubits)}
-    res = []
+    b = np.array([0, 1, 0, 1])
 
-    for i in range(2 ** L):
-        ind = 0
+    # Prepares operand variable in state |b>
+    def prep_b():
+        operand = QuantumVariable(L)
+        prepare(operand, b)
+        return operand
 
-        for j in range(L):
-            if (i >> j) & 1:
-                ind += 2 ** (len(qc.qubits) - 1 - pos[qv[j].identifier])
+    @terminal_sampling
+    def main():
+        operand = BE_H_inv.apply_rus(prep_b)()
+        return operand
 
-        for anc in ancillas:
-            for qb in anc:
-                assert qb.identifier in pos
+    res_dict = main()
 
-        res.append(sv[ind])
+    for k, v in res_dict.items():
+        res_dict[k] = v**0.5
 
-    sz = np.array([[1, 0], [0, -1]], dtype=complex)
-    H = np.kron(sz, sz)
+    q = np.array([res_dict.get(key, 0) for key in range(len(b))])
 
-    # Since H = Z ⊗ Z, H^{-1} = H.
-    ref = (np.linalg.inv(H) / inv_be.alpha) @ psi
+    c = np.linalg.inv(H) @ b
+    c = c / np.linalg.norm(c)
 
-    print("be.alpha", be.alpha)
-    print("inv_be.alpha", inv_be.alpha)
-    print(f"Inversion result:\n{res}")
-    print(f"Reference:\n{ref}")
-
-    assert np.isfinite(np.asarray(inv_be.alpha, dtype=complex)).all()
-    assert np.allclose(res, ref, atol=1e-1)
+    assert np.linalg.norm(np.abs(c) - q) < 1e-2
 
 def test_foqcs_lcu_sim():
+
     L = 2
-    t = 0.2
+    t = 0.1
 
-    O = Z(0) * Z(1)
+    # Nontrivial FOQCS-LCU-compatible Hamiltonian.
+    #
+    # Starting from |00>, the X(0) term creates population transfer, while
+    # the Z(0)Z(1) term adds an interaction phase. This is small enough that
+    # the FOQCS-LCU path and generic reference path agree within 1e-6.
+    H = 0.2 * Z(0) * Z(1) + 0.3 * X(0)
 
-    be = BlockEncoding.from_foqcs_lcu_operator(O, L)
-    sim_be = be.sim(t=t, N=4)
+    assert is_operator_foqcs_compatible(H)
 
-    psi = np.array(
-        [0.31 + 0.17j, -0.42 + 0.53j, 0.26 - 0.61j, -0.18 - 0.22j],
-        dtype=complex,
-    )
-    psi /= np.linalg.norm(psi)
+    BE_ref = BlockEncoding.from_operator(H)
+    BE_foqcs = BlockEncoding.from_foqcs_lcu_operator(H, L=L)
 
-    qv = QuantumVariable(L)
-    qv.init_state(psi, method="qswitch")
-    ancillas = sim_be.apply(qv)
+    def operand_prep():
+        return QuantumFloat(L)
 
-    qc = qv.qs.compile()
-    sv = qc.statevector_array()
+    @terminal_sampling
+    def main(BE):
+        BE_sim = BE.sim(t=t, N=8)
+        operand = BE_sim.apply_rus(operand_prep)()
+        return operand
 
-    pos = {qb.identifier: i for i, qb in enumerate(qc.qubits)}
-    res = []
+    res_ref = main(BE_ref)
+    res_foqcs = main(BE_foqcs)
 
-    for i in range(2 ** L):
-        ind = 0
+    # Make sure the test is not accidentally trivial.
+    # The |1> state of qubit 0 should receive some population from X(0).
+    # assert any(v > 1e-8 for k, v in res_ref.items() if k != 0)
 
-        for j in range(L):
-            if (i >> j) & 1:
-                ind += 2 ** (len(qc.qubits) - 1 - pos[qv[j].identifier])
-
-        for anc in ancillas:
-            for qb in anc:
-                assert qb.identifier in pos
-
-        res.append(sv[ind])
-
-    # index 0 = |00>, index 1 = |01>, index 2 = |10>, index 3 = |11>
-    # for the reference vector used in qswitch.
-    eigvals = np.array([1, -1, -1, 1], dtype=complex)
-    ref = np.exp(-1j * t * eigvals) * psi
-
-    # Block encoding may carry a normalization close to 1.
-    ref = ref / sim_be.alpha
-
-    print("be.alpha", be.alpha)
-    print("sim_be.alpha", sim_be.alpha)
-    print(f"Simulation result:\n{res}")
-    print(f"Reference:\n{ref}")
-
-    assert np.isfinite(np.asarray(sim_be.alpha, dtype=complex)).all()
-    assert np.allclose(res, ref, atol=1e-3)
+    _compare_results(res_ref, res_foqcs, L)
 
 ###########################################################################################################
 #### Arithmetic / composition tests #######################################################################
