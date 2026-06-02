@@ -390,9 +390,10 @@ class QuantumFloat(QuantumVariable):
         return self.decoder(i)
 
     def encoder(self, i):
-        """Convert human-readable value to integer equivalent to the bitstring of the corresponding measurement result.
+        """Convert a human-readable value to an integer that represents the measurement result.
 
-        Also validates that the input value can be represented within the bounds of the provided QuantumFloat.
+        Also validates that the input value can be represented within the bounds of the provided
+        QuantumFloat in static mode.
         """
 
         # check if the encoding number if negative while the QuantumFloat is unsigned.
@@ -422,15 +423,16 @@ class QuantumFloat(QuantumVariable):
 
         # compare the input 'i' against the float limits.
         # we do this before converting to integer to prevent wrapping.
-        is_out_of_bounds = (i > max_float) | (i < min_float)
+        if not check_for_tracing_mode():
+            is_out_of_bounds = (i > max_float) | (i < min_float)
 
-        # add a check that the provided value is safe to be encoded in the provided QuantumFloat
-        if not check_for_tracing_mode() and is_out_of_bounds:
-            sign_description = ["unsigned", "signed"][self.signed]
-            raise ValueError(
-                f"Not enough qubits to encode value {i} in {sign_description} QuantumFloat"
-                + f" of {self.msize} qubits and exponent {self.exponent}."
-            )
+            # add a check that the provided value is safe to be encoded in the provided QuantumFloat
+            if is_out_of_bounds:
+                sign_description = ["unsigned", "signed"][self.signed]
+                raise ValueError(
+                    f"Not enough qubits to encode value {i} in {sign_description} QuantumFloat"
+                    + f" of {self.msize} qubits and exponent {self.exponent}."
+                )
 
         if self.signed:
             res = _signed_int_iso(i / jnp.float64(2** self.exponent) , self.msize)
