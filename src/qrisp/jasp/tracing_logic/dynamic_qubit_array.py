@@ -19,7 +19,6 @@
 from builtins import id
 
 from jax import tree_util
-from jax.core import Tracer
 
 from qrisp.jasp.primitives import (
     AbstractQubit,
@@ -66,10 +65,7 @@ class DynamicQubitArray:
         if isinstance(other, list):
             temp = self
             for x in other:
-                # AbstractQubit is a JAX AbstractValue (for abstract eval only).
-                # At runtime, qubit values are JAX Tracer objects whose .aval
-                # is AbstractQubit — hence the Tracer check.
-                if not isinstance(x, (DynamicQubitArray, Tracer, AbstractQubit)):
+                if not isinstance(getattr(x, "aval", x), AbstractQubit):
                     raise ValueError(
                         "Can only concatenate type AbstractQubit or list[AbstractQubit] to DynamicQubitArray"
                     )
@@ -83,7 +79,7 @@ class DynamicQubitArray:
         if isinstance(other, list):
             temp = self
             for x in other[::-1]:
-                if not isinstance(x, (DynamicQubitArray, Tracer, AbstractQubit)):
+                if not isinstance(getattr(x, "aval", x), AbstractQubit):
                     raise ValueError(
                         "Can only concatenate type AbstractQubit or list[AbstractQubit] to DynamicQubitArray"
                     )
