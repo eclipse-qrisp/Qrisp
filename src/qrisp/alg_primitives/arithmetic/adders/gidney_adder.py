@@ -27,12 +27,51 @@ from qrisp.environments import control, custom_control
 from qrisp.jasp import jrange, jlen, DynamicQubitArray, check_for_tracing_mode
 
 
-def _is_quantum_register(value):
-    if isinstance(value, (QuantumVariable, DynamicQubitArray)):
-        return True
-    if isinstance(value, list):
-        return len(value) > 0 and all(callable(getattr(qb, "qs", None)) for qb in value)
-    return False
+def _validate_gidney_adder_inputs(a, b):
+    """Validate that ``(a, b)`` is a supported input pair.
+
+    Returns
+    -------
+    a_is_quantum : bool
+        Whether ``a`` is a quantum register.
+
+    Raises
+    ------
+    ValueError
+        If the pair is not classical-quantum or quantum-quantum.
+    """
+    # b must be a quantum register (QuantumVariable, DynamicQubitArray,
+    # or non-empty list of qubit-like objects).
+    b_is_quantum = isinstance(b, (QuantumVariable, DynamicQubitArray)) or (
+        isinstance(b, list) and len(b) > 0
+        and all(callable(getattr(qb, "qs", None)) for qb in b)
+    )
+    # a is quantum if it passes the same check or is an empty list
+    # (which the quantum path treats as a zero-size register).
+    a_is_quantum = isinstance(a, (QuantumVariable, DynamicQubitArray)) or (
+        isinstance(a, list) and len(a) > 0
+        and all(callable(getattr(qb, "qs", None)) for qb in a)
+    ) or (isinstance(a, list) and len(a) == 0)
+
+    # Classical a is valid if it is a concrete int / binary string / numpy
+    # integer, or if we are in tracing mode and a is an integer JAX scalar
+    # or BigInteger (which carries its own bit-access protocol).
+    is_concrete_int = isinstance(a, (int, np.integer, str))
+    # Reject non-integer JAX scalars (e.g. float32) — bit extraction
+    # on a float would produce silently wrong results.
+    is_scalar_like = getattr(a, "ndim", None) == 0 and jnp.issubdtype(
+        getattr(a, "dtype", None), jnp.integer
+    )
+    is_biginteger_like = hasattr(a, "get_bit")
+    is_valid_classical = is_concrete_int or (
+        check_for_tracing_mode() and (is_scalar_like or is_biginteger_like)
+    )
+    if not (b_is_quantum and (a_is_quantum or is_valid_classical)):
+        raise ValueError(
+            "gidney_adder expects inputs to be either classical-quantum "
+            "(classical a, quantum b) or quantum-quantum (quantum a, quantum b)."
+        )
+    return a_is_quantum
 
 
 def _extract_bit(a_int, digit_index, a_int_is_bigint):
@@ -288,6 +327,8 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         quantum register or qubit list, the quantum-quantum path is used.
         If a list, must contain only qubit-like objects (elements with a callable
         ``qs`` attribute); the list may be empty for quantum-quantum mode.
+        Binary strings are little-endian: ``"10"`` means bit 0 = 1, bit 1 = 0
+        (decimal value 1).
     b : QuantumVariable, DynamicQubitArray, or list
         The target register that is updated in-place: :math:`b \\leftarrow b + a`.
         If a list, must be a non-empty list of qubit-like objects
@@ -323,25 +364,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     """
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 
-    invalid_input_pair_msg = (
-        "gidney_adder expects inputs to be either classical-quantum "
-        "(classical a, quantum b) or quantum-quantum (quantum a, quantum b)."
-    )
-
-    b_is_quantum = _is_quantum_register(b)
-    a_is_quantum = _is_quantum_register(a) or (isinstance(a, list) and len(a) == 0)
-
-    # Valid classical types: concrete int/str/np.integer, or JAX scalar /
-    # BigInteger (only in JASP tracing mode).
-    is_concrete_int = isinstance(a, (int, np.integer, str))
-    is_scalar_like = getattr(a, "ndim", None) == 0
-    is_biginteger_like = hasattr(a, "get_bit")
-    is_valid_classical = is_concrete_int or (
-        check_for_tracing_mode() and (is_scalar_like or is_biginteger_like)
-    )
-    valid_input_pair = b_is_quantum and (a_is_quantum or is_valid_classical)
-    if not valid_input_pair:
-        raise ValueError(invalid_input_pair_msg)
+    a_is_quantum = _validate_gidney_adder_inputs(a, b)
 
     # Normalise QuantumBool wrappers to raw qubits for downstream code.
     c_in_qb = c_in[0] if isinstance(c_in, QuantumBool) else c_in
@@ -356,6 +379,10 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         is_concrete_int = isinstance(a, (int, np.integer))
 
         # Clamp to the target register width (mod 2^len(b)).
+        # BigInteger and JAX-scalar paths skip this: bit extraction
+        # naturally ignores high bits, so the result is functionally
+        # identical.  Skipping the clamp avoids eager evaluation of
+        # (1 << jlen(b)) on traced values.
         if is_concrete_int:
             a = int(a) % (1 << jlen(b))
 
@@ -382,6 +409,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
             # original a bits move up one slot.  This mutated a is used
             # downstream (final XOR loop) — the shift is effectively undone
             # by the adjusted start offset.
+            # BigInteger supports both << and + (see jasp_bigintiger.py).
             a = (a << 1) + 1
         if c_out_qb is not None:
             b_qbs = b_qbs + [c_out_qb]
