@@ -139,8 +139,8 @@ def _apply_op(op, qubit_tracers, abs_qst, param_dict=None):
             const_tracers = [jnp.float64(float(p)) for p in op.params]
             identity_op = _make_identity_param_op(op)
             return quantum_gate_p.bind(*qubit_tracers, *const_tracers, abs_qst, gate=identity_op)
-        else:
-            return quantum_gate_p.bind(*qubit_tracers, abs_qst, gate=op)
+
+        return quantum_gate_p.bind(*qubit_tracers, abs_qst, gate=op)
 
     defn = op.definition.transpile()
     for instr in defn.data:
