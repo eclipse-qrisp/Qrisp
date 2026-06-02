@@ -42,7 +42,7 @@ from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool, QuantumFloat
 from scipy.sparse import csr_array, csr_matrix
 from typing import Any, Callable, TYPE_CHECKING, Union
-from qrisp.block_encodings.block_encoding_methods import (
+from qrisp.block_encodings.block_encoding_methods.foqcs_lcu import (
     get_foqcs_lcu_prep_num_of_ancillae,
     foqcs_analyze_operator,
     foqcs_prep_heisenberg,
