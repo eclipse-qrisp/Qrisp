@@ -103,6 +103,13 @@ templates_path = ['_templates']
 exclude_patterns = [
     '**/.ipynb_checkpoints',
 ]
+
+# Map external documentation inventories so that cross-references to Python
+# standard-library symbols (e.g. :exc:`RuntimeError`, :class:`~collections.abc.Mapping`)
+# resolve to clickable links pointing at the official Python 3 documentation.
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+}
 nbsphinx_timeout = 60
 
 master_doc = "index"
@@ -141,7 +148,7 @@ html_theme_options = {
     "enable_search_shortcuts" : True,
     "search_bar_text": "Search the docs... ",
     # "navbar_align": "content",
-    "pygment_light_style": "lovelace",
+    "pygments_light_style": "lovelace",
     "secondary_sidebar_items": ["page-toc.html", "discord_link.html", "dynamic_sidebar.html", "thebe_button.html"]
 }
 html_sidebars = {

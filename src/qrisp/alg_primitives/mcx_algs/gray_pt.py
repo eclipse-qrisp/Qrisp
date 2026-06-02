@@ -61,19 +61,3 @@ def pt_multi_cx(n, reduced=False):
         res = input_qv.qs.copy()
 
     return res.to_gate(f"pt{n}cx")
-
-
-def gray_pt_mcx(n, ctrl_state):
-    input_qv = QuantumVariable(n)
-    output_qv = QuantumVariable(1, qs=input_qv.qs)
-
-    tt_str = 2**n * ["0"]
-    tt_str[int(ctrl_state[::-1], 2)] = "1"
-    from qrisp import TruthTable
-
-    tt = TruthTable([tt_str])
-
-    tt.q_synth(input_qv, output_qv, method="gray_pt")
-
-    res = input_qv.qs.copy()
-    return res.to_gate(f"pt{n}cx")

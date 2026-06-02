@@ -25,6 +25,7 @@ from qrisp.qtypes.quantum_float import QuantumFloat
 from qrisp.misc import gate_wrap
 from qrisp.core import cx
 import jax
+from jax.core import Tracer
 
 
 def _moduli_neq(a, b):
@@ -426,7 +427,7 @@ class QuantumModulus(QuantumFloat):
 
                 return montgomery_mod_mul(self, other)
 
-        elif isinstance(other, (int, np.integer, jnp.integer, BigInteger)):
+        elif isinstance(other, (int, np.integer, jnp.integer, BigInteger, Tracer)):
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
                 cq_montgomery_multiply,
             )
@@ -462,6 +463,10 @@ class QuantumModulus(QuantumFloat):
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
                 best_montgomery_shift,
             )
+
+            # If other is a np.integer, convert to Python int for compatibility with best_montgomery_shift
+            if isinstance(other, np.integer):
+                other = int(other)
 
             shift = best_montgomery_shift(other, self.modulus)
             if isinstance(self.modulus, BigInteger):

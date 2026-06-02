@@ -711,7 +711,7 @@ def make_qc_extraction_eqn_evaluator(qc):
             definition_jaxpr = eqn.params["jaxpr"]
             res = eval_jaxpr(
                 definition_jaxpr.jaxpr, eqn_evaluator=qc_extraction_eqn_evaluator
-            )(*(invalues + definition_jaxpr.consts))
+            )(*(definition_jaxpr.consts + invalues))
 
             if len(definition_jaxpr.jaxpr.outvars) == 1:
                 res = [res]
