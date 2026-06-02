@@ -86,6 +86,7 @@ from xdsl.dialects.builtin import (
     f64,
     i32,
 )
+from xdsl.dialects.scf import WhileOp, IfOp, ForOp, IndexSwitchOp
 from xdsl.ir import (
     Attribute,
     Block,
@@ -888,6 +889,76 @@ def _update_non_qst_block_arg_types(block: Block) -> None:
         # QuantumState args: leave for _strip_qst_from_* to handle
 
 
+def _rebuild_scf_op_without_qst(op, rebuild_fn) -> None:
+    """Generic helper to remove QuantumState from an SCF op and reconstruct it.
+    
+    Handles the boilerplate of:
+    1. Stripping QST from nested block arguments, yields, and conditions.
+    2. Detaching regions safely.
+    3. Mapping old results to new results (and erasing QST results).
+    """
+    # 1. Strip qst from inner terminators and block arguments across all regions
+    for region in op.regions:
+        for b in region.blocks:
+            # Erase qst block arguments
+            for arg in list(b.args):
+                if _is_qst(arg.type):
+                    b.erase_arg(arg, safe_erase=False)
+            
+            # Remove qst from scf.yield / scf.condition operands
+            for inner_op in b.ops:
+                if inner_op.name in ("scf.yield", "scf.condition"):
+                    non_qst = [v for v in inner_op.operands if not _is_qst(v.type)]
+                    inner_op.operands = non_qst
+
+    # 2. Check if reconstruction is actually needed
+    has_qst = any(_is_qst(v.type) for v in op.operands) or any(
+        _is_qst(t) for t in op.result_types
+    )
+    if not has_qst:
+        return
+
+    # 3. Determine new result types (convert Qubit arrays to Quake, drop qst)
+    non_qst_res_types = [
+        _quake_type_for(t) or t for t in op.result_types if not _is_qst(t)
+    ]
+
+    # 4. Safely detach all regions 
+    # (Detaching mutates the tuple, so we strictly pop from index 0)
+    detached_regions = []
+    while len(op.regions) > 0:
+        detached_regions.append(op.detach_region(op.regions[0]))
+
+    # 5. Call the provided op-specific builder function
+    new_op = rebuild_fn(op, detached_regions, non_qst_res_types)
+
+    # 6. Map old results to new results, dropping qst results
+    new_results: list = []
+    new_idx = 0
+    for old_res in op.results:
+        if _is_qst(old_res.type):
+            new_results.append(None)
+        else:
+            new_results.append(new_op.results[new_idx])
+            new_idx += 1
+
+    Rewriter.replace_op(op, new_op, new_results, safe_erase=False)
+
+
+# ---------------------------------------------------------------------------
+# SCF while
+# ---------------------------------------------------------------------------
+
+
+def _strip_qst_from_while(while_op, outer_block: Block) -> None:
+    """Remove QuantumState from a ``scf.while`` and reconstruct without it."""
+    def rebuild(old_op, regions, res_types):
+        non_qst_ops = [v for v in old_op.arguments if not _is_qst(v.type)]
+        return WhileOp(non_qst_ops, res_types, regions[0], regions[1])
+
+    _rebuild_scf_op_without_qst(while_op, rebuild)
+
+
 def _process_scf_while(while_op, outer_block: Block, execution_mode: str = "run") -> None:
     """Lower a ``scf.while`` op: update types, recurse, then strip qst."""
     # 1. Update block arg types in both regions
@@ -904,66 +975,17 @@ def _process_scf_while(while_op, outer_block: Block, execution_mode: str = "run"
     _strip_qst_from_while(while_op, outer_block)
 
 
-def _strip_qst_from_while(while_op, outer_block: Block) -> None:
-    """Remove QuantumState from a ``scf.while`` and reconstruct without it."""
-    before_block = while_op.before_region.blocks.first
-    after_block = while_op.after_region.blocks.first
+# ---------------------------------------------------------------------------
+# SCF if
+# ---------------------------------------------------------------------------
 
-    # a) Remove qst from scf.condition operands
-    for op in before_block.ops:
-        if op.name == "scf.condition":
-            non_qst = [v for v in op.operands if not _is_qst(v.type)]
-            op.operands = non_qst
-            break
 
-    # b) Remove qst from scf.yield operands (after-region)
-    for op in after_block.ops:
-        if op.name == "scf.yield":
-            non_qst = [v for v in op.operands if not _is_qst(v.type)]
-            op.operands = non_qst
-            break
+def _strip_qst_from_if(if_op, outer_block: Block) -> None:
+    """Remove QuantumState from a ``scf.if`` and reconstruct without it."""
+    def rebuild(old_op, regions, res_types):
+        return IfOp(old_op.operands[0], res_types, regions[0], regions[1])
 
-    # c) Erase qst block args (should now have 0 uses)
-    for b in [before_block, after_block]:
-        for arg in list(b.args):
-            if _is_qst(arg.type):
-                b.erase_arg(arg, safe_erase=False)
-
-    # d) Collect non-qst operands and result types for the new while op
-    # Also convert QubitArray/Qubit types to Quake equivalents.
-    non_qst_ops = [v for v in while_op.arguments if not _is_qst(v.type)]
-    non_qst_res_types = [
-        _quake_type_for(t) or t for t in while_op.res.types if not _is_qst(t)
-    ]
-
-    # Detach regions and create new scf.while (if anything changed)
-    has_qst = any(_is_qst(v.type) for v in while_op.arguments) or any(
-        _is_qst(t) for t in while_op.res.types
-    )
-    if not has_qst:
-        return  # Nothing to do
-
-    # Save region references before detaching (detach changes the regions tuple)
-    before_ref = while_op.regions[0]
-    after_ref = while_op.regions[1]
-    before = while_op.detach_region(before_ref)
-    after = while_op.detach_region(after_ref)
-
-    from xdsl.dialects.scf import WhileOp
-
-    new_while = WhileOp(non_qst_ops, non_qst_res_types, before, after)
-
-    # Map old non-qst results → new results; qst results → None (erase)
-    new_results: list = []
-    new_idx = 0
-    for old_res in while_op.res:
-        if _is_qst(old_res.type):
-            new_results.append(None)
-        else:
-            new_results.append(new_while.res[new_idx])
-            new_idx += 1
-
-    Rewriter.replace_op(while_op, new_while, new_results, safe_erase=False)
+    _rebuild_scf_op_without_qst(if_op, rebuild)
 
 
 def _process_scf_if(if_op, outer_block: Block, execution_mode: str = "run") -> None:
@@ -983,45 +1005,25 @@ def _process_scf_if(if_op, outer_block: Block, execution_mode: str = "run") -> N
     _strip_qst_from_if(if_op, outer_block)
 
 
-def _strip_qst_from_if(if_op, outer_block: Block) -> None:
-    """Remove QuantumState from a ``scf.if`` and reconstruct without it."""
-    # Remove qst from yields in both branches
-    for region in if_op.regions:
-        for b in region.blocks:
-            for op in b.ops:
-                if op.name == "scf.yield":
-                    non_qst = [v for v in op.operands if not _is_qst(v.type)]
-                    op.operands = non_qst
+# ---------------------------------------------------------------------------
+# SCF for
+# ---------------------------------------------------------------------------
 
-    # Check if if_op has qst in result types
-    qst_result_types = [t for t in if_op.result_types if _is_qst(t)]
-    if not qst_result_types:
-        return  # Nothing to do
 
-    non_qst_res_types = [
-        _quake_type_for(t) or t for t in if_op.result_types if not _is_qst(t)
-    ]
+def _strip_qst_from_for(for_op, outer_block: Block) -> None:
+    """Remove QuantumState from a ``scf.for`` and reconstruct without it."""
+    def rebuild(old_op, regions, res_types):
+        # scf.for operands: [lb, ub, step, init_args...]
+        non_qst_init_args = [v for v in list(old_op.operands)[3:] if not _is_qst(v.type)]
+        return ForOp(
+            old_op.operands[0],  # lb
+            old_op.operands[1],  # ub
+            old_op.operands[2],  # step
+            non_qst_init_args,
+            regions[0],
+        )
 
-    # Detach regions
-    true_region = if_op.detach_region(if_op.regions[0])
-    false_region = if_op.detach_region(if_op.regions[0])  # now index 0 again
-
-    from xdsl.dialects.scf import IfOp
-
-    cond = if_op.operands[0]
-    new_if = IfOp(cond, non_qst_res_types, true_region, false_region)
-
-    # Map results
-    new_results: list = []
-    new_idx = 0
-    for old_res in if_op.results:
-        if _is_qst(old_res.type):
-            new_results.append(None)
-        else:
-            new_results.append(new_if.results[new_idx])
-            new_idx += 1
-
-    Rewriter.replace_op(if_op, new_if, new_results, safe_erase=False)
+    _rebuild_scf_op_without_qst(for_op, rebuild)
 
 
 def _process_scf_for(for_op, outer_block: Block, execution_mode: str = "run") -> None:
@@ -1037,53 +1039,9 @@ def _process_scf_for(for_op, outer_block: Block, execution_mode: str = "run") ->
     _strip_qst_from_for(for_op, outer_block)
 
 
-def _strip_qst_from_for(for_op, outer_block: Block) -> None:
-    """Remove QuantumState from a ``scf.for`` and reconstruct without it."""
-    body_block = for_op.regions[0].blocks.first
-
-    # Remove qst from scf.yield in body
-    for op in body_block.ops:
-        if op.name == "scf.yield":
-            non_qst = [v for v in op.operands if not _is_qst(v.type)]
-            op.operands = non_qst
-
-    # Erase qst block args (induction variable is first arg, then iter args)
-    for arg in list(body_block.args):
-        if _is_qst(arg.type):
-            body_block.erase_arg(arg, safe_erase=False)
-
-    has_qst = any(_is_qst(t) for t in for_op.result_types)
-    if not has_qst:
-        return
-
-    non_qst_init_args = [v for v in list(for_op.operands)[3:] if not _is_qst(v.type)]
-    non_qst_res_types = [
-        _quake_type_for(t) or t for t in for_op.result_types if not _is_qst(t)
-    ]
-
-    body = for_op.detach_region(for_op.regions[0])
-
-    from xdsl.dialects.scf import ForOp
-
-    new_for = ForOp(
-        for_op.operands[0],  # lb
-        for_op.operands[1],  # ub
-        for_op.operands[2],  # step
-        non_qst_init_args,
-        body,
-    )
-
-    new_results: list = []
-    new_idx = 0
-    for old_res in for_op.results:
-        if _is_qst(old_res.type):
-            new_results.append(None)
-        else:
-            new_results.append(new_for.res[new_idx])
-            new_idx += 1
-
-    Rewriter.replace_op(for_op, new_for, new_results, safe_erase=False)
-
+# ---------------------------------------------------------------------------
+# SCF index switch
+# ---------------------------------------------------------------------------
 
 def _process_scf_index_switch(op, outer_block: Block, execution_mode: str = "run") -> None:
     """Lower a ``scf.index_switch`` op by recursing into its regions."""
