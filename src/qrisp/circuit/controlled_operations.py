@@ -93,7 +93,7 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
         if method == "gray_pt_inv":
             qc = qc.inverse()
 
-    elif u3_gate.name == "rx":
+    elif u3_gate.name in ["rx", "sx", "sx_dg"]:
         # Same thing as with rz but now we use RX = H RZ H
         qc.h(target_qubit)
         gray_phase_synth_qb_list(

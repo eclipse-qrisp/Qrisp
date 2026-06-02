@@ -38,6 +38,7 @@ from qrisp.circuit.standard_operations import (
     RZGate,
     SGate,
     TGate,
+    SXGate,
 )
 
 
@@ -312,7 +313,7 @@ class TestU3GateControl:
     def test_controlled_unitary_matches_analytical(self):
         """Controlled U3 unitary matches analytical controlled-unitary formula."""
         
-        for gate in [TGate(), SGate(), TGate().inverse(), SGate().inverse(), U3Gate(1,2,3)]:
+        for gate in [TGate(), SGate(), TGate().inverse(), SGate().inverse(), SXGate(), SXGate().inverse(), U3Gate(1,2,3)]:
             for i in range(1, 3):
                 ctrl_state = "1"*i
                 expected_unitary = _controlled_unitary(gate.get_unitary(), ctrl_state)
@@ -321,7 +322,7 @@ class TestU3GateControl:
 
     def test_non_trivial_control_state(self):
         
-        for gate in [TGate(), SGate(), TGate().inverse(), SGate().inverse(), U3Gate(1,2,3)]:
+        for gate in [TGate(), SGate(), TGate().inverse(), SGate().inverse(), SXGate(), SXGate().inverse(), U3Gate(1,2,3)]:
 
             for i in range(1, 3):
                 ctrl_state = "0"*i
