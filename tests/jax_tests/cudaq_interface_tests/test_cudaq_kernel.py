@@ -55,7 +55,7 @@ except ImportError as exc:
 # Test qrisp cudaq kernel decorator
 # ---------------------------------------------------------------------------
 
-def test_cudaq_kernel():
+def test_cudaq_kernel_run():
     """Test that a simple @cudaq_kernel compiles and runs, returning a valid measurement outcome."""
     @cudaq_kernel
     def bell():
@@ -72,6 +72,28 @@ def test_cudaq_kernel():
         assert outcome in {0, 3}
 
 
+def test_cudaq_kernel_run_nested_function():
+    """Test that a @cudaq_kernel with a nested function with return value compiles and runs, returning valid measurement outcomes."""
+
+    @qache
+    def inner(qv):
+        x(qv[0])
+        cx(qv[0], qv[1])
+        return 1
+
+    @cudaq_kernel
+    def main():
+        qv = QuantumVariable(2)
+        val = inner(qv)
+        with control(val > 0):
+            x(qv[0])
+        return measure(qv)
+
+    results = cudaq.run(main, shots_count=10)
+    for outcome in results:
+        assert outcome == 2
+
+
 def test_cudaq_kernel_sample():
     """Test that a simple @cudaq_kernel compiles and samples, returning a valid measurement outcome."""
     @cudaq_kernel(execution_mode="sample")
@@ -84,6 +106,28 @@ def test_cudaq_kernel_sample():
     results = cudaq.sample(bell, shots_count=10)
     for outcome in results:
         assert outcome in {"00", "11"}
+
+
+def test_cudaq_kernel_sample_nested_function():
+    """Test that a @cudaq_kernel with a nested function with return value compiles and samples, returning valid measurement outcomes."""
+
+    @qache
+    def inner(qv):
+        x(qv[0])
+        cx(qv[0], qv[1])
+        return 1
+
+    @cudaq_kernel(execution_mode="sample")
+    def main():
+        qv = QuantumVariable(2)
+        val = inner(qv)
+        with control(val > 0):
+            x(qv[0])
+        measure(qv)
+
+    results = cudaq.sample(main, shots_count=10)
+    for outcome in results:
+        assert outcome == "01"
 
 
 def test_cudaq_kernel_multiple_returns():

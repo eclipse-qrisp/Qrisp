@@ -371,7 +371,7 @@ def _fix_func_signature(func_op, mark_cudaq_kernel: bool = False, execution_mode
     # Compute new return types (drop qst, convert qubit types).
     # For sample execution_mode the kernel must return void – cudaq.sample collects
     # measurement results via the runtime, not as classical return values.
-    if execution_mode == "sample":
+    if execution_mode == "sample" and func_op.sym_name.data == "main":
         new_outputs = []
     else:
         new_outputs = [
@@ -389,6 +389,55 @@ def _fix_func_signature(func_op, mark_cudaq_kernel: bool = False, execution_mode
     # Only apply entrypoint to the host-callable main function
     if func_op.sym_name.data == "main":
         func_op.attributes["cudaq.entrypoint"] = StringAttr("true")
+
+
+def _fix_return_op(op, execution_mode: str = "run") -> None:
+    """Remove ``!jasp.QuantumState`` values from ``func.return``."""
+    if execution_mode == "sample":
+        # Walk up to the enclosing func.func to check whether this is @main.
+        parent_func = op.parent_block().parent_region().parent_op()
+        if parent_func.sym_name.data == "main":
+            # cudaq.sample kernels return void; drop all return operands.
+            op.operands = []
+            return
+    non_qst = [v for v in op.operands if not _is_qst(v.type)]
+    op.operands = non_qst
+
+
+def _fix_call_op(op) -> None:
+    """
+    Remove ``!jasp.QuantumState`` values from ``func.call`` operands and results.
+    Convert qubit types in the results to their Quake equivalents.
+    """
+    new_operands = [v for v in op.operands if not _is_qst(v.type)]
+
+    # Convert result types: drop QST, map QubitArray→veq, Qubit→ref
+    new_result_types = []
+    for t in op.result_types:
+        if _is_qst(t):
+            continue
+        elif _is_qubit_array(t):
+            new_result_types.append(QuakeVeqType())
+        elif _is_qubit(t):
+            new_result_types.append(QuakeRefType())
+        else:
+            new_result_types.append(t)
+
+    # Create the new call operation
+    new_call = func.CallOp(op.callee, new_operands, new_result_types)
+
+    # Map old results to new results, ignoring the deleted QuantumState results
+    replacement_results = []
+    new_res_idx = 0
+    for old_res in op.results:
+        if _is_qst(old_res.type):
+            replacement_results.append(None)
+        else:
+            replacement_results.append(new_call.results[new_res_idx])
+            new_res_idx += 1
+
+    # Replace the op and update SSA users
+    Rewriter.replace_op(op, new_call, replacement_results, safe_erase=False)
 
 
 # ---------------------------------------------------------------------------
@@ -846,57 +895,6 @@ def _lower_reset(op, block: Block) -> None:
     block.insert_ops_before([reset_op], op)
     _thread_qst(op)
     Rewriter.erase_op(op)
-
-
-# ---------------------------------------------------------------------------
-# func.return and func.call fixup
-# ---------------------------------------------------------------------------
-
-
-def _fix_return_op(op, execution_mode: str = "run") -> None:
-    """Remove ``!jasp.QuantumState`` values from ``func.return``."""
-    if execution_mode == "sample":
-        # cudaq.sample kernels return void; drop all return operands.
-        op.operands = []
-        return
-    non_qst = [v for v in op.operands if not _is_qst(v.type)]
-    op.operands = non_qst
-
-
-def _fix_call_op(op) -> None:
-    """
-    Remove ``!jasp.QuantumState`` values from ``func.call`` operands and results.
-    Convert qubit types in the results to their Quake equivalents.
-    """
-    new_operands = [v for v in op.operands if not _is_qst(v.type)]
-
-    # Convert result types: drop QST, map QubitArray→veq, Qubit→ref
-    new_result_types = []
-    for t in op.result_types:
-        if _is_qst(t):
-            continue
-        elif _is_qubit_array(t):
-            new_result_types.append(QuakeVeqType())
-        elif _is_qubit(t):
-            new_result_types.append(QuakeRefType())
-        else:
-            new_result_types.append(t)
-
-    # Create the new call operation
-    new_call = func.CallOp(op.callee, new_operands, new_result_types)
-
-    # Map old results to new results, ignoring the deleted QuantumState results
-    replacement_results = []
-    new_res_idx = 0
-    for old_res in op.results:
-        if _is_qst(old_res.type):
-            replacement_results.append(None)
-        else:
-            replacement_results.append(new_call.results[new_res_idx])
-            new_res_idx += 1
-
-    # Replace the op and update SSA users
-    Rewriter.replace_op(op, new_call, replacement_results, safe_erase=False)
 
 
 # ---------------------------------------------------------------------------
