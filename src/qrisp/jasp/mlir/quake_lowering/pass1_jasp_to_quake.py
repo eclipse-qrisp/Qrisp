@@ -721,7 +721,32 @@ def _strip_qst_from_op(op, block: Block) -> None:
 
 
 def _lower_measure(op, block: Block, execution_mode: str = "run") -> None:
-    """``jasp.measure %q, %qst`` → ``quake.mz %q`` + ``quake.discriminate``."""
+    """
+    Lower ``jasp.measure`` to Quake measurement ops.
+
+    The output depends on whether the operand is a single qubit or a qubit
+    array, and on *execution_mode*:
+
+    Single qubit, ``"run"`` mode
+        ``quake.mz %ref → !quake.measure`` followed by
+        ``quake.discriminate → i1``, wrapped back to ``tensor<i1>``.
+
+    Single qubit, ``"sample"`` mode
+        ``quake.mz %ref → !quake.measure`` only.  The classical result is
+        replaced by a zero ``tensor<i1>`` placeholder so that downstream SSA
+        uses remain valid; the placeholder is stripped from the function
+        return by :func:`_fix_return_op`.
+
+    Qubit array, ``"run"`` mode
+        A ``scf.for`` loop extracts each qubit, applies ``quake.mz`` +
+        ``quake.discriminate``, and bit-packs the results into a single
+        ``i64`` (little-endian), which is wrapped to ``tensor<i64>``.
+
+    Qubit array, ``"sample"`` mode
+        ``quake.mz %veq → !cc.stdvec<!quake.measure>`` only.  The classical
+        result is replaced by a zero ``tensor<i64>`` placeholder; stripped
+        from the return by :func:`_fix_return_op`.
+    """
     qubit_val = op.operands[0]  # !jasp.Qubit or !jasp.QubitArray
 
     mz = MzOp(qubit_val)
