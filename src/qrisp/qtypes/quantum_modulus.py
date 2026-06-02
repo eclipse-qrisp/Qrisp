@@ -519,7 +519,7 @@ class QuantumModulus(QuantumFloat):
 
         return res
 
-    __radd__ = __mul__
+    __radd__ = __add__
 
     @gate_wrap(permeability=[1], is_qfree=True)
     def __iadd__(self, other):

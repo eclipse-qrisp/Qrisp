@@ -74,6 +74,20 @@ def test_quantum_modulus_numpy_scalar_add_sub_respect_montgomery_shift():
             continue
         assert outcome[0] == (9 - 10) % modulus
 
+
+def test_quantum_modulus_reverse_add_uses_addition():
+    modulus = 13
+
+    qm = QuantumModulus(modulus)
+    qm[:] = 9
+
+    result = 10 + qm
+
+    for outcome in multi_measurement([result]).keys():
+        if outcome[0] is np.nan:
+            continue
+        assert outcome[0] == (10 + 9) % modulus
+
 def test_modular_arithmetic():
     
     #Test In-Place addition
