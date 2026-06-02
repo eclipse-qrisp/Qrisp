@@ -14,6 +14,82 @@
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
+
+# REVIEW COMMENTS / SUGGESTIONS
+#
+# 1. Ctrl-handling asymmetry between classical and quantum paths
+#    - _apply_classical_carry_chain uses `ctrl` explicitly on every relevant
+#      gate (mcx, _apply_x_bit).
+#    - _apply_quantum_carry_chain forward sweep (lines ~195-200) does NOT use
+#      `ctrl` at all — it relies on the @custom_control decorator's
+#      CustomControlEnvironment to auto-prepend the control qubit at compile
+#      time.  This is correct (see custom_control_environment.py:325-328) but
+#      the asymmetry is confusing for readers.  Consider adding a brief comment
+#      in the forward-sweep loop explaining that ctrl is omitted because the
+#      environment auto-wraps every instruction.
+#
+# 2. Reverse sweep ctrl handling (quantum path, lines ~222-228)
+#    - When ctrl is not None, the code explicitly includes `ctrl` in
+#      mcx([ctrl, a_qbs[i]], ...).  The CustomControlEnvironment sees ctrl
+#      already in the qubit list and takes the targeting_control=True path
+#      (no double-add).  This is correct but subtle.  A one-line note would
+#      help future readers.
+#
+# 3. _is_quantum_register (line 27)
+#    - The check `callable(getattr(qb, "qs", None))` is a duck-type probe:
+#      it verifies `qs` exists and is callable.  If `QuantumSession` is not
+#      callable this would reject valid qubit objects.  Verify that this
+#      predicate matches all intended quantum types (QuantumVariable qubits,
+#      DynamicQubitArray elements, etc.).
+#
+# 4. Late import of BigInteger (line 302 inside gidney_adder)
+#    - Import inside the function body is presumably to avoid circular
+#      dependencies.  A short comment acknowledging the reason would help.
+#
+# 5. Classical-path carry-in encoding: `a = (a << 1) + 1` (line 358)
+#    - Shifting a left by 1 and setting LSB=1 folds c_in into the carry chain
+#      as if a[0] is always 1 and the original a is shifted up.  Clever, but
+#      the side-effect on `a` is then used throughout the rest of the function
+#      (including the final XOR loop).  Consider adding a comment explaining
+#      the trick.
+#
+# 6. Edge case: n == 1
+#    - Wrapping the carry chain in `control(n > 1)` is correct for dynamic
+#      (traced) mode, but in static mode `n` is a plain Python int, so
+#      `control(True)` is a no-op and `control(False)` suppresses all ops.
+#      The ancilla creation `QuantumVariable(n-1)` with n-1=0 should be safe,
+#      but verify that QuantumVariable(0) does not leak.
+#
+# 7. Test `test_gidney_adder_invalid_inputs_raise_value_error` uses regex
+#    `"classical-quantum|quantum-quantum"` for `pytest.raises(match=...)`.
+#    While this works (re.search), the pattern is partial and could match
+#    accidentally if the error message ever changes.  Recommend matching
+#    against the full `invalid_input_pair_msg` string or a more unique
+#    substring.
+#
+# 8. Ancilla cleanup test (test_gidney_adder_ancilla_cleanup, line 239)
+#    - Relies on `"gidney" in v.name` to detect leftovers.  If naming
+#      conventions change (e.g. the `*` suffix is dropped), this test could
+#      silently pass or fail.  Consider using a more robust check.
+#
+# 9. _apply_quantum_carry_chain LSB cleanup (lines ~238-243)
+#    - The `lsb_ctrl_anc` allocation is nested inside `if c_in_qb is not None`
+#      and further inside `if ctrl is not None`.  This is correct but the
+#      allocation/deallocation pattern is easy to misplace during refactoring.
+#      Consider extracting to a helper or adding a guard comment.
+#
+# 10. Test coverage is excellent — classical-a, quantum-a, strings, numpy ints,
+#     negative ints, carry-in, carry-out, control, all-options-combined,
+#     invalid inputs, ancilla cleanup, raw Qubit + QuantumBool carry wires,
+#     T-depth comparison vs Cuccaro, and exhaustive JASP/dynamic-mode
+#     enumeration.  The separate test_sc_gidney_adder.py adds valuable
+#     superposition-state coverage.
+#
+# 11. Performance: _extract_bit is called twice per bit index in the classical
+#     carry chain (once in forward sweep, once in reverse).  For JAX tracing
+#     this is fine (the two calls produce the same traced value); for static
+#     modes the result is the same constant.  No change needed, but noted for
+#     awareness.
 """
 
 import jax.numpy as jnp
