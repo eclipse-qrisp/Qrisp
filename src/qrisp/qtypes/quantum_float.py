@@ -28,7 +28,6 @@ from qrisp.environments import invert, conjugate
 from qrisp.jasp import check_for_tracing_mode
 
 
-@jit
 def _signed_int_iso(x, n):
     """
     Computes the signed integer isomorphism for a given bit-width.
@@ -424,7 +423,7 @@ class QuantumFloat(QuantumVariable):
         # compare the input 'i' against the float limits.
         # we do this before converting to integer to prevent wrapping.
         if not check_for_tracing_mode():
-            is_out_of_bounds = (i > max_float) | (i < min_float)
+            is_out_of_bounds = (i > max_float) or (i < min_float)
 
             # add a check that the provided value is safe to be encoded in the provided QuantumFloat
             if is_out_of_bounds:
