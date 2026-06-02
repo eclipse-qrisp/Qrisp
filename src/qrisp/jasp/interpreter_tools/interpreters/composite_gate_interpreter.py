@@ -118,7 +118,7 @@ def _apply_op(op, qubit_tracers, abs_qst, param_dict=None):
             # Evaluate each symbolic parameter expression (e.g. -alpha/2) against
             # the parent gate's symbol->tracer bindings to produce a concrete JAX
             # tracer for each parameter slot.
-            computed_tracers = [_lambdify(sorted_syms, expr)(*sorted_tracers) for expr in op.params]
+            computed_tracers = [_lambdify(sorted_syms, expr, modules="jax")(*sorted_tracers) for expr in op.params]
             # Emit an identity-param version of the gate (params = [alpha, beta, ...])
             # together with the pre-computed tracers.  This is required because
             # append_impl later calls gate.bind_parameters({alpha: val}), which
