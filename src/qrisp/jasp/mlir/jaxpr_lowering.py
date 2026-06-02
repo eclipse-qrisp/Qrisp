@@ -125,7 +125,7 @@ def MLIR_str_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
     """
     # Create context with unregistered operations allowed so our custom ops
     # remain intact when parsed by xDSL.
-    from xdsl.dialects import builtin, func, linalg, arith, tensor, scf
+    from xdsl.dialects import builtin, func, linalg, arith, tensor, scf, math
     from xdsl.parser import Parser
 
     ctx = Context()
