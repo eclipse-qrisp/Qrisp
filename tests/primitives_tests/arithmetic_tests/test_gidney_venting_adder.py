@@ -51,6 +51,8 @@ def test_extract_bit_bigint(idx, expected):
 ZZ_PARITY_CASES = [
     (0, 0, 0),
     (1, 1, 0),
+    (0, 1, 1),
+    (1, 0, 1),
 ]
 
 DUAL_ZZ_CASES = [
@@ -171,13 +173,26 @@ def test_bit_inverted_zz_zz_mcx_jasp(ctrl1_v, ctrl2_v, b, expected_tgt, ctrl_qbl
 
 ALL_VENTING_CASES = [
     # (init, d, c_in_val, expected, n, ctrl_val)
-    # uncontrolled
+    # n=2 (minimal)
     (1, 1, 0, 2, 2, None),
     (1, 2, None, 3, 2, None),
+    # n=3 (uses write_final_carry_to_msb branch)
+    (4, 3, 0, 7, 3, None),
+    (7, 1, None, 0, 3, None),  # wrap: (7+1) % 8 = 0
+    # n=4 (full loop + final block)
+    (5, 5, 0, 10, 4, None),
+    (12, 7, None, 3, 4, None),  # wrap: (12+7) % 16 = 3
+    # n=5
+    (10, 20, 0, 30, 5, None),
+    # with carry-in
+    (3, 2, 1, 6, 3, None),
+    (6, 2, 1, 9, 4, None),
     # ctrl=1 → matches uncontrolled
     (1, 1, 0, 2, 2, 1),
+    (4, 3, 0, 7, 3, 1),
     # ctrl=0 → no-op
     (1, 1, 0, 1, 2, 0),
+    (4, 3, 0, 4, 3, 0),
 ]
 
 @pytest.mark.parametrize("init, d, c_in_val, expected, n, ctrl_val", ALL_VENTING_CASES)
@@ -205,30 +220,91 @@ def test_carry_venting_adder_jasp(init, d, c_in_val, expected, n, ctrl_val):
 
 
 
-CARRY_XOR_CASES = [
-    (5, 3, None),
+ALL_VENTING_CARRY_XOR_TARGET_CASES = [
+    (1, 1, 0, 2, 3),
+    (5, 3, None, 8, 4),
+    (7, 3, 1, 11, 4),
 ]
 
-@pytest.mark.parametrize("init, d, c_in_val", CARRY_XOR_CASES)
-def test_carry_xor_block_jasp(init, d, c_in_val):
+@pytest.mark.parametrize("init, d, c_in_val, expected, n", ALL_VENTING_CARRY_XOR_TARGET_CASES)
+def test_carry_venting_adder_carry_xor_target(init, d, c_in_val, expected, n):
+    """Verify that carry_venting_adder writes carries into carry_xor_target
+    and the dirty qubits can be read back as 0/1 values (not just |+⟩/|−⟩)."""
     @jaspify
     def run():
-        target = QuantumFloat(4)
+        target = QuantumFloat(n)
         target[:] = init
-        dirty_ancillas = QuantumFloat(4)
-        if c_in_val is None:
-            c_in = None
-        else:
+        if c_in_val is not None:
             c_in = QuantumFloat(1)
             c_in[:] = c_in_val
-        carry_xor_block(d, dirty_ancillas, target, c_in if c_in is None else c_in[0])
-        if c_in is None:
-            return measure(target), measure(dirty_ancillas)
-        return measure(target), measure(dirty_ancillas), measure(c_in)
+        else:
+            c_in = None
+        dirty = QuantumFloat(n)
+        anc = QuantumFloat(2)
+        ventmask = carry_venting_adder(d, target, anc, c_in=c_in if c_in is None else c_in[0],
+                                       carry_xor_target=dirty)
+        return measure(target), ventmask
+    result_target, ventmask = run()
+    assert int(result_target) == expected
+    assert ventmask >= 0
+
+
+CARRY_XOR_CASES = [
+    (5, 3, None, 4),
+    (1, 1, 0, 3),
+]
+
+@pytest.mark.parametrize("init, d, c_in_val, n", CARRY_XOR_CASES)
+def test_carry_xor_block_jasp(init, d, c_in_val, n):
+    """Verify the full phase correction sequence restores dirty ancillas.
+
+    Replicates the exact pattern from dirty_ancillae_adder:
+    carry_venting_adder (fused carry write into n-2 dirty qubits) →
+    X(target) → CZ(dirty, ventmask) → carry_xor_block(d, dirty, target[:-1]) →
+    CZ(dirty, ventmask) → X(target)."""
+    @jaspify
+    def run():
+        target = QuantumFloat(n)
+        target[:] = init
+        if c_in_val is not None:
+            c_in = QuantumFloat(1)
+            c_in[:] = c_in_val
+        else:
+            c_in = None
+        # dirty has n-2 qubits, matching dirty_ancillae_adder
+        num_dirty = max(0, n - 2)
+        dirty = QuantumFloat(num_dirty)
+        anc = QuantumFloat(2)
+
+        # Pass 1: vented addition writes carries into dirty via carry_xor_target
+        ventmask = carry_venting_adder(d, target, anc, c_in=c_in if c_in is None else c_in[0],
+                                       carry_xor_target=dirty)
+
+        # Phase correction (mirrors dirty_ancillae_adder exactly)
+        for i in range(n):
+            x(target[i])
+
+        for k in range(num_dirty):
+            with control((ventmask >> k) & 1):
+                z(dirty[k])
+
+        carry_xor_block(d, dirty, target[:-1], c_in=c_in if c_in is None else c_in[0])
+
+        for k in range(num_dirty):
+            with control((ventmask >> k) & 1):
+                z(dirty[k])
+
+        for i in range(n):
+            x(target[i])
+
+        if c_in_val is None:
+            return measure(target), measure(dirty)
+        return measure(target), measure(dirty), measure(c_in)
+
     result = run()
     target_result, dirty_result = result[0], result[1]
-    assert target_result is not None
-    assert dirty_result is not None
+    assert int(target_result) == (init + d + (c_in_val or 0)) & ((1 << n) - 1)
+    assert int(dirty_result) == 0
     if c_in_val is not None:
         assert int(result[2]) == c_in_val
 
@@ -281,7 +357,7 @@ def test_dirty_ancillae_adder_preserves_dirty():
         target = QuantumFloat(4)
         target[:] = 1
         dirty = QuantumFloat(2)
-        dirty[:] = 1
+        dirty[:] = 2  # dirty = |1⟩|0⟩
         for i in range(2):
             h(dirty[i])
         anc = QuantumFloat(2)
@@ -291,7 +367,7 @@ def test_dirty_ancillae_adder_preserves_dirty():
         return measure(target), measure(dirty)
     result_target, result_dirty = run()
     assert int(result_target) == 2   # 1 + 1 = 2
-    assert int(result_dirty) & 1 == 1  # dirty[0] preserved (phase-corrected back to original)
+    assert int(result_dirty) == 2    # dirty = |1⟩|0⟩ restored (both bits checked)
 
 
 
@@ -449,5 +525,33 @@ def test_no_additional_toffoli_cost():
     # count_ops captures gates after compilation, which decomposes
     # MCX into basis gates (T, H, CX). No "mcx" key appears in the
     # output, so we compare T count as the Toffoli-equivalent metric.
+    assert a.get("t", 0) == b.get("t", 0)
+    assert a.get("t", 0) > 0
+
+
+def test_no_additional_toffoli_cost_full_adder():
+    """Same as above but for gidney_cq_venting_adder (the full 3-ancilla adder)."""
+    from qrisp.jasp import count_ops
+
+    @count_ops(meas_behavior="0")
+    def unctrl():
+        target = QuantumFloat(5)
+        target[:] = 7
+        gidney_cq_venting_adder(3, target)
+        return measure(target)
+
+    @count_ops(meas_behavior="0")
+    def ctrl_on():
+        target = QuantumFloat(5)
+        target[:] = 7
+        ctrl_qbl = QuantumFloat(1)
+        ctrl_qbl[:] = 1
+        with control(ctrl_qbl[0]):
+            gidney_cq_venting_adder(3, target)
+        return measure(target)
+
+    a = unctrl()
+    b = ctrl_on()
+
     assert a.get("t", 0) == b.get("t", 0)
     assert a.get("t", 0) > 0
