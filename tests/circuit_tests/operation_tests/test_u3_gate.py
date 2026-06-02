@@ -299,6 +299,17 @@ class TestU3GateControl:
         expected = _controlled_unitary(_u3_unitary(theta, phi, lam, gp))
         assert np.allclose(cgate.get_unitary(), expected, atol=1e-10)
 
+    def test_non_trivial_control_state(self):
+        
+        for i in range(1, 3):
+
+            ctrl_state = "0"*i
+
+            expected_unitary = U3Gate(1, 2, 3).control(i, ctrl_state = ctrl_state).get_unitary()
+            compiled_unitary = U3Gate(1, 2, 3).control(i, ctrl_state = ctrl_state).definition.get_unitary()
+
+            assert np.linalg.norm(expected_unitary - compiled_unitary) < 1E-4
+
 
 # =============================================================================
 # U3Gate – multi-controlled gates (2+ ctrl qubits)

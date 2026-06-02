@@ -196,7 +196,7 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
         from qrisp.alg_primitives.logic_synthesis.gray_synthesis import GraySynthGate
 
         target_phases = (2**(control_amount+1) - 1)*[0]
-        target_phases.insert(2*int(ctrl_state, 2), np.pi)
+        target_phases.append(np.pi)
         synth_gate = GraySynthGate(target_phases, phase_tolerant = True)
 
         temp_qc = QuantumCircuit(control_amount+1)
