@@ -84,6 +84,7 @@ from qrisp.circuit import (
     ControlledOperation,
 )
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
+from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
 
 # Sentinel object returned when two operations cancel completely.
 _FUSION_CANCEL = object()
@@ -387,6 +388,7 @@ def _fuse_via_transpile(op_a, op_b, gphase_array):
     qc = qc.transpile()
     op_counts = qc.count_ops()
     qc = cancel_inverses(qc)
+    qc = combine_single_qubit_gates(qc)
     if op_counts != qc.count_ops():
         # If all gates cancelled → full cancellation.
         if len(qc.data) == 0:
