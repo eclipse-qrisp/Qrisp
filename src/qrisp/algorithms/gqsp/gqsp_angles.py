@@ -172,7 +172,7 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
     Returns
     -------
     F : Array
-        1-D array containing the sequence, ordered from lowest order term to highest.
+        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.
 
     """
 
@@ -207,12 +207,12 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
 @jax.jit
 def _gqsp_angles_from_nlft_sequence(F: Array) -> Tuple[Array, Array, Array]:
     r"""
-    Computes the GQSP angles form the NLFT sequence.
+    Computes the GQSP angles form the non-linear Fourier sequence.
 
     Parameters
     ----------
     F : ArrayLike
-        1-D array containing the sequence, ordered from lowest order term to highest.
+        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.
 
     Returns
     -------
@@ -257,44 +257,60 @@ def _gqsp_angles_from_nlft_sequence(F: Array) -> Tuple[Array, Array, Array]:
 @jax.jit
 def _xqsp_angles_from_nlft_sequence(F: Array) -> Array:
     r"""
-    Computes the XQSP angles form the NLFT sequence.
+    Computes the XQSP angles form the non-linear Fourier sequence.
 
     Parameters
     ----------
     F : ArrayLike
-        1-D array containing the sequence, ordered from lowest order term to highest.
+        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.
 
     Returns
     -------
     angles : Array
         1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
 
+    Raises
+    ------
+    NotImplementedError
+        Always raised until the XQSP convention is mathematically verified.
     """
-    return jnp.arctan(-jnp.imag(F))
+    raise NotImplementedError(
+            "The XQSP angle calculation is currently unverified and disabled. "
+            "Please use QSP, GQSP, or QSVT conventions instead."
+        )
+    #return jnp.arctan(-jnp.imag(F))
 
 
 @jax.jit
 def _yqsp_angles_from_nlft_sequence(F: Array) -> Array:
     r"""
-    Computes the YQSP angles form the NLFT sequence.
+    Computes the YQSP angles form the non-linear Fourier sequence.
 
     Parameters
     ----------
     F : ArrayLike
-        1-D array containing the sequence, ordered from lowest order term to highest.
+        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.
 
     Returns
     -------
     angles : Array
         1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
 
+    Raises
+    ------
+    NotImplementedError
+        Always raised until the YQSP convention is mathematically verified.
     """
-    return jnp.arctan(jnp.real(F))
+    raise NotImplementedError(
+            "The YQSP angle calculation is currently unverified and disabled. "
+            "Please use QSP, GQSP, or QSVT conventions instead."
+        )
+    #return jnp.arctan(jnp.real(F))
 
 
 def poly_to_nlft_sequence(p: "ArrayLike") -> Array:
     r"""
-    Computes the NLFT sequence for a given polynomial.
+    Computes the non-linear Fourier sequence for a given polynomial.
 
     Parameters
     ----------
@@ -304,7 +320,7 @@ def poly_to_nlft_sequence(p: "ArrayLike") -> Array:
     Returns
     -------
     F : Array
-        1-D array containing the sequence, ordered from lowest order term to highest.
+        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.
 
     """
     # Comupute the maximum of |p(z)| for |z|=1
@@ -380,15 +396,23 @@ def xqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
     alpha : Array
         The scalar scaling factor as 0-D array.
 
+    Raises
+    ------
+    NotImplementedError
+        Always raised until the XQSP convention is mathematically verified.
+
     Notes
     -----
     - The resulting angles correspond to a rescaled version of the input polynomial.
 
     """
-    F, alpha = poly_to_nlft_sequence(p)
-    phi = _xqsp_angles_from_nlft_sequence(F)
-
-    return phi, alpha
+    raise NotImplementedError(
+            "The XQSP angle calculation is currently unverified and disabled. "
+            "Please use QSP, GQSP, or QSVT conventions instead."
+        )
+    #F, alpha = poly_to_nlft_sequence(p)
+    #phi = _xqsp_angles_from_nlft_sequence(F)
+    #return phi, alpha
 
 
 # https://arxiv.org/pdf/2503.03026 
@@ -409,15 +433,23 @@ def yqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
     alpha : Array
         The scalar scaling factor as 0-D array.
 
+    Raises
+    ------
+    NotImplementedError
+        Always raised until the YQSP convention is mathematically verified.
+
     Notes
     -----
     - The resulting angles correspond to a rescaled version of the input polynomial.
 
     """
-    F, alpha = poly_to_nlft_sequence(p)
-    phi = _yqsp_angles_from_nlft_sequence(F)
-
-    return phi, alpha
+    raise NotImplementedError(
+            "The YQSP angle calculation is currently unverified and disabled. "
+            "Please use QSP, GQSP, or QSVT conventions instead."
+        )
+    #F, alpha = poly_to_nlft_sequence(p)
+    #phi = _yqsp_angles_from_nlft_sequence(F)
+    #return phi, alpha
 
 
 def laurent_to_analytic_coeffs(

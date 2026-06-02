@@ -23,6 +23,10 @@ from qrisp.algorithms.gqsp.gqsp_angles import (
     gqsp_angles,
     qsp_angles,
     qsvt_angles,
+    xqsp_angles,
+    yqsp_angles,
+    _xqsp_angles_from_nlft_sequence,
+    _yqsp_angles_from_nlft_sequence,
 )
 from qrisp.algorithms.gqsp.gqsp_angles_verification import (
     assert_gqsp_angles_match_target,
@@ -149,3 +153,21 @@ def test_qsvt_angles(target_coeffs, parity):
         target_cheb_coeffs=target_coeffs, 
         atol=1e-5
     )
+
+
+def test_xqsp_angles_unimplemented():
+    """Test that the xqsp_angles function raises NotImplementedError."""
+    with pytest.raises(NotImplementedError):
+        _xqsp_angles_from_nlft_sequence(np.array([1.0, 0.0, 0.0]))
+    
+    with pytest.raises(NotImplementedError):
+        xqsp_angles(np.array([1.0, 0.0, 0.0]))
+
+
+def test_yqsp_angles_unimplemented():
+    """Test that the yqsp_angles function raises NotImplementedError."""
+    with pytest.raises(NotImplementedError):
+        _yqsp_angles_from_nlft_sequence(np.array([1.0, 0.0, 0.0]))
+
+    with pytest.raises(NotImplementedError):
+        yqsp_angles(np.array([1.0, 0.0, 0.0]))
