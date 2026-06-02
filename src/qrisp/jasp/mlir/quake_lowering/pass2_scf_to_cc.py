@@ -45,7 +45,7 @@ A known CUDA-Q compiler bug causes inclusive loop bounds (``sge``) in
 """
 
 from xdsl.dialects import scf, arith, tensor
-from xdsl.dialects.builtin import IntegerAttr, i1, i64
+from xdsl.dialects.builtin import IntegerAttr, i1, i64, ModuleOp
 from xdsl.ir import Block, Region, SSAValue, Operation
 from xdsl.rewriter import Rewriter
 
@@ -61,7 +61,7 @@ from qrisp.jasp.mlir.quake_lowering.cc_dialect import (
 # ===================================================================
 
 
-def lower_scf_to_cc(module) -> None:
+def lower_scf_to_cc(module: ModuleOp) -> None:
     """In-place PASS 2: lower SCF structured control flow to the CC dialect."""
     for op in list(module.body.blocks[0].ops):
         if op.name == "func.func":

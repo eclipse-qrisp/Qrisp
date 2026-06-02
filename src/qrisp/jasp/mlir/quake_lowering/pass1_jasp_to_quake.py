@@ -70,6 +70,7 @@ SCF ops are handled inside-out:
 import warnings
 
 from xdsl.dialects import arith, func, scf, tensor
+from xdsl.dialects.builtin import ModuleOp
 from xdsl.dialects.builtin import (
     DenseIntOrFPElementsAttr,
     FunctionType,
@@ -115,21 +116,28 @@ from qrisp.jasp.mlir.quake_lowering.quake_dialect import (
 from qrisp.jasp.mlir.quake_lowering.gate_mapping import get_gate_info
 
 # ---------------------------------------------------------------------------
-# xDSL version compatibility
+# Public entry point
 # ---------------------------------------------------------------------------
 
 
-def _replace_all_uses_with(val: SSAValue, new_val: SSAValue) -> None:
-    """Replace all uses of *val* with *new_val*.
+def lower_jasp_to_quake(module: ModuleOp, execution_mode: str = "run") -> None:
+    """In-place PASS 1: eliminate QuantumState and lower all Jasp ops to Quake.
 
-    Provides compatibility between xDSL < 0.57 (which uses
-    ``SSAValue.replace_by``) and xDSL >= 0.57 (which uses
-    ``SSAValue.replace_all_uses_with``).
+    Parameters
+    ----------
+    module:
+        An xDSL ``builtin.ModuleOp`` containing the JASP MLIR IR emitted by
+        :func:`~qrisp.jasp.mlir.mlir_emission.jaspr_to_mlir`.  The module is
+        modified in-place.
+    execution_mode:
+        ``"run"`` (default) packs array measurement results into an ``i64``
+        return value, suitable for ``cudaq.run``.  ``"sample"`` emits a raw
+        ``quake.mz`` on the whole veq and strips classical return values from
+        the function, suitable for ``cudaq.sample``.
     """
-    if hasattr(val, "replace_all_uses_with"):
-        val.replace_all_uses_with(new_val)
-    else:  # xDSL < 0.57
-        val.replace_by(new_val)  # type: ignore[attr-defined]
+    for op in list(module.body.blocks[0].ops):
+        if op.name == "func.func":
+            _process_func(op, execution_mode)
 
 
 # ---------------------------------------------------------------------------
@@ -289,31 +297,6 @@ def _wrap_scalar(
     from_elem = tensor.FromElementsOp(operands=[[val]], result_types=[tensor_type])
     block.insert_ops_before([from_elem], insert_before_op)
     return from_elem.result
-
-
-# ---------------------------------------------------------------------------
-# Public entry point
-# ---------------------------------------------------------------------------
-
-
-def lower_jasp_to_quake(module, execution_mode: str = "run") -> None:
-    """In-place PASS 1: eliminate QuantumState and lower all Jasp ops to Quake.
-
-    Parameters
-    ----------
-    module:
-        An xDSL ``builtin.ModuleOp`` containing the Jasp IR emitted by
-        :func:`~qrisp.jasp.mlir.mlir_emission.jaspr_to_mlir`.  The module is
-        modified in-place.
-    execution_mode:
-        ``"run"`` (default) packs array measurement results into an ``i64``
-        return value, suitable for ``cudaq.run``.  ``"sample"`` emits a raw
-        ``quake.mz`` on the whole veq and strips classical return values from
-        the function, suitable for ``cudaq.sample``.
-    """
-    for op in list(module.body.blocks[0].ops):
-        if op.name == "func.func":
-            _process_func(op, execution_mode)
 
 
 # ---------------------------------------------------------------------------
@@ -520,7 +503,7 @@ def _thread_qst(op) -> None:
 
     for i, qst_out in enumerate(qst_outputs):
         if i < len(qst_inputs):
-            _replace_all_uses_with(qst_out, qst_inputs[i])
+            qst_out.replace_all_uses_with(qst_inputs[i])
         else:
             # No corresponding input – erase all uses (create_quantum_kernel)
             qst_out.erase(safe_erase=False)
@@ -545,7 +528,7 @@ def _lower_consume_quantum_kernel(op, block: Block) -> None:
             DenseIntOrFPElementsAttr.from_list(op.results[0].type, [1])
         )
         block.insert_ops_before([true_const], op)
-        _replace_all_uses_with(op.results[0], true_const.result)
+        op.results[0].replace_all_uses_with(true_const.result)
     Rewriter.erase_op(op)
 
 
@@ -563,7 +546,7 @@ def _lower_create_qubits(op, block: Block) -> None:
     # Map QubitArray result → veq result
     for r in op.results:
         if _is_qubit_array(r.type):
-            _replace_all_uses_with(r, alloca.result)
+            r.replace_all_uses_with(alloca.result)
 
     _thread_qst(op)
     Rewriter.erase_op(op)
@@ -584,7 +567,7 @@ def _lower_get_qubit(op, block: Block) -> None:
 
     for r in op.results:
         if _is_qubit(r.type):
-            _replace_all_uses_with(r, extract.result)
+            r.replace_all_uses_with(extract.result)
 
     Rewriter.erase_op(op)
 
@@ -596,11 +579,10 @@ def _lower_get_size(op, block: Block) -> None:
     block.insert_ops_before([veq_size], op)
 
     # Wrap i64 result back into tensor<i64> for compatibility with downstream ops
-
     result_tensor_type = op.results[0].type
     wrapped = _wrap_scalar(veq_size.result, result_tensor_type, block, op)
 
-    _replace_all_uses_with(op.results[0], wrapped)
+    op.results[0].replace_all_uses_with(wrapped)
     Rewriter.erase_op(op)
 
 
@@ -624,28 +606,15 @@ def _lower_slice(op, block: Block) -> None:
     # end may be negative -> need to normalize and convert to inclusive bound
     hi_raw = _extract_scalar(end_t, i64, block, op)
 
-    # Get length of the veq: len = quake.veq_size %arr
-    veq_size = VeqSizeOp(arr)
-
-    # Constants 0 and 1
-    zero = arith.ConstantOp(IntegerAttr(0, 64))
-    one = arith.ConstantOp(IntegerAttr(1, 64))
-
-    # hi_raw < 0 ?
-    hi_is_neg = arith.CmpiOp(hi_raw, zero.result, "slt")
-
-    # hi_plus_len = hi_raw + len
-    hi_plus_len = arith.AddiOp(hi_raw, veq_size.result)
-
-    # end_abs = hi_is_neg ? (hi_raw + len) : hi_raw
-    hi_abs = arith.SelectOp(hi_is_neg.result, hi_plus_len.result, hi_raw)
+    hi_norm = _normalize_index_for_veq(arr, hi_raw, block, op)
 
     # Convert exclusive upper bound → inclusive upper bound: hi_inclusive = end_abs - 1
-    hi_inclusive = arith.SubiOp(hi_abs.result, one.result)
+    one = arith.ConstantOp(IntegerAttr(1, 64))
+    hi_inclusive = arith.SubiOp(hi_norm, one.result)
 
     # Insert all arithmetic before the jasp.slice op
     block.insert_ops_before(
-        [veq_size, zero, one, hi_is_neg, hi_plus_len, hi_abs, hi_inclusive],
+        [one, hi_inclusive],
         op,
     )
 
@@ -656,7 +625,7 @@ def _lower_slice(op, block: Block) -> None:
     # Replace jasp slice result with the quake.subveq result
     for r in op.results:
         if _is_qubit_array(r.type):
-            _replace_all_uses_with(r, subveq.result)
+            r.replace_all_uses_with(subveq.result)
 
     Rewriter.erase_op(op)
 
@@ -669,7 +638,7 @@ def _lower_fuse(op, block: Block) -> None:
 
     for r in op.results:
         if _is_qubit_array(r.type):
-            _replace_all_uses_with(r, concat.result)
+            r.replace_all_uses_with(concat.result)
 
     Rewriter.erase_op(op)
 
@@ -816,7 +785,7 @@ def _lower_measure(op, block: Block, execution_mode: str = "run") -> None:
 
         # Wrap back to tensor<i1> if downstream expects it
         wrapped = _wrap_scalar(scalar_bit, meas_result.type, block, op)
-        _replace_all_uses_with(meas_result, wrapped)
+        meas_result.replace_all_uses_with(wrapped)
     elif not is_array and execution_mode == "sample":
         # Sample execution_mode, single qubit: emit raw quake.mz (→ !quake.measure) and
         # use a zero i1 placeholder to keep SSA valid.
@@ -825,7 +794,7 @@ def _lower_measure(op, block: Block, execution_mode: str = "run") -> None:
             DenseIntOrFPElementsAttr.from_list(meas_result.type, [0])
         )
         block.insert_ops_before([zero_const], op)
-        _replace_all_uses_with(meas_result, zero_const.result)
+        meas_result.replace_all_uses_with(zero_const.result)
     elif execution_mode == "sample":
         # Sample execution_mode: emit a single quake.mz on the whole veq.
         # Its !cc.stdvec<!quake.measure> result is consumed by the cudaq runtime;
@@ -837,7 +806,7 @@ def _lower_measure(op, block: Block, execution_mode: str = "run") -> None:
             DenseIntOrFPElementsAttr.from_list(meas_result.type, [0])
         )
         block.insert_ops_before([zero_const], op)
-        _replace_all_uses_with(meas_result, zero_const.result)
+        meas_result.replace_all_uses_with(zero_const.result)
     else:
         # Run execution_mode: bit-pack discriminated bits into an i64 via scf.for loop.
 
@@ -882,7 +851,7 @@ def _lower_measure(op, block: Block, execution_mode: str = "run") -> None:
 
         # 6. Wrap the final packed i64 back to tensor<i64> for downstream compatibility
         wrapped = _wrap_scalar(for_op.results[0], meas_result.type, block, op)
-        _replace_all_uses_with(meas_result, wrapped)
+        meas_result.replace_all_uses_with(wrapped)
 
     _thread_qst(op)
     Rewriter.erase_op(op)

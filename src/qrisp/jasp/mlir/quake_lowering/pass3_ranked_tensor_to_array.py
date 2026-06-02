@@ -43,6 +43,7 @@ Handles both static and dynamic array indexing.
 """
 
 from xdsl.dialects import arith, func as func_dialect, tensor
+from xdsl.dialects.builtin import ModuleOp
 from xdsl.dialects.builtin import (
     DenseIntOrFPElementsAttr,
     FloatAttr,
@@ -81,7 +82,7 @@ _MLIR_DYNAMIC = -9223372036854775808
 # ===================================================================
 
 
-def lower_ranked_tensors(module) -> None:
+def lower_ranked_tensors(module: ModuleOp) -> None:
     """In-place pass: lower ranked tensor constants + accesses to CC arrays.
 
     Pipeline:

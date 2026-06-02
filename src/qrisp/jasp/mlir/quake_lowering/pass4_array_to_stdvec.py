@@ -40,7 +40,7 @@ that receive concrete locally-allocated arrays.
 """
 
 from xdsl.dialects import func as func_dialect
-from xdsl.dialects.builtin import FunctionType, StringAttr
+from xdsl.dialects.builtin import FunctionType, ModuleOp, StringAttr
 from xdsl.ir import Block, Region, SSAValue
 from xdsl.rewriter import Rewriter
 
@@ -57,7 +57,7 @@ from qrisp.jasp.mlir.quake_lowering.cc_dialect import (
 # ===================================================================
 
 
-def lower_array_params_to_stdvec(module) -> None:
+def lower_array_params_to_stdvec(module: ModuleOp) -> None:
     """In-place pass: rewrite !cc.ptr<!cc.array<T x N>> params.
 
     1. Process entrypoint: param → !cc.stdvec<T> + cc.stdvec_data
@@ -84,6 +84,10 @@ def lower_array_params_to_stdvec(module) -> None:
     if dynamic_ptrs:
         _propagate_dynamic_types(entrypoint, all_funcs, dynamic_ptrs)
 
+
+# ===================================================================
+# Helpers
+# ===================================================================
 
 def _get_func_name(func_op) -> str:
     """Get the function name from a func.func op."""

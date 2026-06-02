@@ -37,6 +37,7 @@ Compatible with **xDSL ≥ 0.55**.
 
 from xdsl.context import Context
 from xdsl.dialects import arith, func as func_dialect, tensor
+from xdsl.dialects.builtin import ModuleOp
 from xdsl.dialects.builtin import (
     DenseIntOrFPElementsAttr,
     FloatAttr,
@@ -46,7 +47,6 @@ from xdsl.dialects.builtin import (
     Float16Type,
     Float32Type,
     Float64Type,
-    ModuleOp,
     TensorType,
 )
 from xdsl.passes import ModulePass
@@ -58,6 +58,16 @@ from xdsl.pattern_rewriter import (
     op_type_rewrite_pattern,
 )
 from xdsl.rewriter import InsertPoint
+
+
+# ===================================================================
+# Public entry point
+# ===================================================================
+
+
+def unwrap_scalar_tensors(module: ModuleOp) -> None:
+    """Applies the TensorUnwrapPass to the given module."""
+    TensorUnwrapPass().apply(Context(), module)
 
 
 # ------------------------------------------------------------------ #
@@ -404,7 +414,3 @@ class TensorUnwrapPass(ModulePass):
             ),
             apply_recursively=False,
         ).rewrite_module(op)
-
-
-def unwrap_scalar_tensors(module: ModuleOp) -> None:
-    TensorUnwrapPass().apply(Context(), module)
