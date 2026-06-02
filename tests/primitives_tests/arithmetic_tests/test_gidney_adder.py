@@ -117,6 +117,9 @@ def test_gidney_adder_with_carry_options(
     if expected_cout is not None:
         assert c_out is not None
         assert c_out.get_measurement() == expected_cout
+    # a is unchanged by the adder
+    if isinstance(a, QuantumFloat):
+        assert a.get_measurement() == {a_val: 1.0}
 
 
 @pytest.mark.parametrize(
@@ -224,20 +227,26 @@ def test_gidney_adder_ancilla_cleanup(a_spec, a_val, b_bits, b_val):
     if kind == "qf":
         a = QuantumFloat(n)
         a[:] = a_val
+        a_var = a
     elif kind == "qf_list":
         qf = QuantumFloat(n)
         qf[:] = a_val
         a = qf[:]
+        a_var = qf
     else:
         a = a_val
+        a_var = None
 
     b = QuantumFloat(b_bits)
     b[:] = b_val
 
+    user_vars = [v for v in [a_var, b] if v is not None]
+    user_ids = {id(v) for v in user_vars}
     gidney_adder(a, b)
-
-    remaining = [v.name for v in b.qs.qv_list if "gidney" in v.name]
-    assert remaining == []
+    # Any variable in the session whose identity doesn't match a user-created
+    # variable is a leaked ancilla — regardless of naming conventions.
+    leaked = [v for v in b.qs.qv_list if id(v) not in user_ids]
+    assert leaked == []
 
 
 @pytest.mark.parametrize("carry_kind", ["in", "out"])
@@ -274,6 +283,136 @@ def test_gidney_adder_inputs_unmodified_size():
 
 
 @pytest.mark.parametrize(
+    "kind, a_val, b_val, use_cout, expected_b, expected_cout", [
+        ("classical", 0, 0, False, 0, None),
+        ("classical", 1, 0, False, 1, None),
+        ("classical", 1, 1, False, 0, None),
+        ("classical", 0, 0, True,  0, 0),
+        ("classical", 1, 1, True,  0, 1),
+        ("quantum",   0, 0, False, 0, None),
+        ("quantum",   1, 0, False, 1, None),
+        ("quantum",   1, 1, False, 0, None),
+        ("quantum",   0, 0, True,  0, 0),
+        ("quantum",   1, 1, True,  0, 1),
+    ],
+)
+def test_gidney_adder_single_qubit(kind, a_val, b_val, use_cout, expected_b, expected_cout):
+    """n == 1 edge case: carry chain is skipped via control(n > 1)."""
+    if kind == "classical":
+        a = a_val
+    else:
+        a = QuantumFloat(1)
+        a[:] = a_val
+
+    b = QuantumFloat(1)
+    b[:] = b_val
+
+    kwargs = {}
+    if use_cout:
+        c_out = QuantumBool()
+        kwargs["c_out"] = c_out
+
+    gidney_adder(a, b, **kwargs)
+
+    assert b.get_measurement() == {expected_b: 1.0}
+    if expected_cout is not None:
+        assert c_out.get_measurement() == {expected_cout: 1.0}
+
+
+@pytest.mark.parametrize(
+    "n_bits, a_val, b_val, spec, expected", [
+    (1, 0, 0, None, 0),      # n=1 edge case (item 8)
+    (1, 1, 0, None, 1),
+    (1, 1, 1, None, 0),
+    (4, -3, 10, None, 7),    # negative / large a
+    (4, -1, 1, None, 0),
+    (4, 20, 5, None, 9),
+    (4, 3, 5, "numpy", 8),   # numpy int a
+    (4, 5, 10, "dqa", 15),   # DynamicQubitArray as b
+])
+def test_gidney_adder_classical_a_dynamic(n_bits, a_val, b_val, spec, expected):
+    """Classical a + quantum b in dynamic mode (varying input types)."""
+    @boolean_simulation
+    def main(bits, av, bv):
+        b_qf = QuantumFloat(bits)
+        b_qf[:] = bv
+        b_arg = b_qf.reg if spec == "dqa" else b_qf
+        gidney_adder(av, b_arg)
+        return measure(b_qf)
+
+    a = np.int64(a_val) if spec == "numpy" else a_val
+    assert main(n_bits, a, b_val) == expected
+
+
+def test_gidney_adder_single_qubit_no_ancilla_leak():
+    """n == 1: QuantumVariable(0) should not leak."""
+    b = QuantumFloat(1)
+    b[:] = 0
+    initial_ids = {id(b)}
+    gidney_adder(1, b)
+    leaked = [v for v in b.qs.qv_list if id(v) not in initial_ids]
+    assert leaked == []
+
+
+@pytest.mark.parametrize(
+    "desc, a_spec, a_val, b_bits, b_val, carry_args, expected", [
+        # Quantum a + c_in + c_out without ctrl (item 6)
+        ("quantum a + c_in + c_out, no ctrl",
+         ("qf", 4), 3, 4, 5, {"c_in": 1, "c_out": True}, {"b": {9: 1.0}, "cout": {0: 1.0}}),
+        # n == 1 with control (item 8)
+        ("n=1 quantum a + ctrl",
+         ("qf", 1), 1, 1, 1, {"ctrl": True}, {"b": {0: 1.0}}),
+        ("n=1 classical a + ctrl",
+         ("classical", None), 1, 1, 1, {"ctrl": True}, {"b": {0: 1.0}}),
+        # Empty quantum a list — identity operation (item 2)
+        ("empty quantum a list",
+         ("empty_list", None), None, 4, 7, {}, {"b": {7: 1.0}}),
+        # Classical a wider than b (item 7)
+        ("classical a=257 in 8-bit b",
+         ("classical", None), 257, 8, 0, {}, {"b": {1: 1.0}}),
+        # String a + c_out (item 4)
+        ("string a + c_out",
+         ("classical", None), "10", 8, 5, {"c_out": True}, {"b": {6: 1.0}, "cout": {0: 1.0}}),
+    ],
+)
+def test_gidney_adder_additional_edge_cases(desc, a_spec, a_val, b_bits, b_val, carry_args, expected):
+    """Cover remaining static-mode gaps identified during code review."""
+    kind, n = a_spec
+    if kind == "qf":
+        a = QuantumFloat(n)
+        a[:] = a_val
+    elif kind == "empty_list":
+        a = []
+    else:
+        a = a_val
+
+    b = QuantumFloat(b_bits)
+    b[:] = b_val
+
+    kwargs = {}
+    if "c_in" in carry_args:
+        c_in = QuantumBool()
+        if carry_args["c_in"]:
+            x(c_in[0])
+        kwargs["c_in"] = c_in
+    if "c_out" in carry_args and carry_args["c_out"]:
+        c_out = QuantumBool()
+        kwargs["c_out"] = c_out
+
+    if "ctrl" in carry_args and carry_args["ctrl"]:
+        ctrl = QuantumBool()
+        x(ctrl[0])
+        with control(ctrl):
+            gidney_adder(a, b, **kwargs)
+    else:
+        gidney_adder(a, b, **kwargs)
+
+    assert b.get_measurement() == expected["b"]
+    if "cout" in expected:
+        assert c_out.get_measurement() == expected["cout"]
+
+
+@pytest.mark.parametrize(
     "mode, validation_case, should_raise",
     [
         ("static", "invalid_a", True),
@@ -290,7 +429,7 @@ def test_gidney_adder_inputs_unmodified_size():
 )
 def test_gidney_adder_invalid_inputs_raise_value_error(mode, validation_case, should_raise):
     """Validation should reject invalid pairs and accept list-based quantum b targets."""
-    expected_msg = "classical-quantum|quantum-quantum"
+    expected_msg = "gidney_adder expects inputs"
     if mode == "static":
         b = QuantumFloat(4)
         b[:] = 0
@@ -616,3 +755,172 @@ def test_gidney_adder_jasp_mode_with_biginteger_classical_input(n_bits, a_val, b
 
     mod = 1 << n_bits
     assert main(n_bits, a_val, b_val) == (a_val + b_val) % mod
+
+
+@pytest.mark.parametrize("N, L, a_val, b_val", [(5, 3, 17, 5)])
+def test_gidney_adder_quantum_a_wider_than_b_dynamic(N, L, a_val, b_val):
+    """Quantum a wider than b in dynamic/tracing mode.
+
+    Exercises the truncation + extension ancilla path.
+    """
+    @boolean_simulation
+    def main(n, l, av, bv):
+        a_qf = QuantumFloat(n)
+        a_qf[:] = av
+        b_qf = QuantumFloat(l)
+        b_qf[:] = bv
+        gidney_adder(a_qf, b_qf)
+        return measure(b_qf)
+
+    expected = (a_val + b_val) % (1 << L)
+    assert main(N, L, a_val, b_val) == expected
+
+
+def test_gidney_adder_invalid_binary_string_dynamic():
+    """Invalid binary string a raises ValueError in dynamic/tracing mode."""
+    @boolean_simulation
+    def main():
+        b = QuantumFloat(4)
+        b[:] = 0
+        gidney_adder("abc", b)
+        return measure(b)
+
+    with pytest.raises(ValueError, match="base 2"):
+        main()
+
+
+# ======================================================================
+# Expected-failure tests for scenarios blocked by DynamicQubitArray.__add__ /
+# __radd__ isinstance bug (doesn't recognise JAX tracer qubits).
+# Once that bug is fixed these can be changed to normal tests.
+# ======================================================================
+
+
+@pytest.mark.xfail(
+    reason="DynamicQubitArray.__add__ rejects JAX tracer in [c_in_qb] + b_qbs",
+    strict=True,
+)
+@pytest.mark.parametrize("n_bits, a_val, b_val", [(4, 5, 10)])
+def test_gidney_adder_classical_a_cin_dynamic_xfail(n_bits, a_val, b_val):
+    """Classical a + c_in in dynamic mode (xfail — DynamicQubitArray bug)."""
+    @boolean_simulation
+    def main(bits, av, bv):
+        b_qf = QuantumFloat(bits)
+        b_qf[:] = bv
+        c_in = QuantumBool()
+        c_in.flip()
+        gidney_adder(av, b_qf, c_in=c_in)
+        return measure(b_qf)
+
+    assert main(n_bits, a_val, b_val) == (a_val + b_val + 1) % (1 << n_bits)
+
+
+@pytest.mark.xfail(
+    reason="DynamicQubitArray.__add__ rejects JAX tracer in b_qbs + [c_out_qb]",
+    strict=True,
+)
+@pytest.mark.parametrize("kind, n_bits, a_val, b_val", [
+    ("classical", 4, 5,  10),
+    ("classical", 4, 12, 7),
+    ("classical", 1, 1,  1),
+    ("quantum",   4, 5,  10),
+    ("quantum",   4, 12, 7),
+    ("quantum",   1, 1,  1),
+])
+def test_gidney_adder_cout_dynamic_xfail(kind, n_bits, a_val, b_val):
+    """C_out in dynamic mode (xfail — DynamicQubitArray bug).
+
+    Covers both classical and quantum a paths.
+    """
+    @boolean_simulation
+    def main(bits, av, bv):
+        if kind == "quantum":
+            a_qf = QuantumFloat(bits)
+            a_qf[:] = av
+            av = a_qf
+        b_qf = QuantumFloat(bits)
+        b_qf[:] = bv
+        c_out = QuantumBool()
+        gidney_adder(av, b_qf, c_out=c_out)
+        return measure(b_qf), measure(c_out)
+
+    mod = 1 << n_bits
+    total = a_val + b_val
+    expected_b = total % mod
+    expected_cout = 1 if total >= mod else 0
+    b_res, cout_res = main(n_bits, a_val, b_val)
+    assert b_res == expected_b
+    assert cout_res == expected_cout
+
+
+@pytest.mark.xfail(
+    reason="DynamicQubitArray.__add__ rejects JAX tracer in b_qbs + [c_out_qb]",
+    strict=True,
+)
+@pytest.mark.parametrize("n_bits, a_val, b_val", [(4, 3, 10)])
+def test_gidney_adder_cin_cout_ctrl_dynamic_xfail(n_bits, a_val, b_val):
+    """c_in + c_out + ctrl in dynamic mode (xfail — DynamicQubitArray bug).
+
+    Also exercises the ``[c_in_qb] + b_qbs`` path (__radd__).
+    """
+    @boolean_simulation
+    def main(bits, av, bv):
+        a_qf = QuantumFloat(bits)
+        a_qf[:] = av
+        b_qf = QuantumFloat(bits)
+        b_qf[:] = bv
+        c_in = QuantumBool()
+        c_in.flip()
+        c_out = QuantumBool()
+        ctrl = QuantumBool()
+        ctrl.flip()
+        with control(ctrl):
+            gidney_adder(a_qf, b_qf, c_in=c_in, c_out=c_out)
+        return measure(b_qf), measure(c_out)
+
+    mod = 1 << n_bits
+    total = a_val + b_val + 1
+    expected_b = total % mod
+    expected_cout = 1 if total >= mod else 0
+    b_res, cout_res = main(n_bits, a_val, b_val)
+    assert b_res == expected_b
+    assert cout_res == expected_cout
+
+
+@pytest.mark.parametrize("a_str, b_bits, b_val", [
+    ("1010", 4, 5),
+    ("11",   2, 1),
+])
+def test_gidney_adder_string_a_dynamic(a_str, b_bits, b_val):
+    """String a input in dynamic/tracing mode (string captured as closure)."""
+    @boolean_simulation
+    def main(bits, bv):
+        s = a_str
+        b_qf = QuantumFloat(bits)
+        b_qf[:] = bv
+        gidney_adder(s, b_qf)
+        return measure(b_qf)
+
+    a_int = int(a_str[::-1], 2)
+    expected = (a_int + b_val) % (1 << b_bits)
+    assert main(b_bits, b_val) == expected
+
+
+@pytest.mark.parametrize("n_bits, a_val, b_val", [
+    (4, 5,  10),
+    (8, 17, 42),
+])
+def test_gidney_adder_ancilla_cleanup_dynamic(n_bits, a_val, b_val):
+    """Ancilla cleanup verification in dynamic/tracing mode."""
+    @boolean_simulation
+    def main(bits, av, bv):
+        b_qf = QuantumFloat(bits)
+        b_qf[:] = bv
+        gidney_adder(av, b_qf)
+        user_ids = {id(b_qf)}
+        leaked = [v for v in b_qf.qs.qv_list if id(v) not in user_ids]
+        assert leaked == []
+        return measure(b_qf)
+
+    expected = (a_val + b_val) % (1 << n_bits)
+    assert main(n_bits, a_val, b_val) == expected

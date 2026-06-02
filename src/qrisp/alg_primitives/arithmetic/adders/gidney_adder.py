@@ -15,82 +15,9 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 
-# REVIEW COMMENTS / SUGGESTIONS
-#
-# 1. Ctrl-handling asymmetry between classical and quantum paths
-#    - _apply_classical_carry_chain uses `ctrl` explicitly on every relevant
-#      gate (mcx, _apply_x_bit).
-#    - _apply_quantum_carry_chain forward sweep (lines ~195-200) does NOT use
-#      `ctrl` at all — it relies on the @custom_control decorator's
-#      CustomControlEnvironment to auto-prepend the control qubit at compile
-#      time.  This is correct (see custom_control_environment.py:325-328) but
-#      the asymmetry is confusing for readers.  Consider adding a brief comment
-#      in the forward-sweep loop explaining that ctrl is omitted because the
-#      environment auto-wraps every instruction.
-#
-# 2. Reverse sweep ctrl handling (quantum path, lines ~222-228)
-#    - When ctrl is not None, the code explicitly includes `ctrl` in
-#      mcx([ctrl, a_qbs[i]], ...).  The CustomControlEnvironment sees ctrl
-#      already in the qubit list and takes the targeting_control=True path
-#      (no double-add).  This is correct but subtle.  A one-line note would
-#      help future readers.
-#
-# 3. _is_quantum_register (line 27)
-#    - The check `callable(getattr(qb, "qs", None))` is a duck-type probe:
-#      it verifies `qs` exists and is callable.  If `QuantumSession` is not
-#      callable this would reject valid qubit objects.  Verify that this
-#      predicate matches all intended quantum types (QuantumVariable qubits,
-#      DynamicQubitArray elements, etc.).
-#
-# 4. Late import of BigInteger (line 302 inside gidney_adder)
-#    - Import inside the function body is presumably to avoid circular
-#      dependencies.  A short comment acknowledging the reason would help.
-#
-# 5. Classical-path carry-in encoding: `a = (a << 1) + 1` (line 358)
-#    - Shifting a left by 1 and setting LSB=1 folds c_in into the carry chain
-#      as if a[0] is always 1 and the original a is shifted up.  Clever, but
-#      the side-effect on `a` is then used throughout the rest of the function
-#      (including the final XOR loop).  Consider adding a comment explaining
-#      the trick.
-#
-# 6. Edge case: n == 1
-#    - Wrapping the carry chain in `control(n > 1)` is correct for dynamic
-#      (traced) mode, but in static mode `n` is a plain Python int, so
-#      `control(True)` is a no-op and `control(False)` suppresses all ops.
-#      The ancilla creation `QuantumVariable(n-1)` with n-1=0 should be safe,
-#      but verify that QuantumVariable(0) does not leak.
-#
-# 7. Test `test_gidney_adder_invalid_inputs_raise_value_error` uses regex
-#    `"classical-quantum|quantum-quantum"` for `pytest.raises(match=...)`.
-#    While this works (re.search), the pattern is partial and could match
-#    accidentally if the error message ever changes.  Recommend matching
-#    against the full `invalid_input_pair_msg` string or a more unique
-#    substring.
-#
-# 8. Ancilla cleanup test (test_gidney_adder_ancilla_cleanup, line 239)
-#    - Relies on `"gidney" in v.name` to detect leftovers.  If naming
-#      conventions change (e.g. the `*` suffix is dropped), this test could
-#      silently pass or fail.  Consider using a more robust check.
-#
-# 9. _apply_quantum_carry_chain LSB cleanup (lines ~238-243)
-#    - The `lsb_ctrl_anc` allocation is nested inside `if c_in_qb is not None`
-#      and further inside `if ctrl is not None`.  This is correct but the
-#      allocation/deallocation pattern is easy to misplace during refactoring.
-#      Consider extracting to a helper or adding a guard comment.
-#
-# 10. Test coverage is excellent — classical-a, quantum-a, strings, numpy ints,
-#     negative ints, carry-in, carry-out, control, all-options-combined,
-#     invalid inputs, ancilla cleanup, raw Qubit + QuantumBool carry wires,
-#     T-depth comparison vs Cuccaro, and exhaustive JASP/dynamic-mode
-#     enumeration.  The separate test_sc_gidney_adder.py adds valuable
-#     superposition-state coverage.
-#
-# 11. Performance: _extract_bit is called twice per bit index in the classical
-#     carry chain (once in forward sweep, once in reverse).  For JAX tracing
-#     this is fine (the two calls produce the same traced value); for static
-#     modes the result is the same constant.  No change needed, but noted for
-#     awareness.
 """
+
+
 
 import jax.numpy as jnp
 import numpy as np
@@ -192,6 +119,11 @@ def _apply_classical_carry_chain(gidney_anc, b_qbs, n, a_int, a_int_is_bigint, c
     for j in jrange(n - 2):
         i = j + 1
         cx(gidney_anc[i - 1], b_qbs[i])
+        # _extract_bit is called twice for the same index i — once here and
+        # once below for the uncomputation.  This is harmless: in JAX tracing
+        # the duplicate is collapsed, and in static mode both calls return the
+        # same constant.  The alternative (caching the bit) would add complexity
+        # for zero benefit.
         bit_i = _extract_bit(a_int, i, a_int_is_bigint)
         with control(bit_i):
             _apply_x_bit(gidney_anc[i - 1], ctrl)
@@ -209,6 +141,8 @@ def _apply_classical_carry_chain(gidney_anc, b_qbs, n, a_int, a_int_is_bigint, c
     for j in jrange(n - 2):
         i = n - j - 2
         cx(gidney_anc[i - 1], gidney_anc[i])
+        # Duplicate _extract_bit call for the same index i (see forward sweep
+        # comment above — the double call is intentional and harmless).
         bit_i = _extract_bit(a_int, i, a_int_is_bigint)
         with control(bit_i):
             _apply_x_bit(gidney_anc[i - 1], ctrl)
@@ -270,6 +204,11 @@ def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, c
     #      carry recurrence: carry[i] = a[i]&b[i] ^ carry[i-1]&(a[i]^b[i]))
     for j in jrange(n - 2):
         i = j + 1
+        # ctrl is not referenced here — the @custom_control decorator's
+        # CustomControlEnvironment auto-prepends the control qubit to every
+        # instruction at compile time (see custom_control_environment.py:325).
+        # The reverse sweep below does reference ctrl explicitly because those
+        # mcx gates need it as a second control, not just an outer guard.
         cx(gidney_anc[i - 1], b_qbs[i])
         cx(gidney_anc[i - 1], a_qbs[i])
         mcx([a_qbs[i], b_qbs[i]], gidney_anc[i], method="gidney")
@@ -296,6 +235,8 @@ def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, c
         cx(gidney_anc[i - 1], gidney_anc[i])
         mcx([a_qbs[i], b_qbs[i]], gidney_anc[i], method="gidney_inv")
         if ctrl is not None:
+            # ctrl is already in the qubit list, so CustomControlEnvironment
+            # takes the targeting_control=True path (no double-add).
             mcx([ctrl, a_qbs[i]], b_qbs[i], method="gidney")
             cx(gidney_anc[i - 1], a_qbs[i])
             cx(gidney_anc[i - 1], b_qbs[i])
@@ -311,6 +252,11 @@ def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, c
 
         # When an outer control is present, the carry-in handling needs
         # an extra ancilla to keep the c_in / b[0] interaction clean.
+        #
+        # NOTE: lsb_ctrl_anc is allocated and deleted entirely within this
+        # nested block (inside c_in_qb AND ctrl guards).  If this block is
+        # ever restructured, make sure the ancilla is still deleted before
+        # the enclosing c_in_qb scope ends.
         if ctrl is not None:
             lsb_ctrl_anc = QuantumBool(name="gidney_lsb_ctrl_anc*")
             mcx([ctrl, c_in_qb], lsb_ctrl_anc[0], method="gidney")
@@ -431,6 +377,11 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         b_qbs = b[:]
         if c_in_qb is not None:
             b_qbs = [c_in_qb] + b_qbs
+            # Shift a left by 1 and set LSB to 1 so that the carry chain
+            # treats c_in as a constant-1 addend at position 0 while the
+            # original a bits move up one slot.  This mutated a is used
+            # downstream (final XOR loop) — the shift is effectively undone
+            # by the adjusted start offset.
             a = (a << 1) + 1
         if c_out_qb is not None:
             b_qbs = b_qbs + [c_out_qb]
@@ -500,3 +451,4 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         cx(a_qbs[0], b_qbs[0])
 
     a_ext.delete()
+
