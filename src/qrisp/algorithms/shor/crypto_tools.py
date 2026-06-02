@@ -34,7 +34,7 @@ def rsa_decrypt(e, N, cipher_int, backend=None):
         Public key 2.
     cipher_int : int
         The integer to decrypt.
-    backend : :ref:`BackendClient`, optional
+    backend : BackendLike, optional
         The backend to execute the quantum algorithm. By default the Qrisp simulator will be used.
 
     Returns
@@ -175,7 +175,7 @@ def rsa_decrypt_string(e, N, ciphertext, backend=None):
         Public key 2.
     ciphertext : string
         A bitstring, containing the encrypted message.
-    backend : :ref:`BackendClient`, optional
+    backend : BackendLike, optional
         The backend to execute the quantum algorithm. By default the Qrisp simulator will be used.
 
     Returns

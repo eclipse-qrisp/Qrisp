@@ -31,3 +31,5 @@ Utilities
     poly2cheb
     cheb2poly
     gqsp_angles
+    qsp_angles
+    qsvt_angles
