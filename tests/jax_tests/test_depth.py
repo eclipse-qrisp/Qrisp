@@ -30,6 +30,8 @@ from qrisp import (
     h,
     measure,
     rx,
+    rz,
+    u3,
 )
 from qrisp.jasp import jrange, q_cond
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
@@ -210,6 +212,33 @@ class TestDepthMultiQubit:
             return measure(qf[0])
 
         assert main(4) == 4
+
+    @pytest.mark.parametrize(
+        "control_qubit,target_qubit_1,target_qubit_2,param_qubit,expected_depth",
+        [
+            (0, 1, 1, 0, 6),
+            (0, 1, 2, 3, 4),
+            (0, 3, 3, 3, 6),
+            (1, 0, 0, 0, 6),
+            (2, 1, 1, 0, 4),
+        ],
+    )
+    def test_parametrized_gates(
+        self, control_qubit, target_qubit_1, target_qubit_2, param_qubit, expected_depth
+    ):
+        """Test depth of a combination of gates including a parametrized gate, with different qubit configurations."""
+
+        @depth(meas_behavior="1")
+        def main():
+            qf = QuantumFloat(4)
+            rx(0.123, qf[param_qubit])
+            rz(0.456, qf[param_qubit])
+            cx(qf[control_qubit], qf[target_qubit_1])
+            rx(0.789, qf[param_qubit])
+            cx(qf[control_qubit], qf[target_qubit_2])
+            u3(0.321, 0.654, 0.987, qf[param_qubit])
+
+        assert main() == expected_depth
 
     def test_multiple_create_qubits(self):
         """Test depth computation with multiple create_qubits calls."""
@@ -572,8 +601,8 @@ class TestDepthMeasurementBehavior:
         assert first == second
 
 
-class TestDepthSliceFuse:
-    """Test that the depth is correctly computed when slicing and/or fusing quantum registers."""
+class TestDepthSlice:
+    """Test that the depth is correctly computed when slicing a quantum register."""
 
     @pytest.mark.parametrize(
         "slices,expected_depth",
@@ -656,6 +685,106 @@ class TestDepthSliceFuse:
             cx(qf2[0:1], qf2[1:2])
 
         assert main(4, 4) == 3
+
+    def test_slice_negative_stop(self):
+        """Test depth computation with slicing using negative stop index."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
+            h(qf[0:-1])  # should apply h to all but the last qubit
+            h(qf[:-1])  # should apply h to all but the last qubit (same as above)
+
+        assert main(2) == 2
+
+    def test_slice_negative_start(self):
+        """Test depth computation with slicing using negative start index."""
+
+        @depth(meas_behavior="0")
+        def main():
+            qf = QuantumFloat(5)
+            h(qf[-4:5])  # should apply h to all qubits except the first one
+            h(qf[-40:5])  # should apply h to all qubits
+            h(qf[-4:50])  # should apply h to all qubits except the first one
+            h(qf[-40:50])  # should apply h to all qubits
+
+        assert main() == 4
+
+    def test_slice_out_of_bounds_stop(self):
+        """Stop index exceeds array size."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
+            h(qf[0:100])  # all qubits get h
+
+        assert main(4) == 1
+
+    def test_slice_out_of_bounds_start(self):
+        """Start index exceeds array size — should produce empty slice."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
+            h(qf[100:])  # empty slice, no gates applied
+
+        assert main(4) == 0
+
+    def test_slice_empty(self):
+        """Test depth computation with an empty slice."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
+            h(qf[0:0])
+            h(qf[1:1])
+            h(qf[2:2])
+
+        assert main(4) == 0
+
+    def test_slice_start_larger_than_stop_1(self):
+        """Test depth computation with a slice where start index is larger than stop index."""
+
+        @depth(meas_behavior="0")
+        def main(num_qubits):
+            qf = QuantumFloat(num_qubits)
+            h(qf[3:2])  # empty slice, no gates applied
+
+        assert main(4) == 0
+
+    def test_slice_start_larger_than_stop_2(self):
+        """Test depth computation with a slice where start index is larger than stop index, with negative indices."""
+
+        @depth(meas_behavior="0")
+        def main():
+            qf = QuantumFloat(4)
+            h(qf[0:-100])  # empty slice, no gates applied
+
+        assert main() == 0
+
+    def test_slice_negative_start_positive_stop(self):
+        """Negative start with positive stop."""
+
+        @depth(meas_behavior="0")
+        def main():
+            qf = QuantumFloat(4)
+            h(qf[-2:4])  # last 2 qubits of a 4-qubit register
+
+        assert main() == 1
+
+    def test_slice_negative_start_negative_stop(self):
+        """Both start and stop negative."""
+
+        @depth(meas_behavior="0")
+        def main():
+            qf = QuantumFloat(4)
+            h(qf[-3:-1])  # qubits 1 and 2 of a 4-qubit register
+
+        assert main() == 1
+
+
+class TestDepthFuse:
+    """Test that the depth is correctly computed when fusing quantum registers."""
 
     # We keep the following tests separate for clarity
     # (parametrization would make them much less readable).

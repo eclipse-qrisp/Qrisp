@@ -28,7 +28,6 @@ from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.core.gate_application_functions import gphase, h, ry, x, z
 from qrisp.environments import conjugate, control, invert
-from qrisp.interface import BackendClient
 from qrisp.jasp import (
     count_ops,
     depth,
@@ -45,6 +44,7 @@ from typing import Any, Callable, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
+    from qrisp.interface.backend import BackendLike
 
 MatrixType = Union[npt.NDArray[Any], csr_array, csr_matrix]
 
@@ -750,7 +750,7 @@ class BlockEncoding:
         self,
         operand_prep: Callable[..., Any],
         shots: int = 100,
-        backend: BackendClient = None,
+        backend: "BackendLike | None" = None,
     ) -> Callable[..., Any]:
         r"""
         Measures the expectation value of the operator using the Hadamard test protocol.
@@ -764,7 +764,7 @@ class BlockEncoding:
             A function ``operand_prep(*args)`` that prepares and returns the operand QuantumVariables.
         shots : int
             The amount of samples to take to compute the expectation value. The default is 100.
-        backend : BackendClient
+        backend : BackendLike, optional
             The backend on which to evaluate the quantum circuit. By default the Qrisp simulator is used.
             Ignored in Jasp mode.
 

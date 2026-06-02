@@ -17,6 +17,8 @@
 """
 
 # Created by ann81984 at 06.05.2022
+from collections.abc import Mapping
+
 import numpy as np
 
 from qrisp.misc import multi_measurement
@@ -48,7 +50,7 @@ def test_grovers_algorithm():
     print(mes_res)
 
     # check if it is dictionary
-    assert isinstance(mes_res, dict)
+    assert isinstance(mes_res, Mapping)
 
     # check if the key value pairs are of the type tuple:float
     # Example: (0, 1) :  0.9592
@@ -101,7 +103,7 @@ def test_grovers_algorithm():
     print(mes_res)
 
     # check if it is a list of dictionary
-    assert isinstance(mes_res, dict)
+    assert isinstance(mes_res, Mapping)
 
     # check if the key value pairs are of the type tuple:float
     # Example: (0, 1) :  0.9592

@@ -624,10 +624,10 @@ class DCQOProblem:
             The keyword arguments for the measurement function. Default is an empty dictionary.
         precision : float, optional
             Precision for expectation value calculations. Default is 0.01.
-        exp_value_backend : BackendClient, optional
+        exp_value_backend : BackendLike, optional
             Backend for expectation value calculations. If provided, uses measurement-based expectation value with this backend.
             If not provided, tries statevector first and falls back to measurement. Default is None.
-        backend : :ref:`BackendClient`, optional
+        backend : BackendLike, optional
             The backend to be used for the quantum simulation.
             By default, the Qrisp simulator is used.
         shots: : int
@@ -700,7 +700,7 @@ class DCQOProblem:
         # Measure qarg
         if not "shots" in mes_kwargs:
             mes_kwargs["shots"] = 5000
-        res_dict = qarg.get_measurement(**mes_kwargs)
+        res_dict = dict(qarg.get_measurement(**mes_kwargs))
 
         # Add qubo cost in result dict
         for res in res_dict.keys():

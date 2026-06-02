@@ -59,6 +59,7 @@ from qrisp.jasp.interpreter_tools.interpreters.cl_func_interpreter import (
     jaspr_to_cl_func_jaxpr,
 )
 from qrisp.jasp.interpreter_tools import Jlist, eval_jaxpr
+from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
 
 from qrisp.jasp import Jaspr
 
@@ -251,10 +252,13 @@ def boolean_simulation(*func: Callable, bit_array_padding: int = 2**16) -> Calla
                     "a quantum value (please measure before returning)"
                 )
 
-        # Transform the Jaspr to a classical Jaxpr
-        # flatten_environments() resolves any nested control flow structures
+        # Analyze the call graph to identify reused sub-jaxprs.
+        # Reused sub-jaxprs are wrapped in jax.pure_callback to prevent
+        # XLA's flatten-call-graph pass from duplicating them.
+        _, call_graph_stats = analyze_call_graph(jaspr)
+
         cl_func_jaxpr = jaspr_to_cl_func_jaxpr(
-            jaspr.flatten_environments(), bit_array_padding
+            jaspr, bit_array_padding, call_graph_stats
         )
 
         # Initialize the boolean quantum circuit representation:

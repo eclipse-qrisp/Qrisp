@@ -16,15 +16,18 @@
 ********************************************************************************
 """
 
-# This file uses the gate constructor from operation.py to define
-# some standard operations
+from __future__ import annotations
 
 import types
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from qrisp.circuit import PauliGate, U3Gate
 from qrisp.circuit.operation import Operation
+
+if TYPE_CHECKING:
+    from qrisp.typing import Param
 
 # TODO: properly treat all gates
 # from Aer.get_backend('qasm_simulator').configuration().basis_gates
@@ -64,12 +67,12 @@ def MCXGate(control_amount=1, ctrl_state=-1, method="gray"):
     return XGate().control(control_amount, method=method, ctrl_state=ctrl_state)
 
 
-def PGate(phi=0):
+def PGate(phi: Param = 0):
     res = U3Gate(0, 0, phi, name="p")
     return res
 
 
-def CPGate(phi=0):
+def CPGate(phi: Param = 0):
     if isinstance(phi, (int, float)):
         phi = phi % (2 * np.pi)
         if np.abs(phi - np.pi) < 1e-8:
@@ -93,33 +96,33 @@ def HGate():
     return res
 
 
-def RXGate(phi=0):
+def RXGate(phi: Param = 0):
     res = U3Gate(phi, -np.pi / 2, np.pi / 2, name="rx")
     return res
 
 
-def RYGate(phi=0):
+def RYGate(phi: Param = 0):
     res = U3Gate(phi, 0, 0, name="ry")
     return res
 
 
-def RZGate(phi=0):
+def RZGate(phi: Param = 0):
     res = U3Gate(0, phi, 0, name="rz", global_phase=-phi / 2)
     return res
 
 
-def RGate(theta=0, phi=0):
+def RGate(theta: Param = 0, phi: Param = 0):
     res = U3Gate(-theta, phi, -phi, name="r", global_phase=0)
     res.params = [theta, phi]
     return res
 
 
-def GPhaseGate(phi=0):
+def GPhaseGate(phi: Param = 0):
     res = U3Gate(0, 0, 0, name="gphase", global_phase=phi)
     return res
 
 
-def MCRXGate(phi=0, control_amount=0):
+def MCRXGate(phi: Param = 0, control_amount: int = 0):
     res = RXGate(phi).control(control_amount)
     res.name = "mcrx"
     return res
@@ -144,7 +147,7 @@ def IDGate():
     return res
 
 
-def RXXGate(phi=0):
+def RXXGate(phi: Param = 0):
     from qrisp.circuit.quantum_circuit import QuantumCircuit
 
     qc = QuantumCircuit(2)
@@ -165,7 +168,7 @@ def RXXGate(phi=0):
     return res
 
 
-def RZZGate(phi=0):
+def RZZGate(phi: Param = 0):
     from qrisp.circuit.quantum_circuit import QuantumCircuit
 
     qc = QuantumCircuit(2)
@@ -182,7 +185,7 @@ def RZZGate(phi=0):
     return res
 
 
-def XXYYGate(phi=0, beta=0):
+def XXYYGate(phi: Param = 0, beta: Param = 0):
     from qrisp.circuit.quantum_circuit import QuantumCircuit
 
     qc = QuantumCircuit(2)
@@ -216,11 +219,11 @@ def Barrier(num_qubits=1):
     return res
 
 
-def u3Gate(theta=0, phi=0, lam=0):
+def u3Gate(theta: Param = 0, phi: Param = 0, lam: Param = 0):
     return U3Gate(theta, phi, lam)
 
 
-def U1Gate(phi=0):
+def U1Gate(phi: Param = 0):
     res = RZGate(phi)
     res.name = "u1"
     res.params = [phi]

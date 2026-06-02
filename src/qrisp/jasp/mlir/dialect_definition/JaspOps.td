@@ -16,7 +16,7 @@ def CreateQubitsOp : JaspOp<"create_qubits"> {
     let arguments = (ins 0DTensorOf<[I64]>:$amount, QuantumStateType:$qst_in);
     let results = (outs QubitArrayType:$result, QuantumStateType:$qst_out);
     
-    let assemblyFormat = "$amount attr-dict `,` $qst_in  `:` type($qst_in) `,` type($amount) `->` type($result)";
+    let assemblyFormat = "$amount attr-dict `,` $qst_in  `:` type($qst_in) `,` type($amount) `->` type($result) `,` type($qst_out)";
 }
 
 def GetQubitOp : JaspOp<"get_qubit"> {

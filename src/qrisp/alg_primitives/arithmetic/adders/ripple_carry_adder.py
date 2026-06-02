@@ -16,100 +16,15 @@
 ********************************************************************************
 """
 
-import numpy as np
+from qrisp import *
+from qrisp.alg_primitives.arithmetic.adders.cuccaro_adder import cuccaro_adder
+from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_procedure
 
-from qrisp import QuantumCircuit
-from qrisp.misc import gate_wrap
-
-# Implementation of the modular Cuccaro-Adder https://arxiv.org/pdf/quant-ph/0410184.pdf
-# Has complexity O(log(N)) (Fourier-Adding has O(log(N)^2))
-
-
-def MAJ_gate():
-    qc = QuantumCircuit(3)
-
-    qc.cx(2, 1)
-    qc.cx(2, 0)
-    qc.mcx([0, 1], 2)
-
-    result = qc.to_gate()
-
-    result.name = "MAJ"
-
-    return result
-
-
-def UMA_gate(mode=2):
-    qc = QuantumCircuit(3)
-    if mode == 2:
-        qc.mcx([0, 1], 2)
-        qc.cx(2, 0)
-        qc.cx(0, 1)
-
-    if mode == 3:
-        qc.x(1)
-        qc.cx(0, 1)
-        qc.mcx([0, 1], 2)
-        qc.x(1)
-        qc.cx(2, 0)
-        qc.cx(2, 1)
-
-    result = qc.to_gate()
-    result.name = "UMA"
-    return result
-
-
-# Performs inplace addition on qv2, ie.
-# qv1 += qv2
-
+class RemovedFunctionError(Exception):
+    pass
 
 def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_in=None):
-    if len(qubit_list_1) != len(qubit_list_2):
-        raise Exception(
-            "Tried to call Cuccaro-procedure with qubit lists of unequal length"
-        )
-
-    from qrisp.core import QuantumVariable
-
-    if carry_in is None:
-        # Request ancilla Qubit
-        ancilla = QuantumVariable(1)
-    else:
-        ancilla = [carry_in]
-
-    # Prepare MAJ/UMA gate qubits
-    slot_1_qbs = list(ancilla) + qubit_list_1[:-1]
-    slot_2_qbs = qubit_list_2
-    slot_3_qbs = qubit_list_1
-
-    iterations = len(slot_1_qbs)
-
-    # Perform 1st step of the modular addition section
-    for i in range(iterations):
-        qbits = [slot_1_qbs[i], slot_2_qbs[i], slot_3_qbs[i]]
-        qs.append(MAJ_gate(), qbits)
-
-    # Calculate output qbit
-    if output_qubit:
-        qs.cx(qbits[2], output_qubit)
-
-    # Perform UMA iterations
-    for i in range(iterations - 1, -1, -1):
-        qbits = [slot_1_qbs[i], slot_2_qbs[i], slot_3_qbs[i]]
-
-        qs.append(UMA_gate(), qbits)
-
-    if carry_in is None:
-        # Detete ancilla
-        ancilla.delete()
-
-
-# Wrapper for the Cuccaro procedure
-# This function mainly serves to determine the input qubits of the Cucarro procedure
-# depending on the shape of the input QuantumFloats
-# The effect of this function is
-# qv1 += qv2
-
+    raise RemovedFunctionError("The cuccaro_procedure function has been removed. Please use the alternative cuccaro_adder.")
 
 @gate_wrap(is_qfree=True, permeability=[1])
 def inpl_add(
@@ -125,9 +40,8 @@ def inpl_add(
 
         qf1 += qf2
 
-    There are two different algorithms available:
+    There is one algorithm available:
     The `Thapliyal adder <https://arxiv.org/abs/1712.02630>`_
-    and the `Cuccaro adder <https://arxiv.org/abs/quant-ph/0410184>`_
 
     Parameters
     ----------
@@ -142,7 +56,7 @@ def inpl_add(
         If set to False, an Exception will be raised if qf2 has higher maximum
         significance than qf2. The default is False.
     adder : str, optional
-        Specifies the adder. Available are "thapliyal" and "cuccaro".
+        Specifies the adder.
         The default is "thapliyal".
 
     Raises
@@ -275,11 +189,7 @@ def inpl_add(
         for i in range(ancilla_var.size):
             qs.cx(qf2[-1], ancilla_var[i])
 
-    if adder == "cuccaro":
-        cuccaro_procedure(
-            qs, qubit_list_2[:-1], qubit_list_1[:-1], output_qubit=qubit_list_1[-1]
-        )
-    elif adder == "thapliyal":
+    if adder == "thapliyal":
         thapliyal_procedure(
             qs, qubit_list_2[:-1], qubit_list_1[:-1], output_qubit=qubit_list_1[-1]
         )
@@ -309,61 +219,3 @@ def inpl_add(
 temp = inpl_add.__doc__
 inpl_add = gate_wrap(inpl_add)
 inpl_add.__doc__ = temp
-
-
-# Adder based on https://arxiv.org/abs/1712.02630
-
-
-def TR_gate():
-    qc = QuantumCircuit(3)
-    qc.crx(-np.pi / 2, 1, 2)
-    qc.p(-np.pi / 4, 1)
-    qc.cx(0, 1)
-
-    qc.p(np.pi / 4, 0)
-    qc.crx(np.pi / 2, 0, 2)
-
-    qc.p(np.pi / 4, 1)
-    qc.crx(np.pi / 2, 1, 2)
-
-    # Error in Thapliyal paper? Doesnt work if there is no inverse here
-    result = qc.to_gate().inverse()
-    result.name = "TR"
-    return result
-
-
-def thapliyal_procedure(qc, qubit_list_1, qubit_list_2, output_qubit):
-    if len(qubit_list_1) != len(qubit_list_2):
-        raise Exception(
-            "Tried to call Thapliyal-procedure with qubit lists of unequal length"
-        )
-
-    n = len(qubit_list_1)
-
-    # Step 1
-    for i in range(1, n):
-        qc.cx(qubit_list_1[i], qubit_list_2[i])
-
-    # Step 2
-    qc.cx(qubit_list_1[-1], output_qubit)
-
-    for i in range(n - 2, 0, -1):
-        qc.cx(qubit_list_1[i], qubit_list_1[i + 1])
-
-    # Step 3
-    for i in range(n - 1):
-        qc.mcx([qubit_list_1[i], qubit_list_2[i]], qubit_list_1[i + 1])
-
-    # Step 4
-    qc.append(TR_gate(), [qubit_list_1[-1], qubit_list_2[-1], output_qubit])
-
-    for i in range(n - 2, -1, -1):
-        qc.append(TR_gate(), [qubit_list_1[i], qubit_list_2[i], qubit_list_1[i + 1]])
-
-    # Step 5
-    for i in range(1, n - 1):
-        qc.cx(qubit_list_1[i], qubit_list_1[i + 1])
-
-    # Step 6
-    for i in range(1, n):
-        qc.cx(qubit_list_1[i], qubit_list_2[i])

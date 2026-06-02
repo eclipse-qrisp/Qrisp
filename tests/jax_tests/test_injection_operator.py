@@ -59,3 +59,115 @@ def test_injection_operator():
         return res
 
     main()
+
+    def init_psi():
+        qv = QuantumFloat(5)
+        x(qv[0])
+        return qv
+
+    @jaspify
+    def main():
+        qv = QuantumFloat(5)
+
+        (qv << init_psi)()
+        return measure(qv)
+
+    assert main() == 1
+
+
+def test_injection_and():
+    """Inject AND gate onto a pre-flipped target."""
+    def AND(a, b):
+        res = QuantumBool()
+        mcx([a, b], res)
+        return res
+
+    @jaspify
+    def main():
+        a = QuantumBool()
+        b = QuantumBool()
+        target = QuantumBool()
+        target.flip()
+        (target << AND)(a, b)
+        return measure(target)
+
+    assert main() == 1
+
+
+def test_injection_uncomputation():
+    """Uncomputation via injection + invert."""
+    @jaspify
+    def main(n):
+        a = QuantumFloat(n)
+        b = QuantumFloat(n)
+        a[:] = 3
+        b[:] = 5
+
+        c = a * b
+
+        with invert():
+            (c << (lambda x, y: x * y))(a, b)
+
+        return measure(c)
+
+    for n in range(4, 7):
+        assert main(n) == 0, f"Uncomputation failed for n={n}"
+
+
+def test_injection_state_prep():
+    """Inject a state-prep function onto an existing variable."""
+    def init_state():
+        qv = QuantumFloat(4)
+        x(qv[0])
+        x(qv[1])
+        return qv
+
+    @jaspify
+    def main():
+        target = QuantumFloat(4)
+        (target << init_state)()
+        return measure(target)
+
+    assert main() == 3
+
+
+def test_injection_superposition_uncompute():
+    """Uncompute addition from superposition."""
+    @jaspify
+    def main():
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+
+        h(a[0])
+        b[:] = 2
+
+        c = a + b
+
+        with invert():
+            (c << (lambda x, y: x + y))(a, b)
+
+        return measure(c)
+
+    assert main() == 0
+
+
+def test_injection_chained():
+    """Two sequential injections onto the same target."""
+    def set_bit0():
+        qv = QuantumFloat(3)
+        x(qv[0])
+        return qv
+
+    def set_bit1():
+        qv = QuantumFloat(3)
+        x(qv[1])
+        return qv
+
+    @jaspify
+    def main():
+        target = QuantumFloat(3)
+        (target << set_bit0)()
+        (target << set_bit1)()
+        return measure(target)
+
+    assert main() == 3
