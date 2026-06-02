@@ -292,7 +292,7 @@ def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, c
         # When an outer control is present, the carry-in handling needs
         # an extra ancilla to keep the c_in / b[0] interaction clean.
         #
-        # NOTE: lsb_ctrl_anc is allocated and deleted entirely within this
+        # note: lsb_ctrl_anc is allocated and deleted entirely within this
         # nested block (inside c_in_qb AND ctrl guards).  If this block is
         # ever restructured, make sure the ancilla is still deleted before
         # the enclosing c_in_qb scope ends.
