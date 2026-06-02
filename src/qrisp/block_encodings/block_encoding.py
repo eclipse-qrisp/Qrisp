@@ -553,11 +553,27 @@ class BlockEncoding:
 
         Raises
         ----------
-        ValueError
-            If operator is incompatible with FOQCS-LCU
-        
         KeyError
             If function received an unsupported FOQCS-LCU PREP method
+
+        Examples
+        --------
+
+        ::
+
+            from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
+            from qrisp.operators import X
+
+            H = X(0) + X(1)
+            BE = BlockEncoding.from_foqcs_lcu_operator(H, L=2)
+
+            @terminal_sampling
+            def main():
+                return BE.apply_rus(lambda: QuantumFloat(2))()
+
+            main()
+            # {1.0: 0.5, 2.0: 0.5}
 
         """
         # Analyze the Qubit operator

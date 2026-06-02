@@ -37,6 +37,11 @@ def foqcs_prep_heisenberg(
     conjugate: bool = False
 ) -> None:
     r"""
+
+    FOQCS-LCU state preparation, based on the application of the same name in https://arxiv.org/pdf/2507.20887.
+    Implements the FOQCS-LCU PREP oracle for the Heisenberg Hamiltonian by preparing selector amplitudes for local X/Y/Z fields and nearest-neighbor XX/YY/ZZ couplings, then mapping them into the two FOQCS activation registers using Dicke-state and CNOT-ladder structures.
+    
+    
     Parameters
     ----------
     prep_qv : QuantumVariable | Sequence[Qubit]
@@ -72,6 +77,11 @@ def foqcs_prep_heisenberg(
         If ``g`` or ``J`` has length not equal to 3.
 
     """
+
+    # Ref: Heisenberg Hamiltonian with local fields and nearest-neighbor
+    # XX/YY/ZZ couplings is Eq. (50).
+    # Ref: Table II maps each Pauli term to FOQCS-LCU coefficient-state pairs.
+
     # Check that received g and J dictionaries exactly contain the expected entries.
     req_keys = {"X", "Y", "Z"}
 
@@ -94,6 +104,8 @@ def foqcs_prep_heisenberg(
             f"Missing: {sorted(missing)}. Extra: {sorted(extra)}."
         )
 
+    # Ref: Fig. 5 shows that the Heisenberg PREP oracle uses 2L + 6 ancillae;
+    # the first 6 ancillae select gx, gy, gz, Jx, Jy, Jz.
     extra_anc = 6 # Depends on the method and can be potentially decreased
 
     _g = np.zeros((3,), dtype="complex")
@@ -111,45 +123,62 @@ def foqcs_prep_heisenberg(
         _J = np.conj(_J)
 
     # SUBPREP
+    # Ref: Eq. (56) gives the 6-entry selector state alpha used in Fig. 6.
     unbalanced_W_state(prep_qv[:extra_anc], np.block([_g, _J]))
     
     # PREP
+    # Ref: Fig. 5 and Fig. 6 split the FOQCS ancillae into two L-qubit
+    # activation registers: one for X activation and one for Z activation.
     fh1 = extra_anc                # First qubit first half
     lh1 = extra_anc + L - 1        # Last qubit first half
     fh2 = extra_anc + L            # First qubit second half
     lh2 = extra_anc + (L * 2) - 1  # Last qubit second half
 
     # 3 specific CNOTs
+    # Ref: Table II: gx maps to |2^l>|0>, gy maps to |2^l>|2^l>,
+    # and gz maps to |0>|2^l>.
     cx(prep_qv[0], prep_qv[lh1]) # from gx
     cx(prep_qv[1], prep_qv[lh1]) # from gy
     cx(prep_qv[2], prep_qv[lh2]) # from gz
     # 2 parallel Gamma gates
+    # Ref: Fig. 2(a) defines Gamma(theta); Fig. 6 uses Gamma(theta_{n-1})
+    # as part of the compact Heisenberg PREP circuit.
     theta = 2 * np.acos(np.sqrt(1 / (L - 1 + 1)))
     _gamma_gate(prep_qv[lh1 - 1], prep_qv[lh1], theta)
     _gamma_gate(prep_qv[lh2 - 1], prep_qv[lh2], theta)
     # 3 specific CNOTs
+    # Ref: Table II: Jx/Jy/Jz nearest-neighbor terms map to two-excitation
+    # patterns |2^l + 2^{l+1}> in the relevant activation register(s).
     cx(prep_qv[3], prep_qv[lh1 - 1]) # from Jx
     cx(prep_qv[4], prep_qv[lh1 - 1]) # from Jy
     cx(prep_qv[5], prep_qv[lh2 - 1]) # from Jz
     # 2 parallel delta gates
+    # Ref: Fig. 2(d) defines the recursive Delta_n subcircuit used to prepare
+    # the Dicke-state structure appearing in Fig. 6.
     theta_coeffs = []
     for i in range(1, L - 1):
         theta_coeffs.append(2 * np.acos(np.sqrt(1 / (i + 1))))
     _delta_gate(prep_qv[fh1:lh1], theta_coeffs)
     _delta_gate(prep_qv[fh2:lh2], theta_coeffs)
     # One spec CNOT
+    # Ref: Fig. 6 compresses the Jx/Jy branches before the controlled ladder.
     cx(prep_qv[3], prep_qv[4]) # from Jx to Jy
     # Controlled CNOT ladder
+    # Ref: Fig. 2(b) defines CL_1; Eq. (35) uses Delta plus CL_1 to build
+    # nearest-neighbor two-excitation Dicke states.
     with control(prep_qv[4]): # from Jy
         _cx_ladder(prep_qv[fh1:lh1 + 1], L)
     # One spec CNOT
     cx(prep_qv[3], prep_qv[4]) # from Jx to Jy
     # Controlled CNOT ladder
+    # Ref: Same CL_1 construction, now for the second activation register.
     with control(prep_qv[5]): # from Jz
         _cx_ladder(prep_qv[fh2:], L)
     # One spec CNOT
     cx(prep_qv[1], prep_qv[4]) # from gy to Jy
     # Controlled Element-wise CNOT
+    # Ref: Fig. 2(c) defines EC; Fig. 6 uses EC to copy the first-register
+    # Dicke pattern into the second register for Y-type terms.
     with control(prep_qv[4]): # from Jy
         cx(prep_qv[fh1:lh1 + 1], prep_qv[fh2:])
     # One spec CNOT
@@ -163,6 +192,12 @@ def foqcs_prep_spin_glass(
     conjugate: bool = False
 ) -> None:
     r"""
+
+    FOQCS-LCU state preparation, based on the application of the same name in https://arxiv.org/pdf/2507.20887.
+    Implements the FOQCS-LCU PREP oracle for the spin-glass Hamiltonian by preparing weighted selector states for non-uniform local X/Y/Z fields and distance-dependent XX/YY/ZZ couplings, then encoding them into FOQCS activation registers via unbalanced W/Dicke states, CNOT ladders, and register-copying for Y terms.
+    Specifically, this is based on the optimal implementation as provided by the authors of the paper here: https://github.com/QuantumComputingLab/foqcs-lcu/blob/main/src/foqcs_lcu/spin_glass_block_encoding.py#L254
+    See Eq. (58) for more.
+
     Parameters
     ----------
     prep_qv : QuantumVariable | Sequence[Qubit]
