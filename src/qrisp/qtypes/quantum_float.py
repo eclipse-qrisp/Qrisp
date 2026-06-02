@@ -390,7 +390,7 @@ class QuantumFloat(QuantumVariable):
         return self.decoder(i)
 
     def encoder(self, i):
-        """Convert human-readable value to qubit index (integer).
+        """Convert human-readable value to integer equivalent to the bitstring of the corresponding measurement result.
 
         Also validates that the input value can be represented within the bounds of the provided QuantumFloat.
         """
@@ -406,7 +406,7 @@ class QuantumFloat(QuantumVariable):
         # size, exponent, and whether the QuantumFloat is signed or unsigned.
 
         # calculate the integer bounds based on mantissa size (msize)
-        max_int = 1<<self.msize - 1
+        max_int = (1<<self.msize) - 1
         if self.signed:
             # Signed range: -2^msize to 2^msize - 1
             min_int = -(1<<self.msize)
