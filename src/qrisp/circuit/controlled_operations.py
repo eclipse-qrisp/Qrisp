@@ -68,12 +68,12 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
     # If the U3 gate is an rx , ry, rz or p gate, we can use gray phase synthesis on the
     # target qubit and wrap this in the corresponding gates
     # (for instance H for rx because RX = H RZ H)
-    if u3_gate.name in ["p"]:
+    if u3_gate.name in ["p", "t", "s", "t_dg", "s_dg"]:
         # Synthesize phases using gray synthesis
         gray_phase_synth_qb_list(
             qc,
             qc.qubits,
-            (2 ** (control_amount + 1) - 1) * [0] + [u3_gate.params[0]],
+            (2 ** (control_amount + 1) - 1) * [0] + [u3_gate.lam + u3_gate.phi],
             phase_tolerant=method in ["gray_pt", "gray_pt_inv"],
         )
 
