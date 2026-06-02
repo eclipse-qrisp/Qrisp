@@ -138,6 +138,7 @@ def MLIR_str_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
     ctx.load_dialect(arith.Arith)
     ctx.load_dialect(tensor.Tensor)
     ctx.load_dialect(scf.Scf)
+    ctx.load_dialect(math.Math)
     ctx.load_dialect(JaspDialect)
 
     # Parse the MLIR string and return the module op.
