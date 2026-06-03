@@ -31,21 +31,33 @@ Coverage
 - Negative test: unsupported gate emits a warning and is left in place.
 """
 
-import warnings
-import jax
 import jax.numpy as jnp
 import numpy as np
-import operator
 import pytest
-import re
 
-from qrisp import QuantumVariable, QuantumBool, QuantumFloat, h, mcx, x, y, z, cp, cx, cy, cz, gphase, rx, ry, rz, rxx, rz, rzz, s, swap, sx, t, xxyy, measure, control, invert, conjugate
-from qrisp.alg_primitives import amplitude_amplification, q_switch
-from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop, qache
+from qrisp import (
+    QuantumVariable,
+    QuantumBool,
+    QuantumFloat,
+    h,
+    x,
+    cx,
+    rx,
+    ry,
+    rz,
+    rz,
+    measure,
+    control,
+
+)
+from qrisp.jasp import  q_while_loop, q_cond, qache
 
 try:
     import cudaq
-    from qrisp.jasp.cudaq_interface import run_quake_mlir, cudaq_kernel, FixedShapeNDArray
+    from qrisp.jasp.cudaq_interface import (
+        cudaq_kernel,
+        FixedShapeNDArray,
+    )
 except ImportError as exc:
     # Skip the entire test file if the import fails
     pytest.skip(f"cudaq unavailable: {exc}", allow_module_level=True)
@@ -55,8 +67,10 @@ except ImportError as exc:
 # Test qrisp cudaq kernel decorator
 # ---------------------------------------------------------------------------
 
+
 def test_cudaq_kernel_run():
     """Test that a simple @cudaq_kernel compiles and runs, returning a valid measurement outcome."""
+
     @cudaq_kernel
     def bell():
         qv = QuantumVariable(2)
@@ -96,6 +110,7 @@ def test_cudaq_kernel_run_nested_function():
 
 def test_cudaq_kernel_sample():
     """Test that a simple @cudaq_kernel compiles and samples, returning a valid measurement outcome."""
+
     @cudaq_kernel(execution_mode="sample")
     def bell():
         qv = QuantumVariable(2)
@@ -132,6 +147,7 @@ def test_cudaq_kernel_sample_nested_function():
 
 def test_cudaq_kernel_multiple_returns():
     """Test that a @cudaq_kernel can return multiple values of different types."""
+
     @cudaq_kernel
     def bell():
         qv = QuantumVariable(2)
@@ -158,7 +174,7 @@ def test_cudaq_kernel_algorithm():
         G.add_nodes_from([0, 1, 2, 3])
         G.add_edges_from([(0, 1), (1, 2), (2, 3), (3, 0)])
 
-        H = sum(X(i) for i in G.nodes) + sum(Z(i)*Z(j) for i, j in G.edges)
+        H = sum(X(i) for i in G.nodes) + sum(Z(i) * Z(j) for i, j in G.edges)
         U = H.trotterization()
 
         a = QuantumFloat(4)
@@ -348,11 +364,11 @@ def test_dynamic_index_into_array_parameter_in_loop():
         def cond_fun(val):
             i, qv = val
             return i < 5
-    
+
         def body_fun(val):
             i, qv = val
             ry(angles[i], qv[i])
-            return i+1, qv
+            return i + 1, qv
 
         q_while_loop(cond_fun, body_fun, (0, qv))
 
@@ -398,7 +414,9 @@ def test_static_index_into_array_parameter():
                 rx(2.0 * beta, qv[i])
         return measure(qv)
 
-    results = cudaq.run(ansatz_kernel, np.array([1.57, 0.78, 0.39, 0.25]), shots_count=10)
+    results = cudaq.run(
+        ansatz_kernel, np.array([1.57, 0.78, 0.39, 0.25]), shots_count=10
+    )
     assert results is not None
 
 

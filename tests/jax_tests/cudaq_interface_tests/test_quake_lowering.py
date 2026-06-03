@@ -73,7 +73,15 @@ from qrisp import (
 )
 from qrisp.alg_primitives import amplitude_amplification, q_switch, QPE, QFT
 from qrisp.block_encodings import BlockEncoding
-from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop, qache, terminal_sampling
+from qrisp.jasp import (
+    make_jaspr,
+    jrange,
+    q_while_loop,
+    q_cond,
+    q_fori_loop,
+    qache,
+    terminal_sampling,
+)
 from qrisp.operators import X, Y, Z
 
 try:
@@ -1123,13 +1131,13 @@ def test_quantum_phase_estimation():
         x = 0.5
         y = 0.125
 
-        p(x*2*np.pi, qv[0])
-        p(y*2*np.pi, qv[1])
+        p(x * 2 * np.pi, qv[0])
+        p(y * 2 * np.pi, qv[1])
 
     def main():
         qv = QuantumVariable(2)
         h(qv)
-        res = QPE(qv, U, precision = 3)
+        res = QPE(qv, U, precision=3)
         return measure(res)
 
     mlir = _lower(main)
@@ -1449,8 +1457,7 @@ def test_quantum_float_comparison(op, rhs_type, size1, exp1, val1, size2, exp2, 
 
 def _post_selection(res_dict):
     # Post-selection on ancillas being in |0> state
-    filtered_dict = {k[0]: p for k, p in res_dict.items() \
-                    if all(x == 0 for x in k[1:])}
+    filtered_dict = {k[0]: p for k, p in res_dict.items() if all(x == 0 for x in k[1:])}
     success_prob = sum(filtered_dict.values())
     filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
     return filtered_dict
@@ -1503,12 +1510,12 @@ def test_simple_block_encoding_results(operator):
         operand = QuantumVariable(2)
         ancs = BE.apply(operand)
         return operand, ancs[0]
-    
+
     res_dict_jasp = main()
     filtered_dict_jasp = _post_selection(res_dict_jasp)
 
     all_keys = set(filtered_dict.keys()).union(set(filtered_dict_jasp.keys()))
-    
+
     for key in all_keys:
         val1 = filtered_dict.get(key, 0.0)
         val2 = filtered_dict_jasp.get(key, 0.0)
@@ -1531,6 +1538,7 @@ def test_simple_block_encoding_poly(operator):
     mlir = _lower(main)
     validate_quake_mlir(mlir)
     results = run_quake_mlir(mlir, shots=10)
+
 
 # ---------------------------------------------------------------------------
 
