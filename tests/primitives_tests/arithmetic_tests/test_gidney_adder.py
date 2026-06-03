@@ -1012,12 +1012,6 @@ def test_gidney_adder_invalid_binary_string_dynamic():
         main()
 
 
-# ======================================================================
-# Expected-failure tests for scenarios blocked by DynamicQubitArray.__add__ /
-# __radd__ isinstance bug (doesn't recognise JAX tracer qubits).
-# Once that bug is fixed these can be changed to normal tests.
-# ======================================================================
-
 
 @pytest.mark.xfail(
     reason="DynamicQubitArray.__add__ rejects JAX tracer in [c_in_qb] + b_qbs",
@@ -1161,3 +1155,53 @@ def test_gidney_adder_ancilla_cleanup_dynamic(n_bits, a_val, b_val):
 
     expected = (a_val + b_val) % (1 << n_bits)
     assert main(n_bits, a_val, b_val) == expected
+
+
+def test_gidney_adder_jaspr_mode():
+    """Verify gidney_adder works as expected in dynamic mode."""
+
+    @boolean_simulation
+    def main(N, L, j, k):
+
+        A = QuantumFloat(N)
+        B = QuantumFloat(L)
+        A[:] = j
+        B[:] = k
+
+        gidney_adder(j, B)
+        return measure(A), measure(B)
+
+    for N in range(1, 5):
+        for L in range(1, 5):
+            for j in range(2**N):
+                for k in range(2**L):
+                    A, B = main(N, L, j, k)
+                    assert A == j
+                    assert B == (k + j) % (2**L)
+
+
+def test_gidney_adder_dynamic_mode_with_control():
+    """Verify gidney_adder is triggered when the control qubit is in the |1> state
+    in dynamic mode."""
+
+    @boolean_simulation
+    def main(N, L, j, k):
+
+        A = QuantumFloat(N)
+        B = QuantumFloat(L)
+        A[:] = j
+        B[:] = k
+        qbl = QuantumBool()
+        qbl.flip()
+
+        with control(qbl):
+            gidney_adder(A, B)
+        return measure(A), measure(B)
+
+    for N in range(1, 4):
+        for L in range(1, 4):
+            for j in range(2**N):
+                for k in range(2**L):
+                    A, B = main(N, L, j, k)
+                    assert A == j
+                    assert B == (k + j) % (2**L)
