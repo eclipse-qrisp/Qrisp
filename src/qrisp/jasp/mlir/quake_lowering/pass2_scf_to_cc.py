@@ -48,7 +48,7 @@ from typing import Optional, List, Any
 
 from xdsl.dialects import scf, arith, tensor
 from xdsl.dialects.scf import IfOp, ForOp, WhileOp, YieldOp, ConditionOp
-from xdsl.dialects.builtin import IntegerAttr, i1, i64, ModuleOp
+from xdsl.dialects.builtin import IntegerAttr, i1, i64, ModuleOp, TensorType
 from xdsl.ir import Block, Region, SSAValue, Operation, Attribute
 
 from xdsl.rewriter import Rewriter, InsertPoint
@@ -113,17 +113,13 @@ def _find_trailing_yield(block: Block) -> Optional[YieldOp]:
 
 def _is_rank0_tensor(t: Attribute) -> bool:
     """Return True if *t* is a rank-0 TensorType."""
-    return getattr(t, "name", "") == "tensor" and not getattr(t, "get_shape", lambda: [])()
+    return isinstance(t, TensorType) and len(t.get_shape()) == 0
 
 
 def _get_element_type(t: Attribute) -> Optional[Attribute]:
     """Extract the element type from a TensorType."""
-    if hasattr(t, "get_element_type"):
-        return t.get_element_type()
-    if hasattr(t, "element_type"):
+    if isinstance(t, TensorType):
         return t.element_type
-    if hasattr(t, "parameters"):
-        return t.parameters[0]
     return None
 
 
@@ -399,7 +395,6 @@ class ScfWhilePattern(RewritePattern):
         _apply_cudaq_while_hotfix(before_block)
 
         cond_op = _find_condition_op(before_block)
-        assert cond_op is not None, "Malformed scf.while block: missing scf.condition operation."
         
         cond_val = cond_op.operands[0]
         forwarded = list(cond_op.operands)[1:]
@@ -413,7 +408,6 @@ class ScfWhilePattern(RewritePattern):
         after_block = after_region.blocks[0]
 
         yield_op = _find_trailing_yield(after_block)
-        assert yield_op is not None, "Malformed scf.while body block: missing scf.yield operation."
         
         unwrapped_yields = [_unwrap(v, yield_op) for v in yield_op.operands]
         step_arg_types = [u.type for u in unwrapped_yields]
