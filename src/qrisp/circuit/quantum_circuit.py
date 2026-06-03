@@ -2866,13 +2866,13 @@ class QuantumCircuit:
     def barrier(self, qubits: QubitLike | None = None):
         """
         Instruct a Barrier onto the given Qubit. Barriers can be used as visual markers
-        and compiler directives. The ``clbits`` argument is currently ignored but can be
-        used in the future to also apply barriers to classical bits.
+        and compiler directives.
 
         Parameters
         ----------
         qubits : QubitLike | None
-            The Qubit to apply the barrier on.
+            The qubits to apply the barrier on. If ``None``, the barrier spans all
+            qubits in the circuit. The default is ``None``.
 
         """
         if qubits is None:
@@ -2920,17 +2920,27 @@ class QuantumCircuit:
         self.append(ops.u3Gate(theta, phi, lam), [qubits])
 
     def r(self, theta: Param, phi: Param, qubits: QubitLike):
-        """
-        Instruct an R-gate from given angles.
+        r"""
+        Instruct an R-gate.
+
+        The unitary is
+
+        .. math::
+
+            R(\theta, \phi) =
+            \begin{pmatrix}
+                \cos\!\tfrac{\theta}{2} & e^{-i\phi}\sin\!\tfrac{\theta}{2} \\
+                -e^{i\phi}\sin\!\tfrac{\theta}{2} & \cos\!\tfrac{\theta}{2}
+            \end{pmatrix}
 
         Parameters
         ----------
         theta : Param
-            The theta parameter.
+            Rotation angle in radians. Controls the amount of rotation.
         phi : Param
-            The phi parameter.
+            Axis angle in radians. Selects the rotation axis in the XY plane.
         qubits : QubitLike
-            The Qubit to apply the r gate on.
+            The qubit to apply the gate on.
 
         """
 
@@ -2943,9 +2953,9 @@ class QuantumCircuit:
         Parameters
         ----------
         unitary_array : numpy.ndarray
-            The U3 matrix to apply.
+            The 2×2 unitary matrix to apply.
         qubits : QubitLike
-            The Qubit to apply the gate on.
+            The qubit to apply the gate on.
 
         """
         from qrisp.simulator.unitary_management import u3matrix
