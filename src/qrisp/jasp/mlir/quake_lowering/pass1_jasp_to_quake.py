@@ -668,11 +668,6 @@ def _lower_delete_qubits(op: DeleteQubitsOp, block: Block) -> None:
 
 def _lower_quantum_gate(op: QuantumGateOp, block: Block) -> None:
     """``jasp.quantum_gate "name" (%qubits, %params...), %qst`` → Quake gate op."""
-    gate_name: str = op.attributes.get("gate_type") or op.attributes.get(
-        "gate_name", StringAttr("")
-    )
-    if hasattr(gate_name, "data"):
-        gate_name = gate_name.data
 
     # Split operands: qubits first, then float params, then qst
     qubit_operands = []
@@ -687,18 +682,13 @@ def _lower_quantum_gate(op: QuantumGateOp, block: Block) -> None:
         else:
             qubit_operands.append(v)
 
+    gate_name = op.gate_type.data
     gate_info = get_gate_info(gate_name)
     if gate_info is None:
-        warnings.warn(
-            f"Unsupported Jasp gate '{gate_name}' – removing jasp.quantum_gate from IR).",
-            stacklevel=4,
+        raise NotImplementedError(
+            f"Lowering failed: Unsupported Jasp gate '{gate_name}'. "
+            "Cannot translate this operation to the Quake dialect."
         )
-        _thread_qst(op)
-        # Don't erase – leave the op (minus qst threading) in place.
-        # Re-insert op without qst
-        _strip_qst_from_op(op, block)
-        Rewriter.erase_op(op)
-        return
 
     # Determine controls vs targets
     num_ctrl = gate_info.num_controls
@@ -715,40 +705,28 @@ def _lower_quantum_gate(op: QuantumGateOp, block: Block) -> None:
 
     final_params = list(param_operands[: gate_info.num_params])
 
-    # ---- Emit gate(s) ----------------------------------------------------
+    # Emit gates using the gate_info: either a single quake.<gate> op or a multi-op sequence.
     if gate_info.emit is not None:
         # Multi-op decomposition path
         ops = gate_info.emit(controls, final_params, targets)
         if not ops:
-            warnings.warn(
-                f"Gate '{gate_name}' emit() returned empty list – skipping.",
-                stacklevel=4,
+            raise RuntimeError(
+                f"Lowering failed: Gate '{gate_name}' emit() function returned an empty list. "
+                "The decomposition logic for this gate failed to produce MLIR operations."
             )
-            _thread_qst(op)
-            _strip_qst_from_op(op, block)
-            return
         block.insert_ops_before(ops, op)
     else:
         # Single-op path
         gate_op = make_gate_op(gate_name, controls, final_params, targets)
         if gate_op is None:
-            warnings.warn(
-                f"Gate '{gate_name}' not in Quake gate class table – skipping.",
-                stacklevel=4,
+            raise RuntimeError(
+                f"Lowering failed: Gate '{gate_name}' is not registered in the "
+                "Quake gate class table. Cannot instantiate the target MLIR operation."
             )
-            _thread_qst(op)
-            _strip_qst_from_op(op, block)
-            return
         block.insert_ops_before([gate_op], op)
 
     _thread_qst(op)
     Rewriter.erase_op(op)
-
-
-def _strip_qst_from_op(op: Operation, block: Block) -> None:
-    """Remove QuantumState from an op's operands in-place (fallback path)."""
-    non_qst = [v for v in op.operands if not _is_qst(v.type)]
-    op.operands = non_qst
 
 
 def _lower_measure(op: JaspMeasureOp, block: Block, execution_mode: str = "run") -> None:
