@@ -19,12 +19,11 @@
 import random
 from qrisp.operators import X, Y, Z, A, C, P0, P1
 from qrisp import *
-from qrisp.interface import VirtualBackend
-from qrisp.simulator import run
+from qrisp.default_backend import QrispSimulatorBackend
 
 def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
-    
-    non_sampling_backend = VirtualBackend(lambda qasm_string, shots, token : run(QuantumCircuit.from_qasm_str(qasm_string), None, ""))    
+
+    non_sampling_backend = QrispSimulatorBackend()
 
     def testing_helper(qv, operator_combinations):
         for H in operator_combinations:
@@ -97,31 +96,6 @@ def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
     assert H.get_measurement(qv,diagonalisation_method='commuting_qw') == 0
     
     # Test BatchedBackend
-    
-    def run_func_batch(batch):
-        """
-        Parameters
-        ----------
-        batch : list[tuple[QuantumCircuit, int]]
-            The circuit and shot batch indicating the backend queries.
-
-        Returns
-        -------
-        results : list[dict[string, int]]
-            The list of results.
-
-        """
-        
-        results = []
-        for i in range(len(batch)):
-            qc = batch[i][0]
-            shots = batch[i][1]
-            results.append(qc.run(shots = shots))
-            
-        return results
-
-    from qrisp.interface import BatchedBackend
-
     d = QuantumFloat(4)
     e = QuantumFloat(3)
     d[:] = 2
@@ -130,8 +104,7 @@ def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
 
     H = Z(0)*Z(1)*Z(2)*Z(3) + X(0)*X(1)*X(2)*X(3)
 
-    # Set up batched backend
-    bb = BatchedBackend(run_func_batch)
+    bb = QrispSimulatorBackend().batched()
 
     ev = H.expectation_value(lambda : f, backend = bb)()
     
