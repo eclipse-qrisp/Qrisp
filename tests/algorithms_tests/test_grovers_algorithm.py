@@ -127,6 +127,21 @@ def test_grovers_quantum_array():
     assert mes_res[winner_state] > 0.99
 
 
+def test_grovers_list_quantum_array():
+    """Tests Grover's algorithm when the input is a list of QuantumArrays."""
+
+    def array_oracle(qa):
+        tag_state({qa[0]: 0, qa[1]: 0, qa[2]: 0})
+
+    qa = QuantumArray(QuantumFloat(2), shape=(3,))
+    grovers_alg([qa], array_oracle)
+
+    mes_res = qa.get_measurement()
+    winner_state = OutcomeArray([0, 0, 0])
+    assert winner_state in mes_res
+    assert mes_res[winner_state] > 0.99
+
+
 @pytest.mark.parametrize("exact", [True, False])
 def test_grovers_all_states_tagged(exact):
     """Tests Grover's algorithm when all states are tagged by the oracle."""

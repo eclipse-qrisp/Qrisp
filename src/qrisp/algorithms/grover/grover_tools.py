@@ -442,8 +442,9 @@ def grovers_alg(
         iterations = jnp.pi / 4 * jnp.sqrt(N / winner_state_amount)
         iterations = jnp.int64(jnp.round(iterations))
 
-    if isinstance(args, (list, QuantumArray)):
-        [h(qv) for qv in args]
+    if isinstance(args, list):
+        for qv in args:
+                h(qv)
     else:
         h(args)
 
@@ -472,7 +473,7 @@ def grovers_alg(
                 diffuser(args)
 
         # NOTE: We could check here whether the oracle introduced new QuantumVariables without uncomputing/deleting them, which would be a common mistake. 
-        # THis check was deactivated, be cause it raises an unjustified error n some cases, e.g., when the oracle acts on a QuantumVariable that is not part of the input `args`.
+        # This check was deactivated, be cause it raises an unjustified error in some cases, e.g., when the oracle acts on a QuantumVariable that is not part of the input `args`. See #586.
         # if qv_amount != len(qs.qv_list):
         #    raise Exception(
         #        "Applied oracle introducing new QuantumVariables without uncomputing/deleting"
