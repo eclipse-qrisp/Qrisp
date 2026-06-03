@@ -73,13 +73,6 @@ def lower_scf_to_cc(module: ModuleOp) -> None:
 # ===================================================================
 
 
-def _replace_all_uses_with(val: SSAValue, new_val: SSAValue) -> None:
-    if hasattr(val, "replace_all_uses_with"):
-        val.replace_all_uses_with(new_val)
-    else:
-        val.replace_by(new_val)
-
-
 def _get_results(op) -> list:
     return list(getattr(op, "results", getattr(op, "res", [])))
 
@@ -192,9 +185,9 @@ def _rewrite_region_args_for_tensors(region: Region) -> Region:
                 result_types=[old_arg.type],
             )
             new_block.add_op(wrap)
-            _replace_all_uses_with(old_arg, wrap.results[0])
+            old_arg.replace_all_uses_with(wrap.results[0])
         else:
-            _replace_all_uses_with(old_arg, new_arg)
+            old_arg.replace_all_uses_with(new_arg)
 
     for op in list(block.ops):
         op.detach()
@@ -233,7 +226,7 @@ def _apply_cudaq_while_hotfix(block: Block) -> None:
                 new_cmp = arith.CmpiOp(lhs, rhs_new.result, "sgt")
 
                 block.insert_ops_before([one, rhs_new, new_cmp], op)
-                _replace_all_uses_with(op.results[0], new_cmp.results[0])
+                op.results[0].replace_all_uses_with(new_cmp.results[0])
                 Rewriter.erase_op(op, safe_erase=False)
 
 
@@ -294,9 +287,9 @@ def _convert_scf_if(if_op, outer_block: Block) -> None:
                 result_types=[orig_type],
             )
             outer_block.insert_ops_before([wrap], if_op)
-            _replace_all_uses_with(res, wrap.results[0])
+            res.replace_all_uses_with(wrap.results[0])
         else:
-            _replace_all_uses_with(res, scalar_res)
+            res.replace_all_uses_with(scalar_res)
 
     Rewriter.erase_op(if_op, safe_erase=False)
 
@@ -383,9 +376,9 @@ def _convert_scf_for(for_op, outer_block: Block) -> None:
                 result_types=[orig_type],
             )
             outer_block.insert_ops_before([wrap], for_op)
-            _replace_all_uses_with(res, wrap.results[0])
+            res.replace_all_uses_with(wrap.results[0])
         else:
-            _replace_all_uses_with(res, scalar_res)
+            res.replace_all_uses_with(scalar_res)
 
     Rewriter.erase_op(for_op, safe_erase=False)
 
@@ -467,8 +460,8 @@ def _convert_scf_while(while_op, outer_block: Block) -> None:
                 result_types=[orig_type],
             )
             outer_block.insert_ops_before([wrap], while_op)
-            _replace_all_uses_with(res, wrap.results[0])
+            res.replace_all_uses_with(wrap.results[0])
         else:
-            _replace_all_uses_with(res, scalar_res)
+            res.replace_all_uses_with(scalar_res)
 
     Rewriter.erase_op(while_op, safe_erase=False)
