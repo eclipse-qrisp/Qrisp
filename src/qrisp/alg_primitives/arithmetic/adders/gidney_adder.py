@@ -202,7 +202,9 @@ def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, c
 
     Implements the Gidney AND-based carry network (arXiv:1709.06648)
     for the case where *a* is a quantum register.  Unlike the classical
-    path, the Toffoli-and-uncompute pattern must be fully reversible.
+    path, which uses known bit values for trivial toggle/uncompute,
+    the quantum path uses the Gidney AND gate in the forward sweep
+    and its measurement-based inverse in the reverse sweep.
 
     Parameters
     ----------
@@ -254,13 +256,16 @@ def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, c
         cx(gidney_anc[i - 1], gidney_anc[i])
 
     # MSB carry-out and sum.
-    # The carry from position n-2 toggles b[n-1] (the sum's MSB).
-    # If no explicit c_out is requested, a[n-1] also contributes
-    # to b[n-1] (the full addition b += a).
+    # The carry from position n-2 toggles b_qbs[n-1].
     if ctrl is not None:
         mcx([ctrl, gidney_anc[n - 2]], b_qbs[n - 1], method="gidney")
         if c_out_qb is None:
             mcx([ctrl, a_qbs[n - 1]], b_qbs[n - 1], method="gidney")
+    # When c_out_qb is None:  b_qbs[n-1] is b's MSB
+    #   — both the carry and a_qbs[n-1] contribute (full b += a).
+    # When c_out_qb is not None:  c_out_qb was appended to b_qbs,
+    #   so b_qbs[n-1] is the carry-out target.  a_qbs[n-1] is not
+    #   added — it is outside the sum range (overflow position).
     else:
         cx(gidney_anc[n - 2], b_qbs[n - 1])
         if c_out_qb is None:
@@ -291,18 +296,15 @@ def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, c
 
         # When an outer control is present, the carry-in handling needs
         # an extra ancilla to keep the c_in / b[0] interaction clean.
-        #
-        # note: lsb_ctrl_anc is allocated and deleted entirely within this
-        # nested block (inside c_in_qb AND ctrl guards).  If this block is
-        # ever restructured, make sure the ancilla is still deleted before
-        # the enclosing c_in_qb scope ends.
+        # gidney_anc[0] is reused here instead of allocating a fresh qubit
+        # — the gidney_inv at line 295 already reset it to |0⟩.
         if ctrl is not None:
-            lsb_ctrl_anc = QuantumBool(name="gidney_lsb_ctrl_anc*")
-            mcx([ctrl, c_in_qb], lsb_ctrl_anc[0], method="gidney")
-            cx(lsb_ctrl_anc[0], b_qbs[0])
-            mcx([ctrl, c_in_qb], lsb_ctrl_anc[0], method="gidney_inv")
+            # Forward Gidney AND computes anc[0] ^= ctrl & c_in (measurement-free)
+            mcx([ctrl, c_in_qb], gidney_anc[0], method="gidney")
+            cx(gidney_anc[0], b_qbs[0])
+            # Inverse uses measurement + CZ fixup to restore anc[0] to |0⟩
+            mcx([ctrl, c_in_qb], gidney_anc[0], method="gidney_inv")
             cx(c_in_qb, b_qbs[0])
-            lsb_ctrl_anc.delete()
 
         # Restore the a[0] input that was flipped during carry-in setup.
         cx(c_in_qb, a_qbs[0])
