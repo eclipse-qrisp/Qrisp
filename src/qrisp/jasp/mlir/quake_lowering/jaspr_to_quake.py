@@ -73,7 +73,7 @@ from qrisp.jasp.mlir.quake_lowering.pass3_scalar_tensor_unwrap import (
     unwrap_scalar_tensors,
 )
 from qrisp.jasp.mlir.quake_lowering.pass4_array_to_stdvec import (
-    lower_array_params_to_stdvec,
+    lower_array_to_stdvec,
 )
 from qrisp.jasp.mlir.quake_lowering.safeguard_no_ranked_tensor_linalg import (
     verify_no_ranked_tensor_linalg,
@@ -144,6 +144,6 @@ def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> str:
     lower_ranked_tensors(module)
 
     # Step 4 – PASS 4: array ptr params → stdvec (CUDA-Q runtime compatibility).
-    lower_array_params_to_stdvec(module)
+    lower_array_to_stdvec(module)
 
     return str(module)
