@@ -402,6 +402,38 @@ def test_static_index_into_array_parameter_in_cond():
     assert result is not None
 
 
+def test_dynamic_index_into_array_parameter_in_cond():
+    """Dynamic index into a FixedShapeNDArray parameter inside a q_cond in a loop."""
+
+    @cudaq_kernel
+    def main(angles: FixedShapeNDArray(float, 5)):
+        qv = QuantumFloat(5)
+
+        def true_fun(qv, angles, ind):
+            ry(angles[ind], qv[0])
+
+        def false_fun(qv, angles, ind):
+            rz(angles[ind], qv[0])
+
+        def cond_fun(val):
+            i, qv = val
+            return i < 5
+
+        def body_fun(val):
+            i, qv = val
+            
+            q_cond(angles[i] > 0.5, true_fun, false_fun, qv, angles, i)
+            return i+1, qv
+
+        q_while_loop(cond_fun, body_fun, (0, qv))
+
+        return measure(qv)
+    
+    angles = np.array([1.57, 0.78, 0.39, 0.25, 0.12])
+    result = cudaq.run(main, angles, shots_count=10)
+    assert result is not None
+
+
 def test_static_index_into_array_parameter():
     """Static index into a FixedShapeNDArray parameter. Parametrized ansatz with 4 layers, each taking an angle from the array."""
 
