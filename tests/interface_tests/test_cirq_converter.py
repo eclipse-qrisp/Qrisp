@@ -381,3 +381,88 @@ def test_convert_from_cirq_unsupported_gate():
 
     with pytest.raises(ValueError, match="not supported by the Cirq to Qrisp converter"):
         convert_from_cirq(cirq_circ)
+
+
+def test_convert_from_cirq_empty_circuit():
+    """Test converting an empty Cirq circuit."""
+    import cirq
+
+    cirq_circ = cirq.Circuit()
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    assert qrisp_qc.num_qubits() == 0
+    assert len(qrisp_qc.data) == 0
+
+
+@pytest.mark.parametrize(
+    "gate_key, expected_name",
+    [
+        ("X", "x"),
+        ("Y", "y"),
+        ("Z", "z"),
+        ("H", "h"),
+        ("S", "s"),
+        ("T", "t"),
+        ("S_dg", "s_dg"),
+        ("T_dg", "t_dg"),
+        ("sx", "sx"),
+        ("sx_dg", "sx_dg"),
+        ("I", "id"),
+    ],
+)
+def test_convert_from_cirq_single_gate(gate_key, expected_name):
+    """Test direct conversion of individual single-qubit gates."""
+    import cirq
+
+    q = cirq.LineQubit(0)
+
+    gate_map = {
+        "X": cirq.X(q),
+        "Y": cirq.Y(q),
+        "Z": cirq.Z(q),
+        "H": cirq.H(q),
+        "S": cirq.S(q),
+        "T": cirq.T(q),
+        "S_dg": cirq.S(q) ** -1,
+        "T_dg": cirq.T(q) ** -1,
+        "sx": cirq.X(q) ** 0.5,
+        "sx_dg": cirq.X(q) ** -0.5,
+        "I": cirq.I(q),
+    }
+
+    cirq_circ = cirq.Circuit([gate_map[gate_key]])
+
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    assert qrisp_qc.data[0].op.name == expected_name
+
+    expected_unitary = cirq.unitary(cirq_circ)
+    np.testing.assert_array_almost_equal(
+        np.abs(qrisp_qc.get_unitary()), np.abs(expected_unitary)
+    )
+
+
+@pytest.mark.parametrize(
+    "construct_key, expected_name",
+    [
+        ("controlled", "cx"),
+        ("ControlledOperation", "cx"),
+    ],
+)
+def test_convert_from_cirq_controlled_cx(construct_key, expected_name):
+    """Test CX via ControlledGate and ControlledOperation APIs."""
+    import cirq
+
+    q0, q1 = cirq.LineQubit.range(2)
+
+    if construct_key == "controlled":
+        cirq_circ = cirq.Circuit([cirq.X.controlled()(q0, q1)])
+    else:
+        cirq_circ = cirq.Circuit([cirq.ControlledOperation([q0], cirq.X(q1))])
+
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    assert qrisp_qc.num_qubits() == 2
+    assert qrisp_qc.data[0].op.name == expected_name
+
+    expected_unitary = cirq.unitary(cirq_circ)
+    np.testing.assert_array_almost_equal(
+        qrisp_qc.get_unitary(), expected_unitary
+    )
