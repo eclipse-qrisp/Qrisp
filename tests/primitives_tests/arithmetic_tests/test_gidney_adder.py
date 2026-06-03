@@ -31,17 +31,61 @@ from qrisp import (
     measure,
     x,
 )
+
+
 @pytest.mark.parametrize(
     "a_spec, a_val, b_bits, b_val, expected_a, expected_b",
     [
-        (("qf", 13), 20, 14, 14, {20: 1.0}, {34: 1.0}),  # quantum a and wider b without wrap
-        (("qf", 10), 15, 5, 7, {15: 1.0}, {(7 + 15) % 32: 1.0}),  # quantum a larger than b to force modulo on b
+        (
+            ("qf", 13),
+            20,
+            14,
+            14,
+            {20: 1.0},
+            {34: 1.0},
+        ),  # quantum a and wider b without wrap
+        (
+            ("qf", 10),
+            15,
+            5,
+            7,
+            {15: 1.0},
+            {(7 + 15) % 32: 1.0},
+        ),  # quantum a larger than b to force modulo on b
         (("classical", None), 20, 15, 14, 20, {34: 1.0}),  # classical integer a path
         (("qf", 1), 0, 1, 1, {0: 1.0}, {1: 1.0}),  # single-qubit register boundary
-        (("classical", None), "10", 8, 5, "10", {6: 1.0}),  # string input accepted through int conversion
-        (("classical", None), np.int64(5), 8, 10, np.int64(5), {15: 1.0}),  # numpy integer compatibility
-        (("classical", None), -3, 4, 5, -3, {2: 1.0}),  # negative classical input wraps modulo 2^b_bits
-        (("qf_list", 3), 7, 8, 100, None, {107: 1.0}),  # list-of-qubits input with wider target register
+        (
+            ("classical", None),
+            "10",
+            8,
+            5,
+            "10",
+            {6: 1.0},
+        ),  # string input accepted through int conversion
+        (
+            ("classical", None),
+            np.int64(5),
+            8,
+            10,
+            np.int64(5),
+            {15: 1.0},
+        ),  # numpy integer compatibility
+        (
+            ("classical", None),
+            -3,
+            4,
+            5,
+            -3,
+            {2: 1.0},
+        ),  # negative classical input wraps modulo 2^b_bits
+        (
+            ("qf_list", 3),
+            7,
+            8,
+            100,
+            None,
+            {107: 1.0},
+        ),  # list-of-qubits input with wider target register
     ],
 )
 def test_gidney_adder_basic(a_spec, a_val, b_bits, b_val, expected_a, expected_b):
@@ -69,16 +113,106 @@ def test_gidney_adder_basic(a_spec, a_val, b_bits, b_val, expected_a, expected_b
 @pytest.mark.parametrize(
     "a_spec, a_val, b_bits, b_val, c_in_val, use_c_out, expected_b, expected_cout",
     [
-        (("qf", 13), 20, 14, 14, None, True, {34: 1.0}, {0: 1.0}),  # carry-out remains zero when sum fits
-        (("qf", 1), 1, 1, 1, None, True, {0: 1.0}, {1: 1.0}),  # minimal-width overflow sets carry-out
-        (("classical", None), 255, 8, 128, None, True, {127: 1.0}, {1: 1.0}),  # high-value overflow case
-        (("classical", None), 10, 8, 20, None, True, {30: 1.0}, {0: 1.0}),  # classical a on standard 8-bit target
-        (("classical", None), 5, 8, 0, 1, False, {6: 1.0}, None),  # classical path with carry-in increment
-        (("qf", 8), 50, 8, 100, 1, False, {151: 1.0}, None),  # quantum path where carry-in changes result
-        (("qf", 8), 50, 8, 100, 0, False, {150: 1.0}, None),  # paired case to isolate carry-in effect
-        (("qf", 8), 200, 8, 55, 1, True, {0: 1.0}, {1: 1.0}),  # c_in pushes sum exactly over modulo boundary
-        (("classical", None), 0, 8, 255, 1, True, {0: 1.0}, {1: 1.0}),  # zero addend with carry-in-only overflow
-        (("classical", None), 1, 8, 1, 1, True, {3: 1.0}, {0: 1.0}),  # small numbers where carry remains zero
+        (
+            ("qf", 13),
+            20,
+            14,
+            14,
+            None,
+            True,
+            {34: 1.0},
+            {0: 1.0},
+        ),  # carry-out remains zero when sum fits
+        (
+            ("qf", 1),
+            1,
+            1,
+            1,
+            None,
+            True,
+            {0: 1.0},
+            {1: 1.0},
+        ),  # minimal-width overflow sets carry-out
+        (
+            ("classical", None),
+            255,
+            8,
+            128,
+            None,
+            True,
+            {127: 1.0},
+            {1: 1.0},
+        ),  # high-value overflow case
+        (
+            ("classical", None),
+            10,
+            8,
+            20,
+            None,
+            True,
+            {30: 1.0},
+            {0: 1.0},
+        ),  # classical a on standard 8-bit target
+        (
+            ("classical", None),
+            5,
+            8,
+            0,
+            1,
+            False,
+            {6: 1.0},
+            None,
+        ),  # classical path with carry-in increment
+        (
+            ("qf", 8),
+            50,
+            8,
+            100,
+            1,
+            False,
+            {151: 1.0},
+            None,
+        ),  # quantum path where carry-in changes result
+        (
+            ("qf", 8),
+            50,
+            8,
+            100,
+            0,
+            False,
+            {150: 1.0},
+            None,
+        ),  # paired case to isolate carry-in effect
+        (
+            ("qf", 8),
+            200,
+            8,
+            55,
+            1,
+            True,
+            {0: 1.0},
+            {1: 1.0},
+        ),  # c_in pushes sum exactly over modulo boundary
+        (
+            ("classical", None),
+            0,
+            8,
+            255,
+            1,
+            True,
+            {0: 1.0},
+            {1: 1.0},
+        ),  # zero addend with carry-in-only overflow
+        (
+            ("classical", None),
+            1,
+            8,
+            1,
+            1,
+            True,
+            {3: 1.0},
+            {0: 1.0},
+        ),  # small numbers where carry remains zero
     ],
 )
 def test_gidney_adder_with_carry_options(
@@ -125,15 +259,41 @@ def test_gidney_adder_with_carry_options(
 @pytest.mark.parametrize(
     "a_spec, a_val, b_bits, b_val, ctrl_on, expected_b",
     [
-        (("qf", 10), 3, 11, 5, True, {8: 1.0}),  # controlled quantum addition executes when ctrl is on
-        (("qf", 10), 3, 11, 5, False, {5: 1.0}),  # matched ctrl-off case leaves b unchanged
-        (("classical", None), 5, 8, 10, True, {15: 1.0}),  # controlled classical addition executes
-        (("classical", None), 5, 8, 10, False, {10: 1.0}),  # classical path blocked by ctrl-off
+        (
+            ("qf", 10),
+            3,
+            11,
+            5,
+            True,
+            {8: 1.0},
+        ),  # controlled quantum addition executes when ctrl is on
+        (
+            ("qf", 10),
+            3,
+            11,
+            5,
+            False,
+            {5: 1.0},
+        ),  # matched ctrl-off case leaves b unchanged
+        (
+            ("classical", None),
+            5,
+            8,
+            10,
+            True,
+            {15: 1.0},
+        ),  # controlled classical addition executes
+        (
+            ("classical", None),
+            5,
+            8,
+            10,
+            False,
+            {10: 1.0},
+        ),  # classical path blocked by ctrl-off
     ],
 )
-def test_gidney_adder_with_control(
-    a_spec, a_val, b_bits, b_val, ctrl_on, expected_b
-):
+def test_gidney_adder_with_control(a_spec, a_val, b_bits, b_val, ctrl_on, expected_b):
     """Verify controlled addition only fires when :math:`ctrl=\ket{1}`."""
     kind, n = a_spec
     if kind == "qf":
@@ -180,8 +340,20 @@ def test_gidney_adder_carry_in_carry_out_ctrl_quantum_a():
 @pytest.mark.parametrize(
     "a_val, b_val, ctrl_on, expected_b, expected_cout",
     [
-        (55, 200, True, {0: 1.0}, {1: 1.0}),  # ctrl-on path with exact overflow boundary
-        (55, 200, False, {200: 1.0}, {0: 1.0}),  # matched ctrl-off case proves full gating
+        (
+            55,
+            200,
+            True,
+            {0: 1.0},
+            {1: 1.0},
+        ),  # ctrl-on path with exact overflow boundary
+        (
+            55,
+            200,
+            False,
+            {200: 1.0},
+            {0: 1.0},
+        ),  # matched ctrl-off case proves full gating
     ],
 )
 def test_gidney_adder_classical_a_cin_cout_ctrl(
@@ -283,20 +455,23 @@ def test_gidney_adder_inputs_unmodified_size():
 
 
 @pytest.mark.parametrize(
-    "kind, a_val, b_val, use_cout, expected_b, expected_cout", [
+    "kind, a_val, b_val, use_cout, expected_b, expected_cout",
+    [
         ("classical", 0, 0, False, 0, None),
         ("classical", 1, 0, False, 1, None),
         ("classical", 1, 1, False, 0, None),
-        ("classical", 0, 0, True,  0, 0),
-        ("classical", 1, 1, True,  0, 1),
-        ("quantum",   0, 0, False, 0, None),
-        ("quantum",   1, 0, False, 1, None),
-        ("quantum",   1, 1, False, 0, None),
-        ("quantum",   0, 0, True,  0, 0),
-        ("quantum",   1, 1, True,  0, 1),
+        ("classical", 0, 0, True, 0, 0),
+        ("classical", 1, 1, True, 0, 1),
+        ("quantum", 0, 0, False, 0, None),
+        ("quantum", 1, 0, False, 1, None),
+        ("quantum", 1, 1, False, 0, None),
+        ("quantum", 0, 0, True, 0, 0),
+        ("quantum", 1, 1, True, 0, 1),
     ],
 )
-def test_gidney_adder_single_qubit(kind, a_val, b_val, use_cout, expected_b, expected_cout):
+def test_gidney_adder_single_qubit(
+    kind, a_val, b_val, use_cout, expected_b, expected_cout
+):
     """n == 1 edge case: carry chain is skipped via control(n > 1)."""
     if kind == "classical":
         a = a_val
@@ -320,18 +495,21 @@ def test_gidney_adder_single_qubit(kind, a_val, b_val, use_cout, expected_b, exp
 
 
 @pytest.mark.parametrize(
-    "n_bits, a_val, b_val, spec, expected", [
-    (1, 0, 0, None, 0),      # n=1 edge case (item 8)
-    (1, 1, 0, None, 1),
-    (1, 1, 1, None, 0),
-    (4, -3, 10, None, 7),    # negative / large a
-    (4, -1, 1, None, 0),
-    (4, 20, 5, None, 9),
-    (4, 3, 5, "numpy", 8),   # numpy int a
-    (4, 5, 10, "dqa", 15),   # DynamicQubitArray as b
-])
+    "n_bits, a_val, b_val, spec, expected",
+    [
+        (1, 0, 0, None, 0),  # n=1 edge case (item 8)
+        (1, 1, 0, None, 1),
+        (1, 1, 1, None, 0),
+        (4, -3, 10, None, 7),  # negative / large a
+        (4, -1, 1, None, 0),
+        (4, 20, 5, None, 9),
+        (4, 3, 5, "numpy", 8),  # numpy int a
+        (4, 5, 10, "dqa", 15),  # DynamicQubitArray as b
+    ],
+)
 def test_gidney_adder_classical_a_dynamic(n_bits, a_val, b_val, spec, expected):
     """Classical a + quantum b in dynamic mode (varying input types)."""
+
     @boolean_simulation
     def main(bits, av, bv):
         b_qf = QuantumFloat(bits)
@@ -355,27 +533,56 @@ def test_gidney_adder_single_qubit_no_ancilla_leak():
 
 
 @pytest.mark.parametrize(
-    "desc, a_spec, a_val, b_bits, b_val, carry_args, expected", [
+    "desc, a_spec, a_val, b_bits, b_val, carry_args, expected",
+    [
         # Quantum a + c_in + c_out without ctrl (item 6)
-        ("quantum a + c_in + c_out, no ctrl",
-         ("qf", 4), 3, 4, 5, {"c_in": 1, "c_out": True}, {"b": {9: 1.0}, "cout": {0: 1.0}}),
+        (
+            "quantum a + c_in + c_out, no ctrl",
+            ("qf", 4),
+            3,
+            4,
+            5,
+            {"c_in": 1, "c_out": True},
+            {"b": {9: 1.0}, "cout": {0: 1.0}},
+        ),
         # n == 1 with control (item 8)
-        ("n=1 quantum a + ctrl",
-         ("qf", 1), 1, 1, 1, {"ctrl": True}, {"b": {0: 1.0}}),
-        ("n=1 classical a + ctrl",
-         ("classical", None), 1, 1, 1, {"ctrl": True}, {"b": {0: 1.0}}),
+        ("n=1 quantum a + ctrl", ("qf", 1), 1, 1, 1, {"ctrl": True}, {"b": {0: 1.0}}),
+        (
+            "n=1 classical a + ctrl",
+            ("classical", None),
+            1,
+            1,
+            1,
+            {"ctrl": True},
+            {"b": {0: 1.0}},
+        ),
         # Empty quantum a list — identity operation (item 2)
-        ("empty quantum a list",
-         ("empty_list", None), None, 4, 7, {}, {"b": {7: 1.0}}),
+        ("empty quantum a list", ("empty_list", None), None, 4, 7, {}, {"b": {7: 1.0}}),
         # Classical a wider than b (item 7)
-        ("classical a=257 in 8-bit b",
-         ("classical", None), 257, 8, 0, {}, {"b": {1: 1.0}}),
+        (
+            "classical a=257 in 8-bit b",
+            ("classical", None),
+            257,
+            8,
+            0,
+            {},
+            {"b": {1: 1.0}},
+        ),
         # String a + c_out (item 4)
-        ("string a + c_out",
-         ("classical", None), "10", 8, 5, {"c_out": True}, {"b": {6: 1.0}, "cout": {0: 1.0}}),
+        (
+            "string a + c_out",
+            ("classical", None),
+            "10",
+            8,
+            5,
+            {"c_out": True},
+            {"b": {6: 1.0}, "cout": {0: 1.0}},
+        ),
     ],
 )
-def test_gidney_adder_additional_edge_cases(desc, a_spec, a_val, b_bits, b_val, carry_args, expected):
+def test_gidney_adder_additional_edge_cases(
+    desc, a_spec, a_val, b_bits, b_val, carry_args, expected
+):
     """Cover remaining static-mode gaps identified during code review."""
     kind, n = a_spec
     if kind == "qf":
@@ -427,7 +634,9 @@ def test_gidney_adder_additional_edge_cases(desc, a_spec, a_val, b_bits, b_val, 
         ("dynamic", "valid_list_b", False),
     ],
 )
-def test_gidney_adder_invalid_inputs_raise_value_error(mode, validation_case, should_raise):
+def test_gidney_adder_invalid_inputs_raise_value_error(
+    mode, validation_case, should_raise
+):
     """Validation should reject invalid pairs and accept list-based quantum b targets."""
     expected_msg = "gidney_adder expects inputs"
     if mode == "static":
@@ -509,7 +718,8 @@ def test_gidney_adder_invalid_inputs_raise_value_error(mode, validation_case, sh
 def test_gidney_adder_t_depth_significantly_lower_than_cuccaro():
     """Compare gidney and cuccaro adders for T-depth, measurement depth, and T-state scaling."""
 
-    measurement_depth_indicator = lambda op: int(op.name == "measure")
+    def measurement_depth_indicator(op):
+        return int(op.name == "measure")
 
     ctrl_c = QuantumVariable(2)
     tgt_c = QuantumVariable(1)
@@ -627,7 +837,7 @@ def test_gidney_adder_t_count_formula_with_optional_inputs(
 
     # defined to take into consideration how a backend transpiles the controlled
     # two-control mcx, which is the dominant contribution to the ctrl term's T-count
-    # used to verify the T count as described in abstract and in the formula comments above. 
+    # used to verify the T count as described in abstract and in the formula comments above.
     tau = numerator // (n_ref + 1)
     ctrl_only_const = t_count_ref - 8 * n_ref
 
@@ -658,10 +868,7 @@ def test_gidney_adder_t_count_formula_with_optional_inputs(
     if not use_ctrl:
         expected_t_count = 4 * (n - 1 + int(use_c_out))
     else:
-        expected_t_count = (
-            4 * (n - 1 + int(use_c_out) + int(use_c_in))
-            + (n + 1) * tau
-        )
+        expected_t_count = 4 * (n - 1 + int(use_c_out) + int(use_c_in)) + (n + 1) * tau
 
     assert t_count == expected_t_count
 
@@ -763,11 +970,12 @@ def test_gidney_adder_quantum_a_wider_than_b_dynamic(N, L, a_val, b_val):
 
     Exercises the truncation + extension ancilla path.
     """
+
     @boolean_simulation
-    def main(n, l, av, bv):
+    def main(n, bit_len, av, bv):
         a_qf = QuantumFloat(n)
         a_qf[:] = av
-        b_qf = QuantumFloat(l)
+        b_qf = QuantumFloat(bit_len)
         b_qf[:] = bv
         gidney_adder(a_qf, b_qf)
         return measure(b_qf)
@@ -778,6 +986,7 @@ def test_gidney_adder_quantum_a_wider_than_b_dynamic(N, L, a_val, b_val):
 
 def test_gidney_adder_invalid_binary_string_dynamic():
     """Invalid binary string a raises ValueError in dynamic/tracing mode."""
+
     @boolean_simulation
     def main():
         b = QuantumFloat(4)
@@ -803,6 +1012,7 @@ def test_gidney_adder_invalid_binary_string_dynamic():
 @pytest.mark.parametrize("n_bits, a_val, b_val", [(4, 5, 10)])
 def test_gidney_adder_classical_a_cin_dynamic_xfail(n_bits, a_val, b_val):
     """Classical a + c_in in dynamic mode (xfail — DynamicQubitArray bug)."""
+
     @boolean_simulation
     def main(bits, av, bv):
         b_qf = QuantumFloat(bits)
@@ -819,19 +1029,23 @@ def test_gidney_adder_classical_a_cin_dynamic_xfail(n_bits, a_val, b_val):
     reason="DynamicQubitArray.__add__ rejects JAX tracer in b_qbs + [c_out_qb]",
     strict=True,
 )
-@pytest.mark.parametrize("kind, n_bits, a_val, b_val", [
-    ("classical", 4, 5,  10),
-    ("classical", 4, 12, 7),
-    ("classical", 1, 1,  1),
-    ("quantum",   4, 5,  10),
-    ("quantum",   4, 12, 7),
-    ("quantum",   1, 1,  1),
-])
+@pytest.mark.parametrize(
+    "kind, n_bits, a_val, b_val",
+    [
+        ("classical", 4, 5, 10),
+        ("classical", 4, 12, 7),
+        ("classical", 1, 1, 1),
+        ("quantum", 4, 5, 10),
+        ("quantum", 4, 12, 7),
+        ("quantum", 1, 1, 1),
+    ],
+)
 def test_gidney_adder_cout_dynamic_xfail(kind, n_bits, a_val, b_val):
     """C_out in dynamic mode (xfail — DynamicQubitArray bug).
 
     Covers both classical and quantum a paths.
     """
+
     @boolean_simulation
     def main(bits, av, bv):
         if kind == "quantum":
@@ -863,6 +1077,7 @@ def test_gidney_adder_cin_cout_ctrl_dynamic_xfail(n_bits, a_val, b_val):
 
     Also exercises the ``[c_in_qb] + b_qbs`` path (__radd__).
     """
+
     @boolean_simulation
     def main(bits, av, bv):
         a_qf = QuantumFloat(bits)
@@ -887,12 +1102,16 @@ def test_gidney_adder_cin_cout_ctrl_dynamic_xfail(n_bits, a_val, b_val):
     assert cout_res == expected_cout
 
 
-@pytest.mark.parametrize("a_str, b_bits, b_val", [
-    ("1010", 4, 5),
-    ("11",   2, 1),
-])
+@pytest.mark.parametrize(
+    "a_str, b_bits, b_val",
+    [
+        ("1010", 4, 5),
+        ("11", 2, 1),
+    ],
+)
 def test_gidney_adder_string_a_dynamic(a_str, b_bits, b_val):
     """String a input in dynamic/tracing mode (string captured as closure)."""
+
     @boolean_simulation
     def main(bits, bv):
         s = a_str
@@ -906,12 +1125,16 @@ def test_gidney_adder_string_a_dynamic(a_str, b_bits, b_val):
     assert main(b_bits, b_val) == expected
 
 
-@pytest.mark.parametrize("n_bits, a_val, b_val", [
-    (4, 5,  10),
-    (8, 17, 42),
-])
+@pytest.mark.parametrize(
+    "n_bits, a_val, b_val",
+    [
+        (4, 5, 10),
+        (8, 17, 42),
+    ],
+)
 def test_gidney_adder_ancilla_cleanup_dynamic(n_bits, a_val, b_val):
     """Ancilla cleanup verification in dynamic/tracing mode."""
+
     @boolean_simulation
     def main(bits, av, bv):
         b_qf = QuantumFloat(bits)

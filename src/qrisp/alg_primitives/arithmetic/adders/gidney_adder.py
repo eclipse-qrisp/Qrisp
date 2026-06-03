@@ -17,8 +17,6 @@
 
 """
 
-
-
 import jax.numpy as jnp
 import numpy as np
 from qrisp.core import QuantumVariable, x, cx, mcx
@@ -43,15 +41,21 @@ def _validate_gidney_adder_inputs(a, b):
     # b must be a quantum register (QuantumVariable, DynamicQubitArray,
     # or non-empty list of qubit-like objects).
     b_is_quantum = isinstance(b, (QuantumVariable, DynamicQubitArray)) or (
-        isinstance(b, list) and len(b) > 0
+        isinstance(b, list)
+        and len(b) > 0
         and all(callable(getattr(qb, "qs", None)) for qb in b)
     )
     # a is quantum if it passes the same check or is an empty list
     # (which the quantum path treats as a zero-size register).
-    a_is_quantum = isinstance(a, (QuantumVariable, DynamicQubitArray)) or (
-        isinstance(a, list) and len(a) > 0
-        and all(callable(getattr(qb, "qs", None)) for qb in a)
-    ) or (isinstance(a, list) and len(a) == 0)
+    a_is_quantum = (
+        isinstance(a, (QuantumVariable, DynamicQubitArray))
+        or (
+            isinstance(a, list)
+            and len(a) > 0
+            and all(callable(getattr(qb, "qs", None)) for qb in a)
+        )
+        or (isinstance(a, list) and len(a) == 0)
+    )
 
     # Classical a is valid if it is a concrete int / binary string / numpy
     # integer, or if we are in tracing mode and a is an integer JAX scalar
@@ -131,7 +135,7 @@ def _apply_classical_carry_chain(gidney_anc, b_qbs, n, a_int, a_int_is_bigint, c
         Target qubits participating in the carry chain.
     n : int
         Effective carry-chain width, including optional carry wires.
-    a_int : int, jnp.ndarray scalar, or BigInteger 
+    a_int : int, jnp.ndarray scalar, or BigInteger
         Classical input representation used for bit extraction.
     a_int_is_bigint : bool
         Indicates whether ``a_int`` must be read via ``get_bit``.
@@ -364,7 +368,9 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     >>> print(b)
     {9: 1.0}
     """
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+        BigInteger,
+    )
 
     a_is_quantum = _validate_gidney_adder_inputs(a, b)
 
@@ -424,7 +430,12 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         with control(n > 1):
             gidney_anc = QuantumVariable(n - 1, name="gidney_anc*")
             _apply_classical_carry_chain(
-                gidney_anc, b_qbs, n, a_int, a_int_is_bigint, ctrl,
+                gidney_anc,
+                b_qbs,
+                n,
+                a_int,
+                a_int_is_bigint,
+                ctrl,
             )
             gidney_anc.delete()
 
@@ -467,9 +478,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
     # Carry chain (only meaningful when n >= 2).
     with control(n > 1):
         gidney_anc = QuantumVariable(n - 1, name="gidney_anc*")
-        _apply_quantum_carry_chain(
-            gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, ctrl
-        )
+        _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, ctrl)
         gidney_anc.delete()
 
     # Final LSB sum: b[0] ^= a[0].
@@ -481,4 +490,3 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         cx(a_qbs[0], b_qbs[0])
 
     a_ext.delete()
-
