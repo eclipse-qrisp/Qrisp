@@ -68,6 +68,7 @@ SCF ops are handled inside-out:
 
 
 import warnings
+from collections.abc import Callable
 
 from xdsl.dialects import arith, func, scf, tensor
 from xdsl.dialects.builtin import ModuleOp
@@ -87,11 +88,12 @@ from xdsl.dialects.builtin import (
     f64,
     i32,
 )
-from xdsl.dialects.scf import WhileOp, IfOp, ForOp, IndexSwitchOp
+from xdsl.dialects.scf import ConditionOp, ForOp, IfOp, IndexSwitchOp, WhileOp, YieldOp
 from xdsl.ir import (
     Attribute,
     Block,
     BlockArgument,
+    Operation,
     OpResult,
     Region,
     SSAValue,
@@ -114,6 +116,23 @@ from qrisp.jasp.mlir.quake_lowering.quake_dialect import (
     make_gate_op,
 )
 from qrisp.jasp.mlir.quake_lowering.gate_mapping import get_gate_info
+from qrisp.jasp.mlir.xdsl_dialect import (
+    ConsumeQuantumKernelOp,
+    CreateQuantumKernelOp,
+    CreateQubitsOp,
+    DeleteQubitsOp,
+    FuseOp,
+    GetQubitOp,
+    GetSizeOp,
+    MeasureOp as JaspMeasureOp,
+    ParityOp,
+    QuantumGateOp,
+    QuantumStateType,
+    QubitArrayType,
+    QubitType,
+    ResetOp as JaspResetOp,
+    SliceOp,
+)
 
 # ---------------------------------------------------------------------------
 # Public entry point
@@ -136,7 +155,7 @@ def lower_jasp_to_quake(module: ModuleOp, execution_mode: str = "run") -> None:
         the function, suitable for ``cudaq.sample``.
     """
     for op in list(module.body.blocks[0].ops):
-        if op.name == "func.func":
+        if isinstance(op, func.FuncOp):
             _process_func(op, execution_mode)
 
 
@@ -147,21 +166,17 @@ def lower_jasp_to_quake(module: ModuleOp, execution_mode: str = "run") -> None:
 
 def _is_qst(t: Attribute) -> bool:
     """Return True if *t* is ``!jasp.QuantumState``."""
-    return t.name == "jasp.QuantumState"
+    return isinstance(t, QuantumStateType)
 
 
 def _is_qubit_array(t: Attribute) -> bool:
     """Return True if *t* is ``!jasp.QubitArray``."""
-    return t.name == "jasp.QubitArray"
+    return isinstance(t, QubitArrayType)
 
 
 def _is_qubit(t: Attribute) -> bool:
     """Return True if *t* is ``!jasp.Qubit``."""
-    return t.name == "jasp.Qubit"
-
-
-def _is_jasp_type(t: Attribute) -> bool:
-    return _is_qst(t) or _is_qubit_array(t) or _is_qubit(t)
+    return isinstance(t, QubitType)
 
 
 def _quake_type_for(jasp_type: Attribute) -> Attribute | None:
@@ -212,7 +227,7 @@ def _scalar_type_of(t: Attribute) -> Attribute:
     return t
 
 
-def _coerce_to_f64(val: SSAValue, block: Block, insert_before) -> SSAValue:
+def _coerce_to_f64(val: SSAValue, block: Block, insert_before: Operation) -> SSAValue:
     """Extract from tensor if needed, then cast int→f64 if needed.
 
     Returns an SSAValue of type f64.
@@ -242,7 +257,7 @@ def _coerce_to_f64(val: SSAValue, block: Block, insert_before) -> SSAValue:
 
 
 def _normalize_index_for_veq(
-    veq: SSAValue, idx: SSAValue, block: Block, insert_before_op
+    veq: SSAValue, idx: SSAValue, block: Block, insert_before_op: Operation
 ) -> SSAValue:
     """Implement Python-style negative indexing on a veq index.
 
@@ -272,7 +287,7 @@ def _normalize_index_for_veq(
 
 
 def _extract_scalar(
-    val: SSAValue, scalar_type: Attribute, block: Block, insert_before_op
+    val: SSAValue, scalar_type: Attribute, block: Block, insert_before_op: Operation
 ) -> SSAValue:
     """Insert a ``tensor.extract %val[] : tensor<T>`` op and return the result.
 
@@ -286,7 +301,7 @@ def _extract_scalar(
 
 
 def _wrap_scalar(
-    val: SSAValue, tensor_type: Attribute, block: Block, insert_before_op
+    val: SSAValue, tensor_type: Attribute, block: Block, insert_before_op: Operation
 ) -> SSAValue:
     """Insert ``tensor.from_elements %val : tensor<T>`` and return the result.
 
@@ -304,7 +319,7 @@ def _wrap_scalar(
 # ---------------------------------------------------------------------------
 
 
-def _process_func(func_op, execution_mode: str = "run") -> None:
+def _process_func(func_op: func.FuncOp, execution_mode: str = "run") -> None:
     """Process a single ``func.func`` op: rewrite body, fix signature."""
     # Check if this function contains create_quantum_kernel → cudaq.kernel
     is_quantum = _func_has_any_jasp(func_op)
@@ -315,7 +330,7 @@ def _process_func(func_op, execution_mode: str = "run") -> None:
     _fix_func_signature(func_op, is_quantum, execution_mode)
 
 
-def _func_has_any_jasp(func_op) -> bool:
+def _func_has_any_jasp(func_op: func.FuncOp) -> bool:
     """Return True if the function body contains any jasp.* op."""
     for block in func_op.body.blocks:
         for op in block.ops:
@@ -324,7 +339,7 @@ def _func_has_any_jasp(func_op) -> bool:
     return False
 
 
-def _fix_func_signature(func_op, mark_cudaq_kernel: bool = False, execution_mode: str = "run") -> None:
+def _fix_func_signature(func_op: func.FuncOp, mark_cudaq_kernel: bool = False, execution_mode: str = "run") -> None:
     """Remove ``!jasp.QuantumState`` from function argument/return types.
 
     Also updates the entry block's argument list and adds ``cudaq.kernel``
@@ -374,7 +389,7 @@ def _fix_func_signature(func_op, mark_cudaq_kernel: bool = False, execution_mode
         func_op.attributes["cudaq.entrypoint"] = StringAttr("true")
 
 
-def _fix_return_op(op, execution_mode: str = "run") -> None:
+def _fix_return_op(op: func.ReturnOp, execution_mode: str = "run") -> None:
     """Remove ``!jasp.QuantumState`` values from ``func.return``."""
     if execution_mode == "sample":
         # Walk up to the enclosing func.func to check whether this is @main.
@@ -387,7 +402,7 @@ def _fix_return_op(op, execution_mode: str = "run") -> None:
     op.operands = non_qst
 
 
-def _fix_call_op(op) -> None:
+def _fix_call_op(op: func.CallOp) -> None:
     """
     Remove ``!jasp.QuantumState`` values from ``func.call`` operands and results.
     Convert qubit types in the results to their Quake equivalents.
@@ -439,46 +454,44 @@ def _process_block(block: Block, execution_mode: str = "run") -> None:
 # ---------------------------------------------------------------------------
 
 
-def _process_op(op, block: Block, execution_mode: str = "run") -> None:
+def _process_op(op: Operation, block: Block, execution_mode: str = "run") -> None:
     """Dispatch a single op for lowering."""
-    n = op.name
-
-    if n == "jasp.create_quantum_kernel":
+    if isinstance(op, CreateQuantumKernelOp):
         _lower_create_quantum_kernel(op, block)
-    elif n == "jasp.consume_quantum_kernel":
+    elif isinstance(op, ConsumeQuantumKernelOp):
         _lower_consume_quantum_kernel(op, block)
-    elif n == "jasp.create_qubits":
+    elif isinstance(op, CreateQubitsOp):
         _lower_create_qubits(op, block)
-    elif n == "jasp.get_qubit":
+    elif isinstance(op, GetQubitOp):
         _lower_get_qubit(op, block)
-    elif n == "jasp.get_size":
+    elif isinstance(op, GetSizeOp):
         _lower_get_size(op, block)
-    elif n == "jasp.slice":
+    elif isinstance(op, SliceOp):
         _lower_slice(op, block)
-    elif n == "jasp.fuse":
+    elif isinstance(op, FuseOp):
         _lower_fuse(op, block)
-    elif n == "jasp.delete_qubits":
+    elif isinstance(op, DeleteQubitsOp):
         _lower_delete_qubits(op, block)
-    elif n == "jasp.quantum_gate":
+    elif isinstance(op, QuantumGateOp):
         _lower_quantum_gate(op, block)
-    elif n == "jasp.measure":
+    elif isinstance(op, JaspMeasureOp):
         _lower_measure(op, block, execution_mode)
-    elif n == "jasp.reset":
+    elif isinstance(op, JaspResetOp):
         _lower_reset(op, block)
-    elif n == "jasp.parity":
+    elif isinstance(op, ParityOp):
         # Intentionally not lowered – left in place.
         pass
-    elif n == "scf.while":
+    elif isinstance(op, WhileOp):
         _process_scf_while(op, block, execution_mode)
-    elif n == "scf.if":
+    elif isinstance(op, IfOp):
         _process_scf_if(op, block, execution_mode)
-    elif n == "scf.for":
+    elif isinstance(op, ForOp):
         _process_scf_for(op, block, execution_mode)
-    elif n == "scf.index_switch":
+    elif isinstance(op, IndexSwitchOp):
         _process_scf_index_switch(op, block, execution_mode)
-    elif n == "func.return":
+    elif isinstance(op, func.ReturnOp):
         _fix_return_op(op, execution_mode)
-    elif n == "func.call":
+    elif isinstance(op, func.CallOp):
         _fix_call_op(op)
     # All other ops (arith, tensor, linalg, …): no action needed.
 
@@ -488,7 +501,7 @@ def _process_op(op, block: Block, execution_mode: str = "run") -> None:
 # ---------------------------------------------------------------------------
 
 
-def _thread_qst(op) -> None:
+def _thread_qst(op: Operation) -> None:
     """For ops with a QuantumState result, thread it backwards.
 
     Finds all ``!jasp.QuantumState`` results of *op* and replaces their uses
@@ -514,13 +527,13 @@ def _thread_qst(op) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _lower_create_quantum_kernel(op, block: Block) -> None:
+def _lower_create_quantum_kernel(op: CreateQuantumKernelOp, block: Block) -> None:
     """``jasp.create_quantum_kernel`` → dropped; mark enclosing func as kernel."""
     _thread_qst(op)
     Rewriter.erase_op(op)
 
 
-def _lower_consume_quantum_kernel(op, block: Block) -> None:
+def _lower_consume_quantum_kernel(op: ConsumeQuantumKernelOp, block: Block) -> None:
     """``jasp.consume_quantum_kernel`` → dropped; replace bool result with True."""
     # Result is tensor<i1> – replace with constant True
     if op.results:
@@ -532,7 +545,7 @@ def _lower_consume_quantum_kernel(op, block: Block) -> None:
     Rewriter.erase_op(op)
 
 
-def _lower_create_qubits(op, block: Block) -> None:
+def _lower_create_qubits(op: CreateQubitsOp, block: Block) -> None:
     """``jasp.create_qubits %n_tensor, %qst`` → ``quake.alloca !quake.veq<?>[%n]``."""
     # Operands: [amount: tensor<i64>, qst_in]
     amount_tensor = op.operands[0]
@@ -552,7 +565,7 @@ def _lower_create_qubits(op, block: Block) -> None:
     Rewriter.erase_op(op)
 
 
-def _lower_get_qubit(op, block: Block) -> None:
+def _lower_get_qubit(op: GetQubitOp, block: Block) -> None:
     """``jasp.get_qubit %arr, %idx_tensor`` → ``quake.extract_ref %veq[%idx]``."""
     arr = op.operands[0]
     idx_tensor = op.operands[1]
@@ -572,7 +585,7 @@ def _lower_get_qubit(op, block: Block) -> None:
     Rewriter.erase_op(op)
 
 
-def _lower_get_size(op, block: Block) -> None:
+def _lower_get_size(op: GetSizeOp, block: Block) -> None:
     """``jasp.get_size %arr`` → ``quake.veq_size %veq`` (returns tensor<i64>)."""
     arr = op.operands[0]
     veq_size = VeqSizeOp(arr)
@@ -586,7 +599,7 @@ def _lower_get_size(op, block: Block) -> None:
     Rewriter.erase_op(op)
 
 
-def _lower_slice(op, block: Block) -> None:
+def _lower_slice(op: SliceOp, block: Block) -> None:
     """``jasp.slice %arr, %start, %end`` → ``quake.subveq %veq, %lo, %hi_inclusive``.
 
     jasp.slice uses exclusive upper bound (Python-style: [start, end)),
@@ -630,7 +643,7 @@ def _lower_slice(op, block: Block) -> None:
     Rewriter.erase_op(op)
 
 
-def _lower_fuse(op, block: Block) -> None:
+def _lower_fuse(op: FuseOp, block: Block) -> None:
     """``jasp.fuse %a, %b`` → ``quake.concat %a, %b``."""
     operands = [v for v in op.operands if not _is_qst(v.type)]
     concat = ConcatOp(operands)
@@ -643,7 +656,7 @@ def _lower_fuse(op, block: Block) -> None:
     Rewriter.erase_op(op)
 
 
-def _lower_delete_qubits(op, block: Block) -> None:
+def _lower_delete_qubits(op: DeleteQubitsOp, block: Block) -> None:
     """``jasp.delete_qubits %arr, %qst`` → ``quake.dealloc %veq``."""
     arr = op.operands[0]
     dealloc = DeallocOp(arr)
@@ -653,7 +666,7 @@ def _lower_delete_qubits(op, block: Block) -> None:
     Rewriter.erase_op(op)
 
 
-def _lower_quantum_gate(op, block: Block) -> None:
+def _lower_quantum_gate(op: QuantumGateOp, block: Block) -> None:
     """``jasp.quantum_gate "name" (%qubits, %params...), %qst`` → Quake gate op."""
     gate_name: str = op.attributes.get("gate_type") or op.attributes.get(
         "gate_name", StringAttr("")
@@ -732,13 +745,13 @@ def _lower_quantum_gate(op, block: Block) -> None:
     Rewriter.erase_op(op)
 
 
-def _strip_qst_from_op(op, block: Block) -> None:
+def _strip_qst_from_op(op: Operation, block: Block) -> None:
     """Remove QuantumState from an op's operands in-place (fallback path)."""
     non_qst = [v for v in op.operands if not _is_qst(v.type)]
     op.operands = non_qst
 
 
-def _lower_measure(op, block: Block, execution_mode: str = "run") -> None:
+def _lower_measure(op: JaspMeasureOp, block: Block, execution_mode: str = "run") -> None:
     """
     Lower ``jasp.measure`` to Quake measurement ops.
 
@@ -857,7 +870,7 @@ def _lower_measure(op, block: Block, execution_mode: str = "run") -> None:
     Rewriter.erase_op(op)
 
 
-def _lower_reset(op, block: Block) -> None:
+def _lower_reset(op: JaspResetOp, block: Block) -> None:
     """``jasp.reset %q, %qst`` → ``quake.reset %q``."""
     qubit_val = op.operands[0]
     reset_op = ResetOp(qubit_val)
@@ -881,7 +894,7 @@ def _update_non_qst_block_arg_types(block: Block) -> None:
         # QuantumState args: leave for _strip_qst_from_* to handle
 
 
-def _rebuild_scf_op_without_qst(op, rebuild_fn) -> None:
+def _rebuild_scf_op_without_qst(op: Operation, rebuild_fn: Callable[..., Operation]) -> None:
     """Generic helper to remove QuantumState from an SCF op and reconstruct it.
     
     Handles the boilerplate of:
@@ -899,7 +912,7 @@ def _rebuild_scf_op_without_qst(op, rebuild_fn) -> None:
             
             # Remove qst from scf.yield / scf.condition operands
             for inner_op in b.ops:
-                if inner_op.name in ("scf.yield", "scf.condition"):
+                if isinstance(inner_op, (YieldOp, ConditionOp)):
                     non_qst = [v for v in inner_op.operands if not _is_qst(v.type)]
                     inner_op.operands = non_qst
 
@@ -942,7 +955,7 @@ def _rebuild_scf_op_without_qst(op, rebuild_fn) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _strip_qst_from_while(while_op, outer_block: Block) -> None:
+def _strip_qst_from_while(while_op: WhileOp, outer_block: Block) -> None:
     """Remove QuantumState from a ``scf.while`` and reconstruct without it."""
     def rebuild(old_op, regions, res_types):
         non_qst_ops = [v for v in old_op.arguments if not _is_qst(v.type)]
@@ -951,7 +964,7 @@ def _strip_qst_from_while(while_op, outer_block: Block) -> None:
     _rebuild_scf_op_without_qst(while_op, rebuild)
 
 
-def _process_scf_while(while_op, outer_block: Block, execution_mode: str = "run") -> None:
+def _process_scf_while(while_op: WhileOp, outer_block: Block, execution_mode: str = "run") -> None:
     """Lower a ``scf.while`` op: update types, recurse, then strip qst."""
     # 1. Update block arg types in both regions
     for region in while_op.regions:
@@ -972,7 +985,7 @@ def _process_scf_while(while_op, outer_block: Block, execution_mode: str = "run"
 # ---------------------------------------------------------------------------
 
 
-def _strip_qst_from_if(if_op, outer_block: Block) -> None:
+def _strip_qst_from_if(if_op: IfOp, outer_block: Block) -> None:
     """Remove QuantumState from a ``scf.if`` and reconstruct without it."""
     def rebuild(old_op, regions, res_types):
         return IfOp(old_op.operands[0], res_types, regions[0], regions[1])
@@ -980,7 +993,7 @@ def _strip_qst_from_if(if_op, outer_block: Block) -> None:
     _rebuild_scf_op_without_qst(if_op, rebuild)
 
 
-def _process_scf_if(if_op, outer_block: Block, execution_mode: str = "run") -> None:
+def _process_scf_if(if_op: IfOp, outer_block: Block, execution_mode: str = "run") -> None:
     """Lower a ``scf.if`` op: recurse into branches, then strip qst."""
     # 1. Update block arg types (scf.if branches typically have no block args,
     #    but handle in case of unusual lowering patterns)
@@ -1002,7 +1015,7 @@ def _process_scf_if(if_op, outer_block: Block, execution_mode: str = "run") -> N
 # ---------------------------------------------------------------------------
 
 
-def _strip_qst_from_for(for_op, outer_block: Block) -> None:
+def _strip_qst_from_for(for_op: ForOp, outer_block: Block) -> None:
     """Remove QuantumState from a ``scf.for`` and reconstruct without it."""
     def rebuild(old_op, regions, res_types):
         # scf.for operands: [lb, ub, step, init_args...]
@@ -1018,7 +1031,7 @@ def _strip_qst_from_for(for_op, outer_block: Block) -> None:
     _rebuild_scf_op_without_qst(for_op, rebuild)
 
 
-def _process_scf_for(for_op, outer_block: Block, execution_mode: str = "run") -> None:
+def _process_scf_for(for_op: ForOp, outer_block: Block, execution_mode: str = "run") -> None:
     """Lower a ``scf.for`` op: update types, recurse, strip qst."""
     for region in for_op.regions:
         for b in region.blocks:
@@ -1035,7 +1048,7 @@ def _process_scf_for(for_op, outer_block: Block, execution_mode: str = "run") ->
 # SCF index switch
 # ---------------------------------------------------------------------------
 
-def _process_scf_index_switch(op, outer_block: Block, execution_mode: str = "run") -> None:
+def _process_scf_index_switch(op: IndexSwitchOp, outer_block: Block, execution_mode: str = "run") -> None:
     """Lower a ``scf.index_switch`` op by recursing into its regions."""
     for region in op.regions:
         for b in region.blocks:
@@ -1049,7 +1062,7 @@ def _process_scf_index_switch(op, outer_block: Block, execution_mode: str = "run
     for region in op.regions:
         for b in region.blocks:
             for inner_op in b.ops:
-                if inner_op.name == "scf.yield":
+                if isinstance(inner_op, YieldOp):
                     non_qst = [v for v in inner_op.operands if not _is_qst(v.type)]
                     inner_op.operands = non_qst
 
