@@ -27,7 +27,7 @@ from qrisp.circuit import PauliGate, U3Gate
 from qrisp.circuit.operation import Operation
 
 if TYPE_CHECKING:
-    from qrisp.typing import Param
+    from qrisp.typing import FloatLike
 
 # TODO: properly treat all gates
 # from Aer.get_backend('qasm_simulator').configuration().basis_gates
@@ -133,12 +133,12 @@ def MCXGate(control_amount=1, ctrl_state=-1, method="gray"):
     return XGate().control(control_amount, method=method, ctrl_state=ctrl_state)
 
 
-def PGate(phi: Param = 0):
+def PGate(phi: FloatLike = 0):
     """Return a phase gate.
 
     Parameters
     ----------
-    phi : Param, optional
+    phi : FloatLike, optional
         The phase angle in radians. The default is 0.
 
     Returns
@@ -150,12 +150,12 @@ def PGate(phi: Param = 0):
     return res
 
 
-def CPGate(phi: Param = 0):
+def CPGate(phi: FloatLike = 0):
     """Return a controlled phase gate.
 
     Parameters
     ----------
-    phi : Param, optional
+    phi : FloatLike, optional
         The phase angle in radians. The default is 0.
 
     Returns
@@ -191,12 +191,12 @@ def HGate():
     return res
 
 
-def RXGate(phi: Param = 0):
+def RXGate(phi: FloatLike = 0):
     """Return a rotation-around-X gate.
 
     Parameters
     ----------
-    phi : Param, optional
+    phi : FloatLike, optional
         The rotation angle in radians. The default is 0.
 
     Returns
@@ -208,12 +208,12 @@ def RXGate(phi: Param = 0):
     return res
 
 
-def RYGate(phi: Param = 0):
+def RYGate(phi: FloatLike = 0):
     """Return a rotation-around-Y gate.
 
     Parameters
     ----------
-    phi : Param, optional
+    phi : FloatLike, optional
         The rotation angle in radians. The default is 0.
 
     Returns
@@ -225,12 +225,12 @@ def RYGate(phi: Param = 0):
     return res
 
 
-def RZGate(phi: Param = 0):
+def RZGate(phi: FloatLike = 0):
     """Return a rotation-around-Z gate.
 
     Parameters
     ----------
-    phi : Param, optional
+    phi : FloatLike, optional
         The rotation angle in radians. The default is 0.
 
     Returns
@@ -242,14 +242,14 @@ def RZGate(phi: Param = 0):
     return res
 
 
-def RGate(theta: Param = 0, phi: Param = 0):
+def RGate(theta: FloatLike = 0, phi: FloatLike = 0):
     """Return an R gate.
 
     Parameters
     ----------
-    theta : Param, optional
+    theta : FloatLike, optional
         The rotation angle in radians. The default is 0.
-    phi : Param, optional
+    phi : FloatLike, optional
         The axis angle in radians. The default is 0.
 
     Returns
@@ -262,12 +262,12 @@ def RGate(theta: Param = 0, phi: Param = 0):
     return res
 
 
-def GPhaseGate(phi: Param = 0):
+def GPhaseGate(phi: FloatLike = 0):
     """Return a global phase gate.
 
     Parameters
     ----------
-    phi : Param, optional
+    phi : FloatLike, optional
         The global phase angle in radians. The default is 0.
 
     Returns
@@ -279,12 +279,12 @@ def GPhaseGate(phi: Param = 0):
     return res
 
 
-def MCRXGate(phi: Param = 0, control_amount: int = 0):
+def MCRXGate(phi: FloatLike = 0, control_amount: int = 0):
     """Return a multi-controlled :func:`RXGate`.
 
     Parameters
     ----------
-    phi : Param, optional
+    phi : FloatLike, optional
         The rotation angle in radians. The default is 0.
     control_amount : int, optional
         Number of control qubits. The default is 0.
@@ -339,12 +339,12 @@ def IDGate():
     return res
 
 
-def RXXGate(phi: Param = 0):
+def RXXGate(phi: FloatLike = 0):
     """Return an Ising XX-coupling gate.
 
     Parameters
     ----------
-    phi : Param, optional
+    phi : FloatLike, optional
         The coupling angle in radians. The default is 0.
 
     Returns
@@ -372,12 +372,12 @@ def RXXGate(phi: Param = 0):
     return res
 
 
-def RZZGate(phi: Param = 0):
+def RZZGate(phi: FloatLike = 0):
     """Return an Ising ZZ-coupling gate.
 
     Parameters
     ----------
-    phi : Param, optional
+    phi : FloatLike, optional
         The coupling angle in radians. The default is 0.
 
     Returns
@@ -401,14 +401,14 @@ def RZZGate(phi: Param = 0):
     return res
 
 
-def XXYYGate(phi: Param = 0, beta: Param = 0):
+def XXYYGate(phi: FloatLike = 0, beta: FloatLike = 0):
     """Return an XX+YY interaction gate.
 
     Parameters
     ----------
-    phi : Param, optional
+    phi : FloatLike, optional
         The rotation angle in radians. The default is 0.
-    beta : Param, optional
+    beta : FloatLike, optional
         The phase angle in radians. The default is 0.
 
     Returns
@@ -461,18 +461,18 @@ def Barrier(num_qubits=1):
     return res
 
 
-def u3Gate(theta: Param = 0, phi: Param = 0, lam: Param = 0):
+def u3Gate(theta: FloatLike = 0, phi: FloatLike = 0, lam: FloatLike = 0):
     """Return a U3 gate with Euler angles ``theta``, ``phi``, ``lam``.
 
     This is a thin alias for :class:`.U3Gate`.
 
     Parameters
     ----------
-    theta : Param, optional
+    theta : FloatLike, optional
         The theta Euler angle in radians. The default is 0.
-    phi : Param, optional
+    phi : FloatLike, optional
         The phi Euler angle in radians. The default is 0.
-    lam : Param, optional
+    lam : FloatLike, optional
         The lambda Euler angle in radians. The default is 0.
 
     Returns
@@ -483,12 +483,12 @@ def u3Gate(theta: Param = 0, phi: Param = 0, lam: Param = 0):
     return U3Gate(theta, phi, lam)
 
 
-def U1Gate(phi: Param = 0):
+def U1Gate(phi: FloatLike = 0):
     """Return a U1 gate, equivalent to :func:`RZGate` up to a global phase.
 
     Parameters
     ----------
-    phi : Param, optional
+    phi : FloatLike, optional
         The phase angle in radians. The default is 0.
 
     Returns

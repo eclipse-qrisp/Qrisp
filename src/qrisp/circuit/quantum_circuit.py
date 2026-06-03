@@ -49,7 +49,7 @@ if TYPE_CHECKING:
     from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
         ParityHandle,
     )
-    from qrisp.typing import ClbitLike, Param, QubitLike
+    from qrisp.typing import ClbitLike, FloatLike, QubitLike
 
 
 TO_GATE_COUNTER = np.zeros(1)
@@ -2573,13 +2573,13 @@ class QuantumCircuit:
         """
         self.append(ops.ZGate(), [qubits])
 
-    def rx(self, phi: Param, qubits: QubitLike):
+    def rx(self, phi: FloatLike, qubits: QubitLike):
         """
         Instruct a parametrized RX-gate.
 
         Parameters
         ----------
-        phi : Param
+        phi : FloatLike
             The angle parameter.
 
         qubits : QubitLike
@@ -2589,13 +2589,13 @@ class QuantumCircuit:
             return
         self.append(ops.RXGate(phi), [qubits])
 
-    def ry(self, phi: Param, qubits: QubitLike):
+    def ry(self, phi: FloatLike, qubits: QubitLike):
         """
         Instruct a parametrized RY-gate.
 
         Parameters
         ----------
-        phi : Param
+        phi : FloatLike
             The angle parameter.
 
         qubits : QubitLike
@@ -2605,13 +2605,13 @@ class QuantumCircuit:
             return
         self.append(ops.RYGate(phi), [qubits])
 
-    def rz(self, phi: Param, qubits: QubitLike):
+    def rz(self, phi: FloatLike, qubits: QubitLike):
         """
         Instruct a parametrized RZ-gate.
 
         Parameters
         ----------
-        phi : Param
+        phi : FloatLike
             The angle parameter.
 
         qubits : QubitLike
@@ -2621,13 +2621,13 @@ class QuantumCircuit:
             return
         self.append(ops.RZGate(phi), [qubits])
 
-    def cp(self, phi: Param, qubits_0: QubitLike, qubits_1: QubitLike):
+    def cp(self, phi: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike):
         """
         Instruct a controlled phase-gate.
 
         Parameters
         ----------
-        phi : Param
+        phi : FloatLike
             The angle parameter.
 
         qubits_0 : QubitLike
@@ -2640,13 +2640,13 @@ class QuantumCircuit:
             return
         self.append(ops.CPGate(phi), [qubits_0, qubits_1])
 
-    def p(self, phi: Param, qubits: QubitLike):
+    def p(self, phi: FloatLike, qubits: QubitLike):
         """
         Instruct a phase-gate.
 
         Parameters
         ----------
-        phi : Param
+        phi : FloatLike
             The angle parameter.
 
         qubits : QubitLike
@@ -2656,13 +2656,13 @@ class QuantumCircuit:
             return
         self.append(ops.PGate(phi), [qubits])
 
-    def rxx(self, phi: Param, qubits_0: QubitLike, qubits_1: QubitLike):
+    def rxx(self, phi: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike):
         """
         Instruct an RXX-gate.
 
         Parameters
         ----------
-        phi : Param
+        phi : FloatLike
             The angle parameter.
 
         qubits_0 : QubitLike
@@ -2675,13 +2675,13 @@ class QuantumCircuit:
             return
         self.append(ops.RXXGate(phi), [qubits_0, qubits_1])
 
-    def rzz(self, phi: Param, qubits_0: QubitLike, qubits_1: QubitLike):
+    def rzz(self, phi: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike):
         """
         Instruct an RZZ-gate.
 
         Parameters
         ----------
-        phi : Param
+        phi : FloatLike
             The angle parameter.
 
         qubits_0 : QubitLike
@@ -2694,15 +2694,17 @@ class QuantumCircuit:
             return
         self.append(ops.RZZGate(phi), [qubits_0, qubits_1])
 
-    def xxyy(self, phi: Param, beta: Param, qubits_0: QubitLike, qubits_1: QubitLike):
+    def xxyy(
+        self, phi: FloatLike, beta: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike
+    ):
         """
         Instruct an XXYY-gate.
 
         Parameters
         ----------
-        phi : Param
+        phi : FloatLike
             The angle parameter.
-        beta : Param
+        beta : FloatLike
             The other angle parameter
         qubits_0 : QubitLike
             The Qubit to apply the gate on.
@@ -2778,13 +2780,13 @@ class QuantumCircuit:
         """
         self.mcx([ctrl_qubit_0, ctrl_qubit_1], target_qubit, method=method)
 
-    def crx(self, phi: Param, qubits_0: QubitLike, qubits_1: QubitLike):
+    def crx(self, phi: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike):
         """
         Instruct a controlled RX-gate.
 
         Parameters
         ----------
-        phi : Param
+        phi : FloatLike
             The angle parameter.
 
         qubits_0 : QubitLike
@@ -2892,7 +2894,7 @@ class QuantumCircuit:
         """
         self.append(ops.Reset(), [qubits])
 
-    def u3(self, theta: Param, phi: Param, lam: Param, qubits: QubitLike):
+    def u3(self, theta: FloatLike, phi: FloatLike, lam: FloatLike, qubits: QubitLike):
         r"""
         Instruct a U3-gate from given Euler angles.
 
@@ -2907,11 +2909,11 @@ class QuantumCircuit:
 
         Parameters
         ----------
-        theta : Param
+        theta : FloatLike
             The theta parameter.
-        phi : Param
+        phi : FloatLike
             The phi parameter.
-        lam : Param
+        lam : FloatLike
             The lambda parameter.
         qubits : QubitLike
             The Qubit to apply the u3 gate on.
@@ -2919,7 +2921,7 @@ class QuantumCircuit:
         """
         self.append(ops.u3Gate(theta, phi, lam), [qubits])
 
-    def r(self, theta: Param, phi: Param, qubits: QubitLike):
+    def r(self, theta: FloatLike, phi: FloatLike, qubits: QubitLike):
         r"""
         Instruct an R-gate.
 
@@ -2935,9 +2937,9 @@ class QuantumCircuit:
 
         Parameters
         ----------
-        theta : Param
+        theta : FloatLike
             Rotation angle in radians. Controls the amount of rotation.
-        phi : Param
+        phi : FloatLike
             Axis angle in radians. Selects the rotation axis in the XY plane.
         qubits : QubitLike
             The qubit to apply the gate on.
@@ -2974,7 +2976,7 @@ class QuantumCircuit:
 
         self.append(U3Gate(theta, phi, lam, global_phase=gphase), qubits)
 
-    def gphase(self, phi: Param, qubits: QubitLike):
+    def gphase(self, phi: FloatLike, qubits: QubitLike):
         """
         Instruct a global phase. Global phases do not directly influence the
         QuantumCircuits outcome however they can become physical if used as a base gate
@@ -2982,7 +2984,7 @@ class QuantumCircuit:
 
         Parameters
         ----------
-        phi : Param
+        phi : FloatLike
             The angle parameter.
         qubits : QubitLike
             The Qubit to apply the gate on.
