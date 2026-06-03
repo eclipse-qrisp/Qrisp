@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence, Set
 
     from qrisp.circuit.operation import ControlledOperation, PTControlledOperation
+    from qrisp.interface import BackendLike, MeasurementResult
     from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
         ParityHandle,
     )
@@ -1824,12 +1825,11 @@ class QuantumCircuit:
 
         self.data.append(Instruction(operation, qubits, clbits))
 
-    # TODO: Update after PR #331 is merged
     def run(
         self,
         shots: int | None = None,
-        backend: Any = None,
-    ) -> dict[str, Any]:
+        backend: BackendLike | None = None,
+    ) -> MeasurementResult:
         """
         Executes a QuantumCircuit on a backend and returns the measurement results.
 
@@ -1841,14 +1841,14 @@ class QuantumCircuit:
             is returned. For real quantum devices, the number of shots is determined
             by the backend's default settings.
 
-        backend : object, optional
+        backend : BackendLike, optional
             The backend on which to evaluate the QuantumCircuit. When not provided,
             Qrisp's built-in statevector simulator is used.
 
         Returns
         -------
-        dict[str, Any]
-            A dictionary mapping measurement outcome strings to integer counts
+        MeasurementResult
+            A lazy mapping from measurement outcome strings to integer counts
             (when *shots* is given) or to exact float probabilities (when
             *shots* is ``None`` and the backend is a simulator).
 
