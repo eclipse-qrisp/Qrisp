@@ -455,22 +455,32 @@ def test_gidney_adder_inputs_unmodified_size():
 
 
 @pytest.mark.parametrize(
-    "kind, a_val, b_val, use_cout, expected_b, expected_cout",
+    "kind, a_val, b_val, use_cin, use_cout, expected_b, expected_cout",
     [
-        ("classical", 0, 0, False, 0, None),
-        ("classical", 1, 0, False, 1, None),
-        ("classical", 1, 1, False, 0, None),
-        ("classical", 0, 0, True, 0, 0),
-        ("classical", 1, 1, True, 0, 1),
-        ("quantum", 0, 0, False, 0, None),
-        ("quantum", 1, 0, False, 1, None),
-        ("quantum", 1, 1, False, 0, None),
-        ("quantum", 0, 0, True, 0, 0),
-        ("quantum", 1, 1, True, 0, 1),
+        ("classical", 0, 0, False, False, 0, None),
+        ("classical", 1, 0, False, False, 1, None),
+        ("classical", 1, 1, False, False, 0, None),
+        ("classical", 0, 0, False, True, 0, 0),
+        ("classical", 1, 1, False, True, 0, 1),
+        ("classical", 0, 0, True, False, 1, None),
+        ("classical", 1, 0, True, False, 0, None),
+        ("classical", 1, 1, True, False, 1, None),
+        ("classical", 0, 0, True, True, 1, 0),
+        ("classical", 1, 1, True, True, 1, 1),
+        ("quantum", 0, 0, False, False, 0, None),
+        ("quantum", 1, 0, False, False, 1, None),
+        ("quantum", 1, 1, False, False, 0, None),
+        ("quantum", 0, 0, False, True, 0, 0),
+        ("quantum", 1, 1, False, True, 0, 1),
+        ("quantum", 0, 0, True, False, 1, None),
+        ("quantum", 1, 0, True, False, 0, None),
+        ("quantum", 1, 1, True, False, 1, None),
+        ("quantum", 0, 0, True, True, 1, 0),
+        ("quantum", 1, 1, True, True, 1, 1),
     ],
 )
 def test_gidney_adder_single_qubit(
-    kind, a_val, b_val, use_cout, expected_b, expected_cout
+    kind, a_val, b_val, use_cin, use_cout, expected_b, expected_cout
 ):
     """n == 1 edge case: carry chain is skipped via control(n > 1)."""
     if kind == "classical":
@@ -483,6 +493,10 @@ def test_gidney_adder_single_qubit(
     b[:] = b_val
 
     kwargs = {}
+    if use_cin:
+        c_in = QuantumBool()
+        x(c_in[0])
+        kwargs["c_in"] = c_in
     if use_cout:
         c_out = QuantumBool()
         kwargs["c_out"] = c_out

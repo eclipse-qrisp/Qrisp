@@ -19,6 +19,7 @@
 
 import jax.numpy as jnp
 import numpy as np
+from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, x, cx, mcx
 from qrisp.qtypes import QuantumBool
 from qrisp.environments import control, custom_control
@@ -38,37 +39,23 @@ def _validate_gidney_adder_inputs(a, b):
     ValueError
         If the pair is not classical-quantum or quantum-quantum.
     """
-    # b must be a quantum register (QuantumVariable, DynamicQubitArray,
-    # or non-empty list of qubit-like objects).
     b_is_quantum = isinstance(b, (QuantumVariable, DynamicQubitArray)) or (
-        isinstance(b, list)
-        and len(b) > 0
-        and all(callable(getattr(qb, "qs", None)) for qb in b)
+        isinstance(b, list) and len(b) > 0 and all(isinstance(qb, Qubit) for qb in b)
     )
-    # a is quantum if it passes the same check or is an empty list
-    # (which the quantum path treats as a zero-size register).
-    a_is_quantum = (
-        isinstance(a, (QuantumVariable, DynamicQubitArray))
-        or (
-            isinstance(a, list)
-            and len(a) > 0
-            and all(callable(getattr(qb, "qs", None)) for qb in a)
-        )
-        or (isinstance(a, list) and len(a) == 0)
+    # Empty list is valid for a (treated as a zero-size quantum register).
+    a_is_quantum = isinstance(a, (QuantumVariable, DynamicQubitArray)) or (
+        isinstance(a, list) and all(isinstance(qb, Qubit) for qb in a)
     )
 
-    # Classical a is valid if it is a concrete int / binary string / numpy
-    # integer, or if we are in tracing mode and a is an integer JAX scalar
-    # or BigInteger (which carries its own bit-access protocol).
-    is_concrete_int = isinstance(a, (int, np.integer, str))
-    # Reject non-integer JAX scalars (e.g. float32) — bit extraction
-    # on a float would produce silently wrong results.
-    is_scalar_like = getattr(a, "ndim", None) == 0 and jnp.issubdtype(
-        getattr(a, "dtype", None), jnp.integer
-    )
-    is_biginteger_like = hasattr(a, "get_bit")
-    is_valid_classical = is_concrete_int or (
-        check_for_tracing_mode() and (is_scalar_like or is_biginteger_like)
+    is_valid_classical = isinstance(a, (int, np.integer, str)) or (
+        check_for_tracing_mode()
+        and (
+            hasattr(a, "get_bit")
+            or (
+                getattr(a, "ndim", None) == 0
+                and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer)
+            )
+        )
     )
     if not (b_is_quantum and (a_is_quantum or is_valid_classical)):
         raise ValueError(
@@ -78,7 +65,7 @@ def _validate_gidney_adder_inputs(a, b):
     return a_is_quantum
 
 
-def _extract_bit(a_int, digit_index, a_int_is_bigint):
+def _extract_bit(a_int, digit_index):
     """Extract one bit from a classical scalar as a JAX boolean.
 
     Parameters
@@ -87,18 +74,16 @@ def _extract_bit(a_int, digit_index, a_int_is_bigint):
         Classical value whose bit is queried.
     digit_index : int
         Zero-based bit index to read (little-endian convention).
-    a_int_is_bigint : bool
-        If ``True``, read the bit through ``a_int.get_bit``.
-        If ``False``, use shift-and-mask extraction.
 
     Examples
     --------
-    >>> bool(_extract_bit(0b1010, 1, False))
+    >>> bool(_extract_bit(0b1010, 1))
     True
-    >>> bool(_extract_bit(0b1010, 0, False))
+    >>> bool(_extract_bit(0b1010, 0))
     False
     """
-    if a_int_is_bigint:
+    # BigInteger (and other big-int wrappers) expose get_bit
+    if hasattr(a_int, "get_bit"):
         return jnp.bool_(a_int.get_bit(digit_index))
     return jnp.bool_((a_int >> digit_index) & 1)
 
@@ -120,7 +105,7 @@ def _apply_x_bit(target, ctrl=None):
         x(target)
 
 
-def _apply_classical_carry_chain(gidney_anc, b_qbs, n, a_int, a_int_is_bigint, ctrl):
+def _apply_classical_carry_chain(gidney_anc, b_qbs, n, a_int, ctrl):
     """Apply carry-chain phases for classical input values.
 
     Implements the Gidney AND-based carry network (arXiv:1709.06648)
@@ -137,14 +122,12 @@ def _apply_classical_carry_chain(gidney_anc, b_qbs, n, a_int, a_int_is_bigint, c
         Effective carry-chain width, including optional carry wires.
     a_int : int, jnp.ndarray scalar, or BigInteger
         Classical input representation used for bit extraction.
-    a_int_is_bigint : bool
-        Indicates whether ``a_int`` must be read via ``get_bit``.
     ctrl : Qubit or None
         Optional outer control qubit.
     """
     # Bit-0 carry setup: if a[0] == 1, seed the carry into the first ancilla qubit:
     #   gidney_anc[0] ^= b[0] (or controlled by ctrl).
-    a_bit0 = _extract_bit(a_int, 0, a_int_is_bigint)
+    a_bit0 = _extract_bit(a_int, 0)
     with control(a_bit0):
         if ctrl is not None:
             mcx([ctrl, b_qbs[0]], gidney_anc[0], method="gidney")
@@ -167,7 +150,7 @@ def _apply_classical_carry_chain(gidney_anc, b_qbs, n, a_int, a_int_is_bigint, c
         # the duplicate is collapsed, and in static mode both calls return the
         # same constant.  The alternative (caching the bit) would add complexity
         # for zero benefit.
-        bit_i = _extract_bit(a_int, i, a_int_is_bigint)
+        bit_i = _extract_bit(a_int, i)
         with control(bit_i):
             _apply_x_bit(gidney_anc[i - 1], ctrl)
         mcx([gidney_anc[i - 1], b_qbs[i]], gidney_anc[i], method="gidney")
@@ -186,7 +169,7 @@ def _apply_classical_carry_chain(gidney_anc, b_qbs, n, a_int, a_int_is_bigint, c
         cx(gidney_anc[i - 1], gidney_anc[i])
         # Duplicate _extract_bit call for the same index i (see forward sweep
         # comment above — the double call is intentional and harmless).
-        bit_i = _extract_bit(a_int, i, a_int_is_bigint)
+        bit_i = _extract_bit(a_int, i)
         with control(bit_i):
             _apply_x_bit(gidney_anc[i - 1], ctrl)
         mcx([gidney_anc[i - 1], b_qbs[i]], gidney_anc[i], method="gidney_inv")
@@ -424,7 +407,6 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
 
         n = jlen(b_qbs)
         a_int = a
-        a_int_is_bigint = isinstance(a_int, BigInteger)
 
         # Carry chain (only meaningful when n >= 2).
         with control(n > 1):
@@ -434,7 +416,6 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
                 b_qbs,
                 n,
                 a_int,
-                a_int_is_bigint,
                 ctrl,
             )
             gidney_anc.delete()
@@ -444,7 +425,7 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         # setup (bit 0 is skipped when c_in was folded in).
         start = 1 if c_in_qb is not None else 0
         for i in jrange(start, n):
-            bit_i = _extract_bit(a_int, i, a_int_is_bigint)
+            bit_i = _extract_bit(a_int, i)
             with control(bit_i):
                 _apply_x_bit(b_qbs[i], ctrl)
         return
@@ -474,6 +455,15 @@ def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
         b_qbs = b_qbs + [c_out_qb]
 
     n = jlen(b_qbs)
+
+    # When n == 1 the carry chain below is skipped, so c_in must be
+    # applied here.  When n > 1 the carry chain handles c_in internally.
+    if c_in_qb is not None:
+        with control(n <= 1):
+            if ctrl is not None:
+                mcx([ctrl, c_in_qb], b_qbs[0], method="gidney")
+            else:
+                cx(c_in_qb, b_qbs[0])
 
     # Carry chain (only meaningful when n >= 2).
     with control(n > 1):
