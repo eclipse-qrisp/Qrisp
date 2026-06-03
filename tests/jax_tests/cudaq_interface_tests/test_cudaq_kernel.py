@@ -402,7 +402,7 @@ def test_static_index_into_array_parameter_in_cond():
     assert result is not None
 
 
-def test_dynamic_index_into_array_parameter_in_cond():
+def test_dynamic_index_into_array_parameter_in_cond_in_loop():
     """Dynamic index into a FixedShapeNDArray parameter inside a q_cond in a loop."""
 
     @cudaq_kernel
