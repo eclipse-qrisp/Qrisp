@@ -532,6 +532,9 @@ class BlockEncoding:
         tol: float = 1e-12
     ) -> BlockEncoding:
         r"""
+        Constructs a BlockEncoding from an operator using the
+        Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) protocol.
+
         Parameters
         ----------
         O : QubitOperator
