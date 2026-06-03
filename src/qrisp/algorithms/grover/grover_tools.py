@@ -40,12 +40,12 @@ from qrisp import (
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.jasp import check_for_tracing_mode, jrange
 from qrisp.typing import FloatLike
-from typing import Callable, Any
+from typing import Callable, Any, Sequence
 
 
 # Applies the grover diffuser onto the (list of) quantum variable input_object
 def diffuser(
-    input_object: QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray],
+    input_object: QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray],
     phase: FloatLike = np.pi,
     state_function: Callable | None = None,
     reflection_indices: list[int] | None = None,
@@ -55,7 +55,7 @@ def diffuser(
 
     Parameters
     ----------
-    input_object : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
+    input_object : QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray]
         The (list of) QuantumVariables to apply the Grover diffuser on.
     phase : float | FloatLike, optional
         Specifies the phase shift. The default is $\pi$, i.e. a
@@ -116,8 +116,10 @@ def diffuser(
 
     if state_function == None:
 
-        def state_function(*qargs):
-            [h(qv) for qv in qargs]
+        def _state_function(*qargs):
+            for arg in qargs:
+                h(arg)
+        state_function = _state_function
 
     reflection(
         input_object, state_function, phase=phase, reflection_indices=reflection_indices
@@ -233,7 +235,7 @@ def tag_state(
 
 
 def grovers_alg(
-    args: QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray],
+    args: QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray],
     oracle_function: Callable,
     kwargs: dict[str, Any] | None = None,
     iterations: int | None = None,
@@ -245,7 +247,7 @@ def grovers_alg(
 
     Parameters
     ----------
-    args : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
+    args : QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray]
         The quantum variable, array, or collection thereof that defines the search space
         for Grover's algorithm.
     oracle_function : Callable
@@ -410,7 +412,7 @@ def grovers_alg(
     elif winner_state_amount is None:
         winner_state_amount = 1
 
-    if isinstance(args, list):
+    if isinstance(args, Sequence):
         flat_qvs: list[QuantumVariable] = []
         for arg in args:
             if isinstance(arg, QuantumArray):
@@ -442,7 +444,7 @@ def grovers_alg(
         iterations = jnp.pi / 4 * jnp.sqrt(N / winner_state_amount)
         iterations = jnp.int64(jnp.round(iterations))
 
-    if isinstance(args, list):
+    if isinstance(args, Sequence):
         for qv in args:
                 h(qv)
     else:

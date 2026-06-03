@@ -130,14 +130,30 @@ def test_grovers_quantum_array():
 def test_grovers_list_quantum_array():
     """Tests Grover's algorithm when the input is a list of QuantumArrays."""
 
-    def array_oracle(qa):
-        tag_state({qa[0]: 0, qa[1]: 0, qa[2]: 0})
+    def array_oracle(qa_list):
+        tag_state({qa_list[0][0]: 0, qa_list[0][1]: 0, qa_list[0][2]: 0})
 
     qa = QuantumArray(QuantumFloat(2), shape=(3,))
-    grovers_alg([qa], array_oracle)
+    qa_list = [qa]
+    grovers_alg(qa_list, array_oracle)
 
     mes_res = qa.get_measurement()
     winner_state = OutcomeArray([0, 0, 0])
+    assert winner_state in mes_res
+    assert mes_res[winner_state] > 0.99
+
+
+def test_grovers_tuple():
+    """Tests Grover's algorithm when the input is a tuple of QuantumFloats."""
+
+    def array_oracle(qf_tuple):
+        tag_state({qf_tuple[0]: 0, qf_tuple[1]: 0, qf_tuple[2]: 0})
+
+    qf_tuple = (QuantumFloat(2), QuantumFloat(2), QuantumFloat(2))
+    grovers_alg(qf_tuple, array_oracle)
+
+    mes_res = multi_measurement(qf_tuple)
+    winner_state = (0, 0, 0)
     assert winner_state in mes_res
     assert mes_res[winner_state] > 0.99
 
