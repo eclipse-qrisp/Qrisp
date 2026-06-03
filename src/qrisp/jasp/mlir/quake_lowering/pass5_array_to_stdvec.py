@@ -17,29 +17,22 @@
 """
 
 """
-PASS 4 – CC Array Pointer → CC StdVec Lowering (Entrypoint + Propagation)
-===========================================================================
+PASS 5 – CC Array Pointer → CC StdVec Lowering (Entrypoint Only)
+=================================================================
 
-Rewrites ``!cc.ptr<!cc.array<T x N>>`` function parameters for CUDA-Q
-runtime compatibility.
+Rewrites ``!cc.ptr<!cc.array<T x N>>`` parameters in the CUDA-Q entrypoint
+to ``!cc.stdvec<T>`` for runtime compatibility.
 
-**Entrypoint function** (marked with ``cudaq.entrypoint = "true"``):
-  - Parameter type → ``!cc.stdvec<T>``
-  - Inserts ``cc.stdvec_data`` to extract ``!cc.ptr<!cc.array<T x ?>>``
-  - Selective rewiring ensures array accesses use the extracted pointer, 
-    while downstream helper calls pass the stdvec.
-
-**Internal helper functions**:
-  - Inter-procedural analysis (IPA) traces parameters receiving dynamic-ptr 
-    values from entrypoints and upgrades them to ``!cc.stdvec<T>`` to match.
+Strategy:
+  - Replace the array pointer parameter with a stdvec in the entrypoint signature.
+  - Immediately extract the data pointer and cast it back to the original
+    statically-sized array pointer type.
+  - All internal functions continue to use the original static array type
+    unchanged, requiring no call graph analysis or propagation.
 """
-
-from typing import Any
-from collections import defaultdict
 
 from xdsl.dialects import func as func_dialect
 from xdsl.dialects.builtin import ModuleOp, FunctionType, Attribute
-from xdsl.ir import SSAValue
 
 from xdsl.rewriter import Rewriter, InsertPoint
 from xdsl.pattern_rewriter import (
@@ -60,168 +53,79 @@ from qrisp.jasp.mlir.quake_lowering.cc_dialect import (
 
 _MLIR_DYNAMIC = -9223372036854775808
 
+
 # ===================================================================
 # Public entry point
 # ===================================================================
 
-# NOTE: Can likely be further simplified: MLIR from JASP assumes statically sized arrays. 
-# The CUDA-Q entrypoint assumes a dynamically sized stdvec. 
-# We can just replace the array in the entrypoint with stdvec and then immediately cast to a statically sized cc array.
-# This would eliminate the need for call graph analysis and selective rewiring, as all internal functions would continue to use the original static array type.
 
 def lower_array_to_stdvec(module: ModuleOp) -> None:
-    """In-place pass: Propagate stdvec types through call graphs and rewrite."""
-    
-    # Step 1: Inter-procedural analysis to find all required argument rewrites
-    rewrites = _analyze_call_graph(module)
-    if not rewrites:
-        return
-
-    # Step 2: Declarative rewriting of function signatures and selective rewiring
+    """In-place pass: Rewrite entrypoint array pointer args to stdvec with immediate cast-back."""
     walker = PatternRewriteWalker(
         GreedyRewritePatternApplier([
-            StdVecFuncSignaturePattern(rewrites)
+            EntrypointArrayToStdVecPattern()
         ]),
-        walk_regions_first=False
+        walk_regions_first=False,
     )
     walker.rewrite_module(module)
 
 
 # ===================================================================
-# Phase 1: Call Graph Analysis
+# Rewrite Pattern
 # ===================================================================
 
 
-def _analyze_call_graph(module: ModuleOp) -> dict[str, set[int]]:
-    """Return a mapping of {func_name: set(arg_indices)} needing stdvec conversion."""
-    rewrites: dict[str, set[int]] = defaultdict(set)
-    func_map: dict[str, func_dialect.FuncOp] = {}
-
-    # 1. Map entrypoints and cache functions
-    for op in module.body.blocks[0].ops:
-        if not isinstance(op, func_dialect.FuncOp):
-            continue
-            
-        func_name = op.sym_name.data
-        func_map[func_name] = op
-        
-        if _is_entrypoint(op):
-            for i, arg in enumerate(op.function_type.inputs):
-                if _is_array_ptr(arg):
-                    rewrites[func_name].add(i)
-
-    # 2. Propagate down the call graph via BFS worklist
-    worklist = [(name, idx) for name, indices in rewrites.items() for idx in indices]
-    
-    while worklist:
-        curr_func_name, curr_arg_idx = worklist.pop(0)
-        curr_func = func_map.get(curr_func_name)
-        if not curr_func or not curr_func.body.blocks:
-            continue
-
-        curr_arg = curr_func.body.blocks[0].args[curr_arg_idx]
-
-        for use in curr_arg.uses:
-            if isinstance(use.operation, func_dialect.CallOp):
-                callee_name = use.operation.callee.string_value()
-                operand_idx = use.index
-                
-                # If this is the first time we've seen this argument in the callee, queue it
-                if callee_name not in rewrites or operand_idx not in rewrites[callee_name]:
-                    rewrites[callee_name].add(operand_idx)
-                    worklist.append((callee_name, operand_idx))
-
-    return dict(rewrites)
-
-
-# ===================================================================
-# Phase 2: Rewrite Patterns
-# ===================================================================
-
-
-class StdVecFuncSignaturePattern(RewritePattern):
-    """Rewrites target function signatures and inserts selective array pointer extraction."""
-    
-    def __init__(self, rewrites: dict[str, set[int]]):
-        self.rewrites = rewrites
+class EntrypointArrayToStdVecPattern(RewritePattern):
+    """Rewrites entrypoint array pointer params to stdvec with immediate cast to static array pointer."""
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: func_dialect.FuncOp, rewriter: PatternRewriter) -> None:
-        func_name = op.sym_name.data
-        if func_name not in self.rewrites:
+        if not _is_entrypoint(op):
             return
 
-        arg_indices = self.rewrites[func_name]
         block = op.body.blocks[0]
-
-        # 1. Break the greedy loop if already converted
-        if all(isinstance(block.args[idx].type, CcStdVecType) for idx in arg_indices):
-            return
-
         new_inputs = list(op.function_type.inputs)
+        modified = False
 
-        for idx in arg_indices:
-            arg = block.args[idx]
+        for idx, arg in enumerate(block.args):
             old_type = arg.type
-            
-            # Ensure we are dealing with the expected pointer type
-            assert isinstance(old_type, CcPtrType) and isinstance(old_type.element_type, CcArrayType)
-            elem_type = old_type.element_type.element_type
+            if not _is_array_ptr(old_type):
+                continue
 
+            # Already converted — break greedy loop
+            if isinstance(old_type, CcStdVecType):
+                continue
+
+            modified = True
+            elem_type = old_type.element_type.element_type
             stdvec_type = CcStdVecType(elem_type)
-            # The dynamic pointer extracted from stdvec
             dyn_ptr_type = CcPtrType(CcArrayType(elem_type, _MLIR_DYNAMIC))
 
-            # 2. Extract array pointer from stdvec
+            # Insert stdvec_data to extract a dynamic-sized array pointer
             data_op = CcStdVecDataOp(arg, dyn_ptr_type)
             rewriter.insert_op(data_op, InsertPoint.at_start(block))
 
-            # 3. FIX: Create a cast bridge if the original IR expected a static size
-            # This converts !cc.ptr<!cc.array<T x ?>> to !cc.ptr<!cc.array<T x N>>
-            if old_type != dyn_ptr_type:
-                cast_op = CcCastOp(data_op.result, old_type)
-                rewriter.insert_op(cast_op, InsertPoint.after(data_op))
-                replacement_val = cast_op.result
-            else:
-                replacement_val = data_op.result
+            # Cast dynamic pointer back to the original static pointer type
+            cast_op = CcCastOp(data_op.result, old_type)
+            rewriter.insert_op(cast_op, InsertPoint.after(data_op))
 
-            # 4. Selectively rewire existing uses
+            # Replace all uses of the old arg (except the data_op itself) with the cast result
             for use in list(arg.uses):
-                if use.operation == data_op:
+                if use.operation is data_op:
                     continue
+                use.operation.operands[use.index] = cast_op.result
 
-                # Pass-through to helpers expecting stdvec are NOT rewired
-                is_pass_through_call = False
-                if isinstance(use.operation, func_dialect.CallOp):
-                    callee = use.operation.callee.string_value()
-                    if callee in self.rewrites and use.index in self.rewrites[callee]:
-                        is_pass_through_call = True
-
-                if not is_pass_through_call:
-                    _replace_specific_use(use, replacement_val)
-
-            # 5. Update the block argument type safely
+            # Update block argument type to stdvec
             Rewriter.replace_value_with_new_type(arg, stdvec_type)
             new_inputs[idx] = stdvec_type
 
-        # 6. Commit signature change
-        op.function_type = FunctionType.from_lists(new_inputs, list(op.function_type.outputs))
+        if modified:
+            op.function_type = FunctionType.from_lists(new_inputs, list(op.function_type.outputs))
 
 
 # ===================================================================
 # Helpers
 # ===================================================================
-
-
-def _replace_specific_use(use: Any, new_val: SSAValue) -> None:
-    """Safely replace a specific operand use in an xDSL operation."""
-    if hasattr(use.operation, "replace_operand"):
-        use.operation.replace_operand(use.index, new_val)
-    else:
-        # Fallback for immutable operation lists
-        new_ops = list(use.operation.operands)
-        new_ops[use.index] = new_val
-        use.operation.operands = tuple(new_ops)
 
 
 def _is_entrypoint(func_op: func_dialect.FuncOp) -> bool:
