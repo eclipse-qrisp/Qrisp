@@ -26,7 +26,14 @@ from sympy import Symbol
 
 from qrisp.circuit.clbit import Clbit
 from qrisp.circuit.qubit import Qubit
-from qrisp.typing import ArrayLike, ClbitLike, NDArrayLike, Param, QubitLike, ScalarLike
+from qrisp.typing import (
+    ArrayLike,
+    ClbitLike,
+    FloatLike,
+    NDArrayLike,
+    QubitLike,
+    ScalarLike,
+)
 
 
 class TestQubitLike:
@@ -181,40 +188,35 @@ class TestArrayLike:
         assert not isinstance(value, ArrayLike)
 
 
-class TestParam:
-    """Tests for the Param type alias."""
+class TestFloatLike:
+    """Tests for the FloatLike type alias."""
 
     @pytest.mark.parametrize("value", [1.5, 0.0, -3.14])
     def test_python_float(self, value):
         """Python floats are valid gate parameters."""
-        assert isinstance(value, Param)
+        assert isinstance(value, FloatLike)
 
     @pytest.mark.parametrize("value", [0, 1, -5])
     def test_python_int(self, value):
         """Python ints are valid gate parameters."""
-        assert isinstance(value, Param)
-
-    @pytest.mark.parametrize("value", [1 + 2j, 0j, complex(0, -1)])
-    def test_python_complex(self, value):
-        """Python complex numbers are valid gate parameters."""
-        assert isinstance(value, Param)
+        assert isinstance(value, FloatLike)
 
     @pytest.mark.parametrize(
         "value",
-        [np.float64(1.0), np.float32(0.5), np.int32(3), np.complex128(1 + 2j)],
+        [np.float64(1.0), np.float32(0.5), np.int32(3)],
     )
     def test_numpy_numeric_scalars(self, value):
-        """NumPy numeric scalars (np.number subclasses) are valid gate parameters."""
-        assert isinstance(value, Param)
+        """NumPy floating-point and integer scalars are valid gate parameters."""
+        assert isinstance(value, FloatLike)
 
     def test_sympy_symbol(self):
         """A sympy.Symbol is a valid gate parameter."""
-        assert isinstance(Symbol("phi"), Param)
+        assert isinstance(Symbol("phi"), FloatLike)
 
     def test_sympy_expression(self):
         """An arbitrary sympy expression is a valid gate parameter."""
         phi = Symbol("phi")
-        assert isinstance(sympy.Integer(2) * phi + sympy.pi, Param)
+        assert isinstance(sympy.Integer(2) * phi + sympy.pi, FloatLike)
 
     def test_jax_tracer(self):
         """JAX tracers encountered during tracing are valid gate parameters."""
@@ -222,16 +224,18 @@ class TestParam:
 
         def f(x):
             results.append(isinstance(x, Tracer))
-            results.append(isinstance(x, Param))
+            results.append(isinstance(x, FloatLike))
             return x
 
         jax.make_jaxpr(f)(1.0)
         assert results[
             0
         ], "make_jaxpr did not produce a Tracer (test precondition failed)"
-        assert results[1], "Tracer is not an instance of Param"
+        assert results[1], "Tracer is not an instance of FloatLike"
 
-    @pytest.mark.parametrize("value", ["phi", [1.0], None, np.array([1.0])])
-    def test_non_param_types_are_rejected(self, value):
-        """Strings, lists, None, and NumPy arrays are not valid gate parameters."""
-        assert not isinstance(value, Param)
+    @pytest.mark.parametrize(
+        "value", ["phi", [1.0], None, np.array([1.0]), 1 + 2j, np.complex128(1 + 2j)]
+    )
+    def test_non_floatlike_types_are_rejected(self, value):
+        """Strings, lists, None, NumPy arrays, and complex numbers are not valid gate parameters."""
+        assert not isinstance(value, FloatLike)

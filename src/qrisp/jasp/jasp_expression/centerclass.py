@@ -237,7 +237,7 @@ class Jaspr(ClosedJaxpr):
         else:
             ctrl_jaspr = self.ctrl_jaspr.copy()
 
-        res = Jaspr(
+        kwargs = dict(
             permeability=self.permeability,
             isqfree=self.isqfree,
             ctrl_jaspr=ctrl_jaspr,
@@ -248,6 +248,10 @@ class Jaspr(ClosedJaxpr):
             effects=self.effects,
             debug_info=self.debug_info,
         )
+        if self.consts:
+            kwargs["consts"] = list(self.consts)
+
+        res = Jaspr(**kwargs)
 
         res.envs_flattened = self.envs_flattened
 
