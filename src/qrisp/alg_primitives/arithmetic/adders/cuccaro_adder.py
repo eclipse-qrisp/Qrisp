@@ -16,14 +16,14 @@
 ********************************************************************************
 """
 from qrisp.core import QuantumVariable, x, cx, mcx
-from qrisp.qtypes import QuantumFloat
+from qrisp.qtypes import QuantumFloat, QuantumBool
 from qrisp.environments import conjugate, custom_control
 from qrisp.misc import int_encoder
 from qrisp.jasp import jrange, jlen
 import jax.numpy as jnp
 
 @custom_control
-def cuccaro_adder(a, b, c_out=None, ctrl = None):
+def cuccaro_adder(a, b, c_in=None, c_out=None, ctrl = None):
     """In-place adder as introduced in https://arxiv.org/abs/quant-ph/0410184
 
     This function works in both static and dynamic modes. The allowed inputs are both quantum types or one classical
@@ -45,6 +45,8 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
         The value that should be added.
     b : QuantumVariable or list[Qubit]
         The value that should be modified in the in-place addition.
+    c_in : QuantumVariable, optional
+        An optional carry in value. The default is None.
     c_out : QuantumVariable, optional
         An optional carry out value. The default is None.
 
@@ -78,15 +80,7 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
         q_a = b.duplicate()
 
         with conjugate(int_encoder)(q_a, a):
-            # begin with q_a in the state |a>
-            if c_out is not None:
-                cuccaro_adder(q_a, b, c_out = c_out)
-            elif ctrl is not None:
-                cuccaro_adder(q_a, b, ctrl = ctrl)
-            elif ctrl is not None and c_out is not None:
-                cuccaro_adder(q_a, b, c_out = c_out, ctrl = ctrl)
-            else:
-                cuccaro_adder(q_a, b)
+            cuccaro_adder(q_a, b, c_in=c_in, c_out=c_out, ctrl=ctrl)
         
         # outside the conjugation, q_a is back in the state |0> and the addition has been performed on b
         # delete the temporary quantum variable created for the classical input
@@ -118,6 +112,11 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
     dim_b = jlen(b)
 
     ancilla = QuantumFloat(max_size)
+
+    if c_in is not None:
+        if isinstance(c_in, QuantumBool):
+            c_in = c_in[0]
+        cx(c_in, ancilla[0])
 
     if c_out is not None:
         ancilla2 = c_out
@@ -179,6 +178,8 @@ def cuccaro_adder(a, b, c_out=None, ctrl = None):
         cx(a[0], ancilla[0])
         cx(a[0], b[0])
     
+    if c_in is not None:
+        cx(c_in, ancilla[0])
 
     # delete the ancilla used for carry bits
     ancilla.delete()
