@@ -21,7 +21,7 @@ from qrisp import (
 )
 from qrisp.circuit import ClControlledOperation, QuantumCircuit
 from qrisp.grover import diffuser
-from qrisp.interface.converter.cirq_converter import convert_to_cirq
+from qrisp.interface.converter.cirq_converter import convert_to_cirq, convert_from_cirq
 
 
 def test_n_qubit_gate_circuit():
@@ -201,3 +201,183 @@ def test_recursive_conversion():
 
     cirq_circuit = qc.to_cirq()
     assert qc.num_qubits() == num_qubits(cirq_circuit)
+
+
+# ------------------------------------------------------------------
+# Tests for convert_from_cirq
+# ------------------------------------------------------------------
+
+
+def test_convert_from_cirq_single_qubit_gates():
+    """Round-trip test: Qrisp -> Cirq -> Qrisp should preserve unitary for single-qubit gates."""
+    qc = QuantumCircuit(4)
+    qc.h(0)
+    qc.x(1)
+    qc.y(2)
+    qc.z(3)
+    qc.s(0)
+    qc.t(1)
+    qc.s_dg(2)
+    qc.t_dg(3)
+    qc.sx(0)
+    qc.sx_dg(1)
+    qc.id(2)
+
+    expected_unitary = qc.get_unitary()
+
+    cirq_circ = convert_to_cirq(qc)
+    qrisp_qc = convert_from_cirq(cirq_circ)
+
+    np.testing.assert_array_almost_equal(
+        qrisp_qc.get_unitary(), expected_unitary
+    )
+
+
+def test_convert_from_cirq_parametrized_gates():
+    """Round-trip test for parametrized single-qubit gates."""
+    qc = QuantumCircuit(4)
+    qc.rx(0.3, 0)
+    qc.ry(0.4, 1)
+    qc.rz(0.2, 2)
+    qc.p(0.5, 3)
+
+    expected_unitary = qc.get_unitary()
+
+    cirq_circ = convert_to_cirq(qc)
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    np.testing.assert_array_almost_equal(
+        qrisp_qc.get_unitary(), expected_unitary
+    )
+
+
+def test_convert_from_cirq_two_qubit_gates():
+    """Round-trip test for two-qubit gates."""
+    qc = QuantumCircuit(4)
+    qc.cx(0, 1)
+    qc.cz(2, 3)
+    qc.swap(0, 2)
+
+    expected_unitary = qc.get_unitary()
+
+    cirq_circ = convert_to_cirq(qc)
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    np.testing.assert_array_almost_equal(
+        qrisp_qc.get_unitary(), expected_unitary
+    )
+
+
+def test_convert_from_cirq_gphase():
+    """Round-trip test for global phase."""
+    qc = QuantumCircuit(1)
+    qc.x(0)
+    qc.x(0)
+    qc.gphase(0.5, 0)
+
+    expected_unitary = qc.get_unitary()
+
+    cirq_circ = convert_to_cirq(qc)
+    qrisp_qc = convert_from_cirq(cirq_circ)
+
+    qrisp_unitary = qrisp_qc.get_unitary()
+    np.testing.assert_array_almost_equal(qrisp_unitary, expected_unitary)
+
+
+def test_convert_from_cirq_fully_parametrized():
+    """Round-trip test combining many gate types."""
+    qc = QuantumCircuit(4)
+    qc.h(0)
+    qc.cx(0, 1)
+    qc.rz(0.25, 1)
+    qc.cx(1, 2)
+    qc.ry(0.5, 2)
+    qc.cz(0, 3)
+    qc.p(0.75, 3)
+    qc.s(0)
+    qc.t(1)
+
+    expected_unitary = qc.get_unitary()
+
+    cirq_circ = convert_to_cirq(qc)
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    np.testing.assert_array_almost_equal(
+        qrisp_qc.get_unitary(), expected_unitary
+    )
+
+
+def test_convert_from_cirq_direct_cirq_circuit():
+    """Test converting a Cirq circuit built directly (not via round-trip)."""
+    import cirq
+
+    q0, q1 = cirq.LineQubit.range(2)
+
+    cirq_circ = cirq.Circuit(
+        [cirq.H(q0), cirq.CNOT(q0, q1), cirq.rz(0.5)(q1), cirq.measure(q0, q1)]
+    )
+
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    assert qrisp_qc.num_qubits() == 2
+    assert len(qrisp_qc.data) == 5
+    assert qrisp_qc.data[0].op.name == "h"
+    assert qrisp_qc.data[1].op.name == "cx"
+    assert qrisp_qc.data[2].op.name == "rz"
+    assert qrisp_qc.data[3].op.name == "measure"
+    assert qrisp_qc.data[4].op.name == "measure"
+
+
+def test_convert_from_cirq_via_classmethod():
+    """Test the QuantumCircuit.from_cirq classmethod."""
+    import cirq
+
+    q0, q1 = cirq.LineQubit.range(2)
+    cirq_circ = cirq.Circuit([cirq.H(q0), cirq.CNOT(q0, q1)])
+
+    qrisp_qc = QuantumCircuit.from_cirq(cirq_circ)
+    assert qrisp_qc.num_qubits() == 2
+
+    cirq_unitary = cirq.unitary(cirq_circ)
+    qrisp_unitary = qrisp_qc.get_unitary()
+
+    np.testing.assert_array_almost_equal(
+        np.abs(cirq_unitary), np.abs(qrisp_unitary)
+    )
+
+
+def test_convert_from_cirq_swap():
+    """Test round-trip for swap gate."""
+    qc = QuantumCircuit(2)
+    qc.swap(0, 1)
+    qc.h(0)
+
+    expected_unitary = qc.get_unitary()
+
+    cirq_circ = convert_to_cirq(qc)
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    np.testing.assert_array_almost_equal(
+        qrisp_qc.get_unitary(), expected_unitary
+    )
+
+
+def test_convert_from_cirq_reset():
+    """Test round-trip for reset."""
+    qc = QuantumCircuit(2)
+    qc.h(0)
+    qc.reset(0)
+    qc.cx(0, 1)
+
+    cirq_circ = convert_to_cirq(qc)
+    qrisp_qc = convert_from_cirq(cirq_circ)
+    assert qrisp_qc.num_qubits() == 2
+    assert qrisp_qc.data[0].op.name == "h"
+    assert qrisp_qc.data[1].op.name == "reset"
+    assert qrisp_qc.data[2].op.name == "cx"
+
+
+def test_convert_from_cirq_unsupported_gate():
+    """Test that an error is raised for unsupported Cirq gates."""
+    import cirq
+
+    q0 = cirq.LineQubit(0)
+    cirq_circ = cirq.Circuit([cirq.ISWAP(q0, cirq.LineQubit(1))])
+
+    with pytest.raises(ValueError, match="not supported by the Cirq to Qrisp converter"):
+        convert_from_cirq(cirq_circ)

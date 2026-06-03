@@ -223,3 +223,170 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
                 cirq_circuit.append(cirq_gate(*cirq_op_qubits))
 
     return cirq_circuit
+
+
+def convert_from_cirq(cirq_circuit):
+    try:
+        import cirq
+    except (ModuleNotFoundError, ImportError):
+        raise ImportError(
+            "Cirq must be installed to be able to use the Cirq to Qrisp converter."
+        )
+
+    import numpy as np
+    from qrisp import QuantumCircuit
+    from qrisp.circuit import ControlledOperation
+    from qrisp.circuit import standard_operations as ops
+
+    qc = QuantumCircuit(len(cirq_circuit.all_qubits()))
+
+    cirq_qubits = sorted(cirq_circuit.all_qubits())
+    qubit_map = {q: qc.qubits[i] for i, q in enumerate(cirq_qubits)}
+
+    for op in cirq_circuit.all_operations():
+        if isinstance(op, cirq.ControlledOperation):
+            sub_op = op.sub_operation
+            sub_gate = getattr(sub_op, "gate", None)
+            if sub_gate is None:
+                raise ValueError(
+                    f"Controlled sub-operation {sub_op} is not supported "
+                    "by the Cirq to Qrisp converter."
+                )
+
+            qrisp_op = _cirq_gate_to_qrisp_op(sub_gate)
+            qrisp_op = ControlledOperation(
+                base_operation=qrisp_op,
+                num_ctrl_qubits=len(op.controls),
+            )
+            all_qubits = list(op.controls) + list(sub_op.qubits)
+            qrisp_qubits = [qubit_map[q] for q in all_qubits]
+            qc.append(qrisp_op, qrisp_qubits)
+            continue
+
+        gate = getattr(op, "gate", None)
+        if gate is None:
+            raise ValueError(
+                f"Operation {op} without gate attribute is not supported "
+                "by the Cirq to Qrisp converter."
+            )
+
+        # Handle GlobalPhaseGate separately: it acts on 0 qubits in Cirq
+        # but Qrisp gphase requires a qubit argument
+        if isinstance(gate, cirq.GlobalPhaseGate):
+            if cirq_qubits:
+                coeff = gate.coefficient
+                phi = np.angle(coeff)
+                qrisp_op = ops.GPhaseGate(phi)
+                qc.append(qrisp_op, [qubit_map[cirq_qubits[0]]])
+            continue
+
+        # Handle measurement: use the circuit's measure method for auto clbit allocation
+        if isinstance(gate, cirq.MeasurementGate):
+            qrisp_qubits = [qubit_map[q] for q in op.qubits]
+            if len(qrisp_qubits) == 1:
+                qc.measure(qrisp_qubits[0])
+            else:
+                qc.measure(qrisp_qubits)
+            continue
+
+        qrisp_op = _cirq_gate_to_qrisp_op(gate)
+        qrisp_qubits = [qubit_map[q] for q in op.qubits]
+        qc.append(qrisp_op, qrisp_qubits)
+
+    return qc
+
+
+def _cirq_gate_to_qrisp_op(gate):
+    import cirq
+    import numpy as np
+    from qrisp.circuit import ControlledOperation
+    from qrisp.circuit import standard_operations as ops
+
+    if isinstance(gate, cirq.ControlledGate):
+        sub_gate = gate.sub_gate
+        base_op = _cirq_gate_to_qrisp_op(sub_gate)
+        num_ctrl = gate.num_controls()
+        ctrl_values = gate.control_values
+        if ctrl_values is not None:
+            ctrl_state = "".join(str(int(v)) for v in ctrl_values)
+        else:
+            ctrl_state = -1
+
+        return ControlledOperation(
+            base_operation=base_op,
+            num_ctrl_qubits=num_ctrl,
+            ctrl_state=ctrl_state,
+        )
+
+    if isinstance(gate, cirq.HPowGate):
+        return ops.HGate()
+
+    # Rx is a subclass of XPowGate - check first to distinguish from XPowGate/p
+    if isinstance(gate, cirq.Rx):
+        return ops.RXGate(gate.exponent * np.pi)
+
+    if isinstance(gate, cirq.XPowGate):
+        exp = gate.exponent
+        if np.isclose(exp % 4, 1.0) or np.isclose(exp % 4, -3.0):
+            return ops.XGate()
+        elif np.isclose(exp % 4, 0.5) or np.isclose(exp % 4, -3.5):
+            return ops.SXGate()
+        elif np.isclose(exp % 4, -0.5) or np.isclose(exp % 4, 3.5):
+            return ops.SXDGGate()
+        else:
+            return ops.RXGate(exp * np.pi)
+
+    # Ry is a subclass of YPowGate - check first to distinguish from YPowGate
+    if isinstance(gate, cirq.Ry):
+        return ops.RYGate(gate.exponent * np.pi)
+
+    if isinstance(gate, cirq.YPowGate):
+        exp = gate.exponent
+        if np.isclose(exp % 4, 1.0) or np.isclose(exp % 4, -3.0):
+            return ops.YGate()
+        else:
+            return ops.RYGate(exp * np.pi)
+
+    # Rz is a subclass of ZPowGate - check first to distinguish from ZPowGate/p
+    if isinstance(gate, cirq.Rz):
+        return ops.RZGate(gate.exponent * np.pi)
+
+    if isinstance(gate, cirq.ZPowGate):
+        exp = gate.exponent
+        if np.isclose(exp % 4, 1.0) or np.isclose(exp % 4, -3.0):
+            return ops.ZGate()
+        elif np.isclose(exp % 4, 0.5) or np.isclose(exp % 4, -3.5):
+            return ops.SGate()
+        elif np.isclose(exp % 4, -0.5) or np.isclose(exp % 4, 3.5):
+            return ops.SGate().inverse()
+        elif np.isclose(exp % 4, 0.25) or np.isclose(exp % 4, -3.75):
+            return ops.TGate()
+        elif np.isclose(exp % 4, -0.25) or np.isclose(exp % 4, 3.75):
+            return ops.TGate().inverse()
+        else:
+            return ops.PGate(exp * np.pi)
+
+    if isinstance(gate, cirq.CXPowGate):
+        return ops.CXGate()
+
+    if isinstance(gate, cirq.CZPowGate):
+        return ops.CZGate()
+
+    if isinstance(gate, cirq.SwapPowGate):
+        return ops.SwapGate()
+
+    if isinstance(gate, cirq.IdentityGate):
+        return ops.IDGate()
+
+    if isinstance(gate, cirq.MeasurementGate):
+        return ops.Measurement()
+
+    if isinstance(gate, cirq.ResetChannel):
+        return ops.Reset()
+
+    if isinstance(gate, cirq.GlobalPhaseGate):
+        return ops.GPhaseGate(np.angle(gate.coefficient))
+
+    raise ValueError(
+        f"Gate {gate} is not supported by the Cirq to Qrisp converter."
+    )
