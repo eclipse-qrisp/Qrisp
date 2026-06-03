@@ -28,7 +28,14 @@ from sympy import Expr
 from qrisp.circuit.clbit import Clbit
 from qrisp.circuit.qubit import Qubit
 
-__all__ = ["QubitLike", "ClbitLike", "ScalarLike", "NDArrayLike", "ArrayLike", "Param"]
+__all__ = [
+    "QubitLike",
+    "ClbitLike",
+    "ScalarLike",
+    "NDArrayLike",
+    "ArrayLike",
+    "FloatLike",
+]
 
 QubitLike: TypeAlias = Qubit | int | Sequence[Qubit | int]
 """Accepted as a qubit specifier in circuit methods and gate functions.
@@ -95,25 +102,24 @@ True
 True
 """
 
-Param: TypeAlias = (
-    float | int | complex | np.number | Expr | jax.Array | jax.core.Tracer
+FloatLike: TypeAlias = (
+    float | int | np.floating | np.integer | Expr | jax.Array | jax.core.Tracer
 )
 """A gate parameter value.
 
 Covers all types accepted as gate parameters throughout Qrisp: Python numeric
-scalars (``float``, ``int``, ``complex``), NumPy numeric scalars
-(``np.float64``, ``np.int32``, etc. via ``np.number``), symbolic expressions
+scalars (``float``, ``int``), NumPy floating-point and integer scalars
+(``np.float64``, ``np.int32``, etc.), symbolic expressions
 (``sympy.Symbol``, ``sympy.Expr``, and any SymPy expression), concrete JAX
-arrays (``jax.Array``, including 0-d arrays), and JAX tracers
-(``jax.core.Tracer``, produced during ``jax.jit``, ``jax.grad``, etc.).
+arrays (``jax.Array``, including 0-d arrays), and JAX tracers.
 
 Examples
 --------
 
->>> from qrisp.typing import Param
+>>> from qrisp.typing import FloatLike
 >>> import sympy
->>> isinstance(1.5, Param)
+>>> isinstance(1.5, FloatLike)
 True
->>> isinstance(sympy.Symbol("phi"), Param)
+>>> isinstance(sympy.Symbol("phi"), FloatLike)
 True
 """
