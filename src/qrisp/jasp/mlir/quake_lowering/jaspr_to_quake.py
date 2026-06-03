@@ -50,9 +50,9 @@ The lowering consists of the following passes:
    (where they have no SSA results) with ``cc.if`` / ``cc.loop``.
 3. **PASS 3** (:mod:`.pass3_scalar_tensor_unwrap`) – Fold trivial rank-0 tensor
    constants / extracts into scalars.
-3a. **PASS 3** (:mod:`.pass3_ranked_tensor_to_array`) – Lower ranked tensor constants
+4. **PASS 4** (:mod:`.pass4_ranked_tensor_to_array`) – Lower ranked tensor constants
     and accesses to CC array operations.
-4. **PASS 4** (:mod:`.pass4_array_to_stdvec`) – Rewrite static array pointer
+5. **PASS 5** (:mod:`.pass5_array_to_stdvec`) – Rewrite static array pointer
    parameters to ``!cc.stdvec<T>`` for CUDA-Q runtime compatibility.
 
 The returned string contains only Quake + CC + arith, math, func ops;
@@ -66,13 +66,13 @@ from xdsl.dialects.builtin import ModuleOp
 from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.jasp.mlir.quake_lowering.pass1_jasp_to_quake import lower_jasp_to_quake
 from qrisp.jasp.mlir.quake_lowering.pass2_scf_to_cc import lower_scf_to_cc
-from qrisp.jasp.mlir.quake_lowering.pass3_ranked_tensor_to_array import (
-    lower_ranked_tensors,
-)
 from qrisp.jasp.mlir.quake_lowering.pass3_scalar_tensor_unwrap import (
     unwrap_scalar_tensors,
 )
-from qrisp.jasp.mlir.quake_lowering.pass4_array_to_stdvec import (
+from qrisp.jasp.mlir.quake_lowering.pass4_ranked_tensor_to_array import (
+    lower_ranked_tensors,
+)
+from qrisp.jasp.mlir.quake_lowering.pass5_array_to_stdvec import (
     lower_array_to_stdvec,
 )
 from qrisp.jasp.mlir.quake_lowering.safeguard_no_ranked_tensor_linalg import (
@@ -140,10 +140,10 @@ def jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> str:
     # Step 3 – PASS 3: scalar tensor unwrapping + scalar constant folding.
     unwrap_scalar_tensors(module)
 
-    # Step 3a – PASS 3: ranked tensor → CC array lowering.
+    # Step 4 – PASS 4: ranked tensor → CC array lowering.
     lower_ranked_tensors(module)
 
-    # Step 4 – PASS 4: array ptr params → stdvec (CUDA-Q runtime compatibility).
+    # Step 5 – PASS 5: array ptr params → stdvec (CUDA-Q runtime compatibility).
     lower_array_to_stdvec(module)
 
     return str(module)
