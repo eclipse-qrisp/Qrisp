@@ -26,6 +26,191 @@ from qrisp.block_encodings.block_encoding_methods.foqcs_lcu.foqcs_preps import (
 
 _FOQCS_SPIN_GLASS_TOL = 1e-12
 
+def foqcs_analyze_operator_spin_glass(
+        O: QubitOperator,
+        L: int = -1,
+        tol: float = _FOQCS_SPIN_GLASS_TOL
+) -> dict:
+    """
+    Verifies operator against the spin-glass model.
+    Every non-zero term is Xi, Yi, Zi, XiXj, YiYj, ZiZj.
+    Fails if operator has:
+        - Const cI
+        - Mixed terms: XiZj, XiYj, YiZj
+        - Three-or-more-body interaction: XiXjXk
+
+    Parameters
+    ----------
+    O : QubitOperator
+            Qubit operator of form: `O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)`
+
+    L : int = -1
+        Number of operand qubits.
+        If not specified, will default to -1, and infer the number of operand qubits from the operator
+
+    tol : float = `_FOQCS_SPIN_GLASS_TOL` (1e-12)
+        Tolerance for considering the entry zero
+
+    Returns
+    ----------
+    dict {
+        "method": str ("heisenberg"")
+        "L": int (number of intracting qubits)
+        "g": dict ("X": np.arr, "Z": np.arr, "Y": np.arr)
+        "J": dict ("X": np.arr, "Z": np.arr, "Y": np.arr) (2-dim numpy arrays)
+    }
+
+    Raises
+    ----------
+    ValueError
+            When the operator is not representing spin-glass model.
+            When spin-glass analysis fails, it raises a ValueError with the reason for failure.
+    """
+    # Verifies that operator exists and is not constant.
+    min_qubits = O.find_minimal_qubit_amount()
+    if min_qubits <= 0:
+        raise ValueError(f"Received empty or constant operator: {O}")
+
+    if L == -1:
+        L = min_qubits
+    elif L < min_qubits:
+        raise ValueError(f"Received L = {L}, while operator acts on {min_qubits} qubits.")
+
+    terms = O._to_pauli_coeff_dict()
+    g_dict = {"X": np.zeros(L, dtype="complex"), "Y": np.zeros(L, dtype="complex"), "Z": np.zeros(L, dtype="complex")}
+    J_dict = {"X": np.zeros((L, L), dtype="complex"), "Y": np.zeros((L, L), dtype="complex"), "Z": np.zeros((L, L), dtype="complex")}
+
+    for pauli_str, coeff in terms.items():
+        # All coeffs in arrays are zeroes, so just skip entry
+        if np.isclose(coeff, 0, atol=tol):
+            continue
+
+        # Fail on a constant: cI
+        if len(pauli_str) == 0:
+            raise ValueError(f"FOQCS-LCU does not support constant/identity terms,"
+                             f" but received {(pauli_str, coeff)}")
+
+        # Inspect one-body terms Xi, Yi, Zi:
+        if len(pauli_str) == 1:
+            (i, pauli), = pauli_str
+            g_dict[pauli][i] += coeff
+            continue
+
+        # Inspect two-body terms XiXj, YiYj, ZiZj:
+        if len(pauli_str) == 2:
+            (i, pauli_i), (j, pauli_j) = sorted(pauli_str)
+
+            if pauli_i != pauli_j:
+                raise ValueError(f"FOQCS-LCU supports only same-axis couplings,"
+                                 f" but received: {pauli_i}({i}) * {pauli_j}({j})")
+
+            J_dict[pauli_i][i, j] += coeff
+            J_dict[pauli_i][j, i] += coeff
+            continue
+
+        if len(pauli_str) > 2:
+            raise ValueError(f"FOQCS-LCU supports only one and two-body interactions.")
+
+    return {
+            "method": "spin_glass",
+            "L": L,
+            "g": g_dict,
+            "J": J_dict,
+        }
+
+def foqcs_analyze_operator_heisenberg(
+        O: QubitOperator,
+        L: int = -1,
+        tol: float = _FOQCS_SPIN_GLASS_TOL
+) -> dict:
+    """
+    Verify the operator against specific Heisenberg model.
+    Considering the Heisenberg model for quantum spins on a one-dimensional nearest-neighbour
+    chain (https://arxiv.org/abs/2507.20887, Page 8, Paragraph 1)
+
+    Verification includes:
+        - Spin-glass check must pass
+        - Must have form: Xi, Yi, Zi, XiXi+1, YiYi+1, ZiZi+1; local fields must be uniform.
+        - Fails if:
+            - Local field is position dependent: `g_0X != g_1X, 0.5*X(0) + 0.7*X(1)`
+            - Has long-range couplings: `X_0*X_2`
+            - Has NN couplings with different strengths: `0.5*X(0)*X(1) + 0.9*X(1)*X(2)`
+            - Zeroes matter, don't pass `0.5*X(0)*X(1) + 0*X(1)*X(2)` , so depends on L.
+    Parameters
+    ----------
+    O : QubitOperator
+            Qubit operator of form: `O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)`
+
+    L : int = -1
+        Number of operand qubits.
+        If not specified, will default to -1, and infer the number of operand qubits from the operator
+
+    tol : float = `_FOQCS_SPIN_GLASS_TOL` (1e-12)
+        Tolerance for considering the entry zero
+
+    Returns
+    ----------
+    dict {
+        "method": str ("heisenberg"")
+        "L": int (number of intracting qubits)
+        "g": dict ("X": np.arr, "Z": np.arr, "Y": np.arr)
+        "J": dict ("X": np.arr, "Z": np.arr, "Y": np.arr)
+    }
+
+    Raises
+    ----------
+    ValueError
+            When the operator is not representing one-dimensional Heisenberg model with nearest-neighbours couplings.
+    """
+    # Do the spin-glass analysis (Heisenberg is a subset of it)
+    spin_glass_res = foqcs_analyze_operator_spin_glass(O, L, tol)
+    g_dict = spin_glass_res["g"]
+    J_dict = spin_glass_res["J"]
+    L = spin_glass_res["L"]
+
+    g_heis_dict = {}
+    J_heis_dict = {}
+
+    # Verify that all one-body (local) coeffs are the same (uniform).
+    for pauli in {"X", "Z", "Y"}:
+        values = g_dict[pauli][:]
+
+        if not np.allclose(values, values[0], atol=tol):
+            raise ValueError(f"Heisenberg Rejected: non-uniform local interactions")
+
+        g_heis_dict[pauli] = values[0]
+
+    # Verify couplings
+    for pauli in {"X", "Z", "Y"}:
+        if L == 1:
+            J_heis_dict[pauli] = 0
+            continue
+        
+        nn_val = np.array(
+            [J_dict[pauli][i, i + 1] for i in range(L - 1)],
+            dtype = complex,
+        )
+        # All same-axis nearest-neighbours interactions must be uniform
+        if not np.allclose(nn_val, nn_val[0], atol=tol):
+            raise ValueError("Heisenberg Rejected: non-uniform NN interactions")
+
+        J_heis_dict[pauli] = nn_val[0]
+
+        # Reject non-nearest-neighbour couplings
+        for i in range(L):
+            for j in range(i + 1, L):
+                if j == i + 1:
+                    continue
+                if not np.isclose(J_dict[pauli][i, j], 0, atol=tol):
+                    raise ValueError("Heisenberg Rejected: not NN interactions present")
+
+    return {
+            "method": "heisenberg",
+            "L": L,
+            "g": g_heis_dict,
+            "J": J_heis_dict,
+        }
+
 def foqcs_analyze_operator(
         O: QubitOperator,
         L: int = -1,
@@ -35,17 +220,14 @@ def foqcs_analyze_operator(
     Parameters
     ----------
     O : QubitOperator
-            Qubit operator of form: O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)
+            Qubit operator of form: `O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)`
 
     L : int = -1
         Number of operand qubits.
         If not specified, will default to -1, and infer the number of operand qubits from the operator
 
-    tol : float = _FOQCS_SPIN_GLASS_TOL (1e-12)
+    tol : float = `_FOQCS_SPIN_GLASS_TOL` (1e-12)
         Tolerance for considering the entry zero
-
-    raise_errors : bool
-        Flag determining whether to raise ValueError in the case of operator being incompatible with FOQCS-LCU.
 
     Returns
     ----------
@@ -59,140 +241,19 @@ def foqcs_analyze_operator(
     Raises
     ----------
     ValueError
-            When the operator is not compatible with FOQCS-LCU (fails the spin-glass check) and `raise_errors` is set to `True`.
+            When the operator is not compatible with FOQCS-LCU (fails the spin-glass check).
     
     """
-    terms = O._to_pauli_coeff_dict()
+    # Spin-glass analysis is base one. If it fails - operator is not compatible.
+    res = foqcs_analyze_operator_spin_glass(O, L, tol)
 
-    # Verifies that operator exists and is not constant.
-    max_ind = -1
-    for pauli_str in terms:
-        for ind, _ in pauli_str:
-            max_ind = max(max_ind, ind)
-    if max_ind < 0:
-        raise ValueError(f"Received empty or constant operator: {O}")
+    # As spin-glass passed, try more specific Heisenberg.
+    try:
+        res = foqcs_analyze_operator_heisenberg(O, L, tol)
+    except ValueError:
+        pass
 
-    # Assigns the length or sanity checks the passed length.
-    if L == -1:
-        L = max_ind + 1
-    elif L < max_ind + 1:
-        raise ValueError(f"Received L = {L}, while operator acts on {max_ind + 1} qubits.")
-
-    g_dict = {"X": np.zeros(L, dtype="complex"), "Y": np.zeros(L, dtype="complex"), "Z": np.zeros(L, dtype="complex")}
-    J_dict = {"X": np.zeros((L, L), dtype="complex"), "Y": np.zeros((L, L), dtype="complex"), "Z": np.zeros((L, L), dtype="complex")}
-
-    # Verify operator against the spin-glass model.
-        # Every non-zero term is Xi, Yi, Zi, XiXj, YiYj, ZiZj.
-        # Fails if:
-            # Has const cI
-            # Mixed terms: XiZj, XiYj, YiZj
-            # Three-or-more-body interaction: XiXjXk
-    # When Spin-glass analysis fails, it raises a ValueError with the reason for failure
-    for pauli_str, coeff in terms.items():
-        # All coeffs in arrays are zeroes, so just skip entry
-        if np.isclose(coeff, 0, atol=tol):
-            continue
-
-        # Fail on a constant: cI
-        if len(pauli_str) == 0:
-            raise ValueError(f"FOQCS-LCU does not support constant/identity terms, but received {(pauli_str, coeff)}")
-
-        # Inspect one-body terms Xi, Yi, Zi:
-        if len(pauli_str) == 1:
-            (i, pauli), = pauli_str
-            g_dict[pauli][i] += coeff
-            continue
-
-        # Inspect two-body terms XiXj, YiYj, ZiZj:
-        if len(pauli_str) == 2:
-            (i, pauli_i), (j, pauli_j) = sorted(pauli_str)
-
-            if pauli_i != pauli_j:
-                raise ValueError(f"FOQCS-LCU supports only same-axis couplings, but received: {pauli_i}({i}) * {pauli_j}({j})")
-
-            J_dict[pauli_i][i, j] += coeff
-            J_dict[pauli_i][j, i] += coeff
-            continue
-
-        if len(pauli_str) > 2:
-            raise ValueError(f"FOQCS-LCU supports only one and two-body interactions.")
-
-    # Spin-glass has passed by this point. YAY! :D
-
-    # Verify ourselves against more specific Heisenberg-model.
-    # Considering the Heisenberg model for quantum spins on a one-dimensional nearest-neighbour
-    # chain (https://arxiv.org/abs/2507.20887, Page 8, Paragraph 1)
-        # Spin-glass-compatible
-        # Must have form: Xi, Yi, Zi, XiXi+1, YiYi+1, ZiZi+1; local fields must be uniform.
-        # Fails if:
-            # Local field is position dependent: g_0X != g_1X, 0.5*X(0) + 0.7*X(1)
-            # Has long-range couplings: X_0*X_2
-            # Has NN couplings with different sterngths: 0.5*X(0)*X(1) + 0.9*X(1)*X(2)
-            # Zeroes matter, don't pass 0.5*X(0)*X(1) + 0*X(1)*X(2) , so depends on L.
-    is_heisenberg = True # Assume it is Heisenberg before the check
-    g_heis_dict = {}
-    J_heis_dict = {}
- 
-    # Verify that all one-body (local) coeffs are the same (uniform).
-    for pauli in {"X", "Z", "Y"}:
-        values = g_dict[pauli][:]
-
-        if not np.allclose(values, values[0], atol=tol):
-            is_heisenberg = False
-            # print("Heisenberg Rejected: non-uniform local interactions")
-            break
-
-        g_heis_dict[pauli] = values[0]
-    
-    # Verify couplings
-    if is_heisenberg:
-        for pauli in {"X", "Z", "Y"}:
-            if L == 1:
-                J_heis_dict[pauli] = 0
-                continue
-            
-            nn_val = np.array(
-                [J_dict[pauli][i, i + 1] for i in range(L - 1)],
-                dtype = complex,
-            )
-            # All same-axis nearest-neighbours interactions must be uniform
-            if not np.allclose(nn_val, nn_val[0], atol=tol):
-                is_heisenberg = False
-                # print("Heisenberg Rejected: non-uniform NN interactions")
-                break
-
-            J_heis_dict[pauli] = nn_val[0]
-
-            # Reject non-nearest-neighbour couplings
-            for i in range(L):
-                for j in range(i + 1, L):
-                    if j == i + 1:
-                        continue
-                    if not np.isclose(J_dict[pauli][i, j], 0, atol=tol):
-                        is_heisenberg = False
-                        # print("Heisenberg Rejected: not NN interactions present")
-                        break
-                if not is_heisenberg:
-                    break
-            if not is_heisenberg:
-                break
-
-    # Heisenberg check passed, build simpler structure
-    if is_heisenberg:
-        return {
-            "method": "heisenberg",
-            "L": L,
-            "g": g_heis_dict,
-            "J": J_heis_dict,
-        }
-    # General spin-glass / position-dependent XYZ spin model.
-    else:
-        return {
-            "method": "spin_glass",
-            "L": L,
-            "g": g_dict,
-            "J": J_dict,
-        }
+    return res
 
 def is_operator_foqcs_compatible(
         O: QubitOperator,

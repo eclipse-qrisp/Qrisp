@@ -1649,7 +1649,7 @@ def test_foqcs_operator_analysis_failures():
     cross_axis_couple_must_fail()
     three_body_couple_must_fail()
 
-def test_foqcs_operator_heisenberg():
+def test_foqcs_operator_analysis():
     def make_heisenberg_pass_cases():
         cases = {}
         # Full uniform nearest-neighbor XYZ/Heisenberg chain with 2 qubits.
