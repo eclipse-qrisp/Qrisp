@@ -28,7 +28,7 @@ from sympy import lambdify
 from sympy.core.expr import Expr
 
 if TYPE_CHECKING:
-    from qrisp.typing import Param
+    from qrisp.typing import FloatLike
 
 
 def adaptive_substitution(expr, subs_dic, precision=10):
@@ -116,7 +116,7 @@ class Operation:
         self.num_clbits = num_clbits
 
         # List of parameters (also available behind the interface)
-        self.params: list[Param] = []
+        self.params: list[FloatLike] = []
 
         # If a definition circuit is given, this means we are supposed to create a
         # non-elementary operation
@@ -461,11 +461,11 @@ class Operation:
 class U3Gate(Operation):
     def __init__(
         self,
-        theta: Param,
-        phi: Param,
-        lam: Param,
+        theta: FloatLike,
+        phi: FloatLike,
+        lam: FloatLike,
         name: str = "u3",
-        global_phase: Param = 0,
+        global_phase: FloatLike = 0,
     ):
 
         # Initialize Operation instance
