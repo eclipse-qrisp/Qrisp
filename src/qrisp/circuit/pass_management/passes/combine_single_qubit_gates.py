@@ -136,7 +136,7 @@ def combine_single_qubit_gates(qc: QuantumCircuit) -> QuantumCircuit:
         # us to flush the accumulated single-qubit gates first.
         is_single_qubit_gate = isinstance(op, U3Gate)
 
-        if not is_single_qubit_gate:
+        if not is_single_qubit_gate or op.abstract_params:
             # Flush pending gates for every qubit touched by this instruction.
             for qb in instr.qubits:
                 _apply_combined_gates(qc_new, qb_dic[qb], qb)
