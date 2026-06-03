@@ -210,7 +210,7 @@ def test_carry_venting_adder_jasp(init, d, c_in_val, expected, n, ctrl_val):
         if ctrl_val is not None:
             ctrl_qbl[:] = ctrl_val
         anc = QuantumFloat(2)
-        ventmask = carry_venting_adder(d, target, anc, c_in=c_in if c_in is None else c_in[0], ctrl=ctrl_qbl[0] if ctrl_val is not None else None)
+        ventmask, _ = carry_venting_adder(d, target, anc, c_in=c_in if c_in is None else c_in[0], ctrl=ctrl_qbl[0] if ctrl_val is not None else None)
         return measure(target), measure(ctrl_qbl), ventmask
     result_target, result_ctrl, ventmask = run()
     assert int(result_target) == expected
@@ -241,8 +241,8 @@ def test_carry_venting_adder_carry_xor_target(init, d, c_in_val, expected, n):
             c_in = None
         dirty = QuantumFloat(n)
         anc = QuantumFloat(2)
-        ventmask = carry_venting_adder(d, target, anc, c_in=c_in if c_in is None else c_in[0],
-                                       carry_xor_target=dirty)
+        ventmask, _ = carry_venting_adder(d, target, anc, c_in=c_in if c_in is None else c_in[0],
+                                          carry_xor_target=dirty)
         return measure(target), ventmask
     result_target, ventmask = run()
     assert int(result_target) == expected
@@ -277,8 +277,8 @@ def test_carry_xor_block_jasp(init, d, c_in_val, n):
         anc = QuantumFloat(2)
 
         # Pass 1: vented addition writes carries into dirty via carry_xor_target
-        ventmask = carry_venting_adder(d, target, anc, c_in=c_in if c_in is None else c_in[0],
-                                       carry_xor_target=dirty)
+        ventmask, _ = carry_venting_adder(d, target, anc, c_in=c_in if c_in is None else c_in[0],
+                                          carry_xor_target=dirty)
 
         # Phase correction (mirrors dirty_ancillae_adder exactly)
         for i in range(n):

@@ -256,8 +256,11 @@ def carry_venting_adder(
 
     Returns
     -------
-    int
-        Vented carry measurement bitmask.
+    ventmask : int
+        Vented carry measurement bitmask.  Bit k corresponds to the k-th vent.
+    num_vents : int
+        Number of vents written to the bitmask (helps callers reconstruct
+        the vent layout without knowing internal bit-indexing details).
     """
     from qrisp.jasp import jrange, jlen, q_fori_loop
 
@@ -276,6 +279,12 @@ def carry_venting_adder(
     # Bitmask that records the measurement outcome of each vented carry.
     # The k-th bit of ventmask stores the vent measurement at position k.
     ventmask = jnp.zeros((), dtype=jnp.int64)
+
+    # Counter for carry_xor_target writes — advances on each write so slots
+    # are always filled consecutively, eliminating index-collision bugs
+    # (e.g. n=3 where the first-block write and final-block write would
+    # both target index 0 without this counter).
+    carry_xor_cnt = 0
 
     # Initial setup: X^{d_i} on all target bits
     # Flip each target bit if the corresponding classical addend bit is 1.
@@ -312,12 +321,13 @@ def carry_venting_adder(
     bit_inverted_mcx(clean_anc[1], target[1], clean_anc[0], d1, ctrl=ctrl)
     qrisp.cx(clean_anc[1], target[1])
 
-    # Fused first carry-xor: write carry at clean_anc[1] into carry_xor_target[0].
+    # Fused first carry-xor: write carry at clean_anc[1] into carry_xor_target.
     # clean_anc[1] holds the carry into bit 1 at this point (computed by the
     # first building block above, before it gets vented).  A single CX copies
     # it to carry_xor_target at no extra Toffoli cost.
     if carry_xor_target is not None:
-        qrisp.cx(clean_anc[1], carry_xor_target[0])
+        qrisp.cx(clean_anc[1], carry_xor_target[carry_xor_cnt])
+        carry_xor_cnt = carry_xor_cnt + 1
 
     # Vent clean_anc[1] (carry into bit 1) — X-basis measurement
     qrisp.h(clean_anc[1])
@@ -336,7 +346,7 @@ def carry_venting_adder(
     # X gates on the carry computation.
 
     def process_middle_bit(j, val):
-        target, clean_anc, ventmask = val
+        target, clean_anc, ventmask, carry_xor_cnt = val
         i = j + 2
         d_i = _extract_bit(d, i, a_int_is_bigint)
         d_prev = _extract_bit(d, i - 1, a_int_is_bigint)
@@ -354,7 +364,8 @@ def carry_venting_adder(
         qrisp.cx(current_carry, target[i])
 
         if carry_xor_target is not None:
-            qrisp.cx(current_carry, carry_xor_target[i - 1])
+            qrisp.cx(current_carry, carry_xor_target[carry_xor_cnt])
+            carry_xor_cnt = carry_xor_cnt + 1
 
         qrisp.h(current_carry)
         m_i = qrisp.measure(current_carry)
@@ -362,10 +373,10 @@ def carry_venting_adder(
         # Record the vent measurement at bit position (j+1) of the ventmask
         ventmask = ventmask + (m_i.astype(jnp.int64) << (j + 1))
 
-        return target, clean_anc, ventmask
+        return target, clean_anc, ventmask, carry_xor_cnt
 
     num_main = jnp.maximum(0, num_qubits - 4)
-    target, clean_anc, ventmask = q_fori_loop(0, num_main, process_middle_bit, (target, clean_anc, ventmask))
+    target, clean_anc, ventmask, carry_xor_cnt = q_fori_loop(0, num_main, process_middle_bit, (target, clean_anc, ventmask, carry_xor_cnt))
 
     # Write the final carry into the most significant bit
     # The carry out of the second-to-last bit becomes the most significant
@@ -378,7 +389,7 @@ def carry_venting_adder(
     #
     # q_cond is used because ventmask is an integer that is modified inside
     # the branch and read outside.
-    def write_final_carry_to_msb(target, clean_anc, ventmask):
+    def write_final_carry_to_msb(target, clean_anc, ventmask, carry_xor_cnt):
         last_i = num_qubits - 2
         d_last = _extract_bit(d, last_i, a_int_is_bigint)
         current_carry = clean_anc[num_main % 2]              # carry lives in the alternator that didn't just vent
@@ -401,13 +412,18 @@ def carry_venting_adder(
         with control(num_qubits > 3):
             bit_inverted_mcx(current_carry, target[last_i], target[num_qubits - 1], d_last, ctrl=ctrl)
             qrisp.cx(current_carry, target[last_i])
-            # Fused carry-xor: write the last carry into carry_xor_target[last_i-1].
-            # NOTE: For n=3 this write is intentionally NOT done here (it's
-            # inside the n>3 branch).  For n=3, the first block already wrote
-            # to carry_xor_target[0], and a second write to the same slot would create a
-            # double-write that the phase correction cannot undo.
-            if carry_xor_target is not None:
-                qrisp.cx(current_carry, carry_xor_target[last_i - 1])
+
+        # Fused carry-xor: write the last carry into the next unwritten slot.
+        # Guared by counter vs. dirty count so it naturally skips when all
+        # slots are already filled (e.g. n=3 where the first block already
+        # wrote the only slot).  No need for a num_qubits > 3 guard.
+        if carry_xor_target is not None:
+            still_needed = carry_xor_cnt < jlen(carry_xor_target)
+            with control(still_needed):
+                qrisp.cx(current_carry, carry_xor_target[carry_xor_cnt])
+            carry_xor_cnt = carry_xor_cnt + still_needed.astype(jnp.int64)
+        else:
+            pass
 
         # Vent (common to both paths) — X-basis measurement
         qrisp.h(current_carry)
@@ -425,16 +441,22 @@ def carry_venting_adder(
                 else:
                     qrisp.cx(ctrl, target[num_qubits - 1])
 
-        return target, clean_anc, ventmask
+        return target, clean_anc, ventmask, carry_xor_cnt
 
-    def skip_final_block(target, clean_anc, ventmask):
-        return target, clean_anc, ventmask
+    def skip_final_block(target, clean_anc, ventmask, carry_xor_cnt):
+        return target, clean_anc, ventmask, carry_xor_cnt
 
     from qrisp.jasp.program_control.prefix_control import q_cond
-    target, clean_anc, ventmask = q_cond(num_qubits > 2, write_final_carry_to_msb, skip_final_block,
-                                   target, clean_anc, ventmask)
+    target, clean_anc, ventmask, carry_xor_cnt = q_cond(num_qubits > 2, write_final_carry_to_msb, skip_final_block,
+                                   target, clean_anc, ventmask, carry_xor_cnt)
 
-    return ventmask
+    # Count the number of vents for the caller (used in ventmask recombination).
+    # When num_qubits <= 2 the final block is skipped (q_cond with num_qubits > 2),
+    # so only m0 from the first block is vented → 1 vent.
+    # When num_qubits >= 3 all three sources fire: m0 + middle + m_last.
+    num_vents = 1 + jnp.where(num_qubits > 2, 1 + jnp.maximum(0, num_qubits - 4), 0)
+
+    return ventmask, num_vents
 
 
 def carry_xor_block(
@@ -574,7 +596,7 @@ def dirty_ancillae_adder(
     num_dirty = jlen(dirty_qubits)
 
     # Step 1: Vented addition with fused first carry-xor
-    ventmask = carry_venting_adder(
+    ventmask, _ = carry_venting_adder(
         d, target, ancilla=ancilla, c_in=c_in, carry_xor_target=dirty_qubits, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
 
 
@@ -751,7 +773,7 @@ def gidney_cq_venting_adder(
     qrisp.cx(carry_mid, target[h])
 
     # Step 2: Vented addition on bottom half
-    ventmask_lo = carry_venting_adder(d_lo, target[:h + 1], anc_clean2, c_in=c_in, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
+    ventmask_lo, _ = carry_venting_adder(d_lo, target[:h + 1], anc_clean2, c_in=c_in, a_int_is_bigint=a_int_is_bigint, ctrl=ctrl)
 
     # Step 3: Swap carry_mid back out of target[h].
     # target[h] is restored to its original qubit and carry_mid now
@@ -788,11 +810,18 @@ def gidney_cq_venting_adder(
     qrisp.reset(carry_mid)
 
     # Combine ventmask_lo with m_carry_mid to get the full ventmask for the
-    # entire register.  m_carry_mid is the vent measurement for the carry
-    # between the two halves, which corresponds to bit position h in the ventmask.
-    # ventmask_lo contains the vent measurements for the bottom half, which correspond
-    # to bit positions 0 through h-1 in the ventmask. 
-    # The top half has no vents of its own, so its bits in the ventmask are zero.
+    # entire register.
+    #
+    # ventmask_lo comes from the bottom-half adder.  Bit 0 of ventmask_lo
+    # records the vent of the carry into bit 1 — this carry is NOT used in
+    # the bottom-half phase correction because the borrowed-dirty workspace
+    # only stores carries for bits 2 .. h.  We shift ventmask_lo right by 1
+    # to drop that unused bit, then mask to h-1 bits to keep only the vents
+    # that correspond to dirty workspace slots 0 .. h-2.
+    #
+    # m_carry_mid (the carry out of the bottom half, i.e. into bit h) is
+    # placed at bit h-1, giving the phase correction a contiguous range of
+    # h vent bits (bits 0 .. h-1) mapped 1:1 to dirty workspace qubits.
     ventmask_lo_mask = (1 << (h - 1)) - 1
     full_ventmask = ((ventmask_lo >> 1) & ventmask_lo_mask) | (
         m_carry_mid.astype(jnp.int64) << (h - 1)
