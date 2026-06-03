@@ -39,14 +39,14 @@ from qrisp import (
 )
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.jasp import check_for_tracing_mode, jrange
-from qrisp.typing import Param
+from qrisp.typing import FloatLike
 from typing import Callable, Any
 
 
 # Applies the grover diffuser onto the (list of) quantum variable input_object
 def diffuser(
     input_object: QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray],
-    phase: Param = np.pi,
+    phase: FloatLike = np.pi,
     state_function: Callable | None = None,
     reflection_indices: list[int] | None = None,
 ):
@@ -57,13 +57,13 @@ def diffuser(
     ----------
     input_object : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
         The (list of) QuantumVariables to apply the Grover diffuser on.
-    phase : qrisp.Param, optional
+    phase : float | FloatLike, optional
         Specifies the phase shift. The default is $\pi$, i.e. a
         multi-controlled Z gate.
     state_function : function, optional
         A Python function preparing the initial state.
         By default, the function prepares the uniform superposition state.
-    refection_indices : list[int], optional
+    reflection_indices : list[int], optional
         A list indicating with respect to which variables the reflection is performed.
         By default, the reflection is performed with respect to all variables in ``input_object``.
 
@@ -127,7 +127,7 @@ def diffuser(
 def tag_state(
     tag_specificator: dict[QuantumVariable, float],
     binary_values: bool = False,
-    phase: Param = np.pi,
+    phase: FloatLike = np.pi,
 ):
     r"""
     Applies a phase tag to (multiple) QuantumVariables. The tagged state is specified in
@@ -142,7 +142,7 @@ def tag_state(
     binary_values : bool, optional
         If set to True, the values in the tag_specificator dict have to be bitstrings
         instead of labels. The default is False.
-    phase : qrisp.Param, optional
+    phase : float | FloatLike, optional
         Specify the phase shift the tag should perform. The default is $\pi$, i.e. a
         multi-controlled Z gate.
 
@@ -463,6 +463,8 @@ def grovers_alg(
                 oracle_function(args, **kwargs)
                 diffuser(args)
 
+        # NOTE: We could check here whether the oracle introduced new QuantumVariables without uncomputing/deleting them, which would be a common mistake. 
+        # THis check was deactivated, be cause it raises an unjustified error n some cases, e.g., when the oracle acts on a QuantumVariable that is not part of the input `args`.
         # if qv_amount != len(qs.qv_list):
         #    raise Exception(
         #        "Applied oracle introducing new QuantumVariables without uncomputing/deleting"
