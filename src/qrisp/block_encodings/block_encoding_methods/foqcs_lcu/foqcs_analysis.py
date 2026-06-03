@@ -29,8 +29,7 @@ _FOQCS_SPIN_GLASS_TOL = 1e-12
 def foqcs_analyze_operator(
         O: QubitOperator,
         L: int = -1,
-        tol: float = _FOQCS_SPIN_GLASS_TOL,
-        raise_errors: bool = True
+        tol: float = _FOQCS_SPIN_GLASS_TOL
 ) -> dict:
     r"""
     Parameters
@@ -65,27 +64,19 @@ def foqcs_analyze_operator(
     """
     terms = O._to_pauli_coeff_dict()
 
-    # When analysis fails, it either throws a ValueError with the reason for failure,
-    # or silently returns None if raise_errors flag is set to False.
-    def fail(arg: str):
-        if raise_errors:
-            raise ValueError(arg)
-        else:
-            return None
-
-    # Verifies that operator exists and checks its length
+    # Verifies that operator exists and is not constant.
     max_ind = -1
     for pauli_str in terms:
         for ind, _ in pauli_str:
             max_ind = max(max_ind, ind)
     if max_ind < 0:
-        return fail(f"Received empty or constant operator: {O}")
+        raise ValueError(f"Received empty or constant operator: {O}")
 
-    # Infers the length or sanity checks the passed length.
+    # Assigns the length or sanity checks the passed length.
     if L == -1:
         L = max_ind + 1
     elif L < max_ind + 1:
-        return fail(f"Received L = {L}, while operator acts on {max_ind + 1} qubits.")
+        raise ValueError(f"Received L = {L}, while operator acts on {max_ind + 1} qubits.")
 
     g_dict = {"X": np.zeros(L, dtype="complex"), "Y": np.zeros(L, dtype="complex"), "Z": np.zeros(L, dtype="complex")}
     J_dict = {"X": np.zeros((L, L), dtype="complex"), "Y": np.zeros((L, L), dtype="complex"), "Z": np.zeros((L, L), dtype="complex")}
@@ -96,6 +87,7 @@ def foqcs_analyze_operator(
             # Has const cI
             # Mixed terms: XiZj, XiYj, YiZj
             # Three-or-more-body interaction: XiXjXk
+    # When Spin-glass analysis fails, it raises a ValueError with the reason for failure
     for pauli_str, coeff in terms.items():
         # All coeffs in arrays are zeroes, so just skip entry
         if np.isclose(coeff, 0, atol=tol):
@@ -103,7 +95,7 @@ def foqcs_analyze_operator(
 
         # Fail on a constant: cI
         if len(pauli_str) == 0:
-            return fail(f"FOQCS-LCU does not support constant/identity terms, but received {(pauli_str, coeff)}")
+            raise ValueError(f"FOQCS-LCU does not support constant/identity terms, but received {(pauli_str, coeff)}")
 
         # Inspect one-body terms Xi, Yi, Zi:
         if len(pauli_str) == 1:
@@ -116,14 +108,14 @@ def foqcs_analyze_operator(
             (i, pauli_i), (j, pauli_j) = sorted(pauli_str)
 
             if pauli_i != pauli_j:
-                return fail(f"FOQCS-LCU supports only same-axis couplings, but received: {pauli_i}({i}) * {pauli_j}({j})")
+                raise ValueError(f"FOQCS-LCU supports only same-axis couplings, but received: {pauli_i}({i}) * {pauli_j}({j})")
 
             J_dict[pauli_i][i, j] += coeff
             J_dict[pauli_i][j, i] += coeff
             continue
 
         if len(pauli_str) > 2:
-            return fail(f"FOQCS-LCU supports only one and two-body interactions.")
+            raise ValueError(f"FOQCS-LCU supports only one and two-body interactions.")
 
     # Spin-glass has passed by this point. YAY! :D
 
@@ -206,7 +198,7 @@ def is_operator_foqcs_compatible(
         O: QubitOperator,
         L: int = -1,
         tol: float = _FOQCS_SPIN_GLASS_TOL
-) -> tuple: # tuple is of the form -> (bool, dict || None)
+) -> dict: # Or None, if incompatible
     r"""
     Parameters
     ----------
@@ -222,13 +214,13 @@ def is_operator_foqcs_compatible(
 
     Returns
     ----------
-    tuple : (bool, dict || None)
-        bool : True if compatible with FOQCS-LCU
-        dict : Output of `foqcs_analyze_operator`
+    dict : Output of `foqcs_analyze_operator` if compatible. `None`, if incompatible.
 
     """
-    res = foqcs_analyze_operator(O, L = L, tol = tol, raise_errors = False)
-    return (res != None, res)
+    try:
+        return foqcs_analyze_operator(O, L = L, tol = tol)
+    except ValueError:
+        return None
 
 def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
     r"""

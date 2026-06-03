@@ -583,7 +583,7 @@ class BlockEncoding:
         from qrisp.block_encodings.block_encoding_methods.foqcs_lcu.foqcs_analysis import foqcs_analyze_operator
         from qrisp.block_encodings.block_encoding_methods.foqcs_lcu.foqcs_analysis import build_foqcs_lcu_prep_from_analysis
         # Analyze the Qubit operator
-        aresult = foqcs_analyze_operator(O, L = L, tol = tol, raise_errors = True)
+        aresult = foqcs_analyze_operator(O, L = L, tol = tol)
         
         return cls.from_foqcs_lcu_prep(*build_foqcs_lcu_prep_from_analysis(aresult))
 

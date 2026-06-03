@@ -18,7 +18,6 @@
 
 import numpy as np
 import pytest
-from qrisp.core import x
 from qrisp.block_encodings import BlockEncoding
 from qrisp import QuantumVariable, QuantumFloat, terminal_sampling, multi_measurement
 from qrisp.block_encodings import foqcs_prep_heisenberg, is_operator_foqcs_compatible, foqcs_analyze_operator, foqcs_prep_spin_glass
@@ -1589,391 +1588,6 @@ def test_block_encoding_foqcs_lcu_negation(H1, H2):
     res_be_neg = main(BE_neg)
     _compare_results(res_be2, res_be_neg, n)
 
-
-
-
-
-
-# Some weird shenanigans. May be exposing some compiler bug, but it is not verified.
-
-def test_foqcs_lcu_add():
-    L = 2
-
-    foqcs_be = BlockEncoding.from_foqcs_lcu_operator(Z(0) * Z(1), L)
-
-    def identity(qv):
-        pass
-
-    id_be = BlockEncoding.from_lcu(
-        np.array([1.0]),
-        [identity],
-    )
-
-    be = foqcs_be + id_be
-
-    psi = np.array(
-        [0.31 + 0.17j, -0.42 + 0.53j, 0.26 - 0.61j, -0.18 - 0.22j],
-        dtype=complex,
-    )
-    psi /= np.linalg.norm(psi)
-
-    qv = QuantumVariable(L)
-    qv.init_state(psi, method="qswitch")
-    ancillas = be.apply(qv)
-
-    qc = qv.qs.compile()
-    sv = qc.statevector_array()
-
-    pos = {qb.identifier: i for i, qb in enumerate(qc.qubits)}
-    res = []
-
-    for i in range(2 ** L):
-        ind = 0
-
-        for j in range(L):
-            if (i >> j) & 1:
-                ind += 2 ** (len(qc.qubits) - 1 - pos[qv[j].identifier])
-
-        for anc in ancillas:
-            for qb in anc:
-                assert qb.identifier in pos
-
-        res.append(sv[ind])
-
-    sz = np.array([[1, 0], [0, -1]], dtype=complex)
-    I = np.eye(2, dtype=complex)
-
-    H = np.kron(sz, sz) + np.eye(2 ** L, dtype=complex)
-    ref = (H / be.alpha) @ psi
-
-    print("foqcs_be.alpha", foqcs_be.alpha)
-    print("id_be.alpha", id_be.alpha)
-    print("combined alpha", be.alpha)
-    print(f"Addition result:\n{res}")
-    print(f"Reference:\n{ref}")
-
-    from qrisp.simulator import statevector_sim
-
-    raw_qc = qv.qs.copy()
-    raw_sv = statevector_sim(raw_qc)
-
-    qc = qv.qs.compile()
-    sv = qc.statevector_array()
-
-    def extract(qc, sv):
-        pos = {qb.identifier: i for i, qb in enumerate(qc.qubits)}
-        out = []
-
-        for i in range(2 ** L):
-            ind = 0
-
-            for j in range(L):
-                if (i >> j) & 1:
-                    ind += 2 ** (len(qc.qubits) - 1 - pos[qv[j].identifier])
-
-            for anc in ancillas:
-                for qb in anc:
-                    assert qb.identifier in pos
-
-            out.append(sv[ind])
-
-        return np.array(out)
-
-    raw_res = extract(raw_qc, raw_sv)
-    compiled_res = extract(qc, sv)
-
-    print(f"Raw addition result:\n{raw_res}")
-    print(f"Compiled addition result:\n{compiled_res}")
-    print(f"Reference:\n{ref}")
-
-    assert np.allclose(raw_res, ref, atol=1e-5)
-    assert np.allclose(compiled_res, ref, atol=1e-5)
-
-    assert np.isclose(foqcs_be.alpha, 1)
-    assert np.isclose(id_be.alpha, 1)
-    assert np.isclose(be.alpha, 2)
-    assert np.allclose(res, ref, atol=1e-5)
-
-def test_compile_preserves_foqcs_lcu_addition_with_identity():
-    from qrisp.simulator import statevector_sim
-
-    L = 2
-
-    # FOQCS-LCU block encoding of Z(0)Z(1).
-    foqcs_be = BlockEncoding.from_foqcs_lcu_operator(Z(0) * Z(1), L)
-
-    # Lightweight no-op block encoding of I via from_lcu.
-    def identity(qv):
-        pass
-
-    id_be = BlockEncoding.from_lcu(
-        np.array([1.0]),
-        [identity],
-    )
-
-    # Encodes (Z(0)Z(1) + I) / 2.
-    be = foqcs_be + id_be
-
-    psi = np.array(
-        [0.31 + 0.17j, -0.42 + 0.53j, 0.26 - 0.61j, -0.18 - 0.22j],
-        dtype=complex,
-    )
-    psi /= np.linalg.norm(psi)
-
-    qv = QuantumVariable(L)
-    qv.init_state(psi, method="qswitch")
-    ancillas = be.apply(qv)
-
-    def extract_zero_ancilla_operands(qc, sv):
-        pos = {qb.identifier: i for i, qb in enumerate(qc.qubits)}
-        out = []
-
-        for i in range(2 ** L):
-            ind = 0
-
-            for j in range(L):
-                if (i >> j) & 1:
-                    ind += 2 ** (len(qc.qubits) - 1 - pos[qv[j].identifier])
-
-            for anc in ancillas:
-                for qb in anc:
-                    assert qb.identifier in pos
-
-            out.append(sv[ind])
-
-        return np.array(out)
-
-    raw_qc = qv.qs.copy()
-    raw_res = extract_zero_ancilla_operands(raw_qc, statevector_sim(raw_qc))
-
-    compiled_qc = qv.qs.compile()
-    compiled_res = extract_zero_ancilla_operands(
-        compiled_qc,
-        compiled_qc.statevector_array(),
-    )
-
-    # (ZZ + I) / 2 is the even-parity projector:
-    # |00>, |11> survive; |01>, |10> vanish.
-    ref = np.array([psi[0], 0, 0, psi[3]], dtype=complex)
-
-    print("foqcs_be.alpha", foqcs_be.alpha)
-    print("id_be.alpha", id_be.alpha)
-    print("combined alpha", be.alpha)
-    print(f"Raw result:\n{raw_res}")
-    print(f"Compiled result:\n{compiled_res}")
-    print(f"Reference:\n{ref}")
-
-    assert np.isclose(foqcs_be.alpha, 1)
-    assert np.isclose(id_be.alpha, 1)
-    assert np.isclose(be.alpha, 2)
-
-    # This proves the arithmetic construction itself is correct.
-    assert np.allclose(raw_res, ref, atol=1e-5)
-
-    # This is the compiler regression check.
-    assert np.allclose(compiled_res, raw_res, atol=1e-5)
-
-    
-
-
-
-def test_compile_preserves_addition_of_two_term_lcu_with_identity():
-    from qrisp.simulator import statevector_sim
-    from qrisp.core import z as q_z
-
-    L = 2
-
-    # Two-term LCU block encoding of ZZ + I.
-    def zz(qv):
-        q_z(qv[0])
-        q_z(qv[1])
-
-    def identity(qv):
-        pass
-
-    lcu_be = BlockEncoding.from_lcu(
-        np.array([1.0, 1.0]),
-        [zz, identity],
-    )
-
-    id_be = BlockEncoding.from_lcu(
-        np.array([1.0]),
-        [identity],
-    )
-
-    # Encodes ((ZZ + I) + I) / 3 = (ZZ + 2I) / 3.
-    be = lcu_be + id_be
-
-    psi = np.array(
-        [0.31 + 0.17j, -0.42 + 0.53j, 0.26 - 0.61j, -0.18 - 0.22j],
-        dtype=complex,
-    )
-    psi /= np.linalg.norm(psi)
-
-    qv = QuantumVariable(L)
-    qv.init_state(psi, method="qswitch")
-    ancillas = be.apply(qv)
-
-    def extract_zero_ancilla_operands(qc, sv):
-        pos = {qb.identifier: i for i, qb in enumerate(qc.qubits)}
-        out = []
-
-        for i in range(2 ** L):
-            ind = 0
-
-            for j in range(L):
-                if (i >> j) & 1:
-                    ind += 2 ** (len(qc.qubits) - 1 - pos[qv[j].identifier])
-
-            for anc in ancillas:
-                for qb in anc:
-                    assert qb.identifier in pos
-
-            out.append(sv[ind])
-
-        return np.array(out)
-
-    raw_qc = qv.qs.copy()
-    raw_res = extract_zero_ancilla_operands(raw_qc, statevector_sim(raw_qc))
-
-    compiled_qc = qv.qs.compile()
-    compiled_res = extract_zero_ancilla_operands(
-        compiled_qc,
-        compiled_qc.statevector_array(),
-    )
-
-    # ZZ = diag(1, -1, -1, 1), so:
-    # (ZZ + 2I) / 3 = diag(1, 1/3, 1/3, 1).
-    ref = np.array(
-        [psi[0], psi[1] / 3, psi[2] / 3, psi[3]],
-        dtype=complex,
-    )
-
-    print("lcu_be.alpha", lcu_be.alpha)
-    print("id_be.alpha", id_be.alpha)
-    print("combined alpha", be.alpha)
-    print(f"Raw result:\n{raw_res}")
-    print(f"Compiled result:\n{compiled_res}")
-    print(f"Reference:\n{ref}")
-
-    assert np.isclose(lcu_be.alpha, 2)
-    assert np.isclose(id_be.alpha, 1)
-    assert np.isclose(be.alpha, 3)
-
-    # Arithmetic construction itself.
-    assert np.allclose(raw_res, ref, atol=1e-6)
-
-    # Compiler preservation.
-    assert np.allclose(compiled_res, raw_res, atol=1e-6)
-
-def test_block_encoding_from_foqcs_lcu_bench_lcu():
-    from qiskit import transpile
-    # Test FOQCS-LCU resources agains normal LCU
-    # Initialize variables + their values
-    L = 4
-    g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
-    J = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
-
-    # Fix coefficients for debugging
-    # g = np.array([0.80054361+0.j,  0.50905072+0.j, -0.89045545+0.j])
-    # J = np.array([0.98167489+0.j, -0.32435597+0.j,  0.42262456+0.j])
-
-    # Normalize
-    norm = np.linalg.norm(np.block([g, J]))
-    g /= norm
-    J /= norm
-
-    # Actual parameters for the PREP
-    _g = np.zeros((3,), dtype="complex")
-    _J = np.zeros((3,), dtype="complex")
-    for i in range(3):
-        _g[i] = np.sqrt(g[i] * L)
-        _J[i] = np.sqrt(J[i] * (L - 1))
-    # Correction for XZ = -iY
-    _J[1] = 1j * _J[1]
-    _g[1] = (1 - 1j) * _g[1] / np.sqrt(2)
-    # Normalization for block encoding
-    norm = np.linalg.norm(np.block([_g, _J]))
-
-    # Construct dictionary input expected by foqcs_prep_heisenberg()
-    heis_g = {"X": g[0], "Y": g[1], "Z": g[2]}
-    heis_J = {"X": J[0], "Y": J[1], "Z": J[2]}
-
-    # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
-    prep = partial(
-        foqcs_prep_heisenberg,
-        L=L,
-        g=heis_g,
-        J=heis_J,
-    )
-    unprep = partial(
-        foqcs_prep_heisenberg,
-        L=L,
-        g=heis_g,
-        J=heis_J,
-        conjugate=True
-    )
-
-    be1 = BlockEncoding.from_foqcs_lcu_prep(prep=prep, num_q_ops=L, unprep=unprep, norm=norm ** 2)
-
-    H = sum(
-        heis_g["X"] * X(i)
-        + heis_g["Y"] * Y(i)
-        + heis_g["Z"] * Z(i)
-        for i in range(L)
-    )
-
-    H += sum(
-        heis_J["X"] * X(i) * X(i + 1)
-        + heis_J["Y"] * Y(i) * Y(i + 1)
-        + heis_J["Z"] * Z(i) * Z(i + 1)
-        for i in range(L - 1)
-    )
-
-    be2 = BlockEncoding.from_operator(H)
-
-    psi = _prep_psi(L)
-    qv = QuantumVariable(4)
-    qv.init_state(psi, method="qswitch")
-
-    res1 = be1.resources(qv)
-    res2 = be2.resources(qv)
-
-    print(f"Resources comp\nFOQCS-LCU:\n{res1}\nLCU:\n{res2}")
-
-    be1.apply(qv)
-    qc1 = qv.qs.compile().to_qiskit()
-    be2.apply(qv)
-    qc2 = qv.qs.compile().to_qiskit()
-
-    tqc1 = transpile(
-                qc1,
-                basis_gates=["rz", "sx", "x", "cx"],
-                optimization_level=0,
-            )
-
-    tqc2 = transpile(
-                qc2,
-                basis_gates=["rz", "sx", "x", "cx"],
-                optimization_level=0,
-            )
-
-    counts1 = tqc1.count_ops()
-    counts2 = tqc2.count_ops()
-
-    print("FOQCS-LCU")
-    print("CX count:", counts1.get("cx", 0))
-    print("Counts:", counts1)
-    print("Depth:", tqc1.depth())
-    print("Qubits:", tqc1.num_qubits)
-    print("LCU")
-    print("CX count:", counts2.get("cx", 0))
-    print("Counts:", counts2)
-    print("Depth:", tqc2.depth())
-    print("Qubits:", tqc2.num_qubits)
-
-    assert True
-
 ###########################################################################################################
 #### Operator analysis tests ##############################################################################
 ###########################################################################################################
@@ -2113,11 +1727,123 @@ def test_foqcs_operator_heisenberg():
         return cases
 
     for name, O in make_heisenberg_pass_cases().items():
-        check, res = is_operator_foqcs_compatible(O)
-        assert check, f"Passing operator failed analysis: {O} "
+        res = is_operator_foqcs_compatible(O)
+        assert res, f"Passing operator failed analysis: {O} "
         assert res["method"] == "heisenberg", name
 
     for name, O in make_heisenberg_fail_cases().items():
-        check, res = is_operator_foqcs_compatible(O)
-        assert check, f"Passing operator failed analysis: {O} "
+        res = is_operator_foqcs_compatible(O)
+        assert res, f"Passing operator failed analysis: {O} "
         assert res["method"] == "spin_glass", name
+
+###########################################################################################################
+#### Benchmarking #########################################################################################
+###########################################################################################################
+
+def test_block_encoding_from_foqcs_lcu_bench_lcu():
+    from qiskit import transpile
+    # Test FOQCS-LCU resources against normal LCU
+    # Initialize variables + their values
+    L = 4
+    g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
+    J = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
+
+    # Fix coefficients for debugging
+    # g = np.array([0.80054361+0.j,  0.50905072+0.j, -0.89045545+0.j])
+    # J = np.array([0.98167489+0.j, -0.32435597+0.j,  0.42262456+0.j])
+
+    # Normalize
+    norm = np.linalg.norm(np.block([g, J]))
+    g /= norm
+    J /= norm
+
+    # Actual parameters for the PREP
+    _g = np.zeros((3,), dtype="complex")
+    _J = np.zeros((3,), dtype="complex")
+    for i in range(3):
+        _g[i] = np.sqrt(g[i] * L)
+        _J[i] = np.sqrt(J[i] * (L - 1))
+    # Correction for XZ = -iY
+    _J[1] = 1j * _J[1]
+    _g[1] = (1 - 1j) * _g[1] / np.sqrt(2)
+    # Normalization for block encoding
+    norm = np.linalg.norm(np.block([_g, _J]))
+
+    # Construct dictionary input expected by foqcs_prep_heisenberg()
+    heis_g = {"X": g[0], "Y": g[1], "Z": g[2]}
+    heis_J = {"X": J[0], "Y": J[1], "Z": J[2]}
+
+    # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
+    prep = partial(
+        foqcs_prep_heisenberg,
+        L=L,
+        g=heis_g,
+        J=heis_J,
+    )
+    unprep = partial(
+        foqcs_prep_heisenberg,
+        L=L,
+        g=heis_g,
+        J=heis_J,
+        conjugate=True
+    )
+
+    be1 = BlockEncoding.from_foqcs_lcu_prep(prep=prep, num_q_ops=L, unprep=unprep, norm=norm ** 2)
+
+    H = sum(
+        heis_g["X"] * X(i)
+        + heis_g["Y"] * Y(i)
+        + heis_g["Z"] * Z(i)
+        for i in range(L)
+    )
+
+    H += sum(
+        heis_J["X"] * X(i) * X(i + 1)
+        + heis_J["Y"] * Y(i) * Y(i + 1)
+        + heis_J["Z"] * Z(i) * Z(i + 1)
+        for i in range(L - 1)
+    )
+
+    be2 = BlockEncoding.from_operator(H)
+
+    psi = _prep_psi(L)
+    qv = QuantumVariable(4)
+    qv.init_state(psi, method="qswitch")
+
+    res1 = be1.resources(qv)
+    res2 = be2.resources(qv)
+
+    print(f"Resources comp\nFOQCS-LCU:\n{res1}\nLCU:\n{res2}")
+
+    be1.apply(qv)
+    qc1 = qv.qs.compile().to_qiskit()
+    be2.apply(qv)
+    qc2 = qv.qs.compile().to_qiskit()
+
+    tqc1 = transpile(
+                qc1,
+                basis_gates=["rz", "sx", "x", "cx"],
+                optimization_level=0,
+            )
+
+    tqc2 = transpile(
+                qc2,
+                basis_gates=["rz", "sx", "x", "cx"],
+                optimization_level=0,
+            )
+
+    counts1 = tqc1.count_ops()
+    counts2 = tqc2.count_ops()
+
+    print("FOQCS-LCU")
+    print("CX count:", counts1.get("cx", 0))
+    print("Counts:", counts1)
+    print("Depth:", tqc1.depth())
+    print("Qubits:", tqc1.num_qubits)
+    print("LCU")
+    print("CX count:", counts2.get("cx", 0))
+    print("Counts:", counts2)
+    print("Depth:", tqc2.depth())
+    print("Qubits:", tqc2.num_qubits)
+
+    assert True
