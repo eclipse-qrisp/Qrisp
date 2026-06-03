@@ -16,14 +16,20 @@
 ********************************************************************************
 """
 
-from qrisp.operators.qubit import QubitOperator, QubitTerm, X ,Y, Z
+from qrisp.operators.qubit import X
 
 def test_qubit_operator_mul_by_zero():
     """Test that multiplying a QubitOperator by zero results in an operator with an empty terms dict, 
     rather than a dict with a single term with zero coefficient."""
     op = X(1) * 0
     assert op.terms_dict == {}
+    assert not op.find_minimal_qubit_amount()
+
+    op = 0 * X(1)
+    assert op.terms_dict == {}
+    assert not op.find_minimal_qubit_amount()
 
     op = X(1)
     op *= 0
     assert op.terms_dict == {}
+    assert not op.find_minimal_qubit_amount()
