@@ -551,10 +551,18 @@ class BlockEncoding:
         tol : float = 1e-12
             Tolerance for considering the entry zero
 
+        Returns
+        -------
+        BlockEncoding
+            A BlockEncoding using the FOQCS-LCU protocol for a compatible QubitOperator,
+            with PREP chosen automatically as either the Heisenberg or Spin-glass implementation.
+
         Raises
         ----------
         KeyError
             If function received an unsupported FOQCS-LCU PREP method
+        ValueError
+            When the operator is not compatible with FOQCS-LCU (fails the spin-glass check) and `raise_errors` is set to `True`.
 
         Examples
         --------
