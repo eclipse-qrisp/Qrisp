@@ -125,7 +125,7 @@ def diffuser(
 
 
 def tag_state(
-    tag_specificator: dict[QuantumVariable, float],
+    tag_specificator: dict[QuantumVariable, Any],
     binary_values: bool = False,
     phase: FloatLike = np.pi,
 ):
@@ -411,11 +411,19 @@ def grovers_alg(
         winner_state_amount = 1
 
     if isinstance(args, list):
-        N = 2 ** jnp.sum(jnp.array([qv.size for qv in args]))
+        flat_qvs: list[QuantumVariable] = []
+        for arg in args:
+            if isinstance(arg, QuantumArray):
+                flat_qvs.extend(list(arg.flatten()))
+            else:
+                flat_qvs.append(arg)
+        N = 2 ** jnp.sum(jnp.array([qv.size for qv in flat_qvs]))
     elif isinstance(args, QuantumArray):
-        N = 2 ** sum(jnp.array([qv.size for qv in args.flatten()]))
+        N = 2 ** jnp.sum(jnp.array([qv.size for qv in args.flatten()]))
     elif isinstance(args, QuantumVariable):
         N = 2**args.size
+    else:
+        raise TypeError(f"Unsupported type for args: {type(args)}")
 
     if exact:
         # Implementation for phase calculation for exact grovers alg as in
