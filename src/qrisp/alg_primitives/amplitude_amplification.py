@@ -16,10 +16,12 @@
 ********************************************************************************
 """
 
+from typing import Any, Callable
+
+from qrisp.alg_primitives.reflection import reflection
 from qrisp.core import QuantumVariable, QuantumArray, merge, recursive_qs_search
 from qrisp.environments import IterationEnvironment
 from qrisp.jasp import check_for_tracing_mode, jrange
-from typing import Any, Callable
 
 
 def amplitude_amplification(
@@ -29,7 +31,7 @@ def amplitude_amplification(
     kwargs_oracle: dict[str, Any] | None = None,
     iter: int = 1,
     reflection_indices: list[int] | None = None,
-):
+) -> None:
     r"""
     This method performs `quantum amplitude amplification <https://arxiv.org/abs/quant-ph/0005055>`_.
 
@@ -124,7 +126,6 @@ def amplitude_amplification(
 
     """
 
-    from qrisp.alg_primitives.reflection import reflection
 
     if kwargs_oracle is None:
         kwargs_oracle = {}
@@ -133,7 +134,7 @@ def amplitude_amplification(
         args = [args]
 
     if check_for_tracing_mode():
-        for i in jrange(iter):
+        for _ in jrange(iter):
             oracle_function(*args, **kwargs_oracle)
             reflection(
                 args,
