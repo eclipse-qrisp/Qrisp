@@ -47,8 +47,8 @@ from typing import Callable, Any
 def diffuser(
     input_object: QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray],
     phase: Param = np.pi,
-    state_function: Callable = None,
-    reflection_indices: list[int] = None,
+    state_function: Callable | None = None,
+    reflection_indices: list[int] | None = None,
 ):
     r"""
     Applies the Grover diffuser onto (multiple) QuantumVariables.
