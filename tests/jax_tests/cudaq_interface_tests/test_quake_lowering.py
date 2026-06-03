@@ -54,6 +54,7 @@ from qrisp import (
     cy,
     cz,
     gphase,
+    p,
     rx,
     ry,
     rz,
@@ -70,7 +71,7 @@ from qrisp import (
     invert,
     conjugate,
 )
-from qrisp.alg_primitives import amplitude_amplification, q_switch
+from qrisp.alg_primitives import amplitude_amplification, q_switch, QPE, QFT
 from qrisp.block_encodings import BlockEncoding
 from qrisp.jasp import make_jaspr, jrange, q_while_loop, q_cond, q_fori_loop, qache, terminal_sampling
 from qrisp.operators import X, Y, Z
@@ -1098,6 +1099,44 @@ def test_amplitude_amplification():
     assert (
         np.mean(result) >= 0.8
     ), f"Expected amplitude amplification to yield mostly 1s, got {result}"
+
+
+def test_quantum_fourier_transform():
+    """Test that the quantum Fourier transform produces the expected output state."""
+
+    def main():
+        qv = QuantumVariable(5)
+        h(qv)
+        QFT(qv)
+        return measure(qv)
+
+    mlir = _lower(main)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    assert result == 10 * [0]
+
+
+def test_quantum_phase_estimation():
+    """Test that the quantum phase estimation produces the expected output state."""
+
+    def U(qv):
+        x = 0.5
+        y = 0.125
+
+        p(x*2*np.pi, qv[0])
+        p(y*2*np.pi, qv[1])
+
+    def main():
+        qv = QuantumVariable(2)
+        h(qv)
+        res = QPE(qv, U, precision = 3)
+        return measure(res)
+
+    mlir = _lower(main)
+    validate_quake_mlir(mlir)
+    result = run_quake_mlir(mlir, shots=10)
+    for r in result:
+        assert r in {0, 0.125, 0.5, 0.625}
 
 
 def test_trotterization():
