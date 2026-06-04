@@ -77,7 +77,6 @@ from qrisp.circuit import (
     RXGate,
     RYGate,
     RZGate,
-    RZZGate,
     PGate,
     GPhaseGate,
     ClControlledOperation,
@@ -156,7 +155,7 @@ def _fuse_swap_with_neighbour(op_a, op_b):
                 half_swap_qc.cx(1, 0)
                 half_swap_qc.cx(0, 1)
                 return half_swap_qc.to_gate()
-            elif op_a.name == "rzz":
+            if op_a.name == "rzz":
                 # RZZ(θ, 0,1) · SWAP ⇒ 2 CX, RZ(θ), CX
                 half_rzz_qc = QuantumCircuit(2)
                 half_rzz_qc.cx(0, 1)
@@ -164,7 +163,7 @@ def _fuse_swap_with_neighbour(op_a, op_b):
                 half_rzz_qc.rz(op_a.params[0], 1)
                 half_rzz_qc.cx(0, 1)
                 return half_rzz_qc.to_gate()
-            elif op_a.name == "cp":
+            if op_a.name == "cp":
                 # CP(θ, 0,1) · SWAP ⇒ 2 CX, P(-θ/2,1), CX, P(θ/2,0), P(θ/2,1)
                 half_cp_qc = QuantumCircuit(2)
                 half_cp_qc.cx(0, 1)
@@ -174,7 +173,7 @@ def _fuse_swap_with_neighbour(op_a, op_b):
                 half_cp_qc.p(op_a.params[0] / 2, 0)
                 half_cp_qc.p(op_a.params[0] / 2, 1)
                 return half_cp_qc.to_gate()
-            elif op_a.name == "cz":
+            if op_a.name == "cz":
                 # CZ(0,1) · SWAP ⇒ H(1), CX(1,0), CX(0,1), H(0)
                 half_cz_qc = QuantumCircuit(2)
                 half_cz_qc.h(1)
@@ -225,8 +224,7 @@ def _fuse_parameterized_1q(op_a, op_b, gphase_array):
         if op_b.name == "rz":
             if param_sum == 0:
                 return _FUSION_CANCEL  # perfect cancellation
-            else:
-                return RZGate(param_sum)
+            return RZGate(param_sum)
         if op_b.name == "p":
             gphase_array[0] += op_a.global_phase
             if param_sum == 0:
@@ -255,7 +253,7 @@ def _fuse_parameterized_1q(op_a, op_b, gphase_array):
                 return _FUSION_CANCEL
             else:
                 return RXGate(param_sum)
-        elif op_a.name == "ry":
+        if op_a.name == "ry":
             if param_sum == 0:
                 return _FUSION_CANCEL
             else:
@@ -341,7 +339,7 @@ def _fuse_controlled_ops(op_a, op_b, gphase_array):
         )
         if temp is _FUSION_CANCEL:
             return _FUSION_CANCEL
-        elif temp is not None:
+        if temp is not None:
             # Re-wrap the fused base in a controlled wrapper.
             return ControlledOperation(
                 temp,
@@ -572,12 +570,10 @@ def _resolve_qubit_order(instr_a, instr_b):
         if a_sym and not b_sym:
             return instr_b.qubits
         return instr_a.qubits
-    else:
-        # Non-symmetric gate: require exact positional qubit match.
-        for i, qb in enumerate(instr_a.qubits):
-            if instr_b.qubits[i] != qb:
-                return None
-        return instr_a.qubits
+    for i, qb in enumerate(instr_a.qubits):
+        if instr_b.qubits[i] != qb:
+            return None
+    return instr_a.qubits
 
 
 def _fuse_instructions(instr_a, instr_b, gphase_array):
@@ -657,12 +653,12 @@ def _init_dag(qc):
     edge_dic = {}
 
     # Seed the DAG with "virtual" nodes for every qubit and clbit.
-    for i in range(qc.num_qubits()):
-        qubit_dic[qc.qubits[i]] = -i - 1
+    for i, qb in enumerate(qc.qubits):
+        qubit_dic[qb] = -i - 1
         G.add_node(-i - 1)
 
-    for i in range(len(qc.clbits)):
-        clbit_dic[qc.clbits[i]] = -i - 1
+    for i, cb in enumerate(qc.clbits):
+        clbit_dic[cb] = -i - 1
         G.add_node(-qc.num_qubits() - i - 1)
 
     # Work on a copy so we can mutate instructions in-place (for
@@ -728,15 +724,14 @@ def _emit_surviving_circuit(G, data_list, qc, gphase_array):
             if i < 0:
                 # Virtual qubit/clbit node — skip.
                 continue
-            else:
-                # Emit the instruction (unless it's a gphase whose value
-                # was already absorbed into the accumulated counter).
-                if data_list[i].op.name != "gphase":
-                    qc_new.append(
-                        data_list[i].op, data_list[i].qubits, qc.data[i].clbits
-                    )
-                else:
-                    gphase_array[0] += data_list[i].op.params[0]
+        # Emit the instruction (unless it's a gphase whose value
+        # was already absorbed into the accumulated counter).
+        if data_list[i].op.name != "gphase":
+            qc_new.append(
+                data_list[i].op, data_list[i].qubits, qc.data[i].clbits
+            )
+        else:
+            gphase_array[0] += data_list[i].op.params[0]
 
     # If accumulated global phase is non-zero, emit a gphase gate.
     if gphase_array[0] != 0:
@@ -864,10 +859,9 @@ def cancel_inverses(qc: QuantumCircuit) -> QuantumCircuit:
     #   c) If ALL those edges come from the SAME node, the instruction
     #      is "locally adjacent" to its predecessor and we can attempt
     #      to fuse/cancel them.
-    for i in range(len(data_list)):
+    for i, instr in enumerate(data_list):
 
         G.add_node(i)
-        instr = data_list[i]
 
         # Collect the immediate predecessors for every qubit.
         predecessors = set()

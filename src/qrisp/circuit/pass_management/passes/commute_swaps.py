@@ -79,9 +79,7 @@ def commute_swaps(qc: QuantumCircuit) -> QuantumCircuit:
 
     id_op = Operation(name="id", num_qubits=1)
 
-    for i in range(len(qc.data)):
-
-        instr = qc.data[i]
+    for instr in qc.data:
         qc_new.append(instr)
 
         if instr.op.name == "swap":
@@ -126,12 +124,6 @@ def commute_swaps(qc: QuantumCircuit) -> QuantumCircuit:
                     last_instruction_dic[qb] = []
 
     # Remove identity placeholders
-    i = 0
-    while i < len(qc_new.data):
-        instr = qc_new.data[i]
-        if instr.op.name == "id":
-            qc_new.data.pop(i)
-            continue
-        i += 1
+    qc_new.data = [instr for instr in qc_new.data if instr.op.name != "id"]
 
     return qc_new

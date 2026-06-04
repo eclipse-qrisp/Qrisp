@@ -24,7 +24,7 @@ Basic Pipeline
 
 Build a compilation pipeline by chaining passes together::
 
-    from qrisp import PassManager
+    from qrisp import QuantumCircuit, PassManager
     from qrisp import cancel_inverses, commute_swaps, combine_single_qubit_gates
 
     qc = QuantumCircuit(2)
@@ -156,12 +156,14 @@ Passes can also be used directly without a PassManager::
     qc.y(0)
 
     optimized_qc = cancel_inverses(qc)
-    # qc now contains only a Y gate
+    # optimized_qc now contains only a Y gate
 
 Targeting Native Gate Sets
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Combine passes to convert circuits to hardware-native gate sets::
+
+    from qrisp import remove_barriers
 
     qc = QuantumCircuit(3)
     qc.swap(0, 1)

@@ -247,7 +247,6 @@ class PassManager:
             Returns self after modification.
         """
         if isinstance(other, CircuitPass):
-            self._validate_pass(other)
             self._passes.append(other)
         elif isinstance(other, PassManager):
             self._passes.extend(other._passes)
