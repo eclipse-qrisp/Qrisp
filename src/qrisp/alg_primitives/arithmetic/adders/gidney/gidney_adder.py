@@ -21,7 +21,7 @@ import numpy as np
 
 from qrisp.alg_primitives.arithmetic.adders.gidney.cq_gidney_adder import *
 from qrisp.alg_primitives.arithmetic.adders.gidney.qq_gidney_adder import *
-from qrisp.alg_primitives.arithmetic.adders.adder_tools import ammend_inpl_adder
+from qrisp.alg_primitives.arithmetic.adders.adder_class import amend_inpl_adder
 from qrisp.environments import custom_control
 from qrisp.core import QuantumVariable
 
@@ -82,5 +82,5 @@ def gidney_adder(a, b, c_in=None, c_out=None):
 
 
 temp = gidney_adder.__doc__
-gidney_adder = ammend_inpl_adder(gidney_adder, ammend_cl_int=False)
+gidney_adder = amend_inpl_adder(gidney_adder, amend_cl_int=False)
 gidney_adder.__doc__ = temp

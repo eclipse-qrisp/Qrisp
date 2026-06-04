@@ -14,197 +14,502 @@
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
+
+Contains deliberately broken variants of the Cuccaro adder for
+demonstrating how ``inpl_adder_test`` catches different classes of bugs.
+
+Each bad adder mirrors the structure of the working
+:func:`~qrisp.alg_primitives.arithmetic.adders.cuccaro_adder.cuccaro_adder`
+but introduces a single surgical flaw that causes it to fail a specific
+assertion in ``_static_inpl_adder_test`` / ``_dynamic_inpl_adder_test``.
 """
 
-from qrisp.qtypes import QuantumFloat, QuantumVariable
-from qrisp.jasp import check_for_tracing_mode
+from qrisp.core import QuantumVariable, x, cx, mcx
+from qrisp.qtypes import QuantumFloat, QuantumBool
+from qrisp.environments import conjugate, custom_control
+from qrisp.misc import int_encoder
+from qrisp.jasp import jrange, jlen
+import jax.numpy as jnp
+
+@custom_control
+def flip_first_maj_cuccaro(a, b, c_in=None, c_out=None, ctrl=None):
+    """Like ``cuccaro_adder`` but the first MAJ gate uses ``cx(b[0], a[0])``
+    instead of ``cx(a[0], b[0])``.  This corrupts the carry chain and makes
+    every sum wrong when the low bit of ``a`` is set.
+
+    Bug: one cx target is wrong in the first MAJ gate.
+    Fails: QQ arithmetic assertion (step 1)."""
+
+    if not isinstance(a, QuantumVariable):
+        q_a = b.duplicate()
+        with conjugate(int_encoder)(q_a, a):
+            flip_first_maj_cuccaro(q_a, b, c_in=c_in, c_out=c_out, ctrl=ctrl)
+        q_a.delete()
+        return
+
+    if not isinstance(b, QuantumVariable):
+        raise ValueError("The second argument must be of type QuantumVariable.")
+
+    dim_a = a.size
+    dim_b = b.size
+    max_size = jnp.maximum(dim_a, dim_b)
+    effective_size_a = jnp.minimum(dim_a, dim_b)
+    a = a[:effective_size_a]
+    extension_size = jnp.maximum(0, dim_b - dim_a)
+    extension_anc_a = QuantumVariable(extension_size)
+    extended_a = a[:] + extension_anc_a[:]
+    a = extended_a
+    dim_a = jlen(a)
+    dim_b = jlen(b)
+    ancilla = QuantumFloat(max_size)
+
+    if c_in is not None:
+        if isinstance(c_in, QuantumBool):
+            c_in = c_in[0]
+        cx(c_in, ancilla[0])
+
+    if c_out is not None:
+        ancilla2 = c_out
+
+    cx(b[0], a[0])
+    cx(a[0], ancilla[0])
+    mcx([ancilla[0], b[0]], a[0])
+
+    for i in jrange(1, dim_a):
+        cx(a[i], b[i])
+        cx(a[i], a[i - 1])
+        mcx([a[i - 1], b[i]], a[i])
+
+    if c_out is not None:
+        cx(a[-1], ancilla2[0])
+
+    if ctrl is None:
+        for j in jrange(dim_a - 1):
+            i = dim_a - j - 1
+            x(b[i])
+            cx(a[i - 1], b[i])
+            mcx([a[i - 1], b[i]], a[i])
+            x(b[i])
+            cx(a[i], a[i - 1])
+            cx(a[i], b[i])
+
+        x(b[0])
+        cx(ancilla[0], b[0])
+        mcx([ancilla[0], b[0]], a[0])
+        x(b[0])
+        cx(a[0], ancilla[0])
+        cx(a[0], b[0])
+    else:
+        for j in jrange(dim_a - 1):
+            i = dim_a - j - 1
+            mcx([a[i - 1], b[i]], a[i])
+            mcx([ctrl, a[i - 1]], b[i])
+            cx(a[i], a[i - 1])
+            cx(a[i], b[i])
+
+        mcx([ancilla[0], b[0]], a[0])
+        mcx([ctrl, ancilla[0]], b[0])
+        cx(a[0], ancilla[0])
+        cx(a[0], b[0])
+
+    if c_in is not None:
+        cx(c_in, ancilla[0])
+
+    ancilla.delete()
+    extension_anc_a.delete()
 
 
-def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
+@custom_control
+def skip_uma_cuccaro(a, b, c_in=None, c_out=None, ctrl=None):
+    """Like ``cuccaro_adder`` but the UMA (un-majority) section is
+    skipped entirely. Without UMA the carry bits stay entangled in the
+    output, producing garbage.
 
-    def ammended_adder(
-        qf2,
-        qf1,
-        *args,
-        ignore_rounding_error=False,
-        ignore_overflow_error=True,
-        **kwargs,
-    ):
+    Bug: MAJ gates are applied but the UMA section is completely omitted.
+    Fails: QQ arithmetic assertion (step 1)."""
 
-        if check_for_tracing_mode():
-            return raw_inpl_adder(qf2, qf1)
+    if not isinstance(a, QuantumVariable):
+        q_a = b.duplicate()
+        with conjugate(int_encoder)(q_a, a):
+            skip_uma_cuccaro(q_a, b, c_in=c_in, c_out=c_out, ctrl=ctrl)
+        q_a.delete()
+        return
 
-        if isinstance(qf1, QuantumFloat) and isinstance(qf2, QuantumFloat) and False:
-            qs = qf1.qs
+    if not isinstance(b, QuantumVariable):
+        raise ValueError("The second argument must be of type QuantumVariable.")
 
-            # If qf2 has lower exponent, the qf2 bits with less significance than all of qf1
-            # can not be added to qf1 (rounding error)
-            if not ignore_rounding_error and qf1.exponent > qf2.exponent:
-                raise Exception(
-                    "Tried to add QuantumFloat to QuantumFloat of lower precision"
-                    " (set ignore_rounding_error = True)"
-                )
+    dim_a = a.size
+    dim_b = b.size
+    max_size = jnp.maximum(dim_a, dim_b)
+    effective_size_a = jnp.minimum(dim_a, dim_b)
+    a = a[:effective_size_a]
+    extension_size = jnp.maximum(0, dim_b - dim_a)
+    extension_anc_a = QuantumVariable(extension_size)
+    extended_a = a[:] + extension_anc_a[:]
+    a = extended_a
+    dim_a = jlen(a)
+    dim_b = jlen(b)
+    ancilla = QuantumFloat(max_size)
 
-            # If qf2 has higher maximum significance than qf1, the qf2 bits with higher
-            # significance than all of qf1 can not be added to qf1 (overflow error)
-            if not ignore_overflow_error and qf1.mshape[1] < qf2.mshape[1]:
-                raise Exception(
-                    "Tried to add QuantumFloat to QuantumFloat of lower precision"
-                    " (set ignore_overflow_error = True)"
-                )
+    if c_in is not None:
+        if isinstance(c_in, QuantumBool):
+            c_in = c_in[0]
+        cx(c_in, ancilla[0])
+    if c_out is not None:
+        ancilla2 = c_out
 
-            # Determine the significance range
-            # For instance for a QuantumFloat with datashape [-2,3]
-            # has significance range [-2,-1,0,1,2,3]
-            significance_range_qf1 = list(range(qf1.mshape[0], qf1.mshape[1] + 1))
-            significance_range_qf2 = list(range(qf2.mshape[0], qf2.mshape[1] + 1))
+    cx(a[0], b[0])
+    cx(a[0], ancilla[0])
+    mcx([ancilla[0], b[0]], a[0])
 
-            # Determine the intersection of the significance ranges
-            signficance_range_intersetion = list(
-                set(significance_range_qf1).intersection(significance_range_qf2)
-            )
+    for i in jrange(1, dim_a):
+        cx(a[i], b[i])
+        cx(a[i], a[i - 1])
+        mcx([a[i - 1], b[i]], a[i])
 
-            # Determine maximum and minimum significance of the addition
-            # The maximum significance is the maximum significance of qf1
-            # (since we are adding in-place)
-            # The minimum significance is the minimum of the intersection because
-            # if qf2.exponent < qf1.exponent
-            # we are allowed to ignore possible rounding errors
-            # (skip all significances lower than qf1.exponent)
-            # if qf2.exponent > qf1.exponent
-            # The qbits of qf1 with lower significance than all of qf2
-            # stay unchanged during addition
+    if c_out is not None:
+        cx(a[-1], ancilla2[0])
 
-            max_sig = max(significance_range_qf1)
-            min_sig = min(signficance_range_intersetion)
+    if c_in is not None:
+        cx(c_in, ancilla[0])
+    ancilla.delete()
+    extension_anc_a.delete()
 
-            # If the maximum significance is higher than the maximum signficance of qf2, we need
-            # to augment some ancilla qubits because the Cuccaro-procedure requires equal
-            # amount of input qubits
 
-            if max_sig > max(significance_range_qf2):
-                # print(max_sig-max(significance_range_qf2))
-                ancilla_var = QuantumVariable(
-                    max_sig - max(significance_range_qf2) - int(qf2.signed)
-                )
-                augmented_qf2_qbs = qf2.reg + ancilla_var.reg
-            else:
-                augmented_qf2_qbs = qf2.reg
+@custom_control
+def ctrl_ignorant_cuccaro(a, b, c_in=None, c_out=None, ctrl=None):
+    """Like ``cuccaro_adder`` but ignores the ``ctrl`` qubit: the addition
+    is applied unconditionally even when a control qubit is present.
+    Fails the controlled-test assertion ``c == b`` when the control qubit
+    is ``|0>``.
 
-            # Determine the bit window of which bits should participate in the Cuccaro-procedure
-            bit_window_1 = [
-                significance_range_qf1.index(min_sig),
-                significance_range_qf1.index(max_sig),
-            ]
+    Bug: the ctrl condition is ignored — addition is always applied.
+    Fails: controlled QQ / controlled CQ assertions (steps 3 & 4)."""
 
-            if max_sig > max(significance_range_qf2):
-                bit_window_2 = [
-                    significance_range_qf2.index(min_sig),
-                    len(augmented_qf2_qbs),
-                ]
-            else:
-                bit_window_2 = [
-                    significance_range_qf2.index(min_sig),
-                    significance_range_qf2.index(max_sig),
-                ]
+    if not isinstance(a, QuantumVariable):
+        q_a = b.duplicate()
+        with conjugate(int_encoder)(q_a, a):
+            ctrl_ignorant_cuccaro(q_a, b, c_in=c_in, c_out=c_out,
+                                  ctrl=ctrl)
+        q_a.delete()
+        return
 
-            # print(max_sig)
-            # print(ancilla_var_.size)
-            # print(significance_range_qf1)
-            # print(significance_range_qf2)
-            # print(bit_window_1)
-            # print(bit_window_2)
+    if not isinstance(b, QuantumVariable):
+        raise ValueError("The second argument must be of type QuantumVariable.")
 
-            # Determine qubit lists
-            qubit_list_1 = qf1.reg[bit_window_1[0] : bit_window_1[1]]
-            qubit_list_2 = augmented_qf2_qbs[bit_window_2[0] : bit_window_2[1]]
+    dim_a = a.size
+    dim_b = b.size
+    max_size = jnp.maximum(dim_a, dim_b)
+    effective_size_a = jnp.minimum(dim_a, dim_b)
+    a = a[:effective_size_a]
+    extension_size = jnp.maximum(0, dim_b - dim_a)
+    extension_anc_a = QuantumVariable(extension_size)
+    extended_a = a[:] + extension_anc_a[:]
+    a = extended_a
+    dim_a = jlen(a)
+    dim_b = jlen(b)
+    ancilla = QuantumFloat(max_size)
 
-            # print(len(qubit_list_1))
-            # print(len(qubit_list_2))
+    if c_in is not None:
+        if isinstance(c_in, QuantumBool):
+            c_in = c_in[0]
+        cx(c_in, ancilla[0])
+    if c_out is not None:
+        ancilla2 = c_out
 
-            # Now we treat the sign bits
-            if qf2.signed and not qf1.signed:
-                raise Exception(
-                    "Tried to add signed QuantumFloat to non signed QuantumFloat"
-                )
+    cx(a[0], b[0])
+    cx(a[0], ancilla[0])
+    mcx([ancilla[0], b[0]], a[0])
 
-            # The signs are handled via modular arithmetic
-            # According to the Cuccaro-Paper this is done via manipulating
-            # the final qubits of the input list
-            # if True:
-            if qf1.signed:
-                qubit_list_1.append(qf1[-1])
+    for i in jrange(1, dim_a):
+        cx(a[i], b[i])
+        cx(a[i], a[i - 1])
+        mcx([a[i - 1], b[i]], a[i])
 
-                if qf2.signed:
-                    qubit_list_2.append(qf2[-1])
-                else:
-                    ancilla_var_2 = QuantumVariable(1)
-                    qubit_list_2.append(ancilla_var_2[0])
+    if c_out is not None:
+        cx(a[-1], ancilla2[0])
 
-            # If qf2 is signed and we augmented Qubits, we need to make sure
-            # the augmented qubits are set to 1 if qf2 is in a negative state
-            # (for details on this check how negative numbers are encoded)
-            if qf2.signed and max_sig > max(significance_range_qf2):
-                for i in range(ancilla_var.size):
-                    qs.cx(qf2[-1], ancilla_var[i])
+    for j in jrange(dim_a - 1):
+        i = dim_a - j - 1
+        x(b[i])
+        cx(a[i - 1], b[i])
+        mcx([a[i - 1], b[i]], a[i])
+        x(b[i])
+        cx(a[i], a[i - 1])
+        cx(a[i], b[i])
 
-            if len(qubit_list_1) > 1:
-                raw_inpl_adder(
-                    qubit_list_1[:-1],
-                    qubit_list_2[:-1],
-                    *args,
-                    carry_out=qubit_list_1[-1],
-                    **kwargs,
-                )
+    x(b[0])
+    cx(ancilla[0], b[0])
+    mcx([ancilla[0], b[0]], a[0])
+    x(b[0])
+    cx(a[0], ancilla[0])
+    cx(a[0], b[0])
 
-            # Perform 2nd step of the modular addition section
-            # qs.cx(qubit_list_2[-2], qubit_list_1[-1])
-            qs.cx(qubit_list_2[-1], qubit_list_1[-1])
+    if c_in is not None:
+        cx(c_in, ancilla[0])
+    ancilla.delete()
+    extension_anc_a.delete()
 
-            # Remove the 1s from the augmented qubits and delete
-            if len(augmented_qf2_qbs) != len(qf2.reg):
-                if qf2.signed:
-                    for i in range(ancilla_var.size):
-                        qs.cx(qf2[-1], ancilla_var[i])
 
-            try:
-                ancilla_var.delete()
-            except NameError:
-                pass
+@custom_control
+def z_phase_cuccaro(a, b, c_in=None, c_out=None, ctrl=None):
+    """Like ``cuccaro_adder`` but applies a phase gate ``p(0.3)`` to the
+    carry ancilla after the MAJ section.  The arithmetic is correct, but
+    the phase shift is detected by the angle-sum check.
 
-            if qf1.signed and not qf2.signed:
-                ancilla_var_2.delete()
+    Bug: an extra ``p(0.3)`` phase gate on the carry ancilla after MAJ.
+    Fails: phase-angle assertion in every test block."""
 
-        elif isinstance(qf2, (list, QuantumVariable)):
+    from qrisp import p as phase_gate
 
-            if len(qf2) < len(qf1):
-                ancilla_var = QuantumVariable(
-                    len(qf1) - len(qf2), name="add_ammend_anc*", qs=qf1[0].qs()
-                )
-                qf2 = list(qf2) + list(ancilla_var)
+    if not isinstance(a, QuantumVariable):
+        q_a = b.duplicate()
+        with conjugate(int_encoder)(q_a, a):
+            z_phase_cuccaro(q_a, b, c_in=c_in, c_out=c_out, ctrl=ctrl)
+        q_a.delete()
+        return
 
-            if len(qf2) > len(qf1):
-                qf2 = qf2[: len(qf1)]
+    if not isinstance(b, QuantumVariable):
+        raise ValueError("The second argument must be of type QuantumVariable.")
 
-            raw_inpl_adder(qf2, qf1, *args, **kwargs)
+    dim_a = a.size
+    dim_b = b.size
+    max_size = jnp.maximum(dim_a, dim_b)
+    effective_size_a = jnp.minimum(dim_a, dim_b)
+    a = a[:effective_size_a]
+    extension_size = jnp.maximum(0, dim_b - dim_a)
+    extension_anc_a = QuantumVariable(extension_size)
+    extended_a = a[:] + extension_anc_a[:]
+    a = extended_a
+    dim_a = jlen(a)
+    dim_b = jlen(b)
+    ancilla = QuantumFloat(max_size)
 
-            try:
-                ancilla_var.delete(verify=False)
-            except NameError:
-                pass
+    if c_in is not None:
+        if isinstance(c_in, QuantumBool):
+            c_in = c_in[0]
+        cx(c_in, ancilla[0])
+    if c_out is not None:
+        ancilla2 = c_out
 
-        elif isinstance(qf2, int) and ammend_cl_int:
+    cx(a[0], b[0])
+    cx(a[0], ancilla[0])
+    mcx([ancilla[0], b[0]], a[0])
 
-            ancilla_var = QuantumFloat(len(qf1), name="add_ammend_anc*", qs=qf1[0].qs())
+    phase_gate(0.3, ancilla[0])
 
-            ancilla_var.encode(qf2 % 2 ** len(qf1))
+    for i in jrange(1, dim_a):
+        cx(a[i], b[i])
+        cx(a[i], a[i - 1])
+        mcx([a[i - 1], b[i]], a[i])
 
-            raw_inpl_adder(ancilla_var, qf1, *args, **kwargs)
-            ancilla_var.encode(qf2 % 2 ** len(qf1), permit_dirtyness=True)
+    if c_out is not None:
+        cx(a[-1], ancilla2[0])
 
-            ancilla_var.delete(verify=False)
+    if ctrl is None:
+        for j in jrange(dim_a - 1):
+            i = dim_a - j - 1
+            x(b[i])
+            cx(a[i - 1], b[i])
+            mcx([a[i - 1], b[i]], a[i])
+            x(b[i])
+            cx(a[i], a[i - 1])
+            cx(a[i], b[i])
 
+        x(b[0])
+        cx(ancilla[0], b[0])
+        mcx([ancilla[0], b[0]], a[0])
+        x(b[0])
+        cx(a[0], ancilla[0])
+        cx(a[0], b[0])
+    else:
+        for j in jrange(dim_a - 1):
+            i = dim_a - j - 1
+            mcx([a[i - 1], b[i]], a[i])
+            mcx([ctrl, a[i - 1]], b[i])
+            cx(a[i], a[i - 1])
+            cx(a[i], b[i])
+
+        mcx([ancilla[0], b[0]], a[0])
+        mcx([ctrl, ancilla[0]], b[0])
+        cx(a[0], ancilla[0])
+        cx(a[0], b[0])
+
+    if c_in is not None:
+        cx(c_in, ancilla[0])
+    ancilla.delete()
+    extension_anc_a.delete()
+
+
+@custom_control
+def double_adjunct_cuccaro(a, b, c_in=None, c_out=None, ctrl=None):
+    """Like ``cuccaro_adder`` but the full MAJ+UMA round is applied twice,
+    so the result is ``b += 2*a`` instead of ``b += a``.
+
+    Bug: the MAJ+UMA pair is applied twice (self-adjunct).
+    Fails: QQ / CQ arithmetic assertions."""
+
+    if not isinstance(a, QuantumVariable):
+        q_a = b.duplicate()
+        with conjugate(int_encoder)(q_a, a):
+            double_adjunct_cuccaro(q_a, b, c_in=c_in, c_out=c_out,
+                                   ctrl=ctrl)
+        q_a.delete()
+        return
+
+    if not isinstance(b, QuantumVariable):
+        raise ValueError("The second argument must be of type QuantumVariable.")
+
+    dim_a = a.size
+    dim_b = b.size
+    max_size = jnp.maximum(dim_a, dim_b)
+    effective_size_a = jnp.minimum(dim_a, dim_b)
+    a = a[:effective_size_a]
+    extension_size = jnp.maximum(0, dim_b - dim_a)
+    extension_anc_a = QuantumVariable(extension_size)
+    extended_a = a[:] + extension_anc_a[:]
+    a = extended_a
+    dim_a = jlen(a)
+    dim_b = jlen(b)
+    ancilla = QuantumFloat(max_size)
+
+    if c_in is not None:
+        if isinstance(c_in, QuantumBool):
+            c_in = c_in[0]
+        cx(c_in, ancilla[0])
+    if c_out is not None:
+        ancilla2 = c_out
+
+    for _ in range(2):
+        cx(a[0], b[0])
+        cx(a[0], ancilla[0])
+        mcx([ancilla[0], b[0]], a[0])
+
+        for i in jrange(1, dim_a):
+            cx(a[i], b[i])
+            cx(a[i], a[i - 1])
+            mcx([a[i - 1], b[i]], a[i])
+
+        if c_out is not None:
+            cx(a[-1], ancilla2[0])
+
+        if ctrl is None:
+            for j in jrange(dim_a - 1):
+                i = dim_a - j - 1
+                x(b[i])
+                cx(a[i - 1], b[i])
+                mcx([a[i - 1], b[i]], a[i])
+                x(b[i])
+                cx(a[i], a[i - 1])
+                cx(a[i], b[i])
+
+            x(b[0])
+            cx(ancilla[0], b[0])
+            mcx([ancilla[0], b[0]], a[0])
+            x(b[0])
+            cx(a[0], ancilla[0])
+            cx(a[0], b[0])
         else:
-            raw_inpl_adder(qf2, qf1, *args, **kwargs)
+            for j in jrange(dim_a - 1):
+                i = dim_a - j - 1
+                mcx([a[i - 1], b[i]], a[i])
+                mcx([ctrl, a[i - 1]], b[i])
+                cx(a[i], a[i - 1])
+                cx(a[i], b[i])
 
-    return ammended_adder
+            mcx([ancilla[0], b[0]], a[0])
+            mcx([ctrl, ancilla[0]], b[0])
+            cx(a[0], ancilla[0])
+            cx(a[0], b[0])
+
+    if c_in is not None:
+        cx(c_in, ancilla[0])
+    ancilla.delete()
+    extension_anc_a.delete()
+
+
+@custom_control
+def mishandle_classical_cuccaro(a, b, c_in=None, c_out=None, ctrl=None):
+    """Like ``cuccaro_adder`` but encodes the classical input in the wrong
+    direction, effectively adding ``-a-1`` to ``b`` when ``a`` is an integer.
+    Fails the CQ arithmetic assertion ``(b + j) % 2**i == a``.
+
+    Bug: encodes ``-a-1`` (bitwise complement) instead of ``a``.
+    Fails: CQ arithmetic assertion (step 2)."""
+
+    if not isinstance(a, QuantumVariable):
+        q_a = b.duplicate()
+        with conjugate(int_encoder)(q_a, -a - 1):
+            mishandle_classical_cuccaro(q_a, b, c_in=c_in, c_out=c_out,
+                                        ctrl=ctrl)
+        q_a.delete()
+        return
+
+    if not isinstance(b, QuantumVariable):
+        raise ValueError("The second argument must be of type QuantumVariable.")
+
+    dim_a = a.size
+    dim_b = b.size
+    max_size = jnp.maximum(dim_a, dim_b)
+    effective_size_a = jnp.minimum(dim_a, dim_b)
+    a = a[:effective_size_a]
+    extension_size = jnp.maximum(0, dim_b - dim_a)
+    extension_anc_a = QuantumVariable(extension_size)
+    extended_a = a[:] + extension_anc_a[:]
+    a = extended_a
+    dim_a = jlen(a)
+    dim_b = jlen(b)
+    ancilla = QuantumFloat(max_size)
+
+    if c_in is not None:
+        if isinstance(c_in, QuantumBool):
+            c_in = c_in[0]
+        cx(c_in, ancilla[0])
+    if c_out is not None:
+        ancilla2 = c_out
+
+    cx(a[0], b[0])
+    cx(a[0], ancilla[0])
+    mcx([ancilla[0], b[0]], a[0])
+
+    for i in jrange(1, dim_a):
+        cx(a[i], b[i])
+        cx(a[i], a[i - 1])
+        mcx([a[i - 1], b[i]], a[i])
+
+    if c_out is not None:
+        cx(a[-1], ancilla2[0])
+
+    if ctrl is None:
+        for j in jrange(dim_a - 1):
+            i = dim_a - j - 1
+            x(b[i])
+            cx(a[i - 1], b[i])
+            mcx([a[i - 1], b[i]], a[i])
+            x(b[i])
+            cx(a[i], a[i - 1])
+            cx(a[i], b[i])
+
+        x(b[0])
+        cx(ancilla[0], b[0])
+        mcx([ancilla[0], b[0]], a[0])
+        x(b[0])
+        cx(a[0], ancilla[0])
+        cx(a[0], b[0])
+    else:
+        for j in jrange(dim_a - 1):
+            i = dim_a - j - 1
+            mcx([a[i - 1], b[i]], a[i])
+            mcx([ctrl, a[i - 1]], b[i])
+            cx(a[i], a[i - 1])
+            cx(a[i], b[i])
+
+        mcx([ancilla[0], b[0]], a[0])
+        mcx([ctrl, ancilla[0]], b[0])
+        cx(a[0], ancilla[0])
+        cx(a[0], b[0])
+
+    if c_in is not None:
+        cx(c_in, ancilla[0])
+    ancilla.delete()
+    extension_anc_a.delete()
