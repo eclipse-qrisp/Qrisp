@@ -153,7 +153,17 @@ def z(qubits):
     return qubits
 
 
-def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
+def mcx(
+    controls,
+    target,
+    method="auto",
+    ctrl_state=-1,
+    num_ancilla=1,
+    epsilon=None,
+    k=None,
+    seed=None,
+    inner_method="auto",
+):
     r"""
     .. _mcx:
 
@@ -188,6 +198,8 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             - A very unique way for synthesizing a logical AND. The Gidney Logical AND performs a circuit with T-depth 1 to compute the truth value and performs another circuit involving a measurement and a classically controlled CZ gate for uncomputation. The uncomputation circuit has T-depth 0, such that the combined T-depth is 1. Requires no ancillae. More details `here <https://arxiv.org/abs/1709.06648>`__. Works only for two control qubits.
         *   - ``hybrid``
             - A flexible method which combines the other available methods, such that the amount of used ancillae is customizable. After several ``balauca``-layers, the recursion is canceled by either a ``yong``, ``maslov`` or ``gray`` mcx, depending on what fits the most.
+        *   - ``approx``
+            - Mixed-unitary approximation from `arXiv:2510.07223 <https://arxiv.org/pdf/2510.07223>`__. Each call samples random parity checks and replaces a large MCX with a smaller exact MCX using only ``O(log(1 / epsilon))`` non-Clifford cost. This method is currently available only through :func:`qrisp.mcx`, not through gate objects such as :meth:`QuantumCircuit.mcx`.
         *   - ``auto``
             - Recompiles the mcx gate at compile time using the hybrid algorithm together with the information about how many clean/dirty ancillae qubits are available. For more information check :meth:`qrisp.QuantumSession.compile`.
 
@@ -208,12 +220,23 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         The Qubit to perform the X gate on.
     method : str, optional
         The synthesis method. Available are ``auto``, ``gray``, ``gray_pt``,
-        ``gray_pt_inv``, ``maslov``, ``balauca`` and ``yong``. The default is ``auto``.
+        ``gray_pt_inv``, ``maslov``, ``balauca``, ``yong`` and ``approx``.
+        The default is ``auto``.
     ctrl_state : int or str, optional
         The state on which to activate the X gate. The default is "1111..".
     num_ancilla : int, optional
         Specifies the amount of ancilla qubits to use. This parameter is used only if
         the method is set to ``hybrid``. The default is 1.
+    epsilon : float, optional
+        Error target for ``method="approx"``. If specified, the number of sampled
+        parity checks is chosen as ``ceil(log2(1 / epsilon))`` unless ``k`` is given.
+    k : int, optional
+        Explicit number of sampled parity checks for ``method="approx"``.
+    seed : int, optional
+        Optional deterministic sampling seed for ``method="approx"``.
+    inner_method : str, optional
+        Exact MCX method used for the small inner MCX synthesized by
+        ``method="approx"``. Phase-tolerant methods are not supported.
 
 
     Examples
@@ -539,6 +562,11 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
                 f"Given control state {ctrl_state} does not match control qubit amount {n}"
             )
     else:
+        if method == "approx":
+            raise Exception(
+                "The approx mcx method is not available in tracing mode"
+            )
+
         qubits_0 = controls
         if isinstance(
             qubits_0, (QuantumVariable, DynamicQubitArray)
@@ -552,6 +580,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         maslov_mcx,
         yong_mcx,
         jasp_balauca_mcx,  # Merge the import
+        approx_mcx,
     )
 
     if method in ["gray", "gray_pt", "gray_pt_inv"]:
@@ -612,6 +641,17 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
 
     elif method == "hybrid":
         hybrid_mcx(qubits_0, qubits_1, ctrl_state=ctrl_state, num_ancilla=num_ancilla)
+
+    elif method == "approx":
+        approx_mcx(
+            qubits_0,
+            qubits_1[0],
+            epsilon=epsilon,
+            k=k,
+            ctrl_state=ctrl_state,
+            seed=seed,
+            inner_method=inner_method,
+        )
 
     elif method == "amy":
         if len(qubits_0) != 2:
