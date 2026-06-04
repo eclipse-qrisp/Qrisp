@@ -724,14 +724,14 @@ def _emit_surviving_circuit(G, data_list, qc, gphase_array):
             if i < 0:
                 # Virtual qubit/clbit node — skip.
                 continue
-        # Emit the instruction (unless it's a gphase whose value
-        # was already absorbed into the accumulated counter).
-        if data_list[i].op.name != "gphase":
-            qc_new.append(
-                data_list[i].op, data_list[i].qubits, qc.data[i].clbits
-            )
-        else:
-            gphase_array[0] += data_list[i].op.params[0]
+            # Emit the instruction (unless it's a gphase whose value
+            # was already absorbed into the accumulated counter).
+            if data_list[i].op.name != "gphase":
+                qc_new.append(
+                    data_list[i].op, data_list[i].qubits, qc.data[i].clbits
+                )
+            else:
+                gphase_array[0] += data_list[i].op.params[0]
 
     # If accumulated global phase is non-zero, emit a gphase gate.
     if gphase_array[0] != 0:
