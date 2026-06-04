@@ -114,7 +114,7 @@ def convert_to_cz(
                     qc_new.cz(instr.qubits[0], instr.qubits[1])
                     qc_new.h(instr.qubits[1])
                 elif strict:
-                    raise Exception(
+                    raise ValueError(
                         f"Don't know how to convert two-qubit gate {op.name!r} to CZ"
                     )
                 else:

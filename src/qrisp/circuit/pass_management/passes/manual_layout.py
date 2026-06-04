@@ -106,7 +106,6 @@ def manual_layout(
                 f"Each circuit qubit must be mapped to a unique physical qubit."
             )
 
-        max_index = max(qubit_mapping) if qubit_mapping else 0
         num_physical_qubits = max(qubit_mapping) + 1 if qubit_mapping else 0
 
         new_qc = qc.copy()

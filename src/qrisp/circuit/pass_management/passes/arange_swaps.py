@@ -108,9 +108,7 @@ def arange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
     qc_new = qc.clearcopy()
 
     used_qubits = set()
-    for i in range(len(qc.data)):
-
-        instr = qc.data[i]
+    for instr in qc.data:
 
         # Skip allocation instructions
         if "alloc" in instr.op.name:
@@ -128,7 +126,7 @@ def arange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
                 instr.qubits = instr.qubits[::-1]
 
         # Track which qubits have been used
-        used_qubits = used_qubits.union(instr.qubits)
+        used_qubits.update(instr.qubits)
 
         qc_new.append(instr)
 

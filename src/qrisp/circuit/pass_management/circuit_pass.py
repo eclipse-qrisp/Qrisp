@@ -176,8 +176,7 @@ class CircuitPass:
             )
 
         # Check that the input circuit contains no measurements
-        for instr in qc.data:
-            if instr.op.name == "measure":
+        if any(instr.op.name == "measure" for instr in qc.data):
                 raise ValueError(
                     "The input circuit contains measurement instructions, "
                     "which break unitarity. Remove measurements before "
@@ -188,8 +187,7 @@ class CircuitPass:
         transformed_qc = self(qc.copy())
 
         # Check that the transformed circuit contains no measurements
-        for instr in transformed_qc.data:
-            if instr.op.name == "measure":
+        if any(instr.op.name == "measure" for instr in transformed_qc.data):
                 raise ValueError(
                     "The transformed circuit contains measurement "
                     "instructions, which break unitarity. The pass should "
