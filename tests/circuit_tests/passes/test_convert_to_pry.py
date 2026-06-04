@@ -1,8 +1,8 @@
+
+from qrisp import QuantumCircuit, Qubit, U3Gate, PRYGate
+import numpy as np
 def test_convert_to_pry():
     """Test the convert_to_pry function with various quantum circuits."""
-    from plasma_sabre.passes import convert_to_pry, PRYGate
-    from qrisp import QuantumCircuit, Qubit, U3Gate
-    import numpy as np
     
     print("Testing convert_to_pry...")
     

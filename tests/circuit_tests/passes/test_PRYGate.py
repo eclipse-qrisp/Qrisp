@@ -1,8 +1,9 @@
+from qrisp.circuit import PRYGate
+from qrisp import U3Gate
+import numpy as np
+
 def test_PRYGate():
     """Test the PRYGate class functionality."""
-    from plasma_sabre.passes import PRYGate
-    from qrisp import U3Gate
-    import numpy as np
     
     print("Testing PRYGate...")
     

@@ -36,7 +36,7 @@ def convert_to_pry(qc: QuantumCircuit) -> QuantumCircuit:
         
     Example
     -------
-    >>> from plasma_sabre.passes import PassManager, convert_to_pry
+    >>> from qrisp import PassManager, convert_to_pry
     >>> pm = PassManager()
     >>> pm.add_pass(convert_to_pry)
     >>> transpiled_qc = pm.run(qc)
@@ -55,13 +55,6 @@ def convert_to_pry(qc: QuantumCircuit) -> QuantumCircuit:
             else:
                 conversion_op = op
             
-            # Skip pulse operations (they have no .lam / .phi attributes
-            # and must survive transpilation unchanged)
-            from plasma_sabre.iqm.pulse_operation import IQMPulseOperation  # noqa: PLC0415
-            if isinstance(conversion_op, IQMPulseOperation):
-                qc_new.append(qc.data[i])
-                continue
-
             if abs(conversion_op.lam + conversion_op.phi) < 1E-5:
                 if abs(conversion_op.theta % (2 * np.pi)) < 1E-5:
                     continue
