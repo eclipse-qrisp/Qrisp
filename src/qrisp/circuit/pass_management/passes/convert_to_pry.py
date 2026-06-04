@@ -45,15 +45,13 @@ def convert_to_pry(qc: QuantumCircuit) -> QuantumCircuit:
     
     for i in range(len(qc.data)):
         op = qc.data[i].op
-        if op.num_qubits == 1 and not op.name == "measure":
-            
-            if "alloc" in op.name:
-                continue
-            
-            if isinstance(op, ClControlledOperation):
-                conversion_op = op.base_op
-            else:
-                conversion_op = op
+
+        if isinstance(op, ClControlledOperation):
+            conversion_op = op.base_op
+        else:
+            conversion_op = op
+        
+        if isinstance(conversion_op, U3Gate):
             
             if abs(conversion_op.lam + conversion_op.phi) < 1E-5:
                 if abs(conversion_op.theta % (2 * np.pi)) < 1E-5:

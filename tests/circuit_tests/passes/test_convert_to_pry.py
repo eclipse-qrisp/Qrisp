@@ -24,14 +24,16 @@ def test_convert_to_pry():
     print("Testing convert_to_pry...")
     
     # Test case 1: Simple single-qubit gate conversion
-    qc = QuantumCircuit()
-    q0 = Qubit("q0")
-    qc.add_qubit(q0)
+    qc = QuantumCircuit(2)
     
     # Add a U3 gate that needs conversion
     theta, phi, lam = np.pi/2, np.pi/4, np.pi/8
     u3_gate = U3Gate(theta, phi, lam)
-    qc.append(u3_gate, [q0])
+    qc.append(u3_gate, 0)
+    qc.reset(0)
+    qc.measure(0)
+    qc.cz(0, 1)
+    qc.barrier([0,1])
     
     qc_converted = convert_to_pry(qc)
     
@@ -42,6 +44,11 @@ def test_convert_to_pry():
     converted_ops = [instr.op for instr in qc_converted.data]
     pry_ops = [op for op in converted_ops if isinstance(op, PRYGate)]
     
+    assert len(pry_ops)
+    for op in converted_ops:
+        if isinstance(op, U3Gate) and not isinstance(op, PRYGate):
+            assert False, "Left non-converted U3 Gate"
+
     # For a general U3 gate where lam ≠ -phi, we expect 2 PRY gates
     if abs(lam + phi) >= 1E-5:
         assert len(pry_ops) >= 1, "Should have at least one PRYGate for general U3"
