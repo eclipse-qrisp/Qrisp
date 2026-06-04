@@ -283,7 +283,7 @@ class BaseMetric(ABC):
 # ``jax.pure_callback`` to prevent XLA from inlining it at every call site.
 # ---------------------------------------------------------------------------
 
-def _should_use_profiling_callback(jaxpr, call_graph_stats):
+def _should_use_profiling_callback(jaxpr : Jaxpr | ClosedJaxpr, call_graph_stats: dict | None) -> bool:
     """
     Decide whether *jaxpr* should be called via ``jax.pure_callback``.
 
