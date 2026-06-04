@@ -19,6 +19,8 @@
 import numpy as np
 
 from qrisp import QuantumCircuit
+from qrisp.core import cx, mcx
+from qrisp.core.gate_application_functions import append_operation
 
 # Adder based on https://arxiv.org/abs/1712.02630
 
@@ -41,38 +43,75 @@ def TR_gate():
     return result
 
 
-def thapliyal_procedure(qc, qubit_list_1, qubit_list_2, output_qubit):
-    if len(qubit_list_1) != len(qubit_list_2):
-        raise Exception(
-            "Tried to call Thapliyal-procedure with qubit lists of unequal length"
-        )
+def thapliyal_adder(a, b):
+    """
+    In-place adder based on https://arxiv.org/abs/1712.02630
 
-    n = len(qubit_list_1)
+    Performs ``b += a`` in-place. The first ``size - 1`` qubits of each register
+    hold the values being summed, and ``b[-1]`` serves as the carry-out qubit.
+    The last qubit of ``a`` is not touched by the algorithm and is available
+    for post-processing by the caller.
+
+    Parameters
+    ----------
+    a : QuantumVariable
+        The source register (value to add).
+    b : QuantumVariable
+        The target register (modified in-place). Must have the same size as ``a``.
+        The last qubit of ``b`` functions as the carry-out.
+
+    Raises
+    ------
+    Exception
+        If ``a`` and ``b`` have different sizes.
+
+    Examples
+    --------
+    >>> from qrisp import QuantumFloat
+    >>> from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_adder
+    >>> a = QuantumFloat(3)
+    >>> b = QuantumFloat(3)
+    >>> a[:] = 2
+    >>> b[:] = 4
+    >>> thapliyal_adder(a, b)
+    >>> print(b)
+    {6: 1.0}
+    """
+    n = a.size if hasattr(a, "size") else len(a)
+
+    if hasattr(b, "size"):
+        if b.size != n:
+            raise Exception("a and b must have the same size")
+    elif len(b) != n:
+        raise Exception("a and b must have the same size")
+
+    N = n - 1
+
+    if N <= 0:
+        return
 
     # Step 1
-    for i in range(1, n):
-        qc.cx(qubit_list_1[i], qubit_list_2[i])
+    for i in range(1, N):
+        cx(a[i], b[i])
 
     # Step 2
-    qc.cx(qubit_list_1[-1], output_qubit)
-
-    for i in range(n - 2, 0, -1):
-        qc.cx(qubit_list_1[i], qubit_list_1[i + 1])
+    cx(a[N - 1], b[-1])
+    for i in range(N - 2, 0, -1):
+        cx(a[i], a[i + 1])
 
     # Step 3
-    for i in range(n - 1):
-        qc.mcx([qubit_list_1[i], qubit_list_2[i]], qubit_list_1[i + 1])
+    for i in range(N - 1):
+        mcx([a[i], b[i]], a[i + 1])
 
     # Step 4
-    qc.append(TR_gate(), [qubit_list_1[-1], qubit_list_2[-1], output_qubit])
-
-    for i in range(n - 2, -1, -1):
-        qc.append(TR_gate(), [qubit_list_1[i], qubit_list_2[i], qubit_list_1[i + 1]])
+    append_operation(TR_gate(), [a[N - 1], b[N - 1], b[-1]])
+    for i in range(N - 2, -1, -1):
+        append_operation(TR_gate(), [a[i], b[i], a[i + 1]])
 
     # Step 5
-    for i in range(1, n - 1):
-        qc.cx(qubit_list_1[i], qubit_list_1[i + 1])
+    for i in range(1, N - 1):
+        cx(a[i], a[i + 1])
 
     # Step 6
-    for i in range(1, n):
-        qc.cx(qubit_list_1[i], qubit_list_2[i])
+    for i in range(1, N):
+        cx(a[i], b[i])

@@ -18,7 +18,7 @@
 
 from qrisp import *
 from qrisp.alg_primitives.arithmetic.adders.cuccaro_adder import cuccaro_adder
-from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_procedure
+from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_adder
 
 class RemovedFunctionError(Exception):
     pass
@@ -190,9 +190,7 @@ def inpl_add(
             qs.cx(qf2[-1], ancilla_var[i])
 
     if adder == "thapliyal":
-        thapliyal_procedure(
-            qs, qubit_list_2[:-1], qubit_list_1[:-1], output_qubit=qubit_list_1[-1]
-        )
+        thapliyal_adder(qubit_list_2, qubit_list_1)
     else:
         raise Exception("Adder " + adder + " not implemented")
 

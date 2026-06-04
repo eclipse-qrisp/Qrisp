@@ -98,7 +98,7 @@ def test_thapliyal_adder_fails_static():
     ``len(a)`` raises ``TracerIntegerConversionError`` on a traced
     ``QuantumFloat``, so the adder is valid in neither mode."""
 
-    from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_procedure
+    from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_adder
 
     def thap_adder(a, b):
         if not isinstance(a, QuantumFloat):
@@ -107,10 +107,9 @@ def test_thapliyal_adder_fails_static():
             thap_adder(q_a, b)
             q_a.delete()
             return
-        qs = a.qs
         n = len(a)
         if n > 1:
-            thapliyal_procedure(qs, list(a.reg[:n-1]), list(b.reg[:n-1]), b.reg[n-1])
+            thapliyal_adder(a, b)
 
     with pytest.raises(AssertionError, match=r".*failed the static test.*"):
         inpl_adder_test(thap_adder, mode="static")
@@ -125,40 +124,35 @@ def test_mishandle_classical_cuccaro():
 
 
 # -----------------------------------------------------------------------------
-# Notes on the Thapliyal adder (``thapliyal_procedure``)
+# Notes on the Thapliyal adder (``thapliyal_adder``)
 # -----------------------------------------------------------------------------
-# ``thapliyal_procedure`` in ``qrisp.alg_primitives.arithmetic.adders`` is
-# based on https://arxiv.org/abs/1712.02630.  It accepts a ``QuantumCircuit``
-# as its first argument — an old signature that predates the current
-# ``QuantumSession``-based infrastructure and only works in static mode.
+# ``thapliyal_adder`` in ``qrisp.alg_primitives.arithmetic.adders`` is
+# based on https://arxiv.org/abs/1712.02630.  It accepts ``QuantumVariable``
+# arguments and applies gates via the ``cx`` / ``mcx`` / ``append_operation``
+# primitives from ``qrisp.core``.  It only works in static mode.
 #
 # Known issues that a future refactor should address:
 #
-# 1. **Signature** – ``(qc, qubit_list_1, qubit_list_2, output_qubit)``
-#    is incompatible with the ``(a, b, ...)`` convention expected by
-#    ``inpl_adder_test``.  It should be changed to accept
-#    ``QuantumVariable`` / ``QuantumFloat`` arguments directly.
-#
-# 2. **Static-only** – The function uses Python ``for i in range(1, n)``,
+# 1. **Static-only** – The function uses Python ``for i in range(1, n)``,
 #    plain-list slicing, and assumes concrete qubit indices.  It cannot be
 #    traced by Jasp and needs to be rewritten with ``jrange``,
 #    ``DynamicQubitArray``, and ``jnp`` primitives.
 #
-# 3. **Size-1 edge case** – When both inputs have size 1, the slicing
-#    ``qubit_list[:-1]`` produces an empty list and the procedure raises
-#    ``IndexError``.  A size-1 adder should fall back to a single ``cx``.
+# 2. **Size-1 edge case** – When both inputs have size 1, the internal
+#    register size ``N = n - 1`` is 0 and the function becomes a no-op.
+#    A size-1 adder should fall back to a single ``cx``.
 #
-# 4. **Unequal-size handling** – The intended contract for the new adder:
+# 3. **Unequal-size handling** – The intended contract for the new adder:
 #    only the first input's size may be adjusted (reduced for modulo
 #    addition, increased via ancillas).  The second input's size must not
 #    be changed because extra ancillas used during in-place addition
 #    cannot be safely uncomputed and deleted afterwards.
 #
-# 5. **Controlled variant** – A ``@custom_control``-compatible version
+# 4. **Controlled variant** – A ``@custom_control``-compatible version
 #    should be provided so the adder works inside ``with control(qbl):``
 #    blocks in both static and dynamic modes.
 #
-# 6. **Classical-quantum** – An ``int`` first argument must be converted
+# 5. **Classical-quantum** – An ``int`` first argument must be converted
 #    to a quantum register automatically (e.g. via ``conjugate`` /
 #    ``int_encoder``) so that ``inpl_adder(j, qf)`` works in both modes.
 # -----------------------------------------------------------------------------
