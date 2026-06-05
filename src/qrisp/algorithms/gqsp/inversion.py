@@ -38,6 +38,8 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
 
     - Quantum Eigenvalue Transformation (QET) ($A$ must be **Hermitian**)
 
+    - Quantum Singular Value Transformation (QSVT)
+
     - Generalized Quantum Singular Value Transform (GQSVT)
 
     using a polynomial approximation of $1/x$ over the domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$.
@@ -55,10 +57,12 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
     kappa : float
         An upper bound for the condition number $\kappa$ of $A$.
         This value defines the "gap" around zero where the function $1/x$ is not approximated.
-    method : {"QET", "GQSVT"}
+    method : {"QET", "QSVT","GQSVT"}
         The method for implementing the inversion.
 
         - ``"QET"``: Quantum Eigenvalue Transform ($A$ must be Hermitian)
+
+        - ``"QSVT"``: Quantum Singular Value Transform
 
         - ``"GQSVT"``: Generalized Quantum Singular Value Transform
 
