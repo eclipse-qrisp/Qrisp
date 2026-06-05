@@ -17,6 +17,9 @@
 """
 
 
+
+
+
 def test_quantum_arithmetic():
     import numpy as np
     from qrisp import h, multi_measurement, q_div, QuantumFloat, QuantumBool
@@ -182,12 +185,13 @@ def test_quantum_arithmetic():
     
     # Test in-place multiplication
     from qrisp.alg_primitives.arithmetic import inpl_q_int_mult
+    from qrisp.alg_primitives.arithmetic.adders.fourier_adder import fourier_adder
     n = 7
     a = QuantumFloat(n)
     h(a)
     b = QuantumFloat(n)
     b[:] = a
-    inpl_q_int_mult(a, 5, inpl_adder = gidney_adder)
+    inpl_q_int_mult(a, 5, inpl_adder = fourier_adder)
     
     meas_res = multi_measurement([a,b])
 

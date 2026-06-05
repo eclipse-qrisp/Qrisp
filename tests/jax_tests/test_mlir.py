@@ -16,10 +16,41 @@
 ********************************************************************************
 """
 
+import pytest
+import re
 from qrisp import *
 from qrisp.operators import a, c
 
-def test_mlir_generation():
+# StableHLO ops that stablehlo-legalize-to-linalg does NOT lower
+# These require specialized lowering patterns not in the standard pass
+STABLEHLO_OPS_NOT_LOWERED = {
+    'stablehlo.scatter',   # Indexed tensor updates - no linalg equivalent
+    'stablehlo.return',    # Block terminators inside scatter/gather regions
+}
+
+def assert_stablehlo_arithmetic_lowered(mlir_str):
+    """
+    Assert that StableHLO arithmetic operations have been lowered.
+    
+    Checks that common arithmetic/element-wise ops are not present,
+    while allowing known exceptions (like scatter) to remain.
+    
+    Raises AssertionError with details if unlowered ops are found.
+    """
+    # Find all stablehlo ops in the MLIR string
+    stablehlo_ops = set(re.findall(r'stablehlo\.\w+', mlir_str))
+    
+    # Remove known exceptions
+    unexpected_ops = stablehlo_ops - STABLEHLO_OPS_NOT_LOWERED
+    
+    if unexpected_ops:
+        raise AssertionError(
+            f"StableHLO ops should be lowered but found: {unexpected_ops}. "
+            f"Only {STABLEHLO_OPS_NOT_LOWERED} are expected to remain."
+        )
+
+@pytest.mark.parametrize("lower_stablehlo", [False, True])
+def test_mlir_generation(lower_stablehlo):
     
     
     # Test some features to make sure mlir generation works properly
@@ -43,7 +74,7 @@ def test_mlir_generation():
         return expectation_value(inner, shots = i*10)(i)
 
     jaspr = make_jaspr(main)(2)
-    xdsl_module = jaspr.to_mlir()
+    xdsl_module = jaspr.to_mlir(lower_stablehlo=lower_stablehlo)
 
     # Test wheter stablehlo control flow is properly removed    
     
@@ -62,7 +93,7 @@ def test_mlir_generation():
         
 
     jaspr = make_jaspr(main)()
-    xdsl_module = jaspr.to_mlir()
+    xdsl_module = jaspr.to_mlir(lower_stablehlo=lower_stablehlo)
 
     mlir_str = str(xdsl_module)
     
@@ -86,9 +117,10 @@ def test_mlir_generation():
         return phi
 
     jaspr = make_jaspr(main)()
-    mlir = jaspr.to_mlir()
+    mlir = jaspr.to_mlir(lower_stablehlo=lower_stablehlo)
 
-def test_mlir_basic_dialect_operations():
+@pytest.mark.parametrize("lower_stablehlo", [False, True])
+def test_mlir_basic_dialect_operations(lower_stablehlo):
     """
     Test that basic JASP dialect operations are properly emitted in MLIR.
     This verifies the lowering rules for fundamental quantum operations.
@@ -112,15 +144,20 @@ def test_mlir_basic_dialect_operations():
     
     # Create jaspr and convert to MLIR
     jaspr = make_jaspr(main)()
-    xdsl_module = jaspr.to_mlir()
+    xdsl_module = jaspr.to_mlir(lower_stablehlo=lower_stablehlo)
     mlir_str = str(xdsl_module)
     
     # Verify that JASP dialect operations appear in the MLIR
     assert "jasp.create_qubits" in mlir_str, "create_qubits operation not found in MLIR"
     assert "jasp.measure" in mlir_str, "measure operation not found in MLIR"
     assert "jasp.quantum_gate" in mlir_str or "jasp.gate" in mlir_str, "gate operations not found in MLIR"
+    
+    # Verify StableHLO arithmetic operations are lowered when lower_stablehlo=True
+    if lower_stablehlo:
+        assert_stablehlo_arithmetic_lowered(mlir_str)
 
-def test_mlir_quantum_control_flow_rewriting():
+@pytest.mark.parametrize("lower_stablehlo", [False, True])
+def test_mlir_quantum_control_flow_rewriting(lower_stablehlo):
     """
     Test that StableHLO control flow is properly rewritten to SCF for quantum types.
     Verifies the fix_quantum_control_flow function works correctly.
@@ -152,7 +189,7 @@ def test_mlir_quantum_control_flow_rewriting():
     
     # Create jaspr and convert to MLIR
     jaspr = make_jaspr(main)()
-    xdsl_module = jaspr.to_mlir()
+    xdsl_module = jaspr.to_mlir(lower_stablehlo=lower_stablehlo)
     mlir_str = str(xdsl_module)
     
     # Verify that StableHLO control flow has been removed
@@ -164,7 +201,8 @@ def test_mlir_quantum_control_flow_rewriting():
     assert "scf.if" in mlir_str or "scf.while" in mlir_str or "scf.yield" in mlir_str, \
         "SCF control flow operations should be present"
 
-def test_mlir_grovers_algorithm():
+@pytest.mark.parametrize("lower_stablehlo", [False, True])
+def test_mlir_grovers_algorithm(lower_stablehlo):
     """
     Test MLIR generation and execution for Grover's algorithm.
     Verifies that complex algorithms can be lowered to MLIR correctly.
@@ -186,14 +224,19 @@ def test_mlir_grovers_algorithm():
     
     # Test MLIR generation
     jaspr = make_jaspr(main)()
-    xdsl_module = jaspr.to_mlir()
+    xdsl_module = jaspr.to_mlir(lower_stablehlo=lower_stablehlo)
     mlir_str = str(xdsl_module)
     
     # Verify MLIR contains expected operations
     assert "jasp.create_qubits" in mlir_str, "Should contain qubit creation"
     assert "jasp.quantum_gate" in mlir_str or "jasp.gate" in mlir_str, "Should contain quantum gates"
+    
+    # Verify StableHLO arithmetic operations are lowered when lower_stablehlo=True
+    if lower_stablehlo:
+        assert_stablehlo_arithmetic_lowered(mlir_str)
 
-def test_mlir_qae_algorithm():
+@pytest.mark.parametrize("lower_stablehlo", [False, True])
+def test_mlir_qae_algorithm(lower_stablehlo):
     """
     Test MLIR generation for Quantum Amplitude Estimation (QAE).
     Verifies that complex estimation algorithms can be lowered to MLIR correctly.
@@ -215,13 +258,17 @@ def test_mlir_qae_algorithm():
     
     # Test MLIR generation
     jaspr = make_jaspr(main)()
-    xdsl_module = jaspr.to_mlir()
+    xdsl_module = jaspr.to_mlir(lower_stablehlo=lower_stablehlo)
     mlir_str = str(xdsl_module)
     
     # Verify MLIR contains expected JASP dialect operations
     assert "jasp.create_qubits" in mlir_str, "Should contain qubit creation"
     assert "jasp.quantum_gate" in mlir_str or "jasp.gate" in mlir_str, "Should contain quantum gates"
     assert "jasp.measure" in mlir_str, "Should contain measurement operations"
+    
+    # Verify StableHLO arithmetic operations are lowered when lower_stablehlo=True
+    if lower_stablehlo:
+        assert_stablehlo_arithmetic_lowered(mlir_str)
     
     # Verify algorithm produces correct result using terminal_sampling wrapper
     @terminal_sampling
@@ -234,7 +281,8 @@ def test_mlir_qae_algorithm():
     assert np.round(meas_res[0.125], 2) == 0.5, f"Expected ~0.5 probability for 0.125"
     assert np.round(meas_res[0.875], 2) == 0.5, f"Expected ~0.5 probability for 0.875"
 
-def test_mlir_iqpe():
+@pytest.mark.parametrize("lower_stablehlo", [False, True])
+def test_mlir_iqpe(lower_stablehlo):
     """
     Test MLIR generation for Iterative Quantum Phase Estimation (IQPE).
     Verifies that IQPE can be properly lowered to MLIR.
@@ -257,15 +305,20 @@ def test_mlir_iqpe():
     
     # Test MLIR generation
     jaspr = make_jaspr(main)()
-    xdsl_module = jaspr.to_mlir()
+    xdsl_module = jaspr.to_mlir(lower_stablehlo=lower_stablehlo)
     mlir_str = str(xdsl_module)
     
     # Verify MLIR contains expected operations
     assert "jasp.create_qubits" in mlir_str, "Should contain qubit creation"
     assert "jasp.quantum_gate" in mlir_str or "jasp.gate" in mlir_str, "Should contain quantum gates"
     assert "jasp.measure" in mlir_str, "Should contain measurement operations"
+    
+    # Verify StableHLO arithmetic operations are lowered when lower_stablehlo=True
+    if lower_stablehlo:
+        assert_stablehlo_arithmetic_lowered(mlir_str)
 
-def test_mlir_iqae():
+@pytest.mark.parametrize("lower_stablehlo", [False, True])
+def test_mlir_iqae(lower_stablehlo):
     """
     Test MLIR generation for Iterative Quantum Amplitude Estimation (IQAE).
     Verifies that IQAE can be properly lowered to MLIR.
@@ -296,15 +349,20 @@ def test_mlir_iqae():
     
     # Test MLIR generation
     jaspr = make_jaspr(main)()
-    xdsl_module = jaspr.to_mlir()
+    xdsl_module = jaspr.to_mlir(lower_stablehlo=lower_stablehlo)
     mlir_str = str(xdsl_module)
     
     # Verify MLIR contains expected operations
     assert "jasp.create_qubits" in mlir_str, "Should contain qubit creation"
     assert "jasp.quantum_gate" in mlir_str or "jasp.gate" in mlir_str, "Should contain quantum gates"
     assert "jasp.measure" in mlir_str, "Should contain measurement operations"
+    
+    # Verify StableHLO arithmetic operations are lowered when lower_stablehlo=True
+    if lower_stablehlo:
+        assert_stablehlo_arithmetic_lowered(mlir_str)
 
-def test_mlir_hamiltonian_simulation():
+@pytest.mark.parametrize("lower_stablehlo", [False, True])
+def test_mlir_hamiltonian_simulation(lower_stablehlo):
     """
     Test MLIR generation for Hamiltonian simulation.
     Verifies that Hamiltonian trotterization can be lowered to MLIR.
@@ -328,14 +386,19 @@ def test_mlir_hamiltonian_simulation():
     
     # Test MLIR generation
     jaspr = make_jaspr(main)()
-    xdsl_module = jaspr.to_mlir()
+    xdsl_module = jaspr.to_mlir(lower_stablehlo=lower_stablehlo)
     mlir_str = str(xdsl_module)
     
     # Verify MLIR contains expected operations
     assert "jasp.create_qubits" in mlir_str, "Should contain qubit creation"
     assert "jasp.quantum_gate" in mlir_str or "jasp.gate" in mlir_str, "Should contain quantum gates"
+    
+    # Verify StableHLO arithmetic operations are lowered when lower_stablehlo=True
+    if lower_stablehlo:
+        assert_stablehlo_arithmetic_lowered(mlir_str)
 
-def test_mlir_qaoa():
+@pytest.mark.parametrize("lower_stablehlo", [False, True])
+def test_mlir_qaoa(lower_stablehlo):
     """
     Tests MLIR generation for the complete QAOA workflow as shown in the 
     'How to use QAOA in Jasp' documentation. This test verifies that the 
@@ -370,7 +433,7 @@ def test_mlir_qaoa():
 
     # Generate MLIR from the complete QAOA workflow
     jaspr = make_jaspr(main)()
-    xdsl_module = jaspr.to_mlir()
+    xdsl_module = jaspr.to_mlir(lower_stablehlo=lower_stablehlo)
     mlir_str = str(xdsl_module)
 
     # Verify that MLIR contains expected JASP dialect operations
@@ -384,8 +447,15 @@ def test_mlir_qaoa():
     
     # Verify that QAOA-specific operations are present
     assert "jasp.slice" in mlir_str or "jasp.get_qubit" in mlir_str, "MLIR should contain qubit indexing operations"
+    
+    # Verify StableHLO arithmetic operations are lowered when lower_stablehlo=True
+    if lower_stablehlo:
+        assert_stablehlo_arithmetic_lowered(mlir_str)
+        # Verify linalg/arith ops are present after lowering
+        assert "arith." in mlir_str or "linalg." in mlir_str, "Lowered arith/linalg ops should be present"
 
-def test_mlir_array_operations():
+@pytest.mark.parametrize("lower_stablehlo", [False, True])
+def test_mlir_array_operations(lower_stablehlo):
     """
     Test MLIR generation for quantum array operations.
     Verifies that array slicing and fusion are properly lowered to MLIR.
@@ -410,7 +480,7 @@ def test_mlir_array_operations():
     
     # Test MLIR generation
     jaspr = make_jaspr(main)()
-    xdsl_module = jaspr.to_mlir()
+    xdsl_module = jaspr.to_mlir(lower_stablehlo=lower_stablehlo)
     mlir_str = str(xdsl_module)
     
     # Verify MLIR contains expected operations
@@ -418,8 +488,13 @@ def test_mlir_array_operations():
     assert "jasp.slice" in mlir_str or "jasp.get_qubit" in mlir_str, "Should contain array access operations"
     assert "jasp.quantum_gate" in mlir_str or "jasp.gate" in mlir_str, "Should contain quantum gates"
     
+    # Verify StableHLO arithmetic operations are lowered when lower_stablehlo=True
+    if lower_stablehlo:
+        assert_stablehlo_arithmetic_lowered(mlir_str)
+    
 
-def test_mlir_jasp_dialect_registration():
+@pytest.mark.parametrize("lower_stablehlo", [False, True])
+def test_mlir_jasp_dialect_registration(lower_stablehlo):
     """
     Test that the JASP dialect is properly registered in xDSL.
 
@@ -448,7 +523,7 @@ def test_mlir_jasp_dialect_registration():
         return result
 
     jaspr = make_jaspr(main)()
-    xdsl_module = jaspr.to_mlir()
+    xdsl_module = jaspr.to_mlir(lower_stablehlo=lower_stablehlo)
     mlir_str = str(xdsl_module)
 
     # Types must appear without quotes
@@ -479,3 +554,24 @@ def test_mlir_jasp_dialect_registration():
     assert "jasp.create_qubits" in mlir_str, "create_qubits op not found in MLIR output"
     assert "jasp.quantum_gate" in mlir_str, "quantum_gate op not found in MLIR output"
     assert "jasp.measure" in mlir_str, "measure op not found in MLIR output"
+    
+    # Verify StableHLO arithmetic operations are lowered when lower_stablehlo=True
+    if lower_stablehlo:
+        assert_stablehlo_arithmetic_lowered(mlir_str)
+
+
+def test_mlir_linalg_folding_after_stablehlo_lowering():
+    """Test that 0-d linalg.generic operations are folded after lowering StableHLO control flow."""
+
+    def main():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        c = measure(qv[1])
+        with control(c==0):
+            x(qv[1])
+        return measure(qv[1])
+
+    jaspr = make_jaspr(main)()
+    xdsl_module = jaspr.to_mlir(lower_stablehlo=True)
+    mlir_str = str(xdsl_module)
+    assert "linalg.generic" not in mlir_str, "0-d linalg.generic should be folded after lowering StableHLO control flow"
