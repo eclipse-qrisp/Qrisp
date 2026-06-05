@@ -14,6 +14,7 @@ Algorithms & Applications
     
     GQSVT
     GQET
+    QSVT
     QET
     hamiltonian_simulation
     inversion
