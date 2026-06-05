@@ -162,15 +162,15 @@ def test_dynamic_qubit_array_concat_with_list():
         a = QuantumFloat(2)
         c_out = QuantumBool()
 
-        # Both a[:] + [c_out[0]] and [c_out[0]] + a[:]
-        # produce [a[0], a[1], c_out[0]] (since __radd__ appends to self)
+        # a[:] + [c_out[0]] appends c_out to the end → [a[0], a[1], c_out[0]]
         plus = a[:] + [c_out[0]]
+        # [c_out[0]] + a[:] prepends c_out to the front → [c_out[0], a[0], a[1]]
         radd = [c_out[0]] + a[:]
 
         # Flip a[0] via plus
         x(plus[0])
-        # Flip c_out[0] via radd
-        x(radd[2])
+        # Flip c_out[0] via radd (now at index 0 instead of 2)
+        x(radd[0])
 
         return measure(a), measure(c_out)
 
