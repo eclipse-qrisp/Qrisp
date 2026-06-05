@@ -152,8 +152,8 @@ class Operation:
         # Qfree basically means that the unitary is a permutation matrix
         # (up to local phase shifts). Permeability means that this gate commutes with
         # the z operator on a given qubit
-        self.is_qfree = None
-        self.permeability = {i: None for i in range(self.num_qubits)}
+        self.is_qfree: bool | None = None
+        self.permeability: dict[int, bool | None] = {i: None for i in range(self.num_qubits)}
 
     def copy(self):
         """
