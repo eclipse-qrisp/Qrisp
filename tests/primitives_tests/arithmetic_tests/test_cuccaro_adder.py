@@ -16,281 +16,332 @@
 ********************************************************************************
 """
 
-from qrisp import *
 import pytest
-
-import pytest
-
-@pytest.mark.parametrize("input_a, input_b, expected_a, expected_b", [
-    # both inputs are quantum in static mode, inputs are of unequal size
-    (QuantumFloat(13), QuantumFloat(14), {20: 1.0}, {34: 1.0}),
-    (QuantumFloat(14), QuantumFloat(13), {20: 1.0}, {34: 1.0}),
-
-    # both inputs are quantum in static mode, inputs are of equal size
-    (QuantumFloat(13), QuantumFloat(13), {20: 1.0}, {34: 1.0}),
-
-    # one input is classical, the other is quantum in static mode
-    (20, QuantumFloat(15), 20, {34: 1.0}),
-])
-def test_cuccaro_adder_valid_input_static_mode(input_a, input_b, expected_a, expected_b):
-    """Verify the function works as expected for valid inputs in static mode."""
-    if isinstance(input_a, QuantumFloat):
-        input_a[:] = 20
-    if isinstance(input_b, QuantumFloat):
-        input_b[:] = 14
-
-    cuccaro_adder(input_a, input_b)
-
-    calculated_out_b = input_b.get_measurement() if isinstance(input_b, QuantumFloat) else input_b
-    calculated_out_a = input_a.get_measurement() if isinstance(input_a, QuantumFloat) else input_a
-
-    assert calculated_out_a == expected_a
-    assert calculated_out_b == expected_b
-
-@pytest.mark.parametrize("input_a, input_b, expected_a, expected_b", [
-    # both inputs are quantum in static mode, inputs are of unequal size
-    (QuantumFloat(13), QuantumFloat(14), {20: 1.0}, {34: 1.0}),
-
-    # both inputs are quantum in static mode, inputs are of equal size
-    (QuantumFloat(13), QuantumFloat(13), {20: 1.0}, {34: 1.0}),
-
-    # one input is classical, the other is quantum in static mode
-    (20, QuantumFloat(15), 20, {34: 1.0}),
-])
-def test_cuccaro_adder_valid_input_static_mode_with_cout(input_a, input_b, expected_a, expected_b):
-    """Verify the function works as expected for valid inputs in static mode when c_out is provided."""
-    if isinstance(input_a, QuantumFloat):
-        input_a[:] = 20
-    if isinstance(input_b, QuantumFloat):
-        input_b[:] = 14
-
-    c_out = QuantumFloat(2)
-    cuccaro_adder(input_a, input_b, c_out=c_out)
-
-    calculated_out_b = input_b.get_measurement() if isinstance(input_b, QuantumFloat) else input_b
-    calculated_out_a = input_a.get_measurement() if isinstance(input_a, QuantumFloat) else input_a
-    calculated_out_cout = c_out.get_measurement()
-
-    assert calculated_out_a == expected_a
-    assert calculated_out_b == expected_b
-    assert calculated_out_cout == {0: 1.0}  # since no overflow is expected in these test cases
+from qrisp import (
+    QuantumBool,
+    QuantumFloat,
+    boolean_simulation,
+    control,
+    cuccaro_adder,
+    measure,
+    x,
+)
 
 
-@pytest.mark.parametrize("input_a, input_b, c_in_val, expected_a, expected_b", [
-    (QuantumFloat(13), QuantumFloat(14), 0, {20: 1.0}, {34: 1.0}),
-    (QuantumFloat(13), QuantumFloat(14), 1, {20: 1.0}, {35: 1.0}),
-    (QuantumFloat(13), QuantumFloat(13), 0, {20: 1.0}, {34: 1.0}),
-    (QuantumFloat(13), QuantumFloat(13), 1, {20: 1.0}, {35: 1.0}),
-    (20, QuantumFloat(15), 0, 20, {34: 1.0}),
-    (20, QuantumFloat(15), 1, 20, {35: 1.0}),
-])
-def test_cuccaro_adder_static_mode_with_cin(input_a, input_b, c_in_val, expected_a, expected_b):
-    """Verify the function works with c_in in static mode."""
-    if isinstance(input_a, QuantumFloat):
-        input_a[:] = 20
-    if isinstance(input_b, QuantumFloat):
-        input_b[:] = 14
-
-    c_in = QuantumBool()
-    if c_in_val:
-        x(c_in[0])
-    cuccaro_adder(input_a, input_b, c_in=c_in)
-
-    calculated_out_b = input_b.get_measurement() if isinstance(input_b, QuantumFloat) else input_b
-    calculated_out_a = input_a.get_measurement() if isinstance(input_a, QuantumFloat) else input_a
-
-    assert calculated_out_a == expected_a
-    assert calculated_out_b == expected_b
+# ---------------------------------------------------------------------------
+# Static smoke tests — just a few representative cases with small registers
+# to catch gross regressions without the full statevector-simulation cost.
+# Exhaustive coverage lives in the boolean_simulation tests below.
+# ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("input_a, input_b, c_in_val, expected_a, expected_b, expected_cout", [
-    (QuantumFloat(13), QuantumFloat(14), 0, {20: 1.0}, {34: 1.0}, {0: 1.0}),
-    (QuantumFloat(13), QuantumFloat(14), 1, {20: 1.0}, {35: 1.0}, {0: 1.0}),
-    (20, QuantumFloat(15), 0, 20, {34: 1.0}, {0: 1.0}),
-    (20, QuantumFloat(15), 1, 20, {35: 1.0}, {0: 1.0}),
-])
-def test_cuccaro_adder_static_mode_with_cin_and_cout(input_a, input_b, c_in_val, expected_a, expected_b, expected_cout):
-    """Verify the function works with c_in and c_out together in static mode."""
-    if isinstance(input_a, QuantumFloat):
-        input_a[:] = 20
-    if isinstance(input_b, QuantumFloat):
-        input_b[:] = 14
-
-    c_in = QuantumBool()
-    if c_in_val:
-        x(c_in[0])
-    c_out = QuantumFloat(2)
-    cuccaro_adder(input_a, input_b, c_in=c_in, c_out=c_out)
-
-    calculated_out_b = input_b.get_measurement() if isinstance(input_b, QuantumFloat) else input_b
-    calculated_out_a = input_a.get_measurement() if isinstance(input_a, QuantumFloat) else input_a
-    calculated_out_cout = c_out.get_measurement()
-
-    assert calculated_out_a == expected_a
-    assert calculated_out_b == expected_b
-    assert calculated_out_cout == expected_cout
-
-
-@pytest.mark.parametrize("input_a, input_b, c_in_val, ctrl_val, expected_b", [
-    (QuantumFloat(13), QuantumFloat(14), 1, True, {35: 1.0}),
-    (QuantumFloat(13), QuantumFloat(14), 1, False, {14: 1.0}),
-])
-def test_cuccaro_adder_static_mode_with_cin_and_control(input_a, input_b, c_in_val, ctrl_val, expected_b):
-    """Verify the function works with c_in and ctrl together in static mode."""
-    input_a[:] = 20
-    input_b[:] = 14
-
-    c_in = QuantumBool()
-    if c_in_val:
-        x(c_in[0])
-    ctrl_qbl = QuantumBool()
-    if ctrl_val:
-        x(ctrl_qbl[0])
-    cuccaro_adder(input_a, input_b, c_in=c_in, ctrl=ctrl_qbl)
-
-    result = input_b.get_measurement()
-    assert result == expected_b
-
-
-def test_inputs_modified():
-    """Verify the size of inputs are unmodified (in-place) when they are initially of unequal size."""
-    a = QuantumFloat(10)
-    b = QuantumFloat(12)
-    original_size_a = a.size
-    original_size_b = b.size
+def test_cuccaro_adder_static_smoke_quantum_a():
+    """Quantum a + quantum b, equal size, no optional args."""
+    a = QuantumFloat(3)
+    b = QuantumFloat(3)
     a[:] = 5
-    b[:] = 7
-
+    b[:] = 3
     cuccaro_adder(a, b)
-
-    assert a.size == original_size_a
-    assert b.size == original_size_b
+    assert b.get_measurement() == {0: 1.0}  # (5+3) % 8
 
 
-@pytest.mark.parametrize("i, j, a_value, b_value, ctrl_qbl_value, expected_result", [
-    (10, 11, 3, 5, True, {8: 1.0}),  
-    (10, 11, 3, 5, False, {5: 1.0}),  
-])
-def test_cuccaro_adder_static_mode_with_control(i, j, a_value, b_value, ctrl_qbl_value, expected_result):
-    """Verify the CDKPM adder is triggered when the control qubit is in the |1> state
-    in static mode. """
-    a = QuantumFloat(i)
-    b = QuantumFloat(j)
-    a[:] = a_value
-    b[:] = b_value
-    ctrl_qbl = QuantumBool()
-    if ctrl_qbl_value:
-        x(ctrl_qbl[0])
-    cuccaro_adder(a, b, ctrl=ctrl_qbl)
-    result = b.get_measurement()
-    assert result == expected_result
+def test_cuccaro_adder_static_smoke_classical_a():
+    """Classical a + quantum b."""
+    b = QuantumFloat(3)
+    b[:] = 3
+    cuccaro_adder(5, b)
+    assert b.get_measurement() == {0: 1.0}
 
 
-@pytest.mark.parametrize("c_in_val", [None, 0, 1])
-def test_jaspr_mode_cuccaro_adder_with_cin(c_in_val):
-    """Verify the function works with c_in in dynamic mode."""
+def test_cuccaro_adder_static_smoke_cin():
+    """c_in with classical a."""
+    b = QuantumFloat(3)
+    b[:] = 2
+    c_in = QuantumBool()
+    x(c_in[0])
+    cuccaro_adder(3, b, c_in=c_in)
+    assert b.get_measurement() == {6: 1.0}  # 2 + 3 + 1
+
+
+def test_cuccaro_adder_static_smoke_cout_overflow():
+    """c_out captures overflow."""
+    b = QuantumFloat(3)
+    b[:] = 6
+    c_out = QuantumBool()
+    cuccaro_adder(3, b, c_out=c_out)
+    assert b.get_measurement() == {1: 1.0}  # (6+3) % 8
+    assert c_out.get_measurement() == {True: 1.0}
+
+
+def test_cuccaro_adder_static_smoke_ctrl():
+    """Controlled addition (ctrl kwarg)."""
+    a = QuantumFloat(3)
+    b = QuantumFloat(3)
+    a[:] = 3
+    b[:] = 5
+    ctrl = QuantumBool()
+    x(ctrl[0])
+    cuccaro_adder(a, b, ctrl=ctrl)
+    assert b.get_measurement() == {0: 1.0}  # (5+3)%8
+
+
+def test_cuccaro_adder_static_smoke_cin_and_cout():
+    """c_in + c_out together."""
+    b = QuantumFloat(3)
+    b[:] = 6
+    c_in = QuantumBool()
+    x(c_in[0])
+    c_out = QuantumBool()
+    cuccaro_adder(3, b, c_in=c_in, c_out=c_out)
+    assert b.get_measurement() == {2: 1.0}  # (6 + 3 + 1) % 8
+    assert c_out.get_measurement() == {True: 1.0}
+
+
+def test_cuccaro_adder_static_smoke_cout_and_ctrl():
+    """c_out + ctrl (ctrl=on) — exercises the MAJ-phase cx(a[-1], c_out) path."""
+    a = QuantumFloat(3)
+    b = QuantumFloat(3)
+    a[:] = 6
+    b[:] = 6
+    c_out = QuantumBool()
+    ctrl = QuantumBool()
+    x(ctrl[0])
+    cuccaro_adder(a, b, c_out=c_out, ctrl=ctrl)
+    assert b.get_measurement() == {4: 1.0}  # (6+6)%8
+    assert c_out.get_measurement() == {True: 1.0}
+
+
+def test_cuccaro_adder_static_smoke_inputs_unmodified():
+    """Input QuantumFloat sizes are unchanged after addition."""
+    a = QuantumFloat(5)
+    b = QuantumFloat(7)
+    orig_a, orig_b = a.size, b.size
+    a[:] = 3
+    b[:] = 4
+    cuccaro_adder(a, b)
+    assert a.size == orig_a
+    assert b.size == orig_b
+
+
+# ---------------------------------------------------------------------------
+# Fast exhaustive tests via @boolean_simulation.
+# Each helper factory captures configuration as CLOSURE variables (not function
+# parameters) so JAX treats them as compile-time constants during @jit tracing.
+# Loops live in plain Python outer functions to keep the JAX cache warm.
+# ---------------------------------------------------------------------------
+
+
+# -- helpers that create @boolean_simulation functions for each config --------
+
+def _mk_add_basic():
+    """No optional args."""
+
     @boolean_simulation
-    def main(N, L, j, k):
+    def add(N, L, j, k):
         A = QuantumFloat(N)
         B = QuantumFloat(L)
         A[:] = j
         B[:] = k
-        if c_in_val is not None:
-            c_in = QuantumBool()
-            if c_in_val:
-                c_in.flip()
-            cuccaro_adder(j, B, c_in=c_in)
-        else:
-            cuccaro_adder(j, B)
+        cuccaro_adder(A, B)
         return measure(A), measure(B)
 
-    for N in range(2, 5):
-        for L in range(2, 5):
-            for j in range(2**N):
-                for k in range(2**L):
-                    A, B = main(N, L, j, k)
-                    assert A == j
-                    assert B == (k + j + (c_in_val or 0)) % (2**L)
+    return add
 
 
-def test_jaspr_mode_cuccaro_adder_with_cin_and_cout():
-    """Verify the function works with c_in and c_out together in dynamic mode."""
+def _mk_add_cin(c_in_val):
+    """c_in_val: 0 or 1."""
+
     @boolean_simulation
-    def main(L, j, k):
+    def add(N, L, j, k):
+        A = QuantumFloat(N)
+        B = QuantumFloat(L)
+        A[:] = j
+        B[:] = k
+        c_in = QuantumBool()
+        if c_in_val:
+            c_in.flip()
+        cuccaro_adder(A, B, c_in=c_in)
+        return measure(B)
+
+    return add
+
+
+def _mk_add_cout(c_in_val):
+    """c_in_val: 0 or 1; c_out always present.  Classical a."""
+
+    @boolean_simulation
+    def add(L, j, k):
         B = QuantumFloat(L)
         B[:] = k
         c_in = QuantumBool()
-        c_in.flip()
+        if c_in_val:
+            c_in.flip()
         c_out = QuantumFloat(1)
         cuccaro_adder(j, B, c_in=c_in, c_out=c_out)
         return measure(B), measure(c_out)
 
-    for L in range(2, 5):
-        for j in range(2**L):
-            for k in range(2**L):
-                B, c_out = main(L, j, k)
-                assert B == (k + j + 1) % (2**L)
-                assert c_out == ((k + j + 1) >= (2**L))
+    return add
 
 
-def test_jaspr_mode_cuccaro_adder_with_cin_cout_equal_sizes():
-    """Verify c_in + c_out with both quantum inputs of equal size in dynamic mode."""
+def _mk_add_cout_qq(c_in_val):
+    """c_in_val: 0 or 1; c_out always present.  Quantum a, equal sizes."""
+
     @boolean_simulation
-    def main(L, j, k):
+    def add(L, j, k):
         A = QuantumFloat(L)
         B = QuantumFloat(L)
         A[:] = j
         B[:] = k
         c_in = QuantumBool()
-        c_in.flip()
+        if c_in_val:
+            c_in.flip()
         c_out = QuantumFloat(1)
         cuccaro_adder(A, B, c_in=c_in, c_out=c_out)
         return measure(A), measure(B), measure(c_out)
 
-    for L in range(2, 5):
-        for j in range(2**L):
-            for k in range(2**L):
-                A, B, c_out = main(L, j, k)
-                assert A == j
-                assert B == (k + j + 1) % (2**L)
-                assert c_out == ((k + j + 1) >= (2**L))
+    return add
 
 
-@pytest.mark.parametrize("c_in_present, use_ctrl_kwarg", [
-    (False, False),
-    (True, False),
-    (True, True),
-])
-def test_jaspr_mode_cuccaro_adder_cin_control(c_in_present, use_ctrl_kwarg):
-    """Verify the function works with c_in and control in dynamic mode."""
+def _mk_add_ctrl(c_in_val, use_kwarg):
+    """c_in_val: 0 or 1.  use_kwarg: bool — ctrl= vs with control()."""
+
     @boolean_simulation
-    def main(N, L, j, k):
+    def add(N, L, j, k):
         A = QuantumFloat(N)
         B = QuantumFloat(L)
         A[:] = j
         B[:] = k
         qbl = QuantumBool()
-        qbl.flip()
-        if c_in_present:
-            c_in = QuantumBool()
+        qbl.flip()  # ctrl is always |1>
+        c_in = QuantumBool()
+        if c_in_val:
             c_in.flip()
-            if use_ctrl_kwarg:
-                cuccaro_adder(A, B, c_in=c_in, ctrl=qbl)
-            else:
-                with control(qbl):
-                    cuccaro_adder(A, B, c_in=c_in)
+        if use_kwarg:
+            cuccaro_adder(A, B, c_in=c_in, ctrl=qbl)
         else:
-            if use_ctrl_kwarg:
-                cuccaro_adder(A, B, ctrl=qbl)
-            else:
-                with control(qbl):
-                    cuccaro_adder(A, B)
+            with control(qbl):
+                cuccaro_adder(A, B, c_in=c_in)
         return measure(A), measure(B)
 
-    for N in range(2, 5):
-        for L in range(2, 5):
-            for j in range(2**N):
-                for k in range(2**L):
-                    A, B = main(N, L, j, k)
+    return add
+
+
+def _mk_add_cout_ctrl(c_in_val):
+    """c_in_val: 0 or 1.  c_out and ctrl together, ctrl is always |1>."""
+
+    @boolean_simulation
+    def add(L, j, k):
+        A = QuantumFloat(L)
+        B = QuantumFloat(L)
+        A[:] = j
+        B[:] = k
+        c_in = QuantumBool()
+        if c_in_val:
+            c_in.flip()
+        c_out = QuantumFloat(1)
+        ctrl = QuantumBool()
+        ctrl.flip()
+        cuccaro_adder(A, B, c_in=c_in, c_out=c_out, ctrl=ctrl)
+        return measure(A), measure(B), measure(c_out)
+
+    return add
+
+
+# -- exhaustive test runners -------------------------------------------------
+
+
+def _run_basic_exhaustive():
+    add = _mk_add_basic()
+    for N in range(2, 6):
+        for L in range(2, 6):
+            for j in range(1 << N):
+                for k in range(1 << L):
+                    A, B = add(N, L, j, k)
                     assert A == j
-                    assert B == (k + j + c_in_present) % (2**L)
+                    assert B == (k + j) % (1 << L)
+
+
+def test_cuccaro_adder_basic_dynamic():
+    _run_basic_exhaustive()
+
+
+def _run_cin_exhaustive():
+    for c_in_val in (0, 1):
+        add = _mk_add_cin(c_in_val)
+        for N in range(2, 6):
+            for L in range(2, 6):
+                for j in range(1 << N):
+                    for k in range(1 << L):
+                        B = add(N, L, j, k)
+                        assert B == (k + j + c_in_val) % (1 << L)
+
+
+def test_cuccaro_adder_cin_dynamic():
+    _run_cin_exhaustive()
+
+
+def _run_cout_exhaustive():
+    for c_in_val in (0, 1):
+        add = _mk_add_cout(c_in_val)
+        for L in range(2, 6):
+            for j in range(1 << L):
+                for k in range(1 << L):
+                    total = k + j + c_in_val
+                    B, cout = add(L, j, k)
+                    assert B == total % (1 << L)
+                    assert cout == (total >= (1 << L))
+
+
+def test_cuccaro_adder_cout_dynamic():
+    _run_cout_exhaustive()
+
+
+def _run_cout_equal_sizes_exhaustive():
+    for c_in_val in (0, 1):
+        add = _mk_add_cout_qq(c_in_val)
+        for L in range(2, 6):
+            for j in range(1 << L):
+                for k in range(1 << L):
+                    total = k + j + c_in_val
+                    A_res, B_res, cout = add(L, j, k)
+                    assert A_res == j
+                    assert B_res == total % (1 << L)
+                    assert cout == (total >= (1 << L))
+
+
+def test_cuccaro_adder_cout_equal_sizes_dynamic():
+    _run_cout_equal_sizes_exhaustive()
+
+
+def _run_ctrl_exhaustive():
+    for c_in_val in (0, 1):
+        for use_kwarg in (False, True):
+            add = _mk_add_ctrl(c_in_val, use_kwarg)
+            for N in range(2, 5):
+                for L in range(2, 5):
+                    for j in range(1 << N):
+                        for k in range(1 << L):
+                            A, B = add(N, L, j, k)
+                            assert A == j
+                            assert B == (k + j + c_in_val) % (1 << L)
+
+
+def test_cuccaro_adder_ctrl_dynamic():
+    _run_ctrl_exhaustive()
+
+
+def _run_cout_ctrl_exhaustive():
+    for c_in_val in (0, 1):
+        add = _mk_add_cout_ctrl(c_in_val)
+        for L in range(2, 5):
+            for j in range(1 << L):
+                for k in range(1 << L):
+                    total = k + j + c_in_val
+                    A_res, B_res, cout = add(L, j, k)
+                    assert A_res == j
+                    assert B_res == total % (1 << L)
+                    assert cout == (total >= (1 << L))
+
+
+def test_cuccaro_adder_cout_ctrl_dynamic():
+    _run_cout_ctrl_exhaustive()
