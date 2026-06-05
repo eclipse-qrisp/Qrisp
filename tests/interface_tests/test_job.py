@@ -211,10 +211,6 @@ class TestJobAbstractInterface:
         with pytest.raises(TypeError):
             Job(backend=None)
 
-    def test_submit_is_abstract(self):
-        """Test that submit() is declared as an abstract method."""
-        assert getattr(Job.submit, "__isabstractmethod__", False)
-
     def test_result_is_abstract(self):
         """Test that result() is declared as an abstract method."""
         assert getattr(Job.result, "__isabstractmethod__", False)

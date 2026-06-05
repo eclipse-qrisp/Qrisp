@@ -39,7 +39,7 @@ class JobStatus(StrEnum):
     ----------
 
     INITIALIZING :
-        The job has been created but not yet submitted to the backend.
+        The job has been created and execution has not yet been handed off to the backend.
     QUEUED :
         The job has been submitted and is waiting for execution resources.
     RUNNING :
@@ -219,7 +219,7 @@ class Job(ABC):
 
     .. rubric:: Design contract
 
-    The ``Job`` base class defines *only the observable contract*. That is, the four
+    The ``Job`` base class defines *only the observable contract*. That is, the three
     abstract methods that every concrete job must implement. It deliberately
     prescribes no internal synchronisation mechanism (no threading, no
     asyncio, no polling loop). Each concrete subclass chooses whatever
@@ -281,8 +281,6 @@ class Job(ABC):
         updated at the following points:
 
         * :meth:`status`: every live query updates the cache as a side effect.
-        * :meth:`submit`: transitions to ``QUEUED`` (or ``RUNNING`` for
-          synchronous backends) once execution has been handed off.
         * :meth:`result`: transitions to ``DONE``, ``CANCELLED``, or
           ``ERROR`` when the job reaches a terminal state.
         * :meth:`refresh`: explicitly fetches the live status and caches it
@@ -294,35 +292,6 @@ class Job(ABC):
     # ------------------------------------------------------------------
     # Abstract methods
     # ------------------------------------------------------------------
-
-    @abstractmethod
-    def submit(self) -> None:
-        """
-        Move the job out of ``INITIALIZING``.
-
-        This method is called by :meth:`~qrisp.interface.Backend.run_async`
-        immediately after the job object has been constructed. Its
-        responsibility is to signal that execution has been handed off to the
-        backend by transitioning the job out of ``INITIALIZING``.
-
-        The target state depends on the backend type:
-
-        * ``QUEUED``: the job has been registered with a remote or local queue
-          and is waiting for execution resources.
-
-        * ``RUNNING``: for synchronous backends that begin execution
-          immediately inside this method.
-
-        For backends where submission to the vendor SDK already happened
-        inside :meth:`~qrisp.interface.Backend.run_async` before this method
-        is called (e.g. because the vendor SDK returns a job handle
-        immediately), no additional network call is needed. However,
-        the vendor is responsible for ensuring that the job's status is
-        updated appropriately via :attr:`last_known_status` to reflect
-        that the job is no longer ``INITIALIZING`` (at minimum ``QUEUED``).
-        """
-
-        raise NotImplementedError
 
     @abstractmethod
     def result(self, timeout: float | None = None) -> JobResult:
