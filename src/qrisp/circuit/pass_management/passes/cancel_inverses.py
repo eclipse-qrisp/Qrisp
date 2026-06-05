@@ -335,7 +335,7 @@ def _fuse_controlled_ops(op_a, op_b, gphase_array):
     if op_a.ctrl_state == op_b.ctrl_state:
         # Recurse into the base (target) operations.
         temp = _fuse_via_transpile(
-            op_a.base_operation, op_b.base_operation, gphase_array
+            op_a.base_operation, op_b.base_operation
         )
         if temp is _FUSION_CANCEL:
             return _FUSION_CANCEL
@@ -353,7 +353,7 @@ def _fuse_controlled_ops(op_a, op_b, gphase_array):
     return None
 
 
-def _fuse_via_transpile(op_a, op_b, gphase_array):
+def _fuse_via_transpile(op_a, op_b):
     """Try to fuse two composite gates by transpiling and cancelling.
 
     Some cancellations are only visible after decomposing composite
@@ -371,9 +371,6 @@ def _fuse_via_transpile(op_a, op_b, gphase_array):
         The first operation (earlier in time).
     op_b : Operation
         The second operation (later in time).
-    gphase_array : list
-        Single-element list tracking accumulated global phase.
-        (Unused here but accepted for dispatch consistency.)
 
     Returns
     -------
@@ -520,7 +517,7 @@ def _fuse_operations(op_a, op_b, gphase_array):
     #    This is an escape hatch for cases where the inverse names
     #    don't match but the decompositions partially cancel.
     if (op_a.definition or op_b.definition) and op_a.num_clbits == 0 == op_b.num_clbits:
-        result = _fuse_via_transpile(op_a, op_b, gphase_array)
+        result = _fuse_via_transpile(op_a, op_b)
         if result is not None:
             return result
 
