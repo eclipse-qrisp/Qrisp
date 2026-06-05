@@ -21,6 +21,7 @@ from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
 from qrisp.circuit.pass_management.passes.cancel_zero_controls import cancel_zero_controls
 from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
 from qrisp.circuit.pass_management.passes.commute_swaps import commute_swaps
+from qrisp.circuit.pass_management.passes.convert_to_cx import convert_to_cx
 from qrisp.circuit.pass_management.passes.convert_to_cz import convert_to_cz
 from qrisp.circuit.pass_management.passes.decompose import decompose
 from qrisp.circuit.pass_management.passes.gray_synth_toffoli import gray_synth_toffoli, is_toffoli
@@ -37,6 +38,7 @@ __all__ = [
     "cancel_zero_controls",
     "combine_single_qubit_gates",
     "commute_swaps",
+    "convert_to_cx",
     "convert_to_cz",
     "decompose",
     "gray_synth_toffoli",

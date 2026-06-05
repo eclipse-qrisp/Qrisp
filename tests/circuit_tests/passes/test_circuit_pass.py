@@ -302,6 +302,18 @@ class TestCircuitPassCompareUnitary:
         cp = convert_to_cz()
         assert cp.compare_unitary(qc)
 
+    def test_convert_to_cx_preserves_unitary(self):
+        """convert_to_cx rewrites CZ→CX·H and should preserve the unitary."""
+        from qrisp.circuit.pass_management.passes.convert_to_cx import convert_to_cx
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cz(0, 1)
+        qc.h(1)
+
+        cp = convert_to_cx()
+        assert cp.compare_unitary(qc)
+
     # --- Mutation safety ---
 
     def test_original_circuit_not_mutated(self, two_qubit_qc):
@@ -440,6 +452,21 @@ class TestCircuitPassCompareMeasurement:
         qc.measure(qc.qubits, qc.clbits)
 
         cp = CircuitPass(convert_to_cz())
+        assert cp.compare_measurement(qc)
+
+    def test_convert_to_cx_measured(self):
+        """convert_to_cx should preserve measurement statistics."""
+        from qrisp.circuit.pass_management.passes.convert_to_cx import convert_to_cx
+
+        qc = QuantumCircuit(2)
+        for _ in range(2):
+            qc.add_clbit()
+        qc.h(0)
+        qc.cz(0, 1)
+        qc.h(1)
+        qc.measure(qc.qubits, qc.clbits)
+
+        cp = CircuitPass(convert_to_cx())
         assert cp.compare_measurement(qc)
 
     def test_combine_single_qubit_gates_measured(self):
