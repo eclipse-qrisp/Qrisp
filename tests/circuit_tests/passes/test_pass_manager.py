@@ -427,15 +427,15 @@ class TestPassManagerVerify:
         with pytest.raises(ValueError, match="Unknown verification_type"):
             pm.verify(qc, "bogus")
 
-    # --- visualize_culprits ---
+    # --- visualize_failures ---
 
-    def test_visualize_culprits_does_not_crash(self, capsys):
-        """visualize_culprits calls visualize on failing passes
+    def test_visualize_failures_does_not_crash(self, capsys):
+        """visualize_failures calls visualize on failing passes
         without raising exceptions."""
         pm = PassManager([self._bad_unitary_pass(), identity_pass])
         qc = QuantumCircuit(2)
         qc.h(0)
-        results = pm.verify(qc, "unitary", visualize_culprits=True)
+        results = pm.verify(qc, "unitary", visualize_failures=True)
         assert results == [("bad_unitary", False), ("identity_pass", True)]
         captured = capsys.readouterr()
         # visualize should have produced output for the bad pass
@@ -443,7 +443,7 @@ class TestPassManagerVerify:
         assert "Before" in captured.out
         assert "After" in captured.out
 
-    def test_visualize_culprits_only_bad_passes(self, capsys):
+    def test_visualize_failures_only_bad_passes(self, capsys):
         """Only failing passes should be visualized."""
         from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
 
@@ -451,7 +451,7 @@ class TestPassManagerVerify:
         qc = QuantumCircuit(2)
         qc.cx(0, 1)
         qc.cx(0, 1)
-        results = pm.verify(qc, "unitary", visualize_culprits=True)
+        results = pm.verify(qc, "unitary", visualize_failures=True)
         assert results == [("cancel_inverses", True), ("bad_unitary", False)]
         captured = capsys.readouterr()
         assert "cancel_inverses" not in captured.out

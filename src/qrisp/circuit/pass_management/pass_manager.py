@@ -164,7 +164,7 @@ class PassManager:
         self,
         qc: QuantumCircuit,
         verification_type: str,
-        visualize_culprits: bool = False,
+        visualize_failures: bool = False,
         **verification_kwargs: Any,
     ) -> list[tuple[str, bool]]:
         """
@@ -182,7 +182,7 @@ class PassManager:
         verification_type : str
             Which verification method to use — ``"unitary"`` or
             ``"measurements"``.
-        visualize_culprits : bool, optional
+        visualize_failures : bool, optional
             If ``True``, call :meth:`CircuitPass.visualize` on any
             pass that fails verification. The default is ``False``.
         **verification_kwargs : Any
@@ -221,7 +221,7 @@ class PassManager:
 
             results.append((circuit_pass.__name__, passed))
 
-            if not passed and visualize_culprits:
+            if not passed and visualize_failures:
                 circuit_pass.visualize(current)
 
             # Always apply the pass so subsequent passes see a realistic
