@@ -15,7 +15,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 
-Circut pass that cancels adjacent gate–inverse-gate pairs by building a
+Circuit pass that cancels adjacent gate–inverse-gate pairs by building a
 directed acyclic graph (DAG) and fusing neighbouring instructions.
 
 **Architecture**
@@ -229,8 +229,7 @@ def _fuse_parameterized_1q(op_a, op_b, gphase_array):
             gphase_array[0] += op_a.global_phase
             if param_sum == 0:
                 return _FUSION_CANCEL
-            else:
-                return PGate(param_sum)
+            return PGate(param_sum)
 
     # --- P + Rz / P + P ---
     elif op_a.name == "p":
@@ -238,26 +237,22 @@ def _fuse_parameterized_1q(op_a, op_b, gphase_array):
             gphase_array[0] += op_b.global_phase
             if param_sum == 0:
                 return _FUSION_CANCEL
-            else:
-                return PGate(param_sum)
+            return PGate(param_sum)
         if op_b.name == "p":
             if param_sum == 0:
                 return _FUSION_CANCEL
-            else:
-                return PGate(param_sum)
+            return PGate(param_sum)
 
     # --- Rx, Ry, gphase (same-name only) ---
     if op_a.name == op_b.name:
         if op_a.name == "rx":
             if param_sum == 0:
                 return _FUSION_CANCEL
-            else:
-                return RXGate(param_sum)
+            return RXGate(param_sum)
         if op_a.name == "ry":
             if param_sum == 0:
                 return _FUSION_CANCEL
-            else:
-                return RYGate(param_sum)
+            return RYGate(param_sum)
         if op_a.name == "gphase":
             return GPhaseGate(op_a.global_phase + op_b.global_phase)
         # Other parameterised gates with matching names (e.g. cp, rzz)
