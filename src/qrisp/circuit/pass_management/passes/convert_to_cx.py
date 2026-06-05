@@ -39,6 +39,12 @@ def convert_to_cx(
     either passed through silently (``strict=False``, the default) or causes the
     pass to raise an exception (``strict=True``).
 
+    .. note::
+
+        This pass does **not** decompose composite (wrapped) gates. Use the
+        :func:`decompose` pass to expand composite gates into elementary
+        operations before applying this pass.
+
     Parameters
     ----------
     strict : bool, optional
