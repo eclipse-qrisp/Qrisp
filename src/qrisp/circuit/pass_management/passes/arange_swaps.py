@@ -65,7 +65,7 @@ def arange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
         >>> qc.swap(0, 1)          # qubit 1 is untouched
 
     Without ``arange_swaps``, the SWAP decomposes into three CX gates.
-    The first CX targets the unused qubit (qubit 2), but since that qubit
+    The first CX targets the unused qubit (qubit 1), but since that qubit
     is still in \|0⟩ the CX is a no-op — it remains in the circuit anyway::
 
         >>> pm_raw = PassManager()
