@@ -11,6 +11,7 @@ Hardware Backends
    QiskitBackend
    AQTBackend
    QiskitRuntimeBackend
+   KipuBackends
 
 Backends that interface with physical quantum hardware from different vendors.
 Each backend wraps the vendor-specific API and exposes it through Qrisp's
@@ -29,3 +30,5 @@ uniform :ref:`Backend` interface.
      - AQT (Alpine Quantum Technologies) backends
    * - :ref:`QiskitRuntimeBackend`
      - IBM Quantum runtime services via Qiskit Runtime
+   * - :ref:`KipuBackends`
+     - Kipu Quantum Cloud backends from multiple providers
