@@ -418,3 +418,32 @@ class TestIdentityPreservation:
         assert set(counts_orig.keys()) == set(counts_opt.keys())
         for key in counts_orig:
             assert abs(counts_orig[key] - counts_opt[key]) < 150
+
+
+class TestGidneyLogicalAND:
+    """Cancellation behaviour of GidneyLogicalAND compute/uncompute pairs."""
+
+    def test_compute_uncompute_cancels(self):
+        """A GidneyLogicalAND compute followed by uncompute must cancel."""
+        from qrisp.alg_primitives.mcx_algs.gidney import GidneyLogicalAND
+
+        compute = GidneyLogicalAND(inv=False, ctrl_state="11")
+        uncompute = GidneyLogicalAND(inv=True, ctrl_state="11")
+
+        qc = QuantumCircuit(3)
+        qc.append(compute, qc.qubits)
+        qc.append(uncompute, qc.qubits)
+        result = cancel_inverses(qc)
+        assert _num_gates(result) == 0
+
+    def test_same_direction_cancels_via_transpile(self):
+        ...
+        from qrisp.alg_primitives.mcx_algs.gidney import GidneyLogicalAND
+
+        compute = GidneyLogicalAND(inv=False, ctrl_state="11")
+
+        qc = QuantumCircuit(3)
+        qc.append(compute, qc.qubits)
+        qc.append(compute, qc.qubits)
+        result = cancel_inverses(qc)
+        assert _num_gates(result) == 0
