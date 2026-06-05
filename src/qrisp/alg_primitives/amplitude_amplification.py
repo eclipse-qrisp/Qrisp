@@ -16,7 +16,8 @@
 ********************************************************************************
 """
 
-from typing import Any, Callable
+from collections.abc import Callable, Sequence
+from typing import Any
 
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.core import QuantumVariable, QuantumArray, merge, recursive_qs_search
@@ -25,7 +26,7 @@ from qrisp.jasp import check_for_tracing_mode, jrange
 
 
 def amplitude_amplification(
-    args: QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray],
+    args: QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray],
     state_function: Callable,
     oracle_function: Callable,
     kwargs_oracle: dict[str, Any] | None = None,
@@ -51,7 +52,7 @@ def amplitude_amplification(
 
     Parameters
     ----------
-    args : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
+    args : QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray]
         The quantum variable, array, or collection thereof on which amplitude amplification 
         is performed. These variables must already be prepared in the initial state 
         :math:`\ket{\Psi}` before calling this method (i.e., the user is responsible 

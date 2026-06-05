@@ -38,16 +38,16 @@ def test_amplitude_amplification_progression():
 
     qb = QuantumBool()
     state_function(qb)
-    assert np.round(qb.get_measurement()[True], 2) == 0.04
+    assert np.isclose(qb.get_measurement()[True], 0.04, atol=1e-2)
 
     amplitude_amplification([qb], state_function, oracle_function, iter=1)
-    assert np.round(qb.get_measurement()[True], 2) == 0.31
+    assert np.isclose(qb.get_measurement()[True], 0.31, atol=1e-2)
 
     amplitude_amplification([qb], state_function, oracle_function, iter=1)
-    assert np.round(qb.get_measurement()[True], 2) == 0.69
+    assert np.isclose(qb.get_measurement()[True], 0.69, atol=1e-2)
 
     amplitude_amplification([qb], state_function, oracle_function, iter=1)
-    assert np.round(qb.get_measurement()[True], 2) == 0.96
+    assert np.isclose(qb.get_measurement()[True], 0.96, atol=1e-2)
 
 
 def test_amplitude_amplification_quantum_array():
@@ -68,10 +68,10 @@ def test_amplitude_amplification_quantum_array():
     target_outcome = OutcomeArray([True, False])
     assert any(k == target_outcome for k in mes_res)
     target_prob = next((p for k, p in mes_res.items() if k == target_outcome), 0.0)
-    assert target_prob > 0.30
+    assert np.isclose(target_prob, 0.31, atol=1e-2)
 
 
-def test_amplitude_amplification_multiple_variables():
+def test_amplitude_amplification_multiple_variables_list():
     """Tests that amplitude amplification correctly handles a list of separate variables."""
 
     def state_function(qb0, qb1):
@@ -85,7 +85,24 @@ def test_amplitude_amplification_multiple_variables():
 
     state_function(qb0, qb1)
     amplitude_amplification([qb0, qb1], state_function, oracle_function, iter=1)
-    assert np.round(qb0.get_measurement()[True], 2) == 0.31
+    assert np.isclose(qb0.get_measurement()[True], 0.31, atol=1e-2)
+
+
+def test_amplitude_amplification_multiple_variables_tuple():
+    """Tests that amplitude amplification correctly handles a tuple of separate variables."""
+
+    def state_function(qb0, qb1):
+        ry(np.pi / 8, qb0)
+
+    def oracle_function(qb0, qb1):
+        z(qb0)
+
+    qb0 = QuantumBool()
+    qb1 = QuantumBool()
+
+    state_function(qb0, qb1)
+    amplitude_amplification((qb0, qb1), state_function, oracle_function, iter=1)
+    assert np.isclose(qb0.get_measurement()[True], 0.31, atol=1e-2)
 
 
 def test_amplitude_amplification_oblivious():
@@ -108,5 +125,4 @@ def test_amplitude_amplification_oblivious():
     )
 
     # Check that the amplification still succeeded on the targeted qubit
-    mes_res = qa[0].get_measurement()
-    assert np.round(mes_res[True], 2) == 0.31
+    assert np.isclose(qa[0].get_measurement()[True], 0.31, atol=1e-2)

@@ -43,10 +43,10 @@ def test_jasp_amplitude_amplification_progression():
         amplitude_amplification([qb], state_function, oracle_function, iter=i)
         return qb
 
-    assert np.round(main_jasp(0)[True], 2) == 0.04
-    assert np.round(main_jasp(1)[True], 2) == 0.31
-    assert np.round(main_jasp(2)[True], 2) == 0.69
-    assert np.round(main_jasp(3)[True], 2) == 0.96
+    assert np.isclose(main_jasp(0)[True], 0.04, atol=1e-2)
+    assert np.isclose(main_jasp(1)[True], 0.31, atol=1e-2)
+    assert np.isclose(main_jasp(2)[True], 0.69, atol=1e-2)
+    assert np.isclose(main_jasp(3)[True], 0.96, atol=1e-2)
 
 
 def test_jasp_amplitude_amplification_quantum_array():
@@ -66,7 +66,7 @@ def test_jasp_amplitude_amplification_quantum_array():
         return qa[0], qa[1]
 
     mes_res = main_jasp()
-    assert mes_res[(True, False)] > 0.30
+    assert np.isclose(mes_res[(True, False)], 0.31, atol=1e-2)
 
 
 def test_jasp_amplitude_amplification_multiple_variables():
@@ -87,7 +87,7 @@ def test_jasp_amplitude_amplification_multiple_variables():
         return qb0
 
     mes_res = main_jasp()
-    assert np.round(mes_res[True], 2) == 0.31
+    assert np.isclose(mes_res[True], 0.31, atol=1e-2)
 
 
 def test_jasp_amplitude_amplification_oblivious():
@@ -111,4 +111,4 @@ def test_jasp_amplitude_amplification_oblivious():
         return qa[0]
 
     mes_res = main_jasp()
-    assert np.round(mes_res[True], 2) == 0.31
+    assert np.isclose(mes_res[True], 0.31, atol=1e-2)
