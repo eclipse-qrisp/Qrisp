@@ -39,7 +39,10 @@ class JobStatus(StrEnum):
     ----------
 
     INITIALIZING :
-        The job has been created and execution has not yet been handed off to the backend.
+        The job object has been created but execution has not yet been handed off to the
+        backend. This is a transient state: a correctly implemented backend must ensure
+        that every job exits ``INITIALIZING`` before :meth:`~qrisp.interface.Backend.run_async`
+        returns.
     QUEUED :
         The job has been submitted and is waiting for execution resources.
     RUNNING :

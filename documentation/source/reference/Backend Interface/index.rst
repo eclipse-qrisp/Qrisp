@@ -406,6 +406,20 @@ Concrete subclasses must implement three abstract methods:
 - :meth:`~qrisp.interface.Job.cancel`: attempt to cancel the job.
 - :meth:`~qrisp.interface.Job.status`: return the current :ref:`JobStatus` without blocking.
 
+.. note::
+
+   *Submission responsibility:* ``Job`` does not mandate how or when a job transitions
+   out of :attr:`~qrisp.interface.JobStatus.INITIALIZING`. That responsibility belongs
+   entirely to the concrete backend author. 
+   
+   The only hard contract is that the job returned by
+   :meth:`~qrisp.interface.Backend.run_async` must not still be in
+   :attr:`~qrisp.interface.JobStatus.INITIALIZING` state.
+
+   For real-world examples, see
+   :meth:`QiskitBackend.run_async <qrisp.interface.QiskitBackend.run_async>` and
+   :meth:`AQTBackend.run_async <qrisp.interface.AQTBackend.run_async>`.
+
 Several non-blocking convenience helpers are provided by the base class
 and derived from :meth:`~qrisp.interface.Job.status`:
 
@@ -430,7 +444,10 @@ during its lifecycle.
 
 The six states are:
 
-- ``INITIALIZING``: the job has been created and execution has not yet been handed off to the backend.
+- ``INITIALIZING``: the job object has been created but execution has not yet been
+  handed off to the backend. This is a transient state: a correctly implemented backend
+  must ensure that every job exits ``INITIALIZING`` before :meth:`~qrisp.interface.Backend.run_async`
+  returns.
 - ``QUEUED``: the job has been submitted and is waiting for execution resources.
 - ``RUNNING``: the job is currently being executed.
 - ``DONE``: the job completed successfully. Results are available via :meth:`~qrisp.interface.Job.result`.
