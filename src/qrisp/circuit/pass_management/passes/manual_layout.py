@@ -75,6 +75,7 @@ def manual_layout(
     >>> pm = PassManager()
     >>> pm += manual_layout([2, 0, 1])  # Logical 0→2, 1→0, 2→1
     >>> new_layout_qc = pm.run(qc)
+    >>> print(new_layout_qc)
     <BLANKLINE>                    
     qb_1: ──■──
           ┌─┴─┐
