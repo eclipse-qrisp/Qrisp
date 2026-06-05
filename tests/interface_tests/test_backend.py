@@ -1217,7 +1217,7 @@ class JobTestLifecycle:
 
     The only hard guarantee is that a job must exit INITIALIZING before
     run_async() returns. The exact state after that depends on the backend:
-    asynchronous backends transition to QUEUED; synchronous simulators may
+    asynchronous backends transition to QUEUED. Synchronous simulators may
     go directly to RUNNING or DONE.
     """
 
