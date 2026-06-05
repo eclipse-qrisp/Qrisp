@@ -780,7 +780,7 @@ def cancel_inverses(qc: QuantumCircuit) -> QuantumCircuit:
     * Parameterised rotations with opposite angles:
       ``Rz(θ)·Rz(−θ)``, ``Rx(θ)·Rx(−θ)``, ``Ry(θ)·Ry(−θ)``
     * Phase gates: ``P(θ)·P(−θ)``
-    * Cross-type fusion: ``Rz(θ)·P(−θ)`` → ``P(0)`` → cancelled
+    * Cross-type fusion: ``Rz(θ)·P(−θ)`` → ``P(0)·Gphase``
     * Controlled operations whose base gates cancel
     * Partial fusion of ``SWAP`` with neighbouring ``CX``, ``CP``,
       ``RZZ`` into fewer CX gates
