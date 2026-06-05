@@ -65,7 +65,7 @@ class DynamicQubitArray:
         if isinstance(other, list):
             temp = self
             for x in other:
-                if not isinstance(other, AbstractQubit):
+                if not isinstance(getattr(x, "aval", x), AbstractQubit):
                     raise ValueError(
                         "Can only concatenate type AbstractQubit or list[AbstractQubit] to DynamicQubitArray"
                     )
@@ -79,7 +79,7 @@ class DynamicQubitArray:
         if isinstance(other, list):
             temp = self
             for x in other[::-1]:
-                if not isinstance(other, AbstractQubit):
+                if not isinstance(getattr(x, "aval", x), AbstractQubit):
                     raise ValueError(
                         "Can only concatenate type AbstractQubit or list[AbstractQubit] to DynamicQubitArray"
                     )
