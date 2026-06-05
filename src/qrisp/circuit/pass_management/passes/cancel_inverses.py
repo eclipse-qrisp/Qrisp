@@ -299,7 +299,7 @@ def _fuse_gidney_and(op_a, op_b):
     return None
 
 
-def _fuse_controlled_ops(op_a, op_b, gphase_array):
+def _fuse_controlled_ops(op_a, op_b):
     """Try to fuse two controlled operations by recursing into their 
     base operations.
 
@@ -315,8 +315,6 @@ def _fuse_controlled_ops(op_a, op_b, gphase_array):
         The first operation (earlier in time).
     op_b : ControlledOperation
         The second operation (later in time).
-    gphase_array : list
-        Single-element list tracking accumulated global phase.
 
     Returns
     -------
@@ -494,7 +492,7 @@ def _fuse_operations(op_a, op_b, gphase_array):
     # 4. Composite gate handling (controlled ops) — falls through
     #    to generic inverse check if no controlled-op match is found.
     if isinstance(op_a, ControlledOperation) and isinstance(op_b, ControlledOperation):
-        result = _fuse_controlled_ops(op_a, op_b, gphase_array)
+        result = _fuse_controlled_ops(op_a, op_b)
         if result is not None:
             return result
         # Deliberately fall through to the generic inverse check.
