@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from qrisp.circuit.pass_management.passes.arange_swaps import arange_swaps
+from qrisp.circuit.pass_management.passes.arrange_swaps import arrange_swaps
 from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
 from qrisp.circuit.pass_management.passes.cancel_zero_controls import cancel_zero_controls
 from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
@@ -33,7 +33,7 @@ from qrisp.circuit.pass_management.passes.visualize import visualize
 from qrisp.circuit.pass_management.passes.convert_to_pry import convert_to_pry, PRYGate
 
 __all__ = [
-    "arange_swaps",
+    "arrange_swaps",
     "cancel_inverses",
     "cancel_zero_controls",
     "combine_single_qubit_gates",

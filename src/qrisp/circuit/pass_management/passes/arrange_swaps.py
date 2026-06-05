@@ -23,7 +23,7 @@ from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 
 
 @CircuitPass
-def arange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
+def arrange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
     """
     Flip SWAP qubit order so that unused qubits come first.
 
@@ -58,13 +58,13 @@ def arange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
     Setup::
 
         >>> from qrisp import QuantumCircuit, PassManager, decompose
-        >>> from qrisp import arange_swaps, cancel_zero_controls
+        >>> from qrisp import arrange_swaps, cancel_zero_controls
         >>>
         >>> qc = QuantumCircuit(2)
         >>> qc.x(0)
         >>> qc.swap(0, 1)          # qubit 1 is untouched
 
-    Without ``arange_swaps``, the SWAP decomposes into three CX gates.
+    Without ``arrange_swaps``, the SWAP decomposes into three CX gates.
     The first CX targets the unused qubit (qubit 1), but since that qubit
     is still in \|0⟩ the CX is a no-op — it remains in the circuit anyway::
 
@@ -77,12 +77,12 @@ def arange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
         qb_1: ─────┤ X ├──■──┤ X ├
                    └───┘     └───┘
 
-    With ``arange_swaps`` the qubit order is flipped so the unused qubit
+    With ``arrange_swaps`` the qubit order is flipped so the unused qubit
     comes first.  ``cancel_zero_controls`` then removes the first CX
     (controlled on \|0⟩).  After decomposition, one CX is gone::
 
         >>> pm = PassManager()
-        >>> pm += arange_swaps
+        >>> pm += arrange_swaps
         >>> pm += decompose()
         >>> pm += cancel_zero_controls
         >>> print(pm.run(qc))

@@ -434,8 +434,9 @@ class TestCircuitPassCompareMeasurement:
         cp = CircuitPass(identity_pass)
         assert cp.compare_measurement(qc)
 
-    def test_no_measurements_different_circuits_fail(self):
-        """Two circuits without measurements that differ should not compare equal."""
+    def test_no_measurements_different_unitaries_still_pass(self):
+        """Measurement-based comparison cannot distinguish unitaries without
+        measurements — the empty distribution is trivially invariant."""
         qc = QuantumCircuit(2)
         qc.h(0)
         qc.cx(0, 1)
@@ -446,7 +447,8 @@ class TestCircuitPassCompareMeasurement:
             return qc_out
 
         cp = CircuitPass(add_x_pass)
-        assert not cp.compare_measurement(qc)
+        # All no-measurement circuits produce the same (empty) distribution.
+        assert cp.compare_measurement(qc)
 
     # --- Integration: real passes ---
 

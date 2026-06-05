@@ -215,7 +215,7 @@ Qrisp ships with the following circuit transformation passes:
 
    * - Pass
      - Description
-   * - :doc:`arange_swaps <Passes/arange_swaps>`
+   * - :doc:`arrange_swaps <Passes/arrange_swaps>`
      - Rearrange SWAP gates for better cancellation later
    * - :doc:`cancel_inverses <Passes/cancel_inverses>`
      - Cancel adjacent gate–inverse-gate pairs via DAG analysis

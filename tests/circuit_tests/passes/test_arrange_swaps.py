@@ -18,17 +18,17 @@
 
 import pytest
 from qrisp.circuit import QuantumCircuit
-from qrisp.circuit.pass_management.passes.arange_swaps import arange_swaps
+from qrisp.circuit.pass_management.passes.arrange_swaps import arrange_swaps
 
 
-class TestArangeSwaps:
+class TestArrangeSwaps:
     def test_swap_used_unused_reorders(self):
         """SWAP(used, unused) should be reordered to SWAP(unused, used)."""
         qc = QuantumCircuit(4)
         qc.h(0)
         qc.swap(0, 2)
 
-        result = arange_swaps(qc)
+        result = arrange_swaps(qc)
 
         swap_instrs = [i for i in result.data if i.op.name == "swap"]
         assert len(swap_instrs) == 1
@@ -42,7 +42,7 @@ class TestArangeSwaps:
         qc.x(1)
         qc.swap(0, 1)
 
-        result = arange_swaps(qc)
+        result = arrange_swaps(qc)
 
         swap_instrs = [i for i in result.data if i.op.name == "swap"]
         assert len(swap_instrs) == 1
@@ -54,7 +54,7 @@ class TestArangeSwaps:
         qc = QuantumCircuit(4)
         qc.swap(2, 3)
 
-        result = arange_swaps(qc)
+        result = arrange_swaps(qc)
 
         swap_instrs = [i for i in result.data if i.op.name == "swap"]
         assert len(swap_instrs) == 0
@@ -67,7 +67,7 @@ class TestArangeSwaps:
         qc.swap(0, 2)
         qc.swap(1, 3)
 
-        result = arange_swaps(qc)
+        result = arrange_swaps(qc)
 
         swap_instrs = [i for i in result.data if i.op.name == "swap"]
         assert len(swap_instrs) == 2
@@ -84,7 +84,7 @@ class TestArangeSwaps:
         qc.h(0)
         qc.cx(0, 1)
 
-        result = arange_swaps(qc)
+        result = arrange_swaps(qc)
 
         assert len(result.data) == len(qc.data)
 
@@ -94,28 +94,28 @@ class TestArangeSwaps:
 # ---------------------------------------------------------------------------
 
 
-class TestArangeSwapsCorrectness:
-    """Verify arange_swaps preserves the circuit unitary."""
+class TestArrangeSwapsCorrectness:
+    """Verify arrange_swaps preserves the circuit unitary."""
 
     def test_unitary_preserved_used_unused_swap(self):
         qc = QuantumCircuit(4)
         qc.h(0)
         qc.swap(0, 2)
-        assert arange_swaps.compare_unitary(qc)
+        assert arrange_swaps.compare_unitary(qc)
 
     def test_unitary_preserved_both_used_swap(self):
         qc = QuantumCircuit(4)
         qc.h(0)
         qc.x(1)
         qc.swap(0, 1)
-        assert arange_swaps.compare_unitary(qc)
+        assert arrange_swaps.compare_unitary(qc)
 
     def test_unitary_preserved_both_unused_identity(self):
         """Unused qubits never touched → pass is a no-op → unitary preserved."""
         qc = QuantumCircuit(4)
         qc.h(0)
         qc.x(1)
-        assert arange_swaps.compare_unitary(qc)
+        assert arrange_swaps.compare_unitary(qc)
 
     def test_unitary_preserved_mixed_swaps(self):
         qc = QuantumCircuit(4)
@@ -123,4 +123,4 @@ class TestArangeSwapsCorrectness:
         qc.x(1)
         qc.swap(0, 2)
         qc.swap(1, 3)
-        assert arange_swaps.compare_unitary(qc)
+        assert arrange_swaps.compare_unitary(qc)
