@@ -42,7 +42,7 @@ from qrisp.alg_primitives.reflection import reflection
 from qrisp.jasp import check_for_tracing_mode, jrange
 from qrisp.typing import FloatLike
 
-# Applies the grover diffuser onto the (list of) quantum variable input_object
+# Applies the grover diffuser onto the (sequence of) quantum variable input_object
 def diffuser(
     input_object: QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray],
     phase: FloatLike = np.pi,
@@ -56,7 +56,7 @@ def diffuser(
     ----------
     input_object : QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray]
         The (list of) QuantumVariables to apply the Grover diffuser on.
-    phase : float | FloatLike, optional
+    phase : FloatLike, optional
         Specifies the phase shift. The default is $\pi$, i.e. a
         multi-controlled Z gate.
     state_function : function, optional
@@ -113,7 +113,7 @@ def diffuser(
 
     """
 
-    if state_function == None:
+    if state_function is None:
 
         def _state_function(*qargs):
             for arg in qargs:
@@ -143,7 +143,7 @@ def tag_state(
     binary_values : bool, optional
         If set to True, the values in the tag_specificator dict have to be bitstrings
         instead of labels. The default is False.
-    phase : float | FloatLike, optional
+    phase : FloatLike, optional
         Specify the phase shift the tag should perform. The default is $\pi$, i.e. a
         multi-controlled Z gate.
 
@@ -451,7 +451,7 @@ def grovers_alg(
 
     if check_for_tracing_mode():
 
-        for i in jrange(iterations):
+        for _ in jrange(iterations):
             if exact:
                 oracle_function(args, phase=phi, **kwargs)
                 diffuser(args, phase=phi)
