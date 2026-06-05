@@ -16,13 +16,15 @@
 ********************************************************************************
 """
 
+from collections.abc import Callable, Sequence
 import numpy as np
+from typing import Any
+
 from qrisp import (
     QuantumArray,
     QuantumVariable,
     QuantumFloat,
     gate_wrap,
-    gphase,
     h,
     mcx,
     mcp,
@@ -33,15 +35,12 @@ from qrisp import (
     merge,
     recursive_qs_search,
     conjugate,
-    invert,
     control,
     IterationEnvironment,
 )
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.jasp import check_for_tracing_mode, jrange
 from qrisp.typing import FloatLike
-from typing import Callable, Any, Sequence
-
 
 # Applies the grover diffuser onto the (list of) quantum variable input_object
 def diffuser(
