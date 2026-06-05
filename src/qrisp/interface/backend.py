@@ -56,11 +56,21 @@ class BackendLike(Protocol):
         """Human-readable name of the backend."""
         ...
 
+    @overload
+    def run(
+        self, circuits: QuantumCircuit, shots: int | None = None
+    ) -> MeasurementResult: ...
+
+    @overload
+    def run(
+        self, circuits: Sequence[QuantumCircuit], shots: int | None = None
+    ) -> list[MeasurementResult]: ...
+
     def run(
         self,
         circuits: QuantumCircuit | Sequence[QuantumCircuit],
         shots: int | None = None,
-    ):
+    ) -> MeasurementResult | list[MeasurementResult]:
         """Submit circuits and return measurement result(s)."""
         ...
 
