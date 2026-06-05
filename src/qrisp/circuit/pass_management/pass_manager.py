@@ -38,14 +38,31 @@ class PassManager:
 
     Example
     -------
-    >>> from qrisp import PassManager, CircuitPass
-    >>>
-    >>> pm = PassManager()
-    >>> pm += CircuitPass(some_layout_pass(coupling_map=[(0,1), (1,2)]))
-    >>> pm += CircuitPass(some_routing_pass(coupling_map=[(0,1), (1,2)]))
-    >>> pm += CircuitPass(some_direct_pass)
-    >>>
-    >>> transpiled_qc = pm.run(qc)
+    Build a pipeline with ``+=``, then inspect, insert, and remove passes::
+
+        >>> from qrisp import PassManager
+        >>> from qrisp import convert_to_cz, cancel_inverses, remove_barriers
+        >>>
+        >>> pm = PassManager()
+        >>> pm += convert_to_cz()
+        >>> pm += cancel_inverses
+        >>> pm += remove_barriers
+        >>>
+        >>> print(pm)
+        PassManager(['convert_to_cz', 'cancel_inverses', 'remove_barriers'])
+        >>>
+        >>> # Insert a pass at a specific position
+        >>> from qrisp import decompose
+        >>> pm.insert_pass(1, decompose)
+        >>> print(pm)
+        PassManager(['convert_to_cz', 'decompose', 'cancel_inverses', 'remove_barriers'])
+        >>>
+        >>> # Remove the last pass
+        >>> pm.remove_pass(len(pm) - 1)
+        >>> print(pm)
+        PassManager(['convert_to_cz', 'decompose', 'cancel_inverses'])
+        >>>
+        >>> transpiled_qc = pm.run(qc)
     """
 
     def __init__(self, passes: list[CircuitPass] | None = None) -> None:
