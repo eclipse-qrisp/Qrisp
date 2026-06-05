@@ -420,6 +420,34 @@ class TestCircuitPassCompareMeasurement:
         with pytest.raises(TypeError, match="Expected a QuantumCircuit"):
             cp.compare_measurement(42)
 
+    def test_no_measurements_identity_passes(self):
+        """A circuit without measurements should compare equal to itself."""
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        cp = CircuitPass(identity_pass)
+        assert cp.compare_measurement(qc)
+
+    def test_no_measurements_empty_circuit(self):
+        """An empty circuit (no qubits touched) should compare equal to itself."""
+        qc = QuantumCircuit(2)
+        cp = CircuitPass(identity_pass)
+        assert cp.compare_measurement(qc)
+
+    def test_no_measurements_different_circuits_fail(self):
+        """Two circuits without measurements that differ should not compare equal."""
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+
+        def add_x_pass(qc_in: QuantumCircuit) -> QuantumCircuit:
+            qc_out = qc_in.copy()
+            qc_out.x(qc_out.qubits[0])
+            return qc_out
+
+        cp = CircuitPass(add_x_pass)
+        assert not cp.compare_measurement(qc)
+
     # --- Integration: real passes ---
 
     def test_cancel_inverses_measured(self, ghz_measured):
