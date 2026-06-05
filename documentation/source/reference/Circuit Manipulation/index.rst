@@ -36,7 +36,7 @@ In addition, Qrisp provides a :doc:`pass management framework <Pass Management/i
 composing and applying circuit transformation passes. The :doc:`CircuitPass <Pass Management/CircuitPass>`
 decorator ensures type safety, while the :doc:`PassManager <Pass Management/PassManager>`
 chains passes together into a reusable compilation pipeline. A library of
-:doc:`built-in passes <Pass Management/Passes>` handles common tasks such as canceling inverse gates,
+:doc:`built-in passes <Pass Management/Passes/index>` handles common tasks such as canceling inverse gates,
 commuting SWAPs, converting to native gate sets, and more.
 
 .. note::

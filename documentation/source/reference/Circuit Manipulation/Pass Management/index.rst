@@ -204,7 +204,6 @@ Combine passes to convert circuits to hardware-native gate sets::
     qb_2: ┤ H ├─────────────────────────■─┤ H ├
           └───┘                           └───┘
 
-::
 
 Built-in Passes
 ---------------

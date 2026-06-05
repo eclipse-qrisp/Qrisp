@@ -28,17 +28,17 @@ from qrisp.circuit.qubit import Qubit
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 
 
-# Single-qubit diagonal gates that map |0⟩ → e^{iφ}|0⟩
+# Single-qubit diagonal gates that map \|0⟩ → e^{iφ}\|0⟩
 _DIAGONAL_1Q = frozenset({"p", "rz", "z", "s", "t", "s_dg", "t_dg", "id", "gphase"})
 
 
 def _is_cancelled_by_zero(
     op: Operation, qubits: list[Qubit], fresh: set[Qubit]
 ) -> bool:
-    """Return True if *op* on *qubits* is a no-op given a set of |0⟩ qubits."""
+    """Return True if *op* on *qubits* is a no-op given a set of \|0⟩ qubits."""
 
     # Symmetric controlled-phase gates: diag(1,1,1,e^{iφ}).
-    # Identity whenever *either* qubit is |0⟩.
+    # Identity whenever *either* qubit is \|0⟩.
     if op.name in ("cp", "cz"):
         return any(qb in fresh for qb in qubits)
 
@@ -50,7 +50,7 @@ def _is_cancelled_by_zero(
     ):
         return any(qb in fresh for qb in qubits)
 
-    # General controlled operations: cancel when a control-on-|1⟩ is still |0⟩.
+    # General controlled operations: cancel when a control-on-\|1⟩ is still \|0⟩.
     if isinstance(op, (ControlledOperation, PTControlledOperation)):
         n_ctrl = len(op.controls)
         ctrl_state = getattr(op, "ctrl_state", "1" * n_ctrl)
@@ -65,12 +65,12 @@ def _is_cancelled_by_zero(
 
 @CircuitPass
 def cancel_zero_controls(qc: QuantumCircuit) -> QuantumCircuit:
-    """Cancel controlled gates whose control qubit is guaranteed to be |0⟩.
+    """Cancel controlled gates whose control qubit is guaranteed to be \|0⟩.
 
-    Every qubit starts in |0⟩ (and re-enters |0⟩ after ``qb_alloc``).  A
-    controlled gate conditioned on |1⟩ acting on such a qubit is a no-op.
+    Every qubit starts in \|0⟩ (and re-enters \|0⟩ after ``qb_alloc``).  A
+    controlled gate conditioned on \|1⟩ acting on such a qubit is a no-op.
     For symmetric controlled-phase gates (CP, CZ) the gate is a no-op if
-    *either* qubit is |0⟩.
+    *either* qubit is \|0⟩.
 
     This is particularly effective on QFT-style circuits, where many
     controlled-phase gates act on qubits that have not yet been touched.
@@ -87,12 +87,12 @@ def cancel_zero_controls(qc: QuantumCircuit) -> QuantumCircuit:
 
     Examples
     --------
-    Cancel a CX whose control qubit is still in |0⟩::
+    Cancel a CX whose control qubit is still in \|0⟩::
 
         >>> from qrisp import QuantumCircuit, PassManager
         >>> from qrisp import cancel_zero_controls
         >>> qc = QuantumCircuit(2)
-        >>> qc.cx(0, 1)  # Qubit 0 starts in |0⟩ — the CX is a no-op
+        >>> qc.cx(0, 1)  # Qubit 0 starts in \|0⟩ — the CX is a no-op
         >>> qc.h(1)       # Now qubit 1 is marked as used
         >>> print(qc)
         qb_58: ──■───────
@@ -110,10 +110,10 @@ def cancel_zero_controls(qc: QuantumCircuit) -> QuantumCircuit:
                └───┘
 
     Symmetric controlled-phase gates (CZ, CP) cancel when *either*
-    qubit is |0⟩::
+    qubit is \|0⟩::
 
         >>> qc = QuantumCircuit(2)
-        >>> qc.cz(0, 1)   # both qubits start in |0⟩ — CZ is a no-op
+        >>> qc.cz(0, 1)   # both qubits start in \|0⟩ — CZ is a no-op
         >>> pm = PassManager()
         >>> pm += cancel_zero_controls
         >>> optimized = pm.run(qc)
@@ -124,7 +124,7 @@ def cancel_zero_controls(qc: QuantumCircuit) -> QuantumCircuit:
         qb_61: 
         <BLANKLINE>    
     """
-    fresh = set(qc.qubits)  # all qubits start in |0⟩
+    fresh = set(qc.qubits)  # all qubits start in \|0⟩
     qc_new = qc.clearcopy()
 
     for instr in qc.data:
@@ -152,7 +152,7 @@ def cancel_zero_controls(qc: QuantumCircuit) -> QuantumCircuit:
         # Gate is kept — append and update freshness.
         qc_new.append(instr)
 
-        # Single-qubit diagonal gates preserve |0⟩.
+        # Single-qubit diagonal gates preserve \|0⟩.
         if len(qubits) == 1 and op.name in _DIAGONAL_1Q:
             continue
 
