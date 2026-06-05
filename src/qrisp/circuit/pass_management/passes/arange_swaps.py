@@ -53,7 +53,7 @@ def arange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
 
     Examples
     --------
-    A SWAP(1, 2) where qubit 2 hasn't been touched yet.
+    A SWAP(0, 1) where qubit 1 hasn't been touched yet.
 
     Setup::
 
