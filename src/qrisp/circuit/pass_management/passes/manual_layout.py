@@ -115,10 +115,11 @@ def manual_layout(
             amended_qubits.append(Qubit("amended_qb_" + str(len(amended_qubits))))
             new_qc.add_qubit(amended_qubits[-1])
 
+        reverse_mapping = {phys: log for log, phys in enumerate(qubit_mapping)} 
         new_qubit_list: list[Qubit] = []
         for i in range(num_physical_qubits):
             if i in qubit_mapping:
-                new_qubit_list.append(qc.qubits[qubit_mapping.index(i)])
+                new_qubit_list.append(qc.qubits[reverse_mapping[i]])
             else:
                 new_qubit_list.append(amended_qubits.pop(0))
 

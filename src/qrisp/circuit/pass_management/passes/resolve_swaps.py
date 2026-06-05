@@ -84,11 +84,13 @@ def resolve_swaps(qc: QuantumCircuit) -> QuantumCircuit:
 
     qc_new = qc.clearcopy()
 
+    qubit_index = {qb: i for i, qb in enumerate(qubits)}
+
     for instr in qc.data:
         if instr.op.name == "swap":
             # Update the permutation: swap the two entries.
-            a = qubits.index(instr.qubits[0])
-            b = qubits.index(instr.qubits[1])
+            a = qubit_index[instr.qubits[0]]
+            b = qubit_index[instr.qubits[1]]
             perm[a], perm[b] = perm[b], perm[a]
         else:
             # Remap qubit operands through the current permutation.
