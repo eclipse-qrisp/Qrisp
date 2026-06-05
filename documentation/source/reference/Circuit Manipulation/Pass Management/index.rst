@@ -225,6 +225,8 @@ Qrisp ships with the following circuit transformation passes:
      - Fuse consecutive single-qubit gates into one
    * - :doc:`commute_swaps <Passes/commute_swaps>`
      - Commute single-qubit ops past SWAP gates
+   * - :doc:`convert_to_cx <Passes/convert_to_cx>`
+     - Convert two-qubit gates (CZ, CY, SWAP) to CX-based form
    * - :doc:`convert_to_cz <Passes/convert_to_cz>`
      - Convert two-qubit gates (CX, CY, SWAP) to CZ-based form
    * - :doc:`decompose <Passes/decompose>`

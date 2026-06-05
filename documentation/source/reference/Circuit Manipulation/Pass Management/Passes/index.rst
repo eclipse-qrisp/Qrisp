@@ -25,6 +25,8 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
      - Fuse consecutive single-qubit gates into one
    * - :doc:`commute_swaps <commute_swaps>`
      - Commute single-qubit ops past SWAP gates
+   * - :doc:`convert_to_cx <convert_to_cx>`
+     - Convert two-qubit gates (CZ, CY, SWAP) to CX-based form
    * - :doc:`convert_to_cz <convert_to_cz>`
      - Convert two-qubit gates (CX, CY, SWAP) to CZ-based form
    * - :doc:`decompose <decompose>`
@@ -51,6 +53,7 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
    cancel_zero_controls
    combine_single_qubit_gates
    commute_swaps
+   convert_to_cx
    convert_to_cz
    decompose
    gray_synth_toffoli
