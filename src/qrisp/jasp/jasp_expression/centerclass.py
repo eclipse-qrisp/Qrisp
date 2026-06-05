@@ -236,7 +236,7 @@ class Jaspr(ClosedJaxpr):
         else:
             ctrl_jaspr = self.ctrl_jaspr.copy()
 
-        res = Jaspr(
+        kwargs = dict(
             permeability=self.permeability,
             isqfree=self.isqfree,
             ctrl_jaspr=ctrl_jaspr,
@@ -247,6 +247,10 @@ class Jaspr(ClosedJaxpr):
             effects=self.effects,
             debug_info=self.debug_info,
         )
+        if self.consts:
+            kwargs["consts"] = list(self.consts)
+
+        res = Jaspr(**kwargs)
 
         res.envs_flattened = self.envs_flattened
 
@@ -1059,11 +1063,19 @@ class Jaspr(ClosedJaxpr):
 
         return jaspr_to_qir(self.flatten_environments())
 
-    def to_mlir(self):
+    def to_mlir(self, lower_stablehlo = False):
         """
         Compiles the Jaspr to an xDSL module using the Jasp Dialect.
         Requires the xDSL package to be installed (``pip install xdsl``).
 
+        Parameters
+        ----------
+        lower_stablehlo : bool, optional
+            If True, runs additional MLIR passes to lower StableHLO operations 
+            (like arithmetic and data operations) to lower-level dialects such 
+            as linalg, arith, and tensor. StableHLO control flow involving 
+            quantum types is preserved and rewritten to SCF by xDSL.
+            The default is False.
 
         .. note::
 
@@ -1130,7 +1142,7 @@ class Jaspr(ClosedJaxpr):
         """
         from qrisp.jasp.mlir import jaspr_to_mlir
 
-        return jaspr_to_mlir(self)
+        return jaspr_to_mlir(self, lower_stablehlo)
 
     def to_catalyst_mlir(self):
         """
