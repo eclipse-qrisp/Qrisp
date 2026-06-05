@@ -16,15 +16,17 @@
 ********************************************************************************
 """
 
+from collections.abc import Callable, Sequence
+from typing import Any
+
 from qrisp.core import QuantumVariable, QuantumArray
 from qrisp.qtypes import QuantumFloat
 from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
 from qrisp.alg_primitives.qpe import QPE
-from typing import Any, Callable
 
 
 def QAE(
-    args: QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray],
+    args: QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray],
     state_function: Callable,
     oracle_function: Callable,
     kwargs_oracle: dict[str, Any] | None = None,
@@ -42,7 +44,7 @@ def QAE(
 
     Parameters
     ----------
-    args : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
+    args : QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray]
         The quantum variable, array, or collection thereof on which quantum amplitude estimation
         is performed. These variables must initially be in the zero state (:math:`\ket{0}`).
         The QAE algorithm will internally apply the ``state_function`` to these variables
@@ -53,7 +55,7 @@ def QAE(
         The required signature of this function depends on the input ``args``:
 
         - if ``args`` is a single variable or array, it receives that single object.
-        - if ``args`` is a list, the elements are unpacked and passed as separate
+        - if ``args`` is a sequence, the elements are unpacked and passed as separate
           positional arguments (e.g., for ``args=[qv1, qv2]``, the signature
           must be ``state_function(qv1, qv2)``).
 
@@ -61,7 +63,7 @@ def QAE(
         A Python function tagging the good state :math:`\ket{\Psi_1}`.
         Like ``state_function``, its required signature matches the structure of ``args``:
         it takes a single argument if ``args`` is a single object, or unpacked
-        positional arguments if ``args`` is a list.
+        positional arguments if ``args`` is a sequence.
     kwargs_oracle : dict, optional
         A dictionary containing keyword arguments for the oracle. The default is None.
     precision : int, optional
@@ -122,7 +124,7 @@ def QAE(
     **Numerical integration**
 
 
-    Here, we demonstarate how to use QAE for numerical integration.
+    Here, we demonstrate how to use QAE for numerical integration.
 
     Consider a continuous function $f\colon[0,1]\rightarrow[0,1]$. We wish to evaluate
 

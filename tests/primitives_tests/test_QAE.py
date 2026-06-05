@@ -40,7 +40,63 @@ def test_QAE_single_variable():
         z(qb)
 
     qb = QuantumBool()
+    res = QAE(qb, state_function, oracle_function, precision=3)
+
+    mes_res = res.get_measurement()
+
+    assert np.isclose(mes_res.get(0.125, 0.0), 0.5)
+    assert np.isclose(mes_res.get(0.875, 0.0), 0.5)
+
+
+def test_QAE_single_variable_list():
+    """Tests QAE with a single QuantumVariable in a list."""
+
+    def state_function(qb):
+        ry(np.pi / 4, qb)
+
+    def oracle_function(qb):
+        z(qb)
+
+    qb = QuantumBool()
     res = QAE([qb], state_function, oracle_function, precision=3)
+
+    mes_res = res.get_measurement()
+
+    assert np.isclose(mes_res.get(0.125, 0.0), 0.5)
+    assert np.isclose(mes_res.get(0.875, 0.0), 0.5)
+
+
+def test_QAE_multiple_variables_list():
+    """Tests QAE with multiple QuantumVariables in a list."""
+
+    def state_function(qb0, qb1):
+        ry(np.pi / 4, qb0)
+
+    def oracle_function(qb0, qb1):
+        z(qb0)
+
+    qb0 = QuantumBool()
+    qb1 = QuantumBool()
+    res = QAE([qb0, qb1], state_function, oracle_function, precision=3)
+
+    mes_res = res.get_measurement()
+
+    assert np.isclose(mes_res.get(0.125, 0.0), 0.5)
+    assert np.isclose(mes_res.get(0.875, 0.0), 0.5)
+
+
+def test_QAE_multiple_variables_tuple():
+    """Tests QAE with multiple QuantumVariables in a tuple."""
+
+    def state_function(qb0, qb1):
+        ry(np.pi / 4, qb0)
+
+    def oracle_function(qb0, qb1):
+        z(qb0)
+
+    qb0 = QuantumBool()
+    qb1 = QuantumBool()
+    res = QAE((qb0, qb1), state_function, oracle_function, precision=3)
 
     mes_res = res.get_measurement()
 
@@ -101,7 +157,7 @@ def test_QAE_missing_parameters_raises_error():
         QAE([qb], state_function, oracle_function, precision=None, target=None)
 
 
-def test_QAE_integration():
+def test_QAE_numerical_integration():
     """Tests QAE on a more complex scenario: computing the integral of f(x) = (sin(x))^2."""
 
     def state_function(inp, tar):
