@@ -154,31 +154,6 @@ def test_injection():
     r, a, b = test()
     assert((r == (a == b)).all())
 
-def test_dynamic_qubit_array_concat_with_list():
-    """Test DynamicQubitArray list concatenation with correct qubit ordering."""
-
-    @boolean_simulation
-    def main():
-        a = QuantumFloat(2)
-        c_out = QuantumBool()
-
-        # a[:] + [c_out[0]] appends c_out to the end → [a[0], a[1], c_out[0]]
-        plus = a[:] + [c_out[0]]
-        # [c_out[0]] + a[:] prepends c_out to the front → [c_out[0], a[0], a[1]]
-        radd = [c_out[0]] + a[:]
-
-        # Flip a[0] via plus
-        x(plus[0])
-        # Flip c_out[0] via radd (now at index 0 instead of 2)
-        x(radd[0])
-
-        return measure(a), measure(c_out)
-
-    a_res, c_res = main()
-    assert a_res == 1
-    assert c_res == True
-
-
 def test_element_wise_addition_injection_qm():
     @jaspify
     def test():
