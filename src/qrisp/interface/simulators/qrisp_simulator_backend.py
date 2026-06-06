@@ -187,8 +187,9 @@ class QrispSimulatorBackend(Backend):
     simulator actually receives.  By inserting
     :func:`~qrisp.visualize` as the last pass you can inspect every
     circuit just before it is executed.  This can for instance be used
-    when evaluating expectation values via :meth:`QubitOperator.expectation_value
-    <qrisp.operators.QubitOperator.expectation_value>`: under the hood
+    when evaluating expectation values via
+    :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`:
+    under the hood
     the operator groups terms by commutativity, appends change-of-basis
     gates, and submits one circuit per group — details that are invisible
     from the operator expression alone.
@@ -216,7 +217,7 @@ class QrispSimulatorBackend(Backend):
         ev_function = H.expectation_value(state_prep, backend=backend)
         result = ev_function(np.pi/2)
 
-    .. code-block::
+    .. code-block:: none
 
                ┌─────────┐┌───┐┌─┐
          qv.0: ┤ Ry(π/2) ├┤ H ├┤M├

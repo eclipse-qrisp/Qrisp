@@ -1812,7 +1812,7 @@ class QubitOperator(Hamiltonian):
             ev_function = H.expectation_value(state_prep, backend=backend)
             result = ev_function(np.pi/2)
 
-        .. code-block::
+        .. code-block:: none
 
                    ┌─────────┐┌───┐┌─┐
              qv.0: ┤ Ry(π/2) ├┤ H ├┤M├
