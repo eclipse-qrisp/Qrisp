@@ -21,12 +21,9 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Sequence, cast
+from typing import Sequence, cast
 
-if TYPE_CHECKING:
-    from qrisp.circuit.pass_management.pass_manager import PassManager
-
-from qrisp.circuit.pass_management.pass_manager import PassManager as _PassManager
+from qrisp.circuit.pass_management.pass_manager import PassManager
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
 from qrisp.interface.job import Job, JobResult, JobStatus
@@ -305,7 +302,7 @@ class QrispSimulatorBackend(Backend):
             :class:`~qrisp.interface.Backend` initialiser.
         """
         super().__init__(name=name, options=options, **kwargs)
-        if pm is not None and not isinstance(pm, _PassManager):
+        if pm is not None and not isinstance(pm, PassManager):
             raise TypeError(
                 f"Expected a PassManager instance for 'pm', "
                 f"got {type(pm).__name__}."
