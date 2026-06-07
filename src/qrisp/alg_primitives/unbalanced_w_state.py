@@ -28,8 +28,8 @@ def unbalanced_W_state(
     reversed: bool = False
 ) -> None:
     r"""
-    Prepare a generalized W state (unbalanced Dicke state of Hamming weight 1)
-    on the given :ref:`QuantumVariable`.
+    Prepare a generalized W state, i.e. an unbalanced Dicke state of Hamming
+    weight 1, on the given :ref:`QuantumVariable`.
 
     The resulting quantum state is
 
@@ -38,20 +38,20 @@ def unbalanced_W_state(
         |\psi\rangle \;=\; \sum_{i=0}^{n-1} a_i \,|e_i\rangle
 
     where :math:`|e_i\rangle` is the computational basis state with a single
-    ``1`` at position `i`, and :math:`a_i` are the (possibly complex)
+    ``1`` at position :math:`i`, and :math:`a_i` are the (possibly complex)
     amplitudes given by ``amplitudes``. The input array is automatically
     normalized so that :math:`\sum_i |a_i|^2 = 1`.
 
     Parameters
     ----------
-    qv : QuantumVariable
+    qv : NDArrayLike
         A freshly allocated :ref:`QuantumVariable` in the
         :math:`|0\dots0\rangle` state whose size matches ``len(amplitudes)``.
     amplitudes : array_like
         A 1-D sequence of complex (or real) target amplitudes, one per qubit.
-        Its length must equal ``qv.size``.
+        Its length must be equal ``qv.size``.
     reversed : bool, optional
-        If ``True``, reverse the order of the received amplitudes before
+        If ``True``, reverse the order of the input amplitudes before
         preparing the state. Default is ``False``
 
     Raises
