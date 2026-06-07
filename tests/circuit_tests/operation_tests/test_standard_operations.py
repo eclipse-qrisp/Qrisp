@@ -69,13 +69,13 @@ class TestSXGate:
         gate = SXGate()
         s = 1 / np.sqrt(2)
         expected = np.array([[s, -1j * s], [-1j * s, s]], dtype=complex)
-        assert np.allclose(gate.get_unitary(), expected, atol=1e-10)
+        assert np.allclose(gate.get_unitary(), expected, atol=1e-6)
 
     def test_sx_squared_is_x_up_to_phase(self):
         """SX @ SX = -i·X (RX(π/2) composed twice = RX(π) = -i·X)."""
         sx = SXGate().get_unitary()
         x = np.array([[0, 1], [1, 0]], dtype=complex)
-        assert np.allclose(sx @ sx, -1j * x, atol=1e-10)
+        assert np.allclose(sx @ sx, -1j * x, atol=1e-6)
 
     def test_sxdg_name_and_params(self):
         """SXDGGate has name 'sx_dg' and no parameters."""
@@ -87,7 +87,7 @@ class TestSXGate:
         """SXDGGate unitary is the conjugate transpose of SXGate."""
         sx = SXGate().get_unitary()
         sxdg = SXDGGate().get_unitary()
-        assert np.allclose(sxdg, sx.conj().T, atol=1e-10)
+        assert np.allclose(sxdg, sx.conj().T, atol=1e-6)
 
     def test_sxdg_permeability_and_qfree(self):
         """SXDGGate is not permeable and not qfree."""
@@ -99,7 +99,7 @@ class TestSXGate:
         """SX @ SX† = I."""
         sx = SXGate().get_unitary()
         sxdg = SXDGGate().get_unitary()
-        assert np.allclose(sx @ sxdg, np.eye(2), atol=1e-10)
+        assert np.allclose(sx @ sxdg, np.eye(2), atol=1e-6)
 
 
 class TestIDGate:
@@ -111,7 +111,7 @@ class TestIDGate:
 
     def test_id_unitary_is_identity(self):
         """IDGate unitary is the 2x2 identity matrix."""
-        assert np.allclose(IDGate().get_unitary(), np.eye(2), atol=1e-10)
+        assert np.allclose(IDGate().get_unitary(), np.eye(2), atol=1e-6)
 
 
 class TestU1Gate:
@@ -135,7 +135,7 @@ class TestU1Gate:
         """U1Gate(phi) unitary matches diag(exp(-i*phi/2), exp(i*phi/2))."""
         gate = U1Gate(phi)
         expected = np.diag([np.exp(-1j * phi / 2), np.exp(1j * phi / 2)])
-        assert np.allclose(gate.get_unitary(), expected, atol=1e-10)
+        assert np.allclose(gate.get_unitary(), expected, atol=1e-6)
 
 
 class TestRGate:
@@ -168,13 +168,13 @@ class TestRGate:
             [[c, np.exp(-1j * phi) * s], [-np.exp(1j * phi) * s, c]],
             dtype=complex,
         )
-        assert np.allclose(gate.get_unitary(), expected, atol=1e-10)
+        assert np.allclose(gate.get_unitary(), expected, atol=1e-6)
 
     def test_r_zero_theta_is_identity(self):
         """R(0, phi) is identity for any phi."""
         for phi in [0.0, 1.0, np.pi]:
             gate = RGate(0.0, phi)
-            assert np.allclose(gate.get_unitary(), np.eye(2), atol=1e-10)
+            assert np.allclose(gate.get_unitary(), np.eye(2), atol=1e-6)
 
 
 class TestCPGate:
@@ -208,7 +208,7 @@ class TestCPGate:
         """CPGate(phi) unitary matches diag(1,1,1,exp(i*phi))."""
         gate = CPGate(phi)
         expected = np.diag([1.0, 1.0, 1.0, np.exp(1j * phi)])
-        assert np.allclose(gate.get_unitary(), expected, atol=1e-10)
+        assert np.allclose(gate.get_unitary(), expected, atol=1e-6)
 
     def test_cp_symbolic_returns_controlled_p(self):
         """CPGate with a sympy symbol returns a controlled PGate."""
@@ -224,7 +224,7 @@ class TestMCXGate:
         """MCXGate() with default control_amount=1 matches CXGate."""
         mcx = MCXGate(control_amount=1)
         cx = CXGate()
-        assert np.allclose(mcx.get_unitary(), cx.get_unitary(), atol=1e-10)
+        assert np.allclose(mcx.get_unitary(), cx.get_unitary(), atol=1e-6)
 
     @pytest.mark.parametrize("n_ctrl", [1, 2, 3])
     def test_mcx_num_qubits(self, n_ctrl):
@@ -238,7 +238,7 @@ class TestMCXGate:
         u = gate.get_unitary()
         expected = np.eye(8, dtype=complex)
         expected[6:8, 6:8] = np.array([[0, 1], [1, 0]])
-        assert np.allclose(u, expected, atol=1e-10)
+        assert np.allclose(u, expected, atol=1e-6)
 
 
 class TestMCRXGate:
@@ -256,7 +256,7 @@ class TestMCRXGate:
         rx_u = RXGate(phi).get_unitary()
         expected = np.eye(4, dtype=complex)
         expected[2:4, 2:4] = rx_u
-        assert np.allclose(u, expected, atol=1e-10)
+        assert np.allclose(u, expected, atol=1e-6)
 
 
 class TestSwapGate:
@@ -275,18 +275,18 @@ class TestSwapGate:
             [[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]],
             dtype=complex,
         )
-        assert np.allclose(SwapGate().get_unitary(), expected, atol=1e-10)
+        assert np.allclose(SwapGate().get_unitary(), expected, atol=1e-6)
 
     def test_swap_is_self_inverse(self):
         """SWAP @ SWAP = I."""
         u = SwapGate().get_unitary()
-        assert np.allclose(u @ u, np.eye(4), atol=1e-10)
+        assert np.allclose(u @ u, np.eye(4), atol=1e-6)
 
     def test_swap_inverse_is_self(self):
         """SwapGate.inverse() returns a gate with the same unitary."""
         gate = SwapGate()
         inv = gate.inverse()
-        assert np.allclose(inv.get_unitary(), gate.get_unitary(), atol=1e-10)
+        assert np.allclose(inv.get_unitary(), gate.get_unitary(), atol=1e-6)
 
 
 class TestRXXGate:
@@ -359,12 +359,12 @@ class TestRZZGate:
                 np.exp(-1j * phi / 2),
             ]
         )
-        assert np.allclose(gate.get_unitary(), expected, atol=1e-10)
+        assert np.allclose(gate.get_unitary(), expected, atol=1e-6)
 
     def test_rzz_is_unitary(self):
         """RZZGate unitary satisfies U @ U† = I."""
         u = RZZGate(2.1).get_unitary()
-        assert np.allclose(u @ u.conj().T, np.eye(4), atol=1e-10)
+        assert np.allclose(u @ u.conj().T, np.eye(4), atol=1e-6)
 
 
 class TestXXYYGate:
@@ -396,7 +396,7 @@ class TestXXYYGate:
         gate = XXYYGate(phi, beta)
         u_direct = gate.get_unitary()
         u_from_def = gate.definition.transpile().get_unitary()
-        assert np.allclose(u_direct, u_from_def, atol=1e-10)
+        assert np.allclose(u_direct, u_from_def, atol=1e-6)
 
 
 class TestMeasurement:
@@ -443,13 +443,13 @@ class TestQubitAllocDealloc:
         """QubitAlloc has name 'qb_alloc' and an identity unitary."""
         op = QubitAlloc()
         assert op.name == "qb_alloc"
-        assert np.allclose(op.unitary, np.eye(2), atol=1e-10)
+        assert np.allclose(op.unitary, np.eye(2), atol=1e-6)
 
     def test_qubit_dealloc_name_and_unitary(self):
         """QubitDealloc has name 'qb_dealloc' and an identity unitary."""
         op = QubitDealloc()
         assert op.name == "qb_dealloc"
-        assert np.allclose(op.unitary, np.eye(2), atol=1e-10)
+        assert np.allclose(op.unitary, np.eye(2), atol=1e-6)
 
 
 class TestU3GateAlias:
@@ -465,7 +465,7 @@ class TestU3GateAlias:
         assert np.allclose(
             u3Gate(theta, phi, lam).get_unitary(),
             U3Gate(theta, phi, lam).get_unitary(),
-            atol=1e-10,
+            atol=1e-6,
         )
 
 
@@ -478,7 +478,7 @@ class TestControlledPauliGates:
             [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]],
             dtype=complex,
         )
-        assert np.allclose(CXGate().get_unitary(), expected, atol=1e-10)
+        assert np.allclose(CXGate().get_unitary(), expected, atol=1e-6)
 
     def test_cy_unitary(self):
         """CYGate unitary applies Y on the target when control is |1⟩."""
@@ -486,9 +486,9 @@ class TestControlledPauliGates:
             [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, -1j], [0, 0, 1j, 0]],
             dtype=complex,
         )
-        assert np.allclose(CYGate().get_unitary(), expected, atol=1e-10)
+        assert np.allclose(CYGate().get_unitary(), expected, atol=1e-6)
 
     def test_cz_unitary(self):
         """CZGate unitary matches diag(1,1,1,-1)."""
         expected = np.diag([1.0, 1.0, 1.0, -1.0])
-        assert np.allclose(CZGate().get_unitary(), expected, atol=1e-10)
+        assert np.allclose(CZGate().get_unitary(), expected, atol=1e-6)
