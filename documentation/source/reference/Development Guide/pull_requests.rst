@@ -18,7 +18,7 @@ Good places to reach out:
 - **GitHub Issues**: for specific bugs, questions about behaviour, or
   suggestions: https://github.com/eclipse-qrisp/Qrisp/issues
 - **Discord**: for broader design conversations:
-  https://discord.gg/fUCFcBAS
+  https://discord.gg/v5np7DeBaq
 
 Opening a pull request
 -----------------------
