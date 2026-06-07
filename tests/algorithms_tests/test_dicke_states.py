@@ -58,7 +58,7 @@ def test_dicke_state_balanced_jasp():
         x(qv[n - 1])
         dicke_state(qv, k)
         return qv
-    
+
     result = main()
 
     res_arr = np.zeros(2 ** n)
@@ -87,7 +87,7 @@ def test_dicke_state_balanced_jasp_inverse():
             x(qv[n - 1])
             dicke_state(qv, k)
         return qv
-    
+
     result = main()
 
     res_arr = np.zeros(2 ** n)
@@ -107,7 +107,7 @@ def test_dicke_state_balanced_jasp_inverse():
 def test_unbalanced_W_state():
     n = 3 # Number of qubits
     amps = np.array([0.25 + 0.2j, 0.375 + 0.18j, 0.375], dtype=complex)
-    
+
     # Prepare unbalanced Dicke state
     qv = QuantumVariable(n)
     unbalanced_W_state(qv, amps, reversed=True)
@@ -126,7 +126,7 @@ def test_unbalanced_W_state():
 def test_unbalanced_W_state_trailing_zeroes():
     n = 3 # Number of qubits
     amps = np.array([0.25 + 0.2j, 0, 0], dtype=complex)
-    
+
     # Prepare unbalanced Dicke state
     qv = QuantumVariable(n)
     unbalanced_W_state(qv, amps, reversed=True)
@@ -145,7 +145,7 @@ def test_unbalanced_W_state_trailing_zeroes():
 def test_unbalanced_W_state_jasp():
     n = 3 # Number of qubits
     amps = np.array([0.25 + 0.2j, 0.375 + 0.18j, 0.375], dtype=complex)
-    
+
     # Prepare unbalanced Dicke state
     @terminal_sampling
     def main():
@@ -171,7 +171,7 @@ def test_unbalanced_W_state_jasp():
 def test_unbalanced_W_state_jasp_inverse():
     n = 3 # Number of qubits
     amps = np.array([0.25 + 0.2j, 0.375 + 0.18j, 0.375], dtype=complex)
-    
+
     # Prepare unbalanced Dicke state
     @terminal_sampling
     def main():
@@ -194,7 +194,7 @@ def test_unbalanced_W_state_jasp_inverse():
 def test_unbalanced_W_state_one_qubit():
     n = 1 # Number of qubits
     amps = np.array([0.25 + 0.2j], dtype=complex)
-    
+
     # Prepare unbalanced Dicke state
     qv = QuantumVariable(n)
     unbalanced_W_state(qv, amps, reversed=True)
