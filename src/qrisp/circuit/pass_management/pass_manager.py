@@ -41,26 +41,26 @@ class PassManager:
     Build a pipeline with ``+=``, then inspect, insert, and remove passes::
 
         >>> from qrisp import PassManager
-        >>> from qrisp import convert_to_cz, cancel_inverses, remove_barriers
+        >>> from qrisp import convert_to_cz, fuse_adjacents, remove_barriers
         >>>
         >>> pm = PassManager()
         >>> pm += convert_to_cz()
-        >>> pm += cancel_inverses
+        >>> pm += fuse_adjacents
         >>> pm += remove_barriers
         >>>
         >>> print(pm)
-        PassManager(['convert_to_cz', 'cancel_inverses', 'remove_barriers'])
+        PassManager(['convert_to_cz', 'fuse_adjacents', 'remove_barriers'])
         >>>
         >>> # Insert a pass at a specific position
         >>> from qrisp import decompose
         >>> pm.insert_pass(1, decompose)
         >>> print(pm)
-        PassManager(['convert_to_cz', 'decompose', 'cancel_inverses', 'remove_barriers'])
+        PassManager(['convert_to_cz', 'decompose', 'fuse_adjacents', 'remove_barriers'])
         >>>
         >>> # Remove the last pass
         >>> pm.remove_pass(len(pm) - 1)
         >>> print(pm)
-        PassManager(['convert_to_cz', 'decompose', 'cancel_inverses'])
+        PassManager(['convert_to_cz', 'decompose', 'fuse_adjacents'])
         >>>
         >>> transpiled_qc = pm.run(qc)
     """

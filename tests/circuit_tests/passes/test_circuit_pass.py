@@ -261,9 +261,9 @@ class TestCircuitPassCompareUnitary:
 
     # --- Integration: real passes ---
 
-    def test_cancel_inverses_preserves_unitary(self):
-        """cancel_inverses removes inverse pairs and should preserve the unitary."""
-        from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
+    def test_fuse_adjacents_preserves_unitary(self):
+        """fuse_adjacents removes inverse pairs and should preserve the unitary."""
+        from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
 
         qc = QuantumCircuit(2)
         qc.h(0)
@@ -273,7 +273,7 @@ class TestCircuitPassCompareUnitary:
         qc.cx(0, 1)  # CX·CX = I — cancels
         qc.h(1)
 
-        cp = cancel_inverses
+        cp = fuse_adjacents
         assert cp.compare_unitary(qc)
 
     def test_combine_single_qubit_gates_preserves_unitary(self):
@@ -452,9 +452,9 @@ class TestCircuitPassCompareMeasurement:
 
     # --- Integration: real passes ---
 
-    def test_cancel_inverses_measured(self, ghz_measured):
-        """cancel_inverses should preserve measurement statistics."""
-        from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
+    def test_fuse_adjacents_measured(self, ghz_measured):
+        """fuse_adjacents should preserve measurement statistics."""
+        from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
 
         qc = QuantumCircuit(3)
         for _ in range(3):
@@ -466,7 +466,7 @@ class TestCircuitPassCompareMeasurement:
         qc.cx(1, 2)
         qc.measure(qc.qubits, qc.clbits)
 
-        cp = cancel_inverses
+        cp = fuse_adjacents
         assert cp.compare_measurement(qc)
 
     def test_convert_to_cz_measured(self):
@@ -640,17 +640,17 @@ class TestCircuitPassVisualize:
         assert before_section != after_section
 
     def test_visualize_with_real_pass(self, capsys):
-        """Integration: visualize with cancel_inverses on a circuit with CX-CX."""
-        from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
+        """Integration: visualize with fuse_adjacents on a circuit with CX-CX."""
+        from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
 
         qc = QuantumCircuit(2)
         qc.cx(0, 1)
         qc.cx(0, 1)
 
-        cancel_inverses.visualize(qc)
+        fuse_adjacents.visualize(qc)
 
         captured = capsys.readouterr()
-        assert "cancel_inverses" in captured.out
+        assert "fuse_adjacents" in captured.out
 
 
 # ---------------------------------------------------------------------------

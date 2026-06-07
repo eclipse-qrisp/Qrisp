@@ -25,7 +25,7 @@ Basic Pipeline
 Build a compilation pipeline by chaining passes together::
 
     from qrisp import QuantumCircuit, PassManager
-    from qrisp import cancel_inverses, commute_swaps, combine_single_qubit_gates
+    from qrisp import fuse_adjacents, commute_swaps, combine_single_qubit_gates
 
     qc = QuantumCircuit(2)
     qc.cx(0, 1)
@@ -47,7 +47,7 @@ Build a compilation pipeline by chaining passes together::
 ::
 
     pm = PassManager()
-    pm += cancel_inverses
+    pm += fuse_adjacents
     pm += commute_swaps
     pm += combine_single_qubit_gates
 
@@ -72,16 +72,16 @@ Visualizing Pass Transformations
 Every :class:`~qrisp.CircuitPass` provides a :meth:`~qrisp.CircuitPass.visualize`
 method that prints a before/after comparison of the circuit::
 
-    from qrisp import cancel_inverses
+    from qrisp import fuse_adjacents
 
     qc = QuantumCircuit(2)
     qc.cx(0, 1)
     qc.cx(0, 1)
-    cancel_inverses.visualize(qc)
+    fuse_adjacents.visualize(qc)
 
 .. code-block:: none
 
-   ====================  cancel_inverses  =====================
+   ====================  fuse_adjacents  =====================
    ────────────────────────── Before ──────────────────────────
                       
     qb_0: ──■────■──
@@ -130,7 +130,7 @@ statistics::
 
     pm = PassManager()
     pm += convert_to_cz()
-    pm += cancel_inverses
+    pm += fuse_adjacents
     pm += combine_single_qubit_gates
 
     qc = QuantumCircuit(2)
@@ -148,14 +148,14 @@ Standalone Passes
 
 Passes can also be used directly without a PassManager::
 
-    from qrisp import cancel_inverses
+    from qrisp import fuse_adjacents
 
     qc = QuantumCircuit(1)
     qc.x(0)
     qc.x(0)
     qc.y(0)
 
-    optimized_qc = cancel_inverses(qc)
+    optimized_qc = fuse_adjacents(qc)
     # optimized_qc now contains only a Y gate
 
 Targeting Native Gate Sets
@@ -217,7 +217,7 @@ Qrisp ships with the following circuit transformation passes:
      - Description
    * - :doc:`arrange_swaps <Passes/arrange_swaps>`
      - Rearrange SWAP gates for better cancellation later
-   * - :doc:`cancel_inverses <Passes/cancel_inverses>`
+   * - :doc:`fuse_adjacents <Passes/fuse_adjacents>`
      - Cancel adjacent gate–inverse-gate pairs via DAG analysis
    * - :doc:`cancel_zero_controls <Passes/cancel_zero_controls>`
      - Remove gates controlled on \|0⟩ states

@@ -37,7 +37,7 @@ from qrisp.circuit import (
     ClControlledOperation,
     U3Gate,
 )
-from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
+from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
 from qrisp.misc import get_depth_dic, retarget_instructions
 from qrisp.permeability import optimize_allocations, parallelize_qc, lightcone_reduction
 
@@ -173,7 +173,7 @@ def qompiler(
         # Reorder circuit for parallelization.
         # For more details check the implementation of this function
         qc = parallelize_qc(qc, depth_indicator=gate_speed)
-        qc = cancel_inverses(qc)
+        qc = fuse_adjacents(qc)
 
         # We now reorder the transpiled circuit to achieve a good (de)allocation order.
         # Reordering is performed based on the DAG representation of Unqomp.
@@ -469,8 +469,8 @@ def qompiler(
         qc.qubits = sorted_qubit_list
 
         reduced_qc = parallelize_qc(qc, depth_indicator=gate_speed)
-        reduced_qc = cancel_inverses(reduced_qc)
-        qc = cancel_inverses(qc)
+        reduced_qc = fuse_adjacents(reduced_qc)
+        qc = fuse_adjacents(qc)
 
     if reduced_qc.depth(depth_indicator=gate_speed) > qc.depth(
         depth_indicator=gate_speed
