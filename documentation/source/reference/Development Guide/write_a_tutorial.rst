@@ -62,7 +62,7 @@ All of these aspects will be required for your tutorial. Our existing tutorials 
 
 * We put heavy emphasis on didactical value. Each step should build on the previous. 
 * Your tutorial should leave the reader thinking: "*I learned how to translate these concepts to solve the problem into Qrisp code!*" or "*In parallel to learning about these concepts I learned how to use the Qrisp code that solves the problem and can now tackle it myself!*" 
-* Keep it short and concise, especially when it comes to maths. We want to understand how to implement things in Qrisp; mathematical rigour can be counterproductive. 
+* Keep it short and concise, especially when it comes to math. While mathematical accuracy is essential, dense derivations can distract from the code. Give the reader exactly the math they need to understand the Qrisp implementation, and use references for the rest.
 * Our tutorials are ``.ipynb`` (Jupyter Notebook Python) files, so please format your tutorial as such! And make sure that it can be executed as is.
 
 Don't be afraid of getting started! We are happy to help, so please reach out! 
