@@ -1140,7 +1140,7 @@ def quantum_bit_shift(qf, bit_shift, treat_overflow=True):
 
 # @lifted
 def app_sb_phase_polynomial(qv_list, poly, symbol_list=None, t=1):
-    """
+    r"""
     Applies a phase function specified by a `semi-Boolean polynomial <https://ieeexplore.ieee.org/document/9815035>`_ acting on a list of QuantumVariables.
     That is, this method implements the transformation
 
@@ -1267,7 +1267,7 @@ def app_sb_phase_polynomial(qv_list, poly, symbol_list=None, t=1):
 
 # @lifted
 def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
-    """
+    r"""
     Applies a phase function specified by a polynomial acting on a list of QuantumFloats.
     That is, this method implements the transformation
 
