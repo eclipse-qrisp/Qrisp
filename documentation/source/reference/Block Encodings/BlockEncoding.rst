@@ -19,6 +19,10 @@ Constructors
      - Constructs a BlockEncoding using the Linear Combination of Unitaries (LCU) protocol.
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_operator`
      - Constructs a BlockEncoding from an operator.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_operator`
+     - Constructs a BlockEncoding from an operator using the Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) protocol.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep`
+     - Constructs a BlockEncoding using the Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) protocol.
 
 .. toctree:: 
    :hidden:
@@ -26,6 +30,8 @@ Constructors
    methods/from_array
    methods/from_lcu
    methods/from_operator
+   methods/from_foqcs_lcu_operator
+   methods/from_foqcs_lcu_prep
 
 Utilities
 ---------

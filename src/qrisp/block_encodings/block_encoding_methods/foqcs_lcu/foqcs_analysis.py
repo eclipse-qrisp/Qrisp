@@ -316,6 +316,7 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
     ----------
     KeyError
         If function received an unsupported FOQCS-LCU PREP method
+
     """
     if aresult["method"] == "heisenberg":
         #print("Parsing as Heisenberg model")

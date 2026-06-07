@@ -532,20 +532,26 @@ class BlockEncoding:
         tol: float = 1e-12
     ) -> BlockEncoding:
         r"""
-        Constructs a BlockEncoding from an operator using the
+        Constructs a :class:`BlockEncoding` from a compatible :class:`QubitOperator` using the
         Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) protocol.
+        Based on the application of the same name in https://arxiv.org/abs/2507.20887.
+
+        The operator is analyzed automatically and the corresponding FOQCS-LCU PREP routine is selected.
+        Currently supported structures include the specialized one-dimensional nearest-neighbour Heisenberg form
+        and the more general spin-glass / same-axis two-body form.
 
         Parameters
         ----------
         O : QubitOperator
-            Qubit operator of form: O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)
+            Operator to encode, e.g.
+            ``O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)``
 
         L : int = -1
             Number of interacting qubits.
             If not specified, will default to -1, and infer the number of interacting qubits from the operator
 
         tol : float = 1e-12
-            Tolerance for considering the entry zero
+            Tolerance for considering the entry to be zero
 
         Returns
         -------
@@ -556,12 +562,9 @@ class BlockEncoding:
         Raises
         ----------
         ValueError
-            If operator is incompatible with FOQCS-LCU
-
+            When the operator is not representing spin-glass model.
         KeyError
-            If function received an unsupported FOQCS-LCU PREP method
-        ValueError
-            When the operator is not compatible with FOQCS-LCU (fails the spin-glass check) and `raise_errors` is set to `True`.
+            If method received an unsupported FOQCS-LCU PREP method
 
         Examples
         --------
@@ -582,6 +585,7 @@ class BlockEncoding:
             main()
             # {1.0: 0.5, 2.0: 0.5}
 
+
         """
         from qrisp.block_encodings.block_encoding_methods.foqcs_lcu.foqcs_analysis import foqcs_analyze_operator
         from qrisp.block_encodings.block_encoding_methods.foqcs_lcu.foqcs_analysis import build_foqcs_lcu_prep_from_analysis
@@ -600,19 +604,25 @@ class BlockEncoding:
         norm: "ArrayLike" = 1
     ) -> BlockEncoding:
         r"""
-        Constructs a BlockEncoding using the Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) protocol.
+        Constructs a :class:`BlockEncoding` using the Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) protocol.
+        Based on the application of the same name in https://arxiv.org/abs/2507.20887.
+
+        This method implements the Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) structure.
+        The provided ``prep`` routine prepares the right PREP (:math:`PREP_{R}`) state on the FOQCS-LCU ancilla register.
+        If ``unprep`` is provided, it is interpreted as the corresponding left PREP (:math:`PREP_{L}`) routine and is applied inversely after ``SELECT``.
 
         Parameters
         ----------
         prep : Callable[[QuantumVariable], None]
-            Partial PREP_R function with all relevant parameters passed except QuantumVariable.
+            Partial :math:`PREP_{R}` function with all relevant parameters passed except QuantumVariable.
+            Parameters can be fixed by using :class:`functools.partial`
         
         num_q_ops : int
-            Number of operand qubits (L argument for FOQCS-LCU PREP routines).
+            Number of operand qubits, i.e. ``L`` argument for FOQCS-LCU PREP routines.
             The default is 1.
 
         unprep : Callable[[QuantumVariable], None] = None
-            Complex conjugate transpose of PREP_R with conjugated parameters (READ NOTE ON THIS!!!), 
+            Complex conjugate transpose of :math:`PREP_{R}` with conjugated parameters (see Notes), 
             also a partial function variable with all relevant parameters passed except QuantumVariable.
             The default is None, in which case the unprep is calculated using the prep parameter.
 
@@ -629,77 +639,85 @@ class BlockEncoding:
         BlockEncoding
             A BlockEncoding using FOQCS LCU.
 
+        Raises
+        ----------
+        ValueError
+            When the operator is not representing spin-glass model.
+        KeyError
+            If method received an unsupported FOQCS-LCU PREP method
+            
         Notes
         -----
-        - PREP_R is the PREP subcircuit for FOQCS-LCU, PREP_L^dagger is the unprep subcircuit and therefore has to undo
-          what PREP_R did to the ancilla qubits. PREP_L is a version of PREP_R that is prepared using
-          conjugated parameters. PREP_L^dagger undoes the PREP_R operation in its entirety.
+        - :math:`PREP_{R}` is the PREP subcircuit for FOQCS-LCU, :math:`PREP_{L}^{\dagger}` is the unprep subcircuit and therefore has to undo
+          what :math:`PREP_{R}` did to the ancilla qubits. :math:`PREP_{L}` is a version of :math:`PREP_{R}` that is prepared using
+          conjugated parameters. :math:`PREP_{L}^{\dagger}` undoes the :math:`PREP_{R}` operation in its entirety.
 
         Examples
         --------
 
         ::
 
-        # Initialize variables + their values
-        L = 4
-        g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
-        J = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
+            # Initialize variables + their values
+            L = 4
+            g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
+            J = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
 
-        # Normalize
-        norm = np.linalg.norm(np.block([g, J]))
-        g /= norm
-        J /= norm
+            # Normalize
+            norm = np.linalg.norm(np.block([g, J]))
+            g /= norm
+            J /= norm
 
-        # Calculating the normalization factor
-        _g = np.zeros((3,), dtype="complex")
-        _J = np.zeros((3,), dtype="complex")
+            # Calculating the normalization factor
+            _g = np.zeros((3,), dtype="complex")
+            _J = np.zeros((3,), dtype="complex")
 
-        for i in range(3):
-            _g[i] = np.sqrt(g[i] * L)
-            _J[i] = np.sqrt(J[i] * (L - 1))
+            for i in range(3):
+                _g[i] = np.sqrt(g[i] * L)
+                _J[i] = np.sqrt(J[i] * (L - 1))
 
-        # Correction for XZ = -iY
-        _J[1] = 1j * _J[1]
-        _g[1] = (1 - 1j) * _g[1] / np.sqrt(2)
+            # Correction for XZ = -iY
+            _J[1] = 1j * _J[1]
+            _g[1] = (1 - 1j) * _g[1] / np.sqrt(2)
 
-        # Normalization for block encoding
-        norm = np.linalg.norm(np.block([_g, _J]))
+            # Normalization for block encoding
+            norm = np.linalg.norm(np.block([_g, _J]))
 
-        # Construct dictionary input expected by foqcs_prep_heisenberg()
-        heis_g = {"X": g[0], "Y": g[1], "Z": g[2]}
-        heis_J = {"X": J[0], "Y": J[1], "Z": J[2]}
+            # Construct dictionary input expected by foqcs_prep_heisenberg()
+            heis_g = {"X": g[0], "Y": g[1], "Z": g[2]}
+            heis_J = {"X": J[0], "Y": J[1], "Z": J[2]}
 
-        # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
-        prep = partial(
-            foqcs_prep_heisenberg,
-            L=L,
-            g=heis_g,
-            J=heis_J,
-        )
-        unprep = partial(
-            foqcs_prep_heisenberg,
-            L=L,
-            g=heis_g,
-            J=heis_J,
-            conjugate=True
-        )
+            # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
+            prep = partial(
+                foqcs_prep_heisenberg,
+                L=L,
+                g=heis_g,
+                J=heis_J,
+            )
+            unprep = partial(
+                foqcs_prep_heisenberg,
+                L=L,
+                g=heis_g,
+                J=heis_J,
+                conjugate=True
+            )
 
-        be = BlockEncoding.from_foqcs_lcu_prep(prep=prep, num_q_ops=L, unprep=unprep, norm=norm ** 2)
+            be = BlockEncoding.from_foqcs_lcu_prep(prep=prep, num_q_ops=L, unprep=unprep, norm=norm ** 2)
 
-        psi = _prep_psi(L)
+            psi = _prep_psi(L)
 
-        def operand_prep(psi):
-            qv = QuantumVariable(4)
-            qv.init_state(psi, method="qswitch")
-            return qv
+            def operand_prep(psi):
+                qv = QuantumVariable(4)
+                qv.init_state(psi, method="qswitch")
+                return qv
 
-        @terminal_sampling
-            def main_apply_rus(BE):
-                return BE.apply_rus(operand_prep)(psi)
-                
-        # Do the measurement using RUS
-            result_rus = main_apply_rus(be)
-            print(result_rus)
+            @terminal_sampling
+                def main_apply_rus(BE):
+                    return BE.apply_rus(operand_prep)(psi)
+                    
+            # Do the measurement using RUS
+                result_rus = main_apply_rus(be)
+                print(result_rus)
+
 
         """
         from qrisp.block_encodings.block_encoding_methods.foqcs_lcu.foqcs_preps import get_foqcs_lcu_prep_num_of_ancillae
