@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from qrisp.circuit import QuantumCircuit, Qubit, XGate
+from qrisp.circuit import QuantumCircuit, Qubit, XGate, CXGate
 
 # This function takes a circuit and turns it into it's controlled version
 def multi_controlled_circuit(
@@ -68,12 +68,12 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
     # If the U3 gate is an rx , ry, rz or p gate, we can use gray phase synthesis on the
     # target qubit and wrap this in the corresponding gates
     # (for instance H for rx because RX = H RZ H)
-    if u3_gate.name in ["p"]:
+    if u3_gate.name in ["p", "t", "s", "t_dg", "s_dg"]:
         # Synthesize phases using gray synthesis
         gray_phase_synth_qb_list(
             qc,
             qc.qubits,
-            (2 ** (control_amount + 1) - 1) * [0] + [u3_gate.params[0]],
+            (2 ** (control_amount + 1) - 1) * [0] + [u3_gate.lam + u3_gate.phi],
             phase_tolerant=method in ["gray_pt", "gray_pt_inv"],
         )
 
@@ -93,7 +93,7 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
         if method == "gray_pt_inv":
             qc = qc.inverse()
 
-    elif u3_gate.name == "rx":
+    elif u3_gate.name in ["rx", "sx", "sx_dg"]:
         # Same thing as with rz but now we use RX = H RZ H
         qc.h(target_qubit)
         gray_phase_synth_qb_list(
@@ -191,20 +191,23 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
 
         qc.append(A.to_gate("A"), [qc.qubits[-1]])
 
-        # To perform the controlled x gate, we can use the phase tolerant algorithm
-        # We construct the mcx gate using the GraySynthGate class
-        from qrisp.alg_primitives.logic_synthesis.gray_synthesis import GraySynthGate
+        if control_amount > 1:
+            # To perform the controlled x gate, we can use the phase tolerant algorithm
+            # We construct the mcx gate using the GraySynthGate class
+            from qrisp.alg_primitives.logic_synthesis.gray_synthesis import GraySynthGate
 
-        target_phases = (2**(control_amount+1) - 1)*[0]
-        target_phases.insert(2*int(ctrl_state, 2), np.pi)
-        synth_gate = GraySynthGate(target_phases, phase_tolerant = True)
+            target_phases = (2**(control_amount+1) - 1)*[0]
+            target_phases.append(np.pi)
+            synth_gate = GraySynthGate(target_phases, phase_tolerant = True)
 
-        temp_qc = QuantumCircuit(control_amount+1)
-        temp_qc.h(temp_qc.qubits[-1])
-        temp_qc.append(synth_gate, temp_qc.qubits)
-        temp_qc.h(temp_qc.qubits[-1])
+            temp_qc = QuantumCircuit(control_amount+1)
+            temp_qc.h(temp_qc.qubits[-1])
+            temp_qc.append(synth_gate, temp_qc.qubits)
+            temp_qc.h(temp_qc.qubits[-1])
 
-        mcx_gate = temp_qc.to_gate("gray_pt_mcx")
+            mcx_gate = temp_qc.to_gate("gray_pt_mcx")
+        else:
+            mcx_gate = CXGate()
 
         qc.append(mcx_gate, qc.qubits)
 
