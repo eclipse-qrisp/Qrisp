@@ -47,11 +47,8 @@ class MinimalJob(Job):
         self._error = None
         self._done_event = threading.Event()
 
-    # ── Abstract interface ────────────────────────────────────────────
-
     def submit(self) -> None:
-        # Honour the INITIALIZING → QUEUED transition so the lifecycle
-        # contract is visible even in this minimal helper.
+        """Transition from INITIALIZING to QUEUED."""
         self._last_known_status = JobStatus.QUEUED
 
     def result(self, timeout=None) -> JobResult | None:
@@ -110,8 +107,8 @@ class MinimalBackend(Backend):
             circuits = list(circuits)
         n_shots = shots if shots is not None else self.options.get("shots", 1024)
         job = MinimalJob(backend=self)
-        job.submit()  # INITIALIZING → QUEUED
-        job._set_status(JobStatus.RUNNING)  # QUEUED → RUNNING
+        job.submit()
+        job._set_status(JobStatus.RUNNING)
         counts = [{"0": n_shots} for _ in circuits]
         job._resolve(JobResult(counts))  # RUNNING → DONE
         return job

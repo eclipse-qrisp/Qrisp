@@ -1013,13 +1013,9 @@ def test_gidney_adder_invalid_binary_string_dynamic():
 
 
 
-@pytest.mark.xfail(
-    reason="DynamicQubitArray.__add__ rejects JAX tracer in [c_in_qb] + b_qbs",
-    strict=True,
-)
 @pytest.mark.parametrize("n_bits, a_val, b_val", [(4, 5, 10)])
-def test_gidney_adder_classical_a_cin_dynamic_xfail(n_bits, a_val, b_val):
-    """Classical a + c_in in dynamic mode (xfail — DynamicQubitArray bug)."""
+def test_gidney_adder_classical_a_cin_dynamic(n_bits, a_val, b_val):
+    """Classical a + c_in in dynamic mode."""
 
     @boolean_simulation
     def main(bits, av, bv):
@@ -1033,10 +1029,6 @@ def test_gidney_adder_classical_a_cin_dynamic_xfail(n_bits, a_val, b_val):
     assert main(n_bits, a_val, b_val) == (a_val + b_val + 1) % (1 << n_bits)
 
 
-@pytest.mark.xfail(
-    reason="DynamicQubitArray.__add__ rejects JAX tracer in b_qbs + [c_out_qb]",
-    strict=True,
-)
 @pytest.mark.parametrize(
     "kind, n_bits, a_val, b_val",
     [
@@ -1048,8 +1040,8 @@ def test_gidney_adder_classical_a_cin_dynamic_xfail(n_bits, a_val, b_val):
         ("quantum", 1, 1, 1),
     ],
 )
-def test_gidney_adder_cout_dynamic_xfail(kind, n_bits, a_val, b_val):
-    """C_out in dynamic mode (xfail — DynamicQubitArray bug).
+def test_gidney_adder_cout_dynamic(kind, n_bits, a_val, b_val):
+    """C_out in dynamic mode.
 
     Covers both classical and quantum a paths.
     """
@@ -1075,13 +1067,9 @@ def test_gidney_adder_cout_dynamic_xfail(kind, n_bits, a_val, b_val):
     assert cout_res == expected_cout
 
 
-@pytest.mark.xfail(
-    reason="DynamicQubitArray.__add__ rejects JAX tracer in b_qbs + [c_out_qb]",
-    strict=True,
-)
 @pytest.mark.parametrize("n_bits, a_val, b_val", [(4, 3, 10)])
-def test_gidney_adder_cin_cout_ctrl_dynamic_xfail(n_bits, a_val, b_val):
-    """c_in + c_out + ctrl in dynamic mode (xfail — DynamicQubitArray bug).
+def test_gidney_adder_cin_cout_ctrl_dynamic(n_bits, a_val, b_val):
+    """c_in + c_out + ctrl in dynamic mode.
 
     Also exercises the ``[c_in_qb] + b_qbs`` path (__radd__).
     """
