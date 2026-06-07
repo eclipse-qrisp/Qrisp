@@ -18,12 +18,12 @@
 
 import numpy as np
 import jax.numpy as jnp
-from qrisp import QuantumVariable, Qubit, x, xxyy, p
+from qrisp.core import x, xxyy, p
+from qrisp.typing import NDArrayLike
 from qrisp.jasp import jrange, check_for_tracing_mode
-from collections.abc import Sequence
 
 def unbalanced_W_state(
-    qv: QuantumVariable | Sequence[Qubit],
+    qv: NDArrayLike,
     amplitudes: list,
     reversed: bool = False
 ) -> None:
