@@ -26,8 +26,8 @@ work through every section in order as each page stands on its own.
      - How to write and structure tests using pytest.
    * - :ref:`DevGuideDocumentation`
      - Building the docs locally and writing correct docstrings.
-   * - :ref:`DevGuidePullRequests`
-     - Opening pull requests, asking for help, and common mistakes to avoid.
+   * - :ref:`DevGuideIssuesPullRequests`
+     - Opening issues and pull requests, asking for help, and common mistakes to avoid.
    * - :ref:`DevGuideWriteaTutorial`
      - Writing a tutorial or example for your implementation.
    * - :ref:`DevGuideFirstIssues`
@@ -41,6 +41,6 @@ work through every section in order as each page stands on its own.
    code_quality
    writing_tests
    documentation
-   pull_requests
+   issues_pull_requests
    write_a_tutorial
    issues_to_tackle

@@ -66,7 +66,7 @@ rest of this guide:
 - :ref:`DevGuideCodeQuality` — static analysis, style, and type annotations
 - :ref:`WritingTests` — how to write and structure tests
 - :ref:`DevGuideDocumentation` — building and checking the documentation
-- :ref:`DevGuidePullRequests` — opening a pull request and asking for help
+- :ref:`DevGuideIssuesPullRequests` — opening issues and pull requests, asking for help, and common mistakes to avoid
 
 Further reading 
 ---------------
