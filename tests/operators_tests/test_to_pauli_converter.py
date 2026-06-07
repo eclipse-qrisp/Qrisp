@@ -68,10 +68,6 @@ def test_pauli_coeff_dict_extraction():
         ((0, "Z"), (4, "Y")): 0.25j,
     }
 
-    print(res0)
-    print(res1)
-    print(res2)
-
     def assert_dict_allclose(res, expected):
         assert set(res.keys()) == set(expected.keys())
 
