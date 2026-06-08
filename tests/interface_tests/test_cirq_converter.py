@@ -492,10 +492,6 @@ def _build_multi_valued_circ():
     return cirq.Circuit([g(q0, q1, q2)])
 
 
-def _build_global_phase_only_circ():
-    return cirq.Circuit([cirq.GlobalPhaseGate(1j).on()])
-
-
 def _build_controlled_no_gate_circ():
     q0, q1 = cirq.LineQubit.range(2)
     inner = cirq.FrozenCircuit([cirq.X(q0)])

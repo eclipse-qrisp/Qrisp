@@ -52,10 +52,10 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
     """
     try:
         from cirq import Circuit, LineQubit
-    except (ModuleNotFoundError, ImportError):
+    except (ModuleNotFoundError, ImportError) as exc:
         raise ImportError(
             "Cirq must be installed to be able to use the Qrisp to Cirq converter."
-        )
+        ) from exc
 
     from cirq import (
         CNOT, H, X, Y, Z, S, T, SWAP,
@@ -87,7 +87,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
             instr.op.name
             for instr in circ.data
             if instr.op.name not in gate_map
-            and instr.op.name not in ("gphase", "qb_alloc", "qb_dealloc")
+
         }
 
     while True:
@@ -102,11 +102,11 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
             transpiled = qrisp_circuit.transpile(
                 transpile_predicate=_transpile_predicate
             )
-        except Exception:
+        except Exception as exc:
             raise ValueError(
                 f"Gates {unknown} could not be transpiled and are not supported "
                 "by the Qrisp to Cirq converter."
-            )
+            ) from exc
 
         new_unknown = _unknown_names(transpiled)
         if new_unknown == unknown:
@@ -163,11 +163,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
         # controlled operations (multi-qubit)
         if isinstance(instr.op, ControlledOperation):
             cs = instr.op.ctrl_state
-            # ctrl_state is a string ("11") or int (-1 for all-ones);
-            # derive the number of control qubits from whichever form we got
-            n_ctrl = len(cs) if isinstance(cs, str) else (
-                instr.op.num_qubits - instr.op.base_operation.num_qubits
-            )
+            n_ctrl = len(cs)
             control_qb = qubits[:n_ctrl]
             target_qb = qubits[n_ctrl:]
             cirq_ctrl = [qubit_map[q] for q in control_qb]
@@ -190,15 +186,8 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
             else:
                 base = cirq_gate
 
-            # Convert ctrl_state for Cirq's .controlled()
-            if isinstance(cs, str):
-                ctrl_vals = [int(c) for c in cs]
-            elif isinstance(cs, int) and cs != -1:
-                # integer ctrl_state like 0b101 → [1, 0, 1]
-                ctrl_vals = [int(b) for b in bin(cs)[2:].zfill(n_ctrl)]
-            else:
-                # cs == -1 means all controls on; None tells Cirq the same
-                ctrl_vals = None
+            # Convert ctrl_state string ("101") to Cirq control_values list
+            ctrl_vals = [int(c) for c in cs]
 
             controlled = base.controlled(
                 num_controls=n_ctrl, control_values=ctrl_vals
@@ -259,11 +248,10 @@ def convert_from_cirq(cirq_circuit):
     """
     try:
         import cirq
-    except (ModuleNotFoundError, ImportError):
+    except (ModuleNotFoundError, ImportError) as exc:
         raise ImportError(
             "Cirq must be installed to be able to use the Cirq to Qrisp converter."
-        )
-
+        ) from exc
     from qrisp import QuantumCircuit
     from qrisp.circuit import standard_operations as ops
 
@@ -272,12 +260,12 @@ def convert_from_cirq(cirq_circuit):
 
     try:
         cirq_qubits = sorted(cirq_circuit.all_qubits())
-    except TypeError:
+    except TypeError as exc:
         types = {type(q).__name__ for q in cirq_circuit.all_qubits()}
         raise ValueError(
             f"Mixed qubit types {types} found in the circuit. The converter "
             f"requires all qubits to be of the same type (e.g. all LineQubit)."
-        )
+        ) from exc
     qubit_map = {q: qc.qubits[i] for i, q in enumerate(cirq_qubits)}
 
     # Maps Cirq gate types to Qrisp gate *callables* (not instances), so
