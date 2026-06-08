@@ -853,7 +853,7 @@ class QubitOperator(Hamiltonian):
             return QubitOperator({QubitTerm({}): res})
         return res
 
-    def _to_pauli_coeff_dict(self) -> dict:
+    def _to_pauli_dict(self) -> dict:
         r"""
         Return the Pauli expansion of this :class:`QubitOperator` as a dictionary.
         
