@@ -28,10 +28,6 @@ REQUIREMENTS = [
                 "networkx",
                 "tqdm",
                 "dill",
-                "flask<2.3.0",
-                "waitress",
-                "pyyaml",
-                "requests",
                 "psutil",
                 "jax==0.7.1",
                 "jaxlib==0.7.1"]
@@ -53,11 +49,9 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     package_dir={"": "src"},
-    install_requires = REQUIREMENTS,
-    setup_requires = REQUIREMENTS,
-    extras_require={
-        'iqm': ['iqm-client[qiskit]']
-    },
+    install_requires=REQUIREMENTS,
+    setup_requires=REQUIREMENTS,
+    extras_require={"iqm": ["iqm-client[qiskit]"]},
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.11",
 )

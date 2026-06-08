@@ -30,9 +30,9 @@ from qrisp.operators.qubit.measurement import get_measurement
 from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge, invert
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 from qrisp.jasp import check_for_tracing_mode, jrange, qache
-
 
 threshold = 1e-9
 
@@ -385,6 +385,11 @@ class QubitOperator(Hamiltonian):
                     res_terms_dict.get(curr_term, 0) + curr_coeff * coeff1 * coeff2
                 )
 
+        res_terms_dict = {
+            term: coeff
+            for term, coeff in res_terms_dict.items()
+            if abs(coeff) >= threshold
+        }
         result = QubitOperator(res_terms_dict)
         return result
 
@@ -456,6 +461,13 @@ class QubitOperator(Hamiltonian):
             # other = QubitOperator({QubitTerm():other})
             for term in self.terms_dict:
                 self.terms_dict[term] *= other
+
+            res_terms_dict = {
+                term: coeff
+                for term, coeff in self.terms_dict.items()
+                if abs(coeff) >= threshold
+            }
+            self.terms_dict = res_terms_dict
             return self
 
         if not isinstance(other, QubitOperator):
@@ -470,6 +482,11 @@ class QubitOperator(Hamiltonian):
                     res_terms_dict.get(curr_term, 0) + curr_coeff * coeff1 * coeff2
                 )
 
+        res_terms_dict = {
+            term: coeff
+            for term, coeff in res_terms_dict.items()
+            if abs(coeff) >= threshold
+        }
         self.terms_dict = res_terms_dict
         return self
 
@@ -1575,7 +1592,7 @@ class QubitOperator(Hamiltonian):
         precision : float, optional
             The precision with which the expectation of the Hamiltonian is to be evaluated.
             The default is 0.01. The number of shots scales quadratically with the inverse precision.
-        backend : :ref:`BackendClient`, optional
+        backend : BackendLike, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
         compile : bool, optional
@@ -1629,7 +1646,8 @@ class QubitOperator(Hamiltonian):
         """
 
         warnings.warn(
-            "DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value."
+            "DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value.",
+            QrispDeprecationWarning,
         )
 
         return get_measurement(
@@ -1686,7 +1704,7 @@ class QubitOperator(Hamiltonian):
             Available are ``commuting_qw``, i.e., the operator is grouped based on qubit-wise commutativity of terms,
             and ``commuting``, i.e., the operator is grouped based on commutativity of terms.
             The default is ``commuting_qw``.
-        backend : :ref:`BackendClient`, optional
+        backend : BackendLike, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
         compile : bool, optional
