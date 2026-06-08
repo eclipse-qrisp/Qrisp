@@ -2309,8 +2309,8 @@ class QuantumCircuit:
 
         Returns
         -------
-        function
-            A function representing a Cirq QuantumCircuit.
+        cirq.Circuit
+            A Cirq Circuit equivalent to the Qrisp QuantumCircuit.
 
         """
         # NOTE: This is here to avoid circular imports
