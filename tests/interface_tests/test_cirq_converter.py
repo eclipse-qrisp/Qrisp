@@ -314,38 +314,43 @@ def test_roundtrip_preserves_unitary(circ_builder):
 
 
 
-def test_convert_from_cirq_direct_cirq_circuit():
-    """Test converting a Cirq circuit built directly (not via round-trip)."""
+def _circ_h_cx_rz_measure():
     q0, q1 = cirq.LineQubit.range(2)
-
-    cirq_circ = cirq.Circuit(
+    return cirq.Circuit(
         [cirq.H(q0), cirq.CNOT(q0, q1), cirq.rz(0.5)(q1), cirq.measure(q0, q1)]
     )
 
-    qrisp_qc = convert_from_cirq(cirq_circ)
-    assert qrisp_qc.num_qubits() == 2
-    assert len(qrisp_qc.data) == 5
-    assert qrisp_qc.data[0].op.name == "h"
-    assert qrisp_qc.data[1].op.name == "cx"
-    assert qrisp_qc.data[2].op.name == "rz"
-    assert qrisp_qc.data[3].op.name == "measure"
-    assert qrisp_qc.data[4].op.name == "measure"
 
-
-def test_convert_from_cirq_via_classmethod():
-    """Test the QuantumCircuit.from_cirq classmethod."""
+def _circ_h_cx():
     q0, q1 = cirq.LineQubit.range(2)
-    cirq_circ = cirq.Circuit([cirq.H(q0), cirq.CNOT(q0, q1)])
+    return cirq.Circuit([cirq.H(q0), cirq.CNOT(q0, q1)])
 
-    qrisp_qc = QuantumCircuit.from_cirq(cirq_circ)
-    assert qrisp_qc.num_qubits() == 2
 
-    cirq_unitary = cirq.unitary(cirq_circ)
-    qrisp_unitary = qrisp_qc.get_unitary()
+@pytest.mark.parametrize(
+    "circ_builder, use_classmethod, expected_names",
+    [
+        (_circ_h_cx_rz_measure, False, ["h", "cx", "rz", "measure", "measure"]),
+        (_circ_h_cx, True, ["h", "cx"]),
+    ],
+    ids=["direct_cirq_circuit", "via_classmethod"],
+)
+def test_convert_from_cirq_circuits(circ_builder, use_classmethod, expected_names):
+    """Test converting Cirq circuits built directly (not via round-trip)."""
+    cirq_circ = circ_builder()
 
-    np.testing.assert_array_almost_equal(
-        np.abs(cirq_unitary), np.abs(qrisp_unitary)
-    )
+    if use_classmethod:
+        qrisp_qc = QuantumCircuit.from_cirq(cirq_circ)
+    else:
+        qrisp_qc = convert_from_cirq(cirq_circ)
+
+    assert qrisp_qc.num_qubits() == len(cirq_circ.all_qubits())
+    assert [d.op.name for d in qrisp_qc.data] == expected_names
+
+    # verify unitary when circuit has no measurement gates
+    if not any(d.op.name == "measure" for d in qrisp_qc.data):
+        np.testing.assert_array_almost_equal(
+            np.abs(qrisp_qc.get_unitary()), np.abs(cirq.unitary(cirq_circ))
+        )
 
 
 def test_convert_from_cirq_reset():
@@ -363,21 +368,7 @@ def test_convert_from_cirq_reset():
     assert qrisp_qc.data[2].op.name == "cx"
 
 
-def test_convert_from_cirq_unsupported_gate():
-    """Test that an error is raised for unsupported Cirq gates."""
-    q0 = cirq.LineQubit(0)
-    cirq_circ = cirq.Circuit([cirq.ISWAP(q0, cirq.LineQubit(1))])
 
-    with pytest.raises(ValueError, match="not supported by the Cirq to Qrisp converter"):
-        convert_from_cirq(cirq_circ)
-
-
-def test_convert_from_cirq_empty_circuit():
-    """Test converting an empty Cirq circuit."""
-    cirq_circ = cirq.Circuit()
-    qrisp_qc = convert_from_cirq(cirq_circ)
-    assert qrisp_qc.num_qubits() == 0
-    assert len(qrisp_qc.data) == 0
 
 
 @pytest.mark.parametrize(
@@ -512,22 +503,52 @@ def _build_controlled_no_gate_circ():
     return cirq.Circuit([cirq.ControlledOperation([q1], co)])
 
 
+def _build_circuit_op_circ():
+    q0 = cirq.LineQubit(0)
+    inner = cirq.FrozenCircuit([cirq.X(q0)])
+    return cirq.Circuit([cirq.CircuitOperation(inner)])
+
+
+def _build_iswap_circ():
+    q0, q1 = cirq.LineQubit.range(2)
+    return cirq.Circuit([cirq.ISWAP(q0, q1)])
+
+
 @pytest.mark.parametrize(
     "circ_builder, match",
     [
         (_build_multi_valued_circ, "Multi-valued control"),
         (_build_controlled_no_gate_circ, "not supported"),
+        (_build_circuit_op_circ, "without gate attribute"),
+        (_build_iswap_circ, "not supported by the Cirq to Qrisp converter"),
     ],
-    ids=["multi_valued_control", "controlled_sub_op_no_gate"],
+    ids=[
+        "multi_valued_control",
+        "controlled_sub_op_no_gate",
+        "circuit_operation_no_gate",
+        "unsupported_iswap",
+    ],
 )
 def test_convert_from_cirq_raises(circ_builder, match):
     with pytest.raises(ValueError, match=match):
         convert_from_cirq(circ_builder())
 
 
-def test_convert_from_cirq_global_phase_only():
-    """A GlobalPhaseGate-only circuit (zero qubits) should convert without error."""
-    circ = cirq.Circuit([cirq.GlobalPhaseGate(1j).on()])
-    qrisp_qc = convert_from_cirq(circ)
+def _empty_circ():
+    return cirq.Circuit()
+
+
+def _global_phase_circ():
+    return cirq.Circuit([cirq.GlobalPhaseGate(1j).on()])
+
+
+@pytest.mark.parametrize(
+    "circ_builder",
+    [_empty_circ, _global_phase_circ],
+    ids=["empty_circuit", "global_phase_only"],
+)
+def test_convert_from_cirq_edge_circuits(circ_builder):
+    """Edge case circuits should convert without error."""
+    qrisp_qc = convert_from_cirq(circ_builder())
     assert qrisp_qc.num_qubits() == 0
     assert len(qrisp_qc.data) == 0
