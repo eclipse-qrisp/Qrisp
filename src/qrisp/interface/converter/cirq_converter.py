@@ -173,21 +173,6 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
             cirq_ctrl = [qubit_map[q] for q in control_qb]
             cirq_target = [qubit_map[q] for q in target_qb]
 
-            if cirq_op_qubits != cirq_ctrl + cirq_target:
-                raise RuntimeError(
-                    f"Internal error: qubit indices do not line up for gate "
-                    f"'{name}'. Expected Cirq qubits "
-                    f"{cirq_op_qubits} but control+target split gives "
-                    f"{cirq_ctrl} + {cirq_target}."
-                )
-            if qubits != control_qb + target_qb:
-                raise RuntimeError(
-                    f"Internal error: qubit indices do not line up for gate "
-                    f"'{name}'. Expected Qrisp qubits "
-                    f"{qubits} but control+target split gives "
-                    f"{control_qb} + {target_qb}."
-                )
-
             # Build the base gate.  cx/cz are unwrapped to X/Z because
             # CNOT.controlled() would produce CCNOT instead of CNOT.
             if name == "sx":
