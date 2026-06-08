@@ -206,15 +206,6 @@ def test_foqcs_lcu_prep():
         np.kron(zero_n, dicke_2NN),
     )
 
-    # Zero out entries that are close to zero
-    # statev[np.isclose(statev, 0j, atol=1e-6)] = 0
-
-    # for i in range(0, len(statev)):
-    #    if statev[i] != 0:
-    #        print(f"s[{i}] = {statev[i]}")
-    #    if ref_state[i] != 0:
-    #        print(f"r[{i}] = {ref_state[i]}")
-
     # Test that the state received is the same as the reference
     assert np.allclose(statev, ref_state, atol=1e-06), (
         f"States differ"
@@ -430,12 +421,6 @@ def test_foqcs_lcu_spin_glass_prep():
 
     statev[np.isclose(statev, 0j, atol=1e-6)] = 0
 
-    # for i in range(0, len(statev)):
-    #     if statev[i] != 0:
-    #         print(f"s[{i}] = {statev[i]}")
-    #     if ref_state[i] != 0:
-    #         print(f"r[{i}] = {ref_state[i]}")
-
     # Test that the state received is the same as the reference
     assert np.allclose(statev, ref_state, atol=1e-06), (
         f"States differ"
@@ -550,12 +535,6 @@ def test_foqcs_lcu_spin_glass_subprep():
     
     statev[np.isclose(statev, 0j, atol=1e-6)] = 0
 
-    for i in range(0, len(statev)):
-        if statev[i] != 0:
-            print(f"s[{i}] = {statev[i]}")
-        if ref_state[i] != 0:
-            print(f"r[{i}] = {ref_state[i]}")
-
     assert np.allclose(statev, ref_state)
 
 def test_block_encoding_from_foqcs_lcu_heisenberg_prep():
@@ -639,9 +618,6 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep():
     # Construct reference state vector
     H = _heisenberg_from_def(L, g, J) / (norm ** 2)
     ref_state = H @ psi
-
-    print(f"Ref state = {ref_state}")
-    print(f"Resulting operands = {res_ops}")
 
     assert np.allclose(res_ops, ref_state, atol=1e-6)
 
@@ -757,9 +733,6 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
     H = _spin_glass_from_def(L, phys_g, phys_J) / alpha
     ref_state = H @ psi
 
-    print(f"Ref state = {ref_state}")
-    print(f"Resulting operands = {res_ops}")
-
     assert np.allclose(res_ops, ref_state, atol=1e-5)
 
 def test_block_encoding_from_foqcs_lcu_heisenberg_prep_jasp():
@@ -847,13 +820,8 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep_jasp():
         for (operand_bits, anc_bits), prob in filtered.items()
     }
 
-    print(f"\n\nFiltered dict = {filtered_conditional}")
-    print(f"Filtered dict amps sum: {sum(filtered_conditional.values())}")
-
     # Do the measurement using RUS
     result_rus = main_apply_rus(be)
-    print(result_rus)
-    print(sum(result_rus.values()))
 
     assert np.allclose([filtered_conditional[k] for k in sorted(filtered_conditional)],
                        [result_rus[k] for k in sorted(result_rus)],
@@ -970,9 +938,6 @@ def test_block_encoding_from_operator_spin_glass_jasp():
         for key, prob in filtered.items()
     }
 
-    print(f"\n\nFiltered dict = {filtered_conditional}")
-    print(f"Filtered dict probs sum: {sum(filtered_conditional.values())}")
-
     # RUS version.
     result_rus = main_apply_rus(be)
 
@@ -980,9 +945,6 @@ def test_block_encoding_from_operator_spin_glass_jasp():
         measurement_key_to_int(k): v
         for k, v in result_rus.items()
     }
-
-    print(result_rus_int)
-    print(sum(result_rus_int.values()))
 
     keys = sorted(set(filtered_conditional) | set(result_rus_int))
     
@@ -1048,9 +1010,6 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_operator():
     # Construct reference state vector
     H = _heisenberg_from_def(L, g, J) / be.alpha # Normalisation can be taken from BE
     ref_state = H @ psi
-
-    print(f"Ref state = {ref_state}")
-    print(f"Resulting operands = {res_ops}")
 
     assert np.allclose(res_ops, ref_state, atol=1e-6)
 
@@ -1170,10 +1129,6 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_operator():
     H = _spin_glass_from_def(L, g, J_diag) / be.alpha
     ref_state = H @ psi
 
-    print(f"alpha = {be.alpha}")
-    print(f"Ref state = {ref_state}")
-    print(f"Resulting operands = {res_ops}")
-
     assert np.allclose(res_ops, ref_state, atol=1e-5)
 
 def test_foqcs_lcu_resources():
@@ -1190,8 +1145,6 @@ def test_foqcs_lcu_resources():
 
     be = BlockEncoding.from_foqcs_lcu_operator(O, L)
     res = be.resources(QuantumVariable(L))
-
-    print(f"Spin-glass FOQCS-LCU resources:\n{res}")
 
     assert set(res) == {"gate counts", "depth", "qubits"}
     assert isinstance(res["gate counts"], dict)
@@ -1605,7 +1558,6 @@ def test_foqcs_operator_analysis_spin_glass_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_spin_glass(O)
 
-        print(exc_info.value)
         assert f"empty or constant operator: {O}" in str(exc_info.value)
     
     def constant_must_fail():
@@ -1613,7 +1565,6 @@ def test_foqcs_operator_analysis_spin_glass_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_spin_glass(O)
 
-        print(exc_info.value)
         assert f"empty or constant operator: {O}" in str(exc_info.value)
     
     def bad_length_must_fail():
@@ -1621,7 +1572,6 @@ def test_foqcs_operator_analysis_spin_glass_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_spin_glass(O, L=2)
 
-        print(exc_info.value)
         assert f"Received L = {2}" in str(exc_info.value)
 
     def const_in_op_must_fail():
@@ -1629,7 +1579,6 @@ def test_foqcs_operator_analysis_spin_glass_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_spin_glass(O)
 
-        print(exc_info.value)
         assert f"FOQCS-LCU does not support constant/identity terms" in str(exc_info.value)
     
     def cross_axis_couple_must_fail():
@@ -1637,7 +1586,6 @@ def test_foqcs_operator_analysis_spin_glass_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_spin_glass(O)
 
-        print(exc_info.value)
         assert f"FOQCS-LCU supports only same-axis couplings, but received: X({0}) * Y({3})" in str(exc_info.value)
 
     def three_body_couple_must_fail():
@@ -1645,10 +1593,8 @@ def test_foqcs_operator_analysis_spin_glass_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_spin_glass(O)
 
-        print(exc_info.value)
         assert f"FOQCS-LCU supports only one and two-body interactions" in str(exc_info.value)
 
-    print("\n")
     empty_must_fail()
     constant_must_fail()
     bad_length_must_fail()
@@ -1662,7 +1608,6 @@ def test_foqcs_operator_analysis_heisenberg_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_heisenberg(O)
 
-        print(exc_info.value)
         assert f"empty or constant operator: {O}" in str(exc_info.value)
 
     def constant_must_fail():
@@ -1670,7 +1615,6 @@ def test_foqcs_operator_analysis_heisenberg_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_heisenberg(O)
 
-        print(exc_info.value)
         assert f"empty or constant operator: {O}" in str(exc_info.value)
 
     def bad_length_must_fail():
@@ -1678,7 +1622,6 @@ def test_foqcs_operator_analysis_heisenberg_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_heisenberg(O, L=2)
 
-        print(exc_info.value)
         assert f"Received L = {2}" in str(exc_info.value)
 
     def const_in_op_must_fail():
@@ -1686,7 +1629,6 @@ def test_foqcs_operator_analysis_heisenberg_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_heisenberg(O)
 
-        print(exc_info.value)
         assert "FOQCS-LCU does not support constant/identity terms" in str(exc_info.value)
 
     def cross_axis_couple_must_fail():
@@ -1694,7 +1636,6 @@ def test_foqcs_operator_analysis_heisenberg_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_heisenberg(O)
 
-        print(exc_info.value)
         assert f"FOQCS-LCU supports only same-axis couplings, but received: X({0}) * Y({1})" in str(exc_info.value)
 
     def three_body_couple_must_fail():
@@ -1702,7 +1643,6 @@ def test_foqcs_operator_analysis_heisenberg_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_heisenberg(O)
 
-        print(exc_info.value)
         assert "FOQCS-LCU supports only one and two-body interactions" in str(exc_info.value)
 
     def non_uniform_local_fields_must_fail():
@@ -1710,7 +1650,6 @@ def test_foqcs_operator_analysis_heisenberg_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_heisenberg(O, L=2)
 
-        print(exc_info.value)
         assert "non-uniform local interactions" in str(exc_info.value)
 
     def long_range_coupling_must_fail():
@@ -1718,7 +1657,6 @@ def test_foqcs_operator_analysis_heisenberg_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_heisenberg(O, L=3)
 
-        print(exc_info.value)
         assert "not NN interactions present" in str(exc_info.value)
 
     def non_uniform_nn_couplings_must_fail():
@@ -1726,7 +1664,6 @@ def test_foqcs_operator_analysis_heisenberg_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_heisenberg(O, L=3)
 
-        print(exc_info.value)
         assert "non-uniform NN interactions" in str(exc_info.value)
 
     def missing_nn_couplings_must_fail():
@@ -1737,10 +1674,8 @@ def test_foqcs_operator_analysis_heisenberg_failures():
         with pytest.raises(ValueError) as exc_info:
             foqcs_analyze_operator_heisenberg(O, L=3)
 
-        print(exc_info.value)
         assert "non-uniform NN interactions" in str(exc_info.value)
 
-    print("\n")
     empty_must_fail()
     constant_must_fail()
     bad_length_must_fail()
