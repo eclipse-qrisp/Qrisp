@@ -224,8 +224,6 @@ class BackendTest(Backend):
         n_shots = shots if shots is not None else self._options["shots"]
         job = JobTest(circuits=circuits, shots=n_shots, backend=self)
 
-        # Honour the lifecycle contract: every run_async implementation
-        # must call submit() so the job transitions out of INITIALIZING.
         job.submit()  # INITIALIZING → QUEUED
 
         if self.mode == ExecutionMode.SYNC:
@@ -1218,13 +1216,13 @@ class JobTestLifecycle:
     """Tests that the job lifecycle contract is honoured.
 
     The only hard guarantee is that a job must exit INITIALIZING before
-    run_async() returns. The exact post-submit state depends on the backend:
+    run_async() returns. The exact state after that depends on the backend:
     asynchronous backends transition to QUEUED. Synchronous simulators may
-    go directly to RUNNING or DONE inside submit().
+    go directly to RUNNING or DONE.
     """
 
     def test_job_starts_in_initializing_state(self):
-        """A newly constructed job must start in INITIALIZING before submit() is called."""
+        """A newly constructed job must start in INITIALIZING state."""
         backend = MinimalBackend()
         job = MinimalJob(backend=backend)
         assert job.status() == JobStatus.INITIALIZING
@@ -1247,10 +1245,7 @@ class JobTestLifecycle:
         assert job.status() == JobStatus.QUEUED
 
     def test_run_async_does_not_leave_job_in_initializing(self):
-        """After run_async() returns, the job must no longer be in INITIALIZING state.
-
-        This guards against backends that forget to call submit() before returning.
-        """
+        """After run_async() returns, the job must no longer be in INITIALIZING state."""
         backend = MinimalBackend()
         job = backend.run_async("c")
         assert job.status() != JobStatus.INITIALIZING
