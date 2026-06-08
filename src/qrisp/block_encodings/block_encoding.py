@@ -17,7 +17,6 @@
 """
 
 from __future__ import annotations
-import inspect
 from dataclasses import dataclass
 from jax.tree_util import register_pytree_node_class
 import jax
@@ -26,7 +25,7 @@ import numpy as np
 import numpy.typing as npt
 from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.reflection import reflection
-from qrisp.core.gate_application_functions import gphase, h, ry, x, z
+from qrisp.core.gate_application_functions import gphase, h, mcx, ry, x, z
 from qrisp.environments import conjugate, control, invert
 from qrisp.jasp import (
     count_ops,
@@ -40,7 +39,7 @@ from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool, QuantumFloat
 from scipy.sparse import csr_array, csr_matrix
-from typing import Any, Callable, TYPE_CHECKING, Union
+from typing import Any, Callable, Literal, Optional, Tuple, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -523,6 +522,282 @@ class BlockEncoding:
             num_ops=num_ops,
             is_hermitian=is_hermitian,
         )
+
+    @classmethod
+    def from_eye(
+        cls: "BlockEncoding",
+        diagonal_index: int = 0,
+    ) -> BlockEncoding:
+        r"""
+        Constructs a BlockEncoding of a 2-D array with ones on the diagonal and zeros elsewhere.
+
+        Parameters
+        ----------
+        diagonal_index : int
+            Index of the diagonal to set to one: 0 (the default) refers to the main diagonal,
+            a positive value refers to an upper diagonal, and a negative value to a lower diagonal.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding instance representing an array where all elements are equal to zero,
+            except for the $k$-th diagonal, whose values are equal to one.
+
+        Examples
+        --------
+
+        ::
+
+            from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
+
+            # diagonal_index = 0: ones on the main diagonal
+            BE1 = BlockEncoding.from_eye(diagonal_index=0)
+
+            # diagonal_index = -2: ones on the second lower subdiagonal
+            # (non-cyclic) shift |x> -> |x+2>
+            BE2 = BlockEncoding.from_eye(diagonal_index=-2)
+
+            BE3 = BE1.kron(BE2)
+
+            def operand_prep():
+                operand1 = QuantumFloat(3)
+                operand2 = QuantumFloat(3)
+                h(operand1)
+                cx(operand1, operand2)
+                return operand1, operand2
+
+            @terminal_sampling
+            def main():
+                operand1, operand2 = BE3.apply_rus(operand_prep)()
+                return operand1, operand2
+
+            main()
+            # {(0.0, 2.0): 0.16666666666666666,
+            # (1.0, 3.0): 0.16666666666666666,
+            # (2.0, 4.0): 0.16666666666666666,
+            # (3.0, 5.0): 0.16666666666666666,
+            # (4.0, 6.0): 0.16666666666666666,
+            # (5.0, 7.0): 0.16666666666666666}
+
+        """
+
+        if diagonal_index == 0:
+            return BlockEncoding(1, [], lambda operand: None, is_hermitian=True)
+
+        if diagonal_index > 0:
+            # Shift |x> -> |x - diagonal_index> can be implemented as cyclic shift |x> -> |x - diagonal_index mod N>
+            # followed by a comparator checking if x >= 2**n - diagonal_index.
+
+            def unitary(*args):
+                anc = args[0]
+                operand = args[1]
+                operand -= diagonal_index
+                n = operand.size
+
+                if diagonal_index == 1:
+                    # Comparator for x >= 2**n - 1 is equivalent to comparator for x == 2**n - 1.
+
+                    def comp(a, b):
+                        return a == b
+
+                    injected_comp = anc << comp
+                    injected_comp(operand, 2**n - 1)
+
+                else:
+
+                    def comp(a, b):
+                        return a >= b
+
+                    injected_comp = anc << comp
+                    injected_comp(operand, 2**n - diagonal_index)
+
+            return BlockEncoding(1, [QuantumBool().template()], unitary)
+
+        if diagonal_index < 0:
+            # Shift |x> -> |x - diagonal_index> can be implemented as cyclic shift |x> -> |x - diagonal_index mod N>
+            # followed by a comparator checking if x < -diagonal_index.
+
+            def unitary(*args):
+                anc = args[0]
+                operand = args[1]
+                operand -= diagonal_index
+
+                if diagonal_index == -1:
+                    # Comparator for x < 1 is equivalent to comparator for x == 0.
+
+                    def comp(a, b):
+                        return a == b
+
+                    injected_comp = anc << comp
+                    injected_comp(operand, 0)
+
+                else:
+
+                    def comp(a, b):
+                        return a < b
+
+                    injected_comp = anc << comp
+                    injected_comp(operand, -diagonal_index)
+
+            return BlockEncoding(1, [QuantumBool().template()], unitary)
+
+    @classmethod
+    def from_projector(
+        cls: "BlockEncoding",
+        left: Union[int, Tuple[int, ...], Callable],
+        right: Optional[Union[int, Tuple[int, ...], Callable]] = None,
+        kernel: bool = False,
+        num_ops: int = 1,
+    ) -> BlockEncoding:
+        r"""
+        Constructs a BlockEncoding of a projector.
+
+        Parameters
+        ----------
+        left : int | tuple of int | Callable
+            An integer or a tuple of integers representing a computational basis state $\ket{\phi}$,
+            or a function ``left(*operands)`` preparing a state $\ket{\phi}$ from $\ket{0}$.
+        right : int | tuple of int | Callable
+            An integer or a tuple of integers representing a computational basis state $\ket{\psi}$,
+            or a function ``right(*operands)`` preparing a state $\ket{\psi}$ from $\ket{0}$.
+            Defaults to ``left``.
+        kernel : bool
+            If True, the kernel projector $\mathbb I - \ket{\phi}\bra{\phi}$ is block-encoded.
+            If False the projector $\ket{\phi}\bra{\psi}$ is block-encoded. Defauts to False.
+        num_ops : int
+            The number of operand quantum variables.
+            Automatically inferred when ``left`` or ``right`` is an integer or tuple of integers.
+            Defaults to 1.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding instance representing the projector $\ket{\phi}\bra{\psi}$.
+
+        Examples
+        --------
+
+        **Example 1: Computational basis states**
+
+        Define a block-encoding for the projector $P=\ket{1}\bra{3}$.
+
+        ::
+
+            from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
+
+            P = BlockEncoding.from_projector(1, 3)
+
+            # Prepare operand in superposition state
+            def operand_prep():
+                operand = QuantumFloat(2)
+                h(operand)
+                return operand
+
+            @terminal_sampling
+            def main():
+                operand = P.apply_rus(operand_prep)()
+                return operand
+
+            res_dict = main()
+            print(res_dict)
+            # {1.0: 1.0}
+
+        **Example 2: Custom states**
+
+        Define a block-encoding for the projector $P=\ket{\psi}\bra{\psi}$ where $\ket{\psi}\propto\ket{0}+\ket{1}+\ket{2}+\ket{3}$.
+
+        ::
+
+            from qrisp import *
+            from qrisp.block_encodings import BlockEncoding
+
+            def prep_psi(qv):
+                h(qv)
+
+            P = BlockEncoding.from_projector(prep_psi)
+
+            # Prepare operand in |0> state
+            def operand_prep():
+                operand = QuantumFloat(2)
+                return operand
+
+            @terminal_sampling
+            def main():
+                operand = P.apply_rus(operand_prep)()
+                return operand
+
+            res_dict = main()
+            print(res_dict)
+            # {0.0: 0.25, 1.0: 0.25, 2.0: 0.25, 3.0: 0.25}
+
+        """
+
+        if kernel or (right == None):
+            right = left
+
+        # left
+        num_left = 1
+        if isinstance(left, int):
+
+            def prep_left(arg):
+                arg.encode(left, permit_dirtyness=True)
+
+        elif isinstance(left, tuple):
+            num_left = len(left)
+
+            def prep_left(*args):
+                for i, arg in enumerate(args):
+                    arg.encode(left[i], permit_dirtyness=True)
+
+        elif callable(left):
+            prep_left = left
+        else:
+            return NotImplemented
+
+        # right
+        num_right = 1
+        if isinstance(right, int):
+
+            def prep_right(arg):
+                arg.encode(right, permit_dirtyness=True)
+
+        elif isinstance(right, tuple):
+            num_right = len(right)
+
+            def prep_right(*args):
+                for i, arg in enumerate(args):
+                    arg.encode(right[i], permit_dirtyness=True)
+
+        elif callable(right):
+            prep_right = right
+        else:
+            return NotImplemented
+
+        if not (isinstance(left, Callable) or isinstance(right, Callable)):
+            if num_left != num_right:
+                raise ValueError(
+                    f"Size mismatch: left has {num_left} elements, but right has {num_right}."
+                )
+        num_ops = max(num_left, num_right, num_ops)
+
+        def unitary(*args):
+            anc = args[0]
+            operands = args[1:]
+
+            if not kernel:
+                x(anc)
+
+            with invert():
+                prep_right(*operands)
+
+            qubits = sum([operand.reg for operand in operands], [])
+            mcx(qubits, anc[0], ctrl_state=0)
+
+            prep_left(*operands)
+
+        return BlockEncoding(1, [QuantumBool().template()], unitary, num_ops=num_ops)
 
     #
     # Utilities
@@ -1096,6 +1371,48 @@ class BlockEncoding:
                 num_ops=self.num_ops,
                 is_hermitian=True,
             )
+
+    def _hermitianization(self) -> BlockEncoding:
+        r"""
+        Returns a BlockEncoding representing the `qubitization walk operator via Hermitianization <https://arxiv.org/pdf/2312.00723>`_.
+
+        For a block-encoded (**not** necessarily Hermitian) operator $A$,
+        this method returns a BlockEncoding of the qubitization walk operator via Hermitianization.
+        The operator $A$ is encoded in the upper right block (measure new ancilla QuantumBool in $\ket{1}$):
+
+        .. math::
+
+            \begin{pmatrix} \mathbb{0} & A \\ A^{\dagger} & \mathbb{0} \end{pmatrix}
+
+        """
+
+        n = self.num_ancs
+
+        def new_unitary(*args):
+
+            anc = args[0]
+            self_ancs = args[1 : n + 1]
+            operands = args[n + 1 :]
+
+            x(anc)
+
+            with control(anc, ctrl_state=0):
+                self.unitary(*self_ancs, *operands)
+
+            with control(anc, ctrl_state=1):
+                with invert():
+                    self.unitary(*self_ancs, *operands)
+
+            reflection(self_ancs)
+
+        new_anc_templates = [QuantumBool().template()] + self._anc_templates
+        return BlockEncoding(
+            self.alpha,
+            new_anc_templates,
+            new_unitary,
+            num_ops=self.num_ops,
+            is_hermitian=True,
+        )
 
     def chebyshev(self, k: int, rescale: bool = True) -> BlockEncoding:
         r"""
@@ -1757,13 +2074,19 @@ class BlockEncoding:
     # Transformations
     #
 
-    def inv(self, eps: float, kappa: float) -> BlockEncoding:
+    def inv(self, eps: float, kappa: float, method: Literal["QET", "GQSVT"] = "QET") -> BlockEncoding:
         r"""
         Returns a BlockEncoding approximating the matrix inversion of the operator.
 
-        For a block-encoded **Hermitian** matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
+        For a block-encoded matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
         operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$.
-        The inversion is implemented via Quantum Eigenvalue Transformation (QET)
+
+        The inversion is implemented via
+
+        - Quantum Eigenvalue Transformation (QET) ($A$ must be **Hermitian**)
+
+        - Generalized Quantum Singular Value Transform (GQSVT)
+
         using a polynomial approximation of $1/x$ over the domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$.
 
         Parameters
@@ -1773,6 +2096,14 @@ class BlockEncoding:
         kappa : float
             An upper bound for the condition number $\kappa$ of $A$.
             This value defines the "gap" around zero where the function $1/x$ is not approximated.
+        method : {"QET", "GQSVT"}
+            The method for implementing the inversion.
+
+            - ``"QET"``: Quantum Eigenvalue Transform ($A$ must be Hermitian)
+
+            - ``"GQSVT"``: Generalized Quantum Singular Value Transform
+
+            Default is ``"QET"``.
 
         Returns
         -------
@@ -1781,7 +2112,9 @@ class BlockEncoding:
 
         Notes
         -----
-        - **Complexity**: The polynomial degree scales as $\mathcal{O}(\kappa \log(\kappa/\epsilon))$.
+        - **Complexity**: The query complexity of the algorithm scales as :math:`\mathcal{O}(\kappa^2 \log(\kappa/\epsilon))`:
+          Guaranteeing successful inversion with high probability requires repeating the procedure :math:`\mathcal{O}(\kappa)` times,
+          and each application of the polynomial requires :math:`\mathcal{O}(\kappa \log(\kappa/\epsilon))` (the polynomial degree) queries to the block-encoding of $A$.
         - It is assumed that the eigenvalues of $A/\alpha$ lie within $D_{\kappa}$.
 
         References
@@ -1871,7 +2204,7 @@ class BlockEncoding:
                 is_hermitian=self.is_hermitian,
             )
 
-        return inversion(self, eps, kappa)
+        return inversion(self, eps, kappa, method=method)
 
     def sim(self, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
         r"""

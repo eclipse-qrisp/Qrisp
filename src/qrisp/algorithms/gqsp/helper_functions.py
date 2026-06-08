@@ -16,10 +16,14 @@
 ********************************************************************************
 """
 
+import numpy as np
+from numpy.polynomial import Chebyshev
+import numpy.typing as npt
 import jax
 from jax import Array
 import jax.numpy as jnp
-from typing import Literal, TYPE_CHECKING
+from typing import Callable, Literal, TYPE_CHECKING
+import warnings
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -174,3 +178,68 @@ def _rescale_poly(
         p = poly2cheb(p)
 
     return p
+
+
+def chebyshev_approx(
+    func: Callable[[npt.NDArray[np.float64]], npt.NDArray[np.float64]],
+    eps: float = 1e-3,
+    max_N: int = 2048,
+) -> Chebyshev:
+    r"""
+    Calculates a truncated Chebyshev polynomial approximation of a function.
+
+    This method interpolates the given smooth function `func` using Chebyshev
+    polynomials up to a specified maximum degree `max_N` over the interval $[-1, 1]$.
+    It then truncates the higher-order coefficients to achieve a compressed
+    representation, guaranteeing that the maximum approximation error caused
+    by the truncation remains below the specified tolerance.
+
+    Parameters
+    ----------
+    func : Callable
+        The target function to approximate. Must accept a 1D
+        NumPy array of inputs and return a 1D array of evaluated outputs.
+    eps : float, optional
+        The maximum allowed absolute error introduced by dropping higher-order terms.
+        Defaults to 1e-3.
+    max_N : int, optional
+        The maximum polynomial degree used for the initial interpolation.
+        Defaults to 2048.
+
+    Returns:
+    --------
+    Chebyshev
+        A NumPy Chebyshev polynomial object with the truncated coefficients.
+
+    """
+    N = 16
+
+    while N <= max_N:
+        cheb_poly = Chebyshev.interpolate(func, deg=N, domain=[-1, 1])
+        coeffs = cheb_poly.coef
+
+        tail_start = int(N * 0.8)
+        tail_sum = np.sum(np.abs(coeffs[tail_start:]))
+
+        if tail_sum < eps:
+            break
+
+        N *= 2
+
+    if N > max_N:
+        warnings.warn(
+            f"Failed to converge to tolerance {eps} within a maximal polynomial degree of {max_N}. "
+            "Consider increasing 'max_N' to improve approximation accuracy."
+        )
+
+    error_sum = 0.0
+    trunc_idx = len(coeffs)
+
+    for i in range(len(coeffs) - 1, -1, -1):
+        error_sum += abs(coeffs[i])
+        if error_sum > eps:
+            trunc_idx = i + 1
+            break
+
+    trunc_idx = max(1, trunc_idx)
+    return Chebyshev(coeffs[:trunc_idx], domain=[-1, 1])
