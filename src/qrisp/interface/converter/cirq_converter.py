@@ -256,10 +256,11 @@ def convert_from_cirq(cirq_circuit):
     from qrisp.circuit import standard_operations as ops
 
     # setup: qubit map and gate lookup table
-    qc = QuantumCircuit(len(cirq_circuit.all_qubits()))
+    all_qs = cirq_circuit.all_qubits()
+    qc = QuantumCircuit(len(all_qs))
 
     try:
-        cirq_qubits = sorted(cirq_circuit.all_qubits())
+        cirq_qubits = sorted(all_qs)
     except TypeError as exc:
         types = {type(q).__name__ for q in cirq_circuit.all_qubits()}
         raise ValueError(
@@ -331,20 +332,20 @@ def convert_from_cirq(cirq_circuit):
         inner_gate = gate
         while isinstance(inner_gate, cirq.ControlledGate):
             cv = inner_gate.control_values
-            if cv is not None:
-                for v in cv:
-                    if isinstance(v, int):
-                        if v not in (0, 1):
-                            raise ValueError(
-                                f"Unsupported control value {v} in {inner_gate}."
-                            )
-                    elif len(v) != 1:
+            ctrl_state = ""
+            for v in cv:
+                if isinstance(v, tuple):
+                    if len(v) != 1:
                         raise ValueError(
-                            f"Multi-valued control {v} in {inner_gate} not supported."
+                            f"Multi-valued control {v} in {inner_gate} "
+                            "not supported."
                         )
-                ctrl_state = "".join(str(int(v[0])) for v in cv)
-            else:
-                ctrl_state = -1
+                    v = v[0]
+                if v not in (0, 1):
+                    raise ValueError(
+                        f"Unsupported control value {v} in {inner_gate}."
+                    )
+                ctrl_state += str(v)
             ctrl_layers.append((inner_gate.num_controls(), ctrl_state))
             inner_gate = inner_gate.sub_gate
 
@@ -426,20 +427,19 @@ def convert_from_cirq(cirq_circuit):
         if extra_controls is not None:
             controls, sub_qubits = extra_controls
             cv = op.control_values
-            if cv is not None:
-                for v in cv:
-                    if isinstance(v, int):
-                        if v not in (0, 1):
-                            raise ValueError(
-                                f"Unsupported control value {v} in {op}."
-                            )
-                    elif len(v) != 1:
+            ctrl_state = ""
+            for v in cv:
+                if isinstance(v, tuple):
+                    if len(v) != 1:
                         raise ValueError(
                             f"Multi-valued control {v} in {op} not supported."
                         )
-                ctrl_state = "".join(str(int(v[0])) for v in cv)
-            else:
-                ctrl_state = -1
+                    v = v[0]
+                if v not in (0, 1):
+                    raise ValueError(
+                        f"Unsupported control value {v} in {op}."
+                    )
+                ctrl_state += str(v)
             qrisp_op = ControlledOperation(
                 base_operation=qrisp_op,
                 num_ctrl_qubits=len(controls),

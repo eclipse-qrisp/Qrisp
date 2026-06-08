@@ -1,5 +1,5 @@
 from math import pi
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import cirq
 import numpy as np
@@ -21,11 +21,13 @@ from qrisp import (
     z,
 )
 from qrisp.circuit import QuantumCircuit
+from qrisp.circuit import ControlledOperation
 from qrisp.grover import diffuser
 from qrisp.interface.converter.cirq_converter import convert_to_cirq, convert_from_cirq
 
 
 def _build_single_qubit_circ():
+    """Qrisp circuit with all single-qubit gates (H, X, Y, Z, RX, RY, RZ, S, T, S†, T†)."""
     qc = QuantumCircuit(4)
     qc.h(0)
     qc.x(1)
@@ -42,6 +44,7 @@ def _build_single_qubit_circ():
 
 
 def _build_mcx_circ():
+    """Qrisp circuit with multi-controlled X (Toffoli-like) gates on 8 qubits."""
     qc = QuantumCircuit(8)
     qc.mcx([0, 1, 2, 4, 5, 6], [3, 7])
     return qc
@@ -60,6 +63,7 @@ def test_convert_to_cirq_preserves_unitary(circ_builder):
 
 
 def _build_mcx_qs():
+    """Compiled quantum session with a 4-controlled multi-controlled X gate."""
     ctrl = QuantumVariable(4)
     target = QuantumBool()
     mcx(ctrl, target)
@@ -67,6 +71,7 @@ def _build_mcx_qs():
 
 
 def _build_reflection_qs():
+    """Compiled quantum session with a reflection operator over GHZ state."""
     qv = QuantumVariable(5)
     x(qv)
 
@@ -209,13 +214,23 @@ def _mock_none_gate_circ():
     return qc
 
 
+def _real_unknown_circ():
+    """Circuit with a real operation not in gate_map and no definition."""
+    from qrisp.circuit import Operation, Instruction
+    qc = QuantumCircuit(1)
+    op = Operation(name="foo", num_qubits=1)
+    qc.data = [Instruction(op, qc.qubits, [])]
+    return qc
+
+
 @pytest.mark.parametrize(
     "circ_builder, match",
     [
         (_mock_unknown_circ, "could not be transpiled and are not supported"),
         (_mock_none_gate_circ, "has no Cirq equivalent"),
+        (_real_unknown_circ, "could not be decomposed into elementary"),
     ],
-    ids=["unknown_gate", "none_gate_no_definition"],
+    ids=["unknown_gate", "none_gate_no_definition", "real_unknown_no_progress"],
 )
 def test_convert_to_cirq_raises(circ_builder, match):
     with pytest.raises(ValueError, match=match):
@@ -223,6 +238,7 @@ def test_convert_to_cirq_raises(circ_builder, match):
 
 
 def _build_single_qubit_roundtrip():
+    """Qrisp circuit with all non-parametrized single-qubit gates (H, X, Y, Z, S, T, S†, T†, SX, SX†, ID)."""
     qc = QuantumCircuit(4)
     qc.h(0)
     qc.x(1)
@@ -239,6 +255,7 @@ def _build_single_qubit_roundtrip():
 
 
 def _build_parametrized_roundtrip():
+    """Qrisp circuit with parametrized single-qubit gates (RX, RY, RZ, P)."""
     qc = QuantumCircuit(4)
     qc.rx(0.3, 0)
     qc.ry(0.4, 1)
@@ -248,6 +265,7 @@ def _build_parametrized_roundtrip():
 
 
 def _build_two_qubit_roundtrip():
+    """Qrisp circuit with two-qubit gates (CX, CZ, SWAP)."""
     qc = QuantumCircuit(4)
     qc.cx(0, 1)
     qc.cz(2, 3)
@@ -256,6 +274,7 @@ def _build_two_qubit_roundtrip():
 
 
 def _build_gphase_roundtrip():
+    """Qrisp circuit with global phase gate after identity (X†X)."""
     qc = QuantumCircuit(1)
     qc.x(0)
     qc.x(0)
@@ -264,6 +283,7 @@ def _build_gphase_roundtrip():
 
 
 def _build_swap_roundtrip():
+    """Qrisp circuit with SWAP followed by H."""
     qc = QuantumCircuit(2)
     qc.swap(0, 1)
     qc.h(0)
@@ -271,6 +291,7 @@ def _build_swap_roundtrip():
 
 
 def _build_mixed_roundtrip():
+    """Qrisp circuit mixing single-qubit, two-qubit, and parametrized gates."""
     qc = QuantumCircuit(4)
     qc.h(0)
     qc.cx(0, 1)
@@ -487,12 +508,14 @@ def test_convert_from_cirq_controlled_gates(key):
 
 
 def _build_multi_valued_circ():
+    """Cirq circuit with multi-valued control (0 OR 1) on first control qubit."""
     q0, q1, q2 = cirq.LineQubit.range(3)
     g = cirq.ControlledGate(cirq.X, control_values=[(0, 1), 1])
     return cirq.Circuit([g(q0, q1, q2)])
 
 
 def _build_controlled_no_gate_circ():
+    """Cirq ControlledOperation wrapping a CircuitOperation (no .gate attribute on sub_op)."""
     q0, q1 = cirq.LineQubit.range(2)
     inner = cirq.FrozenCircuit([cirq.X(q0)])
     co = cirq.CircuitOperation(inner)
@@ -500,12 +523,14 @@ def _build_controlled_no_gate_circ():
 
 
 def _build_circuit_op_circ():
+    """Cirq circuit with a bare CircuitOperation (no .gate attribute)."""
     q0 = cirq.LineQubit(0)
     inner = cirq.FrozenCircuit([cirq.X(q0)])
     return cirq.Circuit([cirq.CircuitOperation(inner)])
 
 
 def _build_iswap_circ():
+    """Cirq circuit with ISWAP (unsupported by the converter)."""
     q0, q1 = cirq.LineQubit.range(2)
     return cirq.Circuit([cirq.ISWAP(q0, q1)])
 
@@ -548,3 +573,153 @@ def test_convert_from_cirq_edge_circuits(circ_builder):
     qrisp_qc = convert_from_cirq(circ_builder())
     assert qrisp_qc.num_qubits() == 0
     assert len(qrisp_qc.data) == 0
+
+
+def test_convert_from_cirq_single_qubit_measure():
+    """Single-qubit measure hits the len(qrisp_qubits) == 1 branch."""
+    q0 = cirq.LineQubit(0)
+    circ = cirq.Circuit([cirq.measure(q0)])
+    qrisp_qc = convert_from_cirq(circ)
+    assert qrisp_qc.data[0].op.name == "measure"
+
+
+@pytest.mark.parametrize(
+    "control_values",
+    [[1], [0]],
+    ids=["control_value_1", "control_value_0"],
+)
+def test_convert_from_cirq_controlled_gate_unwrap(control_values):
+    """GateOperation wrapping a ControlledGate enters the unwrap while-loop."""
+    q0, q1 = cirq.LineQubit.range(2)
+    g = cirq.ControlledGate(cirq.X, num_controls=1, control_values=control_values)
+    circ = cirq.Circuit([cirq.GateOperation(g, [q0, q1])])
+    qrisp_qc = convert_from_cirq(circ)
+    assert qrisp_qc.data[0].op.name == "cx"
+
+
+@pytest.mark.parametrize(
+    "gate, expected_name",
+    [
+        (cirq.X**0.25, "rx"),
+        (cirq.Y**0.25, "ry"),
+    ],
+    ids=["xpowgate_generic", "ypowgate_generic"],
+)
+def test_convert_from_cirq_generic_rotation(gate, expected_name):
+    """Generic rotation gates (non-special exponent) fall to RX/RY."""
+    q0 = cirq.LineQubit(0)
+    circ = cirq.Circuit([gate(q0)])
+    qrisp_qc = convert_from_cirq(circ)
+    assert qrisp_qc.data[0].op.name == expected_name
+
+
+@pytest.mark.parametrize(
+    "name, params, base_gate",
+    [
+        ("sx",     [],      None),
+        ("sx_dg",  [],      None),
+        ("p",      [0.5],   None),
+        ("rx",     [0.5],   None),
+        ("y",      [],      None),
+    ],
+    ids=["controlled_sx", "controlled_sx_dg", "controlled_p",
+         "controlled_params", "controlled_fallback"],
+)
+def test_convert_to_cirq_controlled_branches(name, params, base_gate):
+    """Cover dead branches in the ControlledOperation block of convert_to_cirq."""
+    from qrisp.circuit.standard_operations import XGate
+    qc = QuantumCircuit(2)
+    op = ControlledOperation(XGate(), 1)
+    op.name = name
+    op.params = params
+    qc.append(op, qc.qubits)
+    result = convert_to_cirq(qc)
+    assert isinstance(result, cirq.Circuit)
+
+
+def _make_import_fail():
+    import builtins
+    real = builtins.__import__
+    def mock(name, *args, **kwargs):
+        if name == 'cirq':
+            raise ModuleNotFoundError(f"No module named '{name}'")
+        return real(name, *args, **kwargs)
+    return patch('builtins.__import__', mock)
+
+
+@pytest.mark.parametrize(
+    "func, circuit",
+    [
+        (convert_to_cirq, QuantumCircuit(1)),
+        (convert_from_cirq, cirq.Circuit()),
+    ],
+    ids=["convert_to_cirq", "convert_from_cirq"],
+)
+def test_convert_import_error(func, circuit):
+    """ImportError when cirq is not installed."""
+    with _make_import_fail():
+        with pytest.raises(ImportError, match="Cirq must be installed"):
+            func(circuit)
+
+
+def test_convert_from_cirq_mixed_qubit_types():
+    """Mixed qubit types raise ValueError caught by converter."""
+    q0 = cirq.LineQubit(0)
+    circ = cirq.Circuit([cirq.H(q0)])
+    class BadQubit:
+        def __init__(self):
+            self.dimension = 2
+        def __repr__(self):
+            return 'BadQubit()'
+        def _comparison_key(self):
+            return 0
+    with patch.object(circ, 'all_qubits', return_value={q0, BadQubit()}):
+        with pytest.raises(ValueError, match="Mixed qubit types"):
+            convert_from_cirq(circ)
+
+
+def _build_multi_valued_inner_circ():
+    """GateOperation wrapping a ControlledGate with multi-valued control (0 OR 1),
+    triggering error in the ControlledGate unwrap while-loop."""
+    from cirq.ops.control_values import ProductOfSums
+    q0, q1 = cirq.LineQubit.range(2)
+    cv = ProductOfSums([(0, 1)])
+    g = cirq.ControlledGate(cirq.X, control_values=cv)
+    return cirq.Circuit([cirq.GateOperation(g, [q0, q1])])
+
+
+def _build_invalid_control_inner_circ():
+    """GateOperation wrapping a ControlledGate with control value 2 (bypassed Cirq validation),
+    triggering unsupported-value error in the unwrap while-loop."""
+    from cirq.ops.control_values import ProductOfSums
+    q0, q1 = cirq.LineQubit.range(2)
+    g = cirq.ControlledGate(cirq.X, num_controls=1, control_values=[1])
+    g._control_values = ProductOfSums([2])
+    return cirq.Circuit([cirq.GateOperation(g, [q0, q1])])
+
+
+def _build_invalid_control_outer_circ():
+    """ControlledOperation with control value 2 (bypassed Cirq validation),
+    triggering unsupported-value error in the extra_controls path."""
+    from cirq.ops.control_values import ProductOfSums
+    q0, q1 = cirq.LineQubit.range(2)
+    co = cirq.ControlledOperation([q0], cirq.X(q1), control_values=[1])
+    co._control_values = ProductOfSums([2])
+    return cirq.Circuit([co])
+
+
+@pytest.mark.parametrize(
+    "circ_builder, match",
+    [
+        (_build_multi_valued_inner_circ, "Multi-valued control"),
+        (_build_invalid_control_inner_circ, "Unsupported control value"),
+        (_build_invalid_control_outer_circ, "Unsupported control value"),
+    ],
+    ids=["multi_valued_inner", "invalid_control_inner", "invalid_control_outer"],
+)
+def test_convert_from_cirq_control_value_errors(circ_builder, match):
+    """Control value validation errors in both unwrap and extra_controls paths."""
+    with pytest.raises(ValueError, match=match):
+        convert_from_cirq(circ_builder())
+
+
