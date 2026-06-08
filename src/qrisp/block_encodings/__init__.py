@@ -16,4 +16,6 @@
 ********************************************************************************
 """
 
-from qrisp.block_encodings.block_encoding import *
+from .block_encoding import BlockEncoding
+
+__all__ = ["BlockEncoding"]
