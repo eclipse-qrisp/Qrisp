@@ -40,7 +40,7 @@ def build_from_operator(
     Notes
     -----
     - Block encoding based on Pauli decomposition $O=\sum_i\alpha_i P_i$ where $\alpha_i$ are real positive coefficients
-        and $P_i$ are Pauli strings (including the respective sign).
+      and $P_i$ are Pauli strings (including the respective sign).
     - **Normalization**: The block-encoding normalization factor is $\alpha = \sum_i \alpha_i$.
 
     Examples

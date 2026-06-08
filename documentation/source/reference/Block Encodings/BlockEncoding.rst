@@ -28,9 +28,9 @@ Constructors
    :hidden:
 
    methods/from_array
+   methods/from_eye
    methods/from_lcu
    methods/from_operator
-   methods/from_eye
    methods/from_projector
 
 Utilities
