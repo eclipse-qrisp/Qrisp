@@ -18,13 +18,15 @@
 
 import numpy as np
 import jax.numpy as jnp
-from qrisp.core import x, xxyy, p
+from qrisp.core import QuantumVariable, x, xxyy, p
+from qrisp.circuit import Qubit
 from qrisp.typing import NDArrayLike
 from qrisp.jasp import jrange, check_for_tracing_mode
+from collections.abc import Sequence
 
 def unbalanced_W_state(
-    qv: NDArrayLike,
-    amplitudes: list,
+    qv: QuantumVariable | Sequence[Qubit],
+    amplitudes: NDArrayLike,
     reversed: bool = False
 ) -> None:
     r"""
@@ -44,10 +46,10 @@ def unbalanced_W_state(
 
     Parameters
     ----------
-    qv : NDArrayLike
+    qv : QuantumVariable
         A freshly allocated :ref:`QuantumVariable` in the
         :math:`|0\dots0\rangle` state whose size matches ``len(amplitudes)``.
-    amplitudes : array_like
+    amplitudes : NDArrayLike
         A 1-D sequence of complex (or real) target amplitudes, one per qubit.
         Its length must be equal ``qv.size``.
     reversed : bool, optional
@@ -90,7 +92,7 @@ def unbalanced_W_state(
     Examples
     --------
     >>> import numpy as np
-    >>> from qrisp import QuantumVariable
+    >>> from qrisp import QuantumVariable, unbalanced_W_state
     >>> a = np.array([1j, 2, 3, 4])
     >>> qv = QuantumVariable(4)
     >>> unbalanced_W_state(qv, a)

@@ -18,11 +18,13 @@
 
 import jax.numpy as jnp
 
-from qrisp.core import cx, ry
+from qrisp.core import QuantumVariable, cx, ry
+from qrisp.circuit import Qubit
 from qrisp.jasp import jlen, jrange
+from collections.abc import Sequence
 
 
-def dicke_state(qv, k):
+def dicke_state(qv: QuantumVariable | Sequence[Qubit], k: int) -> None:
     """
     Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358.
     This algorithm creates an equal superposition of Dicke states for a given Hamming weight. The initial input variable has to be within this subspace.
@@ -31,7 +33,7 @@ def dicke_state(qv, k):
     ----------
     qv : QuantumVariable
         Initial quantum variable to be prepared. Has to be in target subspace.
-    k : Int
+    k : int
         The Hamming weight (i.e. number of "ones") for the desired dicke state.
 
 
@@ -61,7 +63,11 @@ def dicke_state(qv, k):
         split_cycle_shift(qv, index, index - 1)
 
 
-def split_cycle_shift(qv, highIndex, lowIndex):
+def split_cycle_shift(
+    qv: QuantumVariable | Sequence[Qubit],
+    highIndex: int,
+    lowIndex: int
+) -> None:
     """
     Helper function for Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358.
 
@@ -69,12 +75,12 @@ def split_cycle_shift(qv, highIndex, lowIndex):
     ----------
     qv : QuantumVariable
         Initial quantum variable to be prepared. Has to be in target subspace.
-    highIndex : Int
+    highIndex : int
         Index for indication of preparation steps, as seen in original algorithm.
-    lowIndex : Int
+    lowIndex : int
         Index for indication of preparation steps, as seen in original algorithm.
     """
-    from qrisp import control
+    from qrisp.environments import control
 
     # index == highIndex
     param = 2 * jnp.arccos(jnp.sqrt(1 / highIndex))
