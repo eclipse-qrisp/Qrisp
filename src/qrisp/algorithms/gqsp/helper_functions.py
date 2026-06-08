@@ -227,7 +227,10 @@ def chebyshev_approx(
         N *= 2
 
     if N > max_N:
-        warnings.warn(f"Failed to converge to {eps} tolerance within {max_N} degrees.")
+        warnings.warn(
+            f"Failed to converge to tolerance {eps} within a maximal polynomial degree of {max_N}. "
+            "Consider increasing 'max_N' to improve approximation accuracy."
+        )
 
     error_sum = 0.0
     trunc_idx = len(coeffs)

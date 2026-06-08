@@ -56,11 +56,21 @@ class BackendLike(Protocol):
         """Human-readable name of the backend."""
         ...
 
+    @overload
+    def run(
+        self, circuits: QuantumCircuit, shots: int | None = None
+    ) -> MeasurementResult: ...
+
+    @overload
+    def run(
+        self, circuits: Sequence[QuantumCircuit], shots: int | None = None
+    ) -> list[MeasurementResult]: ...
+
     def run(
         self,
         circuits: QuantumCircuit | Sequence[QuantumCircuit],
         shots: int | None = None,
-    ):
+    ) -> MeasurementResult | list[MeasurementResult]:
         """Submit circuits and return measurement result(s)."""
         ...
 
@@ -221,19 +231,17 @@ class Backend(ABC):
         """
         Submit one or more circuits for execution and return a :class:`Job`.
 
-        Before returning, every concrete implementation should call
-        :meth:`job.submit() <qrisp.interface.Job.submit>` on the newly created
-        job. :meth:`~qrisp.interface.Job.submit` is the hook that moves the job out of
-        :attr:`~qrisp.interface.JobStatus.INITIALIZING`, signalling that execution
-        has been handed off to the backend. The exact state the job enters depends
-        on the backend type:
+        The returned job must not be in
+        :attr:`~qrisp.interface.JobStatus.INITIALIZING` state: by the time
+        ``run_async`` returns, execution must have been handed off to the
+        backend. The exact state the job enters depends on the backend type:
 
         * :attr:`~qrisp.interface.JobStatus.QUEUED`: for asynchronous or remote
           backends where the job waits in a queue before execution begins.
 
-        * :attr:`~qrisp.interface.JobStatus.RUNNING`: for synchronous simulators
-          that start execution immediately inside
-          :meth:`~qrisp.interface.Job.submit`.
+        * :attr:`~qrisp.interface.JobStatus.RUNNING` or
+          :attr:`~qrisp.interface.JobStatus.DONE`: for synchronous simulators
+          that begin (or complete) execution before returning.
 
         Parameters
         ----------

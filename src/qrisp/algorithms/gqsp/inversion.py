@@ -31,7 +31,7 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
     Quantum Linear System Solver via Quantum Eigenvalue Transformation (QET).
     Returns a BlockEncoding approximating the matrix inversion of the operator.
 
-    For a block-encoded matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
+    For a block-encoded not necessarily Hermitian matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
     operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$.
     
     The inversion is implemented via

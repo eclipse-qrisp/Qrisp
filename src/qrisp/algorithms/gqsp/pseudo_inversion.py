@@ -33,7 +33,7 @@ def pseudo_inversion(
     delta: float = None,
 ) -> BlockEncoding:
     r"""
-    Returns a BlockEncoding approximating the threshold matrix pseudo inversion of the operator.
+    Returns a BlockEncoding approximating the threshold `matrix pseudoinverse <https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse>`_ of the operator.
 
     Let $A$ be a matrix with `Singular Value Decomposition <https://en.wikipedia.org/wiki/Singular_value_decomposition>`_
 

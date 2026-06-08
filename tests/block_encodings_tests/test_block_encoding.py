@@ -63,11 +63,11 @@ def test_block_encoding_from_operator():
 def test_block_encoding_from_eye():
 
     # k = 0: ones on the main diagonal
-    BE1 = BlockEncoding.from_eye(k=0)
+    BE1 = BlockEncoding.from_eye(diagonal_index=0)
 
     # k = -4: ones on the fourth lower subdiagonal
     # (non-cyclic) shift |x> -> |x+4>
-    BE2 = BlockEncoding.from_eye(k=-4)
+    BE2 = BlockEncoding.from_eye(diagonal_index=-4)
 
     BE3 = BE1.kron(BE2)
 
