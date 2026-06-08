@@ -26,10 +26,11 @@ from typing import Callable
 
 def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, kappa: float) -> BlockEncoding:
     r"""
-    Performs the `Dalzell quantum algorithm <https://arxiv.org/pdf/2406.12086>`_
+    Performs the `Dalzell quantum algorithm <https://arxiv.org/pdf/2406.12086>`_ 
     to solve the Quantum Linear System Problem (QSLP) $A\vec{x}=\vec{b}$, using kernel reflection.
     When applied to a state $\ket{0}$, the algorithm prepares a state $\tilde{x}\propto A^{-1}\ket{b}$
     within target precision $\epsilon$ of the ideal solution $\ket{x}$.
+    See also `Dalzell's talk <https://www.youtube.com/watch?v=OwqhdCioj4Y>`_ for more details.
 
     .. warning::
 
@@ -85,7 +86,7 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
     t : float
         An estimate $t$ for the norm $\|x\|_2=\|(A/\alpha)^{-1}b\|_2$ for normalized $\|b\|_2=1$.
         The success probability depends on the the ratio $t/\|x\|_2$. 
-        The optimal choice is $t=\|x\|_2$. The estimate must lie in the interval $[1, \kappa]$.
+        The optimal choice is $t=\|x\|_2$. The estimate must lie in the interval $[1, \kappa]$. See below for more details.
     eps : float
         The target precision $\epsilon$.
     kappa : float
@@ -101,8 +102,13 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
     Notes
     -----
     - **Complexity**: The query complexitiy of the algorithm is determined by the polynomial degree and scales as $\mathcal O(\kappa\log(1/\epsilon))$.
-      The success probability of the algorithm depends on the choice of $t$. 
-      If $t$ is chosen to be on the order of $\|x\|_2$, the algorithm succeeds with constant probability and only requires a constant number of repetitions.
+      The success probability of the algorithm depends on the choice of $t$ relative to $\|x\|_2$: 
+
+      - If the norm is known up to a constant factor, the algorithm succeeds with constant probability, hence only requires a constant number of repetitions.
+      - If the norm is unknown, `methods for norm estimation <https://arxiv.org/pdf/2406.12086>`_ can be used to find a suitable $t$ with only a logarithmic overhead in the overall complexity.
+
+      For further insights, see `Constant Factor Analysis of Optimal Quantum Linear Solvers in Practice <https://arxiv.org/abs/2604.22185>`_,
+      and make sure to use :meth:`.resources() <qrisp.block_encodings.BlockEncoding.resources>` to compare the resources of different inversion methods in practice.
     - The polynomial is applied to operator $G_t=(\mathbb I - \ket{b'}\bra{b'})A_t$.
       Each application of $G_t$ requires 1 call to the block-encoding oracle for $A$
       and 2 calls to the state preparation oracle for $b$. 
@@ -140,14 +146,10 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
 
         BA_inv = dalzell_inversion(BA, prep_b, 2.0, 0.01, 3.0)
 
-        # Prepares operand variable in state |0>
-        def operand_prep():
-            operand = QuantumFloat(2)
-            return operand
-
         @terminal_sampling
         def main():
-            operand = operand_prep()
+            # Prepare operand variable in state |0>
+            operand = QuantumFloat(2)
             ancillas = BA_inv.apply(operand)
             return operand, *ancillas
 
@@ -171,6 +173,20 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
         # [0.51718522 0.43564501 0.60746181 0.41680095] 
         # CLASSICAL SOLUTION
         # [0.51643917 0.4380885  0.60597747 0.41732523]
+
+    Alternatively, use ``apply_rus`` to directly obtain the solution state without post-selection:
+        
+    ::
+
+        @terminal_sampling
+        def main():
+            operand = BA_inv.apply_rus(lambda: QuantumFloat(2))()
+            return operand
+
+        res_dict = main()
+        amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
+        print(amps)
+        # [0.51816163 0.43295659 0.60721322 0.4187472 ]
 
     """
     from qrisp import h, x, control, QuantumBool
