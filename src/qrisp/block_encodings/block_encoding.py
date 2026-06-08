@@ -17,7 +17,6 @@
 """
 
 from __future__ import annotations
-import inspect
 from dataclasses import dataclass
 from jax.tree_util import register_pytree_node_class
 import jax
@@ -527,15 +526,15 @@ class BlockEncoding:
     @classmethod
     def from_eye(
         cls: "BlockEncoding",
-        k: int = 0,
+        diagonal_index: int = 0,
     ) -> BlockEncoding:
         r"""
         Constructs a BlockEncoding of a 2-D array with ones on the diagonal and zeros elsewhere.
 
         Parameters
         ----------
-        k : int
-            Index of the diagonal: 0 (the default) refers to the main diagonal,
+        diagonal_index : int
+            Index of the diagonal to set to one: 0 (the default) refers to the main diagonal,
             a positive value refers to an upper diagonal, and a negative value to a lower diagonal.
 
         Returns
@@ -552,12 +551,12 @@ class BlockEncoding:
             from qrisp import *
             from qrisp.block_encodings import BlockEncoding
 
-            # k = 0: ones on the main diagonal
-            BE1 = BlockEncoding.from_eye(k=0)
+            # diagonal_index = 0: ones on the main diagonal
+            BE1 = BlockEncoding.from_eye(diagonal_index=0)
 
-            # k = -2: ones on the second lower subdiagonal
+            # diagonal_index = -2: ones on the second lower subdiagonal
             # (non-cyclic) shift |x> -> |x+2>
-            BE2 = BlockEncoding.from_eye(k=-2)
+            BE2 = BlockEncoding.from_eye(diagonal_index=-2)
 
             BE3 = BE1.kron(BE2)
 
@@ -583,20 +582,20 @@ class BlockEncoding:
 
         """
 
-        if k == 0:
+        if diagonal_index == 0:
             return BlockEncoding(1, [], lambda operand: None, is_hermitian=True)
 
-        if k > 0:
-            # Shift |x> -> |x-k> can be implemented as cyclic shift |x> -> |x-k mod N>
-            # followed by a comparator checking if x >= 2**n - k.
+        if diagonal_index > 0:
+            # Shift |x> -> |x - diagonal_index> can be implemented as cyclic shift |x> -> |x - diagonal_index mod N>
+            # followed by a comparator checking if x >= 2**n - diagonal_index.
 
             def unitary(*args):
                 anc = args[0]
                 operand = args[1]
-                operand -= k
+                operand -= diagonal_index
                 n = operand.size
 
-                if k == 1:
+                if diagonal_index == 1:
                     # Comparator for x >= 2**n - 1 is equivalent to comparator for x == 2**n - 1.
 
                     def comp(a, b):
@@ -611,20 +610,20 @@ class BlockEncoding:
                         return a >= b
 
                     injected_comp = anc << comp
-                    injected_comp(operand, 2**n - k)
+                    injected_comp(operand, 2**n - diagonal_index)
 
             return BlockEncoding(1, [QuantumBool().template()], unitary)
 
-        if k < 0:
-            # Shift |x> -> |x-k> can be implemented as cyclic shift |x> -> |x-k mod N>
-            # followed by a comparator checking if x < -k.
+        if diagonal_index < 0:
+            # Shift |x> -> |x - diagonal_index> can be implemented as cyclic shift |x> -> |x - diagonal_index mod N>
+            # followed by a comparator checking if x < -diagonal_index.
 
             def unitary(*args):
                 anc = args[0]
                 operand = args[1]
-                operand -= k
+                operand -= diagonal_index
 
-                if k == -1:
+                if diagonal_index == -1:
                     # Comparator for x < 1 is equivalent to comparator for x == 0.
 
                     def comp(a, b):
@@ -639,7 +638,7 @@ class BlockEncoding:
                         return a < b
 
                     injected_comp = anc << comp
-                    injected_comp(operand, -k)
+                    injected_comp(operand, -diagonal_index)
 
             return BlockEncoding(1, [QuantumBool().template()], unitary)
 
