@@ -65,6 +65,7 @@ def foqcs_analyze_operator_spin_glass(
     ValueError
             When the operator is not representing spin-glass model.
             When spin-glass analysis fails, it raises a ValueError with the reason for failure.
+
     """
     # Verifies that operator exists and is not constant.
     min_qubits = O.find_minimal_qubit_amount()
@@ -161,6 +162,7 @@ def foqcs_analyze_operator_heisenberg(
     ----------
     ValueError
             When the operator is not representing one-dimensional Heisenberg model with nearest-neighbours couplings.
+
     """
     # Do the spin-glass analysis (Heisenberg is a subset of it)
     spin_glass_res = foqcs_analyze_operator_spin_glass(O, L, tol)
@@ -217,10 +219,14 @@ def foqcs_analyze_operator(
         tol: float = _FOQCS_SPIN_GLASS_TOL
 ) -> dict:
     r"""
+    Verifies oeprator against different FOQCS-LCU-compatible models.
+    Picks the narrowest scope.
+    First checks against spin-glass, then tries to narrow it down to Heisenberg model.
+
     Parameters
     ----------
     O : QubitOperator
-            Qubit operator of form: `O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)`
+        Qubit operator of form: `O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)`
 
     L : int = -1
         Number of operand qubits.
@@ -242,7 +248,7 @@ def foqcs_analyze_operator(
     ----------
     ValueError
             When the operator is not compatible with FOQCS-LCU (fails the spin-glass check).
-    
+
     """
     # Spin-glass analysis is base one. If it fails - operator is not compatible.
     res = foqcs_analyze_operator_spin_glass(O, L, tol)
@@ -261,16 +267,18 @@ def is_operator_foqcs_compatible(
         tol: float = _FOQCS_SPIN_GLASS_TOL
 ) -> dict: # Or None, if incompatible
     r"""
+    Runs `foqcs_analyze_operator` without rasing an error on unsuccessful attempt.
+
     Parameters
     ----------
     O : QubitOperator
-            Qubit operator of form: O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)
+            Qubit operator of form: `O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)`
 
     L : int = -1
         Number of operand qubits.
-        If not specified, will default to -1, and infer the number of operand qubits from the operator
+        If not specified, will default to `-1`, and infer the number of operand qubits from the operator
 
-    tol : float = _FOQCS_SPIN_GLASS_TOL (1e-12)
+    tol : float = `_FOQCS_SPIN_GLASS_TOL` (1e-12)
         Tolerance for considering the entry zero
 
     Returns
@@ -285,35 +293,39 @@ def is_operator_foqcs_compatible(
 
 def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
     r"""
+    Performs necessary preprocessing for `BlockEncoding.from_foqcs_lcu_prep`, preparing 
+    its parameters based on the analysis output from `foqcs_analyze_operator`
+
     Parameters
     ----------
     aresult : dict
             Output of `foqcs_analyze_operator`
 
     Returns
-    ----------
+    -------
     prep : Callable[[QuantumVariable], None]
-        Partial PREP_R function with all relevant parameters passed except QuantumVariable.
-    
+        Partial :math:`PREP_{R}` function with all relevant parameters passed except QuantumVariable.
+        Parameters can be fixed by using :class:`functools.partial`
+        
     num_q_ops : int
-        Number of operand qubits (L argument for FOQCS-LCU PREP routines).
+        Number of operand qubits, i.e. ``L`` argument for FOQCS-LCU PREP routines.
         The default is 1.
 
     unprep : Callable[[QuantumVariable], None] = None
-        Complex conjugate transpose of PREP_R with conjugated parameters, 
+        Complex conjugate transpose of :math:`PREP_{R}` with conjugated parameters (see Notes), 
         also a partial function variable with all relevant parameters passed except QuantumVariable.
         The default is None, in which case the unprep is calculated using the prep parameter.
 
     is_hermitian : bool
         Indicates whether the block-encoding unitary is Hermitian.
         The default is False.
-    
+        
     norm : "ArrayLike"
         Normalization factor.
-        The default is 1 in case no normalization factor is passed.
+        The default is `1` in case no normalization factor is passed.
 
     Raises
-    ----------
+    ------
     KeyError
         If function received an unsupported FOQCS-LCU PREP method
 

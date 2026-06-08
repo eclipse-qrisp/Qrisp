@@ -582,7 +582,8 @@ class BlockEncoding:
             def main():
                 return BE.apply_rus(lambda: QuantumFloat(2))()
 
-            main()
+            res = main()
+            print(res)
             # {1.0: 0.5, 2.0: 0.5}
 
 
@@ -632,7 +633,7 @@ class BlockEncoding:
         
         norm : "ArrayLike"
             Normalization factor.
-            The default is 1 in case no normalization factor is passed.
+            The default is `1` in case no normalization factor is passed.
 
         Returns
         -------
@@ -656,6 +657,19 @@ class BlockEncoding:
         --------
 
         ::
+
+            import numpy as np
+            from qrisp import QuantumVariable, terminal_sampling
+            from qrisp.block_encodings import BlockEncoding, foqcs_prep_heisenberg
+            from functools import partial
+
+            def _prep_psi(q_num):
+                # Generate state amplitudes.
+                psi = np.random.uniform(-1, 1, 2 ** (q_num)) + 1j * np.random.uniform(
+                    -1, 1, 2 ** (q_num)
+                )
+                psi /= np.linalg.norm(psi)
+                return psi
 
             # Initialize variables + their values
             L = 4
@@ -711,12 +725,12 @@ class BlockEncoding:
                 return qv
 
             @terminal_sampling
-                def main_apply_rus(BE):
-                    return BE.apply_rus(operand_prep)(psi)
-                    
+            def main_apply_rus(BE):
+                return BE.apply_rus(operand_prep)(psi)
+
             # Do the measurement using RUS
-                result_rus = main_apply_rus(be)
-                print(result_rus)
+            result_rus = main_apply_rus(be)
+            print(result_rus)
 
 
         """

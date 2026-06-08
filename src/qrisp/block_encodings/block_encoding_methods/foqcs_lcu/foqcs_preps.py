@@ -37,7 +37,9 @@ def foqcs_prep_heisenberg(
     r"""
 
     FOQCS-LCU state preparation, based on the application of the same name in https://arxiv.org/pdf/2507.20887.
-    Implements the FOQCS-LCU PREP oracle for the Heisenberg Hamiltonian by preparing selector amplitudes for local X/Y/Z fields and nearest-neighbor XX/YY/ZZ couplings, then mapping them into the two FOQCS activation registers using Dicke-state and CNOT-ladder structures.
+    Implements the FOQCS-LCU PREP oracle for the Heisenberg Hamiltonian by preparing selector amplitudes
+    for local X/Y/Z fields and nearest-neighbor XX/YY/ZZ couplings, then mapping them into the
+    two FOQCS activation registers using Dicke-state and CNOT-ladder structures.
     
     
     Parameters
@@ -190,10 +192,13 @@ def foqcs_prep_spin_glass(
     conjugate: bool = False
 ) -> None:
     r"""
-
     FOQCS-LCU state preparation, based on the application of the same name in https://arxiv.org/pdf/2507.20887.
-    Implements the FOQCS-LCU PREP oracle for the spin-glass Hamiltonian by preparing weighted selector states for non-uniform local X/Y/Z fields and distance-dependent XX/YY/ZZ couplings, then encoding them into FOQCS activation registers via unbalanced W/Dicke states, CNOT ladders, and register-copying for Y terms.
-    Specifically, this is based on the optimal implementation as provided by the authors of the paper here: https://github.com/QuantumComputingLab/foqcs-lcu/blob/main/src/foqcs_lcu/spin_glass_block_encoding.py#L254
+    Implements the FOQCS-LCU PREP oracle for the spin-glass Hamiltonian by preparing weighted selector states
+    for non-uniform local X/Y/Z fields and distance-dependent XX/YY/ZZ couplings,
+    then encoding them into FOQCS activation registers via unbalanced W/Dicke states,
+    CNOT ladders, and register-copying for Y terms.
+    Specifically, this is based on the optimal implementation as provided by the authors of the paper here:
+    https://github.com/QuantumComputingLab/foqcs-lcu/blob/main/src/foqcs_lcu/spin_glass_block_encoding.py#L254
     See Eq. (58) for more.
 
     Parameters
@@ -410,16 +415,17 @@ def foqcs_prep_spin_glass(
 ############# Helpers #############
 ###################################
     
-def get_foqcs_lcu_prep_num_of_ancillae(prep: partial, num_ops: int = 1) -> int:
+def get_foqcs_lcu_prep_num_of_ancillae(prep: partial, num_q_ops: int = 1) -> int:
     r"""
-        Constructs a BlockEncoding using the Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) protocol.
+        Gets a number of ancillae qubits for the FOQCS-LCU circuit that uses
+        ``prep`` method to encode ``num_q_ops`` qubits.
 
         Parameters
         ----------
         prep : partial
             Partially initialised FOQCS-LCU PREP method.
         
-        num_ops : int
+        num_q_ops : int
             Number of operand qubits (L argument for FOQCS-LCU PREP routines).
             The default is 1.
 
@@ -429,15 +435,16 @@ def get_foqcs_lcu_prep_num_of_ancillae(prep: partial, num_ops: int = 1) -> int:
             An integer with number of ancillae required by the received FOQCS-LCU PREP method
     """
     if prep.func == foqcs_prep_heisenberg:
-        return num_ops * 2 + 6
+        return num_q_ops * 2 + 6
     elif prep.func == foqcs_prep_spin_glass:
-        return num_ops * 5
+        return num_q_ops * 5
     else:
         raise ValueError(f"Received unknown FOQCS-LCU PREP routine: {prep}")
 
 def _angles_dicke_unbalanced(coeff: Sequence[float]) -> tuple[list[float], int]:
     """
-    Qrisp helper equivalent of angles_dicke1_unbalanced from foqcs-lcu.
+    Helper equivalent of angles_dicke1_unbalanced from foqcs-lcu
+    https://github.com/QuantumComputingLab/foqcs-lcu
 
     coeff must be normalized, real, and non-negative.
     """
@@ -526,7 +533,8 @@ def _phase_fix_dicke1_unbalanced_qrisp(
     cutoff: int | None = None
 ) -> None:
     """
-    Qrisp helper equivalent of phase_fix_dicke1_unbalanced from foqcs-lcu.
+    Helper equivalent of phase_fix_dicke1_unbalanced from foqcs-lcu
+    https://github.com/QuantumComputingLab/foqcs-lcu
     """
 
     coeff = np.asarray(coeff, dtype=complex)
@@ -549,7 +557,8 @@ def _cgamma_opt_qrisp(
     theta_list: Sequence[float],
 ) -> None:
     """
-    Qrisp implementation of the compressed controlled-gamma gate cgamma_opt.
+    Implementation of the compressed controlled-gamma gate `cgamma_opt`
+    from https://github.com/QuantumComputingLab/foqcs-lcu
 
     This follows the upstream decomposition:
 
