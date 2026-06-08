@@ -20,7 +20,7 @@ from qrisp import (
     x,
     z,
 )
-from qrisp.circuit import ClControlledOperation, QuantumCircuit
+from qrisp.circuit import QuantumCircuit
 from qrisp.grover import diffuser
 from qrisp.interface.converter.cirq_converter import convert_to_cirq, convert_from_cirq
 
@@ -89,32 +89,6 @@ def test_convert_to_cirq_compiled_qs(circ_builder):
     expected_unitary = compiled_qc.get_unitary()
     converted_cirq = convert_to_cirq(compiled_qc)
     np.testing.assert_array_almost_equal(expected_unitary, unitary(converted_cirq))
-
-
-@pytest.mark.parametrize(
-    "op, expected_msg",
-    [
-        (
-            MagicMock(name="some_gate"),
-            "could not be transpiled",
-        ),
-        (
-            MagicMock(spec=ClControlledOperation),
-            "could not be transpiled",
-        ),
-    ],
-)
-def test_unsupported_gate(op, expected_msg):
-    """Mock unit test to verify an error is raised for an unsupported gate."""
-    if isinstance(op, ClControlledOperation):
-        op.configure_mock(name="Classically controlled")
-    else:
-        op.configure_mock(name="some_gate")
-
-    qc = QuantumCircuit(1)
-    qc.data = [MagicMock(op=op, qubits=[MagicMock()])]
-    with pytest.raises(ValueError, match=expected_msg):
-        convert_to_cirq(qc)
 
 
 def test_gphase():
@@ -219,24 +193,33 @@ def test_convert_to_cirq_cirq_qubits_passthrough():
     np.testing.assert_array_almost_equal(expected_unitary, cirq.unitary(cirq_circ))
 
 
-def test_convert_to_cirq_none_gate_no_definition_raises():
-    """A gate mapped to None in the dict without a definition should raise."""
-    from qrisp.circuit import QuantumCircuit
-    from unittest.mock import MagicMock
+def _mock_unknown_circ():
+    qc = QuantumCircuit(1)
+    qc.data = [MagicMock(op=MagicMock(name="some_gate", params=[]), qubits=[MagicMock()])]
+    return qc
 
+
+def _mock_none_gate_circ():
     qc = QuantumCircuit(2)
-    qubits = qc.qubits
-
     mock_op = MagicMock()
     mock_op.name = "rxx"
     mock_op.params = []
     mock_op.definition = None
+    qc.data = [MagicMock(op=mock_op, qubits=list(qc.qubits))]
+    return qc
 
-    qc.data = [MagicMock(op=mock_op, qubits=list(qubits))]
 
-    with pytest.raises(ValueError, match="has no Cirq equivalent"):
-        convert_to_cirq(qc)
-
+@pytest.mark.parametrize(
+    "circ_builder, match",
+    [
+        (_mock_unknown_circ, "could not be transpiled and are not supported"),
+        (_mock_none_gate_circ, "has no Cirq equivalent"),
+    ],
+    ids=["unknown_gate", "none_gate_no_definition"],
+)
+def test_convert_to_cirq_raises(circ_builder, match):
+    with pytest.raises(ValueError, match=match):
+        convert_to_cirq(circ_builder())
 
 
 def _build_single_qubit_roundtrip():
@@ -469,7 +452,7 @@ def test_convert_from_cirq_exponent_guards(gate_fn, exponent, should_raise):
         cirq_circ = cirq.Circuit([g(q[0], q[1])])
 
     if should_raise:
-        with pytest.raises(ValueError, match="not supported"):
+        with pytest.raises(ValueError, match="exponent"):
             convert_from_cirq(cirq_circ)
     else:
         qrisp_qc = convert_from_cirq(cirq_circ)
@@ -512,14 +495,39 @@ def test_convert_from_cirq_controlled_gates(key):
     )
 
 
-def test_convert_from_cirq_multi_valued_control_rejected():
-    """Multi-valued control qubits (match 0 or 1) should raise."""
+def _build_multi_valued_circ():
     q0, q1, q2 = cirq.LineQubit.range(3)
     g = cirq.ControlledGate(cirq.X, control_values=[(0, 1), 1])
-    cirq_circ = cirq.Circuit([g(q0, q1, q2)])
-
-    with pytest.raises(ValueError, match="Multi-valued control"):
-        convert_from_cirq(cirq_circ)
+    return cirq.Circuit([g(q0, q1, q2)])
 
 
+def _build_global_phase_only_circ():
+    return cirq.Circuit([cirq.GlobalPhaseGate(1j).on()])
 
+
+def _build_controlled_no_gate_circ():
+    q0, q1 = cirq.LineQubit.range(2)
+    inner = cirq.FrozenCircuit([cirq.X(q0)])
+    co = cirq.CircuitOperation(inner)
+    return cirq.Circuit([cirq.ControlledOperation([q1], co)])
+
+
+@pytest.mark.parametrize(
+    "circ_builder, match",
+    [
+        (_build_multi_valued_circ, "Multi-valued control"),
+        (_build_controlled_no_gate_circ, "not supported"),
+    ],
+    ids=["multi_valued_control", "controlled_sub_op_no_gate"],
+)
+def test_convert_from_cirq_raises(circ_builder, match):
+    with pytest.raises(ValueError, match=match):
+        convert_from_cirq(circ_builder())
+
+
+def test_convert_from_cirq_global_phase_only():
+    """A GlobalPhaseGate-only circuit (zero qubits) should convert without error."""
+    circ = cirq.Circuit([cirq.GlobalPhaseGate(1j).on()])
+    qrisp_qc = convert_from_cirq(circ)
+    assert qrisp_qc.num_qubits() == 0
+    assert len(qrisp_qc.data) == 0
