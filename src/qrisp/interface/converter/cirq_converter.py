@@ -113,9 +113,13 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
                    and instr.op.name not in ("gphase", "qb_alloc", "qb_dealloc")}
         if not unknown:
             break
+
+        def _transpile_predicate(op):
+            return op.name in unknown
+
         try:
             transpiled = qrisp_circuit.transpile(
-                transpile_predicate=lambda op, _u=unknown: op.name in _u
+                transpile_predicate=_transpile_predicate
             )
         except Exception:
             raise ValueError(
