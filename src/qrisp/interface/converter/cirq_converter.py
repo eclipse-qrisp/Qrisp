@@ -58,37 +58,60 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
         ) from exc
 
     from cirq import (
-        CNOT, H, X, Y, Z, S, T, SWAP,
-        rx, ry, rz, I, M, R, CZ,
-        ZPowGate, XPowGate, GlobalPhaseGate,
+        CNOT,
+        H,
+        X,
+        Y,
+        Z,
+        S,
+        T,
+        SWAP,
+        rx,
+        ry,
+        rz,
+        I,
+        M,
+        R,
+        CZ,
+        ZPowGate,
+        XPowGate,
+        GlobalPhaseGate,
     )
 
     # known gate mapping
     gate_map = {
-        "cx":      CNOT,         "cz":      CZ,
-        "swap":    SWAP,         "h":       H,
-        "x":       X,            "y":       Y,
-        "z":       Z,            "rx":      rx,
-        "ry":      ry,           "rz":      rz,
-        "s":       S,            "t":       T,
-        "s_dg":    S**-1,        "t_dg":    T**-1,
-        "measure": M,            "reset":   R,
-        "id":      I,            "p":       ZPowGate,
-        "sx":      XPowGate,     "sx_dg":   XPowGate,
-        "gphase":     None,      "xxyy":    None,
-        "rxx":        None,      "rzz":     None,
+        "cx": CNOT,
+        "cz": CZ,
+        "swap": SWAP,
+        "h": H,
+        "x": X,
+        "y": Y,
+        "z": Z,
+        "rx": rx,
+        "ry": ry,
+        "rz": rz,
+        "s": S,
+        "t": T,
+        "s_dg": S**-1,
+        "t_dg": T**-1,
+        "measure": M,
+        "reset": R,
+        "id": I,
+        "p": ZPowGate,
+        "sx": XPowGate,
+        "sx_dg": XPowGate,
+        "gphase": None,
+        "xxyy": None,
+        "rxx": None,
+        "rzz": None,
         # skip qubit allocation and deallocation ops in the converter
-        "qb_alloc":   None,      "qb_dealloc": None,
+        "qb_alloc": None,
+        "qb_dealloc": None,
     }
 
     # repeatedly transpile unknown gates until only known ones remain
     def _unknown_names(circ):
-        return {
-            instr.op.name
-            for instr in circ.data
-            if instr.op.name not in gate_map
-
-        }
+        return {instr.op.name for instr in circ.data if instr.op.name not in gate_map}
 
     while True:
         unknown = _unknown_names(qrisp_circuit)
@@ -148,9 +171,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
         if cirq_gate is None:
             # decompose via its .definition circuit (e.g. xxyy, rxx, rzz)
             if instr.op.definition:
-                cirq_circ.append(
-                    convert_to_cirq(instr.op.definition, cirq_op_qubits)
-                )
+                cirq_circ.append(convert_to_cirq(instr.op.definition, cirq_op_qubits))
                 continue
             # qb_alloc/qb_dealloc are bookkeeping ops with no circuit effect
             if name not in ("qb_alloc", "qb_dealloc"):
@@ -189,9 +210,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
             # Convert ctrl_state string ("101") to Cirq control_values list
             ctrl_vals = [int(c) for c in cs]
 
-            controlled = base.controlled(
-                num_controls=n_ctrl, control_values=ctrl_vals
-            )
+            controlled = base.controlled(num_controls=n_ctrl, control_values=ctrl_vals)
             cirq_circ.append(controlled(*cirq_ctrl, *cirq_target))
             continue
 
@@ -206,9 +225,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
         # parametrized single-qubit gates
         if params and name != "id":
             if name == "p":
-                cirq_circ.append(
-                    ZPowGate(exponent=params[0] / np.pi)(*cirq_op_qubits)
-                )
+                cirq_circ.append(ZPowGate(exponent=params[0] / np.pi)(*cirq_op_qubits))
             else:
                 cirq_circ.append(cirq_gate(*params)(*cirq_op_qubits))
             continue
@@ -272,21 +289,19 @@ def convert_from_cirq(cirq_circuit):
     # Maps Cirq gate types to Qrisp gate *callables* (not instances), so
     # each use gets a fresh object and no two operations share a gate.
     gate_map = {
-        cirq.HPowGate:     ops.HGate,
-        cirq.CXPowGate:    ops.CXGate,
-        cirq.CZPowGate:    ops.CZGate,
-        cirq.SwapPowGate:  ops.SwapGate,
+        cirq.HPowGate: ops.HGate,
+        cirq.CXPowGate: ops.CXGate,
+        cirq.CZPowGate: ops.CZGate,
+        cirq.SwapPowGate: ops.SwapGate,
         cirq.IdentityGate: ops.IDGate,
-        cirq.ResetChannel:  ops.Reset,
+        cirq.ResetChannel: ops.Reset,
     }
     # these gate types have no Qrisp equivalent for fractional exponents;
     # only the full gate (exponent 1, -1, 3, …) can be converted
-    exponent_guarded = {cirq.HPowGate, cirq.CXPowGate,
-                        cirq.CZPowGate, cirq.SwapPowGate}
+    exponent_guarded = {cirq.HPowGate, cirq.CXPowGate, cirq.CZPowGate, cirq.SwapPowGate}
 
     # main conversion loop
     for op in cirq_circuit.all_operations():
-
         # Extract the gate, unwrapping ControlledOperation if present
         extra_controls = None
         if isinstance(op, cirq.ControlledOperation):
@@ -334,18 +349,16 @@ def convert_from_cirq(cirq_circuit):
             cv = inner_gate.control_values
             ctrl_state = ""
             for v in cv:
-                if isinstance(v, tuple):
-                    if len(v) != 1:
-                        raise ValueError(
-                            f"Multi-valued control {v} in {inner_gate} "
-                            "not supported."
-                        )
-                    v = v[0]
-                if v not in (0, 1):
+                if len(v) != 1:
                     raise ValueError(
-                        f"Unsupported control value {v} in {inner_gate}."
+                        f"Multi-valued control {v} in {inner_gate} not supported."
                     )
-                ctrl_state += str(v)
+                val = v[0]
+                if val not in (0, 1):
+                    raise ValueError(
+                        f"Unsupported control value {val} in {inner_gate}."
+                    )
+                ctrl_state += str(val)
             ctrl_layers.append((inner_gate.num_controls(), ctrl_state))
             inner_gate = inner_gate.sub_gate
 
@@ -429,17 +442,12 @@ def convert_from_cirq(cirq_circuit):
             cv = op.control_values
             ctrl_state = ""
             for v in cv:
-                if isinstance(v, tuple):
-                    if len(v) != 1:
-                        raise ValueError(
-                            f"Multi-valued control {v} in {op} not supported."
-                        )
-                    v = v[0]
-                if v not in (0, 1):
-                    raise ValueError(
-                        f"Unsupported control value {v} in {op}."
-                    )
-                ctrl_state += str(v)
+                if len(v) != 1:
+                    raise ValueError(f"Multi-valued control {v} in {op} not supported.")
+                val = v[0]
+                if val not in (0, 1):
+                    raise ValueError(f"Unsupported control value {val} in {op}.")
+                ctrl_state += str(val)
             qrisp_op = ControlledOperation(
                 base_operation=qrisp_op,
                 num_ctrl_qubits=len(controls),
