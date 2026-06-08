@@ -141,10 +141,10 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
             cirq_circ.append(GlobalPhaseGate(np.exp(1j * params[0]))())
             continue
 
-        # gate with no direct Cirq equivalent
         cirq_gate = gate_map[name]
         cirq_op_qubits = [qubit_map[q] for q in qubits]
 
+        # gate with no direct Cirq equivalent
         if cirq_gate is None:
             # decompose via its .definition circuit (e.g. xxyy, rxx, rzz)
             if instr.op.definition:
@@ -221,7 +221,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
             cirq_circ.append(controlled(*cirq_ctrl, *cirq_target))
             continue
 
-        # sx / sx_dg (always exponent-based)
+        # sx / sx_dg (non-controlled path; controlled is handled above)
         if name == "sx":
             cirq_circ.append(XPowGate(exponent=0.5)(*cirq_op_qubits))
             continue
