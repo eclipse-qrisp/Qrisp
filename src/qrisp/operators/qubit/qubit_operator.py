@@ -853,6 +853,70 @@ class QubitOperator(Hamiltonian):
             return QubitOperator({QubitTerm({}): res})
         return res
 
+    def _to_pauli_dict(self) -> dict:
+        r"""
+        Return the Pauli expansion of this :class:`QubitOperator` as a dictionary.
+        
+        The operator is first converted to Pauli form using :meth:`to_pauli`.
+        Each dictionary key represents one Pauli string as a tuple of
+        ``(index, pauli)`` pairs, sorted by qubit index. The corresponding value is
+        the coefficient of that Pauli string.
+
+        The empty tuple ``()`` represents the identity term.
+
+        Returns
+        -------
+        dict
+            Dictionary mapping Pauli strings to coefficients.
+
+            The keys have the form
+            ::
+                ((int, str), (int, str), ...)
+       
+            where the integer is the qubit index and the string is one of
+            ``"X"``, ``"Y"``, or ``"Z"``.
+
+            The values are the corresponding scalar coefficients, which may be
+            complex.
+
+        Examples
+        --------
+        We define an operator containing Pauli, ladder, and projector terms and
+        convert it to a dictionary representation of its Pauli expansion.
+
+        ::
+            from qrisp.operators import X, Y, Z, A, C, P1
+            H = 1 + 2 * X(0) + 3 * X(0) * Y(1) * A(2) + C(4) * P1(0)
+            res = H.to_pauli_coeff_dict()
+            print(res) # Yields example output
+
+        Example output:
+        ::
+            {
+                ((0, 'X'),): 2,
+                (): 1,
+                ((0, 'X'), (1, 'Y'), (2, 'X')): 1.5,
+                ((0, 'X'), (1, 'Y'), (2, 'Y')): 1.5j,
+                ((0, 'Z'), (4, 'X')): -0.25,
+                ((0, 'Z'), (4, 'Y')): 0.25j,
+                ((4, 'X'),): 0.25,
+                ((4, 'Y'),): -0.25j}
+
+        """
+        O = self.to_pauli()
+        result = {}
+
+        for term, coeff in O.terms_dict.items():
+            factors = tuple(
+                sorted(
+                    (int(index), str(pauli))
+                    for index, pauli in term.factor_dict.items()
+                )
+            )
+            result[factors] = result.get(factors, 0) + coeff
+
+        return result
+
     def adjoint(self):
         """
         Returns the adjoint operator.
