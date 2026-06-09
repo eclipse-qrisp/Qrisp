@@ -115,7 +115,7 @@ def QSVT(
 
     Generate a BlockEncoding of $A$ and use QSVT to obtain a BlockEncoding of $p(A)=U p(\Sigma) V^{\dagger}$
     for an odd parity polynomial.
-    
+
     ::
 
         from qrisp import *
@@ -161,11 +161,11 @@ def QSVT(
         print(res)
         # [0.85184734 0.21296184 0.07098728 0.47324852]
 
-    .. warning:: 
+    .. warning::
 
-        For non-Hermitian matrices performing Singular Value Transform 
+        For non-Hermitian matrices performing Singular Value Transform
         is not the same as applying a matrix polynomial.
-        
+
     ::
 
         A_poly = A + A @ A @ A
@@ -220,4 +220,6 @@ def QSVT(
         h(args[0])
 
     new_anc_templates = [QuantumBool().template()] + A._anc_templates
-    return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian=False)
+    return BlockEncoding(
+        new_alpha, new_anc_templates, new_unitary, num_ops=A.num_ops, is_hermitian=False
+    )
