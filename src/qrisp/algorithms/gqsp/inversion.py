@@ -26,7 +26,7 @@ from qrisp.block_encodings import BlockEncoding
 from typing import Literal
 
 
-def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQSVT"] = "QET") -> BlockEncoding:
+def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQSVT"] = "QSVT") -> BlockEncoding:
     r"""
     Quantum Linear System Solver via Quantum Eigenvalue Transformation (QET).
     Returns a BlockEncoding approximating the matrix inversion of the operator.
@@ -57,7 +57,7 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
     kappa : float
         An upper bound for the condition number $\kappa$ of $A$.
         This value defines the "gap" around zero where the function $1/x$ is not approximated.
-    method : {"QET", "QSVT","GQSVT"}
+    method : {"QET", "QSVT", "GQSVT"}
         The method for implementing the inversion.
 
         - ``"QET"``: Quantum Eigenvalue Transform ($A$ must be Hermitian)
@@ -66,7 +66,7 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
 
         - ``"GQSVT"``: Generalized Quantum Singular Value Transform
 
-        Default is ``"QET"``.
+        Default is ``"QSVT"``.
 
     Returns
     -------

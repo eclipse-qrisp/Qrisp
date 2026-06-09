@@ -1626,7 +1626,7 @@ class BlockEncoding:
     # Transformations
     #
 
-    def inv(self, eps: float, kappa: float, method: Literal["QET", "GQSVT"] = "QET") -> BlockEncoding:
+    def inv(self, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQSVT"] = "QSVT") -> BlockEncoding:
         r"""
         Returns a BlockEncoding approximating the matrix inversion of the operator.
 
@@ -1636,6 +1636,8 @@ class BlockEncoding:
         The inversion is implemented via
 
         - Quantum Eigenvalue Transformation (QET) ($A$ must be **Hermitian**)
+
+        - Quantum Singular Value Transform (QSVT)
 
         - Generalized Quantum Singular Value Transform (GQSVT)
 
@@ -1648,14 +1650,16 @@ class BlockEncoding:
         kappa : float
             An upper bound for the condition number $\kappa$ of $A$.
             This value defines the "gap" around zero where the function $1/x$ is not approximated.
-        method : {"QET", "GQSVT"}
+        method : {"QET", "QSVT", "GQSVT"}
             The method for implementing the inversion.
 
             - ``"QET"``: Quantum Eigenvalue Transform ($A$ must be Hermitian)
 
+            - ``"QSVT"``: Quantum Singular Value Transform
+
             - ``"GQSVT"``: Generalized Quantum Singular Value Transform
 
-            Default is ``"QET"``.
+            Default is ``"QSVT"``.
 
         Returns
         -------
