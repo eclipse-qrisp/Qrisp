@@ -38,7 +38,7 @@ from collections import OrderedDict
 from typing import Any, Callable, Dict, Sequence, Tuple
 
 import jax
-from jax import pure_callback, ShapeDtypeStruct
+from jax import pure_callback
 from jax._src.core import ClosedJaxpr, Jaxpr, JaxprEqn
 from jax.typing import ArrayLike
 
