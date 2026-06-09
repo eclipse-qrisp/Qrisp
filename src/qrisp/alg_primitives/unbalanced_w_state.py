@@ -67,19 +67,19 @@ def unbalanced_W_state(
     The circuit distributes a single excitation across all qubits using a
     linear chain of ``XXYY`` gates:
 
-    0. Precompute all required :math:`\theta` angles using
+    0. Precompute all required :math:`\theta_i` angles using
        :math:`r_i = \sqrt{ \sum_{ j = i }^{ n - 1 }{ |a_j| ^ 2 } }`
-       and :math:`\theta = 2\arccos(|a_i|\,/\,r_i)`.
+       and :math:`\theta_i = 2\arccos(|a_i|\,/\,r_i)`, where :math:`r_i`
+       is the precomputed remaining (undistributed) amplitude magnitude.
     1. Apply ``X`` to qubit 0, producing :math:`|10\dots0\rangle`.
     2. For each qubit :math:`i = 0, \dots, n{-}2`:
 
-       a. Compute :math:`\theta = 2\arccos(|a_i|\,/\,r_i)` where :math:`r_i`
-          is the remaining (undistributed) amplitude magnitude.
-       b. Apply ``XXYY(θ, π/2)`` on qubits :math:`(i,\, i{+}1)`.  In the
-          single-excitation subspace this acts as a parametrized partial swap,
-          leaving magnitude :math:`|a_i|` on qubit :math:`i` and passing the
-          rest to qubit :math:`i{+}1`.
-       c. Apply a phase gate :math:`P(\arg a_i)` on qubit :math:`i` to imprint
+       a. Apply ``XXYY(θ, π/2)`` on qubits :math:`(i,\, i{+}1)`, using the
+          precomputed angles :math:`\theta = \theta_i`. In the single-excitation
+          subspace this acts as a parametrized partial swap, leaving magnitude
+          :math:`|a_i|` on qubit :math:`i` and passing the rest to
+          qubit :math:`i{+}1`.
+       b. Apply a phase gate :math:`P(\arg a_i)` on qubit :math:`i` to imprint
           the correct complex phase.
 
     3. Apply :math:`P(\arg a_{n-1})` on the last qubit.
