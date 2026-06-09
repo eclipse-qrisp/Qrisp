@@ -24,6 +24,18 @@ from qrisp.algorithms.gqsp import inversion
 from qrisp.algorithms.gqsp.qsvt import QSVT
 
 
+def evaluate_parity_polynomial(poly, S, parity):
+    """Evaluate the fixed parity polynomial on the singular values."""
+    start = 0 if parity == "even" else 1
+    coeffs = poly[start::2][::-1]
+    
+    S_poly = np.polyval(coeffs, S**2)
+    if parity == "odd":
+        S_poly *= S
+        
+    return S_poly
+
+
 @pytest.mark.parametrize("poly, parity", [
     (np.array([1., 1.]), "odd"),
     (np.array([1., 2., 1.]), "even"),
@@ -70,15 +82,13 @@ def test_qsvt(poly, parity):
     # Compute the SVD
     U, S, Vh = np.linalg.svd(A)
 
-    # Apply polynomial z + z^3 to singular values
-    start = 0 if parity == "even" else 1
-    S_poly = sum(c * S ** (i * 2 + start) for i, c in enumerate(list(poly)[start::2]))
+    S_poly = evaluate_parity_polynomial(poly, S, parity)
 
     # Reconstruct transformed matrix
     if parity == "even":
         A_poly = Vh.conj().T @ np.diag(S_poly) @ Vh
     else:
-        A_poly = (U @ np.diag(S_poly) @ Vh).conj().T
+        A_poly = U @ np.diag(S_poly) @ Vh
 
     res = A_poly @ b / np.linalg.norm(A_poly @ b)
     assert np.linalg.norm(np.abs(res) - amps) < 1e-2

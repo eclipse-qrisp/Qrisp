@@ -23,6 +23,18 @@ from qrisp.block_encodings import BlockEncoding
 from qrisp.gqsp import GQSVT, inversion
 
 
+def evaluate_parity_polynomial(poly, S, parity):
+    """Evaluate the fixed parity polynomial on the singular values."""
+    start = 0 if parity == "even" else 1
+    coeffs = poly[start::2][::-1]
+    
+    S_poly = np.polyval(coeffs, S**2)
+    if parity == "odd":
+        S_poly *= S
+        
+    return S_poly
+
+
 @pytest.mark.parametrize("poly, parity", [
     (np.array([1., 1.]), "odd"),
     (np.array([1., 2., 1.]), "even"),
@@ -69,9 +81,7 @@ def test_gqsvt(poly, parity):
     # Compute the SVD
     U, S, Vh = np.linalg.svd(A)
 
-    # Apply polynomial z + z^3 to singular values
-    start = 0 if parity == "even" else 1
-    S_poly = sum(c * S ** (i * 2 + start) for i, c in enumerate(list(poly)[start::2]))
+    S_poly = evaluate_parity_polynomial(poly, S, parity)
 
     # Reconstruct transformed matrix
     if parity == "even":
