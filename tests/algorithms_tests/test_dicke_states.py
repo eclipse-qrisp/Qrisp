@@ -16,6 +16,7 @@
 ********************************************************************************
 """
 
+import math
 import numpy as np
 import pytest
 from qrisp import QuantumVariable
@@ -29,9 +30,14 @@ from qrisp.environments import control, invert
 ##################### Dicke state tests #####################
 #############################################################
 
-def test_dicke_state_balanced():
-    n = 3 # Number of qubits
-    k = 1 # Excitations
+@pytest.mark.parametrize("n, k", [
+    (3, 1),
+    (4, 1),
+    (1, 1),
+])
+def test_dicke_state_balanced(n, k):
+    # n - Number of qubits
+    # k - Excitations
     # Prepare balanced Dicke state
     qv = QuantumVariable(n)
     x(qv[n - 1])
@@ -100,47 +106,106 @@ def test_dicke_state_balanced_jasp_inverse():
 
     assert np.allclose(res_arr, expected_arr, atol=1e-6)
 
+@pytest.mark.parametrize("n, k", [
+    (4, 2),
+    (5, 3),
+    (6, 5),
+    (3, 3),
+    (1, 1)
+])
+def test_dicke_state_k(n, k):
+    qv = QuantumVariable(n)
+
+    for i in range(n - k, n):
+        x(qv[i])
+
+    dicke_state(qv, k)
+
+    res = qv.get_measurement()
+
+    assert len(res) == math.comb(n, k)
+
+    expected_prob = 1 / math.comb(n, k)
+
+    for outcome, prob in res.items():
+        # get_measurement returns bitstrings and integer-like outcomes.
+        # Force an n-bit string.
+        if isinstance(outcome, str):
+            bitstring = outcome
+        else:
+            bitstring = format(int(outcome), f"0{n}b")
+
+        assert bitstring.count("1") == k
+        assert np.isclose(prob, expected_prob, atol=1e-6)
+
 ##############################################################
 ################## Unbalanced W state tests ##################
 ##############################################################
 
-def test_unbalanced_W_state():
-    n = 3 # Number of qubits
-    amps = np.array([0.25 + 0.2j, 0.375 + 0.18j, 0.375], dtype=complex)
+@pytest.mark.parametrize("amps", [
+    pytest.param(
+        np.array([0.25 + 0.2j, 0.375 + 0.18j, 0.375], dtype=complex),
+        id="three_qubits_complex",
+    ),
+    pytest.param(
+        np.array([0.25 + 0.2j, 0, 0], dtype=complex),
+        id="trailing_zeroes",
+    ),
+    pytest.param(
+        np.array([0.25 + 0.2j], dtype=complex),
+        id="one_qubit",
+    ),
+])
+def test_unbalanced_W_state(amps):
+    n = len(amps)
 
-    # Prepare unbalanced Dicke state
     qv = QuantumVariable(n)
-    unbalanced_W_state(qv, amps, reversed=True)
+    unbalanced_W_state(qv, amps[::-1])
+
     prepared_sv = qv.qs.compile().statevector_array()
 
-    # Manual expected state:
-    # |ψ> = a0 |001> + a1 |010> + a2 |100>
+    # Manual expected state
+    # e.g. |ψ> = a0 |001> + a1 |010> + a2 |100>
     expected_sv = np.zeros(2 ** n, dtype=complex)
-    norm = np.linalg.norm(amps)
-    normalized_amps = amps / norm
+    normalized_amps = amps / np.linalg.norm(amps)
     for i in range(n):
         expected_sv[2 ** i] = normalized_amps[i]
 
     assert np.allclose(prepared_sv, expected_sv, atol=1e-6)
 
-def test_unbalanced_W_state_trailing_zeroes():
-    n = 3 # Number of qubits
-    amps = np.array([0.25 + 0.2j, 0, 0], dtype=complex)
-
-    # Prepare unbalanced Dicke state
+@pytest.mark.parametrize("amps", [
+    pytest.param(
+        np.array([0.25 + 0.2j, 0.375 + 0.18j, 0.375], dtype=complex),
+        id="three_qubits_complex",
+    ),
+    pytest.param(
+        np.array([0.25 + 0.2j, 0, 0], dtype=complex),
+        id="trailing_zeroes",
+    ),
+    pytest.param(
+        np.array([0.25 + 0.2j], dtype=complex),
+        id="one_qubit",
+    ),
+])
+def test_unbalanced_W_state_measurement(amps):
+    n = len(amps)
     qv = QuantumVariable(n)
-    unbalanced_W_state(qv, amps, reversed=True)
-    prepared_sv = qv.qs.compile().statevector_array()
 
-    # Manual expected state:
-    # |ψ> = a0 |001> + a1 |010> + a2 |100>
-    expected_sv = np.zeros(2 ** n, dtype=complex)
-    norm = np.linalg.norm(amps)
-    normalized_amps = amps / norm
-    for i in range(n):
-        expected_sv[2 ** i] = normalized_amps[i]
+    unbalanced_W_state(qv, amps)
+    result = qv.get_measurement()
 
-    assert np.allclose(prepared_sv, expected_sv, atol=1e-6)
+    normalized_amps = amps / np.linalg.norm(amps)
+    expected = {
+        format(2 ** (n - 1 - i), f"0{n}b"): float(abs(normalized_amps[i]) ** 2)
+        for i in range(n)
+        if not np.isclose(normalized_amps[i], 0, atol=1e-12)
+    }
+
+    keys = sorted(set(result) | set(expected))
+    result_arr = np.array([result.get(k, 0.0) for k in keys])
+    expected_arr = np.array([expected.get(k, 0.0) for k in keys])
+
+    assert np.allclose(result_arr, expected_arr, atol=1e-6)
 
 def test_unbalanced_W_state_jasp():
     n = 3 # Number of qubits
@@ -191,23 +256,6 @@ def test_unbalanced_W_state_jasp_inverse():
 
     assert np.allclose(result_arr, expected_arr, atol=1e-6)
 
-def test_unbalanced_W_state_one_qubit():
-    n = 1 # Number of qubits
-    amps = np.array([0.25 + 0.2j], dtype=complex)
-
-    # Prepare unbalanced Dicke state
-    qv = QuantumVariable(n)
-    unbalanced_W_state(qv, amps, reversed=True)
-    prepared_sv = qv.qs.compile().statevector_array()
-
-    # Manual expected state
-    expected_sv = np.zeros(2 ** n, dtype=complex)
-    norm = np.linalg.norm(amps)
-    normalized_amps = amps / norm
-    expected_sv[1] = normalized_amps[0]
-
-    assert np.allclose(prepared_sv, expected_sv, atol=1e-6)
-
 def test_unbalanced_W_state_fail_len_check():
     n = 1 # Number of qubits
     amps = np.array([0.25 + 0.2j, 2, 3, 4, 5, 6, 7], dtype=complex)
@@ -215,7 +263,7 @@ def test_unbalanced_W_state_fail_len_check():
     # Prepare unbalanced Dicke state
     qv = QuantumVariable(n)
     with pytest.raises(ValueError) as exc_info:
-        unbalanced_W_state(qv, amps, reversed=True)
+        unbalanced_W_state(qv, amps)
 
     assert f"Length of amplitudes" in str(exc_info.value)
 
@@ -226,7 +274,7 @@ def test_unbalanced_W_state_fail_zero_vector():
     # Prepare unbalanced Dicke state
     qv = QuantumVariable(n)
     with pytest.raises(ValueError) as exc_info:
-        unbalanced_W_state(qv, amps, reversed=True)
+        unbalanced_W_state(qv, amps)
 
     assert f"Amplitude vector must be non-zero." in str(exc_info.value)
 
