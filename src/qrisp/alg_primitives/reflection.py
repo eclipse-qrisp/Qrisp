@@ -17,8 +17,8 @@
 """
 
 from collections.abc import Callable, Sequence
-import numpy as np
 from typing import Any
+import numpy as np
 
 from qrisp import (
     QuantumArray,
@@ -64,7 +64,7 @@ def reflection(
     state_function : Callable, optional
         A Python function ``state_function(*qargs, *args, **kwargs)`` preparing the state $\ket{\psi}$ in variables ``qargs`` around which to reflect.
         By default, the reflection is performed around the $\ket{0}$ state.
-    args : Sequence, optional
+    args : Sequence[Any], optional
         Additional arguments for the state function.
     kwargs : dict, optional
         Keyword arguments for the state function.
@@ -191,7 +191,8 @@ def reflection(
     if reflection_indices is None:
         reflection_indices = range(len(flattened_qargs))
 
-    qubits = sum([flattened_qargs[i].reg for i in reflection_indices], [])
+    indices = reflection_indices if reflection_indices is not None else range(len(flattened_qargs))
+    qubits = [q for i in indices for q in flattened_qargs[i].reg]
 
     # Reflection around |0> state
     def inner_reflection(qubits, phase):
