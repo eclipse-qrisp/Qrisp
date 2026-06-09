@@ -79,7 +79,7 @@ def build_from_eye(
     """
 
     if diagonal_index == 0:
-        return BlockEncoding(1, [], lambda operand: None, is_hermitian=True)
+        return cls(1, [], lambda operand: None, is_hermitian=True)
 
     if diagonal_index > 0:
         # Shift |x> -> |x - diagonal_index> can be implemented as cyclic shift |x> -> |x - diagonal_index mod N>
