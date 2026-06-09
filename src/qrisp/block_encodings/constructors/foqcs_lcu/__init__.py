@@ -16,5 +16,5 @@
 ********************************************************************************
 """
 
-from qrisp.block_encodings.block_encoding_methods.foqcs_lcu.foqcs_preps import *
-from qrisp.block_encodings.block_encoding_methods.foqcs_lcu.foqcs_analysis import *
+from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_preps import *
+from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_analysis import *

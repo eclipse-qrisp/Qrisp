@@ -20,12 +20,11 @@ import numpy as np
 import pytest
 from qrisp.block_encodings import BlockEncoding
 from qrisp import QuantumVariable, QuantumFloat, terminal_sampling, multi_measurement
-from qrisp.block_encodings import (
+from qrisp.block_encodings.constructors.foqcs_lcu import (
   foqcs_prep_heisenberg,
   is_operator_foqcs_compatible,
   foqcs_analyze_operator_spin_glass,
   foqcs_analyze_operator_heisenberg,
-  foqcs_analyze_operator,
   foqcs_prep_spin_glass
 )
 from functools import partial

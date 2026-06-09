@@ -19,7 +19,7 @@
 import numpy as np
 from functools import partial
 from qrisp.operators import QubitOperator
-from qrisp.block_encodings.block_encoding_methods.foqcs_lcu.foqcs_preps import (
+from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_preps import (
     foqcs_prep_heisenberg,
     foqcs_prep_spin_glass
     )
@@ -77,7 +77,7 @@ def foqcs_analyze_operator_spin_glass(
     elif L < min_qubits:
         raise ValueError(f"Received L = {L}, while operator acts on {min_qubits} qubits.")
 
-    terms = O._to_pauli_coeff_dict()
+    terms = O._to_pauli_dict()
     g_dict = {"X": np.zeros(L, dtype="complex"), "Y": np.zeros(L, dtype="complex"), "Z": np.zeros(L, dtype="complex")}
     J_dict = {"X": np.zeros((L, L), dtype="complex"), "Y": np.zeros((L, L), dtype="complex"), "Z": np.zeros((L, L), dtype="complex")}
 

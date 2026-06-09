@@ -21,6 +21,8 @@ from .constructors import (
     build_from_array,
     build_from_eye,
     build_from_lcu,
+    build_from_foqcs_lcu_prep,
+    build_from_foqcs_lcu_operator,
     build_from_operator,
     build_from_projector,
 )
@@ -28,6 +30,8 @@ from .constructors import (
 BlockEncoding.from_array = classmethod(build_from_array)
 BlockEncoding.from_eye = classmethod(build_from_eye)
 BlockEncoding.from_lcu = classmethod(build_from_lcu)
+BlockEncoding.from_foqcs_lcu_prep = classmethod(build_from_foqcs_lcu_prep)
+BlockEncoding.from_foqcs_lcu_operator = classmethod(build_from_foqcs_lcu_operator)
 BlockEncoding.from_operator = classmethod(build_from_operator)
 BlockEncoding.from_projector = classmethod(build_from_projector)
 
