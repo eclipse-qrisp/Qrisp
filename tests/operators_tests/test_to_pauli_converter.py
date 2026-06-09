@@ -38,9 +38,9 @@ def test_pauli_coeff_dict_extraction():
     H1 = X(0) * Z(1)
     H2 = 1 + 2 * X(0) + 3 * X(0) * Y(1) * A(2) + C(4) * P1(0)
 
-    res0 = H0._to_pauli_coeff_dict()
-    res1 = H1._to_pauli_coeff_dict()
-    res2 = H2._to_pauli_coeff_dict()
+    res0 = H0._to_pauli_dict()
+    res1 = H1._to_pauli_dict()
+    res2 = H2._to_pauli_dict()
 
     expected0 = {
         ((0, "X"),): 1,

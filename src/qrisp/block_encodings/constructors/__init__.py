@@ -16,19 +16,16 @@
 ********************************************************************************
 """
 
-from .block_encoding_base import BlockEncoding
-from .constructors import (
-    build_from_array,
-    build_from_eye,
-    build_from_lcu,
-    build_from_operator,
-    build_from_projector,
-)
+from .from_array import build_from_array
+from .from_eye import build_from_eye
+from .from_lcu import build_from_lcu
+from .from_operator import build_from_operator
+from .from_projector import build_from_projector
 
-BlockEncoding.from_array = classmethod(build_from_array)
-BlockEncoding.from_eye = classmethod(build_from_eye)
-BlockEncoding.from_lcu = classmethod(build_from_lcu)
-BlockEncoding.from_operator = classmethod(build_from_operator)
-BlockEncoding.from_projector = classmethod(build_from_projector)
-
-__all__ = ["BlockEncoding"]
+__all__ = [
+    "build_from_array",
+    "build_from_eye",
+    "build_from_lcu",
+    "build_from_operator",
+    "build_from_projector",
+]

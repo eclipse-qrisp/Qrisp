@@ -23,15 +23,21 @@ Constructors
      - Constructs a BlockEncoding from an operator using the Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) protocol.
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep`
      - Constructs a BlockEncoding using the Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) protocol.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.from_eye`
+     - Constructs a BlockEncoding of a 2-D array with ones on the diagonal and zeros elsewhere.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.from_projector`
+     - Constructs a BlockEncoding of a projector.
 
 .. toctree:: 
    :hidden:
 
    methods/from_array
+   methods/from_eye
    methods/from_lcu
    methods/from_operator
    methods/from_foqcs_lcu_operator
    methods/from_foqcs_lcu_prep
+   methods/from_projector
 
 Utilities
 ---------
