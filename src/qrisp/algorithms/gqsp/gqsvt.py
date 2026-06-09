@@ -16,21 +16,21 @@
 ********************************************************************************
 """
 
-import numpy as np
-import jax.numpy as jnp
+from typing import Literal, TYPE_CHECKING
+
 from qrisp import QuantumBool, x
 from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
 from qrisp.algorithms.gqsp.helper_functions import poly2cheb, _rescale_poly
 from qrisp.block_encodings import BlockEncoding
-from typing import Literal, TYPE_CHECKING
+from qrisp.operators import QubitOperator, FermionicOperator
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
 
 def GQSVT(
-    A: BlockEncoding,
+    A: BlockEncoding | FermionicOperator | QubitOperator,
     p: "ArrayLike",
     kind: Literal["Polynomial", "Chebyshev"] = "Polynomial",
     parity: Literal["odd", "even"] = "odd",
@@ -48,10 +48,14 @@ def GQSVT(
 
     where $p=p_{odd}+p_{even}$ is decomposed into odd and even parity parts.
 
+    .. warning::
+        If the parity is odd, this deviates from :func:`qrisp.algorithms.gqsp.qsvt.QSVT`,
+        which returns a BlockEncoding of $p_{odd}(A)=U p_{odd}(\Sigma) V^{\dagger}$, i.e., the Hermitian conjugate.
+
     Parameters
     ----------
-    A : BlockEncoding
-        The (**not** necessarily Hermitian) operator to be transformed.
+    A : BlockEncoding | FermionicOperator | QubitOperator
+        The operator to be transformed. Unlike in (G)QET, this operator does not need to be Hermitian.
     p : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
     kind : {"Polynomial", "Chebyshev"}
@@ -82,7 +86,7 @@ def GQSVT(
     Examples
     --------
 
-    Define a non-Hermitian matrix $A$ and a vector $\vec{b}$. The matris $A$ has singular value decomposition
+    Define a non-Hermitian matrix $A$ and a vector $\vec{b}$. The matrix $A$ has singular value decomposition
     $A = U \Sigma V^{\dagger}$ for unitary matrices $U, V$.
 
     ::
@@ -101,7 +105,7 @@ def GQSVT(
         # [0. 0. 3. 1.]
         # [1. 0. 0. 3.]]
 
-    Generate a BlockEncoding of $A$ and use GQSVT to obtain a BlockEncoding of $p(A)=U p(\Sigma) V^{\dagger}$
+    Generate a BlockEncoding of $A$ and use GQSVT to obtain a BlockEncoding of $p(A)=V p(\Sigma) U^{\dagger}$
     for an odd parity polynomial.
     
     ::
@@ -169,6 +173,9 @@ def GQSVT(
             f"Invalid kind specified: '{kind}'. "
             f"Allowed kinds are: {', '.join(ALLOWED_KINDS)}"
         )
+    
+    if isinstance(A, (QubitOperator, FermionicOperator)):
+        A = BlockEncoding.from_operator(A)
 
     # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
     if rescale:

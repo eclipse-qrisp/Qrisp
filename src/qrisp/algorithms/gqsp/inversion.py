@@ -163,11 +163,11 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
         # resulting in U @ p(S) @ V_dg.
         # We apply QSVT to A_dg to get V @ p(S) @ U_dg.
         A_dg = A.dagger()
-        A_inv = QSVT(A_dg, p, kind="Chebyshev", rescale=False)
+        A_inv = QSVT(A_dg, p, kind="Chebyshev", parity="odd", rescale=False)
     if method == "GQSVT":
         # For SDV A = U @ S @ V_dg, the generalized singular value transformation applies p(S) to the singular values,
         # resulting in V @ p(S) @ U_dg.
-        A_inv = GQSVT(A, p, kind="Chebyshev", rescale=False)
+        A_inv = GQSVT(A, p, kind="Chebyshev", parity="odd", rescale=False)
 
     # Adjust scaling factor since (A/α)^{-1} = αA^{-1}.
     A_inv.alpha = A_inv.alpha / A.alpha

@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 
 
 def QSVT(
-    H: BlockEncoding | FermionicOperator | QubitOperator,
+    A: BlockEncoding | FermionicOperator | QubitOperator,
     p: "ArrayLike",
     kind: Literal["Polynomial", "Chebyshev"] = "Polynomial",
     parity: Literal["odd", "even"] = "odd",
@@ -47,19 +47,23 @@ def QSVT(
     r"""
     Returns a BlockEncoding representing a polynomial transformation of the operator via `Quantum Singular Value Transformation <https://arxiv.org/abs/1806.01838>`_.
 
-    For a block-encoded operator $H$ with `Singular Value Decomposition <https://en.wikipedia.org/wiki/Singular_value_decomposition>`_ $H = U \Sigma V^{\dagger}$ for unitaries $U, V$,
+    For a block-encoded operator $A$ with `Singular Value Decomposition <https://en.wikipedia.org/wiki/Singular_value_decomposition>`_ $A = U \Sigma V^{\dagger}$ for unitaries $U, V$,
     and a (complex) polynomial $p(z)$, this method returns a BlockEncoding of either operator:
 
-    - $p_{odd}(H)=U p_{odd}(\Sigma) V^{\dagger}$
+    - $p_{odd}(A)=U p_{odd}(\Sigma) V^{\dagger}$
 
-    - $p_{even}(H)=V p_{even}(\Sigma) V^{\dagger}$
+    - $p_{even}(A)=V p_{even}(\Sigma) V^{\dagger}$
 
     where $p=p_{odd}+p_{even}$ is decomposed into odd and even parity parts.
 
+    .. warning::
+        If the parity is odd, this deviates from :func:`qrisp.algorithms.gqsp.gqsvt.GQSVT`,
+        which returns a BlockEncoding of $p_{odd}(A)=V p_{odd}(\Sigma) U^{\dagger}$, i.e., the Hermitian conjugate.
+
     Parameters
     ----------
-    H : BlockEncoding | FermionicOperator | QubitOperator
-        The operator to be transformed. Unlike QET, this operator is not strictly required to be Hermitian.
+    A : BlockEncoding | FermionicOperator | QubitOperator
+        The operator to be transformed. Unlike in (G)QET, this operator does not need to be Hermitian.
     p : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
     kind : {"Polynomial", "Chebyshev"}
@@ -73,85 +77,101 @@ def QSVT(
     parity : {"odd", "even"}
         The parity part of $p=p_{odd}+p_{even}$ to be applied.
 
-        - ``"odd"``: The odd part $p_{odd}(H)$ is applied.
+        - ``"odd"``: The odd part $p_{odd}(A)$ is applied.
 
-        - ``"even"``: The even part $p_{even}(H)$ is applied.
+        - ``"even"``: The even part $p_{even}(A)$ is applied.
 
         Default is ``"odd"``.
     rescale : bool
-        If True (default), the method returns a block-encoding of $p(H)$.
-        If False, the method returns a block-encoding of $p(H/\alpha)$ where $\alpha$ is the normalization factor for the block-encoding of the operator $H$.
+        If True (default), the method returns a block-encoding of $p(A)$.
+        If False, the method returns a block-encoding of $p(A/\alpha)$ where $\alpha$ is the normalization factor for the block-encoding of the operator $A$.
 
     Returns
     -------
     BlockEncoding
-        A new BlockEncoding instance representing the transformed operator $p_{odd}(H)$ or $p_{even}(H)$.
+        A new BlockEncoding instance representing the transformed operator $p_{odd}(A)$ or $p_{even}(A)$.
 
     Examples
     --------
 
-    Define a Hermitian matrix $H\_mat$ and a vector $\vec{b}$.
+    Define a non-Hermitian matrix $A$ and a vector $\vec{b}$. The matrix $A$ has singular value decomposition
+    $A = U \Sigma V^{\dagger}$ for unitary matrices $U, V$.
 
     ::
 
         import numpy as np
 
-        H = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
-                    [0.14516978, 0.68701415, -0.04929867, -0.00999921],
-                    [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
-                    [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
+        N = 4
+        A = np.eye(N, k=1) + 3 * np.eye(N)
+        A[N-1,0] = 1
 
-        b = np.array([0, 1, 1, 1])
+        b = np.array([1,0,0,0])
 
-    Generate a BlockEncoding of $H$ and use QSVT to obtain a BlockEncoding of $p(H)$
-    for an odd parity polynomial ($p(x) = x + x^3$).
+        print(A)
+        # [[3. 1. 0. 0.]
+        # [0. 3. 1. 0.]
+        # [0. 0. 3. 1.]
+        # [1. 0. 0. 3.]]
 
+    Generate a BlockEncoding of $A$ and use QSVT to obtain a BlockEncoding of $p(A)=U p(\Sigma) V^{\dagger}$
+    for an odd parity polynomial.
+    
     ::
 
         from qrisp import *
         from qrisp.block_encodings import BlockEncoding
         from qrisp.gqsp import QSVT
 
-        BH = BlockEncoding.from_array(H)
+        def U0(qv): pass
+        def U1(qv): qv-=1
+        BE = BlockEncoding.from_lcu(np.array([3,1]), [U0,U1])
 
-        # Applying polynomial p(x) = 0*x^0 + 1*x^1 + 0*x^2 + 1*x^3
-        BH_poly = QSVT(BH, np.array([0., 1., 0., 1.]), parity="odd")
+        BE_poly = QSVT(BE, np.array([0.,1.,0.,1.]), parity="odd")
 
-        # Prepares operand variable in state |b>
-        def prep_b():
-            operand = QuantumVariable(2)
-            prepare(operand, b)
-            return operand
+        # Prepare initial system state |b>
+        def operand_prep():
+            qv = QuantumFloat(2)
+            prepare(qv, b)
+            return qv
 
         @terminal_sampling
         def main():
-            operand = BH_poly.apply_rus(prep_b)()
+            operand = BE_poly.apply_rus(operand_prep)()
             return operand
 
         res_dict = main()
         amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
+        print(amps)
+        # [0.85184732 0.21296187 0.0709873  0.47324855]
 
-    Finally, compare the quantum simulation result with the classical Singular Value polynomial transformation:
+    Finally, compare the quantum simulation result with the classical solution:
 
     ::
 
         # Compute the SVD
-        U, S, Vh = np.linalg.svd(H)
+        U, S, Vh = np.linalg.svd(A)
 
-        # Apply odd polynomial z + z^3 to singular values
+        # Apply polynomial z + z^3 to singular values
         S_poly = S + S ** 3
 
         # Reconstruct transformed matrix
-        H_poly = (U @ np.diag(S_poly) @ Vh).conj().T
+        A_poly = U @ np.diag(S_poly) @ Vh
 
-        c = H_poly @ b
-        c = c / np.linalg.norm(c)
+        res = A_poly @ b / np.linalg.norm(A_poly @ b)
+        print(res)
+        # [0.85184734 0.21296184 0.07098728 0.47324852]
 
-        print("QUANTUM SIMULATION\n", amps, "\nCLASSICAL SOLUTION\n", c)
-        # QUANTUM SIMULATION
-        # [0.07018199 0.56676065 0.67904296 0.46125645]
-        # CLASSICAL SOLUTION
-        # [-0.07018194  0.56676073  0.67904288  0.46125647]
+    .. warning:: 
+
+        For non-Hermitian matrices performing Singular Value Transform 
+        is not the same as applying a matrix polynomial.
+        
+    ::
+
+        A_poly = A + A @ A @ A
+        res = A_poly @ b / np.linalg.norm(A_poly @ b)
+        print(res)
+        # [0.71388113 0.02379604 0.21416434 0.66628906]
 
     """
 
@@ -162,18 +182,18 @@ def QSVT(
             f"Allowed kinds are: {', '.join(ALLOWED_KINDS)}"
         )
 
-    if isinstance(H, (QubitOperator, FermionicOperator)):
-        H = BlockEncoding.from_operator(H)
+    if isinstance(A, (QubitOperator, FermionicOperator)):
+        A = BlockEncoding.from_operator(A)
 
     # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
     if rescale:
-        p = _rescale_poly(H.alpha, p, kind=kind)
+        p = _rescale_poly(A.alpha, p, kind=kind)
     if kind == "Polynomial":
         p = poly2cheb(p)
 
     phi, new_alpha = qsvt_angles(p, parity=parity)
 
-    m = len(H._anc_templates)
+    m = len(A._anc_templates)
 
     def reflection(args, phase):
         qubits = sum([arg.reg for arg in args[1 : m + 1]], [])
@@ -181,11 +201,11 @@ def QSVT(
             rz(phase, args[0])
 
     def even(args):
-        H.unitary(*args[1:])
+        A.unitary(*args[1:])
 
     def odd(args):
         with invert():
-            H.unitary(*args[1:])
+            A.unitary(*args[1:])
 
     def new_unitary(*args):
         h(args[0])
@@ -199,5 +219,5 @@ def QSVT(
 
         h(args[0])
 
-    new_anc_templates = [QuantumBool().template()] + H._anc_templates
+    new_anc_templates = [QuantumBool().template()] + A._anc_templates
     return BlockEncoding(new_alpha, new_anc_templates, new_unitary, is_hermitian=False)
