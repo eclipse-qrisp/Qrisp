@@ -30,7 +30,7 @@ from qrisp.block_encodings import (
 )
 from functools import partial
 from qrisp.operators import X, Y, Z
-from qrisp.alg_primitives.unbalanced_w_state import unbalanced_W_state
+from qrisp.alg_primitives.unbalanced_w_state import unbalanced_w_state
 
 def _heisenberg_from_def(L: int, g: dict, J: dict):
 
@@ -506,7 +506,7 @@ def test_foqcs_lcu_spin_glass_subprep():
     # SUBPREP
     extra_anc = len(g_betas) + (3 * len(J_betas[0]))
     prep_qv = QuantumVariable(extra_anc)
-    unbalanced_W_state(prep_qv, final_betas, reversed=True)
+    unbalanced_w_state(prep_qv, final_betas[::-1])
 
     qc = prep_qv.qs.compile()
     statev = qc.statevector_array()

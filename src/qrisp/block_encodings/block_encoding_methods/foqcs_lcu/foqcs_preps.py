@@ -19,7 +19,7 @@
 import numpy as np
 from qrisp.core import QuantumVariable, Qubit
 from qrisp.core.gate_application_functions import cx, ry, p, h, rz
-from qrisp.alg_primitives.unbalanced_w_state import unbalanced_W_state
+from qrisp.alg_primitives.unbalanced_w_state import unbalanced_w_state
 from qrisp.environments import control
 from collections.abc import Sequence
 from functools import partial
@@ -124,7 +124,7 @@ def foqcs_prep_heisenberg(
 
     # SUBPREP
     # Ref: Eq. (56) gives the 6-entry selector state alpha used in Fig. 6.
-    unbalanced_W_state(prep_qv[:extra_anc], np.block([_g, _J]))
+    unbalanced_w_state(prep_qv[:extra_anc], np.block([_g, _J]))
     
     # PREP
     # Ref: Fig. 5 and Fig. 6 split the FOQCS ancillae into two L-qubit
@@ -288,7 +288,7 @@ def foqcs_prep_spin_glass(
     if subprep_norm <= _FOQCS_SPIN_GLASS_TOL:
         raise ValueError("Cannot prepare spin-glass PREP state: all coefficients are zero.")
 
-    unbalanced_W_state(prep_qv[:extra_anc], subprep_coeffs / subprep_norm)
+    unbalanced_w_state(prep_qv[:extra_anc], subprep_coeffs / subprep_norm)
 
     # Compute unbalanced Dicke/W angles using absolute values.
     theta, cutoff = _theta_cutoff_foqcs_spin_glass_optimal(
