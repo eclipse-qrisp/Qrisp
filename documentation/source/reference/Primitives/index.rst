@@ -31,6 +31,8 @@ This submodule of Qrisp provides a collection of commonly used buildings blocks 
      - prepare a quantum state with given amplitudes
    * - :ref:`Dicke state preparation <DickeStates>`
      - preparation of Dicke states, i.e., states with a given Hamming weight 
+   * - :ref:`Unbalanced W State preparation <unbalanced_w_states>`
+     - preparation of Unbalanced W states, i.e., unbalanced Dicke states with one excitation 
    * - :ref:`Quantum Switch Case <qswitch>`
      - Executes a `switch statement <https://en.wikipedia.org/wiki/Switch_statement>`_. The condition can be a :ref:`QuantumVariable`.
    * - :ref:`Linear Combination of Unitaries <LCU>`
@@ -61,9 +63,10 @@ We encourage you to explore these algorithms, delve into their documentation, an
    IQAE
    IQPE
    prepare
+   DickeStates
+   unbalanced_w_states
    qswitch
    LCU
-   DickeStates
    Grover tools
    Phase polynomial tools
    demux

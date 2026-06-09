@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2024 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,6 +16,16 @@
 ********************************************************************************
 """
 
-from .block_encoding import BlockEncoding
+from .from_array import build_from_array
+from .from_eye import build_from_eye
+from .from_lcu import build_from_lcu
+from .from_operator import build_from_operator
+from .from_projector import build_from_projector
 
-__all__ = ["BlockEncoding"]
+__all__ = [
+    "build_from_array",
+    "build_from_eye",
+    "build_from_lcu",
+    "build_from_operator",
+    "build_from_projector",
+]
