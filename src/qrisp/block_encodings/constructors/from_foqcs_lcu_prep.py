@@ -41,8 +41,8 @@ def build_from_foqcs_lcu_prep(
     The provided ``prep`` routine prepares the right PREP (:math:`PREP_{R}`) state on the FOQCS-LCU ancilla register.
     If ``unprep`` is provided, it is interpreted as the corresponding left PREP (:math:`PREP_{L}`) routine and is applied inversely after ``SELECT``.
 
-        Parameters
-        ----------
+    Parameters
+    ----------
     prep : Callable[[QuantumVariable], None]
         Partial :math:`PREP_{R}` function with all relevant parameters passed except QuantumVariable.
         Parameters can be fixed by using :class:`functools.partial`
@@ -64,28 +64,28 @@ def build_from_foqcs_lcu_prep(
         Normalization factor.
         The default is `1` in case no normalization factor is passed.
 
-        Returns
-        -------
-        BlockEncoding
-        A BlockEncoding using FOQCS LCU.
+    Returns
+    -------
+    BlockEncoding
+    A BlockEncoding using FOQCS LCU.
 
-        Raises
-        ----------
-        ValueError
-        When the operator is not representing spin-glass model.
-        KeyError
-        If method received an unsupported FOQCS-LCU PREP method
+    Raises
+    ------
+    ValueError
+    When the operator is not representing spin-glass model.
+    KeyError
+    If method received an unsupported FOQCS-LCU PREP method
             
-        Notes
-        -----
+    Notes
+    -----
     - :math:`PREP_{R}` is the PREP subcircuit for FOQCS-LCU, :math:`PREP_{L}^{\dagger}` is the unprep subcircuit and therefore has to undo
-        what :math:`PREP_{R}` did to the ancilla qubits. :math:`PREP_{L}` is a version of :math:`PREP_{R}` that is prepared using
-        conjugated parameters. :math:`PREP_{L}^{\dagger}` undoes the :math:`PREP_{R}` operation in its entirety.
+      what :math:`PREP_{R}` did to the ancilla qubits. :math:`PREP_{L}` is a version of :math:`PREP_{R}` that is prepared using
+      conjugated parameters. :math:`PREP_{L}^{\dagger}` undoes the :math:`PREP_{R}` operation in its entirety.
 
-        Examples
-        --------
+    Examples
+    --------
 
-        ::
+    ::
 
         import numpy as np
         from qrisp import QuantumVariable, terminal_sampling
@@ -96,16 +96,16 @@ def build_from_foqcs_lcu_prep(
             # Generate state amplitudes.
             psi = np.random.uniform(-1, 1, 2 ** (q_num)) + 1j * np.random.uniform(
                 -1, 1, 2 ** (q_num)
-                )
+            )
             psi /= np.linalg.norm(psi)
             return psi
 
         # Initialize variables + their values
-            L = 4
+        L = 4
         g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
         J = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
 
-            # Normalize
+        # Normalize
         norm = np.linalg.norm(np.block([g, J]))
             g /= norm
             J /= norm
@@ -132,17 +132,17 @@ def build_from_foqcs_lcu_prep(
         # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
         prep = partial(
             foqcs_prep_heisenberg,
-                L=L,
-                g=heis_g,
-                J=heis_J,
-            )
+            L=L,
+            g=heis_g,
+            J=heis_J,
+        )
         unprep = partial(
             foqcs_prep_heisenberg,
-                L=L,
-                g=heis_g,
-                J=heis_J,
+            L=L,
+            g=heis_g,
+            J=heis_J,
             conjugate=True
-            )
+        )
 
         be = BlockEncoding.from_foqcs_lcu_prep(prep=prep, num_q_ops=L, unprep=unprep, norm=norm ** 2)
 
@@ -151,7 +151,7 @@ def build_from_foqcs_lcu_prep(
         def operand_prep(psi):
             qv = QuantumVariable(4)
             qv.init_state(psi, method="qswitch")
-                return qv
+            return qv
 
         @terminal_sampling
         def main_apply_rus(BE):

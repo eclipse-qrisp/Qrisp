@@ -56,7 +56,7 @@ def build_from_foqcs_lcu_operator(
         with PREP chosen automatically as either the Heisenberg or Spin-glass implementation.
 
     Raises
-    ----------
+    ------
     ValueError
         When the operator is not representing spin-glass model.
     KeyError
