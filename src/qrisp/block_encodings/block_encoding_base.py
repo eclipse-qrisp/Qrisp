@@ -17,23 +17,27 @@
 """
 
 from __future__ import annotations
+from collections.abc import Callable
+from typing import Any, Literal, TYPE_CHECKING
+
 from dataclasses import dataclass
 from jax.tree_util import register_pytree_node_class
 import jax
 import jax.numpy as jnp
 import numpy as np
-from typing import Any, Callable, Literal, TYPE_CHECKING
 
 from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.reflection import reflection
-from qrisp.core.gate_application_functions import gphase, h, ry, x, z
+from qrisp.core.gate_application_functions import gphase, h, measure, reset, ry, x, z
 from qrisp.environments import conjugate, control, invert
 from qrisp.jasp import (
     count_ops,
+    expectation_value,
     depth,
     num_qubits,
     jrange,
     check_for_tracing_mode as is_tracing,
+    RUS,
 )
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.qtypes import QuantumBool
@@ -499,8 +503,6 @@ class BlockEncoding:
             #{3: 0.6828427278345078, 0: 0.17071065215630213, 2: 0.11715730494804945, 1: 0.02928931506114055}
 
         """
-        from qrisp.core.gate_application_functions import measure, reset
-        from qrisp.jasp import RUS
 
         if not callable(operand_prep):
             raise TypeError(
@@ -525,8 +527,10 @@ class BlockEncoding:
             success_bool = jnp.all(bools)
 
             # garbage collection
-            [reset(anc) for anc in ancillas]
-            [anc.delete() for anc in ancillas]
+            for anc in ancillas:
+                reset(anc)
+                anc.delete()
+
             return success_bool, *operands
 
         return rus_function
@@ -615,8 +619,6 @@ class BlockEncoding:
             # 0.3426
 
         """
-        from qrisp.core.gate_application_functions import measure, reset
-        from qrisp.jasp import expectation_value
 
         if not callable(operand_prep):
             raise TypeError(
@@ -637,7 +639,7 @@ class BlockEncoding:
             qbl = QuantumBool()
             h(qbl)
             with control(qbl):
-                ancillas = self.apply(*operands)
+                self.apply(*operands)
             h(qbl)
             return qbl
 
@@ -645,25 +647,25 @@ class BlockEncoding:
         if is_tracing():
 
             @jax.jit
-            def post_processor(x):
-                return jnp.where(x == 0, 1, -1)
+            def post_processor(val):
+                return jnp.where(val == 0, 1, -1)
 
-            def ev_function(*args):
+            def ev_function_dynamic(*args):
                 ev = expectation_value(
                     state_prep, shots=shots, post_processor=post_processor
                 )(*args)
                 return ev * self.alpha
 
-            return ev_function
+            return ev_function_dynamic
 
         # Static mode
-        def ev_function(*args):
+        def ev_function_static(*args):
             qbl = state_prep(*args)
             res_dict = qbl.get_measurement(shots=shots, backend=backend)
             ev = res_dict.get(0, 0) - res_dict.get(1, 0)
             return np.float64(ev * jnp.float64(self.alpha))
 
-        return ev_function
+        return ev_function_static
 
     def resources(
         self,
@@ -838,49 +840,49 @@ class BlockEncoding:
 
         if self.is_hermitian:
             # W = (2*|0><0| - I) U
-            def new_unitary(*args):
+            def new_unitary_hermitian(*args):
                 self.unitary(*args)
                 reflection(args[:m])
 
             return BlockEncoding(
                 self.alpha,
                 self._anc_templates,
-                new_unitary,
+                new_unitary_hermitian,
                 num_ops=self.num_ops,
                 is_hermitian=True,
             )
-        else:
-            # W = (2*|0><0| - I) U_tilde, U_tilde = (H ⊗ I)(|0><0| ⊗ U) + (|1><1| ⊗ U†)(H ⊗ I) is Hermitian
-            # block-encoding of A=(A+A†)/2 if A is Hermitian.
-            # We conjugate by (H ⊗ I) to achieve that the new ancilla is initialized and projected in |0>,
-            # i.e., A is in the upper left block.
-            # A more general Hermitization is:
-            # W = C0-(2*|0><0| - I) C1-(2*|0><0| - I) U_tilde
-            # C0-(2*|0><0| - I) performs reflection of args[0] beign |0>
-            # C1-(2*|0><0| - I) performs reflection of args[0] beign |1>
-            # U_tilde = (|0><1| ⊗ U) + (|1><0| ⊗ U†) is Hermitian
-            # In this case, the new ancilla is initialized and projected in |1>,
-            # i.e., A is not in the upper left block.
-            def new_unitary(*args):
-                with conjugate(h)(args[0]):
-                    # (|0><0| ⊗ U)
-                    with control(args[0], ctrl_state=0):
+
+        # W = (2*|0><0| - I) U_tilde, U_tilde = (H ⊗ I)(|0><0| ⊗ U) + (|1><1| ⊗ U†)(H ⊗ I) is Hermitian
+        # block-encoding of A=(A+A†)/2 if A is Hermitian.
+        # We conjugate by (H ⊗ I) to achieve that the new ancilla is initialized and projected in |0>,
+        # i.e., A is in the upper left block.
+        # A more general Hermitization is:
+        # W = C0-(2*|0><0| - I) C1-(2*|0><0| - I) U_tilde
+        # C0-(2*|0><0| - I) performs reflection of args[0] beign |0>
+        # C1-(2*|0><0| - I) performs reflection of args[0] beign |1>
+        # U_tilde = (|0><1| ⊗ U) + (|1><0| ⊗ U†) is Hermitian
+        # In this case, the new ancilla is initialized and projected in |1>,
+        # i.e., A is not in the upper left block.
+        def new_unitary(*args):
+            with conjugate(h)(args[0]):
+                # (|0><0| ⊗ U)
+                with control(args[0], ctrl_state=0):
+                    self.unitary(*args[1:])
+                # (|1><1| ⊗ U†)
+                with control(args[0], ctrl_state=1):
+                    with invert():
                         self.unitary(*args[1:])
-                    # (|1><1| ⊗ U†)
-                    with control(args[0], ctrl_state=1):
-                        with invert():
-                            self.unitary(*args[1:])
 
-                reflection(args[0 : 1 + m])
+            reflection(args[0 : 1 + m])
 
-            new_anc_templates = [QuantumBool().template()] + self._anc_templates
-            return BlockEncoding(
-                self.alpha,
-                new_anc_templates,
-                new_unitary,
-                num_ops=self.num_ops,
-                is_hermitian=True,
-            )
+        new_anc_templates = [QuantumBool().template()] + self._anc_templates
+        return BlockEncoding(
+            self.alpha,
+            new_anc_templates,
+            new_unitary,
+            num_ops=self.num_ops,
+            is_hermitian=True,
+        )
 
     def _hermitianization(self) -> BlockEncoding:
         r"""
