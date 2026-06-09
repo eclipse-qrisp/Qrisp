@@ -189,7 +189,7 @@ def reflection(
             raise TypeError("Arguments must be of type QuantumVariable or QuantumArray")
 
     indices = reflection_indices if reflection_indices is not None else range(len(flattened_qargs))
-    qubits = [q for i in indices for q in flattened_qargs[i].reg]
+    qubits = sum([flattened_qargs[i].reg for i in indices], [])
 
     # Reflection around |0> state
     def inner_reflection(qubits, phase):
