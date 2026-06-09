@@ -24,10 +24,9 @@ from qrisp.typing import NDArrayLike
 from qrisp.jasp import jrange, check_for_tracing_mode
 from collections.abc import Sequence
 
-def unbalanced_W_state(
+def unbalanced_w_state(
     qv: QuantumVariable | Sequence[Qubit],
-    amplitudes: NDArrayLike,
-    reversed: bool = False
+    amplitudes: NDArrayLike
 ) -> None:
     r"""
     Prepare a generalized W state, i.e. an unbalanced Dicke state of Hamming
@@ -52,9 +51,6 @@ def unbalanced_W_state(
     amplitudes : NDArrayLike
         A 1-D sequence of complex (or real) target amplitudes, one per qubit.
         Its length must be equal ``qv.size``.
-    reversed : bool, optional
-        If ``True``, reverse the order of the input amplitudes before
-        preparing the state. Default is ``False``
 
     Raises
     ------
@@ -67,19 +63,19 @@ def unbalanced_W_state(
     The circuit distributes a single excitation across all qubits using a
     linear chain of ``XXYY`` gates:
 
-    0. Precompute all required :math:`\theta` angles using
+    0. Precompute all required :math:`\theta_i` angles using
        :math:`r_i = \sqrt{ \sum_{ j = i }^{ n - 1 }{ |a_j| ^ 2 } }`
-       and :math:`\theta = 2\arccos(|a_i|\,/\,r_i)`.
+       and :math:`\theta_i = 2\arccos(|a_i|\,/\,r_i)`, where :math:`r_i`
+       is the precomputed remaining (undistributed) amplitude magnitude.
     1. Apply ``X`` to qubit 0, producing :math:`|10\dots0\rangle`.
     2. For each qubit :math:`i = 0, \dots, n{-}2`:
 
-       a. Compute :math:`\theta = 2\arccos(|a_i|\,/\,r_i)` where :math:`r_i`
-          is the remaining (undistributed) amplitude magnitude.
-       b. Apply ``XXYY(θ, π/2)`` on qubits :math:`(i,\, i{+}1)`.  In the
-          single-excitation subspace this acts as a parametrized partial swap,
-          leaving magnitude :math:`|a_i|` on qubit :math:`i` and passing the
-          rest to qubit :math:`i{+}1`.
-       c. Apply a phase gate :math:`P(\arg a_i)` on qubit :math:`i` to imprint
+       a. Apply ``XXYY(θ, π/2)`` on qubits :math:`(i,\, i{+}1)`, using the
+          precomputed angles :math:`\theta = \theta_i`. In the single-excitation
+          subspace this acts as a parametrized partial swap, leaving magnitude
+          :math:`|a_i|` on qubit :math:`i` and passing the rest to
+          qubit :math:`i{+}1`.
+       b. Apply a phase gate :math:`P(\arg a_i)` on qubit :math:`i` to imprint
           the correct complex phase.
 
     3. Apply :math:`P(\arg a_{n-1})` on the last qubit.
@@ -92,16 +88,13 @@ def unbalanced_W_state(
     Examples
     --------
     >>> import numpy as np
-    >>> from qrisp import QuantumVariable, unbalanced_W_state
+    >>> from qrisp import QuantumVariable, unbalanced_w_state
     >>> a = np.array([1j, 2, 3, 4])
     >>> qv = QuantumVariable(4)
-    >>> unbalanced_W_state(qv, a)
+    >>> unbalanced_w_state(qv, a)
     >>> print(qv.qs.statevector())
     """
     a = jnp.asarray(amplitudes, dtype=complex)
-
-    if reversed:
-        a = a[::-1]
 
     n = a.shape[0] # Use the static shape of amplitudes
 

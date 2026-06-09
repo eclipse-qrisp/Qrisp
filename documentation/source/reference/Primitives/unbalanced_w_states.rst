@@ -5,4 +5,4 @@ Unbalanced W State Preparation
 
 .. currentmodule:: qrisp
 
-.. autofunction:: unbalanced_W_state
+.. autofunction:: unbalanced_w_state
