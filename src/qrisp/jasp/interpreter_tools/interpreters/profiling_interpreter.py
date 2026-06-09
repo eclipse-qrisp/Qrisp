@@ -39,7 +39,7 @@ from typing import Any, Callable, Dict, Sequence, Tuple
 
 import jax
 from jax import pure_callback, ShapeDtypeStruct
-from jax._src.core import Jaxpr, JaxprEqn
+from jax._src.core import ClosedJaxpr, Jaxpr, JaxprEqn
 from jax.typing import ArrayLike
 
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
@@ -283,14 +283,15 @@ class BaseMetric(ABC):
 # ``jax.pure_callback`` to prevent XLA from inlining it at every call site.
 # ---------------------------------------------------------------------------
 
-def _should_use_profiling_callback(jaxpr : Jaxpr | ClosedJaxpr, call_graph_stats: dict | None) -> bool:
+def _should_use_profiling_callback(jaxpr : Jaxpr | ClosedJaxpr, call_graph_stats: dict | None, callback_threshold: int | None) -> bool:
     """
     Decide whether *jaxpr* should be called via ``jax.pure_callback``.
 
     A sub-jaxpr benefits from callback wrapping when it is **reused**
     (``call_count >= 2``) and large enough to matter
-    (``call_count * inlined_eqn_count >= 500``).  Wrapping prevents XLA's
-    ``flatten-call-graph`` pass from cloning the HLO at every call site.
+    (``call_count * inlined_eqn_count >= callback_threshold``).  Wrapping
+    prevents XLA's ``flatten-call-graph`` pass from cloning the HLO at
+    every call site.
 
     Parameters
     ----------
@@ -298,6 +299,11 @@ def _should_use_profiling_callback(jaxpr : Jaxpr | ClosedJaxpr, call_graph_stats
         The sub-jaxpr under consideration.
     call_graph_stats : dict | None
         Output of ``analyze_call_graph``.  ``None`` disables callbacks.
+    callback_threshold : int | None
+        Minimum value of ``call_count * inlined_eqn_count`` required to
+        trigger callback wrapping.  Higher values mean fewer callbacks
+        (faster execution, slower compilation).  ``0`` wraps every reused
+        sub-jaxpr; ``None`` disables callbacks entirely.
 
     Returns
     -------
@@ -305,12 +311,14 @@ def _should_use_profiling_callback(jaxpr : Jaxpr | ClosedJaxpr, call_graph_stats
     """
     if call_graph_stats is None:
         return False
+    if callback_threshold is None:
+        return False
     stats = call_graph_stats.get(id(jaxpr))
     if stats is None:
         return False
     return (
         stats.call_count > 1
-        and stats.call_count * stats.inlined_eqn_count >= 500
+        and stats.call_count * stats.inlined_eqn_count >= callback_threshold
     )
 
 
@@ -363,6 +371,7 @@ def get_compiled_profiler(
     metric_cls: type[BaseMetric],
     cache_key: Tuple,
     call_graph_stats=None,
+    callback_threshold=None,
 ) -> Tuple[Callable, Callable]:
     """
     Get a compiled profiler for a given Jaxpr and metric configuration.
@@ -377,6 +386,9 @@ def get_compiled_profiler(
         Hashable representation of the metric's configuration.
     call_graph_stats : dict | None, optional
         Call graph analysis results for callback optimization.
+    callback_threshold : int | None, optional
+        Threshold for callback wrapping decisions (passed through to
+        nested sub-jaxpr evaluations).
 
     Returns
     -------
@@ -390,7 +402,7 @@ def get_compiled_profiler(
         return _profiler_cache[key]
 
     metric = metric_cls.from_cache_key(cache_key)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(metric, call_graph_stats)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(metric, call_graph_stats, callback_threshold)
     jaxpr_evaluator = eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator)
 
     # Always JIT-compile the profiler.  When the caller decides to wrap
@@ -410,7 +422,7 @@ def get_compiled_profiler(
     return result
 
 
-def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None) -> Callable:
+def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, callback_threshold=None) -> Callable:
     """
     Build a profiling equation evaluator for a given metric.
 
@@ -424,6 +436,12 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None) -> C
     call_graph_stats : dict[int, JaxprStats] | None, optional
         Call graph analysis results from ``analyze_call_graph``. When provided,
         enables callback-based compilation optimization for reused sub-jaxprs.
+
+    callback_threshold : int | None, optional
+        Minimum value of ``call_count * inlined_eqn_count`` required to trigger
+        ``jax.pure_callback`` wrapping.  ``None`` (default) disables callbacks
+        entirely (fastest execution).  ``0`` wraps every reused sub-jaxpr
+        (fastest compilation).  The PR's original heuristic was ``500``.
 
     Returns
     -------
@@ -597,10 +615,10 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None) -> C
 
             sub_jaxpr = eqn.params["jaxpr"]
             profiler, jaxpr_evaluator = get_compiled_profiler(
-                sub_jaxpr, type(metric), metric.cache_key(), call_graph_stats
+                sub_jaxpr, type(metric), metric.cache_key(), call_graph_stats, callback_threshold
             )
 
-            if _should_use_profiling_callback(sub_jaxpr, call_graph_stats):
+            if _should_use_profiling_callback(sub_jaxpr, call_graph_stats, callback_threshold):
                 # Compute output shape spec for pure_callback.  We use the
                 # raw (un-jitted) evaluator + make_jaxpr to trace the shapes,
                 # since the profiling transform replaces quantum abstract

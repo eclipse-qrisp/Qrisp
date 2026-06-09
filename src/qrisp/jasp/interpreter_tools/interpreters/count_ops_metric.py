@@ -231,7 +231,7 @@ def extract_count_ops(res: Tuple, jaspr: Jaspr, profiling_dic: dict) -> dict:
 
 @lru_cache(int(1e5))
 def get_count_ops_profiler(
-    jaspr: Jaspr, meas_behavior: Callable
+    jaspr: Jaspr, meas_behavior: Callable, callback_threshold=None
 ) -> Tuple[Callable, dict]:
     """
     Build a count operations profiling computer for a given Jaspr.
@@ -243,6 +243,12 @@ def get_count_ops_profiler(
 
     meas_behavior : Callable
         The measurement behavior function.
+
+    callback_threshold : int | None, optional
+        Minimum value of ``call_count * inlined_eqn_count`` required to
+        trigger ``jax.pure_callback`` wrapping.  ``None`` (default)
+        disables callbacks entirely (fastest execution).  ``0`` wraps
+        every reused sub-jaxpr (fastest compilation).
 
     Returns
     -------
@@ -264,7 +270,7 @@ def get_count_ops_profiler(
     # called, large sub-jaxprs can be wrapped in ``jax.pure_callback``
     # to avoid XLA compilation blowup (see profiling_interpreter.py).
     _, call_graph_stats = analyze_call_graph(jaspr)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(count_ops_metric, call_graph_stats)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(count_ops_metric, call_graph_stats, callback_threshold)
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def count_ops_profiler(*args):
