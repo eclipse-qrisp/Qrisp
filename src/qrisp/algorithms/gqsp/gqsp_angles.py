@@ -473,6 +473,13 @@ def laurent_to_analytic_coeffs(
         3. Expanded A(y): 0*y^0 + 0*y^1 + a_1*y^2 + a_3*y^3
         4. Analytic Coeffs: [0.0, 0.0, a_1, a_3]
 
+    Mathematical Example (Even):
+        Target: P(x) = a_0 + a_2*x^2  (Coeffs: [a_0, 0, a_2], degree d=2)
+        1. Factor out x^{-d}: P(x) = x^{-2} * (a_0*x^2 + a_2*x^4)
+        2. Substitute y = x^2: A(y) = a_0*y + a_2*y^2
+        3. Expanded A(y): 0*y^0 + a_0*y^1 + a_2*y^2
+        4. Analytic Coeffs: [0.0, a_0, a_2]
+
     Once the analytic solver finds the angles for A(y), Lemma 2 from Laneve (2025)
     is used to shift the phases, effectively multiplying the x^{-d} shift back
     into the quantum circuit.
