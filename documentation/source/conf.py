@@ -46,8 +46,7 @@ copyright = '2026, Qrisp developers'
 
 extensions = [
               'sphinx_toolbox.sidebar_links',
-              'nbsphinx',
-               'myst_parser',
+              'myst_nb',
               "sphinx.ext.autosummary",
               "sphinx.ext.autodoc",
               "sphinx.ext.coverage",
@@ -77,8 +76,7 @@ highlight_language = "python"
 # Use a preferred Pygments style (e.g., "sphinx" or "monokai"):
 pygments_style = "sphinx"
 
-# Recognize code cells as Python 3 for highlighting:
-nbsphinx_codecell_lexer = "ipython3"
+
 
 imgmath_latex_preamble = r'\usepackage{braket}\n\usepackage{xcolor}'
 
@@ -110,7 +108,24 @@ exclude_patterns = [
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
 }
-nbsphinx_timeout = 60
+
+# Suppress warnings for intra-notebook heading anchor links (e.g. [text](#anchor)
+# in a table of contents). myst-nb treats these as cross-references, but they are
+# non-breaking cosmetic links within the same notebook.
+suppress_warnings = ["myst.xref_missing"]
+
+nb_execution_timeout = 60
+# Print full traceback to stderr on execution error (not just to .err.log files)
+nb_execution_show_tb = True
+
+# Exclude notebooks that use heavy JIT-compiled resource estimation which
+# times out during the docs build. Pre-rendered cell outputs are used instead.
+nb_execution_excludepatterns = [
+    "general/tutorial/BigInteger.ipynb",
+    "general/tutorial/FT_compilation.ipynb",
+    "general/tutorial/Jasp.ipynb",
+    "general/tutorial/QIROtutorial.ipynb",
+]
 
 master_doc = "index"
 
@@ -190,7 +205,7 @@ html_css_files = [
     'css/custom09.css',
 ]
 
-source_suffix = ['.rst', '.md']
+source_suffix = {'.rst': 'restructuredtext', '.md': 'myst-nb', '.ipynb': 'myst-nb'}
 # Adds 'Edit on gitlab' in the upper right corner
 # html_context = {
 #     "display_gitlab": True, # Integrate Gitlab

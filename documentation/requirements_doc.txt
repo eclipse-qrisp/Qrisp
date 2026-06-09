@@ -4,10 +4,10 @@
 # sphinx_toolbox.sidebar_links is not compatible with Sphinx 9 yet.
 sphinx>=7,<9
 sphinx-toolbox>=3.5.0
-nbsphinx
+myst-nb
 ipykernel
 stim
-myst-parser
+pyscf   # Required by the H2 tutorial notebook
 texext
 numpydoc
 sphinx-sitemap

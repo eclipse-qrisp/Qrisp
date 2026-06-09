@@ -18,10 +18,9 @@ Of further interest is the conf.py, check out the recommended tutorial for its f
 
 # Creating the actual html page
 ```bash
-    make docs-install
+    pip install -r requirements_doc.txt
     make html
 ```
-The `make docs-install` command installs the Python documentation requirements
-and the `pandoc` system package. The `make html` command generates the html
-pages inside the build/html folder.\
+The `pip install` command installs the Python documentation requirements.
+The `make html` command generates the html pages inside the build/html folder.\
 Opening the index.html file in the browser displays the build version of the documentation page.

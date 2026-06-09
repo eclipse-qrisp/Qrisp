@@ -26,7 +26,7 @@ To also install the documentation build dependencies:
 .. code-block:: bash
 
     cd documentation
-    make docs-install
+    pip install -r requirements_doc.txt
 
 Running the test suite
 ----------------------
