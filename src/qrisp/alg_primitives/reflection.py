@@ -188,9 +188,6 @@ def reflection(
         else:
             raise TypeError("Arguments must be of type QuantumVariable or QuantumArray")
 
-    if reflection_indices is None:
-        reflection_indices = range(len(flattened_qargs))
-
     indices = reflection_indices if reflection_indices is not None else range(len(flattened_qargs))
     qubits = [q for i in indices for q in flattened_qargs[i].reg]
 
