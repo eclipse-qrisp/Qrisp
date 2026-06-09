@@ -21,7 +21,7 @@ import numpy as np
 import pytest
 from qrisp import QuantumVariable
 from qrisp.core import h, x
-from qrisp.alg_primitives.unbalanced_w_state import unbalanced_W_state
+from qrisp.alg_primitives.unbalanced_w_state import unbalanced_w_state
 from qrisp.alg_primitives.dicke_state_prep import dicke_state
 from qrisp.jasp import terminal_sampling
 from qrisp.environments import control, invert
@@ -156,11 +156,11 @@ def test_dicke_state_k(n, k):
         id="one_qubit",
     ),
 ])
-def test_unbalanced_W_state(amps):
+def test_unbalanced_w_state(amps):
     n = len(amps)
 
     qv = QuantumVariable(n)
-    unbalanced_W_state(qv, amps[::-1])
+    unbalanced_w_state(qv, amps[::-1])
 
     prepared_sv = qv.qs.compile().statevector_array()
 
@@ -187,11 +187,11 @@ def test_unbalanced_W_state(amps):
         id="one_qubit",
     ),
 ])
-def test_unbalanced_W_state_measurement(amps):
+def test_unbalanced_w_state_measurement(amps):
     n = len(amps)
     qv = QuantumVariable(n)
 
-    unbalanced_W_state(qv, amps)
+    unbalanced_w_state(qv, amps)
     result = qv.get_measurement()
 
     normalized_amps = amps / np.linalg.norm(amps)
@@ -207,7 +207,7 @@ def test_unbalanced_W_state_measurement(amps):
 
     assert np.allclose(result_arr, expected_arr, atol=1e-6)
 
-def test_unbalanced_W_state_jasp():
+def test_unbalanced_w_state_jasp():
     n = 3 # Number of qubits
     amps = np.array([0.25 + 0.2j, 0.375 + 0.18j, 0.375], dtype=complex)
 
@@ -215,7 +215,7 @@ def test_unbalanced_W_state_jasp():
     @terminal_sampling
     def main():
         qv = QuantumVariable(n)
-        unbalanced_W_state(qv, amps)
+        unbalanced_w_state(qv, amps)
         return qv
     result = main()
     # Manual expected state:
@@ -233,7 +233,7 @@ def test_unbalanced_W_state_jasp():
 
     assert np.allclose(result_arr, expected_arr, atol=1e-6)
 
-def test_unbalanced_W_state_jasp_inverse():
+def test_unbalanced_w_state_jasp_inverse():
     n = 3 # Number of qubits
     amps = np.array([0.25 + 0.2j, 0.375 + 0.18j, 0.375], dtype=complex)
 
@@ -241,9 +241,9 @@ def test_unbalanced_W_state_jasp_inverse():
     @terminal_sampling
     def main():
         qv = QuantumVariable(n)
-        unbalanced_W_state(qv, amps)
+        unbalanced_w_state(qv, amps)
         with invert():
-            unbalanced_W_state(qv, amps)
+            unbalanced_w_state(qv, amps)
         return qv
     result = main()
     # Manual expected state:
@@ -256,29 +256,29 @@ def test_unbalanced_W_state_jasp_inverse():
 
     assert np.allclose(result_arr, expected_arr, atol=1e-6)
 
-def test_unbalanced_W_state_fail_len_check():
+def test_unbalanced_w_state_fail_len_check():
     n = 1 # Number of qubits
     amps = np.array([0.25 + 0.2j, 2, 3, 4, 5, 6, 7], dtype=complex)
 
     # Prepare unbalanced Dicke state
     qv = QuantumVariable(n)
     with pytest.raises(ValueError) as exc_info:
-        unbalanced_W_state(qv, amps)
+        unbalanced_w_state(qv, amps)
 
     assert f"Length of amplitudes" in str(exc_info.value)
 
-def test_unbalanced_W_state_fail_zero_vector():
+def test_unbalanced_w_state_fail_zero_vector():
     n = 3 # Number of qubits
     amps = np.array([0, 0, 0], dtype=complex)
 
     # Prepare unbalanced Dicke state
     qv = QuantumVariable(n)
     with pytest.raises(ValueError) as exc_info:
-        unbalanced_W_state(qv, amps)
+        unbalanced_w_state(qv, amps)
 
     assert f"Amplitude vector must be non-zero." in str(exc_info.value)
 
-def test_unbalanced_W_state_one_qubit_jasp():
+def test_unbalanced_w_state_one_qubit_jasp():
     phi = 0.73
     amps = np.array([np.exp(1j * phi)], dtype=complex)
 
@@ -291,11 +291,11 @@ def test_unbalanced_W_state_one_qubit_jasp():
         h(ctrl[0])
 
         # On the ctrl=1 branch:
-        #   unbalanced_W_state(target, [exp(i phi)]) prepares exp(i phi)|1>.
+        #   unbalanced_w_state(target, [exp(i phi)]) prepares exp(i phi)|1>.
         #   x(target) maps |1> back to |0>, leaving exp(i phi) as a
         #   relative phase on the control branch.
         with control(ctrl[0]):
-            unbalanced_W_state(target, amps)
+            unbalanced_w_state(target, amps)
             x(target[0])
 
         # Convert the relative phase into measurement probabilities.

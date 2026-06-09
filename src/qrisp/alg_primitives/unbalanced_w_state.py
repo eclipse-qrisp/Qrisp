@@ -24,7 +24,7 @@ from qrisp.typing import NDArrayLike
 from qrisp.jasp import jrange, check_for_tracing_mode
 from collections.abc import Sequence
 
-def unbalanced_W_state(
+def unbalanced_w_state(
     qv: QuantumVariable | Sequence[Qubit],
     amplitudes: NDArrayLike
 ) -> None:
@@ -88,10 +88,10 @@ def unbalanced_W_state(
     Examples
     --------
     >>> import numpy as np
-    >>> from qrisp import QuantumVariable, unbalanced_W_state
+    >>> from qrisp import QuantumVariable, unbalanced_w_state
     >>> a = np.array([1j, 2, 3, 4])
     >>> qv = QuantumVariable(4)
-    >>> unbalanced_W_state(qv, a)
+    >>> unbalanced_w_state(qv, a)
     >>> print(qv.qs.statevector())
     """
     a = jnp.asarray(amplitudes, dtype=complex)
