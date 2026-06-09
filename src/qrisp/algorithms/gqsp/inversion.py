@@ -26,7 +26,7 @@ from qrisp.block_encodings import BlockEncoding
 from typing import Literal
 
 
-def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET", "GQSVT", "QSVT"] = "QET") -> BlockEncoding:
+def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQSVT"] = "QET") -> BlockEncoding:
     r"""
     Quantum Linear System Solver via Quantum Eigenvalue Transformation (QET).
     Returns a BlockEncoding approximating the matrix inversion of the operator.
@@ -155,13 +155,19 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
 
     p = _inversion_cheb(1.0 / kappa, eps)
 
-    if method == "GQSVT":
+    if method == "QET":
         # Set _rescale=False to apply p(A/α) instead of p(A).
-        A_inv = GQSVT(A, p, kind="Chebyshev", rescale=False)
-    elif method == "QET":
         A_inv = QET(A, p, kind="Chebyshev", rescale=False)
     elif method == "QSVT":
-        A_inv = QSVT(A, p, kind="Chebyshev", rescale=False)
+        # For SDV A = U @ S @ V_dg, the singular value transformation applies p(S) to the singular values,
+        # resulting in U @ p(S) @ V_dg.
+        # We apply QSVT to A_dg to get V @ p(S) @ U_dg.
+        A_dg = A.dagger()
+        A_inv = QSVT(A_dg, p, kind="Chebyshev", rescale=False)
+    if method == "GQSVT":
+        # For SDV A = U @ S @ V_dg, the generalized singular value transformation applies p(S) to the singular values,
+        # resulting in V @ p(S) @ U_dg.
+        A_inv = GQSVT(A, p, kind="Chebyshev", rescale=False)
 
     # Adjust scaling factor since (A/α)^{-1} = αA^{-1}.
     A_inv.alpha = A_inv.alpha / A.alpha

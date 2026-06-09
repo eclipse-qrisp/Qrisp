@@ -22,7 +22,7 @@ from qrisp import *
 from qrisp.block_encodings import BlockEncoding
 
 
-@pytest.mark.parametrize("method", ["QET", "GQSVT"])
+@pytest.mark.parametrize("method", ["QET", "QSVT", "GQSVT"])
 def test_block_encoding_inv(method):
 
     A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
@@ -48,9 +48,6 @@ def test_block_encoding_inv(method):
         return operand
 
     res_dict = main()
-    for k, v in res_dict.items():
-        res_dict[k] = v**0.5
-    q = np.array([res_dict.get(key, 0) for key in range(len(b))])
-    
-    c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
-    assert np.linalg.norm(np.abs(c) - q) < 1e-2
+    amps = np.sqrt([res_dict.get(key, 0) for key in range(len(b))])
+    expected = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
+    assert np.allclose(np.abs(expected), amps, atol=1e-2)
