@@ -26,8 +26,7 @@ from collections.abc import Sequence
 
 def unbalanced_W_state(
     qv: QuantumVariable | Sequence[Qubit],
-    amplitudes: NDArrayLike,
-    reversed: bool = False
+    amplitudes: NDArrayLike
 ) -> None:
     r"""
     Prepare a generalized W state, i.e. an unbalanced Dicke state of Hamming
@@ -52,9 +51,6 @@ def unbalanced_W_state(
     amplitudes : NDArrayLike
         A 1-D sequence of complex (or real) target amplitudes, one per qubit.
         Its length must be equal ``qv.size``.
-    reversed : bool, optional
-        If ``True``, reverse the order of the input amplitudes before
-        preparing the state. Default is ``False``
 
     Raises
     ------
@@ -99,9 +95,6 @@ def unbalanced_W_state(
     >>> print(qv.qs.statevector())
     """
     a = jnp.asarray(amplitudes, dtype=complex)
-
-    if reversed:
-        a = a[::-1]
 
     n = a.shape[0] # Use the static shape of amplitudes
 
