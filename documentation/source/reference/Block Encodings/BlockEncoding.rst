@@ -15,12 +15,12 @@ Constructors
 
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_array`
      - Constructs a BlockEncoding from a 2-D array.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.from_eye`
+     - Constructs a BlockEncoding of a 2-D array with ones on the diagonal and zeros elsewhere.
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_lcu`
      - Constructs a BlockEncoding using the Linear Combination of Unitaries (LCU) protocol.
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_operator`
      - Constructs a BlockEncoding from an operator.
-   * - :func:`~qrisp.block_encodings.BlockEncoding.from_eye`
-     - Constructs a BlockEncoding of a 2-D array with ones on the diagonal and zeros elsewhere.
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_projector`
      - Constructs a BlockEncoding of a projector.
 
@@ -48,6 +48,8 @@ Utilities
      - Returns a BlockEncoding representing $k$-th Chebyshev polynomial of the first kind applied to the operator.
    * - :func:`~qrisp.block_encodings.BlockEncoding.create_ancillas`
      - Returns a list of ancilla QuantumVariables for the BlockEncoding.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.dagger`
+     - Returns a BlockEncoding representing the Hermitian conjugate of the operator.
    * - :func:`~qrisp.block_encodings.BlockEncoding.expectation_value`
      - Measures the expectation value of the operator using the Hadamard test protocol.
    * - :func:`~qrisp.block_encodings.BlockEncoding.qubitization`
@@ -62,6 +64,7 @@ Utilities
    methods/apply_rus
    methods/chebyshev
    methods/create_ancillas
+   methods/dagger
    methods/expectation_value
    methods/qubitization
    methods/resources

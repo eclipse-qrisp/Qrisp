@@ -782,6 +782,46 @@ class BlockEncoding:
             "depth": circuit_depth,
             "qubits": qubit_counts["peak_allocations"],
         }
+    
+    def dagger(self) -> BlockEncoding:
+        r"""
+        Returns a new BlockEncoding representing the Hermitian conjugate of the operator.
+
+        For a block-encoded operator $A$ with block-encoding unitary $U_A$, this method returns a new BlockEncoding with unitary $U_A^{\dagger}$.
+        The resulting block-encoding represents the operator $A^{\dagger}$ with the same scaling factor $\alpha$.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding instance representing the Hermitian conjugate of the operator.
+
+        Examples
+        --------
+
+        Define a block-encoding and obtain its Hermitian conjugate.
+
+        ::
+
+            from qrisp.block_encodings import BlockEncoding
+            from qrisp.operators import X, Y, Z
+
+            H = X(0)*Y(1) + 0.5*Z(0)*X(1)
+            BE = BlockEncoding.from_operator(H)
+            BE_dg = BE.dagger()
+
+        """
+
+        def new_unitary(*args):
+            with invert():
+                self.unitary(*args)
+
+        return BlockEncoding(
+            self.alpha,
+            self._anc_templates,
+            new_unitary,
+            num_ops=self.num_ops,
+            is_hermitian=self.is_hermitian,
+        )
 
     def qubitization(self) -> BlockEncoding:
         r"""

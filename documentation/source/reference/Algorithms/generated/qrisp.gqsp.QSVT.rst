@@ -1,5 +1,5 @@
 ﻿qrisp.gqsp.QSVT
-================
+===============
 
 .. currentmodule:: qrisp.gqsp
 
