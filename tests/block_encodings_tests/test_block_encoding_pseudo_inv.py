@@ -17,9 +17,9 @@
 """
 
 import numpy as np
-from qrisp import *
+
+from qrisp import QuantumFloat, prepare, terminal_sampling
 from qrisp.block_encodings import BlockEncoding
-from qrisp.gqsp import pseudo_inversion
 
 
 def threshold_pseudoinverse(A, threshold):
@@ -30,8 +30,9 @@ def threshold_pseudoinverse(A, threshold):
     return (Vh.conj().T * S_inv) @ U.conj().T
 
 
-def test_pseudo_inversion():
-    """Test QSVT-based pseudo-inversion algorithm on a small 4x4 matrix."""
+def test_block_encoding_pseudo_inv():
+    """Test the pseudo-inversion transformation on a non-Hermitian matrix A with small singular values,
+    and compare the results to a classical thresholded pseudoinverse."""
 
     # Define non-Hermitian matrix A
     #[[0.  1.4 0.  1.1]
@@ -57,7 +58,7 @@ def test_pseudo_inversion():
 
     # Choose threshold theta > 0.3 / 2.5 = 0.12 
     # to cut off smallest singular values.
-    BE_inv = pseudo_inversion(BE, eps=0.01, theta=0.4, delta=0.1)
+    BE_inv = BE.pseudo_inv(eps=0.01, theta=0.4, delta=0.1)
 
     # Prepares operand variable in state |b>
     def prep_b():

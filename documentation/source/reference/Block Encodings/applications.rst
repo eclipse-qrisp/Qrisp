@@ -18,6 +18,10 @@ Key applications of block-encodings are:
 
 - **Matrix Inversion:** Solves the Quantum Linear Systems Problem (QLSP) by applying a polynomial transformation approximating :math:`1/x` to the eigenvalues of an encoded matrix [Childs2017]_.
 
+- **Threshold Matrix Pseudoinverse:** : Approximates the pseudoinverse of a matrix by ignoring singular values below a specified threshold.
+  In ill-conditioned linear systems, tiny singular values amplify noise and cause large numerical errors; discarding them trades a small amount of exact accuracy for a significantly more stable solution.
+  In Quantum Machine Learning (QML), this thresholding acts as a powerful regularizer that prevents models from overfitting to noisy data. [Martyn2021]_
+
 - **Ground State Preparation:** Efficiently prepares eigenstates using eigenstate filtering -- applying a polynomial that acts as a band-pass filter on the spectrum of the Hamiltonian.
 
 - **Hamiltonian Simulation:** Implements time-evolution :math:`e^{-iHt}` by approximating the exponential function with a low-degree polynomial [Low2019]_.
@@ -31,6 +35,8 @@ Key applications of block-encodings are:
      - Returns a BlockEncoding approximating the matrix inversion of the operator.
    * - :func:`~qrisp.block_encodings.BlockEncoding.poly`
      - Returns a BlockEncoding representing a polynomial transformation of the operator.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.pseudo_inv`
+     - Returns a BlockEncoding approximating the threshold matrix pseudoinverse of the operator.
    * - :func:`~qrisp.block_encodings.BlockEncoding.sim`
      - Returns a BlockEncoding approximating Hamiltonian simulation of the operator.
    * - :func:`~qrisp.block_encodings.BlockEncoding.svt`
@@ -41,6 +47,7 @@ Key applications of block-encodings are:
 
    methods/inv
    methods/poly
+   methods/pseudo_inv
    methods/sim
    methods/svt
 

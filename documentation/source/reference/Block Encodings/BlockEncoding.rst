@@ -110,6 +110,8 @@ Algorithms & Applications
      - Returns a BlockEncoding approximating the matrix inversion of the operator.
    * - :func:`~qrisp.block_encodings.BlockEncoding.poly`
      - Returns a BlockEncoding representing a polynomial transformation of the operator.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.pseudo_inv`
+     - Returns a BlockEncoding approximating the threshold matrix pseudoinverse of the operator.
    * - :func:`~qrisp.block_encodings.BlockEncoding.sim`
      - Returns a BlockEncoding approximating Hamiltonian simulation of the operator.
    * - :func:`~qrisp.block_encodings.BlockEncoding.svt`
@@ -120,5 +122,6 @@ Algorithms & Applications
 
    methods/inv
    methods/poly
+   methods/pseudo_inv
    methods/sim
    methods/svt

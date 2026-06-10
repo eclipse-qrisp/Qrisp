@@ -19,6 +19,7 @@
 from .inv import apply_inv
 from .sim import apply_sim
 from .poly import apply_poly
+from .pseudo_inv import apply_pseudo_inv
 from .svt import apply_svt
 
-__all__ = ["apply_inv", "apply_poly", "apply_sim", "apply_svt"]
+__all__ = ["apply_inv", "apply_poly", "apply_pseudo_inv", "apply_sim", "apply_svt"]
