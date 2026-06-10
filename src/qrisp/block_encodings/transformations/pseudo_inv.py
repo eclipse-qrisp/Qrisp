@@ -121,9 +121,8 @@ def apply_pseudo_inv(
 
     ::
 
-        from qrisp import *
+        from qrisp import QuantumFloat, prepare, terminal_sampling
         from qrisp.block_encodings import BlockEncoding
-        from qrisp.gqsp import pseudo_inversion
 
         # Define efficient block-encoding.
         def f0(x): x+=1
