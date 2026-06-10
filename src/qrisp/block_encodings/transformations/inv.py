@@ -65,8 +65,8 @@ def apply_inv(self, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQ
     Notes
     -----
     - **Complexity**: The query complexity of the algorithm scales as :math:`\mathcal{O}(\kappa^2 \log(\kappa/\epsilon))`:
-        Guaranteeing successful inversion with high probability requires repeating the procedure :math:`\mathcal{O}(\kappa)` times,
-        and each application of the polynomial requires :math:`\mathcal{O}(\kappa \log(\kappa/\epsilon))` (the polynomial degree) queries to the block-encoding of $A$.
+      Guaranteeing successful inversion with high probability requires repeating the procedure :math:`\mathcal{O}(\kappa)` times,
+      and each application of the polynomial requires :math:`\mathcal{O}(\kappa \log(\kappa/\epsilon))` (the polynomial degree) queries to the block-encoding of $A$.
     - It is assumed that the eigenvalues of $A/\alpha$ lie within $D_{\kappa}$.
 
     References
@@ -99,7 +99,7 @@ def apply_inv(self, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQ
 
     ::
 
-        from qrisp import *
+        from qrisp import QuantumVariable, prepare, terminal_sampling
         from qrisp.block_encodings import BlockEncoding
 
         BA = BlockEncoding.from_array(A)

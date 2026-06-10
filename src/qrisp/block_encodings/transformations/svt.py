@@ -94,7 +94,7 @@ def apply_svt(
 
     ::
 
-        from qrisp import *
+        from qrisp import QuantumFloat, prepare, terminal_sampling
         from qrisp.block_encodings import BlockEncoding
 
         def U0(qv): pass

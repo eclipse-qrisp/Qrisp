@@ -73,7 +73,7 @@ def apply_poly(
 
     ::
 
-        from qrisp import *
+        from qrisp import QuantumVariable, prepare, terminal_sampling
         from qrisp.block_encodings import BlockEncoding
 
         BA = BlockEncoding.from_array(A)

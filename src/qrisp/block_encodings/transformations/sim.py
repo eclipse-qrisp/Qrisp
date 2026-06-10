@@ -55,9 +55,9 @@ def apply_sim(self, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
     Notes
     -----
     - **Precision**: The truncation error scales (decreases) super-exponentially with $N$. 
-        For a fixed $t$, choosing $N > |t|$ ensures rapid convergence.
+      For a fixed $t$, choosing $N > |t|$ ensures rapid convergence.
     - **Normalization**: The resulting operator is nearly unitary, meaning its 
-        block-encoding normalization factor $\alpha$ will be close to 1.
+      block-encoding normalization factor $\alpha$ will be close to 1.
 
     References
     ----------
@@ -75,7 +75,8 @@ def apply_sim(self, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
         # import os
         # os.environ["QRISP_SIMULATOR_FLOAT_THRESH"] = "1e-10"
 
-        from qrisp import *
+        import numpy as np
+        from qrisp import QuantumFloat, terminal_sampling
         from qrisp.block_encodings import BlockEncoding
         from qrisp.operators import X, Y, Z
 
