@@ -18,12 +18,14 @@
 
 import numpy as np
 import pytest
-from qrisp import *
+
+from qrisp import QuantumVariable, prepare, terminal_sampling
 from qrisp.block_encodings import BlockEncoding
 
 
 @pytest.mark.parametrize("method", ["QET", "QSVT", "GQSVT"])
 def test_block_encoding_inv(method):
+    """Test the inversion transformation of a BlockEncoding by comparing the results to a classical solution."""
 
     A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
                 [0.14516978, 0.68701415, -0.04929867, -0.00999921],

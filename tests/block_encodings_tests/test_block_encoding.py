@@ -18,7 +18,8 @@
 
 import numpy as np
 import pytest
-from qrisp import *
+
+from qrisp import QuantumVariable, QuantumFloat, cx, h, jaspify, measure, multi_measurement, prepare, ry, terminal_sampling, x
 from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
 
