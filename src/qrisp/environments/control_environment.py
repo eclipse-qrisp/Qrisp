@@ -54,20 +54,20 @@ class ControlEnvironment(QuantumEnvironment):
     We create a QuantumVariable and control on some of it's qubits
     using the control alias ::
 
-        from qrisp import QuantumVariable, QuantumString, multi_measurement, control, h
+        from qrisp import QuantumVariable, QuantumString, multi_measurement, control, h, x
 
         qv = QuantumVariable(3)
-        q_str = QuantumString()
+        q_str = QuantumString(size = len("hello world"))
+        q_str[:] = "hello world"
 
         qv[:] = "011"
         h(qv[0])
 
         with control(qv[:2], "11"):
-            q_str += "hello world"
+            x(q_str[0])
 
-
-    >>> print(multi_measurement([qv, q_str]))
-    {('011', 'aaaaaaaaaaa'): 0.5, ('111', 'hello world'): 0.5}
+        print(multi_measurement([qv, q_str]))
+        {('011', 'hello world'): 0.5, ('111', 'yello world'): 0.5}
 
 
     """
