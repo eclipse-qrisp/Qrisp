@@ -136,9 +136,8 @@ def test_transpiled_qc():
     np.testing.assert_array_almost_equal(expected_unitary, unitary(converted_cirq))
 
 
-def test_grover_example():
-    """Verify the function works as expected for the Grover example from
-    the 101 tutorial."""
+def test_grover():
+    """Verify Grover circuit via to_cirq and from_cirq roundtrip."""
 
     @auto_uncompute
     def sqrt_oracle(qf):
@@ -160,13 +159,17 @@ def test_grover_example():
         diffuser(qf)
 
     qrisp_circuit = qf.qs.compile()
-    cirq_circuit = convert_to_cirq(qrisp_circuit)
     qrisp_sv = qrisp_circuit.statevector_array()
+
+    cirq_circuit = convert_to_cirq(qrisp_circuit)
     cirq_sv = final_state_vector(cirq_circuit)
-    zero_array_shape = np.shape(cirq_sv)
     np.testing.assert_array_almost_equal(
-        np.zeros(zero_array_shape),
-        np.round(qrisp_sv - cirq_sv),
+        np.zeros(np.shape(cirq_sv)), np.round(qrisp_sv - cirq_sv),
+    )
+
+    qrisp_restored = QuantumCircuit.from_cirq(cirq_circuit)
+    np.testing.assert_array_almost_equal(
+        qrisp_restored.statevector_array(), qrisp_sv, decimal=5
     )
 
 
