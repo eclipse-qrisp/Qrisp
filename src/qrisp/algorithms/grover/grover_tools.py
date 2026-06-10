@@ -16,6 +16,9 @@
 ********************************************************************************
 """
 
+# Test for reviewdog
+import os
+
 from collections.abc import Callable, Sequence
 import numpy as np
 from typing import Any
