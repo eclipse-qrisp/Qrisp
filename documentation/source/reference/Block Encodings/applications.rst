@@ -33,6 +33,8 @@ Key applications of block-encodings are:
      - Returns a BlockEncoding representing a polynomial transformation of the operator.
    * - :func:`~qrisp.block_encodings.BlockEncoding.sim`
      - Returns a BlockEncoding approximating Hamiltonian simulation of the operator.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.svt`
+     - Returns a BlockEncoding representing a singular value transformation of the operator.
 
 .. toctree::
    :hidden:
@@ -40,7 +42,7 @@ Key applications of block-encodings are:
    methods/inv
    methods/poly
    methods/sim
-
+   methods/svt
 
 **References**
 

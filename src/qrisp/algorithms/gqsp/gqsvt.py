@@ -61,9 +61,9 @@ def GQSVT(
     kind : {"Polynomial", "Chebyshev"}
         The basis in which the coefficients are defined.
 
-        - ``"Polynomial"``: $p(x) = \sum c_i x^i$
+        - ``"Polynomial"``: $p(z) = \sum c_i z^i$
 
-        - ``"Chebyshev"``: $p(x) = \sum c_i T_i(x)$, where $T_i$ are Chebyshev polynomials of the first kind.
+        - ``"Chebyshev"``: $p(z) = \sum c_i T_i(z)$, where $T_i$ are Chebyshev polynomials of the first kind.
 
         Default is ``"Polynomial"``.
     parity : {"odd", "even"}

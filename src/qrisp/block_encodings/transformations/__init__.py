@@ -19,5 +19,6 @@
 from .inv import apply_inv
 from .sim import apply_sim
 from .poly import apply_poly
+from .svt import apply_svt
 
-__all__ = ["apply_inv", "apply_sim", "apply_poly"]
+__all__ = ["apply_inv", "apply_poly", "apply_sim", "apply_svt"]
