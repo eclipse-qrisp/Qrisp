@@ -50,23 +50,15 @@ class QuantumString(QuantumArray):
     >>> print(len(q_str_nn.qs.qubits))
     88
 
-    Similar to its parent class, the size of a QuantumString does not have to be
-    specified at creation
-
-    >>> q_str = QuantumString()
-    >>> q_str[:] = "hello world"
-    >>> print(q_str)
-    {'hello world': 1.0}
-
     **Concatenation**
 
     QuantumStrings provide a number of methods to concatenate:
 
-    >>> q_str_0 = QuantumString()
-    >>> q_str_1 = QuantumString()
-    >>> q_str_2 = QuantumString()
+    >>> q_str_0 = QuantumString(size = len("hello"))
+    >>> q_str_1 = QuantumString(size = 1)
+    >>> q_str_2 = QuantumString(size = len("world"))
     >>> q_str_0[:] = "hello"
-    >>> q_str_1 += " "
+    >>> q_str_1[:] = " "
     >>> q_str_2[:] = "world"
     >>> q_str_3 = q_str_1 + q_str_2
     >>> q_str_0 += q_str_3
