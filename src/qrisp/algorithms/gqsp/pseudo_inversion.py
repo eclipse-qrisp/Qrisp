@@ -19,11 +19,12 @@
 import numpy as np
 import numpy.typing as npt
 from numpy.polynomial import Chebyshev
+from scipy.special import erf
+
 from qrisp.algorithms.cks import cks_coeffs, cks_params
-from qrisp.algorithms.gqsp.gqsvt import GQSVT
+from qrisp.algorithms.gqsp.qsvt import QSVT
 from qrisp.algorithms.gqsp.helper_functions import chebyshev_approx
 from qrisp.block_encodings import BlockEncoding
-from scipy.special import erf
 
 
 def pseudo_inversion(
@@ -60,7 +61,7 @@ def pseudo_inversion(
     For a block-encoded matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an operator 
     $\tilde{A}_{\alpha\cdot\theta}^{+}$ such that $\|\tilde{A}_{\alpha\cdot\theta}^{+} - A_{\alpha\cdot\theta}^{+}\| \leq \epsilon$.
 
-    The pseudo inverse is implemented via Generalized Quantum Singular Value Transform (GQSVT)
+    The pseudo inverse is implemented via Quantum Singular Value Transform (QSVT)
     using a polynomial approximation of $1/x$ over the domain $D_{\theta} = [-1, -\theta] \cup [\theta, 1]$, 
     and a smoothed rectangle filter over the domain $D_{\theta}' = [-\theta, \theta]$.
 
@@ -189,7 +190,7 @@ def pseudo_inversion(
     p = _pseudo_inversion_cheb(theta, delta, eps)
 
     # Set _rescale=False to apply p(A/α) instead of p(A).
-    A_pseudo_inv = GQSVT(A, p, kind="Chebyshev", rescale=False)
+    A_pseudo_inv = QSVT(A, p, kind="Chebyshev", rescale=False)
 
     # Adjust scaling factor since (A/α)^{-1} = αA^{-1}.
     A_pseudo_inv.alpha = A_pseudo_inv.alpha / A.alpha
