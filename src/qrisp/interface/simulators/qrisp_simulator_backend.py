@@ -20,8 +20,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Sequence, cast
+from collections.abc Sequence
+from typing import cast
 
 from qrisp.circuit.pass_management.pass_manager import PassManager
 from qrisp.circuit.quantum_circuit import QuantumCircuit
