@@ -17,7 +17,7 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
      - Description
    * - :doc:`arrange_swaps <arrange_swaps>`
      - Rearrange SWAP gates for better cancellation later
-   * - :doc:`cancel_inverses <cancel_inverses>`
+   * - :doc:`fuse_adjacents <fuse_adjacents>`
      - Cancel adjacent gate–inverse-gate pairs via DAG analysis
    * - :doc:`cancel_zero_controls <cancel_zero_controls>`
      - Remove gates controlled on \|0⟩ states
@@ -49,7 +49,7 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
    :hidden:
 
    arrange_swaps
-   cancel_inverses
+   fuse_adjacents
    cancel_zero_controls
    combine_single_qubit_gates
    commute_swaps

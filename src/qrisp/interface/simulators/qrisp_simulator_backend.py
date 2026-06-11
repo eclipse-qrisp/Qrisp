@@ -169,10 +169,10 @@ class QrispSimulatorBackend(Backend):
     **Using a PassManager to pre-process circuits**
 
     >>> from qrisp import PassManager
-    >>> from qrisp import convert_to_cz, cancel_inverses
+    >>> from qrisp import convert_to_cz, fuse_adjacents
     >>> pm = PassManager()
     >>> pm += convert_to_cz()
-    >>> pm += cancel_inverses
+    >>> pm += fuse_adjacents
     >>> backend = QrispSimulatorBackend(pm=pm)
     >>> # Circuits are now passed through pm before simulation
 

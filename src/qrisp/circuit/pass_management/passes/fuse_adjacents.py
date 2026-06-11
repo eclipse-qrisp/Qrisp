@@ -43,7 +43,7 @@ The module is layered in three tiers:
    qubit alignment, delegates symmetric-gate set-matching to
    :func:`_resolve_qubit_order`, then calls :func:`_fuse_operations`.
 
-3. **DAG orchestration** — :func:`cancel_inverses` builds a DAG where
+3. **DAG orchestration** — :func:`fuse_adjacents` builds a DAG where
    each instruction is a node and edges track qubit/clbit flow.  When
    an instruction has a single predecessor (meaning the pair is locally
    adjacent on every qubit), fusion is attempted.  Cancelled or fused
@@ -354,7 +354,7 @@ def _fuse_via_transpile(op_a, op_b):
 
     1. Builds a two-instruction circuit from ``op_a`` and ``op_b``.
     2. Transpiles it (decomposes the definitions).
-    3. Runs ``cancel_inverses`` on the decomposition.
+    3. Runs ``fuse_adjacents`` on the decomposition.
     4. If anything cancelled (gate count changed), returns the fused
        result as a new gate. 
 
@@ -375,7 +375,7 @@ def _fuse_via_transpile(op_a, op_b):
     qc.append(op_b, qc.qubits)
     qc = qc.transpile()
     op_counts = qc.count_ops()
-    qc = cancel_inverses(qc)
+    qc = fuse_adjacents(qc)
     qc = combine_single_qubit_gates(qc)
     if op_counts != qc.count_ops():
         # If all gates cancelled → full cancellation.
@@ -608,7 +608,7 @@ def _fuse_instructions(instr_a, instr_b, gphase_array):
 # =============================================================================
 # Public pass
 # =============================================================================
-# DAG management helpers — used by cancel_inverses
+# DAG management helpers — used by fuse_adjacents
 # =============================================================================
 
 
@@ -736,7 +736,7 @@ def _emit_surviving_circuit(G, data_list, qc, gphase_array):
 
 
 @CircuitPass
-def cancel_inverses(qc: QuantumCircuit) -> QuantumCircuit:
+def fuse_adjacents(qc: QuantumCircuit) -> QuantumCircuit:
     """Cancel adjacent gate–inverse-gate pairs.
 
     **How it works**
@@ -797,7 +797,7 @@ def cancel_inverses(qc: QuantumCircuit) -> QuantumCircuit:
     Cancel adjacent self-inverse gates (e.g. CX·CX)::
 
         >>> from qrisp import QuantumCircuit, PassManager
-        >>> from qrisp import cancel_inverses
+        >>> from qrisp import fuse_adjacents
         >>> qc = QuantumCircuit(2)
         >>> qc.cx(0, 1)
         >>> qc.cx(0, 1)   # CX is self-inverse → cancelled
@@ -809,7 +809,7 @@ def cancel_inverses(qc: QuantumCircuit) -> QuantumCircuit:
                └───┘└───┘
         >>>
         >>> pm = PassManager()
-        >>> pm += cancel_inverses
+        >>> pm += fuse_adjacents
         >>> optimized_qc = pm.run(qc)
         >>> print(optimized_qc)
         <BLANKLINE>
@@ -824,7 +824,7 @@ def cancel_inverses(qc: QuantumCircuit) -> QuantumCircuit:
         >>> qc.swap(0, 1)
         >>> qc.cx(0, 1)
         >>> pm = PassManager()
-        >>> pm += cancel_inverses
+        >>> pm += fuse_adjacents
         >>> pm += decompose()
         >>> optimized = pm.run(qc)
         >>> # SWAP·CX fused into a cheaper compound gate rather than

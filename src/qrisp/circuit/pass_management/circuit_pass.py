@@ -50,8 +50,8 @@ class CircuitPass:
 
     Wrapping an existing function explicitly::
 
-        from qrisp import CircuitPass, cancel_inverses
-        typed_pass = CircuitPass(cancel_inverses)
+        from qrisp import CircuitPass, fuse_adjacents
+        typed_pass = CircuitPass(fuse_adjacents)
         result = typed_pass(qc)
 
     Inside factory functions that return configured passes::
@@ -211,11 +211,11 @@ class CircuitPass:
         Examples
         --------
         >>> from qrisp import QuantumCircuit, CircuitPass
-        >>> from qrisp.circuit.pass_management.passes.cancel_inverses import cancel_inverses
+        >>> from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
         >>> qc = QuantumCircuit(2)
         >>> qc.cx(0, 1)
         >>> qc.cx(0, 1)
-        >>> cancel_inverses.visualize(qc)
+        >>> fuse_adjacents.visualize(qc)
         """
         # Apply the pass to a copy to avoid mutating the original
         transformed_qc = self(qc.copy())

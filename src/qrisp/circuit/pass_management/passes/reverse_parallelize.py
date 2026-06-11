@@ -70,7 +70,7 @@ def reverse_parallelize(qc: QuantumCircuit) -> QuantumCircuit:
     qb_67: ┤ X ├┤ X ├─X─
            └───┘└───┘   
 
-    The CX gate can now be fused through the ``cancel_inverses`` pass.
+    The CX gate can now be fused through the ``fuse_adjacents`` pass.
                  
     """
     # Defer import: qrisp.permeability loads *after* qrisp.circuit, so
