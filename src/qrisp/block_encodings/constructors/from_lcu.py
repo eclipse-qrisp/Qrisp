@@ -28,6 +28,8 @@ from qrisp.environments import conjugate, invert
 from qrisp.jasp import qache, q_switch
 from qrisp.qtypes import QuantumFloat
 
+_TOLERANCE = 1e-12
+
 
 def build_from_lcu(
     cls: BlockEncoding,
@@ -102,6 +104,11 @@ def build_from_lcu(
     BlockEncoding
         A BlockEncoding representing the operator defined as the linear combination of unitaries.
 
+    Raises
+    ------
+    ValueError
+        If a single unitary is provided with a complex coefficient (up to numerical precision).
+
     Notes
     -----
     - **Normalization**: The block-encoding normalization factor is $\alpha = \sum_i |\alpha_i|$.
@@ -126,26 +133,30 @@ def build_from_lcu(
 
     """
 
-    m = len(coeffs)
+    complex_coeffs = np.array(coeffs, dtype=complex)
+    m = len(complex_coeffs)
     n = (m - 1).bit_length()  # Number of qubits for index variable
     # Ensure coeffs has size 2 ** n by zero padding
-    coeffs = np.pad(coeffs, (0, (1 << n) - m))
-    alpha = np.sum(np.abs(coeffs))
+    complex_coeffs = np.pad(complex_coeffs, (0, (1 << n) - m))
+    alpha = np.sum(np.abs(complex_coeffs))
 
     # Block encoding of a single unitary (up to normalization)
     if m == 1:
-        return cls(
-            coeffs[0], [], unitaries[0], num_ops=num_ops, is_hermitian=is_hermitian
-        )
+        if np.abs(complex_coeffs[0].imag) < _TOLERANCE:
+            return cls(
+                complex_coeffs[0].real, [], unitaries[0], num_ops=num_ops, is_hermitian=is_hermitian
+            )
+        
+        raise ValueError("For a single unitary, the coefficient must be real (up to numerical precision).")
     
     # Block encoding of a linear combination of unitaries via the LCU protocol
     # If all coefficients are real and non-negative: LCU = PREP SEL PREP_dg
-    if _is_real_non_negative_array(coeffs):
+    if _is_real_non_negative_array(complex_coeffs):
 
         @qache
         def unitary(*args):
             # LCU = PREP SEL PREP_dg
-            with conjugate(prepare)(args[0], np.sqrt(coeffs / alpha)):
+            with conjugate(prepare)(args[0], np.sqrt(complex_coeffs / alpha)):
                 q_switch(args[0], unitaries, *args[1:])
 
         return cls(
@@ -157,7 +168,6 @@ def build_from_lcu(
         )
     
      # If coefficients are complex or negative, we use a state preparation pair (PREP_R, PREP_L): LCU = PREP_R SEL PREP_L_dg
-    complex_coeffs = coeffs.astype(complex)
     complex_coeffs_r = np.sqrt(complex_coeffs / alpha)
     complex_coeffs_l = np.sqrt(complex_coeffs / alpha).conjugate()
 
@@ -178,7 +188,7 @@ def build_from_lcu(
     )
 
 
-def _is_real_non_negative_array(arr: npt.NDArray[np.number], tol: float=1e-12):
+def _is_real_non_negative_array(arr: npt.NDArray[np.number], tol: float=_TOLERANCE) -> bool:
     """Checks if all entries in an array are non-negative and have negligible imaginary parts."""
     # 1. Check if the array is a complex type
     if np.issubdtype(arr.dtype, np.complexfloating):
@@ -190,4 +200,3 @@ def _is_real_non_negative_array(arr: npt.NDArray[np.number], tol: float=1e-12):
 
     else:
         return np.all(arr >= 0)
-

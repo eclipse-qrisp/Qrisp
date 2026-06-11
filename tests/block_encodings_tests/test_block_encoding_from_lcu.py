@@ -92,3 +92,11 @@ def test_block_encoding_from_lcu(coeffs):
 
     res_dict = main()
     assert np.isclose(res_dict.get(False, 0), 1.0, atol=1e-6)
+
+
+def test_block_encoding_from_lcu_single_unitary_raises_value_error():
+    """Test that a ValueError is raised when a single unitary is provided with a complex coefficient."""
+    coeffs = np.array([1.0 + 0.5j])
+    def f0(qv): qv -= 1
+    with pytest.raises(ValueError):
+        BlockEncoding.from_lcu(coeffs, [f0])
