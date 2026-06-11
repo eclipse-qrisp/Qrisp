@@ -35,7 +35,7 @@ _DIAGONAL_1Q = frozenset({"p", "rz", "z", "s", "t", "s_dg", "t_dg", "id", "gphas
 def _is_cancelled_by_zero(
     op: Operation, qubits: list[Qubit], fresh: set[Qubit]
 ) -> bool:
-    """Return True if *op* on *qubits* is a no-op given a set of \|0⟩ qubits."""
+    r"""Return True if *op* on *qubits* is a no-op given a set of \|0⟩ qubits."""
 
     # Symmetric controlled-phase gates: diag(1,1,1,e^{iφ}).
     # Identity whenever *either* qubit is \|0⟩.
@@ -65,7 +65,7 @@ def _is_cancelled_by_zero(
 
 @CircuitPass
 def cancel_zero_controls(qc: QuantumCircuit) -> QuantumCircuit:
-    """Cancel controlled gates whose control qubit is guaranteed to be \|0⟩.
+    r"""Cancel controlled gates whose control qubit is guaranteed to be \|0⟩.
 
     Every qubit starts in \|0⟩ (and re-enters \|0⟩ after ``qb_alloc``).  A
     controlled gate conditioned on \|1⟩ acting on such a qubit is a no-op.

@@ -5,6 +5,7 @@ Backend
 
 .. currentmodule:: qrisp.interface
 .. autoclass:: Backend
+   :no-index:
 
 
 
