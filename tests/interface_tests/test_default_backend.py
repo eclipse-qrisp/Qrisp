@@ -275,13 +275,6 @@ class TestQrispSimulatorBackendBatched:
         bb.dispatch()
         assert counting.run_async_call_count == 1
 
-    def test_batched_inherits_shots_from_wrapped_backend(self):
-        """BatchedBackend created via batched() inherits the wrapped backend's options."""
-        backend = QrispSimulatorBackend(options={"shots": 256, "token": ""})
-        bb = backend.batched()
-        assert bb.options["shots"] == 256
-
-
 # ---------------------------------------------------------------------------
 # Tests for PassManager (pm) integration
 # ---------------------------------------------------------------------------
@@ -387,11 +380,11 @@ class TestQrispSimulatorBackendPassManager:
         """PassManager must work with shot-based (non-analytic) execution."""
         pm = PassManager()
         pm += CircuitPass(_prepend_x_on_first_qubit)
-        backend = QrispSimulatorBackend(pm=pm, options={"shots": 100, "token": ""})
+        backend = QrispSimulatorBackend(pm=pm)
 
         qc = QuantumCircuit(2, 2)
         qc.measure(qc.qubits, qc.clbits)
-        assert backend.run(qc) == {"01": 100}
+        assert backend.run(qc, shots=100) == {"01": 100}
 
     def test_pm_works_with_batched_backend(self):
         """PassManager must be applied when circuits are dispatched via BatchedBackend."""

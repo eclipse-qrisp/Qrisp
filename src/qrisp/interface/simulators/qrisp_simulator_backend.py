@@ -20,8 +20,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Sequence, cast
+from collections.abc import Sequence
+from typing import cast
 
 from qrisp.circuit.pass_management.pass_manager import PassManager
 from qrisp.circuit.quantum_circuit import QuantumCircuit
@@ -134,8 +134,6 @@ class QrispSimulatorBackend(Backend):
 
     Parameters
     ----------
-    options : Mapping or None, optional
-        Runtime options.  Defaults to ``{"shots": None, "token": ""}``.
     pm : PassManager or None, optional
         An optional :class:`~qrisp.circuit.pass_management.PassManager` that
         is applied to every circuit before it is submitted to the simulator.
@@ -277,31 +275,19 @@ class QrispSimulatorBackend(Backend):
 
     def __init__(
         self,
-        name: str | None = None,
-        options: Mapping | None = None,
         pm: PassManager | None = None,
-        **kwargs,
     ) -> None:
         """
         Initialize the QrispSimulatorBackend.
 
         Parameters
         ----------
-        name : str or None, optional
-            Optional user-defined name for the backend.
-            Defaults to the class name.
-        options : Mapping or None, optional
-            Runtime execution options for the backend.
-            If omitted, :meth:`_default_options` is used.
         pm : PassManager or None, optional
             An optional :class:`~qrisp.circuit.pass_management.PassManager`
             that is applied to every circuit before it is submitted to the
             simulator. Defaults to ``None``.
-        **kwargs :
-            Additional backend-specific parameters forwarded to the base
-            :class:`~qrisp.interface.Backend` initialiser.
         """
-        super().__init__(name=name, options=options, **kwargs)
+        super().__init__(name="QrispSimulator", options=None)
         if pm is not None and not isinstance(pm, PassManager):
             raise TypeError(
                 f"Expected a PassManager instance for 'pm', "
