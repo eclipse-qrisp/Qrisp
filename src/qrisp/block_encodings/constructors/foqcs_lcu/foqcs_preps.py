@@ -16,14 +16,14 @@
 ********************************************************************************
 """
 
+from collections.abc import Sequence
+from functools import partial
+from typing import Any
 import numpy as np
 from qrisp.core import QuantumVariable, Qubit
 from qrisp.core.gate_application_functions import cx, ry, p, h, rz
 from qrisp.alg_primitives.unbalanced_w_state import unbalanced_w_state
 from qrisp.environments import control
-from collections.abc import Sequence
-from functools import partial
-from typing import Any
 
 _FOQCS_SPIN_GLASS_TOL = 1e-12
 

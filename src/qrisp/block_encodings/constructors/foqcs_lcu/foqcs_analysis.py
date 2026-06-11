@@ -16,8 +16,8 @@
 ********************************************************************************
 """
 
-import numpy as np
 from functools import partial
+import numpy as np
 from qrisp.operators import QubitOperator
 from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_preps import (
     foqcs_prep_heisenberg,

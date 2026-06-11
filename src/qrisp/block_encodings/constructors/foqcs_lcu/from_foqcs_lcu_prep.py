@@ -107,8 +107,8 @@ def build_from_foqcs_lcu_prep(
 
         # Normalize
         norm = np.linalg.norm(np.block([g, J]))
-            g /= norm
-            J /= norm
+        g /= norm
+        J /= norm
 
         # Calculating the normalization factor
         _g = np.zeros((3,), dtype="complex")

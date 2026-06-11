@@ -16,6 +16,7 @@
 ********************************************************************************
 """
 
+from functools import partial
 import numpy as np
 import pytest
 from qrisp.block_encodings import BlockEncoding
@@ -27,7 +28,6 @@ from qrisp.block_encodings.constructors.foqcs_lcu import (
   foqcs_analyze_operator_heisenberg,
   foqcs_prep_spin_glass
 )
-from functools import partial
 from qrisp.operators import X, Y, Z
 from qrisp.alg_primitives.unbalanced_w_state import unbalanced_w_state
 
