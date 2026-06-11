@@ -684,7 +684,7 @@ class QuantumArray:
 
         >>> from qrisp import QuantumFloat, QuantumArray
         >>> qtype = QuantumFloat(3)
-        >>> q_array = QuantumArray(qtype)
+        >>> q_array = QuantumArray(qtype, shape = (2, 2))
         >>> q_array[:] = [[1,0],[0,1]]
         >>> res = q_array.get_measurement()
         >>> print(res)

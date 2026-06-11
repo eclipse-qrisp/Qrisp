@@ -1843,6 +1843,67 @@ class QubitOperator(Hamiltonian):
             print(main())
             # Yields: 0.010126265783222899
 
+        **Inspecting the circuits sent to the backend**
+
+        When evaluating an expectation value, the operator is grouped by
+        commutativity, change-of-basis gates are appended to the state
+        preparation circuit, and one circuit per group is submitted to
+        the backend — details that are not obvious from the operator
+        expression.  You can inspect these circuits by passing a
+        :class:`~qrisp.interface.QrispSimulatorBackend` with a
+        :class:`~qrisp.PassManager` that ends with
+        :func:`~qrisp.visualize`:
+
+        .. code-block:: python
+
+            from qrisp import QuantumFloat, ry, PassManager, visualize, decompose
+            from qrisp.operators import X, Z
+            from qrisp.interface import QrispSimulatorBackend
+            import numpy as np
+
+            def state_prep(theta):
+                qv = QuantumFloat(2)
+                ry(theta, qv)
+                return qv
+
+            H = X(0)*Z(1) + Z(0)*X(1) + X(0)
+
+            pm = PassManager()
+            pm += decompose()
+            pm += visualize
+            backend = QrispSimulatorBackend(pm=pm)
+
+            ev_function = H.expectation_value(state_prep, backend=backend)
+            result = ev_function(np.pi/2)
+
+        .. code-block:: none
+
+                   ┌─────────┐┌───┐┌─┐
+             qv.0: ┤ Ry(π/2) ├┤ H ├┤M├
+                   ├─────────┤└┬─┬┘└╥┘
+             qv.1: ┤ Ry(π/2) ├─┤M├──╫─
+                   └─────────┘ └╥┘  ║ 
+            cb_15: ═════════════╬═══╩═
+                                ║     
+            cb_16: ═════════════╩═════
+                                    
+                   ┌─────────┐     ┌─┐
+             qv.0: ┤ Ry(π/2) ├─────┤M├───
+                   ├─────────┤┌───┐└╥┘┌─┐
+             qv.1: ┤ Ry(π/2) ├┤ H ├─╫─┤M├
+                   └─────────┘└───┘ ║ └╥┘
+            cb_21: ═════════════════╩══╬═
+                                       ║ 
+            cb_22: ════════════════════╩═
+
+        The operator contains three terms.  ``X(0)*Z(1)`` and ``X(0)``
+        commute qubit-wise and are measured together in the first circuit
+        (an H gate rotates X to Z on qubit 0).  ``Z(0)*X(1)`` does not
+        commute with the others and requires a separate circuit (with an
+        H gate on qubit 1).  :func:`~qrisp.visualize` reveals exactly
+        which circuits reach the backend and how the basis rotations are
+        applied.
+
         """
         from qrisp import QuantumVariable
 
