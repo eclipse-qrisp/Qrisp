@@ -17,6 +17,8 @@
 
 """
 
+from __future__ import annotations
+
 import jax.numpy as jnp
 import numpy as np
 from qrisp.circuit import Qubit
@@ -65,7 +67,7 @@ def _validate_gidney_adder_inputs(a, b):
     return a_is_quantum
 
 
-def _extract_bit(a_int, digit_index):
+def _extract_bit(a_int, digit_index, a_int_is_bigint=None):
     """Extract one bit from a classical scalar as a JAX boolean.
 
     Parameters
@@ -74,6 +76,10 @@ def _extract_bit(a_int, digit_index):
         Classical value whose bit is queried.
     digit_index : int
         Zero-based bit index to read (little-endian convention).
+    a_int_is_bigint : bool or None
+        If ``True``, read the bit through ``a_int.get_bit(digit_index)``.
+        If ``False``, use ``(a_int >> digit_index) & 1``.
+        If ``None`` (default), auto-detect by checking for a ``get_bit`` method.
 
     Examples
     --------
@@ -82,8 +88,9 @@ def _extract_bit(a_int, digit_index):
     >>> bool(_extract_bit(0b1010, 0))
     False
     """
-    # BigInteger (and other big-int wrappers) expose get_bit
-    if hasattr(a_int, "get_bit"):
+    if a_int_is_bigint is None:
+        a_int_is_bigint = hasattr(a_int, "get_bit")
+    if a_int_is_bigint:
         return jnp.bool_(a_int.get_bit(digit_index))
     return jnp.bool_((a_int >> digit_index) & 1)
 
@@ -300,8 +307,14 @@ def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, c
 
 
 @custom_control
-def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
-    r"""
+def gidney_adder(
+    a: int | str | QuantumVariable | DynamicQubitArray | list,
+    b: QuantumVariable | DynamicQubitArray | list,
+    c_in: Qubit | QuantumBool | None = None,
+    c_out: Qubit | QuantumBool | None = None,
+    ctrl: Qubit | QuantumBool | None = None,
+):
+    """
     In-place Gidney adder performing ``b += a``.
 
     Based on `arXiv:1709.06648 <https://arxiv.org/abs/1709.06648>`_.  Works in
