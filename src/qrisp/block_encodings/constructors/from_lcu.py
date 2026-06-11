@@ -144,11 +144,17 @@ def build_from_lcu(
     if m == 1:
         if np.abs(complex_coeffs[0].imag) < _TOLERANCE:
             return cls(
-                complex_coeffs[0].real, [], unitaries[0], num_ops=num_ops, is_hermitian=is_hermitian
+                complex_coeffs[0].real,
+                [],
+                unitaries[0],
+                num_ops=num_ops,
+                is_hermitian=is_hermitian,
             )
-        
-        raise ValueError("For a single unitary, the coefficient must be real (up to numerical precision).")
-    
+
+        raise ValueError(
+            "For a single unitary, the coefficient must be real (up to numerical precision)."
+        )
+
     # Block encoding of a linear combination of unitaries via the LCU protocol
     # If all coefficients are real and non-negative: LCU = PREP SEL PREP_dg
     if _is_real_non_negative_array(complex_coeffs):
@@ -166,8 +172,8 @@ def build_from_lcu(
             num_ops=num_ops,
             is_hermitian=is_hermitian,
         )
-    
-     # If coefficients are complex or negative, we use a state preparation pair (PREP_R, PREP_L): LCU = PREP_R SEL PREP_L_dg
+
+    # If coefficients are complex or negative, we use a state preparation pair (PREP_R, PREP_L): LCU = PREP_R SEL PREP_L_dg
     complex_coeffs_r = np.sqrt(complex_coeffs / alpha)
     complex_coeffs_l = np.sqrt(complex_coeffs / alpha).conjugate()
 
@@ -188,13 +194,15 @@ def build_from_lcu(
     )
 
 
-def _is_real_non_negative_array(arr: npt.NDArray[np.number], tol: float=_TOLERANCE) -> bool:
+def _is_real_non_negative_array(
+    arr: npt.NDArray[np.number], tol: float = _TOLERANCE
+) -> bool:
     """Checks if all entries in an array are non-negative and have negligible imaginary parts."""
     # 1. Check if the array is a complex type
     if np.issubdtype(arr.dtype, np.complexfloating):
         abs_imag_part = np.abs(arr.imag)
         real_part = arr.real
-        
+
         # Check if imaginary parts are within tolerance AND real parts are non-negative
         return (abs_imag_part < tol).all() and (real_part >= 0).all()
 
