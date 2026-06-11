@@ -1,25 +1,29 @@
-"""
-********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# """
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+# """
 
 """This module defines :class:`QrispSimulatorBackend` and its associated :class:`QrispSimulatorJob`."""
 
-from typing import Sequence, cast
+from __future__ import annotations
 
+from collections.abc import Sequence
+from typing import cast
+
+from qrisp.circuit.pass_management.pass_manager import PassManager
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
 from qrisp.interface.job import Job, JobResult, JobStatus
@@ -130,8 +134,11 @@ class QrispSimulatorBackend(Backend):
 
     Parameters
     ----------
-    options : Mapping or None, optional
-        Runtime options.  Defaults to ``{"shots": None, "token": ""}``.
+    pm : PassManager or None, optional
+        An optional :class:`~qrisp.circuit.pass_management.PassManager` that
+        is applied to every circuit before it is submitted to the simulator.
+        This allows users to inject custom transpilation or optimisation
+        passes into the simulation pipeline. Defaults to ``None``.
 
     Examples
     --------
@@ -158,6 +165,81 @@ class QrispSimulatorBackend(Backend):
 
     With ``shots=None`` the result is an exact probability distribution, so
     ``{16: 1.0}`` means the outcome ``16`` has probability ``1.0``.
+
+    **Using a PassManager to pre-process circuits**
+
+    >>> from qrisp import PassManager
+    >>> from qrisp import convert_to_cz, cancel_inverses
+    >>> pm = PassManager()
+    >>> pm += convert_to_cz()
+    >>> pm += cancel_inverses
+    >>> backend = QrispSimulatorBackend(pm=pm)
+    >>> # Circuits are now passed through pm before simulation
+
+    **Inspecting circuits with visualize when evaluating expectation values**
+
+    ``pm`` is especially useful for understanding what circuits the
+    simulator actually receives.  By inserting
+    :func:`~qrisp.visualize` as the last pass you can inspect every
+    circuit just before it is executed.  This can for instance be used
+    when evaluating expectation values via
+    :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`:
+    under the hood
+    the operator groups terms by commutativity, appends change-of-basis
+    gates, and submits one circuit per group — details that are invisible
+    from the operator expression alone.
+
+    .. code-block:: python
+
+        from qrisp import QuantumFloat, ry, PassManager, visualize, decompose
+        from qrisp.operators import X, Z
+        from qrisp.interface import QrispSimulatorBackend
+        import numpy as np
+
+        def state_prep(theta):
+            qv = QuantumFloat(2)
+            ry(theta, qv)
+            return qv
+
+        H = X(0)*Z(1) + Z(0)*X(1) + X(0)
+
+        # Attach visualize at the end of the pipeline
+        pm = PassManager()
+        pm += decompose()
+        pm += visualize
+        backend = QrispSimulatorBackend(pm=pm)
+
+        ev_function = H.expectation_value(state_prep, backend=backend)
+        result = ev_function(np.pi/2)
+
+    .. code-block:: none
+
+               ┌─────────┐┌───┐┌─┐
+         qv.0: ┤ Ry(π/2) ├┤ H ├┤M├
+               ├─────────┤└┬─┬┘└╥┘
+         qv.1: ┤ Ry(π/2) ├─┤M├──╫─
+               └─────────┘ └╥┘  ║ 
+        cb_15: ═════════════╬═══╩═
+                            ║     
+        cb_16: ═════════════╩═════
+                                
+               ┌─────────┐     ┌─┐                                              
+         qv.0: ┤ Ry(π/2) ├─────┤M├───
+               ├─────────┤┌───┐└╥┘┌─┐
+         qv.1: ┤ Ry(π/2) ├┤ H ├─╫─┤M├
+               └─────────┘└───┘ ║ └╥┘
+        cb_21: ═════════════════╩══╬═
+                                   ║ 
+        cb_22: ════════════════════╩═
+
+    The measured operator contains three terms where two of them
+    commute (``X(0)*Z(1)`` and ``X(0)``) and a third term that doesn't
+    commute (``Z(0)*X(1)``). Non-commuting terms can not be measured
+    simultaneously so we need to distinct simulator calls.
+    
+    Each circuit sent to the simulator is printed to stdout before
+    execution — revealing the state preparation, the change-of-basis
+    gates (e.g. Hadamards to rotate X to Z), and the qubit measurements.
 
     **Updating options after construction**
 
@@ -191,6 +273,28 @@ class QrispSimulatorBackend(Backend):
     {'0100111': 1.0}
     """
 
+    def __init__(
+        self,
+        pm: PassManager | None = None,
+    ) -> None:
+        """
+        Initialize the QrispSimulatorBackend.
+
+        Parameters
+        ----------
+        pm : PassManager or None, optional
+            An optional :class:`~qrisp.circuit.pass_management.PassManager`
+            that is applied to every circuit before it is submitted to the
+            simulator. Defaults to ``None``.
+        """
+        super().__init__(name="QrispSimulator", options=None)
+        if pm is not None and not isinstance(pm, PassManager):
+            raise TypeError(
+                f"Expected a PassManager instance for 'pm', "
+                f"got {type(pm).__name__}."
+            )
+        self._pm = pm
+
     @classmethod
     def _default_options(cls):
         """Return the default runtime options.
@@ -209,6 +313,10 @@ class QrispSimulatorBackend(Backend):
         :attr:`~qrisp.interface.JobStatus.DONE` before :meth:`run_async`
         returns, because the simulator executes synchronously inside
         :meth:`~QrispSimulatorJob.submit`.
+
+        If a :class:`~qrisp.circuit.pass_management.PassManager` was
+        provided at construction time, it is applied to each circuit
+        before simulation.
 
         Parameters
         ----------
@@ -230,6 +338,11 @@ class QrispSimulatorBackend(Backend):
             circuits = [circuits]
         else:
             circuits = list(circuits)
+
+        # Apply the pass manager (if any) to each circuit before simulation
+        if self._pm is not None:
+            circuits = [self._pm.run(c) for c in circuits]
+
         if isinstance(shots, list):
             self._validate_shots_length(shots, circuits)
         n_shots = shots if shots is not None else self.options.get("shots")
