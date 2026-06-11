@@ -21,13 +21,41 @@ import numpy as np
 
 
 def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
+    """Convert a Qrisp QuantumCircuit to a Cirq Circuit.
 
+    Parameters
+    ----------
+    qrisp_circuit : QuantumCircuit
+        The Qrisp QuantumCircuit to convert.
+    cirq_qubits : list[cirq.LineQubit], optional
+        List of Cirq qubits to map to. If None, LineQubits are created
+        automatically. The default is None.
+
+    Returns
+    -------
+    cirq.Circuit
+        A cirq.Circuit equivalent to the input Qrisp circuit.
+
+    Raises
+    ------
+    ImportError
+        If Cirq is not installed.
+    ValueError
+        If a gate is not supported by the converter.
+
+    Notes
+    -----
+    Unknown gates are decomposed by Qrisp's transpiler before conversion.
+    The converter transpiles all unknown gates together, then checks if any
+    new unknown gates appeared.  This repeats until all gates are known
+    or transpilation makes no progress.
+    """
     try:
         from cirq import Circuit, LineQubit
-    except (ModuleNotFoundError, ImportError):
+    except (ModuleNotFoundError, ImportError) as exc:
         raise ImportError(
             "Cirq must be installed to be able to use the Qrisp to Cirq converter."
-        )
+        ) from exc
 
     from cirq import (
         CNOT,
@@ -41,7 +69,6 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
         rx,
         ry,
         rz,
-        inverse,
         I,
         M,
         R,
@@ -51,7 +78,8 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
         GlobalPhaseGate,
     )
 
-    qrisp_cirq_ops_dict = {
+    # known gate mapping
+    gate_map = {
         "cx": CNOT,
         "cz": CZ,
         "swap": SWAP,
@@ -64,15 +92,14 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
         "rz": rz,
         "s": S,
         "t": T,
-        "s_dg": inverse(S),
-        "t_dg": inverse(T),
+        "s_dg": S**-1,
+        "t_dg": T**-1,
         "measure": M,
         "reset": R,
         "id": I,
         "p": ZPowGate,
         "sx": XPowGate,
         "sx_dg": XPowGate,
-        # the converter skips adding the global phase gate for now
         "gphase": None,
         "xxyy": None,
         "rxx": None,
@@ -82,144 +109,354 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
         "qb_dealloc": None,
     }
 
-    """Function to convert a Qrisp circuit to a Cirq circuit."""
-    # get data from Qrisp circuit
-    qrisp_circ_num_qubits = qrisp_circuit.num_qubits()
-    qrisp_circ_ops_data = qrisp_circuit.data
+    # repeatedly transpile unknown gates until only known ones remain
+    def _unknown_names(circ):
+        return {instr.op.name for instr in circ.data if instr.op.name not in gate_map}
+
+    while True:
+        unknown = _unknown_names(qrisp_circuit)
+        if not unknown:
+            break
+
+        def _transpile_predicate(op, _unknown=unknown):
+            return op.name in _unknown
+
+        try:
+            transpiled = qrisp_circuit.transpile(
+                transpile_predicate=_transpile_predicate
+            )
+        except Exception as exc:
+            raise ValueError(
+                f"Gates {unknown} could not be transpiled and are not supported "
+                "by the Qrisp to Cirq converter."
+            ) from exc
+
+        new_unknown = _unknown_names(transpiled)
+        if new_unknown == unknown:
+            names = ", ".join(sorted(unknown))
+            raise ValueError(
+                f"The following gates could not be decomposed into elementary "
+                f"instructions: {names}. Try transpiling the circuit with "
+                f"Qrisp's transpile() method before calling to_cirq(), or "
+                f"use only gates supported natively by the converter."
+            )
+
+        qrisp_circuit = transpiled
 
     # create an empty Cirq circuit
-    cirq_circuit = Circuit()
+    cirq_circ = Circuit()
 
     if cirq_qubits is None:
-        cirq_qubits = [LineQubit(i) for i in range(qrisp_circ_num_qubits)]
+        cirq_qubits = [LineQubit(i) for i in range(len(qrisp_circuit.qubits))]
 
     # create a mapping of Qrisp qubits to Cirq qubits
     qubit_map = {}
     for i, q in enumerate(qrisp_circuit.qubits):
         qubit_map[q] = cirq_qubits[i]
 
-    for instr in qrisp_circ_ops_data:
-        # get the gate name, qubits it is acting on
-        # and parameters if there are any
-        op_i = instr.op.name
-        op_qubits_i = instr.qubits
+    for instr in qrisp_circuit.data:
+        name = instr.op.name
+        qubits = instr.qubits
+        params = instr.op.params if hasattr(instr.op, "params") else []
 
-        if hasattr(instr.op, "params"):
-            params = instr.op.params
-
-        if op_i not in qrisp_cirq_ops_dict:
-            try:
-                # this code block also ends up transpiling a mcx gate
-                # qrisp allows for different types of control state but cirq does not
-                def transpile_predicate(op):
-                    if op.name == op_i:
-                        return True
-                    else:
-                        return False
-
-                transpiled_qc = qrisp_circuit.transpile(
-                    transpile_predicate=transpile_predicate
-                )
-                return convert_to_cirq(transpiled_qc)
-
-            except Exception:
-                raise ValueError(
-                    f"{op_i} gate is not supported by the Qrisp to Cirq converter."
-                )
-
-        if op_i == "gphase":
-            cirq_circuit.append(GlobalPhaseGate(np.exp(1j * instr.op.params[0]))())
+        # global phase
+        if name == "gphase":
+            cirq_circ.append(GlobalPhaseGate(np.exp(1j * params[0]))())
             continue
 
-        # the filter is useful for composite gates that do not have a cirq equivalent and have instr.op.definition
-        cirq_gates_filter = [
-            "cx",
-            "cz",
-            "swap",
-            "h",
-            "x",
-            "y",
-            "z",
-            "rx",
-            "ry",
-            "rz",
-            "s",
-            "t",
-            "s_dg",
-            "t_dg",
-            "measure",
-            "reset",
-            "id",
-            "p",
-            "sx",
-            "sx_dg",
-        ]
+        cirq_gate = gate_map[name]
+        cirq_op_qubits = [qubit_map[q] for q in qubits]
 
-        cirq_op_qubits = [qubit_map[q] for q in op_qubits_i]
+        # gate with no direct Cirq equivalent
+        if cirq_gate is None:
+            # decompose via its .definition circuit (e.g. xxyy, rxx, rzz)
+            if instr.op.definition:
+                cirq_circ.append(convert_to_cirq(instr.op.definition, cirq_op_qubits))
+                continue
+            # qb_alloc/qb_dealloc are bookkeeping ops with no circuit effect
+            if name not in ("qb_alloc", "qb_dealloc"):
+                raise ValueError(
+                    f"{name} gate has no Cirq equivalent and "
+                    "no definition to decompose."
+                )
+            continue
 
-        if (op_i not in cirq_gates_filter) and instr.op.definition:
-            new_circ = instr.op.definition
-            cirq_circuit.append(convert_to_cirq(new_circ, cirq_op_qubits))
+        # controlled operations (multi-qubit)
+        if isinstance(instr.op, ControlledOperation):
+            cs = instr.op.ctrl_state
+            n_ctrl = len(cs)
+            control_qb = qubits[:n_ctrl]
+            target_qb = qubits[n_ctrl:]
+            cirq_ctrl = [qubit_map[q] for q in control_qb]
+            cirq_target = [qubit_map[q] for q in target_qb]
 
-        cirq_gate = qrisp_cirq_ops_dict[op_i]
+            # Build the base gate.  cx/cz are unwrapped to X/Z because
+            # CNOT.controlled() would produce CCNOT instead of CNOT.
+            if name == "sx":
+                base = XPowGate(exponent=0.5)
+            elif name == "sx_dg":
+                base = XPowGate(exponent=-0.5)
+            elif name == "p" and params:
+                base = ZPowGate(exponent=params[0] / np.pi)
+            elif name == "cx":
+                base = X
+            elif name == "cz":
+                base = Z
+            elif params:
+                base = cirq_gate(*params)
+            else:
+                base = cirq_gate
 
-        # for single qubit parametrized gates
-        if (
-            op_i != "id"
-            and instr.op.params
-            and not isinstance(instr.op, ControlledOperation)
-        ):
-            # added op_i != 'id' becasue the identity gate has parameters (0, 0, 0)
-            if op_i == "p":
-                # Cirq does not have a phase gate
-                # for this reason, it has to be dealt with as a special case.
-                # the ZPowGate has a global phase in addition to the
-                # phase exponent. The default is to assume global_shift = 0 in cirq
-                exp_param = params[0]
-                cirq_circuit.append(
-                    ZPowGate(exponent=exp_param / np.pi)(*cirq_op_qubits)
+            # Convert ctrl_state string ("101") to Cirq control_values list
+            ctrl_vals = [int(c) for c in cs]
+
+            controlled = base.controlled(num_controls=n_ctrl, control_values=ctrl_vals)
+            cirq_circ.append(controlled(*cirq_ctrl, *cirq_target))
+            continue
+
+        # sx / sx_dg (non-controlled path; controlled is handled above)
+        if name == "sx":
+            cirq_circ.append(XPowGate(exponent=0.5)(*cirq_op_qubits))
+            continue
+        if name == "sx_dg":
+            cirq_circ.append(XPowGate(exponent=-0.5)(*cirq_op_qubits))
+            continue
+
+        # parametrized single-qubit gates
+        if params and name != "id":
+            if name == "p":
+                cirq_circ.append(ZPowGate(exponent=params[0] / np.pi)(*cirq_op_qubits))
+            else:
+                cirq_circ.append(cirq_gate(*params)(*cirq_op_qubits))
+            continue
+
+        # simple gates (no parameters)
+        cirq_circ.append(cirq_gate(*cirq_op_qubits))
+
+    return cirq_circ
+
+
+def convert_from_cirq(cirq_circuit):
+    """Convert a Cirq Circuit to a Qrisp QuantumCircuit.
+
+    Parameters
+    ----------
+    cirq_circuit : cirq.Circuit
+        The Cirq Circuit to convert.
+
+    Returns
+    -------
+    QuantumCircuit
+        A Qrisp QuantumCircuit equivalent to the input Cirq circuit.
+
+    Raises
+    ------
+    ImportError
+        If Cirq is not installed.
+    ValueError
+        If a gate is not supported by the converter.
+
+    Notes
+    -----
+    Measurement key names from the source Cirq circuit are **not** preserved
+    during conversion.  Cirq's automatic key generation is used instead, so
+    a round-trip (Qrisp -> Cirq -> Qrisp) will lose the original
+    classical-bit associations.
+    """
+    try:
+        import cirq
+    except (ModuleNotFoundError, ImportError) as exc:
+        raise ImportError(
+            "Cirq must be installed to be able to use the Cirq to Qrisp converter."
+        ) from exc
+    from qrisp import QuantumCircuit
+    from qrisp.circuit import standard_operations as ops
+
+    # setup: qubit map and gate lookup table
+    all_qs = cirq_circuit.all_qubits()
+    qc = QuantumCircuit(len(all_qs))
+
+    try:
+        cirq_qubits = sorted(all_qs)
+    except TypeError as exc:
+        types = {type(q).__name__ for q in cirq_circuit.all_qubits()}
+        raise ValueError(
+            f"Mixed qubit types {types} found in the circuit. The converter "
+            f"requires all qubits to be of the same type (e.g. all LineQubit)."
+        ) from exc
+    qubit_map = {q: qc.qubits[i] for i, q in enumerate(cirq_qubits)}
+
+    # Maps Cirq gate types to Qrisp gate *callables* (not instances), so
+    # each use gets a fresh object and no two operations share a gate.
+    gate_map = {
+        cirq.HPowGate: ops.HGate,
+        cirq.CXPowGate: ops.CXGate,
+        cirq.CZPowGate: ops.CZGate,
+        cirq.SwapPowGate: ops.SwapGate,
+        cirq.IdentityGate: ops.IDGate,
+        cirq.ResetChannel: ops.Reset,
+    }
+    # these gate types have no Qrisp equivalent for fractional exponents;
+    # only the full gate (exponent 1, -1, 3, …) can be converted
+    exponent_guarded = {cirq.HPowGate, cirq.CXPowGate, cirq.CZPowGate, cirq.SwapPowGate}
+
+    # main conversion loop
+    for op in cirq_circuit.all_operations():
+        # Extract the gate, unwrapping ControlledOperation if present
+        extra_controls = None
+        if isinstance(op, cirq.ControlledOperation):
+            sub_op = op.sub_operation
+            gate = getattr(sub_op, "gate", None)
+            if gate is None:
+                raise ValueError(
+                    f"Controlled sub-operation {sub_op} is not supported "
+                    "by the Cirq to Qrisp converter."
+                )
+            extra_controls = (list(op.controls), list(sub_op.qubits))
+        else:
+            gate = getattr(op, "gate", None)
+            if gate is None:
+                raise ValueError(
+                    f"Operation {op} without gate attribute is not supported "
+                    "by the Cirq to Qrisp converter."
                 )
 
-            # elif op_i == 'gphase':
-            # global phase gate in Cirq cannot be applied to specific qubits
-            # cirq_circuit.append(GlobalPhaseGate(*params).on())
+        # Global phase in Cirq acts on 0 qubits; Qrisp requires a qubit
+        # argument, so map it to the first available qubit.  Handled
+        # outside the dict because of this special qubit-mapping logic.
+        if isinstance(gate, cirq.GlobalPhaseGate):
+            phi = np.angle(gate.coefficient)
+            if cirq_qubits:
+                qc.append(ops.GPhaseGate(phi), [qubit_map[cirq_qubits[0]]])
+            continue
 
-            elif cirq_gate:
-                gate_instance = cirq_gate(*params)
-                cirq_circuit.append(gate_instance(*cirq_op_qubits))
+        # Measurement uses the circuit's measure() method for automatic
+        # classical-bit allocation.  Cannot go through the gate dict.
+        if isinstance(gate, cirq.MeasurementGate):
+            qrisp_qubits = [qubit_map[q] for q in op.qubits]
+            if len(qrisp_qubits) == 1:
+                qc.measure(qrisp_qubits[0])
+            else:
+                qc.measure(qrisp_qubits)
+            continue
 
-        elif isinstance(instr.op, ControlledOperation):
-            # control and target qubits from qrisp
-            control_qubits = instr.qubits[: len(instr.op.ctrl_state)]
-            target_qubits = instr.qubits[len(instr.op.ctrl_state) :]
-
-            cirq_ctrl_qubits = [qubit_map[q] for q in control_qubits]
-            cirq_target_qubits = [qubit_map[q] for q in target_qubits]
-
-            # verify the contorl and target qubit mapping worked
-            assert cirq_op_qubits == cirq_ctrl_qubits + cirq_target_qubits
-            assert op_qubits_i == control_qubits + target_qubits
-
-            # for 2-qubit controlled operations
-            if len(cirq_op_qubits) <= 3:
-                # if the controlled operation is also parametrized
-                if instr.op.params:
-                    gate_instance = cirq_gate(*params)
-                    cirq_circuit.append(
-                        gate_instance(*cirq_ctrl_qubits, *cirq_target_qubits)
+        # Unwrap nested ControlledGate layers (e.g. cirq.X.controlled()).
+        # Cannot live in the dict because it needs to recursively peel
+        # control layers off before converting the innermost gate.
+        ctrl_layers = []
+        inner_gate = gate
+        while isinstance(inner_gate, cirq.ControlledGate):
+            cv = inner_gate.control_values
+            ctrl_state = ""
+            for v in cv:
+                if len(v) != 1:
+                    raise ValueError(
+                        f"Multi-valued control {v} in {inner_gate} not supported."
                     )
-                else:
-                    cirq_circuit.append(
-                        cirq_gate(*cirq_ctrl_qubits, *cirq_target_qubits)
+                val = v[0]
+                if val not in (0, 1):
+                    raise ValueError(
+                        f"Unsupported control value {val} in {inner_gate}."
                     )
+                ctrl_state += str(val)
+            ctrl_layers.append((inner_gate.num_controls(), ctrl_state))
+            inner_gate = inner_gate.sub_gate
+
+        # Convert the innermost gate to a Qrisp operation
+        qrisp_op = None
+
+        # Dict lookup by exact type for gates whose Qrisp equivalent is
+        # fixed or follows a simple (attr, multiplier) pattern.
+        converter = gate_map.get(type(inner_gate))
+        if converter is not None:
+            if type(inner_gate) in exponent_guarded:
+                if not np.isclose(inner_gate.exponent % 2, 1.0):
+                    raise ValueError(
+                        f"Only the full {type(inner_gate).__name__} "
+                        f"(exponent 1, -1, 3, ...) can be converted, "
+                        f"not the fractional-power variant with exponent "
+                        f"{inner_gate.exponent} ({inner_gate})."
+                    )
+            qrisp_op = converter()
+
+        # XPowGate uses isinstance to catch cirq.X (type _PauliX, a
+        # subclass).  The exponent selects X, SX, SX†, or generic RX.
+        elif isinstance(inner_gate, cirq.XPowGate):
+            exp = inner_gate.exponent
+            if isinstance(inner_gate, cirq.Rx):
+                qrisp_op = ops.RXGate(exp * np.pi)
+            elif np.isclose(exp % 4, 1.0):
+                qrisp_op = ops.XGate()
+            elif np.isclose(exp % 4, 0.5):
+                qrisp_op = ops.SXGate()
+            elif np.isclose(exp % 4, 3.5):
+                qrisp_op = ops.SXDGGate()
+            else:
+                qrisp_op = ops.RXGate(exp * np.pi)
+
+        # YPowGate: same subclass issue with cirq.Y (type _PauliY).
+        elif isinstance(inner_gate, cirq.YPowGate):
+            exp = inner_gate.exponent
+            if isinstance(inner_gate, cirq.Ry):
+                qrisp_op = ops.RYGate(exp * np.pi)
+            elif np.isclose(exp % 4, 1.0):
+                qrisp_op = ops.YGate()
+            else:
+                qrisp_op = ops.RYGate(exp * np.pi)
+
+        # ZPowGate: catches cirq.Z (type _PauliZ) and exponent-based
+        # variants like S (exp=0.5), T (exp=0.25), etc.
+        elif isinstance(inner_gate, cirq.ZPowGate):
+            exp = inner_gate.exponent
+            if isinstance(inner_gate, cirq.Rz):
+                qrisp_op = ops.RZGate(exp * np.pi)
+            elif np.isclose(exp % 4, 1.0):
+                qrisp_op = ops.ZGate()
+            elif np.isclose(exp % 4, 0.5):
+                qrisp_op = ops.SGate()
+            elif np.isclose(exp % 4, 3.5):
+                qrisp_op = ops.SGate().inverse()
+            elif np.isclose(exp % 4, 0.25):
+                qrisp_op = ops.TGate()
+            elif np.isclose(exp % 4, 3.75):
+                qrisp_op = ops.TGate().inverse()
+            else:
+                qrisp_op = ops.PGate(exp * np.pi)
 
         else:
-            # for simple single qubit gates
-            if op_i == "sx":
-                cirq_circuit.append(XPowGate(exponent=0.5)(*cirq_op_qubits))
-            elif op_i == "sx_dg":
-                cirq_circuit.append(inverse(XPowGate(exponent=0.5)(*cirq_op_qubits)))
-            elif cirq_gate:
-                cirq_circuit.append(cirq_gate(*cirq_op_qubits))
+            raise ValueError(
+                f"Gate {gate} is not supported by the Cirq to Qrisp converter."
+            )
 
-    return cirq_circuit
+        # Wrap any ControlledGate layers (inside-out)
+        for num_ctrl, ctrl_state in reversed(ctrl_layers):
+            qrisp_op = ControlledOperation(
+                base_operation=qrisp_op,
+                num_ctrl_qubits=num_ctrl,
+                ctrl_state=ctrl_state,
+            )
+
+        # Wrap any outer ControlledOperation and append
+        if extra_controls is not None:
+            controls, sub_qubits = extra_controls
+            cv = op.control_values
+            ctrl_state = ""
+            for v in cv:
+                if len(v) != 1:
+                    raise ValueError(f"Multi-valued control {v} in {op} not supported.")
+                val = v[0]
+                if val not in (0, 1):
+                    raise ValueError(f"Unsupported control value {val} in {op}.")
+                ctrl_state += str(val)
+            qrisp_op = ControlledOperation(
+                base_operation=qrisp_op,
+                num_ctrl_qubits=len(controls),
+                ctrl_state=ctrl_state,
+            )
+            qrisp_qubits = [qubit_map[q] for q in controls + sub_qubits]
+        else:
+            qrisp_qubits = [qubit_map[q] for q in op.qubits]
+
+        qc.append(qrisp_op, qrisp_qubits)
+
+    return qc
