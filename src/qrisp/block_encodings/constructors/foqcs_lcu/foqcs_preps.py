@@ -35,7 +35,6 @@ def foqcs_prep_heisenberg(
     conjugate: bool = False
 ) -> None:
     r"""
-
     FOQCS-LCU state preparation, based on the application of the same name in https://arxiv.org/pdf/2507.20887.
     Implements the FOQCS-LCU PREP oracle for the Heisenberg Hamiltonian by preparing selector amplitudes
     for local X/Y/Z fields and nearest-neighbor XX/YY/ZZ couplings, then mapping them into the

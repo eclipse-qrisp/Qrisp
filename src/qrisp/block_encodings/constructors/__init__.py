@@ -19,8 +19,8 @@
 from .from_array import build_from_array
 from .from_eye import build_from_eye
 from .from_lcu import build_from_lcu
-from .from_foqcs_lcu_prep import build_from_foqcs_lcu_prep
-from .from_foqcs_lcu_operator import build_from_foqcs_lcu_operator
+from .foqcs_lcu.from_foqcs_lcu_prep import build_from_foqcs_lcu_prep
+from .foqcs_lcu.from_foqcs_lcu_operator import build_from_foqcs_lcu_operator
 from .from_operator import build_from_operator
 from .from_projector import build_from_projector
 

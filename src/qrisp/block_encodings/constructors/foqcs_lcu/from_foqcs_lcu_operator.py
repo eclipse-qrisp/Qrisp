@@ -18,7 +18,7 @@
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.operators import QubitOperator
-from qrisp.block_encodings.constructors.from_foqcs_lcu_prep import build_from_foqcs_lcu_prep
+from qrisp.block_encodings.constructors.foqcs_lcu.from_foqcs_lcu_prep import build_from_foqcs_lcu_prep
 
 
 def build_from_foqcs_lcu_operator(
