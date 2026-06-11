@@ -1053,7 +1053,7 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
 
     """
 
-    if not isinstance(mult_int, (int, float)):
+    if not isinstance(mult_int, (int, float, np.integer, np.floating)):
         raise Exception(
             "Quantum inplace multiplication is restricted to classical values due to reversibility constraints"
         )

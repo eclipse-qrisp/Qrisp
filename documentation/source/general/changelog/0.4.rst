@@ -75,7 +75,7 @@ For remote backend queries, Qrisp now uses the network interface developed in th
 Docker Container
 ----------------
 
-Using the new network interface, we set up a :ref:`Docker container with a bunch of simulators <DockerSimulators>`. This gives you access to 8 new simulators without having to go through the hassle of installing and converting the compilation results. You can simply call ``docker pull`` and ``docker run`` and that's it!
+Using the new network interface, we set up a Docker container with a bunch of simulators. This gives you access to 8 new simulators without having to go through the hassle of installing and converting the compilation results. You can simply call ``docker pull`` and ``docker run`` and that's it!
 
 Minor features
 --------------

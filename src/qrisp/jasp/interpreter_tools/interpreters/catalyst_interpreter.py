@@ -561,7 +561,7 @@ def process_cond(eqn, context_dic):
     else:
 
         unflattened_outvalues = eqn.primitive.bind(
-            *invalues, branches=branch_list, linear=False
+            *invalues, branches=tuple(branch_list), linear=False
         )
 
     insert_outvalues(eqn, context_dic, unflattened_outvalues)

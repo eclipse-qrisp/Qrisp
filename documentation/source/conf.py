@@ -106,6 +106,13 @@ templates_path = ["_templates"]
 exclude_patterns = [
     "**/.ipynb_checkpoints",
 ]
+
+# Map external documentation inventories so that cross-references to Python
+# standard-library symbols (e.g. :exc:`RuntimeError`, :class:`~collections.abc.Mapping`)
+# resolve to clickable links pointing at the official Python 3 documentation.
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+}
 nbsphinx_timeout = 60
 
 master_doc = "index"

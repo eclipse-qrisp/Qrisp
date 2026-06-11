@@ -16,64 +16,156 @@
 ********************************************************************************
 """
 
-from qrisp.interface import BackendClient
+"""This module defines :class:`VirtualBackend` and its associated :class:`VirtualJob`."""
+
+import warnings
+from typing import Sequence, cast
+
+from qrisp.circuit.quantum_circuit import QuantumCircuit
+from qrisp.interface.backend import Backend
+from qrisp.interface.job import Job, JobResult, JobStatus
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
-class VirtualBackend(BackendClient):
+class VirtualJob(Job):
     """
-    This class provides a virtual backend for circuit execution.
-    Virtual means that the server is running on the same machine as a separate
-    Python thread. This structure allows setting up convenient wrappers for foreign/
-    modified circuit dispatching code.
+    A synchronous :class:`~qrisp.interface.Job` produced by :class:`VirtualBackend`.
 
-    Circuits can be run using ``virtual_backend_instance.run(qc)``.
-    The function that should be used to run a circuit can be specified during
-    construction using the ``run_func`` parameter.
+    Execution is performed inline inside :meth:`submit` by calling the
+    user-provided ``run_func`` once per circuit with the circuit's QASM
+    representation, shot count, and token.
+    """
 
+    def __init__(
+        self,
+        backend: "VirtualBackend",
+        circuits: Sequence[QuantumCircuit],
+        shots: int | list[int] | None,
+        token: str,
+    ):
+        """Initialise the job with the backend, normalised circuit list, shot count, and token."""
+        super().__init__(backend=backend)
+        self._circuits = circuits
+        self._shots = shots
+        self._token = token
+        self._result_data = None
+
+    # ------------------------------------------------------------------
+    # Abstract interface
+    # ------------------------------------------------------------------
+
+    def submit(self) -> None:
+        """Execute all circuits synchronously via the user-provided ``run_func``.
+
+        Each circuit is serialised to QASM and passed to ``run_func`` along
+        with the shot count and token.  The collected counts dictionaries
+        are wrapped in a :class:`~qrisp.interface.JobResult`.
+        """
+        self._last_known_status = JobStatus.RUNNING
+        try:
+            run_func = self._backend.run_func
+            if isinstance(self._shots, list):
+                counts_list = [
+                    run_func(circuit.qasm(), s, self._token)
+                    for circuit, s in zip(self._circuits, self._shots)
+                ]
+            else:
+                counts_list = [
+                    run_func(circuit.qasm(), self._shots, self._token)
+                    for circuit in self._circuits
+                ]
+            self._result_data = JobResult(counts_list)
+            self._last_known_status = JobStatus.DONE
+        except Exception as exc:
+            self._failure_cause = exc
+            self._last_known_status = JobStatus.ERROR
+
+    def result(self, timeout: float | None = None) -> JobResult:
+        """Return the :class:`~qrisp.interface.JobResult`.
+
+        Because execution is synchronous the result is already available as
+        soon as :meth:`submit` has been called.  The *timeout* parameter is
+        accepted for interface compatibility but has no effect.
+
+        Returns
+        -------
+        JobResult
+
+        Raises
+        ------
+        JobFailureError
+            If the user-provided ``run_func`` raised an exception.
+        """
+        self._raise_for_status(self._last_known_status)
+        return cast(JobResult, self._result_data)
+
+    def cancel(self) -> bool:
+        """Return ``False``: synchronous jobs cannot be cancelled after submission."""
+        return False
+
+    def status(self) -> JobStatus:
+        """Return the current :class:`~qrisp.interface.JobStatus` of the job."""
+        return self._last_known_status
+
+
+class VirtualBackend(Backend):
+    """
+    A :class:`~qrisp.interface.Backend` that wraps a user-provided circuit
+    execution function.
+
+    This class replaces the legacy ``VirtualBackend`` (which depended on the
+    now-removed ``BackendClient`` / ``BackendServer`` infrastructure).  It
+    follows the standard :class:`~qrisp.interface.Backend` interface and
+    executes circuits synchronously by calling the user-supplied
+    ``run_func`` for each circuit.
+
+    .. deprecated:: 0.8
+
+        ``VirtualBackend`` is deprecated. New code should subclass
+        :class:`~qrisp.interface.Backend` directly instead. See
+        :class:`~qrisp.interface.simulators.qrisp_simulator_backend.QrispSimulatorBackend`
+        for a reference implementation.
 
     Parameters
     ----------
-    run_func : function
-        A function that recieves a QuantumCircuit, an integer specifiying the amount of
-        shots and a token in the form of a string. It returns the counts as a dictionary
-        of bitstrings.
+    run_func : callable
+        A function with signature ``run_func(qasm_str, shots, token)`` that
+        receives the circuit's QASM string, an integer shot count (or
+        ``None``), and a token string.  It must return a ``dict`` mapping
+        bitstring outcomes to counts (or probabilities when ``shots`` is
+        ``None``).
     name : str, optional
-        A name for the virtual backend. The default is None.
-    port : int, optional
-        The port on which to listen. The default is None.
+        A human-readable name for this backend.  Defaults to
+        ``"VirtualBackend"``.
 
     Examples
     --------
 
+    We set up a ``VirtualBackend`` that prints the received circuit and
+    returns the results of the QASM simulator.  It is recommended that
+    ``run_func`` provides a default value of ``None`` for the ``shots``
+    parameter, substituting its own default::
 
-    We set up a VirtualBackend, which prints the received QuantumCircuit and returns the
-    results of the QASM simulator. It is required that the `run_func` specifies a default
-    value of `None` for the `shots` parameter, substituting its own default. ::
-
-
-        def run_func(qasm_str, shots = None, token = ""):
+        def run_func(qasm_str, shots=None, token=""):
             if shots is None:
                 shots = 1000
 
             from qiskit import QuantumCircuit
 
             qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
-
             print(qiskit_qc)
 
             from qiskit_aer import AerSimulator
             qiskit_backend = AerSimulator()
 
-            #Run Circuit on the Qiskit backend
-            return qiskit_backend.run(qiskit_qc, shots = shots).result().get_counts()
-
+            return qiskit_backend.run(qiskit_qc, shots=shots).result().get_counts()
 
     >>> from qrisp.interface import VirtualBackend
     >>> example_backend = VirtualBackend(run_func)
     >>> from qrisp import QuantumFloat
     >>> qf = QuantumFloat(3)
     >>> qf[:] = 4
-    >>> qf.get_measurement(backend = example_backend)
+    >>> qf.get_measurement(backend=example_backend)
                  ┌─┐
     qf.0:   ─────┤M├──────
                  └╥┘┌─┐
@@ -87,43 +179,64 @@ class VirtualBackend(BackendClient):
                      0  ║
     cb_2: 1/════════════╩═
     {4: 1.0}
-
     """
 
-    def __init__(self, run_func, port=None):
+    def __init__(self, run_func, name=None):
+        warnings.warn(
+            "DeprecationWarning: VirtualBackend is deprecated and will be removed in "
+            "a later release of Qrisp. Please subclass the ``Backend`` abstract class "
+            "to implement custom backends.",
+            QrispDeprecationWarning,
+        )
+        super().__init__(name=name or "VirtualBackend")
+        self.run_func = run_func
 
-        from qrisp.interface import BackendServer
+    # ------------------------------------------------------------------
+    # Backend interface
+    # ------------------------------------------------------------------
 
-        self.port = port
-        if port is None:
-            self.run_func = run_func
-        else:
-            # Create BackendServer
-            self.backend_server = BackendServer(run_func, "localhost", port=port)
-            # Run the server (runs in the background)
-            self.backend_server.start()
-            # Connect client
+    @classmethod
+    def _default_options(cls):
+        """Return the default runtime options.
 
-            super().__init__(api_endpoint="localhost", port=port)
-
-    def run(self, qc, shots=None, token=""):
+        ``shots=None`` enables analytic (exact probability) execution.
+        ``token`` is forwarded to the user-provided ``run_func``.
         """
-        Executes the function run_func specified at object creation.
+        return {"shots": None, "token": ""}
+
+    def run_async(
+        self,
+        circuits: QuantumCircuit | Sequence[QuantumCircuit],
+        shots: int | list[int] | None = None,
+    ) -> VirtualJob:
+        """Submit one or more circuits for execution via the user-provided ``run_func``.
+
+        This method returns a :class:`VirtualJob` that is already
+        :attr:`~qrisp.interface.JobStatus.DONE` before :meth:`run_async`
+        returns, because execution is synchronous.
 
         Parameters
         ----------
-        qc : QuantumCircuit
-            The QuantumCircuit to run.
-        shots : int, optional
-            The amount of shots to perform.
+        circuits : QuantumCircuit or list[QuantumCircuit]
+            One circuit or a sequence of circuits to execute.
+
+        shots : int or None, optional
+            Number of shots.  ``None`` selects analytic execution.
+            If not provided, the backend's ``shots`` option is used.
 
         Returns
         -------
-        res : dict
-            A dictionary containing the measurement results.
-
+        VirtualJob
         """
-        if self.port is None:
-            return self.run_func(qc.qasm(), shots, token)
+        self._check_circuit_limit(circuits)
+        if isinstance(circuits, QuantumCircuit):
+            circuits = [circuits]
         else:
-            return super().run(qc, shots)
+            circuits = list(circuits)
+        if isinstance(shots, list):
+            self._validate_shots_length(shots, circuits)
+        n_shots = shots if shots is not None else self.options.get("shots")
+        token = self.options.get("token", "")
+        job = VirtualJob(backend=self, circuits=circuits, shots=n_shots, token=token)
+        job.submit()
+        return job

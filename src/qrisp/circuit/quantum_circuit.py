@@ -15,7 +15,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 
-This module contains the QuantumCircuit class, which is the main class to describe quantum circuits in Qrisp.
+This module contains the main class to describe quantum circuits in Qrisp.
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ from qiskit.qasm3 import dumps as dumps_qasm3
 from qiskit.visualization import circuit_drawer
 
 import qrisp.circuit.standard_operations as ops
-from qrisp.circuit import Clbit, Instruction, Operation, Qubit
+from qrisp.circuit import Clbit, Instruction, Operation, Qubit, U3Gate
 from qrisp.misc import (
     cnot_count,
     cnot_depth_indicator,
@@ -43,18 +43,43 @@ from qrisp.misc import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence, Set
-    from typing import TypeAlias
 
     from qrisp.circuit.operation import ControlledOperation, PTControlledOperation
+    from qrisp.interface import BackendLike, MeasurementResult
     from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
         ParityHandle,
     )
+    from qrisp.typing import ClbitLike, FloatLike, QubitLike
 
-    # TODO: These should be moved into a separate module (which does not exist yet)
-    QubitLike: TypeAlias = Qubit | int | Sequence[Qubit | int]
-    ClbitLike: TypeAlias = Clbit | int | Sequence[Clbit | int]
 
 TO_GATE_COUNTER = np.zeros(1)
+
+
+def _check_qubit_locks(qubits: list, operation) -> None:
+    """Raise RuntimeError if any qubit is locked or perm-locked for this operation."""
+    critical_qubits = [qb for qb in qubits if qb.lock]
+    if critical_qubits:
+        msg = getattr(critical_qubits[0], "lock_message", None)
+        if msg:
+            raise RuntimeError(msg)
+        raise RuntimeError(
+            f"Tried to perform operation {operation.name} "
+            f"on locked qubit {critical_qubits[0]}"
+        )
+
+    critical_qubits = [qb for qb in qubits if qb.perm_lock]
+    if critical_qubits:
+        from qrisp.permeability import is_permeable
+
+        critical_qubit_indices = [qubits.index(qb) for qb in critical_qubits]
+        if not is_permeable(operation, critical_qubit_indices):
+            msg = getattr(critical_qubits[0], "perm_lock_message", None)
+            if msg:
+                raise RuntimeError(msg)
+            raise RuntimeError(
+                f"Tried to perform non-permeable operation {operation.name} on"
+                f" perm_locked qubit {critical_qubits[0]}"
+            )
 
 
 class QuantumCircuit:
@@ -1062,8 +1087,8 @@ class QuantumCircuit:
     def compose(
         self,
         other: QuantumCircuit,
-        qubits: QubitLike | None = None,
-        clbits: ClbitLike | None = None,
+        qubits: Sequence[QubitLike] | None = None,
+        clbits: Sequence[ClbitLike] | None = None,
         inplace: bool = True,
     ) -> QuantumCircuit | None:
         """
@@ -1074,12 +1099,12 @@ class QuantumCircuit:
         other : QuantumCircuit
             The QuantumCircuit to be appended to self.
 
-        qubits : QubitLike | None, optional
+        qubits : Sequence[QubitLike] | None, optional
             The qubits to be used for the composition.
             If None, the qubits of self and other will be matched by their identifiers.
             The default is None.
 
-        clbits : ClbitLike | None, optional
+        clbits : Sequence[ClbitLike] | None, optional
             The classical bits to be used for the composition.
             If None, the clbits of self and other will be matched by their identifiers.
             The default is None.
@@ -1179,7 +1204,8 @@ class QuantumCircuit:
         ----------
         **kwargs : dict
             Keyword arguments forwarded to Qiskit's
-            `circuit_drawer <https://docs.quantum.ibm.com/api/qiskit/qiskit.visualization.circuit_drawer>`_
+            `circuit_drawer
+            <https://docs.quantum.ibm.com/api/qiskit/qiskit.visualization.circuit_drawer>`_
             function.
 
         Returns
@@ -1246,7 +1272,7 @@ class QuantumCircuit:
         qiskit_qc = self.to_qiskit()
         try:
             return qiskit_qc.qasm(formatted, filename, encoding)
-        except:
+        except AttributeError:
             try:
                 return dumps_qasm2(qiskit_qc)
             except (QASM2ExportError, TypeError):
@@ -1314,6 +1340,7 @@ class QuantumCircuit:
 
         """
 
+        _ = formatted  # accepted for backward compatibility, has no effect
         qiskit_qc = self.to_qiskit()
         qasm_str = dumps_qasm3(qiskit_qc)
 
@@ -1559,7 +1586,6 @@ class QuantumCircuit:
         """
         return len(self.qubits)
 
-    # TODO: Refactor the `append` method
     # Interface for appending instructions
     # Can take either instruction or operations objects
     # Can apply multiple operations, if given the correct qubits
@@ -1569,29 +1595,134 @@ class QuantumCircuit:
     # execute qc.append(CXGate(), [[qubit1, qubit3, qubit5], [qubit2, qubit4, qubit6]])
     # If it is required to apply a cx gate to the qubit pairs (1,2), (1,3), (1,4)
     # execute qc.append(CXGate(), [qubit_1, [qubit2, qubit3, qubit4]])
+
+    def _append_xla_fast_path(
+        self,
+        operation_or_instruction: Operation | Instruction,
+        qubits: list,
+        clbits: list,
+    ) -> None:
+        """Handle the XLA accelerated compilation fast path."""
+        if isinstance(operation_or_instruction, Instruction):
+            self.data.append(operation_or_instruction)
+            return
+        if self.xla_mode <= 1:
+            if not isinstance(qubits, list):
+                raise TypeError(
+                    f"Operation {operation_or_instruction.name} was appended with "
+                    f"{qubits} in accelerated compilation mode "
+                    "(allowed is type List[Qubit])."
+                )
+            for qb in qubits:
+                if not isinstance(qb, Qubit):
+                    raise TypeError(
+                        f"Operation {operation_or_instruction.name} was appended with "
+                        f"{qubits} in accelerated compilation mode "
+                        "(allowed is type List[Qubit])."
+                    )
+        self.data.append(Instruction(operation_or_instruction, qubits, clbits))
+
+    def _apply_broadcast(
+        self,
+        operation: Operation,
+        qubits: list,
+        clbits: list,
+        qb_argument_is_list: list,
+        cb_argument_is_list: list,
+    ) -> None:
+        """Apply the operation once per broadcast index."""
+        if qb_argument_is_list:
+            arg_list_len = len(qubits[qb_argument_is_list[0]])
+        else:
+            arg_list_len = len(clbits[cb_argument_is_list[0]])
+
+        for arg_list_index in qb_argument_is_list:
+            if len(qubits[arg_list_index]) != arg_list_len:
+                raise ValueError(
+                    f"Don't know how to combine appending arguments {qubits + clbits}"
+                )
+
+        for arg_list_index in cb_argument_is_list:
+            if len(clbits[arg_list_index]) != arg_list_len:
+                raise ValueError(
+                    f"Don't know how to combine appending arguments {qubits + clbits}"
+                )
+
+        for i in range(arg_list_len):
+            qubit_constellation = [
+                qubits[j][i] if j in qb_argument_is_list else qubits[j]
+                for j in range(len(qubits))
+            ]
+            clbit_constellation = [
+                clbits[j][i] if j in cb_argument_is_list else clbits[j]
+                for j in range(len(clbits))
+            ]
+            QuantumCircuit.append(
+                self, operation, qubit_constellation, clbit_constellation
+            )
+
+    def _resolve_qubits(self, qubits: list, operation: Operation) -> list:
+        """Validate qubit count and membership; return the resolved qubit list."""
+        if len(qubits) != operation.num_qubits:
+            raise ValueError(
+                f"Provided incorrect amount ({len(qubits)}) of qubits for operation "
+                f"{operation.name} (requires {operation.num_qubits})"
+            )
+
+        if len(set(qubits)) != len(qubits):
+            raise ValueError(
+                f"Duplicate qubit arguments in {qubits} for operation {operation.name}"
+            )
+
+        # Comparing object identity first is fast; falling back to identifier comparison
+        # handles qubits equal by name but not by identity (e.g. after unpickling).
+        if not set(qubits).issubset(set(self.qubits)):
+            op_identifiers = [qb.identifier for qb in qubits]
+            qc_identifiers = [qb.identifier for qb in self.qubits]
+
+            if not set(op_identifiers).issubset(qc_identifiers):
+                raise ValueError(
+                    f"Instruction Qubits {set(qubits) - set(self.qubits)} "
+                    "not present in circuit"
+                )
+
+            qubits = [
+                self.qubits[qc_identifiers.index(op_id)] for op_id in op_identifiers
+            ]
+
+        return qubits
+
     def append(
         self,
         operation_or_instruction: Operation | Instruction,
-        qubits: Sequence[Qubit] | None = None,
-        clbits: Sequence[Clbit] | None = None,
+        qubits: Sequence[QubitLike] | None = None,
+        clbits: Sequence[ClbitLike] | None = None,
     ):
         r"""
-        Method for appending Operation or Instruction objects to the QuantumCircuit.
+        Append an :class:`.Operation` or :class:`.Instruction` to this QuantumCircuit.
 
-        The parameter qubits can be an integer, a list of integers, a Qubit object or a
-        list of Qubit objects. The same is valid for the clbit parameter.
+        Each qubit or classical-bit argument may be specified as a :class:`.Qubit` /
+        :class:`.Clbit` object, an integer index into ``self.qubits`` / ``self.clbits``,
+        or a (possibly nested) list thereof.  When a list argument contains *n* elements,
+        the operation is broadcast and applied *n* times — once per element — with the
+        remaining scalar arguments reused for every application.
 
-        If given an Instruction object instead of an Operation, the given qubit and
-        clbit parameters are ignored.
+        If an :class:`.Instruction` is given instead of an :class:`.Operation`, the
+        *qubits* and *clbits* arguments are ignored; the instruction's own qubit and
+        classical-bit lists are used directly.
 
         Parameters
         ----------
         operation_or_instruction : Operation or Instruction
-            The operation or instruction to be appended to the QuantumCircuit.
-        qubits : integer, list[integer], Qubit, list[Qubit], optional
-            The qubits on which to apply the operation. The default is [].
-        clbits : integer, list[integer], Clbit, list[Clbit], optional
-            The classical bits on which to apply the operation. The default is [].
+            The operation or instruction to append.
+        qubits : QubitLike, optional
+            The qubit(s) on which to apply the operation. The default is ``[]``.
+        clbits : ClbitLike, optional
+            The classical bit(s) on which to apply the operation. The default is ``[]``.
+
+        Returns
+        -------
+        None
 
         Examples
         --------
@@ -1599,11 +1730,10 @@ class QuantumCircuit:
         We create a $H^{\otimes 4}$ gate and append it to every second qubit of another
         QuantumCircuit:
 
-
         >>> from qrisp import QuantumCircuit
-        >>> multi_h_qc = QuantumCircuit(4, name = "multi h")
+        >>> multi_h_qc = QuantumCircuit(4)
         >>> multi_h_qc.h(range(4))
-        >>> multi_h = multi_h_qc.to_gate()
+        >>> multi_h = multi_h_qc.to_gate(name="multi h")
         >>> qc = QuantumCircuit(8)
         >>> qc.append(multi_h, [2*i for i in range(4)])
         >>> print(qc)
@@ -1632,216 +1762,74 @@ class QuantumCircuit:
         qubits = [] if qubits is None else qubits
         clbits = [] if clbits is None else clbits
 
-        # Check the type of the instruction/operation
-        # from qrisp.circuit import Instruction, Operation
-
         if self.xla_mode > 0:
-            if isinstance(operation_or_instruction, Instruction):
-                self.data.append(operation_or_instruction)
-            else:
-                if self.xla_mode <= 1:
-                    if not isinstance(qubits, list):
-                        raise Exception(
-                            f"Operation {operation_or_instruction.name} was appended with "
-                            f"{qubits} in accelerated compilation mode "
-                            "(allowed is type List[Qubit])."
-                        )
-                    for qb in qubits:
-                        if not isinstance(qb, Qubit):
-                            raise Exception(
-                                f"Operation {operation_or_instruction.name} was appended with "
-                                f"{qubits} in accelerated compilation mode "
-                                "(allowed is type List[Qubit])."
-                            )
-                self.data.append(Instruction(operation_or_instruction, qubits, clbits))
+            self._append_xla_fast_path(operation_or_instruction, qubits, clbits)
             return
 
         if isinstance(operation_or_instruction, Instruction):
             instruction = operation_or_instruction
             self.append(instruction.op, instruction.qubits, instruction.clbits)
-
             return
 
-        elif isinstance(operation_or_instruction, Operation):
-            operation = operation_or_instruction
-
-        else:
-            raise Exception(
-                "Tried to append object type "
-                + str(type(operation_or_instruction))
-                + " which is neither Instruction nor Operation"
+        if not isinstance(operation_or_instruction, Operation):
+            raise TypeError(
+                f"Tried to append object of type {type(operation_or_instruction)} "
+                "which is neither Instruction nor Operation"
             )
 
-        # Convert arguments (possibly integers) to list
-        # The logic here is that the list structure gets preserved ie.
-        # [[0, 1] ,2] ==> [[qubit_0, qubit_1], qubit_2]
-        # unless the input is a single qubit/integer.
-        # In this case we have
-        # qubit_0 ==> [qubit_0]
-
+        operation = operation_or_instruction
+        # Convert arguments (possibly integers) to lists of Qubit / Clbit objects.
+        # The list structure is preserved:
+        #   [[0, 1], 2]  →  [[qubit_0, qubit_1], qubit_2]
+        # A scalar input is wrapped in a list:
+        #   qubit_0  →  [qubit_0]
         qubits = convert_to_qb_list(qubits, circuit=self)
         clbits = convert_to_cb_list(clbits, circuit=self)
 
-        # Now we check which of the arguments is a list
-        # For user convenience we allow to execute multiple gates at the same time
-        # This comes with some restrictions where the operation to execute could be
-        # ambigous.
-        # When appending n gates with a single call of this function,
-        # each qubit argument must either be a list of n qubits or a single qubit
+        # Identify which positional arguments are lists (broadcast dimensions).
+        # For user convenience, a single append() call can apply the same operation
+        # n times by passing a list of n qubits for one or more arguments.
+        # Every list argument must have the same length n; scalar arguments are
+        # reused for all n applications.
+        qb_argument_is_list = [i for i, qb in enumerate(qubits) if isinstance(qb, list)]
+        cb_argument_is_list = [i for i, cb in enumerate(clbits) if isinstance(cb, list)]
 
-        # First we check which arguments are lists
-        qb_argument_is_list = []
-        for i in range(len(qubits)):
-            if isinstance(qubits[i], list):
-                qb_argument_is_list.append(i)
-
-        # Same with classical bits
-        cb_argument_is_list = []
-        for i in range(len(clbits)):
-            if isinstance(clbits[i], list):
-                cb_argument_is_list.append(i)
-
-        if qb_argument_is_list + cb_argument_is_list:
-            # Determine the amount of gates to be applied
-            if qb_argument_is_list:
-                arg_list_len = len(qubits[qb_argument_is_list[0]])
-            else:
-                arg_list_len = len(clbits[cb_argument_is_list[0]])
-
-            # Check that indeed every list argument that has been given has
-            # arg_list_len entries
-            for arg_list_index in qb_argument_is_list:
-                if len(qubits[arg_list_index]) != arg_list_len:
-                    raise Exception(
-                        "Don't know how to combine appending arguments "
-                        + str((qubits + clbits))
-                    )
-
-            for arg_list_index in cb_argument_is_list:
-                if len(clbits[arg_list_index]) != arg_list_len:
-                    raise Exception(
-                        "Don't know how to combine appending arguments "
-                        + str((qubits + clbits))
-                    )
-
-            # Create argument constellations
-            for i in range(arg_list_len):
-                qubit_constellation = []
-                for j in range(len(qubits)):
-                    if j in qb_argument_is_list:
-                        qubit_constellation.append(qubits[j][i])
-                    else:
-                        qubit_constellation.append(qubits[j])
-
-                clbit_constellation = []
-                for j in range(len(clbits)):
-                    if j in cb_argument_is_list:
-                        clbit_constellation.append(clbits[j][i])
-                    else:
-                        clbit_constellation.append(clbits[j])
-
-                # Append instruction (qubit_constellation and clbit_constellation) now
-                # contains no lists but only qubit/clbit arguments
-                QuantumCircuit.append(
-                    self, operation, qubit_constellation, clbit_constellation
-                )
-
+        if qb_argument_is_list or cb_argument_is_list:
+            self._apply_broadcast(
+                operation, qubits, clbits, qb_argument_is_list, cb_argument_is_list
+            )
             return
 
-        if len(qubits) != operation.num_qubits:
-            raise Exception(
-                f"Provided incorrect amount ({len(qubits)}) of qubits for operation "
-                + str(operation.name)
-                + f" (requires {operation.num_qubits})"
-            )
+        qubits = self._resolve_qubits(qubits, operation)
 
         if len(clbits) != operation.num_clbits:
-            raise Exception(
+            raise ValueError(
                 f"Provided incorrect amount ({len(clbits)}) of clbits for operation "
-                + str(operation.name)
-                + f" (requires {operation.num_clbits})"
+                f"{operation.name} (requires {operation.num_clbits})"
             )
 
-        if len(set(qubits)) != len(qubits):
-            raise Exception(
-                f"Duplicate qubit arguments in {qubits} for operation {operation.name}"
-            )
+        if len({cb.identifier for cb in clbits}) != len(clbits):
+            raise ValueError("Duplicate clbit arguments")
 
-        # Building up the list of identifiers seems to slow down this function
-        # We therefore check first if the qubit objects match and if this is not the
-        # case we check if the identifiers match
-        if not set(qubits).issubset(set(self.qubits)):
-            op_identifiers = [qb.identifier for qb in qubits]
-            qc_identifiers = [qb.identifier for qb in self.qubits]
-
-            if not set(op_identifiers).issubset(qc_identifiers):
-                raise ValueError(
-                    "Instruction Qubits "
-                    + str(set(qubits) - set(self.qubits))
-                    + " not present in circuit"
-                )
-            else:
-                qubits = [
-                    self.qubits[qc_identifiers.index(op_id)] for op_id in op_identifiers
-                ]
-
-        if len(set([cb.identifier for cb in clbits])) != len(clbits):
-            raise Exception("Duplicate clbit arguments")
-
-        if not set([cb.identifier for cb in clbits]).issubset(
-            set([cb.identifier for cb in self.clbits])
+        if not {cb.identifier for cb in clbits}.issubset(
+            {cb.identifier for cb in self.clbits}
         ):
             raise ValueError("Instruction Clbits not present in circuit")
 
-        # Log which abstract parameters have been added to the circuit
         try:
             self.abstract_params.update(operation.abstract_params)
         except AttributeError:
             pass
 
-        critical_qubits = []
-        perm_critical_qubits = []
-
-        for qb in qubits:
-            if qb.lock:
-                critical_qubits.append(qb)
-            if qb.perm_lock:
-                perm_critical_qubits.append(qb)
-
-        critical_qubits = [qb for qb in qubits if qb.lock]
-        if critical_qubits:
-            if critical_qubits[0].lock_message:
-                raise Exception(critical_qubits[0].lock_message)
-            else:
-                raise Exception(
-                    f"Tried to perform operation {operation.name}"
-                    "on locked qubit {critical_qubits[0]}"
-                )
-
-        # Check if there are non-permeable operations on pt_locked qubits
-        critical_qubits = [qb for qb in qubits if qb.perm_lock]
-
-        if critical_qubits:
-            from qrisp.permeability import is_permeable
-
-            critical_qubit_indices = [qubits.index(qb) for qb in critical_qubits]
-            if not is_permeable(operation, critical_qubit_indices):
-                if critical_qubits[0].perm_lock_message:
-                    raise Exception(critical_qubits[0].perm_lock_message)
-                else:
-                    raise Exception(
-                        f"Tried to perform non-permeable operation {operation.name} on"
-                        f" perm_locked qubit {critical_qubits[0]}"
-                    )
+        _check_qubit_locks(qubits, operation)
 
         self.data.append(Instruction(operation, qubits, clbits))
 
-    # TODO: Update after PR #331 is merged
     def run(
         self,
         shots: int | None = None,
-        backend: Any = None,
-    ) -> dict[str, Any]:
+        backend: BackendLike | None = None,
+    ) -> MeasurementResult:
         """
         Executes a QuantumCircuit on a backend and returns the measurement results.
 
@@ -1853,14 +1841,14 @@ class QuantumCircuit:
             is returned. For real quantum devices, the number of shots is determined
             by the backend's default settings.
 
-        backend : object, optional
+        backend : BackendLike, optional
             The backend on which to evaluate the QuantumCircuit. When not provided,
             Qrisp's built-in statevector simulator is used.
 
         Returns
         -------
-        dict[str, Any]
-            A dictionary mapping measurement outcome strings to integer counts
+        MeasurementResult
+            A lazy mapping from measurement outcome strings to integer counts
             (when *shots* is given) or to exact float probabilities (when
             *shots* is ``None`` and the backend is a simulator).
 
@@ -2312,14 +2300,74 @@ class QuantumCircuit:
 
         Returns
         -------
-        function
-            A function representing a Cirq QuantumCircuit.
+        cirq.Circuit
+            A Cirq Circuit equivalent to the Qrisp QuantumCircuit.
 
         """
         # NOTE: This is here to avoid circular imports
         from qrisp.interface import convert_to_cirq
 
         return convert_to_cirq(self)
+
+    @classmethod
+    def from_cirq(cls, cirq_circuit):
+        """
+        Class method to create QuantumCircuits from Cirq Circuits.
+
+        Parameters
+        ----------
+        cirq_circuit : cirq.Circuit
+            The Cirq Circuit to convert.
+
+        Returns
+        -------
+        QuantumCircuit
+            The converted QuantumCircuit.
+
+        Examples
+        --------
+
+        We construct a Bell-state circuit in Cirq:
+
+        >>> import cirq
+        >>> q0, q1 = cirq.LineQubit.range(2)
+        >>> cirq_circ = cirq.Circuit([cirq.H(q0), cirq.CNOT(q0, q1)])
+        >>> from qrisp import QuantumCircuit
+        >>> qrisp_qc = QuantumCircuit.from_cirq(cirq_circ)
+        >>> print(qrisp_qc)
+
+        .. code-block:: none
+
+             qb_0: ──H──■──
+                       ┌─┴─┐
+             qb_1: ────┤ X ├
+                       └───┘
+
+        """
+        # NOTE: This is here to avoid circular imports
+        from qrisp.interface import convert_from_cirq
+
+        return convert_from_cirq(cirq_circuit)
+
+    def to_pdag(self, remove_artificials: bool = False):
+        """
+        Method to convert the given QuantumCircuit to a PermeabilityGraph.
+
+        Parameters
+        ----------
+        remove_artificials : bool, optional
+            Whether to remove artificial nodes from the PermeabilityGraph. The default is False.
+
+        Returns
+        -------
+        PermeabilityGraph
+            The resulting PermeabilityGraph.
+        """
+
+        # NOTE: This is here to avoid circular imports
+        from qrisp.permeability import PermeabilityGraph
+
+        return PermeabilityGraph(self, remove_artificials=remove_artificials)
 
     def measure(
         self,
@@ -2479,257 +2527,263 @@ class QuantumCircuit:
 
         return ParityHandle(self.data[-1])
 
-    def cx(self, qubits_0, qubits_1):
+    def cx(self, qubits_0: QubitLike, qubits_1: QubitLike):
         """
         Instruct a CX-gate.
 
         Parameters
         ----------
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to control on.
-        qubits_1 : Qubit
+        qubits_1 : QubitLike
             The target Qubit.
 
         """
         self.append(ops.CXGate(), [qubits_0, qubits_1])
 
-    def cy(self, qubits_0, qubits_1):
+    def cy(self, qubits_0: QubitLike, qubits_1: QubitLike):
         """
         Instruct a CY-gate.
 
         Parameters
         ----------
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to control on.
-        qubits_1 : Qubit
+        qubits_1 : QubitLike
             The target Qubit.
 
         """
         self.append(ops.CYGate(), [qubits_0, qubits_1])
 
-    def cz(self, qubits_0, qubits_1):
+    def cz(self, qubits_0: QubitLike, qubits_1: QubitLike):
         """
         Instruct a CZ-gate.
 
         Parameters
         ----------
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to control on.
-        qubits_1 : Qubit
+        qubits_1 : QubitLike
             The target Qubit.
 
         """
         self.append(ops.CZGate(), [qubits_0, qubits_1])
 
-    def h(self, qubits):
+    def h(self, qubits: QubitLike):
         """
         Instruct a Hadamard-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
-
         self.append(ops.HGate(), [qubits])
 
-    def x(self, qubits):
+    def x(self, qubits: QubitLike):
         """
         Instruct a Pauli-X-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.XGate(), [qubits])
 
-    def y(self, qubits):
+    def y(self, qubits: QubitLike):
         """
         Instruct a Pauli-Y-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.YGate(), [qubits])
 
-    def z(self, qubits):
+    def z(self, qubits: QubitLike):
         """
         Instruct a Pauli-Z-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.ZGate(), [qubits])
 
-    def rx(self, phi, qubits):
+    def rx(self, phi: FloatLike, qubits: QubitLike):
         """
         Instruct a parametrized RX-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : FloatLike
             The angle parameter.
 
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         if phi == 0:
             return
         self.append(ops.RXGate(phi), [qubits])
 
-    def ry(self, phi, qubits):
+    def ry(self, phi: FloatLike, qubits: QubitLike):
         """
         Instruct a parametrized RY-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : FloatLike
             The angle parameter.
 
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
-
         if phi == 0:
             return
         self.append(ops.RYGate(phi), [qubits])
 
-    def rz(self, phi, qubits):
+    def rz(self, phi: FloatLike, qubits: QubitLike):
         """
         Instruct a parametrized RZ-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : FloatLike
             The angle parameter.
 
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         if phi == 0:
             return
         self.append(ops.RZGate(phi), [qubits])
 
-    def cp(self, phi, qubits_0, qubits_1):
+    def cp(self, phi: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike):
         """
         Instruct a controlled phase-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : FloatLike
             The angle parameter.
 
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to apply the gate on.
-        qubits_1 : Qubit
+
+        qubits_1 : QubitLike
             The other Qubit to apply the gate on.
         """
         if phi == 0:
             return
         self.append(ops.CPGate(phi), [qubits_0, qubits_1])
 
-    def p(self, phi, qubits):
+    def p(self, phi: FloatLike, qubits: QubitLike):
         """
         Instruct a phase-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : FloatLike
             The angle parameter.
 
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         if phi == 0:
             return
         self.append(ops.PGate(phi), [qubits])
 
-    def rxx(self, phi, qubits_0, qubits_1):
+    def rxx(self, phi: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike):
         """
         Instruct an RXX-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : FloatLike
             The angle parameter.
 
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to apply the gate on.
-        qubits_1 : Qubit
+
+        qubits_1 : QubitLike
             The other Qubit to apply the gate on.
         """
-
         if phi == 0:
             return
         self.append(ops.RXXGate(phi), [qubits_0, qubits_1])
 
-    def rzz(self, phi, qubits_0, qubits_1):
+    def rzz(self, phi: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike):
         """
         Instruct an RZZ-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : FloatLike
             The angle parameter.
 
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to apply the gate on.
-        qubits_1 : Qubit
+
+        qubits_1 : QubitLike
             The other Qubit to apply the gate on.
         """
-
         if phi == 0:
             return
         self.append(ops.RZZGate(phi), [qubits_0, qubits_1])
 
-    def xxyy(self, phi, beta, qubits_0, qubits_1):
+    def xxyy(
+        self, phi: FloatLike, beta: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike
+    ):
         """
         Instruct an XXYY-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : FloatLike
             The angle parameter.
-        beta : float or sympi.Symbol
+        beta : FloatLike
             The other angle parameter
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to apply the gate on.
-        qubits_1 : Qubit
+        qubits_1 : QubitLike
             The other Qubit to apply the gate on.
         """
-
         if phi == 0:
             return
         self.append(ops.XXYYGate(phi, beta), [qubits_0, qubits_1])
 
-    def swap(self, qubits_0, qubits_1):
+    def swap(self, qubits_0: QubitLike, qubits_1: QubitLike):
         """
         Instruct a SWAP-gate.
 
         Parameters
         ----------
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The qubit to swap.
-        qubits_1 : Qubit
+        qubits_1 : QubitLike
             The other qubit to swap.
 
         """
         self.append(ops.SwapGate(), [qubits_0, qubits_1])
 
-    def mcx(self, control_qubits, target_qubits, method="gray", ctrl_state=-1):
+    def mcx(
+        self,
+        control_qubits: list[QubitLike],
+        target_qubits: QubitLike,
+        method="gray",
+        ctrl_state=-1,
+    ):
         """
         Instruct a multi-controlled X-gate.
 
         Parameters
         ----------
-        control_qubits : list
+        control_qubits : list[QubitLike]
             The list of Qubits to control on.
-        target_qubits : Qubit
+        target_qubits : QubitLike
             The target Qubit.
         method : str, optional
             The algorithm to synthesize the mcx gate. The default is "gray".
@@ -2737,147 +2791,150 @@ class QuantumCircuit:
             The state on which the X gate is activated. Can be supplied as a string
             (i.e. "010110...") or an integer. The default is all ones ("11111...").
 
-
         """
         self.append(
             ops.MCXGate(len(control_qubits), ctrl_state=ctrl_state, method=method),
             control_qubits + [target_qubits],
         )
 
-    def ccx(self, ctrl_qubit_0, ctrl_qubit_1, target_qubit, method="gray"):
+    def ccx(
+        self,
+        ctrl_qubit_0: QubitLike,
+        ctrl_qubit_1: QubitLike,
+        target_qubit: QubitLike,
+        method="gray",
+    ):
         """
         Instruct a Toffoli-gate.
 
         Parameters
         ----------
-        ctrl_qubit_0 : list
+        ctrl_qubit_0 : QubitLike
             The first control Qubit.
-        ctrl_qubit_1 : Qubit
+        ctrl_qubit_1 : QubitLike
             The second control Qubit.
-        target_qubit : Qubit.
+        target_qubit : QubitLike
             The target Qubit.
         method : str, optional
             The algorithm to synthesize the mcx gate. The default is "gray".
         """
-
         self.mcx([ctrl_qubit_0, ctrl_qubit_1], target_qubit, method=method)
 
-    def crx(self, phi, qubits_0, qubits_1):
+    def crx(self, phi: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike):
         """
-        Instruct a controlled rx-gate.
+        Instruct a controlled RX-gate.
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : FloatLike
             The angle parameter.
 
-        qubits_0 : Qubit
+        qubits_0 : QubitLike
             The Qubit to apply the gate on.
-        qubits_1 : Qubit
+
+        qubits_1 : QubitLike
             The other Qubit to apply the gate on.
         """
         if phi == 0:
             return
         self.append(ops.MCRXGate(phi, 1), [qubits_0, qubits_1])
 
-    def t(self, qubits):
+    def t(self, qubits: QubitLike):
         """
         Instruct a T-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.TGate(), [qubits])
 
-    def t_dg(self, qubits):
+    def t_dg(self, qubits: QubitLike):
         """
         Instruct a dagger T-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.TGate().inverse(), [qubits])
 
-    def s(self, qubits):
+    def s(self, qubits: QubitLike):
         """
         Instruct an S-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.SGate(), [qubits])
 
-    def s_dg(self, qubits):
+    def s_dg(self, qubits: QubitLike):
         """
         Instruct a daggered S-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.SGate().inverse(), [qubits])
 
-    def sx(self, qubits):
+    def sx(self, qubits: QubitLike):
         """
         Instruct a SX-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.SXGate(), [qubits])
 
-    def sx_dg(self, qubits):
+    def sx_dg(self, qubits: QubitLike):
         """
         Instruct a daggered SX-gate.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
         self.append(ops.SXGate().inverse(), [qubits])
 
-    def barrier(self, qubits=None, clbits=None):
+    def barrier(self, qubits: QubitLike | None = None):
         """
         Instruct a Barrier onto the given Qubit. Barriers can be used as visual markers
         and compiler directives.
 
         Parameters
         ----------
-        qubits : Qubit
-            The Qubit to apply the barrier on.
-        clbits : Clbit
-            The Clbits to apply the barrier on.
-        """
+        qubits : QubitLike | None
+            The qubits to apply the barrier on. If ``None``, the barrier spans all
+            qubits in the circuit. The default is ``None``.
 
+        """
         if qubits is None:
             qubits = self.qubits
 
         self.append(ops.Barrier(len(qubits)), qubits)
 
-    def reset(self, qubits):
+    def reset(self, qubits: QubitLike):
         r"""
         Instruct a reset. This resets this Qubit into the $\ket{0}$ state regardless
         of its previous state.
 
         Parameters
         ----------
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to reset.
         """
-
         self.append(ops.Reset(), [qubits])
 
-    def u3(self, theta, phi, lam, qubits):
+    def u3(self, theta: FloatLike, phi: FloatLike, lam: FloatLike, qubits: QubitLike):
         r"""
         Instruct a U3-gate from given Euler angles.
 
@@ -2892,61 +2949,74 @@ class QuantumCircuit:
 
         Parameters
         ----------
-        theta : float or sympy.Symbol
+        theta : FloatLike
             The theta parameter.
-        phi : float or sympy.Symbol
+        phi : FloatLike
             The phi parameter.
-        lam : float or sympy.Symbol
+        lam : FloatLike
             The lambda parameter.
-        qubits : Qubit
+        qubits : QubitLike
             The Qubit to apply the u3 gate on.
 
         """
         self.append(ops.u3Gate(theta, phi, lam), [qubits])
 
-    def r(self, phi, theta, qubits):
-        self.append(ops.RGate(phi, theta), [qubits])
+    def r(self, theta: FloatLike, phi: FloatLike, qubits: QubitLike):
+        r"""
+        Instruct an R-gate.
 
-    def unitary(self, unitary_array, qubits):
+        The unitary is
+
+        .. math::
+
+            R(\theta, \phi) =
+            \begin{pmatrix}
+                \cos\!\tfrac{\theta}{2} & e^{-i\phi}\sin\!\tfrac{\theta}{2} \\
+                -e^{i\phi}\sin\!\tfrac{\theta}{2} & \cos\!\tfrac{\theta}{2}
+            \end{pmatrix}
+
+        Parameters
+        ----------
+        theta : FloatLike
+            Rotation angle in radians. Controls the amount of rotation.
+        phi : FloatLike
+            Axis angle in radians. Selects the rotation axis in the XY plane.
+        qubits : QubitLike
+            The qubit to apply the gate on.
+
         """
-        Instruct a U3-gate from a given U3 matrix.
+
+        self.append(ops.RGate(theta, phi), [qubits])
+
+    def unitary(self, unitary_array, qubits: QubitLike):
+        """
+        Instruct a gate from a given unitary matrix.
 
         Parameters
         ----------
         unitary_array : numpy.ndarray
-            The U3 matrix to apply.
-        qubits : Qubit
-            The Qubit to apply the gate on.
+            The 2×2 unitary matrix to apply.
+        qubits : QubitLike
+            The qubit to apply the gate on.
 
         """
+        from qrisp.simulator.unitary_management import u3matrix
 
         mat = unitary_array
         coeff = 1 / np.sqrt(np.linalg.det(mat))
-        gphase = -np.angle(coeff) % (2 * np.pi)
-        tmp_10 = np.abs((coeff * mat[1][0]))
-        tmp_00 = np.abs((coeff * mat[0][0]))
-        theta = 2 * np.arctan2(tmp_10, tmp_00)
+        theta = 2 * np.arctan2(np.abs(coeff * mat[1][0]), np.abs(coeff * mat[0][0]))
         phiplambda2 = np.angle(coeff * mat[1][1]) % (2 * np.pi)
         phimlambda2 = np.angle(coeff * mat[1][0]) % (2 * np.pi)
         phi = phiplambda2 + phimlambda2
         lam = phiplambda2 - phimlambda2
 
-        # gphase -= (phi + lam)
-
         arg_max = np.argmax(np.abs(mat).flatten())
-        from qrisp.simulator.unitary_management import u3matrix
-
         temp_u3 = u3matrix(theta, phi, lam, 0).flatten()
-
         gphase = (-np.angle(temp_u3[arg_max] / mat.flatten()[arg_max])) % (2 * np.pi)
 
-        from qrisp.circuit import U3Gate
-        from qrisp.simulator.unitary_management import u3matrix
-
         self.append(U3Gate(theta, phi, lam, global_phase=gphase), qubits)
-        # self.u3(theta, phi, lam, [qubits], global_phase = gphase)
 
-    def gphase(self, phi, qubits):
+    def gphase(self, phi: FloatLike, qubits: QubitLike):
         """
         Instruct a global phase. Global phases do not directly influence the
         QuantumCircuits outcome however they can become physical if used as a base gate
@@ -2954,15 +3024,14 @@ class QuantumCircuit:
 
         Parameters
         ----------
-        phi : float or sympy.Symbol
+        phi : FloatLike
             The angle parameter.
-        qubits : TYPE
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
-
         self.append(ops.GPhaseGate(phi), [qubits])
 
-    def id(self, qubits):
+    def id(self, qubits: QubitLike):
         """
         Instruct an identity gate. Identity gates are simply placeholders and have no
         effect on the quantum state.
@@ -2970,81 +3039,155 @@ class QuantumCircuit:
         Parameters
         ----------
 
-        qubits : TYPE
+        qubits : QubitLike
             The Qubit to apply the gate on.
         """
-
         self.append(ops.IDGate(), [qubits])
 
-    def to_pdag(self, remove_artificials=False):
-        from qrisp.permeability import PermeabilityGraph
 
-        return PermeabilityGraph(self, remove_artificials=remove_artificials)
-
-
-# TODO: Refactor the convert_to_qb_list and convert_to_cb_list functions
-
-
-# Converts various inputs (eg. integers, qubits or quantum variables) to lists of qubit
-# used in the append method of QuantumCircuit and QuantumSession
-def convert_to_qb_list(input, circuit=None, top_level=True):
+def _convert_qb_item(
+    value: Any,
+    circuit: QuantumCircuit | None = None,
+) -> Qubit | list[Any]:
+    """Recursive helper for convert_to_qb_list; may return a bare Qubit or a list."""
+    # NOTE: This is here to avoid circular imports
     from qrisp import QuantumArray
 
-    if issubclass(input.__class__, Qubit):
-        if top_level:
-            result = [input]
-        else:
-            result = input
-    elif isinstance(input, QuantumArray):
-        result = sum([qv.reg for qv in input.flatten()], [])
+    if isinstance(value, Qubit):
+        return value
 
-    elif hasattr(input, "__iter__"):
-        result = []
-        for i in range(len(input)):
-            result.append(convert_to_qb_list(input[i], circuit, top_level=False))
+    if isinstance(value, QuantumArray):
+        return [qb for qv in value.flatten() for qb in qv.reg]
 
-    elif hasattr(input, "reg"):
-        result = list(input.reg)
+    if hasattr(value, "__iter__"):
+        return [_convert_qb_item(item, circuit) for item in value]
 
-    elif isinstance(input, int):
-        if isinstance(circuit, type(None)):
-            raise Exception(
-                "Tried to convert integer argument to qubit without given circuit"
+    if hasattr(value, "reg"):
+        return list(value.reg)
+
+    if isinstance(value, int):
+        if circuit is None:
+            raise ValueError(
+                "Tried to convert integer index to Qubit without a circuit"
             )
-
-        if input >= len(circuit.qubits):
-            raise Exception(
-                f"Tried to adress qubit with index {input} "
+        if value >= len(circuit.qubits):
+            raise ValueError(
+                f"Tried to address qubit with index {value} "
                 f"in a circuit with {len(circuit.qubits)} qubits"
             )
+        return _convert_qb_item(circuit.qubits[value], circuit)
 
-        result = convert_to_qb_list(circuit.qubits[input], top_level=top_level)
-
-    else:
-        raise Exception("Couldn't convert type " + str(type(input)) + " to qubit list")
-
-    return result
+    raise TypeError(f"Cannot convert type {type(value)} to a qubit list")
 
 
-def convert_to_cb_list(input, circuit=None, top_level=True):
+def convert_to_qb_list(
+    value: Any,
+    circuit: QuantumCircuit | None = None,
+) -> list[Any]:
+    """
+    Convert a qubit specification to a (possibly nested) list of :class:`.Qubit` objects.
 
-    if hasattr(input, "__iter__"):
-        result = []
-        for i in range(len(input)):
-            result.append(convert_to_cb_list(input[i], circuit, top_level=False))
+    This is the internal helper used by :meth:`.QuantumCircuit.append` to normalise the
+    *qubits* argument before an instruction is recorded.  The function accepts every form
+    that ``append`` advertises:
 
-    elif isinstance(input, int):
-        if isinstance(circuit, type(None)):
-            raise Exception(
-                "Tried to convert integer argument to qubit without given circuit"
+    * A :class:`.Qubit` instance, returned as ``[qubit]``.
+    * An :class:`int` and then re-processed.
+    * A :class:`~qrisp.QuantumArray`, flattened to a single list of its constituent
+      qubits.
+    * Any object with a ``.reg`` attribute (e.g. a :class:`~qrisp.QuantumVariable`) —
+      converted via ``list(value.reg)``.
+    * Any other iterable. Each element is recursively processed and the results are
+      collected into a list. This is what enables the multi-gate broadcasting feature
+      of ``append``.
+
+    Parameters
+    ----------
+    value : Any
+        The qubit specification to convert.
+    circuit : QuantumCircuit, optional
+        The circuit whose ``qubits`` list is used to resolve integer indices.
+        Required when *value* (or any nested element) is an integer.
+        The default is ``None``.
+
+    Returns
+    -------
+    list[Any]
+        A flat or nested list of :class:`.Qubit` objects.  Nesting only occurs
+        when *value* is itself a nested iterable, enabling the broadcasting logic
+        in :meth:`.QuantumCircuit.append`.
+
+    Raises
+    ------
+    ValueError
+        If an integer index is provided but no *circuit* is given, or if the
+        index is out of range.
+    TypeError
+        If *value* cannot be converted to a qubit list.
+    """
+    item = _convert_qb_item(value, circuit)
+    return item if isinstance(item, list) else [item]
+
+
+def _convert_cb_item(
+    value: Any,
+    circuit: QuantumCircuit | None = None,
+) -> Clbit | list[Any]:
+    """Recursive helper for convert_to_cb_list. May return a bare Clbit or a list."""
+
+    if isinstance(value, Clbit):
+        return value
+
+    if hasattr(value, "__iter__"):
+        return [_convert_cb_item(item, circuit) for item in value]
+
+    if isinstance(value, int):
+        if circuit is None:
+            raise ValueError(
+                "Tried to convert integer index to Clbit without a circuit"
             )
+        return _convert_cb_item(circuit.clbits[value], circuit)
 
-        result = convert_to_cb_list(circuit.clbits[input], top_level=top_level)
+    raise TypeError(f"Cannot convert type {type(value)} to a classical-bit list")
 
-    elif issubclass(input.__class__, Clbit):
-        if top_level:
-            result = [input]
-        else:
-            result = input
 
-    return result
+def convert_to_cb_list(
+    value: Any,
+    circuit: QuantumCircuit | None = None,
+) -> list[Any]:
+    """
+    Convert a classical-bit specification to a (possibly nested) list of
+    :class:`.Clbit` objects.
+
+    This is the internal helper used by :meth:`.QuantumCircuit.append` to normalise the
+    *clbits* argument before an instruction is recorded.  It mirrors the behaviour of
+    :func:`convert_to_qb_list` for classical bits:
+
+    * A :class:`.Clbit` instance, returned as ``[clbit]``.
+    * An :class:`int` and then re-processed.
+    * Any other iterable. Each element is recursively processed and the results are
+      collected into a list.
+
+    Parameters
+    ----------
+    value : Any
+        The classical-bit specification to convert.
+    circuit : QuantumCircuit, optional
+        The circuit whose ``clbits`` list is used to resolve integer indices.
+        Required when *value* (or any nested element) is an integer.
+        The default is ``None``.
+
+    Returns
+    -------
+    list[Any]
+        A flat or nested list of :class:`.Clbit` objects.
+
+    Raises
+    ------
+    ValueError
+        If an integer index is provided but no *circuit* is given.
+    TypeError
+        If *value* cannot be converted to a classical-bit list.
+    """
+    item = _convert_cb_item(value, circuit)
+    return item if isinstance(item, list) else [item]

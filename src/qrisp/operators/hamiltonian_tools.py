@@ -45,7 +45,7 @@ def multi_hamiltonian_measurement(
     precision: float, optional
         The precision with which the expectation of the Hamiltonians is to be evaluated.
         The default is 0.01.
-    backend : BackendClient, optional
+    backend : BackendLike, optional
         The backend on which to evaluate the quantum circuit. The default can be
         specified in the file default_backend.py.
     shots : integer, optional

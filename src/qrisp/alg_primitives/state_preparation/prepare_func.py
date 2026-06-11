@@ -16,6 +16,10 @@
 ********************************************************************************
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 from jax.errors import TracerArrayConversionError
 
@@ -27,8 +31,17 @@ from qrisp.alg_primitives.state_preparation.qswitch_state_preparation import (
 )
 from qrisp.jasp.tracing_logic import check_for_tracing_mode
 
+if TYPE_CHECKING:
+    from qrisp.core import QuantumVariable
+    from qrisp.typing import NDArrayLike
 
-def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
+
+def prepare(
+    qv: QuantumVariable,
+    target_array: NDArrayLike,
+    reversed: bool = False,
+    method: str = "auto",
+):
     r"""
     Prepare a quantum state on ``qv`` from a target amplitude vector.
 
@@ -60,7 +73,7 @@ def prepare(qv, target_array, reversed: bool = False, method: str = "auto"):
     qv : QuantumVariable
         Quantum variable to prepare.
 
-    target_array : numpy.ndarray or jax.numpy.ndarray
+    target_array : NDArrayLike
         Target amplitude vector :math:`b`. Must have length :math:`2^n` where
         :math:`n` is the size of ``qv`` (validated for concrete arrays).
 

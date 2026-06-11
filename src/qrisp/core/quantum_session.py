@@ -135,7 +135,7 @@ class QuantumSession(QuantumCircuit):
 
         Parameters
         ----------
-        backend : BackendClient, optional
+        backend : BackendLike, optional
             The backend on which to execute the circuits created by this QuantumSession.
             This choice can be overwritten by specifying a backend in the
             :meth:`get_measurement <qrisp.QuantumVariable.get_measurement>` method of

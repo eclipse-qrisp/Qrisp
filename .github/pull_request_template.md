@@ -1,5 +1,3 @@
-# .github/pull_request_template.md
-
 ## Description
 
 <!-- What does this PR do? Keep it concise. -->

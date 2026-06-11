@@ -977,7 +977,10 @@ def process_delete_qubits(eqn: JaxprEqn, context_dic: ContextDict) -> None:
 
         qubit = qubit_reg.pop()
         # Verify the qubit is in |0⟩ state before deletion
-        cond(get_bit_array(bit_array, qubit), true_fun, false_fun)
+        dirty = get_bit_array(bit_array, qubit)
+        cond(dirty, true_fun, false_fun)
+        # Reset dirty bits to |0⟩ so recycled qubits are clean
+        bit_array = conditional_bit_flip_bit_array(bit_array, qubit, dirty)
         # Return the qubit index to the free pool
         free_qubits.append(qubit)
 

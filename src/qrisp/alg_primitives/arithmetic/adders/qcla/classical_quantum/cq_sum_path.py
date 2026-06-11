@@ -24,7 +24,7 @@
 
 from qrisp.core.gate_application_functions import x, cx
 from qrisp.misc.utility import check_if_fresh
-from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder, cq_gidney_adder
+from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
 from qrisp.alg_primitives.arithmetic.adders.incrementation import lin_incr
 
 # Both of these functions are the semi-classical versions of the ones found in
@@ -102,6 +102,6 @@ def cq_sum_path_direct_uncomputation(a, b, c, R, ctrl=None):
                 c_out = c[i]
 
             if a_block != len(a_block) * "0":
-                cq_gidney_adder(a_block, b_block, c_in=c_in, ctrl=ctrl, c_out=c_out)
+                gidney_adder(a_block, b_block, c_in=c_in, ctrl=ctrl, c_out=c_out)
             else:
                 lin_incr(b_block, c_in=c_in, c_out=c_out)

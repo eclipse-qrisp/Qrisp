@@ -39,6 +39,12 @@ Utilities
      - Returns the CNOT-depth of a given operation.
    * - :func:`~qrisp.inpl_adder_test`
      - Tests if an inplace adder is working correctly.
+   * - :data:`~qrisp.QubitLike`, :data:`~qrisp.ClbitLike`
+     - Type aliases for qubit and classical bit specifiers.
+   * - :data:`~qrisp.ScalarLike`, :data:`~qrisp.NDArrayLike`, :data:`~qrisp.ArrayLike`
+     - Type aliases for scalar values, multi-dimensional arrays, and their union.
+   * - :data:`~qrisp.Param`
+     - Type alias for gate parameter values (numerics, SymPy expressions, JAX tracers).
 
 .. toctree::
    :hidden:
@@ -56,4 +62,5 @@ Utilities
    perm_unlock
    t_depth_indicator
    cnot_depth_indicator
-   inpl_adder_test   
+   inpl_adder_test
+   typing

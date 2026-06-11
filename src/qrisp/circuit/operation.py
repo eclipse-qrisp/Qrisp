@@ -16,13 +16,19 @@
 ********************************************************************************
 """
 
+from __future__ import annotations
+
 import copy
+from typing import TYPE_CHECKING
 
 import numpy as np
-from sympy.core.expr import Expr
-from sympy import lambdify
-from jax.core import Tracer
 from jax._src.array import ArrayImpl
+from jax.core import Tracer
+from sympy import lambdify
+from sympy.core.expr import Expr
+
+if TYPE_CHECKING:
+    from qrisp.typing import FloatLike
 
 
 def adaptive_substitution(expr, subs_dic, precision=10):
@@ -96,7 +102,7 @@ class Operation:
 
         elif not isinstance(name, str):
             raise Exception(
-                "Tried to create a Operation with name of type({type(name)} (required is str)"
+                f"Tried to create a Operation with name of type({type(name)} (required is str)"
             )
 
         # Name of the operation - this is how the backend behind the interface will
@@ -110,7 +116,7 @@ class Operation:
         self.num_clbits = num_clbits
 
         # List of parameters (also available behind the interface)
-        self.params = []
+        self.params: list[FloatLike] = []
 
         # If a definition circuit is given, this means we are supposed to create a
         # non-elementary operation
@@ -146,8 +152,8 @@ class Operation:
         # Qfree basically means that the unitary is a permutation matrix
         # (up to local phase shifts). Permeability means that this gate commutes with
         # the z operator on a given qubit
-        self.is_qfree = None
-        self.permeability = {i: None for i in range(self.num_qubits)}
+        self.is_qfree: bool | None = None
+        self.permeability: dict[int, bool | None] = {i: None for i in range(self.num_qubits)}
 
     def copy(self):
         """
@@ -279,7 +285,7 @@ class Operation:
                 res = inverse_circ.to_op(name=self.name[:-3])
             else:
                 res = inverse_circ.to_op(name=self.name + "_dg")
-            
+
             res.params = list(self.params)
             res.abstract_params = set(self.abstract_params)
 
@@ -453,7 +459,14 @@ class Operation:
 # See https://qiskit.org/documentation/stubs/qiskit.circuit.library.U3Gate.html
 # for more information
 class U3Gate(Operation):
-    def __init__(self, theta, phi, lam, name="u3", global_phase=0):
+    def __init__(
+        self,
+        theta: FloatLike,
+        phi: FloatLike,
+        lam: FloatLike,
+        name: str = "u3",
+        global_phase: FloatLike = 0,
+    ):
 
         # Initialize Operation instance
         super().__init__(
@@ -913,7 +926,7 @@ class ClControlledOperation(Operation):
 
         if base_op.definition:
 
-            from qrisp import QuantumCircuit, Clbit
+            from qrisp import Clbit, QuantumCircuit
 
             definition = QuantumCircuit()
             definition.qubits = list(base_op.definition.qubits)

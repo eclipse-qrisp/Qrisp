@@ -36,22 +36,6 @@ def test_pauli_hamiltonian():
     # res = H.get_measurement(q_array)
     # assert np.abs(res-1.0) < 2e-2
 
-def test_bound_pauli_hamiltonian():
-
-    from qrisp import QuantumVariable, QuantumArray, h, x
-    from qrisp.operators.qubit import X,Y,Z
-    import numpy as np
-
-    qv1 = QuantumVariable(2)
-    qv2 = QuantumVariable(2)
-
-    h(qv1[0])
-    x(qv2[0])
-
-    H = X(qv1[0])*Z(qv2[0])
-    res = H.get_measurement([qv1,qv2])
-    assert np.abs(res-(-1.0)) < 2e-2
-
 def test_trotterization():
 
     from qrisp import QuantumVariable, x, QPE

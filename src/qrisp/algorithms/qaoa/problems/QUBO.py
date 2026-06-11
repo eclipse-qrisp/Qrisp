@@ -148,7 +148,7 @@ def solve_QUBO(Q, depth, shots=5000, max_iter=50, backend=None):
     max_iter : int, optional
         The maximal amount of iterations of the ``COBYLA`` optimizer in the QAOA algorithm.
         The default is 50.
-    backend : :ref:`BackendClient`, optional
+    backend : BackendLike, optional
         The backend to be used for the quantum simulation.
         By default, the Qrisp simulator is used.
 

@@ -21,7 +21,7 @@ import numpy as np
 import jax
 from jax import Array
 import jax.numpy as jnp
-from typing import Tuple, TYPE_CHECKING
+from typing import Literal, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -172,7 +172,7 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
     Returns
     -------
     F : Array
-        1-D array containing the sequence, ordered from lowest order term to highest.
+        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.
 
     """
 
@@ -207,12 +207,12 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
 @jax.jit
 def _gqsp_angles_from_nlft_sequence(F: Array) -> Tuple[Array, Array, Array]:
     r"""
-    Computes the GQSP angles form the NLFT sequence.
+    Computes the GQSP angles form the non-linear Fourier sequence.
 
     Parameters
     ----------
     F : ArrayLike
-        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.
 
     Returns
     -------
@@ -254,6 +254,95 @@ def _gqsp_angles_from_nlft_sequence(F: Array) -> Tuple[Array, Array, Array]:
     return theta, phi, lambda_
 
 
+@jax.jit
+def _xqsp_angles_from_nlft_sequence(F: Array) -> Array:
+    r"""
+    Computes the XQSP angles form the non-linear Fourier sequence.
+
+    Parameters
+    ----------
+    F : ArrayLike
+        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.
+
+    Returns
+    -------
+    angles : Array
+        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
+
+    Raises
+    ------
+    NotImplementedError
+        Always raised until the XQSP convention is mathematically verified.
+    """
+    raise NotImplementedError(
+            "The XQSP angle calculation is currently unverified and disabled. "
+            "Please use QSP, GQSP, or QSVT conventions instead."
+        )
+    #return jnp.arctan(-jnp.imag(F))
+
+
+@jax.jit
+def _yqsp_angles_from_nlft_sequence(F: Array) -> Array:
+    r"""
+    Computes the YQSP angles form the non-linear Fourier sequence.
+
+    Parameters
+    ----------
+    F : ArrayLike
+        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.
+
+    Returns
+    -------
+    angles : Array
+        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
+
+    Raises
+    ------
+    NotImplementedError
+        Always raised until the YQSP convention is mathematically verified.
+    """
+    raise NotImplementedError(
+            "The YQSP angle calculation is currently unverified and disabled. "
+            "Please use QSP, GQSP, or QSVT conventions instead."
+        )
+    #return jnp.arctan(jnp.real(F))
+
+
+def poly_to_nlft_sequence(p: "ArrayLike") -> Array:
+    r"""
+    Computes the non-linear Fourier sequence for a given polynomial.
+
+    Parameters
+    ----------
+    p : ArrayLike
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+
+    Returns
+    -------
+    F : Array
+        1-D array containing the non-linear Fourier sequence, ordered from lowest order term to highest.
+
+    """
+    # Comupute the maximum of |p(z)| for |z|=1
+    M = _maximum(p, N=1024)
+
+    # Rescale p(z)
+    # Divide by M such that |p(z)|<=1 for |z|=1 and QSP success probability is maximized
+    p = p / M
+    # Multiply by 0.99 to ensure that |p(z)|<1 for |z|=1 for numerical stability of completion algorithm
+    # This comes at the expense of a slightly smaller QSP success probability
+    p = 0.99 * p
+    alpha = M / 0.99
+    # Switch (Q,P) -> (P, iQ)
+    p = -1.0j * p
+
+    # Find completion q(z) of p(z) such that |p(z)|^2 + |q(z)|^2 = 1 for |z|=1
+    q = _complementary_polynomial(p)
+
+    F = _inlft(q, p)
+    return F, alpha
+
+
 # https://arxiv.org/pdf/2503.03026
 def gqsp_angles(p: "ArrayLike") -> Tuple[Tuple[Array, Array, Array], Array]:
     r"""
@@ -283,27 +372,216 @@ def gqsp_angles(p: "ArrayLike") -> Tuple[Tuple[Array, Array, Array], Array]:
     - The resulting angles correspond to a rescaled version of the input polynomial.
 
     """
-
-    # Comupute the maximum of |p(z)| for |z|=1
-    M = _maximum(p, N=1024)
-
-    # Rescale p(z)
-    # Divide by M such that |p(z)|<=1 for |z|=1 and QSP success probability is maximized
-    p = p / M
-    # Multiply by 0.99 to ensure that |p(z)|<1 for |z|=1 for numerical stability of completion algorithm
-    # This comes at the expense of a slightly smaller QSP success probability
-    p = 0.99 * p
-    alpha = M / 0.99
-    # Switch (Q,P) -> (P, iQ)
-    p = -1.0j * p
-
-    # Find completion q(z) of p(z) such that |p(z)|^2 + |q(z)|^2 = 1 for |z|=1
-    q = _complementary_polynomial(p)
-
-    # INLFT
-    F = _inlft(q, p)
-
-    # GQSP angles from NLFT sequence
+    F, alpha = poly_to_nlft_sequence(p)
     theta, phi, lambda_ = _gqsp_angles_from_nlft_sequence(F)
 
     return (theta, phi, lambda_), alpha
+
+
+# https://arxiv.org/pdf/2503.03026 
+# Not verified to be correct.
+def xqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
+    r"""
+    Computes the XQSP angles for a given polynomial.
+
+    Parameters
+    ----------
+    p : ArrayLike
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+
+    Returns
+    -------
+    angles : Array
+        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
+    alpha : Array
+        The scalar scaling factor as 0-D array.
+
+    Raises
+    ------
+    NotImplementedError
+        Always raised until the XQSP convention is mathematically verified.
+
+    Notes
+    -----
+    - The resulting angles correspond to a rescaled version of the input polynomial.
+
+    """
+    raise NotImplementedError(
+            "The XQSP angle calculation is currently unverified and disabled. "
+            "Please use QSP, GQSP, or QSVT conventions instead."
+        )
+    #F, alpha = poly_to_nlft_sequence(p)
+    #phi = _xqsp_angles_from_nlft_sequence(F)
+    #return phi, alpha
+
+
+# https://arxiv.org/pdf/2503.03026 
+# Not verified to be correct.
+def yqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
+    r"""
+    Computes the YQSP angles for a given polynomial.
+
+    Parameters
+    ----------
+    p : ArrayLike
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+
+    Returns
+    -------
+    angles : Array
+        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
+    alpha : Array
+        The scalar scaling factor as 0-D array.
+
+    Raises
+    ------
+    NotImplementedError
+        Always raised until the YQSP convention is mathematically verified.
+
+    Notes
+    -----
+    - The resulting angles correspond to a rescaled version of the input polynomial.
+
+    """
+    raise NotImplementedError(
+            "The YQSP angle calculation is currently unverified and disabled. "
+            "Please use QSP, GQSP, or QSVT conventions instead."
+        )
+    #F, alpha = poly_to_nlft_sequence(p)
+    #phi = _yqsp_angles_from_nlft_sequence(F)
+    #return phi, alpha
+
+
+def laurent_to_analytic_coeffs(
+    target_coeffs: "ArrayLike", parity: Literal["even", "odd"] = "odd"
+) -> Array:
+    """
+    Converts a target polynomial from the Laurent QSP framework to the Analytic QSP framework.
+
+    In standard QSP, signal operators enforce strict parity (even or odd). Analytic QSP
+    (like GQSP) natively builds polynomials in strictly positive powers of a variable
+    without parity constraints.
+
+    This helper performs the algebraic mapping required to trick an analytic solver
+    into solving a Laurent polynomial. Specifically, it factors out x^{-d} and
+    substitutes y = x^2 to create a dense analytic polynomial A(y).
+
+    Mathematical Example (Odd):
+        Target: P(x) = a_1*x + a_3*x^3  (Coeffs: [0, a_1, 0, a_3], degree d=3)
+        1. Factor out x^{-d}: P(x) = x^{-3} * (a_1*x^4 + a_3*x^6)
+        2. Substitute y = x^2: A(y) = a_1*y^2 + a_3*y^3
+        3. Expanded A(y): 0*y^0 + 0*y^1 + a_1*y^2 + a_3*y^3
+        4. Analytic Coeffs: [0.0, 0.0, a_1, a_3]
+
+    Once the analytic solver finds the angles for A(y), Lemma 2 from Laneve (2025)
+    is used to shift the phases, effectively multiplying the x^{-d} shift back
+    into the quantum circuit.
+
+    Parameters
+    ----------
+    target_coeffs : jax.Array
+        The standard coefficients of the target polynomial (a_0, a_1, a_2, ...).
+    parity : Literal["even", "odd"]
+        The structural parity of the target polynomial ('even' or 'odd'). Defaults to 'odd'.
+        Must be known at compile time for JAX tracing.
+
+    Returns
+    -------
+    jax.Array
+        The mapped Analytic QSP coefficient array A(y). The first half consists
+        of zeros (representing the skipped lower-degree y terms), and the second
+        half consists of the extracted parity coefficients.
+    """
+    if parity == "odd":
+        # Extract odd coefficients: indices 1, 3, 5...
+        extracted_coeffs = target_coeffs[1::2]
+        num_zeros = extracted_coeffs.shape[0]
+    elif parity == "even":
+        # Extract even coefficients: indices 0, 2, 4...
+        extracted_coeffs = target_coeffs[0::2]
+        num_zeros = extracted_coeffs.shape[0] - 1
+    else:
+        raise ValueError("Parity must be either 'even' or 'odd'.")
+
+    # Create an array of zeros matching the input dtype
+    zeros = jnp.zeros(num_zeros, dtype=target_coeffs.dtype)
+
+    # Concatenate the zeros with the extracted coefficients
+    analytic_coeffs = jnp.concatenate((zeros, extracted_coeffs))
+
+    return analytic_coeffs
+
+
+def qsp_angles(
+    p: "ArrayLike",
+    parity: Literal["even", "odd"] = "odd",
+    signal_basis: Literal["X", "Z"] = "Z",
+) -> Tuple[Array, Array]:
+    r"""
+    Computes the QSP angles for a given polynomial.
+
+    Parameters
+    ----------
+    p : ArrayLike
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+    parity : Literal["even", "odd"]
+        The structural parity of the target polynomial ('even' or 'odd'). Defaults to 'odd'.
+        Must be known at compile time for JAX tracing.
+    signal_basis : Literal["X", "Z"]
+        The signal basis for the QSP angles ('X' or 'Z'). Defaults to 'Z'.
+
+    Returns
+    -------
+    angles : Array
+        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
+    alpha : Array
+        The scalar scaling factor as 0-D array.
+
+    Notes
+    -----
+    - The resulting angles correspond to a rescaled version of the input polynomial.
+
+    """
+    p_analytic = laurent_to_analytic_coeffs(p, parity=parity)
+    (theta, phi, lambda_), alpha = gqsp_angles(p_analytic)
+
+    if signal_basis == "X":
+        phi = phi.at[0].set(phi[0] - np.pi / 4)
+        phi = phi.at[-1].set(phi[-1] + np.pi / 4)
+
+    return phi, alpha
+
+
+def qsvt_angles(p: "ArrayLike", parity: Literal["even", "odd"] = "odd") -> Tuple[Array, Array]:
+    r"""
+    Computes the QSVT angles for a given polynomial.
+
+    Parameters
+    ----------
+    p : ArrayLike
+        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+    parity : Literal["even", "odd"]
+        The structural parity of the target polynomial ('even' or 'odd'). Defaults to 'odd'.
+        Must be known at compile time for JAX tracing.
+
+    Returns
+    -------
+    angles : Array
+        1-D array of angles $(\phi_0,\dotsc,\phi_d)$.
+    alpha : Array
+        The scalar scaling factor as 0-D array.
+
+    Notes
+    -----
+    - The resulting angles correspond to a rescaled version of the input polynomial.
+
+    """
+    phi_qsp, alpha = qsp_angles(p, parity=parity, signal_basis="X")
+
+    d = len(phi_qsp) - 1
+
+    phi_qsvt = jnp.zeros(d + 1)
+    phi_qsvt = phi_qsvt.at[0].set(phi_qsp[0] + (2 * d - 1) * np.pi / 4)
+    phi_qsvt = phi_qsvt.at[1:].set(phi_qsp[1:] - np.pi / 2)
+    phi_qsvt = phi_qsvt.at[d].set(phi_qsp[d] - np.pi / 4)
+    return phi_qsvt, alpha

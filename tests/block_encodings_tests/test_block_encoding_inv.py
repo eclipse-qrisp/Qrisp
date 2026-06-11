@@ -17,11 +17,13 @@
 """
 
 import numpy as np
+import pytest
 from qrisp import *
 from qrisp.block_encodings import BlockEncoding
 
 
-def test_block_encoding_inv():
+@pytest.mark.parametrize("method", ["QET", "GQSVT"])
+def test_block_encoding_inv(method):
 
     A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
                 [0.14516978, 0.68701415, -0.04929867, -0.00999921],
@@ -32,7 +34,7 @@ def test_block_encoding_inv():
 
     BA = BlockEncoding.from_array(A)
 
-    BA_inv = BA.inv(0.01, np.linalg.cond(A))
+    BA_inv = BA.inv(0.01, np.linalg.cond(A), method=method)
 
     # Prepares operand variable in state |b>
     def prep_b():
