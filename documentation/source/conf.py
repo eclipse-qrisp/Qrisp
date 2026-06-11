@@ -30,13 +30,14 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../src/qrisp'))
-sys.path.insert(0, os.path.abspath('_ext'))
+
+sys.path.insert(0, os.path.abspath("../../src/qrisp"))
+sys.path.insert(0, os.path.abspath("_ext"))
 
 # -- Project information -----------------------------------------------------
 
 project = ""
-copyright = '2026, Qrisp developers'
+copyright = "2026, Qrisp developers"
 
 
 # -- General configuration ---------------------------------------------------
@@ -46,26 +47,26 @@ copyright = '2026, Qrisp developers'
 # ones.
 
 extensions = [
-              'sphinx_toolbox.sidebar_links',
-              'nbsphinx',
-               'myst_parser',
-              "sphinx.ext.autosummary",
-              "sphinx.ext.autodoc",
-              "sphinx.ext.coverage",
-              "sphinx.ext.doctest",
-              "sphinx.ext.intersphinx",
-               "sphinx.ext.mathjax",
-              "sphinx.ext.todo",
-              "sphinx.ext.viewcode",
-              "texext",
-                "numpydoc",
-              "sphinx_sitemap",
-               "sphinx_copybutton",
-               "sphinx_design",
-               "sphinx_thebe",
-               "sphinx_new_tab_link",
-               "tutorial_authors",
-              ]
+    "sphinx_toolbox.sidebar_links",
+    "nbsphinx",
+    "myst_parser",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.coverage",
+    "sphinx.ext.doctest",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.todo",
+    "sphinx.ext.viewcode",
+    "texext",
+    "numpydoc",
+    "sphinx_sitemap",
+    "sphinx_copybutton",
+    "sphinx_design",
+    "sphinx_thebe",
+    "sphinx_new_tab_link",
+    "tutorial_authors",
+]
 
 # Configure sphinx-copybutton to only copy input lines (with >>> prompts) and strip the prompts
 copybutton_prompt_text = r">>> |\.\.\. "
@@ -82,7 +83,7 @@ pygments_style = "sphinx"
 # Recognize code cells as Python 3 for highlighting:
 nbsphinx_codecell_lexer = "ipython3"
 
-imgmath_latex_preamble = r'\usepackage{braket}\n\usepackage{xcolor}'
+imgmath_latex_preamble = r"\usepackage{braket}\n\usepackage{xcolor}"
 
 thebe_config = {
     "repository_url": "https://github.com/fraunhoferfokus/Qrisp",
@@ -93,23 +94,23 @@ thebe_config = {
 
 
 imgmath_use_preview = True
-#github_username = 'positr0nium'
-github_repository = 'https://github.com/eclipse-qrisp/Qrisp'
+# github_username = 'positr0nium'
+github_repository = "https://github.com/eclipse-qrisp/Qrisp"
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = [
-    '**/.ipynb_checkpoints',
+    "**/.ipynb_checkpoints",
 ]
 nbsphinx_timeout = 60
 
 master_doc = "index"
 
-html_baseurl = 'https://qrisp.eu'
+html_baseurl = "https://qrisp.eu"
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -119,10 +120,9 @@ html_baseurl = 'https://qrisp.eu'
 
 
 html_context = {
-   # ...
-   "default_mode": "light"
+    # ...
+    "default_mode": "light"
 }
-
 
 
 html_theme = "pydata_sphinx_theme"
@@ -140,27 +140,32 @@ html_theme_options = {
     "navbar_start": ["navbar-logo"],
     "navbar_center": ["navbar-nav"],
     "navbar_end": ["navbar-icon-links"],
-    "enable_search_shortcuts" : True,
+    "enable_search_shortcuts": True,
     "search_bar_text": "Search the docs... ",
     # "navbar_align": "content",
     "pygment_light_style": "lovelace",
-    "secondary_sidebar_items": ["page-toc.html", "discord_link.html", "dynamic_sidebar.html", "thebe_button.html"]
+    "secondary_sidebar_items": [
+        "page-toc.html",
+        "discord_link.html",
+        "dynamic_sidebar.html",
+        "thebe_button.html",
+    ],
 }
 html_sidebars = {
     "**": ["sidebar-nav-bs"],
     "index": [],
     "install": [],
-    #"tutorial": [],
+    # "tutorial": [],
     "tutorial/*": ["sidebar-nav-bs"],
     "auto_examples/index": [],
 }
 
 autodoc_default_options = {
-    'members': False,
-    'member-order': 'bysource',
-    'special-members': None,
-    'undoc-members': False,
-    'exclude-members': None
+    "members": False,
+    "member-order": "bysource",
+    "special-members": None,
+    "undoc-members": False,
+    "exclude-members": None,
 }
 autosummary_generate = True
 numpydoc_show_class_members = False
@@ -168,12 +173,12 @@ numpydoc_show_class_members = False
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # Removes the sphinx integrated option to see the page source
 html_show_sourcelink = False
 
-html_favicon = '../../logo/qrisp_favicon.png'
+html_favicon = "../../logo/qrisp_favicon.png"
 
 # html_logo = "../../logo/logo_extended.png"
 html_logo = "../../logo/qrisp_logo.png"
@@ -182,10 +187,10 @@ html_logo = "../../logo/qrisp_logo.png"
 add_module_names = False
 
 html_css_files = [
-    'css/custom09.css',
+    "css/custom09.css",
 ]
 
-source_suffix = ['.rst', '.md']
+source_suffix = [".rst", ".md"]
 # Adds 'Edit on gitlab' in the upper right corner
 # html_context = {
 #     "display_gitlab": True, # Integrate Gitlab
@@ -193,4 +198,4 @@ source_suffix = ['.rst', '.md']
 #     "conf_py_path": "/source/", # Path in the checkout to the docs root
 # }
 
-html_extra_path = ['_extra']  # copies contents of docs/_extra/ to _build/html/
+html_extra_path = ["_extra"]  # copies contents of docs/_extra/ to _build/html/
