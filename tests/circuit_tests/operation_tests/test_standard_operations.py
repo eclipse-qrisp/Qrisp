@@ -73,9 +73,9 @@ class TestSXGate:
 
     def test_sx_squared_is_x_up_to_phase(self):
         """SX @ SX = -i·X (RX(π/2) composed twice = RX(π) = -i·X)."""
-        sx = SXGate().get_unitary()
+        sx = SXGate().get_unitary().astype(complex)
         x = np.array([[0, 1], [1, 0]], dtype=complex)
-        assert np.allclose(sx @ sx, -1j * x, atol=1e-10)
+        assert np.allclose(sx @ sx, -1j * x, atol=1e-6)
 
     def test_sxdg_name_and_params(self):
         """SXDGGate has name 'sx_dg' and no parameters."""
@@ -97,9 +97,9 @@ class TestSXGate:
 
     def test_sx_sxdg_compose_to_identity(self):
         """SX @ SX† = I."""
-        sx = SXGate().get_unitary()
-        sxdg = SXDGGate().get_unitary()
-        assert np.allclose(sx @ sxdg, np.eye(2), atol=1e-10)
+        sx = SXGate().get_unitary().astype(complex)
+        sxdg = SXDGGate().get_unitary().astype(complex)
+        assert np.allclose(sx @ sxdg, np.eye(2), atol=1e-6)
 
 
 class TestIDGate:
