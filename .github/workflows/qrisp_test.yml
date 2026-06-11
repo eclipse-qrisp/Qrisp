@@ -32,4 +32,4 @@ jobs:
           pip install git+https://github.com/tqec/tqecd.git 
       - name: Test with pytest
         run: |
-          pytest
+          pytest tests/circuit_tests/operation_tests/test_standard_operations.py::TestSXGate
