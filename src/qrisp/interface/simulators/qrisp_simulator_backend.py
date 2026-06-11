@@ -20,7 +20,7 @@
 
 from __future__ import annotations
 
-from collections.abc Sequence
+from collections.abc import Sequence
 from typing import cast
 
 from qrisp.circuit.pass_management.pass_manager import PassManager
