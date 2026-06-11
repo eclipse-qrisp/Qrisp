@@ -15,7 +15,8 @@ from numpy.linalg import norm
 import time
 from qrisp import QuantumFloat, transpile
 from qrisp.simulator import statevector_sim
-from qiskit import Aer, execute
+from qiskit_aer import AerSimulator
+from qiskit import execute
 
 
 n = 6
@@ -48,8 +49,7 @@ qc.qubits.reverse()
 qiskit_qc = qc.to_qiskit()
 
 start_time = time.time()
-# simulator = Aer.get_backend('qasm_simulator')
-simulator = Aer.get_backend("statevector_simulator")
+simulator = AerSimulator()
 result = execute(qiskit_qc, simulator).result()
 qiskit_res = result.get_statevector(qiskit_qc).data
 print("Qiskit simulator time: ", time.time() - start_time)
