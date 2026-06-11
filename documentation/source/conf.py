@@ -283,66 +283,80 @@ tutorial_authors = {
     ],
 }
 
-
-class AuthorBioDirective(Directive):
-    has_content = False
+def inject_authors_after_title(app, doctree):
+    # Get the current document name being processed
+    docname = app.builder.env.docname
     
-    def run(self):
-        env = self.state.document.settings.env
-        docname = env.docname
-        
-        if docname in tutorial_authors:
-            author_list = tutorial_authors[docname]
-            
-            # --- Build the Grouped Dictionary by Affiliation ---
-            affiliations_dict = {}
-            for author in author_list:
-                # Using .get() provides a fallback just in case the key is missing
-                affiliation = author.get('affiliation', 'Unaffiliated')
-                name = author['name']
-                linkedin_url = author.get('linkedin')
-                
-                # Build the individual author's HTML (Name + Optional Icon)
-                author_html = f"<span style='font-weight: 600; color: #222;'>{name}</span>"
-                
-                if linkedin_url:
-                    author_html += f'<a href="{linkedin_url}" target="_blank" title="{name} on LinkedIn" style="text-decoration: none;">{LINKEDIN_ICON}</a>'
-                
-                # Group by affiliation
-                if affiliation not in affiliations_dict:
-                    affiliations_dict[affiliation] = []
-                    
-                # Append the fully formatted HTML string
-                affiliations_dict[affiliation].append(author_html)
-            
-            # --- Render the Output ---
-            html_content = f"""
-            <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif;">
-                <strong style="display: block; margin-bottom: 10px; color: #333;">Authors:</strong>
-                <ul style="list-style-type: none; padding-left: 0; margin: 0;">
-            """
-            
-            for affiliation, author_html_list in affiliations_dict.items():
-                # Join the HTML blocks with a comma and space
-                names_joined = ", ".join(author_html_list)
-                
-                html_content += f"""
-                    <li style="margin-bottom: 6px; display: flex; align-items: baseline; flex-wrap: wrap;">
-                        <span style="line-height: 1.5;">{names_joined}</span>
-                        <span style="margin: 0 8px; color: #ccc;">—</span>
-                        <span style="color: #666; font-style: italic; font-size: 0.95em;">{affiliation}</span>
-                    </li>
-                """
-                
-            html_content += "</ul></div>"
-            return [nodes.raw('', html_content, format='html')]
-        
-        return []
+    # If the document isn't in our dictionary, skip it
+    if docname not in tutorial_authors:
+        return
 
+    # --- Step A: Build the HTML Content ---
+    author_list = tutorial_authors[docname]
+    affiliations_dict = {}
+    
+    # Group authors by affiliation
+    for author in author_list:
+        affiliation = author.get('affiliation', 'Unaffiliated')
+        name = author['name']
+        linkedin_url = author.get('linkedin')
+        
+        # Build the author's name string (with optional LinkedIn icon)
+        author_html = f"<span style='font-weight: 600; color: #222;'>{name}</span>"
+        if linkedin_url:
+            author_html += f'<a href="{linkedin_url}" target="_blank" title="{name} on LinkedIn" style="text-decoration: none;">{LINKEDIN_ICON}</a>'
+            
+        if affiliation not in affiliations_dict:
+            affiliations_dict[affiliation] = []
+        affiliations_dict[affiliation].append(author_html)
+    
+    # Create the flattened sentence structure
+    affiliation_blocks = []
+    for affiliation, author_html_list in affiliations_dict.items():
+        names_joined = ", ".join(author_html_list)
+        block = f"{names_joined}, <span style='color: #666; font-style: italic;'>{affiliation}</span>"
+        affiliation_blocks.append(block)
+        
+    final_text = "; ".join(affiliation_blocks) + "."
+    
+    # Wrap in the final styled container
+    html_content = f"""
+    <div class="author-bio" style="margin-bottom: 24px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-left: 5px solid #007acc; border-radius: 4px; font-family: sans-serif; line-height: 1.6;">
+        <strong style="color: #333; margin-right: 5px;">Authors:</strong> 
+        {final_text}
+    </div>
+    """
+    
+    # Convert HTML string to a Docutils node
+    bio_node = nodes.raw('', html_content, format='html')
+
+    # --- Step B: Inject into the AST ---
+    # Handle backwards compatibility for older Sphinx versions
+    finder = doctree.findall if hasattr(doctree, 'findall') else doctree.traverse
+    
+    injected = False 
+    
+    # Hunt for the main document title
+    for title_node in finder(nodes.title):
+        # Security Check: Ensure this title belongs to the main page layout, 
+        # not a warning box, note, or sidebar.
+        if isinstance(title_node.parent, nodes.section):
+            parent = title_node.parent
+            index = parent.index(title_node)
+            
+            # Insert our HTML block immediately AFTER the title
+            parent.insert(index + 1, bio_node)
+            injected = True
+            
+            # Stop searching after finding the first valid H1
+            break
+            
+    # Fallback: If the author forgot to include a title cell entirely, 
+    # shove the bio to the absolute top of the page so it isn't lost.
+    if not injected:
+        doctree.insert(0, bio_node)
+
+# Register the Hook with Sphinx
 def setup(app):
-    app.add_directive('author-bio', AuthorBioDirective)
-
-# This injects our custom directive at the very top of every rendered notebook page
-nbsphinx_prolog = """
-.. author-bio::
-"""
+    # 'doctree-read' runs immediately after the notebook/markdown is parsed into AST
+    app.connect('doctree-read', inject_authors_after_title)
