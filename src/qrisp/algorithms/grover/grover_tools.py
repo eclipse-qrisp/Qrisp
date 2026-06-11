@@ -478,7 +478,7 @@ def grovers_alg(
                 diffuser(args)
 
         # NOTE: We could check here whether the oracle introduced new QuantumVariables without uncomputing/deleting them, which would be a common mistake.
-        # This check was deactivated, be cause it raises an unjustified error in some cases, e.g., when the oracle acts on a QuantumVariable that is not part of the input `args`. See #586.
+        # This check was deactivated, because it raises an unjustified error in some cases, e.g., when the oracle acts on a QuantumVariable that is not part of the input `args`. See #586.
         # if qv_amount != len(qs.qv_list):
         #    raise Exception(
         #        "Applied oracle introducing new QuantumVariables without uncomputing/deleting"
