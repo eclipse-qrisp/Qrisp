@@ -81,8 +81,8 @@ def reverse_parallelize(qc: QuantumCircuit) -> QuantumCircuit:
     # to make the parallelize pass execute the two qubit gates first.
     def depth_indicator(op):
         if op.num_qubits == 1:
-            return 1
-        return 0
+            return 10
+        return 1
 
     reversed_qc = qc.copy()
     reversed_qc.data.reverse()

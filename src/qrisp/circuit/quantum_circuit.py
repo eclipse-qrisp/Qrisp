@@ -2300,14 +2300,54 @@ class QuantumCircuit:
 
         Returns
         -------
-        function
-            A function representing a Cirq QuantumCircuit.
+        cirq.Circuit
+            A Cirq Circuit equivalent to the Qrisp QuantumCircuit.
 
         """
         # NOTE: This is here to avoid circular imports
         from qrisp.interface import convert_to_cirq
 
         return convert_to_cirq(self)
+
+    @classmethod
+    def from_cirq(cls, cirq_circuit):
+        """
+        Class method to create QuantumCircuits from Cirq Circuits.
+
+        Parameters
+        ----------
+        cirq_circuit : cirq.Circuit
+            The Cirq Circuit to convert.
+
+        Returns
+        -------
+        QuantumCircuit
+            The converted QuantumCircuit.
+
+        Examples
+        --------
+
+        We construct a Bell-state circuit in Cirq:
+
+        >>> import cirq
+        >>> q0, q1 = cirq.LineQubit.range(2)
+        >>> cirq_circ = cirq.Circuit([cirq.H(q0), cirq.CNOT(q0, q1)])
+        >>> from qrisp import QuantumCircuit
+        >>> qrisp_qc = QuantumCircuit.from_cirq(cirq_circ)
+        >>> print(qrisp_qc)
+
+        .. code-block:: none
+
+             qb_0: ──H──■──
+                       ┌─┴─┐
+             qb_1: ────┤ X ├
+                       └───┘
+
+        """
+        # NOTE: This is here to avoid circular imports
+        from qrisp.interface import convert_from_cirq
+
+        return convert_from_cirq(cirq_circuit)
 
     def to_pdag(self, remove_artificials: bool = False):
         """

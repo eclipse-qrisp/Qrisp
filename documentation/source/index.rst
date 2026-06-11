@@ -355,6 +355,21 @@ This example demonstrates how high-level quantum programming enables novel, scal
 
     </div>
 
+Get Involved
+============
+
+.. raw:: html
+
+    <hr class="section-divider">
+    <div class="code-example-text">
+
+Interested in contributing to Qrisp? Whether it's fixing a bug, improving the documentation, or proposing a new feature, contributions of all kinds are welcome. Head over to the `Contributing Guide <./reference/Development%20Guide/index.html>`_ to get started.
+
+.. raw:: html
+
+    </div>
+
+
 Who is behind Qrisp
 ===================
 
@@ -479,9 +494,10 @@ Qrisp is an open-source project developed across organizations. We are open to a
 
 .. toctree::
    :hidden:
-   
+
    general/tutorial/index
    reference/index
+   reference/Development Guide/index
    general/setup
    general/papers/index
    general/changelog/index
