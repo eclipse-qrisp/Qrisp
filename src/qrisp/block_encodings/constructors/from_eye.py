@@ -36,7 +36,7 @@ def build_from_eye(
     Returns
     -------
     BlockEncoding
-        A new BlockEncoding instance representing an array where all elements are equal to zero,
+        A BlockEncoding representing an array where all elements are equal to zero,
         except for the $k$-th diagonal, whose values are equal to one.
 
     Examples
