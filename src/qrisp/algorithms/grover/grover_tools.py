@@ -16,9 +16,6 @@
 ********************************************************************************
 """
 
-# Test for reviewdog
-import os
-
 from collections.abc import Callable, Sequence
 import numpy as np
 from typing import Any
@@ -45,9 +42,12 @@ from qrisp.alg_primitives.reflection import reflection
 from qrisp.jasp import check_for_tracing_mode, jrange
 from qrisp.typing import FloatLike
 
+
 # Applies the grover diffuser onto the (sequence of) quantum variable input_object
 def diffuser(
-    input_object: QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray],
+    input_object: (
+        QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray]
+    ),
     phase: FloatLike = np.pi,
     state_function: Callable | None = None,
     reflection_indices: list[int] | None = None,
@@ -121,6 +121,7 @@ def diffuser(
         def _state_function(*qargs):
             for arg in qargs:
                 h(arg)
+
         state_function = _state_function
 
     reflection(
@@ -448,7 +449,7 @@ def grovers_alg(
 
     if isinstance(args, Sequence):
         for qv in args:
-                h(qv)
+            h(qv)
     else:
         h(args)
 
@@ -476,7 +477,7 @@ def grovers_alg(
                 oracle_function(args, **kwargs)
                 diffuser(args)
 
-        # NOTE: We could check here whether the oracle introduced new QuantumVariables without uncomputing/deleting them, which would be a common mistake. 
+        # NOTE: We could check here whether the oracle introduced new QuantumVariables without uncomputing/deleting them, which would be a common mistake.
         # This check was deactivated, be cause it raises an unjustified error in some cases, e.g., when the oracle acts on a QuantumVariable that is not part of the input `args`. See #586.
         # if qv_amount != len(qs.qv_list):
         #    raise Exception(
