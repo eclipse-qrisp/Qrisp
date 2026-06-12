@@ -205,7 +205,7 @@ def carry_venting_adder(
 ) -> int:
     """Fig. 2 — carry-venting CQ in-place adder.
 
-    target ← (target + d + c_in) mod 2^n
+    :math:`\\text{target} \\rightarrow (\\text{target} + d + c_{\\text{in}}) \\bmod 2^n`
 
     Instead of propagating carries across all bits with many Toffoli gates,
     each carry is measured in the X-basis (vented) as soon as it is no longer
@@ -540,7 +540,7 @@ def dirty_ancillae_adder(
 ) -> int:
     """Fig. 4 — dirty-ancilla CQ in-place adder.
 
-    target ← (target + d + c_in) mod 2^n
+    :math:`\\text{target} \\rightarrow (\\text{target} + d + c_{\\text{in}}) \\bmod 2^n`
 
     Uses 2 clean ancillae for the streaming carry chain plus n-2 dirty
     workspace qubits that are restored to their original state.
@@ -623,7 +623,7 @@ def gidney_cq_venting_adder(
     Heavily adapted from the reference implementation released with
     https://arxiv.org/pdf/2507.23079 at https://zenodo.org/records/15866587.
 
-    :math:`\\text{target} \\leftarrow (\\text{target} + d + c_{\\text{in}}) \\bmod 2^n`
+    :math:`\\text{target} \\rightarrow (\\text{target} + d + c_{\\text{in}}) \\bmod 2^n`
 
     Uses 3 clean ancillae allocated internally (1 for the mid-carry + 2
     streaming carry) and no external dirty workspace — the target register

@@ -5,7 +5,7 @@ Unit tests for Gidney Figure 1-4 gate implementations.
 import pytest
 import jax.numpy as jnp
 from qrisp import QuantumFloat, x, h, z, measure, control, multi_measurement, cx
-from qrisp.jasp import jaspify, count_ops
+from qrisp.jasp import jaspify, count_ops, terminal_sampling, jrange
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.alg_primitives.arithmetic.adders.gidney_venting_adder import (
     _extract_bit,
@@ -772,3 +772,153 @@ def test_carry_xor_block_ctrl(use_ctrl):
     t, d = main()
     assert int(t) == 8  # 5 + 3 = 8
     assert int(d) == 0  # dirty restored
+
+
+# ─── Terminal sampling demos ────────────────────────────────────────────────
+# These tests demonstrate that the adder works correctly under @terminal_sampling,
+# which measures the final state vector directly instead of via individual Z
+# measurements.  Mid-circuit measurements (the vents) still execute during the
+# single trace; only the final readout uses state-vector sampling.
+#
+# Note: @terminal_sampling functions must be module-level (not defined inside
+# pytest test functions) to avoid closure interaction with JASP tracing.
+
+
+@terminal_sampling
+def _ts_add(init, d, n):
+    """Uncontrolled addition helper (module-level for terminal sampling)."""
+    target = QuantumFloat(n)
+    target[:] = init
+    gidney_cq_venting_adder(d, target)
+    return target
+
+
+@terminal_sampling
+def _ts_add_carry(init, d, c_in_val, n):
+    """Addition with carry-in helper (module-level for terminal sampling)."""
+    target = QuantumFloat(n)
+    target[:] = init
+    c_in = QuantumFloat(1)
+    c_in[:] = c_in_val
+    gidney_cq_venting_adder(d, target, c_in[0])
+    return target
+
+
+@terminal_sampling
+def _ts_add_ctrl(init, d, ctrl_val, n):
+    """Controlled addition helper (module-level for terminal sampling)."""
+    target = QuantumFloat(n)
+    target[:] = init
+    ctrl_qbl = QuantumFloat(1)
+    ctrl_qbl[:] = ctrl_val
+    with control(ctrl_qbl[0]):
+        gidney_cq_venting_adder(d, target)
+    return target, ctrl_qbl
+
+
+@terminal_sampling
+def _ts_add_carry_ctrl(init, d, c_in_val, ctrl_val, n):
+    """Controlled addition with carry-in helper (module-level for terminal sampling)."""
+    target = QuantumFloat(n)
+    target[:] = init
+    c_in = QuantumFloat(1)
+    c_in[:] = c_in_val
+    ctrl_qbl = QuantumFloat(1)
+    ctrl_qbl[:] = ctrl_val
+    with control(ctrl_qbl[0]):
+        gidney_cq_venting_adder(d, target, c_in[0])
+    return target, ctrl_qbl
+
+
+@terminal_sampling
+def _ts_dirty(init, d):
+    """Dirty-ancilla adder helper (module-level for terminal sampling)."""
+    n = 4
+    target = QuantumFloat(n)
+    target[:] = init
+    dirty = QuantumFloat(n - 2)
+    for i in jrange(n - 2):
+        h(dirty[i])
+    anc = QuantumFloat(2)
+    dirty_ancillae_adder(d, target, dirty, anc)
+    for i in jrange(n - 2):
+        h(dirty[i])
+    return target, dirty
+
+
+@terminal_sampling
+def _ts_identity(n):
+    """Coherence helper: H⊗ⁿ → add(0) → H⊗ⁿ returns |0⟩."""
+    target = QuantumFloat(n)
+    h(target)
+    gidney_cq_venting_adder(0, target)
+    h(target)
+    return target
+
+
+TERMINAL_CASES = [
+    (1, 1, 2, 3, None),
+    (15, 1, 16, 6, None),
+    (5, 2, 7, 3, None),
+    (0, 7, 7, 5, None),
+    (15, 3, 2, 4, None),
+    (3, 2, 5, 3, None),
+]
+
+TERMINAL_CTRL_CASES = [
+    (1, 1, 0, 2, 3, 1),
+    (1, 1, 0, 1, 3, 0),
+    (10, 5, 15, 5, 1),
+    (10, 5, 10, 5, 0),
+]
+
+TERMINAL_CARRY_CASES = [
+    (3, 2, 1, 6, 3),
+    (6, 2, 1, 9, 4),
+]
+
+TERMINAL_CARRY_CTRL_CASES = [
+    (3, 2, 1, 1, 6, 3),
+]
+
+
+@pytest.mark.parametrize("init, d, expected, n, ctrl_val", TERMINAL_CASES)
+def test_terminal_unctrl(init, d, expected, n, ctrl_val):
+    """Uncontrolled addition via terminal sampling."""
+    if ctrl_val is not None:
+        res = _ts_add_ctrl(init, d, ctrl_val, n)
+        (t_val, c_val), prob = next(iter(res.items()))
+        assert int(c_val) == ctrl_val
+    else:
+        res = _ts_add(init, d, n)
+        t_val, prob = next(iter(res.items()))
+    assert prob == pytest.approx(1.0)
+    assert int(t_val) == expected
+
+
+@pytest.mark.parametrize("init, d, c_in_val, expected, n", TERMINAL_CARRY_CASES)
+def test_terminal_carry_in(init, d, c_in_val, expected, n):
+    """Addition with carry-in via terminal sampling."""
+    res = _ts_add_carry(init, d, c_in_val, n)
+    t_val, prob = next(iter(res.items()))
+    assert prob == pytest.approx(1.0)
+    assert int(t_val) == expected
+
+
+@pytest.mark.parametrize("init, d, c_in_val, ctrl_val, expected, n", TERMINAL_CARRY_CTRL_CASES)
+def test_terminal_carry_and_ctrl(init, d, c_in_val, ctrl_val, expected, n):
+    """Addition with carry-in and control via terminal sampling."""
+    res = _ts_add_carry_ctrl(init, d, c_in_val, ctrl_val, n)
+    (t_val, c_val), prob = next(iter(res.items()))
+    assert prob == pytest.approx(1.0)
+    assert int(t_val) == expected
+    assert int(c_val) == ctrl_val
+
+
+def test_terminal_dirty_adder():
+    """Dirty-ancilla adder via terminal sampling: target == sum, dirty restored."""
+    res = _ts_dirty(5, 3)
+    (t_val, d_val), prob = next(iter(res.items()))
+    assert prob == pytest.approx(1.0)
+    assert int(t_val) == 8
+    assert int(d_val) == 0
