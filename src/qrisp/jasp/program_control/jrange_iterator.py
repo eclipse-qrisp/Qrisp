@@ -16,14 +16,30 @@
 ********************************************************************************
 """
 
+import warnings
+
 import jax.numpy as jnp
 from jax._src.array import ArrayImpl
 from jax import jit
 
 from qrisp.jasp.tracing_logic import check_for_tracing_mode
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 class JRangeIterator:
+    """Iterator used by :func:`jrange` in JASP tracing mode.
+
+    Traces two loop iterations to capture the quantum operations performed
+    inside the loop body. The collected environments are compiled into a
+    JAX loop primitive by :class:`~qrisp.environments.JIterationEnvironment`.
+
+    Parameters
+    ----------
+    *args : int
+        One argument: stop value (start defaults to 0).
+        Two arguments: start and stop values.
+
+    """
 
     def __init__(self, *args):
 
@@ -42,6 +58,8 @@ class JRangeIterator:
         self.stop -= 1
 
     def __iter__(self):
+        """Initialise the loop index and reset the iteration counter."""
+
         self.iteration = 0
 
         # We create the loop iteration index tracer
@@ -52,6 +70,15 @@ class JRangeIterator:
         return self
 
     def __next__(self):
+        """Run the next tracing step.
+
+        Traces two iterations inside a
+        :class:`~qrisp.environments.JIterationEnvironment` to capture the
+        quantum operations performed by the loop body. The first iteration
+        opens the environment; the second closes it and opens a new one to
+        detect created qubits and compute the loop semantics.
+        """
+
         # The idea is now to trace two iterations to capture what values get
         # updated after each iteration.
         # We capture the loop semantics using the JIterationEnvironment.
@@ -119,8 +146,8 @@ def jrange(*args):
 
     .. note::
 
-        The ``step`` parameter was removed in version 0.9. To achieve stepping
-        behavior, compute the desired index from the loop variable using arithmetic.
+        The ``step`` parameter was removed in version 0.9. Use a step-1
+        loop and multiply the loop variable by your desired step.
 
     .. warning::
 
@@ -239,8 +266,10 @@ def jrange(*args):
     >>> jaspr(5, 8)
     Exception: Jax semantics changed during jrange iteration
 
-    Since the ``step`` argument has been removed, simply compute the desired
-    index from a step-1 loop variable using arithmetic:
+    Since the ``step`` argument has been removed as of v0.9, multiply the loop
+    variable by your desired step inside the body.
+
+    The following example steps through every second qubit (equivalent to step 2):
 
     ::
 
@@ -249,10 +278,11 @@ def jrange(*args):
 
         @qache
         def stepped_loop(qv):
-            # Equivalent to: for i in jrange(0, qv.size, 2):
-            # but without using the removed step argument.
+            # Number of iterations for step 2
             n = (qv.size + 1) // 2
+            # Step-1 loop
             for k in jrange(n):
+                # Multiply by the desired step
                 i = 2 * k
                 x(qv[i])
 
@@ -268,8 +298,10 @@ def jrange(*args):
     >>> jaspr(4)
     5
 
-    Similarly, a reversed iteration can be expressed as a forward loop with
-    arithmetic on the index:
+    Reversing a ``jrange`` loop (equivalent to step size -1) can be done in
+    two ways.
+
+    The first is to compute the index manually:
 
     ::
 
@@ -278,8 +310,9 @@ def jrange(*args):
 
         @qache
         def reversed_loop(qv):
-            # Iterate from qv.size-1 down to 0 (reverse order)
+            # Step-1 loop
             for j in jrange(qv.size):
+                # Compute index in reverse
                 i = qv.size - j - 1
                 x(qv[i])
 
@@ -295,8 +328,10 @@ def jrange(*args):
     >>> jaspr(4)
     15
 
-    To reverse a loop (equivalent to step size -1), wrap it in an
+    The second way is to wrap the forward loop in an
     :meth:`~qrisp.environments.InversionEnvironment`:
+
+    First, the forward loop without inversion:
 
     ::
 
@@ -305,7 +340,9 @@ def jrange(*args):
 
         @qache
         def loop_with_offset(qv, start):
+            # Forward jrange loop
             for i in jrange(qv.size - start):
+                # Offset the loop variable by start
                 x(qv[i + start])
 
         def test_f(a):
@@ -319,13 +356,16 @@ def jrange(*args):
     {QuantumVariable with 4 qubits: 0011}
 
     This applies ``x`` to qubits 2 and 3, giving state ``|0011⟩``.
-    Wrapping the loop in ``invert()`` reverses the iteration order:
+    Wrapping the same loop in ``invert()`` reverses the iteration order and
+    daggers the operations:
 
     ::
 
         @qache
         def reversed_loop_with_offset(qv, start):
+            # Reverses the enclosed loop
             with invert():
+                # Same forward loop, now runs backwards
                 for i in jrange(qv.size - start):
                     x(qv[i + start])
 
@@ -345,6 +385,15 @@ def jrange(*args):
     higher nesting levels.
 
     """
+
+    if len(args) == 3:
+        warnings.warn(
+            "DeprecationWarning: The step argument of jrange has been removed "
+            "in version 0.9. Use arithmetic on the loop variable to achieve "
+            "stepping behavior.",
+            QrispDeprecationWarning,
+            stacklevel=2,
+        )
 
     if len(args) not in (1, 2):
         raise TypeError(
@@ -372,6 +421,23 @@ def jrange(*args):
 
 
 def make_tracer(x):
+    """Create a JIT-compiled tracer from a Python scalar.
+
+    Parameters
+    ----------
+    x : bool, int, float, or complex
+        The value to convert into a tracer.
+
+    Returns
+    -------
+    ArrayImpl
+        A traced JAX array representing the given value.
+
+    Raises
+    ------
+    Exception
+        If the type of *x* is not supported.
+    """
     if isinstance(x, bool):
         dtype = jnp.bool
     elif isinstance(x, int):
@@ -390,6 +456,18 @@ def make_tracer(x):
 
 
 def jlen(x):
+    """Return the length of *x*, supporting both lists and JAX arrays.
+
+    Parameters
+    ----------
+    x : list or ArrayImpl
+        The object whose length to return.
+
+    Returns
+    -------
+    int
+        ``len(x)`` if *x* is a list, otherwise ``x.size``.
+    """
     if isinstance(x, list):
         return len(x)
     else:
