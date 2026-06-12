@@ -50,10 +50,6 @@ class DCQOProblem:
     lam_func : callable
         A function $\lambda(t, T)$ mapping $t \in [0, T]$ to $\lambda \in [0, 1]$. This function needs to return
         a `sympy <https://docs.sympy.org/>`_ expression with $t$ and $T$ as `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
-    g_func : callable, optional
-        The inverse function of $\lambda(t, T)$. This function needs to return a `sympy <https://docs.sympy.org/>`_ expression
-        with $\lambda$ and $T$ as `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
-        Only needed for the COLD algorithm.
     H_control : :ref:`QubitOperator`, optional
         Hamiltonian specifying the control pulses for the COLD method. If not given, the LCD method is used automatically.
     qarg_prep : callable, optional
@@ -199,7 +195,9 @@ class DCQOProblem:
         lamdot = lamdot_func(t_list, T)
         # Convert lamdot to a constant list to make it subscriptable by timestep
         if isinstance(lamdot, float):
-            lamdot = [lamdot] * N_steps
+            lamdot = np.full(N_steps, lamdot)
+        else:
+            lamdot = np.array(lamdot)
 
         self.lam = lam
         self.lamdot = lamdot
@@ -457,8 +455,9 @@ class DCQOProblem:
             The parameter bounds for the optimizer. Default is (-2, 2).
         precision : float, optional
             Precision for expectation value calculations. Default is 0.01.
-        exp_value_backend : BackendClient, optional
-            Backend for expectation value calculations. If provided, uses measurement-based expectation value with this backend.
+        exp_value_backend : BackendLike, optional
+            Backend for expectation value calculations, if ``exp_value`` is used as opbjective function.
+            If provided, uses measurement-based expectation value with this backend.
             If not provided, tries statevector first and falls back to measurement. Default is None.
 
         Returns
@@ -592,8 +591,11 @@ class DCQOProblem:
         exp_value_backend=None,
     ):
         """
-        Run the specific DCQO problem instance with given quantum arguments, number of timesteps and
-        evolution time.
+        Run the specific DCQO problem instance with given quantum arguments, number of timesteps,
+        evolution time and method. 
+
+        There is also the option to choose if parameter optimization via the expectation value objective function should be done via a simulator or real quantum backend.
+        If the user chooses a quantum backend this iterative optimization can potentially use a lot of computing time.
 
         Parameters
         ----------
@@ -625,7 +627,8 @@ class DCQOProblem:
         precision : float, optional
             Precision for expectation value calculations. Default is 0.01.
         exp_value_backend : BackendLike, optional
-            Backend for expectation value calculations. If provided, uses measurement-based expectation value with this backend.
+            Backend for expectation value calculations, if ``exp_value`` is used as opbjective function.
+            If provided, uses measurement-based expectation value with this backend.
             If not provided, tries statevector first and falls back to measurement. Default is None.
         backend : BackendLike, optional
             The backend to be used for the quantum simulation.

@@ -138,3 +138,55 @@ def test_cold_expvalue_method_backend():
     res = solve_QUBO(Q, problem_args=problem_args, run_args=run_args)
     assert isinstance(res, dict)
     assert len(res) > 0
+
+def test_cold_full_example():
+    import sympy as sp
+    from qrisp import QuantumVariable
+    from qrisp.operators.qubit import X, Y, Z
+    from qrisp.algorithms.cold import DCQOProblem
+
+    Q = np.array([[-1.1, 0.6, 0.4, 0.0, 0.0, 0.0],
+              [0.6, -0.9,  0.5, 0.0, 0.0, 0.0],
+              [0.4, 0.5, -1.0, -0.6, 0.0, 0.0],
+              [0.0, 0.0, -0.6, -0.5, 0.6, 0.0],
+              [0.0, 0.0, 0.0, 0.6, -0.3, 0.5],
+              [0.0, 0.0, 0.0, 0.0, 0.5, -0.4]])
+
+    N = Q.shape[0]
+    h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
+    J = 0.5 * Q
+
+    H_init = 1 * sum([X(i) for i in range(N)])
+
+    H_prob = (sum([sum([J[i][j]*Z(i)*Z(j) for j in range(i)]) for i in range(N)])
+            + sum([h[i]*Z(i) for i in range(N)]))
+
+    H_control = sum([Z(i) for i in range(N)])
+
+    A_lam = [Y(i) for i in range(N)] # non-uniform
+
+    def alpha(lam, f, f_deriv):
+
+        nom = [h[i] + f + (1-lam) * f_deriv
+            for i in range(N)]
+
+        denom = [2 * ((lam*h[i] + f)**2 + (1-lam)**2 +
+                lam**2 * sum([J[i][j] for j in range(N) if j != i]))
+                for i in range(N)]
+
+        alph = [nom[i]/denom[i] for i in range(N)]
+
+        return alph
+
+    def lam():
+        t, T = sp.symbols("t T", real=True)
+        lam_expr = t/T
+        return lam_expr
+
+    cold_problem = DCQOProblem(Q, H_init, H_prob, A_lam, alpha, lam, H_control)
+
+    qarg = QuantumVariable(N)
+    result = cold_problem.run(qarg, N_steps=4, T=8, method="COLD", N_opt=1, bounds=(-3, 3))
+
+    assert isinstance(result, dict)
+    assert len(result) > 0
