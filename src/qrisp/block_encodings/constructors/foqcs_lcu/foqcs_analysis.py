@@ -42,7 +42,7 @@ def foqcs_analyze_operator_spin_glass(
     Parameters
     ----------
     O : QubitOperator
-            Qubit operator of form: `O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)`
+        Qubit operator of form: `O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)`
 
     L : int = -1
         Number of operand qubits.
@@ -63,8 +63,8 @@ def foqcs_analyze_operator_spin_glass(
     Raises
     ----------
     ValueError
-            When the operator is not representing spin-glass model.
-            When spin-glass analysis fails, it raises a ValueError with the reason for failure.
+        When the operator is not representing spin-glass model.
+        When spin-glass analysis fails, it raises a ValueError with the reason for failure.
 
     """
     # Verifies that operator exists and is not constant.
@@ -134,13 +134,12 @@ def foqcs_analyze_operator_heisenberg(
         - Must have form: Xi, Yi, Zi, XiXi+1, YiYi+1, ZiZi+1; local fields must be uniform.
         - Fails if:
             - Local field is position dependent: `g_0X != g_1X, 0.5*X(0) + 0.7*X(1)`
-            - Has long-range couplings: `X_0*X_2`
+            - Has long-range couplings: `X(0)*X(2)`
             - Has NN couplings with different strengths: `0.5*X(0)*X(1) + 0.9*X(1)*X(2)`
-            - Zeroes matter, don't pass `0.5*X(0)*X(1) + 0*X(1)*X(2)` , so depends on L.
     Parameters
     ----------
     O : QubitOperator
-            Qubit operator of form: `O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)`
+        Qubit operator of form: `O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)`
 
     L : int = -1
         Number of operand qubits.
@@ -161,7 +160,7 @@ def foqcs_analyze_operator_heisenberg(
     Raises
     ----------
     ValueError
-            When the operator is not representing one-dimensional Heisenberg model with nearest-neighbours couplings.
+        When the operator is not representing one-dimensional Heisenberg model with nearest-neighbours couplings.
 
     """
     # Do the spin-glass analysis (Heisenberg is a subset of it)
@@ -247,7 +246,7 @@ def foqcs_analyze_operator(
     Raises
     ----------
     ValueError
-            When the operator is not compatible with FOQCS-LCU (fails the spin-glass check).
+        When the operator is not compatible with FOQCS-LCU (fails the spin-glass check).
 
     """
     # Spin-glass analysis is base one. If it fails - operator is not compatible.
@@ -299,22 +298,31 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
     Parameters
     ----------
     aresult : dict
-            Output of `foqcs_analyze_operator`
+        Output of `foqcs_analyze_operator`
 
     Returns
     -------
-    prep : Callable[[QuantumVariable], None]
-        Partial :math:`PREP_{R}` function with all relevant parameters passed except QuantumVariable.
-        Parameters can be fixed by using :class:`functools.partial`
+    p_r : Callable[[QuantumVariable], None]
+        Partial :math:`PREP_{R}` function with all relevant parameters which depend on PREP routine
+        passed except QuantumVariable. Parameters can be fixed by using :class:`functools.partial`.
+        e.g. foqcs_prep_heisenberg would have the following parameters:
+
+        prep_qv: QuantumVariable | Sequence[Qubit],
+        L: int,
+        g: dict,
+        J: dict,
+        conjugate: bool = False
+
+        Most of these already exist by the time we define the partial function, excluding QuantumVariable as
+        this is passed later on by the :class:`BlockEncoding` class when we call :meth:`apply` or :meth:`apply_rus`.
+
+    p_l : Callable[[QuantumVariable], None] = None
+        :math:`PREP_{R}` with conjugated parameters (see Notes), also a partial function variable with
+        all relevant parameters passed except QuantumVariable.
         
     num_q_ops : int
         Number of operand qubits, i.e. ``L`` argument for FOQCS-LCU PREP routines.
         The default is 1.
-
-    unprep : Callable[[QuantumVariable], None] = None
-        Complex conjugate transpose of :math:`PREP_{R}` with conjugated parameters (see Notes), 
-        also a partial function variable with all relevant parameters passed except QuantumVariable.
-        The default is None, in which case the unprep is calculated using the prep parameter.
 
     is_hermitian : bool
         Indicates whether the block-encoding unitary is Hermitian.
@@ -367,13 +375,13 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
         # Calculate the norm factor
         alpha = norm**2
         # Create partial PREP_R and PREP_L functions
-        prep = partial(
+        p_r = partial(
             foqcs_prep_heisenberg,
             L=heis_L,
             g=_g,
             J=_J,
         )
-        unprep = partial(
+        p_l = partial(
             foqcs_prep_heisenberg,
             L=heis_L,
             g=_g,
@@ -381,7 +389,7 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
             conjugate=True
         )
 
-        return prep, heis_L, unprep, False, alpha
+        return p_r, p_l, heis_L, False, alpha
 
     elif aresult["method"] == "spin_glass":
         #print("Parsing as Spin-Glass model")
@@ -451,14 +459,14 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
         norm = np.linalg.norm(coeff_vec)
         alpha = norm**2
 
-        prep = partial(
+        p_r = partial(
             foqcs_prep_spin_glass,
             L=sg_L,
             g=_g,
             J=_J,
         )
 
-        unprep = partial(
+        p_l = partial(
             foqcs_prep_spin_glass,
             L=sg_L,
             g=_g,
@@ -466,6 +474,6 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
             conjugate=True,
         )
 
-        return prep, sg_L, unprep, False, alpha
+        return p_r, p_l, sg_L, False, alpha
 
     raise KeyError(f"Failed to handle FOQCS-LCU method: \"{aresult['method']}\"")

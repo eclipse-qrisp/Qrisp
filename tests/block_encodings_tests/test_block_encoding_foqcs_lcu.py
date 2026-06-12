@@ -17,6 +17,7 @@
 """
 
 from functools import partial
+from qrisp.typing import NDArrayLike
 import numpy as np
 import pytest
 from qrisp.block_encodings import BlockEncoding
@@ -31,8 +32,7 @@ from qrisp.block_encodings.constructors.foqcs_lcu import (
 from qrisp.operators import X, Y, Z
 from qrisp.alg_primitives.unbalanced_w_state import unbalanced_w_state
 
-def _heisenberg_from_def(L: int, g: dict, J: dict):
-
+def _heisenberg_from_def(L: int, g: NDArrayLike, J: NDArrayLike):
     assert len(J) == 3, "J must be a list of length 3."
     assert len(g) == 3, "g must be list a of length 3."
     sigma_list = [np.array([[0,1],[1,0]]), np.array([[0,-1j],[1j,0]]), np.array([[1,0],[0,-1]])]
@@ -93,6 +93,36 @@ def _flatten_spin_glass_coeffs(g: dict, J: dict):
             coeffs.extend(diag)
     return np.array(coeffs, dtype=complex)
 
+def _generate_heisenberg_coeff():
+    g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
+    J = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
+    # Fix coefficients for debugging
+    #g = np.array([0.80054361+0.j,  0.50905072+0.j, -0.89045545+0.j])
+    #J = np.array([0.98167489+0.j, -0.32435597+0.j,  0.42262456+0.j])
+    # Normalize
+    norm = np.linalg.norm(np.block([g, J]))
+    g /= norm
+    J /= norm
+    return g, J
+
+def _preprocess_heisenberg_coeff(g, J, L):
+    _g = np.zeros((3,), dtype="complex")
+    _J = np.zeros((3,), dtype="complex")
+    # Modify the original coefficients for the manual state building.
+    # g and J must be normalized
+    _g[0] = np.sqrt(g[0] * L)
+    _g[1] = np.sqrt(g[1] * L * -1j)
+    _g[2] = np.sqrt(g[2] * L)
+    _J[0] = np.sqrt(J[0] * (L - 1))
+    _J[1] = np.sqrt(J[1] * -(L - 1))
+    _J[2] = np.sqrt(J[2] * (L - 1))
+
+    norm = np.linalg.norm(np.block([_g, _J]))
+    _g /= norm
+    _J /= norm
+
+    return _g, _J, norm
+
 def _prep_psi(q_num):
     # Generate state amplitudes.
     psi = np.random.uniform(-1, 1, 2 ** (q_num)) + 1j * np.random.uniform(
@@ -109,32 +139,32 @@ def _prep_psi(q_num):
     psi /= np.linalg.norm(psi)
     return psi
 
-def test_foqcs_lcu_prep():
+def _bit_reverse(i: int, n: int) -> int:
+        return int(f"{i:0{n}b}"[::-1], 2)
+
+def _pick_ops_with_anc_all_zero(
+    sv: NDArrayLike,
+    anc: NDArrayLike,
+    L: int
+)-> NDArrayLike:
+    res_ops = []
+
+    for i in range(0, 2 ** L):
+        qi = _bit_reverse(i, L)
+        ind = qi << (len(anc[0]))
+        res_ops.append(sv[ind])
+
+    return res_ops
+
+def test_foqcs_lcu_heisenberg_prep():
+    r"""
+    Verifies Heisenberg model `foqcs_prep_heisenberg` PREP statevector
+    against the manually constructed expected statevector.
+    """
     # Initialize variables + their values
     L = 4
-    g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
-    J = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
-
-    # Fix coefficients for debugging
-    #g = np.array([0.80054361+0.j,  0.50905072+0.j, -0.89045545+0.j])
-    #J = np.array([0.98167489+0.j, -0.32435597+0.j,  0.42262456+0.j])
-
-    # Normalize
-    norm = np.linalg.norm(np.block([g, J]))
-    g /= norm
-    J /= norm
-
-    # Modify the original coefficients for the manual state building.
-    g[0] = np.sqrt(g[0] * L)
-    g[1] = np.sqrt(g[1] * L * -1j)
-    g[2] = np.sqrt(g[2] * L)
-    J[0] = np.sqrt(J[0] * (L - 1))
-    J[1] = np.sqrt(J[1] * -(L - 1))
-    J[2] = np.sqrt(J[2] * (L - 1))
-
-    norm = np.linalg.norm(np.block([g, J]))
-    g /= norm
-    J /= norm
+    g, J = _generate_heisenberg_coeff()
+    g, J, _ = _preprocess_heisenberg_coeff(g, J, L)
 
     heis_g = {"X": g[0], "Y": g[1], "Z": g[2]}
     heis_J = {"X": J[0], "Y": J[1], "Z": J[2]}
@@ -211,7 +241,10 @@ def test_foqcs_lcu_prep():
     )
 
 def test_foqcs_lcu_spin_glass_prep():
-
+    r"""
+    Verifies Spin-glass model `foqcs_prep_spin_glass` PREP statevector
+    against the manually constructed expected statevector
+    """
     # Initialize variables + their values
     L = 3
     coeff = np.random.uniform(-1, 1, (3, L, L))
@@ -425,160 +458,28 @@ def test_foqcs_lcu_spin_glass_prep():
         f"States differ"
     )
 
-def test_foqcs_lcu_spin_glass_subprep():
-
-    L = 5
-    g = {"X" : [2, 1, 3, 2, 4], "Y" : [1, 2, 3, 4, 5], "Z" : [6, 7, 8, 9, 10]}
-    J = {"X" : [[3, 5, 6, 7], [1, 2, 1], [1, 0], [4]], "Y" : [[1, 2, 3, 4], [5, 6, 7], [9, 10], [11]], "Z" : [[12, 13, 14, 15], [16, 17, 18], [19, 20], [21]]}
-
-    g_betas = [] # Squared normalization factors for all g components (X, Y, Z) --> [g_beta_X, g_beta_Y, g_beta_Z]
-    J_betas = [[], [], []] # Squared normalization factors for all J components and diagonals (X, Y, Z) --> [[J_beta_X1, J_beta_X2, ...], [J_beta_Y1, J_beta_Y2, ...], [J_beta_Z1, J_beta_Z2, ...]]
-    g_hats = [[], [], []] # Normalized g coefficients
-    J_hats = [[], [], []] # Normalized J coefficients
-    components = ["X", "Y", "Z"]
-
-    # Normalization for state preparation
-    for i in range(3):
-
-        for j in range(len(J["X"])):
-
-            J_hats[i].append([])
-
-    for i in range(3):
-
-        s_sum = 0
-        dimension = components[i]
-
-        for j in range(len(g[dimension])):
-
-            s_sum += abs(g[dimension][j]) ** 2
-
-        g_betas.append(s_sum)
-
-    for i in range(3):
-
-        dimension = components[i]
-
-        for j in range(len(J[dimension])):
-
-            s_sum = 0
-
-            for k in range(len(J[dimension][j])):
-
-                s_sum += abs(J[dimension][j][k]) ** 2
-
-            J_betas[i].append(s_sum)
-
-    for i in range(3):
-
-        dimension = components[i]
-
-        for j in range(len(g[dimension])):
-
-            new_g = g[dimension][j] / (g_betas[i] ** 0.5)
-            g_hats[i].append(new_g)
-
-    for i in range(3):
-
-        dimension = components[i]
-
-        for j in range(len(J[dimension])):
-
-            for k in range(len(J[dimension][j])):
-
-                new_J = J[dimension][j][k] / ((J_betas[i][j]) ** 0.5)
-                J_hats[i][j].append(new_J)
-
-    final_betas = []
-
-    for i in range(3):
-
-        final_betas.append(g_betas[i])
-
-        for j in range(len(J_betas[i])):
-
-            final_betas.append(J_betas[i][j])
-
-    final_betas = np.sqrt(np.array(final_betas))
-    final_betas = final_betas / np.linalg.norm(final_betas)
-
-    # SUBPREP
-    extra_anc = len(g_betas) + (3 * len(J_betas[0]))
-    prep_qv = QuantumVariable(extra_anc)
-    unbalanced_w_state(prep_qv, final_betas[::-1])
-
-    qc = prep_qv.qs.compile()
-    statev = qc.statevector_array()
-
-    ref_state = np.zeros(2 ** (3 * L))
-    components = ["X", "Y", "Z"]
-
-    for x in range(3):
-
-        # g term
-        ket = np.zeros(2 ** (3 * L))
-        ket[2 ** (x * L)] = 1
-        ref_state += np.linalg.norm(g[components[x]]) * ket
-
-        # J terms
-        for k in range(1, L):
-
-            J_kNN = J[components[x]][k - 1]
-
-            ket = np.zeros(2 ** (3 * L))
-            ket[2 ** (k + x * L)] = 1
-
-            ref_state += np.linalg.norm(J_kNN) * ket
-
-    ref_state = ref_state / np.linalg.norm(ref_state)
-    
-    statev[np.isclose(statev, 0j, atol=1e-6)] = 0
-
-    assert np.allclose(statev, ref_state)
-
 def test_block_encoding_from_foqcs_lcu_heisenberg_prep():
+    r"""
+    Verifies Heisenberg model block encoding `.apply`.
+    Tests it against the manually constructed statevector from definition
+    """
     # Initialize variables + their values
     L = 4
-    g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
-    J = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
-
-    # Fix coefficients for debugging
-    # g = np.array([0.80054361+0.j,  0.50905072+0.j, -0.89045545+0.j])
-    # J = np.array([0.98167489+0.j, -0.32435597+0.j,  0.42262456+0.j])
-
-    # Normalize
-    norm = np.linalg.norm(np.block([g, J]))
-    g /= norm
-    J /= norm
-
-    # Actual parameters for the PREP
-    _g = np.zeros((3,), dtype="complex")
-    _J = np.zeros((3,), dtype="complex")
-
-    # Modify the original coefficients for the manual state building.
-    _g[0] = np.sqrt(g[0] * L)
-    _g[1] = np.sqrt(g[1] * L * -1j)
-    _g[2] = np.sqrt(g[2] * L)
-    _J[0] = np.sqrt(J[0] * (L - 1))
-    _J[1] = np.sqrt(J[1] * -(L - 1))
-    _J[2] = np.sqrt(J[2] * (L - 1))
-
-    norm = np.linalg.norm(np.block([_g, _J]))
-    _g /= norm
-    _J /= norm
+    g, J = _generate_heisenberg_coeff()
+    _g, _J, norm = _preprocess_heisenberg_coeff(g, J, L)
 
     # Construct dictionary input expected by foqcs_prep_heisenberg()
     heis_g = {"X": _g[0], "Y": _g[1], "Z": _g[2]}
     heis_J = {"X": _J[0], "Y": _J[1], "Z": _J[2]}
 
     # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
-    prep = partial(
+    p_r = partial(
         foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
         J=heis_J,
     )
-    unprep = partial(
+    p_l = partial(
         foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
@@ -586,7 +487,12 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep():
         conjugate=True
     )
 
-    be = BlockEncoding.from_foqcs_lcu_prep(prep, L, unprep=unprep, norm=norm ** 2)
+    be = BlockEncoding.from_foqcs_lcu_prep(
+        p_r = p_r,
+        p_l = p_l,
+        num_q_ops = L,
+        norm = norm ** 2
+    )
 
     qv = QuantumVariable(4)
 
@@ -604,15 +510,8 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep():
     qc = operand.qs.compile()
     sv = qc.statevector_array()
 
-    def bit_reverse(i: int, n: int) -> int:
-        return int(f"{i:0{n}b}"[::-1], 2)
-
     # Take out the resulting operands with zero ancillas amplitude.
-    res_ops = []
-    for i in range(0, 2 ** L):
-        qi = bit_reverse(i, L)
-        ind = qi << (len(ancillas[0]))
-        res_ops.append(sv[ind])
+    res_ops = _pick_ops_with_anc_all_zero(sv, ancillas, L)
 
     # Construct reference state vector
     H = _heisenberg_from_def(L, g, J) / (norm ** 2)
@@ -621,6 +520,10 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep():
     assert np.allclose(res_ops, ref_state, atol=1e-6)
 
 def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
+    r"""
+    Verifies spin-glass model block encoding `.apply`.
+    Tests it against the manually constructed statevector from definition.
+    """
     L = 3
 
     # Physical Hamiltonian coefficients.
@@ -683,14 +586,14 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
 
     alpha = np.linalg.norm(_flatten_spin_glass_coeffs(prep_g, prep_J)) ** 2
 
-    prep = partial(
+    p_r = partial(
         foqcs_prep_spin_glass,
         L=L,
         g=prep_g,
         J=prep_J,
     )
 
-    unprep = partial(
+    p_l = partial(
         foqcs_prep_spin_glass,
         L=L,
         g=prep_g,
@@ -699,10 +602,10 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
     )
 
     be = BlockEncoding.from_foqcs_lcu_prep(
-        prep=prep,
-        num_q_ops=L,
-        unprep=unprep,
-        norm=alpha,
+        p_r = p_r,
+        p_l = p_l,
+        num_q_ops = L,
+        norm = alpha,
     )
 
     qv = QuantumVariable(L)
@@ -719,15 +622,8 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
     qc = operand.qs.compile()
     sv = qc.statevector_array()
 
-    def bit_reverse(i: int, n: int) -> int:
-        return int(f"{i:0{n}b}"[::-1], 2)
-
-    # Extract the operand amplitudes where all FOQCS-LCU ancillae are zero.
-    res_ops = []
-    for i in range(2**L):
-        qi = bit_reverse(i, L)
-        ind = qi << len(ancillas[0])
-        res_ops.append(sv[ind])
+    # Take out the resulting operands with zero ancillas amplitude.
+    res_ops = _pick_ops_with_anc_all_zero(sv, ancillas, L)
     
     H = _spin_glass_from_def(L, phys_g, phys_J) / alpha
     ref_state = H @ psi
@@ -735,47 +631,27 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
     assert np.allclose(res_ops, ref_state, atol=1e-5)
 
 def test_block_encoding_from_foqcs_lcu_heisenberg_prep_jasp():
+    r"""
+    Verifies Heisenberg model block encoding `.apply_rus` (under the jasp environment).
+    Tests it against the `.apply` produced statevector.
+    """
     # Initialize variables + their values
     L = 4
-    g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
-    J = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
-
-    # Fix coefficients for debugging
-    # g = np.array([0.80054361+0.j,  0.50905072+0.j, -0.89045545+0.j])
-    # J = np.array([0.98167489+0.j, -0.32435597+0.j,  0.42262456+0.j])
-
-    # Normalize
-    norm = np.linalg.norm(np.block([g, J]))
-    g /= norm
-    J /= norm
-
-    # actual parameters for the PREP
-    _g = np.zeros((3,), dtype="complex")
-    _J = np.zeros((3,), dtype="complex")
-    # Modify the original coefficients for the manual state building.
-    _g[0] = np.sqrt(g[0] * L)
-    _g[1] = np.sqrt(g[1] * L * -1j)
-    _g[2] = np.sqrt(g[2] * L)
-    _J[0] = np.sqrt(J[0] * (L - 1))
-    _J[1] = np.sqrt(J[1] * -(L - 1))
-    _J[2] = np.sqrt(J[2] * (L - 1))
-
-    norm = np.linalg.norm(np.block([_g, _J]))
-    _g /= norm
-    _J /= norm
+    g, J = _generate_heisenberg_coeff()
+    _g, _J, norm = _preprocess_heisenberg_coeff(g, J, L)
 
     # Construct dictionary input expected by foqcs_prep_heisenberg()
     heis_g = {"X": _g[0], "Y": _g[1], "Z": _g[2]}
     heis_J = {"X": _J[0], "Y": _J[1], "Z": _J[2]}
 
     # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
-    prep = partial(
+    p_r = partial(
         foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
         J=heis_J,
     )
-    unprep = partial(
+    p_l = partial(
         foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
@@ -783,7 +659,12 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep_jasp():
         conjugate=True
     )
 
-    be = BlockEncoding.from_foqcs_lcu_prep(prep=prep, num_q_ops=L, unprep=unprep, norm=norm ** 2)
+    be = BlockEncoding.from_foqcs_lcu_prep(
+        p_r = p_r,
+        p_l = p_l,
+        num_q_ops = L,
+        norm = norm ** 2
+    )
 
     psi = _prep_psi(L)
 
@@ -827,6 +708,10 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep_jasp():
                        atol = 1e-4)
 
 def test_block_encoding_from_operator_spin_glass_jasp():
+    r"""
+    Verifies spin-glass model block encoding `.apply_rus` (under the jasp environment).
+    Tests it against the `.apply` produced statevector.
+    """
     L = 3
 
     g = {
@@ -954,19 +839,13 @@ def test_block_encoding_from_operator_spin_glass_jasp():
     )
 
 def test_block_encoding_from_foqcs_lcu_heisenberg_operator():
+    r"""
+    Verifies `from_foqcs_lcu_operator` execution with Heisenberg model.
+    Tests it against the manually constructed statevector from definition.
+    """
     # Initialize variables + their values
     L = 4
-    g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
-    J = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
-
-    # Fix coefficients for debugging
-    # g = np.array([0.80054361+0.j,  0.50905072+0.j, -0.89045545+0.j])
-    # J = np.array([0.98167489+0.j, -0.32435597+0.j,  0.42262456+0.j])
-
-    # Normalize
-    norm = np.linalg.norm(np.block([g, J]))
-    g /= norm
-    J /= norm
+    g, J = _generate_heisenberg_coeff()
 
     # Build the operator
     terms = []
@@ -996,15 +875,8 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_operator():
     qc = operand.qs.compile()
     sv = qc.statevector_array()
 
-    def bit_reverse(i: int, n: int) -> int:
-        return int(f"{i:0{n}b}"[::-1], 2)
-
     # Take out the resulting operands with zero ancillas amplitude.
-    res_ops = []
-    for i in range(0, 2 ** L):
-        qi = bit_reverse(i, L)
-        ind = qi << (len(ancillas[0]))
-        res_ops.append(sv[ind])
+    res_ops = _pick_ops_with_anc_all_zero(sv, ancillas, L)
 
     # Construct reference state vector
     H = _heisenberg_from_def(L, g, J) / be.alpha # Normalisation can be taken from BE
@@ -1013,6 +885,10 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_operator():
     assert np.allclose(res_ops, ref_state, atol=1e-6)
 
 def test_block_encoding_from_foqcs_lcu_spin_glass_operator():
+    r"""
+    Verifies `from_foqcs_lcu_operator` execution with Spin-glass model.
+    Tests it against the manually constructed statevector from definition.
+    """
     L = 3
 
     # Nonuniform fields/couplings
@@ -1114,15 +990,8 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_operator():
     qc = operand.qs.compile()
     sv = qc.statevector_array()
 
-    def bit_reverse(i: int, n: int) -> int:
-        return int(f"{i:0{n}b}"[::-1], 2)
-
-    # Extract the operand amplitudes with all FOQCS-LCU ancillae zero.
-    res_ops = []
-    for i in range(2**L):
-        qi = bit_reverse(i, L)
-        ind = qi << len(ancillas[0])
-        res_ops.append(sv[ind])
+    # Take out the resulting operands with zero ancillas amplitude.
+    res_ops = _pick_ops_with_anc_all_zero(sv, ancillas, L)
 
     # Build reference state from spin-glass definition
     H = _spin_glass_from_def(L, g, J_diag) / be.alpha
@@ -1131,6 +1000,10 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_operator():
     assert np.allclose(res_ops, ref_state, atol=1e-5)
 
 def test_foqcs_lcu_resources():
+    r"""
+    Validates that `.resources` can be executed for FOQCS-LCU Block Encoding.
+    Spin-glass model is taken as benchmark.
+    """
     L = 3
 
     O = (
@@ -1152,6 +1025,9 @@ def test_foqcs_lcu_resources():
     assert res["qubits"] > 0
 
 def test_block_encoding_foqcs_lcu_is_controllable():
+    r"""
+    Tests that FOQCS-LCU produced block encoding can be controlled under jasp environment.
+    """
     from qrisp import QuantumBool, h
     from qrisp.environments import control
     H = X(0)*X(1) + 0.2*Y(0)*Y(1)
@@ -1177,6 +1053,12 @@ def test_block_encoding_foqcs_lcu_is_controllable():
 #### Transformations tests ################################################################################
 ###########################################################################################################
 
+def _compare_results(res_dict_1, res_dict_2, n):
+    for k in range(2 ** n):
+        val_1 = res_dict_1.get(k, 0)
+        val_2 = res_dict_2.get(k, 0)
+        assert np.isclose(val_1, val_2, atol=1e-6), f"Mismatch at state |{k}>: {val_1} vs {val_2}"
+
 @pytest.mark.parametrize(
     "H1, H2, rescaled",
     [
@@ -1193,6 +1075,11 @@ def test_block_encoding_foqcs_lcu_is_controllable():
     ],
 )
 def test_foqcs_lcu_chebyshev(H1, H2, rescaled):
+    r"""
+    Tests `.chebyshev(k)` on a FOQCS-LCU block encoding by comparing `BE1 + T_k(BE2)`
+    against direct operator block encodings for `T_1`, `T_2`, and `T_3`,
+    with both rescaled and non-rescaled cases.
+    """
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L=n)
@@ -1258,6 +1145,10 @@ def test_foqcs_lcu_chebyshev(H1, H2, rescaled):
     ],
 )
 def test_foqcs_lcu_poly(H1, H2, poly):
+    r"""
+    Tests `.poly(poly)` on a FOQCS-LCU block encoding by comparing `poly(BE1) + BE2`
+    against a direct block encoding of `sum(poly[k] * H1**k) + H2`.
+    """
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L=n)
@@ -1280,6 +1171,11 @@ def test_foqcs_lcu_poly(H1, H2, poly):
     _compare_results(res_be3, res_be_poly, n)
 
 def test_foqcs_lcu_inv():
+    r"""
+    Tests `.inv(...)` on a FOQCS-LCU block encoding by solving a small linear system
+    and comparing the sampled output amplitudes
+    against the normalized classical solution `inv(H) @ b`.
+    """
     from qrisp import prepare
 
     L = 2
@@ -1333,7 +1229,10 @@ def test_foqcs_lcu_inv():
     assert np.linalg.norm(np.abs(c) - q) < 1e-2
 
 def test_foqcs_lcu_sim():
-
+    r"""
+    Tests `.sim(t, N)` for Hamiltonian simulation by comparing simulation results from a FOQCS-LCU block encoding
+    against a generic `BlockEncoding.from_operator(H)` reference
+    """
     L = 2
     t = 0.1
 
@@ -1364,26 +1263,21 @@ def test_foqcs_lcu_sim():
     # Make sure the test is not accidentally trivial.
     # The |1> state of qubit 0 should receive some population from X(0).
     # assert any(v > 1e-8 for k, v in res_ref.items() if k != 0)
-
     _compare_results(res_ref, res_foqcs, L)
 
 ###########################################################################################################
 #### Arithmetic / composition tests #######################################################################
 ###########################################################################################################
-
-def _compare_results(res_dict_1, res_dict_2, n):
-    for k in range(2 ** n):
-        val_1 = res_dict_1.get(k, 0)
-        val_2 = res_dict_2.get(k, 0)
-        assert np.isclose(val_1, val_2, atol=1e-6), f"Mismatch at state |{k}>: {val_1} vs {val_2}"    
-
-# +
+# Addition
 @pytest.mark.parametrize("H1, H2", [
     (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2)),
     (0.5*X(1) + 0.7*Y(1) + 0.3*X(4), Z(0) + Z(1) + X(2)),
     (X(0)*X(1), Z(0) + 0.9*Z(1) + X(3)),
 ])
 def test_block_encoding_foqcs_lcu_addition(H1, H2):
+    r"""
+    Tests `BE_addition = BE1 + BE2` with `BE1` constructed by FOQCS-LCU.
+    """
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
@@ -1401,13 +1295,16 @@ def test_block_encoding_foqcs_lcu_addition(H1, H2):
     res_be_add = main(BE_addition)
     _compare_results(res_be3, res_be_add, n)
 
-# -
+# Subtraction
 @pytest.mark.parametrize("H1, H2", [
     (X(0)*X(1) + 0.2*Y(0)*Y(1), Z(0)*Z(1) + X(2)),
     (0.5*X(1) + 0.7*Y(1) + 0.3*X(4), Z(0) + Z(1) + X(2)),
     (X(0)*X(1), Z(0) + 0.9*Z(1) + X(3)),
 ])
 def test_block_encoding_foqcs_lcu_subtraction(H1, H2):
+    r"""
+    Tests `BE_subtraction = BE1 - BE2` with `BE1` constructed by FOQCS-LCU.
+    """
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
@@ -1435,6 +1332,9 @@ def test_block_encoding_foqcs_lcu_subtraction(H1, H2):
     (X(0)*X(1), Z(0)*Z(1) + Y(3)),
 ])
 def test_block_encoding_foqcs_lcu_multiplication(H1, H2):
+    r"""
+    Tests `BE_multiplication = BE1 @ BE2` with `BE1` constructed by FOQCS-LCU.
+    """
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
@@ -1460,6 +1360,10 @@ def test_block_encoding_foqcs_lcu_multiplication(H1, H2):
     (X(0), Z(0), 1),
 ])
 def test_block_encoding_foqcs_lcu_scalar_multiplication(H1, H2, scalar):
+    r"""
+    Tests the `BE_left = scalar * BE1 + BE2`, `BE_right = BE1 * scalar + BE2`
+    with `BE1` constructed by FOQCS-LCU.
+    """
     H_target = scalar * H1 + H2
     BE_target = BlockEncoding.from_operator(H_target)
 
@@ -1488,7 +1392,9 @@ def test_block_encoding_foqcs_lcu_scalar_multiplication(H1, H2, scalar):
     (X(0)*X(1), Z(0)*Z(1)),
 ])
 def test_block_encoding_foqcs_lcu_kron(H1, H2):
-
+    r"""
+    Tests the use of `.kron` with FOQCS-LCU.
+    """
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
 
@@ -1529,7 +1435,9 @@ def test_block_encoding_foqcs_lcu_kron(H1, H2):
     (Z(0)*Z(1) - Y(3), Y(3) - Z(0)*Z(1)),
 ])
 def test_block_encoding_foqcs_lcu_negation(H1, H2):
-
+    r"""
+    Tests the use of negation `BE_neg = -BE` with FOQCS-LCU.
+    """
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
@@ -1550,225 +1458,223 @@ def test_block_encoding_foqcs_lcu_negation(H1, H2):
 ###########################################################################################################
 #### Operator analysis tests ##############################################################################
 ###########################################################################################################
+def _uniform_heisenberg_chain(L):
+    H = 0
+    for i in range(L):
+        H += 1.0 * X(i)
+        H += 0.5 * Y(i)
+        H += -0.3 * Z(i)
 
-def test_foqcs_operator_analysis_spin_glass_failures():
-    def empty_must_fail():
-        O = 0 * X(0)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_spin_glass(O)
+        if i < L - 1:
+            H += 0.7 * X(i) * X(i + 1)
+            H += -0.2 * Y(i) * Y(i + 1)
+            H += 0.4 * Z(i) * Z(i + 1)
 
-        assert f"empty or constant operator: {O}" in str(exc_info.value)
-    
-    def constant_must_fail():
-        O = X(0) * X(0)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_spin_glass(O)
+    return H
 
-        assert f"empty or constant operator: {O}" in str(exc_info.value)
-    
-    def bad_length_must_fail():
-        O = X(0) + X(1) + X(2) + X(3) + X(4)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_spin_glass(O, L=2)
+@pytest.mark.parametrize(
+    "O, L, expected_error",
+    [
+        pytest.param(
+            0 * X(0),
+            -1,
+            "empty or constant operator",
+            id="empty_operator",
+        ),
+        pytest.param(
+            X(0) * X(0),
+            -1,
+            "empty or constant operator",
+            id="constant_operator",
+        ),
+        pytest.param(
+            X(0) + X(1) + X(2) + X(3) + X(4),
+            2,
+            "Received L = 2",
+            id="bad_length",
+        ),
+        pytest.param(
+            Y(0) + (0.18 + 0.5j) * Z(1) * Z(3) + X(0) * X(0),
+            -1,
+            "FOQCS-LCU does not support constant/identity terms",
+            id="constant_term_in_operator",
+        ),
+        pytest.param(
+            X(0) * Y(3) + X(0) * X(1) + Z(0),
+            -1,
+            "FOQCS-LCU supports only same-axis couplings, but received: X(0) * Y(3)",
+            id="cross_axis_coupling",
+        ),
+        pytest.param(
+            X(0) * X(1) + Z(0) + Y(0) * Y(1) * Y(2),
+            -1,
+            "FOQCS-LCU supports only one and two-body interactions",
+            id="three_body_coupling",
+        ),
+    ],
+)
+def test_foqcs_operator_analysis_spin_glass_failures(O, L, expected_error):
+    r"""
+    Verifies that `foqcs_analyze_operator_spin_glass` raises correct errors for different failure cases.
+    """
+    with pytest.raises(ValueError) as exc_info:
+        foqcs_analyze_operator_spin_glass(O, L=L)
 
-        assert f"Received L = {2}" in str(exc_info.value)
+    assert expected_error in str(exc_info.value)
 
-    def const_in_op_must_fail():
-        O = Y(0) + (0.18 + 0.5j) * Z(1) * Z(3) + X(0) * X(0)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_spin_glass(O)
+@pytest.mark.parametrize(
+    "O, L, expected_error",
+    [
+        pytest.param(
+            0 * X(0),
+            -1,
+            "empty or constant operator",
+            id="empty_operator",
+        ),
+        pytest.param(
+            X(0) * X(0),
+            -1,
+            "empty or constant operator",
+            id="constant_operator",
+        ),
+        pytest.param(
+            X(0) + X(1) + X(2) + X(3) + X(4),
+            2,
+            "Received L = 2",
+            id="bad_length",
+        ),
+        pytest.param(
+            Y(0) + (0.18 + 0.5j) * Z(1) * Z(2) + X(0) * X(0),
+            -1,
+            "FOQCS-LCU does not support constant/identity terms",
+            id="constant_term_in_operator",
+        ),
+        pytest.param(
+            X(0) * Y(1) + X(0) + X(1),
+            -1,
+            "FOQCS-LCU supports only same-axis couplings, but received: X(0) * Y(1)",
+            id="cross_axis_coupling",
+        ),
+        pytest.param(
+            X(0) * X(1) + Z(0) + Y(0) * Y(1) * Y(2),
+            -1,
+            "FOQCS-LCU supports only one and two-body interactions",
+            id="three_body_coupling",
+        ),
+        pytest.param(
+            0.5 * X(0) + 0.7 * X(1),
+            2,
+            "non-uniform local interactions",
+            id="non_uniform_local_fields",
+        ),
+        pytest.param(
+            X(0) * X(2),
+            3,
+            "not NN interactions present",
+            id="long_range_coupling",
+        ),
+        pytest.param(
+            0.5 * X(0) * X(1) + 0.9 * X(1) * X(2),
+            3,
+            "non-uniform NN interactions",
+            id="non_uniform_nn_couplings",
+        ),
+        pytest.param(
+            # Zeroes matter for the Heisenberg specialization.
+            # For L=3, X0X1 exists but X1X2 is implicitly zero,
+            # so NN couplings are [1, 0] and therefore non-uniform.
+            X(0) * X(1),
+            3,
+            "non-uniform NN interactions",
+            id="missing_nn_couplings",
+        ),
+    ],
+)
+def test_foqcs_operator_analysis_heisenberg_failures(O, L, expected_error):
+    r"""
+    Verifies that `foqcs_analyze_operator_heisenberg` raises correct errors for different failure cases.
+    """
+    with pytest.raises(ValueError) as exc_info:
+        foqcs_analyze_operator_heisenberg(O, L=L)
 
-        assert f"FOQCS-LCU does not support constant/identity terms" in str(exc_info.value)
-    
-    def cross_axis_couple_must_fail():
-        O = X(0) * Y(3) + X(0) * X(1) + Z(0)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_spin_glass(O)
+    assert expected_error in str(exc_info.value)
 
-        assert f"FOQCS-LCU supports only same-axis couplings, but received: X({0}) * Y({3})" in str(exc_info.value)
-
-    def three_body_couple_must_fail():
-        O = X(0) * X(1) + Z(0) + Y(0) * Y(1) * Y(2)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_spin_glass(O)
-
-        assert f"FOQCS-LCU supports only one and two-body interactions" in str(exc_info.value)
-
-    empty_must_fail()
-    constant_must_fail()
-    bad_length_must_fail()
-    const_in_op_must_fail()
-    cross_axis_couple_must_fail()
-    three_body_couple_must_fail()
-
-def test_foqcs_operator_analysis_heisenberg_failures():
-    def empty_must_fail():
-        O = 0 * X(0)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_heisenberg(O)
-
-        assert f"empty or constant operator: {O}" in str(exc_info.value)
-
-    def constant_must_fail():
-        O = X(0) * X(0)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_heisenberg(O)
-
-        assert f"empty or constant operator: {O}" in str(exc_info.value)
-
-    def bad_length_must_fail():
-        O = X(0) + X(1) + X(2) + X(3) + X(4)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_heisenberg(O, L=2)
-
-        assert f"Received L = {2}" in str(exc_info.value)
-
-    def const_in_op_must_fail():
-        O = Y(0) + (0.18 + 0.5j) * Z(1) * Z(2) + X(0) * X(0)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_heisenberg(O)
-
-        assert "FOQCS-LCU does not support constant/identity terms" in str(exc_info.value)
-
-    def cross_axis_couple_must_fail():
-        O = X(0) * Y(1) + X(0) + X(1)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_heisenberg(O)
-
-        assert f"FOQCS-LCU supports only same-axis couplings, but received: X({0}) * Y({1})" in str(exc_info.value)
-
-    def three_body_couple_must_fail():
-        O = X(0) * X(1) + Z(0) + Y(0) * Y(1) * Y(2)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_heisenberg(O)
-
-        assert "FOQCS-LCU supports only one and two-body interactions" in str(exc_info.value)
-
-    def non_uniform_local_fields_must_fail():
-        O = 0.5 * X(0) + 0.7 * X(1)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_heisenberg(O, L=2)
-
-        assert "non-uniform local interactions" in str(exc_info.value)
-
-    def long_range_coupling_must_fail():
-        O = X(0) * X(2)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_heisenberg(O, L=3)
-
-        assert "not NN interactions present" in str(exc_info.value)
-
-    def non_uniform_nn_couplings_must_fail():
-        O = 0.5 * X(0) * X(1) + 0.9 * X(1) * X(2)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_heisenberg(O, L=3)
-
-        assert "non-uniform NN interactions" in str(exc_info.value)
-
-    def missing_nn_couplings_must_fail():
-        # Zeroes matter for the Heisenberg specialization.
-        # For L=3, X0X1 exists but X1X2 is implicitly zero,
-        # so NN couplings are [1, 0] and therefore non-uniform.
-        O = X(0) * X(1)
-        with pytest.raises(ValueError) as exc_info:
-            foqcs_analyze_operator_heisenberg(O, L=3)
-
-        assert "non-uniform NN interactions" in str(exc_info.value)
-
-    empty_must_fail()
-    constant_must_fail()
-    bad_length_must_fail()
-    const_in_op_must_fail()
-    cross_axis_couple_must_fail()
-    three_body_couple_must_fail()
-    non_uniform_local_fields_must_fail()
-    long_range_coupling_must_fail()
-    non_uniform_nn_couplings_must_fail()
-    missing_nn_couplings_must_fail()
-
-def test_foqcs_operator_analysis():
-    def make_heisenberg_pass_cases():
-        cases = {}
-        # Full uniform nearest-neighbor XYZ/Heisenberg chain with 2 qubits.
-        cases["L2_full_uniform"] = (
-            X(0) + X(1)
-            + 0.5 * Y(0) + 0.5 * Y(1)
-            - 0.3 * Z(0) - 0.3 * Z(1)
-            + 0.7 * X(0) * X(1)
-            - 0.2 * Y(0) * Y(1)
-            + 0.4 * Z(0) * Z(1)
-        )
-        # Full uniform nearest-neighbor XYZ/Heisenberg chain with 4 qubits.
-        H = 0
-        L = 4
-        H += 1.0 * X(0)
-        H += 0.5 * Y(0)
-        H += -0.3 * Z(0)
-        for i in range(1, L):
-            H += 1.0 * X(i)
-            H += 0.5 * Y(i)
-            H += -0.3 * Z(i)
-            H += 0.7 * X(i - 1) * X(i)
-            H += -0.2 * Y(i - 1) * Y(i)
-            H += 0.4 * Z(i - 1) * Z(i)
-        cases["L4_full_uniform"] = H
-        # Uniform local X field only.
-        cases["uniform_X_field_only"] = X(0) + X(1) + X(2) + X(3)
-        # Uniform ZZ NN coupling only.
-        cases["uniform_ZZ_coupling_only"] = (
+@pytest.mark.parametrize(
+    "O, expected_method",
+    [
+        pytest.param(
+            _uniform_heisenberg_chain(2),
+            "heisenberg",
+            id="L2_full_uniform",
+        ),
+        pytest.param(
+            _uniform_heisenberg_chain(4),
+            "heisenberg",
+            id="L4_full_uniform",
+        ),
+        pytest.param(
+            X(0) + X(1) + X(2) + X(3),
+            "heisenberg",
+            id="uniform_X_field_only",
+        ),
+        pytest.param(
             Z(0) * Z(1)
             + Z(1) * Z(2)
-            + Z(2) * Z(3)
-        )
-        # Zero coefficient in one Pauli family.
-        cases["uniform_with_some_zero_families"] = (
+            + Z(2) * Z(3),
+            "heisenberg",
+            id="uniform_ZZ_coupling_only",
+        ),
+        pytest.param(
             0.8 * X(0) + 0.8 * X(1) + 0.8 * X(2)
             + 0.0 * Y(0) + 0.0 * Y(1) + 0.0 * Y(2)
             + 0.2 * Z(0) * Z(1)
-            + 0.2 * Z(1) * Z(2)
-        )
-        return cases
-
-    def make_heisenberg_fail_cases():
-        cases = {}
-        # Non-uniform local fields
-        cases["non_uniform_local_X"] = (
+            + 0.2 * Z(1) * Z(2),
+            "heisenberg",
+            id="uniform_with_some_zero_families",
+        ),
+        pytest.param(
             1.0 * X(0)
             + 0.5 * X(1)
-            + 1.0 * X(2)
-        )
-        # Local fields on different sites/axes only.
-        cases["position_dependent_local_fields"] = (
-            X(0)
-            + 0.5 * Y(1)
-            + 0.2 * Z(0) * Z(1)
-        )
-        # Long-range same-axis coupling
-        cases["long_range_XX"] = X(0) * X(2)
-        # Non-uniform nearest-neighbor couplings
-        cases["non_uniform_NN_ZZ"] = (
+            + 1.0 * X(2),
+            "spin_glass",
+            id="non_uniform_local_X",
+        ),
+        pytest.param(
+            X(0) + 0.5 * Y(1)
+            + 0.2 * Z(0) * Z(1),
+            "spin_glass",
+            id="position_dependent_local_fields",
+        ),
+        pytest.param(
+            X(0) * X(2),
+            "spin_glass",
+            id="long_range_XX",
+        ),
+        pytest.param(
             0.2 * Z(0) * Z(1)
-            + 0.7 * Z(1) * Z(2)
-        )
-        # Missing one NN bond while L is inferred as 4 because of X(3).
-        cases["missing_NN_bonds_due_to_L"] = (
-            X(3)
-            + 0.2 * Z(0) * Z(1)
-        )
-        # Same-axis arbitrary pair couplings.
-        cases["sparse_spin_glass_pairs"] = (
+            + 0.7 * Z(1) * Z(2),
+            "spin_glass",
+            id="non_uniform_NN_ZZ",
+        ),
+        pytest.param(
+            X(3) + 0.2 * Z(0) * Z(1),
+            "spin_glass",
+            id="missing_NN_bonds_due_to_L",
+        ),
+        pytest.param(
             0.3 * X(0) * X(3)
             - 0.4 * Y(1) * Y(2)
-            + 0.9 * Z(0)
-        )
-        return cases
+            + 0.9 * Z(0),
+            "spin_glass",
+            id="sparse_spin_glass_pairs",
+        ),
+    ],
+)
+def test_foqcs_operator_analysis(O, expected_method):
+    r"""
+    Verifies that `foqcs_analyze_operator` properly identifies Heisenberg and spin-glass operator cases.
+    """
+    res = is_operator_foqcs_compatible(O)
 
-    for name, O in make_heisenberg_pass_cases().items():
-        res = is_operator_foqcs_compatible(O)
-        assert res, f"Passing operator failed analysis: {O} "
-        assert res["method"] == "heisenberg", name
-
-    for name, O in make_heisenberg_fail_cases().items():
-        res = is_operator_foqcs_compatible(O)
-        assert res, f"Passing operator failed analysis: {O} "
-        assert res["method"] == "spin_glass", name
+    assert res, f"Compatible operator failed analysis: {O}"
+    assert res["method"] == expected_method
