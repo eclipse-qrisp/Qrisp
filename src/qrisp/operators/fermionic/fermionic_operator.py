@@ -700,67 +700,6 @@ class FermionicOperator(Hamiltonian):
         else:
             raise Exception(f"Don't know fermionic mapping {mapping_type}.")
 
-    #
-    # Measurement
-    #
-
-    def get_measurement(self, qarg, mapping_type="jordan_wigner", **measurement_kwargs):
-        r"""
-
-        .. warning::
-
-            This method will no longer be supported in a later release of Qrisp. Instead please migrate to :meth:`expectation_value <qrisp.operators.fermionic.FermionicOperator.expectation_value>`.
-
-
-        This method returns the expected value of a Hamiltonian for the state
-        of a quantum argument. Note that this method measures the **hermitized**
-        version of the operator:
-
-        .. math::
-
-            H = (O + O^\dagger)/2
-
-        Parameters
-        ----------
-        qarg : :ref:`QuantumVariable` or list[Qubit]
-            The quantum argument to evaluate the Hamiltonian on.
-        mapping_type : str, optional
-            The strategy on how to map the FermionicOperator to a QubitOperator. Default is ``jordan_wigner``.
-        measurement_kwargs : dict, optional
-            The keyword arguments of :meth:`QubitOperator.get_measurement`.
-
-        Raises
-        ------
-        Exception
-            If the containing QuantumSession is in a quantum environment, it is not
-            possible to execute measurements.
-
-        Returns
-        -------
-        float
-            The expected value of the Hamiltonian.
-
-        Examples
-        --------
-
-        We create a FermionicOperator and perform a measurement.
-
-        >>> from qrisp.operators import *
-        >>> from qrisp import QuantumVariable
-        >>> qv = QuantumVariable(4)
-        >>> O = a(0)*a(1) + a(2)*c(1) + c(2)*a(3)
-        >>> print(O.get_measurement(qv))
-        -0.007968127490039834
-
-        """
-
-        warnings.warn(
-            "DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value.",
-            QrispDeprecationWarning,
-        )
-
-        qubit_operator = self.to_qubit_operator(mapping_type)
-        return qubit_operator.get_measurement(qarg, **measurement_kwargs)
 
     def expectation_value(
         self, state_prep, mapping_type="jordan_wigner", **measurement_kwargs
