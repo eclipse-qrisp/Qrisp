@@ -94,10 +94,6 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
         [sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)] # ÄNDERUNG
     ) + sum([h[i] * Z(i) for i in range(N)])
 
-    #H_prob = sum(
-    #    [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]
-    #) + sum([h[i] * Z(i) for i in range(N)])
-
     # AGP as function of alpha
     if uniform_AGP_coeffs:
         A_lam = sum([Y(i) for i in range(N)])
