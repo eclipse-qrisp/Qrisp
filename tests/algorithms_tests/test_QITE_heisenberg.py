@@ -41,9 +41,12 @@ def test_qite_heisenberg():
     M = nx.maximal_matching(G)
     U_0 = create_heisenberg_init_function(M)
 
-    qv = QuantumVariable(N)
-    U_0(qv)
-    E_0 = H.get_measurement(qv)
+    def state_prep():
+        qv = QuantumVariable(N)
+        U_0(qv)
+        return qv
+    
+    E_0 = H.expectation_value(state_prep)()
 
     def exp_H(qv, t):
         H.trotterization(method='commuting')(qv,t,5)
@@ -67,7 +70,7 @@ def test_qite_heisenberg():
         qc = qv.qs.compile()
 
         # Find optimal evolution time 
-        energies = [H.expectation_value(state_prep,subs_dic={theta:s_},precompiled_qc=qc,diagonalisation_method='commuting') for s_ in s_values]
+        energies = [H.expectation_value(state_prep,subs_dic={theta:s_},precompiled_qc=qc,diagonalisation_method='commuting')() for s_ in s_values]
         index = np.argmin(energies)
         s_min = s_values[index]
 
