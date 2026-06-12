@@ -39,30 +39,78 @@ def build_from_foqcs_lcu_prep(
     The provided ``p_l`` routine is the corresponding left PREP (:math:`PREP_{L}`) routine and is applied inversely
     after ``SELECT``. Based on the methodology established in https://arxiv.org/abs/2507.20887.
 
-    In order not to restrict this implementation to just the Heisenberg and Spin-glass models,
-    :func:`from_foqcs_lcu_prep` is designed using partial functions for the ``p_r`` and ``p_l`` parameters, letting
+    In order not to restrict this implementation to just the Heisenberg and spin-glass models,
+    :meth:`from_foqcs_lcu_prep` is designed using partial functions for the ``p_r`` and ``p_l`` parameters, letting
     users pass more or less anything for the :math:`P_{R}` and :math:`P_{L}` subroutines. This means you can experiment
-    with different :math:`P_{R}` and :math:`P_{L}` pairs to your hearts desire!
+    with different :math:`P_{R}` and :math:`P_{L}` pairs to your hearts desire! 🦊
 
     Parameters
     ----------
     p_r : Callable[[QuantumVariable], None]
-        Partial :math:`PREP_{R}` function with all relevant parameters which depend on PREP routine
-        passed except QuantumVariable. Parameters can be fixed by using :class:`functools.partial`.
-        e.g. foqcs_prep_heisenberg would have the following parameters:
+        Right FOQCS-LCU PREP routine, corresponding to :math:`P_R = \mathrm{PREP}(\alpha)`
+        The callable should prepare the right coefficient state on the FOQCS-LCU ancilla register.
 
-        prep_qv: QuantumVariable | Sequence[Qubit],
-        L: int,
-        g: dict,
-        J: dict,
-        conjugate: bool = False
+        The callable is expected to take only the ancilla :class:`QuantumVariable` as its remaining argument.
+        All classical parameters of the PREP routine, such as the system size or coefficient dictionaries,
+        should already be fixed, for example by using :class:`functools.partial`.
 
-        Most of these already exist by the time we define the partial function, excluding QuantumVariable as
-        this is passed later on by the BlockEncoding class when we call :func:``.apply`` or :func:``.apply_rus``.
+        For example, :func:`foqcs_prep_heisenberg` has parameters of the form
+
+        .. code-block:: python
+
+            def foqcs_prep_heisenberg(
+                prep_qv: QuantumVariable | Sequence[Qubit],
+                L: int,
+                g: dict,
+                J: dict,
+                conjugate: bool = False
+            ) -> None:
+
+        In this case, ``L``, ``g``, and ``J`` should be fixed before passing the
+        routine to :func:`from_foqcs_lcu_prep`, leaving only ``prep_qv`` to be
+        supplied internally by the :class:`BlockEncoding` during :meth:`apply` or
+        :meth:`apply_rus`.
+
+        In this example case the partial construction would look as follows:
+
+        .. code-block:: python
+
+            p_r = partial(
+                foqcs_prep_heisenberg, # PREP function
+                L=heis_L,              # Number of qubits
+                g=_g,                  # Heisenberg model g coefficients
+                J=_J,                  # heisenberg model J coefficients
+            )
+        
 
     p_l : Callable[[QuantumVariable], None]
-        :math:`PREP_{R}` with conjugated parameters (see Notes).
-        Is a partial function with the same pattern as p_r.
+        Left FOQCS-LCU PREP routine, corresponding to
+        :math:`P_{L} = \mathrm{PREP}(a^*)`. The block-encoding circuit applies this
+        routine under inversion, realizing :math:`P_L^\dagger` after ``SELECT``
+
+        In the common case, ``p_l`` is constructed from the same PREP routine as
+        ``p_r``, but with conjugated coefficients. It should follow the same
+        calling convention as ``p_r``: all classical parameters should
+        already be fixed, leaving only the ancilla :class:`QuantumVariable` to be
+        supplied internally by the :class:`BlockEncoding`.
+
+        Following the example set in ``p_r``, the partial construction will
+        be of form:
+
+        .. code-block:: python
+
+            p_l = partial(
+                foqcs_prep_heisenberg, # PREP function
+                L=heis_L,              # Number of qubits
+                g=_g,                  # Heisenberg model g coefficients
+                J=_J,                  # Heisenberg model J coefficients
+                conjugate=True         # Conjugate g and J coefficients
+            )
+
+        However, ``p_l`` is not required to be built from the same Python function
+        as ``p_r``. Any callable is valid as long as it prepares the correct left
+        PREP state :math:`P_{L}` for the chosen FOQCS-LCU representation and accepts
+        the ancilla quantum variable as its only remaining argument.
         
     num_q_ops : int
         Number of operand qubits, i.e. ``L`` argument for FOQCS-LCU PREP routines.
@@ -102,7 +150,7 @@ def build_from_foqcs_lcu_prep(
         :math:`P_{R} = PREP(\alpha)`
         :math:`P_{L} = PREP(\alpha ^ *)`
 
-        U = :math:`P_{L}^{\dagger} \cdot \mathrm{SELECT} \cdot P_{R}`
+        :math:`U = P_{L}^{\dagger} \cdot \mathrm{SELECT} \cdot P_{R}`
     
     Examples
     --------
@@ -121,11 +169,11 @@ def build_from_foqcs_lcu_prep(
     The helper :func:`foqcs_prep_heisenberg` prepares the FOQCS-LCU state
     on the ancillary qubits that correspond to these terms.
 
-    The quantities ``_g`` and ``_J`` are the amplitudes used internally by the
+    The coefficients ``_g`` and ``_J`` are the amplitudes used internally by the
     PREP routine. Their squared norm gives the LCU normalization factor
     :math:`\alpha`, so the resulting block encoding represents approximately
-    :math:`\frac{H}{\alpha}`. Finally, a random input state ``psi`` is prepared on the
-    operand register and ``apply_rus`` applies the block encoding using
+    :math:`{H} / {\alpha}`. Finally, a random input state ``psi`` is prepared on the
+    operand register and :meth:`apply_rus` applies the block encoding using
     repeat-until-success sampling
 
     The constructor
@@ -139,17 +187,17 @@ def build_from_foqcs_lcu_prep(
     operand qubits, and the normalization factor, while the constructor builds
     the corresponding FOQCS-LCU block-encoding structure.
 
-    It can be applied in two common ways. The method ``apply`` applies the
+    It can be applied in two common ways. The method :meth:`apply` applies the
     block encoding circuit directly, leaving the success/failure information
     in the block-encoding ancilla qubits, requiring us to explicitly filter out
-    the non-zero ancillary qubits. The method ``apply_rus`` instead uses
+    the non-zero ancillary qubits. The method :meth:`apply_rus` instead uses
     repeat-until-success sampling: it repeatedly applies the block encoding
     until the success condition is observed, and then returns the transformed
-    operand register. This example uses ``apply_rus`` so that the sampled result
+    operand register. This example uses :meth:`apply_rus` so that the sampled result
     corresponds to a successful application of the encoded operator to the random
     input state ``psi``.
 
-    This example uses ``apply_rus``:
+    This example uses :meth:`apply_rus`:
 
     ::
 
@@ -228,9 +276,8 @@ def build_from_foqcs_lcu_prep(
         result_rus = main_apply_rus(be)
         print(result_rus)
 
-    
-    This example uses ``apply``:
-        
+    This example uses :meth:`apply`:
+
     ::
     
         import numpy as np

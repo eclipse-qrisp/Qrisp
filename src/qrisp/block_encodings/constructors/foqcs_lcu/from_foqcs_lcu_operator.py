@@ -37,12 +37,43 @@ def build_from_foqcs_lcu_operator(
     Heisenberg PREP routine is used. Otherwise, if it matches the more general
     same-axis two-body spin-glass form, the spin-glass PREP routine is used.
 
-    Supported operators
-    -------------------
+    This method uses more general :meth:`from_foqcs_lcu_prep` internally,
+    abstracting the partial ``PREP`` methods construction. If the operator does not
+    match supported operators specified in `Notes`, it will require its own custom PREP subroutine,
+    which is covered in more detail in :meth:`from_foqcs_lcu_prep` documentation.
 
+    Parameters
+    ----------
+    O : QubitOperator
+        Operator to encode, supported operators are covered in `Notes`, e.g.
+        ``O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)``
+
+    L : int = -1
+        Number of interacting qubits.
+        If not specified, will default to -1, and infer the number of interacting qubits from the operator
+
+    tol : float, optional = 1e-12
+        The tolerance used to determine if an entry is zero. 
+        Defaults to 1e-12.
+
+    Returns
+    -------
+    BlockEncoding
+        A BlockEncoding using the FOQCS-LCU protocol for a compatible QubitOperator,
+        with PREP chosen automatically as either the Heisenberg or spin-glass implementation.
+
+    Raises
+    ------
+    ValueError
+        When the operator is not representing spin-glass model.
+    KeyError
+        If method received an unsupported FOQCS-LCU PREP method
+
+    Notes
+    -----
     Let :math:`L` be the number of operand qubits and let
     :math:`P_i` denote the Pauli operator :math:`P` acting on qubit :math:`i`, where
-    :math:`P in {X, Y, Z}`.
+    :math:`P \in \{X, Y, Z\}`.
 
     The general supported form is the same-axis one- and two-body spin-glass
     Hamiltonian
@@ -72,7 +103,7 @@ def build_from_foqcs_lcu_operator(
 
     * constant / identity terms, e.g. ``c * I``;
     * mixed-axis two-body terms, e.g. ``X(i) * Z(j)``,
-    ``X(i) * Y(j)``, or ``Y(i) * Z(j)``;
+      ``X(i) * Y(j)``, or ``Y(i) * Z(j)``;
     * three- or higher-body terms, e.g. ``X(i) * X(j) * X(k)``.
 
     A specialized Heisenberg PREP routine is selected when the operator has the
@@ -108,36 +139,9 @@ def build_from_foqcs_lcu_operator(
 
     Examples of unsupported terms include
 
-    ``2.0``                       # identity / constant term
-    ``X(0) * Z(1)``               # mixed-axis coupling
-    ``X(0) * X(1) * X(2)``        # three-body interaction
-
-    Parameters
-    ----------
-    O : QubitOperator
-        Operator to encode, e.g.
-        ``O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)``
-
-    L : int = -1
-        Number of interacting qubits.
-        If not specified, will default to -1, and infer the number of interacting qubits from the operator
-
-    tol : float, optional = 1e-12
-        The tolerance used to determine if an entry is zero. 
-        Defaults to 1e-12.
-
-    Returns
-    -------
-    BlockEncoding
-        A BlockEncoding using the FOQCS-LCU protocol for a compatible QubitOperator,
-        with PREP chosen automatically as either the Heisenberg or Spin-glass implementation.
-
-    Raises
-    ------
-    ValueError
-        When the operator is not representing spin-glass model.
-    KeyError
-        If method received an unsupported FOQCS-LCU PREP method
+    * ``2.0``: identity / constant term;
+    * ``X(0) * Z(1)``: mixed-axis coupling;
+    * ``X(0) * X(1) * X(2)``: three-body interaction.
 
     Examples
     --------

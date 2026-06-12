@@ -314,7 +314,7 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
         conjugate: bool = False
 
         Most of these already exist by the time we define the partial function, excluding QuantumVariable as
-        this is passed later on by the BlockEncoding class when we call :func:``.apply`` or :func:``.apply_rus``.
+        this is passed later on by the :class:`BlockEncoding` class when we call :meth:`apply` or :meth:`apply_rus`.
 
     p_l : Callable[[QuantumVariable], None] = None
         :math:`PREP_{R}` with conjugated parameters (see Notes), also a partial function variable with
