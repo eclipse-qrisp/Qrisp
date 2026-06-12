@@ -30,7 +30,7 @@ def cuccaro_adder(
     a: int | QuantumVariable,
     b: QuantumVariable,
     c_in: QuantumBool | Qubit | None = None,
-    c_out: QuantumVariable | None = None,
+    c_out: QuantumBool | Qubit | None = None,
     ctrl: QuantumBool | None = None,
 ) -> None:
     """In-place adder as introduced in https://arxiv.org/abs/quant-ph/0410184
@@ -56,13 +56,13 @@ def cuccaro_adder(
         The value that should be modified in the in-place addition.
     c_in : QuantumBool or Qubit, optional
         An optional carry in value. The default is None.
-    c_out : QuantumVariable, optional
+    c_out : QuantumBool or Qubit, optional
         An optional carry out value. The default is None.
 
     Raises
     ------
     TypeError
-        If carry in is not of type QuantumBool or Qubit in static mode.
+        If carry in or carry out is not of type QuantumBool or Qubit in static mode.
     ValueError
         If the inputs are not valid quantum or classical types.
 
@@ -133,7 +133,14 @@ def cuccaro_adder(
         cx(c_in, ancilla[0])
 
     if c_out is not None:
-        ancilla2 = c_out
+        if isinstance(c_out, QuantumBool):
+            ancilla2 = c_out[0]
+        elif not check_for_tracing_mode() and not isinstance(c_out, Qubit):
+            raise TypeError(
+                f"c_out must be of type QuantumBool or Qubit, not {type(c_out)}"
+            )
+        else:
+            ancilla2 = c_out
 
     # first maj gate application
     cx(a[0], b[0])
@@ -149,7 +156,7 @@ def cuccaro_adder(
 
     # cnot
     if c_out is not None:
-        cx(a[-1], ancilla2[0])
+        cx(a[-1], ancilla2)
 
     if ctrl is None:
         # iterator uma gate application

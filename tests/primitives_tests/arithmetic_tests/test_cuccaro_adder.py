@@ -236,7 +236,7 @@ def _mk_add_cout(c_in_val):
         c_in = QuantumBool()
         if c_in_val:
             c_in.flip()
-        c_out = QuantumFloat(1)
+        c_out = QuantumBool()
         cuccaro_adder(j, B, c_in=c_in, c_out=c_out)
         return measure(B), measure(c_out)
 
@@ -254,7 +254,7 @@ def _mk_add_cout_qubit(c_in_val):
         c_in = qv[0]
         if c_in_val:
             x(c_in)
-        c_out = QuantumFloat(1)
+        c_out = QuantumBool()
         cuccaro_adder(j, B, c_in=c_in, c_out=c_out)
         return measure(B), measure(c_out)
 
@@ -273,7 +273,7 @@ def _mk_add_cout_qq(c_in_val):
         c_in = QuantumBool()
         if c_in_val:
             c_in.flip()
-        c_out = QuantumFloat(1)
+        c_out = QuantumBool()
         cuccaro_adder(A, B, c_in=c_in, c_out=c_out)
         return measure(A), measure(B), measure(c_out)
 
@@ -341,7 +341,7 @@ def _mk_add_cout_ctrl(c_in_val):
         c_in = QuantumBool()
         if c_in_val:
             c_in.flip()
-        c_out = QuantumFloat(1)
+        c_out = QuantumBool()
         ctrl = QuantumBool()
         ctrl.flip()
         cuccaro_adder(A, B, c_in=c_in, c_out=c_out, ctrl=ctrl)
