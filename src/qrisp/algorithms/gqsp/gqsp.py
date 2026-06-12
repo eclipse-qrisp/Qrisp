@@ -17,7 +17,7 @@
 """
 
 from collections.abc import Callable
-from typing import Any, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import rx, rz
@@ -35,8 +35,8 @@ def GQSP(
     anc: QuantumBool,
     *qargs: QuantumVariable,
     unitary: Callable[..., None],
-    p: "ArrayLike" | None = None,
-    angles: tuple["ArrayLike", "ArrayLike", "ArrayLike"] | None = None,
+    p: Optional["ArrayLike"] = None,
+    angles: Optional[tuple["ArrayLike", "ArrayLike", "ArrayLike"]] = None,
     k: int = 0,
     kwargs: dict[str, Any] = {},
 ) -> None:

@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 import numpy as np
 import jax.numpy as jnp
 
@@ -33,8 +33,8 @@ if TYPE_CHECKING:
 # QSP version of https://iopscience.iop.org/article/10.1088/2058-9565/acfc62
 def fourier_series_loader(
     qarg: QuantumVariable,
-    signal: "ArrayLike" | None = None,
-    frequencies: "ArrayLike" | None = None,
+    signal: Optional["ArrayLike"] = None,
+    frequencies: Optional["ArrayLike"] = None,
     k: int = 1,
     mirror: bool = False,
 ) -> QuantumBool:
