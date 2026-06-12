@@ -44,8 +44,8 @@ def build_from_projector(
         or a function ``right(*operands)`` preparing a state $\ket{\psi}$ from $\ket{0}$.
         Defaults to ``left``.
     kernel : bool
-        If True, the kernel projector $\mathbb I - \ket{\phi}\bra{\phi}$ is block-encoded.
-        If False the projector $\ket{\phi}\bra{\psi}$ is block-encoded. Defauts to False.
+        If `True`, the kernel projector $\mathbb I - \ket{\phi}\bra{\phi}$ is block-encoded.
+        If `False`, the projector $\ket{\phi}\bra{\psi}$ is block-encoded. Defaults to `False`.
     num_ops : int
         The number of operand quantum variables.
         Automatically inferred when ``left`` or ``right`` is an integer or tuple of integers.
@@ -54,7 +54,8 @@ def build_from_projector(
     Returns
     -------
     BlockEncoding
-        A new BlockEncoding instance representing the projector $\ket{\phi}\bra{\psi}$.
+        A BlockEncoding representing either the projector $\ket{\phi}\bra{\psi}$
+        or the kernel projector $\mathbb I - \ket{\phi}\bra{\phi}$, depending on the value of ``kernel``.
 
     Examples
     --------

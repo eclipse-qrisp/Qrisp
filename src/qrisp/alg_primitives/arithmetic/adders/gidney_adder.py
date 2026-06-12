@@ -301,7 +301,7 @@ def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, c
 
 @custom_control
 def gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
-    """
+    r"""
     In-place Gidney adder performing ``b += a``.
 
     Based on `arXiv:1709.06648 <https://arxiv.org/abs/1709.06648>`_.  Works in

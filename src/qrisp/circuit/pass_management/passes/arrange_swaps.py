@@ -24,7 +24,7 @@ from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 
 @CircuitPass
 def arrange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
-    """
+    r"""
     Flip SWAP qubit order so that unused qubits come first.
 
     A SWAP gate decomposes into three CX gates.  When a SWAP involves a

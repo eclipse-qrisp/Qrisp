@@ -16,14 +16,19 @@
 ********************************************************************************
 """
 
+from collections.abc import Callable
+from typing import Any
+
 import numpy as np
 import numpy.typing as npt
-from typing import Any, Callable
 
+from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
-from qrisp.environments import conjugate
-from qrisp.jasp import qache
+from qrisp.environments import conjugate, invert
+from qrisp.jasp import qache, q_switch
 from qrisp.qtypes import QuantumFloat
+
+_TOLERANCE = 1e-12
 
 
 def build_from_lcu(
@@ -42,10 +47,11 @@ def build_from_lcu(
 
         O = \sum_{i=0}^{M-1} \alpha_i U_i
 
-    where $\alpha_i$ are real non-negative coefficients such that $\sum_i \alpha_i = \alpha$,
+    where $\alpha_i$ are complex coefficients, $\alpha = \sum_i |\alpha_i|$,
     and $U_i$ are unitaries acting on the same operand quantum variables.
 
-    The block encoding unitary is constructed via the LCU protocol:
+    The block encoding unitary is constructed via the LCU protocol.
+    If all coefficients are real and non-negative, the block encoding unitary can be expressed as
 
     .. math::
 
@@ -53,46 +59,66 @@ def build_from_lcu(
 
     where:
 
-    * **SEL** (Select, in Qrisp: :ref:`q_switch <qswitch>`) applies each unitary $U_i$ conditioned on the auxiliary variable state $\ket{i}_a$:
+    * $SEL$ (Select, in Qrisp: :ref:`q_switch <qswitch>`) applies each unitary $U_i$ conditioned on the auxiliary variable state $\ket{i}_a$:
 
     .. math::
 
         \text{SEL} = \sum_{i=0}^{M-1} \ket{i}\bra{i} \otimes U_i
 
-    * **PREP** (Prepare) prepares the state representing the coefficients:
+    * $PREP$ (Prepare) prepares the state representing the coefficients:
 
     .. math::
 
         \text{PREP} \ket{0}_a = \sum_{i=0}^{M-1} \sqrt{\frac{\alpha_i}{\alpha}} \ket{i}_a
 
+    If the coefficients are complex or negative, a state preparation pair $(PREP_R, PREP_L)$ is used:
+
+    .. math::
+
+        U = \text{PREP}_R \cdot \text{SEL} \cdot \text{PREP}_L^{\dagger}
+
+    * $PREP_R$ and $PREP_L$ prepare the states representing the coefficients and their complex conjugates, respectively:
+
+    .. math::
+
+        \text{PREP}_R \ket{0}_a = \sum_{i=0}^{M-1} \sqrt{\frac{\alpha_i}{\alpha}} \ket{i}_a, \qquad
+        \text{PREP}_L \ket{0}_a = \sum_{i=0}^{M-1} \sqrt{\frac{\alpha_i}{\alpha}}^* \ket{i}_a
+
     Parameters
     ----------
-    coeffs : ArrayLike
-        1-D array of non-negative coefficients $\alpha_i$.
+    coeffs : np.ndarray
+        1-D array containing the real non-negative or complex coefficients.
+            - If all coefficients are real and non-negative, the block encoding unitary is constructed as $U = PREP \cdot SEL \cdot PREP^{\dagger}$.
+            - If coefficients are complex or negative, the block encoding unitary is constructed as $U = PREP_R \cdot SEL \cdot PREP_L^{\dagger}$, 
+              where $PREP_R$ and $PREP_L$ prepare the states representing the coefficients and their complex conjugates, respectively.
     unitaries : list[Callable]
-        List of functions, where each ``U(*operands)`` applies a unitary
+        List of functions, where each ``unitary(*operands)`` applies a unitary
         transformation in-place to the provided quantum variables.
         All functions must accept the same signature and operate on the
         same set of operands.
-    num_ops : int
-        The number of operand quantum variables. The default is 1.
-    is_hermitian : bool
-        Indicates whether the block-encoding unitary is Hermitian. The default is False.
-        Set to True, if all provided unitaries are Hermitian.
+    num_ops : int, optional
+        The number of operand quantum variables. The defaults to 1.
+    is_hermitian : bool, optional
+        Indicates whether the block-encoding unitary is Hermitian. The defaults to `False`.
+        Set to `True`, if all provided unitaries are Hermitian.
 
     Returns
     -------
     BlockEncoding
-        A BlockEncoding using LCU.
+        A BlockEncoding representing the operator defined as the linear combination of unitaries.
 
     Raises
     ------
     ValueError
-        If any entry in ``coeffs`` is negative, as the LCU protocol only supports positive coefficients.
+        If a single unitary is provided with a complex coefficient (up to numerical precision).
 
     Notes
     -----
-    - **Normalization**: The block-encoding normalization factor is $\alpha = \sum_i \alpha_i$.
+    - **Normalization**: The block-encoding normalization factor is $\alpha = \sum_i |\alpha_i|$.
+    - **Performance**: Complex or negative coefficients require a state preparation pair, 
+      which increases the number of gates in the controlled block-encoding unitary compared to the case of real non-negative coefficients.
+      If all coefficients are real and non-negative, the block encoding unitary is constructed as $U = PREP \cdot SEL \cdot PREP^{\dagger}$.
+      In this case, the controlled block-encoding unitary requires only to control the $SEL$ operation. 
 
     Examples
     --------
@@ -113,30 +139,58 @@ def build_from_lcu(
         # {1.0: 0.5, 3.0: 0.5}
 
     """
-    from qrisp.alg_primitives.state_preparation import prepare
-    from qrisp.jasp import q_switch
 
-    m = len(coeffs)
+    complex_coeffs = np.array(coeffs, dtype=complex)
+    m = len(complex_coeffs)
     n = (m - 1).bit_length()  # Number of qubits for index variable
     # Ensure coeffs has size 2 ** n by zero padding
-    coeffs = np.pad(coeffs, (0, (1 << n) - m))
-    alpha = np.sum(coeffs)
+    complex_coeffs = np.pad(complex_coeffs, (0, (1 << n) - m))
+    alpha = np.sum(np.abs(complex_coeffs))
 
-    if np.any(coeffs < 0):
-        raise ValueError(
-            f"Negative coefficients detected: {coeffs}. Only positive values are supported."
-        )
-
+    # Block encoding of a single unitary (up to normalization)
     if m == 1:
-        return cls(
-            alpha, [], unitaries[0], num_ops=num_ops, is_hermitian=is_hermitian
+        if np.abs(complex_coeffs[0].imag) < _TOLERANCE:
+            return cls(
+                complex_coeffs[0].real,
+                [],
+                unitaries[0],
+                num_ops=num_ops,
+                is_hermitian=is_hermitian,
+            )
+
+        raise ValueError(
+            "For a single unitary, the coefficient must be real (up to numerical precision)."
         )
+
+    # Block encoding of a linear combination of unitaries via the LCU protocol
+    # If all coefficients are real and non-negative: LCU = PREP SEL PREP_dg
+    if _is_real_non_negative_array(complex_coeffs):
+
+        @qache
+        def unitary(*args):
+            # LCU = PREP SEL PREP_dg
+            with conjugate(prepare)(args[0], np.sqrt(complex_coeffs / alpha)):
+                q_switch(args[0], unitaries, *args[1:])
+
+        return cls(
+            alpha,
+            [QuantumFloat(n).template()],
+            unitary,
+            num_ops=num_ops,
+            is_hermitian=is_hermitian,
+        )
+
+    # If coefficients are complex or negative, we use a state preparation pair (PREP_R, PREP_L): LCU = PREP_R SEL PREP_L_dg
+    complex_coeffs_r = np.sqrt(complex_coeffs / alpha)
+    complex_coeffs_l = np.sqrt(complex_coeffs / alpha).conjugate()
 
     @qache
     def unitary(*args):
-        # LCU = PREP SEL PREP_dg
-        with conjugate(prepare)(args[0], np.sqrt(coeffs / alpha)):
-            q_switch(args[0], unitaries, *args[1:])
+        # LCU = PREP_R SEL PREP_L_dg
+        prepare(args[0], complex_coeffs_r)
+        q_switch(args[0], unitaries, *args[1:])
+        with invert():
+            prepare(args[0], complex_coeffs_l)
 
     return cls(
         alpha,
@@ -145,3 +199,19 @@ def build_from_lcu(
         num_ops=num_ops,
         is_hermitian=is_hermitian,
     )
+
+
+def _is_real_non_negative_array(
+    arr: npt.NDArray[np.number], tol: float = _TOLERANCE
+) -> bool:
+    """Checks if all entries in an array are non-negative and have negligible imaginary parts."""
+    # 1. Check if the array is a complex type
+    if np.issubdtype(arr.dtype, np.complexfloating):
+        abs_imag_part = np.abs(arr.imag)
+        real_part = arr.real
+
+        # Check if imaginary parts are within tolerance AND real parts are non-negative
+        return (abs_imag_part < tol).all() and (real_part >= 0).all()
+
+    else:
+        return np.all(arr >= 0)

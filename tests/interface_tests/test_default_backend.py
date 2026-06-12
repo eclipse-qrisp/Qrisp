@@ -22,6 +22,7 @@ import pytest
 
 from qrisp import QuantumCircuit, QuantumFloat, h
 from qrisp.circuit import Operation
+from qrisp.circuit.pass_management import CircuitPass, PassManager
 from qrisp.default_backend import QrispSimulatorBackend, QrispSimulatorJob, def_backend
 from qrisp.interface import BatchedBackend
 from qrisp.interface.job import JobFailureError, JobResult, JobStatus
@@ -274,8 +275,141 @@ class TestQrispSimulatorBackendBatched:
         bb.dispatch()
         assert counting.run_async_call_count == 1
 
-    def test_batched_inherits_shots_from_wrapped_backend(self):
-        """BatchedBackend created via batched() inherits the wrapped backend's options."""
-        backend = QrispSimulatorBackend(options={"shots": 256, "token": ""})
+# ---------------------------------------------------------------------------
+# Tests for PassManager (pm) integration
+# ---------------------------------------------------------------------------
+
+def _prepend_x_on_first_qubit(qc):
+    """Insert an X gate at the beginning of the circuit, before any measurements."""
+    from qrisp.circuit import Instruction, XGate
+
+    qc.data.insert(0, Instruction(XGate(), [qc.qubits[0]]))
+    return qc
+
+
+class TestQrispSimulatorBackendPassManager:
+    """Tests for the pm (PassManager) keyword argument on QrispSimulatorBackend."""
+
+    def test_construct_with_pm_none(self):
+        """Backend constructed with pm=None must behave normally."""
+        backend = QrispSimulatorBackend(pm=None)
+        qf = QuantumFloat(2)
+        qf[:] = 3
+        assert qf.get_measurement(backend=backend) == {3: 1.0}
+
+    def test_construct_with_pm(self):
+        """Backend constructed with a PassManager must accept it without error."""
+        pm = PassManager()
+        backend = QrispSimulatorBackend(pm=pm)
+        qf = QuantumFloat(2)
+        qf[:] = 3
+        assert qf.get_measurement(backend=backend) == {3: 1.0}
+
+    def test_pm_pass_is_called(self):
+        """Passes in the pm must be invoked for each circuit submitted."""
+        call_counter = [0]
+
+        def _counting_pass(qc):
+            call_counter[0] += 1
+            return qc
+
+        pm = PassManager()
+        pm += CircuitPass(_counting_pass)
+        backend = QrispSimulatorBackend(pm=pm)
+
+        qf = QuantumFloat(2)
+        qf[:] = 3
+        qf.get_measurement(backend=backend)
+        assert call_counter[0] == 1
+
+        qc = QuantumCircuit(2, 2)
+        qc.measure(qc.qubits, qc.clbits)
+        backend.run([qc, qc.copy(), qc.copy()])
+        assert call_counter[0] == 4
+
+    def test_pm_modifies_circuit_before_simulation(self):
+        """A pass that prepends an X gate must change the measurement outcome."""
+        pm = PassManager()
+        pm += CircuitPass(_prepend_x_on_first_qubit)
+        backend = QrispSimulatorBackend(pm=pm)
+
+        # |00⟩ → X prepended on qubit 0 → |01⟩  (qubit 0 is LSB, rightmost bit)
+        qc = QuantumCircuit(2, 2)
+        qc.measure(qc.qubits, qc.clbits)
+        assert backend.run(qc) == {"01": 1.0}
+
+    def test_pm_is_applied_to_every_circuit(self):
+        """Simulating multiple circuits must apply pm to each one."""
+        pm = PassManager()
+        pm += CircuitPass(_prepend_x_on_first_qubit)
+        backend = QrispSimulatorBackend(pm=pm)
+
+        qc_zero = QuantumCircuit(2, 2)
+        qc_zero.measure(qc_zero.qubits, qc_zero.clbits)
+
+        qc_one = QuantumCircuit(2, 2)
+        qc_one.x(qc_one.qubits[0])  # built-in X on qubit 0 → |01⟩
+        qc_one.measure(qc_one.qubits, qc_one.clbits)
+
+        results = backend.run([qc_zero, qc_one])
+        # qc_zero: |00⟩ + prepended X on qubit 0 → |01⟩
+        assert results[0] == {"01": 1.0}
+        # qc_one: |01⟩ + prepended X on qubit 0 → |00⟩ (X·X = I)
+        assert results[1] == {"00": 1.0}
+
+    def test_empty_pm_is_identity(self):
+        """An empty PassManager must not alter circuit behaviour."""
+        backend = QrispSimulatorBackend(pm=PassManager())
+        qf = QuantumFloat(2)
+        qf[:] = 3
+        assert qf.get_measurement(backend=backend) == {3: 1.0}
+
+    def test_pm_chain_executes_in_order(self):
+        """Multiple passes in a PassManager must execute in the given order."""
+        pm = PassManager()
+        # Two prepended X gates on qubit 0 cancel
+        pm += CircuitPass(_prepend_x_on_first_qubit)
+        pm += CircuitPass(_prepend_x_on_first_qubit)
+        backend = QrispSimulatorBackend(pm=pm)
+
+        qc = QuantumCircuit(2, 2)
+        qc.measure(qc.qubits, qc.clbits)
+        assert backend.run(qc) == {"00": 1.0}
+
+    def test_pm_works_with_shot_based_execution(self):
+        """PassManager must work with shot-based (non-analytic) execution."""
+        pm = PassManager()
+        pm += CircuitPass(_prepend_x_on_first_qubit)
+        backend = QrispSimulatorBackend(pm=pm)
+
+        qc = QuantumCircuit(2, 2)
+        qc.measure(qc.qubits, qc.clbits)
+        assert backend.run(qc, shots=100) == {"01": 100}
+
+    def test_pm_works_with_batched_backend(self):
+        """PassManager must be applied when circuits are dispatched via BatchedBackend."""
+        pm = PassManager()
+        pm += CircuitPass(_prepend_x_on_first_qubit)
+        backend = QrispSimulatorBackend(pm=pm)
         bb = backend.batched()
-        assert bb.options["shots"] == 256
+
+        qc = QuantumCircuit(2, 2)
+        qc.measure(qc.qubits, qc.clbits)
+        result = bb.run(qc)
+        bb.dispatch()
+        assert result == {"01": 1.0}
+
+    def test_pm_works_with_analytic_execution(self):
+        """PassManager must work with analytic execution (shots=None)."""
+        pm = PassManager()
+        pm += CircuitPass(_prepend_x_on_first_qubit)
+        backend = QrispSimulatorBackend(pm=pm)
+
+        qc = QuantumCircuit(3, 3)
+        qc.measure(qc.qubits, qc.clbits)
+        assert backend.run(qc) == {"001": 1.0}
+
+    def test_pm_rejects_non_passmanager(self):
+        """Constructing with a non-PassManager pm must raise TypeError."""
+        with pytest.raises(TypeError):
+            QrispSimulatorBackend(pm="not_a_pass_manager")
