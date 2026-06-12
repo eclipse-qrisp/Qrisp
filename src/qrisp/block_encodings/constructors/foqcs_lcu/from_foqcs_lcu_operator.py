@@ -29,12 +29,88 @@ def build_from_foqcs_lcu_operator(
 ) -> BlockEncoding:
     r"""
     Constructs a :class:`BlockEncoding` from a compatible :class:`QubitOperator` using the
-    Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) protocol.
-    Based on the application of the same name in https://arxiv.org/abs/2507.20887.
+    Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) algorithm
+    specified in https://arxiv.org/abs/2507.20887.
 
-    The operator is analyzed automatically and the corresponding FOQCS-LCU PREP routine is selected.
-    Currently supported structures include the specialized one-dimensional nearest-neighbour Heisenberg form
-    and the more general spin-glass / same-axis two-body form.
+    The input operator is analyzed automatically. If it matches the more
+    specialized one-dimensional nearest-neighbour Heisenberg form, the
+    Heisenberg PREP routine is used. Otherwise, if it matches the more general
+    same-axis two-body spin-glass form, the spin-glass PREP routine is used.
+
+    Supported operators
+    -------------------
+
+    Let :math:`L` be the number of operand qubits and let
+    :math:`P_i` denote the Pauli operator :math:`P` acting on qubit :math:`i`, where
+    :math:`P in {X, Y, Z}`.
+
+    The general supported form is the same-axis one- and two-body spin-glass
+    Hamiltonian
+
+    .. math::
+
+        H =
+        \sum_{P \in \{X,Y,Z\}}
+        \left(
+            \sum_{i=0}^{L-1} g_i^P P_i
+            +
+            \sum_{0 \leq i < j < L} J_{ij}^P P_i P_j
+        \right).
+
+    Equivalently, every non-zero Pauli term must be one of
+
+    .. math::
+
+        X_i,\; Y_i,\; Z_i,\;
+        X_i X_j,\; Y_i Y_j,\; Z_i Z_j.
+
+    Thus, arbitrary one-body fields are allowed, and arbitrary two-body
+    couplings are allowed as long as both Paulis in a two-body term use the
+    same axis.
+
+    The following terms are not supported:
+
+    * constant / identity terms, e.g. ``c * I``;
+    * mixed-axis two-body terms, e.g. ``X(i) * Z(j)``,
+    ``X(i) * Y(j)``, or ``Y(i) * Z(j)``;
+    * three- or higher-body terms, e.g. ``X(i) * X(j) * X(k)``.
+
+    A specialized Heisenberg PREP routine is selected when the operator has the
+    one-dimensional nearest-neighbour form
+
+    .. math::
+
+        H =
+        \sum_{i=0}^{L-1}
+        \left(
+            g^X X_i + g^Y Y_i + g^Z Z_i
+        \right)
+        +
+        \sum_{i=0}^{L-2}
+        \left(
+            J^X X_i X_{i+1}
+            + J^Y Y_i Y_{i+1}
+            + J^Z Z_i Z_{i+1}
+        \right).
+
+    Here the local field coefficients must be uniform in :math:`i` for each Pauli
+    axis, and the nearest-neighbour coupling coefficients must also be uniform
+    in :math:`i` for each Pauli axis. The coefficients may still differ between
+    axes, e.g. :math:`J^X`, :math:`J^Y`, and :math:`J^Z` need not be equal.
+
+    Examples of supported spin-glass terms include
+
+    ``X(0) + 0.5 * Y(2) + 0.2 * Z(0) * Z(3)``
+
+    and
+
+    ``X(0) * X(2) + Y(1) * Y(4) + Z(0) * Z(1)``.
+
+    Examples of unsupported terms include
+
+    ``2.0``                       # identity / constant term
+    ``X(0) * Z(1)``               # mixed-axis coupling
+    ``X(0) * X(1) * X(2)``        # three-body interaction
 
     Parameters
     ----------
@@ -46,8 +122,9 @@ def build_from_foqcs_lcu_operator(
         Number of interacting qubits.
         If not specified, will default to -1, and infer the number of interacting qubits from the operator
 
-    tol : float = 1e-12
-        Tolerance for considering the entry to be zero
+    tol : float, optional = 1e-12
+        The tolerance used to determine if an entry is zero. 
+        Defaults to 1e-12.
 
     Returns
     -------
@@ -64,6 +141,8 @@ def build_from_foqcs_lcu_operator(
 
     Examples
     --------
+
+    A minimal one-body example:
 
     ::
 
@@ -82,6 +161,30 @@ def build_from_foqcs_lcu_operator(
         print(res)
         # {1.0: 0.5, 2.0: 0.5}
 
+    A same-axis two-body spin-glass example:
+
+    ::
+
+        from qrisp import *
+        from qrisp.block_encodings import BlockEncoding
+        from qrisp.operators import X, Y, Z
+
+        H = (
+            0.7 * X(0)
+            - 0.3 * Z(2)
+            + 0.5 * X(0) * X(1)
+            + 1.2 * Y(1) * Y(3)
+            - 0.8 * Z(0) * Z(3)
+        )
+
+        BE = BlockEncoding.from_foqcs_lcu_operator(H, L=4)
+
+        @terminal_sampling
+        def main():
+            return BE.apply_rus(lambda: QuantumFloat(4))()
+
+        res = main()
+        print(res)
 
     """
 

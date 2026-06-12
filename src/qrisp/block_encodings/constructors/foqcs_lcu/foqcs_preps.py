@@ -35,7 +35,7 @@ def foqcs_prep_heisenberg(
     conjugate: bool = False
 ) -> None:
     r"""
-    FOQCS-LCU state preparation, based on the application of the same name in https://arxiv.org/pdf/2507.20887.
+    FOQCS-LCU state preparation, based on the methodology established in https://arxiv.org/pdf/2507.20887, pages 8-9.
     Implements the FOQCS-LCU PREP oracle for the Heisenberg Hamiltonian by preparing selector amplitudes
     for local X/Y/Z fields and nearest-neighbor XX/YY/ZZ couplings, then mapping them into the
     two FOQCS activation registers using Dicke-state and CNOT-ladder structures.
@@ -191,7 +191,7 @@ def foqcs_prep_spin_glass(
     conjugate: bool = False
 ) -> None:
     r"""
-    FOQCS-LCU state preparation, based on the application of the same name in https://arxiv.org/pdf/2507.20887.
+    FOQCS-LCU state preparation, based on the methodology established in https://arxiv.org/pdf/2507.20887, pages 9-11.
     Implements the FOQCS-LCU PREP oracle for the spin-glass Hamiltonian by preparing weighted selector states
     for non-uniform local X/Y/Z fields and distance-dependent XX/YY/ZZ couplings,
     then encoding them into FOQCS activation registers via unbalanced W/Dicke states,
@@ -313,7 +313,7 @@ def foqcs_prep_spin_glass(
                     theta_list.append(theta[axis][k][i - k])
                     qubit_list.append(prep_qv[axis * L + k])
 
-        _cgamma_opt_qrisp(
+        _cgamma_opt(
             qubit_list,
             prep_qv[extra_anc + L - 2 - i],
             prep_qv[extra_anc + L - 1 - i],
@@ -329,7 +329,7 @@ def foqcs_prep_spin_glass(
                 theta_list.append(theta[2][k][i - k])
                 qubit_list.append(prep_qv[2 * L + k])
 
-        _cgamma_opt_qrisp(
+        _cgamma_opt(
             qubit_list,
             prep_qv[extra_anc + 2 * L - 2 - i],
             prep_qv[extra_anc + 2 * L - 1 - i],
@@ -341,46 +341,52 @@ def foqcs_prep_spin_glass(
     cx(prep_qv[2 * L - 1], prep_qv[extra_anc])      # Y g/J last selector
     cx(prep_qv[3 * L - 1], prep_qv[extra_anc + L])  # Z g/J last selector
 
-    # Phase fixes for g branches.
+    # Phase fixes for g branches:
+    # The unbalanced Dicke preparation only uses the magnitudes of the
+    # coefficients to set the rotation angles. This prepares the correct
+    # probability weights, but drops any complex phases. Reinsert those phases
+    # on the selected branch so that the prepared LCU coefficient state contains
+    # the original complex amplitudes, not just their absolute values.
     with control(prep_qv[0]):
-        _phase_fix_dicke1_unbalanced_qrisp(
+        _phase_fix_dicke1_unbalanced(
             prep_qv[fh1:lh1 + 1],
             g_arr["X"],
             cutoff[0][0]
         )
 
     with control(prep_qv[L]):
-        _phase_fix_dicke1_unbalanced_qrisp(
+        _phase_fix_dicke1_unbalanced(
             prep_qv[fh1:lh1 + 1],
             g_arr["Y"],
             cutoff[1][0]
         )
 
     with control(prep_qv[2 * L]):
-        _phase_fix_dicke1_unbalanced_qrisp(
+        _phase_fix_dicke1_unbalanced(
             prep_qv[fh2:lh2 + 1],
             g_arr["Z"],
             cutoff[2][0]
         )
 
-    # Phase fixes for J branches.
+    # Phase fixes for J branches:
+    # Same logic as the phase fixes for g branches.
     for k in range(1, L):
         with control(prep_qv[k]):
-            _phase_fix_dicke1_unbalanced_qrisp(
+            _phase_fix_dicke1_unbalanced(
                 prep_qv[fh1:fh1 + L - k],
                 J_arr["X"][k - 1],
                 cutoff[0][k]
             )
 
         with control(prep_qv[L + k]):
-            _phase_fix_dicke1_unbalanced_qrisp(
+            _phase_fix_dicke1_unbalanced(
                 prep_qv[fh1:fh1 + L - k],
                 J_arr["Y"][k - 1],
                 cutoff[1][k]
             )
 
         with control(prep_qv[2 * L + k]):
-            _phase_fix_dicke1_unbalanced_qrisp(
+            _phase_fix_dicke1_unbalanced(
                 prep_qv[fh2:fh2 + L - k],
                 J_arr["Z"][k - 1],
                 cutoff[2][k]
@@ -526,7 +532,7 @@ def _theta_cutoff_foqcs_spin_glass_optimal(
 
     return theta, cutoff
 
-def _phase_fix_dicke1_unbalanced_qrisp(
+def _phase_fix_dicke1_unbalanced(
     qv: QuantumVariable | Sequence[Qubit],
     coeff: Sequence[complex],
     cutoff: int | None = None
@@ -534,6 +540,18 @@ def _phase_fix_dicke1_unbalanced_qrisp(
     """
     Helper equivalent of phase_fix_dicke1_unbalanced from foqcs-lcu
     https://github.com/QuantumComputingLab/foqcs-lcu
+
+    Applies phase corrections for a Dicke-1 / W-state-style register whose
+    amplitudes were prepared from coefficient magnitudes.
+
+    For each coefficient ``coeff[i]``, this applies a single-qubit phase gate
+    to the corresponding qubit ``qv[i]``. This converts amplitudes prepared
+    as ``abs(coeff[i])`` into amplitudes with the desired complex phase
+    ``coeff[i] = abs(coeff[i]) * exp(1j * angle(coeff[i]))``.
+
+    If ``cutoff`` is given, only entries ``0`` through ``cutoff`` are
+    corrected. Phases that are zero up to numerical tolerance are skipped.
+
     """
 
     coeff = np.asarray(coeff, dtype=complex)
@@ -549,7 +567,7 @@ def _phase_fix_dicke1_unbalanced_qrisp(
         if angle > _FOQCS_SPIN_GLASS_TOL:
             p(angle, qv[i])
 
-def _cgamma_opt_qrisp(
+def _cgamma_opt(
     controls: Sequence[Qubit],
     qv_rot: Qubit,
     qv_x: Qubit,
