@@ -29,6 +29,7 @@ from qrisp.jasp.interpreter_tools import (
     eval_jaxpr,
     make_profiling_eqn_evaluator,
 )
+from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     get_quantum_operations,
 )
@@ -230,7 +231,7 @@ def extract_count_ops(res: Tuple, jaspr: Jaspr, profiling_dic: dict) -> dict:
 
 @lru_cache(int(1e5))
 def get_count_ops_profiler(
-    jaspr: Jaspr, meas_behavior: Callable
+    jaspr: Jaspr, meas_behavior: Callable, callback_threshold=None
 ) -> Tuple[Callable, dict]:
     """
     Build a count operations profiling computer for a given Jaspr.
@@ -242,6 +243,12 @@ def get_count_ops_profiler(
 
     meas_behavior : Callable
         The measurement behavior function.
+
+    callback_threshold : int | None, optional
+        Minimum value of ``call_count * inlined_eqn_count`` required to
+        trigger ``jax.pure_callback`` wrapping.  ``None`` (default)
+        disables callbacks entirely (fastest execution).  ``0`` wraps
+        every reused sub-jaxpr (fastest compilation).
 
     Returns
     -------
@@ -257,7 +264,13 @@ def get_count_ops_profiler(
         profiling_dic["measure"] = -1
 
     count_ops_metric = CountOpsMetric(meas_behavior, profiling_dic)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(count_ops_metric)
+
+    # Analyze the call graph to identify reused sub-jaxprs.  The resulting
+    # stats are threaded into the profiling evaluator so that frequently
+    # called, large sub-jaxprs can be wrapped in ``jax.pure_callback``
+    # to avoid XLA compilation blowup (see profiling_interpreter.py).
+    _, call_graph_stats = analyze_call_graph(jaspr)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(count_ops_metric, call_graph_stats, callback_threshold)
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def count_ops_profiler(*args):

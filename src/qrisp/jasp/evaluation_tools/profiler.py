@@ -111,7 +111,9 @@ def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
 # Keeping them here for now to avoid circular imports.
 
 
-def count_ops(meas_behavior: str | Callable) -> Callable:
+def count_ops(
+    meas_behavior: str | Callable, callback_threshold: int | None = None
+) -> Callable:
     """
     Decorator to determine resources of large scale quantum computations.
     This decorator compiles the given Jasp-compatible function into a classical
@@ -149,6 +151,13 @@ def count_ops(meas_behavior: str | Callable) -> Callable:
         A string or callable indicating the behavior of the resource computation
         when measurements are performed. Available strings are ``"0"``, ``"1"``, and ``"sim"``.
 
+    callback_threshold : int or None, optional
+        For very large algorithms, compile time can blow up due to aggressively
+        inlining of the Jax pipeline. ``callback_threshold`` allows to mitigate
+        this by trading compilation speed for execution speed.
+        ``None`` (default) disables callbacks (fastest execution).
+        ``0`` wraps every reused subroutine (fastest compilation).
+        ``500`` is a good middle ground for many large algorithms.
 
     Returns
     -------
@@ -278,7 +287,7 @@ def count_ops(meas_behavior: str | Callable) -> Callable:
                 function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
             return function.jaspr_dict[hash_key].count_ops(
-                *args, meas_behavior=meas_behavior
+                *args, meas_behavior=meas_behavior, callback_threshold=callback_threshold
             )
 
         return ops_counter
@@ -286,7 +295,11 @@ def count_ops(meas_behavior: str | Callable) -> Callable:
     return count_ops_decorator
 
 
-def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
+def depth(
+    meas_behavior: str | Callable,
+    max_qubits: int = 1024,
+    callback_threshold: int | None = None,
+) -> Callable:
     """
     Decorator to determine the depth of large scale quantum computations.
 
@@ -308,6 +321,14 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
     max_qubits : int, optional
         The maximum number of qubits supported for depth computation.
         Default is 1024.
+
+    callback_threshold : int or None, optional
+        For very large algorithms, compile time can blow up due to aggressively
+        inlining of the Jax pipeline. ``callback_threshold`` allows to mitigate
+        this by trading compilation speed for execution speed.
+        ``None`` (default) disables callbacks (fastest execution).
+        ``0`` wraps every reused subroutine (fastest compilation).
+        ``500`` is a good middle ground for many large algorithms.
 
     Returns
     -------
@@ -418,7 +439,7 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
                 function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
             return function.jaspr_dict[hash_key].depth(
-                *args, meas_behavior=meas_behavior, max_qubits=max_qubits
+                *args, meas_behavior=meas_behavior, max_qubits=max_qubits, callback_threshold=callback_threshold
             )
 
         return depth_counter
@@ -426,7 +447,11 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024) -> Callable:
     return depth_decorator
 
 
-def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Callable:
+def num_qubits(
+    meas_behavior: str | Callable,
+    max_allocations: int = 1000,
+    callback_threshold: int | None = None,
+) -> Callable:
     """
     Decorator to track qubit allocation and deallocation events during a quantum computation.
 
@@ -460,6 +485,14 @@ def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Ca
     max_allocations : int, optional
         The maximum number of allocation/deallocation events supported for tracking.
         Default is 1000. This is necessary as JAX requires static shapes for JIT compilation.
+
+    callback_threshold : int or None, optional
+        For very large algorithms, compile time can blow up due to aggressively
+        inlining of the Jax pipeline. ``callback_threshold`` allows to mitigate
+        this by trading compilation speed for execution speed.
+        ``None`` (default) disables callbacks (fastest execution).
+        ``0`` wraps every reused subroutine (fastest compilation).
+        ``500`` is a good middle ground for many large algorithms.
 
     Returns
     -------
@@ -586,7 +619,7 @@ def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000) -> Ca
                 function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
             return function.jaspr_dict[hash_key].num_qubits(
-                *args, meas_behavior=meas_behavior, max_allocations=max_allocations
+                *args, meas_behavior=meas_behavior, max_allocations=max_allocations, callback_threshold=callback_threshold
             )
 
         return qubits_counter

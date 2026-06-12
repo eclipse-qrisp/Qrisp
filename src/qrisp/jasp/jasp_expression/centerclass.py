@@ -684,21 +684,21 @@ class Jaspr(ClosedJaxpr):
         qs.abs_qst = new_abs_qst
         return res
 
-    def count_ops(self, *args, meas_behavior):
+    def count_ops(self, *args, meas_behavior, callback_threshold=None):
         from qrisp.jasp.evaluation_tools import profile_jaspr
 
-        return profile_jaspr(self, "count_ops", meas_behavior)(*args)
+        return profile_jaspr(self, "count_ops", meas_behavior, callback_threshold=callback_threshold)(*args)
 
-    def depth(self, *args, meas_behavior, max_qubits=1024):
+    def depth(self, *args, meas_behavior, max_qubits=1024, callback_threshold=None):
         from qrisp.jasp.evaluation_tools import profile_jaspr
 
-        return profile_jaspr(self, "depth", meas_behavior, max_qubits=max_qubits)(*args)
+        return profile_jaspr(self, "depth", meas_behavior, max_qubits=max_qubits, callback_threshold=callback_threshold)(*args)
 
-    def num_qubits(self, *args, meas_behavior, max_allocations=1000):
+    def num_qubits(self, *args, meas_behavior, max_allocations=1000, callback_threshold=None):
         from qrisp.jasp.evaluation_tools import profile_jaspr
 
         return profile_jaspr(
-            self, "num_qubits", meas_behavior, max_allocations=max_allocations
+            self, "num_qubits", meas_behavior, max_allocations=max_allocations, callback_threshold=callback_threshold
         )(*args)
 
     def embedd(self, *args, name=None, inline=False):
