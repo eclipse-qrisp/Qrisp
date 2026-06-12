@@ -68,13 +68,8 @@ def q_montgomery_reduction(
     inpl_adder : Callable
         In-place adder to use during computation (defaults to gidney_adder).
     """
-    if check_for_tracing_mode():
-        xrange = jrange
-    else:
-        xrange = range
-
     # Estimation stage
-    for j in xrange(m):
+    for j in jrange(m):
         with control(qf[j]):
             with invert():
                 inpl_adder((N - 1) >> 1, qf[j + 1 :])
@@ -84,7 +79,7 @@ def q_montgomery_reduction(
         inpl_adder(N, qf[m:-1])
 
     # Move sign bit across the result into the aux MSB (n swaps)
-    for i in xrange(jlen(qf) - m - 1):
+    for i in jrange(jlen(qf) - m - 1):
         swap(qf[-1 - i], qf[-2 - i])
 
     # Fold sign with LSB of estimate to form u-tilde
@@ -153,10 +148,6 @@ def cq_montgomery_multiply(
     # N^{-1} modulo 2^{m+1}
     N1 = modinv(N, R << 1)
 
-    if check_for_tracing_mode():
-        xrange = jrange
-    else:
-        xrange = range
     n = jlen(y)
     if res is None:
         res = QuantumModulus(N)
@@ -164,7 +155,7 @@ def cq_montgomery_multiply(
     wqf = aux[:] + res[:]
 
     # Multiplication: sum_j y_j * (X*2^j mod N) into wqf
-    for i in xrange(n):
+    for i in jrange(n):
         j = n - i - 1
         with control(y[j]):
             inpl_adder((X << j) % N, wqf)
@@ -173,7 +164,7 @@ def cq_montgomery_multiply(
     q_montgomery_reduction(wqf, N, m, inpl_adder=inpl_adder)
 
     # Uncompute aux: add ((X*2^j mod N)*N^{-1} mod 2^{m+1})
-    for i in xrange(n):
+    for i in jrange(n):
         j = n - i - 1
         with control(y[j]):
             with invert():
@@ -284,19 +275,14 @@ def qq_montgomery_multiply(
         The mongomery product of the inputs.
     """
 
-    if check_for_tracing_mode():
-        xrange = jrange
-    else:
-        xrange = range
-
     def qq_mul(ox: QuantumFloat, oy: QuantumFloat, ores: QuantumFloat):
-        for i in xrange(jlen(oy)):
+        for i in jrange(jlen(oy)):
             with control(oy[i]):
                 inpl_adder(ox[:], ores[i:])
 
     def qc_mul_inplace(operand, cl_int):
         size = jlen(operand)
-        for i in xrange(size - 1):
+        for i in jrange(size - 1):
             with control(operand[size - 2 - i]):
                 inpl_adder(cl_int // 2, operand[size - 1 - i :])
 
@@ -355,19 +341,14 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     n = smallest_power_of_two(N)
     m = smallest_power_of_two((N - 1) ** 2 + 1) - n
 
-    if check_for_tracing_mode():
-        xrange = jrange
-    else:
-        xrange = range
-
     def qq_mul(ox: QuantumFloat, oy: QuantumFloat, ores: QuantumFloat):
-        for i in xrange(jlen(oy)):
+        for i in jrange(jlen(oy)):
             with control(oy[i]):
                 inpl_adder(ox[:], ores[i:])
 
     def qc_mul_inplace(operand, cl_int):
         size = jlen(operand)
-        for i in xrange(size - 1):
+        for i in jrange(size - 1):
             with control(operand[size - 2 - i]):
                 inpl_adder(cl_int // 2, operand[size - 1 - i :])
 
@@ -391,11 +372,8 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
 
 def cq_montgomery_mat_multiply(A, B, out):
     if check_for_tracing_mode():
-        xrange = jrange
         x_cond = q_cond
     else:
-        xrange = range
-
         def x_cond(condition, tf, ff):
             if condition:
                 tf()
@@ -409,9 +387,9 @@ def cq_montgomery_mat_multiply(A, B, out):
 
     # out = QuantumArray(qtype=A[0,0], shape=(n1, n2))
 
-    for k in xrange(m):
-        for j in xrange(n2):
-            for i in xrange(n1):
+    for k in jrange(m):
+        for j in jrange(n2):
+            for i in jrange(n1):
 
                 def true_fun():
                     best_montgomery_shift(B[k, j], A[i, k].modulus)

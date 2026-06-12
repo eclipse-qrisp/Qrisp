@@ -306,7 +306,6 @@ def prepare_qswitch(
     from qrisp import gphase, ry, u3
     from qrisp.jasp.program_control.jrange_iterator import jrange
     from qrisp.jasp.program_control.prefix_control import q_switch
-    from qrisp.jasp.tracing_logic import check_for_tracing_mode
     from qrisp.misc.utility import bit_reverse
 
     target_array_jax: jax.Array = jnp.asarray(target_array, dtype=jnp.complex128)
@@ -325,9 +324,6 @@ def prepare_qswitch(
     # so we need to swap the endianness of the target_array before proceeding.
     if big_endianness is False:
         target_array_jax = swap_endianness(target_array_jax, n)
-
-    # We could use jrange even in static mode, but this would add overhead.
-    xrange = jrange if check_for_tracing_mode() else range
 
     thetas, u_params, phases = _preprocess(target_array_jax)
 
@@ -355,7 +351,7 @@ def prepare_qswitch(
 
     ry(thetas[0][0], qv[0])
 
-    for layer_size in xrange(1, qv.size - 1):
+    for layer_size in jrange(1, qv.size - 1):
 
         q_switch(
             qv[:layer_size],
