@@ -284,7 +284,6 @@ def get_num_qubits_profiler(
     max_allocations: int = 1000,
     callback_threshold: int | None = None,
 ) -> tuple[Callable, None]:
-) -> Tuple[Callable, None]:
     """
     Build a num qubits profiling computer for a given Jaspr.
 
