@@ -157,6 +157,10 @@ def _pick_ops_with_anc_all_zero(
     return res_ops
 
 def test_foqcs_lcu_heisenberg_prep():
+    r"""
+    Verifies Heisenberg model `foqcs_prep_heisenberg` PREP statevector
+    against the manually constructed expected statevector.
+    """
     # Initialize variables + their values
     L = 4
     g, J = _generate_heisenberg_coeff()
@@ -237,6 +241,10 @@ def test_foqcs_lcu_heisenberg_prep():
     )
 
 def test_foqcs_lcu_spin_glass_prep():
+    r"""
+    Verifies Spin-glass model `foqcs_prep_spin_glass` PREP statevector
+    against the manually constructed expected statevector
+    """
     # Initialize variables + their values
     L = 3
     coeff = np.random.uniform(-1, 1, (3, L, L))
@@ -451,6 +459,10 @@ def test_foqcs_lcu_spin_glass_prep():
     )
 
 def test_block_encoding_from_foqcs_lcu_heisenberg_prep():
+    r"""
+    Verifies Heisenberg model block encoding `.apply`.
+    Tests it against the manually constructed statevector from definition
+    """
     # Initialize variables + their values
     L = 4
     g, J = _generate_heisenberg_coeff()
@@ -461,13 +473,13 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep():
     heis_J = {"X": _J[0], "Y": _J[1], "Z": _J[2]}
 
     # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
-    prep = partial(
+    p_r = partial(
         foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
         J=heis_J,
     )
-    unprep = partial(
+    p_l = partial(
         foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
@@ -475,7 +487,12 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep():
         conjugate=True
     )
 
-    be = BlockEncoding.from_foqcs_lcu_prep(prep, L, unprep=unprep, norm=norm ** 2)
+    be = BlockEncoding.from_foqcs_lcu_prep(
+        p_r = p_r,
+        p_l = p_l,
+        num_q_ops = L,
+        norm = norm ** 2
+    )
 
     qv = QuantumVariable(4)
 
@@ -503,6 +520,10 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep():
     assert np.allclose(res_ops, ref_state, atol=1e-6)
 
 def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
+    r"""
+    Verifies spin-glass model block encoding `.apply`.
+    Tests it against the manually constructed statevector from definition.
+    """
     L = 3
 
     # Physical Hamiltonian coefficients.
@@ -565,14 +586,14 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
 
     alpha = np.linalg.norm(_flatten_spin_glass_coeffs(prep_g, prep_J)) ** 2
 
-    prep = partial(
+    p_r = partial(
         foqcs_prep_spin_glass,
         L=L,
         g=prep_g,
         J=prep_J,
     )
 
-    unprep = partial(
+    p_l = partial(
         foqcs_prep_spin_glass,
         L=L,
         g=prep_g,
@@ -581,10 +602,10 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
     )
 
     be = BlockEncoding.from_foqcs_lcu_prep(
-        prep=prep,
-        num_q_ops=L,
-        unprep=unprep,
-        norm=alpha,
+        p_r = p_r,
+        p_l = p_l,
+        num_q_ops = L,
+        norm = alpha,
     )
 
     qv = QuantumVariable(L)
@@ -610,6 +631,10 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
     assert np.allclose(res_ops, ref_state, atol=1e-5)
 
 def test_block_encoding_from_foqcs_lcu_heisenberg_prep_jasp():
+    r"""
+    Verifies Heisenberg model block encoding `.apply_rus` (under the jasp environment).
+    Tests it against the `.apply` produced statevector.
+    """
     # Initialize variables + their values
     L = 4
     g, J = _generate_heisenberg_coeff()
@@ -620,13 +645,13 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep_jasp():
     heis_J = {"X": _J[0], "Y": _J[1], "Z": _J[2]}
 
     # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
-    prep = partial(
+    p_r = partial(
         foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
         J=heis_J,
     )
-    unprep = partial(
+    p_l = partial(
         foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
@@ -634,7 +659,12 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep_jasp():
         conjugate=True
     )
 
-    be = BlockEncoding.from_foqcs_lcu_prep(prep=prep, num_q_ops=L, unprep=unprep, norm=norm ** 2)
+    be = BlockEncoding.from_foqcs_lcu_prep(
+        p_r = p_r,
+        p_l = p_l,
+        num_q_ops = L,
+        norm = norm ** 2
+    )
 
     psi = _prep_psi(L)
 
@@ -678,6 +708,10 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep_jasp():
                        atol = 1e-4)
 
 def test_block_encoding_from_operator_spin_glass_jasp():
+    r"""
+    Verifies spin-glass model block encoding `.apply_rus` (under the jasp environment).
+    Tests it against the `.apply` produced statevector.
+    """
     L = 3
 
     g = {
@@ -805,6 +839,10 @@ def test_block_encoding_from_operator_spin_glass_jasp():
     )
 
 def test_block_encoding_from_foqcs_lcu_heisenberg_operator():
+    r"""
+    Verifies `from_foqcs_lcu_operator` execution with Heisenberg model.
+    Tests it against the manually constructed statevector from definition.
+    """
     # Initialize variables + their values
     L = 4
     g, J = _generate_heisenberg_coeff()
@@ -847,6 +885,10 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_operator():
     assert np.allclose(res_ops, ref_state, atol=1e-6)
 
 def test_block_encoding_from_foqcs_lcu_spin_glass_operator():
+    r"""
+    Verifies `from_foqcs_lcu_operator` execution with Spin-glass model.
+    Tests it against the manually constructed statevector from definition.
+    """
     L = 3
 
     # Nonuniform fields/couplings
@@ -958,6 +1000,10 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_operator():
     assert np.allclose(res_ops, ref_state, atol=1e-5)
 
 def test_foqcs_lcu_resources():
+    r"""
+    Validates that `.resources` can be executed for FOQCS-LCU Block Encoding.
+    Spin-glass model is taken as benchmark.
+    """
     L = 3
 
     O = (
@@ -979,6 +1025,9 @@ def test_foqcs_lcu_resources():
     assert res["qubits"] > 0
 
 def test_block_encoding_foqcs_lcu_is_controllable():
+    r"""
+    Tests that FOQCS-LCU produced block encoding can be controlled under jasp environment.
+    """
     from qrisp import QuantumBool, h
     from qrisp.environments import control
     H = X(0)*X(1) + 0.2*Y(0)*Y(1)
@@ -1026,6 +1075,11 @@ def _compare_results(res_dict_1, res_dict_2, n):
     ],
 )
 def test_foqcs_lcu_chebyshev(H1, H2, rescaled):
+    r"""
+    Tests `.chebyshev(k)` on a FOQCS-LCU block encoding by comparing `BE1 + T_k(BE2)`
+    against direct operator block encodings for `T_1`, `T_2`, and `T_3`,
+    with both rescaled and non-rescaled cases.
+    """
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L=n)
@@ -1091,6 +1145,10 @@ def test_foqcs_lcu_chebyshev(H1, H2, rescaled):
     ],
 )
 def test_foqcs_lcu_poly(H1, H2, poly):
+    r"""
+    Tests `.poly(poly)` on a FOQCS-LCU block encoding by comparing `poly(BE1) + BE2`
+    against a direct block encoding of `sum(poly[k] * H1**k) + H2`.
+    """
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L=n)
@@ -1113,6 +1171,11 @@ def test_foqcs_lcu_poly(H1, H2, poly):
     _compare_results(res_be3, res_be_poly, n)
 
 def test_foqcs_lcu_inv():
+    r"""
+    Tests `.inv(...)` on a FOQCS-LCU block encoding by solving a small linear system
+    and comparing the sampled output amplitudes
+    against the normalized classical solution `inv(H) @ b`.
+    """
     from qrisp import prepare
 
     L = 2
@@ -1166,7 +1229,10 @@ def test_foqcs_lcu_inv():
     assert np.linalg.norm(np.abs(c) - q) < 1e-2
 
 def test_foqcs_lcu_sim():
-
+    r"""
+    Tests `.sim(t, N)` for Hamiltonian simulation by comparing simulation results from a FOQCS-LCU block encoding
+    against a generic `BlockEncoding.from_operator(H)` reference
+    """
     L = 2
     t = 0.1
 
@@ -1209,6 +1275,9 @@ def test_foqcs_lcu_sim():
     (X(0)*X(1), Z(0) + 0.9*Z(1) + X(3)),
 ])
 def test_block_encoding_foqcs_lcu_addition(H1, H2):
+    r"""
+    Tests `BE_addition = BE1 + BE2` with `BE1` constructed by FOQCS-LCU.
+    """
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
@@ -1233,6 +1302,9 @@ def test_block_encoding_foqcs_lcu_addition(H1, H2):
     (X(0)*X(1), Z(0) + 0.9*Z(1) + X(3)),
 ])
 def test_block_encoding_foqcs_lcu_subtraction(H1, H2):
+    r"""
+    Tests `BE_subtraction = BE1 - BE2` with `BE1` constructed by FOQCS-LCU.
+    """
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
@@ -1260,6 +1332,9 @@ def test_block_encoding_foqcs_lcu_subtraction(H1, H2):
     (X(0)*X(1), Z(0)*Z(1) + Y(3)),
 ])
 def test_block_encoding_foqcs_lcu_multiplication(H1, H2):
+    r"""
+    Tests `BE_multiplication = BE1 @ BE2` with `BE1` constructed by FOQCS-LCU.
+    """
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
@@ -1285,6 +1360,10 @@ def test_block_encoding_foqcs_lcu_multiplication(H1, H2):
     (X(0), Z(0), 1),
 ])
 def test_block_encoding_foqcs_lcu_scalar_multiplication(H1, H2, scalar):
+    r"""
+    Tests the `BE_left = scalar * BE1 + BE2`, `BE_right = BE1 * scalar + BE2`
+    with `BE1` constructed by FOQCS-LCU.
+    """
     H_target = scalar * H1 + H2
     BE_target = BlockEncoding.from_operator(H_target)
 
@@ -1313,7 +1392,9 @@ def test_block_encoding_foqcs_lcu_scalar_multiplication(H1, H2, scalar):
     (X(0)*X(1), Z(0)*Z(1)),
 ])
 def test_block_encoding_foqcs_lcu_kron(H1, H2):
-
+    r"""
+    Tests the use of `.kron` with FOQCS-LCU.
+    """
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
 
@@ -1354,7 +1435,9 @@ def test_block_encoding_foqcs_lcu_kron(H1, H2):
     (Z(0)*Z(1) - Y(3), Y(3) - Z(0)*Z(1)),
 ])
 def test_block_encoding_foqcs_lcu_negation(H1, H2):
-
+    r"""
+    Tests the use of negation `BE_neg = -BE` with FOQCS-LCU.
+    """
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
@@ -1431,6 +1514,9 @@ def _uniform_heisenberg_chain(L):
     ],
 )
 def test_foqcs_operator_analysis_spin_glass_failures(O, L, expected_error):
+    r"""
+    Verifies that `foqcs_analyze_operator_spin_glass` raises correct errors for different failure cases.
+    """
     with pytest.raises(ValueError) as exc_info:
         foqcs_analyze_operator_spin_glass(O, L=L)
 
@@ -1505,6 +1591,9 @@ def test_foqcs_operator_analysis_spin_glass_failures(O, L, expected_error):
     ],
 )
 def test_foqcs_operator_analysis_heisenberg_failures(O, L, expected_error):
+    r"""
+    Verifies that `foqcs_analyze_operator_heisenberg` raises correct errors for different failure cases.
+    """
     with pytest.raises(ValueError) as exc_info:
         foqcs_analyze_operator_heisenberg(O, L=L)
 
@@ -1582,6 +1671,9 @@ def test_foqcs_operator_analysis_heisenberg_failures(O, L, expected_error):
     ],
 )
 def test_foqcs_operator_analysis(O, expected_method):
+    r"""
+    Verifies that `foqcs_analyze_operator` properly identifies Heisenberg and spin-glass operator cases.
+    """
     res = is_operator_foqcs_compatible(O)
 
     assert res, f"Compatible operator failed analysis: {O}"
