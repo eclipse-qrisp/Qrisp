@@ -16,13 +16,9 @@ In-place adders
    fourier_adder
    cuccaro_adder
    gidney_adder
+   gidney_cq_venting_adder
    remaud_adder
    qcla
-
-.. toctree::
-   :maxdepth: 1
-
-   Gidney venting adder
 
 QuantumFloat processing
 -----------------------
