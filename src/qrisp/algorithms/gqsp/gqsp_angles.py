@@ -530,7 +530,7 @@ def qsp_angles(
     Parameters
     ----------
     p : ArrayLike
-        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+        1-D array containing the polynomial coefficients in Chebyshev basis, ordered from lowest order term to highest.
     parity : Literal["even", "odd"]
         The structural parity of the target polynomial ('even' or 'odd'). Defaults to 'odd'.
         Must be known at compile time for JAX tracing.
@@ -566,7 +566,7 @@ def qsvt_angles(p: "ArrayLike", parity: Literal["even", "odd"] = "odd") -> Tuple
     Parameters
     ----------
     p : ArrayLike
-        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+        1-D array containing the polynomial coefficients in Chebyshev basis, ordered from lowest order term to highest.
     parity : Literal["even", "odd"]
         The structural parity of the target polynomial ('even' or 'odd'). Defaults to 'odd'.
         Must be known at compile time for JAX tracing.
