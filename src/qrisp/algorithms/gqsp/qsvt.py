@@ -18,19 +18,14 @@
 
 from typing import Literal, TYPE_CHECKING
 
-from qrisp import (
-    QuantumBool,
-    invert,
-    rz,
-    h,
-    mcx
-)
-from qrisp.environments import conjugate
+from qrisp.core.gate_application_functions import h, mcx, rz
+from qrisp.environments import conjugate, invert
 from qrisp.algorithms.gqsp.gqsp_angles import qsvt_angles
 from qrisp.algorithms.gqsp.helper_functions import poly2cheb, _rescale_poly
 from qrisp.block_encodings import BlockEncoding
 from qrisp.jasp import jrange, q_cond
 from qrisp.operators import QubitOperator, FermionicOperator
+from qrisp.qtypes import QuantumBool
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike

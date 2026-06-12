@@ -16,12 +16,12 @@
 ********************************************************************************
 """
 
+from typing import Literal, TYPE_CHECKING
 from functools import partial
 import numpy as np
 import jax
 from jax import Array
 import jax.numpy as jnp
-from typing import Literal, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -205,7 +205,7 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
 
 
 @jax.jit
-def _gqsp_angles_from_nlft_sequence(F: Array) -> Tuple[Array, Array, Array]:
+def _gqsp_angles_from_nlft_sequence(F: Array) -> tuple[Array, Array, Array]:
     r"""
     Computes the GQSP angles form the non-linear Fourier sequence.
 
@@ -344,7 +344,7 @@ def poly_to_nlft_sequence(p: "ArrayLike") -> Array:
 
 
 # https://arxiv.org/pdf/2503.03026
-def gqsp_angles(p: "ArrayLike") -> Tuple[Tuple[Array, Array, Array], Array]:
+def gqsp_angles(p: "ArrayLike") -> tuple[tuple[Array, Array, Array], Array]:
     r"""
     Computes the GQSP angles for a given polynomial.
 
@@ -380,7 +380,7 @@ def gqsp_angles(p: "ArrayLike") -> Tuple[Tuple[Array, Array, Array], Array]:
 
 # https://arxiv.org/pdf/2503.03026 
 # Not verified to be correct.
-def xqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
+def xqsp_angles(p: "ArrayLike") -> tuple[Array, Array]:
     r"""
     Computes the XQSP angles for a given polynomial.
 
@@ -417,7 +417,7 @@ def xqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
 
 # https://arxiv.org/pdf/2503.03026 
 # Not verified to be correct.
-def yqsp_angles(p: "ArrayLike") -> Tuple[Array, Array]:
+def yqsp_angles(p: "ArrayLike") -> tuple[Array, Array]:
     r"""
     Computes the YQSP angles for a given polynomial.
 
@@ -523,7 +523,7 @@ def qsp_angles(
     p: "ArrayLike",
     parity: Literal["even", "odd"] = "odd",
     signal_basis: Literal["X", "Z"] = "Z",
-) -> Tuple[Array, Array]:
+) -> tuple[Array, Array]:
     r"""
     Computes the QSP angles for a given polynomial.
 
@@ -559,7 +559,7 @@ def qsp_angles(
     return phi, alpha
 
 
-def qsvt_angles(p: "ArrayLike", parity: Literal["even", "odd"] = "odd") -> Tuple[Array, Array]:
+def qsvt_angles(p: "ArrayLike", parity: Literal["even", "odd"] = "odd") -> tuple[Array, Array]:
     r"""
     Computes the QSVT angles for a given polynomial.
 

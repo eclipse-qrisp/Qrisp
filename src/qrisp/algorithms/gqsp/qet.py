@@ -16,9 +16,9 @@
 ********************************************************************************
 """
 
-import numpy as np
+from typing import Literal, TYPE_CHECKING
 import jax.numpy as jnp
-from qrisp import QuantumBool
+
 from qrisp.core.gate_application_functions import rx
 from qrisp.environments import conjugate, control
 from qrisp.alg_primitives.reflection import reflection
@@ -27,7 +27,7 @@ from qrisp.algorithms.gqsp.helper_functions import poly2cheb, _rescale_poly
 from qrisp.block_encodings import BlockEncoding
 from qrisp.jasp import jrange
 from qrisp.operators import QubitOperator, FermionicOperator
-from typing import Literal, TYPE_CHECKING
+from qrisp.qtypes import QuantumBool
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike

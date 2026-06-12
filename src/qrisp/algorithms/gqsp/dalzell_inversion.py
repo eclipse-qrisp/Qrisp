@@ -16,12 +16,13 @@
 ********************************************************************************
 """
 
+from collections.abc import Callable
 import numpy as np
 import numpy.typing as npt
 from numpy.polynomial import Chebyshev
+
 from qrisp.algorithms.gqsp.qsvt import QSVT
 from qrisp.block_encodings import BlockEncoding
-from typing import Callable
 
 
 def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, kappa: float) -> BlockEncoding:

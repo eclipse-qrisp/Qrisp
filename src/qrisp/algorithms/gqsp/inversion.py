@@ -16,14 +16,15 @@
 ********************************************************************************
 """
 
+from typing import Literal
 import numpy as np
 import numpy.typing as npt
+
 from qrisp.algorithms.cks import cks_coeffs, cks_params
 from qrisp.algorithms.gqsp.gqsvt import GQSVT
 from qrisp.algorithms.gqsp.qet import QET
 from qrisp.algorithms.gqsp.qsvt import QSVT
 from qrisp.block_encodings import BlockEncoding
-from typing import Literal
 
 
 def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQSVT"] = "QSVT") -> BlockEncoding:
