@@ -17,14 +17,15 @@
 """
 
 import random
+
+from qrisp import QuantumVariable, QuantumFloat, cx, h, jaspify, x
+from qrisp.default_backend import QrispSimulatorBackend
 from qrisp.operators import X, Y, Z, A, C, P0, P1
-from qrisp import *
-from qrisp.interface import VirtualBackend
-from qrisp.simulator import run
+
 
 def test_expectation_value(sample_size=100, seed=42, exhaustive = False):
     
-    non_sampling_backend = VirtualBackend(lambda qasm_string, shots, token : run(QuantumCircuit.from_qasm_str(qasm_string), None, ""))    
+    non_sampling_backend = QrispSimulatorBackend()
 
     def testing_helper(state_prep, operator_combinations):
         for H in operator_combinations:
@@ -105,4 +106,35 @@ def test_expectation_value(sample_size=100, seed=42, exhaustive = False):
 
     testing_helper(state_prep, all_combinations)
 
-    
+
+def test_expectation_value_issue_165():
+    """Test the expectation value method for the specific case of issue #165."""
+        
+    def state_prep():
+        qv = QuantumVariable(4)
+        x(qv[0])
+        x(qv[1])
+        return qv
+
+    H = A(0)*C(1)*C(2)*A(3) + P1(0)*P1(2) + P1(1)*P1(3)
+
+    assert H.expectation_value(state_prep, diagonalisation_method='commuting')() == 0
+    assert H.expectation_value(state_prep, diagonalisation_method='commuting_qw')() == 0
+
+
+def test_expectation_value_batched_backend():
+    """Test the expectation value method with the BatchedBackend."""
+
+    def state_prep():
+        d = QuantumFloat(4)
+        e = QuantumFloat(3)
+        d[:] = 2
+        e[:] = 2
+        f = d + e
+        return f
+
+    H = Z(0)*Z(1)*Z(2)*Z(3) + X(0)*X(1)*X(2)*X(3)
+
+    bb = QrispSimulatorBackend().batched()
+
+    ev = H.expectation_value(state_prep, backend = bb)()
