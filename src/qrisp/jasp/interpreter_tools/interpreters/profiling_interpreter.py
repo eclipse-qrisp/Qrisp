@@ -396,7 +396,7 @@ def get_compiled_profiler(
         ``(profiler, jaxpr_evaluator)`` – the compiled profiler function and the
         raw evaluator (used for computing result shapes for ``pure_callback``).
     """
-    key = (id(jaxpr), metric_cls, cache_key)
+    key = (id(jaxpr), metric_cls, cache_key, callback_threshold)
     if key in _profiler_cache:
         _profiler_cache.move_to_end(key)
         return _profiler_cache[key]
@@ -441,7 +441,7 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
         Minimum value of ``call_count * inlined_eqn_count`` required to trigger
         ``jax.pure_callback`` wrapping.  ``None`` (default) disables callbacks
         entirely (fastest execution).  ``0`` wraps every reused sub-jaxpr
-        (fastest compilation).  The PR's original heuristic was ``500``.
+        (fastest compilation). 
 
     Returns
     -------

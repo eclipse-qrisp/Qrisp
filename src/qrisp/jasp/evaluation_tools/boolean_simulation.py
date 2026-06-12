@@ -64,7 +64,11 @@ from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
 from qrisp.jasp import Jaspr
 
 
-def boolean_simulation(*func: Callable, bit_array_padding: int = 2**16, callback_threshold=None) -> Callable:
+def boolean_simulation(
+    *func: Callable,
+    bit_array_padding: int = 2**16,
+    callback_threshold: int | None = None,
+) -> Callable:
     """
     Decorator to simulate Jasp functions containing only classical logic (like X, CX, CCX etc.).
 
@@ -98,7 +102,7 @@ def boolean_simulation(*func: Callable, bit_array_padding: int = 2**16, callback
         The default here is therefore ``2**16/2**6 = 1024``.
 
     callback_threshold : int or None, optional
-        For very large algorithms, compile time can blow up due to aggressively
+        For very large algorithms, compile time can blow up due to aggressive
         inlining of the Jax pipeline. ``callback_threshold`` allows to mitigate
         this by trading compilation speed for execution speed.
         ``None`` (default) disables callbacks (fastest execution).

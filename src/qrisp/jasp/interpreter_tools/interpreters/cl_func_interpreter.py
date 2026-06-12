@@ -86,7 +86,10 @@ QubitIndex = Array  # int64 scalar representing a qubit's position
 BooleanQuantumState = tuple[BitArray, Jlist]  # (bit_array, free_qubits)
 
 
-def make_cl_func_eqn_evaluator(call_graph_stats=None, callback_threshold=None):
+def make_cl_func_eqn_evaluator(
+    call_graph_stats: dict | None = None,
+    callback_threshold: int | None = None,
+) -> Callable:
     """
     Factory that creates a cl_func_eqn_evaluator for transforming quantum
     primitives into classical bit operations.
@@ -594,7 +597,12 @@ def process_parity(eqn, context_dic):
     context_dic[eqn.outvars[0]] = jnp.array(result, dtype=bool)
 
 
-def process_while(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None, callback_threshold=None) -> bool | None:
+def process_while(
+    eqn: JaxprEqn,
+    context_dic: ContextDict,
+    call_graph_stats: dict | None = None,
+    callback_threshold: int | None = None,
+) -> bool | None:
     """
     Process while loop primitives that may contain quantum operations.
 

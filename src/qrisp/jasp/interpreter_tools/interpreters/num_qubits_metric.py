@@ -279,7 +279,11 @@ def extract_num_qubits(res: Tuple, jaspr: Jaspr, _) -> dict:
 
 @lru_cache(int(1e5))
 def get_num_qubits_profiler(
-    jaspr: Jaspr, meas_behavior: Callable, max_allocations: int = 1000, callback_threshold=None
+    jaspr: Jaspr,
+    meas_behavior: Callable,
+    max_allocations: int = 1000,
+    callback_threshold: int | None = None,
+) -> tuple[Callable, None]:
 ) -> Tuple[Callable, None]:
     """
     Build a num qubits profiling computer for a given Jaspr.

@@ -111,7 +111,9 @@ def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
 # Keeping them here for now to avoid circular imports.
 
 
-def count_ops(meas_behavior: str | Callable, callback_threshold=None) -> Callable:
+def count_ops(
+    meas_behavior: str | Callable, callback_threshold: int | None = None
+) -> Callable:
     """
     Decorator to determine resources of large scale quantum computations.
     This decorator compiles the given Jasp-compatible function into a classical
@@ -293,7 +295,11 @@ def count_ops(meas_behavior: str | Callable, callback_threshold=None) -> Callabl
     return count_ops_decorator
 
 
-def depth(meas_behavior: str | Callable, max_qubits: int = 1024, callback_threshold=None) -> Callable:
+def depth(
+    meas_behavior: str | Callable,
+    max_qubits: int = 1024,
+    callback_threshold: int | None = None,
+) -> Callable:
     """
     Decorator to determine the depth of large scale quantum computations.
 
@@ -441,7 +447,11 @@ def depth(meas_behavior: str | Callable, max_qubits: int = 1024, callback_thresh
     return depth_decorator
 
 
-def num_qubits(meas_behavior: str | Callable, max_allocations: int = 1000, callback_threshold=None) -> Callable:
+def num_qubits(
+    meas_behavior: str | Callable,
+    max_allocations: int = 1000,
+    callback_threshold: int | None = None,
+) -> Callable:
     """
     Decorator to track qubit allocation and deallocation events during a quantum computation.
 
