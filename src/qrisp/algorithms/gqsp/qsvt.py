@@ -16,22 +16,21 @@
 ********************************************************************************
 """
 
+from typing import Literal, TYPE_CHECKING
+
 from qrisp import (
     QuantumBool,
     invert,
     rz,
     h,
-    mcx,
-    x,
+    mcx
 )
-from qrisp.environments import conjugate, control
+from qrisp.environments import conjugate
 from qrisp.algorithms.gqsp.gqsp_angles import qsvt_angles
 from qrisp.algorithms.gqsp.helper_functions import poly2cheb, _rescale_poly
 from qrisp.block_encodings import BlockEncoding
 from qrisp.jasp import jrange, q_cond
 from qrisp.operators import QubitOperator, FermionicOperator
-from jax import numpy as jnp
-from typing import Literal, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -186,8 +185,13 @@ def QSVT(
         A = BlockEncoding.from_operator(A)
 
     # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
+    # If rescale=False, the returned block-encoding will implement p(A/alpha) instead of p(A),
+    # where alpha is the normalization factor of the input block-encoding A. 
     if rescale:
         p = _rescale_poly(A.alpha, p, kind=kind)
+
+    # If the coefficients are given in the standard polynomial basis, convert them to the Chebyshev basis,
+    # which is used internally for the angle calculation.
     if kind == "Polynomial":
         p = poly2cheb(p)
 
