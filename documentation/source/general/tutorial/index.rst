@@ -45,16 +45,17 @@ The tutorials are organized into four topics, each containing multiple hands-on 
 
 - **High-Performance Compilation and Execution with Jasp**: Learn how to scale your code, while estimating your quantum resources, for the real world using the Jasp pipeline for hybrid real-time control. You will also learn about optimizing for Fault-Tolerant compilation for next-generation hardware.
 
-- **Scientific Computing and Quantum Numerical Linear Algebra**: Dive into high-level abstractions for quantum chemistry, physics and linear systems (HHL, CKS, QSP) using our new :ref:`BlockEncoding` class.
+- **Scientific Computing and Quantum Numerical Linear Algebra**: Dive into high-level abstractions for quantum chemistry, physics and linear systems using our new :ref:`BlockEncoding` class.
 
 If you’re the type who learns best by breaking things (and then fixing them), you can download any of these tutorials as a Jupyter notebook. Just look for the download box on the right side of the page within each specific tutorial to grab the code and run it in your own local environment.
 
 By the end of these tutorials, you'll have a solid foundation of our high-level framework and be ready to tackle more complex projects. So let's get **started**!
 
 
-Foundations and first steps
+Foundations and First Steps
 ---------------------------
-Kickstart your quantum programming journey here! This section is designed to familiarize you with Qrisp's core philosophy: shifting away from low-level circuit manipulation and toward intuitive, high-level programming using QuantumVariables. 
+Kickstart your quantum programming journey here! This section is designed to familiarize you with Qrisp's core philosophy:
+shifting away from low-level circuit manipulation and toward intuitive, high-level programming using QuantumVariables. 
 
 .. grid:: 1 1 2 2
 
@@ -97,7 +98,8 @@ Kickstart your quantum programming journey here! This section is designed to fam
 
 Optimization and Numerics
 -------------------------
-Discover how quantum algorithms can tackle complex search and optimization problems. In this section, you will dive into solving famous computational challenges (such as the Traveling Salesman Problem and Sudoku) using a versatile suite of quantum tools. 
+Discover how quantum algorithms can tackle complex search and optimization problems. In this section, you will dive into famous computational challenges using a diverse range of quantum algorithms.
+Learn how to optimize solutions across a variety of real-world domains using hybrid variational models, backtracking, and counterdiabatic driving.
 
 .. grid:: 1 1 2 2
             
@@ -147,7 +149,7 @@ Discover how quantum algorithms can tackle complex search and optimization probl
 
             <a href="./QIROtutorial.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Apply the theory to implement the algorithm and solve a Maximal Independent Set problem with it!</p>
+            <p class="sd-card-text">Discover a variational algorithm that dynamically updates the problem structure after each optimization round to solve the Maximal Independent Set problem.</p>
             </div>
             </a>
 
@@ -165,7 +167,7 @@ Discover how quantum algorithms can tackle complex search and optimization probl
 
             <a href="./CD.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Solve a QUBO problem with LCD (local counterdiabatic driving) and COLD (counterdiabatic optimized local driving).</p>
+            <p class="sd-card-text">Solve a QUBO problem with local counterdiabatic driving and counterdiabatic optimized local driving.</p>
             </div>
             </a>
 
@@ -185,7 +187,7 @@ Discover how quantum algorithms can tackle complex search and optimization probl
 
             <a href="./Sudoku.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Learn how to efficiently implement the Sudoku problem specific quantum oracles using Quantum Backtracking.</p>
+            <p class="sd-card-text">Learn how to efficiently implement quantum oracles for Sudoku and apply Qrisp's general Quantum Backtracking algorithm.</p>
             </div>
             </a>
 
@@ -216,7 +218,9 @@ Discover how quantum algorithms can tackle complex search and optimization probl
 
 High-Performance Compilation and Execution with Jasp
 ----------------------------------------------------
-Scale your quantum algorithms to practically relevant problem sizes by bypassing Python’s performance bottlenecks. You will explore the Jasp pipeline for hybrid real-time control, learn how to build highly performant custom optimization algorithms, and delve into Fault-Tolerant compilation to ensure your code is ready for next-generation hardware.
+Scale your quantum algorithms to practically relevant problem sizes by bypassing Python’s performance bottlenecks. 
+By targeting the MLIR toolchain and QIR specification, Jasp enables high-speed compilation and seamless real-time control, allowing classical logic to execute within the quantum coherence window.
+Explore the Jasp pipeline to build highly performant algorithms, and ensure your code is ready for next-generation, fault-tolerant hardware.
 
 .. grid:: 1 1 2 2
 
@@ -247,7 +251,7 @@ Scale your quantum algorithms to practically relevant problem sizes by bypassing
 
             <a href="./JaspQAOAtutorial.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Build an efficient custom QAOA implementation in Jasp using a Jasp-traceable objective function for the MaxCut problem.</p>
+            <p class="sd-card-text">Build an efficient custom QAOA implementation in Jasp using a JAX-traceable objective function for the MaxCut problem.</p>
             </div>
             </a>
 
@@ -285,7 +289,7 @@ Scale your quantum algorithms to practically relevant problem sizes by bypassing
 
             <a href="./BigInteger.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Use the BigInteger class to avoid integer overflow in Jasp and perform resource estimation of large-scale quantum algorithms.</p>
+            <p class="sd-card-text">Use the BigInteger class to avoid integer overflow in JAX and perform resource estimation of large-scale quantum algorithms.</p>
             </div>
             </a>
 
@@ -298,7 +302,10 @@ Scale your quantum algorithms to practically relevant problem sizes by bypassing
 
 Scientific Computing and Quantum Numerical Linear Algebra
 ---------------------------------------------------------
-Unlock the potential of quantum computers for scientific discovery and advanced mathematics. Here, you will use Qrisp's high-level abstractions to tackle problems in quantum chemistry, while having block encodings as a programming abstraction for quantum numerical linear algebra. 
+Unlock the potential of quantum computers for scientific discovery and advanced mathematics. 
+Here, you will use Qrisp's high-level abstractions to tackle problems in quantum chemistry, while having block encodings as a programming abstraction for quantum numerical linear algebra. 
+From simulating molecular dynamics (like the $H_2$ molecule) to solving systems of linear equations with the HHL algorithm and preparing ground states via quantum signal processing,
+this track demonstrates how to bridge the gap between complex scientific theory and executable quantum code.
 
 .. grid:: 1 1 2 2
 
@@ -310,7 +317,7 @@ Unlock the potential of quantum computers for scientific discovery and advanced 
 
             <a href="./H2.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Leverage Qrisp’s advanced capabilities to perform molecular simulations on quantum computers.</p>
+            <p class="sd-card-text">Simulate the quantum dynamics of molecules using chemistry data.</p>
             </div>
             </a>
 
@@ -318,7 +325,7 @@ Unlock the potential of quantum computers for scientific discovery and advanced 
             :alt: Hydrogen Molecule Tutorial
 
         +++
-        **Simulate the dynamics of the $H_2$ molecule**
+        **Simulate the dynamics of the hydrogen molecule**
 
     .. grid-item-card::
         :shadow: sm
@@ -348,7 +355,7 @@ Unlock the potential of quantum computers for scientific discovery and advanced 
 
             <a href="./GQSP_filtering.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Prepare the ground state by applying a Gaussian filter to enhance the overlap of the prepared state using GQSP.</p>
+            <p class="sd-card-text">Prepare ground states of lattice models by applying a Gaussian filter to enhance the overlap of the initial state with the ground state using quantum signal processing.</p>
             </div>
             </a>
 
@@ -366,7 +373,7 @@ Unlock the potential of quantum computers for scientific discovery and advanced 
 
             <a href="./HHL.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Explore hybrid quantum-classical workflows using Catalyst and Qrisp to solve linear system problems Ax=b.</p>
+            <p class="sd-card-text">Explore hybrid quantum-classical workflows using Catalyst and Qrisp to solve linear system problems.</p>
             </div>
             </a>
 
@@ -377,9 +384,11 @@ Unlock the potential of quantum computers for scientific discovery and advanced 
         **Solving systems of linear equations via HHL**
 
 
-You’ve now explored the breadth of what’s possible when you trade gate-level surgery for high-level logic. From your first QuantumVariable to fault-tolerant resource estimation, you have the roadmap to develop utility-scale applications that once seemed out of reach.
+You’ve now explored the breadth of what’s possible when you trade gate-level surgery for high-level logic.
+From your first QuantumVariable to fault-tolerant resource estimation, you have the roadmap to develop utility-scale applications that once seemed out of reach.
 
-The quantum landscape is evolving rapidly. By mastering these tutorials, you’re no longer just a spectator, you’re an architect of the next generation of algorithms. So, take these concepts, experiment, and start building the future of quantum computing with intuitive, clean, and Qrisp code.
+The quantum landscape is evolving rapidly. By mastering these tutorials, you’re no longer just a spectator, you’re an architect of the next generation of algorithms. 
+So, take these concepts, experiment, and start building the future of quantum computing with intuitive, clean, and qrispy code.
 
 .. toctree::
    :maxdepth: 2
