@@ -2,38 +2,6 @@
 
 Tutorials
 =========
-
-.. raw:: html
-
-    <style>
-        /* Isolate the hover overlay effect so it doesn't break Sphinx layouts */
-        .tutorial-hover-overlay {
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            background: rgb(0 14 72);
-            color: #ffffff;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
-            z-index: 10;
-            text-decoration: none !important;
-        }
-        
-        .sd-card:hover .tutorial-hover-overlay {
-            opacity: 0.95;
-        }
-        
-        .tutorial-hover-overlay p.sd-card-text {
-            color: #ffffff !important;
-            margin: 0;
-            text-align: center;
-            font-size: 0.95rem;
-        }
-    </style>
  
 Welcome to the Qrisp tutorials! This gallery is designed to take you from a curious beginner to a proficient developer of utility-scale quantum algorithms. By shifting the focus from low-level gate gymnastics to high-level programming with :ref:`QuantumVariables <QuantumVariable>`, Qrisp allows you to express complex logic with ease.
 
@@ -302,10 +270,9 @@ Explore the Jasp pipeline to build highly performant algorithms, and ensure your
 
 Scientific Computing and Quantum Numerical Linear Algebra
 ---------------------------------------------------------
-Unlock the potential of quantum computers for scientific discovery and advanced mathematics. 
-Here, you will use Qrisp's high-level abstractions to tackle problems in quantum chemistry, while having block encodings as a programming abstraction for quantum numerical linear algebra. 
-From simulating molecular dynamics (like the $H_2$ molecule) to solving systems of linear equations with the HHL algorithm and preparing ground states via quantum signal processing,
-this track demonstrates how to bridge the gap between complex scientific theory and executable quantum code.
+Unlock the potential of quantum computers for scientific discovery and advanced mathematics.
+Here, you will use Qrisp's high-level abstractions to tackle complex problems in quantum chemistry and physics.
+This track demonstrates how to bridge the gap between complex scientific theory and executable quantum code using features like block encodings as programming abstractions and quantum signal processing.
 
 .. grid:: 1 1 2 2
 
