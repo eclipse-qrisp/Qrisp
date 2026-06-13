@@ -21,7 +21,6 @@ import numpy as np
 import numpy.polynomial.chebyshev as cheb
 import numpy.polynomial.polynomial as poly
 import numpy.typing as npt
-from typing import Union
 
 
 def plot_reconstruction_vs_target(
@@ -139,7 +138,7 @@ def plot_reconstruction_vs_target(
 
 def evaluate_nlft_sequence(
     F_sequence: npt.NDArray[np.complex128],
-    z_values: Union[npt.NDArray[np.complex128], npt.NDArray[np.float64]],
+    z_values: npt.NDArray[np.complex128],
 ) -> npt.NDArray[np.complex128]:
     """
     Evaluates the Non-Linear Fourier Transform (NLFT) sequence by classically
@@ -270,7 +269,7 @@ def evaluate_gqsp_polynomial(
     theta_angles: npt.NDArray[np.float64],
     phi_angles: npt.NDArray[np.float64],
     lambd: float,
-    z_values: Union[npt.NDArray[np.complex128], npt.NDArray[np.float64]],
+    z_values: npt.NDArray[np.complex128],
 ) -> npt.NDArray[np.complex128]:
     """
     Evaluates the Generalized Quantum Signal Processing (GQSP) polynomial response
@@ -432,7 +431,7 @@ def assert_gqsp_angles_match_target(
 
 def evaluate_qsp_polynomial(
     angles: npt.NDArray[np.float64],
-    x_values: Union[npt.NDArray[np.float64], npt.NDArray[np.complex128]],
+    x_values: npt.NDArray[np.complex128],
     signal_basis: str = "X",
     phase_basis: str = "Z",
 ) -> npt.NDArray[np.complex128]:
@@ -613,7 +612,7 @@ def assert_qsp_angles_match_target(
 
 def evaluate_qsvt_polynomial(
     angles: npt.NDArray[np.float64],
-    x_values: Union[npt.NDArray[np.float64], npt.NDArray[np.complex128]],
+    x_values: npt.NDArray[np.complex128],
 ) -> npt.NDArray[np.complex128]:
     """
     Evaluates the classical Quantum Singular Value Transformation (QSVT) matrix response.

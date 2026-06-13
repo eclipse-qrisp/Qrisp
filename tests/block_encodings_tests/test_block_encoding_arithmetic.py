@@ -18,7 +18,8 @@
 
 import numpy as np
 import pytest
-from qrisp import *
+
+from qrisp import QuantumVariable, QuantumFloat, terminal_sampling
 from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
 
@@ -41,7 +42,7 @@ def test_block_encoding_addition(H1, H2):
     BE2 = BlockEncoding.from_operator(H2)
 
     H3 = H1 + H2
-    BE3 = H3.pauli_block_encoding()
+    BE3 = BlockEncoding.from_operator(H3)
     BE_addition = BE1 + BE2
 
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())

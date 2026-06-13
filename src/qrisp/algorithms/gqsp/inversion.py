@@ -16,16 +16,18 @@
 ********************************************************************************
 """
 
+from typing import Literal
 import numpy as np
 import numpy.typing as npt
+
 from qrisp.algorithms.cks import cks_coeffs, cks_params
 from qrisp.algorithms.gqsp.gqsvt import GQSVT
 from qrisp.algorithms.gqsp.qet import QET
+from qrisp.algorithms.gqsp.qsvt import QSVT
 from qrisp.block_encodings import BlockEncoding
-from typing import Literal
 
 
-def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET", "GQSVT"] = "QET") -> BlockEncoding:
+def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQSVT"] = "QSVT") -> BlockEncoding:
     r"""
     Quantum Linear System Solver via Quantum Eigenvalue Transformation (QET).
     Returns a BlockEncoding approximating the matrix inversion of the operator.
@@ -36,6 +38,8 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
     The inversion is implemented via
 
     - Quantum Eigenvalue Transformation (QET) ($A$ must be **Hermitian**)
+
+    - Quantum Singular Value Transformation (QSVT)
 
     - Generalized Quantum Singular Value Transform (GQSVT)
 
@@ -54,14 +58,16 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
     kappa : float
         An upper bound for the condition number $\kappa$ of $A$.
         This value defines the "gap" around zero where the function $1/x$ is not approximated.
-    method : {"QET", "GQSVT"}
+    method : {"QET", "QSVT", "GQSVT"}
         The method for implementing the inversion.
 
         - ``"QET"``: Quantum Eigenvalue Transform ($A$ must be Hermitian)
 
+        - ``"QSVT"``: Quantum Singular Value Transform
+
         - ``"GQSVT"``: Generalized Quantum Singular Value Transform
 
-        Default is ``"QET"``.
+        Default is ``"QSVT"``.
 
     Returns
     -------
@@ -141,7 +147,7 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
 
     """
 
-    ALLOWED_METHODS = {"QET", "GQSVT"}
+    ALLOWED_METHODS = {"QET", "GQSVT", "QSVT"}
     if method not in ALLOWED_METHODS:
         raise ValueError(
             f"Invalid method specified: '{method}'. "
@@ -150,11 +156,19 @@ def inversion(A: BlockEncoding, eps: float, kappa: float, method: Literal["QET",
 
     p = _inversion_cheb(1.0 / kappa, eps)
 
-    if method == "GQSVT":
+    if method == "QET":
         # Set _rescale=False to apply p(A/α) instead of p(A).
-        A_inv = GQSVT(A, p, kind="Chebyshev", rescale=False)
-    else:
         A_inv = QET(A, p, kind="Chebyshev", rescale=False)
+    elif method == "QSVT":
+        # For SDV A = U @ S @ V_dg, the singular value transformation applies p(S) to the singular values,
+        # resulting in U @ p(S) @ V_dg.
+        # We apply QSVT to A_dg to get V @ p(S) @ U_dg.
+        A_dg = A.dagger()
+        A_inv = QSVT(A_dg, p, kind="Chebyshev", parity="odd", rescale=False)
+    if method == "GQSVT":
+        # For SDV A = U @ S @ V_dg, the generalized singular value transformation applies p(S) to the singular values,
+        # resulting in V @ p(S) @ U_dg.
+        A_inv = GQSVT(A, p, kind="Chebyshev", parity="odd", rescale=False)
 
     # Adjust scaling factor since (A/α)^{-1} = αA^{-1}.
     A_inv.alpha = A_inv.alpha / A.alpha

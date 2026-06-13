@@ -17,13 +17,15 @@
 """
 
 import numpy as np
-from qrisp import *
+import scipy as sp
+
+from qrisp import QuantumFloat, terminal_sampling
 from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
-import scipy as sp
 
 
 def test_block_encoding_sim():
+    """Test the simulation transformation of a BlockEncoding by comparing the results to a classical solution."""
 
     def create_ising_hamiltonian(L, J, B):
         H = sum(-J * Z(i) * Z(i + 1) for i in range(L-1))  \

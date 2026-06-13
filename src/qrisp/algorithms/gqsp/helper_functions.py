@@ -16,14 +16,16 @@
 ********************************************************************************
 """
 
+from collections.abc import Callable
+from typing import Literal, TYPE_CHECKING
+import warnings
+
 import numpy as np
 from numpy.polynomial import Chebyshev
 import numpy.typing as npt
 import jax
 from jax import Array
 import jax.numpy as jnp
-from typing import Callable, Literal, TYPE_CHECKING
-import warnings
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike

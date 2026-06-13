@@ -16,17 +16,15 @@
 ********************************************************************************
 """
 
+from typing import Optional, TYPE_CHECKING
 import numpy as np
 import jax.numpy as jnp
-from qrisp import (
-    QuantumVariable,
-    QuantumBool,
-    h,
-    p,
-)
+
+from qrisp.core import QuantumVariable
+from qrisp.core.gate_application_functions import h, p
 from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.jasp import qache, jrange
-from typing import Optional, TYPE_CHECKING
+from qrisp.qtypes import QuantumBool
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
