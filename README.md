@@ -79,7 +79,7 @@ Qrisp offers much more than just factoring! More examples, like simulating molec
 ## Feedback and Contact
 If you have comments, questions or love letters, here is how you can engange with the Qrisp Community and Developers:
 
-- Join the Discussions on [Discord](https://discord.gg/6JuRUQ4M).
+- Join the Discussions on [Discord](https://discord.gg/v5np7DeBaq).
 - Join the bi-weekly [Developer Call](https://github.com/eclipse-qrisp/Qrisp/wiki/Eclipse-Qrisp-Developer-Meetings).
 - Ask a question, request a new feature and file a bug with [GitHub issues](https://github.com/eclipse-qrisp/qrisp/issues/new/choose).
 - Vote on existing GitHub issues by reacting with a 👍. We regularly check issues with votes!

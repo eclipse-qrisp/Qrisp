@@ -16,8 +16,8 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumFloat, measure
-from qrisp.jasp import boolean_simulation, jrange
+from qrisp import QuantumFloat, QuantumVariable, control, h, measure, x
+from qrisp.jasp import boolean_simulation, jrange, qache
 from jax import lax
 import jax.numpy as jnp
 
@@ -342,3 +342,201 @@ def test_boolean_simulation_pytree():
     result = computed_dict(3, 4)
     assert result["sum"] == 7, "sum should be 7"
     assert result["product"] == 12, "product should be 12"
+
+
+def test_callback_threshold_boolean_simulation():
+    """Test that boolean_simulation with callback_threshold produces correct results.
+
+    The callback_threshold parameter controls whether ``jax.pure_callback``
+    wrapping is used for reused sub-jaxprs to prevent XLA compilation blowup.
+    Different threshold values should all produce the same simulation results.
+    """
+
+    # A qache'd subroutine that will be reused multiple times.
+    @qache
+    def boolean_sub(qf):
+        """A subroutine with multiple boolean operations."""
+        with control(qf[0]):
+            x(qf[1])
+        with control(qf[1]):
+            x(qf[2])
+        return measure(qf[0])
+
+    def make_circuit(i):
+        qf = QuantumFloat(4)
+        qf[:] = i
+
+        # Call the qache'd subroutine multiple times so it gets reused
+        m1 = boolean_sub(qf)
+        m2 = boolean_sub(qf)
+        m3 = boolean_sub(qf)
+
+        final_res = measure(qf)
+        return final_res, m1, m2, m3
+
+    # Baseline: no callbacks (default)
+    baseline_func = boolean_simulation(make_circuit)
+    baseline = baseline_func(7)
+
+    # callback_threshold=0: wrap every reused sub-jaxpr
+    result_0_func = boolean_simulation(make_circuit, callback_threshold=0)
+    result_0 = result_0_func(7)
+    assert result_0 == baseline, (
+        f"callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
+    )
+
+    # callback_threshold=500: middle ground
+    result_500_func = boolean_simulation(make_circuit, callback_threshold=500)
+    result_500 = result_500_func(7)
+    assert result_500 == baseline, (
+        f"callback_threshold=500 diverged:\n  baseline={baseline}\n  got={result_500}"
+    )
+
+    # Very large threshold
+    result_large_func = boolean_simulation(make_circuit, callback_threshold=10**9)
+    result_large = result_large_func(7)
+    assert result_large == baseline, (
+        f"callback_threshold=10**9 diverged:\n  baseline={baseline}\n  got={result_large}"
+    )
+
+    # Also test the decorator syntax with callback_threshold
+    @boolean_simulation(callback_threshold=0)
+    def decorated_circuit(i):
+        qf = QuantumFloat(4)
+        qf[:] = i
+        boolean_sub(qf)
+        boolean_sub(qf)
+        boolean_sub(qf)
+        return measure(qf)
+
+    result_decorated = decorated_circuit(7)
+
+    @boolean_simulation
+    def baseline_decorated(i):
+        qf = QuantumFloat(4)
+        qf[:] = i
+        boolean_sub(qf)
+        boolean_sub(qf)
+        boolean_sub(qf)
+        return measure(qf)
+
+    baseline_decorated_result = baseline_decorated(7)
+    assert result_decorated == baseline_decorated_result, (
+        f"decorator syntax diverged:\n  baseline={baseline_decorated_result}\n  got={result_decorated}"
+    )
+
+    # Test simple circuit with no qache'd subroutines (should still work)
+    @boolean_simulation(callback_threshold=0)
+    def simple_circuit(x, y):
+        a = QuantumFloat(8)
+        b = QuantumFloat(8)
+        a[:] = x
+        b[:] = y
+        c = a * b
+        return measure(c)
+
+    assert simple_circuit(3, 4) == 12, "Simple multiply with callback_threshold=0 failed"
+    assert simple_circuit(7, 8) == 56, "Simple multiply with callback_threshold=0 failed"
+
+
+def test_callback_threshold_boolean_simulation_nested():
+    """Test callback_threshold with nested @qache'd subroutines in boolean_simulation.
+
+    An outer qache'd function calls an inner qache'd function.  Both are
+    reused multiple times.  The callback wrapping must preserve correctness
+    across all threshold values.
+    """
+
+    @qache
+    def inner_bool_sub(qf):
+        """Inner subroutine: controlled-X operations."""
+        with control(qf[0]):
+            x(qf[1])
+        return measure(qf[0])
+
+    @qache
+    def outer_bool_sub(qf):
+        """Outer subroutine: calls inner_bool_sub and adds its own gates."""
+        with control(qf[1]):
+            x(qf[2])
+        m1 = inner_bool_sub(qf)
+        m2 = inner_bool_sub(qf)
+        return m1, m2
+
+    def make_circuit(i):
+        qf = QuantumFloat(4)
+        qf[:] = i
+
+        outer_bool_sub(qf)
+        outer_bool_sub(qf)
+        outer_bool_sub(qf)
+
+        final_res = measure(qf)
+        return final_res
+
+    baseline_func = boolean_simulation(make_circuit)
+    baseline = baseline_func(7)
+
+    result_0_func = boolean_simulation(make_circuit, callback_threshold=0)
+    result_0 = result_0_func(7)
+    assert result_0 == baseline, (
+        f"Nested qache boolean_simulation callback_threshold=0 diverged:\n"
+        f"  baseline={baseline}\n  got={result_0}"
+    )
+
+    result_500_func = boolean_simulation(make_circuit, callback_threshold=500)
+    result_500 = result_500_func(7)
+    assert result_500 == baseline, (
+        f"Nested qache boolean_simulation callback_threshold=500 diverged:\n"
+        f"  baseline={baseline}\n  got={result_500}"
+    )
+
+
+def test_callback_threshold_boolean_simulation_jrange():
+    """Test callback_threshold with a jrange loop in boolean_simulation.
+
+    The jrange loop calls a qache'd subroutine many times, creating many
+    call sites — the exact scenario callback wrapping optimizes for.
+    """
+
+    @qache
+    def iterated_bool_sub(qf, n):
+        """Subroutine called inside a jrange loop."""
+        with control(qf[0]):
+            x(qf[n % 3])
+        return measure(qf[0])
+
+    def make_circuit(i):
+        qf = QuantumFloat(4)
+        qf[:] = i
+
+        for idx in jrange(30):
+            iterated_bool_sub(qf, idx)
+
+        final_res = measure(qf)
+        return final_res
+
+    baseline_func = boolean_simulation(make_circuit)
+    baseline = baseline_func(5)
+
+    result_0_func = boolean_simulation(make_circuit, callback_threshold=0)
+    result_0 = result_0_func(5)
+    assert result_0 == baseline, (
+        f"jrange boolean_simulation callback_threshold=0 diverged:\n"
+        f"  baseline={baseline}\n  got={result_0}"
+    )
+
+    result_500_func = boolean_simulation(make_circuit, callback_threshold=500)
+    result_500 = result_500_func(5)
+    assert result_500 == baseline, (
+        f"jrange boolean_simulation callback_threshold=500 diverged:\n"
+        f"  baseline={baseline}\n  got={result_500}"
+    )
+
+    # threshold=1 edge case
+    result_1_func = boolean_simulation(make_circuit, callback_threshold=1)
+    result_1 = result_1_func(5)
+    assert result_1 == baseline, (
+        f"jrange boolean_simulation callback_threshold=1 diverged:\n"
+        f"  baseline={baseline}\n  got={result_1}"
+    )

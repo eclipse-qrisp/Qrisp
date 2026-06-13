@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from qrisp.alg_primitives.arithmetic import gidney_adder
+from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 from qrisp.jasp import qache, jrange
 from qrisp.qtypes import QuantumFloat, QuantumBool
 from qrisp.environments import control

@@ -21,11 +21,13 @@ import pytest
 from qrisp import (
     QuantumFloat,
     control,
+    cx,
     h,
     measure,
     num_qubits,
+    x,
 )
-from qrisp.jasp import jrange
+from qrisp.jasp import jrange, qache
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
     always_zero,
@@ -435,3 +437,170 @@ class TestNumQubitsExceptions:
             ValueError, match="The ``num_qubits`` metric computation overflowed"
         ):
             main()
+
+
+def test_callback_threshold_num_qubits():
+    """Test that num_qubits with callback_threshold produces correct results.
+
+    The callback_threshold parameter controls whether ``jax.pure_callback``
+    wrapping is used for reused sub-jaxprs to prevent XLA compilation blowup.
+    Different threshold values should all produce the same profiling results.
+    """
+
+    # A qache'd subroutine that allocates/deallocates qubits.
+    @qache
+    def qubit_allocating_sub(qv):
+        """A subroutine with its own qubit allocation."""
+        inner = QuantumFloat(2)
+        h(inner[0])
+        cx(qv[0], inner[0])
+        h(inner[1])
+        inner.delete()
+
+    def make_circuit():
+        qv = QuantumFloat(3)
+        h(qv[0])
+
+        # Call multiple times for reuse
+        qubit_allocating_sub(qv)
+        qubit_allocating_sub(qv)
+        qubit_allocating_sub(qv)
+
+        x(qv)
+        qv.delete()
+
+    # Baseline: no callbacks
+    baseline = num_qubits(meas_behavior="0")(make_circuit)()
+
+    # callback_threshold=0: wrap every reused sub-jaxpr
+    result_0 = num_qubits(meas_behavior="0", callback_threshold=0)(make_circuit)()
+    assert result_0 == baseline, (
+        f"callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
+    )
+
+    # callback_threshold=500: middle ground
+    result_500 = num_qubits(meas_behavior="0", callback_threshold=500)(make_circuit)()
+    assert result_500 == baseline, (
+        f"callback_threshold=500 diverged:\n  baseline={baseline}\n  got={result_500}"
+    )
+
+    # Very large threshold
+    result_large = num_qubits(meas_behavior="0", callback_threshold=10**9)(make_circuit)()
+    assert result_large == baseline, (
+        f"callback_threshold=10**9 diverged:\n  baseline={baseline}\n  got={result_large}"
+    )
+
+    # Also test with meas_behavior="1"
+    baseline_1 = num_qubits(meas_behavior="1")(make_circuit)()
+    result_1_0 = num_qubits(meas_behavior="1", callback_threshold=0)(make_circuit)()
+    assert result_1_0 == baseline_1, (
+        f"meas_behavior='1', callback_threshold=0 diverged:\n  baseline={baseline_1}\n  got={result_1_0}"
+    )
+
+    # Verify the result dictionary has expected keys
+    for key in ("total_allocated", "total_deallocated", "peak_allocations", "finally_allocated"):
+        assert key in baseline, f"Expected '{key}' in num_qubits result, got {baseline}"
+
+
+def test_callback_threshold_num_qubits_nested():
+    """Test callback_threshold with nested @qache'd subroutines for num_qubits.
+
+    An outer qache'd function calls an inner qache'd function that allocates
+    its own qubits.  Both are reused.  Quota tracking must remain correct
+    regardless of callback wrapping.
+    """
+
+    @qache
+    def inner_alloc_sub(qv):
+        """Inner subroutine: allocates a temporary qubit, uses it, deletes it."""
+        tmp = QuantumFloat(2)
+        h(tmp[0])
+        cx(qv[0], tmp[0])
+        h(tmp[1])
+        tmp.delete()
+
+    @qache
+    def outer_alloc_sub(qv):
+        """Outer subroutine: calls inner_alloc_sub and allocates its own temp."""
+        tmp = QuantumFloat(1)
+        h(tmp[0])
+        inner_alloc_sub(qv)
+        inner_alloc_sub(qv)
+        tmp.delete()
+
+    def make_circuit():
+        qv = QuantumFloat(3)
+        h(qv[0])
+
+        outer_alloc_sub(qv)
+        outer_alloc_sub(qv)
+        outer_alloc_sub(qv)
+
+        x(qv)
+        qv.delete()
+
+    baseline = num_qubits(meas_behavior="0")(make_circuit)()
+    result_0 = num_qubits(meas_behavior="0", callback_threshold=0)(make_circuit)()
+    assert result_0 == baseline, (
+        f"Nested qache num_qubits callback_threshold=0 diverged:\n"
+        f"  baseline={baseline}\n  got={result_0}"
+    )
+
+    result_500 = num_qubits(meas_behavior="0", callback_threshold=500)(make_circuit)()
+    assert result_500 == baseline, (
+        f"Nested qache num_qubits callback_threshold=500 diverged:\n"
+        f"  baseline={baseline}\n  got={result_500}"
+    )
+
+    # threshold=1 edge case
+    result_1 = num_qubits(meas_behavior="0", callback_threshold=1)(make_circuit)()
+    assert result_1 == baseline, (
+        f"Nested qache num_qubits callback_threshold=1 diverged:\n"
+        f"  baseline={baseline}\n  got={result_1}"
+    )
+
+    for key in ("total_allocated", "total_deallocated", "peak_allocations", "finally_allocated"):
+        assert key in baseline, f"Expected '{key}' in num_qubits result, got {baseline}"
+
+
+def test_callback_threshold_num_qubits_jrange():
+    """Test callback_threshold with a jrange loop + qache'd subroutine for num_qubits.
+
+    The jrange loop calls a subroutine that allocates/deallocates qubits
+    many times, creating many call sites for callback wrapping optimization.
+    """
+
+    @qache
+    def alloc_loop_sub(qv, n):
+        """Subroutine with its own allocation, called inside jrange loop."""
+        tmp = QuantumFloat(2)
+        h(tmp[0])
+        cx(qv[n % 2], tmp[0])
+        h(tmp[1])
+        tmp.delete()
+
+    def make_circuit():
+        qv = QuantumFloat(3)
+        h(qv[0])
+
+        for i in jrange(10):
+            alloc_loop_sub(qv, i)
+
+        x(qv)
+        qv.delete()
+
+    baseline = num_qubits(meas_behavior="0")(make_circuit)()
+    result_0 = num_qubits(meas_behavior="0", callback_threshold=0)(make_circuit)()
+    assert result_0 == baseline, (
+        f"jrange num_qubits callback_threshold=0 diverged:\n"
+        f"  baseline={baseline}\n  got={result_0}"
+    )
+
+    result_500 = num_qubits(meas_behavior="0", callback_threshold=500)(make_circuit)()
+    assert result_500 == baseline, (
+        f"jrange num_qubits callback_threshold=500 diverged:\n"
+        f"  baseline={baseline}\n  got={result_500}"
+    )
+
+    for key in ("total_allocated", "total_deallocated", "peak_allocations", "finally_allocated"):
+        assert key in baseline, f"Expected '{key}' in num_qubits result, got {baseline}"

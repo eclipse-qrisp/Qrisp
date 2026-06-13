@@ -38,6 +38,7 @@ from qrisp.circuit.standard_operations import (
     RZGate,
     SGate,
     TGate,
+    SXGate,
 )
 
 
@@ -66,14 +67,32 @@ def _u3_unitary(theta, phi, lam, global_phase=0.0):
     return np.exp(1j * global_phase) * mat
 
 
-def _controlled_unitary(u):
-    """Build the 4x4 controlled-unitary matrix for a 1-ctrl qubit gate.
+def _controlled_unitary(u, ctrl_state="1"):
+    """Build the controlled-unitary matrix for given control qubits and ctrl_state.
 
-    Returns diag(1, 1) ⊕ u.
+    Parameters
+    ----------
+    u : ndarray
+        The target unitary (2x2 for a single target qubit).
+    ctrl_state : str
+        String of '0's and '1's indicating the state of each control qubit.
+        Default "1" gives a single control qubit active on |1⟩ (I ⊕ u).
+
+    Returns
+    -------
+    ndarray
+        The controlled unitary matrix of shape (2**(k+1), 2**(k+1))
+        where k = len(ctrl_state).
     """
+    num_ctrl = len(ctrl_state)
     n = u.shape[0]
-    result = np.eye(2 * n, dtype=complex)
-    result[n:, n:] = u
+    full_dim = (2 ** num_ctrl) * n
+    result = np.eye(full_dim, dtype=complex)
+
+    ctrl_val = int(ctrl_state, 2)
+    start = ctrl_val * n
+    result[start:start + n, start:start + n] = u
+
     return result
 
 
@@ -293,11 +312,24 @@ class TestU3GateControl:
 
     def test_controlled_unitary_matches_analytical(self):
         """Controlled U3 unitary matches analytical controlled-unitary formula."""
-        theta, phi, lam, gp = 1.0, 2.0, 3.0, 0.5
-        gate = U3Gate(theta, phi, lam, global_phase=gp)
-        cgate = gate.control(1)
-        expected = _controlled_unitary(_u3_unitary(theta, phi, lam, gp))
-        assert np.allclose(cgate.get_unitary(), expected, atol=1e-10)
+        
+        for gate in [TGate(), SGate(), TGate().inverse(), SGate().inverse(), SXGate(), SXGate().inverse(), U3Gate(1,2,3)]:
+            for i in range(1, 3):
+                ctrl_state = "1"*i
+                expected_unitary = _controlled_unitary(gate.get_unitary(), ctrl_state)
+                compiled_unitary = gate.control(i, ctrl_state = ctrl_state).definition.get_unitary()
+                assert np.linalg.norm(expected_unitary - compiled_unitary) < 1E-4
+
+    def test_non_trivial_control_state(self):
+        
+        for gate in [TGate(), SGate(), TGate().inverse(), SGate().inverse(), SXGate(), SXGate().inverse(), U3Gate(1,2,3)]:
+
+            for i in range(1, 3):
+                ctrl_state = "0"*i
+                expected_unitary = _controlled_unitary(gate.get_unitary(), ctrl_state)
+                compiled_unitary = gate.control(i, ctrl_state = ctrl_state).definition.get_unitary()
+
+                assert np.linalg.norm(expected_unitary - compiled_unitary) < 1E-4
 
 
 # =============================================================================

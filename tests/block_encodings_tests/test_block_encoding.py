@@ -18,7 +18,8 @@
 
 import numpy as np
 import pytest
-from qrisp import *
+
+from qrisp import QuantumVariable, QuantumFloat, cx, h, jaspify, measure, multi_measurement, prepare, ry, terminal_sampling, x
 from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
 
@@ -58,6 +59,63 @@ def test_block_encoding_from_operator():
 
     res = main()
     assert res == {3.0: 1.0}
+
+
+def test_block_encoding_from_eye():
+
+    # k = 0: ones on the main diagonal
+    BE1 = BlockEncoding.from_eye(diagonal_index=0)
+
+    # k = -4: ones on the fourth lower subdiagonal
+    # (non-cyclic) shift |x> -> |x+4>
+    BE2 = BlockEncoding.from_eye(diagonal_index=-4)
+
+    BE3 = BE1.kron(BE2)
+
+    def operand_prep():
+        operand1 = QuantumFloat(3)
+        operand2 = QuantumFloat(3)
+        h(operand1)
+        cx(operand1, operand2)
+        return operand1, operand2
+
+    @terminal_sampling
+    def main():
+        operand1, operand2 = BE3.apply_rus(operand_prep)()
+        return operand1, operand2
+
+    res_dict = main()
+    assert res_dict == pytest.approx({
+        (0.0, 4.0): 0.25, (1.0, 5.0): 0.25, 
+        (2.0, 6.0): 0.25, (3.0, 7.0): 0.25
+    })
+
+
+def test_block_encoding_from_projector():
+
+    # Define projector P = |1><+|
+    P = BlockEncoding.from_projector(1, lambda qv: h(qv))
+
+    # Prepare operand in superposition state
+    def operand_prep():
+        operand = QuantumFloat(2)
+        h(operand)
+        return operand
+
+    @terminal_sampling
+    def main():
+        return P.apply_rus(operand_prep)()
+
+    res = main()
+    assert res == {1.0: 1.0}
+
+
+def test_block_encoding_from_projector_value_error():
+
+    with pytest.raises(ValueError) as excinfo:
+        P = BlockEncoding.from_projector(1, (2, 3))
+
+    assert "Size mismatch: left has 1 elements, but right has 2" in str(excinfo.value)
 
 
 def test_block_encoding_apply():
@@ -225,3 +283,40 @@ def test_block_encoding_alpha_dynamic():
     
     res = main()
     assert res == {0: 0.5, 3: 0.5}
+
+
+def test_block_encoding_dagger():
+    """This test verifies that the dagger of a block-encoding correctly implements the Hermitian conjugate of the operator.
+    We construct a block-encoding for a non-Hermitian matrix A, apply the dagger to get a block-encoding for A^†,
+    and then use it to perform state transformation and compare with classical results."""
+
+    N = 8
+    A = np.eye(N, k=1) + 1 * np.eye(N)
+    A[N-1,0] = 1
+
+    b = np.array([0, 1, 1, 0, 1, 0, 0, 1])
+
+    # Define identity and shift unitaries for LCU construction
+    def id(qv):
+        pass
+
+    def U(qv):
+        qv -= 1
+
+    BA = BlockEncoding.from_lcu(np.array([1.,1.]), [id, U])
+    BA_dg = BA.dagger()
+
+    def operand_prep():
+        operand = QuantumFloat(3)
+        prepare(operand, b)
+        return operand
+
+    @terminal_sampling
+    def main():
+        operand = BA_dg.apply_rus(operand_prep)()
+        return operand
+
+    res_dict = main()
+    amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
+    expected = A.conj().T @ b / np.linalg.norm(A.conj().T @ b)
+    assert np.allclose(amps, expected, atol=1e-6)

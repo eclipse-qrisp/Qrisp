@@ -5,6 +5,8 @@ __pycache__/
 *.egg-info/
 *.eggs
 *.DS_Store
+.coverage
+
 /.vscode/*
 timer.dat
 tmp/*

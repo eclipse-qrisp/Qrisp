@@ -1316,11 +1316,11 @@ def measure_to_big_integer(qv, size):
     import jax.numpy as jnp
 
     def body_fun(i, val):
-        return val.at[i].set(measure(qv[32 * i : 32 * (i + 1)]))
+        return val.at[i].set(jnp.uint32(measure(qv[32 * i : 32 * (i + 1)])))
 
     digits = q_fori_loop(0, (qv.size - 1) // 32, body_fun, jnp.zeros(size, jnp.uint32))
     digits = digits.at[(qv.size - 1) // 32].set(
-        measure(qv[32 * ((qv.size - 1) // 32) :])
+        jnp.uint32(measure(qv[32 * ((qv.size - 1) // 32) :]))
     )
     return BigInteger(digits)
 

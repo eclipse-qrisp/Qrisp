@@ -30,9 +30,9 @@ from qrisp.operators.qubit.measurement import get_measurement
 from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge, invert
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 from qrisp.jasp import check_for_tracing_mode, jrange, qache
-
 
 threshold = 1e-9
 
@@ -385,6 +385,11 @@ class QubitOperator(Hamiltonian):
                     res_terms_dict.get(curr_term, 0) + curr_coeff * coeff1 * coeff2
                 )
 
+        res_terms_dict = {
+            term: coeff
+            for term, coeff in res_terms_dict.items()
+            if abs(coeff) >= threshold
+        }
         result = QubitOperator(res_terms_dict)
         return result
 
@@ -456,6 +461,13 @@ class QubitOperator(Hamiltonian):
             # other = QubitOperator({QubitTerm():other})
             for term in self.terms_dict:
                 self.terms_dict[term] *= other
+
+            res_terms_dict = {
+                term: coeff
+                for term, coeff in self.terms_dict.items()
+                if abs(coeff) >= threshold
+            }
+            self.terms_dict = res_terms_dict
             return self
 
         if not isinstance(other, QubitOperator):
@@ -470,6 +482,11 @@ class QubitOperator(Hamiltonian):
                     res_terms_dict.get(curr_term, 0) + curr_coeff * coeff1 * coeff2
                 )
 
+        res_terms_dict = {
+            term: coeff
+            for term, coeff in res_terms_dict.items()
+            if abs(coeff) >= threshold
+        }
         self.terms_dict = res_terms_dict
         return self
 
@@ -835,6 +852,70 @@ class QubitOperator(Hamiltonian):
         if isinstance(res, (float, int)):
             return QubitOperator({QubitTerm({}): res})
         return res
+
+    def _to_pauli_dict(self) -> dict:
+        r"""
+        Return the Pauli expansion of this :class:`QubitOperator` as a dictionary.
+        
+        The operator is first converted to Pauli form using :meth:`to_pauli`.
+        Each dictionary key represents one Pauli string as a tuple of
+        ``(index, pauli)`` pairs, sorted by qubit index. The corresponding value is
+        the coefficient of that Pauli string.
+
+        The empty tuple ``()`` represents the identity term.
+
+        Returns
+        -------
+        dict
+            Dictionary mapping Pauli strings to coefficients.
+
+            The keys have the form
+            ::
+                ((int, str), (int, str), ...)
+       
+            where the integer is the qubit index and the string is one of
+            ``"X"``, ``"Y"``, or ``"Z"``.
+
+            The values are the corresponding scalar coefficients, which may be
+            complex.
+
+        Examples
+        --------
+        We define an operator containing Pauli, ladder, and projector terms and
+        convert it to a dictionary representation of its Pauli expansion.
+
+        ::
+            from qrisp.operators import X, Y, Z, A, C, P1
+            H = 1 + 2 * X(0) + 3 * X(0) * Y(1) * A(2) + C(4) * P1(0)
+            res = H.to_pauli_coeff_dict()
+            print(res) # Yields example output
+
+        Example output:
+        ::
+            {
+                ((0, 'X'),): 2,
+                (): 1,
+                ((0, 'X'), (1, 'Y'), (2, 'X')): 1.5,
+                ((0, 'X'), (1, 'Y'), (2, 'Y')): 1.5j,
+                ((0, 'Z'), (4, 'X')): -0.25,
+                ((0, 'Z'), (4, 'Y')): 0.25j,
+                ((4, 'X'),): 0.25,
+                ((4, 'Y'),): -0.25j}
+
+        """
+        O = self.to_pauli()
+        result = {}
+
+        for term, coeff in O.terms_dict.items():
+            factors = tuple(
+                sorted(
+                    (int(index), str(pauli))
+                    for index, pauli in term.factor_dict.items()
+                )
+            )
+            result[factors] = result.get(factors, 0) + coeff
+
+        return result
 
     def adjoint(self):
         """
@@ -1575,7 +1656,7 @@ class QubitOperator(Hamiltonian):
         precision : float, optional
             The precision with which the expectation of the Hamiltonian is to be evaluated.
             The default is 0.01. The number of shots scales quadratically with the inverse precision.
-        backend : :ref:`BackendClient`, optional
+        backend : BackendLike, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
         compile : bool, optional
@@ -1629,7 +1710,8 @@ class QubitOperator(Hamiltonian):
         """
 
         warnings.warn(
-            "DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value."
+            "DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value.",
+            QrispDeprecationWarning,
         )
 
         return get_measurement(
@@ -1686,7 +1768,7 @@ class QubitOperator(Hamiltonian):
             Available are ``commuting_qw``, i.e., the operator is grouped based on qubit-wise commutativity of terms,
             and ``commuting``, i.e., the operator is grouped based on commutativity of terms.
             The default is ``commuting_qw``.
-        backend : :ref:`BackendClient`, optional
+        backend : BackendLike, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
         compile : bool, optional
@@ -1760,6 +1842,67 @@ class QubitOperator(Hamiltonian):
 
             print(main())
             # Yields: 0.010126265783222899
+
+        **Inspecting the circuits sent to the backend**
+
+        When evaluating an expectation value, the operator is grouped by
+        commutativity, change-of-basis gates are appended to the state
+        preparation circuit, and one circuit per group is submitted to
+        the backend — details that are not obvious from the operator
+        expression.  You can inspect these circuits by passing a
+        :class:`~qrisp.interface.QrispSimulatorBackend` with a
+        :class:`~qrisp.PassManager` that ends with
+        :func:`~qrisp.visualize`:
+
+        .. code-block:: python
+
+            from qrisp import QuantumFloat, ry, PassManager, visualize, decompose
+            from qrisp.operators import X, Z
+            from qrisp.interface import QrispSimulatorBackend
+            import numpy as np
+
+            def state_prep(theta):
+                qv = QuantumFloat(2)
+                ry(theta, qv)
+                return qv
+
+            H = X(0)*Z(1) + Z(0)*X(1) + X(0)
+
+            pm = PassManager()
+            pm += decompose()
+            pm += visualize
+            backend = QrispSimulatorBackend(pm=pm)
+
+            ev_function = H.expectation_value(state_prep, backend=backend)
+            result = ev_function(np.pi/2)
+
+        .. code-block:: none
+
+                   ┌─────────┐┌───┐┌─┐
+             qv.0: ┤ Ry(π/2) ├┤ H ├┤M├
+                   ├─────────┤└┬─┬┘└╥┘
+             qv.1: ┤ Ry(π/2) ├─┤M├──╫─
+                   └─────────┘ └╥┘  ║ 
+            cb_15: ═════════════╬═══╩═
+                                ║     
+            cb_16: ═════════════╩═════
+                                    
+                   ┌─────────┐     ┌─┐
+             qv.0: ┤ Ry(π/2) ├─────┤M├───
+                   ├─────────┤┌───┐└╥┘┌─┐
+             qv.1: ┤ Ry(π/2) ├┤ H ├─╫─┤M├
+                   └─────────┘└───┘ ║ └╥┘
+            cb_21: ═════════════════╩══╬═
+                                       ║ 
+            cb_22: ════════════════════╩═
+
+        The operator contains three terms.  ``X(0)*Z(1)`` and ``X(0)``
+        commute qubit-wise and are measured together in the first circuit
+        (an H gate rotates X to Z on qubit 0).  ``Z(0)*X(1)`` does not
+        commute with the others and requires a separate circuit (with an
+        H gate on qubit 1).  :func:`~qrisp.visualize` reveals exactly
+        which circuits reach the backend and how the basis rotations are
+        applied.
 
         """
         from qrisp import QuantumVariable

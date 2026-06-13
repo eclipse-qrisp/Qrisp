@@ -323,7 +323,7 @@ def convert_from_qiskit(qiskit_qc):
     from sympy import sympify
 
     for i in range(len(qiskit_qc.data)):
-        qiskit_op = qiskit_qc.data[i][0]
+        qiskit_op = qiskit_qc.data[i].operation
 
         if hasattr(qiskit_op, "condition_bits"):
             condition_bits = [cb_dic[cb] for cb in qiskit_op.condition_bits]
@@ -388,7 +388,7 @@ def convert_from_qiskit(qiskit_qc):
                     )
 
         if controlled_gate:
-            qiskit_op = qiskit_qc.data[i][0]
+            qiskit_op = qiskit_qc.data[i].operation
             op = ControlledOperation(
                 base_operation=op,
                 num_ctrl_qubits=qiskit_op.num_ctrl_qubits,
@@ -400,8 +400,8 @@ def convert_from_qiskit(qiskit_qc):
         if op.name == "barrier":
             op = Barrier(qiskit_op.num_qubits)
 
-        qubits = [qb_dic[qb] for qb in qiskit_qc.data[i][1]]
-        clbits = [cb_dic[cb] for cb in qiskit_qc.data[i][2]]
+        qubits = [qb_dic[qb] for qb in qiskit_qc.data[i].qubits]
+        clbits = [cb_dic[cb] for cb in qiskit_qc.data[i].clbits]
 
         if condition_bits:
             clbits += condition_bits

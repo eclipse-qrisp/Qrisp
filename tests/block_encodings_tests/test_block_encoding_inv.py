@@ -17,11 +17,15 @@
 """
 
 import numpy as np
-from qrisp import *
+import pytest
+
+from qrisp import QuantumVariable, prepare, terminal_sampling
 from qrisp.block_encodings import BlockEncoding
 
 
-def test_block_encoding_inv():
+@pytest.mark.parametrize("method", ["QET", "QSVT", "GQSVT"])
+def test_block_encoding_inv(method):
+    """Test the inversion transformation of a BlockEncoding by comparing the results to a classical solution."""
 
     A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
                 [0.14516978, 0.68701415, -0.04929867, -0.00999921],
@@ -32,7 +36,7 @@ def test_block_encoding_inv():
 
     BA = BlockEncoding.from_array(A)
 
-    BA_inv = BA.inv(0.01, np.linalg.cond(A))
+    BA_inv = BA.inv(0.01, np.linalg.cond(A), method=method)
 
     # Prepares operand variable in state |b>
     def prep_b():
@@ -46,9 +50,6 @@ def test_block_encoding_inv():
         return operand
 
     res_dict = main()
-    for k, v in res_dict.items():
-        res_dict[k] = v**0.5
-    q = np.array([res_dict.get(key, 0) for key in range(len(b))])
-    
-    c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
-    assert np.linalg.norm(np.abs(c) - q) < 1e-2
+    amps = np.sqrt([res_dict.get(key, 0) for key in range(len(b))])
+    expected = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
+    assert np.allclose(np.abs(expected), amps, atol=1e-2)

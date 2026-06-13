@@ -18,6 +18,8 @@
 
 import functools
 import traceback
+import warnings
+from typing import TYPE_CHECKING
 
 import jax
 import jax.numpy as jnp
@@ -25,9 +27,15 @@ import numpy as np
 import sympy
 from jax.typing import ArrayLike
 
+from qrisp.misc.exceptions import QrispDeprecationWarning
+
+if TYPE_CHECKING:
+    from qrisp.interface.backend import BackendLike
+    from qrisp.interface.measurement_result import _IntKeyedResult
+
 # A small epsilon value for numerical stability.
 # Defined here for convenience, so it can be imported elsewhere.
-_EPSILON = jnp.sqrt(jnp.finfo(jnp.float64).eps)
+EPSILON = jnp.sqrt(jnp.finfo(jnp.float64).eps)
 
 
 def bin_rep(n, bits):
@@ -51,7 +59,7 @@ def int_encoder(qv, encoding_number):
 
     if not check_for_tracing_mode():
         if encoding_number > 2 ** len(qv) - 1:
-            raise Exception(
+            raise ValueError(
                 "Not enough qubits to encode integer " + str(encoding_number)
             )
 
@@ -729,7 +737,7 @@ def multi_measurement(qv_list, shots=None, backend=None):
         A list of QuantumVariables.
     shots : int, optional
         The amount of shots to perform. The default is given by the backend used.
-    backend : BackendClient, optional
+    backend : BackendLike, optional
         The backend to evaluate the compiled QuantumCircuit on. By default, the backend
         from default_backend.py will be used.
 
@@ -762,6 +770,7 @@ def multi_measurement(qv_list, shots=None, backend=None):
 
     """
 
+    from qrisp.interface.measurement_result import MultiMeasurementResult
     from qrisp.jasp import check_for_tracing_mode
 
     if check_for_tracing_mode():
@@ -801,7 +810,6 @@ def multi_measurement(qv_list, shots=None, backend=None):
     compiled_qc = qompiler(
         qv_list[0].qs, intended_measurements=sum([qv.reg for qv in temp], [])
     )
-    # compiled_qc = qv_list[0].qs.copy()
     # Add classical registers for the measurement results to be stored in
     cl_reg_list = []
 
@@ -823,63 +831,8 @@ def multi_measurement(qv_list, shots=None, backend=None):
         # Add measurement instruction
         compiled_qc.measure(qubits, cl_reg)
 
-    # counts = execute(qs_temp, backend, basis_gates = basis_gates,
-    # noise_model = noise_model, shots = shots).result().get_counts()
-    counts = backend.run(compiled_qc, shots)
-    counts = {k: counts[k] for k in sorted(counts)}
-    shots = sum(counts.values())
-
-    # Convert the labeling bistrings of counts into list of labels
-    new_counts = {}
-    for i in range(len(counts)):
-        # Retrieve the separated strings of each measurement variable
-
-        counts_strings = []
-        counts_bitstring = list(counts.keys())[i]
-
-        bitstring_adress = 0
-        for j in range(len(cl_reg_list)):
-            cl_reg = cl_reg_list[::-1][j]
-            counts_strings.append(
-                counts_bitstring[bitstring_adress : bitstring_adress + len(cl_reg)][
-                    ::-1
-                ]
-            )
-            bitstring_adress += len(cl_reg)
-
-        # Convert to integers and insert outcome labels
-        counts_values = []
-        for j in range(len(counts_strings)):
-            outcome_int = int(counts_strings[j][::-1], 2)
-            try:
-                label = qv_list[j].decoder(outcome_int)
-                if isinstance(label, np.ndarray):
-                    from qrisp import OutcomeArray
-
-                    label = OutcomeArray(label)
-                counts_values.append(label)
-            except AttributeError:
-                counts_values.append(outcome_int)
-
-        # Create array
-        array_state = tuple(counts_values)
-        try:
-            no_of_shots_executed = sum(counts.values())
-            new_counts[array_state] = (
-                counts[list(counts.keys())[i]] / no_of_shots_executed
-            )
-        except TypeError:
-            raise Exception(
-                "Tried to create measurement outcome dic for QuantumVariable "
-                "with unhashable labels"
-            )
-        # Append to the counts list
-        # counts_list.append((array_state, counts[list(counts.keys())[i]]/shots))
-
-    # Sort counts_list such the most probable values come first
-    new_counts = dict(sorted(new_counts.items(), key=lambda item: -item[1]))
-
-    return new_counts
+    raw = backend.run(compiled_qc, shots)
+    return MultiMeasurementResult(raw, qv_list, cl_reg_list)
 
 
 # Function to apply a phase function of signature phase_function(x,y,z..) -> float
@@ -1391,47 +1344,52 @@ def check_if_fresh(qubits, qs, ignore_q_envs=True):
     return True
 
 
-def get_measurement_from_qc(qc, qubits, backend, shots=None):
-    # Add classical registers for the measurement results to be stored in
+def get_measurement_from_qc(
+    qc, qubits, backend: "BackendLike", shots=None
+) -> "_IntKeyedResult":
+    """Run *qc*, measure *qubits*, and return a lazy int-keyed probability mapping.
+
+    Appends measurement gates for each qubit in *qubits*, submits the circuit
+    to *backend*, and wraps the raw result in an
+    :class:`~qrisp.interface.measurement_result._IntKeyedResult` that converts
+    bitstrings to integers and normalises shot counts to probabilities on first
+    access.
+
+    Parameters
+    ----------
+    qc : QuantumCircuit
+        The circuit to execute. Measurement gates are added in-place.
+    qubits : sequence
+        The qubits to measure, in order.
+    backend : BackendLike
+        Any Qrisp-compatible backend (either a concrete
+        :class:`~qrisp.interface.Backend` subclass or a
+        :class:`~qrisp.interface.BatchedBackend`).
+    shots : int or None, optional
+        Number of shots. If ``None``, the backend's default is used.
+
+    Returns
+    -------
+    _IntKeyedResult
+        Lazy mapping from integer bitstring indices to normalised probabilities.
+        Population is deferred until the first access.
+    """
+    from qrisp.interface.measurement_result import MeasurementResult, _IntKeyedResult
+
     cl = []
     for i in range(len(qubits)):
         cl.append(qc.add_clbit())
 
-    # Add measurement instruction
     for i in range(len(qubits)):
         qc.measure(qubits[i], cl[i])
 
-    # Execute circuit
-    counts = backend.run(qc, shots)
-
-    # Remove other measurements outcomes from counts dic
-    new_counts_dic = {}
-
-    no_of_shots_executed = 0
-
-    for key in counts.keys():
-        # Remove possible whitespaces
-        new_key = key.replace(" ", "")
-        # Remove other measurements
-        new_key = new_key[: len(cl)]
-
-        new_key = int(new_key, base=2)
-        try:
-            new_counts_dic[new_key] += counts[key]
-        except KeyError:
-            new_counts_dic[new_key] = counts[key]
-
-        no_of_shots_executed += counts[key]
-
-    counts = new_counts_dic
-
-    if abs(1 - no_of_shots_executed) < 1e-3:
-        return counts
-    # Normalize counts
-    for key in counts.keys():
-        counts[key] = counts[key] / abs(no_of_shots_executed)
-
-    return counts
+    raw = backend.run(qc, shots=shots)
+    if not isinstance(raw, MeasurementResult):
+        # Legacy backends (e.g. VirtualBackend) return a plain dict directly.
+        mr = MeasurementResult()
+        mr._inject(raw)
+        raw = mr
+    return _IntKeyedResult(raw, len(cl))
 
 
 def find_calling_line(level=0):
@@ -2310,54 +2268,49 @@ def inpl_adder_test(inpl_adder):
 
 def batched_measurement(variables, backend, shots=None):
     """
-    This functions facilitates the measurement of multiple :ref:`QuantumVariables <QuantumVariable>` with a :ref:`BatchedBackend`.
+    Measure multiple :ref:`QuantumVariables <QuantumVariable>` in a single
+    batched execution using a :class:`~qrisp.interface.BatchedBackend`.
+
+    All ``get_measurement`` calls are collected first (returning lazy results
+    immediately), then :meth:`~qrisp.interface.BatchedBackend.dispatch` is
+    called once to execute every circuit and populate all results together.
+
+    .. deprecated:: 0.8
+
+        ``batched_measurement`` is deprecated. You can call
+        :meth:`~qrisp.QuantumVariable.get_measurement` on each variable with a
+        :class:`~qrisp.interface.BatchedBackend`, then call
+        :meth:`~qrisp.interface.BatchedBackend.dispatch` directly instead::
+
+            bb = backend.batched()
+            r1 = qv1.get_measurement(backend=bb)
+            r2 = qv2.get_measurement(backend=bb)
+            bb.dispatch()
 
     Parameters
     ----------
     variables : list[:ref:`QuantumVariable`]
-        A list of QuantumVariables.
-    backend : :ref:`BatchedBackend`
-        The backend to evaluate the compiled QuantumCircuits on.
+        A list of QuantumVariables to measure.
+    backend : :class:`~qrisp.interface.BatchedBackend`
+        A batched backend obtained via
+        :meth:`Backend.batched() <qrisp.interface.Backend.batched>`.
     shots : int, optional
-        The amount of shots to perform. The default is given by the backend used.
+        Number of shots. Defaults to the backend's ``shots`` option.
 
     Returns
     -------
-    results : list[dict]
-        The list of results.
+    results : list[DecodedMeasurementResult]
+        One decoded result per variable, in the same order as *variables*.
 
     Examples
     --------
 
-    We set up a BatchedBackend, which sequentially executes the QuantumCircuits
-    on the Qrisp simulator.
-
     ::
 
-        from qrisp import *
-        from qrisp.interface import BatchedBackend
+        from qrisp import QuantumFloat, batched_measurement
+        from qrisp.default_backend import QrispSimulatorBackend
 
-        def run_func_batch(batch):
-            # Parameters
-            # ----------
-            # batch : list[tuple[QuantumCircuit, int]]
-            #     The circuit and shot batch indicating the backend queries.
-
-            # Returns
-            # -------
-            # results : list[dict[string, int]]
-            #     The list of results.
-
-            results = []
-            for i in range(len(batch)):
-                qc = batch[i][0]
-                shots = batch[i][1]
-                results.append(qc.run(shots = shots))
-
-            return results
-
-        # Set up batched backend
-        bb = BatchedBackend(run_func_batch)
+        bb = QrispSimulatorBackend().batched()
 
         a = QuantumFloat(4)
         b = QuantumFloat(3)
@@ -2371,43 +2324,20 @@ def batched_measurement(variables, backend, shots=None):
         e[:] = 3
         f = d + e
 
-        batched_measurement([c,f], backend=bb)
+        batched_measurement([c, f], backend=bb)
         # Yields: [{3: 1.0}, {5: 1.0}]
 
     """
+    warnings.warn(
+        "batched_measurement is deprecated and will be removed in a future release. "
+        "Call get_measurement() on each variable with a BatchedBackend, "
+        "then call backend.dispatch() directly.",
+        QrispDeprecationWarning,
+        stacklevel=2,
+    )
 
-    import threading
-
-    results = [0] * len(variables)
-
-    def eval_measurement(qv, i):
-        results[i] = qv.get_measurement(backend=backend, shots=shots)
-
-    threads = []
-    for i, var in enumerate(variables):
-        thread = threading.Thread(
-            target=eval_measurement,
-            args=(
-                var,
-                i,
-            ),
-        )
-        threads.append(thread)
-
-    # Start the threads
-    for thread in threads:
-        thread.start()
-
-    # Call the dispatch routine
-    # The min_calls keyword will make it wait
-    # until the batch has a size of number of variables
-    backend.dispatch(min_calls=len(variables))
-
-    # Wait for the threads to join
-    for thread in threads:
-        thread.join()
-
-    # Inspect the results
+    results = [var.get_measurement(backend=backend, shots=shots) for var in variables]
+    backend.dispatch()
     return results
 
 

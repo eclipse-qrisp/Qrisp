@@ -25,3 +25,6 @@ from qrisp.circuit.compilation_acceleration import *
 from qrisp.circuit.transpiler import *
 from qrisp.circuit.standard_operations import *
 from qrisp.circuit.controlled_operations import *
+from qrisp.circuit.pass_management.circuit_pass import CircuitPass
+from qrisp.circuit.pass_management.pass_manager import PassManager
+from qrisp.circuit.pass_management.passes import *
