@@ -1165,7 +1165,11 @@ class QuantumArray:
         # If other is a numpy/jax array, flatten and index element-wise
         elif isinstance(other, (np.ndarray, jnp.ndarray)):
             flattened_other = other.flatten()
-            for i in jrange(self_view.size):
+            if isinstance(other, np.ndarray):
+                xrange = range
+            else:
+                xrange = jrange
+            for i in xrange(self_view.size):
                 # Convert numpy scalars to Python scalars for compatibility
                 scalar_val = flattened_other[i]
                 if isinstance(scalar_val, np.generic):
@@ -2050,8 +2054,12 @@ class QuantumArray:
                     f"Tried to perform element-wise function call with missmatching array shapes ({self.shape} vs {other.shape})"
                 )
             flattened_other = other.flatten()
+            if isinstance(other, np.ndarray):
+                xrange = range
+            else:
+                xrange = jrange
 
-            for i in jrange(self_view.size):
+            for i in xrange(self_view.size):
                 fun(self_view[i], flattened_other[i])
         else:
             if check_for_tracing_mode():
