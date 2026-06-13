@@ -348,12 +348,12 @@ def jrange(*args):
         def test_f(a):
             qv = QuantumVariable(a)
             loop_with_offset(qv, 2)
-            return qv
+            return measure(qv)
 
         jaspr = make_jaspr(test_f)(1)
 
     >>> jaspr(4)
-    {QuantumVariable with 4 qubits: 0011}
+    12
 
     This applies ``x`` to qubits 2 and 3, giving state ``|0011⟩``.
     Wrapping the same loop in ``invert()`` reverses the iteration order and
@@ -372,12 +372,12 @@ def jrange(*args):
         def test_f_rev(a):
             qv = QuantumVariable(a)
             reversed_loop_with_offset(qv, 2)
-            return qv
+            return measure(qv)
 
         jaspr_rev = make_jaspr(test_f_rev)(1)
 
     >>> jaspr_rev(4)
-    {QuantumVariable with 4 qubits: 0011}
+    12
 
     Because ``x`` is self-inverse, the result is the same — the loop still
     iterates from ``qv.size - start - 1`` down to ``start``. JASP handles
