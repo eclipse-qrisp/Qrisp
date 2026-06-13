@@ -355,6 +355,21 @@ This example demonstrates how high-level quantum programming enables novel, scal
 
     </div>
 
+Get Involved
+============
+
+.. raw:: html
+
+    <hr class="section-divider">
+    <div class="code-example-text">
+
+Interested in contributing to Qrisp? Whether it's fixing a bug, improving the documentation, or proposing a new feature, contributions of all kinds are welcome. Head over to the `Contributing Guide <./reference/Development%20Guide/index.html>`_ to get started.
+
+.. raw:: html
+
+    </div>
+
+
 Who is behind Qrisp
 ===================
 
@@ -448,11 +463,41 @@ Qrisp is an open-source project developed across organizations. We are open to a
             :class: no-scaled-link
 
 
+.. raw:: html
+
+    <link rel="stylesheet" href="./_static/css/slider.css">
+
+    <section class="trusted-by">
+    <h2>Trusted By</h2>
+    
+    <div class="logo-slider">
+        <div class="logo-track">
+        <div class="slide"><img src="./_static/FMF_UL_logo.svg" alt="Faculty of Mathematics and Physics, University of Ljubljana logo"></div>
+        <div class="slide"><img src="./_static/FRI_UL_logo.png" alt="Faculty of Computer and Information Science, University of Ljubljana logo"></div>
+        <div class="slide"><img src="./_static/ORNL_logo.png" alt="Oak Ridge National Laboratory logo"></div>
+        
+        <div class="slide"><img src="./_static/FMF_UL_logo.svg" alt=""></div>
+        <div class="slide"><img src="./_static/FRI_UL_logo.png" alt=""></div>
+        <div class="slide"><img src="./_static/ORNL_logo.png" alt=""></div>
+
+        <div class="slide"><img src="./_static/FMF_UL_logo.svg" alt=""></div>
+        <div class="slide"><img src="./_static/FRI_UL_logo.png" alt=""></div>
+        <div class="slide"><img src="./_static/ORNL_logo.png" alt=""></div>
+
+        <div class="slide"><img src="./_static/FMF_UL_logo.svg" alt=""></div>
+        <div class="slide"><img src="./_static/FRI_UL_logo.png" alt=""></div>
+        <div class="slide"><img src="./_static/ORNL_logo.png" alt=""></div>
+        </div>
+    </div>
+    </section>
+
+
 .. toctree::
    :hidden:
-   
+
    general/tutorial/index
    reference/index
+   reference/Development Guide/index
    general/setup
    general/papers/index
    general/changelog/index

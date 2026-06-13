@@ -76,20 +76,18 @@ To find out how this can be used to break encryption be sure to check the [tutor
 
 Qrisp offers much more than just factoring! More examples, like simulating molecules at the quantum level or how to solve the Travelling Salesman Problem, can be found [here](https://qrisp.eu/general/tutorial/index.html).
 
+## Feedback and Contact
+If you have comments, questions or love letters, here is how you can engange with the Qrisp Community and Developers:
+
+- Join the Discussions on [Discord](https://discord.gg/v5np7DeBaq).
+- Join the bi-weekly [Developer Call](https://github.com/eclipse-qrisp/Qrisp/wiki/Eclipse-Qrisp-Developer-Meetings).
+- Ask a question, request a new feature and file a bug with [GitHub issues](https://github.com/eclipse-qrisp/qrisp/issues/new/choose).
+- Vote on existing GitHub issues by reacting with a 👍. We regularly check issues with votes!
+- Star the repository to show your support.
+
+
 ## Authors and Citation
 Qrisp is the work of [many people](https://projects.eclipse.org/projects/technology.qrisp/who).
-
-If you have comments, questions or love letters, feel free to reach out to us:
-
-raphael.seidel [at] meetiqm.com
-
-sebastian.bock [at] fokus.fraunhofer.de
-
-nikolay.tcholtchev [at] fokus.fraunhofer.de
-
-rene.zander [at] fokus.fraunhofer.de
-
-matic.petric [at] fokus.fraunhofer.de
 
 If you want to cite Qrisp in your work, please use:
 

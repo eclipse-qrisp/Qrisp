@@ -31,16 +31,8 @@ def yong_mcx(input_qubits, target, ancilla=None, ctrl_state=None):
     if ctrl_state is None:
         ctrl_state = len(input_qubits) * "1"
 
-    from qrisp.alg_primitives.mcx_algs import gray_pt_mcx
-
     if len(input_qubits) == 2:
-        if ancilla is None:
-            mcx(input_qubits, target, method="gray", ctrl_state=ctrl_state)
-        else:
-            target.qs().append(
-                gray_pt_mcx(2, ctrl_state=ctrl_state), input_qubits + [target]
-            )
-            # mcx(input_qubits, target, method = "gray_pt", ctrl_state = ctrl_state)
+        mcx(input_qubits, target, method="gray", ctrl_state=ctrl_state)
         return
 
     for i in range(len(input_qubits)):

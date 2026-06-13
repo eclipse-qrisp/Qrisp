@@ -17,8 +17,76 @@
 """
 
 
+import pytest
 from qrisp import QuantumModulus, h, multi_measurement, cx, qcla, gidney_adder, QuantumBool, control
 import numpy as np
+
+MAX_UNIFORM_SUPERPOSITION_TEST_MODULUS = 128
+
+@pytest.mark.parametrize("modulus", range(1, MAX_UNIFORM_SUPERPOSITION_TEST_MODULUS + 1))
+def test_quantum_modulus_uniform_superposition(modulus):
+    qf = QuantumModulus(modulus)
+    h(qf)
+
+    measurement = qf.get_measurement()
+
+    if qf.size == 0:
+        assert measurement == {"": 1.0}
+        return
+
+    allowed_probability = 1 / (2**qf.size)
+    nan_probability = (2**qf.size - modulus) / (2**qf.size)
+
+    for value in range(modulus):
+        assert np.isclose(measurement[value], allowed_probability)
+
+    nan_keys = [key for key in measurement if isinstance(key, float) and np.isnan(key)]
+
+    if nan_probability:
+        assert len(nan_keys) == 1
+        assert np.isclose(measurement[nan_keys[0]], nan_probability)
+    else:
+        assert len(nan_keys) == 0
+
+    assert np.isclose(sum(measurement.values()), 1.0)
+
+
+def test_quantum_modulus_numpy_scalar_add_sub_respect_montgomery_shift():
+    modulus = 13
+
+    add_qm = QuantumModulus(modulus)
+    add_qm.m = 3
+    add_qm[:] = 9
+    add_result = add_qm + np.int64(10)
+
+    for outcome in multi_measurement([add_result]).keys():
+        if outcome[0] is np.nan:
+            continue
+        assert outcome[0] == (9 + 10) % modulus
+
+    sub_qm = QuantumModulus(modulus)
+    sub_qm.m = 3
+    sub_qm[:] = 9
+    sub_result = sub_qm - np.int64(10)
+
+    for outcome in multi_measurement([sub_result]).keys():
+        if outcome[0] is np.nan:
+            continue
+        assert outcome[0] == (9 - 10) % modulus
+
+
+def test_quantum_modulus_reverse_add_uses_addition():
+    modulus = 13
+
+    qm = QuantumModulus(modulus)
+    qm[:] = 9
+
+    result = 10 + qm
+
+    for outcome in multi_measurement([result]).keys():
+        if outcome[0] is np.nan:
+            continue
+        assert outcome[0] == (10 + 9) % modulus
 
 def test_modular_arithmetic():
     

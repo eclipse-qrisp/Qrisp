@@ -91,7 +91,7 @@ class HLOControlFlowReplacement(RewritePattern):
                 const_op = arith.ConstantOp(
                     builtin.IntegerAttr(0, builtin.IntegerType(32))
                 )
-                cmp_op = arith.CmpiOp(i32_case_indicator, const_op, "ne")
+                cmp_op = arith.CmpiOp(i32_case_indicator, const_op, "eq")
 
                 if_op = scf.IfOp(
                     cond=cmp_op.results[0],

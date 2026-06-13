@@ -191,7 +191,7 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
 
 
 def quantum_step(k, N, init_function, state_function, oracle_function, mes_kwargs):
-    """
+    r"""
     Performs the quantum step, i.e., Quantum Amplitude Amplification,
     in accordance to `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_
 
@@ -224,7 +224,7 @@ def quantum_step(k, N, init_function, state_function, oracle_function, mes_kwarg
     if check_for_tracing_mode():
         a_i = expectation_value(state_prep, shots=N)(k)
     else:
-        mes_kwargs["shots"] = N
+        mes_kwargs["shots"] = int(N)
         res_dict = state_prep(k).get_measurement(**mes_kwargs)
         a_i = res_dict.get(True, 0)
 
@@ -232,7 +232,7 @@ def quantum_step(k, N, init_function, state_function, oracle_function, mes_kwarg
 
 
 def compute_thetas(m_i, K_i, A_i, E):
-    """
+    r"""
     Helper function to compute the angles for the next iteration.
     See `the original paper <https://arxiv.org/abs/2407.16795>`_ , Algorithm 1.
 

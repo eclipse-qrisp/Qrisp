@@ -64,7 +64,11 @@ from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
 from qrisp.jasp import Jaspr
 
 
-def boolean_simulation(*func: Callable, bit_array_padding: int = 2**16) -> Callable:
+def boolean_simulation(
+    *func: Callable,
+    bit_array_padding: int = 2**16,
+    callback_threshold: int | None = None,
+) -> Callable:
     """
     Decorator to simulate Jasp functions containing only classical logic (like X, CX, CCX etc.).
 
@@ -96,6 +100,14 @@ def boolean_simulation(*func: Callable, bit_array_padding: int = 2**16) -> Calla
         amount per QuantumVariable/per QuantumArray is tied to this number
         and will always be ``1/64`` of the ``bit_array_padding``.
         The default here is therefore ``2**16/2**6 = 1024``.
+
+    callback_threshold : int or None, optional
+        For very large algorithms, compile time can blow up due to aggressive
+        inlining of the Jax pipeline. ``callback_threshold`` allows to mitigate
+        this by trading compilation speed for execution speed.
+        ``None`` (default) disables callbacks (fastest execution).
+        ``0`` wraps every reused subroutine (fastest compilation).
+        ``500`` is a good middle ground for many large algorithms.
 
     Returns
     -------
@@ -204,7 +216,7 @@ def boolean_simulation(*func: Callable, bit_array_padding: int = 2**16) -> Calla
     # Handle both @boolean_simulation and @boolean_simulation(...) syntax
     if len(func) == 0:
         # Called with arguments: @boolean_simulation(bit_array_padding=...)
-        return lambda x: boolean_simulation(x, bit_array_padding=bit_array_padding)
+        return lambda x: boolean_simulation(x, bit_array_padding=bit_array_padding, callback_threshold=callback_threshold)
     else:
         # Called without arguments: @boolean_simulation
         func = func[0]
@@ -258,7 +270,7 @@ def boolean_simulation(*func: Callable, bit_array_padding: int = 2**16) -> Calla
         _, call_graph_stats = analyze_call_graph(jaspr)
 
         cl_func_jaxpr = jaspr_to_cl_func_jaxpr(
-            jaspr, bit_array_padding, call_graph_stats
+            jaspr, bit_array_padding, call_graph_stats, callback_threshold
         )
 
         # Initialize the boolean quantum circuit representation:

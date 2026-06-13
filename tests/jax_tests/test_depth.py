@@ -33,7 +33,7 @@ from qrisp import (
     rz,
     u3,
 )
-from qrisp.jasp import jrange, q_cond
+from qrisp.jasp import jrange, qache, q_cond
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
     always_zero,
@@ -1025,3 +1025,160 @@ def test_caching_behavior():
 
     main(BigInteger.create_static(1, 1))
     main(BigInteger.create_static(5, 2))
+
+
+def test_callback_threshold_depth():
+    """Test that depth with callback_threshold produces correct results.
+
+    The callback_threshold parameter controls whether ``jax.pure_callback``
+    wrapping is used for reused sub-jaxprs to prevent XLA compilation blowup.
+    Different threshold values should all produce the same profiling results.
+    """
+
+    # A qache'd subroutine that will be reused multiple times.
+    @qache
+    def depth_heavy_sub(qv):
+        """A subroutine that contributes significant depth."""
+        h(qv[0])
+        cx(qv[0], qv[1])
+        h(qv[0])
+        cx(qv[0], qv[1])
+        h(qv[1])
+
+    def make_circuit():
+        qv = QuantumFloat(3)
+        h(qv[0])
+
+        # Call the qache'd subroutine multiple times
+        depth_heavy_sub(qv)
+        depth_heavy_sub(qv)
+        depth_heavy_sub(qv)
+
+        h(qv[2])
+        return measure(qv[0])
+
+    # Baseline: no callbacks
+    baseline = depth(meas_behavior="0")(make_circuit)()
+
+    # callback_threshold=0: wrap every reused sub-jaxpr
+    result_0 = depth(meas_behavior="0", callback_threshold=0)(make_circuit)()
+    assert result_0 == baseline, (
+        f"callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
+    )
+
+    # callback_threshold=500: middle ground
+    result_500 = depth(meas_behavior="0", callback_threshold=500)(make_circuit)()
+    assert result_500 == baseline, (
+        f"callback_threshold=500 diverged:\n  baseline={baseline}\n  got={result_500}"
+    )
+
+    # Callback threshold with very large value
+    result_large = depth(meas_behavior="0", callback_threshold=10**9)(make_circuit)()
+    assert result_large == baseline, (
+        f"callback_threshold=10**9 diverged:\n  baseline={baseline}\n  got={result_large}"
+    )
+
+    # Also test with meas_behavior="1"
+    baseline_1 = depth(meas_behavior="1")(make_circuit)()
+    result_1_0 = depth(meas_behavior="1", callback_threshold=0)(make_circuit)()
+    assert result_1_0 == baseline_1, (
+        f"meas_behavior='1', callback_threshold=0 diverged:\n  baseline={baseline_1}\n  got={result_1_0}"
+    )
+
+    # Verify the depth result is a positive integer
+    assert isinstance(baseline, int), f"Depth should be int, got {type(baseline)}"
+    assert baseline > 0, f"Depth should be positive, got {baseline}"
+
+
+def test_callback_threshold_depth_nested_qache():
+    """Test callback_threshold depth with nested @qache'd subroutines.
+
+    An outer qache'd function calls an inner qache'd function.  Both are
+    reused.  The callback wrapping must yield the same depth regardless
+    of threshold.
+    """
+
+    @qache
+    def inner_depth_sub(qv):
+        """Inner subroutine: contributes depth via sequential gates."""
+        h(qv[0])
+        cx(qv[0], qv[1])
+        h(qv[0])
+
+    @qache
+    def outer_depth_sub(qv):
+        """Outer subroutine: calls inner_depth_sub and adds more depth."""
+        cx(qv[1], qv[2])
+        inner_depth_sub(qv)
+        inner_depth_sub(qv)
+
+    def make_circuit():
+        qv = QuantumFloat(4)
+        h(qv[0])
+
+        outer_depth_sub(qv)
+        outer_depth_sub(qv)
+        outer_depth_sub(qv)
+
+        h(qv[3])
+        return measure(qv[0])
+
+    baseline = depth(meas_behavior="0")(make_circuit)()
+    result_0 = depth(meas_behavior="0", callback_threshold=0)(make_circuit)()
+    assert result_0 == baseline, (
+        f"Nested qache depth with callback_threshold=0 diverged:\n"
+        f"  baseline={baseline}\n  got={result_0}"
+    )
+
+    result_500 = depth(meas_behavior="0", callback_threshold=500)(make_circuit)()
+    assert result_500 == baseline, (
+        f"Nested qache depth with callback_threshold=500 diverged:\n"
+        f"  baseline={baseline}\n  got={result_500}"
+    )
+
+    # Also test with threshold=1
+    result_1 = depth(meas_behavior="0", callback_threshold=1)(make_circuit)()
+    assert result_1 == baseline, (
+        f"Nested qache depth with callback_threshold=1 diverged:\n"
+        f"  baseline={baseline}\n  got={result_1}"
+    )
+
+
+def test_callback_threshold_depth_with_jrange():
+    """Test callback_threshold depth with a jrange loop + qache'd subroutine.
+
+    The jrange loop creates many call sites for the same qache'd function,
+    testing that callback wrapping handles scan-primitive-based loops
+    correctly in the depth metric.
+    """
+
+    @qache
+    def depth_loop_sub(qv, n):
+        """Subroutine called inside a jrange loop, contributes depth."""
+        h(qv[(n + 0) % 3])
+        cx(qv[(n + 0) % 3], qv[(n + 1) % 3])
+
+    def make_circuit():
+        qv = QuantumFloat(4)
+        h(qv[0])
+
+        for i in jrange(15):
+            depth_loop_sub(qv, i)
+
+        h(qv[3])
+        return measure(qv[0])
+
+    baseline = depth(meas_behavior="0")(make_circuit)()
+    result_0 = depth(meas_behavior="0", callback_threshold=0)(make_circuit)()
+    assert result_0 == baseline, (
+        f"jrange depth with callback_threshold=0 diverged:\n"
+        f"  baseline={baseline}\n  got={result_0}"
+    )
+
+    result_500 = depth(meas_behavior="0", callback_threshold=500)(make_circuit)()
+    assert result_500 == baseline, (
+        f"jrange depth with callback_threshold=500 diverged:\n"
+        f"  baseline={baseline}\n  got={result_500}"
+    )
+
+    assert baseline > 0, f"Depth should be positive, got {baseline}"

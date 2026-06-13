@@ -16,17 +16,28 @@
 ********************************************************************************
 """
 
-def test_reflection():
+from qrisp import QuantumVariable, QuantumFloat, QuantumArray, OutcomeArray, h, x, cx, reflection, multi_measurement
+from qrisp.jasp import terminal_sampling, jrange
 
-    from qrisp import QuantumVariable, QuantumFloat, QuantumArray, OutcomeArray, h, x, cx, reflection, multi_measurement
 
-    # Reflection with QuantumVariable as input
-    def ghz(qv):
-        h(qv[0])
+def ghz(*args):
+    """Prepares a GHZ state on the provided quantum variables."""
 
-        for i in range(1, qv.size):
-            cx(qv[0], qv[i])
+    flattened_qargs = []   
+    for arg in args:
+        if isinstance(arg, QuantumVariable):
+            flattened_qargs.append(arg)
+        elif isinstance(arg, QuantumArray):
+            flattened_qargs.extend([qv for qv in arg.flatten()])
 
+    qubits = sum([arg.reg for arg in flattened_qargs], [])
+    h(qubits[0])
+    for i in range(1, len(qubits)):
+        cx(qubits[0], qubits[i])
+
+
+def test_reflection_quantum_variable():
+    """Tests that the reflection primitive correctly applies a reflection around a GHZ state."""
 
     qv = QuantumVariable(5)
     x(qv)
@@ -38,17 +49,71 @@ def test_reflection():
     assert res == {'00000': 1.0}
 
 
-    # Reflection with list[QuantumVariable | QuantumArray] as input
+def test_reflection_quantum_array():
+    """Tests that the reflection primitive correctly applies a reflection around a GHZ state with QuantumArray input."""
+
+    qa = QuantumArray(QuantumFloat(3), shape=(3,))
+    x(qa)
+    res = qa.get_measurement()
+    assert res == {OutcomeArray([7, 7, 7]): 1.0}
+
+    reflection(qa, ghz)
+    res = qa.get_measurement()
+    assert res == {OutcomeArray([0, 0, 0]): 1.0}
+
+
+def test_reflection_quantum_array():
+    """Tests that the reflection primitive correctly applies a reflection around a GHZ state with QuantumArray input."""
+
+    qa = QuantumArray(QuantumFloat(3), shape=(3,))
+    x(qa)
+    res = qa.get_measurement()
+    assert res == {OutcomeArray([7, 7, 7]): 1.0}
+
+    reflection(qa, ghz)
+    res = qa.get_measurement()
+    assert res == {OutcomeArray([0, 0, 0]): 1.0}
+
+
+def test_reflection_list_quantum_variable():
+    """Tests that the reflection primitive correctly applies a reflection around a GHZ state with list of QuantumVariable input."""
+
+    qv_list = [QuantumVariable(3), QuantumVariable(2)]
+    x(qv_list[0])
+    x(qv_list[1])
+    res = multi_measurement(qv_list)
+    assert res == {('111', '11'): 1.0}
+
+    reflection(qv_list, ghz)
+    res = multi_measurement(qv_list)
+    assert res == {('000', '00'): 1.0}
+
+
+def test_reflection_tuple_quantum_variable():
+    """Tests that the reflection primitive correctly applies a reflection around a GHZ state with tuple of QuantumVariable input."""
+
+    qv_tuple = (QuantumVariable(3), QuantumVariable(2))
+    x(qv_tuple[0])
+    x(qv_tuple[1])
+    res = multi_measurement(qv_tuple)
+    assert res == {('111', '11'): 1.0}
+
+    reflection(qv_tuple, ghz)
+    res = multi_measurement(qv_tuple)
+    assert res == {('000', '00'): 1.0}
+
+
+def test_reflection_list_quantum_varaible_quantum_array():
+    """Tests that the reflection primitive correctly applies a reflection around a GHZ state with list of QuantumVariable and QuantumArray input."""
+
     def ghz(qv, qa):
         h(qv[0])
-
         for i in range(1, qv.size):
             cx(qv[0], qv[i])
 
         for var in qa:
             for i in range(var.size):
                 cx(qv[0], var[i])
-
 
     qv = QuantumVariable(5)
     qa = QuantumArray(QuantumFloat(3), shape=(3,))
@@ -63,17 +128,12 @@ def test_reflection():
 
 
 def test_jasp_reflection():
+    """Tests that the reflection primitive correctly applies a reflection around a GHZ state in Jasp."""
 
-    from qrisp import QuantumVariable, QuantumArray, h, x, cx, reflection
-    from qrisp.jasp import terminal_sampling, jrange
-
-    # Reflection with QuantumVariable as input
     def ghz(qv):
         h(qv[0])
-
         for i in jrange(1, qv.size):
             cx(qv[0], qv[i])
-
 
     @terminal_sampling
     def main():

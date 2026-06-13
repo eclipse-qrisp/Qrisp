@@ -30,6 +30,12 @@ Classical cost function
 .. autofunction:: create_maxcut_cl_cost_function
 
 
+Sample array post processor (Jasp)
+-----------------------------------
+
+.. autofunction:: create_maxcut_sample_array_post_processor
+
+
 MaxCut problem
 --------------
 

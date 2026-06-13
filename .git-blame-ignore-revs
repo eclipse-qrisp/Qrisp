@@ -1,1 +1,22 @@
+# This file lists commit hashes that `git blame` should skip when attributing lines.
+# It prevents global formatting changes (e.g., full-repo ruff reformats) from
+# making every line appear authored by the formatting commit. Git reads this
+# file when `blame.ignoreRevsFile` is set in git config.
+#
+# Usage:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#   or: git blame --ignore-revs-file .git-blame-ignore-revs <file>
+#
+# Add the full SHA of any commit that made only formatting/mechanical changes
+# across many files (e.g., ruff format, line-length changes, import sorting).
+# One hash per line; comments and blank lines are allowed.
+#
+# 4ce1bcf7 -- "Apply Black formatter to entire codebase"
+#   Ran Black across every file, making blame point at this commit
+#   for almost every line instead of the original author. This is the
+#   exact kind of commit this file exists to skip.
+#
+# When adding future global mechanical changes (e.g., enabling ruff
+# format in CI, import sorting, line-length changes), add those
+# commit hashes here too.
 4ce1bcf7553aba8b90a6301094a22aaf75da9f9d

@@ -43,7 +43,7 @@ from qrisp.alg_primitives.mcx_algs import hybrid_mcx
 
 # Returns the PROPAGATE status of a group of entries
 def calc_P_group(P):
-    new_p = QuantumBool(name="p_group*", qs=P[0].qs())
+    new_p = QuantumBool(name="p_group*")
     # Due to the semi-classical nature of the algorithm, it is possible
     # that some propagate values are known to be 0 (because some of the
     # input values are known to be 0)
@@ -258,14 +258,14 @@ def cq_calc_carry(a, b, radix_base=2, radix_exponent=0, ctrl=None):
     # If b can be divided into k blocks of size R,
     # we only need k-1 ancillae qubit, because we have no need for
     # the carry of the last bock.
-    c = QuantumVariable(int(np.ceil(len(b) / R)) - 1, name="carry*", qs=b[0].qs())
+    c = QuantumVariable(int(np.ceil(len(b) / R)) - 1, name="carry*")
 
     # This variable will hold the intermediate GENERATE values, that are supposed
     # to be uncomputed. The uncomputation is performed using the auto_uncompute
     # decorator. This decorator uncomputes all local variables.
     if R > 1:
         brent_kung_ancilla = QuantumVariable(
-            c.size * (R - 1), name="bk_ancilla*", qs=b[0].qs()
+            c.size * (R - 1), name="bk_ancilla*"
         )
         anc_list = list(brent_kung_ancilla)
     else:
@@ -294,7 +294,7 @@ def cq_calc_carry(a, b, radix_base=2, radix_exponent=0, ctrl=None):
     if not ctrl is None:
         if sum(k == "1" for k in a) > 1:
             parallel_anc_var = QuantumVariable(
-                sum(k == "1" for k in a), name="parll_qbl*", qs=b[0].qs()
+                sum(k == "1" for k in a), name="parll_qbl*"
             )
             parallel_ancillae = list(parallel_anc_var)
 

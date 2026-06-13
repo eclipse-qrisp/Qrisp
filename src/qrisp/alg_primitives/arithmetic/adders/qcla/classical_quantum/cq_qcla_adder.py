@@ -26,11 +26,9 @@ from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_sum_path i
     cq_sum_path,
     cq_sum_path_direct_uncomputation,
 )
-from qrisp.alg_primitives.arithmetic.adders.gidney import cq_gidney_adder
+from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
 from qrisp.misc.utility import bin_rep, redirect_qfunction
-from qrisp.circuit import fast_append
 from qrisp.environments import QuantumEnvironment, invert, custom_control
-from qrisp.core.session_merging_tools import merge
 
 verify_manual_uncomputations = np.zeros(1)
 
@@ -53,52 +51,49 @@ def cq_qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=N
 
     R = radix_base**radix_exponent
 
-    merge([a, b])
-    with fast_append(3):
-        # The case that a only has a single qubit is simple.
-        if len(b) == 1:
-            if a[0] == "1":
-                if ctrl is None:
-                    x(b[0])
-                else:
-                    cx(ctrl, b[0])
-            return
-        elif len(b) <= R:
-            cq_gidney_adder(a, b, ctrl=ctrl)
-            return
-
-        # Calculate the carry
-        # Executing within a QuantumEnvironemnt accelerates the uncomputation algorithm
-        # because it doesn't have to consider the operations appended outside of this function
-        with QuantumEnvironment():
-            merge([b[0].qs()])
-            c = cq_calc_carry(a, b, radix_base, radix_exponent, ctrl=ctrl)
-
-            if t_depth_reduction:
-                cq_sum_path_direct_uncomputation(a, b, c, R, ctrl=ctrl)
+    # The case that a only has a single qubit is simple.
+    if len(b) == 1:
+        if a[0] == "1":
+            if ctrl is None:
+                x(b[0])
             else:
-                cq_sum_path(a, b, c, R, ctrl=ctrl)
+                cx(ctrl, b[0])
+        return
+    elif len(b) <= R:
+        gidney_adder(a, b, ctrl=ctrl)
+        return
 
-                # To uncompute the carry we use Drapers strategy
-                # CARRY(A,B) = CARRY(A, NOT(A+B))
-                # We therefore bitflip the sum
-                for i in range(len(b)):
-                    x(b[i])
+    # Calculate the carry
+    # Executing within a QuantumEnvironemnt accelerates the uncomputation algorithm
+    # because it doesn't have to consider the operations appended outside of this function
+    with QuantumEnvironment():
+        c = cq_calc_carry(a, b, radix_base, radix_exponent, ctrl=ctrl)
 
-                # Contrary to Draper's adder we don't need to uncompute every carry digit.
-                # Because of the above equivalence, the carries agree on every digit, so especially
-                # on the digits representing the output of the calc_carry function. We can therefore
-                # uncompute using calc_carry (even with higher radix) by inverting calc_carry.
+        if t_depth_reduction:
+            cq_sum_path_direct_uncomputation(a, b, c, R, ctrl=ctrl)
+        else:
+            cq_sum_path(a, b, c, R, ctrl=ctrl)
 
-                with invert():
-                    # We use the redirect_qfunction decorator to steer the function onto c
-                    redirect_qfunction(cq_calc_carry)(
-                        a, b, radix_base, radix_exponent, target=c, ctrl=ctrl
-                    )
+            # To uncompute the carry we use Drapers strategy
+            # CARRY(A,B) = CARRY(A, NOT(A+B))
+            # We therefore bitflip the sum
+            for i in range(len(b)):
+                x(b[i])
 
-                # Flip the sum back
-                for i in range(len(b)):
-                    x(b[i])
+            # Contrary to Draper's adder we don't need to uncompute every carry digit.
+            # Because of the above equivalence, the carries agree on every digit, so especially
+            # on the digits representing the output of the calc_carry function. We can therefore
+            # uncompute using calc_carry (even with higher radix) by inverting calc_carry.
 
-        # Delete c
-        c.delete(verify=bool(verify_manual_uncomputations[0]))
+            with invert():
+                # We use the redirect_qfunction decorator to steer the function onto c
+                redirect_qfunction(cq_calc_carry)(
+                    a, b, radix_base, radix_exponent, target=c, ctrl=ctrl
+                )
+
+            # Flip the sum back
+            for i in range(len(b)):
+                x(b[i])
+
+    # Delete c
+    c.delete(verify=bool(verify_manual_uncomputations[0]))

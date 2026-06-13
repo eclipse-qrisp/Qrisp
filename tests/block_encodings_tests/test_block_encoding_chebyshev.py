@@ -18,7 +18,8 @@
 
 import numpy as np
 import pytest
-from qrisp import *
+
+from qrisp import QuantumVariable, terminal_sampling
 from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
 
@@ -35,6 +36,7 @@ def compare_results(res_dict_1, res_dict_2, n):
     (0.5*X(1) + 0.7*Y(1) + 0.3*X(4), Z(0) + Z(1) + X(2), False),
 ])
 def test_block_encoding_chebyshev(H1, H2, rescaled):
+    """Test the Chebyshev polynomial transformation of a BlockEncoding by comparing the results to a classical solution."""
 
     BE1 = BlockEncoding.from_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)

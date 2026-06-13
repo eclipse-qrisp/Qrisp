@@ -16,6 +16,8 @@
 ********************************************************************************
 """
 
+from collections.abc import Mapping
+
 import numpy as np
 
 # Created by ann81984 at 04.05.2022
@@ -86,7 +88,7 @@ def test_controlled_gates():
 
     assert 0.4 < tmp["11"] < 0.6 and 0.4 < tmp["00"] < 0.6
     assert not (0.8 < tmp["11"] < 1 and 0.7 < tmp["00"] < 0.2)
-    assert isinstance(tmp, dict)
+    assert isinstance(tmp, Mapping)
     with pytest.raises(KeyError) as excinfo:
         bool(tmp["23"] < 0.6)
     assert "23" in str(excinfo.value)
@@ -113,7 +115,7 @@ def test_controlled_gates():
 
     print(qv_target.get_measurement())
     tmp2 = qv_target.get_measurement()
-    assert isinstance(tmp2, dict)
+    assert isinstance(tmp2, Mapping)
     assert tmp2["1"] == 1.0
 
     qv_0 = QuantumVariable(2)

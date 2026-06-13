@@ -17,12 +17,16 @@
 """
 
 import copy
+from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
 from jax import tree_util
 
 from qrisp.core.compilation import qompiler
+
+if TYPE_CHECKING:
+    from qrisp.interface.measurement_result import DecodedMeasurementResult
 
 
 class QuantumVariable:
@@ -993,20 +997,19 @@ class QuantumVariable:
         circuit_preprocessor=None,
         filename=None,
         precompiled_qc=None,
-    ) -> dict:
+    ) -> "DecodedMeasurementResult":
         r"""
         Method for quick access to the measurement results of the state of the variable.
-        This method returns a dictionary of the type {value : p} where p indicates the
-        probability with which that value is measured.
-
+        Returns a :class:`~qrisp.interface.DecodedMeasurementResult`, which behaves like
+        a dictionary of the type ``{value: p}`` where ``p`` is the measurement probability.
 
         Parameters
         ----------
         plot : Bool, optional
             Plots the measurement results as a historgram. The default is False.
-        backend : BackendClient, optional
-            The backend on which to evaluate the quantum circuit. The default can be
-            specified in the file default_backend.py.
+        backend : BackendLike, optional
+            The backend on which to evaluate the quantum circuit. 
+            The default can be specified in the file default_backend.py.
         shots : integer, optional
             The amount of shots to evaluate the circuit. The default is given by the backend it runs on.
         compile : bool, optional
@@ -1034,8 +1037,9 @@ class QuantumVariable:
 
         Returns
         -------
-        dict
-            A dictionary of values and their corresponding measurement probabilities.
+        DecodedMeasurementResult
+            A lazy :class:`~qrisp.interface.DecodedMeasurementResult` mapping each
+            decoded value to its measurement probability.
 
         Examples
         --------
@@ -1083,7 +1087,7 @@ class QuantumVariable:
         # Bind parameters
         if subs_dic:
             qc = qc.bind_parameters(subs_dic)
-            from qrisp.core.compilation import combine_single_qubit_gates
+            from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
 
             qc = combine_single_qubit_gates(qc)
 
@@ -1100,56 +1104,27 @@ class QuantumVariable:
 
         # qc = qc.transpile()
 
+        from qrisp.interface.measurement_result import DecodedMeasurementResult
         from qrisp.misc import get_measurement_from_qc
 
         counts = get_measurement_from_qc(qc, self.reg, backend, shots)
-
-        # Insert outcome labels (if available and hashable)
-        try:
-            new_counts_dic = {}
-
-            sorted_keys = list(counts.keys())
-            sorted_keys.sort()
-
-            for key in sorted_keys:
-                new_counts_dic[self.decoder(key)] = counts[key]
-
-            counts = new_counts_dic
-
-            # Sort keys
-            sorted_key_list = list(counts.keys())
-            sorted_key_list.sort(key=lambda x: -counts[x])
-            counts = {key: counts[key] for key in sorted_key_list}
-
-        except TypeError:
-            counts_tuple_list = []
-
-            for key in counts.keys():
-                counts_tuple_list.append((key, counts[key]))
-
-            counts = counts_tuple_list
-
-            counts.sorted(key=lambda x: x[1])
+        result = DecodedMeasurementResult(counts, self.decoder)
 
         if plot:
             outcome_labels = []
             for i in range(2**self.size):
                 temp = self.decoder(i)
-
                 try:
                     hash(temp)
                 except TypeError:
                     raise Exception(
                         "Outcome value " + str(self.decoder(i)) + " is not hashable"
                     )
-
                 outcome_labels.append(temp)
-
-            plot_histogram(outcome_labels, counts, filename)
+            plot_histogram(outcome_labels, dict(result), filename)
             plt.show()
 
-        # Return dictionary of measurement results
-        return counts
+        return result
 
     def most_likely(self, **kwargs):
         """

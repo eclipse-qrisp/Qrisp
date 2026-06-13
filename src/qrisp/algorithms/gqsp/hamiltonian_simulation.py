@@ -16,17 +16,17 @@
 ********************************************************************************
 """
 
-import numpy as np
-from qrisp import QuantumBool
-from qrisp.algorithms.gqsp.gqsp import GQSP
-from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
-from qrisp.jasp import qache
-from qrisp.block_encodings import BlockEncoding
-from qrisp.operators import QubitOperator, FermionicOperator
-from scipy.special import jv
+from typing import TYPE_CHECKING
 import jax
 import jax.numpy as jnp
-from typing import TYPE_CHECKING
+import numpy as np
+from scipy.special import jv
+
+from qrisp.algorithms.gqsp.gqsp import GQSP
+from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
+from qrisp.block_encodings import BlockEncoding
+from qrisp.operators import QubitOperator, FermionicOperator
+from qrisp.qtypes import QuantumBool
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike

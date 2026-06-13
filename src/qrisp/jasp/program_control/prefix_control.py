@@ -212,7 +212,7 @@ def q_fori_loop(lower, upper, body_fun, init_val):
 
             return acc, measure(qf)
 
-        print(main(k))
+        print(main(5))
         # Yields:
         # (Array(5, dtype=int64), Array(31., dtype=float64))
 
