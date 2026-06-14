@@ -67,8 +67,10 @@ def _validate_gidney_adder_inputs(a, b):
     return a_is_quantum
 
 
-def _extract_bit(a_int, digit_index, a_int_is_bigint=None):
+def _extract_bit(a_int, digit_index):
     """Extract one bit from a classical scalar as a JAX boolean.
+
+    Automatically detects BigInteger values by checking for a ``get_bit`` method.
 
     Parameters
     ----------
@@ -76,10 +78,6 @@ def _extract_bit(a_int, digit_index, a_int_is_bigint=None):
         Classical value whose bit is queried.
     digit_index : int
         Zero-based bit index to read (little-endian convention).
-    a_int_is_bigint : bool or None
-        If ``True``, read the bit through ``a_int.get_bit(digit_index)``.
-        If ``False``, use ``(a_int >> digit_index) & 1``.
-        If ``None`` (default), auto-detect by checking for a ``get_bit`` method.
 
     Examples
     --------
@@ -88,9 +86,8 @@ def _extract_bit(a_int, digit_index, a_int_is_bigint=None):
     >>> bool(_extract_bit(0b1010, 0))
     False
     """
-    if a_int_is_bigint is None:
-        a_int_is_bigint = hasattr(a_int, "get_bit")
-    if a_int_is_bigint:
+    # BigInteger (and other big-int wrappers) expose get_bit
+    if hasattr(a_int, "get_bit"):
         return jnp.bool_(a_int.get_bit(digit_index))
     return jnp.bool_((a_int >> digit_index) & 1)
 
