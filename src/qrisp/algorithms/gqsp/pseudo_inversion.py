@@ -201,7 +201,7 @@ def _smooth_rectangle(
     t: float, 
     delta: float,
 ) -> npt.NDArray[np.float64]:
-    """
+    r"""
     Computes a smoothed rectangle (indicator) function using the error function.
 
     This function acts as a continuous, differentiable stand-in for 
@@ -218,7 +218,7 @@ def _smooth_rectangle(
         The half-width of the inner interval. The function will be approximately 1 for x in [-t, t].
     delta :float
         The width of the transition region. The function will smoothly decay from 1 to 0 over the intervals 
-        $[-t - \\delta, -t + \\delta]$ and $[t - \\delta, t + \\delta]$.
+        $[-t - \delta, -t + \delta]$ and $[t - \delta, t + \delta]$.
 
     Returns
     -------

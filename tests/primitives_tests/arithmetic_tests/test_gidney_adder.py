@@ -294,7 +294,7 @@ def test_gidney_adder_with_carry_options(
     ],
 )
 def test_gidney_adder_with_control(a_spec, a_val, b_bits, b_val, ctrl_on, expected_b):
-    """Verify controlled addition only fires when :math:`ctrl=\\ket{1}`."""
+    r"""Verify controlled addition only fires when :math:`ctrl=\ket{1}`."""
     kind, n = a_spec
     if kind == "qf":
         a = QuantumFloat(n)

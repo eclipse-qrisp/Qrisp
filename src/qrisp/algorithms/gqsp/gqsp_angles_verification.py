@@ -31,7 +31,7 @@ def plot_reconstruction_vs_target(
     domain_label: str = "Singular Value (x)",
     title: str = "Input Target vs. Reconstructed Polynomial",
 ):
-    """
+    r"""
     Plots the target polynomial against the reconstructed QSP/GQSP response,
     along with a subplot showing the absolute residual error.
 
@@ -77,7 +77,7 @@ def plot_reconstruction_vs_target(
             domain=omega_domain,
             target_values=target_magnitude,
             reconstructed_values=reconstructed_magnitude,
-            domain_label=r"Angle $\\omega$ (where $z = e^{i\\omega}$)",
+            domain_label=r"Angle $\omega$ (where $z = e^{i\omega}$)",
             title="GQSP Reconstruction (Magnitude on Unit Circle)"
         )
     """
@@ -128,7 +128,7 @@ def plot_reconstruction_vs_target(
     ax2.fill_between(domain, 0, residuals, color="blue", alpha=0.1)
 
     ax2.set_xlabel(domain_label, fontsize=12)
-    ax2.set_ylabel("Error $\\Delta$", fontsize=12)
+    ax2.set_ylabel(r"Error $\Delta$", fontsize=12)
     ax2.set_yscale("log")  # Log scale is best for viewing numerical precision errors
     ax2.grid(True, linestyle=":", alpha=0.6)
     ax2.legend(loc="upper right", fontsize=10)

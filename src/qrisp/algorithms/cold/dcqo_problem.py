@@ -25,7 +25,7 @@ from qrisp.operators import QubitOperator
 
 
 class DCQOProblem:
-    """
+    r"""
     General structure to formulate Digitized Counterdiabatic Quantum Optimization problems.
     This class is used to solve |dcqo_link|
     problems with the algorithms `COLD <https://doi.org/10.1103/PRXQuantum.4.010312>`_
@@ -48,17 +48,17 @@ class DCQOProblem:
         The parameters for the adiabatic gauge potential (AGP). If the COLD method is being used,
         they must depend on the optimization pulses in ``H_control``.
     lam_func : callable
-        A function $\\lambda(t, T)$ mapping $t \\in [0, T]$ to $\\lambda \\in [0, 1]$. This function needs to return
+        A function $\lambda(t, T)$ mapping $t \in [0, T]$ to $\lambda \in [0, 1]$. This function needs to return
         a `sympy <https://docs.sympy.org/>`_ expression with $t$ and $T$ as `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
     g_func : callable, optional
-        The inverse function of $\\lambda(t, T)$. This function needs to return a `sympy <https://docs.sympy.org/>`_ expression
-        with $\\lambda$ and $T$ as `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
+        The inverse function of $\lambda(t, T)$. This function needs to return a `sympy <https://docs.sympy.org/>`_ expression
+        with $\lambda$ and $T$ as `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
         Only needed for the COLD algorithm.
     H_control : :ref:`QubitOperator`, optional
         Hamiltonian specifying the control pulses for the COLD method. If not given, the LCD method is used automatically.
     qarg_prep : callable, optional
         A function receiving a :ref:`QuantumVariable` for preparing the inital state.
-        By default, the groundstate of the x-operator $\\ket{-}^n$ is prepared.
+        By default, the groundstate of the x-operator $\ket{-}^n$ is prepared.
 
 
     Examples

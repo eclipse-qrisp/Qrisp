@@ -472,9 +472,9 @@ def create_QCCSD_ansatz(M, N):
 
 
 def create_hartree_fock_init_function(M, N):
-    """
+    r"""
     Creates the function that, when applied to a :ref:`QuantumVariable`, initializes the Hartee-Fock state:
-    Consistent with the Jordan-Wigner mapping, the first ``N`` qubits are initialized in the $\\ket{1}$ state.
+    Consistent with the Jordan-Wigner mapping, the first ``N`` qubits are initialized in the $\ket{1}$ state.
 
     Parameters
     ----------
@@ -485,9 +485,8 @@ def create_hartree_fock_init_function(M, N):
 
     Returns
     -------
-    init_function : function
-        A function that can be applied to a :ref:`QuantumVariable`.
-
+    callable
+        A function receiving a :ref:`QuantumVariable`, that initializes the Hartee-Fock state.
     """
 
     def init_function(qv):

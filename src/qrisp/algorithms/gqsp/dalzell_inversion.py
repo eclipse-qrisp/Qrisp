@@ -229,16 +229,16 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
 
 
 def _kernel_reflection_cheb(delta: float, eps: float = 1e-3) -> npt.NDArray[np.float64]:
-    """
+    r"""
     Constructs the Chebyshev polynomial for the Kernel Reflection 
-    Polynomial $K_{\\delta, \\ell}(x)$ from `Dalzell (2024) <https://arxiv.org/pdf/2406.12086>`_ Eq 62.
+    Polynomial $K_{\delta, \ell}(x)$ from `Dalzell (2024) <https://arxiv.org/pdf/2406.12086>`_ Eq 62.
     
     Parameters
     ----------
     delta : float
-        The spectral gap threshold ($0 < \\delta < 1$).
+        The spectral gap threshold ($0 < \delta < 1$).
     eps : float
-        The maximum allowed error on the interval $[\\delta, 1]$. Defaults to 1e-3.
+        The maximum allowed error on the interval $[\delta, 1]$. Defaults to 1e-3.
     
     Returns
     -------

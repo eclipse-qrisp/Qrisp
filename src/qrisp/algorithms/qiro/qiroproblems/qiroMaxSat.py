@@ -134,7 +134,7 @@ def create_maxsat_replacement_routine(res, problem_updated):
 
 
 def create_maxsat_cost_operator_reduced(problem_updated):
-    """
+    r"""
     Creates the ``cost_operator`` for the problem instance.
     This operator is adjusted to consider qubits that were found to be a part of the problem solution.
 
@@ -147,7 +147,7 @@ def create_maxsat_cost_operator_reduced(problem_updated):
     Returns
     -------
     cost_operator : function
-        A function receiving a :ref:`QuantumVariable` and a real parameter $\\gamma$. This function performs the application of the cost operator.
+        A function receiving a :ref:`QuantumVariable` and a real parameter $\gamma$. This function performs the application of the cost operator.
 
     """
 

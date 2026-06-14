@@ -942,10 +942,10 @@ class QubitOperator(Hamiltonian):
         return QubitOperator(new_terms_dict)
 
     def hermitize(self):
-        """
+        r"""
         Returns the hermitian part of self.
 
-        $H = (O + O^\\dagger)/2$
+        $H = (O + O^\dagger)/2$
 
         Returns
         -------
