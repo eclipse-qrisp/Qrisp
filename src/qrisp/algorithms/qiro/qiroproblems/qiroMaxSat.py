@@ -147,7 +147,7 @@ def create_maxsat_cost_operator_reduced(problem_updated):
     Returns
     -------
     cost_operator : function
-        A function receiving a :ref:`QuantumVariable` and a real parameter $\gamma$. This function performs the application of the cost operator.
+        A function receiving a :ref:`QuantumVariable` and a real parameter $\\gamma$. This function performs the application of the cost operator.
 
     """
 

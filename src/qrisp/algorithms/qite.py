@@ -222,7 +222,7 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
         To create a jasp-compatible implementation of QITE, we need to remove the recursive structure.
         We achieve this by fully expanding the recursive formula for $U_k$ down to the $k=0$ level.
         From there, we find a tree structure with branching factor 3 (GC) or 5 (HOPF) where
-        some branches are inverted due to the presence of conjugate operators $U_i^\dagger$.
+        some branches are inverted due to the presence of conjugate operators $U_i^\\dagger$.
         We traverse the tree depth-first using up-, down-, bounce-, and leaf-operations that we obtain from
         inspecting the formula for $U_k$.
         """

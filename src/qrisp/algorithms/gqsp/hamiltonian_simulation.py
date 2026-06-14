@@ -254,7 +254,7 @@ def bessel_multiplication(m, s, jv_values_at_t, t=1.0):
 
     .. math::
 
-        J_{m}(\lambda t) = \lambda^m \sum_{k=0}^{\intfy}\frac{(1-\lambda^2)^k(t/2)^k}{k!}J_{m+k}(t)
+        J_{m}(\\lambda t) = \\lambda^m \\sum_{k=0}^{\\infty}\\frac{(1-\\lambda^2)^k(t/2)^k}{k!}J_{m+k}(t)
 
     Parameters
     ----------
@@ -263,7 +263,7 @@ def bessel_multiplication(m, s, jv_values_at_t, t=1.0):
     s : float
         New argument to evaluate.
     j_values_at_t: ndarray
-        Array of values $J_k(t)$ for $k=0,\dotsc,N$.
+        Array of values $J_k(t)$ for $k=0,\\dotsc,N$.
     t : float
         Fixed argument where values are known (default 1.0).
 

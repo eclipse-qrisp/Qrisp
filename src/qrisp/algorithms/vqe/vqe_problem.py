@@ -440,7 +440,7 @@ class VQEProblem:
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
             Specifies the way the initial optimization parameters are chosen. Available is ``random``.
-            The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\pi/2)]$.
+            The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\\pi/2)]$.
         init_point : ndarray, shape (n,), optional
             Specifies the initial optimization parameters.
         optimizer : str, optional
@@ -529,7 +529,7 @@ class VQEProblem:
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
             Specifies the way the initial optimization parameters are chosen. Available is ``random``.
-            The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\pi/2)]$.
+            The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\\pi/2)]$.
         init_point : ndarray, shape (n,), optional
             Specifies the initial optimization parameters.
         optimizer : str, optional
@@ -635,7 +635,7 @@ class VQEProblem:
             The keyword arguments for the :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>` function. Default is an empty dictionary.
         init_type : str, optional
             Specifies the way the initial optimization parameters are chosen. Available is ``random``.
-            The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\pi/2)]$.
+            The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\\pi/2)]$.
         optimizer : str, optional
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.

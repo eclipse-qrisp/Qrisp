@@ -945,7 +945,7 @@ class QubitOperator(Hamiltonian):
         """
         Returns the hermitian part of self.
 
-        $H = (O + O^\dagger)/2$
+        $H = (O + O^\\dagger)/2$
 
         Returns
         -------

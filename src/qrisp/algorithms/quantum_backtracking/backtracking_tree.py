@@ -625,7 +625,7 @@ class QuantumBacktrackingTree:
         Parameters
         ----------
         even : bool
-            Depending on the parameter, the diffuser acts on the subspaces $\mathcal H_x=\{\ket{x}\}\cup\{\ket{y}\,|\,x\\rightarrow y\}$ where $x$ has odd (``even=False``) or even (``even=True``) height.
+            Depending on the parameter, the diffuser acts on the subspaces $\\mathcal H_x=\\{\\ket{x}\\}\\cup\\{\\ket{y}\\,|\\,x\\rightarrow y\\}$ where $x$ has odd (``even=False``) or even (``even=True``) height.
             Note that "even" refers to the parity of the ``h`` attribute instead of the distance from the root.
             If the ``max_depth`` of the tree is odd, and ``even=False`` then $R_A$ (otherwise $R_B$) is performed, and vice verse if the ``max_depth`` is even.
 
@@ -1635,7 +1635,7 @@ paper (https://arxiv.org/abs/1509.02374)or the beginning of this file.
 
 The general idea to implement this operator are the following two steps:
 
-    1. Manipulatre h such that |h> -> 1/N(|h> + c*|h-1>) with suitable N,c \in R
+    1. Manipulatre h such that |h> -> 1/N(|h> + c*|h-1>) with suitable N,c \\in R
     2. Manipulate branch_qa controlled on h-1 to bring the new branches into
         into superposition.
 

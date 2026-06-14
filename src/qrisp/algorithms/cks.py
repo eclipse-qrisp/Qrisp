@@ -48,9 +48,9 @@ def cks_params(eps: float, kappa: float, max_beta: int = None) -> Tuple[int, int
 
     .. math::
 
-        \\beta = \kappa^2 \log\!\left(\\frac{\kappa}{\epsilon}\\right),
-        \quad
-        j_0 = \sqrt{\\beta \log\!\left(\\frac{4\\beta}{\epsilon}\\right)}.
+        \\beta = \\kappa^2 \\log\\!\\left(\\frac{\\kappa}{\\epsilon}\\right),
+        \\quad
+        j_0 = \\sqrt{\\beta \\log\\!\\left(\\frac{4\\beta}{\\epsilon}\\right)}.
 
     If ``max_beta`` is provided, :math:`\\beta` is capped to
     :math:`\\min(\\beta, \\beta_{\\max})`. The returned values are cast to integers
@@ -58,8 +58,8 @@ def cks_params(eps: float, kappa: float, max_beta: int = None) -> Tuple[int, int
 
     Parameters
     ----------
-    eps : float
-        Target precision :math:`\epsilon`.
+        eps : float
+        Target precision :math:`\\epsilon`.
     kappa : float
         An upper bound for the condition number :math:`\\kappa` of :math:`A`. This value defines the "gap"
         around zero where the function :math:`1/x` is not approximated.
@@ -70,17 +70,21 @@ def cks_params(eps: float, kappa: float, max_beta: int = None) -> Tuple[int, int
     -------
     j0 : int
         Truncation order of the Chebyshev expansion
-        :math:`j_0 = \\lfloor\sqrt{\\beta \log(4\\beta/\epsilon)}\\rfloor`.
+        :math:`j_0 = \\lfloor\\sqrt{\\beta \\log(4\\beta/\\epsilon)}\\rfloor`.
     beta : int
-        Complexity parameter :math:`\\beta = \\lfloor\kappa^2 \log(\kappa/\epsilon)\\rfloor`.
+        Complexity parameter :math:`\\beta = \\lfloor\\kappa^2 \\log(\\kappa/\\epsilon)\\rfloor`.
     """
 
     if max_beta == None:
+
+        
         beta = kappa**2 * np.log(kappa / eps)
     else:
         beta = min(kappa**2 * np.log(kappa / eps), max_beta)
     j0 = np.sqrt(beta * np.log(4 * beta / eps))
     return int(j0), int(beta)
+
+
 
 
 def cks_coeffs(j0: int, b: int) -> npt.NDArray[float]:
@@ -106,9 +110,9 @@ def cks_coeffs(j0: int, b: int) -> npt.NDArray[float]:
     ----------
     j0 : int
         Truncation order of the Chebyshev expansion,
-        :math:`j_0 = \\lfloor\sqrt{\\beta \log(4\\beta/\epsilon)}\\rfloor`.
+        :math:`j_0 = \\lfloor\\sqrt{\\beta \\log(4\\beta/\\epsilon)}\\rfloor`.
     b : float
-        Complexity parameter :math:`\\beta = \\lfloor\kappa^2 \log(\kappa/\epsilon)\\rfloor`.
+        Complexity parameter :math:`\\beta = \\lfloor\\kappa^2 \\log(\\kappa/\\epsilon)\\rfloor`.
 
     Returns
     -------
@@ -140,16 +144,16 @@ def cks_coeffs(j0: int, b: int) -> npt.NDArray[float]:
 
 def _unary_angles(coeffs: "ArrayLike") -> "ArrayLike":
     """
-    Computes rotation angles :math:`\\phi_i` to prepare the unary state :math:`\ket{\\text{unary}}`,
+    Computes rotation angles :math:`\\phi_i` to prepare the unary state :math:`\\ket{\\text{unary}}`,
     corresponding to the square-root-amplitude encoding of the Chebyshev coefficients.
 
     The prepared unary state is
 
     .. math::
 
-        \ket{\\text{unary}} \propto
-        \\sqrt{\\alpha_1}\ket{100\\dots00} + \\sqrt{\\alpha_3}\ket{110\\dots00} +
-        \\cdots + \\sqrt{\\alpha_{2j_0+1}}\ket{111\\dots11}
+        \\ket{\\text{unary}} \\propto
+        \\sqrt{\\alpha_1}\\ket{100\\dots00} + \\sqrt{\\alpha_3}\\ket{110\\dots00} +
+        \\cdots + \\sqrt{\\alpha_{2j_0+1}}\\ket{111\\dots11}
 
     Parameters
     ----------
@@ -178,23 +182,23 @@ def _unary_angles(coeffs: "ArrayLike") -> "ArrayLike":
 
 def unary_prep(case: QuantumVariable, coeffs: "ArrayLike") -> None:
     """
-    Prepares the unary-encoded state :math:`\ket{\\text{unary}}` of Chebyshev coefficients.
+    Prepares the unary-encoded state :math:`\\ket{\\text{unary}}` of Chebyshev coefficients.
 
-    When applied to a variable in state :math:`\ket{0}`, the resulting superposition is
+    When applied to a variable in state :math:`\\ket{0}`, the resulting superposition is
 
     .. math::
 
-        \ket{\\text{unary}} \propto
-        \\sqrt{\\alpha_1}\ket{100\\dots00} + \\sqrt{\\alpha_3}\ket{110\\dots00} +
-        \\cdots + \\sqrt{\\alpha_{2j_0+1}}\ket{111\\dots11}
+        \\ket{\\text{unary}} \\propto
+        \\sqrt{\\alpha_1}\\ket{100\\dots00} + \\sqrt{\\alpha_3}\\ket{110\\dots00} +
+        \\cdots + \\sqrt{\\alpha_{2j_0+1}}\\ket{111\\dots11}
 
     Parameters
     ----------
     case : QuantumVariable
         Variable with :math:`j_0` qubits on which the unary state preparation will be performed.
-        If the variable is in state :math:`\ket{0}`, the state :math:`\ket{\\text{unary}}` is prepared.
+        If the variable is in state :math:`\\ket{0}`, the state :math:`\\ket{\\text{unary}}` is prepared.
     coeffs : ArrayLike
-        1-D array of :math:`j_0` Chebyshev coefficients :math:`\\alpha_1,\\alpha_3,\dotsc,\\alpha_{2j_0+1}`.
+        1-D array of :math:`j_0` Chebyshev coefficients :math:`\\alpha_1,\\alpha_3,\\dotsc,\\alpha_{2j_0+1}`.
 
     """
     phi = _unary_angles(coeffs)
@@ -212,16 +216,16 @@ def CKS(
     """
     Performs the `Childs–Kothari–Somma (CKS) quantum algorithm <https://arxiv.org/abs/1511.02306>`_ to solve the Quantum Linear System Problem (QLSP)
     :math:`A \\vec{x} = \\vec{b}`, using the Chebyshev approximation of :math:`1/x`.
-    When applied to a state $\ket{b}$, the algorithm prepares a state :math:`\ket{\\tilde{x}} \propto A^{-1} \ket{b}`
-    within target precision :math:`\epsilon` of the ideal solution :math:`\ket{x}`.
+    When applied to a state $\\ket{b}$, the algorithm prepares a state :math:`\\ket{\\tilde{x}} \\propto A^{-1} \\ket{b}`
+    within target precision :math:`\\epsilon` of the ideal solution :math:`\\ket{x}`.
 
     For a block-encoded **Hermitian** matrix :math:`A`, this function returns a BlockEncoding of an
-    operator :math:`\\tilde{A}^{-1}` such that :math:`\|\\tilde{A}^{-1} - A^{-1}\| \leq \epsilon`.
+    operator :math:`\\tilde{A}^{-1}` such that :math:`\\|\\tilde{A}^{-1} - A^{-1}\\| \\leq \\epsilon`.
     The inversion is implemented using a polynomial approximation of :math:`1/x` over the domain :math:`D_{\\kappa} = [-1, -1/\\kappa] \\cup [1/\\kappa, 1]`.
 
     The asymptotic complexity is
     :math:`\\mathcal{O}\\!\\left(\\log(N)s \\kappa^2 \\text{polylog}\\!\\frac{s\\kappa}{\\epsilon}\\right)`, where :math:`N` is the matrix size, :math:`s` its sparsity, and
-    :math:`\kappa` its condition number. This represents an exponentially
+    :math:`\\kappa` its condition number. This represents an exponentially
     better precision scaling compared to the HHL algorithm.
 
     This function integrates all core components of the CKS approach:
@@ -238,12 +242,12 @@ def CKS(
       3. Build the core LCU structure via qubitization operator.
 
     The goal of this algorithm is to apply the non-unitary operator :math:`A^{-1}` to the
-    input state :math:`\ket{b}`. Following the Chebyshev approach introduced in the CKS paper, we express :math:`A^{-1}` as
+    input state :math:`\\ket{b}`. Following the Chebyshev approach introduced in the CKS paper, we express :math:`A^{-1}` as
     a linear combination of odd Chebyshev polynomials:
 
     .. math::
 
-        A^{-1}\propto\sum_{j=0}^{j_0}\\alpha_{2j+1}T_{2j+1}(A),
+        A^{-1}\\propto\\sum_{j=0}^{j_0}\\alpha_{2j+1}T_{2j+1}(A),
 
     where :math:`T_k(A)` are Chebyshev polynomials of the first kind and :math:`\\alpha_{2j+1} > 0` are computed
     via :func:`cks_coeffs`. These operators can be efficiently implemented with qubitization, which relies on a unitary
@@ -251,7 +255,7 @@ def CKS(
 
     If the block encoding unitary is $U$ is Hermitian (:math:`U^2=I`),
     the fundamental iteration step is defined as :math:`(RU)`, where :math:`R` reflects
-    around the auxiliary block-encoding state :math:`\ket{G}`, prepared as the ``inner_case`` QuantumFloat.
+    around the auxiliary block-encoding state :math:`\\ket{G}`, prepared as the ``inner_case`` QuantumFloat.
     Repeated applications of these unitaries, :math:`(RU)^k`, yield a block encoding of the :math:`k`-th Chebyshev polynomial
     of the first kind :math:`T_k(A)`.
 
@@ -259,16 +263,16 @@ def CKS(
 
     .. math::
 
-       \\text{LCU}\ket{0}\ket{\psi}=\\text{PREP}^{\dagger}\cdot \\text{SEL}\cdot \\text{PREP}\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi}.
+       \\text{LCU}\\ket{0}\\ket{\\psi}=\\text{PREP}^{\\dagger}\\cdot \\text{SEL}\\cdot \\text{PREP}\\ket{0}\\ket{\\psi}=\\tilde{A}\\ket{0}\\ket{\\psi}.
 
-    Here, the :math:`\\text{PREP}` operation prepares an auxiliary ``out_case`` Quantumfloat in the unary state :math:`\ket{\\text{unary}}`
-    that encodes the square root of the Chebyshev coefficients :math:`\sqrt{\\alpha_j}`. The :math:`\\text{SEL}` operation selects and applies the
+    Here, the :math:`\\text{PREP}` operation prepares an auxiliary ``out_case`` Quantumfloat in the unary state :math:`\\ket{\\text{unary}}`
+    that encodes the square root of the Chebyshev coefficients :math:`\\sqrt{\\alpha_j}`. The :math:`\\text{SEL}` operation selects and applies the
     appropriate Chebyshev polynomial operator :math:`T_k(A)`, implemented by :math:`(RU)^k`, controlled on ``out_case`` in the unary
-    state :math:`\ket{\\text{unary}}`. Based on the Hamming-weight :math:`k` of :math:`\ket{\\text{unary}}`,
+    state :math:`\\ket{\\text{unary}}`. Based on the Hamming-weight :math:`k` of :math:`\\ket{\\text{unary}}`,
     the polynomial :math:`T_{2k-1}` is block encoded and applied to the circuit.
 
     To construct a linear combination of Chebyshev polynomials up to the :math:`2j_0+1`-th order, as in the original paper,
-    our implementation requires :math:`j_0+1` qubits in the ``out_case`` state :math:`\ket{\\text{unary}}`.
+    our implementation requires :math:`j_0+1` qubits in the ``out_case`` state :math:`\\ket{\\text{unary}}`.
 
     The Chebyshev coefficients alternate in sign :math:`(-1)^j\\alpha_j`.
     Since the LCU lemma requires :math:`\\alpha_j>0`, negative terms are accounted for
@@ -279,7 +283,7 @@ def CKS(
     A : BlockEncoding
         The block-encoded Hermitian matrix to be inverted.
     eps : float
-        Target precision :math:`\epsilon`.
+        Target precision :math:`\\epsilon`.
     kappa : float
         An upper bound for the condition number :math:`\\kappa` of :math:`A`. This value defines the "gap"
         around zero where the function :math:`1/x` is not approximated.
@@ -359,7 +363,7 @@ def CKS(
         # CLASSICAL SOLUTION
         # [0.02944539 0.55423278 0.53013239 0.64102936]
 
-    We see that we obtained the same result in our quantum simulation up to precision :math:`\epsilon`!
+    We see that we obtained the same result in our quantum simulation up to precision :math:`\\epsilon`!
 
     To perform quantum resource estimation, replace the ``@terminal_sampling``
     decorator with ``@count_ops(meas_behavior="0")``:
@@ -413,7 +417,7 @@ def CKS(
         #  [ 0.  0. -2.  0.  0.  0.  5.  0.]
         #  [ 0.  0.  0. -2.  0.  0.  0.  5.]]
 
-    This matrix can be decomposed using three unitaries: the identity $I$, and two shift operators $V\colon\ket{k}\\rightarrow-\ket{k+N/2 \mod N}$ and $V^{\dagger}\colon\ket{k}\\rightarrow-\ket{k-N/2 \mod N}$.
+    This matrix can be decomposed using three unitaries: the identity $I$, and two shift operators $V\\colon\\ket{k}\\rightarrow-\\ket{k+N/2 \\mod N}$ and $V^{\\dagger}\\colon\\ket{k}\\rightarrow-\\ket{k-N/2 \\mod N}$.
     We define their corresponding functions and the block-encoding using Linear Combination of Unitaries (LCU):
 
     ::

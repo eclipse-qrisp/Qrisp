@@ -77,7 +77,7 @@ def create_QUBO_cost_operator(Q):
     Returns
     -------
     cost_operator : function
-        A function receiving a :ref:`QuantumVariable` and a real parameter $\gamma$.
+        A function receiving a :ref:`QuantumVariable` and a real parameter $\\gamma$.
         This function performs the application of the cost operator.
 
     """

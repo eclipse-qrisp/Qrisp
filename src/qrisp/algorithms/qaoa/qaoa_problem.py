@@ -155,9 +155,9 @@ class QAOAProblem:
             The amount of QAOA layers.
         init_type : string, optional
             Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``:
-            The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.
+            The parameters are initialized uniformly at random in the interval $[0,\\pi/2]$.
             For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
-            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).
+            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\\ket{-}^n$ state is prepared (the ground state for the X mixer).
 
         Returns
         -------
@@ -597,9 +597,9 @@ class QAOAProblem:
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
             Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``:
-            The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.
+            The parameters are initialized uniformly at random in the interval $[0,\\pi/2]$.
             For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
-            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).
+            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\\ket{-}^n$ state is prepared (the ground state for the X mixer).
         init_point : ndarray, shape (n,), optional
             Specifies the initial optimization parameters.
         optimizer : str, optional
@@ -711,9 +711,9 @@ class QAOAProblem:
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
             Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``:
-            The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.
+            The parameters are initialized uniformly at random in the interval $[0,\\pi/2]$.
             For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
-            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).
+            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\\ket{-}^n$ state is prepared (the ground state for the X mixer).
         init_point : ndarray, shape (n,), optional
             Specifies the initial optimization parameters.
         optimizer : str, optional
@@ -849,9 +849,9 @@ class QAOAProblem:
             The keyword arguments, that are used for the ``qarg.get_measurement``. The default is {}.
         init_type : string, optional
             Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``:
-            The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.
+            The parameters are initialized uniformly at random in the interval $[0,\\pi/2]$.
             For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
-            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).
+            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\\ket{-}^n$ state is prepared (the ground state for the X mixer).
         optimizer : str, optional
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.
