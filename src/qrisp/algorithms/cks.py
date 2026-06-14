@@ -58,7 +58,7 @@ def cks_params(eps: float, kappa: float, max_beta: int = None) -> Tuple[int, int
 
     Parameters
     ----------
-        eps : float
+    eps : float
         Target precision :math:`\epsilon`.
     kappa : float
         An upper bound for the condition number :math:`\kappa` of :math:`A`. This value defines the "gap"
