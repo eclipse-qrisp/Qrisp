@@ -469,3 +469,24 @@ def test_quantum_array_injection():
     (r_array << (lambda a, b: a == b))(a_array, b_array)
     for k in r_array.get_measurement().keys():
         assert k == (a_c == b_c)
+
+
+def test_quantum_array_modulus_invalid_state():
+    qa = QuantumArray(QuantumModulus(3), shape=(4,))
+    h(qa[0])
+
+    probs = dict(qa.get_measurement())
+    assert len(probs) == 4
+
+    valid = {}
+    nan_prob = 0.0
+    for outcome, prob in probs.items():
+        arr = np.asarray(outcome, dtype=float)
+        assert list(arr[1:]) == [0.0, 0.0, 0.0]
+        if np.isnan(arr[0]):
+            nan_prob += prob
+        else:
+            valid[int(arr[0])] = prob
+
+    assert set(valid) == {0, 1, 2}
+    assert_allclose(sorted(valid.values()) + [nan_prob], [0.25] * 4)
