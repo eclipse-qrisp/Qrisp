@@ -57,8 +57,9 @@ def convert_to_cz(
     Callable[[QuantumCircuit], QuantumCircuit]
         A pass function suitable for :meth:`PassManager.add_pass`.
 
-    Decompositions
-    --------------
+    Notes
+    -----
+    **Decompositions**
     - CX(control, target)  -> H(target), CZ(control, target), H(target)
     - CY(control, target)  -> S†(target), H(target), CZ(control, target), H(target), S(target)
     - SWAP(a, b)           -> three CX-style CZ sequences

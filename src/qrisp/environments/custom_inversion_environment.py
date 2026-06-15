@@ -70,7 +70,7 @@ def custom_inversion(*func, **cusi_kwargs):
         within the custom inversion context.
 
     Examples
-    ----------
+    --------
     We demonstrate the use of the ``custom_inversion`` decorator with a simple example.
     
     In this example, we define a function that implements Gidney's logical AND operation in the forward direction and uncomputes the

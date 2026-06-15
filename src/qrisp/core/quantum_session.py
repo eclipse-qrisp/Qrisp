@@ -1078,7 +1078,7 @@ class QuantumSession(QuantumCircuit):
         >>> x(qv[0])
         >>> print(qv.qs)
         QuantumCircuit:
-        ---------------
+        --------------
               ┌───┐┌───┐┌───┐
         qv.0: ┤ Y ├┤ X ├┤ X ├─────
               ├───┤└─┬─┘├───┤┌───┐
@@ -1087,7 +1087,7 @@ class QuantumSession(QuantumCircuit):
         qv.2: ───────■────■───────
         <BLANKLINE>
         Live QuantumVariables:
-        ----------------------
+        ---------------------
         QuantumVariable qv
 
         Because the CNOT gate on ``qv.1`` has to wait for the other CNOT gate

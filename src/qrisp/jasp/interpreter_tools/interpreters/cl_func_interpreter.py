@@ -18,7 +18,7 @@
 
 """
 Boolean Simulation Interpreter for Classical Function Evaluation
-=================================================================
+================================================================
 
 This module provides an interpreter that transforms Jaspr (JAX-based quantum 
 program representations) into purely classical JAX expressions. This enables 
