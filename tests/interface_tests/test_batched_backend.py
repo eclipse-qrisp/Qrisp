@@ -629,7 +629,9 @@ def test_hamiltonian_measurement_uses_single_run_async_call():
     from qrisp import QuantumVariable
     from qrisp.operators import X, Z
 
-    qv = QuantumVariable(1)  # |0> state
+    def state_prep():
+        qv = QuantumVariable(1)  # |0> state
+        return qv
 
     # Unequal coefficients → different operator variances → different shot budgets
     # per group (~799 shots for 3*X(0), ~266 shots for Z(0) at precision=0.1).
@@ -638,7 +640,7 @@ def test_hamiltonian_measurement_uses_single_run_async_call():
     counting = CountingWrapper(QrispSimulatorBackend())
     bb = counting.batched()
 
-    H.get_measurement(qv, precision=0.1, backend=bb)
+    H.expectation_value(state_prep, precision=0.1, backend=bb)()
 
     # One run_async call regardless of how many commuting groups
     # the Hamiltonian decomposes into

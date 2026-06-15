@@ -21,11 +21,14 @@ def test_pauli_hamiltonian():
     from qrisp import QuantumVariable, QuantumArray, h
     from qrisp.operators.qubit import X,Y,Z
     import numpy as np
-            
-    qv = QuantumVariable(2)
-    h(qv)
+
+    def state_prep():
+        qv = QuantumVariable(2)
+        h(qv)
+        return qv
+
     H = Z(0)*Z(1)
-    res = H.get_measurement(qv, precision = 0.001)
+    res = H.expectation_value(state_prep, precision = 0.001)()
     assert np.abs(res-0.0) < 2e-2
 
     # What is the semantics here?
@@ -49,9 +52,12 @@ def test_trotterization():
 
     U = G.trotterization(forward_evolution = False)
 
-    qv = QuantumVariable(2)
-    x(qv) 
-    E1 = G.get_measurement(qv)
+    def state_prep():
+        qv = QuantumVariable(2)
+        x(qv)
+        return qv
+
+    E1 = G.expectation_value(state_prep, precision = 0.001)()
     assert np.abs(E1-(-0.78)) < 2e-2
 
     # Find minimum Eigenvalue with Hamiltonian simulation + QPE

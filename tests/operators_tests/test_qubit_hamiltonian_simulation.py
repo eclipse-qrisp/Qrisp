@@ -16,9 +16,12 @@
 ********************************************************************************
 """
 
+import numpy as np
+from scipy.linalg import expm, norm
+
 from qrisp import QuantumVariable, x, QPE
 from qrisp.operators import X, Y, Z, A, C, P0, P1, QubitOperator
-import numpy as np
+
 
 def test_qubit_hamiltonian_simulation():
 
@@ -34,12 +37,15 @@ def test_qubit_hamiltonian_simulation():
         # Find minimum eigenvalue of H with Hamiltonian simulation and QPE
 
         # ansatz state
-        qv = QuantumVariable(2)
-        x(qv[0])
-        E1 = H.get_measurement(qv)
+        def state_prep():
+            qv = QuantumVariable(2)
+            x(qv[0])
+            return qv
+
+        E1 = H.expectation_value(state_prep, precision = 0.001)()
         assert abs(E1-E0)<5e-2
         
-        qpe_res = QPE(qv,U,precision=6,kwargs={"steps":3},iter_spec=True)
+        qpe_res = QPE(state_prep(),U,precision=6,kwargs={"steps":3},iter_spec=True)
 
         results = qpe_res.get_measurement()    
         sorted_results= dict(sorted(results.items(), key=lambda item: item[1], reverse=True))
@@ -49,7 +55,6 @@ def test_qubit_hamiltonian_simulation():
         assert abs(E_qpe-E0)<2e-2
     
     
-    from scipy.linalg import expm, norm
     def verify_trotterization(H,method):
         
         # Compute hermitean matrix
