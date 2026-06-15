@@ -297,6 +297,7 @@ This track demonstrates how to bridge the gap between complex scientific theory 
     .. grid-item-card::
         :shadow: sm
         :text-align: center
+        :class-body: d-flex justify-content-center align-items-center
 
         .. raw:: html
 
@@ -308,6 +309,7 @@ This track demonstrates how to bridge the gap between complex scientific theory 
 
         .. image:: ../../_static/BE_thumbnail.png
             :alt: Block Encoding Tutorial
+            :align: center
 
         +++
         **Quantum Linear Algebra**
