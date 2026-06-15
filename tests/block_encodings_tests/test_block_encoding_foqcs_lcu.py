@@ -201,39 +201,17 @@ def test_foqcs_lcu_heisenberg_prep():
     ref_state = np.zeros((2 ** (6 + 2 * L),), dtype="complex")
     zero_n = np.array([1] + [0] * (2**L - 1))
 
-    # g[0]
-    ref_state += g[0] * np.kron(
-            [1 if i == 2 ** (6 - 1) else 0 for i in range(2**6)],
-            np.kron(dicke_1, zero_n),
-        )
+    def _ref_state_helper(coeff, q, param):
+        """DO DOC FOR THIS TOO PLEASE :))"""
+
+        return coeff * np.kron([1 if i == 2 ** (6 - q) else 0 for i in range(2**6)], param)
+
+    coeff_arr = [g[0], g[1], g[2], J[0], J[1], J[2]]
+    param_arr = [np.kron(dicke_1, zero_n), dicke_double, np.kron(zero_n, dicke_1), np.kron(dicke_2NN, zero_n), dicke_2NN_double, np.kron(zero_n, dicke_2NN)]
     
-    # g[1]
-    ref_state += g[1] * np.kron(
-        [1 if i == 2 ** (6 - 2) else 0 for i in range(2**6)], dicke_double
-    )
-    
-    # g[2]
-    ref_state += g[2] * np.kron(
-        [1 if i == 2 ** (6 - 3) else 0 for i in range(2**6)],
-        np.kron(zero_n, dicke_1),
-    )
+    for i in range(6):
 
-    # J[0]
-    ref_state += J[0] * np.kron(
-        [1 if i == 2 ** (6 - 4) else 0 for i in range(2**6)],
-        np.kron(dicke_2NN, zero_n),
-    )
-
-    # J[1]
-    ref_state += J[1] * np.kron(
-        [1 if i == 2 ** (6 - 5) else 0 for i in range(2**6)], dicke_2NN_double
-    )
-
-    # J[2]
-    ref_state += J[2] * np.kron(
-        [1 if i == 2 ** (6 - 6) else 0 for i in range(2**6)],
-        np.kron(zero_n, dicke_2NN),
-    )
+        ref_state += _ref_state_helper(coeff_arr[i], i + 1, param_arr[i])
 
     # Test that the state received is the same as the reference
     assert np.allclose(statev, ref_state, atol=1e-06), (
@@ -384,56 +362,87 @@ def test_foqcs_lcu_spin_glass_prep():
     ref_state = np.zeros(2 ** (5 * L), dtype=complex)
     zero_n = np.array([1] + [0] * (2**L - 1))
 
-    # Modify the original coefficients for the manual state building.
+    def _add_ref_state_kron_term(ref_state, coeff, eye_3L, eye_power, *right_factors):
+        """DO DOC OF THIS PLEASE"""
+
+        right_state = right_factors[0]
+
+        for factor in right_factors[1:]:
+            right_state = np.kron(right_state, factor)
+
+        ref_state += coeff * np.kron(
+            eye_3L[2 ** eye_power],
+            right_state,
+        )
+
+        return ref_state
+
+    eye_3L = np.eye(2 ** (3 * L))
+
     for k in range(L):
         for i in range(0, L - k):
             # g terms
             if k == 0:
                 ket = np.zeros(2**L)
                 ket[2 ** (L - i - 1)] = 1
+
                 # gx
-                ref_state += g[0, i] * np.kron(
-                    [
-                        1 if j == 2 ** (3 * L - 1) else 0
-                        for j in range(2 ** (3 * L))
-                    ],
-                    np.kron(ket, zero_n),
+                ref_state = _add_ref_state_kron_term(
+                    ref_state,
+                    g[0, i],
+                    eye_3L,
+                    3 * L - 1,
+                    ket,
+                    zero_n,
                 )
+
                 # gz
-                ref_state += g[2, i] * np.kron(
-                    [1 if j == 2 ** (L - 1) else 0 for j in range(2 ** (3 * L))],
-                    np.kron(zero_n, ket),
+                ref_state = _add_ref_state_kron_term(
+                    ref_state,
+                    g[2, i],
+                    eye_3L,
+                    L - 1,
+                    zero_n,
+                    ket,
                 )
+
                 double_ket = np.zeros(2 ** (2 * L))
                 double_ket[2 ** (L - i - 1) + 2 ** (2 * L - i - 1)] = 1
+
                 # gy
-                ref_state += g[1, i] * np.kron(
-                    [
-                        1 if j == 2 ** (2 * L - 1) else 0
-                        for j in range(2 ** (3 * L))
-                    ],
+                ref_state = _add_ref_state_kron_term(
+                    ref_state,
+                    g[1, i],
+                    eye_3L,
+                    2 * L - 1,
                     double_ket,
                 )
+
             # J terms
             else:
                 ket = np.zeros(2**L)
                 ket[2 ** (L - i - 1) + 2 ** (L - i - k - 1)] = 1
-                # gx
-                ref_state += J[0, i, i + k] * np.kron(
-                    [
-                        1 if j == 2 ** (3 * L - k - 1) else 0
-                        for j in range(2 ** (3 * L))
-                    ],
-                    np.kron(ket, zero_n),
+
+                # Jx
+                ref_state = _add_ref_state_kron_term(
+                    ref_state,
+                    J[0, i, i + k],
+                    eye_3L,
+                    3 * L - k - 1,
+                    ket,
+                    zero_n,
                 )
-                # gz
-                ref_state += J[2, i, i + k] * np.kron(
-                    [
-                        1 if j == 2 ** (L - k - 1) else 0
-                        for j in range(2 ** (3 * L))
-                    ],
-                    np.kron(zero_n, ket),
+
+                # Jz
+                ref_state = _add_ref_state_kron_term(
+                    ref_state,
+                    J[2, i, i + k],
+                    eye_3L,
+                    L - k - 1,
+                    zero_n,
+                    ket,
                 )
+
                 double_ket = np.zeros(2 ** (2 * L))
                 double_ket[
                     2 ** (L - i - 1)
@@ -441,14 +450,16 @@ def test_foqcs_lcu_spin_glass_prep():
                     + 2 ** (2 * L - i - 1)
                     + 2 ** (2 * L - i - k - 1)
                 ] = 1
-                # gy
-                ref_state += J[1, i, i + k] * np.kron(
-                    [
-                        1 if j == 2 ** (2 * L - k - 1) else 0
-                        for j in range(2 ** (3 * L))
-                    ],
+
+                # Jy
+                ref_state = _add_ref_state_kron_term(
+                    ref_state,
+                    J[1, i, i + k],
+                    eye_3L,
+                    2 * L - k - 1,
                     double_ket,
                 )
+
     ref_state = ref_state / np.linalg.norm(ref_state)
 
     statev[np.isclose(statev, 0j, atol=1e-6)] = 0
