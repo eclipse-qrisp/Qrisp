@@ -34,28 +34,26 @@ import sys
 sys.path.insert(0, os.path.abspath("../../src/qrisp"))
 sys.path.insert(0, os.path.abspath("_ext"))
 
-# Suppress numpydoc warnings for non-standard sections in code-block examples
-# "QuantumCircuit:" and "Live QuantumVariables:" appear as literal circuit output
-# inside code block examples; they are not actual docstring sections.
 import warnings
+# Suppress numpydoc warnings for circuit output in docstring code blocks
 warnings.filterwarnings(
     "ignore",
     message="Unknown section Quantumcircuit*",
     category=UserWarning,
     module="numpydoc",
-)
+)  # "QuantumCircuit:" is literal circuit output, not a section header
 warnings.filterwarnings(
     "ignore",
     message="Unknown section Live Quantumvariables*",
     category=UserWarning,
     module="numpydoc",
-)
+)  # "Live QuantumVariables:" is literal circuit output, not a section header
 warnings.filterwarnings(
     "ignore",
     message="potentially wrong underline length*",
     category=UserWarning,
     module="numpydoc",
-)
+)  # Underline dashes are part of literal circuit output
 
 # -- Project information -----------------------------------------------------
 

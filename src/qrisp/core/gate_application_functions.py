@@ -264,52 +264,62 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
                 print(f"Qubit count: \t{compiled_qc.num_qubits()}")
 
 
-    .. code-block:: none
-
-        Method: gray
-        Depth:          50
-        CNOT count:     30
-        Qubit count:    5
-
-        Method: gray_pt
-        Depth:          34
-        CNOT count:     16
-        Qubit count:    5
-
-        Method: maslov
-        Depth:          43
-        CNOT count:     18
-        Qubit count:    6
-
-        Method: balauca
-        Depth:          22
-        CNOT count:     18
-        Qubit count:    7
-
-        Method: yong
-        Depth:          77
-        CNOT count:     30
-        Qubit count:    6
-
-        Method: gray
-        Depth:          3106
-        CNOT count:     2046
-        Qubit count:    11
-
-        Method: gray_pt
-        Depth:          2050
-        CNOT count:     1024
-        Qubit count:    11
-
-        Method: balauca
-        Depth:          53
-        CNOT count:     54
-        Qubit count:    18
-
-        Method: yong
-        Depth:          621
-        CNOT count:     264
-        Qubit count:    12
+    >>> benchmark_mcx(4, methods = ["gray", "gray_pt", "maslov", "balauca", "yong"])
+    ==================
+    Method: gray
+    ------------------
+    Depth:          50
+    CNOT count:     30
+    Qubit count:    5
+    ==================
+    Method: gray_pt
+    ------------------
+    Depth:          34
+    CNOT count:     16
+    Qubit count:    5
+    ==================
+    Method: maslov
+    ------------------
+    Depth:          43
+    CNOT count:     18
+    Qubit count:    6
+    ==================
+    Method: balauca
+    ------------------
+    Depth:          22
+    CNOT count:     18
+    Qubit count:    7
+    ==================
+    Method: yong
+    ------------------
+    Depth:          77
+    CNOT count:     30
+    Qubit count:    6
+    >>> benchmark_mcx(10, methods = ["gray", "gray_pt", "balauca", "yong"])
+    ==================
+    Method: gray
+    ------------------
+    Depth:          3106
+    CNOT count:     2046
+    Qubit count:    11
+    ==================
+    Method: gray_pt
+    ------------------
+    Depth:          2050
+    CNOT count:     1024
+    Qubit count:    11
+    ==================
+    Method: balauca
+    ------------------
+    Depth:          53
+    CNOT count:     54
+    Qubit count:    18
+    ==================
+    Method: yong
+    ------------------
+    Depth:          621
+    CNOT count:     264
+    Qubit count:    12
 
     **Mid circuit measurement based methods**
 
