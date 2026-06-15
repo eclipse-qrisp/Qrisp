@@ -32,6 +32,8 @@ work through every section in order as each page stands on its own.
      - Writing a tutorial or example for your implementation.
    * - :ref:`DevGuideFirstIssues`
      - First issues to tackle and feature requests.
+   * - :ref:`DevGuideReleasing`
+     - How to cut a Qrisp release — version bump, tagging, building, and publishing.
 
 .. toctree::
    :hidden:
@@ -44,3 +46,4 @@ work through every section in order as each page stands on its own.
    issues_pull_requests
    write_a_tutorial
    issues_to_tackle
+   releasing
