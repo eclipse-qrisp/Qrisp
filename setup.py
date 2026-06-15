@@ -53,5 +53,6 @@ setuptools.setup(
     setup_requires=REQUIREMENTS,
     extras_require={"iqm": ["iqm-client[qiskit]"]},
     packages=setuptools.find_packages(where="src"),
+    package_data={"qrisp": ["py.typed"]},
     python_requires=">=3.11",
 )
