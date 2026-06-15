@@ -49,21 +49,17 @@ Step-by-step instructions
    * **Minor** (0.8.2 → 0.9.0) — new features, deprecations, backward-compatible API additions.
    * **Major** (0.8.2 → 1.0.0) — breaking changes to the public API.
 
-#. **Update CHANGELOG.md.**
+#. **Update CHANGELOG.md (optional but recommended).**
 
-   Ensure :file:`CHANGELOG.md` reflects all notable changes since the last
-   release.  If the :doc:`changelog workflow <index:workflows/changelog.yml>`
-   is active, it will have kept the ``Unreleased`` section up-to-date on every
-   push to ``main``.
+   If you maintain a :file:`CHANGELOG.md`, move any unreleased entries under a
+   heading for the new version.  This step is manual — the automation only
+   handles the GitHub Release notes.
 
-   Move the ``Unreleased`` entries under a new heading for the version being
-   released (e.g. ``## [v0.8.3] - 2026-06-15``) and commit the result.
-
-#. **Commit the version bump and changelog update.**
+#. **Commit the version bump.**
 
    .. code-block:: bash
 
-       git add setup.cfg CHANGELOG.md
+       git add setup.cfg
        git commit -m "chore: bump version to 0.8.3"
 
 #. **Create a signed tag.**
@@ -76,9 +72,10 @@ Step-by-step instructions
        git tag -a v0.8.3 -m "v0.8.3"
        git push origin v0.8.3
 
-   Pushing the tag triggers the :doc:`changelog workflow <index:workflows/changelog.yml>`,
-   which automatically creates a GitHub Release with notes extracted from
-   :file:`CHANGELOG.md`.
+   Pushing the tag triggers the **Release Drafter** workflow
+   (:file:`.github/workflows/changelog.yml`), which promotes the current draft
+   to a real GitHub Release.  The release notes are auto-generated from the
+   labels on every PR merged since the last tag.
 
 #. **Build the distribution packages.**
 
@@ -140,9 +137,9 @@ This release process is supported by the following CI workflows:
    * - Workflow
      - What it does
    * - :file:`.github/workflows/changelog.yml`
-     - On push to ``main``, rebuilds :file:`CHANGELOG.md` from git history.
-       On tag push (``v*``), creates a GitHub Release with auto-generated
-       notes. See the inline comments in the file for a detailed walkthrough.
+     - Uses `release-drafter/release-drafter` to draft release notes
+       incrementally as PRs are merged (categorised by label).  On tag
+       push (``v*``), publishes the draft as a real GitHub Release.
    * - :file:`.github/workflows/qrisp_test.yml`
      - Runs ``pytest`` on every push and pull request to ``main``. Releases
        should never be cut from a branch that fails tests.

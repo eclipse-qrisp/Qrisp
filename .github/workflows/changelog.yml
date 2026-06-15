@@ -1,301 +1,57 @@
 # =============================================================================
-# Changelog & Release workflow
+# Release Drafter
 # =============================================================================
-# This workflow does two things using only git and the GitHub CLI (gh):
+# Automatically drafts release notes as PRs are merged, and publishes a
+# GitHub Release when a version tag is pushed.
 #
-#   1. On push to main — updates CHANGELOG.md with any new commits since the
-#      last release tag, so the changelog stays current between releases.
+# HOW IT WORKS
+# ─────────────
+#   1. PR merged to main  →  Release Drafter adds it to a draft release
+#                             under the section matching its GitHub label.
+#   2. Tag v* pushed       →  The draft is promoted to a real release with
+#                             auto-computed version (major/minor/patch based
+#                             on labels).
 #
-#   2. On tag push (v*) — creates a GitHub Release with auto-generated notes
-#      listing every commit and PR merged since the previous tag.
+# SETUP (one time)
+# ────────────────
+#   1. Merge this PR (workflow + config) to main so Release Drafter can
+#      read .github/release-drafter.yml from the default branch.
+#   2. Create the labels in your repo matching the categories above:
+#      breaking, feature, bug, refactoring, performance, documentation,
+#      testing, ci, dependencies, chore, skip-changelog
+#   3. That's it.  From now on, label PRs appropriately and the draft will
+#      stay current automatically.
 #
-# No conventional commits, no external actions, no config files needed.
-# The formatting is controlled entirely by the template in the script below.
-#
-# HOW IT WORKS:
-#   ┌───────────────────────────────────────────────────────────────┐
-#   │   Push to main  ──► rebuild CHANGELOG.md from git history    │
-#   │                                                              │
-#   │   Push v* tag   ──► build release notes + create Release     │
-#   └───────────────────────────────────────────────────────────────┘
+# WHY THIS OVER A CUSTOM SCRIPT
+# ─────────────────────────────
+#   - Incremental:  the draft is updated on *every* merge, not rebuilt
+#     from scratch at release time.
+#   - Per-PR labels make categorisation explicit and reviewable.
+#   - Handles edge cases (re-opened PRs, closed-without-merge, etc.).
 # =============================================================================
 
-name: Changelog & Release
+name: Release Drafter
 
 on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, closed]
+    branches: [main]
   push:
     branches: [main]
-    tags:
-      - "v*"
-
-  # Allow manual trigger to regenerate CHANGELOG.md or test a release
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Tag to generate release notes for (leave blank for unreleased)"
-        required: false
+    tags: ["v*"]
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
-  changelog:
+  draft:
     runs-on: ubuntu-latest
-
     steps:
-      # ── 1. Check out with full history ─────────────────────────────────────
-      # We need --depth 0 (all history) because we traverse git tags and
-      # commits to build the changelog.
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: release-drafter/release-drafter@v6
         with:
-          fetch-depth: 0
-
-      # ── 2. Generate CHANGELOG.md ───────────────────────────────────────────
-      # This step runs a Python script that:
-      #   a) Finds every version tag (v*.*.*) in the repo.
-      #   b) For each tag, collects the commits since the previous tag.
-      #   c) Groups them by 'type' (the prefix before the colon in commit
-      #      messages like "Fix the widget" or "Add new gate").
-      #      No strict conventional-commit enforcement — it just uses whatever
-      #      word comes before ": " as a grouping label.
-      #   d) Writes a formatted CHANGELOG.md with a "Keep a Changelog"-style
-      #      structure.
-      #
-      # You can customise the grouping logic by editing the TYPES dict in the
-      # script (lines ~106-120) — just map keywords to section headings.
-      - name: Build CHANGELOG.md
-        shell: python
-        # Working directory is the repo root because actions/checkout places
-        # us there.
-        run: |
-          import subprocess, re, os
-          from collections import defaultdict
-
-          # ── Helper: run a shell command and return stdout ────────────────
-          def run(cmd):
-              return subprocess.check_output(cmd, shell=True, text=True).strip()
-
-          # ── Step A: find all version tags, sorted semantically ──────────
-          # We use "git tag --list" to get tags matching v*.*.*, then sort
-          # them by version (not alphabetically, since v0.10.0 would sort
-          # before v0.9.0 alphabetically).
-          raw_tags = run("git tag --list 'v*.*.*' --sort=-version:refname")
-          tags = raw_tags.split("\n") if raw_tags else []
-
-          # If this run was triggered by a tag, set the current version from
-          # the GITHUB_REF environment variable (set by GitHub Actions).
-          ref = os.environ.get("GITHUB_REF", "")
-          current_tag = None
-          if ref.startswith("refs/tags/v"):
-              current_tag = ref.replace("refs/tags/", "")
-
-          # ── Step B: define how commit prefixes map to section headings ──
-          # The key is the prefix text (case-insensitive) — whatever word
-          # appears before ": " in the commit message. "Fix: widget" → Bug Fixes.
-          # If no colon is found, the commit goes into "Miscellaneous".
-          TYPES = {
-              "feat":    "Features",
-              "feature": "Features",
-              "add":     "Features",
-              "fix":     "Bug Fixes",
-              "bug":     "Bug Fixes",
-              "hotfix":  "Bug Fixes",
-              "docs":    "Documentation",
-              "doc":     "Documentation",
-              "perf":    "Performance",
-              "refactor":"Refactoring",
-              "style":   "Refactoring",
-              "test":    "Testing",
-              "ci":      "CI / Build",
-              "build":   "CI / Build",
-              "chore":   "Miscellaneous",
-              "bump":    "Dependencies",
-              "revert":  "Reverts",
-          }
-
-          # ── Step C: build the changelog body ─────────────────────────────
-          lines = []
-          lines.append("# Changelog")
-          lines.append("")
-          lines.append(
-              "All notable changes to Qrisp are documented here."
-          )
-          lines.append("")
-          lines.append(
-              "The format follows "
-              "[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), "
-              "and Qrisp adheres to "
-              "[Semantic Versioning](https://semver.org/spec/v2.0.0.html)."
-          )
-          lines.append("")
-
-          # Start from the newest tag (index 0) and work backwards.
-          # If there are no tags yet, we show all commits as "Unreleased".
-          if not tags:
-              tags_for_section = [(None, "HEAD")]
-          elif current_tag and current_tag in tags:
-              # Build sections for each tag from current_tag down to the oldest
-              idx = tags.index(current_tag)
-              tags_for_section = []
-              for i in range(idx, len(tags)):
-                  prev = tags[i + 1] if i + 1 < len(tags) else None
-                  tags_for_section.append((tags[i], prev))
-              # Also include the unreleased section (if there are commits
-              # after the newest tag)
-              tags_for_section.insert(0, (None, tags[0]))
-          else:
-              # No specific current tag — show the most recent tag and unreleased
-              tags_for_section = [(None, tags[0])]
-              for i in range(len(tags)):
-                  prev = tags[i + 1] if i + 1 < len(tags) else None
-                  tags_for_section.append((tags[i], prev))
-
-          # ── Helper: get formatted date from a tag's commit ──────────────
-          def get_tag_date(tag):
-              # git log -1 --format=%as on the tag's commit gives YYYY-MM-DD
-              return run(f"git log -1 --format=%as {tag}")
-
-          # ── Helper: get tag message (annotation) for annotated tags ─────
-          def get_tag_message(tag):
-              msg = run(f"git tag -l --format='%(contents)' {tag}")
-              return msg.split("\n")[0] if msg else ""
-
-          for tag, prev_tag in tags_for_section:
-              # ── Determine the commit range for this section ───────────────
-              if tag is None:
-                  # "Unreleased" section — commits since the newest tag
-                  section_title = "Unreleased"
-                  if prev_tag:
-                      range_spec = f"{prev_tag}..HEAD"
-                  else:
-                      range_spec = "HEAD"  # no tags yet, show everything
-              else:
-                  # Released version — commits between this tag and the previous
-                  section_title = tag
-                  if prev_tag:
-                      range_spec = f"{prev_tag}..{tag}"
-                  else:
-                      range_spec = tag
-
-              # ── Collect commits in this range ────────────────────────────
-              # Format: <short-hash> <subject>
-              # We use --first-parent to only see merge-commit messages,
-              # which in most GitHub workflows maps 1:1 to PR titles.
-              commit_output = run(
-                  f"git log --oneline --first-parent {range_spec}"
-              )
-              commits = [
-                  c for c in commit_output.split("\n")
-                  if c.strip()
-              ] if commit_output else []
-
-              if not commits:
-                  continue
-
-              # ── Group commits by type ──────────────────────────────────────
-              grouped = defaultdict(list)
-              for c in commits:
-                  # Example: "a1b2c3d Fix the widget crash (#42)"
-                  parts = c.split(" ", 1)
-                  subject = parts[1] if len(parts) > 1 else parts[0]
-                  hash_val = parts[0]
-
-                  # Try to extract a type prefix (word before ": ")
-                  prefix = subject.split(":")[0].lower() if ": " in subject else ""
-                  section = TYPES.get(prefix, "Miscellaneous")
-                  grouped[section].append(subject)
-
-              # ── Write the section header ───────────────────────────────────
-              if tag is None:
-                  lines.append(f"## [{section_title}]")
-              else:
-                  date_str = get_tag_date(tag)
-                  lines.append(f"## [{section_title}] - {date_str}")
-
-              # ── Write the grouped commits ─────────────────────────────────
-              # Sort sections so important ones appear first
-              section_order = [
-                  "Breaking Changes", "Features", "Bug Fixes", "Performance",
-                  "Refactoring", "Documentation", "Testing", "CI / Build",
-                  "Dependencies", "Miscellaneous", "Reverts",
-              ]
-              for section in section_order:
-                  items = grouped.get(section)
-                  if not items:
-                      continue
-                  lines.append("")
-                  lines.append(f"### {section}")
-                  for item in items:
-                      # Strip merge-commit noise: remove "(#123)" suffix so we
-                      # can re-add it cleanly.
-                      clean = re.sub(r"\s+\(#(\d+)\)$", r" (\1)", item)
-                      lines.append(f"  - {clean}")
-
-              lines.append("")
-
-          # ── Step D: write the file ─────────────────────────────────────────
-          with open("CHANGELOG.md", "w") as f:
-              f.write("\n".join(lines) + "\n")
-
-          print("CHANGELOG.md written successfully")
-
-      # ── 3. Commit and push CHANGELOG.md ────────────────────────────────────
-      # We only commit on push to main (not on tag pushes), because updating
-      # the changelog on a release tag would create conflicting commits.
-      - name: Commit CHANGELOG.md
-        if: github.ref == 'refs/heads/main'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md
-          if git diff --cached --quiet; then
-            echo "No changes to CHANGELOG.md — skipping commit"
-          else
-            git commit -m "docs: update CHANGELOG.md [skip ci]"
-            git push
-          fi
-
-      # ── 4. Create GitHub Release (tag pushes only) ────────────────────────
-      # Uses the GitHub CLI (gh) which is pre-installed on GitHub's runners.
-      # We extract just the notes for this specific tag from CHANGELOG.md.
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+          config-name: release-drafter.yml
+          # Publish only when a tag is pushed, not on every merge to main
+          publish: ${{ startsWith(github.ref, 'refs/tags/v') }}
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-
-          # Extract this tag's section from CHANGELOG.md using awk.
-          # The section starts with "## [$TAG]" and ends at the next "## [".
-          NOTES=$(awk '
-            /^## \['"$TAG"'\]/ { found=1; next }
-            found && /^## \[/ { exit }
-            found { print }
-          ' CHANGELOG.md)
-
-          if [ -z "$NOTES" ]; then
-            # Fallback: use git log directly if CHANGELOG.md section is empty
-            PREV_TAG=$(git describe --tags --abbrev=0 "$TAG~1" 2>/dev/null || true)
-            if [ -n "$PREV_TAG" ]; then
-              NOTES="## Changes since $PREV_TAG"$'\n'"$(git log --oneline --first-parent "$PREV_TAG..$TAG")"
-            else
-              NOTES="## Changes in $TAG"$'\n'"$(git log --oneline --first-parent "$TAG")"
-            fi
-          fi
-
-          # Write notes to a temp file and pass to gh release create
-          echo "$NOTES" > /tmp/release_notes.md
-
-          # Determine if this is a pre-release (tag contains hyphen, e.g. v0.9.0-alpha)
-          if [[ "$TAG" == *-* ]]; then
-            PRERELEASE="--prerelease"
-          else
-            PRERELEASE=""
-          fi
-
-          gh release create "$TAG" \
-            --title "$TAG" \
-            --notes-file /tmp/release_notes.md \
-            --latest \
-            $PRERELEASE
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
