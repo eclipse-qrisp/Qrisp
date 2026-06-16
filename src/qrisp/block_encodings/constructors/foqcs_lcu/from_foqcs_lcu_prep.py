@@ -31,7 +31,8 @@ def build_from_foqcs_lcu_prep(
     p_l: Callable[[QuantumVariable], None],
     num_q_ops: int = 1,
     is_hermitian: bool = False,
-    norm: "ArrayLike" = 1
+    norm: "ArrayLike" = 1,
+    num_q_anc: int = -1
 ) -> BlockEncoding:
     r"""
     This method implements the Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) structure.
@@ -43,6 +44,38 @@ def build_from_foqcs_lcu_prep(
     :meth:`from_foqcs_lcu_prep` is designed using partial functions for the ``p_r`` and ``p_l`` parameters, letting
     users pass more or less anything for the :math:`P_{R}` and :math:`P_{L}` subroutines. This means you can experiment
     with different :math:`P_{R}` and :math:`P_{L}` pairs to your hearts desire! 🦊
+
+    Note, custom :math:`P_R` and :math:`P_L` routines must prepare an ancilla register
+    containing at least :math:`2L` qubits, where :math:`L` is the number of operand
+    qubits. The final :math:`2L` qubits of this ancilla register are interpreted by
+    the FOQCS-LCU ``SELECT`` block as two activation registers of length
+    :math:`L`:
+
+    .. math::
+
+        [x_0, \dots, x_{L-1}, z_0, \dots, z_{L-1}].
+
+    The :math:`x_i` qubits control the application of :math:`X_i` to the operand
+    register, while the :math:`z_i` qubits control the application of :math:`Z_i`.
+
+    Any additional ancilla qubits required by the custom PREP routine must precede
+    these :math:`2L` activation qubits. Thus, if the PREP routine uses
+    :math:`m` extra ancillas, the ancilla register layout is
+
+    .. math::
+
+        [\text{extra}_0, \dots, \text{extra}_{m-1},
+        x_0, \dots, x_{L-1},
+        z_0, \dots, z_{L-1}].
+
+    For example, with :math:`L = 2`, the FOQCS-LCU activation part consists of
+    four ancilla qubits,
+
+    .. math::
+
+        [x_0, x_1, z_0, z_1],
+
+    possibly preceded by any extra PREP ancillas.
 
     Parameters
     ----------
@@ -123,6 +156,12 @@ def build_from_foqcs_lcu_prep(
     norm : "ArrayLike"
         Normalization factor.
         The default is `1` in case no normalization factor is passed.
+
+    num_q_anc : int
+        Number of ancillary qubits required for the passed PREP method. (Minimum :math:`2\dot` `num_q_ops`)
+        For example, :func:`foqcs_prep_heisenberg` requires :math:`2\dot` `num_q_ops` :math:` + 6` qubits.
+        This parameter is necessary for the custom PREP methods. It is defined for built-in methods and can be ommited.
+        The default is -1.
 
     Returns
     -------
@@ -391,7 +430,13 @@ def build_from_foqcs_lcu_prep(
 
     """
     from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_preps import get_foqcs_lcu_prep_num_of_ancillae
-    n_anc = get_foqcs_lcu_prep_num_of_ancillae(p_r, num_q_ops)
+    if num_q_anc == -1:
+        n_anc = get_foqcs_lcu_prep_num_of_ancillae(p_r, num_q_ops)
+    elif num_q_anc >= num_q_ops * 2:
+        n_anc = num_q_anc
+    else:
+        raise ValueError(f"FOQCS-LCU requires at least 2L ancillary qubits."
+                         f" Expected at least {num_q_ops * 2}, but received {num_q_anc}.")
 
     # FOQCS-LCU SELECT
     def _select(num_q_ops: int, n_anc: int, ancillae, *operands):
@@ -399,20 +444,13 @@ def build_from_foqcs_lcu_prep(
         cx(ancillae[extra_anc:extra_anc + num_q_ops], operands[0])
         cz(ancillae[extra_anc + num_q_ops:], operands[0])
 
-    if p_l is None:
-        @qache
-        def unitary(*args):
-            # LCU = PREP SELECT PREP^dg
-            with conjugate(p_r)(args[0]):
-                _select(num_q_ops, n_anc, args[0], *args[1:])
-    else:
-        @qache
-        def unitary(*args):
-            # LCU = PREP_R SELECT PREP_L^dg (note: PREP(a)^dg != PREP(a*)^dg, where PREP(a) = PREP_R, and PREP(a*) = PREP_L)
-            p_r(args[0])
-            _select(num_q_ops, n_anc, args[0], *args[1:])
-            with invert():
-                p_l(args[0])
+    @qache
+    def unitary(*args):
+        # LCU = PREP_R SELECT PREP_L^dg (note: PREP(a)^dg != PREP(a*)^dg, where PREP(a) = PREP_R, and PREP(a*) = PREP_L)
+        p_r(args[0])
+        _select(num_q_ops, n_anc, args[0], *args[1:])
+        with invert():
+            p_l(args[0])
 
     return cls(
         norm,
