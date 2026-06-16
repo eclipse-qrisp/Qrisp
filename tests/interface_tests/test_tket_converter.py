@@ -160,3 +160,23 @@ def test_to_pytket_u1_angle():
     expected = np.diag([1, np.exp(1j * theta)])
 
     assert _matches_up_to_global_phase(unitary, expected)
+
+
+def test_to_pytket_cp_controlled_phase():
+    """Regression for #630: cp must map to controlled-phase, not CRz.
+
+    cp(theta) = diag(1, 1, 1, e^{i*theta}). Before the fix it was emitted as a
+    CRz, which splits the phase across the two target states and is a different
+    gate. The converted unitary must equal the controlled-phase matrix up to a
+    global phase.
+    """
+    pytest.importorskip("pytket")
+
+    theta = 0.7
+    qc = QuantumCircuit(2)
+    qc.append(CPGate(theta), [0, 1])
+
+    unitary = qc.to_pytket().get_unitary()
+    expected = np.diag([1, 1, 1, np.exp(1j * theta)])
+
+    assert _matches_up_to_global_phase(unitary, expected)

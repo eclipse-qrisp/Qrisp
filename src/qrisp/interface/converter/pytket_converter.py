@@ -159,10 +159,9 @@ def pytket_converter(qc, boxFlag=False):
                 tket_ins = OpType.CZ
 
         elif op.name == "cp":
-            if hasattr(op, "ctrl_state"):
-                tket_ins = OpType.CRz
-            else:
-                tket_ins = OpType.Rz
+            # cp is the controlled-phase gate diag(1,1,1,e^{i*theta}); pytket's
+            # CU1 is exactly controlled-U1 (CRz is a different gate). (#630)
+            tket_ins = OpType.CU1
 
         elif op.name == "sx":
             # bugged -> params empty
