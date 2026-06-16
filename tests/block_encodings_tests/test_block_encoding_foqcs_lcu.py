@@ -202,7 +202,12 @@ def test_foqcs_lcu_heisenberg_prep():
     zero_n = np.array([1] + [0] * (2**L - 1))
 
     def _ref_state_helper(coeff, q, param):
-        """DO DOC FOR THIS TOO PLEASE :))"""
+        r"""
+        Build one weighted Heisenberg PREP reference-state branch.
+
+        Selects the q-th basis state of the 6-qubit selector register,
+        tensors it with ``param``, and scales the resulting branch by ``coeff``.
+        """
 
         return coeff * np.kron([1 if i == 2 ** (6 - q) else 0 for i in range(2**6)], param)
 
@@ -363,7 +368,13 @@ def test_foqcs_lcu_spin_glass_prep():
     zero_n = np.array([1] + [0] * (2**L - 1))
 
     def _add_ref_state_kron_term(ref_state, coeff, eye_3L, eye_power, *right_factors):
-        """DO DOC OF THIS PLEASE"""
+        r"""
+        Add one weighted tensor-product branch to the spin-glass reference state.
+
+        Selects the ``|2**eye_power>`` basis state of the 3L-qubit selector
+        register, tensors together the supplied right-hand state factors, and
+        accumulates the resulting branch into ``ref_state`` scaled by ``coeff``.
+        """
 
         right_state = right_factors[0]
 
