@@ -1,6 +1,3 @@
-"""
-Unit tests for Gidney Figure 1-4 gate implementations.
-"""
 
 import pytest
 
