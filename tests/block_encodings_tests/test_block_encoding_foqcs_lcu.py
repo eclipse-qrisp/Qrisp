@@ -1400,7 +1400,7 @@ def test_block_encoding_foqcs_lcu_addition(H1, H2):
     BE2 = BlockEncoding.from_operator(H2)
 
     H3 = H1 + H2
-    BE3 = H3.pauli_block_encoding()
+    BE3 = BlockEncoding.from_operator(H3)
     BE_addition = BE1 + BE2
 
     @terminal_sampling
