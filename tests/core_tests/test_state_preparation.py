@@ -59,6 +59,9 @@ def _compute_statevector_logical_qubits(
     return logical_amplitudes
 
 
+np.random.seed(42)  # Deterministic for reproducible test results
+
+
 def _gen_real_vector(n):
     """Returns a full real normalized vector."""
     v = np.random.rand(1 << n) - 0.5
