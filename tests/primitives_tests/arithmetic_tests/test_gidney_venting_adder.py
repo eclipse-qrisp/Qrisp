@@ -945,7 +945,7 @@ def _ts_cq_gidney_roundtrip(n):
     return target
 
 
-@pytest.mark.xfail(reason="n<6: dirty_ancillae_adder excess vent XOR fix incomplete")
+@pytest.mark.xfail(reason="Non-deterministic under @terminal_sampling for small registers: inner carry_venting's excess vent has no dirty qubit, and the single-trajectory simulation gives random results")
 @pytest.mark.parametrize("n", [3, 4, 5])
 def test_cq_gidney_roundtrip_small(n):
     """H⊗ⁿ → add 1 (venting) → subtract 1 (gidney) → H⊗ⁿ leaves |0⟩ (small n: xfail)."""

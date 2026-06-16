@@ -194,6 +194,7 @@ def carry_venting_adder(
     c_in: QuantumVariable | None = None,
     carry_xor_target: QuantumVariable | None = None,
     ctrl: QuantumVariable | None = None,
+    vent_final: bool = True,
 ) -> tuple[int, int]:
     r"""Fig. 2 — carry-venting CQ in-place adder.
 
@@ -425,10 +426,11 @@ def carry_venting_adder(
         return target, clean_anc, ventmask, carry_xor_cnt
 
     def skip_final_block(target, clean_anc, ventmask, carry_xor_cnt):
-        h(clean_anc[0])
-        m_i = measure(clean_anc[0])
-        reset(clean_anc[0])
-        ventmask = ventmask + (m_i.astype(jnp.int64) << 1)
+        if vent_final:
+            h(clean_anc[0])
+            m_i = measure(clean_anc[0])
+            reset(clean_anc[0])
+            ventmask = ventmask + (m_i.astype(jnp.int64) << 1)
         return target, clean_anc, ventmask, carry_xor_cnt
 
     from qrisp.jasp.program_control.prefix_control import q_cond
@@ -583,9 +585,13 @@ def dirty_ancillae_adder(
     dirty_qubits = dirty_ancillas
     num_dirty = jlen(dirty_qubits)
 
-    # Step 1: Vented addition with fused first carry-xor
+    # Step 1: Vented addition with fused first carry-xor.
+    # Suppress the final vent (vent_final=False) — for small targets the
+    # excess vent has no corresponding dirty qubit and would leave an
+    # uncorrected Z-phase error.
     ventmask, _ = carry_venting_adder(
-        d, target, ancilla=ancilla, c_in=c_in, carry_xor_target=dirty_qubits, ctrl=ctrl
+        d, target, ancilla=ancilla, c_in=c_in, carry_xor_target=dirty_qubits,
+        ctrl=ctrl, vent_final=False,
     )
 
     # Step 2: Phase correction
