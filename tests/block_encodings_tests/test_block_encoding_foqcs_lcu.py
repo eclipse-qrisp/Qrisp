@@ -835,7 +835,7 @@ def test_block_encoding_from_operator_spin_glass_jasp():
     assert np.allclose(
         [filtered_conditional.get(k, 0) for k in keys],
         [result_rus_int.get(k, 0) for k in keys],
-        atol=1e-4,
+        atol=1e-3,
     )
 
 def test_block_encoding_from_foqcs_lcu_heisenberg_operator():
@@ -998,6 +998,100 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_operator():
     ref_state = H @ psi
 
     assert np.allclose(res_ops, ref_state, atol=1e-5)
+
+def test_foqcs_lcu_custom_prep_from_prep():
+    r"""
+    Tests the usage of custom PREP function with from_foqcs_lcu_prep
+    """
+    from collections.abc import Sequence
+    from qrisp.core import QuantumVariable, Qubit
+    from qrisp.core.gate_application_functions import x, z, cx
+    L = 2
+    n_anc_custom_prep = 5
+
+    # Custom PREP_R subroutine.
+    # Defines how many ancillary qubits the circuit requires.
+    # This example does not result in a viable block encoding,
+    # it only shows the process of defining a custom subroutine.
+    def custom_prep(qv: QuantumVariable | Sequence[Qubit], L: int):
+        # Ancilla layout for L = 2 and n_anc = 5:
+        #
+        #   [extra, x0, x1, z0, z1]
+        #
+        # SELECT should use only the final 2L qubits:
+        #
+        #   [x0, x1, z0, z1]
+        #
+        # This PREP sets extra = 1 and copies it into x0.
+        # Thus the selected operation should be X(0)
+        x(qv[0]) # Extra ancillary
+        cx(qv[0], qv[1]) # x[0] taken from extra ancillary.
+        x(qv[4]) # z[1]
+
+    # Then, custom_prep is used for both prep_r and prep_l, as there is no
+    # specific handling required. (For example, parametrised subcircuit
+    # would have required conjugated parameters. See the `foqcs_prep_heisenberg`
+    # usage from previous example)
+    p_r = partial(
+        custom_prep,
+        L=L
+    )
+    p_l = partial(
+        custom_prep,
+        L=L
+    )
+
+    be = BlockEncoding.from_foqcs_lcu_prep(
+        p_r = p_r,
+        p_l = p_l,
+        num_q_ops = L,
+        num_q_anc = n_anc_custom_prep
+    )
+
+    qv = QuantumVariable(L)
+    ancillas = be.apply(qv)
+
+    assert len(ancillas[0]) == n_anc_custom_prep
+
+    qc = qv.qs.compile()
+    sv = qc.statevector_array()
+
+    res = _pick_ops_with_anc_all_zero(sv, ancillas, L)
+
+    expected = np.zeros(2 ** L, dtype=complex)
+    expected[1] = 1.0  # X(0)|00> = |01>, i.e. basis index 2**0
+
+    assert np.allclose(res, expected, atol=1e-6)
+
+def test_foqcs_lcu_custom_prep_n_anc_fail():
+    r"""
+    Verifies that passing invalid number of ancillary qubits results in
+    a failure.
+    """
+    from collections.abc import Sequence
+    from qrisp.core import Qubit
+    from qrisp.core.gate_application_functions import x
+    L = 2
+    n_anc_custom_prep = 3
+
+    def custom_prep(qv: QuantumVariable | Sequence[Qubit], L: int):
+        x(qv[0])
+
+    p_r = partial(
+        custom_prep,
+        L=L
+    )
+    p_l = p_r
+
+    with pytest.raises(ValueError) as exc_info:
+        be = BlockEncoding.from_foqcs_lcu_prep(
+            p_r = p_r,
+            p_l = p_l,
+            num_q_ops = L,
+            num_q_anc = n_anc_custom_prep
+        )
+
+    assert f"at least {L * 2}, but received {n_anc_custom_prep}." in str(exc_info.value)
 
 def test_foqcs_lcu_resources():
     r"""

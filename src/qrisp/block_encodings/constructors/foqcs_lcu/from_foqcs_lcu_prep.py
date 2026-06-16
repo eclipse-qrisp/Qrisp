@@ -45,6 +45,38 @@ def build_from_foqcs_lcu_prep(
     users pass more or less anything for the :math:`P_{R}` and :math:`P_{L}` subroutines. This means you can experiment
     with different :math:`P_{R}` and :math:`P_{L}` pairs to your hearts desire! 🦊
 
+    Note, custom :math:`P_R` and :math:`P_L` routines must prepare an ancilla register
+    containing at least :math:`2L` qubits, where :math:`L` is the number of operand
+    qubits. The final :math:`2L` qubits of this ancilla register are interpreted by
+    the FOQCS-LCU ``SELECT`` block as two activation registers of length
+    :math:`L`:
+
+    .. math::
+
+        [x_0, \dots, x_{L-1}, z_0, \dots, z_{L-1}].
+
+    The :math:`x_i` qubits control the application of :math:`X_i` to the operand
+    register, while the :math:`z_i` qubits control the application of :math:`Z_i`.
+
+    Any additional ancilla qubits required by the custom PREP routine must precede
+    these :math:`2L` activation qubits. Thus, if the PREP routine uses
+    :math:`m` extra ancillas, the ancilla register layout is
+
+    .. math::
+
+        [\text{extra}_0, \dots, \text{extra}_{m-1},
+        x_0, \dots, x_{L-1},
+        z_0, \dots, z_{L-1}].
+
+    For example, with :math:`L = 2`, the FOQCS-LCU activation part consists of
+    four ancilla qubits,
+
+    .. math::
+
+        [x_0, x_1, z_0, z_1],
+
+    possibly preceded by any extra PREP ancillas.
+
     Parameters
     ----------
     p_r : Callable[[QuantumVariable], None]
@@ -126,7 +158,7 @@ def build_from_foqcs_lcu_prep(
         The default is `1` in case no normalization factor is passed.
 
     num_q_anc : int
-        Number of ancillary qubits required for the passed PREP method.
+        Number of ancillary qubits required for the passed PREP method. (Minimum :math:`2\dot` `num_q_ops`)
         For example, :func:`foqcs_prep_heisenberg` requires :math:`2\dot` `num_q_ops` :math:` + 6` qubits.
         This parameter is necessary for the custom PREP methods. It is defined for built-in methods and can be ommited.
         The default is -1.
@@ -400,8 +432,11 @@ def build_from_foqcs_lcu_prep(
     from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_preps import get_foqcs_lcu_prep_num_of_ancillae
     if num_q_anc == -1:
         n_anc = get_foqcs_lcu_prep_num_of_ancillae(p_r, num_q_ops)
-    else:
+    elif num_q_anc >= num_q_ops * 2:
         n_anc = num_q_anc
+    else:
+        raise ValueError(f"FOQCS-LCU requires at least 2L ancillary qubits."
+                         f" Expected at least {num_q_ops * 2}, but received {num_q_anc}.")
 
     # FOQCS-LCU SELECT
     def _select(num_q_ops: int, n_anc: int, ancillae, *operands):
