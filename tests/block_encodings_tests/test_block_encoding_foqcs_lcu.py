@@ -860,26 +860,58 @@ def test_block_encoding_from_operator_spin_glass_jasp():
         atol=1e-3,
     )
 
-def test_block_encoding_from_foqcs_lcu_heisenberg_operator():
+@pytest.mark.parametrize(
+    "O",
+    [
+        pytest.param(
+            0.31 * X(0)
+            + 0.31 * X(1)
+            + 0.31 * X(2)
+            + 0.31 * X(3)
+            - 0.47 * Y(0)
+            - 0.47 * Y(1)
+            - 0.47 * Y(2)
+            - 0.47 * Y(3)
+            + 0.22 * Z(0)
+            + 0.22 * Z(1)
+            + 0.22 * Z(2)
+            + 0.22 * Z(3)
+            + 0.17 * X(0) * X(1)
+            + 0.17 * X(1) * X(2)
+            + 0.17 * X(2) * X(3)
+            - 0.24 * Y(0) * Y(1)
+            - 0.24 * Y(1) * Y(2)
+            - 0.24 * Y(2) * Y(3)
+            + 0.33 * Z(0) * Z(1)
+            + 0.33 * Z(1) * Z(2)
+            + 0.33 * Z(2) * Z(3),
+            id="full_uniform_L4_heisenberg",
+        ),
+        pytest.param(
+            X(0) + X(1),
+            id="uniform_X_field_heisenberg",
+        ),
+        pytest.param(
+            0.39 * Z(0) * Z(1)
+            + 0.39 * Z(1) * Z(2)
+            + 0.39 * Z(2) * Z(3),
+            id="uniform_ZZ_coupling_heisenberg",
+        ),
+    ],
+)
+def test_block_encoding_from_foqcs_lcu_heisenberg_operator(O):
     r"""
-    Verifies `from_foqcs_lcu_operator` execution with Heisenberg model.
-    Tests it against the manually constructed statevector from definition.
+    Verifies `from_foqcs_lcu_operator` execution with Heisenberg operators.
+    Tests it against the manually constructed statevector from the analyzed
+    Heisenberg coefficients.
     """
-    # Initialize variables + their values
-    L = 4
-    g, J = _generate_heisenberg_coeff()
+    from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_analysis import foqcs_analyze_operator_heisenberg
 
-    # Build the operator
-    terms = []
-    for i in range(L):
-        terms.append(g[0] * X(i))
-        terms.append(g[1] * Y(i))
-        terms.append(g[2] * Z(i))
-    for i in range(L - 1):
-        terms.append(J[0] * X(i) * X(i + 1))
-        terms.append(J[1] * Y(i) * Y(i + 1))
-        terms.append(J[2] * Z(i) * Z(i + 1))
-    O = sum(terms[1:], terms[0])
+    aresult = foqcs_analyze_operator_heisenberg(O)
+
+    L = aresult["L"]
+    g = aresult["g"]
+    J = aresult["J"]
 
     be = BlockEncoding.from_foqcs_lcu_operator(O, L)
 
@@ -887,114 +919,88 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_operator():
     psi = _prep_psi(L)
     qv.init_state(psi, method="qswitch")
 
-    def main(BE):
-        operand = qv
-        ancillas = BE.apply(operand)
-        return operand, ancillas
+    ancillas = be.apply(qv)
 
-    operand, ancillas = main(be)
-
-    qc = operand.qs.compile()
+    qc = qv.qs.compile()
     sv = qc.statevector_array()
 
     # Take out the resulting operands with zero ancillas amplitude.
     res_ops = _pick_ops_with_anc_all_zero(sv, ancillas, L)
 
-    # Construct reference state vector
-    H = _heisenberg_from_def(L, g, J) / be.alpha # Normalisation can be taken from BE
+    # Build reference state from the Heisenberg definition.
+    g_arr = np.array([g["X"], g["Y"], g["Z"]], dtype=complex)
+    J_arr = np.array([J["X"], J["Y"], J["Z"]], dtype=complex)
+    H = _heisenberg_from_def(L, g_arr, J_arr) / be.alpha
     ref_state = H @ psi
 
     assert np.allclose(res_ops, ref_state, atol=1e-6)
 
-def test_block_encoding_from_foqcs_lcu_spin_glass_operator():
+@pytest.mark.parametrize(
+    "O",
+    [
+        pytest.param(
+            0.31 * X(0)
+            - 0.47 * X(1)
+            + 0.22 * X(2)
+            - 0.18 * Y(0)
+            + 0.29 * Y(1)
+            + 0.41 * Y(2)
+            + 0.52 * Z(0)
+            - 0.13 * Z(1)
+            - 0.36 * Z(2)
+            + 0.17 * X(0) * X(1)
+            - 0.24 * X(1) * X(2)
+            + 0.33 * X(0) * X(2)
+            - 0.21 * Y(0) * Y(1)
+            + 0.15 * Y(1) * Y(2)
+            - 0.28 * Y(0) * Y(2)
+            + 0.39 * Z(0) * Z(1)
+            - 0.11 * Z(1) * Z(2)
+            + 0.26 * Z(0) * Z(2),
+            id="dense_L3_spin_glass",
+        ),
+        pytest.param(
+            0.7 * X(0)
+            - 0.3 * Z(2)
+            + 0.5 * X(0) * X(1)
+            + 1.2 * Y(1) * Y(3)
+            - 0.8 * Z(0) * Z(3),
+            id="sparse_L4_spin_glass",
+        ),
+    ],
+)
+def test_block_encoding_from_foqcs_lcu_spin_glass_operator(O):
     r"""
-    Verifies `from_foqcs_lcu_operator` execution with Spin-glass model.
-    Tests it against the manually constructed statevector from definition.
+    Verifies `from_foqcs_lcu_operator` execution with spin-glass operators.
+    Tests it against the manually constructed statevector from the analyzed
+    spin-glass coefficients.
     """
-    L = 3
+    from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_analysis import foqcs_analyze_operator_spin_glass
+    def _J_matrix_to_diag_list(J, L):
+        """
+        Convert full matrix J into diagonal-list form:
+          
+          `J_diag[p][k - 1][i]` couples `i` and `i + k`.
+        
+        This is the format expected by `_spin_glass_from_def` and
+        `foqcs_prep_spin_glass`.
+        """
+        return {
+            p: [
+                np.array(
+                    [J[p][i, i + k] for i in range(L - k)],
+                    dtype=complex,
+                )
+                for k in range(1, L)
+            ]
+            for p in ("X", "Y", "Z")
+        }
 
-    # Nonuniform fields/couplings
-    g = {
-        "X": np.array([0.31, -0.47, 0.22], dtype=complex),
-        "Y": np.array([-0.18, 0.29, 0.41], dtype=complex),
-        "Z": np.array([0.52, -0.13, -0.36], dtype=complex),
-    }
+    aresult = foqcs_analyze_operator_spin_glass(O)
 
-    # Full symmetric coupling matrices with zero diagonal.
-    # These are used to build the QubitOperator.
-    J = {
-        "X": np.array(
-            [
-                [0.00, 0.17, 0.33],
-                [0.17, 0.00, -0.24],
-                [0.33, -0.24, 0.00],
-            ],
-            dtype=complex,
-        ),
-        "Y": np.array(
-            [
-                [0.00, -0.21, -0.28],
-                [-0.21, 0.00, 0.15],
-                [-0.28, 0.15, 0.00],
-            ],
-            dtype=complex,
-        ),
-        "Z": np.array(
-            [
-                [0.00, 0.39, 0.26],
-                [0.39, 0.00, -0.11],
-                [0.26, -0.11, 0.00],
-            ],
-            dtype=complex,
-        ),
-    }
-
-    # Normalize the physical Hamiltonian coefficients.
-    coeff_vec = []
-    for p in ["X", "Y", "Z"]:
-        coeff_vec.extend(g[p])
-        for i in range(L):
-            for j in range(i + 1, L):
-                coeff_vec.append(J[p][i, j])
-
-    phys_norm = np.linalg.norm(np.array(coeff_vec, dtype=complex))
-
-    for p in ["X", "Y", "Z"]:
-        g[p] = g[p] / phys_norm
-        J[p] = J[p] / phys_norm
-
-    # Convert full matrix J into diagonal-list form:
-    #
-    #   J_diag[p][k - 1][i] couples i and i + k.
-    #
-    # This is the format expected by _spin_glass_from_def and
-    # foqcs_prep_spin_glass.
-    J_diag = {
-        p: [
-            np.array(
-                [J[p][i, i + k] for i in range(L - k)],
-                dtype=complex,
-            )
-            for k in range(1, L)
-        ]
-        for p in ["X", "Y", "Z"]
-    }
-
-    # Build QubitOperator.
-    terms = []
-
-    for i in range(L):
-        terms.append(g["X"][i] * X(i))
-        terms.append(g["Y"][i] * Y(i))
-        terms.append(g["Z"][i] * Z(i))
-
-    for i in range(L):
-        for j in range(i + 1, L):
-            terms.append(J["X"][i, j] * X(i) * X(j))
-            terms.append(J["Y"][i, j] * Y(i) * Y(j))
-            terms.append(J["Z"][i, j] * Z(i) * Z(j))
-
-    O = sum(terms[1:], terms[0])
+    L = aresult["L"]
+    g = aresult["g"]
+    J_diag = _J_matrix_to_diag_list(aresult["J"], L)
 
     be = BlockEncoding.from_foqcs_lcu_operator(O, L)
 
@@ -1002,20 +1008,15 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_operator():
     psi = _prep_psi(L)
     qv.init_state(psi, method="qswitch")
 
-    def main(BE):
-        operand = qv
-        ancillas = BE.apply(operand)
-        return operand, ancillas
+    ancillas = be.apply(qv)
 
-    operand, ancillas = main(be)
-
-    qc = operand.qs.compile()
+    qc = qv.qs.compile()
     sv = qc.statevector_array()
 
     # Take out the resulting operands with zero ancillas amplitude.
     res_ops = _pick_ops_with_anc_all_zero(sv, ancillas, L)
 
-    # Build reference state from spin-glass definition
+    # Build reference state from the spin-glass definition.
     H = _spin_glass_from_def(L, g, J_diag) / be.alpha
     ref_state = H @ psi
 
@@ -1023,11 +1024,11 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_operator():
 
 def test_foqcs_lcu_custom_prep_from_prep():
     r"""
-    Tests the usage of custom PREP function with from_foqcs_lcu_prep
+    Tests the usage of custom PREP function with `from_foqcs_lcu_prep`.
     """
     from collections.abc import Sequence
     from qrisp.core import QuantumVariable, Qubit
-    from qrisp.core.gate_application_functions import x, z, cx
+    from qrisp.core.gate_application_functions import x, cx
     L = 2
     n_anc_custom_prep = 5
 
