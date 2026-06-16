@@ -311,7 +311,7 @@ def gidney_adder(
     c_out: Qubit | QuantumBool | None = None,
     ctrl: Qubit | QuantumBool | None = None,
 ):
-    """
+    r"""
     In-place Gidney adder performing ``b += a``.
 
     Based on `arXiv:1709.06648 <https://arxiv.org/abs/1709.06648>`_.  Works in
@@ -329,12 +329,12 @@ def gidney_adder(
         Binary strings are little-endian: ``"10"`` means bit 0 = 1, bit 1 = 0
         (decimal value 1).
     b : QuantumVariable, DynamicQubitArray, or list
-        The target register that is updated in-place: :math:`b \\leftarrow b + a`.
+        The target register that is updated in-place: :math:`b \leftarrow b + a`.
         If a list, must be a non-empty list of qubit-like objects
         (elements with a callable ``qs`` attribute).
     c_in : QuantumBool, Qubit, or None
         Optional single-qubit carry-in.  When provided, the addition
-        becomes :math:`b \\leftarrow b + a + c_{\\text{in}}`.
+        becomes :math:`b \leftarrow b + a + c_{\text{in}}`.
     c_out : QuantumBool, Qubit, or None
         Optional single-qubit carry-out.  When provided, this qubit
         receives the overflow carry of the addition.

@@ -29,7 +29,7 @@ EXTRACT_BIT_CASES = [
 @pytest.mark.parametrize("val, bit, expected", EXTRACT_BIT_CASES)
 def test_extract_bit_int(val, bit, expected):
     # Verify bit extraction via shift-and-mask for small integers
-    assert bool(_extract_bit(val, bit, False)) == bool(expected)
+    assert bool(_extract_bit(val, bit)) == bool(expected)
 
 EXTRACT_BIT_BIGINT_CASES = [
     (0, True),
@@ -46,7 +46,7 @@ def test_extract_bit_bigint(idx, expected):
 
     b = _MockBigInt([1, 0, 1, 1])
     # Verify bit extraction via the BigInteger interface
-    assert bool(_extract_bit(b, idx, True)) == expected
+    assert bool(_extract_bit(b, idx)) == expected
 
 
 ZZ_PARITY_CASES = [
