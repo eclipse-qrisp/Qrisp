@@ -158,9 +158,11 @@ def build_from_foqcs_lcu_prep(
         The default is `1` in case no normalization factor is passed.
 
     num_q_anc : int
-        Number of ancillary qubits required for the passed PREP method. (Minimum :math:`2\dot` `num_q_ops`)
-        For example, :func:`foqcs_prep_heisenberg` requires :math:`2\dot` `num_q_ops` :math:` + 6` qubits.
-        This parameter is necessary for the custom PREP methods. It is defined for built-in methods and can be ommited.
+        Number of ancillary qubits required for the passed PREP method. (Minimum 2 * ``num_q_ops``)
+        For example, :func:`foqcs_prep_heisenberg` requires 2 * ``num_q_ops`` + 6 qubits.
+        This parameter is necessary for custom PREP routines whose ancilla count
+        cannot be inferred automatically. For built-in FOQCS-LCU PREP routines,
+        the ancilla count is predefined and this argument can be omitted.
         The default is -1.
 
     Returns
@@ -186,8 +188,8 @@ def build_from_foqcs_lcu_prep(
       :math:`PREP_{R}`, but because it DOES use conjugated coefficients, it is not.
     
     - In short:
-        :math:`P_{R} = PREP(\alpha)`
-        :math:`P_{L} = PREP(\alpha ^ *)`
+        :math:`P_{R} = PREP(\alpha),` 
+        :math:`P_{L} = PREP(\alpha ^ *),` 
 
         :math:`U = P_{L}^{\dagger} \cdot \mathrm{SELECT} \cdot P_{R}`
     
@@ -427,6 +429,99 @@ def build_from_foqcs_lcu_prep(
 
         # where alpha is the LCU/block-encoding normalization factor passed as `norm`.
         print(res_ops)
+
+    The following example shows how to define and use a custom PREP function.
+
+    ::
+
+        from functools import partial
+        from qrisp import *
+        from qrisp.block_encodings import BlockEncoding
+
+        # Reverses the bit order.
+        # For n = 2
+        # i = 0 -> "00" -> "00" -> 0
+        # i = 1 -> "01" -> "10" -> 2
+        # i = 2 -> "10" -> "01" -> 1
+        # i = 3 -> "11" -> "11" -> 3
+        def _bit_reverse(i: int, n: int) -> int:
+                return int(f"{i:0{n}b}"[::-1], 2)
+
+        # Extracts operand amplitudes from the branch where all block-encoding
+        # ancillas are zeroes. (The resulting statevector contains all amplitudes)
+        def _pick_ops_with_anc_all_zero(
+            sv: NDArrayLike,
+            anc: NDArrayLike,
+            L: int
+        )-> NDArrayLike:
+            res_ops = []
+
+            for i in range(0, 2 ** L):
+                qi = _bit_reverse(i, L)
+                ind = qi << (len(anc[0]))
+                res_ops.append(sv[ind])
+
+            return res_ops
+
+        L = 2 # 2 operand qubits
+        n_anc_custom_prep = 5 # 4 base ancillary qubits + one extra
+
+        # Custom PREP_R subroutine.
+        # Defines how many ancillary qubits the circuit requires.
+        # This example does not result in a viable block encoding,
+        # it only shows the process of defining a custom subroutine.
+        def custom_prep(qv: QuantumVariable | Sequence[Qubit], L: int):
+            # Ancilla layout for L = 2 and n_anc = 5:
+            #
+            #   [extra, x0, x1, z0, z1]
+            #
+            # SELECT should use only the final 2L qubits:
+            #
+            #   [x0, x1, z0, z1]
+            #
+            # This PREP sets extra = 1 and copies it into x0.
+            # Thus the selected operation should be X(0)
+            x(qv[0]) # Extra ancillary
+            cx(qv[0], qv[1]) # x[0] taken from extra ancillary.
+            x(qv[4]) # z[1]
+
+        # Then, custom_prep is used for both prep_r and prep_l, as there is no
+        # specific handling required. (For example, parametrised subcircuit
+        # would have required conjugated parameters. See the foqcs_prep_heisenberg()
+        # usage from the previous example)
+        p_r = partial(
+            custom_prep,
+            L=L
+        )
+        p_l = partial(
+            custom_prep,
+            L=L
+        )
+
+        be = BlockEncoding.from_foqcs_lcu_prep(
+            p_r = p_r,
+            p_l = p_l,
+            num_q_ops = L,
+            num_q_anc = n_anc_custom_prep
+        )
+
+        qv = QuantumVariable(L)
+        ancillas = be.apply(qv)
+
+        qc = qv.qs.compile()
+        sv = qc.statevector_array()
+
+        res = _pick_ops_with_anc_all_zero(sv, ancillas, L)
+
+        # res contains the unnormalized operand amplitudes in the success branch,
+        # i.e. the branch where all FOQCS-LCU ancillas are |0>.
+        #
+        # In this example the custom PREP activates x[0] and z[1], so SELECT applies
+        # X(0)Z(1). Since the operand starts in |00>, the Z(1) part has no visible
+        # phase effect and X(0) maps |00> to |01>. Therefore the expected extracted
+        # operand state is approximately [0, 1, 0, 0].
+        print(res)
+
 
     """
     from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_preps import get_foqcs_lcu_prep_num_of_ancillae
