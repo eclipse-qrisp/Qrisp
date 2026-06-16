@@ -18,15 +18,21 @@
 
 import numpy as np
 
-from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
 from qrisp.jasp import qache, jrange
 from qrisp.qtypes import QuantumFloat, QuantumBool
 from qrisp.environments import control
 from qrisp.core import cx, x
 
 
+def _default_adder():
+    from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
+    return gidney_adder
+
+
 @qache(static_argnames="inpl_adder")
-def jasp_controlling_multiplyer(a, b, inpl_adder=gidney_adder):
+def jasp_controlling_multiplyer(a, b, inpl_adder=None):
+    if inpl_adder is None:
+        inpl_adder = _default_adder()
 
     s = QuantumFloat(a.size + b.size)
 
@@ -38,7 +44,9 @@ def jasp_controlling_multiplyer(a, b, inpl_adder=gidney_adder):
 
 
 @qache(static_argnames="inpl_adder")
-def jasp_squaring(a, inpl_adder=gidney_adder):
+def jasp_squaring(a, inpl_adder=None):
+    if inpl_adder is None:
+        inpl_adder = _default_adder()
 
     s = QuantumFloat(2 * a.size)
     temp = QuantumBool()
@@ -58,7 +66,9 @@ def jasp_squaring(a, inpl_adder=gidney_adder):
 
 
 @qache(static_argnames="inpl_adder")
-def jasp_multiplyer(factor_1, factor_2, inpl_adder=gidney_adder):
+def jasp_multiplyer(factor_1, factor_2, inpl_adder=None):
+    if inpl_adder is None:
+        inpl_adder = _default_adder()
 
     # Executes the algorithm
 

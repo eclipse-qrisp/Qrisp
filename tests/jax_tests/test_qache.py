@@ -18,6 +18,7 @@
 
 from qrisp import *
 from qrisp.jasp import *
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_multiplyers import jasp_multiplyer
 
 
 def test_qache():

@@ -19,6 +19,20 @@
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_fourier_adder import (
     jasp_fourier_adder,
 )
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_adder import (
+    jasp_mod_adder,
+)
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_multiplyers import (
+    jasp_controlling_multiplyer,
+    jasp_squaring,
+    jasp_multiplyer,
+)
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
+    q_montgomery_reduction,
+    qq_montgomery_multiply,
+    cq_montgomery_multiply,
+    cq_montgomery_multiply_inplace,
+)
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
     BigInteger,
     bi_modinv,
@@ -29,21 +43,3 @@ from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
     best_montgomery_shift,
 )
-
-
-def __getattr__(name):
-    import importlib
-    lazy = {
-        "jasp_mod_adder": "qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_adder",
-        "jasp_controlling_multiplyer": "qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_multiplyers",
-        "jasp_squaring": "qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_multiplyers",
-        "jasp_multiplyer": "qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_multiplyers",
-        "q_montgomery_reduction": "qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery",
-        "qq_montgomery_multiply": "qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery",
-        "cq_montgomery_multiply": "qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery",
-        "cq_montgomery_multiply_inplace": "qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery",
-    }
-    if name in lazy:
-        mod = importlib.import_module(lazy[name])
-        return getattr(mod, name)
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

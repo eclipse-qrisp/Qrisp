@@ -19,9 +19,13 @@
 from typing import Union
 import math
 
-from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
 from qrisp.qtypes import QuantumFloat, QuantumModulus
 from qrisp.jasp import jrange, check_for_tracing_mode, jlen, q_cond
+
+
+def _default_adder():
+    from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
+    return gidney_adder
 from qrisp.environments import control, invert, custom_control
 from qrisp.core import swap, cx, x
 
@@ -36,7 +40,7 @@ from .jasp_mod_tools import (
 
 
 def q_montgomery_reduction(
-    qf: QuantumFloat, N: Union[int, BigInteger], m: int, inpl_adder=gidney_adder
+    qf: QuantumFloat, N: Union[int, BigInteger], m: int, inpl_adder=None
 ):
     """
     Perform the Montgomery reduction of a concatenated QuantumFloat in-place.
@@ -68,6 +72,8 @@ def q_montgomery_reduction(
     inpl_adder : Callable
         In-place adder to use during computation (defaults to gidney_adder).
     """
+    if inpl_adder is None:
+        inpl_adder = _default_adder()
     if check_for_tracing_mode():
         xrange = jrange
     else:
@@ -96,7 +102,7 @@ def cq_montgomery_multiply(
     y: QuantumFloat,
     N: Union[int, BigInteger],
     m: int,
-    inpl_adder=gidney_adder,
+    inpl_adder=None,
     x_is_montgomery: bool = False,
     res=None,
 ):
@@ -141,6 +147,8 @@ def cq_montgomery_multiply(
     QuantumFloat
         The Montgomery product X*y mod N in standard representation.
     """
+    if inpl_adder is None:
+        inpl_adder = _default_adder()
     # Build R = 2^m with width matching X if BigInteger
     if isinstance(X, BigInteger):
         R = BigInteger.create(1, X.digits.shape[0]) << m
@@ -189,10 +197,12 @@ def cq_montgomery_multiply_inplace(
     y: QuantumFloat,
     N: Union[int, BigInteger],
     m: int,
-    inpl_adder=gidney_adder,
+    inpl_adder=None,
     x_is_montgomery: bool = False,
     ctrl=None,
 ):
+    if inpl_adder is None:
+        inpl_adder = _default_adder()
     """
     Montgomery product of a classical X and a QuantumFloat y, in-place on y.
 
@@ -260,7 +270,7 @@ def cq_montgomery_multiply_inplace(
 
 
 def qq_montgomery_multiply(
-    x: QuantumFloat, y: QuantumFloat, N: int, m: int, inpl_adder=gidney_adder
+    x: QuantumFloat, y: QuantumFloat, N: int, m: int, inpl_adder=None
 ):
     """
     Perform the montgomery product of two QuantumFloats. Note that both QuantumFloats must be in montgomery form.
@@ -283,6 +293,9 @@ def qq_montgomery_multiply(
     QuantumFloat
         The mongomery product of the inputs.
     """
+
+    if inpl_adder is None:
+        inpl_adder = _default_adder()
 
     if check_for_tracing_mode():
         xrange = jrange
