@@ -174,8 +174,7 @@ def pytket_converter(qc, boxFlag=False):
             tket_ins = OpType.SXdg
 
         elif op.name == "u1":
-            params[0] = params[0] / np.pi
-            # bugged
+            # angle already converted to pi-units in the block above (#631)
             tket_ins = OpType.Rz
         elif op.name == "id":
             params = []
