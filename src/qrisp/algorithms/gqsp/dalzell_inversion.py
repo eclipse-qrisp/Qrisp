@@ -16,12 +16,13 @@
 ********************************************************************************
 """
 
+from collections.abc import Callable
 import numpy as np
 import numpy.typing as npt
 from numpy.polynomial import Chebyshev
-from qrisp.algorithms.gqsp.gqsvt import GQSVT
+
+from qrisp.algorithms.gqsp.qsvt import QSVT
 from qrisp.block_encodings import BlockEncoding
-from typing import Callable
 
 
 def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, kappa: float) -> BlockEncoding:
@@ -59,7 +60,7 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
     
     Hence, the solution state $\ket{x_t}$ is a kernel state (sigular value 0) of the operator $G_t=(\mathbb{I} - \ket{b'}\bra{b'})A_t$.
     The **kernel reflection** operator $K(G_t)$ reflects about the solution state $\ket{x_t}$ to the augmented system, 
-    and can be implemented via (G)QSVT using a polynomial approximation of the kernel reflection function 
+    and can be implemented via QSVT using a polynomial approximation of the kernel reflection function 
     $K(\sigma)\colon [0,1] \to [-1,1]$ which maps the sigular value 0 to 1 and all other singular values to -1.
 
     The algorithm consists of the following steps:
@@ -214,7 +215,7 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
     # Rescale kappa to account for larger normalization factor of A_t
     kappa_t = kappa * (1.0 + 1.0 / t)
     p = _kernel_reflection_cheb(1.0 / kappa_t, eps)
-    KR = GQSVT(G_t, p, kind="Chebyshev", parity="even", rescale=False)
+    KR = QSVT(G_t, p, kind="Chebyshev", parity="even", rescale=False)
 
     def new_unitary(*args):
         anc_ext = args[0]

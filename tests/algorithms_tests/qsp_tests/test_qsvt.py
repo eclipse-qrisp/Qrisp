@@ -20,7 +20,8 @@ import numpy as np
 import pytest
 from qrisp import *
 from qrisp.block_encodings import BlockEncoding
-from qrisp.gqsp import GQSVT, inversion
+from qrisp.algorithms.gqsp import inversion
+from qrisp.algorithms.gqsp.qsvt import QSVT
 
 
 def evaluate_parity_polynomial(poly, S, parity):
@@ -41,8 +42,8 @@ def evaluate_parity_polynomial(poly, S, parity):
     (np.array([0.,1.,0.,1.]), "odd"),
     (np.array([2.,1.,0.,1.,2.,3.]), "odd"),
 ])
-def test_gqsvt(poly, parity):
-    """Test GQSVT on a small 4x4 matrix with a simple polynomial transformation."""
+def test_qsvt(poly, parity):
+    """Test QSVT on a small 4x4 matrix with a simple polynomial transformation."""
 
     # Define non-Hermitian matrix A
     # [[3. 1. 0. 0.]
@@ -60,8 +61,8 @@ def test_gqsvt(poly, parity):
     def U1(qv): qv-=1
     BE = BlockEncoding.from_lcu(np.array([3,1]), [U0,U1])
 
-    # Apply polynomial via GQSVT
-    BE_poly = GQSVT(BE, poly, parity=parity)
+    # Apply polynomial via QSVT
+    BE_poly = QSVT(BE, poly, parity=parity)
 
     # Prepare initial system state |b>
     def operand_prep():
@@ -87,14 +88,14 @@ def test_gqsvt(poly, parity):
     if parity == "even":
         A_poly = Vh.conj().T @ np.diag(S_poly) @ Vh
     else:
-        A_poly = (U @ np.diag(S_poly) @ Vh).conj().T
+        A_poly = U @ np.diag(S_poly) @ Vh
 
     res = A_poly @ b / np.linalg.norm(A_poly @ b)
     assert np.linalg.norm(np.abs(res) - amps) < 1e-2
 
 
-def test_gqsvt_inversion():
-    """Test GQSVT-based inversion on a small 4x4 matrix."""
+def test_qsvt_inversion():
+    """Test QSVT-based inversion on a small 4x4 matrix."""
 
     # Define non-Hermitian matrix A
     # [[3. 1. 0. 0.]
@@ -112,8 +113,8 @@ def test_gqsvt_inversion():
     def U1(qv): qv-=1
     BE = BlockEncoding.from_lcu(np.array([3,1]), [U0,U1])
 
-    # Apply inversion via GQSVT
-    BE_inv = inversion(BE, 0.01, np.linalg.cond(A), method="GQSVT")
+    # Apply inversion via QSVT
+    BE_inv = inversion(BE, 0.01, np.linalg.cond(A), method="QSVT")
 
     # Prepare initial system state |b>
     def operand_prep():

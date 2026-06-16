@@ -18,7 +18,7 @@
 
 from __future__ import annotations
 from collections.abc import Callable
-from typing import Any, Literal, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from dataclasses import dataclass
 from jax.tree_util import register_pytree_node_class
@@ -782,6 +782,46 @@ class BlockEncoding:
             "depth": circuit_depth,
             "qubits": qubit_counts["peak_allocations"],
         }
+    
+    def dagger(self) -> BlockEncoding:
+        r"""
+        Returns a new BlockEncoding representing the Hermitian conjugate of the operator.
+
+        For a block-encoded operator $A$ with block-encoding unitary $U_A$, this method returns a new BlockEncoding with unitary $U_A^{\dagger}$.
+        The resulting block-encoding represents the operator $A^{\dagger}$ with the same scaling factor $\alpha$.
+
+        Returns
+        -------
+        BlockEncoding
+            A new BlockEncoding instance representing the Hermitian conjugate of the operator.
+
+        Examples
+        --------
+
+        Define a block-encoding and obtain its Hermitian conjugate.
+
+        ::
+
+            from qrisp.block_encodings import BlockEncoding
+            from qrisp.operators import X, Y, Z
+
+            H = X(0)*Y(1) + 0.5*Z(0)*X(1)
+            BE = BlockEncoding.from_operator(H)
+            BE_dg = BE.dagger()
+
+        """
+
+        def new_unitary(*args):
+            with invert():
+                self.unitary(*args)
+
+        return BlockEncoding(
+            self.alpha,
+            self._anc_templates,
+            new_unitary,
+            num_ops=self.num_ops,
+            is_hermitian=self.is_hermitian,
+        )
 
     def qubitization(self) -> BlockEncoding:
         r"""
@@ -1581,342 +1621,3 @@ class BlockEncoding:
             num_ops=self.num_ops,
             is_hermitian=self.is_hermitian,
         )
-
-    #
-    # Transformations
-    #
-
-    def inv(self, eps: float, kappa: float, method: Literal["QET", "GQSVT"] = "QET") -> BlockEncoding:
-        r"""
-        Returns a BlockEncoding approximating the matrix inversion of the operator.
-
-        For a block-encoded matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
-        operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$.
-
-        The inversion is implemented via
-
-        - Quantum Eigenvalue Transformation (QET) ($A$ must be **Hermitian**)
-
-        - Generalized Quantum Singular Value Transform (GQSVT)
-
-        using a polynomial approximation of $1/x$ over the domain $D_{\kappa} = [-1, -1/\kappa] \cup [1/\kappa, 1]$.
-
-        Parameters
-        ----------
-        eps : float
-            The target precision $\epsilon$.
-        kappa : float
-            An upper bound for the condition number $\kappa$ of $A$.
-            This value defines the "gap" around zero where the function $1/x$ is not approximated.
-        method : {"QET", "GQSVT"}
-            The method for implementing the inversion.
-
-            - ``"QET"``: Quantum Eigenvalue Transform ($A$ must be Hermitian)
-
-            - ``"GQSVT"``: Generalized Quantum Singular Value Transform
-
-            Default is ``"QET"``.
-
-        Returns
-        -------
-        BlockEncoding
-            A new BlockEncoding instance representing an approximation of the inverse $A^{-1}$.
-
-        Notes
-        -----
-        - **Complexity**: The query complexity of the algorithm scales as :math:`\mathcal{O}(\kappa^2 \log(\kappa/\epsilon))`:
-          Guaranteeing successful inversion with high probability requires repeating the procedure :math:`\mathcal{O}(\kappa)` times,
-          and each application of the polynomial requires :math:`\mathcal{O}(\kappa \log(\kappa/\epsilon))` (the polynomial degree) queries to the block-encoding of $A$.
-        - It is assumed that the eigenvalues of $A/\alpha$ lie within $D_{\kappa}$.
-
-        References
-        ----------
-        - Childs et. al (2017) `Quantum algorithm for systems of linear equations with exponentially improved dependence on precision <https://arxiv.org/pdf/1511.02306>`_.
-
-        Examples
-        --------
-
-        Define a QSLP and solve it using :meth:`inv`.
-
-        First, define a Hermitian matrix $A$ and a right-hand side vector $\vec{b}$.
-
-        ::
-
-            import numpy as np
-
-            A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
-                        [0.14516978, 0.68701415, -0.04929867, -0.00999921],
-                        [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
-                        [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
-
-            b = np.array([0, 1, 1, 1])
-
-            kappa = np.linalg.cond(A)
-            print("Condition number of A: ", kappa)
-            # Condition number of A:  1.8448536035491883
-
-        Generate a block-encoding of $A$ and use :meth:`inv` to find a block-encoding approximating $A^{-1}$.
-
-        ::
-
-            from qrisp import *
-            from qrisp.block_encodings import BlockEncoding
-
-            BA = BlockEncoding.from_array(A)
-
-            BA_inv = BA.inv(0.01, 2)
-
-            # Prepares operand variable in state |b>
-            def prep_b():
-                operand = QuantumVariable(2)
-                prepare(operand, b)
-                return operand
-
-            @terminal_sampling
-            def main():
-                operand = BA_inv.apply_rus(prep_b)()
-                return operand
-
-            res_dict = main()
-            amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
-
-        Finally, compare the quantum simulation result with the classical solution:
-
-        ::
-
-            c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
-
-            print("QUANTUM SIMULATION\n", amps, "\nCLASSICAL SOLUTION\n", c)
-            # QUANTUM SIMULATION
-            # [0.02844496 0.55538449 0.53010186 0.64010231]
-            # CLASSICAL SOLUTION
-            # [0.02944539 0.55423278 0.53013239 0.64102936]
-
-        """
-        from qrisp.algorithms.gqsp import inversion
-
-        # The operator is unitary (up to scaling).
-        if self.num_ancs == 0:
-
-            if not self.is_hermitian:
-
-                def new_unitary(*args):
-                    with invert():
-                        self.unitary(*args)
-
-            else:
-                # The operator is a reflection (up to scaling).
-                new_unitary = self.unitary
-
-            return BlockEncoding(
-                1.0 / self.alpha,
-                self._anc_templates,
-                new_unitary,
-                num_ops=self.num_ops,
-                is_hermitian=self.is_hermitian,
-            )
-
-        return inversion(self, eps, kappa, method=method)
-
-    def sim(self, t: "ArrayLike" = 1, N: int = 1) -> BlockEncoding:
-        r"""
-        Returns a BlockEncoding approximating Hamiltonian simulation of the operator.
-
-        For a block-encoded Hamiltonian $H$, this method returns a BlockEncoding of an approximation of
-        the unitary evolution operator $e^{-itH}$ for a given time $t$.
-
-        The approximation is based on the Jacobi-Anger expansion into Bessel functions 
-        of the first kind ($J_n$):
-
-        .. math ::
-
-            e^{-it\cos(\theta)} \approx \sum_{n=-N}^{N}(-i)^nJ_n(t)e^{in\theta}
-
-        Parameters
-        ----------
-        t : ArrayLike
-            The scalar evolution time $t$. The default is 1.0.
-        N : int
-            The truncation order $N$ of the expansion. A higher order provides 
-            better approximation for larger $t$ or higher precision requirements. 
-            Default is 1.
-
-        Returns
-        -------
-        BlockEncoding
-            A new BlockEncoding instance representing an approximation of the unitary $e^{-itH}$.
-
-        Notes
-        -----
-        - **Precision**: The truncation error scales (decreases) super-exponentially with $N$. 
-          For a fixed $t$, choosing $N > |t|$ ensures rapid convergence.
-        - **Normalization**: The resulting operator is nearly unitary, meaning its 
-          block-encoding normalization factor $\alpha$ will be close to 1.
-
-        References
-        ----------
-        - Low & Chuang (2019) `Hamiltonian Simulation by Qubitization <https://quantum-journal.org/papers/q-2019-07-12-163/>`_.
-        - Motlagh & Wiebe (2025) `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
-
-        Examples
-        --------
-
-        Generate an Ising Hamiltonian $H$ and apply Hamiltonian simulation $e^{-itH}$ to the inital system state $\ket{0}$.
-
-        ::
-
-            # For larger systems, restart the kernel and adjust simulator precision
-            # import os
-            # os.environ["QRISP_SIMULATOR_FLOAT_THRESH"] = "1e-10"
-
-            from qrisp import *
-            from qrisp.block_encodings import BlockEncoding
-            from qrisp.operators import X, Y, Z
-
-            def create_ising_hamiltonian(L, J, B):
-                H = sum(-J * Z(i) * Z(i + 1) for i in range(L-1))  \
-                    + sum(B * X(i) for i in range(L))
-                return H
-
-            L = 4
-            H = create_ising_hamiltonian(L, 0.25, 0.5)
-            BE = BlockEncoding.from_operator(H)
-
-            # Prepare inital system state |psi> = |0>
-            def operand_prep():
-                return QuantumFloat(L)
-
-            # Prepare state|psi(t)> = e^{itH} |psi>
-            def psi(t):
-                BE_sim = BE.sim(t=t, N=8)
-                operand = BE_sim.apply_rus(operand_prep)()
-                return operand
-
-            @terminal_sampling
-            def main(t):
-                return psi(t)
-
-            res_dict = main(0.5)
-            amps = np.sqrt([res_dict.get(i, 0) for i in range(2 ** L)])
-            print(amps)
-            #[0.88288218 0.224682   0.22269639 0.05723058 0.22269632 0.05669449                   
-            # 0.0570588  0.01457775 0.22468192 0.05717859 0.05669445 0.0145699
-            # 0.05723059 0.01456992 0.01457775 0.00372438]
-
-        Finally, compare the quantum simulation result with the classical solution:
-
-        ::
-
-            import scipy as sp
-
-            H_mat = H.to_array()
-
-            # Prepare state|psi(t)> = e^{itH} |psi>
-            def psi_(t):
-                # Prepare inital system state |psi> = |0>
-                psi0 = np.zeros(2**H.find_minimal_qubit_amount())
-                psi0[0] = 1
-                
-                psi = sp.linalg.expm(-1.0j * t * H_mat) @ psi0
-                psi = psi / np.linalg.norm(psi)
-                return psi
-
-            c = np.abs(psi_(0.5))
-            print(c)
-            #[0.88288217 0.22468197 0.22269638 0.05723056 0.22269638 0.05669446
-            # 0.05705877 0.01457772 0.22468197 0.0571786  0.05669446 0.01456988
-            # 0.05723056 0.01456988 0.01457772 0.00372439]
-
-        """
-        from qrisp.algorithms.gqsp import hamiltonian_simulation
-
-        return hamiltonian_simulation(self, t, N)
-
-    def poly(
-        self, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial"
-    ) -> BlockEncoding:
-        r"""
-        Returns a BlockEncoding representing a polynomial transformation of the operator.
-
-        For a block-encoded **Hermitian** matrix $A$ and a (complex) polynomial $p(z)$, this method returns
-        a BlockEncoding of the operator $p(A)$. This is achieved using
-        Generalized Quantum Eigenvalue Transformation (GQET).
-
-        Parameters
-        ----------
-        p : ArrayLike
-            1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
-        kind : {"Polynomial", "Chebyshev"}
-            The basis in which the coefficients are defined.
-
-            - ``"Polynomial"``: $p(x) = \sum c_i x^i$
-
-            - ``"Chebyshev"``: $p(x) = \sum c_i T_i(x)$, where $T_i$ are Chebyshev polynomials of the first kind.
-
-            Default is ``"Polynomial"``.
-
-        Returns
-        -------
-        BlockEncoding
-            A new Block-Encoding instance representing the transformed operator $p(A)$.
-
-        Examples
-        --------
-
-        Define a Hermitian matrix $A$ and a vector $\vec{b}$.
-
-        ::
-
-            import numpy as np
-
-            A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
-                        [0.14516978, 0.68701415, -0.04929867, -0.00999921],
-                        [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
-                        [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
-
-            b = np.array([0, 1, 1, 1])
-
-        Generate a block-encoding $A$ of and use :meth:`poly` to find a block-encoding of $p(A)$.
-
-        ::
-
-            from qrisp import *
-            from qrisp.block_encodings import BlockEncoding
-
-            BA = BlockEncoding.from_array(A)
-
-            BA_poly = BA.poly(np.array([1.,2.,1.]))
-
-            # Prepares operand variable in state |b>
-            def prep_b():
-                operand = QuantumVariable(2)
-                prepare(operand, b)
-                return operand
-
-            @terminal_sampling
-            def main():
-                operand = BA_poly.apply_rus(prep_b)()
-                return operand
-
-            res_dict = main()
-            amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
-
-        Finally, compare the quantum simulation result with the classical solution:
-
-        ::
-
-            c = (np.eye(4) + 2 * A + A @ A) @ b
-            c = c / np.linalg.norm(c)
-
-            print("QUANTUM SIMULATION\n", amps, "\nCLASSICAL SOLUTION\n", c)
-            # QUANTUM SIMULATION
-            # [0.02986315 0.57992481 0.62416743 0.52269535]
-            # CLASSICAL SOLUTION
-            # [-0.02986321  0.57992485  0.6241675   0.52269522]
-
-        """
-        from qrisp.algorithms.gqsp import GQET
-
-        if isinstance(p, list):
-            p = np.array(p)
-        return GQET(self, p, kind=kind)

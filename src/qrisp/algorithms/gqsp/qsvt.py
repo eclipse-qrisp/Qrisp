@@ -18,11 +18,12 @@
 
 from typing import Literal, TYPE_CHECKING
 
-from qrisp.core.gate_application_functions import x
-from qrisp.algorithms.gqsp.gqsp import GQSP
-from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
+from qrisp.core.gate_application_functions import h, mcx, rz
+from qrisp.environments import conjugate, invert
+from qrisp.algorithms.gqsp.gqsp_angles import qsvt_angles
 from qrisp.algorithms.gqsp.helper_functions import poly2cheb, _rescale_poly
 from qrisp.block_encodings import BlockEncoding
+from qrisp.jasp import jrange, q_cond
 from qrisp.operators import QubitOperator, FermionicOperator
 from qrisp.qtypes import QuantumBool
 
@@ -30,7 +31,7 @@ if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
 
-def GQSVT(
+def QSVT(
     A: BlockEncoding | FermionicOperator | QubitOperator,
     p: "ArrayLike",
     kind: Literal["Polynomial", "Chebyshev"] = "Polynomial",
@@ -38,20 +39,20 @@ def GQSVT(
     rescale: bool = True,
 ) -> BlockEncoding:
     r"""
-    Returns a BlockEncoding representing a polynomial transformation of the operator via `Generalized Quantum Singular Value Transform <https://arxiv.org/pdf/2312.00723>`_.
+    Returns a BlockEncoding representing a polynomial transformation of the operator via `Quantum Singular Value Transformation <https://arxiv.org/abs/1806.01838>`_.
 
-    For a block-encoded operator $A$ with `Singular Value Decomposition <https://en.wikipedia.org/wiki/Singular_value_decomposition>`_ $A = U \Sigma V^{\dagger}$ for unitaries $U, V$, 
-    and a (complex) polynomial $p(z)$, this method returns a BlockEncoding of either operator:
+    For a block-encoded operator $A$ with `Singular Value Decomposition <https://en.wikipedia.org/wiki/Singular_value_decomposition>`_ $A = U \Sigma V^{\dagger}$ for unitaries $U, V$,
+    and a (real) polynomial $p(x)$, this method returns a BlockEncoding of either operator:
 
-    - $p_{odd}(A)=V p_{odd}(\Sigma) U^{\dagger}$ 
+    - $p_{odd}(A)=U p_{odd}(\Sigma) V^{\dagger}$
 
     - $p_{even}(A)=V p_{even}(\Sigma) V^{\dagger}$
 
     where $p=p_{odd}+p_{even}$ is decomposed into odd and even parity parts.
 
     .. warning::
-        If the parity is odd, this deviates from :func:`qrisp.algorithms.gqsp.qsvt.QSVT`,
-        which returns a BlockEncoding of $p_{odd}(A)=U p_{odd}(\Sigma) V^{\dagger}$, i.e., the Hermitian conjugate.
+        If the parity is odd, this deviates from :func:`qrisp.algorithms.gqsp.gqsvt.GQSVT`,
+        which returns a BlockEncoding of $p_{odd}(A)=V p_{odd}(\Sigma) U^{\dagger}$, i.e., the Hermitian conjugate.
 
     Parameters
     ----------
@@ -62,9 +63,9 @@ def GQSVT(
     kind : {"Polynomial", "Chebyshev"}
         The basis in which the coefficients are defined.
 
-        - ``"Polynomial"``: $p(z) = \sum c_i z^i$
+        - ``"Polynomial"``: $p(x) = \sum c_i x^i$
 
-        - ``"Chebyshev"``: $p(z) = \sum c_i T_i(z)$, where $T_i$ are Chebyshev polynomials of the first kind.
+        - ``"Chebyshev"``: $p(x) = \sum c_i T_i(x)$, where $T_i$ are Chebyshev polynomials of the first kind.
 
         Default is ``"Polynomial"``.
     parity : {"odd", "even"}
@@ -82,7 +83,7 @@ def GQSVT(
     Returns
     -------
     BlockEncoding
-        A new BlockEncoding instance representing the transformed operator $p(A)$.
+        A new BlockEncoding instance representing the transformed operator $p_{odd}(A)$ or $p_{even}(A)$.
 
     Examples
     --------
@@ -106,20 +107,20 @@ def GQSVT(
         # [0. 0. 3. 1.]
         # [1. 0. 0. 3.]]
 
-    Generate a BlockEncoding of $A$ and use GQSVT to obtain a BlockEncoding of $p(A)=V p(\Sigma) U^{\dagger}$
+    Generate a BlockEncoding of $A$ and use QSVT to obtain a BlockEncoding of $p(A)=U p(\Sigma) V^{\dagger}$
     for an odd parity polynomial.
-    
+
     ::
 
         from qrisp import *
         from qrisp.block_encodings import BlockEncoding
-        from qrisp.gqsp import GQSVT
+        from qrisp.gqsp import QSVT
 
         def U0(qv): pass
         def U1(qv): qv-=1
         BE = BlockEncoding.from_lcu(np.array([3,1]), [U0,U1])
 
-        BE_poly = GQSVT(BE, np.array([0.,1.,0.,1.]), parity="odd")
+        BE_poly = QSVT(BE, np.array([0.,1.,0.,1.]), parity="odd")
 
         # Prepare initial system state |b>
         def operand_prep():
@@ -135,7 +136,7 @@ def GQSVT(
         res_dict = main()
         amps = np.sqrt([res_dict.get(i, 0) for i in range(len(b))])
         print(amps)
-        # [0.85184734 0.47324852 0.07098728 0.21296184]
+        # [0.85184732 0.21296187 0.0709873  0.47324855]
 
     Finally, compare the quantum simulation result with the classical solution:
 
@@ -148,17 +149,17 @@ def GQSVT(
         S_poly = S + S ** 3
 
         # Reconstruct transformed matrix
-        A_poly = (U @ np.diag(S_poly) @ Vh).conj().T
+        A_poly = U @ np.diag(S_poly) @ Vh
 
         res = A_poly @ b / np.linalg.norm(A_poly @ b)
         print(res)
-        # [0.85184734, 0.47324852, 0.07098728, 0.21296184]
+        # [0.85184734 0.21296184 0.07098728 0.47324852]
 
-    .. warning:: 
+    .. warning::
 
-        For non-Hermitian matrices performing Singular Value Transform 
+        For non-Hermitian matrices performing Singular Value Transform
         is not the same as applying a matrix polynomial.
-        
+
     ::
 
         A_poly = A + A @ A @ A
@@ -174,31 +175,50 @@ def GQSVT(
             f"Invalid kind specified: '{kind}'. "
             f"Allowed kinds are: {', '.join(ALLOWED_KINDS)}"
         )
-    
+
     if isinstance(A, (QubitOperator, FermionicOperator)):
         A = BlockEncoding.from_operator(A)
 
     # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
+    # If rescale=False, the returned block-encoding will implement p(A/alpha) instead of p(A),
+    # where alpha is the normalization factor of the input block-encoding A. 
     if rescale:
         p = _rescale_poly(A.alpha, p, kind=kind)
+
+    # If the coefficients are given in the standard polynomial basis, convert them to the Chebyshev basis,
+    # which is used internally for the angle calculation.
     if kind == "Polynomial":
         p = poly2cheb(p)
 
-    BE_herm = A._hermitianization()
+    phi, new_alpha = qsvt_angles(p, parity=parity)
 
-    angles, new_alpha = gqsp_angles(p)
+    m = len(A._anc_templates)
+
+    def reflection(args, phase):
+        qubits = sum([arg.reg for arg in args[1 : m + 1]], [])
+        with conjugate(mcx)(qubits, args[0], ctrl_state=0):
+            rz(phase, args[0])
+
+    def even(args):
+        A.unitary(*args[1:])
+
+    def odd(args):
+        with invert():
+            A.unitary(*args[1:])
 
     def new_unitary(*args):
-        if parity == "even":
-            x(args[1])
-        GQSP(args[0], *args[1:], unitary=BE_herm.unitary, angles=angles)
-        x(args[1]) # Ensure measuring ancilla in |0> yields correct result
+        h(args[0])
 
-    new_anc_templates = [QuantumBool().template()] + BE_herm._anc_templates
+        d = len(phi) - 1
+
+        for i in jrange(0, d):
+            reflection(args, phase=2 * phi[d - i])
+            q_cond(i % 2 == 0, even, odd, args)
+        reflection(args, phase=2 * phi[0])
+
+        h(args[0])
+
+    new_anc_templates = [QuantumBool().template()] + A._anc_templates
     return BlockEncoding(
-        new_alpha,
-        new_anc_templates,
-        new_unitary,
-        num_ops=BE_herm.num_ops,
-        is_hermitian=False,
+        new_alpha, new_anc_templates, new_unitary, num_ops=A.num_ops, is_hermitian=False
     )

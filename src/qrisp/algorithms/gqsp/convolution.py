@@ -16,14 +16,13 @@
 ********************************************************************************
 """
 
-import numpy as np
-from qrisp import (
-    QuantumVariable,
-    QuantumBool,
-)
+from typing import TYPE_CHECKING
+
+from qrisp.core import QuantumVariable
 from qrisp.alg_primitives import gidney_adder
 from qrisp.algorithms.gqsp.gqsp import GQSP
-from typing import TYPE_CHECKING
+from qrisp.qtypes import QuantumBool
+
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike

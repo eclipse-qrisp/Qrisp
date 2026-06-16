@@ -38,5 +38,9 @@ def test_pyscf_interface():
 
     H_ferm = FermionicOperator.from_pyscf(mol) # DOES NOT WORK
     
-    qv = QuantumVariable(12)
-    H_ferm.get_measurement(qv)
+    def state_prep():
+        qv = QuantumVariable(12)
+        return qv
+    
+    H_ferm.expectation_value(state_prep)()
+

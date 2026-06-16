@@ -16,20 +16,15 @@
 ********************************************************************************
 """
 
-# from __future__ import annotations
-# from jax.typing import ArrayLike
-from qrisp import (
-    QuantumArray,
-    QuantumVariable,
-    QuantumBool,
-    control,
-    invert,
-    rx,
-    rz,
-)
+from collections.abc import Callable
+from typing import Any, Optional, TYPE_CHECKING
+
+from qrisp.core import QuantumVariable
+from qrisp.core.gate_application_functions import rx, rz
+from qrisp.environments import control, invert
 from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
 from qrisp.jasp import jrange
-from typing import Any, Callable, Dict, Optional, Tuple, TYPE_CHECKING
+from qrisp.qtypes import QuantumBool
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
@@ -41,9 +36,9 @@ def GQSP(
     *qargs: QuantumVariable,
     unitary: Callable[..., None],
     p: Optional["ArrayLike"] = None,
-    angles: Optional[Tuple["ArrayLike", "ArrayLike", "ArrayLike"]] = None,
+    angles: Optional[tuple["ArrayLike", "ArrayLike", "ArrayLike"]] = None,
     k: int = 0,
-    kwargs: Dict[str, Any] = {},
+    kwargs: dict[str, Any] = {},
 ) -> None:
     r"""
     Performs `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.

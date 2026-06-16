@@ -86,7 +86,10 @@ QubitIndex = Array  # int64 scalar representing a qubit's position
 BooleanQuantumState = tuple[BitArray, Jlist]  # (bit_array, free_qubits)
 
 
-def make_cl_func_eqn_evaluator(call_graph_stats=None):
+def make_cl_func_eqn_evaluator(
+    call_graph_stats: dict | None = None,
+    callback_threshold: int | None = None,
+) -> Callable:
     """
     Factory that creates a cl_func_eqn_evaluator for transforming quantum
     primitives into classical bit operations.
@@ -106,6 +109,10 @@ def make_cl_func_eqn_evaluator(call_graph_stats=None):
     call_graph_stats : dict[int, JaxprStats] | None, optional
         Call graph analysis results from ``analyze_call_graph``. When provided,
         enables callback-based compilation optimization for reused sub-jaxprs.
+
+    callback_threshold : int | None, optional
+        Minimum value of ``call_count * inlined_eqn_count`` required to
+        trigger callback wrapping.  ``None`` disables callbacks entirely.
 
     Returns
     -------
@@ -150,13 +157,13 @@ def make_cl_func_eqn_evaluator(call_graph_stats=None):
         else:
             # Handle classical control flow primitives that may contain quantum operations
             if eqn.primitive.name == "while":
-                return process_while(eqn, context_dic, call_graph_stats)
+                return process_while(eqn, context_dic, call_graph_stats, callback_threshold)
             elif eqn.primitive.name == "cond":
-                return process_cond(eqn, context_dic, call_graph_stats)
+                return process_cond(eqn, context_dic, call_graph_stats, callback_threshold)
             elif eqn.primitive.name == "scan":
-                return process_scan(eqn, context_dic, call_graph_stats)
+                return process_scan(eqn, context_dic, call_graph_stats, callback_threshold)
             elif eqn.primitive.name == "jit":
-                process_pjit(eqn, context_dic, call_graph_stats)
+                process_pjit(eqn, context_dic, call_graph_stats, callback_threshold)
             else:
                 # Return True to indicate default JAX evaluation should be used
                 return True
@@ -590,7 +597,12 @@ def process_parity(eqn, context_dic):
     context_dic[eqn.outvars[0]] = jnp.array(result, dtype=bool)
 
 
-def process_while(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None) -> bool | None:
+def process_while(
+    eqn: JaxprEqn,
+    context_dic: ContextDict,
+    call_graph_stats: dict | None = None,
+    callback_threshold: int | None = None,
+) -> bool | None:
     """
     Process while loop primitives that may contain quantum operations.
 
@@ -606,6 +618,8 @@ def process_while(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None
         The variable-to-value mapping dictionary.
     call_graph_stats : dict[int, JaxprStats] | None, optional
         Call graph analysis results for callback optimization.
+    callback_threshold : int | None, optional
+        Threshold for callback wrapping decisions.
 
     Returns
     -------
@@ -625,8 +639,8 @@ def process_while(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None
     else:
         bit_array_padding = 0
 
-    converted_body_jaxpr = jaspr_to_cl_func_jaxpr(body_jaxpr.jaxpr, bit_array_padding, call_graph_stats)
-    converted_cond_jaxpr = jaspr_to_cl_func_jaxpr(cond_jaxpr.jaxpr, bit_array_padding, call_graph_stats)
+    converted_body_jaxpr = jaspr_to_cl_func_jaxpr(body_jaxpr.jaxpr, bit_array_padding, call_graph_stats, callback_threshold)
+    converted_cond_jaxpr = jaspr_to_cl_func_jaxpr(cond_jaxpr.jaxpr, bit_array_padding, call_graph_stats, callback_threshold)
 
     def body_fun(args: list) -> list:
         """Execute the loop body with flattened/unflattened signature conversion."""
@@ -659,7 +673,7 @@ def process_while(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None
     insert_outvalues(eqn, context_dic, outvalues)
 
 
-def process_cond(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None) -> None:
+def process_cond(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None, callback_threshold=None) -> None:
     """
     Process conditional (if/else) primitives that may contain quantum operations.
 
@@ -674,6 +688,8 @@ def process_cond(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None)
         The variable-to-value mapping dictionary.
     call_graph_stats : dict[int, JaxprStats] | None, optional
         Call graph analysis results for callback optimization.
+    callback_threshold : int | None, optional
+        Threshold for callback wrapping decisions.
     """
     invalues = extract_invalues(eqn, context_dic)
 
@@ -681,7 +697,7 @@ def process_cond(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None)
     branch_list: list[Callable] = []
     for i in range(len(eqn.params["branches"])):
         converted_jaxpr = ensure_conversion(
-            eqn.params["branches"][i].jaxpr, invalues[1:], call_graph_stats
+            eqn.params["branches"][i].jaxpr, invalues[1:], call_graph_stats, callback_threshold
         )
         branch_list.append(eval_jaxpr(converted_jaxpr))
 
@@ -697,7 +713,7 @@ def process_cond(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None)
     insert_outvalues(eqn, context_dic, unflattened_outvalues)
 
 
-def process_scan(eqn, context_dic, call_graph_stats=None):
+def process_scan(eqn, context_dic, call_graph_stats=None, callback_threshold=None):
     """
     Process scan primitive for cl_func_interpreter.
     Reinterprets the scan body and calls jax.lax.scan to preserve loop structure.
@@ -710,6 +726,8 @@ def process_scan(eqn, context_dic, call_graph_stats=None):
         The variable-to-value mapping dictionary.
     call_graph_stats : dict[int, JaxprStats] | None, optional
         Call graph analysis results for callback optimization.
+    callback_threshold : int | None, optional
+        Threshold for callback wrapping decisions.
     """
     from jax.lax import scan as jax_scan
 
@@ -729,7 +747,7 @@ def process_scan(eqn, context_dic, call_graph_stats=None):
 
     # Reinterpret the scan body with the appropriate eqn_evaluator
     scan_body_jaxpr = eqn.params["jaxpr"]
-    scan_body = eval_jaxpr(scan_body_jaxpr, eqn_evaluator=make_cl_func_eqn_evaluator(call_graph_stats))
+    scan_body = eval_jaxpr(scan_body_jaxpr, eqn_evaluator=make_cl_func_eqn_evaluator(call_graph_stats, callback_threshold))
 
     # Create wrapper function that includes constants
     if num_consts > 0:
@@ -789,14 +807,14 @@ _TRACED_FUN_CACHE_MAX_SIZE: int = 10_000
 _traced_fun_cache: OrderedDict[tuple[int, int], tuple[Callable, tuple]] = OrderedDict()
 
 
-def _should_use_callback(jaxpr, call_graph_stats):
+def _should_use_callback(jaxpr, call_graph_stats, callback_threshold=None):
     """
     Decide whether *jaxpr* should be called via ``jax.pure_callback``.
 
     A sub-jaxpr benefits from callback wrapping when it is **reused**
-    (``call_count >= 2``), large enough to matter (``inlined_eqn_count > 100``),
-    and operates on quantum state.  Wrapping prevents XLA's
-    ``flatten-call-graph`` pass from cloning the HLO at every call site.
+    (``call_count >= 2``), large enough to matter, and operates on quantum
+    state.  Wrapping prevents XLA's ``flatten-call-graph`` pass from
+    cloning the HLO at every call site.
 
     Parameters
     ----------
@@ -804,6 +822,10 @@ def _should_use_callback(jaxpr, call_graph_stats):
         The sub-jaxpr under consideration.
     call_graph_stats : dict | None
         Output of ``analyze_call_graph``.  ``None`` disables callbacks.
+    callback_threshold : int | None, optional
+        Minimum value of ``call_count * inlined_eqn_count`` required to
+        trigger callback wrapping.  ``None`` disables callbacks entirely.
+        ``0`` wraps every reused sub-jaxpr (fastest compilation).
 
     Returns
     -------
@@ -811,17 +833,19 @@ def _should_use_callback(jaxpr, call_graph_stats):
     """
     if call_graph_stats is None:
         return False
+    if callback_threshold is None:
+        return False
     stats = call_graph_stats.get(id(jaxpr))
     if stats is None:
         return False
     return (
         stats.call_count > 1
-        and stats.call_count*stats.inlined_eqn_count >= 500
+        and stats.call_count*stats.inlined_eqn_count >= callback_threshold
         and isinstance(jaxpr.jaxpr.invars[-1].aval, AbstractQuantumState)
     )
 
 
-def _compile_sub_jaxpr(jaxpr, bit_array_size, call_graph_stats=None):
+def _compile_sub_jaxpr(jaxpr, bit_array_size, call_graph_stats=None, callback_threshold=None):
     """
     Compile a sub-jaxpr to a JIT-compiled function and cache the result.
 
@@ -835,6 +859,9 @@ def _compile_sub_jaxpr(jaxpr, bit_array_size, call_graph_stats=None):
     bit_array_size : int
         Maximum number of simulatable qubits.
     call_graph_stats : dict | None, optional
+        Passed through to ``jaspr_to_cl_func_jaxpr`` for nested callback
+        decisions.
+    callback_threshold : int | None, optional
         Passed through to ``jaspr_to_cl_func_jaxpr`` for nested callback
         decisions.
 
@@ -852,7 +879,7 @@ def _compile_sub_jaxpr(jaxpr, bit_array_size, call_graph_stats=None):
     from jax.core import eval_jaxpr as jax_eval_jaxpr
 
     if isinstance(jaxpr, Jaspr):
-        cl_func_jaxpr = jaspr_to_cl_func_jaxpr(jaxpr, bit_array_size, call_graph_stats)
+        cl_func_jaxpr = jaspr_to_cl_func_jaxpr(jaxpr, bit_array_size, call_graph_stats, callback_threshold)
     else:
         cl_func_jaxpr = jaxpr
 
@@ -876,7 +903,7 @@ def _compile_sub_jaxpr(jaxpr, bit_array_size, call_graph_stats=None):
 # process_pjit – handles the ``jit`` primitive
 # ---------------------------------------------------------------------------
 
-def process_pjit(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None) -> None:
+def process_pjit(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None, callback_threshold=None) -> None:
     """
     Process a ``jit`` (pjit) equation in the boolean-simulation interpreter.
 
@@ -896,6 +923,8 @@ def process_pjit(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None)
         Variable-to-value mapping.
     call_graph_stats : dict | None, optional
         Call-graph analysis results from ``analyze_call_graph``.
+    callback_threshold : int | None, optional
+        Threshold for callback wrapping decisions.
     """
     invalues = extract_invalues(eqn, context_dic)
     name = eqn.params["name"]
@@ -924,11 +953,11 @@ def process_pjit(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None)
     bit_array_padding = invalues[-1][0].shape[0] * 64 if isinstance(jaxpr, Jaspr) else 0
 
     traced_fun, result_shapes = _compile_sub_jaxpr(
-        jaxpr, bit_array_padding, call_graph_stats
+        jaxpr, bit_array_padding, call_graph_stats, callback_threshold
     )
     flattened_invalues = flatten_signature(invalues, eqn.invars)
 
-    if _should_use_callback(jaxpr, call_graph_stats):
+    if _should_use_callback(jaxpr, call_graph_stats, callback_threshold):
         outvalues = pure_callback(traced_fun, result_shapes, *flattened_invalues)
     else:
         outvalues = traced_fun(*flattened_invalues)
@@ -1035,7 +1064,7 @@ def process_reset(eqn: JaxprEqn, context_dic: ContextDict) -> None:
     insert_outvalues(eqn, context_dic, outvalues)
 
 
-def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int, call_graph_stats=None) -> ClosedJaxpr:
+def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int, call_graph_stats=None, callback_threshold=None) -> ClosedJaxpr:
     """
     Transform a Jaspr (quantum program) into a classical ClosedJaxpr.
 
@@ -1056,6 +1085,8 @@ def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int, call_graph_stat
         the size of the bit array (ceiling of bit_array_padding / 64 uint64s).
     call_graph_stats : dict[int, JaxprStats] | None, optional
         Call graph analysis results for callback optimization of reused sub-jaxprs.
+    callback_threshold : int | None, optional
+        Threshold for callback wrapping decisions.
 
     Returns
     -------
@@ -1100,7 +1131,7 @@ def jaspr_to_cl_func_jaxpr(jaspr: Jaspr, bit_array_padding: int, call_graph_stat
             # Classical abstract values pass through unchanged
             args.append(invar.aval)
 
-    eqn_evaluator = make_cl_func_eqn_evaluator(call_graph_stats)
+    eqn_evaluator = make_cl_func_eqn_evaluator(call_graph_stats, callback_threshold)
     return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator))(*args)
 
 
@@ -1258,7 +1289,7 @@ def flatten_signature(values: list[Any], variables: list[Var]) -> list[Array]:
     return flattened_values
 
 
-def ensure_conversion(jaxpr: Jaspr, invalues: list[Any], call_graph_stats=None) -> ClosedJaxpr:
+def ensure_conversion(jaxpr: Jaspr, invalues: list[Any], call_graph_stats=None, callback_threshold=None) -> ClosedJaxpr:
     """
     Ensure a Jaxpr is converted to classical form if it contains quantum types.
 
@@ -1274,6 +1305,8 @@ def ensure_conversion(jaxpr: Jaspr, invalues: list[Any], call_graph_stats=None) 
         The input values, used to determine the bit array size.
     call_graph_stats : dict[int, JaxprStats] | None, optional
         Call graph analysis results for callback optimization.
+    callback_threshold : int | None, optional
+        Threshold for callback wrapping decisions.
 
     Returns
     -------
@@ -1292,4 +1325,4 @@ def ensure_conversion(jaxpr: Jaspr, invalues: list[Any], call_graph_stats=None) 
                 # Get bit array size from the quantum circuit value
                 bit_array_padding = invalues[i][0].shape[0] * 64
 
-    return jaspr_to_cl_func_jaxpr(jaxpr, bit_array_padding, call_graph_stats)
+    return jaspr_to_cl_func_jaxpr(jaxpr, bit_array_padding, call_graph_stats, callback_threshold)

@@ -29,6 +29,7 @@ from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
     eval_jaxpr,
     make_profiling_eqn_evaluator,
 )
+from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
 from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.jasp.primitives import (
     AbstractQubitArray,
@@ -278,8 +279,11 @@ def extract_num_qubits(res: Tuple, jaspr: Jaspr, _) -> dict:
 
 @lru_cache(int(1e5))
 def get_num_qubits_profiler(
-    jaspr: Jaspr, meas_behavior: Callable, max_allocations: int = 1000
-) -> Tuple[Callable, None]:
+    jaspr: Jaspr,
+    meas_behavior: Callable,
+    max_allocations: int = 1000,
+    callback_threshold: int | None = None,
+) -> tuple[Callable, None]:
     """
     Build a num qubits profiling computer for a given Jaspr.
 
@@ -295,6 +299,12 @@ def get_num_qubits_profiler(
         The maximum number of qubit allocations/deallocations supported by the profiler.
         Default is 1000.
 
+    callback_threshold : int | None, optional
+        Minimum value of ``call_count * inlined_eqn_count`` required to
+        trigger ``jax.pure_callback`` wrapping.  ``None`` (default)
+        disables callbacks entirely (fastest execution).  ``0`` wraps
+        every reused sub-jaxpr (fastest compilation).
+
     Returns
     -------
     Tuple[Callable, None]
@@ -303,7 +313,13 @@ def get_num_qubits_profiler(
     """
 
     num_qubits_metric = NumQubitsMetric(meas_behavior, max_allocations)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(num_qubits_metric)
+
+    # Analyze the call graph to identify reused sub-jaxprs.  The resulting
+    # stats are threaded into the profiling evaluator so that frequently
+    # called, large sub-jaxprs can be wrapped in ``jax.pure_callback``
+    # to avoid XLA compilation blowup (see profiling_interpreter.py).
+    _, call_graph_stats = analyze_call_graph(jaspr)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(num_qubits_metric, call_graph_stats, callback_threshold)
     jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     def num_qubits_profiler(*args):

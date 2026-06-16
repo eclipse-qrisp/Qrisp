@@ -239,3 +239,225 @@ def test_parity_count_ops_in_while():
     assert ops["x"] == 3, f"Expected 3 x gates, got {ops.get('x', 0)}"
     assert ops["measure"] == 6, f"Expected 6 measurements, got {ops.get('measure', 0)}"
     assert "parity" not in ops, "Parity should not be counted as an operation"
+
+
+def test_callback_threshold_count_ops():
+    """Test that count_ops with callback_threshold produces correct results.
+
+    The callback_threshold parameter controls whether ``jax.pure_callback``
+    wrapping is used for reused sub-jaxprs to prevent XLA compilation blowup.
+    Different threshold values should all produce the same profiling results.
+    """
+
+    # A qache'd subroutine that will be reused multiple times.
+    # The reuse triggers the call-graph analysis and callback wrapping.
+    @qache
+    def add_controlled_h(qv):
+        """Apply H gates controlled on the first qubit to two other qubits."""
+        with control(qv[0]):
+            h(qv[1])
+            h(qv[2])
+
+    def make_circuit():
+        qv = QuantumFloat(3)
+        h(qv[0])
+
+        # Call the qache'd subroutine multiple times so it gets reused
+        add_controlled_h(qv)
+        add_controlled_h(qv)
+        add_controlled_h(qv)
+
+        x(qv)
+        return measure(qv)
+
+    # Baseline: no callbacks (default, fastest execution)
+    baseline = count_ops(meas_behavior="0")(make_circuit)()
+
+    # callback_threshold=0: wrap every reused sub-jaxpr (fastest compilation)
+    result_0 = count_ops(meas_behavior="0", callback_threshold=0)(make_circuit)()
+    assert result_0 == baseline, (
+        f"callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
+    )
+
+    # callback_threshold=500: suggested middle ground
+    result_500 = count_ops(meas_behavior="0", callback_threshold=500)(make_circuit)()
+    assert result_500 == baseline, (
+        f"callback_threshold=500 diverged:\n  baseline={baseline}\n  got={result_500}"
+    )
+
+    # callback_threshold with a very large value: no sub-jaxpr should be wrapped
+    result_large = count_ops(meas_behavior="0", callback_threshold=10**9)(make_circuit)()
+    assert result_large == baseline, (
+        f"callback_threshold=10**9 diverged:\n  baseline={baseline}\n  got={result_large}"
+    )
+
+    # Also test with meas_behavior="1"
+    baseline_1 = count_ops(meas_behavior="1")(make_circuit)()
+    result_1_0 = count_ops(meas_behavior="1", callback_threshold=0)(make_circuit)()
+    assert result_1_0 == baseline_1, (
+        f"meas_behavior='1', callback_threshold=0 diverged:\n  baseline={baseline_1}\n  got={result_1_0}"
+    )
+
+    # Verify that the results contain expected gates
+    assert "h" in baseline, f"Expected 'h' in count_ops result, got {baseline}"
+    assert "cx" in baseline, f"Expected 'cx' in count_ops result, got {baseline}"
+    assert "x" in baseline, f"Expected 'x' in count_ops result, got {baseline}"
+    assert "measure" in baseline, f"Expected 'measure' in count_ops result, got {baseline}"
+
+
+def test_callback_threshold_nested_qache():
+    """Test callback_threshold with nested @qache'd subroutines.
+
+    An outer qache'd function calls an inner qache'd function.  Both are
+    reused multiple times.  The callback wrapping must handle the nested
+    case without corrupting profiling results.
+    """
+
+    @qache
+    def inner_sub(qv):
+        """Inner subroutine: apply H gates controlled on qv[0]."""
+        with control(qv[0]):
+            h(qv[1])
+
+    @qache
+    def outer_sub(qv):
+        """Outer subroutine: calls inner_sub and adds its own gates."""
+        with control(qv[1]):
+            h(qv[2])
+        inner_sub(qv)
+        inner_sub(qv)
+
+    def make_circuit():
+        qv = QuantumFloat(4)
+        h(qv[0])
+
+        # Reuse both outer_sub (and transitively inner_sub) multiple times
+        outer_sub(qv)
+        outer_sub(qv)
+        outer_sub(qv)
+
+        x(qv)
+        return measure(qv)
+
+    baseline = count_ops(meas_behavior="0")(make_circuit)()
+    result_0 = count_ops(meas_behavior="0", callback_threshold=0)(make_circuit)()
+    assert result_0 == baseline, (
+        f"Nested qache with callback_threshold=0 diverged:\n"
+        f"  baseline={baseline}\n  got={result_0}"
+    )
+
+    result_500 = count_ops(meas_behavior="0", callback_threshold=500)(make_circuit)()
+    assert result_500 == baseline, (
+        f"Nested qache with callback_threshold=500 diverged:\n"
+        f"  baseline={baseline}\n  got={result_500}"
+    )
+
+    # Nested qache with meas_behavior="1"
+    baseline_1 = count_ops(meas_behavior="1")(make_circuit)()
+    result_1_0 = count_ops(meas_behavior="1", callback_threshold=0)(make_circuit)()
+    assert result_1_0 == baseline_1, (
+        f"Nested qache meas_behavior='1', callback_threshold=0 diverged:\n"
+        f"  baseline={baseline_1}\n  got={result_1_0}"
+    )
+
+
+def test_callback_threshold_with_jrange():
+    """Test callback_threshold with a jrange loop calling a qache'd subroutine.
+
+    The jrange loop creates many call sites for the same qache'd function,
+    which is exactly the scenario that callback wrapping is designed to
+    optimize.  All threshold values must produce identical results.
+    """
+
+    @qache
+    def iterated_sub(qv, n):
+        """Subroutine called inside a jrange loop."""
+        with control(qv[0]):
+            h(qv[n % 3])
+        with control(qv[1]):
+            x(qv[n % 3])
+
+    def make_circuit():
+        qv = QuantumFloat(4)
+        h(qv[0])
+
+        for i in jrange(20):
+            iterated_sub(qv, i)
+
+        x(qv)
+        return measure(qv)
+
+    baseline = count_ops(meas_behavior="0")(make_circuit)()
+    result_0 = count_ops(meas_behavior="0", callback_threshold=0)(make_circuit)()
+    assert result_0 == baseline, (
+        f"jrange loop with callback_threshold=0 diverged:\n"
+        f"  baseline={baseline}\n  got={result_0}"
+    )
+
+    result_500 = count_ops(meas_behavior="0", callback_threshold=500)(make_circuit)()
+    assert result_500 == baseline, (
+        f"jrange loop with callback_threshold=500 diverged:\n"
+        f"  baseline={baseline}\n  got={result_500}"
+    )
+
+    # Verify that the gate counts are as expected (20 iterations of iterated_sub)
+    assert baseline.get("h", 0) > 0, "Expected some H gates"
+    assert baseline.get("x", 0) > 0, "Expected some X gates"
+
+
+def test_callback_threshold_edge_cases():
+    """Test edge cases of callback_threshold.
+
+    - threshold=1: every reused sub-jaxpr (call_count > 1) gets wrapped,
+      regardless of its size.
+    - Determinism: running the same circuit multiple times with the same
+      threshold yields identical results.
+    """
+
+    @qache
+    def tiny_sub(qv):
+        """A very small subroutine (few equations)."""
+        x(qv[0])
+
+    def make_circuit():
+        qv = QuantumFloat(3)
+        h(qv[0])
+        tiny_sub(qv)
+        tiny_sub(qv)
+        tiny_sub(qv)
+        return measure(qv)
+
+    baseline = count_ops(meas_behavior="0")(make_circuit)()
+
+    # threshold=1: even tiny reused sub-jaxprs should be wrapped
+    result_1 = count_ops(meas_behavior="0", callback_threshold=1)(make_circuit)()
+    assert result_1 == baseline, (
+        f"callback_threshold=1 diverged:\n  baseline={baseline}\n  got={result_1}"
+    )
+
+    # Determinism: same threshold, multiple calls give same result
+    for _ in range(3):
+        r = count_ops(meas_behavior="0", callback_threshold=0)(make_circuit)()
+        assert r == baseline, (
+            f"Determinism check failed: expected {baseline}, got {r}"
+        )
+
+    # Single-call subroutine (no reuse) — callback_threshold should have no effect
+    @qache
+    def single_use_sub(qv):
+        with control(qv[0]):
+            h(qv[1])
+
+    def single_call_circuit():
+        qv = QuantumFloat(3)
+        h(qv[0])
+        single_use_sub(qv)  # only called once — no reuse
+        x(qv)
+        return measure(qv)
+
+    s_baseline = count_ops(meas_behavior="0")(single_call_circuit)()
+    s_result_0 = count_ops(meas_behavior="0", callback_threshold=0)(single_call_circuit)()
+    assert s_result_0 == s_baseline, (
+        f"Single-call with callback_threshold=0 diverged:\n"
+        f"  baseline={s_baseline}\n  got={s_result_0}"
+    )
