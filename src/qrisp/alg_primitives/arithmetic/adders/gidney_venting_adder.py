@@ -191,10 +191,11 @@ def carry_venting_adder(
     d: int | BigInteger,
     target: QuantumVariable,
     ancilla: QuantumVariable,
-    c_in: QuantumVariable | None = None,
+    c_in: QuantumBool | None = None,
     carry_xor_target: QuantumVariable | None = None,
     ctrl: QuantumVariable | None = None,
     vent_final: bool = True,
+    c_out: QuantumBool | None = None,
 ) -> tuple[int, int]:
     r"""Fig. 2 — carry-venting CQ in-place adder.
 
@@ -223,7 +224,7 @@ def carry_venting_adder(
         Classical addend (compile-time constant).
     ancilla : QuantumVariable
         2-qubit clean ancilla register for the streaming carry chain.
-    c_in : QuantumVariable | None
+    c_in : QuantumBool | None
         Quantum carry-in.  ``None`` is treated as ``|0⟩``.
     carry_xor_target : QuantumVariable | None
         Optional dirty workspace register used for the fused carry-xor pass
@@ -407,6 +408,10 @@ def carry_venting_adder(
         else:
             pass
 
+        # XOR the final carry into c_out before venting it.
+        if c_out is not None:
+            cx(current_carry, c_out[0])
+
         # Vent (common to both paths) — X-basis measurement
         h(current_carry)
         m_last = measure(current_carry)
@@ -426,6 +431,8 @@ def carry_venting_adder(
         return target, clean_anc, ventmask, carry_xor_cnt
 
     def skip_final_block(target, clean_anc, ventmask, carry_xor_cnt):
+        if c_out is not None:
+            cx(clean_anc[0], c_out[0])
         if vent_final:
             h(clean_anc[0])
             m_i = measure(clean_anc[0])
@@ -458,7 +465,7 @@ def carry_xor_block(
     d: int | BigInteger,
     dirty_ancillas: QuantumVariable,
     target: QuantumVariable,
-    c_in: QuantumVariable | None = None,
+    c_in: QuantumBool | None = None,
     ctrl: QuantumVariable | None = None,
 ) -> None:
     """Fig. 3 — carry-XOR block: second pass of the two-pass phase correction.
@@ -542,7 +549,8 @@ def dirty_ancillae_adder(
     target: QuantumVariable,
     dirty_ancillas: QuantumVariable,
     ancilla: QuantumVariable,
-    c_in: QuantumVariable | None = None,
+    c_in: QuantumBool | None = None,
+    c_out: QuantumBool | None = None,
     ctrl: QuantumVariable | None = None,
 ) -> int:
     r"""Fig. 4 — dirty-ancilla CQ in-place adder.
@@ -570,7 +578,7 @@ def dirty_ancillae_adder(
         n-2 dirty workspace qubits.
     ancilla : QuantumVariable
         2-qubit clean ancilla register for the streaming carry chain.
-    c_in : QuantumVariable | None
+    c_in : QuantumBool | None
         Quantum carry-in.  ``None`` is treated as ``|0⟩``.
 
     Returns
@@ -591,7 +599,7 @@ def dirty_ancillae_adder(
     # uncorrected Z-phase error.
     ventmask, _ = carry_venting_adder(
         d, target, ancilla=ancilla, c_in=c_in, carry_xor_target=dirty_qubits,
-        ctrl=ctrl, vent_final=False,
+        ctrl=ctrl, vent_final=False, c_out=c_out,
     )
 
     # Step 2: Phase correction
@@ -623,6 +631,7 @@ def gidney_cq_venting_adder(
     d: int | BigInteger,
     target: QuantumVariable,
     c_in: QuantumBool | None = None,
+    c_out: QuantumBool | None = None,
     ctrl: QuantumVariable | QuantumBool | None = None,
 ) -> None:
     r"""In-place classical-quantum adder using Gidney's carry-venting technique.
@@ -782,6 +791,7 @@ def gidney_cq_venting_adder(
         ancilla=clean_anc[1:],
         c_in=clean0,
         ctrl=ctrl,
+        c_out=c_out,
     )
 
     # Step 5: MX measurement on clean0.

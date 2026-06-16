@@ -487,7 +487,41 @@ def test_gidney_cq_venting_adder_jasp(init, d, c_in_val, expected, n, ctrl_val):
         assert int(result_ctrl) == ctrl_val
 
 
-def test_invalid_inputs():
+C_OUT_CASES = [
+    # (init, d, c_in_val, n)
+    (0, 1, 0, 3),      # 0+1+0 = 1,  carry=0
+    (7, 1, 0, 3),      # 7+1+0 = 8 ≥ 8, carry=1
+    (15, 1, 0, 4),     # 15+1+0 = 16 ≥ 16, carry=1
+    (14, 1, 0, 4),     # 14+1+0 = 15, carry=0
+    (255, 1, 0, 8),    # 255+1+0 = 256 ≥ 256, carry=1
+    (0, 0, 0, 5),      # 0+0+0 = 0, carry=0
+    (0, 0, 1, 5),      # 0+0+1 = 1, carry=0 (c_in=1 but no overflow)
+    (31, 0, 1, 5),     # 31+0+1 = 32 ≥ 32, carry=1
+]
+
+
+@pytest.mark.parametrize("init, d, c_in_val, n", C_OUT_CASES)
+def test_gidney_cq_venting_adder_c_out(init, d, c_in_val, n):
+    """Verify carry-out is set correctly."""
+    expected_carry = 1 if (init + d + (c_in_val or 0)) >= (1 << n) else 0
+
+    @jaspify
+    def run():
+        target = QuantumFloat(n)
+        target[:] = init
+        if c_in_val is not None:
+            c_in = QuantumBool()
+            if c_in_val:
+                x(c_in)
+        else:
+            c_in = None
+        c_out = QuantumBool()
+        gidney_cq_venting_adder(d, target, c_in=c_in, c_out=c_out)
+        return measure(target), measure(c_out)
+
+    result_target, result_carry = run()
+    assert int(result_target) == (init + d + (c_in_val or 0)) % (1 << n)
+    assert int(result_carry) == expected_carry
     """Verify error handling: non-JASP mode, wrong argument types."""
     target = QuantumFloat(3)
     with pytest.raises(
@@ -945,17 +979,11 @@ def _ts_cq_gidney_roundtrip(n):
     return target
 
 
-@pytest.mark.xfail(reason="Non-deterministic under @terminal_sampling for small registers: inner carry_venting's excess vent has no dirty qubit, and the single-trajectory simulation gives random results")
-@pytest.mark.parametrize("n", [3, 4, 5])
-def test_cq_gidney_roundtrip_small(n):
-    """H⊗ⁿ → add 1 (venting) → subtract 1 (gidney) → H⊗ⁿ leaves |0⟩ (small n: xfail)."""
-    res = _ts_cq_gidney_roundtrip(n)
-    t_val, prob = next(iter(res.items()))
-    assert prob == pytest.approx(1.0)
-    assert int(t_val) == 0
-
-
-@pytest.mark.parametrize("n", range(6, 15))
+@pytest.mark.parametrize("n", [
+    pytest.param(3, marks=pytest.mark.xfail(reason="small-register non-determinism under @terminal_sampling")),
+    pytest.param(4, marks=pytest.mark.xfail(reason="small-register non-determinism under @terminal_sampling")),
+    pytest.param(5, marks=pytest.mark.xfail(reason="small-register non-determinism under @terminal_sampling")),
+] + list(range(6, 15)))
 def test_cq_gidney_roundtrip(n):
     """H⊗ⁿ → add 1 (venting) → subtract 1 (gidney) → H⊗ⁿ leaves |0⟩."""
     res = _ts_cq_gidney_roundtrip(n)
