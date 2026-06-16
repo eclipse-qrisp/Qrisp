@@ -1,18 +1,13 @@
 from __future__ import annotations
 
 import jax.numpy as jnp
-from typing import TYPE_CHECKING
 from qrisp import QuantumVariable, x, cx, mcx, h, measure, reset, z
 from qrisp.environments import control, custom_control
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.qtypes import QuantumBool
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 
 from qrisp.alg_primitives.arithmetic.adders.gidney_adder import _extract_bit
-
-if TYPE_CHECKING:
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
-        BigInteger,
-    )
 
 
 def bit_inverted_mcx(
@@ -32,11 +27,9 @@ def bit_inverted_mcx(
 
     .. warning::
 
-       When *ctrl* is provided, it only gates the X-flips on *parity_check_ctrl*, **not** the MCX itself.
-       If *ctrl* = |0⟩, the X-flips are suppressed (same as *b* = 0), but the MCX still executes and can
-       flip *target* whenever the resulting input state satisfies its control condition.  This function
-       does **not** guarantee a no-op for *ctrl* = |0⟩ — callers must ensure that when *ctrl* = |0⟩,
-       the combination of *parity_check_ctrl* and *simple_ctrl* never causes the MCX to fire.
+       *ctrl* only decides whether *parity_check_ctrl* gets flipped before the MCX.
+       When *ctrl* = |0⟩ the flip is skipped (same as *b* = 0), but the MCX still runs
+       and can fire if *parity_check_ctrl* and *simple_ctrl* are both |1⟩.
 
     Circuit diagram — two X gates conditioned on classical b wrap a standard MCX:
 
@@ -56,10 +49,9 @@ def bit_inverted_mcx(
         else:
             cx(ctrl, parity_check_ctrl)
 
-    # MCX stays 2-control — ctrl is NOT added as a third control because
-    # ctrl conditions the parity flips above, not the MCX itself.
-    # When ctrl=|0⟩ and b=1, the CX flips are no-ops → MCX sees un-flipped
-    # parity (= same as b=0) → d_i=1 effectively becomes d_i=0.
+    # ctrl is not added to the MCX — it only conditions the X-flips on parity_check_ctrl.
+    # When ctrl=0 and b=1, cx(ctrl, parity_check_ctrl) is a no-op, so parity_check_ctrl
+    # stays unchanged and the MCX acts as if b=0.
     mcx([parity_check_ctrl, simple_ctrl], target)
 
     with control(b):
@@ -154,12 +146,10 @@ def bit_inverted_zz_zz_mcx(
 
     .. warning::
 
-       When *ctrl* is provided, it only gates the X-flips on *parity_ctrl1* and *parity_ctrl2*,
-       **not** the MCX itself.  If *ctrl* = |0⟩, the X-flips are suppressed (same as *b* = 0),
-       but the MCX still executes and can flip *target* whenever the resulting input state
-       satisfies its control condition.  This function does **not** guarantee a no-op for
-       *ctrl* = |0⟩ — callers must ensure that when *ctrl* = |0⟩, the combination of
-       *parity_ctrl1* and *parity_ctrl2* never causes the MCX to fire.
+       Same as :func:`bit_inverted_mcx`: *ctrl* only decides whether *parity_ctrl1* and
+       *parity_ctrl2* get flipped before the MCX.  When *ctrl* = |0⟩ the flips are skipped
+       (same as *b* = 0), but the MCX still runs and can fire if both parity controls
+       are |1⟩.
 
     Circuit diagram — two X gates on each control wrap a standard MCX:
 
@@ -184,8 +174,7 @@ def bit_inverted_zz_zz_mcx(
             cx(ctrl, parity_ctrl1)
             cx(ctrl, parity_ctrl2)
 
-    # MCX stays 2-control — same reasoning as bit_inverted_mcx.
-    # ctrl conditions the parity flips above, not the MCX itself.
+    # Same as bit_inverted_mcx: ctrl only conditions the X-flips, not the MCX.
     mcx([parity_ctrl1, parity_ctrl2], target)
 
     with control(b):
@@ -232,7 +221,7 @@ def carry_venting_adder(
         Classical addend (compile-time constant).
     ancilla : QuantumVariable
         2-qubit clean ancilla register for the streaming carry chain.
-    c_in : QuantumBool | None
+    c_in : QuantumVariable | None
         Quantum carry-in.  ``None`` is treated as ``|0⟩``.
     carry_xor_target : QuantumVariable | None
         Optional dirty workspace register used for the fused carry-xor pass
@@ -474,13 +463,13 @@ def carry_xor_block(
     Z-phase corrections from surrounding CZ gates).
 
     The computation has four phases:
-      1. Reverse order — walk dirty slots from most significant bit to
+      1. Reverse order — walk dirty qubits from most significant bit to
          least significant bit, computing the carry into each position
          and XORing it in.
-      2. Flip each dirty slot if the corresponding addend bit is 1.
-      3. If there is a carry-in, handle the first dirty slot using a
+      2. Flip each dirty qubit if the corresponding addend bit is 1.
+      3. If there is a carry-in, handle the first dirty qubit using a
          parity-checking gate.
-      4. Forward order — walk dirty slots from least significant bit to
+      4. Forward order — walk dirty qubits from least significant bit to
          most significant bit, computing the carry into each position
          and XORing it in.
 
@@ -500,10 +489,10 @@ def carry_xor_block(
             carry_in = c_in
 
     # Reverse chain
-    # Walk the dirty slots from most significant bit to least significant bit.
+    # Walk the dirty qubits from most significant bit to least significant bit.
     # For each slot, combine the
-    # corresponding target bit and the previous dirty slot (as carry-in) to
-    # recompute the carry, then flip the current dirty slot if the addend
+    # corresponding target bit and the previous dirty qubit (as carry-in) to
+    # recompute the carry, then flip the current dirty qubit if the addend
     # bit is 1.  This propagates carries downward from high to low bits.
     for j in jrange(num_dirty_qubits - 1):
         i = (num_dirty_qubits - 1) - j
@@ -512,7 +501,7 @@ def carry_xor_block(
             target[i], dirty_ancillas[i - 1], dirty_ancillas[i], bit_i, ctrl=ctrl
         )
 
-    # Flip each dirty slot if the addend bit is 1
+    # Flip each dirty qubit if the addend bit is 1
     for i in jrange(num_dirty_qubits):
         bit_i = _extract_bit(d, i)
         with control(bit_i):
@@ -526,7 +515,7 @@ def carry_xor_block(
         bit_inverted_zz_zz_mcx(carry_in, target[0], dirty_ancillas[0], d0, ctrl=ctrl)
 
     # Forward chain
-    # Walk dirty slots from least significant bit to most significant bit.
+    # Walk dirty qubits from least significant bit to most significant bit.
     for j in jrange(num_dirty_qubits - 1):
         i = j + 1
         bit_i = _extract_bit(d, i)
@@ -568,7 +557,7 @@ def dirty_ancillae_adder(
         n-2 dirty workspace qubits.
     ancilla : QuantumVariable
         2-qubit clean ancilla register for the streaming carry chain.
-    c_in : QuantumBool | None
+    c_in : QuantumVariable | None
         Quantum carry-in.  ``None`` is treated as ``|0⟩``.
 
     Returns

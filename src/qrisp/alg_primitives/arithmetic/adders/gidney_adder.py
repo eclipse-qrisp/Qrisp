@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import jax.numpy as jnp
 import numpy as np
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, x, cx, mcx
 from qrisp.qtypes import QuantumBool
@@ -305,7 +306,7 @@ def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, c
 
 @custom_control
 def gidney_adder(
-    a: int | str | QuantumVariable | DynamicQubitArray | list,
+    a: int | str | BigInteger | QuantumVariable | DynamicQubitArray | list,
     b: QuantumVariable | DynamicQubitArray | list,
     c_in: Qubit | QuantumBool | None = None,
     c_out: Qubit | QuantumBool | None = None,
@@ -361,10 +362,6 @@ def gidney_adder(
     >>> print(b)
     {9: 1.0}
     """
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
-        BigInteger,
-    )
-
     a_is_quantum = _validate_gidney_adder_inputs(a, b)
 
     # Normalise QuantumBool wrappers to raw qubits for downstream code.
