@@ -43,4 +43,4 @@ jobs:
           pip install --group test
 
       - name: Run tests with pytest
-        run: pytest -n auto -vv
+        run: pytest -n auto -v
