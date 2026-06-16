@@ -606,9 +606,16 @@ def dirty_ancillae_adder(
     for i in jrange(num_targets):
         x(target[i])
 
-    # CZ pass 1: correct Z-phases using ventmask
+    # XOR excess vent bits (beyond num_dirty) into the last dirty slot's
+    # correction so their Z-phase errors are not left uncorrected.
+    excess = ventmask >> num_dirty
+    ventmask_fixed = (ventmask & ((1 << num_dirty) - 1)) ^ (
+        (bitwise_count(excess) & 1) << (num_dirty - 1)
+    )
+
+    # CZ pass 1: correct Z-phases using ventmask (excess XORed into last slot)
     for k in jrange(num_dirty):
-        with control((ventmask >> k) & 1):
+        with control((ventmask_fixed >> k) & 1):
             z(dirty_qubits[k])
 
     # Second carry-xor pass: recompute carries against the flipped sum
@@ -616,7 +623,7 @@ def dirty_ancillae_adder(
 
     # CZ pass 2: correct Z-phases again
     for k in jrange(num_dirty):
-        with control((ventmask >> k) & 1):
+        with control((ventmask_fixed >> k) & 1):
             z(dirty_qubits[k])
 
     # Restore target

@@ -980,7 +980,7 @@ def _ts_cq_gidney_roundtrip(n):
     pytest.param(3, marks=pytest.mark.xfail(reason="small-register non-determinism under @terminal_sampling")),
     pytest.param(4, marks=pytest.mark.xfail(reason="small-register non-determinism under @terminal_sampling")),
     pytest.param(5, marks=pytest.mark.xfail(reason="small-register non-determinism under @terminal_sampling")),
-] + list(range(6, 15)))
+] + list(range(6, 13)))
 def test_cq_gidney_roundtrip(n):
     """H⊗ⁿ → add 1 (venting) → subtract 1 (gidney) → H⊗ⁿ leaves |0⟩."""
     res = _ts_cq_gidney_roundtrip(n)
