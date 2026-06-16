@@ -29,12 +29,6 @@ from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_multiplyers import (
     jasp_squaring,
     jasp_multiplyer,
 )
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
-    q_montgomery_reduction,
-    qq_montgomery_multiply,
-    cq_montgomery_multiply,
-    cq_montgomery_multiply_inplace,
-)
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
     BigInteger,
     bi_modinv,
@@ -45,3 +39,18 @@ from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
     best_montgomery_shift,
 )
+
+
+def __getattr__(name):
+    if name in (
+        "q_montgomery_reduction",
+        "qq_montgomery_multiply",
+        "cq_montgomery_multiply",
+        "cq_montgomery_multiply_inplace",
+    ):
+        import importlib
+        mod = importlib.import_module(
+            "qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery"
+        )
+        return getattr(mod, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
