@@ -11,7 +11,7 @@ The tutorials are organized into four topics, each containing multiple hands-on 
 
 - **Optimization and Numerics**: Explore how to solve combinatorial optimization problems in logistics and scheduling using hybrid approaches like QAOA, QIRO, and COLD, as well as learning about our qrispy Quantum Backtracking implementation.
 
-- **High-Performance Compilation and Execution with Jasp**: Learn how to scale your code, while estimating your quantum resources, for the real world using the Jasp pipeline for hybrid real-time control. You will also learn about optimizing for Fault-Tolerant compilation for next-generation hardware.
+- **High-Performance Compilation and Execution with Jasp**: Leverage the JAX-based Jasp pipeline to enable hybrid real-time control flow, while scaling your code and estimating quantum resources for real-world-sized applications.
 
 - **Scientific Computing and Quantum Numerical Linear Algebra**: Dive into high-level abstractions for quantum chemistry, physics and linear systems using our new :ref:`BlockEncoding` class.
 
