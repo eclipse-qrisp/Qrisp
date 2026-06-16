@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from jax.numpy import bitwise_count
 import jax.numpy as jnp
 from qrisp import QuantumVariable, x, cx, mcx, h, measure, reset, z
 from qrisp.environments import control, custom_control
@@ -424,6 +425,10 @@ def carry_venting_adder(
         return target, clean_anc, ventmask, carry_xor_cnt
 
     def skip_final_block(target, clean_anc, ventmask, carry_xor_cnt):
+        h(clean_anc[0])
+        m_i = measure(clean_anc[0])
+        reset(clean_anc[0])
+        ventmask = ventmask + (m_i.astype(jnp.int64) << 1)
         return target, clean_anc, ventmask, carry_xor_cnt
 
     from qrisp.jasp.program_control.prefix_control import q_cond
@@ -513,6 +518,12 @@ def carry_xor_block(
     if carry_in is not None:
         d0 = _extract_bit(d, 0)
         bit_inverted_zz_zz_mcx(carry_in, target[0], dirty_ancillas[0], d0, ctrl=ctrl)
+    else:
+        d0 = _extract_bit(d, 0)
+        with control(d0):
+            x(target[0])
+            cx(target[0], dirty_ancillas[0])
+            x(target[0])
 
     # Forward chain
     # Walk dirty qubits from least significant bit to most significant bit.
@@ -783,8 +794,9 @@ def gidney_cq_venting_adder(
     # carry into bit k+1, matching the dirty-workspace slots 0..n_half-1 used in
     # the phase correction (reference _add_3_clean.py line 123).
     ventmask_lo_mask = (1 << (n_half - 1)) - 1
+    high_vent_bits = ventmask_lo >> (n_half - 1)
     full_ventmask = (ventmask_lo & ventmask_lo_mask) | (
-        m_clean0.astype(jnp.int64) << (n_half - 1)
+        ((m_clean0 ^ (bitwise_count(high_vent_bits) & 1)) & 1).astype(jnp.int64) << (n_half - 1)
     )
 
     # Step 6: Phase correction for bottom half vents
