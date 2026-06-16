@@ -537,29 +537,28 @@ def _phase_fix_dicke1_unbalanced(
     coeff: Sequence[complex],
     cutoff: int | None = None
 ) -> None:
-    """
+    coeff = np.asarray(coeff, dtype=complex)
+    r"""
     Helper equivalent of phase_fix_dicke1_unbalanced from foqcs-lcu
     https://github.com/QuantumComputingLab/foqcs-lcu
 
-    Applies phase corrections for a Dicke-1 / W-state-style register whose
-    amplitudes were prepared from coefficient magnitudes.
+    Applies phase corrections for an unbalanced Dicke-1 state preparation.
 
-    For each coefficient ``coeff[i]``, this applies a single-qubit phase gate
-    to the corresponding qubit ``qv[i]``. This converts amplitudes prepared
-    as ``abs(coeff[i])`` into amplitudes with the desired complex phase
-    ``coeff[i] = abs(coeff[i]) * exp(1j * angle(coeff[i]))``.
-
-    If ``cutoff`` is given, only entries ``0`` through ``cutoff`` are
-    corrected. Phases that are zero up to numerical tolerance are skipped.
-
+    The Dicke rotation routine prepares amplitudes using coefficient magnitudes.
+    This helper restores the original complex phases/signs of the coefficients by
+    applying single-qubit phase gates to all relevant nonzero coefficient entries.
+    The optional cutoff is treated only as a lower bound from the preparation
+    routine and is extended when needed so sparse nonzero coefficients are not
+    skipped.
     """
-
-    coeff = np.asarray(coeff, dtype=complex)
+    nonzero = np.flatnonzero(np.abs(coeff) > _FOQCS_SPIN_GLASS_TOL)
 
     if cutoff is None:
-        cutoff = len(coeff) - 1
-    
-    max_i = min(cutoff, len(coeff) - 1)
+        max_i = len(coeff) - 1
+    elif len(nonzero):
+        max_i = min(max(cutoff, int(nonzero[-1])), len(coeff) - 1)
+    else:
+        max_i = min(cutoff, len(coeff) - 1)
 
     for i in range(max_i + 1):
         angle = np.mod(np.angle(coeff[i]), 2 * np.pi)
