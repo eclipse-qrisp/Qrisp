@@ -35,6 +35,13 @@ def build_from_foqcs_lcu_prep(
     num_q_anc: int = -1
 ) -> BlockEncoding:
     r"""
+
+    .. note::
+
+        This implementation is designed for building custom FOQCS-LCU
+        block encodings. For automatic construction from a given operator, use
+        :meth:`from_foqcs_lcu_operator`.
+
     This method implements the Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) structure.
     The provided ``prep_r`` routine prepares the right PREP (:math:`PREP_{R}`) state on the FOQCS-LCU ancilla register.
     The provided ``prep_l`` routine is the corresponding left PREP (:math:`PREP_{L}`) routine and is applied inversely
@@ -45,7 +52,7 @@ def build_from_foqcs_lcu_prep(
     users pass more or less anything for the :math:`P_{R}` and :math:`P_{L}` subroutines. This means you can experiment
     with different :math:`P_{R}` and :math:`P_{L}` pairs to your hearts desire! 🦊
 
-    Note, custom :math:`prep_r` and :math:`prep_l` routines must prepare an ancilla register
+    Note, custom :math:`P_{R}` and :math:`P_{L}` routines must prepare an ancilla register
     containing at least :math:`2L` qubits, where :math:`L` is the number of operand
     qubits. The final :math:`2L` qubits of this ancilla register are interpreted by
     the FOQCS-LCU ``SELECT`` block as two activation registers of length
@@ -80,7 +87,7 @@ def build_from_foqcs_lcu_prep(
     Parameters
     ----------
     prep_r : Callable[[QuantumVariable], None]
-        Right FOQCS-LCU PREP routine, corresponding to :math:`prep_r = \mathrm{PREP}(\alpha)`
+        Right FOQCS-LCU PREP routine, corresponding to :math:`P_{R} = \mathrm{PREP}(\alpha)`
         The callable should prepare the right coefficient state on the FOQCS-LCU ancilla register.
 
         The callable is expected to take only the ancilla :class:`QuantumVariable` as its remaining argument.
@@ -119,7 +126,7 @@ def build_from_foqcs_lcu_prep(
     prep_l : Callable[[QuantumVariable], None]
         Left FOQCS-LCU PREP routine, corresponding to
         :math:`P_{L} = \mathrm{PREP}(a^*)`. The block-encoding circuit applies this
-        routine under inversion, realizing :math:`prep_l^\dagger` after ``SELECT``
+        routine under inversion, realizing :math:`P_{L}^\dagger` after ``SELECT``
 
         In the common case, ``prep_l`` is constructed from the same PREP routine as
         ``prep_r``, but with conjugated coefficients. It should follow the same
@@ -193,7 +200,7 @@ def build_from_foqcs_lcu_prep(
         :math:`P_{L} = PREP(\alpha ^ *),` 
 
         :math:`U = P_{L}^{\dagger} \cdot \mathrm{SELECT} \cdot P_{R}`
-    
+
     Examples
     --------
 
@@ -321,7 +328,7 @@ def build_from_foqcs_lcu_prep(
     This example uses :meth:`apply`:
 
     ::
-    
+
         import numpy as np
         from functools import partial
 
