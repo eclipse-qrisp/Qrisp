@@ -7,6 +7,18 @@ from qrisp.environments import control, custom_control
 from typing import TYPE_CHECKING
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.qtypes import QuantumBool
+# BigInteger is only used in type hints (lazy-evaluated strings thanks to
+# from __future__ import annotations) and never at runtime.  Importing it
+# at module level triggers a circular import:
+#
+#   gidney_adder -> BigInteger (from jasp_bigintiger)
+#     -> jasp_arithmetic/__init__ -> jasp_mod_adder/multiplyers/montgomery
+#     -> gidney_adder  (circular!)
+#
+# That cycle forced a __getattr__-based lazy import in jasp_arithmetic/__init__,
+# which broke from qrisp.jasp import * (__getattr__ is not triggered by
+# import *), causing NameError in downstream code.  The TYPE_CHECKING guard
+# keeps the runtime import-free while satisfying static type checkers.
 if TYPE_CHECKING:
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 

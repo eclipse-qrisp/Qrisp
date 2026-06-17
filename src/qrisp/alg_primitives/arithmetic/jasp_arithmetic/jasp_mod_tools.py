@@ -34,7 +34,7 @@ from typing import Union
 from jax import jit
 import jax.numpy as jnp
 import jax.lax as lax
-from qrisp.jasp import check_for_tracing_mode
+from qrisp import check_for_tracing_mode
 
 from .jasp_bigintiger import (
     BigInteger,

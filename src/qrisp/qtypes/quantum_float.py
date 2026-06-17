@@ -501,9 +501,7 @@ class QuantumFloat(QuantumVariable):
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_multiplyers import (
-                jasp_multiplyer, jasp_squaring,
-            )
+            from qrisp.alg_primitives.arithmetic import jasp_multiplyer, jasp_squaring
 
             if isinstance(other, QuantumFloat):
                 if self is other:
@@ -650,7 +648,7 @@ class QuantumFloat(QuantumVariable):
             res[:] = 1
             return res
         else:
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_multiplyers import jasp_multiplyer
+            from qrisp import jasp_multiplyer
 
             def power_conjugator(base, power, temp_results):
                 cx(base, temp_results[0])
@@ -675,7 +673,7 @@ class QuantumFloat(QuantumVariable):
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
+            from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 
             if isinstance(other, QuantumFloat):
                 starting_digit = jnp.maximum(other.exponent, self.exponent)

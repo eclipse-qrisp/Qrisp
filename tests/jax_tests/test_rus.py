@@ -19,7 +19,6 @@
 from qrisp import *
 from qrisp.jasp import *
 from jax import make_jaxpr
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_adder import jasp_mod_adder
 
 def test_rus():
     
