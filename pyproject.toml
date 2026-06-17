@@ -26,7 +26,7 @@ test = [
 "stim<=1.15.0",
 "cirq<=1.6.1",
 "xdsl<=0.62.1",
-"pennylane-catalyst<=0.14.1",
+"pennylane-catalyst<=0.15.0",
 "gast<=0.7.0",
 "tqecd @ git+https://github.com/tqec/tqecd.git"
 ]
