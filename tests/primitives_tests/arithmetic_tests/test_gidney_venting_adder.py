@@ -1,3 +1,21 @@
+"""
+********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************
+
+"""
 
 import pytest
 
@@ -486,14 +504,14 @@ def test_gidney_cq_venting_adder_jasp(init, d, c_in_val, expected, n, ctrl_val):
 
 C_OUT_CASES = [
     # (init, d, c_in_val, n)
-    (0, 1, 0, 3),      # 0+1+0 = 1,  carry=0
-    (7, 1, 0, 3),      # 7+1+0 = 8 ≥ 8, carry=1
-    (15, 1, 0, 4),     # 15+1+0 = 16 ≥ 16, carry=1
-    (14, 1, 0, 4),     # 14+1+0 = 15, carry=0
-    (255, 1, 0, 8),    # 255+1+0 = 256 ≥ 256, carry=1
-    (0, 0, 0, 5),      # 0+0+0 = 0, carry=0
-    (0, 0, 1, 5),      # 0+0+1 = 1, carry=0 (c_in=1 but no overflow)
-    (31, 0, 1, 5),     # 31+0+1 = 32 ≥ 32, carry=1
+    (0, 1, 0, 3),  # 0+1+0 = 1,  carry=0
+    (7, 1, 0, 3),  # 7+1+0 = 8 ≥ 8, carry=1
+    (15, 1, 0, 4),  # 15+1+0 = 16 ≥ 16, carry=1
+    (14, 1, 0, 4),  # 14+1+0 = 15, carry=0
+    (255, 1, 0, 8),  # 255+1+0 = 256 ≥ 256, carry=1
+    (0, 0, 0, 5),  # 0+0+0 = 0, carry=0
+    (0, 0, 1, 5),  # 0+0+1 = 1, carry=0 (c_in=1 but no overflow)
+    (31, 0, 1, 5),  # 31+0+1 = 32 ≥ 32, carry=1
 ]
 
 
@@ -976,11 +994,36 @@ def _ts_cq_gidney_roundtrip(n):
     return target
 
 
-@pytest.mark.parametrize("n", [
-    pytest.param(3, marks=pytest.mark.skip(reason="stochastic behavior under @terminal_sampling")),
-    pytest.param(4, marks=pytest.mark.skip(reason="stochastic behavior under @terminal_sampling")),
-    pytest.param(5, marks=pytest.mark.skip(reason="stochastic behavior under @terminal_sampling")),
-] + list(range(6, 13)))
+@pytest.mark.parametrize(
+    "n",
+    [
+        # n=3,4,5: register too small for reliable phase correction.
+        # The venting adder splits the register into two halves via
+        # h = (n-1)>>1.  For n<6 one or both halves are ≤2 bits, so the
+        # dirty-ancilla borrowing and ventmask recombination can't fully
+        # compensate the random mid-circuit measurements — outcomes are
+        # non-deterministic under @terminal_sampling.
+        pytest.param(
+            3,
+            marks=pytest.mark.skip(
+                reason="stochastic behavior under @terminal_sampling"
+            ),
+        ),
+        pytest.param(
+            4,
+            marks=pytest.mark.skip(
+                reason="stochastic behavior under @terminal_sampling"
+            ),
+        ),
+        pytest.param(
+            5,
+            marks=pytest.mark.skip(
+                reason="stochastic behavior under @terminal_sampling"
+            ),
+        ),
+    ]
+    + list(range(6, 13)),
+)
 def test_cq_gidney_roundtrip(n):
     """H⊗ⁿ → add 1 (venting) → subtract 1 (gidney) → H⊗ⁿ leaves |0⟩."""
     res = _ts_cq_gidney_roundtrip(n)

@@ -1,3 +1,22 @@
+"""
+********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************
+
+"""
+
 from __future__ import annotations
 
 from jax.numpy import bitwise_count
@@ -7,20 +26,21 @@ from qrisp.environments import control, custom_control
 from typing import TYPE_CHECKING
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.qtypes import QuantumBool
+
 # BigInteger is only used in type hints (lazy-evaluated strings thanks to
-# from __future__ import annotations) and never at runtime.  Importing it
-# at module level triggers a circular import:
+# from __future__ import annotations) and never at runtime.
+# Importing it at module level triggers a circular import:
 #
 #   gidney_adder -> BigInteger (from jasp_bigintiger)
 #     -> jasp_arithmetic/__init__ -> jasp_mod_adder/multiplyers/montgomery
 #     -> gidney_adder  (circular!)
 #
-# That cycle forced a __getattr__-based lazy import in jasp_arithmetic/__init__,
-# which broke from qrisp.jasp import * (__getattr__ is not triggered by
-# import *), causing NameError in downstream code.  The TYPE_CHECKING guard
-# keeps the runtime import-free while satisfying static type checkers.
-if TYPE_CHECKING:
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+# The TYPE_CHECKING guard keeps the runtime import-free while satisfying
+# static type checkers.
+if TYPE_CHECKING:  # noqa
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+        BigInteger,
+    )  # noqa
 
 from qrisp.alg_primitives.arithmetic.adders.gidney_adder import _extract_bit
 
@@ -612,8 +632,14 @@ def dirty_ancillae_adder(
     # excess vent has no corresponding dirty qubit and would leave an
     # uncorrected Z-phase error.
     ventmask, _ = carry_venting_adder(
-        d, target, ancilla=ancilla, c_in=c_in, carry_xor_target=dirty_qubits,
-        ctrl=ctrl, vent_final=False, c_out=c_out,
+        d,
+        target,
+        ancilla=ancilla,
+        c_in=c_in,
+        carry_xor_target=dirty_qubits,
+        ctrl=ctrl,
+        vent_final=False,
+        c_out=c_out,
     )
 
     # Step 2: Phase correction
@@ -833,7 +859,8 @@ def gidney_cq_venting_adder(
     ventmask_lo_mask = (1 << (n_half - 1)) - 1
     high_vent_bits = ventmask_lo >> (n_half - 1)
     full_ventmask = (ventmask_lo & ventmask_lo_mask) | (
-        ((m_clean0 ^ (bitwise_count(high_vent_bits) & 1)) & 1).astype(jnp.int64) << (n_half - 1)
+        ((m_clean0 ^ (bitwise_count(high_vent_bits) & 1)) & 1).astype(jnp.int64)
+        << (n_half - 1)
     )
 
     # Step 6: Phase correction for bottom half vents
