@@ -16,7 +16,6 @@
 ********************************************************************************
 """
 
-import warnings
 from uuid import UUID
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
@@ -29,15 +28,12 @@ from qrisp.interface.job import (
     JobResult,
     JobStatus,
 )
-from qrisp.misc.exceptions import QrispDeprecationWarning
 
 # ---------------------------------------------------------------------------
 # TEMPORARY IMPLEMENTATION — TO BE REMOVED
 #
 # This module is a stop-gap.  Once the QCCSW release from IQM is published,
-# the classes below will be deleted and replaced by a direct import:
-#
-#     from <iqm-qccsw-package> import IQMBackend, IQMJob
+# the classes below will be deleted and replaced by a direct import.
 #
 # Do NOT extend or refactor this file; any effort spent here is wasted.
 # ---------------------------------------------------------------------------
@@ -76,9 +72,9 @@ class IQMJob(Job):
     .. warning::
 
         **Temporary implementation.**  This class exists only until the IQM
-        QCCSW release ships a Qrisp-compatible backend package.  At that point
-        this file will be deleted and ``IQMJob`` will be imported from that
-        package instead.  Do not depend on implementation details here.
+        QCCSW release ships the new Qrisp-compatible ``IQMBackend``.
+        At that point, this file will be deleted and ``IQMBackend`` will be imported
+        from that package instead. Do not depend on implementation details here.
 
     One ``IQMJob`` is created per :meth:`IQMBackend.run_async` call.
     The underlying IQM job is already submitted before this object is returned;
@@ -220,9 +216,9 @@ class IQMBackend(Backend):
     .. warning::
 
         **Temporary implementation.**  This class exists only until the IQM
-        QCCSW release ships a Qrisp-compatible backend package.  At that point
-        this entire file will be deleted and ``IQMBackend`` will be imported
-        from that package instead.  Do not depend on implementation details here.
+        QCCSW release ships the new Qrisp-compatible ``IQMBackend``.
+        At that point, this file will be deleted and ``IQMBackend`` will be imported
+        from that package instead. Do not depend on implementation details here.
 
     .. deprecated:: 0.8
 
@@ -310,10 +306,6 @@ class IQMBackend(Backend):
         use_metrics: bool = False,
         use_timeslot: bool = False,
     ):
-        warnings.warn(
-            "DeprecationWarning: The IQMBackend will be removed from qrisp in a future release.",
-            QrispDeprecationWarning,
-        )
 
         if not isinstance(api_token, str):
             raise TypeError(
