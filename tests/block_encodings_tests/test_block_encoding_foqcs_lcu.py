@@ -495,13 +495,13 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep():
     heis_J = {"X": _J[0], "Y": _J[1], "Z": _J[2]}
 
     # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
-    p_r = partial(
+    prep_r = partial(
         foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
         J=heis_J,
     )
-    p_l = partial(
+    prep_l = partial(
         foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
@@ -510,8 +510,8 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep():
     )
 
     be = BlockEncoding.from_foqcs_lcu_prep(
-        p_r = p_r,
-        p_l = p_l,
+        prep_r = prep_r,
+        prep_l = prep_l,
         num_q_ops = L,
         norm = norm ** 2
     )
@@ -608,14 +608,14 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
 
     alpha = np.linalg.norm(_flatten_spin_glass_coeffs(prep_g, prep_J)) ** 2
 
-    p_r = partial(
+    prep_r = partial(
         foqcs_prep_spin_glass,
         L=L,
         g=prep_g,
         J=prep_J,
     )
 
-    p_l = partial(
+    prep_l = partial(
         foqcs_prep_spin_glass,
         L=L,
         g=prep_g,
@@ -624,8 +624,8 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
     )
 
     be = BlockEncoding.from_foqcs_lcu_prep(
-        p_r = p_r,
-        p_l = p_l,
+        prep_r = prep_r,
+        prep_l = prep_l,
         num_q_ops = L,
         norm = alpha,
     )
@@ -667,13 +667,13 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep_jasp():
     heis_J = {"X": _J[0], "Y": _J[1], "Z": _J[2]}
 
     # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
-    p_r = partial(
+    prep_r = partial(
         foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
         J=heis_J,
     )
-    p_l = partial(
+    prep_l = partial(
         foqcs_prep_heisenberg,
         L=L,
         g=heis_g,
@@ -682,8 +682,8 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep_jasp():
     )
 
     be = BlockEncoding.from_foqcs_lcu_prep(
-        p_r = p_r,
-        p_l = p_l,
+        prep_r = prep_r,
+        prep_l = prep_l,
         num_q_ops = L,
         norm = norm ** 2
     )
@@ -1055,18 +1055,18 @@ def test_foqcs_lcu_custom_prep_from_prep():
     # specific handling required. (For example, parametrised subcircuit
     # would have required conjugated parameters. See the `foqcs_prep_heisenberg`
     # usage from previous example)
-    p_r = partial(
+    prep_r = partial(
         custom_prep,
         L=L
     )
-    p_l = partial(
+    prep_l = partial(
         custom_prep,
         L=L
     )
 
     be = BlockEncoding.from_foqcs_lcu_prep(
-        p_r = p_r,
-        p_l = p_l,
+        prep_r = prep_r,
+        prep_l = prep_l,
         num_q_ops = L,
         num_q_anc = n_anc_custom_prep
     )
@@ -1100,16 +1100,16 @@ def test_foqcs_lcu_custom_prep_n_anc_fail():
     def custom_prep(qv: QuantumVariable | Sequence[Qubit], L: int):
         x(qv[0])
 
-    p_r = partial(
+    prep_r = partial(
         custom_prep,
         L=L
     )
-    p_l = p_r
+    prep_l = prep_r
 
     with pytest.raises(ValueError) as exc_info:
         be = BlockEncoding.from_foqcs_lcu_prep(
-            p_r = p_r,
-            p_l = p_l,
+            prep_r = prep_r,
+            prep_l = prep_l,
             num_q_ops = L,
             num_q_anc = n_anc_custom_prep
         )

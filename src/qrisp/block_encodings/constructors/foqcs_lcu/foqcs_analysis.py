@@ -302,7 +302,7 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
 
     Returns
     -------
-    p_r : Callable[[QuantumVariable], None]
+    prep_r : Callable[[QuantumVariable], None]
         Partial :math:`PREP_{R}` function with all relevant parameters which depend on PREP routine
         passed except QuantumVariable. Parameters can be fixed by using :class:`functools.partial`.
         e.g. foqcs_prep_heisenberg would have the following parameters:
@@ -316,7 +316,7 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
         Most of these already exist by the time we define the partial function, excluding QuantumVariable as
         this is passed later on by the :class:`BlockEncoding` class when we call :meth:`apply` or :meth:`apply_rus`.
 
-    p_l : Callable[[QuantumVariable], None] = None
+    prep_l : Callable[[QuantumVariable], None] = None
         :math:`PREP_{R}` with conjugated parameters (see Notes), also a partial function variable with
         all relevant parameters passed except QuantumVariable.
         
@@ -375,13 +375,13 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
         # Calculate the norm factor
         alpha = norm**2
         # Create partial PREP_R and PREP_L functions
-        p_r = partial(
+        prep_r = partial(
             foqcs_prep_heisenberg,
             L=heis_L,
             g=_g,
             J=_J,
         )
-        p_l = partial(
+        prep_l = partial(
             foqcs_prep_heisenberg,
             L=heis_L,
             g=_g,
@@ -389,7 +389,7 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
             conjugate=True
         )
 
-        return p_r, p_l, heis_L, False, alpha
+        return prep_r, prep_l, heis_L, False, alpha
 
     elif aresult["method"] == "spin_glass":
         #print("Parsing as Spin-Glass model")
@@ -459,14 +459,14 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
         norm = np.linalg.norm(coeff_vec)
         alpha = norm**2
 
-        p_r = partial(
+        prep_r = partial(
             foqcs_prep_spin_glass,
             L=sg_L,
             g=_g,
             J=_J,
         )
 
-        p_l = partial(
+        prep_l = partial(
             foqcs_prep_spin_glass,
             L=sg_L,
             g=_g,
@@ -474,6 +474,6 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
             conjugate=True,
         )
 
-        return p_r, p_l, sg_L, False, alpha
+        return prep_r, prep_l, sg_L, False, alpha
 
     raise KeyError(f"Failed to handle FOQCS-LCU method: \"{aresult['method']}\"")

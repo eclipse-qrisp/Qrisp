@@ -27,8 +27,8 @@ from qrisp.core import cx, cz
 
 def build_from_foqcs_lcu_prep(
     cls: BlockEncoding,
-    p_r: Callable[[QuantumVariable], None],
-    p_l: Callable[[QuantumVariable], None],
+    prep_r: Callable[[QuantumVariable], None],
+    prep_l: Callable[[QuantumVariable], None],
     num_q_ops: int = 1,
     is_hermitian: bool = False,
     norm: "ArrayLike" = 1,
@@ -36,16 +36,16 @@ def build_from_foqcs_lcu_prep(
 ) -> BlockEncoding:
     r"""
     This method implements the Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) structure.
-    The provided ``p_r`` routine prepares the right PREP (:math:`PREP_{R}`) state on the FOQCS-LCU ancilla register.
-    The provided ``p_l`` routine is the corresponding left PREP (:math:`PREP_{L}`) routine and is applied inversely
+    The provided ``prep_r`` routine prepares the right PREP (:math:`PREP_{R}`) state on the FOQCS-LCU ancilla register.
+    The provided ``prep_l`` routine is the corresponding left PREP (:math:`PREP_{L}`) routine and is applied inversely
     after ``SELECT``. Based on the methodology established in https://arxiv.org/abs/2507.20887.
 
     In order not to restrict this implementation to just the Heisenberg and spin-glass models,
-    :meth:`from_foqcs_lcu_prep` is designed using partial functions for the ``p_r`` and ``p_l`` parameters, letting
+    :meth:`from_foqcs_lcu_prep` is designed using partial functions for the ``prep_r`` and ``prep_l`` parameters, letting
     users pass more or less anything for the :math:`P_{R}` and :math:`P_{L}` subroutines. This means you can experiment
     with different :math:`P_{R}` and :math:`P_{L}` pairs to your hearts desire! 🦊
 
-    Note, custom :math:`P_R` and :math:`P_L` routines must prepare an ancilla register
+    Note, custom :math:`prep_r` and :math:`prep_l` routines must prepare an ancilla register
     containing at least :math:`2L` qubits, where :math:`L` is the number of operand
     qubits. The final :math:`2L` qubits of this ancilla register are interpreted by
     the FOQCS-LCU ``SELECT`` block as two activation registers of length
@@ -79,8 +79,8 @@ def build_from_foqcs_lcu_prep(
 
     Parameters
     ----------
-    p_r : Callable[[QuantumVariable], None]
-        Right FOQCS-LCU PREP routine, corresponding to :math:`P_R = \mathrm{PREP}(\alpha)`
+    prep_r : Callable[[QuantumVariable], None]
+        Right FOQCS-LCU PREP routine, corresponding to :math:`prep_r = \mathrm{PREP}(\alpha)`
         The callable should prepare the right coefficient state on the FOQCS-LCU ancilla register.
 
         The callable is expected to take only the ancilla :class:`QuantumVariable` as its remaining argument.
@@ -108,7 +108,7 @@ def build_from_foqcs_lcu_prep(
 
         .. code-block:: python
 
-            p_r = partial(
+            prep_r = partial(
                 foqcs_prep_heisenberg, # PREP function
                 L=heis_L,              # Number of qubits
                 g=_g,                  # Heisenberg model g coefficients
@@ -116,23 +116,23 @@ def build_from_foqcs_lcu_prep(
             )
         
 
-    p_l : Callable[[QuantumVariable], None]
+    prep_l : Callable[[QuantumVariable], None]
         Left FOQCS-LCU PREP routine, corresponding to
         :math:`P_{L} = \mathrm{PREP}(a^*)`. The block-encoding circuit applies this
-        routine under inversion, realizing :math:`P_L^\dagger` after ``SELECT``
+        routine under inversion, realizing :math:`prep_l^\dagger` after ``SELECT``
 
-        In the common case, ``p_l`` is constructed from the same PREP routine as
-        ``p_r``, but with conjugated coefficients. It should follow the same
-        calling convention as ``p_r``: all classical parameters should
+        In the common case, ``prep_l`` is constructed from the same PREP routine as
+        ``prep_r``, but with conjugated coefficients. It should follow the same
+        calling convention as ``prep_r``: all classical parameters should
         already be fixed, leaving only the ancilla :class:`QuantumVariable` to be
         supplied internally by the :class:`BlockEncoding`.
 
-        Following the example set in ``p_r``, the partial construction will
+        Following the example set in ``prep_r``, the partial construction will
         be of form:
 
         .. code-block:: python
 
-            p_l = partial(
+            prep_l = partial(
                 foqcs_prep_heisenberg, # PREP function
                 L=heis_L,              # Number of qubits
                 g=_g,                  # Heisenberg model g coefficients
@@ -140,8 +140,8 @@ def build_from_foqcs_lcu_prep(
                 conjugate=True         # Conjugate g and J coefficients
             )
 
-        However, ``p_l`` is not required to be built from the same Python function
-        as ``p_r``. Any callable is valid as long as it prepares the correct left
+        However, ``prep_l`` is not required to be built from the same Python function
+        as ``prep_r``. Any callable is valid as long as it prepares the correct left
         PREP state :math:`P_{L}` for the chosen FOQCS-LCU representation and accepts
         the ancilla quantum variable as its only remaining argument.
 
@@ -287,13 +287,13 @@ def build_from_foqcs_lcu_prep(
         heis_J = {"X": J[0], "Y": J[1], "Z": J[2]}
 
         # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
-        p_r = partial(
+        prep_r = partial(
             foqcs_prep_heisenberg,
             L=L,
             g=heis_g,
             J=heis_J,
         )
-        p_l = partial(
+        prep_l = partial(
             foqcs_prep_heisenberg,
             L=L,
             g=heis_g,
@@ -301,7 +301,7 @@ def build_from_foqcs_lcu_prep(
             conjugate=True
         )
 
-        be = BlockEncoding.from_foqcs_lcu_prep(p_r=p_r, p_l=p_l, num_q_ops=L, norm=norm ** 2)
+        be = BlockEncoding.from_foqcs_lcu_prep(prep_r=prep_r, prep_l=prep_l, num_q_ops=L, norm=norm ** 2)
 
         psi = _prep_psi(L)
 
@@ -369,14 +369,14 @@ def build_from_foqcs_lcu_prep(
         heis_J = {"X": _J[0], "Y": _J[1], "Z": _J[2]}
 
         # Create PREP_R and PREP_L^dagger functions.
-        p_r = partial(
+        prep_r = partial(
             foqcs_prep_heisenberg,
             L=L,
             g=heis_g,
             J=heis_J,
         )
 
-        p_l = partial(
+        prep_l = partial(
             foqcs_prep_heisenberg,
             L=L,
             g=heis_g,
@@ -386,8 +386,8 @@ def build_from_foqcs_lcu_prep(
 
         # Constructing the block encoding using the :func:`from_foqcs_lcu_prep` function.
         be = BlockEncoding.from_foqcs_lcu_prep(
-            p_r=p_r,
-            p_l=p_l,
+            prep_r=prep_r,
+            prep_l=prep_l,
             num_q_ops=L,
             norm=norm**2,
         )
@@ -466,18 +466,18 @@ def build_from_foqcs_lcu_prep(
         # specific handling required. (For example, parametrised subcircuit
         # would have required conjugated parameters. See the foqcs_prep_heisenberg()
         # usage from the previous example)
-        p_r = partial(
+        prep_r = partial(
             custom_prep,
             L=L
         )
-        p_l = partial(
+        prep_l = partial(
             custom_prep,
             L=L
         )
 
         be = BlockEncoding.from_foqcs_lcu_prep(
-            p_r = p_r,
-            p_l = p_l,
+            prep_r = prep_r,
+            prep_l = prep_l,
             num_q_ops = L,
             num_q_anc = n_anc_custom_prep
         )
@@ -492,7 +492,7 @@ def build_from_foqcs_lcu_prep(
         #
         # In this example, the custom PREP activates x[0] and z[1], so SELECT applies
         # X(0)Z(1). Since the operand starts in |00>, the Z(1) part has no visible
-        # phase effect and X(0) flips the first operand qubit. The inverse of p_l 
+        # phase effect and X(0) flips the first operand qubit. The inverse of prep_l 
         # then uncomputes the PREP register, so all ancillas return to |00000>.
         # Therefore, the expected measurement result is the operand state |10> and
         # the ancilla state |00000>, with probability 1: {('10', '00000'): 1.0}
@@ -502,7 +502,7 @@ def build_from_foqcs_lcu_prep(
     """
     from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_preps import get_foqcs_lcu_prep_num_of_ancillae
     if num_q_anc == -1:
-        n_anc = get_foqcs_lcu_prep_num_of_ancillae(p_r, num_q_ops)
+        n_anc = get_foqcs_lcu_prep_num_of_ancillae(prep_r, num_q_ops)
     elif num_q_anc >= num_q_ops * 2:
         n_anc = num_q_anc
     else:
@@ -518,10 +518,10 @@ def build_from_foqcs_lcu_prep(
     @qache
     def unitary(*args):
         # LCU = PREP_R SELECT PREP_L^dg (note: PREP(a)^dg != PREP(a*)^dg, where PREP(a) = PREP_R, and PREP(a*) = PREP_L)
-        p_r(args[0])
+        prep_r(args[0])
         _select(num_q_ops, n_anc, args[0], *args[1:])
         with invert():
-            p_l(args[0])
+            prep_l(args[0])
 
     return cls(
         norm,
