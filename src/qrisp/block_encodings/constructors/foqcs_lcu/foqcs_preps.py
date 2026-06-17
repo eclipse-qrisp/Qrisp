@@ -39,8 +39,8 @@ def foqcs_prep_heisenberg(
     Implements the FOQCS-LCU PREP oracle for the Heisenberg Hamiltonian by preparing selector amplitudes
     for local X/Y/Z fields and nearest-neighbor XX/YY/ZZ couplings, then mapping them into the
     two FOQCS activation registers using Dicke-state and CNOT-ladder structures.
-    
-    
+
+
     Parameters
     ----------
     prep_qv : QuantumVariable | Sequence[Qubit]
@@ -124,7 +124,7 @@ def foqcs_prep_heisenberg(
     # SUBPREP
     # Ref: Eq. (56) gives the 6-entry selector state alpha used in Fig. 6.
     unbalanced_w_state(prep_qv[:extra_anc], np.block([_g, _J]))
-    
+
     # PREP
     # Ref: Fig. 5 and Fig. 6 split the FOQCS ancillae into two L-qubit
     # activation registers: one for X activation and one for Z activation.
@@ -419,7 +419,7 @@ def foqcs_prep_spin_glass(
 ###################################
 ############# Helpers #############
 ###################################
-    
+
 def get_foqcs_lcu_prep_num_of_ancillae(prep: partial, num_q_ops: int = 1) -> int:
     r"""
         Gets a number of ancillae qubits for the FOQCS-LCU circuit that uses
@@ -429,7 +429,7 @@ def get_foqcs_lcu_prep_num_of_ancillae(prep: partial, num_q_ops: int = 1) -> int
         ----------
         prep : partial
             Partially initialised FOQCS-LCU PREP method.
-        
+
         num_q_ops : int
             Number of operand qubits (L argument for FOQCS-LCU PREP routines).
             The default is 1.

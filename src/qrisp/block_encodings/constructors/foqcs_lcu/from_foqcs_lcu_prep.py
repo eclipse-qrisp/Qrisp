@@ -121,7 +121,7 @@ def build_from_foqcs_lcu_prep(
                 g=_g,                  # Heisenberg model g coefficients
                 J=_J,                  # heisenberg model J coefficients
             )
-        
+
 
     prep_l : Callable[[QuantumVariable], None]
         Left FOQCS-LCU PREP routine, corresponding to
@@ -194,7 +194,7 @@ def build_from_foqcs_lcu_prep(
 
     - :math:`PREP_{L}^{\dagger}`, if it were to NOT use conjugated coefficients, would be the exact mathematical inverse of
       :math:`PREP_{R}`, but because it DOES use conjugated coefficients, it is not.
-    
+
     - In short:
         :math:`P_{R} = PREP(\alpha),` 
         :math:`P_{L} = PREP(\alpha ^ *),` 
@@ -420,7 +420,7 @@ def build_from_foqcs_lcu_prep(
 
         qc = qv.qs.compile()
         sv = qc.statevector_array()
-        
+
         # The remaining amplitude of the full statevector lives in the failure branches,
         # where the ancilla register is nonzero.
         res_ops = []
@@ -429,7 +429,7 @@ def build_from_foqcs_lcu_prep(
             qi = int(f"{i:0{L}b}"[::-1], 2) # Reverses bits
             ind = qi << (len(ancillas[0]))
             res_ops.append(sv[ind])
-        
+
         # res_ops contains the amplitudes of the operand register in the postselected
         # success branch of the block encoding, i.e. the branch where all ancillas are 0.
 

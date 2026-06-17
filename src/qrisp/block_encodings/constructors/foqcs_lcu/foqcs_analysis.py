@@ -186,7 +186,7 @@ def foqcs_analyze_operator_heisenberg(
         if L == 1:
             J_heis_dict[pauli] = 0
             continue
-        
+
         nn_val = np.array(
             [J_dict[pauli][i, i + 1] for i in range(L - 1)],
             dtype = complex,
@@ -319,7 +319,7 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
     prep_l : Callable[[QuantumVariable], None] = None
         :math:`PREP_{R}` with conjugated parameters (see Notes), also a partial function variable with
         all relevant parameters passed except QuantumVariable.
-        
+
     num_q_ops : int
         Number of operand qubits, i.e. ``L`` argument for FOQCS-LCU PREP routines.
         The default is 1.
@@ -327,7 +327,7 @@ def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
     is_hermitian : bool
         Indicates whether the block-encoding unitary is Hermitian.
         The default is False.
-        
+
     norm : "ArrayLike"
         Normalization factor.
         The default is `1` in case no normalization factor is passed.

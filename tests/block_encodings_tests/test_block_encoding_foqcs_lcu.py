@@ -213,7 +213,7 @@ def test_foqcs_lcu_heisenberg_prep():
 
     coeff_arr = [g[0], g[1], g[2], J[0], J[1], J[2]]
     param_arr = [np.kron(dicke_1, zero_n), dicke_double, np.kron(zero_n, dicke_1), np.kron(dicke_2NN, zero_n), dicke_2NN_double, np.kron(zero_n, dicke_2NN)]
-    
+
     for i in range(6):
 
         ref_state += _ref_state_helper(coeff_arr[i], i + 1, param_arr[i])
@@ -235,11 +235,11 @@ def test_foqcs_lcu_spin_glass_prep():
     J = []
 
     for i in range(3):
-    
+
         g.append(np.diag(coeff[i]))
         coeff[i] = (coeff[i] + coeff[i].T) / 2.0
         J.append(coeff[i] - np.diag(g[i]))
-    
+
     g = np.array(g, dtype=complex)
     J = np.array(J, dtype=complex)
     d_state = QuantumVariable(5 * L)
@@ -646,7 +646,7 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
 
     # Take out the resulting operands with zero ancillas amplitude.
     res_ops = _pick_ops_with_anc_all_zero(sv, ancillas, L)
-    
+
     H = _spin_glass_from_def(L, phys_g, phys_J) / alpha
     ref_state = H @ psi
 
@@ -853,7 +853,7 @@ def test_block_encoding_from_operator_spin_glass_jasp():
     }
 
     keys = sorted(set(filtered_conditional) | set(result_rus_int))
-    
+
     assert np.allclose(
         [filtered_conditional.get(k, 0) for k in keys],
         [result_rus_int.get(k, 0) for k in keys],
@@ -979,9 +979,9 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_operator(O):
     def _J_matrix_to_diag_list(J, L):
         """
         Convert full matrix J into diagonal-list form:
-          
+
           `J_diag[p][k - 1][i]` couples `i` and `i + k`.
-        
+
         This is the format expected by `_spin_glass_from_def` and
         `foqcs_prep_spin_glass`.
         """
@@ -1453,7 +1453,7 @@ def test_block_encoding_foqcs_lcu_subtraction(H1, H2):
         operand = QuantumVariable(n)
         ancillas = BE.apply(operand)
         return operand, *ancillas
-    
+
     res_be3 = _post_selection(main(BE3))
     res_be_sub = _post_selection(main(BE_subtraction))
     _compare_results(res_be3, res_be_sub, n)
@@ -1486,7 +1486,7 @@ def test_block_encoding_foqcs_lcu_multiplication(H1, H2):
         operand = QuantumVariable(n)
         ancillas = BE.apply(operand)
         return operand, *ancillas
-    
+
     res_be3 = _post_selection(main(BE3))
     res_be_mul = _post_selection(main(BE_multiplication))
     _compare_results(res_be3, res_be_mul, n)
@@ -1510,7 +1510,7 @@ def test_block_encoding_foqcs_lcu_scalar_multiplication(H1, H2, scalar):
 
     BE_left = scalar * BE1 + BE2
     BE_right = BE1 * scalar + BE2
-    
+
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     @terminal_sampling
@@ -1591,7 +1591,7 @@ def test_block_encoding_foqcs_lcu_negation(H1, H2):
         operand = QuantumVariable(n)
         ancillas = BE.apply(operand)
         return operand, *ancillas
-    
+
     res_be2 = _post_selection(main(BE2))
     res_be_neg = _post_selection(main(BE_neg))
     _compare_results(res_be2, res_be_neg, n)

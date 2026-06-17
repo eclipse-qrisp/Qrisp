@@ -190,5 +190,5 @@ def build_from_foqcs_lcu_operator(
     from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_analysis import foqcs_analyze_operator
     from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_analysis import build_foqcs_lcu_prep_from_analysis
     # Analyze the Qubit operator
-    aresult = foqcs_analyze_operator(O, tol = tol)        
+    aresult = foqcs_analyze_operator(O, tol = tol)
     return build_from_foqcs_lcu_prep(cls, *build_foqcs_lcu_prep_from_analysis(aresult))
