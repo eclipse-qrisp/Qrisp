@@ -1068,15 +1068,6 @@ class Jaspr(ClosedJaxpr):
         Compiles the Jaspr to an xDSL module using the Jasp Dialect.
         Requires the xDSL package to be installed (``pip install xdsl``).
 
-        Parameters
-        ----------
-        lower_stablehlo : bool, optional
-            If True, runs additional MLIR passes to lower StableHLO operations 
-            (like arithmetic and data operations) to lower-level dialects such 
-            as linalg, arith, and tensor. StableHLO control flow involving 
-            quantum types is preserved and rewritten to SCF by xDSL.
-            The default is False.
-
         .. note::
 
             An xDSL module can be visualized via:
@@ -1092,6 +1083,14 @@ class Jaspr(ClosedJaxpr):
                 from xdsl.printer import Printer
                 Printer().print_op(xdsl_module)
 
+        Parameters
+        ----------
+        lower_stablehlo : bool, optional
+            If True, runs additional MLIR passes to lower StableHLO operations 
+            (like arithmetic and data operations) to lower-level dialects such 
+            as linalg, arith, and tensor. StableHLO control flow involving 
+            quantum types is preserved and rewritten to SCF by xDSL.
+            The default is False.
 
         Returns
         -------
