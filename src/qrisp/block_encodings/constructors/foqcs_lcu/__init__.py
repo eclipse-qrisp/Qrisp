@@ -16,5 +16,10 @@
 ********************************************************************************
 """
 
-from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_preps import *
-from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_analysis import *
+from .from_foqcs_lcu_prep import build_from_foqcs_lcu_prep
+from .from_foqcs_lcu_operator import build_from_foqcs_lcu_operator
+
+__all__ = [
+    "build_from_foqcs_lcu_prep",
+    "build_from_foqcs_lcu_operator",
+]

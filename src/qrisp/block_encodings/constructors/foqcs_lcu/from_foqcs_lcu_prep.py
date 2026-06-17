@@ -22,6 +22,7 @@ from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.environments import conjugate, invert
 from qrisp.qtypes import QuantumVariable
 from qrisp.core import cx, cz
+from .foqcs_preps import get_foqcs_lcu_prep_num_of_ancillae
 
 
 def build_from_foqcs_lcu_prep(
@@ -506,7 +507,7 @@ def build_from_foqcs_lcu_prep(
 
 
     """
-    from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_preps import get_foqcs_lcu_prep_num_of_ancillae
+
     if num_q_anc == -1:
         n_anc = get_foqcs_lcu_prep_num_of_ancillae(prep_r, num_q_ops)
     elif num_q_anc >= num_q_ops * 2:
