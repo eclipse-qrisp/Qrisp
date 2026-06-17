@@ -1176,6 +1176,13 @@ def _compare_results(res_dict_1, res_dict_2, n):
         val_2 = res_dict_2.get(k, 0)
         assert np.isclose(val_1, val_2, atol=1e-6), f"Mismatch at state |{k}>: {val_1} vs {val_2}"
 
+def _post_selection(res_dict):
+    # Post-selection on ancillas being in |0> state
+    filtered_dict = {k[0]: p for k, p in res_dict.items() if all(x == 0 for x in k[1:])}
+    success_prob = sum(filtered_dict.values())
+    filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
+    return filtered_dict
+
 @pytest.mark.parametrize(
     "H1, H2, rescaled",
     [
@@ -1227,18 +1234,20 @@ def test_foqcs_lcu_chebyshev(H1, H2, rescaled):
 
     @terminal_sampling
     def main(BE):
-        return BE.apply_rus(lambda: QuantumVariable(n))()
+        operand = QuantumVariable(n)
+        ancillas = BE.apply(operand)
+        return operand, *ancillas
 
-    res_be_t1 = main(BE_T1)
-    res_be_add_t1 = main(BE_add_T1)
+    res_be_t1 = _post_selection(main(BE_T1))
+    res_be_add_t1 = _post_selection(main(BE_add_T1))
     _compare_results(res_be_t1, res_be_add_t1, n)
 
-    res_be_t2 = main(BE_T2)
-    res_be_add_t2 = main(BE_add_T2)
+    res_be_t2 = _post_selection(main(BE_T2))
+    res_be_add_t2 = _post_selection(main(BE_add_T2))
     _compare_results(res_be_t2, res_be_add_t2, n)
 
-    res_be_t3 = main(BE_T3)
-    res_be_add_t3 = main(BE_add_T3)
+    res_be_t3 = _post_selection(main(BE_T3))
+    res_be_add_t3 = _post_selection(main(BE_add_T3))
     _compare_results(res_be_t3, res_be_add_t3, n)
 
 @pytest.mark.parametrize(
@@ -1280,10 +1289,12 @@ def test_foqcs_lcu_poly(H1, H2, poly):
 
     @terminal_sampling
     def main(BE):
-        return BE.apply_rus(lambda: QuantumVariable(n))()
+        operand = QuantumVariable(n)
+        ancillas = BE.apply(operand)
+        return operand, *ancillas
 
-    res_be3 = main(BE3)
-    res_be_poly = main(BE_poly)
+    res_be3 = _post_selection(main(BE3))
+    res_be_poly = _post_selection(main(BE_poly))
 
     _compare_results(res_be3, res_be_poly, n)
 
@@ -1330,10 +1341,11 @@ def test_foqcs_lcu_inv():
 
     @terminal_sampling
     def main():
-        operand = BE_H_inv.apply_rus(prep_b)()
-        return operand
+        operand = prep_b()
+        ancillas = BE_H_inv.apply(operand)
+        return operand, *ancillas
 
-    res_dict = main()
+    res_dict = _post_selection(main())
 
     for k, v in res_dict.items():
         res_dict[k] = v**0.5
@@ -1371,11 +1383,12 @@ def test_foqcs_lcu_sim():
     @terminal_sampling
     def main(BE):
         BE_sim = BE.sim(t=t, N=8)
-        operand = BE_sim.apply_rus(operand_prep)()
-        return operand
+        operand = operand_prep()
+        ancillas = BE_sim.apply(operand)
+        return operand, *ancillas
 
-    res_ref = main(BE_ref)
-    res_foqcs = main(BE_foqcs)
+    res_ref = _post_selection(main(BE_ref))
+    res_foqcs = _post_selection(main(BE_foqcs))
 
     # Make sure the test is not accidentally trivial.
     # The |1> state of qubit 0 should receive some population from X(0).
@@ -1407,10 +1420,12 @@ def test_block_encoding_foqcs_lcu_addition(H1, H2):
 
     @terminal_sampling
     def main(BE):
-        return BE.apply_rus(lambda: QuantumVariable(n))()
+        operand = QuantumVariable(n)
+        ancillas = BE.apply(operand)
+        return operand, *ancillas
 
-    res_be3 = main(BE3)
-    res_be_add = main(BE_addition)
+    res_be3 = _post_selection(main(BE3))
+    res_be_add = _post_selection(main(BE_addition))
     _compare_results(res_be3, res_be_add, n)
 
 # Subtraction
@@ -1435,10 +1450,12 @@ def test_block_encoding_foqcs_lcu_subtraction(H1, H2):
 
     @terminal_sampling
     def main(BE):
-        return BE.apply_rus(lambda: QuantumVariable(n))()
-
-    res_be3 = main(BE3)
-    res_be_sub = main(BE_subtraction)
+        operand = QuantumVariable(n)
+        ancillas = BE.apply(operand)
+        return operand, *ancillas
+    
+    res_be3 = _post_selection(main(BE3))
+    res_be_sub = _post_selection(main(BE_subtraction))
     _compare_results(res_be3, res_be_sub, n)
 
 # @ (__matmul__)
@@ -1466,10 +1483,12 @@ def test_block_encoding_foqcs_lcu_multiplication(H1, H2):
 
     @terminal_sampling
     def main(BE):
-        return BE.apply_rus(lambda: QuantumVariable(n))()
+        operand = QuantumVariable(n)
+        ancillas = BE.apply(operand)
+        return operand, *ancillas
     
-    res_be3 = main(BE3)
-    res_be_mul = main(BE_multiplication)
+    res_be3 = _post_selection(main(BE3))
+    res_be_mul = _post_selection(main(BE_multiplication))
     _compare_results(res_be3, res_be_mul, n)
 
 # __mul__, __rmul__
@@ -1496,11 +1515,13 @@ def test_block_encoding_foqcs_lcu_scalar_multiplication(H1, H2, scalar):
 
     @terminal_sampling
     def main(BE):
-        return BE.apply_rus(lambda: QuantumVariable(n))()
+        operand = QuantumVariable(n)
+        ancillas = BE.apply(operand)
+        return operand, *ancillas
 
-    res_target = main(BE_target)
-    res_left = main(BE_left)
-    res_right = main(BE_right)
+    res_target = _post_selection(main(BE_target))
+    res_left = _post_selection(main(BE_left))
+    res_right = _post_selection(main(BE_right))
     _compare_results(res_target, res_left, n)
     _compare_results(res_target, res_right, n)
 
@@ -1567,10 +1588,12 @@ def test_block_encoding_foqcs_lcu_negation(H1, H2):
 
     @terminal_sampling
     def main(BE):
-        return BE.apply_rus(lambda: QuantumVariable(n))()
-
-    res_be2 = main(BE2)
-    res_be_neg = main(BE_neg)
+        operand = QuantumVariable(n)
+        ancillas = BE.apply(operand)
+        return operand, *ancillas
+    
+    res_be2 = _post_selection(main(BE2))
+    res_be_neg = _post_selection(main(BE_neg))
     _compare_results(res_be2, res_be_neg, n)
 
 ###########################################################################################################
