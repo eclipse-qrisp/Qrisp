@@ -274,7 +274,7 @@ class QuantumModulus(QuantumFloat):
         # Consider reconciling it.
         if check_for_tracing_mode():
             if inpl_adder is None:
-                from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
+                from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 
                 inpl_adder = gidney_adder
 
