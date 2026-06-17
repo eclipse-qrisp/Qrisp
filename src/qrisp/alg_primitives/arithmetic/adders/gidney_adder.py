@@ -21,7 +21,9 @@ from __future__ import annotations
 
 import jax.numpy as jnp
 import numpy as np
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, x, cx, mcx
 from qrisp.qtypes import QuantumBool

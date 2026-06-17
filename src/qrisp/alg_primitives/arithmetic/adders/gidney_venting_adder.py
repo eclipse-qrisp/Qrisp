@@ -4,9 +4,11 @@ from jax.numpy import bitwise_count
 import jax.numpy as jnp
 from qrisp import QuantumVariable, x, cx, mcx, h, measure, reset, z
 from qrisp.environments import control, custom_control
+from typing import TYPE_CHECKING
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.qtypes import QuantumBool
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+if TYPE_CHECKING:
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 
 from qrisp.alg_primitives.arithmetic.adders.gidney_adder import _extract_bit
 

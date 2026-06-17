@@ -22,17 +22,11 @@ from qrisp.jasp import qache, jrange
 from qrisp.core import swap, h, cx, t, t_dg, s, p, measure, cz, cp, QuantumVariable
 from qrisp.qtypes import QuantumBool, QuantumFloat
 from qrisp.environments import control, custom_control, conjugate, invert
-
-
-def _default_adder():
-    from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
-    return gidney_adder
+from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 
 
 # @qache(static_argnames = "inpl_adder")
-def jasp_mod_adder(a, b, modulus, inpl_adder=None, ctrl=None):
-    if inpl_adder is None:
-        inpl_adder = _default_adder()
+def jasp_mod_adder(a, b, modulus, inpl_adder=gidney_adder, ctrl=None):
 
     reduction_not_necessary = QuantumBool()
     # sign = QuantumBool()
