@@ -438,31 +438,6 @@ def build_from_foqcs_lcu_prep(
         from qrisp import *
         from qrisp.block_encodings import BlockEncoding
 
-        # Reverses the bit order.
-        # For n = 2
-        # i = 0 -> "00" -> "00" -> 0
-        # i = 1 -> "01" -> "10" -> 2
-        # i = 2 -> "10" -> "01" -> 1
-        # i = 3 -> "11" -> "11" -> 3
-        def _bit_reverse(i: int, n: int) -> int:
-                return int(f"{i:0{n}b}"[::-1], 2)
-
-        # Extracts operand amplitudes from the branch where all block-encoding
-        # ancillas are zeroes. (The resulting statevector contains all amplitudes)
-        def _pick_ops_with_anc_all_zero(
-            sv: NDArrayLike,
-            anc: NDArrayLike,
-            L: int
-        )-> NDArrayLike:
-            res_ops = []
-
-            for i in range(0, 2 ** L):
-                qi = _bit_reverse(i, L)
-                ind = qi << (len(anc[0]))
-                res_ops.append(sv[ind])
-
-            return res_ops
-
         L = 2 # 2 operand qubits
         n_anc_custom_prep = 5 # 4 base ancillary qubits + one extra
 
@@ -508,18 +483,16 @@ def build_from_foqcs_lcu_prep(
         qv = QuantumVariable(L)
         ancillas = be.apply(qv)
 
-        qc = qv.qs.compile()
-        sv = qc.statevector_array()
-
-        res = _pick_ops_with_anc_all_zero(sv, ancillas, L)
+        res = multi_measurement([qv] + ancillas)
 
         # res contains the unnormalized operand amplitudes in the success branch,
         # i.e. the branch where all FOQCS-LCU ancillas are |0>.
         #
-        # In this example the custom PREP activates x[0] and z[1], so SELECT applies
+        # In this example, the custom PREP activates x[0] and z[1], so SELECT applies
         # X(0)Z(1). Since the operand starts in |00>, the Z(1) part has no visible
-        # phase effect and X(0) maps |00> to |01>. Therefore the expected extracted
-        # operand state is approximately [0, 1, 0, 0].
+        # phase effect and X(0) flips the first operand qubit. Therefore, the expected
+        # measured state is |10> with probability 1.
+        # {('10', '00000'): 1.0}
         print(res)
 
 
