@@ -42,15 +42,9 @@ __all__ = ["IQMBackend", "IQMJob"]
 
 
 def _map_iqm_status(iqm_job) -> JobStatus:
-    """Translate an IQM ``CircuitJob`` status to :class:`~qrisp.interface.JobStatus`.
-
-    ``CircuitJob.status`` is a **property** (not a method); this helper accesses it
-    accordingly.  IQM ``JobStatus`` values (as of iqm-client ≥ 34) are:
-    ``waiting``, ``processing``, ``completed``, ``failed``, ``cancelled``.
-    Any unrecognised value falls back to ``RUNNING``.
-    """
+    """Translate an IQM ``CircuitJob`` status to :class:`~qrisp.interface.JobStatus`."""
     try:
-        raw = iqm_job.status  # property access — NOT a method call
+        raw = iqm_job.status
         name = raw.value if hasattr(raw, "value") else str(raw).lower()
     except Exception:
         return JobStatus.RUNNING
