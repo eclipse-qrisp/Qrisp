@@ -20,7 +20,6 @@ from typing import Callable
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.environments import conjugate, invert
-from qrisp.jasp import qache
 from qrisp.qtypes import QuantumVariable
 from qrisp.core import cx, cz
 
@@ -522,7 +521,6 @@ def build_from_foqcs_lcu_prep(
         cx(ancillae[extra_anc:extra_anc + num_q_ops], operands[0])
         cz(ancillae[extra_anc + num_q_ops:], operands[0])
 
-    @qache
     def unitary(*args):
         # LCU = PREP_R SELECT PREP_L^dg (note: PREP(a)^dg != PREP(a*)^dg, where PREP(a) = PREP_R, and PREP(a*) = PREP_L)
         prep_r(args[0])

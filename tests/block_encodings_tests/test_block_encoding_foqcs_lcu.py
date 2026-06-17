@@ -17,7 +17,6 @@
 """
 
 from functools import partial
-from qrisp.typing import NDArrayLike
 import numpy as np
 import pytest
 from qrisp.block_encodings import BlockEncoding
@@ -32,7 +31,7 @@ from qrisp.block_encodings.constructors.foqcs_lcu import (
 from qrisp.operators import X, Y, Z
 from qrisp.alg_primitives.unbalanced_w_state import unbalanced_w_state
 
-def _heisenberg_from_def(L: int, g: NDArrayLike, J: NDArrayLike):
+def _heisenberg_from_def(L: int, g: np.ndarray, J: np.ndarray):
     assert len(J) == 3, "J must be a list of length 3."
     assert len(g) == 3, "g must be list a of length 3."
     sigma_list = [np.array([[0,1],[1,0]]), np.array([[0,-1j],[1j,0]]), np.array([[1,0],[0,-1]])]
@@ -143,10 +142,10 @@ def _bit_reverse(i: int, n: int) -> int:
         return int(f"{i:0{n}b}"[::-1], 2)
 
 def _pick_ops_with_anc_all_zero(
-    sv: NDArrayLike,
-    anc: NDArrayLike,
+    sv: np.ndarray,
+    anc: np.ndarray,
     L: int
-)-> NDArrayLike:
+)-> np.ndarray:
     res_ops = []
 
     for i in range(0, 2 ** L):
