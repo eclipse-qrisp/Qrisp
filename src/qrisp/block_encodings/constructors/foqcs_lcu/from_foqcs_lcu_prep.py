@@ -144,15 +144,16 @@ def build_from_foqcs_lcu_prep(
         as ``p_r``. Any callable is valid as long as it prepares the correct left
         PREP state :math:`P_{L}` for the chosen FOQCS-LCU representation and accepts
         the ancilla quantum variable as its only remaining argument.
-        
+
     num_q_ops : int
         Number of operand qubits, i.e. ``L`` argument for FOQCS-LCU PREP routines.
         The default is 1.
 
     is_hermitian : bool
-        Indicates whether the block-encoding unitary is Hermitian.
-        The default is False.
-        
+        Indicates whether the block-encoding unitary is Hermitian. For more information
+        see ``is_hermitian`` parameter from :class:`BlockEncoding` class.
+        The default is ``False``.
+
     norm : "ArrayLike"
         Normalization factor.
         The default is `1` in case no normalization factor is passed.
@@ -176,14 +177,14 @@ def build_from_foqcs_lcu_prep(
         When the operator is not representing spin-glass model.
     KeyError
         If method received an unsupported FOQCS-LCU PREP method
-            
+
     Notes
     -----
 
     - :math:`PREP_{R}` is the PREP subcircuit for FOQCS-LCU.
       :math:`PREP_{L}` is the same as :math:`PREP_{R}`, but with conjugated coefficients.
       :math:`PREP_{L}^{\dagger}` is the complex conjugate transpose of :math:`PREP_{L}`.
-    
+
     - :math:`PREP_{L}^{\dagger}`, if it were to NOT use conjugated coefficients, would be the exact mathematical inverse of
       :math:`PREP_{R}`, but because it DOES use conjugated coefficients, it is not.
     
@@ -450,12 +451,13 @@ def build_from_foqcs_lcu_prep(
             #
             #   [extra, x0, x1, z0, z1]
             #
-            # SELECT should use only the final 2L qubits:
+            # SELECT will use only the final 2L qubits:
             #
             #   [x0, x1, z0, z1]
             #
             # This PREP sets extra = 1 and copies it into x0.
-            # Thus the selected operation should be X(0)
+            # Also it sets z1 = 1.
+            # Thus the selected operation should be X(0)Z(1)
             x(qv[0]) # Extra ancillary
             cx(qv[0], qv[1]) # x[0] taken from extra ancillary.
             x(qv[4]) # z[1]
@@ -485,14 +487,15 @@ def build_from_foqcs_lcu_prep(
 
         res = multi_measurement([qv] + ancillas)
 
-        # res contains the unnormalized operand amplitudes in the success branch,
-        # i.e. the branch where all FOQCS-LCU ancillas are |0>.
+        # res contains the measurement probabilities for the operand register
+        # together with the FOQCS-LCU ancilla register.
         #
         # In this example, the custom PREP activates x[0] and z[1], so SELECT applies
         # X(0)Z(1). Since the operand starts in |00>, the Z(1) part has no visible
-        # phase effect and X(0) flips the first operand qubit. Therefore, the expected
-        # measured state is |10> with probability 1.
-        # {('10', '00000'): 1.0}
+        # phase effect and X(0) flips the first operand qubit. The inverse of p_l 
+        # then uncomputes the PREP register, so all ancillas return to |00000>.
+        # Therefore, the expected measurement result is the operand state |10> and
+        # the ancilla state |00000>, with probability 1: {('10', '00000'): 1.0}
         print(res)
 
 

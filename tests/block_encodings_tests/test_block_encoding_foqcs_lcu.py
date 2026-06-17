@@ -795,7 +795,7 @@ def test_block_encoding_from_operator_spin_glass_jasp():
 
     O = sum(terms[1:], terms[0])
 
-    be = BlockEncoding.from_foqcs_lcu_operator(O, L=L)
+    be = BlockEncoding.from_foqcs_lcu_operator(O)
 
     psi = _prep_psi(L)
 
@@ -913,7 +913,7 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_operator(O):
     g = aresult["g"]
     J = aresult["J"]
 
-    be = BlockEncoding.from_foqcs_lcu_operator(O, L)
+    be = BlockEncoding.from_foqcs_lcu_operator(O)
 
     qv = QuantumVariable(L)
     psi = _prep_psi(L)
@@ -1002,7 +1002,7 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_operator(O):
     g = aresult["g"]
     J_diag = _J_matrix_to_diag_list(aresult["J"], L)
 
-    be = BlockEncoding.from_foqcs_lcu_operator(O, L)
+    be = BlockEncoding.from_foqcs_lcu_operator(O)
 
     qv = QuantumVariable(L)
     psi = _prep_psi(L)
@@ -1132,7 +1132,7 @@ def test_foqcs_lcu_resources():
         + 0.39 * Z(0) * Z(1) - 0.11 * Z(1) * Z(2) + 0.26 * Z(0) * Z(2)
     )
 
-    be = BlockEncoding.from_foqcs_lcu_operator(O, L)
+    be = BlockEncoding.from_foqcs_lcu_operator(O)
     res = be.resources(QuantumVariable(L))
 
     assert set(res) == {"gate counts", "depth", "qubits"}
@@ -1150,7 +1150,7 @@ def test_block_encoding_foqcs_lcu_is_controllable():
     H = X(0)*X(1) + 0.2*Y(0)*Y(1)
     n = H.find_minimal_qubit_amount()
 
-    BE = BlockEncoding.from_foqcs_lcu_operator(H, L=n)
+    BE = BlockEncoding.from_foqcs_lcu_operator(H)
 
     @terminal_sampling
     def main():
@@ -1199,8 +1199,8 @@ def test_foqcs_lcu_chebyshev(H1, H2, rescaled):
     """
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L=n)
-    BE2 = BlockEncoding.from_foqcs_lcu_operator(H2, L=n)
+    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1)
+    BE2 = BlockEncoding.from_foqcs_lcu_operator(H2)
 
     alpha = BE2.alpha
 
@@ -1268,8 +1268,8 @@ def test_foqcs_lcu_poly(H1, H2, poly):
     """
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L=n)
-    BE2 = BlockEncoding.from_foqcs_lcu_operator(H2, L=n)
+    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1)
+    BE2 = BlockEncoding.from_foqcs_lcu_operator(H2)
 
     # Apply polynomial to QubitOperator H1 and add H2
     H3 = sum(poly[k] * H1**k for k in range(len(poly))) + H2
@@ -1317,7 +1317,7 @@ def test_foqcs_lcu_inv():
 
     assert np.linalg.matrix_rank(H) == 2**L
 
-    BE_H = BlockEncoding.from_foqcs_lcu_operator(H_op, L=L)
+    BE_H = BlockEncoding.from_foqcs_lcu_operator(H_op)
     BE_H_inv = BE_H.inv(0.01, np.linalg.cond(H))
 
     b = np.array([0, 1, 0, 1])
@@ -1363,7 +1363,7 @@ def test_foqcs_lcu_sim():
     assert is_operator_foqcs_compatible(H)
 
     BE_ref = BlockEncoding.from_operator(H)
-    BE_foqcs = BlockEncoding.from_foqcs_lcu_operator(H, L=L)
+    BE_foqcs = BlockEncoding.from_foqcs_lcu_operator(H)
 
     def operand_prep():
         return QuantumFloat(L)
@@ -1395,14 +1395,15 @@ def test_block_encoding_foqcs_lcu_addition(H1, H2):
     r"""
     Tests `BE_addition = BE1 + BE2` with `BE1` constructed by FOQCS-LCU.
     """
-    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
+    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
 
     H3 = H1 + H2
     BE3 = BlockEncoding.from_operator(H3)
     BE_addition = BE1 + BE2
+
+    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     @terminal_sampling
     def main(BE):
@@ -1422,19 +1423,20 @@ def test_block_encoding_foqcs_lcu_subtraction(H1, H2):
     r"""
     Tests `BE_subtraction = BE1 - BE2` with `BE1` constructed by FOQCS-LCU.
     """
-    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
+    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
 
     H3 = H1 - H2
     BE3 = BlockEncoding.from_operator(H3)
     BE_subtraction = BE1 - BE2
 
+    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
+
     @terminal_sampling
     def main(BE):
         return BE.apply_rus(lambda: QuantumVariable(n))()
-    
+
     res_be3 = main(BE3)
     res_be_sub = main(BE_subtraction)
     _compare_results(res_be3, res_be_sub, n)
@@ -1452,15 +1454,15 @@ def test_block_encoding_foqcs_lcu_multiplication(H1, H2):
     r"""
     Tests `BE_multiplication = BE1 @ BE2` with `BE1` constructed by FOQCS-LCU.
     """
-    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
+    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
 
     H3 = H1 * H2
     BE3 = BlockEncoding.from_operator(H3)
     BE_multiplication = BE1 @ BE2
 
+    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     @terminal_sampling
     def main(BE):
@@ -1484,14 +1486,13 @@ def test_block_encoding_foqcs_lcu_scalar_multiplication(H1, H2, scalar):
     H_target = scalar * H1 + H2
     BE_target = BlockEncoding.from_operator(H_target)
 
-    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
-
-    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
+    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
 
     BE_left = scalar * BE1 + BE2
     BE_right = BE1 * scalar + BE2
     
+    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     @terminal_sampling
     def main(BE):
@@ -1555,19 +1556,19 @@ def test_block_encoding_foqcs_lcu_negation(H1, H2):
     r"""
     Tests the use of negation `BE_neg = -BE` with FOQCS-LCU.
     """
-    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1, L = n)
+    BE1 = BlockEncoding.from_foqcs_lcu_operator(H1)
     BE_neg = -BE1
 
     BE2 = BlockEncoding.from_operator(H2)
 
+    n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
     #n = H1.find_minimal_qubit_amount()
 
     @terminal_sampling
     def main(BE):
         return BE.apply_rus(lambda: QuantumVariable(n))()
-    
+
     res_be2 = main(BE2)
     res_be_neg = main(BE_neg)
     _compare_results(res_be2, res_be_neg, n)

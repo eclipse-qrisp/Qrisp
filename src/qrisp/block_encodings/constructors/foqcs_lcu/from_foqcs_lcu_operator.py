@@ -24,7 +24,6 @@ from qrisp.block_encodings.constructors.foqcs_lcu.from_foqcs_lcu_prep import bui
 def build_from_foqcs_lcu_operator(
     cls: BlockEncoding,
     O: QubitOperator,
-    L: int = -1,
     tol: float = 1e-12
 ) -> BlockEncoding:
     r"""
@@ -47,10 +46,6 @@ def build_from_foqcs_lcu_operator(
     O : QubitOperator
         Operator to encode, supported operators are covered in `Notes`, e.g.
         ``O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)``
-
-    L : int = -1
-        Number of interacting qubits.
-        If not specified, will default to -1, and infer the number of interacting qubits from the operator
 
     tol : float, optional = 1e-12
         The tolerance used to determine if an entry is zero. 
@@ -155,7 +150,7 @@ def build_from_foqcs_lcu_operator(
         from qrisp.operators import X
 
         H = X(0) + X(1)
-        BE = BlockEncoding.from_foqcs_lcu_operator(H, L=2)
+        BE = BlockEncoding.from_foqcs_lcu_operator(H)
 
         @terminal_sampling
         def main():
@@ -181,7 +176,7 @@ def build_from_foqcs_lcu_operator(
             - 0.8 * Z(0) * Z(3)
         )
 
-        BE = BlockEncoding.from_foqcs_lcu_operator(H, L=4)
+        BE = BlockEncoding.from_foqcs_lcu_operator(H)
 
         @terminal_sampling
         def main():
@@ -195,5 +190,5 @@ def build_from_foqcs_lcu_operator(
     from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_analysis import foqcs_analyze_operator
     from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_analysis import build_foqcs_lcu_prep_from_analysis
     # Analyze the Qubit operator
-    aresult = foqcs_analyze_operator(O, L = L, tol = tol)        
+    aresult = foqcs_analyze_operator(O, tol = tol)        
     return build_from_foqcs_lcu_prep(cls, *build_foqcs_lcu_prep_from_analysis(aresult))
