@@ -91,7 +91,7 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
 
     # Problem Hamiltonian
     H_prob = sum(
-        [sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)] # ÄNDERUNG
+        [sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)] 
     ) + sum([h[i] * Z(i) for i in range(N)])
 
     # AGP as function of alpha
@@ -255,7 +255,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     #) + sum([h[i] * Z(i) for i in range(N)])
 
     H_prob = sum(
-        [sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)] # ÄNDERUNG
+        [sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)] 
     ) + sum([h[i] * Z(i) for i in range(N)])
 
     # AGP
@@ -278,8 +278,8 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
     problem_args : dict
         Holds arguments for DCQO problem creation (``method``: str ("COLD"/"LCD"), ``uniform``: bool).
     run_args : dict
-        Holds arguments for running the DCQO instance (``N_steps``, ``T``, ``N_opt``, ``CRAB``).
-        For all options, see :meth:`DCQOProblem.run`.
+        Holds arguments for running the DCQO instance (``N_steps``, ``T``, ``N_opt``, ``CRAB``, ``objective``,``precision``, ``backend``, ``exp_value_backend``).
+        All optionas are also listed here: :meth:`DCQOProblem.run`.
 
     Returns
     -------

@@ -1,5 +1,10 @@
 import numpy as np
 from qrisp.algorithms.cold import solve_QUBO
+from qrisp.interface.provider_backends.qiskit_backend import QiskitBackend
+import sympy as sp
+from qrisp import QuantumVariable
+from qrisp.operators.qubit import X, Y, Z
+from qrisp.algorithms.cold import DCQOProblem
 
 def test_cold_uniform_magnitude():
 
@@ -122,7 +127,6 @@ def test_coldcrab_uniform_magnitude():
 
 
 def test_cold_expvalue_method_backend():
-    from qrisp.interface.provider_backends.qiskit_backend import QiskitBackend
 
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
     problem_args = {"method": "COLD", "uniform": True} #, "agp_type": "order1"}
@@ -140,10 +144,6 @@ def test_cold_expvalue_method_backend():
     assert len(res) > 0
 
 def test_cold_full_example():
-    import sympy as sp
-    from qrisp import QuantumVariable
-    from qrisp.operators.qubit import X, Y, Z
-    from qrisp.algorithms.cold import DCQOProblem
 
     Q = np.array([[-1.1, 0.6, 0.4, 0.0, 0.0, 0.0],
               [0.6, -0.9,  0.5, 0.0, 0.0, 0.0],

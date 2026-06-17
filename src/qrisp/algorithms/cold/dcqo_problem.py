@@ -627,14 +627,8 @@ class DCQOProblem:
         precision : float, optional
             Precision for expectation value calculations. Default is 0.01.
         exp_value_backend : BackendLike, optional
-            Backend for expectation value calculations, if ``exp_value`` is used as opbjective function.
-            If provided, uses measurement-based expectation value with this backend.
-            If not provided, tries statevector first and falls back to measurement. Default is None.
-        backend : BackendLike, optional
-            The backend to be used for the quantum simulation.
-            By default, the Qrisp simulator is used.
-        shots: : int
-            The number of shots. The default is 5000.
+            Backend for expectation value calculations, if ``exp_value`` is used as objective function.
+            If provided, uses measurement-based expectation value with this backend. Default is the Qrisp statevector simulator.
 
         Returns
         -------
