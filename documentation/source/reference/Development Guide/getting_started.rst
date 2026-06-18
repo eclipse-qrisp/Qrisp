@@ -27,22 +27,22 @@ For development you will also want the test and documentation dependencies:
 
     pip install -e ".[test,docs]"
 
-The following optional dependency groups are available:
+.. list-table:: Optional dependency groups
+   :header-rows: 1
+   :widths: 15 40
 
-``test``
-    Test runner (pytest), simulators (qiskit-aer, cirq), and chemistry (pyscf).
-
-``docs``
-    Sphinx and related extensions for building the documentation.
-
-``iqm``
-    Client for IQM quantum hardware.
-
-``catalyst``
-    PennyLane Catalyst JIT compiler.
-
-``xdsl``
-    xDSL compiler infrastructure.
+   * - Group
+     - What it installs
+   * - ``test``
+     - Test runner (pytest), simulators (qiskit-aer, cirq), and chemistry (pyscf)
+   * - ``docs``
+     - Sphinx and related extensions for building the documentation
+   * - ``iqm``
+     - Client for IQM quantum hardware
+   * - ``catalyst``
+     - PennyLane Catalyst JIT compiler
+   * - ``xdsl``
+     - xDSL compiler infrastructure
 
 Include the groups you need in brackets:
 
