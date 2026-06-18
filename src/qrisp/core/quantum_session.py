@@ -561,7 +561,8 @@ class QuantumSession(QuantumCircuit):
     # that has been merged with self.qs doesnt point to the same data list anymore.
     # This method tackles this problem by keeping the pointer to the list alive,
     # but removing every single element
-    def clear_data(self):
+    def clear_data(self) -> None:
+        """Clear the data list of this QuantumSession, while keeping the pointer alive."""
         self.data.clear()
 
     def statevector(self, return_type="sympy", plot=False, decimals=None):

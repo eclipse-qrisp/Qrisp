@@ -18,3 +18,4 @@ Quantum Environments
    GateWrapEnvironment
    IterationEnvironment
    GMSEnvironment
+   LayeredEnvironment
