@@ -23,6 +23,7 @@ from qrisp.alg_primitives.mcx_algs.circuit_library import (
     ctrl_state_wrap,
 )
 from qrisp.circuit import QuantumCircuit, Operation
+from qrisp.jasp import qache
 
 
 class GidneyLogicalAND(Operation):
@@ -84,7 +85,7 @@ from qrisp.core import x, h, cx, t, t_dg, s, measure, cz
 from qrisp.environments import control
 from qrisp import custom_inversion
 
-
+@qache
 def gidney_mcx_impl(a, b, c):
     h(c)
     t(c)
@@ -100,6 +101,7 @@ def gidney_mcx_impl(a, b, c):
     h(c)
     s(c)
 
+@qache
 def gidney_mcx_inv_impl(a, b, c):
     h(c)
     bl = measure(c)

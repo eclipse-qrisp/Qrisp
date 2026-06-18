@@ -930,7 +930,7 @@ def process_pjit(eqn: JaxprEqn, context_dic: ContextDict, call_graph_stats=None,
     name = eqn.params["name"]
 
     # ---- Gidney MCX shortcuts ------------------------------------------------
-    if name in ("gidney_mcx", "gidney_mcx_inv"):
+    if name in ("gidney_mcx_impl", "gidney_mcx_inv_impl"):
         unflattened_outvalues = [
             (cl_multi_cx(invalues[-1][0], "11", invalues[:-1]), invalues[-1][1])
         ]
