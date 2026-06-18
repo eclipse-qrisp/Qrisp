@@ -108,6 +108,7 @@ def iteration_env_evaluator(eqn, context_dic):
 
     # Set the aliases for the equations and the jasprs
     iteration_1_eqn = context_dic[id(eqn.primitive)]
+    del context_dic[id(eqn.primitive)
     iteration_2_eqn = eqn
 
     iter_1_jaspr = iteration_1_eqn.params["jaspr"].flatten_environments()
