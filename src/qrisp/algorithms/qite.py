@@ -24,7 +24,18 @@ import numpy as np
 import jax.numpy as jnp
 
 
-def QITE(qarg, U_0, exp_H, s, k, method="GC"):
+def QITE(*args, procedure_type=None, **kwargs):
+    r"""
+    To anticipate other methods implementing QITE
+    Currently, Qrisp supports only DB-QITE
+    """
+    # default
+    if procedure_type is None:
+        DB_QITE(*args, **kwargs)
+    # TODO: variational methods based on measurements
+    
+    
+def DB_QITE(qarg, U_0, exp_H, s, k, method="GC"):
     r"""
     Performs `Double-Braket Quantum Imaginary-Time Evolution (DB-QITE) <https://arxiv.org/abs/2412.04554>`_.
     Given a Hamiltonian :ref:`Operator <Operators>` $H$, this method implements the unitary $U_k$ that is recursively defined by either of
