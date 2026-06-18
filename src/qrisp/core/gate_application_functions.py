@@ -489,7 +489,6 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         amy_toffoli,
         jones_toffoli,
         jasp_gidney_mcx,
-        jasp_gidney_mcx_inv,
         khattar_mcx,
     )
     from qrisp.core import QuantumVariable
