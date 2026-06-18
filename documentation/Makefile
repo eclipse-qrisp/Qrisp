@@ -9,7 +9,7 @@ SOURCEDIR     = source
 BUILDDIR      = build
 
 docs-install:
-	pip install -r requirements_doc.txt
+	pip install -e ".[docs]"
 	sudo apt install -y pandoc
 
 # Put it first so that "make" without argument is like "make help".

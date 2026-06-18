@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 name = "qrisp"
 version = "0.8.2"
 authors = [
-    {name = "The Qrisp authors", email = "raphael.seidel@iqm.tech"},
+    {name = "The Qrisp authors"},
 ]
 description = "A high-level quantum programming language"
 readme = "README.md"
@@ -58,7 +58,6 @@ docs = [
 ]
 test = [
     "pytest==9.0.3",
-    "pytest-xdist==3.8.0",
     "qiskit-aer==0.17.2",
     "pyscf==2.13.0",
     "cirq==1.6.1",
