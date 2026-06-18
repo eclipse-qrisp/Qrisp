@@ -493,6 +493,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     )
     from qrisp.core import QuantumVariable
     from qrisp.qtypes import QuantumBool
+    from qrisp.environments import invert
 
     if isinstance(controls, list):
 
@@ -579,7 +580,8 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             )
 
         if check_for_tracing_mode():
-            jasp_gidney_mcx_inv(qubits_0[0], qubits_0[1], qubits_1[0])
+            with invert():
+                jasp_gidney_mcx(qubits_0[0], qubits_0[1], qubits_1[0])
         else:
             append_operation(
                 GidneyLogicalAND(ctrl_state=ctrl_state, inv=True),
