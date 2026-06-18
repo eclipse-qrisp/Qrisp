@@ -80,8 +80,6 @@ class GidneyLogicalAND(Operation):
         res.ctrl_state = self.ctrl_state
         return res
 
-
-from qrisp.jasp import AbstractQubit, make_jaspr, Jaspr
 from qrisp.core import x, h, cx, t, t_dg, s, measure, cz
 from qrisp.environments import control
 from qrisp import custom_inversion
@@ -109,39 +107,10 @@ def gidney_mcx_inv_impl(a, b, c):
         cz(a, b)
         x(c)
 
-class GidneyMCXJaspr(Jaspr):
-    def __init__(self, inv):
-        self.inv = inv
-        
-        # The decorator requires the function to accept 'inv' as an argument. 
-        @custom_inversion
-        def gate_logic(a, b, c, inv=False):
-            # We rely on self.inv to determine which circuit to trace.
-            # The 'inv' argument from the decorator is effectively ignored here
-            # because self.inv defines the static nature of this specific Jaspr instance.
-            if self.inv:
-                gidney_mcx_inv_impl(a, b, c)
-            else:
-                gidney_mcx_impl(a, b, c)
-        
-        temp_jaspr = make_jaspr(gate_logic)(
-            AbstractQubit(), AbstractQubit(), AbstractQubit()
-        ).flatten_environments()
-        
-        Jaspr.__init__(self, temp_jaspr)
-        self.envs_flattened = True
+@custom_inversion
+def jasp_gidney_mcx(a, b, c, inv = False):
 
-    def inverse(self):
-        if self.inv:
-            return gidney_mcx_jaspr
-        else:
-            return gidney_mcx_inv_jaspr
-
-gidney_mcx_jaspr = GidneyMCXJaspr(False)
-gidney_mcx_inv_jaspr = GidneyMCXJaspr(True)
-
-def jasp_gidney_mcx(a, b, c):
-    gidney_mcx_jaspr.embedd(a, b, c, name="gidney_mcx")
-
-def jasp_gidney_mcx_inv(a, b, c):
-    gidney_mcx_inv_jaspr.embedd(a, b, c, name="gidney_mcx_inv")
+    if not inv:
+        gidney_mcx_impl(a, b, c)
+    else:
+        gidney_mcx_inv_impl(a, b, c)
