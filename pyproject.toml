@@ -41,6 +41,13 @@ dependencies = [
 iqm = ["iqm-client[qiskit]"]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
 xdsl = ["xdsl==0.59.0"]
+test = [
+    "pytest==9.0.3",
+    "pytest-xdist==3.8.0",
+    "qiskit-aer==0.17.2",
+    "pyscf==2.13.0",
+    "cirq==1.6.1",
+]
 
 [project.urls]
 Homepage = "https://github.com/eclipse-qrisp/Qrisp"
