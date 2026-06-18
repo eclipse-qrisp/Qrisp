@@ -41,6 +41,21 @@ dependencies = [
 iqm = ["iqm-client[qiskit]"]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
 xdsl = ["xdsl==0.59.0"]
+docs = [
+    "sphinx>=7,<9", # sphinx_toolbox.sidebar_links not compatible with Sphinx 9
+    "sphinx-toolbox==4.1.2",
+    "nbsphinx==0.9.8",
+    "ipykernel==7.2.0",
+    "myst-parser==5.0.0",
+    "texext==0.6.8",
+    "numpydoc==1.10.0",
+    "sphinx-sitemap==2.9.0",
+    "sphinx-copybutton==0.5.2",
+    "sphinx-design==0.7.0",
+    "sphinx-thebe==0.3.1",
+    "sphinx-new-tab-link==0.8.1",
+    "pydata-sphinx-theme==0.17.1",
+]
 test = [
     "pytest==9.0.3",
     "pytest-xdist==3.8.0",
