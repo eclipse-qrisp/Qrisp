@@ -21,12 +21,50 @@ reflected immediately without reinstalling:
 
     pip install -e .
 
-To also install the documentation build dependencies:
+For development you will also want the test and documentation dependencies:
 
 .. code-block:: bash
 
-    cd documentation
-    make docs-install
+    pip install -e ".[test,docs]"
+
+The following optional dependency groups are available:
+
+``test``
+    Test runner (pytest), simulators (qiskit-aer, cirq), and chemistry (pyscf).
+
+``docs``
+    Sphinx and related extensions for building the documentation.
+
+``iqm``
+    Client for IQM quantum hardware.
+
+``catalyst``
+    PennyLane Catalyst JIT compiler.
+
+``xdsl``
+    xDSL compiler infrastructure.
+
+Include the groups you need in brackets:
+
+.. code-block:: bash
+
+    pip install -e ".[test]"
+    pip install -e ".[docs]"
+    pip install -e ".[test,docs,iqm,catalyst,xdsl]"
+
+.. note::
+
+    The quotes around the bracket expression are required in most shells (``zsh``, ``bash``, etc.)
+    to prevent the shell from interpreting the square brackets.
+
+Verify the installation
+-----------------------
+
+Confirm that Qrisp can be imported and reports the expected version:
+
+.. code-block:: bash
+
+    python -c "import qrisp; print(qrisp.__version__)"
 
 Running the test suite
 ----------------------
