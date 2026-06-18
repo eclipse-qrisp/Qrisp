@@ -16,11 +16,14 @@
 ********************************************************************************
 """
 
+import numpy as np
 from qrisp import QuantumVariable, jaspify
 from qrisp.qaoa import QAOAProblem, RX_mixer, create_maxcut_cost_operator, create_maxcut_sample_array_post_processor
 import networkx as nx
 
 def test_jasp_QAOAmaxCut():
+    
+    np.random.seed(42)  # Deterministic for reproducible test results
     
     @jaspify(terminal_sampling=True)
     def main():

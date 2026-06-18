@@ -95,6 +95,7 @@ def test_coldcrab_uniform_cost():
             [ 0.0,   0.0,  0.30,-0.80]
         ])
     
+    np.random.seed(42)  # Deterministic for reproducible test results
     solution = "1011"
     
     problem_args = {"method": "COLD", "uniform": True}
