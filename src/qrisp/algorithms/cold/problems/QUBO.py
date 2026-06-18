@@ -49,14 +49,8 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
 
     def lam():
         t, T = sp.symbols("t T", real=True)
-        lam_expr = t / T
+        lam_expr = sp.sin(sp.pi / 2 * sp.sin(sp.pi * t / (2 * T)) ** 2) ** 2
         return lam_expr
-
-    def g():
-        # Inverse of lam(t) giving t(lam)
-        lam, T = sp.symbols("lam T")
-        g_expr = lam * T
-        return g_expr
 
     # AGP coefficients
     if uniform_AGP_coeffs:
@@ -97,7 +91,7 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
 
     # Problem Hamiltonian
     H_prob = sum(
-        [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]
+        [sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)] 
     ) + sum([h[i] * Z(i) for i in range(N)])
 
     # AGP as function of alpha
@@ -109,7 +103,7 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
     # Control Hamiltonian
     H_control = sum([Z(i) for i in range(N)])
 
-    collected_operators = (Q, H_init, H_prob, A_lam, alpha, lam, g, H_control)
+    collected_operators = (Q, H_init, H_prob, A_lam, alpha, lam, H_control)
 
     return collected_operators
 
@@ -256,8 +250,12 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     H_init = 1 * sum([X(i) for i in range(N)])
 
     # Problem Hamiltonian
+    # H_prob = sum(
+    #    [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]
+    #) + sum([h[i] * Z(i) for i in range(N)])
+
     H_prob = sum(
-        [sum([J[i][j] * Z(i) * Z(j) for j in range(i)]) for i in range(N)]
+        [sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)] 
     ) + sum([h[i] * Z(i) for i in range(N)])
 
     # AGP
@@ -280,8 +278,8 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
     problem_args : dict
         Holds arguments for DCQO problem creation (``method``: str ("COLD"/"LCD"), ``uniform``: bool).
     run_args : dict
-        Holds arguments for running the DCQO instance (``N_steps``, ``T``, ``N_opt``, ``CRAB``).
-        For all options, see :meth:`DCQOProblem.run`.
+        Holds arguments for running the DCQO instance (``N_steps``, ``T``, ``N_opt``, ``CRAB``, ``objective``,``precision``, ``backend``, ``exp_value_backend``).
+        All optionas are also listed here: :meth:`DCQOProblem.run`.
 
     Returns
     -------
