@@ -38,8 +38,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-iqm = ["iqm-client[qiskit]"]
-catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
+iqm = ["iqm-client[qiskit]==22.4"]
+catalyst = ["pennylane-catalyst==0.15.0", "pennylane==0.45.0"]
 xdsl = ["xdsl==0.59.0"]
 docs = [
     "sphinx>=7,<9", # sphinx_toolbox.sidebar_links not compatible with Sphinx 9
