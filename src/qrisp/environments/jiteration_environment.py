@@ -99,17 +99,20 @@ def iteration_env_evaluator(eqn, context_dic):
 
     # This represents the case that we are faced with the q_env primitive of the
     # first iteration. We set it as an attribute to use it in the other case.
-    if not hasattr(eqn.primitive, "iteration_1_eqn"):
-        eqn.primitive.iteration_1_eqn = eqn
+    
+    if id(eqn.primitive) not in context_dic:
+        context_dic[id(eqn.primitive)] = eqn
         return None
 
     # We can now retrieve the equations for both iterations.
 
     # Set the aliases for the equations and the jasprs
-    iteration_1_eqn = eqn.primitive.iteration_1_eqn
+    iteration_1_eqn = context_dic[id(eqn.primitive)]
     iteration_2_eqn = eqn
+
     iter_1_jaspr = iteration_1_eqn.params["jaspr"].flatten_environments()
     iter_2_jaspr = iteration_2_eqn.params["jaspr"].flatten_environments()
+    
 
     if len(iter_2_jaspr.outvars) > 1:
         raise Exception("Found jrange with external carry value")
