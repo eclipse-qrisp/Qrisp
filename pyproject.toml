@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 name = "qrisp"
 version = "0.8.2"
 authors = [
-    {name = "The Qrisp authors"},
+    {name = "The Qrisp authors", email = "raphael.seidel@iqm.tech"},
 ]
 description = "A high-level quantum programming language"
 readme = "README.md"
@@ -22,7 +22,7 @@ classifiers = [
 license = {text = "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0"}
 
 dependencies = [
-    "numpy==2.4.4",
+    "numpy>=2.0,<2.3", # tqecd (git dependency) requires numpy<2.3
     "sympy<=1.13", # https://github.com/sympy/sympy/issues/28039 - fix on dev branch, not released
     "qiskit==2.4.0",
     "matplotlib==3.10.9",
@@ -57,10 +57,11 @@ docs = [
     "pydata-sphinx-theme==0.17.1",
 ]
 test = [
-    "pytest==9.0.3",
+    "pytest==9.1.0",
     "qiskit-aer==0.17.2",
-    "pyscf==2.13.0",
+    "pyscf==2.13.1",
     "cirq==1.6.1",
+    "tqecd==0.2.0",
 ]
 
 [project.urls]
