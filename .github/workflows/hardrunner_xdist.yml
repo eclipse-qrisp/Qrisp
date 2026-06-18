@@ -15,9 +15,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
 
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11.*", "3.12.*"]
 
@@ -43,4 +44,4 @@ jobs:
           pip install --group test
 
       - name: Run tests with pytest
-        run: pytest -n auto -v
+        run: pytest -n 0 -ra
