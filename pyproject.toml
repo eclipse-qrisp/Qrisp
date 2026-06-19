@@ -28,7 +28,7 @@ classifiers = [
 license = {text = "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0"}
 
 dependencies = [
-    "numpy>=2.0,<2.3", # tqecd (git dependency) requires numpy<2.3
+    "numpy>=2.0,<2.3", # tqecd requires numpy<2.3
     "sympy<=1.13", # https://github.com/sympy/sympy/issues/28039 - fix on dev branch, not released
     "qiskit==2.4.0",
     "matplotlib==3.10.9",
