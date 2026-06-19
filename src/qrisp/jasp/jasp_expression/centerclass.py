@@ -732,6 +732,7 @@ class Jaspr(ClosedJaxpr):
         """
         Leverages the Catalyst pipeline to compile a QIR representation of
         this function and executes that function using the Catalyst QIR runtime.
+        Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
         Parameters
         ----------
@@ -784,6 +785,7 @@ class Jaspr(ClosedJaxpr):
     def to_qir(self):
         """
         Compiles the Jaspr to QIR using the `Catalyst framework <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
+        Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
         Parameters
         ----------
@@ -1066,7 +1068,7 @@ class Jaspr(ClosedJaxpr):
     def to_mlir(self, lower_stablehlo = False):
         """
         Compiles the Jaspr to an xDSL module using the Jasp Dialect.
-        Requires the xDSL package to be installed (``pip install xdsl``).
+        Requires the xDSL package to be installed (``pip install qrisp[xdsl]``).
 
         .. note::
 
@@ -1146,6 +1148,7 @@ class Jaspr(ClosedJaxpr):
     def to_catalyst_mlir(self):
         """
         Compiles the Jaspr to MLIR using the `Catalyst dialect <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
+        Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
         Parameters
         ----------
@@ -1338,6 +1341,7 @@ class Jaspr(ClosedJaxpr):
     def to_catalyst_jaxpr(self):
         """
         Compiles the jaspr to the corresponding `Catalyst jaxpr <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
+        Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
         Parameters
         ----------
