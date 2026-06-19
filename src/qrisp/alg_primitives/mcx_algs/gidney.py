@@ -111,7 +111,6 @@ def gidney_mcx_inv_impl(a, b, c):
 
 @custom_inversion
 def jasp_gidney_mcx(a, b, c, inv = False):
-
     if not inv:
         gidney_mcx_impl(a, b, c)
     else:
