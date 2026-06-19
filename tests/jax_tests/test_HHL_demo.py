@@ -259,6 +259,8 @@ def test_HHL_demo():
 
     ############################################################
 
+    np.random.seed(42)  # Deterministic for reproducible test results
+
     def hermitian_matrix_with_power_of_2_eigenvalues(n):
         # Generate eigenvalues as inverse powers of 2.
         eigenvalues = 1 / np.exp2(np.random.randint(1, 4, size=n))

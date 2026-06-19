@@ -16,39 +16,50 @@
 ********************************************************************************
 """
 
+import warnings
+
 import jax.numpy as jnp
 from jax._src.array import ArrayImpl
 from jax import jit
 
 from qrisp.jasp.tracing_logic import check_for_tracing_mode
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 class JRangeIterator:
+    """Iterator used by :func:`jrange` in JASP tracing mode.
+
+    Traces two loop iterations to capture the quantum operations performed
+    inside the loop body. The collected environments are compiled into a
+    JAX loop primitive by :class:`~qrisp.environments.JIterationEnvironment`.
+
+    Parameters
+    ----------
+    *args : int
+        One argument: stop value (start defaults to 0).
+        Two arguments: start and stop values.
+
+    """
 
     def __init__(self, *args):
 
-        # Differentiate between the 3 possible cases of input signature
+        # Differentiate between the 2 possible cases of input signature
 
         if len(args) == 1:
             # In the case of one input argument, this argument is the stop value
             self.start = None
             self.stop = jnp.asarray(args[0], dtype="int64")
-            self.step = jnp.asarray(1, dtype="int64")
         elif len(args) == 2:
             self.start = jnp.asarray(args[0], dtype="int64")
             self.stop = jnp.asarray(args[1], dtype="int64")
-            self.step = jnp.asarray(1, dtype="int64")
-        elif len(args) == 3:
-            # Three arguments denote the case of a non-trivial step
-            self.start = jnp.asarray(args[0], dtype="int64")
-            self.stop = jnp.asarray(args[1], dtype="int64")
-            self.step = jnp.asarray(args[2], dtype="int64")
 
         # The loop index should be inclusive because this makes loop inversion
         # much easier. For more details check inv_transform.py.
         self.stop -= 1
 
     def __iter__(self):
+        """Initialise the loop index and reset the iteration counter."""
+
         self.iteration = 0
 
         # We create the loop iteration index tracer
@@ -59,6 +70,15 @@ class JRangeIterator:
         return self
 
     def __next__(self):
+        """Run the next tracing step.
+
+        Traces two iterations inside a
+        :class:`~qrisp.environments.JIterationEnvironment` to capture the
+        quantum operations performed by the loop body. The first iteration
+        opens the environment; the second closes it and opens a new one to
+        detect created qubits and compute the loop semantics.
+        """
+
         # The idea is now to trace two iterations to capture what values get
         # updated after each iteration.
         # We capture the loop semantics using the JIterationEnvironment.
@@ -92,7 +112,7 @@ class JRangeIterator:
             created_qvs = sorted(created_qvs, key=lambda x: hash(x))
 
             # Perform the incrementation
-            self.loop_index += self.step
+            self.loop_index += 1
 
             # Exit the old environment and enter the new one.
             self.iter_env.__exit__(None, None, None)
@@ -111,7 +131,7 @@ class JRangeIterator:
             created_qvs = list(created_qvs)
             created_qvs = sorted(created_qvs, key=lambda x: hash(x))
 
-            self.loop_index += self.step
+            self.loop_index += 1
 
             self.iter_env.__exit__(None, None, None)
             raise StopIteration
@@ -119,11 +139,15 @@ class JRangeIterator:
 
 def jrange(*args):
     """
-    Performs a loop with a dynamic bound. Similar to the Python native ``range``,
-    this iterator can receive multiple arguments. If it receives just one, this
-    value is interpreted as the stop value and the start value is assumed to be 0.
-    Two arguments represent start and stop value, whereas three represent start,
-    stop and step.
+    Performs a loop with a dynamic bound. Similar to the Python native ``range``
+    with one or two arguments. If it receives just one argument, this value is
+    interpreted as the stop value and the start value is assumed to be 0.
+    Two arguments represent start and stop value.
+
+    .. note::
+
+        The ``step`` parameter was removed in version 0.9. Use a step-1
+        loop and multiply the loop variable by your desired step.
 
     .. warning::
 
@@ -137,15 +161,12 @@ def jrange(*args):
         Each loop iteration must perform exactly the same instructions - the only
         thing that changes is the loop index
 
-
     Parameters
     ----------
     start : int
         The loop index to start at.
     stop : int
         The loop index to stop at.
-    step : int
-        The value to increase the loop index by after each iteration.
 
     Examples
     --------
@@ -245,14 +266,143 @@ def jrange(*args):
     >>> jaspr(5, 8)
     Exception: Jax semantics changed during jrange iteration
 
+    Since the ``step`` argument has been removed as of v0.9, multiply the loop
+    variable by your desired step inside the body.
+
+    The following example steps through every second qubit (equivalent to step 2):
+
+    ::
+
+        from qrisp.jasp import jrange, make_jaspr, qache
+        from qrisp import QuantumFloat, x, measure
+
+        @qache
+        def stepped_loop(qv):
+            # Number of iterations for step 2
+            n = (qv.size + 1) // 2
+            # Step-1 loop
+            for k in jrange(n):
+                # Multiply by the desired step
+                i = 2 * k
+                x(qv[i])
+
+        def test_f(a):
+            qv = QuantumFloat(a)
+            stepped_loop(qv)
+            return measure(qv)
+
+        jaspr = make_jaspr(test_f)(1)
+
+    >>> jaspr(3)
+    5
+    >>> jaspr(4)
+    5
+
+    Reversing a ``jrange`` loop (equivalent to step size -1) can be done in
+    two ways.
+
+    The first is to compute the index manually:
+
+    ::
+
+        from qrisp.jasp import jrange, make_jaspr, qache
+        from qrisp import QuantumFloat, x, measure
+
+        @qache
+        def reversed_loop(qv):
+            # Step-1 loop
+            for j in jrange(qv.size):
+                # Compute index in reverse
+                i = qv.size - j - 1
+                x(qv[i])
+
+        def test_f(a):
+            qv = QuantumFloat(a)
+            reversed_loop(qv)
+            return measure(qv)
+
+        jaspr = make_jaspr(test_f)(1)
+
+    >>> jaspr(3)
+    7
+    >>> jaspr(4)
+    15
+
+    The second way is to wrap the forward loop in an
+    :meth:`~qrisp.environments.InversionEnvironment`:
+
+    First, the forward loop without inversion:
+
+    ::
+
+        from qrisp import QuantumVariable, x, invert
+        from qrisp.jasp import jrange, make_jaspr, qache
+
+        @qache
+        def loop_with_offset(qv, start):
+            # Forward jrange loop
+            for i in jrange(qv.size - start):
+                # Offset the loop variable by start
+                x(qv[i + start])
+
+        def test_f(a):
+            qv = QuantumVariable(a)
+            loop_with_offset(qv, 2)
+            return measure(qv)
+
+        jaspr = make_jaspr(test_f)(1)
+
+    >>> jaspr(4)
+    12
+
+    This applies ``x`` to qubits 2 and 3, giving state ``|0011⟩``.
+    Wrapping the same loop in ``invert()`` reverses the iteration order and
+    daggers the operations:
+
+    ::
+
+        @qache
+        def reversed_loop_with_offset(qv, start):
+            # Reverses the enclosed loop
+            with invert():
+                # Same forward loop, now runs backwards
+                for i in jrange(qv.size - start):
+                    x(qv[i + start])
+
+        def test_f_rev(a):
+            qv = QuantumVariable(a)
+            reversed_loop_with_offset(qv, 2)
+            return measure(qv)
+
+        jaspr_rev = make_jaspr(test_f_rev)(1)
+
+    >>> jaspr_rev(4)
+    12
+
+    Because ``x`` is self-inverse, the result is the same — the loop still
+    iterates from ``qv.size - start - 1`` down to ``start``. JASP handles
+    the reversed iteration and proper daggers automatically, including at
+    higher nesting levels.
+
     """
+
+    if len(args) == 3:
+        warnings.warn(
+            "DeprecationWarning: The step argument of jrange has been removed "
+            "in version 0.9. Use arithmetic on the loop variable to achieve "
+            "stepping behavior.",
+            QrispDeprecationWarning,
+            stacklevel=2,
+        )
+
+    if len(args) not in (1, 2):
+        raise TypeError(
+            f"jrange takes 1 or 2 arguments ({len(args)} given)"
+        )
 
     new_args = []
     if check_for_tracing_mode():
         for i in range(len(args)):
-            if i == 2:
-                new_args.append(args[i])
-                continue
             if isinstance(args[i], (int, ArrayImpl)):
                 new_args.append(make_tracer(args[i]))
             else:
@@ -271,6 +421,23 @@ def jrange(*args):
 
 
 def make_tracer(x):
+    """Create a JIT-compiled tracer from a Python scalar.
+
+    Parameters
+    ----------
+    x : bool, int, float, or complex
+        The value to convert into a tracer.
+
+    Returns
+    -------
+    ArrayImpl
+        A traced JAX array representing the given value.
+
+    Raises
+    ------
+    Exception
+        If the type of *x* is not supported.
+    """
     if isinstance(x, bool):
         dtype = jnp.bool
     elif isinstance(x, int):
@@ -289,6 +456,18 @@ def make_tracer(x):
 
 
 def jlen(x):
+    """Return the length of *x*, supporting both lists and JAX arrays.
+
+    Parameters
+    ----------
+    x : list or ArrayImpl
+        The object whose length to return.
+
+    Returns
+    -------
+    int
+        ``len(x)`` if *x* is a list, otherwise ``x.size``.
+    """
     if isinstance(x, list):
         return len(x)
     else:

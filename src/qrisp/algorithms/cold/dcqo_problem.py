@@ -50,10 +50,6 @@ class DCQOProblem:
     lam_func : callable
         A function $\lambda(t, T)$ mapping $t \in [0, T]$ to $\lambda \in [0, 1]$. This function needs to return
         a `sympy <https://docs.sympy.org/>`_ expression with $t$ and $T$ as `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
-    g_func : callable, optional
-        The inverse function of $\lambda(t, T)$. This function needs to return a `sympy <https://docs.sympy.org/>`_ expression
-        with $\lambda$ and $T$ as `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
-        Only needed for the COLD algorithm.
     H_control : :ref:`QubitOperator`, optional
         Hamiltonian specifying the control pulses for the COLD method. If not given, the LCD method is used automatically.
     qarg_prep : callable, optional
@@ -137,14 +133,12 @@ class DCQOProblem:
         A_lam,
         agp_coeffs,
         lam_func,
-        g_func=None,
         H_control=None,
         qarg_prep=None,
     ):
 
         # Scheduling function
         self.lam_func = lam_func
-        self.g_func = g_func
 
         # Operators
         self.agp_coeffs = agp_coeffs
@@ -201,7 +195,9 @@ class DCQOProblem:
         lamdot = lamdot_func(t_list, T)
         # Convert lamdot to a constant list to make it subscriptable by timestep
         if isinstance(lamdot, float):
-            lamdot = [lamdot] * N_steps
+            lamdot = np.full(N_steps, lamdot)
+        else:
+            lamdot = np.array(lamdot)
 
         self.lam = lam
         self.lamdot = lamdot
@@ -209,13 +205,10 @@ class DCQOProblem:
         # Functions for t = g(lam) and derivative (later needed for opt pulses)
         # must only be calculated for COLD, not for LCD
         if method == "COLD":
-            lam_sym = sp.Symbol("lam")
-            g_func = sp.lambdify((lam_sym, T_sym), self.g_func(), "numpy")
-            g_deriv_expr = sp.diff(self.g_func(), lam_sym)
-            g_deriv_func = sp.lambdify((lam_sym, T_sym), g_deriv_expr, "numpy")
-            g_deriv = g_deriv_func(self.lam, T)
+            g = t_list                        # g(lam[s]) = t[s] by definition
+            g_deriv = 1.0 / lamdot            # dt/dlambda = 1 / (dlambda/dt)
 
-            self.g = g_func(self.lam, T)
+            self.g = g
             self.g_deriv = g_deriv
 
     def _precompute_opt_pulses(self, N_steps, T, t_list, N_opt, CRAB=False):
@@ -301,6 +294,7 @@ class DCQOProblem:
 
             # Get alpha for the timestep
             coeffs = self.agp_coeffs(self.lam[s])
+            # print(f"Alpha = {coeffs}")
 
             # H_0 contribution scaled by dt
             U1(qarg, t=dt * (1 - self.lam[s]))
@@ -419,7 +413,19 @@ class DCQOProblem:
         return compiled_qc
 
     def optimization_routine(
-        self, qarg, N_opt, N_steps, T, qc, CRAB, optimizer, options, objective, bounds
+        self,
+        qarg,
+        N_opt,
+        N_steps,
+        T,
+        qc,
+        CRAB,
+        optimizer,
+        options,
+        objective,
+        bounds,
+        precision=0.01,
+        exp_value_backend=None,
     ):
         """
         Subroutine for the optimization method used in COLD.
@@ -447,6 +453,12 @@ class DCQOProblem:
             The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude``, ``agp_coeff_amplitude``). Default is ``exp_value``.
         bounds : tuple
             The parameter bounds for the optimizer. Default is (-2, 2).
+        precision : float, optional
+            Precision for expectation value calculations. Default is 0.01.
+        exp_value_backend : BackendLike, optional
+            Backend for expectation value calculations, if ``exp_value`` is used as objective function.
+            If provided, uses measurement-based expectation value with this backend.
+            If not provided, tries statevector first and falls back to measurement. Default is None.
 
         Returns
         -------
@@ -456,6 +468,14 @@ class DCQOProblem:
 
         # Different objective functions: exp_value, agp coeffs magnitude, agp coeffs amplitude
 
+        # Precompute costs for statevector method
+        n_qubits = len(qarg)
+        num_states = 1 << n_qubits
+        bit_indices = np.arange(n_qubits - 1, -1, -1, dtype=np.uint64)
+        state_indices = np.arange(num_states, dtype=np.uint64)
+        basis = ((state_indices[:, None] >> bit_indices) & 1).astype(np.int8)
+        costs = np.einsum("bi,ij,bj->b", basis, self.Q, basis)
+
         # Expectation value of the QUBO Hamiltonian
         def objective_exp(params, CRAB):
             # Dict to assign the optimization parameters
@@ -463,11 +483,33 @@ class DCQOProblem:
                 sp.Symbol("par_" + str(i)): params[i] for i in range(len(params))
             }
 
-            cost = self.H_prob.expectation_value(
-                qarg, compile=False, subs_dic=subs_dic, precompiled_qc=qc
-            )()
+            if exp_value_backend is not None:
+                # Use provided backend
+                exp_val = self.H_prob.expectation_value(
+                    qarg,
+                    precision=precision,
+                    compile=False,
+                    subs_dic=subs_dic,
+                    precompiled_qc=qc,
+                    backend=exp_value_backend,
+                )()
+            else:
+                # Try statevector first, fallback to measurement
+                try:
+                    bound_qc = qc.bind_parameters(subs_dic)
+                    sv = bound_qc.statevector_array()
+                    probs = np.abs(sv) ** 2
+                    exp_val = float(np.dot(probs, costs))
+                except (MemoryError, ValueError, RuntimeError):
+                    exp_val = self.H_prob.expectation_value(
+                        qarg,
+                        precision=precision,
+                        compile=False,
+                        subs_dic=subs_dic,
+                        precompiled_qc=qc,
+                    )()
 
-            return cost
+            return exp_val
 
         # Magnitude of the AGP coefficients (coeffs are treated as uniform for simplification)
         # (sum of absolute values for each timestep)
@@ -545,10 +587,15 @@ class DCQOProblem:
         bounds=(),
         options={},
         mes_kwargs={},
+        precision=0.01,
+        exp_value_backend=None,
     ):
         """
-        Run the specific DCQO problem instance with given quantum arguments, number of timesteps and
-        evolution time.
+        Run the specific DCQO problem instance with given quantum arguments, number of timesteps,
+        evolution time and method. 
+
+        There is also the option to choose if parameter optimization via the expectation value objective function should be done via a simulator or real quantum backend.
+        If the user chooses a quantum backend this iterative optimization can potentially use a lot of computing time.
 
         Parameters
         ----------
@@ -577,11 +624,11 @@ class DCQOProblem:
             Additional options for the Scipy solver.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
-        backend : BackendLike, optional
-            The backend to be used for the quantum simulation.
-            By default, the Qrisp simulator is used.
-        shots: : int
-            The number of shots. The default is 5000.
+        precision : float, optional
+            Precision for expectation value calculations. Default is 0.01.
+        exp_value_backend : BackendLike, optional
+            Backend for expectation value calculations, if ``exp_value`` is used as objective function.
+            If provided, uses measurement-based expectation value with this backend. Default is the Qrisp statevector simulator.
 
         Returns
         -------
@@ -627,6 +674,8 @@ class DCQOProblem:
                     options,
                     objective=objective,
                     bounds=bounds,
+                    precision=precision,
+                    exp_value_backend=exp_value_backend,
                 )
                 if cost is None or cost_temp < cost:
                     opt_params = opt_params_temp

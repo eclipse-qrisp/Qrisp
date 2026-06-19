@@ -1,6 +1,7 @@
 
 #from qrisp.circuit.standard_operations import op_list
 import numpy as np
+np.random.seed(42)  # Deterministic for reproducible test results
 
 from qrisp import QuantumVariable
 from qrisp.circuit.standard_operations import (
