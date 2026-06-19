@@ -189,18 +189,20 @@ def build_from_foqcs_lcu_prep(
     Notes
     -----
 
-    - :math:`PREP_{R}` is the PREP subcircuit for FOQCS-LCU.
-      :math:`PREP_{L}` is the same as :math:`PREP_{R}`, but with conjugated coefficients.
-      :math:`PREP_{L}^{\dagger}` is the complex conjugate transpose of :math:`PREP_{L}`.
+    **State Preparation in FOQCS-LCU**
 
-    - :math:`PREP_{L}^{\dagger}`, if it were to NOT use conjugated coefficients, would be the exact mathematical inverse of
-      :math:`PREP_{R}`, but because it DOES use conjugated coefficients, it is not.
+    The FOQCS-LCU block encoding unitary $U$ relies on distinct right and left state preparation subroutines, denoted as $P_R$ and $P_L$, alongside a $\text{SELECT}$ operation:
 
-    - In short:
-        :math:`P_{R} = PREP(\alpha),` 
-        :math:`P_{L} = PREP(\alpha ^ *),` 
+    * $\mathbf{P_R}$ **(Right State Preparation):** This subroutine prepares the state based on the target system's original coefficients, $\alpha$.
+    * $\mathbf{P_L}$ **(Left State Preparation):** This subroutine acts identically to $P_R$, but operates on the complex conjugated coefficients, $\alpha^*$.
 
-        :math:`U = P_{L}^{\dagger} \cdot \mathrm{SELECT} \cdot P_{R}`
+    **Note on the Adjoint:** Because $P_L$ utilizes conjugated coefficients, its adjoint $P_L^\dagger$ is in general *not* the mathematical inverse of $P_R$.
+
+    **Summary:**
+
+    $P_R = \text{PREP}(\alpha),\; P_L = \text{PREP}(\alpha^*)$
+
+    $U = P_L^\dagger \cdot \text{SELECT} \cdot P_R$
 
     Examples
     --------
