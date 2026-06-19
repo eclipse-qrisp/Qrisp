@@ -689,6 +689,10 @@ def gidney_cq_venting_adder(
     Uses 3 clean ancillae (allocated internally) and no external dirty workspace.
     The target register is split in half — each half serves as dirty storage for
     the other half's carry chain — keeping the total qubit count to ``n + 3``.
+    For registers with fewer than 5 qubits the split creates a 2-bit bottom half
+    whose phase correction is non-deterministic under :math:`@terminal\\_sampling`;
+    in that case the function falls back to :func:`gidney_adder` (unitary, no
+    vents), matching the strategy used in the reference implementation.
 
     Heavily adapted from the reference implementation released with
     `arXiv:2507.23079 <https://arxiv.org/abs/2507.23079>`_ at https://zenodo.org/records/15866587.
@@ -782,116 +786,173 @@ def gidney_cq_venting_adder(
             "The Gidney Classical-Quantum adder does not work in standard python execution mode."
         )
 
+    from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
+    from qrisp.jasp.program_control.prefix_control import q_cond
+
     num_targets = jlen(target)
 
-    n_half = (
-        num_targets - 1
-    ) >> 1  # bottom half size (needs num_targets >= 3 for a meaningful split)
+    # The reference implementation (_add_3_clean.py, line 57-64) first tries
+    # a clean (non-venting) adder and returns immediately when 3 clean qubits
+    # suffice (when len(Q_clean) >= len(Q_target) - 2, true for n <= 5).
+    # Only when the clean-adder check fails does it fall through to the
+    # split-half carry-venting path.
+    #
+    # For n < 5 the split creates a 2-bit bottom half (h = (n-1)>>1 = 1)
+    # whose second Toffoli has simple_ctrl = target[1] = clean0 = |0⟩ — the
+    # just-swapped-in ancilla.  That Toffoli can never fire, yet
+    # skip_final_block vents the dead ancilla anyway (H|0⟩ = |+⟩ gives a
+    # uniformly random bit).  The phase-correction formula for the split-half
+    # assumes at least 3-bit halves and cannot compensate this noise under
+    # @terminal_sampling (single-trajectory simulation).
+    #
+    # We follow the same strategy: gidney_adder (unitary, no vents) for n < 5,
+    # split-half carry-venting for n >= 5.  q_cond selects between the two
+    # paths.  Both paths receive target and clean_anc as operands and delete
+    # clean_anc internally, so no QuantumVariable objects survive the
+    # conditional.
+
+    def gidney_path(tgt, cln):
+        """Clean unitary adder path for n < 5.
+
+        Delegates to gidney_adder (arXiv:1709.06648), which uses no mid-circuit
+        measurements and is therefore deterministic under @terminal_sampling.
+        The 3 clean ancillae are unused (gidney_adder allocates its own).
+        """
+        gidney_adder(d, tgt, c_in=c_in, c_out=c_out, ctrl=ctrl)
+        cln.delete()
+
+    def split_path(tgt, cln):
+        """Split-half carry-venting adder path for n >= 5.
+
+        Implements Fig. 2-4 of arXiv:2507.23079 using 3 clean ancillae.
+        The target is split at h = (n-1)>>1.  The bottom half is added via
+        carry_venting_adder (Fig. 2, vents carries in the X-basis).  The top
+        half is added via dirty_ancillae_adder (Fig. 4, uses bottom-half
+        qubits as dirty workspace).  The low half's vented Z-phases are
+        corrected by a CZ sandwich with two carry_xor passes (Fig. 3).
+        """
+
+        n_half = (jlen(tgt) - 1) >> 1  # bottom half size (floor((n-1)/2))
+
+        cln0 = cln[0]  # mid-carry ancilla (clean0 in paper notation)
+        # cln[1], cln[2] are the streaming-carry ancillae (clean1, clean2)
+
+        # Split classical addend: d_lo is the lower n_half bits, d_hi the
+        # upper bits.  Each sub-adder receives its respective slice of d.
+        d_lo = d & ((1 << n_half) - 1)
+        d_hi = d >> n_half
+
+        # Step 1: Place clean0 into target[n_half].
+        # Three CNOTs implement a SWAP so that carry_venting_adder on the
+        # (n_half+1)-bit slice target[:n_half+1] writes the carry out of
+        # bit n_half-1 into clean0 (as its final carry).  The paper does a
+        # Python-level reference swap; JASP's dynamic-length QuantumVariable
+        # requires a quantum gate.
+        cx(cln0, tgt[n_half])
+        cx(tgt[n_half], cln0)
+        cx(cln0, tgt[n_half])
+
+        # Step 2: Vented addition on bottom half (Fig. 2).
+        # carry_venting_adder computes carries, vents them in the X-basis
+        # (H then measure), and returns an integer ventmask whose k-th bit
+        # holds the k-th vent outcome.  The bottom-half ancillae start clean
+        # and are left clean after reset.
+        ventmask_lo, _ = carry_venting_adder(
+            d_lo, tgt[: n_half + 1], cln[1:], c_in=c_in, ctrl=ctrl
+        )
+
+        # Step 3: Swap clean0 back out of target[n_half].
+        # target[n_half] is restored to its original value and clean0 now
+        # holds the carry into the top half (the carry out of the bottom half).
+        cx(cln0, tgt[n_half])
+        cx(tgt[n_half], cln0)
+        cx(cln0, tgt[n_half])
+
+        # Step 4: Top half addition using dirty ancillas (Fig. 4).
+        # target[n_half:] has n-n_half bits (top half).  clean0 is the
+        # carry-in.  target[:max(1, n-n_half-2)] (bottom n-n_half-2 bits,
+        # at least 1) are borrowed as dirty workspace — they will be
+        # restored by dirty_ancillae_adder's internal phase correction.
+        # The same [clean1, clean2] is reused as the clean ancilla register,
+        # keeping the total clean ancilla count at 3.
+        # note: n-n_half-2 may be less than n_half (e.g. n=5, n_half=2:
+        # n-n_half-2=1).  We use n-n_half-2 dirty qubits (at least 1)
+        # because dirty_ancillae_adder expects exactly num_targets - 2
+        # dirty qubits.
+        dirty_ancillae_adder(
+            d_hi, tgt[n_half:],
+            dirty_ancillas=tgt[: jnp.maximum(1, jlen(tgt) - n_half - 2)],
+            ancilla=cln[1:], c_in=cln0, ctrl=ctrl, c_out=c_out,
+        )
+
+        # Step 5: MX measurement on clean0.
+        # The clean0 qubit still holds the carry out of the bottom half.
+        # We measure it in the X-basis (H then Z-measurement).
+        h(cln0)
+        m_clean0 = measure(cln0)
+        reset(cln0)
+
+        # Combine ventmask_lo with m_clean0 to get the full ventmask for
+        # the bottom-half phase correction.
+        #
+        # ventmask_lo bits 0..n_half-2 hold carries into bits 1..n_half-1
+        # (from the bottom-half adder).  m_clean0 is the carry into bit
+        # n_half.  These are packed contiguously so that bit k of
+        # full_ventmask corresponds to the carry into bit k+1, matching
+        # the dirty-workspace slots 0..n_half-1 (reference _add_3_clean.py
+        # line 123).
+        ventmask_lo_mask = (1 << (n_half - 1)) - 1
+        high_vent_bits = ventmask_lo >> (n_half - 1)
+        full_ventmask = (ventmask_lo & ventmask_lo_mask) | (
+            ((m_clean0 ^ (bitwise_count(high_vent_bits) & 1)) & 1).astype(jnp.int64)
+            << (n_half - 1)
+        )
+
+        # Step 6: Phase correction for bottom half vents.
+        #
+        # The CZ sandwich (CZ, carry_xor, CZ, carry_xor) corrects the
+        # Z-phases introduced by the X-basis vent measurements.  The NOT
+        # gates on the bottom half flip the sum bits so that the carry_xor
+        # block (Fig. 3) recomputes carries from the flipped sum: the dirty
+        # workspace starts as the high half's sum bits and after the sandwich
+        # the dirty workspace is restored.
+
+        workspace = tgt[n_half : 2 * n_half]  # high half's bottom bits
+        bottom = tgt[:n_half]                 # low half
+
+        # 6a — Complement bottom half: NOT(bottom)
+        for i in jrange(n_half):
+            x(bottom[i])
+
+        # 6b — CZ(workspace[k], vent[k+1]): correct Z-phases from vents
+        for k in jrange(n_half):
+            with control((full_ventmask >> k) & 1):
+                z(workspace[k])
+
+        # 6c — First carry_xor pass (second-pass carries into workspace)
+        carry_xor_block(d_lo, workspace, bottom, c_in, ctrl=ctrl)
+
+        # 6d — CZ(workspace[k], vent[k+1]) again
+        for k in jrange(n_half):
+            with control((full_ventmask >> k) & 1):
+                z(workspace[k])
+
+        # 6e — Second carry_xor pass (restore workspace)
+        carry_xor_block(d_lo, workspace, bottom, c_in, ctrl=ctrl)
+
+        # 6f — Restore bottom half: NOT cancels the complement from 6a
+        for i in jrange(n_half):
+            x(bottom[i])
+
+        cln.delete()
 
     # initialize 3 clean ancillae
     clean_anc = QuantumVariable(3, name="gidney_anc*")
-    clean0 = clean_anc[0]  # mid-carry ancilla (clean0 in paper notation)
-    # clean1, clean2 (streaming-carry ancillae) are not bound individually —
-    # sub-functions receive them as a traceable slice: clean_anc[1:]
+    # clean0, clean1, clean2 — mid-carry and streaming-carry ancillae
 
-    # Split classical addend: d_lo is the lower n_half bits, d_hi is the upper bits
-    d_lo = d & ((1 << n_half) - 1)
-    d_hi = d >> n_half
-
-    # Step 1: Place clean0 into target[n_half].
-    # Three CNOTs implement a SWAP so that carry_venting_adder on the
-    # (n_half+1)-bit slice target[:n_half+1] writes the carry out of bit n_half-1 into
-    # clean0 (as its final carry).  Gidney's code does a Python-level
-    # reference swap, but JASP's dynamic-length QuantumVariable requires
-    # a quantum gate.
-    cx(clean0, target[n_half])
-    cx(target[n_half], clean0)
-    cx(clean0, target[n_half])
-
-    # Step 2: Vented addition on bottom half
-    ventmask_lo, _ = carry_venting_adder(
-        d_lo, target[: n_half + 1], clean_anc[1:], c_in=c_in, ctrl=ctrl
-    )
-
-    # Step 3: Swap clean0 back out of target[n_half].
-    # target[n_half] is restored to its original qubit and clean0 now
-    # holds the carry into the top half.
-    cx(clean0, target[n_half])
-    cx(target[n_half], clean0)
-    cx(clean0, target[n_half])
-
-    # Step 4: Top half addition using dirty ancillas.
-    # target[n_half:] has n-n_half bits (top half).  clean0 is the carry-in.
-    # target[:max(1, n-n_half-2)] (bottom n-n_half-2 bits, at least 1) are borrowed as
-    # dirty workspace — they will be restored by dirty_ancillae_adder's internal
-    # phase correction.
-    # The same [clean1, clean2] is reused as the clean ancilla register, so the
-    # total clean ancilla count is just 3 (shared between both halves).
-    # note: n-n_half-2 may be less than n_half (e.g. n=5, n_half=2: n-n_half-2=1).  We use
-    # n-n_half-2 dirty qubits (at least 1) because dirty_ancillae_adder expects
-    # exactly num_targets - 2 dirty qubits.  The remaining bottom bit(s) stay
-    # untouched and keep their value from the bottom-half sum.
-    dirty_ancillae_adder(
-        d_hi,
-        target[n_half:],
-        dirty_ancillas=target[: jnp.maximum(1, num_targets - n_half - 2)],
-        ancilla=clean_anc[1:],
-        c_in=clean0,
-        ctrl=ctrl,
-        c_out=c_out,
-    )
-
-    # Step 5: MX measurement on clean0.
-    # The clean0 qubit still holds the carry out of the bottom half.
-    # We measure it in the X-basis (H then Z-measurement).
-    h(clean0)
-    m_clean0 = measure(clean0)
-    reset(clean0)
-
-    # Combine ventmask_lo with m_clean0 to get the full ventmask for the
-    # entire register.
-    #
-    # ventmask_lo bits 0..n_half-2 hold carries into bits 1..n_half-1 (from the
-    # bottom-half adder).  m_clean0 is the carry into bit n_half.  These are
-    # packed contiguously so that bit k of full_ventmask corresponds to the
-    # carry into bit k+1, matching the dirty-workspace slots 0..n_half-1 used in
-    # the phase correction (reference _add_3_clean.py line 123).
-    ventmask_lo_mask = (1 << (n_half - 1)) - 1
-    high_vent_bits = ventmask_lo >> (n_half - 1)
-    full_ventmask = (ventmask_lo & ventmask_lo_mask) | (
-        ((m_clean0 ^ (bitwise_count(high_vent_bits) & 1)) & 1).astype(jnp.int64)
-        << (n_half - 1)
-    )
-
-    # Step 6: Phase correction for bottom half vents
-
-    workspace = target[n_half : 2 * n_half]
-    bottom = target[:n_half]
-
-    # 6a — Complement bottom half: NOT(bottom)
-    for i in jrange(n_half):
-        x(bottom[i])
-
-    # 6b — CZ(workspace[k], vent[k+1])
-    for k in jrange(n_half):
-        with control((full_ventmask >> k) & 1):
-            z(workspace[k])
-
-    # 6c — First carry_xor pass (explicit, no fused pass for bottom half)
-    carry_xor_block(d_lo, workspace, bottom, c_in, ctrl=ctrl)
-
-    # 6d — CZ(workspace[k], vent[k+1]) again
-    for k in jrange(n_half):
-        with control((full_ventmask >> k) & 1):
-            z(workspace[k])
-
-    # 6e — Second carry_xor pass
-    carry_xor_block(d_lo, workspace, bottom, c_in, ctrl=ctrl)
-
-    # 6f — Restore bottom half: NOT cancels the complement from 6a
-    for i in jrange(n_half):
-        x(bottom[i])
-
-    clean_anc.delete()
+    # Select path based on register size.
+    # n < 5 → gidney_path (unitary, no vents, correct under @terminal_sampling)
+    # n >= 5 → split_path  (split-half carry-venting, faithful to the paper)
+    q_cond(num_targets < 5, gidney_path, split_path, target, clean_anc)
 
     return None
