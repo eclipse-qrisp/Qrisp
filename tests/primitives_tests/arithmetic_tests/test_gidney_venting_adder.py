@@ -996,33 +996,7 @@ def _ts_cq_gidney_roundtrip(n):
 
 @pytest.mark.parametrize(
     "n",
-    [
-        # n=3,4,5: register too small for reliable phase correction.
-        # The venting adder splits the register into two halves via
-        # h = (n-1)>>1.  For n<6 one or both halves are ≤2 bits, so the
-        # dirty-ancilla borrowing and ventmask recombination can't fully
-        # compensate the random mid-circuit measurements — outcomes are
-        # non-deterministic under @terminal_sampling.
-        pytest.param(
-            3,
-            marks=pytest.mark.skip(
-                reason="stochastic behavior under @terminal_sampling"
-            ),
-        ),
-        pytest.param(
-            4,
-            marks=pytest.mark.skip(
-                reason="stochastic behavior under @terminal_sampling"
-            ),
-        ),
-        pytest.param(
-            5,
-            marks=pytest.mark.skip(
-                reason="stochastic behavior under @terminal_sampling"
-            ),
-        ),
-    ]
-    + list(range(6, 13)),
+    list(range(3, 13)) + [],
 )
 def test_cq_gidney_roundtrip(n):
     """H⊗ⁿ → add 1 (venting) → subtract 1 (gidney) → H⊗ⁿ leaves |0⟩."""
