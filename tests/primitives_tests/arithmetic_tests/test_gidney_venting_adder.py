@@ -572,7 +572,7 @@ def test_gidney_cq_venting_adder_c_out(init, d, c_in_val, n):
 def test_no_additional_toffoli_cost(use_full_adder):
     """Controlled adder uses zero extra Toffoli gates (zero-Toffoli control trick)."""
     d = 3
-    n = 5
+    n = 6
 
     @count_ops(meas_behavior="0")
     def unctrl():
@@ -994,15 +994,11 @@ def _ts_cq_gidney_roundtrip(n):
     return target
 
 
-@pytest.mark.parametrize(
-    "n",
-    list(range(3, 13)),   # start at n=3: n=1 has no carries, n=2 has only one carry;
-                           # the roundtrip is trivial for those sizes.
-)
+@pytest.mark.parametrize("n", list(range(3, 13)))
 def test_cq_gidney_roundtrip(n):
     """H⊗ⁿ → add 1 (venting) → subtract 1 (gidney) → H⊗ⁿ leaves |0⟩.
 
-    For n < 5 this tests that gidney_adder(1) followed by gidney_adder(1)^†
+    For n < 6 this tests that gidney_adder(1) followed by gidney_adder(1)^†
     (its inverse) is the identity — the carry-venting split-half is not used.
     """
     res = _ts_cq_gidney_roundtrip(n)

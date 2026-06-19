@@ -689,10 +689,10 @@ def gidney_cq_venting_adder(
     Uses 3 clean ancillae (allocated internally) and no external dirty workspace.
     The target register is split in half — each half serves as dirty storage for
     the other half's carry chain — keeping the total qubit count to ``n + 3``.
-    For registers with fewer than 5 qubits the split creates a 2-bit bottom half
-    whose phase correction is non-deterministic under :math:`@terminal\\_sampling`;
-    in that case the function falls back to :func:`gidney_adder` (unitary, no
-    vents), matching the strategy used in the reference implementation.
+    For registers with fewer than 6 qubits the split-half path is replaced by
+    :func:`gidney_adder` (unitary, no vents), which avoids a nested-q_cond
+    tracing-session issue for n=5.  This matches the paper's strategy of using
+    a clean adder when enough ancillae are available.
 
     Heavily adapted from the reference implementation released with
     `arXiv:2507.23079 <https://arxiv.org/abs/2507.23079>`_ at https://zenodo.org/records/15866587.
@@ -792,40 +792,25 @@ def gidney_cq_venting_adder(
     num_targets = jlen(target)
     n_half = (num_targets - 1) >> 1
 
-    # The reference implementation (_add_3_clean.py, line 57-64) first tries
-    # a clean (non-venting) adder and returns immediately when 3 clean qubits
-    # suffice (when len(Q_clean) >= len(Q_target) - 2, true for n <= 5).
-    # Only when the clean-adder check fails does it fall through to the
-    # split-half carry-venting path.
+    # ---- Path selection ---------------------------------------------------
+    # n < 6 → gidney_path (gidney_adder, unitary, no vents).
+    #   The paper's reference (_add_3_clean.py lines 57-64) uses a clean
+    #   adder when 3 clean qubits suffice for the full register (n <= 5).
+    #   We extend this to n < 6 because q_cond wrapping split_path (which
+    #   calls carry_venting_adder, itself using q_cond internally) creates
+    #   nested tracing sessions that interfere for n=5.
     #
-    # For n < 5 the split creates a 2-bit bottom half (h = (n-1)>>1 = 1)
-    # whose second Toffoli has simple_ctrl = target[1] = clean0 = |0⟩ — the
-    # just-swapped-in ancilla.  That Toffoli can never fire, yet
-    # skip_final_block vents the dead ancilla anyway (H|0⟩ = |+⟩ gives a
-    # uniformly random bit).  The phase-correction formula for the split-half
-    # assumes at least 3-bit halves and cannot compensate this noise under
-    # @terminal_sampling (single-trajectory simulation).
-    #
-    # We follow the same strategy: gidney_adder (unitary, no vents) for n < 5,
-    # split-half carry-venting for n >= 5.  q_cond selects between the two
-    # paths.  Both paths receive target and clean_anc as operands and delete
-    # clean_anc internally, so no QuantumVariable objects survive the
-    # conditional.
-    #
-    # d_lo and d_hi are computed outside q_cond so that all traced integer
-    # arithmetic happens in the outer tracing session — the q_cond branches
-    # only receive the already-computed values, avoiding tracer interference.
+    # n >= 6 → split_path (split-half carry-venting, Fig. 2-4).
+    #   The paper enters the split-half for n >= 6 (line 66+).  Sub-halves
+    #   may still use clean adders when they fit (lines 79-84, 101-107);
+    #   carry-venting (Fig. 2) only activates when a sub-half exceeds the
+    #   clean-adder budget (n >= 10).
 
     d_lo = d & ((1 << n_half) - 1)
     d_hi = d >> n_half
 
-    # d_lo and d_hi are computed here (outside q_cond) so that all traced
-    # integer arithmetic happens in the outer session.  The q_cond branches
-    # receive them via closure and never create their own traced integers
-    # from jlen — this avoids tracer cross-session issues inside q_cond.
-
     def gidney_path(target, clean_anc):
-        """Clean unitary adder for n < 5 (no vents, no phase correction).
+        """Clean unitary adder for n < 6 (no vents, no phase correction).
 
         Delegates to gidney_adder (arXiv:1709.06648), which uses no mid-circuit
         measurements and is therefore deterministic under @terminal_sampling.
@@ -835,7 +820,7 @@ def gidney_cq_venting_adder(
         clean_anc.delete()
 
     def split_path(target, clean_anc):
-        """Split-half carry-venting adder for n >= 5 (paper's main circuit).
+        """Split-half carry-venting adder for n >= 6 (paper's main circuit).
 
         Implements Fig. 2-4 of arXiv:2507.23079 using 3 clean ancillae.
         The target is split at h = (n-1)>>1.  The bottom half is added via
@@ -923,8 +908,10 @@ def gidney_cq_venting_adder(
     # clean0, clean1, clean2 — mid-carry and streaming-carry ancillae
 
     # Select path based on register size.
-    # n < 5 → gidney_path (unitary, no vents, correct under @terminal_sampling)
-    # n >= 5 → split_path  (split-half carry-venting, faithful to the paper)
-    q_cond(num_targets < 5, gidney_path, split_path, target, clean_anc)
+    # n < 6 → gidney_path (clean Gidney carry-lookahead, no vents).
+    #   n=5 is included because q_cond + split_path + carry_venting_adder's
+    #   internal q_cond creates nested tracing sessions that interfere.
+    # n >= 6 → split_path  (split-half carry-venting, faithful to the paper)
+    q_cond(num_targets < 6, gidney_path, split_path, target, clean_anc)
 
     return None
