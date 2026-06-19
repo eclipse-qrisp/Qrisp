@@ -16,5 +16,20 @@
 ********************************************************************************
 """
 
-from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_preps import *
-from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_analysis import *
+from .from_foqcs_lcu_prep import build_from_foqcs_lcu_prep
+from .from_foqcs_lcu_operator import build_from_foqcs_lcu_operator
+from .foqcs_preps import foqcs_prep_heisenberg, foqcs_prep_spin_glass
+from .foqcs_analysis import (
+  is_operator_foqcs_compatible,
+  foqcs_analyze_operator_spin_glass,
+  foqcs_analyze_operator_heisenberg,
+)
+__all__ = [
+    "build_from_foqcs_lcu_prep",
+    "build_from_foqcs_lcu_operator",
+    "foqcs_prep_heisenberg",
+    "is_operator_foqcs_compatible",
+    "foqcs_analyze_operator_spin_glass",
+    "foqcs_analyze_operator_heisenberg",
+    "foqcs_prep_spin_glass"
+]
