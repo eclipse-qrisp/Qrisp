@@ -985,21 +985,26 @@ def test_terminal_dirty_adder():
 @terminal_sampling
 def _ts_cq_gidney_roundtrip(n):
     """Check gidney_cq_venting_adder and gidney_adder cancel in superposition."""
-    target = QuantumFloat(n)
-    h(target)
-    gidney_cq_venting_adder(1, target)
+    target = QuantumFloat(n)  # defaults to encoding 0
+    h(target)                 # |0⟩ → |+⟩⊗ⁿ
+    gidney_cq_venting_adder(1, target)   # add 1
     with invert():
-        gidney_adder(1, target)
-    h(target)
+        gidney_adder(1, target)          # subtract 1
+    h(target)                             # |+⟩⊗ⁿ → |0⟩⊗ⁿ
     return target
 
 
 @pytest.mark.parametrize(
     "n",
-    list(range(3, 13)) + [],
+    list(range(3, 13)),   # start at n=3: n=1 has no carries, n=2 has only one carry;
+                           # the roundtrip is trivial for those sizes.
 )
 def test_cq_gidney_roundtrip(n):
-    """H⊗ⁿ → add 1 (venting) → subtract 1 (gidney) → H⊗ⁿ leaves |0⟩."""
+    """H⊗ⁿ → add 1 (venting) → subtract 1 (gidney) → H⊗ⁿ leaves |0⟩.
+
+    For n < 5 this tests that gidney_adder(1) followed by gidney_adder(1)^†
+    (its inverse) is the identity — the carry-venting split-half is not used.
+    """
     res = _ts_cq_gidney_roundtrip(n)
     t_val, prob = next(iter(res.items()))
     assert prob == pytest.approx(1.0)
