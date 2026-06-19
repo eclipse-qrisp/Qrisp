@@ -37,6 +37,10 @@ For development you will also want the test and documentation dependencies:
      - Test runner (pytest), simulators (qiskit-aer, cirq), and chemistry (pyscf)
    * - ``docs``
      - Sphinx and related extensions for building the documentation
+   * - ``aqt``
+     - Client for AQT quantum hardware
+   * - ``qiskit``
+     - Qiskit Aer simulator and IBM Quantum Runtime hardware
    * - ``iqm``
      - Client for IQM quantum hardware
    * - ``catalyst``
@@ -49,7 +53,7 @@ Include the groups you need in brackets, either at install time or later:
 .. code-block:: bash
 
     # All at once
-    pip install -e ".[test,docs,iqm,catalyst,xdsl]"
+    pip install -e ".[test,docs,iqm,catalyst,xdsl,aqt,qiskit]"
 
     # Or individual groups after the base install
     pip install -e ".[test]"

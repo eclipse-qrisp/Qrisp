@@ -44,6 +44,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+aqt = ["qiskit-aqt-provider==1.15.0"]
+qiskit = ["qiskit-aer==0.17.2", "qiskit-ibm-runtime==0.37.0"]
 iqm = ["iqm-client[qiskit]==22.4"]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane==0.45.0"]
 xdsl = ["xdsl==0.59.0"]
