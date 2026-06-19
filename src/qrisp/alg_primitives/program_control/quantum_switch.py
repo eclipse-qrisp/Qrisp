@@ -441,10 +441,10 @@ def _q_switch_q(
 
             # Jump to next leaf
             q = bitwise_count_diff(pos, pos + 1)
-            for j in xrange(0, q - 1, 1):
+            for j in xrange(0, q - 1):
                 up(n - j - 1, anc, ca, oper)
             bounce(n - q, anc, ca, oper)
-            for j in xrange(0, q - 1, 1):
+            for j in xrange(0, q - 1):
                 down(n - (q - 1) + j, anc, ca, oper)
 
             return anc, ca, oper
@@ -453,7 +453,7 @@ def _q_switch_q(
         # x(anc[0])
 
         # Go to first node
-        for j in xrange(0, n, 1):
+        for j in xrange(0, n):
             down(j, anc, index, operands)
 
         # Perform leafs and jumps
@@ -471,7 +471,7 @@ def _q_switch_q(
 
         # Go back from last node
         diff = 2**n - branch_amount
-        for j in xrange(0, n, 1):
+        for j in xrange(0, n):
             up(n - j - 1, anc, index, operands)
 
             def bf():
