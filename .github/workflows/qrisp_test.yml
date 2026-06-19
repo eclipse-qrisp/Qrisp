@@ -27,7 +27,7 @@ jobs:
         test-group:
           - name: core
             paths: "tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py"
-          - name: algorithms
+          - name: algorithms-and-integrations
             paths: "tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests"
 
     steps:
