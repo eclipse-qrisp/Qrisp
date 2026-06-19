@@ -1,4 +1,4 @@
-name: Qrisp unit tests (core) via Pytest
+name: Qrisp unit tests (algorithms & integrations) via Pytest
 
 on:
   pull_request:
@@ -37,4 +37,4 @@ jobs:
           pip install -e ".[test,catalyst,xdsl,iqm]"
       - name: Test with pytest
         run: |
-          pytest tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py
+          pytest tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests
