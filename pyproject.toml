@@ -15,9 +15,15 @@ description = "A high-level quantum programming language"
 readme = "README.md"
 requires-python = ">=3.11, <3.13"
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Intended Audience :: Science/Research",
     "License :: OSI Approved :: Eclipse Public License 2.0 (EPL-2.0)",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Quantum Computing",
+    "Topic :: Software Development :: Compilers",
 ]
 license = {text = "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0"}
 

@@ -44,13 +44,16 @@ For development you will also want the test and documentation dependencies:
    * - ``xdsl``
      - xDSL compiler infrastructure
 
-Include the groups you need in brackets:
+Include the groups you need in brackets, either at install time or later:
 
 .. code-block:: bash
 
-    pip install -e ".[test]"
-    pip install -e ".[docs]"
+    # All at once
     pip install -e ".[test,docs,iqm,catalyst,xdsl]"
+
+    # Or individual groups after the base install
+    pip install -e ".[test]"
+    pip install -e ".[iqm]"
 
 .. note::
 
