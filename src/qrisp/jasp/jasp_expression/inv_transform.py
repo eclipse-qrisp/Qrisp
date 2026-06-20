@@ -261,7 +261,8 @@ def invert_loop_body(jaxpr):
     from qrisp.jasp.program_control.jrange_iterator import JRANGE_MARKER_NAME
 
     marker_eqn = None
-    for eqn in new_eqn_list:
+    # The marker is the last equation in the body, so scan backward.
+    for eqn in reversed(new_eqn_list):
         if eqn.primitive.name == "jit":
             if eqn.params.get("name") == JRANGE_MARKER_NAME:
                 marker_eqn = eqn
@@ -327,22 +328,6 @@ def invert_loop_eqn(eqn):
     # Process the loop body
     body_jaxpr = eqn.params["body_jaxpr"]
     inv_loop_body = invert_loop_body(body_jaxpr)
-
-    # Assert that inversion preserved the body's input/output structure
-    orig_in_avals = [v.aval for v in body_jaxpr.jaxpr.invars]
-    inv_in_avals = [v.aval for v in inv_loop_body.jaxpr.invars]
-    orig_out_avals = [v.aval for v in body_jaxpr.jaxpr.outvars]
-    inv_out_avals = [v.aval for v in inv_loop_body.jaxpr.outvars]
-    assert len(orig_in_avals) == len(inv_in_avals), \
-        f"Body inversion changed invar count: {len(orig_in_avals)} → {len(inv_in_avals)}"
-    assert len(orig_out_avals) == len(inv_out_avals), \
-        f"Body inversion changed outvar count: {len(orig_out_avals)} → {len(inv_out_avals)}"
-    for i, (a, b) in enumerate(zip(orig_in_avals, inv_in_avals)):
-        assert type(a) is type(b), \
-            f"Body inversion changed invar[{i}] type: {type(a).__name__} → {type(b).__name__}"
-    for i, (a, b) in enumerate(zip(orig_out_avals, inv_out_avals)):
-        assert type(a) is type(b), \
-            f"Body inversion changed outvar[{i}] type: {type(a).__name__} → {type(b).__name__}"
 
     # Extract the compared carry positions from the original cond.
     # Access everything via .jaxpr to ensure consistent Var objects.

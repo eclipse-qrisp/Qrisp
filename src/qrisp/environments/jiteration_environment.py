@@ -145,7 +145,8 @@ def iteration_env_evaluator(eqn, context_dic):
     from qrisp.jasp.program_control.jrange_iterator import JRANGE_MARKER_NAME
 
     def _find_marker_eqn(eqns):
-        for eqn in eqns:
+        # The marker is the last equation in the body, so scan backward.
+        for eqn in reversed(eqns):
             if eqn.primitive.name == "jit":
                 if eqn.params.get("name") == JRANGE_MARKER_NAME:
                     return eqn
@@ -166,9 +167,10 @@ def iteration_env_evaluator(eqn, context_dic):
         marker = _find_marker_eqn(body.eqns)
         thresh = marker.invars[1]
         updated = marker.invars[0]
-        # Find the add that feeds the marker
+        # Find the add that feeds the marker (immediately preceding it,
+        # so scan backward).
         loop = None
-        for eqn in body.eqns:
+        for eqn in reversed(body.eqns):
             if eqn.outvars[0] is updated:
                 loop = eqn.invars[0]
                 break
