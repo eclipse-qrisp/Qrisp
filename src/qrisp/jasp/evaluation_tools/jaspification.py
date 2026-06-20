@@ -23,6 +23,10 @@ from jax.tree_util import tree_unflatten, tree_flatten
 from jax._src.lib.mlir import ir
 
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
+from qrisp.jasp.interpreter_tools.call_graph_analysis import (
+    analyze_call_graph,
+    JaxprStats,
+)
 from qrisp.jasp.evaluation_tools.buffered_quantum_state import BufferedQuantumState
 from qrisp.jasp.primitives import (
     AbstractQuantumState,
@@ -247,6 +251,56 @@ def stimulate(func=None):
     return return_function
 
 
+# ---------------------------------------------------------------------------
+# Compilation benefit prediction
+# ---------------------------------------------------------------------------
+
+#: Minimum inlined equation count below which a jaxpr called only once is
+#: considered too small to benefit from JAX compilation.
+_MIN_INLINED_EQNS = 20
+
+#: Minimum call count above which even a small jaxpr is considered worth
+#: compiling because the one-time compilation cost is amortized across
+#: multiple call sites.
+_MIN_CALL_COUNT_FOR_SMALL = 5
+
+
+def predict_compilation_benefit(stats):
+    """
+    Predict whether JAX compilation of a sub-jaxpr is likely worthwhile.
+
+    Uses call graph analysis statistics to decide whether the JAX tracing +
+    XLA compilation overhead is expected to be amortized by faster execution.
+
+    The heuristic is intentionally conservative: it only recommends
+    **skipping** compilation when **both** conditions hold:
+
+    1. The jaxpr's fully-inlined equation count is below
+       ``_MIN_INLINED_EQNS`` (i.e. the function body is very small), AND
+    2. The jaxpr is referenced only once in the call graph (so the
+       one-time compilation cost cannot be shared across call sites).
+
+    In all other cases the function returns ``True``, preferring
+    compilation over interpretation.
+
+    Parameters
+    ----------
+    stats : JaxprStats
+        The call graph statistics for the sub-jaxpr under consideration.
+
+    Returns
+    -------
+    bool
+        ``True`` if compilation is predicted to be beneficial,
+        ``False`` if interpretation is likely faster.
+    """
+    if stats.inlined_eqn_count >= _MIN_INLINED_EQNS:
+        return True
+    if stats.call_count >= _MIN_CALL_COUNT_FOR_SMALL:
+        return True
+    return False
+
+
 def simulate_jaspr(
     jaxpr,
     *args,
@@ -270,6 +324,12 @@ def simulate_jaspr(
         raise Exception(f"Don't know simulator {simulator}")
 
     args = list(tree_flatten(args)[0]) + [BufferedQuantumState(simulator)]
+
+    # Pre-analyze the call graph once so that per-sub-jaxpr compilation
+    # decisions can be made with global knowledge of inlined size and reuse
+    # count.  The analysis walks the tree in O(total equations), comparable
+    # to a single interpreter pass.
+    _root_stats, call_graph_stats = analyze_call_graph(jaxpr)
 
     def eqn_evaluator(eqn, context_dic):
 
@@ -305,25 +365,38 @@ def simulate_jaspr(
                     break
             else:
 
-                compiled_function, is_executable = compile_cl_func(
-                    jaxpr.jaxpr, function_name
+                # Consult call graph analysis to decide whether JAX
+                # compilation is likely to pay off.  Small, single-use
+                # sub-jaxprs are executed via the interpreter because
+                # the JAX tracing + XLA compilation overhead would
+                # dominate any execution speedup.
+                sub_jaxpr = eqn.params["jaxpr"]
+                sub_stats = call_graph_stats.get(id(sub_jaxpr))
+                should_compile = (
+                    sub_stats is None
+                    or predict_compilation_benefit(sub_stats)
                 )
 
-                # Functions with purely classical inputs/outputs can still contain
-                # kernelized quantum functions. This will raise an NotImplementedError
-                # when attempting to compile. Since the compile_cl_func is lru_cached
-                # we can store this information to avoid further attempts at compiling
-                # such a function.
-                if is_executable[0]:
-                    try:
-                        outvalues = compiled_function(*(jaxpr.consts + invalues))
-                        if len(jaxpr.jaxpr.outvars) > 1:
-                            insert_outvalues(eqn, context_dic, outvalues)
-                        else:
-                            insert_outvalues(eqn, context_dic, [outvalues])
-                        return False
-                    except (TypeError, ir.MLIRError):
-                        is_executable[0] = False
+                if should_compile:
+                    compiled_function, is_executable = compile_cl_func(
+                        jaxpr.jaxpr, function_name
+                    )
+
+                    # Functions with purely classical inputs/outputs can still contain
+                    # kernelized quantum functions. This will raise an NotImplementedError
+                    # when attempting to compile. Since the compile_cl_func is lru_cached
+                    # we can store this information to avoid further attempts at compiling
+                    # such a function.
+                    if is_executable[0]:
+                        try:
+                            outvalues = compiled_function(*(jaxpr.consts + invalues))
+                            if len(jaxpr.jaxpr.outvars) > 1:
+                                insert_outvalues(eqn, context_dic, outvalues)
+                            else:
+                                insert_outvalues(eqn, context_dic, [outvalues])
+                            return False
+                        except (TypeError, ir.MLIRError):
+                            is_executable[0] = False
 
             # We simulate the inverse Gidney mcx via the non-hybrid version because
             # the hybrid version prevents the simulator from fusing gates, which
