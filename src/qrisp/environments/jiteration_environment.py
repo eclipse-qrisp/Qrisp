@@ -97,16 +97,10 @@ from qrisp.environments import QuantumEnvironment
 
 def iteration_env_evaluator(eqn, context_dic):
 
-    # This represents the case that we are faced with the q_env primitive of the
-    # first iteration. We set it as an attribute to use it in the other case.
-    
     if id(eqn.primitive) not in context_dic:
         context_dic[id(eqn.primitive)] = eqn
         return None
 
-    # We can now retrieve the equations for both iterations.
-
-    # Set the aliases for the equations and the jasprs
     iteration_1_eqn = context_dic[id(eqn.primitive)]
     del context_dic[id(eqn.primitive)]
     iteration_2_eqn = eqn
@@ -118,42 +112,107 @@ def iteration_env_evaluator(eqn, context_dic):
     if len(iter_2_jaspr.outvars) > 1:
         raise Exception("Found jrange with external carry value")
 
-    # Move the loop index to the last argument
+    # ------------------------------------------------------------------
+    # Identify the loop index and threshold variables via the named
+    # marker jit equation inserted right before __exit__ by jrange.
+    #
+    # The marker has signature  marker(updated_loop_index, threshold)
+    #   invars[0] = updated loop index (output of the add increment)
+    #   invars[1] = threshold (stop value)
+    # ------------------------------------------------------------------
+    from qrisp.jasp.program_control.jrange_iterator import JRANGE_MARKER_NAME
 
-    # The loop index is increased in the last equation of the jaspr.
-    # We can therefore identify the variable by finding the fist argument
-    # of the incrementation equation.
-    increment_eq = iter_1_jaspr.eqns[-1]
-    arg_pos = iter_1_jaspr.invars.index(increment_eq.invars[0])
-    # Move the loop index to the second position in both the jaspr and the equation
-    iter_1_jaspr.invars.insert(0, iter_1_jaspr.invars.pop(arg_pos))
-    iteration_1_eqn.invars.insert(0, iteration_1_eqn.invars.pop(arg_pos))
+    def _find_marker_eqn(eqns):
+        for eqn in eqns:
+            if eqn.primitive.name == "jit":
+                if eqn.params.get("name") == JRANGE_MARKER_NAME:
+                    return eqn
+        raise Exception(
+            f"JIterationEnvironment: could not find marker equation "
+            f"'{JRANGE_MARKER_NAME}' in body Jaxpr."
+        )
 
-    # The same for the jaspr of the second iteration
-    increment_eq = iter_2_jaspr.eqns[-1]
-    arg_pos = iter_2_jaspr.invars.index(increment_eq.invars[0])
-    # Move the loop index to the second position in both the jaspr and the equation
-    iter_2_jaspr.invars.insert(0, iter_2_jaspr.invars.pop(arg_pos))
-    iteration_2_eqn.invars.insert(0, iteration_2_eqn.invars.pop(arg_pos))
+    # --- Use ORIGINAL (unflattened) bodies for Var identification ---
+    # These Vars match iteration_*_eqn.invars.
+    orig_body_1 = iteration_1_eqn.params["jaspr"]
+    orig_body_2 = iteration_2_eqn.params["jaspr"]
 
-    # Move the loop threshold variable to the last position
-    # The loop threshold is demarked as the variable that gets incremented
-    # by 0 in the first equation
+    def _find_vars_from_marker(body, eqn_invars):
+        """Return (threshold_var, loop_index_var) from a body Jaspr.
+        The returned Vars are looked up in *eqn_invars* so they match
+        the equation's invar list (original or flattened)."""
+        marker = _find_marker_eqn(body.eqns)
+        thresh = marker.invars[1]
+        updated = marker.invars[0]
+        # Find the add that feeds the marker
+        loop = None
+        for eqn in body.eqns:
+            if eqn.outvars[0] is updated:
+                loop = eqn.invars[0]
+                break
+        if loop is None:
+            raise Exception(
+                "Could not find increment equation feeding the jrange marker."
+            )
+        # Verify the vars are in the target invars list
+        if thresh not in eqn_invars:
+            raise Exception("Threshold var not found in equation invars.")
+        if loop not in eqn_invars:
+            raise Exception("Loop index var not found in equation invars.")
+        return thresh, loop
 
-    demark_eq = iter_1_jaspr.eqns[0]
-    arg_pos = iter_1_jaspr.invars.index(demark_eq.invars[0])
-    iter_1_jaspr.invars.insert(0, iter_1_jaspr.invars.pop(arg_pos))
-    iteration_1_eqn.invars.insert(0, iteration_1_eqn.invars.pop(arg_pos))
+    # Original Vars → for iteration_*_eqn.invars
+    threshold_var, loop_index_var = _find_vars_from_marker(
+        orig_body_1, iteration_1_eqn.invars
+    )
+    threshold_var_2, loop_index_var_2 = _find_vars_from_marker(
+        orig_body_2, iteration_2_eqn.invars
+    )
 
-    # Same for second iteration
-    demark_eq = iter_2_jaspr.eqns[0]
-    arg_pos = iter_2_jaspr.invars.index(demark_eq.invars[0])
-    iter_2_jaspr.invars.insert(0, iter_2_jaspr.invars.pop(arg_pos))
-    iteration_2_eqn.invars.insert(0, iteration_2_eqn.invars.pop(arg_pos))
+    # Flattened Vars → for iter_*_jaspr.invars
+    thresh_flat_1, loop_flat_1 = _find_vars_from_marker(
+        iter_1_jaspr, iter_1_jaspr.invars
+    )
+    thresh_flat_2, loop_flat_2 = _find_vars_from_marker(
+        iter_2_jaspr, iter_2_jaspr.invars
+    )
+
+    # --- inc_res_index: from the flattened body's marker outvar ---
+    marker_flat_1 = _find_marker_eqn(iter_1_jaspr.eqns)
+    inc_outvar = marker_flat_1.outvars[0]
+    inc_res_index = None
+    for i, ov in enumerate(iter_1_jaspr.jaxpr.outvars):
+        if ov is inc_outvar:
+            inc_res_index = i
+            break
+    if inc_res_index is None:
+        raise Exception(
+            "Could not find marker output in iteration 1 outvars."
+        )
+
+    # --- Rearrange: threshold at position 0, loop index at position 1 ---
+    def _move_var_to_front(invars_list, target_var):
+        """Move *target_var* to index 0 in *invars_list* (mutates in place)."""
+        arg_pos = invars_list.index(target_var)
+        invars_list.insert(0, invars_list.pop(arg_pos))
+
+    # Iteration 1: flattened Jaspr invars + original equation invars
+    _move_var_to_front(iter_1_jaspr.invars, loop_flat_1)
+    _move_var_to_front(iteration_1_eqn.invars, loop_index_var)
+
+    _move_var_to_front(iter_1_jaspr.invars, thresh_flat_1)
+    _move_var_to_front(iteration_1_eqn.invars, threshold_var)
+
+    # Iteration 2
+    _move_var_to_front(iter_2_jaspr.invars, loop_flat_2)
+    _move_var_to_front(iteration_2_eqn.invars, loop_index_var_2)
+
+    _move_var_to_front(iter_2_jaspr.invars, thresh_flat_2)
+    _move_var_to_front(iteration_2_eqn.invars, threshold_var_2)
 
     # For the jaspr of both iterations we now have the situation that
-    # the loop threshold is the argument at the last position and the loop
-    # index the argument at the second last position.
+    # the loop threshold is at position 0 and the loop index is at
+    # position 1 (both identified via the named marker jit equations).
 
     # The way the environment jaspr is collected allows for permuted arguments,
     # ie. the first argument of the first iteration could be the the last argument
@@ -161,30 +220,15 @@ def iteration_env_evaluator(eqn, context_dic):
     verify_semantic_equivalence(iter_1_jaspr, iter_2_jaspr)
 
     # Now, we figure out which of the return values need to be updated after
-    # each iteration. The update needs to happen if the input values of
-    # both iterations are not the same. In this case we find the
-    # updated value in the output of the first iteration.
+    # each iteration. We use structural information and Var identity:
+    # - Position 0 (threshold): never updated (pass-through)
+    # - Position 1 (loop index): always updated from the increment marker eqn
+    # - Other positions: use identity comparison (Var is Var) instead of
+    #   hash(var), because hash(var) depends on id(var) which can vary
+    #   non-deterministically across JAX trace cache lifetimes, leading to
+    #   false "unchanged" classifications and ultimately infinite loops.
 
-    iter_1_invar_hashes = []
-    for var in iteration_1_eqn.invars:
-        if isinstance(var, Literal):
-            iter_1_invar_hashes.append(hash(var.val))
-        else:
-            iter_1_invar_hashes.append(hash(var))
-
-    iter_2_invar_hashes = []
-    for var in iteration_2_eqn.invars:
-        if isinstance(var, Literal):
-            iter_2_invar_hashes.append(hash(var.val))
-        else:
-            iter_2_invar_hashes.append(hash(var))
-
-    iter_1_outvar_hashes = []
-    for var in iteration_1_eqn.outvars:
-        if isinstance(var, Literal):
-            iter_1_outvar_hashes.append(hash(var.val))
-        else:
-            iter_1_outvar_hashes.append(hash(var))
+    # inc_res_index was already computed above from the marker equation.
 
     # This list will contain the information about which variables need to be
     # updated. If the entry is None, no update is required. Otherwise the entry
@@ -194,21 +238,29 @@ def iteration_env_evaluator(eqn, context_dic):
 
     # Iterate through the input variables of the equation of iteration 1
     for i in range(len(iteration_1_eqn.invars)):
-
-        # If the input variable is not in the input variables of iteration 2,
-        # it needs to be updated.
-        if iter_1_invar_hashes[i] not in iter_2_invar_hashes:
-
-            # Find the index in the outvars of iteration 1
+        # Position 0: threshold — never updated (pass-through)
+        if i == 0:
+            update_rules.append(None)
+        # Position 1: loop index — always updated from increment eqn
+        elif i == 1:
+            update_rules.append(inc_res_index)
+        # Other positions: use identity comparison (Var is Var)
+        # JAX reuses the same Var object for unchanged variables within a
+        # single Jaxpr, so identity comparison is reliable and deterministic.
+        elif iteration_1_eqn.invars[i] is not iteration_2_eqn.invars[i]:
+            # Variable was updated — find which output of iteration 1
+            # provides the new value for iteration 2's input.
             try:
-                res_index = iter_1_outvar_hashes.index(iter_2_invar_hashes[i])
+                res_index = iteration_1_eqn.outvars.index(
+                    iteration_2_eqn.invars[i]
+                )
             except ValueError:
                 # If the iter 2 invar is not part of the iter 1 outvars
                 # and also not part of the iter 1 invars, it is most likely
                 # because the user loaded an array from a static list.
                 # Loading arrays from static lists is realized via adding
                 # a constant to the Jaxpr, which contains the list.
-                # Since the loop body is traced twice, this means to constants
+                # Since the loop body is traced twice, this means two constants
                 # are added to the Jaxpr and therefore also two variables
                 # (even if they represent the same constant).
                 # In this case no update is required.
@@ -219,7 +271,7 @@ def iteration_env_evaluator(eqn, context_dic):
                 raise
             update_rules.append(res_index)
         else:
-            # Otherwise append None
+            # Variable unchanged (same Var object in both iterations)
             update_rules.append(None)
 
     # We can now construct the body function of the loop
@@ -237,8 +289,6 @@ def iteration_env_evaluator(eqn, context_dic):
             res = (res,)
 
         # Collect the return values.
-        # For the values that are updated after each iteration, we need to return
-        # those.
         return_values = []
 
         for i in range(len(update_rules)):
@@ -265,15 +315,12 @@ def iteration_env_evaluator(eqn, context_dic):
     res = while_loop(cond_fun, body_fun, init_val=tuple(init_val))
 
     # Finally, we insert the result values that receive and update
-    # into the context dic
+    # into the context dic.
+    # Note: res[-1] holds the final value of the last carried variable,
+    # which must correspond to the last output of the second iteration's
+    # equation for the loop to terminate correctly.
     context_dic[iteration_2_eqn.outvars[-1]] = res[-1]
     return
-    # print(iteration_2_eqn)
-    # print(update_rules)
-    for i in range(len(update_rules) - 1):
-        if update_rules[i] is not None:
-            iteration_2_eqn.outvars[update_rules[i]]
-            context_dic[iteration_2_eqn.outvars[update_rules[i]]] = res[i]
 
 
 # This function takes two jaxpr objects that perform the same jax semantics
