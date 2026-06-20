@@ -18,6 +18,7 @@
 
 from functools import lru_cache
 
+from qrisp._cache_config import QRISP_COMPILATION_CACHE_SIZE
 from jax.extend.core import JaxprEqn
 
 from qrisp.jasp.primitives import AbstractQuantumState
@@ -35,7 +36,7 @@ def copy_jaxpr_eqn(eqn):
     )
 
 
-@lru_cache(int(1e5))
+@lru_cache(maxsize=QRISP_COMPILATION_CACHE_SIZE)
 def injection_transform(jaspr, qubit_array_outvar):
     """
     This function takes in a Jaspr that returns a QubitArray, which has been

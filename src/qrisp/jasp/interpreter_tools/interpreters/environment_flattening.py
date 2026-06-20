@@ -18,6 +18,7 @@
 
 from functools import lru_cache
 
+from qrisp._cache_config import QRISP_COMPILATION_CACHE_SIZE
 from jax.extend.core import JaxprEqn, ClosedJaxpr
 
 from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret
@@ -36,7 +37,7 @@ def copy_jaxpr_eqn(eqn):
     )
 
 
-@lru_cache(maxsize=int(1e5))
+@lru_cache(maxsize=QRISP_COMPILATION_CACHE_SIZE)
 def flatten_environments(jaspr):
     """
     This function takes in a jaspr with QuantumEnvironment primitives

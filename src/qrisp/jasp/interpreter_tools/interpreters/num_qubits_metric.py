@@ -20,6 +20,7 @@ import types
 from functools import lru_cache
 from typing import Callable, Tuple
 
+from qrisp._cache_config import QRISP_COMPILATION_CACHE_SIZE
 import jax
 import jax.numpy as jnp
 from jax.random import key
@@ -277,7 +278,7 @@ def extract_num_qubits(res: Tuple, jaspr: Jaspr, _) -> dict:
     }
 
 
-@lru_cache(int(1e5))
+@lru_cache(maxsize=QRISP_COMPILATION_CACHE_SIZE)
 def get_num_qubits_profiler(
     jaspr: Jaspr,
     meas_behavior: Callable,

@@ -18,6 +18,8 @@
 
 from functools import lru_cache
 
+from qrisp._cache_config import QRISP_COMPILATION_CACHE_SIZE
+
 import numpy as np
 from sympy import lambdify
 
@@ -108,7 +110,7 @@ def invert_eqn(eqn):
     )
 
 
-@lru_cache(int(1e5))
+@lru_cache(maxsize=QRISP_COMPILATION_CACHE_SIZE)
 def invert_jaspr(jaspr):
     """
     Takes a Jaspr and returns a Jaspr, which performs the inverted quantum operation

@@ -17,6 +17,8 @@
 """
 
 from functools import lru_cache
+
+from qrisp._cache_config import QRISP_COMPILATION_CACHE_SIZE
 from jax.extend.core import JaxprEqn
 import jax.numpy as jnp
 from sympy import lambdify as _lambdify
@@ -209,7 +211,7 @@ def decompose_eqn_evaluator(eqn, context_dic):
     return True  # fall back to default execution
 
 
-@lru_cache(maxsize=int(1e5))
+@lru_cache(maxsize=QRISP_COMPILATION_CACHE_SIZE)
 def _decompose_sub_jaxpr(jaxpr):
     """Apply decompose_composite_gates to a sub-jaxpr (ClosedJaxpr or Jaspr)."""
     from qrisp.jasp import Jaspr
@@ -224,7 +226,7 @@ def _decompose_sub_jaxpr(jaxpr):
         return jaxpr
 
 
-@lru_cache(maxsize=int(1e5))
+@lru_cache(maxsize=QRISP_COMPILATION_CACHE_SIZE)
 def decompose_composite_gates(jaspr):
     """Return a new Jaspr with all composite (non-primitive) gates recursively inlined."""
     from qrisp.jasp import Jaspr

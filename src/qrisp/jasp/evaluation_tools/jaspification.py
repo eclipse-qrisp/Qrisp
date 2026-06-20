@@ -19,6 +19,7 @@
 from functools import lru_cache
 
 import jax
+from qrisp._cache_config import QRISP_COMPILATION_CACHE_SIZE
 from jax.tree_util import tree_unflatten, tree_flatten
 from jax._src.lib.mlir import ir
 
@@ -360,6 +361,6 @@ def simulate_jaspr(
         return res
 
 
-@lru_cache(maxsize=int(1e5))
+@lru_cache(maxsize=QRISP_COMPILATION_CACHE_SIZE)
 def compile_cl_func(jaxpr, function_name):
     return jax.jit(eval_jaxpr(jaxpr)), [True]
