@@ -21,7 +21,7 @@ from functools import lru_cache
 import numpy as np
 from sympy import lambdify
 
-from jax import make_jaxpr
+from jax import make_jaxpr, jit
 from jax.extend.core import JaxprEqn, Var, ClosedJaxpr, Jaxpr
 from jax.lax import add_p, sub_p, while_loop
 
@@ -254,14 +254,43 @@ def invert_loop_body(jaxpr):
     # This list will contain the equations with the loop index decrementation
     new_eqn_list = list(jaxpr.eqns)
 
-    # Find the incrementation equation. For this we identify the equation,
-    # which updates the loop index
+    # Find the incrementation equation via the named marker jit equation
+    # inserted by jrange right before __exit__.  Only jrange-based loops
+    # carry this marker, so loops created by other means cannot be
+    # automatically inverted.
+    from qrisp.jasp.program_control.jrange_iterator import JRANGE_MARKER_NAME
 
-    loop_index = jaxpr.jaxpr.outvars[-2]
+    marker_eqn = None
+    # The marker is the last equation in the body, so scan backward.
+    for eqn in reversed(new_eqn_list):
+        if eqn.primitive.name == "jit":
+            if eqn.params.get("name") == JRANGE_MARKER_NAME:
+                marker_eqn = eqn
+                break
+
+    if marker_eqn is None:
+        raise Exception(
+            "Automatic loop inversion is only supported for jrange-based "
+            "loops. The current loop body does not contain a jrange marker "
+            f"('{JRANGE_MARKER_NAME}')."
+        )
+
+    # marker(updated_loop_index, threshold)
+    # Find the add/sub whose outvar is the marker's invars[0].
+    updated_var = marker_eqn.invars[0]
+    increment_eqn_index = None
     for i in range(len(new_eqn_list))[::-1]:
-        if loop_index == new_eqn_list[i].outvars[0]:
-            break
-    increment_eqn_index = int(i)
+        if new_eqn_list[i].outvars[0] is updated_var:
+            if new_eqn_list[i].primitive in (add_p, sub_p):
+                increment_eqn_index = i
+                break
+
+    if increment_eqn_index is None:
+        raise Exception(
+            "Could not find the increment equation feeding the jrange "
+            "marker. The loop body may be malformed."
+        )
+
     increment_eqn = new_eqn_list[increment_eqn_index]
 
     # Change the primitive
@@ -269,14 +298,6 @@ def invert_loop_body(jaxpr):
         new_primitive = sub_p
     else:
         new_primitive = add_p
-
-    try:
-        if increment_eqn.invars[1].val != 1:
-            raise
-    except:
-        raise Exception(
-            "Dynamic loop inversion is only supported for loops the have step size 1."
-        )
 
     # Create the decrement equation
     decrement_eqn = JaxprEqn(
@@ -301,56 +322,81 @@ def invert_loop_body(jaxpr):
     return res_jaspr
 
 
-# This function performs the above mentioned step 2 to treat the loop primitive
+# This function performs the above mentioned step 2 to treat the loop primitive.
 def invert_loop_eqn(eqn):
-
-    overall_constant_amount = eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
 
     # Process the loop body
     body_jaxpr = eqn.params["body_jaxpr"]
     inv_loop_body = invert_loop_body(body_jaxpr)
 
-    def body_fun(val):
-
-        constants = val[eqn.params["cond_nconsts"] : overall_constant_amount]
-        carries = val[overall_constant_amount:]
-
-        body_res = eval_jaxpr(inv_loop_body)(*(constants + carries))
-
-        return val[:overall_constant_amount] + tuple(body_res)
-
-    # Process the loop cancelation
+    # Extract the compared carry positions from the original cond.
+    # Access everything via .jaxpr to ensure consistent Var objects.
     cond_jaxpr = eqn.params["cond_jaxpr"]
+    cond_core = cond_jaxpr.jaxpr
+    for eq in cond_core.eqns:
+        if id(eq.outvars[0]) == id(cond_jaxpr.jaxpr.outvars[0]):
+            cond_eq = eq
+            break
 
-    def cond_fun(val):
+    cond_ins = cond_core.invars
 
-        if cond_jaxpr.eqns[0].primitive.name == "ge":
-            return val[-2] <= val[-3]
-        else:
-            return val[-2] >= val[-3]
+    # Helper: backtrace a Var through convert_element_type chains
+    # to find the original invar it ultimately derives from.
+    def backtrace(var):
+        for _ in range(10):  # safety limit
+            found = False
+            for eq in cond_core.eqns:
+                if eq.primitive.name == "convert_element_type" and eq.outvars[0] is var:
+                    var = eq.invars[0]
+                    found = True
+                    break
+            if not found:
+                break
+        return var
 
-    # Create the new equation by tracing the while loop
-    def tracing_function(*args):
-        return while_loop(cond_fun, body_fun, tuple(args))
+    # Find positions, backtracing through any type conversions
+    pos_a = next(i for i, v in enumerate(cond_ins) if v is backtrace(cond_eq.invars[0]))
+    pos_b = next(i for i, v in enumerate(cond_ins) if v is backtrace(cond_eq.invars[1]))
 
-    jaxpr = make_jaxpr(tracing_function)(*[var.aval for var in eqn.invars])
-    new_eqn = jaxpr.eqns[0]
+    # Trace a cond with swapped operands. Swapping the operands of
+    # le/ge inverts the comparison. Combined with the invar swap
+    # below, this gives the correct inverted loop condition.
+    carries_count = len(eqn.outvars)
+    carry_avals = [v.aval for v in eqn.invars[-carries_count:]]
 
-    # The new invars should have initial loop index at loop threshold switched.
-    # The loop initialization is located at invars[-3] and the threshold at invars[-2]
+    if cond_eq.primitive.name == "ge":
+        def swapped_cond(*carries):
+            return carries[pos_b] >= carries[pos_a]
+    else:
+        def swapped_cond(*carries):
+            return carries[pos_b] <= carries[pos_a]
+
+    inv_cond_jaxpr = make_jaxpr(swapped_cond)(*carry_avals)
+
+    # Swap the equation invars at positions corresponding to the
+    # compared carries (init ↔ threshold).
     invars = eqn.invars
     new_invars = list(invars)
-    new_invars[-2], new_invars[-3] = new_invars[-3], new_invars[-2]
+    eqn_pos_a = eqn.params["cond_nconsts"] + eqn.params["body_nconsts"] + pos_a
+    eqn_pos_b = eqn.params["cond_nconsts"] + eqn.params["body_nconsts"] + pos_b
+    new_invars[eqn_pos_a], new_invars[eqn_pos_b] = \
+        new_invars[eqn_pos_b], new_invars[eqn_pos_a]
 
-    # Create the Equation
+    # Assemble the inverted while equation directly — no while_loop
+    # re-trace, avoiding JAX's non-deterministic body_nconsts.
     res = JaxprEqn(
-        primitive=new_eqn.primitive,
+        primitive=eqn.primitive,
         invars=new_invars,
         outvars=list(eqn.outvars),
-        params=new_eqn.params,
+        params={
+            "body_jaxpr": inv_loop_body,
+            "cond_jaxpr": inv_cond_jaxpr,
+            "body_nconsts": eqn.params["body_nconsts"],
+            "cond_nconsts": eqn.params["cond_nconsts"],
+        },
         source_info=eqn.source_info,
         effects=eqn.effects,
-        ctx=new_eqn.ctx,
+        ctx=eqn.ctx,
     )
 
     return res
