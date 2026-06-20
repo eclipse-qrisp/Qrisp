@@ -20,7 +20,7 @@ import types
 from functools import lru_cache
 from typing import Callable, Dict, List, Tuple
 
-from qrisp._cache_config import QRISP_COMPILATION_CACHE_SIZE
+from qrisp._cache_config import qrisp_lru_compilation_cache
 import jax
 import jax.numpy as jnp
 from jax.random import key
@@ -230,7 +230,8 @@ def extract_count_ops(res: Tuple, jaspr: Jaspr, profiling_dic: dict) -> dict:
     return res_dic
 
 
-@lru_cache(maxsize=QRISP_COMPILATION_CACHE_SIZE)
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def get_count_ops_profiler(
     jaspr: Jaspr, meas_behavior: Callable, callback_threshold=None
 ) -> Tuple[Callable, dict]:

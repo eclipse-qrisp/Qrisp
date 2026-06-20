@@ -18,7 +18,7 @@
 
 from functools import lru_cache
 
-from qrisp._cache_config import QRISP_COMPILATION_CACHE_SIZE
+from qrisp._cache_config import qrisp_lru_compilation_cache
 import numpy as np
 
 import jax.numpy as jnp
@@ -361,7 +361,8 @@ def terminal_sampling_evaluator(sampling_res_type):
     return sampling_eqn_evaluator
 
 
-@lru_cache(maxsize=QRISP_COMPILATION_CACHE_SIZE)
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def decoder_compiler(jaxpr, eqn_evaluator):
     """
     This function compiles the decoder using the Jax pipeline into a binary

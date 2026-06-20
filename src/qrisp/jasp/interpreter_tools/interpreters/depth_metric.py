@@ -20,7 +20,7 @@ import types
 from functools import lru_cache
 from typing import Any, Callable, Iterator, List, Tuple
 
-from qrisp._cache_config import QRISP_COMPILATION_CACHE_SIZE
+from qrisp._cache_config import qrisp_lru_compilation_cache
 import jax
 import jax.numpy as jnp
 from jax.random import key
@@ -384,7 +384,8 @@ def extract_depth(res: Tuple, jaspr: Jaspr, _) -> int:
     return int(depth)
 
 
-@lru_cache(maxsize=QRISP_COMPILATION_CACHE_SIZE)
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def get_depth_profiler(
     jaspr: Jaspr, meas_behavior: Callable, max_qubits: int = 1024, callback_threshold=None
 ) -> Tuple[Callable, None]:

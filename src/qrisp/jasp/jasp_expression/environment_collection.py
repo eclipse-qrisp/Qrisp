@@ -23,7 +23,7 @@ from numba import njit
 from jax.extend.core import ClosedJaxpr, JaxprEqn, Literal, Jaxpr
 from jax.api_util import debug_info
 
-from qrisp._cache_config import QRISP_COMPILATION_CACHE_SIZE
+from qrisp._cache_config import qrisp_lru_compilation_cache
 
 # In newer versions, Jax enforces providing a debug info object
 # to the Jaxpr constructor. This object contains metadata information
@@ -45,7 +45,8 @@ dummy_debug_info = debug_info(
 )
 
 
-@lru_cache(maxsize=QRISP_COMPILATION_CACHE_SIZE)
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def collect_environments(closed_jaxpr):
     """
     This function turns Jaxpr that contain QuantumEnvironment primitive in enter/exit

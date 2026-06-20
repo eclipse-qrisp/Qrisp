@@ -19,7 +19,7 @@
 from functools import lru_cache
 
 import jax
-from qrisp._cache_config import QRISP_COMPILATION_CACHE_SIZE
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from jax import make_jaxpr
 from jax.extend.core import Jaxpr, Literal, ClosedJaxpr
 from jax.tree_util import tree_flatten, tree_unflatten
@@ -765,12 +765,14 @@ class Jaspr(ClosedJaxpr):
         else:
             return res
 
+    # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
     @classmethod
-    @lru_cache(maxsize=QRISP_COMPILATION_CACHE_SIZE)
+    @qrisp_lru_compilation_cache
     def from_cache(cls, closed_jaxpr):
         res = Jaspr(jaxpr=closed_jaxpr.jaxpr, consts=closed_jaxpr.consts)
         remove_redundant_allocations(res)
         return res
+
 
     def update_eqns(self, eqns):
         return Jaspr(
