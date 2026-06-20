@@ -68,12 +68,12 @@ def invert_eqn(eqn):
         name = params["name"]
         if name[-3:] == "_dg":
             params["name"] = params["name"][:-3]
-        elif name not in ["gidney_mcx", "gidney_mcx_inv"]:
+        elif name not in ["gidney_mcx_inv_impl", "gidney_mcx_impl"]:
             params["name"] += "_dg"
-        elif name == "gidney_mcx":
-            params["name"] = "gidney_mcx_inv"
-        elif name == "gidney_mcx_inv":
-            params["name"] = "gidney_mcx"
+        elif name == "gidney_mcx_impl":
+            params["name"] = "gidney_mcx_inv_impl"
+        elif name == "gidney_mcx_inv_impl":
+            params["name"] = "gidney_mcx_impl"
 
         primitive = eqn.primitive
     elif eqn.primitive.name == "while":
