@@ -19,7 +19,7 @@
 import os
 from functools import lru_cache as _lru_cache
 
-QRISP_COMPILATION_CACHE_SIZE = int(os.environ.get("QRISP_COMPILATION_CACHE_SIZE", 100000))
+QRISP_COMPILATION_CACHE_SIZE = int(os.environ.get("QRISP_COMPILATION_CACHE_SIZE", 1000))
 
 _ALL_LRU_CACHES = []
 
