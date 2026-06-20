@@ -36,7 +36,7 @@ def _jrange_marker(updated_loop_index, threshold):
     return updated_loop_index
 
 
-# JIT-compile once so every call site shares the same compiled object.
+# JIT-compile so every call site shares the same compiled object.
 _jrange_marker = jit(_jrange_marker)
 
 # Public constant exported for use in other modules.
@@ -105,7 +105,7 @@ class JRangeIterator:
             # invars[1] = threshold.  Assignment keeps it live.
             self.loop_index = _jrange_marker(self.loop_index, self.stop)
 
-            # Exit the old environment and enter the new one.
+            # Exit the first environment and enter the second.
             self.iter_env.__exit__(None, None, None)
             self.iter_env.__enter__()
 
