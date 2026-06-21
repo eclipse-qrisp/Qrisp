@@ -56,3 +56,22 @@ BlockEncoding has been rebuilt around a cleaner **Base Class + Facade pattern** 
   involves implementing a new class that inherits from the base and updating the facade
   to recognize it, without needing to modify existing code.
 
+
+FOQCS-LCU Block Encoding
+-------------------------
+ 
+Qrisp 0.9 adds the **FOQCS-LCU** block encoding method to the :ref:`BlockEncoding
+<BlockEncoding>` class (PR #597), opening up a more direct path to block encoding
+Heisenberg and spin-glass type operators:
+ 
+* :func:`from_foqcs_lcu_prep
+  <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep>`: Builds a FOQCS-LCU block
+  encoding from a custom PREP function, giving you full control over the underlying
+  state preparation.
+* :func:`from_foqcs_lcu_operator
+  <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_operator>`: Builds a FOQCS-LCU
+  block encoding straight from a :class:`QubitOperator <qrisp.operators.QubitOperator>`,
+  automatically detecting whether the operator fits a Heisenberg or spin-glass model and
+  preparing it accordingly via the new operator analysis utilities.
+
+
