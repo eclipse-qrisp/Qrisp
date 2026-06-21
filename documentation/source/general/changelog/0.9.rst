@@ -13,7 +13,7 @@ including a new **Gidney adder** based on venting carries via mid-circuit measur
 round things out.
 
 QSVT and Singular Value Transformations
-----------------------------------------
+---------------------------------------
  
 With Qrisp 0.9, the Quantum Singular Value Transform (QSVT) framework is now available
 as the primary tool for matrix inversion and singular value processing to operators that
@@ -63,7 +63,7 @@ BlockEncoding has been rebuilt around a cleaner **Base Class + Facade pattern** 
 
 
 FOQCS-LCU Block Encoding
--------------------------
+------------------------
  
 Qrisp 0.9 adds the **FOQCS-LCU** block encoding method to the :ref:`BlockEncoding
 <BlockEncoding>` class (PR #597), opening up a more direct path to block encoding
@@ -80,7 +80,7 @@ Heisenberg and spin-glass type operators:
   preparing it accordingly via the new operator analysis utilities.
 
 Circuit Optimization Pass Manager
-----------------------------------
+---------------------------------
  
 Qrisp 0.9 ships a complete **circuit optimization pass management system** (PR #564),
 giving you a modular, composable framework in place of the previous ad-hoc compilation
@@ -96,7 +96,7 @@ routines. Key features include:
      Cancels adjacent gate-inverse pairs via DAG analysis, also fusing compatible
      neighbors along the way (SWAP with CX/CP/RZZ, same-site rotation gates, Gidney
      AND compute/uncompute, and controlled operations whose base gates cancel).
-  * :func:`combine_single_qubit_gates<qrisp.circuit.pass_management.passes.combine_single_qubit_gates>`:
+  * :func:`combine_single_qubit_gates <qrisp.circuit.pass_management.passes.combine_single_qubit_gates>`:
     Merges consecutive single-qubit gates for tighter circuits.
   * :func:`commute_swaps <qrisp.circuit.pass_management.passes.commute_swaps>`: Moves
     SWAP gates around using commutation rules.
@@ -178,7 +178,7 @@ to switch between them seamlessly.
 
 
 COLD (Counterdiabatic Local Driving)
--------------------------------------
+------------------------------------
  
 The :ref:`DCQOProblem <DCQO>` class (PR #614) introduces a smoother scheduling
 function, :math:`\operatorname{lam}(t) = \sin^2\!\bigl(\frac{\pi}{2}\sin^2\!\bigl(\frac{\pi
@@ -190,7 +190,7 @@ hardware, with an automatic fallback to statevector simulation when needed.
 
 
 Dicke State and Unbalanced W State
------------------------------------
+----------------------------------
  
 Two new deterministic state preparation routines join the library (PR #572):
  
@@ -312,11 +312,14 @@ Compatibility
   :func:`convert_from_cirq <qrisp.interface.convert_from_cirq>` functions give you
   bidirectional conversion between Qrisp and `Cirq
   <https://quantumai.google/cirq>`_ circuits (PR #610).
+* **``jrange`` ``step`` argument removed** (PR #652): Passing three arguments to
+  :func:`jrange <qrisp.jasp.jrange>` now emits a ``QrispDeprecationWarning`` and raises
+  a ``TypeError``. Use a step-1 loop and multiply the loop variable by the desired step.
 * Jax 0.5.x compatibility (matching current Jasp tracing requirements).
 * Catalyst 0.15 compatibility.
  
 Updated Tutorial
------------------
+----------------
  
 * :doc:`Counterdiabatic Driving Protocols </general/tutorial/CD>` - Updated for the
   COLD module's smoother scheduling function and the new ``precision`` /
