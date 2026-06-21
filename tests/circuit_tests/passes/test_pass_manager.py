@@ -43,10 +43,12 @@ add_cx_pass.__doc__ = "Pass that appends a CX gate on qubits 0 and 1."
 # Import tests
 # ---------------------------------------------------------------------------
 
+
 class TestPassManagerImports:
     def test_import_from_qrisp_top_level(self):
         """PassManager must be importable directly from qrisp."""
         from qrisp import PassManager as PM
+
         assert PM is PassManager
 
     def test_import_from_qrisp_circuit_passes(self):
@@ -56,12 +58,14 @@ class TestPassManagerImports:
     def test_import_from_qrisp_circuit_passes_pass_manager(self):
         """PassManager must be importable from the leaf module."""
         from qrisp.circuit.pass_management.pass_manager import PassManager as PM
+
         assert PM is PassManager
 
 
 # ---------------------------------------------------------------------------
 # Construction
 # ---------------------------------------------------------------------------
+
 
 class TestPassManagerConstruction:
     def test_default_construction(self):
@@ -86,6 +90,7 @@ class TestPassManagerConstruction:
 # ---------------------------------------------------------------------------
 # Mutation methods
 # ---------------------------------------------------------------------------
+
 
 class TestPassManagerMutation:
     def test_add_pass_appends(self):
@@ -151,6 +156,7 @@ class TestPassManagerMutation:
 # Run
 # ---------------------------------------------------------------------------
 
+
 class TestPassManagerRun:
     def _make_circuit(self):
         qc = QuantumCircuit(2)
@@ -197,6 +203,7 @@ class TestPassManagerRun:
 # ---------------------------------------------------------------------------
 # Dunder methods
 # ---------------------------------------------------------------------------
+
 
 class TestPassManagerDunder:
     def test_len(self):

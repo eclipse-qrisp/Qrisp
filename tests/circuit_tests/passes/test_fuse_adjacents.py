@@ -112,10 +112,10 @@ class TestParameterisedCancellation:
 
     def test_rz_cancelation_preserves_gphase(self):
         qc = QuantumCircuit(1)
-        qc.rz(np.pi/2, 0)
-        qc.rz(-np.pi/4, 0)
+        qc.rz(np.pi / 2, 0)
+        qc.rz(-np.pi / 4, 0)
         result = fuse_adjacents(qc)
-        assert result.compare_unitary(qc, ignore_gphase = False)
+        assert result.compare_unitary(qc, ignore_gphase=False)
 
     def test_controlled_preserves_gphase(self):
         from qrisp import QuantumVariable, control
@@ -378,8 +378,8 @@ class TestControlledOperations:
 
         qc = QuantumCircuit(2)
 
-        gate_a = XGate().control(ctrl_state = "0")
-        gate_b = XGate().control(ctrl_state = "1")
+        gate_a = XGate().control(ctrl_state="0")
+        gate_b = XGate().control(ctrl_state="1")
 
         qc.append(gate_a, qc.qubits)
         qc.append(gate_b, qc.qubits)
@@ -387,6 +387,7 @@ class TestControlledOperations:
         result = fuse_adjacents(qc)
 
         assert _num_gates(result) == 2
+
 
 # ---------------------------------------------------------------------------
 # Tests: circuit identity preservation

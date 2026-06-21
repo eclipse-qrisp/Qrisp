@@ -73,7 +73,7 @@ def convert_to_cz(
         >>> qc = QuantumCircuit(2)
         >>> qc.cx(0, 1)
         >>> print(qc)
-        <BLANKLINE>                            
+        <BLANKLINE>
         qb_69: ──■──
                ┌─┴─┐
         qb_70: ┤ X ├
@@ -120,9 +120,7 @@ def convert_to_cz(
                     qc_new.cz(instr.qubits[0], instr.qubits[1])
                     qc_new.h(instr.qubits[1])
                 elif strict:
-                    raise ValueError(
-                        f"Don't know how to convert two-qubit gate {op.name!r} to CZ"
-                    )
+                    raise ValueError(f"Don't know how to convert two-qubit gate {op.name!r} to CZ")
                 else:
                     qc_new.append(instr)
             else:

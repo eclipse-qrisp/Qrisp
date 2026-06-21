@@ -151,8 +151,8 @@ def analyze_call_graph(jaxpr):
     Returns
     -------
     JaxprStats
-        The analysis results for the root jaxpr. 
-        
+        The analysis results for the root jaxpr.
+
     dict[int, JaxprStats]
         A dictionary mapping ``id(sub_jaxpr)`` to ``JaxprStats`` for every unique
         sub-jaxpr encountered in the call graph (including the root).

@@ -161,23 +161,17 @@ class QAOABenchmark:
         """
 
         if isinstance(cost_metric, str):
-
             if cost_metric == "oqv":
                 cost_metric = overall_quantum_volume
             else:
                 raise Exception(f"Cost metric {cost_metric} is unknown")
 
         if isinstance(gain_metric, str):
-
             if gain_metric == "approx_ratio":
-                gain_metric = lambda x: approximation_ratio(
-                    x["counts"], self.optimal_solution, self.cost_function
-                )
+                gain_metric = lambda x: approximation_ratio(x["counts"], self.optimal_solution, self.cost_function)
 
             elif gain_metric == "tts":
-                gain_metric = lambda x: time_to_solution(
-                    x["counts"], self.optimal_solution, self.cost_function
-                )
+                gain_metric = lambda x: time_to_solution(x["counts"], self.optimal_solution, self.cost_function)
             else:
                 raise Exception(f"Gain metric {gain_metric} is unknown")
 
@@ -185,7 +179,6 @@ class QAOABenchmark:
         gain_data = []
 
         for i in range(len(self.layer_depth)):
-
             run_data = {
                 "layer_depth": self.layer_depth[i],
                 "circuit_depth": self.circuit_depth[i],
@@ -260,7 +253,6 @@ class QAOABenchmark:
             cost_name = cost_metric.__name__
 
         if isinstance(gain_metric, str):
-
             if gain_metric == "approx_ratio":
                 gain_name = "Approximation ratio"
             elif gain_metric == "tts":
@@ -325,20 +317,15 @@ class QAOABenchmark:
         """
 
         if isinstance(metric, str):
-
             if metric == "approx_ratio":
 
                 def approx_ratio(x):
-                    return approximation_ratio(
-                        x["counts"], self.optimal_solution, self.cost_function
-                    )
+                    return approximation_ratio(x["counts"], self.optimal_solution, self.cost_function)
 
                 metric = approx_ratio
 
             elif metric == "time_to_sol":
-                metric = lambda x: time_to_solution(
-                    x["counts"], self.optimal_solution, self.cost_function
-                )
+                metric = lambda x: time_to_solution(x["counts"], self.optimal_solution, self.cost_function)
 
         run_data_list = []
 
@@ -347,7 +334,6 @@ class QAOABenchmark:
             average_dict = {}
 
         for i in range(len(self.layer_depth)):
-
             run_data = {
                 "layer_depth": self.layer_depth[i],
                 "circuit_depth": self.circuit_depth[i],
@@ -391,9 +377,7 @@ class QAOABenchmark:
                 if not key in average_dict:
                     continue
 
-                run_data["metric"] = (
-                    average_dict[key]["total_metric"] / average_dict[key]["count"]
-                )
+                run_data["metric"] = average_dict[key]["total_metric"] / average_dict[key]["count"]
                 del run_data["counts"]
                 del run_data["runtime"]
                 run_data_list.append(run_data)
@@ -432,12 +416,9 @@ class QAOABenchmark:
 
         # Print the header row
         print("{:<5} {:<12} {:<12} {:<4} {:<10} {:<9} {:<7} {:<10}".format(*header))
-        print(
-            "============================================================================"
-        )
+        print("============================================================================")
 
         for i, run_data in enumerate(run_data_list):
-
             oqv = sci_notation(overall_quantum_volume(run_data), 4)
             metric_value = sci_notation(run_data["metric"], 3)
 
@@ -547,12 +528,7 @@ class QAOABenchmark:
 
 
 def overall_quantum_volume(run_data):
-    return (
-        run_data["circuit_depth"]
-        * run_data["qubit_amount"]
-        * run_data["shots"]
-        * run_data["iterations"]
-    )
+    return run_data["circuit_depth"] * run_data["qubit_amount"] * run_data["shots"] * run_data["iterations"]
 
 
 def max_five_metric(metric_dict):
@@ -586,9 +562,7 @@ def time_to_solution(counts, optimal_solution, cost_function):
     obj_function = lambda x: cost_function({x: 1})
     optimal_solution_cost = obj_function(optimal_solution)
 
-    return 1 / sum(
-        [v for k, v in counts.items() if obj_function(k) == optimal_solution_cost]
-    )
+    return 1 / sum([v for k, v in counts.items() if obj_function(k) == optimal_solution_cost])
 
 
 def approximation_ratio(counts, optimal_solution, cost_function):

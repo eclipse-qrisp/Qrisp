@@ -69,12 +69,7 @@ class TestNumQubitsSimple:
             h(qf3[0])
             h(qf4[0])
 
-        expected_entry = (
-            num_qubits_input
-            + (num_qubits_input + 1)
-            + (num_qubits_input + 2)
-            + (num_qubits_input + 3)
-        )
+        expected_entry = num_qubits_input + (num_qubits_input + 1) + (num_qubits_input + 2) + (num_qubits_input + 3)
         expected_dic = {
             "total_allocated": expected_entry,
             "total_deallocated": 0,
@@ -212,9 +207,7 @@ class TestNumQubitsControlFlow:
                 qv3 = QuantumFloat(num_qubits_input3)
                 h(qv3[0])
 
-        expected_alloc = (
-            num_qubits_input2 if meas_behavior == always_zero else num_qubits_input3
-        )
+        expected_alloc = num_qubits_input2 if meas_behavior == always_zero else num_qubits_input3
         peak_alloc = num_qubits_input + expected_alloc
         expected_dic = {
             "total_allocated": peak_alloc,
@@ -400,9 +393,7 @@ class TestNumQubitsExceptions:
             qf = QuantumFloat(1)
             return measure(qf[0])
 
-        with pytest.raises(
-            ValueError, match="Measurement behavior must return a boolean, got 42"
-        ):
+        with pytest.raises(ValueError, match="Measurement behavior must return a boolean, got 42"):
             main()
 
     def test_num_qubits_overflow1(self):
@@ -417,9 +408,7 @@ class TestNumQubitsExceptions:
             qv3 = QuantumFloat(1)  # This allocation should trigger the overflow
             h(qv3[0])
 
-        with pytest.raises(
-            ValueError, match="The ``num_qubits`` metric computation overflowed"
-        ):
+        with pytest.raises(ValueError, match="The ``num_qubits`` metric computation overflowed"):
             main()
 
     def test_num_qubits_overflow2(self):
@@ -433,9 +422,7 @@ class TestNumQubitsExceptions:
             h(qv2[0])
             qv2.delete()  # This should prevent the overflow since it frees up one allocation
 
-        with pytest.raises(
-            ValueError, match="The ``num_qubits`` metric computation overflowed"
-        ):
+        with pytest.raises(ValueError, match="The ``num_qubits`` metric computation overflowed"):
             main()
 
 
@@ -474,21 +461,15 @@ def test_callback_threshold_num_qubits():
 
     # callback_threshold=0: wrap every reused sub-jaxpr
     result_0 = num_qubits(meas_behavior="0", callback_threshold=0)(make_circuit)()
-    assert result_0 == baseline, (
-        f"callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
-    )
+    assert result_0 == baseline, f"callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
 
     # callback_threshold=500: middle ground
     result_500 = num_qubits(meas_behavior="0", callback_threshold=500)(make_circuit)()
-    assert result_500 == baseline, (
-        f"callback_threshold=500 diverged:\n  baseline={baseline}\n  got={result_500}"
-    )
+    assert result_500 == baseline, f"callback_threshold=500 diverged:\n  baseline={baseline}\n  got={result_500}"
 
     # Very large threshold
     result_large = num_qubits(meas_behavior="0", callback_threshold=10**9)(make_circuit)()
-    assert result_large == baseline, (
-        f"callback_threshold=10**9 diverged:\n  baseline={baseline}\n  got={result_large}"
-    )
+    assert result_large == baseline, f"callback_threshold=10**9 diverged:\n  baseline={baseline}\n  got={result_large}"
 
     # Also test with meas_behavior="1"
     baseline_1 = num_qubits(meas_behavior="1")(make_circuit)()
@@ -542,21 +523,18 @@ def test_callback_threshold_num_qubits_nested():
     baseline = num_qubits(meas_behavior="0")(make_circuit)()
     result_0 = num_qubits(meas_behavior="0", callback_threshold=0)(make_circuit)()
     assert result_0 == baseline, (
-        f"Nested qache num_qubits callback_threshold=0 diverged:\n"
-        f"  baseline={baseline}\n  got={result_0}"
+        f"Nested qache num_qubits callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
     )
 
     result_500 = num_qubits(meas_behavior="0", callback_threshold=500)(make_circuit)()
     assert result_500 == baseline, (
-        f"Nested qache num_qubits callback_threshold=500 diverged:\n"
-        f"  baseline={baseline}\n  got={result_500}"
+        f"Nested qache num_qubits callback_threshold=500 diverged:\n  baseline={baseline}\n  got={result_500}"
     )
 
     # threshold=1 edge case
     result_1 = num_qubits(meas_behavior="0", callback_threshold=1)(make_circuit)()
     assert result_1 == baseline, (
-        f"Nested qache num_qubits callback_threshold=1 diverged:\n"
-        f"  baseline={baseline}\n  got={result_1}"
+        f"Nested qache num_qubits callback_threshold=1 diverged:\n  baseline={baseline}\n  got={result_1}"
     )
 
     for key in ("total_allocated", "total_deallocated", "peak_allocations", "finally_allocated"):
@@ -592,14 +570,12 @@ def test_callback_threshold_num_qubits_jrange():
     baseline = num_qubits(meas_behavior="0")(make_circuit)()
     result_0 = num_qubits(meas_behavior="0", callback_threshold=0)(make_circuit)()
     assert result_0 == baseline, (
-        f"jrange num_qubits callback_threshold=0 diverged:\n"
-        f"  baseline={baseline}\n  got={result_0}"
+        f"jrange num_qubits callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
     )
 
     result_500 = num_qubits(meas_behavior="0", callback_threshold=500)(make_circuit)()
     assert result_500 == baseline, (
-        f"jrange num_qubits callback_threshold=500 diverged:\n"
-        f"  baseline={baseline}\n  got={result_500}"
+        f"jrange num_qubits callback_threshold=500 diverged:\n  baseline={baseline}\n  got={result_500}"
     )
 
     for key in ("total_allocated", "total_deallocated", "peak_allocations", "finally_allocated"):

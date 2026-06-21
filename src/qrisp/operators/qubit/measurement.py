@@ -95,17 +95,13 @@ def get_measurement(
     elif isinstance(qarg, QuantumArray):
         for qv in qarg.flatten():
             if qv.is_deleted():
-                raise Exception(
-                    "Tried to measure QuantumArray containing deleted QuantumVariables"
-                )
+                raise Exception("Tried to measure QuantumArray containing deleted QuantumVariables")
         qs = qarg.qs
     elif isinstance(qarg, list):
         qs = QuantumSession()
         for arg in qarg:
             if isinstance(arg, QuantumVariable) and qv.is_deleted():
-                raise Exception(
-                    "Tried to measure QuantumArray containing deleted QuantumVariables"
-                )
+                raise Exception("Tried to measure QuantumArray containing deleted QuantumVariables")
             merge(qs, arg)
 
     if backend is None:
@@ -146,15 +142,12 @@ def get_measurement(
     qc = qc.transpile()
 
     if measurement_data is None:
-        measurement_data = QubitOperatorMeasurement(
-            hamiltonian, diagonalisation_method=diagonalisation_method
-        )
+        measurement_data = QubitOperatorMeasurement(hamiltonian, diagonalisation_method=diagonalisation_method)
 
     return measurement_data.get_measurement(qc, qubit_list, precision, backend)
 
 
 class QubitOperatorMeasurement:
-
     def __init__(self, hamiltonian, diagonalisation_method="commuting_qw"):
 
         n = hamiltonian.find_minimal_qubit_amount()
@@ -165,11 +158,7 @@ class QubitOperatorMeasurement:
             # In order for the change of basis function (below) to work properly,
             # the ladder terms either need to completely agree or completely disagree
             for group in temp_groups:
-                self.groups.extend(
-                    group.group_up(
-                        lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)
-                    )
-                )
+                self.groups.extend(group.group_up(lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)))
 
         elif diagonalisation_method == "commuting":
             temp_groups = hamiltonian.group_up(lambda a, b: a.commute_pauli(b))
@@ -177,23 +166,16 @@ class QubitOperatorMeasurement:
             # In order for the change of basis function (below) to work properly,
             # the ladder terms either need to completely agree or completely disagree
             for group in temp_groups:
-                self.groups.extend(
-                    group.group_up(
-                        lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)
-                    )
-                )
+                self.groups.extend(group.group_up(lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)))
 
         else:
-            raise Exception(
-                f"Unknown diagonalisation method: {diagonalisation_method}."
-            )
+            raise Exception(f"Unknown diagonalisation method: {diagonalisation_method}.")
 
         self.stds = []
         self.change_of_basis_gates = []
         self.measurement_operators = []
 
         for group in self.groups:
-
             qv = QuantumVariable(n)
 
             meas_op = group.change_of_basis(qv, diagonalisation_method)
@@ -226,18 +208,14 @@ class QubitOperatorMeasurement:
             curr = qc.copy()
             curr.append(gate, qubits)
 
-            results.append(
-                get_measurement_from_qc(curr, list(qubit_list), backend, shots)
-            )
+            results.append(get_measurement_from_qc(curr, list(qubit_list), backend, shots))
             meas_ops.append([term.serialize() for term in group.terms_dict])
             meas_coeffs.append(list(group.terms_dict.values()))
 
         if isinstance(backend, BatchedBackend):
             backend.dispatch()
 
-        samples = create_padded_array([list(res.keys()) for res in results]).astype(
-            np.int64
-        )
+        samples = create_padded_array([list(res.keys()) for res in results]).astype(np.int64)
         probs = create_padded_array([list(res.values()) for res in results])
         meas_ops = create_padded_array(meas_ops, use_tuples=True).astype(np.int64)
         meas_coeffs = create_padded_array(meas_coeffs)
@@ -262,9 +240,7 @@ def create_padded_array(list_of_lists, use_tuples=False):
     if not use_tuples:
         padded_lists = [lst + [0] * (max_length - len(lst)) for lst in list_of_lists]
     else:
-        padded_lists = [
-            lst + [(0, 0, 0, 0)] * (max_length - len(lst)) for lst in list_of_lists
-        ]
+        padded_lists = [lst + [(0, 0, 0, 0)] * (max_length - len(lst)) for lst in list_of_lists]
 
     # Convert to numpy array
     return np.array(padded_lists)
@@ -291,11 +267,7 @@ def evaluate_expectation(samples, probs, operators, coefficients):
         for index2, op in enumerate(ops):
             for i in range(len(samples[index1])):
                 outcome, probability = samples[index1, i], probs[index1, i]
-                expectation += (
-                    probability
-                    * evaluate_observable(op, outcome)
-                    * np.real(coefficients[index1][index2])
-                )
+                expectation += probability * evaluate_observable(op, outcome) * np.real(coefficients[index1][index2])
 
     return expectation
 
@@ -355,9 +327,7 @@ def evaluate_expectation_jitted(samples, probs, operators, coefficients):
             for i in range(len(samples[index1])):
                 outcome, probability = samples[index1, i], probs[index1, i]
                 expectation += (
-                    probability
-                    * evaluate_observable_jitted(op, outcome)
-                    * np.real(coefficients[index1][index2])
+                    probability * evaluate_observable_jitted(op, outcome) * np.real(coefficients[index1][index2])
                 )
 
     return expectation

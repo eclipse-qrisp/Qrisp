@@ -88,7 +88,6 @@ def collect_environments(closed_jaxpr):
         eqn = eqn_list[j]
 
         if eqn.primitive.name == "jit":
-
             new_params = dict(eqn.params)
 
             collected_jaspr = collect_environments(eqn.params["jaxpr"])
@@ -106,7 +105,6 @@ def collect_environments(closed_jaxpr):
             )
 
         if eqn.primitive.name == "cond":
-
             new_params = dict(eqn.params)
 
             branch_list = []
@@ -128,7 +126,6 @@ def collect_environments(closed_jaxpr):
             )
 
         if eqn.primitive.name == "while":
-
             new_params = dict(eqn.params)
 
             body_collected_jaspr = collect_environments(eqn.params["body_jaxpr"])
@@ -147,14 +144,10 @@ def collect_environments(closed_jaxpr):
 
         # If an exit primitive is found, start the collecting mechanism.
         if eqn.primitive.name == "jasp.q_env" and "exit" in eqn.params.values():
-
             # Find the position of the enter primitive.
             for i in range(len(new_eqn_list))[::-1]:
                 enter_eq = new_eqn_list[i]
-                if (
-                    enter_eq.primitive.name == "jasp.q_env"
-                    and "enter" in enter_eq.params.values()
-                ):
+                if enter_eq.primitive.name == "jasp.q_env" and "enter" in enter_eq.params.values():
                     break
             else:
                 raise
@@ -180,11 +173,7 @@ def collect_environments(closed_jaxpr):
             outvars = find_outvars(
                 environment_body_eqn_list,
                 remaining_script_var_tracker,
-                [
-                    var
-                    for var in closed_jaxpr.jaxpr.outvars
-                    if not isinstance(var, Literal)
-                ],
+                [var for var in closed_jaxpr.jaxpr.outvars if not isinstance(var, Literal)],
             )
 
             # Filter the AbstractQuantumState (we add it manually to make sure
@@ -444,17 +433,13 @@ class VarTracker:
         # Slice the invar list
         res.eqn_invar_list = self.eqn_invar_list[invar_starting_point:]
         # Slice the index tracker and ensure it starts from 0
-        res.invar_eqn_index_tracker = [
-            i - invar_starting_point
-            for i in self.invar_eqn_index_tracker[starting_point:]
-        ]
+        res.invar_eqn_index_tracker = [i - invar_starting_point for i in self.invar_eqn_index_tracker[starting_point:]]
 
         # Same for the outvars
         outvar_starting_point = self.outvar_eqn_index_tracker[starting_point]
         res.eqn_outvar_list = self.eqn_outvar_list[outvar_starting_point:]
         res.outvar_eqn_index_tracker = [
-            i - outvar_starting_point
-            for i in self.outvar_eqn_index_tracker[starting_point:]
+            i - outvar_starting_point for i in self.outvar_eqn_index_tracker[starting_point:]
         ]
 
         res.int_to_var_dic = self.int_to_var_dic
@@ -501,9 +486,7 @@ class VarTracker:
 
         # If viable, call the jitted version.
         if len(self.eqn_invar_list) < 20 or len(self.eqn_outvar_list) < 20:
-            invar_index_list = find_invar_kernel(
-                [-1] + self.eqn_invar_list, [-1] + self.eqn_outvar_list
-            )
+            invar_index_list = find_invar_kernel([-1] + self.eqn_invar_list, [-1] + self.eqn_outvar_list)
         else:
             invar_index_list = jitted_find_invar_kernel(
                 np.array([-1] + self.eqn_invar_list, dtype=np.int32),
@@ -522,9 +505,7 @@ class VarTracker:
 
         # We therefore create a dictionary that indicates the index of the first
         # usage as an invar and sort according to this dictionary.
-        sorting_dic = {
-            self.eqn_invar_list[i]: i for i in range(len(self.eqn_invar_list))[::-1]
-        }
+        sorting_dic = {self.eqn_invar_list[i]: i for i in range(len(self.eqn_invar_list))[::-1]}
 
         res.sort(key=lambda x: sorting_dic[self.var_to_int_dic[x]])
 

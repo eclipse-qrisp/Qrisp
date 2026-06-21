@@ -96,9 +96,7 @@ def permute_axes(index, permutation):
             # new_index = new_index |
             # (((index&(1<<permutation[i]))>>permutation[i])<<(i))
             for j in prange(len(new_index)):
-                new_index[j] = new_index[j] | (
-                    ((index[j] & (1 << permutation[i])) >> permutation[i]) << (i)
-                )
+                new_index[j] = new_index[j] | (((index[j] & (1 << permutation[i])) >> permutation[i]) << (i))
 
     return new_index
 
@@ -198,13 +196,7 @@ def jitted_permuter(index, new_index, bit_partition, permuted_bit_partition, per
             # insert_bit_range(new_index, bit_range, permuted_bit_partition[perm[i]])
             # Inlined version more efficient:
             new_index[j] |= (
-                (
-                    index[j]
-                    & (
-                        ((1 << (bit_partition[i + 1] - bit_partition[i])) - 1)
-                        << bit_partition[i]
-                    )
-                )
+                (index[j] & (((1 << (bit_partition[i + 1] - bit_partition[i])) - 1) << bit_partition[i]))
                 >> bit_partition[i]
             ) << permuted_bit_partition[perm[i]]
 
@@ -216,25 +208,13 @@ def permuter(index, new_index, bit_partition, permuted_bit_partition, perm):
         # Inlined version more efficient:
         if isinstance(new_index, np.ndarray):
             new_index |= (
-                (
-                    index
-                    & (
-                        (int(1 << (bit_partition[i + 1] - bit_partition[i])) - 1)
-                        << bit_partition[i]
-                    )
-                )
+                (index & ((int(1 << (bit_partition[i + 1] - bit_partition[i])) - 1) << bit_partition[i]))
                 >> bit_partition[i]
             ) << permuted_bit_partition[perm[i]]
         else:
             for j in range(len(index)):
                 new_index[j] |= (
-                    (
-                        index[j]
-                        & (
-                            (int(1 << (bit_partition[i + 1] - bit_partition[i])) - 1)
-                            << int(bit_partition[i])
-                        )
-                    )
+                    (index[j] & ((int(1 << (bit_partition[i + 1] - bit_partition[i])) - 1) << int(bit_partition[i])))
                     >> int(bit_partition[i])
                 ) << int(permuted_bit_partition[perm[i]])
 
@@ -286,9 +266,7 @@ def permute_axes(index, index_bit_permutation, jit=True):
     bit_partition = [sum(perm_shape[:i]) for i in range(len(perm_shape) + 1)]
 
     perm_shape_permuted = [perm_shape[i] for i in invert_perm(perm)]
-    permuted_bit_partition = [
-        sum(perm_shape_permuted[:i]) for i in range(len(perm_shape) + 1)
-    ]
+    permuted_bit_partition = [sum(perm_shape_permuted[:i]) for i in range(len(perm_shape) + 1)]
 
     if len(perm) * len(index) > 2**10 and jit:
         jitted_permuter(
@@ -299,7 +277,6 @@ def permute_axes(index, index_bit_permutation, jit=True):
             np.array(perm),
         )
     else:
-
         permuter(
             index,
             new_index,
@@ -384,9 +361,7 @@ def dense_measurement_smart(input_array, mes_amount, outcome_index, float_thresh
     p_list = []
     outcome_index_list = []
 
-    a, b, c = dense_measurement_smart(
-        input_array[: N // 2], mes_amount - 1, outcome_index, float_thresh
-    )
+    a, b, c = dense_measurement_smart(input_array[: N // 2], mes_amount - 1, outcome_index, float_thresh)
 
     if c[0] != -1:
         new_arrays.extend(a)
@@ -426,9 +401,7 @@ def sort_indices_jitted(row, col, data, shape_1):
     return new_row, new_col, new_data
 
 
-def coo_sparse_matrix_mult_inner(
-    A_row, A_col, A_data, B_row, B_col, B_data, A_shape, B_shape, cutoff_ratio
-):
+def coo_sparse_matrix_mult_inner(A_row, A_col, A_data, B_row, B_col, B_data, A_shape, B_shape, cutoff_ratio):
     """
     This function describes a novel sparse matrix multiplication algorithm operating
     on the COO format. The scipy and MKL implementation of sparse matrix multiplication
@@ -542,14 +515,11 @@ def coo_sparse_matrix_mult_inner(
 @njit(parallel=True, cache=True)
 def coo_mult_kernel(A_col, A_data, B_row, B_data, unique_marker_a, unique_marker_b):
 
-    res = np.zeros(
-        (len(unique_marker_a) - 1, len(unique_marker_b) - 1), dtype=A_data.dtype
-    )
+    res = np.zeros((len(unique_marker_a) - 1, len(unique_marker_b) - 1), dtype=A_data.dtype)
 
     for i in prange(len(unique_marker_a) - 1):
         comparison_block_a = A_col[unique_marker_a[i] : unique_marker_a[i + 1]]
         for j in range(len(unique_marker_b) - 1):
-
             if comparison_block_a[0] > B_row[unique_marker_b[j + 1] - 1]:
                 continue
 
@@ -558,9 +528,7 @@ def coo_mult_kernel(A_col, A_data, B_row, B_data, unique_marker_a, unique_marker
 
             comparison_block_b = B_row[unique_marker_b[j] : unique_marker_b[j + 1]]
 
-            agreeing_ind_a, agreeing_ind_b = find_agreements(
-                comparison_block_a, comparison_block_b
-            )
+            agreeing_ind_a, agreeing_ind_b = find_agreements(comparison_block_a, comparison_block_b)
 
             res[i, j] = np.dot(
                 A_data[unique_marker_a[i] + agreeing_ind_a],
@@ -600,7 +568,6 @@ def coo_sparse_matrix_mult(A, B):
         )
 
     else:
-
         new_col, new_row, new_data = coo_sparse_matrix_mult_inner(
             B.col,
             B.row,
@@ -628,7 +595,6 @@ def coo_sparse_matrix_mult(A, B):
 def sparse_matrix_mult(A, B):
 
     if A.shape[0] * A.shape[1] < B.shape[0] * B.shape[1]:
-
         log_shape_0_a = np.log2(A.shape[0])
         log_shape_1_b = np.log2(B.shape[1])
 

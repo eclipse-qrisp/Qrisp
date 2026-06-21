@@ -179,9 +179,7 @@ def permute_detectors(circuit: stim.Circuit, permutation) -> stim.Circuit:
     if len(perm_list) != n_detectors:
         # Check if the user perhaps provided a permutation for a subset?
         # The spec says "numbers 0...N". Assuming N is total count.
-        raise ValueError(
-            f"Circuit contains {n_detectors} detectors, but permutation has length {len(perm_list)}."
-        )
+        raise ValueError(f"Circuit contains {n_detectors} detectors, but permutation has length {len(perm_list)}.")
 
     if sorted(perm_list) != list(range(n_detectors)):
         raise ValueError("Permutation must contain numbers 0 to N-1 exactly once.")

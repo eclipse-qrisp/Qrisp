@@ -50,9 +50,7 @@ def append_impl(*args, **kwargs):
     qubit_args = args[: gate.num_qubits]
     parameter_args = args[gate.num_qubits :]
 
-    temp_op = gate.bind_parameters(
-        {greek_letters[i]: float(parameter_args[i]) for i in range(len(parameter_args))}
-    )
+    temp_op = gate.bind_parameters({greek_letters[i]: float(parameter_args[i]) for i in range(len(parameter_args))})
     qc.append(temp_op, list(qubit_args))
     return qc
 
@@ -83,8 +81,7 @@ def abstract_eval(*args, **kwargs):
 
     if not all(
         [
-            isinstance(param, jnp.number)
-            or (isinstance(param, jax.core.ShapedArray) and len(param.shape) == 0)
+            isinstance(param, jnp.number) or (isinstance(param, jax.core.ShapedArray) and len(param.shape) == 0)
             for param in parameter_args
         ]
     ):

@@ -57,14 +57,10 @@ class BackendLike(Protocol):
         ...
 
     @overload
-    def run(
-        self, circuits: QuantumCircuit, shots: int | None = None
-    ) -> MeasurementResult: ...
+    def run(self, circuits: QuantumCircuit, shots: int | None = None) -> MeasurementResult: ...
 
     @overload
-    def run(
-        self, circuits: Sequence[QuantumCircuit], shots: int | None = None
-    ) -> list[MeasurementResult]: ...
+    def run(self, circuits: Sequence[QuantumCircuit], shots: int | None = None) -> list[MeasurementResult]: ...
 
     def run(
         self,
@@ -194,9 +190,7 @@ class Backend(ABC):
         other configuration).
     """
 
-    def __init__(
-        self, name: str | None = None, options: Mapping | None = None, **kwargs
-    ):
+    def __init__(self, name: str | None = None, options: Mapping | None = None, **kwargs):
         """Initialise the backend."""
         self.name = name or self.__class__.__name__
 
@@ -204,10 +198,7 @@ class Backend(ABC):
             options = self._default_options()
 
         if not isinstance(options, Mapping):
-            raise TypeError(
-                f"'options' must be a dict-like Mapping, "
-                f"got {type(options).__name__}"
-            )
+            raise TypeError(f"'options' must be a dict-like Mapping, got {type(options).__name__}")
 
         # Shallow-copy and convert to dict so that:
         # (a) external mutations of the original mapping do not affect the
@@ -279,14 +270,10 @@ class Backend(ABC):
     # ------------------------------------------------------------------
 
     @overload
-    def run(
-        self, circuits: QuantumCircuit, shots: int | None = None
-    ) -> MeasurementResult: ...
+    def run(self, circuits: QuantumCircuit, shots: int | None = None) -> MeasurementResult: ...
 
     @overload
-    def run(
-        self, circuits: Sequence[QuantumCircuit], shots: int | None = None
-    ) -> list[MeasurementResult]: ...
+    def run(self, circuits: Sequence[QuantumCircuit], shots: int | None = None) -> list[MeasurementResult]: ...
 
     def run(
         self,
@@ -393,8 +380,7 @@ class Backend(ABC):
             If no job with the given *job_id* can be found on the backend.
         """
         raise NotImplementedError(
-            f"{self.__class__.__name__} does not support job recovery. "
-            "Override retrieve_job() to enable this feature."
+            f"{self.__class__.__name__} does not support job recovery. Override retrieve_job() to enable this feature."
         )
 
     def _check_circuit_limit(
@@ -465,9 +451,7 @@ class Backend(ABC):
         if shots is None:
             return
         if isinstance(shots, bool) or not isinstance(shots, int):
-            raise TypeError(
-                f"'shots' must be a positive integer, got {type(shots).__name__!r}"
-            )
+            raise TypeError(f"'shots' must be a positive integer, got {type(shots).__name__!r}")
         if shots <= 0:
             raise ValueError(f"'shots' must be a positive integer, got {shots!r}")
 
@@ -735,8 +719,4 @@ class Backend(ABC):
 
     def __repr__(self) -> str:
         """Return a concise string representation of the backend."""
-        return (
-            f"{self.__class__.__name__}("
-            f"name={self.name!r}, "
-            f"options={dict(self._options)!r})"
-        )
+        return f"{self.__class__.__name__}(name={self.name!r}, options={dict(self._options)!r})"

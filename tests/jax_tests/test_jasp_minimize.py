@@ -16,6 +16,7 @@
 ********************************************************************************
 """
 
+
 def test_jasp_minimize():
     from qrisp import QuantumFloat, ry
     from qrisp.jasp import expectation_value, minimize, jaspify
@@ -26,34 +27,32 @@ def test_jasp_minimize():
         qv = QuantumFloat(1)
         ry(theta[0], qv)
         return qv
-    
+
     def objective(theta, state_prep):
         return expectation_value(state_prep, shots=100)(theta)
-    
 
     @jaspify(terminal_sampling=True)
     def main():
 
         x0 = jnp.array([1.0])
 
-        return minimize(objective,x0,args=(state_prep,),method='SPSA')
+        return minimize(objective, x0, args=(state_prep,), method="SPSA")
 
     results = main()
     print(results.x)
     print(results.fun)
-    assert np.round(results.x,1)==0
-    assert np.round(results.fun,1)==0
+    assert np.round(results.x, 1) == 0
+    assert np.round(results.fun, 1) == 0
 
-    
     @jaspify(terminal_sampling=True)
     def main():
 
         x0 = jnp.array([1.0])
 
-        return minimize(objective,x0,args=(state_prep,),method='COBYLA')
+        return minimize(objective, x0, args=(state_prep,), method="COBYLA")
 
     results = main()
     print(results.x)
     print(results.fun)
-    assert np.round(results.x,1)<0.5
-    assert np.round(results.fun,1)==0
+    assert np.round(results.x, 1) < 0.5
+    assert np.round(results.fun, 1) == 0

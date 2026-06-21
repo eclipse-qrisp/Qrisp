@@ -95,7 +95,6 @@ class TestQrispSimulatorJobInterface:
         job.cancel()
         assert job.status() == JobStatus.DONE
 
-
     def test_failure_raises_job_failure_error(self):
         """result() must raise JobFailureError (not a raw simulator exception) on failure."""
         backend = QrispSimulatorBackend()
@@ -275,9 +274,11 @@ class TestQrispSimulatorBackendBatched:
         bb.dispatch()
         assert counting.run_async_call_count == 1
 
+
 # ---------------------------------------------------------------------------
 # Tests for PassManager (pm) integration
 # ---------------------------------------------------------------------------
+
 
 def _prepend_x_on_first_qubit(qc):
     """Insert an X gate at the beginning of the circuit, before any measurements."""

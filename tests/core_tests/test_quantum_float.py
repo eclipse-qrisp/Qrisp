@@ -107,9 +107,7 @@ def test_roundtrip_consistency_property(signed):
         (2, -4, False, 3),
     ],
 )
-def test_encoder_rejects_out_of_bounds_values(
-    msize, exponent, signed, out_of_bounds_value
-):
+def test_encoder_rejects_out_of_bounds_values(msize, exponent, signed, out_of_bounds_value):
     """Test that encoder rejects values outside representable range."""
     qf = QuantumFloat(msize, exponent=exponent, signed=signed)
 

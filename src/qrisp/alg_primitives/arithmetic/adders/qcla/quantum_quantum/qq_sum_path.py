@@ -31,7 +31,6 @@ def qq_sum_path(a, b, c, R):
         i = 0
         # Execute addition using the corresponding carry values
         for i in range(len(c) + 1):
-
             # Determine the radix qubits to perform the addition on
             a_block = a[R * i : R * (i + 1)]
             b_block = b[R * i : R * (i + 1)]
@@ -55,7 +54,6 @@ def qq_sum_path(a, b, c, R):
 
                 gidney_adder(a_block, b_block)
             else:
-
                 # cuccaro_procedure(a.qs, a_block, b_block, carry_in = c[i-1])
                 gidney_adder(a_block, b_block, c[i - 1])
 
@@ -70,7 +68,6 @@ def qq_sum_path(a, b, c, R):
         # qubits of b (incase the carry is True)
         # We start at the index the last loop finished at
         for j in range(i + 1, len(b) // R + 1)[::-1]:
-
             b_block = b[R * j : R * (j + 1)]
 
             if not len(b_block):
@@ -121,10 +118,8 @@ def qq_sum_path_direct_uncomputation(a, b, c, R):
     # qubits of b (incase the carry is True)
     # #We start at the index the last loop finished at
     if len(a) != len(b):
-
         # Perform the loop in reverse
         for j in range(int(np.ceil(len(a) / R)), len(b) // R + 2)[::-1]:
-
             b_block = b[R * j : R * (j + 1)]
 
             if not len(b_block):
@@ -163,7 +158,6 @@ def qq_sum_path_direct_uncomputation(a, b, c, R):
 
         # Perform Gidney addition
         if i == 0:
-
             # Use the c_out keyword of the Gidney-Adder to uncompute the carry of
             # the previous iteration
             if len(c):

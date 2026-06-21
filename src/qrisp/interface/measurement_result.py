@@ -214,9 +214,7 @@ class MeasurementResult(LazyDict):
         """
         if self._error is not None:
             raise self._error
-        raise RuntimeError(
-            "MeasurementResult not yet populated. Call dispatch() first."
-        )
+        raise RuntimeError("MeasurementResult not yet populated. Call dispatch() first.")
 
     def _inject(self, counts: dict) -> None:
         """Populate with raw backend results.
@@ -374,9 +372,7 @@ class MultiMeasurementResult(LazyDict):
         :func:`~qrisp.multi_measurement`.
     """
 
-    def __init__(
-        self, raw: MeasurementResult, qv_list: list, cl_reg_list: list
-    ) -> None:
+    def __init__(self, raw: MeasurementResult, qv_list: list, cl_reg_list: list) -> None:
         super().__init__()
         self._raw = raw
         self._qv_list = qv_list
@@ -431,8 +427,7 @@ class MultiMeasurementResult(LazyDict):
                 new_counts[outcome] = count / total
             except TypeError as exc:
                 raise TypeError(
-                    "Tried to create measurement outcome dic for QuantumVariable "
-                    "with unhashable labels"
+                    "Tried to create measurement outcome dic for QuantumVariable with unhashable labels"
                 ) from exc
 
         # Sort descending by probability, matching the convention used by

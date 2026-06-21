@@ -49,9 +49,9 @@ def visualize(qc: QuantumCircuit) -> QuantumCircuit:
     >>> pm += decompose(1)
     >>> pm += visualize
     >>> pm.run(qc)
-    <BLANKLINE>                    
+    <BLANKLINE>
     qb_82: ──■──
-             │  
+             │
     qb_83: ──■──
            ┌─┴─┐
     qb_84: ┤ X ├
@@ -63,7 +63,7 @@ def visualize(qc: QuantumCircuit) -> QuantumCircuit:
            │                │
     qb_84: ┤2               ├
            └────────────────┘
-           ┌─────┐                                                 
+           ┌─────┐
     qb_82: ┤ Tdg ├───────■─────────■────■───────────────────────■──
            ├─────┤┌───┐  │  ┌───┐┌─┴─┐  │  ┌─────┐┌───┐ ┌───┐ ┌─┴─┐
     qb_83: ┤ Tdg ├┤ X ├──┼──┤ T ├┤ X ├──┼──┤ Tdg ├┤ X ├─┤ T ├─┤ X ├

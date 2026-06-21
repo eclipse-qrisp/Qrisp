@@ -303,10 +303,7 @@ class InversionEnvironment(QuantumEnvironment):
         i = 0
         while i < len(self.env_qs.data):
             instr = self.env_qs.data[i]
-            if (
-                instr.op.name == "qb_alloc"
-                and not instr.qubits[0] in initially_allocated_qubits
-            ):
+            if instr.op.name == "qb_alloc" and not instr.qubits[0] in initially_allocated_qubits:
                 initially_allocated_qubits.append(self.env_qs.data.pop(i).qubits[0])
                 continue
             i += 1
@@ -317,10 +314,7 @@ class InversionEnvironment(QuantumEnvironment):
         self.env_qs.data.reverse()
         while i < len(self.env_qs.data):
             instr = self.env_qs.data[i]
-            if (
-                instr.op.name == "qb_dealloc"
-                and not instr.qubits[0] in deallocated_qubits
-            ):
+            if instr.op.name == "qb_dealloc" and not instr.qubits[0] in deallocated_qubits:
                 deallocated_qubits.append(self.env_qs.data.pop(i).qubits[0])
                 continue
             i += 1

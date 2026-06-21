@@ -67,9 +67,7 @@ def _iter_definition_ops(definition) -> Iterator[Tuple[Instruction, List[Any]]]:
     for instruction in definition.data:
         qubits = getattr(instruction, "qubits", None)
         if qubits is None:
-            raise TypeError(
-                f"Unsupported definition.data entry type {type(instruction)}: {instruction}"
-            )
+            raise TypeError(f"Unsupported definition.data entry type {type(instruction)}: {instruction}")
         yield instruction, list(qubits)
 
 
@@ -248,7 +246,6 @@ class DepthMetric(BaseMetric):
         qubit_map = dict(zip(concrete_qubits, qubits, strict=True))
 
         for _, inner_def_qubits in _iter_definition_ops(transpiled_definition):
-
             if not inner_def_qubits:
                 continue
 
@@ -273,7 +270,6 @@ class DepthMetric(BaseMetric):
         meas_number = context_dic.get("_depth_meas_number", jnp.int32(0))
 
         if isinstance(eqn.invars[0].aval, AbstractQubitArray):
-
             _, size = target
 
             def body_fun(i, acc):
@@ -283,7 +279,6 @@ class DepthMetric(BaseMetric):
             context_dic["_depth_meas_number"] = meas_number + size
 
         else:  # measuring a single qubit
-
             meas_res = self.meas_behavior(key(meas_number))
             self._validate_measurement_result(meas_res)
             context_dic["_depth_meas_number"] = meas_number + jnp.int32(1)
@@ -376,9 +371,7 @@ def extract_depth(res: Tuple, jaspr: Jaspr, _) -> int:
     _, depth, _, overflowed = metric
 
     if overflowed:
-        raise ValueError(
-            "The depth metric computation overflowed the maximum number of qubits supported."
-        )
+        raise ValueError("The depth metric computation overflowed the maximum number of qubits supported.")
 
     return int(depth)
 
@@ -433,9 +426,7 @@ def get_depth_profiler(
 
         initial_metric = depth_metric.initial_metric()
 
-        filtered_args = [
-            x for x in args + (initial_metric,) if type(x) not in STATIC_TYPES
-        ]
+        filtered_args = [x for x in args + (initial_metric,) if type(x) not in STATIC_TYPES]
         return jitted_evaluator(*filtered_args)
 
     return depth_profiler, None

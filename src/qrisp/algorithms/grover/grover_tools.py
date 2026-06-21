@@ -42,6 +42,7 @@ from qrisp.alg_primitives.reflection import reflection
 from qrisp.jasp import check_for_tracing_mode, jrange
 from qrisp.typing import FloatLike
 
+
 # Applies the grover diffuser onto the (sequence of) quantum variable input_object
 def diffuser(
     input_object: QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray],
@@ -118,11 +119,10 @@ def diffuser(
         def _state_function(*qargs):
             for arg in qargs:
                 h(arg)
+
         state_function = _state_function
 
-    reflection(
-        input_object, state_function, phase=phase, reflection_indices=reflection_indices
-    )
+    reflection(input_object, state_function, phase=phase, reflection_indices=reflection_indices)
 
 
 def tag_state(
@@ -167,7 +167,6 @@ def tag_state(
     qv_list = list(tag_specificator.keys())
 
     if check_for_tracing_mode():
-
         states = [qv.encoder(tag_specificator[qv]) for qv in qv_list]
 
         def conjugator(qv_list, temp_qf):
@@ -198,7 +197,6 @@ def tag_state(
         temp_qf.delete()
 
     else:
-
         states = [tag_specificator[qv] for qv in qv_list]
 
         if not len(states):
@@ -211,9 +209,7 @@ def tag_state(
             if binary_values:
                 bit_string += states[i][::-1]
             else:
-                bit_string += bin_rep(qv_list[i].encoder(states[i]), qv_list[i].size)[
-                    ::-1
-                ]
+                bit_string += bin_rep(qv_list[i].encoder(states[i]), qv_list[i].size)[::-1]
 
         qubit_list = sum([list(qv.reg) for qv in qv_list], [])
         state = bit_string
@@ -405,9 +401,7 @@ def grovers_alg(
         kwargs = {}
 
     if exact and winner_state_amount is None:
-        raise ValueError(
-            "Exact Grover's algorithm requires 'winner_state_amount' to be specified."
-        )
+        raise ValueError("Exact Grover's algorithm requires 'winner_state_amount' to be specified.")
     elif winner_state_amount is None:
         winner_state_amount = 1
 
@@ -434,10 +428,7 @@ def grovers_alg(
 
         iterations = jnp.int64(jnp.ceil(jnp.pi / (4 * theta) - 0.5))
 
-        phi = 2 * jnp.arcsin(
-            jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
-            * (N / winner_state_amount) ** 0.5
-        )
+        phi = 2 * jnp.arcsin(jnp.sin(jnp.pi / (4 * (iterations - 1) + 6)) * (N / winner_state_amount) ** 0.5)
 
     elif iterations is None:
         iterations = jnp.pi / 4 * jnp.sqrt(N / winner_state_amount)
@@ -445,12 +436,11 @@ def grovers_alg(
 
     if isinstance(args, Sequence):
         for qv in args:
-                h(qv)
+            h(qv)
     else:
         h(args)
 
     if check_for_tracing_mode():
-
         for _ in jrange(iterations):
             if exact:
                 oracle_function(args, phase=phi, **kwargs)
@@ -460,7 +450,6 @@ def grovers_alg(
                 diffuser(args)
 
     elif iterations > 0:
-
         merge(args)
         qs = recursive_qs_search(args)[0]
         # qv_amount = len(qs.qv_list)
@@ -473,7 +462,7 @@ def grovers_alg(
                 oracle_function(args, **kwargs)
                 diffuser(args)
 
-        # NOTE: We could check here whether the oracle introduced new QuantumVariables without uncomputing/deleting them, which would be a common mistake. 
+        # NOTE: We could check here whether the oracle introduced new QuantumVariables without uncomputing/deleting them, which would be a common mistake.
         # This check was deactivated, be cause it raises an unjustified error in some cases, e.g., when the oracle acts on a QuantumVariable that is not part of the input `args`. See #586.
         # if qv_amount != len(qs.qv_list):
         #    raise Exception(

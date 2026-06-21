@@ -231,10 +231,7 @@ class TestQuantumCircuitMethods:
         qc.x(0)
         qc.data.append(Instruction(XGate(), [qc.qubits[1]]))
         op = qc.to_op(name="filtered_op")
-        assert all(
-            instr.op.name not in {"qb_alloc", "qb_dealloc"}
-            for instr in op.definition.data
-        )
+        assert all(instr.op.name not in {"qb_alloc", "qb_dealloc"} for instr in op.definition.data)
 
     def test_to_op_definition_is_copy(self):
         """Mutating the source circuit after to_op does not change the definition."""
@@ -345,9 +342,7 @@ class TestQuantumCircuitMethods:
         ext = QuantumCircuit(2)
         ext.x(0)
         qc = QuantumCircuit(1)
-        with pytest.raises(
-            ValueError, match="Instruction Qubits .* not present in circuit"
-        ):
+        with pytest.raises(ValueError, match="Instruction Qubits .* not present in circuit"):
             qc.extend(ext, {ext.qubits[0]: ext.qubits[1]})
 
     def test_extend_raises_for_invalid_clbit_reference(self):
@@ -356,9 +351,7 @@ class TestQuantumCircuitMethods:
         ext = QuantumCircuit(1, 2)
         ext.measure(0, 0)
         qc = QuantumCircuit(1, 1)
-        with pytest.raises(
-            ValueError, match="Instruction Clbits not present in circuit"
-        ):
+        with pytest.raises(ValueError, match="Instruction Clbits not present in circuit"):
             qc.extend(
                 ext,
                 {
@@ -1902,9 +1895,7 @@ class TestQuantumCircuitAppend:
         """Broadcasting a 2-qubit gate over two aligned lists applies it n times."""
         qc = QuantumCircuit(4)
         # Apply CX to pairs (0,1) and (2,3)
-        qc.append(
-            CXGate(), [[qc.qubits[0], qc.qubits[2]], [qc.qubits[1], qc.qubits[3]]]
-        )
+        qc.append(CXGate(), [[qc.qubits[0], qc.qubits[2]], [qc.qubits[1], qc.qubits[3]]])
         assert len(qc.data) == 2
         assert qc.data[0].qubits == [qc.qubits[0], qc.qubits[1]]
         assert qc.data[1].qubits == [qc.qubits[2], qc.qubits[3]]
@@ -2430,9 +2421,7 @@ class TestQuantumCircuitGateMethodUnitaries:
 
         qc = QuantumCircuit(1)
         qc.r(theta, phi, 0)
-        assert np.allclose(
-            qc.get_unitary(), RGate(theta, phi).get_unitary(), atol=1e-10
-        )
+        assert np.allclose(qc.get_unitary(), RGate(theta, phi).get_unitary(), atol=1e-10)
 
     def test_r_theta_phi_order_is_not_commutative(self):
         """r(theta, phi) and r(phi, theta) produce different unitaries when theta ≠ phi."""
@@ -2452,9 +2441,7 @@ class TestQuantumCircuitGateMethodUnitaries:
 
         qc = QuantumCircuit(1)
         qc.u3(theta, phi, lam, 0)
-        assert np.allclose(
-            qc.get_unitary(), U3Gate(theta, phi, lam).get_unitary(), atol=1e-10
-        )
+        assert np.allclose(qc.get_unitary(), U3Gate(theta, phi, lam).get_unitary(), atol=1e-10)
 
     # two-qubit parametric gates
 
@@ -2492,9 +2479,7 @@ class TestQuantumCircuitGateMethodUnitaries:
 
         qc = QuantumCircuit(2)
         qc.xxyy(phi, beta, 0, 1)
-        assert np.allclose(
-            qc.get_unitary(), XXYYGate(phi, beta).get_unitary(), atol=1e-6
-        )
+        assert np.allclose(qc.get_unitary(), XXYYGate(phi, beta).get_unitary(), atol=1e-6)
 
     @pytest.mark.parametrize("phi", [np.pi / 4, np.pi / 2, 1.5])
     def test_crx_unitary(self, phi):

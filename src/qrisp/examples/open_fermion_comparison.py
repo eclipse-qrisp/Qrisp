@@ -59,9 +59,7 @@ def benchmark_hamiltonian_simulation(molecule_data):
     geometry, basis, multiplicity, charge = molecule_data
 
     # Generate Hamiltonian
-    hamiltonian = ofpyscf.generate_molecular_hamiltonian(
-        geometry, basis, multiplicity, charge
-    )
+    hamiltonian = ofpyscf.generate_molecular_hamiltonian(geometry, basis, multiplicity, charge)
     hamiltonian_ferm_op = of.get_fermion_operator(hamiltonian)
     n_qubits = of.count_qubits(hamiltonian)
 
@@ -70,9 +68,7 @@ def benchmark_hamiltonian_simulation(molecule_data):
     def openfermion_circuit():
         qubits = cirq.LineQubit.range(n_qubits)
         circuit = cirq.Circuit(
-            of.simulate_trotter(
-                qubits, hamiltonian, time=1.0, n_steps=1, order=0, algorithm=of.LOW_RANK
-            )
+            of.simulate_trotter(qubits, hamiltonian, time=1.0, n_steps=1, order=0, algorithm=of.LOW_RANK)
         )
         # Convert to Qrisp circuit via OpenQASM
         return QuantumCircuit.from_qasm_str(circuit.to_qasm())
@@ -163,9 +159,7 @@ def benchmark_hamiltonian_simulation(molecule_data):
 
     if qc_qrisp.num_qubits() < 10:
         # Compute exact unitary
-        hamiltonian_jw_sparse = of.get_sparse_operator(
-            of.jordan_wigner(hamiltonian_ferm_op)
-        )
+        hamiltonian_jw_sparse = of.get_sparse_operator(of.jordan_wigner(hamiltonian_ferm_op))
         exact_unitary = linalg.expm(-1j * hamiltonian_jw_sparse).todense()
         of_precision = unitary_distance(qc_of, exact_unitary)
         qrisp_precision = unitary_distance(qc_qrisp, exact_unitary)
@@ -199,7 +193,6 @@ def filter_clifford(qc):
 
     # Filter out non-clifford operations
     for instr in qc.data:
-
         if len(instr.op.params) > 0:
             par = instr.op.params[0]
 
@@ -231,7 +224,6 @@ def filter_clifford(qc):
             else:
                 qc_new.append(instr)
         elif instr.op.name == "u3":
-
             for par in instr.op.params:
                 if par not in [i * np.pi / 4 for i in range(8)]:
                     break
@@ -294,7 +286,7 @@ for idx, molecule_data in enumerate(molecule_list):
     print(molecule_data)
     results = benchmark_hamiltonian_simulation(molecule_data)
 
-    molecules.append(f"Molecule {idx+1}")
+    molecules.append(f"Molecule {idx + 1}")
     of_rz_counts.append(results["OpenFermion"]["RZ count"])
     of_rz_depths.append(results["OpenFermion"]["RZ depth"])
     of_precisions.append(results["OpenFermion"]["Precision"])

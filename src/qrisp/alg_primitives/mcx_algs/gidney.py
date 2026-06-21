@@ -26,7 +26,6 @@ from qrisp.circuit import QuantumCircuit, Operation
 
 
 class GidneyLogicalAND(Operation):
-
     def __init__(self, inv=False, ctrl_state="11"):
 
         definition = QuantumCircuit(3)
@@ -66,9 +65,7 @@ class GidneyLogicalAND(Operation):
             elif computation_strategy == "margolus":
                 compiled_qc = margolus_qc
             else:
-                raise Exception(
-                    f"Don't know measurement based uncomputation strategy {computation_strategy}"
-                )
+                raise Exception(f"Don't know measurement based uncomputation strategy {computation_strategy}")
 
         name = "compiled_gidney_mcx"
         if self.inv:
@@ -102,6 +99,7 @@ def gidney_mcx_impl(a, b, c):
     h(c)
     s(c)
 
+
 def gidney_mcx_inv_impl(a, b, c):
     h(c)
     bl = measure(c)
@@ -109,11 +107,12 @@ def gidney_mcx_inv_impl(a, b, c):
         cz(a, b)
         x(c)
 
+
 class GidneyMCXJaspr(Jaspr):
     def __init__(self, inv):
         self.inv = inv
-        
-        # The decorator requires the function to accept 'inv' as an argument. 
+
+        # The decorator requires the function to accept 'inv' as an argument.
         @custom_inversion
         def gate_logic(a, b, c, inv=False):
             # We rely on self.inv to determine which circuit to trace.
@@ -123,11 +122,9 @@ class GidneyMCXJaspr(Jaspr):
                 gidney_mcx_inv_impl(a, b, c)
             else:
                 gidney_mcx_impl(a, b, c)
-        
-        temp_jaspr = make_jaspr(gate_logic)(
-            AbstractQubit(), AbstractQubit(), AbstractQubit()
-        ).flatten_environments()
-        
+
+        temp_jaspr = make_jaspr(gate_logic)(AbstractQubit(), AbstractQubit(), AbstractQubit()).flatten_environments()
+
         Jaspr.__init__(self, temp_jaspr)
         self.envs_flattened = True
 
@@ -137,11 +134,14 @@ class GidneyMCXJaspr(Jaspr):
         else:
             return gidney_mcx_inv_jaspr
 
+
 gidney_mcx_jaspr = GidneyMCXJaspr(False)
 gidney_mcx_inv_jaspr = GidneyMCXJaspr(True)
 
+
 def jasp_gidney_mcx(a, b, c):
     gidney_mcx_jaspr.embedd(a, b, c, name="gidney_mcx")
+
 
 def jasp_gidney_mcx_inv(a, b, c):
     gidney_mcx_inv_jaspr.embedd(a, b, c, name="gidney_mcx_inv")

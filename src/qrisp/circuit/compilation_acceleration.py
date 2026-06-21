@@ -23,7 +23,6 @@ from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
 class CompilationAccelerator:
-
     def __init__(self, xla_mode=2):
         self.xla_mode = xla_mode
 

@@ -205,8 +205,8 @@ class DCQOProblem:
         # Functions for t = g(lam) and derivative (later needed for opt pulses)
         # must only be calculated for COLD, not for LCD
         if method == "COLD":
-            g = t_list                        # g(lam[s]) = t[s] by definition
-            g_deriv = 1.0 / lamdot            # dt/dlambda = 1 / (dlambda/dt)
+            g = t_list  # g(lam[s]) = t[s] by definition
+            g_deriv = 1.0 / lamdot  # dt/dlambda = 1 / (dlambda/dt)
 
             self.g = g
             self.g_deriv = g_deriv
@@ -250,9 +250,7 @@ class DCQOProblem:
         for k in range(N_opt):
             sin_matrix[:, k] = np.sin(np.pi * (k + 1 + r_params[k]) * t_list / T)
             cos_matrix[:, k] = (
-                (np.pi * (k + 1 + r_params[k]))
-                * np.cos(np.pi * (k + 1 + r_params[k]) * self.g)
-                * self.g_deriv
+                (np.pi * (k + 1 + r_params[k])) * np.cos(np.pi * (k + 1 + r_params[k]) * self.g) * self.g_deriv
             )
 
         return sin_matrix, cos_matrix
@@ -291,7 +289,6 @@ class DCQOProblem:
 
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
-
             # Get alpha for the timestep
             coeffs = self.agp_coeffs(self.lam[s])
             # print(f"Alpha = {coeffs}")
@@ -337,9 +334,7 @@ class DCQOProblem:
         # Precompute opt pulses
         dt = T / N_steps
         t_list = np.linspace(dt, T, int(N_steps))
-        sin_matrix, cos_matrix = self._precompute_opt_pulses(
-            N_steps, T, t_list, N_opt=len(opt_params), CRAB=CRAB
-        )
+        sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(opt_params), CRAB=CRAB)
         beta = opt_params
 
         # Trotterize Hamiltonian in different parts with each one needing different coefficients
@@ -355,7 +350,6 @@ class DCQOProblem:
 
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
-
             # Get alpha, f and f_deriv for the timestep
             f = sin_matrix[s, :] @ beta
             f_deriv = cos_matrix[s, :] @ beta
@@ -479,9 +473,7 @@ class DCQOProblem:
         # Expectation value of the QUBO Hamiltonian
         def objective_exp(params, CRAB):
             # Dict to assign the optimization parameters
-            subs_dic = {
-                sp.Symbol("par_" + str(i)): params[i] for i in range(len(params))
-            }
+            subs_dic = {sp.Symbol("par_" + str(i)): params[i] for i in range(len(params))}
 
             if exp_value_backend is not None:
                 # Use provided backend
@@ -516,9 +508,7 @@ class DCQOProblem:
         def objective_mag(params, CRAB):
             # Precompute opt pulses to be multiplied with opt params
             t_list = np.linspace(T / N_steps, T, int(N_steps))
-            sin_matrix, cos_matrix = self._precompute_opt_pulses(
-                N_steps, T, t_list, N_opt=len(params), CRAB=CRAB
-            )
+            sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(params), CRAB=CRAB)
             magnitude = 0
 
             # Iterate through lambda(t)
@@ -526,9 +516,7 @@ class DCQOProblem:
                 # Get alpha, f and f_deriv for the timestep
                 f = sin_matrix[s, :] @ params
                 f_deriv = cos_matrix[s, :] @ params
-                alpha, gamma, chi = solve_alpha_gamma_chi(
-                    self.h, self.J, self.lam[s], f, f_deriv, uniform=True
-                )
+                alpha, gamma, chi = solve_alpha_gamma_chi(self.h, self.J, self.lam[s], f, f_deriv, uniform=True)
                 magnitude += np.abs(gamma[0]) + np.abs(chi[0]) + np.abs(alpha[0])
 
             return magnitude
@@ -592,7 +580,7 @@ class DCQOProblem:
     ):
         """
         Run the specific DCQO problem instance with given quantum arguments, number of timesteps,
-        evolution time and method. 
+        evolution time and method.
 
         There is also the option to choose if parameter optimization via the expectation value objective function should be done via a simulator or real quantum backend.
         If the user chooses a quantum backend this iterative optimization can potentially use a lot of computing time.
@@ -690,9 +678,7 @@ class DCQOProblem:
             self.apply_lcd_hamiltonian(qarg, N_steps, T)
 
         else:
-            raise ValueError(
-                f'"{method}" is not an option for method. Choose "LCD" or "COLD".'
-            )
+            raise ValueError(f'"{method}" is not an option for method. Choose "LCD" or "COLD".')
 
         # Measure qarg
         if not "shots" in mes_kwargs:

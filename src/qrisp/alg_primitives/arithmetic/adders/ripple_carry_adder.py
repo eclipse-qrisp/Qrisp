@@ -20,11 +20,16 @@ from qrisp import *
 from qrisp.alg_primitives.arithmetic.adders.cuccaro_adder import cuccaro_adder
 from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_procedure
 
+
 class RemovedFunctionError(Exception):
     pass
 
+
 def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_in=None):
-    raise RemovedFunctionError("The cuccaro_procedure function has been removed. Please use the alternative cuccaro_adder.")
+    raise RemovedFunctionError(
+        "The cuccaro_procedure function has been removed. Please use the alternative cuccaro_adder."
+    )
+
 
 @gate_wrap(is_qfree=True, permeability=[1])
 def inpl_add(
@@ -85,16 +90,14 @@ def inpl_add(
     # can not be added to qf1 (rounding error)
     if not ignore_rounding_error and qf1.exponent > qf2.exponent:
         raise Exception(
-            "Tried to add QuantumFloat to QuantumFloat of lower precision"
-            " (set ignore_rounding_error = True)"
+            "Tried to add QuantumFloat to QuantumFloat of lower precision (set ignore_rounding_error = True)"
         )
 
     # If qf2 has higher maximum significance than qf1, the qf2 bits with higher
     # significance than all of qf1 can not be added to qf1 (overflow error)
     if not ignore_overflow_error and qf1.mshape[1] < qf2.mshape[1]:
         raise Exception(
-            "Tried to add QuantumFloat to QuantumFloat of lower precision"
-            " (set ignore_overflow_error = True)"
+            "Tried to add QuantumFloat to QuantumFloat of lower precision (set ignore_overflow_error = True)"
         )
 
     # Determine the significance range
@@ -104,9 +107,7 @@ def inpl_add(
     significance_range_qf2 = list(range(qf2.mshape[0], qf2.mshape[1] + 1))
 
     # Determine the intersection of the significance ranges
-    signficance_range_intersetion = list(
-        set(significance_range_qf1).intersection(significance_range_qf2)
-    )
+    signficance_range_intersetion = list(set(significance_range_qf1).intersection(significance_range_qf2))
 
     # Determine maximum and minimum significance of the addition
     # The maximum significance is the maximum significance of qf1
@@ -130,9 +131,7 @@ def inpl_add(
 
     if max_sig > max(significance_range_qf2):
         # print(max_sig-max(significance_range_qf2))
-        ancilla_var = QuantumVariable(
-            max_sig - max(significance_range_qf2) - int(qf2.signed)
-        )
+        ancilla_var = QuantumVariable(max_sig - max(significance_range_qf2) - int(qf2.signed))
         augmented_qf2_qbs = qf2.reg + ancilla_var.reg
     else:
         augmented_qf2_qbs = qf2.reg
@@ -190,9 +189,7 @@ def inpl_add(
             qs.cx(qf2[-1], ancilla_var[i])
 
     if adder == "thapliyal":
-        thapliyal_procedure(
-            qs, qubit_list_2[:-1], qubit_list_1[:-1], output_qubit=qubit_list_1[-1]
-        )
+        thapliyal_procedure(qs, qubit_list_2[:-1], qubit_list_1[:-1], output_qubit=qubit_list_1[-1])
     else:
         raise Exception("Adder " + adder + " not implemented")
 

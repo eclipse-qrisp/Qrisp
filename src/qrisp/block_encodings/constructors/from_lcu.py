@@ -89,7 +89,7 @@ def build_from_lcu(
     coeffs : np.ndarray
         1-D array containing the real non-negative or complex coefficients.
             - If all coefficients are real and non-negative, the block encoding unitary is constructed as $U = PREP \cdot SEL \cdot PREP^{\dagger}$.
-            - If coefficients are complex or negative, the block encoding unitary is constructed as $U = PREP_R \cdot SEL \cdot PREP_L^{\dagger}$, 
+            - If coefficients are complex or negative, the block encoding unitary is constructed as $U = PREP_R \cdot SEL \cdot PREP_L^{\dagger}$,
               where $PREP_R$ and $PREP_L$ prepare the states representing the coefficients and their complex conjugates, respectively.
     unitaries : list[Callable]
         List of functions, where each ``unitary(*operands)`` applies a unitary
@@ -115,10 +115,10 @@ def build_from_lcu(
     Notes
     -----
     - **Normalization**: The block-encoding normalization factor is $\alpha = \sum_i |\alpha_i|$.
-    - **Performance**: Complex or negative coefficients require a state preparation pair, 
+    - **Performance**: Complex or negative coefficients require a state preparation pair,
       which increases the number of gates in the controlled block-encoding unitary compared to the case of real non-negative coefficients.
       If all coefficients are real and non-negative, the block encoding unitary is constructed as $U = PREP \cdot SEL \cdot PREP^{\dagger}$.
-      In this case, the controlled block-encoding unitary requires only to control the $SEL$ operation. 
+      In this case, the controlled block-encoding unitary requires only to control the $SEL$ operation.
 
     Examples
     --------
@@ -158,9 +158,7 @@ def build_from_lcu(
                 is_hermitian=is_hermitian,
             )
 
-        raise ValueError(
-            "For a single unitary, the coefficient must be real (up to numerical precision)."
-        )
+        raise ValueError("For a single unitary, the coefficient must be real (up to numerical precision).")
 
     # Block encoding of a linear combination of unitaries via the LCU protocol
     # If all coefficients are real and non-negative: LCU = PREP SEL PREP_dg
@@ -201,9 +199,7 @@ def build_from_lcu(
     )
 
 
-def _is_real_non_negative_array(
-    arr: npt.NDArray[np.number], tol: float = _TOLERANCE
-) -> bool:
+def _is_real_non_negative_array(arr: npt.NDArray[np.number], tol: float = _TOLERANCE) -> bool:
     """Checks if all entries in an array are non-negative and have negligible imaginary parts."""
     # 1. Check if the array is a complex type
     if np.issubdtype(arr.dtype, np.complexfloating):

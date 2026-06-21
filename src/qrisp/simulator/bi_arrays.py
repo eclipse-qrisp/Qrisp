@@ -178,10 +178,7 @@ class SparseBiArray(BiArray):
         # Handle the case that the init_object is a tuple of nz_indices/data arrays
         elif isinstance(init_object, tuple):
             if shape is None:
-                raise Exception(
-                    "Tried to initialise SparseBiArray from sparse data without "
-                    "providing a shape"
-                )
+                raise Exception("Tried to initialise SparseBiArray from sparse data without providing a shape")
 
             self.nz_indices = init_object[0].ravel()
             self.data = init_object[1]
@@ -191,14 +188,9 @@ class SparseBiArray(BiArray):
         # Handle the case that the init_object is a sparse matrix/array
         elif isinstance(init_object, (coo_array)):
             if shape is None:
-                raise Exception(
-                    "Tried to initialise SparseBiArray from sparse matrix without "
-                    "providing a shape"
-                )
+                raise Exception("Tried to initialise SparseBiArray from sparse matrix without providing a shape")
 
-            self.nz_indices = hlp.gen_flat_coords(
-                init_object.col, init_object.row, init_object.shape
-            )
+            self.nz_indices = hlp.gen_flat_coords(init_object.col, init_object.row, init_object.shape)
             self.data = init_object.data
 
         elif isinstance(init_object, SparseBiArray):
@@ -209,10 +201,7 @@ class SparseBiArray(BiArray):
 
             return
         else:
-            raise Exception(
-                "Tried to initialize SparseBiArray with unknown type "
-                + str(type(init_object))
-            )
+            raise Exception("Tried to initialize SparseBiArray with unknown type " + str(type(init_object)))
         if shape is not None:
             self.shape = shape
 
@@ -221,9 +210,7 @@ class SparseBiArray(BiArray):
 
         if not ((self.size & (self.size - 1) == 0) and self.size != 0):
             raise Exception(
-                "Tried to initialize SparseBiArray with size "
-                + str(self.size)
-                + " which is not a power of 2"
+                "Tried to initialize SparseBiArray with size " + str(self.size) + " which is not a power of 2"
             )
 
         # Store the sparsity
@@ -256,9 +243,7 @@ class SparseBiArray(BiArray):
     # Method for copying
     def copy(self):
         self.apply_swaps()
-        return SparseBiArray(
-            (self.nz_indices.copy(), self.data.copy()), shape=tuple(self.shape)
-        )
+        return SparseBiArray((self.nz_indices.copy(), self.data.copy()), shape=tuple(self.shape))
 
     # This method checks if the sparse array has a thread object, which means that
     # it's data is under construction. If so, it waits until the thread is finished
@@ -363,9 +348,7 @@ class SparseBiArray(BiArray):
         final_interval = self.index_bit_permutation[j_interval_end:]
 
         # Concatenate intervals
-        self.index_bit_permutation = (
-            init_interval + j_interval + middle_interval + i_interval + final_interval
-        )
+        self.index_bit_permutation = init_interval + j_interval + middle_interval + i_interval + final_interval
 
         # Create the tuple for the new shape
         new_shape = list(self.shape)
@@ -395,9 +378,7 @@ class SparseBiArray(BiArray):
 
         # Apply permutations
         # The bit level manipulations are done in the helper file
-        self.nz_indices = hlp.permute_axes(
-            self.nz_indices, np.array(self.index_bit_permutation)
-        ).ravel()
+        self.nz_indices = hlp.permute_axes(self.nz_indices, np.array(self.index_bit_permutation)).ravel()
 
         # Reset the index_bit_permutation attribute, to
         # indicate that no permutation has to be executed now
@@ -494,9 +475,7 @@ class SparseBiArray(BiArray):
         contraction_size_other = prod([other.shape[i] for i in axes_other])
 
         if contraction_size != contraction_size_other:
-            raise Exception(
-                "Tried to contract tensor with differently sized contraction indices"
-            )
+            raise Exception("Tried to contract tensor with differently sized contraction indices")
 
         # Copy axes list in order to prevent modification
         axes_self = list(axes_self)
@@ -524,9 +503,7 @@ class SparseBiArray(BiArray):
 
         # Determine new shape (now that the contraction axes are at the front, we can
         # simply slice the shapes)
-        res_shape = list(self.shape[len(axes_self) :]) + list(
-            other.shape[len(axes_other) :]
-        )
+        res_shape = list(self.shape[len(axes_self) :]) + list(other.shape[len(axes_other) :])
 
         # In order to feature multiprocessing, we create an "empty" result array, which
         # will be returned after the calculation has been started. If the content is
@@ -541,21 +518,15 @@ class SparseBiArray(BiArray):
         # Define multi processing wrapper
         def mp_wrapper():
             # Build up sparse matrices
-            sr_matrix_self = self.build_sr_matrix(
-                (contraction_size, self.size // contraction_size), transpose=True
-            )
-            sr_matrix_other = other.build_sr_matrix(
-                (contraction_size, other.size // contraction_size)
-            )
+            sr_matrix_self = self.build_sr_matrix((contraction_size, self.size // contraction_size), transpose=True)
+            sr_matrix_other = other.build_sr_matrix((contraction_size, other.size // contraction_size))
 
             # Perform sparse matrix multiplication
 
             res_sr_matrix = sparse_matrix_mult(sr_matrix_self, sr_matrix_other)
 
             # Acquire flattened coordinates from the helper function
-            res.nz_indices = hlp.gen_flat_coords(
-                res_sr_matrix.col, res_sr_matrix.row, res_sr_matrix.shape
-            )
+            res.nz_indices = hlp.gen_flat_coords(res_sr_matrix.col, res_sr_matrix.row, res_sr_matrix.shape)
 
             # Set the data
             res.data = res_sr_matrix.data
@@ -624,18 +595,14 @@ class SparseBiArray(BiArray):
         lower_half_data = self.data[mask].copy()
 
         # Create lower half result
-        lower_half = SparseBiArray(
-            (lower_half_nz_indices, lower_half_data), shape=(self.shape[0] // 2,)
-        )
+        lower_half = SparseBiArray((lower_half_nz_indices, lower_half_data), shape=(self.shape[0] // 2,))
 
         # Perform the same process for the upper half but with inverted mask
         mask = np.invert(mask)
         upper_half_nz_indices = self.nz_indices[mask] - self.size // 2
         upper_half_data = self.data[mask].copy()
 
-        upper_half = SparseBiArray(
-            (upper_half_nz_indices, upper_half_data), shape=(self.shape[0] // 2,)
-        )
+        upper_half = SparseBiArray((upper_half_nz_indices, upper_half_data), shape=(self.shape[0] // 2,))
 
         # Return result
         return lower_half, upper_half
@@ -647,13 +614,9 @@ class SparseBiArray(BiArray):
         #     [2 ** (len(indices)), self.size // 2 ** len(indices)]
         # ).tocsr()
 
-        sprs = self.build_sr_matrix(
-            [2 ** (len(indices)), self.size // 2 ** len(indices)]
-        )
+        sprs = self.build_sr_matrix([2 ** (len(indices)), self.size // 2 ** len(indices)])
 
-        sprs.row, sprs.col, sprs.data = hlp.sort_indices_jitted(
-            sprs.row, sprs.col, sprs.data, sprs.shape[1]
-        )
+        sprs.row, sprs.col, sprs.data = hlp.sort_indices_jitted(sprs.row, sprs.col, sprs.data, sprs.shape[1])
         unique_markers = hlp.find_unique_markers(sprs.row)
 
         p_list = []
@@ -672,7 +635,6 @@ class SparseBiArray(BiArray):
             outcome_index_list.append(sprs.row[unique_markers[i]])
 
             if return_new_arrays:
-
                 new_bi_array = SparseBiArray(
                     (sprs.col[unique_markers[i] : unique_markers[i + 1]], temp_data),
                     shape=(self.size // 2 ** len(indices),),
@@ -742,9 +704,7 @@ class DenseBiArray(BiArray):
     # The constructor can only be called with numpy arrays
     def __init__(self, array, sparsity=None, shape=None):
         if not isinstance(array, np.ndarray):
-            raise Exception(
-                "Tried to initialize DenseBiArray with type " + str(type(array))
-            )
+            raise Exception("Tried to initialize DenseBiArray with type " + str(type(array)))
 
         # Save data
         self.data = array
@@ -825,9 +785,7 @@ class DenseBiArray(BiArray):
 
         final_interval = self.index_bit_permutation[j_interval_end:]
 
-        self.index_bit_permutation = (
-            init_interval + j_interval + middle_interval + i_interval + final_interval
-        )
+        self.index_bit_permutation = init_interval + j_interval + middle_interval + i_interval + final_interval
 
         new_shape = list(self.shape)
 
@@ -880,9 +838,7 @@ class DenseBiArray(BiArray):
         # and group them into one axis
 
         # Get the permutation of the axes
-        bi_index_perm = [
-            self.index_bit_permutation.index(i) for i in range(int(np.log2(self.size)))
-        ]
+        bi_index_perm = [self.index_bit_permutation.index(i) for i in range(int(np.log2(self.size)))]
 
         if False:
             # result = np.empty(self.data.size, dtype = self.data.dtype)
@@ -897,9 +853,7 @@ class DenseBiArray(BiArray):
             # result[0] = self.data.ravel()[0]
 
             # Unfortunately, this is not faster (maybe if implemented in C?)
-            self.data = hlp.bi_array_moveaxis(
-                self.data.ravel(), index_perm, f_index_array
-            )
+            self.data = hlp.bi_array_moveaxis(self.data.ravel(), index_perm, f_index_array)
             # temp = hlp.bi_array_moveaxis(self.data.ravel(), index_perm, f_index_array)
 
             # permutated_indices = hlp.bi_array_moveaxis_jitted(index_perm, f_index_array)
@@ -958,9 +912,7 @@ class DenseBiArray(BiArray):
         contraction_size_other = prod([other.shape[i] for i in axes_other])
 
         if contraction_size != contraction_size_other:
-            raise Exception(
-                "Tried to contract tensor with differently sized contraction indices"
-            )
+            raise Exception("Tried to contract tensor with differently sized contraction indices")
 
         # Copy axes list in order to prevent modification
         axes_self = list(axes_self)
@@ -988,9 +940,7 @@ class DenseBiArray(BiArray):
 
         # Determine new shape (now that the contraction axes are at the front, we can
         # simply slice the shapes).
-        res_shape = list(self.shape[len(axes_self) :]) + list(
-            other.shape[len(axes_other) :]
-        )
+        res_shape = list(self.shape[len(axes_self) :]) + list(other.shape[len(axes_other) :])
 
         # The sparsity can be estimated using statistical methods:
         # In a regular tensor contraction, any entry of the resulting tensor, is the sum
@@ -1074,9 +1024,9 @@ class DenseBiArray(BiArray):
             raise Exception("Tried to split multi rank BiArray")
         self.apply_swaps()
 
-        return DenseBiArray(
-            self.data[: self.size // 2].copy(), self.sparsity
-        ), DenseBiArray(self.data[self.size // 2 :].copy(), sparsity=self.sparsity)
+        return DenseBiArray(self.data[: self.size // 2].copy(), self.sparsity), DenseBiArray(
+            self.data[self.size // 2 :].copy(), sparsity=self.sparsity
+        )
 
     def multi_measure(self, indices, return_new_arrays=True):
         original_shape = tuple(self.shape)
@@ -1098,9 +1048,7 @@ class DenseBiArray(BiArray):
 
         if return_new_arrays:
             for i in range(len(new_arrays)):
-                new_bi_arrays.append(
-                    DenseBiArray(new_arrays[i], sparsity=self.sparsity)
-                )
+                new_bi_arrays.append(DenseBiArray(new_arrays[i], sparsity=self.sparsity))
         else:
             new_bi_arrays = len(p_list) * [None]
 
@@ -1133,9 +1081,7 @@ class DenseBiArray(BiArray):
 
     # Generates the SparseBiArray version of self using multithreading
     def to_sparse(self):
-        res = SparseBiArray(
-            (np.zeros(1, dtype=np.int64), np.zeros(1)), shape=self.shape
-        )
+        res = SparseBiArray((np.zeros(1, dtype=np.int64), np.zeros(1)), shape=self.shape)
 
         # Prepare the wrapper
         def mp_wrapper():
@@ -1262,9 +1208,7 @@ def tensordot(a, b, axes, contract_sparsity_threshold=0.01):
 
         res_size = a.size * b.size
 
-    if (
-        res_sparsity > contract_sparsity_threshold or a.size * b.size < 2**12
-    ) and not res_size > 2**32:
+    if (res_sparsity > contract_sparsity_threshold or a.size * b.size < 2**12) and not res_size > 2**32:
         #     if ((isinstance(a, SparseBiArray) and isinstance(b, DenseBiArray)) or
         #     (isinstance(b, SparseBiArray) and isinstance(a, DenseBiArray))):
 
@@ -1307,9 +1251,7 @@ def tensordot(a, b, axes, contract_sparsity_threshold=0.01):
                     b.size * a.nz_indices,
                     np.ones(len(b.data), dtype=np.int64),
                     ((), ()),
-                ) + np.tensordot(
-                    np.ones(len(a.data), dtype=np.int64), b.nz_indices, ((), ())
-                )
+                ) + np.tensordot(np.ones(len(a.data), dtype=np.int64), b.nz_indices, ((), ()))
 
                 # The corresponding data can be calculated as
                 data = np.tensordot(a.data.ravel(), b.data.ravel(), ((), ())).ravel()
@@ -1371,9 +1313,7 @@ def mixed_contractor(a, b, axes):
     contraction_size_b = prod([b.shape[i] for i in axes_b])
 
     if contraction_size != contraction_size_b:
-        raise Exception(
-            "Tried to contract tensor with differently sized contraction indices"
-        )
+        raise Exception("Tried to contract tensor with differently sized contraction indices")
 
     # Move axes to the front
     for i in range(len(axes_a)):
@@ -1402,17 +1342,13 @@ def mixed_contractor(a, b, axes):
     res_sparsity = 1 - (1 - a.sparsity * b.sparsity) ** contraction_size
 
     # Prepare "unfinished" result
-    res = DenseBiArray(
-        np.empty(1, dtype=a.data.dtype), sparsity=res_sparsity, shape=res_shape
-    )
+    res = DenseBiArray(np.empty(1, dtype=a.data.dtype), sparsity=res_sparsity, shape=res_shape)
 
     # Define multi processing wrapper
     def mp_wrapper():
         # Build up sparse matrices
         if isinstance(a, SparseBiArray):
-            mult_matrix_a = a.build_sr_matrix(
-                (contraction_size, a.size // contraction_size), transpose=True
-            )
+            mult_matrix_a = a.build_sr_matrix((contraction_size, a.size // contraction_size), transpose=True)
             original_shape_b = b.shape
             b.reshape([contraction_size, b.size // contraction_size])
             b.apply_swaps()
@@ -1424,9 +1360,7 @@ def mixed_contractor(a, b, axes):
             a.swapaxes(0, 1)
             a.apply_swaps()
             mult_matrix_a = a.data
-            mult_matrix_b = b.build_sr_matrix(
-                (contraction_size, b.size // contraction_size)
-            )
+            mult_matrix_b = b.build_sr_matrix((contraction_size, b.size // contraction_size))
 
         # Set the data
         res.data = sparse_matrix_mult(mult_matrix_a, mult_matrix_b)

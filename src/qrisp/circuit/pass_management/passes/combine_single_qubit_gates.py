@@ -148,9 +148,9 @@ def combine_single_qubit_gates(qc: QuantumCircuit) -> QuantumCircuit:
                 # that definition, then re-wrap in a ControlledOperation.
                 if op.base_operation.definition:
                     instr = instr.copy()
-                    optimized_base = combine_single_qubit_gates(
-                        op.base_operation.definition
-                    ).to_gate(name=op.base_operation.name)
+                    optimized_base = combine_single_qubit_gates(op.base_operation.definition).to_gate(
+                        name=op.base_operation.name
+                    )
                     instr.op = ControlledOperation(
                         optimized_base,
                         num_ctrl_qubits=len(op.ctrl_state),

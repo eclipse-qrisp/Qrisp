@@ -39,7 +39,7 @@ from qrisp.jasp.mlir.mlir_rewrites.cmpi_extui_folding import cmpi_extui_folding
 from qrisp.jasp.jasp_expression import Jaspr
 
 
-def jaspr_to_mlir(jaspr: Jaspr, lower_stableHLO = False) -> builtin.ModuleOp:
+def jaspr_to_mlir(jaspr: Jaspr, lower_stableHLO=False) -> builtin.ModuleOp:
     """Convert a Jaspr to an xDSL MLIR module using the JASP dialect.
 
     This function lowers a Jaspr (JAX-traced quantum program) to MLIR with

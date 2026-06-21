@@ -215,9 +215,7 @@ def hamiltonian_simulation(
     j_val_at_1 = jv(np.arange(0, 2 * N + 1, 1), 1.0)
     j_val_at_t = bessel_multiplication(np.arange(0, N + 1), t, j_val_at_1)
     # J_{-n}(t) = (-1)^nJ_n(t)
-    j_values = jnp.concatenate(
-        ((j_val_at_t * (-1.0) ** jnp.arange(0, N + 1))[::-1], j_val_at_t[1:])
-    )
+    j_values = jnp.concatenate(((j_val_at_t * (-1.0) ** jnp.arange(0, N + 1))[::-1], j_val_at_t[1:]))
     factors = (-1.0j) ** jnp.arange(-N, N + 1)
     coeffs = factors * j_values
 
@@ -278,9 +276,7 @@ def bessel_multiplication(m, s, jv_values_at_t, t=1.0):
 
     """
     # Use jax.vmap to map the single-m logic over an array of m values
-    return jax.vmap(lambda m_val: _bessel_multiplication(m_val, s, jv_values_at_t, t))(
-        m
-    )
+    return jax.vmap(lambda m_val: _bessel_multiplication(m_val, s, jv_values_at_t, t))(m)
 
 
 def _bessel_multiplication(m, s, jv_values_at_t, t=1.0):

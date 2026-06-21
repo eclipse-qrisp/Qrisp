@@ -26,58 +26,54 @@ import jax.numpy as jnp
 # H2 molecule
 #
 
-def test_vqe_electronic_structure_H2():  
-    
+
+def test_vqe_electronic_structure_H2():
+
     try:
         from pyscf import gto
     except:
         return
 
-    mol = gto.M(
-        atom = '''H 0 0 0; H 0 0 0.74''',
-        basis = 'sto-3g')
-    
+    mol = gto.M(atom="""H 0 0 0; H 0 0 0.74""", basis="sto-3g")
+
     H = create_electronic_hamiltonian(mol).to_qubit_operator()
-    assert np.abs(H.ground_state_energy()-(-1.85238817356958)) < 1e-5
+    assert np.abs(H.ground_state_energy() - (-1.85238817356958)) < 1e-5
 
     vqe = electronic_structure_problem(mol)
-    
+
     results = []
     for i in range(5):
-        res = vqe.run(QuantumVariable(4),
-                depth=1,
-                max_iter=50)
+        res = vqe.run(QuantumVariable(4), depth=1, max_iter=50)
         results.append(res)
-    
-    assert np.abs(min(results)-(-1.85238817356958)) < 3e-1
+
+    assert np.abs(min(results) - (-1.85238817356958)) < 3e-1
 
 
-def test_jasp_vqe_electronic_structure_H2():  
-    
+def test_jasp_vqe_electronic_structure_H2():
+
     try:
         from pyscf import gto
     except:
         return
-    
+
     @jaspify(terminal_sampling=True)
     def main():
 
-        mol = gto.M(
-            atom = '''H 0 0 0; H 0 0 0.74''',
-            basis = 'sto-3g')
+        mol = gto.M(atom="""H 0 0 0; H 0 0 0.74""", basis="sto-3g")
 
         vqe = electronic_structure_problem(mol)
 
-        results = jnp.array([0.0]*5)
+        results = jnp.array([0.0] * 5)
         for i in range(5):
             res = vqe.run(QuantumFloat(4), depth=1, max_iter=100, optimizer="SPSA")
             results = results.at[i].set(res)
 
         return results
-    
+
     results = main()
-    
-    assert np.abs(min(results)-(-1.85238817356958)) < 3e-1
+
+    assert np.abs(min(results) - (-1.85238817356958)) < 3e-1
+
 
 #
 # BeH2 molecule, active space

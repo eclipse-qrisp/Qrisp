@@ -19,42 +19,40 @@
 from qrisp import *
 from qrisp.jasp import *
 
+
 def test_conjugation_env():
-    
+
     # Test base conjugation
     def conj_test_0():
-        
+
         qv = QuantumFloat(3)
-        
+
         with conjugate(h)(qv[0]):
             with conjugate(h)(qv[1]):
                 with conjugate(h)(qv[2]):
                     z(qv[0])
                     z(qv[1])
                     z(qv[2])
-            
-        return measure(qv)
 
+        return measure(qv)
 
     jaspr = make_jaspr(conj_test_0)()
 
     assert jaspr() == 7
-    
-    # Test controlled conjugation    
+
+    # Test controlled conjugation
     def conj_test_1():
-        
+
         qv = QuantumFloat(2)
         a = QuantumVariable(3)
-        
+
         def conjugator(qv):
             h(qv[0])
             y(qv[1])
+
         with control([a[0], a[1], a[2]]):
             with conjugate(conjugator)(qv):
                 z(qv[0])
-            
 
     jaspr = make_jaspr(conj_test_1)()
     assert jaspr.to_qc().cnot_count() == 29
-
-

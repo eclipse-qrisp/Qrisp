@@ -71,7 +71,7 @@ def arrange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
         >>> pm_raw = PassManager()
         >>> pm_raw += decompose()
         >>> print(pm_raw.run(qc)) # doctest: +SKIP
-              ┌───┐     ┌───┐     
+              ┌───┐     ┌───┐
         qb_0: ┤ X ├──■──┤ X ├──■──
               └───┘┌─┴─┐└─┬─┘┌─┴─┐
         qb_1: ─────┤ X ├──■──┤ X ├
@@ -90,7 +90,7 @@ def arrange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
         qb_0: ┤ X ├──■──┤ X ├
               └───┘┌─┴─┐└─┬─┘
         qb_1: ─────┤ X ├──■──
-                   └───┘     
+                   └───┘
 
     A SWAP between **two** untouched qubits is dropped entirely (a SWAP
     between \|0⟩ states is the identity):
@@ -100,16 +100,15 @@ def arrange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
     >>> result = pm.run(qc)
     >>> print(pm.run(qc))
     <BLANKLINE>
-    qb_0: 
+    qb_0:
     <BLANKLINE>
-    qb_1: 
-        
+    qb_1:
+
     """
     qc_new = qc.clearcopy()
 
     used_qubits = set()
     for instr in qc.data:
-
         # Skip allocation instructions
         if "alloc" in instr.op.name:
             continue

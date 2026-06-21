@@ -26,18 +26,10 @@ from qrisp.environments import control, invert, custom_control
 from qrisp.core import swap, cx, x
 
 from .jasp_bigintiger import BigInteger
-from .jasp_mod_tools import (
-    montgomery_encoder,
-    montgomery_decoder,
-    modinv,
-    best_montgomery_shift,
-    smallest_power_of_two
-)
+from .jasp_mod_tools import montgomery_encoder, montgomery_decoder, modinv, best_montgomery_shift, smallest_power_of_two
 
 
-def q_montgomery_reduction(
-    qf: QuantumFloat, N: Union[int, BigInteger], m: int, inpl_adder=gidney_adder
-):
+def q_montgomery_reduction(qf: QuantumFloat, N: Union[int, BigInteger], m: int, inpl_adder=gidney_adder):
     """
     Perform the Montgomery reduction of a concatenated QuantumFloat in-place.
 
@@ -50,7 +42,7 @@ def q_montgomery_reduction(
     - aux has m+1 qubits (for u-tilde including the folded sign bit),
     - res has n qubits (holds the reduced result).
 
-    Algorithm 
+    Algorithm
     ---------
     - Estimation (m steps): For each LSB, conditionally subtract floor(N/2) on the
       truncated slice (implicit right-shift).
@@ -259,9 +251,7 @@ def cq_montgomery_multiply_inplace(
         tmp.delete()
 
 
-def qq_montgomery_multiply(
-    x: QuantumFloat, y: QuantumFloat, N: int, m: int, inpl_adder=gidney_adder
-):
+def qq_montgomery_multiply(x: QuantumFloat, y: QuantumFloat, N: int, m: int, inpl_adder=gidney_adder):
     """
     Perform the montgomery product of two QuantumFloats. Note that both QuantumFloats must be in montgomery form.
 
@@ -341,6 +331,7 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     """
 
     from qrisp.qtypes.quantum_modulus import _moduli_neq
+
     if not check_for_tracing_mode() and _moduli_neq(x.modulus, y.modulus):
         raise Exception("Tried to multiply two QuantumModulus with differing modulus")
 
@@ -416,14 +407,10 @@ def cq_montgomery_mat_multiply(A, B, out):
                 def true_fun():
                     best_montgomery_shift(B[k, j], A[i, k].modulus)
                     shift = best_montgomery_shift(B[k, j], A[i, k].modulus)
-                    aux = cq_montgomery_multiply(
-                        B[k, j], A[i, k], A[i, k].modulus, shift
-                    )
+                    aux = cq_montgomery_multiply(B[k, j], A[i, k], A[i, k].modulus, shift)
                     out[i, j] += aux
                     with invert():
-                        cq_montgomery_multiply(
-                            B[k, j], A[i, k], A[i, k].modulus, shift, res=aux
-                        )
+                        cq_montgomery_multiply(B[k, j], A[i, k], A[i, k].modulus, shift, res=aux)
                     aux.delete()
 
                 x_cond(B[k, j] != 0, true_fun, lambda: None)

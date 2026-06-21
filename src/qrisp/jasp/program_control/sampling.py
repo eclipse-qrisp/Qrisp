@@ -184,13 +184,9 @@ def sample(state_prep=None, shots=0, post_processor=None):
         post_processor = identity
 
     if isinstance(shots, jax.core.Tracer):
-        raise Exception(
-            "Tried to sample with dynamic shots value (static integer required)"
-        )
+        raise Exception("Tried to sample with dynamic shots value (static integer required)")
     elif not isinstance(shots, int):
-        raise Exception(
-            f"Tried to sample with shots value of non-integer type {type(shots)}"
-        )
+        raise Exception(f"Tried to sample with shots value of non-integer type {type(shots)}")
 
     # Qache the user function
     @qache
@@ -203,9 +199,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
 
         for arg in args:
             if isinstance(arg, QuantumVariable):
-                raise Exception(
-                    "Tried to sample from state preparation function taking a quantum value"
-                )
+                raise Exception("Tried to sample from state preparation function taking a quantum value")
 
         # We now construct a loop to collect the samples by
         # inserting the postprocessed measurement result into an array.
@@ -223,9 +217,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
 
             for qv in qv_tuple:
                 if not isinstance(qv, QuantumVariable):
-                    raise Exception(
-                        "Tried to sample from function not returning a QuantumVariable"
-                    )
+                    raise Exception("Tried to sample from function not returning a QuantumVariable")
 
             # Trace the DynamicQubitArray measurements
             # Since we execute the measurements on the .reg attribute, no decoding
@@ -277,9 +269,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
         return_amount = []
 
         try:
-            loop_res = jax.lax.fori_loop(
-                0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args)
-            )
+            loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args))
             return loop_res[0]
         except AuxException:
             loop_res = jax.lax.fori_loop(

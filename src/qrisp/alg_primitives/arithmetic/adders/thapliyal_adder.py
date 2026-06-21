@@ -43,9 +43,7 @@ def TR_gate():
 
 def thapliyal_procedure(qc, qubit_list_1, qubit_list_2, output_qubit):
     if len(qubit_list_1) != len(qubit_list_2):
-        raise Exception(
-            "Tried to call Thapliyal-procedure with qubit lists of unequal length"
-        )
+        raise Exception("Tried to call Thapliyal-procedure with qubit lists of unequal length")
 
     n = len(qubit_list_1)
 

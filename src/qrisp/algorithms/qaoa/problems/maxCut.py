@@ -95,7 +95,6 @@ def create_maxcut_cl_cost_function(G: nx.Graph) -> Callable[[dict], float]:
 
         int_list = []
         if not isinstance(counts_keys[0], str):
-
             for c_array in counts_keys:
                 integer = int("".join(list(c_array))[::-1], 2)
                 int_list.append(integer)
@@ -138,9 +137,7 @@ def create_cut_computer(G: nx.Graph) -> Callable[[ArrayLike], Array]:
     @jit
     def cut_computer(x: ArrayLike) -> Array:
         x_uint = jnp.uint32(x)
-        bools = extract_boolean_digit(x_uint, edge_list[:, 0]) != extract_boolean_digit(
-            x_uint, edge_list[:, 1]
-        )
+        bools = extract_boolean_digit(x_uint, edge_list[:, 0]) != extract_boolean_digit(x_uint, edge_list[:, 1])
         # Count the number of edges crossing the cut
         cut = jnp.sum(bools)
         return -cut
@@ -240,6 +237,4 @@ def maxcut_problem(G: nx.Graph) -> QAOAProblem:
 
     """
 
-    return QAOAProblem(
-        create_maxcut_cost_operator(G), RX_mixer, create_maxcut_cl_cost_function(G)
-    )
+    return QAOAProblem(create_maxcut_cost_operator(G), RX_mixer, create_maxcut_cl_cost_function(G))

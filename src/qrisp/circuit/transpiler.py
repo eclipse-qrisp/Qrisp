@@ -31,7 +31,6 @@ def transpile(qc, transpilation_level=np.inf, transpile_predicate=None, **kwargs
     from qrisp.circuit import QuantumCircuit, Clbit, Qubit
 
     with fast_append():
-
         transpiled_qc = QuantumCircuit()
 
         # [transpiled_qc.add_qubit(Qubit(qb.identifier)) for qb in qc.qubits]
@@ -49,23 +48,13 @@ def transpile(qc, transpilation_level=np.inf, transpile_predicate=None, **kwargs
             else:
                 transpiled_qc.add_clbit(Clbit(cb.identifier))
 
-        translation_dic = {
-            qc.qubits[i].identifier: transpiled_qc.qubits[i]
-            for i in range(len(qc.qubits))
-        }
-        translation_dic.update(
-            {
-                qc.clbits[i].identifier: transpiled_qc.clbits[i]
-                for i in range(len(qc.clbits))
-            }
-        )
+        translation_dic = {qc.qubits[i].identifier: transpiled_qc.qubits[i] for i in range(len(qc.qubits))}
+        translation_dic.update({qc.clbits[i].identifier: transpiled_qc.clbits[i] for i in range(len(qc.clbits))})
 
         if transpile_predicate is None:
             transpile_predicate_ = lambda i, op: i < transpilation_level
         else:
-            transpile_predicate_ = (
-                lambda i, op: i < transpilation_level and transpile_predicate(op)
-            )
+            transpile_predicate_ = lambda i, op: i < transpilation_level and transpile_predicate(op)
 
         transpile_inner(qc, transpiled_qc, translation_dic, transpile_predicate_)
 
@@ -101,17 +90,13 @@ def transpile_inner(
                 definition = instr.op.definition
 
                 new_translation_dic = {
-                    definition.qubits[j].identifier: translation_dic[
-                        instr.qubits[j].identifier
-                    ]
+                    definition.qubits[j].identifier: translation_dic[instr.qubits[j].identifier]
                     for j in range(len(instr.qubits))
                 }
 
                 new_translation_dic.update(
                     {
-                        definition.clbits[j].identifier: translation_dic[
-                            instr.clbits[j].identifier
-                        ]
+                        definition.clbits[j].identifier: translation_dic[instr.clbits[j].identifier]
                         for j in range(len(instr.clbits))
                     }
                 )

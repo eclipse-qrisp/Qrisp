@@ -102,9 +102,7 @@ True
 True
 """
 
-FloatLike: TypeAlias = (
-    float | int | np.floating | np.integer | Expr | jax.Array | jax.core.Tracer
-)
+FloatLike: TypeAlias = float | int | np.floating | np.integer | Expr | jax.Array | jax.core.Tracer
 """A gate parameter value.
 
 Covers all types accepted as gate parameters throughout Qrisp: Python numeric

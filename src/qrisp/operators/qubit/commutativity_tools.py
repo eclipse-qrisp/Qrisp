@@ -136,9 +136,7 @@ def gaussian_elimination_mod2(matrix, type="row", reduced=False, show_pivots=Fal
                 pivots.append(row_index)
 
                 # Swap the current column with the pivot column
-                matrix[:, [column_index, max_column]] = matrix[
-                    :, [max_column, column_index]
-                ]
+                matrix[:, [column_index, max_column]] = matrix[:, [max_column, column_index]]
 
                 # Eliminate all columns after the pivot
                 for j in range(column_index + 1, columns):
@@ -191,9 +189,7 @@ def construct_change_of_basis(S):
     # Step 0: Calculate S_0: Independent columns (i.e., Pauli terms) of S
     ####################
 
-    S_reduced, independent_cols = gaussian_elimination_mod2(
-        S, reduced=True, show_pivots=True
-    )
+    S_reduced, independent_cols = gaussian_elimination_mod2(S, reduced=True, show_pivots=True)
     k = len(independent_cols)
 
     S0 = S[:, independent_cols]
@@ -204,9 +200,7 @@ def construct_change_of_basis(S):
     ####################
 
     # Find independent rows in X component of S0
-    S0X_reduced, independent_rows = gaussian_elimination_mod2(
-        S0[-n:, :], type="column", show_pivots=True
-    )
+    S0X_reduced, independent_rows = gaussian_elimination_mod2(S0[-n:, :], type="column", show_pivots=True)
 
     S1 = S0.copy()
     h_list = []
@@ -217,9 +211,7 @@ def construct_change_of_basis(S):
             S1[[i, n + i]] = S1[[n + i, i]]
 
     # Find independent rows in X component of S1
-    S1X_reduced, independent_rows = gaussian_elimination_mod2(
-        S1[-n:, :], type="column", show_pivots=True
-    )
+    S1X_reduced, independent_rows = gaussian_elimination_mod2(S1[-n:, :], type="column", show_pivots=True)
 
     # Construct permutation achieving that the first k rows in X component of S1 are independent
     perm = np.arange(0, n)
@@ -244,7 +236,6 @@ def construct_change_of_basis(S):
     ####################
 
     if n > k:
-
         C = S2[:k, :]
         D = S2[k:n, :]
         F = S2[-(n - k) :, :]
@@ -260,7 +251,6 @@ def construct_change_of_basis(S):
         R2_inv = np.block([[np.eye(k, dtype=int)], [np.zeros((n - k, k), dtype=int)]])
 
     else:
-
         S3 = S2
         R2_inv = np.eye(n, dtype=int)
 

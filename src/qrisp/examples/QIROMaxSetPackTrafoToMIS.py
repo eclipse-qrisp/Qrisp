@@ -64,9 +64,7 @@ qiro_instance = QIROProblem(
 )
 
 # We run the qiro instance and get the results!
-res_qiro = qiro_instance.run_qiro(
-    qarg=qarg, depth=3, n_recursions=2, mes_kwargs=mes_kwargs
-)
+res_qiro = qiro_instance.run_qiro(qarg=qarg, depth=3, n_recursions=2, mes_kwargs=mes_kwargs)
 # and also the final graph, that has been adjusted
 final_Graph = qiro_instance.problem
 
@@ -76,7 +74,6 @@ maxfive = sorted(res_qiro, key=res_qiro.get, reverse=True)[:5]
 costFunc = create_max_indep_set_cl_cost_function(G)
 for key, val in res_qiro.items():
     if key in maxfive:
-
         print(key)
         print(costFunc({key: 1}))
 

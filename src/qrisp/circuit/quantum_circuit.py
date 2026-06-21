@@ -62,10 +62,7 @@ def _check_qubit_locks(qubits: list, operation) -> None:
         msg = getattr(critical_qubits[0], "lock_message", None)
         if msg:
             raise RuntimeError(msg)
-        raise RuntimeError(
-            f"Tried to perform operation {operation.name} "
-            f"on locked qubit {critical_qubits[0]}"
-        )
+        raise RuntimeError(f"Tried to perform operation {operation.name} on locked qubit {critical_qubits[0]}")
 
     critical_qubits = [qb for qb in qubits if qb.perm_lock]
     if critical_qubits:
@@ -77,8 +74,7 @@ def _check_qubit_locks(qubits: list, operation) -> None:
             if msg:
                 raise RuntimeError(msg)
             raise RuntimeError(
-                f"Tried to perform non-permeable operation {operation.name} on"
-                f" perm_locked qubit {critical_qubits[0]}"
+                f"Tried to perform non-permeable operation {operation.name} on perm_locked qubit {critical_qubits[0]}"
             )
 
 
@@ -259,13 +255,11 @@ class QuantumCircuit:
 
         if not isinstance(num_qubits, int):
             raise TypeError(
-                f"Tried to initialize QuantumCircuit with type "
-                f"{type(num_qubits).__name__} for num_qubits, expected int"
+                f"Tried to initialize QuantumCircuit with type {type(num_qubits).__name__} for num_qubits, expected int"
             )
         if not isinstance(num_clbits, int):
             raise TypeError(
-                f"Tried to initialize QuantumCircuit with type "
-                f"{type(num_clbits).__name__} for num_clbits, expected int"
+                f"Tried to initialize QuantumCircuit with type {type(num_clbits).__name__} for num_clbits, expected int"
             )
 
         object.__setattr__(self, "data", [])
@@ -275,15 +269,11 @@ class QuantumCircuit:
         self.abstract_params: Set = set()
 
         start_index = self.qubit_index_counter[0]
-        self.qubits: list[Qubit] = [
-            Qubit(f"qb_{start_index + i}") for i in range(num_qubits)
-        ]
+        self.qubits: list[Qubit] = [Qubit(f"qb_{start_index + i}") for i in range(num_qubits)]
         self.qubit_index_counter[0] += num_qubits
 
         start_index = self.clbit_index_counter[0]
-        self.clbits: list[Clbit] = [
-            Clbit(f"cb_{start_index + i}") for i in range(num_clbits)
-        ]
+        self.clbits: list[Clbit] = [Clbit(f"cb_{start_index + i}") for i in range(num_clbits)]
         self.clbit_index_counter[0] += num_clbits
 
     def add_qubit(self, qubit: Qubit | None = None) -> Qubit:
@@ -425,11 +415,7 @@ class QuantumCircuit:
 
         definition = self.copy()
 
-        definition.data = [
-            instr
-            for instr in definition.data
-            if instr.op.name not in ["qb_alloc", "qb_dealloc"]
-        ]
+        definition.data = [instr for instr in definition.data if instr.op.name not in ["qb_alloc", "qb_dealloc"]]
 
         return Operation(
             name=name,
@@ -491,15 +477,11 @@ class QuantumCircuit:
         """
 
         if len(self.clbits) != 0:
-            raise ValueError(
-                "Tried to turn a circuit including classical bits into unitary gate"
-            )
+            raise ValueError("Tried to turn a circuit including classical bits into unitary gate")
 
         return self.to_op(name)
 
-    def extend(
-        self, other: QuantumCircuit, translation_dic: dict | None = None
-    ) -> None:
+    def extend(self, other: QuantumCircuit, translation_dic: dict | None = None) -> None:
         """
         Extends this QuantumCircuit in-place by appending instructions from another QuantumCircuit.
 
@@ -628,15 +610,11 @@ class QuantumCircuit:
                 )
             )
         except AttributeError as exc:
-            raise RuntimeError(
-                "Tried to print QuantumSession with uncompiled QuantumEnvironments"
-            ) from exc
+            raise RuntimeError("Tried to print QuantumSession with uncompiled QuantumEnvironments") from exc
 
         return res_str
 
-    def compare_unitary(
-        self, other: QuantumCircuit, precision: int = 4, ignore_gphase: bool = False
-    ) -> bool:
+    def compare_unitary(self, other: QuantumCircuit, precision: int = 4, ignore_gphase: bool = False) -> bool:
         """
         Compares the unitaries of two QuantumCircuits. This can be used to check if a
         QuantumCircuit transformation is valid.
@@ -707,9 +685,7 @@ class QuantumCircuit:
         if ignore_gphase:
             # Normalize by the phase of the largest amplitude element
             arg_max = np.argmax(np.abs(unitary_self.flatten()))
-            phase_correction = (
-                unitary_other.flatten()[arg_max] / unitary_self.flatten()[arg_max]
-            )
+            phase_correction = unitary_other.flatten()[arg_max] / unitary_self.flatten()[arg_max]
             unitary_self = unitary_self * phase_correction
 
         return bool(norm(unitary_self - unitary_other) < 10**-precision)
@@ -821,9 +797,7 @@ class QuantumCircuit:
 
         res = calc_circuit_unitary(self, res_type="numpy")
         if not isinstance(res, np.ndarray):
-            raise TypeError(
-                f"calc_circuit_unitary must return a numpy array, got {type(res).__name__}"
-            )
+            raise TypeError(f"calc_circuit_unitary must return a numpy array, got {type(res).__name__}")
 
         if decimals is None:
             return res
@@ -923,9 +897,7 @@ class QuantumCircuit:
 
         return cnot_count(self)
 
-    def transpile(
-        self, transpilation_level: int | float = np.inf, **qiskit_kwargs
-    ) -> QuantumCircuit:
+    def transpile(self, transpilation_level: int | float = np.inf, **qiskit_kwargs) -> QuantumCircuit:
         """
         Transpiles the QuantumCircuit in the sense that there are no longer any
         synthesized gate objects. Furthermore, we can call the `Qiskit transpiler
@@ -1402,9 +1374,7 @@ class QuantumCircuit:
         if len(self.data) == 0:
             return 0
 
-        depth_dic = get_depth_dic(
-            self, transpile_qc=transpile, depth_indicator=depth_indicator
-        )
+        depth_dic = get_depth_dic(self, transpile_qc=transpile, depth_indicator=depth_indicator)
 
         return int(max(depth_dic.values()))
 
@@ -1638,28 +1608,16 @@ class QuantumCircuit:
 
         for arg_list_index in qb_argument_is_list:
             if len(qubits[arg_list_index]) != arg_list_len:
-                raise ValueError(
-                    f"Don't know how to combine appending arguments {qubits + clbits}"
-                )
+                raise ValueError(f"Don't know how to combine appending arguments {qubits + clbits}")
 
         for arg_list_index in cb_argument_is_list:
             if len(clbits[arg_list_index]) != arg_list_len:
-                raise ValueError(
-                    f"Don't know how to combine appending arguments {qubits + clbits}"
-                )
+                raise ValueError(f"Don't know how to combine appending arguments {qubits + clbits}")
 
         for i in range(arg_list_len):
-            qubit_constellation = [
-                qubits[j][i] if j in qb_argument_is_list else qubits[j]
-                for j in range(len(qubits))
-            ]
-            clbit_constellation = [
-                clbits[j][i] if j in cb_argument_is_list else clbits[j]
-                for j in range(len(clbits))
-            ]
-            QuantumCircuit.append(
-                self, operation, qubit_constellation, clbit_constellation
-            )
+            qubit_constellation = [qubits[j][i] if j in qb_argument_is_list else qubits[j] for j in range(len(qubits))]
+            clbit_constellation = [clbits[j][i] if j in cb_argument_is_list else clbits[j] for j in range(len(clbits))]
+            QuantumCircuit.append(self, operation, qubit_constellation, clbit_constellation)
 
     def _resolve_qubits(self, qubits: list, operation: Operation) -> list:
         """Validate qubit count and membership; return the resolved qubit list."""
@@ -1670,9 +1628,7 @@ class QuantumCircuit:
             )
 
         if len(set(qubits)) != len(qubits):
-            raise ValueError(
-                f"Duplicate qubit arguments in {qubits} for operation {operation.name}"
-            )
+            raise ValueError(f"Duplicate qubit arguments in {qubits} for operation {operation.name}")
 
         # Comparing object identity first is fast; falling back to identifier comparison
         # handles qubits equal by name but not by identity (e.g. after unpickling).
@@ -1681,14 +1637,9 @@ class QuantumCircuit:
             qc_identifiers = [qb.identifier for qb in self.qubits]
 
             if not set(op_identifiers).issubset(qc_identifiers):
-                raise ValueError(
-                    f"Instruction Qubits {set(qubits) - set(self.qubits)} "
-                    "not present in circuit"
-                )
+                raise ValueError(f"Instruction Qubits {set(qubits) - set(self.qubits)} not present in circuit")
 
-            qubits = [
-                self.qubits[qc_identifiers.index(op_id)] for op_id in op_identifiers
-            ]
+            qubits = [self.qubits[qc_identifiers.index(op_id)] for op_id in op_identifiers]
 
         return qubits
 
@@ -1795,9 +1746,7 @@ class QuantumCircuit:
         cb_argument_is_list = [i for i, cb in enumerate(clbits) if isinstance(cb, list)]
 
         if qb_argument_is_list or cb_argument_is_list:
-            self._apply_broadcast(
-                operation, qubits, clbits, qb_argument_is_list, cb_argument_is_list
-            )
+            self._apply_broadcast(operation, qubits, clbits, qb_argument_is_list, cb_argument_is_list)
             return
 
         qubits = self._resolve_qubits(qubits, operation)
@@ -1811,9 +1760,7 @@ class QuantumCircuit:
         if len({cb.identifier for cb in clbits}) != len(clbits):
             raise ValueError("Duplicate clbit arguments")
 
-        if not {cb.identifier for cb in clbits}.issubset(
-            {cb.identifier for cb in self.clbits}
-        ):
+        if not {cb.identifier for cb in clbits}.issubset({cb.identifier for cb in self.clbits}):
             raise ValueError("Instruction Clbits not present in circuit")
 
         try:
@@ -2007,11 +1954,7 @@ class QuantumCircuit:
 
             # Composite gates are identified by the hash of their
             # sub-circuit, while primitive gates are identified by their name.
-            op_hash = (
-                hash(instr.op.definition)
-                if instr.op.definition
-                else hash(instr.op.name)
-            )
+            op_hash = hash(instr.op.definition) if instr.op.definition else hash(instr.op.name)
 
             # Weight by (i+1)² so that swapping two instructions changes
             # the total, making the hash order-sensitive.
@@ -2274,9 +2217,7 @@ class QuantumCircuit:
         # NOTE: This is here to avoid circular imports
         from qrisp.interface import qrisp_to_stim
 
-        return qrisp_to_stim(
-            self, return_measurement_map, return_detector_map, return_observable_map
-        )
+        return qrisp_to_stim(self, return_measurement_map, return_detector_map, return_observable_map)
 
     def to_pytket(self):
         """
@@ -2428,7 +2369,6 @@ class QuantumCircuit:
 
         """
         if clbits is None:
-
             if isinstance(qubits, (Qubit, int)):
                 # For single-qubit measurement,
                 # we allocate exactly one classical bit.
@@ -2520,9 +2460,7 @@ class QuantumCircuit:
 
         clbits = [clbits] if isinstance(clbits, Clbit) else clbits
 
-        parity_op = ParityOperation(
-            len(clbits), expectation=expectation, observable=observable
-        )
+        parity_op = ParityOperation(len(clbits), expectation=expectation, observable=observable)
         self.append(parity_op, clbits=clbits)
 
         return ParityHandle(self.data[-1])
@@ -2734,9 +2672,7 @@ class QuantumCircuit:
             return
         self.append(ops.RZZGate(phi), [qubits_0, qubits_1])
 
-    def xxyy(
-        self, phi: FloatLike, beta: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike
-    ):
+    def xxyy(self, phi: FloatLike, beta: FloatLike, qubits_0: QubitLike, qubits_1: QubitLike):
         """
         Instruct an XXYY-gate.
 
@@ -3067,13 +3003,10 @@ def _convert_qb_item(
 
     if isinstance(value, int):
         if circuit is None:
-            raise ValueError(
-                "Tried to convert integer index to Qubit without a circuit"
-            )
+            raise ValueError("Tried to convert integer index to Qubit without a circuit")
         if value >= len(circuit.qubits):
             raise ValueError(
-                f"Tried to address qubit with index {value} "
-                f"in a circuit with {len(circuit.qubits)} qubits"
+                f"Tried to address qubit with index {value} in a circuit with {len(circuit.qubits)} qubits"
             )
         return _convert_qb_item(circuit.qubits[value], circuit)
 
@@ -3143,9 +3076,7 @@ def _convert_cb_item(
 
     if isinstance(value, int):
         if circuit is None:
-            raise ValueError(
-                "Tried to convert integer index to Clbit without a circuit"
-            )
+            raise ValueError("Tried to convert integer index to Clbit without a circuit")
         return _convert_cb_item(circuit.clbits[value], circuit)
 
     raise TypeError(f"Cannot convert type {type(value)} to a classical-bit list")

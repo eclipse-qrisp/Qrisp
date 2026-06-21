@@ -85,20 +85,14 @@ for n in precisions:
 
     ops_qrisp = count_ops_qrisp(n)
 
-    execution_time = (
-        timeit.timeit(f"count_ops_qrisp({n})", globals=globals(), number=10) / 10
-    )
+    execution_time = timeit.timeit(f"count_ops_qrisp({n})", globals=globals(), number=10) / 10
     results["qrisp"]["times"].append(execution_time)
     print("Qrisp time: ", execution_time)
-    results["qrisp"]["cx_counts"].append(
-        ops_qrisp.get("cx", 0) + ops_qrisp.get("cz", 0)
-    )
+    results["qrisp"]["cx_counts"].append(ops_qrisp.get("cx", 0) + ops_qrisp.get("cz", 0))
 
 # %%
 n_qiskit = len(results["qiskit"]["times"])
-fit_res = np.polyfit(
-    list(range(1, n_qiskit + 1)), np.log(results["qiskit"]["times"]), deg=1
-)
+fit_res = np.polyfit(list(range(1, n_qiskit + 1)), np.log(results["qiskit"]["times"]), deg=1)
 fit_data = np.exp(fit_res[0] * np.arange(1, len(precisions) + 1) + fit_res[1])
 
 # %%
@@ -173,9 +167,7 @@ lines1, labels1 = ax1.get_legend_handles_labels()
 lines2, labels2 = ax2.get_legend_handles_labels()
 ax1.legend(lines1 + lines2, labels1 + labels2, loc="center right")
 
-plt.title(
-    "Resource Efficiency and Computation Speed \n vs. Beryllium hydride QPE Precision"
-)
+plt.title("Resource Efficiency and Computation Speed \n vs. Beryllium hydride QPE Precision")
 plt.tight_layout()
 # plt.savefig("resource_computation_comparison.png", dpi = 300)
 plt.show()

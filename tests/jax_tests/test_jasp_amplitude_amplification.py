@@ -105,9 +105,7 @@ def test_jasp_amplitude_amplification_oblivious():
     def main_jasp():
         qa = QuantumArray(QuantumBool(), shape=(2,))
         state_function(qa)
-        amplitude_amplification(
-            qa, state_function, oracle_function, iter=1, reflection_indices=[0]
-        )
+        amplitude_amplification(qa, state_function, oracle_function, iter=1, reflection_indices=[0])
         return qa[0]
 
     mes_res = main_jasp()

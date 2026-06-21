@@ -40,10 +40,10 @@ def GQSVT(
     r"""
     Returns a BlockEncoding representing a polynomial transformation of the operator via `Generalized Quantum Singular Value Transform <https://arxiv.org/pdf/2312.00723>`_.
 
-    For a block-encoded operator $A$ with `Singular Value Decomposition <https://en.wikipedia.org/wiki/Singular_value_decomposition>`_ $A = U \Sigma V^{\dagger}$ for unitaries $U, V$, 
+    For a block-encoded operator $A$ with `Singular Value Decomposition <https://en.wikipedia.org/wiki/Singular_value_decomposition>`_ $A = U \Sigma V^{\dagger}$ for unitaries $U, V$,
     and a (complex) polynomial $p(z)$, this method returns a BlockEncoding of either operator:
 
-    - $p_{odd}(A)=V p_{odd}(\Sigma) U^{\dagger}$ 
+    - $p_{odd}(A)=V p_{odd}(\Sigma) U^{\dagger}$
 
     - $p_{even}(A)=V p_{even}(\Sigma) V^{\dagger}$
 
@@ -108,7 +108,7 @@ def GQSVT(
 
     Generate a BlockEncoding of $A$ and use GQSVT to obtain a BlockEncoding of $p(A)=V p(\Sigma) U^{\dagger}$
     for an odd parity polynomial.
-    
+
     ::
 
         from qrisp import *
@@ -154,11 +154,11 @@ def GQSVT(
         print(res)
         # [0.85184734, 0.47324852, 0.07098728, 0.21296184]
 
-    .. warning:: 
+    .. warning::
 
-        For non-Hermitian matrices performing Singular Value Transform 
+        For non-Hermitian matrices performing Singular Value Transform
         is not the same as applying a matrix polynomial.
-        
+
     ::
 
         A_poly = A + A @ A @ A
@@ -170,11 +170,8 @@ def GQSVT(
 
     ALLOWED_KINDS = {"Polynomial", "Chebyshev"}
     if kind not in ALLOWED_KINDS:
-        raise ValueError(
-            f"Invalid kind specified: '{kind}'. "
-            f"Allowed kinds are: {', '.join(ALLOWED_KINDS)}"
-        )
-    
+        raise ValueError(f"Invalid kind specified: '{kind}'. Allowed kinds are: {', '.join(ALLOWED_KINDS)}")
+
     if isinstance(A, (QubitOperator, FermionicOperator)):
         A = BlockEncoding.from_operator(A)
 
@@ -192,7 +189,7 @@ def GQSVT(
         if parity == "even":
             x(args[1])
         GQSP(args[0], *args[1:], unitary=BE_herm.unitary, angles=angles)
-        x(args[1]) # Ensure measuring ancilla in |0> yields correct result
+        x(args[1])  # Ensure measuring ancilla in |0> yields correct result
 
     new_anc_templates = [QuantumBool().template()] + BE_herm._anc_templates
     return BlockEncoding(

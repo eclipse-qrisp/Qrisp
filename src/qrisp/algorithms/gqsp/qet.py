@@ -148,10 +148,7 @@ def QET(
 
     ALLOWED_KINDS = {"Polynomial", "Chebyshev"}
     if kind not in ALLOWED_KINDS:
-        raise ValueError(
-            f"Invalid kind specified: '{kind}'. "
-            f"Allowed kinds are: {', '.join(ALLOWED_KINDS)}"
-        )
+        raise ValueError(f"Invalid kind specified: '{kind}'. Allowed kinds are: {', '.join(ALLOWED_KINDS)}")
 
     if isinstance(H, (QubitOperator, FermionicOperator)):
         H = BlockEncoding.from_operator(H)
@@ -193,6 +190,4 @@ def QET(
             H.unitary(*args[1:])
 
     new_anc_templates = [QuantumBool().template()] + H._anc_templates
-    return BlockEncoding(
-        alpha, new_anc_templates, new_unitary, num_ops=H.num_ops, is_hermitian=False
-    )
+    return BlockEncoding(alpha, new_anc_templates, new_unitary, num_ops=H.num_ops, is_hermitian=False)

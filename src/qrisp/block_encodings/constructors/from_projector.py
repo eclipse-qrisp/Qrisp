@@ -159,9 +159,7 @@ def build_from_projector(
 
     if not (isinstance(left, Callable) or isinstance(right, Callable)):
         if num_left != num_right:
-            raise ValueError(
-                f"Size mismatch: left has {num_left} elements, but right has {num_right}."
-            )
+            raise ValueError(f"Size mismatch: left has {num_left} elements, but right has {num_right}.")
     num_ops = max(num_left, num_right, num_ops)
 
     def unitary(*args):

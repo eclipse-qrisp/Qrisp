@@ -258,9 +258,7 @@ def simulate_jaspr(
     from qrisp.jasp import Jaspr
     from qrisp.alg_primitives.mcx_algs.circuit_library import gidney_qc
 
-    if len(jaxpr.jaxpr.outvars) == 1 and isinstance(
-        jaxpr.jaxpr.outvars[0].aval, AbstractQuantumState
-    ):
+    if len(jaxpr.jaxpr.outvars) == 1 and isinstance(jaxpr.jaxpr.outvars[0].aval, AbstractQuantumState):
         return None
 
     if simulator == "stim":
@@ -274,12 +272,10 @@ def simulate_jaspr(
     def eqn_evaluator(eqn, context_dic):
 
         if eqn.primitive.name == "jit":
-
             function_name = eqn.params["name"]
             jaxpr = eqn.params["jaxpr"]
 
             if terminal_sampling:
-
                 translation_dic = {
                     "expectation_value_eval_function": "ev",
                     "sampling_eval_function": "array",
@@ -304,10 +300,7 @@ def simulate_jaspr(
                 ):
                     break
             else:
-
-                compiled_function, is_executable = compile_cl_func(
-                    jaxpr.jaxpr, function_name
-                )
+                compiled_function, is_executable = compile_cl_func(jaxpr.jaxpr, function_name)
 
                 # Functions with purely classical inputs/outputs can still contain
                 # kernelized quantum functions. This will raise an NotImplementedError
@@ -332,9 +325,7 @@ def simulate_jaspr(
                 invalues[-1].append(gidney_qc.inverse().to_gate(), invalues[:-1])
                 outvalues = [invalues[-1]]
             else:
-                outvalues = eval_jaxpr(
-                    eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator
-                )(*invalues)
+                outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator)(*invalues)
             if not isinstance(outvalues, (list, tuple)):
                 outvalues = [outvalues]
             insert_outvalues(eqn, context_dic, outvalues)

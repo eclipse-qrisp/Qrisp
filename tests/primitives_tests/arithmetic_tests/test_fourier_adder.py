@@ -16,11 +16,10 @@
 ********************************************************************************
 """
 
-
 import numpy as np
 from qrisp import inpl_adder_test, fourier_adder
 
+
 def test_fourier_adder():
-    
+
     inpl_adder_test(fourier_adder)
-    

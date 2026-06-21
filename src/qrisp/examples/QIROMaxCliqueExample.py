@@ -37,9 +37,7 @@ mes_kwargs = {
 
 # assign cost_function and maxclique_instance, normal QAOA
 testCostFun = create_max_clique_cl_cost_function(Gtwo)
-maxclique_instance = QAOAProblem(
-    create_max_indep_set_mixer(G), RX_mixer, create_max_clique_cl_cost_function(G)
-)
+maxclique_instance = QAOAProblem(create_max_indep_set_mixer(G), RX_mixer, create_max_clique_cl_cost_function(G))
 
 # assign the correct new update functions for qiro from above imports
 qiro_instance = QIROProblem(
@@ -70,7 +68,6 @@ print("QIRO 5 best results")
 maxfive = sorted(res_qiro, key=res_qiro.get, reverse=True)[:5]
 for key, val in res_qiro.items():
     if key in maxfive:
-
         print(key)
         print(testCostFun({key: 1}))
 

@@ -219,22 +219,15 @@ class PassManager:
             ``"measurements"``.
         """
         if verification_type not in ("unitary", "measurements"):
-            raise ValueError(
-                f"Unknown verification_type {verification_type!r}. "
-                f"Expected 'unitary' or 'measurements'."
-            )
+            raise ValueError(f"Unknown verification_type {verification_type!r}. Expected 'unitary' or 'measurements'.")
 
         results: list[tuple[str, bool]] = []
         current = qc
         for circuit_pass in self._passes:
             if verification_type == "unitary":
-                passed = circuit_pass.compare_unitary(
-                    current, **verification_kwargs
-                )
+                passed = circuit_pass.compare_unitary(current, **verification_kwargs)
             else:
-                passed = circuit_pass.compare_measurement(
-                    current, **verification_kwargs
-                )
+                passed = circuit_pass.compare_measurement(current, **verification_kwargs)
 
             results.append((circuit_pass.__name__, passed))
 
@@ -269,8 +262,7 @@ class PassManager:
             self._passes.extend(other._passes)
         else:
             raise TypeError(
-                f"PassManager only accepts CircuitPass or PassManager instances, "
-                f"got {type(other).__name__}."
+                f"PassManager only accepts CircuitPass or PassManager instances, got {type(other).__name__}."
             )
         return self
 

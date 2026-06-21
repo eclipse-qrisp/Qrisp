@@ -38,7 +38,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: astral-sh/ruff-action@v3
       - name: Ruff format
         uses: astral-sh/ruff-action@v3
         with:

@@ -73,17 +73,17 @@ def decompose(
         >>> qc.mcx([0, 1], 2)
         >>> print(qc)
         qb_71: ──■──
-                 │  
+                 │
         qb_72: ──■──
                ┌─┴─┐
         qb_73: ┤ X ├
                └───┘
-        
+
         >>> pm = PassManager()
         >>> pm += decompose()
         >>> decomposed_qc = pm.run(qc)
         >>> print(decomposed_qc)
-               ┌─────┐                                                 
+               ┌─────┐
         qb_71: ┤ Tdg ├───────■─────────■────■───────────────────────■──
                ├─────┤┌───┐  │  ┌───┐┌─┴─┐  │  ┌─────┐┌───┐ ┌───┐ ┌─┴─┐
         qb_72: ┤ Tdg ├┤ X ├──┼──┤ T ├┤ X ├──┼──┤ Tdg ├┤ X ├─┤ T ├─┤ X ├
@@ -113,8 +113,6 @@ def decompose(
         )
 
     _decompose.__name__ = f"decompose(level={level})"
-    _decompose.__doc__ = (
-        f"Recursively decompose synthesized gates up to recursion depth {level}."
-    )
+    _decompose.__doc__ = f"Recursively decompose synthesized gates up to recursion depth {level}."
 
     return _decompose

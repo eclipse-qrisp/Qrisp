@@ -86,13 +86,9 @@ class BaseMetric(ABC):
             return
         if hasattr(meas_res, "dtype") and meas_res.dtype == jax.numpy.bool_:
             return
-        raise ValueError(
-            f"Measurement behavior must return a boolean, got {meas_res} of type {type(meas_res)}."
-        )
+        raise ValueError(f"Measurement behavior must return a boolean, got {meas_res} of type {type(meas_res)}.")
 
-    def _measurement_body_fun(
-        self, meas_number: ArrayLike, i: ArrayLike, acc: ArrayLike
-    ) -> ArrayLike:
+    def _measurement_body_fun(self, meas_number: ArrayLike, i: ArrayLike, acc: ArrayLike) -> ArrayLike:
         """Helper function for measuring qubit arrays."""
 
         meas_key = jax.random.key(meas_number + i)
@@ -118,9 +114,7 @@ class BaseMetric(ABC):
     ##############################################################
 
     @abstractmethod
-    def handle_create_qubits(
-        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
-    ) -> Sequence:
+    def handle_create_qubits(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
         """
         Handle the `jasp.create_qubits` primitive.
 
@@ -132,9 +126,7 @@ class BaseMetric(ABC):
         """
 
     @abstractmethod
-    def handle_get_qubit(
-        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
-    ) -> Sequence:
+    def handle_get_qubit(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
         """
         Handle the `jasp.get_qubit` primitive.
 
@@ -146,9 +138,7 @@ class BaseMetric(ABC):
         """
 
     @abstractmethod
-    def handle_get_size(
-        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
-    ) -> Sequence:
+    def handle_get_size(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
         """
         Handle the `jasp.get_size` primitive.
 
@@ -160,9 +150,7 @@ class BaseMetric(ABC):
         """
 
     @abstractmethod
-    def handle_fuse(
-        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
-    ) -> Sequence:
+    def handle_fuse(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
         """
         Handle the `jasp.fuse` primitive.
 
@@ -174,9 +162,7 @@ class BaseMetric(ABC):
         """
 
     @abstractmethod
-    def handle_slice(
-        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
-    ) -> Sequence:
+    def handle_slice(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
         """
         Handle the `jasp.slice` primitive.
 
@@ -188,9 +174,7 @@ class BaseMetric(ABC):
         """
 
     @abstractmethod
-    def handle_quantum_gate(
-        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
-    ) -> Sequence:
+    def handle_quantum_gate(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
         """
         Handle the `jasp.quantum_gate` primitive.
 
@@ -202,9 +186,7 @@ class BaseMetric(ABC):
         """
 
     @abstractmethod
-    def handle_measure(
-        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
-    ) -> Sequence:
+    def handle_measure(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
         """
         Handle the `jasp.measure` primitive.
 
@@ -216,9 +198,7 @@ class BaseMetric(ABC):
         """
 
     @abstractmethod
-    def handle_reset(
-        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
-    ) -> Sequence:
+    def handle_reset(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
         """
         Handle the `jasp.reset` primitive.
 
@@ -230,9 +210,7 @@ class BaseMetric(ABC):
         """
 
     @abstractmethod
-    def handle_delete_qubits(
-        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
-    ) -> Sequence:
+    def handle_delete_qubits(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
         """
         Handle the `jasp.delete_qubits` primitive.
 
@@ -244,9 +222,7 @@ class BaseMetric(ABC):
         """
 
     @abstractmethod
-    def handle_parity(
-        self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict
-    ) -> Sequence:
+    def handle_parity(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
         """
         Handle the `jasp.parity` primitive.
 
@@ -256,9 +232,7 @@ class BaseMetric(ABC):
     def handle_create_quantum_kernel(self, *_args, **_kwargs):
         """Handle the `jasp.create_quantum_kernel` primitive."""
 
-        raise NotImplementedError(
-            "Quantum kernel creation not yet supported in profiling interpreter."
-        )
+        raise NotImplementedError("Quantum kernel creation not yet supported in profiling interpreter.")
 
     def get_handlers(self) -> Dict[str, Callable[..., Any]]:
         """Return a mapping from primitive names to handler methods."""
@@ -283,7 +257,10 @@ class BaseMetric(ABC):
 # ``jax.pure_callback`` to prevent XLA from inlining it at every call site.
 # ---------------------------------------------------------------------------
 
-def _should_use_profiling_callback(jaxpr : Jaxpr | ClosedJaxpr, call_graph_stats: dict | None, callback_threshold: int | None) -> bool:
+
+def _should_use_profiling_callback(
+    jaxpr: Jaxpr | ClosedJaxpr, call_graph_stats: dict | None, callback_threshold: int | None
+) -> bool:
     """
     Decide whether *jaxpr* should be called via ``jax.pure_callback``.
 
@@ -316,10 +293,7 @@ def _should_use_profiling_callback(jaxpr : Jaxpr | ClosedJaxpr, call_graph_stats
     stats = call_graph_stats.get(id(jaxpr))
     if stats is None:
         return False
-    return (
-        stats.call_count > 1
-        and stats.call_count * stats.inlined_eqn_count >= callback_threshold
-    )
+    return stats.call_count > 1 and stats.call_count * stats.inlined_eqn_count >= callback_threshold
 
 
 # Cache for result shape specifications.  Computing result shapes requires
@@ -441,7 +415,7 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
         Minimum value of ``call_count * inlined_eqn_count`` required to trigger
         ``jax.pure_callback`` wrapping.  ``None`` (default) disables callbacks
         entirely (fastest execution).  ``0`` wraps every reused sub-jaxpr
-        (fastest compilation). 
+        (fastest compilation).
 
     Returns
     -------
@@ -469,7 +443,6 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
             insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "cond":
-
             branch_fns = [
                 eval_jaxpr(branch_jaxpr, eqn_evaluator=profiling_eqn_evaluator)
                 for branch_jaxpr in eqn.params["branches"]
@@ -482,7 +455,6 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
             insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "while":
-
             body_jaxpr = eqn.params["body_jaxpr"]
             cond_jaxpr = eqn.params["cond_jaxpr"]
             body_nconsts = eqn.params["body_nconsts"]
@@ -505,18 +477,13 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
                 carries = val[overall_constant_amount:]
                 return cond_eval(*(constants + carries))
 
-            outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[
-                overall_constant_amount:
-            ]
+            outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[overall_constant_amount:]
 
             insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "scan":
-
             # Reinterpret the scan body function
-            scan_body = eval_jaxpr(
-                eqn.params["jaxpr"], eqn_evaluator=profiling_eqn_evaluator
-            )
+            scan_body = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=profiling_eqn_evaluator)
 
             # Extract scan parameters
             num_consts = eqn.params["num_consts"]
@@ -534,11 +501,7 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
             if num_consts > 0:
 
                 def wrapped_body(carry, x):
-                    args = (
-                        consts + list(carry) + list(x)
-                        if isinstance(x, tuple)
-                        else consts + list(carry) + [x]
-                    )
+                    args = consts + list(carry) + list(x) if isinstance(x, tuple) else consts + list(carry) + [x]
                     result = scan_body(*args)
                     if not isinstance(result, tuple):
                         result = (result,)
@@ -584,7 +547,6 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
             insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "jit":
-
             # For qached functions, we want to make sure, the compiled function
             # contains only a single implementation per qached function.
 

@@ -93,9 +93,7 @@ class QuantumColor(QuantumVariable):
 
         # If binary encoding is used, the size of QuantumVariable is the maximal value of log2 for the number of colors
         else:
-            QuantumVariable.__init__(
-                self, size=int(np.ceil(np.log2(len(list_of_colors))))
-            )
+            QuantumVariable.__init__(self, size=int(np.ceil(np.log2(len(list_of_colors)))))
 
     def decoder(self, i):
         """
@@ -200,7 +198,6 @@ def cl_cost_function(counts):
 
     # Iterate over all items in counts in reverse order
     for meas, meas_count in list(counts.items())[::-1]:
-
         # Calculate objective function for current measurement
         obj_for_meas = mkcs_obj(meas, G)
 
@@ -253,7 +250,6 @@ def mkcs_obj(quantumcolor_array, G):
 
     # Iterate over all edges in graph G
     for pair in list(G.edges()):
-
         # If colors of nodes in current pair are not same, multiply color by reward factor 4
         if quantumcolor_array[pair[0]] != quantumcolor_array[pair[1]]:
             color *= 4
@@ -329,9 +325,7 @@ coloring_instance.set_init_function(initial_state_mkcs)
 start_time = time.time()
 
 # Run QAOA with given quantum arguments, depth, measurement keyword arguments and maximum iterations for optimization
-res = coloring_instance.run(
-    qarg, depth, mes_kwargs={"backend": qaoa_backend}, max_iter=25
-)
+res = coloring_instance.run(qarg, depth, mes_kwargs={"backend": qaoa_backend}, max_iter=25)
 
 print(qarg.qs)
 
@@ -342,20 +336,14 @@ print(time.time() - start_time)
 
 # Get the best solution and print it
 best_coloring, best_solution = min(
-    [
-        (mkcs_obj(quantumcolor_array, G), quantumcolor_array)
-        for quantumcolor_array in res.keys()
-    ],
+    [(mkcs_obj(quantumcolor_array, G), quantumcolor_array) for quantumcolor_array in res.keys()],
     key=itemgetter(0),
 )
 print(f"Best string: {best_solution} with coloring: {-best_coloring}")
 
 # Get final solution with optimized gamma and beta angle parameter values and print it
 best_coloring, res_str = min(
-    [
-        (mkcs_obj(quantumcolor_array, G), quantumcolor_array)
-        for quantumcolor_array in list(res.keys())[:5]
-    ],
+    [(mkcs_obj(quantumcolor_array, G), quantumcolor_array) for quantumcolor_array in list(res.keys())[:5]],
     key=itemgetter(0),
 )
 print("QAOA solution: ", res_str)

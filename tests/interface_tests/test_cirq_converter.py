@@ -164,13 +164,12 @@ def test_grover():
     cirq_circuit = convert_to_cirq(qrisp_circuit)
     cirq_sv = final_state_vector(cirq_circuit)
     np.testing.assert_array_almost_equal(
-        np.zeros(np.shape(cirq_sv)), np.round(qrisp_sv - cirq_sv),
+        np.zeros(np.shape(cirq_sv)),
+        np.round(qrisp_sv - cirq_sv),
     )
 
     qrisp_restored = QuantumCircuit.from_cirq(cirq_circuit)
-    np.testing.assert_array_almost_equal(
-        qrisp_restored.statevector_array(), qrisp_sv, decimal=5
-    )
+    np.testing.assert_array_almost_equal(qrisp_restored.statevector_array(), qrisp_sv, decimal=5)
 
 
 def test_recursive_conversion():
@@ -207,9 +206,7 @@ def test_convert_to_cirq_cirq_qubits_passthrough():
 def _mock_unknown_circ():
     """Qrisp circuit with a MagicMock operation (triggers Exception during transpile)."""
     qc = QuantumCircuit(1)
-    qc.data = [
-        MagicMock(op=MagicMock(name="some_gate", params=[]), qubits=[MagicMock()])
-    ]
+    qc.data = [MagicMock(op=MagicMock(name="some_gate", params=[]), qubits=[MagicMock()])]
     return qc
 
 
@@ -350,9 +347,7 @@ def test_roundtrip_preserves_unitary(circ_builder):
 def _circ_h_cx_rz_measure():
     """Cirq circuit with H, CX, RZ, and a two-qubit measurement."""
     q0, q1 = cirq.LineQubit.range(2)
-    return cirq.Circuit(
-        [cirq.H(q0), cirq.CNOT(q0, q1), cirq.rz(0.5)(q1), cirq.measure(q0, q1)]
-    )
+    return cirq.Circuit([cirq.H(q0), cirq.CNOT(q0, q1), cirq.rz(0.5)(q1), cirq.measure(q0, q1)])
 
 
 def _circ_h_cx():
@@ -383,9 +378,7 @@ def test_convert_from_cirq_circuits(circ_builder, use_classmethod, expected_name
 
     # verify unitary when circuit has no measurement gates
     if not any(d.op.name == "measure" for d in qrisp_qc.data):
-        np.testing.assert_array_almost_equal(
-            np.abs(qrisp_qc.get_unitary()), np.abs(cirq.unitary(cirq_circ))
-        )
+        np.testing.assert_array_almost_equal(np.abs(qrisp_qc.get_unitary()), np.abs(cirq.unitary(cirq_circ)))
 
 
 def test_convert_from_cirq_reset():
@@ -443,9 +436,7 @@ def test_convert_from_cirq_single_gate(gate_key, expected_name):
     assert qrisp_qc.data[0].op.name == expected_name
 
     expected_unitary = cirq.unitary(cirq_circ)
-    np.testing.assert_array_almost_equal(
-        np.abs(qrisp_qc.get_unitary()), np.abs(expected_unitary)
-    )
+    np.testing.assert_array_almost_equal(np.abs(qrisp_qc.get_unitary()), np.abs(expected_unitary))
 
 
 @pytest.mark.parametrize(
@@ -504,15 +495,9 @@ def test_convert_from_cirq_controlled_gates(key):
 
     builders = {
         "X.controlled()": cirq.Circuit([cirq.X.controlled()(q0, q1)]),
-        "ControlledOperation": cirq.Circuit(
-            [cirq.ControlledOperation([q0], cirq.X(q1))]
-        ),
-        "Toffoli_via_ControlledGate": cirq.Circuit(
-            [cirq.ControlledGate(cirq.X, num_controls=2)(q0, q1, q2)]
-        ),
-        "anti_control_via_control_values": cirq.Circuit(
-            [cirq.X.controlled(control_values=[0, 1])(q0, q1, q2)]
-        ),
+        "ControlledOperation": cirq.Circuit([cirq.ControlledOperation([q0], cirq.X(q1))]),
+        "Toffoli_via_ControlledGate": cirq.Circuit([cirq.ControlledGate(cirq.X, num_controls=2)(q0, q1, q2)]),
+        "anti_control_via_control_values": cirq.Circuit([cirq.X.controlled(control_values=[0, 1])(q0, q1, q2)]),
     }
 
     cirq_circ = builders[key]

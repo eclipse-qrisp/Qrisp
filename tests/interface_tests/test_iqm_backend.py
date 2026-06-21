@@ -36,9 +36,7 @@ def test_IQMBackend():
 
     compilation_options = CircuitCompilationOptions()
     # Create an instance of IQMBackend
-    backend = IQMBackend(
-        api_token, device_instance, compilation_options=compilation_options
-    )
+    backend = IQMBackend(api_token, device_instance, compilation_options=compilation_options)
 
     # Check that the backend is an instance of VirtualBackend
     assert isinstance(backend, VirtualBackend)

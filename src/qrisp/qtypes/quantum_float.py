@@ -83,9 +83,7 @@ def _signed_int_iso_inv(y, n):
     # 2. Sign extension: If bit 'n' is set, the number is negative.
     # In two's complement, we subtract 2**(n+1) from values >= 2**n.
     sign_bit = jnp.int64(1) << n
-    return jnp.where(
-        y_wrapped & sign_bit, y_wrapped - (jnp.int64(1) << (n + 1)), y_wrapped
-    )
+    return jnp.where(y_wrapped & sign_bit, y_wrapped - (jnp.int64(1) << (n + 1)), y_wrapped)
 
 
 # def signed_int_iso(x, n):
@@ -398,18 +396,16 @@ class QuantumFloat(QuantumVariable):
         # check if the encoding number is negative while the QuantumFloat is unsigned.
         # We do this before converting to integer to prevent wrapping.
         if not check_for_tracing_mode() and not self.signed and i < 0:
-                raise ValueError(
-                    "Tried to encode negative number in an unsigned QuantumFloat"
-                )
+            raise ValueError("Tried to encode negative number in an unsigned QuantumFloat")
 
         # the following check is based on the math for fixed point arithmetic which varies according to the
         # size, exponent, and whether the QuantumFloat is signed or unsigned.
 
         # calculate the integer bounds based on mantissa size (msize)
-        max_int = (1<<self.msize) - 1
+        max_int = (1 << self.msize) - 1
         if self.signed:
             # Signed range: -2^msize to 2^msize - 1
-            min_int = -(1<<self.msize)
+            min_int = -(1 << self.msize)
         else:
             # Unsigned range: 0 to 2^msize - 1
             min_int = 0
@@ -434,7 +430,7 @@ class QuantumFloat(QuantumVariable):
                 )
 
         if self.signed:
-            res = _signed_int_iso(i / jnp.float64(2** self.exponent) , self.msize)
+            res = _signed_int_iso(i / jnp.float64(2**self.exponent), self.msize)
         else:
             res = i / jnp.float64(2) ** self.exponent
 
@@ -489,9 +485,7 @@ class QuantumFloat(QuantumVariable):
         if rounding:
             # Round value to closest fitting number
             outcome_labels = [self.decoder(i) for i in range(2**self.size)]
-            encoding_number = outcome_labels[
-                np.argmin(np.abs(encoding_number - np.array(outcome_labels)))
-            ]
+            encoding_number = outcome_labels[np.argmin(np.abs(encoding_number - np.array(outcome_labels)))]
 
         super().encode(encoding_number, permit_dirtyness=permit_dirtyness)
 
@@ -509,9 +503,7 @@ class QuantumFloat(QuantumVariable):
                 else:
                     return jasp_multiplyer(other, self)
             else:
-                raise Exception(
-                    f"Tried to multiply class {type(other)} with QuantumFloat"
-                )
+                raise Exception(f"Tried to multiply class {type(other)} with QuantumFloat")
 
         from qrisp.alg_primitives.arithmetic import q_mult, polynomial_encoder
 
@@ -568,9 +560,7 @@ class QuantumFloat(QuantumVariable):
             res += other
             return res
         else:
-            raise Exception(
-                "Addition with type " + str(type(other)) + " not implemented"
-            )
+            raise Exception("Addition with type " + str(type(other)) + " not implemented")
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __sub__(self, other):
@@ -592,9 +582,7 @@ class QuantumFloat(QuantumVariable):
             res -= other
             return res
         else:
-            raise Exception(
-                "Subtraction with type " + str(type(other)) + " not implemented"
-            )
+            raise Exception("Subtraction with type " + str(type(other)) + " not implemented")
 
     __radd__ = __add__
     __rmul__ = __mul__
@@ -614,9 +602,7 @@ class QuantumFloat(QuantumVariable):
             res += other + 2**res.exponent
             return res
         else:
-            raise Exception(
-                "Subtraction with type " + str(type(other)) + " not implemented"
-            )
+            raise Exception("Subtraction with type " + str(type(other)) + " not implemented")
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __truediv__(self, other):
@@ -630,9 +616,7 @@ class QuantumFloat(QuantumVariable):
             raise Exception("Floor division not implemented for signed QuantumFloats")
 
         if self.exponent < 0 or other.exponent < 0:
-            raise Exception(
-                "Tried to perform floor division on non-integer QuantumFloats"
-            )
+            raise Exception("Tried to perform floor division on non-integer QuantumFloats")
         from qrisp.alg_primitives.arithmetic import q_div
 
         return q_div(self, other, prec=0)
@@ -689,9 +673,7 @@ class QuantumFloat(QuantumVariable):
             else:
                 print(isinstance(other, Tracer))
                 print(type(other.dtype))
-                raise Exception(
-                    f"Don't know how to handle quantum addition with type {type(other)}"
-                )
+                raise Exception(f"Don't know how to handle quantum addition with type {type(other)}")
 
             return self
 
@@ -708,8 +690,7 @@ class QuantumFloat(QuantumVariable):
 
             if not int(other / 2**self.exponent) == other / 2**self.exponent:
                 raise Exception(
-                    "Tried to perform in-place addition with invalid number. "
-                    "QuantumFloat precision too low."
+                    "Tried to perform in-place addition with invalid number. QuantumFloat precision too low."
                 )
 
             input_qf_list = []
@@ -718,9 +699,7 @@ class QuantumFloat(QuantumVariable):
             polynomial_encoder(input_qf_list, self, poly)
 
         else:
-            raise Exception(
-                "In-place addition for type " + str(type(other)) + " not implemented"
-            )
+            raise Exception("In-place addition for type " + str(type(other)) + " not implemented")
 
         return self
 
@@ -745,8 +724,7 @@ class QuantumFloat(QuantumVariable):
         elif isinstance(other, (int, float, np.integer, np.floating)):
             if not int(other / 2**self.exponent) == other / 2**self.exponent:
                 raise Exception(
-                    "Tried to perform in-place subtraction with invalid number. "
-                    "QuantumFloat precision too low."
+                    "Tried to perform in-place subtraction with invalid number. QuantumFloat precision too low."
                 )
 
             input_qf_list = []
@@ -755,11 +733,7 @@ class QuantumFloat(QuantumVariable):
             polynomial_encoder(input_qf_list, self, poly)
 
         else:
-            raise Exception(
-                "In-place substraction for type "
-                + str(type(other))
-                + " not implemented"
-            )
+            raise Exception("In-place substraction for type " + str(type(other)) + " not implemented")
 
         return self
 
@@ -828,9 +802,7 @@ class QuantumFloat(QuantumVariable):
 
         from qrisp.alg_primitives.arithmetic import eq
 
-        if not check_for_tracing_mode() and not isinstance(
-            other, (QuantumFloat, int, float)
-        ):
+        if not check_for_tracing_mode() and not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
 
         return eq(self, other)
@@ -839,9 +811,7 @@ class QuantumFloat(QuantumVariable):
 
         from qrisp.alg_primitives.arithmetic import neq
 
-        if not check_for_tracing_mode() and not isinstance(
-            other, (QuantumFloat, int, float)
-        ):
+        if not check_for_tracing_mode() and not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
 
         return neq(self, other)
@@ -978,9 +948,7 @@ class QuantumFloat(QuantumVariable):
 
         return self[-1]
 
-    def init_from(
-        self, other, ignore_rounding_errors=False, ignore_overflow_errors=False
-    ):
+    def init_from(self, other, ignore_rounding_errors=False, ignore_overflow_errors=False):
         copy_qf(
             self,
             other,
@@ -1041,8 +1009,7 @@ class QuantumFloat(QuantumVariable):
 
         if k not in sig_list:
             raise Exception(
-                f"Tried to retrieve invalid significant {k} "
-                f"from QuantumFloat with mantissa shape {self.mshape}"
+                f"Tried to retrieve invalid significant {k} from QuantumFloat with mantissa shape {self.mshape}"
             )
 
         return self[sig_list.index(k)]
@@ -1208,19 +1175,14 @@ def create_output_qf(operands, op):
         from sympy import Abs, Poly, Symbol
 
         poly = Poly(op)
-        monom_list = [
-            a * prod(x**k for x, k in zip(poly.gens, mon))
-            for a, mon in zip(poly.coeffs(), poly.monoms())
-        ]
+        monom_list = [a * prod(x**k for x, k in zip(poly.gens, mon)) for a, mon in zip(poly.coeffs(), poly.monoms())]
 
         max_value_dic = {Symbol(qf.name): 2.0 ** qf.mshape[1] for qf in operands}
         min_value_dic = {Symbol(qf.name): 2.0 ** qf.mshape[0] for qf in operands}
 
         abs_poly = sum([Abs(monom) for monom in monom_list], 0)
 
-        min_poly_value = min(
-            [float(Abs(monom).subs(min_value_dic)) for monom in monom_list]
-        )
+        min_poly_value = min([float(Abs(monom).subs(min_value_dic)) for monom in monom_list])
 
         max_poly_value = float(abs_poly.subs(max_value_dic))
 
@@ -1242,10 +1204,7 @@ def create_output_qf(operands, op):
             res.m = (
                 operands[0].m
                 + operands[1].m
-                - (
-                    int(np.ceil(np.log2((operands[0].modulus - 1) ** 2) + 1))
-                    - operands[0].size
-                )
+                - (int(np.ceil(np.log2((operands[0].modulus - 1) ** 2) + 1)) - operands[0].size)
             )
         return res
 
@@ -1255,22 +1214,16 @@ def create_output_qf(operands, op):
         max_sig = jnp.maximum(operands[0].mshape[1], operands[1].mshape[1]) + 1
         msize = max_sig - exponent + 1
 
-        return QuantumFloat(
-            msize, exponent, operands[0].qs, signed=signed, name="add_res*"
-        )
+        return QuantumFloat(msize, exponent, operands[0].qs, signed=signed, name="add_res*")
 
     if op == "mul":
         signed = operands[0].signed or operands[1].signed
 
-        if operands[0].reg == operands[1].reg and (
-            operands[0].signed and operands[1].signed
-        ):
+        if operands[0].reg == operands[1].reg and (operands[0].signed and operands[1].signed):
             signed = False
 
         return QuantumFloat(
-            operands[0].msize
-            + operands[1].msize
-            + operands[0].signed * operands[1].signed,
+            operands[0].msize + operands[1].msize + operands[0].signed * operands[1].signed,
             operands[0].exponent + operands[1].exponent,
             operands[0].qs,
             signed=signed,
@@ -1282,9 +1235,7 @@ def create_output_qf(operands, op):
         max_sig = jnp.maximum(operands[0].mshape[1], operands[1].mshape[1]) + 1
         msize = max_sig - exponent + 1
 
-        return QuantumFloat(
-            msize, exponent, operands[0].qs, signed=True, name="sub_res*"
-        )
+        return QuantumFloat(msize, exponent, operands[0].qs, signed=True, name="sub_res*")
 
 
 # Initiates the value of qf2 into qf1 where qf1 has to hold the value 0
@@ -1295,16 +1246,10 @@ def copy_qf(qf1, qf2, ignore_overflow_errors=False, ignore_rounding_errors=False
 
     # Check overflow/underflow
     if max(qf1_sign_list) < max(qf2_sign_list) and not ignore_overflow_errors:
-        raise Exception(
-            "Copy operation would result in overflow "
-            "(use ignore_overflow_errors = True)"
-        )
+        raise Exception("Copy operation would result in overflow (use ignore_overflow_errors = True)")
 
     if min(qf1_sign_list) > min(qf2_sign_list) and not ignore_rounding_errors:
-        raise Exception(
-            "Copy operation would result in rounding "
-            "(use ignore_rounding_errors = True)"
-        )
+        raise Exception("Copy operation would result in rounding (use ignore_rounding_errors = True)")
 
     qs = qf1.qs
 

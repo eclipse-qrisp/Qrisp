@@ -71,9 +71,7 @@ def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     with conjugate(injecteted_comp_func)(a, b):
         cx(a[l - a.exponent : r - a.exponent], res[l - new_exponent : r - new_exponent])
 
-        with conjugate(cx)(
-            a[l - a.exponent : r - a.exponent], b[l - b.exponent : r - b.exponent]
-        ):
+        with conjugate(cx)(a[l - a.exponent : r - a.exponent], b[l - b.exponent : r - b.exponent]):
             with control(c, 0):
                 cx(
                     b[l - b.exponent : r - b.exponent],
@@ -153,9 +151,7 @@ def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     with conjugate(injecteted_comp_func)(a, b):
         cx(a[l - a.exponent : r - a.exponent], res[l - new_exponent : r - new_exponent])
 
-        with conjugate(cx)(
-            a[l - a.exponent : r - a.exponent], b[l - b.exponent : r - b.exponent]
-        ):
+        with conjugate(cx)(a[l - a.exponent : r - a.exponent], b[l - b.exponent : r - b.exponent]):
             with control(c, 0):
                 cx(
                     b[l - b.exponent : r - b.exponent],

@@ -413,9 +413,7 @@ def extract_stim(func=None, *, detector_order="chronological"):
 
     # Validate detector_order parameter
     if detector_order not in ["chronological", "return_order"]:
-        raise ValueError(
-            f"detector_order must be 'chronological' or 'return_order', got '{detector_order}'"
-        )
+        raise ValueError(f"detector_order must be 'chronological' or 'return_order', got '{detector_order}'")
 
     def decorator(f):
         """
@@ -463,12 +461,10 @@ def extract_stim(func=None, *, detector_order="chronological"):
                 # - clbit_mapping: maps Clbit objects to Stim measurement record indices
                 # - detector_mapping: maps ParityHandle to Stim detector indices
                 # - observable_mapping: maps ParityHandle to Stim observable indices
-                stim_circ, clbit_mapping, detector_mapping, observable_mapping = (
-                    qc.to_stim(
-                        return_measurement_map=True,
-                        return_detector_map=True,
-                        return_observable_map=True,
-                    )
+                stim_circ, clbit_mapping, detector_mapping, observable_mapping = qc.to_stim(
+                    return_measurement_map=True,
+                    return_detector_map=True,
+                    return_observable_map=True,
                 )
 
                 # Create qubit mapping: Qubit -> Stim qubit index
@@ -484,9 +480,7 @@ def extract_stim(func=None, *, detector_order="chronological"):
                         elif val in observable_mapping:
                             return observable_mapping[val], "observable"
                         else:
-                            raise KeyError(
-                                f"ParityHandle not found in detector or observable mapping: {val}"
-                            )
+                            raise KeyError(f"ParityHandle not found in detector or observable mapping: {val}")
                     elif isinstance(val, Qubit):
                         return qubit_mapping[val], "qubit"
                     else:
@@ -497,7 +491,6 @@ def extract_stim(func=None, *, detector_order="chronological"):
                 # wrapped in typed numpy array subtypes for identification.
                 new_result = []
                 for i in range(len(staticalization_result) - 1):
-
                     val = staticalization_result[i]
 
                     # Case 1: Value is a numpy array - could contain Clbits, ParityHandles, or Qubits
@@ -510,9 +503,7 @@ def extract_stim(func=None, *, detector_order="chronological"):
                             if first_type is not None:
                                 # Convert all elements
                                 indices = [convert_single_value(v)[0] for v in flat]
-                                result_array = np.array(indices, dtype=np.intp).reshape(
-                                    val.shape
-                                )
+                                result_array = np.array(indices, dtype=np.intp).reshape(val.shape)
                                 # Wrap in appropriate type
                                 if first_type == "measurement":
                                     new_val = result_array.view(StimMeasurementHandles)
@@ -532,54 +523,36 @@ def extract_stim(func=None, *, detector_order="chronological"):
                     # This happens when a QuantumFloat/QuantumVariable is measured and returns
                     # a list of classical bits representing the measurement results.
                     # Wrap in StimMeasurementHandles for type identification.
-                    elif (
-                        isinstance(val, list) and len(val) and isinstance(val[0], Clbit)
-                    ):
+                    elif isinstance(val, list) and len(val) and isinstance(val[0], Clbit):
                         indices = [clbit_mapping[clbit] for clbit in val]
-                        new_val = np.array(indices, dtype=np.intp).view(
-                            StimMeasurementHandles
-                        )
+                        new_val = np.array(indices, dtype=np.intp).view(StimMeasurementHandles)
 
                     # Case 3: Value is a list of Qubit objects
                     # Replace each Qubit with its corresponding Stim qubit index.
-                    elif (
-                        isinstance(val, list) and len(val) and isinstance(val[0], Qubit)
-                    ):
+                    elif isinstance(val, list) and len(val) and isinstance(val[0], Qubit):
                         indices = [qubit_mapping[qb] for qb in val]
-                        new_val = np.array(indices, dtype=np.intp).view(
-                            StimQubitIndices
-                        )
+                        new_val = np.array(indices, dtype=np.intp).view(StimQubitIndices)
 
                     # Case 4: Value is a single Clbit object
                     # Replace it with its Stim measurement index as a 0-d StimMeasurementHandles array.
                     # This happens when a single qubit is measured.
                     elif isinstance(val, Clbit):
-                        new_val = np.array(clbit_mapping[val], dtype=np.intp).view(
-                            StimMeasurementHandles
-                        )
+                        new_val = np.array(clbit_mapping[val], dtype=np.intp).view(StimMeasurementHandles)
 
                     # Case 5: Value is a single Qubit object
                     # Replace it with its Stim qubit index as a 0-d StimQubitIndices array.
                     elif isinstance(val, Qubit):
-                        new_val = np.array(qubit_mapping[val], dtype=np.intp).view(
-                            StimQubitIndices
-                        )
+                        new_val = np.array(qubit_mapping[val], dtype=np.intp).view(StimQubitIndices)
 
                     # Case 6: Value is a ParityHandle (from parity operation)
                     # Look up in detector or observable mapping and wrap accordingly.
                     elif isinstance(val, ParityHandle):
                         if val in detector_mapping:
-                            new_val = np.array(
-                                detector_mapping[val], dtype=np.intp
-                            ).view(StimDetectorHandles)
+                            new_val = np.array(detector_mapping[val], dtype=np.intp).view(StimDetectorHandles)
                         elif val in observable_mapping:
-                            new_val = np.array(
-                                observable_mapping[val], dtype=np.intp
-                            ).view(StimObservableHandles)
+                            new_val = np.array(observable_mapping[val], dtype=np.intp).view(StimObservableHandles)
                         else:
-                            raise KeyError(
-                                f"ParityHandle not found in detector or observable mapping: {val}"
-                            )
+                            raise KeyError(f"ParityHandle not found in detector or observable mapping: {val}")
 
                     # Case 7: Value is something else (e.g., integer, float, ProcessedMeasurement)
                     # Pass through unchanged. Classical values computed during the function
@@ -617,16 +590,11 @@ def extract_stim(func=None, *, detector_order="chronological"):
 
                         # Update all detector handle values in new_result
                         for i, val in enumerate(new_result):
-                            if (
-                                isinstance(val, np.ndarray)
-                                and type(val) == StimDetectorHandles
-                            ):
+                            if isinstance(val, np.ndarray) and type(val) == StimDetectorHandles:
                                 # Map old indices to new indices
                                 old_indices = val.view(np.ndarray)
                                 new_indices = inverse_perm[old_indices]
-                                new_result[i] = new_indices.reshape(val.shape).view(
-                                    StimDetectorHandles
-                                )
+                                new_result[i] = new_indices.reshape(val.shape).view(StimDetectorHandles)
 
                 # Reconstruct the original PyTree structure from the flat results
                 reconstructed = tree_unflatten(out_tree, new_result)
@@ -651,9 +619,7 @@ def extract_stim(func=None, *, detector_order="chronological"):
                             return reg.view(StimQubitIndices)
                         elif isinstance(reg, list):
                             indices = [qubit_mapping.get(qb, qb) for qb in reg]
-                            return np.array(indices, dtype=np.intp).view(
-                                StimQubitIndices
-                            )
+                            return np.array(indices, dtype=np.intp).view(StimQubitIndices)
                         return val
                     elif isinstance(val, tuple):
                         return tuple(convert_qv(v) for v in val)

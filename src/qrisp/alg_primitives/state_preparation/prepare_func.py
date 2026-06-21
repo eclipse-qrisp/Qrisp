@@ -179,10 +179,7 @@ def prepare(
     if not is_tracing:
         expected = 1 << qv.size
         if target_array.size != expected:
-            raise ValueError(
-                f"Statevector length must be {expected} for {qv.size} qubits, "
-                f"got {target_array.size}."
-            )
+            raise ValueError(f"Statevector length must be {expected} for {qv.size} qubits, got {target_array.size}.")
         target_array = np.asarray(target_array)
         norm = np.linalg.norm(target_array)
         if np.isclose(norm, 0.0):

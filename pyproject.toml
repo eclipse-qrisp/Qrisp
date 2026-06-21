@@ -81,7 +81,7 @@ Homepage = "https://github.com/eclipse-qrisp/Qrisp"
 disable = ["import-error"]
 
 [tool.ruff]
-exclude = ["__init__.py", "docs/"]
+exclude = ["__init__.py", "docs/", "*.ipynb"]
 line-length = 120
 target-version = "py312"
 force-exclude = true
@@ -89,4 +89,9 @@ force-exclude = true
 [tool.ruff.lint]
 select = ["I", "E", "W", "D", "PL", "F"]
 
-exclude = []
+ignore = [
+    "D203",  # incorrect-blank-line-before-class (incompatible with D211)
+    "D213",  # multi-line-summary-second-line (incompatible with D212)
+    "D400",  # first-line-should-end-with-period
+    "D415",  # ends-in-punctuation
+]

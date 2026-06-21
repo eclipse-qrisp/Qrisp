@@ -103,9 +103,7 @@ def jaspr_to_catalyst_jaxpr(jaspr):
 
     # Hotfix according to: https://github.com/PennyLaneAI/catalyst/issues/2394#issuecomment-3752134787
     with Patcher((DynamicJaxprTrace, "make_eqn", patched_make_eqn)):
-        return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator))(
-            *args
-        )
+        return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator))(*args)
 
 
 def jaspr_to_catalyst_function(jaspr, device=None):
@@ -158,9 +156,7 @@ def jaspr_to_catalyst_qjit(jaspr, function_name="jaspr_function", device=None):
     catalyst_function = jaspr_to_catalyst_function(jaspr, device=device)
     catalyst_function.__name__ = function_name
     jit_object = catalyst.QJIT(catalyst_function, catalyst.CompileOptions())
-    jit_object.jaxpr = make_jaxpr(catalyst_function)(
-        *[invar.aval for invar in jaspr.invars[:-1]]
-    )
+    jit_object.jaxpr = make_jaxpr(catalyst_function)(*[invar.aval for invar in jaspr.invars[:-1]])
     jit_object.workspace = jit_object._get_workspace()
     temp = jit_object.generate_ir()
     if isinstance(temp, tuple):

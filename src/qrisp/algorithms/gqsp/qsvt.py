@@ -171,17 +171,14 @@ def QSVT(
 
     ALLOWED_KINDS = {"Polynomial", "Chebyshev"}
     if kind not in ALLOWED_KINDS:
-        raise ValueError(
-            f"Invalid kind specified: '{kind}'. "
-            f"Allowed kinds are: {', '.join(ALLOWED_KINDS)}"
-        )
+        raise ValueError(f"Invalid kind specified: '{kind}'. Allowed kinds are: {', '.join(ALLOWED_KINDS)}")
 
     if isinstance(A, (QubitOperator, FermionicOperator)):
         A = BlockEncoding.from_operator(A)
 
     # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
     # If rescale=False, the returned block-encoding will implement p(A/alpha) instead of p(A),
-    # where alpha is the normalization factor of the input block-encoding A. 
+    # where alpha is the normalization factor of the input block-encoding A.
     if rescale:
         p = _rescale_poly(A.alpha, p, kind=kind)
 
@@ -219,6 +216,4 @@ def QSVT(
         h(args[0])
 
     new_anc_templates = [QuantumBool().template()] + A._anc_templates
-    return BlockEncoding(
-        new_alpha, new_anc_templates, new_unitary, num_ops=A.num_ops, is_hermitian=False
-    )
+    return BlockEncoding(new_alpha, new_anc_templates, new_unitary, num_ops=A.num_ops, is_hermitian=False)

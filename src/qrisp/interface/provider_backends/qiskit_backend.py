@@ -157,9 +157,7 @@ class QiskitJob(Job):
             terminal_status = _map_qiskit_status(self._qiskit_job)
             self._last_known_status = terminal_status
             if terminal_status == JobStatus.CANCELLED:
-                raise JobCancelledError(
-                    f"Qiskit job {self._job_id!r} was cancelled."
-                ) from exc
+                raise JobCancelledError(f"Qiskit job {self._job_id!r} was cancelled.") from exc
             raise JobFailureError(f"Qiskit job {self._job_id!r} failed: {exc}") from exc
 
         self._last_known_status = JobStatus.DONE
@@ -473,23 +471,16 @@ class QiskitRuntimeBackend(QiskitBackend):
 
     """
 
-    def __init__(
-        self, api_token, backend=None, channel="ibm_cloud", mode="job", instance=None
-    ):
+    def __init__(self, api_token, backend=None, channel="ibm_cloud", mode="job", instance=None):
         try:
             from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2, Session
         except ImportError as exc:
             raise ImportError(
-                "Please install qiskit-ibm-runtime to use QiskitRuntimeBackend: "
-                "pip install qiskit-ibm-runtime"
+                "Please install qiskit-ibm-runtime to use QiskitRuntimeBackend: pip install qiskit-ibm-runtime"
             ) from exc
 
-        service = QiskitRuntimeService(
-            channel=channel, token=api_token, instance=instance
-        )
-        ibm_backend = (
-            service.least_busy() if backend is None else service.backend(backend)
-        )
+        service = QiskitRuntimeService(channel=channel, token=api_token, instance=instance)
+        ibm_backend = service.least_busy() if backend is None else service.backend(backend)
 
         # Delegate common setup (self.backend, name, options) to QiskitBackend.
         # Pass _default_options() explicitly so the IBM hardware backend's internal
@@ -505,9 +496,7 @@ class QiskitRuntimeBackend(QiskitBackend):
         elif mode == "job":
             self.sampler = SamplerV2(ibm_backend)
         else:
-            raise ValueError(
-                f"Execution mode {mode!r} not available. Choose 'job' or 'session'."
-            )
+            raise ValueError(f"Execution mode {mode!r} not available. Choose 'job' or 'session'.")
 
     @classmethod
     def _default_options(cls):

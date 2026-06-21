@@ -85,24 +85,16 @@ def get_quantum_operations(jaspr: Jaspr) -> List[str]:
     quantum_operations = set()
 
     for eqn in jaspr.eqns:
-
         if eqn.primitive.name == "jasp.quantum_gate":
-
             if eqn.params["gate"].definition:
-                for op_name in (
-                    eqn.params["gate"].definition.transpile().count_ops().keys()
-                ):
+                for op_name in eqn.params["gate"].definition.transpile().count_ops().keys():
                     quantum_operations.add(op_name)
             else:
                 quantum_operations.add(eqn.params["gate"].name)
 
         if eqn.primitive.name == "cond":
-            quantum_operations.update(
-                get_quantum_operations(eqn.params["branches"][0].jaxpr)
-            )
-            quantum_operations.update(
-                get_quantum_operations(eqn.params["branches"][1].jaxpr)
-            )
+            quantum_operations.update(get_quantum_operations(eqn.params["branches"][0].jaxpr))
+            quantum_operations.update(get_quantum_operations(eqn.params["branches"][1].jaxpr))
             continue
 
         # Handle call primitives (like cond/pjit)

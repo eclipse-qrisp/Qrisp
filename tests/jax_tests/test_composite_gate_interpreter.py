@@ -34,6 +34,7 @@ from qrisp.jasp.primitives import quantum_gate_p
 # while/cond are inspected recursively) and collect gate objects.
 # ---------------------------------------------------------------------------
 
+
 def _collect_gates_from_jaxpr(jaxpr):
     """Yield every gate object found in quantum_gate_p equations, recursing
     into jit/while/cond sub-jaxprs."""
@@ -76,9 +77,7 @@ def assert_composite_gates(jaspr):
 def assert_no_composite_gates(jaspr):
     """Assert that all gates in the jaspr are primitive (definition is None)."""
     for gate in _collect_gates_from_jaxpr(jaspr):
-        assert gate.definition is None, (
-            f"Gate '{gate.name}' still has a composite definition after decomposition."
-        )
+        assert gate.definition is None, f"Gate '{gate.name}' still has a composite definition after decomposition."
 
 
 def assert_primitive_gates_invars_match_abstract_params(jaspr):
@@ -121,6 +120,7 @@ def assert_same_unitary(jaspr_a, jaspr_b):
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 def test_decompose_state_preparation():
     """prepare() inserts a state_init composite gate.  After decomposition,
@@ -230,11 +230,7 @@ def test_call_graph_compression_preserved():
 
     # Collect the ClosedJaxpr objects from all top-level jit equations
     def _jit_jaxprs(jaxpr):
-        return [
-            eqn.params["jaxpr"]
-            for eqn in jaxpr.eqns
-            if eqn.primitive.name == "jit"
-        ]
+        return [eqn.params["jaxpr"] for eqn in jaxpr.eqns if eqn.primitive.name == "jit"]
 
     orig_jaxprs = _jit_jaxprs(jaspr)
     assert len(orig_jaxprs) >= 2
@@ -427,7 +423,7 @@ def test_decompose_parametrized_xxyy():
         h(qv)
         xxyy(1.1, 0.4, qv[0], qv[1])
         h(qv)
-        return qv  
+        return qv
 
     jaspr_fixed = make_jaspr(circuit_fixed)()
     decomposed_fixed = decompose_composite_gates(jaspr_fixed)

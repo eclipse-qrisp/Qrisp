@@ -309,9 +309,7 @@ def test_batched_measurement_emits_deprecation_warning():
     a = QuantumFloat(3)
     a[:] = 7
 
-    with pytest.warns(
-        QrispDeprecationWarning, match="batched_measurement is deprecated"
-    ):
+    with pytest.warns(QrispDeprecationWarning, match="batched_measurement is deprecated"):
         batched_measurement([a], backend=bb)
 
 

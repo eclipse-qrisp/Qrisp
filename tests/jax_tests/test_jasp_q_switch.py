@@ -18,16 +18,25 @@
 
 # classical indexed switch tests
 
+
 def test_jasp_q_switch_classical_index():
     from qrisp import QuantumFloat, jaspify, measure, q_switch
 
     @jaspify
     def main(index_val):
 
-        def f0(x): pass
-        def f1(x): x += 1
-        def f2(x): x += 2
-        def f3(x): x += 3
+        def f0(x):
+            pass
+
+        def f1(x):
+            x += 1
+
+        def f2(x):
+            x += 2
+
+        def f3(x):
+            x += 3
+
         branches = [f0, f1, f2, f3]
         operand = QuantumFloat(2)
 
@@ -41,16 +50,25 @@ def test_jasp_q_switch_classical_index():
 
 # quantum indexed switch tests
 
+
 def test_jasp_q_switch_quantum_index():
     from qrisp import QuantumFloat, jaspify, measure, q_switch
 
     @jaspify
     def main(index_val):
 
-        def f0(x): pass
-        def f1(x): x += 1
-        def f2(x): x += 2
-        def f3(x): x += 3
+        def f0(x):
+            pass
+
+        def f1(x):
+            x += 1
+
+        def f2(x):
+            x += 2
+
+        def f3(x):
+            x += 3
+
         index = QuantumFloat(2)
         index[:] = index_val
         branches = [f0, f1, f2, f3]
@@ -70,17 +88,18 @@ def test_jasp_q_switch_multiple_operands():
     @jaspify
     def main(index_val):
 
-        def f0(x, y): pass
+        def f0(x, y):
+            pass
 
-        def f1(x ,y): 
+        def f1(x, y):
             x += 1
             y += 1
 
-        def f2(x, y): 
+        def f2(x, y):
             x += 2
             y += 2
 
-        def f3(x, y): 
+        def f3(x, y):
             x += 3
             y += 3
 

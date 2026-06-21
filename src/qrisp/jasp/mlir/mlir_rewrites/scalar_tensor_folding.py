@@ -16,7 +16,6 @@
 ********************************************************************************
 """
 
-
 """
 Optimization pass for unwrapping scalar tensor packing and eliminating
 dead tensor operations in MLIR/xDSL.
@@ -86,9 +85,7 @@ class FoldExtractFromElements(RewritePattern):
     """Folds a tensor.extract from a 0-D tensor created by tensor.from_elements back into the original scalar value."""
 
     @op_type_rewrite_pattern
-    def match_and_rewrite(
-        self, op: tensor.ExtractOp, rewriter: PatternRewriter
-    ) -> None:
+    def match_and_rewrite(self, op: tensor.ExtractOp, rewriter: PatternRewriter) -> None:
         # Only handle 0-D case (no index operands)
         if len(op.indices) != 0:
             return
@@ -126,9 +123,7 @@ class EraseDeadFromElements(RewritePattern):
     """
 
     @op_type_rewrite_pattern
-    def match_and_rewrite(
-        self, op: tensor.FromElementsOp, rewriter: PatternRewriter
-    ) -> None:
+    def match_and_rewrite(self, op: tensor.FromElementsOp, rewriter: PatternRewriter) -> None:
         # If the result has zero uses, we are safe to delete it
         if not op.result.uses:
             rewriter.erase_op(op)

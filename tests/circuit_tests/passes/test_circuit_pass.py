@@ -133,6 +133,7 @@ class TestCircuitPassCall:
     def test_call_passes_kwargs_is_equivalent_to_preconfiguration(self):
         """If a pass factory pre-configures kwargs at creation time,
         the resulting CircuitPass should work with a single positional arg."""
+
         def make_double_h_pass():
             @CircuitPass
             def _double_h_pass(qc):
@@ -213,6 +214,7 @@ class TestCircuitPassCompareUnitary:
 
     def test_different_qubit_count_returns_false(self):
         """Transforming a 1-qubit circuit into a 2-qubit circuit."""
+
         def add_qubit_pass(qc: QuantumCircuit) -> QuantumCircuit:
             qc = qc.copy()
             qc.add_qubit()
@@ -247,6 +249,7 @@ class TestCircuitPassCompareUnitary:
 
     def test_pass_introducing_measurement_raises_valueerror(self):
         """A pass that injects a measurement into the circuit should raise."""
+
         def measure_pass(qc: QuantumCircuit) -> QuantumCircuit:
             qc = qc.copy()
             qc.add_clbit()
@@ -370,8 +373,10 @@ class TestCircuitPassCompareMeasurement:
 
     def test_pass_that_adds_x_flips_distribution(self, ghz_measured):
         """Adding an X gate before measurement changes the measurement outcomes."""
+
         def add_x_before_measure(qc: QuantumCircuit) -> QuantumCircuit:
             from qrisp.circuit import Instruction
+
             # Insert X on qubit 0 just before the measurement instructions
             new_qc = qc.clearcopy()
             for instr in qc.data:
@@ -385,6 +390,7 @@ class TestCircuitPassCompareMeasurement:
 
     def test_pass_that_adds_h_changes_distribution(self, ghz_measured):
         """Adding an H gate before measurement changes the measurement statistics."""
+
         def add_h_before_measure(qc: QuantumCircuit) -> QuantumCircuit:
             new_qc = qc.clearcopy()
             for instr in qc.data:
@@ -400,6 +406,7 @@ class TestCircuitPassCompareMeasurement:
 
     def test_precision_loose_enough(self, equal_superposition_measured):
         """With precision=-1 (tolerance 10), even a wrong distribution 'passes'."""
+
         def add_x_pass(qc: QuantumCircuit) -> QuantumCircuit:
             qc = qc.copy()
             qc.x(qc.qubits[0])
@@ -530,6 +537,7 @@ class TestCircuitPassCompareMeasurement:
     def test_detects_new_outcome_key(self):
         """When the pass introduces a completely new measurement outcome,
         compare_measurement should detect it."""
+
         def swap_qubits_pass(qc: QuantumCircuit) -> QuantumCircuit:
             new_qc = qc.clearcopy()
             for instr in qc.data:
@@ -566,6 +574,7 @@ class TestCircuitPassVisualize:
 
     def test_visualize_output_contains_pass_name(self, capsys, two_qubit_qc):
         """Output must contain the pass name."""
+
         def my_pass(qc):
             return qc
 
@@ -617,6 +626,7 @@ class TestCircuitPassVisualize:
 
     def test_visualize_after_differs_from_before(self, capsys):
         """When the pass modifies the circuit, before/after outputs differ."""
+
         def reverse_circuit(qc: QuantumCircuit) -> QuantumCircuit:
             new_qc = qc.clearcopy()
             for instr in reversed(qc.data):
@@ -663,12 +673,15 @@ class TestCircuitPassImports:
 
     def test_import_from_qrisp_top_level(self):
         from qrisp import CircuitPass as CP
+
         assert CP is CircuitPass
 
     def test_import_from_qrisp_circuit_passes(self):
         from qrisp.circuit.pass_management import CircuitPass as CP
+
         assert CP is CircuitPass
 
     def test_import_from_leaf_module(self):
         from qrisp.circuit.pass_management.circuit_pass import CircuitPass as CP
+
         assert CP is CircuitPass

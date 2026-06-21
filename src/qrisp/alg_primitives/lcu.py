@@ -173,9 +173,7 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=
         num_unitaries = len(unitaries)
     else:
         if num_unitaries == None:
-            raise ValueError(
-                "The number of unitiaries must be specified if unitaries is callable."
-            )
+            raise ValueError("The number of unitiaries must be specified if unitaries is callable.")
 
     # Specify the QunatumVariable that indicates which case to execute
     n = np.int64(np.ceil(np.log2(num_unitaries)))
@@ -395,9 +393,7 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
 
     """
 
-    case_indicator, qv = inner_LCU(
-        operand_prep, state_prep, unitaries, num_unitaries, oaa_iter
-    )
+    case_indicator, qv = inner_LCU(operand_prep, state_prep, unitaries, num_unitaries, oaa_iter)
 
     # Success condition
     success_bool = measure(case_indicator) == 0
@@ -501,9 +497,7 @@ def view_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
         num_unitaries = len(unitaries)
     else:
         if num_unitaries == None:
-            raise ValueError(
-                "The number of unitiaries must be specified if unitaries is callable."
-            )
+            raise ValueError("The number of unitiaries must be specified if unitaries is callable.")
 
     jaspr = make_jaspr(inner_LCU)(operand_prep, state_prep, unitaries, num_unitaries)
 

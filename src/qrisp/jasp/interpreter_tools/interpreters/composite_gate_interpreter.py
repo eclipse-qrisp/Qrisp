@@ -34,12 +34,12 @@ _greek_letter_order = {sym: i for i, sym in enumerate(_greek_letters)}
 # bind_parameters({alpha: val}) and get back a fully concrete gate with params=[val].
 _U3_IDENTITY_FACTORIES = {
     "gphase": lambda: _std_ops.GPhaseGate(_greek_letters[0]),
-    "rx":     lambda: _std_ops.RXGate(_greek_letters[0]),
-    "ry":     lambda: _std_ops.RYGate(_greek_letters[0]),
-    "rz":     lambda: _std_ops.RZGate(_greek_letters[0]),
-    "p":      lambda: _std_ops.PGate(_greek_letters[0]),
-    "u1":     lambda: _std_ops.U1Gate(_greek_letters[0]),
-    "u3":     lambda: _U3Gate(_greek_letters[0], _greek_letters[1], _greek_letters[2]),
+    "rx": lambda: _std_ops.RXGate(_greek_letters[0]),
+    "ry": lambda: _std_ops.RYGate(_greek_letters[0]),
+    "rz": lambda: _std_ops.RZGate(_greek_letters[0]),
+    "p": lambda: _std_ops.PGate(_greek_letters[0]),
+    "u1": lambda: _std_ops.U1Gate(_greek_letters[0]),
+    "u3": lambda: _U3Gate(_greek_letters[0], _greek_letters[1], _greek_letters[2]),
 }
 
 
@@ -194,9 +194,7 @@ def decompose_eqn_evaluator(eqn, context_dic):
 
     elif eqn.primitive.name == "cond":
         new_eqn = _copy_eqn(eqn)
-        new_eqn.params["branches"] = tuple(
-            _decompose_sub_jaxpr(branch) for branch in eqn.params["branches"]
-        )
+        new_eqn.params["branches"] = tuple(_decompose_sub_jaxpr(branch) for branch in eqn.params["branches"])
         exec_eqn(new_eqn, context_dic)
         return False
 
@@ -228,4 +226,5 @@ def _decompose_sub_jaxpr(jaxpr):
 def decompose_composite_gates(jaspr):
     """Return a new Jaspr with all composite (non-primitive) gates recursively inlined."""
     from qrisp.jasp import Jaspr
+
     return Jaspr(reinterpret(jaspr, decompose_eqn_evaluator))
