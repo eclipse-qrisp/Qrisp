@@ -3,23 +3,56 @@
 Qrisp 0.9
 =========
 
-Feature Name 1
---------------
+A redesigned **backend interface** anchors Qrisp 0.9, alongside the **Quantum
+Singular Value Transform (QSVT)** at the heart of a new suite of
+BlockEncoding transformations, including the new **FOQCS-LCU (Fast
+One-Qubit-Controlled Select Linear Combination of Unitaries)** block encoding method,
+a full **circuit optimization pass manager**, and new state preparation primitives.
+Richer **QuantumArray** arithmetic and meaningful upgrades to arithmetic subroutines,
+including a new **Gidney adder** based on venting carries via mid-circuit measurements,
+round things out.
 
-Feature Name 2
---------------
+QSVT and Singular Value Transformations
+----------------------------------------
+ 
+With Qrisp 0.9, the Quantum Singular Value Transform (QSVT) framework is now available
+as the primary tool for matrix inversion and singular value processing to operators that
+aren't necessarily Hermitian. The :ref:`BlockEncoding <BlockEncoding>` class gains the
+following new methods:
+ 
+* :func:`svt <qrisp.block_encodings.BlockEncoding.svt>`: Applies a polynomial to the
+  singular values of a block-encoded operator, supporting both even and odd parity
+  polynomials in either the Chebyshev or Polynomial basis.
+* :func:`pseudo_inv <qrisp.block_encodings.BlockEncoding.pseudo_inv>`: Using Quantum
+  Singular Value Transform, this function returns a block encoding that approximates
+  the threshold pseudoinverse by ignoring singular values below a specific limit to
+  regularize ill-conditioned linear systems. 
+* :func:`inv <qrisp.block_encodings.BlockEncoding.inv>` now uses QSVT by default,
+  succeeding the previous Hermitianization-based GQSVT approach. A ``method`` keyword
+  lets you switch between QSVT, GQSVT (Generalized QSVT via Hermitianization), or
+  QET (Quantum Eigenvalue Transform) as needed.
+* :func:`dagger <qrisp.block_encodings.BlockEncoding.dagger>`: Returns the adjoint of a
+  block-encoded operator.
+ 
+The GQSVT framework, introduced in PR #479, remains the method of choice whenever
+QET's Hermitian-only restriction doesn't apply. It powers `dalzell_inversion`,
+Qrisp's implementation of the Dalzell Quantum Linear System Solver, along with
+`pseudo_inverse` for threshold pseudoinversion.
 
-Feature Name 3
---------------
+BlockEncoding Refactoring
+-------------------------
+ 
+BlockEncoding has been rebuilt around a cleaner **Base Class + Facade pattern** (PR
+#628), making the codebase easier to extend going forward:
+ 
+* **Modular architecture**: The old monolith is now split across
+  ``block_encoding_base.py`` (the abstract base), ``block_encoding.py`` (the facade),
+  ``constructors/`` (from_array, from_lcu, from_eye, from_projector), and
+  ``transformations/`` (inv, pseudo_inv, svt, qsvt, gqsvt).
+* **Clear separation of concerns**: The base class defines the core interface and
+  shared utilities, while the facade provides a user-friendly API that delegates to
+  the appropriate implementation based on the chosen method.
+* **Easier extensibility**: Adding new block encoding methods or transformations now
+  involves implementing a new class that inherits from the base and updating the facade
+  to recognize it, without needing to modify existing code.
 
-Feature Name 4
---------------
-
-Other New Features
-------------------
-
-Compatibility
--------------
-
-New Tutorials
--------------
