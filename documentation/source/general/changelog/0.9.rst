@@ -44,93 +44,6 @@ the Dalzell Quantum Linear System Solver via QSVT-based kernel reflection, and
 pseudoinversion (also reachable as :func:`BlockEncoding.pseudo_inv
 <qrisp.block_encodings.BlockEncoding.pseudo_inv>`).
 
-BlockEncoding Refactoring
--------------------------
- 
-BlockEncoding has been rebuilt around a cleaner **Base Class + Facade pattern** (PR
-#628), making the codebase easier to extend going forward:
- 
-* **Modular architecture**: The old monolith is now split across
-  ``block_encoding_base.py`` (the abstract base), ``block_encoding.py`` (the facade),
-  ``constructors/`` (from_array, from_lcu, from_eye, from_projector), and
-  ``transformations/`` (inv, poly, pseudo_inv, sim, svt).
-* **Clear separation of concerns**: The base class defines the core interface and
-  shared utilities, while the facade provides a user-friendly API that delegates to
-  the appropriate implementation based on the chosen method.
-* **Easier extensibility**: Adding new block encoding methods or transformations now
-  involves implementing a new class that inherits from the base and updating the facade
-  to recognize it, without needing to modify existing code.
-
-
-FOQCS-LCU Block Encoding
-------------------------
- 
-Qrisp 0.9 adds the **FOQCS-LCU** block encoding method to the :ref:`BlockEncoding
-<BlockEncoding>` class (PR #597), opening up a more direct path to block encoding
-Heisenberg and spin-glass type operators:
- 
-* :func:`from_foqcs_lcu_prep
-  <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep>`: Builds a FOQCS-LCU block
-  encoding from a custom PREP function, giving you full control over the underlying
-  state preparation.
-* :func:`from_foqcs_lcu_operator
-  <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_operator>`: Builds a FOQCS-LCU
-  block encoding straight from a :class:`QubitOperator <qrisp.operators.QubitOperator>`,
-  automatically detecting whether the operator fits a Heisenberg or spin-glass model and
-  preparing it accordingly via the new operator analysis utilities.
-
-Circuit Optimization Pass Manager
----------------------------------
- 
-Qrisp 0.9 ships a complete **circuit optimization pass management system** (PR #564),
-giving you a modular, composable framework in place of the previous ad-hoc compilation
-routines. Key features include:
- 
-* :class:`PassManager <qrisp.circuit.pass_management.PassManager>`: Keeps an ordered
-  list of :class:`CircuitPass <qrisp.circuit.pass_management.CircuitPass>` instances,
-  runs them in sequence via ``.run(qc)``, and can verify the outcome with
-  ``.verify(qc)`` (checking unitarity or that measurement statistics are preserved).
-  Add new passes with a simple ``+=``.
-* Passes available out of the box:
-   * :func:`cancel_inverses <qrisp.circuit.pass_management.passes.cancel_inverses>`:
-     Cancels adjacent gate-inverse pairs via DAG analysis, also fusing compatible
-     neighbors along the way (SWAP with CX/CP/RZZ, same-site rotation gates, Gidney
-     AND compute/uncompute, and controlled operations whose base gates cancel).
-  * :func:`combine_single_qubit_gates <qrisp.circuit.pass_management.passes.combine_single_qubit_gates>`:
-    Merges consecutive single-qubit gates for tighter circuits.
-  * :func:`commute_swaps <qrisp.circuit.pass_management.passes.commute_swaps>`: Moves
-    SWAP gates around using commutation rules.
-  * :func:`resolve_swaps <qrisp.circuit.pass_management.passes.resolve_swaps>`: Resolves
-    SWAP networks cleanly.
-  * :func:`remove_barriers <qrisp.circuit.pass_management.passes.remove_barriers>`:
-    Clears out all barrier instructions.
-  * :func:`reverse_parallelize <qrisp.circuit.pass_management.passes.reverse_parallelize>`:
-    Restructures circuits to unlock more parallelism.
-  * :func:`manual_layout <qrisp.circuit.pass_management.passes.manual_layout>`: Gives
-    you direct control over qubit placement.
-  * :func:`convert_to_cx <qrisp.circuit.pass_management.passes.convert_to_cx>`,
-    :func:`convert_to_cz <qrisp.circuit.pass_management.passes.convert_to_cz>`,
-    :func:`convert_to_pry <qrisp.circuit.pass_management.passes.convert_to_pry>`: Handle
-    gate basis conversion (the last of which introduces the new ``PRYGate``).
-  * :func:`decompose <qrisp.circuit.pass_management.passes.decompose>`: Breaks
-    composite or parametrized gates down further.
-  * :func:`gray_synth_toffoli <qrisp.circuit.pass_management.passes.gray_synth_toffoli>`: Applies
-    Gray-code synthesis to Toffoli gates.
-  * :func:`cancel_zero_controls <qrisp.circuit.pass_management.passes.cancel_zero_controls>`: Removes
-    gates that carry zero controls.
-  * :func:`arrange_swaps <qrisp.circuit.pass_management.passes.arrange_swaps>`: Lines
-    up SWAP gates for smarter routing.
-  * :func:`visualize <qrisp.circuit.pass_management.passes.visualize>`: Makes
-    optimization culprits easy to spot visually.
- 
-:class:`CircuitPass <qrisp.circuit.pass_management.CircuitPass>` also ships two
-correctness-checking methods, ``compare_unitary`` and ``compare_measurement``, used
-internally by ``PassManager.verify()`` to confirm that a pass leaves a circuit's
-unitary or measurement statistics unchanged.
- 
-The standalone ``cancel_inverses`` utility is still around, but running it as part of
-the `PassManager` chain is now the recommended path.
-
 Backend Interface Redesign
 --------------------------
  
@@ -145,182 +58,107 @@ to switch between them seamlessly.
   abstraction for all backends, offering ``run_async(circuits, shots)`` for an
   immediate ``Job`` (Future-style) alongside a synchronous ``run(circuits, shots)``
   wrapper for convenience, plus ``batched()`` to obtain a ``BatchedBackend`` and
-  ``retrieve_job(job_id)`` to look up a previously submitted job. Runtime options
-  flow through ``_default_options()`` / ``update_options()``. Hardware metadata
-  properties (``health``, ``info``, ``queue``, ``num_qubits``, ``max_circuits``,
-  ``connectivity``, ``gate_set``, ``error_rates``) return ``None`` by default, ready
-  to be filled in by a given backend.
+  ``retrieve_job(job_id)`` to look up a previously submitted job.
 * **:class:`BackendLike <qrisp.interface.BackendLike>` protocol**: A structural typing
   protocol that both ``Backend`` and ``BatchedBackend`` satisfy, so type hints stay
   flexible.
 * **:class:`Job <qrisp.interface.Job>` class**: Tracks the lifecycle of a single
-  execution with its own status handling (``last_known_status``) and result
-  retrieval. ``submit()``, ``result()``, ``cancel()``, and ``status()`` are abstract
-  methods that concrete backends implement; ``run_async()`` is expected to call
-  ``job.submit()`` before handing the ``Job`` back to the caller.
-* **:class:`BatchedBackend <qrisp.interface.BatchedBackend>` reworked**: Intentionally
-  does not inherit from ``Backend`` (its ``run()`` returns lazy, unpopulated results,
-  which would violate the Liskov substitution principle). Circuits queued via
-  ``run()`` are only executed once ``dispatch()`` is called, with ``clear()`` and
-  ``pending_count`` rounding out the queue management. ``batched_measurement`` is
-  deprecated in favor of calling ``get_measurement()`` with a ``BatchedBackend``
-  directly.
+  execution with ``submit()``, ``result()``, ``cancel()``, and ``status()``.
+* **:class:`BatchedBackend <qrisp.interface.BatchedBackend>` reworked**: Does not inherit
+  from ``Backend``. Circuits queued via ``run()`` are executed once ``dispatch()`` is called.
+  ``batched_measurement`` is deprecated in favor of ``get_measurement()`` with a
+  ``BatchedBackend`` directly.
 * **Backend migrations**: ``DefaultBackend`` is now :class:`QrispSimulatorBackend
-  <qrisp.interface.QrispSimulatorBackend>`, living under
-  ``interface/simulators/``, with the ``qrisp.default_backend`` module kept around
-  as a thin compatibility shim. ``QiskitBackend``, ``QiskitRuntimeBackend``,
+  <qrisp.interface.QrispSimulatorBackend>`. ``QiskitBackend``, ``QiskitRuntimeBackend``,
   ``AQTBackend``, and ``IQMBackend`` have all been brought up to the new API.
-  ``VirtualBackend`` itself is kept as a deprecated drop-in subclass of the new
-  ``Backend`` for backward compatibility, raising a ``QrispDeprecationWarning`` on
-  use.
+  ``VirtualBackend`` is kept as a deprecated drop-in subclass.
 * **A leaner core**: The old ``BackendClient``/``BackendServer`` (qunicorn) network
   infrastructure and the Docker-based backends have been removed entirely.
 
+Circuit Optimization Pass Manager
+---------------------------------
+ 
+Qrisp 0.9 ships a complete **circuit optimization pass management system** (PR #564).
+:class:`PassManager <qrisp.circuit.pass_management.PassManager>` keeps an ordered list of
+:class:`CircuitPass <qrisp.circuit.pass_management.CircuitPass>` instances, runs them via
+``.run(qc)``, and verifies correctness with ``.verify(qc)``. Built-in passes handle
+canceling adjacent gate-inverse pairs, fusing consecutive single-qubit gates,
+commuting and resolving SWAP networks, removing barriers, reverse-parallelization,
+manual qubit layout, gate basis conversion (to CX/CZ/PRY), decomposition,
+Gray-synth Toffoli synthesis, canceling zero-controlled gates, arranging SWAPs for
+smarter routing, and visualizing optimization culprits.
 
-COLD (Counterdiabatic Local Driving)
-------------------------------------
- 
-The :ref:`DCQOProblem <DCQO>` class (PR #614) introduces a smoother scheduling
-function, :math:`\operatorname{lam}(t) = \sin^2\!\bigl(\frac{\pi}{2}\sin^2\!\bigl(\frac{\pi
-t}{2T}\bigr)\bigr)`, for better-behaved annealing. The ``g_func`` parameter has been
-retired; ``g`` and ``g_deriv`` are now computed automatically from the time list. A new
-``precision`` parameter (default 0.01) lets you dial in expectation-value accuracy, and
-``exp_value_backend`` makes it possible to run measurement-based optimization on real
-hardware, with an automatic fallback to statevector simulation when needed.
-
-
-Dicke State and Unbalanced W State
-----------------------------------
- 
-Two new deterministic state preparation routines join the library (PR #572):
- 
-* :func:`dicke_state <qrisp.dicke_state>`: Prepares a uniform superposition over every
-  basis state with Hamming weight :math:`k`, built on the deterministic algorithm from
-  `Baez et al. (2024) <https://arxiv.org/abs/1904.07358>`_, with gate depth scaling as
-  :math:`\mathcal{O}(n)`.
-* :func:`unbalanced_w_state <qrisp.unbalanced_w_state>`: Prepares a generalized W state
-  :math:`\sum_i a_i |e_i\rangle` with arbitrary, complex amplitudes via a linear chain
-  of ``XXYY`` gates, hitting :math:`\mathcal{O}(n)` depth and gate count.
-  Works equally well in standard and Jasp modes.
- 
-Both are invert-compatible and fully traceable under Jasp.
- 
-QuantumArray Upgrades
----------------------
- 
-:ref:`QuantumArray <QuantumArray>` picks up a much fuller set of element-wise
-operations (PR #519):
- 
-* **In-place arithmetic**: ``iadd``, ``isub``, and ``imul`` for QuantumArray, with
-  support for ``np.integer`` and ``np.floating`` scalar types.
-* **Logical operations**: Element-wise ``and``, ``or``, and ``xor`` between arrays and
-  scalars.
-* **Reductions**: :meth:`all() <qrisp.QuantumArray.all>` and :meth:`any()
-  <qrisp.QuantumArray.any>` reduce over axes through the new ``_reduce_over_axes``
-  helper.
-* **Exception safety**: Multiplying a QuantumArray by a classical value now raises a
-  clear ``TypeError``, and element-wise operations check that operand moduli line up.
-
-Other Arithmetic Enhancements
------------------------------
- 
-* **Gidney adder refactored** (PR #473): Now lives in its own dedicated module,
-  ``adders/gidney_adder.py``. It supports ``c_in`` / ``c_out`` carry qubits, ``BigInteger`` operands,
-  and custom inversion within the Jasp pipeline. The older variants are no longer available. 
-* **Cuccaro adder** (PR #615): Now accepts ``c_in`` and ``c_out`` as well, bringing it
-  in line with the Gidney adder's interface.
-* **Gidney venting adder** (PR #537): Adds ``gidney_cq_venting_adder``, an
-  implementation of Gidney's carry-venting classical-quantum adder as described in
-  `arXiv:2507.23079 <https://arxiv.org/abs/2507.23079>`_. The adder automatically
-  defers to the standard Gidney adder for very small registers, where venting offers
-  no real advantage, and comes with a full Jasp-traceable test suite.
-* **BigInteger Montgomery arithmetic** (PR #495): Fixes quantum-quantum Montgomery
-  multiplication for non-standard Montgomery shifts, adds ``bi_pow2mod`` for traced
-  exponentiation, and gives the Montgomery decoder a proper rebuild with correct
-  BigInteger digit handling.
-* **QuantumModulus**: A rebuilt constructor, fixes for uniform superposition, and new
-  compatibility with traced QubitOperators.
- 
-Typing Module
--------------
- 
-A new :mod:`qrisp.typing <qrisp.typing>` module brings standardized type aliases to
-the library (PR #543):
- 
-* :class:`QubitLike <qrisp.typing.QubitLike>`: ``Qubit | int | Sequence[Qubit | int]``
-* :class:`ClbitLike <qrisp.typing.ClbitLike>`: ``Clbit | int | Sequence[Clbit | int]``
-* :class:`FloatLike <qrisp.typing.FloatLike>`: Covers Python ``float``/``int``,
-  ``np.floating``/``np.integer``, SymPy ``Expr``, and JAX arrays and tracers
-  (replacing the previous ``Param`` alias).
-* :class:`ScalarLike <qrisp.typing.ScalarLike>`, :class:`NDArrayLike
-  <qrisp.typing.NDArrayLike>`, :class:`ArrayLike <qrisp.typing.ArrayLike>`: General
-  scalar and array types to keep numeric code consistent.
- 
-Other New Features
+Additional Updates
 ------------------
- 
-* **MLIR / xDSL dialect** (PR #465): JASP now defines a native xDSL dialect with
-  ``QuantumGateOp`` and ``MeasureOp`` operations and IRDL-based verification.
-  ``CreateQubitsOp`` returns a quantum state operand.
-* **StableHLO lowering** (PR #577): A first working version of stablehlo lowering,
-  with scalar linalg folding, tensor folding, and a ``cmpi extui`` rewrite pattern,
-  plus lowering of ``stablehlo.case`` to ``scf.if`` through xDSL foreign-type
-  processing.
-* **Composite gate interpreter** (PR #593): A new interpreter for parametrized and
-  compound gates that supports decomposition for MLIR emission and ``scan``
-  operations, using ``lru_cache`` to keep the call graph compact.
-* **BoundQubitOperator cleanup** (PR #559): ``BoundQubitTerm`` and
-  ``BoundQubitOperator`` have been retired from the codebase, with
-  ``operator_factors`` updated to match.
-* **QubitOperator improvements**: A new ``_to_pauli_dict()`` helper returns the
-  Pauli expansion of an operator as a dictionary; multiplying an operator by zero
-  now correctly empties ``terms_dict`` (PR #612).
-* **Refactored MaxCut module** (PR #542): Cleaner structure and documentation
-  throughout.
-* **Benchmarking improvements** (PR #505): Metric interpreters now support a callback
-  threshold, giving you finer control over profiling granularity.
-* **Catalyst 0.15 compatibility** (PR #568).
-* **Gast dependency** added to the ``pip install`` requirements (PR #474).
-* **Pass documentation**: Every circuit pass now comes with a full docstring and
-  examples (PR #564).
-* **Depth metric** improvements (PR #451): Support for negative slicing values, plus a
-  helpful warning when computing depth on already-profiled circuits.
-* **IQM backend** domain update (PR #561) and migration of the IQM package.
-* **Controlled-U3 compilation** fixes (PR #551): Correct handling of non-trivial
-  control states, global phase, and the ``U3Gate`` class.
- 
+
+**BlockEncoding refactored** (PR #628): Rebuilt around a Base Class + Facade pattern.
+The old monolith is now split across ``block_encoding_base.py`` (abstract base),
+``block_encoding.py`` (facade), ``constructors/``, and ``transformations/``, making
+extensions easier.
+
+**FOQCS-LCU block encoding** (PR #597): New :func:`from_foqcs_lcu_prep <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep>` and
+:func:`from_foqcs_lcu_operator <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_operator>` methods enable block
+encoding Heisenberg and spin-glass type operators directly from a
+:class:`QubitOperator <qrisp.operators.QubitOperator>`.
+
+**COLD improvements** (PR #614): The :ref:`DCQOProblem <DCQO>` class gets a smoother
+scheduling function, automatic ``g``/``g_deriv`` computation, a ``precision`` parameter
+for expectation-value accuracy, and ``exp_value_backend`` for hardware-based optimization.
+
+**Dicke state and unbalanced W state** (PR #572): New :func:`dicke_state
+<qrisp.dicke_state>` and :func:`unbalanced_w_state <qrisp.unbalanced_w_state>`
+deterministic state preparation routines, both invert-compatible and Jasp-traceable.
+
+**QuantumArray upgrades** (PR #519): In-place arithmetic (``iadd``, ``isub``, ``imul``),
+element-wise logical operations (``and``, ``or``, ``xor``), and reductions via
+:meth:`all() <qrisp.QuantumArray.all>` / :meth:`any() <qrisp.QuantumArray.any>`.
+
+**Arithmetic enhancements**: Gidney adder refactored (PR #473) with ``c_in``/``c_out``
+support; Cuccaro adder gains matching ``c_in``/``c_out`` interface (PR #615); new
+``gidney_cq_venting_adder`` for carry-venting classical-quantum addition (PR #537);
+BigInteger Montgomery arithmetic fixes (PR #495); rebuilt QuantumModulus constructor.
+
+**Typing module** (PR #543): New :mod:`qrisp.typing <qrisp.typing>` module with
+:class:`QubitLike <qrisp.typing.QubitLike>`, :class:`ClbitLike
+<qrisp.typing.ClbitLike>`, :class:`FloatLike <qrisp.typing.FloatLike>` (replacing
+``Param``), :class:`ScalarLike <qrisp.typing.ScalarLike>`, :class:`NDArrayLike
+<qrisp.typing.NDArrayLike>`, and :class:`ArrayLike <qrisp.typing.ArrayLike>`.
+
+**Other improvements**: MLIR / xDSL dialect (PR #465); StableHLO lowering (PR #577);
+composite gate interpreter (PR #593); ``BoundQubitTerm``/``BoundQubitOperator`` removed
+(PR #559); ``QubitOperator._to_pauli_dict()`` and zero-multiplication fix (PR #612);
+MaxCut module refactored (PR #542); benchmarking callback threshold (PR #505); depth
+metric negative slicing (PR #451); IQM backend domain update (PR #561); controlled-U3
+compilation fixes (PR #551); Gast dependency added (PR #474); Catalyst 0.15
+compatibility (PR #568).
+
 Compatibility
 -------------
- 
+
 * **Backend API breaking change**: ``Backend`` is now the base abstraction for all
   backends. ``VirtualBackend`` still works, but only as a deprecated drop-in
   subclass. ``DefaultBackend`` is now ``QrispSimulatorBackend``. ``batched_measurement``
   is deprecated in favor of ``BatchedBackend.dispatch()``.
-* **``cancel_inverses`` now runs as part of the PassManager chain** alongside the
+* **``fuse_adjacents`` now runs as part of the PassManager chain** alongside the
   other built-in passes; the standalone function still works as before.
-* **``Param`` type alias renamed to ``FloatLike``** and moved into the new
-  ``qrisp.typing`` module.
+* **``Param`` type alias renamed to ``FloatLike``** and moved into ``qrisp.typing``.
 * **``BoundQubitTerm`` and ``BoundQubitOperator`` removed**; use ``QubitTerm`` /
-  ``QubitOperator`` directly instead.
+  ``QubitOperator`` instead.
 * **``unbalanced_W_state`` renamed to ``unbalanced_w_state``** (lowercase ``w``).
-* **Cuccaro adder's ``c_in`` parameter** is supported but kept simple, with
-  independent ancilla management.
-* **``quake_lowering`` directory removed** (it had been added to main by mistake).
+* **``quake_lowering`` directory removed**.
 * The old ``qunicorn``-based ``BackendClient``/``BackendServer`` network
   infrastructure and the Docker-based backends have been removed.
 * New :func:`convert_to_cirq <qrisp.interface.convert_to_cirq>` and
-  :func:`convert_from_cirq <qrisp.interface.convert_from_cirq>` functions give you
-  bidirectional conversion between Qrisp and `Cirq
-  <https://quantumai.google/cirq>`_ circuits (PR #610).
+  :func:`convert_from_cirq <qrisp.interface.convert_from_cirq>` functions for
+  bidirectional Qrisp-Cirq conversion (PR #610).
 * **``jrange`` ``step`` argument removed** (PR #652): Passing three arguments to
   :func:`jrange <qrisp.jasp.jrange>` now emits a ``QrispDeprecationWarning`` and raises
   a ``TypeError``. Use a step-1 loop and multiply the loop variable by the desired step.
-* Jax 0.5.x compatibility (matching current Jasp tracing requirements).
-* Catalyst 0.15 compatibility.
- 
-Updated Tutorial
-----------------
- 
-* :doc:`Counterdiabatic Driving Protocols </general/tutorial/CD>` - Updated for the
-  COLD module's smoother scheduling function and the new ``precision`` /
-  ``exp_value_backend`` parameters (updated).
+* Jax 0.5.x and Catalyst 0.15 compatibility.
+
+First Time Contributors 🎉
+-------------------------
+
+* `Redperij <https://github.com/Redperij>`_ 
+* `MSY2K <https://github.com/MSY2K>`_
+
