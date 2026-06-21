@@ -1632,7 +1632,7 @@ def get_sympy_state(qs, decimals):
         simplify,
         sin,
     )
-    from sympy.physics.quantum import Ket, OrthogonalKet
+    from sympy.physics.quantum import Ket, OrthogonalKet, TensorProduct
 
     from qrisp.simulator import statevector_sim
 
@@ -1752,14 +1752,19 @@ def get_sympy_state(qs, decimals):
 
         int_string = bin_rep(ind, len(compiled_qc.qubits))
 
-        labels = []
+        state_kets = []
         for qv in qv_list:
             bit_string = ""
             for qb in qv.reg:
                 bit_string += int_string[compiled_qc.qubits.index(qb)]
 
             label = qv.decoder(int(bit_string[::-1], 2))
-            ket_expr = ket_expr * OrthogonalKet((label))
+            state_kets.append(OrthogonalKet((label)))
+
+        if len(state_kets) == 1:
+            ket_expr *= state_kets[0]
+        else:
+            ket_expr *= TensorProduct(*state_kets)
 
         res += ket_expr
 
