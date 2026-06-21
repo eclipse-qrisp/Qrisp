@@ -799,12 +799,14 @@ def process_scan(eqn, context_dic, call_graph_stats=None, callback_threshold=Non
 # Sub-jaxpr compilation cache & callback helpers
 # ---------------------------------------------------------------------------
 
-# LRU cache for compiled sub-jaxprs.  Keyed by ``(id(jaxpr), bit_array_size)``
-# so that identical sub-jaxpr objects (shared via ``@qache``) are compiled
-# only once.  Uses ``OrderedDict`` for LRU eviction instead of
-# ``@lru_cache`` because ``call_graph_stats`` is an unhashable dict.
+# LRU cache for compiled sub-jaxprs.  Keyed by ``(id(jaxpr), bit_array_size,
+# callback_threshold, id(call_graph_stats))`` so that identical sub-jaxpr
+# objects (shared via ``@qache``) are compiled only once, but different
+# inlining decisions (driven by call_graph_stats / callback_threshold)
+# produce distinct entries.  Uses ``OrderedDict`` for LRU eviction instead
+# of ``@lru_cache`` because ``call_graph_stats`` is an unhashable dict.
 _TRACED_FUN_CACHE_MAX_SIZE: int = 10_000
-_traced_fun_cache: OrderedDict[tuple[int, int], tuple[Callable, tuple]] = OrderedDict()
+_traced_fun_cache: OrderedDict[tuple[int, int, int | None, int], tuple[Callable, tuple]] = OrderedDict()
 
 
 def _should_use_callback(jaxpr, call_graph_stats, callback_threshold=None):
@@ -871,7 +873,7 @@ def _compile_sub_jaxpr(jaxpr, bit_array_size, call_graph_stats=None, callback_th
         ``(jitted_fun, result_shapes)`` – the compiled function and the
         output shape specification needed by ``jax.pure_callback``.
     """
-    key = (id(jaxpr), bit_array_size)
+    key = (id(jaxpr), bit_array_size, callback_threshold, id(call_graph_stats))
     if key in _traced_fun_cache:
         _traced_fun_cache.move_to_end(key)          # mark as recently used
         return _traced_fun_cache[key]
