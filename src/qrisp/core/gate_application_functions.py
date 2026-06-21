@@ -1224,10 +1224,30 @@ def unitary(unitary_array, qubits):
         The U3 matrix to apply.
     qubits : Qubit
         The Qubit to apply the gate on.
+
+    Examples
+    --------
+
+    The unitary can be used inside a :func:`~qrisp.jasp.jaspify` trace:
+
+    ::
+
+        import numpy as np
+        from qrisp import QuantumFloat, jaspify, measure, unitary
+
+        U = np.eye(2, dtype=np.complex128)
+
+        @jaspify
+        def main():
+            qf = QuantumFloat(1)
+            unitary(U, qf[0])
+            return measure(qf[0])
+
+        assert not bool(main())
     """
     import jax.numpy as jnp
 
-    mat = unitary_array
+    mat = jnp.asarray(unitary_array)
     coeff = 1 / jnp.sqrt(jnp.linalg.det(mat))
     gphase_angle = -jnp.angle(coeff) % (2 * jnp.pi)
     tmp_10 = jnp.abs((coeff * mat[1][0]))
@@ -1239,9 +1259,20 @@ def unitary(unitary_array, qubits):
     lam = phiplambda2 - phimlambda2
 
     arg_max = jnp.argmax(jnp.abs(mat).flatten())
-    from qrisp.simulator.unitary_management import u3matrix
-
-    temp_u3 = u3matrix(theta, phi, lam, 0).flatten()
+    theta_half = theta / 2
+    sin_theta_half = jnp.sin(theta_half)
+    cos_theta_half = jnp.cos(theta_half)
+    temp_u3 = jnp.stack(
+        [
+            jnp.stack([cos_theta_half, -jnp.exp(1j * lam) * sin_theta_half]),
+            jnp.stack(
+                [
+                    jnp.exp(1j * phi) * sin_theta_half,
+                    jnp.exp(1j * (phi + lam)) * cos_theta_half,
+                ]
+            ),
+        ]
+    ).flatten()
 
     gphase_angle = (-jnp.angle(temp_u3[arg_max] / mat.flatten()[arg_max])) % (
         2 * jnp.pi
