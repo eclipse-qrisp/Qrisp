@@ -64,7 +64,8 @@ docs = [
     "sphinx-new-tab-link==0.8.1",
     "pydata-sphinx-theme==0.17.1",
 ]
-test = [
+dev = [
+    "ruff>=0.11,<1",
     "pytest==9.1.0",
     "qiskit-aer==0.17.2",
     "pyscf==2.13.1",
@@ -76,12 +77,16 @@ test = [
 Homepage = "https://github.com/eclipse-qrisp/Qrisp"
 "Bug Tracker" = "https://github.com/eclipse-qrisp/Qrisp/issues"
 
-[tool.isort]
-profile = "black"
-
 [tool.pylint. messages_control]
 disable = ["import-error"]
 
-[tool.black]
-line-length = 88
-target-version = ["py311", "py312"]
+[tool.ruff]
+exclude = ["__init__.py", "docs/"]
+line-length = 120
+target-version = "py312"
+force-exclude = true
+
+[tool.ruff.lint]
+select = ["I", "E", "W", "D", "PL", "F"]
+
+exclude = []
