@@ -205,7 +205,7 @@ Built-in backend classes include:
    * - Backend
      - Description
    * - :doc:`IQMBackend <Backend Interface/index>`
-     - IQM Resonance cloud
+     - IQM Resonance cloud (install via ``pip install qrisp[iqm]``)
    * - :doc:`QiskitBackend <Backend Interface/index>`
      - Any Qiskit-compatible backend (Aer, IBM hardware)
    * - :doc:`AQTBackend <Backend Interface/index>`
