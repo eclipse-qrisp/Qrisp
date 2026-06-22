@@ -37,8 +37,22 @@ jobs:
           comment-author: github-actions[bot]
           body-includes: "<!-- CHANGELOG_CHECK_MARKER -->"
 
+      - name: Check if already acknowledged
+        id: ack
+        if: steps.find.outputs.comment-id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CID: ${{ steps.find.outputs.comment-id }}
+        run: |
+          body=$(gh api /repos/${{ github.repository }}/issues/comments/$CID --jq '.body')
+          if echo "$body" | grep -q "Changelog entry confirmed"; then
+            echo "done=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "done=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Post reminder comment
-        if: steps.check.outputs.modified == 'false'
+        if: steps.check.outputs.modified == 'false' && steps.ack.outputs.done != 'true'
         uses: peter-evans/create-or-update-comment@v4
         with:
           comment-id: ${{ steps.find.outputs.comment-id }}
@@ -63,7 +77,7 @@ jobs:
           edit-mode: replace
 
       - name: Post acknowledgment comment
-        if: steps.check.outputs.modified == 'true'
+        if: steps.check.outputs.modified == 'true' && steps.ack.outputs.done != 'true'
         uses: peter-evans/create-or-update-comment@v4
         with:
           comment-id: ${{ steps.find.outputs.comment-id }}
@@ -77,7 +91,7 @@ jobs:
           edit-mode: replace
 
       - name: Fail if no changelog entry
-        if: steps.check.outputs.modified == 'false'
+        if: steps.check.outputs.modified == 'false' && steps.ack.outputs.done != 'true'
         run: |
           echo "::error::changelog-dev.rst was not updated with entries for this PR."
           exit 1
