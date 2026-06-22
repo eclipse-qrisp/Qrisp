@@ -756,7 +756,7 @@ class Jaspr(ClosedJaxpr):
         )
 
     def to_qir(self):
-        """Compiles the Jaspr to QIR using the `Catalyst framework <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
+        r"""Compiles the Jaspr to QIR using the `Catalyst framework <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
         Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
         Parameters
@@ -790,37 +790,36 @@ class Jaspr(ClosedJaxpr):
             print(jaspr.to_qir())
 
         Yields
-        ------
 
         .. code-block:: none
 
             ; ModuleID = 'LLVMDialectModule'
             source_filename = "LLVMDialectModule"
-
-            @"{'shots': 0, 'mcmc': False, 'num_burnin': 0, 'kernel_name': None}" = internal constant [66 x i8] c"{'shots': 0, 'mcmc': False, 'num_burnin': 0, 'kernel_name': None}\00"
-            @lightning.qubit = internal constant [16 x i8] c"lightning.qubit\00"
-            @"/home/positr0nium/miniconda3/envs/qrisp/lib/python3.10/site-packages/catalyst/utils/../lib/librtd_lightning.so" = internal constant [111 x i8] c"/home/positr0nium/miniconda3/envs/qrisp/lib/python3.10/site-packages/catalyst/utils/../lib/librtd_lightning.so\00"
-
+            
+            @"{'shots': 0, 'mcmc': False, 'num_burnin': 0, 'kernel_name': None}" = internal constant [66 x i8] c"{'shots': 0, 'mcmc': False, 'num_burnin': 0, 'kernel_name': None}"
+            @lightning.qubit = internal constant [16 x i8] c"lightning.qubit"
+            @"/home/positr0nium/miniconda3/envs/qrisp/lib/python3.10/site-packages/catalyst/utils/../lib/librtd_lightning.so" = internal constant [111 x i8] c"/home/positr0nium/miniconda3/envs/qrisp/lib/python3.10/site-packages/catalyst/utils/../lib/librtd_lightning.so"
+            
             declare void @__catalyst__rt__finalize() local_unnamed_addr
-
+            
             declare void @__catalyst__rt__initialize() local_unnamed_addr
-
+            
             declare ptr @__catalyst__qis__Measure(ptr, i32) local_unnamed_addr
-
+            
             declare void @__catalyst__qis__T(ptr, ptr) local_unnamed_addr
-
+            
             declare void @__catalyst__qis__CNOT(ptr, ptr, ptr) local_unnamed_addr
-
+            
             declare ptr @__catalyst__rt__array_get_element_ptr_1d(ptr, i64) local_unnamed_addr
-
+            
             declare ptr @__catalyst__rt__qubit_allocate_array(i64) local_unnamed_addr
-
+            
             declare void @__catalyst__rt__device_init(ptr, ptr, ptr) local_unnamed_addr
-
+            
             declare void @_mlir_memref_to_llvm_free(ptr) local_unnamed_addr
-
+            
             declare ptr @_mlir_memref_to_llvm_alloc(i64) local_unnamed_addr
-
+            
             define { ptr, ptr, i64 } @jit_jaspr_function(ptr nocapture readnone %0, ptr nocapture readonly %1, i64 %2) local_unnamed_addr {
               tail call void @__catalyst__rt__device_init(ptr nonnull @"/home/positr0nium/miniconda3/envs/qrisp/lib/python3.10/site-packages/catalyst/utils/../lib/librtd_lightning.so", ptr nonnull @lightning.qubit, ptr nonnull @"{'shots': 0, 'mcmc': False, 'num_burnin': 0, 'kernel_name': None}")
               %4 = tail call ptr @__catalyst__rt__qubit_allocate_array(i64 20)
@@ -878,7 +877,7 @@ class Jaspr(ClosedJaxpr):
               store i64 %48, ptr %47, align 1
               tail call void @_mlir_memref_to_llvm_free(ptr nonnull %41)
               br i1 %44, label %.lr.ph, label %._crit_edge
-
+            
             .lr.ph:                                           ; preds = %3, %.lr.ph
               %49 = phi ptr [ %87, %.lr.ph ], [ %47, %3 ]
               %50 = phi ptr [ %85, %.lr.ph ], [ %45, %3 ]
@@ -940,7 +939,7 @@ class Jaspr(ClosedJaxpr):
               store i64 %88, ptr %87, align 1
               tail call void @_mlir_memref_to_llvm_free(ptr nonnull %79)
               br i1 %84, label %.lr.ph, label %._crit_edge
-
+            
             ._crit_edge:                                      ; preds = %.lr.ph, %3
               %.lcssa20 = phi ptr [ %45, %3 ], [ %85, %.lr.ph ]
               %.lcssa = phi ptr [ %47, %3 ], [ %87, %.lr.ph ]
@@ -971,13 +970,13 @@ class Jaspr(ClosedJaxpr):
               tail call void @_mlir_memref_to_llvm_free(ptr %89)
               %103 = icmp eq ptr %96, inttoptr (i64 3735928559 to ptr)
               br i1 %103, label %104, label %107
-
+            
             104:                                              ; preds = %._crit_edge
               %105 = tail call ptr @_mlir_memref_to_llvm_alloc(i64 4)
               %106 = load i32, ptr %100, align 64
               store i32 %106, ptr %105, align 1
               br label %107
-
+            
             107:                                              ; preds = %104, %._crit_edge
               %.pn16 = phi ptr [ %105, %104 ], [ %96, %._crit_edge ]
               %.pn14 = phi ptr [ %105, %104 ], [ %100, %._crit_edge ]
@@ -986,7 +985,7 @@ class Jaspr(ClosedJaxpr):
               %108 = insertvalue { ptr, ptr, i64 } %.pn, i64 0, 2
               ret { ptr, ptr, i64 } %108
             }
-
+            
             define void @_catalyst_pyface_jit_jaspr_function(ptr nocapture writeonly %0, ptr nocapture readonly %1) local_unnamed_addr {
               %.unpack = load ptr, ptr %1, align 8
               %.elt1.i = getelementptr inbounds { ptr, ptr, i64 }, ptr %.unpack, i64 0, i32 1
@@ -1002,7 +1001,7 @@ class Jaspr(ClosedJaxpr):
               store i64 %.elt8.i, ptr %.repack7.i, align 8
               ret void
             }
-
+            
             define void @_catalyst_ciface_jit_jaspr_function(ptr nocapture writeonly %0, ptr nocapture readonly %1) local_unnamed_addr {
               %.elt1 = getelementptr inbounds { ptr, ptr, i64 }, ptr %1, i64 0, i32 1
               %.unpack2 = load ptr, ptr %.elt1, align 8
@@ -1017,45 +1016,46 @@ class Jaspr(ClosedJaxpr):
               store i64 %.elt8, ptr %.repack7, align 8
               ret void
             }
-
+            
             define void @setup() local_unnamed_addr {
               tail call void @__catalyst__rt__initialize()
               ret void
             }
-
+            
             define void @teardown() local_unnamed_addr {
               tail call void @__catalyst__rt__finalize()
               ret void
             }
-
+            
             !llvm.module.flags = !{!0}
-
+            
             !0 = !{i32 2, !"Debug Info Version", i32 3}
-
+            
+            
         """
         from qrisp.jasp.evaluation_tools.catalyst_interface import jaspr_to_qir
-
+            
         return jaspr_to_qir(self.flatten_environments())
-
+            
     def to_mlir(self, lower_stablehlo=False):
         """Compiles the Jaspr to an xDSL module using the Jasp Dialect.
         Requires the xDSL package to be installed (``pip install qrisp[xdsl]``).
-
+            
         .. note::
-
+            
             An xDSL module can be visualized via:
-
+            
             ::
-
+            
                 print(xdsl_module)
-
+            
             and serialized to a string using:
-
+            
             ::
-
+            
                 from xdsl.printer import Printer
                 Printer().print_op(xdsl_module)
-
+            
         Parameters
         ----------
         lower_stablehlo : bool, optional
@@ -1064,33 +1064,33 @@ class Jaspr(ClosedJaxpr):
             as linalg, arith, and tensor. StableHLO control flow involving
             quantum types is preserved and rewritten to SCF by xDSL.
             The default is False.
-
+            
         Returns
         -------
         xdsl.dialects.builtin.ModuleOp
             An xDSL module representing the quantum computation.
-
+            
         Examples
         --------
         We create a simple script and inspect the MLIR string:
-
+            
         ::
-
+            
             from qrisp import *
             from qrisp.jasp import make_jaspr
-
+            
             def example_function(i):
-
+            
                 qv = QuantumVariable(i)
                 cx(qv[0], qv[1])
                 t(qv[1])
                 meas_res = measure(qv)
                 meas_res += 1
                 return meas_res
-
+            
             jaspr = make_jaspr(example_function)(2)
             print(jaspr.to_mlir())
-
+            
         .. code-block:: none
 
             builtin.module @jasp_module {
@@ -1109,46 +1109,46 @@ class Jaspr(ClosedJaxpr):
                 func.return %10, %12 : tensor<i64>, !jasp.QuantumState
               }
             }
-
+            
         """
         from qrisp.jasp.mlir import jaspr_to_mlir
-
+            
         return jaspr_to_mlir(self, lower_stablehlo)
-
+            
     def to_catalyst_mlir(self):
         """Compiles the Jaspr to MLIR using the `Catalyst dialect <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
         Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
-
+            
         Parameters
         ----------
         None
-
+            
         Returns
         -------
         str
             The MLIR string.
-
+            
         Examples
         --------
         We create a simple script and inspect the MLIR string:
-
+            
         ::
-
+            
             from qrisp import *
             from qrisp.jasp import make_jaspr
-
+            
             def example_function(i):
-
+            
                 qv = QuantumFloat(i)
                 cx(qv[0], qv[1])
                 t(qv[1])
                 meas_res = measure(qv)
                 meas_res += 1
                 return meas_res
-
+            
             jaspr = make_jaspr(example_function)(2)
             print(jaspr.to_catalyst_mlir())
-
+            
         .. code-block:: none
 
                         module @jaspr_function {
@@ -1202,79 +1202,79 @@ class Jaspr(ClosedJaxpr):
                 return
               }
             }
-
+            
         """
         from qrisp.jasp.evaluation_tools.catalyst_interface import jaspr_to_mlir
-
+            
         return jaspr_to_mlir(self.flatten_environments())
-
+            
     def to_qasm(self, *args):
         """Compiles the Jaspr into an OpenQASM 2 string. Real-time control is possible
         as long as no computations on the measurement results are performed.
-
+            
         Parameters
         ----------
         *args : list
             The arguments to call the :ref:`QuantumCircuit` evaluation with.
-
+            
         Returns
         -------
         str
             The OpenQASM 2 string.
-
+            
         Examples
         --------
         We create a simple script and inspect the QASM 2 string:
-
+            
         ::
-
+            
             from qrisp import *
             from qrisp.jasp import make_jaspr
-
+            
             def main(i):
-
+            
                 qv = QuantumVariable(i)
                 cx(qv[0], qv[1])
                 t(qv[1])
                 return qv
-
+            
             jaspr = make_jaspr(main)(2)
-
+            
             qasm_str = jaspr.to_qasm(2)
             print(qasm_str)
             # Yields
-
+            
             # OPENQASM 2.0;
             # include "qelib1.inc";
             # qreg qb_59[1];
             # qreg qb_60[1];
             # cx qb_59[0],qb_60[0];
             # t qb_60[0];
-
-
+            
+            
         It is also possible to compile simple real-time control features:
-
+            
         ::
-
+            
             def main(phi):
-
+            
                 qf = QuantumFloat(5)
                 h(qf)
                 bl = measure(qf[0])
-
+            
                 with control(bl):
                     rz(phi, qf[1])
                     x(qf[1])
-
+            
                 return
-
+            
             jaspr = make_jaspr(main)(0.5)
             print(jaspr.to_qasm(0.5))
-
+            
         This gives:
-
+            
         ::
-
+            
             OPENQASM 2.0;
             include "qelib1.inc";
             qreg qb_59[1];
@@ -1296,48 +1296,48 @@ class Jaspr(ClosedJaxpr):
             if(cb_0==1) rz(0.5) qb_60[0];
             if(cb_0==1) x qb_60[0];
             reset qb_60[0];
-
+            
         """
         res = self.to_qc(*args)
         if len(self.outvars) == 1:
             res = [res]
         qrisp_qc = res[-1]
         return qrisp_qc.qasm()
-
+            
     def to_catalyst_jaxpr(self):
         """Compiles the jaspr to the corresponding `Catalyst jaxpr <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
         Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
-
+            
         Parameters
         ----------
         *args : tuple
             The arguments to call the jaspr with.
-
+            
         Returns
         -------
         jax.core.Jaxpr
             The Jaxpr using Catalyst primitives.
-
+            
         Examples
         --------
         We create a simple script and inspect the Catalyst Jaxpr:
-
+            
         ::
-
+            
             from qrisp import *
             from qrisp.jasp import make_jaspr
-
+            
             def example_function(i):
-
+            
                 qv = QuantumFloat(i)
                 cx(qv[0], qv[1])
                 t(qv[1])
                 meas_res = measure(qv)
                 meas_res += 1
                 return meas_res
-
+            
             jaspr = make_jaspr(example_function)(2)
-
+            
             print(jaspr.to_catalyst_jaxpr())
             # Yields
             # { lambda ; a:AbstractQreg() b:i64[] c:i32[]. let
@@ -1379,25 +1379,25 @@ class Jaspr(ClosedJaxpr):
             #   bq:i32[] = mul bp 1
             #   br:i32[] = add bq 1
             # in (t, e, br) }
-
+            
         """
         from qrisp.jasp.evaluation_tools.catalyst_interface import (
             jaspr_to_catalyst_jaxpr,
         )
-
+            
         return jaspr_to_catalyst_jaxpr(self.flatten_environments())
-
-
+            
+            
 def make_jaxpr_mod(fun, static_argnums=(), return_shape=False, abstracted_axes=None):
     """Creates a function that produces the jaxpr of a traced function.
-
+            
     This is a modified version of JAX's ``make_jaxpr`` that supports
     ``return_shape=True`` even when the function returns custom abstract
     types that don't have ``shape``/``dtype`` attributes (such as
     ``AbstractQuantumState``).
-
+            
     The interface is identical to ``jax.make_jaxpr``.
-
+            
     Parameters
     ----------
     fun : Callable
@@ -1413,14 +1413,14 @@ def make_jaxpr_mod(fun, static_argnums=(), return_shape=False, abstracted_axes=N
         Default is False.
     abstracted_axes : optional
         Specification for which axes to abstract over. Default is None.
-
+            
     Returns
     -------
     Callable
         A function that, when called with example arguments, returns either:
         - A ClosedJaxpr representation of ``fun`` (if ``return_shape=False``)
         - A tuple ``(ClosedJaxpr, out_tree)`` (if ``return_shape=True``)
-
+            
     Notes
     -----
     JAX's native ``make_jaxpr(return_shape=True)`` fails on custom abstract
@@ -1428,25 +1428,25 @@ def make_jaxpr_mod(fun, static_argnums=(), return_shape=False, abstracted_axes=N
     outputs, which requires ``shape`` and ``dtype`` attributes. This function
     avoids that by using ``jit(...).trace()`` to directly access the output
     tree structure.
-
+            
     Examples
     --------
     >>> def f(x):
     ...     return {"a": x + 1, "b": x * 2}
     >>> jaxpr, out_tree = make_jaxpr_mod(f, return_shape=True)(1.0)
     >>> # out_tree can be used with tree_unflatten to reconstruct the dict
-
+            
     """
     from jax._src.interpreters import partial_eval as pe
     from jax._src.util import split_list
-
+            
     def jaxpr_creator(*args, **kwargs):
         if return_shape:
             # Use jit(...).trace() directly to get access to _out_tree
             # This avoids JAX's make_jaxpr return_shape logic which fails on
             # custom abstract types that don't have shape/dtype attributes.
             traced = jax.jit(fun, static_argnums=static_argnums, abstracted_axes=abstracted_axes).trace(*args, **kwargs)
-
+            
             # Extract the jaxpr, handling constants if needed
             # (same logic as JAX's make_jaxpr)
             if traced._num_consts:
@@ -1455,20 +1455,20 @@ def make_jaxpr_mod(fun, static_argnums=(), return_shape=False, abstracted_axes=N
                 closed_jaxpr = ClosedJaxpr(jaxpr_, consts)
             else:
                 closed_jaxpr = traced.jaxpr
-
+            
             return closed_jaxpr, traced._out_tree
         else:
             return make_jaxpr(fun, static_argnums=static_argnums, abstracted_axes=abstracted_axes)(*args, **kwargs)
-
+            
     return jaxpr_creator
-
-
+            
+            
 def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
     """Creates a function that returns the Jaspr representation of a quantum function.
-
+            
     This function is analogous to JAX's ``make_jaxpr``, but produces a Jaspr
     (a Jaxpr enhanced with quantum primitives) from a Qrisp quantum function.
-
+            
     Parameters
     ----------
     fun : Callable
@@ -1484,64 +1484,64 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
     **jax_kwargs
         Additional keyword arguments passed to ``jax.make_jaxpr``, such as
         ``static_argnums``.
-
+            
     Returns
     -------
     Callable
         A function that, when called with example arguments, returns either:
         - A Jaspr representation of ``fun`` (if ``return_shape=False``)
         - A tuple ``(Jaspr, out_tree)`` (if ``return_shape=True``) where ``out_tree`` is a PyTreeDef that can be used with ``tree_unflatten``
-
+            
     Examples
     --------
     **Basic quantum circuit with measurement**
-
+            
     Create a Jaspr for a simple Bell state circuit:
-
+            
     ::
-
+            
         from qrisp import QuantumVariable, h, cx, measure
         from qrisp.jasp import make_jaspr
-
+            
         def simple_circuit():
             qv = QuantumVariable(2)
             h(qv[0])
             cx(qv[0], qv[1])
             return measure(qv)
-
+            
         jaspr = make_jaspr(simple_circuit)()
         result = jaspr()  # Returns 0 or 3 with equal probability
-
+            
     **Parameterized quantum circuit**
-
+            
     Create a Jaspr with parameterized gates that can be executed with different parameters:
-
+            
     ::
-
+            
         from qrisp import QuantumVariable, h, p, measure
         from qrisp.jasp import make_jaspr
-
+            
         def rotation_circuit(angle):
             qv = QuantumVariable(1)
             h(qv)
             p(angle, qv)
             return measure(qv)
-
+            
         jaspr = make_jaspr(rotation_circuit)(0.5)
         result1 = jaspr(0.5)  # Execute with angle=0.5
         result2 = jaspr(1.0)  # Execute with angle=1.0
-
+            
     **Using return_shape for PyTree reconstruction**
-
+            
     Retrieve the output tree structure alongside the Jaspr for reconstructing
     complex return values:
-
+            
     ::
-
+            
         from qrisp import QuantumVariable, h, cx, x, measure
         from qrisp.jasp import make_jaspr
         from jax.tree_util import tree_unflatten, tree_flatten
-
+            
         def multi_output_circuit():
             qa = QuantumVariable(2)
             qb = QuantumVariable(2)
@@ -1549,14 +1549,14 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
             cx(qa[0], qa[1])
             x(qb)
             return measure(qa), measure(qb)
-
+            
         jaspr, out_tree = make_jaspr(multi_output_circuit, return_shape=True)()
         result_a, result_b = jaspr()
-
+            
         # Use out_tree to reconstruct the output structure
         flat_results, _ = tree_flatten((result_a, result_b))
         reconstructed = tree_unflatten(out_tree, flat_results)
-
+            
     """
     from qrisp import recursive_qv_search
     from qrisp.jasp import (
@@ -1564,7 +1564,7 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
         TracingQuantumSession,
         check_for_tracing_mode,
     )
-
+            
     # Handle static_argnums adjustment for the ammended function
     adjusted_jax_kwargs = dict(jax_kwargs)
     if "static_argnums" in adjusted_jax_kwargs:
@@ -1574,26 +1574,26 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
                 adjusted_jax_kwargs["static_argnums"][i] += 1
         else:
             adjusted_jax_kwargs["static_argnums"] += 1
-
+            
     def jaspr_creator(*args, **kwargs):
-
+            
         qs = TracingQuantumSession.get_instance()
-
+            
         # Close any tracing quantum sessions that might have not been
         # properly closed due to whatever reason.
         if not check_for_tracing_mode():
             while qs.abs_qst is not None:
                 qs.conclude_tracing()
-
+            
         # This function will be traced by Jax.
         # Note that we add the abs_qst keyword as the tracing quantum circuit
         def ammended_function(*args, **kwargs):
-
+            
             abs_qst = kwargs[10 * "~"]
             del kwargs[10 * "~"]
-
+            
             qs.start_tracing(abs_qst)
-
+            
             # If the signature contains QuantumVariables, these QuantumVariables went
             # through a flattening/unflattening procedure. The unflattening creates
             # a copy of the QuantumVariable object, which is however not yet registered in any
@@ -1601,32 +1601,32 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
             arg_qvs = recursive_qv_search(args)
             for qv in arg_qvs:
                 qs.register_qv(qv, None)
-
+            
             try:
                 res = fun(*args, **kwargs)
             except Exception as e:
                 qs.conclude_tracing()
                 raise e
-
+            
             res_qc = qs.conclude_tracing()
-
+            
             return res, res_qc
-
+            
         ammended_kwargs = dict(kwargs)
         ammended_kwargs[10 * "~"] = AbstractQuantumState()
-
+            
         # Use make_jaxpr_mod to trace the function
         # Pass return_shape through to get the output tree if requested
         static_argnums = adjusted_jax_kwargs.get("static_argnums", ())
         abstracted_axes = adjusted_jax_kwargs.get("abstracted_axes", None)
-
+            
         result = make_jaxpr_mod(
             ammended_function,
             static_argnums=static_argnums,
             return_shape=return_shape,
             abstracted_axes=abstracted_axes,
         )(*args, **ammended_kwargs)
-
+            
         if return_shape:
             closed_jaxpr, full_out_tree = result
             # full_out_tree is a PyTreeDef for (res, res_qc)
@@ -1634,32 +1634,32 @@ def make_jaspr(fun, flatten_envs=True, return_shape=False, **jax_kwargs):
             user_out_tree = full_out_tree.children()[0]
         else:
             closed_jaxpr = result
-
+            
         # Collect the environments
         # This means that the quantum environments no longer appear as
         # enter/exit primitives but as primitive that "call" a certain Jaspr.
         res = Jaspr.from_cache(collect_environments(closed_jaxpr))
-
+            
         if flatten_envs:
             res = res.flatten_environments()
-
+            
         if return_shape:
             return res, user_out_tree
         else:
             return res
-
+            
     return jaspr_creator
-
-
+            
+            
 def check_aval_equivalence(invars_1, invars_2):
     avals_1 = [invar.aval for invar in invars_1]
     avals_2 = [invar.aval for invar in invars_2]
     return all([type(avals_1[i]) == type(avals_2[i]) for i in range(len(avals_1))])
-
-
+            
+            
 def remove_redundant_allocations(closed_jaxpr):
     """Optimizes the Jaspr by removing redundant qubit allocations.
-
+            
     Strategy:
     1.  Map usages of all variables to identify how QubitArrays are consumed.
     2.  Identify `jasp.create_qubits` operations that are redundant. An allocation is redundant if:
@@ -1677,17 +1677,17 @@ def remove_redundant_allocations(closed_jaxpr):
         -   Update variable references in remaining equations and output variables using the replacement map.
     """
     from jax.core import DropVar
-
+            
     try:
         from jax.extend.core import Literal
     except ImportError:
         from jax.core import Literal
-
+            
     jaxpr = closed_jaxpr.jaxpr
     eqns = jaxpr.eqns
-
+            
     usages = {}
-
+            
     # 1. Build usage map
     # We iterate over all equations and record which equation uses which input variable.
     for eqn in eqns:
@@ -1699,33 +1699,33 @@ def remove_redundant_allocations(closed_jaxpr):
             if var not in usages:
                 usages[var] = []
             usages[var].append(eqn)
-
+            
     # Identify variables that are returned by the function, as these cannot be optimized away.
     returned_vars = set()
     for var in jaxpr.outvars:
         if not isinstance(var, DropVar) and not isinstance(var, Literal):
             returned_vars.add(var)
-
+            
     replacements = {}
     eqns_to_remove = set()
-
+            
     # Primitives that are "safe" to exist on a redundant qubit array.
     # These operations can be resolved without the actual qubits if the allocation is known.
     allowed_primitives = {"jasp.get_size", "jasp.delete_qubits"}
-
+            
     # 2. Identify and plan removals
     for eqn in eqns:
         if eqn.primitive.name == "jasp.create_qubits":
             out_qa = eqn.outvars[0]
             out_qc = eqn.outvars[1]
-
+            
             # If the QubitArray is part of the output, we must keep it.
             if out_qa in returned_vars:
                 continue
-
+            
             # Check if out_qa is only used by allowed primitives or not at all
             is_redundant = False
-
+            
             if isinstance(out_qa, DropVar) or out_qa not in usages:
                 is_redundant = True
             else:
@@ -1737,28 +1737,28 @@ def remove_redundant_allocations(closed_jaxpr):
                         break
                 if only_allowed_usages:
                     is_redundant = True
-
+            
             if is_redundant:
                 eqns_to_remove.add(id(eqn))
-
+            
                 # Rewire circuit: Bypass the allocation by mapping output circuit to input circuit.
                 replacements[out_qc] = eqn.invars[1]
-
+            
                 # Handle dependent equations (safe primitives)
                 if not isinstance(out_qa, DropVar) and out_qa in usages:
                     for u_eqn in usages[out_qa]:
                         eqns_to_remove.add(id(u_eqn))
-
+            
                         if u_eqn.primitive.name == "jasp.get_size":
                             # Optimize get_size: Use the input size from create_qubits directly.
                             replacements[u_eqn.outvars[0]] = eqn.invars[0]
                         elif u_eqn.primitive.name == "jasp.delete_qubits":
                             # Bypass cleanup: Map the cleanup's output circuit to its input circuit.
                             replacements[u_eqn.outvars[0]] = u_eqn.invars[1]
-
+            
     if not eqns_to_remove:
         return
-
+            
     # 3. Apply replacements
     def resolve(var):
         # Literals are not hashable and cannot be in replacements
@@ -1772,16 +1772,16 @@ def remove_redundant_allocations(closed_jaxpr):
             # Handle other potentially unhashable types
             pass
         return var
-
+            
     new_eqns = []
     for eqn in eqns:
         if id(eqn) in eqns_to_remove:
             continue
-
+            
         # Update inputs of remaining equations using the replacement map
         eqn.invars[:] = [resolve(var) for var in eqn.invars]
         new_eqns.append(eqn)
-
+            
     # Update the equations list in-place
     jaxpr.eqns[:] = new_eqns
     # Update the output variables of the jaxpr

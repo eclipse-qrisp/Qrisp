@@ -35,7 +35,7 @@ class PassManager:
     ``CircuitPass(my_func)``.
 
     Example:
-    -------
+    --------
     Build a pipeline with ``+=``, then inspect, insert, and remove passes::
 
         >>> from qrisp import PassManager
