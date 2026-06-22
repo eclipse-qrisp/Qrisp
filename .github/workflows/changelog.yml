@@ -12,7 +12,7 @@ jobs:
   remind:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -37,7 +37,7 @@ jobs:
 
       - name: Post reminder comment
         if: steps.check.outputs.modified == 'false'
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@v5
         with:
           comment-id: ${{ steps.find.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
@@ -49,6 +49,7 @@ jobs:
             Make sure your entry covers all of the following:
 
             - [ ] **Section** — placed under the right heading (feature section, `Additional Updates`, or `Compatibility`)
+            - [ ] **First-time contributor?** — add yourself under `First Time Contributors 🎉`
             - [ ] **Description** — a concise explanation of what changed and why
             - [ ] **PR link** — reference the PR using `` `PR #NNN <URL>`_ ``
             - [ ] **Component** — which class/module/function was affected (use ``:class:`` / ``:func:`` roles)
