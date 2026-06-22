@@ -729,7 +729,7 @@ def gidney_cq_venting_adder(
     --------
     Basic addition in dynamic (JASP) mode::
 
-        from qrisp import QuantumFloat, measure
+        from qrisp import QuantumFloat, measure, gidney_cq_venting_adder
         from qrisp.jasp import jaspify
 
         @jaspify
