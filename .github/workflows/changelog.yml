@@ -72,7 +72,7 @@ jobs:
             - [ ] **Component** - which class/module/function was affected (use :class: / :func: roles)
             - [ ] **Deprecations** - if applicable, what replaces the old API
 
-            See changelog-template.rst for the full section layout.
+            See changelog-dev.rst for the full section layout.
           edit-mode: replace
 
       # Post (or update) an acknowledgment if the changelog was updated
