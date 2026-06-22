@@ -86,16 +86,9 @@ class JRangeIterator:
             self.iter_env = JIterationEnvironment()
             self.iter_env.__enter__()
 
-            self.iter_1_qvs = list(TracingQuantumSession.get_instance().qv_list)
-
             return self.loop_index
 
         elif self.iteration == 2:
-
-            qs = TracingQuantumSession.get_instance()
-            created_qvs = set(list(qs.qv_list)) - set(self.iter_1_qvs)
-            created_qvs = list(created_qvs)
-            created_qvs = sorted(created_qvs, key=lambda x: hash(x))
 
             # Perform the incrementation (step size 1)
             self.loop_index += 1
@@ -109,16 +102,9 @@ class JRangeIterator:
             self.iter_env.__exit__(None, None, None)
             self.iter_env.__enter__()
 
-            self.iter_2_qvs = list(TracingQuantumSession.get_instance().qv_list)
-
             return self.loop_index
 
         elif self.iteration == 3:
-
-            qs = TracingQuantumSession.get_instance()
-            created_qvs = set(list(qs.qv_list)) - set(self.iter_2_qvs)
-            created_qvs = list(created_qvs)
-            created_qvs = sorted(created_qvs, key=lambda x: hash(x))
 
             self.loop_index += 1
 
@@ -189,6 +175,187 @@ def jrange(*args):
     9
     >>> jaspr(5, 9)
     10
+    
+    We now give examples that violate the above rules (ie. no carries and changing
+    iteration behavior).
+
+    To create a loop with carry behavior we simply return the final loop index
+
+    ::
+
+        @qache
+        def int_encoder(qv, encoding_int):
+
+            for i in jrange(qv.size):
+                with control(encoding_int & (1<<i)):
+                    x(qv[i])
+            return i
+
+
+        def test_f(a, b):
+
+            qv = QuantumFloat(a)
+
+            int_encoder(qv, b+1)
+
+            return measure(qv)
+
+        jaspr = make_jaspr(test_f)(1,1)
+
+    >>> jaspr(5, 8)
+    Exception: Found jrange with external carry value
+
+    To demonstrate the second kind of illegal behavior, we construct a loop
+    that behaves differently on the first iteration:
+
+    ::
+
+        @qache
+        def int_encoder(qv, encoding_int):
+
+            flag = True
+            for i in jrange(qv.size):
+                if flag:
+                    with control(encoding_int & (1<<i)):
+                        x(qv[i])
+                else:
+                    x(qv[0])
+                flag = False
+
+        def test_f(a, b):
+
+            qv = QuantumFloat(a)
+
+            int_encoder(qv, b+1)
+
+            return measure(qv)
+
+        jaspr = make_jaspr(test_f)(1,1)
+
+    In this script, ``int_encoder`` defines a boolean flag that changes the
+    semantics of the iteration behavior. After the first iteration the flag
+    is set to ``False`` such that the alternate behavior is activated.
+
+    >>> jaspr(5, 8)
+    Exception: Jax semantics changed during jrange iteration
+
+    Since the ``step`` argument has been removed as of v0.9, multiply the loop
+    variable by your desired step inside the body.
+
+    The following example steps through every second qubit (equivalent to step 2):
+
+    ::
+
+        from qrisp.jasp import jrange, make_jaspr, qache
+        from qrisp import QuantumFloat, x, measure
+
+        @qache
+        def stepped_loop(qv):
+            # Number of iterations for step 2
+            n = (qv.size + 1) // 2
+            # Step-1 loop
+            for k in jrange(n):
+                # Multiply by the desired step
+                i = 2 * k
+                x(qv[i])
+
+        def test_f(a):
+            qv = QuantumFloat(a)
+            stepped_loop(qv)
+            return measure(qv)
+
+        jaspr = make_jaspr(test_f)(1)
+
+    >>> jaspr(3)
+    5
+    >>> jaspr(4)
+    5
+
+    Reversing a ``jrange`` loop (equivalent to step size -1) can be done in
+    two ways.
+
+    The first is to compute the index manually:
+
+    ::
+
+        from qrisp.jasp import jrange, make_jaspr, qache
+        from qrisp import QuantumFloat, x, measure
+
+        @qache
+        def reversed_loop(qv):
+            # Step-1 loop
+            for j in jrange(qv.size):
+                # Compute index in reverse
+                i = qv.size - j - 1
+                x(qv[i])
+
+        def test_f(a):
+            qv = QuantumFloat(a)
+            reversed_loop(qv)
+            return measure(qv)
+
+        jaspr = make_jaspr(test_f)(1)
+
+    >>> jaspr(3)
+    7
+    >>> jaspr(4)
+    15
+
+    The second way is to wrap the forward loop in an
+    :meth:`~qrisp.environments.InversionEnvironment`:
+
+    First, the forward loop without inversion:
+
+    ::
+
+        from qrisp import QuantumVariable, x, invert
+        from qrisp.jasp import jrange, make_jaspr, qache
+
+        @qache
+        def loop_with_offset(qv, start):
+            # Forward jrange loop
+            for i in jrange(qv.size - start):
+                # Offset the loop variable by start
+                x(qv[i + start])
+
+        def test_f(a):
+            qv = QuantumVariable(a)
+            loop_with_offset(qv, 2)
+            return measure(qv)
+
+        jaspr = make_jaspr(test_f)(1)
+
+    >>> jaspr(4)
+    12
+
+    This applies ``x`` to qubits 2 and 3, giving state ``|0011⟩``.
+    Wrapping the same loop in ``invert()`` reverses the iteration order and
+    daggers the operations:
+
+    ::
+
+        @qache
+        def reversed_loop_with_offset(qv, start):
+            # Reverses the enclosed loop
+            with invert():
+                # Same forward loop, now runs backwards
+                for i in jrange(qv.size - start):
+                    x(qv[i + start])
+
+        def test_f_rev(a):
+            qv = QuantumVariable(a)
+            reversed_loop_with_offset(qv, 2)
+            return measure(qv)
+
+        jaspr_rev = make_jaspr(test_f_rev)(1)
+
+    >>> jaspr_rev(4)
+    12
+
+    Because ``x`` is self-inverse, the result is the same — the loop still
+    iterates from ``qv.size - start - 1`` down to ``start``. JASP handles
+    the reversed iteration and proper daggers automatically, including at
+    higher nesting levels.
     """
 
     new_args = []
