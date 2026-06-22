@@ -5,7 +5,7 @@ Qrisp 0.9
 
 A redesigned **backend interface** anchors Qrisp 0.9, alongside the **Quantum
 Singular Value Transform (QSVT)** at the heart of a new suite of
-BlockEncoding transformations, including the new **FOQCS-LCU (Fast
+`BlockEncoding` transformations, including the new **FOQCS-LCU (Fast
 One-Qubit-Controlled Select Linear Combination of Unitaries)** block encoding method,
 a full **circuit optimization pass manager**, and new state preparation primitives.
 Richer **QuantumArray** arithmetic and meaningful upgrades to arithmetic subroutines,
@@ -28,8 +28,8 @@ following new methods:
   the threshold pseudoinverse by ignoring singular values below a specific limit to
   regularize ill-conditioned linear systems. 
 * :func:`inv <qrisp.block_encodings.BlockEncoding.inv>` now uses QSVT by default,
-  succeeding the previous Hermitianization-based GQSVT approach. A ``method`` keyword
-  lets you switch between QSVT, GQSVT (Generalized QSVT via Hermitianization), or
+  succeeding the previous Hermitianization-based GQSVT (Generalized QSVT) approach. 
+  A ``method`` keyword lets you switch between QSVT, GQSVT, or
   QET (Quantum Eigenvalue Transform) as needed.
 * :func:`dagger <qrisp.block_encodings.BlockEncoding.dagger>`: Returns the adjoint of a
   block-encoded operator.
@@ -41,8 +41,7 @@ doesn't apply. Two further standalone functions round out the ``qrisp.gqsp`` mod
 :func:`dalzell_inversion <qrisp.gqsp.dalzell_inversion>`, Qrisp's implementation of
 the Dalzell Quantum Linear System Solver via QSVT-based kernel reflection, and
 :func:`pseudo_inversion <qrisp.gqsp.pseudo_inversion>` for QSVT-based threshold
-pseudoinversion (also reachable as :func:`BlockEncoding.pseudo_inv
-<qrisp.block_encodings.BlockEncoding.pseudo_inv>`).
+pseudoinversion (also reachable as :func:`BlockEncoding.pseudo_inv <qrisp.block_encodings.BlockEncoding.pseudo_inv>`).
 
 Backend Interface Redesign
 --------------------------
@@ -105,9 +104,9 @@ encoding Heisenberg and spin-glass type operators directly from a
 scheduling function, automatic ``g``/``g_deriv`` computation, a ``precision`` parameter
 for expectation-value accuracy, and ``exp_value_backend`` for hardware-based optimization.
 
-**Dicke state and unbalanced W state** (PR #572): New :func:`dicke_state
-<qrisp.dicke_state>` and :func:`unbalanced_w_state <qrisp.unbalanced_w_state>`
-deterministic state preparation routines, both invert-compatible and Jasp-traceable.
+**Dicke state and unbalanced W state** (PR #572): New :func:`dicke_state <qrisp.dicke_state>` and
+:func:`unbalanced_w_state <qrisp.unbalanced_w_state>` deterministic state preparation routines,
+based on the algorithm in `arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_.
 
 **QuantumArray upgrades** (PR #519): In-place arithmetic (``iadd``, ``isub``, ``imul``),
 element-wise logical operations (``and``, ``or``, ``xor``), and reductions via
@@ -154,6 +153,7 @@ Compatibility
 * **``jrange`` ``step`` argument removed** (PR #652): Passing three arguments to
   :func:`jrange <qrisp.jasp.jrange>` now emits a ``QrispDeprecationWarning`` and raises
   a ``TypeError``. Use a step-1 loop and multiply the loop variable by the desired step.
+* New optional ``xdsl`` and ``catalyst`` dependency groups in ``pyproject.toml`` (PR #664).
 * Jax 0.5.x and Catalyst 0.15 compatibility.
 
 First Time Contributors 🎉
