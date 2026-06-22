@@ -24,6 +24,7 @@ def qjit(function=None, device=None):
     """
     Decorator to leverage the jasp + Catalyst infrastructure to compile the given
     function to QIR and run it on the Catalyst QIR runtime.
+    Requires the Catalyst package to be installed (``pip install qrisp[catalyst]``).
 
     Parameters
     ----------
