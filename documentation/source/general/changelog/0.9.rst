@@ -15,7 +15,8 @@ round things out.
 QSVT and Singular Value Transformations
 ---------------------------------------
  
-With Qrisp 0.9, the Quantum Singular Value Transform (QSVT) framework (`PR #607 <https://github.com/eclipse-qrisp/Qrisp/pull/607>`_) is now available
+With Qrisp 0.9, the Quantum Singular Value Transform (QSVT) framework 
+(`PR #607 <https://github.com/eclipse-qrisp/Qrisp/pull/607>`_) is now available
 as the primary tool for matrix inversion and singular value processing to operators that
 aren't necessarily Hermitian. The :ref:`BlockEncoding <BlockEncoding>` class gains the
 following new methods:
@@ -61,7 +62,9 @@ The :ref:`BlockEncoding <BlockEncoding>` class gains the following new construct
   now supports general complex coefficients 
   (previously, only real non-negative coefficients were supported).
 
-* :func:`QSVT <qrisp.algorithms.gqsp.qsvt.QSVT>` and :func:`GQSVT <qrisp.algorithms.gqsp.gqsvt.GQSVT>` (introduced in `PR #479 <https://github.com/eclipse-qrisp/Qrisp/pull/479>`_) perform (Gerneralized) Quantum Singular Value Transform for fixed parity real or complex polynomials, respectively.
+* :func:`QSVT <qrisp.algorithms.gqsp.qsvt.QSVT>` and :func:`GQSVT <qrisp.algorithms.gqsp.gqsvt.GQSVT>`
+  (introduced in `PR #479 <https://github.com/eclipse-qrisp/Qrisp/pull/479>`_)
+  perform (Gerneralized) Quantum Singular Value Transform for fixed parity real or complex polynomials, respectively.
 Two further standalone functions round out the ``qrisp.gqsp`` module:
 :func:`dalzell_inversion <qrisp.gqsp.dalzell_inversion>`, Qrisp's implementation of
 the Dalzell Quantum Linear System Solver via QSVT-based kernel reflection, and
@@ -72,7 +75,8 @@ Backend Interface Redesign
 --------------------------
  
 The backend interface has been redesigned from the ground up for a cleaner, more
-modular abstraction (`PR #331 <https://github.com/eclipse-qrisp/Qrisp/pull/331>`_ and its follow-ups). The new `Backend` class provides a consistent
+modular abstraction (`PR #331 <https://github.com/eclipse-qrisp/Qrisp/pull/331>`_ and its follow-ups).
+The new `Backend` class provides a consistent
 interface for both simulators and hardware backends, abstracting away the differences and allowing users
 to switch between them seamlessly.
 
@@ -102,7 +106,8 @@ to switch between them seamlessly.
 Circuit Optimization Pass Manager
 ---------------------------------
  
-Qrisp 0.9 ships a complete **circuit optimization pass management system** (`PR #564 <https://github.com/eclipse-qrisp/Qrisp/pull/564>`_).
+Qrisp 0.9 ships a complete **circuit optimization pass management system**
+(`PR #564 <https://github.com/eclipse-qrisp/Qrisp/pull/564>`_).
 :class:`PassManager <qrisp.circuit.pass_management.PassManager>` keeps an ordered list of
 :class:`CircuitPass <qrisp.circuit.pass_management.CircuitPass>` instances, runs them via
 ``.run(qc)``, and verifies correctness with ``.verify(qc)``. Built-in passes handle
@@ -115,46 +120,63 @@ smarter routing, and visualizing optimization culprits.
 Additional Updates
 ------------------
 
-**BlockEncoding refactored** (`PR #628 <https://github.com/eclipse-qrisp/Qrisp/pull/628>`_): Rebuilt around a Base Class + Facade pattern.
+**BlockEncoding refactored** (`PR #628 <https://github.com/eclipse-qrisp/Qrisp/pull/628>`_):
+Rebuilt around a Base Class + Facade pattern.
 The old monolith is now split across ``block_encoding_base.py`` (abstract base),
 ``block_encoding.py`` (facade), ``constructors/``, and ``transformations/``, making
 extensions easier.
 
-**FOQCS-LCU block encoding** (`PR #597 <https://github.com/eclipse-qrisp/Qrisp/pull/597>`_): New :func:`from_foqcs_lcu_prep <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep>` and
+**FOQCS-LCU block encoding** (`PR #597 <https://github.com/eclipse-qrisp/Qrisp/pull/597>`_):
+New :func:`from_foqcs_lcu_prep <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep>` and
 :func:`from_foqcs_lcu_operator <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_operator>` methods enable block
 encoding Heisenberg and spin-glass type operators directly from a
 :class:`QubitOperator <qrisp.operators.QubitOperator>`.
 
-**COLD improvements** (`PR #614 <https://github.com/eclipse-qrisp/Qrisp/pull/614>`_): The :ref:`DCQOProblem <DCQO>` class gets a smoother
+**COLD improvements** (`PR #614 <https://github.com/eclipse-qrisp/Qrisp/pull/614>`_):
+The :ref:`DCQOProblem <DCQO>` class gets a smoother
 scheduling function, automatic ``g``/``g_deriv`` computation, a ``precision`` parameter
 for expectation-value accuracy, and ``exp_value_backend`` for hardware-based optimization.
 
-**Dicke state and unbalanced W state** (`PR #572 <https://github.com/eclipse-qrisp/Qrisp/pull/572>`_): New :func:`dicke_state <qrisp.dicke_state>` and
+**Dicke state and unbalanced W state** (`PR #572 <https://github.com/eclipse-qrisp/Qrisp/pull/572>`_):
+New :func:`dicke_state <qrisp.dicke_state>` and
 :func:`unbalanced_w_state <qrisp.unbalanced_w_state>` deterministic state preparation routines,
 based on the algorithm in `arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_.
 
-**QuantumArray upgrades** (`PR #519 <https://github.com/eclipse-qrisp/Qrisp/pull/519>`_): In-place arithmetic (``iadd``, ``isub``, ``imul``),
+**QuantumArray upgrades** (`PR #519 <https://github.com/eclipse-qrisp/Qrisp/pull/519>`_):
+In-place arithmetic (``iadd``, ``isub``, ``imul``),
 element-wise logical operations (``and``, ``or``, ``xor``), and reductions via
 :meth:`all() <qrisp.QuantumArray.all>` / :meth:`any() <qrisp.QuantumArray.any>`.
 
-**Arithmetic enhancements**: Gidney adder refactored (`PR #473 <https://github.com/eclipse-qrisp/Qrisp/pull/473>`_) with ``c_in``/``c_out``
-support; Cuccaro adder gains matching ``c_in``/``c_out`` interface (`PR #615 <https://github.com/eclipse-qrisp/Qrisp/pull/615>`_); new
-``gidney_cq_venting_adder`` for carry-venting classical-quantum addition (`PR #537 <https://github.com/eclipse-qrisp/Qrisp/pull/537>`_);
-BigInteger Montgomery arithmetic fixes (`PR #495 <https://github.com/eclipse-qrisp/Qrisp/pull/495>`_); rebuilt QuantumModulus constructor.
+**Arithmetic enhancements**: Gidney adder refactored
+(`PR #473 <https://github.com/eclipse-qrisp/Qrisp/pull/473>`_) with ``c_in``/``c_out``
+support; Cuccaro adder gains matching ``c_in``/``c_out`` interface
+(`PR #615 <https://github.com/eclipse-qrisp/Qrisp/pull/615>`_); new
+``gidney_cq_venting_adder`` for carry-venting classical-quantum addition
+(`PR #537 <https://github.com/eclipse-qrisp/Qrisp/pull/537>`_);
+BigInteger Montgomery arithmetic fixes
+(`PR #495 <https://github.com/eclipse-qrisp/Qrisp/pull/495>`_); rebuilt QuantumModulus constructor.
 
-**Typing module** (`PR #543 <https://github.com/eclipse-qrisp/Qrisp/pull/543>`_): New :mod:`qrisp.typing <qrisp.typing>` module with
+**Typing module** (`PR #543 <https://github.com/eclipse-qrisp/Qrisp/pull/543>`_):
+New :mod:`qrisp.typing <qrisp.typing>` module with
 :class:`QubitLike <qrisp.typing.QubitLike>`, :class:`ClbitLike
 <qrisp.typing.ClbitLike>`, :class:`FloatLike <qrisp.typing.FloatLike>` (replacing
 ``Param``), :class:`ScalarLike <qrisp.typing.ScalarLike>`, :class:`NDArrayLike
 <qrisp.typing.NDArrayLike>`, and :class:`ArrayLike <qrisp.typing.ArrayLike>`.
 
-**Other improvements**: MLIR / xDSL dialect (`PR #465 <https://github.com/eclipse-qrisp/Qrisp/pull/465>`_); StableHLO lowering (`PR #577 <https://github.com/eclipse-qrisp/Qrisp/pull/577>`_);
-composite gate interpreter (`PR #593 <https://github.com/eclipse-qrisp/Qrisp/pull/593>`_); ``BoundQubitTerm``/``BoundQubitOperator`` removed
-(`PR #559 <https://github.com/eclipse-qrisp/Qrisp/pull/559>`_); ``QubitOperator._to_pauli_dict()`` and zero-multiplication fix (`PR #612 <https://github.com/eclipse-qrisp/Qrisp/pull/612>`_);
-MaxCut module refactored (`PR #542 <https://github.com/eclipse-qrisp/Qrisp/pull/542>`_); benchmarking callback threshold (`PR #505 <https://github.com/eclipse-qrisp/Qrisp/pull/505>`_); depth
-metric negative slicing (`PR #451 <https://github.com/eclipse-qrisp/Qrisp/pull/451>`_); IQM backend domain update (`PR #561 <https://github.com/eclipse-qrisp/Qrisp/pull/561>`_); controlled-U3
-compilation fixes (`PR #551 <https://github.com/eclipse-qrisp/Qrisp/pull/551>`_); Gast dependency added (`PR #474 <https://github.com/eclipse-qrisp/Qrisp/pull/474>`_); Catalyst 0.15
-compatibility (`PR #568 <https://github.com/eclipse-qrisp/Qrisp/pull/568>`_).
+**Other improvements**: MLIR / xDSL dialect
+(`PR #465 <https://github.com/eclipse-qrisp/Qrisp/pull/465>`_);
+StableHLO lowering (`PR #577 <https://github.com/eclipse-qrisp/Qrisp/pull/577>`_);
+composite gate interpreter (`PR #593 <https://github.com/eclipse-qrisp/Qrisp/pull/593>`_);
+``BoundQubitTerm``/``BoundQubitOperator`` removed
+(`PR #559 <https://github.com/eclipse-qrisp/Qrisp/pull/559>`_);
+``QubitOperator._to_pauli_dict()`` and zero-multiplication fix
+(`PR #612 <https://github.com/eclipse-qrisp/Qrisp/pull/612>`_);
+MaxCut module refactored (`PR #542 <https://github.com/eclipse-qrisp/Qrisp/pull/542>`_);
+benchmarking callback threshold (`PR #505 <https://github.com/eclipse-qrisp/Qrisp/pull/505>`_);
+depth metric negative slicing (`PR #451 <https://github.com/eclipse-qrisp/Qrisp/pull/451>`_);
+IQM backend domain update (`PR #561 <https://github.com/eclipse-qrisp/Qrisp/pull/561>`_);
+controlled-U3 compilation fixes (`PR #551 <https://github.com/eclipse-qrisp/Qrisp/pull/551>`_);
+Catalyst 0.15 compatibility (`PR #568 <https://github.com/eclipse-qrisp/Qrisp/pull/568>`_).
 
 Compatibility
 -------------
@@ -175,10 +197,10 @@ Compatibility
 * New :func:`convert_to_cirq <qrisp.interface.convert_to_cirq>` and
   :func:`convert_from_cirq <qrisp.interface.convert_from_cirq>` functions for
   bidirectional Qrisp-Cirq conversion (`PR #610 <https://github.com/eclipse-qrisp/Qrisp/pull/610>`_).
-* **``jrange`` ``step`` argument removed** (`PR #652 <https://github.com/eclipse-qrisp/Qrisp/pull/652>`_): Passing three arguments to
+* **``jrange`` ``step`` argument removed**
+  (`PR #652 <https://github.com/eclipse-qrisp/Qrisp/pull/652>`_): Passing three arguments to
   :func:`jrange <qrisp.jasp.jrange>` now emits a ``QrispDeprecationWarning`` and raises
   a ``TypeError``. Use a step-1 loop and multiply the loop variable by the desired step.
-
 
 First Time Contributors 🎉
 -------------------------
