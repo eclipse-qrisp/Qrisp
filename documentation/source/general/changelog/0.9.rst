@@ -33,7 +33,34 @@ following new methods:
   QET (Quantum Eigenvalue Transform) as needed.
 * :func:`dagger <qrisp.block_encodings.BlockEncoding.dagger>`: Returns the adjoint of a
   block-encoded operator.
- 
+
+The :ref:`BlockEncoding <BlockEncoding>` class gains the following new constructors:
+
+* :func:`from_eye <qrisp.block_encodings.BlockEncoding.from_eye>`: Constructs a
+  BlockEncoding of a 2-D array with ones on a specified diagonal and zeros elsewhere.
+  A positive ``diagonal_index`` selects an upper subdiagonal, a negative value a lower
+  subdiagonal, and 0 (the default) the main diagonal.
+* :func:`from_projector <qrisp.block_encodings.BlockEncoding.from_projector>`:
+  Constructs a BlockEncoding of the projector :math:`|\phi\rangle\langle\psi|`, or,
+  when ``kernel=True``, of the kernel projector :math:`\mathbb{I} - |\phi\rangle\langle\phi|`.
+  Both left and right states may be specified as integers (computational basis states)
+  or as arbitrary state-preparation callables.
+* :func:`from_foqcs_lcu_operator <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_operator>`:
+  Constructs a BlockEncoding from a :class:`QubitOperator` using the
+  Fast One-Qubit-Controlled Select LCU (FOQCS-LCU) algorithm. The operator is
+  analyzed automatically and the appropriate PREP subroutine — Heisenberg or
+  spin-glass — is selected. Supported operators include arbitrary one-body fields
+  and same-axis two-body couplings of the form :math:`P_i P_j` with
+  :math:`P \in \{X, Y, Z\}`.
+* :func:`from_foqcs_lcu_prep <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep>`:
+  Low-level FOQCS-LCU constructor for users who supply their own right and left
+  PREP subroutines (:math:`P_R` and :math:`P_L`), enabling custom FOQCS-LCU
+  block encodings beyond the built-in Heisenberg and spin-glass models.
+
+*In addition,* :func:`from_lcu <qrisp.block_encodings.BlockEncoding.from_lcu>`
+  now supports general complex coefficients 
+  (previously, only real non-negative coefficients were supported).
+
 GQSVT, introduced in PR #479, is available as one of the three methods on
 :func:`inv <qrisp.block_encodings.BlockEncoding.inv>` (``method="GQSVT"``), giving you
 a Hermitianization-based fallback for cases where QET's Hermitian-only restriction
