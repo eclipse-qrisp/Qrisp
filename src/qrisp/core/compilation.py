@@ -28,14 +28,7 @@ from qrisp.circuit import (
     transpile,
     Instruction,
     fast_append,
-    RXGate,
-    RYGate,
-    RZGate,
-    RZZGate,
-    PGate,
-    GPhaseGate,
-    ClControlledOperation,
-    U3Gate,
+    decompose
 )
 from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
 from qrisp.misc import get_depth_dic, retarget_instructions
@@ -157,7 +150,8 @@ def qompiler(
 
         # Transpile to the first level
 
-        qc = transpile(qc, transpile_predicate=permeability_transpile_predicate)
+        qc = decompose(decompose_predicate=permeability_transpile_predicate, 
+                       collect_gphases = True)(qc)
 
         if intended_measurements and len(qc.clbits) == 0:
             # This function reorders the circuit such that the intended measurements can
@@ -193,9 +187,8 @@ def qompiler(
         # previous order which might have been intentionally picked to optimize depth.
         # In summary: Transpiling more aggressively leads to less qubits but more depth.
 
-        transpiled_qc = transpile(
-            qc, transpile_predicate=allocation_level_transpile_predicate
-        )
+        transpiled_qc = decompose(decompose_predicate=allocation_level_transpile_predicate,
+                                  collect_gphases=True)(qc)
 
         reordered_qc = optimize_allocations(transpiled_qc)
 
@@ -214,9 +207,8 @@ def qompiler(
                 or allocation_level_transpile_predicate(op)
             )
 
-        reordered_qc = transpile(
-            reordered_qc, transpile_predicate=logic_synth_transpile_predicate
-        )
+        reordered_qc = decompose(decompose_predicate=logic_synth_transpile_predicate, 
+                                 collect_gphases=True)(reordered_qc)
 
         # We now determine the amount of Qubits the circuit will need
         required_qubits = 0
