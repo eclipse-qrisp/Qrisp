@@ -37,7 +37,7 @@ from qrisp.jasp.primitives import (
     QuantumPrimitive,
     ParityOperation,
 )
-from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement
+from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement  # noqa: F401 — re-exported via qrisp.jasp.jasp_expression
 from qrisp.jasp.primitives import AbstractQuantumState, QuantumPrimitive
 from qrisp.jasp.jasp_expression import collect_environments, invert_jaspr
 

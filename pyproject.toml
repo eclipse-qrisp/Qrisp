@@ -78,7 +78,7 @@ Homepage = "https://github.com/eclipse-qrisp/Qrisp"
 "Bug Tracker" = "https://github.com/eclipse-qrisp/Qrisp/issues"
 
 [tool.ruff]
-exclude = ["__init__.py", "docs/"]
+exclude = ["__init__.py", "*.ipynb"]
 line-length = 120
 target-version = "py312" # will be changed to consider other python versions as well
 force-exclude = true
