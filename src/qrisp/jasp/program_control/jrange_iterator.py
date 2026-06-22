@@ -150,7 +150,8 @@ def jrange(*args):
     ::
 
         from qrisp import QuantumFloat, control, x
-        from qrisp.jasp import jrange, make_jaspr
+        from qrisp import QuantumFloat, control, measure, x
+        from qrisp.jasp import jrange, make_jaspr, qache
 
         @qache
         def int_encoder(qv, encoding_int):
