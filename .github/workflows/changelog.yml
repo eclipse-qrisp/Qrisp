@@ -8,14 +8,17 @@ on:
 permissions:
   pull-requests: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   remind:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.0
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
 
       - name: Check if changelog-dev.rst has actual entries
         id: check
@@ -26,22 +29,23 @@ jobs:
             echo "modified=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Find existing reminder comment
+      - name: Find existing changelog comment
         id: find
-        if: steps.check.outputs.modified == 'false'
         uses: peter-evans/find-comment@v3
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: github-actions[bot]
-          body-includes: Please update the developer changelog
+          body-includes: "<!-- changelog -->"
 
       - name: Post reminder comment
         if: steps.check.outputs.modified == 'false'
-        uses: peter-evans/create-or-update-comment@v5
+        uses: peter-evans/create-or-update-comment@v5.0.0
         with:
           comment-id: ${{ steps.find.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
+            <!-- changelog -->
+
             :memo: **Please update the developer changelog**
 
             It looks like this PR doesn't include an entry in `documentation/source/general/changelog/changelog-dev.rst`.
@@ -56,6 +60,20 @@ jobs:
             - [ ] **Deprecations** — if applicable, what replaces the old API
 
             See `changelog-template.rst` for the full section layout.
+          edit-mode: replace
+
+      - name: Post acknowledgment comment
+        if: steps.check.outputs.modified == 'true'
+        uses: peter-evans/create-or-update-comment@v5.0.0
+        with:
+          comment-id: ${{ steps.find.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            <!-- changelog -->
+
+            :white_check_mark: **Changelog entry confirmed**
+
+            Thanks for adding an entry to `documentation/source/general/changelog/changelog-dev.rst`!
           edit-mode: replace
 
       - name: Fail if changelog-dev.rst has no entries
