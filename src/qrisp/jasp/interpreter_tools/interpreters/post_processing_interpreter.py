@@ -21,6 +21,7 @@ to avoid manually building slice/squeeze equations.
 
 from functools import lru_cache
 
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     extract_invalues,
     insert_outvalues,
@@ -30,7 +31,8 @@ from qrisp.jasp.interpreter_tools.abstract_interpreter import (
 )
 
 
-@lru_cache(maxsize=int(1e5))
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def get_post_processing_evaluator(jaxpr):
     """
     Get a cached evaluator for a jaxpr.

@@ -887,7 +887,7 @@ class QubitOperator(Hamiltonian):
         ::
             from qrisp.operators import X, Y, Z, A, C, P1
             H = 1 + 2 * X(0) + 3 * X(0) * Y(1) * A(2) + C(4) * P1(0)
-            res = H.to_pauli_coeff_dict()
+            res = H._to_pauli_dict()
             print(res) # Yields example output
 
         Example output:
