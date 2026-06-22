@@ -21,7 +21,7 @@ from sympy import lambdify, Expr
 
 from qrisp.misc import bin_rep
 from qrisp.circuit.standard_operations import op_list
-from qrisp.circuit import ControlledOperation, ClControlledOperation
+from qrisp.circuit import ControlledOperation, ClControlledOperation, PRXGate
 
 
 # Function to convert qrisp quantum circuits to Qiskit quantum circuits
@@ -96,6 +96,7 @@ def convert_to_qiskit(qc, transpile=False):
 
         elif op.name == "gphase":
             temp_qc = QuantumCircuit(1)
+            temp_qc.global_phase += float(params[0])
             qiskit_ins = temp_qc.to_gate()
             qiskit_ins.name = "gphase"
 
@@ -256,6 +257,8 @@ def create_qiskit_instruction(op, params=[]):
         qiskit_ins = qsk_gates.U3Gate(*params)
     elif op.name == "r":
         qiskit_ins = qsk_gates.RGate(*params)
+    elif isinstance(op, PRXGate):
+        qiskit_ins = qsk_gates.RGate(op.alpha, op.beta)
     elif op.name == "id":
         qiskit_ins = qsk_gates.IGate()
     elif op.name == "reset":
@@ -370,22 +373,28 @@ def convert_from_qiskit(qiskit_qc):
         else:
             controlled_gate = False
 
-        try:
-            op = op_dic[qiskit_op.name](*params)
-        except KeyError:
+        # Qiskit RGate → PRXGate
+        if qiskit_op.name == "r":
+            from qrisp.circuit import PRXGate as _PRXGate
+
+            op = _PRXGate(params[0], params[1])
+        else:
             try:
-                op = op_dic[qiskit_op.name.lower()](*params)
+                op = op_dic[qiskit_op.name](*params)
             except KeyError:
-                if qiskit_op.definition is not None:
-                    op = convert_from_qiskit(qiskit_op.definition).to_gate(
-                        name=qiskit_op.name
-                    )
-                else:
-                    raise Exception(
-                        "Could not convert Qiskit operation "
-                        + str(qiskit_op.name)
-                        + " to Qrisp"
-                    )
+                try:
+                    op = op_dic[qiskit_op.name.lower()](*params)
+                except KeyError:
+                    if qiskit_op.definition is not None:
+                        op = convert_from_qiskit(qiskit_op.definition).to_gate(
+                            name=qiskit_op.name
+                        )
+                    else:
+                        raise Exception(
+                            "Could not convert Qiskit operation "
+                            + str(qiskit_op.name)
+                            + " to Qrisp"
+                        )
 
         if controlled_gate:
             qiskit_op = qiskit_qc.data[i].operation
@@ -408,5 +417,11 @@ def convert_from_qiskit(qiskit_qc):
             op = op.c_if(len(condition_bits), condition_value)
 
         qc.append(op, qubits, clbits)
+
+    # Propagate Qiskit's global phase (stored as a circuit attribute,
+    # not an instruction).  Dropping it changes the unitary — critical
+    # for controlled operations built from gate definitions with phase.
+    if abs(getattr(qiskit_qc, "global_phase", 0)) > 1e-10:
+        qc.gphase(qiskit_qc.global_phase, qc.qubits[0])
 
     return qc
