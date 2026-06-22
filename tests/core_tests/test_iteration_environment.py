@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 from qrisp.grover import diffuser
 
 from qrisp import (

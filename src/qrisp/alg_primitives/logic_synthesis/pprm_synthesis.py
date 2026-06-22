@@ -65,7 +65,7 @@ def pprm_synth(input_var, output_var, tt, qb_nr, phase_tolerant=False):
                 )
             else:
                 mcx(input_qubits, output_qubit, method="gray")
-                    # qs.append(mul_tt.gate_synth(method = "gray"),input_qubits+[output_qubit])  # noqa
+                # qs.append(mul_tt.gate_synth(method = "gray"),input_qubits+[output_qubit])  # noqa
         else:
             if isinstance(args[element][0], sp.core.symbol.Symbol):
                 arg_qubit = (-int(args[element][0].name[1:]) - 1) % input_var.size

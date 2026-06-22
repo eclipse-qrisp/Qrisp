@@ -323,7 +323,7 @@ def cq_calc_carry(a, b, radix_base=2, radix_exponent=0, ctrl=None):
                 parll_qbl = parallel_ancillae.pop(0)
                 cx(ctrl, parll_qbl)
                 mcx([parll_qbl, b[i]], g[i], method="gidney", ctrl_state="10")
-                    # parll_qbl.uncompute(recompute = True)
+                # parll_qbl.uncompute(recompute = True)
 
     try:
         parallel_anc_var.uncompute(recompute=True)

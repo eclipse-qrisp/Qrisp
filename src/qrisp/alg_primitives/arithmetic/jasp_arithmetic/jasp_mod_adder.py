@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 from qrisp.core import cx
 from qrisp.environments import control, invert

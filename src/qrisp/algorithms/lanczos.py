@@ -227,8 +227,7 @@ def lanczos_expvals(
 
         @jax.jit
         def post_processor(*args):
-            """Maps the 'all-zeros' outcome to 1 and any other outcome to -1.
-            """
+            """Maps the 'all-zeros' outcome to 1 and any other outcome to -1."""
             return jnp.where(jnp.all(jnp.array(args)) == 0, 1, -1)
 
         ev_even = expectation_value(lanczos_even, shots=mes_kwargs["shots"], post_processor=post_processor)

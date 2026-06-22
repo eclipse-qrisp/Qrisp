@@ -251,9 +251,7 @@ def create_padded_array(list_of_lists, use_tuples=False):
 
 
 def evaluate_expectation(samples, probs, operators, coefficients):
-    """Evaluate the expectation.
-
-    """
+    """Evaluate the expectation."""
     # print(results)
     # print(operators)
     # print(coefficients)
@@ -314,9 +312,7 @@ evaluate_observable_jitted = njit(cache=True)(evaluate_observable)
 
 @njit(cache=True)
 def evaluate_expectation_jitted(samples, probs, operators, coefficients):
-    """Evaluate the expectation.
-
-    """
+    """Evaluate the expectation."""
     expectation = 0
 
     for index1, ops in enumerate(operators):

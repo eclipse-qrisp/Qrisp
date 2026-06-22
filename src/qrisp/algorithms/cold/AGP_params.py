@@ -155,8 +155,7 @@ def build_AGP_templates_NC(h, J):
 
 
 def build_AGP_templates(N, uniform=False):
-    """Build AGP ansatz for 2nd order with uniform or non-uniform parameters
-    """
+    """Build AGP ansatz for 2nd order with uniform or non-uniform parameters"""
     A = []
 
     # Non-uniform case
@@ -236,8 +235,7 @@ def build_Hg_from_templates(h, J, lam, B_val, Bp_val, A_lam):
 
 # ----- Solvers -----
 def solve_params(Hmat, gvec):
-    """Solve Hmat x = gvec.
-    """
+    """Solve Hmat x = gvec."""
     try:
         x = np.linalg.solve(Hmat, gvec)
     except np.linalg.LinAlgError:

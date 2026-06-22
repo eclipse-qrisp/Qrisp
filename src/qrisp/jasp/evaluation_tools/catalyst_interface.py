@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 import catalyst
 import jax.numpy as jnp
 import pennylane as qml

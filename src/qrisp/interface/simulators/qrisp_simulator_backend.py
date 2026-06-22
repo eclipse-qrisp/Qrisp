@@ -31,8 +31,7 @@ from qrisp.simulator.simulator import run as default_run
 
 
 class QrispSimulatorJob(Job):
-    """A synchronous :class:`~qrisp.interface.Job` produced by :class:`QrispSimulatorBackend`.
-    """
+    """A synchronous :class:`~qrisp.interface.Job` produced by :class:`QrispSimulatorBackend`."""
 
     def __init__(
         self,

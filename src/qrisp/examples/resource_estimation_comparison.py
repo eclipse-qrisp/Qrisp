@@ -57,7 +57,6 @@ def count_ops_qrisp(n):
     return measure(qpe_res)
 
 
-
 t0 = time.time()
 count_ops_qrisp(2)
 print("Just-in-time compilation time: ", t0 - time.time())

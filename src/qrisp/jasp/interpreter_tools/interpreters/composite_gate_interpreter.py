@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 import jax.numpy as jnp
 from jax.extend.core import JaxprEqn
 from sympy import lambdify as _lambdify

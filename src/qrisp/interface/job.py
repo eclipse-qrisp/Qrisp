@@ -16,8 +16,7 @@
 # ********************************************************************************
 # """
 
-"""Abstract :class:`Job` interface and related types for representing and managing backend executions.
-"""
+"""Abstract :class:`Job` interface and related types for representing and managing backend executions."""
 
 from __future__ import annotations
 
@@ -382,8 +381,7 @@ class Job(ABC):
     # ------------------------------------------------------------------
 
     def done(self) -> bool:
-        """Return ``True`` if the job has completed successfully and results are available.
-        """
+        """Return ``True`` if the job has completed successfully and results are available."""
         return self.status() == JobStatus.DONE
 
     def running(self) -> bool:

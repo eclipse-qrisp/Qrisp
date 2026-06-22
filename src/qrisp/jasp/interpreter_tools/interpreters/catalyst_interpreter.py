@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 import jax.numpy as jnp
 from catalyst.jax_primitives import (
     cond_p,

@@ -964,8 +964,7 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_operator(O):
 
 
 def test_foqcs_lcu_custom_prep_from_prep():
-    r"""Tests the usage of custom PREP function with `from_foqcs_lcu_prep`.
-    """
+    r"""Tests the usage of custom PREP function with `from_foqcs_lcu_prep`."""
     from collections.abc import Sequence
 
     from qrisp.core import QuantumVariable, Qubit
@@ -1080,8 +1079,7 @@ def test_foqcs_lcu_resources():
 
 
 def test_block_encoding_foqcs_lcu_is_controllable():
-    r"""Tests that FOQCS-LCU produced block encoding can be controlled under jasp environment.
-    """
+    r"""Tests that FOQCS-LCU produced block encoding can be controlled under jasp environment."""
     from qrisp import QuantumBool, h
     from qrisp.environments import control
 
@@ -1346,8 +1344,7 @@ def test_foqcs_lcu_sim():
     ],
 )
 def test_block_encoding_foqcs_lcu_addition(H1, H2):
-    r"""Tests `BE_addition = BE1 + BE2` with `BE1` constructed by FOQCS-LCU.
-    """
+    r"""Tests `BE_addition = BE1 + BE2` with `BE1` constructed by FOQCS-LCU."""
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
 
@@ -1378,8 +1375,7 @@ def test_block_encoding_foqcs_lcu_addition(H1, H2):
     ],
 )
 def test_block_encoding_foqcs_lcu_subtraction(H1, H2):
-    r"""Tests `BE_subtraction = BE1 - BE2` with `BE1` constructed by FOQCS-LCU.
-    """
+    r"""Tests `BE_subtraction = BE1 - BE2` with `BE1` constructed by FOQCS-LCU."""
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
 
@@ -1414,8 +1410,7 @@ def test_block_encoding_foqcs_lcu_subtraction(H1, H2):
     ],
 )
 def test_block_encoding_foqcs_lcu_multiplication(H1, H2):
-    r"""Tests `BE_multiplication = BE1 @ BE2` with `BE1` constructed by FOQCS-LCU.
-    """
+    r"""Tests `BE_multiplication = BE1 @ BE2` with `BE1` constructed by FOQCS-LCU."""
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
 
@@ -1482,8 +1477,7 @@ def test_block_encoding_foqcs_lcu_scalar_multiplication(H1, H2, scalar):
     ],
 )
 def test_block_encoding_foqcs_lcu_kron(H1, H2):
-    r"""Tests the use of `.kron` with FOQCS-LCU.
-    """
+    r"""Tests the use of `.kron` with FOQCS-LCU."""
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
 
@@ -1528,8 +1522,7 @@ def test_block_encoding_foqcs_lcu_kron(H1, H2):
     ],
 )
 def test_block_encoding_foqcs_lcu_negation(H1, H2):
-    r"""Tests the use of negation `BE_neg = -BE` with FOQCS-LCU.
-    """
+    r"""Tests the use of negation `BE_neg = -BE` with FOQCS-LCU."""
     BE1 = BlockEncoding.from_foqcs_lcu_operator(H1)
     BE_neg = -BE1
 
@@ -1609,8 +1602,7 @@ def _uniform_heisenberg_chain(L):
     ],
 )
 def test_foqcs_operator_analysis_spin_glass_failures(O, L, expected_error):
-    r"""Verifies that `foqcs_analyze_operator_spin_glass` raises correct errors for different failure cases.
-    """
+    r"""Verifies that `foqcs_analyze_operator_spin_glass` raises correct errors for different failure cases."""
     with pytest.raises(ValueError) as exc_info:
         foqcs_analyze_operator_spin_glass(O, L=L)
 
@@ -1686,8 +1678,7 @@ def test_foqcs_operator_analysis_spin_glass_failures(O, L, expected_error):
     ],
 )
 def test_foqcs_operator_analysis_heisenberg_failures(O, L, expected_error):
-    r"""Verifies that `foqcs_analyze_operator_heisenberg` raises correct errors for different failure cases.
-    """
+    r"""Verifies that `foqcs_analyze_operator_heisenberg` raises correct errors for different failure cases."""
     with pytest.raises(ValueError) as exc_info:
         foqcs_analyze_operator_heisenberg(O, L=L)
 
@@ -1762,8 +1753,7 @@ def test_foqcs_operator_analysis_heisenberg_failures(O, L, expected_error):
     ],
 )
 def test_foqcs_operator_analysis(O, expected_method):
-    r"""Verifies that `foqcs_analyze_operator` properly identifies Heisenberg and spin-glass operator cases.
-    """
+    r"""Verifies that `foqcs_analyze_operator` properly identifies Heisenberg and spin-glass operator cases."""
     res = is_operator_foqcs_compatible(O)
 
     assert res, f"Compatible operator failed analysis: {O}"

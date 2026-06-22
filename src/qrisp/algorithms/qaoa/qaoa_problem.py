@@ -93,9 +93,7 @@ class QAOAProblem:
         self.optimization_costs = []
 
     def set_callback(self):
-        """Sets ``callback=True`` for saving intermediate results.
-
-        """
+        """Sets ``callback=True`` for saving intermediate results."""
         self.callback = True
 
     def set_init_function(self, init_function):
@@ -911,9 +909,7 @@ class QAOAProblem:
         return QAOABenchmark(data_dict, optimal_solution, self.cl_cost_function)
 
     def visualize_cost(self):
-        """Visualizes the cost during the optimization process. Can only be used if ``callback=True``.
-
-        """
+        """Visualizes the cost during the optimization process. Can only be used if ``callback=True``."""
         import matplotlib.pyplot as plt
 
         if not self.callback:

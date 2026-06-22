@@ -235,7 +235,6 @@ class QubitTerm:
     @custom_control(static_argnums=0)
     def simulate(self, coeff, qv, ctrl=None):
 
-
         from qrisp import (
             QuantumBool,
             QuantumEnvironment,
@@ -645,9 +644,7 @@ class QubitTerm:
         return temp
 
     def commute(self, other):
-        """Checks if two QubitTerms commute.
-
-        """
+        """Checks if two QubitTerms commute."""
         a = self.factor_dict
         b = other.factor_dict
 
@@ -675,9 +672,7 @@ class QubitTerm:
         return sign_flip == 1
 
     def commute_pauli(self, other):
-        """Checks if the Pauli factors of two QubitTerms commute and the ladder factors commute qubit-wise.
-
-        """
+        """Checks if the Pauli factors of two QubitTerms commute and the ladder factors commute qubit-wise."""
         a = self.factor_dict
         b = other.factor_dict
 
@@ -706,9 +701,7 @@ class QubitTerm:
         return sign_flip == 1
 
     def commute_qw(self, other):
-        """Checks if two QubitTerms commute qubit-wise.
-
-        """
+        """Checks if two QubitTerms commute qubit-wise."""
         a = self.factor_dict
         b = other.factor_dict
 
@@ -722,9 +715,7 @@ class QubitTerm:
         return True
 
     def intersect(self, other):
-        """Checks if two QubitTerms operate on the same qubit.
-
-        """
+        """Checks if two QubitTerms operate on the same qubit."""
         return len(set(self.factor_dict.keys()).intersection(other.factor_dict.keys())) != 0
 
     def ladders_agree(self, other):

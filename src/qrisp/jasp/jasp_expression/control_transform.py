@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 import numpy as np
 from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Var
 

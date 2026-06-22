@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 import jax
 from jax._src.lib.mlir import ir
 from jax.tree_util import tree_flatten, tree_unflatten

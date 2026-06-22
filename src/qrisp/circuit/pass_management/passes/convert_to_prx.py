@@ -1,5 +1,4 @@
-"""Convert single-qubit gates to PRX (Phased-RX) decomposition.
-"""
+"""Convert single-qubit gates to PRX (Phased-RX) decomposition."""
 
 from __future__ import annotations
 

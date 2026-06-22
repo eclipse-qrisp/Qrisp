@@ -905,4 +905,3 @@ def gidney_cq_venting_adder(
     #   internal q_cond creates nested tracing sessions that interfere.
     # n >= 6 → split_path  (split-half carry-venting, faithful to the paper)
     q_cond(num_targets < 6, gidney_path, split_path, target, clean_anc)
-

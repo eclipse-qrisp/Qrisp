@@ -1271,8 +1271,7 @@ class QuantumCircuit:
         return qasm_str
 
     def qasm(self, **kwargs) -> str:
-        """Alias for :meth:`to_qasm2`.
-        """
+        """Alias for :meth:`to_qasm2`."""
         return self.to_qasm2(**kwargs)
 
     def depth(

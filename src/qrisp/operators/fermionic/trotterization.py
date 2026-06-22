@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 from qrisp import IterationEnvironment, conjugate, merge
 from qrisp.jasp import check_for_tracing_mode, jrange
 from qrisp.operators.hamiltonian_tools import group_up_iterable

@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 import numpy as np
 from jax.api_util import debug_info
 from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Literal

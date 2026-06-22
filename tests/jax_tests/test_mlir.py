@@ -79,7 +79,6 @@ def test_mlir_generation(lower_stablehlo):
 
     # Test wheter stablehlo control flow is properly removed
 
-
     def main():
 
         qv = QuantumVariable(2)

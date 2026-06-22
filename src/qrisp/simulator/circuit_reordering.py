@@ -297,7 +297,6 @@ def nk_reorder_circuit(qc, preferential_gates=[]):
             if qc.data[i].op.name == "measure":
                 measurement_counter += 1
 
-
     new_qc_list = []
 
     from networkit.graphtools import GraphTools
@@ -337,7 +336,6 @@ def nk_reorder_circuit(qc, preferential_gates=[]):
 
         # callback(node)
         # G.removeNode(node)
-
 
     def topological_df_traversal(G, node, tp_dic, callback):
         node_list = [x for x in G.iterNeighbors(node)]
@@ -383,7 +381,6 @@ def nk_reorder_circuit(qc, preferential_gates=[]):
 
 
 try:
-
     nk_available = True
 
 except:
