@@ -1,57 +1,70 @@
-# =============================================================================
-# Release Drafter
-# =============================================================================
-# Automatically drafts release notes as PRs are merged, and publishes a
-# GitHub Release when a version tag is pushed.
-#
-# HOW IT WORKS
-# ─────────────
-#   1. PR merged to main  →  Release Drafter adds it to a draft release
-#                             under the section matching its GitHub label.
-#   2. Tag v* pushed       →  The draft is promoted to a real release with
-#                             auto-computed version (major/minor/patch based
-#                             on labels).
-#
-# SETUP (one time)
-# ────────────────
-#   1. Merge this PR (workflow + config) to main so Release Drafter can
-#      read .github/release-drafter.yml from the default branch.
-#   2. Create the labels in your repo matching the categories above:
-#      breaking, feature, bug, refactoring, performance, documentation,
-#      testing, ci, dependencies, chore, skip-changelog
-#   3. That's it.  From now on, label PRs appropriately and the draft will
-#      stay current automatically.
-#
-# WHY THIS OVER A CUSTOM SCRIPT
-# ─────────────────────────────
-#   - Incremental:  the draft is updated on *every* merge, not rebuilt
-#     from scratch at release time.
-#   - Per-PR labels make categorisation explicit and reviewable.
-#   - Handles edge cases (re-opened PRs, closed-without-merge, etc.).
-# =============================================================================
-
-name: Release Drafter
+name: Changelog Reminder
 
 on:
   pull_request_target:
-    types: [opened, reopened, synchronize, closed]
+    types: [opened, synchronize, reopened]
     branches: [main]
-  push:
-    branches: [main]
-    tags: ["v*"]
 
 permissions:
-  contents: write
-  pull-requests: read
+  pull-requests: write
 
 jobs:
-  draft:
+  remind:
     runs-on: ubuntu-latest
     steps:
-      - uses: release-drafter/release-drafter@v6
+      - uses: actions/checkout@v4
         with:
-          config-name: release-drafter.yml
-          # Publish only when a tag is pushed, not on every merge to main
-          publish: ${{ startsWith(github.ref, 'refs/tags/v') }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Check if changelog-dev.rst was modified
+        id: check
+        run: |
+          if git diff --name-only origin/main...HEAD | grep -q "documentation/source/general/changelog/changelog-dev.rst"; then
+            echo "modified=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "modified=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Find existing reminder comment
+        id: find
+        if: steps.check.outputs.modified == 'false'
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: github-actions[bot]
+          body-includes: Please update the developer changelog
+
+      - name: Add or update reminder comment
+        if: steps.check.outputs.modified == 'false'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            :memo: **Please update the developer changelog**
+
+            It looks like this PR doesn't include an entry in `documentation/source/general/changelog/changelog-dev.rst`.
+
+            Every contributor is responsible for adding a changelog entry describing their changes. Add your entry under the appropriate section in `changelog-dev.rst`:
+
+            | Section | When to use |
+            |---------|-------------|
+            | Named feature section | Major new feature (e.g. *QSVT and Singular Value Transformations*) |
+            | `Additional Updates` | Smaller changes — new methods, refactors, improvements |
+            | `Compatibility` | Breaking changes, deprecations, renamed/removed APIs |
+            | `First Time Contributors` | (auto-added, leave this to the maintainers) |
+
+            Each entry should include:
+
+            - **What** changed and **why** — a concise description of the feature, fix, or improvement
+            - **PR reference** — link the PR: ``(`PR #NNN <URL>`_)``
+            - **Component** — which class/module was affected (reference it via ``:class:`` / ``:func:`` where appropriate)
+            - **For deprecations** — what replaces the old API
+
+            Example from a past changelog:
+
+            > :func:`QSVT <qrisp.algorithms.gqsp.qsvt.QSVT>` and :func:`GQSVT <qrisp.algorithms.gqsp.gqsvt.GQSVT>` perform (Generalized) Quantum Singular Value Transform for fixed parity real or complex polynomials, respectively. (\`PR #479 <https://github.com/eclipse-qrisp/Qrisp/pull/479>\`_)
+
+            See `changelog-template.rst` for the full section layout.
+          edit-mode: replace
