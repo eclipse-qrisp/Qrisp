@@ -64,7 +64,7 @@ The :ref:`BlockEncoding <BlockEncoding>` class gains the following new construct
   :math:`P \in \{X, Y, Z\}`.
 * :func:`from_foqcs_lcu_prep <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep>`:
   (`PR #597 <https://github.com/eclipse-qrisp/Qrisp/pull/597>`_):
-  Low-level FOQCS-LCU constructor for users who supply their own right and left
+  Experimental FOQCS-LCU constructor for users who supply their own right and left
   PREP subroutines (:math:`P_R` and :math:`P_L`), enabling custom FOQCS-LCU
   block encodings beyond the built-in Heisenberg and spin-glass models.
 
@@ -200,8 +200,6 @@ Compatibility
   backends. ``VirtualBackend`` still works, but only as a deprecated drop-in
   subclass. ``DefaultBackend`` is now ``QrispSimulatorBackend``. ``batched_measurement``
   is deprecated in favor of ``BatchedBackend.dispatch()``.
-* ``fuse_adjacents`` now runs as part of the PassManager chain alongside the
-  other built-in passes; the standalone function still works as before.
 * ``BoundQubitTerm`` and ``BoundQubitOperator`` removed; use ``QubitTerm`` /
   ``QubitOperator`` instead.
 * The old ``qunicorn``-based ``BackendClient``/``BackendServer`` network
@@ -211,8 +209,8 @@ Compatibility
   bidirectional Qrisp-Cirq conversion (`PR #610 <https://github.com/eclipse-qrisp/Qrisp/pull/610>`_).
 * ``jrange`` ``step`` argument removed
   (`PR #652 <https://github.com/eclipse-qrisp/Qrisp/pull/652>`_): Passing three arguments to
-  :func:`jrange <qrisp.jasp.jrange>` now emits a ``QrispDeprecationWarning`` and raises
-  a ``TypeError``. Use a step-1 loop and multiply the loop variable by the desired step.
+  :func:`jrange <qrisp.jasp.jrange>` now raises a ``TypeError``. 
+  Use a step-1 loop and multiply the loop variable by the desired step.
 
 First Time Contributors 🎉
 --------------------------
