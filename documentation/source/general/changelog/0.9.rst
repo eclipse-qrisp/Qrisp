@@ -154,12 +154,21 @@ In-place arithmetic (``iadd``, ``isub``, ``imul``),
 element-wise logical operations (``and``, ``or``, ``xor``), and reductions via
 :meth:`all() <qrisp.QuantumArray.all>` / :meth:`any() <qrisp.QuantumArray.any>`.
 
+**Gidney carry-venting adder** (`PR #537 <https://github.com/eclipse-qrisp/Qrisp/pull/537>`_):
+New :func:`gidney_cq_venting_adder <qrisp.gidney_cq_venting_adder>` implements
+the classical-quantum in-place adder from `arXiv:2507.23079 <https://arxiv.org/abs/2507.23079>`_.
+Instead of propagating carries through the full register, each carry is measured in the
+X-basis ("vented") as soon as it is no longer needed, reducing Toffoli depth from
+:math:`\mathcal{O}(n)` to :math:`\mathcal{O}(1)`. A split-half design uses the
+target register itself as dirty workspace, keeping the total qubit overhead to
+just 3 clean ancillae. The adder requires dynamic (JASP) mode and supports
+``c_in``, ``c_out``, and zero-overhead :func:`control <qrisp.control>`
+via the :func:`custom_control <qrisp.custom_control>` decorator.
+
 **Arithmetic enhancements**: Gidney adder refactored
 (`PR #473 <https://github.com/eclipse-qrisp/Qrisp/pull/473>`_) with ``c_in``/``c_out``
 support; Cuccaro adder gains matching ``c_in``/``c_out`` interface
-(`PR #615 <https://github.com/eclipse-qrisp/Qrisp/pull/615>`_); new
-``gidney_cq_venting_adder`` for carry-venting classical-quantum addition
-(`PR #537 <https://github.com/eclipse-qrisp/Qrisp/pull/537>`_);
+(`PR #615 <https://github.com/eclipse-qrisp/Qrisp/pull/615>`_);
 BigInteger Montgomery arithmetic fixes and rebuilt QuantumModulus constructor
 (`PR #495 <https://github.com/eclipse-qrisp/Qrisp/pull/495>`_).
 
