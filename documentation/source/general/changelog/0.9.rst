@@ -58,14 +58,15 @@ The :ref:`BlockEncoding <BlockEncoding>` class gains the following new construct
   PREP subroutines (:math:`P_R` and :math:`P_L`), enabling custom FOQCS-LCU
   block encodings beyond the built-in Heisenberg and spin-glass models.
 
-*In addition,* :func:`from_lcu <qrisp.block_encodings.BlockEncoding.from_lcu>`
-  now supports general complex coefficients 
-  (previously, only real non-negative coefficients were supported).
+* :func:`from_lcu <qrisp.block_encodings.BlockEncoding.from_lcu>` now supports general
+  complex coefficients (previously, only real non-negative coefficients were supported).
 
 * :func:`QSVT <qrisp.algorithms.gqsp.qsvt.QSVT>` and :func:`GQSVT <qrisp.algorithms.gqsp.gqsvt.GQSVT>`
   (introduced in `PR #479 <https://github.com/eclipse-qrisp/Qrisp/pull/479>`_)
   perform (Gerneralized) Quantum Singular Value Transform for fixed parity real or complex polynomials, respectively.
-Two further standalone functions round out the ``qrisp.gqsp`` module:
+
+Two further standalone functions round out the ``qrisp.gqsp`` module
+(`PR #607 <https://github.com/eclipse-qrisp/Qrisp/pull/607>`_):
 :func:`dalzell_inversion <qrisp.gqsp.dalzell_inversion>`, Qrisp's implementation of
 the Dalzell Quantum Linear System Solver via QSVT-based kernel reflection, and
 :func:`pseudo_inversion <qrisp.gqsp.pseudo_inversion>` for QSVT-based threshold
@@ -76,9 +77,8 @@ Backend Interface Redesign
  
 The backend interface has been redesigned from the ground up for a cleaner, more
 modular abstraction (`PR #331 <https://github.com/eclipse-qrisp/Qrisp/pull/331>`_ and its follow-ups).
-The new `Backend` class provides a consistent
-interface for both simulators and hardware backends, abstracting away the differences and allowing users
-to switch between them seamlessly.
+The new `Backend` class provides a consistent interface for both simulators and hardware backends, abstracting away the
+differences and allowing users to switch between them seamlessly.
 
 * **Improved error handling**: The backend interface now includes more robust error handling and
   clearer error messages, making it easier to diagnose and fix issues when running circuits.
@@ -153,8 +153,8 @@ support; Cuccaro adder gains matching ``c_in``/``c_out`` interface
 (`PR #615 <https://github.com/eclipse-qrisp/Qrisp/pull/615>`_); new
 ``gidney_cq_venting_adder`` for carry-venting classical-quantum addition
 (`PR #537 <https://github.com/eclipse-qrisp/Qrisp/pull/537>`_);
-BigInteger Montgomery arithmetic fixes
-(`PR #495 <https://github.com/eclipse-qrisp/Qrisp/pull/495>`_); rebuilt QuantumModulus constructor.
+BigInteger Montgomery arithmetic fixes and rebuilt QuantumModulus constructor
+(`PR #495 <https://github.com/eclipse-qrisp/Qrisp/pull/495>`_).
 
 **Typing module** (`PR #543 <https://github.com/eclipse-qrisp/Qrisp/pull/543>`_):
 New :mod:`qrisp.typing <qrisp.typing>` module with
@@ -207,4 +207,6 @@ First Time Contributors 🎉
 
 * `Redperij <https://github.com/Redperij>`_ 
 * `MSY2K <https://github.com/MSY2K>`_
+* `bruno-ah-um <https://github.com/bruno-ah-um>`_
+* `Jfilz001 <https://github.com/Jfilz001>`_
 
