@@ -331,3 +331,188 @@ class TestControlledOperations:
         qc.cp(0.5, 0, 1)
         qc_rt = convert_from_qiskit(convert_to_qiskit(qc))
         assert_unitary_equal(qc, qc_rt)
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# Direct Qrisp ↔ Qiskit unitary comparison (no round-trip)
+# ══════════════════════════════════════════════════════════════════════════
+
+def _reverse_qubit_order(U: np.ndarray) -> np.ndarray:
+    """Reverse qubit ordering: MSB-first (Qrisp) → LSB-first (Qiskit)."""
+    n = int(np.log2(U.shape[0]))
+    perm = np.array([int(f"{i:0{n}b}"[::-1], 2) for i in range(2**n)])
+    return U[np.ix_(perm, perm)]
+
+
+def _assert_qrisp_qiskit_unitary_equal(qrisp_qc: QuantumCircuit, qiskit_qc: QiskitQC, atol=1e-13):
+    """Compare Qrisp unitary (MSB-first) against Qiskit unitary (LSB-first)."""
+    U_qrisp = qrisp_qc.get_unitary()
+    U_qiskit = Operator(qiskit_qc).data
+    U_qrisp_lsb = _reverse_qubit_order(U_qrisp)
+    assert np.allclose(U_qrisp_lsb, U_qiskit, atol=atol), \
+        f"unitaries differ after qubit-order reversal\n{U_qrisp_lsb}\n{U_qiskit}"
+
+
+class TestQrispToQiskitUnitary:
+    """Qrisp → Qiskit: compare unitaries directly (no round-trip)."""
+
+    def test_empty(self):
+        qc = QuantumCircuit(2)
+        qiskit_qc = convert_to_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
+
+    @pytest.mark.parametrize("gate", ["h", "x", "y", "z", "s", "t"])
+    def test_clifford_1q(self, gate):
+        qc = QuantumCircuit(2)
+        getattr(qc, gate)(0)
+        getattr(qc, gate)(1)
+        qiskit_qc = convert_to_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
+
+    @pytest.mark.parametrize("gate,args", [
+        ("rx", [0.5]), ("ry", [1.2]), ("rz", [-0.3]), ("p", [np.pi / 3]),
+    ])
+    def test_rotation_1q(self, gate, args):
+        qc = QuantumCircuit(1)
+        getattr(qc, gate)(*args, 0)
+        qiskit_qc = convert_to_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
+
+    def test_u3(self):
+        qc = QuantumCircuit(1)
+        qc.u3(1.0, 0.5, -0.3, 0)
+        qiskit_qc = convert_to_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
+
+    def test_prx(self):
+        qc = QuantumCircuit(1)
+        qc.append(PRXGate(0.7, 1.2), [0])
+        qiskit_qc = convert_to_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
+
+    def test_cx(self):
+        qc = QuantumCircuit(2)
+        qc.cx(0, 1)
+        qiskit_qc = convert_to_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
+
+    def test_cz(self):
+        qc = QuantumCircuit(2)
+        qc.cz(0, 1)
+        qiskit_qc = convert_to_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
+
+    def test_swap(self):
+        qc = QuantumCircuit(2)
+        qc.swap(0, 1)
+        qiskit_qc = convert_to_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
+
+    def test_rzz(self):
+        qc = QuantumCircuit(2)
+        qc.rzz(0.7, 0, 1)
+        qiskit_qc = convert_to_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
+
+    def test_cp(self):
+        qc = QuantumCircuit(2)
+        qc.cp(np.pi / 4, 0, 1)
+        qiskit_qc = convert_to_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
+
+    def test_toffoli(self):
+        qc = QuantumCircuit(3)
+        qc.mcx([0, 1], 2)
+        qiskit_qc = convert_to_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
+
+    def test_composite(self):
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.rz(0.5, 2)
+        qc.cz(1, 2)
+        qc.x(0)
+        qc.append(PRXGate(0.7, 1.2), [1])
+        qiskit_qc = convert_to_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
+
+    def test_controlled_prx(self):
+        qc = QuantumCircuit(2)
+        qc.append(PRXGate(0.6, 0.8).control(1), [0, 1])
+        qiskit_qc = convert_to_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
+
+
+class TestQiskitToQrispUnitary:
+    """Qiskit → Qrisp: compare unitaries directly (no round-trip)."""
+
+    def test_empty(self):
+        qc = QiskitQC(2)
+        qrisp_qc = convert_from_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
+
+    @pytest.mark.parametrize("gate,args", [
+        ("h", [0]), ("x", [1]), ("y", [0]), ("z", [1]),
+    ])
+    def test_clifford_1q(self, gate, args):
+        qc = QiskitQC(2)
+        getattr(qc, gate)(*args)
+        qrisp_qc = convert_from_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
+
+    @pytest.mark.parametrize("gate,args", [
+        ("rx", [0.5, 0]), ("ry", [1.2, 0]), ("rz", [-0.3, 0]),
+    ])
+    def test_rotation_1q(self, gate, args):
+        qc = QiskitQC(1)
+        getattr(qc, gate)(*args)
+        qrisp_qc = convert_from_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
+
+    def test_rgate(self):
+        qc = QiskitQC(1)
+        qc.r(0.7, 1.2, 0)
+        qrisp_qc = convert_from_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
+
+    def test_cx(self):
+        qc = QiskitQC(2)
+        qc.cx(0, 1)
+        qrisp_qc = convert_from_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
+
+    def test_cz(self):
+        qc = QiskitQC(2)
+        qc.cz(0, 1)
+        qrisp_qc = convert_from_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
+
+    def test_swap(self):
+        qc = QiskitQC(2)
+        qc.swap(0, 1)
+        qrisp_qc = convert_from_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
+
+    def test_ccx(self):
+        qc = QiskitQC(3)
+        qc.ccx(0, 1, 2)
+        qrisp_qc = convert_from_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
+
+    def test_controlled_rgate(self):
+        from qiskit.circuit.library import RGate
+        qc = QiskitQC(2)
+        qc.append(RGate(0.6, 0.8).control(1), [0, 1])
+        qrisp_qc = convert_from_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
+
+    def test_composite(self):
+        qc = QiskitQC(3)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.rz(0.5, 2)
+        qc.cz(1, 2)
+        qc.r(0.7, 1.2, 1)
+        qrisp_qc = convert_from_qiskit(qc)
+        _assert_qrisp_qiskit_unitary_equal(qrisp_qc, qc)
