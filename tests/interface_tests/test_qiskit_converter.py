@@ -24,6 +24,7 @@ from qiskit.quantum_info import Operator
 from qiskit import QuantumCircuit as QiskitQC
 
 from qrisp import QuantumCircuit
+from qrisp.circuit import PRXGate
 from qrisp.interface.converter.qiskit_converter import (
     convert_from_qiskit,
     convert_to_qiskit,
@@ -73,6 +74,39 @@ class TestQrispToQiskitRoundtrip:
     def test_u3(self):
         qc = QuantumCircuit(1)
         qc.u3(1.0, 0.5, -0.3, 0)
+        qc_rt = convert_from_qiskit(convert_to_qiskit(qc))
+        assert_unitary_equal(qc, qc_rt)
+
+    def test_prx(self):
+        """PRXGate maps to Qiskit RGate and back."""
+        qc = QuantumCircuit(1)
+        qc.append(PRXGate(0.7, 1.2), [0])
+        qc_rt = convert_from_qiskit(convert_to_qiskit(qc))
+        assert_unitary_equal(qc, qc_rt)
+
+    def test_prx_identity(self):
+        """PRXGate(0, beta) = identity should survive round-trip."""
+        qc = QuantumCircuit(1)
+        qc.append(PRXGate(0.0, 2.5), [0])
+        qc_rt = convert_from_qiskit(convert_to_qiskit(qc))
+        assert_unitary_equal(qc, qc_rt)
+
+    def test_prx_pi_rotation(self):
+        """PRXGate(pi, beta) should survive round-trip."""
+        qc = QuantumCircuit(1)
+        qc.append(PRXGate(np.pi, 0.3), [0])
+        qc_rt = convert_from_qiskit(convert_to_qiskit(qc))
+        assert_unitary_equal(qc, qc_rt)
+
+    def test_prx_composite(self):
+        """PRXGate mixed with other gates in a multi-qubit circuit."""
+        qc = QuantumCircuit(3)
+        qc.append(PRXGate(0.7, 1.2), [0])
+        qc.cx(0, 1)
+        qc.append(PRXGate(2.0, -0.5), [2])
+        qc.cz(1, 2)
+        qc.append(PRXGate(np.pi / 2, 0.0), [0])
+        qc.h(1)
         qc_rt = convert_from_qiskit(convert_to_qiskit(qc))
         assert_unitary_equal(qc, qc_rt)
 
@@ -172,6 +206,23 @@ class TestQiskitToQrispRoundtrip:
         qc_rt = convert_to_qiskit(convert_from_qiskit(qc))
         assert_unitary_equal(qc, qc_rt)
 
+    @pytest.mark.parametrize("theta,phi", [
+        (0.7, 1.2), (np.pi, 0.0), (0.0, 2.5), (-0.5, -1.0),
+    ])
+    def test_rgate_to_prx(self, theta, phi):
+        """Qiskit RGate maps to PRXGate and back."""
+        qc = QiskitQC(1)
+        qc.r(theta, phi, 0)
+        qc_rt = convert_to_qiskit(convert_from_qiskit(qc))
+        assert_unitary_equal(qc, qc_rt)
+
+        # Also verify the intermediate Qrisp circuit uses PRXGate
+        qrisp_qc = convert_from_qiskit(qc)
+        prx_ops = [instr.op for instr in qrisp_qc.data if isinstance(instr.op, PRXGate)]
+        assert len(prx_ops) == 1, f"Expected 1 PRXGate, got {len(prx_ops)}"
+        assert abs(prx_ops[0].alpha - theta) < 1e-10
+        assert abs(prx_ops[0].beta - phi) < 1e-10
+
     def test_cx(self):
         qc = QiskitQC(2)
         qc.cx(0, 1)
@@ -256,6 +307,22 @@ class TestControlledOperations:
     def test_qiskit_ccx(self):
         qc = QiskitQC(3)
         qc.ccx(0, 1, 2)
+        qc_rt = convert_to_qiskit(convert_from_qiskit(qc))
+        assert_unitary_equal(qc, qc_rt)
+
+    def test_controlled_prx(self):
+        """Controlled PRXGate round-trips correctly."""
+        qc = QuantumCircuit(2)
+        qc.append(PRXGate(0.6, 0.8).control(1), [0, 1])
+        qc_rt = convert_from_qiskit(convert_to_qiskit(qc))
+        assert_unitary_equal(qc, qc_rt)
+
+    def test_qiskit_controlled_rgate(self):
+        """Qiskit controlled RGate → controlled PRXGate and back."""
+        from qiskit.circuit.library import RGate
+
+        qc = QiskitQC(2)
+        qc.append(RGate(0.6, 0.8).control(1), [0, 1])
         qc_rt = convert_to_qiskit(convert_from_qiskit(qc))
         assert_unitary_equal(qc, qc_rt)
 
