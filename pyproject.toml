@@ -64,24 +64,45 @@ docs = [
     "sphinx-new-tab-link==0.8.1",
     "pydata-sphinx-theme==0.17.1",
 ]
-test = [
+dev = [
     "pytest==9.1.0",
     "qiskit-aer==0.17.2",
     "pyscf==2.13.1",
     "cirq==1.6.1",
     "tqecd==0.2.0",
+    "ruff==0.15.16",
 ]
 
 [project.urls]
 Homepage = "https://github.com/eclipse-qrisp/Qrisp"
 "Bug Tracker" = "https://github.com/eclipse-qrisp/Qrisp/issues"
 
-[tool.isort]
-profile = "black"
+[tool.ruff]
+exclude = ["__init__.py", "docs/"]
+line-length = 120
+target-version = "py312" # will be changed to consider other python versions as well
+force-exclude = true
+
+
+[tool.ruff.lint]
+select = ["I", "E", "W", "D", "PL", "F"]
+# ruff configuration
+# E, W -- pycodestyle
+# D -- pydocstyle
+# I -- isort
+# PL -- pylint
+# F -- pyflakes
+
+
+# Rules considered over other incompatible ones
+exclude = ["*.ipynb"]
+
+ignore = [
+    "D203",  # inconsistent with D211 (no-blank-line-before-class)
+    "D213",  # inconsistent with D212 (multi-line-summary-first-line)
+    "D400",  # first-line-should-end-with-period
+    "D415",  # ends-in-punctuation
+]
 
 [tool.pylint. messages_control]
 disable = ["import-error"]
-
-[tool.black]
-line-length = 88
-target-version = ["py311", "py312"]
