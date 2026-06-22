@@ -179,7 +179,7 @@ def jrange(*args):
     We now give examples that violate the above rules (ie. no carries and changing
     iteration behavior).
 
-    To create a loop with carry behavior we simply return the final loop index
+    To create a loop with carry behavior we return the incremented final loop index
 
     ::
 
@@ -189,7 +189,8 @@ def jrange(*args):
             for i in jrange(qv.size):
                 with control(encoding_int & (1<<i)):
                     x(qv[i])
-            return i
+                j = i + 1
+            return j
 
 
         def test_f(a, b):
