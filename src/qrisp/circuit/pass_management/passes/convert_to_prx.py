@@ -1,19 +1,17 @@
-"""
-Convert single-qubit gates to PRX (Phased-RX) decomposition.
-"""
+"""Convert single-qubit gates to PRX (Phased-RX) decomposition."""
 
 from __future__ import annotations
 
 import numpy as np
+
+from qrisp.circuit.operation import ClControlledOperation, U3Gate
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
-from qrisp.circuit.operation import U3Gate, ClControlledOperation
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.standard_operations import GPhaseGate
 
 
 class PRXGate(U3Gate):
-    r"""
-    PRX (Phased-RX) gate.
+    r"""PRX (Phased-RX) gate.
 
     The PRX gate is a single-qubit gate of the form:
 
@@ -27,6 +25,7 @@ class PRXGate(U3Gate):
         The rotation angle.
     beta : float
         The phase parameter.
+
     """
 
     def __init__(self, alpha: float, beta: float) -> None:
@@ -45,8 +44,7 @@ class PRXGate(U3Gate):
         super().__init__(alpha, beta - np.pi / 2, np.pi / 2 - beta, name="prx")
 
     def inverse(self):
-        """
-        Returns the inverse of the PRX gate.
+        """Returns the inverse of the PRX gate.
 
         The inverse of :math:`R_Z(\\beta) R_X(\\alpha) R_Z(-\\beta)` is
         :math:`R_Z(\\beta) R_X(-\\alpha) R_Z(-\\beta)`.
@@ -55,6 +53,7 @@ class PRXGate(U3Gate):
         -------
         PRXGate
             The inverted PRX gate with parameters ``(-alpha, beta)``.
+
         """
         return PRXGate(-self.alpha, self.beta)
 
@@ -70,8 +69,7 @@ def _get_phase_diff(U_a: np.ndarray, U_b: np.ndarray) -> float:
 
 @CircuitPass
 def convert_to_prx(qc: QuantumCircuit) -> QuantumCircuit:
-    """
-    Convert single-qubit gates to PRX (Phased-RX) gate decomposition.
+    """Convert single-qubit gates to PRX (Phased-RX) gate decomposition.
 
     This pass converts arbitrary single-qubit gates to PRX gates.
     When a U3 gate is already in PRX form (:math:`\\lambda \\approx -\\phi`),
@@ -99,6 +97,7 @@ def convert_to_prx(qc: QuantumCircuit) -> QuantumCircuit:
     >>> pm = PassManager()
     >>> pm.add_pass(convert_to_prx)
     >>> transpiled_qc = pm.run(qc)
+
     """
     qc_new = qc.clearcopy()
     accumulated_phase = 0.0
@@ -112,18 +111,17 @@ def convert_to_prx(qc: QuantumCircuit) -> QuantumCircuit:
             conversion_op = op
 
         if isinstance(conversion_op, U3Gate):
-
             U_orig = conversion_op.get_unitary()
 
             # Single PRX case: lambda ≈ -phi (U3 is already in PRX form)
-            if abs(conversion_op.lam + conversion_op.phi) < 1E-5:
+            if abs(conversion_op.lam + conversion_op.phi) < 1e-5:
                 prx_0 = PRXGate(conversion_op.theta, conversion_op.phi + np.pi / 2)
 
                 # Track global phase
                 accumulated_phase += _get_phase_diff(U_orig, prx_0.get_unitary())
 
                 # Append gate if not identity
-                if abs(conversion_op.theta % (2 * np.pi)) >= 1E-5:
+                if abs(conversion_op.theta % (2 * np.pi)) >= 1e-5:
                     if isinstance(op, ClControlledOperation):
                         qc_new.append(prx_0.c_if(op.num_control, op.ctrl_state), qc.data[i].qubits)  # type: ignore[arg-type]
                     else:
@@ -138,22 +136,22 @@ def convert_to_prx(qc: QuantumCircuit) -> QuantumCircuit:
                 U_prx = prx_1.get_unitary() @ prx_0.get_unitary()
                 accumulated_phase += _get_phase_diff(U_orig, U_prx)
 
-                if not (abs(prx_0.alpha % (2 * np.pi)) < 1E-5):
+                if not (abs(prx_0.alpha % (2 * np.pi)) < 1e-5):
                     if isinstance(op, ClControlledOperation):
                         qc_new.append(
                             prx_0.c_if(op.num_control, op.ctrl_state),  # type: ignore[arg-type]
                             qc.data[i].qubits,
-                            qc.data[i].clbits
+                            qc.data[i].clbits,
                         )
                     else:
                         qc_new.append(prx_0, qc.data[i].qubits)
 
-                if not (abs(prx_1.alpha % (2 * np.pi)) < 1E-5):
+                if not (abs(prx_1.alpha % (2 * np.pi)) < 1e-5):
                     if isinstance(op, ClControlledOperation):
                         qc_new.append(
                             prx_1.c_if(op.num_control, op.ctrl_state),  # type: ignore[arg-type]
                             qc.data[i].qubits,
-                            qc.data[i].clbits
+                            qc.data[i].clbits,
                         )
                     else:
                         qc_new.append(prx_1, qc.data[i].qubits)
@@ -162,7 +160,7 @@ def convert_to_prx(qc: QuantumCircuit) -> QuantumCircuit:
 
     # Emit accumulated global phase on the zeroth qubit
     accumulated_phase = accumulated_phase % (2 * np.pi)
-    if abs(accumulated_phase) > 1E-10 and len(qc_new.qubits) > 0:
+    if abs(accumulated_phase) > 1e-10 and len(qc_new.qubits) > 0:
         qc_new.append(GPhaseGate(accumulated_phase), [qc_new.qubits[0]])
 
     return qc_new
