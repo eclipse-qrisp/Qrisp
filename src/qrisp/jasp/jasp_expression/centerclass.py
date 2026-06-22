@@ -28,6 +28,8 @@ from qrisp.jasp import (
     insert_outvalues,
 )
 from qrisp.jasp.jasp_expression import collect_environments, invert_jaspr
+from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement  # noqa: F401 — re-exported via qrisp.jasp.jasp_expression
+
 from qrisp.jasp.primitives import (
     AbstractQuantumState,
 )
