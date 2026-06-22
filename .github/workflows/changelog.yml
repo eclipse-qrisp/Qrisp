@@ -1,5 +1,6 @@
 name: Changelog Reminder
 
+# Trigger on PR events targeting main
 on:
   pull_request:
     types:
@@ -9,13 +10,11 @@ on:
       - ready_for_review
     branches:
       - main
-  push:
-    branches:
-      - main
 
 permissions:
-  pull-requests: write
+  pull-requests: write  # needed to post/update PR comments
 
+# Cancel in-progress runs for the same ref (e.g., on new pushes to a PR)
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -25,17 +24,23 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
+      # Checkout full history so git diff against the base ref works
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      # Check whether the changelog file was modified in this PR's diff
       - name: Check changelog-dev.rst for entries
         id: check
         run: |
-          if grep -q "PR #" documentation/source/general/changelog/changelog-dev.rst 2>/dev/null; then
+          if git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD | \
+             grep -q "documentation/source/general/changelog/changelog-dev.rst"; then
             echo "modified=true" >> "$GITHUB_OUTPUT"
           else
             echo "modified=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # Look for a previous bot comment so we can update it in place
       - name: Find existing changelog comment
         id: find
         uses: peter-evans/find-comment@v3
@@ -44,6 +49,7 @@ jobs:
           comment-author: github-actions[bot]
           body-includes: "CHANGELOG_CHECK_MARKER"
 
+      # Post (or update) a reminder if no changelog entry was found
       - name: Post reminder comment
         if: steps.check.outputs.modified == 'false'
         uses: peter-evans/create-or-update-comment@v4
@@ -69,6 +75,7 @@ jobs:
             See changelog-template.rst for the full section layout.
           edit-mode: replace
 
+      # Post (or update) an acknowledgment if the changelog was updated
       - name: Post acknowledgment comment
         if: steps.check.outputs.modified == 'true'
         uses: peter-evans/create-or-update-comment@v4
@@ -83,8 +90,7 @@ jobs:
             Thanks for adding an entry to `documentation/source/general/changelog/changelog-dev.rst`!
           edit-mode: replace
 
+      # Mark CI as failed to enforce the changelog requirement
       - name: Fail if no changelog entry
         if: steps.check.outputs.modified == 'false'
-        run: |
-          echo "::error::changelog-dev.rst was not updated with entries for this PR."
-          exit 1
+        run: exit 1
