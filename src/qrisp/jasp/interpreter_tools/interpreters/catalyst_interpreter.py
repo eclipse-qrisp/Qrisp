@@ -18,6 +18,7 @@
 
 from functools import lru_cache
 
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from sympy import lambdify, symbols
 
 from jax import make_jaxpr, jit
@@ -638,7 +639,8 @@ def process_scan(eqn, context_dic):
     insert_outvalues(eqn, context_dic, outvalues)
 
 
-@lru_cache(maxsize=int(1e5))
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def get_traced_fun(jaxpr):
 
     catalyst_jaxpr = ensure_conversion(jaxpr)

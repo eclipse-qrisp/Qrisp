@@ -19,6 +19,7 @@
 from functools import lru_cache
 
 import numpy as np
+from qrisp._cache_config import qrisp_lru_compilation_cache
 
 from jax.extend.core import JaxprEqn, ClosedJaxpr, Var, Jaxpr
 
@@ -77,8 +78,9 @@ class ControlledJaspr(Jaspr):
     def inverse(self):
         return ControlledJaspr.from_cache(self.base_jaspr.inverse(), self.ctrl_state)
 
+    # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
     @classmethod
-    @lru_cache(maxsize=int(1e5))
+    @qrisp_lru_compilation_cache
     def from_cache(cls, base_jaspr, ctrl_state):
         return ControlledJaspr(base_jaspr, ctrl_state)
 
@@ -237,7 +239,8 @@ def control_eqn(eqn, ctrl_qubit_var):
         )
 
 
-@lru_cache(int(1e5))
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def control_jaspr(jaspr):
     """
     Takes a Jaspr and returns a Jaspr that has an additional Qubit argument

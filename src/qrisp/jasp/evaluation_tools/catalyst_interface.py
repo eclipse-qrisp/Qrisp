@@ -18,6 +18,7 @@
 
 from functools import lru_cache
 
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from jax import make_jaxpr
 from jax.extend.core import Literal
 import jax.numpy as jnp
@@ -151,7 +152,8 @@ def jaspr_to_catalyst_function(jaspr, device=None):
     return catalyst_function
 
 
-@lru_cache(int(1e5))
+# LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
+@qrisp_lru_compilation_cache
 def jaspr_to_catalyst_qjit(jaspr, function_name="jaspr_function", device=None):
     # This function takes a jaspr and turns it into a Catalyst QJIT object.
     # Perform the code specified by the Catalyst developers

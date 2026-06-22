@@ -16,25 +16,20 @@
 ********************************************************************************
 """
 
-import setuptools
-
-
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
-
-setuptools.setup(
-    name="qrisp",
-    author="The Qrisp team",
-    author_email="raphael.seidel@fokus.fraunhofer.de",
-    description="Qrisp - A high level language for gate-based quantum computing",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: Eclipse Public License 2.0 (EPL-2.0)",
-        "Operating System :: OS Independent",
-    ],
-    package_dir={"": "src"},
-    packages=setuptools.find_packages(where="src"),
-    python_requires=">=3.11, <3.13",
+from .from_foqcs_lcu_prep import build_from_foqcs_lcu_prep
+from .from_foqcs_lcu_operator import build_from_foqcs_lcu_operator
+from .foqcs_preps import foqcs_prep_heisenberg, foqcs_prep_spin_glass
+from .foqcs_analysis import (
+  is_operator_foqcs_compatible,
+  foqcs_analyze_operator_spin_glass,
+  foqcs_analyze_operator_heisenberg,
 )
+__all__ = [
+    "build_from_foqcs_lcu_prep",
+    "build_from_foqcs_lcu_operator",
+    "foqcs_prep_heisenberg",
+    "is_operator_foqcs_compatible",
+    "foqcs_analyze_operator_spin_glass",
+    "foqcs_analyze_operator_heisenberg",
+    "foqcs_prep_spin_glass"
+]

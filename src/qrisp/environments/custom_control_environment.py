@@ -18,6 +18,8 @@
 
 import inspect
 
+import functools
+
 import jax
 import jax.numpy as jnp
 
@@ -167,6 +169,7 @@ def custom_control(*func, **cusc_kwargs):
 
     qashed_func = qache(func, **qache_kwargs)
 
+    @functools.wraps(func)
     def adaptive_control_function(*args, **kwargs):
 
         if not check_for_tracing_mode():
