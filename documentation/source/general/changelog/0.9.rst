@@ -179,7 +179,6 @@ Compatibility
   :func:`jrange <qrisp.jasp.jrange>` now emits a ``QrispDeprecationWarning`` and raises
   a ``TypeError``. Use a step-1 loop and multiply the loop variable by the desired step.
 * New optional ``xdsl`` and ``catalyst`` dependency groups in ``pyproject.toml`` (PR #664).
-* Jax 0.5.x and Catalyst 0.15 compatibility.
 
 First Time Contributors 🎉
 -------------------------
