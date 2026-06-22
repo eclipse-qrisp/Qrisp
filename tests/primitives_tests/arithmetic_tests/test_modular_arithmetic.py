@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,10 @@
 ********************************************************************************
 """
 
-import pytest
-from qrisp import QuantumModulus, h, multi_measurement, cx, qcla, gidney_adder, QuantumBool, control
 import numpy as np
+import pytest
+
+from qrisp import QuantumBool, QuantumModulus, control, cx, gidney_adder, h, multi_measurement, qcla
 
 MAX_UNIFORM_SUPERPOSITION_TEST_MODULUS = 128
 

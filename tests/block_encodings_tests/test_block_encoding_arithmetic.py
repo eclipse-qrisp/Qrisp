@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,7 +18,7 @@
 import numpy as np
 import pytest
 
-from qrisp import QuantumVariable, QuantumFloat, terminal_sampling
+from qrisp import QuantumFloat, QuantumVariable, terminal_sampling
 from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
 

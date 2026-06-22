@@ -5,6 +5,7 @@ import cirq
 import numpy as np
 import pytest
 from cirq import final_state_vector, num_qubits, unitary
+from qrisp.grover import diffuser
 
 from qrisp import (
     QPE,
@@ -20,10 +21,8 @@ from qrisp import (
     x,
     z,
 )
-from qrisp.circuit import QuantumCircuit
-from qrisp.circuit import ControlledOperation
-from qrisp.grover import diffuser
-from qrisp.interface.converter.cirq_converter import convert_to_cirq, convert_from_cirq
+from qrisp.circuit import ControlledOperation, QuantumCircuit
+from qrisp.interface.converter.cirq_converter import convert_from_cirq, convert_to_cirq
 
 
 def _build_single_qubit_circ():
@@ -174,7 +173,6 @@ def test_grover():
 
 def test_recursive_conversion():
     """Verify an op that is non-elementary and has the definition attribute can be converted recursively."""
-
     qc = QuantumCircuit(4)
     qc.rxx(0.3, 0, 1)
     qc.rxx(0.3, 2, 3)
@@ -185,7 +183,7 @@ def test_recursive_conversion():
 
 def test_convert_to_cirq_cirq_qubits_passthrough():
     """Providing custom cirq_qubits should be preserved after transpilation."""
-    from qrisp import QuantumVariable, h, QPE, p
+    from qrisp import QPE, QuantumVariable, h, p
 
     def U(qv):
         p(0.5 * 2 * np.pi, qv[0])
@@ -223,7 +221,7 @@ def _mock_none_gate_circ():
 
 def _real_unknown_circ():
     """Circuit with a real operation not in gate_map and no definition."""
-    from qrisp.circuit import Operation, Instruction
+    from qrisp.circuit import Instruction, Operation
 
     qc = QuantumCircuit(1)
     op = Operation(name="foo", num_qubits=1)
@@ -696,7 +694,8 @@ def test_convert_from_cirq_mixed_qubit_types():
 
 def _build_multi_valued_inner_circ():
     """GateOperation wrapping a ControlledGate with multi-valued control (0 OR 1),
-    triggering error in the ControlledGate unwrap while-loop."""
+    triggering error in the ControlledGate unwrap while-loop.
+    """
     from cirq.ops.control_values import ProductOfSums
 
     q0, q1 = cirq.LineQubit.range(2)
@@ -707,7 +706,8 @@ def _build_multi_valued_inner_circ():
 
 def _build_invalid_control_inner_circ():
     """GateOperation wrapping a ControlledGate with control value 2 (bypassed Cirq validation),
-    triggering unsupported-value error in the unwrap while-loop."""
+    triggering unsupported-value error in the unwrap while-loop.
+    """
     from cirq.ops.control_values import ProductOfSums
 
     q0, q1 = cirq.LineQubit.range(2)
@@ -718,7 +718,8 @@ def _build_invalid_control_inner_circ():
 
 def _build_invalid_control_outer_circ():
     """ControlledOperation with control value 2 (bypassed Cirq validation),
-    triggering unsupported-value error in the extra_controls path."""
+    triggering unsupported-value error in the extra_controls path.
+    """
     from cirq.ops.control_values import ProductOfSums
 
     q0, q1 = cirq.LineQubit.range(2)

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -40,7 +39,6 @@ def compare_results(res_dict_1, res_dict_2, n):
 )
 def test_block_encoding_chebyshev(H1, H2, rescaled):
     """Test the Chebyshev polynomial transformation of a BlockEncoding by comparing the results to a classical solution."""
-
     BE1 = BlockEncoding.from_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
 

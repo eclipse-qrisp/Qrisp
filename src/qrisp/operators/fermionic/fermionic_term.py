@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,14 +15,13 @@
 ********************************************************************************
 """
 
-from qrisp.operators.fermionic.visualization import a_, c_
-from qrisp.operators.qubit import A, C, Z
-
 #
 # FermionicTerm
 #
-
 import numpy as np
+
+from qrisp.operators.fermionic.visualization import a_, c_
+from qrisp.operators.qubit import A, C, Z
 
 
 class FermionicTerm:
@@ -69,8 +67,7 @@ class FermionicTerm:
         return str(self)
 
     def to_expr(self):
-        """
-        Returns a SymPy expression representing the FermionicTerm.
+        """Returns a SymPy expression representing the FermionicTerm.
 
         Returns
         -------
@@ -100,8 +97,7 @@ class FermionicTerm:
         return FermionicTerm(result_ladder_list)
 
     def order(self):
-        """
-        Not that important, since relevant Hamiltonians (e.g., electronic structure) consist of ordered terms.
+        """Not that important, since relevant Hamiltonians (e.g., electronic structure) consist of ordered terms.
         What is needed for trotterization?
 
         Fermionic commutation relations:
@@ -145,16 +141,14 @@ class FermionicTerm:
         return FermionicTerm(new_ladder_list)
 
     def unipolars_intersect(self, other):
-        """
-        Checks if two terms have intersecting unipolar factos.
+        """Checks if two terms have intersecting unipolar factos.
         Unipolar factors are factors that are not of the form a(i)*c(i),
         i.e. the index i appears only once.
         """
         return len(set(self.get_unipolars()).intersection(other.get_unipolars())) != 0
 
     def unipolars_agree(self, other):
-        """
-        Checks if two terms have intersecting unipolar factos.
+        """Checks if two terms have intersecting unipolar factos.
         Unipolar factors are factors that are not of the form a(i)*c(i),
         i.e. the index i appears only once.
         """

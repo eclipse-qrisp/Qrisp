@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,8 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumFloat, h, t, x, conjugate, measure, control, QuantumBool, cx
-from qrisp.jasp import jaspify, sample, jrange, expectation_value, q_while_loop
+from qrisp import QuantumBool, QuantumFloat, conjugate, control, cx, h, measure, t, x
+from qrisp.jasp import expectation_value, jaspify, jrange, q_while_loop, sample
 
 
 def double(*args):

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,8 @@
 ********************************************************************************
 """
 
-import numpy as np
 
-from qrisp import QuantumCircuit, CZGate, XGate, Instruction
+from qrisp import CZGate, Instruction, QuantumCircuit, XGate
 
 
 def ctrl_state_wrap(qc, ctrl_state):

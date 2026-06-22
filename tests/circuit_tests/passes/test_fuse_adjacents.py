@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,10 +18,9 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
-from qrisp.circuit.quantum_circuit import QuantumCircuit
-from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
 
+from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -119,7 +117,7 @@ class TestParameterisedCancellation:
 
     def test_controlled_preserves_gphase(self):
         from qrisp import QuantumVariable, control
-        from qrisp.core import h, rz, p
+        from qrisp.core import h, p, rz
         from qrisp.simulator import statevector_sim
 
         theta = 0.73
@@ -372,8 +370,8 @@ class TestControlledOperations:
 
     def test_non_trivial_control_state(self):
         """Tests that XGates with differing control state
-        are not canceling"""
-
+        are not canceling
+        """
         from qrisp.circuit import XGate
 
         qc = QuantumCircuit(2)

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,12 +15,11 @@
 ********************************************************************************
 """
 
-from jax.lax import while_loop
-from jax.extend.core import Literal
 from jax.core import ShapedArray
+from jax.extend.core import Literal
+from jax.lax import while_loop
 
 from qrisp.environments import QuantumEnvironment
-
 
 # The jrange feature executes 2 iterations of the loop to capture
 # the loop body in a QuantumEnvironment. We need 2 iterations to
@@ -105,7 +103,6 @@ def iteration_env_evaluator(eqn, context_dic):
     call stores the equation; the second call retrieves it, pairs the two
     iterations, and compiles them into a JAX ``while_loop`` primitive.
     """
-
     # First call: store the equation keyed by the primitive's identity.
     # The primitive is the JIterationEnvironment instance, which is unique
     # to this jrange loop, so the key distinguishes different loops.
@@ -160,7 +157,8 @@ def iteration_env_evaluator(eqn, context_dic):
     def _find_vars_from_marker(body, eqn_invars):
         """Return (threshold_var, loop_index_var) from a body Jaspr.
         The returned Vars are looked up in *eqn_invars* so they match
-        the equation's invar list (original or flattened)."""
+        the equation's invar list (original or flattened).
+        """
         marker = _find_marker_eqn(body.eqns)
         thresh = marker.invars[1]
         updated = marker.invars[0]

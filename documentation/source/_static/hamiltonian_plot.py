@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,8 +18,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from qrisp import QuantumFloat, h, QFT
-from qrisp.misc import as_hamiltonian, multi_measurement
+from qrisp import QuantumFloat, h
 
 
 # Hamiltonian function

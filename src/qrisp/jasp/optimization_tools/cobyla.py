@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -25,9 +24,7 @@ from jax.scipy.optimize import OptimizeResults
 
 
 def cobyla(fun, x0, args, maxiter=50, cons=[], rhobeg=1.0, rhoend=1e-6, seed=3):
-    r"""
-
-    Minimize a scalar function of one or more variables using the Constrained Optimization By Linear Approximation (COBYLA) algorithm.
+    r"""Minimize a scalar function of one or more variables using the Constrained Optimization By Linear Approximation (COBYLA) algorithm.
 
     Parameters
     ----------

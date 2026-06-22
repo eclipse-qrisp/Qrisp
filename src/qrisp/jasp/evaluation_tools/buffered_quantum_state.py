@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -87,7 +86,7 @@ class BufferedQuantumState:
                     self.quantum_state.s(*qubit_indices)
                 elif instr.op.name == "s_dg":
                     self.quantum_state.s_dag(*qubit_indices)
-                elif not instr.op.name in ["qb_alloc", "qb_dealloc"]:
+                elif instr.op.name not in ["qb_alloc", "qb_dealloc"]:
                     raise Exception(f"Don't know how to simulate quantum gate {instr.op.name} with stim")
 
         for instr in self.buffer_qc.data:

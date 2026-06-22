@@ -28,8 +28,7 @@ from qrisp.interface.job import Job, JobResult, JobStatus
 
 
 class MinimalJob(Job):
-    """
-    The smallest possible concrete `Job` class that can be instantiated.
+    """The smallest possible concrete `Job` class that can be instantiated.
 
     Used to unit-test the base class behaviour in isolation.
     All state is managed directly via private attributes.
@@ -86,8 +85,7 @@ class MinimalJob(Job):
 
 
 class MinimalBackend(Backend):
-    """
-    The smallest possible concrete `Backend` class that can be instantiated.
+    """The smallest possible concrete `Backend` class that can be instantiated.
 
     Executes synchronously and returns a `MinimalJob` that is
     already `JobStatus.DONE` before `run` returns.
@@ -121,6 +119,7 @@ class CountingWrapper(Backend):
 
     shots_received : list
         The ``shots`` argument passed on each ``run_async`` call, in order.
+
     """
 
     def __init__(self, inner: Backend):

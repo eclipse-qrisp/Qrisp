@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,7 +16,6 @@
 """
 
 from qrisp import *
-from qrisp.alg_primitives.arithmetic.adders.cuccaro_adder import cuccaro_adder
 from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_procedure
 
 
@@ -39,8 +37,7 @@ def inpl_add(
     ignore_overflow_error=False,
     adder="thapliyal",
 ):
-    """
-    Performs in-place addition of the second argument onto the first.
+    """Performs in-place addition of the second argument onto the first.
     In Python syntax: ::
 
         qf1 += qf2
@@ -71,7 +68,6 @@ def inpl_add(
 
     Examples
     --------
-
     We create two QuantumFloats and apply the inplace adder
 
     >>> from qrisp import QuantumFloat, inpl_add
@@ -82,8 +78,8 @@ def inpl_add(
     >>> inpl_add(qf_0, qf_1)
     >>> print(qf_0)
     {7.0: 1.0}
-    """
 
+    """
     qs = qf1.qs
 
     # If qf2 has lower exponent, the qf2 bits with less significance than all of qf1

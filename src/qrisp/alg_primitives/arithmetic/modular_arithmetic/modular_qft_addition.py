@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,22 +15,15 @@
 ********************************************************************************
 """
 
-import numpy as np
 
-from qrisp.qtypes.quantum_float import QuantumFloat
-from qrisp.qtypes.quantum_bool import QuantumBool
-from qrisp.alg_primitives.arithmetic import multi_controlled_U_g, hybrid_mult, U_g
-from qrisp.alg_primitives import QFT
-from qrisp.core.gate_application_functions import h, cx, swap
-from qrisp.environments import conjugate, control, invert, custom_control
-from qrisp.jasp import jrange
-from qrisp.circuit import Operation
-from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import (
-    modinv,
-    montgomery_decoder,
-    montgomery_encoder,
-)
 from qrisp import check_for_tracing_mode
+from qrisp.alg_primitives import QFT
+from qrisp.alg_primitives.arithmetic import U_g, multi_controlled_U_g
+from qrisp.core.gate_application_functions import cx
+from qrisp.environments import conjugate, control, custom_control, invert
+from qrisp.jasp import jrange
+from qrisp.qtypes.quantum_bool import QuantumBool
+from qrisp.qtypes.quantum_float import QuantumFloat
 
 
 def qft_basis_adder(addend, target):

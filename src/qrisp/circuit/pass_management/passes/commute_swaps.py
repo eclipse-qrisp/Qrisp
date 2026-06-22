@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,16 +17,15 @@
 
 from __future__ import annotations
 
-from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.operation import Operation
-from qrisp.circuit.qubit import Qubit
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
+from qrisp.circuit.quantum_circuit import QuantumCircuit
+from qrisp.circuit.qubit import Qubit
 
 
 @CircuitPass
 def commute_swaps(qc: QuantumCircuit) -> QuantumCircuit:
-    """
-    Commute single-qubit instructions past SWAP gates.
+    """Commute single-qubit instructions past SWAP gates.
 
     This pass walks the circuit and moves any single-qubit instruction
     (gates *and* measurements) to the other side of an adjacent SWAP on
@@ -73,6 +71,7 @@ def commute_swaps(qc: QuantumCircuit) -> QuantumCircuit:
                 │ ┌───┐
         qb_66: ─X─┤ H ├
                   └───┘
+
     """
     qc_new = qc.clearcopy()
     last_instruction_dic: dict[Qubit, list[int]] = {qb: [] for qb in qc_new.qubits}

@@ -1,21 +1,15 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Nov 21 11:22:37 2023
+"""Created on Tue Nov 21 11:22:37 2023
 
 @author: sea
 """
 
 import numpy as np
 
-from qrisp.core.gate_application_functions import x, cx
-from qrisp.qtypes import QuantumVariable, QuantumBool
-from qrisp.environments import invert
-from qrisp.misc import redirect_qfunction
 from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
-from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_carry_path import (
-    qq_calc_carry,
-)
 from qrisp.alg_primitives.arithmetic.adders.incrementation import lin_incr
+from qrisp.core.gate_application_functions import cx
+from qrisp.qtypes import QuantumVariable
 
 
 def qq_sum_path(a, b, c, R):
@@ -128,13 +122,12 @@ def qq_sum_path_direct_uncomputation(a, b, c, R):
             # Perform incrementation function
             if R * j == 0:
                 lin_incr(b_block, c_out=c[j])
+            elif j < len(c):
+                # We use the c_out of the incrementor to uncompute the carry of
+                # the previous iteration
+                lin_incr(b_block, c[j - 1], c_out=c[j])
             else:
-                if j < len(c):
-                    # We use the c_out of the incrementor to uncompute the carry of
-                    # the previous iteration
-                    lin_incr(b_block, c[j - 1], c_out=c[j])
-                else:
-                    lin_incr(b_block, c[j - 1])
+                lin_incr(b_block, c[j - 1])
 
     # Execute addition using the corresponding carry values
     for i in range(len(a) // R + 1)[::-1]:

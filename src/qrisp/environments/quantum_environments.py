@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -58,9 +57,7 @@ from qrisp.jasp import AbstractQuantumState, QuantumPrimitive, TracingQuantumSes
 
 
 class QuantumEnvironment(QuantumPrimitive):
-    """
-
-    QuantumEnvironments are blocks of code, that undergo some user-specified compilation
+    """QuantumEnvironments are blocks of code, that undergo some user-specified compilation
     process. They can be entered using the ``with`` statement
 
     ::
@@ -340,7 +337,6 @@ class QuantumEnvironment(QuantumPrimitive):
             This function does not need to be JAX traceable. It will be invoked with
             abstractions of the actual arguments.
             """
-
             return (AbstractQuantumState(),)
 
         self.env_args = env_args

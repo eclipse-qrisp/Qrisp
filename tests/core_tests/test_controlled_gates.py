@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,17 +15,16 @@
 ********************************************************************************
 """
 
+import time
 from collections.abc import Mapping
 
 import numpy as np
 
 # Created by ann81984 at 04.05.2022
 import pytest
-import time
 
-from qrisp.circuit import multi_controlled_circuit, RYGate, RZGate, RXGate, transpile, HGate, XGate, PGate, U3Gate
-from qrisp import QuantumSession, QuantumVariable, QuantumCircuit, transpile, x
-from qiskit.circuit.library import HGate
+from qrisp import QuantumCircuit, QuantumSession, QuantumVariable, x
+from qrisp.circuit import U3Gate, XGate, multi_controlled_circuit
 
 
 # Check by printing circuit

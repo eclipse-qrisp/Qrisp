@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,12 +15,13 @@
 ********************************************************************************
 """
 
-import time
 import itertools
+import time
+
+from qrisp.vqe.problems.electronic_structure import *
 
 from qrisp import *
 from qrisp.jasp import *
-from qrisp.vqe.problems.electronic_structure import *
 
 
 def test_catalyst_interface():
@@ -218,7 +218,6 @@ def test_parity_catalyst():
 
 def test_parity_catalyst_with_scan():
     """Test parity with array inputs (scan primitive) in catalyst."""
-
     try:
         import catalyst
     except ModuleNotFoundError:
@@ -260,7 +259,6 @@ def test_parity_catalyst_with_scan():
 
 def test_qjit_pytree():
     """Test that qjit preserves PyTree structure in return values."""
-
     try:
         import catalyst
     except ModuleNotFoundError:

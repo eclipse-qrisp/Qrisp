@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,20 +17,17 @@
 
 # Created by ann81984 at 29.04.2022
 # import pytest
-import numpy
 
-from qrisp.interface import QiskitBackend
 from qrisp import (
-    QuantumFloat,
-    QuantumChar,
-    QuantumArray,
-    merge,
-    x,
-    h,
     OutcomeArray,
-    multi_measurement,
+    QuantumArray,
+    QuantumChar,
+    QuantumFloat,
     auto_uncompute,
+    h,
     invert,
+    multi_measurement,
+    x,
 )
 
 
@@ -71,7 +67,7 @@ def test_conditional_environments_example():
 
     assert len(qc.qs.qv_list) == 5
 
-    from qrisp import as_hamiltonian, QuantumBool, control
+    from qrisp import QuantumBool, as_hamiltonian, control
 
     @as_hamiltonian
     def dummy_d_function(i, j):

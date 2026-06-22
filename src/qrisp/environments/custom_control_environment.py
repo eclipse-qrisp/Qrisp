@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,31 +15,27 @@
 ********************************************************************************
 """
 
+import functools
 import inspect
 
-import functools
-
-import jax
 import jax.numpy as jnp
 
-from qrisp.environments.quantum_environments import QuantumEnvironment
-from qrisp.environments.gate_wrap_environment import GateWrapEnvironment
-from qrisp.circuit import Operation, QuantumCircuit, Instruction
-from qrisp.environments.iteration_environment import IterationEnvironment
+from qrisp.circuit import Instruction, Operation, QuantumCircuit
 from qrisp.core import merge
-
+from qrisp.environments.gate_wrap_environment import GateWrapEnvironment
+from qrisp.environments.iteration_environment import IterationEnvironment
+from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.jasp import (
-    check_for_tracing_mode,
-    qache,
     AbstractQubit,
-    make_jaspr,
+    check_for_tracing_mode,
     get_last_equation,
+    make_jaspr,
+    qache,
 )
 
 
 def custom_control(*func, **cusc_kwargs):
-    """
-    The ``custom_control`` decorator allows to specify the controlled version of
+    """The ``custom_control`` decorator allows to specify the controlled version of
     the decorated function. If this function is called within a :ref:`ControlEnvironment`
     or a :ref:`ConditionEnvironment` the controlled version is executed instead.
 
@@ -68,7 +63,6 @@ def custom_control(*func, **cusc_kwargs):
 
     Examples
     --------
-
     We create a swap function with custom control.
 
     ::
@@ -147,7 +141,6 @@ def custom_control(*func, **cusc_kwargs):
 
 
     """
-
     if len(func) == 0:
         return lambda x: custom_control(x, **cusc_kwargs)
     else:
@@ -173,15 +166,15 @@ def custom_control(*func, **cusc_kwargs):
     def adaptive_control_function(*args, **kwargs):
 
         if not check_for_tracing_mode():
-            from qrisp.core import recursive_qs_search
             from qrisp import (
-                merge,
-                ControlEnvironment,
                 ConditionEnvironment,
-                QuantumEnvironment,
-                InversionEnvironment,
                 ConjugationEnvironment,
+                ControlEnvironment,
+                InversionEnvironment,
+                QuantumEnvironment,
+                merge,
             )
+            from qrisp.core import recursive_qs_search
 
             qs_list = recursive_qs_search(args)
 

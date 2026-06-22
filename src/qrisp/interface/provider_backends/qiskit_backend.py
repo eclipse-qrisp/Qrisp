@@ -20,9 +20,8 @@
 
 from __future__ import annotations
 
-import warnings
-
 import re
+import warnings
 from collections.abc import Mapping
 from typing import cast
 
@@ -71,8 +70,7 @@ def _map_qiskit_status(qiskit_job) -> JobStatus:
 
 
 class QiskitJob(Job):
-    """
-    A :class:`~qrisp.interface.Job` that wraps a Qiskit ``SamplerV2`` job.
+    """A :class:`~qrisp.interface.Job` that wraps a Qiskit ``SamplerV2`` job.
 
     One ``QiskitJob`` is created per :meth:`QiskitBackend.run_async` call,
     regardless of how many circuits were submitted.  Internally it holds
@@ -110,8 +108,7 @@ class QiskitJob(Job):
         self._last_known_status = JobStatus.QUEUED
 
     def result(self, timeout: float | None = None) -> JobResult:
-        """
-        Block until the Qiskit job finishes and return the :class:`~qrisp.interface.JobResult`.
+        """Block until the Qiskit job finishes and return the :class:`~qrisp.interface.JobResult`.
 
         Waiting is delegated to Qiskit's own blocking ``job.result()`` call.
         If the job is already in a terminal state, this method returns (or
@@ -138,6 +135,7 @@ class QiskitJob(Job):
 
         TimeoutError
             If *timeout* expires before the job completes.
+
         """
         if self._last_known_status in JOB_FINAL_STATES:
             self._raise_for_status(self._last_known_status)
@@ -175,8 +173,7 @@ class QiskitJob(Job):
         return self._cached_result
 
     def cancel(self) -> bool:
-        """
-        Attempt to cancel the underlying Qiskit job.
+        """Attempt to cancel the underlying Qiskit job.
 
         Returns
         -------
@@ -184,6 +181,7 @@ class QiskitJob(Job):
             ``True`` if the cancellation request was accepted by Qiskit;
             ``False`` if the job is already in a terminal state or the
             backend does not support cancellation.
+
         """
         if self.in_final_state():
             return False
@@ -200,8 +198,7 @@ class QiskitJob(Job):
 
 
 class QiskitBackend(Backend):
-    """
-    A :class:`~qrisp.interface.Backend` that wraps a Qiskit backend.
+    """A :class:`~qrisp.interface.Backend` that wraps a Qiskit backend.
 
     This allows easy access to any Qiskit-compatible simulator or real
     quantum hardware through the Qrisp backend interface.
@@ -226,7 +223,6 @@ class QiskitBackend(Backend):
 
     Examples
     --------
-
     **Simulation on the Aer simulator**
 
     We start by creating a ``QiskitBackend`` wrapping the Qiskit Aer simulator,
@@ -286,6 +282,7 @@ class QiskitBackend(Backend):
     The result is no longer a sharp peak at ``{4: 1.0}`` because the noise
     model introduces gate errors and readout errors, spreading probability
     mass across neighbouring bitstrings.
+
     """
 
     def __init__(
@@ -338,8 +335,7 @@ class QiskitBackend(Backend):
         return value if isinstance(value, int) else None
 
     def run_async(self, circuits, shots: int | list[int] | None = None) -> QiskitJob:
-        """
-        Transpile and submit one or more circuits to the Qiskit backend.
+        """Transpile and submit one or more circuits to the Qiskit backend.
 
         This method returns a :class:`QiskitJob` immediately.  Call
         :meth:`Job.result` on the returned object to block and retrieve
@@ -359,8 +355,8 @@ class QiskitBackend(Backend):
         Returns
         -------
         QiskitJob
-        """
 
+        """
         if isinstance(circuits, QrispQuantumCircuit):
             circuits = [circuits]
         else:
@@ -406,8 +402,7 @@ class QiskitBackend(Backend):
 
 
 class QiskitRuntimeBackend(QiskitBackend):
-    """
-    A :class:`~qrisp.interface.Backend` that wraps an IBM Quantum Runtime backend.
+    """A :class:`~qrisp.interface.Backend` that wraps an IBM Quantum Runtime backend.
 
     This allows easy access to IBM Quantum Runtime backends through the Qrisp
     backend interface. Circuits are transpiled and submitted through Qiskit's
@@ -442,7 +437,6 @@ class QiskitRuntimeBackend(QiskitBackend):
 
     Examples
     --------
-
     >>> from qrisp import QuantumFloat
     >>> from qrisp.interface import QiskitRuntimeBackend
     >>> example_backend = QiskitRuntimeBackend(api_token="YOUR_IBM_CLOUD_TOKEN", backend="ibm_brisbane", channel="ibm_cloud")

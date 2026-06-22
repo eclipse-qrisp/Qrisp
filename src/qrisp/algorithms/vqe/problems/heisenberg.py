@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,15 +15,15 @@
 ********************************************************************************
 """
 
-from qrisp.operators.qubit import X, Y, Z
-from qrisp.core import x, h, cx, cp, gphase, rz
-from qrisp.environments import conjugate
 import networkx as nx
+
+from qrisp.core import cp, cx, gphase, h, rz, x
+from qrisp.environments import conjugate
+from qrisp.operators.qubit import X, Y, Z
 
 
 def greedy_edge_coloring(G, E=None):
-    """
-    This methods computes an edge coloring of a given graph.
+    """This methods computes an edge coloring of a given graph.
 
     Parameters
     ----------
@@ -39,7 +38,6 @@ def greedy_edge_coloring(G, E=None):
         An edge coloring of the graph.
 
     """
-
     edge_coloring = []
 
     G = G.copy()
@@ -81,8 +79,7 @@ def heis(theta, a, b):
 
 
 def create_heisenberg_hamiltonian(G, J, B):
-    """
-    This method creates the Hamiltonian for the Heisenberg model.
+    """This method creates the Hamiltonian for the Heisenberg model.
 
     Parameters
     ----------
@@ -99,14 +96,12 @@ def create_heisenberg_hamiltonian(G, J, B):
         The quantum Hamiltonian.
 
     """
-
     H = sum(J * (X(i) * X(j) + Y(i) * Y(j) + Z(i) * Z(j)) for (i, j) in G.edges()) + sum(B * Z(i) for i in G.nodes)
     return H
 
 
 def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
-    """
-    This method creates a function for applying one layer of the ansatz.
+    """This method creates a function for applying one layer of the ansatz.
 
     Parameters
     ----------
@@ -126,7 +121,6 @@ def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
 
     Returns
     -------
-
     ansatz : function
         A function that can be applied to a :ref:`QuantumVariable` and a list of parameters.
 
@@ -183,8 +177,7 @@ def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
 
 
 def create_heisenberg_init_function(M):
-    """
-    Creates the function that, when applied to a :ref:`QuantumVariable`, initializes a tensor product of singlet sates corresponding to a given matching.
+    """Creates the function that, when applied to a :ref:`QuantumVariable`, initializes a tensor product of singlet sates corresponding to a given matching.
 
     Parameters
     ----------
@@ -208,8 +201,7 @@ def create_heisenberg_init_function(M):
 
 
 def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
-    r"""
-    Creates a VQE problem instance for an isotropic Heisenberg model defined by a graph $G=(V,E)$,
+    r"""Creates a VQE problem instance for an isotropic Heisenberg model defined by a graph $G=(V,E)$,
     the coupling constant $J>0$ (antiferromagnetic), and the magnetic field strength $B$. The model Hamiltonian is given by:
 
     .. math::
@@ -303,7 +295,6 @@ def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
 
     Examples
     --------
-
     ::
 
         import networkx as nx

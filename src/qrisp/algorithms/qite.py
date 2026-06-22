@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,17 +15,16 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumArray, mcp, conjugate, invert
-from qrisp.jasp import q_fori_loop, q_cond, check_for_tracing_mode
-from jax import lax
-import sympy as sp
-import numpy as np
 import jax.numpy as jnp
+import sympy as sp
+from jax import lax
+
+from qrisp import QuantumArray, conjugate, invert, mcp
+from qrisp.jasp import check_for_tracing_mode, q_cond, q_fori_loop
 
 
 def QITE(qarg, U_0, exp_H, s, k, method="GC"):
-    r"""
-    Performs `Double-Braket Quantum Imaginary-Time Evolution (DB-QITE) <https://arxiv.org/abs/2412.04554>`_.
+    r"""Performs `Double-Braket Quantum Imaginary-Time Evolution (DB-QITE) <https://arxiv.org/abs/2412.04554>`_.
     Given a Hamiltonian :ref:`Operator <Operators>` $H$, this method implements the unitary $U_k$ that is recursively defined by either of
 
     * Group commutator (GQ) approximation:
@@ -64,7 +62,6 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
 
     Examples
     --------
-
     We utilize QITE to approximate the ground state energy of a Heisenberg chain. We start by defining the lattice graph $G$:
 
     ::
@@ -214,7 +211,7 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
                 exp_H(qarg, -phi * s_)
 
     else:
-        """
+        r"""
         To create a jasp-compatible implementation of QITE, we need to remove the recursive structure.
         We achieve this by fully expanding the recursive formula for $U_k$ down to the $k=0$ level.
         From there, we find a tree structure with branching factor 3 (GC) or 5 (HOPF) where
@@ -224,8 +221,7 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
         """
 
         def int_to_base(n, base=3, max_digits=10):
-            """
-            Get the array representation of an integer `n` with base `base`.
+            """Get the array representation of an integer `n` with base `base`.
             The array has length `max_digits` and the least significant digit is at index `0`.
             """
 

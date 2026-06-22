@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,15 +15,15 @@
 ********************************************************************************
 """
 
-from typing import Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
+from qrisp.algorithms.gqsp.gqsp_angles import qsvt_angles
+from qrisp.algorithms.gqsp.helper_functions import _rescale_poly, poly2cheb
+from qrisp.block_encodings import BlockEncoding
 from qrisp.core.gate_application_functions import h, mcx, rz
 from qrisp.environments import conjugate, invert
-from qrisp.algorithms.gqsp.gqsp_angles import qsvt_angles
-from qrisp.algorithms.gqsp.helper_functions import poly2cheb, _rescale_poly
-from qrisp.block_encodings import BlockEncoding
 from qrisp.jasp import jrange, q_cond
-from qrisp.operators import QubitOperator, FermionicOperator
+from qrisp.operators import FermionicOperator, QubitOperator
 from qrisp.qtypes import QuantumBool
 
 if TYPE_CHECKING:
@@ -38,8 +37,7 @@ def QSVT(
     parity: Literal["odd", "even"] = "odd",
     rescale: bool = True,
 ) -> BlockEncoding:
-    r"""
-    Returns a BlockEncoding representing a polynomial transformation of the operator via `Quantum Singular Value Transformation <https://arxiv.org/abs/1806.01838>`_.
+    r"""Returns a BlockEncoding representing a polynomial transformation of the operator via `Quantum Singular Value Transformation <https://arxiv.org/abs/1806.01838>`_.
 
     For a block-encoded operator $A$ with `Singular Value Decomposition <https://en.wikipedia.org/wiki/Singular_value_decomposition>`_ $A = U \Sigma V^{\dagger}$ for unitaries $U, V$,
     and a (real) polynomial $p(x)$, this method returns a BlockEncoding of either operator:
@@ -87,7 +85,6 @@ def QSVT(
 
     Examples
     --------
-
     Define a non-Hermitian matrix $A$ and a vector $\vec{b}$. The matrix $A$ has singular value decomposition
     $A = U \Sigma V^{\dagger}$ for unitary matrices $U, V$.
 
@@ -168,7 +165,6 @@ def QSVT(
         # [0.71388113 0.02379604 0.21416434 0.66628906]
 
     """
-
     ALLOWED_KINDS = {"Polynomial", "Chebyshev"}
     if kind not in ALLOWED_KINDS:
         raise ValueError(f"Invalid kind specified: '{kind}'. Allowed kinds are: {', '.join(ALLOWED_KINDS)}")

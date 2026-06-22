@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -31,23 +30,23 @@ Notes
 """
 
 from typing import Union
-from jax import jit
+
 import jax.numpy as jnp
-import jax.lax as lax
+from jax import jit, lax
+
 from qrisp import check_for_tracing_mode
 
 from .jasp_bigintiger import (
     BigInteger,
     bi_modinv,
-    bi_montgomery_encode,
     bi_montgomery_decode,
+    bi_montgomery_encode,
 )
 
 
 @jit
 def pow2_mod_N(m, N):
-    """
-    Compute ``2 ** m % N`` for traced scalar inputs.
+    """Compute ``2 ** m % N`` for traced scalar inputs.
 
     Uses square-and-multiply inside ``lax.while_loop`` so the computation
     remains valid under JAX tracing.
@@ -95,8 +94,7 @@ def pow2_mod_N(m, N):
 
 
 def bi_pow2mod(exp, mod_bi):
-    """
-    Compute ``2 ** exp % mod_bi`` as a BigInteger.
+    """Compute ``2 ** exp % mod_bi`` as a BigInteger.
 
     Uses square-and-multiply in double-width BigInteger space so that
     intermediate products cannot overflow.  Both *exp* and *mod_bi* may
@@ -113,6 +111,7 @@ def bi_pow2mod(exp, mod_bi):
     -------
     BigInteger
         ``2 ** exp % mod_bi`` with the same limb count as *mod_bi*.
+
     """
     k = mod_bi.digits.shape[0]
     # Double width to avoid wraparound in intermediate products
@@ -140,8 +139,7 @@ def bi_pow2mod(exp, mod_bi):
 
 
 def pow2mod(exp, modulus: Union[int, BigInteger]):
-    """
-    Compute ``2 ** exp % modulus`` across static ints, traced ints, and BigInteger.
+    """Compute ``2 ** exp % modulus`` across static ints, traced ints, and BigInteger.
 
     Dispatches to ``bi_pow2mod`` for BigInteger moduli, ``pow2_mod_N`` for
     traced scalar moduli, and Python ``pow`` in static scalar mode.
@@ -157,6 +155,7 @@ def pow2mod(exp, modulus: Union[int, BigInteger]):
     -------
     int, jnp scalar, or BigInteger
         ``2 ** exp % modulus`` in the representation matching ``modulus``.
+
     """
     if isinstance(modulus, BigInteger):
         return bi_pow2mod(exp, modulus)
@@ -166,8 +165,7 @@ def pow2mod(exp, modulus: Union[int, BigInteger]):
 
 
 def montgomery_encoder(x: Union[int, BigInteger], R: Union[int, BigInteger], N: Union[int, BigInteger]):
-    """
-    Montgomery-encode x as x*R mod N.
+    """Montgomery-encode x as x*R mod N.
 
     Parameters
     ----------
@@ -182,6 +180,7 @@ def montgomery_encoder(x: Union[int, BigInteger], R: Union[int, BigInteger], N: 
     -------
     int or BigInteger
         x in Montgomery form.
+
     """
     if isinstance(x, BigInteger) or isinstance(R, BigInteger) or isinstance(N, BigInteger):
         xb = x if isinstance(x, BigInteger) else BigInteger.create(x, N.digits.shape[0])
@@ -192,8 +191,7 @@ def montgomery_encoder(x: Union[int, BigInteger], R: Union[int, BigInteger], N: 
 
 
 def new_montgomery_decoder(y: Union[int, BigInteger], m: Union[int, BigInteger], N: Union[int, BigInteger]):
-    """
-    Montgomery-decode y using the shift exponent m instead of an explicit radix.
+    """Montgomery-decode y using the shift exponent m instead of an explicit radix.
 
     The helper supports plain Python ints, traced JAX scalars, and BigInteger
     moduli by routing the power-of-two and modular inverse computations
@@ -213,6 +211,7 @@ def new_montgomery_decoder(y: Union[int, BigInteger], m: Union[int, BigInteger],
     -------
     int or BigInteger
         Decoded value in standard representation.
+
     """
     if check_for_tracing_mode():
         m = jnp.int64(m)
@@ -233,8 +232,7 @@ def new_montgomery_decoder(y: Union[int, BigInteger], m: Union[int, BigInteger],
 
 
 def montgomery_decoder(y: Union[int, BigInteger], R: Union[int, BigInteger], N: Union[int, BigInteger]):
-    """
-    Montgomery-decode y as y*R^{-1} mod N.
+    """Montgomery-decode y as y*R^{-1} mod N.
 
     Parameters
     ----------
@@ -249,6 +247,7 @@ def montgomery_decoder(y: Union[int, BigInteger], R: Union[int, BigInteger], N: 
     -------
     int or BigInteger
         Decoded value in standard representation.
+
     """
     if isinstance(y, BigInteger) or isinstance(R, BigInteger) or isinstance(N, BigInteger):
         yb = y if isinstance(y, BigInteger) else BigInteger.create(y, N.digits.shape[0])
@@ -263,8 +262,7 @@ def montgomery_decoder(y: Union[int, BigInteger], R: Union[int, BigInteger], N: 
 
 
 def egcd(a: int, b: int):
-    """
-    Extended Euclidean Algorithm (ints, JAX-friendly).
+    """Extended Euclidean Algorithm (ints, JAX-friendly).
 
     Computes (g, x, y) such that a*x + b*y = g = gcd(a, b).
 
@@ -279,6 +277,7 @@ def egcd(a: int, b: int):
     -------
     tuple
         (g, x, y) with gcd and Bézout coefficients (JAX scalars under tracing).
+
     """
 
     def cond_fun(state):
@@ -296,8 +295,7 @@ def egcd(a: int, b: int):
 
 
 def modinv(a: Union[int, BigInteger], m: Union[int, BigInteger]):
-    """
-    Modular inverse t = a^{-1} mod m.
+    """Modular inverse t = a^{-1} mod m.
 
     BigInteger inputs are handled via bi_modinv; ints use a JAX-compatible EEA
     under tracing and a simple loop otherwise.
@@ -313,6 +311,7 @@ def modinv(a: Union[int, BigInteger], m: Union[int, BigInteger]):
     -------
     int or BigInteger
         Modular inverse in [0, m).
+
     """
     if isinstance(a, BigInteger) or isinstance(m, BigInteger):
         a_bi = a if isinstance(a, BigInteger) else BigInteger.create(a, m.digits.shape[0])
@@ -347,8 +346,7 @@ def modinv(a: Union[int, BigInteger], m: Union[int, BigInteger]):
 
 
 def smallest_power_of_two(n: Union[int, BigInteger]):
-    """
-    ceil(log2(n)) computed in a JAX-safe way.
+    """ceil(log2(n)) computed in a JAX-safe way.
 
     Parameters
     ----------
@@ -359,6 +357,7 @@ def smallest_power_of_two(n: Union[int, BigInteger]):
     -------
     int or jnp.int64
         ceil(log2(n)) with 0 for n <= 1.
+
     """
     if isinstance(n, BigInteger):
         # bit_size already yields ceil(log2(n)) with 0 for n==0
@@ -376,8 +375,7 @@ def smallest_power_of_two(n: Union[int, BigInteger]):
 
 
 def best_montgomery_shift(n: Union[int, BigInteger], N: Union[int, BigInteger] = None):
-    """
-    Minimal auxiliary exponent m for Montgomery reduction.
+    """Minimal auxiliary exponent m for Montgomery reduction.
 
     If N is provided (classical integer, possibly JAX-traced), use the tighter bound
     derived from t < n·(N-1):
@@ -396,6 +394,7 @@ def best_montgomery_shift(n: Union[int, BigInteger], N: Union[int, BigInteger] =
     -------
     int or jnp.int64
         Exponent m such that R = 2^m.
+
     """
     # Fallback (no modulus or unsupported BigInteger modulus): ceil(log2 n)
     if (N is None) or isinstance(N, BigInteger):

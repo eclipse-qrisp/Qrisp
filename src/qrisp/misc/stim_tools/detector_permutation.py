@@ -1,10 +1,9 @@
-import stim
 import numpy as np
+import stim
 
 
 def permute_detectors(circuit: stim.Circuit, permutation) -> stim.Circuit:
-    """
-    Permutes the detectors in a Stim circuit according to the given permutation.
+    """Permutes the detectors in a Stim circuit according to the given permutation.
 
     The function moves all detectors to the end of the circuit and applies the permutation.
     It preserves the semantic meaning of each detector (which measurements it targets)
@@ -27,7 +26,6 @@ def permute_detectors(circuit: stim.Circuit, permutation) -> stim.Circuit:
 
     Examples
     --------
-
     We create a circuit with three detectors. The first and third detectors are triggered by deterministic errors.
 
     ::
@@ -83,7 +81,6 @@ def permute_detectors(circuit: stim.Circuit, permutation) -> stim.Circuit:
         # Yields: [[False, True, True]]
 
     """
-
     # Check for REPEAT blocks
     for instr in circuit:
         if instr.name == "REPEAT":

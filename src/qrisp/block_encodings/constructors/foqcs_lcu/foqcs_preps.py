@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,10 +18,12 @@
 from collections.abc import Sequence
 from functools import partial
 from typing import Any
+
 import numpy as np
-from qrisp.core import QuantumVariable, Qubit
-from qrisp.core.gate_application_functions import cx, ry, p, h, rz
+
 from qrisp.alg_primitives.unbalanced_w_state import unbalanced_w_state
+from qrisp.core import QuantumVariable, Qubit
+from qrisp.core.gate_application_functions import cx, h, p, ry, rz
 from qrisp.environments import control
 
 _FOQCS_SPIN_GLASS_TOL = 1e-12
@@ -31,8 +32,7 @@ _FOQCS_SPIN_GLASS_TOL = 1e-12
 def foqcs_prep_heisenberg(
     prep_qv: QuantumVariable | Sequence[Qubit], L: int, g: dict, J: dict, conjugate: bool = False
 ) -> None:
-    r"""
-    FOQCS-LCU state preparation, based on the methodology established in https://arxiv.org/pdf/2507.20887, pages 8-9.
+    r"""FOQCS-LCU state preparation, based on the methodology established in https://arxiv.org/pdf/2507.20887, pages 8-9.
     Implements the FOQCS-LCU PREP oracle for the Heisenberg Hamiltonian by preparing selector amplitudes
     for local X/Y/Z fields and nearest-neighbor XX/YY/ZZ couplings, then mapping them into the
     two FOQCS activation registers using Dicke-state and CNOT-ladder structures.
@@ -73,7 +73,6 @@ def foqcs_prep_heisenberg(
         If ``g`` or ``J`` has length not equal to 3.
 
     """
-
     # Ref: Heisenberg Hamiltonian with local fields and nearest-neighbor
     # XX/YY/ZZ couplings is Eq. (50).
     # Ref: Table II maps each Pauli term to FOQCS-LCU coefficient-state pairs.
@@ -182,8 +181,7 @@ def foqcs_prep_heisenberg(
 def foqcs_prep_spin_glass(
     prep_qv: QuantumVariable | Sequence[Qubit], L: int, g: dict, J: dict, conjugate: bool = False
 ) -> None:
-    r"""
-    FOQCS-LCU state preparation, based on the methodology established in https://arxiv.org/pdf/2507.20887, pages 9-11.
+    r"""FOQCS-LCU state preparation, based on the methodology established in https://arxiv.org/pdf/2507.20887, pages 9-11.
     Implements the FOQCS-LCU PREP oracle for the spin-glass Hamiltonian by preparing weighted selector states
     for non-uniform local X/Y/Z fields and distance-dependent XX/YY/ZZ couplings,
     then encoding them into FOQCS activation registers via unbalanced W/Dicke states,
@@ -372,8 +370,7 @@ def foqcs_prep_spin_glass(
 
 
 def get_foqcs_lcu_prep_num_of_ancillae(prep: partial, num_q_ops: int = 1) -> int:
-    r"""
-    Gets a number of ancillae qubits for the FOQCS-LCU circuit that uses
+    r"""Gets a number of ancillae qubits for the FOQCS-LCU circuit that uses
     ``prep`` method to encode ``num_q_ops`` qubits.
 
     Parameters
@@ -389,6 +386,7 @@ def get_foqcs_lcu_prep_num_of_ancillae(prep: partial, num_q_ops: int = 1) -> int
     -------
     int
         An integer with number of ancillae required by the received FOQCS-LCU PREP method
+
     """
     if prep.func == foqcs_prep_heisenberg:
         return num_q_ops * 2 + 6
@@ -399,13 +397,11 @@ def get_foqcs_lcu_prep_num_of_ancillae(prep: partial, num_q_ops: int = 1) -> int
 
 
 def _angles_dicke_unbalanced(coeff: Sequence[float]) -> tuple[list[float], int]:
-    """
-    Helper equivalent of angles_dicke1_unbalanced from foqcs-lcu
+    """Helper equivalent of angles_dicke1_unbalanced from foqcs-lcu
     https://github.com/QuantumComputingLab/foqcs-lcu
 
     coeff must be normalized, real, and non-negative.
     """
-
     coeff = np.asarray(coeff, dtype=float)
     L = len(coeff)
 
@@ -432,14 +428,12 @@ def _angles_dicke_unbalanced(coeff: Sequence[float]) -> tuple[list[float], int]:
 
 
 def _theta_cutoff_foqcs_spin_glass_optimal(L: int, g: dict, J: dict) -> tuple[list[list[list[float]]], list[list[int]]]:
-    """
-    Computes the angle/cutoff data used by foqcs_prep_spin_glass_optimal.
+    """Computes the angle/cutoff data used by foqcs_prep_spin_glass_optimal.
 
     theta[axis][k] contains the unbalanced-Dicke angles for:
         k = 0: local field g[axis]
         k > 0: kth-nearest-neighbour coupling J[axis][k - 1]
     """
-
     components = ["X", "Y", "Z"]
 
     theta = []
@@ -521,8 +515,7 @@ def _cgamma_opt(
     qv_x: Qubit,
     theta_list: Sequence[float],
 ) -> None:
-    """
-    Implementation of the compressed controlled-gamma gate `cgamma_opt`
+    """Implementation of the compressed controlled-gamma gate `cgamma_opt`
     from https://github.com/QuantumComputingLab/foqcs-lcu
 
     This follows the upstream decomposition:
@@ -535,7 +528,6 @@ def _cgamma_opt(
         CX(rot, x),
         S(rot), H(rot)
     """
-
     if len(theta_list) == 0:
         return
 

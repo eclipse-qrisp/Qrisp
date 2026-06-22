@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,9 +17,10 @@
 
 
 def test_QMCI():
+    import numpy as np
+
     from qrisp import QuantumFloat
     from qrisp.algorithms.qmci import QMCI
-    import numpy as np
 
     def f(qf):
         return qf * qf

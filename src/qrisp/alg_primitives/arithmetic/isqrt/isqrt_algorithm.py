@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,8 +16,8 @@
 """
 
 from qrisp.circuit import Qubit
+from qrisp.core.gate_application_functions import cx, mcx, swap, x
 from qrisp.qtypes import QuantumFloat
-from qrisp.core.gate_application_functions import x, cx, mcx, swap
 
 
 def peres(a: Qubit, b: Qubit, c: Qubit):
@@ -182,8 +181,7 @@ def remainder_restoration(R: QuantumFloat, F: QuantumFloat, z: QuantumFloat):
 
 
 def q_isqrt(R: QuantumFloat) -> QuantumFloat:
-    """
-    Computes the integer square root of a QuantumFloat, as well as the remainder using the `non-Restoring square root algorithm <https://arxiv.org/abs/1712.08254>`_.
+    """Computes the integer square root of a QuantumFloat, as well as the remainder using the `non-Restoring square root algorithm <https://arxiv.org/abs/1712.08254>`_.
     Does not yield plausible output when applied to negative integers.
 
     Parameters
@@ -209,6 +207,7 @@ def q_isqrt(R: QuantumFloat) -> QuantumFloat:
     >>> print(R.get_measurement())
     {11: 1.0}
     {10: 1.0}
+
     """
     n = R.size
     e = R.exponent

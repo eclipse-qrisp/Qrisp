@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -25,8 +24,7 @@ from qrisp.misc import bin_rep, custom_qv, int_as_array
 
 
 class QuantumDictionary(dict):
-    r"""
-    This class can be used for loading data relations into the quantum computer which
+    r"""This class can be used for loading data relations into the quantum computer which
     are not based on a quantum algorithm.
 
     As an inheritor of the Python dictionary it has all the functionality we are used to
@@ -151,8 +149,7 @@ class QuantumDictionary(dict):
         return self.load(key)
 
     def load(self, key, value_qv=None, synth_method="gray"):
-        """
-        Loads the values of the QuantumDictionary into a given QuantumVariable.
+        """Loads the values of the QuantumDictionary into a given QuantumVariable.
 
         Parameters
         ----------
@@ -173,7 +170,6 @@ class QuantumDictionary(dict):
 
         Examples
         --------
-
         We create a QuantumDictionary with return type QuantumFloat
 
         >>> from qrisp import QuantumDictionary, QuantumFloat, h

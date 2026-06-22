@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,7 +18,7 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
+
 from qrisp import QuantumCircuit, Qubit, U3Gate
 from qrisp.circuit import ControlledOperation, Operation, PTControlledOperation
 from qrisp.circuit.pass_management.passes.cancel_zero_controls import cancel_zero_controls

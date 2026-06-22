@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,7 +18,8 @@
 
 def test_montgomery_jasp_qq():
     import numpy as np
-    from qrisp import boolean_simulation, QuantumFloat, modinv, gidney_adder, measure, best_montgomery_shift
+
+    from qrisp import QuantumFloat, best_montgomery_shift, boolean_simulation, gidney_adder, measure, modinv
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import qq_montgomery_multiply
 
     @boolean_simulation
@@ -45,7 +45,7 @@ def test_montgomery_jasp_qq():
 
 
 def test_montgomery_not_jasp_qq():
-    from qrisp import QuantumFloat, modinv, gidney_adder, multi_measurement, best_montgomery_shift
+    from qrisp import QuantumFloat, best_montgomery_shift, gidney_adder, modinv, multi_measurement
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import qq_montgomery_multiply
 
     X = 29
@@ -69,7 +69,8 @@ def test_montgomery_not_jasp_qq():
 
 def test_montgomery_jasp_cq():
     import numpy as np
-    from qrisp import boolean_simulation, QuantumFloat, gidney_adder, measure, best_montgomery_shift
+
+    from qrisp import QuantumFloat, best_montgomery_shift, boolean_simulation, gidney_adder, measure
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply
 
     @boolean_simulation
@@ -92,9 +93,10 @@ def test_montgomery_jasp_cq():
 
 def test_montgomery_jasp_cq_inplace():
     import numpy as np
-    from qrisp import boolean_simulation, QuantumFloat, gidney_adder, measure, best_montgomery_shift
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
+
+    from qrisp import QuantumFloat, best_montgomery_shift, boolean_simulation, gidney_adder, measure
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import modinv
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
 
     @boolean_simulation
     def icq(a, b, n, N):
@@ -116,17 +118,18 @@ def test_montgomery_jasp_cq_inplace():
 
 def test_montgomery_jasp_cq_inplace_controlled():
     import numpy as np
+
     from qrisp import (
-        boolean_simulation,
+        QuantumBool,
         QuantumFloat,
+        best_montgomery_shift,
+        boolean_simulation,
+        control,
         gidney_adder,
         measure,
-        QuantumBool,
-        control,
-        best_montgomery_shift,
     )
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import modinv
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
 
     @boolean_simulation
     def cicq(a, b, n, N, c):
@@ -152,15 +155,16 @@ def test_montgomery_jasp_cq_inplace_controlled():
 
 def test_montgomery_jasp_cq_inplace_bi():
     import numpy as np
+
     from qrisp import (
-        boolean_simulation,
-        QuantumFloat,
+        BigInteger,
         QuantumBool,
+        QuantumFloat,
+        best_montgomery_shift,
+        boolean_simulation,
+        control,
         gidney_adder,
         measure,
-        control,
-        BigInteger,
-        best_montgomery_shift,
     )
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
 
@@ -189,9 +193,21 @@ def test_montgomery_jasp_cq_inplace_bi():
 
 def test_montgomery_find_order():
     import numpy as np
-    import jax
-    from qrisp import terminal_sampling, QuantumModulus, QuantumFloat, jrange, control, QFT, h, x, BigInteger
-    from qrisp import fourier_adder, jasp_fourier_adder, gidney_adder
+
+    from qrisp import (
+        QFT,
+        BigInteger,
+        QuantumFloat,
+        QuantumModulus,
+        control,
+        fourier_adder,
+        gidney_adder,
+        h,
+        jasp_fourier_adder,
+        jrange,
+        terminal_sampling,
+        x,
+    )
 
     def find_order(a, N, inpl_adder):
         qg = QuantumModulus(N, inpl_adder)

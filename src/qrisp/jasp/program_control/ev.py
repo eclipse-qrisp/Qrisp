@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -47,8 +46,7 @@ from qrisp.jasp.tracing_logic import quantum_kernel
 
 
 def expectation_value(state_prep, shots, return_dict=False, post_processor=None):
-    r"""
-    The ``expectation_value`` function allows to estimate the expectation value
+    r"""The ``expectation_value`` function allows to estimate the expectation value
     from a state that is specified by a preparation procedure. This preparation
     procedure can be supplied via a Python function that returns one or
     more :ref:`QuantumVariables <QuantumVariable>`.
@@ -79,7 +77,6 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
 
     Examples
     --------
-
     We prepare the state
 
     .. math::
@@ -152,9 +149,8 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
 
 
     """
-
-    from qrisp.jasp import make_tracer, qache
     from qrisp.core import QuantumVariable, measure
+    from qrisp.jasp import make_tracer, qache
 
     if isinstance(shots, int):
         shots = make_tracer(shots)

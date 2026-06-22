@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -22,19 +21,16 @@ from io import StringIO
 from jax._src import core
 from jax.interpreters.mlir import LoweringParameters, ModuleContext, lower_jaxpr_to_fun
 from jaxlib.mlir import ir, passmanager
-from jaxlib.mlir._mlir_libs import _stablehlo, _mlirHlo, _chlo, _jax_mlir_ext
-
+from jaxlib.mlir._mlir_libs import _chlo, _mlirHlo, _stablehlo
 from xdsl.context import Context
 from xdsl.dialects import builtin, func
 from xdsl.parser import Parser
 
 from qrisp.jasp.mlir.xdsl_dialect import JaspDialect
-from qrisp.jasp.mlir.jasp_lowering_rules import jasp_lowering_rules
 
 
 def lower_jaxpr_to_stablehlo_MLIR(jaxpr, lowering_rules=tuple([])):
-    """
-    Lowers a Jaxpr object into an MLIR string uses Jax's MLIR infrastructure.
+    """Lowers a Jaxpr object into an MLIR string uses Jax's MLIR infrastructure.
 
     Parameters
     ----------
@@ -118,11 +114,11 @@ def MLIR_str_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
     builtin.ModuleOp
         The parsed xDSL module operation. Unregistered ops are allowed so that
         custom JASP ops survive the round-trip.
+
     """
     # Create context with unregistered operations allowed so our custom ops
     # remain intact when parsed by xDSL.
-    from xdsl.dialects import builtin, func, linalg, arith, tensor, scf, math
-    from xdsl.parser import Parser
+    from xdsl.dialects import arith, builtin, linalg, math, scf, tensor
 
     ctx = Context()
     ctx.allow_unregistered = True
@@ -170,8 +166,8 @@ def jaxpr_to_xdsl(jaxpr, lower_stableHLO=False, lowering_rules=tuple([])):
         The xDSL context in which the module resides.
     builtin.ModuleOp
         The xDSL module containing the lowered program.
-    """
 
+    """
     # 1) Lower to MLIR (jasp dialect) using the custom lowering pipeline.
     if lower_stableHLO:
         mlir_module = lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules=lowering_rules)
@@ -231,6 +227,7 @@ def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
     MLIRModule
         An MLIR module object in JAX's MLIR infrastructure with StableHLO
         arithmetic lowered to linalg.
+
     """
     # --- Step 1: Lower Jaxpr to a JAX MLIR module ---------------------------
     mlir_module = lower_jaxpr_to_stablehlo_MLIR(jaxpr, lowering_rules=lowering_rules)

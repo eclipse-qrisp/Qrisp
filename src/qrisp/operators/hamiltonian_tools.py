@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,9 @@
 ********************************************************************************
 """
 
+import networkx as nx
 import numba as nb
 import numpy as np
-import networkx as nx
 
 
 def multi_hamiltonian_measurement(
@@ -33,8 +32,7 @@ def multi_hamiltonian_measurement(
     precompiled_qc=None,
     _measurements=None,
 ):
-    r"""
-    This method returns the expected value of a list of Hamiltonians for the state of a quantum argument.
+    r"""This method returns the expected value of a list of Hamiltonians for the state of a quantum argument.
 
     Parameters
     ----------
@@ -71,7 +69,6 @@ def multi_hamiltonian_measurement(
         The expected value of the Hamiltonians.
 
     """
-
     expectations = []
     n = len(hamiltonians)
     for i in range(n):

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -23,20 +22,17 @@ import networkx as nx
 import numpy as np
 
 from qrisp.circuit import (
-    QuantumCircuit,
-    fast_append,
-    Instruction,
-    Qubit,
-    QubitDealloc,
-    QubitAlloc,
     ControlledOperation,
+    Instruction,
+    QuantumCircuit,
+    QubitAlloc,
+    fast_append,
 )
 from qrisp.permeability.type_checker import is_permeable
 
 
 def get_perm_dic(gate):
-    """
-    This function takes an Operation object and returns a dictionary indicating the
+    """This function takes an Operation object and returns a dictionary indicating the
     permeability status of that Operation on each of it's qubits.
 
     Parameters
@@ -50,7 +46,6 @@ def get_perm_dic(gate):
         A dictionary of the type {qubit_index : permeability_type}.
 
     """
-
     # If the gate is known to be X-permeable return the corresponding dict
     if gate.name in ["x", "rx", "rxx"]:
         return {i: "X" for i in range(gate.num_qubits)}
@@ -174,8 +169,7 @@ class PermeabilityGraph(nx.DiGraph):
 
     # Visualizes the DAG
     def draw(self, layout_seed=None):
-        """
-        Visualizes the PermeabilityGraph.
+        """Visualizes the PermeabilityGraph.
 
         Parameters
         ----------
@@ -186,8 +180,7 @@ class PermeabilityGraph(nx.DiGraph):
         visualize_dag(self, layout_seed)
 
     def to_qc(self, topo_sort=None):
-        """
-        Turns the PermeabilityGraph into a QuantumCircuit, using a given topological sort algorithm.
+        """Turns the PermeabilityGraph into a QuantumCircuit, using a given topological sort algorithm.
 
         Parameters
         ----------
@@ -200,7 +193,6 @@ class PermeabilityGraph(nx.DiGraph):
             DESCRIPTION.
 
         """
-
         if topo_sort is None:
             topo_sort = nx.topological_sort
         res_qc = self.original_qc.clearcopy()
@@ -215,8 +207,7 @@ class PermeabilityGraph(nx.DiGraph):
         return res_qc
 
     def add_edge(self, in_node, out_node, edge_type, qubits=[]):
-        """
-        Adds an edge (in-place) to the PermeabilityGraph.
+        """Adds an edge (in-place) to the PermeabilityGraph.
 
         Parameters
         ----------
@@ -232,7 +223,6 @@ class PermeabilityGraph(nx.DiGraph):
             The default is [].
 
         """
-
         if in_node == out_node:
             return
 
@@ -242,8 +232,7 @@ class PermeabilityGraph(nx.DiGraph):
             nx.DiGraph.add_edge(self, in_node, out_node, edge_type=edge_type, qubits=list(qubits))
 
     def get_target_qubits(self, node):
-        """
-        Returns the target qubits of a node, i.e. the qubits that have either neutral or X-permeability.
+        """Returns the target qubits of a node, i.e. the qubits that have either neutral or X-permeability.
 
         Parameters
         ----------
@@ -274,8 +263,7 @@ class PermeabilityGraph(nx.DiGraph):
         return target_qubits
 
     def get_control_qubits(self, node):
-        """
-        Returns the control qubits of a node, i.e. the qubits that have Z-permeability.
+        """Returns the control qubits of a node, i.e. the qubits that have Z-permeability.
 
         Parameters
         ----------
@@ -309,8 +297,7 @@ class PermeabilityGraph(nx.DiGraph):
         return control_qubits
 
     def get_control_nodes(self, node):
-        """
-        Returns the list of control nodes of a node, i.e. the nodes that are connected via an
+        """Returns the list of control nodes of a node, i.e. the nodes that are connected via an
         outgoing edge with Z-permeability type.
 
         Parameters
@@ -342,8 +329,7 @@ class PermeabilityGraph(nx.DiGraph):
         return control_nodes
 
     def get_target_nodes(self, node):
-        """
-        Returns the list of control nodes of a node, i.e. the nodes that are connected via an
+        """Returns the list of control nodes of a node, i.e. the nodes that are connected via an
         outgoing edge with X-permeability or neutral type.
 
         Parameters
@@ -375,8 +361,7 @@ class PermeabilityGraph(nx.DiGraph):
         return target_nodes
 
     def get_edge_qubits(self, in_node, out_node):
-        """
-        Returns the list of qubits that a given edge is representing.
+        """Returns the list of qubits that a given edge is representing.
 
         Parameters
         ----------
@@ -413,8 +398,7 @@ class PermeabilityGraph(nx.DiGraph):
 
 
 def dag_from_qc(dag, qc, remove_artificials=False):
-    """
-    This function receives an (empty) PermeabilityGraph and builds up the corresponding
+    """This function receives an (empty) PermeabilityGraph and builds up the corresponding
     nodes/edges according to the given QuantumCircuit.
 
     Parameters
@@ -431,7 +415,6 @@ def dag_from_qc(dag, qc, remove_artificials=False):
         applied to a given Qubit.
 
     """
-
     # This dictionary keeps track of the most recent instruction that was
     # applied to a given Qubit
     recent_node_dic = {}
@@ -592,8 +575,7 @@ def dag_from_qc(dag, qc, remove_artificials=False):
 
 
 def visualize_dag(G, layout_seed=None):
-    """
-    Visualizes a PermeabilityGraph, coloring edges and nodes according to their types.
+    """Visualizes a PermeabilityGraph, coloring edges and nodes according to their types.
 
     Parameters
     ----------
@@ -603,7 +585,6 @@ def visualize_dag(G, layout_seed=None):
         An integer representing a random seed that can (slightly) modify the plot layout. The default is None.
 
     """
-
     # The subset_key dictionary groups the nodes according to their value_layers.
     # This dictionary will then be used to generate the plot layout via the nx.multipartite_layout
     subset_key = {}

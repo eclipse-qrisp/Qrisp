@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,8 +17,9 @@
 
 
 def test_quantum_counting():
-    from qrisp import quantum_counting, z, QuantumVariable
     import numpy as np
+
+    from qrisp import QuantumVariable, quantum_counting, z
 
     def oracle(qv):
         z(qv[-1])

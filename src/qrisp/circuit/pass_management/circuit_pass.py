@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -26,8 +25,7 @@ from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
 class CircuitPass:
-    """
-    A decorator for quantum circuit transformation passes.
+    """A decorator for quantum circuit transformation passes.
 
     ``CircuitPass`` wraps a callable with signature
     ``QuantumCircuit -> QuantumCircuit`` and enforces type safety by checking
@@ -61,15 +59,16 @@ class CircuitPass:
             def _convert_to_cz(qc):
                 ...
             return _convert_to_cz
+
     """
 
     def __init__(self, func: Callable[[QuantumCircuit], QuantumCircuit]) -> None:
-        """
-        Parameters
+        """Parameters
         ----------
         func : Callable[[QuantumCircuit], QuantumCircuit]
             The transformation function to wrap.  The function's ``__name__``
             and ``__doc__`` are copied onto the ``CircuitPass`` instance.
+
         """
         self._func: Callable[[QuantumCircuit], QuantumCircuit] = func
         functools.update_wrapper(self, func, assigned=("__module__", "__doc__", "__annotations__"))
@@ -77,8 +76,7 @@ class CircuitPass:
         self.__name__ = func.__name__
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        """
-        Invoke the wrapped pass function with type guards.
+        """Invoke the wrapped pass function with type guards.
 
         The argument must be a :class:`~qrisp.QuantumCircuit`.  The wrapped
         function receives it and the return value is checked to also be a
@@ -99,6 +97,7 @@ class CircuitPass:
         TypeError
             If the argument is not a :class:`~qrisp.QuantumCircuit`, or if the
             wrapped function does not return a :class:`~qrisp.QuantumCircuit`.
+
         """
         # --- Type guard on input ---
         if len(args) != 1 or kwargs:
@@ -129,8 +128,7 @@ class CircuitPass:
         precision: int = 4,
         ignore_gphase: bool = False,
     ) -> bool:
-        """
-        Verify that this :class:`CircuitPass` leaves the unitary invariant
+        """Verify that this :class:`CircuitPass` leaves the unitary invariant
         when applied to the given :class:`~qrisp.QuantumCircuit`.
 
         The method copies *qc*, applies the pass to the copy, and then
@@ -164,6 +162,7 @@ class CircuitPass:
         ValueError
             If either the input or the transformed circuit contains
             measurement instructions.
+
         """
         if not isinstance(qc, QuantumCircuit):
             raise TypeError(f"Expected a QuantumCircuit, got {type(qc).__name__}.")
@@ -190,8 +189,7 @@ class CircuitPass:
         return qc.compare_unitary(transformed_qc, precision, ignore_gphase)
 
     def visualize(self, qc: QuantumCircuit) -> None:
-        """
-        Print a before/after visualisation of this pass applied to *qc*.
+        """Print a before/after visualisation of this pass applied to *qc*.
 
         The method copies *qc*, applies the pass, and prints both the
         original and the transformed circuit to the console.
@@ -209,6 +207,7 @@ class CircuitPass:
         >>> qc.cx(0, 1)
         >>> qc.cx(0, 1)
         >>> fuse_adjacents.visualize(qc)
+
         """
         # Apply the pass to a copy to avoid mutating the original
         transformed_qc = self(qc.copy())
@@ -237,8 +236,7 @@ class CircuitPass:
         precision: int = 6,
         backend: Any = None,
     ) -> bool:
-        """
-        Verify that this :class:`CircuitPass` leaves measurement statistics
+        """Verify that this :class:`CircuitPass` leaves measurement statistics
         invariant when applied to the given :class:`~qrisp.QuantumCircuit`.
 
         The method copies *qc*, applies the pass to the copy, and then
@@ -272,6 +270,7 @@ class CircuitPass:
         ------
         TypeError
             If *qc* is not a :class:`~qrisp.QuantumCircuit`.
+
         """
         if not isinstance(qc, QuantumCircuit):
             raise TypeError(f"Expected a QuantumCircuit, got {type(qc).__name__}.")

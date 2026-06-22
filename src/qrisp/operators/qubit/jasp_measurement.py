@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,13 +15,11 @@
 ********************************************************************************
 """
 
-import numpy as np
-from qrisp.core import QuantumVariable, measure
-from qrisp.jasp import sample
-
 import jax
 import jax.numpy as jnp
-from jax.lax import while_loop, fori_loop
+import numpy as np
+
+from qrisp.jasp import sample
 
 
 def get_jasp_measurement(
@@ -32,8 +29,7 @@ def get_jasp_measurement(
     precision=0.01,
     diagonalisation_method="commuting_qw",
 ):
-    r"""
-    This method returns the expected value of a Hamiltonian for the state of a quantum argument.
+    r"""This method returns the expected value of a Hamiltonian for the state of a quantum argument.
 
     Parameters
     ----------
@@ -61,7 +57,6 @@ def get_jasp_measurement(
         The expected value of the Hamiltonian.
 
     """
-
     hamiltonian = hamiltonian.hermitize()
     hamiltonian = hamiltonian.eliminate_ladder_conjugates()
     hamiltonian = hamiltonian.apply_threshold(0)
@@ -130,11 +125,9 @@ def get_jasp_measurement(
 
 @jax.jit
 def jasp_evaluate_expectation_jitted(samples, operators, coefficients):
-    """
-    Evaluate the expectation.
+    """Evaluate the expectation.
 
     """
-
     expectation = 0
 
     # Evaluate and sum intermediate results for each measurement setting

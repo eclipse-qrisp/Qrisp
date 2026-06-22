@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,18 +15,17 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
 
-from qrisp._cache_config import qrisp_lru_compilation_cache
-from jax.extend.core import JaxprEqn
 import jax.numpy as jnp
+from jax.extend.core import JaxprEqn
 from sympy import lambdify as _lambdify
 
-from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret, extract_invalues, insert_outvalues
+import qrisp.circuit.standard_operations as _std_ops
+from qrisp._cache_config import qrisp_lru_compilation_cache
+from qrisp.circuit.operation import U3Gate as _U3Gate
+from qrisp.jasp.interpreter_tools import exec_eqn, extract_invalues, insert_outvalues, reinterpret
 from qrisp.jasp.primitives import quantum_gate_p
 from qrisp.jasp.primitives.operation_primitive import greek_letters as _greek_letters
-from qrisp.circuit.operation import U3Gate as _U3Gate
-import qrisp.circuit.standard_operations as _std_ops
 
 _greek_letter_order = {sym: i for i, sym in enumerate(_greek_letters)}
 
@@ -213,8 +211,9 @@ def decompose_eqn_evaluator(eqn, context_dic):
 @qrisp_lru_compilation_cache
 def _decompose_sub_jaxpr(jaxpr):
     """Apply decompose_composite_gates to a sub-jaxpr (ClosedJaxpr or Jaspr)."""
-    from qrisp.jasp import Jaspr
     from jax.extend.core import ClosedJaxpr
+
+    from qrisp.jasp import Jaspr
 
     if isinstance(jaxpr, Jaspr):
         return decompose_composite_gates(jaxpr)

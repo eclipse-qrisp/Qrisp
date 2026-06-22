@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,7 +18,6 @@
 
 def test_HHL_demo():
 
-    import jax
     import qrisp
 
     qv = qrisp.QuantumVariable(5)
@@ -237,7 +235,6 @@ def test_HHL_demo():
     ############################################################
 
     from qrisp.operators import QubitOperator
-    import numpy as np
 
     A = np.array([[3 / 8, 1 / 8], [1 / 8, 3 / 8]])
     b = np.array([1, 1])

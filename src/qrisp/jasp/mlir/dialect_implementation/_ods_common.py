@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,4 +17,3 @@
 
 # Stub that redirects to JAX's MLIR infrastructure
 from jaxlib.mlir.dialects._ods_common import *
-from jaxlib.mlir.dialects._ods_common import _cext

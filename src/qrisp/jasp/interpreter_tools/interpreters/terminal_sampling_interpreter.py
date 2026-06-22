@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,28 +15,25 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
 
-from qrisp._cache_config import qrisp_lru_compilation_cache
+import jax
+import jax.numpy as jnp
 import numpy as np
 
-import jax.numpy as jnp
-import jax
-
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     eval_jaxpr,
+    exec_eqn,
     extract_invalues,
     insert_outvalues,
-    exec_eqn,
 )
 from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation import (
     evaluate_while_loop,
 )
-
 from qrisp.jasp.primitives import (
-    AbstractQubitArray,
     AbstractQuantumState,
     AbstractQubit,
+    AbstractQubitArray,
 )
 
 # The following function implements the behavior of the jaspify simulator for terminal sampling
@@ -292,7 +288,7 @@ def terminal_sampling_evaluator(sampling_res_type):
                                 # sampling_res.extend(v*[key])
                             elif sampling_res_type == "dict":
                                 key = outvalues
-                                if not type(v) in [int, float]:
+                                if type(v) not in [int, float]:
                                     if v.dtype in [np.float64, np.float32]:
                                         v = float(v.item())
                                     elif v.dtype in [np.int32, np.int64]:
@@ -303,20 +299,19 @@ def terminal_sampling_evaluator(sampling_res_type):
 
                         # If the user given function returned more than one
                         # value, the key is a tuple to be build up
-                        else:
-                            if sampling_res_type == "ev":
-                                sampling_res += jnp.array(outvalues) * v
-                            elif sampling_res_type == "array":
-                                sampling_res_dict[tuple(np.array(outvalues))] = v
-                            elif sampling_res_type == "dict":
-                                if not type(v) in [int, float]:
-                                    if v.dtype in [np.float64, np.float32]:
-                                        v = float(v.item())
-                                    elif v.dtype in [np.int32, np.int64]:
-                                        v = int(v.item())
-                                    else:
-                                        raise
-                                sampling_res[tuple(x.item() for x in outvalues)] = v
+                        elif sampling_res_type == "ev":
+                            sampling_res += jnp.array(outvalues) * v
+                        elif sampling_res_type == "array":
+                            sampling_res_dict[tuple(np.array(outvalues))] = v
+                        elif sampling_res_type == "dict":
+                            if type(v) not in [int, float]:
+                                if v.dtype in [np.float64, np.float32]:
+                                    v = float(v.item())
+                                elif v.dtype in [np.int32, np.int64]:
+                                    v = int(v.item())
+                                else:
+                                    raise
+                            sampling_res[tuple(x.item() for x in outvalues)] = v
 
                     if sampling_res_type == "array":
                         keys = np.array(list(sampling_res_dict.keys()))
@@ -353,8 +348,7 @@ def terminal_sampling_evaluator(sampling_res_type):
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
 @qrisp_lru_compilation_cache
 def decoder_compiler(jaxpr, eqn_evaluator):
-    """
-    This function compiles the decoder using the Jax pipeline into a binary
+    """This function compiles the decoder using the Jax pipeline into a binary
     such that it can be evaluated fast. This is important because the decoding
     step can become a critical bottleneck in some sampling based simulations.
 

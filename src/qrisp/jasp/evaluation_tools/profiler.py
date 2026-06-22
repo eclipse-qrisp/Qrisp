@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -89,7 +88,6 @@ METRIC_DISPATCH = {
 
 def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
     """Normalize the measurement behavior into a callable."""
-
     if isinstance(meas_behavior, str):
         if meas_behavior == "0":
             return always_zero
@@ -110,8 +108,7 @@ def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
 
 
 def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = None) -> Callable:
-    """
-    Decorator to determine resources of large scale quantum computations.
+    """Decorator to determine resources of large scale quantum computations.
     This decorator compiles the given Jasp-compatible function into a classical
     function computing the amount of each gates required. The decorated function
     will return a dictionary containing the operation counts.
@@ -162,7 +159,6 @@ def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = No
 
     Examples
     --------
-
     We compute the resources required to perform a large scale integer multiplication.
 
     ::
@@ -294,8 +290,7 @@ def depth(
     max_qubits: int = 1024,
     callback_threshold: int | None = None,
 ) -> Callable:
-    """
-    Decorator to determine the depth of large scale quantum computations.
+    """Decorator to determine the depth of large scale quantum computations.
 
     This decorator compiles the given Jasp-compatible function into a classical
     function computing the circuit depth required. The decorated function returns
@@ -331,7 +326,6 @@ def depth(
 
     Examples
     --------
-
     Let's consider a simple circuit:
 
     ::
@@ -444,8 +438,7 @@ def num_qubits(
     max_allocations: int = 1000,
     callback_threshold: int | None = None,
 ) -> Callable:
-    """
-    Decorator to track qubit allocation and deallocation events during a quantum computation.
+    """Decorator to track qubit allocation and deallocation events during a quantum computation.
 
     This decorator compiles a Jasp-compatible quantum function into a resource-analysis
     function that tracks qubit allocation and deallocation events throughout the computation.
@@ -494,7 +487,6 @@ def num_qubits(
 
     Examples
     --------
-
     Let's consider a simple circuit in which the number of allocated
     qubits depends on the measurement outcome:
 
@@ -621,8 +613,7 @@ def num_qubits(
 
 
 def profile_jaspr(jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0", **kwargs: Any) -> Callable:
-    """
-    Profile a Jaspr according to a given metric mode.
+    """Profile a Jaspr according to a given metric mode.
 
     Parameters
     ----------
@@ -648,7 +639,6 @@ def profile_jaspr(jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0", 
         arguments as the original Jaspr.
 
     """
-
     meas_behavior_callable = _normalize_meas_behavior(meas_behavior)
     metric_spec = METRIC_DISPATCH[mode]
 

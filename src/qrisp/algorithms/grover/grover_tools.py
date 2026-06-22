@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,26 +16,27 @@
 """
 
 from collections.abc import Callable, Sequence
-import numpy as np
 from typing import Any
 
+import numpy as np
+
 from qrisp import (
+    IterationEnvironment,
     QuantumArray,
-    QuantumVariable,
     QuantumFloat,
-    gate_wrap,
-    h,
-    mcx,
-    mcp,
-    mcz,
-    p,
-    x,
-    z,
-    merge,
-    recursive_qs_search,
+    QuantumVariable,
     conjugate,
     control,
-    IterationEnvironment,
+    gate_wrap,
+    h,
+    mcp,
+    mcx,
+    mcz,
+    merge,
+    p,
+    recursive_qs_search,
+    x,
+    z,
 )
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.jasp import check_for_tracing_mode, jrange
@@ -50,8 +50,7 @@ def diffuser(
     state_function: Callable | None = None,
     reflection_indices: list[int] | None = None,
 ):
-    r"""
-    Applies the Grover diffuser onto (multiple) QuantumVariables.
+    r"""Applies the Grover diffuser onto (multiple) QuantumVariables.
 
     Parameters
     ----------
@@ -69,7 +68,6 @@ def diffuser(
 
     Examples
     --------
-
     We apply the Grover diffuser onto several QuantumChars:
 
     >>> from qrisp import QuantumChar
@@ -113,7 +111,6 @@ def diffuser(
                   └────────────┘
 
     """
-
     if state_function is None:
 
         def _state_function(*qargs):
@@ -130,8 +127,7 @@ def tag_state(
     binary_values: bool = False,
     phase: FloatLike = np.pi,
 ):
-    r"""
-    Applies a phase tag to (multiple) QuantumVariables. The tagged state is specified in
+    r"""Applies a phase tag to (multiple) QuantumVariables. The tagged state is specified in
     the dictionary ``tag_specificator``. This dictionary should contain the
     QuantumVariables as keys and the labels of the states which should be tagged as
     values.
@@ -149,7 +145,6 @@ def tag_state(
 
     Examples
     --------
-
     We construct an oracle that tags the states -3 and 2 on two QuantumFloats
 
     ::
@@ -163,7 +158,6 @@ def tag_state(
             tag_state(tag_dic)
 
     """
-
     qv_list = list(tag_specificator.keys())
 
     if check_for_tracing_mode():
@@ -199,7 +193,7 @@ def tag_state(
     else:
         states = [tag_specificator[qv] for qv in qv_list]
 
-        if not len(states):
+        if not states:
             states = ["1" * qv.size for qv in qv_list]
 
         bit_string = ""
@@ -237,8 +231,7 @@ def grovers_alg(
     winner_state_amount: int | None = None,
     exact: bool = False,
 ):
-    r"""
-    Applies Grover's algorithm to a given oracle (in the form of a Python function).
+    r"""Applies Grover's algorithm to a given oracle (in the form of a Python function).
 
     Parameters
     ----------
@@ -275,7 +268,6 @@ def grovers_alg(
 
     Examples
     --------
-
     We construct an oracle that tags the states -3 and 2 on two QuantumFloats and apply
     Grover's algorithm.
 
@@ -390,7 +382,6 @@ def grovers_alg(
     tagged by the oracle have zero percent measurement probability.
 
     """
-
     # Necessary to prevent errors in recursive_qs_search when applied to jax arrays.
     if check_for_tracing_mode():
         import jax.numpy as jnp

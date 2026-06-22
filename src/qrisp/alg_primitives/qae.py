@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,10 +18,10 @@
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from qrisp.core import QuantumVariable, QuantumArray
-from qrisp.qtypes import QuantumFloat
 from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
 from qrisp.alg_primitives.qpe import QPE
+from qrisp.core import QuantumArray, QuantumVariable
+from qrisp.qtypes import QuantumFloat
 
 
 def QAE(
@@ -33,8 +32,7 @@ def QAE(
     precision: int | None = None,
     target: QuantumFloat | None = None,
 ) -> QuantumFloat:
-    r"""
-    This method implements the canonical quantum amplitude estimation (QAE) algorithm by `Brassard et al. <https://arxiv.org/abs/quant-ph/0005055>`_.
+    r"""This method implements the canonical quantum amplitude estimation (QAE) algorithm by `Brassard et al. <https://arxiv.org/abs/quant-ph/0005055>`_.
 
     The problem of quantum amplitude estimation is described as follows:
 
@@ -94,7 +92,6 @@ def QAE(
 
     Examples
     --------
-
     We define a function that prepares the state :math:`\ket{\Psi}=\cos(\frac{\pi}{8})\ket{0}+\sin(\frac{\pi}{8})\ket{1}`
     and an oracle that tags the good state :math:`\ket{1}`. In this case, we have :math:`a=\sin^2(\frac{\pi}{8})`.
 
@@ -192,7 +189,6 @@ def QAE(
     0.26430
 
     """
-
     if kwargs_oracle is None:
         kwargs_oracle = {}
 

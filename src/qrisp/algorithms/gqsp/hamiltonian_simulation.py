@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,6 +16,7 @@
 """
 
 from typing import TYPE_CHECKING
+
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -25,7 +25,7 @@ from scipy.special import jv
 from qrisp.algorithms.gqsp.gqsp import GQSP
 from qrisp.algorithms.gqsp.gqsp_angles import gqsp_angles
 from qrisp.block_encodings import BlockEncoding
-from qrisp.operators import QubitOperator, FermionicOperator
+from qrisp.operators import FermionicOperator, QubitOperator
 from qrisp.qtypes import QuantumBool
 
 if TYPE_CHECKING:
@@ -36,8 +36,7 @@ if TYPE_CHECKING:
 def hamiltonian_simulation(
     H: BlockEncoding | FermionicOperator | QubitOperator, t: "ArrayLike" = 1, N: int = 1
 ) -> BlockEncoding:
-    r"""
-    Returns a BlockEncoding approximating Hamiltonian simulation of the operator.
+    r"""Returns a BlockEncoding approximating Hamiltonian simulation of the operator.
 
     For a block-encoded Hamiltonian $H$, this method returns a BlockEncoding of an approximation of
     the unitary evolution operator $e^{-itH}$ for a given time $t$.
@@ -79,7 +78,6 @@ def hamiltonian_simulation(
 
     Examples
     --------
-
     Below is an example of using the :func:`hamiltonian_simulation` function to simulate a quantum system governed by an Ising Hamiltonian on a 1D chain graph.
     In this example, we construct a chain graph, define an Ising Hamiltonian with specific coupling and magnetic field strengths,
     and compute the system's energy and magnetization over various evolution times using the QSP-based simulation algorithm.
@@ -200,7 +198,6 @@ def hamiltonian_simulation(
     - Mitigation: This divergence is attributed to an insufficient truncation order $N$ used in the QSP polynomial expansion. The simulation error accumulates over time when the truncation order is too low for the required evolution time $T$. Increasing the truncation order $N$ can mitigate this effect and maintain accuracy at larger $T$ values, but this comes at the expense of a higher computational runtime or circuit depth.
 
     """
-
     if isinstance(H, (QubitOperator, FermionicOperator)):
         H = BlockEncoding.from_operator(H)
 
@@ -247,12 +244,11 @@ def hamiltonian_simulation(
 # and use the Bessel multiplication theorem to evaluate jv(m,s)
 @jax.jit
 def bessel_multiplication(m, s, jv_values_at_t, t=1.0):
-    """
-    Computes ``jv(m, s)`` using the Bessel Multiplication Theorem.
+    """Computes ``jv(m, s)`` using the Bessel Multiplication Theorem.
 
     .. math::
 
-        J_{m}(\lambda t) = \lambda^m \sum_{k=0}^{\intfy}\frac{(1-\lambda^2)^k(t/2)^k}{k!}J_{m+k}(t)
+        J_{m}(\\lambda t) = \\lambda^m \\sum_{k=0}^{\\intfy}\frac{(1-\\lambda^2)^k(t/2)^k}{k!}J_{m+k}(t)
 
     Parameters
     ----------
@@ -261,7 +257,7 @@ def bessel_multiplication(m, s, jv_values_at_t, t=1.0):
     s : float
         New argument to evaluate.
     j_values_at_t: ndarray
-        Array of values $J_k(t)$ for $k=0,\dotsc,N$.
+        Array of values $J_k(t)$ for $k=0,\\dotsc,N$.
     t : float
         Fixed argument where values are known (default 1.0).
 

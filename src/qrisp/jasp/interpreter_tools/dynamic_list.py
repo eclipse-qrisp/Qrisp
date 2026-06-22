@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -156,16 +155,14 @@ class Jlist:
         return copy.copy(self)
 
     def flatten(self):
-        """
-        Flatten the DynamicJaxArray into a tuple of arrays and auxiliary data.
+        """Flatten the DynamicJaxArray into a tuple of arrays and auxiliary data.
         This is useful for JAX transformations and serialization.
         """
         return (self.array, self.counter), tuple()
 
     @classmethod
     def unflatten(cls, aux_data, children):
-        """
-        Recreate a DynamicJaxArray from flattened data.
+        """Recreate a DynamicJaxArray from flattened data.
         """
         array, counter = children
         obj = cls(max_size=array.shape[0])

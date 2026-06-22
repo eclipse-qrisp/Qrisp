@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,22 +15,19 @@
 ********************************************************************************
 """
 
-from jax.lax import fori_loop, while_loop, cond, switch
-from jax.extend.core import ClosedJaxpr
-import jax
+from jax.lax import cond, switch, while_loop
 
-from qrisp.core import recursive_qv_search, recursive_qa_search
+from qrisp.core import recursive_qv_search
+from qrisp.jasp.primitives import AbstractQuantumState
 from qrisp.jasp.tracing_logic import (
     TracingQuantumSession,
     check_for_tracing_mode,
     get_last_equation,
 )
-from qrisp.jasp.primitives import AbstractQuantumState
 
 
 def q_while_loop(cond_fun, body_fun, init_val):
-    """
-    Jasp compatible version of
+    """Jasp compatible version of
     `jax.lax.while_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.while_loop.html#jax.lax.while_loop>`_.
     The parameters and semantics are the same as for the Jax version.
 
@@ -67,7 +63,6 @@ def q_while_loop(cond_fun, body_fun, init_val):
 
     Examples
     --------
-
     We write a dynamic loop that collects measurement values of a quantum
     qubits into an accumulator. Note that the accumulator variable is a carry
     value implying the loop could not be implemented using :ref:`jrange`.
@@ -102,7 +97,6 @@ def q_while_loop(cond_fun, body_fun, init_val):
         # (Array(5, dtype=int64), Array(31., dtype=float64))
 
     """
-
     if not check_for_tracing_mode():
         val = init_val
         while cond_fun(val):
@@ -112,7 +106,7 @@ def q_while_loop(cond_fun, body_fun, init_val):
     def new_cond_fun(val):
         temp_qc = qs.abs_qst
         res = cond_fun(val[0])
-        if not qs.abs_qst is temp_qc:
+        if qs.abs_qst is not temp_qc:
             raise Exception("Tried to modify quantum state during while condition evaluation")
         return res
 
@@ -156,8 +150,7 @@ def q_while_loop(cond_fun, body_fun, init_val):
 
 
 def q_fori_loop(lower, upper, body_fun, init_val):
-    """
-    Jasp compatible version of
+    """Jasp compatible version of
     `jax.lax.fori_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.fori_loop.html#jax.lax.fori_loop>`_.
     The parameters and semantics are the same as for the Jax version.
 
@@ -189,7 +182,6 @@ def q_fori_loop(lower, upper, body_fun, init_val):
 
     Examples
     --------
-
     We write a dynamic loop that collects measurement values of a quantum
     qubits into an accumulator:
 
@@ -230,8 +222,7 @@ def q_fori_loop(lower, upper, body_fun, init_val):
 
 
 def q_cond(pred, true_fun, false_fun, *operands):
-    r"""
-    Jasp compatible version of
+    r"""Jasp compatible version of
     `jax.lax.cond <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.cond.html#jax.lax.cond>`_.
     The parameters and semantics are the same as for the Jax version.
 
@@ -264,7 +255,6 @@ def q_cond(pred, true_fun, false_fun, *operands):
 
     Examples
     --------
-
     We write a script that brings a :ref:`QuantumBool` into superpostion and
     subsequently measures it. If the measurement result is ``False`` we flip
     it such that in the end, the bool will always be in the $\ket{\text{True}}$
@@ -301,7 +291,6 @@ def q_cond(pred, true_fun, false_fun, *operands):
         # True
 
     """
-
     if not check_for_tracing_mode():
         if pred:
             return true_fun(*operands)
@@ -372,8 +361,7 @@ def q_cond(pred, true_fun, false_fun, *operands):
 
 # Switch implementation for classical index
 def _q_switch_c(index, branches, *operands):
-    r"""
-    Jasp compatible version of
+    r"""Jasp compatible version of
     `jax.lax.switch <https://docs.jax.dev/en/latest/_autosummary/jax.lax.switch.html>`_.
     The parameters and semantics are the same as for the Jax version.
 
@@ -401,7 +389,6 @@ def _q_switch_c(index, branches, *operands):
 
     Examples
     --------
-
     We write a script that brings a :ref:`QuantumFloat` into superpostion and
     subsequently measures it. If the measurement result is ``k`` we add ``3-k``
     such that in the end, the float will always be in the $\ket{\text{3}}$
@@ -433,7 +420,6 @@ def _q_switch_c(index, branches, *operands):
         # 3.0
 
     """
-
     if not check_for_tracing_mode():
         return branches[index](*operands)
 
@@ -493,9 +479,7 @@ def _q_switch_c(index, branches, *operands):
 
 
 def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
-    r"""
-
-    **Classical index**
+    r"""**Classical index**
 
     Jasp compatible version of
     `jax.lax.switch <https://docs.jax.dev/en/latest/_autosummary/jax.lax.switch.html>`_.
@@ -549,7 +533,6 @@ def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
 
     Examples
     --------
-
     **Classical index**
 
     We write a script that brings a :ref:`QuantumFloat` into superpostion and
@@ -616,7 +599,6 @@ def q_switch(index, branches, *operands, branch_amount=None, method="auto"):
         # (3.0, 3.0): 0.12499999441206447}
 
     """
-
     from qrisp.alg_primitives.program_control.quantum_switch import _q_switch_q
     from qrisp.circuit import Qubit
     from qrisp.core import QuantumVariable

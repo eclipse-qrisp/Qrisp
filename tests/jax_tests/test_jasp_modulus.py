@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,12 +15,14 @@
 ********************************************************************************
 """
 
-import random
-import pytest
 import math
+import random
+
 import jax
 import jax.numpy as jnp
 import numpy as np
+import pytest
+
 from qrisp import *
 
 CREATE_MEASURE_SEEDS = [0, 1, 2]
@@ -39,8 +40,7 @@ def mask_for_size(size: int) -> int:
 
 
 def _digits_array(maybe_bi):
-    """
-    Return the digits array whether input is a BigInteger or a raw JAX/Numpy array.
+    """Return the digits array whether input is a BigInteger or a raw JAX/Numpy array.
     """
     if isinstance(maybe_bi, (jnp.ndarray, np.ndarray)):
         return maybe_bi
@@ -50,8 +50,7 @@ def _digits_array(maybe_bi):
 
 
 def to_int(maybe_bi) -> int:
-    """
-    Convert a BigInteger (or its digits array) to a Python int exactly.
+    """Convert a BigInteger (or its digits array) to a Python int exactly.
     """
     ds = np.asarray(_digits_array(maybe_bi), dtype=np.uint64).tolist()
     acc = 0
@@ -61,8 +60,7 @@ def to_int(maybe_bi) -> int:
 
 
 def limbs_to_int(limbs) -> int:
-    """
-    Convert a list of uint32 limbs (little-endian) to a Python int.
+    """Convert a list of uint32 limbs (little-endian) to a Python int.
     """
     acc = 0
     for i, d in enumerate(limbs):
@@ -244,7 +242,8 @@ def test_modulus_qq_multiply_standard_form():
     """Regression test: qq_montgomery_multiply_modulus must work when both
     inputs are in standard form (m=0).  Before the fix, the function used x.m
     directly as the reduction shift, which was 0 for standard-form inputs and
-    produced wrong results."""
+    produced wrong results.
+    """
     from qrisp import QuantumModulus, jaspify, measure
 
     @jaspify
@@ -280,7 +279,7 @@ _TRACED_BI_PRIMES = [7, 13, 31, 97]
 
 @pytest.mark.parametrize("p", _TRACED_BI_PRIMES)
 def test_qq_multiply_traced_biginteger_zeros(p):
-    """qq multiply with traced BigInteger modulus — both inputs default (0)."""
+    """Qq multiply with traced BigInteger modulus — both inputs default (0)."""
 
     @jaspify
     def run(N):
@@ -304,7 +303,7 @@ def test_qq_multiply_traced_biginteger_zeros(p):
     ],
 )
 def test_qq_multiply_traced_biginteger(p, a_val, b_val):
-    """qq multiply with traced BigInteger modulus — non-trivial values."""
+    """Qq multiply with traced BigInteger modulus — non-trivial values."""
 
     @jaspify
     def run(N):

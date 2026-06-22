@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,21 +15,20 @@
 ********************************************************************************
 """
 
+from typing import Any, Union
+
 import numpy.typing as npt
 from scipy.sparse import csr_array, csr_matrix
-from typing import Any, Union
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.block_encodings.constructors.from_operator import build_from_operator
 from qrisp.operators import QubitOperator
 
-
 MatrixType = Union[npt.NDArray[Any], csr_array, csr_matrix]
 
 
 def build_from_array(cls: BlockEncoding, A: MatrixType) -> BlockEncoding:
-    r"""
-    Constructs a BlockEncoding from a 2-D array.
+    r"""Constructs a BlockEncoding from a 2-D array.
 
     Parameters
     ----------
@@ -57,14 +55,12 @@ def build_from_array(cls: BlockEncoding, A: MatrixType) -> BlockEncoding:
 
     Examples
     --------
-
     >>> import numpy as np
     >>> from qrisp.block_encodings import BlockEncoding
     >>> A = np.array([[0,1,0,1],[1,0,0,0],[0,0,1,0],[1,0,0,0]])
     >>> B = BlockEncoding.from_array(A)
 
     """
-
     shape = A.shape
     # 1. Check if the array is 2D and square
     if len(shape) != 2 or shape[0] != shape[1]:

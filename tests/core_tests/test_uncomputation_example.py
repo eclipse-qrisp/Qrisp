@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,9 +17,9 @@
 
 # Created by ann81984 at 07.05.2022
 import numpy as np
-from qrisp import *
 
-from qrisp import QuantumVariable, mcx, cx, QuantumEnvironment, x
+from qrisp import *
+from qrisp import QuantumVariable, cx, mcx, x
 
 
 def test_uncomputation_example():

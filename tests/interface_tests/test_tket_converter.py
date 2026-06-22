@@ -5,21 +5,13 @@ np.random.seed(42)  # Deterministic for reproducible test results
 
 from qrisp import QuantumVariable
 from qrisp.circuit.standard_operations import (
-    Barrier,
-    CPGate,
     CXGate,
     CYGate,
     CZGate,
-    GPhaseGate,
     HGate,
-    IDGate,
     MCRXGate,
     MCXGate,
-    Measurement,
     PGate,
-    QubitAlloc,
-    QubitDealloc,
-    Reset,
     RXGate,
     RXXGate,
     RYGate,
@@ -27,14 +19,10 @@ from qrisp.circuit.standard_operations import (
     RZZGate,
     SGate,
     SwapGate,
-    SXDGGate,
     SXGate,
-    TGate,
-    U1Gate,
     XGate,
     YGate,
     ZGate,
-    u3Gate,
 )
 
 
@@ -126,7 +114,7 @@ def pytket_rand_test():
     print(theRes)
 
     for index4 in list(d.keys()):
-        if not index4 in list(theRes.keys()):
+        if index4 not in list(theRes.keys()):
             print("NOT IN THERE")
             print(index4)
         assert index4 in list(theRes.keys())

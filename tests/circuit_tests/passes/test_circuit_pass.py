@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,11 +17,10 @@
 
 from __future__ import annotations
 
-import numpy as np
 import pytest
+
 from qrisp import CircuitPass
 from qrisp.circuit.quantum_circuit import QuantumCircuit
-
 
 # ---------------------------------------------------------------------------
 # Simple pass helpers
@@ -132,7 +130,8 @@ class TestCircuitPassCall:
 
     def test_call_passes_kwargs_is_equivalent_to_preconfiguration(self):
         """If a pass factory pre-configures kwargs at creation time,
-        the resulting CircuitPass should work with a single positional arg."""
+        the resulting CircuitPass should work with a single positional arg.
+        """
 
         def make_double_h_pass():
             @CircuitPass
@@ -207,7 +206,8 @@ class TestCircuitPassCompareUnitary:
 
     def test_ignore_gphase_false_modifying_pass(self, two_qubit_qc):
         """A pass that changes the unitary should return False regardless
-        of ignore_gphase, because the difference is not just a global phase."""
+        of ignore_gphase, because the difference is not just a global phase.
+        """
         cp = CircuitPass(add_cx_pass)
         assert not cp.compare_unitary(two_qubit_qc, ignore_gphase=False)
         assert not cp.compare_unitary(two_qubit_qc, ignore_gphase=True)
@@ -375,7 +375,6 @@ class TestCircuitPassCompareMeasurement:
         """Adding an X gate before measurement changes the measurement outcomes."""
 
         def add_x_before_measure(qc: QuantumCircuit) -> QuantumCircuit:
-            from qrisp.circuit import Instruction
 
             # Insert X on qubit 0 just before the measurement instructions
             new_qc = qc.clearcopy()
@@ -443,7 +442,8 @@ class TestCircuitPassCompareMeasurement:
 
     def test_no_measurements_different_unitaries_still_pass(self):
         """Measurement-based comparison cannot distinguish unitaries without
-        measurements — the empty distribution is trivially invariant."""
+        measurements — the empty distribution is trivially invariant.
+        """
         qc = QuantumCircuit(2)
         qc.h(0)
         qc.cx(0, 1)
@@ -536,7 +536,8 @@ class TestCircuitPassCompareMeasurement:
 
     def test_detects_new_outcome_key(self):
         """When the pass introduces a completely new measurement outcome,
-        compare_measurement should detect it."""
+        compare_measurement should detect it.
+        """
 
         def swap_qubits_pass(qc: QuantumCircuit) -> QuantumCircuit:
             new_qc = qc.clearcopy()
@@ -566,7 +567,7 @@ class TestCircuitPassVisualize:
     """Test the visualize() console output method."""
 
     def test_visualize_does_not_mutate_input(self, two_qubit_qc):
-        """visualize must not modify the input circuit."""
+        """Visualize must not modify the input circuit."""
         original_data = list(two_qubit_qc.data)
         cp = CircuitPass(identity_pass)
         cp.visualize(two_qubit_qc)

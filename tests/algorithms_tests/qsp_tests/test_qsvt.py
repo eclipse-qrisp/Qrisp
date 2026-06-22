@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,10 +17,11 @@
 
 import numpy as np
 import pytest
+
 from qrisp import *
-from qrisp.block_encodings import BlockEncoding
 from qrisp.algorithms.gqsp import inversion
 from qrisp.algorithms.gqsp.qsvt import QSVT
+from qrisp.block_encodings import BlockEncoding
 
 
 def evaluate_parity_polynomial(poly, S, parity):
@@ -47,7 +47,6 @@ def evaluate_parity_polynomial(poly, S, parity):
 )
 def test_qsvt(poly, parity):
     """Test QSVT on a small 4x4 matrix with a simple polynomial transformation."""
-
     # Define non-Hermitian matrix A
     # [[3. 1. 0. 0.]
     # [0. 3. 1. 0.]
@@ -103,7 +102,6 @@ def test_qsvt(poly, parity):
 
 def test_qsvt_inversion():
     """Test QSVT-based inversion on a small 4x4 matrix."""
-
     # Define non-Hermitian matrix A
     # [[3. 1. 0. 0.]
     # [0. 3. 1. 0.]

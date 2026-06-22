@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,14 +15,13 @@
 ********************************************************************************
 """
 
-from qrisp.core.gate_application_functions import h
 from qrisp.alg_primitives.qft import QFT
+from qrisp.core.gate_application_functions import h
 from qrisp.jasp import jrange
 
 
 def QPE(args, U, precision=None, target=None, iter_spec=False, ctrl_method=None, kwargs={}):
-    r"""
-    Evaluates the `quantum phase estimation algorithm
+    r"""Evaluates the `quantum phase estimation algorithm
     <https://en.wikipedia.org/wiki/Quantum_phase_estimation_algorithm>`_.
 
     The unitary to estimate is expected to be given as Python function, which is called
@@ -65,7 +63,6 @@ def QPE(args, U, precision=None, target=None, iter_spec=False, ctrl_method=None,
 
     Examples
     --------
-
     We define a function that applies two phase gates onto its input and estimate the
     applied phase. ::
 
@@ -121,7 +118,6 @@ def QPE(args, U, precision=None, target=None, iter_spec=False, ctrl_method=None,
     34
 
     """
-
     from qrisp import QuantumFloat, control
 
     if target is None:

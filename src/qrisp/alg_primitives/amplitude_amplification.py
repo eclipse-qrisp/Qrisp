@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -20,7 +19,7 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 from qrisp.alg_primitives.reflection import reflection
-from qrisp.core import QuantumVariable, QuantumArray, merge, recursive_qs_search
+from qrisp.core import QuantumArray, QuantumVariable, merge, recursive_qs_search
 from qrisp.environments import IterationEnvironment
 from qrisp.jasp import check_for_tracing_mode, jrange
 
@@ -33,8 +32,7 @@ def amplitude_amplification(
     iter: int = 1,
     reflection_indices: list[int] | None = None,
 ) -> None:
-    r"""
-    This method performs `quantum amplitude amplification <https://arxiv.org/abs/quant-ph/0005055>`_.
+    r"""This method performs `quantum amplitude amplification <https://arxiv.org/abs/quant-ph/0005055>`_.
 
     The problem of quantum amplitude amplification is described as follows:
 
@@ -89,7 +87,6 @@ def amplitude_amplification(
 
     Examples
     --------
-
     We define a function that prepares the state :math:`\ket{\Psi}=\cos(\frac{\pi}{16})\ket{0}+\sin(\frac{\pi}{16})\ket{1}`
     and an oracle that tags the good state :math:`\ket{1}`. In this case, we have :math:`a=\sin^2(\frac{\pi}{16})\approx 0.19509`.
 
@@ -126,7 +123,6 @@ def amplitude_amplification(
     0.19509*|False> + 0.98079*|True>
 
     """
-
     if kwargs_oracle is None:
         kwargs_oracle = {}
 

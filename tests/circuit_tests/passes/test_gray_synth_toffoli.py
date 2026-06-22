@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,18 +18,15 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from qrisp import QuantumCircuit, Qubit
-from qrisp.circuit import ControlledOperation, XGate
-from qrisp.circuit.standard_operations import MCXGate
-
+from qrisp.circuit import XGate
 from qrisp.circuit.pass_management.passes.gray_synth_toffoli import (
-    is_toffoli,
     _get_gray_toffoli_qc,
     gray_synth_toffoli,
+    is_toffoli,
 )
-
+from qrisp.circuit.standard_operations import MCXGate
 
 # ------------------------------------------------------------------
 # Helpers
@@ -206,7 +202,8 @@ class TestGraySynthToffoliPass:
 
 class TestGraySynthToffoliCorrectness:
     """Verify gray_synth_toffoli preserves the circuit unitary using the
-    standard compare_unitary API."""
+    standard compare_unitary API.
+    """
 
     def test_unitary_equivalence_single(self):
         qc, qubits = _make_circuit(3)

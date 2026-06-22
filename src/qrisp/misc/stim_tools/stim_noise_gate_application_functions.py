@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,10 +16,11 @@
 """
 
 import stim
+from sympy import symbols
+
 from qrisp.core import append_operation
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.misc.stim_tools.error_class import StimNoiseGate
-from sympy import symbols
 
 greek_letters = symbols(
     "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega"
@@ -28,8 +28,7 @@ greek_letters = symbols(
 
 
 def stim_noise(stim_name, *parameters_and_qubits, pauli_string=None):
-    """
-    Applies a ``StimNoiseGate`` to the given qubits.
+    """Applies a ``StimNoiseGate`` to the given qubits.
 
     For a list of supported error instructions, please check `Stims gate reference <https://github.com/quantumlib/Stim/blob/main/doc/gates.md#noise-channels>`_.
 
@@ -84,7 +83,6 @@ def stim_noise(stim_name, *parameters_and_qubits, pauli_string=None):
 
     Examples
     --------
-
     We construct a noisy Bell-pair using the :func:`~qrisp.jasp.extract_stim` decorator.
 
     ::
@@ -132,12 +130,11 @@ def stim_noise(stim_name, *parameters_and_qubits, pauli_string=None):
 
 
     """
-
     error_data = stim.gate_data(stim_name)
 
     if pauli_string is not None:
         # Check for compatibility
-        if not (stim_name in ["E", "CORRELATED_ERROR", "ELSE_CORRELATED_ERROR"]):
+        if stim_name not in ["E", "CORRELATED_ERROR", "ELSE_CORRELATED_ERROR"]:
             raise Exception(
                 f"Stim error {stim_name} does not support Pauli strings. Supported gates are E, CORRELATED_ERROR, ELSE_CORRELATED_ERROR"
             )

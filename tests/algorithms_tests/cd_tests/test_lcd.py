@@ -1,4 +1,5 @@
 import numpy as np
+
 from qrisp.algorithms.cold import solve_QUBO
 
 

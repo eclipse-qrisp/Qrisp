@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,9 +17,10 @@
 
 import numpy as np
 import pytest
+from qrisp.gqsp import dalzell_inversion
+
 from qrisp import *
 from qrisp.block_encodings import BlockEncoding
-from qrisp.gqsp import dalzell_inversion
 
 
 @pytest.mark.parametrize(
@@ -41,7 +41,6 @@ from qrisp.gqsp import dalzell_inversion
 )
 def test_dalzell_inversion(A, b):
     """Test Dalzell's inversion algorithm on a small 4x4 matrix."""
-
     BA = BlockEncoding.from_array(A)
 
     # All singular values of (A / alpha) must lie in [1 / kappa, 1]

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -49,7 +48,7 @@ class DynamicQubitArray:
 
         qs = TracingQuantumSession.get_instance()
         id_tuple = (id(self.tracer), id(key))
-        if not id_tuple in qs.qubit_cache:
+        if id_tuple not in qs.qubit_cache:
             qs.qubit_cache[id_tuple] = get_qubit(self.tracer, key)
         return qs.qubit_cache[id_tuple]
 

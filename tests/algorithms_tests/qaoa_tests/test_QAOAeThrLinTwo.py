@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,7 +15,8 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable
+import itertools
+
 from qrisp.qaoa import (
     QAOAProblem,
     RX_mixer,
@@ -24,7 +24,8 @@ from qrisp.qaoa import (
     create_e3lin2_cl_cost_function,
     create_e3lin2_cost_operator,
 )
-import itertools
+
+from qrisp import QuantumVariable
 
 
 def test_eThrLinTwoQAOA():

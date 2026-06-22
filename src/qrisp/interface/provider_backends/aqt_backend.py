@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -59,8 +58,7 @@ def _map_aqt_status(aqt_job) -> JobStatus:
 
 
 class AQTJob(Job):
-    """
-    A :class:`~qrisp.interface.Job` that wraps a single AQT primitive job.
+    """A :class:`~qrisp.interface.Job` that wraps a single AQT primitive job.
 
     One ``AQTJob`` is created per :meth:`AQTBackend.run_async` call.
     The underlying AQT job is already submitted before this object is returned;
@@ -77,7 +75,8 @@ class AQTJob(Job):
 
     def __init__(self, backend: "AQTBackend", aqt_job, cl_bits_per_circuit: list[int]):
         """Initialise the wrapper with the Qrisp backend, the AQT job, and the
-        per-circuit classical-bit counts needed to format result bitstrings."""
+        per-circuit classical-bit counts needed to format result bitstrings.
+        """
         super().__init__(backend=backend)
         self._aqt_job = aqt_job
         self._cl_bits_per_circuit = cl_bits_per_circuit
@@ -91,8 +90,7 @@ class AQTJob(Job):
         self._last_known_status = JobStatus.QUEUED
 
     def result(self, timeout: float | None = None) -> JobResult:
-        """
-        Block until the AQT job finishes and return the :class:`~qrisp.interface.JobResult`.
+        """Block until the AQT job finishes and return the :class:`~qrisp.interface.JobResult`.
 
         Waiting is delegated to the AQT job's own blocking ``result()`` call.
 
@@ -112,6 +110,7 @@ class AQTJob(Job):
             If the AQT job failed or raised an exception.
         JobCancelledError
             If the AQT job was cancelled.
+
         """
         try:
             aqt_result = self._aqt_job.result()
@@ -133,13 +132,13 @@ class AQTJob(Job):
         return JobResult(result_dicts)
 
     def cancel(self) -> bool:
-        """
-        AQT does not expose a job cancellation API.
+        """AQT does not expose a job cancellation API.
 
         Returns
         -------
         bool
             Always ``False``.
+
         """
         return False
 
@@ -150,8 +149,7 @@ class AQTJob(Job):
 
 
 class AQTBackend(Backend):
-    """
-    A :class:`~qrisp.interface.Backend` that executes circuits on AQT
+    """A :class:`~qrisp.interface.Backend` that executes circuits on AQT
     quantum hardware via `AQT ARNICA <https://www.aqt.eu/products/arnica/>`_.
 
     Circuits are transpiled from Qrisp's internal representation to Qiskit
@@ -191,7 +189,6 @@ class AQTBackend(Backend):
 
     Examples
     --------
-
     We evaluate a :ref:`QuantumFloat` multiplication on the 12-qubit AQT IBEX:
 
     >>> from qrisp import QuantumFloat
@@ -206,6 +203,7 @@ class AQTBackend(Backend):
     >>> b = a * a
     >>> b.get_measurement(backend=qrisp_ibex, shots=100)
     {4: 0.49, 8: 0.11, 2: 0.08, 0: 0.06, ...}
+
     """
 
     def __init__(self, api_token: str, device_instance: str, workspace: str | None = None):
@@ -251,8 +249,7 @@ class AQTBackend(Backend):
         return value if isinstance(value, int) else None
 
     def run_async(self, circuits, shots: int | list[int] | None = None) -> AQTJob:
-        """
-        Transpile and submit one or more circuits to the AQT backend.
+        """Transpile and submit one or more circuits to the AQT backend.
 
         This method returns an ``AQTJob`` immediately.  Call
         ``Job.result`` on the returned object to block and retrieve the
@@ -272,8 +269,8 @@ class AQTBackend(Backend):
         Returns
         -------
         AQTJob
-        """
 
+        """
         if isinstance(circuits, QuantumCircuit):
             circuits = [circuits]
         else:

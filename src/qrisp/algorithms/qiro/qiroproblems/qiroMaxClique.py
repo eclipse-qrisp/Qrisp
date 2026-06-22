@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,16 +15,16 @@
 ********************************************************************************
 """
 
-from qrisp import rz, rzz, x
-import numpy as np
 import copy
+
 import networkx as nx
+
+from qrisp import rz, rzz
 from qrisp.algorithms.qiro.qiroproblems.qiro_utils import *
 
 
 def create_max_clique_replacement_routine(res, problem_updated):
-    """
-    Creates a replacement routine for the problem structure, i.e., defines the replacement rules.
+    """Creates a replacement routine for the problem structure, i.e., defines the replacement rules.
     See the `original paper <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_ for a description of the update rules.
 
     Parameters
@@ -78,36 +77,34 @@ def create_max_clique_replacement_routine(res, problem_updated):
             new_graph.remove_node(max_item)
             exclusions.append(max_item)
 
-    else:
-        if sign > 0:
-            # keep the two items in solution and remove all that are not adjacent to both
+    elif sign > 0:
+        # keep the two items in solution and remove all that are not adjacent to both
 
-            intersect = list(set(list(graph.adj[max_item[0]].keys())) & set(list(graph.adj[max_item[0]].keys())))
-            intersect.append(max_item[0])
-            intersect.append(max_item[1])
-            to_remove = [int(item) for item in graph.nodes() if item not in intersect]
-            new_graph.remove_nodes_from([item for item in graph.nodes() if item not in intersect])
-            solutions.append(max_item[0])
-            solutions.append(max_item[1])
-            exclusions += to_remove
+        intersect = list(set(list(graph.adj[max_item[0]].keys())) & set(list(graph.adj[max_item[0]].keys())))
+        intersect.append(max_item[0])
+        intersect.append(max_item[1])
+        to_remove = [int(item) for item in graph.nodes() if item not in intersect]
+        new_graph.remove_nodes_from([item for item in graph.nodes() if item not in intersect])
+        solutions.append(max_item[0])
+        solutions.append(max_item[1])
+        exclusions += to_remove
 
-        elif sign < 0:
-            # remove all that do not border on either! node
-            union = list(graph.adj[max_item[0]].keys())
-            union += list(graph.adj[max_item[1]].keys())
-            union.append(max_item[0])
-            union.append(max_item[1])
-            to_remove = [int(item) for item in graph.nodes() if item not in union]
-            # to_delete = [item for item in graph.nodes() if item not in union]
-            new_graph.remove_nodes_from(to_remove)
-            exclusions += to_remove
+    elif sign < 0:
+        # remove all that do not border on either! node
+        union = list(graph.adj[max_item[0]].keys())
+        union += list(graph.adj[max_item[1]].keys())
+        union.append(max_item[0])
+        union.append(max_item[1])
+        to_remove = [int(item) for item in graph.nodes() if item not in union]
+        # to_delete = [item for item in graph.nodes() if item not in union]
+        new_graph.remove_nodes_from(to_remove)
+        exclusions += to_remove
 
     return new_graph, solutions, sign, exclusions
 
 
 def create_max_clique_cost_operator_reduced(problem_updated):
-    r"""
-    Creates the ``cost_operator`` for the problem instance.
+    r"""Creates the ``cost_operator`` for the problem instance.
     This operator is adjusted to consider qubits that were found to be a part of the problem solution.
 
     Parameters
@@ -133,7 +130,7 @@ def create_max_clique_cost_operator_reduced(problem_updated):
             rz(-gamma, qv[pair[0]])
             rz(-gamma, qv[pair[1]])
         for i in problem.nodes():
-            if not i in solutions:
+            if i not in solutions:
                 rz(gamma, qv[i])
 
     return cost_operator

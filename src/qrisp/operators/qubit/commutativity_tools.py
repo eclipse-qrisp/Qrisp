@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -20,8 +19,7 @@ import numpy as np
 
 
 def inverse_mod2(matrix):
-    """
-    Calculates the inverse of a binary matrix over the field of integers modulo 2.
+    """Calculates the inverse of a binary matrix over the field of integers modulo 2.
 
     Parameters
     ----------
@@ -63,8 +61,7 @@ def inverse_mod2(matrix):
 
 
 def gaussian_elimination_mod2(matrix, type="row", reduced=False, show_pivots=False):
-    r"""
-    Performs Gaussian elimination in the field $F_2$.
+    r"""Performs Gaussian elimination in the field $F_2$.
 
     Parameters
     ----------
@@ -87,7 +84,6 @@ def gaussian_elimination_mod2(matrix, type="row", reduced=False, show_pivots=Fal
         A list of indices for the pivot columns (rows).
 
     """
-
     matrix = matrix.copy()
 
     rows, columns = matrix.shape
@@ -160,8 +156,7 @@ def gaussian_elimination_mod2(matrix, type="row", reduced=False, show_pivots=Fal
 
 
 def construct_change_of_basis(S):
-    """
-    Implements the CZ construction outlined in https://quantum-journal.org/papers/q-2021-01-20-385/.
+    """Implements the CZ construction outlined in https://quantum-journal.org/papers/q-2021-01-20-385/.
 
     Parameters
     ----------
@@ -182,7 +177,6 @@ def construct_change_of_basis(S):
         A vector repesenting a permutation.
 
     """
-
     n = int(S.shape[0] / 2)
 
     ####################

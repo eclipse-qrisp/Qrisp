@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,29 +16,19 @@
 """
 
 import numpy as np
-import networkx as nx
 
 from qrisp.circuit import (
-    QuantumCircuit,
-    Operation,
-    Qubit,
-    PTControlledOperation,
     ControlledOperation,
-    transpile,
     Instruction,
+    PTControlledOperation,
+    QuantumCircuit,
+    Qubit,
     fast_append,
-    RXGate,
-    RYGate,
-    RZGate,
-    RZZGate,
-    PGate,
-    GPhaseGate,
-    ClControlledOperation,
-    U3Gate,
+    transpile,
 )
 from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
 from qrisp.misc import get_depth_dic, retarget_instructions
-from qrisp.permeability import optimize_allocations, parallelize_qc, lightcone_reduction
+from qrisp.permeability import lightcone_reduction, optimize_allocations, parallelize_qc
 
 # The purpose of this function is to dynamically (de)allocate qubits when they are
 # needed or not needed anymore. The qompiler function knows when a qubit is ready to
@@ -129,9 +118,9 @@ def qompiler(
         #   can also look into reordering the inner structure of high-level functions to also
         #   get a good allocation strategy for this type of functions.
 
+        from qrisp.alg_primitives.arithmetic import QuasiRZZ
         from qrisp.alg_primitives.logic_synthesis import LogicSynthGate
         from qrisp.alg_primitives.mcx_algs import GidneyLogicalAND, JonesToffoli
-        from qrisp.alg_primitives.arithmetic import QuasiRZZ
 
         def allocation_level_transpile_predicate(op):
 
@@ -437,7 +426,7 @@ def qompiler(
         workspace_naming_counter = 0
         td_values = list(translation_dic.values())
         for i in range(len(qc.qubits)):
-            if not qc.qubits[i] in td_values:
+            if qc.qubits[i] not in td_values:
                 qc.qubits[i].identifier = "workspace_" + str(workspace_naming_counter)
                 workspace_naming_counter += 1
                 sorted_qubit_list.append(qc.qubits[i])
@@ -458,8 +447,8 @@ def gen_hybrid_mcx_data(controls, target, ctrl_state, clean_ancillae, dirty_anci
 
     # This function generates the data for the hybrid mcx implementation
 
-    from qrisp.core import QuantumVariable
     from qrisp.alg_primitives.mcx_algs import hybrid_mcx
+    from qrisp.core import QuantumVariable
 
     # Specify QuantumVariables to call mcx function
     control_qv = QuantumVariable(len(controls), name="control")
@@ -509,7 +498,7 @@ def gen_hybrid_mcx_data(controls, target, ctrl_state, clean_ancillae, dirty_anci
     i = 0
     # Remove (de)allocation gates
     while i < len(data):
-        if data[i].op.name in ["qb_dealloc", "qb_alloc"] and not data[i].qubits[0] in used_clean_ancillae:
+        if data[i].op.name in ["qb_dealloc", "qb_alloc"] and data[i].qubits[0] not in used_clean_ancillae:
             data.pop(i)
             continue
         i += 1
@@ -607,7 +596,7 @@ def qft_cancellation(qc):
                 if previous_instruction.op.num_qubits != instr.op.num_qubits:
                     break
 
-                if not qb in previous_instruction.qubits:
+                if qb not in previous_instruction.qubits:
                     break
 
                 if tuple(previous_instruction.qubits) != tuple(instr.qubits):

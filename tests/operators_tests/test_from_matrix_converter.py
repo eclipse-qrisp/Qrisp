@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,6 +17,7 @@
 
 from scipy.sparse import random as random_sparse
 from scipy.sparse.linalg import norm
+
 from qrisp.operators import QubitOperator
 
 

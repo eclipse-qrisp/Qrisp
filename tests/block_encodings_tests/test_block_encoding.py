@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -20,8 +19,8 @@ import numpy as np
 import pytest
 
 from qrisp import (
-    QuantumVariable,
     QuantumFloat,
+    QuantumVariable,
     cx,
     h,
     jaspify,
@@ -300,8 +299,8 @@ def test_block_encoding_alpha_dynamic():
 def test_block_encoding_dagger():
     """This test verifies that the dagger of a block-encoding correctly implements the Hermitian conjugate of the operator.
     We construct a block-encoding for a non-Hermitian matrix A, apply the dagger to get a block-encoding for A^†,
-    and then use it to perform state transformation and compare with classical results."""
-
+    and then use it to perform state transformation and compare with classical results.
+    """
     N = 8
     A = np.eye(N, k=1) + 1 * np.eye(N)
     A[N - 1, 0] = 1

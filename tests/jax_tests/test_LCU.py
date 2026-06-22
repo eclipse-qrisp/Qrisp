@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,11 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable, h, x, LCU
-from qrisp.jasp import terminal_sampling
-from qrisp.operators import X, Y, Z
 import numpy as np
+
+from qrisp import LCU, QuantumVariable, h, x
+from qrisp.jasp import terminal_sampling
+from qrisp.operators import X, Z
 
 
 # A = I + X

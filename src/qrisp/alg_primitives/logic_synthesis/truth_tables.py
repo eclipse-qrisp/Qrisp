@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,8 +18,8 @@
 import numpy as np
 import sympy as sp
 
-from qrisp.misc import int_as_array
 from qrisp.circuit import Operation, QuantumCircuit
+from qrisp.misc import int_as_array
 
 
 # Class to describe truth tables

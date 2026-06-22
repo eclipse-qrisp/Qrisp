@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,7 +17,7 @@
 
 # -*- coding: utf-8 -*-
 
-from qrisp.simulator.bi_arrays import DenseBiArray, SparseBiArray, tensordot, BiArray
+from qrisp.simulator.bi_arrays import BiArray, DenseBiArray, SparseBiArray, tensordot
 from qrisp.simulator.numerics_config import float_thresh, xp
 
 # tensordot = xp.tensordot

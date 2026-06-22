@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,20 +15,20 @@
 ********************************************************************************
 """
 
-import random
 import math
+import random
+
+import jax.numpy as jnp
 import numpy as np
 import pytest
-import jax.numpy as jnp
 
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic import (
     BigInteger,
-    bi_modinv,
-    bi_montgomery_encode,
-    bi_montgomery_decode,
     bi_extended_euclidean,
+    bi_modinv,
+    bi_montgomery_decode,
+    bi_montgomery_encode,
 )
-
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BASE
 
 # ----------------- Global parameter lists -----------------
@@ -102,8 +101,7 @@ def mask_for_size(size: int) -> int:
 
 
 def _digits_array(maybe_bi):
-    """
-    Return the digits array whether input is a BigInteger or a raw JAX/Numpy array.
+    """Return the digits array whether input is a BigInteger or a raw JAX/Numpy array.
     """
     if isinstance(maybe_bi, (jnp.ndarray, np.ndarray)):
         return maybe_bi
@@ -113,8 +111,7 @@ def _digits_array(maybe_bi):
 
 
 def to_int(maybe_bi) -> int:
-    """
-    Convert a BigInteger (or its digits array) to a Python int exactly.
+    """Convert a BigInteger (or its digits array) to a Python int exactly.
     """
     ds = np.asarray(_digits_array(maybe_bi), dtype=np.uint64).tolist()
     acc = 0
@@ -124,8 +121,7 @@ def to_int(maybe_bi) -> int:
 
 
 def limbs_to_int(limbs) -> int:
-    """
-    Convert a list of uint32 limbs (little-endian) to a Python int.
+    """Convert a list of uint32 limbs (little-endian) to a Python int.
     """
     acc = 0
     for i, d in enumerate(limbs):
@@ -138,8 +134,7 @@ def random_limbs(size):
 
 
 def mk_bigint_dynamic_by_base_digits(digits_le, size):
-    """
-    Dynamically build a BigInteger from base-2^32 digits using only
+    """Dynamically build a BigInteger from base-2^32 digits using only
     small create(...) calls and multiplication by BASE, avoiding passing
     huge Python ints to create(...).
 

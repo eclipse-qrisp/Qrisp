@@ -1,5 +1,3 @@
-import numpy as np
-import scipy
 import matplotlib.pyplot as plt
 
 # from  8 up until 26 nodes

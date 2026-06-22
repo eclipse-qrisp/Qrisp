@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,14 +16,16 @@
 """
 
 import math
+
 import numpy as np
 import pytest
+
 from qrisp import QuantumVariable
-from qrisp.core import h, x
-from qrisp.alg_primitives.unbalanced_w_state import unbalanced_w_state
 from qrisp.alg_primitives.dicke_state_prep import dicke_state
-from qrisp.jasp import terminal_sampling
+from qrisp.alg_primitives.unbalanced_w_state import unbalanced_w_state
+from qrisp.core import h, x
 from qrisp.environments import control, invert
+from qrisp.jasp import terminal_sampling
 
 #############################################################
 ##################### Dicke state tests #####################
@@ -277,7 +278,7 @@ def test_unbalanced_w_state_fail_len_check():
     with pytest.raises(ValueError) as exc_info:
         unbalanced_w_state(qv, amps)
 
-    assert f"Length of amplitudes" in str(exc_info.value)
+    assert "Length of amplitudes" in str(exc_info.value)
 
 
 def test_unbalanced_w_state_fail_zero_vector():
@@ -289,7 +290,7 @@ def test_unbalanced_w_state_fail_zero_vector():
     with pytest.raises(ValueError) as exc_info:
         unbalanced_w_state(qv, amps)
 
-    assert f"Amplitude vector must be non-zero." in str(exc_info.value)
+    assert "Amplitude vector must be non-zero." in str(exc_info.value)
 
 
 def test_unbalanced_w_state_one_qubit_jasp():

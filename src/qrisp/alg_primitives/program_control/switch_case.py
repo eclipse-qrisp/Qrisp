@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -46,8 +45,7 @@ def _invert_inpl_function(func):
 
 # DEPRECATED FUNCTIONALITY
 def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=False, ctrl=None):
-    r"""
-    Executes a switch - case statement distinguishing between a list of
+    r"""Executes a switch - case statement distinguishing between a list of
     given in-place functions.
 
     More precisely, the qswitch applies the unitary $U_i$ to the operand in state $\ket{\psi}$ given that the case variable is in state $\ket{i}$, i.e.,
@@ -76,7 +74,6 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
 
     Examples
     --------
-
     First, we consider the case where ``case_function`` is a **list of functions**:
 
     We create some sample functions:
@@ -129,7 +126,6 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
     {(0, 1): 0.25, (1, 2): 0.25, (2, 4): 0.25, (3, 8): 0.25}
 
     """
-
     warnings.warn(
         "The 'qswitch(operand, case, case_function)' interface is deprecated and will be "
         "removed in a future release. Please migrate to 'q_switch(index, branches, *operands)'. "
@@ -174,13 +170,12 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
                             case_function(i, operand)
                         else:
                             case_function[i](operand)
+                    elif is_function_mode:
+                        with control(ctrl):
+                            case_function(i, operand)
                     else:
-                        if is_function_mode:
-                            with control(ctrl):
-                                case_function(i, operand)
-                        else:
-                            with control(ctrl):
-                                case_function[i](operand)
+                        with control(ctrl):
+                            case_function[i](operand)
 
         control_qbl.delete()
 
@@ -219,13 +214,12 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
                                 case_function(i, qa[i])
                             else:
                                 case_function[i](qa[i])
+                        elif is_function_mode:
+                            with control(ctrl):
+                                case_function(i, qa[i])
                         else:
-                            if is_function_mode:
-                                with control(ctrl):
-                                    case_function(i, qa[i])
-                            else:
-                                with control(ctrl):
-                                    case_function[i](qa[i])
+                            with control(ctrl):
+                                case_function[i](qa[i])
 
         qa.delete()
 

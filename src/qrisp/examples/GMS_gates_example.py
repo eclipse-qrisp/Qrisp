@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,7 +17,7 @@
 
 import numpy as np
 
-from qrisp import QuantumVariable, cp, transpile, x, h
+from qrisp import QuantumVariable, cp, h, transpile
 from qrisp.misc.GMS_tools import (
     gms_multi_cp_gate,
     gms_multi_cx_fan_out,

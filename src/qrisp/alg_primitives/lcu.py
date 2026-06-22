@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,16 +15,16 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumFloat, conjugate, measure
-from qrisp.jasp import make_jaspr, q_switch, RUS
-from qrisp.algorithms.grover.grover_tools import tag_state
-from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
 import numpy as np
+
+from qrisp import QuantumFloat, conjugate, measure
+from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
+from qrisp.algorithms.grover.grover_tools import tag_state
+from qrisp.jasp import RUS, make_jaspr, q_switch
 
 
 def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
-    r"""
-    Core implementation of the Linear Combination of Unitaries (LCU) protocol without
+    r"""Core implementation of the Linear Combination of Unitaries (LCU) protocol without
     Repeat-Until-Success (RUS) protocol. The LCU method is a foundational quantum algorithmic
     primitive that enables the application of a non-unitary operator $A$, expressed as a weighted
     sum of unitaries $U_i$ as $A=\sum_i\alpha_i U_i$, to a quantum state, by embedding $A$ into a larger unitary circuit. This is
@@ -102,7 +101,6 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=
 
     Examples
     --------
-
     As a **first example**, we apply the non-unitary operator $A$ to the operand $\ket{\psi}=\ket{1}$ where
 
     .. math::
@@ -164,16 +162,14 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=
     implementing (up to rescaling) the non-unitary operator $A$ acting on the input state $\ket{\psi}=\ket{1}$.
 
     """
-
     operand = operand_prep()
 
     if not callable(unitaries):
         if not isinstance(unitaries, list):
             raise TypeError("unitaries must be callable or list[callable].")
         num_unitaries = len(unitaries)
-    else:
-        if num_unitaries == None:
-            raise ValueError("The number of unitiaries must be specified if unitaries is callable.")
+    elif num_unitaries == None:
+        raise ValueError("The number of unitiaries must be specified if unitaries is callable.")
 
     # Specify the QunatumVariable that indicates which case to execute
     n = np.int64(np.ceil(np.log2(num_unitaries)))
@@ -202,8 +198,7 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=
 
 
 def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
-    r"""
-    Full implementation of the Linear Combination of Unitaries (LCU) algorithmic primitive using the
+    r"""Full implementation of the Linear Combination of Unitaries (LCU) algorithmic primitive using the
     Repeat-Until-Success (RUS) protocol.
 
     This function constructs and executes the LCU protocol using the provided state preparation function
@@ -256,7 +251,6 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
 
     Examples
     --------
-
     As a **first example**, we apply the non-unitary operator $A$ to the operand $\ket{\psi}=\ket{1}$ where
 
     .. math::
@@ -392,7 +386,6 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
     which are exactly the probabilities we obsered in the quantum simulation!
 
     """
-
     case_indicator, qv = inner_LCU(operand_prep, state_prep, unitaries, num_unitaries, oaa_iter)
 
     # Success condition
@@ -407,8 +400,7 @@ LCU.__doc__ = temp_docstring
 
 
 def view_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
-    r"""
-    Generate and return the quantum circuit for the LCU algorithm without utilizing
+    r"""Generate and return the quantum circuit for the LCU algorithm without utilizing
     the Repeat-Until-Success (RUS) protocol.
 
     This function constructs the LCU primitive and returns the corresponding quantum
@@ -447,7 +439,6 @@ def view_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
 
     Examples
     --------
-
     ::
 
         from qrisp import *
@@ -490,14 +481,12 @@ def view_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
     The inner workings of the circuit can be further analyzed by calling ``qc.transpile(level: int)``.
 
     """
-
     if not callable(unitaries):
         if not isinstance(unitaries, list):
             raise TypeError("unitaries must be callable or list[callable].")
         num_unitaries = len(unitaries)
-    else:
-        if num_unitaries == None:
-            raise ValueError("The number of unitiaries must be specified if unitaries is callable.")
+    elif num_unitaries == None:
+        raise ValueError("The number of unitiaries must be specified if unitaries is callable.")
 
     jaspr = make_jaspr(inner_LCU)(operand_prep, state_prep, unitaries, num_unitaries)
 

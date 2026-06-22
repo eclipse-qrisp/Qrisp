@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -424,11 +423,10 @@ def sum_path_gidney(a, b, c, R):
             # Perform incrementation function
             if R * j == 0:
                 lin_incr(b_block, c_out=c[j])
+            elif j < len(c):
+                lin_incr(b_block, c[j - 1], c_out=c[j])
             else:
-                if j < len(c):
-                    lin_incr(b_block, c[j - 1], c_out=c[j])
-                else:
-                    lin_incr(b_block, c[j - 1])
+                lin_incr(b_block, c[j - 1])
 
     # Execute addition using the corresponding carry values
     for i in range(len(a) // R + 1)[::-1]:
@@ -538,7 +536,6 @@ c = calc_carry(a, b, radix_base, radix_exponent)
 # gidney_adder(a, b)
 
 print(c)
-from qrisp.interface import QiskitBackend
 
 # print(multi_measurement([a,d,b]))
 # print(b.get_measurement(compilation_kwargs = {"compile_mcm" : True}))

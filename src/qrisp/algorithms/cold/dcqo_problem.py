@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,16 +16,16 @@
 """
 
 import numpy as np
-from scipy.optimize import minimize, Bounds
 import sympy as sp
-from qrisp.algorithms.cold.AGP_params import solve_alpha_gamma_chi
+from scipy.optimize import Bounds, minimize
+
 from qrisp import h, z
+from qrisp.algorithms.cold.AGP_params import solve_alpha_gamma_chi
 from qrisp.operators import QubitOperator
 
 
 class DCQOProblem:
-    """
-    General structure to formulate Digitized Counterdiabatic Quantum Optimization problems.
+    r"""General structure to formulate Digitized Counterdiabatic Quantum Optimization problems.
     This class is used to solve |dcqo_link|
     problems with the algorithms `COLD <https://doi.org/10.1103/PRXQuantum.4.010312>`_
     (counterdiabatic optimized local driving) or LCD (local counterdiabatic driving).
@@ -123,6 +122,7 @@ class DCQOProblem:
     .. |dcqo_link| raw:: html
 
        <a href="https://journals.aps.org/prresearch/abstract/10.1103/PhysRevResearch.4.L042030" target="_blank">DCQO</a>
+
     """
 
     def __init__(
@@ -158,8 +158,7 @@ class DCQOProblem:
         self.lamdot = None
 
     def _precompute_timegrid(self, N_steps, T, method):
-        """
-        Compute lambda(t, T) and the time-derivative lambdadot(t, T)
+        """Compute lambda(t, T) and the time-derivative lambdadot(t, T)
         for each timestep.
 
         Parameters
@@ -177,8 +176,8 @@ class DCQOProblem:
             The parametrized timefunction, specified by ``lam_func`` for t in [0, T].
         lamdot : array
             The time derivative of ``lam_func`` for t in [0, T].
-        """
 
+        """
         # Sympy symbols for t and T
         t_sym, T_sym = sp.symbols("t T", real=True)
         # Array for t values
@@ -212,8 +211,7 @@ class DCQOProblem:
             self.g_deriv = g_deriv
 
     def _precompute_opt_pulses(self, N_steps, T, t_list, N_opt, CRAB=False):
-        """
-        Precompute optimization pulses for COLD routine that will be scaled by optimized paramters.
+        """Precompute optimization pulses for COLD routine that will be scaled by optimized paramters.
 
         Parameters
         ----------
@@ -234,8 +232,8 @@ class DCQOProblem:
             Numpy or sympy (if CRAB) array holding the opt pulse for each timestep.
         cos_matrix :
             Numpy or sympy (if CRAB) array holding the derivative of the opt pulse for each timestep.
-        """
 
+        """
         # Precompute f (sine) and f_deriv (cosine) for each timestep as numpy arrays
         sin_matrix = np.zeros((N_steps, N_opt))
         cos_matrix = np.zeros((N_steps, N_opt))
@@ -256,8 +254,7 @@ class DCQOProblem:
         return sin_matrix, cos_matrix
 
     def apply_lcd_hamiltonian(self, qarg, N_steps, T):
-        """
-        Simulate the local counterdiabatic driving (LCD) Hamiltonian on a
+        """Simulate the local counterdiabatic driving (LCD) Hamiltonian on a
         quantum argument via trotterization. The LCD Hamiltonian consists
         of the system Hamiltonian and the adiabatic gauge potential (AGP).
 
@@ -269,8 +266,8 @@ class DCQOProblem:
             Number of steps in which the timefunction ``lambda`` is split up.
         T : float
             Evolution time for the simulation.
-        """
 
+        """
         self.qarg_prep(qarg)
         dt = T / N_steps
 
@@ -305,8 +302,7 @@ class DCQOProblem:
                 U3(qarg, t=dt * self.lamdot[s] * coeffs[0])
 
     def apply_cold_hamiltonian(self, qarg, N_steps, T, opt_params, CRAB=False):
-        """
-        Simulate counterdiabatic optimized local driving (COLD) Hamiltonian
+        """Simulate counterdiabatic optimized local driving (COLD) Hamiltonian
         on a quantumvariable via trotterization. The COLD Hamiltonian consists
         of the system Hamiltonian, the adiabatic gauge potential (AGP) and
         local pulses (given by ``H_control``) with optimized parameters.
@@ -323,8 +319,8 @@ class DCQOProblem:
             Either the optimized parameters or the corresponding `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
         CRAB : bool, optional
             If ``True``, the CRAB optimization method is being used. The default is ``False``.
-        """
 
+        """
         # Initialize qarg
         self.qarg_prep(qarg)
 
@@ -373,8 +369,7 @@ class DCQOProblem:
             U4(qarg, t=dt * f)
 
     def compile_U_cold(self, qarg, N_opt, N_steps, T, CRAB=False):
-        """
-        Compiles the circuit that is created by the :meth:`apply_cold_hamiltonian <qrisp.cold.DCQOProblem.apply_cold_hamiltonian>` method.
+        """Compiles the circuit that is created by the :meth:`apply_cold_hamiltonian <qrisp.cold.DCQOProblem.apply_cold_hamiltonian>` method.
 
         Parameters
         ----------
@@ -395,7 +390,6 @@ class DCQOProblem:
             The compiled quantum circuit.
 
         """
-
         temp = list(qarg.qs.data)
         # Initzialize parameters as symbols
         params = [sp.Symbol("par_" + str(i)) for i in range(N_opt)]
@@ -421,8 +415,7 @@ class DCQOProblem:
         precision=0.01,
         exp_value_backend=None,
     ):
-        """
-        Subroutine for the optimization method used in COLD.
+        """Subroutine for the optimization method used in COLD.
         The initial values are set and the optimization via is conducted here.
 
         Parameters
@@ -458,8 +451,8 @@ class DCQOProblem:
         -------
         res.x: array
             The optimized parameters of the problem instance.
-        """
 
+        """
         # Different objective functions: exp_value, agp coeffs magnitude, agp coeffs amplitude
 
         # Precompute costs for statevector method
@@ -545,8 +538,7 @@ class DCQOProblem:
         return res.x, objective(res.x, CRAB)
 
     def QUBO_cost(self, res):
-        """
-        Returns the cost y = x^T Q x for a given binary array x.
+        """Returns the cost y = x^T Q x for a given binary array x.
 
         Parameters
         ----------
@@ -578,8 +570,7 @@ class DCQOProblem:
         precision=0.01,
         exp_value_backend=None,
     ):
-        """
-        Run the specific DCQO problem instance with given quantum arguments, number of timesteps,
+        """Run the specific DCQO problem instance with given quantum arguments, number of timesteps,
         evolution time and method.
 
         There is also the option to choose if parameter optimization via the expectation value objective function should be done via a simulator or real quantum backend.
@@ -624,7 +615,6 @@ class DCQOProblem:
             The optimal result after running DCQO problem for a specific problem instance. It contains the measurement results after applying the optimal DCQO circuit to the quantum argument.
 
         """
-
         # If no prep for qarg is specified, use uniform superposition state
         if self.qarg_prep is None:
 
@@ -681,7 +671,7 @@ class DCQOProblem:
             raise ValueError(f'"{method}" is not an option for method. Choose "LCD" or "COLD".')
 
         # Measure qarg
-        if not "shots" in mes_kwargs:
+        if "shots" not in mes_kwargs:
             mes_kwargs["shots"] = 5000
         res_dict = dict(qarg.get_measurement(**mes_kwargs))
 

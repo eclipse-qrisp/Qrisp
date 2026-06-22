@@ -198,6 +198,7 @@ class MeasurementResult(LazyDict):
 
         batched_backend.dispatch()
         print(result)   # {5: 1.0}
+
     """
 
     def __init__(self) -> None:
@@ -227,6 +228,7 @@ class MeasurementResult(LazyDict):
         ----------
         counts : dict
             Raw bitstring-to-count mapping produced by the backend.
+
         """
         self._data = counts
         self._populated = True
@@ -243,6 +245,7 @@ class MeasurementResult(LazyDict):
         ----------
         exc : Exception
             The exception to store and re-raise on access.
+
         """
         self._error = exc
 
@@ -328,6 +331,7 @@ class DecodedMeasurementResult(LazyDict):
 
         print(res_a)        # {3: 1.0}  decoded on first access
         print(res_b)        # {5: 1.0}
+
     """
 
     def __init__(self, raw: LazyDict, decoder: Callable[[int], object]) -> None:
@@ -370,6 +374,7 @@ class MultiMeasurementResult(LazyDict):
         Classical-bit sub-registers, one per variable in *qv_list* (reversed),
         produced by the circuit construction inside
         :func:`~qrisp.multi_measurement`.
+
     """
 
     def __init__(self, raw: MeasurementResult, qv_list: list, cl_reg_list: list) -> None:

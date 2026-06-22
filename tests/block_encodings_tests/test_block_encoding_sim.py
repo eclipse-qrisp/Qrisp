@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -21,7 +20,7 @@ import scipy as sp
 
 from qrisp import QuantumFloat, terminal_sampling
 from qrisp.block_encodings import BlockEncoding
-from qrisp.operators import X, Y, Z
+from qrisp.operators import X, Z
 
 
 def test_block_encoding_sim():

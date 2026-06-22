@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,16 +15,18 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable
+import itertools
+
 from qrisp.qaoa import (
     QAOAProblem,
     RZ_mixer,
     approximation_ratio,
-    create_min_set_cover_mixer,
     create_min_set_cover_cl_cost_function,
+    create_min_set_cover_mixer,
     min_set_cover_init_function,
 )
-import itertools
+
+from qrisp import QuantumVariable
 
 
 def test_QAOAminSetCover():

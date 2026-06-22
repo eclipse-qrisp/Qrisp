@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,13 +15,12 @@
 ********************************************************************************
 """
 
-import numpy as np
 
-from qrisp import QuantumCircuit, Operation, QuantumVariable
+from qrisp import Operation, QuantumCircuit, QuantumVariable
 from qrisp.alg_primitives.mcx_algs.circuit_library import (
-    jones_toffoli_qc,
     amy_toffoli_qc,
     ctrl_state_wrap,
+    jones_toffoli_qc,
 )
 
 

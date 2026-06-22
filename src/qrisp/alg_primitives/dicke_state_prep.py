@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,17 +15,17 @@
 ********************************************************************************
 """
 
+from collections.abc import Sequence
+
 import jax.numpy as jnp
 
-from qrisp.core import QuantumVariable, cx, ry
 from qrisp.circuit import Qubit
+from qrisp.core import QuantumVariable, cx, ry
 from qrisp.jasp import jlen, jrange
-from collections.abc import Sequence
 
 
 def dicke_state(qv: QuantumVariable | Sequence[Qubit], k: int) -> None:
-    """
-    Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358.
+    """Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358.
     This algorithm creates an equal superposition of Dicke states for a given Hamming weight. The initial input variable has to be within this subspace.
 
     Parameters
@@ -64,8 +63,7 @@ def dicke_state(qv: QuantumVariable | Sequence[Qubit], k: int) -> None:
 
 
 def split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], highIndex: int, lowIndex: int) -> None:
-    """
-    Helper function for Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358.
+    """Helper function for Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358.
 
     Parameters
     ----------
@@ -75,6 +73,7 @@ def split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], highIndex: int, low
         Index for indication of preparation steps, as seen in original algorithm.
     lowIndex : int
         Index for indication of preparation steps, as seen in original algorithm.
+
     """
     from qrisp.environments import control
 

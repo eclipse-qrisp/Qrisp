@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,9 @@
 ********************************************************************************
 """
 
-from qrisp.circuit import ControlledOperation
 import numpy as np
+
+from qrisp.circuit import ControlledOperation
 
 
 def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
@@ -49,6 +49,7 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
     The converter transpiles all unknown gates together, then checks if any
     new unknown gates appeared.  This repeats until all gates are known
     or transpilation makes no progress.
+
     """
     try:
         from cirq import Circuit, LineQubit
@@ -57,23 +58,23 @@ def convert_to_cirq(qrisp_circuit, cirq_qubits=None):
 
     from cirq import (
         CNOT,
-        H,
-        X,
-        Y,
-        Z,
-        S,
-        T,
+        CZ,
         SWAP,
-        rx,
-        ry,
-        rz,
+        GlobalPhaseGate,
+        H,
         I,
         M,
         R,
-        CZ,
-        ZPowGate,
+        S,
+        T,
+        X,
         XPowGate,
-        GlobalPhaseGate,
+        Y,
+        Z,
+        ZPowGate,
+        rx,
+        ry,
+        rz,
     )
 
     # known gate mapping
@@ -254,6 +255,7 @@ def convert_from_cirq(cirq_circuit):
     during conversion.  Cirq's automatic key generation is used instead, so
     a round-trip (Qrisp -> Cirq -> Qrisp) will lose the original
     classical-bit associations.
+
     """
     try:
         import cirq

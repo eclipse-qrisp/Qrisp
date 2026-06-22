@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,16 +15,17 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable
+import networkx as nx
 from qrisp.qaoa import (
     QAOAProblem,
     RZ_mixer,
+    approximation_ratio,
     create_max_indep_set_cl_cost_function,
     create_max_indep_set_mixer,
     max_indep_set_init_function,
-    approximation_ratio,
 )
-import networkx as nx
+
+from qrisp import QuantumVariable
 
 
 def test_QAOAmaxClique():

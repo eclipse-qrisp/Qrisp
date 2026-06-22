@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,11 +15,10 @@
 ********************************************************************************
 """
 
-from qrisp import h, qRange, QuantumFloat
+from qrisp import QuantumFloat, h, qRange
 
 
 def test_loop():
-    from qrisp import QuantumFloat, qRange, h
 
     # Create some QuantumFloats
     n = QuantumFloat(3)

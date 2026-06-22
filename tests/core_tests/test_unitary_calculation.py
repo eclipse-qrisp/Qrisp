@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,10 +18,10 @@
 # Created by ann81984 at 07.05.2022
 import time
 
-from qrisp.core import QuantumSession
-from qrisp.alg_primitives.arithmetic import QuantumFloat
 from numpy.linalg import norm
 
+from qrisp.alg_primitives.arithmetic import QuantumFloat
+from qrisp.core import QuantumSession
 from qrisp.interface import convert_to_qiskit
 
 

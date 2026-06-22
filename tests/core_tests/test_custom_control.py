@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,11 +15,9 @@
 ********************************************************************************
 """
 
-import time
-import random
 import numpy as np
 
-from qrisp import QuantumVariable, QuantumBool, custom_control, h, x, y, cp, control, invert, QuantumFloat, cx, qcla
+from qrisp import QuantumBool, QuantumFloat, QuantumVariable, control, cp, custom_control, cx, h, invert, qcla, x, y
 
 
 def test_custom_control():
@@ -42,7 +39,6 @@ def test_custom_control():
             cp(np.pi / 4, ctrl, qv)
             x(qv)
             temp.uncompute()
-        return None
 
     with control(qv_0):
         test_function(qv_1)

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -22,8 +21,8 @@ from numpy.polynomial import Chebyshev
 from scipy.special import erf
 
 from qrisp.algorithms.cks import cks_coeffs, cks_params
-from qrisp.algorithms.gqsp.qsvt import QSVT
 from qrisp.algorithms.gqsp.helper_functions import chebyshev_approx
+from qrisp.algorithms.gqsp.qsvt import QSVT
 from qrisp.block_encodings import BlockEncoding
 
 
@@ -33,8 +32,7 @@ def pseudo_inversion(
     theta: float,
     delta: float | None = None,
 ) -> BlockEncoding:
-    r"""
-    Returns a BlockEncoding approximating the threshold `matrix pseudoinverse <https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse>`_ of the operator.
+    r"""Returns a BlockEncoding approximating the threshold `matrix pseudoinverse <https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse>`_ of the operator.
 
     Let $A$ be a matrix with `Singular Value Decomposition <https://en.wikipedia.org/wiki/Singular_value_decomposition>`_
 
@@ -99,7 +97,6 @@ def pseudo_inversion(
 
     Examples
     --------
-
     First, define a matrix $A$ and a right-hand side vector $\vec{b}$.
 
     ::
@@ -186,7 +183,6 @@ def pseudo_inversion(
         # [0.63245553 0.31622777 0.63245553 0.31622777]
 
     """
-
     p = _pseudo_inversion_cheb(theta, delta, eps)
 
     # Set _rescale=False to apply p(A/α) instead of p(A).
@@ -202,8 +198,7 @@ def _smooth_rectangle(
     t: float,
     delta: float,
 ) -> npt.NDArray[np.float64]:
-    """
-    Computes a smoothed rectangle (indicator) function using the error function.
+    r"""Computes a smoothed rectangle (indicator) function using the error function.
 
     This function acts as a continuous, differentiable stand-in for
     a harsh discontinuous step function. It evaluates to approximately 1 inside
@@ -225,6 +220,7 @@ def _smooth_rectangle(
     -------
     ndarray
         An array of evaluated function values, bounded between 0 and 1, with the same shape as the input array ``x``.
+
     """
     # kappa dictates the steepness of the transition.
     # The factor of 2.0 is an empirical choice to ensure the curve settles
@@ -243,8 +239,7 @@ def _pseudo_inversion_cheb(
     eps: float = 1e-3,
     max_N: int = 2024,
 ) -> npt.NDArray[np.float64]:
-    r"""
-    Constructs a Chebyshev polynomial approximation of the pseudo-inversion.
+    r"""Constructs a Chebyshev polynomial approximation of the pseudo-inversion.
 
     This function creates a polynomial that approximates $1/x$ over the domain
     $[-1, \theta] \cup [\theta, 1]$ while smoothly dropping to zero around the
@@ -271,8 +266,8 @@ def _pseudo_inversion_cheb(
     ndarray
         1-D array containing the coefficients of the Chebyshev series representing the smooth, bounded
         approximation of the pseudo-inverse, ordered from lowest order term to highest.
-    """
 
+    """
     if delta is None:
         delta = theta / 4
 

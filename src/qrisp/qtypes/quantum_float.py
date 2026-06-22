@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,21 +15,20 @@
 ********************************************************************************
 """
 
+import jax.numpy as jnp
 import numpy as np
 import sympy as sp
-import jax.numpy as jnp
-from jax import jit, Array
+from jax import Array, jit
 from jax.core import Tracer
 
 from qrisp.core import QuantumVariable, cx
-from qrisp.misc import gate_wrap
-from qrisp.environments import invert, conjugate
+from qrisp.environments import conjugate, invert
 from qrisp.jasp import check_for_tracing_mode
+from qrisp.misc import gate_wrap
 
 
 def _signed_int_iso(x, n):
-    """
-    Computes the signed integer isomorphism for a given bit-width.
+    """Computes the signed integer isomorphism for a given bit-width.
 
     This function maps an integer `x` from the signed range [-2^n, 2^n - 1]
     into the unsigned range [0, 2^(n+1) - 1].
@@ -48,6 +46,7 @@ def _signed_int_iso(x, n):
     jax.Array
         A jnp.int64 array where each element of `x` has been mapped to
         the unsigned range [0, 2^(n+1) - 1].
+
     """
     # 1. Modular wrap: Ensure x is within [0, 2**(n+1) - 1]
     mask = (jnp.int64(1) << (n + 1)) - 1
@@ -56,8 +55,7 @@ def _signed_int_iso(x, n):
 
 @jit
 def _signed_int_iso_inv(y, n):
-    """
-    Computes the inverse signed integer isomorphism for a given bit-width.
+    """Computes the inverse signed integer isomorphism for a given bit-width.
 
     This function maps an integer `y` from the unsigned range [0, 2^(n+1) - 1]
     back into the signed range [-2^n, 2^n - 1]. It performs a manual
@@ -75,6 +73,7 @@ def _signed_int_iso_inv(y, n):
     jax.Array
         A jnp.int64 array where each element of `y` has been mapped to
         the signed range [-2^n, 2^n - 1].
+
     """
     # 1. Modular wrap: Ensure y is within [0, 2**(n+1) - 1]
     mask = (jnp.int64(1) << (n + 1)) - 1
@@ -123,8 +122,7 @@ def trunc_poly(poly, trunc_bounds):
 
 
 class QuantumFloat(QuantumVariable):
-    r"""
-    This subclass of :ref:`QuantumVariable` can represent floating point numbers
+    r"""This subclass of :ref:`QuantumVariable` can represent floating point numbers
     (signed and unsigned) up to an arbitrary precision.
 
     The technical details of the employed arithmetic can be found in this
@@ -369,7 +367,6 @@ class QuantumFloat(QuantumVariable):
     # Define outcome_labels
     def decoder(self, i):
         """Convert measurement outcome (integer) back to human-readable value."""
-
         if self.signed:
             res = _signed_int_iso_inv(i, self.msize) * jnp.float64(2) ** self.exponent
         else:
@@ -377,11 +374,10 @@ class QuantumFloat(QuantumVariable):
 
         if check_for_tracing_mode():
             return res
+        elif self.exponent >= 0:
+            return int(res)
         else:
-            if self.exponent >= 0:
-                return int(res)
-            else:
-                return float(res)
+            return float(res)
 
     def jdecoder(self, i):
         return self.decoder(i)
@@ -392,7 +388,6 @@ class QuantumFloat(QuantumVariable):
         Also validates that the input value can be represented within the bounds of the provided
         QuantumFloat in static mode.
         """
-
         # check if the encoding number is negative while the QuantumFloat is unsigned.
         # We do this before converting to integer to prevent wrapping.
         if not check_for_tracing_mode() and not self.signed and i < 0:
@@ -440,8 +435,7 @@ class QuantumFloat(QuantumVariable):
             return res.astype(int)
 
     def sb_poly(self, m=0):
-        """
-        Returns the semi-boolean polynomial of this `QuantumFloat` where `m` specifies
+        """Returns the semi-boolean polynomial of this `QuantumFloat` where `m` specifies
         the image extension parameter.
 
         For the technical details we refer to:
@@ -460,14 +454,12 @@ class QuantumFloat(QuantumVariable):
 
         Examples
         --------
-
         >>> from qrisp import QuantumFloat
         >>> x = QuantumFloat(3, -1, signed = True, name = "x")
         >>> print(x.sb_poly(5))
         0.5*x_0 + 1.0*x_1 + 2.0*x_2 + 28.0*x_3
 
         """
-
         if m == 0:
             m = self.size
 
@@ -505,7 +497,7 @@ class QuantumFloat(QuantumVariable):
             else:
                 raise Exception(f"Tried to multiply class {type(other)} with QuantumFloat")
 
-        from qrisp.alg_primitives.arithmetic import q_mult, polynomial_encoder
+        from qrisp.alg_primitives.arithmetic import polynomial_encoder, q_mult
 
         if isinstance(other, QuantumFloat):
             return q_mult(self, other)
@@ -542,8 +534,8 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability="args", is_qfree=True)
     def __add__(self, other):
 
-        from qrisp.alg_primitives.arithmetic import sbp_add
         from qrisp import check_for_tracing_mode
+        from qrisp.alg_primitives.arithmetic import sbp_add
 
         if isinstance(other, QuantumFloat):
             if check_for_tracing_mode():
@@ -564,8 +556,8 @@ class QuantumFloat(QuantumVariable):
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __sub__(self, other):
-        from qrisp.alg_primitives.arithmetic import sbp_sub
         from qrisp import check_for_tracing_mode
+        from qrisp.alg_primitives.arithmetic import sbp_sub
 
         if isinstance(other, QuantumFloat):
             if check_for_tracing_mode():
@@ -707,7 +699,6 @@ class QuantumFloat(QuantumVariable):
     def __isub__(self, other):
 
         from qrisp.alg_primitives.arithmetic import polynomial_encoder
-
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
@@ -755,7 +746,7 @@ class QuantumFloat(QuantumVariable):
         return self
 
     def __lt__(self, other):
-        from qrisp.alg_primitives.arithmetic import lt, uint_lt, gidney_adder
+        from qrisp.alg_primitives.arithmetic import gidney_adder, lt, uint_lt
 
         if check_for_tracing_mode():
             return uint_lt(self, other, gidney_adder)
@@ -766,7 +757,7 @@ class QuantumFloat(QuantumVariable):
             return lt(self, other)
 
     def __gt__(self, other):
-        from qrisp.alg_primitives.arithmetic import gt, uint_gt, gidney_adder
+        from qrisp.alg_primitives.arithmetic import gidney_adder, gt, uint_gt
 
         if check_for_tracing_mode():
             return uint_gt(self, other, gidney_adder)
@@ -777,7 +768,7 @@ class QuantumFloat(QuantumVariable):
             return gt(self, other)
 
     def __le__(self, other):
-        from qrisp.alg_primitives.arithmetic import leq, uint_le, gidney_adder
+        from qrisp.alg_primitives.arithmetic import gidney_adder, leq, uint_le
 
         if check_for_tracing_mode():
             return uint_le(self, other, gidney_adder)
@@ -788,7 +779,7 @@ class QuantumFloat(QuantumVariable):
             return leq(self, other)
 
     def __ge__(self, other):
-        from qrisp.alg_primitives.arithmetic import geq, uint_ge, gidney_adder
+        from qrisp.alg_primitives.arithmetic import geq, gidney_adder, uint_ge
 
         if check_for_tracing_mode():
             return uint_ge(self, other, gidney_adder)
@@ -817,8 +808,7 @@ class QuantumFloat(QuantumVariable):
         return neq(self, other)
 
     def exp_shift(self, shift):
-        """
-        Performs an internal bit shift. Note that this method doesn't cost any
+        """Performs an internal bit shift. Note that this method doesn't cost any
         quantum gates. For the quantum version of this method, see
         :meth:`quantum_bit_shift<qrisp.QuantumFloat.quantum_bitshift>`.
 
@@ -834,7 +824,6 @@ class QuantumFloat(QuantumVariable):
 
         Examples
         --------
-
         We create a QuantumFloat and perform a bitshift:
 
         >>> from qrisp import QuantumFloat
@@ -868,8 +857,7 @@ class QuantumFloat(QuantumVariable):
         self.exponent += shift
 
     def add_sign(self):
-        """
-        Turns an unsigned QuantumFloat into its signed version.
+        """Turns an unsigned QuantumFloat into its signed version.
 
         Raises
         ------
@@ -878,7 +866,6 @@ class QuantumFloat(QuantumVariable):
 
         Examples
         --------
-
         >>> from qrisp import QuantumFloat
         >>> qf = QuantumFloat(4)
         >>> qf.signed
@@ -888,7 +875,6 @@ class QuantumFloat(QuantumVariable):
         True
 
         """
-
         if self.signed:
             raise Exception(r"Tried to add sign to signed QuantumFloat")
 
@@ -896,8 +882,7 @@ class QuantumFloat(QuantumVariable):
         self.signed = True
 
     def sign(self):
-        r"""
-        Returns the sign qubit.
+        r"""Returns the sign qubit.
 
         This qubit is in state $\ket{1}$ if the QuantumFloat holds a negative value and
         in state $\ket{0}$ otherwise.
@@ -929,7 +914,6 @@ class QuantumFloat(QuantumVariable):
 
         Examples
         --------
-
         We create a QuantumFloat, initiate a state that has probability 2/3 of being
         negative and entangle a QuantumBool with the sign qubit.
 
@@ -967,8 +951,7 @@ class QuantumFloat(QuantumVariable):
         return id(self)
 
     def significant(self, k):
-        """
-        Returns the qubit with significance $k$.
+        """Returns the qubit with significance $k$.
 
         Parameters
         ----------
@@ -987,7 +970,6 @@ class QuantumFloat(QuantumVariable):
 
         Examples
         --------
-
         We create a QuantumFloat and flip a qubit of specified significance.
 
         >>> from qrisp import QuantumFloat, x
@@ -1004,7 +986,6 @@ class QuantumFloat(QuantumVariable):
         The qubit with significance $2$ corresponds to the value $4 = 2^{2}$.
 
         """
-
         sig_list = list(range(self.mshape[0], self.mshape[1]))
 
         if k not in sig_list:
@@ -1015,8 +996,7 @@ class QuantumFloat(QuantumVariable):
         return self[sig_list.index(k)]
 
     def truncate(self, x):
-        """
-        Receives a regular float and returns the float that is closest to the input but
+        """Receives a regular float and returns the float that is closest to the input but
         can still be encoded.
 
         Parameters
@@ -1031,7 +1011,6 @@ class QuantumFloat(QuantumVariable):
 
         Examples
         --------
-
         We create a QuantumFloat and round a value to fit the encoder and subsequently
         initiate:
 
@@ -1048,7 +1027,6 @@ class QuantumFloat(QuantumVariable):
         {0.5: 1.0}
 
         """
-
         res = jnp.int64(jnp.round(x / jnp.float64(2) ** self.exponent))
         res = jnp.minimum(2**self.msize - 1, res)
 
@@ -1061,8 +1039,7 @@ class QuantumFloat(QuantumVariable):
         return self.decoder(res)
 
     def get_ev(self, **mes_kwargs):
-        """
-        Retrieves the expectation value of self.
+        """Retrieves the expectation value of self.
 
         Parameters
         ----------
@@ -1076,7 +1053,6 @@ class QuantumFloat(QuantumVariable):
 
         Examples
         --------
-
         We set up a QuantumFloat in uniform superposition and retrieve the expectation value:
 
         >>> from qrisp import QuantumFloat, h
@@ -1086,14 +1062,12 @@ class QuantumFloat(QuantumVariable):
         7.5
 
         """
-
         mes_res = self.get_measurement(**mes_kwargs)
 
         return sum([k * v for k, v in mes_res.items()])
 
     def quantum_bit_shift(self, shift_amount):
-        """
-        Performs a bit shift in the quantum device.
+        """Performs a bit shift in the quantum device.
         While :meth:`exp_shift<qrisp.QuantumFloat.exp_shift>` performs a bit shift
         in the compiler (thus costing no quantum gates) this method performs the
         bitshift on the hardware.
@@ -1126,7 +1100,6 @@ class QuantumFloat(QuantumVariable):
 
         Examples
         --------
-
         We create a QuantumFloat and a QuantumBool to perform a controlled bit shift.
 
         ::
@@ -1146,7 +1119,6 @@ class QuantumFloat(QuantumVariable):
         sqrt(2)*(|1>*|False> + |4>*|True>)/2
 
         """
-
         from qrisp.alg_primitives.arithmetic import quantum_bit_shift
 
         quantum_bit_shift(self, shift_amount)

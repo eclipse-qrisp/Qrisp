@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,20 +16,19 @@
 """
 
 import types
-from functools import lru_cache
 from typing import Callable, Tuple
 
-from qrisp._cache_config import qrisp_lru_compilation_cache
 import jax
 import jax.numpy as jnp
 from jax.random import key
 
+from qrisp._cache_config import qrisp_lru_compilation_cache
+from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
 from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
     BaseMetric,
     eval_jaxpr,
     make_profiling_eqn_evaluator,
 )
-from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
 from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.jasp.primitives import (
     AbstractQubitArray,
@@ -41,7 +39,6 @@ from qrisp.jasp.primitives import (
 # but this way we can print an informative message before the failure happens.
 def _warn(n_allocations, max_allocations):
     """Helper function to print a warning when the number of qubits exceeds the maximum supported."""
-
     jax.debug.print(
         (
             "ERROR: `num_qubits` computation overflowed: tried to (de)allocate qubits "
@@ -54,8 +51,7 @@ def _warn(n_allocations, max_allocations):
 
 
 class NumQubitsMetric(BaseMetric):
-    """
-    A metric implementation that computes the number of qubits in a Jaspr.
+    """A metric implementation that computes the number of qubits in a Jaspr.
 
     Parameters
     ----------
@@ -69,7 +65,6 @@ class NumQubitsMetric(BaseMetric):
 
     def __init__(self, meas_behavior: Callable, max_allocations: int = 1000):
         """Initialize the NumQubitsMetric."""
-
         super().__init__(meas_behavior=meas_behavior)
 
         self._max_allocations: int = max_allocations
@@ -237,7 +232,6 @@ class NumQubitsMetric(BaseMetric):
 
 def _peak_allocated_qubits(dict_values) -> int:
     """Helper function to compute the peak number of allocated qubits from the allocation dictionary."""
-
     current, peak = 0, 0
     for delta in dict_values:
         current += delta
@@ -247,7 +241,6 @@ def _peak_allocated_qubits(dict_values) -> int:
 
 def extract_num_qubits(res: Tuple, jaspr: Jaspr, _) -> dict:
     """Extract the number of allocated and deallocated qubits from the metric result."""
-
     metric = res[-1] if len(jaspr.outvars) > 1 else res
 
     allocations_array, allocations_counter_index, overflowed = metric
@@ -281,8 +274,7 @@ def get_num_qubits_profiler(
     max_allocations: int = 1000,
     callback_threshold: int | None = None,
 ) -> tuple[Callable, None]:
-    """
-    Build a num qubits profiling computer for a given Jaspr.
+    """Build a num qubits profiling computer for a given Jaspr.
 
     Parameters
     ----------
@@ -308,7 +300,6 @@ def get_num_qubits_profiler(
         A num qubits profiler function and None as auxiliary data.
 
     """
-
     num_qubits_metric = NumQubitsMetric(meas_behavior, max_allocations)
 
     # Analyze the call graph to identify reused sub-jaxprs.  The resulting
@@ -336,5 +327,4 @@ def get_num_qubits_profiler(
 
 def simulate_num_qubits(jaspr: Jaspr, *_, **__) -> dict:
     """Simulate num_qubits metric via actual simulation."""
-
     raise NotImplementedError("Num qubits metric via simulation is not implemented yet.")

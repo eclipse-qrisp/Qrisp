@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,16 +15,17 @@
 ********************************************************************************
 """
 
+import itertools
+
 from qrisp import QuantumVariable
-from qrisp.algorithms.qaoa import create_maxsat_cl_cost_function, approximation_ratio
+from qrisp.algorithms.qaoa import approximation_ratio, create_maxsat_cl_cost_function
 from qrisp.algorithms.qiro import (
     QIROProblem,
+    create_maxsat_cost_operator_reduced,
+    create_maxsat_replacement_routine,
     qiro_init_function,
     qiro_rx_mixer,
-    create_maxsat_replacement_routine,
-    create_maxsat_cost_operator_reduced,
 )
-import itertools
 
 
 def test_qiro_maxsat():

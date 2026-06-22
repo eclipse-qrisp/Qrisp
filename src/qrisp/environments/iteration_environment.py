@@ -1,20 +1,18 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Jul  3 17:37:05 2023
+"""Created on Mon Jul  3 17:37:05 2023
 
 @author: sea
 """
 
-from qrisp.environments import QuantumEnvironment, GateWrapEnvironment
-from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.circuit import QubitAlloc
 from qrisp.core.compilation import qompiler
+from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.environments import QuantumEnvironment
 from qrisp.misc.utility import retarget_instructions
-from qrisp.circuit import QubitAlloc, transpile
 
 
 class IterationEnvironment(QuantumEnvironment):
-    """
-    This QuantumEnvironment can be used for reducing bottlenecks in compilation time.
+    """This QuantumEnvironment can be used for reducing bottlenecks in compilation time.
     Many algorithms such as Grover or QPE require repeated execution of the same
     quantum circuit. When scaling up complex algorithms that perform a lot of
     non-trivial logic many iterations can significantly slow down the compilation
@@ -40,7 +38,6 @@ class IterationEnvironment(QuantumEnvironment):
 
     Parameters
     ----------
-
     qs : QuantumSession
         The ``QuantumSession`` in which the iterated code should be performed.
         QuantumVariables that have been created outside this ``QuantumEnvironment``
@@ -55,7 +52,6 @@ class IterationEnvironment(QuantumEnvironment):
 
     Examples
     --------
-
     We perform a simple addition circuit multiple times:
 
     ::
@@ -217,7 +213,7 @@ class IterationEnvironment(QuantumEnvironment):
             # Determine the workspace qubits from the compiled qc
             workspace_qubits = list(set(compiled_qc.qubits) - set(anc_qv.reg))
 
-            if len(workspace_qubits):
+            if workspace_qubits:
                 # Allocate a QuantumVariable that will hold the workspace
                 workspace_var = QuantumVariable(len(workspace_qubits), qs=self.env_qs, name="workspace_var*")
             else:

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,11 +15,11 @@
 ********************************************************************************
 """
 
-import sympy
 import jax
+import sympy
 
 import qrisp.circuit.standard_operations as std_ops
-from qrisp.jasp import check_for_tracing_mode, DynamicQubitArray, jlen
+from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen
 
 
 def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
@@ -45,8 +44,7 @@ def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
 
 
 def cx(control, target):
-    """
-    Applies a CX gate.
+    """Applies a CX gate.
 
     Parameters
     ----------
@@ -54,6 +52,7 @@ def cx(control, target):
         The Qubit to control on.
     target : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the X gate on.
+
     """
     append_operation(std_ops.CXGate(), [control, target])
 
@@ -63,8 +62,7 @@ def cx(control, target):
 
 
 def cy(control, target):
-    """
-    Applies a CY gate.
+    """Applies a CY gate.
 
     Parameters
     ----------
@@ -72,15 +70,14 @@ def cy(control, target):
         The Qubit to control on.
     target : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the Y gate on.
-    """
 
+    """
     append_operation(std_ops.CYGate(), [control, target])
     return control, target
 
 
 def cz(control, target):
-    """
-    Applies a CZ gate.
+    """Applies a CZ gate.
 
     Parameters
     ----------
@@ -88,20 +85,20 @@ def cz(control, target):
         The Qubit to control on.
     target : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the Z gate on.
-    """
 
+    """
     append_operation(std_ops.CZGate(), [control, target])
     return control, target
 
 
 def h(qubits):
-    """
-    Applies an H gate.
+    """Applies an H gate.
 
     Parameters
     ----------
     qubits : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the H gate on.
+
     """
     append_operation(std_ops.HGate(), [qubits])
 
@@ -109,43 +106,41 @@ def h(qubits):
 
 
 def x(qubits):
-    """
-    Applies an X gate.
+    """Applies an X gate.
 
     Parameters
     ----------
     qubits : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the X gate on.
-    """
 
+    """
     append_operation(std_ops.XGate(), [qubits])
 
     return qubits
 
 
 def y(qubits):
-    """
-    Applies a Y gate.
+    """Applies a Y gate.
 
     Parameters
     ----------
     qubits : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the Y gate on.
-    """
 
+    """
     append_operation(std_ops.YGate(), [qubits])
 
     return qubits
 
 
 def z(qubits):
-    """
-    Applies a Z gate.
+    """Applies a Z gate.
 
     Parameters
     ----------
     qubits : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the Z gate on.
+
     """
     append_operation(std_ops.ZGate(), [qubits])
 
@@ -153,8 +148,7 @@ def z(qubits):
 
 
 def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
-    r"""
-    .. _mcx:
+    r""".. _mcx:
 
     Applies a multi-controlled X gate.
 
@@ -217,7 +211,6 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
 
     Examples
     --------
-
     We apply a 3-contolled X gate
 
     >>> from qrisp import QuantumVariable, mcx, QuantumBool
@@ -481,18 +474,17 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
 
 
     """
-
-    from qrisp.misc import bin_rep
     from qrisp.alg_primitives.mcx_algs import (
         GidneyLogicalAND,
         amy_toffoli,
-        jones_toffoli,
         jasp_gidney_mcx,
+        jones_toffoli,
         khattar_mcx,
     )
     from qrisp.core import QuantumVariable
-    from qrisp.qtypes import QuantumBool
     from qrisp.environments import invert
+    from qrisp.misc import bin_rep
+    from qrisp.qtypes import QuantumBool
 
     if isinstance(controls, list):
         new_controls = []
@@ -541,9 +533,9 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         balauca_dirty,
         balauca_mcx,
         hybrid_mcx,
+        jasp_balauca_mcx,  # Merge the import
         maslov_mcx,
         yong_mcx,
-        jasp_balauca_mcx,  # Merge the import
     )
 
     if method in ["gray", "gray_pt", "gray_pt_inv"]:
@@ -635,8 +627,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
 
 
 def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
-    """
-    Applies a multi-controlled Z gate.
+    """Applies a multi-controlled Z gate.
 
     For more information on the available methods, check
     :meth:`the mcx documentation page <qrisp.mcx>`.
@@ -656,7 +647,6 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
         the method is set to ``hybrid``. The default is 1.
 
     """
-
     from qrisp.misc import bin_rep, gate_wrap
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
@@ -680,8 +670,9 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
     def jasp_mcz_inner(qubits, method="balauca", ctrl_state=-1):
-        from jax.lax import cond
         import jax.numpy as jnp
+        from jax.lax import cond
+
         from qrisp.environments import control
 
         n = jlen(qubits)
@@ -739,8 +730,7 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
 
 
 def mcp(phi, qubits, method="auto", ctrl_state=-1):
-    """
-    Applies a multi-controlled phase gate.
+    """Applies a multi-controlled phase gate.
 
     The available methods are:
 
@@ -764,12 +754,12 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
         The control state on which to apply the phase. The default is "111...".
 
     """
-
-    from qrisp.alg_primitives.mcx_algs import hybrid_mcx, jasp_balauca_mcp, khattar_mcp
-    from qrisp import QuantumBool
-    from qrisp.misc import bin_rep, gate_wrap
-    from qrisp.environments import control
     import numpy as np
+
+    from qrisp import QuantumBool
+    from qrisp.alg_primitives.mcx_algs import hybrid_mcx, jasp_balauca_mcp, khattar_mcp
+    from qrisp.environments import control
+    from qrisp.misc import bin_rep, gate_wrap
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcp")
     def balauca_mcp(phi, qubits, ctrl_state):
@@ -839,8 +829,7 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
 
 
 def p(phi, qubits):
-    """
-    Applies a phase gate.
+    """Applies a phase gate.
 
     Parameters
     ----------
@@ -850,7 +839,6 @@ def p(phi, qubits):
         The Qubit on which to apply the phase gate.
 
     """
-
     if check_for_tracing_mode():
         append_operation(std_ops.PGate(sympy.Symbol("alpha")), [qubits], param_tracers=[phi])
     else:
@@ -862,8 +850,7 @@ def p(phi, qubits):
 
 
 def cp(phi, qubits_0, qubits_1):
-    """
-    Applies a controlled phase gate.
+    """Applies a controlled phase gate.
 
     Parameters
     ----------
@@ -875,7 +862,6 @@ def cp(phi, qubits_0, qubits_1):
         The second Qubit.
 
     """
-
     if check_for_tracing_mode():
         cp_gate = std_ops.CPGate(sympy.Symbol("alpha"))
         append_operation(cp_gate, [qubits_0, qubits_1], param_tracers=[phi])
@@ -887,8 +873,7 @@ def cp(phi, qubits_0, qubits_1):
 
 
 def rx(phi, qubits):
-    """
-    Applies an RX gate.
+    """Applies an RX gate.
 
     Parameters
     ----------
@@ -898,7 +883,6 @@ def rx(phi, qubits):
         The Qubit to perform the RX gate on.
 
     """
-
     if check_for_tracing_mode():
         append_operation(std_ops.RXGate(sympy.Symbol("alpha")), [qubits], param_tracers=[phi])
     else:
@@ -908,8 +892,7 @@ def rx(phi, qubits):
 
 
 def ry(phi, qubits):
-    """
-    Applies an RY gate.
+    """Applies an RY gate.
 
     Parameters
     ----------
@@ -919,7 +902,6 @@ def ry(phi, qubits):
         The Qubit to perform the RY gate on.
 
     """
-
     if check_for_tracing_mode():
         append_operation(std_ops.RYGate(sympy.Symbol("alpha")), [qubits], param_tracers=[phi])
     else:
@@ -929,8 +911,7 @@ def ry(phi, qubits):
 
 
 def rz(phi, qubits):
-    """
-    Applies an RZ gate.
+    """Applies an RZ gate.
 
     Parameters
     ----------
@@ -940,7 +921,6 @@ def rz(phi, qubits):
         The Qubit to perform the RZ gate on.
 
     """
-
     if check_for_tracing_mode():
         append_operation(std_ops.RZGate(sympy.Symbol("alpha")), [qubits], param_tracers=[phi])
     else:
@@ -950,8 +930,7 @@ def rz(phi, qubits):
 
 
 def crz(phi, qubits_0, qubits_1):
-    """
-    Applies controlled RZ gate
+    """Applies controlled RZ gate
 
     Parameters
     ----------
@@ -963,7 +942,6 @@ def crz(phi, qubits_0, qubits_1):
         The second Qubit.
 
     """
-
     if check_for_tracing_mode():
         crz_gate = std_ops.RZGate(sympy.Symbol("alpha")).control(1)
         append_operation(crz_gate, [qubits_0, qubits_1], param_tracers=[phi])
@@ -975,90 +953,86 @@ def crz(phi, qubits_0, qubits_1):
 
 
 def s(qubits):
-    """
-    Applies an S gate.
+    """Applies an S gate.
 
     Parameters
     ----------
     qubits : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the S gate on.
-    """
 
+    """
     append_operation(std_ops.SGate(), [qubits])
     return qubits
 
 
 def t(qubits):
-    """
-    Applies a T gate.
+    """Applies a T gate.
 
     Parameters
     ----------
     qubits : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the T gate on.
+
     """
     append_operation(std_ops.TGate(), [qubits])
     return qubits
 
 
 def s_dg(qubits):
-    """
-    Applies a daggered S gate.
+    """Applies a daggered S gate.
 
     Parameters
     ----------
     qubits : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the daggered S gate on.
-    """
 
+    """
     append_operation(std_ops.SGate().inverse(), [qubits])
     return qubits
 
 
 def t_dg(qubits):
-    """
-    Applies a daggered T gate.
+    """Applies a daggered T gate.
 
     Parameters
     ----------
     qubits : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the daggered T gate on.
+
     """
     append_operation(std_ops.TGate().inverse(), [qubits])
     return qubits
 
 
 def sx(qubits):
-    """
-    Applies an SX gate.
+    """Applies an SX gate.
 
     Parameters
     ----------
     qubits : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the SX gate on.
-    """
 
+    """
     append_operation(std_ops.SXGate(), [qubits])
 
     return qubits
 
 
 def sx_dg(qubits):
-    """
-    Applies a daggered SX gate.
+    """Applies a daggered SX gate.
 
     Parameters
     ----------
     qubits : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the daggered SX gate on.
+
     """
     append_operation(std_ops.SXDGGate().inverse(), [qubits])
     return qubits
 
 
 def gphase(phi, qubits):
-    """
-    Applies a global phase. This gate turns into a phase gate when controlled.
+    """Applies a global phase. This gate turns into a phase gate when controlled.
 
     Parameters
     ----------
@@ -1066,8 +1040,8 @@ def gphase(phi, qubits):
         The global phase to apply.
     qubits : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the global phase gate on.
-    """
 
+    """
     if check_for_tracing_mode():
         append_operation(std_ops.GPhaseGate(sympy.Symbol("alpha")), [qubits], param_tracers=[phi])
     else:
@@ -1076,8 +1050,7 @@ def gphase(phi, qubits):
 
 
 def xxyy(phi, beta, qubits_0, qubits_1):
-    """
-    Applies an XXYY interaction gate.
+    """Applies an XXYY interaction gate.
 
     Parameters
     ----------
@@ -1089,8 +1062,8 @@ def xxyy(phi, beta, qubits_0, qubits_1):
         The first Qubit to perform the XXYY gate on.
     qubits_1 : Qubit or list[Qubit] or QuantumVariable
         The second Qubit to perform the XXYY gate on.
-    """
 
+    """
     if check_for_tracing_mode():
         xxyy_gate = std_ops.XXYYGate(sympy.Symbol("alpha"), sympy.Symbol("beta"))
         append_operation(xxyy_gate, [qubits_0, qubits_1], param_tracers=[phi, beta])
@@ -1103,8 +1076,7 @@ def xxyy(phi, beta, qubits_0, qubits_1):
 
 
 def rzz(phi, qubits_0, qubits_1):
-    """
-    Applies an RZZ gate.
+    """Applies an RZZ gate.
 
     Parameters
     ----------
@@ -1114,8 +1086,8 @@ def rzz(phi, qubits_0, qubits_1):
         The first argument to perform the RZZ gate one.
     qubits_1 : Qubit or list[Qubit] or QuantumVariable
         The second argument to perform the RZZ gate one.
-    """
 
+    """
     if check_for_tracing_mode():
         rzz_gate = std_ops.RZZGate(sympy.Symbol("alpha"))
         append_operation(rzz_gate, [qubits_0, qubits_1], param_tracers=[phi])
@@ -1126,8 +1098,7 @@ def rzz(phi, qubits_0, qubits_1):
 
 
 def rxx(phi, qubits_0, qubits_1):
-    """
-    Applies an RXX gate.
+    """Applies an RXX gate.
 
     Parameters
     ----------
@@ -1137,8 +1108,8 @@ def rxx(phi, qubits_0, qubits_1):
         The first argument to perform the RXX gate one.
     qubits_1 : Qubit or list[Qubit] or QuantumVariable
         The second argument to perform the RXX gate one.
-    """
 
+    """
     if check_for_tracing_mode():
         rxx_gate = std_ops.RXXGate(sympy.Symbol("alpha"))
         append_operation(rxx_gate, [qubits_0, qubits_1], param_tracers=[phi])
@@ -1149,8 +1120,7 @@ def rxx(phi, qubits_0, qubits_1):
 
 
 def u3(theta, phi, lam, qubits):
-    """
-    Applies an U3 gate.
+    """Applies an U3 gate.
 
     Parameters
     ----------
@@ -1162,8 +1132,8 @@ def u3(theta, phi, lam, qubits):
         The third angle parameter.
     qubits : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the U3 gate on.
-    """
 
+    """
     if check_for_tracing_mode():
         append_operation(
             std_ops.U3Gate(sympy.Symbol("alpha"), sympy.Symbol("beta"), sympy.Symbol("gamma")),
@@ -1177,8 +1147,7 @@ def u3(theta, phi, lam, qubits):
 
 
 def unitary(unitary_array, qubits):
-    """
-    Instruct a U3-gate from a given U3 matrix.
+    """Instruct a U3-gate from a given U3 matrix.
 
     Parameters
     ----------
@@ -1186,6 +1155,7 @@ def unitary(unitary_array, qubits):
         The U3 matrix to apply.
     qubits : Qubit
         The Qubit to apply the gate on.
+
     """
     import jax.numpy as jnp
 
@@ -1212,8 +1182,7 @@ def unitary(unitary_array, qubits):
 
 
 def measure(qubits):
-    """
-    Performs a measurement of the specified Qubit.
+    """Performs a measurement of the specified Qubit.
 
     Parameters
     ----------
@@ -1244,15 +1213,15 @@ def measure(qubits):
 
         return clbits
     else:
+        from qrisp import QuantumArray, QuantumVariable
         from qrisp.jasp import (
-            Measurement_p,
             AbstractQubit,
             AbstractQubitArray,
             DynamicQubitArray,
+            Measurement_p,
         )
-        from qrisp import QuantumVariable, QuantumArray
 
-        if not qs.abs_qst._trace is jax.core.trace_ctx.trace:
+        if qs.abs_qst._trace is not jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
             )
@@ -1269,8 +1238,9 @@ def measure(qubits):
 
 
 def measure_to_big_integer(qv, size):
-    from qrisp import BigInteger, q_fori_loop
     import jax.numpy as jnp
+
+    from qrisp import BigInteger, q_fori_loop
 
     def body_fun(i, val):
         return val.at[i].set(jnp.uint32(measure(qv[32 * i : 32 * (i + 1)])))
@@ -1281,15 +1251,15 @@ def measure_to_big_integer(qv, size):
 
 
 def reset(qubits):
-    """
-    Performs a reset of the specified Qubit.
+    """Performs a reset of the specified Qubit.
 
     Parameters
     ----------
     qubit : Qubit or list[Qubit] or QuantumVariable
         The Qubit to measure.
+
     """
-    from qrisp import find_qs, QuantumArray
+    from qrisp import QuantumArray, find_qs
     from qrisp.jasp import TracingQuantumSession, jrange
 
     qs = find_qs(qubits)
@@ -1298,8 +1268,8 @@ def reset(qubits):
         append_operation(std_ops.Reset(), [qubits])
         return None
     else:
-        from qrisp.jasp import reset_p, AbstractQubit, AbstractQubitArray
         from qrisp import QuantumVariable
+        from qrisp.jasp import AbstractQubit, AbstractQubitArray, reset_p
 
         if isinstance(qubits, QuantumVariable):
             abs_qst = reset_p.bind(qubits.reg.tracer, qs.abs_qst)
@@ -1321,8 +1291,7 @@ def reset(qubits):
 
 
 def barrier(qubits):
-    """
-    A visual marker for structuring the QuantumCircuit.
+    """A visual marker for structuring the QuantumCircuit.
 
     Parameters
     ----------
@@ -1331,7 +1300,6 @@ def barrier(qubits):
 
     Examples
     --------
-
     >>> from qrisp import QuantumVariable, x, y, barrier
     >>> qv = QuantumVariable(5)
     >>> x(qv)
@@ -1370,8 +1338,7 @@ def barrier(qubits):
 
 
 def swap(qubits_0, qubits_1):
-    """
-    Applies a SWAP gate.
+    """Applies a SWAP gate.
 
     Parameters
     ----------

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,10 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable, x, QPE
-from qrisp.operators import X, Y, Z, A, C, P0, P1
 import numpy as np
 from numpy.linalg import norm
+
+from qrisp.operators import P0, P1, A, C, X, Y, Z
 
 
 def test_qubit_hamiltonian_commutator():

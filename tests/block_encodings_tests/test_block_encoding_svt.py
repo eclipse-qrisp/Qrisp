@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,6 +17,7 @@
 
 import numpy as np
 import pytest
+
 from qrisp import QuantumVariable, terminal_sampling
 from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
@@ -32,7 +32,6 @@ from qrisp.operators import X, Y, Z
 )
 def test_block_encoding_svt_scaling(H1, H2, poly, parity):
     """Tests that the scaling factor alpha of BlockEncodings obtained via QSVT (used for BlockEncoding.svt) is correct."""
-
     parity_str = "even" if parity else "odd"
 
     BE1 = BlockEncoding.from_operator(H1)

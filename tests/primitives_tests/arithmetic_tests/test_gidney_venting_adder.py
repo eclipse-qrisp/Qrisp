@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -22,27 +21,26 @@ import pytest
 from qrisp import (
     QuantumBool,
     QuantumFloat,
-    x,
-    h,
-    z,
-    measure,
     control,
-    invert,
     gidney_adder,
+    h,
+    invert,
+    measure,
+    x,
+    z,
 )
-from qrisp.jasp import jaspify, count_ops, terminal_sampling, jrange
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.alg_primitives.arithmetic.adders.gidney_venting_adder import (
     bit_inverted_mcx,
-    zz_mcx,
-    zz_zz_mcx,
     bit_inverted_zz_zz_mcx,
     carry_venting_adder,
     carry_xor_block,
     dirty_ancillae_adder,
     gidney_cq_venting_adder,
+    zz_mcx,
+    zz_zz_mcx,
 )
-
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+from qrisp.jasp import count_ops, jaspify, jrange, terminal_sampling
 
 ZZ_PARITY_CASES = [
     (0, 0, 0),

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,8 +17,9 @@
 
 
 def outome_array_hashing_test():
-    from qrisp import OutcomeArray
     import numpy as np
+
+    from qrisp import OutcomeArray
 
     test = OutcomeArray(np.eye(3))
 

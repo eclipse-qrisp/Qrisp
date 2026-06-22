@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -36,8 +35,7 @@ if TYPE_CHECKING:
 def _rot_params_from_state(
     vec: jax.Array,
 ) -> tuple[jax.Array, jax.Array, jax.Array]:
-    """
-    Computes the rotation angles to prepare a single qubit state,
+    """Computes the rotation angles to prepare a single qubit state,
     where the amplitude of the |0> basis state is real and non-negative.
 
     Specifically, it computes the angles ``theta``, ``phi``, and ``lambda``
@@ -60,6 +58,7 @@ def _rot_params_from_state(
 
     lam : float
         The rotation angle lambda.
+
     """
     a, b = vec
     # We know that a is real (and non-negative).
@@ -72,8 +71,7 @@ def _rot_params_from_state(
 
 
 def _normalize_with_phase(v: jax.Array, acc: jax.Array) -> tuple[jax.Array, jax.Array, jax.Array]:
-    """
-    Normalizes a given vector and adjusts its phase.
+    """Normalizes a given vector and adjusts its phase.
 
     The phase of the first element of the vector is removed and added to the accumulated phase.
     The vector is normalized to have a unit norm and the first element is ensured to be real and non-negative.
@@ -96,8 +94,8 @@ def _normalize_with_phase(v: jax.Array, acc: jax.Array) -> tuple[jax.Array, jax.
 
     updated_acc : jax.Array
         The updated accumulated phase.
-    """
 
+    """
     norm = jnp.linalg.norm(v)
 
     def branch_nonzero(_):
@@ -121,8 +119,7 @@ def _normalize_with_phase(v: jax.Array, acc: jax.Array) -> tuple[jax.Array, jax.
 
 
 def _compute_thetas(vec: jax.Array, acc: jax.Array) -> tuple[jax.Array, jax.Array, jax.Array]:
-    """
-    For a given input vector, this function computes the rotation angles
+    """For a given input vector, this function computes the rotation angles
     needed for the uniformly controlled RY at this tree layer, normalizes its child vectors,
     and updates the accumulated phases for each child vector.
 
@@ -147,7 +144,6 @@ def _compute_thetas(vec: jax.Array, acc: jax.Array) -> tuple[jax.Array, jax.Arra
         A 1D array containing the updated accumulated phases for each subvector.
 
     """
-
     len_vec = vec.shape[0]
     half = len_vec // 2
 
@@ -165,8 +161,7 @@ def _compute_thetas(vec: jax.Array, acc: jax.Array) -> tuple[jax.Array, jax.Arra
 
 
 def _compute_u3_params(qubit_vec: jax.Array, acc: jax.Array) -> tuple[jax.Array, jax.Array]:
-    """
-    For a given length-2 vector, this function computes the U3 gate parameters needed
+    """For a given length-2 vector, this function computes the U3 gate parameters needed
     to prepare the corresponding state, normalizes the vector, and updates the accumulated phase.
 
     Parameters
@@ -186,7 +181,6 @@ def _compute_u3_params(qubit_vec: jax.Array, acc: jax.Array) -> tuple[jax.Array,
         The updated accumulated phase after processing the leaf subvector.
 
     """
-
     _, vec_n, total_phase = _normalize_with_phase(qubit_vec, acc)
     theta, phi, lam = _rot_params_from_state(vec_n)
     return jnp.array([theta, phi, lam]), total_phase
@@ -216,8 +210,7 @@ def _compute_u3_params(qubit_vec: jax.Array, acc: jax.Array) -> tuple[jax.Array,
 def _preprocess(
     target_array: jax.Array,
 ) -> tuple[jax.Array, jax.Array, jax.Array]:
-    """
-    This preprocessing function returns three data structures needed for state preparation.
+    """This preprocessing function returns three data structures needed for state preparation.
 
     Parameters
     ----------
@@ -234,7 +227,6 @@ def _preprocess(
         A 1D array containing the global phase for each leaf node.
 
     """
-
     n = int(np.log2(target_array.shape[0]))
     max_nodes = 1 << (n - 1)
 
@@ -265,8 +257,7 @@ def _preprocess(
 
 
 def prepare_qswitch(qv: QuantumVariable, target_array: NDArrayLike, big_endianness: bool = False) -> None:
-    """
-    Prepare the quantum state encoded in ``qv`` so that it matches the given
+    """Prepare the quantum state encoded in ``qv`` so that it matches the given
     ``target_array`` by constructing a binary-tree decomposition of the target
     amplitudes and applying a sequence of uniformly controlled rotations via
     the ``q_switch`` primitive.
@@ -292,7 +283,6 @@ def prepare_qswitch(qv: QuantumVariable, target_array: NDArrayLike, big_endianne
         Default is ``False``, meaning little-endian convention is used.
 
     """
-
     # These imports are here to avoid circular dependencies
     from qrisp import gphase, ry, u3
     from qrisp.jasp.program_control.jrange_iterator import jrange

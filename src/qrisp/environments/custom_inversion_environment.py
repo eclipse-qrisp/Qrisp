@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,30 +15,19 @@
 ********************************************************************************
 """
 
-import inspect
 
-import jax
 import jax.numpy as jnp
-
-from qrisp.environments.quantum_environments import QuantumEnvironment
-from qrisp.environments.gate_wrap_environment import GateWrapEnvironment
-from qrisp.circuit import Operation, QuantumCircuit, Instruction
-from qrisp.environments.iteration_environment import IterationEnvironment
-from qrisp.core import merge
 
 from qrisp.jasp import (
     check_for_tracing_mode,
-    qache,
-    AbstractQubit,
-    make_jaspr,
     get_last_equation,
+    make_jaspr,
+    qache,
 )
 
 
 def custom_inversion(*func, **cusi_kwargs):
-    """
-
-    The ``custom_inversion`` decorator enables registering a specialized subroutine for the inverted version
+    """The ``custom_inversion`` decorator enables registering a specialized subroutine for the inverted version
     of the decorated function. This decorator is crucial for functions where the inversion logic cannot be derived
     simply by reversing the gate order (e.g., subroutines involving measurements or dynamic classical control).
     In such scenarios, the user can explicitly define how the function should behave when inverted, ensuring that
@@ -70,7 +58,7 @@ def custom_inversion(*func, **cusi_kwargs):
         within the custom inversion context.
 
     Examples
-    ----------
+    --------
     We demonstrate the use of the ``custom_inversion`` decorator with a simple example.
 
     In this example, we define a function that implements Gidney's logical AND operation in the forward direction and uncomputes the
@@ -133,7 +121,6 @@ def custom_inversion(*func, **cusi_kwargs):
 
 
     """
-
     if len(func) == 0:
         return lambda x: custom_inversion(x, **cusi_kwargs)
     else:

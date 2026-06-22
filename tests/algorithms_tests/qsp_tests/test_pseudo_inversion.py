@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,9 +16,10 @@
 """
 
 import numpy as np
+from qrisp.gqsp import pseudo_inversion
+
 from qrisp import *
 from qrisp.block_encodings import BlockEncoding
-from qrisp.gqsp import pseudo_inversion
 
 
 def threshold_pseudoinverse(A, threshold):
@@ -32,7 +32,6 @@ def threshold_pseudoinverse(A, threshold):
 
 def test_pseudo_inversion():
     """Test QSVT-based pseudo-inversion algorithm on a small 4x4 matrix."""
-
     # Define non-Hermitian matrix A
     # [[0.  1.4 0.  1.1]
     # [1.1 0.  1.4 0. ]

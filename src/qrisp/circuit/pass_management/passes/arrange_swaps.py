@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,14 +17,13 @@
 
 from __future__ import annotations
 
-from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
 @CircuitPass
 def arrange_swaps(qc: QuantumCircuit) -> QuantumCircuit:
-    r"""
-    Flip SWAP qubit order so that unused qubits come first.
+    r"""Flip SWAP qubit order so that unused qubits come first.
 
     A SWAP gate decomposes into three CX gates.  When a SWAP involves a
     qubit that has not yet been touched by any prior operation, that qubit

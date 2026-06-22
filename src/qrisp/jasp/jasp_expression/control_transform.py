@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,21 +15,18 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
 
 import numpy as np
+from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Var
+
 from qrisp._cache_config import qrisp_lru_compilation_cache
-
-from jax.extend.core import JaxprEqn, ClosedJaxpr, Var, Jaxpr
-
+from qrisp.jasp import TracingQuantumSession
 from qrisp.jasp.jasp_expression.centerclass import Jaspr
 from qrisp.jasp.primitives import AbstractQubit
-from qrisp.jasp import TracingQuantumSession
 
 
 class ControlledJaspr(Jaspr):
-    """
-    This class enables the representation of controlled quantum functions.
+    """This class enables the representation of controlled quantum functions.
 
     The advantage of treating controlled functions in a separate manner is
     that controlled function have an efficient control themselves:
@@ -96,8 +92,7 @@ def copy_jaxpr(jaxpr):
 
 
 def control_eqn(eqn, ctrl_qubit_var):
-    """
-    Receives and equation that describes either an operation or a pjit primitive
+    """Receives and equation that describes either an operation or a pjit primitive
     and returns an equation that describes the inverse.
 
     Parameters
@@ -111,7 +106,7 @@ def control_eqn(eqn, ctrl_qubit_var):
         The equation with inverted operation.
 
     """
-    from qrisp.jasp import Jaspr, AbstractQuantumState
+    from qrisp.jasp import AbstractQuantumState, Jaspr
 
     if eqn.primitive.name == "jit":
         new_params = dict(eqn.params)
@@ -222,8 +217,7 @@ def control_eqn(eqn, ctrl_qubit_var):
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
 @qrisp_lru_compilation_cache
 def control_jaspr(jaspr):
-    """
-    Takes a Jaspr and returns a Jaspr that has an additional Qubit argument
+    """Takes a Jaspr and returns a Jaspr that has an additional Qubit argument
     (located behind the QuantumState argument). The returned Jaspr is
     controlled on that Qubit argument.
 
@@ -238,8 +232,7 @@ def control_jaspr(jaspr):
         The controlled Jaspr.
 
     """
-
-    from qrisp.jasp import Jaspr, AbstractQubit
+    from qrisp.jasp import AbstractQubit, Jaspr
 
     ctrl_qubit_var = Var(aval=AbstractQubit())
     control_var_count[0] += 1
@@ -273,8 +266,7 @@ def control_jaspr(jaspr):
 
 
 def multi_control_jaspr(jaspr, num_ctrl, ctrl_state):
-    """
-    Similar to control_jaspr but allows specification of more than
+    """Similar to control_jaspr but allows specification of more than
     one control and a control state
 
     Parameters
@@ -292,7 +284,6 @@ def multi_control_jaspr(jaspr, num_ctrl, ctrl_state):
         The controlled Jaspr.
 
     """
-
     from qrisp.jasp import make_jaspr
 
     ctrl_vars = [Var(aval=AbstractQubit()) for _ in range(num_ctrl)]

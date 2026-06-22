@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,9 @@
 ********************************************************************************
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 # Function to generate the torus

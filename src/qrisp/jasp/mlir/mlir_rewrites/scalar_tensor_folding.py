@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -42,18 +41,17 @@ from xdsl.context import Context
 from xdsl.dialects import builtin, tensor
 from xdsl.pattern_rewriter import (
     GreedyRewritePatternApplier,
-    op_type_rewrite_pattern,
     PatternRewriter,
     PatternRewriteWalker,
     RewritePattern,
+    op_type_rewrite_pattern,
 )
 from xdsl.transforms.canonicalize import CanonicalizePass
 from xdsl.transforms.dead_code_elimination import DeadCodeElimination
 
 
 def scalar_tensor_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> None:
-    """
-    Applies custom rewrite patterns to fold trivial 0-dimensional tensor operations
+    """Applies custom rewrite patterns to fold trivial 0-dimensional tensor operations
     into scalar operations, and eliminates dead tensor ops.
 
     Parameters
@@ -63,6 +61,7 @@ def scalar_tensor_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> N
     xdsl_module: builtin.ModuleOp
         The xDSL module to be rewritten. The transformation is applied
         greedily and recursively over the whole module.
+
     """
     patterns = [FoldExtractFromElements(), EraseDeadFromElements()]
 
@@ -103,8 +102,7 @@ class FoldExtractFromElements(RewritePattern):
 
 
 class EraseDeadFromElements(RewritePattern):
-    """
-    Eliminates dead `tensor.from_elements` operations that have no active uses.
+    """Eliminates dead `tensor.from_elements` operations that have no active uses.
 
     Why is this necessary?
     In MLIR and xDSL, the standard `DeadCodeElimination` (DCE) pass will only

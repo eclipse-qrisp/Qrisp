@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,7 +17,7 @@
 
 # qswitch is deprecated, use q_switch instead
 
-from qrisp import inpl_mult, h, QuantumFloat, qswitch, multi_measurement, x
+from qrisp import QuantumFloat, h, inpl_mult, multi_measurement, qswitch, x
 
 
 def test_qswitch_case_list():

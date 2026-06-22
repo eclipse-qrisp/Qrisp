@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -23,15 +22,14 @@ from qrisp.jasp.primitives.quantum_primitive import QuantumPrimitive
 
 parity_p = QuantumPrimitive("parity")
 
+import jax.numpy as jnp
 from jax.core import ShapedArray
 from jax.lax import while_loop
-import jax.numpy as jnp
 
 
 @parity_p.def_abstract_eval
 def parity_abstract_eval(*measurements, expectation=0, observable=False):
-    """
-    Abstract evaluation for the parity primitive.
+    """Abstract evaluation for the parity primitive.
 
     Checks that inputs are boolean (measurement results) and returns a boolean scalar (the detector result).
     """
@@ -43,8 +41,7 @@ def parity_abstract_eval(*measurements, expectation=0, observable=False):
 
 
 def parity(*measurements, expectation=0, observable=False):
-    r"""
-    Computes the parity on a set of measurement results. This is equivalent to performing a multi-input XOR gate.
+    r"""Computes the parity on a set of measurement results. This is equivalent to performing a multi-input XOR gate.
 
     In mathematical terms, if given the inputs $\{x_i \in \mathbb{F}_2\| 0 \leq i < n \}$
     the output of this function is therefore
@@ -125,7 +122,6 @@ def parity(*measurements, expectation=0, observable=False):
 
     Examples
     --------
-
     We measure the parity of the 4 qubit GHZ state:
 
     .. math::
@@ -173,7 +169,6 @@ def parity(*measurements, expectation=0, observable=False):
 
     """
     import jax.numpy as jnp
-    from jax import lax
 
     expectation = int(expectation)
     observable = bool(observable)
@@ -235,8 +230,7 @@ def parity(*measurements, expectation=0, observable=False):
 
 @parity_p.def_impl
 def parity_implementation(*measurements, expectation, observable):
-    """
-    Implementation of the parity primitive.
+    """Implementation of the parity primitive.
 
     Handles only scalar inputs. Array broadcasting is handled in the parity function.
     """
@@ -248,8 +242,7 @@ def parity_implementation(*measurements, expectation, observable):
 
 
 class ParityOperation(Operation):
-    """
-    Operation class representing a Stim parity instructions (DETECTOR or OBSERVABLE_INCLUDE).
+    """Operation class representing a Stim parity instructions (DETECTOR or OBSERVABLE_INCLUDE).
 
     This operation is used to interface with Stim's DETECTOR and OBSERVABLE instructions during the
     conversion process. It acts as a placeholder in the Qrisp QuantumCircuit.

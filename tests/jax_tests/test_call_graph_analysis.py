@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -22,9 +21,7 @@ from jax import make_jaxpr
 
 from qrisp.jasp.interpreter_tools.call_graph_analysis import (
     analyze_call_graph,
-    JaxprStats,
 )
-
 
 # ── Tests ─────────────────────────────────────────────────────────
 
@@ -155,7 +152,7 @@ def test_nested_jit():
 
 
 def test_diamond_reuse():
-    """inner called from two different outer functions → call_count == 2."""
+    """Inner called from two different outer functions → call_count == 2."""
 
     @jax.jit
     def inner(x):

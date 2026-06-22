@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,23 +16,24 @@
 """
 
 from __future__ import annotations
-from functools import partial
-import jax.numpy as jnp
+
+from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple
+
 import jax
+import jax.numpy as jnp
 import numpy as np
-from qrisp import QuantumVariable, QuantumBool, h, control, multi_measurement
-from qrisp.operators import QubitOperator
+
+from qrisp import QuantumBool, QuantumVariable, control, h, multi_measurement
 from qrisp.block_encodings import BlockEncoding
-from qrisp.jasp import jrange, check_for_tracing_mode, expectation_value
-from typing import Any, TYPE_CHECKING, Callable, Dict, Tuple
+from qrisp.jasp import check_for_tracing_mode, expectation_value, jrange
+from qrisp.operators import QubitOperator
 
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
 
 def lanczos_even(BE: BlockEncoding, k: int, operand_prep: Callable[..., Any]) -> Tuple[QuantumVariable, ...]:
-    r"""
-    This function implements the Krylov space construction via block-encodings
+    r"""This function implements the Krylov space construction via block-encodings
     of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(a) of `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018>`__.
 
     For even $k$, the subroutine prepares a state by applying $k/2$ qubitization
@@ -58,6 +58,7 @@ def lanczos_even(BE: BlockEncoding, k: int, operand_prep: Callable[..., Any]) ->
     -------
     tuple of QuantumVariable
         The ancilla QuantumVariables. Measurement outcomes of these variables encode the expectation value.
+
     """
     BE_qubitized = BE.qubitization()
 
@@ -74,8 +75,7 @@ def lanczos_even(BE: BlockEncoding, k: int, operand_prep: Callable[..., Any]) ->
 
 
 def lanczos_odd(BE: BlockEncoding, k: int, operand_prep: Callable[..., Any]) -> QuantumBool:
-    r"""
-    This function implements the Krylov space construction via block-encodings
+    r"""This function implements the Krylov space construction via block-encodings
     of Chebyshev polynomials $T_k(H)$, following the layout in Figure 1(b) of `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/>`__.
 
     For odd $k$, the subroutine applies $\lfloor k/2 \rfloor$ qubitization steps
@@ -98,6 +98,7 @@ def lanczos_odd(BE: BlockEncoding, k: int, operand_prep: Callable[..., Any]) -> 
     QuantumBool
         QuantumBool used as the Hadamard test ancilla. The expectation value is derived
         from the Z-basis measurement statistics ($P(0) - P(1)$).
+
     """
     BE_qubitized = BE.qubitization()
 
@@ -120,8 +121,7 @@ def lanczos_odd(BE: BlockEncoding, k: int, operand_prep: Callable[..., Any]) -> 
 
 
 def compute_expectation(meas_res: Dict[object, float]) -> float:
-    r"""
-    Convert measurement results from Lanczos subroutines into the expectation
+    r"""Convert measurement results from Lanczos subroutines into the expectation
     value of a Chebyshev polynomial $\langle T_k(H) \rangle_0$.
 
     This function processes the output of `:ref: lanczos_even` and `lanczos_odd`` constructing the circuits described in
@@ -175,8 +175,7 @@ def lanczos_expvals(
     operand_prep: Callable[..., Any],
     mes_kwargs: Dict[str, object] = {},
 ) -> "ArrayLike":
-    r"""
-    Estimate the expectation values of Chebyshev polynomials $\langle T_k(H) \rangle_0$
+    r"""Estimate the expectation values of Chebyshev polynomials $\langle T_k(H) \rangle_0$
     for the exact and efficient Quantum Lanczos method.
 
     This function constructs the Krylov space basis by evaluating the expectation
@@ -218,9 +217,8 @@ def lanczos_expvals(
         The expectation values $\langle T_k(H) \rangle_0$ for $k=0, \dots, 2D-1$.
 
     """
-
     # Set default options
-    if not "shots" in mes_kwargs:
+    if "shots" not in mes_kwargs:
         mes_kwargs["shots"] = 100000
 
     BE = H if isinstance(H, BlockEncoding) else BlockEncoding.from_operator(H)
@@ -229,8 +227,7 @@ def lanczos_expvals(
 
         @jax.jit
         def post_processor(*args):
-            """
-            Maps the 'all-zeros' outcome to 1 and any other outcome to -1.
+            """Maps the 'all-zeros' outcome to 1 and any other outcome to -1.
             """
             return jnp.where(jnp.all(jnp.array(args)) == 0, 1, -1)
 
@@ -264,8 +261,7 @@ def lanczos_expvals(
 
 @jax.jit
 def build_S_H_from_Tk(expvals: "ArrayLike") -> Tuple["ArrayLike", "ArrayLike"]:
-    r"""
-    Construct the overlap matrix $\mathbf{S}$ and the Krylov Hamiltonian matrix $\mathbf{H}$ from Chebyshev polynomial expectation values.
+    r"""Construct the overlap matrix $\mathbf{S}$ and the Krylov Hamiltonian matrix $\mathbf{H}$ from Chebyshev polynomial expectation values.
 
     Using Chebyshev recurrence relations, this function generates the matrix elements for
     both the overlap matrix ($\mathbf{S}$) and the Hamiltonian matrix ($\mathbf{H}$) in the Krylov subspace.
@@ -314,8 +310,7 @@ def build_S_H_from_Tk(expvals: "ArrayLike") -> Tuple["ArrayLike", "ArrayLike"]:
 def regularize_S_H(
     S: "ArrayLike", H_mat: "ArrayLike", cutoff: float = 1e-2
 ) -> Tuple["ArrayLike", "ArrayLike", "ArrayLike"]:
-    r"""
-    Regularize the overlap matrix $\mathbf{S}$ by retaining only eigenvectors with sufficiently large eigenvalues and project the Hamiltonian matrix $\mathbf{H}$ accordingly.
+    r"""Regularize the overlap matrix $\mathbf{S}$ by retaining only eigenvectors with sufficiently large eigenvalues and project the Hamiltonian matrix $\mathbf{H}$ accordingly.
 
     This function applies a spectral cutoff: only directions in the Krylov subspace with eigenvalues
     above ``cutoff * max_eigenvalue`` are kept. Both the overlap matrix ($\mathbf{S}$) and the Hamiltonian matrix ($\mathbf{H}$)
@@ -339,6 +334,7 @@ def regularize_S_H(
         The regularized Hamiltonian matrix in Krylov subspace.
     V : ArrayLike, shape (D, D)
         The projection matrix.
+
     """
     D = S.shape[0]
 
@@ -379,8 +375,7 @@ def regularize_S_H(
 # jax.scipy.linalg.eigh does currently not support the generalized eigenvalue problem
 @jax.jit
 def generalized_eigh(A: "ArrayLike", B: "ArrayLike") -> Tuple["ArrayLike", "ArrayLike"]:
-    r"""
-    Solves the generalized eigenvalue problem $A v = \lambda B v$
+    r"""Solves the generalized eigenvalue problem $A v = \lambda B v$
     for a complex Hermitian or real symmetric matrix $A$ and a real symmetric positive-definite matrix $B$.
 
     Parameters
@@ -396,6 +391,7 @@ def generalized_eigh(A: "ArrayLike", B: "ArrayLike") -> Tuple["ArrayLike", "Arra
         The generalized eigenvalues.
     eigvecs : ArrayLike, shape (D, D)
         The generalized eigenvectors.
+
     """
     # Compute Cholesky decomposition of B (L*L.T)
     # The 'lower=True' parameter is typically the default but good to be explicit.
@@ -426,8 +422,7 @@ def lanczos_alg(
     cutoff: float = 1e-2,
     show_info: bool = False,
 ):
-    r"""
-    Estimate the ground state energy of a Hamiltonian using the `Exact and efficient Lanczos method on a quantum computer <https://quantum-journal.org/papers/q-2023-05-23-1018/>`__.
+    r"""Estimate the ground state energy of a Hamiltonian using the `Exact and efficient Lanczos method on a quantum computer <https://quantum-journal.org/papers/q-2023-05-23-1018/>`__.
 
     This function implements the algorithm proposed in Kirby et al. by constructing a Krylov subspace using block-encodings of Chebyshev polynomials $T_k(H)$,
     bypassing the need for real or imaginary time evolution.
@@ -531,7 +526,6 @@ def lanczos_alg(
 
     Examples
     --------
-
     **Example 1: Jasp Mode (Dynamic Execution)**
 
     This mode uses Qrisp's :ref:`Jasp <jasp>` framework for JIT-compilation and
@@ -588,7 +582,6 @@ def lanczos_alg(
         print(f"Ground state energy: {H.ground_state_energy()}")
 
     """
-
     BE = H if isinstance(H, BlockEncoding) else BlockEncoding.from_operator(H)
 
     # Step 1: Quantum Lanczos: Find expectation values of Chebyshev polynomials

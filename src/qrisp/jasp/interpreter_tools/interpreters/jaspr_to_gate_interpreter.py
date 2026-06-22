@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -20,7 +19,7 @@ from qrisp.jasp.interpreter_tools import eval_jaxpr, extract_invalues, insert_ou
 
 
 def cond_to_cl_control(eqn, context_dic, eqn_evaluator):
-    from qrisp.circuit import QuantumCircuit, Clbit
+    from qrisp.circuit import Clbit, QuantumCircuit
 
     if len(eqn.params["branches"]) > 2:
         raise Exception("Tried to extract QuantumCircuit from Jaspr including a condition with more than two branches")

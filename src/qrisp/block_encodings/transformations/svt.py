@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,7 +15,8 @@
 ********************************************************************************
 """
 
-from typing import Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
+
 import numpy as np
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
@@ -31,8 +31,7 @@ def apply_svt(
     kind: Literal["Polynomial", "Chebyshev"] = "Polynomial",
     parity: Literal["even", "odd"] = "odd",
 ) -> BlockEncoding:
-    r"""
-    Returns a BlockEncoding representing a singular value transformation (SVT) of the operator.
+    r"""Returns a BlockEncoding representing a singular value transformation (SVT) of the operator.
 
     For a block-encoded operator $A$ with `Singular Value Decomposition <https://en.wikipedia.org/wiki/Singular_value_decomposition>`_ $A = U \Sigma V^{\dagger}$ for unitaries $U, V$,
     and a (real) polynomial $p(x)$, this method returns a BlockEncoding of either operator:
@@ -72,7 +71,6 @@ def apply_svt(
 
     Examples
     --------
-
     Define a non-Hermitian matrix $A$ and a vector $\vec{b}$. The matrix $A$ has singular value decomposition
     $A = U \Sigma V^{\dagger}$ for unitary matrices $U, V$.
 

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -37,10 +36,9 @@ from qrisp.circuit.standard_operations import (
     RYGate,
     RZGate,
     SGate,
-    TGate,
     SXGate,
+    TGate,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helper: analytical U3 unitary
@@ -84,6 +82,7 @@ def _controlled_unitary(u, ctrl_state="1"):
     ndarray
         The controlled unitary matrix of shape (2**(k+1), 2**(k+1))
         where k = len(ctrl_state).
+
     """
     num_ctrl = len(ctrl_state)
     n = u.shape[0]
@@ -317,7 +316,6 @@ class TestU3GateControl:
 
     def test_controlled_unitary_matches_analytical(self):
         """Controlled U3 unitary matches analytical controlled-unitary formula."""
-
         for gate in [
             TGate(),
             SGate(),

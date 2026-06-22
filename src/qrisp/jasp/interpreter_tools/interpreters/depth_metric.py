@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,15 +16,14 @@
 """
 
 import types
-from functools import lru_cache
 from typing import Any, Callable, Iterator, List, Tuple
 
-from qrisp._cache_config import qrisp_lru_compilation_cache
 import jax
 import jax.numpy as jnp
 from jax.random import key
 from jax.typing import ArrayLike
 
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.circuit.instruction import Instruction
 from qrisp.jasp.interpreter_tools import (
     BaseMetric,
@@ -48,8 +46,7 @@ def _apply_duration_on_qubits(
     qubit_ids: List,
     duration: jnp.ndarray,
 ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-    """
-    Apply a gate of given duration on specified qubits,
+    """Apply a gate of given duration on specified qubits,
     updating the depth array and current depth accordingly.
     """
     qubit_ids_arr = jnp.asarray(qubit_ids, dtype=jnp.int64)
@@ -64,7 +61,6 @@ def _apply_duration_on_qubits(
 
 def _iter_definition_ops(definition) -> Iterator[Tuple[Instruction, List[Any]]]:
     """Iterate over operations in a quantum circuit definition."""
-
     for instruction in definition.data:
         qubits = getattr(instruction, "qubits", None)
         if qubits is None:
@@ -77,13 +73,11 @@ def _iter_definition_ops(definition) -> Iterator[Tuple[Instruction, List[Any]]]:
 # that maps logical indices to global qubit ids in the depth array.
 def _create_lookup_table(idx_start: ArrayLike, table_size: ArrayLike) -> ArrayLike:
     """Create a lookup table for qubit IDs starting from idx_start."""
-
     return idx_start + jnp.arange(table_size, dtype=jnp.int64)
 
 
 def _as_qubit_array_handle(x) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """Convert input to a qubit array handle (array, size) tuple."""
-
     if isinstance(x, tuple) and len(x) == 2:
         return jnp.asarray(x[0], dtype=jnp.int64), jnp.asarray(x[1], dtype=jnp.int64)
 
@@ -106,8 +100,7 @@ def _warn_overflow(idx_end, max_qubits):
 
 
 class DepthMetric(BaseMetric):
-    """
-    A metric implementation that computes the circuit depth of a Jaspr.
+    """A metric implementation that computes the circuit depth of a Jaspr.
 
     Parameters
     ----------
@@ -121,7 +114,6 @@ class DepthMetric(BaseMetric):
 
     def __init__(self, meas_behavior: Callable, max_qubits: int = 1024):
         """Initialize the DepthMetric."""
-
         super().__init__(meas_behavior=meas_behavior)
 
         # Define a maximum number of qubits to track depth for
@@ -367,7 +359,6 @@ class DepthMetric(BaseMetric):
 
 def extract_depth(res: Tuple, jaspr: Jaspr, _) -> int:
     """Extract depth from the profiling result."""
-
     metric = res[-1] if len(jaspr.outvars) > 1 else res
     _, depth, _, overflowed = metric
 
@@ -382,8 +373,7 @@ def extract_depth(res: Tuple, jaspr: Jaspr, _) -> int:
 def get_depth_profiler(
     jaspr: Jaspr, meas_behavior: Callable, max_qubits: int = 1024, callback_threshold=None
 ) -> Tuple[Callable, None]:
-    """
-    Build a depth profiling computer for a given Jaspr.
+    """Build a depth profiling computer for a given Jaspr.
 
     Parameters
     ----------
@@ -408,7 +398,6 @@ def get_depth_profiler(
         A depth profiler function and None as auxiliary data.
 
     """
-
     depth_metric = DepthMetric(meas_behavior, max_qubits)
 
     # Analyze the call graph to identify reused sub-jaxprs.  The resulting
@@ -436,5 +425,4 @@ def get_depth_profiler(
 
 def simulate_depth(jaspr: Jaspr, *_, **__) -> int:
     """Simulate depth metric via actual simulation."""
-
     raise NotImplementedError("Depth metric via simulation is not implemented yet.")

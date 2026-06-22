@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,7 +17,6 @@
 
 import numpy as np
 import sympy as sp
-from sympy.polys.polytools import degree
 
 from qrisp.alg_primitives.arithmetic.poly_tools import (
     expr_to_list,
@@ -29,20 +27,16 @@ from qrisp.core import (
     QuantumArray,
     QuantumVariable,
     cp,
+    crz,
     cx,
-    cz,
+    gphase,
     h,
+    mcp,
     mcx,
     p,
     z,
-    rz,
-    rzz,
-    crz,
-    mcp,
-    gphase,
 )
-from qrisp.misc import gate_wrap, lifted
-from qrisp.circuit import XGate
+from qrisp.misc import gate_wrap
 
 # Threshold of rounding used in detecting integer multiples of pi
 pi_mult_round_threshold = 11
@@ -104,9 +98,8 @@ def multi_controlled_U_g(output_qf, control_qb_list, y, phase_tolerant=False, us
     # of multiple qubits within a single laser pulse
 
     from qrisp.environments import (
-        QuantumEnvironment,
-        control,
         GMSEnvironment,
+        QuantumEnvironment,
         custom_control,
     )
 
@@ -219,7 +212,7 @@ def sb_polynomial_encoder(input_qf_list, output_qf, poly, inplace_mult=1, use_gm
     # Acquire monomials in list form
     monomial_list = expr_to_list(poly)
 
-    from qrisp import QFT, conjugate, QuantumEnvironment
+    from qrisp import QFT, QuantumEnvironment, conjugate
 
     if inplace_mult == 1:
         env = conjugate(QFT)(
@@ -343,8 +336,7 @@ def sb_polynomial_encoder(input_qf_list, output_qf, poly, inplace_mult=1, use_gm
 # these polynomials get multiplied and which forms a bigger polynomial
 # which can be encoded using the polynomial encoder
 def sbp_mult(factor_1_qf, factor_2_qf, output_qf=None):
-    """
-    Performs multiplication based on the evaluation of
+    """Performs multiplication based on the evaluation of
     `semi-boolean polynomials <https://ieeexplore.ieee.org/document/9815035>`_.
 
     Parameters
@@ -364,7 +356,6 @@ def sbp_mult(factor_1_qf, factor_2_qf, output_qf=None):
 
     Examples
     --------
-
     We multiply two QuantumFloats:
 
     ::
@@ -384,7 +375,6 @@ def sbp_mult(factor_1_qf, factor_2_qf, output_qf=None):
 
 
     """
-
     if output_qf is None:
         from qrisp.qtypes.quantum_float import create_output_qf
 
@@ -399,8 +389,7 @@ def sbp_mult(factor_1_qf, factor_2_qf, output_qf=None):
 
 
 def sbp_add(summand_1_qf, summand_2_qf, output_qf=None):
-    """
-    Performs addition based on the evaluation of
+    """Performs addition based on the evaluation of
     `semi-boolean polynomials <https://ieeexplore.ieee.org/document/9815035>`_.
 
     Parameters
@@ -420,7 +409,6 @@ def sbp_add(summand_1_qf, summand_2_qf, output_qf=None):
 
     Examples
     --------
-
     We add two QuantumFloats:
 
     ::
@@ -440,7 +428,6 @@ def sbp_add(summand_1_qf, summand_2_qf, output_qf=None):
 
 
     """
-
     if output_qf is None:
         from qrisp.qtypes.quantum_float import create_output_qf
 
@@ -455,8 +442,7 @@ def sbp_add(summand_1_qf, summand_2_qf, output_qf=None):
 
 
 def sbp_sub(summand_1_qf, summand_2_qf, output_qf=None):
-    """
-    Performs subtraction based on the evaluation of
+    """Performs subtraction based on the evaluation of
     `semi-boolean polynomials <https://ieeexplore.ieee.org/document/9815035>`_.
 
     Parameters
@@ -476,7 +462,6 @@ def sbp_sub(summand_1_qf, summand_2_qf, output_qf=None):
 
     Examples
     --------
-
     We add two QuantumFloats:
 
     ::
@@ -496,7 +481,6 @@ def sbp_sub(summand_1_qf, summand_2_qf, output_qf=None):
 
 
     """
-
     if output_qf is None:
         from qrisp.qtypes.quantum_float import create_output_qf
 
@@ -514,8 +498,7 @@ def sbp_sub(summand_1_qf, summand_2_qf, output_qf=None):
 # depending on the input variables qv_list
 @gate_wrap(is_qfree=True, permeability=[0])
 def polynomial_encoder(qf_list, output_qf, poly, encoding_dic=None, inplace_mult=1):
-    """
-    Evaluates a (multivariate) sympy polynomial on a list of QuantumFloats using
+    """Evaluates a (multivariate) sympy polynomial on a list of QuantumFloats using
     `semi-boolean polynomials <https://ieeexplore.ieee.org/document/9815035>`_.
 
     Parameters
@@ -547,7 +530,6 @@ def polynomial_encoder(qf_list, output_qf, poly, encoding_dic=None, inplace_mult
 
     Examples
     --------
-
     We evaluate the polynomial $x^2 + 2y^2$ on two QuantumFloats:
 
 
@@ -574,7 +556,6 @@ def polynomial_encoder(qf_list, output_qf, poly, encoding_dic=None, inplace_mult
 
 
     """
-
     if isinstance(qf_list, QuantumArray):
         qf_list = list(qf_list.flatten())
 
@@ -659,8 +640,7 @@ def hybrid_mult(
     phase_tolerant=False,
     cl_factor=1,
 ):
-    """
-    An advanced algorithm for multiplication which has better depth, gate-count
+    """An advanced algorithm for multiplication which has better depth, gate-count
     and compile time than :meth:`sbp_mult <qrisp.sbp_mult>`.
     It does not support squaring a single QuantumFloat though.
 
@@ -701,7 +681,6 @@ def hybrid_mult(
 
     Examples
     --------
-
     We multiply two QuantumFloat with eachother and an additional classical factor
 
     ::
@@ -721,7 +700,6 @@ def hybrid_mult(
 
 
     """
-
     from qrisp import QFT, cx, h, merge, z
 
     # The two factors take asymetrical roles in this algorithm
@@ -863,13 +841,12 @@ def hybrid_mult(
             cx(y[i], y[i + 1])
             cx(y[i + 1], output_qf)
             cx(y[i], y[i + 1])
-        else:
-            if not y.signed:
-                # This command performs the final negation
-                # if y is signed, we can perform the negation
-                # together with the negation conditioned on the sign qubit
-                # of y (command [6])
-                cx(y[i], output_qf)  # command [5]
+        elif not y.signed:
+            # This command performs the final negation
+            # if y is signed, we can perform the negation
+            # together with the negation conditioned on the sign qubit
+            # of y (command [6])
+            cx(y[i], output_qf)  # command [5]
 
     if not phase_tolerant and terminal_op != "qft":
         cx(y[i], hybrid_mult_anc[0])
@@ -987,8 +964,7 @@ def QFT_inpl_mult(qv, inplace_mult=1):
 
 
 def inpl_mult(qf, mult_int, treat_overflow=True):
-    """
-    Performs inplace multiplication of a :ref:`QuantumFloat` with a classical integer.
+    """Performs inplace multiplication of a :ref:`QuantumFloat` with a classical integer.
     To prevent overflow errors, this function automatically adjusts the mantissa size.
     If you want to prevent this behavior, set ``treat_overflow = False``.
 
@@ -1003,7 +979,6 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
 
     Examples
     --------
-
     We create a QuantumFloat, bring it to superposition and perform an inplace multiplication.
 
     ::
@@ -1032,7 +1007,6 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
 
 
     """
-
     if not isinstance(mult_int, (int, float, np.integer, np.floating)):
         raise Exception(
             "Quantum inplace multiplication is restricted to classical values due to reversibility constraints"
@@ -1079,7 +1053,7 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
 
 def quantum_bit_shift(qf, bit_shift, treat_overflow=True):
 
-    from qrisp import cyclic_shift, control, QuantumFloat
+    from qrisp import QuantumFloat, control, cyclic_shift
 
     if isinstance(bit_shift, QuantumFloat):
         if bit_shift.signed or qf.signed:
@@ -1110,8 +1084,7 @@ def quantum_bit_shift(qf, bit_shift, treat_overflow=True):
 
 # @lifted
 def app_sb_phase_polynomial(qv_list, poly, symbol_list=None, t=1):
-    r"""
-    Applies a phase function specified by a `semi-Boolean polynomial <https://ieeexplore.ieee.org/document/9815035>`_ acting on a list of QuantumVariables.
+    r"""Applies a phase function specified by a `semi-Boolean polynomial <https://ieeexplore.ieee.org/document/9815035>`_ acting on a list of QuantumVariables.
     That is, this method implements the transformation
 
     .. math::
@@ -1143,7 +1116,6 @@ def app_sb_phase_polynomial(qv_list, poly, symbol_list=None, t=1):
 
     Examples
     --------
-
     We apply the phase function specified by the polynomial :math:`P(x,y,z) = \pi xyz` on a QuantumVariable:
 
     ::
@@ -1166,7 +1138,6 @@ def app_sb_phase_polynomial(qv_list, poly, symbol_list=None, t=1):
     sqrt(2)*(|000> - |111>)/2
 
     """
-
     if isinstance(qv_list, QuantumArray):
         qv_list = list(qv_list.flatten())
 
@@ -1237,8 +1208,7 @@ def app_sb_phase_polynomial(qv_list, poly, symbol_list=None, t=1):
 
 # @lifted
 def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
-    r"""
-    Applies a phase function specified by a polynomial acting on a list of QuantumFloats.
+    r"""Applies a phase function specified by a polynomial acting on a list of QuantumFloats.
     That is, this method implements the transformation
 
     .. math::
@@ -1269,7 +1239,6 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
 
     Examples
     --------
-
     We apply the phase function specified by the polynomial :math:`P(x,y) = \pi x + \pi xy` on two QuantumFloats:
 
     ::
@@ -1347,7 +1316,6 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
         :align: center
 
     """
-
     if isinstance(qf_list, QuantumArray):
         qf_list = list(qf_list.flatten())
 

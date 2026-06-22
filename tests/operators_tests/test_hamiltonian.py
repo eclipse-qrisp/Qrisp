@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,9 +18,10 @@
 
 def test_pauli_hamiltonian():
 
-    from qrisp import QuantumVariable, QuantumArray, h
-    from qrisp.operators.qubit import X, Y, Z
     import numpy as np
+
+    from qrisp import QuantumVariable, h
+    from qrisp.operators.qubit import Z
 
     def state_prep():
         qv = QuantumVariable(2)
@@ -43,9 +43,10 @@ def test_pauli_hamiltonian():
 
 def test_trotterization():
 
-    from qrisp import QuantumVariable, x, QPE
-    from qrisp.operators.qubit import X, Y, Z
     import numpy as np
+
+    from qrisp import QPE, QuantumVariable, x
+    from qrisp.operators.qubit import X, Z
 
     # Hydrogen https://arxiv.org/abs/1704.05018
     G = 0.011280 * Z(0) * Z(1) + 0.397936 * Z(0) + 0.397936 * Z(1) + 0.180931 * X(0) * X(1)

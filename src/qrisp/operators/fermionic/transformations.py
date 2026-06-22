@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,10 @@
 ********************************************************************************
 """
 
-from qrisp.operators.qubit.qubit_term import QubitTerm
-from qrisp.operators.qubit.qubit_operator import QubitOperator
-
 from functools import cache
+
+from qrisp.operators.qubit.qubit_operator import QubitOperator
+from qrisp.operators.qubit.qubit_term import QubitTerm
 
 
 # Jordan-Wigner annihilation operaror

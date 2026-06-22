@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -28,9 +27,9 @@ from scipy.sparse import (
 
 import qrisp.simulator.bi_array_helper as hlp
 from qrisp.simulator.numerics_config import (
+    cutoff_ratio,
     float_thresh,
     sparsification_rate,
-    cutoff_ratio,
 )
 
 try:

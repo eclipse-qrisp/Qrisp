@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,11 +18,12 @@
 from __future__ import annotations
 
 import functools
+
 import numpy as np
 
-from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.operation import ControlledOperation
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
 # The gray-synthesis Toffoli circuit is built lazily (on first call) rather than
@@ -76,6 +76,7 @@ def is_toffoli(op) -> bool:
     >>>
     >>> is_toffoli(qc.data[0].op)
     True
+
     """
     return isinstance(op, ControlledOperation) and len(op.controls) == 2 and op.base_operation.name == "x"
 
@@ -109,7 +110,6 @@ def gray_synth_toffoli(qc: QuantumCircuit) -> QuantumCircuit:
 
     Examples
     --------
-
     We showcase the distinction in Toffoli decompositions.
 
     >>> from qrisp import QuantumCircuit, PassManager
@@ -157,6 +157,7 @@ def gray_synth_toffoli(qc: QuantumCircuit) -> QuantumCircuit:
     This implementation has T-depth 5 but the first 4 CX gates can be implemented
     swap-free on a linear chain connectivity. After this, a single SWAP (that can
     be fused with one of the CX) is suffificient to execute the remaining CX.
+
     """
     qc_new = qc.clearcopy()
 

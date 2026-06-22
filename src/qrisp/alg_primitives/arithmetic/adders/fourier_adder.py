@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,14 +18,13 @@
 import numpy as np
 
 from qrisp.alg_primitives import QFT
-from qrisp.core.gate_application_functions import p, cz
-from qrisp.environments import QuantumEnvironment, conjugate
 from qrisp.circuit import Operation, PGate, QuantumCircuit
+from qrisp.core.gate_application_functions import cz, p
+from qrisp.environments import QuantumEnvironment, conjugate
 
 
 def fourier_adder(a, b, perform_QFT=True):
-    """
-    In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0410184>`__.
+    """In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0410184>`__.
     Performs the addition:
 
     ::
@@ -45,7 +43,6 @@ def fourier_adder(a, b, perform_QFT=True):
 
     Examples
     --------
-
     We add two integers:
 
     >>> from qrisp import QuantumFloat, fourier_adder
@@ -58,7 +55,6 @@ def fourier_adder(a, b, perform_QFT=True):
     {9: 1.0}
 
     """
-
     if perform_QFT:
         env = conjugate(QFT)(b, exec_swap=False)
     else:

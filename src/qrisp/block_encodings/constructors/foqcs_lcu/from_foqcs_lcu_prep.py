@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,10 +18,11 @@
 from typing import Callable
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
-from qrisp.environments import conjugate, invert
+from qrisp.core import cx, cz
+from qrisp.environments import invert
 from qrisp.jasp import qache
 from qrisp.qtypes import QuantumVariable
-from qrisp.core import cx, cz
+
 from .foqcs_preps import get_foqcs_lcu_prep_num_of_ancillae
 
 
@@ -35,9 +35,7 @@ def build_from_foqcs_lcu_prep(
     norm: "ArrayLike" = 1,
     num_q_anc: int = -1,
 ) -> BlockEncoding:
-    r"""
-
-    .. note::
+    r""".. note::
 
         This implementation is designed for building custom FOQCS-LCU
         block encodings. For automatic construction from a given operator, use
@@ -188,7 +186,6 @@ def build_from_foqcs_lcu_prep(
 
     Notes
     -----
-
     **State Preparation in FOQCS-LCU**
 
     The FOQCS-LCU block encoding unitary $U$ relies on distinct right and left state preparation subroutines, denoted as $P_R$ and $P_L$, alongside a $\text{SELECT}$ operation:
@@ -206,7 +203,6 @@ def build_from_foqcs_lcu_prep(
 
     Examples
     --------
-
     This example constructs a FOQCS-LCU block encoding for the one-dimensional
     nearest-neighbour Heisenberg Hamiltonian
 

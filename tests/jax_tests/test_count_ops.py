@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,10 @@
 ********************************************************************************
 """
 
-from jax import random
-
 from dataclasses import dataclass
-from jax.tree_util import register_pytree_node_class, tree_flatten
+
+from jax import random
+from jax.tree_util import register_pytree_node_class
 
 from qrisp import *
 from qrisp.jasp import *

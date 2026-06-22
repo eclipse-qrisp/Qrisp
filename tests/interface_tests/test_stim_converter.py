@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -283,8 +282,7 @@ def test_stim_errors():
 
 
 def test_detector_operation_conversion():
-    """
-    Test manual creation of ParityOperation and conversion to Stim using qc.to_stim().
+    """Test manual creation of ParityOperation and conversion to Stim using qc.to_stim().
 
     With the new parity design, ParityOperation takes only n input clbits (no output clbit).
     The parity operation is tracked in the circuit and converted directly to Stim detectors.

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -25,15 +24,14 @@ trace instead of being evaluated, leading to TracerIntegerConversionError.
 """
 
 import numpy as np
-from qrisp import QuantumVariable, QuantumFloat, QuantumBool, QuantumArray, QuantumCircuit, cx, x, h, measure, Clbit
-from qrisp.jasp import make_jaspr, qache
-from qrisp.jasp.interpreter_tools.interpreters import jaspr_to_qc
+
+from qrisp import Clbit, QuantumArray, QuantumBool, QuantumVariable, cx, h, measure
 from qrisp.circuit import QuantumCircuit as QC
+from qrisp.jasp import make_jaspr, qache
 
 
 def _build_to_qc_args(inner_jaspr, num_qubits):
-    """
-    Build concrete arguments for calling to_qc on an inner Jaspr.
+    """Build concrete arguments for calling to_qc on an inner Jaspr.
 
     Inspects the Jaspr's invars (excluding the trailing QuantumCircuit)
     to build appropriate concrete arguments. Handles both QuantumVariable
@@ -84,8 +82,7 @@ def test_to_qc_standalone():
 
 
 def test_to_qc_inside_make_jaspr():
-    """
-    Call to_qc on a sub-jaspr from within a make_jaspr tracing context.
+    """Call to_qc on a sub-jaspr from within a make_jaspr tracing context.
 
     This is the core use case: tracing an inner function to get its Jaspr,
     then calling to_qc to analyze its circuit structure, all while
@@ -130,8 +127,7 @@ def test_to_qc_inside_make_jaspr():
 
 
 def test_to_qc_inside_make_jaspr_with_measurements():
-    """
-    Call to_qc inside tracing and verify measurement Clbit objects
+    """Call to_qc inside tracing and verify measurement Clbit objects
     are returned correctly from the analysis.
     """
 
@@ -171,8 +167,7 @@ def test_to_qc_inside_make_jaspr_with_measurements():
 
 
 def test_to_qc_inside_make_jaspr_quantum_array():
-    """
-    Call to_qc with QuantumArray arguments inside tracing context.
+    """Call to_qc with QuantumArray arguments inside tracing context.
 
     This tests the full pattern with QuantumArray (multiple QuantumBool),
     which produces more complex Jaspr invars including ind_array and
@@ -212,8 +207,7 @@ def test_to_qc_inside_make_jaspr_quantum_array():
 
 
 def test_to_qc_stim_conversion_inside_tracing():
-    """
-    Full pipeline: to_qc -> to_stim inside tracing context.
+    """Full pipeline: to_qc -> to_stim inside tracing context.
 
     Verifies that the QuantumCircuit produced by to_qc can be further
     converted to a stim circuit, all within a make_jaspr tracing context.
@@ -253,8 +247,7 @@ def test_to_qc_stim_conversion_inside_tracing():
 
 
 def test_to_qc_existing_behavior_unchanged():
-    """
-    Verify that normal (non-tracing) to_qc behavior is unchanged after
+    """Verify that normal (non-tracing) to_qc behavior is unchanged after
     the eval_context addition.
     """
 

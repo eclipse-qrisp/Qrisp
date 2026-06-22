@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,11 +15,11 @@
 ********************************************************************************
 """
 
-from qrisp import gphase, rz, cx, conjugate, custom_control, x, y, z
-from qrisp.operators.qubit.visualization import X_, Y_, Z_
-
-from sympy import Symbol
 import numpy as np
+from sympy import Symbol
+
+from qrisp import conjugate, custom_control, cx, gphase, rz, x, y, z
+from qrisp.operators.qubit.visualization import X_, Y_, Z_
 
 PAULI_TABLE = {
     ("I", "I"): ("I", 1),
@@ -236,25 +235,19 @@ class QubitTerm:
     @custom_control(static_argnums=0)
     def simulate(self, coeff, qv, ctrl=None):
 
+
         from qrisp import (
-            h,
-            cx,
-            rz,
-            mcp,
-            conjugate,
-            control,
             QuantumBool,
-            mcx,
-            x,
-            p,
-            s,
             QuantumEnvironment,
-            gphase,
             QuantumVariable,
+            control,
             find_qs,
+            gphase,
+            mcp,
+            mcx,
+            p,
         )
         from qrisp.operators import QubitOperator
-        import numpy as np
 
         # If required, do change of basis. Change of basis here means, that
         # the quantum argument is conjugated with a function that makes the
@@ -501,8 +494,7 @@ class QubitTerm:
         return res
 
     def to_expr(self):
-        """
-        Returns a SymPy expression representing the QubitTerm.
+        """Returns a SymPy expression representing the QubitTerm.
 
         Returns
         -------
@@ -567,9 +559,7 @@ class QubitTerm:
         return QubitTerm(result_factor_dict), result_coeff
 
     def subs(self, subs_dict):
-        """
-
-        Parameters
+        """Parameters
         ----------
         subs_dict : dict
             A dictionary with indices (int) as keys and numbers (int, float, complex) as values.
@@ -597,8 +587,7 @@ class QubitTerm:
     #
 
     def unitary(self, sign=False):
-        """
-        Returns the unitary for the term self.
+        """Returns the unitary for the term self.
 
         Parameters
         ----------
@@ -622,8 +611,7 @@ class QubitTerm:
         return unitary_
 
     def apply_unitary(self, operand, sign=False):
-        """
-        Applies the unitary for the term self to the ``operand``.
+        """Applies the unitary for the term self to the ``operand``.
 
         Parameters
         ----------
@@ -657,8 +645,7 @@ class QubitTerm:
         return temp
 
     def commute(self, other):
-        """
-        Checks if two QubitTerms commute.
+        """Checks if two QubitTerms commute.
 
         """
         a = self.factor_dict
@@ -688,8 +675,7 @@ class QubitTerm:
         return sign_flip == 1
 
     def commute_pauli(self, other):
-        """
-        Checks if the Pauli factors of two QubitTerms commute and the ladder factors commute qubit-wise.
+        """Checks if the Pauli factors of two QubitTerms commute and the ladder factors commute qubit-wise.
 
         """
         a = self.factor_dict
@@ -720,8 +706,7 @@ class QubitTerm:
         return sign_flip == 1
 
     def commute_qw(self, other):
-        """
-        Checks if two QubitTerms commute qubit-wise.
+        """Checks if two QubitTerms commute qubit-wise.
 
         """
         a = self.factor_dict
@@ -737,15 +722,13 @@ class QubitTerm:
         return True
 
     def intersect(self, other):
-        """
-        Checks if two QubitTerms operate on the same qubit.
+        """Checks if two QubitTerms operate on the same qubit.
 
         """
         return len(set(self.factor_dict.keys()).intersection(other.factor_dict.keys())) != 0
 
     def ladders_agree(self, other):
-        """
-        Checks if the ladder operators of two QubitTerms operate on the same set of qubits.
+        """Checks if the ladder operators of two QubitTerms operate on the same set of qubits.
 
         Parameters
         ----------
@@ -762,8 +745,7 @@ class QubitTerm:
         return set(ladder_indices_self) == set(ladder_indices_other)
 
     def ladders_intersect(self, other):
-        """
-        Checks if the ladder operators of two QubitTerms operate on the same qubit.
+        """Checks if the ladder operators of two QubitTerms operate on the same qubit.
 
         Parameters
         ----------

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,8 @@
 ********************************************************************************
 """
 
+
 from qrisp import *
-from jax import make_jaxpr
 
 
 def test_qasm_converter():

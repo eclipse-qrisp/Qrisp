@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -24,8 +23,8 @@ import numpy as np
 import sympy as sp
 
 from qrisp.circuit.operation import Operation
-from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
+from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 
 def _collect_gphases(qc: QuantumCircuit) -> QuantumCircuit:
@@ -63,8 +62,7 @@ def decompose(
     decompose_predicate: Callable[[Operation], bool] | None = None,
     collect_gphases: bool = False,
 ) -> Callable[[QuantumCircuit], QuantumCircuit]:
-    """
-    Create a pass that recursively decomposes synthesized gates.
+    """Create a pass that recursively decomposes synthesized gates.
 
     Every gate that has a ``.definition`` (a sub-circuit) is dissolved into
     its constituent elementary gates up to the specified recursion *level*.
@@ -140,6 +138,7 @@ def decompose(
 
         >>> pm3 = PassManager()
         >>> pm3 += decompose(level=1)
+
     """
 
     @CircuitPass

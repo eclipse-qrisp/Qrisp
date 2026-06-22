@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,11 +16,12 @@
 """
 
 import pytest
-from qrisp.jasp.mlir.mlir_rewrites import cmpi_extui_folding, scalar_linalg_folding, scalar_tensor_folding
 from xdsl.context import Context
 from xdsl.dialects import arith, builtin, func, linalg, tensor
 from xdsl.ir import Block, Region
 from xdsl.ir.affine import AffineMap
+
+from qrisp.jasp.mlir.mlir_rewrites import cmpi_extui_folding, scalar_linalg_folding, scalar_tensor_folding
 
 
 @pytest.fixture
@@ -42,7 +42,6 @@ class TestFoldScalarLinalgGeneric:
     @staticmethod
     def build_test_ir(is_0d: bool = True, num_outputs: int = 1):
         """Constructs a test IR inside a func.FuncOp to prevent DCE."""
-
         f32 = builtin.f32
         tensor_type = builtin.TensorType(f32, [])
 
@@ -124,11 +123,10 @@ class TestScalarTensorFolding:
 
     @staticmethod
     def build_extract_test_ir():
-        """
-        Constructs a standard, perfectly valid 0-D scalar tensor extraction sequence:
-          %tensor = tensor.from_elements %arg0
-          %extracted = tensor.extract %tensor
-          func.return %extracted
+        """Constructs a standard, perfectly valid 0-D scalar tensor extraction sequence:
+        %tensor = tensor.from_elements %arg0
+        %extracted = tensor.extract %tensor
+        func.return %extracted
         """
         f32 = builtin.f32
         block = Block(arg_types=[f32])
@@ -153,8 +151,7 @@ class TestScalarTensorFolding:
 
     @staticmethod
     def build_dead_from_elements_ir(has_uses: bool = False):
-        """
-        Constructs a test function containing an orphaned tensor.from_elements
+        """Constructs a test function containing an orphaned tensor.from_elements
         to verify custom targeted Dead Code Elimination (DCE).
         """
         f32 = builtin.f32
@@ -226,7 +223,6 @@ class TestCmpiExtUIFolding:
     @staticmethod
     def build_test_ir(pred_int: int, rhs_val: int, lhs_is_extui: bool = True):
         """Constructs a test IR inside a func.FuncOp to prevent DCE."""
-
         # 1. Create a block that takes exactly one i1 argument.
         # This block argument (block.args[0]) acts as our abstract, un-foldable value!
         block = Block(arg_types=[builtin.i1])

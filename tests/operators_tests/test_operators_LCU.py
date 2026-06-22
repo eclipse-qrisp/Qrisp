@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,10 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable, LCU, prepare, terminal_sampling
-from qrisp.operators import X, Y, Z
 import numpy as np
+
+from qrisp import LCU, QuantumVariable, prepare, terminal_sampling
+from qrisp.operators import X, Z
 
 
 def test_operators_LCU():

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,11 +15,12 @@
 ********************************************************************************
 """
 
-from qrisp.vqe.problems.electronic_structure import *
-from qrisp import QuantumVariable, QuantumFloat
-from qrisp.jasp import jaspify
-import numpy as np
 import jax.numpy as jnp
+import numpy as np
+from qrisp.vqe.problems.electronic_structure import *
+
+from qrisp import QuantumFloat, QuantumVariable
+from qrisp.jasp import jaspify
 
 #
 # H2 molecule

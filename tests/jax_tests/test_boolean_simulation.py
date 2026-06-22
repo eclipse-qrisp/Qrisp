@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,11 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumFloat, QuantumVariable, control, h, measure, x
-from qrisp.jasp import boolean_simulation, jrange, qache
-from jax import lax
 import jax.numpy as jnp
+from jax import lax
+
+from qrisp import QuantumFloat, QuantumVariable, control, measure, x
+from qrisp.jasp import boolean_simulation, jrange, qache
 
 
 def test_boolean_simulation():
@@ -127,7 +127,7 @@ def test_boolean_simulation():
 
 
 def test_parity_boolean_simulation():
-    from qrisp import QuantumVariable, x, measure, boolean_simulation
+    from qrisp import boolean_simulation, measure, x
     from qrisp.jasp import parity
 
     # Test scalar parity with boolean simulation
@@ -182,9 +182,10 @@ def test_parity_boolean_simulation():
 
 def test_parity_boolean_simulation_inside_loop():
     """Test parity with array inputs (scan primitive) in boolean simulation."""
-    from qrisp import QuantumVariable, x, measure, boolean_simulation
-    from qrisp.jasp import parity
     import jax.numpy as jnp
+
+    from qrisp import boolean_simulation, measure, x
+    from qrisp.jasp import parity
 
     @boolean_simulation
     def test_array_parity():

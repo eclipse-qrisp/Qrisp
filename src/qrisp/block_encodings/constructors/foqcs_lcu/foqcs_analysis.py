@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,16 +16,18 @@
 """
 
 from functools import partial
+
 import numpy as np
+
 from qrisp.operators import QubitOperator
+
 from .foqcs_preps import foqcs_prep_heisenberg, foqcs_prep_spin_glass
 
 _FOQCS_SPIN_GLASS_TOL = 1e-12
 
 
 def foqcs_analyze_operator_spin_glass(O: QubitOperator, L: int = -1, tol: float = _FOQCS_SPIN_GLASS_TOL) -> dict:
-    """
-    Verifies operator against the spin-glass model.
+    """Verifies operator against the spin-glass model.
     Every non-zero term is Xi, Yi, Zi, XiXj, YiYj, ZiZj.
     Fails if operator has:
         - Const cI
@@ -46,7 +47,7 @@ def foqcs_analyze_operator_spin_glass(O: QubitOperator, L: int = -1, tol: float 
         Tolerance for considering the entry zero
 
     Returns
-    ----------
+    -------
     dict {
         "method": str ("heisenberg"")
         "L": int (number of intracting qubits)
@@ -55,7 +56,7 @@ def foqcs_analyze_operator_spin_glass(O: QubitOperator, L: int = -1, tol: float 
     }
 
     Raises
-    ----------
+    ------
     ValueError
         When the operator is not representing spin-glass model.
         When spin-glass analysis fails, it raises a ValueError with the reason for failure.
@@ -108,7 +109,7 @@ def foqcs_analyze_operator_spin_glass(O: QubitOperator, L: int = -1, tol: float 
             continue
 
         if len(pauli_str) > 2:
-            raise ValueError(f"FOQCS-LCU supports only one and two-body interactions.")
+            raise ValueError("FOQCS-LCU supports only one and two-body interactions.")
 
     return {
         "method": "spin_glass",
@@ -119,8 +120,7 @@ def foqcs_analyze_operator_spin_glass(O: QubitOperator, L: int = -1, tol: float 
 
 
 def foqcs_analyze_operator_heisenberg(O: QubitOperator, L: int = -1, tol: float = _FOQCS_SPIN_GLASS_TOL) -> dict:
-    """
-    Verify the operator against specific Heisenberg model.
+    """Verify the operator against specific Heisenberg model.
     Considering the Heisenberg model for quantum spins on a one-dimensional nearest-neighbour
     chain (https://arxiv.org/abs/2507.20887, Page 8, Paragraph 1)
 
@@ -131,6 +131,7 @@ def foqcs_analyze_operator_heisenberg(O: QubitOperator, L: int = -1, tol: float 
             - Local field is position dependent: `g_0X != g_1X, 0.5*X(0) + 0.7*X(1)`
             - Has long-range couplings: `X(0)*X(2)`
             - Has NN couplings with different strengths: `0.5*X(0)*X(1) + 0.9*X(1)*X(2)`
+
     Parameters
     ----------
     O : QubitOperator
@@ -144,7 +145,7 @@ def foqcs_analyze_operator_heisenberg(O: QubitOperator, L: int = -1, tol: float 
         Tolerance for considering the entry zero
 
     Returns
-    ----------
+    -------
     dict {
         "method": str ("heisenberg"")
         "L": int (number of intracting qubits)
@@ -153,7 +154,7 @@ def foqcs_analyze_operator_heisenberg(O: QubitOperator, L: int = -1, tol: float 
     }
 
     Raises
-    ----------
+    ------
     ValueError
         When the operator is not representing one-dimensional Heisenberg model with nearest-neighbours couplings.
 
@@ -168,16 +169,16 @@ def foqcs_analyze_operator_heisenberg(O: QubitOperator, L: int = -1, tol: float 
     J_heis_dict = {}
 
     # Verify that all one-body (local) coeffs are the same (uniform).
-    for pauli in {"X", "Z", "Y"}:
+    for pauli in ("X", "Z", "Y"):
         values = g_dict[pauli][:]
 
         if not np.allclose(values, values[0], atol=tol):
-            raise ValueError(f"Heisenberg Rejected: non-uniform local interactions")
+            raise ValueError("Heisenberg Rejected: non-uniform local interactions")
 
         g_heis_dict[pauli] = values[0]
 
     # Verify couplings
-    for pauli in {"X", "Z", "Y"}:
+    for pauli in ("X", "Z", "Y"):
         if L == 1:
             J_heis_dict[pauli] = 0
             continue
@@ -209,8 +210,7 @@ def foqcs_analyze_operator_heisenberg(O: QubitOperator, L: int = -1, tol: float 
 
 
 def foqcs_analyze_operator(O: QubitOperator, L: int = -1, tol: float = _FOQCS_SPIN_GLASS_TOL) -> dict:
-    r"""
-    Verifies oeprator against different FOQCS-LCU-compatible models.
+    r"""Verifies oeprator against different FOQCS-LCU-compatible models.
     Picks the narrowest scope.
     First checks against spin-glass, then tries to narrow it down to Heisenberg model.
 
@@ -227,7 +227,7 @@ def foqcs_analyze_operator(O: QubitOperator, L: int = -1, tol: float = _FOQCS_SP
         Tolerance for considering the entry zero
 
     Returns
-    ----------
+    -------
     dict {
         "method": str ("heisenberg" || "spin_glass")
         "L": int (number of intracting qubits)
@@ -236,7 +236,7 @@ def foqcs_analyze_operator(O: QubitOperator, L: int = -1, tol: float = _FOQCS_SP
     }
 
     Raises
-    ----------
+    ------
     ValueError
         When the operator is not compatible with FOQCS-LCU (fails the spin-glass check).
 
@@ -256,8 +256,7 @@ def foqcs_analyze_operator(O: QubitOperator, L: int = -1, tol: float = _FOQCS_SP
 def is_operator_foqcs_compatible(
     O: QubitOperator, L: int = -1, tol: float = _FOQCS_SPIN_GLASS_TOL
 ) -> dict:  # Or None, if incompatible
-    r"""
-    Runs `foqcs_analyze_operator` without rasing an error on unsuccessful attempt.
+    r"""Runs `foqcs_analyze_operator` without rasing an error on unsuccessful attempt.
 
     Parameters
     ----------
@@ -272,7 +271,7 @@ def is_operator_foqcs_compatible(
         Tolerance for considering the entry zero
 
     Returns
-    ----------
+    -------
     dict : Output of `foqcs_analyze_operator` if compatible. `None`, if incompatible.
 
     """
@@ -283,8 +282,7 @@ def is_operator_foqcs_compatible(
 
 
 def build_foqcs_lcu_prep_from_analysis(aresult: dict) -> dict:
-    r"""
-    Performs necessary preprocessing for `BlockEncoding.from_foqcs_lcu_prep`, preparing
+    r"""Performs necessary preprocessing for `BlockEncoding.from_foqcs_lcu_prep`, preparing
     its parameters based on the analysis output from `foqcs_analyze_operator`
 
     Parameters

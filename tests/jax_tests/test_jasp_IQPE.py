@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,9 +17,10 @@
 
 
 def test_IQPE_integration():
-    from qrisp import QuantumVariable, h, x, rx, IQPE
-    from qrisp.jasp import make_jaspr
     import numpy as np
+
+    from qrisp import IQPE, QuantumVariable, h, rx, x
+    from qrisp.jasp import make_jaspr
 
     def f():
         def U(qv):

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,12 +17,13 @@
 
 import networkx as nx
 import numpy as np
-from numpy.polynomial import Polynomial
 import pytest
-from qrisp import *
+from numpy.polynomial import Polynomial
 from qrisp.gqsp import GQET
-from qrisp.operators import X, Y, Z
 from qrisp.vqe.problems.heisenberg import create_heisenberg_init_function
+
+from qrisp import *
+from qrisp.operators import X, Y, Z
 
 
 def generate_1D_chain_graph(L):
@@ -51,7 +51,6 @@ def polyvalm(poly, A):
 )
 def test_gqet(L, poly):
     """Test GQET on a 1D Heisenberg chain with a simple polynomial transformation."""
-
     # Define Heisenberg Hamiltonian
     G = generate_1D_chain_graph(L)
     H = sum((X(i) * X(j) + Y(i) * Y(j) + Z(i) * Z(j)) for i, j in G.edges())

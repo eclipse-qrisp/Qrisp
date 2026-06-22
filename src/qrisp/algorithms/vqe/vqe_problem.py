@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,23 +17,21 @@
 
 import time
 
+import jax
+import jax.numpy as jnp
 import numpy as np
 from scipy.optimize import minimize
 from sympy import Symbol
 
 from qrisp.algorithms.vqe.vqe_benchmark_data import VQEBenchmark
-from qrisp.operators.qubit.measurement import QubitOperatorMeasurement
-from qrisp.operators.fermionic import FermionicOperator
-
-import jax
-import jax.numpy as jnp
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.jasp.optimization_tools.optimize import minimize as jasp_minimize
+from qrisp.operators.fermionic import FermionicOperator
+from qrisp.operators.qubit.measurement import QubitOperatorMeasurement
 
 
 class VQEProblem:
-    r"""
-    Central structure to facilitate treatment of VQE problems.
+    r"""Central structure to facilitate treatment of VQE problems.
     This class encapsulates the Hamiltonian, the ansatz, and the initial state preparation function for a specific VQE problem instance. 
     
     Parameters
@@ -54,7 +51,6 @@ class VQEProblem:
 
     Examples
     --------
-
     For a quick demonstration, we show how to calculate the ground state energy of the $H_2$ molecule using VQE. 
     The :meth:`electronic_structure_problem <qrisp.vqe.problems.electronic_structure.electronic_structure_problem>` method generates 
     a VQEProblem instance with the Hamiltonian and a chemistry-inspired Qubit Coupled Cluster Single Double `(QCCSD) ansatz <https://arxiv.org/abs/2005.08451>`_.
@@ -154,27 +150,24 @@ class VQEProblem:
         self.optimization_costs = []
 
     def set_callback(self):
-        """
-        Sets ``callback=True`` for saving intermediate results.
+        """Sets ``callback=True`` for saving intermediate results.
 
         """
-
         self.callback = True
 
     def set_init_function(self, init_function):
-        """
-        Set the initial state preparation function for the VQE problem.
+        """Set the initial state preparation function for the VQE problem.
 
         Parameters
         ----------
         init_function : callable
             The initial state preparation function for the specific VQE problem instance.
+
         """
         self.init_function = init_function
 
     def compile_circuit(self, qarg, depth):
-        """
-        Compiles the circuit that is evaluated by the :meth:`run <qrisp.vqe.VQEProblem.run>` method.
+        """Compiles the circuit that is evaluated by the :meth:`run <qrisp.vqe.VQEProblem.run>` method.
 
         Parameters
         ----------
@@ -191,7 +184,6 @@ class VQEProblem:
             A list of the parameters that appear in ``compiled_qc``.
 
         """
-
         temp = list(qarg.qs.data)
 
         # Define parameters theta for VQE circuit
@@ -223,8 +215,7 @@ class VQEProblem:
         options,
         measurement_data,
     ):
-        """
-        Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
+        """Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
 
         Parameters
         ----------
@@ -252,13 +243,12 @@ class VQEProblem:
             The optimized parameters of the problem instance.
         float or jax.Array
             The expectation value of the Hamiltonian for the optimized parameters.
-        """
 
+        """
         if check_for_tracing_mode():
             # Define optimization wrapper function to be minimized using VQE
             def optimization_wrapper(theta, state_prep, mes_kwargs):
-                """
-                Wrapper function for the optimization method used in VQE.
+                """Wrapper function for the optimization method used in VQE.
 
                 This function calculates the expectation value of the Hamiltonian.
 
@@ -278,8 +268,8 @@ class VQEProblem:
                 -------
                 jax.Array
                     The expectation value of the Hamiltonian.
-                """
 
+                """
                 expectation = self.hamiltonian.expectation_value(state_prep, **mes_kwargs)(theta)
 
                 return expectation
@@ -287,8 +277,7 @@ class VQEProblem:
         else:
             # Define optimization wrapper function to be minimized using VQE
             def optimization_wrapper(theta, state_prep, mes_kwargs, compiled_qc, symbols, measurement_data):
-                """
-                Wrapper function for the optimization method used in VQE.
+                """Wrapper function for the optimization method used in VQE.
 
                 This function calculates the expectation value of the Hamiltonian.
 
@@ -311,8 +300,8 @@ class VQEProblem:
                 -------
                 float
                     The expectation value of the Hamiltonian.
-                """
 
+                """
                 subs_dic = {symbols[i]: theta[i] for i in range(len(symbols))}
 
                 expectation = self.hamiltonian.expectation_value(
@@ -399,8 +388,7 @@ class VQEProblem:
         optimizer="COBYLA",
         options={},
     ):
-        """
-        Run VQE for the specific problem instance.
+        r"""Run VQE for the specific problem instance.
 
         Parameters
         ----------
@@ -434,7 +422,6 @@ class VQEProblem:
             The expectation value of the Hamiltonian after applying the optimal VQE circuit to the quantum argument.
 
         """
-
         if callable(qarg):
             qarg_prep = qarg
         else:
@@ -444,10 +431,10 @@ class VQEProblem:
                 return template.construct()
 
         # Set default options
-        if not "precision" in mes_kwargs:
+        if "precision" not in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
-        if not "diagonalisation_method" in mes_kwargs:
+        if "diagonalisation_method" not in mes_kwargs:
             mes_kwargs["diagonalisation_method"] = "commuting_qw"
 
         options["maxiter"] = max_iter
@@ -485,8 +472,7 @@ class VQEProblem:
         optimizer="COBYLA",
         options={},
     ):
-        """
-        This function allows for training of a circuit with a given instance of a ``VQEProblem``. It will then return a function that can be applied to a :ref:`QuantumVariable`,
+        r"""This function allows for training of a circuit with a given instance of a ``VQEProblem``. It will then return a function that can be applied to a :ref:`QuantumVariable`,
         such that it prepares the ground state of the problem Hamiltonian. The function therefore applies a circuit for the problem instance with optimized parameters.
 
         Parameters
@@ -522,7 +508,6 @@ class VQEProblem:
             The :ref:`QuantumVariable` then represents the ground state of the problem Hamiltonian.
 
         """
-
         if callable(qarg):
             qarg_prep = qarg
         else:
@@ -532,10 +517,10 @@ class VQEProblem:
                 return template.construct()
 
         # Set default options
-        if not "precision" in mes_kwargs:
+        if "precision" not in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
-        if not "diagonalisation_method" in mes_kwargs:
+        if "diagonalisation_method" not in mes_kwargs:
             mes_kwargs["diagonalisation_method"] = "commuting_qw"
 
         options["maxiter"] = max_iter
@@ -583,8 +568,7 @@ class VQEProblem:
         optimizer="COBYLA",
         options={},
     ):
-        """
-        This method enables convenient data collection regarding performance of the implementation.
+        r"""This method enables convenient data collection regarding performance of the implementation.
 
         Parameters
         ----------
@@ -620,7 +604,6 @@ class VQEProblem:
 
         Examples
         --------
-
         We create a Heisenberg problem instance and benchmark several parameters:
 
         ::
@@ -655,7 +638,6 @@ class VQEProblem:
         you drawing conclusions from the collected data. Make sure to check them out!
 
         """
-
         if callable(qarg):
             qarg_prep = qarg
         else:
@@ -708,8 +690,7 @@ class VQEProblem:
         return VQEBenchmark(data_dict, optimal_energy, self.hamiltonian)
 
     def visualize_energy(self, exact=False):
-        """
-        Visualizes the energy during the optimization process.
+        """Visualizes the energy during the optimization process.
 
         Parameters
         ----------
@@ -718,7 +699,6 @@ class VQEProblem:
             The default is ``False``.
 
         """
-
         import matplotlib.pyplot as plt
 
         if not self.callback:

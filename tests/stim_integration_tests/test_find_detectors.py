@@ -1,5 +1,4 @@
-"""
-Tests for the find_detectors decorator.
+"""Tests for the find_detectors decorator.
 
 Each test is a standalone ``test_*`` function at module scope so it can be
 run individually with ``pytest tests/test_find_detectors.py::test_name``
@@ -8,17 +7,15 @@ or manually via ``python -c "from tests.test_find_detectors import test_name; te
 
 import pytest
 import stim
-from qrisp import QuantumArray, QuantumBool, QuantumFloat, cx, measure, reset, h
+
+from qrisp import QuantumArray, QuantumBool, QuantumFloat, cx, h, measure, reset
 from qrisp.jasp.evaluation_tools.stim_extraction import extract_stim
-
 from qrisp.misc.stim_tools.find_detectors import (
-    find_detectors,
-    _prepare_for_tqecd,
-    _RESET_OPS,
     _MEASUREMENT_OPS,
-    _TWO_QUBIT_OPS,
+    _RESET_OPS,
+    _prepare_for_tqecd,
+    find_detectors,
 )
-
 
 # ─────────────────────── helpers ───────────────────────────────────────
 
@@ -854,7 +851,6 @@ def test_traced_integer_raises_error():
     invar-count check inside ``find_detectors`` catches it — see
     ``test_traced_silent_absorption_raises_error``.
     """
-    from qrisp import QuantumFloat
 
     @find_detectors
     def syndrome_with_param(qa, num_rounds):

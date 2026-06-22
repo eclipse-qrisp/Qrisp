@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -42,17 +41,16 @@ from xdsl.context import Context
 from xdsl.dialects import builtin, linalg, tensor
 from xdsl.pattern_rewriter import (
     GreedyRewritePatternApplier,
-    op_type_rewrite_pattern,
     PatternRewriter,
     PatternRewriteWalker,
     RewritePattern,
+    op_type_rewrite_pattern,
 )
 from xdsl.rewriter import InsertPoint
 
 
 def scalar_linalg_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> None:
-    """
-    Applies custom rewrite patterns to fold 0-dimensional `linalg.generic` operations into
+    """Applies custom rewrite patterns to fold 0-dimensional `linalg.generic` operations into
     scalar arithmetic wrapped in `tensor.extract` / `tensor.from_elements`.
 
     Parameters
@@ -62,6 +60,7 @@ def scalar_linalg_folding(xdsl_ctx: Context, xdsl_module: builtin.ModuleOp) -> N
     xdsl_module: builtin.ModuleOp
         The xDSL module to be rewritten. The transformation is applied
         greedily and recursively over the whole module.
+
     """
     patterns = [FoldScalarLinalgGeneric()]
 
@@ -112,6 +111,7 @@ class FoldScalarLinalgGeneric(RewritePattern):
             %scalar = tensor.extract %in[] : tensor<i1>
             %v      = arith.extui %scalar : i1 to i64
             %result = tensor.from_elements %v : tensor<i64>
+
     """
 
     @op_type_rewrite_pattern

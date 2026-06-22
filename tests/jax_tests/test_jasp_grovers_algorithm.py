@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,10 +17,11 @@
 
 
 def test_jasp_grovers_algorithm():
-    from qrisp import QuantumFloat, QuantumArray
-    from qrisp.jasp import terminal_sampling
-    from qrisp.grover import tag_state, grovers_alg
     import numpy as np
+    from qrisp.grover import grovers_alg, tag_state
+
+    from qrisp import QuantumArray, QuantumFloat
+    from qrisp.jasp import terminal_sampling
 
     def test_oracle(qf_list, phase=np.pi):
         tag_dic = {qf_list[0]: 0, qf_list[1]: 0.5}

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,8 +16,6 @@
 """
 
 # Created by ann81984 at 04.05.2022
-import pytest
-import time
 
 from qrisp import *
 

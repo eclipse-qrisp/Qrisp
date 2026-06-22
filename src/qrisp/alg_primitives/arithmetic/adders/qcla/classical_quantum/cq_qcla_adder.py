@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,7 +17,7 @@
 
 import numpy as np
 
-from qrisp.core.gate_application_functions import x, cx
+from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
 from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_carry_path import (
     cq_calc_carry,
 )
@@ -26,9 +25,9 @@ from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_sum_path i
     cq_sum_path,
     cq_sum_path_direct_uncomputation,
 )
-from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
+from qrisp.core.gate_application_functions import cx, x
+from qrisp.environments import QuantumEnvironment, custom_control, invert
 from qrisp.misc.utility import bin_rep, redirect_qfunction
-from qrisp.environments import QuantumEnvironment, invert, custom_control
 
 verify_manual_uncomputations = np.zeros(1)
 

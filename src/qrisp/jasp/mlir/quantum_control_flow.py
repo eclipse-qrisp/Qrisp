@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -32,13 +31,13 @@ JASP dialect, so we explicitly allow unregistered ops in the xDSL context
 outside of this file.
 """
 
-from xdsl.dialects import builtin, tensor, arith, scf
+from xdsl.dialects import arith, builtin, scf, tensor
 from xdsl.pattern_rewriter import (
-    PatternRewriter,
-    RewritePattern,
-    PatternRewriteWalker,
-    op_type_rewrite_pattern,
     GreedyRewritePatternApplier,
+    PatternRewriter,
+    PatternRewriteWalker,
+    RewritePattern,
+    op_type_rewrite_pattern,
 )
 
 
@@ -50,6 +49,7 @@ def fix_quantum_control_flow(xdsl_module: builtin.ModuleOp) -> None:
     xdsl_module:
         The xDSL module to be rewritten. The transformation is applied
         greedily and recursively over the whole module.
+
     """
     # Build the pattern set. Keep it small and focused so the greedy rewriter
     # converges quickly.

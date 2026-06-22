@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -46,15 +45,15 @@ Usage
         return detectors, m1, m3
 """
 
-import stim
-import numpy as np
 import jax
+import numpy as np
+import stim
 from jax.tree_util import tree_flatten
 
 from qrisp import QuantumArray, QuantumBool
+from qrisp.circuit import QuantumCircuit as QC
 from qrisp.jasp import make_jaspr
 from qrisp.jasp.primitives.parity_primitive import parity
-from qrisp.circuit import QuantumCircuit as QC
 
 # ───────────────────── stim instruction categories ─────────────────────
 _RESET_OPS = frozenset({"R", "RX", "RY"})
@@ -544,6 +543,7 @@ def find_detectors(func=None, *, return_circuits=False):
         result = main()
         stim_circ = result[-1]
         print(f"Found {stim_circ.num_detectors} detectors")
+
     """
     try:
         import tqecd

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,13 +17,12 @@
 
 from typing import Literal
 
-from qrisp.environments import invert
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
+from qrisp.environments import invert
 
 
 def apply_inv(self, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQSVT"] = "QSVT") -> BlockEncoding:
-    r"""
-    Returns a BlockEncoding approximating the matrix inversion of the operator.
+    r"""Returns a BlockEncoding approximating the matrix inversion of the operator.
 
     For a block-encoded matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
     operator $\tilde{A}^{-1}$ such that $\|\tilde{A}^{-1} - A^{-1}\| \leq \epsilon$.
@@ -75,7 +73,6 @@ def apply_inv(self, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQ
 
     Examples
     --------
-
     Define a QSLP and solve it using :meth:`inv`.
 
     First, define a Hermitian matrix $A$ and a right-hand side vector $\vec{b}$.

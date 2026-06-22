@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,10 @@
 ********************************************************************************
 """
 
+from qrisp.vqe.problems.electronic_structure import *
+
 from qrisp.operators.fermionic import a, c
 from qrisp.operators.qubit import X, Y, Z
-from qrisp.vqe.problems.electronic_structure import *
 
 
 def test_fermionic_to_qubit():

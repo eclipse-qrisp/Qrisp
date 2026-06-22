@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,6 +16,7 @@
 """
 
 from collections.abc import Callable
+
 import numpy as np
 import numpy.typing as npt
 from numpy.polynomial import Chebyshev
@@ -26,8 +26,7 @@ from qrisp.block_encodings import BlockEncoding
 
 
 def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, kappa: float) -> BlockEncoding:
-    r"""
-    Performs the `Dalzell quantum algorithm <https://arxiv.org/pdf/2406.12086>`_ 
+    r"""Performs the `Dalzell quantum algorithm <https://arxiv.org/pdf/2406.12086>`_
     to solve the Quantum Linear System Problem (QSLP) $A\vec{x}=\vec{b}$, using kernel reflection.
     When applied to a state $\ket{0}$, the algorithm prepares a state $\tilde{x}\propto A^{-1}\ket{b}$
     within target precision $\epsilon$ of the ideal solution $\ket{x}$.
@@ -118,7 +117,6 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
 
     Examples
     --------
-
     ::
     
         import numpy as np
@@ -190,7 +188,7 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
         # [0.51816163 0.43295659 0.60721322 0.4187472 ]
 
     """
-    from qrisp import h, x, control, QuantumBool
+    from qrisp import QuantumBool, control, h, x
 
     def prep_b_ext(*args):
         ext = args[0]
@@ -230,8 +228,7 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
 
 
 def _kernel_reflection_cheb(delta: float, eps: float = 1e-3) -> npt.NDArray[np.float64]:
-    """
-    Constructs the Chebyshev polynomial for the Kernel Reflection
+    r"""Constructs the Chebyshev polynomial for the Kernel Reflection
     Polynomial $K_{\delta, \ell}(x)$ from `Dalzell (2024) <https://arxiv.org/pdf/2406.12086>`_ Eq 62.
 
     Parameters
@@ -246,8 +243,8 @@ def _kernel_reflection_cheb(delta: float, eps: float = 1e-3) -> npt.NDArray[np.f
     ndarray
         1-D array containing the coefficients of the Chebyshev series representing the smooth, bounded
         approximation of the kernel reflection, ordered from lowest order term to highest.
-    """
 
+    """
     # 1. Calculate the required degree parameter ell for the
     # Kernel Reflection Polynomial to achieve a target error eps.
     # Formula 51 (Dalzell 2024, arXiv:2406.12086):

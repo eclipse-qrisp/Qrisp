@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,19 +16,18 @@
 """
 
 import jax
-from jax.extend.core import ClosedJaxpr, JaxprEqn
+from jax.extend.core import JaxprEqn
 
+from qrisp.circuit import Operation
+from qrisp.core.session_merging_tools import merge, recursive_qs_search
 from qrisp.environments import QuantumEnvironment, control
 from qrisp.environments.custom_control_environment import custom_control
-from qrisp.circuit import Operation
-from qrisp.core.session_merging_tools import recursive_qs_search, merge
-from qrisp.misc import get_depth_dic
 from qrisp.jasp import check_for_tracing_mode, get_last_equation
+from qrisp.misc import get_depth_dic
 
 
 class ConjugationEnvironment(QuantumEnvironment):
-    r"""
-    This :ref:`QuantumEnvironment<QuantumEnvironment>` can be used for perfoming conjugated operations.
+    r"""This :ref:`QuantumEnvironment<QuantumEnvironment>` can be used for perfoming conjugated operations.
     An arbitrary unitary :math:`U \in SU(2^n)` can be conjugated by another unitary
     :math:`V \in SU(2^n)`:
 
@@ -66,7 +64,6 @@ class ConjugationEnvironment(QuantumEnvironment):
 
     Parameters
     ----------
-
     conjugation_function : function
         The function performing the operation :math:`V`.
     args : iterable
@@ -76,7 +73,6 @@ class ConjugationEnvironment(QuantumEnvironment):
 
     Examples
     --------
-
     We perform Fourier addition on a :ref:`QuantumFloat`
 
     ::
@@ -418,7 +414,7 @@ def conjugate(conjugation_function, allocation_management=True):
 class PJITEnvironment(QuantumEnvironment):
     def jcompile(self, eqn, context_dic):
 
-        from qrisp.jasp import extract_invalues, insert_outvalues, Jaspr
+        from qrisp.jasp import Jaspr, extract_invalues, insert_outvalues
 
         args = extract_invalues(eqn, context_dic)
         body_jaspr = eqn.params["jaspr"]

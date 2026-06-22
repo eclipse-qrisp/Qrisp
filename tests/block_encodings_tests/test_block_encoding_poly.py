@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -34,7 +33,6 @@ from qrisp.operators import X, Y, Z
 )
 def test_block_encoding_poly_scaling(H1, H2, poly):
     """Tests that the scaling factor alpha of BlockEncodings obtained via GQET (used for BlockEncoding.poly) is correct."""
-
     BE1 = BlockEncoding.from_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
 

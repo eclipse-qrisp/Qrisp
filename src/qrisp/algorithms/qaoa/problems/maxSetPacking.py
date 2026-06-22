@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,18 +15,19 @@
 ********************************************************************************
 """
 
+from itertools import combinations
+
+import networkx as nx
+
 from qrisp.algorithms.qaoa.problems.maxIndepSet import (
     create_max_indep_set_cl_cost_function,
     create_max_indep_set_mixer,
     max_indep_set_init_function,
 )
-import networkx as nx
-from itertools import combinations
 
 
 def max_set_packing_problem(sets):
-    """
-    Creates a QAOA problem instance with appropriate phase separator, mixer, and
+    """Creates a QAOA problem instance with appropriate phase separator, mixer, and
     classical cost function.
 
     Parameters

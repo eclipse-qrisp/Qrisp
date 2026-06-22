@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,14 +16,14 @@
 """
 
 import time
-from math import factorial
 from itertools import permutations
-from numpy import binary_repr
-from qrisp import *
-from qrisp import auto_uncompute
-from qrisp.grover import grovers_alg
-from qrisp import QuantumFloat
+from math import factorial
 
+from numpy import binary_repr
+from qrisp.grover import grovers_alg
+
+from qrisp import *
+from qrisp import QuantumFloat, auto_uncompute
 
 city_amount = 4
 
@@ -77,7 +76,7 @@ def create_perm_specifiers(city_amount, init_seq=None):
 
         perm_specifier = QuantumFloat(qf_size)
 
-        if not init_seq is None:
+        if init_seq is not None:
             perm_specifier[:] = init_seq[i]
 
         perm_specifiers.append(perm_specifier)
@@ -241,7 +240,7 @@ def create_perm_specifiers(city_amount, init_seq=None):
 
         temp_qf = QuantumFloat(qf_size)
 
-        if not init_seq is None:
+        if init_seq is not None:
             temp_qf[:] = init_seq[i - 1]
 
         perm_specifiers.append(temp_qf)

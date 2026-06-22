@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,12 @@
 ********************************************************************************
 """
 
-import pytest
-import numpy as np
 import operator
-from qrisp import QuantumArray, QuantumFloat, QuantumBool, QuantumChar, QuantumModulus
+
+import numpy as np
+import pytest
+
+from qrisp import QuantumArray, QuantumBool, QuantumChar, QuantumFloat, QuantumModulus
 
 ops = [
     operator.add,

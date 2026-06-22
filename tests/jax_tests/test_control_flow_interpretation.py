@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,10 @@
 ********************************************************************************
 """
 
-from qrisp import *
-from jax.lax import fori_loop, switch
 from jax import random
+from jax.lax import fori_loop, switch
+
+from qrisp import *
 
 
 def test_control_flow_interpretation():

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,40 +17,35 @@
 
 from itertools import product
 
-import numpy as np
 import networkx as nx
-from sympy.physics.quantum import Ket, OrthogonalKet
+import numpy as np
+from sympy.physics.quantum import OrthogonalKet
 
-from qrisp.alg_primitives import QFT
 from qrisp import (
-    QuantumFloat,
-    QuantumBool,
+    HGate,
+    IterationEnvironment,
     QuantumArray,
-    mcz,
+    QuantumBool,
+    QuantumFloat,
+    QuantumVariable,
+    RYGate,
+    auto_uncompute,
+    control,
     cx,
     h,
-    ry,
-    swap,
-    auto_uncompute,
     invert,
-    control,
-    IterationEnvironment,
-    bin_rep,
-    multi_measurement,
-    xxyy,
-    p,
-    QuantumVariable,
-    cz,
     mcx,
-    z,
-    x,
-    RYGate,
-    HGate,
+    mcz,
+    multi_measurement,
+    ry,
     s,
-    t,
     s_dg,
+    swap,
+    t,
     t_dg,
+    x,
 )
+from qrisp.alg_primitives import QFT
 
 """
 As specified in the paper (https://arxiv.org/abs/1509.02374), the key challenge
@@ -192,8 +186,7 @@ branch_qa = |0>|0>|1>|0>|0>|0>
 
 
 class QuantumBacktrackingTree:
-    r"""
-    This class describes the central data structure to run backtracking algorithms in
+    r"""This class describes the central data structure to run backtracking algorithms in
     a quantum setting. `Backtracking algorithms <https://en.wikipedia.org/wiki/Backtracking>`_
     are a very general class of algorithms which cover many problems of combinatorial
     optimization such as 3-SAT or TSP.
@@ -334,7 +327,6 @@ class QuantumBacktrackingTree:
 
     Parameters
     ----------
-
     max_depth : integer
         The depth of the backtracking tree.
     branch_qv : QuantumVariable
@@ -355,7 +347,6 @@ class QuantumBacktrackingTree:
 
     Attributes
     ----------
-
     h : :ref:`QuantumFloat`
         A one hot encoded integer representing the height of the node. The root
         has ``h = max_depth``, it's children have ``h = max_depth-1`` etc.
@@ -376,7 +367,6 @@ class QuantumBacktrackingTree:
 
     Examples
     --------
-
     **Checking for the existence of a solution**
 
     Even though primary purpose of backtracking algorithms is to find a solution,
@@ -617,13 +607,12 @@ class QuantumBacktrackingTree:
 
     @auto_uncompute
     def qstep_diffuser(self, even, ctrl=[], min_height_assumption=0):
-        """
-        Performs the operators :math:`R_A` or :math:`R_B`. For more information on these operators check `the paper <https://arxiv.org/abs/1509.02374>`_.
+        """Performs the operators :math:`R_A` or :math:`R_B`. For more information on these operators check `the paper <https://arxiv.org/abs/1509.02374>`_.
 
         Parameters
         ----------
         even : bool
-            Depending on the parameter, the diffuser acts on the subspaces $\mathcal H_x=\{\ket{x}\}\cup\{\ket{y}\,|\,x\\rightarrow y\}$ where $x$ has odd (``even=False``) or even (``even=True``) height.
+            Depending on the parameter, the diffuser acts on the subspaces $\\mathcal H_x=\\{\\ket{x}\\}\\cup\\{\\ket{y}\\,|\\,x\\rightarrow y\\}$ where $x$ has odd (``even=False``) or even (``even=True``) height.
             Note that "even" refers to the parity of the ``h`` attribute instead of the distance from the root.
             If the ``max_depth`` of the tree is odd, and ``even=False`` then $R_A$ (otherwise $R_B$) is performed, and vice verse if the ``max_depth`` is even.
 
@@ -632,7 +621,6 @@ class QuantumBacktrackingTree:
 
         Examples
         --------
-
         We set up a QuantumBackTrackingTree and perform the diffuser on a marked node
 
         ::
@@ -661,8 +649,8 @@ class QuantumBacktrackingTree:
         |0>*|1>**3
 
         We see that the node (as expected) is invariant under :math:`R_A`.
-        """
 
+        """
         # This function performs the operation
         # D_x = U_x (1 - (1+(-1)**accept(x))*|x><x|) U_x^(-1)
         # For more information, check the beginning of this file
@@ -786,16 +774,15 @@ class QuantumBacktrackingTree:
         psi_prep(self, even=even, min_height_assumption=min_height_assumption)
 
     def quantum_step(self, ctrl=[], min_height_assumption=0):
-        """
-        Performs the quantum step operator $R_BR_A$.
+        """Performs the quantum step operator $R_BR_A$.
         For more information check the :meth:`diffuser method <qrisp.quantum_backtracking.QuantumBacktrackingTree.qstep_diffuser>`.
 
         Parameters
         ----------
         ctrl : List[Qubit], optional
             A list of qubits, the step operator should be controlled on. The default is [].
-        """
 
+        """
         self.qstep_diffuser(
             even=not self.max_depth % 2,
             ctrl=ctrl,
@@ -808,8 +795,7 @@ class QuantumBacktrackingTree:
         )
 
     def estimate_phase(self, precision):
-        r"""
-        Performs :meth:`quantum phase estimation <qrisp.QPE>` on the :meth:`quantum step operator <qrisp.quantum_backtracking.QuantumBacktrackingTree.quantum_step>`.
+        r"""Performs :meth:`quantum phase estimation <qrisp.QPE>` on the :meth:`quantum step operator <qrisp.quantum_backtracking.QuantumBacktrackingTree.quantum_step>`.
 
         If executed with sufficient precision, the phase estimation will yield a QuantumFloat, where the probability of the 0 component indicates the presence of a node where the ``accept`` function yielded ``True``.
 
@@ -839,7 +825,6 @@ class QuantumBacktrackingTree:
             The QuantumFloat containing the result of the phase estimation.
 
         """
-
         qpe_res = QuantumFloat(precision, -precision, qs=self.qs)
 
         h(qpe_res)
@@ -865,8 +850,7 @@ class QuantumBacktrackingTree:
         return qpe_res
 
     def init_phi(self, path):
-        r"""
-        Initializes the normalized version of the state :math:`\ket{\phi}`.
+        r"""Initializes the normalized version of the state :math:`\ket{\phi}`.
 
         .. math::
 
@@ -883,7 +867,6 @@ class QuantumBacktrackingTree:
 
         Examples
         --------
-
         We set up a backtracking tree of depth 3, where the marked element is the 111 node.
 
         ::
@@ -916,8 +899,8 @@ class QuantumBacktrackingTree:
         (0.816496014595032*|0>*|1>**3 - 0.816496014595032*|0>**2*|1>*|2> + 1.0*sqrt(2)*|0>**3*|3> - 0.816496014595032*|1>**3*|0>)/2
 
         We see that the node (as expected) is invariant under the quantum step operator.
-        """
 
+        """
         h_state = {}
         h_state[self.max_depth] = (self.max_depth) ** 0.5
 
@@ -932,8 +915,7 @@ class QuantumBacktrackingTree:
                     self.branch_qa[-j - 1].encode(path[j], permit_dirtyness=True)
 
     def init_node(self, path):
-        """
-        Initializes the state of a given node.
+        """Initializes the state of a given node.
 
         Parameters
         ----------
@@ -942,7 +924,6 @@ class QuantumBacktrackingTree:
 
         Examples
         --------
-
         We initialize a backtracking tree in the 101 node.
 
         ::
@@ -964,14 +945,12 @@ class QuantumBacktrackingTree:
             tree.init_node([1,0,1])
 
         """
-
         self.h[:] = self.max_depth - len(path)
         if len(path):
             self.branch_qa[-len(path) :] = path[::-1]
 
     def subtree(self, new_root):
-        """
-        Returns the subtree of a given node.
+        """Returns the subtree of a given node.
 
         Parameters
         ----------
@@ -985,7 +964,6 @@ class QuantumBacktrackingTree:
 
         Examples
         --------
-
         We initiate a QuantumBacktrackingTree with trivial reject
         function and create a subtree starting at an accepted node-
 
@@ -1024,8 +1002,7 @@ class QuantumBacktrackingTree:
         return Subtree(self, new_root)
 
     def copy(self):
-        """
-        Returns a copy of self. Copy means a QuantumBacktrackingTree with identical
+        """Returns a copy of self. Copy means a QuantumBacktrackingTree with identical
         depth, accept/reject functions etc. but with freshly allocated QuantumVariables.
 
         Returns
@@ -1037,8 +1014,7 @@ class QuantumBacktrackingTree:
         return Subtree(self, [])
 
     def find_solution(self, precision, cl_accept=None, measurement_kwargs={}):
-        """
-        Determines a path to a solution.
+        """Determines a path to a solution.
 
         Parameters
         ----------
@@ -1061,7 +1037,6 @@ class QuantumBacktrackingTree:
 
         Examples
         --------
-
         We create a accept function that marks the node [0,1] and a trivial
         reject function.
 
@@ -1094,12 +1069,10 @@ class QuantumBacktrackingTree:
         [0, 1]
 
         """
-
         return find_solution(self, precision, cl_accept, measurement_kwargs=measurement_kwargs)
 
     def path_decoder(self, h, branch_qa):
-        """
-        Returns the path representation for a given constellation of the
+        """Returns the path representation for a given constellation of the
         ``h`` and ``branch_qa`` variables. The path representation is a list
         indicating which branches to take starting from the root.
         This function exists because the encoding of the nodes is hardware
@@ -1120,7 +1093,6 @@ class QuantumBacktrackingTree:
 
         Examples
         --------
-
         We create a QuantumBacktrackingTree, initiate a node and retrieve the path.
 
         ::
@@ -1148,13 +1120,11 @@ class QuantumBacktrackingTree:
         [1, 0]
 
         """
-
         l = self.max_depth - h
         return list(branch_qa[::-1][:l])
 
     def statevector_graph(self, return_root=False):
-        r"""
-        Returns a NetworkX Graph representing the quantum state of the backtracking tree.
+        r"""Returns a NetworkX Graph representing the quantum state of the backtracking tree.
         The nodes have an ``amplitude`` attribute, indicating the complex amplitude of that node.
 
         Parameters
@@ -1169,7 +1139,6 @@ class QuantumBacktrackingTree:
 
         Examples
         --------
-
         We initialize a backtracking tree, initialize a :math:`\ket{\phi}` state and retrieve
         the statevector graph.
 
@@ -1199,7 +1168,6 @@ class QuantumBacktrackingTree:
         QBTNode(path = [], amplitude = (0.7071066+0j))
 
         """
-
         from networkx import DiGraph
 
         sv_function = self.qs.statevector("function")
@@ -1237,8 +1205,7 @@ class QuantumBacktrackingTree:
         return res_graph
 
     def visualize_statevector(self, pos=None, ax=None):
-        """
-        Visualizes the statevector graph.
+        """Visualizes the statevector graph.
 
         Parameters
         ----------
@@ -1252,7 +1219,6 @@ class QuantumBacktrackingTree:
 
         Examples
         --------
-
         We initialize a backtracking tree and visualize:
 
         ::
@@ -1291,7 +1257,6 @@ class QuantumBacktrackingTree:
 
 
         """
-
         G, root = self.statevector_graph(return_root=True)
 
         def tree_layout(G, node, depth, theta_parent, res_dic={}):
@@ -1358,8 +1323,7 @@ class QuantumBacktrackingTree:
         nx.draw_networkx_edge_labels(G, pos=pos, edge_labels=edge_labels, ax=ax)
 
     def statevector(self):
-        """
-        Returns a SymPy statevector object representing the state of the tree
+        """Returns a SymPy statevector object representing the state of the tree
         with decoded node labels.
 
         Returns
@@ -1369,7 +1333,6 @@ class QuantumBacktrackingTree:
 
         Examples
         --------
-
         We create a QuantumBacktrackingTree with and investigate the action of the
         :meth:`quantum step diffuser <qrisp.quantum_backtracking.QuantumBacktrackingTree.qstep_diffuser>`
 
@@ -1435,7 +1398,6 @@ class QuantumBacktrackingTree:
         `the paper <https://arxiv.org/abs/1509.02374>`_.
 
         """
-
         sv_function = self.qs.statevector("function", decimals=10)
 
         # Internal qvs are the quantum variables that specify a backtrackingtree node
@@ -1596,7 +1558,7 @@ def fan_in(control, target):
         cx(control, target)
 
 
-"""
+r"""
 This function realizes the operator U_x, which has the property
 
 U_x |x> = |psi_x>

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,6 +16,7 @@
 """
 
 import numpy as np
+
 from qrisp import QuantumFloat, gphase, multi_measurement, prepare
 from qrisp.algorithms.cks import CKS
 from qrisp.block_encodings import BlockEncoding

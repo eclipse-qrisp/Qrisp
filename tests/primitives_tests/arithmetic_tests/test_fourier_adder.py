@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,7 @@
 ********************************************************************************
 """
 
-import numpy as np
-from qrisp import inpl_adder_test, fourier_adder
+from qrisp import fourier_adder, inpl_adder_test
 
 
 def test_fourier_adder():

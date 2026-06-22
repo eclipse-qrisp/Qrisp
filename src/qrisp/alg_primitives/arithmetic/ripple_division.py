@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,8 @@
 ********************************************************************************
 """
 
-from qrisp.core.gate_application_functions import x
 from qrisp import gate_wrap
+from qrisp.core.gate_application_functions import x
 
 
 @gate_wrap(is_qfree=True, permeability="args")
@@ -287,8 +286,7 @@ def q_int_div(numerator, divisor, adder="thapliyal", n=None, log_output=True):
 # And allows to give a precision threshold (prec)
 # The resulting quotient variable Q_res has the property |Q_res - Q_real| < 2**prec
 def q_divmod(numerator, divisor, adder="thapliyal", prec=0):
-    """
-    Performs division up to arbitrary precision. Returns the quotient and the remainder.
+    """Performs division up to arbitrary precision. Returns the quotient and the remainder.
 
     Parameters
     ----------
@@ -313,7 +311,6 @@ def q_divmod(numerator, divisor, adder="thapliyal", prec=0):
 
     Examples
     --------
-
     We calculate 10/8 with varying precision:
 
     >>> from qrisp import QuantumFloat, q_divmod, multi_measurement
@@ -336,7 +333,6 @@ def q_divmod(numerator, divisor, adder="thapliyal", prec=0):
     {(1.25, 0.0): 1.0}
 
     """
-
     # The idea is to bit shift numerator and divisor by s such that,
     # they are both integers. To increase the precision we shift N by -prec
     # (we'll see shortly why this increases the precision).
@@ -391,8 +387,7 @@ def q_divmod(numerator, divisor, adder="thapliyal", prec=0):
 
 
 def q_div(numerator, divisor, prec=None):
-    """
-    Performs division up to arbitrary precision and uncomputes the remainder.
+    """Performs division up to arbitrary precision and uncomputes the remainder.
 
     Parameters
     ----------
@@ -413,7 +408,6 @@ def q_div(numerator, divisor, prec=None):
 
     Examples
     --------
-
     We calculate 10/8:
 
     >>> from qrisp import QuantumFloat, q_div
@@ -426,7 +420,6 @@ def q_div(numerator, divisor, prec=None):
     {1.25: 1.0}
 
     """
-
     from qrisp import U_g_inpl_adder, h, hybrid_mult
 
     if prec is None:
@@ -448,8 +441,7 @@ def q_div(numerator, divisor, prec=None):
 
 
 def qf_inversion(qf, prec=None):
-    """
-    Calculates the multiplicative inverse of a QuantumFloat.
+    """Calculates the multiplicative inverse of a QuantumFloat.
 
     Parameters
     ----------
@@ -468,7 +460,6 @@ def qf_inversion(qf, prec=None):
 
     Examples
     --------
-
     We calculate the inverse of 0.75
 
     >>> from qrisp import QuantumFloat, qf_inversion
@@ -481,7 +472,6 @@ def qf_inversion(qf, prec=None):
     1.3333333333333333
 
     """
-
     if prec is None:
         prec = qf.size
 

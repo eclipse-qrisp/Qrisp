@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -35,8 +34,7 @@ from qrisp.interface.provider_backends.aqt_backend import AQTBackend, AQTJob
 
 @pytest.fixture()
 def aqt_mocks(monkeypatch):
-    """
-    Inject mock ``qiskit_aqt_provider`` modules into ``sys.modules``.
+    """Inject mock ``qiskit_aqt_provider`` modules into ``sys.modules``.
 
     This allows ``AQTBackend.__init__`` to execute its
     ``from qiskit_aqt_provider import ...`` imports without the real package
@@ -47,6 +45,7 @@ def aqt_mocks(monkeypatch):
     tuple[MagicMock, MagicMock]
         ``(mock_provider_cls, mock_sampler_cls)``, which are the mock class
         objects for ``AQTProvider`` and ``AQTSampler`` respectively.
+
     """
     mock_provider_cls = MagicMock(name="AQTProvider")
     mock_sampler_cls = MagicMock(name="AQTSampler")
@@ -65,8 +64,7 @@ def aqt_mocks(monkeypatch):
 
 @pytest.fixture()
 def aqt_backend(aqt_mocks):
-    """
-    A ready-to-use ``AQTBackend`` wired to a mock AQT device named ``"test_device"``.
+    """A ready-to-use ``AQTBackend`` wired to a mock AQT device named ``"test_device"``.
 
     The ``AQTSampler`` mock is returned alongside the backend so individual
     tests can configure its return values and inspect its call arguments.
@@ -75,6 +73,7 @@ def aqt_backend(aqt_mocks):
     -------
     tuple[AQTBackend, MagicMock]
         ``(backend, mock_sampler_cls)``
+
     """
     mock_provider_cls, mock_sampler_cls = aqt_mocks
 
@@ -111,8 +110,7 @@ def _make_quasi_result(quasi_dists: list[dict]) -> MagicMock:
 
 
 def _make_aqt_job(quasi_dists: list[dict] | None = None, fail: Exception | None = None):
-    """
-    Return a mock AQT primitive job.
+    """Return a mock AQT primitive job.
 
     Parameters
     ----------
@@ -120,6 +118,7 @@ def _make_aqt_job(quasi_dists: list[dict] | None = None, fail: Exception | None 
         If provided, ``result()`` returns a mock carrying these distributions.
     fail
         If provided, ``result()`` raises this exception instead.
+
     """
     mock_job = MagicMock()
     if fail is not None:
@@ -240,7 +239,8 @@ class TestAQTBackendOptions:
 
 class TestAQTRunAsync:
     """Correctness of run_async: circuit conversion, result parsing, and
-    sampler configuration."""
+    sampler configuration.
+    """
 
     def test_quasi_dists_converted_to_bitstrings(self, aqt_backend):
         """Integer keys from quasi_dists are converted to '0'/'1' bitstrings."""
@@ -511,7 +511,8 @@ class TestAQTErrorPropagation:
 
     def test_sampler_run_error_propagates_from_run_async(self, aqt_backend):
         """If ``AQTSampler.run()`` raises at submission time, the error propagates
-        directly from ``run_async`` (before a job handle is created)."""
+        directly from ``run_async`` (before a job handle is created).
+        """
         backend, mock_sampler_cls = aqt_backend
         mock_sampler_cls.return_value.run.side_effect = RuntimeError("submission failed")
 

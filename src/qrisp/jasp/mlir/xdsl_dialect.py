@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -36,7 +35,6 @@ from xdsl.dialects.builtin import (
     i64,
 )
 from xdsl.ir import Dialect, ParametrizedAttribute, TypeAttribute
-from xdsl.utils.exceptions import VerifyException
 from xdsl.irdl import (
     AnyAttr,
     EqAttrConstraint,
@@ -52,6 +50,7 @@ from xdsl.irdl import (
     var_operand_def,
 )
 from xdsl.printer import Printer
+from xdsl.utils.exceptions import VerifyException
 
 
 def _scalar_tensor(elem_type):

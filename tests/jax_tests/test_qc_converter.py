@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,8 @@
 ********************************************************************************
 """
 
-from jax import make_jaxpr
-from qrisp import QuantumVariable, cx, QuantumCircuit, QuantumFloat, x, rz, measure, control, QuantumBool, QuantumArray
-from qrisp.jasp import qache, flatten_pjit, make_jaspr, ProcessedMeasurement
+from qrisp import QuantumArray, QuantumBool, QuantumCircuit, QuantumFloat, QuantumVariable, control, cx, measure, rz, x
+from qrisp.jasp import ProcessedMeasurement, flatten_pjit, make_jaspr, qache
 
 
 def test_qc_converter():
@@ -91,7 +89,6 @@ def test_qc_converter():
             rz(0.5, qf[1])
             x(qf[1])
 
-        return
 
     jaspr = make_jaspr(main)()
 
@@ -126,6 +123,7 @@ def test_qc_converter():
 def test_parity_to_qc():
     """Test parity primitive with to_qc (cl_func_interpreter/qc_extraction_interpreter)."""
     import numpy as np
+
     from qrisp.jasp import parity
     from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityHandle
     from qrisp.jasp.primitives.parity_primitive import ParityOperation
@@ -192,7 +190,7 @@ def test_parity_to_qc():
     # Array parity now returns a numpy array with dtype=object containing ParityHandles
     assert isinstance(result, np.ndarray), f"Expected numpy array for array parity, got {type(result)}"
     assert result.dtype == object, f"Expected dtype=object, got {result.dtype}"
-    assert all(isinstance(item, ParityHandle) for item in result.flat), f"All elements should be ParityHandle objects"
+    assert all(isinstance(item, ParityHandle) for item in result.flat), "All elements should be ParityHandle objects"
 
     # Should have 3 ParityOperations in the circuit (one for each element-wise parity)
     parity_ops = [op for op in qc.data if isinstance(op.op, ParityOperation)]
@@ -202,6 +200,7 @@ def test_parity_to_qc():
 def test_measurement_array_basic():
     """Test basic measurement array construction and element extraction."""
     import jax.numpy as jnp
+
     from qrisp import Clbit
 
     # Test 1: Array construction from measurements and element extraction
@@ -260,6 +259,7 @@ def test_measurement_array_basic():
 def test_measurement_array_reshape():
     """Test that reshape preserves measurement information."""
     import jax.numpy as jnp
+
     from qrisp import Clbit
 
     def reshape_test():
@@ -285,8 +285,8 @@ def test_measurement_array_reshape():
 
 def test_measurement_array_processed_markers():
     """Test that classical operations mark array entries as processed."""
-    import numpy as np
     import jax.numpy as jnp
+    import numpy as np
 
     # Test 1: Bitwise NOT marks as processed
     def not_test():
@@ -306,7 +306,7 @@ def test_measurement_array_processed_markers():
     assert isinstance(result, np.ndarray), f"Expected numpy array, got {type(result)}"
     assert result.dtype == object, f"Expected dtype=object, got {result.dtype}"
     assert all(isinstance(item, ProcessedMeasurement) for item in result.flat), (
-        f"NOT should mark all entries as ProcessedMeasurement"
+        "NOT should mark all entries as ProcessedMeasurement"
     )
 
     # Test 2: Extracting from processed array gives ProcessedMeasurement
@@ -331,8 +331,9 @@ def test_measurement_array_processed_markers():
 
 def test_measurement_array_concatenate_with_processed():
     """Test concatenating regular measurements with processed values."""
-    import numpy as np
     import jax.numpy as jnp
+    import numpy as np
+
     from qrisp import Clbit
 
     def concat_test():
@@ -371,8 +372,9 @@ def test_measurement_array_concatenate_with_processed():
 
 def test_measurement_array_type_conversion():
     """Test that type conversions to float types mark as processed, but int conversions pass through."""
-    import numpy as np
     import jax.numpy as jnp
+    import numpy as np
+
     from qrisp import Clbit
 
     # Test: astype to int should pass through (needed for cond primitive)
@@ -399,8 +401,8 @@ def test_measurement_array_type_conversion():
 
 def test_measurement_array_arithmetic():
     """Test that arithmetic operations mark as processed."""
-    import numpy as np
     import jax.numpy as jnp
+    import numpy as np
 
     # Test: Addition
     def add_test():
@@ -442,8 +444,8 @@ def test_measurement_array_arithmetic():
 
 def test_measurement_array_comparison():
     """Test that comparison operations mark as processed."""
-    import numpy as np
     import jax.numpy as jnp
+    import numpy as np
 
     def compare_test():
         qv = QuantumVariable(2)
@@ -465,8 +467,8 @@ def test_measurement_array_comparison():
 
 def test_measurement_array_reductions():
     """Test that reduction operations mark as processed."""
-    import numpy as np
     import jax.numpy as jnp
+    import numpy as np
 
     # Test: Sum reduction
     def sum_test():
@@ -514,8 +516,8 @@ def test_measurement_array_reductions():
 
 def test_measurement_array_bitwise_ops():
     """Test that bitwise operations mark as processed."""
-    import numpy as np
     import jax.numpy as jnp
+    import numpy as np
 
     # Test: AND
     def and_test():
@@ -578,6 +580,7 @@ def test_measurement_array_bitwise_ops():
 def test_measurement_array_parity_with_processed():
     """Test that parity raises error when given processed measurement data."""
     import jax.numpy as jnp
+
     from qrisp.jasp import parity
 
     def parity_negated_test():
@@ -604,9 +607,9 @@ def test_measurement_array_parity_with_processed():
 
 def test_measurement_array_parity_with_unprocessed():
     """Test parity with measurement arrays (uses scan primitive internally)."""
-    import numpy as np
     import jax.numpy as jnp
-    from qrisp import Clbit
+    import numpy as np
+
     from qrisp.jasp import parity
     from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityHandle
 
@@ -634,13 +637,14 @@ def test_measurement_array_parity_with_unprocessed():
     # Parity of array returns numpy array of ParityHandles (one per element)
     assert isinstance(result, np.ndarray), f"Array parity should return numpy array, got {type(result)}"
     assert result.dtype == object, f"Expected dtype=object, got {result.dtype}"
-    assert all(isinstance(item, ParityHandle) for item in result.flat), f"All elements should be ParityHandle objects"
+    assert all(isinstance(item, ParityHandle) for item in result.flat), "All elements should be ParityHandle objects"
 
 
 def test_measurement_array_chain_operations():
     """Test chaining multiple operations on measurement arrays."""
-    import numpy as np
     import jax.numpy as jnp
+    import numpy as np
+
     from qrisp import Clbit
 
     # Test: Extract from array, then use in another array
@@ -706,7 +710,7 @@ def test_measurement_array_chain_operations():
 def test_scatter_with_clbit_updates():
     """Test scatter primitive handling with Clbit updates (used by QuantumArray measurement)."""
     import numpy as np
-    import jax.numpy as jnp
+
     from qrisp import Clbit
 
     # Test 1: Simple QuantumArray measurement (uses scatter internally via while loop)
@@ -722,7 +726,7 @@ def test_scatter_with_clbit_updates():
     assert isinstance(result, np.ndarray), f"QuantumArray measurement should return numpy array, got {type(result)}"
     assert result.shape == (2,), f"Expected shape (2,), got {result.shape}"
     # Should contain Clbit objects
-    assert all(isinstance(item, Clbit) for item in result.flat), f"All values should be Clbit objects"
+    assert all(isinstance(item, Clbit) for item in result.flat), "All values should be Clbit objects"
 
     # Test 2: QuantumArray with different shape (stored flattened internally)
     def shaped_quantum_array_measure():
@@ -751,8 +755,8 @@ def test_scatter_with_clbit_updates():
     jaspr = make_jaspr(multiple_quantum_array_measure)()
     result_0, result_1, qc = jaspr.to_qc()
 
-    assert isinstance(result_0, np.ndarray), f"First result should be numpy array"
-    assert isinstance(result_1, np.ndarray), f"Second result should be numpy array"
+    assert isinstance(result_0, np.ndarray), "First result should be numpy array"
+    assert isinstance(result_1, np.ndarray), "Second result should be numpy array"
     assert result_0.shape == (2,), f"Expected shape (2,), got {result_0.shape}"
     assert result_1.shape == (3,), f"Expected shape (3,), got {result_1.shape}"
 
@@ -764,7 +768,7 @@ def test_scatter_with_clbit_updates():
 def test_quantum_array_measurement_with_parity():
     """Test the user's example: QuantumArray measurement with parity operation."""
     import numpy as np
-    import jax.numpy as jnp
+
     from qrisp.jasp import parity
     from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import ParityHandle
     from qrisp.jasp.primitives.parity_primitive import ParityOperation
@@ -786,7 +790,7 @@ def test_quantum_array_measurement_with_parity():
         f"Parity of QuantumArray measurements should return numpy array, got {type(result)}"
     )
     assert result.dtype == object, f"Expected dtype=object, got {result.dtype}"
-    assert all(isinstance(item, ParityHandle) for item in result.flat), f"All elements should be ParityHandle objects"
+    assert all(isinstance(item, ParityHandle) for item in result.flat), "All elements should be ParityHandle objects"
 
     # The circuit should have classical bits ONLY for the measurements
     # 4 measurements (2 from each QuantumArray)
@@ -821,8 +825,8 @@ def test_quantum_array_measurement_with_parity():
 
 def test_quantum_array_measurement_operations():
     """Test various operations on QuantumArray measurement results."""
-    import numpy as np
     import jax.numpy as jnp
+    import numpy as np
 
     # Test: Element access from QuantumArray measurement
     def element_access_test():
@@ -852,12 +856,13 @@ def test_quantum_array_measurement_operations():
     assert isinstance(result, np.ndarray), f"Concatenated measurements should be numpy array, got {type(result)}"
     assert result.shape == (5,), f"Expected shape (5,), got {result.shape}"
     # All should be Clbit objects
-    assert all(isinstance(item, Clbit) for item in result.flat), f"All values should be Clbit objects"
+    assert all(isinstance(item, Clbit) for item in result.flat), "All values should be Clbit objects"
 
 
 def test_processed_parity_returns_processed_measurement():
     """Test that parity on processed measurements returns ProcessedMeasurement."""
     import jax.numpy as jnp
+
     from qrisp.jasp import parity
 
     def parity_on_processed():
@@ -891,7 +896,6 @@ def test_processed_parity_returns_processed_measurement():
 def test_processed_measurement_in_control_raises_error():
     """Test that using processed measurements for control raises an error."""
     import jax.numpy as jnp
-    import pytest
 
     def control_with_processed():
         qv = QuantumVariable(2)
@@ -930,7 +934,8 @@ def test_nested_qache_with_measurements():
     This is a common pattern for syndrome measurements in error correction.
     """
     import jax.numpy as jnp
-    from qrisp import reset, cx, Clbit
+
+    from qrisp import Clbit, cx, reset
 
     N = 4
 

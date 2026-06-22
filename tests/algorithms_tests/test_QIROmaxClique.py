@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,16 +15,17 @@
 ********************************************************************************
 """
 
+import networkx as nx
+
 from qrisp import QuantumVariable
+from qrisp.algorithms.qaoa import create_max_clique_cl_cost_function
 from qrisp.algorithms.qiro import (
     QIROProblem,
-    create_max_clique_replacement_routine,
     create_max_clique_cost_operator_reduced,
-    qiro_rx_mixer,
+    create_max_clique_replacement_routine,
     qiro_init_function,
+    qiro_rx_mixer,
 )
-from qrisp.algorithms.qaoa import max_clique_problem, create_max_clique_cl_cost_function
-import networkx as nx
 
 
 def test_qiro_max_clique():

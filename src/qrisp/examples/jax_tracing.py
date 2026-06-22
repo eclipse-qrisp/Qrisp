@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,8 @@
 ********************************************************************************
 """
 
-from qrisp.jasp import qfunc_def
 from qrisp import *
+from qrisp.jasp import qfunc_def
 
 
 def test_function_1(i):
@@ -70,7 +69,7 @@ def compile_inv_environments(closed_jaxpr):
 
 # %%
 from qrisp import *
-from qrisp.jasp import qfunc_def, evaluate_eqn
+from qrisp.jasp import evaluate_eqn
 
 
 def test_function_1(i):

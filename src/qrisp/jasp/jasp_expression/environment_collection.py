@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,12 +15,11 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
 
 import numpy as np
-from numba import njit
-from jax.extend.core import ClosedJaxpr, JaxprEqn, Literal, Jaxpr
 from jax.api_util import debug_info
+from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Literal
+from numba import njit
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
 
@@ -48,8 +46,7 @@ dummy_debug_info = debug_info(
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
 @qrisp_lru_compilation_cache
 def collect_environments(closed_jaxpr):
-    """
-    This function turns Jaxpr that contain QuantumEnvironment primitive in enter/exit
+    """This function turns Jaxpr that contain QuantumEnvironment primitive in enter/exit
     form into the collected form. Collected means that the QuantumEnvironments content
     is represented by a Jaspr.
 
@@ -64,7 +61,6 @@ def collect_environments(closed_jaxpr):
         A Jaxpr with QuantumEnvironments in collected form.
 
     """
-
     # We iterate through the list of equations, appending the equations to
     # the new list containing the processed equations.
 
@@ -81,7 +77,7 @@ def collect_environments(closed_jaxpr):
     eqn_var_tracker = VarTracker(eqn_list)
     new_eqn_var_tracker = VarTracker(new_eqn_list)
 
-    from qrisp.jasp import Jaspr, AbstractQuantumState
+    from qrisp.jasp import AbstractQuantumState, Jaspr
 
     if isinstance(closed_jaxpr, Jaspr) and closed_jaxpr.envs_flattened:
         return closed_jaxpr
@@ -236,8 +232,7 @@ def collect_environments(closed_jaxpr):
 
 
 def find_outvars(body_eqn_list, script_remainder_var_tracker, return_vars):
-    """
-    This function takes the equations of a function and some "follow-up"
+    """This function takes the equations of a function and some "follow-up"
     instructions and infers which variables need to be returned by the function.
 
     Parameters
@@ -253,7 +248,6 @@ def find_outvars(body_eqn_list, script_remainder_var_tracker, return_vars):
         A list of variables that would have to be returned by the function.
 
     """
-
     # This list will contain all variables produced by the function
     outvars = []
 
@@ -272,8 +266,7 @@ def find_outvars(body_eqn_list, script_remainder_var_tracker, return_vars):
 
 
 class VarTracker:
-    """
-    This class is motivated by the task of identifying the inputs and outputs
+    """This class is motivated by the task of identifying the inputs and outputs
     of the collected environments. For large Jaxpr, this can be prohibitively
     expensive, which is why this class tracks a specialized data structure, which
     allows an efficient solution of this problem.
@@ -381,15 +374,13 @@ class VarTracker:
         self.outvar_eqn_index_tracker = outvar_eqn_index_tracker
 
     def append(self, eqn):
-        """
-        Adds the equation eqn to the list of tracked equations.
+        """Adds the equation eqn to the list of tracked equations.
 
         Parameters
         ----------
         eqn : jax.core.Equation
 
         """
-
         # Perform similar logic as in __init__
         invar_integers = []
         for var in eqn.invars:
@@ -419,15 +410,14 @@ class VarTracker:
         self.outvar_eqn_index_tracker.append(len(self.eqn_outvar_list))
 
     def slice_start(self, starting_point):
-        """
-        If self is represented by VarTracker(eqn_list), the result of this
+        """If self is represented by VarTracker(eqn_list), the result of this
         function is VarTracker(eqn_list[starting_point:])
 
         Parameters
         ----------
         starting_point : int
-        """
 
+        """
         res = VarTracker([])
 
         # Identify where the invar list has to be sliced from
@@ -450,15 +440,14 @@ class VarTracker:
         return res
 
     def slice_end(self, end_point):
-        """
-        If self is represented by VarTracker(eqn_list), the result of this
+        """If self is represented by VarTracker(eqn_list), the result of this
         function is VarTracker(eqn_list[:end_point])
 
         Parameters
         ----------
         end_point : int
-        """
 
+        """
         res = VarTracker([])
 
         # Perform similar slicing logic as in slice_start
@@ -476,16 +465,15 @@ class VarTracker:
         return res
 
     def find_invars(self):
-        """
-        Computes the undefined invars of the currently tracked equation list,
+        """Computes the undefined invars of the currently tracked equation list,
         i.e. all the variables that are used as invars but not defined by one
         of the equations.
 
         Returns
         -------
         res : list[Eqn]
-        """
 
+        """
         # If viable, call the jitted version.
         if len(self.eqn_invar_list) < 20 or len(self.eqn_outvar_list) < 20:
             invar_index_list = find_invar_kernel([-1] + self.eqn_invar_list, [-1] + self.eqn_outvar_list)

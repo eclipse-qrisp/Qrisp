@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -46,9 +45,7 @@ def _invert_inpl_function(func):
 
 # Switch implementation for quantum index
 def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", inv=False, ctrl=None):
-    r"""
-    Executes a switch - case statement distinguishing between given in-place functions.
-
+    r"""Executes a switch - case statement distinguishing between given in-place functions.
 
     Parameters
     ----------
@@ -71,7 +68,6 @@ def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", i
 
     Examples
     --------
-
     We write a script that uses a :ref:`QuantumFloat` as index to select
     different operations on another operand :ref:`QuantumFloat`. The index variable is
     put into superposition such that all branches are executed in superposition.
@@ -104,7 +100,6 @@ def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", i
         # (3.0, 3.0): 0.12499999441206447}
 
     """
-
     if is_function_mode := callable(branches):
         if branch_amount is None:
             index_size = len(index) if isinstance(index, list) else index.size
@@ -141,13 +136,12 @@ def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", i
                             branches(i, *operands)
                         else:
                             branches[i](*operands)
+                    elif is_function_mode:
+                        with control(ctrl):
+                            branches(i, *operands)
                     else:
-                        if is_function_mode:
-                            with control(ctrl):
-                                branches(i, *operands)
-                        else:
-                            with control(ctrl):
-                                branches[i](*operands)
+                        with control(ctrl):
+                            branches[i](*operands)
 
         control_qbl.delete()
 
@@ -191,13 +185,12 @@ def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", i
                                 branches(i, qa[i])
                             else:
                                 branches[i](qa[i])
+                        elif is_function_mode:
+                            with control(ctrl):
+                                branches(i, qa[i])
                         else:
-                            if is_function_mode:
-                                with control(ctrl):
-                                    branches(i, qa[i])
-                            else:
-                                with control(ctrl):
-                                    branches[i](qa[i])
+                            with control(ctrl):
+                                branches[i](qa[i])
 
         qa.delete()
 

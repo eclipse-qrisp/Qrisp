@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,11 +18,13 @@
 
 from __future__ import annotations
 
-from jax.numpy import bitwise_count
-import jax.numpy as jnp
-from qrisp import QuantumVariable, x, cx, mcx, h, measure, reset, z
-from qrisp.environments import control, custom_control
 from typing import TYPE_CHECKING
+
+import jax.numpy as jnp
+from jax.numpy import bitwise_count
+
+from qrisp import QuantumVariable, cx, h, mcx, measure, reset, x, z
+from qrisp.environments import control, custom_control
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.qtypes import QuantumBool
 
@@ -272,8 +273,9 @@ def carry_venting_adder(
     num_vents : int
         Number of vents written to the bitmask (helps callers reconstruct
         the vent layout without knowing internal bit-indexing details).
+
     """
-    from qrisp.jasp import jrange, jlen, q_fori_loop
+    from qrisp.jasp import jlen, jrange, q_fori_loop
 
     num_qubits = jlen(target)
 
@@ -520,7 +522,7 @@ def carry_xor_block(
     Steps 3-4 use parity-checking gates because the dirty workspace stores
     carries differently from the clean ancilla chain.
     """
-    from qrisp.jasp import jrange, jlen
+    from qrisp.jasp import jlen, jrange
 
     num_dirty_qubits = jlen(dirty_ancillas)
 
@@ -594,7 +596,7 @@ def dirty_ancillae_adder(
           that fixes the Z-phase from the vented measurements and returns
           the dirty qubits to all zeros.
 
-     Parameters
+    Parameters
     ----------
     target : QuantumVariable
         Target register, little-endian (index 0 = LSB). Modified in place.
@@ -611,8 +613,9 @@ def dirty_ancillae_adder(
     -------
     int
         Vented carry measurement bitmask.  Bit k corresponds to the k-th vent.
+
     """
-    from qrisp.jasp import jrange, jlen
+    from qrisp.jasp import jlen, jrange
 
     num_targets = jlen(target)
 
@@ -763,8 +766,9 @@ def gidney_cq_venting_adder(
         result = main()
         # result is 15 (10 + 5 = 15)
         # when ctrl is not provided, target stays unchanged
+
     """
-    from qrisp.jasp import jrange, jlen
+    from qrisp.jasp import jlen, jrange
 
     if isinstance(d, (QuantumVariable, list)):
         raise TypeError("The first argument must be a classical integer.")
@@ -818,7 +822,6 @@ def gidney_cq_venting_adder(
         corrected by a CZ sandwich with two carry_xor passes (Fig. 3).
         n_half, d_lo, and d_hi are closed over from the outer scope.
         """
-
         clean0 = clean_anc[0]  # mid-carry ancilla (clean0 in paper notation)
 
         # Step 1: Place clean0 into target[n_half].
@@ -903,4 +906,3 @@ def gidney_cq_venting_adder(
     # n >= 6 → split_path  (split-half carry-venting, faithful to the paper)
     q_cond(num_targets < 6, gidney_path, split_path, target, clean_anc)
 
-    return None

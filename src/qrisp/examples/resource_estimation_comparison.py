@@ -1,15 +1,15 @@
 import time
+
 import matplotlib.pyplot as plt
 import numpy as np
+from qiskit import transpile as qiskit_transpile
+from qiskit.circuit.library import PhaseEstimation
+from qiskit_addon_utils.problem_generators import generate_time_evolution_circuit
 
 # Requires Qiskit < 2.0 for Qiskit nature support
 # --- Qiskit Imports ---
 from qiskit_nature.second_q.drivers import PySCFDriver
 from qiskit_nature.second_q.mappers import ParityMapper
-from qiskit.quantum_info import Statevector
-from qiskit.circuit.library import PhaseEstimation
-from qiskit import transpile as qiskit_transpile
-from qiskit_addon_utils.problem_generators import generate_time_evolution_circuit
 
 
 # --- Qiskit Setup ---
@@ -40,6 +40,7 @@ def count_qpe_ops_qiskit(n):
 
 # --- Qrisp Imports ---
 from pyscf import gto
+
 from qrisp import *
 from qrisp.operators import FermionicOperator
 
@@ -56,7 +57,6 @@ def count_ops_qrisp(n):
     return measure(qpe_res)
 
 
-import time
 
 t0 = time.time()
 count_ops_qrisp(2)
@@ -96,7 +96,6 @@ fit_res = np.polyfit(list(range(1, n_qiskit + 1)), np.log(results["qiskit"]["tim
 fit_data = np.exp(fit_res[0] * np.arange(1, len(precisions) + 1) + fit_res[1])
 
 # %%
-import matplotlib.pyplot as plt
 
 fig, ax1 = plt.subplots(figsize=(6.5, 5))
 

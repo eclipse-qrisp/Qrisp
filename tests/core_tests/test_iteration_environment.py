@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,23 +15,20 @@
 ********************************************************************************
 """
 
-import numpy as np
+
+from qrisp.grover import diffuser
 
 from qrisp import (
     IterationEnvironment,
-    auto_uncompute,
-    z,
-    h,
     QuantumBool,
-    z,
-    ry,
     QuantumFloat,
-    merge,
-    IterationEnvironment,
-    recursive_qs_search,
+    auto_uncompute,
     control,
+    h,
+    merge,
+    recursive_qs_search,
+    z,
 )
-from qrisp.grover import diffuser
 
 
 def test_iteration_env():

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -22,8 +21,7 @@ qubit_hash = np.zeros(1)
 
 
 class Qubit:
-    """
-    This class describes qubits. Qubits are created by supplying the identifier string.
+    """This class describes qubits. Qubits are created by supplying the identifier string.
 
     Attributes
     ----------
@@ -32,7 +30,6 @@ class Qubit:
 
     Examples
     --------
-
     We create a Qubit and add it to a :ref:`QuantumCircuit`:
 
     >>> from qrisp import QuantumCircuit, Qubit

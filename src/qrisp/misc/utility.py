@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -53,7 +52,7 @@ def bin_rep(n, bits):
 def int_encoder(qv, encoding_number):
 
     from qrisp import control, x
-    from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode, jrange
+    from qrisp.jasp import check_for_tracing_mode, jrange
 
     if not check_for_tracing_mode():
         if encoding_number > 2 ** len(qv) - 1:
@@ -191,8 +190,7 @@ def get_depth_dic(qc, transpile_qc=True, depth_indicator=lambda x: 1) -> dict:
 
 
 def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
-    """
-    Decorator to bundle up the quantum instructions of a function into a single gate
+    """Decorator to bundle up the quantum instructions of a function into a single gate
     object. Bundled gate objects can help debugging as it allows for a more clear
     QuantumCircuit visualisation.
 
@@ -225,7 +223,6 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
 
     Parameters
     ----------
-
     permeability : string or list, optional
         Specify the permeability behavior of the function. When given "args", it is
         assumed that the gate is permeable only on the qubits of the arguments. When
@@ -243,7 +240,6 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
 
     Examples
     --------
-
     We create a simple function wrapping up multiple gates: ::
 
 
@@ -385,8 +381,8 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
                 └───────────────────┘└──────────────────────┘
         Live QuantumVariables:
         ---------------------
-    """
 
+    """
     """
     if len(args):
         return gate_wrap_inner(args[0])
@@ -441,9 +437,9 @@ def gate_wrap_inner(function, permeability=None, is_qfree=None, name=None, verif
             return qached_function(*args, **kwargs)
 
         wrapped_function.__name__ = function.__name__
-        from qrisp import QuantumArray, QuantumVariable, merge
+        from qrisp import QuantumArray, QuantumVariable
         from qrisp.circuit import Qubit
-        from qrisp.core import recursive_qs_search, recursive_qv_search
+        from qrisp.core import recursive_qs_search
         from qrisp.environments import GateWrapEnvironment
 
         try:
@@ -706,8 +702,7 @@ def find_qs(args):
 
 # Function to measure multiple quantum variables at once to assess their entanglement
 def multi_measurement(qv_list, shots=None, backend=None):
-    """
-    This functions facilitates the measurement of multiple QuantumVariables at the same
+    """This functions facilitates the measurement of multiple QuantumVariables at the same
     time. This can be used if the entanglement structure between several
     QuantumVariables is of interest.
 
@@ -735,7 +730,6 @@ def multi_measurement(qv_list, shots=None, backend=None):
 
     Examples
     --------
-
     We entangle three QuantumFloats via addition and perform a multi-measurement:
 
     >>> from qrisp import QuantumFloat, h, multi_measurement
@@ -749,7 +743,6 @@ def multi_measurement(qv_list, shots=None, backend=None):
     {(3, 2, 5): 0.5, (3, 3, 6): 0.5}
 
     """
-
     from qrisp.interface.measurement_result import MultiMeasurementResult
     from qrisp.jasp import check_for_tracing_mode
 
@@ -841,8 +834,7 @@ def app_phase_function(qv_list, phase_function, t=1, **kwargs):
 
 
 def as_hamiltonian(hamiltonian):
-    r"""
-    Decorator that recieves a regular Python function (returning a float) and returns a
+    r"""Decorator that recieves a regular Python function (returning a float) and returns a
     function of QuantumVariables, applying phases based on the function's output.
 
     Parameters
@@ -858,8 +850,6 @@ def as_hamiltonian(hamiltonian):
 
     Examples
     --------
-
-
     In this example we will demonstrate how a phase function with multiple arguments can
     be synthesized. For this we will create a phase function which encodes the fourier
     transform of different integers on the QuantumFloat x conditioned on the value of a
@@ -961,8 +951,7 @@ def as_hamiltonian(hamiltonian):
 
 
 def perm_lock(qubits):
-    """
-    Locks a list of qubits such that only permeable gates can be executed on these
+    """Locks a list of qubits such that only permeable gates can be executed on these
     qubits. This means that an error will be raised if the user attempts to perform any
     operation involving these qubits if the operation does not commute with the
     Z-operator of this qubit. For more information, what a permeable gate is, check the
@@ -982,7 +971,6 @@ def perm_lock(qubits):
 
     Examples
     --------
-
     We create a QuantumChar, perm-lock it's Qubits and attempt to initialize.
 
     >>> from qrisp import QuantumChar, perm_lock, cx, p
@@ -1013,8 +1001,7 @@ def perm_lock(qubits):
 
 
 def perm_unlock(qubits):
-    """
-    Reverses the effect of "perm_lock".
+    """Reverses the effect of "perm_lock".
 
     Parameters
     ----------
@@ -1023,7 +1010,6 @@ def perm_unlock(qubits):
 
     Examples
     --------
-
     We create a QuantumChar, perm-lock it's Qubits and attempt to initialize.
 
     >>> from qrisp import QuantumChar, perm_lock, perm_unlock
@@ -1049,8 +1035,7 @@ def perm_unlock(qubits):
 
 
 def lock(qubits):
-    """
-    Locks a list of qubits, implying an error will be raised if the user tries to
+    """Locks a list of qubits, implying an error will be raised if the user tries to
     perform any operation involving these qubits.
 
     This can be reversed by calling unlock.
@@ -1062,7 +1047,6 @@ def lock(qubits):
 
     Examples
     --------
-
     We create a QuantumChar, lock it's Qubits and attempt to initialize.
 
     >>> from qrisp import QuantumChar, lock
@@ -1070,6 +1054,7 @@ def lock(qubits):
     >>> lock(q_ch)
     >>> q_ch[:] = "g"
     Exception: Tried to operation on locked qubits
+
     """
     from qrisp.circuit.quantum_circuit import convert_to_qb_list
 
@@ -1083,8 +1068,7 @@ def lock(qubits):
 
 
 def unlock(qubits):
-    """
-    Reverses the effect of "lock".
+    """Reverses the effect of "lock".
 
     Parameters
     ----------
@@ -1093,7 +1077,6 @@ def unlock(qubits):
 
     Examples
     --------
-
     We create a QuantumChar, lock it's Qubits and attempt to initialize.
 
     >>> from qrisp import QuantumChar, lock, unlock
@@ -1173,8 +1156,7 @@ def custom_qv(labels, decoder=None, qs=None, name=None):
 # where it is called inside jrange loops, because DynamicQubitArray
 # does not support reverse iteration.
 def bit_reverse(i, width):
-    """
-    Jasp-compatible bit-reversal function.
+    """Jasp-compatible bit-reversal function.
 
     Interprets ``i`` as a ``width``-bit binary integer
     and returns the decimal integer corresponding to the bit-reversal of ``i``.
@@ -1198,7 +1180,6 @@ def bit_reverse(i, width):
 
     Examples
     --------
-
     For ``i=5`` and ``width=3``, the binary representation
     of ``5`` is ``101``, and its bit-reversal is (again) ``101``, which is ``5`` in decimal.
 
@@ -1339,6 +1320,7 @@ def get_measurement_from_qc(qc, qubits, backend: "BackendLike", shots=None) -> "
     _IntKeyedResult
         Lazy mapping from integer bitstring indices to normalised probabilities.
         Population is deferred until the first access.
+
     """
     from qrisp.interface.measurement_result import MeasurementResult, _IntKeyedResult
 
@@ -1380,8 +1362,7 @@ def retarget_instructions(data, source_qubits, target_qubits):
 
 
 def redirect_qfunction(function_to_redirect):
-    """
-    Decorator to turn a function returning a QuantumVariable into an in-place function.
+    """Decorator to turn a function returning a QuantumVariable into an in-place function.
     This can be helpful for manual uncomputation if we have a function returning some
     QuantumVariable, but we want the result to operate on some other variable, which is
     supposed to be uncomputed.
@@ -1409,7 +1390,6 @@ def redirect_qfunction(function_to_redirect):
 
     Examples
     --------
-
     We create a function that determins the AND value of its inputs and redirect it
     onto another QuantumBool. ::
 
@@ -1571,19 +1551,15 @@ def redirect_qfunction(function_to_redirect):
 def get_sympy_state(qs, decimals):
     from sympy import (
         I,
-        Rational,
         Symbol,
         cancel,
-        cos,
         count_ops,
         exp,
-        factor,
         nsimplify,
         pi,
         simplify,
-        sin,
     )
-    from sympy.physics.quantum import Ket, OrthogonalKet
+    from sympy.physics.quantum import OrthogonalKet
 
     from qrisp.simulator import statevector_sim
 
@@ -1723,18 +1699,10 @@ def get_sympy_state(qs, decimals):
 
 def trigify_amp(amplitude, nnz):
     from sympy import (
-        I,
-        Rational,
         Symbol,
-        cancel,
         cos,
-        count_ops,
-        exp,
-        factor,
         latex,
         nsimplify,
-        pi,
-        simplify,
         sin,
     )
 
@@ -1768,11 +1736,10 @@ def trigify_amp(amplitude, nnz):
         else:
             abs = temp
 
+    elif expr == "cos":
+        abs = cos(cos_expr * Symbol("pi"))
     else:
-        if expr == "cos":
-            abs = cos(cos_expr * Symbol("pi"))
-        else:
-            abs = sin(sin_expr * Symbol("pi"))
+        abs = sin(sin_expr * Symbol("pi"))
 
     return abs
 
@@ -1809,8 +1776,7 @@ def render_qc(qc):
 
 
 def lifted(*args, verify=False):
-    """
-    Shorthand for ``gate_wrap(permability = "args", is_qfree = True)``.
+    """Shorthand for ``gate_wrap(permability = "args", is_qfree = True)``.
 
     A lifted function is ``qfree`` and permeable on its inputs. The results of lifted
     functions can be automatically uncomputed even if they contain functions that could
@@ -1829,14 +1795,12 @@ def lifted(*args, verify=False):
 
     Parameters
     ----------
-
     verify : bool, optional
         If set to ``True``, the specified information about permeability and
         ``qfree``-ness will be checked numerically. The default is ``False``.
 
     Examples
     --------
-
     We create a function performing the `Margolus gate
     <https://arxiv.org/abs/quant-ph/0312225>`_. As it contains ``ry`` rotations,
     there are non-``qfree`` steps involved. Putting on the ``lifted`` decorator however
@@ -1906,7 +1870,6 @@ def lifted(*args, verify=False):
     a small scale, since the verification can be time-consuming.
 
     """
-
     if len(args) == 0:
 
         def lifted_helper(function):
@@ -1919,8 +1882,7 @@ def lifted(*args, verify=False):
 
 
 def t_depth_indicator(op, epsilon):
-    r"""
-    This function returns the T-depth of an :ref:`Operation` object.
+    r"""This function returns the T-depth of an :ref:`Operation` object.
 
     According to `this paper <https://arxiv.org/abs/1403.2975>`_, the synthesis of an $RZ(\phi)$
     up to precision $\epsilon$ requires $3\text{log}_2(\frac{1}{\epsilon})$
@@ -1940,7 +1902,6 @@ def t_depth_indicator(op, epsilon):
         The estimated T-depth of the Operation.
 
     """
-
     from qrisp import ClControlledOperation
 
     if isinstance(op, ClControlledOperation):
@@ -1993,8 +1954,7 @@ def t_depth_indicator(op, epsilon):
 
 
 def cnot_depth_indicator(op):
-    r"""
-    This function returns the CNOT-depth of an :ref:`Operation` object.
+    r"""This function returns the CNOT-depth of an :ref:`Operation` object.
 
     In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum
     circuit execution. This function can be used as a gate-speed specifier for
@@ -2011,7 +1971,6 @@ def cnot_depth_indicator(op):
         The CNOT-depth of the Operation.
 
     """
-
     from qrisp import ClControlledOperation
 
     if isinstance(op, ClControlledOperation):
@@ -2027,8 +1986,7 @@ def cnot_depth_indicator(op):
 
 
 def inpl_adder_test(inpl_adder):
-    """
-    This function runs tests on a desired inplace addition function.
+    """This function runs tests on a desired inplace addition function.
     An inplace addition function is a function mapping (a, b) to (a, a+b),
     where a is a :ref:`QuantumVariable`, list[:ref:`Qubit`] or an integer
     and b is either a :ref:`QuantumVariable` or a list[:ref:`Qubit`].
@@ -2046,7 +2004,6 @@ def inpl_adder_test(inpl_adder):
 
     Examples
     --------
-
     We test the built-in Cuccaro adder:
 
     ::
@@ -2188,8 +2145,7 @@ def inpl_adder_test(inpl_adder):
 
 
 def batched_measurement(variables, backend, shots=None):
-    """
-    Measure multiple :ref:`QuantumVariables <QuantumVariable>` in a single
+    """Measure multiple :ref:`QuantumVariables <QuantumVariable>` in a single
     batched execution using a :class:`~qrisp.interface.BatchedBackend`.
 
     All ``get_measurement`` calls are collected first (returning lazy results
@@ -2225,7 +2181,6 @@ def batched_measurement(variables, backend, shots=None):
 
     Examples
     --------
-
     ::
 
         from qrisp import QuantumFloat, batched_measurement
@@ -2272,8 +2227,7 @@ def _bitrev_indices(n: ArrayLike) -> jax.Array:
 
 
 def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jax.Array:
-    """
-    Convert between big-endian and little-endian qubit ordering.
+    """Convert between big-endian and little-endian qubit ordering.
 
     This transformation is its own inverse, so it works in both directions.
 
@@ -2288,6 +2242,7 @@ def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jax.Array:
     -------
     jax.Array
         The state vector with reversed qubit ordering.
+
     """
     r = _bitrev_indices(n)
     return vec[r]

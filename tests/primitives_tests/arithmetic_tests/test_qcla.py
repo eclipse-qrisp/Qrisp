@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,16 +18,16 @@
 import numpy as np
 
 from qrisp import (
+    QuantumBool,
     QuantumFloat,
     QuantumVariable,
-    QuantumBool,
-    qq_calc_carry,
+    bin_rep,
+    control,
     cq_calc_carry,
     h,
     multi_measurement,
     qcla,
-    bin_rep,
-    control,
+    qq_calc_carry,
     x,
 )
 

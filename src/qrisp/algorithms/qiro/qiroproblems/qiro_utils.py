@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -20,8 +19,7 @@ import numpy as np
 
 
 def find_max(single_cor, double_cor, res, solutions):
-    """
-    Subroutine for finding the values with maximal correlation in the QIRO algorithm.
+    """Subroutine for finding the values with maximal correlation in the QIRO algorithm.
 
     Parameters
     ----------
@@ -40,7 +38,6 @@ def find_max(single_cor, double_cor, res, solutions):
         The item with maximal correlation and the sign of the correlation.
 
     """
-
     max = 0
     max_item = None
     sign = None

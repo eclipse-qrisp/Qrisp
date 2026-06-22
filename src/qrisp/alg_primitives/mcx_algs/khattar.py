@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,27 +15,26 @@
 ********************************************************************************
 """
 
-from qrisp.core.gate_application_functions import (
-    x,
-    cx,
-    mcx,
-    h,
-    t,
-    t_dg,
-    sx,
-    cz,
-    p,
-    cp,
-    measure,
-)
-from qrisp.qtypes import QuantumFloat
-from qrisp.environments import invert, control, conjugate, custom_inversion
-from qrisp.jasp import jlen, jrange, check_for_tracing_mode, qache
-
 # Move this one layer up
 import jax.numpy as jnp
-from jax.lax import cond
 from jax import jit
+from jax.lax import cond
+
+from qrisp.core.gate_application_functions import (
+    cx,
+    cz,
+    h,
+    mcx,
+    measure,
+    p,
+    sx,
+    t,
+    t_dg,
+    x,
+)
+from qrisp.environments import conjugate, control, custom_inversion, invert
+from qrisp.jasp import check_for_tracing_mode, jlen, jrange, qache
+from qrisp.qtypes import QuantumFloat
 
 
 # Move this one layer up
@@ -61,14 +59,14 @@ def ctrl_state_conjugator(ctrls, ctrl_state):
 
 @custom_inversion
 def gidney_CCCX(ctrls, target, inv=False):
-    """
-    Implements a CCCZ gate using the Gidney
+    """Implements a CCCZ gate using the Gidney
     method described in https://arxiv.org/abs/2106.11513 using only 6 T gates.
+
     Args:
         ctrls (list): A list of control qubits. It is expected to contain three qubits.
         target (list): A list containing the target qubit. It is expected to contain one qubit.
-    """
 
+    """
     h(target[0])
 
     gidney_anc = QuantumFloat(1)
@@ -156,10 +154,10 @@ def cca_mcx(ctrls, target, anc):
 
 @qache
 def khattar_mcx(ctrls, target, ctrl_state):
-    """
-    Implements the Khattar multi-controlled X (MCX) gate methode using conditionally clean ancillae described in https://arxiv.org/abs/2407.17966.
+    """Implements the Khattar multi-controlled X (MCX) gate methode using conditionally clean ancillae described in https://arxiv.org/abs/2407.17966.
     The behavior of the function varies depending on the number of
     control qubits (N) and the control state.
+
     Args:
         ctrls (list): A list of control qubits.
         target (list): A list containing the target qubit(s).
@@ -172,8 +170,8 @@ def khattar_mcx(ctrls, target, ctrl_state):
           Otherwise, a specific MCX method ("balauca") is used.
         - For N = 4: A custom 4-controlled gate (`cca_4ctrls`) is applied.
         - For N > 4: An ancillary qubit is used to decompose the operation into smaller steps.
-    """
 
+    """
     N = jlen(ctrls)
 
     if isinstance(ctrl_state, str):
@@ -232,11 +230,9 @@ def khattar_mcx(ctrls, target, ctrl_state):
 
 @qache
 def khattar_mcp(phi, ctrls, ctrl_state):
-    """
-    Implements the multi-controlled phase (MCP) gate based on the Khattar MCX implementation.
+    """Implements the multi-controlled phase (MCP) gate based on the Khattar MCX implementation.
 
     """
-
     N = jlen(ctrls)
 
     if isinstance(ctrl_state, str):

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,15 +17,16 @@
 
 import numpy as np
 import pytest
+
 from qrisp import (
+    QAE,
+    QuantumArray,
     QuantumBool,
     QuantumFloat,
-    QuantumArray,
     control,
+    h,
     ry,
     z,
-    h,
-    QAE,
 )
 
 

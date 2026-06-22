@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,11 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable, cx, ry
-from qrisp.vqe.vqe_problem import *
-from qrisp.operators.qubit import X, Y, Z
 import numpy as np
+from qrisp.vqe.vqe_problem import *
+
+from qrisp import QuantumVariable, cx, ry
+from qrisp.operators.qubit import X, Y, Z
 
 
 def test_vqe():

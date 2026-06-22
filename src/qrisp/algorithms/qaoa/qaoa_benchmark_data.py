@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,13 +15,12 @@
 ********************************************************************************
 """
 
-import matplotlib.pyplot as plt
 import dill as pickle
+import matplotlib.pyplot as plt
 
 
 class QAOABenchmark:
-    """
-    This class is a wrapper for representing and evaluating the data collected in the :meth:`.benchmark <qrisp.qaoa.QAOAProblem.benchmark>` method.
+    """This class is a wrapper for representing and evaluating the data collected in the :meth:`.benchmark <qrisp.qaoa.QAOAProblem.benchmark>` method.
 
     Attributes
     ----------
@@ -61,8 +59,7 @@ class QAOABenchmark:
         self.cost_function = cost_function
 
     def evaluate(self, cost_metric="oqv", gain_metric="approx_ratio"):
-        r"""
-        Evaluates the data in terms of a cost and a gain metric.
+        r"""Evaluates the data in terms of a cost and a gain metric.
 
         **Cost metric**
 
@@ -103,7 +100,6 @@ class QAOABenchmark:
 
         Examples
         --------
-
         We set up a MaxCut instance and perform some benchmarking.
 
         ::
@@ -159,7 +155,6 @@ class QAOABenchmark:
         * ``optimal_solution``: The optimal solution of the problem
 
         """
-
         if isinstance(cost_metric, str):
             if cost_metric == "oqv":
                 cost_metric = overall_quantum_volume
@@ -196,8 +191,7 @@ class QAOABenchmark:
         return cost_data, gain_data
 
     def visualize(self, cost_metric="oqv", gain_metric="approx_ratio"):
-        """
-        Plots the results of :meth:`.evaluate <qrisp.qaoa.QAOABenchmark.evaluate>`.
+        """Plots the results of :meth:`.evaluate <qrisp.qaoa.QAOABenchmark.evaluate>`.
 
         Parameters
         ----------
@@ -208,7 +202,6 @@ class QAOABenchmark:
 
         Examples
         --------
-
         We create a MaxCut instance and benchmark several parameters
 
         ::
@@ -241,7 +234,6 @@ class QAOABenchmark:
 
 
         """
-
         cost_data, gain_data = self.evaluate(cost_metric, gain_metric)
 
         plt.plot(cost_data, gain_data, "x")
@@ -266,8 +258,7 @@ class QAOABenchmark:
         plt.show()
 
     def rank(self, metric="approx_ratio", print_res=False, average_repetitions=False):
-        """
-        Ranks the runs of the benchmark according to a given metric.
+        """Ranks the runs of the benchmark according to a given metric.
 
         The default metric is approximation ratio. Similar to :meth:`.evaluate <qrisp.qaoa.QAOABenchmark.evaluate>`,
         the metric can be user specified.
@@ -284,7 +275,6 @@ class QAOABenchmark:
 
         Examples
         --------
-
         We create a MaxCut instance and benchmark several parameters
 
         ::
@@ -315,7 +305,6 @@ class QAOABenchmark:
             #Yields: {'layer_depth': 5, 'circuit_depth': 44, 'qubit_amount': 5, 'shots': 10000, 'iterations': 50, 'counts': {'11100': 0.4909, '00011': 0.4909, '00010': 0.002, '11110': 0.002, '00001': 0.002, '11101': 0.002, '10000': 0.0015, '01000': 0.0015, '00100': 0.0015, '11011': 0.0015, '10111': 0.0015, '01111': 0.0015, '00000': 0.0001, '10010': 0.0001, '01010': 0.0001, '11010': 0.0001, '00110': 0.0001, '10110': 0.0001, '01110': 0.0001, '10001': 0.0001, '01001': 0.0001, '11001': 0.0001, '00101': 0.0001, '10101': 0.0001, '01101': 0.0001, '11111': 0.0001, '11000': 0.0, '10100': 0.0, '01100': 0.0, '10011': 0.0, '01011': 0.0, '00111': 0.0}, 'runtime': 1.4269020557403564, 'optimal_solution': '11100'}
 
         """
-
         if isinstance(metric, str):
             if metric == "approx_ratio":
 
@@ -374,7 +363,7 @@ class QAOABenchmark:
                     run_data["iterations"],
                 )
 
-                if not key in average_dict:
+                if key not in average_dict:
                     continue
 
                 run_data["metric"] = average_dict[key]["total_metric"] / average_dict[key]["count"]
@@ -392,8 +381,7 @@ class QAOABenchmark:
         return run_data_list
 
     def print_rank_table(self, run_data_list, metric_name):
-        """
-        Prints a nicely formatted table of the ranked runs.
+        """Prints a nicely formatted table of the ranked runs.
 
         Parameters
         ----------
@@ -437,8 +425,7 @@ class QAOABenchmark:
             print("{:<5} {:<12} {:<12} {:<4} {:<10} {:<9} {:<7} {:<10}".format(*row))
 
     def save(self, filename):
-        """
-        Saves the data to the harddrive for later use.
+        """Saves the data to the harddrive for later use.
 
         Parameters
         ----------
@@ -447,7 +434,6 @@ class QAOABenchmark:
 
         Examples
         --------
-
         We create a MaxCut instance and benchmark several parameters
 
         ::
@@ -487,8 +473,7 @@ class QAOABenchmark:
 
     @classmethod
     def load(cls, filename):
-        """
-        Loads benchmark data from the harddrive that has been saved by
+        """Loads benchmark data from the harddrive that has been saved by
         :meth:`.save <qrisp.qaoa.QAOABenchmark.save>`.
 
         Parameters
@@ -503,7 +488,6 @@ class QAOABenchmark:
 
         Examples
         --------
-
         We assume that the code from the example in :meth:`.save <qrisp.qaoa.QAOABenchmark.save>`
         has been executed and load the corresponding data:
 
@@ -542,8 +526,7 @@ def max_five_metric(metric_dict):
 
 
 def time_to_solution(counts, optimal_solution, cost_function):
-    """
-    Parameters
+    """Parameters
     ----------
     counts : the result dictionary from the QAOA method, contaning the
                     bitstrings as keys and the counts divided by the number
@@ -566,8 +549,7 @@ def time_to_solution(counts, optimal_solution, cost_function):
 
 
 def approximation_ratio(counts, optimal_solution, cost_function):
-    """
-    Parameters
+    """Parameters
     ----------
     counts : the result dictionary from the QAOA method, contaning the
                     bitstrings as keys and the counts divided by the number
@@ -588,15 +570,13 @@ def approximation_ratio(counts, optimal_solution, cost_function):
 
 
 def ilog(n, base):
-    """
-    Find the integer log of n with respect to the base.
+    """Find the integer log of n with respect to the base.
 
     >>> import math
     >>> for base in range(2, 16 + 1):
     ...     for n in range(1, 1000):
     ...         assert ilog(n, base) == int(math.log(n, base) + 1e-10), '%s %s' % (n, base)
     """
-
     if abs(n) < 1:
         n = 1 / n
 
@@ -608,8 +588,7 @@ def ilog(n, base):
 
 
 def sci_notation(n, prec=3):
-    """
-    Represent n in scientific notation, with the specified precision.
+    """Represent n in scientific notation, with the specified precision.
 
     >>> sci_notation(1234 * 10**1000)
     '1.234e+1003'

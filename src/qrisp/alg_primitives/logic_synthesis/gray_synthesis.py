@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,14 +18,14 @@
 import numpy as np
 import sympy as sp
 
-from qrisp.misc import array_as_int, gate_wrap, int_as_array
 from qrisp.circuit import (
-    QuantumCircuit,
+    ControlledOperation,
     Operation,
     PTControlledOperation,
-    ControlledOperation,
+    QuantumCircuit,
     fast_append,
 )
+from qrisp.misc import array_as_int, gate_wrap, int_as_array
 
 use_gray_code = False
 try:
@@ -85,7 +84,7 @@ def hamming_tsp(location_list, bit_amount):
     # Keep track of some stats
     empty_steps = 0
 
-    while len(location_list):
+    while location_list:
         # Move first salesman
 
         # Find closest location
@@ -332,10 +331,9 @@ def gray_synth_qc(target_phases, phase_tolerant=False, flip_bit_order=False):
         if target_phases_id in compiled_gates:
             temp = compiled_gates[target_phases_id]
             return temp
-    else:
-        if target_phases_id in compiled_pt_gates:
-            temp = compiled_pt_gates[target_phases_id]
-            return temp
+    elif target_phases_id in compiled_pt_gates:
+        temp = compiled_pt_gates[target_phases_id]
+        return temp
 
     qc = QuantumCircuit(bit_amount)
 
@@ -537,7 +535,6 @@ def gray_logic_synth_single_qb(input_var, output_var, qb_nr, tt, phase_tolerant=
         (input_var.reg + [output_var[qb_nr]]),
     )
     h(output_var[qb_nr])
-    return
 
 
 # This function uses it's single qubit version iteratively to synthesize

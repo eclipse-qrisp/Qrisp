@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -54,8 +53,7 @@ from qrisp.jasp.primitives import (
 
 
 class BaseMetric(ABC):
-    """
-    Runtime-enforced base class for profiling metrics.
+    """Runtime-enforced base class for profiling metrics.
 
     Classes inheriting from `BaseMetric` must implement handler methods
     for all quantum primitives, and define an `initial_metric` property
@@ -71,7 +69,6 @@ class BaseMetric(ABC):
 
     def __init__(self, meas_behavior: Callable) -> None:
         """Initialize the BaseMetric."""
-
         self._meas_behavior: Callable = meas_behavior
 
     @property
@@ -81,7 +78,6 @@ class BaseMetric(ABC):
 
     def _validate_measurement_result(self, meas_res: bool | jax.Array) -> None:
         """Validate that measurement result is a boolean."""
-
         if isinstance(meas_res, bool):
             return
         if hasattr(meas_res, "dtype") and meas_res.dtype == jax.numpy.bool_:
@@ -90,7 +86,6 @@ class BaseMetric(ABC):
 
     def _measurement_body_fun(self, meas_number: ArrayLike, i: ArrayLike, acc: ArrayLike) -> ArrayLike:
         """Helper function for measuring qubit arrays."""
-
         meas_key = jax.random.key(meas_number + i)
         meas_res = self.meas_behavior(meas_key)
         self._validate_measurement_result(meas_res)
@@ -115,8 +110,7 @@ class BaseMetric(ABC):
 
     @abstractmethod
     def handle_create_qubits(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
-        """
-        Handle the `jasp.create_qubits` primitive.
+        """Handle the `jasp.create_qubits` primitive.
 
         The `create_qubits_p` primitive has the following semantics:
 
@@ -127,8 +121,7 @@ class BaseMetric(ABC):
 
     @abstractmethod
     def handle_get_qubit(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
-        """
-        Handle the `jasp.get_qubit` primitive.
+        """Handle the `jasp.get_qubit` primitive.
 
         The `get_qubit_p` primitive has the following semantics:
 
@@ -139,8 +132,7 @@ class BaseMetric(ABC):
 
     @abstractmethod
     def handle_get_size(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
-        """
-        Handle the `jasp.get_size` primitive.
+        """Handle the `jasp.get_size` primitive.
 
         The `get_size_p` primitive has the following semantics:
 
@@ -151,8 +143,7 @@ class BaseMetric(ABC):
 
     @abstractmethod
     def handle_fuse(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
-        """
-        Handle the `jasp.fuse` primitive.
+        """Handle the `jasp.fuse` primitive.
 
         The `fuse_p` primitive has the following semantics:
 
@@ -163,8 +154,7 @@ class BaseMetric(ABC):
 
     @abstractmethod
     def handle_slice(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
-        """
-        Handle the `jasp.slice` primitive.
+        """Handle the `jasp.slice` primitive.
 
         The `slice_p` primitive has the following semantics:
 
@@ -175,8 +165,7 @@ class BaseMetric(ABC):
 
     @abstractmethod
     def handle_quantum_gate(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
-        """
-        Handle the `jasp.quantum_gate` primitive.
+        """Handle the `jasp.quantum_gate` primitive.
 
         The `quantum_gate_p` primitive has the following semantics:
 
@@ -187,8 +176,7 @@ class BaseMetric(ABC):
 
     @abstractmethod
     def handle_measure(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
-        """
-        Handle the `jasp.measure` primitive.
+        """Handle the `jasp.measure` primitive.
 
         The `measure_p` primitive has the following semantics:
 
@@ -199,8 +187,7 @@ class BaseMetric(ABC):
 
     @abstractmethod
     def handle_reset(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
-        """
-        Handle the `jasp.reset` primitive.
+        """Handle the `jasp.reset` primitive.
 
         The `reset_p` primitive has the following semantics:
 
@@ -211,8 +198,7 @@ class BaseMetric(ABC):
 
     @abstractmethod
     def handle_delete_qubits(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
-        """
-        Handle the `jasp.delete_qubits` primitive.
+        """Handle the `jasp.delete_qubits` primitive.
 
         The `delete_qubits_p` primitive has the following semantics:
 
@@ -223,20 +209,17 @@ class BaseMetric(ABC):
 
     @abstractmethod
     def handle_parity(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
-        """
-        Handle the `jasp.parity` primitive.
+        """Handle the `jasp.parity` primitive.
 
         TODO: add semantics here.
         """
 
     def handle_create_quantum_kernel(self, *_args, **_kwargs):
         """Handle the `jasp.create_quantum_kernel` primitive."""
-
         raise NotImplementedError("Quantum kernel creation not yet supported in profiling interpreter.")
 
     def get_handlers(self) -> Dict[str, Callable[..., Any]]:
         """Return a mapping from primitive names to handler methods."""
-
         return {
             "jasp.create_qubits": self.handle_create_qubits,
             "jasp.get_qubit": self.handle_get_qubit,
@@ -261,8 +244,7 @@ class BaseMetric(ABC):
 def _should_use_profiling_callback(
     jaxpr: Jaxpr | ClosedJaxpr, call_graph_stats: dict | None, callback_threshold: int | None
 ) -> bool:
-    """
-    Decide whether *jaxpr* should be called via ``jax.pure_callback``.
+    """Decide whether *jaxpr* should be called via ``jax.pure_callback``.
 
     A sub-jaxpr benefits from callback wrapping when it is **reused**
     (``call_count >= 2``) and large enough to matter
@@ -285,6 +267,7 @@ def _should_use_profiling_callback(
     Returns
     -------
     bool
+
     """
     if call_graph_stats is None:
         return False
@@ -303,8 +286,7 @@ _result_shapes_cache: dict[int, Any] = {}
 
 
 def _get_result_shapes(jaxpr_evaluator, invalues):
-    """
-    Compute the output shape specification for ``jax.pure_callback``.
+    """Compute the output shape specification for ``jax.pure_callback``.
 
     ``jax.pure_callback`` needs a pytree of ``ShapeDtypeStruct`` that
     describes the shape and dtype of every output *before* the callback
@@ -347,8 +329,7 @@ def get_compiled_profiler(
     call_graph_stats=None,
     callback_threshold=None,
 ) -> Tuple[Callable, Callable]:
-    """
-    Get a compiled profiler for a given Jaxpr and metric configuration.
+    """Get a compiled profiler for a given Jaxpr and metric configuration.
 
     Parameters
     ----------
@@ -369,6 +350,7 @@ def get_compiled_profiler(
     tuple[Callable, Callable]
         ``(profiler, jaxpr_evaluator)`` – the compiled profiler function and the
         raw evaluator (used for computing result shapes for ``pure_callback``).
+
     """
     key = (id(jaxpr), metric_cls, cache_key, callback_threshold)
     if key in _profiler_cache:
@@ -397,8 +379,7 @@ def get_compiled_profiler(
 
 
 def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, callback_threshold=None) -> Callable:
-    """
-    Build a profiling equation evaluator for a given metric.
+    """Build a profiling equation evaluator for a given metric.
 
     Parameters
     ----------
@@ -423,8 +404,8 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
         The profiling equation evaluator. This is a function that takes a Jaxpr equation
         and a context dictionary, and evaluates the equation according to the
         profiling logic defined by the metric.
-    """
 
+    """
     prim_handlers = metric.get_handlers()
 
     def profiling_eqn_evaluator(eqn: JaxprEqn, context_dic: ContextDict) -> None | bool:

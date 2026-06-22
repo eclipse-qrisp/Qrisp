@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -89,8 +88,7 @@ class _StimJob(Job):
 
 
 class StimBackend(Backend):
-    """
-    A :class:`~qrisp.interface.Backend` that simulates Clifford circuits via
+    """A :class:`~qrisp.interface.Backend` that simulates Clifford circuits via
     `Stim <https://github.com/quantumlib/Stim>`_.
 
     :meth:`run` returns a :class:`~qrisp.interface.MeasurementResult` immediately.
@@ -108,7 +106,6 @@ class StimBackend(Backend):
 
     Examples
     --------
-
     ::
 
         from qrisp import QuantumVariable
@@ -119,6 +116,7 @@ class StimBackend(Backend):
         res = qv.get_measurement(backend=StimBackend())
         print(res)
         # Yields: {'10': 1.0}
+
     """
 
     @classmethod

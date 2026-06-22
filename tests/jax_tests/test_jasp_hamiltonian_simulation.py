@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,9 @@
 ********************************************************************************
 """
 
-from qrisp.operators import *
 from qrisp import QuantumFloat
 from qrisp.jasp import terminal_sampling
+from qrisp.operators import *
 
 
 def test_jasp_hamiltonian_simulation():
@@ -50,9 +49,10 @@ def test_jasp_hamiltonian_simulation():
     test_hamiltonian(H)
 
 
+import numpy as np
+
 from qrisp import *
 from qrisp.operators import FermionicOperator
-import numpy as np
 
 
 def test_jasp_hamiltonian_simulation_H2():

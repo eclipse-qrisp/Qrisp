@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,14 +15,15 @@
 ********************************************************************************
 """
 
-from qrisp.alg_primitives import app_sb_phase_polynomial
-import sympy as sp
 import math
+
+import sympy as sp
+
+from qrisp.alg_primitives import app_sb_phase_polynomial
 
 
 def create_maxsat_cost_polynomials(problem):
-    """
-    Creates a list of polynomials representing the cost function for each clause, and a list of symbols.
+    """Creates a list of polynomials representing the cost function for each clause, and a list of symbols.
 
     Parameters
     ----------
@@ -38,7 +38,6 @@ def create_maxsat_cost_polynomials(problem):
         A list of SymPy symbols.
 
     """
-
     clauses = problem[1]
     symbols = [sp.Symbol(f"x{i}") for i in range(1, problem[0] + 1)]
     cost_polynomials = []
@@ -51,8 +50,7 @@ def create_maxsat_cost_polynomials(problem):
 
 
 def create_maxsat_cl_cost_function(problem):
-    """
-    Creates the classical cost function for an instance of the maximum satisfiability problem.
+    """Creates the classical cost function for an instance of the maximum satisfiability problem.
 
     Parameters
     ----------
@@ -65,7 +63,6 @@ def create_maxsat_cl_cost_function(problem):
         The classical cost function for the problem instance, which takes a dictionary of measurement results as input.
 
     """
-
     clauses = problem[1]
 
     def cl_cost_function(res_dic):
@@ -88,8 +85,7 @@ def create_maxsat_cl_cost_function(problem):
 
 
 def create_maxsat_cost_operator(problem):
-    r"""
-    Creates the cost operator for an instance of the maximum satisfiability problem.
+    r"""Creates the cost operator for an instance of the maximum satisfiability problem.
     For a given cost function
 
     .. math::
@@ -110,7 +106,6 @@ def create_maxsat_cost_operator(problem):
         This function performs the application of the cost operator.
 
     """
-
     cost_polynomials, symbols = create_maxsat_cost_polynomials(problem)
 
     def cost_operator(qv, gamma):
@@ -121,8 +116,7 @@ def create_maxsat_cost_operator(problem):
 
 
 def maxsat_problem(problem):
-    """
-    Creates a QAOA problem instance with appropriate phase separator, mixer, and
+    """Creates a QAOA problem instance with appropriate phase separator, mixer, and
     classical cost function.
 
     Parameters

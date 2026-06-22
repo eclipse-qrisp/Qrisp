@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,42 +16,44 @@
 """
 
 from __future__ import annotations
-from collections.abc import Callable
-from typing import Any, TYPE_CHECKING
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from jax.tree_util import register_pytree_node_class
+from typing import TYPE_CHECKING, Any
+
 import jax
 import jax.numpy as jnp
 import numpy as np
+from jax.tree_util import register_pytree_node_class
 
-from qrisp.core import QuantumVariable
 from qrisp.alg_primitives.reflection import reflection
+from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import gphase, h, measure, reset, ry, x, z
 from qrisp.environments import conjugate, control, invert
 from qrisp.jasp import (
-    count_ops,
-    expectation_value,
-    depth,
-    num_qubits,
-    jrange,
-    check_for_tracing_mode as is_tracing,
     RUS,
+    count_ops,
+    depth,
+    expectation_value,
+    jrange,
+    num_qubits,
+)
+from qrisp.jasp import (
+    check_for_tracing_mode as is_tracing,
 )
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.qtypes import QuantumBool
 
-
 if TYPE_CHECKING:
     from jax.typing import ArrayLike
+
     from qrisp.interface.backend import BackendLike
 
 
 @register_pytree_node_class
 @dataclass(frozen=False)
 class BlockEncoding:
-    r"""
-    Central structure for representing block-encodings.
+    r"""Central structure for representing block-encodings.
 
     Block-encoding is a foundational technique that enables the implementation of non-unitary operations on a quantum computer by embedding them into a larger unitary operator. 
     Given an operator $A$, we embed a scaled version $A/\alpha$ into the upper-left block of a unitary matrix $U_{A}$:
@@ -135,7 +136,6 @@ class BlockEncoding:
 
     Examples
     --------
-
     **Example 1: Pauli Block Encoding**
 
     Define a :ref:`QubitOperator` repesenting a Heisenberg Hamiltonian,
@@ -273,14 +273,14 @@ class BlockEncoding:
         self.num_ops = num_ops
 
     def tree_flatten(self):
-        """
-        PyTree flatten for JAX.
+        """PyTree flatten for JAX.
 
         Returns
         -------
         tuple
             A pair `(children, aux_data)` where `children` is a tuple containing
             the digits array, and `aux_data` is `None`.
+
         """
         children = (
             self.alpha,
@@ -295,8 +295,7 @@ class BlockEncoding:
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        """
-        PyTree unflatten for JAX.
+        """PyTree unflatten for JAX.
 
         Parameters
         ----------
@@ -309,6 +308,7 @@ class BlockEncoding:
         -------
         BigInteger
             Reconstructed instance.
+
         """
         return cls(*children, *aux_data)
 
@@ -317,8 +317,7 @@ class BlockEncoding:
     #
 
     def create_ancillas(self) -> list[QuantumVariable]:
-        r"""
-        Returns a list of ancilla QuantumVariables for the BlockEncoding.
+        r"""Returns a list of ancilla QuantumVariables for the BlockEncoding.
 
         Returns
         -------
@@ -332,8 +331,7 @@ class BlockEncoding:
         return anc_list
 
     def apply(self, *operands: QuantumVariable) -> list[QuantumVariable]:
-        r"""
-        Applies the BlockEncoding unitary to the given operands.
+        r"""Applies the BlockEncoding unitary to the given operands.
 
         Parameters
         ----------
@@ -354,7 +352,6 @@ class BlockEncoding:
 
         Examples
         --------
-
         **Example 1:**
 
         Define a block-encoding and apply it using :ref:`RUS`.
@@ -438,7 +435,6 @@ class BlockEncoding:
             #{3: 0.6828427278345078, 0: 0.17071065215630213, 2: 0.11715730494804945, 1: 0.02928931506114055}
 
         """
-
         if len(operands) != self.num_ops:
             raise ValueError(f"Operation expected {self.num_ops} operands, but got {len(operands)}.")
 
@@ -447,8 +443,7 @@ class BlockEncoding:
         return ancillas
 
     def apply_rus(self, operand_prep: Callable[..., Any]) -> Callable[..., Any]:
-        r"""
-        Applies the BlockEncoding using :ref:`RUS`.
+        r"""Applies the BlockEncoding using :ref:`RUS`.
 
         Parameters
         ----------
@@ -473,7 +468,6 @@ class BlockEncoding:
 
         Examples
         --------
-
         Define a block-encoding and apply it using :ref:`RUS`.
 
         ::
@@ -500,7 +494,6 @@ class BlockEncoding:
             #{3: 0.6828427278345078, 0: 0.17071065215630213, 2: 0.11715730494804945, 1: 0.02928931506114055}
 
         """
-
         if not callable(operand_prep):
             raise TypeError(f"Expected 'operand_prep' to be a callable, but got {type(operand_prep).__name__}.")
 
@@ -534,8 +527,7 @@ class BlockEncoding:
         shots: int = 100,
         backend: "BackendLike | None" = None,
     ) -> Callable[..., Any]:
-        r"""
-        Measures the expectation value of the operator using the Hadamard test protocol.
+        r"""Measures the expectation value of the operator using the Hadamard test protocol.
 
         For a block-encoded **Hermitian** operator $A$ and a state $\ket{\psi}$,
         this method measures the expectation value $\langle\psi|A|\psi\rangle$.
@@ -575,7 +567,6 @@ class BlockEncoding:
 
         Examples
         --------
-
         **Example 1: Jasp Mode (Dynamic Execution)**
 
         ::
@@ -612,7 +603,6 @@ class BlockEncoding:
             # 0.3426
 
         """
-
         if not callable(operand_prep):
             raise TypeError(f"Expected 'operand_prep' to be a callable, but got {type(operand_prep).__name__}.")
 
@@ -661,8 +651,7 @@ class BlockEncoding:
         max_qubits: int = 1024,
         max_allocations: int = 1000,
     ):
-        r"""
-        Estimate the quantum resources required for the BlockEncoding.
+        r"""Estimate the quantum resources required for the BlockEncoding.
 
         This method uses the ``count_ops``, ``depth`` and ``num_qubits`` decorators to obtain gate counts, circuit depth,
         and qubit usage for a single execution of block-encoding ``.unitary``.
@@ -700,7 +689,6 @@ class BlockEncoding:
 
         Examples
         --------
-
         **Example 1:** Estimate the quantum resources for a block-encoded Pauli operator.
 
         ::
@@ -739,7 +727,6 @@ class BlockEncoding:
             # 'gphase': 6, 'p': 2}, 'depth': 42, 'qubits': 5}
 
         """
-
         if len(operands) != self.num_ops:
             raise ValueError(f"Operation expected {self.num_ops} operands, but got {len(operands)}.")
 
@@ -765,8 +752,7 @@ class BlockEncoding:
         }
 
     def dagger(self) -> BlockEncoding:
-        r"""
-        Returns a new BlockEncoding representing the Hermitian conjugate of the operator.
+        r"""Returns a new BlockEncoding representing the Hermitian conjugate of the operator.
 
         For a block-encoded operator $A$ with block-encoding unitary $U_A$, this method returns a new BlockEncoding with unitary $U_A^{\dagger}$.
         The resulting block-encoding represents the operator $A^{\dagger}$ with the same scaling factor $\alpha$.
@@ -778,7 +764,6 @@ class BlockEncoding:
 
         Examples
         --------
-
         Define a block-encoding and obtain its Hermitian conjugate.
 
         ::
@@ -805,8 +790,7 @@ class BlockEncoding:
         )
 
     def qubitization(self) -> BlockEncoding:
-        r"""
-        Returns a BlockEncoding representing the `qubitization walk operator <https://quantum-journal.org/papers/q-2019-07-12-163/>`_.
+        r"""Returns a BlockEncoding representing the `qubitization walk operator <https://quantum-journal.org/papers/q-2019-07-12-163/>`_.
 
         For a block-encoded **Hermitian** operator $A$ with normalization factor $\alpha$,
         this method returns a BlockEncoding of the qubitization walk operator $W$
@@ -840,7 +824,6 @@ class BlockEncoding:
 
         Examples
         --------
-
         Define a block-encoding and apply the qubitization transformation.
 
         ::
@@ -853,7 +836,6 @@ class BlockEncoding:
             BE_walk = BE.qubitization()
 
         """
-
         m = len(self._anc_templates)
         # W = U
         if m == 0:
@@ -906,8 +888,7 @@ class BlockEncoding:
         )
 
     def _hermitianization(self) -> BlockEncoding:
-        r"""
-        Returns a BlockEncoding representing the `qubitization walk operator via Hermitianization <https://arxiv.org/pdf/2312.00723>`_.
+        r"""Returns a BlockEncoding representing the `qubitization walk operator via Hermitianization <https://arxiv.org/pdf/2312.00723>`_.
 
         For a block-encoded (**not** necessarily Hermitian) operator $A$,
         this method returns a BlockEncoding of the qubitization walk operator via Hermitianization.
@@ -918,7 +899,6 @@ class BlockEncoding:
             \begin{pmatrix} \mathbb{0} & A \\ A^{\dagger} & \mathbb{0} \end{pmatrix}
 
         """
-
         n = self.num_ancs
 
         def new_unitary(*args):
@@ -948,8 +928,7 @@ class BlockEncoding:
         )
 
     def chebyshev(self, k: int, rescale: bool = True) -> BlockEncoding:
-        r"""
-        Returns a BlockEncoding representing $k$-th Chebyshev polynomial of the first kind applied to the operator.
+        r"""Returns a BlockEncoding representing $k$-th Chebyshev polynomial of the first kind applied to the operator.
 
         For a block-encoded **Hermitian** operator $A$ with normalization factor $\alpha$,
         this method returns a BlockEncoding of the rescaled operator $T_k(A)$ if ``rescale=True``,
@@ -979,7 +958,6 @@ class BlockEncoding:
 
         Examples
         --------
-
         Define a block-encoding and apply the Chebyshev polynomial transformation.
 
         ::
@@ -1006,7 +984,6 @@ class BlockEncoding:
             main(BE_cheb)
 
         """
-
         if rescale:
             from qrisp.algorithms.gqsp.qet import QET
 
@@ -1047,8 +1024,7 @@ class BlockEncoding:
     #
 
     def __add__(self, other: BlockEncoding) -> BlockEncoding:
-        r"""
-        Returns a BlockEncoding of the sum of two operators.
+        r"""Returns a BlockEncoding of the sum of two operators.
 
         This method implements the linear combination $A + B$ via the LCU
         (Linear Combination of Unitaries) framework, where $A$ and $B$ are
@@ -1073,7 +1049,6 @@ class BlockEncoding:
 
         Examples
         --------
-
         Define two block-encodings and add them.
 
         ::
@@ -1147,8 +1122,7 @@ class BlockEncoding:
         )
 
     def __sub__(self, other: BlockEncoding) -> BlockEncoding:
-        r"""
-        Returns a BlockEncoding of the difference between two operators.
+        r"""Returns a BlockEncoding of the difference between two operators.
 
         This method implements the subtraction $A - B$ using a linear combination
         of unitaries (LCU), where $A$ is the operator encoded by this instance
@@ -1173,7 +1147,6 @@ class BlockEncoding:
 
         Examples
         --------
-
         Define two block-encodings and subtract them.
 
         ::
@@ -1249,8 +1222,7 @@ class BlockEncoding:
         )
 
     def __mul__(self, other: "ArrayLike") -> BlockEncoding:
-        r"""
-        Returns a BlockEncoding of the scaled operator.
+        r"""Returns a BlockEncoding of the scaled operator.
 
         This method implements the scalar multiplication $c \cdot A$, where $A$
         is the operator encoded by this instance and $c$ is the
@@ -1273,7 +1245,6 @@ class BlockEncoding:
 
         Examples
         --------
-
         Define two block-encodings and implement their scaled sum as a new block encoding.
 
         ::
@@ -1313,6 +1284,7 @@ class BlockEncoding:
             # Result from BE of 2 * H1 + H2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}
             # Result from 2 * BE1 + BE2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}
             # Result from BE1 * 2 + BE2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}
+
         """
         from jax.typing import ArrayLike
 
@@ -1334,8 +1306,7 @@ class BlockEncoding:
         return NotImplemented
 
     def __matmul__(self, other: "ArrayLike" | BlockEncoding) -> BlockEncoding:
-        r"""
-        Returns a BlockEncoding of the product of two operators.
+        r"""Returns a BlockEncoding of the product of two operators.
 
         This method implements the operator product $A \cdot B$ by composing
         two BlockEncodings, where $A$ and $B$ are the operators encoded by the respective instances.
@@ -1358,7 +1329,6 @@ class BlockEncoding:
 
         Examples
         --------
-
         Define two block-encodings and multiply them.
 
         ::
@@ -1415,8 +1385,7 @@ class BlockEncoding:
     __rmul__ = __mul__
 
     def kron(self, other: BlockEncoding) -> BlockEncoding:
-        r"""
-        Returns a BlockEncoding of the Kronecker product (tensor product) of two operators.
+        r"""Returns a BlockEncoding of the Kronecker product (tensor product) of two operators.
 
         This method implements the operator $A \otimes B$, where $A$ and $B$ are
         the operators encoded by the respective instances. Following the
@@ -1442,7 +1411,6 @@ class BlockEncoding:
 
         Examples
         --------
-
         **Example 1:**
 
         Define two block-encodings and perform their Kronecker product.
@@ -1536,8 +1504,7 @@ class BlockEncoding:
         )
 
     def __neg__(self) -> BlockEncoding:
-        r"""
-        Returns a BlockEncoding of the negated operator.
+        r"""Returns a BlockEncoding of the negated operator.
 
         This method implements the transformation $A \to -A$ by scaling the
         encoded operator by $-1$.
@@ -1549,7 +1516,6 @@ class BlockEncoding:
 
         Examples
         --------
-
         Define a block-encoding and negate it.
 
         ::
@@ -1581,6 +1547,7 @@ class BlockEncoding:
             print("Result from - BE1: ", res_be_neg)
             # Result from BE of H2 = - H1:  {3.0: 1.0}
             # Result from - BE1:  {3.0: 1.0}
+
         """
 
         def new_unitary(*args):

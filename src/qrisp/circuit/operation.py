@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -45,8 +44,7 @@ def adaptive_substitution(expr, subs_dic, precision=10):
 # Class that describes an operation which can be performed on a quantum computer
 # Example would be an X gate or a measurement
 class Operation:
-    """
-    This class describes operations like quantum gates, measurements or classical logic
+    """This class describes operations like quantum gates, measurements or classical logic
     gates. Operation objects do not carry information about which Qubit/Clbits they are
     applied to. This can be found in the Instruction class, which is a combination of an
     Operation object together with its operands.
@@ -69,7 +67,6 @@ class Operation:
 
     Examples
     --------
-
     We create a QuantumCircuit and append a couple of operations
 
     >>> from qrisp import QuantumCircuit, XGate, CXGate, PGate
@@ -152,8 +149,7 @@ class Operation:
         self.permeability: dict[int, bool | None] = {i: None for i in range(self.num_qubits)}
 
     def copy(self):
-        """
-        Returns a copy of the Operation object.
+        """Returns a copy of the Operation object.
 
         Returns
         -------
@@ -161,7 +157,6 @@ class Operation:
             The copied operation.
 
         """
-
         res = copy.copy(self)
         if self.definition:
             copied_definition = self.definition.copy()
@@ -184,8 +179,7 @@ class Operation:
     # Rounding is usefull here because the floating point errors
     # sometimes make it hard to read the unitary
     def get_unitary(self, decimals=-1):
-        """
-        Returns the unitary matrix (if applicable) of the Operation as a numpy array.
+        """Returns the unitary matrix (if applicable) of the Operation as a numpy array.
 
         Parameters
         ----------
@@ -205,7 +199,6 @@ class Operation:
 
         Examples
         --------
-
         >>> from qrisp import CPGate
         >>> import numpy as np
         >>> CPGate(np.pi/2).get_unitary(decimals = 3)
@@ -213,8 +206,8 @@ class Operation:
                [0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j],
                [0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j],
                [0.+0.j, 0.+0.j, 0.+0.j, 0.+1.j]], dtype=complex64)
-        """
 
+        """
         if self.name == "barrier":
             from qrisp.simulator.unitary_management import np_dtype
 
@@ -229,22 +222,20 @@ class Operation:
 
         # If we are dealing with a non-elementary gate, calculate the unitary from
         # the definition circuit
-        else:
-            if not isinstance(self.definition, type(None)):
-                self.unitary = self.definition.get_unitary()
-                return self.get_unitary()
+        elif not isinstance(self.definition, type(None)):
+            self.unitary = self.definition.get_unitary()
+            return self.get_unitary()
 
-            # If no definition circuit is known, raise an error.
-            # Note that the get_unitary methods of more specific gate families specified
-            # by the inheritors of this class
-            else:
-                raise Exception("Unitary of operation " + self.name + " not defined.")
+        # If no definition circuit is known, raise an error.
+        # Note that the get_unitary methods of more specific gate families specified
+        # by the inheritors of this class
+        else:
+            raise Exception("Unitary of operation " + self.name + " not defined.")
 
     # Method to return the inverse of the given operation. Again, the methods of more
     # specific gate families are specified by the inheritors of this class
     def inverse(self):
-        """
-        Returns the inverse of this Operation (if applicable).
+        """Returns the inverse of this Operation (if applicable).
 
         Raises
         ------
@@ -258,7 +249,6 @@ class Operation:
 
         Examples
         --------
-
         We invert a phase gate and inspect it's parameters
 
         >>> from qrisp import PGate
@@ -267,7 +257,6 @@ class Operation:
         [-0.8]
 
         """
-
         # Check if the instruction contains classical bits => operation is not
         # invertible
         if self.num_clbits:
@@ -305,8 +294,7 @@ class Operation:
         return res
 
     def control(self, num_ctrl_qubits=1, ctrl_state=-1, method=None):
-        """
-        Returns the controlled version of this Operation (if applicable).
+        """Returns the controlled version of this Operation (if applicable).
 
         Parameters
         ----------
@@ -334,7 +322,6 @@ class Operation:
 
         Examples
         --------
-
         We control a parametrized X Rotation.
 
         >>> from qrisp import QuantumCircuit, RXGate
@@ -356,7 +343,6 @@ class Operation:
 
 
         """
-
         if method is None:
             method = "auto"
 
@@ -384,8 +370,7 @@ class Operation:
         return is_permeable(self, indices)
 
     def bind_parameters(self, subs_dic):
-        """
-        Binds abstract parameters to specified values.
+        """Binds abstract parameters to specified values.
 
         Parameters
         ----------
@@ -399,7 +384,6 @@ class Operation:
 
         Examples
         --------
-
         We create a phase gate with an abstract parameter and bind it to a specified
         value.
 
@@ -412,8 +396,8 @@ class Operation:
         >>> bound_p_gate = abstract_p_gate.bind_parameters({phi : 1.5})
         >>> bound_p_gate.params
         [1.5]
-        """
 
+        """
         new_params = []
         repl_args = [subs_dic[symb] for symb in self.abstract_params]
 
@@ -508,11 +492,10 @@ class U3Gate(Operation):
 
         if self.name in ["p", "rz", "rx", "ry", "gphase", "h"]:
             new_name = str(self.name)
+        elif self.name[-3:] == "_dg":
+            new_name = self.name[:-3]
         else:
-            if self.name[-3:] == "_dg":
-                new_name = self.name[:-3]
-            else:
-                new_name = self.name + "_dg"
+            new_name = self.name + "_dg"
 
         # For exponentials of hermitian matrices, the inverse is the hermitean
         # conjugate, which implies that we simply have to negate the parameters
@@ -899,7 +882,7 @@ class ClControlledOperation(Operation):
         self.ctrl_state = ctrl_state
 
         if base_op.definition:
-            from qrisp import Clbit, QuantumCircuit
+            from qrisp import QuantumCircuit
 
             definition = QuantumCircuit()
             definition.qubits = list(base_op.definition.qubits)

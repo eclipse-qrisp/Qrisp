@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,9 @@
 ********************************************************************************
 """
 
-from qrisp import cyclic_shift, QuantumVariable, QuantumArray, QuantumFloat, OutcomeArray
 import numpy as np
+
+from qrisp import OutcomeArray, QuantumArray, QuantumFloat, QuantumVariable, cyclic_shift
 
 
 def test_cycling_function():

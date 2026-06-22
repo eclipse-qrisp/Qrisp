@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,12 +16,12 @@
 """
 
 from qrisp.alg_primitives.mcx_algs.circuit_library import (
+    ctrl_state_wrap,
     gidney_qc,
     gidney_qc_inv,
     margolus_qc,
-    ctrl_state_wrap,
 )
-from qrisp.circuit import QuantumCircuit, Operation
+from qrisp.circuit import Operation, QuantumCircuit
 from qrisp.jasp import qache
 
 
@@ -60,13 +59,12 @@ class GidneyLogicalAND(Operation):
     def recompile(self, computation_strategy="gidney"):
         if self.inv:
             compiled_qc = gidney_qc_inv
+        elif computation_strategy == "gidney":
+            compiled_qc = gidney_qc
+        elif computation_strategy == "margolus":
+            compiled_qc = margolus_qc
         else:
-            if computation_strategy == "gidney":
-                compiled_qc = gidney_qc
-            elif computation_strategy == "margolus":
-                compiled_qc = margolus_qc
-            else:
-                raise Exception(f"Don't know measurement based uncomputation strategy {computation_strategy}")
+            raise Exception(f"Don't know measurement based uncomputation strategy {computation_strategy}")
 
         name = "compiled_gidney_mcx"
         if self.inv:
@@ -79,9 +77,9 @@ class GidneyLogicalAND(Operation):
         return res
 
 
-from qrisp.core import x, h, cx, t, t_dg, s, measure, cz
-from qrisp.environments import control
 from qrisp import custom_inversion
+from qrisp.core import cx, cz, h, measure, s, t, t_dg, x
+from qrisp.environments import control
 
 
 @qache

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,6 +18,7 @@
 import numpy as np
 import pennylane as qml
 import pytest
+from qrisp.grover import diffuser
 from sympy import symbols
 
 from qrisp import QuantumFloat, QuantumVariable, auto_uncompute, h, z
@@ -49,7 +49,6 @@ from qrisp.circuit.standard_operations import (  # Barrier,
     ZGate,
     u3Gate,
 )
-from qrisp.grover import diffuser
 from qrisp.interface import qml_converter
 
 SINGLE_GATE_MAP = [
@@ -109,14 +108,12 @@ def _get_qml_operations(qml_circuit):
 
 # The circuit returned should be executed to populate the tape
 def _create_qml_circuit(qrisp_circuit, subs_dic=None):
-    """
-    Helper function to create a PennyLane circuit from a Qrisp circuit.
+    """Helper function to create a PennyLane circuit from a Qrisp circuit.
 
     This function wraps the PennyLane circuit in a QNode for execution.
     The measurement used is `qml.state()` to retrieve the statevector after execution.
     If `subs_dic` is provided, it is used to substitute abstract parameters in the Qrisp circuit.
     """
-
     pennylane_circuit = qml_converter(qc=qrisp_circuit.qs)
     qrisp_qubits = [qubit.identifier for qubit in qrisp_circuit]
 
@@ -142,7 +139,6 @@ def check_qml_operations(qml_circuit, expected_ops):
 
 def check_statevector_equivalence(qrisp_qv, qml_statevector, atol=1e-5):
     """Helper function to check if the statevectors from Qrisp and PennyLane are equivalent."""
-
     qrisp_statevector = qrisp_qv.qs.statevector_array()
 
     assert np.allclose(qrisp_statevector, qml_statevector, atol=atol), (
@@ -153,7 +149,6 @@ def check_statevector_equivalence(qrisp_qv, qml_statevector, atol=1e-5):
 # We use this check when the statevector comparison is not possible
 def check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-5):
     """Helper function to check if the measurement probabilities from Qrisp and PennyLane are equivalent."""
-
     qrisp_res = qrisp_qv.get_measurement()
     qml_probs = np.asarray(qml_res, dtype=float)
 
@@ -293,7 +288,6 @@ class TestSingleGateConversion:
     @pytest.mark.parametrize("outer_wires", [[0, 1], [2, 3], [1, 4]])
     def test_nested_circuits(self, outer_wires):
         """Test conversion of nested circuits from Qrisp to PennyLane."""
-
         inner_qv = QuantumVariable(2)
         inner_qs = inner_qv.qs
         inner_qs.append(CXGate(), [0, 1])
@@ -321,7 +315,6 @@ class TestSingleGateConversion:
 
     def test_nested_circuits_multiple_levels(self):
         """Test conversion of nested circuits with multiple levels from Qrisp to PennyLane."""
-
         inner_qv = QuantumVariable(2)
         inner_qs = inner_qv.qs
         inner_qs.append(CXGate(), [0, 1])
@@ -692,7 +685,6 @@ class TestControlledGateConversion:
         """Test conversion of custom controlled rotation gates (RZ, RY, RX)
         from Qrisp to PennyLane, including multi-controlled variants.
         """
-
         qrisp_qv = QuantumVariable(5)
         qrisp_qs = qrisp_qv.qs
 
@@ -792,7 +784,6 @@ def test_measure():
 
 def test_mixed_circuit():
     """Test conversion of a mixed circuit with various gate types from Qrisp to PennyLane."""
-
     qrisp_qv = QuantumVariable(10)
     qrisp_qs = qrisp_qv.qs
 

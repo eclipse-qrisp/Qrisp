@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,20 +17,17 @@
 
 # -*- coding: utf-8 -*-
 
-import threading
 
 import numpy as np
 from numba import njit
 
 from qrisp.circuit import (
-    Instruction,
-    QuantumCircuit,
-    transpile,
-    Reset,
     ClControlledOperation,
     CXGate,
-    Operation,
+    Instruction,
     Measurement,
+    Operation,
+    QuantumCircuit,
 )
 from qrisp.permeability.type_checker import is_permeable
 
@@ -215,7 +211,7 @@ def find_grouping_options(int_qc, traversed_qb_sets, max_recursion_depth, qubits
         # proposed_set = qubits.union(BinaryQubitSet([expansion_options[i]], qc.source))
 
         # If this set has not been checked yet, add to the options
-        if not proposed_set in traversed_qb_sets:
+        if proposed_set not in traversed_qb_sets:
             # options += find_grouping_options(qc_data, traversed_qb_sets,
             # max_recursion_depth - 1, qubits = qubits + [expansion_options[i]],
             # established_indices = list(instruction_indices))
@@ -393,7 +389,7 @@ def insert_disentangling(qc):
     disentangling_counter = 0
     i = 0
     while i < len(reversed_data):
-        if not reversed_data[i].op.name in ["measure", "reset"]:
+        if reversed_data[i].op.name not in ["measure", "reset"]:
             i += 1
             continue
 

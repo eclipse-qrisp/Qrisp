@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,9 @@
 ********************************************************************************
 """
 
-from qrisp.core import mcx, h, s, s_dg, x
-from qrisp.qtypes import QuantumBool
+from qrisp.core import h, mcx, s, s_dg, x
 from qrisp.environments import invert
+from qrisp.qtypes import QuantumBool
 
 
 # Algorithm based on https://link.springer.com/article/10.1007/s10773-017-3389-4

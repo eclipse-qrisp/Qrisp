@@ -307,7 +307,6 @@ class TestJobConcreteHelpers:
 
     def test_done_returns_false_for_cancelled_and_error(self, backend):
         """Test that done() returns False for CANCELLED and ERROR."""
-
         # done() means 'completed successfully' — it is not a synonym for
         # in_final_state(). Use in_final_state() to test for any terminal state.
         assert self._job_with_status(backend, JobStatus.CANCELLED).done() is False

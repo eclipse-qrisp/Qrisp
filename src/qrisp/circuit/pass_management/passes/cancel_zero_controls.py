@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,15 +17,14 @@
 
 from __future__ import annotations
 
-from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.operation import (
     ControlledOperation,
     Operation,
     PTControlledOperation,
 )
-from qrisp.circuit.qubit import Qubit
 from qrisp.circuit.pass_management.circuit_pass import CircuitPass
-
+from qrisp.circuit.quantum_circuit import QuantumCircuit
+from qrisp.circuit.qubit import Qubit
 
 # Single-qubit diagonal gates that map \|0⟩ → e^{iφ}\|0⟩
 _DIAGONAL_1Q = frozenset({"p", "rz", "z", "s", "t", "s_dg", "t_dg", "id", "gphase"})
@@ -34,7 +32,6 @@ _DIAGONAL_1Q = frozenset({"p", "rz", "z", "s", "t", "s_dg", "t_dg", "id", "gphas
 
 def _is_cancelled_by_zero(op: Operation, qubits: list[Qubit], fresh: set[Qubit]) -> bool:
     r"""Return True if *op* on *qubits* is a no-op given a set of \|0⟩ qubits."""
-
     # Symmetric controlled-phase gates: diag(1,1,1,e^{iφ}).
     # Identity whenever *either* qubit is \|0⟩.
     if op.name in ("cp", "cz"):
@@ -117,6 +114,7 @@ def cancel_zero_controls(qc: QuantumCircuit) -> QuantumCircuit:
         <BLANKLINE>
         qb_61:
         <BLANKLINE>
+
     """
     fresh = set(qc.qubits)  # all qubits start in \|0⟩
     qc_new = qc.clearcopy()

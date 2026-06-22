@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,6 +16,7 @@
 """
 
 from typing import Literal
+
 import numpy as np
 import numpy.typing as npt
 
@@ -30,8 +30,7 @@ from qrisp.block_encodings import BlockEncoding
 def inversion(
     A: BlockEncoding, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQSVT"] = "QSVT"
 ) -> BlockEncoding:
-    r"""
-    Quantum Linear System Solver via Quantum Eigenvalue Transformation (QET).
+    r"""Quantum Linear System Solver via Quantum Eigenvalue Transformation (QET).
     Returns a BlockEncoding approximating the matrix inversion of the operator.
 
     For a block-encoded not necessarily Hermitian matrix $A$ with normalization factor $\alpha$, this function returns a BlockEncoding of an
@@ -88,7 +87,6 @@ def inversion(
 
     Examples
     --------
-
     Define a QSLP and solve it using :meth:`inversion`.
 
     First, define a Hermitian matrix $A$ and a right-hand side vector $\vec{b}$.
@@ -148,7 +146,6 @@ def inversion(
         # [0.02944539 0.55423278 0.53013239 0.64102936]
 
     """
-
     ALLOWED_METHODS = {"QET", "GQSVT", "QSVT"}
     if method not in ALLOWED_METHODS:
         raise ValueError(f"Invalid method specified: '{method}'. Allowed methods are: {', '.join(ALLOWED_METHODS)}")
@@ -178,8 +175,7 @@ def _inversion_cheb(
     theta: float,
     eps: float = 1e-3,
 ) -> npt.NDArray[np.float64]:
-    r"""
-    Constructs a Chebyshev polynomial approximation of the inversion.
+    r"""Constructs a Chebyshev polynomial approximation of the inversion.
 
     This function creates a polynomial that approximates $1/x$ over the domain
     $[-1, \theta] \cup [\theta, 1]$ (https://arxiv.org/pdf/1511.02306, Lemma 14).
@@ -197,8 +193,8 @@ def _inversion_cheb(
     ndarray
         1-D array containing the coefficients of the Chebyshev series representing the smooth, bounded
         approximation of the inverse, ordered from lowest order term to highest.
-    """
 
+    """
     # The inversion polynomial is constructed using cks_params and cks_coeffs.
     # Since approximating 1/x over the relevant spectral interval [-1, -1/kappa] + [1/kappa, 1]
     # requires an odd Chebyshev series, cks_coeffs returns an array containing only the odd-degree coefficients.

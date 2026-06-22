@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,6 +16,7 @@
 """
 
 import pytest
+
 from qrisp import QuantumCircuit, Qubit
 from qrisp.circuit.pass_management.passes.convert_to_cz import convert_to_cz
 

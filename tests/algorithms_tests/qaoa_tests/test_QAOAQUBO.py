@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,12 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable, QuantumArray
-from qrisp.qaoa import QUBO_problem, QUBO_obj
 from operator import itemgetter
+
 import numpy as np
+from qrisp.qaoa import QUBO_obj, QUBO_problem
+
+from qrisp import QuantumArray, QuantumVariable
 
 
 def test_QUBO():

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,13 +15,14 @@
 ********************************************************************************
 """
 
-from qrisp.core import QuantumVariable, x, cx, mcx
-from qrisp.circuit import Qubit
-from qrisp.qtypes import QuantumFloat, QuantumBool
-from qrisp.environments import conjugate, custom_control
-from qrisp.misc import int_encoder
-from qrisp.jasp import jrange, jlen, check_for_tracing_mode
 import jax.numpy as jnp
+
+from qrisp.circuit import Qubit
+from qrisp.core import QuantumVariable, cx, mcx, x
+from qrisp.environments import conjugate, custom_control
+from qrisp.jasp import check_for_tracing_mode, jlen, jrange
+from qrisp.misc import int_encoder
+from qrisp.qtypes import QuantumBool, QuantumFloat
 
 
 @custom_control
@@ -83,8 +83,8 @@ def cuccaro_adder(
     >>> cuccaro_adder(a,b)
     >>> print(b)
     {9: 1.0}
-    """
 
+    """
     # convert the classical input to a quantum input
     if not isinstance(a, QuantumVariable):
         # create a QuantumFloat of the same size as the other quantum input

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,7 +16,8 @@
 """
 
 from jax.core import AbstractValue
-from qrisp.jasp.primitives import QuantumPrimitive, AbstractQubitArray
+
+from qrisp.jasp.primitives import AbstractQubitArray, QuantumPrimitive
 
 
 class AbstractQuantumState(AbstractValue):
@@ -50,12 +50,13 @@ def create_qubits_abstract_eval(size, qc):
 
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
+
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
-    """
 
+    """
     assert isinstance(qc, AbstractQuantumState)
 
     return AbstractQubitArray(), AbstractQuantumState()
@@ -84,12 +85,13 @@ def delete_qubits_abstract_eval(qarr, qc):
 
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
+
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
-    """
 
+    """
     return AbstractQuantumState()
 
 
@@ -112,10 +114,11 @@ def quantum_kernel_abstract_eval():
 
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
+
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
-    """
 
+    """
     return AbstractQuantumState()

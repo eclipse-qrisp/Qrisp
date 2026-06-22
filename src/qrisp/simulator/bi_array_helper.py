@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -22,9 +21,10 @@
 # of SparseBiArray manipulation
 
 import numpy as np
-from numba import uint64, uint32, int64, njit, prange, vectorize
-from qrisp.simulator.numerics_config import cutoff_ratio
+from numba import int64, njit, prange, uint32, uint64, vectorize
 from scipy.sparse import coo_array
+
+from qrisp.simulator.numerics_config import cutoff_ratio
 
 
 # It can happen that the coo-matrix multiplication puts two data entries
@@ -380,7 +380,7 @@ def dense_measurement_smart(input_array, mes_amount, outcome_index, float_thresh
         p_list.extend(b)
         outcome_index_list.extend(c)
 
-    if len(outcome_index_list):
+    if outcome_index_list:
         return new_arrays, p_list, outcome_index_list
     else:
         return new_arrays, p_list, [-1]
@@ -402,8 +402,7 @@ def sort_indices_jitted(row, col, data, shape_1):
 
 
 def coo_sparse_matrix_mult_inner(A_row, A_col, A_data, B_row, B_col, B_data, A_shape, B_shape, cutoff_ratio):
-    """
-    This function describes a novel sparse matrix multiplication algorithm operating
+    """This function describes a novel sparse matrix multiplication algorithm operating
     on the COO format. The scipy and MKL implementation of sparse matrix multiplication
     operate on the CSR/CSC format, which requires a conversion step, that can
     be costly for very sparse matrices.
@@ -489,7 +488,6 @@ def coo_sparse_matrix_mult_inner(A_row, A_col, A_data, B_row, B_col, B_data, A_s
     The data is R[I,J]
 
     """
-
     A_row, A_col, A_data = sort_indices_jitted(A_row, A_col, A_data, A_shape[1])
     B_col, B_row, B_data = sort_indices_jitted(B_col, B_row, B_data, B_shape[0])
 

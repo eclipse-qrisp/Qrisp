@@ -10,8 +10,7 @@
 # ANY KIND, either express or implied. See the Licence for the specific language
 # governing permissions and limitations under the Licence.
 
-"""
-Manual qubit layout pass.
+"""Manual qubit layout pass.
 
 Creates a pass function that re-indexes qubits according to a caller-supplied
 physical qubit mapping.  Logical qubit *i* is placed on physical qubit
@@ -23,9 +22,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.qubit import Qubit
-from qrisp.circuit.pass_management.circuit_pass import CircuitPass
 
 
 def manual_layout(
@@ -83,6 +82,7 @@ def manual_layout(
           ├───┤
     qb_0: ┤ H ├
           └───┘
+
     """
 
     @CircuitPass

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,8 +18,9 @@
 import jax.numpy as jnp
 import numpy as np
 import pytest
-from qrisp import *
 from qrisp.gqsp import fourier_series_loader
+
+from qrisp import *
 
 
 # Gaussian
@@ -62,7 +62,6 @@ def main(n, alpha):
 )
 def test_gqsp_gaussian(n, alpha):
     """Test GQSP Fourier series loader on a Gaussian function with different widths."""
-
     # Run the simulation for n-qubit state
     res_dict = main(n, alpha)
 

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,12 @@
 ********************************************************************************
 """
 
-from qrisp.qaoa import QAOAProblem, RX_mixer, create_maxcut_cl_cost_function, create_maxcut_cost_operator
-from qrisp import QuantumArray, QuantumVariable
-import networkx as nx
 from operator import itemgetter
+
+import networkx as nx
+from qrisp.qaoa import QAOAProblem, RX_mixer, create_maxcut_cl_cost_function, create_maxcut_cost_operator
+
+from qrisp import QuantumArray, QuantumVariable
 
 
 def test_maxcut():

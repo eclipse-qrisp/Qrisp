@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,8 @@
 ********************************************************************************
 """
 
-from qrisp.qtypes import QuantumFloat, QuantumVariable
 from qrisp.jasp import check_for_tracing_mode
+from qrisp.qtypes import QuantumFloat, QuantumVariable
 
 
 def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):

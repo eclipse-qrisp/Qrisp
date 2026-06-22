@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -33,7 +32,7 @@ from qrisp import (
     rz,
     u3,
 )
-from qrisp.jasp import jrange, qache, q_cond
+from qrisp.jasp import jrange, q_cond, qache
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
     always_zero,
@@ -267,7 +266,6 @@ class TestDepthMultiQubit:
     )
     def test_op_with_definition(self, x_target, expected_depth):
         """Test depth computation for an operation with definition."""
-
         qc = QuantumCircuit(2)
         for _ in range(3):
             qc.x(x_target)
@@ -286,7 +284,6 @@ class TestDepthMultiQubit:
 
     def test_op_with_definition2(self):
         """Test depth computation for an operation with definition."""
-
         qc_2 = QuantumCircuit(3)
         for _ in range(3):
             qc_2.x(0)
@@ -306,7 +303,6 @@ class TestDepthMultiQubit:
 
     def test_op_with_definition3(self):
         """Test depth computation for an operation with definition."""
-
         qc_1 = QuantumCircuit(2)
         for _ in range(3):
             qc_1.rx(3.1415, 0)
@@ -329,7 +325,6 @@ class TestDepthMultiQubit:
 
     def test_op_with_definition4(self):
         """Test depth computation for an operation with definition."""
-
         qc_1 = QuantumCircuit(2)
         for _ in range(3):
             qc_1.x(0)
@@ -352,7 +347,6 @@ class TestDepthMultiQubit:
 
     def test_op_with_definition5(self):
         """Test depth computation for an operation with definition."""
-
         qc_1 = QuantumCircuit(2)
         for _ in range(3):
             qc_1.x(1)

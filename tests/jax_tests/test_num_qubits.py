@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -154,8 +153,7 @@ class TestNumQubitsSimple:
         assert main(num_qubits_input) == expected_dic
 
     def test_num_qubits_alias_delete_counts_once(self):
-        """
-        Test that if we create an alias to a quantum variable and delete the alias,
+        """Test that if we create an alias to a quantum variable and delete the alias,
         it only counts as one deletion.
         """
 
@@ -177,8 +175,7 @@ class TestNumQubitsSimple:
 
 
 class TestNumQubitsControlFlow:
-    """
-    Test cases for the num_qubits metric in the presence of control flow,
+    """Test cases for the num_qubits metric in the presence of control flow,
     possibly with qubit allocation and deletion, and with control flow
     based on measurement outcomes.
     """
@@ -241,7 +238,6 @@ class TestNumQubitsControlFlow:
 
     def test_delete_qubits_in_loop(self):
         """Test qubit counting with qubit deletion inside a loop."""
-
         num_iterations = 4
 
         @num_qubits(meas_behavior="1")

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,9 @@
 ********************************************************************************
 """
 
-from qrisp import h, QuantumFloat, multi_measurement, QuantumModulus, gphase
 import numpy as np
+
+from qrisp import QuantumFloat, QuantumModulus, gphase, h, multi_measurement
 
 
 def test_quantum_float_comparison():

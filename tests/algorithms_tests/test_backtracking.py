@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,17 +15,16 @@
 ********************************************************************************
 """
 
-from qrisp import h, QuantumFloat, multi_measurement, auto_uncompute, QuantumBool, mcx, cx
 from qrisp.quantum_backtracking import QuantumBacktrackingTree
-import numpy as np
-from sympy import nsimplify, Float
+from sympy import Float
+
+from qrisp import QuantumBool, QuantumFloat, auto_uncompute, mcx
 
 
 def test_backtracking():
     # This test is depracated (i.e., for previous implementation of backtracking).
     # In this example [1,1,1] is accepted and rejected and can be reached in the backtracking tree!
-    """
-    @auto_uncompute
+    """@auto_uncompute
     def P(tree):
         temp_0 = (tree.h == 0)
         predicate = QuantumBool()

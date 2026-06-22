@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,15 +15,15 @@
 ********************************************************************************
 """
 
-from qrisp import z, control
+from jax.lax import while_loop
+
+from qrisp import z
 from qrisp.alg_primitives.qae import amplitude_amplification
 from qrisp.jasp import check_for_tracing_mode, expectation_value
-from jax.lax import while_loop
 
 
 def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
-    r"""
-    Accelerated Quantum Amplitude Estimation (IQAE). This function performs :ref:`QAE <QAE>` with a fraction of the quantum resources of the well-known `QAE algorithm <https://arxiv.org/abs/quant-ph/0005055>`_.
+    r"""Accelerated Quantum Amplitude Estimation (IQAE). This function performs :ref:`QAE <QAE>` with a fraction of the quantum resources of the well-known `QAE algorithm <https://arxiv.org/abs/quant-ph/0005055>`_.
     See `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_.
 
     The problem of iterative quantum amplitude estimation is described as follows:
@@ -60,7 +59,6 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
 
     Examples
     --------
-
     We show the same **Numerical integration** example which can also be found in the :ref:`QAE documentation <QAE>`.
 
     We wish to evaluate
@@ -103,7 +101,6 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
     0.26782038552705856
 
     """
-
     if callable(qargs):
         init_function = qargs
 
@@ -185,8 +182,7 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
 
 
 def quantum_step(k, N, init_function, state_function, oracle_function, mes_kwargs):
-    r"""
-    Performs the quantum step, i.e., Quantum Amplitude Amplification,
+    r"""Performs the quantum step, i.e., Quantum Amplitude Amplification,
     in accordance to `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_
 
     Parameters
@@ -207,6 +203,7 @@ def quantum_step(k, N, init_function, state_function, oracle_function, mes_kwarg
         course of this algorithm.
     mes_kwargs : dict, optional
         The keyword arguments for the measurement function. Default is an empty dictionary.
+
     """
 
     def state_prep(k):
@@ -226,8 +223,7 @@ def quantum_step(k, N, init_function, state_function, oracle_function, mes_kwarg
 
 
 def compute_thetas(m_i, K_i, A_i, E):
-    r"""
-    Helper function to compute the angles for the next iteration.
+    r"""Helper function to compute the angles for the next iteration.
     See `the original paper <https://arxiv.org/abs/2407.16795>`_ , Algorithm 1.
 
     Parameters
@@ -240,8 +236,8 @@ def compute_thetas(m_i, K_i, A_i, E):
         Share of ``1``-measurements in amplitude amplification steps.
     E : float
         :math:`\epsilon` limit.
-    """
 
+    """
     if check_for_tracing_mode:
         import jax.numpy as jnp
     else:
@@ -260,8 +256,7 @@ def compute_thetas(m_i, K_i, A_i, E):
 
 
 def compute_Li(L_arr, m_arr, m_i, K_i, theta_b, theta_sh):
-    """
-    Helper function to compute further values for the next iteration.
+    """Helper function to compute further values for the next iteration.
     See `the original paper <https://arxiv.org/abs/2407.16795>`_ , Algorithm 1.
 
     Parameters
@@ -274,8 +269,8 @@ def compute_Li(L_arr, m_arr, m_i, K_i, theta_b, theta_sh):
         Lower bound for angle from last iteration.
     theta_b : float
         Upper bound for angle from last iteration.
-    """
 
+    """
     if check_for_tracing_mode:
         import jax.numpy as jnp
     else:

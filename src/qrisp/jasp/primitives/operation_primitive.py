@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,14 +15,14 @@
 ********************************************************************************
 """
 
-from sympy import symbols
-import jax.numpy as jnp
 import jax
+import jax.numpy as jnp
+from sympy import symbols
 
 from qrisp.jasp.primitives import (
-    QuantumPrimitive,
     AbstractQuantumState,
     AbstractQubit,
+    QuantumPrimitive,
 )
 
 greek_letters = symbols(
@@ -41,7 +40,6 @@ def append_impl(*args, **kwargs):
     This function does not need to be JAX traceable. It will be invoked with
     actual instances.
     """
-
     gate = kwargs["gate"]
 
     qc = args[-1]
@@ -62,7 +60,6 @@ def abstract_eval(*args, **kwargs):
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
     """
-
     # `gate` is treated like a static param to the primitive
     gate = kwargs["gate"]
     qc = args[-1]

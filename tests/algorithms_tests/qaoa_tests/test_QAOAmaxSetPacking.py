@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,7 +15,9 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable
+import itertools
+
+import networkx as nx
 from qrisp.qaoa import (
     QAOAProblem,
     RZ_mixer,
@@ -25,8 +26,8 @@ from qrisp.qaoa import (
     create_max_indep_set_mixer,
     max_indep_set_init_function,
 )
-import networkx as nx
-import itertools
+
+from qrisp import QuantumVariable
 
 
 def QAOAmaxSetPacking():

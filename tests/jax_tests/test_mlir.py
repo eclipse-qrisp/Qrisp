@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,12 @@
 ********************************************************************************
 """
 
-import pytest
 import re
+
+import pytest
+
 from qrisp import *
-from qrisp.operators import a, c
+from qrisp.operators import a
 
 # StableHLO ops that stablehlo-legalize-to-linalg does NOT lower
 # These require specialized lowering patterns not in the standard pass
@@ -30,8 +31,7 @@ STABLEHLO_OPS_NOT_LOWERED = {
 
 
 def assert_stablehlo_arithmetic_lowered(mlir_str):
-    """
-    Assert that StableHLO arithmetic operations have been lowered.
+    """Assert that StableHLO arithmetic operations have been lowered.
 
     Checks that common arithmetic/element-wise ops are not present,
     while allowing known exceptions (like scatter) to remain.
@@ -79,7 +79,6 @@ def test_mlir_generation(lower_stablehlo):
 
     # Test wheter stablehlo control flow is properly removed
 
-    from xdsl.printer import Printer
 
     def main():
 
@@ -122,11 +121,10 @@ def test_mlir_generation(lower_stablehlo):
 
 @pytest.mark.parametrize("lower_stablehlo", [False, True])
 def test_mlir_basic_dialect_operations(lower_stablehlo):
-    """
-    Test that basic JASP dialect operations are properly emitted in MLIR.
+    """Test that basic JASP dialect operations are properly emitted in MLIR.
     This verifies the lowering rules for fundamental quantum operations.
     """
-    from qrisp import QuantumVariable, h, cx, measure, x
+    from qrisp import QuantumVariable, cx, h, measure, x
     from qrisp.jasp import make_jaspr
 
     def main():
@@ -160,12 +158,11 @@ def test_mlir_basic_dialect_operations(lower_stablehlo):
 
 @pytest.mark.parametrize("lower_stablehlo", [False, True])
 def test_mlir_quantum_control_flow_rewriting(lower_stablehlo):
-    """
-    Test that StableHLO control flow is properly rewritten to SCF for quantum types.
+    """Test that StableHLO control flow is properly rewritten to SCF for quantum types.
     Verifies the fix_quantum_control_flow function works correctly.
     """
-    from qrisp import QuantumVariable, QuantumFloat, h, x, rz, cx, measure, control
-    from qrisp.jasp import make_jaspr, jrange
+    from qrisp import QuantumFloat, QuantumVariable, control, cx, h, measure, rz, x
+    from qrisp.jasp import jrange, make_jaspr
 
     def main():
         qv = QuantumVariable(3)
@@ -207,14 +204,14 @@ def test_mlir_quantum_control_flow_rewriting(lower_stablehlo):
 
 @pytest.mark.parametrize("lower_stablehlo", [False, True])
 def test_mlir_grovers_algorithm(lower_stablehlo):
-    """
-    Test MLIR generation and execution for Grover's algorithm.
+    """Test MLIR generation and execution for Grover's algorithm.
     Verifies that complex algorithms can be lowered to MLIR correctly.
     """
-    from qrisp import QuantumFloat
-    from qrisp.grover import tag_state, grovers_alg
-    from qrisp.jasp import make_jaspr
     import numpy as np
+    from qrisp.grover import grovers_alg, tag_state
+
+    from qrisp import QuantumFloat
+    from qrisp.jasp import make_jaspr
 
     # Define oracle for Grover's algorithm (matching existing test pattern)
     def test_oracle(qf_list, phase=np.pi):
@@ -242,13 +239,13 @@ def test_mlir_grovers_algorithm(lower_stablehlo):
 
 @pytest.mark.parametrize("lower_stablehlo", [False, True])
 def test_mlir_qae_algorithm(lower_stablehlo):
-    """
-    Test MLIR generation for Quantum Amplitude Estimation (QAE).
+    """Test MLIR generation for Quantum Amplitude Estimation (QAE).
     Verifies that complex estimation algorithms can be lowered to MLIR correctly.
     """
-    from qrisp import QuantumFloat, ry, z, QAE
-    from qrisp.jasp import make_jaspr, terminal_sampling
     import numpy as np
+
+    from qrisp import QAE, QuantumFloat, ry, z
+    from qrisp.jasp import make_jaspr, terminal_sampling
 
     def state_function(qb):
         ry(np.pi / 4, qb)
@@ -283,19 +280,19 @@ def test_mlir_qae_algorithm(lower_stablehlo):
         return res
 
     meas_res = main_sampling()
-    assert np.round(meas_res[0.125], 2) == 0.5, f"Expected ~0.5 probability for 0.125"
-    assert np.round(meas_res[0.875], 2) == 0.5, f"Expected ~0.5 probability for 0.875"
+    assert np.round(meas_res[0.125], 2) == 0.5, "Expected ~0.5 probability for 0.125"
+    assert np.round(meas_res[0.875], 2) == 0.5, "Expected ~0.5 probability for 0.875"
 
 
 @pytest.mark.parametrize("lower_stablehlo", [False, True])
 def test_mlir_iqpe(lower_stablehlo):
-    """
-    Test MLIR generation for Iterative Quantum Phase Estimation (IQPE).
+    """Test MLIR generation for Iterative Quantum Phase Estimation (IQPE).
     Verifies that IQPE can be properly lowered to MLIR.
     """
-    from qrisp import QuantumVariable, h, x, rx, IQPE
-    from qrisp.jasp import make_jaspr
     import numpy as np
+
+    from qrisp import IQPE, QuantumVariable, h, rx, x
+    from qrisp.jasp import make_jaspr
 
     def U(qv):
         x_val = 1 / 2**3
@@ -326,13 +323,11 @@ def test_mlir_iqpe(lower_stablehlo):
 
 @pytest.mark.parametrize("lower_stablehlo", [False, True])
 def test_mlir_iqae(lower_stablehlo):
-    """
-    Test MLIR generation for Iterative Quantum Amplitude Estimation (IQAE).
+    """Test MLIR generation for Iterative Quantum Amplitude Estimation (IQAE).
     Verifies that IQAE can be properly lowered to MLIR.
     """
-    from qrisp import QuantumFloat, QuantumBool, control, h, ry, IQAE
-    from qrisp.jasp import make_jaspr, jrange
-    import numpy as np
+    from qrisp import IQAE, QuantumBool, QuantumFloat, control, h, ry
+    from qrisp.jasp import jrange, make_jaspr
 
     # State function for integration example
     def state_function(inp, tar):
@@ -371,11 +366,10 @@ def test_mlir_iqae(lower_stablehlo):
 
 @pytest.mark.parametrize("lower_stablehlo", [False, True])
 def test_mlir_hamiltonian_simulation(lower_stablehlo):
-    """
-    Test MLIR generation for Hamiltonian simulation.
+    """Test MLIR generation for Hamiltonian simulation.
     Verifies that Hamiltonian trotterization can be lowered to MLIR.
     """
-    from qrisp import QuantumFloat, x, qache
+    from qrisp import QuantumFloat, qache, x
     from qrisp.jasp import make_jaspr
     from qrisp.operators import a
 
@@ -408,15 +402,15 @@ def test_mlir_hamiltonian_simulation(lower_stablehlo):
 
 @pytest.mark.parametrize("lower_stablehlo", [False, True])
 def test_mlir_qaoa(lower_stablehlo):
-    """
-    Tests MLIR generation for the complete QAOA workflow as shown in the
+    """Tests MLIR generation for the complete QAOA workflow as shown in the
     'How to use QAOA in Jasp' documentation. This test verifies that the
     entire QAOA optimization loop (including QAOAProblem setup, cost operator,
     mixer, and sample array post-processing) can be compiled to MLIR.
     """
-    from qrisp import QuantumVariable, make_jaspr
-    from qrisp.qaoa import QAOAProblem, RX_mixer, create_maxcut_cost_operator, create_maxcut_sample_array_post_processor
     import networkx as nx
+    from qrisp.qaoa import QAOAProblem, RX_mixer, create_maxcut_cost_operator, create_maxcut_sample_array_post_processor
+
+    from qrisp import QuantumVariable, make_jaspr
 
     def main():
         # Create a random graph for the MaxCut problem
@@ -464,12 +458,11 @@ def test_mlir_qaoa(lower_stablehlo):
 
 @pytest.mark.parametrize("lower_stablehlo", [False, True])
 def test_mlir_array_operations(lower_stablehlo):
-    """
-    Test MLIR generation for quantum array operations.
+    """Test MLIR generation for quantum array operations.
     Verifies that array slicing and fusion are properly lowered to MLIR.
     """
-    from qrisp import QuantumVariable, h, cx
-    from qrisp.jasp import make_jaspr, jrange
+    from qrisp import QuantumVariable, cx, h
+    from qrisp.jasp import jrange, make_jaspr
 
     def main():
         # Create quantum arrays
@@ -503,8 +496,7 @@ def test_mlir_array_operations(lower_stablehlo):
 
 @pytest.mark.parametrize("lower_stablehlo", [False, True])
 def test_mlir_jasp_dialect_registration(lower_stablehlo):
-    """
-    Test that the JASP dialect is properly registered in xDSL.
+    """Test that the JASP dialect is properly registered in xDSL.
 
     When the dialect is registered, types and op names are printed without
     surrounding quotes.  An unregistered op would appear as::

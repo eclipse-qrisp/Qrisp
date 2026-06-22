@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,21 +15,20 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumArray
+import random
+from operator import itemgetter
+
+import networkx as nx
 from qrisp.qaoa import (
     QAOAProblem,
     QuantumColor,
-    XY_mixer,
-    apply_XY_mixer,
     RX_mixer,
-    create_coloring_operator,
+    apply_XY_mixer,
     create_coloring_cl_cost_function,
+    create_coloring_operator,
 )
-import random
-import networkx as nx
-from operator import itemgetter
 
-
+from qrisp import QuantumArray
 from qrisp.default_backend import def_backend
 
 qrisp_sim = def_backend

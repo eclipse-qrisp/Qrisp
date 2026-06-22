@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,8 +17,9 @@
 
 
 def test_jasp_IQAE_integration():
-    from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, IQAE, jrange, jaspify
     import numpy as np
+
+    from qrisp import IQAE, QuantumBool, QuantumFloat, control, h, jaspify, jrange, ry
 
     # We compute the integral of f(x)=(sin(x))^2 from 0 to 1
     def state_function(inp, tar):

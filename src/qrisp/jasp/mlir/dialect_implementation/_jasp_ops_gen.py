@@ -2,16 +2,15 @@
 
 from ._ods_common import _cext as _ods_cext
 from ._ods_common import (
-    equally_sized_accessor as _ods_equally_sized_accessor,
     get_default_loc_context as _ods_get_default_loc_context,
+)
+from ._ods_common import (
     get_op_results_or_values as _get_op_results_or_values,
-    segmented_accessor as _ods_segmented_accessor,
 )
 
 _ods_ir = _ods_cext.ir
 
 import builtins
-from typing import Sequence as _Sequence, Union as _Union, Optional as _Optional
 
 
 @_ods_cext.register_dialect
@@ -21,8 +20,7 @@ class _Dialect(_ods_ir.Dialect):
 
 @_ods_cext.register_operation(_Dialect)
 class ConsumeQuantumKernelOp(_ods_ir.OpView):
-    r"""
-    Indicates to the execution environment that the quantum computation has concluded.
+    r"""Indicates to the execution environment that the quantum computation has concluded.
     """
 
     OPERATION_NAME = "jasp.consume_quantum_kernel"
@@ -67,8 +65,7 @@ def consume_quantum_kernel(success, qst, *, loc=None, ip=None) -> _ods_ir.OpResu
 
 @_ods_cext.register_operation(_Dialect)
 class CreateQuantumKernelOp(_ods_ir.OpView):
-    r"""
-    Indicates to the execution environment that a quantum computation will start.
+    r"""Indicates to the execution environment that a quantum computation will start.
     """
 
     OPERATION_NAME = "jasp.create_quantum_kernel"
@@ -108,8 +105,7 @@ def create_quantum_kernel(result, *, loc=None, ip=None) -> _ods_ir.OpResult:
 
 @_ods_cext.register_operation(_Dialect)
 class CreateQubitsOp(_ods_ir.OpView):
-    r"""
-    Allocates a QubitArray containing n qubits. N can be dynamically sized
+    r"""Allocates a QubitArray containing n qubits. N can be dynamically sized
     """
 
     OPERATION_NAME = "jasp.create_qubits"
@@ -164,8 +160,7 @@ def create_qubits(result, qst_out, amount, qst_in, *, loc=None, ip=None) -> _ods
 
 @_ods_cext.register_operation(_Dialect)
 class DeleteQubitsOp(_ods_ir.OpView):
-    r"""
-    Indicates to the execution environment that the corresponding qubits can be reused.
+    r"""Indicates to the execution environment that the corresponding qubits can be reused.
     """
 
     OPERATION_NAME = "jasp.delete_qubits"
@@ -215,8 +210,7 @@ def delete_qubits(out_qst, qubits, in_qst, *, loc=None, ip=None) -> _ods_ir.OpRe
 
 @_ods_cext.register_operation(_Dialect)
 class FuseOp(_ods_ir.OpView):
-    r"""
-    Fuses two QubitArrays, Qubits, or combinations thereof to create a larger QubitArray.
+    r"""Fuses two QubitArrays, Qubits, or combinations thereof to create a larger QubitArray.
     """
 
     OPERATION_NAME = "jasp.fuse"
@@ -266,8 +260,7 @@ def fuse(result, operand1, operand2, *, loc=None, ip=None) -> _ods_ir.OpResult:
 
 @_ods_cext.register_operation(_Dialect)
 class GetQubitOp(_ods_ir.OpView):
-    r"""
-    Retrieves a single qubit from a given QubitArray at position.
+    r"""Retrieves a single qubit from a given QubitArray at position.
     """
 
     OPERATION_NAME = "jasp.get_qubit"
@@ -317,8 +310,7 @@ def get_qubit(result, qb_array, position, *, loc=None, ip=None) -> _ods_ir.OpRes
 
 @_ods_cext.register_operation(_Dialect)
 class GetSizeOp(_ods_ir.OpView):
-    r"""
-    Returns the number of qubits in a given QubitArray.
+    r"""Returns the number of qubits in a given QubitArray.
     """
 
     OPERATION_NAME = "jasp.get_size"
@@ -363,8 +355,7 @@ def get_size(size, qb_array, *, loc=None, ip=None) -> _ods_ir.OpResult:
 
 @_ods_cext.register_operation(_Dialect)
 class MeasureOp(_ods_ir.OpView):
-    r"""
-    Performs a measurement of a given quantum state on a given qubit or qubit array.
+    r"""Performs a measurement of a given quantum state on a given qubit or qubit array.
     """
 
     OPERATION_NAME = "jasp.measure"
@@ -419,8 +410,7 @@ def measure(meas_res, out_qst, meas_q, in_qst, *, loc=None, ip=None) -> _ods_ir.
 
 @_ods_cext.register_operation(_Dialect)
 class ParityOp(_ods_ir.OpView):
-    r"""
-    Computes the parity (XOR sum) of a set of measurement results. Supports expectation and observable attributes for error correction contexts.
+    r"""Computes the parity (XOR sum) of a set of measurement results. Supports expectation and observable attributes for error correction contexts.
     """
 
     OPERATION_NAME = "jasp.parity"
@@ -503,8 +493,7 @@ def parity(result, measurements, expectation, observable, *, loc=None, ip=None) 
 
 @_ods_cext.register_operation(_Dialect)
 class QuantumGateOp(_ods_ir.OpView):
-    r"""
-    This operation enables quantum processing of quantum states with (parametric) gates
+    r"""This operation enables quantum processing of quantum states with (parametric) gates
     """
 
     OPERATION_NAME = "jasp.quantum_gate"
@@ -578,8 +567,7 @@ def quantum_gate(out_qst, gate_type, gate_operands, in_qst, *, loc=None, ip=None
 
 @_ods_cext.register_operation(_Dialect)
 class ResetOp(_ods_ir.OpView):
-    r"""
-    Performs a reset operation on a single qubit or qubit array, returning them to the |0⟩ state.
+    r"""Performs a reset operation on a single qubit or qubit array, returning them to the |0⟩ state.
     """
 
     OPERATION_NAME = "jasp.reset"
@@ -629,8 +617,7 @@ def reset(out_qst, qubits, in_qst, *, loc=None, ip=None) -> _ods_ir.OpResult:
 
 @_ods_cext.register_operation(_Dialect)
 class SliceOp(_ods_ir.OpView):
-    r"""
-    Returns a subset of qubits from a QubitArray using start and end indices.
+    r"""Returns a subset of qubits from a QubitArray using start and end indices.
     """
 
     OPERATION_NAME = "jasp.slice"

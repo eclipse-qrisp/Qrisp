@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,16 +15,15 @@
 ********************************************************************************
 """
 
+import jax.numpy as jnp
+
 from qrisp import *
 from qrisp.jasp import make_jaspr
 from qrisp.jasp.interpreter_tools.interpreters import extract_post_processing
-import numpy as np
-import jax.numpy as jnp
 
 
 def test_basic_post_processing():
-    """
-    Test basic post-processing extraction with simple arithmetic operations.
+    """Test basic post-processing extraction with simple arithmetic operations.
     """
 
     @make_jaspr
@@ -47,8 +45,7 @@ def test_basic_post_processing():
 
 
 def test_multiple_measurements():
-    """
-    Test post-processing with multiple measurements and operations.
+    """Test post-processing with multiple measurements and operations.
     """
 
     @make_jaspr
@@ -83,8 +80,7 @@ def test_multiple_measurements():
 
 
 def test_boolean_post_processing():
-    """
-    Test post-processing with boolean operations.
+    """Test post-processing with boolean operations.
     """
 
     @make_jaspr
@@ -127,8 +123,7 @@ def test_boolean_post_processing():
 
 
 def test_arithmetic_post_processing():
-    """
-    Test post-processing with various arithmetic operations.
+    """Test post-processing with various arithmetic operations.
     """
 
     @make_jaspr
@@ -162,8 +157,7 @@ def test_arithmetic_post_processing():
 
 
 def test_comparison_post_processing():
-    """
-    Test post-processing with comparison operations.
+    """Test post-processing with comparison operations.
     """
 
     @make_jaspr
@@ -197,8 +191,7 @@ def test_comparison_post_processing():
 
 
 def test_nested_operations():
-    """
-    Test post-processing with nested operations.
+    """Test post-processing with nested operations.
     """
 
     @make_jaspr
@@ -231,8 +224,7 @@ def test_nested_operations():
 
 
 def test_single_measurement_multiple_uses():
-    """
-    Test that a single measurement result can be used multiple times in post-processing.
+    """Test that a single measurement result can be used multiple times in post-processing.
     """
 
     @make_jaspr
@@ -267,8 +259,7 @@ def test_single_measurement_multiple_uses():
 
 
 def test_consistency_with_to_qc():
-    """
-    Test that extract_post_processing produces consistent results with to_qc.
+    """Test that extract_post_processing produces consistent results with to_qc.
     The quantum circuit and post-processing function should use the same static arguments.
     """
 
@@ -302,8 +293,7 @@ def test_consistency_with_to_qc():
 
 
 def test_no_measurements():
-    """
-    Test that post-processing extraction handles functions with no measurements.
+    """Test that post-processing extraction handles functions with no measurements.
     """
 
     @make_jaspr
@@ -322,8 +312,7 @@ def test_no_measurements():
 
 
 def test_direct_function_call():
-    """
-    Test using extract_post_processing function directly (not as a method).
+    """Test using extract_post_processing function directly (not as a method).
     """
 
     @make_jaspr
@@ -347,8 +336,7 @@ def test_direct_function_call():
 
 
 def test_multiple_static_arguments():
-    """
-    Test post-processing extraction with many static arguments.
+    """Test post-processing extraction with many static arguments.
     """
 
     @make_jaspr
@@ -376,8 +364,7 @@ def test_multiple_static_arguments():
 
 
 def test_quantum_gates_before_measurement():
-    """
-    Test that quantum gates before measurements are properly excluded from post-processing.
+    """Test that quantum gates before measurements are properly excluded from post-processing.
     """
 
     @make_jaspr
@@ -413,8 +400,7 @@ def test_quantum_gates_before_measurement():
 
 
 def test_get_size_in_post_processing():
-    """
-    Test that get_size operations work correctly in post-processing.
+    """Test that get_size operations work correctly in post-processing.
     """
 
     @make_jaspr
@@ -451,8 +437,7 @@ def test_get_size_in_post_processing():
 
 
 def test_slice_in_post_processing():
-    """
-    Test that QubitArray slicing works correctly in post-processing.
+    """Test that QubitArray slicing works correctly in post-processing.
     """
 
     @make_jaspr
@@ -490,8 +475,7 @@ def test_slice_in_post_processing():
 
 
 def test_fuse_in_post_processing():
-    """
-    Test that QubitArray fusing works correctly in post-processing.
+    """Test that QubitArray fusing works correctly in post-processing.
     """
 
     @make_jaspr
@@ -540,8 +524,7 @@ def test_fuse_in_post_processing():
 
 
 def test_bitstring_input():
-    """
-    Test that bitstring input works correctly (default behavior).
+    """Test that bitstring input works correctly (default behavior).
     """
 
     @make_jaspr
@@ -572,8 +555,7 @@ def test_bitstring_input():
 
 
 def test_bitstring_vs_array_equivalence():
-    """
-    Test that bitstring and array inputs produce the same results.
+    """Test that bitstring and array inputs produce the same results.
     """
 
     @make_jaspr
@@ -606,8 +588,7 @@ def test_bitstring_vs_array_equivalence():
 
 
 def test_array_input_jittable():
-    """
-    Test that the post-processing function works with JAX jit.
+    """Test that the post-processing function works with JAX jit.
     """
     import jax
 
@@ -646,8 +627,7 @@ def test_array_input_jittable():
 
 
 def test_jit_post_processor_with_jitted_subroutines():
-    """
-    Test that jitting a post-processor works when it contains jitted subroutines.
+    """Test that jitting a post-processor works when it contains jitted subroutines.
     This is important because QuantumFloat decoders use jax.jit internally for
     non-trivial exponents.
     """
@@ -707,12 +687,12 @@ def test_jit_post_processor_with_jitted_subroutines():
 
 
 def test_jit_post_processor_with_qached_subroutines():
-    """
-    Test that jitting a post-processor works when it contains qached subroutines.
+    """Test that jitting a post-processor works when it contains qached subroutines.
     Qached functions are the quantum equivalent of jit - they cache quantum circuits
     and are called with pjit in the Jaspr.
     """
     import jax
+
     from qrisp.jasp import qache
 
     # Create a qached subroutine
@@ -774,11 +754,11 @@ def test_jit_post_processor_with_qached_subroutines():
 
 
 def test_jit_post_processor_with_mixed_subroutines():
-    """
-    Test jitting a post-processor with both jitted (QuantumFloat decoder) and
+    """Test jitting a post-processor with both jitted (QuantumFloat decoder) and
     qached subroutines. This is the most comprehensive test case.
     """
     import jax
+
     from qrisp.jasp import qache
 
     # Create a qached subroutine
@@ -849,8 +829,7 @@ def test_jit_post_processor_with_mixed_subroutines():
 
 
 def test_cond_primitive():
-    """
-    Test that the cond (conditional) primitive works with post-processing.
+    """Test that the cond (conditional) primitive works with post-processing.
     """
     import jax
 
@@ -902,8 +881,7 @@ def test_cond_primitive():
 
 
 def test_while_primitive():
-    """
-    Test that the while loop primitive works with post-processing.
+    """Test that the while loop primitive works with post-processing.
     """
     import jax
 
@@ -962,8 +940,7 @@ def test_while_primitive():
 
 
 def test_terminal_sampling_comparison():
-    """
-    Compare post-processing extraction with terminal sampling across various algorithms.
+    """Compare post-processing extraction with terminal sampling across various algorithms.
 
     This test verifies that post-processing extraction produces equivalent results
     to terminal sampling by:
@@ -985,8 +962,7 @@ def test_terminal_sampling_comparison():
 
     # Helper function to compare post-processed distributions
     def compare_post_processed_distributions(qc_results, post_proc, terminal_results, tolerance=0.1):
-        """
-        Compare post-processed circuit results with terminal sampling results.
+        """Compare post-processed circuit results with terminal sampling results.
 
         This applies post-processing to each circuit output and builds a distribution
         of post-processed results, then compares with terminal sampling.

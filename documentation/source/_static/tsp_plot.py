@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,11 +15,11 @@
 ********************************************************************************
 """
 
-import numpy as np
-import networkx as nx
-import matplotlib.pyplot as plt
-
 import itertools
+
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
 
 
 def traveling_salesman_bruteforce(adjacency_matrix):

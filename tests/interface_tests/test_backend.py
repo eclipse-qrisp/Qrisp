@@ -52,8 +52,7 @@ class ExecutionMode:
 
 
 class JobTest(Job):
-    """
-    Concrete :class:`Job` produced by :class:`BackendTest`.
+    """Concrete :class:`Job` produced by :class:`BackendTest`.
 
     Demonstrates how a backend author implements the Job contract using
     internal threading, without any threading in the abstract base class.
@@ -153,8 +152,7 @@ class JobTest(Job):
 
 
 class BackendTest(Backend):
-    """
-    Full-featured fake backend used by the integration tests.
+    """Full-featured fake backend used by the integration tests.
 
     Supports four execution modes (sync, async, error, cancel) and generates
     fake measurement counts using a NumPy multinomial draw over all
@@ -209,7 +207,6 @@ class BackendTest(Backend):
 
     def run_async(self, circuits, shots: int | list[int] | None = None) -> JobTest:
         """Submit one or more circuits and return a JobTest according to the current mode."""
-
         # We use a different check for list/tuple here to allow
         # other iterable types (e.g. generators) to be accepted as batches.
         if not isinstance(circuits, (list, tuple)):
@@ -281,8 +278,7 @@ class BackendTest(Backend):
 
 
 class DummyBackend(Backend):
-    """
-    Minimal subclass of Backend for unit tests.
+    """Minimal subclass of Backend for unit tests.
 
     The run() method returns a plain dict so tests can inspect the
     arguments that were passed to it without any Job machinery.

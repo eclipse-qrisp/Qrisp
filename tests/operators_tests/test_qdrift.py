@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,6 +18,7 @@
 import jax.numpy as jnp
 import networkx as nx
 import numpy as np
+
 from qrisp import QuantumVariable
 from qrisp.jasp import jaspify
 from qrisp.operators import X, Z

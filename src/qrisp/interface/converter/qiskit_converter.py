@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,11 +16,11 @@
 """
 
 import numpy as np
-from sympy import lambdify, Expr
+from sympy import Expr, lambdify
 
-from qrisp.misc import bin_rep
+from qrisp.circuit import ClControlledOperation, ControlledOperation
 from qrisp.circuit.standard_operations import op_list
-from qrisp.circuit import ControlledOperation, ClControlledOperation
+from qrisp.misc import bin_rep
 
 
 # Function to convert qrisp quantum circuits to Qiskit quantum circuits
@@ -70,7 +69,7 @@ def convert_to_qiskit(qc, transpile=False):
                 qiskit_symbs = []
 
                 for s in free_symbols:
-                    if not s in symbol_param_dic:
+                    if s not in symbol_param_dic:
                         symbol_param_dic[s] = Parameter(str(s))
 
                     qiskit_symbs.append(symbol_param_dic[s])
@@ -135,14 +134,13 @@ def convert_to_qiskit(qc, transpile=False):
                 base_gate.name = op.base_operation.name
                 qiskit_ins = base_gate.control(len(op.controls), ctrl_state=op.ctrl_state[::-1])
 
+            elif op.base_operation.name == "gphase":
+                qiskit_ins = create_qiskit_instruction(op, params)
+            elif op.num_qubits == op.base_operation.num_qubits:
+                qiskit_ins = create_qiskit_instruction(op.base_operation, params)
             else:
-                if op.base_operation.name == "gphase":
-                    qiskit_ins = create_qiskit_instruction(op, params)
-                elif op.num_qubits == op.base_operation.num_qubits:
-                    qiskit_ins = create_qiskit_instruction(op.base_operation, params)
-                else:
-                    base_gate = create_qiskit_instruction(op.base_operation, params)
-                    qiskit_ins = base_gate.control(len(op.controls), ctrl_state=op.ctrl_state[::-1])
+                base_gate = create_qiskit_instruction(op.base_operation, params)
+                qiskit_ins = base_gate.control(len(op.controls), ctrl_state=op.ctrl_state[::-1])
         else:
             qiskit_ins = create_qiskit_instruction(op, params)
 
@@ -154,9 +152,10 @@ def convert_to_qiskit(qc, transpile=False):
 
 def create_qiskit_instruction(op, params=[]):
     import qiskit.circuit.library.standard_gates as qsk_gates
-    from qiskit.circuit import Measure, Reset, Barrier
-    from qrisp.circuit import ControlledOperation
     from qiskit import QiskitError
+    from qiskit.circuit import Barrier, Measure, Reset
+
+    from qrisp.circuit import ControlledOperation
 
     if op.name == "cx":
         if hasattr(op, "ctrl_state"):
@@ -267,10 +266,10 @@ op_dic["u"] = op_dic["u3"]
 
 
 def convert_from_qiskit(qiskit_qc):
-    from qiskit.circuit import ControlledGate, ParameterExpression
     from qiskit import QuantumCircuit as QiskitQuantumCircuit
+    from qiskit.circuit import ControlledGate, ParameterExpression
 
-    from qrisp import Clbit, ControlledOperation, QuantumCircuit, Barrier, Qubit
+    from qrisp import Barrier, Clbit, ControlledOperation, QuantumCircuit, Qubit
 
     qc = QuantumCircuit()
 
@@ -314,7 +313,7 @@ def convert_from_qiskit(qiskit_qc):
 
         if hasattr(qiskit_op, "condition_bits"):
             condition_bits = [cb_dic[cb] for cb in qiskit_op.condition_bits]
-            if len(condition_bits):
+            if condition_bits:
                 condition_value = qiskit_op.condition[1]
         elif hasattr(qiskit_op, "is_control_flow") and qiskit_op.is_control_flow():
             condition_bits = [cb_dic[cb] for cb in qiskit_qc.data[i].clbits]
@@ -326,7 +325,7 @@ def convert_from_qiskit(qiskit_qc):
 
         qrisp_params = []
 
-        while len(params):
+        while params:
             p = params.pop(0)
             if isinstance(p, np.ndarray):
                 params = list(p.flatten()) + params

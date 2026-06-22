@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -33,7 +32,6 @@ from qrisp.misc.utility import EPSILON, swap_endianness
 
 def _compute_statevector_logical_qubits(qv: QuantumVariable, big_endianness: bool = False) -> ArrayLike:
     """Compute the statevector amplitudes corresponding to the logical qubits"""
-
     qs_compiled = qv.qs.compile()
     sv = qs_compiled.statevector_array()
     qubits = qs_compiled.qubits
@@ -90,7 +88,6 @@ class TestStatePreparationQSwitch:
 
     def test_error_mismatched_size(self):
         """Test that an error is raised when a vector of mismatched size is provided."""
-
         qv = QuantumVariable(3)
 
         array = np.array([1j, 0, 0, 0], dtype=complex)
@@ -103,7 +100,6 @@ class TestStatePreparationQSwitch:
 
     def test_error_zero_vector(self):
         """Test that an error is raised when a zero vector is provided."""
-
         qv = QuantumVariable(2)
 
         array = np.array([0, 0, 0, 0], dtype=complex)
@@ -116,7 +112,6 @@ class TestStatePreparationQSwitch:
 
     def test_error_unrecognized_method(self):
         """Test that an error is raised when an unrecognized method is provided."""
-
         qv = QuantumVariable(2)
 
         array = np.array([1j, 0, 0, 0], dtype=complex)
@@ -130,7 +125,6 @@ class TestStatePreparationQSwitch:
     @pytest.mark.parametrize("big_endianness", [True, False])
     def test_prepare_qswitch_with_endianness(self, big_endianness):
         """Test state preparation via `prepare_qswitch` with different endianness settings."""
-
         qv = QuantumVariable(3)
         array = jnp.array([1, 1j, -1, -1j, 1, 1j, -1, -1j])
 
@@ -154,7 +148,6 @@ class TestStatePreparationQSwitch:
     @pytest.mark.parametrize("method", ["qswitch", "qiskit"])
     def test_state_prep_parametric(self, n, statevector_fn, method):
         """Test state preparation for various number of qubits, statevectors, and methods."""
-
         qv = QuantumVariable(n)
 
         array = statevector_fn(n)
@@ -166,7 +159,6 @@ class TestStatePreparationQSwitch:
 
     def test_near_zero_amplitudes(self):
         """Test state preparation of a state with near-zero amplitudes."""
-
         qv = QuantumVariable(3)
         array = jnp.array([1.0, EPSILON, 0, 0, 0, EPSILON * 1j, -EPSILON, 0])
         qv.init_state(array, method="qswitch")
@@ -220,7 +212,6 @@ class TestStatePreparationQswitchJasp:
     @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
     def test_uniform_superposition(self, n):
         """Test state preparation of uniform superposition in JASP mode."""
-
         n_shots = 10000
         std = jnp.sqrt(n_shots * (1 / (1 << n)) * (1 - 1 / (1 << n)))
         tolerance = 6 * std
@@ -242,7 +233,6 @@ class TestStatePreparationQswitchJasp:
     @pytest.mark.parametrize("n", [2, 3, 4, 5])
     def test_sparse_k_state_superposition(self, n):
         """Test state prep for a sparse uniform superposition on several states."""
-
         shots = 30000
         n_qubits = 1 << n
         k = 3
@@ -280,7 +270,6 @@ class TestStatePreparationQswitchJasp:
 
 def test_state_preparation():
     """Test state preparation for QuantumFloat with a dictionary."""
-
     qf = QuantumFloat(4, -2, signed=True)
 
     state_dic = {

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,7 +18,8 @@
 
 def test_quantum_arithmetic():
     import numpy as np
-    from qrisp import h, multi_measurement, q_div, QuantumFloat, QuantumBool
+
+    from qrisp import QuantumBool, QuantumFloat, h, multi_measurement, q_div
 
     def test_arithmetic_helper(qf_0, qf_1, operation):
         qf_0 = qf_0.duplicate()
@@ -75,7 +75,7 @@ def test_quantum_arithmetic():
         test_arithmetic_helper(a, b, operation)
 
     # Test tensordot
-    from qrisp import QuantumFloat, QuantumArray, tensordot, OutcomeArray
+    from qrisp import OutcomeArray, QuantumArray, QuantumFloat, tensordot
 
     qf = QuantumFloat(3, 0, signed=False)
     q_tensor_0 = QuantumArray(qf, shape=(4, 4))
@@ -141,7 +141,7 @@ def test_quantum_arithmetic():
     h(a)
     h(b)
 
-    from qrisp import q_int_mult, gidney_adder
+    from qrisp import gidney_adder, q_int_mult
 
     c = q_int_mult(a, b, inpl_adder=gidney_adder)
 
@@ -158,7 +158,7 @@ def test_quantum_arithmetic():
     h(a)
     h(b)
 
-    from qrisp import q_int_mult, gidney_adder
+    from qrisp import gidney_adder, q_int_mult
 
     c = q_int_mult(a, b, inpl_adder=gidney_adder, target_qf=s)
 
@@ -173,7 +173,7 @@ def test_quantum_arithmetic():
     h(a)
     h(b)
 
-    from qrisp import q_int_mult, gidney_adder
+    from qrisp import gidney_adder, q_int_mult
 
     c = q_int_mult(a, b, inpl_adder=gidney_adder)
 

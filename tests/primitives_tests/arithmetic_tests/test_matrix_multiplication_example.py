@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,8 +16,9 @@
 """
 
 # Created by ann81984 at 06.05.2022
-from qrisp import QuantumFloat, QuantumArray, tensordot, dot
 import numpy as np
+
+from qrisp import QuantumArray, QuantumFloat, dot, tensordot
 
 np.random.seed(42)  # Deterministic for reproducible test results
 

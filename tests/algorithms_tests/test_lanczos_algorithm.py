@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,11 +17,12 @@
 
 import networkx as nx
 import numpy as np
+from qrisp.lanczos import lanczos_alg
+from qrisp.vqe.problems.heisenberg import create_heisenberg_init_function
+
 from qrisp import QuantumVariable
 from qrisp.jasp import jaspify
-from qrisp.lanczos import lanczos_alg
 from qrisp.operators import X, Y, Z
-from qrisp.vqe.problems.heisenberg import create_heisenberg_init_function
 
 
 def test_lanczos_algorithm():

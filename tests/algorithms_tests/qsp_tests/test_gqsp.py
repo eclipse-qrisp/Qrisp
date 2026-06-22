@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,10 +17,11 @@
 
 import numpy as np
 import pytest
-from qrisp import *
 from qrisp.gqsp import GQSP
-from qrisp.operators import X, Y, Z
 from scipy.linalg import expm
+
+from qrisp import *
+from qrisp.operators import X, Z
 
 
 def expvalm(poly, k, A):
@@ -40,7 +40,6 @@ def expvalm(poly, k, A):
 )
 def test_gqsp(poly, k):
     """Test GQSP on a small 4x4 unitary with a simple polynomial transformation."""
-
     # All terms in Hamiltonian commute -> e^{iH} is implemented exactly by trotterization
     H = Z(0) * Z(1) + X(0) * X(1)
 

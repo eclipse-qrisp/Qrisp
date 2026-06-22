@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,11 +15,10 @@
 ********************************************************************************
 """
 
-import pytest
+
+import jax.numpy as jnp
 
 from qrisp import *
-import jax.numpy as jnp
-from qrisp.alg_primitives.arithmetic.adders import gidney_adder
 
 
 def test_jrange():

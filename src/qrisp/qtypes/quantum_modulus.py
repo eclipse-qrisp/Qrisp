@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,16 +15,15 @@
 ********************************************************************************
 """
 
-import numpy as np
+import jax
 import jax.numpy as jnp
+import numpy as np
 from jax.core import Tracer
 
 from qrisp import check_for_tracing_mode
-from qrisp.qtypes.quantum_float import QuantumFloat
-from qrisp.misc import gate_wrap
 from qrisp.core import cx
-import jax
-from jax.core import Tracer
+from qrisp.misc import gate_wrap
+from qrisp.qtypes.quantum_float import QuantumFloat
 
 
 def _moduli_neq(a, b):
@@ -51,7 +49,6 @@ def _moduli_neq(a, b):
         the same modulus.
 
     """
-
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
         BigInteger,
     )
@@ -96,8 +93,8 @@ def _coerce_bigint_operand(value, modulus):
     -------
     BigInteger
         Value with exactly ``modulus.digits.shape[0]`` limbs.
-    """
 
+    """
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
         BigInteger,
     )
@@ -143,8 +140,7 @@ def comparison_wrapper(func):
 
 
 class QuantumModulus(QuantumFloat):
-    r"""
-    This class is a subtype of :ref:`QuantumFloat`, which can be used to model and
+    r"""This class is a subtype of :ref:`QuantumFloat`, which can be used to model and
     process `modular arithmetic <https://en.wikipedia.org/wiki/Modular_arithmetic>`_.
     Modular arithmetic plays an important role in many cryptographical applications,
     especially in Shor's algorithm.
@@ -272,11 +268,10 @@ class QuantumModulus(QuantumFloat):
 
                 inpl_adder = gidney_adder
 
-        else:
-            if inpl_adder is None:
-                from qrisp.alg_primitives.arithmetic import fourier_adder
+        elif inpl_adder is None:
+            from qrisp.alg_primitives.arithmetic import fourier_adder
 
-                inpl_adder = fourier_adder
+            inpl_adder = fourier_adder
 
         self.inpl_adder = inpl_adder
         self.m = 0
@@ -288,11 +283,11 @@ class QuantumModulus(QuantumFloat):
         Decoding recovers k = (k_hat * 2^m) mod N = montgomery_decoder(k_hat, R, N)
         where R = 2^m is the Montgomery radix.
         """
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
-            new_montgomery_decoder,
-        )
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
             BigInteger,
+        )
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+            new_montgomery_decoder,
         )
 
         if check_for_tracing_mode():
@@ -319,7 +314,7 @@ class QuantumModulus(QuantumFloat):
         )
 
         if isinstance(self.modulus, BigInteger):
-            from qrisp import q_fori_loop, measure, jlen
+            from qrisp import measure, q_fori_loop
 
             if check_for_tracing_mode():
                 for_loop = q_fori_loop
@@ -405,11 +400,11 @@ class QuantumModulus(QuantumFloat):
                 return montgomery_mod_mul(self, other)
 
         elif isinstance(other, (int, np.integer, jnp.integer, BigInteger, Tracer)):
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
-                cq_montgomery_multiply,
-            )
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
                 best_montgomery_shift,
+            )
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
+                cq_montgomery_multiply,
             )
 
             shift = best_montgomery_shift(other, self.modulus)
@@ -430,11 +425,11 @@ class QuantumModulus(QuantumFloat):
         )
 
         if isinstance(other, (int, np.integer, jnp.integer, jax.Array, BigInteger)):
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
-                cq_montgomery_multiply_inplace,
-            )
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
                 best_montgomery_shift,
+            )
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
+                cq_montgomery_multiply_inplace,
             )
 
             # If other is a np.integer, convert to Python int for compatibility with best_montgomery_shift

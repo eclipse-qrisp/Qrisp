@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,11 +15,11 @@
 ********************************************************************************
 """
 
-import numpy as np
-from numpy.testing import assert_allclose
 import operator
-import pytest
 from collections.abc import Mapping
+
+import numpy as np
+import pytest
 
 from qrisp import *
 from qrisp.interface.measurement_result import DecodedMeasurementResult
@@ -177,7 +176,6 @@ instances = [
 @pytest.mark.parametrize("instance", instances)
 def test_quantum_array_element_wise_ops(op, rhs_type, instance):
     """Test element-wise operations on QuantumArrays of QuantumFloat/QuantumModulus against their classical counterparts."""
-
     a_c_ref, b_c_ref, qtype = instance
     a_c = a_c_ref.copy()
     b_c = b_c_ref.copy() if isinstance(b_c_ref, np.ndarray) else b_c_ref
@@ -231,7 +229,6 @@ bool_ops = [
 @pytest.mark.parametrize("op", bool_ops)
 def test_quantum_array_element_wise_bool_ops(op):
     """Test element-wise boolean operations on QuantumArrays of QuantumBool against their classical counterparts."""
-
     a_c = np.array([[True, False], [False, True]])
     b_c = np.array([[True, True], [False, False]])
 
@@ -278,7 +275,6 @@ instances = [
 @pytest.mark.parametrize("instance", instances)
 def test_quantum_array_element_wise_inplace_ops(op, rhs_type, instance):
     """Test element-wise in-place operations on QuantumArrays of QuantumFloat/QuantumModulus against classical counterparts."""
-
     a_c_ref, b_c_ref, qtype = instance
     a_c = a_c_ref.copy()
     b_c = b_c_ref.copy() if isinstance(b_c_ref, np.ndarray) else b_c_ref

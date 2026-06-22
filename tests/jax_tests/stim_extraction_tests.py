@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,16 +17,16 @@
 
 import numpy as np
 import stim
-from qrisp import QuantumVariable, QuantumFloat, QuantumBool, h, x, y, z, s, s_dg, sx, cx, cy, cz, measure, control
+
+from qrisp import QuantumBool, QuantumFloat, QuantumVariable, control, cx, cy, cz, h, measure, s, s_dg, sx, x, y, z
 from qrisp.jasp import extract_stim, parity
 from qrisp.jasp.evaluation_tools.stim_extraction import (
-    StimMeasurementHandles,
     StimDetectorHandles,
+    StimMeasurementHandles,
     StimObservableHandles,
     StimQubitIndices,
 )
 from qrisp.misc.stim_tools import stim_noise
-
 
 # ============================================================================
 # Basic Functionality Tests
@@ -644,8 +643,8 @@ def test_large_circuit():
 
 def test_jasp_stim_extraction_with_error():
     """Test Jasp stim extraction with errors."""
+    from qrisp import QuantumVariable, cx, h
     from qrisp.jasp import extract_stim
-    from qrisp import QuantumVariable, h, cx
     from qrisp.misc.stim_tools import StimNoiseGate, stim_noise
 
     @extract_stim
@@ -680,8 +679,9 @@ def test_jasp_stim_extraction_with_error():
 
 def test_stim_noise_gate_errors():
     """Test that prohibited methods on StimNoiseGate raise appropriate exceptions."""
-    from qrisp.misc.stim_tools.error_class import StimNoiseGate
     import pytest
+
+    from qrisp.misc.stim_tools.error_class import StimNoiseGate
 
     ng = StimNoiseGate("DEPOLARIZE1", 0.1)
 
@@ -707,8 +707,7 @@ def test_stim_noise_gate_errors():
 
 
 def test_basic_parity_detector():
-    """
-    Test simple parity detector usage.
+    """Test simple parity detector usage.
     """
 
     @extract_stim
@@ -739,8 +738,7 @@ def test_basic_parity_detector():
 
 
 def test_measurement_detector_gap_interleaved():
-    """
-    Test detector with measurements separated by another measurement in time.
+    """Test detector with measurements separated by another measurement in time.
     """
 
     @extract_stim
@@ -764,8 +762,7 @@ def test_measurement_detector_gap_interleaved():
 
 
 def test_basic_observable():
-    """
-    Test observable creation (observable=True).
+    """Test observable creation (observable=True).
     """
 
     @extract_stim
@@ -789,8 +786,7 @@ def test_basic_observable():
 
 
 def test_observable_chaining():
-    """
-    Test chaining observables (extending one observable).
+    """Test chaining observables (extending one observable).
     parity(new_meas, old_obs) -> should create NEW observable with combined measurements.
     """
 
@@ -833,8 +829,7 @@ def test_observable_chaining():
 
 
 def test_observable_merging():
-    """
-    Test merging two distinct observables into a third one.
+    """Test merging two distinct observables into a third one.
     """
 
     @extract_stim
@@ -868,8 +863,7 @@ def test_observable_merging():
 
 
 def test_detectors_on_observables():
-    """
-    Test creating a detector from observable handles.
+    """Test creating a detector from observable handles.
     """
 
     @extract_stim
@@ -904,8 +898,7 @@ def test_detectors_on_observables():
 
 
 def test_classical_conditions():
-    """
-    Test classically conditioned gates (Feedback).
+    """Test classically conditioned gates (Feedback).
     """
 
     @extract_stim
@@ -927,8 +920,7 @@ def test_classical_conditions():
 
 
 def test_stim_noise_injection():
-    """
-    Test explicit Stim noise injection.
+    """Test explicit Stim noise injection.
     """
 
     @extract_stim
@@ -948,8 +940,7 @@ def test_stim_noise_injection():
 
 
 def test_parity_observable_sampling():
-    """
-    Verify that parity used as an observable correctly computes parity of measurements.
+    """Verify that parity used as an observable correctly computes parity of measurements.
     We'll produce a state |00> + |11> (Parity even -> 0)
     and |01> + |10> (Parity odd -> 1).
     """
@@ -994,8 +985,7 @@ def test_parity_observable_sampling():
 
 
 def test_parity_detector_sampling():
-    """
-    Verify `parity` with expectation=... working as a detector.
+    """Verify `parity` with expectation=... working as a detector.
     """
 
     @extract_stim
@@ -1028,8 +1018,7 @@ def test_parity_detector_sampling():
 
 
 def test_parity_expectations_behavior():
-    """
-    Verify `parity` expectation parameter behavior in Stim.
+    """Verify `parity` expectation parameter behavior in Stim.
 
     Note: Currently, Stim conversion uses expectation only to distinguish
     between Detectors (expectation=1/False) and Observables (observable=True).
@@ -1070,12 +1059,12 @@ def test_parity_expectations_behavior():
 
 
 def test_parity_exception_behavior():
-    """
-    Test that parity raises an Exception in noiseless simulation if expectation is violated,
+    """Test that parity raises an Exception in noiseless simulation if expectation is violated,
     but does NOT raise an Exception in Stim extraction/simulation.
     """
-    from qrisp.jasp import jaspify
     import pytest
+
+    from qrisp.jasp import jaspify
 
     def violating_circuit():
         qv = QuantumVariable(2)
@@ -1783,7 +1772,7 @@ def test_split_2d_array():
 def test_dynamic_update_slice():
     """Test dynamic_update_slice with measurement arrays."""
     import jax.numpy as jnp
-    import jax.lax as lax
+    from jax import lax
 
     @extract_stim
     def update_slice():
@@ -1812,7 +1801,7 @@ def test_dynamic_update_slice():
 def test_dynamic_update_slice_middle():
     """Test dynamic_update_slice updating middle elements."""
     import jax.numpy as jnp
-    import jax.lax as lax
+    from jax import lax
 
     @extract_stim
     def update_middle():
@@ -2110,7 +2099,8 @@ def test_detector_order_nested_structure():
 def test_detector_order_repetition_code():
     """Test detector_order='return_order' with repetition code pattern."""
     import jax.numpy as jnp
-    from qrisp import QuantumArray, QuantumBool, reset, cx
+
+    from qrisp import QuantumArray, QuantumBool, cx, reset
 
     code_size = 4
     rounds = 3
@@ -2417,7 +2407,8 @@ def test_dynamic_noise_multiple_different_strengths():
 
 def test_dynamic_noise_sampling_statistics():
     """Verify dynamic noise actually affects sampling statistics.
-    With X_ERROR(1.0) the qubit deterministically flips."""
+    With X_ERROR(1.0) the qubit deterministically flips.
+    """
 
     @extract_stim
     def deterministic_flip(p):

@@ -1,7 +1,7 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import to_rgb
+import numpy as np
 from matplotlib.collections import LineCollection
+from matplotlib.colors import to_rgb
 from numpy.polynomial import Chebyshev
 from numpy.polynomial.chebyshev import chebval
 

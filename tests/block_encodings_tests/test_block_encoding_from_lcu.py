@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -25,7 +24,6 @@ from qrisp.block_encodings import BlockEncoding
 
 def create_matrix(coeffs, N):
     """Creates a banded matrix with specified coefficients on superdiagonal, subdiagonal, and their wrap-around elements."""
-
     A = np.zeros((N, N), dtype=complex)
 
     A += np.eye(N, k=1) * coeffs[0]  # Superdiagonal
@@ -44,7 +42,8 @@ def create_matrix(coeffs, N):
 
 def create_block_encoding(coeffs):
     """Creates a BlockEncoding of a banded matrix with specified coefficients on superdiagonal, subdiagonal,
-    and their wrap-around elements using the LCU constructor."""
+    and their wrap-around elements using the LCU constructor.
+    """
 
     def f0(qv):
         qv -= 1
@@ -73,7 +72,6 @@ def create_block_encoding(coeffs):
 )
 def test_block_encoding_from_lcu(coeffs):
     """Test the construction of a BlockEncoding from a linear combination of unitaries (LCU) with various types of coefficients."""
-
     A = create_matrix(coeffs, N=8)
     b = np.array([0, 1, 1, 0, 1, 0, 0, 1])
     c = A @ b / np.linalg.norm(A @ b)

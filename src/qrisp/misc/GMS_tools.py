@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,6 +16,7 @@
 """
 
 import numpy as np
+
 from qrisp.circuit import Operation
 
 
@@ -216,12 +216,11 @@ def gms_multi_cx_fan_out(n, use_uniform=True, phase_tolerant=False, basis="GXX")
 
 
 def GXX_converter(qs):
-    from qrisp import QuantumSession, QuantumVariable
 
     # Check if the given Circuit is valid
     global_phase = np.array([0.0])
     for i in range(len(qs.data)):
-        if not qs.data[i].op.name in [
+        if qs.data[i].op.name not in [
             "p",
             "cp",
             "id",
@@ -232,7 +231,7 @@ def GXX_converter(qs):
         ]:
             raise Exception(qs.data[i].op.name + " is neither Phase nor CPhase gate")
 
-        if not qs.data[i].op.name in ["cp", "cz", "qb_alloc", "qb_dealloc"]:
+        if qs.data[i].op.name not in ["cp", "cz", "qb_alloc", "qb_dealloc"]:
             global_phase += qs.data[i].op.global_phase
 
         # Subtract a 1/4 of the phase in case we are dealing with a cp gate (for more
@@ -392,12 +391,11 @@ class GZZ_wrapper(Operation):
 # The terms (-1)^a and (-1)^b are executed by single qubit phase gates
 # The remaining -1 is an irrelevant global phase
 def GZZ_converter(qs):
-    from qrisp import QuantumSession, QuantumVariable
 
     # Check if the given Circuit is valid
     global_phase = np.array([0.0])
     for i in range(len(qs.data)):
-        if not qs.data[i].op.name in [
+        if qs.data[i].op.name not in [
             "p",
             "cp",
             "id",
@@ -408,7 +406,7 @@ def GZZ_converter(qs):
         ]:
             raise Exception(qs.data[i].op.name + " is neither Phase nor CPhase gate")
 
-        if not qs.data[i].op.name in ["cp", "cz", "qb_alloc", "qb_dealloc"]:
+        if qs.data[i].op.name not in ["cp", "cz", "qb_alloc", "qb_dealloc"]:
             global_phase += qs.data[i].op.global_phase
 
         # Subtract a 1/4 of the phase in case we are dealing with a cp gate (for more

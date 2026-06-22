@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,10 @@
 ********************************************************************************
 """
 
+from jax import make_jaxpr
+
 from qrisp import *
 from qrisp.jasp import *
-from jax import make_jaxpr
 
 
 def test_quantum_kernel():

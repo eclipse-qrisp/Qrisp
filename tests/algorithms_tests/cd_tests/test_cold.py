@@ -1,10 +1,10 @@
 import numpy as np
-from qrisp.algorithms.cold import solve_QUBO
-from qrisp.interface.provider_backends.qiskit_backend import QiskitBackend
 import sympy as sp
+
 from qrisp import QuantumVariable
+from qrisp.algorithms.cold import DCQOProblem, solve_QUBO
+from qrisp.interface.provider_backends.qiskit_backend import QiskitBackend
 from qrisp.operators.qubit import X, Y, Z
-from qrisp.algorithms.cold import DCQOProblem
 
 
 def test_cold_uniform_magnitude():

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,12 +15,12 @@
 ********************************************************************************
 """
 
-from qrisp.misc.utility import lifted
 from qrisp.environments import adaptive_condition, conjugate, control
+from qrisp.misc.utility import lifted
 
 
 def less_than_gate(a, b):
-    from qrisp import QuantumBool, QuantumFloat, cx, inpl_add
+    from qrisp import QuantumBool, QuantumFloat, cx
 
     a = a.duplicate()
 
@@ -195,9 +194,10 @@ def less_than(a, b):
 
 @lifted
 def equal(qf_0, qf_1):
-    from qrisp import QuantumBool, QuantumFloat, cx, mcx, check_for_tracing_mode, q_cond
-    from qrisp.jasp import jrange
     import jax.numpy as jnp
+
+    from qrisp import QuantumBool, QuantumFloat, cx, mcx
+    from qrisp.jasp import jrange
 
     eq_qbl = QuantumBool(qs=qf_0.qs, name="eq_qbl*")
 

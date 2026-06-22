@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,16 +15,10 @@
 ********************************************************************************
 """
 
-import numpy as np
 
-from qrisp.operators import Hamiltonian
-from qrisp.operators.fermionic.fermionic_term import FermionicTerm
-from qrisp.operators.hamiltonian_tools import group_up_iterable
-from qrisp import merge, IterationEnvironment, conjugate
-from qrisp.operators.qubit import QubitOperator
-
+from qrisp import IterationEnvironment, conjugate, merge
 from qrisp.jasp import check_for_tracing_mode, jrange
-import sympy as sp
+from qrisp.operators.hamiltonian_tools import group_up_iterable
 
 threshold = 1e-9
 

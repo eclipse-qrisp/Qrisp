@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,10 @@
 ********************************************************************************
 """
 
+from math import ceil, floor
+
 from qrisp import *
 from qrisp.jasp import *
-from math import floor, ceil
 
 
 def test_min_max(exhaustive=False):

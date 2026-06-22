@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,11 +15,10 @@
 ********************************************************************************
 """
 
-import numpy as np
 import pytest
+
 from qrisp import *
 from qrisp.jasp import *
-
 
 # ---------------------------------------------------------------------------
 # Construction & size
@@ -300,7 +298,8 @@ def test_dqa_radd_multi_element_list():
 def test_dqa_radd_preserves_qubit_identity():
     """After __radd__, accessing qubits via the new DQA should reference the
     original qubits (not copies). Flipping via the concatenated DQA must
-    affect the original QuantumVariable."""
+    affect the original QuantumVariable.
+    """
 
     @boolean_simulation
     def main():
@@ -546,7 +545,8 @@ def test_dqa_gidney_adder_append_pattern():
 
 def test_dqa_measure_sliced():
     """Measuring a sliced DynamicQubitArray returns the integer value of the
-    qubits in the slice only."""
+    qubits in the slice only.
+    """
 
     @boolean_simulation
     def main():

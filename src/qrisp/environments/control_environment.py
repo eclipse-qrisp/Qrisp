@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,23 +15,20 @@
 ********************************************************************************
 """
 
-from jax.core import ShapedArray
-from jax._src.array import ArrayImpl
-from jax.extend.core import ClosedJaxpr
-
-from qrisp.circuit import Qubit, QuantumCircuit, XGate
-from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
-from qrisp.environments import QuantumEnvironment, ClControlEnvironment
-from qrisp.misc import perm_lock, perm_unlock, bin_rep
-from qrisp.jasp import check_for_tracing_mode, get_last_equation
-from qrisp.core import mcx, p, rz, x
-
 import numpy as np
+from jax._src.array import ArrayImpl
+from jax.core import ShapedArray
+
+from qrisp.circuit import QuantumCircuit, Qubit, XGate
+from qrisp.core import mcx, p, rz, x
+from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
+from qrisp.environments import ClControlEnvironment, QuantumEnvironment
+from qrisp.jasp import check_for_tracing_mode, get_last_equation
+from qrisp.misc import bin_rep, perm_lock, perm_unlock
 
 
 class ControlEnvironment(QuantumEnvironment):
-    """
-    This class behaves similarly to ConditionEnvironment but instead of a function
+    """This class behaves similarly to ConditionEnvironment but instead of a function
     calculating a truth value, we supply a list of qubits.
     The environment's content is then controlled on these qubits.
 
@@ -50,7 +46,6 @@ class ControlEnvironment(QuantumEnvironment):
 
     Examples
     --------
-
     We create a QuantumVariable and control on some of it's qubits
     using the control alias ::
 
@@ -451,7 +446,7 @@ def convert_to_custom_control(instruction, control_qubit, invert_control=False):
 
 def control(*args, **kwargs):
     args = list(args)
-    from qrisp import Qubit, QuantumBool, QuantumVariable
+    from qrisp import QuantumBool, QuantumVariable, Qubit
     from qrisp.jasp import AbstractQubit, check_for_tracing_mode
 
     if isinstance(args[0], QuantumVariable):
@@ -471,13 +466,12 @@ def control(*args, **kwargs):
             return ClControlEnvironment(*args, **kwargs)
         else:
             raise Exception(f"Don't know how to control from input type {args[0]}")
+    elif all(isinstance(obj, (Qubit, QuantumBool)) for obj in args[0]):
+        return ControlEnvironment(*args, **kwargs)
+    elif all(isinstance(obj, (bool, np.bool)) for obj in [x for x in args[0]]):
+        return ClControlEnvironment(*args, **kwargs)
+    elif all(isinstance(obj, ArrayImpl) for obj in [x for x in args[0]]):
+        args[0] = [bool(bit) for bit in args[0]]
+        return ClControlEnvironment(*args, **kwargs)
     else:
-        if all(isinstance(obj, (Qubit, QuantumBool)) for obj in args[0]):
-            return ControlEnvironment(*args, **kwargs)
-        elif all(isinstance(obj, (bool, np.bool)) for obj in [x for x in args[0]]):
-            return ClControlEnvironment(*args, **kwargs)
-        elif all(isinstance(obj, ArrayImpl) for obj in [x for x in args[0]]):
-            args[0] = [bool(bit) for bit in args[0]]
-            return ClControlEnvironment(*args, **kwargs)
-        else:
-            raise Exception(f"Don't know how to control from input type {args[0]}")
+        raise Exception(f"Don't know how to control from input type {args[0]}")

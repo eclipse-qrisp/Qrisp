@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,8 +17,8 @@
 
 import numpy as np
 
-from qrisp.core import p, h, cp, cx, x, s, swap
-from qrisp.jasp import qache, jrange, check_for_tracing_mode
+from qrisp.core import cp, cx, h, p, s, swap, x
+from qrisp.jasp import check_for_tracing_mode, jrange, qache
 
 
 def QFT_inner(
@@ -145,8 +144,7 @@ def QFT(
     use_gms=False,
     inpl_adder=None,
 ):
-    """
-    Performs the quantum fourier transform on the input.
+    """Performs the quantum fourier transform on the input.
 
     Parameters
     ----------
@@ -196,18 +194,17 @@ def QFT(
                     inpl_adder=inpl_adder,
                 )
 
+    elif check_for_tracing_mode():
+        jasp_qft(qv, exec_swap)
     else:
-        if check_for_tracing_mode():
-            jasp_qft(qv, exec_swap)
-        else:
-            gate_wrap(permeability=[], is_qfree=False, name=name)(QFT_inner)(
-                qv,
-                exec_swap=exec_swap,
-                qiskit_endian=qiskit_endian,
-                inplace_mult=inplace_mult,
-                use_gms=use_gms,
-                inpl_adder=inpl_adder,
-            )
+        gate_wrap(permeability=[], is_qfree=False, name=name)(QFT_inner)(
+            qv,
+            exec_swap=exec_swap,
+            qiskit_endian=qiskit_endian,
+            inplace_mult=inplace_mult,
+            use_gms=use_gms,
+            inpl_adder=inpl_adder,
+        )
 
     return qv
 

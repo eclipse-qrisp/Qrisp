@@ -31,8 +31,7 @@ from qrisp.simulator.simulator import run as default_run
 
 
 class QrispSimulatorJob(Job):
-    """
-    A synchronous :class:`~qrisp.interface.Job` produced by :class:`QrispSimulatorBackend`.
+    """A synchronous :class:`~qrisp.interface.Job` produced by :class:`QrispSimulatorBackend`.
     """
 
     def __init__(
@@ -60,7 +59,6 @@ class QrispSimulatorJob(Job):
         to :attr:`~qrisp.interface.JobStatus.DONE` (or
         :attr:`~qrisp.interface.JobStatus.ERROR`) synchronously.
         """
-
         token = self._backend.options.get("token", "")
         self._last_known_status = JobStatus.RUNNING
         try:
@@ -97,6 +95,7 @@ class QrispSimulatorJob(Job):
         ------
         RuntimeError
             If the simulation raised an exception.
+
         """
         self._raise_for_status(self._last_known_status)
         return cast(JobResult, self._result_data)
@@ -111,8 +110,7 @@ class QrispSimulatorJob(Job):
 
 
 class QrispSimulatorBackend(Backend):
-    """
-    The built-in Qrisp statevector simulator backend.
+    """The built-in Qrisp statevector simulator backend.
 
     This is the simplest concrete :class:`~qrisp.interface.Backend`
     implementation. It executes circuits synchronously. That is, the
@@ -136,7 +134,6 @@ class QrispSimulatorBackend(Backend):
 
     Examples
     --------
-
     **Analytic execution (default)**
 
     We first create a :class:`QrispSimulatorBackend`:
@@ -265,14 +262,14 @@ class QrispSimulatorBackend(Backend):
     >>> result = job.result()
     >>> print(result.get_counts())
     {'0100111': 1.0}
+
     """
 
     def __init__(
         self,
         pm: PassManager | None = None,
     ) -> None:
-        """
-        Initialize the QrispSimulatorBackend.
+        """Initialize the QrispSimulatorBackend.
 
         Parameters
         ----------
@@ -280,6 +277,7 @@ class QrispSimulatorBackend(Backend):
             An optional :class:`~qrisp.circuit.pass_management.PassManager`
             that is applied to every circuit before it is submitted to the
             simulator. Defaults to ``None``.
+
         """
         super().__init__(name="QrispSimulator", options=None)
         if pm is not None and not isinstance(pm, PassManager):
@@ -321,6 +319,7 @@ class QrispSimulatorBackend(Backend):
         Returns
         -------
         QrispSimulatorJob
+
         """
         self._check_circuit_limit(circuits)
         if isinstance(circuits, QuantumCircuit):

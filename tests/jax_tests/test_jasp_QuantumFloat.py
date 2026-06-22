@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -21,7 +20,7 @@ def test_jasp_QuantumFloat():
 
     # Test decoder for QuantumFloat (Issue #271)
     from qrisp import QuantumFloat, h
-    from qrisp.jasp import terminal_sampling, qache, make_jaspr
+    from qrisp.jasp import make_jaspr, qache, terminal_sampling
 
     @terminal_sampling
     def main():

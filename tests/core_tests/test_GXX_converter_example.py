@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,9 +16,11 @@
 """
 
 # Created by ann81984 at 29.04.2022
-import numpy as np
 import random
-from qrisp import QuantumSession, QuantumVariable, p, cp
+
+import numpy as np
+
+from qrisp import QuantumVariable, cp, p
 from qrisp.misc.GMS_tools import GXX_converter
 
 

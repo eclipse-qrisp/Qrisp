@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -60,8 +59,7 @@ def _map_iqm_status(iqm_job) -> JobStatus:
 
 
 class IQMJob(Job):
-    """
-    A :class:`~qrisp.interface.Job` that wraps a single IQM ``CircuitJob``.
+    """A :class:`~qrisp.interface.Job` that wraps a single IQM ``CircuitJob``.
 
     .. warning::
 
@@ -100,6 +98,7 @@ class IQMJob(Job):
         client : IQMClient
             The IQM client used to fetch measurement counts after completion.
             Stored directly to avoid accessing a protected member of the backend.
+
         """
         super().__init__(backend=backend, job_id=str(iqm_job.job_id))
         self._iqm_job = iqm_job
@@ -116,8 +115,7 @@ class IQMJob(Job):
         self._last_known_status = JobStatus.QUEUED
 
     def result(self, timeout: float | None = None) -> JobResult:
-        """
-        Block until the IQM job finishes and return the :class:`~qrisp.interface.JobResult`.
+        """Block until the IQM job finishes and return the :class:`~qrisp.interface.JobResult`.
 
         Waiting is delegated to ``CircuitJob.wait_for_completion()``.
         Counts are fetched via ``IQMClient.get_job_measurement_counts``,
@@ -139,6 +137,7 @@ class IQMJob(Job):
             If the IQM job failed.
         JobCancelledError
             If the IQM job was cancelled.
+
         """
         if self._cached_result is not None:
             return self._cached_result
@@ -176,8 +175,7 @@ class IQMJob(Job):
         return self._cached_result
 
     def cancel(self) -> bool:
-        """
-        Attempt to cancel the underlying IQM job.
+        """Attempt to cancel the underlying IQM job.
 
         Returns
         -------
@@ -185,6 +183,7 @@ class IQMJob(Job):
             ``True`` if the cancellation request was dispatched successfully;
             ``False`` if the job is already in a terminal state or cancellation
             failed.
+
         """
         if self._last_known_status in JOB_FINAL_STATES:
             return False
@@ -206,8 +205,7 @@ class IQMJob(Job):
 
 
 class IQMBackend(Backend):
-    """
-    A :class:`~qrisp.interface.Backend` for executing circuits on IQM hardware.
+    """A :class:`~qrisp.interface.Backend` for executing circuits on IQM hardware.
 
     .. warning::
 
@@ -256,7 +254,6 @@ class IQMBackend(Backend):
 
     Examples
     --------
-
     We evaluate a :ref:`QuantumFloat` multiplication on the 20-qubit IQM Garnet.
 
     >>> from qrisp.interface import IQMBackend
@@ -289,6 +286,7 @@ class IQMBackend(Backend):
         qc.measure(0)
 
         meas_res = qc.run(shots = 10000, backend = custom_transpiled_garnet)
+
     """
 
     def __init__(
@@ -371,8 +369,7 @@ class IQMBackend(Backend):
         circuits,
         shots: int | list[int] | None = None,
     ) -> IQMJob:
-        """
-        Transpile and submit one or more circuits to the IQM backend.
+        """Transpile and submit one or more circuits to the IQM backend.
 
         This method returns an ``IQMJob`` immediately.  Call
         :meth:`Job.result` on the returned object to block and retrieve the
@@ -392,6 +389,7 @@ class IQMBackend(Backend):
         Returns
         -------
         IQMJob
+
         """
         if isinstance(circuits, QuantumCircuit):
             circuits = [circuits]

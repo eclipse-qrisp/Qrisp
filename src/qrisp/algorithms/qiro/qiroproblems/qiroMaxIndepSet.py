@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,18 +15,15 @@
 ********************************************************************************
 """
 
-from qrisp import rz, rzz, x
-import numpy as np
 import copy
-from qrisp.algorithms.qiro.qiroproblems.qiro_utils import find_max
+
+from qrisp import QuantumBool, mcx, rz, rzz, x
 from qrisp.algorithms.qiro.qiro_mixers import qiro_controlled_RX_mixer_gen
-from qrisp import QuantumBool, mcx
-from qrisp.algorithms.qaoa import controlled_RX_mixer_gen
+from qrisp.algorithms.qiro.qiroproblems.qiro_utils import find_max
 
 
 def create_max_indep_replacement_routine(res, problem_updated):
-    """
-    Creates a replacement routine for the problem structure, i.e., defines the replacement rules.
+    """Creates a replacement routine for the problem structure, i.e., defines the replacement rules.
     See the `original paper <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_ for a description of the update rules.
 
     Parameters
@@ -83,24 +79,22 @@ def create_max_indep_replacement_routine(res, problem_updated):
             new_graph.remove_node(max_item)
             exclusions.append(max_item)
 
-    else:
-        if sign > 0:
-            # remove both nodes
-            new_graph.remove_nodes_from(max_item)
-            exclusions += list(max_item)
+    elif sign > 0:
+        # remove both nodes
+        new_graph.remove_nodes_from(max_item)
+        exclusions += list(max_item)
 
-        elif sign < 0:
-            # remove all nodes connected to both nodes
-            intersect = list(set(list(graph.adj[max_item[0]].keys())) & set(list(graph.adj[max_item[0]].keys())))
-            new_graph.remove_nodes_from(intersect)
-            exclusions += intersect
+    elif sign < 0:
+        # remove all nodes connected to both nodes
+        intersect = list(set(list(graph.adj[max_item[0]].keys())) & set(list(graph.adj[max_item[0]].keys())))
+        new_graph.remove_nodes_from(intersect)
+        exclusions += intersect
 
     return new_graph, solutions, sign, exclusions
 
 
 def create_max_indep_cost_operator_reduced(problem_updated):
-    r"""
-    Creates the ``cost_operator`` for the problem instance.
+    r"""Creates the ``cost_operator`` for the problem instance.
     This operator is adjusted to consider qubits that were found to be a part of the problem solution.
 
     Parameters
@@ -115,7 +109,6 @@ def create_max_indep_cost_operator_reduced(problem_updated):
         A function receiving a :ref:`QuantumVariable` and a real parameter $\gamma$. This function performs the application of the cost operator.
 
     """
-
     problem = problem_updated[0]
     solutions = problem_updated[1]
 
@@ -126,15 +119,14 @@ def create_max_indep_cost_operator_reduced(problem_updated):
             rz(-gamma, qv[pair[0]])
             rz(-gamma, qv[pair[1]])
         for i in problem.nodes():
-            if not i in solutions:
+            if i not in solutions:
                 rz(gamma, qv[i])
 
     return cost_operator
 
 
 def create_max_indep_controlled_mixer_reduced(problem_updated):
-    r"""
-    Creates the ``controlled_RX_mixer`` for a QIRO instance of the maximal independet set problem for a given graph ``G`` following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
+    r"""Creates the ``controlled_RX_mixer`` for a QIRO instance of the maximal independet set problem for a given graph ``G`` following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
 
     The belonging ``predicate`` function indicates if a set can be swapped into the solution.
 
@@ -151,7 +143,6 @@ def create_max_indep_controlled_mixer_reduced(problem_updated):
         This function performs the application of the mixer associated to the graph ``G``.
 
     """
-
     problem = problem_updated[0]
     solutions = problem_updated[1]
     exclusions = problem_updated[2]
@@ -175,8 +166,7 @@ def create_max_indep_controlled_mixer_reduced(problem_updated):
 
 
 def qiro_max_indep_set_init_function(solutions=[], exclusions=[]):
-    r"""
-    To be used for the controlled mixer approach of QIRO MIS. Only flips qubits which we found to be a part of the problem soultion.
+    r"""To be used for the controlled mixer approach of QIRO MIS. Only flips qubits which we found to be a part of the problem soultion.
 
     Parameters
     ----------

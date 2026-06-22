@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,10 +16,8 @@
 """
 
 import jax
-from jax.extend.core import ClosedJaxpr
 
-from qrisp.core import recursive_qv_search, recursive_qa_search
-
+from qrisp.core import recursive_qa_search, recursive_qv_search
 from qrisp.jasp.primitives import AbstractQuantumState
 from qrisp.jasp.tracing_logic import (
     TracingQuantumSession,
@@ -30,8 +27,7 @@ from qrisp.jasp.tracing_logic import (
 
 
 def qache(*func, **kwargs):
-    """
-    This decorator allows you to mark a function as "reusable". Reusable here means
+    """This decorator allows you to mark a function as "reusable". Reusable here means
     that the jasp expression of this function will be cached and reused in the next
     calls (if the function is called with the same signature).
 
@@ -65,7 +61,6 @@ def qache(*func, **kwargs):
 
     Examples
     --------
-
     We create a simple function that is qached. To simulate an expensive compilation
     task we insert a ``time.sleep`` command.
 
@@ -189,10 +184,9 @@ def qache(*func, **kwargs):
         # Yields: Exception: Found in-place parameter modification of QuantumVariable qf
 
     """
-
-    if len(kwargs) and len(func) == 0:
+    if kwargs and len(func) == 0:
         return lambda x: qache_helper(x, kwargs)
-    elif len(kwargs) and len(func):
+    elif kwargs and func:
         return qache_helper(func[0], kwargs)
     else:
         return qache_helper(func[0], {})
@@ -259,7 +253,7 @@ def qache_helper(func, jax_kwargs):
         for qv in arg_qvs:
             flat_qv = list(flatten_qv(qv)[0])
             for i in range(len(flat_qv)):
-                if not flat_qv[i] is flattened_qvs.pop(0):
+                if flat_qv[i] is not flattened_qvs.pop(0):
                     raise Exception(f"Found in-place parameter modification of QuantumVariable {qv.name}")
 
         new_abs_qst = tr_qs.abs_qst

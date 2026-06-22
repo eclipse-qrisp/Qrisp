@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,17 +15,19 @@
 ********************************************************************************
 """
 
-from itertools import product
 from collections.abc import Mapping
+from itertools import product
 
 import numpy as np
 import pytest
+from qrisp.grover import grovers_alg, tag_state
+
 from qrisp import (
-    QuantumVariable,
-    QuantumArray,
     OutcomeArray,
+    QuantumArray,
     QuantumBool,
     QuantumFloat,
+    QuantumVariable,
     auto_uncompute,
     h,
     invert,
@@ -34,7 +35,6 @@ from qrisp import (
     multi_measurement,
     p,
 )
-from qrisp.grover import tag_state, grovers_alg
 
 
 def assert_valid_measurement(mes_res):
@@ -47,7 +47,6 @@ def assert_valid_measurement(mes_res):
 
 def test_grovers_basic_oracle():
     """Tests Grover's algorithm with a simple oracle that tags a specific state."""
-
     qf_list = [QuantumFloat(2), QuantumFloat(2)]
 
     def test_oracle(qf_list):
@@ -67,7 +66,6 @@ def test_grovers_basic_oracle():
 
 def test_grovers_equation_oracle():
     """Tests Grover's algorithm with an oracle that tags states based on a simple equation (multiplication)."""
-
     qf_list = [QuantumFloat(2, -1, signed=True), QuantumFloat(2, -1, signed=True)]
 
     def equation_oracle(qf_list):

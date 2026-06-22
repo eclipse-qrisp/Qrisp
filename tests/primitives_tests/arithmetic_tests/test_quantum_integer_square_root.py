@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,10 @@
 ********************************************************************************
 """
 
-from qrisp.alg_primitives.arithmetic.isqrt import q_isqrt
-from qrisp import QuantumFloat, multi_measurement
 import math
+
+from qrisp import QuantumFloat, multi_measurement
+from qrisp.alg_primitives.arithmetic.isqrt import q_isqrt
 
 
 def test_quantum_square_root():

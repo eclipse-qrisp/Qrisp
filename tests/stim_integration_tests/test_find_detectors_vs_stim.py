@@ -1,5 +1,4 @@
-"""
-Tests that validate find_detectors against stim's built-in circuit generators.
+"""Tests that validate find_detectors against stim's built-in circuit generators.
 
 stim.Circuit.generated() produces QEC circuits with *correct* DETECTOR
 annotations.  These tests:
@@ -15,14 +14,11 @@ measurement), MY (Y-basis measurement), and their MR variants with proper
 buffering so that tqecd fragment structure is preserved.
 """
 
-import pytest
 import stim
-import numpy as np
+
 from qrisp import QuantumArray, QuantumBool, cx, h, measure, reset
 from qrisp.jasp.evaluation_tools.stim_extraction import extract_stim
-
 from qrisp.misc.stim_tools.find_detectors import find_detectors
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # Helpers
@@ -48,8 +44,7 @@ def _sample_detectors_ok(stim_circ, shots=2000):
 
 
 def _parse_stim_for_qrisp_recode(stim_circ):
-    """
-    Parse a stim circuit and extract its gate-level structure.
+    """Parse a stim circuit and extract its gate-level structure.
 
     Returns (n_qubits, ops, measurements) where:
       - n_qubits: total qubit count
@@ -111,14 +106,12 @@ def _parse_stim_for_qrisp_recode(stim_circ):
 
 
 def _build_qrisp_from_parsed(n_qubits, ops):
-    """
-    Build a @find_detectors-decorated Qrisp function from parsed stim ops.
+    """Build a @find_detectors-decorated Qrisp function from parsed stim ops.
 
     Handles MR buffering and MX/MY basis-tracking to preserve tqecd
     fragment structure.
     """
-    from qrisp import s, s_dg, x, y, z, cz, cy
-    from qrisp import sx, sx_dg
+    from qrisp import cy, cz, s, s_dg, sx, sx_dg, x, y, z
 
     @find_detectors
     def auto_circuit(qa):
@@ -223,8 +216,7 @@ def _build_qrisp_from_parsed(n_qubits, ops):
 
 
 def _auto_recode_and_check(code_task, distance, rounds):
-    """
-    Fully automated comparison: generate stim reference, parse, recode via
+    """Fully automated comparison: generate stim reference, parse, recode via
     Qrisp, compare detector counts and verify noiseless sampling.
 
     Returns (expected_det, found_det, noiseless_ok).

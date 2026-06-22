@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -23,8 +22,7 @@ from qrisp.algorithms.shor import shors_alg
 
 
 def rsa_decrypt(e, N, cipher_int, backend=None):
-    """
-    Decrypts an integer using factorization powered by Shor's algorithm.
+    """Decrypts an integer using factorization powered by Shor's algorithm.
 
     Parameters
     ----------
@@ -44,7 +42,6 @@ def rsa_decrypt(e, N, cipher_int, backend=None):
 
     Examples
     --------
-
     We decrypt the integer 2 using $N = 33$ and $e = 7$
 
     >>> from qrisp.shor import rsa_decrypt
@@ -52,8 +49,7 @@ def rsa_decrypt(e, N, cipher_int, backend=None):
     8
 
     """
-
-    if not backend is None:
+    if backend is not None:
         mes_kwargs = {"backend": backend}
     else:
         mes_kwargs = {}
@@ -76,8 +72,7 @@ def rsa_decrypt(e, N, cipher_int, backend=None):
 
 
 def rsa_encrypt(e, N, message_int):
-    """
-    Encrypts an integer using a public key pair $(e,N)$.
+    """Encrypts an integer using a public key pair $(e,N)$.
 
     Parameters
     ----------
@@ -95,12 +90,12 @@ def rsa_encrypt(e, N, message_int):
 
     Examples
     --------
-
     We encrypt the integer 8 using $N=33$ ($p = 11$, $q = 3$) and $e = 7$
 
     >>> from qrisp.shor import rsa_encrypt
     >>> rsa_encrypt(e = 7, N = 33, message_int = 8)
     2
+
     """
     # Convert the message to an integer
     # message_int = int.from_bytes(message.encode(), 'big')
@@ -112,8 +107,7 @@ def rsa_encrypt(e, N, message_int):
 
 
 def rsa_encrypt_string(e, N, message):
-    """
-    Encrypts an arbitrary Python string using RSA.
+    """Encrypts an arbitrary Python string using RSA.
 
     Parameters
     ----------
@@ -131,7 +125,6 @@ def rsa_encrypt_string(e, N, message):
 
     Examples
     --------
-
     We encrypt a string containing an important message
 
     >>> from qrisp.shor import rsa_encrypt_string
@@ -139,7 +132,6 @@ def rsa_encrypt_string(e, N, message):
     '01010000000101001010001100100110010010000101000010001101000010100011010101110011101000100100011100000100000100110111101000011000111110111111'
 
     """
-
     message_bitstring = " ".join(format(x, "b").zfill(7) for x in bytearray(message, "ascii")).replace(" ", "")
 
     chunksize = N.bit_length() - 1
@@ -159,8 +151,7 @@ def rsa_encrypt_string(e, N, message):
 
 
 def rsa_decrypt_string(e, N, ciphertext, backend=None):
-    """
-    Decrypts a bitstring into a human readable string.
+    """Decrypts a bitstring into a human readable string.
 
     Parameters
     ----------
@@ -180,7 +171,6 @@ def rsa_decrypt_string(e, N, ciphertext, backend=None):
 
     Examples
     --------
-
     We decrypt the message we encrypted in the example of :meth:`rsa_encrypt_string <qrisp.shor.rsa_encrypt_string>`.
 
     >>> ciphertext = '01010000000101001010001100100110010010000101000010001101000010100011010101110011101000100100011100000100000100110111101000011000111110111111'
@@ -189,8 +179,7 @@ def rsa_decrypt_string(e, N, ciphertext, backend=None):
     'Qrisp is awesome!'
 
     """
-
-    if not backend is None:
+    if backend is not None:
         mes_kwargs = {"backend": backend}
     else:
         mes_kwargs = {}

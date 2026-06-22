@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,6 +18,7 @@
 """Tests for QrispSimulatorBackend and QrispSimulatorJob."""
 
 import pytest
+from conftest import CountingWrapper
 
 from qrisp import QuantumCircuit, QuantumFloat, h
 from qrisp.circuit import Operation
@@ -27,7 +27,6 @@ from qrisp.default_backend import QrispSimulatorBackend, QrispSimulatorJob, def_
 from qrisp.interface import BatchedBackend
 from qrisp.interface.job import JobFailureError, JobResult, JobStatus
 from qrisp.interface.measurement_result import LazyDict
-from conftest import CountingWrapper
 
 
 def _simple_computation():

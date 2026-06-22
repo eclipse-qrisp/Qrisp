@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,7 +15,7 @@
 ********************************************************************************
 """
 
-from qrisp import inpl_mult, h, QuantumFloat, q_switch, multi_measurement, x
+from qrisp import QuantumFloat, h, inpl_mult, multi_measurement, q_switch, x
 
 # classical indexed switch tests
 
@@ -82,7 +81,7 @@ def test_q_switch_quantum_index():
 
 
 def test_q_switch_multiple_operands():
-    from qrisp import QuantumFloat, jaspify, multi_measurement, q_switch
+    from qrisp import QuantumFloat, multi_measurement, q_switch
 
     def main(index_val):
 

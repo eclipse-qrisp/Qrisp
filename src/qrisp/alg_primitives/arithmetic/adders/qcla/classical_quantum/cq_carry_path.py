@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -33,12 +32,12 @@
 
 import numpy as np
 
-from qrisp.core.gate_application_functions import x, cx, mcx, barrier
-from qrisp.qtypes import QuantumVariable, QuantumBool
-from qrisp.circuit import QuantumCircuit
-from qrisp.permeability import auto_uncompute
-from qrisp.misc.utility import bin_rep, check_if_fresh
 from qrisp.alg_primitives.mcx_algs import hybrid_mcx
+from qrisp.circuit import QuantumCircuit
+from qrisp.core.gate_application_functions import cx, mcx, x
+from qrisp.misc.utility import bin_rep, check_if_fresh
+from qrisp.permeability import auto_uncompute
+from qrisp.qtypes import QuantumBool, QuantumVariable
 
 
 # Returns the PROPAGATE status of a group of entries
@@ -284,7 +283,7 @@ def cq_calc_carry(a, b, radix_base=2, radix_exponent=0, ctrl=None):
 
     use_parallel = False
 
-    if not ctrl is None:
+    if ctrl is not None:
         if sum(k == "1" for k in a) > 1:
             parallel_anc_var = QuantumVariable(sum(k == "1" for k in a), name="parll_qbl*")
             parallel_ancillae = list(parallel_anc_var)
@@ -310,21 +309,20 @@ def cq_calc_carry(a, b, radix_base=2, radix_exponent=0, ctrl=None):
             # GENERATE entries to 0 if the control qubit is in the |0> state.
             # This is achieved by deploying a x gate controlled by
             # the control qubit and b_i.
-            else:
-                # Instead of this command:
+            # Instead of this command:
 
-                if not use_parallel:
-                    mcx([ctrl, b[i]], g[i], method="gidney", ctrl_state="10")
-                    use_parallel = True
-                else:
-                    # To achieve further parallelization, we "copy" the value of
-                    # the control value.
-                    # The permutation of the controls  that is necessary for
-                    # actual parallelization will be done by the the compiler.
-                    # parll_qbl = QuantumBool(name = "parll_qbl*", qs = b[0].qs())
-                    parll_qbl = parallel_ancillae.pop(0)
-                    cx(ctrl, parll_qbl)
-                    mcx([parll_qbl, b[i]], g[i], method="gidney", ctrl_state="10")
+            elif not use_parallel:
+                mcx([ctrl, b[i]], g[i], method="gidney", ctrl_state="10")
+                use_parallel = True
+            else:
+                # To achieve further parallelization, we "copy" the value of
+                # the control value.
+                # The permutation of the controls  that is necessary for
+                # actual parallelization will be done by the the compiler.
+                # parll_qbl = QuantumBool(name = "parll_qbl*", qs = b[0].qs())
+                parll_qbl = parallel_ancillae.pop(0)
+                cx(ctrl, parll_qbl)
+                mcx([parll_qbl, b[i]], g[i], method="gidney", ctrl_state="10")
                     # parll_qbl.uncompute(recompute = True)
 
     try:

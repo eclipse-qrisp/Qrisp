@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,13 +16,14 @@
 """
 
 # Created by ann81984 at 04.05.2022
-import time
 import random
-import numpy as np
+import time
 
-from qrisp.core import QuantumSession, QuantumVariable, xxyy
-from qrisp.circuit import RYGate, RXGate, transpile, HGate, ZGate, PGate, XGate, MCXGate
+import numpy as np
 from sympy import Symbol, simplify
+
+from qrisp.circuit import PGate
+from qrisp.core import QuantumVariable, xxyy
 
 
 def test_abstract_parameters():
@@ -66,8 +66,9 @@ def test_abstract_parameters():
     if use_qiskit:
         from qiskit.circuit import Parameter, QuantumCircuit
     else:
-        from qrisp.circuit import QuantumCircuit
         from sympy import Symbol as Parameter
+
+        from qrisp.circuit import QuantumCircuit
 
     n = 1000
     param_name_list = ["p_" + str(i) for i in range(n)]

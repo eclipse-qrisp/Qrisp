@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -23,8 +22,7 @@ def qrisp_to_stim(
     return_detector_map=False,
     return_observable_map=False,
 ):
-    """
-    Convert a Qrisp quantum circuit to a Stim circuit.
+    """Convert a Qrisp quantum circuit to a Stim circuit.
 
     Parameters
     ----------
@@ -101,11 +99,11 @@ def qrisp_to_stim(
     >>> clbit_indices = {clbit: qc.clbits.index(clbit) for clbit in measurement_map}
     >>> sorted_clbits = sorted(measurement_map.keys(), key=lambda cb: clbit_indices[cb])
     >>> reordered = samples[:, [measurement_map[cb] for cb in sorted_clbits]]
+
     """
     import stim
-    from qrisp import QuantumCircuit
+
     from qrisp.circuit.operation import ClControlledOperation
-    from qrisp.jasp.primitives.parity_primitive import ParityOperation
     from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
         ParityHandle,
     )

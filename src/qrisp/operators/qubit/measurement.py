@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -21,7 +20,7 @@ import math
 import numpy as np
 from numba import njit
 
-from qrisp.core import QuantumVariable, QuantumArray
+from qrisp.core import QuantumArray, QuantumVariable
 from qrisp.core.compilation import qompiler
 from qrisp.interface import BatchedBackend
 
@@ -38,8 +37,7 @@ def get_measurement(
     diagonalisation_method="commuting_qw",
     measurement_data=None,  # measurement settings
 ):
-    r"""
-    This method returns the expected value of a Hamiltonian for the state of a quantum argument.
+    r"""This method returns the expected value of a Hamiltonian for the state of a quantum argument.
 
     Parameters
     ----------
@@ -84,7 +82,6 @@ def get_measurement(
         The expected value of the Hamiltonian.
 
     """
-
     from qrisp import QuantumSession, merge
 
     if isinstance(qarg, QuantumVariable):
@@ -224,14 +221,16 @@ class QubitOperatorMeasurement:
 
 
 def create_padded_array(list_of_lists, use_tuples=False):
-    """
-    Create a padded numpy array from a list of lists with varying lengths.
+    """Create a padded numpy array from a list of lists with varying lengths.
 
-    Parameters:
+    Parameters
+    ----------
     list_of_lists (list): A list of lists with potentially different lengths.
 
-    Returns:
+    Returns
+    -------
     numpy.ndarray: A 2D numpy array with padded rows.
+
     """
     # Find the maximum length of any list in the input
     max_length = max(len(lst) for lst in list_of_lists)
@@ -252,8 +251,7 @@ def create_padded_array(list_of_lists, use_tuples=False):
 
 
 def evaluate_expectation(samples, probs, operators, coefficients):
-    """
-    Evaluate the expectation.
+    """Evaluate the expectation.
 
     """
     # print(results)
@@ -316,8 +314,7 @@ evaluate_observable_jitted = njit(cache=True)(evaluate_observable)
 
 @njit(cache=True)
 def evaluate_expectation_jitted(samples, probs, operators, coefficients):
-    """
-    Evaluate the expectation.
+    """Evaluate the expectation.
 
     """
     expectation = 0
@@ -334,8 +331,7 @@ def evaluate_expectation_jitted(samples, probs, operators, coefficients):
 
 
 def partition(values, num_qubits):
-    """
-    Partitions a list of integers into a list of lists of integers with size 64 bit.
+    """Partitions a list of integers into a list of lists of integers with size 64 bit.
 
     Parameters
     ----------
@@ -350,7 +346,6 @@ def partition(values, num_qubits):
         A list of NumPy numpy.uint64 arrays.
 
     """
-
     M = math.ceil(num_qubits / 64)
     N = len(values)
 

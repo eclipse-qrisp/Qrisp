@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,9 @@
 ********************************************************************************
 """
 
+
 from qrisp import *
 from qrisp.jasp import *
-import time
 
 
 def test_control_compilation():
@@ -99,11 +98,9 @@ def test_control_compilation():
 
 
 def test_control_qached_fun_closed_over_const():
-    """
-    Test that a qached function which closes over a constant JAX array can be
+    """Test that a qached function which closes over a constant JAX array can be
     called inside a control block. The closed-over array must become a JASPR constvar in the qached body.
     """
-
     # Closed-over array. This should become a JASPR constvar in the qached body.
     angles = jnp.array([jnp.pi], dtype=jnp.float64)
 

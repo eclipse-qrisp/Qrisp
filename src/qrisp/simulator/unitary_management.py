@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,12 +18,10 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import sympy as sp
 from numba import njit
 
-from qrisp import fast_append, ControlledOperation
+from qrisp import ControlledOperation, fast_append
 from qrisp.simulator.bi_arrays import BiArray, DenseBiArray, SparseBiArray, tensordot
-
 
 np_dtype = np.complex64
 
@@ -33,7 +30,6 @@ id_matrix = np.eye(2, dtype=np_dtype)
 pauli_x = np.asarray([[0, 1], [1, 0]], dtype=np_dtype)
 pauli_y = (np.asarray([[0, 0], [0, 0]], dtype=np_dtype) + 1j * np.asarray([[0, -1], [1, 0]])).astype(np_dtype)
 pauli_z = np.asarray([[1, 0], [0, -1]], dtype=np_dtype)
-from sympy.core.expr import Expr
 import numpy
 import sympy
 

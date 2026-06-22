@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,7 +18,7 @@
 import jax
 import jax.numpy as jnp
 
-from qrisp.jasp.tracing_logic import quantum_kernel, check_for_tracing_mode
+from qrisp.jasp.tracing_logic import check_for_tracing_mode, quantum_kernel
 
 # The following function implements the sample feature.
 
@@ -48,8 +47,7 @@ from qrisp.jasp.tracing_logic import quantum_kernel, check_for_tracing_mode
 
 
 def sample(state_prep=None, shots=0, post_processor=None):
-    r"""
-    The ``sample`` function allows to take samples from a state that is specified
+    r"""The ``sample`` function allows to take samples from a state that is specified
     by a preparation procedure. This preparation procedure can be supplied via
     a Python function that returns one or more :ref:`QuantumVariables <QuantumVariable>`.
 
@@ -88,7 +86,6 @@ def sample(state_prep=None, shots=0, post_processor=None):
 
     Examples
     --------
-
     We prepare the state
 
     .. math::
@@ -163,9 +160,8 @@ def sample(state_prep=None, shots=0, post_processor=None):
         # [10. 10.  0.  0.  0.  0.  0.  0. 10. 10.]
 
     """
-
-    from qrisp.jasp import qache
     from qrisp.core import QuantumVariable, measure
+    from qrisp.jasp import qache
 
     if isinstance(state_prep, int):
         shots = state_prep

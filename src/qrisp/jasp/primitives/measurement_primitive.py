@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,13 +16,13 @@
 """
 
 from jax.core import ShapedArray
-from qrisp.circuit import Reset, Qubit
 
+from qrisp.circuit import Qubit
 from qrisp.jasp.primitives import (
     AbstractQuantumState,
     AbstractQubit,
-    QuantumPrimitive,
     AbstractQubitArray,
+    QuantumPrimitive,
 )
 
 # Create the primitive
@@ -36,12 +35,13 @@ def measure_abstract_eval(meas_object, qc):
 
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
+
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
-    """
 
+    """
     if isinstance(meas_object, AbstractQubit):
         return ShapedArray((), bool), AbstractQuantumState()
     elif isinstance(meas_object, AbstractQubitArray):
@@ -55,7 +55,7 @@ Measurement_p.multiple_results = True
 
 @Measurement_p.def_impl
 def measure_implementation(meas_object, qc):
-    from qrisp import Qubit, QuantumCircuit, Clbit
+    from qrisp import Clbit, QuantumCircuit, Qubit
 
     return_bool = False
     if isinstance(meas_object, Qubit):
@@ -95,10 +95,12 @@ def reset_abstract_eval(reset_object, qc):
 
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments.
+
     Args:
       xs, ys, zs: abstractions of the arguments.
     Result:
       a ShapedArray for the result of the primitive.
+
     """
     return AbstractQuantumState()
 

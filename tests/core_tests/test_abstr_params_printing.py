@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,18 +17,16 @@
 
 # Created by nik40643 at 23.06.2023
 
-import time
-import random
-import numpy as np
 
-from qrisp.core import QuantumSession, QuantumVariable
-from qrisp import rz, rx, ry, p, cp
 import qiskit.circuit.library.standard_gates as qsk_gates
-from qiskit.circuit import Parameter, QuantumCircuit, ParameterExpression
+from qiskit.circuit import Parameter, QuantumCircuit
 
 # from qrisp.circuit.quantum_circuit import rxx, ryy, rzz
-from sympy import Symbol, simplify, symbols
-from qrisp.interface import convert_to_qiskit, convert_from_qiskit
+from sympy import Symbol, symbols
+
+from qrisp import p, rx, ry, rz
+from qrisp.core import QuantumVariable
+from qrisp.interface import convert_from_qiskit, convert_to_qiskit
 
 
 def test_abstract_params_printing():

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -67,8 +66,7 @@ def is_abstract(tensor: ArrayLike) -> bool:
 
 
 def get_quantum_operations(jaspr: Jaspr) -> List[str]:
-    """
-    Get the list of quantum operations used in a Jaspr expression.
+    """Get the list of quantum operations used in a Jaspr expression.
 
     Parameters
     ----------
@@ -81,7 +79,6 @@ def get_quantum_operations(jaspr: Jaspr) -> List[str]:
         A list of quantum operation names used in the Jaspr expression.
 
     """
-
     quantum_operations = set()
 
     for eqn in jaspr.eqns:

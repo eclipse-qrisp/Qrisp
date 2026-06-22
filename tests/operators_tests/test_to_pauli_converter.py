@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,9 +15,10 @@
 ********************************************************************************
 """
 
-from qrisp.operators import X, Y, Z, A, C, P0, P1
-from numpy.linalg import norm
 from numpy import isclose
+from numpy.linalg import norm
+
+from qrisp.operators import P0, P1, A, C, X, Y, Z
 
 
 def test_to_pauli_converter():

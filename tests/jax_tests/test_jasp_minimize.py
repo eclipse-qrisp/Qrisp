@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,10 +17,11 @@
 
 
 def test_jasp_minimize():
-    from qrisp import QuantumFloat, ry
-    from qrisp.jasp import expectation_value, minimize, jaspify
     import jax.numpy as jnp
     import numpy as np
+
+    from qrisp import QuantumFloat, ry
+    from qrisp.jasp import expectation_value, jaspify, minimize
 
     def state_prep(theta):
         qv = QuantumFloat(1)

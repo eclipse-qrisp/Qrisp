@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,11 @@
 ********************************************************************************
 """
 
-import numpy as np
-from qrisp import QuantumVariable, jaspify
-from qrisp.qaoa import QAOAProblem, RX_mixer, create_maxcut_cost_operator, create_maxcut_sample_array_post_processor
 import networkx as nx
+import numpy as np
+from qrisp.qaoa import QAOAProblem, RX_mixer, create_maxcut_cost_operator, create_maxcut_sample_array_post_processor
+
+from qrisp import QuantumVariable, jaspify
 
 
 def test_jasp_QAOAmaxCut():

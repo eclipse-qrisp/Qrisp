@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -17,14 +16,15 @@
 """
 
 import copy
-from jax import tree_util
+
 import jax.numpy as jnp
+from jax import tree_util
+
 from qrisp.jasp.tracing_logic import (
-    TracingQuantumSession,
     DynamicQubitArray,
+    TracingQuantumSession,
     check_for_tracing_mode,
 )
-
 
 # This class has two purposes
 

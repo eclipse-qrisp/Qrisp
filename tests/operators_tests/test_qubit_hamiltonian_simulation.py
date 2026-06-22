@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,8 +18,8 @@
 import numpy as np
 from scipy.linalg import expm, norm
 
-from qrisp import QuantumVariable, x, QPE
-from qrisp.operators import X, Y, Z, A, C, P0, P1, QubitOperator
+from qrisp import QPE, QuantumVariable, x
+from qrisp.operators import P0, P1, A, C, QubitOperator, X, Y, Z
 
 
 def test_qubit_hamiltonian_simulation():
@@ -98,7 +97,7 @@ def test_qubit_hamiltonian_simulation():
             for O2 in operator_list:
                 for O3 in operator_list:
                     H = O0(0) * O1(1) * O2(2) * O3(3)
-                    if H is 1:
+                    if H == 1:
                         H = QubitOperator() + 1
                     print(H)
                     verify_trotterization(H, "commuting_qw")

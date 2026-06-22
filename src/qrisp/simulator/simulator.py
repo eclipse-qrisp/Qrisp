@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -154,7 +153,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True) -> dict:
         for instr in mes_list:
             mes_qubit_indices.append(qc.qubits.index(instr.qubits[0]))
 
-        if len(mes_qubit_indices):
+        if mes_qubit_indices:
             outcome_list, cl_prob = iqs.multi_measure(mes_qubit_indices[::-1], return_res_states=False)
             mes_qubit_indices = []
 

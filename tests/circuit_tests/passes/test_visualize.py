@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,10 +15,8 @@
 ********************************************************************************
 """
 
-import sys
 
-import pytest
-from qrisp import QuantumCircuit, PassManager, visualize
+from qrisp import PassManager, QuantumCircuit, visualize
 
 
 class TestVisualizePass:

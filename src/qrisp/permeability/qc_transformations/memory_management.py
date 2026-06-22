@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,8 +17,8 @@
 
 import networkx as nx
 import numpy as np
-from numba import njit
 import psutil
+from numba import njit
 
 
 def optimize_allocations(qc):
@@ -101,8 +100,7 @@ def optimize_allocations(qc):
 # We can thus determine the amount of allocation nodes required for a deallocation node
 # n by counting, the amount of allocation nodes in the "ancestors" subgraph of n.
 def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
-    """
-    Function to perform a topological sort on an Unqomp DAG which allows preferring/
+    """Function to perform a topological sort on an Unqomp DAG which allows preferring/
     delaying specific types of nodes
 
     Parameters
@@ -125,7 +123,6 @@ def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
         The linearized list of UnqompNodes. The init nodes are not included.
 
     """
-
     if prefer is None:
         prefer = lambda x: False
 

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,10 +18,10 @@
 
 def qulacs_converter(qc):
 
-    from qrisp.simulator import extract_measurements
-
-    from qulacs import QuantumCircuit
     import qulacs.gate as gt
+    from qulacs import QuantumCircuit
+
+    from qrisp.simulator import extract_measurements
 
     temp_qc, measurements = extract_measurements(qc.copy())
 

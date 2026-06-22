@@ -81,8 +81,7 @@ class BackendLike(Protocol):
 
 
 class Backend(ABC):
-    """
-    Abstract base class for Qrisp-compatible backends.
+    """Abstract base class for Qrisp-compatible backends.
 
     This class provides a minimal, hardware-agnostic interface that all
     backends (simulators or quantum hardware clients) must follow.
@@ -188,6 +187,7 @@ class Backend(ABC):
         base-class level but may be accepted by concrete backend
         implementations (e.g. for authentication, provider selection, or
         other configuration).
+
     """
 
     def __init__(self, name: str | None = None, options: Mapping | None = None, **kwargs):
@@ -219,8 +219,7 @@ class Backend(ABC):
         circuits: QuantumCircuit | Sequence[QuantumCircuit],
         shots: int | list[int] | None = None,
     ) -> Job:
-        """
-        Submit one or more circuits for execution and return a :class:`Job`.
+        """Submit one or more circuits for execution and return a :class:`Job`.
 
         The returned job must not be in
         :attr:`~qrisp.interface.JobStatus.INITIALIZING` state: by the time
@@ -262,6 +261,7 @@ class Backend(ABC):
             :meth:`Job.result <qrisp.interface.Job.result>` to wait for
             completion and retrieve the
             :class:`~qrisp.interface.JobResult`.
+
         """
         raise NotImplementedError
 
@@ -280,8 +280,7 @@ class Backend(ABC):
         circuits: QuantumCircuit | Sequence[QuantumCircuit],
         shots: int | None = None,
     ) -> MeasurementResult | list[MeasurementResult]:
-        """
-        Submit one or more circuits, block until completion, and return results.
+        """Submit one or more circuits, block until completion, and return results.
 
         This is a synchronous convenience wrapper around :meth:`run_async`.
         It calls :meth:`run_async`, waits for the :class:`Job` to finish, and
@@ -312,6 +311,7 @@ class Backend(ABC):
 
         ValueError
             If *shots* is not a positive integer.
+
         """
         self._validate_shots(shots)
         self._check_circuit_limit(circuits)
@@ -341,14 +341,14 @@ class Backend(ABC):
         Returns
         -------
         BatchedBackend
+
         """
         from qrisp.interface.batched_backend import BatchedBackend
 
         return BatchedBackend(self)
 
     def retrieve_job(self, job_id: str) -> Job:
-        """
-        Reconnect to a previously submitted job by its identifier.
+        """Reconnect to a previously submitted job by its identifier.
 
         This method allows users to recover a :class:`Job` handle after a
         process restart or network interruption, provided the backend
@@ -378,6 +378,7 @@ class Backend(ABC):
 
         LookupError
             If no job with the given *job_id* can be found on the backend.
+
         """
         raise NotImplementedError(
             f"{self.__class__.__name__} does not support job recovery. Override retrieve_job() to enable this feature."
@@ -387,8 +388,7 @@ class Backend(ABC):
         self,
         circuits: QuantumCircuit | Sequence[QuantumCircuit],
     ) -> None:
-        """
-        Raise :exc:`ValueError` if the number of submitted circuits exceeds
+        """Raise :exc:`ValueError` if the number of submitted circuits exceeds
         :attr:`max_circuits`.
 
         This helper is called automatically by :meth:`run`. Implementations
@@ -406,6 +406,7 @@ class Backend(ABC):
         ValueError
             If *circuits* is a sequence whose length exceeds
             :attr:`max_circuits`.
+
         """
         limit = self.max_circuits
         if limit is None:
@@ -425,8 +426,7 @@ class Backend(ABC):
 
     @staticmethod
     def _validate_shots(shots: int | None) -> None:
-        """
-        Raise an informative error if *shots* is not a valid positive integer.
+        """Raise an informative error if *shots* is not a valid positive integer.
 
         Intended to be called at the top of :meth:`run` (and optionally
         inside :meth:`run_async` implementations) before submitting circuits
@@ -447,6 +447,7 @@ class Backend(ABC):
 
         ValueError
             If *shots* is zero or negative.
+
         """
         if shots is None:
             return
@@ -460,8 +461,7 @@ class Backend(ABC):
         shots: list[int],
         circuits: "QuantumCircuit | Sequence[QuantumCircuit]",
     ) -> None:
-        """
-        Raise :exc:`ValueError` if the length of a per-circuit *shots* list
+        """Raise :exc:`ValueError` if the length of a per-circuit *shots* list
         does not match the number of submitted circuits.
 
         This method can be called inside :meth:`run_async` implementations
@@ -481,6 +481,7 @@ class Backend(ABC):
         ------
         ValueError
             If ``len(shots)`` does not equal the number of circuits.
+
         """
         n = 1 if isinstance(circuits, QuantumCircuit) else len(circuits)
         if len(shots) != n:
@@ -496,8 +497,7 @@ class Backend(ABC):
 
     @classmethod
     def _default_options(cls) -> Mapping[str, Any]:
-        """
-        Default runtime options for the backend.
+        """Default runtime options for the backend.
 
         Child classes may override this method to provide custom default
         options, or the defaults may be overridden entirely by passing an
@@ -507,13 +507,13 @@ class Backend(ABC):
         -------
         Mapping[str, Any]
             A mapping of option names to their default values.
+
         """
         return {"shots": 1024}
 
     @property
     def options(self) -> Mapping[str, Any]:
-        """
-        Current runtime options for the backend.
+        """Current runtime options for the backend.
 
         These options may influence execution behaviour (e.g. the number of
         shots) and therefore may affect :meth:`run_async` and :meth:`run`.
@@ -525,8 +525,7 @@ class Backend(ABC):
         return MappingProxyType(self._options)
 
     def update_options(self, **kwargs) -> None:
-        """
-        Update existing runtime options for the backend.
+        """Update existing runtime options for the backend.
 
         Only keys that were present at initialisation (i.e. defined in
         :meth:`_default_options` or the ``options`` argument passed to the
@@ -540,8 +539,8 @@ class Backend(ABC):
         ----------
         **kwargs :
             Key-value pairs to update in the backend's runtime options.
-        """
 
+        """
         unknown = [k for k in kwargs if k not in self._options]
         if unknown:
             raise AttributeError(
@@ -559,8 +558,7 @@ class Backend(ABC):
 
     @property
     def health(self):
-        """
-        Current health status or diagnostics of the backend.
+        """Current health status or diagnostics of the backend.
 
         This may include uptime statistics or other backend-specific health
         indicators.
@@ -571,8 +569,7 @@ class Backend(ABC):
 
     @property
     def info(self):
-        """
-        General information about the backend.
+        """General information about the backend.
 
         This may include backend version, provider details, or other
         backend-specific information.
@@ -583,8 +580,7 @@ class Backend(ABC):
 
     @property
     def queue(self):
-        """
-        Current queue status or job backlog of the backend.
+        """Current queue status or job backlog of the backend.
 
         This may include estimated wait times, number of pending jobs, or
         other backend-specific queue indicators.
@@ -599,8 +595,7 @@ class Backend(ABC):
 
     @property
     def num_qubits(self):
-        """
-        Total number of physical qubits the backend exposes.
+        """Total number of physical qubits the backend exposes.
 
         This reflects the full physical qubit count of the device, not a
         snapshot of currently healthy or calibrated qubits. A qubit whose
@@ -615,8 +610,7 @@ class Backend(ABC):
 
     @property
     def max_circuits(self) -> int | None:
-        """
-        Maximum number of circuits this backend can execute in a single job.
+        """Maximum number of circuits this backend can execute in a single job.
 
         Many hardware backends impose a per-job circuit limit (e.g. a
         cloud provider may accept at most 300 circuits per submission).
@@ -638,8 +632,7 @@ class Backend(ABC):
 
     @property
     def connectivity(self):
-        """
-        Currently executable qubit connectivity for the backend.
+        """Currently executable qubit connectivity for the backend.
 
         This property describes which qubit pairs currently
         have at least one multi-qubit gate available for execution. It
@@ -668,8 +661,7 @@ class Backend(ABC):
 
     @property
     def gate_set(self):
-        """
-        Native gate set supported by the backend.
+        """Native gate set supported by the backend.
 
         This property describes which operations the backend can execute
         natively. The gate set is purely descriptive.
@@ -695,8 +687,7 @@ class Backend(ABC):
 
     @property
     def error_rates(self):
-        """
-        Error rates or calibration-related information for the backend.
+        """Error rates or calibration-related information for the backend.
 
         This property is calibration-dependent: the values it exposes are
         only meaningful relative to a specific calibration run. Concrete

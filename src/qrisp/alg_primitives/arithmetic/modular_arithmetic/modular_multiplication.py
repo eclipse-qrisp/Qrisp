@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,18 +17,16 @@
 
 import numpy as np
 
-from qrisp.qtypes import QuantumFloat, QuantumModulus
 from qrisp.alg_primitives.arithmetic.comparisons import less_than
 from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import (
     modinv,
     montgomery_encoder,
 )
-from qrisp.environments import custom_control
-from qrisp.core.gate_application_functions import cx, swap, mcx
-from qrisp.misc.utility import bin_rep, redirect_qfunction
-from qrisp.environments import control, invert
 from qrisp.circuit import fast_append
-from qrisp.permeability import auto_uncompute
+from qrisp.core.gate_application_functions import cx, mcx, swap
+from qrisp.environments import control, custom_control, invert
+from qrisp.misc.utility import bin_rep, redirect_qfunction
+from qrisp.qtypes import QuantumFloat, QuantumModulus
 
 # This file implements the techniques described in this paper: https://arxiv.org/abs/1801.01081
 # The goal is to have performant modular multiplication. To this end, instead of taking the
@@ -41,8 +38,7 @@ from qrisp.permeability import auto_uncompute
 
 
 def cl_montgomery_reduction(t, N, m):
-    """
-    This function serves as an example, how classical Montgomery reduction works.
+    """This function serves as an example, how classical Montgomery reduction works.
 
     Note, that the return value is not t%N but (t*2**-m)%N. This is called Montgomery
     form and doesn't really create in any problems because it is just a matter of
@@ -65,7 +61,6 @@ def cl_montgomery_reduction(t, N, m):
         A garbage variable with the value u = (-tN**-1)%(2**m)
 
     """
-
     S = t
     u = int(0)
     for k in range(m):
@@ -400,8 +395,7 @@ def montgomery_mod_mul(a, b, output_qg=None):
 
     m = int(np.ceil(np.log2((a.modulus - 1) ** 2) + 1)) - a.size
 
-    from qrisp import h, merge, QFT, q_int_mult
-
+    from qrisp import merge, q_int_mult
     from qrisp.qtypes.quantum_modulus import _moduli_neq
 
     if _moduli_neq(a.modulus, b.modulus):

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -18,20 +17,17 @@
 
 import networkx as nx
 
-from qrisp.circuit import fast_append, ControlledOperation, PTControlledOperation
-from qrisp.permeability.type_checker import is_qfree
-
+from qrisp.circuit import ControlledOperation, PTControlledOperation, fast_append
 from qrisp.permeability.permeability_dag import (
-    PermeabilityGraph,
     InstructionNode,
+    PermeabilityGraph,
     TerminatorNode,
-    AllocNode,
 )
+from qrisp.permeability.type_checker import is_qfree
 
 
 def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
-    """
-    This function applies the Unqomp algorithm to the QuantumCircuit qc, uncomputing
+    """This function applies the Unqomp algorithm to the QuantumCircuit qc, uncomputing
     the qubits uncomp_qbs. It is possible to specify a set of qubits that has been
     uncomputed earlier, which is allowed to be recomputed.
 
@@ -59,7 +55,6 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
         The result of the Unqomp algorithm.
 
     """
-
     with fast_append():
         # To speed up the uncomputation, the first step is to filter
         # out instruction that are guaranteed that they don't need to be uncomputed.
@@ -178,8 +173,7 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
 
 
 def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
-    """
-    Uncomputes a node in a given PermeabilityGraph (in-place) according to the
+    """Uncomputes a node in a given PermeabilityGraph (in-place) according to the
     Unqomp algorithm.
 
     Parameters
@@ -204,7 +198,6 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
         A bool indicating whether a recomputation is required.
 
     """
-
     # Get the target qubits
     target_qubits = pdag.get_target_qubits(node)
 

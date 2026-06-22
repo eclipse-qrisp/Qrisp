@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -24,8 +23,8 @@
 # no actual job submission takes place.
 
 import sys
-from unittest.mock import MagicMock
 from collections.abc import Mapping
+from unittest.mock import MagicMock
 
 import pytest
 from qiskit_aer import AerSimulator
@@ -41,6 +40,8 @@ _skip_if_no_runtime = pytest.mark.skipif(
     not _qiskit_ibm_runtime_available,
     reason="qiskit-ibm-runtime is not installed",
 )
+
+from conftest import CountingWrapper
 
 from qrisp import QuantumFloat
 from qrisp.circuit.quantum_circuit import QuantumCircuit as QrispQuantumCircuit
@@ -58,7 +59,6 @@ from qrisp.interface.provider_backends.qiskit_backend import (
     QiskitRuntimeBackend,
     _map_qiskit_status,
 )
-from conftest import CountingWrapper
 
 
 class _MockCircuitData:
@@ -113,6 +113,7 @@ def _make_qiskit_job(
         If provided, ``result()`` raises this exception instead.
     job_id
         The value returned by ``mock_job.job_id()``.
+
     """
     mock_job = MagicMock()
     mock_job.job_id.return_value = job_id
@@ -372,7 +373,6 @@ class TestMapQiskitStatus:
 
     def test_status_raises_falls_back_to_running(self):
         """If querying job status raises, _map_qiskit_status returns RUNNING."""
-
         mock_job = MagicMock()
         mock_job.status.side_effect = RuntimeError("connection error")
         assert _map_qiskit_status(mock_job) == JobStatus.RUNNING
@@ -526,7 +526,6 @@ class TestQiskitBackendIntegration:
     )
     def test_run_multiple_circuits_returns_list_of_counts_dicts(self, circuits, real_backend):
         """run() with a sequence of circuits returns a list of MeasurementResult objects."""
-
         results = real_backend.run(circuits, shots=20)
         assert isinstance(results, list)
         assert len(results) == len(circuits)
@@ -812,7 +811,6 @@ class TestQiskitRuntimeBackendIntegration:
     )
     def test_run_multiple_circuits_returns_list_of_counts_dicts(self, circuits, backend):
         """run() with a sequence of circuits returns a list of MeasurementResult objects."""
-
         results = backend.run(circuits, shots=20)
         assert isinstance(results, list)
         assert len(results) == len(circuits)

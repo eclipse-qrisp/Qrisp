@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,13 +15,12 @@
 ********************************************************************************
 """
 
-from qrisp.circuit import QuantumCircuit, QubitAlloc, QubitDealloc, XGate
+from qrisp.circuit import QuantumCircuit, QubitAlloc, QubitDealloc
 from qrisp.environments import QuantumEnvironment
 
 
 class GateWrapEnvironment(QuantumEnvironment):
-    """
-    This environment allows to hide complexity in the circuit visualisation.
+    """This environment allows to hide complexity in the circuit visualisation.
     Operations appended inside this environment are bundled into a single
     :ref:`Instruction` object.
 
@@ -39,7 +37,6 @@ class GateWrapEnvironment(QuantumEnvironment):
 
     Examples
     --------
-
     We create some :ref:`QuantumVariable` and execute some gates inside
     a GateWrapEnvironment: ::
 

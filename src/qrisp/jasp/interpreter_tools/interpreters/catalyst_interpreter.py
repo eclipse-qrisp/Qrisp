@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,41 +15,38 @@
 ********************************************************************************
 """
 
-from functools import lru_cache
 
-from qrisp._cache_config import qrisp_lru_compilation_cache
-from sympy import lambdify, symbols
-
-from jax import make_jaxpr, jit
-from jax.lax import fori_loop, cond, while_loop
-from jax._src.linear_util import wrap_init
 import jax.numpy as jnp
-
 from catalyst.jax_primitives import (
-    qinst_p,
-    measure_p,
-    qextract_p,
-    qinsert_p,
-    while_p,
     cond_p,
     func_p,
-    qdealloc_p,
+    measure_p,
     qalloc_p,
+    qdealloc_p,
+    qextract_p,
+    qinsert_p,
+    qinst_p,
+    while_p,
 )
+from jax import jit, make_jaxpr
+from jax._src.linear_util import wrap_init
+from jax.lax import cond, fori_loop, while_loop
+from sympy import lambdify, symbols
 
+from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp import (
-    QuantumPrimitive,
     AbstractQuantumState,
-    AbstractQubitArray,
     AbstractQubit,
+    AbstractQubitArray,
+    Jlist,
+    Measurement_p,
+    QuantumPrimitive,
     eval_jaxpr,
     extract_invalues,
-    insert_outvalues,
-    quantum_gate_p,
-    Measurement_p,
     get_qubit_p,
     get_size_p,
-    Jlist,
+    insert_outvalues,
+    quantum_gate_p,
 )
 
 greek_letters = symbols(
@@ -80,8 +76,7 @@ op_name_translation_dic = {
 
 
 def catalyst_eqn_evaluator(eqn, context_dic):
-    """
-    This function serves as the central interface to interpret jasp equations
+    """This function serves as the central interface to interpret jasp equations
     into Catalyst primitives.
 
     Parameters
@@ -105,7 +100,6 @@ def catalyst_eqn_evaluator(eqn, context_dic):
         primitive.
 
     """
-
     # If the equations primitive is a Qrisp primitive, we process it according
     # to one of the implementations below. Otherwise we return True to indicate
     # default interpretation.
@@ -142,17 +136,16 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             qdealloc_p.bind(invalues[0][0])
         else:
             raise Exception(f"Don't know how to process QuantumPrimitive {eqn.primitive}")
+    elif eqn.primitive.name == "while":
+        return process_while(eqn, context_dic)
+    elif eqn.primitive.name == "cond":
+        return process_cond(eqn, context_dic)
+    elif eqn.primitive.name == "scan":
+        return process_scan(eqn, context_dic)
+    elif eqn.primitive.name == "jit":
+        process_pjit(eqn, context_dic)
     else:
-        if eqn.primitive.name == "while":
-            return process_while(eqn, context_dic)
-        elif eqn.primitive.name == "cond":
-            return process_cond(eqn, context_dic)  #
-        elif eqn.primitive.name == "scan":
-            return process_scan(eqn, context_dic)
-        elif eqn.primitive.name == "jit":
-            process_pjit(eqn, context_dic)
-        else:
-            return True
+        return True
 
 
 def process_create_qubits(invars, outvars, context_dic):
@@ -396,8 +389,7 @@ def process_measurement(invars, outvars, context_dic):
 
 
 def process_parity(eqn, context_dic):
-    """
-    Process the parity primitive, computing XOR of measurement results.
+    """Process the parity primitive, computing XOR of measurement results.
 
     Parameters
     ----------
@@ -405,6 +397,7 @@ def process_parity(eqn, context_dic):
         The equation containing the parity primitive.
     context_dic : qrisp.jasp.interpreters.ContextDict
         The ContextDict representing the current state.
+
     """
     # Extract the measurement results
     invalues = extract_invalues(eqn, context_dic)
@@ -534,8 +527,7 @@ def process_cond(eqn, context_dic):
 
 
 def process_scan(eqn, context_dic):
-    """
-    Process scan primitive for catalyst_interpreter.
+    """Process scan primitive for catalyst_interpreter.
     Reinterprets the scan body and calls jax.lax.scan to preserve loop structure.
     """
     from jax.lax import scan as jax_scan

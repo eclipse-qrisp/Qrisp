@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,18 +15,19 @@
 ********************************************************************************
 """
 
-import numpy as np
-import jax.numpy as jnp
-from qrisp.core import QuantumVariable, x, xxyy, p
-from qrisp.circuit import Qubit
-from qrisp.typing import NDArrayLike
-from qrisp.jasp import jrange, check_for_tracing_mode
 from collections.abc import Sequence
+
+import jax.numpy as jnp
+import numpy as np
+
+from qrisp.circuit import Qubit
+from qrisp.core import QuantumVariable, p, x, xxyy
+from qrisp.jasp import check_for_tracing_mode, jrange
+from qrisp.typing import NDArrayLike
 
 
 def unbalanced_w_state(qv: QuantumVariable | Sequence[Qubit], amplitudes: NDArrayLike) -> None:
-    r"""
-    Prepare a generalized W state, i.e. an unbalanced Dicke state of Hamming
+    r"""Prepare a generalized W state, i.e. an unbalanced Dicke state of Hamming
     weight 1, on the given :ref:`QuantumVariable`.
 
     The resulting quantum state is
@@ -91,6 +91,7 @@ def unbalanced_w_state(qv: QuantumVariable | Sequence[Qubit], amplitudes: NDArra
     >>> qv = QuantumVariable(4)
     >>> unbalanced_w_state(qv, a)
     >>> print(qv.qs.statevector())
+
     """
     a = jnp.asarray(amplitudes, dtype=complex)
 

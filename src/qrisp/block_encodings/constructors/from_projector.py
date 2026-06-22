@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -31,8 +30,7 @@ def build_from_projector(
     kernel: bool = False,
     num_ops: int = 1,
 ) -> BlockEncoding:
-    r"""
-    Constructs a BlockEncoding of a projector.
+    r"""Constructs a BlockEncoding of a projector.
 
     Parameters
     ----------
@@ -59,7 +57,6 @@ def build_from_projector(
 
     Examples
     --------
-
     **Example 1: Computational basis states**
 
     Define a block-encoding for the projector $P=\ket{1}\bra{3}$.
@@ -115,7 +112,6 @@ def build_from_projector(
         # {0.0: 0.25, 1.0: 0.25, 2.0: 0.25, 3.0: 0.25}
 
     """
-
     if kernel or (right == None):
         right = left
 

@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -25,7 +24,7 @@ import numpy.typing as npt
 from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.environments import conjugate, invert
-from qrisp.jasp import qache, q_switch
+from qrisp.jasp import q_switch, qache
 from qrisp.qtypes import QuantumFloat
 
 _TOLERANCE = 1e-12
@@ -38,8 +37,7 @@ def build_from_lcu(
     num_ops: int = 1,
     is_hermitian: bool = False,
 ) -> BlockEncoding:
-    r"""
-    Constructs a BlockEncoding using the Linear Combination of Unitaries (LCU) protocol.
+    r"""Constructs a BlockEncoding using the Linear Combination of Unitaries (LCU) protocol.
 
     For an LCU block encoding, consider a linear combination of unitaries:
 
@@ -122,7 +120,6 @@ def build_from_lcu(
 
     Examples
     --------
-
     ::
 
         from qrisp import *
@@ -139,7 +136,6 @@ def build_from_lcu(
         # {1.0: 0.5, 3.0: 0.5}
 
     """
-
     complex_coeffs = np.array(coeffs, dtype=complex)
     m = len(complex_coeffs)
     n = (m - 1).bit_length()  # Number of qubits for index variable

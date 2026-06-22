@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,8 +15,8 @@
 ********************************************************************************
 """
 
+
 from qrisp import *
-from jax import make_jaxpr
 
 
 def test_basic_primitives():
@@ -346,9 +345,9 @@ def test_redundant_allocation_removal():
 
 def test_make_jaxpr_mod():
     """Test the make_jaxpr_mod function with return_shape parameter."""
-    from qrisp.jasp import make_jaxpr_mod
     from jax.tree_util import tree_unflatten
-    import jax.numpy as jnp
+
+    from qrisp.jasp import make_jaxpr_mod
 
     # Test 1: Basic function without return_shape (should behave like make_jaxpr)
     def simple_func(x):

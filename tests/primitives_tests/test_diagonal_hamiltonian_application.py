@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -19,7 +18,7 @@
 # Created by ann81984 at 05.05.2022
 import numpy as np
 
-from qrisp import QuantumFloat, QuantumChar, QFT, multi_measurement, as_hamiltonian, h
+from qrisp import QFT, QuantumChar, QuantumFloat, as_hamiltonian, h, multi_measurement
 
 
 def test_diagonal_hamiltonian_application():
@@ -136,7 +135,8 @@ def test_diagonal_hamiltonian_application():
 def test_phase_polynomial_application():
     import numpy as np
     import sympy as sp
-    from qrisp import QuantumFloat, h, app_phase_polynomial
+
+    from qrisp import QuantumFloat, app_phase_polynomial, h
 
     # We apply the phase function specified by the polynomial P(x) = 1 - 0.9x^2 + x^3 on a QuantumFloat (unsigned)
     x = sp.symbols("x")

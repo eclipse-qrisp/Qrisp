@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -224,8 +223,7 @@ def depth_sensitive_topological_sort(indices, indptr, int_qc, num_qubits, depth_
 
         for i in range(num_qubits):
             if int_qc[u, i // 64] & 1 << (i % 64):
-                if depths[i] > max_depth:
-                    max_depth = depths[i]
+                max_depth = max(max_depth, depths[i])
 
         for i in range(num_qubits):
             if int_qc[u, i // 64] & 1 << (i % 64):

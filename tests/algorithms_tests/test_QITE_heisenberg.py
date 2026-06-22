@@ -1,5 +1,4 @@
-"""
-********************************************************************************
+"""********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -16,13 +15,14 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable
-from qrisp.operators import X, Y, Z
-from qrisp.vqe.problems.heisenberg import create_heisenberg_init_function
-from qrisp.qite import QITE
 import networkx as nx
 import numpy as np
 import sympy as sp
+from qrisp.qite import QITE
+from qrisp.vqe.problems.heisenberg import create_heisenberg_init_function
+
+from qrisp import QuantumVariable
+from qrisp.operators import X, Y, Z
 
 
 def test_qite_heisenberg():
