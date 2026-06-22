@@ -6,8 +6,10 @@ Qrisp 0.9
 A redesigned **backend interface** anchors Qrisp 0.9, alongside the **Quantum
 Singular Value Transform (QSVT)** at the heart of a new suite of
 `BlockEncoding` transformations, including the new **FOQCS-LCU (Fast
-One-Qubit-Controlled Select Linear Combination of Unitaries)** block encoding method,
-a full **circuit optimization pass manager**, and new state preparation primitives.
+One-Qubit-Controlled Select Linear Combination of Unitaries)** block encoding method
+and **Dalzell's optimal Quantum Linear System Solver**. 
+Complementing these core advancements are a full **circuit optimization pass manager**, 
+and new state preparation primitives.
 Richer **QuantumArray** arithmetic and meaningful upgrades to arithmetic subroutines,
 including a new **Gidney adder** based on venting carries via mid-circuit measurements,
 round things out.
@@ -21,32 +23,39 @@ as the primary tool for matrix inversion and singular value processing to operat
 aren't necessarily Hermitian. The :ref:`BlockEncoding <BlockEncoding>` class gains the
 following new methods:
  
-* :func:`svt <qrisp.block_encodings.BlockEncoding.svt>`: Applies a polynomial to the
+* :func:`svt <qrisp.block_encodings.BlockEncoding.svt>`
+  (`PR #607 <https://github.com/eclipse-qrisp/Qrisp/pull/607>`_): Applies a polynomial to the
   singular values of a block-encoded operator, supporting both even and odd parity
   polynomials in either the Chebyshev or Polynomial basis.
-* :func:`pseudo_inv <qrisp.block_encodings.BlockEncoding.pseudo_inv>`: Using Quantum
+* :func:`pseudo_inv <qrisp.block_encodings.BlockEncoding.pseudo_inv>`
+  (`PR #607 <https://github.com/eclipse-qrisp/Qrisp/pull/607>`_): Using Quantum
   Singular Value Transform, this function returns a block encoding that approximates
   the threshold pseudoinverse by ignoring singular values below a specific limit to
   regularize ill-conditioned linear systems. 
-* :func:`inv <qrisp.block_encodings.BlockEncoding.inv>` now uses QSVT by default,
-  succeeding the previous Hermitianization-based GQSVT (Generalized QSVT) approach. 
+* :func:`inv <qrisp.block_encodings.BlockEncoding.inv>` now uses QSVT by default
+  (`PR #607 <https://github.com/eclipse-qrisp/Qrisp/pull/607>`_),
+  succeeding the previous QET approach which was limited to Hermitian operators.
   A ``method`` keyword lets you switch between QSVT, GQSVT, or
   QET (Quantum Eigenvalue Transform) as needed.
-* :func:`dagger <qrisp.block_encodings.BlockEncoding.dagger>`: Returns the adjoint of a
+* :func:`dagger <qrisp.block_encodings.BlockEncoding.dagger>`
+  (`PR #607 <https://github.com/eclipse-qrisp/Qrisp/pull/607>`_): Returns the adjoint of a
   block-encoded operator.
 
 The :ref:`BlockEncoding <BlockEncoding>` class gains the following new constructors:
 
-* :func:`from_eye <qrisp.block_encodings.BlockEncoding.from_eye>`: Constructs a
+* :func:`from_eye <qrisp.block_encodings.BlockEncoding.from_eye>`
+  (`PR #479 <https://github.com/eclipse-qrisp/Qrisp/pull/479>`_): Constructs a
   BlockEncoding of a 2-D array with ones on a specified diagonal and zeros elsewhere.
   A positive ``diagonal_index`` selects an upper subdiagonal, a negative value a lower
   subdiagonal, and 0 (the default) the main diagonal.
-* :func:`from_projector <qrisp.block_encodings.BlockEncoding.from_projector>`:
+* :func:`from_projector <qrisp.block_encodings.BlockEncoding.from_projector>`
+  (`PR #479 <https://github.com/eclipse-qrisp/Qrisp/pull/479>`_):
   Constructs a BlockEncoding of the projector :math:`|\phi\rangle\langle\psi|`, or,
   when ``kernel=True``, of the kernel projector :math:`\mathbb{I} - |\phi\rangle\langle\phi|`.
   Both left and right states may be specified as integers (computational basis states)
   or as arbitrary state-preparation callables.
-* :func:`from_foqcs_lcu_operator <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_operator>`:
+* :func:`from_foqcs_lcu_operator <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_operator>` 
+  (`PR #597 <https://github.com/eclipse-qrisp/Qrisp/pull/597>`_):
   Constructs a BlockEncoding from a :class:`QubitOperator` using the
   Fast One-Qubit-Controlled Select LCU (FOQCS-LCU) algorithm. The operator is
   analyzed automatically and the appropriate PREP subroutine — Heisenberg or
@@ -54,23 +63,27 @@ The :ref:`BlockEncoding <BlockEncoding>` class gains the following new construct
   and same-axis two-body couplings of the form :math:`P_i P_j` with
   :math:`P \in \{X, Y, Z\}`.
 * :func:`from_foqcs_lcu_prep <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep>`:
+  (`PR #597 <https://github.com/eclipse-qrisp/Qrisp/pull/597>`_):
   Low-level FOQCS-LCU constructor for users who supply their own right and left
   PREP subroutines (:math:`P_R` and :math:`P_L`), enabling custom FOQCS-LCU
   block encodings beyond the built-in Heisenberg and spin-glass models.
 
-* :func:`from_lcu <qrisp.block_encodings.BlockEncoding.from_lcu>` now supports general
+* :func:`from_lcu <qrisp.block_encodings.BlockEncoding.from_lcu>`
+  (`PR #647 <https://github.com/eclipse-qrisp/Qrisp/pull/647>`_): now supports general
   complex coefficients (previously, only real non-negative coefficients were supported).
 
-* :func:`QSVT <qrisp.algorithms.gqsp.qsvt.QSVT>` and :func:`GQSVT <qrisp.algorithms.gqsp.gqsvt.GQSVT>`
-  (introduced in `PR #479 <https://github.com/eclipse-qrisp/Qrisp/pull/479>`_)
-  perform (Gerneralized) Quantum Singular Value Transform for fixed parity real or complex polynomials, respectively.
+* :func:`QSVT <qrisp.gqsp.QSVT>` and :func:`GQSVT <qrisp.gqsp.GQSVT>`
+  (introduced in `PR #607 <https://github.com/eclipse-qrisp/Qrisp/pull/607>`_ and `PR #479 <https://github.com/eclipse-qrisp/Qrisp/pull/479>`_)
+  perform (Generalized) Quantum Singular Value Transform for fixed parity real or complex polynomials, respectively.
 
 Two further standalone functions round out the ``qrisp.gqsp`` module
-(`PR #607 <https://github.com/eclipse-qrisp/Qrisp/pull/607>`_):
+(`PR #479 <https://github.com/eclipse-qrisp/Qrisp/pull/479>`_):
 :func:`dalzell_inversion <qrisp.gqsp.dalzell_inversion>`, Qrisp's implementation of
 the Dalzell Quantum Linear System Solver via QSVT-based kernel reflection, and
-:func:`pseudo_inversion <qrisp.gqsp.pseudo_inversion>` for QSVT-based threshold
-pseudoinversion (also reachable as :func:`BlockEncoding.pseudo_inv <qrisp.block_encodings.BlockEncoding.pseudo_inv>`).
+:func:`pseudo_inversion <qrisp.gqsp.pseudo_inversion>` 
+(`PR #479 <https://github.com/eclipse-qrisp/Qrisp/pull/479>`_):
+for QSVT-based threshold pseudoinversion 
+(also reachable as :func:`BlockEncoding.pseudo_inv <qrisp.block_encodings.BlockEncoding.pseudo_inv>`).
 
 Backend Interface Redesign
 --------------------------
@@ -82,17 +95,17 @@ differences and allowing users to switch between them seamlessly.
 
 * **Improved error handling**: The backend interface now includes more robust error handling and
   clearer error messages, making it easier to diagnose and fix issues when running circuits.
-* **New abstract :class:`Backend <qrisp.interface.Backend>` class**: The new base
+* **New abstract** :class:`Backend <qrisp.interface.Backend>` **class**: The new base
   abstraction for all backends, offering ``run_async(circuits, shots)`` for an
   immediate ``Job`` (Future-style) alongside a synchronous ``run(circuits, shots)``
   wrapper for convenience, plus ``batched()`` to obtain a ``BatchedBackend`` and
   ``retrieve_job(job_id)`` to look up a previously submitted job.
-* **:class:`BackendLike <qrisp.interface.BackendLike>` protocol**: A structural typing
+* :class:`BackendLike <qrisp.interface.BackendLike>` **protocol**: A structural typing
   protocol that both ``Backend`` and ``BatchedBackend`` satisfy, so type hints stay
   flexible.
-* **:class:`Job <qrisp.interface.Job>` class**: Tracks the lifecycle of a single
+* :class:`Job <qrisp.interface.Job>` **class**: Tracks the lifecycle of a single
   execution with ``submit()``, ``result()``, ``cancel()``, and ``status()``.
-* **:class:`BatchedBackend <qrisp.interface.BatchedBackend>` reworked**: Does not inherit
+* :class:`BatchedBackend <qrisp.interface.BatchedBackend>` **reworked**: Does not inherit
   from ``Backend``. Circuits queued via ``run()`` are executed once ``dispatch()`` is called.
   ``batched_measurement`` is deprecated in favor of ``get_measurement()`` with a
   ``BatchedBackend`` directly.
@@ -126,12 +139,6 @@ The old monolith is now split across ``block_encoding_base.py`` (abstract base),
 ``block_encoding.py`` (facade), ``constructors/``, and ``transformations/``, making
 extensions easier.
 
-**FOQCS-LCU block encoding** (`PR #597 <https://github.com/eclipse-qrisp/Qrisp/pull/597>`_):
-New :func:`from_foqcs_lcu_prep <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_prep>` and
-:func:`from_foqcs_lcu_operator <qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_operator>` methods enable block
-encoding Heisenberg and spin-glass type operators directly from a
-:class:`QubitOperator <qrisp.operators.QubitOperator>`.
-
 **COLD improvements** (`PR #614 <https://github.com/eclipse-qrisp/Qrisp/pull/614>`_):
 The :ref:`DCQOProblem <DCQO>` class gets a smoother
 scheduling function, automatic ``g``/``g_deriv`` computation, a ``precision`` parameter
@@ -159,15 +166,19 @@ BigInteger Montgomery arithmetic fixes and rebuilt QuantumModulus constructor
 **Typing module** (`PR #543 <https://github.com/eclipse-qrisp/Qrisp/pull/543>`_):
 New :mod:`qrisp.typing <qrisp.typing>` module with
 :class:`QubitLike <qrisp.typing.QubitLike>`, :class:`ClbitLike
-<qrisp.typing.ClbitLike>`, :class:`FloatLike <qrisp.typing.FloatLike>` (replacing
-``Param``), :class:`ScalarLike <qrisp.typing.ScalarLike>`, :class:`NDArrayLike
+<qrisp.typing.ClbitLike>`, :class:`FloatLike <qrisp.typing.FloatLike>`,
+:class:`ScalarLike <qrisp.typing.ScalarLike>`, :class:`NDArrayLike
 <qrisp.typing.NDArrayLike>`, and :class:`ArrayLike <qrisp.typing.ArrayLike>`.
 
-**Other improvements**: `QuantumCircuit`` class refactored
+**Other improvements**: :class:`QuantumCircuit <qrisp.circuit.QuantumCircuit>` class refactored
 (`PR #461 <https://github.com/eclipse-qrisp/Qrisp/pull/461>`_,
 `#486 <https://github.com/eclipse-qrisp/Qrisp/pull/486>`_,
 `#489 <https://github.com/eclipse-qrisp/Qrisp/pull/489>`_,
 `#526 <https://github.com/eclipse-qrisp/Qrisp/pull/526>`_);
+Polished :func:`reflection <qrisp.reflection>` (`PR #627 <https://github.com/eclipse-qrisp/Qrisp/pull/627>`_), 
+:func:`amplitude_amplification <qrisp.amplitude_amplification>` (`PR #588 <https://github.com/eclipse-qrisp/Qrisp/pull/588>`_), 
+:func:`QAE <qrisp.QAE>` (`PR #589 <https://github.com/eclipse-qrisp/Qrisp/pull/589>`_), 
+and :func:`grovers_alg <qrisp.grover.grovers_alg>` (`PR #587 <https://github.com/eclipse-qrisp/Qrisp/pull/587>`_) functions;
 MLIR / xDSL dialect
 (`PR #465 <https://github.com/eclipse-qrisp/Qrisp/pull/465>`_);
 StableHLO lowering (`PR #577 <https://github.com/eclipse-qrisp/Qrisp/pull/577>`_);
@@ -179,7 +190,6 @@ composite gate interpreter (`PR #593 <https://github.com/eclipse-qrisp/Qrisp/pul
 MaxCut module refactored (`PR #542 <https://github.com/eclipse-qrisp/Qrisp/pull/542>`_);
 benchmarking callback threshold (`PR #505 <https://github.com/eclipse-qrisp/Qrisp/pull/505>`_);
 depth metric negative slicing (`PR #451 <https://github.com/eclipse-qrisp/Qrisp/pull/451>`_);
-IQM backend domain update (`PR #561 <https://github.com/eclipse-qrisp/Qrisp/pull/561>`_);
 controlled-U3 compilation fixes (`PR #551 <https://github.com/eclipse-qrisp/Qrisp/pull/551>`_);
 Catalyst 0.15 compatibility (`PR #568 <https://github.com/eclipse-qrisp/Qrisp/pull/568>`_).
 
@@ -190,25 +200,22 @@ Compatibility
   backends. ``VirtualBackend`` still works, but only as a deprecated drop-in
   subclass. ``DefaultBackend`` is now ``QrispSimulatorBackend``. ``batched_measurement``
   is deprecated in favor of ``BatchedBackend.dispatch()``.
-* **``fuse_adjacents`` now runs as part of the PassManager chain** alongside the
+* ``fuse_adjacents`` now runs as part of the PassManager chain alongside the
   other built-in passes; the standalone function still works as before.
-* **``Param`` type alias renamed to ``FloatLike``** and moved into ``qrisp.typing``.
-* **``BoundQubitTerm`` and ``BoundQubitOperator`` removed**; use ``QubitTerm`` /
+* ``BoundQubitTerm`` and ``BoundQubitOperator`` removed; use ``QubitTerm`` /
   ``QubitOperator`` instead.
-* **``unbalanced_W_state`` renamed to ``unbalanced_w_state``** (lowercase ``w``).
-* **``quake_lowering`` directory removed**.
 * The old ``qunicorn``-based ``BackendClient``/``BackendServer`` network
   infrastructure and the Docker-based backends have been removed.
 * New :func:`convert_to_cirq <qrisp.interface.convert_to_cirq>` and
   :func:`convert_from_cirq <qrisp.interface.convert_from_cirq>` functions for
   bidirectional Qrisp-Cirq conversion (`PR #610 <https://github.com/eclipse-qrisp/Qrisp/pull/610>`_).
-* **``jrange`` ``step`` argument removed**
+* ``jrange`` ``step`` argument removed
   (`PR #652 <https://github.com/eclipse-qrisp/Qrisp/pull/652>`_): Passing three arguments to
   :func:`jrange <qrisp.jasp.jrange>` now emits a ``QrispDeprecationWarning`` and raises
   a ``TypeError``. Use a step-1 loop and multiply the loop variable by the desired step.
 
 First Time Contributors 🎉
--------------------------
+--------------------------
 
 * `Redperij <https://github.com/Redperij>`_ 
 * `MSY2K <https://github.com/MSY2K>`_
