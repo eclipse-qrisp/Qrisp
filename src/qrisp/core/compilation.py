@@ -229,7 +229,6 @@ def qompiler(
                 required_qubits -= 1
             if max_required_qubits < required_qubits:
                 max_required_qubits += 1
-
         # Create a QuantumCircuit. Note that we make sure that the Qubit naming is
         # consistent, since we don't want any non-deterministic elements in the
         # function, as this can hinder bugfixing

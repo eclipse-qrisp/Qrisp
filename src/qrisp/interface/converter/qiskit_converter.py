@@ -95,8 +95,10 @@ def convert_to_qiskit(qc, transpile=False):
             qiskit_ins.name = op.name
 
         elif op.name == "gphase":
-            qiskit_qc.global_phase += float(params[0])
-            continue
+            temp_qc = QuantumCircuit(1)
+            temp_qc.global_phase += float(params[0])
+            qiskit_ins = temp_qc.to_gate()
+            qiskit_ins.name = "gphase"
 
         elif isinstance(op, ClControlledOperation):
             q_reg = QuantumRegister(op.num_qubits)
