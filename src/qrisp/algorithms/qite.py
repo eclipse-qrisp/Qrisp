@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2024 the Qrisp authors
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,20 +16,20 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumArray, mcp, conjugate, invert
-from qrisp.jasp import q_fori_loop, q_cond, check_for_tracing_mode
-from jax import lax
-import sympy as sp
-import numpy as np
 import jax.numpy as jnp
+import sympy as sp
+from jax import lax
+
+from qrisp import QuantumArray, conjugate, invert, mcp
+from qrisp.jasp import check_for_tracing_mode, q_cond, q_fori_loop
 
 
 def QITE(qarg, U_0, exp_H, s, k, method="GC"):
     r"""
-    Performs `Double-Braket Quantum Imaginary-Time Evolution (DB-QITE) <https://arxiv.org/abs/2412.04554>`_.
+    Performs `Double-Bracket Quantum Imaginary-Time Evolution (DB-QITE) <https://arxiv.org/abs/2412.04554>`_.
     Given a Hamiltonian :ref:`Operator <Operators>` $H$, this method implements the unitary $U_k$ that is recursively defined by either of
 
-    * Group commutator (GQ) approximation:
+    * Group commutator (GC) approximation:
 
     .. math::
 
@@ -41,7 +41,7 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
 
         U_{k+1} = e^{i\phi\sqrt{s_k}H}e^{i\phi\sqrt{s_k}\omega_k}e^{-i\sqrt{s_k}H}e^{-i(1+\phi)\sqrt{s_k}\omega_k}e^{i(1-\phi)\sqrt{s_k}H}U_k
 
-    where $e^{it\omega_k}=U_ke^{it\ket{0}\bra{0}}U_k^{\dagger}$ is the refection around the state $\ket{\omega_k}=U_k\ket{0}$.
+    where $e^{it\omega_k}=U_ke^{it\ket{0}\bra{0}}U_k^{\dagger}$ is the reflection around the state $\ket{\omega_k}=U_k\ket{0}$.
 
 
 
@@ -218,14 +218,13 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
 
     else:
 
-        """
-        To create a jasp-compatible implementation of QITE, we need to remove the recursive structure.
-        We achieve this by fully expanding the recursive formula for $U_k$ down to the $k=0$ level.
-        From there, we find a tree structure with branching factor 3 (GC) or 5 (HOPF) where
-        some branches are inverted due to the presence of conjugate operators $U_i^\dagger$.
-        We traverse the tree depth-first using up-, down-, bounce-, and leaf-operations that we obtain from
-        inspecting the formula for $U_k$.
-        """
+        # To create a jasp-compatible implementation of QITE, we need to remove the
+        # recursive structure. We achieve this by fully expanding the recursive formula
+        # for U_k down to the k=0 level. From there, we find a tree structure with
+        # branching factor 3 (GC) or 5 (HOPF) where some branches are inverted due to
+        # the presence of conjugate operators U_i†. We traverse the tree depth-first
+        # using up-, down-, bounce-, and leaf-operations that we obtain from inspecting
+        # the formula for U_k.
 
         def int_to_base(n, base=3, max_digits=10):
             """
@@ -234,7 +233,7 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
             """
 
             def cond_fun(state):
-                n, digits, i = state
+                n, _, i = state
                 return jnp.logical_and(n > 0, i < max_digits)
 
             def body_fun(state):
@@ -257,7 +256,7 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
 
         if method == "GC":
 
-            def body_fun(i, val):
+            def body_fun_gc(i, val):
                 qarg = val
 
                 # Obtain old and new position
@@ -323,7 +322,7 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
                 return qarg
 
             # Iterate all leafs except last
-            q_fori_loop(0, 3**k - 1, body_fun, qarg)
+            q_fori_loop(0, 3**k - 1, body_fun_gc, qarg)
 
             # Do last leaf
             U_0(qarg)
@@ -334,7 +333,7 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
 
             phi = (jnp.sqrt(5) - 1) / 2
 
-            def body_fun(i, val):
+            def body_fun_hopf(i, val):
                 qarg = val
 
                 # Obtain old and new position
@@ -443,7 +442,7 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
                 return qarg
 
             # Iterate all leafs except last
-            q_fori_loop(0, 5**k - 1, body_fun, qarg)
+            q_fori_loop(0, 5**k - 1, body_fun_hopf, qarg)
 
             # Do last leaf
             U_0(qarg)
