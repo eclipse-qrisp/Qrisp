@@ -17,10 +17,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Check if changelog-dev.rst was modified
+      - name: Check if changelog-dev.rst has actual entries
         id: check
         run: |
-          if git diff --name-only origin/main...HEAD | grep -q "documentation/source/general/changelog/changelog-dev.rst"; then
+          if grep -q "PR #" documentation/source/general/changelog/changelog-dev.rst 2>/dev/null; then
             echo "modified=true" >> "$GITHUB_OUTPUT"
           else
             echo "modified=false" >> "$GITHUB_OUTPUT"
@@ -35,7 +35,7 @@ jobs:
           comment-author: github-actions[bot]
           body-includes: Please update the developer changelog
 
-      - name: Add or update reminder comment
+      - name: Post reminder comment
         if: steps.check.outputs.modified == 'false'
         uses: peter-evans/create-or-update-comment@v4
         with:
@@ -46,25 +46,19 @@ jobs:
 
             It looks like this PR doesn't include an entry in `documentation/source/general/changelog/changelog-dev.rst`.
 
-            Every contributor is responsible for adding a changelog entry describing their changes. Add your entry under the appropriate section in `changelog-dev.rst`:
+            Make sure your entry covers all of the following:
 
-            | Section | When to use |
-            |---------|-------------|
-            | Named feature section | Major new feature (e.g. *QSVT and Singular Value Transformations*) |
-            | `Additional Updates` | Smaller changes — new methods, refactors, improvements |
-            | `Compatibility` | Breaking changes, deprecations, renamed/removed APIs |
-            | `First Time Contributors` | (auto-added, leave this to the maintainers) |
-
-            Each entry should include:
-
-            - **What** changed and **why** — a concise description of the feature, fix, or improvement
-            - **PR reference** — link the PR: ``(`PR #NNN <URL>`_)``
-            - **Component** — which class/module was affected (reference it via ``:class:`` / ``:func:`` where appropriate)
-            - **For deprecations** — what replaces the old API
-
-            Example from a past changelog:
-
-            > :func:`QSVT <qrisp.algorithms.gqsp.qsvt.QSVT>` and :func:`GQSVT <qrisp.algorithms.gqsp.gqsvt.GQSVT>` perform (Generalized) Quantum Singular Value Transform for fixed parity real or complex polynomials, respectively. (\`PR #479 <https://github.com/eclipse-qrisp/Qrisp/pull/479>\`_)
+            - [ ] **Section** — placed under the right heading (feature section, `Additional Updates`, or `Compatibility`)
+            - [ ] **Description** — a concise explanation of what changed and why
+            - [ ] **PR link** — reference the PR using `` `PR #NNN <URL>`_ ``
+            - [ ] **Component** — which class/module/function was affected (use ``:class:`` / ``:func:`` roles)
+            - [ ] **Deprecations** — if applicable, what replaces the old API
 
             See `changelog-template.rst` for the full section layout.
           edit-mode: replace
+
+      - name: Fail if changelog-dev.rst has no entries
+        if: steps.check.outputs.modified == 'false'
+        run: |
+          echo "::error::changelog-dev.rst was not updated with entries for this PR."
+          exit 1
