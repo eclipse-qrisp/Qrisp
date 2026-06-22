@@ -23,7 +23,7 @@ concurrency:
 jobs:
   remind:
     runs-on: ubuntu-latest
-    if: github.event.pull_request
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
 
@@ -51,7 +51,7 @@ jobs:
           comment-id: ${{ steps.find.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            CHANGELOG_CHECK_MARKER
+            <!-- CHANGELOG_CHECK_MARKER -->
 
             :memo: **Please update the developer changelog**
 
@@ -76,7 +76,7 @@ jobs:
           comment-id: ${{ steps.find.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            CHANGELOG_CHECK_MARKER
+            <!-- CHANGELOG_CHECK_MARKER -->
 
             :white_check_mark: **Changelog entry confirmed**
 
