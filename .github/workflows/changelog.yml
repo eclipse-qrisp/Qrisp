@@ -35,7 +35,7 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: github-actions[bot]
-          body-includes: CHANGELOG_CHECK_MARKER
+          body-includes: "<!-- CHANGELOG_CHECK_MARKER -->"
 
       - name: Post reminder comment
         if: steps.check.outputs.modified == 'false'
@@ -44,7 +44,7 @@ jobs:
           comment-id: ${{ steps.find.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            CHANGELOG_CHECK_MARKER
+            <!-- CHANGELOG_CHECK_MARKER -->
 
             :memo: **Please update the developer changelog**
 
@@ -69,7 +69,7 @@ jobs:
           comment-id: ${{ steps.find.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            CHANGELOG_CHECK_MARKER
+            <!-- CHANGELOG_CHECK_MARKER -->
 
             :white_check_mark: **Changelog entry confirmed**
 

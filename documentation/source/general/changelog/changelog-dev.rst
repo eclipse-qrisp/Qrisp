@@ -3,24 +3,17 @@
 Qrisp 0.10
 ==========
 
-Qrisp 0.10 continues to push the boundaries of high-level quantum programming. This release brings....
-
-.. Add introductory paragraph above this line
-
-Feature Section One
--------------------
-
-.. Add feature description above this line
-
-Feature Section Two
--------------------
-
-.. Add feature description above this line
+Qrisp 0.10 continues to push the boundaries of high-level quantum programming.
+This release brings a streamlined contribution experience with automated
+changelog enforcement.
 
 Other New Features
 ------------------
 
-.. Add other new features above this line
+* Added a changelog reminder workflow that enforces changelog entries on PRs,
+  along with a developer changelog (``changelog-dev.rst``) for the v0.10
+  release and a generic template (``changelog-template.rst``) for future releases.
+  (`PR #658 <https://github.com/eclipse-qrisp/Qrisp/pull/658>`_)
 
 Compatibility
 -------------

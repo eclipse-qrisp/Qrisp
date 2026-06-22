@@ -36,3 +36,8 @@ UI Changes
 ----------
 
 .. Add UI changes above this line
+
+First Time Contributors 🎉
+--------------------------
+
+.. Add new contributors above this line
