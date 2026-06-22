@@ -358,6 +358,7 @@ class IQMBackend(Backend):
         self._compilation_options = compilation_options
         self._use_timeslot = use_timeslot
         self._device_instance = device_instance
+        self._calibration_set_id = calibration_set_id
         self._transpile_to_iqm = transpile_to_IQM
 
         if transpiler is None:
@@ -436,6 +437,7 @@ class IQMBackend(Backend):
 
         iqm_job = self._client.submit_circuits(
             circuit_batch,
+            calibration_set_id=self._calibration_set_id,
             options=self._compilation_options,
             shots=max(shots_per_circuit),
             use_timeslot=self._use_timeslot,
