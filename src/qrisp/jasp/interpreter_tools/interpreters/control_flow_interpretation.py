@@ -85,7 +85,7 @@ def evaluate_while_loop(
         Exception: If the loop condition depends on a Qrisp ProcessedMeasurement.
     """
 
-    from qrisp.jasp.jasp_expression import ProcessedMeasurement
+    from qrisp.jasp.interpreter_tools.interpreters import ProcessedMeasurement
 
     # Parse parameter structure for constants and carry variables
     num_const_cond_args = while_loop_eqn.params["cond_nconsts"]
