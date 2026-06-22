@@ -55,7 +55,7 @@ class JRangeIterator:
             self.start = jnp.asarray(args[0], dtype="int64")
             self.stop = jnp.asarray(args[1], dtype="int64")
         else:
-            raise Exception("jrange only supports 1 or 2 arguments (step size 1 only)")
+            raise ValueError("jrange only supports 1 or 2 arguments (step size 1 only)")
 
         # The loop index should be inclusive because this makes loop inversion
         # much easier. For more details check inv_transform.py.
