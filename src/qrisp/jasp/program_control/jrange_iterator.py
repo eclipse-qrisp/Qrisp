@@ -390,6 +390,23 @@ def jrange(*args):
 
 
 def make_tracer(x):
+    """Create a JIT-compiled tracer from a Python scalar.
+
+    Parameters
+    ----------
+    x : bool, int, float, or complex
+        The value to convert into a tracer.
+
+    Returns
+    -------
+    ArrayImpl
+        A traced JAX array representing the given value.
+
+    Raises
+    ------
+    Exception
+        If the type of *x* is not supported.
+    """
     if isinstance(x, bool):
         dtype = jnp.bool
     elif isinstance(x, int):
@@ -408,6 +425,18 @@ def make_tracer(x):
 
 
 def jlen(x):
+    """Return the length of *x*, supporting both lists and JAX arrays.
+
+    Parameters
+    ----------
+    x : list or ArrayImpl
+        The object whose length to return.
+
+    Returns
+    -------
+    int
+        ``len(x)`` if *x* is a list, otherwise ``x.size``.
+    """
     if isinstance(x, list):
         return len(x)
     else:
