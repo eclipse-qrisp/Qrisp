@@ -21,6 +21,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 import numpy as np
+import sympy as sp
 
 from qrisp.circuit.operation import Operation
 from qrisp.circuit.quantum_circuit import QuantumCircuit
@@ -51,7 +52,7 @@ def _collect_gphases(qc: QuantumCircuit) -> QuantumCircuit:
 
     # Emit accumulated phase
     accumulated_phase = accumulated_phase % (2 * np.pi)
-    if abs(accumulated_phase) > 1e-10 and anchor_qubit is not None:
+    if isinstance(accumulated_phase, sp.Expr) or (abs(accumulated_phase) > 1e-10 and anchor_qubit is not None):
         new_qc.gphase(accumulated_phase, anchor_qubit)
 
     return new_qc
