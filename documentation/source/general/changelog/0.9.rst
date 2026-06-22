@@ -163,7 +163,12 @@ New :mod:`qrisp.typing <qrisp.typing>` module with
 ``Param``), :class:`ScalarLike <qrisp.typing.ScalarLike>`, :class:`NDArrayLike
 <qrisp.typing.NDArrayLike>`, and :class:`ArrayLike <qrisp.typing.ArrayLike>`.
 
-**Other improvements**: MLIR / xDSL dialect
+**Other improvements**: `QuantumCircuit`` class refactored
+(`PR #461 <https://github.com/eclipse-qrisp/Qrisp/pull/461>`_,
+`#486 <https://github.com/eclipse-qrisp/Qrisp/pull/486>`_,
+`#489 <https://github.com/eclipse-qrisp/Qrisp/pull/489>`_,
+`#526 <https://github.com/eclipse-qrisp/Qrisp/pull/526>`_);
+MLIR / xDSL dialect
 (`PR #465 <https://github.com/eclipse-qrisp/Qrisp/pull/465>`_);
 StableHLO lowering (`PR #577 <https://github.com/eclipse-qrisp/Qrisp/pull/577>`_);
 composite gate interpreter (`PR #593 <https://github.com/eclipse-qrisp/Qrisp/pull/593>`_);
