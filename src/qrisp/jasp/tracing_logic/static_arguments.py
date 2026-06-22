@@ -41,8 +41,6 @@ def unflatten_qv(aux_data, children):
     return aux_data.val
 
 
-
-
 def unflatten_function(aux_data, children):
     return aux_data
 

@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 from qrisp import check_for_tracing_mode
 from qrisp.alg_primitives import QFT
 from qrisp.alg_primitives.arithmetic import U_g, multi_controlled_U_g

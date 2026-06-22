@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 from qrisp import *
 from qrisp.operators.fermionic import a, c
 

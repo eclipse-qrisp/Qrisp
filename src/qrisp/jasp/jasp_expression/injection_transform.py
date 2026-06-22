@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 from jax.extend.core import JaxprEqn
 
 from qrisp._cache_config import qrisp_lru_compilation_cache

@@ -412,8 +412,7 @@ def extract_stim(func=None, *, detector_order="chronological"):
         raise ValueError(f"detector_order must be 'chronological' or 'return_order', got '{detector_order}'")
 
     def decorator(f):
-        """Decorator that wraps the function to perform Stim extraction.
-        """
+        """Decorator that wraps the function to perform Stim extraction."""
 
         def return_func(*args):
             """Inner function that performs the actual Stim extraction.

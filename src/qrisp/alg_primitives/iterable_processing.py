@@ -346,8 +346,7 @@ def _cyclic_shift_one(iterable):
 
 
 def compute_floor_log2(N):
-    """Computes floor(log2(N)) in a JASP-compatible way using while_loop.
-    """
+    """Computes floor(log2(N)) in a JASP-compatible way using while_loop."""
 
     def body_fun(val):
         result, current = val

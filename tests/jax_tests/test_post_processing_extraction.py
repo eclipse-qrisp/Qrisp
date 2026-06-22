@@ -23,8 +23,7 @@ from qrisp.jasp.interpreter_tools.interpreters import extract_post_processing
 
 
 def test_basic_post_processing():
-    """Test basic post-processing extraction with simple arithmetic operations.
-    """
+    """Test basic post-processing extraction with simple arithmetic operations."""
 
     @make_jaspr
     def simple_function(i):
@@ -45,8 +44,7 @@ def test_basic_post_processing():
 
 
 def test_multiple_measurements():
-    """Test post-processing with multiple measurements and operations.
-    """
+    """Test post-processing with multiple measurements and operations."""
 
     @make_jaspr
     def multi_meas_function(index, offset):
@@ -80,8 +78,7 @@ def test_multiple_measurements():
 
 
 def test_boolean_post_processing():
-    """Test post-processing with boolean operations.
-    """
+    """Test post-processing with boolean operations."""
 
     @make_jaspr
     def boolean_function():
@@ -123,8 +120,7 @@ def test_boolean_post_processing():
 
 
 def test_arithmetic_post_processing():
-    """Test post-processing with various arithmetic operations.
-    """
+    """Test post-processing with various arithmetic operations."""
 
     @make_jaspr
     def arithmetic_function(multiplier):
@@ -157,8 +153,7 @@ def test_arithmetic_post_processing():
 
 
 def test_comparison_post_processing():
-    """Test post-processing with comparison operations.
-    """
+    """Test post-processing with comparison operations."""
 
     @make_jaspr
     def comparison_function(threshold):
@@ -191,8 +186,7 @@ def test_comparison_post_processing():
 
 
 def test_nested_operations():
-    """Test post-processing with nested operations.
-    """
+    """Test post-processing with nested operations."""
 
     @make_jaspr
     def nested_function(a, b):
@@ -224,8 +218,7 @@ def test_nested_operations():
 
 
 def test_single_measurement_multiple_uses():
-    """Test that a single measurement result can be used multiple times in post-processing.
-    """
+    """Test that a single measurement result can be used multiple times in post-processing."""
 
     @make_jaspr
     def reuse_function(offset):
@@ -293,8 +286,7 @@ def test_consistency_with_to_qc():
 
 
 def test_no_measurements():
-    """Test that post-processing extraction handles functions with no measurements.
-    """
+    """Test that post-processing extraction handles functions with no measurements."""
 
     @make_jaspr
     def no_meas_function(value):
@@ -312,8 +304,7 @@ def test_no_measurements():
 
 
 def test_direct_function_call():
-    """Test using extract_post_processing function directly (not as a method).
-    """
+    """Test using extract_post_processing function directly (not as a method)."""
 
     @make_jaspr
     def direct_function(a):
@@ -336,8 +327,7 @@ def test_direct_function_call():
 
 
 def test_multiple_static_arguments():
-    """Test post-processing extraction with many static arguments.
-    """
+    """Test post-processing extraction with many static arguments."""
 
     @make_jaspr
     def many_args_function(a, b, c, d):
@@ -364,8 +354,7 @@ def test_multiple_static_arguments():
 
 
 def test_quantum_gates_before_measurement():
-    """Test that quantum gates before measurements are properly excluded from post-processing.
-    """
+    """Test that quantum gates before measurements are properly excluded from post-processing."""
 
     @make_jaspr
     def gates_function(value):
@@ -400,8 +389,7 @@ def test_quantum_gates_before_measurement():
 
 
 def test_get_size_in_post_processing():
-    """Test that get_size operations work correctly in post-processing.
-    """
+    """Test that get_size operations work correctly in post-processing."""
 
     @make_jaspr
     def size_function(i):
@@ -437,8 +425,7 @@ def test_get_size_in_post_processing():
 
 
 def test_slice_in_post_processing():
-    """Test that QubitArray slicing works correctly in post-processing.
-    """
+    """Test that QubitArray slicing works correctly in post-processing."""
 
     @make_jaspr
     def slice_function():
@@ -475,8 +462,7 @@ def test_slice_in_post_processing():
 
 
 def test_fuse_in_post_processing():
-    """Test that QubitArray fusing works correctly in post-processing.
-    """
+    """Test that QubitArray fusing works correctly in post-processing."""
 
     @make_jaspr
     def fuse_function():
@@ -524,8 +510,7 @@ def test_fuse_in_post_processing():
 
 
 def test_bitstring_input():
-    """Test that bitstring input works correctly (default behavior).
-    """
+    """Test that bitstring input works correctly (default behavior)."""
 
     @make_jaspr
     def bitstring_function(i, j):
@@ -555,8 +540,7 @@ def test_bitstring_input():
 
 
 def test_bitstring_vs_array_equivalence():
-    """Test that bitstring and array inputs produce the same results.
-    """
+    """Test that bitstring and array inputs produce the same results."""
 
     @make_jaspr
     def test_function():
@@ -588,8 +572,7 @@ def test_bitstring_vs_array_equivalence():
 
 
 def test_array_input_jittable():
-    """Test that the post-processing function works with JAX jit.
-    """
+    """Test that the post-processing function works with JAX jit."""
     import jax
 
     @make_jaspr
@@ -829,8 +812,7 @@ def test_jit_post_processor_with_mixed_subroutines():
 
 
 def test_cond_primitive():
-    """Test that the cond (conditional) primitive works with post-processing.
-    """
+    """Test that the cond (conditional) primitive works with post-processing."""
     import jax
 
     @make_jaspr
@@ -881,8 +863,7 @@ def test_cond_primitive():
 
 
 def test_while_primitive():
-    """Test that the while loop primitive works with post-processing.
-    """
+    """Test that the while loop primitive works with post-processing."""
     import jax
 
     @make_jaspr

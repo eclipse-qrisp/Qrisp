@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 from qrisp import QuantumCircuit, QuantumVariable
 from qrisp.alg_primitives.mcx_algs.circuit_library import (
     margolus_qc,

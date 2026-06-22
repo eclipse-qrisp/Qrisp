@@ -162,8 +162,7 @@ class Jlist:
 
     @classmethod
     def unflatten(cls, aux_data, children):
-        """Recreate a DynamicJaxArray from flattened data.
-        """
+        """Recreate a DynamicJaxArray from flattened data."""
         array, counter = children
         obj = cls(max_size=array.shape[0])
         obj.array = array

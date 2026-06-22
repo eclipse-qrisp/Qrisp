@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 from qrisp import CZGate, Instruction, QuantumCircuit, XGate
 
 

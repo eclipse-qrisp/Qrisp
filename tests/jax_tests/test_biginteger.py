@@ -101,8 +101,7 @@ def mask_for_size(size: int) -> int:
 
 
 def _digits_array(maybe_bi):
-    """Return the digits array whether input is a BigInteger or a raw JAX/Numpy array.
-    """
+    """Return the digits array whether input is a BigInteger or a raw JAX/Numpy array."""
     if isinstance(maybe_bi, (jnp.ndarray, np.ndarray)):
         return maybe_bi
     if hasattr(maybe_bi, "digits"):
@@ -111,8 +110,7 @@ def _digits_array(maybe_bi):
 
 
 def to_int(maybe_bi) -> int:
-    """Convert a BigInteger (or its digits array) to a Python int exactly.
-    """
+    """Convert a BigInteger (or its digits array) to a Python int exactly."""
     ds = np.asarray(_digits_array(maybe_bi), dtype=np.uint64).tolist()
     acc = 0
     for i, d in enumerate(ds):
@@ -121,8 +119,7 @@ def to_int(maybe_bi) -> int:
 
 
 def limbs_to_int(limbs) -> int:
-    """Convert a list of uint32 limbs (little-endian) to a Python int.
-    """
+    """Convert a list of uint32 limbs (little-endian) to a Python int."""
     acc = 0
     for i, d in enumerate(limbs):
         acc |= (int(d) & 0xFFFFFFFF) << (32 * i)

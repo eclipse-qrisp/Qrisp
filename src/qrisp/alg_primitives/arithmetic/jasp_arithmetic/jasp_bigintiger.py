@@ -1621,8 +1621,7 @@ def bi_contfrac_best_approx(
         done: bool,
         i: int,
     ) -> tuple:
-        """One step of CF with bound handling. Internal helper for while_loop.
-        """
+        """One step of CF with bound handling. Internal helper for while_loop."""
         # Compute quotient and remainder
         quot = a0 // b0
         rem = a0 % b0

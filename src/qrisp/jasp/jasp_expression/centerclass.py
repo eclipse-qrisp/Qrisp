@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 import jax
 from jax import make_jaxpr
 from jax.extend.core import ClosedJaxpr, Jaxpr, Literal

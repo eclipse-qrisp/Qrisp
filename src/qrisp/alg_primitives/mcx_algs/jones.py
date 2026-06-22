@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 from qrisp import Operation, QuantumCircuit, QuantumVariable
 from qrisp.alg_primitives.mcx_algs.circuit_library import (
     amy_toffoli_qc,

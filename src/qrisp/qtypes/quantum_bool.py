@@ -177,9 +177,7 @@ class QuantumBool(QuantumVariable):
         return xor_qbl
 
     def flip(self):
-        """Flips the QuantumBool's value.
-
-        """
+        """Flips the QuantumBool's value."""
         from qrisp import x
 
         x(self[0])

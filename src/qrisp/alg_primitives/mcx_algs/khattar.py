@@ -230,9 +230,7 @@ def khattar_mcx(ctrls, target, ctrl_state):
 
 @qache
 def khattar_mcp(phi, ctrls, ctrl_state):
-    """Implements the multi-controlled phase (MCP) gate based on the Khattar MCX implementation.
-
-    """
+    """Implements the multi-controlled phase (MCP) gate based on the Khattar MCX implementation."""
     N = jlen(ctrls)
 
     if isinstance(ctrl_state, str):

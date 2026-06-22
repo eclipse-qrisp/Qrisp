@@ -89,7 +89,6 @@ def test_qc_converter():
             rz(0.5, qf[1])
             x(qf[1])
 
-
     jaspr = make_jaspr(main)()
 
     qrisp_qc = jaspr.to_qc()

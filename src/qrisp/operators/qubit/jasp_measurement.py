@@ -125,9 +125,7 @@ def get_jasp_measurement(
 
 @jax.jit
 def jasp_evaluate_expectation_jitted(samples, operators, coefficients):
-    """Evaluate the expectation.
-
-    """
+    """Evaluate the expectation."""
     expectation = 0
 
     # Evaluate and sum intermediate results for each measurement setting

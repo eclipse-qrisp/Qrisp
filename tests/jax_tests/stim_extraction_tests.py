@@ -707,8 +707,7 @@ def test_stim_noise_gate_errors():
 
 
 def test_basic_parity_detector():
-    """Test simple parity detector usage.
-    """
+    """Test simple parity detector usage."""
 
     @extract_stim
     def simple_detector():
@@ -738,8 +737,7 @@ def test_basic_parity_detector():
 
 
 def test_measurement_detector_gap_interleaved():
-    """Test detector with measurements separated by another measurement in time.
-    """
+    """Test detector with measurements separated by another measurement in time."""
 
     @extract_stim
     def gap_detector_interleaved():
@@ -762,8 +760,7 @@ def test_measurement_detector_gap_interleaved():
 
 
 def test_basic_observable():
-    """Test observable creation (observable=True).
-    """
+    """Test observable creation (observable=True)."""
 
     @extract_stim
     def simple_observable():
@@ -829,8 +826,7 @@ def test_observable_chaining():
 
 
 def test_observable_merging():
-    """Test merging two distinct observables into a third one.
-    """
+    """Test merging two distinct observables into a third one."""
 
     @extract_stim
     def merged_observable():
@@ -863,8 +859,7 @@ def test_observable_merging():
 
 
 def test_detectors_on_observables():
-    """Test creating a detector from observable handles.
-    """
+    """Test creating a detector from observable handles."""
 
     @extract_stim
     def detector_on_obs():
@@ -898,8 +893,7 @@ def test_detectors_on_observables():
 
 
 def test_classical_conditions():
-    """Test classically conditioned gates (Feedback).
-    """
+    """Test classically conditioned gates (Feedback)."""
 
     @extract_stim
     def conditional_circuit():
@@ -920,8 +914,7 @@ def test_classical_conditions():
 
 
 def test_stim_noise_injection():
-    """Test explicit Stim noise injection.
-    """
+    """Test explicit Stim noise injection."""
 
     @extract_stim
     def noise_job():
@@ -985,8 +978,7 @@ def test_parity_observable_sampling():
 
 
 def test_parity_detector_sampling():
-    """Verify `parity` with expectation=... working as a detector.
-    """
+    """Verify `parity` with expectation=... working as a detector."""
 
     @extract_stim
     def detector_circuit():

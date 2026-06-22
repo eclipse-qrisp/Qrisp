@@ -17,7 +17,6 @@
 
 # Created by nik40643 at 23.06.2023
 
-
 import qiskit.circuit.library.standard_gates as qsk_gates
 from qiskit.circuit import Parameter, QuantumCircuit
 

@@ -15,7 +15,6 @@
 ********************************************************************************
 """
 
-
 from qrisp.jasp.primitives import (
     AbstractQubit,
     AbstractQubitArray,
