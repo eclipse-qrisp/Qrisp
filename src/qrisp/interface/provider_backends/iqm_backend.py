@@ -168,7 +168,13 @@ class IQMJob(Job):
         counts_batch_raw = self._iqm_client.get_job_measurement_counts(
             self._iqm_job.job_id
         )
-        counts_batch = [c.counts for c in counts_batch_raw]
+
+        counts_batch = []
+        for c in counts_batch_raw:
+            counts_dic = {}
+            for key, val in c.counts.items():
+                counts_dic[key[::-1]] = val
+            counts_batch.append(counts_dic)
 
         self._cached_result = JobResult(counts_batch)
         return self._cached_result
