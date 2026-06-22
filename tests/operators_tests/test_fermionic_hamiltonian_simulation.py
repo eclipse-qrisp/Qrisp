@@ -110,7 +110,7 @@ def test_fermionic_hamiltonian_simulation():
             for op3 in operators:
                 O += op1(0) * op2(1) * op3(2)
 
-                if O == 1:
+                if O is 1:  # noqa: F632, PLR0124
                     continue
 
                 from numpy.linalg import norm
