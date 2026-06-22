@@ -567,13 +567,13 @@ def polynomial_encoder(qf_list, output_qf, poly, encoding_dic=None, inplace_mult
 
     if len(symbol_list) != len(qf_list):
         raise Exception(
-            "Provided QuantumFloat list does not include the appropriate amountof elements to encode given polynomial"
+            "Provided QuantumFloat list does not include the appropriate amount of elements to encode given polynomial"
         )
 
     if not output_qf.signed:
         for qf in qf_list:
             if qf.signed:
-                raise Exception("When encoding into an unsigned quantum floatprovide only unsigned inputs")
+                raise Exception("When encoding into an unsigned quantum float provide only unsigned inputs")
 
     sb_poly_list = [qf.sb_poly(output_qf.size) for qf in qf_list]
 

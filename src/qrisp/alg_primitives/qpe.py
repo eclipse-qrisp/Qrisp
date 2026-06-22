@@ -122,7 +122,7 @@ def QPE(args, U, precision=None, target=None, iter_spec=False, ctrl_method=None,
 
     if target is None:
         if precision is None:
-            raise Exception("Tried to perform quantum phase estimation withoutprecision specification")
+            raise Exception("Tried to perform quantum phase estimation without precision specification")
         qpe_res = QuantumFloat(precision, -precision, signed=False)
     else:
         qpe_res = target

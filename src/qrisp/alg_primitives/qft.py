@@ -48,7 +48,7 @@ def QFT_inner(
         env = GMSEnvironment
 
     if not is_inv(inplace_mult, n):
-        raise Exception("Tried to perform non-invertible inplace multiplicationduring Fourier-Transform")
+        raise Exception("Tried to perform non-invertible inplace multiplication during Fourier-Transform")
 
     if inpl_adder is None:
         accumulated_phases = np.zeros(n)

@@ -79,7 +79,7 @@ def q_matmul(q_array_0, q_array_1, output_array=None, res_bit_shape="eq", phase_
 
     """
     if q_array_0.shape[1] != q_array_1.shape[0]:
-        raise Exception("Tried to perform matrix multiplicationwith differing contraction index size")
+        raise Exception("Tried to perform matrix multiplication with differing contraction index size")
 
     L = q_array_0.shape[0]
     K = q_array_0.shape[1]
@@ -301,7 +301,7 @@ def semi_classic_matmul(q_matrix, cl_matrix, output_array=None, res_bit_shape="e
         output_array = QuantumArray(shape=(L, J), qtype=qtype, qs=q_matrix.qs)
 
     if output_array.shape != (L, J):
-        raise Exception("Tried to to encode matrix multiplicationinto Quantum Array of unfitting size")
+        raise Exception("Tried to to encode matrix multiplication into Quantum Array of unfitting size")
 
     from sympy.matrices import zeros
 

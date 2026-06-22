@@ -129,11 +129,11 @@ def demux(
     elif isinstance(output, QuantumArray):
         for qv in output.flatten()[1:]:
             if qv.name == input.name:
-                raise Exception("Tried to in-place demux QuantumArray entry,which is not a 0-th position")
+                raise Exception("Tried to in-place demux QuantumArray entry, which is not a 0-th position")
     elif isinstance(output, QuantumVariable):
         for qb in output.reg[1:]:
             if qb.identifier == input.identifier:
-                raise Exception("Tried to in-place demux QuantumVariable entry,which is not a 0-th position")
+                raise Exception("Tried to in-place demux QuantumVariable entry, which is not a 0-th position")
 
     n = int(np.ceil(np.log2(len(output))))
     N = 2**n
