@@ -31,6 +31,32 @@ from qrisp import (
     measure,
     x,
 )
+from qrisp.alg_primitives.arithmetic.adders.gidney_adder import _extract_bit
+
+
+EXTRACT_BIT_CASES = [
+    (0, 0, 0),
+    (10, 1, 1),
+    (15, 0, 1),
+    (15, 3, 1),
+]
+
+
+@pytest.mark.parametrize("val, bit, expected", EXTRACT_BIT_CASES)
+def test_extract_bit_int(val, bit, expected):
+    assert bool(_extract_bit(val, bit)) == bool(expected)
+
+
+EXTRACT_BIT_BIGINT_CASES = [
+    (0, True),
+    (2, True),
+]
+
+
+@pytest.mark.parametrize("idx, expected", EXTRACT_BIT_BIGINT_CASES)
+def test_extract_bit_bigint(idx, expected):
+    b = BigInteger.create(13, 4)
+    assert bool(_extract_bit(b, idx)) == expected
 
 
 @pytest.mark.parametrize(
