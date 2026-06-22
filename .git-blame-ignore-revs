@@ -20,3 +20,6 @@
 # format in CI, import sorting, line-length changes), add those
 # commit hashes here too.
 4ce1bcf7553aba8b90a6301094a22aaf75da9f9d
+# 12dbd445 -- "style: apply ruff format to entire codebase"
+#   Migrated from Black to ruff format across the codebase.
+12dbd445b2d14a9f78a19b6c3d09ef530d86f636
