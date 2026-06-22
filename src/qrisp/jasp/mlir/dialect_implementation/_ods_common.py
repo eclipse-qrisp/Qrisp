@@ -17,3 +17,4 @@
 
 # Stub that redirects to JAX's MLIR infrastructure
 from jaxlib.mlir.dialects._ods_common import *
+from jaxlib.mlir.dialects._ods_common import _cext  # noqa: F401 — re-exported for _jasp_ops_gen
