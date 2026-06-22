@@ -31,7 +31,7 @@ from qrisp.circuit.pass_management.passes.resolve_swaps import resolve_swaps
 from qrisp.circuit.pass_management.passes.reverse_parallelize import reverse_parallelize
 from qrisp.circuit.pass_management.passes.visualize import visualize
 from qrisp.circuit.pass_management.passes.convert_to_pry import convert_to_pry, PRYGate
-from qrisp.circuit.pass_management.passes.convert_to_prx import PRXGate
+from qrisp.circuit.pass_management.passes.convert_to_prx import PRXGate, convert_to_prx
 
 __all__ = [
     "arrange_swaps",
@@ -51,5 +51,6 @@ __all__ = [
     "visualize",
     "convert_to_pry",
     "PRYGate",
-    "PRXGate"
+    "PRXGate",
+    "convert_to_prx"
 ]
