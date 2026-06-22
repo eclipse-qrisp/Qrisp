@@ -59,12 +59,12 @@ def resolve_swaps(qc: QuantumCircuit) -> QuantumCircuit:
         >>> qc.swap(0, 1)
         >>> qc.cx(0, 1)
         >>> print(qc)
-                ┌───┐        
+                ┌───┐
         qb_126: ┤ H ├─X───■──
                 └───┘ │ ┌─┴─┐
         qb_127: ──────X─┤ X ├
                         └───┘
-        
+
         >>> pm = PassManager()
         >>> pm += resolve_swaps
         >>> routable_qc = pm.run(qc)
@@ -73,7 +73,7 @@ def resolve_swaps(qc: QuantumCircuit) -> QuantumCircuit:
         qb_126: ┤ H ├┤ X ├
                 └───┘└─┬─┘
         qb_127: ───────■──
-                        
+
     """
     n = qc.num_qubits()
     qubits = qc.qubits

@@ -47,22 +47,22 @@ def remove_barriers(qc: QuantumCircuit) -> QuantumCircuit:
         >>> qc.barrier()
         >>> qc.cx(0, 1)
         >>> print(qc)
-                ┌───┐ ░      
+                ┌───┐ ░
         qb_124: ┤ H ├─░───■──
                 └───┘ ░ ┌─┴─┐
         qb_125: ──────░─┤ X ├
                       ░ └───┘
-        
+
         >>> pm = PassManager()
         >>> pm += remove_barriers
         >>> clean_qc = pm.run(qc)
         >>> print(clean_qc)
-                ┌───┐     
+                ┌───┐
         qb_124: ┤ H ├──■──
                 └───┘┌─┴─┐
         qb_125: ─────┤ X ├
                      └───┘
-                     
+
     """
     qc_new = qc.clearcopy()
     for instr in qc.data:

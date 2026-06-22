@@ -184,9 +184,7 @@ class QuantumArray:
         size = 1
         for s in shape:
             if not isinstance(s, (int, np.integer)):
-                raise Exception(
-                    f"Tried to create QuantumArray with non-integer tuple {shape}"
-                )
+                raise Exception(f"Tried to create QuantumArray with non-integer tuple {shape}")
             size *= s
 
         # The idea to implement this class with compatibility to dynamic features
@@ -209,11 +207,8 @@ class QuantumArray:
         self.qtype_template = qtype.template()
 
         if check_for_tracing_mode():
-
             if isinstance(qtype.reg, list):
-                raise Exception(
-                    "Tried to create QuantumArray with qtype defined outside of tracing context"
-                )
+                raise Exception("Tried to create QuantumArray with qtype defined outside of tracing context")
 
             qs = qtype.qs
             self.qs = qs
@@ -298,9 +293,7 @@ class QuantumArray:
             else:
                 for i in range(len(key)):
                     if key[i] >= self.shape[i]:
-                        raise Exception(
-                            f"Index {key} out of bounds for QuantumArray with shape {self.shape}"
-                        )
+                        raise Exception(f"Index {key} out of bounds for QuantumArray with shape {self.shape}")
                 return self.qv_list[index]
 
     def __setitem__(self, key, value):
@@ -355,16 +348,12 @@ class QuantumArray:
             value = np.array(value, dtype="object")
 
         if not value.shape == self.shape:
-            raise Exception(
-                "Tried to initialize a QuantumArray with incompatible shape"
-            )
+            raise Exception("Tried to initialize a QuantumArray with incompatible shape")
 
         flattened_value_array = value.flatten()
         flat_self = self.flatten()
 
-        if check_for_tracing_mode() and isinstance(
-            flattened_value_array, (np.ndarray, list)
-        ):
+        if check_for_tracing_mode() and isinstance(flattened_value_array, (np.ndarray, list)):
             flattened_value_array = jnp.array(flattened_value_array)
 
         for i in jrange(self.size):
@@ -542,8 +531,8 @@ class QuantumArray:
         qtype : QuantumVariable
             The type of the quantum variable to return.
         axis : int or tuple of ints, optional
-            The axes to reduce over. If None (default), reduces over all axes. 
-            If an integer is provided, it is treated as a single axis. 
+            The axes to reduce over. If None (default), reduces over all axes.
+            If an integer is provided, it is treated as a single axis.
             If a tuple of integers is provided, it specifies multiple axes to reduce over.
 
         Returns
@@ -623,9 +612,7 @@ class QuantumArray:
             meas_res = meas_res.at[i].set(measure(flattened_qa[i]))
             return (meas_res, flattened_qa)
 
-        meas_res, flattened_qa = q_fori_loop(
-            0, flattened_qa.size, body_fun, (meas_res, flattened_qa)
-        )
+        meas_res, flattened_qa = q_fori_loop(0, flattened_qa.size, body_fun, (meas_res, flattened_qa))
 
         return meas_res.reshape(self.shape)
 
@@ -693,15 +680,11 @@ class QuantumArray:
         """
 
         if check_for_tracing_mode():
-            raise Exception(
-                "Tried to get_measurement from QuantumArray in tracing mode"
-            )
+            raise Exception("Tried to get_measurement from QuantumArray in tracing mode")
 
         for qv in self.flatten():
             if qv.is_deleted():
-                raise Exception(
-                    "Tried to measure QuantumArray containing deleted QuantumVariables"
-                )
+                raise Exception("Tried to measure QuantumArray containing deleted QuantumVariables")
 
         if backend is None:
             if self.qs.backend is None:
@@ -720,9 +703,7 @@ class QuantumArray:
 
         if precompiled_qc is None:
             if compile:
-                qc = qompiler(
-                    self.qs, intended_measurements=qubits, **compilation_kwargs
-                )
+                qc = qompiler(self.qs, intended_measurements=qubits, **compilation_kwargs)
             else:
                 qc = self.qs.copy()
 
@@ -838,12 +819,12 @@ class QuantumArray:
         ValueError
             If the shapes of self and other are incompatible for matrix multiplication.
         TypeError
-            If the types of self and other are incompatible for matrix multiplication: 
+            If the types of self and other are incompatible for matrix multiplication:
                 - If self is not a QuantumArray of QuantumFloat or QuantumModulus, matrix multiplication is not supported.
                 - If other is a QuantumArray but not of QuantumFloat or QuantumModulus, matrix multiplication is not supported.
         NotImplementedError
             If matrix multiplication between the given types is not supported:
-                - If self is a QuantumArray of QuantumModulus, matrix multiplication with another QuantumArray is not supported. 
+                - If self is a QuantumArray of QuantumModulus, matrix multiplication with another QuantumArray is not supported.
                   Other must be a classical array of integers.
                 - If self is a QuantumArray of QuantumFloat, matrix multiplication is not supported in tracing mode.
 
@@ -889,16 +870,14 @@ class QuantumArray:
         from qrisp.qtypes.quantum_modulus import QuantumModulus
 
         if self.shape[1] != other.shape[0]:
-            raise ValueError(
-                f"Incompatible shapes for matrix multiplication: {self.shape} and {other.shape}"
-            )
-        
+            raise ValueError(f"Incompatible shapes for matrix multiplication: {self.shape} and {other.shape}")
+
         if not isinstance(self.qtype, (QuantumFloat, QuantumModulus)):
             raise TypeError(
                 f"Matrix multiplication requires qtype 'QuantumFloat' or 'QuantumModulus'. "
                 f"Got {type(self.qtype).__name__}."
             )
-        
+
         if isinstance(other, QuantumArray) and not isinstance(other.qtype, (QuantumFloat, QuantumModulus)):
             raise TypeError(
                 f"Matrix multiplication requires both arrays to have qtype 'QuantumFloat' or 'QuantumModulus'. "
@@ -926,8 +905,7 @@ class QuantumArray:
         elif isinstance(self.qtype, QuantumFloat):
             if check_for_tracing_mode():
                 raise NotImplementedError(
-                    "Matrix multiplication between QuantumArrays of QuantumFloat in tracing mode "
-                    "is not supported."
+                    "Matrix multiplication between QuantumArrays of QuantumFloat in tracing mode is not supported."
                 )
 
             if isinstance(other, QuantumArray):
@@ -991,39 +969,24 @@ class QuantumArray:
         # How can we make this more secure?
         if check_for_tracing_mode():
             if not type(self.qtype) == type(other.qtype):
-                raise Exception(
-                    "Tried to concatenate two QuantumArrays with non-identical qtype"
-                )
+                raise Exception("Tried to concatenate two QuantumArrays with non-identical qtype")
 
             if isinstance(self.qtype, QuantumFloat):
                 if self.qtype.signed != other.qtype.signed:
-                    raise Exception(
-                        "Tried to concatenate two QuantumArrays with non-identical qtype"
-                    )
+                    raise Exception("Tried to concatenate two QuantumArrays with non-identical qtype")
         else:
-            if (not type(self.qtype) == type(other.qtype)) or (
-                self.qtype.size != other.qtype.size
-            ):
-                raise Exception(
-                    "Tried to concatenate two QuantumArrays with non-identical qtype"
-                )
+            if (not type(self.qtype) == type(other.qtype)) or (self.qtype.size != other.qtype.size):
+                raise Exception("Tried to concatenate two QuantumArrays with non-identical qtype")
 
             if isinstance(self.qtype, QuantumFloat):
-                if (
-                    self.qtype.exponent != other.qtype.exponent
-                    or self.qtype.signed != other.qtype.signed
-                ):
-                    raise Exception(
-                        "Tried to concatenate two QuantumArrays with non-identical qtype"
-                    )
+                if self.qtype.exponent != other.qtype.exponent or self.qtype.signed != other.qtype.signed:
+                    raise Exception("Tried to concatenate two QuantumArrays with non-identical qtype")
 
         res = copy.copy(self)
 
         ind_array_other_shifted = other.ind_array + self.size
 
-        concat_ind_array = jnp.concatenate(
-            (self.ind_array, ind_array_other_shifted), axis=axis
-        )
+        concat_ind_array = jnp.concatenate((self.ind_array, ind_array_other_shifted), axis=axis)
 
         res.ind_array = concat_ind_array
 
@@ -1088,9 +1051,7 @@ class QuantumArray:
 
         if check_for_tracing_mode():
             qs = self.qs
-            qb_array_tracer, qs.abs_qst = create_qubits(
-                self.size * self.qtype_size, qs.abs_qst
-            )
+            qb_array_tracer, qs.abs_qst = create_qubits(self.size * self.qtype_size, qs.abs_qst)
             res.qb_array = DynamicQubitArray(qb_array_tracer)
 
             if init:
@@ -1100,7 +1061,6 @@ class QuantumArray:
                     cx(self.qb_array[i], res.qb_array[i])
 
         else:
-
             if qs is None:
                 res.qs = QuantumSession()
             else:
@@ -1108,11 +1068,7 @@ class QuantumArray:
 
             res.qv_list = []
             for i in range(self.size):
-                res.qv_list.append(
-                    self.qv_list[i].duplicate(
-                        name=self.qtype.name + "*", qs=res.qs, init=init
-                    )
-                )
+                res.qv_list.append(self.qv_list[i].duplicate(name=self.qtype.name + "*", qs=res.qs, init=init))
 
         return res
 
@@ -1196,7 +1152,7 @@ class QuantumArray:
         from qrisp.qtypes.quantum_float import QuantumFloat
 
         if mode == "float":
-            valid_qtype = QuantumFloat #QuantumModulus is subclass of QuantumFloat, so this covers both cases
+            valid_qtype = QuantumFloat  # QuantumModulus is subclass of QuantumFloat, so this covers both cases
         elif mode == "bool":
             valid_qtype = QuantumBool
         else:
@@ -1205,8 +1161,7 @@ class QuantumArray:
         # Self qtype must always be QuantumFloat or QuantumBool for element-wise operations
         if not isinstance(self.qtype, valid_qtype):
             raise TypeError(
-                f"Element-wise operations require qtype '{valid_qtype.__name__}'. "
-                f"Got {type(self.qtype).__name__}."
+                f"Element-wise operations require qtype '{valid_qtype.__name__}'. Got {type(self.qtype).__name__}."
             )
 
         # If other is a QuantumArray, check its qtype and shape
@@ -1225,9 +1180,7 @@ class QuantumArray:
         # For scalar/QuantumVariable cases, no additional validation needed
         # (the underlying QuantumFloat operations will handle type checking)
 
-    def __add__(
-        self, other: QuantumArray | QuantumVariable | "ArrayLike"
-    ) -> QuantumArray:
+    def __add__(self, other: QuantumArray | QuantumVariable | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise addition.
 
@@ -1299,13 +1252,9 @@ class QuantumArray:
             # For scalars and numpy arrays, use self's type as output
             # (scalar operations preserve size)
             out_type = self.qtype
-        return self._element_wise_out_of_place_injection(
-            other, lambda a, b: a + b, out_type
-        )
+        return self._element_wise_out_of_place_injection(other, lambda a, b: a + b, out_type)
 
-    def __sub__(
-        self, other: QuantumArray | QuantumVariable | "ArrayLike"
-    ) -> QuantumArray:
+    def __sub__(self, other: QuantumArray | QuantumVariable | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise subtraction.
 
@@ -1378,13 +1327,9 @@ class QuantumArray:
             # For scalars and numpy arrays, use self's type as output
             # (scalar operations preserve size)
             out_type = self.qtype
-        return self._element_wise_out_of_place_injection(
-            other, lambda a, b: a - b, out_type
-        )
+        return self._element_wise_out_of_place_injection(other, lambda a, b: a - b, out_type)
 
-    def __mul__(
-        self, other: QuantumArray | QuantumVariable | "ArrayLike"
-    ) -> QuantumArray:
+    def __mul__(self, other: QuantumArray | QuantumVariable | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise multiplication.
 
@@ -1440,17 +1385,13 @@ class QuantumArray:
             if not isinstance(self.qtype, QuantumModulus):
                 raise NotImplementedError(
                     "Quantum-classical multiplication is not supported for non-QuantumModulus types."
-                )   
+                )
             # For scalars and numpy arrays, use self's type as output
             # (scalar operations are handled by QuantumFloat)
             out_type = self.qtype
-        return self._element_wise_out_of_place_injection(
-            other, lambda a, b: a * b, out_type
-        )
+        return self._element_wise_out_of_place_injection(other, lambda a, b: a * b, out_type)
 
-    def __eq__(
-        self, other: QuantumArray | QuantumVariable | "ArrayLike"
-    ) -> QuantumArray:
+    def __eq__(self, other: QuantumArray | QuantumVariable | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise ``==`` comparison.
 
@@ -1502,13 +1443,9 @@ class QuantumArray:
         from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other)
-        return self._element_wise_out_of_place_injection(
-            other, lambda a, b: a == b, QuantumBool()
-        )
+        return self._element_wise_out_of_place_injection(other, lambda a, b: a == b, QuantumBool())
 
-    def __ne__(
-        self, other: QuantumArray | QuantumVariable | "ArrayLike"
-    ) -> QuantumArray:
+    def __ne__(self, other: QuantumArray | QuantumVariable | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise ``!=`` comparison.
 
@@ -1560,13 +1497,9 @@ class QuantumArray:
         from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other)
-        return self._element_wise_out_of_place_injection(
-            other, lambda a, b: a != b, QuantumBool()
-        )
+        return self._element_wise_out_of_place_injection(other, lambda a, b: a != b, QuantumBool())
 
-    def __gt__(
-        self, other: QuantumArray | QuantumVariable | "ArrayLike"
-    ) -> QuantumArray:
+    def __gt__(self, other: QuantumArray | QuantumVariable | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise ``>`` comparison.
 
@@ -1618,13 +1551,9 @@ class QuantumArray:
         from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other)
-        return self._element_wise_out_of_place_injection(
-            other, lambda a, b: a > b, QuantumBool()
-        )
+        return self._element_wise_out_of_place_injection(other, lambda a, b: a > b, QuantumBool())
 
-    def __ge__(
-        self, other: QuantumArray | QuantumVariable | "ArrayLike"
-    ) -> QuantumArray:
+    def __ge__(self, other: QuantumArray | QuantumVariable | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise ``>=`` comparison.
 
@@ -1676,13 +1605,9 @@ class QuantumArray:
         from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other)
-        return self._element_wise_out_of_place_injection(
-            other, lambda a, b: a >= b, QuantumBool()
-        )
+        return self._element_wise_out_of_place_injection(other, lambda a, b: a >= b, QuantumBool())
 
-    def __lt__(
-        self, other: QuantumArray | QuantumVariable | "ArrayLike"
-    ) -> QuantumArray:
+    def __lt__(self, other: QuantumArray | QuantumVariable | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise ``<`` comparison.
 
@@ -1734,13 +1659,9 @@ class QuantumArray:
         from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other)
-        return self._element_wise_out_of_place_injection(
-            other, lambda a, b: a < b, QuantumBool()
-        )
+        return self._element_wise_out_of_place_injection(other, lambda a, b: a < b, QuantumBool())
 
-    def __le__(
-        self, other: QuantumArray | QuantumVariable | "ArrayLike"
-    ) -> QuantumArray:
+    def __le__(self, other: QuantumArray | QuantumVariable | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise ``<=`` comparison.
 
@@ -1792,9 +1713,7 @@ class QuantumArray:
         from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other)
-        return self._element_wise_out_of_place_injection(
-            other, lambda a, b: a <= b, QuantumBool()
-        )
+        return self._element_wise_out_of_place_injection(other, lambda a, b: a <= b, QuantumBool())
 
     def __and__(self, other: QuantumArray | QuantumVariable) -> QuantumArray:
         """
@@ -1816,7 +1735,7 @@ class QuantumArray:
             If the qtypes of self and other are not QuantumBool.
         ValueError
             If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
-    
+
         Examples
         --------
         >>> import numpy as np
@@ -1832,9 +1751,7 @@ class QuantumArray:
         from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other, mode="bool")
-        return self._element_wise_out_of_place_injection(
-            other, lambda a, b: a & b, QuantumBool()
-        )
+        return self._element_wise_out_of_place_injection(other, lambda a, b: a & b, QuantumBool())
 
     def __or__(self, other: QuantumArray | QuantumVariable) -> QuantumArray:
         """
@@ -1872,9 +1789,7 @@ class QuantumArray:
         from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other, mode="bool")
-        return self._element_wise_out_of_place_injection(
-            other, lambda a, b: a | b, QuantumBool()
-        )
+        return self._element_wise_out_of_place_injection(other, lambda a, b: a | b, QuantumBool())
 
     def __xor__(self, other: QuantumArray | QuantumVariable) -> QuantumArray:
         """
@@ -1912,13 +1827,9 @@ class QuantumArray:
         from qrisp.qtypes.quantum_bool import QuantumBool
 
         self._validate_arithmetic(other, mode="bool")
-        return self._element_wise_out_of_place_injection(
-            other, lambda a, b: a ^ b, QuantumBool()
-        )
+        return self._element_wise_out_of_place_injection(other, lambda a, b: a ^ b, QuantumBool())
 
-    def all(
-        self, axis: int | tuple[int, ...] | None = None
-    ) -> QuantumArray | QuantumVariable:
+    def all(self, axis: int | tuple[int, ...] | None = None) -> QuantumArray | QuantumVariable:
         """
         Performs an element-wise logical AND reduction, returning True if all elements are True.
 
@@ -1971,9 +1882,7 @@ class QuantumArray:
 
         return self._reduce_over_axes(_all, QuantumBool(), axis=axis)
 
-    def any(
-        self, axis: int | tuple[int, ...] | None = None
-    ) -> QuantumArray | QuantumVariable:
+    def any(self, axis: int | tuple[int, ...] | None = None) -> QuantumArray | QuantumVariable:
         """
         Performs an element-wise logical OR reduction, returning True if any element is True.
 
@@ -2031,9 +1940,7 @@ class QuantumArray:
 
     # Delegation of element-wise in-place functions
 
-    def _element_wise_in_place_call(
-        self, other: QuantumArray | QuantumVariable | "ArrayLike", fun: Callable
-    ) -> None:
+    def _element_wise_in_place_call(self, other: QuantumArray | QuantumVariable | "ArrayLike", fun: Callable) -> None:
         """Helper function to perform element-wise in-place calls for in-place arithmetic operations."""
         self_view = self.flatten()
         if isinstance(other, QuantumArray):
@@ -2069,9 +1976,7 @@ class QuantumArray:
                 for i in range(self_view.size):
                     fun(self_view[i], other)
 
-    def __iadd__(
-        self, other: QuantumArray | QuantumVariable | "ArrayLike"
-    ) -> QuantumArray:
+    def __iadd__(self, other: QuantumArray | QuantumVariable | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise in-place addition.
         Note that this modifies the original QuantumArray and does not create a new one.
@@ -2121,9 +2026,7 @@ class QuantumArray:
         self._element_wise_in_place_call(other, f)
         return self
 
-    def __isub__(
-        self, other: QuantumArray | QuantumVariable | "ArrayLike"
-    ) -> QuantumArray:
+    def __isub__(self, other: QuantumArray | QuantumVariable | "ArrayLike") -> QuantumArray:
         """
         Performs element-wise in-place subtraction.
         Note that this modifies the original QuantumArray and does not create a new one.
@@ -2199,11 +2102,11 @@ class QuantumArray:
         ValueError
             If other is an array (QuantumArray or numpy/jax array) and its shape does not match the shape of self.
         TypeError
-            If other is a QuantumArray or QuantumVariable, since quantum-quantum in-place multiplication is not supported. 
+            If other is a QuantumArray or QuantumVariable, since quantum-quantum in-place multiplication is not supported.
             Use out-of-place multiplication instead.
         NotImplementedError
             If in tracing mode and self's ``qtype`` is not QuantumModulus, since quantum-classical in-place multiplication is not supported in tracing mode for non-QuantumModulus types.
- 
+
         Examples
         --------
 
@@ -2228,7 +2131,7 @@ class QuantumArray:
             raise TypeError(
                 "Quantum-quantum in-place multiplication is not supported. Use out-of-place multiplication instead."
             )
-        
+
         if check_for_tracing_mode() and not isinstance(self.qtype, QuantumModulus):
             raise NotImplementedError(
                 "Quantum-classical in-place multiplication is not supported in tracing mode for non-QuantumModulus types."
@@ -2275,7 +2178,6 @@ class QuantumArray:
 
 
 class QuantumArrayIterator:
-
     def __init__(self, qa):
         self.qa = qa
         self.counter = -1
@@ -2291,9 +2193,7 @@ def flatten_qa(qa):
 
     children = []
 
-    qtype_template_children, qtype_template_aux_values = jax.tree.flatten(
-        qa.qtype_template
-    )
+    qtype_template_children, qtype_template_aux_values = jax.tree.flatten(qa.qtype_template)
 
     children.append(qa.qtype_size)
     children.append(qa.ind_array)
@@ -2310,9 +2210,7 @@ def unflatten_qa(aux_data, children):
     qtype_template_children = children[3:]
     qtype_template_aux_values = aux_data[0]
 
-    qtype_template = jax.tree.unflatten(
-        qtype_template_aux_values, qtype_template_children
-    )
+    qtype_template = jax.tree.unflatten(qtype_template_aux_values, qtype_template_children)
 
     qa_dummy = object.__new__(QuantumArray)
 
@@ -2337,9 +2235,7 @@ def manipulate_array(q_array, index):
 
     if isinstance(index, tuple):
         if len(q_array.shape) != len(index):
-            raise Exception(
-                "Tried to quantum deref QuantumArray with index of mismatching shape"
-            )
+            raise Exception("Tried to quantum deref QuantumArray with index of mismatching shape")
 
         for qf in index:
             if isinstance(qf, QuantumFloat):

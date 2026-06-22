@@ -69,10 +69,7 @@ def _validate_gidney_adder_inputs(a, b):
         check_for_tracing_mode()
         and (
             hasattr(a, "get_bit")
-            or (
-                getattr(a, "ndim", None) == 0
-                and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer)
-            )
+            or (getattr(a, "ndim", None) == 0 and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer))
         )
     )
     if not (b_is_quantum and (a_is_quantum or is_valid_classical)):

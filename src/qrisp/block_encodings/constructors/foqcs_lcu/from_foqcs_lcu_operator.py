@@ -22,11 +22,7 @@ from .from_foqcs_lcu_prep import build_from_foqcs_lcu_prep
 from .foqcs_analysis import foqcs_analyze_operator, build_foqcs_lcu_prep_from_analysis
 
 
-def build_from_foqcs_lcu_operator(
-    cls: BlockEncoding,
-    O: QubitOperator,
-    tol: float = 1e-12
-) -> BlockEncoding:
+def build_from_foqcs_lcu_operator(cls: BlockEncoding, O: QubitOperator, tol: float = 1e-12) -> BlockEncoding:
     r"""
     Constructs a :class:`BlockEncoding` from a compatible :class:`QubitOperator` using the
     Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) algorithm
@@ -49,7 +45,7 @@ def build_from_foqcs_lcu_operator(
         ``O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)``
 
     tol : float, optional = 1e-12
-        The tolerance used to determine if an entry is zero. 
+        The tolerance used to determine if an entry is zero.
         Defaults to 1e-12.
 
     Returns
@@ -189,5 +185,5 @@ def build_from_foqcs_lcu_operator(
     """
 
     # Analyze the Qubit operator
-    aresult = foqcs_analyze_operator(O, tol = tol)
+    aresult = foqcs_analyze_operator(O, tol=tol)
     return build_from_foqcs_lcu_prep(cls, *build_foqcs_lcu_prep_from_analysis(aresult))

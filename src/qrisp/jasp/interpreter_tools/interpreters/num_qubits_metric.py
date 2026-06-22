@@ -170,7 +170,6 @@ class NumQubitsMetric(BaseMetric):
             context_dic["_meas_number"] = meas_number + invalues[0]
 
         else:  # measuring a single qubit
-
             meas_res = self.meas_behavior(key(meas_number))
             self._validate_measurement_result(meas_res)
             context_dic["_meas_number"] = meas_number + jnp.int32(1)
@@ -255,14 +254,10 @@ def extract_num_qubits(res: Tuple, jaspr: Jaspr, _) -> dict:
 
     if overflowed:
         raise ValueError(
-            "The ``num_qubits`` metric computation overflowed "
-            "the maximum number of allocations supported. "
+            "The ``num_qubits`` metric computation overflowed the maximum number of allocations supported. "
         )
 
-    alloc_dict = {
-        f"alloc{i+1}": int(allocations_array[i])
-        for i in range(int(allocations_counter_index))
-    }
+    alloc_dict = {f"alloc{i + 1}": int(allocations_array[i]) for i in range(int(allocations_counter_index))}
     dict_values = alloc_dict.values()
 
     total_allocated = sum(v for v in dict_values if v > 0)
@@ -333,9 +328,7 @@ def get_num_qubits_profiler(
 
         initial_metric = num_qubits_metric.initial_metric()
 
-        filtered_args = [
-            x for x in args + (initial_metric,) if type(x) not in STATIC_TYPES
-        ]
+        filtered_args = [x for x in args + (initial_metric,) if type(x) not in STATIC_TYPES]
         return jitted_evaluator(*filtered_args)
 
     return num_qubits_profiler, None
@@ -344,6 +337,4 @@ def get_num_qubits_profiler(
 def simulate_num_qubits(jaspr: Jaspr, *_, **__) -> dict:
     """Simulate num_qubits metric via actual simulation."""
 
-    raise NotImplementedError(
-        "Num qubits metric via simulation is not implemented yet."
-    )
+    raise NotImplementedError("Num qubits metric via simulation is not implemented yet.")

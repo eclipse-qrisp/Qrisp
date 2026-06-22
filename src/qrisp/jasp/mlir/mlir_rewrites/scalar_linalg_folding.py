@@ -16,7 +16,6 @@
 ********************************************************************************
 """
 
-
 """
 Optimization pass for unwrapping 0-dimensional linalg.generic operations
 in MLIR/xDSL.
@@ -116,9 +115,7 @@ class FoldScalarLinalgGeneric(RewritePattern):
     """
 
     @op_type_rewrite_pattern
-    def match_and_rewrite(
-        self, op: linalg.GenericOp, rewriter: PatternRewriter
-    ) -> None:
+    def match_and_rewrite(self, op: linalg.GenericOp, rewriter: PatternRewriter) -> None:
         # Guard: only 0-d generics
         if len(op.iterator_types.data) != 0:
             return
@@ -151,9 +148,7 @@ class FoldScalarLinalgGeneric(RewritePattern):
             cloned = op_in_body.clone()
 
             # Safely remap operands based on our running dictionary
-            new_operands = [
-                mapping.get(operand, operand) for operand in cloned.operands
-            ]
+            new_operands = [mapping.get(operand, operand) for operand in cloned.operands]
             cloned.operands = tuple(new_operands)  # Reassign safely
 
             rewriter.insert_op(cloned, InsertPoint.before(op))

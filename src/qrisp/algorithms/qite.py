@@ -178,7 +178,6 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
 
     """
     if not check_for_tracing_mode():
-
         if k == 0:
             U_0(qarg)
         else:
@@ -197,14 +196,12 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
                         mcp(t_, qarg, ctrl_state=0, method="khattar")
 
             if method == "GC":
-
                 QITE(qarg, U_0, exp_H, s, k - 1, method=method)
 
                 with conjugate(exp_H)(qarg, s_):
                     reflection(qarg, s_)
 
             if method == "HOPF":
-
                 phi = (sp.sqrt(5) - 1) / 2
 
                 QITE(qarg, U_0, exp_H, s, k - 1, method=method)
@@ -217,7 +214,6 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
                 exp_H(qarg, -phi * s_)
 
     else:
-
         """
         To create a jasp-compatible implementation of QITE, we need to remove the recursive structure.
         We achieve this by fully expanding the recursive formula for $U_k$ down to the $k=0$ level.
@@ -269,18 +265,14 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
                 # Compute which operations must be inverted
                 inv_mode_leaf = jnp.equal(jnp.count_nonzero(old_pos == 1) % 2, 0)
                 inv_mode_up = inv_mode_leaf
-                inv_mode_bounce = jnp.logical_xor(
-                    inv_mode_up, old_pos[num_changes - 1] == 1
-                )
+                inv_mode_bounce = jnp.logical_xor(inv_mode_up, old_pos[num_changes - 1] == 1)
                 inv_mode_down = jnp.equal(jnp.count_nonzero(new_pos == 1) % 2, 0)
 
                 # Apply U_0
                 q_cond(inv_mode_leaf, U_0, U_0_dag, qarg)
 
                 # Go up the branch
-                time = q_fori_loop(
-                    0, num_changes - 1, lambda j, time: time + jnp.sqrt(s[j]), 0
-                )
+                time = q_fori_loop(0, num_changes - 1, lambda j, time: time + jnp.sqrt(s[j]), 0)
                 q_cond(inv_mode_up, exp_H, lambda a, b: None, qarg, -time)
 
                 # Bounce to next branch
@@ -299,18 +291,14 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
                     jnp.sqrt(s[num_changes - 1]),
                 )
                 q_cond(
-                    jnp.logical_and(
-                        old_pos[num_changes - 1] == 0, jnp.logical_not(inv_mode_bounce)
-                    ),
+                    jnp.logical_and(old_pos[num_changes - 1] == 0, jnp.logical_not(inv_mode_bounce)),
                     exp_00,
                     lambda a, b: None,
                     qarg,
                     -jnp.sqrt(s[num_changes - 1]),
                 )
                 q_cond(
-                    jnp.logical_and(
-                        old_pos[num_changes - 1] == 1, jnp.logical_not(inv_mode_bounce)
-                    ),
+                    jnp.logical_and(old_pos[num_changes - 1] == 1, jnp.logical_not(inv_mode_bounce)),
                     exp_H,
                     lambda a, b: None,
                     qarg,
@@ -331,7 +319,6 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
             exp_H(qarg, -time)
 
         if method == "HOPF":
-
             phi = (jnp.sqrt(5) - 1) / 2
 
             def body_fun(i, val):
@@ -344,30 +331,19 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
                 num_changes = jnp.count_nonzero(new_pos != old_pos)
 
                 # Compute which operations must be inverted
-                inv_mode_leaf = (
-                    jnp.count_nonzero(old_pos == 1) + jnp.count_nonzero(old_pos == 3)
-                ) % 2 == 0
+                inv_mode_leaf = (jnp.count_nonzero(old_pos == 1) + jnp.count_nonzero(old_pos == 3)) % 2 == 0
                 inv_mode_up = inv_mode_leaf
                 inv_mode_bounce = jnp.logical_xor(
                     inv_mode_up,
-                    jnp.logical_or(
-                        old_pos[num_changes - 1] == 1, old_pos[num_changes - 1] == 3
-                    ),
+                    jnp.logical_or(old_pos[num_changes - 1] == 1, old_pos[num_changes - 1] == 3),
                 )
-                inv_mode_down = (
-                    jnp.count_nonzero(new_pos == 1) + jnp.count_nonzero(new_pos == 3)
-                ) % 2 == 0
+                inv_mode_down = (jnp.count_nonzero(new_pos == 1) + jnp.count_nonzero(new_pos == 3)) % 2 == 0
 
                 # Apply U_0
                 q_cond(inv_mode_leaf, U_0, U_0_dag, qarg)
 
                 # Go up the branch
-                time = (
-                    q_fori_loop(
-                        0, num_changes - 1, lambda j, time: time + jnp.sqrt(s[j]), 0
-                    )
-                    * phi
-                )
+                time = q_fori_loop(0, num_changes - 1, lambda j, time: time + jnp.sqrt(s[j]), 0) * phi
                 q_cond(inv_mode_up, exp_H, lambda a, b: None, qarg, -time)
 
                 # Bounce to next branch
@@ -401,36 +377,28 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
                 )
 
                 q_cond(
-                    jnp.logical_and(
-                        old_pos[num_changes - 1] == 3, jnp.logical_not(inv_mode_bounce)
-                    ),
+                    jnp.logical_and(old_pos[num_changes - 1] == 3, jnp.logical_not(inv_mode_bounce)),
                     exp_H,
                     lambda a, b: None,
                     qarg,
                     (1 - phi) * jnp.sqrt(s[num_changes - 1]),
                 )
                 q_cond(
-                    jnp.logical_and(
-                        old_pos[num_changes - 1] == 2, jnp.logical_not(inv_mode_bounce)
-                    ),
+                    jnp.logical_and(old_pos[num_changes - 1] == 2, jnp.logical_not(inv_mode_bounce)),
                     exp_00,
                     lambda a, b: None,
                     qarg,
                     (1 + phi) * jnp.sqrt(s[num_changes - 1]),
                 )
                 q_cond(
-                    jnp.logical_and(
-                        old_pos[num_changes - 1] == 1, jnp.logical_not(inv_mode_bounce)
-                    ),
+                    jnp.logical_and(old_pos[num_changes - 1] == 1, jnp.logical_not(inv_mode_bounce)),
                     exp_H,
                     lambda a, b: None,
                     qarg,
                     -jnp.sqrt(s[num_changes - 1]),
                 )
                 q_cond(
-                    jnp.logical_and(
-                        old_pos[num_changes - 1] == 0, jnp.logical_not(inv_mode_bounce)
-                    ),
+                    jnp.logical_and(old_pos[num_changes - 1] == 0, jnp.logical_not(inv_mode_bounce)),
                     exp_00,
                     lambda a, b: None,
                     qarg,

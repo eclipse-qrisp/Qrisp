@@ -301,26 +301,26 @@ def test_dqa_radd_preserves_qubit_identity():
     """After __radd__, accessing qubits via the new DQA should reference the
     original qubits (not copies). Flipping via the concatenated DQA must
     affect the original QuantumVariable."""
-    
+
     @boolean_simulation
     def main():
         a = QuantumFloat(3)
         c_in = QuantumBool()
-        a[:] = 4     # 100
-        x(c_in[0])   # c_in = True
-        
+        a[:] = 4  # 100
+        x(c_in[0])  # c_in = True
+
         # Pattern used by gidney_adder: prepend carry-in qubit
         combined = [c_in[0]] + a.reg
         # combined layout: [c_in, a[0], a[1], a[2]]
-        
+
         x(combined[0])  # flip c_in: True → False
         x(combined[3])  # flip a[2] (MSB): 100 → 000
-        
+
         return measure(a), measure(c_in)
-    
+
     a_res, c_res = main()
-    assert a_res == 0     # 100 → 000
-    assert not c_res       # True → False
+    assert a_res == 0  # 100 → 000
+    assert not c_res  # True → False
 
 
 # ---------------------------------------------------------------------------

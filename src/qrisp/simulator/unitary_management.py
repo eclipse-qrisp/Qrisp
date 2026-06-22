@@ -31,9 +31,7 @@ np_dtype = np.complex64
 id_matrix = np.eye(2, dtype=np_dtype)
 
 pauli_x = np.asarray([[0, 1], [1, 0]], dtype=np_dtype)
-pauli_y = (
-    np.asarray([[0, 0], [0, 0]], dtype=np_dtype) + 1j * np.asarray([[0, -1], [1, 0]])
-).astype(np_dtype)
+pauli_y = (np.asarray([[0, 0], [0, 0]], dtype=np_dtype) + 1j * np.asarray([[0, -1], [1, 0]])).astype(np_dtype)
 pauli_z = np.asarray([[1, 0], [0, -1]], dtype=np_dtype)
 from sympy.core.expr import Expr
 import numpy
@@ -76,9 +74,7 @@ def controlled_unitary(controlled_gate):
     try:
         temp = controlled_gate.base_operation.unitary_array
     except AttributeError:
-        temp = controlled_gate.base_operation.unitary_array = (
-            controlled_gate.base_operation.get_unitary()
-        )
+        temp = controlled_gate.base_operation.unitary_array = controlled_gate.base_operation.get_unitary()
 
     n = controlled_gate.num_qubits
     res = np.eye(2**n, dtype=temp.dtype)
@@ -125,11 +121,9 @@ def calc_embedded_unitary(gate, n, destination_qubits):
         gate.unitary = gate_array
 
     elif gate.definition is not None:
-
         gate_array = __calc_circuit_unitary(gate.definition)
         gate.unitary = gate_array
     else:
-
         gate_array = gate.get_unitary()
 
     # Numpy arrays are only fast on a low scale than BiArrays. Therefore,  we generate
@@ -304,9 +298,7 @@ def __calc_circuit_unitary(qc):
     # calculate this instructions unitary and embedd it
     if len(qc.data) == 1:
         instr_0 = qc.data[0]
-        unitary_0 = calc_embedded_unitary(
-            qc.data[0].op, n, [qc.qubits.index(qb) for qb in instr_0.qubits]
-        )
+        unitary_0 = calc_embedded_unitary(qc.data[0].op, n, [qc.qubits.index(qb) for qb in instr_0.qubits])
 
         return unitary_0
 
@@ -316,18 +308,12 @@ def __calc_circuit_unitary(qc):
     # If the circuit contained unused qubits, the next "else" statement will turn
     # this circuit into it's version without any idle qubits
     # and this case is then called at a later recursion
-    elif len(qc.data) == 2 and len(qc.qubits) == len(
-        set(qc.data[0].qubits).union(qc.data[1].qubits)
-    ):
+    elif len(qc.data) == 2 and len(qc.qubits) == len(set(qc.data[0].qubits).union(qc.data[1].qubits)):
         instr_0 = qc.data[0]
         instr_1 = qc.data[1]
 
-        unitary_0 = calc_embedded_unitary(
-            instr_0.op, n, [qc.qubits.index(qb) for qb in instr_0.qubits]
-        )
-        unitary_1 = calc_embedded_unitary(
-            instr_1.op, n, [qc.qubits.index(qb) for qb in instr_1.qubits]
-        )
+        unitary_0 = calc_embedded_unitary(instr_0.op, n, [qc.qubits.index(qb) for qb in instr_0.qubits])
+        unitary_1 = calc_embedded_unitary(instr_1.op, n, [qc.qubits.index(qb) for qb in instr_1.qubits])
 
         res = tensordot(unitary_1, unitary_0, (1, 0), contract_sparsity_threshold=0.01)
 

@@ -23,9 +23,7 @@ def cond_to_cl_control(eqn, context_dic, eqn_evaluator):
     from qrisp.circuit import QuantumCircuit, Clbit
 
     if len(eqn.params["branches"]) > 2:
-        raise Exception(
-            "Tried to extract QuantumCircuit from Jaspr including a condition with more than two branches"
-        )
+        raise Exception("Tried to extract QuantumCircuit from Jaspr including a condition with more than two branches")
 
     # Extract the invalues from the context dic
     invalues = extract_invalues(eqn, context_dic)
@@ -70,9 +68,7 @@ def eval_qc(definition_jaxpr, invalues, eqn_evaluator):
     invalues = list(invalues)
     invalues[-1] = new_qc
 
-    res = eval_jaxpr(definition_jaxpr.jaxpr, eqn_evaluator=eqn_evaluator)(
-        *(invalues + definition_jaxpr.consts)
-    )
+    res = eval_jaxpr(definition_jaxpr.jaxpr, eqn_evaluator=eqn_evaluator)(*(invalues + definition_jaxpr.consts))
 
     if len(definition_jaxpr.jaxpr.outvars) == 1:
         res = [res]

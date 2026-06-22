@@ -66,14 +66,10 @@ class VirtualJob(Job):
             run_func = self._backend.run_func
             if isinstance(self._shots, list):
                 counts_list = [
-                    run_func(circuit.qasm(), s, self._token)
-                    for circuit, s in zip(self._circuits, self._shots)
+                    run_func(circuit.qasm(), s, self._token) for circuit, s in zip(self._circuits, self._shots)
                 ]
             else:
-                counts_list = [
-                    run_func(circuit.qasm(), self._shots, self._token)
-                    for circuit in self._circuits
-                ]
+                counts_list = [run_func(circuit.qasm(), self._shots, self._token) for circuit in self._circuits]
             self._result_data = JobResult(counts_list)
             self._last_known_status = JobStatus.DONE
         except Exception as exc:

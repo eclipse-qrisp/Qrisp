@@ -117,34 +117,24 @@ def spacial_to_spin(one_int, two_int):
 
     for i in range(num_spacial_orbs):
         for j in range(num_spacial_orbs):
-
             one_int_spin[2 * i][2 * j] = one_int[i][j]
 
             one_int_spin[2 * i + 1][2 * j + 1] = one_int[i][j]
 
     # Initialize the spin-orbital two-electron integral tensor
-    two_int_spin = np.zeros(
-        (num_spin_orbs, num_spin_orbs, num_spin_orbs, num_spin_orbs)
-    )
+    two_int_spin = np.zeros((num_spin_orbs, num_spin_orbs, num_spin_orbs, num_spin_orbs))
 
     for i in range(num_spacial_orbs):
         for j in range(num_spacial_orbs):
             for k in range(num_spacial_orbs):
                 for l in range(num_spacial_orbs):
+                    two_int_spin[2 * i][2 * j + 1][2 * k + 1][2 * l] = two_int[i][j][k][l]
 
-                    two_int_spin[2 * i][2 * j + 1][2 * k + 1][2 * l] = two_int[i][j][k][
-                        l
-                    ]
-
-                    two_int_spin[2 * i + 1][2 * j][2 * k][2 * l + 1] = two_int[i][j][k][
-                        l
-                    ]
+                    two_int_spin[2 * i + 1][2 * j][2 * k][2 * l + 1] = two_int[i][j][k][l]
 
                     two_int_spin[2 * i][2 * j][2 * k][2 * l] = two_int[i][j][k][l]
 
-                    two_int_spin[2 * i + 1][2 * j + 1][2 * k + 1][2 * l + 1] = two_int[
-                        i
-                    ][j][k][l]
+                    two_int_spin[2 * i + 1][2 * j + 1][2 * k + 1][2 * l + 1] = two_int[i][j][k][l]
 
     return one_int_spin, two_int_spin
 
@@ -288,9 +278,7 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None):
         if not verify_symmetries(data["two_int"]):
             raise Warning("Failed to verify symmetries for two-electron integrals")
     else:
-        raise TypeError(
-            "Cannot create electronic Hamiltonian from type " + str(type(arg))
-        )
+        raise TypeError("Cannot create electronic Hamiltonian from type " + str(type(arg)))
 
     one_int = data["one_int"]
     two_int = data["two_int"]
@@ -337,9 +325,7 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None):
             for k in range(K):
                 for l in range(K):
                     if two_int[I + i][I + j][I + k][I + l] != 0 and i != j and k != l:
-                        term = FermionicTerm(
-                            [(l, False), (k, False), (j, True), (i, True)]
-                        )
+                        term = FermionicTerm([(l, False), (k, False), (j, True), (i, True)])
                         res_dict[term] = 0.5 * two_int[I + i][I + j][I + k][I + l]
                         # H += (0.5*two_int[I+i][I+j][I+k][I+l])*c(i)*c(j)*a(k)*a(l)
     temp_H = FermionicOperator(res_dict)
@@ -421,15 +407,10 @@ def create_QCCSD_ansatz(M, N):
     spin_up_occupied = [i for i in range(N) if i % 2 == 1]
     spin_up_virtual = [i for i in range(N, M) if i % 2 == 1]
 
-    num_singles = len(spin_down_occupied) * len(spin_down_virtual) + len(
-        spin_up_occupied
-    ) * len(spin_up_virtual)
+    num_singles = len(spin_down_occupied) * len(spin_down_virtual) + len(spin_up_occupied) * len(spin_up_virtual)
 
     num_doubles = (
-        len(spin_down_occupied)
-        * len(spin_up_occupied)
-        * len(spin_down_virtual)
-        * len(spin_up_virtual)
+        len(spin_down_occupied) * len(spin_up_occupied) * len(spin_down_virtual) * len(spin_up_virtual)
         + math.comb(len(spin_down_occupied), 2) * math.comb(len(spin_down_virtual), 2)
         + math.comb(len(spin_up_occupied), 2) * math.comb(len(spin_up_virtual), 2)
     )
@@ -508,9 +489,7 @@ def create_hartree_fock_init_function(M, N):
     return init_function
 
 
-def electronic_structure_problem(
-    arg, active_orb=None, active_elec=None, ansatz_type="QCCSD", threshold=1e-4
-):
+def electronic_structure_problem(arg, active_orb=None, active_elec=None, ansatz_type="QCCSD", threshold=1e-4):
     r"""
     Creates a VQE problem instance for an electronic structure problem defined by the
     one-electron and two-electron integrals for the spin orbitals (in physicists' notation).

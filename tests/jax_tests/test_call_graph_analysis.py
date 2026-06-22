@@ -28,6 +28,7 @@ from qrisp.jasp.interpreter_tools.call_graph_analysis import (
 
 # ── Tests ─────────────────────────────────────────────────────────
 
+
 def test_flat_jaxpr():
     """A jaxpr with no sub-calls: inlined_eqn_count == local_eqn_count."""
 
@@ -77,8 +78,7 @@ def test_single_jit_call():
     assert root.inlined_eqn_count == 3
 
     # sub_body should have 2 eqns, called once
-    sub_stats = [s for s in all_stats.values()
-                 if s.local_eqn_count == 2 and s.inlined_eqn_count == 2]
+    sub_stats = [s for s in all_stats.values() if s.local_eqn_count == 2 and s.inlined_eqn_count == 2]
     assert len(sub_stats) == 1
     assert sub_stats[0].call_count == 1
 
@@ -115,8 +115,7 @@ def test_shared_jit_reuse():
     assert root.inlined_eqn_count == 6
 
     # sub should be reused 3 times
-    sub_stats = [s for s in all_stats.values()
-                 if s.local_eqn_count == 2 and s.inlined_eqn_count == 2]
+    sub_stats = [s for s in all_stats.values() if s.local_eqn_count == 2 and s.inlined_eqn_count == 2]
     assert len(sub_stats) == 1
     assert sub_stats[0].call_count == 3
 
@@ -178,8 +177,7 @@ def test_diamond_reuse():
     root, all_stats = analyze_call_graph(jaxpr)
 
     # inner_body has 1 local eqn and should be called 2×
-    inner_stats = [s for s in all_stats.values()
-                   if s.local_eqn_count == 1 and s.inlined_eqn_count == 1]
+    inner_stats = [s for s in all_stats.values() if s.local_eqn_count == 1 and s.inlined_eqn_count == 1]
     assert len(inner_stats) == 1
     assert inner_stats[0].call_count == 2
 
@@ -222,6 +220,7 @@ def test_scan():
     def f(x):
         def body(carry, _):
             return carry + 1.0, carry
+
         final, ys = jax.lax.scan(body, x, jnp.arange(5.0))
         return final
 
@@ -256,8 +255,7 @@ def test_inflation_calculation():
     root, all_stats = analyze_call_graph(jaxpr)
 
     # Find sub (5 local eqns, called 10×)
-    sub_stats = [s for s in all_stats.values()
-                 if s.local_eqn_count == 5 and s.inlined_eqn_count == 5]
+    sub_stats = [s for s in all_stats.values() if s.local_eqn_count == 5 and s.inlined_eqn_count == 5]
     assert len(sub_stats) == 1
     assert sub_stats[0].call_count == 10
 
@@ -288,10 +286,7 @@ def test_no_reuse_no_inflation():
     jaxpr = make_jaxpr(f)(1.0)
     root, all_stats = analyze_call_graph(jaxpr)
 
-    total_inflation = sum(
-        (s.call_count - 1) * s.inlined_eqn_count
-        for s in all_stats.values()
-    )
+    total_inflation = sum((s.call_count - 1) * s.inlined_eqn_count for s in all_stats.values())
     assert total_inflation == 0
 
 
@@ -358,9 +353,9 @@ def test_mixed_reuse_and_unique():
 
     # unique_body: 1 eqn, called 1×, inlined == 1
     # (exclude root wrapper which also has local==1 but inlined==4)
-    unique_stats = [s for s in all_stats.values()
-                    if s.call_count == 1 and s.local_eqn_count == 1
-                    and s.inlined_eqn_count == 1]
+    unique_stats = [
+        s for s in all_stats.values() if s.call_count == 1 and s.local_eqn_count == 1 and s.inlined_eqn_count == 1
+    ]
     assert len(unique_stats) == 1
 
 
@@ -396,8 +391,7 @@ def test_large_reuse_count():
     jaxpr = make_jaxpr(f)(1.0)
     root, all_stats = analyze_call_graph(jaxpr)
 
-    sub_stats = [s for s in all_stats.values()
-                 if s.local_eqn_count == 2 and s.inlined_eqn_count == 2]
+    sub_stats = [s for s in all_stats.values() if s.local_eqn_count == 2 and s.inlined_eqn_count == 2]
     assert len(sub_stats) == 1
     assert sub_stats[0].call_count == 100
 

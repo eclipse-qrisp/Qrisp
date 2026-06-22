@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 
 import itertools
 
+
 def traveling_salesman_bruteforce(adjacency_matrix):
     num_nodes = len(adjacency_matrix)
     if num_nodes <= 1:
@@ -30,7 +31,7 @@ def traveling_salesman_bruteforce(adjacency_matrix):
     # Generate all possible permutations of cities to visit
     all_permutations = itertools.permutations(range(1, num_nodes))
 
-    min_distance = float('inf')
+    min_distance = float("inf")
     best_path = []
 
     # Iterate through all permutations and calculate the total distance
@@ -48,13 +49,8 @@ def traveling_salesman_bruteforce(adjacency_matrix):
     return min_distance, best_path
 
 
-
 # Define the adjacency matrix for 4 cities (replace with your data)
-adjacency_matrix = np.array([[0, 2, 9, 10, 3],
-                             [1, 0, 6, 4, 8],
-                             [15, 7, 0, 8, 9],
-                             [6, 3, 12, 0, 7],
-                             [3, 8, 9, 7, 0]])
+adjacency_matrix = np.array([[0, 2, 9, 10, 3], [1, 0, 6, 4, 8], [15, 7, 0, 8, 9], [6, 3, 12, 0, 7], [3, 8, 9, 7, 0]])
 
 # Define the order of cities visited (replace with your solution)
 # order_of_cities = [0, 1, 3, 2, 4, 0]  # Start and end at the first city
@@ -82,7 +78,7 @@ for i in range(num_cities):
         end_city = j
         distance = adjacency_matrix[start_city, end_city]
         G.add_edge(start_city, end_city, weight=distance)
-        
+
         if i < j:
             edge_labels[start_city, end_city] = distance
 
@@ -90,33 +86,47 @@ for i in range(num_cities):
 # plt.figure(figsize=(6, 6))
 
 # Draw the nodes with different colors
-pos = nx.spring_layout(G, seed = 182)
+pos = nx.spring_layout(G, seed=182)
 # pos = nx.spring_layout(G, seed = 189)
 # pos = nx.kamada_kawai_layout(G)
-labels = {0 : "a", 1 : "b", 2: "c", 3: "d", 4: "e"}
-nx.draw_networkx_nodes(G, pos, node_color='#7d7d7d', node_size=500)
+labels = {0: "a", 1: "b", 2: "c", 3: "d", 4: "e"}
+nx.draw_networkx_nodes(G, pos, node_color="#7d7d7d", node_size=500)
 
 # Draw the edges between cities as dotted lines
-nx.draw_networkx_edges(G, pos, edgelist=list(G.edges()), style='dotted', edge_color='gray')
+nx.draw_networkx_edges(G, pos, edgelist=list(G.edges()), style="dotted", edge_color="gray")
 nx.draw_networkx_labels(G, pos, labels, font_size=15, font_color="whitesmoke")
 # Draw the solution path as a solid line
 solution_edges = [(order_of_cities[i], order_of_cities[i + 1]) for i in range(num_cities)]
 
 # nx.draw_networkx_edges(G, pos, edgelist=solution_edges, style='solid', edge_color='#263a88', width=7, alpha=0.8,)
-nx.draw_networkx_edges(G, pos, edgelist=solution_edges, style='solid', edge_color='#20306f', width=7, alpha=0.8,)
+nx.draw_networkx_edges(
+    G,
+    pos,
+    edgelist=solution_edges,
+    style="solid",
+    edge_color="#20306f",
+    width=7,
+    alpha=0.8,
+)
 # nx.draw_networkx_edges(G, pos, edgelist=solution_edges, style='solid', edge_color='#015999', width=7, alpha=0.8,)
-nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=12, label_pos=0.3, font_color = "#444444", bbox = {'boxstyle': 'square',  "ec" : (1.0, 1.0, 1.0), "fc" : (1.0, 1.0, 1.0), "pad" : 0.1})
-
-
+nx.draw_networkx_edge_labels(
+    G,
+    pos,
+    edge_labels=edge_labels,
+    font_size=12,
+    label_pos=0.3,
+    font_color="#444444",
+    bbox={"boxstyle": "square", "ec": (1.0, 1.0, 1.0), "fc": (1.0, 1.0, 1.0), "pad": 0.1},
+)
 
 
 # Set plot title and labels
-plt.xlabel('X-coordinate')
-plt.ylabel('Y-coordinate')
+plt.xlabel("X-coordinate")
+plt.ylabel("Y-coordinate")
 
 # Show the plot
-plt.axis('off')
+plt.axis("off")
 plt.grid()
-plt.tight_layout() 
+plt.tight_layout()
 # plt.savefig("tsp.svg", format = "svg", dpi = 80, bbox_inches = "tight")
 # plt.show()

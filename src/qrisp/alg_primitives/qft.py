@@ -49,10 +49,7 @@ def QFT_inner(
         env = GMSEnvironment
 
     if not is_inv(inplace_mult, n):
-        raise Exception(
-            "Tried to perform non-invertible inplace multiplication"
-            "during Fourier-Transform"
-        )
+        raise Exception("Tried to perform non-invertible inplace multiplicationduring Fourier-Transform")
 
     if inpl_adder is None:
         accumulated_phases = np.zeros(n)
@@ -96,7 +93,6 @@ def QFT_inner(
                 accumulated_phases[i] = 0
 
     else:
-
         from qrisp import QuantumFloat, conjugate
 
         reservoir = QuantumFloat(n + 1)
@@ -108,9 +104,7 @@ def QFT_inner(
                 p(np.pi * 2 ** (i - n + 1), reservoir[i])
 
         with conjugate(prepare_reservoir)(reservoir):
-
             for i in range(n):
-
                 h(qv[i])
 
                 if i == n - 1:

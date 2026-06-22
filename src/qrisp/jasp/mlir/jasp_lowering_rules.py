@@ -105,9 +105,7 @@ def create_qubits_lowering(ctx, amount, qst_in):
     Lowering rule that emits our CreateQubits dialect operation.
     """
     # Create our create_qubits operation using the generated class
-    create_qubits_op = jasp_dialect.CreateQubitsOp(
-        get_ir_qa_type(), get_ir_qst_type(), amount, qst_in
-    )
+    create_qubits_op = jasp_dialect.CreateQubitsOp(get_ir_qa_type(), get_ir_qst_type(), amount, qst_in)
     # Return both results: QubitArray and QuantumState as list
     return [create_qubits_op.results[0], create_qubits_op.results[1]]
 
@@ -133,9 +131,7 @@ def get_size_lowering(ctx, qb_array):
     Lowering rule that emits our GetSize dialect operation.
     """
     # Create scalar tensor type for i64 result
-    i64_result_type = ir.RankedTensorType.get(
-        [], get_i64_type()
-    )  # scalar tensor of i64
+    i64_result_type = ir.RankedTensorType.get([], get_i64_type())  # scalar tensor of i64
 
     # Create our get_size operation using the generated class
     get_size_op = jasp_dialect.GetSizeOp(i64_result_type, qb_array)
@@ -241,9 +237,7 @@ def consume_quantum_kernel_lowering(ctx, qst):
     bool_result_type = ir.RankedTensorType.get([], get_i1_type())  # scalar tensor of i1
 
     # Create our consume_quantum_kernel operation using the generated class
-    consume_quantum_kernel_op = jasp_dialect.ConsumeQuantumKernelOp(
-        bool_result_type, qst
-    )
+    consume_quantum_kernel_op = jasp_dialect.ConsumeQuantumKernelOp(bool_result_type, qst)
     # Return the boolean result indicating success
     return [consume_quantum_kernel_op.results[0]]
 
@@ -292,9 +286,7 @@ def parity_lowering(ctx, *measurements, expectation, observable):
     result_type = ir.RankedTensorType.get([], get_i1_type())
 
     # Create our parity operation using the generated class
-    parity_op = jasp_dialect.ParityOp(
-        result_type, list(measurements), expectation, observable
-    )
+    parity_op = jasp_dialect.ParityOp(result_type, list(measurements), expectation, observable)
     # Return the boolean result
     return [parity_op.results[0]]
 

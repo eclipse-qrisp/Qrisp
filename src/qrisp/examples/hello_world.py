@@ -18,7 +18,7 @@
 
 from qrisp import QuantumString
 
-q_str = QuantumString(size = len("hello world"))
+q_str = QuantumString(size=len("hello world"))
 q_str[:] = "hello world"
 
 print(q_str)

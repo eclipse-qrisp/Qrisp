@@ -198,8 +198,7 @@ def QAE(
 
     if precision is None and target is None:
         raise ValueError(
-            "Tried to call Quantum Amplitude Estimation without specifying "
-            "either 'precision' or 'target'."
+            "Tried to call Quantum Amplitude Estimation without specifying either 'precision' or 'target'."
         )
 
     if isinstance(args, (QuantumVariable, QuantumArray)):

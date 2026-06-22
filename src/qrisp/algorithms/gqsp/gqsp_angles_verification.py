@@ -314,9 +314,7 @@ def evaluate_gqsp_polynomial(
     """
 
     if len(theta_angles) != len(phi_angles):
-        raise ValueError(
-            "theta_angles and phi_angles must have the same length (d + 1)."
-        )
+        raise ValueError("theta_angles and phi_angles must have the same length (d + 1).")
 
     z = np.asarray(z_values, dtype=complex)
     num_z = len(z)
@@ -338,9 +336,7 @@ def evaluate_gqsp_polynomial(
         return mat
 
     # A_0 = exp(i * lambd * Z) * exp(i * phi_0 * X) * exp(i * theta_0 * Z)
-    U = np.matmul(
-        exp_iZ(lambd), np.matmul(exp_iX(phi_angles[0]), exp_iZ(theta_angles[0]))
-    )
+    U = np.matmul(exp_iZ(lambd), np.matmul(exp_iX(phi_angles[0]), exp_iZ(theta_angles[0])))
 
     # Iteratively apply W(z) and A_k
     for k in range(1, d + 1):
@@ -572,9 +568,7 @@ def assert_qsp_angles_match_target(
     expected_values = cheb.chebval(x_range, target_cheb_coeffs)
 
     # 2. Evaluate classical matrix reconstruction (using the universal helper)
-    u00_response = evaluate_qsp_polynomial(
-        angles, x_range, signal_basis=signal_basis, phase_basis=phase_basis
-    )
+    u00_response = evaluate_qsp_polynomial(angles, x_range, signal_basis=signal_basis, phase_basis=phase_basis)
 
     # 3. Scale back by alpha
     reconstructed_real = u00_response.real * alpha
@@ -712,9 +706,7 @@ def assert_qsvt_angles_match_target(
         "Real (+1)": np.max(np.abs(reconstructed_real - expected_values)),
         "Imaginary (+i)": np.max(np.abs(reconstructed_imag - expected_values)),
         "Negative Real (-1)": np.max(np.abs(-reconstructed_real - expected_values)),
-        "Negative Imaginary (-i)": np.max(
-            np.abs(-reconstructed_imag - expected_values)
-        ),
+        "Negative Imaginary (-i)": np.max(np.abs(-reconstructed_imag - expected_values)),
     }
 
     best_match_component = min(errors, key=errors.get)

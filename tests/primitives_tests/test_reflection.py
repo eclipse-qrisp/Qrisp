@@ -23,7 +23,7 @@ from qrisp.jasp import terminal_sampling, jrange
 def ghz(*args):
     """Prepares a GHZ state on the provided quantum variables."""
 
-    flattened_qargs = []   
+    flattened_qargs = []
     for arg in args:
         if isinstance(arg, QuantumVariable):
             flattened_qargs.append(arg)
@@ -42,11 +42,11 @@ def test_reflection_quantum_variable():
     qv = QuantumVariable(5)
     x(qv)
     res = qv.get_measurement()
-    assert res == {'11111': 1.0}
+    assert res == {"11111": 1.0}
 
     reflection(qv, ghz)
     res = qv.get_measurement()
-    assert res == {'00000': 1.0}
+    assert res == {"00000": 1.0}
 
 
 def test_reflection_quantum_array():
@@ -82,11 +82,11 @@ def test_reflection_list_quantum_variable():
     x(qv_list[0])
     x(qv_list[1])
     res = multi_measurement(qv_list)
-    assert res == {('111', '11'): 1.0}
+    assert res == {("111", "11"): 1.0}
 
     reflection(qv_list, ghz)
     res = multi_measurement(qv_list)
-    assert res == {('000', '00'): 1.0}
+    assert res == {("000", "00"): 1.0}
 
 
 def test_reflection_tuple_quantum_variable():
@@ -96,11 +96,11 @@ def test_reflection_tuple_quantum_variable():
     x(qv_tuple[0])
     x(qv_tuple[1])
     res = multi_measurement(qv_tuple)
-    assert res == {('111', '11'): 1.0}
+    assert res == {("111", "11"): 1.0}
 
     reflection(qv_tuple, ghz)
     res = multi_measurement(qv_tuple)
-    assert res == {('000', '00'): 1.0}
+    assert res == {("000", "00"): 1.0}
 
 
 def test_reflection_list_quantum_varaible_quantum_array():
@@ -120,11 +120,11 @@ def test_reflection_list_quantum_varaible_quantum_array():
     x(qv)
     x(qa)
     res = multi_measurement([qv, qa])
-    assert res == {('11111', OutcomeArray([7, 7, 7])): 1.0}
+    assert res == {("11111", OutcomeArray([7, 7, 7])): 1.0}
 
     reflection([qv, qa], ghz)
     res = multi_measurement([qv, qa])
-    assert res == {('00000', OutcomeArray([0, 0, 0])): 1.0}
+    assert res == {("00000", OutcomeArray([0, 0, 0])): 1.0}
 
 
 def test_jasp_reflection():

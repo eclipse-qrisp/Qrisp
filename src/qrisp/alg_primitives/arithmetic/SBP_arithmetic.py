@@ -73,9 +73,7 @@ def check_for_polynomial(expr):
 
 
 # Efficient implementation of the multicontrolled U_g gate
-def multi_controlled_U_g(
-    output_qf, control_qb_list, y, phase_tolerant=False, use_gms=False
-):
+def multi_controlled_U_g(output_qf, control_qb_list, y, phase_tolerant=False, use_gms=False):
     # Set alias for quantum session
     # qs = output_qf.qs
     qs = control_qb_list[0].qs()
@@ -201,9 +199,7 @@ def U_g(y, qv):
 # For the polynomial p(x_0, x_1, x_2) = 4*x_0*x_1 + 2*x_0*x_2
 # the effect of this function is:
 # U_f |x_0, x_1, x_2>|0> = |x_0, x_1, x_2>|p(x_1,x_2,x_3)>
-def sb_polynomial_encoder(
-    input_qf_list, output_qf, poly, inplace_mult=1, use_gms=False, init_op="auto"
-):
+def sb_polynomial_encoder(input_qf_list, output_qf, poly, inplace_mult=1, use_gms=False, init_op="auto"):
     # As the polynomial has only boolean variables,
     # powers can be ignored since x**k = x for x in GF(2)
     poly = filter_pow(poly.expand()).expand() / 2.0**output_qf.exponent
@@ -218,9 +214,7 @@ def sb_polynomial_encoder(
     n = len(symbol_list)
 
     if n != sum([var.size for var in input_qf_list]):
-        raise Exception(
-            "Input variables do not the required amount of qubits to encode polynomial"
-        )
+        raise Exception("Input variables do not the required amount of qubits to encode polynomial")
 
     # Acquire monomials in list form
     monomial_list = expr_to_list(poly)
@@ -396,9 +390,7 @@ def sbp_mult(factor_1_qf, factor_2_qf, output_qf=None):
 
         output_qf = create_output_qf([factor_1_qf, factor_2_qf], op="mul")
     # Multiply the polynmials
-    mult_poly = factor_1_qf.sb_poly(output_qf.msize) * factor_2_qf.sb_poly(
-        output_qf.msize
-    )
+    mult_poly = factor_1_qf.sb_poly(output_qf.msize) * factor_2_qf.sb_poly(output_qf.msize)
 
     # Apply sb encoder
     sb_polynomial_encoder([factor_1_qf, factor_2_qf], output_qf, mult_poly)
@@ -454,9 +446,7 @@ def sbp_add(summand_1_qf, summand_2_qf, output_qf=None):
 
         output_qf = create_output_qf([summand_1_qf, summand_2_qf], op="add")
 
-    sum_poly = summand_1_qf.sb_poly(output_qf.msize) + summand_2_qf.sb_poly(
-        output_qf.msize
-    )
+    sum_poly = summand_1_qf.sb_poly(output_qf.msize) + summand_2_qf.sb_poly(output_qf.msize)
 
     # Apply sb encoder
     sb_polynomial_encoder([summand_1_qf, summand_2_qf], output_qf, sum_poly)
@@ -512,9 +502,7 @@ def sbp_sub(summand_1_qf, summand_2_qf, output_qf=None):
 
         output_qf = create_output_qf([summand_1_qf, summand_2_qf], op="sub")
 
-    dif_poly = summand_1_qf.sb_poly(output_qf.msize) - summand_2_qf.sb_poly(
-        output_qf.msize
-    )
+    dif_poly = summand_1_qf.sb_poly(output_qf.msize) - summand_2_qf.sb_poly(output_qf.msize)
 
     # Apply sb encoder
     sb_polynomial_encoder([summand_1_qf, summand_2_qf], output_qf, dif_poly)
@@ -598,17 +586,13 @@ def polynomial_encoder(qf_list, output_qf, poly, encoding_dic=None, inplace_mult
 
     if len(symbol_list) != len(qf_list):
         raise Exception(
-            "Provided QuantumFloat list does not include the appropriate amount"
-            "of elements to encode given polynomial"
+            "Provided QuantumFloat list does not include the appropriate amountof elements to encode given polynomial"
         )
 
     if not output_qf.signed:
         for qf in qf_list:
             if qf.signed:
-                raise Exception(
-                    "When encoding into an unsigned quantum float"
-                    "provide only unsigned inputs"
-                )
+                raise Exception("When encoding into an unsigned quantum floatprovide only unsigned inputs")
 
     sb_poly_list = [qf.sb_poly(output_qf.size) for qf in qf_list]
 
@@ -832,9 +816,7 @@ def hybrid_mult(
     # Note that the boolean y.signed adds the phase that would have been added
     # in command [3]
     # however not requiring another round of U_g gates
-    applied_phases = U_g_inpl_adder(
-        output_qf, x, cl_factor * (2 ** (y.msize) - 1 + y.signed)
-    )
+    applied_phases = U_g_inpl_adder(output_qf, x, cl_factor * (2 ** (y.msize) - 1 + y.signed))
 
     # We now come to the loop of the multiplication algorithm
 
@@ -975,9 +957,7 @@ def QFT_inpl_mult(qv, inplace_mult=1):
     n = len(qv)
 
     if not is_inv(inplace_mult, n):
-        raise Exception(
-            "Tried to perform non-invertible inplace multiplication during Fourier-Transform"
-        )
+        raise Exception("Tried to perform non-invertible inplace multiplication during Fourier-Transform")
 
     # Perform QFT with inplace multiplication
     for i in range(n):
@@ -1059,23 +1039,18 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
         )
 
     if mult_int < 0 and not qf.signed:
-        raise Exception(
-            "Tried to inplace-multiply unsigned QuantumFloat with negative factor"
-        )
+        raise Exception("Tried to inplace-multiply unsigned QuantumFloat with negative factor")
 
     bit_shift = 0
 
     if int(mult_int) != mult_int:
-
         c = abs(mult_int)
 
         for i in range(32):
             if int(2**i * c) == 2**i * c:
                 break
         else:
-            raise Exception(
-                "Tried to inplace multiply with number of to much precision"
-            )
+            raise Exception("Tried to inplace multiply with number of to much precision")
 
         bit_shift = -i
         mult_int = 2**i * mult_int
@@ -1107,11 +1082,8 @@ def quantum_bit_shift(qf, bit_shift, treat_overflow=True):
     from qrisp import cyclic_shift, control, QuantumFloat
 
     if isinstance(bit_shift, QuantumFloat):
-
         if bit_shift.signed or qf.signed:
-            raise Exception(
-                "Quantum-quantum bitshifting is currently only supported for unsigned arguments"
-            )
+            raise Exception("Quantum-quantum bitshifting is currently only supported for unsigned arguments")
 
         for i in range(*bit_shift.mshape):
             with control(bit_shift.significant(i)):
@@ -1120,9 +1092,7 @@ def quantum_bit_shift(qf, bit_shift, treat_overflow=True):
         return
 
     if treat_overflow:
-
         if bit_shift > 0:
-
             if qf.signed:
                 qf.extend(bit_shift, position=qf.size - 1)
             else:
@@ -1396,9 +1366,7 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
         if qf.signed:
             # We do not use modular arithmetic.
             sb_poly_list.append(
-                qf.sb_poly()
-                - 2 ** (qf.msize + 2 + qf.exponent)
-                * sp.symbols(str(hash(qf)) + "_" + str(qf.msize))
+                qf.sb_poly() - 2 ** (qf.msize + 2 + qf.exponent) * sp.symbols(str(hash(qf)) + "_" + str(qf.msize))
             )
         else:
             sb_poly_list.append(qf.sb_poly())
@@ -1421,17 +1389,13 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
 
 temp = app_sb_phase_polynomial.__doc__
 
-app_sb_phase_polynomial = gate_wrap(permeability="args", is_qfree=True)(
-    app_sb_phase_polynomial
-)
+app_sb_phase_polynomial = gate_wrap(permeability="args", is_qfree=True)(app_sb_phase_polynomial)
 
 app_sb_phase_polynomial.__doc__ = temp
 
 
 temp = app_phase_polynomial.__doc__
 
-app_phase_polynomial = gate_wrap(permeability="args", is_qfree=True)(
-    app_phase_polynomial
-)
+app_phase_polynomial = gate_wrap(permeability="args", is_qfree=True)(app_phase_polynomial)
 
 app_phase_polynomial.__doc__ = temp

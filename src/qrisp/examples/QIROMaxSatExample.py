@@ -67,7 +67,6 @@ print("QIRO 5 best results")
 maxfive = sorted(res_qiro, key=res_qiro.get, reverse=True)[:5]
 for key, val in res_qiro.items():
     if key in maxfive:
-
         print(key)
         print(testCostFun({key: 1}))
 

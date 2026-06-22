@@ -27,7 +27,6 @@ from qrisp.jasp import qache
 
 
 class GidneyLogicalAND(Operation):
-
     def __init__(self, inv=False, ctrl_state="11"):
 
         definition = QuantumCircuit(3)
@@ -67,9 +66,7 @@ class GidneyLogicalAND(Operation):
             elif computation_strategy == "margolus":
                 compiled_qc = margolus_qc
             else:
-                raise Exception(
-                    f"Don't know measurement based uncomputation strategy {computation_strategy}"
-                )
+                raise Exception(f"Don't know measurement based uncomputation strategy {computation_strategy}")
 
         name = "compiled_gidney_mcx"
         if self.inv:
@@ -81,9 +78,11 @@ class GidneyLogicalAND(Operation):
         res.ctrl_state = self.ctrl_state
         return res
 
+
 from qrisp.core import x, h, cx, t, t_dg, s, measure, cz
 from qrisp.environments import control
 from qrisp import custom_inversion
+
 
 @qache
 def gidney_mcx_impl(a, b, c):
@@ -101,6 +100,7 @@ def gidney_mcx_impl(a, b, c):
     h(c)
     s(c)
 
+
 @qache
 def gidney_mcx_inv_impl(a, b, c):
     h(c)
@@ -109,8 +109,9 @@ def gidney_mcx_inv_impl(a, b, c):
         cz(a, b)
         x(c)
 
+
 @custom_inversion
-def jasp_gidney_mcx(a, b, c, inv = False):
+def jasp_gidney_mcx(a, b, c, inv=False):
     if not inv:
         gidney_mcx_impl(a, b, c)
     else:

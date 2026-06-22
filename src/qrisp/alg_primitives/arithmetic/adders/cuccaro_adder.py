@@ -127,18 +127,14 @@ def cuccaro_adder(
         if isinstance(c_in, QuantumBool):
             c_in = c_in[0]
         elif not check_for_tracing_mode() and not isinstance(c_in, Qubit):
-            raise TypeError(
-                f"c_in must be of type QuantumBool or Qubit, not {type(c_in)}"
-            )
+            raise TypeError(f"c_in must be of type QuantumBool or Qubit, not {type(c_in)}")
         cx(c_in, ancilla[0])
 
     if c_out is not None:
         if isinstance(c_out, QuantumBool):
             ancilla2 = c_out[0]
         elif not check_for_tracing_mode() and not isinstance(c_out, Qubit):
-            raise TypeError(
-                f"c_out must be of type QuantumBool or Qubit, not {type(c_out)}"
-            )
+            raise TypeError(f"c_out must be of type QuantumBool or Qubit, not {type(c_out)}")
         else:
             ancilla2 = c_out
 

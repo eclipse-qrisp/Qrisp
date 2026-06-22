@@ -140,23 +140,18 @@ def rsa_encrypt_string(e, N, message):
 
     """
 
-    message_bitstring = " ".join(
-        format(x, "b").zfill(7) for x in bytearray(message, "ascii")
-    ).replace(" ", "")
+    message_bitstring = " ".join(format(x, "b").zfill(7) for x in bytearray(message, "ascii")).replace(" ", "")
 
     chunksize = N.bit_length() - 1
 
     chunks = [
-        message_bitstring[i * chunksize : (i + 1) * chunksize][::-1].zfill(chunksize)[
-            ::-1
-        ]
+        message_bitstring[i * chunksize : (i + 1) * chunksize][::-1].zfill(chunksize)[::-1]
         for i in range(int(np.ceil(len(message_bitstring) / chunksize)))
     ]
 
     ciphertext = ""
 
     for i in range(len(chunks)):
-
         encrypted_int = rsa_encrypt(e, N, int(chunks[i], 2))
         ciphertext += bin(encrypted_int)[2:].zfill(chunksize + 1)
 
@@ -213,10 +208,7 @@ def rsa_decrypt_string(e, N, ciphertext, backend=None):
 
     chunksize = (N).bit_length()
 
-    chunks = [
-        ciphertext[i * chunksize : (i + 1) * chunksize]
-        for i in range(int(np.ceil(len(ciphertext) / chunksize)))
-    ]
+    chunks = [ciphertext[i * chunksize : (i + 1) * chunksize] for i in range(int(np.ceil(len(ciphertext) / chunksize)))]
 
     plaintext_bitstring = ""
     for i in range(len(chunks)):

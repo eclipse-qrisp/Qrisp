@@ -47,9 +47,7 @@ def measure_abstract_eval(meas_object, qc):
     elif isinstance(meas_object, AbstractQubitArray):
         return ShapedArray((), dtype="int64"), AbstractQuantumState()
     else:
-        raise Exception(
-            f"Tried to call measurement primitive with type {type(meas_object)}"
-        )
+        raise Exception(f"Tried to call measurement primitive with type {type(meas_object)}")
 
 
 Measurement_p.multiple_results = True

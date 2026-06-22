@@ -74,11 +74,7 @@ def get_jasp_measurement(
         # In order for the change of basis function (below) to work properly,
         # the ladder terms either need to completely agree or completely disagree
         for group in temp_groups:
-            groups.extend(
-                group.group_up(
-                    lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)
-                )
-            )
+            groups.extend(group.group_up(lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)))
 
     elif diagonalisation_method == "commuting":
         temp_groups = hamiltonian.group_up(lambda a, b: a.commute_pauli(b))
@@ -86,11 +82,7 @@ def get_jasp_measurement(
         # In order for the change of basis function (below) to work properly,
         # the ladder terms either need to completely agree or completely disagree
         for group in temp_groups:
-            groups.extend(
-                group.group_up(
-                    lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)
-                )
-            )
+            groups.extend(group.group_up(lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)))
 
     else:
         raise Exception(f"Unknown diagonalisation method: {diagonalisation_method}.")
@@ -110,7 +102,6 @@ def get_jasp_measurement(
     shots_list = [N * s for s in stds]
 
     for index, group in enumerate(groups):
-
         # Calculate the new measurement operators (after change of basis)
         meas_op = group.change_of_basis(method=diagonalisation_method)
 
@@ -148,9 +139,7 @@ def jasp_evaluate_expectation_jitted(samples, operators, coefficients):
 
     # Evaluate and sum intermediate results for each measurement setting
     for index, ops in enumerate(operators):
-        expectation += sum_over_observables_and_samples(
-            ops, samples[index], coefficients[index]
-        ) / len(samples[index])
+        expectation += sum_over_observables_and_samples(ops, samples[index], coefficients[index]) / len(samples[index])
 
     return expectation
 
@@ -180,11 +169,7 @@ def jasp_evaluate_observable_jitted(observable: tuple, x: int):
     corrected_x = x ^ AND_ctrl_state
 
     # If all bits are in the 0 state the AND is true.
-    return (
-        prefactor
-        * jnp.where(sign_flip % 2 == 0, 1, -1)
-        * jnp.int64((AND_bits == 0) | (corrected_x & AND_bits == 0))
-    )
+    return prefactor * jnp.where(sign_flip % 2 == 0, 1, -1) * jnp.int64((AND_bits == 0) | (corrected_x & AND_bits == 0))
 
 
 @jax.jit
@@ -194,9 +179,7 @@ def sum_over_observables_and_samples(observables, x_values, coefficients):
         sum_val = val
         obs = observables[i]
         c = coefficients[i]
-        results = jax.vmap(jasp_evaluate_observable_jitted, in_axes=(None, 0))(
-            obs, x_values
-        )
+        results = jax.vmap(jasp_evaluate_observable_jitted, in_axes=(None, 0))(obs, x_values)
         return sum_val + c * jnp.sum(results)
 
     total_sum = jax.lax.fori_loop(

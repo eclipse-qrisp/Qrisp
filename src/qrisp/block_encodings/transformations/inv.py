@@ -137,7 +137,6 @@ def apply_inv(self, eps: float, kappa: float, method: Literal["QET", "QSVT", "GQ
 
     # The operator is unitary (up to scaling).
     if self.num_ancs == 0:
-
         if not self.is_hermitian:
 
             def new_unitary(*args):

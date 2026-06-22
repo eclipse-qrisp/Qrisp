@@ -122,19 +122,12 @@ class AQTJob(Job):
             terminal_status = _map_aqt_status(self._aqt_job)
             self._last_known_status = terminal_status
             if terminal_status == JobStatus.CANCELLED:
-                raise JobCancelledError(
-                    f"AQT job {self._job_id!r} was cancelled."
-                ) from exc
-            raise JobFailureError(
-                f"AQT job {self._job_id!r} failed: {exc}"
-            ) from exc
+                raise JobCancelledError(f"AQT job {self._job_id!r} was cancelled.") from exc
+            raise JobFailureError(f"AQT job {self._job_id!r} failed: {exc}") from exc
 
         self._last_known_status = JobStatus.DONE
         result_dicts = [
-            {
-                bin(outcome)[2:].zfill(self._cl_bits_per_circuit[i]): prob
-                for outcome, prob in quasi_dist.items()
-            }
+            {bin(outcome)[2:].zfill(self._cl_bits_per_circuit[i]): prob for outcome, prob in quasi_dist.items()}
             for i, quasi_dist in enumerate(aqt_result.quasi_dists)
         ]
         return JobResult(result_dicts)
@@ -215,14 +208,9 @@ class AQTBackend(Backend):
     {4: 0.49, 8: 0.11, 2: 0.08, 0: 0.06, ...}
     """
 
-    def __init__(
-        self, api_token: str, device_instance: str, workspace: str | None = None
-    ):
+    def __init__(self, api_token: str, device_instance: str, workspace: str | None = None):
         if not isinstance(api_token, str):
-            raise TypeError(
-                "api_token must be a string. "
-                "You can create an API token on the AQT ARNICA website."
-            )
+            raise TypeError("api_token must be a string. You can create an API token on the AQT ARNICA website.")
         if workspace is not None and not isinstance(workspace, str):
             raise TypeError("workspace must be a string.")
         if not isinstance(device_instance, str):
@@ -236,21 +224,14 @@ class AQTBackend(Backend):
             from qiskit_aqt_provider.primitives import AQTSampler
         except ImportError as exc:
             raise ImportError(
-                "Please install qiskit-aqt-provider to use AQTBackend: "
-                "pip install qiskit-aqt-provider"
+                "Please install qiskit-aqt-provider to use AQTBackend: pip install qiskit-aqt-provider"
             ) from exc
 
         provider = AQTProvider(api_token)
-        self._aqt_device = provider.get_backend(
-            name=device_instance, workspace=workspace
-        )
+        self._aqt_device = provider.get_backend(name=device_instance, workspace=workspace)
         self._aqt_sampler = AQTSampler
 
-        name = (
-            self._aqt_device.name
-            if isinstance(self._aqt_device.name, str)
-            else self._aqt_device.name()
-        )
+        name = self._aqt_device.name if isinstance(self._aqt_device.name, str) else self._aqt_device.name()
         super().__init__(name=name)
 
     @classmethod
@@ -320,9 +301,7 @@ class AQTBackend(Backend):
 
         for qc in circuits:
             qiskit_qc = qc.transpile().to_qiskit()
-            new_qiskit_qc = QiskitQuantumCircuit(
-                len(qiskit_qc.qubits), len(qiskit_qc.clbits)
-            )
+            new_qiskit_qc = QiskitQuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
             for instr in qiskit_qc:
                 new_qiskit_qc.append(
                     instr.operation,

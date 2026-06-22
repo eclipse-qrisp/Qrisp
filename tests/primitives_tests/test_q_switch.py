@@ -20,14 +20,23 @@ from qrisp import inpl_mult, h, QuantumFloat, q_switch, multi_measurement, x
 
 # classical indexed switch tests
 
+
 def test_q_switch_classical_index():
 
     def main(index_val):
 
-        def f0(x): pass
-        def f1(x): x += 1
-        def f2(x): x += 2
-        def f3(x): x += 3
+        def f0(x):
+            pass
+
+        def f1(x):
+            x += 1
+
+        def f2(x):
+            x += 2
+
+        def f3(x):
+            x += 3
+
         branches = [f0, f1, f2, f3]
         operand = QuantumFloat(2)
 
@@ -41,15 +50,24 @@ def test_q_switch_classical_index():
 
 # quantum indexed switch tests
 
+
 def test_q_switch_quantum_index():
     from qrisp import QuantumFloat, q_switch
 
     def main(index_val):
 
-        def f0(x): pass
-        def f1(x): x += 1
-        def f2(x): x += 2
-        def f3(x): x += 3
+        def f0(x):
+            pass
+
+        def f1(x):
+            x += 1
+
+        def f2(x):
+            x += 2
+
+        def f3(x):
+            x += 3
+
         index = QuantumFloat(2)
         index[:] = index_val
         branches = [f0, f1, f2, f3]
@@ -68,20 +86,21 @@ def test_q_switch_multiple_operands():
 
     def main(index_val):
 
-        def f0(x, y): pass
+        def f0(x, y):
+            pass
 
-        def f1(x ,y): 
+        def f1(x, y):
             x += 1
             y += 1
 
-        def f2(x, y): 
+        def f2(x, y):
             x += 2
             y += 2
 
-        def f3(x, y): 
+        def f3(x, y):
             x += 3
             y += 3
-            
+
         index = QuantumFloat(2)
         index[:] = index_val
         branches = [f0, f1, f2, f3]
@@ -99,36 +118,37 @@ def test_q_switch_multiple_operands():
 def test_q_switch_branches_list():
 
     # Some sample index functions
-    def f0(x): x += 1
-    def f1(x): inpl_mult(x, 3, treat_overflow = False)
-    def f2(x): pass
-    def f3(x): h(x[1])
+    def f0(x):
+        x += 1
+
+    def f1(x):
+        inpl_mult(x, 3, treat_overflow=False)
+
+    def f2(x):
+        pass
+
+    def f3(x):
+        h(x[1])
+
     branches_list = [f0, f1, f2, f3]
-    
+
     # Create operand and index variable
     operand = QuantumFloat(4)
     operand[:] = 1
     index = QuantumFloat(2)
     h(index)
-    
+
     # Execute switch_index function
-    q_switch(index, branches_list, operand, method = "sequential")
-    
+    q_switch(index, branches_list, operand, method="sequential")
+
     # Simulate
-    assert multi_measurement([index, operand]) == {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
-    # Yields {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
-    
-    # Create operand and index variable
-    operand = QuantumFloat(4)
-    operand[:] = 1
-    index = QuantumFloat(2)
-    h(index)
-    
-    # Execute switch_index function
-    q_switch(index, branches_list, operand, method = "parallel")
-    
-    # Simulate
-    assert multi_measurement([index, operand]) == {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
+    assert multi_measurement([index, operand]) == {
+        (0, 2): 0.25,
+        (1, 3): 0.25,
+        (2, 1): 0.25,
+        (3, 1): 0.125,
+        (3, 3): 0.125,
+    }
     # Yields {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
 
     # Create operand and index variable
@@ -136,22 +156,55 @@ def test_q_switch_branches_list():
     operand[:] = 1
     index = QuantumFloat(2)
     h(index)
-    
+
     # Execute switch_index function
-    q_switch(index, branches_list, operand, method = "tree")
-    
+    q_switch(index, branches_list, operand, method="parallel")
+
     # Simulate
-    assert multi_measurement([index, operand]) == {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
+    assert multi_measurement([index, operand]) == {
+        (0, 2): 0.25,
+        (1, 3): 0.25,
+        (2, 1): 0.25,
+        (3, 1): 0.125,
+        (3, 3): 0.125,
+    }
+    # Yields {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
+
+    # Create operand and index variable
+    operand = QuantumFloat(4)
+    operand[:] = 1
+    index = QuantumFloat(2)
+    h(index)
+
+    # Execute switch_index function
+    q_switch(index, branches_list, operand, method="tree")
+
+    # Simulate
+    assert multi_measurement([index, operand]) == {
+        (0, 2): 0.25,
+        (1, 3): 0.25,
+        (2, 1): 0.25,
+        (3, 1): 0.125,
+        (3, 3): 0.125,
+    }
     # Yields {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
 
 
 def test_q_switch_function():
 
     # Some sample index functions
-    def f0(x): x += 1
-    def f1(x): inpl_mult(x, 3, treat_overflow = False)
-    def f2(x): pass
-    def f3(x): h(x[1])
+    def f0(x):
+        x += 1
+
+    def f1(x):
+        inpl_mult(x, 3, treat_overflow=False)
+
+    def f2(x):
+        pass
+
+    def f3(x):
+        h(x[1])
+
     def branches(i, x):
         if i == 0:
             f0(x)
@@ -161,31 +214,24 @@ def test_q_switch_function():
             f2(x)
         if i == 3:
             f3(x)
-    
+
     # Create operand and index variable
     operand = QuantumFloat(4)
     operand[:] = 1
     index = QuantumFloat(2)
     h(index)
-    
+
     # Execute switch_index function
-    q_switch(index, branches, operand, method = "sequential")
-    
+    q_switch(index, branches, operand, method="sequential")
+
     # Simulate
-    assert multi_measurement([index, operand]) == {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
-    # Yields {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
-    
-    # Create operand and index variable
-    operand = QuantumFloat(4)
-    operand[:] = 1
-    index = QuantumFloat(2)
-    h(index)
-    
-    # Execute switch_index function
-    q_switch(index, branches, operand, method = "parallel")
-    
-    # Simulate
-    assert multi_measurement([index, operand]) == {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
+    assert multi_measurement([index, operand]) == {
+        (0, 2): 0.25,
+        (1, 3): 0.25,
+        (2, 1): 0.25,
+        (3, 1): 0.125,
+        (3, 3): 0.125,
+    }
     # Yields {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
 
     # Create operand and index variable
@@ -193,86 +239,113 @@ def test_q_switch_function():
     operand[:] = 1
     index = QuantumFloat(2)
     h(index)
-    
+
     # Execute switch_index function
-    q_switch(index, branches, operand, method = "tree")
-    
+    q_switch(index, branches, operand, method="parallel")
+
     # Simulate
-    assert multi_measurement([index, operand]) == {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
+    assert multi_measurement([index, operand]) == {
+        (0, 2): 0.25,
+        (1, 3): 0.25,
+        (2, 1): 0.25,
+        (3, 1): 0.125,
+        (3, 3): 0.125,
+    }
+    # Yields {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
+
+    # Create operand and index variable
+    operand = QuantumFloat(4)
+    operand[:] = 1
+    index = QuantumFloat(2)
+    h(index)
+
+    # Execute switch_index function
+    q_switch(index, branches, operand, method="tree")
+
+    # Simulate
+    assert multi_measurement([index, operand]) == {
+        (0, 2): 0.25,
+        (1, 3): 0.25,
+        (2, 1): 0.25,
+        (3, 1): 0.125,
+        (3, 3): 0.125,
+    }
     # Yields {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
 
 
-def test_q_switch_list_cutoff(): 
-        
+def test_q_switch_list_cutoff():
+
     def branches(i, arg):
         for j, b in enumerate(bin(i)[:1:-1]):
-            if b== "1":
+            if b == "1":
                 x(arg[j])
 
-    branches_list = [lambda arg: branches(0,arg),
-         lambda arg: branches(1,arg),
-         lambda arg: branches(2,arg),
-         lambda arg: branches(3,arg),
-         lambda arg: branches(4,arg)]
+    branches_list = [
+        lambda arg: branches(0, arg),
+        lambda arg: branches(1, arg),
+        lambda arg: branches(2, arg),
+        lambda arg: branches(3, arg),
+        lambda arg: branches(4, arg),
+    ]
 
     # Execute switch_index function
-    for mode, r in zip([1,4, None], [1,4,5]):
+    for mode, r in zip([1, 4, None], [1, 4, 5]):
         operand = QuantumFloat(4)
         index = QuantumFloat(4)
         h(index)
-        q_switch(index, branches_list, operand, method = "tree", branch_amount=mode)
+        q_switch(index, branches_list, operand, method="tree", branch_amount=mode)
         res = multi_measurement([index, operand])
 
         for i in range(16):
             if r <= i:
-                assert res[(i,0)] == 0.0625
+                assert res[(i, 0)] == 0.0625
             else:
-                assert res[(i,i)] == 0.0625
+                assert res[(i, i)] == 0.0625
 
-    for mode, r in zip([1,4, None], [1,4,5]):
+    for mode, r in zip([1, 4, None], [1, 4, 5]):
         operand = QuantumFloat(3)
         index = QuantumFloat(3)
         h(index)
-        q_switch(index, branches_list, operand, method = "parallel", branch_amount=r)
+        q_switch(index, branches_list, operand, method="parallel", branch_amount=r)
         res = multi_measurement([index, operand])
 
         for i in range(8):
             if r <= i:
-                assert res[(i,0)] == 0.0625*2
+                assert res[(i, 0)] == 0.0625 * 2
             else:
-                assert res[(i,i)] == 0.0625*2
+                assert res[(i, i)] == 0.0625 * 2
 
 
-def test_q_switch_function_cutoff(): 
-        
+def test_q_switch_function_cutoff():
+
     def branches(i, arg):
         for j, b in enumerate(bin(i)[:1:-1]):
-            if b== "1":
+            if b == "1":
                 x(arg[j])
 
     # Execute switch_index function
-    for r in [4,7,8]:
+    for r in [4, 7, 8]:
         operand = QuantumFloat(4)
         index = QuantumFloat(4)
         h(index)
-        q_switch(index, branches, operand, method = "tree", branch_amount=r)
+        q_switch(index, branches, operand, method="tree", branch_amount=r)
         res = multi_measurement([index, operand])
 
         for i in range(16):
             if r <= i:
-                assert res[(i,0)] == 0.0625
+                assert res[(i, 0)] == 0.0625
             else:
-                assert res[(i,i)] == 0.0625
+                assert res[(i, i)] == 0.0625
 
-    for r in [3,5,6]:
+    for r in [3, 5, 6]:
         operand = QuantumFloat(3)
         index = QuantumFloat(3)
         h(index)
-        q_switch(index, branches, operand, method = "parallel", branch_amount=r)
+        q_switch(index, branches, operand, method="parallel", branch_amount=r)
         res = multi_measurement([index, operand])
 
         for i in range(8):
             if r <= i:
-                assert res[(i,0)] == 0.0625*2
+                assert res[(i, 0)] == 0.0625 * 2
             else:
-                assert res[(i,i)] == 0.0625*2
+                assert res[(i, i)] == 0.0625 * 2

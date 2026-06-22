@@ -136,18 +136,14 @@ class JobResult:
         """Initialize a JobResult instance."""
 
         if not isinstance(counts, Sequence) or isinstance(counts, (str, bytes)):
-            raise TypeError(
-                f"'counts' must be a sequence of dicts, got {type(counts).__name__}"
-            )
+            raise TypeError(f"'counts' must be a sequence of dicts, got {type(counts).__name__}")
 
         if len(counts) == 0:
             raise ValueError("'counts' must contain at least one dict")
 
         for i, count in enumerate(counts):
             if not isinstance(count, dict):
-                raise TypeError(
-                    f"Each item in 'counts' must be a dict, got {type(count).__name__} at index {i}"
-                )
+                raise TypeError(f"Each item in 'counts' must be a dict, got {type(count).__name__} at index {i}")
 
         self._counts = list(counts)
         self.metadata = kwargs
@@ -188,20 +184,14 @@ class JobResult:
         try:
             return self._counts[index]
         except IndexError as exc:
-            raise IndexError(
-                f"Result contains {len(self._counts)} circuit(s); "
-                f"index {index} is out of range."
-            ) from exc
+            raise IndexError(f"Result contains {len(self._counts)} circuit(s); index {index} is out of range.") from exc
 
     # ------------------------------------------------------------------
     # Dunder methods
     # ------------------------------------------------------------------
 
     def __repr__(self) -> str:
-        return (
-            f"JobResult(num_circuits={self.num_circuits}, "
-            f"metadata={self.metadata!r})"
-        )
+        return f"JobResult(num_circuits={self.num_circuits}, metadata={self.metadata!r})"
 
 
 class Job(ABC):
@@ -482,9 +472,7 @@ class Job(ABC):
             status = self.status()
         if status == JobStatus.ERROR:
             if self._failure_cause is not None:
-                raise JobFailureError(
-                    f"Job {self._job_id!r} failed: {self._failure_cause}"
-                ) from self._failure_cause
+                raise JobFailureError(f"Job {self._job_id!r} failed: {self._failure_cause}") from self._failure_cause
             raise JobFailureError(f"Job {self._job_id!r} terminated with status ERROR.")
         if status == JobStatus.CANCELLED:
             raise JobCancelledError(f"Job {self._job_id!r} was cancelled.")
@@ -500,8 +488,4 @@ class Job(ABC):
         # logging, debugging, or pytest failure messages) would be
         # surprising and potentially expensive. Callers that want the
         # current status should call refresh() before printing.
-        return (
-            f"{self.__class__.__name__}("
-            f"job_id={self._job_id!r}, "
-            f"status={self._last_known_status.name})"
-        )
+        return f"{self.__class__.__name__}(job_id={self._job_id!r}, status={self._last_known_status.name})"

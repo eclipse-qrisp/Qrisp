@@ -23,7 +23,6 @@ from qrisp.simulator import QuantumState, advance_quantum_state, gen_res_dict
 
 
 class BufferedQuantumState:
-
     def __init__(self, simulator="qrisp"):
 
         if simulator == "qrisp":
@@ -89,9 +88,7 @@ class BufferedQuantumState:
                 elif instr.op.name == "s_dg":
                     self.quantum_state.s_dag(*qubit_indices)
                 elif not instr.op.name in ["qb_alloc", "qb_dealloc"]:
-                    raise Exception(
-                        f"Don't know how to simulate quantum gate {instr.op.name} with stim"
-                    )
+                    raise Exception(f"Don't know how to simulate quantum gate {instr.op.name} with stim")
 
         for instr in self.buffer_qc.data:
             if instr.op.name == "qb_dealloc":
@@ -109,9 +106,7 @@ class BufferedQuantumState:
 
         self.apply_buffer()
         if self.simulator == "qrisp":
-            meas_res, self.quantum_state = self.quantum_state.measure(
-                self.qubit_to_index_dict[qubit[0]], keep_res=True
-            )
+            meas_res, self.quantum_state = self.quantum_state.measure(self.qubit_to_index_dict[qubit[0]], keep_res=True)
             return meas_res
         elif self.simulator == "stim":
             return self.quantum_state.measure(self.qubit_to_index_dict[qubit[0]])

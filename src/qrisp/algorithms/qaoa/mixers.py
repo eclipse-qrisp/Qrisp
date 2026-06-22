@@ -236,9 +236,7 @@ def constrained_mixer_gen(constraint_oracle, winner_state_amount):
         elif isinstance(qarg, QuantumArray):
             qubit_amount = len(qarg.qtype) * len(qarg.flatten())
         else:
-            raise Exception(
-                f"Argument type {type(qarg)} not supported for constrained mixer"
-            )
+            raise Exception(f"Argument type {type(qarg)} not supported for constrained mixer")
 
         grovers_alg(
             qarg,

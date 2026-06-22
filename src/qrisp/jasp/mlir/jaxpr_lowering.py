@@ -73,7 +73,6 @@ def lower_jaxpr_to_stablehlo_MLIR(jaxpr, lowering_rules=tuple([])):
 
     # Lower JAXPR to MLIR using Catalyst's method
     with ctx.context, ir.Location.unknown(ctx.context):
-
         ctx.module.operation.attributes["sym_name"] = ir.StringAttr.get("jasp_module")
 
         try:
@@ -83,10 +82,7 @@ def lower_jaxpr_to_stablehlo_MLIR(jaxpr, lowering_rules=tuple([])):
                 jaxpr,  # Pass the full ClosedJaxpr object
                 jaxpr.effects,
                 num_const_args=len(core.jaxpr_const_args(jaxpr.jaxpr)),
-                in_avals=[
-                    var.aval
-                    for var in core.jaxpr_const_args(jaxpr.jaxpr) + jaxpr.jaxpr.invars
-                ],
+                in_avals=[var.aval for var in core.jaxpr_const_args(jaxpr.jaxpr) + jaxpr.jaxpr.invars],
                 main_function=True,
             )
 
@@ -146,11 +142,11 @@ def MLIR_str_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
     return ctx, parser.parse_module()
 
 
-def jaxpr_to_xdsl(jaxpr, lower_stableHLO = False, lowering_rules=tuple([])):
+def jaxpr_to_xdsl(jaxpr, lower_stableHLO=False, lowering_rules=tuple([])):
     """Lower a JAXPR to an xDSL module.
 
     This function performs three steps:
-    
+
     1. Use Qrisp's JAXPR lowering to create an MLIR module with custom ops.
     2. (Optional) Lower StableHLO to linalg and other lower-level dialects.
     3. Print the module in MLIR's generic form and re-parse it with xDSL to
@@ -197,8 +193,9 @@ def jaxpr_to_xdsl(jaxpr, lower_stableHLO = False, lowering_rules=tuple([])):
 
     # Parse to xDSL.
     xdsl_ctx, xdsl_module = MLIR_str_to_xdsl(generic_mlir_string)
-    
+
     return xdsl_ctx, xdsl_module
+
 
 def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
     """Lower a Jaxpr to an MLIR module with StableHLO ops lowered to linalg.
@@ -210,14 +207,14 @@ def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
     subsequently rewritten to SCF by xDSL.
 
     .. note::
-    
-        Not all StableHLO operations are lowered. Operations like 
+
+        Not all StableHLO operations are lowered. Operations like
         ``stablehlo.scatter`` (used for indexed array updates) remain as-is
         because they require specialized lowering not covered by the standard
         ``stablehlo-legalize-to-linalg`` pass.
 
     The pipeline applied:
-    
+
     1. symbol-dce: removes unused private shadow functions that JAX emits
     2. stablehlo-convert-to-signless: converts to signless integers
     3. stablehlo-legalize-to-linalg: converts arithmetic/data ops to linalg
@@ -252,11 +249,7 @@ def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
         # symbol-dce removes unused private shadow functions that JAX emits.
         # stablehlo-legalize-to-linalg converts arithmetic/data ops to linalg.
         # stablehlo control-flow ops (case, while) are left untouched here.
-        pipeline = "builtin.module(" \
-                   "symbol-dce," \
-                   "stablehlo-convert-to-signless," \
-                   "stablehlo-legalize-to-linalg" \
-                   ")"
+        pipeline = "builtin.module(symbol-dce,stablehlo-convert-to-signless,stablehlo-legalize-to-linalg)"
 
         pm = passmanager.PassManager.parse(pipeline)
         # Disable verifier: stablehlo.case carries !jasp.QuantumState which
@@ -267,9 +260,6 @@ def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
         pm.run(mlir_module.operation)
 
         # --- Step 3: Print to generic MLIR text ------------------------------
-        generic_mlir = mlir_module.operation.get_asm(
-            print_generic_op_form=True
-        )
+        generic_mlir = mlir_module.operation.get_asm(print_generic_op_form=True)
 
-    
     return mlir_module

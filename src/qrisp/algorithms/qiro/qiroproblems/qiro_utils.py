@@ -52,11 +52,7 @@ def find_max(single_cor, double_cor, res, solutions):
 
         # calc correlation expectation
         for key, val in res.items():
-            summe += (
-                val
-                * pow(-1, int(key[int(abs(item2[0]))]))
-                * pow(-1, int(key[int(abs(item2[1]))]))
-            )
+            summe += val * pow(-1, int(key[int(abs(item2[0]))])) * pow(-1, int(key[int(abs(item2[1]))]))
 
         # find max
         if abs(summe) > abs(max):

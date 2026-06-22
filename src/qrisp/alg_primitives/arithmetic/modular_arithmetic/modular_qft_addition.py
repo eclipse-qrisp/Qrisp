@@ -57,9 +57,7 @@ def montgomery_addition(a, b):
 def beauregard_adder(a, b, modulus):
 
     if modulus > 2**a.size:
-        raise Exception(
-            "Tried to perform modular addition on QuantumFloat with too few qubits"
-        )
+        raise Exception("Tried to perform modular addition on QuantumFloat with too few qubits")
     if modulus == 2**a.size:
         with conjugate(QFT)(a, exec_swap=False):
             qft_basis_adder(b, a)
@@ -74,7 +72,6 @@ def beauregard_adder(a, b, modulus):
     a = list(a) + [sign[0]]
 
     with conjugate(QFT)(a, exec_swap=False):
-
         qft_basis_adder(b, a)
 
         with invert():

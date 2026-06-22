@@ -216,15 +216,15 @@ def boolean_simulation(
     # Handle both @boolean_simulation and @boolean_simulation(...) syntax
     if len(func) == 0:
         # Called with arguments: @boolean_simulation(bit_array_padding=...)
-        return lambda x: boolean_simulation(x, bit_array_padding=bit_array_padding, callback_threshold=callback_threshold)
+        return lambda x: boolean_simulation(
+            x, bit_array_padding=bit_array_padding, callback_threshold=callback_threshold
+        )
     else:
         # Called without arguments: @boolean_simulation
         func = func[0]
 
     if bit_array_padding < 64:
-        raise Exception(
-            "Tried to initialize boolean_simulation with less than 512 bits"
-        )
+        raise Exception("Tried to initialize boolean_simulation with less than 512 bits")
 
     @jit
     def return_function(*args: Any) -> Any:
@@ -269,9 +269,7 @@ def boolean_simulation(
         # XLA's flatten-call-graph pass from duplicating them.
         _, call_graph_stats = analyze_call_graph(jaspr)
 
-        cl_func_jaxpr = jaspr_to_cl_func_jaxpr(
-            jaspr, bit_array_padding, call_graph_stats, callback_threshold
-        )
+        cl_func_jaxpr = jaspr_to_cl_func_jaxpr(jaspr, bit_array_padding, call_graph_stats, callback_threshold)
 
         # Initialize the boolean quantum circuit representation:
         # - bit_array: packed uint64 array storing qubit states (all zeros initially)
@@ -280,9 +278,7 @@ def boolean_simulation(
         bit_array: Array = jnp.zeros(aval.shape, dtype=aval.dtype)
 
         # Create the free qubit pool as a flattened Jlist
-        free_qubit_list = Jlist(
-            jnp.arange(bit_array_padding), max_size=bit_array_padding
-        ).flatten()[0]
+        free_qubit_list = Jlist(jnp.arange(bit_array_padding), max_size=bit_array_padding).flatten()[0]
 
         # The boolean quantum circuit is represented as a tuple:
         # (bit_array, jlist_array, jlist_counter)

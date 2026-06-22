@@ -19,13 +19,25 @@
 import numpy as np
 import pytest
 
-from qrisp import QuantumVariable, QuantumFloat, cx, h, jaspify, measure, multi_measurement, prepare, ry, terminal_sampling, x
+from qrisp import (
+    QuantumVariable,
+    QuantumFloat,
+    cx,
+    h,
+    jaspify,
+    measure,
+    multi_measurement,
+    prepare,
+    ry,
+    terminal_sampling,
+    x,
+)
 from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
 
 
 def test_block_encoding_from_array():
-    A = np.array([[0,1,0,1],[1,0,0,0],[0,0,1,0],[1,0,0,0]])
+    A = np.array([[0, 1, 0, 1], [1, 0, 0, 0], [0, 0, 1, 0], [1, 0, 0, 0]])
     B = BlockEncoding.from_array(A)
 
     @terminal_sampling
@@ -37,20 +49,24 @@ def test_block_encoding_from_array():
 
 
 def test_block_encoding_from_lcu():
-    def f0(x): x-=1
-    def f1(x): x+=1
-    BE = BlockEncoding.from_lcu(np.array([1., 1.]), [f0, f1])
+    def f0(x):
+        x -= 1
+
+    def f1(x):
+        x += 1
+
+    BE = BlockEncoding.from_lcu(np.array([1.0, 1.0]), [f0, f1])
 
     @terminal_sampling
     def main():
-        return BE.apply_rus(lambda : QuantumFloat(2))()
+        return BE.apply_rus(lambda: QuantumFloat(2))()
 
     res = main()
     assert res == {1.0: 0.5, 3.0: 0.5}
 
 
 def test_block_encoding_from_operator():
-    H = X(0)*X(1) + 0.2*Y(0)*Y(1)
+    H = X(0) * X(1) + 0.2 * Y(0) * Y(1)
     B = BlockEncoding.from_operator(H)
 
     @terminal_sampling
@@ -85,10 +101,7 @@ def test_block_encoding_from_eye():
         return operand1, operand2
 
     res_dict = main()
-    assert res_dict == pytest.approx({
-        (0.0, 4.0): 0.25, (1.0, 5.0): 0.25, 
-        (2.0, 6.0): 0.25, (3.0, 7.0): 0.25
-    })
+    assert res_dict == pytest.approx({(0.0, 4.0): 0.25, (1.0, 5.0): 0.25, (2.0, 6.0): 0.25, (3.0, 7.0): 0.25})
 
 
 def test_block_encoding_from_projector():
@@ -119,7 +132,7 @@ def test_block_encoding_from_projector_value_error():
 
 
 def test_block_encoding_apply():
-    H = X(0)*X(1) + Z(0)*Z(1)
+    H = X(0) * X(1) + Z(0) * Z(1)
     BE = BlockEncoding.from_operator(H)
 
     operand = QuantumFloat(2)
@@ -130,7 +143,7 @@ def test_block_encoding_apply():
 
 
 def test_block_encoding_apply_value_error():
-    H = X(0)*X(1) + Z(0)*Z(1)
+    H = X(0) * X(1) + Z(0) * Z(1)
     BE = BlockEncoding.from_operator(H)
 
     wrong_operands = (QuantumFloat(2), QuantumFloat(2))
@@ -141,7 +154,7 @@ def test_block_encoding_apply_value_error():
 
 
 def test_block_encoding_apply_rus_type_error():
-    H = X(0)*X(1) + Z(0)*Z(1)
+    H = X(0) * X(1) + Z(0) * Z(1)
     BE = BlockEncoding.from_operator(H)
 
     wrong_operands = (QuantumFloat(2), QuantumFloat(2))
@@ -152,12 +165,12 @@ def test_block_encoding_apply_rus_type_error():
 
 
 def test_block_encoding_apply_rus_value_error():
-    H = X(0)*X(1) + Z(0)*Z(1)
+    H = X(0) * X(1) + Z(0) * Z(1)
     BE = BlockEncoding.from_operator(H)
 
     def wrong_operand_prep():
         return QuantumFloat(2), QuantumFloat(2)
-    
+
     with pytest.raises(ValueError) as excinfo:
         operands = BE.apply_rus(wrong_operand_prep)()
 
@@ -165,7 +178,7 @@ def test_block_encoding_apply_rus_value_error():
 
 
 def test_block_encoding_ev():
-    H = X(0)*X(1) + 0.5*Z(0)*Z(1)
+    H = X(0) * X(1) + 0.5 * Z(0) * Z(1)
     BE = BlockEncoding.from_operator(H)
 
     def operand_prep(phi):
@@ -192,7 +205,7 @@ def test_block_encoding_ev():
 
 
 def test_block_encoding_ev_type_error():
-    H = X(0)*X(1) + Z(0)*Z(1)
+    H = X(0) * X(1) + Z(0) * Z(1)
     BE = BlockEncoding.from_operator(H)
 
     wrong_operands = (QuantumFloat(2), QuantumFloat(2))
@@ -203,12 +216,12 @@ def test_block_encoding_ev_type_error():
 
 
 def test_block_encoding_ev_value_error():
-    H = X(0)*X(1) + Z(0)*Z(1)
+    H = X(0) * X(1) + Z(0) * Z(1)
     BE = BlockEncoding.from_operator(H)
 
     def wrong_operand_prep():
         return QuantumFloat(2), QuantumFloat(2)
-    
+
     with pytest.raises(ValueError) as excinfo:
         ev = BE.expectation_value(wrong_operand_prep)()
 
@@ -216,19 +229,19 @@ def test_block_encoding_ev_value_error():
 
 
 def test_block_encoding_resources():
-    H = X(0)*X(1) + 0.5*Z(0)*Z(1)
+    H = X(0) * X(1) + 0.5 * Z(0) * Z(1)
     BE = BlockEncoding.from_operator(H)
 
     res_dict = BE.resources(QuantumFloat(2))
-    # {'gate counts': {'x': 3, 'cz': 2, 'u3': 2, 'cx': 4, 'gphase': 2}, 
+    # {'gate counts': {'x': 3, 'cz': 2, 'u3': 2, 'cx': 4, 'gphase': 2},
     # 'depth': 12, 'qubits': 4}
-    assert isinstance(res_dict['gate counts'], dict)
-    assert isinstance(res_dict['depth'], int)
-    assert isinstance(res_dict['qubits'], int)
+    assert isinstance(res_dict["gate counts"], dict)
+    assert isinstance(res_dict["depth"], int)
+    assert isinstance(res_dict["qubits"], int)
 
 
 def test_block_encoding_resources_value_error():
-    H = X(0)*X(1) + Z(0)*Z(1)
+    H = X(0) * X(1) + Z(0) * Z(1)
     BE = BlockEncoding.from_operator(H)
 
     wrong_operands = (QuantumFloat(2), QuantumFloat(2))
@@ -251,15 +264,14 @@ def test_block_encoding_alpha_dynamic():
         def U(qv):
             x(qv)
 
-        BE1 = BlockEncoding(b,[],U)
-        BE2 = BlockEncoding(1,[],U)
+        BE1 = BlockEncoding(b, [], U)
+        BE2 = BlockEncoding(1, [], U)
         BE = BE1 + BE2
 
         return BE.apply_rus(lambda: QuantumVariable(2))()
 
     res = main()
     assert res == {3: 1.0}
-
 
     @terminal_sampling
     def main():
@@ -275,12 +287,12 @@ def test_block_encoding_alpha_dynamic():
         def U2(qv):
             pass
 
-        BE1 = BlockEncoding(b,[],U1)
-        BE2 = BlockEncoding(1,[],U2)
+        BE1 = BlockEncoding(b, [], U1)
+        BE2 = BlockEncoding(1, [], U2)
         BE = BE1 + BE2
 
         return BE.apply_rus(lambda: QuantumVariable(2))()
-    
+
     res = main()
     assert res == {0: 0.5, 3: 0.5}
 
@@ -292,7 +304,7 @@ def test_block_encoding_dagger():
 
     N = 8
     A = np.eye(N, k=1) + 1 * np.eye(N)
-    A[N-1,0] = 1
+    A[N - 1, 0] = 1
 
     b = np.array([0, 1, 1, 0, 1, 0, 0, 1])
 
@@ -303,7 +315,7 @@ def test_block_encoding_dagger():
     def U(qv):
         qv -= 1
 
-    BA = BlockEncoding.from_lcu(np.array([1.,1.]), [id, U])
+    BA = BlockEncoding.from_lcu(np.array([1.0, 1.0]), [id, U])
     BA_dg = BA.dagger()
 
     def operand_prep():

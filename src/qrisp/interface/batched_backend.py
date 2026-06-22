@@ -154,14 +154,10 @@ class BatchedBackend:
         self._backend.update_options(**kwargs)
 
     @overload
-    def run(
-        self, circuits: QuantumCircuit, shots: int | None = None
-    ) -> MeasurementResult: ...
+    def run(self, circuits: QuantumCircuit, shots: int | None = None) -> MeasurementResult: ...
 
     @overload
-    def run(
-        self, circuits: Sequence[QuantumCircuit], shots: int | None = None
-    ) -> list[MeasurementResult]: ...
+    def run(self, circuits: Sequence[QuantumCircuit], shots: int | None = None) -> list[MeasurementResult]: ...
 
     def run(
         self,
@@ -298,11 +294,7 @@ class BatchedBackend:
         """Submit one chunk of circuits and inject results into the corresponding placeholders."""
         unique = set(chunk_shots)
         effective_shots = chunk_shots[0] if len(unique) == 1 else chunk_shots
-        chunk_counts = (
-            self._backend.run_async(chunk_circuits, shots=effective_shots)
-            .result(timeout=timeout)
-            .all_counts
-        )
+        chunk_counts = self._backend.run_async(chunk_circuits, shots=effective_shots).result(timeout=timeout).all_counts
         for raw, counts in zip(chunk_raws, chunk_counts):
             raw._inject(counts)
 

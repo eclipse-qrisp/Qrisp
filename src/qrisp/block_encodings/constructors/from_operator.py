@@ -21,9 +21,7 @@ from qrisp.block_encodings.constructors.from_lcu import build_from_lcu
 from qrisp.operators import QubitOperator, FermionicOperator
 
 
-def build_from_operator(
-    cls: BlockEncoding, O: QubitOperator | FermionicOperator
-) -> BlockEncoding:
+def build_from_operator(cls: BlockEncoding, O: QubitOperator | FermionicOperator) -> BlockEncoding:
     r"""
     Constructs a BlockEncoding from an operator.
 

@@ -29,10 +29,10 @@ def test_lanczos_algorithm():
 
     L = 6
     G = nx.Graph()
-    G.add_edges_from([(k, (k+1) % L) for k in range(L - 1)])
+    G.add_edges_from([(k, (k + 1) % L) for k in range(L - 1)])
 
     # Define Hamiltonian e.g. Heisenberg with custom couplings
-    H = (1/4)*sum((X(i)*X(j) + Y(i)*Y(j) + 0.5*Z(i)*Z(j)) for i,j in G.edges())
+    H = (1 / 4) * sum((X(i) * X(j) + Y(i) * Y(j) + 0.5 * Z(i) * Z(j)) for i, j in G.edges())
 
     energy_exact = H.ground_state_energy()
     print(f"Ground state energy: {energy_exact}")
@@ -50,7 +50,7 @@ def test_lanczos_algorithm():
     energy, info = lanczos_alg(H, D, init_state, show_info=True)
     print(f"Ground state energy estimate: {energy}")
 
-    assert np.abs(energy_exact-energy) < 1e-2
+    assert np.abs(energy_exact - energy) < 1e-2
 
 
 def test_jasp_lanczos_algorithm():
@@ -60,10 +60,10 @@ def test_jasp_lanczos_algorithm():
 
         L = 6
         G = nx.Graph()
-        G.add_edges_from([(k, (k+1) % L) for k in range(L - 1)])
+        G.add_edges_from([(k, (k + 1) % L) for k in range(L - 1)])
 
         # Define Hamiltonian e.g. Heisenberg with custom couplings
-        H = (1/4)*sum((X(i)*X(j) + Y(i)*Y(j) + 0.5*Z(i)*Z(j)) for i,j in G.edges())
+        H = (1 / 4) * sum((X(i) * X(j) + Y(i) * Y(j) + 0.5 * Z(i) * Z(j)) for i, j in G.edges())
 
         energy_exact = H.ground_state_energy()
 
@@ -82,4 +82,4 @@ def test_jasp_lanczos_algorithm():
 
     energy_exact, energy = main()
 
-    assert np.abs(energy_exact-energy) < 1e-2
+    assert np.abs(energy_exact - energy) < 1e-2

@@ -191,17 +191,11 @@ def invert_jaspr(jaspr):
             processed_tracers = []
 
             for expr in params:
-                processed_tracers.append(
-                    lambdify(symbols, expr, modules="jax")(*tracers)
-                )
+                processed_tracers.append(lambdify(symbols, expr, modules="jax")(*tracers))
 
-            new_gate = eqn.params["gate"].bind_parameters(
-                {symbols[i]: params[i] for i in range(len(params))}
-            )
+            new_gate = eqn.params["gate"].bind_parameters({symbols[i]: params[i] for i in range(len(params))})
 
-            outvalues = quantum_gate_p.bind(
-                *(invals[:num_qubits] + processed_tracers + [invals[-1]]), gate=new_gate
-            )
+            outvalues = quantum_gate_p.bind(*(invals[:num_qubits] + processed_tracers + [invals[-1]]), gate=new_gate)
 
             insert_outvalues(eqn, context_dic, outvalues)
 
@@ -290,8 +284,7 @@ def invert_loop_body(jaxpr):
 
     if increment_eqn_index is None:
         raise Exception(
-            "Could not find the increment equation feeding the jrange "
-            "marker. The loop body may be malformed."
+            "Could not find the increment equation feeding the jrange marker. The loop body may be malformed."
         )
 
     increment_eqn = new_eqn_list[increment_eqn_index]
@@ -368,9 +361,11 @@ def invert_loop_eqn(eqn):
     carry_avals = [v.aval for v in eqn.invars[-carries_count:]]
 
     if cond_eq.primitive.name == "ge":
+
         def swapped_cond(*carries):
             return carries[pos_b] >= carries[pos_a]
     else:
+
         def swapped_cond(*carries):
             return carries[pos_b] <= carries[pos_a]
 
@@ -382,8 +377,7 @@ def invert_loop_eqn(eqn):
     new_invars = list(invars)
     eqn_pos_a = eqn.params["cond_nconsts"] + eqn.params["body_nconsts"] + pos_a
     eqn_pos_b = eqn.params["cond_nconsts"] + eqn.params["body_nconsts"] + pos_b
-    new_invars[eqn_pos_a], new_invars[eqn_pos_b] = \
-        new_invars[eqn_pos_b], new_invars[eqn_pos_a]
+    new_invars[eqn_pos_a], new_invars[eqn_pos_b] = new_invars[eqn_pos_b], new_invars[eqn_pos_a]
 
     # Assemble the inverted while equation directly — no while_loop
     # re-trace, avoiding JAX's non-deterministic body_nconsts.

@@ -110,9 +110,7 @@ def less_than_gate(a, b):
 
     res_gate = qc.to_gate("less_than")
     res_gate.is_qfree = True
-    res_gate.permeability = {
-        i: i < qc.qubits.index(res) for i in range(res_gate.num_qubits)
-    }
+    res_gate.permeability = {i: i < qc.qubits.index(res) for i in range(res_gate.num_qubits)}
 
     return res_gate
 

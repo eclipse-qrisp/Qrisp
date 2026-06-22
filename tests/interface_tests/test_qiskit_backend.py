@@ -120,9 +120,7 @@ def _make_qiskit_job(
         mock_job.result.side_effect = fail
     else:
         mock_job.result.return_value = _make_primitive_result(
-            counts_per_circuit
-            if counts_per_circuit is not None
-            else [{"0": 512, "1": 512}]
+            counts_per_circuit if counts_per_circuit is not None else [{"0": 512, "1": 512}]
         )
     return mock_job
 
@@ -358,16 +356,11 @@ class TestMapQiskitStatus:
 
     def test_validating_maps_to_queued(self):
         """A Qiskit job with status VALIDATING maps to JobStatus.QUEUED."""
-        assert (
-            _map_qiskit_status(self._job_with_status("VALIDATING")) == JobStatus.QUEUED
-        )
+        assert _map_qiskit_status(self._job_with_status("VALIDATING")) == JobStatus.QUEUED
 
     def test_cancelled_maps_to_cancelled(self):
         """A Qiskit job with status CANCELLED maps to JobStatus.CANCELLED."""
-        assert (
-            _map_qiskit_status(self._job_with_status("CANCELLED"))
-            == JobStatus.CANCELLED
-        )
+        assert _map_qiskit_status(self._job_with_status("CANCELLED")) == JobStatus.CANCELLED
 
     def test_error_maps_to_error(self):
         """A Qiskit job with status ERROR maps to JobStatus.ERROR."""
@@ -375,10 +368,7 @@ class TestMapQiskitStatus:
 
     def test_unknown_status_falls_back_to_running(self):
         """A Qiskit job with an unrecognized status maps to JobStatus.RUNNING."""
-        assert (
-            _map_qiskit_status(self._job_with_status("SOME_VENDOR_STATE"))
-            == JobStatus.RUNNING
-        )
+        assert _map_qiskit_status(self._job_with_status("SOME_VENDOR_STATE")) == JobStatus.RUNNING
 
     def test_status_raises_falls_back_to_running(self):
         """If querying job status raises, _map_qiskit_status returns RUNNING."""
@@ -459,9 +449,7 @@ class TestQiskitBackendRunAsync:
     def test_run_async_shots_list_warns_and_uses_max(self, qiskit_backend):
         """run_async with a list of shots must warn and run all circuits at max(shots)."""
         backend, sampler_mock = qiskit_backend
-        sampler_mock.return_value.run.return_value = _make_qiskit_job(
-            [{"0": 300}, {"0": 300}]
-        )
+        sampler_mock.return_value.run.return_value = _make_qiskit_job([{"0": 300}, {"0": 300}])
 
         with pytest.warns(UserWarning, match="per-circuit shot counts"):
             backend.run_async([_simple_circuit(), _simple_circuit()], shots=[100, 300])
@@ -536,9 +524,7 @@ class TestQiskitBackendIntegration:
             (_simple_circuit(), _simple_circuit(), _simple_circuit()),
         ],
     )
-    def test_run_multiple_circuits_returns_list_of_counts_dicts(
-        self, circuits, real_backend
-    ):
+    def test_run_multiple_circuits_returns_list_of_counts_dicts(self, circuits, real_backend):
         """run() with a sequence of circuits returns a list of MeasurementResult objects."""
 
         results = real_backend.run(circuits, shots=20)
@@ -597,9 +583,7 @@ class TestQiskitBackendIntegration:
     # _MockCircuitData. The real DataBin.__iter__ and getattr path
     # never runs in the mocked suite.
 
-    def test_batch_of_two_circuits_produces_correct_per_circuit_counts(
-        self, real_backend
-    ):
+    def test_batch_of_two_circuits_produces_correct_per_circuit_counts(self, real_backend):
         """Batch submission of 2 circuits returns individually correct count dicts."""
         job = real_backend.run_async([_simple_circuit(), _simple_circuit()], shots=50)
         jr = job.result()
@@ -754,9 +738,7 @@ class TestQiskitRuntimeBackendOptions:
 
     def test_default_options_differ_from_parent(self, runtime_mocks):
         """QiskitRuntimeBackend._default_options() overrides the parent's 1024 default."""
-        assert (
-            QiskitRuntimeBackend._default_options() != QiskitBackend._default_options()
-        )
+        assert QiskitRuntimeBackend._default_options() != QiskitBackend._default_options()
 
 
 @_skip_if_no_runtime
@@ -828,9 +810,7 @@ class TestQiskitRuntimeBackendIntegration:
             (_simple_circuit(), _simple_circuit(), _simple_circuit()),
         ],
     )
-    def test_run_multiple_circuits_returns_list_of_counts_dicts(
-        self, circuits, backend
-    ):
+    def test_run_multiple_circuits_returns_list_of_counts_dicts(self, circuits, backend):
         """run() with a sequence of circuits returns a list of MeasurementResult objects."""
 
         results = backend.run(circuits, shots=20)
@@ -884,9 +864,7 @@ class TestQiskitBackendBatched:
 
     def test_batched_returns_batched_backend(self):
         """QiskitBackend.batched() must return a BatchedBackend instance."""
-        assert isinstance(
-            QiskitBackend(backend=AerSimulator()).batched(), BatchedBackend
-        )
+        assert isinstance(QiskitBackend(backend=AerSimulator()).batched(), BatchedBackend)
 
     def test_result_is_lazy_before_dispatch(self):
         """get_measurement via batched QiskitBackend must raise before dispatch() is called."""

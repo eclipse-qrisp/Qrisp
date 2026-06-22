@@ -49,7 +49,6 @@ def cq_sum_path(a, b, c, R, ctrl=None):
     else:
         # Execute addition using the corresponding carry values
         for i in range(len(c) + 1):
-
             # Determine the radix qubits to perform the addition on
             a_block = a[R * i : R * (i + 1)]
             b_block = b[R * i : R * (i + 1)]
@@ -84,7 +83,6 @@ def cq_sum_path_direct_uncomputation(a, b, c, R, ctrl=None):
     else:
         # Execute addition using the corresponding carry values
         for i in range(len(c) + 1)[::-1]:
-
             # Determine the radix qubits to perform the addition on
             a_block = a[R * i : R * (i + 1)]
             b_block = b[R * i : R * (i + 1)]

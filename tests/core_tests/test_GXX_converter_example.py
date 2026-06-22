@@ -46,9 +46,7 @@ def test_GMS_converter_example():
 
     unitary = qc.get_unitary()
 
-    print(
-        "Is diagonal:", np.linalg.norm(unitary - np.diag(np.diagonal(unitary))) < 1e-3
-    )
+    print("Is diagonal:", np.linalg.norm(unitary - np.diag(np.diagonal(unitary))) < 1e-3)
     # print(np.round(np.angle(np.diagonal(qv.qs.get_unitary()))%(2*np.pi)/(2*np.pi), 3))
     assert qv.qs.compare_unitary(qc, precision=4)
     assert np.linalg.norm(unitary - np.diag(np.diagonal(unitary))) < 1e-3

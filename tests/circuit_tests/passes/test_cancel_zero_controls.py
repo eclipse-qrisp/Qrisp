@@ -109,10 +109,7 @@ class TestControlledOperations:
         ctrl_op = ControlledOperation(base, num_ctrl_qubits=1, ctrl_state=1)
         qc.append(ctrl_op, [qubits[0], qubits[1]])
         result = cancel_zero_controls(qc)
-        controlled = [
-            i for i in result.data
-            if isinstance(i.op, ControlledOperation) or i.op.name.endswith("my_h")
-        ]
+        controlled = [i for i in result.data if isinstance(i.op, ControlledOperation) or i.op.name.endswith("my_h")]
         assert len(controlled) == 0
 
     def test_controlled_op_ctrl_on_0_fresh_qubit_kept(self):
@@ -131,10 +128,7 @@ class TestControlledOperations:
         pt_op = PTControlledOperation(base, num_ctrl_qubits=1)
         qc.append(pt_op, [qubits[0], qubits[1]])
         result = cancel_zero_controls(qc)
-        meaningful = [
-            i for i in result.data
-            if i.op.name not in ("qb_alloc", "qb_dealloc", "barrier")
-        ]
+        meaningful = [i for i in result.data if i.op.name not in ("qb_alloc", "qb_dealloc", "barrier")]
         assert len(meaningful) == 0
 
 

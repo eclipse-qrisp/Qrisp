@@ -38,9 +38,7 @@ class MinimalJob(Job):
     detail of this test helper (not a requirement of the base class).
     """
 
-    def __init__(
-        self, backend, job_id=None, initial_status=JobStatus.INITIALIZING, **kwargs
-    ):
+    def __init__(self, backend, job_id=None, initial_status=JobStatus.INITIALIZING, **kwargs):
         super().__init__(backend=backend, job_id=job_id, **kwargs)
         self._last_known_status = initial_status
         self._result_data = None
@@ -53,9 +51,7 @@ class MinimalJob(Job):
 
     def result(self, timeout=None) -> JobResult | None:
         if not self._done_event.wait(timeout=timeout):
-            raise TimeoutError(
-                f"Job '{self._job_id}' did not complete within {timeout}s."
-            )
+            raise TimeoutError(f"Job '{self._job_id}' did not complete within {timeout}s.")
         # Pass the already-known terminal status to avoid a redundant
         # live status() call inside _raise_for_status.
         self._raise_for_status(self._last_known_status)
@@ -81,9 +77,7 @@ class MinimalJob(Job):
 
     def _fail(self, error: Exception) -> None:
         """Mark the job as failed."""
-        self._failure_cause = (
-            error  # base-class attribute; chained by _raise_for_status
-        )
+        self._failure_cause = error  # base-class attribute; chained by _raise_for_status
         self._last_known_status = JobStatus.ERROR
         self._done_event.set()
 

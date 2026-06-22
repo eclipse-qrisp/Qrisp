@@ -73,9 +73,9 @@ def convert_to_cx(
         >>> qc = QuantumCircuit(2)
         >>> qc.cz(0, 1)
         >>> print(qc)
-        <BLANKLINE>                            
+        <BLANKLINE>
         qb_69: ──■──
-                 │  
+                 │
         qb_70: ──■──
         >>> pm = PassManager()
         >>> pm += convert_to_cx()
@@ -109,9 +109,7 @@ def convert_to_cx(
                     qc_new.cx(instr.qubits[1], instr.qubits[0])
                     qc_new.cx(instr.qubits[0], instr.qubits[1])
                 elif strict:
-                    raise ValueError(
-                        f"Don't know how to convert two-qubit gate {op.name!r} to CX"
-                    )
+                    raise ValueError(f"Don't know how to convert two-qubit gate {op.name!r} to CX")
                 else:
                     qc_new.append(instr)
             else:

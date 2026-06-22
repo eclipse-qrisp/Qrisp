@@ -54,24 +54,24 @@ def reverse_parallelize(qc: QuantumCircuit) -> QuantumCircuit:
     >>> qc.z(0)
     >>> qc.swap(0, 1)
     >>> print(qc)
-                 ┌───┐   
+                 ┌───┐
     qb_130: ──■──┤ Z ├─X─
-            ┌─┴─┐├───┤ │ 
+            ┌─┴─┐├───┤ │
     qb_131: ┤ X ├┤ X ├─X─
-            └───┘└───┘   
+            └───┘└───┘
 
     >>> pm = PassManager()
     >>> pm += reverse_parallelize
     >>> optimized_qc = pm.run(qc)
     >>> print(optimized_qc)
-           ┌───┐        
+           ┌───┐
     qb_66: ┤ Z ├──■───X─
-           ├───┤┌─┴─┐ │ 
+           ├───┤┌─┴─┐ │
     qb_67: ┤ X ├┤ X ├─X─
-           └───┘└───┘   
+           └───┘└───┘
 
     The CX gate can now be fused through the ``fuse_adjacents`` pass.
-                 
+
     """
     # Defer import: qrisp.permeability loads *after* qrisp.circuit, so
     # importing at module level would create a circular import.

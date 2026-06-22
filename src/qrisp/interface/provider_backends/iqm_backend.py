@@ -153,9 +153,7 @@ class IQMJob(Job):
                 raise JobCancelledError(f"IQM job {self._job_id!r} was cancelled.")
             if final_iqm_status != IQMJobStatus.COMPLETED:
                 self._last_known_status = JobStatus.ERROR
-                raise JobFailureError(
-                    f"IQM job {self._job_id!r} failed with status {final_iqm_status.value!r}."
-                )
+                raise JobFailureError(f"IQM job {self._job_id!r} failed with status {final_iqm_status.value!r}.")
 
         except (JobCancelledError, JobFailureError):
             raise
@@ -165,9 +163,7 @@ class IQMJob(Job):
 
         self._last_known_status = JobStatus.DONE
 
-        counts_batch_raw = self._iqm_client.get_job_measurement_counts(
-            self._iqm_job.job_id
-        )
+        counts_batch_raw = self._iqm_client.get_job_measurement_counts(self._iqm_job.job_id)
 
         counts_batch = []
         for c in counts_batch_raw:
@@ -308,15 +304,10 @@ class IQMBackend(Backend):
     ):
 
         if not isinstance(api_token, str):
-            raise TypeError(
-                "api_token must be a string. "
-                "You can create an API token on the IQM Resonance website."
-            )
+            raise TypeError("api_token must be a string. You can create an API token on the IQM Resonance website.")
 
         if server_url is not None and device_instance is not None:
-            raise ValueError(
-                "Please provide either a server_url or a device_instance, but not both."
-            )
+            raise ValueError("Please provide either a server_url or a device_instance, but not both.")
 
         if server_url is None and device_instance is None:
             raise ValueError("Please provide either a server_url or a device_instance.")
@@ -337,16 +328,13 @@ class IQMBackend(Backend):
             from iqm.qiskit_iqm.iqm_provider import IQMBackend as _IQMProviderBackend
         except ImportError as exc:
             raise ImportError(
-                "Please install qiskit-iqm to use the IQMBackend. "
-                "You can do this by running `pip install qrisp[iqm]`."
+                "Please install qiskit-iqm to use the IQMBackend. You can do this by running `pip install qrisp[iqm]`."
             ) from exc
 
         if server_url is None:
             server_url = "https://resonance.meetiqm.com/"
 
-        self._client = IQMClient(
-            iqm_server_url=server_url, token=api_token, quantum_computer=device_instance
-        )
+        self._client = IQMClient(iqm_server_url=server_url, token=api_token, quantum_computer=device_instance)
         self._iqm_provider_backend = _IQMProviderBackend(
             self._client,
             calibration_set_id=calibration_set_id,
@@ -365,9 +353,7 @@ class IQMBackend(Backend):
 
             def transpiler(qc):
                 qiskit_qc = qc.to_qiskit()
-                transpiled_qiskit_qc = transpile_to_IQM(
-                    qiskit_qc, self._iqm_provider_backend
-                )
+                transpiled_qiskit_qc = transpile_to_IQM(qiskit_qc, self._iqm_provider_backend)
                 return QuantumCircuit.from_qiskit(transpiled_qiskit_qc)
 
         self._transpiler = transpiler
@@ -425,15 +411,11 @@ class IQMBackend(Backend):
         circuit_batch = []
         for qc in circuits:
             if self._device_instance == "sirius":
-                qiskit_qc = self._transpile_to_iqm(
-                    qc.to_qiskit(), self._iqm_provider_backend
-                )
+                qiskit_qc = self._transpile_to_iqm(qc.to_qiskit(), self._iqm_provider_backend)
             else:
                 transpiled_qc = self._transpiler(qc)
                 qiskit_qc = transpiled_qc.to_qiskit()
-            circuit_batch.append(
-                self._iqm_provider_backend.serialize_circuit(qiskit_qc)
-            )
+            circuit_batch.append(self._iqm_provider_backend.serialize_circuit(qiskit_qc))
 
         iqm_job = self._client.submit_circuits(
             circuit_batch,

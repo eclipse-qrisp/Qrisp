@@ -27,12 +27,9 @@ from qrisp.environments import control
 
 _FOQCS_SPIN_GLASS_TOL = 1e-12
 
+
 def foqcs_prep_heisenberg(
-    prep_qv: QuantumVariable | Sequence[Qubit],
-    L: int,
-    g: dict,
-    J: dict,
-    conjugate: bool = False
+    prep_qv: QuantumVariable | Sequence[Qubit], L: int, g: dict, J: dict, conjugate: bool = False
 ) -> None:
     r"""
     FOQCS-LCU state preparation, based on the methodology established in https://arxiv.org/pdf/2507.20887, pages 8-9.
@@ -91,21 +88,19 @@ def foqcs_prep_heisenberg(
         missing = req_keys - g_keys
         extra = g_keys - req_keys
         raise ValueError(
-            f"g must contain exactly keys {sorted(req_keys)}. "
-            f"Missing: {sorted(missing)}. Extra: {sorted(extra)}."
+            f"g must contain exactly keys {sorted(req_keys)}. Missing: {sorted(missing)}. Extra: {sorted(extra)}."
         )
 
     if J_keys != req_keys:
         missing = req_keys - J_keys
         extra = J_keys - req_keys
         raise ValueError(
-            f"J must contain exactly keys {sorted(req_keys)}. "
-            f"Missing: {sorted(missing)}. Extra: {sorted(extra)}."
+            f"J must contain exactly keys {sorted(req_keys)}. Missing: {sorted(missing)}. Extra: {sorted(extra)}."
         )
 
     # Ref: Fig. 5 shows that the Heisenberg PREP oracle uses 2L + 6 ancillae;
     # the first 6 ancillae select gx, gy, gz, Jx, Jy, Jz.
-    extra_anc = 6 # Depends on the method and can be potentially decreased
+    extra_anc = 6  # Depends on the method and can be potentially decreased
 
     _g = np.zeros((3,), dtype="complex")
     _J = np.zeros((3,), dtype="complex")
@@ -128,17 +123,17 @@ def foqcs_prep_heisenberg(
     # PREP
     # Ref: Fig. 5 and Fig. 6 split the FOQCS ancillae into two L-qubit
     # activation registers: one for X activation and one for Z activation.
-    fh1 = extra_anc                # First qubit first half
-    lh1 = extra_anc + L - 1        # Last qubit first half
-    fh2 = extra_anc + L            # First qubit second half
+    fh1 = extra_anc  # First qubit first half
+    lh1 = extra_anc + L - 1  # Last qubit first half
+    fh2 = extra_anc + L  # First qubit second half
     lh2 = extra_anc + (L * 2) - 1  # Last qubit second half
 
     # 3 specific CNOTs
     # Ref: Table II: gx maps to |2^l>|0>, gy maps to |2^l>|2^l>,
     # and gz maps to |0>|2^l>.
-    cx(prep_qv[0], prep_qv[lh1]) # from gx
-    cx(prep_qv[1], prep_qv[lh1]) # from gy
-    cx(prep_qv[2], prep_qv[lh2]) # from gz
+    cx(prep_qv[0], prep_qv[lh1])  # from gx
+    cx(prep_qv[1], prep_qv[lh1])  # from gy
+    cx(prep_qv[2], prep_qv[lh2])  # from gz
     # 2 parallel Gamma gates
     # Ref: Fig. 2(a) defines Gamma(theta); Fig. 6 uses Gamma(theta_{n-1})
     # as part of the compact Heisenberg PREP circuit.
@@ -148,9 +143,9 @@ def foqcs_prep_heisenberg(
     # 3 specific CNOTs
     # Ref: Table II: Jx/Jy/Jz nearest-neighbor terms map to two-excitation
     # patterns |2^l + 2^{l+1}> in the relevant activation register(s).
-    cx(prep_qv[3], prep_qv[lh1 - 1]) # from Jx
-    cx(prep_qv[4], prep_qv[lh1 - 1]) # from Jy
-    cx(prep_qv[5], prep_qv[lh2 - 1]) # from Jz
+    cx(prep_qv[3], prep_qv[lh1 - 1])  # from Jx
+    cx(prep_qv[4], prep_qv[lh1 - 1])  # from Jy
+    cx(prep_qv[5], prep_qv[lh2 - 1])  # from Jz
     # 2 parallel delta gates
     # Ref: Fig. 2(d) defines the recursive Delta_n subcircuit used to prepare
     # the Dicke-state structure appearing in Fig. 6.
@@ -161,34 +156,31 @@ def foqcs_prep_heisenberg(
     _delta_gate(prep_qv[fh2:lh2], theta_coeffs)
     # One spec CNOT
     # Ref: Fig. 6 compresses the Jx/Jy branches before the controlled ladder.
-    cx(prep_qv[3], prep_qv[4]) # from Jx to Jy
+    cx(prep_qv[3], prep_qv[4])  # from Jx to Jy
     # Controlled CNOT ladder
     # Ref: Fig. 2(b) defines CL_1; Eq. (35) uses Delta plus CL_1 to build
     # nearest-neighbor two-excitation Dicke states.
-    with control(prep_qv[4]): # from Jy
-        _cx_ladder(prep_qv[fh1:lh1 + 1], L)
+    with control(prep_qv[4]):  # from Jy
+        _cx_ladder(prep_qv[fh1 : lh1 + 1], L)
     # One spec CNOT
-    cx(prep_qv[3], prep_qv[4]) # from Jx to Jy
+    cx(prep_qv[3], prep_qv[4])  # from Jx to Jy
     # Controlled CNOT ladder
     # Ref: Same CL_1 construction, now for the second activation register.
-    with control(prep_qv[5]): # from Jz
+    with control(prep_qv[5]):  # from Jz
         _cx_ladder(prep_qv[fh2:], L)
     # One spec CNOT
-    cx(prep_qv[1], prep_qv[4]) # from gy to Jy
+    cx(prep_qv[1], prep_qv[4])  # from gy to Jy
     # Controlled Element-wise CNOT
     # Ref: Fig. 2(c) defines EC; Fig. 6 uses EC to copy the first-register
     # Dicke pattern into the second register for Y-type terms.
-    with control(prep_qv[4]): # from Jy
-        cx(prep_qv[fh1:lh1 + 1], prep_qv[fh2:])
+    with control(prep_qv[4]):  # from Jy
+        cx(prep_qv[fh1 : lh1 + 1], prep_qv[fh2:])
     # One spec CNOT
-    cx(prep_qv[1], prep_qv[4]) # from gy to Jy
+    cx(prep_qv[1], prep_qv[4])  # from gy to Jy
+
 
 def foqcs_prep_spin_glass(
-    prep_qv: QuantumVariable | Sequence[Qubit],
-    L: int,
-    g: dict,
-    J: dict,
-    conjugate: bool = False
+    prep_qv: QuantumVariable | Sequence[Qubit], L: int, g: dict, J: dict, conjugate: bool = False
 ) -> None:
     r"""
     FOQCS-LCU state preparation, based on the methodology established in https://arxiv.org/pdf/2507.20887, pages 9-11.
@@ -234,28 +226,13 @@ def foqcs_prep_spin_glass(
     components = ["X", "Y", "Z"]
 
     # Normalize input representation.
-    g_arr = {
-        dim: np.asarray(g[dim], dtype=complex)
-        for dim in components
-    }
+    g_arr = {dim: np.asarray(g[dim], dtype=complex) for dim in components}
 
-    J_arr = {
-        dim: [
-            np.asarray(J[dim][k - 1], dtype=complex)
-            for k in range(1, L)
-        ]
-        for dim in components
-    }
+    J_arr = {dim: [np.asarray(J[dim][k - 1], dtype=complex) for k in range(1, L)] for dim in components}
 
     if conjugate:
-        g_arr = {
-            dim: np.conj(g_arr[dim])
-            for dim in components
-        }
-        J_arr = {
-            dim: [np.conj(diag) for diag in J_arr[dim]]
-            for dim in components
-        }
+        g_arr = {dim: np.conj(g_arr[dim]) for dim in components}
+        J_arr = {dim: [np.conj(diag) for diag in J_arr[dim]] for dim in components}
 
     # Selector layout:
     #   X block: controls 0, ..., L-1
@@ -290,18 +267,14 @@ def foqcs_prep_spin_glass(
     unbalanced_w_state(prep_qv[:extra_anc], subprep_coeffs / subprep_norm)
 
     # Compute unbalanced Dicke/W angles using absolute values.
-    theta, cutoff = _theta_cutoff_foqcs_spin_glass_optimal(
-        L,
-        g_arr,
-        J_arr
-    )
+    theta, cutoff = _theta_cutoff_foqcs_spin_glass_optimal(L, g_arr, J_arr)
 
     # Main optimal unbalanced-Dicke construction.
     for i in range(L - 1):
         # Activating CNOTs.
-        cx(prep_qv[i], prep_qv[extra_anc + L - 1 - i])              # X branch
+        cx(prep_qv[i], prep_qv[extra_anc + L - 1 - i])  # X branch
         cx(prep_qv[2 * L + i], prep_qv[extra_anc + 2 * L - 1 - i])  # Z branch
-        cx(prep_qv[L + i], prep_qv[extra_anc + L - 1 - i])          # Y branch
+        cx(prep_qv[L + i], prep_qv[extra_anc + L - 1 - i])  # Y branch
 
         # X and Y branches share the first half register.
         theta_list = []
@@ -337,8 +310,8 @@ def foqcs_prep_spin_glass(
         )
 
     # Final activation CNOTs.
-    cx(prep_qv[L - 1], prep_qv[extra_anc])          # X g/J last selector
-    cx(prep_qv[2 * L - 1], prep_qv[extra_anc])      # Y g/J last selector
+    cx(prep_qv[L - 1], prep_qv[extra_anc])  # X g/J last selector
+    cx(prep_qv[2 * L - 1], prep_qv[extra_anc])  # Y g/J last selector
     cx(prep_qv[3 * L - 1], prep_qv[extra_anc + L])  # Z g/J last selector
 
     # Phase fixes for g branches:
@@ -348,49 +321,25 @@ def foqcs_prep_spin_glass(
     # on the selected branch so that the prepared LCU coefficient state contains
     # the original complex amplitudes, not just their absolute values.
     with control(prep_qv[0]):
-        _phase_fix_dicke1_unbalanced(
-            prep_qv[fh1:lh1 + 1],
-            g_arr["X"],
-            cutoff[0][0]
-        )
+        _phase_fix_dicke1_unbalanced(prep_qv[fh1 : lh1 + 1], g_arr["X"], cutoff[0][0])
 
     with control(prep_qv[L]):
-        _phase_fix_dicke1_unbalanced(
-            prep_qv[fh1:lh1 + 1],
-            g_arr["Y"],
-            cutoff[1][0]
-        )
+        _phase_fix_dicke1_unbalanced(prep_qv[fh1 : lh1 + 1], g_arr["Y"], cutoff[1][0])
 
     with control(prep_qv[2 * L]):
-        _phase_fix_dicke1_unbalanced(
-            prep_qv[fh2:lh2 + 1],
-            g_arr["Z"],
-            cutoff[2][0]
-        )
+        _phase_fix_dicke1_unbalanced(prep_qv[fh2 : lh2 + 1], g_arr["Z"], cutoff[2][0])
 
     # Phase fixes for J branches:
     # Same logic as the phase fixes for g branches.
     for k in range(1, L):
         with control(prep_qv[k]):
-            _phase_fix_dicke1_unbalanced(
-                prep_qv[fh1:fh1 + L - k],
-                J_arr["X"][k - 1],
-                cutoff[0][k]
-            )
+            _phase_fix_dicke1_unbalanced(prep_qv[fh1 : fh1 + L - k], J_arr["X"][k - 1], cutoff[0][k])
 
         with control(prep_qv[L + k]):
-            _phase_fix_dicke1_unbalanced(
-                prep_qv[fh1:fh1 + L - k],
-                J_arr["Y"][k - 1],
-                cutoff[1][k]
-            )
+            _phase_fix_dicke1_unbalanced(prep_qv[fh1 : fh1 + L - k], J_arr["Y"][k - 1], cutoff[1][k])
 
         with control(prep_qv[2 * L + k]):
-            _phase_fix_dicke1_unbalanced(
-                prep_qv[fh2:fh2 + L - k],
-                J_arr["Z"][k - 1],
-                cutoff[2][k]
-            )
+            _phase_fix_dicke1_unbalanced(prep_qv[fh2 : fh2 + L - k], J_arr["Z"][k - 1], cutoff[2][k])
 
     # CNOT ladders complete the two-body J terms.
     for k in range(1, L):
@@ -398,10 +347,10 @@ def foqcs_prep_spin_glass(
         cx(prep_qv[k], prep_qv[L + k])
 
         with control(prep_qv[L + k]):
-            _cx_ladder(prep_qv[fh1:lh1 + 1], L, k)
+            _cx_ladder(prep_qv[fh1 : lh1 + 1], L, k)
 
         with control(prep_qv[2 * L + k]):
-            _cx_ladder(prep_qv[fh2:lh2 + 1], L, k)
+            _cx_ladder(prep_qv[fh2 : lh2 + 1], L, k)
 
         # Undo activation.
         cx(prep_qv[k], prep_qv[L + k])
@@ -411,33 +360,35 @@ def foqcs_prep_spin_glass(
         cx(prep_qv[i], prep_qv[i + 1])
 
     with control(prep_qv[2 * L - 1]):
-        cx(prep_qv[fh1:lh1 + 1], prep_qv[fh2:lh2 + 1])
+        cx(prep_qv[fh1 : lh1 + 1], prep_qv[fh2 : lh2 + 1])
 
     for i in reversed(range(L, 2 * L - 1)):
         cx(prep_qv[i], prep_qv[i + 1])
+
 
 ###################################
 ############# Helpers #############
 ###################################
 
+
 def get_foqcs_lcu_prep_num_of_ancillae(prep: partial, num_q_ops: int = 1) -> int:
     r"""
-        Gets a number of ancillae qubits for the FOQCS-LCU circuit that uses
-        ``prep`` method to encode ``num_q_ops`` qubits.
+    Gets a number of ancillae qubits for the FOQCS-LCU circuit that uses
+    ``prep`` method to encode ``num_q_ops`` qubits.
 
-        Parameters
-        ----------
-        prep : partial
-            Partially initialised FOQCS-LCU PREP method.
+    Parameters
+    ----------
+    prep : partial
+        Partially initialised FOQCS-LCU PREP method.
 
-        num_q_ops : int
-            Number of operand qubits (L argument for FOQCS-LCU PREP routines).
-            The default is 1.
+    num_q_ops : int
+        Number of operand qubits (L argument for FOQCS-LCU PREP routines).
+        The default is 1.
 
-        Returns
-        -------
-        int
-            An integer with number of ancillae required by the received FOQCS-LCU PREP method
+    Returns
+    -------
+    int
+        An integer with number of ancillae required by the received FOQCS-LCU PREP method
     """
     if prep.func == foqcs_prep_heisenberg:
         return num_q_ops * 2 + 6
@@ -445,6 +396,7 @@ def get_foqcs_lcu_prep_num_of_ancillae(prep: partial, num_q_ops: int = 1) -> int
         return num_q_ops * 5
     else:
         raise ValueError(f"Received unknown FOQCS-LCU PREP routine: {prep}")
+
 
 def _angles_dicke_unbalanced(coeff: Sequence[float]) -> tuple[list[float], int]:
     """
@@ -478,11 +430,8 @@ def _angles_dicke_unbalanced(coeff: Sequence[float]) -> tuple[list[float], int]:
 
     return theta, cutoff
 
-def _theta_cutoff_foqcs_spin_glass_optimal(
-    L: int,
-    g: dict,
-    J: dict
-) -> tuple[list[list[list[float]]], list[list[int]]]:
+
+def _theta_cutoff_foqcs_spin_glass_optimal(L: int, g: dict, J: dict) -> tuple[list[list[list[float]]], list[list[int]]]:
     """
     Computes the angle/cutoff data used by foqcs_prep_spin_glass_optimal.
 
@@ -532,10 +481,9 @@ def _theta_cutoff_foqcs_spin_glass_optimal(
 
     return theta, cutoff
 
+
 def _phase_fix_dicke1_unbalanced(
-    qv: QuantumVariable | Sequence[Qubit],
-    coeff: Sequence[complex],
-    cutoff: int | None = None
+    qv: QuantumVariable | Sequence[Qubit], coeff: Sequence[complex], cutoff: int | None = None
 ) -> None:
     coeff = np.asarray(coeff, dtype=complex)
     r"""
@@ -565,6 +513,7 @@ def _phase_fix_dicke1_unbalanced(
 
         if angle > _FOQCS_SPIN_GLASS_TOL:
             p(angle, qv[i])
+
 
 def _cgamma_opt(
     controls: Sequence[Qubit],
@@ -614,15 +563,18 @@ def _cgamma_opt(
     p(np.pi / 2, qv_rot)
     h(qv_rot)
 
+
 def _cx_ladder(qv: QuantumVariable | Sequence[Qubit], n: int, k: int = 1) -> None:
 
     for i in reversed(range(0, n - k)):
         cx(qv[i], qv[i + k])
 
+
 def _gamma_gate(qv_rot: Any, qv_x: Any, theta: float):
     with control(qv_x):
         ry(theta, qv_rot)
     cx(qv_rot, qv_x)
+
 
 def _delta_gate(qv: QuantumVariable | Sequence[Qubit], theta_coeffs):
     if len(theta_coeffs) == 0:

@@ -195,7 +195,6 @@ def reflection(
     def inner_reflection(qubits, phase):
 
         with control(phase == np.pi):
-
             x(qubits[-1])
 
             with control(jlen(qubits) == 1):

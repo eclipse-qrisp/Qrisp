@@ -83,6 +83,7 @@ class TestConvertToCZPreservation:
 
     def test_unknown_two_qubit_gate_passes_through_by_default(self):
         from qrisp.circuit import Operation
+
         qc, qubits = _make_circuit(2)
         op = Operation(name="mystery_gate", num_qubits=2)
         qc.append(op, qubits)
@@ -94,6 +95,7 @@ class TestConvertToCZPreservation:
 class TestConvertToCZStrict:
     def test_unknown_two_qubit_gate_raises_in_strict_mode(self):
         from qrisp.circuit import Operation
+
         qc, qubits = _make_circuit(2)
         op = Operation(name="mystery_gate", num_qubits=2)
         qc.append(op, qubits)

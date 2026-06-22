@@ -58,9 +58,7 @@ def aqt_mocks(monkeypatch):
     mock_primitives_module.AQTSampler = mock_sampler_cls
 
     monkeypatch.setitem(sys.modules, "qiskit_aqt_provider", mock_aqt_module)
-    monkeypatch.setitem(
-        sys.modules, "qiskit_aqt_provider.primitives", mock_primitives_module
-    )
+    monkeypatch.setitem(sys.modules, "qiskit_aqt_provider.primitives", mock_primitives_module)
 
     return mock_provider_cls, mock_sampler_cls
 
@@ -127,9 +125,7 @@ def _make_aqt_job(quasi_dists: list[dict] | None = None, fail: Exception | None 
     if fail is not None:
         mock_job.result.side_effect = fail
     else:
-        mock_job.result.return_value = _make_quasi_result(
-            quasi_dists if quasi_dists is not None else [{0: 1.0}]
-        )
+        mock_job.result.return_value = _make_quasi_result(quasi_dists if quasi_dists is not None else [{0: 1.0}])
     return mock_job
 
 
@@ -195,9 +191,7 @@ class TestAQTBackendConstruction:
         mock_provider_cls.return_value.get_backend.return_value = mock_device
 
         AQTBackend("token", "ibex", "my_workspace")
-        mock_provider_cls.return_value.get_backend.assert_called_once_with(
-            name="ibex", workspace="my_workspace"
-        )
+        mock_provider_cls.return_value.get_backend.assert_called_once_with(name="ibex", workspace="my_workspace")
 
 
 class TestAQTBackendOptions:
@@ -251,9 +245,7 @@ class TestAQTRunAsync:
     def test_quasi_dists_converted_to_bitstrings(self, aqt_backend):
         """Integer keys from quasi_dists are converted to '0'/'1' bitstrings."""
         backend, mock_sampler_cls = aqt_backend
-        mock_sampler_cls.return_value.run.return_value = _make_aqt_job(
-            [{0: 0.6, 1: 0.4}]
-        )
+        mock_sampler_cls.return_value.run.return_value = _make_aqt_job([{0: 0.6, 1: 0.4}])
 
         result = backend.run(_simple_circuit(), shots=100)
         assert result == {"0": 0.6, "1": 0.4}
@@ -262,9 +254,7 @@ class TestAQTRunAsync:
         """For a 2-clbit circuit, outcome 0 is rendered as '00', not '0'."""
         backend, mock_sampler_cls = aqt_backend
         # Outcomes: 0b00 → "00", 0b11 → "11"
-        mock_sampler_cls.return_value.run.return_value = _make_aqt_job(
-            [{0: 0.5, 3: 0.5}]
-        )
+        mock_sampler_cls.return_value.run.return_value = _make_aqt_job([{0: 0.5, 3: 0.5}])
 
         result = backend.run(_two_bit_circuit(), shots=100)
         assert "00" in result
@@ -275,9 +265,7 @@ class TestAQTRunAsync:
     def test_results_split_per_circuit(self, aqt_backend):
         """Each circuit in the batch gets its own result dict."""
         backend, mock_sampler_cls = aqt_backend
-        mock_sampler_cls.return_value.run.return_value = _make_aqt_job(
-            [{0: 0.7, 1: 0.3}, {0: 0.4, 1: 0.6}]
-        )
+        mock_sampler_cls.return_value.run.return_value = _make_aqt_job([{0: 0.7, 1: 0.3}, {0: 0.4, 1: 0.6}])
 
         results = backend.run([_simple_circuit(), _simple_circuit()], shots=100)
 
@@ -293,9 +281,7 @@ class TestAQTRunAsync:
 
         backend.run(_simple_circuit(), shots=100)
 
-        mock_sampler_cls.return_value.set_transpile_options.assert_called_once_with(
-            optimization_level=3
-        )
+        mock_sampler_cls.return_value.set_transpile_options.assert_called_once_with(optimization_level=3)
 
     def test_new_sampler_created_per_run_async(self, aqt_backend):
         """A fresh ``AQTSampler`` is constructed for each ``run_async`` call."""
@@ -318,9 +304,7 @@ class TestAQTRunAsync:
     def test_run_async_shots_list_warns_and_uses_max(self, aqt_backend):
         """run_async with a list of shots must warn and run all circuits at max(shots)."""
         backend, mock_sampler_cls = aqt_backend
-        mock_sampler_cls.return_value.run.return_value = _make_aqt_job(
-            [{0: 1.0}, {0: 1.0}]
-        )
+        mock_sampler_cls.return_value.run.return_value = _make_aqt_job([{0: 1.0}, {0: 1.0}])
 
         with pytest.warns(UserWarning, match="per-circuit shot counts"):
             backend.run_async([_simple_circuit(), _simple_circuit()], shots=[100, 300])
@@ -512,9 +496,7 @@ class TestAQTBackendEdgeCases:
     def test_run_with_list_of_circuits_returns_list(self, aqt_backend):
         """run() returns a list of dicts when a sequence of circuits is submitted."""
         backend, mock_sampler_cls = aqt_backend
-        mock_sampler_cls.return_value.run.return_value = _make_aqt_job(
-            [{0: 0.6, 1: 0.4}, {0: 0.3, 1: 0.7}]
-        )
+        mock_sampler_cls.return_value.run.return_value = _make_aqt_job([{0: 0.6, 1: 0.4}, {0: 0.3, 1: 0.7}])
 
         results = backend.run([_simple_circuit(), _simple_circuit()], shots=100)
 
@@ -531,9 +513,7 @@ class TestAQTErrorPropagation:
         """If ``AQTSampler.run()`` raises at submission time, the error propagates
         directly from ``run_async`` (before a job handle is created)."""
         backend, mock_sampler_cls = aqt_backend
-        mock_sampler_cls.return_value.run.side_effect = RuntimeError(
-            "submission failed"
-        )
+        mock_sampler_cls.return_value.run.side_effect = RuntimeError("submission failed")
 
         with pytest.raises(RuntimeError, match="submission failed"):
             backend.run_async(_simple_circuit(), shots=100)
@@ -592,9 +572,7 @@ class TestAQTBackendBatched:
         with pytest.raises(TypeError, match="workspace"):
             AQTBackend(api_token="token", device_instance="ibex", workspace=42)
 
-    @pytest.mark.skip(
-        reason="requires AQT hardware credentials and qiskit-aqt-provider"
-    )
+    @pytest.mark.skip(reason="requires AQT hardware credentials and qiskit-aqt-provider")
     def test_integration_batching_properties(self):
         """Placeholder: full batching integration test for AQTBackend.
 

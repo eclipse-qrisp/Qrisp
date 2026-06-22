@@ -16,7 +16,6 @@
 ********************************************************************************
 """
 
-
 """
 Optimization pass for simplifying verbose boolean condition chains in MLIR/xDSL.
 
@@ -129,9 +128,7 @@ class FoldCmpiExtui(RewritePattern):
     def match_and_rewrite(self, op: arith.CmpiOp, rewriter: PatternRewriter):
         # 1. RHS must be constant 0 or 1
         rhs_op = op.rhs.owner
-        if not isinstance(rhs_op, arith.ConstantOp) or not isinstance(
-            rhs_op.value, IntegerAttr
-        ):
+        if not isinstance(rhs_op, arith.ConstantOp) or not isinstance(rhs_op.value, IntegerAttr):
             return
         rhs_val = rhs_op.value.value.data
         if rhs_val not in (0, 1):

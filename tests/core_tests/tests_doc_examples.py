@@ -114,9 +114,7 @@ def test_ConditionEnvironment():
         res = QuantumBool(name="res_bool")
 
         if qv_0.size != qv_1.size:
-            raise Exception(
-                "Tried to evaluate equality condition for QuantumVariables of differing size"
-            )
+            raise Exception("Tried to evaluate equality condition for QuantumVariables of differing size")
 
         temp_qv = QuantumVariable(qv_0.size)
 

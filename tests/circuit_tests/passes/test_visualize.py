@@ -32,6 +32,7 @@ class TestVisualizePass:
     def test_is_a_circuit_pass(self):
         """``visualize`` is a :class:`CircuitPass`."""
         from qrisp import CircuitPass
+
         assert isinstance(visualize, CircuitPass)
 
     def test_is_callable(self):

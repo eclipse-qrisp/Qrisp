@@ -26,7 +26,10 @@ if TYPE_CHECKING:
 
 
 def apply_svt(
-    self, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial", parity: Literal["even", "odd"] = "odd"
+    self,
+    p: "ArrayLike",
+    kind: Literal["Polynomial", "Chebyshev"] = "Polynomial",
+    parity: Literal["even", "odd"] = "odd",
 ) -> BlockEncoding:
     r"""
     Returns a BlockEncoding representing a singular value transformation (SVT) of the operator.
@@ -150,7 +153,7 @@ def apply_svt(
 
     """
     from qrisp.algorithms.gqsp import QSVT
-    
+
     if isinstance(p, list):
         p = np.array(p)
     return QSVT(self, p, kind=kind, parity=parity)

@@ -54,9 +54,7 @@ class FermionicTerm:
         return FermionicTerm(self.ladder_list.copy())
 
     def dagger(self):
-        return FermionicTerm(
-            [(index, not is_creator) for index, is_creator in self.ladder_list[::-1]]
-        )
+        return FermionicTerm([(index, not is_creator) for index, is_creator in self.ladder_list[::-1]])
 
     #
     # Printing
@@ -142,9 +140,7 @@ class FermionicTerm:
     def fermionic_swap(self, permutation):
 
         permutation = [permutation.index(i) for i in range(len(permutation))]
-        new_ladder_list = [
-            (permutation[i], is_creator) for i, is_creator in self.ladder_list
-        ]
+        new_ladder_list = [(permutation[i], is_creator) for i, is_creator in self.ladder_list]
 
         return FermionicTerm(new_ladder_list)
 

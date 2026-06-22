@@ -5,6 +5,7 @@ Each test is a standalone ``test_*`` function at module scope so it can be
 run individually with ``pytest tests/test_find_detectors.py::test_name``
 or manually via ``python -c "from tests.test_find_detectors import test_name; test_name()"``.
 """
+
 import pytest
 import stim
 from qrisp import QuantumArray, QuantumBool, QuantumFloat, cx, measure, reset, h
@@ -21,6 +22,7 @@ from qrisp.misc.stim_tools.find_detectors import (
 
 # ─────────────────────── helpers ───────────────────────────────────────
 
+
 def _run_and_get_stim(main_fn):
     """Call an @extract_stim function and return the stim circuit."""
     result = main_fn()
@@ -34,6 +36,7 @@ def _sample_detectors(stim_circ, shots=2000):
 
 
 # ─────────────── single-round syndrome extraction ─────────────────────
+
 
 def test_single_round_detectors_found():
     """Two parity checks should produce two detectors."""
@@ -84,17 +87,26 @@ def test_single_round_noiseless_zero():
 
 # ──────────────── two-round repetition code ────────────────────────────
 
+
 def _build_two_round_rep_code():
     @find_detectors
     def two_rounds(qa):
-        reset(qa[1]); reset(qa[3])
-        cx(qa[0], qa[1]); cx(qa[2], qa[1])
-        cx(qa[2], qa[3]); cx(qa[4], qa[3])
-        m1_r1 = measure(qa[1]); m3_r1 = measure(qa[3])
-        reset(qa[1]); reset(qa[3])
-        cx(qa[0], qa[1]); cx(qa[2], qa[1])
-        cx(qa[2], qa[3]); cx(qa[4], qa[3])
-        m1_r2 = measure(qa[1]); m3_r2 = measure(qa[3])
+        reset(qa[1])
+        reset(qa[3])
+        cx(qa[0], qa[1])
+        cx(qa[2], qa[1])
+        cx(qa[2], qa[3])
+        cx(qa[4], qa[3])
+        m1_r1 = measure(qa[1])
+        m3_r1 = measure(qa[3])
+        reset(qa[1])
+        reset(qa[3])
+        cx(qa[0], qa[1])
+        cx(qa[2], qa[1])
+        cx(qa[2], qa[3])
+        cx(qa[4], qa[3])
+        m1_r2 = measure(qa[1])
+        m3_r2 = measure(qa[3])
         return m1_r1, m3_r1, m1_r2, m3_r2
 
     @extract_stim
@@ -119,6 +131,7 @@ def test_two_round_noiseless_zero():
 
 
 # ───────────────── return_circuits debug mode ──────────────────────────
+
 
 def test_return_circuits_no_crash():
     """return_circuits=True must not raise."""
@@ -165,6 +178,7 @@ def test_return_circuits_are_stim_instances():
 
 # ─────────────── _prepare_for_tqecd unit tests ────────────────────────
 
+
 def test_tqecd_qubit_coords_present():
     """Output must have QUBIT_COORDS for every qubit."""
     circ = stim.Circuit("R 0 1 2\nCX 0 1\nM 0 1 2")
@@ -205,6 +219,7 @@ def test_tqecd_two_qubit_gate_moments():
 
 
 # ─────────────── edge cases ───────────────────────────────────────────
+
 
 def test_no_reset_pipeline_survives():
     """CX + measure (no reset) — pipeline must not crash."""
@@ -255,13 +270,16 @@ def test_type_error_non_quantum_array():
         return measure(x)
 
     with pytest.raises(TypeError, match="QuantumArray"):
+
         @extract_stim
         def main():
             bad(42)
+
         main()
 
 
 # ─────────────── stress tests ─────────────────────────────────────────
+
 
 def test_stress_single_return():
     """Single return value (not a tuple) — normalize-to-tuple logic."""
@@ -352,9 +370,12 @@ def test_stress_partial_return():
 
     @find_detectors
     def partial(qa):
-        reset(qa[1]); reset(qa[3])
-        cx(qa[0], qa[1]); cx(qa[2], qa[1])
-        cx(qa[2], qa[3]); cx(qa[4], qa[3])
+        reset(qa[1])
+        reset(qa[3])
+        cx(qa[0], qa[1])
+        cx(qa[2], qa[1])
+        cx(qa[2], qa[3])
+        cx(qa[4], qa[3])
         m1 = measure(qa[1])
         m3 = measure(qa[3])
         return m1  # discard m3
@@ -375,9 +396,12 @@ def test_stress_reversed_return_order():
 
     @find_detectors
     def reversed_ret(qa):
-        reset(qa[1]); reset(qa[3])
-        cx(qa[0], qa[1]); cx(qa[2], qa[1])
-        cx(qa[2], qa[3]); cx(qa[4], qa[3])
+        reset(qa[1])
+        reset(qa[3])
+        cx(qa[0], qa[1])
+        cx(qa[2], qa[1])
+        cx(qa[2], qa[3])
+        cx(qa[4], qa[3])
         m1 = measure(qa[1])
         m3 = measure(qa[3])
         return m3, m1  # reversed
@@ -439,9 +463,11 @@ def test_stress_no_reset_between_rounds():
     @find_detectors
     def no_reset_round2(qa):
         reset(qa[1])
-        cx(qa[0], qa[1]); cx(qa[2], qa[1])
+        cx(qa[0], qa[1])
+        cx(qa[2], qa[1])
         m1 = measure(qa[1])
-        cx(qa[0], qa[1]); cx(qa[2], qa[1])
+        cx(qa[0], qa[1])
+        cx(qa[2], qa[1])
         m2 = measure(qa[1])
         return m1, m2
 
@@ -462,7 +488,8 @@ def test_stress_reset_unmeasured_qubit():
     def reset_extra(qa):
         reset(qa[0])
         reset(qa[1])
-        cx(qa[0], qa[1]); cx(qa[2], qa[1])
+        cx(qa[0], qa[1])
+        cx(qa[2], qa[1])
         return measure(qa[1])
 
     @extract_stim
@@ -480,12 +507,18 @@ def test_stress_back_to_back_measurements():
 
     @find_detectors
     def back_to_back(qa):
-        reset(qa[1]); reset(qa[3])
-        cx(qa[0], qa[1]); cx(qa[2], qa[3])
-        m1 = measure(qa[1]); m3 = measure(qa[3])
-        reset(qa[1]); reset(qa[3])
-        cx(qa[0], qa[1]); cx(qa[2], qa[3])
-        m1b = measure(qa[1]); m3b = measure(qa[3])
+        reset(qa[1])
+        reset(qa[3])
+        cx(qa[0], qa[1])
+        cx(qa[2], qa[3])
+        m1 = measure(qa[1])
+        m3 = measure(qa[3])
+        reset(qa[1])
+        reset(qa[3])
+        cx(qa[0], qa[1])
+        cx(qa[2], qa[3])
+        m1b = measure(qa[1])
+        m3b = measure(qa[3])
         return m1, m3, m1b, m3b
 
     @extract_stim
@@ -505,10 +538,12 @@ def test_stress_return_circuits_inspection():
     @find_detectors(return_circuits=True)
     def debug_fn(qa):
         reset(qa[1])
-        cx(qa[0], qa[1]); cx(qa[2], qa[1])
+        cx(qa[0], qa[1])
+        cx(qa[2], qa[1])
         m = measure(qa[1])
         reset(qa[1])
-        cx(qa[0], qa[1]); cx(qa[2], qa[1])
+        cx(qa[0], qa[1])
+        cx(qa[2], qa[1])
         m2 = measure(qa[1])
         return m, m2
 
@@ -533,12 +568,18 @@ def test_stress_interleaved_reset_gate():
 
     @find_detectors
     def interleaved(qa):
-        reset(qa[1]); cx(qa[0], qa[1])
-        reset(qa[3]); cx(qa[2], qa[3])
-        m1 = measure(qa[1]); m3 = measure(qa[3])
-        reset(qa[1]); cx(qa[0], qa[1])
-        reset(qa[3]); cx(qa[2], qa[3])
-        m1b = measure(qa[1]); m3b = measure(qa[3])
+        reset(qa[1])
+        cx(qa[0], qa[1])
+        reset(qa[3])
+        cx(qa[2], qa[3])
+        m1 = measure(qa[1])
+        m3 = measure(qa[3])
+        reset(qa[1])
+        cx(qa[0], qa[1])
+        reset(qa[3])
+        cx(qa[2], qa[3])
+        m1b = measure(qa[1])
+        m3b = measure(qa[3])
         return m1, m3, m1b, m3b
 
     @extract_stim
@@ -557,7 +598,8 @@ def test_stress_double_measure_same_qubit():
 
     @find_detectors
     def double_meas(qa):
-        reset(qa[0]); reset(qa[1])
+        reset(qa[0])
+        reset(qa[1])
         cx(qa[0], qa[1])
         m1 = measure(qa[1])
         m2 = measure(qa[1])
@@ -579,12 +621,16 @@ def test_stress_weight4_check():
     @find_detectors
     def weight4(qa):
         reset(qa[4])
-        cx(qa[0], qa[4]); cx(qa[1], qa[4])
-        cx(qa[2], qa[4]); cx(qa[3], qa[4])
+        cx(qa[0], qa[4])
+        cx(qa[1], qa[4])
+        cx(qa[2], qa[4])
+        cx(qa[3], qa[4])
         m = measure(qa[4])
         reset(qa[4])
-        cx(qa[0], qa[4]); cx(qa[1], qa[4])
-        cx(qa[2], qa[4]); cx(qa[3], qa[4])
+        cx(qa[0], qa[4])
+        cx(qa[1], qa[4])
+        cx(qa[2], qa[4])
+        cx(qa[3], qa[4])
         m2 = measure(qa[4])
         return m, m2
 
@@ -605,12 +651,18 @@ def test_stress_hadamard_cnot_x_basis():
 
     @find_detectors
     def x_check(qa):
-        reset(qa[2]); h(qa[2])
-        cx(qa[2], qa[0]); cx(qa[2], qa[1])
-        h(qa[2]); m = measure(qa[2])
-        reset(qa[2]); h(qa[2])
-        cx(qa[2], qa[0]); cx(qa[2], qa[1])
-        h(qa[2]); m2 = measure(qa[2])
+        reset(qa[2])
+        h(qa[2])
+        cx(qa[2], qa[0])
+        cx(qa[2], qa[1])
+        h(qa[2])
+        m = measure(qa[2])
+        reset(qa[2])
+        h(qa[2])
+        cx(qa[2], qa[0])
+        cx(qa[2], qa[1])
+        h(qa[2])
+        m2 = measure(qa[2])
         return m, m2
 
     @extract_stim
@@ -627,25 +679,26 @@ def test_stress_hadamard_cnot_x_basis():
 
 # ──────────────── noise handling tests ─────────────────────────────────
 
+
 def test_noise_x_error_100_percent():
     """Test that expectations are computed correctly even with 100% X errors."""
-    
+
     @find_detectors
     def syndrome_with_noise(qa):
         reset(qa[1])
         cx(qa[0], qa[1])
         cx(qa[2], qa[1])
         return measure(qa[1])
-    
+
     @extract_stim
     def main():
         qa = QuantumArray(qtype=QuantumBool(), shape=(3,))
         detectors, m = syndrome_with_noise(qa)
         return detectors, m
-    
+
     # Get the stim circuit
     stim_circ = _run_and_get_stim(main)
-    
+
     # Manually add 100% X error on the ancilla (qubit 1) before measurement.
     # This flips the measurement outcome and should trigger the detector.
     noisy_circ = stim.Circuit()
@@ -654,12 +707,12 @@ def test_noise_x_error_100_percent():
         if instruction.name in ("M", "MR") and 1 in [t.value for t in instruction.targets_copy()]:
             noisy_circ.append("X_ERROR", [1], 1.0)
         noisy_circ.append(instruction)
-    
+
     # The noiseless circuit should still have detectors that sample to 0
     # (the decorated function computed expectations from noiseless simulation)
     samples_noiseless = _sample_detectors(stim_circ)
     assert samples_noiseless.sum() == 0, "Noiseless circuit should have zero detector samples"
-    
+
     # The noisy circuit should have non-zero detector samples
     samples_noisy = _sample_detectors(noisy_circ, shots=100)
     # With 100% error, we expect many non-zero detector samples
@@ -668,9 +721,10 @@ def test_noise_x_error_100_percent():
 
 # ──────────────── static parameter tests ───────────────────────────────
 
+
 def test_static_parameter_integer():
     """Test that static integer parameters work correctly."""
-    
+
     @find_detectors
     def syndrome_with_rounds(qa, num_rounds):
         results = []
@@ -680,13 +734,13 @@ def test_static_parameter_integer():
             cx(qa[2], qa[1])
             results.append(measure(qa[1]))
         return tuple(results)
-    
+
     @extract_stim
     def main():
         qa = QuantumArray(qtype=QuantumBool(), shape=(3,))
         detectors, *measurements = syndrome_with_rounds(qa, 3)  # 3 rounds
         return (detectors,) + tuple(measurements)
-    
+
     stim_circ = _run_and_get_stim(main)
     # Should find >= 3 detectors (one per round)
     assert stim_circ.num_detectors >= 3
@@ -696,14 +750,14 @@ def test_static_parameter_integer():
 
 def test_static_parameter_boolean():
     """Test that static boolean parameters work correctly."""
-    
+
     @find_detectors
     def syndrome_conditional(qa, include_second_check):
         reset(qa[1])
         cx(qa[0], qa[1])
         cx(qa[2], qa[1])
         m1 = measure(qa[1])
-        
+
         if include_second_check:
             reset(qa[3])
             cx(qa[2], qa[3])
@@ -711,8 +765,8 @@ def test_static_parameter_boolean():
             m2 = measure(qa[3])
             return m1, m2
         else:
-            return m1,
-    
+            return (m1,)
+
     @extract_stim
     def main():
         qa = QuantumArray(qtype=QuantumBool(), shape=(5,))
@@ -720,7 +774,7 @@ def test_static_parameter_boolean():
         detectors = result[0]
         measurements = result[1:]
         return (detectors,) + measurements
-    
+
     stim_circ = _run_and_get_stim(main)
     # Should find >= 2 detectors (one per check)
     assert stim_circ.num_detectors >= 2
@@ -730,7 +784,7 @@ def test_static_parameter_boolean():
 
 def test_static_parameter_mixed():
     """Test mixing quantum arrays and multiple static parameters."""
-    
+
     @find_detectors
     def syndrome_parameterized(data, ancilla, num_rounds, apply_hadamard):
         results = []
@@ -744,14 +798,14 @@ def test_static_parameter_mixed():
                 h(ancilla[0])
             results.append(measure(ancilla[0]))
         return tuple(results)
-    
+
     @extract_stim
     def main():
         data = QuantumArray(qtype=QuantumBool(), shape=(2,))
         ancilla = QuantumArray(qtype=QuantumBool(), shape=(1,))
         detectors, *measurements = syndrome_parameterized(data, ancilla, 2, False)
         return (detectors,) + tuple(measurements)
-    
+
     stim_circ = _run_and_get_stim(main)
     assert stim_circ.num_detectors >= 2
     samples = _sample_detectors(stim_circ)
@@ -763,6 +817,7 @@ def test_static_parameter_custom_object():
 
     class SyndromeConfig:
         """Plain class with no JAX flattening — not a pytree, not a QuantumArray."""
+
         def __init__(self, num_rounds, pairs):
             self.num_rounds = num_rounds
             self.pairs = pairs  # list of (data_idx, ancilla_idx) tuples

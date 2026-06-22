@@ -50,7 +50,6 @@ def fermionic_trotterization(H, forward_evolution=True):
         qarg = [qarg[i] for i in range(n)]
 
         for group in groups:
-
             # We now treat the fermionic swaps.
             # The problem here is that terms like
             # a(0)*a(2) + a(1)*a(3)
@@ -87,7 +86,6 @@ def fermionic_trotterization(H, forward_evolution=True):
             n = group.find_minimal_qubit_amount()
 
             for term in terms:
-
                 # For non-unipolar factors (i.e. a(i)*c(i) for instance), no matching is necessary.
                 index_list = term.get_unipolars()
 
@@ -111,24 +109,16 @@ def fermionic_trotterization(H, forward_evolution=True):
                     coeff = reduced_H.terms_dict[ferm_term]
 
                     # This function permutes the indices of the fermionic term
-                    qubit_operator = ferm_term.fermionic_swap(
-                        permutation
-                    ).to_qubit_term()
+                    qubit_operator = ferm_term.fermionic_swap(permutation).to_qubit_term()
                     qubit_term = list(qubit_operator.terms_dict.keys())[0]
 
                     if not len(ferm_term.get_unipolars()) % 2:
                         for factor in qubit_term.factor_dict.values():
                             if factor == "Z":
-                                raise Exception(
-                                    "Fermionic matching failed: Z Operator found"
-                                )
+                                raise Exception("Fermionic matching failed: Z Operator found")
 
                     qubit_term.simulate(
-                        -coeff
-                        * t
-                        / steps
-                        * qubit_operator.terms_dict[qubit_term]
-                        * (-1) ** int(forward_evolution),
+                        -coeff * t / steps * qubit_operator.terms_dict[qubit_term] * (-1) ** int(forward_evolution),
                         new_qarg,
                     )
 
@@ -181,7 +171,6 @@ def kai_pflaume(singles, couples, n):
     females.reverse()
 
     for f in females:
-
         m = couples[f]
         # Move the female adjacent to the male
         for i in range(permutation.index(f), permutation.index(m) - 1):

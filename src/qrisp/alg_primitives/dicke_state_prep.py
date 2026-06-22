@@ -63,11 +63,7 @@ def dicke_state(qv: QuantumVariable | Sequence[Qubit], k: int) -> None:
         split_cycle_shift(qv, index, index - 1)
 
 
-def split_cycle_shift(
-    qv: QuantumVariable | Sequence[Qubit],
-    highIndex: int,
-    lowIndex: int
-) -> None:
+def split_cycle_shift(qv: QuantumVariable | Sequence[Qubit], highIndex: int, lowIndex: int) -> None:
     """
     Helper function for Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358.
 

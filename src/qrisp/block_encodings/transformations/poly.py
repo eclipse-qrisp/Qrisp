@@ -25,9 +25,7 @@ if TYPE_CHECKING:
     from jax.typing import ArrayLike
 
 
-def apply_poly(
-    self, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial"
-) -> BlockEncoding:
+def apply_poly(self, p: "ArrayLike", kind: Literal["Polynomial", "Chebyshev"] = "Polynomial") -> BlockEncoding:
     r"""
     Returns a BlockEncoding representing a polynomial transformation of the operator.
 
@@ -109,7 +107,7 @@ def apply_poly(
 
     """
     from qrisp.algorithms.gqsp import GQET
-    
+
     if isinstance(p, list):
         p = np.array(p)
     return GQET(self, p, kind=kind)

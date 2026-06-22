@@ -57,9 +57,7 @@ def yong_mcx(input_qubits, target, ancilla=None, ctrl_state=None):
 
     s(ancilla)
 
-    yong_mcx(
-        input_qubits=partition_k_2 + [target], target=ancilla, ancilla=partition_k_1[-1]
-    )
+    yong_mcx(input_qubits=partition_k_2 + [target], target=ancilla, ancilla=partition_k_1[-1])
 
     s_dg(ancilla)
 

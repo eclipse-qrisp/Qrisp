@@ -97,9 +97,7 @@ def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
             return always_one
         if meas_behavior == "sim":
             return simulation
-        raise ValueError(
-            f"Don't know how to compute required resources via method {meas_behavior}"
-        )
+        raise ValueError(f"Don't know how to compute required resources via method {meas_behavior}")
 
     if callable(meas_behavior):
         return meas_behavior
@@ -111,9 +109,7 @@ def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
 # Keeping them here for now to avoid circular imports.
 
 
-def count_ops(
-    meas_behavior: str | Callable, callback_threshold: int | None = None
-) -> Callable:
+def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = None) -> Callable:
     """
     Decorator to determine resources of large scale quantum computations.
     This decorator compiles the given Jasp-compatible function into a classical
@@ -278,9 +274,7 @@ def count_ops(
                 function.jaspr_dict = {}
 
             signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(
-                arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape")
-            )
+            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
             hash_key = (signature, shape_signature, hash(meas_behavior))
 
             if hash_key not in function.jaspr_dict:
@@ -430,9 +424,7 @@ def depth(
                 function.jaspr_dict = {}
 
             signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(
-                arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape")
-            )
+            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
             hash_key = (signature, shape_signature, hash(meas_behavior))
 
             if hash_key not in function.jaspr_dict:
@@ -610,16 +602,17 @@ def num_qubits(
                 function.jaspr_dict = {}
 
             signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(
-                arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape")
-            )
+            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
             hash_key = (signature, shape_signature, hash(meas_behavior))
 
             if hash_key not in function.jaspr_dict:
                 function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
 
             return function.jaspr_dict[hash_key].num_qubits(
-                *args, meas_behavior=meas_behavior, max_allocations=max_allocations, callback_threshold=callback_threshold
+                *args,
+                meas_behavior=meas_behavior,
+                max_allocations=max_allocations,
+                callback_threshold=callback_threshold,
             )
 
         return qubits_counter
@@ -627,9 +620,7 @@ def num_qubits(
     return num_qubits_decorator
 
 
-def profile_jaspr(
-    jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0", **kwargs: Any
-) -> Callable:
+def profile_jaspr(jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0", **kwargs: Any) -> Callable:
     """
     Profile a Jaspr according to a given metric mode.
 
@@ -661,10 +652,7 @@ def profile_jaspr(
     meas_behavior_callable = _normalize_meas_behavior(meas_behavior)
     metric_spec = METRIC_DISPATCH[mode]
 
-    if (
-        meas_behavior_callable.__name__ == "simulation"
-        and metric_spec.simulate_fallback is not None
-    ):
+    if meas_behavior_callable.__name__ == "simulation" and metric_spec.simulate_fallback is not None:
 
         @wraps(metric_spec.simulate_fallback)
         def simulation_wrapper(*args):
