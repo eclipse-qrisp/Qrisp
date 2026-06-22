@@ -133,13 +133,13 @@ def jrange(*args):
         Each loop iteration must perform exactly the same instructions - the only
         thing that changes is the loop index
 
-
     Parameters
     ----------
-    start : int, optional
-        The loop index to start at. Defaults to 0.
-    stop : int
-        The loop index to stop at (exclusive, as in standard Python range).
+    *args : int
+        Can be either a single integer ``stop``, or two integers ``start, stop``.
+        In both cases, ``stop`` is exclusive, as in standard Python range.
+        - If one argument is provided, it acts as ``stop`` and ``start`` defaults to 0.
+        - If two arguments are provided, they act as ``start`` and ``stop``.
 
     Examples
     --------
@@ -358,6 +358,15 @@ def jrange(*args):
     the reversed iteration and proper daggers automatically, including at
     higher nesting levels.
     """
+
+    if len(args) not in (1, 2): 
+        raise TypeError(
+            f"jrange takes 1 or 2 arguments ({len(args)} given). "
+            "The step argument of jrange has been removed "
+            "in version 0.9. Use arithmetic on the loop variable to achieve "
+            "stepping behavior."
+        )
+
 
     new_args = []
     if check_for_tracing_mode():
